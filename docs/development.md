@@ -15,25 +15,22 @@ The app builds from a Mac (Apple silicon), from Windows (x64), and from Linux (x
 | iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py src/app/draughts.goose --run`, `--device --run` | [Run on iOS](#run-on-ios) |
 | Rules tests | Mac, Windows, Linux | `scripts/test.sh` | [Test the rules](#test-the-rules) |
 
-The Toolchain table below is the Mac's; Windows lists its own under Run on Windows and Run
-on Android.
-
 ## Toolchain
 
-The Mac's, tested 2026-11-07 on macOS 26.3.1:
+On the Mac:
 
 | Tool | Where | Version |
 | --- | --- | --- |
 | Goose | `build/goose-v2026.4-macos-arm64/`, from the [release](https://github.com/aardappel/goose/releases/tag/v2026.4); `GOOSE` overrides it | v2026.4, with gfx, ui, and audio built in |
-| goose_gfx | `third_party/goose_gfx` submodule, with SDL and Nuklear as its submodules | `15de5e0`, the [kaitk/goose_gfx](https://github.com/kaitk/goose_gfx) fork's `main`, which the submodule follows: each change Draughts needs is a branch of its own on upstream's `main` (offered upstream one at a time), merged into the fork's `main` |
+| goose_gfx | `third_party/goose_gfx` submodule (the fork `kaitk/goose_gfx`), with SDL and Nuklear as its submodules | its `main` |
 | Android SDK | `~/Library/Android/sdk`; `ANDROID_HOME` overrides it | platform 36, build-tools 36.0.0, platform-tools |
 | Android NDK | `$ANDROID_HOME/ndk/29.0.14206865`; `ANDROID_NDK` overrides it | r29 |
 | JDK | `javac` on `PATH` | OpenJDK 21 |
-| CMake, Ninja | Homebrew | CMake 4.4.4 |
+| CMake, Ninja | Homebrew | |
 | Python | `python3` | 3.x |
-| bundletool | `build/bundletool-1.18.3/`, from the [release](https://github.com/google/bundletool/releases/tag/1.18.3), fetched by `scripts/android.py --release` | 1.18.3 |
-| Xcode | `/Applications/Xcode.app`, for the iOS SDKs, clang, `simctl`, and `devicectl` | 26.4, an iOS 18.3 simulator runtime |
-| astcenc | `build/astcenc-5.7.0/bin/astcenc`, from the [release](https://github.com/ARM-software/astc-encoder/releases/tag/5.7.0) (Apache 2.0; not in Homebrew) | 5.7.0, macOS universal |
+| bundletool | `build/bundletool-1.18.3/`, fetched by `scripts/android.py --release` | 1.18.3 |
+| Xcode | `/Applications/Xcode.app`, for the iOS SDKs, clang, `simctl`, and `devicectl` | 26.4 |
+| astcenc | `build/astcenc-5.7.0/bin/astcenc`, from the [release](https://github.com/ARM-software/astc-encoder/releases/tag/5.7.0) (not in Homebrew) | 5.7.0 |
 
 Set up from a fresh clone:
 
@@ -48,16 +45,15 @@ cd ..
 brew install cmake ninja     # for iOS and Android
 ```
 
-Android's SDK, NDK, and JDK: [Set up on the Mac](#set-up-on-the-mac) under Run on Android.
+Android's SDK, NDK, and JDK: [Run on Android](#run-on-android).
 
 `scripts/clean.py` deletes what builds, tests, and shots left in `build/` (`-n` lists it
-first, with sizes), keeping what is slow to get again: the fetched releases (Goose's,
-astcenc, bundletool, PresentMon), `build/notes/`, SDL as Linux builds it, and iOS's
-provisioning project. The scripts make the rest again when they next run.
+first, with sizes), keeping what is slow to get again: the fetched releases, `build/notes/`,
+SDL as Linux builds it, and iOS's provisioning project.
 
 When the Goose release changes, bring the fork's `main` to the upstream commit whose
 `src/`, `gfx.goose`, and `CMakeLists.txt` match the release's `pkg/gfx/`, merge its
-branches again, and move the submodule to it, so Android and desktop compile the same gfx
+branches again, and move the submodule to it, so every platform compiles the same gfx
 layer with the same changes.
 
 ## Run on the Mac
@@ -70,135 +66,64 @@ cd src/app
 ../../build/draughts --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
 ```
 
-The app is built, not run through `goose run`: the computer thinks on a worker thread
-(`src/app/think.goose`), and `goose run` refuses a program that starts one.
-`scripts/mac.py` builds goose_gfx's sources from the submodule into a copy
-of the release (`build/mac/goose/`), as the Android, iOS, Windows, and Linux builds do,
-then the program with that copy's `goose`: about 13 s on an M-series Mac, as long as a
-plain `goose build`. The gfx sources are compiled again only when they, SDL's version,
-or their flags change (`native.patched_goose`, a stamp beside the library). A plain
-`goose build` in `src/app` still works, but its gfx presents every frame, so at rest it
-spins at the display's rate ([rendering](architecture/rendering.md#frames-and-battery)).
-Run the app from `src/app`, where `--frames` saves `draughts.png`; the flags follow the
-executable with no `--`. `src/app/draughts.goose` is the
-app; its development flags (each a field of `Flags` in `src/app/flags.goose`, the one list
-of them) pick the board theme (`wood`, `stone`, `birch`, `sunset`; the
-season's by default, with its photograph), the window size, a starting position,
-squares to tap on the first frames, move hints (`--hints moves` shows the targets;
-mistakes only by default), the language (`--lang et`; the system's by default), the
-layout's shorter side in dp (`--dp 540`; 800 by default, for trying phone scales;
-`gui::scale_of`), a phone's insets (`--inset L,T,R,B`, in dp of the layout, left,
-top, right, bottom; the window's own safe area by default, all of it on the Mac), the
-scale's floor in physical size (`--density-floor F` with `--display-scale S`: the scale
-becomes `max(short side / 800, F × S)`; off by default, and `--dp` turns it off unless
-`--density-floor` is given too; the Mac's own display scale is left out, so without
-`--display-scale` the floor does nothing there), whether a desktop's window is laid out as a
-touch screen (`--touch on|off`: off by default, the controls a mouse's size; on with
-`--size WxH`, `--dp`, or `--inset`, which stand for a device, unless `--touch off` is
-given: `--size 1728x1080 --touch off` shows a MacBook's full screen as the app lays it
-out, and `--display-scale` stands for another display's scale there, so `--size 1280x720
---touch off --display-scale 1` draws a 27" 2560 × 1440 screen's pixels on a Retina Mac,
-whose window macOS would otherwise shrink to fit its own screen; [rendering](architecture/rendering.md#screen-sizes-and-the-safe-area)), the pointer held at a window pixel (`--mouse X,Y`, twice the points on a Retina Mac: a tile lit under the mouse in a shot, with `--touch off`), keys pressed one a frame from the third (`--keys down,down,enter`: up, down, left, right, enter, tab, backtab; the keys' focus, and the board's cursor, in a shot), and a frame to stop at and save as
-`draughts.png`. The Pixel 7a in portrait at 540 dp, its 118 px cutout and its 84 px
-gesture bar, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,42`,
-and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,42` (or `0,0,59,42`, turned
-the other way). What the Pixel would show at a floor of 0.75: `--size 1200x540
---density-floor 0.75 --display-scale 2.625` (1.97 px a dp, 548 dp across).
-`src/app/draughts.build` adds the program's own C (`src/app/background.c`, the photographs as
-pixels, with, on the Mac only, their JPEG decoder; `src/app/photo.c`, their upload
-through gfx's C API;
-`src/app/locale.c`, the system's locales; `src/app/display.c`, the window's safe area and the
-display's scale; `src/app/wake.c`, the timer a running clock wakes the
-loop with; `src/app/resize.c`, the backdrop a Mac window shows around its last frame
-while its edge is dragged; `src/app/memory.c`, which gives back on Android the memory malloc keeps for
-what the launch freed; `src/app/launch.c`, which tells the activity the first frame is on screen, and
-to close and leave recents after home's X), which `scripts/android.py` builds into the APK too. The photographs are
-embedded from `design/backgrounds/masters/` when they are there (the JPEGs, and the ASTC
-files `design/backgrounds/README.md` says how to make with astcenc); without them the
-board sits on the page color. goose caches the program's C by its source, so after
-adding or changing a master, touch `src/app/background.c`. The Mac's gfx (the fork's) takes the
-ASTC files, which Apple silicon samples, and the JPEGs are left for a GPU without ASTC
-(an Intel Mac; a plain `goose build`, whose gfx has no compressed formats); Android
-embeds only the ASTC files ([rendering](architecture/rendering.md#scene-and-glass)). The
-board's logic is the `board/` package, the UI layer `gui/`, the game screen `game/`, and
-the screens around it `shell/` (home, and which screen shows), each tested headless
-(`test/board/`, `test/gui/`, `test/game/`, `test/shell/`). The app opens at home; `--fen`,
-`--tap` (`c3`, or `d10` on 10 × 10), or `--screen game` open the game screen,
-`--screen settings` settings, `--screen setup` home's setup as the player's file has it
-(`friend` or `computer` with that opponent chosen), `--screen
-puzzles` the puzzles to pick from, `--screen results` the results, `--screen tutorial` how to play at `--step N`'s
-step (from 1; `--step end` its end's card), its `--tap`s on its board, `--screen ask` a
-new player's question over home, `--screen replay` the
-replay of the newest game in the history, at its end or at `--ply N` (0 the start;
-`--history FILE` reads the games from a history file in place of the player's, for
-shots: `--history games.txt --screen replay --ply 39 --frames 12`; `--best on` shows the
-best move on its board, as the bulb does; `--go here` then plays
-from that move, as the replay's play from here does), and `--puzzle ID` that puzzle,
-whose taps go to its board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or
-`home`, `game`, `play`, `puzzles`, `puzzle`) switches there on the second frame through
-its transition, once any `--tap`s have played out, and `--hold 0.4` keeps a transition
-at 40% of the way, for a screenshot: `--go settings --hold 0.5 --frames 12`, or
-`--screen settings --go home --hold 0.5 --frames 12` for the way back. `game` goes as continue does, `play` as the
-setup's play (`--screen friend --variant russian --go play`; it leaves the player's file
-alone), `puzzle` from the puzzles to pick from (`--screen puzzles --go puzzle --puzzle
-21`), and `puzzles` back to them (`--puzzle 21 --go puzzles`). `--hold 1` ends the
-transition at once, to shoot the screen reached through it. A won game's way home:
-`--variant russian --fen W:Wa1,c1,g1,b2,h2,e3:Bf4 --tap e3 --tap g5 --win 3 --go home
---hold 0.5 --frames 3000`. `--win 1.2` keeps a win
-at 1.2 s into its celebration: `--variant russian --fen W:Wa1,c1,g1,b2,h2,e3:Bf4 --tap
-e3 --tap g5 --win 1.2 --frames 3000`. `--variant
-international|brazilian|russian` starts a new game of that draughts (else the setup's
-last choice), `--clock 5+3|10+5` with a clock, and `--computer white|black` against
-the computer playing that side (the board turned when it plays white), at `--level
-easy|medium|hard` (else the setup's last choice). With `--screen setup`, `friend`, or
-`computer` those three set the setup's choices instead, the child playing the side
-`--computer` doesn't, and leave the player's file alone unless a tap in the setup writes
-it: `--screen computer --variant russian --computer white --frames 12` shows the
-setup against the computer for Russian with the child on black. A `--frames` run doesn't wait for the
-display, nor for events (it wakes each frame's idle wait at once, `draughts_wake_now`), so a
-screenshot of the computer's reply, which comes after a pause of under a second, takes
-some thousands of frames, about 2 s: `--variant russian --computer black --tap c3
---tap d4 --frames 5000`. The settings are in the app's storage folder (on the Mac
-`~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
-language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));
-`--theme`, `--hints`, `--lang`, `--background`, `--board`, `--material`, `--lookout
-on|off`, and `--moves off|list|marks` override them for a run without changing them; once `--tap`'s
-moves have played and been judged, `--sheet on` opens the game's moves' sheet and `--tip
-N` shows move N's mark's tip on the moves panel. `--board 3d` plays a run on the 3D board at once, as settings'
-Board row's Raised does, and `--board flat` on the flat one; `--material
-wood|stone|carved|auto` picks the 3D board's material, as the Board row's Wood, Stone,
-Carved, and Raised do; `--languages open` opens settings' language list for a shot;
-`--background plain` shows the
-plain fade in place of the photograph, and `--background photo` the photograph. `--wood N`
-(0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D board's wood and winter
-frame's marble for the run, and `--summer N` (0 to 5) and `--spring N` (0 the
-birch, 1 the carved stone, 2 the carved oak) summer's and spring's 3D looks; `--autumn N`
-(0 the wood, 1 to 3 stone) and `--winter N` (0 the slate, 1 to 3 wood) autumn's and
-winter's, the other material's takes (task 080); each, given, picks its season's look
-over the material. `scripts/board_thumbs.py` shoots each season's wood, stone, and carved
-board with `tools/board_shot.goose` (the app's renderer and `looks::of`, headless) for
-settings' board pictures.
-`--reset-skill`, which takes no value, puts the playing player back to easy with the
-computer's skill at every level at its start, and writes that to their file; stars and
-games stay. `--no-vsync`, which takes no value either, presents without waiting for the
-display, on both builds (gfx's `NO_VSYNC`, ngfx's in `scripts/ngfx.py`'s; on Metal both
-turn the layer's display sync off), so `--bench` measures frames uncapped (task 070).
-Each player's game is kept in `game-N.bin` beside them; a
-run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
-`--computer` neither reads nor writes it, so
-screenshots don't depend on the last session. On the tablet, check a resume with
-`adb shell input keyevent HOME`, `adb shell am kill io.github.kaitk.draughts`, and starting
-the app again. The flags reach the tablet through the intent:
-`adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
-`-S` stops the app first: the activity is `singleInstance`, so a start that finds it
-running only brings it back, with the flags it started with.
-On Android a clock counts only while the app has focus; on the Mac, where a window
-started from a terminal never has it, the clocks run while the window shows.
+The app is built, not run through `goose run`, which refuses a program that starts a
+thread (the computer thinks on one, `src/app/think.goose`). `scripts/mac.py` builds
+goose_gfx from the submodule into a copy of the release (`build/mac/goose/`), as every
+platform's script does, then the program with that copy's `goose`, in about 13 s; the gfx sources are compiled
+again only when they, SDL's version, or their flags change. A plain
+`goose build` works too, but the release's gfx presents every frame, so at rest it spins
+at the display's rate ([rendering](architecture/rendering.md#frames-and-battery)).
+
+`src/app/draughts.build` adds the program's own C (`src/app/*.c`: the photographs, the
+locales, the safe area, the clock's wake timer, and the platform glue), which the mobile
+builds compile too. The photographs are embedded from `design/backgrounds/masters/` when
+they are there (`design/backgrounds/README.md`); without them the board sits on the page
+color. goose caches the program's C by its source, so after changing a master, touch
+`src/app/background.c`.
+
+### Development flags
+
+Run the app from `src/app`; the flags follow the executable with no `--`. Each is a
+field of `Flags` in `src/app/flags.goose`, the one list of them, with its values. The
+common ones:
+
+| Flag | What it does |
+| --- | --- |
+| `--size WxH`, `--size full` | the window, in points on the Mac; `full` fills the screen |
+| `--dp N`, `--inset L,T,R,B` | a phone's layout: its shorter side in dp, its safe area in dp |
+| `--touch on\|off`, `--mouse X,Y`, `--keys down,enter` | a desktop laid out as touch or not, the pointer held, keys pressed one a frame |
+| `--theme`, `--lang`, `--hints`, `--background`, `--board 3d\|flat`, `--material`, `--moves` | override the settings for the run without writing them |
+| `--fen POS`, `--tap c3` | a game from a position, squares tapped on the first frames |
+| `--variant`, `--clock 5+3`, `--computer white\|black`, `--level` | a new game of that kind |
+| `--screen NAME` | open a screen: `game`, `settings`, `setup`, `friend`, `computer`, `puzzles`, `results`, `tutorial` (`--step N`), `ask`, `replay` (`--ply N`, `--history FILE`, `--best on`) |
+| `--puzzle ID` | open a puzzle; its taps go to its board |
+| `--go NAME`, `--hold 0.4` | switch screens through the transition on the second frame; hold it part of the way |
+| `--win 1.2` | hold a win's celebration at that time |
+| `--frames N` | stop after N frames and save `draughts.png` |
+| `--bench N`, `--rest S`, `--no-vsync` | time frames, count CPU at rest, present uncapped |
+
+A phone, the Pixel 7a in portrait: `--size 450x1000 --dp 540 --inset 0,59,0,42`. A
+`--frames` run doesn't wait for the display nor for events, so a shot of the computer's
+reply takes some thousands of frames (`--computer black --tap c3 --tap d4 --frames 5000`).
+
+The settings are in the app's storage folder (on the Mac
+`~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's,
+`player-N.txt` each player's ([players](architecture/README.md#players)), and
+`game-N.bin` each player's game. A run with `--fen`, `--tap`, `--screen`, `--frames`,
+`--variant`, `--clock`, or `--computer` neither reads nor writes the game, so shots don't
+depend on the last session. `--reset-skill` puts the playing player back to easy.
+
+On Android the flags go through the intent; `-S` stops the app first, since the
+`singleInstance` activity would otherwise come back with its old flags:
+
+```sh
+adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"
+```
+
 
 ## Run on Windows
 
-Tested 2026-11-10 on Windows 11 with Visual Studio's Build Tools (their `clang-cl`), Python,
-and Git Bash (for `patch`):
+Needs Visual Studio's Build Tools (`clang-cl`), Python, and Git Bash (for `patch`):
 
 ```sh
 mkdir -p build && cd build
@@ -207,36 +132,18 @@ unzip -q goose-v2026.4-windows-x64.zip && rm goose-v2026.4-windows-x64.zip
 cd ..
 python scripts/windows.py src/app/draughts.goose                 # build/windows/draughts.exe
 python scripts/windows.py src/app/draughts.goose --run -- --board 3d --screen game
-python scripts/windows.py src/app/draughts.goose --run -- --size full --board flat --screen game --rest 25
 ```
 
-`--size full` fills the screen on the desktop, as the app always does on a phone. `--rest`
-prints its line and leaves the app running, so close it (or kill it from a script) once
-the line is out; a `--bench` run quits by itself.
-
-`scripts/windows.py` builds goose_gfx from the submodule, as Android and
-iOS do, into a copy of the release (`build/windows/goose/`; delete it after the release
-changes), and builds the program with that copy's `goose`; about 10 s. SDL is the
-release's own, linked statically into the program, so the program's C calls SDL directly
-as on Android (`src/app/platform.h`). The app draws through Vulkan, as on Android
-(`draughts_choose_gpu` in `src/app/display.c`): the driver takes the SPIR-V compiled with
-the program and keeps what it makes of it, so a launch takes 1.25 s the first time and
-0.66 s after. The fork's gfx draws only on change: idle at home the app takes no CPU (the
-release's gfx, 344 ms in 10 s), and `--frames N` counts the frames drawn, so a shot of a
-settled screen wants few (4 for a 2D screen, 95 for the 3D board once it has appeared). A
-plain `goose build` with the release's `goose.exe` works as on the Mac, redrawing every
-frame.
-
-The flags are the Mac's. The settings and the saved game are in `%APPDATA%\kaitk\draughts\`.
-`test/run_tests.py` takes the Windows release by default there. The iOS script is the
-Mac's only. Android builds from Windows too (Run on Android, below).
+The script builds goose_gfx into `build/windows/goose/` (delete it after the release
+changes); SDL is the release's, linked statically. The app draws through Vulkan. `--rest`
+leaves the app running after its line, so close it; a `--bench` run quits by itself. The
+settings are in `%APPDATA%\kaitk\draughts\`. `test/run_tests.py` takes the Windows
+release there.
 
 ## Run on Linux
 
-Built in WSL's Ubuntu 26.04 and an Ubuntu 22.04 chroot, and on the Bazzite PC (Fedora 44
-based, GNOME 50, an RX 6800 on RADV, GCC 16) on 2026-11-12 (task 075). It needs a C
-compiler that has `#embed` (GCC 15 or Clang 19 and later), Python 3, Vulkan's loader, and
-the submodules' own submodules (goose_gfx's SDL headers):
+Needs a C compiler with `#embed` (GCC 15 or Clang 19 and later), Python 3, Vulkan's
+loader, and, for SDL, CMake and the Wayland and X11 headers:
 
 ```sh
 git submodule update --init --recursive
@@ -248,42 +155,24 @@ scripts/linux.py src/app/draughts.goose                # build/linux/draughts
 scripts/linux.py src/app/draughts.goose --run -- --board 3d --screen game
 ```
 
-As on Windows, `scripts/linux.py` builds goose_gfx from the submodule into a copy of the
-release (`build/linux/goose/`; delete it after the release changes). It builds SDL too
-(task 076), from the submodule with `patches/SDL` applied, statically, with Wayland and X11,
-in place of the release's `libSDL3.a`, which has no Wayland
-([findings](goose-findings.md)). SDL opens Wayland where there is one and X11 otherwise
-(`SDL_VIDEO_DRIVER=x11` forces XWayland), loading the libraries of either at run time. The
-program's C calls SDL directly (`src/app/platform.h`): a Linux executable exports none of
-SDL's functions for `dlsym` to find. `CC` picks the compiler for gfx, SDL, and Goose
-(`GOOSE_CC`). The settings and the saved game are in `~/.local/share/kaitk/draughts/`. The
-flags are the Mac's.
+The script builds goose_gfx into `build/linux/goose/` and SDL from the submodule with
+`patches/SDL` applied, statically, with Wayland and X11 (the release's `libSDL3.a` has no
+Wayland, [findings](goose-findings.md)). SDL opens Wayland where there is one
+(`SDL_VIDEO_DRIVER=x11` forces XWayland). `CC` picks the compiler. The settings are in
+`~/.local/share/kaitk/draughts/`.
 
-Building SDL takes CMake and the Wayland and X11 headers, which Bazzite's host lacks: the
-first build, and the first after SDL's commit or a patch changes, runs in the
-`draughts-jammy` box (Desktop releases), and the host's builds link the
-`build/linux/SDL/libSDL3.a` it left. On Fedora and Bazzite SELinux refuses TinyCC's code
-in memory, so `test/run_tests.py` fails every test there: run `test/run_tests.py --build`.
+On an immutable host without the headers (Fedora Atomic, Bazzite), build SDL once in the
+`draughts-jammy` box ([Desktop releases](#desktop-releases)); the host's builds then link
+the `build/linux/SDL/libSDL3.a` it left. SELinux there refuses TinyCC's code in memory,
+so run `test/run_tests.py --build`.
 
 ```sh
 distrobox enter draughts-jammy -- env CC=clang-20 scripts/linux.py src/app/draughts.goose
-scripts/linux.py src/app/draughts.goose               # then on the host, with its GCC
+scripts/linux.py src/app/draughts.goose               # then on the host
 ```
 
-**ngfx on Linux.** `scripts/ngfx.py src/app/draughts.goose` builds `build/ngfx/draughts`
-with goose-ngfx's CMake, so in the `goose` box (Fedora 43, with the X11 and Wayland
-headers, slangc in `NGFX_SLANGC`, the Vulkan SDK's `setup-env.sh` sourced), and it runs
-on the host, whose Mesa 26.2 has `VK_EXT_descriptor_heap` (the box's 25.3 doesn't). It
-builds its shader compiler rather than `goose run`ning it, for SELinux. ngfx draws into
-gfx's window: on Wayland a `wl_surface`, through XWayland an X11 window
-(`ngfx::open` given gfx's display and kind). Windowed, `--frames` saves no screenshot under ngfx, since the
-window's image can't be read; `import -window Draughts shot.png` grabs an X11 window
-(ImageMagick, on the host), and nothing here grabs a Wayland one: the screenshot
-portal's non-interactive call waits on a permission dialog, and while it waits every
-SDL program's Wayland start stalls 50 s on the portal's settings, until
-`systemctl --user restart xdg-desktop-portal`. `WAYLAND_DEBUG=1` shows what a run
-presents: Mesa's `create_immed` buffers at the window's pixel size, and the
-`xdg_toplevel.set_app_id`.
+`scripts/ngfx.py src/app/draughts.goose` builds the ngfx renderer (`build/ngfx/draughts`;
+slangc in `NGFX_SLANGC`, a Mesa with `VK_EXT_descriptor_heap`).
 
 ## Test the rules
 
@@ -295,20 +184,16 @@ test/run_tests.py --bless   # write each test's output as its expected output
 scripts/test.sh             # the app's shaders, the tests, then perft and the random-game check
 ```
 
-By default the tests run in batches through Goose's TinyCC, but for the few whose search
-takes TinyCC's code 9 to 28 s (`SLOW` in `test/run_tests.py`), which build at -O2 beside
-the batches. The times are a 10-core M-series Mac's.
-
-GitHub Actions runs `scripts/test.sh` on every push and pull request
-(`.github/workflows/test.yml`), on Ubuntu 22.04 with the Goose Linux release and the
-submodules, then builds the app with `scripts/linux.py` and Clang 20, with the packages
-Desktop releases lists, so a C error in the program's own C fails it too.
+By default the tests run in batches through TinyCC, but the few whose search is slow
+there (`SLOW` in `test/run_tests.py`) build at -O2 beside the batches. The times are a
+10-core M-series Mac's. GitHub Actions runs `scripts/test.sh` on every push and pull
+request (`.github/workflows/test.yml`) on Ubuntu 22.04, then builds the app with
+`scripts/linux.py` and Clang 20, so a C error in the program's own C fails it too.
 
 `scripts/test.sh` also builds `tools/perft.goose` into `build/perft`, which counts moves
 from a position (`build/perft russian 9`, `build/perft international 8 FEN --divide`), and
-runs `test/perft.py compare`: random games, with every position's legal moves checked
-against an independent Python generator. All of it takes about 50 seconds. On an M-series Mac
-the native perft runs at 12 to 16 million positions a second.
+runs `test/perft.py compare`: random games, every position's legal moves checked against
+an independent Python generator. All of `scripts/test.sh` takes about 50 seconds.
 
 ## Time the computer player
 
@@ -319,22 +204,11 @@ goose build -o build/aimatch tools/aimatch.goose
 build/aimatch russian 90 40 20      # skill 90 against 40, 20 games, colors swapped
 goose build -o build/play tools/play.goose
 build/play russian easy white       # play it yourself in the terminal
-scripts/android_cli.sh tools/aibench.goose                          # the same on the tablet
+scripts/android_cli.sh tools/aibench.goose                          # the same on a device
 ```
 
-`tools/aibench.goose` times each level in a few middlegames of Russian, International, and
-Brazilian and prints its speed in nodes a second ([computer player](architecture/ai.md));
-give it a variant and a FEN to time one position. `tools/aimatch.goose` plays the computer
-against itself at two skills (`--nodes A B` gives each side its own node limit;
-`--fens PLY` prints the positions games reach, for benchmarks; `--overlooks A B` scales
-each side's overlooks in percent; `--hangs` counts each side's hung pieces in quiet and
-tense positions). `tools/play.goose` lets you
-play it in the terminal at a level or a skill (0 to 100) with either color: type a move
-as its list shows it or its number, `u` to take back your move and its reply. `scripts/android_cli.sh`
-builds any headless Goose program as a plain Android executable with the NDK's clang at
--O2, pushes it to `/data/local/tmp`, and runs it with the arguments given: no APK, no SDL.
-`adb shell "taskset 0f /data/local/tmp/aibench"` keeps it on the tablet's four little
-cores (`f0`, the big ones).
+Each tool's header lists its options ([computer player](architecture/ai.md));
+`scripts/android_cli.sh` runs any headless Goose program on a device, no APK.
 
 ## Check the puzzles
 
@@ -342,18 +216,9 @@ cores (`f0`, the big ones).
 goose build -o build/puzzles tools/puzzles.goose && build/puzzles    # every puzzle, and the engine's view
 build/puzzles try 'W:W33,38,43,45,47,48:B3,11,21,23,24,29' 'take 2' 2  # what solves a position
 build/puzzles find 'take 3' 2 7 7 6                                  # random shots to compose from
-test/perft.py puzzles international src/puzzles/international.txt       # the lines, by the independent generator
-build/puzzles --variant russian                                       # Russian's set, and the engine's view
-build/puzzles try --variant russian 'W:Wh4,a5:Bg5,c7,e7,g7' 'take 3' 1
-build/puzzles find black 'take 2' 2 7 7 6 --variant russian          # flags anywhere; --rows N, --tempo
-test/perft.py puzzles russian src/puzzles/russian.txt                    # Russian's only independent check
-test/perft.py puzzles brazilian src/puzzles/brazilian.txt
+build/puzzles --variant russian                                      # Russian's set
+test/perft.py puzzles international src/puzzles/international.txt  # the lines, by the independent generator
 ```
-
-The app shows the set of the player's draughts; `--variant russian` picks Russian's for
-a run (`--screen puzzles --variant russian`), the library's switch lit on it (in
-memory: written to the player's file only if the run changes something, as a solved
-puzzle's stars).
 
 `test/puzzles/` runs the same checks on every puzzle without the engine
 ([puzzles](architecture/puzzles.md#checks)).
@@ -362,14 +227,13 @@ puzzle's stars).
 
 The daily libraries are generated, rated, and assembled per draughts
 ([puzzles](architecture/puzzles.md#daily-puzzles)); about an hour for International on
-ten processes, less for the 8×8 draughts:
+ten processes:
 
 ```sh
 goose build -o build/puzzles tools/puzzles.goose
 for s in 100 101 102 103 104 105 106 107 108 109; do               # PER a kind, SECONDS a kind
   build/puzzles --variant international batch $s 12 120 > find-$s.txt 2> find-$s.log &
-done; wait                                                         # each kind's pass rates on stderr
-build/puzzles games 11 60 90 300000 > games-11.txt                 # from the computer's games (few pass)
+done; wait
 tools/library.py merge merged.txt find-*.txt                       # each puzzle once
 tools/library.py split merged.txt 10 rate-in
 for i in 0 1 2 3 4 5 6 7 8 9; do build/puzzles rate rate-in-$i.txt > rate-out-$i.txt & done; wait
@@ -377,53 +241,15 @@ tools/library.py assemble src/puzzles/library-international.txt international ra
 build/puzzles rate tools/calibration/adult_beginners.txt           # the estimate's calibration
 ```
 
-Trap puzzles, where the move a player is used to making is there and loses
-([puzzles](architecture/puzzles.md#daily-puzzles)), come from `batch --traps`, which
-runs the trap kinds (`TRAP_KINDS`) in place of the rest, and are added to a library the
-same way; `assemble` keeps the puzzles already in it with their ids and numbers the new
-ones after the highest, and `batch` skips every puzzle the built-in library has:
-
-```sh
-for s in 200 201 202 203; do
-  build/puzzles --variant international batch $s 15 300 --traps > find-$s.txt 2> find-$s.log &
-done; wait
-tools/library.py merge merged.txt find-*.txt
-tools/library.py split merged.txt 10 rate-in                       # then rate each, as above
-tools/library.py assemble src/puzzles/library-international.txt international rate-out-*.txt
-build/puzzles tempt src/puzzles/library-international.txt         # the traps, by kind and band
-build/puzzles find white 'take 1' 2 6 6 2 5 0 'W:Wd6:B' --variant russian --trap 16  # one kind
-```
-
-The trap kinds: a crown trap (a man placed one step from crowning, whose king would be
-caught; take 1 or 2 in 2), a run (a man two steps from crowning, taken if it steps to the
-row before; crown in 2 or 3, take 1 or 2 in 2), and Russian's bigger capture (black men
-placed where white can take them, a capture due, the bigger one losing). `find --trap
-MASK` keeps only puzzles with a trap of `tempt`'s kinds (1 crown, 2 bigger, 4 grab, 16
-run, 32 any). Before solving a position, `lure` asks whether a move of the kind loses
-material at all, which skips the solver on most positions.
-
-To look a library over in the app, `build/draughts --variant international --library N`
-opens its puzzle of id N - 1 (the number `tempt` prints) on the puzzle screen, the replies played, its
-stars and hint as any puzzle's, nothing kept: no rating moved, no day's record.
-`--puzzler NAME:RATING` sets up a player for trying the day's puzzles at a level: the
-player of that name (made if there is none) playing, their draughts' Learn solved and a
-puzzle of each other theme, their puzzle rating RATING, and today's record cleared,
-in `--variant`'s draughts if given (then the player's), written to their file; the next
-start picks the day at that rating. On Android, through
-the intent's args: `adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity
---es args "'--puzzler Hard:1800'"`, then start the app again.
-
-`rate` prints each puzzle's difficulty, then the misses and which skills found it (100
-down to 0), and the shape: moves, men given, moves to weigh, forced, rivals, pieces, a
-crown let, level.
+Trap puzzles come from `batch ... --traps`, added the same way; `assemble` keeps a
+library's puzzles and their ids. In the app, `--library N` opens a library's puzzle (id
+N - 1), and `--puzzler NAME:RATING` sets up a player at that rating for the day's puzzles.
 
 ## Run on Android
 
 A device needs Developer options with **USB debugging** on; a Samsung, also **Auto
-Blocker** off (Settings → Security and privacy), which otherwise blocks USB debugging
-and sideloading. Use USB mode **Transferring files** and allow the computer's key.
-`adb devices` should list it. The scripts build from the Mac and from Windows (on
-Windows, `python scripts/android.py ...`).
+Blocker** off (Settings → Security and privacy). Use USB mode **Transferring files** and
+allow the computer's key; `adb devices` should list it.
 
 ```sh
 scripts/android.py src/app/draughts.goose --run     # build, install, start
@@ -432,12 +258,9 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 
 ### Set up on the Mac
 
-The tools are the Toolchain table's. The script looks for the SDK in
-`~/Library/Android/sdk`, where Android Studio puts it; with Android Studio, install the
-packages below through its SDK Manager. Without it, the SDK comes from Google's
-[command-line tools](https://developer.android.com/studio#command-line-tools-only) for
-the Mac, whose zip holds a `cmdline-tools/` folder that `sdkmanager` wants at
-`cmdline-tools/latest/`:
+With Android Studio, install the Toolchain table's packages through its SDK Manager.
+Without it, unpack Google's
+[command-line tools](https://developer.android.com/studio#command-line-tools-only):
 
 ```sh
 brew install openjdk@21 cmake ninja
@@ -448,128 +271,54 @@ unzip -q ~/Downloads/commandlinetools-mac-*_latest.zip -d $sdk/cmdline-tools
 mv $sdk/cmdline-tools/cmdline-tools $sdk/cmdline-tools/latest
 $sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$sdk \
     "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
-export PATH="$sdk/platform-tools:$PATH"   # adb for logcat by hand; in the shell's profile
-scripts/android.py src/app/draughts.goose --run
 ```
-
-`sdkmanager` asks to accept the SDK's licences. A Mac needs no USB driver. The script
-takes the SDK's `adb` when none is on `PATH`, and `patch` is the system's.
 
 ### Set up on Windows
 
-Tested 2026-11-10 on Windows 11, with the same SDK packages as on the Mac. The script
-finds them where Android Studio puts them, and runs with `python`:
-
-| Tool | Where on Windows |
-| --- | --- |
-| Goose | `build/goose-v2026.4-windows-x64/goose.exe` (above); `GOOSE` overrides it |
-| Android SDK | `%LOCALAPPDATA%\Android\Sdk`; `ANDROID_HOME` overrides it |
-| JDK | `javac`, `java`, and `keytool` on `PATH`, 17 or newer (`d8` and `sdkmanager` need it) |
-| CMake, Ninja | on `PATH`, from winget |
-| `patch` | Git Bash's |
-
-Without Android Studio, the SDK comes from Google's
-[command-line tools](https://developer.android.com/studio#command-line-tools-only),
-unpacked as `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest\`:
+The same SDK packages, in `%LOCALAPPDATA%\Android\Sdk` (`ANDROID_HOME` overrides it); a
+JDK 17 or newer (`javac`, `java`, `keytool`) on `PATH`; CMake and Ninja from winget;
+Git Bash's `patch`:
 
 ```sh
 sdk="$LOCALAPPDATA/Android/Sdk"
 "$sdk/cmdline-tools/latest/bin/sdkmanager.bat" --sdk_root="$sdk" \
     "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools" \
-    "extras;google;usb_driver"       # asks to accept the SDK's licences
+    "extras;google;usb_driver"
 winget install -e --id Kitware.CMake --scope user
 winget install -e --id Ninja-build.Ninja
-python scripts/android.py src/app/draughts.goose --run   # build, install, start
+python scripts/android.py src/app/draughts.goose --run
 ```
 
-`adb` is the SDK's `platform-tools\adb.exe` when it isn't on `PATH`. Windows 11 usually
-finds a phone's driver itself; if Device Manager shows a device without one, Google's is in
-`extras\google\usb_driver`, and a Samsung takes Samsung's. A device Windows doesn't list at all, whose USB
-preferences offer only "This device", is on a charge-only cable. The build goes into
-`build\android\`, as on the Mac.
+A device Windows doesn't list at all is on a charge-only cable.
 
 ### The debug key
 
-Each computer has its own debug key (`~/.android/debug.keystore`, which the script makes
-when it's missing), and Android refuses to install an app over one signed with
-another key, as it refuses a debug build over a release (Release builds, below). Never
-uninstall to get past that on a device whose saved game and settings matter: uninstalling
-deletes them. Either copy the debug key from the computer that installed the app, or
-install the build beside it under its own id:
+Each computer has its own debug key (`~/.android/debug.keystore`, made when missing), and
+Android refuses to install over an app signed with another key. Never uninstall to get
+past that where the saved games matter: copy the key from the computer that installed the
+app, or install beside it:
 
 ```sh
 scripts/android.py src/app/draughts.goose --run --id-suffix test   # io.github.kaitk.draughts.test
 ```
 
-The script never uninstalls; a refused install stops it with that advice.
-
-A GPU profiler (Arm's Streamline, Android GPU Inspector) on a device that isn't rooted
-needs a debuggable app: `--debuggable` marks the APK so (task 059). Not with `--release`.
+The script never uninstalls. `--debuggable` marks the APK for a GPU profiler on a device
+that isn't rooted (not with `--release`).
 
 ### The build
 
-`scripts/android.py` builds without Gradle, into `build/android/<program>/`, with
-`scripts/native.py`, which holds what it shares with `scripts/ios.py` (the app's id and
-version, the Goose-to-C step, the patched copies, and the launcher's names):
+`scripts/android.py` builds without Gradle, into `build/android/<program>/`: Goose writes
+the C, CMake with the NDK builds `libSDL3.so` and `libmain.so` (SDL copied to
+`build/android/SDL_src/` with `patches/SDL/*.patch` applied), `javac` and `d8` compile the
+Java, `aapt2` links the resources, and `zipalign -P 16` and `apksigner` finish the APK,
+whose libraries the script checks are on 16 KB pages. The id is `io.github.kaitk.draughts`; `APP_ID` and `VERSION_NAME` are set at the top of
+`scripts/native.py`, `VERSION_CODE` at the top of `scripts/android.py`. Delete
+`build/android/<program>/native` after changing `android/CMakeLists.txt`.
 
-1. Goose writes the program's C (`goose -o`) and the runtime's C (`goose --emit-runtime`).
-2. goose_gfx's `src/` is copied from the submodule (`kaitk/goose_gfx`'s `main`).
-   SDL is copied to `build/android/SDL_src/` and `patches/SDL/*.patch` applied, again only
-   when SDL's commit or a patch changes.
-3. CMake with the NDK toolchain builds `android/CMakeLists.txt`: `libSDL3.so` and
-   `libmain.so` (the program, the runtime, goose_gfx's layers, and
-   `android/stdio_to_logcat.c`). The program's `main` is compiled as `SDL_main`.
-4. `javac` and `d8` compile SDL's Java from the patched copy
-   (`SDL_src/android-project/.../org/libsdl/app`) and `android/java/`.
-5. `aapt2` compiles `android/res` (the icon and the launch theme; `scripts/icon.py` makes
-   the icon, `design/icon/README.md`) and links it with `android/AndroidManifest.xml`,
-   giving the app its id, `versionCode`, and `versionName` from `APP_ID` and
-   `VERSION_NAME` at the top of `scripts/native.py` (which iOS's build reads too) and
-   `VERSION_CODE` at the top of the script, the one place each is set. The id is
-   `io.github.kaitk.draughts`, the Java code's package too.
-   The launcher's name follows the phone's language: the script writes
-   `res/values/strings.xml` and `res/values-<lang>/strings.xml` into the build directory
-   from each `strings/<lang>.txt`'s `app.name` key, and the manifest's label is
-   `@string/app_name`.
-   Python's `zipfile` adds the dex and the stripped libraries, the libraries stored
-   uncompressed. `zipalign -P 16`
-   aligns them to 16 KB pages, and `apksigner` signs with `~/.android/debug.keystore`,
-   which it creates if missing (each computer's own: The debug key, above). The
-   script checks that every library's ELF segments and
-   its offset in the APK are on 16 KB pages, as Play requires.
-
-The CMake build directory is configured once. Delete `build/android/<program>/native`
-after changing `android/CMakeLists.txt`.
-
-### Screens and devices
-
-On Android the program opens with `gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE`,
-which SDL turns into an immersive window with the system bars hidden. Resizable makes
-SDL request `FULL_USER`, so the screen turns as the system's rotation lock allows
-(Android turns the activity; SDL's own accelerometer, which `DraughtsActivity` keeps
-off, plays no part);
-without it SDL locks the activity to the orientation it started in, which phones obey
-and large tablets ignore (found on the Pixel 7a, 2026-11-08). From Android 11 SDL lays
-the window out under the camera's cutout too (`LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`), so
-the window is the whole display and the layout keeps its taps and words in the safe
-area ([rendering](architecture/rendering.md#screen-sizes-and-the-safe-area)); on
-Android 10, the app's lowest, the window keeps out of the cutout instead (the default
-mode) and SDL reports no insets. It knows it's on Android from
-`draughts_platform` (`src/app/launch.c`, [findings](goose-findings.md)). Act on taps with
-`gfx::mouse_pressed` and `gfx::mouse_released`: a tap can press and release within one
-frame, which `gfx::mouse_down` never sees. `adb shell input tap X Y` checks it.
-
-Screens are checked at other sizes first on the Mac (`--size` at a device's proportions,
-`--dp` and `--inset` for a phone, `test/shell/sizes` headless), then on two devices over
-USB: the Galaxy Tab A11+ (1920 × 1200, three-button navigation) and a Pixel 7a (1080 ×
-2400, Android 17, gesture navigation, a punch-hole camera), one attached at a time. A
-Galaxy A33 5G (SM-A336B, 1080 × 2400 at 90 Hz, Android 16, Exynos 1280 with a Mali-G68
-MP4, Vulkan 1.3, 5.5 GB) is the weakest phone tried (2026-11-09): 2D holds 90 Hz, the 3D
-board ran at about 28 fps while it moved, about 39 since its frame cost's first cuts
-([numbers](architecture/rendering.md#the-3d-board-on-devices)). On iOS an iPhone 13 mini
-(A15 Bionic, iOS 26) runs the development build ("Run on iOS" below). The README's "Tested on" lists them all.
-Larger tablets (2560 × 1600, 2880 × 1920, 4:3, a foldable's inner screen) are checked
-only on the Mac (2026-11-08), as there is no such device.
+Check screens at other sizes on the Mac first (`--size`, `--dp`, `--inset`,
+`test/shell/sizes`), then on devices over USB; the README's "Tested on" lists them. Act
+on taps with `gfx::mouse_pressed` and `gfx::mouse_released`: a tap can press and release
+within one frame, which `gfx::mouse_down` never sees.
 
 ## Run on iOS
 
@@ -581,76 +330,27 @@ scripts/ios.py src/app/draughts.goose --device --run            # on an attached
 ```
 
 `scripts/ios.py` builds without an Xcode project, into `build/ios/<program>/sim/` or
-`device/`, as `scripts/android.py` does for Android:
+`device/`: one static executable (SDL without HIDAPI, whose CoreBluetooth App Store Connect
+refuses without a purpose string) and the bundle around it.
 
-1. Goose writes the program's C (`goose -o`, with `--stack-reserve 128M`: an iOS process
-   can't map Goose's default 2 GB for each of the app's 26 data stacks) and the runtime's
-   C.
-2. goose_gfx's `src/` is copied, and SDL to
-   `build/ios/SDL_src/` with `patches/SDL/` applied (`0005` lets SDL_GPU take the
-   simulator's Metal device, `0006` keeps a rotation from stretching the picture).
-3. CMake with Ninja and Xcode's clang builds `ios/CMakeLists.txt` for the simulator's or
-   the device's SDK: one executable with the program, the runtime, goose_gfx's layers,
-   and SDL, linked statically. `ios/main.c` hands the main thread to UIKit through
-   `SDL_RunApp`, which calls the program's main back as `SDL_main`. SDL is built without
-   HIDAPI (`SDL_HIDAPI OFF`): on iOS it links CoreBluetooth, and App Store Connect
-   refuses a binary that references Bluetooth without a purpose string.
-4. The bundle is the executable, an `Info.plist` the script writes (the id, the script's
-   `BUNDLE_ID`, for now not Android's: `store/README.md`, "The app's identity"; the version from `native.py`'s `VERSION_NAME` and the
-   script's `BUILD_NUMBER`, full screen, a `UILaunchScreen`, without which iOS
-   letterboxes the app), and the
-   launcher's name per language (`<lang>.lproj/InfoPlist.strings` from each
-   `strings/<lang>.txt`'s `app.name`).
-5. An asset catalog, written into `build/ios/<program>/<sim|device>/Assets.xcassets` and
-   compiled by `actool` into the bundle's `Assets.car`: the icon (`AppIcon`, one 1024 px
-   image; `CFBundleIconName` and actool's `CFBundleIcons` in the `Info.plist`) and the
-   launch screen's colour (`LaunchBackground`, the launch screen's `UIColorName`), the
-   icon's background read from `android/res/values/colors.xml`'s `icon_background`. The
-   icon is `ios/icon-1024.png`, in git as Android's foregrounds are: `scripts/icon.py`
-   writes it with them from the shipped season's master (`design/icon/README.md`).
-6. The privacy manifest, `PrivacyInfo.xcprivacy`: no tracking, no tracking domains, no
-   data collected, and a reason for each "required reason" API the binary imports
-   (`ios.py`'s `PRIVACY_APIS`): `C617.1` for `stat` and `fstat`, `35F9.1` for
-   `mach_absolute_time`. Check the list again after an SDL or Goose update:
+The privacy manifest declares a reason for each "required reason" API the binary imports
+(`ios.py`'s `PRIVACY_APIS`). Check the list again after an SDL or Goose update:
 
-   ```sh
-   nm -u build/ios/draughts/device/Draughts.app/Draughts | grep -E \
-     '^_(f?stat(at)?|lstat|f?getattrlist(bulk|at)?|f?statv?fs|mach_absolute_time)$'
-   strings -a build/ios/draughts/device/Draughts.app/Draughts | grep -iE \
-     'userdefaults|systemuptime|activeinputmodes|volumeavailable|filesystemfree'
-   ```
+```sh
+nm -u build/ios/draughts/device/Draughts.app/Draughts | grep -E \
+  '^_(f?stat(at)?|lstat|f?getattrlist(bulk|at)?|f?statv?fs|mach_absolute_time)$'
+```
 
-   Any other API in Apple's list needs its category and reason added. To check a bundle:
-   `xcrun assetutil --info .../Draughts.app/Assets.car` (the icon and the colour),
-   `plutil -p .../Info.plist`, `plutil -lint .../PrivacyInfo.xcprivacy`.
+The simulator is one the script creates once (`DRAUGHTS_IOS_SIM` names another), booted
+headless; `simctl` can't tap, so touch is checked on a device.
 
-The simulator is an iPhone 13 mini the script creates once (`Draughts iPhone 13 mini`;
-`DRAUGHTS_IOS_SIM` names another), booted headless with `simctl`: no Simulator.app
-window opens. `simctl` can't tap, so touch is checked on a device; the flags (`--screen`,
-`--tap`, `--go`) reach the rest. `--console` prints the program's output until it ends.
-To send the app to the background, start another (`xcrun simctl launch booted
-com.apple.Preferences`), and `xcrun simctl launch booted io.github.kaitk.draughts.app` brings
-it back. Its storage folder is `Library/Application Support/kaitk/draughts/` in `xcrun
-simctl get_app_container booted io.github.kaitk.draughts.app data`. The simulator build embeds
-the JPEGs beside the ASTC files, as the simulator's GPU may take no ASTC; a device build
-embeds the ASTC files only, as Android does (11.7 MB).
-
-A device build needs, once, on the device: pairing with the Mac (trust it) and
-Developer Mode (Settings → Privacy & Security); on the Mac: an Apple ID in Xcode
-(Settings → Accounts; a free one gives a personal team) and an Apple Development
-certificate (Manage Certificates → +). The script then signs with that identity and a
-development provisioning profile for the app's id on the device; when it finds none it
-has Xcode make one, building an empty app of that id once
-(`build/ios/provision/`, `xcodebuild -allowProvisioningUpdates`), which also registers
-the device. A free team's profile lasts 7 days, after which the script makes another.
-The team, the identity, and the device are read on the Mac at each build and never
-written into the repo; `DRAUGHTS_IOS_DEVICE` picks a device when several are attached.
-With several development identities on the Mac, as when an Apple ID of a company's team
-is in Xcode too, the script stops and lists them; `DRAUGHTS_IOS_TEAM` (a team id or an
-Apple ID) picks a personal one, so the app is never signed into a company's team.
-The first launch of an app from a free team waits for the phone to trust its developer
-(Settings → General → VPN & Device Management). `devicectl` installs and starts it;
-`--console` shows its output.
+A device build needs, once: the device paired with the Mac and in Developer Mode, and on
+the Mac an Apple ID in Xcode with an Apple Development certificate. The script signs with
+that identity and has Xcode make a development profile when there is none (registering the
+device). `DRAUGHTS_IOS_DEVICE` picks a device; with several development identities,
+`DRAUGHTS_IOS_TEAM` (a team id or an Apple ID) picks one. A free team's first launch
+waits for the phone to trust the developer (Settings → General → VPN & Device
+Management).
 
 ## Release builds
 
@@ -658,53 +358,26 @@ The first launch of an app from a free team waits for the phone to trust its dev
 scripts/android.py src/app/draughts.goose --release   # draughts-release.apk and .aab
 ```
 
-A release build is signed with the upload key instead of the debug key, and also makes
-the Android App Bundle Play takes, both in `build/android/draughts/`:
-
-- `draughts-release.apk`, the same APK as a debug build but for its signature, to install
-  from a clean state and check before an upload. Android refuses it over a debug build,
-  as their signatures differ: `adb uninstall io.github.kaitk.draughts` first, which deletes
-  the app's saved game and settings, so only on a device whose data doesn't matter.
-- `draughts-release.aab`, for Play. `aapt2 link --proto-format` links the resources in
-  the bundle's protobuf form; the script packs them, the dex, and the libraries into the
-  base module's layout (`manifest/`, `dex/`, `lib/arm64-v8a/`, `res/`, `resources.pb`);
-  bundletool builds the bundle with its native libraries uncompressed and aligned to
-  16 KB pages (`PAGE_ALIGNMENT_16K` in the bundle's config); `jarsigner` signs it with the
-  upload key; and `bundletool validate` checks it. The script then has bundletool make the
-  APKs Play would serve an arm64 tablet from it and checks their libraries are on 16 KB
-  pages too.
-
-Build a release where `design/backgrounds/masters/` holds the `-6x6.astc` files, or it
-ships without the photographs: `libmain.so` is about 9 MB with them, 7.5 MB of it the four
-ASTC files.
-
-bundletool is [1.18.3](https://github.com/google/bundletool/releases/tag/1.18.3), in
-`build/bundletool-1.18.3/`; the script downloads it there when missing and checks it
-against the SHA-256 it pins. It needs `java`.
-
-The target SDK is 36: Play requires new apps and updates to target Android 16 (API 36)
-from 2026-08-31 ([target API level](https://developer.android.com/google/play/requirements/target-sdk),
-checked 2026-11-08). Raise `VERSION_CODE` for every upload; Play refuses one it has seen.
+A release is signed with the upload key and also makes the bundle Play takes, both in
+`build/android/draughts/`: `draughts-release.apk`, to install and check before an upload
+(Android refuses it over a debug build), and `draughts-release.aab`, built and validated
+by bundletool with its libraries on 16 KB pages. Build where
+`design/backgrounds/masters/` holds the `-6x6.astc` files, or it ships without the
+photographs. The target SDK is 36, as Play requires; raise `VERSION_CODE` for every
+upload.
 
 ### The upload key
 
-Play App Signing holds the key that signs the app on users' devices; the upload key only
-proves an upload comes from the developer. Lost, it can be reset through Play Console's
-support, which takes days, so keep a backup anyway. Whoever publishes to Play, a fork
-included, makes their own. It stays outside the repo, and neither it nor its password is
-ever committed. The script reads it from two files:
+Play App Signing holds the key users' devices see; the upload key only proves an upload
+comes from the developer. Whoever publishes, a fork included, makes their own, outside the
+repo:
 
 | File | What it is |
 | --- | --- |
 | `~/.config/draughts/upload-key.jks` | The keystore: PKCS12, alias `upload`, RSA 4096 |
-| `~/.config/draughts/upload-key.properties` | `storeFile`, `keyAlias`, `storePassword`, and `keyPassword` (the same password, as PKCS12 has one), readable only by its owner |
+| `~/.config/draughts/upload-key.properties` | `storeFile`, `keyAlias`, `storePassword`, `keyPassword` (the same), readable only by its owner |
 
-`DRAUGHTS_UPLOAD_KEY` points the script at another properties file. The script hands the
-password to `apksigner` and `jarsigner` through the environment, never the command line.
-`keytool -list -v -keystore ~/.config/draughts/upload-key.jks` shows the certificate's
-SHA-256, which Play Console shows once the first upload has registered it.
-
-Make one with:
+`DRAUGHTS_UPLOAD_KEY` points at another properties file. Make one with:
 
 ```sh
 mkdir -p ~/.config/draughts && chmod 700 ~/.config/draughts
@@ -713,14 +386,9 @@ keytool -genkeypair -keystore ~/.config/draughts/upload-key.jks -storetype PKCS1
     -storepass:env PASS -keypass:env PASS   # PASS: 40 random letters and digits
 ```
 
-and write the properties file beside it with the same password, both `chmod 600`.
-
-**Back it up before the first upload**, both files together, somewhere that survives the
-computer: a password manager's file attachment is the simplest, or an encrypted disk
-image on a drive kept elsewhere (on a Mac, `hdiutil create -encryption AES-256
--srcfolder ~/.config/draughts ...`, its passphrase stored apart from the image). Check a
-backup by restoring it to a scratch folder and running `keytool -list -keystore
-upload-key.jks` with the password from its properties file.
+and write the properties file beside it, both `chmod 600`. **Back both up before the
+first upload**, somewhere that survives the computer (a password manager, or an encrypted
+disk image), and check the backup with `keytool -list -keystore upload-key.jks`.
 
 ### The App Store build
 
@@ -729,99 +397,50 @@ scripts/ios.py src/app/draughts.goose --release            # build/ios/draughts/
 scripts/ios.py src/app/draughts.goose --release --upload   # and upload it to App Store Connect
 ```
 
-A release build is the device build signed for the App Store: the bundle in
-`build/ios/draughts/release/`, with the App Store profile embedded, signed by the Apple
-Distribution identity whose certificate the profile names, and zipped into `Payload/` as
-the `.ipa`. Its entitlements are the profile's but for its keychain wildcard:
-`get-task-allow` false and `beta-reports-active` true, which TestFlight needs. The
-Info.plist names the SDK and Xcode it was built with (`DTSDKBuild`, `DTXcode`), which App
-Store Connect checks against its minimum. Raise `BUILD_NUMBER` in `scripts/ios.py` for
-every upload; App Store Connect refuses one it has seen for the version. A build appears
-in App Store Connect's TestFlight tab once Apple has processed it, within an hour.
-
-Nothing of the signing or the upload is in the repo:
+The device build signed with the App Store profile's Apple Distribution identity. Raise
+`BUILD_NUMBER` in `scripts/ios.py` for every upload. Nothing of the signing is in the
+repo:
 
 | File | What it is |
 | --- | --- |
-| `~/.config/draughts/draughts-app-store.mobileprovision` | An App Store Connect distribution profile for the bundle id, made under Certificates, Identifiers & Profiles → Profiles with the Apple Distribution certificate; valid a year |
-| `~/.config/draughts/app-store-connect.properties` | `key_id=` and `issuer_id=` of an App Store Connect API team key (Users and Access → Integrations, Developer access is enough) |
-| `~/.private_keys/AuthKey_<key id>.p8` | The key itself, downloadable once, where `altool` looks for it |
-
-`DRAUGHTS_IOS_PROFILE` and `DRAUGHTS_ASC_PROPERTIES` point the script at others.
-`xcrun altool --validate-app -t ios -f build/ios/draughts/Draughts.ipa --apiKey <key id>
---apiIssuer <issuer id>` has Apple check an `.ipa` without uploading it.
+| `~/.config/draughts/draughts-app-store.mobileprovision` | An App Store distribution profile for the bundle id; `DRAUGHTS_IOS_PROFILE` overrides it |
+| `~/.config/draughts/app-store-connect.properties` | `key_id=` and `issuer_id=` of an App Store Connect API key; `DRAUGHTS_ASC_PROPERTIES` overrides it |
+| `~/.private_keys/AuthKey_<key id>.p8` | The key itself, where `altool` looks for it |
 
 ## Desktop releases
 
-The Mac, Windows, and Linux apps go out as files on a GitHub release, built on our own
-machines rather than in CI, which would need the toolchain on its runners and the Apple
-credentials as secrets.
+The Mac, Windows, and Linux apps go out as files on a GitHub release, built locally.
 
-**macOS.** `scripts/mac.py src/app/draughts.goose --release` builds for macOS 13.3 (the
-Goose release's prebuilt SDL and runtime are built for it; the shaders are Metal source
-that SDL compiles on the user's Mac), wraps it in `build/mac/release/Draughts.app` (the
-id `io.github.kaitk.draughts`, the shared version, the launcher's name per language, the
-icon from `ios/icon-1024.png`, made an Icon Composer `.icon` that `actool` compiles
-into `Assets.car` and an `AppIcon.icns`, as macOS 26 sets an icon given only as `.icns`
-on a grey plate), signs it with the hardened runtime, has Apple's notary service check
-it, staples the ticket, and writes
-`Draughts-VERSION-macos-arm64.zip` beside it. Apple silicon only, as the Goose release is.
+**macOS.** `scripts/mac.py src/app/draughts.goose --release` builds
+`build/mac/release/Draughts.app` for macOS 13.3, Apple silicon only, signs it with the
+hardened runtime, notarizes and staples it, and writes `Draughts-VERSION-macos-arm64.zip`.
 It needs, once per Mac:
 
-1. A **Developer ID Application** certificate in the login keychain, which only the team's
-   Account Holder (the Apple ID that enrolled in the Developer Program) can create: in
-   Xcode, Settings → Accounts, add that Apple ID, choose the team, Manage Certificates →
-   + → Developer ID Application. A member's Apple ID gets "can only be done by the account
-   holder". Or on developer.apple.com, signed in as the Account Holder: Certificates → + →
-   Developer ID Application (the G2 Sub-CA), with a signing request from Keychain Access
-   (Certificate Assistant → Request a Certificate From a Certificate Authority, saved to
-   disk), then open the downloaded `.cer`. `security find-identity -v -p codesigning`
-   lists it as "Developer ID Application: NAME (TEAM)". Back up its private key with the
-   certificate (Keychain Access → Export, a `.p12`): a lost key means a new certificate.
-2. A **notarytool profile** in the keychain: an app-specific password for that Apple ID
-   (account.apple.com → Sign-In and Security → App-Specific Passwords), then
-   `xcrun notarytool store-credentials draughts-notary --apple-id APPLE_ID --team-id TEAM`,
-   which asks for the password.
+1. A **Developer ID Application** certificate in the login keychain, which only the
+   team's Account Holder can create (Xcode → Settings → Accounts → Manage Certificates,
+   or developer.apple.com with a signing request from Keychain Access). Back up its
+   private key as a `.p12`.
+2. A **notarytool profile**: `xcrun notarytool store-credentials draughts-notary
+   --apple-id APPLE_ID --team-id TEAM`, with an app-specific password.
 
-The script finds the identity by its name (or `DRAUGHTS_MAC_IDENTITY`) and uses the
-profile `draughts-notary` (or `DRAUGHTS_NOTARY_PROFILE`). Without the identity it signs
-the bundle ad hoc and stops before notarizing, enough to try the bundle on the Mac that
-built it. Notarizing takes a few minutes; `spctl --assess` at the end says "accepted,
-source=Notarized Developer ID".
+`DRAUGHTS_MAC_IDENTITY` and `DRAUGHTS_NOTARY_PROFILE` override them. Without the identity
+the script signs ad hoc and stops before notarizing.
 
 **Windows.** `python scripts/windows.py src/app/draughts.goose --release` zips the
-executable alone as `Draughts.exe` into
-`build/windows/release/Draughts-VERSION-windows-x64.zip`: SDL and the C runtime are
-linked in, and Vulkan's loader is the system's. Every Windows build carries the icon,
-`windows/draughts.ico` (the iOS icon in a rounded square, 16 to 256 px, made with
-ImageMagick's `-define icon:auto-resize`), put into the executable's resources after
-linking (`embed_icon`, the system's `UpdateResource`), since Goose's build file has no
-key for a `.rc`: Explorer shows it, and SDL takes the first icon for the window and the
-taskbar. The release's executable is marked a GUI program (`gui_subsystem`, the PE header's subsystem set after linking, as Goose's build links a console one), so started from Explorer it opens no console window; dev builds keep the console for their output. It is unsigned, so SmartScreen warns on
-first run ("Windows protected your PC", More info → Run anyway); a code-signing
-certificate would end that. Tested on Windows 11 on 2026-11-12: the 0.1.1 zip is 11.8 MB
-(the executable 15.5 MB), and extracted alone it imports only system DLLs and plays on
-both boards.
+executable alone into `build/windows/release/Draughts-VERSION-windows-x64.zip`: SDL and
+the C runtime are linked in, the icon `windows/draughts.ico` embedded, and it is marked a
+GUI program. It is unsigned, so SmartScreen warns on first run.
 
-**Linux.** `scripts/linux.py src/app/draughts.goose --release` tars `Draughts/`, holding
-the executable `draughts` (stripped), `io.github.kaitk.draughts.desktop`, the icon
-`io.github.kaitk.draughts.png` (`linux/`, the 256 px layer of `windows/draughts.ico`), and
-`install.sh`, into `build/linux/release/Draughts-VERSION-linux-x64.tar.gz`. The app runs
-from the folder as it is; `install.sh` copies the executable to `~/.local/bin` and the
-`.desktop` file (its `Exec` the full path) and the icon where the desktop's menu finds
-them, and `install.sh --remove` takes them away. The app id, which SDL gives the window
-(`src/app/display.c`), is the `.desktop` file's name and its `StartupWMClass`, so the
-window shows the menu's icon. SDL
-is linked in; the C library, libm, Wayland or X11, and Vulkan's loader are the system's.
-The executable needs a glibc as new as the one it was built against, so a release is
-built in an Ubuntu 22.04 container (glibc 2.35, the oldest the Goose compiler itself runs
-on), with Clang 20 from apt.llvm.org since 22.04's gcc 11 has no `#embed`:
+**Linux.** `scripts/linux.py src/app/draughts.goose --release` writes
+`build/linux/release/Draughts-VERSION-linux-x64.tar.gz`: the stripped executable, a
+`.desktop` file, the icon, and `install.sh` (`--remove` undoes it). The executable needs a
+glibc as new as the one it was built against, so build it in an Ubuntu 22.04 container
+(glibc 2.35) with Clang 20:
 
 ```sh
-distrobox create -n draughts-jammy -i ubuntu:22.04     # once; on Bazzite distrobox is there
+distrobox create -n draughts-jammy -i ubuntu:22.04     # once
 distrobox enter draughts-jammy
 sudo apt-get install -y curl gnupg python3 git cmake ninja-build pkg-config binutils
-# SDL's: Wayland and X11 (both required), and the audio, IME, and input backends
 sudo apt-get install -y libwayland-dev libxkbcommon-dev libdecor-0-dev wayland-protocols \
     libegl-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
     libxss-dev libxtst-dev libasound2-dev libpulse-dev libpipewire-0.3-dev libjack-dev \
@@ -832,27 +451,12 @@ sudo apt-get update && sudo apt-get install -y clang-20
 CC=clang-20 scripts/linux.py src/app/draughts.goose --release
 ```
 
-Docker on Windows or a Mac does as well (0.5.0's tarball, 2026-11-14): `docker run -d
---name draughts-jammy -v <repo>:/src:ro ubuntu:22.04 sleep infinity`, then in it (`docker
-exec`, as root, so without `sudo`) the same packages, `git config --global --add
-safe.directory '*'`, a `git clone /src` with `git submodule update --init --recursive`,
-the Goose Linux release in its `build/`, and the build above. A clone rather than the
-mount keeps the host's checkout and its line endings out of it; copy the tarball out
-through a second mount. Under WSL, WSLg runs the result for a look (`--frames 20` saves a
-shot), though WSL's own Ubuntu may be too new to build a release in.
+A Docker `ubuntu:22.04` container does as well (as root, without `sudo`): build in a
+`git clone` of the mounted repo, not the mount itself. `objdump -T
+build/linux/release/Draughts/draughts | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1`
+should say `GLIBC_2.35`.
 
-`objdump -T build/linux/release/Draughts/draughts | grep -o 'GLIBC_[0-9.]*' | sort -Vu |
-tail -1` says `GLIBC_2.35`: Ubuntu 22.04 and later, Debian 12, Fedora 36 and later, and
-SteamOS and Bazzite run it. Built on a newer system it asks for that system's glibc (on
-Ubuntu 26.04, 2.43, which Fedora 43's 2.42 refuses). Not signed; nothing on Linux asks.
-What asks for 2.35 is the build's own glibc (`hypotf`, and 2.34's `pthread_*` and `dl*`),
-which older glibcs have under older versions; but Goose itself needs 2.35, so the floor
-would drop only by making the C with Goose on a newer system and compiling it on the older
-one, as `scripts/android.py` and `ios.py` do (`native.goose_to_c`). Debian 11 (2.31, as
-the Steam Runtime's sniper) also has no libdecor, without which GNOME's Wayland window has
-no title bar (task 076).
-
-**The release.** With the zips at hand, tagged as the shared version (`native.VERSION_NAME`):
+**The release.** Tagged as the shared version (`native.VERSION_NAME`):
 
 ```sh
 gh release create v0.2.0 build/mac/release/Draughts-0.2.0-macos-arm64.zip \
@@ -867,65 +471,42 @@ adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity \
 adb logcat -d | grep bench3d
 ```
 
-On the flat board (`--board flat`) the same flag prints `bench2d:` instead: N whole
-frames, from the shell's fill to the GPU done, each waited for, then N as the loop draws
-them, frame to frame.
-Both end with a summary: the waited frame's P50 and P99, and the presented frames'
-average and 1% low (the rate of the 99th percentile's gap), both by the app's own clock,
-which can't tell how long a frame stayed on screen: it put the tablet's flat board's 1% low
-at 70 fps where the compositor counts no frame dropped. [Rendering's table](architecture/rendering.md#the-releases-frames) takes its
-frames from the compositor: `scripts/device_perf.sh` runs `--bench 1000` in a game (Russian,
-wood) on each board once the device is cool, counts the presented frames with
-SurfaceFlinger's timestats between the bench's `presenting` and `presented` lines, then
-takes the idle CPU and memory. The bench's first phase waits for the GPU after every frame
-and drops frames by design, so a count must not overlap it. `tools/pace.goose` draws
-every frame with nothing else, or a set GPU load, to check the pacing alone.
-`scripts/ios_perf.py` takes the iPhone's rows: Instruments' Animation Hitches counts the
-frames the display showed between the bench's console lines, and `--rest 25` has the app
-count its own CPU time, footprint, and each thread's CPU time at rest, as Instruments'
-Activity Monitor often can't reach the phone after `devicectl` has used it.
-`python scripts/windows_perf.py` takes the Windows rows, full screen: PresentMon's command
-line exe (from github.com/GameTechDev/PresentMon's releases, into `build/presentmon/`,
-no admin rights needed) records the presents through the bench, and the script counts
-those between its console lines that reached the display, each in whole refreshes, with
-the GPU's busy time a frame, the latency to the display, and the present mode (DWM's
-composing costs a refresh of latency; full screen the window is flipped straight to the
-screen). The app's own 1% low there (105 fps for the flat board) is the loop's wakes
-jittering against the swapchain's queue, not frames dropped (2026-11-10). The app counts its own CPU time
-there, in Windows' 15.6 ms ticks (one tick is 0.06% of 25 s), and its memory as the
-private bytes.
+`--bench N` times N waited frames, then N as the loop draws them, and prints the waited
+frame's P50 and P99 and the presented frames' average and 1% low (`bench2d:` on the flat
+board). The app's own clock can't tell how long a frame stayed on screen, so the release
+table's frames ([rendering](architecture/rendering.md#the-releases-frames)) come from
+the platform's counter, each by its script:
 
-Two seconds after the launch the app times 300 frames drawing the 3D board and its
-shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`); 300
-drawing the board alone, waited for; 300 as the loop draws them, frame to frame; then
-300 as a pulsing ring draws them, a ring round every piece (the kept depth's pass, and
-the screen's part with the rings and without, each waited for), and quits. It prints those medians, the steps getting the board ready (their count, their
-sum, the setup, and the longest), the first frame, and the bake again warm (`src/app/bench.goose`, a wrapper the loop calls
-in place of `render::frame` while `--bench` is given, so the drawing holds no measuring).
-A waited frame includes the submit and the wait, about 5 ms on the Pixel 7a for an empty
-pass, so it is an upper bound; the frame to frame time is held at the display's rate.
-Let the device cool between series (`adb shell dumpsys thermalservice`, status 0):
-warm, the Pixel 7a's frames slowed from 16.7 to 19.8 ms. [Rendering](architecture/rendering.md#the-3d-board-on-devices) has the numbers.
+- `scripts/device_perf.sh`: Android, SurfaceFlinger's timestats between the bench's
+  `presenting` and `presented` lines, then idle CPU and memory.
+- `scripts/ios_perf.py`: the iPhone, Instruments' Animation Hitches, and `--rest 25`'s
+  CPU and footprint at rest.
+- `python scripts/windows_perf.py`: Windows full screen, PresentMon's console exe in
+  `build/presentmon/`.
+
+The bench's first phase drops frames by design, so a count must not overlap it. Let a
+device cool between series (`adb shell dumpsys thermalservice`, status 0). `tools/pace.goose`
+checks the pacing alone. [Rendering](architecture/rendering.md#the-3d-board-on-devices)
+has the numbers.
 
 ## Check idle CPU
 
 ```sh
-adb shell svc power stayon true    # keep the screen on: Android pauses the app when it sleeps (not `usb`: the Pixel 7a charges as AC)
-scripts/idle_cpu.sh 60             # with the app running on the tablet, untouched
+adb shell svc power stayon true    # Android pauses the app when the screen sleeps
+scripts/idle_cpu.sh 60             # with the app running on the device, untouched
 adb shell svc power stayon false
 ```
 
-It prints the CPU time of the thread running the program and of the whole process, and
-how many times the program's thread went to sleep. An idle board should use a fraction
-of a percent of a core with about one wakeup a second
+It prints the CPU time of the program's thread and the process, and the thread's wakeups.
+An idle board should use a fraction of a percent of a core with about one wakeup a second
 ([rendering](architecture/rendering.md#frames-and-battery)).
 
 ## Check memory over the Android lifecycle
 
 ```sh
-scripts/lifecycle_memory.sh 20     # with the app running on the tablet
+scripts/lifecycle_memory.sh 20     # with the app running on the device
 ```
 
-Each cycle goes home and back, then rotates to portrait and back. It prints PSS, native
-heap, and graphics memory per cycle and any errors in logcat, then restores the rotation
-settings. Graphics memory should stay flat apart from short driver spikes.
+Each cycle goes home and back, then rotates to portrait and back, printing PSS, native
+heap, and graphics memory and any errors in logcat. Graphics memory should stay flat apart
+from short driver spikes.

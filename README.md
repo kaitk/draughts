@@ -43,8 +43,7 @@ Vulkan, or iOS 16 or later with Metal.
 
 ### Performance
 
-Release builds in a game, 2026-11-10 (Linux 2026-11-12, the A33's 3D frames 2026-11-13),
-frames as they reached the screen:
+Release builds in a game, frames as they reached the screen:
 
 | Device | Display | 3D board | Memory (2D / 3D) |
 | --- | --- | --- | --- |
@@ -57,7 +56,7 @@ frames as they reached the screen:
 
 - **2D board:** locked to the display's rate on every device.
 - **Uncapped:** in brackets, the 3D board's average frames a second with the display's
-  sync off (`--no-vsync`), where the system lets it off: the desktops (tasks 074, 076).
+  sync off (`--no-vsync`), on the desktops.
 - **At rest:** under 0.35% of one core, no GPU work.
 - **Memory:** the 3D board's extra is on the GPU.
 
@@ -127,9 +126,8 @@ python3 test/run_tests.py
 scripts/test.sh                 # also perft and a random-game check of the rules
 ```
 
-The season photographs are not in the repository (`design/backgrounds/README.md` says how
-they were made); a build without them shows the board on the season's plain color.
-[docs/development.md](docs/development.md) has the rest: the toolchain, development
+The season photographs the app embeds are in `design/backgrounds/masters/`; their
+originals stay local (`design/backgrounds/README.md`). [docs/development.md](docs/development.md) has the rest: the toolchain, development
 flags, the Android and release builds, and how to measure idle CPU and memory.
 
 ## Layout
