@@ -1,4 +1,4 @@
-// What the shaders ngfx alone has share (down.slang and mip.slang; task 065): a
+// What the shaders ngfx alone has share (down.slang and mip.slang): a
 // full-screen triangle and a texel read by the texture's heap index. The shaders written
 // from gfx's GLSL include glsl.slang instead.
 #pragma once

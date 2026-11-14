@@ -8,9 +8,8 @@ import os;
 import gfx;
 import ngfx;
 
-// What patches/goose_gfx/0008 adds to gfx, which the release's gfx.goose doesn't
-// declare: open's flag for a window with no device, the window's native handle for ngfx
-// (on Linux a Wayland surface or an X11 window, its display, and which of the two),
+// What the goose_gfx fork adds, which the release's gfx.goose doesn't declare: open's
+// flag for a window with no device, the window's native handle for ngfx (on Linux a Wayland surface or an X11 window, its display, and which of the two),
 // whether ngfx showed this frame, and whether the window wants one shown.
 let WINDOW_ONLY = 64;
 extern fn native_window() -> u64 = "gs_gfx_native_window";

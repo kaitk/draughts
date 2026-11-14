@@ -1,4 +1,4 @@
-// What the build holding both renderers asks before it opens a window (task 073): whether
+// What the build holding both renderers asks before it opens a window: whether
 // this system can run NoGraphicsAPI at all, from what can be asked without a window or a
 // device, and which GPU and driver it would run on, for the crash marker's key; and the
 // window shown once ngfx has opened it hidden. In draughts_ngfx.build's c_sources.

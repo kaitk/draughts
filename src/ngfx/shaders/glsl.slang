@@ -1,5 +1,5 @@
 // The GLSL names the gfx shaders were written with, so their bodies carry over to Slang
-// as they are (task 065): its vector types, mix, fract, mod, not, and two-argument atan;
+// as they are: its vector types, mix, fract, mod, not, and two-argument atan;
 // and its samplers, a texture and a sampler by their heap indices. Included by the
 // modules scripts/ngfx_2d_shaders.py writes and by r3d.slang.
 #pragma once

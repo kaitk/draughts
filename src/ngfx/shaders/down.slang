@@ -1,6 +1,5 @@
 // The 3D board's pass, drawn at twice the size, shrunk into its target (render3d.goose's
-// draw): each pixel the average of its 2 × 2, in place of gfx's 4× MSAA resolve, which
-// NoGraphicsAPI has no way to do.
+// draw): each pixel the average of its 2 × 2 (SSAA).
 #include "common.slang"
 
 struct Root { uint src; uint pad0; uint pad1; uint pad2; };

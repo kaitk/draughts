@@ -1,19 +1,14 @@
-// The one seam between the app and its renderer in the build that holds both
-// (draughts_ngfx.goose; src/app/backend.goose is gfx's alone): open() chooses gfx or
-// goose-ngfx once and opens its window, gfx's (host_gpu) or gfx's WINDOW_ONLY with ngfx
-// drawing into it (host_ngfx), and with() runs its block on that renderer's backend,
-// gpu::Gfx or gpu_ngfx::Ngfx (task 073). The drawers under render.goose and host.goose
-// take the backend as a parameter, so they are compiled once for each and call it
-// directly: the choice is the one `if` in with().
+// The seam between the app and its renderer in the build that holds both: open()
+// chooses gfx or goose-ngfx once and opens its window, and with() runs its block on that
+// renderer's backend, gpu::Gfx or gpu_ngfx::Ngfx. The drawers take the backend as a
+// parameter, so they are compiled once for each: the choice is the one `if` in with().
 //
-// --renderer gfx or ngfx forces one, ngfx failing loudly where it can't run; auto, the
-// default, takes the platform's first choice, measured (AUTO_NGFX). Where that is ngfx it
-// asks first what needs no window (renderer.c: the OS and Metal, or Vulkan's loader and
-// the GPU's extensions), then opens gfx's window hidden for ngfx and closes it again if
-// ngfx won't open there, and gfx starts as it does alone. A marker beside the settings,
-// naming the GPU, its driver, and the app's version, stands while ngfx starts and goes at
-// its first frame presented: a start that finds it, from a start that never got that far,
-// takes gfx, until the GPU, the driver, or the app changes. The choice and why are printed.
+// --renderer gfx or ngfx forces one; auto takes the platform's first choice (AUTO_NGFX).
+// Where that is ngfx it asks first what needs no window (renderer.c), then opens gfx's
+// window hidden for ngfx and closes it again if ngfx won't open there. A marker beside
+// the settings, naming the GPU, its driver, and the app's version, stands while ngfx
+// starts and goes at its first frame presented: a start that finds it takes gfx, until
+// the GPU, the driver, or the app changes. The choice and why are printed.
 namespace backend;
 import std;
 import vec;
@@ -25,10 +20,7 @@ extern fn draughts_os() -> i64;
 extern fn draughts_ngfx_check(out: u8[:]) -> i64;
 
 // auto's first choice per system (renderer.c's draughts_os: macOS, Windows, Linux, iOS),
-// from what was measured: Windows ngfx, 26 to 41% less GPU time a frame on the RTX 4090
-// (task 074); the Mac and iOS ngfx, its 3D frame about 5% under gfx's on the M1 Pro and
-// the iPhone 13 mini (task 085); Linux gfx, RADV running ngfx 13% slower (task 076),
-// until MSAA is measured there.
+// the faster renderer on each.
 let AUTO_NGFX: bool[4] = [true, true, false, true];
 let OS_NAMES = ["macOS", "Windows", "Linux", "iOS"];
 let MARKER = "renderer-start.txt";

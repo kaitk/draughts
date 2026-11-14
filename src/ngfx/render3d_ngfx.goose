@@ -1,11 +1,10 @@
 // Recording the 3D board's renderer (render3d.goose) through goose-ngfx, beside gfx's
 // recorder (src/render3d/render3d_gpu.goose) in the build that holds both
-// (src/ngfx/draughts_ngfx.goose): one forward pass, into 4× multisampled transient targets resolved into the
-// picture as gfx's is, or at the size antialiasing wants and then SMAA or the 2 × 2
-// supersampled pass shrunk. The shaders are gfx's GLSL in shaders.goose, written into
-// Slang by scripts/ngfx_3d_shaders.py (build/ngfx/shaders/r3d_*.slang), each module with one
-// root (Root) and its blob built ahead and embedded. The handles render3d.goose holds are
-// gfx's types (nx).
+// (src/ngfx/draughts_ngfx.goose): one forward pass, into 4× multisampled transient
+// targets resolved into the picture as gfx's is, or at the size antialiasing wants and
+// then SMAA or the 2 × 2 supersampled pass shrunk. The shaders are gfx's GLSL in
+// shaders.goose, written into Slang by scripts/ngfx_3d_shaders.py, each module with one
+// root (Root) and its blob built ahead. The handles render3d.goose holds are gfx's types (nx).
 namespace render3d_ngfx;
 import std;
 import vec;
@@ -60,7 +59,6 @@ fn photo_pipelines(own: Own&, g: Gpu&) {
     nx::prepare(g.blur, g.small, nx::Texture { 0 });
 }
 
-// The shadow map, from the key light.
 fn shadow_pass(own: Own&, g: Gpu&) {
     nx::begin_pass(nx::PassDesc { depth: g.shadow_map });
     nx::bind(g.shadow);
@@ -159,7 +157,7 @@ fn no_root() -> Root { Root { frame: 0, u: 0, buf0: 0, buf1: 0, buf2: 0, verts: 
 
 // How the 3D pass is antialiased: not at all; SMAA 1x over the pass drawn at 1x; the
 // pass drawn at twice the size and shrunk (2 x 2 supersampling); or 4× multisampled into
-// transient targets, resolved as the pass ends (task 077).
+// transient targets, resolved as the pass ends.
 let AA_OFF = 0;
 
 let AA_SMAA = 2;
@@ -168,8 +166,7 @@ let AA_SSAA = 3;
 
 let AA_MSAA = 4;
 
-// The default, as gfx's: on the M1 Pro 10% under SMAA's GPU time and 12 MB less GPU memory
-// while drawing (its targets memoryless), 2% over gfx's MSAA (task 077).
+// The default, as gfx's: its targets memoryless, cheaper than SMAA in time and memory.
 let AA = AA_MSAA;
 
 let SAMPLES = 4;
@@ -386,7 +383,7 @@ fn pass_targets(own: Own&, g: Gpu&) {
 
 // The pass antialiased by `aa` (AA_OFF..) from the next draw on: its targets given back
 // (made again for the new way by the next draw), the way's pipelines and tables made the
-// first time it is chosen. The app's A key (task 071). It draws SAMPLES whatever `samples`
+// first time it is chosen. The app's A key. It draws SAMPLES whatever `samples`
 // says: fewer are asked for only on Android, which the ngfx build isn't built for.
 fn set_aa(own: Own&, g: Gpu&, aa: i32, samples: i32 = SAMPLES) {
     render3d::give_back(own, g);
