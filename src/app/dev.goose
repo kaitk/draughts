@@ -142,7 +142,8 @@ fn puzzler(sh: shell::Shell&, name: const u8[:], rating: i64, variant: i64) {
     sh.prefs.puzzle_rating[set] = rating;
     sh.prefs.puzzle_rated[set] = 30;
     sh.prefs.today[set] = settings::Today {};
-    players::store(ps, ps.list[ps.playing].id, sh.prefs);
+    // Their file, and the device's: they are the one playing at the next start.
+    players::write(ps, sh.prefs);
     sh.daily.set = -1;
     sh.changed = true;
 }
