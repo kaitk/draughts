@@ -466,7 +466,7 @@ fn play(sh: Shell&, now: f64) {
 // one nobody set up (`unset`) with no move played (issue 1).
 fn resume(sh: Shell&) -> home::Resume {
     let gm .= sh.game;
-    let on = !sh.unset || gm.b.history.len > 0 || gm.computer >= 0;
+    let on = !sh.unset || gm.b.rec.history.len > 0 || gm.computer >= 0;
     // A new player, asked whether they know how to play (`first_start_done`), who hasn't
     // learned their draughts, nor said they know how, nor begun a game against the
     // computer: How to play in continue's place (task 026).

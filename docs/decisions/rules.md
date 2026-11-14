@@ -44,3 +44,11 @@ text for Brazilian.
 
 The game keeps no counts of its own: it folds them over its undo history whenever the
 position changes, so undo and a saved game bring them back with no new state.
+
+The game's record (where it began, the positions before each move, and its past for draws)
+is a value of the rules', `rules::Record`, held by the board (2026-11-14). It had been the
+board widget's own fields beside its selection and animation, with the game screen caching
+the draw counts on it; undo, the draws, judging, and saving now work on the record, and the
+board, a widget, only holds it. Rejected: putting it in `game/`, which the board can't
+import (`board` is a leaf under `game`), and keeping the draw counts as they're played,
+which undo and a saved game would then have to rebuild anyway.

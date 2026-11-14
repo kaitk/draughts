@@ -29,7 +29,7 @@ fn show(gm: game::Game&, what: const u8[:]) {
     let v .= rules::VARIANTS[gm.b.variant];
     var last: u8[>..] = [];
     if gm.b.has_last { last = str(drive::name(v, gm.b.last.from), "-", drive::name(v, gm.b.last.to)); } else { last = str("none"); }
-    print(what, ": ", rules::fen(gm.b.pos), ", history ", gm.b.history.len, ", last ", last);
+    print(what, ": ", rules::fen(gm.b.pos), ", history ", gm.b.rec.history.len, ", last ", last);
 }
 
 let HOME = 0;

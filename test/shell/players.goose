@@ -75,7 +75,7 @@ fn state(sh: shell::Shell&) -> u8[>..] {
                sh.prefs.seen[v][0], ", day ", sh.prefs.today[v].day, ", ", sh.prefs.daily_count, " a day, skill ", sh.prefs.skill[0], " ", sh.prefs.skill[1], " ", sh.prefs.skill[2], ", games ",
                sh.prefs.games, ", season ", sh.prefs.season, ", hints ", sh.prefs.hints, ", game ",
                rules::VARIANTS[sh.game.b.variant].size, "x", rules::VARIANTS[sh.game.b.variant].size, " after ",
-               sh.game.b.history.len, " moves, language ", sh.prefs.language);
+               sh.game.b.rec.history.len, " moves, language ", sh.prefs.language);
 }
 
 // A fresh shell reading the players from dir, as the app does at start.

@@ -23,7 +23,6 @@ let PULSE = 2.8;            // must-capture rings pulse for two of their 1.4 s c
 let DRAG_START = 10.0;      // dp a press moves before it becomes a drag
 let SNAP = 0.9;             // squares from a square's center a press or drop off the dark squares still reaches
 let FLASH = 1.2;            // a wrong move's red ring flashes twice, 0.6 s each
-let MAX_HISTORY = 512;      // moves undo can take back; the oldest go first
 
 // Move hints (docs/product.md): mistakes only, the default, marks a wrong move and pulses
 // the pieces that must capture, and a second wrong square in a capture lights its next
@@ -123,19 +122,10 @@ let GHOST_KING = 0.62;      // the crowning ghost king's opacity
 let GHOST_HINT = 0.5;       // the hint's ghost's
 let TRACE_GHOST = 0.3;      // a replay's last move: the piece where it started
 
-// A position the game was in, for undo, with the move that led to it.
-struct Step {
-    pos:       rules::Position,
-    last_from: u8,
-    last_to:   u8,
-    has_last:  bool,
-}
-
 struct Board {
     variant:  u8,
-    start:    rules::Position,  // where the game began, for restart
+    rec:      rules::Record,    // the game as played: where it began, the positions before each move
     pos:      rules::Position,
-    history:  Step[..MAX_HISTORY],  // the positions before each move, oldest first
     moves:    rules::Moves,     // the legal moves of pos
     selected: i64,              // a bit, or -1
     // The selected piece's ways (`select`): its captures, every way to each (rules::ways),
@@ -274,14 +264,13 @@ fn show(b: Board&, p: rules::Position) {
 
 // Starts a new game from position p.
 fn set(b: Board&, p: rules::Position) {
-    b.start = p;
-    b.history.clear();
+    rules::record_begin(b.rec, p);
     b.has_last = false;
     show(b, p);
 }
 
 // Starts the game over from where it began.
-fn restart(b: Board&) { set(b, b.start); }
+fn restart(b: Board&) { set(b, b.rec.start); }
 
 // Starts a new game of another variant, from its start.
 fn reset(b: Board&, variant: u8) {
@@ -291,42 +280,16 @@ fn reset(b: Board&, variant: u8) {
 
 // Takes back the last move, even one still animating; false when there is none.
 fn undo(b: Board&) -> bool {
-    guard b.history.len > 0 else { return false; }
-    let s = b.history.pop();
+    let s, ok = rules::record_pop(b.rec);
+    guard ok else { return false; }
     b.has_last = s.has_last;
     b.last = rules::Move { from: s.last_from, to: s.last_to, .. };
     show(b, s.pos);
     return true;
 }
 
-// The game's past for draws at its position (rules/draw.goose): the counts and the
-// positions since the last man's move or capture, folded over the undo history, so undo
-// and a saved game bring them back with nothing kept beside it. A game longer than the
-// history counts from its oldest position kept, MAX_HISTORY plies back, farther than any
-// count runs.
-fn past(b: Board&, out: rules::Past&) {
-    let n = b.history.len;
-    let first = if n > 0 { b.history[0].pos } else { b.pos };
-    out.draw = rules::draw_start(first);
-    out.before.clear();
-    for i in 1..n + 1 {
-        let q = if i < n { b.history[i].pos } else { b.pos };
-        rules::pass_between(out, b.history[i - 1].pos, q);
-    }
-}
-
-// The same at the position before move `ply` of the history (task 074's judging of a
-// move played earlier).
-fn past_to(b: Board&, ply: i64, out: rules::Past&) {
-    let n = b.history.len;
-    let first = if n > 0 { b.history[0].pos } else { b.pos };
-    out.draw = rules::draw_start(first);
-    out.before.clear();
-    for i in 1..min(ply, n) + 1 {
-        let q = if i < n { b.history[i].pos } else { b.pos };
-        rules::pass_between(out, b.history[i - 1].pos, q);
-    }
-}
+// The game's past for draws at its position (rules/draw.goose), from its record.
+fn past(b: Board&) -> rules::Past& { rules::record_past(b.rec, b.pos) }
 
 // The side that has won, the other having no move left, or -1 while the game goes on
 // or a move is still showing.
@@ -357,7 +320,7 @@ fn ghost_on(b: Board&, to: i64, now: f64) {
 // move it played, so the caller passes m: after one move is taken back, the move under
 // it is the caller's to know. False when there is no move to take back.
 fn slide_back(b: Board&, m: rules::Move, now: f64, mistake: bool = true) -> bool {
-    guard b.history.len > 0 else { return false; }
+    guard b.rec.history.len > 0 else { return false; }
     let side = 1 - b.pos.side;
     let king = b.pos.kings & rules::bit(m.to) != 0;
     undo(b);
@@ -520,11 +483,7 @@ fn waiting(b: Board&) -> i64 {
 }
 
 fn start_move(b: Board&, i: i64, now: f64) {
-    if b.history.len == MAX_HISTORY {
-        for k in MAX_HISTORY - 1 { b.history[k] = b.history[k + 1]; }
-        b.history.pop();
-    }
-    b.history.push(Step { pos: b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last });
+    rules::record_push(b.rec, rules::Step { pos: b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last });
     b.move = b.moves[i];
     b.before = b.pos;
     b.pos = rules::play(b.pos, b.move);

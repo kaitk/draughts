@@ -186,7 +186,7 @@ fn missed(pl: Play&, now: f64) {
 // solved the puzzle.
 fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) -> bool {
     let b .= pl.b;
-    if b.history.len > history {
+    if b.rec.history.len > history {
         let m = b.move;
         played(pl, m);
         let what = puzzles::judge(pl.s, b.before, puzzles::short(m), pl.left);
@@ -219,7 +219,7 @@ fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) -> bool {
 // A tap at p by the app's development flags, as a press and release. A puzzle it solves
 // keeps no stars: a run with taps writes no player's file.
 fn tap(pl: Play&, l: board::Layout, p: float2, now: f64) {
-    let history = pl.b.history.len;
+    let history = pl.b.rec.history.len;
     let wrong_at = pl.b.wrong_at;
     board::press(pl.b, l, p, now);
     board::release(pl.b, l, p, now);
@@ -293,7 +293,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     // The board is offered to the keys every frame, so their focus stays on it while the
     // player can't move; Enter on it is a tap only when the pointer could tap.
     let mine = !held && !g.took && ready(pl) && b.pos.side == side;
-    let history = b.history.len;
+    let history = b.rec.history.len;
     let wrong_at = b.wrong_at;
     let waited = board::waiting(b);
     // Through the perspective on the 3D board, as the game's.

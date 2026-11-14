@@ -64,7 +64,7 @@ fn main() {
     tap(b, l, "c5", 2.0);
     tap(b, l, "a3", 3.0);
     tap(b, l, "c1", 4.0);
-    print("then c5, a3, c1: playing ", b.moving, ", along ", way(b.move), ", history ", b.history.len);
+    print("then c5, a3, c1: playing ", b.moving, ", along ", way(b.move), ", history ", b.rec.history.len);
 
     board::set(b, p);
     tap(b, l, "c1", 10.0);

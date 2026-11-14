@@ -120,12 +120,12 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 
 | Directory | What it holds |
 | --- | --- |
-| `src/rules/` | The rules as pure functions over values: variants as data, positions, legal moves, playing a move, FEN, and the square at a column and row ([rules.md](rules.md)) |
+| `src/rules/` | The rules as pure functions over values: variants as data, positions, legal moves, playing a move, FEN, the square at a column and row, the draws, and a game's record (where it began and the position before each move) ([rules.md](rules.md)) |
 | `src/ai/` | The computer player over `rules`: a search sliced into steps, its levels and skill, a played move judged, and the ratings ([ai.md](ai.md)) |
 | `src/puzzles/` | The puzzles as plain text read into a fixed table, and the exact search that says whether a move solves one ([puzzles.md](puzzles.md)) |
 | `strings/` | The user-facing text by key, from `strings/<lang>.txt` |
 | `src/gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts and `stack`, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
-| `src/board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash); the 3D board's camera, its fit on screen, picking through its perspective, and its instances (`view3d`) |
+| `src/board/` | The board on screen: the position, the legal moves, and the game's record (`rules::Record`, held beside them); where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash); the 3D board's camera, its fit on screen, picking through its perspective, and its instances (`view3d`) |
 | `src/game/` | The game screen: its panels and where they and the board go (`panel::layout`, round the 3D board `panel::corners_in`, each a `Layout` with its mode: landscape, corners, portrait, or compact), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, the moves as played with their marks and their panel (`notes.goose`), and the pieces it puts over the UI |
 | `src/shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Frame.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, their saved games, and their games played with the results screen |
 | `src/model3d/` | The 3D board but its drawing, with no graphics: the meshes, the themes as data (`looks`), the photograph's light as spherical harmonics, the plain fade's ambient, and the plan of a theme's bake in steps |
@@ -237,7 +237,7 @@ returns.
   since Android may kill a paused app, and before another player plays. The device's
   own keys are in `settings.txt`. All are read at start. Nothing is written while idle.
 - **The saved game is one flat value** (`shell::Saved`): the screen, the variant, the
-  position, where the game began, the last move, the undo history (a limited array),
+  position, the last move, the game's record (where it began and the undo history, a limited array),
   the clocks, and the computer's side, level, and skill, if it plays, with the game's
   number for its seeds, and whether anyone set the game up (home's Continue); written with Goose's `to_bytes` and an FNV-1a checksum after
   it, about 15 KB. While a game played from a replay shows, the game it set aside is the

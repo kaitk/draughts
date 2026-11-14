@@ -62,7 +62,7 @@ fn state(gm: game::Game&, g: gui::Gui&, changed: bool, what: const u8[:]) {
     let v .= rules::VARIANTS[b.variant];
     let on = if g.focus == panel::BOARD_ID { str("board") } else if g.focus == 0 { str("none") } else { str("control ", g.focus) };
     print(what, ": focus ", on, ", cursor ", cursor(b), ", chosen ", drive::name(v, b.selected), ", over ",
-          drive::name(v, b.over), ", wrong ", drive::name(v, b.wrong), ", moves made ", b.history.len, ", changed ", changed);
+          drive::name(v, b.over), ", wrong ", drive::name(v, b.wrong), ", moves made ", b.rec.history.len, ", changed ", changed);
 }
 
 fn start(gm: game::Game&, fen: const u8[:], computer: i64) {

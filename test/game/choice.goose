@@ -55,7 +55,7 @@ fn begin(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], hint
 
 // What was played since the start, if anything, and what white can take after it.
 fn played(gm: game::Game&) -> u8[>..] {
-    guard gm.b.history.len > 0 else { return str("nothing played"); }
+    guard gm.b.rec.history.len > 0 else { return str("nothing played"); }
     var white_takes: u8[>..] = [];
     var lost = false;
     for m in gm.b.moves {
@@ -130,7 +130,7 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
         drive::tap(gm, g, l, at(l, stray(gm.b, opts)), t + 0.2);
         print(if hints == board::MISTAKES { "mistakes only" } else { "move hints" }, ", rings:", before,
               "; after ", stray(gm.b, opts), " tapped with ", number(king_sq), " selected:", rings(gm, l, t + 0.3),
-              "; wrong ", number(gm.b.wrong), ", selected ", number(gm.b.selected), ", played ", gm.b.history.len);
+              "; wrong ", number(gm.b.wrong), ", selected ", number(gm.b.selected), ", played ", gm.b.rec.history.len);
         for m, i in opts {
             for by_drag in [false, true] {
                 begin(gm, g, l, fen, hints, t);
@@ -138,7 +138,7 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
                     drag(gm, g, l, at(l, number(m.from)), at(l, number(m.to)), t + 0.1);
                 } else {
                     drive::tap(gm, g, l, at(l, number(m.from)), t + 0.1);
-                    let after_select = gm.b.history.len;
+                    let after_select = gm.b.rec.history.len;
                     drive::tap(gm, g, l, at(l, number(m.to)), t + 0.2);
                     if after_select != 0 {
                         print("  a tap on ", number(m.from), " played ", played(gm));
@@ -146,7 +146,7 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
                     }
                 }
                 drive::idle(gm, g, l, t + 3.0);
-                let ok = gm.b.history.len == 1 && same(gm.b.move, m);
+                let ok = gm.b.rec.history.len == 1 && same(gm.b.move, m);
                 if !ok { fails++; }
                 if hints == board::MISTAKES && !by_drag || !ok {
                     print("  ", move_text(m), if by_drag { " by a drag" } else { " by taps" }, ": ", played(gm),
@@ -172,13 +172,13 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
             }
             drive::tap(gm, g, l, at(l, number(king)), t + 3.0);
             drive::tap(gm, g, l, at(l, stray(gm.b, opts)), t + 3.1);
-            let wrong = gm.b.history.len;
+            let wrong = gm.b.rec.history.len;
             // The king stays selected after the stray square; a tap on it would put it down
             // (board::release), so it is tapped only when another piece is to move.
             if gm.b.selected != m.from { drive::tap(gm, g, l, at(l, number(m.from)), t + 4.5); }
             drive::tap(gm, g, l, at(l, number(m.to)), t + 4.6);
             drive::idle(gm, g, l, t + 8.0);
-            let ok = wrong == 0 && gm.b.history.len == 1 && same(gm.b.move, m);
+            let ok = wrong == 0 && gm.b.rec.history.len == 1 && same(gm.b.move, m);
             if !ok {
                 fails++;
                 print("  after the stray taps, ", move_text(m), ": ", played(gm), "  <- not the one chosen");
@@ -233,7 +233,7 @@ fn raised(g: gui::Gui&, fen: const u8[:]) {
             }
             drive::idle(sh, g, t + 3.0);
             count++;
-            if !(sh.game.b.history.len == 1 && same(sh.game.b.move, m)) {
+            if !(sh.game.b.rec.history.len == 1 && same(sh.game.b.move, m)) {
                 fails++;
                 print("  3D ", move_text(m), if by_drag { " by a drag" } else { " by taps" }, ": ", played(sh.game),
                       "  <- not the one chosen");

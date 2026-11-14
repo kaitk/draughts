@@ -204,7 +204,7 @@ fn main() {
     now += 0.1;
     drive::tap(gm, g, l, drive::control(g, UNDO), now);
     state(gm, "take back");
-    print("  ", rules::fen(gm.b.pos), ", history ", gm.b.history.len, ", selected ", named(gm, gm.b.selected));
+    print("  ", rules::fen(gm.b.pos), ", history ", gm.b.rec.history.len, ", selected ", named(gm, gm.b.selected));
     tap(gm, k.from);
     tap(gm, k.path[1]);
     state(gm, str(named(gm, k.from), ", ", named(gm, k.path[1]), " again"));

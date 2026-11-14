@@ -446,7 +446,7 @@ fn taken(g: gui::Gui&) {
         }
         let gm .= sh.game;
         gm.taken = panel::Taken { men: [14, 12], kings: [1, 0] };
-        gm.taken_len = gm.b.history.len;
+        gm.taken_len = gm.b.rec.history.len;
         gm.taken_pos = gm.b.pos;
         at_rest(sh, g);
         let b = float4 { sh.out.layout.board.x, sh.out.layout.board.y, sh.out.layout.board.z, sh.out.layout.board.z };

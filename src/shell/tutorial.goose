@@ -168,7 +168,7 @@ fn ready(ls: Lesson&) -> bool { ls.state == PLAYING && !ls.b.moving && ls.b.pos.
 
 // A tap at p by the app's development flags, as a press and release.
 fn tap(ls: Lesson&, l: board::Layout, p: float2, now: f64) {
-    let history = ls.b.history.len;
+    let history = ls.b.rec.history.len;
     board::press(ls.b, l, p, now);
     board::release(ls.b, l, p, now);
     judge(ls, history);
@@ -179,7 +179,7 @@ fn tap(ls: Lesson&, l: board::Layout, p: float2, now: f64) {
 // step was played.
 fn judge(ls: Lesson&, history: i64) -> bool {
     let b .= ls.b;
-    guard b.history.len > history else { return false; }
+    guard b.rec.history.len > history else { return false; }
     ls.played++;
     ls.glowed = false;
     if current(ls) == MOVE && ls.played < MOVES_IN_FIRST {
@@ -238,7 +238,7 @@ fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: floa
     let held, moved = board::showcase(ls.cam, g, input, l.three, l.pitch, now);
     if moved { changed = true; }
     let mine = !held && !g.took && ready(ls);
-    let history = b.history.len;
+    let history = b.rec.history.len;
     if mine && board::touch(b, l.board, l.three, l.view, input, ls.grab, now) { changed = true; }
     if panel::board_keys(g, l, b, mine, now) { changed = true; }
     if mine && judge(ls, history) {

@@ -78,14 +78,10 @@ struct Game {
     won_on:   i64          = -1,                    // the winning piece's square, or -1 for none to lift
     still:    f64          = STILL,                 // the celebration's moment from which it is still
     stilled:  bool         = false,                 // whether its still frame has been drawn
-    // A draw (rules/draw.goose): the game's past for it at the position as last folded
-    // over the board's history (`seen_len` plies, at `seen_pos`), why the game is drawn
-    // (rules::DRAW_*, NO_DRAW while it goes on), and when its ending began, or -1.
-    past:        rules::Past     = rules::Past { draw: rules::Draw {}, before: [] },
-    seen_len:    i64             = -1,
-    seen_pos:    rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
-    drawn_at:    f64             = -1.0,
-    drawn_still: bool            = false,
+    // A draw (rules/draw.goose): when its ending began, or -1; why the game is drawn
+    // comes from the board's record (`past`).
+    drawn_at:    f64  = -1.0,
+    drawn_still: bool = false,
     // The computer's turn: the move asked for, and its answer.
     asks:     i64         = 0,                      // moves asked for so far, to number them
     asking:   i64         = 0,                      // the one waited for, or 0
@@ -167,17 +163,17 @@ struct Game {
 // board, so a game set up from a position counts what it lacks as taken. Kings apart: a
 // piece taken while a king counts as a king, as the child saw it taken, found from the
 // undo history's positions (a king of the side not moving gone after the move), so
-// kings taken more than board::MAX_HISTORY moves back count as men.
+// kings taken more than rules::MAX_HISTORY moves back count as men.
 fn taken(b: board::Board&) -> panel::Taken {
     var t = panel::Taken {};
     let v .= rules::VARIANTS[b.variant];
     for c in 2 {
         let lost = max(popcount(v.start[c]) - popcount(b.pos.pieces[c]), 0);
         var kings: i64 = 0;
-        for st, i in b.history {
+        for st, i in b.rec.history {
             let a = st.pos;
             guard a.side != c else { continue; }
-            let next = if i + 1 < b.history.len { b.history[i + 1].pos } else { b.pos };
+            let next = if i + 1 < b.rec.history.len { b.rec.history[i + 1].pos } else { b.pos };
             kings += popcount(a.pieces[c] & a.kings & ~next.pieces[c]);
         }
         t.kings[c] = min(kings, lost);
@@ -194,10 +190,10 @@ fn count_taken(gm: Game&) -> bool {
     guard !b.moving else { return false; }
     let p = b.pos;
     let q = gm.taken_pos;
-    guard gm.taken_len != b.history.len || p.pieces[0] != q.pieces[0] || p.pieces[1] != q.pieces[1]
+    guard gm.taken_len != b.rec.history.len || p.pieces[0] != q.pieces[0] || p.pieces[1] != q.pieces[1]
           || p.kings != q.kings || p.side != q.side || p.variant != q.variant else { return false; }
     gm.taken = taken(b);
-    gm.taken_len = b.history.len;
+    gm.taken_len = b.rec.history.len;
     gm.taken_pos = p;
     return true;
 }
@@ -232,7 +228,6 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.seen = -1.0;
     gm.won_at = -1.0;
     gm.drawn_at = -1.0;
-    gm.seen_len = -1;
     gm.counted = false;
     gm.kept = false;
     gm.asking = 0;
@@ -287,17 +282,9 @@ fn winner(gm: Game&) -> i64 {
     return board::winner(gm.b);
 }
 
-// The game's past for draws at the board's position, folded again when the position
-// changed: a move, undo, start over, a saved game brought back.
-fn past(gm: Game&) -> rules::Past& {
-    let b .= gm.b;
-    if gm.seen_len != b.history.len || !rules::same(gm.seen_pos, b.pos) {
-        board::past(b, gm.past);
-        gm.seen_len = b.history.len;
-        gm.seen_pos = b.pos;
-    }
-    return gm.past;
-}
+// The game's past for draws at the board's position, folded again from its record when
+// the position changed: a move, undo, start over, a saved game brought back.
+fn past(gm: Game&) -> rules::Past& { board::past(gm.b) }
 
 // Why the game is drawn (rules::DRAW_*), or rules::NO_DRAW while it goes on: once the
 // drawing move has shown, unless it won (the other side has no move, or no time).
@@ -345,7 +332,7 @@ let JUDGE = 3;              // a played move judged (ai::judge_start, notes.goos
 fn asking(gm: Game&) -> Ask {
     // The seed: the game's number and the ply, so moves vary between games yet the same
     // game replays the same.
-    let seed = (gm.number as u64) * 1000 + gm.b.history.len as u64;
+    let seed = (gm.number as u64) * 1000 + gm.b.rec.history.len as u64;
     return Ask { id: gm.asking, pos: gm.b.pos, past: past(gm), skill: gm.skill, seed: seed };
 }
 
@@ -447,7 +434,7 @@ fn answer(gm: Game&, id: i64, m: rules::Move, close: i64) {
     gm.wait = PAUSE[level];
     guard gm.clock.running == gm.computer else { return; }
     gm.wait = pace::seconds(PAUSE[level], level, gm.clock.left[gm.computer], clock::INCREMENTS[gm.clock.kind],
-                            gm.b.history.len, gm.b.moves.len, board::must_capture(gm.b), pace::tense(gm.b.pos, m),
+                            gm.b.rec.history.len, gm.b.moves.len, board::must_capture(gm.b), pace::tense(gm.b.pos, m),
                             close);
 }
 
@@ -459,7 +446,7 @@ fn take_back(gm: Game&) -> bool {
     var done = false;
     if gm.computer < 0 || b.pos.side == gm.computer {
         done = board::undo(b);
-    } else if b.history.len >= 2 {
+    } else if b.rec.history.len >= 2 {
         board::undo(b);
         done = board::undo(b);
     }
@@ -657,7 +644,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     // A move made or taken back, whichever way: the clocks follow it, and stop once the
     // side to move has none.
     if undone {
-        clock::undone(gm.clock, b.pos.side, b.history.len == 0);
+        clock::undone(gm.clock, b.pos.side, b.rec.history.len == 0);
     } else if b.pos.side != gm.turn {
         clock::moved(gm.clock, gm.turn);
     }

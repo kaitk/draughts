@@ -113,7 +113,7 @@ fn trial(sh: shell::Shell&) -> u8[>..] {
     return str("screen ", sh.screen, " (game ", shell::GAME, "), from the replay ", sh.past.trial, ", doesn't count ", gm.no_count,
                "; ", rules::VARIANT_NAMES[gm.b.variant], " against ", opponent, "; the replay's position ",
                rules::same(gm.b.pos, r.pos[r.ply]), ", ", SIDES[gm.b.pos.side], " to move; clock ", gm.clock.kind,
-               "; moves ", gm.b.history.len);
+               "; moves ", gm.b.rec.history.len);
 }
 
 // What a game's end could change: the rating, the skills and games per level, the games
@@ -238,7 +238,7 @@ fn main() {
     press(sh, g, gui::PANEL_IDS);
     drive::idle(sh, g, tick());
     print("back: screen ", sh.screen, ", move ", r.ply, ", from the replay ", sh.past.trial, "; the game in progress as it was: ",
-          shell::save(sh) == saved, ", ", sh.game.b.history.len, " moves, the computer as ",
+          shell::save(sh) == saved, ", ", sh.game.b.rec.history.len, " moves, the computer as ",
           SIDES[sh.game.computer]);
 
     // The friend's game at move 11, black to move: two sides of a friend's, numbered on.

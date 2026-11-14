@@ -1040,7 +1040,7 @@ take b, `plain.html`'s fade b, and the like) are in git history only
 - **Counts** (`game::taken`): the variant's start pieces of each color less those on the
   board, men and kings apart; a piece of the side not moving that was a king before a
   move and gone after it counts as a king taken, from the undo history (saved with the
-  game, `board::MAX_HISTORY` moves back). Counted once a move has shown, and after undo
+  game, `rules::MAX_HISTORY` moves back). Counted once a move has shown, and after undo
   and start over (`game::count_taken`), never per frame.
 - **Drawn** as more instances of the pieces' quad over the UI (`panel::taken`, into the
   overlay, `board::OVER` 96): the app's men and crowned kings, 32 dp on a tablet, 26 on a

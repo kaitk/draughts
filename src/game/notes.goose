@@ -1,6 +1,6 @@
 // The game's moves as played, each with its mark once judged (task 074): what the moves
 // panel lists and the history keeps. The moves aren't kept beside the board: they are
-// read off its undo history (board::Board.history, the position before each move), so
+// read off its record (rules::Record.history, the position before each move), so
 // undo, start over, and a saved game brought back need nothing of their own. A move's
 // mark is kept while the move stays in the game; a move taken back loses it, and a
 // saved game brought back is judged again.
@@ -21,12 +21,10 @@ struct Note {
     has_best: bool        = false,
 }
 
-type Notes = Note[..board::MAX_HISTORY];
+type Notes = Note[..rules::MAX_HISTORY];
 
 // The position after move i of the board's history.
-fn after(b: board::Board&, i: i64) -> rules::Position {
-    return if i + 1 < b.history.len { b.history[i + 1].pos } else { b.pos };
-}
+fn after(b: board::Board&, i: i64) -> rules::Position { rules::record_after(b.rec, i, b.pos) }
 
 // The legal move of p that leads to q, and whether there is one. Two captures by
 // different ways that take the same pieces to the same square lead to one position: the
@@ -49,15 +47,15 @@ fn sync_notes(gm: Game&) -> bool {
     let ns .= gm.notes;
     var changed = false;
     // The history full and its oldest step dropped: the notes shift with it.
-    if ns.len > 1 && b.history.len > 0 && !rules::same(ns[0].before, b.history[0].pos)
-       && rules::same(ns[1].before, b.history[0].pos) {
+    if ns.len > 1 && b.rec.history.len > 0 && !rules::same(ns[0].before, b.rec.history[0].pos)
+       && rules::same(ns[1].before, b.rec.history[0].pos) {
         for k in ns.len - 1 { ns[k] = ns[k + 1]; }
         ns.pop();
         gm.notes_from += 1;
         changed = true;
     }
     var k = 0;
-    while k < ns.len && k < b.history.len && rules::same(ns[k].before, b.history[k].pos) {
+    while k < ns.len && k < b.rec.history.len && rules::same(ns[k].before, b.rec.history[k].pos) {
         let played = rules::play(ns[k].before, ns[k].move);
         let next = after(b, k);
         guard rules::same(played, next) else { break; }
@@ -65,11 +63,11 @@ fn sync_notes(gm: Game&) -> bool {
     }
     if k < ns.len { changed = true; }
     while ns.len > k { ns.pop(); }
-    if b.history.len == 0 { gm.notes_from = 0; }
-    for i in k..b.history.len {
-        let m, ok = move_between(b.history[i].pos, after(b, i), gm.scratch);
+    if b.rec.history.len == 0 { gm.notes_from = 0; }
+    for i in k..b.rec.history.len {
+        let m, ok = move_between(b.rec.history[i].pos, after(b, i), gm.scratch);
         guard ok else { break; }
-        ns.push(Note { before: b.history[i].pos, move: m, .. });
+        ns.push(Note { before: b.rec.history[i].pos, move: m, .. });
         changed = true;
     }
     // A judge asked for a move no longer in the game is dropped.
@@ -82,9 +80,9 @@ fn sync_notes(gm: Game&) -> bool {
 fn keep_notes(gm: Game&) -> bool {
     let b .= gm.b;
     var changed = false;
-    if b.history.len != gm.notes_len || !rules::same(b.pos, gm.notes_pos) {
+    if b.rec.history.len != gm.notes_len || !rules::same(b.pos, gm.notes_pos) {
         changed = sync_notes(gm);
-        gm.notes_len = b.history.len;
+        gm.notes_len = b.rec.history.len;
         gm.notes_pos = b.pos;
     }
     next_judge(gm);
@@ -108,8 +106,8 @@ fn next_judge(gm: Game&) {
 // it for the draws.
 fn judge_ask(gm: Game&) -> Ask {
     let i = gm.judge_ply;
-    var past = rules::Past { draw: rules::draw_start(gm.b.start), before: [] };
-    board::past_to(gm.b, i, past);
+    var past = rules::Past { draw: rules::Draw {}, before: [] };
+    rules::record_past_to(gm.b.rec, i, gm.b.pos, past);
     return Ask { id: gm.judging, pos: gm.notes[i].before, past: past, skill: ai::JUDGE_SKILL, seed: 0, kind: JUDGE,
                  move: gm.notes[i].move };
 }
@@ -238,7 +236,7 @@ fn mark_width(g: gui::Gui&, mark: u8, face: i64 = gui::BODY, k: f32 = 1.0) -> f3
 // and one for a game set up with black to move, which leaves white's half of its first
 // row empty.
 fn first_ply(gm: Game&) -> i64 {
-    let black: i64 = if gm.ply0 == 0 && gm.b.start.side == rules::BLACK { 1 } else { 0 };
+    let black: i64 = if gm.ply0 == 0 && gm.b.rec.start.side == rules::BLACK { 1 } else { 0 };
     return gm.ply0 + gm.notes_from + black;
 }
 

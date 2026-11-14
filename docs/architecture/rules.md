@@ -103,8 +103,19 @@ In code (`rules/draw.goose`) a `rules::Draw` holds the counts beside a position:
 carries it through a move, `draw_reason` says whether and why the game is drawn, and
 `countdown` gives the count nearest its end within five moves, for the game to show.
 Counts are plies, so a test checks each at its edge (`test/rules/draws_*`). The game
-keeps no counts of its own: it folds them over its undo history whenever the position
+keeps no counts of its own: they are folded over its record whenever the position
 changes, so undo and a saved game bring them back with no new state.
+
+## The record
+
+A game as played is a `rules::Record`, a value beside the rules (`rules/draw.goose`):
+where it began and the position before each move with the move that led to it, at most
+512 (`MAX_HISTORY`), the oldest dropped first. Undo pops it (`record_pop`), the draws
+fold over it (`record_past`, cached until the record or the position changes, and
+`record_past_to` for a move played earlier, which judging needs), the moves panel reads
+its moves off it, and the saved game keeps its start and steps. The board holds one
+(`board::Board.rec`) beside the position it shows; nothing else of the game's past is
+kept in the board or the game screen (2026-11-14).
 
 ## Text
 

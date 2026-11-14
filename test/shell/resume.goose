@@ -20,8 +20,8 @@ import drive from "../drive";
 
 fn show(sh: shell::Shell&, what: const u8[:]) {
     let b .= sh.game.b;
-    print(what, ": screen ", sh.screen, ", ", rules::fen(b.pos), ", began ", rules::fen(b.start), ", history ",
-          b.history.len, ", last ", b.has_last, " ", b.last.from, "-", b.last.to);
+    print(what, ": screen ", sh.screen, ", ", rules::fen(b.pos), ", began ", rules::fen(b.rec.start), ", history ",
+          b.rec.history.len, ", last ", b.has_last, " ", b.last.from, "-", b.last.to);
 }
 
 fn play(b: board::Board&, from: i64, to: i64, now: f64) {
@@ -83,8 +83,8 @@ fn main() {
     print("unset restored: ", shell::restore(unset, shell::save(sh)), ", unset ", unset.unset);
     let b .= sh.game.b;
     var three: shell::Saved3[>..] = [];
-    three.push(shell::Saved3 { version: 3, screen: shell::GAME, variant: b.variant, start: b.start, pos: b.pos,
-                               last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
+    three.push(shell::Saved3 { version: 3, screen: shell::GAME, variant: b.variant, start: b.rec.start, pos: b.pos,
+                               last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.rec.history,
                                clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level,
                                skill: sh.game.skill, number: sh.game.number, counted: sh.game.counted });
     var old = to_bytes(three);

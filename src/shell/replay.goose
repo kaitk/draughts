@@ -45,7 +45,7 @@ let BACK = gui::ASK_BACK;
 let SHOWN = gui::ASK_SHOWN;         // another move shown
 let PLAY = gui::ASK_OWN;            // play from here: a game from the move shown
 
-let MAX_PLIES = board::MAX_HISTORY;
+let MAX_PLIES = rules::MAX_HISTORY;
 let POSITIONS = MAX_PLIES + 1; // the start and the position after each move
 
 let EDGE = 24.0;            // dp from the safe area's edges

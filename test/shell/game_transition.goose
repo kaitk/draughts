@@ -187,7 +187,7 @@ fn main() {
     look(sh, g, 4.1, "continue again");
     drive::frame(sh, g, take_back, true, true, false, 4.12);
     drive::frame(sh, g, take_back, false, false, true, 4.14);
-    print("take back where the game has it: ", screen(sh), ", moves made ", sh.game.b.history.len);
+    print("take back where the game has it: ", screen(sh), ", moves made ", sh.game.b.rec.history.len);
 
     // The game's home during the transition turns it round: the board goes back from
     // where it is, and takes as long as it came.
@@ -231,7 +231,7 @@ fn main() {
     drive::frame(sh, g, play, true, true, false, 7.0);
     drive::frame(sh, g, play, false, false, true, 7.02);
     print("tapped play: ", screen(sh), ", the setup's board ", sh.out.layout.board == setup_at, ", a new game ",
-          sh.game.b.history.len == 0, ", setup ", sh.setup);
+          sh.game.b.rec.history.len == 0, ", setup ", sh.setup);
     for i in 1..5 { look(sh, g, 7.02 + 0.0625 * i, "  "); }
     look(sh, g, 7.4, "idle");
     print("the game as opened straight ", arrived(sh, g) == straight(sh, 7.4));

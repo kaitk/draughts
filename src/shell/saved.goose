@@ -24,7 +24,7 @@ struct Saved {
     last_from: u8,
     last_to:   u8,
     has_last:  bool,
-    history:   board::Step[..board::MAX_HISTORY],
+    history:   rules::Step[..rules::MAX_HISTORY],
     clock:     clock::Clock,
     computer:  i64,
     level:     i64,
@@ -46,8 +46,8 @@ fn checksum(data: const u8[:]) -> u64 {
 // home).
 fn kept_of(sh: Shell&) -> Saved {
     let b .= sh.game.b;
-    return Saved { version: VERSION, unset: sh.unset, screen: KINDS[sh.screen].kept, variant: b.variant, start: b.start,
-                   pos: b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
+    return Saved { version: VERSION, unset: sh.unset, screen: KINDS[sh.screen].kept, variant: b.variant, start: b.rec.start,
+                   pos: b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.rec.history,
                    clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
                    number: sh.game.number, counted: sh.game.counted };
 }
@@ -104,7 +104,7 @@ fn bring_back(sh: Shell&, s: Saved&) {
     let b .= gm.b;
     board::set(b, s.start);
     board::show(b, s.pos);
-    b.history = s.history;
+    b.rec.history = s.history;
     b.has_last = s.has_last;
     b.last = rules::Move { from: s.last_from, to: s.last_to, .. };
     gm.clock = s.clock;
@@ -158,7 +158,7 @@ struct Saved3 {
     last_from: u8,
     last_to:   u8,
     has_last:  bool,
-    history:   board::Step[..board::MAX_HISTORY],
+    history:   rules::Step[..rules::MAX_HISTORY],
     clock:     clock::Clock,
     computer:  i64,
     level:     i64,

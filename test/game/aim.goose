@@ -101,7 +101,7 @@ fn sweep(g: gui::Gui&, fen: const u8[:], size: float2, three: bool, by_drag: boo
                     drive::tap(sh, g, q, t + 0.2);
                 }
                 drive::idle(sh, g, t + 3.0);
-                if sh.game.b.history.len == 0 { none++; } else if same(sh.game.b.move, m) { good++; } else { other++; }
+                if sh.game.b.rec.history.len == 0 { none++; } else if same(sh.game.b.move, m) { good++; } else { other++; }
                 t += 10.0;
             }
         }

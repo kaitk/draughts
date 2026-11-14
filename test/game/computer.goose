@@ -69,7 +69,7 @@ fn show(gm: game::Game&, what: const u8[:]) {
     }
     var r: u8[>..] = [];
     format_flt(r, ring, 2);
-    print(what, ": ", rules::fen(gm.b.pos), ", plies ", gm.b.history.len, ", moving ", gm.b.moving, ", asking ",
+    print(what, ": ", rules::fen(gm.b.pos), ", plies ", gm.b.rec.history.len, ", moving ", gm.b.moving, ", asking ",
           gm.asking, left, ", ring ", r);
 }
 
@@ -163,7 +163,7 @@ fn main() {
     show(gm, "the child plays black");
     let first = gm.asking;
     drive::tap(gm, g, turned, drive::control(g, UNDO), 10.1);
-    print("  take back: plies ", gm.b.history.len, ", the same ask ", gm.asking == first);
+    print("  take back: plies ", gm.b.rec.history.len, ", the same ask ", gm.asking == first);
     print("  ", answer(gm, e));
     drive::idle(gm, g, turned, 10.59);
     show(gm, "0.6 s on medium, not over");

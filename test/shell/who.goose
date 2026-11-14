@@ -45,7 +45,7 @@ fn state(sh: shell::Shell&) -> u8[>..] {
     let states = ["closed", "who's playing", "the sheet", "the question"];
     return str(states[sh.who.state], if sh.who.editing { " (editing)" } else { "" }, if sh.who.typing { " (typing)" } else { "" },
                "; ", listed(sh), "; season ", sh.prefs.season, ", game ", rules::VARIANTS[sh.game.b.variant].size,
-               " after ", sh.game.b.history.len);
+               " after ", sh.game.b.rec.history.len);
 }
 
 // The tiles declared from the n-th on (the card's, home's being first).

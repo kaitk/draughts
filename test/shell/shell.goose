@@ -82,7 +82,7 @@ fn show(sh: shell::Shell&, g: gui::Gui&, what: const u8[:]) {
     for q in g.quads { if q.look.x == gui::TEXT { glyphs++; } }
     let text = if drive::verbose { str(", glyphs ", glyphs) } else { str("") };
     print(what, ": ", screen(sh), ", sharp ", sh.out.blur == 0.0, ", ", board_at(sh), text, ", ", rules::fen(sh.game.b.pos),
-          ", history ", sh.game.b.history.len);
+          ", history ", sh.game.b.rec.history.len);
 }
 
 fn prefs(sh: shell::Shell&) -> u8[>..] {

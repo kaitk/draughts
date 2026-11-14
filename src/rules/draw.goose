@@ -27,6 +27,10 @@
 //   in Russian, a strong piece steps on it).
 // A count ends only when the lone king is taken: the federations' "unless a winning
 // position" exceptions need judgment and aren't built. English has repetition only.
+//
+// A game's `Record` is what the counts fold over: where it began and the position
+// before each move. Undo, the draws, judging a move, and a saved game work on it; the
+// board holds one beside what it shows.
 namespace rules;
 import std;
 
@@ -307,6 +311,81 @@ fn closer(c: Countdown&, kind: i64, moves: i64, side: i64) {
     c.kind = kind;
     c.moves = moves;
     c.side = side;
+}
+
+// Moves a record keeps: undo takes them back, and the oldest go first.
+let MAX_HISTORY = 512;
+
+// A position the game was in, with the move that led to it (none at the start).
+struct Step {
+    pos:       Position,
+    last_from: u8,
+    last_to:   u8,
+    has_last:  bool,
+}
+
+// A game as played: where it began, the position before each move, oldest first, and
+// its past for draws at its position as last folded (`folded` steps, at `at`), so the
+// counts come back after undo or a saved game brought back with nothing kept beside them.
+struct Record {
+    start:   Position            = Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+    history: Step[..MAX_HISTORY] = [],
+    past:    Past                = Past { draw: Draw {}, before: [] },
+    folded:  i64                 = -1,
+    at:      Position            = Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+}
+
+// A record of a game beginning at p.
+fn record_begin(r: Record&, p: Position) {
+    r.start = p;
+    r.history.clear();
+    r.folded = -1;
+}
+
+// Keeps step s, the position before a move; the oldest step goes when the record is full.
+fn record_push(r: Record&, s: Step) {
+    if r.history.len == MAX_HISTORY {
+        for k in MAX_HISTORY - 1 { r.history[k] = r.history[k + 1]; }
+        r.history.pop();
+    }
+    r.history.push(s);
+}
+
+// Takes back the last step: the position before the last move, and false when none.
+fn record_pop(r: Record&) -> Step, bool {
+    guard r.history.len > 0 else { return Step { pos: r.start, last_from: 0, last_to: 0, has_last: false }, false; }
+    return r.history.pop(), true;
+}
+
+// The game's past for draws at pos, its position, folded again when the record or the
+// position changed since it last was: the counts and the positions since the last man's
+// move or capture. A game longer than the record counts from its oldest step kept,
+// MAX_HISTORY plies back, farther than any count runs.
+fn record_past(r: Record&, pos: Position) -> Past& {
+    if r.folded != r.history.len || !same(r.at, pos) {
+        record_past_to(r, r.history.len, pos, r.past);
+        r.folded = r.history.len;
+        r.at = pos;
+    }
+    return r.past;
+}
+
+// The same at the position before move `ply` of the record, pos being the position after
+// its last move, into out (task 074's judging of a move played earlier).
+fn record_past_to(r: Record&, ply: i64, pos: Position, out: Past&) {
+    let n = r.history.len;
+    let first = if n > 0 { r.history[0].pos } else { pos };
+    out.draw = draw_start(first);
+    out.before.clear();
+    for i in 1..min(ply, n) + 1 {
+        let q = if i < n { r.history[i].pos } else { pos };
+        pass_between(out, r.history[i - 1].pos, q);
+    }
+}
+
+// The position after move i of the record, pos being the position after its last.
+fn record_after(r: Record&, i: i64, pos: Position) -> Position {
+    return if i + 1 < r.history.len { r.history[i + 1].pos } else { pos };
 }
 
 // Carries a game's past through m, one of p's legal moves, which leads to q: the counts,
