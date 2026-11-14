@@ -35,7 +35,7 @@ let STAR_SCORE: i64[4] = [0, 30, 60, 100]; // a solve's score in percent by its 
 // of text is in the built-in file.
 struct Entry { difficulty: i64, theme: i64, level: i64, at: i64, len: i64 }
 
-struct Library { list: Entry[..MAX_LIBRARY] }
+struct Library { list: Entry[..MAX_LIBRARY], variant: u8 = rules::INTERNATIONAL }
 
 var library:        Library;
 var library_loaded: u8 = rules::INTERNATIONAL;
@@ -63,12 +63,17 @@ fn load_library(variant: u8 = rules::INTERNATIONAL) -> bool {
 
 fn index_library(text: const u8[:], lib: Library&) -> bool {
     lib.list.clear();
+    lib.variant = rules::INTERNATIONAL;
     var at = 0;
     while at < text.len {
         var end = at;
         while end < text.len && text[end] != '\n' { end++; }
         let l = trim(text[at..end]);
-        if l.len > 0 && l[0] != '#' && !starts_with(l, "variant ") {
+        if starts_with(l, "variant ") {
+            let named, known = rules::variant_named(trim(l[8..]));
+            guard known else { return false; }
+            lib.variant = named;
+        } else if l.len > 0 && l[0] != '#' {
             guard lib.list.len < MAX_LIBRARY else { return false; }
             let d, rest, ok1 = split_once(l, '|');
             let tl, _, ok2 = split_once(rest, '|');
@@ -90,14 +95,7 @@ fn index_library(text: const u8[:], lib: Library&) -> bool {
 fn entry_of(text: const u8[:], lib: Library&, i: i64, pz: Puzzle&) -> bool {
     guard i >= 0 && i < lib.list.len else { return false; }
     let e = lib.list[i];
-    var variant: u8 = rules::INTERNATIONAL;
-    // The variant is named once at the top.
-    let head, _, has = split_once(text, '\n');
-    if has && starts_with(head, "variant ") {
-        let named, known = rules::variant_named(trim(head[8..]));
-        if known { variant = named; }
-    }
-    guard parse_entry(text[e.at..e.at + e.len], variant, pz) else { return false; }
+    guard parse_entry(text[e.at..e.at + e.len], lib.variant, pz) else { return false; }
     pz.id = i + 1;
     pz.theme = e.theme;
     pz.level = e.level;

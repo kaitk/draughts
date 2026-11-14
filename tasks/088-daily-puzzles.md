@@ -266,20 +266,40 @@ The 30 random sample puzzles by the estimate, for a look (open each with
 `build/draughts --variant international --fen FEN`), are in `build/library/sample-30.md`,
 local.
 
+## The library (2026-11-14)
+
+`batch` on ten processes per draughts, PER 12 and 120 s a kind (the hard kinds three
+times that), then `tools/library.py` and `rate` (`docs/development.md`, "Daily puzzles"):
+International's batch 46 min, Russian's and Brazilian's together 33 min, the rating 5, 1,
+and 1 min. Every puzzle passes `puzzles::check` again in `test/puzzles/library` (9 s
+through TinyCC for all three).
+
+| Draughts | Kept (seen before) | Puzzles | Bytes | Difficulty: min, median, max | Over 1400 | Themes |
+|---|---|---|---|---|---|---|
+| International | 3,292 (1,196) | 3,292 | 449,632 | 341, 969, 2290 | 343 | shots 1,938, king shots 627, crowning 458, captures 169, safe move 100 |
+| Russian | 2,094 (2,552) | 2,094 | 235,603 | 300, 861, 1991 | 71 | shots 1,571, crowning 438, captures 85 |
+| Brazilian | 1,863 (2,477) | 1,863 | 210,039 | 300, 849, 2119 | 93 | shots 1,382, crowning 402, captures 79 |
+
+On the 8×8 boards the camps repeat much more (more than half seen before; Brazilian's
+crown in 1 among 7 found 24 new in 600 s), so a larger 8×8 library wants new kinds, not
+more time. The slowest International kinds: take 2 in 4 among 14 men a side, 31 s a
+puzzle; take 2 in 3 among 14, 17 s; a safe move among 10, 13 s.
+
 ## Acceptance criteria
 
-- [ ] The UI takes above prototyped, checked on the tablet's and a phone's sizes in both
+- [x] The UI takes above prototyped, checked on the tablet's and a phone's sizes in both
       orientations, and chosen; the choice recorded in `docs/decisions/puzzles.md`
 - [ ] A generation sample: a few hundred International puzzles from `find` at scale and
       from the computer's games, with how many pass the checks, how long each costs,
       and a look at a random 30 by the user for quality
 - [ ] The difficulty estimate on the sample, its spread, and the user's 30 ordered by it
       against how hard the user finds them
-- [ ] The library generated for International, Russian, and Brazilian, embedded, tested
+- [x] The library generated for International, Russian, and Brazilian, embedded, tested
       headless as the sets are (`test/puzzles/`), with the size in this file
-- [ ] The daily pick (date, player, rating, opened themes) and the rating as pure
+- [x] The daily pick (date, player, rating, opened themes) and the rating as pure
       functions, tested headless; nothing allocated in the frame loop
 - [ ] Home, the library, Today's page, and the setting built as chosen, with strings in
-      `strings/`; checked on the Mac, then on the tablet
-- [ ] `docs/architecture/puzzles.md` and `docs/product.md` updated; this task's numbers
+      `strings/`; checked on the Mac, then on the tablet (built and checked on the Mac,
+      headless at the tablet's and a phone's sizes both ways; the tablet is left)
+- [x] `docs/architecture/puzzles.md` and `docs/product.md` updated; this task's numbers
       recorded here
