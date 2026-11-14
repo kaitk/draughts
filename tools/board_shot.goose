@@ -15,6 +15,7 @@ import os;
 import gfx;
 import rules from "../src/rules";
 import gui from "../src/gui";
+import strings from "../strings";
 import board from "../src/board";
 import model3d from "../src/model3d";
 import render3d from "../src/render3d";
