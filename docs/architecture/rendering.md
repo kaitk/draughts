@@ -1144,7 +1144,8 @@ they and the title don't both fit beside back). In landscape a panel at the left
 figures) and the results against each level (the level's name and its rating at the
 player's skill there, then won, drawn, lost: a crown, `=`, an X, each with its count;
 left out where the panel can't hold them in the height); at the right the games in that draughts, newest first, in a scrolling list
-of 88 dp rows: the result as a crown, `=`, or an X, the opponent ("Medium 1644", or "A
+(its glass as tall as its rows where a few don't fill the height, one row's height with
+none, so a few games don't stand in a tall empty panel) of 88 dp rows: the result as a crown, `=`, or an X, the opponent ("Medium 1644", or "A
 friend") over the date, the rating's change, and the player's blunders as `?? n`. In
 portrait the panel is above the list. Only the rows in view are declared. Each row is a
 tap, the whole of it, its blunders' count too, lit under the mouse and by a press: it

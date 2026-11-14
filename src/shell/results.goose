@@ -186,20 +186,25 @@ fn rating_panel(g: gui::Gui&, r: float4, s: settings::Settings&, gs: history::Ga
     }
 }
 
-// The games of the draughts shown, newest first, in r: only the rows in view are
+// The games of the draughts shown, newest first, in area, the glass as tall as the rows
+// where they don't fill it: only the rows in view are
 // declared. Each row is a tap, the whole of it, its blunders' count too (2026-11-13):
 // returns the index in gs of the game whose row was tapped, or -1.
-fn list(g: gui::Gui&, r: float4, gs: history::Game[..history::MAX_GAMES]&, variant: i64, lk: Look) -> i64 {
+fn list(g: gui::Gui&, area: float4, gs: history::Game[..history::MAX_GAMES]&, variant: i64, lk: Look) -> i64 {
     let u = g.scale;
-    gui::panel(g, r);
-    let view = gui::inset(r, 12.0 * u);
     var n = 0;
     for &x in gs { if x.variant == variant { n += 1; } }
+    let step = (lk.row + ROW_GAP) * u;
+    // The glass as tall as its rows (one row's height for none), the room left at most:
+    // a few games don't stand in a tall empty panel.
+    var r = area;
+    r.w = min(r.w, max(n * step - ROW_GAP * u, lk.row * u) + 24.0 * u);
+    gui::panel(g, r);
+    let view = gui::inset(r, 12.0 * u);
     if n == 0 {
         gui::text(g, lk.body, view, strings::get(strings::RESULTS_NONE), 0.66, 0.0, gui::CENTER);
         return -1;
     }
-    let step = (lk.row + ROW_GAP) * u;
     let off = gui::scroll_begin(g, LIST, view, n * step - ROW_GAP * u);
     let first = max((off / step) as i64, 0);
     let last = min(((off + view.w) / step) as i64 + 1, n);
