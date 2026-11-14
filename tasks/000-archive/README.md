@@ -224,3 +224,28 @@ and the commit that last has it.
 - 082: New game's icon. Done 2026-11-13: a light piece mid-jump over a dark one, flat
   isometric discs with a gap cut between them and an arc from behind, in the app and the
   home prototype. `082-new-game-icon.md`, `1e21ead`
+- 062: Architecture for people, decisions for agents. Done 2026-11-11: `docs/architecture/`
+  says how the app works now, the dated decisions moved to `docs/decisions/`, the
+  overview page is `docs/architecture/index.html`. `062-architecture-and-decisions.md`,
+  `314c3b5`
+- 068: A desktop's layout, tuned by eye. Done 2026-11-11: settings' board level with the
+  Game group, home's menu and the setup at the side bar's top, a wider setup bar, and
+  `gui::DESKTOP_DP_LARGE` 0.9 on large screens. `068-desktop-layout.md`, `314c3b5`
+- 069: Name the layout's sizes, then thinner tiles on a desktop. Done 2026-11-11:
+  `gui::TAP`, `gui::WORD_SIDE`, and the panels' heights as sums of their parts, every
+  test's output byte-identical; a desktop's thinner tiles picked from shots.
+  `069-layout-constants.md`, `314c3b5`
+- 070: ngfx against gfx, uncapped, on the Mac. Done 2026-11-11: `--no-vsync` on both
+  builds; both renderers' uncapped numbers flat and 3D, and where ngfx was slower.
+  `070-ngfx-uncapped-performance.md`, `314c3b5`
+- 084: The shadow pass's culling and the iPhone's renderer. Done 2026-11-13: back faces
+  culled in the shadow pass (front-face culling gave acne at any bias); gfx won on the
+  iPhone 13 mini, so `auto` stayed. `084-shadow-culling-and-ios-renderer.md`, `314c3b5`
+- 085: Why ngfx's 3D frame waits a whole refresh. Done 2026-11-13: NoGraphicsAPI's Metal
+  root alignment hint made Apple's compiler shade every MSAA sample (`docs/goose-findings.md`);
+  fixed, ngfx's frame is about 4 to 5% under gfx's on the iPhone and the M1 Pro.
+  `085-ngfx-waited-frame.md`, `314c3b5`
+- 086: Better shadows for the 3D board at a phone's cost. Done 2026-11-13: the shadow map
+  fitted to the board (`render3d::plan_light`), 16 taps on a desktop, 9 on a tablet, 4 on
+  a phone. Left over, no task: the jump's occlusion blob pops off over the taken piece's
+  square, as the squares buffer holds one piece a square. `086-better-shadows.md`, `314c3b5`

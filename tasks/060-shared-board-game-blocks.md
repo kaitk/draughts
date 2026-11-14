@@ -21,34 +21,14 @@ arbitrary meshes and materials, asset pipeline, audio, or physics.
 
 ## What carries over and what doesn't
 
-The blocks would be:
+Blocks: `gui`, `widgets`, `scene`, `text`, themes, `strings`' loader, the badge baker,
+players and saved files, clocks, `pace`, `think`'s protocol, `view3d` and `rig`,
+`render3d`'s board, lighting, shadow, multisampling, and photo ambient, the platform C
+files and build scripts, and the host and render seams.
 
-- `gui`
-- the UI drawer (`widgets`)
-- the photographs and their blurs (`scene`)
-- the font atlas (`text`)
-- themes
-- `strings`' loader
-- the badge baker
-- players and saved files
-- clocks
-- `pace`
-- the worker's ask/answer protocol (`think`)
-- `view3d` and `rig`
-- `render3d`'s board, lighting, shadow, multisampling, and photo ambient
-- the platform C files and build scripts
-- the host and render seams of the code review's stage 4
-
-What stays per game:
-
-- the rules
-- the computer player's evaluation and move generation (the sliced search, levels,
-  and skill carry over)
-- puzzles and their format
-- how a move is entered: draughts captures stop by stop; chess castles (two pieces
-  move), captures en passant (the taken piece is off the target square), and promotes
-  (a choice)
-- the pieces' shapes
+Per game: the rules, the computer player's evaluation and move generation (its sliced
+search, levels, and skill carry over), puzzles, how a move is entered (draughts stop by
+stop; chess castling, en passant, promotion), and the pieces' shapes.
 
 ## Steps
 

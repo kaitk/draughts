@@ -3,96 +3,40 @@
 Status: in-progress
 
 A choice for the raised board: Wood, Stone, Carved, or Auto, the season's own (the user,
-2026-11-13: first wood, stone, or auto; then three for every season, Carved the season's
-best carved board whether wood or stone, wood plain wood and stone plain stone). It
-replaces task 045, which listed every alternative look. The flat board doesn't change.
+2026-11-13), one choice for every season. Carved is the season's best carved board,
+whether wood or stone. It replaces task 045. The flat board doesn't change.
 
 | Season | Auto | Wood | Stone | Carved |
 | --- | --- | --- | --- | --- |
 | Autumn | wood | maple and walnut in cherry (`--autumn 0`) | sandstone and porphyry, a solid speckled frame (`--autumn 3`) | rust vines in weathered stone (`--autumn 2`) |
 | Winter | stone | limed ash and smoked oak (`--winter 1`) | slate in marble (`--winter 0`) | the same wood, a Nordic band in smoked oak (`--winter 2`) |
 | Spring | carved | the birch (`--spring 0`) | ivory and jade, uncarved, veined and cracked (`--spring 3`) | the elven stone (`--spring 1`) |
-| Summer | wood | `--summer 0` | the amber granite, uncarved (`--summer 6`) | the Baltic oak tuned for summer, amber signs in a red oiled oak (`--summer 7`; the amber granite `--summer 4` before 2026-11-13) |
+| Summer | wood | `--summer 0` | the amber granite, uncarved (`--summer 6`) | the Baltic oak tuned for summer, amber signs in red oiled oak (`--summer 7`) |
 
-The user's picks, 2026-11-13: winter's wood and carved both; autumn's 2 and 3, with no
-seams at the frame's corners (stone shows none); spring 0, 1, and 3, the birch the wood
-(bare wood is the better wood); Auto kept, today's defaults (winter's stone). The Baltic
-oak (`--spring 2`) is liked but has no place yet.
+The Baltic oak (`--spring 2`) is liked but has no place yet. Autumn 1 (travertine and red
+jasper) and winter 3 (stained birch) were takes the user didn't pick.
 
-Decided (2026-11-13): one choice for every season, Wood showing each season's wood
-(settings' take b). Per season mattered only if a child likes autumn's stone but
-spring's wood.
+## Built (2026-11-13)
 
-Steps:
+- The looks in `looks::AUTUMNS` and `WINTERS` beside the others, made with the bake's
+  existing machinery; a look may have its own frame marble (`looks::marble_for`). The
+  plain stones are the carved looks through `looks::plain`, weathered by `BAKE_FRAG`'s
+  `cracks` with moss settled in them (`looks::MOSSY`, `WEATHERED`).
+- Settings' Board row: Flat, Raised (Auto), Wood, Stone, Carved; the player's `material =
+  auto|wood|stone|carved`. `looks::of(season, material)` gives the look
+  (`test/model3d/material`); the board is prepared again on a change. The season flags
+  pick their season's look over it; `--material` sets it for a run.
 
-1. Autumn's stone and winter's wood in `poc/3d`, as looks beside the others, made with the
-   bake's existing machinery (stone mottling and veins, the woods' models, the carving),
-   shots beside each season's other board for the user. A new concept is welcome.
-2. Summer's amber stone finished: the open points in task 041 (the amber reads as an
-   inlay, the motifs small against the squares).
-3. The choice in the player's file, the renderer picking the look from season and
-   material; the flags (`--spring`, `--summer`, `--marble`) kept for tuning.
-4. The bake's cost of each new look on the Pixel 7a and the A33, and the memory the same.
+The bake on the A33 (portrait, warm second runs): a wood prepares in about 2.3 s, the
+stones 2.7 to 2.8 s, the carved looks between; 1.1 s of it is the bake pipeline's compile
+whatever the look. No look is more than about 0.6 s slower than today's defaults. Memory
+is the same for every look: they bake into the same targets.
 
-## Autumn's stone and winter's wood (2026-11-13)
+## Left
 
-Three takes each, as variants beside the season's own look (`looks::AUTUMNS`,
-`WINTERS`), picked with `--autumn N` and `--winter N` in `poc/3d` and the app, 0 the
-current look and still the default. All made with the bake as it was: no shader
-changed. One new piece of machinery: a look may have its own frame marble
-(`looks::marble_for`, `render3d::marble_of`), since the marble had been one for every
-stone frame, winter's chosen one; autumn's stone frames take theirs, winter's stays
-`--marble`'s. Judged headless only, 960 × 720, beside each season's board.
-
-- **Autumn 1, travertine and red jasper** (`looks::autumn_stone`, the pick): honed
-  travertine light squares (0.9 0.79 0.62, roughness 0.4), cloudy (the stone's
-  clouding 0.16 and a finer mottling 0.2 at 4 a unit); polished red jasper dark ones
-  (0.52 0.24 0.13, roughness 0.28), mottled with pale veins (`dark_ring` 0.3, 6, 0.12);
-  a deep brown inlay; a solid block of dark brown marble with soft golden veins and fine
-  cracks, Emperador Dark's (`looks::EMPERADOR`, marble 5, past the ones M cycles: base
-  0.2 0.125 0.085, veins 0.62 0.48 0.32, width 0.014, softness 0.6, cracks 0.4, wave
-  1.4, polish 0.75). Cream travertine (0.92 0.85 0.72) and rust-brown (0.34 0.17 0.11)
-  pieces. Autumn's light. The first veins (0.8 0.64 0.44, crisper) read as gold paint
-  and were toned down.
-- **Autumn 2, carved** (`autumn_carved`): the same field in a weathered brown stone
-  frame (0.4 0.3 0.23), mitred, speckled (`stone.w` 0.6) and coarse, carved with the
-  elven vines (`looks::AUTUMN_VINES`: motif 0, depth 0.023, scale 23.685, moss 0.15),
-  their leaves rust (`fill` 0.72 0.38 0.14, 0.7). First at 0.86 0.42 0.12 full, the
-  leaves read as orange beads.
-- **Autumn 3, sandstone and porphyry** (`autumn_porphyry`): golden sandstone (0.88 0.73
-  0.5) and a finely mottled red-brown porphyry (0.4 0.17 0.15), a speckled dark brown
-  stone frame, mitred, with its own clouding (no marble). The plainest of the three.
-- **Winter 1, limed ash and smoked oak** (`looks::winter_wood`, the pick): ash light
-  squares (0.8 0.77 0.72) and smoked oak dark ones (0.36 0.33 0.31), ring-porous (wood
-  2's rings, `light_ring` 0.07 0.4 0.5 0.45), limed: white in the pores and grain as
-  frost (`looks::LIMED`: pickle 0.3, warmth -0.3, varnish 0.1, sanding 0.3), a mitred
-  frame of blue-grey stained oak (0.3 0.31 0.34) limed the same; ivory (0.88 0.86 0.82)
-  and smoked dark (0.22 0.23 0.25) pieces, the dark one with a wood figure. Winter's
-  light. At first pickle 0.6 and lighter squares (0.85 0.83 0.8): under winter's light
-  they read as white plastic and grey fabric, not wood.
-- **Winter 2, Nordic carved** (`winter_carved`): the same field in a smoked oak frame
-  (0.2 0.2 0.22) carved with the folk band (`looks::NORDIC`: motif 1, depth 0.015,
-  scale 6), the cut pale wood (0.86 0.86 0.84): diamonds, zigzags, a meander, a tree of
-  life mid-side, the corners' sun wheels reading as snowflakes.
-- **Winter 3, stained birch** (`winter_stained`): pale birch (0.84 0.81 0.74) and birch
-  stained slate blue-grey (0.4 0.44 0.5), winter's stone colors in wood, in a deep
-  blue-grey stained frame; satin (`looks::COOL`). Reads most plainly as wood, the blue
-  perhaps too much like a stain.
-
-Shots (headless, the session's scratchpad `looks/new/`): `cmp-autumn.png` and
-`cmp-winter.png` (the current board beside the pick), `takes-autumn.png` and
-`takes-winter.png` (all takes), `low-sheet.png` and `lowcrops.png` (`--pitch 22 --yaw
-18`, 2× crops of the far and right frames): the far frames blur smoothly into the mips,
-no speckle or moiré, the carved bands included. The defaults are unchanged: the same
-pixels as before for autumn, winter (marbles 0 and 1 too), spring and summer 4.
-
-Bake on the Mac (M1 Pro, warm, `--bench 50 --size 1920x1200`, the plan and the frame
-map with their mips, waited for, three runs, each within 1 ms): autumn's wood 23 ms,
-autumn 1 33, autumn 2 47, autumn 3 41; winter's slate 31, winter 1 23, winter 2 27,
-winter 3 22. A frame costs the same as any look's (2.3 ms waited): the same textures.
-
-Open: the user's pick of each, then the chosen take's tuning in the panel (P; the
-panel's marble tunes winter's, not autumn 1's own); the takes' bake on the A33 (step 4).
+- Summer's stone finished: task 041's open points (the amber reads as an inlay, the
+  motifs small against the squares).
+- The chosen takes' tuning in the panel (P), if the user wants it.
 
 ## Acceptance criteria
 
@@ -100,71 +44,3 @@ panel's marble tunes winter's, not autumn 1's own); the takes' bake on the A33 (
 - [ ] Summer's stone finished
 - [x] The choice in settings (per 02's take) and the player's file; Auto as today's looks
 - [x] Bake time of the new looks on the A33
-
-## Three for every season (2026-11-13)
-
-- Autumn 2 and 3 lost their corners' seams: autumn 3's frame is one solid block
-  (`build.x` 1), autumn 2 keeps the mitred bands its carving needs with no joint drawn
-  (`build.y` 0), as the elven frame.
-- Spring's and summer's plain stones, `SPRING_STONE` (`--spring 3`) and `SUMMER_STONE`
-  (`--summer 6`): their carved looks through `looks::plain` (the frame one solid block,
-  no carving), keeping the carved looks' tints (`looks::variant`) and their own frame
-  figure rather than winter's marble (`marble_for`).
-- Shots: the scratchpad's `looks/new/plainstones.jpg` (carved beside plain) and
-  `seamless.jpg` (autumn 2 and 3 with corner crops). `model3d` and `shell` tests pass.
-
-## The plain stone weathered (2026-11-13)
-
-The uncarved stones read bare. Moss and lichen alone (the carving pass's, with a motif 3
-that cuts nothing) gave faint moss and lichen as spots; the user asked for the stone made
-better as a whole, cracks or veins. Now `BAKE_FRAG`'s `cracks`: a warped cell field's
-edges (1.7 cells a world unit), shown only where a broad noise lets them (so they run and
-stop), 0.008 to 0.02 wide, a texel and a half soft, cut 0.006 deep; the moss settles in
-and beside them (`looks::MOSSY`, moss 0.8, no lichen; summer's `WEATHERED`, moss 0.5,
-lichen 0.08). Spring's plain stone has clearer veins (`stone.x` 0.2, the carved one's
-0.07), on its ivory squares too. A first take at 3.2 cells and twice the width read as
-crazy paving. Shots: the scratchpad's `looks/new/sp3view.jpg` (with a low-angle crop),
-`su6m.png`.
-
-## The choice built (2026-11-13)
-
-Settings' Board row: Flat, Raised (Auto), Wood, Stone, Carved; the player's `material =
-auto|wood|stone|carved`, auto by default. `looks::of(season, material)` gives the look by
-the table above (`test/model3d/material` checks it against the flags' looks); the app's
-3D drawer asks for it with each frame's material (`draw3d::want_material`) and prepares
-the board again on a change, as on a new theme. `--autumn`, `--winter`, `--spring`, and
-`--summer`, given, pick their season's look over it; `--material` sets it for a run.
-Shots of each material raised in autumn and winter (the session's scratchpad,
-`settings/tablet-*-wood.png` and the like). Its bake on the A33: below.
-
-## The bake on the A33 (2026-11-13)
-
-Main's build of the day, beside the Play app (`--id-suffix dev`), portrait 1080 × 2400,
-`--board 3d --screen game --theme T --material M --bench 50`, each look run twice from a
-force-stop (the two runs within about 50 ms). In ms, the second run's: the plan's and the
-frame map's bake warm (the pipeline made), the whole preparation cold (the bench's
-"prepared"), and its longest step.
-
-| Season | Material | Plan | Frame map | Prepared | Longest step |
-| --- | --- | --- | --- | --- | --- |
-| Autumn | wood (auto) | 258 | 125 | 2,255 | 1,100 |
-| Autumn | stone | 441 | 461 | 2,732 | 1,107 |
-| Autumn | carved | 423 | 328 | 2,665 | 1,143 |
-| Winter | wood | 261 | 132 | 2,282 | 1,104 |
-| Winter | stone (auto) | 415 | 120 | 2,385 | 1,152 |
-| Winter | carved | 260 | 187 | 2,366 | 1,158 |
-| Spring | wood | 261 | 122 | 2,292 | 1,150 |
-| Spring | stone | 447 | 380 | 2,738 | 1,145 |
-| Spring | carved (auto) | 495 | 328 | 2,712 | 1,151 |
-| Summer | wood (auto) | 301 | 137 | 2,298 | 1,111 |
-| Summer | stone | 473 | 496 | 2,825 | 1,110 |
-| Summer | carved | 385 | 283 | 2,573 | 1,153 |
-
-The longest step is the bake's pipeline compile, 1.1 s whatever the look (task 042 had
-about 1.3 s), during which nothing on screen changes; the looks differ only in the bake
-itself. The woods are the cheapest (2.3 s in all); the new stones the dearest, autumn's
-and summer's solid speckled frames about 0.5 s more than a wood (2.7 to 2.8 s), the
-carved ones between. No look is more than about 0.6 s slower than today's defaults.
-The frame afterwards (waited, P50) is 14 to 16 ms on the stones and the carved looks
-and 17.5 to 18.3 on every wood, the same textures' sizes, so the wood's shading,
-not the bake. Memory isn't measured: every look bakes into the same targets.

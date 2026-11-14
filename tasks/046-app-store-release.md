@@ -1,142 +1,46 @@
 # 046: Release on the App Store
 
-Status: in-progress (the listing and answers prepared, and the app meets the bundle's
-rules, 2026-11-09; the account active, 2026-11-10; the app record made and 0.2.0 (1)
-uploaded, the listing filled in, and 0.2.0 submitted for review, 2026-11-12)
+Status: in-progress (0.2.0 (1) uploaded and submitted for review, 2026-11-12)
 
-Everything between task 043's development build and Draughts on the App Store for iPhone
-and iPad, in Games → Puzzle at 4+ (not the Kids category): no ads, no tracking, no
-accounts, no network, as on Play (task 029). The listing and App Store Connect's answers are in `store/app-store.md`, the
-page's preview in `store/preview/app-store.html`. Apple's rules change; check each against
-Apple's pages when doing this, as `store/app-store.md` was on 2026-11-09.
+Draughts on the App Store for iPhone and iPad, in Games → Puzzle at 4+ (not the Kids
+category): no ads, no tracking, no accounts, no network, as on Play (task 029). The
+listing and App Store Connect's answers are in `store/app-store.md`, the preview in
+`store/preview/app-store.html`. Apple's rules change: check each against Apple's pages.
+The preparation notes are in git at 314c3b5.
 
-## Prepared (2026-11-09)
+## Done
 
-- **The listing** (approved by the user 2026-11-09): name "Draughts" (a fallback in
-  `store/app-store.md` if it's taken), subtitle "Play, learn, and solve puzzles"
-  (30 of 30), promotional text (160 of 170), keywords (93 of 100 bytes), and the
-  description (2,381 of 4,000): Play's text with the devices named as iPhone and iPad, as
-  Apple bars other platforms' names.
-- **No Estonian listing:** Estonian is not an App Store localization, and Estonia's
-  storefront shows English (U.K.). The Estonian text is in `store/app-store.md` for when
-  it is.
-- **The answers:** App Privacy "Data Not Collected"; the age questionnaire all None, 4+,
-  Made for Kids No; export compliance already answered by the Info.plist's
-  `ITSAppUsesNonExemptEncryption` false; review notes.
-- **The privacy policy** covers iPhone and iPad and their backup (`store/privacy/`).
-- **Screenshots** from headless simulators (iOS 26.4, no Simulator.app window), seven
-  scenes in English and Estonian, in `~/Downloads/draughts-store/screenshots/app-store-0.2/`:
-  `iphone-6.9/` (1320 × 2868, an iPhone 16 Pro Max; the Dynamic Island the simulator draws
-  painted out) and `ipad-13/` (2064 × 2752, an iPad Pro 13-inch); portrait only, as
-  `simctl` can't turn the simulator.
+- The app meets the bundle's rules (2026-11-09): the privacy sentence in settings
+  (Guideline 5.1.1(i)), `PrivacyInfo.xcprivacy` written by `scripts/ios.py`, no
+  CoreBluetooth (`SDL_HIDAPI OFF`), the icon and launch colour through `actool`, resizable
+  iPad windows (no `UIRequiresFullScreen`), and no links out (no `OpenURL`, rating prompt,
+  or share sheet; check again before each submission).
+- `scripts/ios.py --release --upload` builds, signs, and uploads the `.ipa`
+  (`docs/development.md`, "The App Store build").
+- No Estonian listing: Estonian is not an App Store localization; its text waits in
+  `store/app-store.md`.
 
-## What the app needs before submitting
+## Decided (2026-11-09 to 12)
 
-Each is a store rule the app doesn't meet yet:
-
-- [x] **The privacy policy inside the app** (Guideline 5.1.1(i)), 2026-11-09: one
-      sentence in settings' Game group, no link (`settings.privacy`): "Privacy: Draughts
-      collects nothing. Everything stays on this device." / "Privaatsus: Kabe ei kogu
-      midagi. Kõik jääb sellesse seadmesse." Beside the group's title where it fits in two
-      lines at most (the stacked landscapes, one line on the Android tablet and the 13"
-      iPad), else at the glass's foot (portrait, a phone's tabs), so no layout moved
-      (`test/shell/sizes`, `screens3d`, `shell` unchanged; `transition` only counts the
-      note's glyphs). Shot headless on the Mac at an iPhone 13 mini portrait, an iPhone 16
-      Pro Max landscape, the 13" iPad in both, and the tablet's landscape, both languages.
-- [x] **A privacy manifest**, 2026-11-09: `scripts/ios.py` writes `PrivacyInfo.xcprivacy`
-      (`PRIVACY_APIS`): `NSPrivacyAccessedAPICategoryFileTimestamp` (`C617.1`) for
-      `stat`/`fstat`, `NSPrivacyAccessedAPICategorySystemBootTime` (`35F9.1`) for
-      `mach_absolute_time`; tracking false, no domains, no collected data. `nm -u` and the
-      selectors' strings on the simulator and device builds found no other API in Apple's
-      list (no `statfs`, `getattrlist`, `NSUserDefaults`, `systemUptime`,
-      `activeInputModes`).
-- [x] **No Bluetooth**, found 2026-11-09: SDL's HIDAPI linked CoreBluetooth
-      (`CBCentralManager`), which App Store Connect rejects without
-      `NSBluetoothAlwaysUsageDescription` (ITMS-90683, secondhand). The app opens no
-      joystick; `ios/CMakeLists.txt` sets `SDL_HIDAPI OFF`, and the binary links no
-      CoreBluetooth. CoreMotion and GameController stay (SDL's joystick and sensors,
-      never started), which need no purpose string.
-- [x] **The icon**, 2026-11-09: an asset catalog with autumn's 1024 px icon (no alpha),
-      compiled by `actool` into `Assets.car` with `CFBundleIconName` and `CFBundleIcons`
-      (`assetutil --info` lists `AppIcon` at 1024 and the colour). The PNG is
-      `ios/icon-1024.png`, in git, written by `icon.py` with Android's foregrounds. A dark
-      and a tinted variant are optional and left out.
-- [x] **The launch screen's colour**, 2026-11-09: `UILaunchScreen`'s `UIColorName` is
-      the catalog's `LaunchBackground`, #140c09, read from Android's `icon_background`.
-- [x] **iPad windows** (iPhone and iPad kept, 2026-11-09): `UIRequiresFullScreen` is
-      deprecated in iPadOS 26 and will be ignored, so `scripts/ios.py` drops it (done
-      2026-11-09; with it the window kept a large minimum) and the app follows a resized
-      window. Tried 2026-11-09 on an iPad Pro 11-inch (M5)
-      simulator, iOS 26.4, in Windowed Apps, with a copy of the bundle without the key:
-      resizing, the 3D board while resized, both orientations in a window and full screen,
-      taps after a resize, and leaving and coming back all work. Small windows waste or
-      lose room on three screens and the puzzles: task 050, done 2026-11-09 (archived),
-      checked by the user in the simulator at the smallest window.
-- [x] **A distribution build**, 2026-11-12: `scripts/ios.py --release --upload` signs
-      with the Apple Distribution identity and the App Store profile, makes the `.ipa`,
-      and uploads it with `altool` and an API key (docs/development.md, "The App Store
-      build"); Xcode 26.4, the iOS 26.4 SDK. 0.2.0 (1) passed `altool --validate-app`
-      and was uploaded 2026-11-12.
-- [x] **No links out stays true:** no `SDL_OpenURL`, no rating prompt, no share sheet
-      (checked 2026-11-09: none of `OpenURL`, `openURL`, `SKStoreReview`, `requestReview`,
-      `UIActivityViewController`, `ACTION_SEND`, `ACTION_VIEW` in `src/`, `ios/`, `android/`,
-      `scripts/`; check again before the submission, task 040's build included).
-
-## Decided (2026-11-09)
-
-- **Not the Kids category:** Games → Puzzle, rated 4+, Made for Kids No, no age band. The
-  listing speaks to all ages, as Guideline 5.1.4(b) requires outside Kids
-  (`store/app-store.md`).
-- **iPhone and iPad.**
-- **The account** (corrected 2026-11-10): the Apple Developer Program as an individual
-  on a separate personal Apple ID made for the store, enrolled and paid on the web; the
-  membership active since 2026-11-10. A first enrolment, started on the Apple ID whose free
-  Personal Team signed the development builds and left before paying, ended when Apple
-  locked that Apple ID; its reinstatement was refused (2026-11-10). That team's profile
-  for the app expires 2026-11-16, after which device builds need another team (a
-  personal one: the store's paid team, or another Apple ID's Personal Team). That team
-  also holds the app's bundle id: the paid team found `io.github.kaitk.draughts` taken
-  (2026-11-10), so iOS builds use `io.github.kaitk.draughts.app` (`BUNDLE_ID` in
-  `scripts/ios.py`), kept for good rather than waiting for Apple to free the plain one
-  (2026-11-12): the id is never shown, and Apple doesn't check it against the domain. Android
-  keeps `io.github.kaitk.draughts` until its first Play upload fixes it. No Apple ID, team id, or device identifier
-  goes into the repo.
-- **Signing with the paid team:** once its team shows in Xcode (Settings → Accounts),
-  `DRAUGHTS_IOS_TEAM` picks it for `scripts/ios.py`, whose development profiles then
-  last a year, not 7 days. With several identities on the Mac the script stops rather
-  than take one, so the app is never signed into a company's team.
-- **EU trader status:** non-trader, for the account and the app.
-- **The support URL** `https://kaitk.github.io/draughts/`, the privacy URL
+- Games → Puzzle, 4+, Made for Kids No; the listing speaks to all ages (Guideline
+  5.1.4(b)). iPhone and iPad. EU trader status: non-trader.
+- The bundle id is `io.github.kaitk.draughts.app` for good (`BUNDLE_ID` in
+  `scripts/ios.py`; the plain id was taken by another team). No Apple ID, team id, or
+  device id goes into the repo; `DRAUGHTS_IOS_TEAM` picks the signing team.
+- Support URL `https://kaitk.github.io/draughts/`, privacy URL
   `https://kaitk.github.io/draughts/privacy/`.
 
-## What remains for the user
+## What is left
 
-- **Submitted** 2026-11-12: 0.2.0 (1), released manually after approval (Pending
-  Developer Release → Release This Version). The listing as in `store/app-store.md`; the
-  iPhone set `upload/app-store-0.3/iphone-6.3/` (1206 × 2622, the 2026-11-09 shots
-  scaled: the slot takes no 6.9" size now), the iPad set
-  `2026-11-12/upload/app-store/ipad-13-landscape/`, the product page's art
-  `apple-header-0.1/` (in `~/Downloads/draughts-store/`). Not yet: TestFlight on the
-  iPhone, and the iPhone shots retaken from today's app (Results, the move list), which
-  needs no new build.
-
-- **App Store Connect:** the bundle id, the App Store profile, an API key for uploads,
-  and the app record (name "Draughts", English (U.K.), iOS only, macOS addable later)
-  done 2026-11-12. Left: App Information (category, URLs, content rights, the trader
-  status); the listing and answers pasted from `store/app-store.md`; the screenshots; the
-  review contact (a phone, not shown publicly).
-- **The version:** App Store Connect made the record's version 1.0; it must match the
-  build's `VERSION_NAME` (0.2.0) when submitting, so one of them changes.
-- **TestFlight** on the iPhone 13 mini (an internal tester, no beta review) before
-  submitting.
+- Approval, then release by hand (Pending Developer Release → Release This Version).
+- TestFlight on the iPhone 13 mini.
+- The iPhone screenshots retaken from today's app (Results, the move list); no new build
+  needed.
 
 ## Acceptance criteria
 
-- [x] The listing, the answers, and the screenshots prepared, and a preview of the page
-      (2026-11-09)
+- [x] The listing, the answers, the screenshots, and a preview of the page
 - [x] The privacy text in the app, the privacy manifest, the icon, and the launch screen
-      (2026-11-09; the bundle built for the simulator and the device and checked, not yet
-      run with them)
-- [x] The iPad layout in a resized window, or the app offered for iPhone only (task 050)
+- [x] The iPad layout in a resized window (task 050)
 - [ ] A distribution build uploaded and tried through TestFlight on a device
 - [ ] Submitted (2026-11-12) and approved, in Games → Puzzle at 4+

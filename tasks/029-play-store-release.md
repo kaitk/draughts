@@ -1,233 +1,41 @@
 # 029: Release on Google Play
 
-Status: in-progress (the package and the drafts ready, 2026-11-08; the listing's texts,
-answers, screenshots, and a preview checked against Play's current help, 2026-11-09; the
-identity and the feature graphic settled the same day; the screenshots retaken as 0.3;
-on Play from 2026-11-10; 0.1.1 in review for the closed test, 2026-11-11)
+Status: in-progress (on Play from 2026-11-10; the closed test running since its review
+passed, seen 2026-11-12)
 
-Everything between a sideloaded APK and the app on Google Play, under Google's Families
-Policy: the app is for all ages, children included, with no ads, no tracking, no accounts, and no network
-(`docs/product.md`, "After the MVP": release). Android first; the App Store's listing is
-prepared in task 046. Things Play requires change yearly: check each against Play's current
-documentation when doing this, not this list.
+The app on Google Play under the Families Policy: for all ages, no ads, no tracking, no
+accounts, no network (`docs/product.md`). Play's rules change yearly: check each against
+its current help, not this file. The App Store is task 046.
 
-## Done (2026-11-08)
+## Done
 
-- **Identity:** the application id is `io.github.kaitk.draughts` (chosen 2026-11-08),
-  `APP_ID` in `scripts/android.py`, the one place it is set: aapt2's
-  `--rename-manifest-package` gives it to the app. The Java code moved to the package of
-  the same name, so `adb shell am start -n io.github.kaitk.draughts/.DraughtsActivity`
-  works; `scripts/idle_cpu.sh` and `scripts/lifecycle_memory.sh` read the id and the
-  activity from `android.py`. `versionCode` 1 and `versionName` 0.1.0 are `VERSION_CODE`
-  and `VERSION_NAME` beside it, no longer in the manifest. On the tablet this is a new
-  app beside the old `com.kaitk.draughts`, with its own (empty) settings and game:
-  uninstall the old one (`adb uninstall com.kaitk.draughts`).
-- **Target SDK:** 36 already. Play requires new apps and updates to target Android 16
-  (API 36) from 2026-08-31
-  ([developer.android.com/google/play/requirements/target-sdk](https://developer.android.com/google/play/requirements/target-sdk),
-  read 2026-11-08). Closed testing: a personal account created after 2023-11-13 needs at
-  least 12 testers opted in for the 14 days before applying for production
-  ([Play Console Help 14151465](https://support.google.com/googleplay/android-developer/answer/14151465),
-  read 2026-11-08). The testers' list is local, out of git:
-  `~/Downloads/draughts-store/testers.md`.
-- **Signing:** an upload key at `~/.config/draughts/upload-key.jks` (PKCS12, alias
-  `upload`, RSA 4096, `CN=Draughts`, valid to 2054-03-26, certificate SHA-256
-  `C4:F6:7B:CD:…:1D:6F:4B`), its random password in
-  `~/.config/draughts/upload-key.properties` (mode 600, the folder 700). Neither is in
-  git. `scripts/android.py --release` signs with it, debug builds with the debug key.
-  How to back it up is in `docs/development.md`, "The upload key".
-- **The bundle:** `scripts/android.py src/app/draughts.goose --release` builds
-  `build/android/draughts/draughts-release.apk` and `draughts-release.aab` beside the
-  debug `draughts.apk`. bundletool 1.18.3 (pinned by version and SHA-256, downloaded into
-  `build/` if missing) builds the AAB from a base module of aapt2's `--proto-format`
-  output, the dex, and the arm64-v8a libraries, with `PAGE_ALIGNMENT_16K`; jarsigner signs
-  it, `bundletool validate` passes. The script checks every library's ELF `LOAD`
-  segments are aligned to 16 KB, and `zipalign -c -P 16` passes on the release APK and on
-  the arm64 split bundletool makes from the AAB for a device like the tablet.
-- **The icon:** winter again (`SHIPPED = "winter"`, `icon_background` #06172b); the
-  foreground PNGs are byte-identical to winter's before autumn shipped.
-- **Drafts** in `store/`: the listing in English and Estonian, the privacy policy page in
-  both, and the answers for Data safety, ads, IARC, target audience and the Families
-  Policy, and the store settings (`store/README.md`).
+- The release build: `scripts/android.py src/app/draughts.goose --release` signs the APK
+  and the AAB with the upload key (`docs/development.md`, "The upload key"), 16 KB-aligned,
+  `bundletool validate` passing. 0.1.0 (2026-11-08): APK 11.4 MB, AAB 9.1 MB, no
+  permissions, target SDK 36.
+- The app's entry on Play (2026-11-10 and 11): every App content form as
+  `store/play-console.md` has them, every age group, Teacher Approved, the listing in
+  English and Estonian with the 0.3 screenshots, category Board.
+- 0.1.0 to internal testers 2026-11-11; 0.1.1 (code 2, easy starts at 8) to the Alpha
+  track's closed test with 15 testers, its review passed; "12 testers opted in" ticked.
 
-The release build, once (2026-11-08, the tree of `e1f9f09`, with the photographs' ASTC
-masters present):
+## What is left
 
-| | Bytes |
-| --- | --- |
-| `draughts-release.apk` | 11,449,560 |
-| `draughts-release.aab` | 9,107,572 |
-| `libmain.so`, stored, stripped | 9,160,784 (7,485,760 of it the four ASTC photographs) |
-| `libSDL3.so`, stored, stripped | 1,931,888 |
-| `classes.dex` | 97,116 |
-
-- `apksigner verify --print-certs`: v3 scheme verified, one signer, `CN=Draughts`, the
-  upload key's SHA-256. `jarsigner -verify` on the AAB: "jar verified", signer `CN=Draughts`
-  with the same SHA-256 (its warnings are those of any self-signed key: no chain, no
-  timestamp).
-- `aapt2 dump badging`: `io.github.kaitk.draughts`, versionCode 1, versionName 0.1.0,
-  targetSdkVersion 36, native-code arm64-v8a, launchable `DraughtsActivity` labelled
-  "Draughts"; `aapt2 dump permissions`: none.
-- `test/run_tests.py` and `--build`: 40 of 40 each.
-- Not yet on a device: the main session checks the release APK on the tablet.
-
-## What remains for the user
-
-- **Identity:** the developer name Gideonic and the contact email kaitkasak@proton.me
-  (the user, 2026-11-10, replacing the blocked Gmail; filled into `store/`); the Play developer account opened on that address 2026-11-10 as a non-trader, identity check pending. Confirm
-  the privacy policy's URL,
-  `https://kaitk.github.io/draughts/privacy`, and publish `store/privacy/index.html` there
-  (`store/README.md`). Never the Snowhound name, domain, or email.
-- **Back up the upload key** before the first upload: both files in
-  `~/.config/draughts/`, as `docs/development.md` says.
-- **`allowBackup` stays on** (the user, 2026-11-09), so Android's own backup may carry a
-  child's progress to a new tablet; the Data safety answers count that as not collected
-  (`store/play-console.md`).
-- **The feature graphic** (chosen by the user, 2026-11-09):
-  `~/Downloads/draughts-store/feature-0.2/feature-render-close-name.png`, the autumn 3D
-  board close at a low angle with home's king and the name (`store/README.md`).
-- **Play Console:** the developer account (a personal account: identity check, then the
-  closed test above), the app's entry, the listing pasted from `store/`, the 512 px icon
-  (`~/Downloads/draughts-store/icon/play-512.png`, autumn), the 1024 × 500 feature
-  graphic, and the screenshots (both below), then the App content forms from
-  `store/play-console.md`, and Play App Signing (Google-generated app key) at the first
-  upload of `draughts-release.aab`.
-- **Read the drafts:** the listing (rewritten for task 037's puzzles and task 038's
-  players), the Estonian especially, and the policy, which now names players and their
-  optional names.
-- **Pick or redo the images:** an Estonian feature graphic would say "Kabe". Say whether the 0.2 screenshots'
-  scenes and the made-up player (Mia the fox) will do, and whether the Estonian listing
-  takes its Estonian set (`~/Downloads/draughts-store/screenshots/play-0.2/`).
-- **Decide:** trader status (non-trader proposed, `store/play-console.md`), the tags in
-  the Console's list, and the Estonian text's new lines after a translation review.
-
-## The listing's images, first iteration (2026-11-09)
-
-- **Texts:** `store/listing-en.md` and `listing-et.md` describe the 64 puzzles in five
-  themes (the library, black to move in some, Learn opening the rest, the stars) and the
-  players (four, badge, name, each keeping their look, stars, computer level, and game);
-  English 74 and 2,218 characters, Estonian 64 and 2,284. `store/privacy/index.html` and
-  `store/play-console.md` said the app had no names to enter; they now say a player's
-  optional name stays on the device.
-- **Play's rules** (read 2026-11-09, in `store/README.md`): tablet screenshots must be
-  16:9 or 9:16, so the tablet's own 16:10 doesn't fit its slots; the tablet set is shot
-  at 2560 × 1440, and a 2560 × 1600 set is kept beside it.
-- **Screenshots** in `~/Downloads/draughts-store/screenshots/play-0.1/`: `tablet/`
-  (2560 × 1440), `phone/` (1080 × 1920 at 548 dp), `tablet-16x10/`, six each: home, a
-  game with a capture shown, the puzzle library, a Shots puzzle black to move mid-solve,
-  settings with the seasons, and the computer's setup in Estonian. Each checked by eye;
-  `shoot.sh` there retakes them (`store/README.md`).
-- **Feature graphic:** `feature-graphic-draft.png` there, the autumn photograph, the
-  board, and the wordmark in Libertinus Sans, by `feature.sh` (ImageMagick).
-- **Seen while shooting:** at 16:9 and 16:10 the library's right column of themes ends
-  about 24 dp from the screen's edge while the left starts 128 dp in, so the two columns
-  sit off centre; the counts aren't cut. One run of the puzzle shot at 1280x800 came out
-  as Learn's page instead of the puzzle and was right when run again; not looked into.
-- The old `screenshots/play/` set (2026-11-08, before the puzzles and players) is
-  superseded.
-
-## The listing, ready to paste (2026-11-09)
-
-- **Texts:** `store/listing-en.md` and `listing-et.md` brought to the app on `main` at
-  `1824780`: 120 puzzles (74 International in six themes, Safe move the sixth, and 46
-  Russian), the 3D board turned by hand on home, the four season boards, the pips on a
-  piece that must capture, and the plain background (task 044). English 17, 75, and 2,597
-  characters; Estonian 12, 65, and 2,648.
-- **Play's current help** (read 2026-11-09, linked in `store/README.md` and
-  `store/play-console.md`): the limits and image rules unchanged; Data safety must be
-  filled in even with nothing collected; IARC is mandatory; Teacher Approved is now an
-  opt-in for Families apps, not invitation only; "Designed for Families" is the Families
-  Policy; EU trader status is declared by every account (a non-trader shows only email
-  and country); a personal account shows its developer email publicly. Play's Data safety
-  help names nothing about Android's backup (unconfirmed either way).
-- **Screenshots 0.2** in `~/Downloads/draughts-store/screenshots/play-0.2/`: seven scenes,
-  phone (1080 × 1920) and tablet (2560 × 1440), English and Estonian, from one batch of the
-  Mac app (2026-11-09, 15:45 to 15:49): home on the 3D board in winter, the flat game in
-  autumn, the 3D game in summer, the puzzle library in spring, a Shots puzzle in winter,
-  settings, the computer's setup. Play wants at least 3 of the phone's (for game
-  recommendations) and 4 of the tablet's; all seven go up. They predate main's way back
-  and Theme row (`49f44e6`); the 0.3 sets (`play-0.3/`, `app-store-0.3/`) retake them
-  from `78c7029`, the Mac's headless, 2026-11-09.
-- **Preview:** `store/preview/play.html` (filled by `store/preview/build.py`) shows the
-  page on a phone and on the web in both languages: the titles fit on one line in a
-  search row, the short descriptions under 80, the web's "About this game" folds after
-  the opening paragraph and the first line of PLAY. Shots of it in
-  `~/Downloads/draughts-store/preview/`.
-
-## On Play (2026-11-10 and 11)
-
-- **The app's entry** made: `Draughts`, en-GB default, a game, free; package
-  `io.github.kaitk.draughts` asked at creation (Android developer verification);
-  automatic protection off (it would add Google's code to the app). Every setup task
-  done: the App content forms as `store/play-console.md` has them, the target audience
-  every age group (the user: the game is for all ages), Teacher Approved joined, the
-  listing in English and Estonian (an Estonian feature graphic with "Kabe" made the same
-  way, `~/Downloads/draughts-store/feature-0.2/`), the icon alone labelled as made by AI,
-  category Board.
-- **Internal test:** 0.1.0 (code 1, `f2d3f11`) available to internal testers from
-  2026-11-11 00:17, 11,375 supported devices; installed from Play on the Pixel 7a and
-  played (the unreviewed name and a plain icon on Play's page until the first review).
-  The release smoke-tested by hand on the Pixel 7a beforehand (task 061's archive line).
-- **0.1.1** (code 2, `7a78595`): easy starts at 8 and a first game's win lifts it 16
-  (`docs/decisions/ai.md`), after the user found easy too weak on 8 × 8. For the closed
-  test, the Alpha track, with `~/Downloads/draughts-store/testers.csv`. Tested by the
-  user on the Galaxy A33, the iPhone, and the Mac before the upload.
-- **Closed test sent for review** (2026-11-11): the AAB built from `fc352dc` (`7a78595`
-  and a task note), its manifest versionCode 2 and 0.1.1, main with nothing after it.
-  The Alpha track in all countries (the testers are all in Estonia, but only the list
-  can opt in), an email list of the 15 addresses in `testers.csv` (one of them not
-  Gmail, which needs a Google account on that address), feedback to
-  `kaitkasak@proton.me`. Release notes in en-GB and et (166 puzzles; easy starts a
-  little stronger and adapts faster after a win), 355 and 360 of Play's 500 characters.
-  Sending it first asked for the advertising ID declaration (No, as
-  `store/play-console.md` has it), then sent 16 changes, the app's first review: the
-  listing, the App content forms, and the track. Testers can't install from Alpha
-  until it passes; send them the opt-in link from the Testers tab then (Play doesn't
-  mail them), and the 14 days start once 12 have opted in.
-- **Closed test running** (seen 2026-11-12): the review passed, testers sent feedback,
-  and the Dashboard's production-access steps tick "at least 12 testers opted in", the
-  14-day step still open. The Console shows only that the count is met, not who opted
-  in; asking the testers is the only way to find who hasn't.
-- **Production countries**, for later: all countries proposed, since the app is free,
-  offline, and collects nothing, and the English listing stands in where there is no
-  translation; draughts' players are mostly outside the English-speaking countries
-  (the Netherlands, France, Poland, West Africa, Brazil, the former USSR). The user
-  wants at least the main English-speaking audiences.
-- **The A33's move** from its sideloaded debug build to Play's (a backup with `run-as`
-  and `bmgr backupnow`, then a restore at install) not done yet; the tablet wasn't
-  attached.
-
-## Checks before upload
-
-- The release build on the tablet from a clean install (`adb uninstall
-  io.github.kaitk.draughts`, then `adb install draughts-release.apk`), and
-  `scripts/idle_cpu.sh` and `scripts/lifecycle_memory.sh` on it; task 011 (SDL's
-  accelerometer, the last idle CPU) done.
-- Idle CPU, 2026-11-09, the tablet untouched at home: 0.03 s in 60 s (0.05%), 61
-  voluntary switches; the PSS at home 134 MB.
-- Raise `VERSION_CODE` for every upload after the first.
-
-## Notes
-
-- **The pre-launch report:** Play may run the app on virtual devices, whose software GPU
-  (SwiftShader) can lack ASTC; the Android build ships the photographs only as ASTC, so
-  there the app shows the page color without a photograph, the expected fallback, not a
-  bug (`docs/architecture/rendering.md`). Real devices with Vulkan all have ASTC.
-- **The photographs:** the APK embeds only what is in `design/backgrounds/masters/`
-  locally; build the release where the `-6x6.astc` files are present, or it ships
-  without photographs.
-- **Screens:** the listing's screenshots must show the app as it runs on that class of
-  device; phones are listed too, as the layouts fit them (task 030, done).
+- The closed test's 14 days with 12 testers opted in, then apply for production. Play
+  doesn't mail testers: send them the opt-in link from the Testers tab.
+- Production countries: all proposed (free, offline, collects nothing); the user wants at
+  least the main English-speaking ones.
+- Move the A33 from its sideloaded debug build to Play's (a `run-as` backup and
+  `bmgr backupnow`, a restore at install).
+- Raise `VERSION_CODE` for every upload; build releases where the `-6x6.astc` masters are
+  present, or the photographs are missing.
+- Play's pre-launch report may run on SwiftShader without ASTC: the page color with no
+  photograph there is the expected fallback (`docs/architecture/rendering.md`).
 
 ## Acceptance criteria
 
 - [x] Final application id, upload key outside the repo, release AAB built by the script
-      (2026-11-08; the key's backup is the user's)
 - [x] Task 030 done, so phones and larger tablets are listed
-- [ ] Store listing in English and Estonian, with icon, feature graphic, and screenshots
-      (texts, the 0.2 screenshots, and a preview 2026-11-09; the texts approved by the
-      user 2026-11-09; the developer name, the contact email, and the feature graphic
-      settled 2026-11-09; the 0.3 screenshots, retaken 2026-11-09)
-- [ ] Target audience, content rating, Data safety, and privacy policy filled in (the
-      answers and the policy drafted in `store/`)
+- [x] Store listing in English and Estonian, with icon, feature graphic, and screenshots
+- [x] Target audience, content rating, Data safety, and privacy policy filled in
 - [ ] Closed test run as Play requires, then the app published
