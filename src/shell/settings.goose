@@ -514,22 +514,20 @@ fn languages(s: Settings&, g: gui::Gui&, button: float4, screen: float4, shown: 
 // language button is.
 fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, button: float4&) -> i64 {
     let u = g.scale;
-    var row = r;
     var ask = NOTHING;
     let title = strings::get(strings::HOME_SETTINGS);
-    let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
+    let label = strings::get(strings::NAV_BACK);
     let lw = language_width(g);
-    let stacked = r.z - wide - 40.0 * u - lw < gui::text_width(g, gui::LABEL, title);
-    let bw = if stacked { gui::tap() * u } else { wide };
-    let back = gui::center(gui::cut_left(row, bw), bw, gui::tap() * u);
-    if gui::back(g, BACK_ID, back, strings::get(strings::NAV_BACK), stacked) { ask = BACK; }
-    gui::cut_left(row, 20.0 * u);
-    button = gui::center(gui::cut_right(row, lw), lw, gui::tap() * u);
+    let stacked = gui::head_stacks(g, label, r.z, 40.0 * u + lw + gui::text_width(g, gui::LABEL, title));
+    let bw = if stacked { gui::tap() * u } else { gui::back_width(g, label) };
+    let tapped, at, row = gui::head(g, BACK_ID, r, label, bw, if stacked { gui::STACKED } else { gui::MIDDLE }, 20.0 * u, lw,
+                                    20.0 * u);
+    if tapped { ask = BACK; }
+    button = at;
     if language_button(g, button, shown, s.languages_open) {
         s.languages_open = !s.languages_open;
         ask = SHOWN;
     }
-    gui::cut_right(row, 20.0 * u);
     let face = gui::fitting(g, gui::LABEL, title, row.z);
     if gui::text_width(g, face, title) <= row.z { gui::text(g, face, row, title, 1.0, 0.0, gui::LEFT); }
     return ask;

@@ -1057,6 +1057,7 @@ fn picture(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, on: bool) -> boo
 // How a labelled tile lays out its icon and word.
 let MIDDLE = 1;             // the icon and the word side by side, centered
 let STACKED = 2;            // the icon over the word, centered
+let ARROW_ONLY = 3;         // a head's back alone, its arrow with no word (head)
 let LABEL_PAD = 8.0;        // dp a labelled tile's word keeps from its sides at least
 
 // A glass tile with an icon `size` dp across and a word in face `face`
@@ -1130,6 +1131,38 @@ fn back_width(g: Gui&, label: const u8[:]) -> f32 {
 fn back(g: Gui&, id: i64, r: float4, label: const u8[:], stacked: bool = false) -> bool {
     under_tile(g, r, 22.0);
     return labelled(g, id, r, BACK, BACK_ICON, label, HEADING, if stacked { STACKED } else { MIDDLE });
+}
+
+// Whether a head row `width` wide stacks back, the arrow over its word in a tap's square:
+// where back worded and `rest` (what else the row holds, its gaps included) don't fit.
+fn head_stacks(g: Gui&, label: const u8[:], width: f32, rest: f32) -> bool { back_width(g, label) + rest > width }
+
+// A screen's head (rendering.md, "The way back"), the row r a tap tall: back at its left,
+// `back_w` wide (none for 0, where the screen puts it elsewhere), its icon beside its
+// word, over it (STACKED), or alone (ARROW_ONLY), as `arrange` says; `trail_w` at the
+// right for the screen's own control, whole even where the two fill the row; then
+// `left_gap` after back and `right_gap` before the control, from what is left. Each screen
+// decides how its row shares out (head_stacks the usual way); the cuts are these on all.
+// Declares back and returns whether it was tapped, where the control goes, and the room
+// between them for the title, which the screen declares after the control.
+fn head(g: Gui&, id: i64, r: float4, label: const u8[:], back_w: f32, arrange: i64, left_gap: f32, trail_w: f32,
+        right_gap: f32) -> bool, float4, float4 {
+    let h = tap() * g.scale;
+    var row = r;
+    var tapped = false;
+    if back_w > 0.0 {
+        let b = center(cut_left(row, back_w), back_w, h);
+        if arrange == ARROW_ONLY {
+            under_tile(g, b, 22.0);
+            tapped = tile(g, id, b, BACK, PLAIN, 22.0);
+        } else {
+            tapped = back(g, id, b, label, arrange == STACKED);
+        }
+    }
+    let trail = if trail_w > 0.0 { center(cut_right(row, trail_w), trail_w, h) } else { float4 { row.x + row.z, row.y, 0.0, h } };
+    cut_left(row, left_gap);
+    cut_right(row, right_gap);
+    return tapped, trail, row;
 }
 
 // Where to break `text` into two lines of face `face` each at most w pixels wide: the

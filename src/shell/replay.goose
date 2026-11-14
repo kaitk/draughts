@@ -706,17 +706,16 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
 
     // The head: back, the title and the game where they fit, and play from here.
     gui::group(g, GROUP_HEAD);
-    var head = o.head;
-    let back_at = if own { float4 { o.back.x, o.back.y, back_w, o.back.w } } else { gui::cut_left(head, back_w) };
-    if gui::back(g, BACK_ID, back_at, strings::get(strings::NAV_BACK), !own && arrange == gui::STACKED) { ask = BACK; }
-    let at = gui::cut_right(head, play_w);
+    let label = strings::get(strings::NAV_BACK);
+    if own && gui::back(g, BACK_ID, float4 { o.back.x, o.back.y, back_w, o.back.w }, label) { ask = BACK; }
+    let tapped, at, head = gui::head(g, BACK_ID, o.head, label, if own { 0.0 } else { back_w }, arrange,
+                                     if own { 0.0 } else { gui::PAD_WIDE * u }, play_w, GAP * u);
+    if tapped { ask = BACK; }
     let icon = if r.game.level == history::FRIEND { gui::FRIEND } else { gui::COMPUTER };
     if gui::labelled(g, PLAY_ID, at, icon, 34.0, strings::get(strings::REPLAY_PLAY), gui::HEADING, arrange, gui::PRIMARY,
                      playable(r)) {
         ask = PLAY;
     }
-    if !own { gui::cut_left(head, gui::PAD_WIDE * u); }
-    gui::cut_right(head, GAP * u);
     let in_head = titled && title(g, head, r.game);
 
     // Over the board, that a game from here doesn't count; not a tap. On a desktop it

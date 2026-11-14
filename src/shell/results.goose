@@ -70,15 +70,16 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
         whole.z = LARGE_W * u;
     }
     var c = gui::inset(whole, EDGE * u);
-    var head = gui::cut_top(c, gui::tap() * u);
+    let row = gui::cut_top(c, gui::tap() * u);
     gui::cut_top(c, GAP * u);
     let back = strings::get(strings::NAV_BACK);
-    if gui::back(g, BACK_ID, gui::cut_left(head, gui::back_width(g, back)), back) { ask = BACK; }
+    let back_w = gui::back_width(g, back);
     // The draughts at the head's right, each its name and rating, as wide as its words,
     // joined on one glass as the puzzles' switch is (picker::switch), its rim round them
     // and between: plain tiles alone were faint glass on a bright photograph (a phone in
-    // landscape over winter's snow, 2026-11-13). Where they don't fit beside back (a phone
-    // in portrait), a row of their own under the head, sharing its width.
+    // landscape over winter's snow, 2026-11-13). Where they and the title don't both fit
+    // beside back (a phone in portrait), a row of their own under the head, sharing its
+    // width.
     let rim = picker::SWITCH_PAD * u;
     var t:      gui::Text = [];
     var widths: f32[3]    = [0.0; 3];
@@ -88,13 +89,12 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
         widths[i] = max(gui::tap() * u, gui::text_width(g, gui::BODY, name) + 2.0 * gui::side() * u);
         all += widths[i];
     }
-    // head is what back left; the title follows back, and the switch takes a row of its
-    // own where the title and it don't both fit beside back.
     let title = strings::get(strings::RESULTS_TITLE);
-    let title_x = head.x + gui::PAD_WIDE * u;
-    let own_row = title_x + gui::text_width(g, gui::LABEL, title) + GAP * u + all > head.x + head.z;
+    let own_row = back_w + gui::PAD_WIDE * u + gui::text_width(g, gui::LABEL, title) + GAP * u + all > row.z;
+    let tapped, sw, room = gui::head(g, BACK_ID, row, back, back_w, gui::MIDDLE, gui::PAD_WIDE * u, if own_row { 0.0 } else { all },
+                                     if own_row { 0.0 } else { GAP * u });
+    if tapped { ask = BACK; }
     var tiles: float4[3] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3];
-    var right = head.x + head.z;
     if own_row {
         let line = gui::cut_top(c, picker::switch_row_h() * u);
         gui::cut_top(c, GAP * u);
@@ -103,18 +103,16 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
         for i in 3 { tiles[i] = float4 { line.x + rim + i * (w + rim), line.y + rim, w, line.w - 2.0 * rim }; }
     } else {
         // The glass round the head's height, its rim above and below it.
-        gui::glass(g, float4 { right - all, head.y - rim, all, head.w + 2.0 * rim }, 22.0);
-        right -= rim;
+        gui::glass(g, float4 { sw.x, sw.y - rim, sw.z, sw.w + 2.0 * rim }, 22.0);
+        var right = sw.x + sw.z - rim;
         for k in 3 {
             let i = 2 - k;
-            tiles[i] = float4 { right - widths[i], head.y, widths[i], head.w };
+            tiles[i] = float4 { right - widths[i], sw.y, widths[i], sw.w };
             right -= widths[i] + rim;
         }
-        right -= GAP * u;
     }
-    let room = right - title_x;
-    if gui::text_width(g, gui::LABEL, title) <= room {
-        gui::text(g, gui::LABEL, float4 { title_x, head.y, room, head.w }, title, 1.0, 0.0, gui::LEFT);
+    if gui::text_width(g, gui::LABEL, title) <= room.z {
+        gui::text(g, gui::LABEL, room, title, 1.0, 0.0, gui::LEFT);
     }
     for i in 3 {
         let v = variant_of(i);

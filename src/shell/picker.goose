@@ -607,20 +607,14 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let worded = back_w(g) + rest <= w;
     beside = worded || gui::tap() * u + rest <= w;
     head = if beside { gui::tap() * u + gap } else { gui::tap() * u + gap + sw_h + gap };
-    var top = float4 { x, y, w, gui::tap() * u };
-    if worded || !beside {
-        if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
-    } else {
-        let r = gui::cut_left(top, gui::tap() * u);
-        gui::under_tile(g, r, 22.0);
-        if gui::tile(g, BACK_ID, r, gui::BACK, gui::PLAIN, 22.0) { pick = BACK; }
-    }
-    gui::cut_left(top, HEAD_GAP * u);
     // The switch at the row's right, ending with the rows.
-    let sw_x = x + w - sw_w;
-    let sw = if beside { float4 { sw_x, top.y - rim, sw_w, sw_h } }
+    let named = worded || !beside;
+    let tapped, trail, top = gui::head(g, BACK_ID, float4 { x, y, w, gui::tap() * u }, strings::get(strings::NAV_BACK),
+                                       if named { back_w(g) } else { gui::tap() * u }, if named { gui::MIDDLE } else { gui::ARROW_ONLY },
+                                       HEAD_GAP * u, if beside { sw_w } else { 0.0 }, if beside { 24.0 * u } else { 0.0 });
+    if tapped { pick = BACK; }
+    let sw = if beside { float4 { trail.x, trail.y - rim, sw_w, sw_h } }
              else { float4 { x, y + gui::tap() * u + gap, w, sw_h } };
-    if beside { top.z = sw_x - 24.0 * u - top.x; }
     if how_tile {
         // How to play's tile after the title, as far along as the title's words.
         let tw = min(title_width(g), top.z - how_w);
