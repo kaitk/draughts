@@ -32,7 +32,7 @@ settings.by_date = By date
 settings.board = Board
 settings.hints = Move hints
 settings.kings = Kings
-# Settings' Background row (task 080): the photograph or the plain fade.
+# Settings' Background row: the photograph or the plain fade.
 settings.background = Background
 background.photo = Photo
 background.plain = Plain
@@ -166,12 +166,12 @@ game.lookout = Lookout
 game.hint = Hint
 game.where_to = Where to?
 
-# The moves panel's row (task 074): hidden, the list, or the list with marks.
+# The moves panel's row: hidden, the list, or the list with marks.
 settings.moves = Move list
 moves.hidden = Off
 moves.list = Moves
 moves.marks = Marks
-# The results screen (task 074): its title, the rating's heading, the levels' results'
+# The results screen: its title, the rating's heading, the levels' results'
 # heading, a game against a friend in the list, and the list with no game yet.
 results.title = Results
 results.rating = Rating
@@ -223,16 +223,16 @@ mark.mistake = a mistake
 mark.mistake_tip = Mistake: this move lowered the chance to win
 mark.blunder = a blunder
 mark.blunder_tip = Blunder: this move lost much of the chance to win
-# A past game's replay (task 078): its title, the label on a game played from a replay's
+# A past game's replay: its title, the label on a game played from a replay's
 # move, which counts for nothing, the line over its list at the start, before the first
 # move, its button that plays on from the move shown, and why a game from it doesn't
-# count, in full (2026-11-13).
+# count, in full.
 replay.title = Replay
 replay.no_count = A game from here doesn't count
 replay.start = The start, before the first move
 replay.play = Play from here
 replay.no_count_why = A game from here doesn't count: it isn't saved and doesn't change your rating
-# A replay's lines for the best move (task 087), each followed by the move: what was best
+# A replay's lines for the best move, each followed by the move: what was best
 # in place of a marked move, the best next for the side to move (white's, then black's),
 # or the move it must make, a capture or an only move (white's then black's); and the end
 # of the game.
@@ -250,7 +250,7 @@ replay.ended = The game ended here
 quit.ask = Quit Draughts?
 quit.cancel = Cancel
 
-# How to play (task 026): home's row, the library's, the tutorial's; a new player's
+# How to play: home's row, the library's, the tutorial's; a new player's
 # question, and its answers; "{} short steps", under show me; the end's card; the last
 # step's next; "{} / {} steps", the library's row; the end's way home; the first step's
 # lines while the other side moves, and after.
@@ -301,7 +301,7 @@ how.win = Win
 how.win_line = Take all the other side’s pieces, or leave them no move. Take the last one!
 how.win_well = You won!
 
-# The daily puzzles (task 088): the library's Today row, its note, and settings' row.
+# The daily puzzles: the library's Today row, its note, and settings' row.
 daily.today = Today’s puzzles
 daily.left = {} to go
 daily.tomorrow = New ones tomorrow

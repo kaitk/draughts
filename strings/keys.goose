@@ -260,7 +260,7 @@ let SETTINGS_BY_DATE = 19;
 let SETTINGS_BOARD = 20;
 let SETTINGS_HINTS = 21;
 let SETTINGS_KINGS = 22;
-// Settings' Background row (task 080): the photograph or the plain fade.
+// Settings' Background row: the photograph or the plain fade.
 let SETTINGS_BACKGROUND = 23;
 let BACKGROUND_PHOTO = 24;
 let BACKGROUND_PLAIN = 25;
@@ -377,12 +377,12 @@ let COUNT_REPEATED = 114;
 let GAME_LOOKOUT = 115;
 let GAME_HINT = 116;
 let GAME_WHERE_TO = 117;
-// The moves panel's row (task 074): hidden, the list, or the list with marks.
+// The moves panel's row: hidden, the list, or the list with marks.
 let SETTINGS_MOVES = 118;
 let MOVES_HIDDEN = 119;
 let MOVES_LIST = 120;
 let MOVES_MARKS = 121;
-// The results screen (task 074): its title, the rating's heading, the levels' results'
+// The results screen: its title, the rating's heading, the levels' results'
 // heading, a game against a friend in the list, and the list with no game yet.
 let RESULTS_TITLE = 122;
 let RESULTS_RATING = 123;
@@ -432,16 +432,16 @@ let MARK_MISTAKE = 157;
 let MARK_MISTAKE_TIP = 158;
 let MARK_BLUNDER = 159;
 let MARK_BLUNDER_TIP = 160;
-// A past game's replay (task 078): its title, the label on a game played from a replay's
+// A past game's replay: its title, the label on a game played from a replay's
 // move, which counts for nothing, the line over its list at the start, before the first
 // move, its button that plays on from the move shown, and why a game from it doesn't
-// count, in full (2026-11-13).
+// count, in full.
 let REPLAY_TITLE = 161;
 let REPLAY_NO_COUNT = 162;
 let REPLAY_START = 163;
 let REPLAY_PLAY = 164;
 let REPLAY_NO_COUNT_WHY = 165;
-// A replay's lines for the best move (task 087), each followed by the move: what was best
+// A replay's lines for the best move, each followed by the move: what was best
 // in place of a marked move, the best next for the side to move (white's, then black's),
 // or the move it must make, a capture or an only move (white's then black's); and the end
 // of the game.
@@ -457,7 +457,7 @@ let REPLAY_ENDED = 173;
 // the app open.
 let QUIT_ASK = 174;
 let QUIT_CANCEL = 175;
-// How to play (task 026): home's row, the library's, the tutorial's; a new player's
+// How to play: home's row, the library's, the tutorial's; a new player's
 // question, and its answers; "{} short steps", under show me; the end's card; the last
 // step's next; "{} / {} steps", the library's row; the end's way home; the first step's
 // lines while the other side moves, and after.
@@ -507,7 +507,7 @@ let HOW_WAY_WELL = 216;
 let HOW_WIN = 217;
 let HOW_WIN_LINE = 218;
 let HOW_WIN_WELL = 219;
-// The daily puzzles (task 088): the library's Today row, its note, and settings' row.
+// The daily puzzles: the library's Today row, its note, and settings' row.
 let DAILY_TODAY = 220;
 let DAILY_LEFT = 221;
 let DAILY_TOMORROW = 222;
