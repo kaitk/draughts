@@ -262,9 +262,9 @@ median; 24 of 374 over 1400. The full library weights the hard kinds three times
 kind's `share`) and adds take 3 in 3, take 2 in 4 among 12, and a king's take 2 in 3
 among 25, so its range reaches past kabe.ee's.
 
-The 30 random sample puzzles by the estimate, for a look (open each with
-`build/draughts --variant international --fen FEN`), are in `build/library/sample-30.md`,
-local.
+The 30 random puzzles of International's library by the estimate, for a look, are in
+`build/library/sample-30.md` (local): `build/draughts --variant international --library
+N` opens each on the puzzle screen, the replies played.
 
 ## The library (2026-11-14)
 
@@ -284,6 +284,17 @@ On the 8×8 boards the camps repeat much more (more than half seen before; Brazi
 crown in 1 among 7 found 24 new in 600 s), so a larger 8×8 library wants new kinds, not
 more time. The slowest International kinds: take 2 in 4 among 14 men a side, 31 s a
 puzzle; take 2 in 3 among 14, 17 s; a safe move among 10, 13 s.
+
+## Next: the obvious move is wrong (2026-11-14)
+
+Chess puzzles teach most where the move a player is used to making is the wrong one:
+crowning at once, taking the most, taking back, running a man home. Draughts has the same
+habits. A kind of puzzle for each: positions where such a tempting move exists and loses
+(its man trapped on the far row, the big capture walking into a shot, the recapture that
+opens a combination), and only a quieter move wins. The generator can find them as it
+finds the rest, keeping those whose first turn has a tempting wrong move that a shallow
+search plays (`rate`'s rivals are the start of this). To do once the library as built has
+been tested with the children, rather than generating more now.
 
 ## Acceptance criteria
 
