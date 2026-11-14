@@ -60,9 +60,10 @@ flattened copies, with the iPhone 6.3" scale; a contact sheet per device type
 the `scripts/` that made them. The made-up player has Learn solved, so 04 shows the
 library with Today open, two of the day's four solved, and home's Puzzles row its dots.
 Play's and the iPad's shots ran the headless copy with each run's own folder as the
-storage folder; the iPhone's, the simulator. The tablet's 04 was retaken from `67e4a68`,
-which centres the library again; the iPad's 04 is left out of its `upload/`, as the
-library there still isn't centred (`check.txt`). It supersedes
+storage folder; the iPhone's, the simulator. The tablet's and the iPad's 04 were retaken
+from `3bf526b`, which centres the library's rows below back; the iPad's is in its
+`upload/`, the tablet's left out, as its switch stands past the rows' right edge
+(`check.txt`). It supersedes
 the 2026-11-10 set, never approved. Until it is approved, the sets below stay current.
 
 The current sets, outside git, taken 2026-11-09 from `main` at `78c7029`, each scene in
