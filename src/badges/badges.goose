@@ -1,17 +1,10 @@
-// The players' badges' animals (task 038; rendering.md, "Controls"): each a silhouette in
-// an SVG file of its own, assets/badges/<animal>.svg, embedded when the app is built and
-// baked at start into a signed distance field, one CELL × CELL texel cell per animal,
-// that the UI shader carves into a piece's top. Swapping an animal's art is replacing
-// its file and building again.
+// The players' badges' animals: each a silhouette in assets/badges/<animal>.svg,
+// embedded in the app and baked at start into a signed distance field, one CELL × CELL
+// cell per animal, that the UI shader carves into a piece's top.
 //
-// What a file may hold: a viewBox on the svg element, square or not (its longer side
-// spans the cell, centred), and one or more paths filled together even-odd, each `d`
-// of M, L, H, V, C, S, Q, T, A, and Z in either case. Transforms on the paths and their
-// groups (translate, scale, matrix, rotate) are applied, as a tracer such as potrace
-// writes them. Fill and stroke attributes are ignored: everything is one filled shape.
-// No other elements (circle, rect, text, use) are read, and nothing outside a path.
-//
-// Pure functions over bytes, with no graphics, so the bake is tested headless.
+// What a file may hold: a viewBox, and paths filled together even-odd, each `d` of
+// M, L, H, V, C, S, Q, T, A, and Z in either case, with transforms on them and their
+// groups (translate, scale, matrix, rotate). Fill, stroke, and other elements are ignored.
 namespace badges;
 import std;
 import vec;
