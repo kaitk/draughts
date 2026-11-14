@@ -251,15 +251,20 @@ fn was_best(p: Ply&) -> bool { p.best.from == p.move.from && p.best.to == p.move
 
 // The best move in place of the move shown as the game's hint, while comparing and the
 // board is at rest: a ring on its piece, a light ghost and a ring where it goes, a ring at
-// each stop between; lit and still, never pulsing (each frame sets it again).
+// each stop between; lit and still, never pulsing (each frame sets it again). The move
+// played gets a light ghost where it went too, with no ring.
 fn show_best(r: Replay&) {
     let b .= r.b;
     guard comparing(r) && !b.moving else {
         b.glow = -1;
         b.hint_to = -1;
         b.hint_via = 0;
+        b.played_to = -1;
         return;
     }
+    // The move played, a light ghost where it went, as the best move's.
+    b.played_from = r.plies[r.ply - 1].move.from;
+    b.played_to = r.plies[r.ply - 1].move.to;
     let m .= r.plies[r.ply - 1].best;
     b.glow = m.from;
     b.glow_at = -1.0;

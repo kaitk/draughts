@@ -125,12 +125,12 @@ struct Board {
     hop_at:   f64,
     hop_from: i64,
     hop_to:   i64,
-    again: bool,                // a press on the selected piece: let go without a drag, it is put down
+    again:    bool,             // a press on the selected piece: let go without a drag, it is put down
     // A puzzle's board: nothing shows the way (no counts, no pieces to take, no next stop).
     by_hand: bool,
     kept_at: f64,               // when the next stops started pulsing (next_shown)
-    misses: i64,                // wrong squares in this turn's capture (`missed`)
-    quiet: bool,                // no counts: the computer is to move
+    misses:  i64,               // wrong squares in this turn's capture (`missed`)
+    quiet:   bool,              // no counts: the computer is to move
     counted: bool,              // on mistakes only, a mistake has shown the counts (`counting`)
     // The move being shown: the position before it, when it started, and where the
     // piece starts from if it was dropped there; `back`, a move shown sliding back.
@@ -145,42 +145,46 @@ struct Board {
     last:      rules::Way,
     has_last:  bool,
     pulse_end: f64,
-    outtaken: u64,              // pieces pulsing beside the capturers: what they must take
-    hints:    i64,              // MISTAKES or MOVES
-    wrong:    i64,              // the square of the last wrong move, a bit, or -1
-    wrong_at: f64,
-    ghost:    bool,             // a ghost of the piece that slid back fades on the wrong square
-    ghost_of: float2,           // its side (0 or 1) and whether it is a king
-    glow:     i64,              // the piece a hint shows with a glow ring, a bit, or -1
-    glow_at:  f64,
+    outtaken:  u64,             // pieces pulsing beside the capturers: what they must take
+    hints:     i64,             // MISTAKES or MOVES
+    wrong:     i64,             // the square of the last wrong move, a bit, or -1
+    wrong_at:  f64,
+    ghost:     bool,            // a ghost of the piece that slid back fades on the wrong square
+    ghost_of:  float2,          // its side (0 or 1) and whether it is a king
+    glow:      i64,             // the piece a hint shows with a glow ring, a bit, or -1
+    glow_at:   f64,
     // A hint's second step: a light ghost of the piece on the square it goes to (a bit,
     // or -1), its ring pulsing from `ghost_at`; `hint_via`, its capture's stops between.
     hint_to:  i64,
     ghost_at: f64,
     hint_via: u64,
+    // A replay's move compared with the hint: a light ghost of the piece on `played_from`
+    // where it went, `played_to` (a square, or -1), as the hint's but with no ring.
+    played_from: i64,
+    played_to:   i64,
     // A replay's last move: every square it stood on shaded, and a ghost where it started
     // at `trace_a` of TRACE_GHOST.
     trace:   bool,
     trace_a: f32 = 1.0,
     // The lookout: the side to move's pieces in danger, and the other side's crowning
     // squares. Cleared by a move.
-    danger: u64,
-    crowns: u64,
-    shows:  i64,                // counts the positions shown: the lookout's marks were cleared
+    danger:    u64,
+    crowns:    u64,
+    shows:     i64,             // counts the positions shown: the lookout's marks were cleared
     pulsed:    i64,             // the piece whose glow ring pulses this frame, or -1
     king_look: i64,             // CROWN or STACK
     // A picture rather than a game: a flashed ring and pulsed capture rings stay lit and
     // still (`held`), so it needs no frames after.
     still: bool,
     held:  bool,
-    over: i64,                  // the selected piece's target under the pointer, or -1 (`target_at`)
+    over:  i64,                 // the selected piece's target under the pointer, or -1 (`target_at`)
     // The keys' cursor, numbered y * size + x as Marks are (a light square too), or -1.
-    cursor: i64,
+    cursor:      i64,
     cursor_flip: bool = false,  // whether `keys` last read the cells turned
-    pressed:  i64,
-    press_at: float2,
-    dragging: bool,
-    drag_at:  float2,
+    pressed:     i64,
+    press_at:    float2,
+    dragging:    bool,
+    drag_at:     float2,
     // Filled by fill().
     pieces: Piece[..MAX_PIECES],
     marks:  Marks,
@@ -190,7 +194,7 @@ struct Board {
 
 fn new(variant: u8) -> Board {
     var b = Board { variant: variant, selected: -1, hop_at: -1.0, hop_from: -1, hop_to: -1, wrong: -1, glow: -1, hint_to: -1,
-                    pulsed: -1, king_look: CROWN, over: -1, cursor: -1, pressed: -1, .. };
+                    played_to: -1, pulsed: -1, king_look: CROWN, over: -1, cursor: -1, pressed: -1, .. };
     set(b, rules::start(variant));
     return b;
 }
@@ -213,6 +217,7 @@ fn show(b: Board&, p: rules::Position) {
     b.glow = -1;
     b.hint_to = -1;
     b.hint_via = 0;
+    b.played_to = -1;
     b.danger = 0;
     b.crowns = 0;
     b.over = -1;
@@ -449,6 +454,7 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.glow = -1;
     b.hint_to = -1;
     b.hint_via = 0;
+    b.played_to = -1;
     b.danger = 0;
     b.crowns = 0;
     b.over = -1;
@@ -1025,6 +1031,11 @@ fn fill(b: Board&, l: Layout, now: f64) {
             mark(b, b.marks.via, ctz(via));
             via &= via - 1;
         }
+    }
+    if b.played_to >= 0 && b.played_to != b.hint_to && !b.moving {
+        add(b, center(l, v, b.played_to), r, 0.0, b.pos.side == rules::BLACK, b.pos.kings & rules::bit(b.played_from) != 0, 0.0,
+            GHOST_HINT, 0.0);
+        if b.pieces.len > 0 { b.pieces[b.pieces.len - 1].ring.w = LIGHT; }
     }
     if b.ghost && b.wrong >= 0 {
         // The ghost fades from 0.8 out over the flash, slowly at first.

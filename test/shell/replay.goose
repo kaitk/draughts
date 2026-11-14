@@ -76,9 +76,15 @@ fn hint(sh: shell::Shell&) -> u8[>..] {
     guard b.glow >= 0 else { return str("no best move on the board"); }
     let v .= rules::VARIANTS[b.variant];
     let m = r.plies[r.ply - 1].best;
-    let right = b.glow == m.from as i64 && b.hint_to == m.to as i64 && popcount(b.hint_via) == max(m.path.len - 2, 0);
-    return str("the best move ", drive::name(v, b.glow), "-", drive::name(v, b.hint_to), " on the board, ", popcount(b.hint_via),
-               " stops ringed, ", if right { "right" } else { "WRONG" });
+    let played = r.plies[r.ply - 1].move;
+    let right = b.glow == m.from as i64 && b.hint_to == m.to as i64 && popcount(b.hint_via) == max(m.path.len - 2, 0) &&
+                b.played_to == played.to as i64;
+    var s = str("the best move ", drive::name(v, b.glow), "-", drive::name(v, b.hint_to), " on the board, ", popcount(b.hint_via),
+                " stops ringed");
+    // The move played, ghosted where it went unless the best goes there too.
+    if b.played_to != b.hint_to { format(s, ", the move played ghosted on ", drive::name(v, b.played_to)); }
+    format(s, ", ", if right { "right" } else { "WRONG" });
+    return s;
 }
 
 // The squares numbered on the board, by name.
