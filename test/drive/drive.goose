@@ -118,6 +118,7 @@ fn frame(gm: game::Game&, g: gui::Gui&, l: panel::Layout, at: float2, down: bool
          now: f64) -> i64 {
     gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.board.scale, now);
     let ev, changed = game::frame(gm, g, l, now, over);
+    dropped(g);
     if ev.ended { result = ev.result; }
     return ev.go;
 }
@@ -126,7 +127,15 @@ fn frame(gm: game::Game&, g: gui::Gui&, l: panel::Layout, at: float2, down: bool
 fn frame(sh: shell::Shell&, g: gui::Gui&, at: float2, down: bool, pressed: bool, released: bool, now: f64) -> bool {
     gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, gui::scale_of(size.x, size.y),
                now);
-    return shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d).changed;
+    let changed = shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d).changed;
+    dropped(g);
+    return changed;
+}
+
+// A frame that dropped quads past gui::MAX_QUADS says so, in any test's output: a
+// control missing unseen (2026-11-14, test/shell/long_game).
+fn dropped(g: gui::Gui&) {
+    if g.dropped > 0 { print("gui: ", g.dropped, " quads dropped past gui::MAX_QUADS"); }
 }
 
 let AWAY = float2 { -1.0, -1.0 };
@@ -146,7 +155,9 @@ fn tap(gm: game::Game&, g: gui::Gui&, l: panel::Layout, p: float2, now: f64) -> 
 // pressed and the pointer resting away; returns whether anything changed.
 fn key(sh: shell::Shell&, g: gui::Gui&, step: i64, confirm: bool, now: f64) -> bool {
     gui::begin(g, gui::Input { at: AWAY, step: step, confirm: confirm, .. }, gui::scale_of(size.x, size.y), now);
-    return shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d).changed;
+    let changed = shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d).changed;
+    dropped(g);
+    return changed;
 }
 
 // A tap at p, then a frame with the pointer away, as a finger lifts.

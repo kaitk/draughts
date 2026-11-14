@@ -7,58 +7,118 @@
 <link rel="stylesheet" href="draughts.css">
 <script src="draughts.js"></script>
 <style>
-  /* A past game's replay as built (docs/architecture/rendering.md, "A game's replay"), at
-     move 20 of the shared game, white's blunder: the steps a column at the board's left,
-     the board with the move's mark on its square, and a column with back, the title and
-     "Doesn't count", and a glass with the move shown, each side's accuracy, the whole
-     list, and the marks' legend. Portrait: the head, the board, the steps in a row, the
-     glass. */
-  .rep { display: grid; grid-template-columns: 88px auto minmax(300px, 1fr); gap: 24px; }
+  /* A past game's replay (docs/architecture/rendering.md, "A game's replay"), opened at
+     move 20 of the shared game, white's blunder; the steps work. What it adds to the
+     built screen, its takes as parameters (task 087):
+     - The move shown, once its piece has arrived (a step on plays it; any other step
+       shows it at once): a faded piece where it started, every square it went through
+       shaded, and its way as a trail, ?trail=dots (default) | dash | none;
+       ?shade=path (default) | ends (the first and last squares only, as built).
+     - The best move from the position shown (none where the move is forced: the glass
+       says the side must take, or has one move), the hint's look (the glow ring on the piece,
+       a light ghost with the ring where it goes, a ring at each stop):
+       ?best=tile (default; the bulb tile under the steps turns it on and off, on at first)
+       | always | text (the glass's line only). The glass says it too, and, after a
+       marked move, which was best instead.
+     - A desktop's large window: the board, the steps, and a column of at most 680 dp
+       centered as one, the column's words a third larger, taps 64 dp (task 069).
+     Portrait: the head, the board, the steps in a row, the glass. */
+  .rep { --k: 1; --tap: 88px; --col: 1fr; display: grid; grid-template-columns: var(--tap) auto minmax(300px, var(--col)); gap: 24px; }
   .steps { display: flex; flex-direction: column; justify-content: center; gap: 16px; }
-  .steps .tile { padding: 0; }
-  #board { place-self: center; width: min(var(--h), var(--w) - 88px - 300px - 48px); }
+  .steps .tile { padding: 0; min-width: var(--tap); min-height: var(--tap); }
+  .steps .tile.dim { opacity: 0.35; }
+  .steps .sep { height: 8px; }
+  .mid { place-self: center; display: flex; flex-direction: column; align-items: center; }
+  .note { height: calc(26px * var(--k)); font-size: calc(16px * var(--k)); color: var(--fg-dim); white-space: nowrap; }
+  #board { width: min(var(--h) - 26px * var(--k), var(--w) - var(--tap) - 300px - 48px); }
   .col { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
-  .top h1 { font-size: 30px; }
-  .pill { white-space: nowrap; padding: 4px 12px; border-radius: 14px; font-size: 17px; background: color-mix(in srgb, var(--glow) 20%, transparent); }
-  .list { --r: 24px; flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 14px 16px; font-size: 20px; }
-  .shown { display: flex; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid rgb(255 255 255 / 0.12); font-size: 18px; }
-  .shown .piece { width: 22px; margin-top: 2px; }
-  .acc { display: grid; grid-template-columns: 30px 1fr 1fr; padding: 8px 0 4px; font-size: 17px; }
+  .top { min-height: var(--tap); gap: 16px; }
+  .top .tile { min-height: var(--tap); font-size: calc(22px * var(--k)); }
+  .top .tile .icon { width: calc(30px * var(--k)); height: calc(30px * var(--k)); }
+  .top h1 { font-size: calc(30px * var(--k)); flex: 1; }
+  .gline { display: flex; gap: 10px; align-items: center; font-size: calc(18px * var(--k)); color: var(--fg-dim); }
+  .gline .icon { width: 1.1em; height: 1.1em; color: var(--fg); }
+  .list { --r: 24px; flex: 1; min-height: 0; display: flex; flex-direction: column; padding: calc(14px * var(--k)) calc(16px * var(--k)); font-size: calc(20px * var(--k)); }
+  .shown { display: flex; gap: 10px; font-size: calc(18px * var(--k)); line-height: 1.25; }
+  .shown .piece, .say .piece { width: calc(22px * var(--k)); margin-top: 2px; }
+  .say { display: flex; gap: 10px; align-items: center; margin-top: 8px; font-size: calc(18px * var(--k)); color: var(--fg-dim); }
+  .say b { font-weight: 700; color: var(--fg); }
+  .say .icon { flex: none; width: calc(22px * var(--k)); height: calc(22px * var(--k)); color: var(--glow); }
+  .say[hidden] { display: none; }
+  .rule { border-bottom: 1px solid rgb(255 255 255 / 0.12); margin-top: 10px; }
+  .acc { display: grid; grid-template-columns: calc(30px * var(--k)) 1fr 1fr; padding: 8px 0 4px; font-size: calc(17px * var(--k)); }
   .acc span { display: flex; gap: 6px; align-items: center; }
-  .acc .piece { width: 20px; }
-  .rows { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
-  .mrow { display: grid; grid-template-columns: 30px 1fr 1fr; align-items: center; height: 34px; flex: none; }
-  .mrow .n { font-size: 17px; color: var(--fg-dim); }
-  .mv { justify-self: start; display: flex; gap: 3px; padding: 2px 8px; border-radius: 9px; white-space: nowrap; }
+  .acc .piece { width: calc(20px * var(--k)); }
+  .rows { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; }
+  .mrow { display: grid; grid-template-columns: calc(30px * var(--k)) 1fr 1fr; align-items: center; height: calc(34px * var(--k)); }
+  .mrow .n { font-size: calc(17px * var(--k)); color: var(--fg-dim); }
+  .mv { justify-self: start; display: flex; gap: 3px; padding: 2px 8px; border-radius: 9px; white-space: nowrap; cursor: pointer; }
   .mv.lit { background: color-mix(in srgb, var(--glow) 22%, transparent); }
   .mv.after { opacity: 0.55; }
-  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; padding-top: 8px; font-size: 15px; color: var(--fg-dim); }
+  .mk { font-size: calc(17px * var(--k)); }
+  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; padding-top: 8px; font-size: calc(15px * var(--k)); color: var(--fg-dim); }
+
+  /* The move shown and the best move, over the board's squares (10 % a square). Each
+     comes in once the piece is at rest. */
+  .ind { opacity: 0; transition: opacity 0.25s; }
+  .board.rest .ind { opacity: 1; }
+  .shade { position: absolute; inset: 0; background: color-mix(in srgb, var(--glow) 18%, transparent); }
+  .shade.end { background: color-mix(in srgb, var(--glow) 26%, transparent); }
+  .piece.ghost, .piece.hintghost { opacity: 0; transition: opacity 0.25s; }
+  .board.rest .piece.ghost { opacity: 0.3; }
+  .board.rest .piece.hintghost { opacity: 0.5; }
+  .ringmark { position: absolute; inset: 11%; z-index: 2; border-radius: 50%;
+    box-shadow: 0 0 0 calc(0.45 * var(--u)) color-mix(in srgb, var(--glow) 85%, transparent),
+      0 0 calc(2 * var(--u)) calc(0.3 * var(--u)) color-mix(in srgb, var(--glow) 45%, transparent); }
+  .trail { position: absolute; inset: 1.1%; width: 97.8%; height: 97.8%; pointer-events: none; overflow: visible; }
+  .trail circle { fill: var(--glow); }
+  .trail .stop { fill: none; stroke: var(--glow); stroke-width: 0.06; }
+  .trail path { fill: none; stroke: var(--glow); stroke-width: 0.07; stroke-dasharray: 0.16 0.14; stroke-linecap: round; }
+  .mover { position: absolute; inset: 1.1%; pointer-events: none; z-index: 3; }
+  .mover > div { position: absolute; width: 10%; height: 10%; left: 0; top: 0; }
+  .piece.gone { visibility: hidden; }
+
   @container (max-height: 599px) and (orientation: landscape) {
-    .top h1 { font-size: 24px; }
-    .top .tile { flex-direction: column; gap: 2px; font-size: 20px; padding: 0; }
+    .top h1 { display: none; }
+    .gline { display: none; }
     .legend { display: none; }
+    .say.better { display: none; }
   }
   @container (orientation: portrait) {
     .rep { grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr); gap: 16px; }
     .col { display: contents; }
     .top { order: -1; }
+    .gline { order: -1; }
     .steps { flex-direction: row; justify-content: space-between; }
     .steps .tile { flex: 1; }
-    #board { width: min(var(--w), var(--h) - 88px - 88px - 220px - 64px); }
+    .steps .sep { display: none; }
+    #board { width: min(var(--w), var(--h) - 88px - 88px - 260px - 64px); }
+  }
+  /* A desktop's large window (draughts.css caps its width at 1.9 times its height). */
+  @container (min-width: 1700px) and (min-height: 1000px) {
+    .rep { --k: 1.5; --tap: 64px; --col: 760px; justify-content: center; grid-template-columns: var(--tap) auto minmax(420px, var(--col)); }
+    #board { width: min(var(--h) - 26px * var(--k), var(--w) - var(--tap) - 420px - 48px); }
+    .steps .tile .icon { width: 30px; height: 30px; }
   }
 </style>
 </head>
 <body data-screen="board">
 <main class="screen rep">
   <div class="steps">
-    <a class="tile glass" data-icon="first"></a><a class="tile glass" data-icon="left"></a>
-    <a class="tile glass" data-icon="right"></a><a class="tile glass" data-icon="last"></a>
+    <a class="tile glass" data-icon="first" data-go="first"></a><a class="tile glass" data-icon="left" data-go="back"></a>
+    <a class="tile glass" data-icon="right" data-go="on"></a><a class="tile glass" data-icon="last" data-go="last"></a>
+    <span class="sep"></span><a class="tile glass on" data-icon="hint" id="besttile" title="Best move"></a>
   </div>
-  <div id="board"></div>
+  <div class="mid"><div class="note" id="note">A game from here doesn't count: it isn't saved and doesn't change your rating</div><div id="board"></div></div>
   <div class="col">
-    <div class="top"><a class="tile glass" href="results.html" data-icon="back">Back</a><h1>Replay</h1><span class="pill">Doesn't count</span></div>
+    <div class="top"><a class="tile glass" href="results.html" data-icon="back">Back</a><h1>Replay</h1>
+      <a class="tile primary" data-icon="computer">Play from here</a></div>
+    <div class="gline"><span data-icon="x"></span>Medium 1644 · 2026-11-13</div>
     <section class="list glass">
-      <div class="shown"><span class="piece solo white"></span><span>20. 33-29 <i class="mk q2">??</i> Blunder: this move lost much of the chance to win</span></div>
+      <div class="shown" id="shown"></div>
+      <div class="say better" id="better"></div>
+      <div class="say" id="next"></div>
+      <div class="rule"></div>
       <div class="acc"><span></span><span><span class="piece solo white"></span>89%</span><span><span class="piece solo black"></span>91%</span></div>
       <div class="rows" id="rows"></div>
       <div class="legend" id="legend"></div>
@@ -66,17 +126,193 @@
   </div>
 </main>
 <script>
-  const D = Draughts, P = D.PLIES, PLY = 39;
-  const mv = (i) => (P[i] ? `<span class="mv${i === PLY - 1 ? ' lit' : i >= PLY ? ' after' : ''}">${P[i].m}${D.mark(P[i].k)}</span>` : '<span></span>');
-  let html = '';
-  for (let i = 26; i < 52; i += 2) html += `<div class="mrow"><span class="n">${i / 2 + 1}</span>${mv(i)}${mv(i + 1)}</div>`;
-  document.getElementById('rows').innerHTML = html;
+  const D = Draughts, Q = new URLSearchParams(location.search);
+  const take = (k, vs) => (vs.includes(Q.get(k)) ? Q.get(k) : vs[0]);
+  const TRAIL = take('trail', ['dots', 'dash', 'none']), SHADE = take('shade', ['path', 'ends']), BEST = take('best', ['tile', 'always', 'text']);
+
+  // The shared game with each capture's whole way and, for each position, the move the
+  // engine judged best there (src/ai/judge.goose at the judge's depth; none where the
+  // move was forced). The marks are the shared game's (draughts.js).
+  const GAME = ('31-27|34-30 17-22|17-21 36-31|37-31 19-24|12-17 34-30|41-36 14-19|11-17 40-34|41-36 20-25|11-17 41-36|41-36 ' +
+    '15-20|15-20 32-28|45-40 11-17|10-14 45-40|38-32 10-15|6-11 50-45|38-32 6-11|7-11 47-41|37-32 5-10|9-14 37-32|27-21 ' +
+    '1-6|10-14 41-37|41-37 10-14|10-14 46-41|46-41 4-10|4-10 34-29|28-23 25x34x23| 39-34|40-34 20-25|24-29 43-39|34-29 ' +
+    '15-20|14-20 48-43|49-43 10-15|10-15 35-30|34-29 24x35| 34-30|34-29 35x24|35x24 40-34|40-34 24-30|23-29 33-29|31-26 ' +
+    '22x33x24| 31-26|31-26 30-35|17-21 36-31|34-30 24-30|24-30 41-36|41-36 20-24|23-28 45-40|27-21 14-20|24-29 ' +
+    '38-33|27-21 17-22|23-28 43-38|42-38 11-17|24-29 49-43|49-43 6-11|6-11 33-28|26-21 22x33| 38x29|38x29 24x33| ' +
+    '39x28| 30x39x50|30x39x50 40-34|40-34 50x22|').split(' ').map((s) => { const [m, b] = s.split('|'); return { m, b }; });
+  const N = GAME.length, ways = (m) => m.split(/[-x]/).map(Number);
+  // PDN square n on 10 × 10 as [column, row from the top]: 1 is b10, 46 is a1.
+  const xy = (n) => { const r = Math.floor((n - 1) / 5), k = (n - 1) % 5; return [r % 2 ? 2 * k : 2 * k + 1, r]; };
+  const alg = (n) => { const [x, r] = xy(n); return String.fromCharCode(97 + x) + (10 - r); };
+  const at = (x, r) => { const k = r % 2 ? x / 2 : (x - 1) / 2; return r * 5 + k + 1; };
+
+  // Every position, played out: pieces as { n: 'w' | 'b' | 'W' | 'B' }.
+  const POS = [{}];
+  for (let n = 1; n <= 20; n++) POS[0][n] = 'b';
+  for (let n = 31; n <= 50; n++) POS[0][n] = 'w';
+  // The squares a way passes, its ends and every square between its stops.
+  function passes(path) {
+    const out = [path[0]];
+    for (let i = 1; i < path.length; i++) {
+      const [x0, r0] = xy(path[i - 1]), [x1, r1] = xy(path[i]), d = Math.abs(x1 - x0);
+      for (let s = 1; s <= d; s++) out.push(at(x0 + (s * (x1 - x0)) / d, r0 + (s * (r1 - r0)) / d));
+    }
+    return out;
+  }
+  for (const g of GAME) {
+    const p = { ...POS[POS.length - 1] }, w = ways(g.m), from = w[0], to = w[w.length - 1], me = p[from];
+    g.taken = [];
+    if (g.m.includes('x')) for (const s of passes(w)) if (p[s] && p[s].toLowerCase() !== me.toLowerCase()) { g.taken.push([s, p[s]]); delete p[s]; }
+    delete p[from];
+    p[to] = me === 'w' && to <= 5 ? 'W' : me === 'b' && to >= 46 ? 'B' : me;
+    g.who = me.toLowerCase() === 'w' ? 'white' : 'black';
+    POS.push(p);
+  }
+  const MARK = D.PLIES.map((p) => p.k);
+  const TIPS = { '*': 'Best: the best move the computer found', '?!': 'Not the best: a better move was there', '?': 'A mistake: this move lost some of the chance to win',
+    '??': 'Blunder: this move lost much of the chance to win', '=': 'The only move', '': 'Good: nearly as good as the best' };
+  const label = (i) => `${Math.floor(i / 2) + 1}${i % 2 ? '…' : '.'} ${GAME[i].m}`;
+
+  let ply = 39, best = BEST !== 'text', anim = null;
+  const boardEl = document.getElementById('board');
+
+  // The board at ply k. moving: the move into k plays first, its piece hidden at its
+  // square under a mover, the pieces it takes there until it passes them.
+  function draw(k, moving) {
+    const p = POS[k], opts = { n: 10, view: 'flat', white: [], black: [], kings: [], marks: {} };
+    for (const [n, c] of Object.entries(p)) { opts[c.toLowerCase() === 'w' ? 'white' : 'black'].push(alg(n)); if (c === 'W' || c === 'B') opts.kings.push(alg(n)); }
+    const g = GAME[k - 1];
+    if (g && moving) for (const [s, c] of g.taken) { opts[c.toLowerCase() === 'w' ? 'white' : 'black'].push(alg(s)); if (c === 'W' || c === 'B') opts.kings.push(alg(s)); }
+    D.board(boardEl, opts);
+    const sq = (n) => boardEl.querySelectorAll('.sq')[xy(n)[1] * 10 + xy(n)[0]];
+    boardEl.classList.remove('rest');
+    let html = '';
+    if (g) {
+      const w = ways(g.m), from = w[0], to = w[w.length - 1], cls = g.who + (POS[k - 1][from] === g.who[0].toUpperCase() ? ' king' : '');
+      // The squares it went through, its last a little more.
+      const shaded = SHADE === 'path' ? passes(w) : [from, to];
+      for (const s of shaded) sq(s).insertAdjacentHTML('afterbegin', `<div class="shade ind${s === to ? ' end' : ''}"></div>`);
+      sq(from).insertAdjacentHTML('beforeend', `<div class="piece ghost ind ${cls}"></div>`);
+      const mk = MARK[k - 1];
+      const disc = { '*': ['var(--glow)', D.icon('star')], '?!': ['#ffd75a', '?!'], '?': ['#ff9a3c', '?'], '??': ['var(--forced)', '??'] }[mk];
+      if (disc) sq(to).insertAdjacentHTML('beforeend', `<span class="mark ind" style="--c: ${disc[0]}; color: #fff">${disc[1]}</span>`);
+      // The way: dots or a dashed line from the faded piece through each stop, clear of
+      // the pieces at its ends.
+      if (TRAIL !== 'none') {
+        const pts = w.map((n) => { const [x, r] = xy(n); return [x + 0.5, r + 0.5]; });
+        let svg = '';
+        if (TRAIL === 'dots') {
+          for (let i = 1; i < pts.length; i++) {
+            const [a, b] = [pts[i - 1], pts[i]], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+            const start = i === 1 ? 0.42 : 0.3, end = i === pts.length - 1 ? 0.42 : 0.3, cnt = Math.max(1, Math.round((len - start - end) / 0.3));
+            for (let j = 0; j <= cnt; j++) {
+              const t = (start + ((len - start - end) * j) / cnt) / len;
+              svg += `<circle cx="${a[0] + (b[0] - a[0]) * t}" cy="${a[1] + (b[1] - a[1]) * t}" r="0.06"/>`;
+            }
+          }
+        } else {
+          const [a, b] = [pts[0], pts[1]], l = Math.hypot(b[0] - a[0], b[1] - a[1]), s = 0.42 / l;
+          const z = pts[pts.length - 1], y = pts[pts.length - 2], lz = Math.hypot(z[0] - y[0], z[1] - y[1]), e = 0.42 / lz;
+          const q = pts.map((v) => [...v]);
+          q[0] = [a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s];
+          q[q.length - 1] = [z[0] - (z[0] - y[0]) * e, z[1] - (z[1] - y[1]) * e];
+          svg += `<path d="M${q.map((v) => v.join(' ')).join(' L')}"/>`;
+        }
+        for (let i = 1; i < pts.length - 1; i++) svg += `<circle class="stop" cx="${pts[i][0]}" cy="${pts[i][1]}" r="0.2"/>`;
+        html += `<svg class="trail ind" viewBox="0 0 10 10">${svg}</svg>`;
+      }
+    }
+    // The best move from here, the hint's look.
+    const b = GAME[k] && GAME[k].b;
+    if (b && best) {
+      const w = ways(b), from = w[0], to = w[w.length - 1], c = p[from], cls = (c.toLowerCase() === 'w' ? 'white' : 'black') + (c === c.toUpperCase() ? ' king' : '');
+      sq(from).insertAdjacentHTML('beforeend', '<div class="ringmark ind"></div>');
+      sq(to).insertAdjacentHTML('beforeend', `<div class="piece hintghost ${cls}"></div><div class="ringmark ind"></div>`);
+      for (const s of w.slice(1, -1)) sq(s).insertAdjacentHTML('beforeend', '<div class="target via ind"></div>');
+    }
+    boardEl.insertAdjacentHTML('beforeend', html);
+    D.paint();
+    if (!moving) { requestAnimationFrame(() => boardEl.classList.add('rest')); return; }
+    // The step on: the piece slides from stop to stop, 0.14 s a square, and each piece it
+    // takes goes as it passes; then the marks come in.
+    const w = ways(g.m), to = w[w.length - 1], piece = sq(to).querySelector('.piece:not(.ghost):not(.hintghost)');
+    piece.classList.add('gone');
+    const layer = document.createElement('div');
+    layer.className = 'mover';
+    layer.innerHTML = `<div><div class="${piece.className.replace('gone', '')}"></div></div>`;
+    boardEl.appendChild(layer);
+    D.paint();
+    const lens = w.slice(1).map((n, i) => Math.abs(xy(n)[0] - xy(w[i])[0])), total = lens.reduce((a, c) => a + c, 0);
+    let t = 0;
+    const frames = [{ offset: 0, transform: `translate(${xy(w[0])[0] * 100}%, ${xy(w[0])[1] * 100}%)` }];
+    lens.forEach((l, i) => { t += l; frames.push({ offset: t / total, transform: `translate(${xy(w[i + 1])[0] * 100}%, ${xy(w[i + 1])[1] * 100}%)` }); });
+    const dur = Math.max(260, 140 * total);
+    for (const [s] of g.taken) {
+      // When the mover passes s: its place along the way.
+      const way = passes(w), idx = way.indexOf(s);
+      const el = sq(s).querySelector('.piece');
+      if (el) setTimeout(() => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, fill: 'forwards' }), (dur * idx) / (way.length - 1));
+    }
+    anim = layer.firstElementChild.animate(frames, { duration: dur, easing: 'ease-in-out' });
+    anim.onfinish = () => {
+      layer.remove();
+      for (const [s] of g.taken) sq(s).querySelector('.piece')?.remove();
+      piece.classList.remove('gone');
+      anim = null;
+      boardEl.classList.add('rest');
+    };
+  }
+
+  function glass() {
+    const g = GAME[ply - 1], mk = MARK[ply - 1] || '';
+    document.getElementById('shown').innerHTML = g
+      ? `<span class="piece solo ${g.who}"></span><span>${label(ply - 1)} ${D.mark(mk)} ${TIPS[mk]}</span>`
+      : '<span>The start, before the first move</span>';
+    // After a marked move, the best there instead.
+    const better = document.getElementById('better'), prev = GAME[ply - 1];
+    better.hidden = !(prev && ['?!', '?', '??'].includes(mk) && prev.b && prev.b !== prev.m);
+    if (!better.hidden) better.innerHTML = `${D.icon('star')}<span>The best was <b>${prev.b}</b></span>`;
+    const next = document.getElementById('next'), here = GAME[ply];
+    next.innerHTML = !here ? `${D.icon('crown')}<span>The game ended here</span>`
+      : here.b ? `${D.icon('hint')}<span>Best next for ${here.who}: <b>${here.b}</b></span>`
+      : `${D.icon('lock')}<span>${here.who[0].toUpperCase() + here.who.slice(1)} ${here.m.includes('x') ? 'must take' : 'has one move'}: <b>${here.m}</b></span>`;
+    let rows = '';
+    const mv = (i) => (GAME[i] ? `<span class="mv${i === ply - 1 ? ' lit' : i >= ply ? ' after' : ''}" data-ply="${i + 1}">${GAME[i].m}${D.mark(MARK[i])}</span>` : '<span></span>');
+    for (let i = 0; i < N; i += 2) rows += `<div class="mrow"><span class="n">${i / 2 + 1}</span>${mv(i)}${mv(i + 1)}</div>`;
+    const el = document.getElementById('rows');
+    el.innerHTML = rows;
+    const lit = el.querySelector('.lit');
+    if (lit) { const r = lit.parentNode; el.scrollTop = Math.max(0, r.offsetTop - el.offsetTop - el.clientHeight / 2 + r.offsetHeight / 2); }
+    document.querySelector('[data-go="first"]').classList.toggle('dim', ply === 0);
+    document.querySelector('[data-go="back"]').classList.toggle('dim', ply === 0);
+    document.querySelector('[data-go="on"]').classList.toggle('dim', ply === N);
+    document.querySelector('[data-go="last"]').classList.toggle('dim', ply === N);
+  }
+
+  function show(k, moving) {
+    if (anim) anim.finish();
+    ply = Math.max(0, Math.min(N, k));
+    draw(ply, moving);
+    glass();
+  }
+  document.querySelectorAll('[data-go]').forEach((t) => t.addEventListener('click', () => {
+    const go = t.dataset.go;
+    if (go === 'on' && ply < N) show(ply + 1, true);
+    else if (go === 'back') show(ply - 1);
+    else if (go === 'first') show(0);
+    else if (go === 'last') show(N);
+  }));
+  addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' && ply < N) show(ply + 1, true);
+    if (e.key === 'ArrowLeft') show(ply - 1);
+  });
+  document.getElementById('rows').addEventListener('click', (e) => { const m = e.target.closest('[data-ply]'); if (m) show(+m.dataset.ply); });
+  const tile = document.getElementById('besttile');
+  if (BEST !== 'tile') tile.remove(); else tile.addEventListener('click', () => { best = !best; tile.classList.toggle('on', best); show(ply); });
   document.getElementById('legend').innerHTML = [['*', 'best'], ['?!', 'not the best'], ['?', 'a mistake'], ['??', 'a blunder']]
     .map(([k, w]) => `<span>${D.mark(k)} ${w}</span>`).join('');
-  const pos = D.game(PLY);
-  D.board(document.getElementById('board'), { ...pos, view: 'flat',
-    marks: { [pos.last[1]]: '<span class="mark" style="--c: var(--forced); color: #fff">??</span>' } });
   D.init();
+  show(ply);
 </script>
 </body>
 </html>

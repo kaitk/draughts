@@ -106,6 +106,7 @@ fn main() {
     var season_in = 0;
     var wake_at = -1.0;
     var released = false;
+    var most_dropped = 0;
     var thinker = think::Thinker {};
     while host::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
@@ -201,6 +202,13 @@ fn main() {
         if want == shell::DROPPED { render::drop3d(rd); }
         let out .= shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d);
         if out.changed { dirty = true; }
+        // The UI's quads past gui::MAX_QUADS are dropped unseen: said whenever a frame
+        // drops more than any before, so it shows in a run's output rather than as a
+        // control missing from a screenshot (2026-11-14, a long game's win card).
+        if g.dropped > most_dropped {
+            most_dropped = g.dropped;
+            print("gui: ", g.dropped, " quads dropped past gui::MAX_QUADS (", gui::MAX_QUADS, ") on screen ", sh.screen);
+        }
         // The A key switches the 3D board between MSAA and SMAA, not while a name is typed.
         if !out.typing && host::aa_key() {
             render::toggle_aa(rd);

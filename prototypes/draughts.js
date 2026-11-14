@@ -2,7 +2,8 @@
 // over it, the board flat and raised (?board=3d), icons, and one game's moves. Plain
 // script, no build step. URL parameters, all optional: ?season=winter|spring|summer|autumn
 // (else by the date), ?bg=plain (the plain fade in place of the photograph), ?board=3d,
-// ?device=tablet|pixel|iphone, with -portrait for its portrait (else the window).
+// ?device=tablet|pixel|iphone, with -portrait for its portrait, or a desktop's window
+// full screen: mac|desktop|ultrawide (else the window).
 'use strict';
 
 const Draughts = (() => {
@@ -15,11 +16,16 @@ const Draughts = (() => {
 
   // Devices in dp, landscape, with the safe area's insets (top, right, bottom, left); a
   // portrait turns them. The Pixel 7a: its cutout and gesture bar; the iPhone 13 mini at
-  // its points. Without ?device= the window is the screen, with no insets.
+  // its points. A desktop in dp (gui::DESKTOP_DP, 0.75 points a dp, up to 0.9 on a
+  // 1440-point screen): a MacBook's 1512 × 982 points, a 27" 2560 × 1440, and a 34"
+  // ultrawide's 3440 × 1440. Without ?device= the window is the screen, with no insets.
   const DEVICES = {
     tablet: [1280, 800, [0, 0, 0, 0], [0, 0, 0, 0]],
     pixel: [1066, 480, [0, 0, 37, 52], [52, 0, 37, 0]],
     iphone: [812, 375, [0, 50, 21, 50], [50, 0, 34, 0]],
+    mac: [2016, 1309, [0, 0, 0, 0], [0, 0, 0, 0]],
+    desktop: [2844, 1600, [0, 0, 0, 0], [0, 0, 0, 0]],
+    ultrawide: [3822, 1600, [0, 0, 0, 0], [0, 0, 0, 0]],
   };
   const device = (() => {
     const [name, turn] = (params.get('device') || '').split('-');

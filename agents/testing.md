@@ -17,6 +17,10 @@ Badge art: `tools/badge_trace.py <animal> <png>` traces a black-on-white silhoue
 `assets/badges/<animal>.svg`, its viewBox fitted round the shape's enclosing circle so it
 sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
 
+A frame driven through `test/drive` that drops UI quads past `gui::MAX_QUADS` prints
+`gui: N quads dropped`, so any test's output shows it; the app prints the same line
+whenever a frame drops more than before (2026-11-14).
+
 ## What each kind of test is for
 
 - `test/<area>/<name>.goose` with `test/expected/<name>.out`: `expected/` is flat, so a

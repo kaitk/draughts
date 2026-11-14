@@ -10,7 +10,9 @@
   /* The results screen as built (docs/architecture/rendering.md, "The results screen"):
      back and the title, the draughts with the player's rating in each on one glass; a
      panel with the rating and the results against each level; the games in that draughts,
-     newest first, each row opening its replay. Portrait: the panel above the list. */
+     newest first, each row opening its replay. Portrait: the panel above the list.
+     A desktop's large window (task 087): the whole at most 1640 dp wide, centered, its
+     words larger, taps 64 dp; draughts.css caps every screen at 1.9 times its height. */
   .res { display: flex; flex-direction: column; gap: 20px; }
   .top h1 { flex: 1; text-align: center; }
   .joined .tile { flex-direction: column; gap: 2px; font-size: 20px; }
@@ -41,6 +43,25 @@
     .top .end { width: auto; margin-left: auto; }
     .body { grid-template-columns: 320px minmax(0, 1fr); }
     .big { margin-bottom: 0; }
+  }
+  @container (min-width: 1700px) and (min-height: 1000px) {
+    .res { padding-inline: max(24px, (100% - 1640px) / 2); }
+    .top { min-height: 64px; }
+    .top h1 { font-size: 44px; }
+    .top .tile { min-height: 64px; font-size: 26px; }
+    .joined .tile { font-size: 24px; min-width: 170px; }
+    .joined small { font-size: 20px; }
+    .body { grid-template-columns: 480px minmax(0, 1fr); gap: 24px; }
+    .stats { padding: 28px 32px; gap: 14px; }
+    .stats small { font-size: 21px; }
+    .big { font-size: 56px; }
+    .lv { font-size: 26px; grid-template-columns: 1fr repeat(3, 68px); }
+    .lv .icon { width: 26px; height: 26px; }
+    .games { padding: 16px; }
+    .game { font-size: 28px; min-height: 96px; grid-template-columns: 64px 1fr auto 96px; }
+    .game small { font-size: 20px; }
+    .game > .icon { width: 32px; height: 32px; }
+    .mk { font-size: 22px; }
   }
 </style>
 </head>

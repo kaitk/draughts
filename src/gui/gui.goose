@@ -14,7 +14,8 @@ import .words;
 
 // The UI's quads a frame, past which gui::add drops them unseen. A long game's move list
 // on a desktop (every row's glyphs and marks) and its win's card come to about 600; 512
-// lost the card (2026-11-14, test/shell/long_game). 64 bytes each.
+// lost the card (2026-11-14, test/shell/long_game). 64 bytes each. What a frame drops
+// is counted (Gui's dropped), which the app prints and the tests' drive reports.
 let MAX_QUADS = 2048;
 let MAX_IDS = 32;
 let MAX_SPOTS = 128;        // the controls a frame offers the keys' focus (Spot)
@@ -259,6 +260,7 @@ struct Gui {
     acted:   bool              = false, // whether a widget was clicked this frame
     holding: bool              = false, // whether a hold (hold_tile) is filling this frame
     quads:   Quad[..MAX_QUADS] = [],
+    dropped: i64               = 0,     // the quads this frame dropped past MAX_QUADS
     slots:   Slot[MAX_IDS]     = [Slot {}; MAX_IDS],
     faces:   Face[FACES]       = [Face {}; FACES],
     pointer: Input             = Input {}, // the frame's pointer, kept while input is off (listen)
@@ -596,6 +598,7 @@ fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
     g.scale = scale;
     g.now = now;
     g.quads.clear();
+    g.dropped = 0;
     // The tile the last frame found under the pointer is lit from now. One coming back
     // while it fades out, and the one it leaves, turn from where they are, so a sweep
     // to and fro never jumps.
@@ -641,7 +644,10 @@ let ON_BOARD = 2.0;         // added to a quad's extra.z
 fn on_board(g: Gui&, first: i64, last: i64) { for i in first..last { g.quads[i].extra.z += ON_BOARD; } }
 
 fn add(g: Gui&, q: Quad) {
-    guard g.quads.len < MAX_QUADS else { return; }
+    guard g.quads.len < MAX_QUADS else {
+        g.dropped++;
+        return;
+    }
     g.quads.push(q);
     // The focused control's first quad, its tile or disc, is its shape: the ring follows
     // it, RING_GAP outside it with the corners grown to match.
