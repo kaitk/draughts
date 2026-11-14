@@ -316,6 +316,88 @@ taken), aiming at some, not most: a few hundred per draughts across the bands. A
 pass that counted any wrong move of a habit's kind, losing or not, found grabs in 35% of
 International's, but most were captures in crown puzzles, wrong only by the goal.
 
+## Traps generated (2026-11-14)
+
+Library puzzles first got ids for good (`id | difficulty | ...`, the first libraries'
+puzzles their 0-based lines), and a player's seen bits and today's record keep them by
+id, so adding puzzles moves nothing a player has (`test/puzzles/library` and
+`test/shell/today` check the first libraries' puzzles by id and an old player file).
+`tools/library.py assemble` keeps a library's ids and numbers new puzzles after the
+highest; `batch` skips the built-in library's puzzles.
+
+`batch --traps` runs trap kinds: each keeps a puzzle only if `tempts` finds a wrong first
+move of its habit that loses, and `lure` looks for such a move before the solver runs
+(which skips the solver on about half of the positions past the cheap guards for the runs, and 90 to 99% for the crown traps and bigger captures). What didn't work,
+from 20 to 45 s probes on three seeds each:
+
+- A crown trap in a crown puzzle: the king caught makes crowning at once no crown, and
+  crown in 2 then needs a deflection first: 0 of 12,000 lured solved.
+- Any trap in a safe move's puzzle: its wrong moves must leave no capture due, which a
+  caught king, a taken runner, or a grab never do: 0 sound.
+- Grabs (a move that wins a man at a glance and loses): about 2,000 lured in 45 s, every
+  sound one already in the library. Camps rarely make the forcing 2-for-1; it wants a
+  core of its own.
+- Russian's bigger capture: black men placed where white can take them (`baits`) raise
+  the lured positions sixfold, but most fail the checks (the line ends with a capture
+  due, or another capture solves too): 13 in 30 min of two kinds.
+
+The run: four processes for International, three each for Russian and Brazilian, PER 15
+or 20 and 300 s a kind, about 40 min; then `merge` (dedup across processes), `rate`
+(0.4 to 0.8 s a puzzle), and `assemble`.
+
+| Kind | International: kept, s a puzzle | Russian | Brazilian |
+|---|---|---|---|
+| crowntrap-t1 (take 1 in 2, a man before crowning, 10 v 10) | 60, 6.9 | 60, 1.2 | 60, 1.5 |
+| crowntrap-s2 (take 2 in 2, a shot) | 50, 24 | 29, 31 | 25, 36 |
+| crowntrap-t2 (take 2 in 2, 12 v 12) | 13, 92 | 6, 150 | 5, 180 |
+| bigger-1, bigger-m2 (Russian) | | 13, 140 | |
+| run-c2 (crown in 2, a man two steps short) | 60, 1.4 | 60, 0.14 | 60, 0.26 |
+| run-c3 (crown in 3) | 60, 15 | 60, 0.55 | 60, 0.55 |
+| run-t1 (take 1 in 2) | 60, 1.2 | 60, 0.15 | 60, 0.24 |
+| run-t2 (take 2 in 2, 12 v 12) | 38, 29 | 60, 0.69 | 60, 0.71 |
+| After merging across processes | 287 of 341 | 234 of 348 | 217 of 330 |
+
+On 8×8 most sound positions of the shot kinds were seen before (475 of 504 in Russian's
+crowntrap-s2), as the other kinds' were.
+
+| Draughts | Puzzles | Bytes | Difficulty: min, median, max | Over 1400 | New: median, over 1400 |
+|---|---|---|---|---|---|
+| International | 3,579 | 507,183 | 341, 952, 2290 | 376 | 867, 33 |
+| Russian | 2,328 | 273,327 | 300, 859, 1991 | 87 | 791, 20 |
+| Brazilian | 2,080 | 244,438 | 300, 847, 2119 | 112 | 846, 21 |
+
+`build/puzzles tempt`, before and after, the traps by band (under 600, 600-899,
+900-1199, 1200-1499, 1500 and over):
+
+| Draughts | Crown trap | Bigger | Grab | Run | Any trap |
+|---|---|---|---|---|---|
+| International before | 0 | 0 | 22 | 3 | 25 |
+| International after | 108 | 0 | 23 | 182 | 312 = 2 165 67 51 27 |
+| Russian before | 0 | 2 | 4 | 4 | 8 |
+| Russian after | 68 | 9 | 6 | 167 | 242 = 12 141 42 32 15 |
+| Brazilian before | 0 | 0 | 3 | 7 | 10 |
+| Brazilian after | 61 | 0 | 3 | 163 | 227 = 8 122 44 39 14 |
+
+About 9% of International's library and 10 to 11% of the 8×8 ones are traps now, half
+of them between 600 and 900. To try, `build/draughts --variant V --library N`, by kind
+easiest, middle, hardest:
+
+- International: crown trap 3297 (675), 3474 (971), 3579 (2047); run in crowning 3294
+  (650), 3520 (1297), 3561 (1587); run in a shot 3293 (646), 3411 (805), 3573 (1856).
+- Russian: bigger capture 2095 (316), 2099 (491), 2316 (1611); crown trap 2131 (638),
+  2244 (900), 2328 (1918); run 2103 (606), 2257 (975), 2324 (1830).
+- Brazilian: crown trap 1895 (638), 1996 (919), 2080 (1955); run 1867 (586), 2010
+  (986), 2078 (1869).
+
+Checked by hand: Russian 2095 (black, take 1): f8:h6:f4 takes two and white's g3 then
+takes three, g3:e5:c3:a5; f8:d6 takes one and keeps it. Russian 2131 (white, take 2 in
+2): a7-b8 crowns, and black's d4-c3 starts a shot (`try` with the line); h2-g3 gives one, h4:f2, and g1:e3:c5:e7 takes
+three.
+
+Left: grabs need a core that makes the forcing exchange, and Russian's bigger capture a
+better generator than baits in camps; the share of traps the children meet is
+unmeasured.
+
 ## Acceptance criteria
 
 - [x] The UI takes above prototyped, checked on the tablet's and a phone's sizes in both

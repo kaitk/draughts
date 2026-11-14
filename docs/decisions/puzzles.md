@@ -83,6 +83,14 @@ over thousands on home would only discourage. So (2026-11-14, task 088):
   seeded from the course's stars; moved only by a puzzle's first try. Not shown as a
   number on the puzzle screen.
 - **A day's shape**: a warm-up below the rating, the middle at it, a stretch above.
+- **Traps are some, not most** (2026-11-14): puzzles where the habitual move (crowning
+  at once, the bigger capture, running a man home) is there and loses teach most, as in
+  chess, but a library of them would teach suspicion of every natural move. A few
+  hundred per draughts, under a tenth of the library, made by kinds of their own and
+  spread over the levels as their difficulty falls.
+- **Library puzzles have ids for good** (2026-11-14): a player's file keeps the puzzles
+  had and today's by id, so a library grows without moving them; its first puzzles took
+  their lines as ids. Indexing by line was rejected once the library grew.
 
 On the screen (2026-11-14, prototyped and chosen):
 

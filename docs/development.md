@@ -361,6 +361,31 @@ tools/library.py assemble src/puzzles/library-international.txt international ra
 build/puzzles rate tools/calibration/kabe.txt                      # the estimate's calibration
 ```
 
+Trap puzzles, where the move a player is used to making is there and loses
+([puzzles](architecture/puzzles.md#daily-puzzles)), come from `batch --traps`, which
+runs the trap kinds (`TRAP_KINDS`) in place of the rest, and are added to a library the
+same way; `assemble` keeps the puzzles already in it with their ids and numbers the new
+ones after the highest, and `batch` skips every puzzle the built-in library has:
+
+```sh
+for s in 200 201 202 203; do
+  build/puzzles --variant international batch $s 15 300 --traps > find-$s.txt 2> find-$s.log &
+done; wait
+tools/library.py merge merged.txt find-*.txt
+tools/library.py split merged.txt 10 rate-in                       # then rate each, as above
+tools/library.py assemble src/puzzles/library-international.txt international rate-out-*.txt
+build/puzzles tempt src/puzzles/library-international.txt         # the traps, by kind and band
+build/puzzles find white 'take 1' 2 6 6 2 5 0 'W:Wd6:B' --variant russian --trap 16  # one kind
+```
+
+The trap kinds: a crown trap (a man placed one step from crowning, whose king would be
+caught; take 1 or 2 in 2), a run (a man two steps from crowning, taken if it steps to the
+row before; crown in 2 or 3, take 1 or 2 in 2), and Russian's bigger capture (black men
+placed where white can take them, a capture due, the bigger one losing). `find --trap
+MASK` keeps only puzzles with a trap of `tempt`'s kinds (1 crown, 2 bigger, 4 grab, 16
+run, 32 any). Before solving a position, `lure` asks whether a move of the kind loses
+material at all, which skips the solver on most positions.
+
 To look a library over in the app, `build/draughts --variant international --library N`
 opens its puzzle of id N - 1 (the number `tempt` prints) on the puzzle screen, the replies played, its
 stars and hint as any puzzle's, nothing kept: no rating moved, no day's record.

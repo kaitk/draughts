@@ -216,15 +216,18 @@ line, sorted by difficulty:
 
 ```text
 variant international
-737 | shots 1 | take 2 in 2 | W:W23,29,30,...:B3,5,7,... | 23-18 12x23 29x18x27x38
+732 | 737 | shots 1 | take 2 in 2 | B:W20,30,35,38,...:B1,2,K8,10,... | 28-33 38x29 23x34x25x14
 ```
 
-the estimated difficulty, the theme and level, the goal in the solver's moves, the
-position, and its one line. `puzzles::load_library` reads only an index at start and when
-the player's draughts change (`shell::sync_puzzles`): each line's difficulty, theme, and
-place, at most `MAX_LIBRARY` (4,096); a day's puzzles are read from their lines
-(`puzzles::entry_of`) into a fixed table of at most `MAX_DAILY` (10) when the day, the
-set, or the player changes, never while a screen is drawn.
+the puzzle's id, the estimated difficulty, the theme and level, the goal in the solver's
+moves, the position, and its one line. The id is given once and kept for good, under
+`MAX_LIBRARY` (4,096): a player's file keeps the puzzles had and today's by id, so
+puzzles added to a library, wherever their difficulty sorts them, move none of those.
+`puzzles::load_library` reads only an index at start and when the player's draughts
+change (`shell::sync_puzzles`): each line's id, difficulty, theme, and place, at most
+`MAX_LIBRARY`, and a table from id to place; a day's puzzles are read from their lines
+by id (`puzzles::entry_by_id`) into a fixed table of at most `MAX_DAILY` (10) when the
+day, the set, or the player changes, never while a screen is drawn.
 
 **Made offline**, every position our own: `tools/puzzles.goose batch` places men in
 game-like camps for a table of kinds (a capture to find, shots of two to four moves, the
@@ -232,11 +235,25 @@ free tempo, crowning, a king's shots, the safe move, among 8 to 15 men a side), 
 those with exactly one right move at each turn that pass every check above, keeps each
 once by its position and by its line, the course's included, and turns a third for
 black. Each puzzle's theme and level are read off its line: a safe move, a crown, a
-king's capture, men given or a free tempo (shots), else a capture. `tools/puzzles.goose
+king's capture, men given or a free tempo (shots), else a capture. Some are traps, made
+by their own kinds (`batch --traps`): the move a player is used to making is there and
+loses, and only a quieter one wins (below). `tools/puzzles.goose
 games` takes positions from the computer's own games, where the material is even and the
 side that just moved thought its move even, and the game then won men. `tools/puzzles.goose
 rate` estimates each difficulty, and `tools/library.py` joins, dedups, and writes the file
 ([development](../development.md#daily-puzzles)).
+
+**Traps** are some of the library, not most: puzzles where the move a player is used to
+making is there and loses, and only a quieter one wins. `tools/puzzles.goose tempts`
+reads a puzzle's first turn for a wrong move of a habit's kind that loses material with
+best play over the puzzle's moves and two plies more: crowning at once (the king is
+caught), the bigger of Russian's free choice of captures, a grab that wins a man at a
+glance, a man run to the row before crowning and taken. `batch --traps` makes them as
+it makes the rest, with kinds that place a man one or two steps from crowning, or black
+men white can take, and keep a position only if such a move is there and loses (a cheap
+look first, `lure`) and `tempts` finds the trap in the checked puzzle. They take the
+themes their lines read as (shots, crowning, captures), so the pick mixes them in with
+the rest at every level.
 
 **The difficulty** is estimated on the rating's scale, with no play data: how many of the
 computer's skills 0, 5, ..., 100 (searching as a hint does) miss the right first move,
@@ -264,8 +281,8 @@ screen.
 
 **Kept** in the player's file beside the stars: `puzzle_rating.international = 812 14`
 (the rating and the puzzles that moved it), `seen.international = 0:3 5:80` (the
-library's puzzles had, by word of 64), `daily.international = 20406 1203:3 877:0 ...`
-(the day, and each of its puzzles with the stars won, 0 unsolved), and `daily_count =
+library's puzzles had by id, by word of 64), `daily.international = 20406 1203:3 877:0
+...` (the day, and each of its puzzles' ids with the stars won, 0 unsolved), and `daily_count =
 4`. Starting again clears them but the count.
 
 ## Checks
