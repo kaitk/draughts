@@ -213,11 +213,9 @@ h1, h2, h3, p { margin: 0; font-weight: 400; }
   background: linear-gradient(color-mix(in srgb, var(--frame), #000 25%), color-mix(in srgb, var(--frame), #000 55%)); }
 .raised .p3 { position: absolute; z-index: 1; background: 0 0 / 100% 100% no-repeat; }
 
-/* Today's puzzles as dots (task 087's takes): filled in the glow when solved. */
+/* Today's puzzles as dots: filled in the glow when solved. */
 .dots { display: inline-flex; align-items: center; gap: 7px; }
 .dots i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.45); }
 .dots i.on { background: var(--glow); box-shadow: none; }
 .dots i.now { box-shadow: inset 0 0 0 3px var(--glow); }
 .dots.all .icon { width: 26px; height: 26px; color: var(--glow); stroke-width: 3; opacity: 1; }
-.streak { display: inline-flex; align-items: center; gap: 4px; color: var(--glow); }
-.streak .icon { width: 22px; height: 22px; opacity: 1; }

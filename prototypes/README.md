@@ -7,12 +7,11 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 
 | Page | Shows |
 | --- | --- |
-| `home.html` | Home: the title menu beside the board, the player's chip, the X; `?daily=a|b` Puzzles' row as today's dots, b with the streak (task 087, `?today=N`), `?locked=1` the puzzles solved before Today opens; `?newgame=a..h` tries New game's icon (two pieces, a piece and a plus, a small board, the app icon's board and piece, two pieces from the side, the angled board, it with a piece, a jump: a solid piece and an outlined one over it) |
+| `home.html` | Home: the title menu beside the board, the player's chip, the X; Puzzles' row shows today's dots (`?today=N` solved of 4), `?locked=1` the puzzles solved before Today opens; `?newgame=a..h` tries New game's icon (two pieces, a piece and a plus, a small board, the app icon's board and piece, two pieces from the side, the angled board, it with a piece, a jump: a solid piece and an outlined one over it) |
 | `setup.html` | Home's setup for a game against the computer |
 | `game.html` | The game screen on move 20 of one game: the way out, the catch, whose turn with the lookout, the hint and undo, the moves panel (a line on a phone, the last move in portrait) |
-| `puzzles.html` | The puzzles' library: the draughts switch, How to play's row, and a row per theme; task 087's Today row, `?daily=a` (dots, opens `daily.html`) or `b` (today's puzzles as tiles in the row, How to play a tile beside the title, chosen), `?locked=1` (How to play first, Today locked last), `?today=N`, `?streak=1` |
-| `puzzle.html` | One puzzle in the game's layout; `?daily=1` one of today's (task 087), today's dots over next |
-| `daily.html` | Task 087's takes: today's puzzles as tiles, each its level's bars and stars; `?today=N` solved, `?n=3..5`, `?bars=0`, `?more=1` (one more when done), `?streak=N` |
+| `puzzles.html` | The puzzles' library: the draughts switch, a Today row heading it with today's puzzles as tiles (each its level's bars and stars; How to play a tile beside the title, the last row in portrait; the moon when all are solved), and a row per theme; `?today=N` solved of 4, `?locked=1` (How to play first, Today locked last) |
+| `puzzle.html` | One puzzle in the game's layout; `?daily=1` one of today's, today's dots over next |
 | `results.html` | The results: the rating per draughts, by level, the games played |
 | `replay.html` | A past game at move 20, its steps working, with the whole list and the marks' legend; task 087's move shown (a faded piece where it started, its way in dots, the squares it stood on shaded) and best move (as the hint, on the board only when asked for); `?ply=60` a king's capture; a desktop's larger column |
 | `players.html` | Who's playing, over home |

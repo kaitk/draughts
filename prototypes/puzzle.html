@@ -71,10 +71,9 @@
 </main>
 <script>
   document.getElementById('stars').innerHTML = Draughts.icon('star').repeat(3);
-  // Task 087's take: ?daily=1, one of today's puzzles: back goes to today's page, and
-  // today's dots stand over next (this one the third of four).
+  // ?daily=1, one of today's puzzles: back goes to the library, and today's dots stand over next (this one the third of four).
   if (Draughts.params.get('daily') === '1') {
-    document.querySelector('.left .tile[href]').href = 'daily.html';
+    document.querySelector('.left .tile[href]').href = 'puzzles.html';
     document.querySelector('.next').insertAdjacentHTML('beforebegin', `<span class="today">${Draughts.dots(2, 4, 2)}</span>`);
   }
   Draughts.board(document.getElementById('board'), {

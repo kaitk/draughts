@@ -167,7 +167,6 @@ const Draughts = (() => {
     shield: '<path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6z"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     moon: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
-    flame: '<path class="solid" d="M12 2.5c1.2 3.6 6 6 6 11.2a6 6 0 0 1-12 0c0-2.8 1.5-4.5 2.8-5.9.3 1.7 1 2.8 2.2 3.3-.3-3.3.2-6 1-8.6z"/>',
     today: '<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle class="solid" cx="12" cy="15" r="2.2"/>',
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.7 3.8 5.7 3.8 9s-1.2 6.3-3.8 9c-2.6-2.7-3.8-5.7-3.8-9S9.4 5.7 12 3z"/>',
@@ -519,8 +518,7 @@ const Draughts = (() => {
   const MARKS = { '*': ['best', ''], '?!': ['q0', '?!'], '?': ['q1', '?'], '??': ['q2', '??'] };
   const mark = (k) => (MARKS[k] ? `<i class="mk ${MARKS[k][0]}">${MARKS[k][1] || icon('star')}</i>` : '');
 
-  // Today's puzzles as dots, the solved ones filled in the glow; a check once all are
-  // (task 087's takes).
+  // Today's puzzles as dots, the solved ones filled in the glow; a check once all are.
   const dots = (done, n, now = -1) => (done >= n ? `<span class="dots all">${icon('check')}</span>`
     : `<span class="dots">${Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : i === now ? 'now' : ''}"></i>`).join('')}</span>`);
 
