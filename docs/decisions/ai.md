@@ -16,6 +16,18 @@ The transposition table is 4 MB: against 2 MB it makes hard's searches a fifth f
 the Mac and a ply deeper in International middlegames; 8 MB was slower than 4, clearing
 it costing more than it saved.
 
+The table is no longer cleared for each search (2026-11-14): an entry carries the search's
+generation in its spare byte, and one of another generation is a miss, which is what a
+cleared table gives. Clearing 4 MB had cost more than easy's whole search, up to 13 times a
+move with the gift's probes: easy ran at 0.43 M nodes a second in `tools/aibench`, now 2.7 M,
+medium and hard as before. The same moves, depths, and nodes in every aibench position,
+and the same games move for move in 1,338 games of `tools/aimatch` (skills 0 to 90, the
+three variants, their summaries and positions at plies 20 and 60 compared). The 8 MB
+table's case against clearing no longer holds, but a larger table still costs cache
+misses; it wasn't measured again. Rejected: keeping the earlier searches' entries as
+hints (their best move, a deeper result), which makes a reply depend on what was searched
+before, and tests and replays rely on it not doing so.
+
 ## Levels
 
 - Medium starts at skill 40 (2026-11-08).

@@ -125,6 +125,7 @@ fn adapt(skill: i64, level: i64, child_won: i64, played: i64) -> i64 {
 
 root struct Engine {
     tt:    Entry[>..] = [],
+    gen:   u8         = 0,      // the search under way's generation of table entries
     plies: Ply[>..]   = [],
     // Move ordering, reset for each search.
     history:    i32[64 * 64]     = [0; 64 * 64],

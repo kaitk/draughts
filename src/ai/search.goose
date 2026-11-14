@@ -33,6 +33,8 @@ let UPPER = 3;              // the value is at most the score
 let ENTER = 0;              // search the node in the frame
 let RETURN = 1;             // take the value a child left in Engine.value
 
+// A table entry, 16 bytes. One stored by an earlier search is of another generation and
+// answers nothing, as if the table had been cleared for each search.
 struct Entry {
     key:   u64 = 0,
     score: i16 = 0,
@@ -40,6 +42,7 @@ struct Entry {
     d:     u8  = 0,
     h:     u8  = 0,
     flag:  u8  = 0,
+    gen:   u8  = 0,         // the search that stored it (Engine.gen); 0 for none
 }
 
 // One node being searched.
@@ -79,7 +82,14 @@ fn init(e: Engine&) {
 // The game's draw counts at p (e.root_draw) and the keys of its positions before p
 // (e.past) are the caller's: ai::start sets them.
 fn begin(e: Engine&, p: rules::Position, depth: i64, extra: i64, margin: i64, limit: i64) {
-    for &t in e.tt { t = Entry { .. }; }
+    // A new generation leaves the earlier searches' entries unread: clearing 4 MB took
+    // longer than easy's whole search. Once every 255 searches it wraps, and the table is
+    // cleared so no entry of the generation's last use is left.
+    if e.gen == 255 {
+        for &t in e.tt { t = Entry { .. }; }
+        e.gen = 0;
+    }
+    e.gen += 1;
     for &x in e.history { x = 0; }
     for &x in e.killer { x = 0; }
     e.root = p;
@@ -186,7 +196,7 @@ fn enter(e: Engine&) {
         return;
     }
     let slot = (f.key & TT_MASK) as i64;
-    if ply > 0 && e.use_tt && e.tt[slot].key == f.key {
+    if ply > 0 && e.use_tt && e.tt[slot].key == f.key && e.tt[slot].gen == e.gen {
         let t = e.tt[slot];
         f.tt = t.best as i64 - 1;
         if t.d == max(f.d, 0) && t.h == f.h {
@@ -403,6 +413,6 @@ fn done(e: Engine&) {
     let flag: u8 = if f.best <= f.first { UPPER } else if f.best >= f.beta { LOWER } else { EXACT };
     let slot = (f.key & TT_MASK) as i64;
     if e.use_tt { e.tt[slot] = Entry { key: f.key, score: store_score(f.best, ply) as i16, best: (f.best_i + 1) as u16,
-                         d: max(f.d, 0) as u8, h: f.h as u8, flag: flag }; }
+                         d: max(f.d, 0) as u8, h: f.h as u8, flag: flag, gen: e.gen }; }
     leave(e, f.best);
 }

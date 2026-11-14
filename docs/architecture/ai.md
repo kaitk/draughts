@@ -124,8 +124,10 @@ On a worker the frame loop draws as it would without the computer
   are compulsory, so there is no standing pat on a capture. A forced move (the only legal
   one) costs no depth, as a person sees it at once. At `h = 0` the search stops wherever
   it is. `h` is how far a level sees.
-- **Transposition table**: 2^18 entries of 16 bytes (4 MB), made once by `ai::init` and
-  cleared at the start of each search, so a reply never depends on earlier searches.
+- **Transposition table**: 2^18 entries of 16 bytes (4 MB), made once by `ai::init`. Each
+  search is a new generation (`Entry.gen`, the entry's spare byte) and reads only entries
+  of its own, as if the table were cleared, so a reply never depends on earlier searches;
+  every 255 searches the generation wraps and the table is cleared once.
   Zobrist keys are updated per move. An entry answers a node only when it was searched
   with the same `d` and `h`; an entry from another depth would make the result depend on
   what was searched first. The table then changes how many nodes a search takes, never
