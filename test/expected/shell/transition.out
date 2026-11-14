@@ -3,11 +3,11 @@ tapped settings: settings, from home true, drawn true with home's board true at 
    1.0825: settings, board 8x8, mix 16.0%, quads faded all, mostly some, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
    1.145: settings, board 8x8, mix 50.0%, quads faded all, mostly some, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
    1.2075: settings, board 8x8, mix 84.0%, quads faded all, mostly some, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
-   1.27: settings, board 10x10, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating true
-ended 1.3: settings, board 10x10, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating true
-   1.4: settings, board 10x10, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating true
-after the flash and the pulse 5.3: settings, board 10x10, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating false
-idle 5.4: settings, board 10x10, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating false
+   1.27: settings, board 8x8, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating true
+ended 1.3: settings, board 8x8, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating true
+   1.4: settings, board 8x8, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating true
+after the flash and the pulse 5.3: settings, board 8x8, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating false
+idle 5.4: settings, board 8x8, mix 100.0%, quads faded some, mostly some, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating false
 the board went up all the way true
 settings at rest as opened straight: board true, quads true
 tapped back: home, settings' board true, the preview's pieces 19, hole none

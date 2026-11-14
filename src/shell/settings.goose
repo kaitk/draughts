@@ -543,10 +543,10 @@ struct Page {
     room3d: float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
 }
 
-// Where the screen's parts go in `area` (Page). It declares nothing and changes nothing.
-fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
+// Where the screen's parts go in `area` (Page), the preview's board `n` squares a side
+// (its draughts, stage's). It declares nothing and changes nothing.
+fn layout(s: Settings&, g: gui::Gui&, area: float4, n: i64) -> Page {
     let u = g.scale;
-    let n = rules::VARIANTS[s.variant].size;
     var p = Page {};
     var page = area;
     if area.z >= area.w {
@@ -583,10 +583,10 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
 // `over`. Returns BACK, CHANGED after a tap changed s, SHOWN after the language list
 // opened or closed, or NOTHING.
 fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
-         room3d: float4&) -> i64 {
+         room3d: float4&, n: i64) -> i64 {
     let u = g.scale;
     over.clear();
-    let p = layout(s, g, area);
+    let p = layout(s, g, area, n);
     l = p.board;
     room3d = p.room3d;
     gui::glass(g, gui::bleed(g, p.glass, area), 32.0);

@@ -62,7 +62,7 @@ fn layout(g: gui::Gui&, name: const u8[:]) {
     for q in g.quads { if q.look.x == gui::GLASS { glass = q.rect; break; } }
     let landscape = drive::size.x >= drive::size.y;
     var wrong: u8[>..] = [];
-    var out: u8[>..] = [];
+    var out:   u8[>..] = [];
     let v = g.scroll.view;
     if drive::verbose {
         if landscape { format(out, "the column ", whole((glass.x + glass.z - safe.x) / u), " dp"); }
@@ -91,7 +91,7 @@ fn layout(g: gui::Gui&, name: const u8[:]) {
     // The flat preview as the layout places it, and the 3D board's bounds in its room.
     var flat = sh.prefs;
     flat.board = settings::FLAT;
-    let b = settings::layout(flat, g, safe).board.board;
+    let b = settings::layout(flat, g, safe, rules::VARIANTS[sh.preview.variant].size).board.board;
     let raised = sh.came_view.rect;
     if b.z > 0.0 {
         if drive::verbose {

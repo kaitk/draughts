@@ -222,7 +222,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
             if p.three { sh.went_view = p.view; }
         },
         SETTINGS => {
-            settings::frame(sh.prefs, over, g, l, area, strings::current, room);
+            settings::frame(sh.prefs, over, g, l, area, strings::current, room, rules::VARIANTS[sh.preview.variant].size);
             sh.went_view = dragged_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
         },
         PICKER => {
@@ -887,7 +887,8 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     if fresh { settings::stage(sh.preview, sh.prefs, now + (1.0 - progress(sh, now)) * DURATION, variant); }
     let changed = board::update(sh.preview, now);
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
-    let ask = settings::frame(sh.prefs, sh.out.over, g, sh.out.layout, area, strings::current, room);
+    let ask = settings::frame(sh.prefs, sh.out.over, g, sh.out.layout, area, strings::current, room,
+                              rules::VARIANTS[sh.preview.variant].size);
     let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
     // The preview turns under a drag as home's board does; the choices, the language
     // list, and their glass take their presses first (g.took).
