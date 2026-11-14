@@ -240,6 +240,8 @@ process, "owned unmapped (graphics)" GPU-only heaps and textures.
 
 ## Linux
 
+- On an SELinux system (Bazzite, Fedora) TinyCC's runs fail with `mprotect failed`: run
+  the tests with `test/run_tests.py --build`.
 - `--frames N` saves the PNG from gfx's window; under ngfx only headless does. `import
   -window Draughts out.png` grabs an X11 window. Never call the screenshot portal for a
   Wayland window: its permission dialog stalls every SDL Wayland start until

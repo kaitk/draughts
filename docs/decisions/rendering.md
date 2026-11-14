@@ -67,6 +67,18 @@ facade per recorder in the gfx build too.
   the squares' numbers at its stops, and the best move drawn as the game's hint, shown
   only while asked for. They are UI over the board, so the board's shader is unchanged.
   Rejected: white dots to a dashed ring, the best move in words only.
+- The replay's best move is the one in place of the move shown, compared with it
+  (2026-11-14), replacing the bulb's best next move above. The bulb, and the glass's line
+  "The best was 34-29" (or "This was the best move"), turn on a comparison: the board at
+  the position before the move shown, the move's way in dots and its mark, the best move
+  as the hint, both from the same position. It stays on through the steps, each step at
+  once; it is dimmed where the move was forced, at the start, and in games with no best
+  moves kept. Play from here plays from the position on the board. The best next move
+  showed one turn's move under lines about the other's, so after a mistake the bulb
+  showed the opponent's reply; the line's tap went back a move, which nothing said.
+  Rejected: the best move drawn as a ghost on the position after the move (its piece may
+  have moved, a capture's men may be gone), and keeping the best next with the line only
+  made to look like a tap.
 
 ### Small windows
 

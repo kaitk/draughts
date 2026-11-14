@@ -171,8 +171,7 @@ let KEYS = [
     "replay.play",
     "replay.no_count_why",
     "replay.best_was",
-    "replay.next_white",
-    "replay.next_black",
+    "replay.was_best",
     "replay.take_white",
     "replay.take_black",
     "replay.one_white",
@@ -441,80 +440,78 @@ let REPLAY_NO_COUNT = 162;
 let REPLAY_START = 163;
 let REPLAY_PLAY = 164;
 let REPLAY_NO_COUNT_WHY = 165;
-// A replay's lines for the best move, each followed by the move: what was best
-// in place of a marked move, the best next for the side to move (white's, then black's),
-// or the move it must make, a capture or an only move (white's then black's); and the end
-// of the game.
+// A replay's line about the best move in place of the move shown: what was best,
+// followed by the move; that the move shown was the best; that it was forced, a capture or
+// an only move (white's then black's); and the end of the game.
 let REPLAY_BEST_WAS = 166;
-let REPLAY_NEXT_WHITE = 167;
-let REPLAY_NEXT_BLACK = 168;
-let REPLAY_TAKE_WHITE = 169;
-let REPLAY_TAKE_BLACK = 170;
-let REPLAY_ONE_WHITE = 171;
-let REPLAY_ONE_BLACK = 172;
-let REPLAY_ENDED = 173;
+let REPLAY_WAS_BEST = 167;
+let REPLAY_TAKE_WHITE = 168;
+let REPLAY_TAKE_BLACK = 169;
+let REPLAY_ONE_WHITE = 170;
+let REPLAY_ONE_BLACK = 171;
+let REPLAY_ENDED = 172;
 // A desktop's quit asks first (home::ask_quit): the question, and the button that keeps
 // the app open.
-let QUIT_ASK = 174;
-let QUIT_CANCEL = 175;
+let QUIT_ASK = 173;
+let QUIT_CANCEL = 174;
 // How to play: home's row, the library's, the tutorial's; a new player's
 // question, and its answers; "{} short steps", under show me; the end's card; the last
 // step's next; "{} / {} steps", the library's row; the end's way home; the first step's
 // lines while the other side moves, and after.
-let HOW_TITLE = 176;
-let HOW_ASK = 177;
-let HOW_SHOW = 178;
-let HOW_KNOWN = 179;
-let HOW_STEPS = 180;
-let HOW_DONE = 181;
-let HOW_FINISH = 182;
-let HOW_STEP_COUNT = 183;
-let HOW_HOME = 184;
-let HOW_MOVE_REPLY = 185;
-let HOW_MOVE_AGAIN = 186;
+let HOW_TITLE = 175;
+let HOW_ASK = 176;
+let HOW_SHOW = 177;
+let HOW_KNOWN = 178;
+let HOW_STEPS = 179;
+let HOW_DONE = 180;
+let HOW_FINISH = 181;
+let HOW_STEP_COUNT = 182;
+let HOW_HOME = 183;
+let HOW_MOVE_REPLY = 184;
+let HOW_MOVE_AGAIN = 185;
 // The steps, three keys each from how.move (strings::HOW_STEP): the rule's name, its
 // line, and what is said once it is played; in the order tutorial::STEPS names them.
-let HOW_MOVE = 187;
-let HOW_MOVE_LINE = 188;
-let HOW_MOVE_WELL = 189;
-let HOW_JUMP = 190;
-let HOW_JUMP_LINE = 191;
-let HOW_JUMP_WELL = 192;
-let HOW_MUST = 193;
-let HOW_MUST_LINE = 194;
-let HOW_MUST_WELL = 195;
-let HOW_CHAIN = 196;
-let HOW_CHAIN_LINE = 197;
-let HOW_CHAIN_WELL = 198;
-let HOW_MOST = 199;
-let HOW_MOST_LINE = 200;
-let HOW_MOST_WELL = 201;
-let HOW_ANY = 202;
-let HOW_ANY_LINE = 203;
-let HOW_ANY_WELL = 204;
-let HOW_KING = 205;
-let HOW_KING_LINE = 206;
-let HOW_KING_WELL = 207;
-let HOW_FLY = 208;
-let HOW_FLY_LINE = 209;
-let HOW_FLY_WELL = 210;
-let HOW_AFAR = 211;
-let HOW_AFAR_LINE = 212;
-let HOW_AFAR_WELL = 213;
-let HOW_WAY = 214;
-let HOW_WAY_LINE = 215;
-let HOW_WAY_WELL = 216;
-let HOW_WIN = 217;
-let HOW_WIN_LINE = 218;
-let HOW_WIN_WELL = 219;
+let HOW_MOVE = 186;
+let HOW_MOVE_LINE = 187;
+let HOW_MOVE_WELL = 188;
+let HOW_JUMP = 189;
+let HOW_JUMP_LINE = 190;
+let HOW_JUMP_WELL = 191;
+let HOW_MUST = 192;
+let HOW_MUST_LINE = 193;
+let HOW_MUST_WELL = 194;
+let HOW_CHAIN = 195;
+let HOW_CHAIN_LINE = 196;
+let HOW_CHAIN_WELL = 197;
+let HOW_MOST = 198;
+let HOW_MOST_LINE = 199;
+let HOW_MOST_WELL = 200;
+let HOW_ANY = 201;
+let HOW_ANY_LINE = 202;
+let HOW_ANY_WELL = 203;
+let HOW_KING = 204;
+let HOW_KING_LINE = 205;
+let HOW_KING_WELL = 206;
+let HOW_FLY = 207;
+let HOW_FLY_LINE = 208;
+let HOW_FLY_WELL = 209;
+let HOW_AFAR = 210;
+let HOW_AFAR_LINE = 211;
+let HOW_AFAR_WELL = 212;
+let HOW_WAY = 213;
+let HOW_WAY_LINE = 214;
+let HOW_WAY_WELL = 215;
+let HOW_WIN = 216;
+let HOW_WIN_LINE = 217;
+let HOW_WIN_WELL = 218;
 // The daily puzzles: the library's Today row, its note, and settings' row.
-let DAILY_TODAY = 220;
-let DAILY_LEFT = 221;
-let DAILY_TOMORROW = 222;
-let SETTINGS_DAILY = 223;
+let DAILY_TODAY = 219;
+let DAILY_LEFT = 220;
+let DAILY_TOMORROW = 221;
+let SETTINGS_DAILY = 222;
 // Under a daily puzzle's goal: the day's first, and its last.
-let DAILY_WARMUP = 224;
-let DAILY_STRETCH = 225;
+let DAILY_WARMUP = 223;
+let DAILY_STRETCH = 224;
 // Home's Puzzles row once all of today's are solved, before its check where it fits.
-let DAILY_HOME_TOMORROW = 226;
-let COUNT = 227;
+let DAILY_HOME_TOMORROW = 225;
+let COUNT = 226;

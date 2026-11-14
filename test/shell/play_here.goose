@@ -201,6 +201,14 @@ fn main() {
     drive::idle(sh, g, tick());
     drive::tap(sh, g, drive::middle(at), tick());
     print("at the end, play from here tapped: playable ", replay::playable(r), ", screen ", sh.screen, ", from the replay ", sh.past.trial);
+    // Comparing the last move with the best, the board is at the position before it, which
+    // can be played on from.
+    r.best = true;
+    replay::settle(r);
+    print("  comparing the last move: a best move there ", replay::has_best(r), ", playable ", replay::playable(r), ", from move ",
+          replay::on_board(r));
+    r.best = false;
+    replay::settle(r);
 
     // Move 30: white, the player, to move.
     replay::go(r, 30, 0.0);

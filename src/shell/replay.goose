@@ -34,7 +34,7 @@ let NOTE = 26.0;            // dp: the line under the board saying a game from h
 
 let REVEAL = 0.25;          // s: the move shown's marks fade in once its piece has arrived
 let BULB_GAP = 8.0;         // dp: the bulb further below the steps than they are apart
-let TILE_LINE = 44.0;       // dp: the glass's line for the best move as a tile (its tap a tap tall)
+let TILE_LINE = 44.0;       // dp: the glass's line about the best move as a tile (its tap a tap tall)
 let SAY_ICON = 22.0;        // dp: the icon before a line of the glass about the best move
 // The move's way on the board, in squares: a dot's radius, a stop's, how far apart the
 // dots are, and how far they keep from a piece at the way's end and from a stop.
@@ -58,10 +58,9 @@ let BACK_ID = gui::REPLAY_IDS;
 let STEP_ID = BACK_ID + 1;          // the four steps
 let LIST = STEP_ID + 4;             // the list's scroll
 let PLAY_ID = LIST + 1;             // play from here
-let BULB_ID = PLAY_ID + 1;          // the best move shown: the fifth step tile,
-let BEST_LINE_ID = BULB_ID + 1;     // or the glass's line for it
-let WAS_ID = BEST_LINE_ID + 1;      // the line saying what was best: back to it, shown
-let MOVE_ID = WAS_ID + 1;           // a move's tap, by its index in the game
+let BULB_ID = PLAY_ID + 1;          // the comparison with the best move: the fifth step tile,
+let BEST_LINE_ID = BULB_ID + 1;     // and the glass's line about the best move
+let MOVE_ID = BEST_LINE_ID + 1;     // a move's tap, by its index in the game
 let IDS_END = MOVE_ID + MAX_PLIES;
 
 // The keys' groups (gui::group), in Tab's order: the head, the steps, the list.
@@ -96,10 +95,10 @@ struct Replay {
     note: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
     why:  bool   = false,
     rows: f32    = 0.0,     // the list's rows in view, for the layout's tests
-    was:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 }, // the line saying what was best, as a tap, or none: for the tests
-    // The best move on the board (the bulb), kept through the steps; whether the game has
-    // any best move (a game written before the history kept them has none: no line for
-    // it, and the bulb stays dimmed).
+    was:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 }, // the line about the best move, as a tap, or none: for the tests
+    // The move shown compared with the best there (the bulb), kept through the steps; whether
+    // the game has any best move (a game written before the history kept them has none: no
+    // line for it, and the bulb stays dimmed).
     best:     bool = false,
     any_best: bool = false,
     // When the move shown's piece arrives (its marks fade in from then), or -1: at once.
@@ -183,31 +182,48 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
     go(r, r.plies.len, 0.0);
 }
 
-// Shows the position after `ply` moves (clamped to the game), the one move on from the
-// one shown played on the board, the others at once. True when another is shown.
+// Shows the move `ply` moves in (clamped to the game): a step on played on the board, any
+// other step, and every step while comparing, at once. True when another is shown.
 fn go(r: Replay&, ply: i64, now: f64) -> bool {
     let k = clamp(ply, 0, r.plies.len);
     guard k != r.ply else { return false; }
-    let one = r.ply >= 0 && k == r.ply + 1;
-    let from = if one { r.ply } else { k };
-    board::set(r.b, r.pos[from]);
-    if one {
-        let m = r.plies[r.ply].move;
-        var at = -1;
-        for x, i in r.b.moves {
-            if at < 0 && x.from == m.from && x.to == m.to && x.captured == m.captured { at = i; }
-        }
-        if at >= 0 { board::start_move(r.b, at, now); }
-        else { board::set(r.b, r.pos[k]); }
+    let one = r.ply >= 0 && k == r.ply + 1 && !r.best;
+    let before = r.ply;
+    r.ply = k;
+    r.rest_at = -1.0;
+    guard one else {
+        settle(r);
+        return true;
     }
-    if k > 0 && !one {
-        r.b.last = r.plies[k - 1].move;
+    board::set(r.b, r.pos[before]);
+    let m = r.plies[before].move;
+    var at = -1;
+    for x, i in r.b.moves {
+        if at < 0 && x.from == m.from && x.to == m.to && x.captured == m.captured { at = i; }
+    }
+    guard at >= 0 else {
+        settle(r);
+        return true;
+    }
+    board::start_move(r.b, at, now);
+    // The move's marks show once its piece has arrived.
+    if r.b.moving { r.rest_at = now + board::duration(r.b.move); }
+    return true;
+}
+
+// The board at rest for the move shown: the position after it with it as the last move,
+// or, comparing, the position before it, where the move and the best one both start, with
+// no last move shaded (a third move on the board).
+fn settle(r: Replay&) {
+    guard !comparing(r) else {
+        board::set(r.b, r.pos[r.ply - 1]);
+        return;
+    }
+    board::set(r.b, r.pos[r.ply]);
+    if r.ply > 0 {
+        r.b.last = r.plies[r.ply - 1].move;
         r.b.has_last = true;
     }
-    // A step on shows the move's marks once its piece has arrived; any other step at once.
-    r.rest_at = if one && r.b.moving { now + board::duration(r.b.move) } else { -1.0 };
-    r.ply = k;
-    return true;
 }
 
 // How far the move shown's marks have faded in at `now`, 0..1: none while its piece moves.
@@ -222,21 +238,29 @@ fn animating(r: Replay&, now: f64) -> bool {
     board::animating(r.b, now) || (r.rest_at >= 0.0 && now < r.rest_at + REVEAL)
 }
 
-// Whether the position shown has a best move to show: one the judge found, not forced.
-fn has_best(r: Replay&) -> bool { r.ply < r.plies.len && r.plies[r.ply].has_best && !r.plies[r.ply].only }
+// Whether the move shown has a best move to compare it with: one the judge found, the
+// move not forced.
+fn has_best(r: Replay&) -> bool { r.ply > 0 && r.plies[r.ply - 1].has_best && !r.plies[r.ply - 1].only }
 
-// The best move from the position shown on the board as the game's hint, while asked for
-// and the board is at rest: a ring on its piece, a light ghost and a ring where it goes,
-// a ring at each stop between; lit and still, never pulsing (each frame sets it again).
+// Whether the board compares the move shown with the best one (the bulb on, and a best
+// move there): the position before the move, both drawn from it.
+fn comparing(r: Replay&) -> bool { r.best && has_best(r) }
+
+// Whether the move shown was the best one.
+fn was_best(p: Ply&) -> bool { p.best.from == p.move.from && p.best.to == p.move.to && p.best.captured == p.move.captured }
+
+// The best move in place of the move shown as the game's hint, while comparing and the
+// board is at rest: a ring on its piece, a light ghost and a ring where it goes, a ring at
+// each stop between; lit and still, never pulsing (each frame sets it again).
 fn show_best(r: Replay&) {
     let b .= r.b;
-    guard r.best && !b.moving && has_best(r) else {
+    guard comparing(r) && !b.moving else {
         b.glow = -1;
         b.hint_to = -1;
         b.hint_via = 0;
         return;
     }
-    let m .= r.plies[r.ply].best;
+    let m .= r.plies[r.ply - 1].best;
     b.glow = m.from;
     b.glow_at = -1.0;
     b.hint_to = m.to;
@@ -305,9 +329,13 @@ fn title(g: gui::Gui&, r: float4, x: history::Game&) -> bool {
     return line;
 }
 
-// Whether the move shown can be played on from: any but the end of a game that ended
-// there.
-fn playable(r: Replay&) -> bool { r.ply < r.plies.len || !r.over }
+// The position on the board, by its moves played: the move shown's, or, comparing, the
+// one before it.
+fn on_board(r: Replay&) -> i64 { if comparing(r) { r.ply - 1 } else { r.ply } }
+
+// Whether the position on the board can be played on from: any but the end of a game that
+// ended there.
+fn playable(r: Replay&) -> bool { on_board(r) < r.plies.len || !r.over }
 
 // How back and play from here share the head, `head` pixels across: both icon beside
 // word (gui::MIDDLE) or both icon over word (gui::STACKED, play from here's word in a
@@ -436,15 +464,6 @@ fn shown_line(r: Replay&, g: gui::Gui&, box: float4, over: board::Overlay&) {
     gui::text(g, gui::fitting(g, r.body, rest, second.z), second, rest, 0.8, 0.0, gui::LEFT);
 }
 
-// Whether the move shown has a line saying what was best instead: a move marked ?!, ?, or
-// ??, with a best move other than it.
-fn was_shown(r: Replay&) -> bool {
-    guard r.ply > 0 else { return false; }
-    let p .= r.plies[r.ply - 1];
-    guard p.mark == ai::INACCURACY || p.mark == ai::MISTAKE || p.mark == ai::BLUNDER else { return false; }
-    return p.has_best && !(p.best.from == p.move.from && p.best.to == p.move.to && p.best.captured == p.move.captured);
-}
-
 // A line of the glass about the best move in box: an icon in `style` (gui::ON in the glow
 // color), the words dimmed, then the move, in the column's face or a smaller one where
 // the line is wider than box.
@@ -467,25 +486,6 @@ fn say(r: Replay&, g: gui::Gui&, box: float4, icon: i64, style: i64, words: cons
     gui::text(g, face, float4 { x + w, box.y, room - w, box.w }, way, 1.0, 0.0, gui::LEFT);
 }
 
-// After a marked move, the best there instead: the star and "The best was 31-26". Where
-// it is a `tap` (beside the bulb tile: the tablet, a desktop), lit under the mouse as the
-// list's moves are; true when tapped, which goes back to the position it was best in and
-// shows it on the board.
-fn was_line(r: Replay&, g: gui::Gui&, box: float4, tap: bool) -> bool {
-    let p .= r.plies[r.ply - 1];
-    let v .= rules::VARIANTS[r.game.variant];
-    var way: gui::Text = [];
-    way_text(way, v, p.best);
-    var clicked = false;
-    if tap {
-        let c, press = gui::hold(g, WAS_ID, box, false);
-        clicked = c;
-        lit_line(g, box, gui::hover(g, WAS_ID), press);
-    }
-    say(r, g, box, gui::STAR, gui::ON, strings::get(strings::REPLAY_BEST_WAS), way[..]);
-    return clicked;
-}
-
 // A line of the glass that is a tap, lit faintly under the mouse and by a press.
 fn lit_line(g: gui::Gui&, box: float4, hover: f32, press: f32) {
     guard hover > 0.0 || press > 0.0 else { return; }
@@ -494,28 +494,29 @@ fn lit_line(g: gui::Gui&, box: float4, hover: f32, press: f32) {
               8.0 * u);
 }
 
-// The line for the next move in box: the best next for the side to move (the bulb, lit in
-// the glow while the move shows), or the move it must make, or that the game ended here.
-// As a `tile` (a phone), the best next is the best move's toggle, a thin tile whose tap is
-// a tap tall; elsewhere the line is a tap too, beside the bulb tile. True when tapped.
-fn next_line(r: Replay&, g: gui::Gui&, box: float4, tile: bool) -> bool {
+// The line about the move shown's best in box: what was best in its place ("The best was
+// 34-29") or that it was the best, each the comparison's toggle, lit in the glow while it
+// shows; or that the move was forced; or, with none of those, that the game ended here. As
+// a `tile` (a phone), the toggle is a thin tile whose tap is a tap tall; elsewhere the line
+// is a tap beside the bulb tile, lit under the mouse as the list's moves are. True when
+// tapped.
+fn best_line(r: Replay&, g: gui::Gui&, box: float4, tile: bool) -> bool {
     let u = g.scale;
+    guard r.ply > 0 else { return false; }
+    let p .= r.plies[r.ply - 1];
+    if p.only {
+        let key = if p.move.captured != 0 { strings::REPLAY_TAKE } else { strings::REPLAY_ONE };
+        say(r, g, box, gui::LOCK, gui::PLAIN, strings::get(key + r.pos[r.ply - 1].side), "");
+        return false;
+    }
+    guard p.has_best else {
+        if r.ply == r.plies.len && r.over { say(r, g, box, gui::CROWN, gui::PLAIN, strings::get(strings::REPLAY_ENDED), ""); }
+        return false;
+    }
     let v .= rules::VARIANTS[r.game.variant];
     var way: gui::Text = [];
-    guard r.ply < r.plies.len else {
-        say(r, g, box, gui::CROWN, gui::PLAIN, strings::get(strings::REPLAY_ENDED), "");
-        return false;
-    }
-    let p .= r.plies[r.ply];
-    let side = r.pos[r.ply].side as i64;
-    if p.only {
-        way_text(way, v, p.move);
-        let key = if p.move.captured != 0 { strings::REPLAY_TAKE } else { strings::REPLAY_ONE };
-        say(r, g, box, gui::LOCK, gui::PLAIN, strings::get(key + side), way[..]);
-        return false;
-    }
-    guard p.has_best else { return false; }
-    way_text(way, v, p.best);
+    let best = was_best(p);
+    if !best { way_text(way, v, p.best); }
     var clicked = false;
     var inner = box;
     if tile {
@@ -531,7 +532,8 @@ fn next_line(r: Replay&, g: gui::Gui&, box: float4, tile: bool) -> bool {
         clicked = c;
         lit_line(g, box, gui::hover(g, BEST_LINE_ID), press);
     }
-    say(r, g, inner, gui::HINT, if r.best || !tile { gui::ON } else { gui::PLAIN }, strings::get(strings::REPLAY_NEXT + side), way[..]);
+    let words = strings::get(if best { strings::REPLAY_WAS_BEST } else { strings::REPLAY_BEST_WAS });
+    say(r, g, inner, gui::STAR, if r.best || !tile { gui::ON } else { gui::PLAIN }, words, way[..]);
     return clicked;
 }
 
@@ -693,9 +695,8 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     r.why = disclaimer(g, r.note, r.small);
 
-    // The glass: the game where the head had no room for it, the move shown, what was best
-    // instead (not on a phone in landscape, which keeps its rows), the line for the next
-    // move, each side's accuracy, and the list; the legend under it where the bulb is a
+    // The glass: the game where the head had no room for it, the move shown, the line about
+    // its best, each side's accuracy, and the list; the legend under it where the bulb is a
     // tile (portrait and a phone in landscape keep its room for the rows).
     let ku = k * u;
     gui::panel(g, o.glass);
@@ -705,30 +706,16 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
         gui::cut_top(c, 6.0 * ku);
     }
     shown_line(r, g, gui::cut_top(c, 2.0 * LINE * ku), over);
-    let landscape = area.z > area.w;
-    var to_best = false;
     r.was = float4 { 0.0, 0.0, 0.0, 0.0 };
-    if (o.five || !landscape) && was_shown(r) {
-        let line = gui::cut_top(c, LINE * ku);
-        if o.five { r.was = line; }
-        to_best = was_line(r, g, line, o.five);
-    }
     if r.any_best {
         gui::group(g, GROUP_STEPS);
-        if o.five {
-            gui::cut_top(c, 4.0 * ku);
-            if next_line(r, g, gui::cut_top(c, LINE * ku), false) { toggled = true; }
-        } else {
-            gui::cut_top(c, 10.0 * u);
-            if next_line(r, g, gui::cut_top(c, TILE_LINE * u), true) { toggled = true; }
-        }
+        let line = if o.five { gui::cut_top(c, LINE * ku) } else { gui::cut_top(c, 10.0 * u); gui::cut_top(c, TILE_LINE * u) };
+        if has_best(r) { r.was = line; }
+        if best_line(r, g, line, !o.five) { toggled = true; }
     }
     if toggled && has_best(r) {
         r.best = !r.best;
-        ask = SHOWN;
-    }
-    if to_best && go(r, r.ply - 1, now) {
-        r.best = true;
+        settle(r);
         ask = SHOWN;
     }
     show_best(r);
@@ -755,8 +742,9 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     r.rows = c.w / (ROW * ku);
     list(r, g, float4 { o.glass.x, c.y, o.glass.z, c.w }, c.x, c.z, now, ask);
 
-    // The move shown on the board once it stands on its square, fading in: its way, its
-    // squares' numbers and the best move's while it shows, and its mark.
+    // The move shown on the board once it stands on its square, fading in (comparing, from
+    // the square it starts on, at once): its way, its squares' numbers and the best move's
+    // while it shows, and its mark.
     let a = revealed(r, now);
     r.b.trace_a = a;
     guard a > 0.0 else { return ask; }
@@ -775,7 +763,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
 fn numbered(r: Replay&) -> u64 {
     var squares: u64 = 0;
     if r.ply > 0 { for s in r.plies[r.ply - 1].move.path { squares |= rules::bit(s); } }
-    if r.b.glow >= 0 && has_best(r) { for s in r.plies[r.ply].best.path { squares |= rules::bit(s); } }
+    if r.b.glow >= 0 && has_best(r) { for s in r.plies[r.ply - 1].best.path { squares |= rules::bit(s); } }
     return squares;
 }
 

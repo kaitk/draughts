@@ -56,11 +56,11 @@ fn within(r: float4, a: float4) -> bool {
 fn press(sh: shell::Shell&, g: gui::Gui&, id: i64) { drive::tap(sh, g, drive::middle(spot(g, id)), tick()); }
 
 // What the replay shows: the move, the board's position, and whether it is the one the
-// game's moves give there.
+// game's moves give there (comparing, the one before the move shown).
 fn shown(sh: shell::Shell&) -> u8[>..] {
     let r .= sh.past.replay;
     let b .= r.b;
-    let right = rules::same(b.pos, r.pos[r.ply]);
+    let right = rules::same(b.pos, r.pos[if replay::comparing(r) { r.ply - 1 } else { r.ply }]);
     var s = str("move ", r.ply, " of ", r.plies.len, ", the board ", if right { "right" } else { "WRONG" });
     if b.moving { s.append(", moving"); }
     if b.has_last { format(s, ", last ", drive::name(rules::VARIANTS[b.variant], b.last.from), "-",
@@ -69,13 +69,13 @@ fn shown(sh: shell::Shell&) -> u8[>..] {
 }
 
 // The best move on the board: the hint's piece, where it goes, and its stops ringed, and
-// whether they are the best move from the position shown.
+// whether they are the best move in place of the move shown.
 fn hint(sh: shell::Shell&) -> u8[>..] {
     let r .= sh.past.replay;
     let b .= r.b;
     guard b.glow >= 0 else { return str("no best move on the board"); }
     let v .= rules::VARIANTS[b.variant];
-    let m = r.plies[r.ply].best;
+    let m = r.plies[r.ply - 1].best;
     let right = b.glow == m.from as i64 && b.hint_to == m.to as i64 && popcount(b.hint_via) == max(m.path.len - 2, 0);
     return str("the best move ", drive::name(v, b.glow), "-", drive::name(v, b.hint_to), " on the board, ", popcount(b.hint_via),
                " stops ringed, ", if right { "right" } else { "WRONG" });
@@ -327,6 +327,8 @@ fn main() {
     var forced_at = -1;
     var free_at = -1;
     var widest = -1;
+    var marked = -1;
+    var right_at = -1;
     for p, i in sh.past.replay.plies {
         if p.has_best { bests++; }
         if p.only { forced++; }
@@ -336,53 +338,60 @@ fn main() {
         let next = i + 1 < sh.past.replay.plies.len && sh.past.replay.plies[i + 1].has_best && !sh.past.replay.plies[i + 1].only;
         if !p.only && p.has_best && next && free_at < 0 && i > 10 { free_at = i; }
         if p.move.captured != 0 && (widest < 0 || p.move.path.len > sh.past.replay.plies[widest].move.path.len) { widest = i; }
+        let m = p.mark;
+        if marked < 0 && i > 10 && p.has_best && !replay::was_best(p) && (m == ai::INACCURACY || m == ai::MISTAKE || m == ai::BLUNDER) {
+            marked = i;
+        }
+        if right_at < 0 && !p.only && p.has_best && replay::was_best(p) { right_at = i; }
     }
     print("the best moves read: ", bests, " of ", sh.past.replay.plies.len, ", ", forced, " forced, ", both, " of them with one");
-    // The bulb, a fifth step tile on the tablet: the best move from the position shown on
-    // the board as the hint, kept through the steps, none where the move is forced.
-    replay::go(sh.past.replay, free_at, 0.0);
+    // The bulb, a fifth step tile on the tablet: the move shown compared with the best in its
+    // place, the board at the position before it with the best move as the hint; kept
+    // through the steps, each at once; none where the move was forced.
+    replay::go(sh.past.replay, free_at + 1, 0.0);
     drive::idle(sh, g, tick());
-    print("at move ", free_at, ": ", hint(sh));
+    print("move ", free_at + 1, ": ", shown(sh), ", ", hint(sh));
     press(sh, g, replay::BULB_ID);
     drive::idle(sh, g, tick());
-    print("the bulb: on ", sh.past.replay.best, ", ", hint(sh), "; numbered ", numbered(sh));
+    print("the bulb: on ", sh.past.replay.best, ", ", shown(sh), ", ", hint(sh), "; numbered ", numbered(sh));
     press(sh, g, replay::STEP_ID + 2);
     drive::idle(sh, g, tick());
-    drive::idle(sh, g, tick());
-    print("on: ", shown(sh), ", the best move on ", sh.past.replay.best, ", a best move here ", replay::has_best(sh.past.replay),
-          ", ", hint(sh));
+    print("on: ", shown(sh), ", the bulb on ", sh.past.replay.best, ", ", hint(sh));
     if forced_at >= 0 {
-        replay::go(sh.past.replay, forced_at, 0.0);
+        replay::go(sh.past.replay, forced_at + 1, 0.0);
         drive::idle(sh, g, tick());
-        print("at move ", forced_at, ", forced: ", hint(sh), "; the bulb still on ", sh.past.replay.best);
+        print("move ", forced_at + 1, ", forced: ", shown(sh), ", ", hint(sh), "; the bulb still on ", sh.past.replay.best);
         press(sh, g, replay::BULB_ID);
         drive::idle(sh, g, tick());
         print("  the bulb there, dimmed, changes nothing: on ", sh.past.replay.best);
     }
-    replay::go(sh.past.replay, free_at, 0.0);
+    replay::go(sh.past.replay, free_at + 1, 0.0);
     drive::idle(sh, g, tick());
     press(sh, g, replay::BULB_ID);
     drive::idle(sh, g, tick());
-    print("the bulb again: on ", sh.past.replay.best, ", ", hint(sh));
+    print("the bulb again: on ", sh.past.replay.best, ", ", shown(sh), ", ", hint(sh));
 
-    // The line saying what was best after a marked move, tapped: the position it was best
-    // in, that move on the board.
-    var marked = -1;
-    for p, i in sh.past.replay.plies {
-        let m = p.mark;
-        let other = p.best.from != p.move.from || p.best.to != p.move.to;
-        if marked < 0 && i > 10 && p.has_best && other && (m == ai::INACCURACY || m == ai::MISTAKE || m == ai::BLUNDER) { marked = i; }
-    }
+    // The line saying what was best after a marked move: a tap that turns the comparison on
+    // and off as the bulb does, the move not left.
     replay::go(sh.past.replay, marked + 1, 0.0);
     drive::idle(sh, g, tick());
     let was = sh.past.replay.was;
-    print("move ", marked + 1, ", marked ", sh.past.replay.plies[marked].mark, ": the line saying what was best a tap ", was.z > 0.0);
+    print("move ", marked + 1, ", marked ", sh.past.replay.plies[marked].mark, ": the line about the best a tap ", was.z > 0.0);
     drive::tap(sh, g, drive::middle(was), tick());
     drive::idle(sh, g, tick());
-    print("  tapped: ", shown(sh), ", the best move on ", sh.past.replay.best, ", ", hint(sh), ", the one that was best ",
-          sh.past.replay.b.glow == sh.past.replay.plies[marked].best.from && sh.past.replay.b.hint_to == sh.past.replay.plies[marked].best.to);
-    press(sh, g, replay::BULB_ID);
+    print("  tapped: ", shown(sh), ", the bulb on ", sh.past.replay.best, ", ", hint(sh));
+    drive::tap(sh, g, drive::middle(sh.past.replay.was), tick());
     drive::idle(sh, g, tick());
+    print("  again: ", shown(sh), ", the bulb on ", sh.past.replay.best);
+    // After the best move, the comparison shows it as the hint on its own way.
+    if right_at >= 0 {
+        replay::go(sh.past.replay, right_at + 1, 0.0);
+        press(sh, g, replay::BULB_ID);
+        drive::idle(sh, g, tick());
+        print("move ", right_at + 1, ", the best: ", shown(sh), ", ", hint(sh));
+        press(sh, g, replay::BULB_ID);
+        drive::idle(sh, g, tick());
+    }
 
     // The move shown's marks: once its piece has arrived, fading in over 0.25 s, drawn
     // while they fade; at once after a jump.

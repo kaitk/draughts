@@ -72,7 +72,7 @@ fn replay_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) 
     return moved || ask != replay::NOTHING;
 }
 
-// Play from here on the replay: a game from the position at the move shown, of the same
+// Play from here on the replay: a game from the position on its board, of the same
 // draughts, against the same opponent (the computer at the game's level and skill, or a
 // friend), the player on the same side and the side to move as there, with no clock (the
 // history keeps none), and its moves numbered on from the replay's. The game in progress
@@ -87,7 +87,8 @@ fn play_from_here(sh: Shell&, now: f64) {
     let computer = if x.level == history::FRIEND { -1 } else { 1 - x.side };
     let level = if x.level == history::FRIEND { sh.prefs.level } else { clamp(x.level, game::EASY, game::HARD) };
     game::start(gm, x.variant as u8, clock::NONE, computer, level, x.skill, sh.prefs.games);
-    game::start_from(gm, r.pos[r.ply], r.ply + replay::offset(r));
+    let at = replay::on_board(r);
+    game::start_from(gm, r.pos[at], at + replay::offset(r));
     apply_prefs(sh);
     go_to(sh, GAME, now);
 }

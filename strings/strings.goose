@@ -16,7 +16,6 @@ let LANGUAGES = ["en", "et"];
 // The keys and their constants come from en.txt (keys.goose). Code that steps from a
 // key by offset names the run's first by the name it had before.
 let HOW_STEP = HOW_MOVE;             // three a step: the name, _line, _well
-let REPLAY_NEXT = REPLAY_NEXT_WHITE; // white's, then black's (+ side)
 let REPLAY_TAKE = REPLAY_TAKE_WHITE;
 let REPLAY_ONE = REPLAY_ONE_WHITE;
 

@@ -436,7 +436,10 @@ tiles (start, back, on, end) beside or under the board, and a glass with the mov
 its mark and tip, each side's accuracy, and the moves as the moves panel draws them. A
 line over the board says a game from here doesn't count. On the board the last move's
 squares are shaded, its way drawn in dots with the squares' numbers, and its mark in a
-disc. The best move from the position is shown on asking (the bulb), as the game's hint.
+disc. The bulb, or the glass's line saying what was best, compares the move shown with
+the best one in its place: the board goes back to the position before the move, its way
+still in dots with its mark, and the best move drawn as the game's hint. The comparison
+stays on through the steps.
 Left and Right step with the keys (`gui::claim_sideways`). The board takes no taps.
 
 The replay has its own board and moves (`shell.replay`): opening it reads the game's line

@@ -1,6 +1,7 @@
 before: ratings 800/0 800/0 800/0 800/0; skills 8 40 90, played 0 0 0; games 7; history 4 lines, 2198 bytes
 the newest game's replay: screen 6 (replay 6), move 80 of 80, the game over there true
 at the end, play from here tapped: playable false, screen 6, from the replay false
+  comparing the last move: a best move there true, playable true, from move 79
 played from move 30: screen 1 (game 1), from the replay true, doesn't count true; international against the computer as black at level 1, skill 40; the replay's position true, white to move; clock 0; moves 0
   the image kept is the game in progress's: true; home's continue still on: true
   the computer asked at skill 40

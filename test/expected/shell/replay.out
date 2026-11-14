@@ -17,14 +17,16 @@ Tab 3 times: focus on move 75, move 75 of 80, the board right, last b6-c7
 Down: focus on move 77, move 77 of 80, the board right, last c7-b8
 Left: focus on move 76, move 76 of 80, the board right, last i5-h4
 the best moves read: 61 of 80, 19 forced, 0 of them with one
-at move 13: no best move on the board
-the bulb: on true, the best move b8-d6 on the board, 0 stops ringed, right; numbered a5 d6 c7 b8
-on: move 14 of 80, the board right, last b8-d6, the best move on true, a best move here true, the best move b2-c3 on the board, 0 stops ringed, right
-at move 3, forced: no best move on the board; the bulb still on true
+move 14: move 14 of 80, the board right, last b8-d6, no best move on the board
+the bulb: on true, move 14 of 80, the board right, the best move b8-d6 on the board, 0 stops ringed, right; numbered d6 b8
+on: move 15 of 80, the board right, the bulb on true, the best move b2-c3 on the board, 0 stops ringed, right
+move 4, forced: move 4 of 80, the board right, last d6-b4, no best move on the board; the bulb still on true
   the bulb there, dimmed, changes nothing: on true
-the bulb again: on false, no best move on the board
-move 12, marked 6: the line saying what was best a tap true
-  tapped: move 11 of 80, the board right, last i3-g5, the best move on true, the best move c7-d6 on the board, 0 stops ringed, right, the one that was best true
+the bulb again: on false, move 14 of 80, the board right, last b8-d6, no best move on the board
+move 12, marked 6: the line about the best a tap true
+  tapped: move 12 of 80, the board right, the bulb on true, the best move c7-d6 on the board, 0 stops ringed, right
+  again: move 12 of 80, the board right, last c7-b6, the bulb on false
+move 5, the best: move 5 of 80, the board right, the best move c3-a5 on the board, 0 stops ringed, right
 a jump: its marks 1.0
 on: its marks 0.0 while the piece moves
   as it arrives 0.0, 0.125 s on 0.5, 0.25 s on 1.0; drawn while they fade true, after false

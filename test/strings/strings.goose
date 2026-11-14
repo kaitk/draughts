@@ -60,7 +60,6 @@ fn main() {
                                             "how.afar_well", "how.way_well", "how.win_well"]);
     wrong += run(strings::MONTH_JAN, 1, ["month.jan", "month.feb", "month.mar", "month.apr", "month.may", "month.jun",
                                          "month.jul", "month.aug", "month.sep", "month.oct", "month.nov", "month.dec"]);
-    wrong += run(strings::REPLAY_NEXT, 1, ["replay.next_white", "replay.next_black"]);
     wrong += run(strings::REPLAY_TAKE, 1, ["replay.take_white", "replay.take_black"]);
     wrong += run(strings::REPLAY_ONE, 1, ["replay.one_white", "replay.one_black"]);
     print("runs stepped through by offset: ", wrong, " wrong");

@@ -232,17 +232,15 @@ replay.no_count = A game from here doesn't count
 replay.start = The start, before the first move
 replay.play = Play from here
 replay.no_count_why = A game from here doesn't count: it isn't saved and doesn't change your rating
-# A replay's lines for the best move, each followed by the move: what was best
-# in place of a marked move, the best next for the side to move (white's, then black's),
-# or the move it must make, a capture or an only move (white's then black's); and the end
-# of the game.
+# A replay's line about the best move in place of the move shown: what was best,
+# followed by the move; that the move shown was the best; that it was forced, a capture or
+# an only move (white's then black's); and the end of the game.
 replay.best_was = The best was
-replay.next_white = Best next for white:
-replay.next_black = Best next for black:
-replay.take_white = White must take:
-replay.take_black = Black must take:
-replay.one_white = White has one move:
-replay.one_black = Black has one move:
+replay.was_best = This was the best move
+replay.take_white = White had to take
+replay.take_black = Black had to take
+replay.one_white = White had one move
+replay.one_black = Black had one move
 replay.ended = The game ended here
 
 # A desktop's quit asks first (home::ask_quit): the question, and the button that keeps
