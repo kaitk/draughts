@@ -759,7 +759,7 @@ let BAKE_FRAG = """
         vec4 dark_ring;
         vec4 frame_ring;
         vec4 finish;     // the wood's (looks::Finish): varnish, sanding, grain, rings
-        vec4 tone;       // x: its warmth, y: pickle, z: caulk
+        vec4 tone;       // x: its warmth, y: pickle, z: caulk; w: samples a side a texel
         vec4 marble;     // looks::Marble: veins, wave, polish, tint; mode.w the variant
         vec4 marble_base;
         vec4 marble_vein;
@@ -1684,9 +1684,15 @@ let BAKE_FRAG = """
         return mode.x < 0.5 ? plan_over(w, c, p) : frame_over(w, c, p);
     }
 
+    // size is the full bake's (model3d::BAKE_SIDE); a phone's half-size target takes
+    // tone.w 2 samples a side a texel at the full bake's texels, averaged as its first mip
+    // would be, so the wood's fine detail (its furrows and pores a texel or two across)
+    // looks as it does on a larger screen instead of twice as coarse.
     void main() {
         vec2 texel = size.zw / size.xy;
-        vec2 p = gl_FragCoord.xy * texel - (mode.x < 0.5 ? 0.5 * size.zw : vec2(0.0));
+        vec2 origin = mode.x < 0.5 ? 0.5 * size.zw : vec2(0.0);
+        int n = int(tone.w + 0.5);
+        vec2 p = (floor(gl_FragCoord.xy) * float(n) + 0.5 * float(n)) * texel - origin;
         if (mode.x > 0.5 && mode.w > 0.5 && frame_fig.w < 0.5 && carve.w < 0.5) {
             // A marble frame, flat: once a texel, no relief to take the normal from.
             Wood m = marble_at(p.yx);
@@ -1694,27 +1700,40 @@ let BAKE_FRAG = """
             out_normal = vec4(0.5, 0.5, 1.0, 1.0);
             return;
         }
-        // The texel and its neighbours along x and y, for the normal, in a loop the
+        // Each sample and its neighbours along x and y, for the normal, in a loop the
         // compiler can't unroll (its count comes from the block): unrolled, the whole
         // wood was compiled three times over, and the pipeline took 2.5 s to make on the
         // Pixel 7a.
+        float relief = 0.0015 * (mode.x < 0.5 ? surface.w : frame_surface.y);
         Wood w;
         vec2 hn = vec2(0.0);
+        vec4 albedo = vec4(0.0);
+        vec3 normal = vec3(0.0);
+        float cavity = 0.0;
         int taps = mode.x > 9.0 ? 4 : 3;
-        for (int k = 0; k < taps; k++) {
-            vec2 o = k == 1 ? vec2(texel.x, 0.0) : (k == 2 ? vec2(0.0, texel.y) : vec2(0.0));
-            Wood s = at(p + o);
-            if (k == 0) w = s;
-            else if (k == 1) hn.x = s.height;
-            else hn.y = s.height;
+        for (int k = 0; k < taps * n * n; k++) {
+            int j = k % taps;
+            int s = k / taps;
+            vec2 q = (floor(gl_FragCoord.xy) * float(n) + vec2(float(s % n), float(s / n)) + 0.5) * texel - origin;
+            vec2 o = j == 1 ? vec2(texel.x, 0.0) : (j == 2 ? vec2(0.0, texel.y) : vec2(0.0));
+            Wood t = at(q + o);
+            if (j == 0) w = t;
+            else if (j == 1) hn.x = t.height;
+            else hn.y = t.height;
+            if (j == 2) {
+                vec2 grad = (hn - w.height) / texel;
+                normal += normalize(vec3(-grad.x * relief, 1.0, -grad.y * relief));
+                albedo += vec4(w.albedo, w.rough);
+                cavity += w.cavity;
+            }
         }
-        vec2 grad = (hn - w.height) / texel;
-        float relief = 0.0015 * (mode.x < 0.5 ? surface.w : frame_surface.y);
-        vec3 n = normalize(vec3(-grad.x * relief, 1.0, -grad.y * relief));
-        out_albedo = vec4(w.albedo, w.rough);
-        // The normal's x and z, the cavity's occlusion, the normal's y: what the mips
-        // average shortens the normal, which widens the roughness where they blur.
-        out_normal = vec4(n.x * 0.5 + 0.5, n.z * 0.5 + 0.5, w.cavity, n.y);
+        float share = 1.0 / float(n * n);
+        out_albedo = albedo * share;
+        // The normal's x and z, the cavity's occlusion, the normal's y: what the samples
+        // and the mips average shortens the normal, which widens the roughness where they
+        // blur.
+        vec3 m = normal * share;
+        out_normal = vec4(m.x * 0.5 + 0.5, m.z * 0.5 + 0.5, cavity * share, m.y);
     }
     """;
 

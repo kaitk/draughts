@@ -205,9 +205,11 @@ struct Gpu {
     marked:         bool,             // whether the board's pass has marks to draw
     plan_albedo:    Texture,
     plan_normal:    Texture,
+    side:           i64,            // the surfaces' side they are made at (model3d::BAKE_SIDE..), 0 none yet
+    want_side:      i64,            // and the one set_bake() asks for, 0 BAKE_SIDE
     frame_albedo:   Texture,
     frame_normal:   Texture,
-    frame_rows:     i64,            // the frame map's rows: model3d::FRAME_MAP, or the mitred bands'
+    frame_rows:     i64,            // the frame map's rows: `side`, or the mitred bands'
     frame_flat:     bool,           // frame_normal is flat_frame()'s 4 × 4, not the map's
     photo:          Texture,
     shadow_map:     Texture,
@@ -279,12 +281,12 @@ fn photograph(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
 fn bake_surfaces(g: Gpu&, plan: bool = true, frame: bool = true) {
     let t = look(g, g.look);
     if plan {
-        bake(g, g.plan_albedo, g.plan_normal, model3d::PLAN_SIZE, model3d::PLAN_SIZE, 0.0, model3d::plan_extent(), t);
+        bake(g, g.plan_albedo, g.plan_normal, g.side, g.side, 0.0, model3d::plan_extent(), t);
     }
     if frame {
         full_frame(g);
         let rows = g.frame_rows;
-        bake(g, g.frame_albedo, g.frame_normal, model3d::FRAME_MAP, rows, 1.0, model3d::frame_extent(rows), t);
+        bake(g, g.frame_albedo, g.frame_normal, g.side, rows, 1.0, model3d::frame_extent(rows, g.side), t);
         flat_frame(g);
     }
     gpu_flush();
@@ -360,18 +362,30 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
 // map's targets as its frame wants. Whether the surfaces are to be baked.
 fn theme_begin(g: Gpu&, which: i64, n: i64) -> bool {
     own_carving(g, looks::shown(which, g.spring));
-    guard which != g.look || n != g.n else { return false; }
+    let side = if g.want_side > 0 { g.want_side } else { model3d::BAKE_SIDE };
+    guard which != g.look || n != g.n || side != g.side else { return false; }
     if !frame_matches(g) { abort("render3d::Frame and shaders::FRAME differ in size"); }
     let t = look(g, which);
     g.look = which;
     g.n = n;
-    let rows = model3d::frame_rows(t);
+    if side != g.side {
+        if g.side != 0 { gpu_release_waited(g.plan_albedo, g.plan_normal); }
+        g.plan_albedo = baked(side, side, RGBA8_SRGB);
+        g.plan_normal = baked(side, side, RGBA8);
+        g.side = side;
+        // The frame map's width is the side too: made again below.
+        if g.frame_rows != 0 {
+            gpu_release_waited(g.frame_albedo, g.frame_normal);
+            g.frame_rows = 0;
+        }
+    }
+    let rows = model3d::frame_rows(t, side);
     if rows != g.frame_rows {
         if g.frame_rows != 0 {
             gpu_release_waited(g.frame_albedo, g.frame_normal);
         }
-        g.frame_albedo = baked(model3d::FRAME_MAP, rows, RGBA8_SRGB);
-        g.frame_normal = baked(model3d::FRAME_MAP, rows, RGBA8);
+        g.frame_albedo = baked(side, rows, RGBA8_SRGB);
+        g.frame_normal = baked(side, rows, RGBA8);
         g.frame_rows = rows;
         g.frame_flat = false;
     }
@@ -395,7 +409,7 @@ fn flat_frame(g: Gpu&) {
 fn full_frame(g: Gpu&) {
     guard g.frame_flat else { return; }
     gpu_release(g.frame_normal);
-    g.frame_normal = baked(model3d::FRAME_MAP, g.frame_rows, RGBA8);
+    g.frame_normal = baked(g.side, g.frame_rows, RGBA8);
     g.frame_flat = false;
 }
 
@@ -419,15 +433,14 @@ fn theme_photo(g: Gpu&, which: i64, photo: i64) {
 fn theme_step(g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
     let t = look(g, g.look);
     let rows = g.frame_rows;
-    let st = model3d::step(k, rows);
+    let st = model3d::step(k, rows, g.side);
     if st.what == model3d::BEGIN {
         // A new look or size is baked whatever theme_begin finds: the steps bake in turn.
         theme_begin(g, which, n);
     } else if st.what == model3d::PIPELINE || st.what == model3d::PLAN {
-        bake(g, g.plan_albedo, g.plan_normal, model3d::PLAN_SIZE, model3d::PLAN_SIZE, 0.0, model3d::plan_extent(), t,
-             st.y0, st.y1, st.mips);
+        bake(g, g.plan_albedo, g.plan_normal, g.side, g.side, 0.0, model3d::plan_extent(), t, st.y0, st.y1, st.mips);
     } else if st.what == model3d::FRAME {
-        bake(g, g.frame_albedo, g.frame_normal, model3d::FRAME_MAP, rows, 1.0, model3d::frame_extent(rows), t, st.y0,
+        bake(g, g.frame_albedo, g.frame_normal, g.side, rows, 1.0, model3d::frame_extent(rows, g.side), t, st.y0,
              st.y1, st.mips);
     } else if st.what == model3d::PHOTO_PIPELINES {
         photo_pipelines(g);
@@ -466,7 +479,7 @@ fn theme_end(g: Gpu&, which: i64, n: i64) {
     f.grade = t.grade;
     f.tint = model3d::linear4(t.tint);
     f.frame_build = t.build;
-    f.frame_map = float4 { (g.frame_rows as f32) / model3d::FRAME_MAP, 0.0, 0.0, 0.0 };
+    f.frame_map = float4 { (g.frame_rows as f32) / g.side, 0.0, 0.0, 0.0 };
     f.frame_surface = t.frame_surface;
     g.shadow_dirty = true;
 }
@@ -540,6 +553,10 @@ fn choose(g: Gpu&, wood: i64, marble: i64, spring: i64 = -1) {
         g.stone = looks::marble(g.marble);
     }
 }
+
+// The surfaces' side (model3d::BAKE_SIDE, or PHONE_BAKE_SIDE on a phone) from the next
+// theme put on: the caller puts the theme on again for it to show.
+fn set_bake(g: Gpu&, side: i64) { g.want_side = side; }
 
 // Switches the wood's model, with its finish, and bakes the surfaces again.
 fn set_wood(g: Gpu&, model: i64) {

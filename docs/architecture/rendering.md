@@ -1549,7 +1549,10 @@ board's does and the backdrop over it as opaque as the blur.
   prepares the board again as a new theme does (`draw3d::want_material`), the old image
   easing grey meanwhile; the flat board has none.
   **The wood and the stone are baked** once into 2048² maps (the plan and the frame map,
-  with mips; `shaders::BAKE_FRAG`) at getting ready and on a theme change, never a frame.
+  with mips; `shaders::BAKE_FRAG`) at getting ready and on a theme change, never a frame;
+  on a phone's screen (`gui::phone`, a window as narrow too) into 1024² maps, each texel
+  the average of the 2 × 2 the full bake would have there, so the wood looks the same at
+  a quarter of the memory (`draw3d::screen_bake`, `model3d::PHONE_BAKE_SIDE`).
   The wood is growth rings round a wandering pith axis with pores along the fibres and a
   fibre relief (Liu, Dong, Hašan and Marschner, 2016), colored by Beer's law, under a
   finish per look (`looks::Finish`: varnish, sanding, pickling, caulking); winter's

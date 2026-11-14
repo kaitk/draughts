@@ -11,13 +11,15 @@ import math;
 import .mesh;
 import .looks;
 
-// The baked surfaces' targets: the plan (the field and the frame's top seen from above)
-// and the frame map. A mitred frame's map holds only its four bands (LIT_FRAG: 0.2 to
-// 5.65 of the map's 10.4 world units across), its rows at the same density: 44% less
-// memory and bake.
-let PLAN_SIZE = 2048;
-let FRAME_MAP = 2048;
-let FRAME_MITRED_ROWS = 1152;
+// The baked surfaces' targets: the plan (the field and the frame's top seen from above),
+// `side` texels square, and the frame map, `side` wide. BAKE_SIDE, or PHONE_BAKE_SIDE on
+// a phone (render3d::set_bake), whose field spans at most about a thousand pixels: a
+// texel a pixel or more there, at a quarter of the memory (85 MB to 21 with a full frame
+// map). A mitred frame's map holds only its four bands (LIT_FRAG: 0.2 to 5.65 of the
+// map's 10.4 world units across), its rows at the same density: 44% less memory and bake.
+let BAKE_SIDE = 2048;
+let PHONE_BAKE_SIDE = 1024;
+let FRAME_MITRED_ROWS = 1152;   // at BAKE_SIDE, and in proportion at another side
 
 // The wood's model (task 039): 0 noise drawn out along the grain, 1 growth rings, 2
 // growth rings with pores and a fibre relief, 3 the first with thin lines and pores laid
@@ -170,13 +172,13 @@ struct Step {
     part: i64  = 0,
 }
 
-// Step k, 0 to THEME_STEPS - 1, with a frame map `rows` high.
-fn step(k: i64, rows: i64) -> Step {
+// Step k, 0 to THEME_STEPS - 1, with the plan `side` square and a frame map `rows` high.
+fn step(k: i64, rows: i64, side: i64 = BAKE_SIDE) -> Step {
     if k == 0 { return Step { what: BEGIN, .. }; }
     if k == 1 { return Step { what: PIPELINE, y0: 0, y1: 1, .. }; }
     if k < 2 + PLAN_BANDS {
         let b = k - 2;
-        return Step { what: PLAN, y0: PLAN_SIZE * b / PLAN_BANDS, y1: PLAN_SIZE * (b + 1) / PLAN_BANDS,
+        return Step { what: PLAN, y0: side * b / PLAN_BANDS, y1: side * (b + 1) / PLAN_BANDS,
                       mips: b == PLAN_BANDS - 1, .. };
     }
     if k < 2 + PLAN_BANDS + FRAME_BANDS {
@@ -188,10 +190,13 @@ fn step(k: i64, rows: i64) -> Step {
     return Step { what: PHOTO, part: k - 3 - PLAN_BANDS - FRAME_BANDS, .. };
 }
 
-// The frame map's rows for a look: the mitred bands' where its frame is mitred.
-fn frame_rows(t: looks::Theme&) -> i64 { if t.build.x < 0.5 { FRAME_MITRED_ROWS } else { FRAME_MAP } }
+// The frame map's rows for a look at `side` texels wide: the mitred bands' where its
+// frame is mitred.
+fn frame_rows(t: looks::Theme&, side: i64 = BAKE_SIDE) -> i64 {
+    if t.build.x < 0.5 { FRAME_MITRED_ROWS * side / BAKE_SIDE } else { side }
+}
 
 // The surfaces' extents in world units: the plan over the field and the frame's top, the
-// frame map 10.4 across and as much down as its rows.
+// frame map 10.4 across and as much down as its rows, of `side` across.
 fn plan_extent() -> float2 { float2 { 2.0 * mesh::INNER, 2.0 * mesh::INNER } }
-fn frame_extent(rows: i64) -> float2 { float2 { 10.4, 10.4 * rows / FRAME_MAP } }
+fn frame_extent(rows: i64, side: i64 = BAKE_SIDE) -> float2 { float2 { 10.4, 10.4 * rows / side } }

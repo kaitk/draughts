@@ -223,8 +223,8 @@ find out by compiling, so the next session doesn't.
 - An `i64` converts to `f32` by itself where an `f32` is wanted (a `float4 { ... }`
   field, an `f32` parameter): `as f32` there is a redundant-cast warning (2026-11-09).
 - An integer over an integer is an integer division even where an `f32` is wanted:
-  `float4 { ..., rows / FRAME_MAP }` with `rows: i64` gives 0 (the 3D frame map turned
-  flat); write `(rows as f32) / FRAME_MAP` (2026-11-09).
+  `float4 { ..., rows / side }` with `rows: i64` gives 0 (the 3D frame map turned
+  flat); write `(rows as f32) / side` (2026-11-09).
 - `as` binds looser than `&`: write `(x as i64) & 0x3F`; `x as i64 & 0x3F` doesn't parse.
 - An array of untyped float literals (`let FACE_DP = [64.0, 30.0]`) holds `f64`s; cast an
   element `as f32` to use it with `f32`s. So is a `let` of untyped float constants

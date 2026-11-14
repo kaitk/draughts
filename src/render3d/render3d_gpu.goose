@@ -279,15 +279,17 @@ fn bake(g: render3d::Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h
     if y1 >= 0 { gfx::scissor(0, y0, w, y1 - y0); }
     gfx::bind(g.bake);
     let fi = g.finish;
+    // Samples a side a texel: a phone's half-size surface sampled as the full one, averaged.
+    let fine = model3d::BAKE_SIDE / w;
     let m = render3d::stone_of(g);
     gfx::uniforms(gfx::FRAGMENT, 0, render3d::Bake { float4 { mode, g.wood, g.n, render3d::marble_of(g) },
-                                           float4 { w, h, extent.x, extent.y },
+                                           float4 { w * fine, h * fine, extent.x, extent.y },
                                            t.light_sq, t.light_fig, t.dark_sq, t.dark_fig,
                                            t.inlay, t.inlay_fig, t.frame, t.frame_fig,
                                            t.surface, t.frame_surface, t.stone,
                                            t.light_ring, t.dark_ring, t.frame_ring,
                                            float4 { fi.varnish, fi.sanding, fi.grain, fi.rings },
-                                           float4 { fi.warmth, fi.pickle, fi.caulk, 0.0 },
+                                           float4 { fi.warmth, fi.pickle, fi.caulk, fine },
                                            float4 { m.veins, m.wave, m.polish, m.tint },
                                            m.base, m.vein, m.form, t.seam,
                                            float4 { g.carving.depth, g.carving.scale, g.carving.moss, t.build.w },
@@ -468,9 +470,8 @@ fn setup(g: render3d::Gpu&, samples: i32 = SAMPLES, look: i32 = render3d::SHADOW
     g.show = gfx::pipeline(embed_shader("vert", shaders::SHOW_VS, shaders::SHOW_BLOCK, shaders::SHOW_VERT),
                            embed_shader("frag", shaders::SHOW_FS, shaders::SHOW_BLOCK, shaders::SHOW_FRAG),
                            gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED });
-    g.plan_albedo = render3d::baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, gfx::RGBA8_SRGB);
-    g.plan_normal = render3d::baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, gfx::RGBA8);
-    g.frame_rows = 0;   // made by apply(), as the look's frame wants
+    g.side = 0;         // the plan and the frame map made by apply(), at its side and as the look's frame wants
+    g.frame_rows = 0;
     g.photo = gfx::render_target(render3d::PHOTO_SIZE, render3d::PHOTO_SIZE, gfx::RGBA8);
     g.small = gfx::render_target(render3d::PHOTO_SIZE, render3d::PHOTO_SIZE, gfx::RGBA8);
     g.across = gfx::render_target(render3d::PHOTO_SIZE, render3d::PHOTO_SIZE, gfx::RGBA8);

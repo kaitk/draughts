@@ -1,9 +1,10 @@
 // The 3D board's model without graphics (model3d, task 061): the plan a theme is put on
 // in, step by step (render3d::theme_step runs each in a frame of its own), for the full
-// frame map and a mitred one, so every row of each surface is baked once, in order, its
-// mips with its last band; and the photograph's light as harmonics: a grey photograph
-// lights evenly (only the first band, the mean, has light: the grey's linear value times
-// 0.282 × 4π, 3.54), one lit from above has its light in the y band too, and
+// frame map and a mitred one, at a desktop's and a tablet's side and at a phone's, so
+// every row of each surface is baked once, in order, its mips with its last band; and
+// the photograph's light as harmonics: a grey photograph lights evenly (only the first
+// band, the mean, has light: the grey's linear value times 0.282 × 4π, 3.54), one lit
+// from above has its light in the y band too, and
 // `toward_grey` takes a colored one's light to grey.
 import std;
 import vec;
@@ -11,13 +12,14 @@ import model3d from "../../src/model3d";
 
 let WHAT = ["begin", "pipeline", "plan", "frame", "photo pipelines", "photo"];
 
-fn plan(rows: i64) {
-    print("a frame map ", rows, " rows high:");
+fn plan(side: i64, rows: i64) {
+    if side == model3d::BAKE_SIDE { print("a frame map ", rows, " rows high:"); }
+    else { print("at ", side, " texels a side, a phone's, a frame map ", rows, " rows high:"); }
     var line: u8[>..] = [];
     var plan_to = 0;
     var frame_to = 0;
     for k in model3d::THEME_STEPS {
-        let s = model3d::step(k, rows);
+        let s = model3d::step(k, rows, side);
         line.clear();
         format(line, "    ", k, " ", WHAT[s.what]);
         if s.what == model3d::PIPELINE || s.what == model3d::PLAN || s.what == model3d::FRAME {
@@ -36,7 +38,7 @@ fn plan(rows: i64) {
             frame_to = s.y1;
         }
     }
-    print("    the plan to row ", plan_to, " of ", model3d::PLAN_SIZE, ", the frame map to ", frame_to, " of ", rows);
+    print("    the plan to row ", plan_to, " of ", side, ", the frame map to ", frame_to, " of ", rows);
 }
 
 // Nine harmonics, two decimals each.
@@ -49,8 +51,11 @@ fn show(name: const u8[:], sh: float4[9]) {
 }
 
 fn main() {
-    plan(model3d::FRAME_MAP);
-    plan(model3d::FRAME_MITRED_ROWS);
+    plan(model3d::BAKE_SIDE, model3d::BAKE_SIDE);
+    plan(model3d::BAKE_SIDE, model3d::FRAME_MITRED_ROWS);
+    let phone = model3d::PHONE_BAKE_SIDE;
+    plan(phone, phone);
+    plan(phone, model3d::FRAME_MITRED_ROWS * phone / model3d::BAKE_SIDE);
     let n = 64;
     var px: u8[>..] = [];
     for i in n * n * 4 { px.push(if i % 4 == 3 { 255 } else { 128 }); }

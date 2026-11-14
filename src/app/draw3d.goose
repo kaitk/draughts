@@ -37,6 +37,7 @@ struct Drawer {
     aa:        i32                                   = render3d::AA, // --aa and the A key: render3d's AA_OFF..
     samples:   i32                                   = render3d::SAMPLES, // MSAA's, fewer on a slow device
     look:      i32                                   = render3d::SHADOW_9, // how the shadow is filtered (screen_shadow)
+    side:      i64                                   = model3d::BAKE_SIDE, // the surfaces' side (screen_bake)
     kind:      i64                                   = -1, // the app's theme the board was set up with
     plain:     bool                                  = false, // and whether behind it the plain fade
     which:     i64                                   = -1, // the board drawn (the shell's which())
@@ -103,6 +104,7 @@ fn want_material(d: Drawer&, material: i64) {
 fn set_up(d: Drawer&) {
     let t0 = clock();
     render3d::setup(d.gpu, render3d::SAMPLES, d.look);
+    render3d::set_bake(d.gpu, d.side);
     render3d::set_aa(d.gpu, d.aa, d.samples);
     render3d::choose(d.gpu, d.wood, d.marble, d.spring);
     d.ready = true;
@@ -235,7 +237,7 @@ fn cover(d: Drawer&) {
 fn drop(d: Drawer&) {
     guard d.ready else { return; }
     render3d::release(d.gpu);
-    d = Drawer { aa: d.aa, samples: d.samples, look: d.look, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
+    d = Drawer { aa: d.aa, samples: d.samples, look: d.look, side: d.side, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
                 spring: d.spring, want: d.want, .. };
 }
 
@@ -270,6 +272,20 @@ fn screen_shadow(d: Drawer&, look: i32) {
     guard d.ready else { return; }
     render3d::set_shadow(d.gpu, look);
     d.fresh = true;
+}
+
+// The surfaces baked at 1024 texels a side on a phone (`small`), whose field spans at most
+// about a thousand pixels, else at 2048 (model3d::BAKE_SIDE): a quarter of the memory
+// there. A change once ready puts the theme on again in its steps, the image shown
+// meanwhile; never in the frame loop's steady state, only when the screen turns from a
+// phone's to a larger one (a foldable opened).
+fn screen_bake(d: Drawer&, small: bool) {
+    let side = if small { model3d::PHONE_BAKE_SIDE } else { model3d::BAKE_SIDE };
+    guard side != d.side else { return; }
+    d.side = side;
+    guard d.ready else { return; }
+    render3d::set_bake(d.gpu, side);
+    d.themed = 0;
 }
 
 // What only drawing the board needs (the pass's targets, the kept backdrop and depth) kept

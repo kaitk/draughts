@@ -1118,11 +1118,29 @@ after a pause of a second paid the remade targets' first touch, +4 ms on the M1 
 +13 ms on the iPhone 13 mini, a refresh late at the start of the move, and the targets
 made and given back again and again cost allocations on every turn, for memory no other
 app wanted while ours was in front. The headless 3D game at 1280 × 800 on the Mac now holds
-171 MB at rest against 144 (the 4× color and depth, the kept depth and backdrop). What a
+171 MB at rest against 144 (the 4× color and depth, the kept depth and backdrop); the ngfx
+build, whose 4× targets are memoryless, 153 against 146. What a
 background app holds is what the system weighs, and that is unchanged. iOS gives them back
 at the first frame without focus, before it is in the background, where no GPU work may be
 submitted. Rejected: a longer delay (another number to tune, the same first touch after
 it).
+
+A phone's screen bakes the plan and the frame map at 1024 texels a side (2026-11-14):
+its field spans at most about a thousand pixels, so 2048 gave about two texels a pixel,
+which the anisotropic filter averaged away. Each texel takes the 2 × 2 samples the full
+bake has there, averaged as its first mip would be (`BAKE_FRAG`'s `tone.w`): baked at 1024
+plainly, the wood's furrows and pores, a texel or two of the bake across, came out twice
+as coarse, the frame's grain streaky (98 of 255 against the 2048 bake on a 1080 × 2400
+shot); averaged, within 35 to 45 of 255 at a few pixels in each season. The bake costs
+what it did (a quarter of the texels, four samples each), and the memory a quarter: the
+headless 3D game at the Pixel 7a's size on the Mac at rest, 149 → 116 MB on gfx and
+140 → 91 on ngfx, the pass's targets kept as above. Phones are told by `gui::phone`, the
+layouts' test (under 600 dp across the shorter side), so iPhones take it, tablets and
+desktops keep 2048, and a narrow desktop window takes 1024 too, its field as small. A
+screen that crosses the line (a foldable opened) bakes again in the theme's steps, the
+image shown meanwhile. Rejected: the plan's normal as RG8 besides, its blue holds the
+cavity's occlusion and its alpha the normal's y, whose shortening in the mips widens the
+roughness; dropping them changes the look, and keeping them needs a second target.
 
 Not done: the plan's normal as RG8 (it would need a second bake
 pipeline, the frame's normal uses all four channels), the plan and frame maps without

@@ -317,15 +317,17 @@ fn bake(g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h: i64, mode:
     if y1 >= 0 { ngfx::scissor(0, y0, w, y1 - y0); }
     nx::bind(g.bake);
     let fi = g.finish;
+    // Samples a side a texel: a phone's half-size surface sampled as the full one, averaged.
+    let fine = model3d::BAKE_SIDE / w;
     let m = g.stone;
     let u: render3d::Bake[1] = [render3d::Bake { float4 { mode, g.wood, g.n, g.marble },
-                                           float4 { w, h, extent.x, extent.y },
+                                           float4 { w * fine, h * fine, extent.x, extent.y },
                                            t.light_sq, t.light_fig, t.dark_sq, t.dark_fig,
                                            t.inlay, t.inlay_fig, t.frame, t.frame_fig,
                                            t.surface, t.frame_surface, t.stone,
                                            t.light_ring, t.dark_ring, t.frame_ring,
                                            float4 { fi.varnish, fi.sanding, fi.grain, fi.rings },
-                                           float4 { fi.warmth, fi.pickle, fi.caulk, 0.0 },
+                                           float4 { fi.warmth, fi.pickle, fi.caulk, fine },
                                            float4 { m.veins, m.wave, m.polish, m.tint },
                                            m.base, m.vein, m.form, t.seam,
                                            float4 { g.carving.depth, g.carving.scale, g.carving.moss, t.build.w },
@@ -469,9 +471,8 @@ fn setup(g: Gpu&, aa: i32 = AA, look: i32 = render3d::SHADOW_9) {
     own.down = module(embed_file("../app/shaders/down.blob"));
     aa_resources(g, aa);
     g.show = module(embed_file("../app/shaders/r3d_show.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
-    g.plan_albedo = render3d::baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, ngfx::RGBA8_SRGB);
-    g.plan_normal = render3d::baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, ngfx::RGBA8);
-    g.frame_rows = 0;   // made by apply(), as the look's frame wants
+    g.side = 0;         // the plan and the frame map made by apply(), at its side and as the look's frame wants
+    g.frame_rows = 0;
     g.photo = nx::render_target(render3d::PHOTO_SIZE, render3d::PHOTO_SIZE, ngfx::RGBA8);
     g.small = nx::render_target(render3d::PHOTO_SIZE, render3d::PHOTO_SIZE, ngfx::RGBA8);
     g.across = nx::render_target(render3d::PHOTO_SIZE, render3d::PHOTO_SIZE, ngfx::RGBA8);

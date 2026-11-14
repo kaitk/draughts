@@ -72,6 +72,9 @@ fn fewer_samples(r: Renderer&) { draw3d::fewer_samples(r.d3); }
 // The 3D board's shadow filter for the screen (draw3d::screen_shadow).
 fn screen_shadow(r: Renderer&, look: i32) { draw3d::screen_shadow(r.d3, look); }
 
+// The 3D board's surfaces baked for a phone's screen, or a larger one (draw3d::screen_bake).
+fn screen_bake(r: Renderer&, small: bool) { draw3d::screen_bake(r.d3, small); }
+
 // Whether it draws theme `kind` with its photograph, or with `plain` the fade.
 fn shows_theme(r: Renderer&, kind: i64, plain: bool) -> bool { r.d.kind == kind && r.d.scene.plain == plain }
 

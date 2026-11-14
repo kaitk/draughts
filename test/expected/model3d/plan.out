@@ -58,6 +58,66 @@ a frame map 1152 rows high:
     26 photo part 1
     27 photo part 2
     the plan to row 2048 of 2048, the frame map to 1152 of 1152
+at 1024 texels a side, a phone's, a frame map 1024 rows high:
+    0 begin
+    1 pipeline rows 0..1
+    2 plan rows 0..64
+    3 plan rows 64..128
+    4 plan rows 128..192
+    5 plan rows 192..256
+    6 plan rows 256..320
+    7 plan rows 320..384
+    8 plan rows 384..448
+    9 plan rows 448..512
+    10 plan rows 512..576
+    11 plan rows 576..640
+    12 plan rows 640..704
+    13 plan rows 704..768
+    14 plan rows 768..832
+    15 plan rows 832..896
+    16 plan rows 896..960
+    17 plan rows 960..1024, mips
+    18 frame rows 0..170
+    19 frame rows 170..341
+    20 frame rows 341..512
+    21 frame rows 512..682
+    22 frame rows 682..853
+    23 frame rows 853..1024, mips
+    24 photo pipelines
+    25 photo part 0
+    26 photo part 1
+    27 photo part 2
+    the plan to row 1024 of 1024, the frame map to 1024 of 1024
+at 1024 texels a side, a phone's, a frame map 576 rows high:
+    0 begin
+    1 pipeline rows 0..1
+    2 plan rows 0..64
+    3 plan rows 64..128
+    4 plan rows 128..192
+    5 plan rows 192..256
+    6 plan rows 256..320
+    7 plan rows 320..384
+    8 plan rows 384..448
+    9 plan rows 448..512
+    10 plan rows 512..576
+    11 plan rows 576..640
+    12 plan rows 640..704
+    13 plan rows 704..768
+    14 plan rows 768..832
+    15 plan rows 832..896
+    16 plan rows 896..960
+    17 plan rows 960..1024, mips
+    18 frame rows 0..96
+    19 frame rows 96..192
+    20 frame rows 192..288
+    21 frame rows 288..384
+    22 frame rows 384..480
+    23 frame rows 480..576, mips
+    24 photo pipelines
+    25 photo part 0
+    26 photo part 1
+    27 photo part 2
+    the plan to row 1024 of 1024, the frame map to 576 of 576
 the grey's linear value: 0.216
 grey: (0.77 0.77 0.77) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0)
 lit from above: (1.82 1.82 1.82) (1.04 1.04 1.04) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (-0.01 -0.01 -0.01) (0.0 0.0 0.0) (0.0 0.0 0.0)
