@@ -572,7 +572,17 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // the screen as far as that allows (a phone's landscape, back beside the rows).
     let y0 = if landscape { page.y + max(0.0, floor(0.5 * (page.w - (head + first + per * row_h + (per - 1) * gap + end)) + 0.5)) }
              else { page.y };
-    let room = if landscape && y0 >= whole.y + gui::tap() * u + gap { whole } else { page };
+    // A tablet whose rows reach up beside back (16:9, Today open) keeps them centered on
+    // the screen, back's clearance mirrored on the right, rather than pushed against it,
+    // where they still fit the height that way (Today's tiles may wrap when narrower).
+    let clear = page.x - whole.x;
+    let mirrored = float4 { page.x, page.y, max(0.0, whole.z - 2.0 * clear), page.w };
+    let mirror_w = cols * min((mirrored.z - (cols - 1) * gap) / cols, COLUMN * u) + (cols - 1) * gap;
+    let mirror_first = if opened { today_h(g, mirror_w, n_today, phone) + gap } else { first };
+    let mirror_fits = mirrored.z >= 2.0 * NARROWEST * u + gap &&
+                      head + mirror_first + per * row_h + (per - 1) * gap + end <= page.w;
+    let room = if landscape && y0 >= whole.y + gui::tap() * u + gap { whole }
+               else if landscape && !phone && mirror_fits { mirrored } else { page };
     let col_w = min((room.z - (cols - 1) * gap) / cols, COLUMN * u);
     let w = cols * col_w + (cols - 1) * gap;
     if opened {
