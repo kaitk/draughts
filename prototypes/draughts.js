@@ -1,7 +1,6 @@
 // The prototypes' shared parts: the screen (?device=), the season's scene and the glass
-// over it, the board flat and raised (?board=3d), icons, and one game's moves. Plain
-// script, no build step. URL parameters, all optional: ?season=winter|spring|summer|autumn
-// (else by the date), ?bg=plain (the plain fade in place of the photograph), ?board=3d,
+// over it, the board, icons, and one game's moves. Plain script, no build step. URL
+// parameters, all optional: ?season=winter|spring|summer|autumn (else by the date),
 // ?device=tablet|pixel|iphone, with -portrait for its portrait, or a desktop's window
 // full screen: mac|desktop|ultrawide (else the window).
 'use strict';
@@ -12,7 +11,8 @@ const Draughts = (() => {
   const pick = (key, values, fallback) => (values.includes(params.get(key)) ? params.get(key) : fallback);
   const m = new Date().getMonth();
   const season = pick('season', Object.keys(SEASON_THEME), m < 2 || m === 11 ? 'winter' : m < 5 ? 'spring' : m < 8 ? 'summer' : 'autumn');
-  const settings = { season, theme: SEASON_THEME[season], board: pick('board', ['flat', '3d'], 'flat'), bg: pick('bg', ['photo', 'plain'], 'photo') };
+  const settings = { season, theme: SEASON_THEME[season] };
+
 
   // Devices in dp, landscape, with the safe area's insets (top, right, bottom, left); a
   // portrait turns them. The Pixel 7a: its cutout and gesture bar; the iPhone 13 mini at
@@ -43,14 +43,14 @@ const Draughts = (() => {
     ['--it', '--ir', '--ib', '--il'].forEach((k, i) => b.style.setProperty(k, `${device.insets[i]}px`));
   }
 
-  // The scene: the season's photograph (design/backgrounds/masters/, in git), or the plain
-  // fade. As natively (src/app/scene.goose), glass and the flat game's backdrop show
+  // The scene: the season's photograph (design/backgrounds/masters/, in git). As natively
+  // (src/app/scene.goose), glass and the game's blurred backdrop show
   // copies blurred once when the page loads, at a fixed size (a file:// image can be
   // drawn, not read back): the image is cover-cropped by the screen, so the same blur
   // serves every size. A glass copies its part into its own small canvas: a blit, no
   // filter, and only when it moved or changed size.
   let scene = null, copies = null;
-  const dims = () => [scene.naturalWidth || scene.width, scene.naturalHeight || scene.height];
+  const dims = () => [scene.naturalWidth, scene.naturalHeight];
   function blurred(N, px, filter) {
     // The image N across with a margin, the margin its edges stretched, then blurred.
     const [iw, ih] = dims(), M = Math.ceil(2 * px);
@@ -79,7 +79,7 @@ const Draughts = (() => {
         glass: blurred(256, 24 * 256 / 1280, `saturate(1.3) brightness(${cs.getPropertyValue('--glass-dim')})`),
         back: blurred(512, 14 * 512 / 1280, 'brightness(0.8)') };
     }
-    if (b.dataset.screen === 'board' && settings.board === 'flat') {
+    if (b.dataset.screen === 'board') {
       let bg = b.querySelector(':scope > canvas.scene-blur');
       if (!bg) b.prepend(bg = Object.assign(document.createElement('canvas'), { className: 'scene-blur' }));
       const m = map(copies.back, W, H), w = Math.ceil(W * m.f), h = Math.ceil(H * m.f);
@@ -107,37 +107,7 @@ const Draughts = (() => {
   let queued = false;
   const later = () => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; sync(); }); } };
 
-  // The plain fade (fade b, src/render3d/shaders.goose's FADE_FN): the page color at the
-  // top to a deep tone of the frame at the foot, a faint light of the dark square behind
-  // the middle, the corners darker; in linear light, painted at most 480 px across.
-  const PLAIN = { wood: ['#1e1510', '#4a2c1a', '#7a4626'], stone: ['#0c1724', '#2c3a4c', '#5a6777'],
-    birch: ['#101b15', '#2f3d30', '#6b7f6a'], sunset: ['#21150f', '#4f2e28', '#9a6655'] };
-  function plain(w, h) {
-    const lin = (s) => [1, 3, 5].map((i) => ((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))(parseInt(s.slice(i, i + 2), 16) / 255));
-    const [top, foot, light] = PLAIN[settings.theme].map(lin);
-    const step = (a, b, x) => { const t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); };
-    const k = Math.min(1, 480 / Math.max(w, h)), W = Math.round(w * k), H = Math.round(h * k), L = Math.max(w, h);
-    const c = Object.assign(document.createElement('canvas'), { width: W, height: H });
-    const g = c.getContext('2d'), img = g.createImageData(W, H);
-    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
-      const qx = (i + 0.5) / W - 0.5, qy = (j + 0.5) / H - 0.5;
-      const a = 0.22 * (1 - step(0, 1, Math.hypot(qx * (w / L) / 0.62, (qy - 0.04) * (h / L) / 0.5)));
-      const v = 1 - 0.3 * step(0.15, 0.6, qx * qx + qy * qy), f = step(0, 1, qy + 0.5);
-      for (let n = 0; n < 3; n++) {
-        const col = (top[n] + (foot[n] - top[n]) * f) * (1 - a) + light[n] * a;
-        img.data[(j * W + i) * 4 + n] = 255 * (col * v) ** (1 / 2.2);
-      }
-      img.data[(j * W + i) * 4 + 3] = 255;
-    }
-    g.putImageData(img, 0, 0);
-    return c;
-  }
   function loadScene() {
-    if (settings.bg === 'plain') {
-      scene = plain(document.body.offsetWidth, document.body.offsetHeight);
-      document.body.style.backgroundImage = `url(${scene.toDataURL()})`;
-      return sync();
-    }
     const img = new Image();
     img.onload = () => { scene = img; sync(); };
     img.src = `../design/backgrounds/masters/${settings.season}-01-2048.jpg`;
@@ -181,307 +151,31 @@ const Draughts = (() => {
     right: '<path d="M9 6l6 6-6 6"/>',
     first: '<path d="M17 6l-6 6 6 6"/><path d="M7 6v12"/>',
     last: '<path d="M7 6l6 6-6 6"/><path d="M17 6v12"/>',
-    view: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 4v16M4 12h16"/>',
-    zoom: '<circle cx="11" cy="11" r="7"/><path d="M16 16l5 5M11 8v6M8 11h6"/>',
-    orbit: '<ellipse cx="12" cy="15" rx="9" ry="4"/><path d="M7 13.5V9a5 5 0 0 1 10 0v4.5"/>',
   };
   const icon = (name) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 
-  // The flat board and its pieces as the native shaders draw them: a port of
-  // src/app/draw.goose's board and piece shaders, run once per board and kind of piece,
-  // into images. Sizes are rounded up to steps of 19%, so a resize repaints only past a
-  // step. Keep it in step with draw.goose (docs/architecture/rendering.md, "Board and pieces").
-  const Paint = (() => {
-    const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
-    const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
-    const fract = (x) => x - Math.floor(x);
-    const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-    const WHITE = [1, 1, 1], BLACK = [0, 0, 0];
-    const tint = (c, a) => (a > 0 ? mix(c, WHITE, a) : mix(c, BLACK, -a));
-    const lit = (c, a) => (a > 0 ? mix(c, WHITE, a) : mix(c, c.map((v) => v * v * 0.85), -a));
-    const hash = (x, y) => fract(Math.sin(x * 127.1 + y * 311.7) * 43758.5453);
-    function noise(x, y) {
-      const ix = Math.floor(x), iy = Math.floor(y);
-      let fx = x - ix, fy = y - iy;
-      fx = fx * fx * (3 - 2 * fx);
-      fy = fy * fy * (3 - 2 * fy);
-      const a = hash(ix, iy), b = hash(ix + 1, iy), c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1);
-      return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
-    }
-    const box = (px, py, cx, cy, h, r) => {
-      const qx = Math.abs(px - cx) - h + r, qy = Math.abs(py - cy) - h + r;
-      return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
-    };
-    const color = (s) => [1, 3, 5].map((i) => parseInt(s.trim().slice(i, i + 2), 16) / 255);
-    const KIND = { wood: 0, stone: 1, birch: 2, sunset: 3 };
-    function canvas(w, h) {
-      const c = Object.assign(document.createElement('canvas'), { width: w, height: h });
-      const g = c.getContext('2d');
-      return { c, g, img: g.createImageData(w, h) };
-    }
-    const put = (img, i, rgb, a) => {
-      img.data[i] = rgb[0] * 255; img.data[i + 1] = rgb[1] * 255; img.data[i + 2] = rgb[2] * 255; img.data[i + 3] = a * 255;
-    };
-
-    // The board B px wide with its lip and soft shadow, on a canvas reaching 5% past it.
-    // squaresOnly: just the squares, for the raised board.
-    function board(t, n, B, squaresOnly) {
-      const u = B * 0.01, lw = squaresOnly ? 0 : 1.1 * u, rad = 1.6 * u;
-      const inner = B - 2 * lw, sqw = inner / n;
-      const m = squaresOnly ? 0 : Math.round(0.05 * B), W = Math.round(B) + 2 * m;
-      const { c, g, img } = canvas(W, W);
-      const light = color(t.light), dark = color(t.dark), kind = t.kind, line = mix(light, WHITE, 0.25), bh = B / 2;
-      for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) {
-        const px = i + 0.5 - m, py = j + 0.5 - m, k = (j * W + i) * 4;
-        const fd = squaresOnly ? -B : box(px, py, bh, bh, bh, rad);
-        const sh = squaresOnly ? 0 : 0.55 * (1 - smooth(-3.6 * u, 3.6 * u, box(px, py, bh, bh + 1.4 * u, bh - u, rad)));
-        if (fd >= 1) { put(img, k, BLACK, sh); continue; }
-        const id = squaresOnly ? -B : box(px, py, bh, bh, inner / 2, 0.5 * rad);
-        let col = BLACK;
-        if (id > -1) {
-          // The lip: the dark square's color, a line of the light one on its outer edge.
-          const tt = clamp(-fd / lw, 0, 1), ny = (py - bh) / bh;
-          col = tint(mix(tint(dark, 0.06 - 0.1 * ny), line, (0.75 - 0.25 * ny) * (1 - smooth(0.1, 0.26, tt))), -0.35 * smooth(0.7, 1, tt));
-        }
-        if (id < 1) {
-          const qx = (px - lw) / sqw, qy = (py - lw) / sqw;
-          const cx = clamp(Math.floor(qx), 0, n - 1), cy = clamp(Math.floor(qy), 0, n - 1), h = hash(cx, cy);
-          let a = 0;
-          if (kind === 0) {
-            const mx = px / u + 41 * h, my = py / u + 41 * h;
-            a += 0.022 * (noise(mx * 2.6, my * 0.08) - 0.5) + 0.03 * (noise(mx * 0.35, my * 0.06) - 0.5) + 0.02 * (h - 0.5);
-          } else if (kind === 1) {
-            a += 0.07 * (0.6 * noise(px / u * 0.45 + 13 * h, py / u * 0.45 + 13 * h) + 0.4 * noise(px / u * 1.3, py / u * 1.3) - 0.5);
-          } else if (kind === 2) {
-            a += 0.03 * (noise(px / (3 * u), py / (0.35 * u)) - 0.5);
-          } else {
-            a += 0.02 * (noise(px / (2 * u), py / (2 * u)) - 0.5);
-          }
-          a += 0.04 * (1 - smooth(0, 0.18 * u, fract(qy) * sqw));
-          col = mix(col, tint((cx + n - 1 - cy) % 2 === 0 ? dark : light, a), clamp(0.5 - id, 0, 1));
-        }
-        const cov = clamp(0.5 - fd, 0, 1), al = cov + sh * (1 - cov);
-        put(img, k, al > 0 ? col.map((v) => (v * cov) / al) : col, al);
-      }
-      g.putImageData(img, 0, 0);
-      return c.toDataURL();
-    }
-
-    // The crown: five points over a band, in units where it spans -1..1.
-    const CROWN = [[-0.72, 0.30], [-0.88, -0.42], [-0.40, 0.02], [0.0, -0.62], [0.40, 0.02], [0.88, -0.42], [0.72, 0.30]];
-    function crown(px, py) {
-      let d = (px - CROWN[0][0]) ** 2 + (py - CROWN[0][1]) ** 2, s = 1;
-      for (let i = 0, j = 6; i < 7; j = i, i++) {
-        const ex = CROWN[j][0] - CROWN[i][0], ey = CROWN[j][1] - CROWN[i][1], wx = px - CROWN[i][0], wy = py - CROWN[i][1];
-        const t = clamp((wx * ex + wy * ey) / (ex * ex + ey * ey), 0, 1);
-        d = Math.min(d, (wx - ex * t) ** 2 + (wy - ey * t) ** 2);
-        const a = py >= CROWN[i][1], b = py < CROWN[j][1], c = ex * wy > ey * wx;
-        if ((a && b && c) || (!a && !b && !c)) s = -s;
-      }
-      const qx = Math.abs(px) - 0.72, qy = Math.abs(py - 0.47) - 0.09;
-      return Math.min(s * Math.sqrt(d), Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0));
-    }
-    const shoulder = (r, a, b, dy) => { const th = 1.45 * clamp((r - a) / (b - a), 0, 1); return 0.7071 * (-dy * Math.sin(th) + Math.cos(th) - 1); };
-    const groove = (r, a, b, dy) => { const t = (r - a) / (b - a); return t <= 0 || t >= 1 ? 0 : -dy * Math.sin(2 * Math.PI * t); };
-    const fill = (d, w) => clamp(0.5 - d / w, 0, 1);
-
-    // One piece, R px in radius, over x -1.9..1.9 and y top..2.1 + side radii. o: { face,
-    // crownW, glow, black, king: '' | 'crown' | 'stack', sel, side, lift, stack, bare }; bare
-    // leaves out the shadow, the side, and the glow, for the raised board's sprites.
-    function piece(o, R) {
-      const top = -1.9 - o.lift - o.stack;
-      const W = Math.ceil(3.8 * R), H = Math.ceil((2.1 + o.side - top) * R);
-      const { c, g, img } = canvas(W, H);
-      const face = color(o.face), glow = color(o.glow), crownW = color(o.crownW), black = o.black, sel = o.sel ? 1 : 0;
-      const lift = sel ? o.lift : 0, side = o.side, scale = 1 + 0.05 * sel, w = 1 / R / scale;
-      const sidec = black ? mix(face, BLACK, 0.5) : face.map((v) => v * v * 0.92), gold = [0.914, 0.769, 0.416];
-      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
-        const x = -1.9 + (i + 0.5) / R, y = top + (j + 0.5) / R;
-        let ar = 0, ag = 0, ab = 0, aa = 0;
-        const over = (col, a) => {
-          ar = col[0] * a + ar * (1 - a); ag = col[1] * a + ag * (1 - a); ab = col[2] * a + ab * (1 - a); aa = a + aa * (1 - a);
-        };
-        if (!o.bare) {
-          const soft = 0.16 + 0.5 * lift;
-          over(BLACK, (0.4 - 0.1 * sel) * (1 - smooth(-2 * soft, 2 * soft, Math.hypot(x - 0.04, y - 0.25 - 0.6 * lift) - 1)));
-          over(BLACK, 0.3 * (1 - smooth(-0.08, 0.06, Math.hypot(x, y - 0.06 - side) - 1)) * (1 - smooth(0, 0.2, lift)));
-          if (sel) over(glow, 0.4 * Math.exp(-Math.max(Math.hypot(x / scale, (y + lift) / scale) - 1, 0) * 5));
-        }
-        const discs = o.king === 'stack' ? [[0, side], [o.stack, o.stack]] : [[0, side]];
-        let fr = 9;
-        for (const [up, depth] of discs) {
-          const fx = x / scale, fy = (y + lift + up) / scale, r = Math.hypot(fx, fy), dy = fy / Math.max(r, 0.001);
-          fr = r;
-          if (!o.bare) {
-            const dd = depth / scale, arc = Math.sqrt(Math.max(1 - fx * fx, 0)), foot = clamp((fy - arc) / dd, 0, 1);
-            over(sidec.map((v) => v * (0.8 + 0.25 * arc) * (1 - 0.25 * foot)), fill(Math.hypot(fx, fy - clamp(fy, 0, dd)) - 1, w));
-          }
-          let col = tint(face, -0.02 * fy);
-          const l = shoulder(r, 0.86, 1, dy);
-          col = lit(col, l > 0 ? (black ? 1 : 1.2) * l : (black ? 0.28 : 0.4) * l);
-          const gr = groove(r, 0.63, 0.76, dy);
-          col = lit(col, gr > 0 ? (black ? 0.4 : 0.5) * gr : (black ? 0.6 : 1.2) * gr);
-          col = lit(col, -(black ? 0.3 : 0.45) * (1 - smooth(0, 0.05, Math.abs(r - 0.695))));
-          if (o.king === 'crown') col = mix(col, black ? gold : crownW, fill(0.56 * crown(fx / 0.56, fy / 0.56), w));
-          over(col, fill(r - 1, w));
-        }
-        if (sel && !o.bare) {
-          const rd = Math.abs(fr - 1.13) - 0.055;
-          over(glow, 0.6 * Math.exp(-Math.max(rd, 0) * 7));
-          over(mix(glow, WHITE, 0.25), fill(rd, w));
-        }
-        put(img, (j * W + i) * 4, aa > 0 ? [ar / aa, ag / aa, ab / aa] : BLACK, aa);
-      }
-      g.putImageData(img, 0, 0);
-      return { c, top };
-    }
-
-    // A raised piece's sprite, R px in radius: the face above, squashed by the tilt, over
-    // its side (two discs for a stacked king), over a soft shadow on the board. In units of
-    // the radius the sprite is 2.6 wide, and the piece's foot is at (1.3, UP).
-    const TILT = 37.5 * Math.PI / 180, COS = Math.cos(TILT), SIN = Math.sin(TILT), T = 0.3, GAP = 0.04, UP = 1.35, DOWN = 1.15;
-    function raised(o, R) {
-      const W = Math.ceil(2.6 * R), H = Math.ceil((UP + DOWN) * R), ox = 1.3 * R, oy = UP * R;
-      const c = Object.assign(document.createElement('canvas'), { width: W, height: H });
-      const g = c.getContext('2d');
-      const sh = g.createRadialGradient(0, 0, 0, 0, 0, 1.3 * R);
-      sh.addColorStop(0, 'rgb(0 0 0 / 0.5)');
-      sh.addColorStop(0.7, 'rgb(0 0 0 / 0.3)');
-      sh.addColorStop(1, 'rgb(0 0 0 / 0)');
-      g.save();
-      g.translate(ox + 0.08 * R, oy + 0.12 * R);
-      g.scale(1, COS);
-      g.fillStyle = sh;
-      g.fillRect(-1.4 * R, -1.4 * R, 2.8 * R, 2.8 * R);
-      g.restore();
-      const f = color(o.face), sc = o.black ? f.map((v) => v * 0.5) : f.map((v) => v * v * 0.92);
-      const css = (v, k) => `rgb(${v.map((x) => Math.round(255 * Math.min(1, x * k))).join(' ')})`;
-      const side = g.createLinearGradient(ox - R, 0, ox + R, 0);
-      side.addColorStop(0, css(sc, 1.15));
-      side.addColorStop(0.4, css(sc, 1));
-      side.addColorStop(1, css(sc, 0.6));
-      const ry = R * COS, t = T * R * SIN, lift = o.sel ? 0.25 * R : 0;
-      let y = oy - lift;
-      const discs = o.king === 'stack' ? 2 : 1;
-      for (let k = 0; k < discs; k++) {
-        g.fillStyle = side;
-        g.beginPath();
-        g.ellipse(ox, y, R, ry, 0, 0, Math.PI);
-        g.lineTo(ox - R, y - t);
-        g.ellipse(ox, y - t, R, ry, 0, Math.PI, 0, true);
-        g.closePath();
-        g.fill();
-        y -= t + (k + 1 < discs ? GAP * R : 0);
-      }
-      const p = piece({ ...o, king: o.king === 'crown' ? 'crown' : '', bare: true, side: 0, lift: 0, stack: 0, sel: false }, R);
-      g.drawImage(p.c, ox - 1.9 * R, y - 1.9 * ry, 3.8 * R, p.c.height * COS);
-      if (o.sel) {
-        g.strokeStyle = o.glow;
-        g.lineWidth = 0.1 * R;
-        g.shadowColor = o.glow;
-        g.shadowBlur = 0.4 * R;
-        g.beginPath();
-        g.ellipse(ox, y, 1.12 * R, 1.12 * ry, 0, 0, 2 * Math.PI);
-        g.stroke();
-      }
-      return c.toDataURL();
-    }
-
-    function theme(el) {
-      const cs = getComputedStyle(el), v = (k) => cs.getPropertyValue(k).trim();
-      return { light: v('--light'), dark: v('--dark'), white: v('--w-face'), black: v('--b-face'), crownW: v('--crown-w'),
-        glow: v('--glow'), kind: KIND[v('--kind')] ?? 3 };
-    }
-    const cache = new Map();
-    const once = (key, make) => { if (!cache.has(key)) cache.set(key, make()); return cache.get(key); };
-    const step = (x) => Math.round(2 ** (Math.ceil(Math.log2(Math.max(x, 8)) * 4) / 4));
-    const dpr = () => Math.min(devicePixelRatio || 1, 2) * (document.body.getBoundingClientRect().width / document.body.offsetWidth || 1);
-    // What a piece element is: its color, king, and selection.
-    const kind = (el, t) => {
-      const black = el.classList.contains('black');
-      return { face: black ? t.black : t.white, crownW: t.crownW, glow: t.glow, black, sel: el.classList.contains('selected'),
-        king: el.classList.contains('king') ? (el.closest('.raised, .stack') ? 'stack' : 'crown') : '' };
-    };
-
-    // Paints every board and piece under root not painted at its present size's step.
-    function all(root = document) {
-      for (const el of root.querySelectorAll('.board')) {
-        const B = step(el.offsetWidth * dpr()), flat = !el.classList.contains('raised');
-        if (!el.offsetWidth || el.dataset.painted === String(B)) continue;
-        const t = theme(el), n = +getComputedStyle(el).getPropertyValue('--n') || 8;
-        el.querySelector(flat ? '.lip' : '.squares').style.backgroundImage = (
-          `url(${once(`b${flat}${t.light}${t.kind}${n}${flat ? B : 0}`, () => board(t, n, flat ? B : 1024, !flat))})`);
-        el.dataset.painted = String(B);
-        el.classList.add('painted');
-        if (!flat) place(el, t);
-      }
-      for (const el of root.querySelectorAll('.piece')) {
-        const R = step(el.offsetWidth / 2 * dpr());
-        if (!el.offsetWidth || el.dataset.painted === String(R)) continue;
-        const o = kind(el, theme(el));
-        // Depths in radii, as on an 8 × 8 board: the side 0.55% of it, the lift 0.8%, a
-        // stacked disc 1.3%.
-        const r1 = 0.39 * 0.978 / 8;
-        Object.assign(o, { side: 0.0055 / r1, lift: 0.008 / r1, stack: o.king === 'stack' ? 0.013 / r1 : 0 });
-        const s = once(`p${o.face}${o.glow}${o.king}${o.sel}${R}`, () => { const p = piece(o, R); return { url: p.c.toDataURL(), top: p.top }; });
-        // The image covers x -1.9..1.9 and y top..2.1 + side radii; the element is -1..1.
-        const img = el.firstElementChild || el.appendChild(document.createElement('i'));
-        Object.assign(img.style, { backgroundImage: `url(${s.url})`, top: `${((s.top + 1) / 2) * 100}%`,
-          bottom: `${(-(1.1 + o.side) / 2) * 100}%` });
-        el.dataset.painted = String(R);
-      }
-    }
-
-    // The raised board's pieces and front edge, where the tilted plane puts them: the
-    // plane is perspective(1.7 S) rotateX(37.5°) about its center, S its width.
-    function place(el, t = theme(el)) {
-      const S = el.offsetWidth, P = 1.7 * S, n = +el.style.getPropertyValue('--n') || 8, sq = (S * 0.952) / n;
-      const at = (x, y) => { const f = P / (P - y * SIN); return [S / 2 + x * f, S / 2 + y * COS * f, f]; };
-      const R = step(0.39 * sq * at(0, S / 2)[2] * dpr());
-      for (const p of el.querySelectorAll('.p3')) {
-        const [X, Y, f] = at(-S * 0.476 + (+p.dataset.x + 0.5) * sq, -S * 0.476 + (+p.dataset.y + 0.5) * sq);
-        const r = 0.39 * sq * f;
-        Object.assign(p.style, { left: `${X - 1.3 * r}px`, top: `${Y - UP * r}px`, width: `${2.6 * r}px`, height: `${(UP + DOWN) * r}px` });
-        if (p.dataset.painted === String(R)) continue;
-        const o = kind(p, t);
-        p.style.backgroundImage = `url(${once(`r${o.face}${o.king}${o.sel}${R}`, () => raised(o, R))})`;
-        p.dataset.painted = String(R);
-      }
-      const [, Y, f] = at(0, S / 2), front = el.querySelector('.front');
-      front.style.cssText = `left:${S / 2 - (S / 2) * f}px;width:${S * f}px;top:${Y - 0.022 * S}px;height:${0.022 * S + 0.035 * S * SIN * f}px`;
-    }
-    return { all, place };
-  })();
-
   // Draws a board into el. Squares are a1..h8 (a1..j10), a1 dark at the bottom left.
-  // opts: { n, view: 'flat' | '3d', white, black, kings, selected, forced, targets, via,
-  // last, error, marks: { sq: html } }.
+  // opts: { n, white, black, kings, selected, forced, targets, via, last, error,
+  // marks: { sq: html } }. The board and pieces are plain CSS (draughts.css).
   function board(el, opts) {
-    const n = opts.n || 8, raised = (opts.view || settings.board) === '3d';
+    const n = opts.n || 8;
     const has = (k, sq) => (opts[k] || []).includes(sq);
-    el.className = `board${raised ? ' raised' : ''} ${el.className.replace(/\b(board|raised|painted)\b/g, '')}`.trim();
+    el.classList.add('board');
     el.style.setProperty('--n', n);
-    delete el.dataset.painted;
-    let html = '', pieces = '';
+    let html = '';
     for (let y = n - 1; y >= 0; y--) for (let x = 0; x < n; x++) {
       const sq = String.fromCharCode(97 + x) + (y + 1), dark = (x + y) % 2 === 0;
       const color = has('white', sq) ? 'white' : has('black', sq) ? 'black' : '';
-      const cls = `${color} ${has('kings', sq) ? 'king' : ''} ${opts.selected === sq ? 'selected' : ''}`;
       let inner = '';
-      if (color && !raised) inner = `<div class="piece ${cls}${has('forced', sq) ? ' forced' : ''}"></div>`;
-      if (color && raised) {
-        pieces += `<div class="p3 ${cls}" data-x="${x}" data-y="${n - 1 - y}"></div>`;
-        if (has('forced', sq)) inner = '<div class="spot forced"></div>';
-      }
+      if (color) inner = `<div class="piece ${color}${has('kings', sq) ? ' king' : ''}${opts.selected === sq ? ' selected' : ''}` +
+        `${has('forced', sq) ? ' forced' : ''}"></div>`;
       if (has('targets', sq)) inner += '<div class="target"></div>';
       if (has('via', sq)) inner += '<div class="target via"></div>';
       if (has('error', sq)) inner += '<div class="error"></div>';
       if (opts.marks && opts.marks[sq]) inner += opts.marks[sq];
       html += `<div class="sq${dark ? ' dark' : ''}${has('last', sq) ? ' last' : ''}">${inner}</div>`;
     }
-    el.innerHTML = raised ? `<div class="plane"><div class="squares">${html}</div></div><div class="front"></div>${pieces}`
-      : `<i class="lip"></i><div class="squares">${html}</div>`;
-    if (document.readyState !== 'loading') Paint.all(el.parentNode);
+    el.innerHTML = `<div class="squares">${html}</div>`;
   }
 
   // The start on a size × size board: men on the dark squares of the first three rows,
@@ -531,21 +225,12 @@ const Draughts = (() => {
     document.querySelectorAll('[data-icon]').forEach((e) => e.insertAdjacentHTML('afterbegin', icon(e.dataset.icon)));
     fit();
     loadScene();
-    Paint.all();
-    // While a size changes, the images scale; they are painted again at the new size's
-    // step once it has held for 0.2 s.
-    let repaint = 0;
-    const ro = new ResizeObserver(() => {
-      clearTimeout(repaint);
-      repaint = setTimeout(() => Paint.all(), 200);
-      document.querySelectorAll('.board.raised.painted').forEach((el) => Paint.place(el));
-      later();
-    });
+    const ro = new ResizeObserver(later);
     ro.observe(document.body);
-    document.querySelectorAll('.board, .glass').forEach((el) => ro.observe(el));
+    document.querySelectorAll('.glass').forEach((el) => ro.observe(el));
     addEventListener('resize', () => { fit(); later(); });
     document.fonts.ready.then(later);
   }
 
-  return { settings, params, dots, icon, board, start, init, sync: later, paint: () => Paint.all(), game, PLIES, mark };
+  return { settings, params, dots, icon, board, start, init, sync: later, game, PLIES, mark };
 })();

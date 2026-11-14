@@ -160,8 +160,8 @@ before committing a change to `rules/`.
   most about four at a time, or runs hang.
 - In a worktree, copy `design/backgrounds/masters/*.jpg` from the main checkout (ignored
   by git) and touch `src/app/background.c`, or shots show the page color.
-- The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
-  shader: a native crop beside it shows a shader change exactly.
+- The prototypes don't port the board and piece shaders: check a shader change on native
+  crops before and after. The port is in git history at fed389b.
 
 ### Headless and byte-identical shots
 

@@ -82,7 +82,7 @@
   <div class="stage"><div id="board"></div></div>
 </main>
 <script>
-  for (const el of document.querySelectorAll('[data-n]')) Draughts.board(el, { ...Draughts.start(+el.dataset.n), view: 'flat' });
+  for (const el of document.querySelectorAll('[data-n]')) Draughts.board(el, Draughts.start(+el.dataset.n));
   Draughts.board(document.getElementById('board'), Draughts.start(10));
   Draughts.init();
 </script>

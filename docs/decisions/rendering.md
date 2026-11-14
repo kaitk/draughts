@@ -129,6 +129,16 @@ Set aside, not rejected, for another season or a theme setting:
 The prototypes were cut to one plain page per screen on 2026-11-13; every take these
 entries name is in git history at 086f47d.
 
+On 2026-11-14 they were cut again, to what building a new screen needs: the takes already
+chosen and built (`new-game.html`, `settings-takes.html`, the tutorial's, the replay's
+numbers switch) and `design-boards-prompt.md` went, and the board and pieces became
+plain CSS, close to the app's but not a copy, with no raised board and no plain
+background. The shader port painted every board and piece in script, so a page took 260
+to 340 ms to load in Chrome on the Mac; plain CSS takes 50 to 65. The app is the
+reference for how the board looks. Rejected: keeping the port at a fixed small size (100
+of its 300 lines for a look the app shows anyway). All of it is in git history at
+fed389b.
+
 **Input**
 
 - The tile under the mouse lights on a desktop (task 066, 2026-11-11): the chosen tile's

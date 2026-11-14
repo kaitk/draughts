@@ -203,7 +203,7 @@
   // Board el at ply k. moving: the move into k plays first, its piece
   // hidden at its square under a mover, the pieces it takes there until it passes them.
   function draw(el, k, moving) {
-    const p = POS[k], opts = { n: 10, view: 'flat', white: [], black: [], kings: [], marks: {} };
+    const p = POS[k], opts = { n: 10, white: [], black: [], kings: [], marks: {} };
     const put = (n, c) => { opts[c.toLowerCase() === 'w' ? 'white' : 'black'].push(alg(n)); if (c === 'W' || c === 'B') opts.kings.push(alg(n)); };
     for (const [n, c] of Object.entries(p)) put(n, c);
     const g = GAME[k - 1];
@@ -231,7 +231,6 @@
       for (const s of w.slice(1, -1)) sq(s).insertAdjacentHTML('beforeend', '<div class="target via ind"></div>');
     }
     el.insertAdjacentHTML('beforeend', html);
-    D.paint();
     if (!moving) { requestAnimationFrame(() => el.classList.add('rest')); return; }
     // The step on: the piece slides from stop to stop, 0.14 s a square, and each piece it
     // takes goes as it passes; then the marks come in.
@@ -241,7 +240,6 @@
     layer.className = 'mover';
     layer.innerHTML = `<div><div class="${piece.className.replace('gone', '')}"></div></div>`;
     el.appendChild(layer);
-    D.paint();
     const lens = w.slice(1).map((n, i) => Math.abs(xy(n)[0] - xy(w[i])[0])), total = lens.reduce((a, c) => a + c, 0);
     let s = 0;
     const frames = [{ offset: 0, transform: `translate(${xy(w[0])[0] * 100}%, ${xy(w[0])[1] * 100}%)` }];

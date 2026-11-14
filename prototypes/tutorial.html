@@ -69,10 +69,9 @@
   .next .icon { width: 48px; height: 48px; }
   .next.primary { box-shadow: inset 0 0 0 2px var(--glow); }
   .board .piece.taken { opacity: 0.35; }
-  .board .p3.taken { opacity: 0.35; }
   .board .piece.ring { animation: ring 1.6s ease-in-out infinite; }
   @keyframes ring { 50% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--glow) 40%, transparent), 0 0 10px 2px color-mix(in srgb, var(--glow) 25%, transparent); } }
-  .board .sq, .board .p3 { cursor: pointer; }
+  .board .sq { cursor: pointer; }
   @container (max-height: 599px) and (orientation: landscape) {
     .game { --side: 200px; }
     .way .tile, .col > .tile { flex-direction: column; gap: 4px; justify-content: center; min-height: 96px; font-size: 20px; padding: 0; }
@@ -219,7 +218,7 @@
   if (view === 'step') document.body.dataset.screen = 'board';
   ({ ask, step, done })[view]();
   Draughts.init();
-  for (const m of document.querySelectorAll('.mini[data-n]')) Draughts.board(m, { ...Draughts.start(+m.dataset.n), view: '2d' });
+  for (const m of document.querySelectorAll('.mini[data-n]')) Draughts.board(m, Draughts.start(+m.dataset.n));
   Draughts.sync();
 
   // The handover: right after a new player is added (and on a fresh install, for its
@@ -281,12 +280,9 @@
     }
     function pieceAt(sq) {
       const [x, y] = at(sq);
-      return el.querySelector(`.p3[data-x="${x}"][data-y="${N - 1 - y}"]`) ||
-        el.querySelectorAll('.sq')[(N - 1 - y) * N + x]?.querySelector('.piece');
+      return el.querySelectorAll('.sq')[(N - 1 - y) * N + x]?.querySelector('.piece');
     }
     function squareOf(t) {
-      const p3 = t.closest('.p3');
-      if (p3) return nm(+p3.dataset.x, N - 1 - +p3.dataset.y);
       const sqEl = t.closest('.sq');
       if (!sqEl) return null;
       const idx = [...sqEl.parentNode.children].indexOf(sqEl);

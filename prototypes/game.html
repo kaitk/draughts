@@ -14,13 +14,10 @@
      turn with the lookout's eye, the hint and undo move, the moves panel under it). A
      phone in landscape (under 600 dp tall): narrower panels, back and settings side by
      side, the moves as a line under the catch. Portrait: the way out and the catch with
-     the last move over the board, the play under it. ?board=3d: the raised board and the
-     camera's buttons. */
+     the last move over the board, the play under it. */
   .game { display: grid; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); gap: 24px; --side: 232px; }
   .col { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
   #board { place-self: center; width: min(var(--h), 100%); }
-  /* The raised board's near edge is 1.22 times its box. */
-  .raised#board { width: min(var(--h), (var(--w) - 2 * var(--side) - 24px) / 1.22); align-self: end; margin-bottom: 4%; }
   .back { flex: none; }
   .way { display: flex; flex-direction: column; gap: 20px; padding: 20px; }
   .way .tile { justify-content: flex-start; }
@@ -43,10 +40,6 @@
   .mrow .n { font-size: 17px; color: var(--fg-dim); }
   .mv { justify-self: start; display: flex; gap: 3px; padding: 2px 8px; border-radius: 9px; white-space: nowrap; }
   .mv.lit { background: color-mix(in srgb, var(--glow) 22%, transparent); }
-  .cams { display: none; justify-content: flex-end; gap: 8px; }
-  .cams span { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-tint); }
-  .cams .icon { width: 26px; height: 26px; }
-  .board3d .cams { display: flex; }
   .line { display: none; position: relative; }
   @container (max-height: 599px) or (orientation: portrait) {
     .way > .copy, .way::after { display: none; }
@@ -84,7 +77,6 @@
     .way { display: contents; }
     .bar .tile { flex-direction: column; gap: 4px; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; justify-content: center; }
     #board { order: 1; width: min(var(--w), 100%); align-self: center; }
-    .raised#board { width: calc(var(--w) / 1.22); margin: 0; }
     .play { order: 2; display: grid; grid-template-columns: 1fr 1fr; padding: 14px 16px 16px; }
     .turn { grid-column: span 2; display: flex; justify-content: center; align-items: center; gap: 16px; }
     .turn .piece { width: 52px; }
@@ -95,7 +87,6 @@
     .pill { display: flex; grid-column: span 3; justify-content: space-between; align-items: center; height: 40px; }
     .pill .mv { padding: 6px 14px; font-size: 20px; background: rgb(255 255 255 / 0.08); border-radius: 20px; }
     .pill .mv .icon { width: 20px; height: 20px; }
-    .cams { order: 1; }
   }
 </style>
 </head>
@@ -121,7 +112,6 @@
         <a class="tile" data-icon="undo">Undo move</a>
       </div>
     </div>
-    <div class="cams"><span data-icon="view"></span><span data-icon="zoom"></span><span data-icon="orbit"></span></div>
     <div class="glass moves" id="moves"></div>
   </div>
 </main>
@@ -141,7 +131,6 @@
   document.getElementById('catch').innerHTML = taken('white', 20 - pos.white.length) + taken('black', 20 - pos.black.length);
   document.getElementById('pill').innerHTML = `${taken('white', 20 - pos.white.length)}` +
     `<span class="mv">${Math.ceil(PLY / 2)}. ${P[PLY - 1].m}${D.mark(P[PLY - 1].k)}${D.icon('up')}</span>${taken('black', 0)}`;
-  if (D.settings.board === '3d') document.querySelector('.game').classList.add('board3d');
   D.board(document.getElementById('board'), pos);
   D.init();
 </script>
