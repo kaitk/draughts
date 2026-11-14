@@ -26,8 +26,7 @@ let INTERNATIONAL = 1;
 let ENGLISH = 2;
 let BRAZILIAN = 3;
 let VARIANT_COUNT = 4;
-// The variants' names, in RUSSIAN.. order: as the files name them (settings' `draughts`,
-// the puzzles' `variant` and `stars.NAME`), the --variant flag, and the tools.
+// The variants' names, in RUSSIAN.. order, as files and flags write them.
 let VARIANT_NAMES = ["russian", "international", "english", "brazilian"];
 
 // The variant a name in VARIANT_NAMES stands for; false for any other name.
@@ -45,13 +44,11 @@ let CROWN_ENDS_MOVE = 2;    // English: crowned, and the move ends
 // A 10×10 board has 32 squares a piece can be captured on.
 let MAX_PATH = 34;
 // Room for every legal move of a position. Flying kings under the majority rule make
-// the most: an International position with 407 captures of six pieces each, by six kings
-// (test/rules/most_moves.goose), was the most a search over positions found; quiet moves
-// stay under a hundred, Russian's and Brazilian's 8×8 under seventy (2026-11-14).
+// the most: 407 in test/rules/most_moves.goose's International position.
 let MAX_MOVES = 512;
-// Room for a piece's ways (`ways`): more than its moves where several ways make one, 137
-// for one king of the 407 moves. A search found contrived positions whose king has more
-// than this; past it the rest are dropped, and the board can't follow them stop by stop.
+// Room for a piece's ways (`ways`), more than its moves where several ways make one.
+// Contrived positions can exceed it; the rest are dropped, and the board can't follow
+// them stop by stop.
 let MAX_WAYS = 512;
 
 struct Variant {
@@ -79,7 +76,7 @@ struct Variant {
 struct Position { pieces: u64[2], kings: u64, side: u8, variant: u8 }
 
 // A move: where the piece starts and ends, the pieces it takes, and whether it is
-// crowned. 16 bytes: the search, perft, the game's notes, and the saves keep these.
+// crowned. 16 bytes, kept small for the search and the saves.
 struct Move { from: u8, to: u8, crowned: bool, captured: u64 }
 
 type Moves = Move[..MAX_MOVES];
@@ -301,8 +298,7 @@ fn captures(p: Position, v: Variant&, out: Moves&) {
 }
 
 // Whether the side to move's piece on sq could take anything, legal or not: under the
-// majority rule a piece that takes fewer than another has no move, yet a child sees it
-// can take (the board says why it may not).
+// majority rule a piece that takes fewer than another has no move, yet it can take.
 fn can_take_from(p: Position, sq: i64) -> bool {
     let v .= VARIANTS[p.variant];
     guard sq >= 0 && p.pieces[p.side] & bit(sq) != 0 else { return false; }
@@ -311,12 +307,10 @@ fn can_take_from(p: Position, sq: i64) -> bool {
     return can_take(v, s, sq, p.kings & bit(sq) != 0, 0);
 }
 
-// Every way the side to move's piece on sq captures, into out, which it empties first:
-// generate keeps one way per end and pieces taken, which is one move, but a capture made
-// stop by stop may take any of them (board::follow). A king that can land on two squares
-// and take the same pieces on from either is two ways to one move. Under the majority
-// rule only this piece's longest captures, which are legal when the piece has a move at
-// all. Empty when the piece can't take.
+// Every way the side to move's piece on sq captures, into out, which it empties first.
+// generate keeps one way per end and pieces taken, but a capture made stop by stop may
+// take any of them: a king landing on two squares to take the same pieces on is two ways
+// to one move. Under the majority rule only this piece's longest captures.
 fn ways(p: Position, sq: i64, out: Ways&) {
     out.clear();
     let v .= VARIANTS[p.variant];
@@ -329,7 +323,7 @@ fn ways(p: Position, sq: i64, out: Ways&) {
 }
 
 // Move m of p with its stops: a quiet move's two squares, a capture's first way as
-// generate meets it, the way a move found by generate was always shown.
+// generate meets it.
 fn way_of(p: Position, m: Move) -> Way {
     var w = Way { from: m.from, to: m.to, crowned: m.crowned, captured: m.captured, path: [] };
     w.path.push(m.from);

@@ -2,8 +2,7 @@
 // with room to spare: in International, six white kings that can each take six of
 // black's pieces by many ends and sets (the majority rule keeps only the sixes, every one
 // a move of its own), 407 moves. A search over positions with up to the starting pieces,
-// no man on its crowning row, found none with more (2026-11-14); test/perft.py agrees on
-// the 407. Each king's ways (rules::ways, every way to each move, which the board keeps
+// no man on its crowning row, found none with more; test/perft.py agrees on the 407. Each king's ways (rules::ways, every way to each move, which the board keeps
 // for a selected piece) stay within rules::MAX_WAYS too, and every move's first way, the
 // one the board shows (rules::way_of), ends where the move does and takes its pieces.
 import std;

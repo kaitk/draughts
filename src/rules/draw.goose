@@ -277,12 +277,9 @@ struct Countdown { kind: i64 = COUNT_NONE, moves: i64 = 0, side: i64 = -1 }
 let SOON = 5;
 
 // The count nearest its end at p, if within SOON moves: the moves left, the drawing one
-// included. A count of each side's moves draws at ply `end`, so (end - plies + 1) / 2
-// moves are left; a count of the strong side's leaves (end - plies + 1) / 2 of its moves
-// when it is to move and (end - plies) / 2 when not, and none at all once only the lone
-// king's last move is left: that is a draw in 1. A lone king against a lone king counts
-// each side's. On a tie the strong side's count shows, so the words don't change from
-// one ply to the next. Failing a count, the position come twice.
+// included. A count of each side's moves that draws at ply `end` has (end - plies + 1) / 2
+// left. On a tie the strong side's count shows, so the words don't change from one ply
+// to the next. Failing a count, the position come twice.
 fn countdown(d: Draw&, p: Position&) -> Countdown {
     var c = Countdown {};
     if d.lone_kind != LONE_NONE { strong(c, p, d.lone_end - d.lone, d.lone_side); }
@@ -296,6 +293,9 @@ fn countdown(d: Draw&, p: Position&) -> Countdown {
     return c;
 }
 
+// A count of the strong side's moves, `left` plies from its end: (left + 1) / 2 of its
+// moves when it is to move, left / 2 when not. Once only the lone king's last move is
+// left, or with a lone king against a lone king, it is a draw in each side's moves.
 fn strong(c: Countdown&, p: Position&, left: i64, side: u8) {
     let mine = if p.side == side { 1 } else { 0 };
     let moves = (left + mine) / 2;
@@ -371,7 +371,7 @@ fn record_past(r: Record&, pos: Position) -> Past& {
 }
 
 // The same at the position before move `ply` of the record, pos being the position after
-// its last move, into out (task 074's judging of a move played earlier).
+// its last move, into out.
 fn record_past_to(r: Record&, ply: i64, pos: Position, out: Past&) {
     let n = r.history.len;
     let first = if n > 0 { r.history[0].pos } else { pos };
