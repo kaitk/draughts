@@ -759,6 +759,15 @@ sudo apt-get update && sudo apt-get install -y clang-20
 CC=clang-20 scripts/linux.py src/app/draughts.goose --release
 ```
 
+Docker on Windows or a Mac does as well (0.5.0's tarball, 2026-11-14): `docker run -d
+--name draughts-jammy -v <repo>:/src:ro ubuntu:22.04 sleep infinity`, then in it (`docker
+exec`, as root, so without `sudo`) the same packages, `git config --global --add
+safe.directory '*'`, a `git clone /src` with `git submodule update --init --recursive`,
+the Goose Linux release in its `build/`, and the build above. A clone rather than the
+mount keeps the host's checkout and its line endings out of it; copy the tarball out
+through a second mount. Under WSL, WSLg runs the result for a look (`--frames 20` saves a
+shot), though WSL's own Ubuntu may be too new to build a release in.
+
 `objdump -T build/linux/release/Draughts/draughts | grep -o 'GLIBC_[0-9.]*' | sort -Vu |
 tail -1` says `GLIBC_2.35`: Ubuntu 22.04 and later, Debian 12, Fedora 36 and later, and
 SteamOS and Bazzite run it. Built on a newer system it asks for that system's glibc (on
