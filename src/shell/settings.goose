@@ -1,21 +1,7 @@
-// Settings (prototypes/settings.html; rendering.md, "Settings"; task 080, take b): back,
-// the title, and the language pinned at the top, and under them one list that scrolls,
-// on one glass: Look (the background, the photograph or the plain fade; the theme, a
-// season or by the date; the board, flat, or raised in the season's own material or its
-// wood, stone, or carved board, each a picture; the kings, auto, crown, or stack), then
-// Game (move hints, the moves panel beside the game with a line saying what the
-// chosen one shows, and the puzzles a day, 3, 4, 5, or 10, task 088), then the privacy
-// note. The draughts are chosen in home's setup and
-// the puzzles' library, whether a friend's game turns the board in home's setup. The
-// preview beside the list is home's board as the choices make it: the player's draughts'
-// size, the kings, and what the move hints show, on a fixed position. In landscape the
-// list is a column at the left, its glass running off the screen's edge as home's, and
-// the preview the rest; in portrait the preview is a band at the top and the list a sheet
-// under it. The list fades out at its foot while there is more below, as home's does. The
-// language is a button at the title row's right end, a globe, its code, and a chevron,
-// opening a small glass list of the languages over the screen. A tap applies at once;
-// there is no save button.
-// The values, the file they are kept in, and its keys are in prefs.goose.
+// Settings (prototypes/settings.html; rendering.md, "Settings"): back, the title, and
+// the language button pinned at the top, one scrolling list of the Look and Game rows
+// under them, and a preview of home's board as the choices make it. A tap applies at
+// once. The values, the file they are kept in, and its keys are in prefs.goose.
 namespace settings;
 import std;
 import vec;
@@ -122,7 +108,7 @@ let BOARD_ROW = 2;
 let KINGS_ROW = 3;
 let HINTS_ROW = 4;
 let MOVES_ROW = 5;
-let DAILY_ROW = 6;          // puzzles a day (task 088), its tiles the numbers of DAILY_COUNTS
+let DAILY_ROW = 6;          // puzzles a day, its tiles the numbers of DAILY_COUNTS
 let ROWS = 7;
 let LOOK_ROWS = 4;
 let ROW_NAMES = [strings::SETTINGS_BACKGROUND, strings::SETTINGS_THEME, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS,
@@ -176,8 +162,8 @@ fn word(row: i64, i: i64) -> i64 {
     return [strings::MOVES_HIDDEN, strings::MOVES_LIST, strings::MOVES_MARKS][i];
 }
 
-// What the move list's tile i shows, said under its row for the chosen one: its words
-// alone (Off, Moves, Marks) didn't say (task 078).
+// What the move list's tile i shows, said under its row for the chosen one, which its
+// word alone doesn't say.
 let MOVES_NOTES = [strings::MOVES_HIDDEN_NOTE, strings::MOVES_LIST_NOTE, strings::MOVES_MARKS_NOTE];
 
 // How many lines the move list's notes take at most at width w, so the list keeps one

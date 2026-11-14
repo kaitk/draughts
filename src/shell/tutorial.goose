@@ -1,4 +1,4 @@
-// How to play (task 026; prototypes/tutorial.html; rendering.md, "How to play"): the
+// How to play (prototypes/tutorial.html; rendering.md, "How to play"): the
 // rules one at a time, each a step played on the board in the puzzle's layout, with the
 // moves shown (board::MOVES, the only place they show by default, docs/product.md). The
 // left panel is the puzzle's (back, settings, start over, which plays the step again);

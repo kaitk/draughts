@@ -1,4 +1,4 @@
-// The games played (task 074, prototypes/history.html's games view): the playing
+// The games played (prototypes/history.html's games view): the playing
 // player's rating in a draughts, their wins, draws, and losses against each of the
 // computer's levels, and their games in that draughts, newest first, in a scrolling list.
 // Back and the title head it, the draughts as tiles at the head's right, each with its
@@ -7,7 +7,7 @@
 // games. Reached from home's Results row. Everything is read off the history the shell
 // read when the screen opened (record.goose); nothing allocates. A game's row opens its
 // replay (replay.goose). A desktop's large window (gui::large) keeps the whole at most
-// LARGE_W dp wide, centered, its words and rows larger (task 087).
+// LARGE_W dp wide, centered, its words and rows larger.
 namespace results;
 import std;
 import vec;
@@ -15,7 +15,7 @@ import vec;
 let NOTHING = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;
 let SHOWN = gui::ASK_SHOWN;         // another draughts shown
-let REPLAY = gui::ASK_OWN;          // a game's row tapped: its replay (task 078)
+let REPLAY = gui::ASK_OWN;          // a game's row tapped: its replay
 
 let EDGE = 24.0;            // dp from the safe area's edges
 let GAP = 16.0;             // between the head and the panels, and between the panels
@@ -76,10 +76,9 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     let back_w = gui::back_width(g, back);
     // The draughts at the head's right, each its name and rating, as wide as its words,
     // joined on one glass as the puzzles' switch is (picker::switch), its rim round them
-    // and between: plain tiles alone were faint glass on a bright photograph (a phone in
-    // landscape over winter's snow, 2026-11-13). Where they and the title don't both fit
-    // beside back (a phone in portrait), a row of their own under the head, sharing its
-    // width.
+    // and between, so they read on a bright photograph. Where they and the title don't
+    // both fit beside back (a phone in portrait), a row of their own under the head,
+    // sharing its width.
     let rim = picker::SWITCH_PAD * u;
     var t:      gui::Text = [];
     var widths: f32[3]    = [0.0; 3];
@@ -190,9 +189,8 @@ fn rating_panel(g: gui::Gui&, r: float4, s: settings::Settings&, gs: history::Ga
 }
 
 // The games of the draughts shown, newest first, in area, the glass as tall as the rows
-// where they don't fill it: only the rows in view are
-// declared. Each row is a tap, the whole of it, its blunders' count too (2026-11-13):
-// returns the index in gs of the game whose row was tapped, or -1.
+// where they don't fill it: only the rows in view are declared. Each row is a tap, the
+// whole of it: returns the index in gs of the game whose row was tapped, or -1.
 fn list(g: gui::Gui&, area: float4, gs: history::Game[..history::MAX_GAMES]&, variant: i64, lk: Look) -> i64 {
     let u = g.scale;
     var n = 0;
@@ -251,8 +249,7 @@ fn row(g: gui::Gui&, id: i64, r: float4, x: history::Game&, lk: Look) -> bool {
     t.clear();
     gui::push(t, "?? ");
     gui::push_number(t, blunders);
-    // In the rating's face: red where there are blunders, else the dates' dim white, which
-    // reads on the glass (red at 35% didn't, 2026-11-14).
+    // In the rating's face: red where there are blunders, else the dates' dim white.
     if blunders > 0 { gui::colored(g, lk.body, marks, t[..], float4 { gui::RED.x, gui::RED.y, gui::RED.z, 1.0 }, gui::RIGHT); }
     else { gui::text(g, lk.body, marks, t[..], 0.66, 0.0, gui::RIGHT); }
     // The rating's change.

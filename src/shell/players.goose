@@ -18,8 +18,7 @@ import os;
 
 let MAX_PLAYERS = 4;
 // The pictures (badges), as the file names them, each with its own colour; one a player
-// has is not offered to another. app/widgets.goose's badge() draws them, for now a
-// placeholder in the badge's colour: the art is still open (task 038).
+// has is not offered to another. app/widgets.goose's badge() draws them.
 let ANIMALS = ["fox", "hare", "bear", "owl", "frog", "hedgehog"];
 let NAME_CHARS = 12;
 let NAME_BYTES = 36;        // 12 characters of at most 3 bytes: the faces hold none longer

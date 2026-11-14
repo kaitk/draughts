@@ -1,4 +1,4 @@
-// A player's games played (task 074): `history-N.txt` beside `player-N.txt`, a line a
+// A player's games played: `history-N.txt` beside `player-N.txt`, a line a
 // finished game, oldest first, at most MAX_GAMES; the oldest go when a new one comes.
 // Pure text in and out, so the tests read and write it headless; the shell reads and
 // writes the file (keep_game) only when a game ends and when its last moves have been
@@ -68,7 +68,7 @@ fn format_game(out: u8[>..]&, g: Game&, notes: game::Notes&) {
         rules::format_move(out, n.before, n.move);
     }
     // The best move from the position before each, `-` for none (an only move, or one
-    // not judged): what a replay shows when asked (task 087).
+    // not judged): what a replay shows when asked.
     out.append("\tbest=");
     for &n, i in notes {
         if i > 0 { out.push(' '); }
@@ -143,8 +143,8 @@ fn parse_game(line: const u8[:]) -> Game, bool {
 }
 
 // The moves of a line, as text, space-separated, its marks, a digit a move, and the best
-// move from the position before each, space-separated, `-` for none (empty in a line
-// written before 2026-11-14): for a replay.
+// move from the position before each, space-separated, `-` for none (empty in a line an
+// older app wrote): for a replay.
 fn moves_of(line: const u8[:]) -> const u8[:], const u8[:], const u8[:] {
     var moves: const u8[:] = line[..0];
     var marks: const u8[:] = line[..0];

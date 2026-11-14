@@ -1,5 +1,5 @@
 // A finished game kept in the playing player's history, and their rating moved by it
-// (task 074; history.goose, ai/rating.goose). Part of the shell's namespace.
+// (history.goose, ai/rating.goose). Part of the shell's namespace.
 //
 // The game is written once it ends, with its moves' marks as far as they are judged,
 // and written again over its own line once the worker has judged the rest, if the game

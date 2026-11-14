@@ -1,13 +1,7 @@
-// The daily puzzles in the shell (task 088; docs/architecture/puzzles.md, "Daily
-// puzzles"): a few a day from the set's library (puzzles::load_library), picked by the
-// local date, which the app hands in (Shell.day), and the player, at the player's puzzle
-// rating, once Learn is solved (picker::today_open). A new day, seen from home or the
-// library, seeds the rating from the course's stars where it has none, picks the day's
-// puzzles from the themes the player has opened, marks them had, and keeps them in the
-// player's file (settings::Today); they are read from the library into a small table when
-// the day, the set, or the player changes, never per frame. A daily puzzle plays on the
-// puzzle screen; its first solve moves the rating, and replays the same day win stars
-// only. Part of the shell's namespace.
+// The daily puzzles in the shell (docs/architecture/puzzles.md, "Daily puzzles"): a few
+// a day from the set's library, picked by the local date and the player at their puzzle
+// rating, kept in the player's file (settings::Today) and read into a small table when
+// the day, the set, or the player changes, never per frame. Part of the shell's namespace.
 namespace shell;
 import std;
 import vec;
@@ -114,10 +108,10 @@ fn play_daily(sh: Shell&, k: i64, now: f64 = 0.0) {
     go_to(sh, PUZZLE, now);
 }
 
-// Library puzzle `id` on the puzzle screen, outside today's
-// set, for looking the library over (the app's --library flag): its replies, stars, and
-// hint as any puzzle's, no dots, and nothing kept: no place in today's record to keep
-// stars in, no rating moved, next back to the library.
+// Library puzzle `id` on the puzzle screen, outside today's set, for looking the library
+// over (the app's --library flag): its replies, stars, and hint as any puzzle's, no
+// dots, and nothing kept: no place in today's record to keep stars in, no rating moved,
+// next back to the library.
 fn play_library(sh: Shell&, id: i64, now: f64 = 0.0) {
     // A run's flags open it before home or the library has read the library.
     if sh.library != puzzles::loaded || sh.library_text.len == 0 { load_library(sh); }

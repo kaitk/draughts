@@ -1,27 +1,8 @@
-// One puzzle on screen (prototypes/puzzle.html, take c; docs/architecture/puzzles.md,
-// "The screen"): the board between the game's panels, leaving it on the left (the
-// puzzles, settings, start over) and playing it on the right: whose puzzle it is as the
-// game's turn piece, the goal under its icon,
-// the three stars at stake, and next, a big tile dim until the puzzle is solved.
-//
-// The child plays the side to move. A right move that leaves the goal ahead is answered
-// after a short pause; a wrong one plays, then slides back by itself, its square
-// flashing the red ring over a fading ghost of the piece, while the goal gives way to
-// "try again" for a moment and a star goes out. A wrong move the other side answers by
-// taking something back (a capture back, a shot) shows that answer first, played as a
-// reply is and held a moment, then both slide back. A tap that isn't a move, which the
-// board flashes as a mistake, is a miss too. A capture of many jumps is made by hand: a tap or
-// a drop on a stop leaves the piece waiting there for the next jump, and next wakes;
-// pressed then, it leaves the capture unfinished, no move under the rules, so the piece
-// slides back as a wrong move does and it is a miss. After two misses the piece to move
-// glows. Solved,
-// the goal says so, the stars won pop in, and next lights; nothing covers the board.
-// A star stays at the least, so a puzzle solved is one, two, or three stars.
-//
-// One of today's puzzles (task 088, prototypes/puzzle.html?daily=1) plays the same, a
-// copy of it read from the library in place of one of the set's, and today's dots stand
-// over next: those solved filled in the glow, this one ringed in it. Under the goal's
-// lines the day's first says "Warm-up" in the glow, its last "A bit harder".
+// One puzzle on screen (prototypes/puzzle.html; docs/architecture/puzzles.md, "The
+// screen"): the board between the game's panels, the right one with whose puzzle it is,
+// the goal, the stars at stake, and next. A right move is answered, a wrong one (or a
+// capture left partway) slides back and costs a star, down to one; after two misses the
+// piece to move glows. One of today's puzzles plays the same, today's dots over next.
 namespace puzzle;
 import std;
 import math;
@@ -82,7 +63,7 @@ struct Play {
     won:       i64      = 0,     // stars won, once solved
     grab:      float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (board::touch)
     cam:       rig::Rig = rig::Rig {},          // and the camera its buttons move (board/rig.goose)
-    // One of today's puzzles (task 088): its place in today's, else -1 for the set's at
+    // One of today's puzzles: its place in today's, else -1 for the set's at
     // `index`; the puzzle itself, read from the library (open_daily); and today's count
     // and the stars won in each, for the dots over next, which the shell keeps up.
     daily:   i64                    = -1,
@@ -318,12 +299,12 @@ fn animating(pl: Play&, g: gui::Gui&, now: f64) -> bool {
 }
 
 let RESTART_ASK = gui::ASK_RESTART;
-let DOT_ABOVE = 8.0;        // dp: today's dots (picker::dots, task 088) above next
+let DOT_ABOVE = 8.0;        // dp: today's dots (picker::dots) above next
 
 // Whether today's dots show: one of today's puzzles playing.
 fn shows_dots(pl: Play&) -> bool { pl.daily >= 0 && pl.day_n > 0 }
 
-// The word under the goal's lines naming the day's slot (task 088): "Warm-up" on today's
+// The word under the goal's lines naming the day's slot: "Warm-up" on today's
 // first, "A bit harder" on its last, else -1: the middle ones, at the player's level, say
 // nothing, nor does a puzzle outside today's.
 fn slot_word(pl: Play&) -> i64 {
@@ -478,12 +459,12 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
     }
 }
 
-// Declares the panels: the left one as the game's, its back going to the theme; on the right
-// whose puzzle it is as the game's turn piece (72 dp over the goal in landscape, beside
-// its icon where the panel is too short for that, a phone's; 52 dp leading the goal's row
-// in portrait), the goal, the stars, and next, a tall tile in landscape, a wide one in
-// portrait. The piece goes into `over`. Next
-// is lit once the puzzle is solved; before, it is dim and takes no tap, but while a piece
+// Declares the panels: the left one as the game's, its back going to the theme; on the
+// right whose puzzle it is as the game's turn piece (72 dp over the goal in landscape,
+// beside its icon where the panel is too short for that, a phone's; 52 dp leading the
+// goal's row in portrait), the goal, the stars, and next, a tall tile in landscape, a
+// wide one in portrait. The piece goes into `over`. Next is lit once the puzzle is
+// solved; before, it is dim and takes no tap, but while a piece
 // waits partway through a capture it wakes, unlit, to say the move is done, which a
 // capture left partway isn't. Round the 3D board, the camera buttons (panel::camera).
 // Returns PUZZLES, SETTINGS, NEXT, RESTART_ASK, CAMERA, or STAY.

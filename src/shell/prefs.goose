@@ -30,16 +30,16 @@ let SEASON_NAMES = ["winter", "spring", "summer", "autumn"];
 let BY_DATE = -1;
 // By the date is the background row's last tile, after the four seasons: wrapped on a
 // phone in portrait the seasons keep one row and by the date goes under them, and the
-// order is the same at every size, turned or not (2026-11-08).
+// order is the same at every size, turned or not.
 let BY_DATE_TILE = 4;
 let FLAT = 0;                   // the 2D board
-let RAISED = 1;                 // the 3D board (task 015)
+let RAISED = 1;                 // the 3D board
 // A new player's board: the 3D board on a desktop, whose window has room for it, and the
-// flat one on a phone or a tablet (the app sets it at launch, 2026-11-14).
+// flat one on a phone or a tablet (the app sets it at launch).
 var default_board = FLAT;
 let SYSTEM = -1;                // the language the system's locales pick
-// The raised board's material, as the file names it (`material = auto|wood|stone|carved`,
-// task 080), one for every season, numbered as looks::MATERIAL_AUTO..: the season's own
+// The raised board's material, as the file names it (`material = auto|wood|stone|carved`),
+// one for every season, numbered as looks::MATERIAL_AUTO..: the season's own
 // (auto), or its wood, stone, or carved board. The flat board has none.
 let MATERIAL_AUTO = 0;
 let MATERIAL_WOOD = 1;
@@ -53,7 +53,8 @@ let KING_NAMES = ["auto", "crown", "stack"];
 let KING_KEYS = [strings::KINGS_AUTO, strings::KINGS_CROWN, strings::KINGS_STACK];
 
 // The draughts a new game can be, in the order the setup shows them: the variant, its
-// name, and its board; the file names it as rules::VARIANT_NAMES does. International is the default.
+// name, and its board; the file names it as rules::VARIANT_NAMES does. International is
+// the default.
 let DRAUGHTS = [rules::INTERNATIONAL, rules::BRAZILIAN, rules::RUSSIAN];
 let DRAUGHTS_KEYS = [strings::VARIANT_INTERNATIONAL, strings::VARIANT_BRAZILIAN, strings::VARIANT_RUSSIAN];
 let DRAUGHTS_SIZES = [strings::SIZE_10, strings::SIZE_8, strings::SIZE_8];
@@ -62,18 +63,16 @@ let DEFAULT_DRAUGHTS = rules::INTERNATIONAL;
 let LEVEL_NAMES = ["easy", "medium", "hard"];
 let SKILL_KEYS = ["skill_easy", "skill_medium", "skill_hard"];
 let PLAYED_KEYS = ["played_easy", "played_medium", "played_hard"];
-// The moves panel on the game screen (task 074): hidden, the moves alone, or with their
-// marks.
+// The moves panel on the game screen: hidden, the moves alone, or with their marks.
 let MOVES_HIDDEN = 0;
 let MOVES_LIST = 1;
 let MOVES_MARKS = 2;
 let MOVES_NAMES = ["hidden", "list", "marks"];
-// Where each level started before easy started at 0 (2026-11-09), for a file from
-// before `played`: a skill still there has had no games that moved it, and starts
-// afresh; one moved from it has had its first games.
+// Where each level started in a file from before `played`: a skill still there has had
+// no games that moved it, and starts afresh; one moved from it has had its first games.
 let OLD_SKILL = [10, 40, 90];
 let CLOCK_NAMES = ["none", "5+3", "10+5"];
-// Puzzles a day, the parent's choice in settings (task 088).
+// Puzzles a day, the parent's choice in settings.
 let DAILY_COUNTS = [3, 4, 5, 10];
 
 // A day's daily puzzles as a player had them: the day (days since the epoch by the local
@@ -87,7 +86,7 @@ struct Today {
 
 struct Settings {
     // The player's picture (players::ANIMALS) and name, up to 12 characters, perhaps
-    // none; and whether they have had the first start (task 026).
+    // none; and whether they have had the first start.
     picture:          i64           = 0,
     name:             players::Name = [],
     first_start_done: bool          = false,
@@ -105,7 +104,7 @@ struct Settings {
     // the child's pieces, the clock.
     friend:  bool = false,
     variant: i64  = DEFAULT_DRAUGHTS,
-    level:   i64  = 0,          // easy (the user's call, 2026-11-09)
+    level:   i64  = 0,          // easy
     color:   i64  = rules::WHITE, // the child's pieces against the computer
     clock:   i64  = 0,          // none
     // The computer's skill at each level (ai::adapt), the games that ended on each, and
@@ -114,19 +113,19 @@ struct Settings {
     played: i64[3] = [0; 3],
     games:  i64    = 0,
     // The moves panel (MOVES_*), and the player's rating (ai/rating.goose) and rated games
-    // against the computer by draughts (rules::RUSSIAN..), task 074.
+    // against the computer by draughts (rules::RUSSIAN..).
     moves:  i64                       = MOVES_MARKS,
     rating: i64[rules::VARIANT_COUNT] = [ai::FIRST_RATING; rules::VARIANT_COUNT],
     rated:  i64[rules::VARIANT_COUNT] = [0; rules::VARIANT_COUNT],
     // The stars won in each puzzle, 1 to 3, by its set's variant (puzzles::set_of) and
     // its id; 0 for one not solved.
     stars: u8[puzzles::MAX_PUZZLES + 1][rules::VARIANT_COUNT] = [[0; puzzles::MAX_PUZZLES + 1]; rules::VARIANT_COUNT],
-    // How to play (task 026): the steps played in each draughts' tutorial (`learned.russian
+    // How to play: the steps played in each draughts' tutorial (`learned.russian
     // = 4`), all of them once it is done; and whether the player said they know how to
     // play when asked as a new player (`how_to_play = known`), which keeps home's row away.
     learned: i64[rules::VARIANT_COUNT] = [0; rules::VARIANT_COUNT],
     knows:   bool                      = false,
-    // The daily puzzles (task 088), by the set's variant (puzzles::set_of): the puzzle
+    // The daily puzzles, by the set's variant (puzzles::set_of): the puzzle
     // rating, 0 until it is seeded from the course's stars, and how many first solves have
     // moved it (`puzzle_rating.international = 812 14`); the library's puzzles had, a bit
     // each by id (`seen.international = 0:3 5:80`, the words that aren't 0 by their index,
@@ -148,7 +147,7 @@ fn king_look(s: Settings) -> i64 { if s.kings == board::STACK { board::STACK } e
 fn raised(s: Settings) -> bool { s.board == RAISED }
 
 // Whether the season's photograph is shown, or the plain fade in its place: with plain
-// the app decodes, uploads, and holds no photograph (task 044).
+// the app decodes, uploads, and holds no photograph.
 fn photo_shown(s: Settings) -> bool { !s.plain }
 
 // How the 3D board draws kings: auto is a stack of two plain discs there.
@@ -256,7 +255,7 @@ fn parse(text: const u8[:]) -> Settings {
         }
     }
     // No game has ended on a level, so nothing has moved its skill: it starts where the
-    // level starts now (easy moved from 0 to 8 on 2026-11-11).
+    // level starts now.
     for i in 3 {
         if played_read[i] && s.played[i] == 0 { s.skill[i] = ai::level_skill(i); }
     }

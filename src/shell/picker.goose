@@ -1,31 +1,8 @@
-// The puzzles to pick from (rendering.md, "Controls", Puzzle picker; docs/architecture/puzzles.md,
-// "The screen"): a library of the themes, and a theme's page.
-//
-// The library is back, the title, the draughts switch (prototypes/puzzle-set.html, take
-// a: settings' draughts, one setting), and a glass row per theme: its mark (the theme's
-// icon on a disc in the glow color), its name, its stars ("★ n / total"), and a bar of
-// them. The switch stands at the title row's right in landscape and in a row under the
-// title in portrait; a draughts shown another's set (none now) says so under the title.
-// Learn is open; the other themes open once
-// half of Learn is solved, and until then each shows its mark plain with a lock and how
-// many more Learn wants. The rows are two columns in landscape where two fit the width or
-// one doesn't fit the height, else one column. A row opens the theme's page: back, the theme's mark, name, and count
-// over its levels, each a glass row of the level's mark and name beside its tiles, or
-// over them where the two don't fit side by side; a level's tiles split into rows as even
-// as they go. Each tile shows the stars won, the first without stars lit. Every tap is
-// a tap (gui::tap()) at least. Over the themes, across the columns, How to play (task 026,
-// prototypes/tutorial.html entry b): its mark, its name, the steps played of the
-// switch's draughts' tutorial, and a bar of them; it is never needed to open a theme. The sharp photograph shows behind it, and no board.
-//
-// The daily puzzles (task 088, prototypes/puzzles.html?daily=b): until Learn is solved,
-// all of it, How to play heads the list and a locked Today row ends it, across the
-// columns ("Solve n more in Learn"). Once it is, Today's row heads the list across the
-// columns: its mark (a calendar, the moon once all are solved), "Today's puzzles", a note
-// ("n to go", or "New ones tomorrow"), and today's puzzles as tiles, beside them where they
-// fit and under them where they don't, each its level's bars (the warm-up one, the middle
-// two, the stretch three) over its stars, the first unsolved lit; a tile opens its
-// puzzle. How to play is then a tile with its mark beside the title in landscape, and its
-// row ends the list in portrait, where the title row has no room.
+// The puzzles to pick from (rendering.md, "Controls", Puzzle picker;
+// docs/architecture/puzzles.md, "The screen"): the library, a glass row per theme under
+// back, the title, and the draughts switch, with How to play's and Today's rows; and a
+// theme's page, its levels each a row of the puzzles' tiles. The other themes open once
+// half of Learn is solved, Today once all of it is. No board shows behind it.
 namespace picker;
 import std;
 import vec;
@@ -40,9 +17,9 @@ let NOTHING = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;   // home
 let SHOWN = gui::ASK_SHOWN; // a theme's page opened or left: drawn again
 let SWITCHED = gui::ASK_OWN; // other draughts chosen on the library's switch
-let LEARN = gui::ASK_OWN + 1; // how to play, the library's first row (task 026)
+let LEARN = gui::ASK_OWN + 1; // how to play, the library's first row
 let PUZZLE = gui::ASK_OWN + 2; // a puzzle tapped, by its index in puzzles::all
-let TODAY = gui::ASK_OWN + 3; // one of today's puzzles tapped, by its place in them (task 088)
+let TODAY = gui::ASK_OWN + 3; // one of today's puzzles tapped, by its place in them
 
 // The widget ids, from gui::PICKER_IDS, each on from the one before by as many as it
 // takes, so no two meet; test/gui/ids keeps IDS_END inside the picker's range.
@@ -82,7 +59,7 @@ fn to_open(stars: const u8[:]) -> i64 {
 // Whether a theme is open: Learn always, the others once half of Learn is solved.
 fn open(stars: const u8[:], theme: i64) -> bool { theme == puzzles::LEARN || to_open(stars) == 0 }
 
-// How many of Learn's puzzles are still to solve before Today opens (task 088): all of
+// How many of Learn's puzzles are still to solve before Today opens: all of
 // Learn, the rules a daily puzzle may use; 0 once it is open. A set read with no Learn
 // (none read yet) keeps it shut.
 fn today_more(stars: const u8[:]) -> i64 { puzzles::theme_count(puzzles::all, puzzles::LEARN) - solved(stars, puzzles::LEARN) }
@@ -102,7 +79,7 @@ fn solved_all(stars: const u8[:]) -> i64, i64 {
 // stretch 3 (puzzles::target's shape).
 fn slot_level(k: i64, n: i64) -> i64 { if k == 0 { 1 } else if k == n - 1 { 3 } else { 2 } }
 
-// Today's dots (task 088): n of them DOT dp across and DOT_GAP apart, centered in r,
+// Today's dots: n of them DOT dp across and DOT_GAP apart, centered in r,
 // those with stars in `won` filled in the glow, puzzle `ring` (or none, -1) ringed in it,
 // the rest dim; home's note and over a daily puzzle's next. Smaller where r is narrower
 // than they want (ten over a phone's next).
@@ -173,7 +150,7 @@ fn line_h(g: gui::Gui&, face: i64) -> f32 { g.faces[face].ascent - g.faces[face]
 // switch), LEARN, PUZZLE with the index in puzzles::all of the puzzle tapped, or NOTHING,
 // and the puzzle (-1 for none).
 //
-// With `today`, the player's daily puzzles in the set (task 088), and `today_at` the one
+// With `today`, the player's daily puzzles in the set, and `today_at` the one
 // playing (its place in them, or -1), whose tile the board grows out of: a tap on one
 // returns TODAY and its place.
 fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&, variant: i64&,
@@ -248,8 +225,8 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
     gui::cut_top(b, 10.0 * u);
     let name = strings::get(NAMES[theme]);
     if opened {
-        // The stars won of those there are, a star before them (prototypes/puzzle-set.html,
-        // take b), and the bar under the name as far as the stars go.
+        // The stars won of those there are, a star before them, and the bar under the name
+        // as far as the stars go.
         let won = stars_won(stars, theme);
         let all = 3 * puzzles::theme_count(puzzles::all, theme);
         var n: u8[..64] = [];
@@ -314,7 +291,7 @@ fn learn_row(g: gui::Gui&, r: float4, learned: i64, steps: i64, phone: bool) -> 
     return tapped;
 }
 
-// The draughts switch (prototypes/puzzle-set.html, take a): settings' draughts tiles, each
+// The draughts switch (prototypes/puzzle-set.html): settings' draughts tiles, each
 // its name over its board's size, joined on one glass, 4 dp round them and between.
 let SWITCH_PAD = 4.0;
 fn switch_row_h() -> f32 { gui::tap() + 2.0 * SWITCH_PAD } // its tiles, a tap tall, and the glass round them
@@ -335,8 +312,8 @@ fn switch_width(g: gui::Gui&) -> f32 {
     return w;
 }
 
-// The switch in r, the player's draughts lit; its tiles widened or narrowed in proportion to what each wants.
-// True when a tap chose other draughts, set in `variant`.
+// The switch in r, the player's draughts lit; its tiles widened or narrowed in proportion
+// to what each wants. True when a tap chose other draughts, set in `variant`.
 fn switch(g: gui::Gui&, r: float4, variant: i64&) -> bool {
     let u = g.scale;
     let rim = SWITCH_PAD * u;
@@ -371,7 +348,7 @@ fn title(g: gui::Gui&, r: float4) {
 // How wide the title wants to be.
 fn title_width(g: gui::Gui&) -> f32 { gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES)) }
 
-// Today's row (task 088): its padding, its mark, and its gap after the mark, as How to
+// Today's row: its padding, its mark, and its gap after the mark, as How to
 // play's row; its tiles a tap square each, TODAY_GAP apart at least, and under the head
 // where they don't fit beside it, TODAY_FOOT dp above the row's foot.
 let TODAY_GAP = 10.0;
@@ -529,7 +506,7 @@ fn today_locked(g: gui::Gui&, r: float4, stars: const u8[:], phone: bool) {
     name_note(g, c, strings::get(strings::DAILY_TODAY), more[..], true);
 }
 
-// How to play as a tile beside the title (task 088, once Today heads the list in
+// How to play as a tile beside the title (once Today heads the list in
 // landscape): its mark on glass, a tap square. True when tapped.
 fn learn_tile(g: gui::Gui&, r: float4) -> bool {
     gui::glass(g, r, 22.0);
@@ -559,8 +536,8 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let sw_w = switch_width(g);
     let sw_h = switch_row_h() * u;
     let rim = SWITCH_PAD * u;
-    // The head row tops the rows, as wide as they are and lined up with them, as settings'
-    // head tops its list (rendering.md, "The way back"): back at its left, the title
+    // The head row tops the rows, as wide as they are and lined up with them
+    // (rendering.md, "The way back"): back at its left, the title
     // HEAD_GAP after it, How to play's tile after the title, and the switch at the row's
     // right, its glass's rim above and below the row. Where they don't fit, back gives up
     // its word for a tap's square; where even that doesn't, the switch takes a row of its

@@ -1,33 +1,8 @@
-// Home, the title menu (prototypes/home.html; rendering.md, "Home"): the sharp
-// photograph, the board as the game stands, and one glass column with the wordmark, then
-// continue, new game with the last opponent, puzzles, the games played, and settings,
-// each an icon and a word. In landscape the column stands at the left, its left edge off
-// the screen; in portrait it is a sheet along the bottom, and settings is a gear alone
-// beside the wordmark, so the sheet leaves the board its room. Puzzles notes the puzzles
-// solved of those there are in the player's draughts until Today opens, then today's
-// puzzles as dots, filled as they are solved, and a check once all are, "New tomorrow"
-// before it where it fits (task 088).
-//
-// New game opens the setup in the same column (prototypes/new-game.html, take c): back
-// and the title, then a row of tiles per choice, lit as in settings: whom to play (a
-// friend, or the computer easy, medium, or hard), the draughts, the child's color
-// against the computer or for a friend whether the board turns, the clock; then play.
-// Both opponents have the same rows, so the column never jumps. The choices are kept in
-// the settings. Where they don't fit the column they scroll, play pinned under them, or,
-// in a phone's landscape, in the head row in the title's place (choose).
-//
-// A bare X in the screen's top right, with no disc until pressed, closes the app, at
-// once on a touch screen: the game is kept in any case. On a desktop it asks first
-// (ask_quit), as Quit and the shell's back on the menu do. In portrait the board moves down and shrinks to clear it.
-// On a desktop's landscape column, where it fits, the way out is a last row, Quit, under
-// settings, and the X isn't shown (quit_row): one way out shown one of two ways, as
-// settings is the gear or a row.
-//
-// On the menu, the player's chip, their badge bare as the X is and their name on a small
-// glass pill (rendering.md, "Controls", Players; so it reads on any photograph), opens who's
-// playing (who.goose): it mirrors the X, at the top left of the board's side of the
-// screen (the whole width in portrait, right of the column in landscape), so it is never
-// on the column (player_spot).
+// Home, the title menu (prototypes/home.html; rendering.md, "Home"): the board as the
+// game stands beside one glass column, a sheet in portrait, holding the wordmark and the
+// menu's rows, or a new game's setup (prototypes/new-game.html). The way out, an X or a
+// Quit row, and the player's chip, which opens who's playing (who.goose), sit off the
+// column at the board's side.
 namespace home;
 import std;
 import vec;
@@ -52,8 +27,8 @@ let PLAY = gui::ASK_OWN + 2; // a new game as the setup stands
 let PUZZLES = gui::ASK_OWN + 3;
 let EXIT = gui::ASK_OWN + 4; // close the app
 let PLAYERS = gui::ASK_OWN + 5; // who's playing
-let RESULTS = gui::ASK_OWN + 6; // the games played (results.goose, task 074)
-let LEARN = gui::ASK_OWN + 7; // how to play (task 026)
+let RESULTS = gui::ASK_OWN + 6; // the games played (results.goose)
+let LEARN = gui::ASK_OWN + 7; // how to play
 let NO_SETUP = NOTHING;
 
 // Whether home shows its way out: not on iOS, where an app never closes itself (the app
@@ -86,7 +61,7 @@ let CLOCK_IDS = TURNS_IDS + 2;      // the clocks, three,
 let PLAY_ID = CLOCK_IDS + 3;        // and play
 let IDS_END = PLAY_ID + 1;
 
-// The games played (task 074), a last row after the others (before settings and Quit
+// The games played, a last row after the others (before settings and Quit
 // where they are rows). The menu's height is reckoned without it (menu_height); where it
 // fits with it the menu grows by a row, and where that would shrink the board or leave
 // the screen (a phone) the menu keeps its height and its rows scroll under the wordmark,
@@ -94,7 +69,7 @@ let IDS_END = PLAY_ID + 1;
 let FADE = 72.0;            // dp at the list's foot over which a row fades out
 let PEEK = 60.0;            // dp of the next row a scrolling menu shows, its word in it
 let ROW_GAP = 2.0;
-// A small window (gui::compact, task 050): the menu's rows and the wordmark's row lower,
+// A small window (gui::compact): the menu's rows and the wordmark's row lower,
 // the sheet's rim thinner, so the board keeps a room above it.
 let ROW_COMPACT = 72.0;
 let MARK_COMPACT = 64.0;
@@ -103,7 +78,7 @@ fn row_h(small: bool) -> f32 { if small { min(ROW_COMPACT, gui::tap()) } else { 
 fn mark_h(small: bool) -> f32 { if small { MARK_COMPACT } else { MARK_H } }
 let MARK_H = 72.0;          // the wordmark's row
 let MARK_GAP = 34.0;        // under it in landscape; 14 beside settings' gear, down to 4
-let DESKTOP_MARK_GAP = 56.0; // under it on a desktop's column, where 34 read as the rows crowding it
+let DESKTOP_MARK_GAP = 56.0; // under it on a desktop's column
 let GEAR_ICON = 40.0;       // settings' gear beside the wordmark, alone in a tap over its row's height
 let MARGIN = 16.0;          // dp the menu keeps from the screen's top and foot at least
 let EDGE = 24.0;            // the way out, a round tap in the top right, this far from both edges,
@@ -130,9 +105,8 @@ let COLUMN_W = 360.0;       // the column's content in landscape;
 let GEAR_W = 440.0;         // the menu's with the gear beside the wordmark;
 let SETUP_W = 400.0;        // the setup's, its first row's four tiles each a tap wide
 // On a desktop (gui::desktop_scale) the column's content starts DESKTOP_TOP dp from the
-// top rather than centered down it, and is DESKTOP_COLUMN_W dp wide at least: centered on
-// a large window the menu floated in the column's middle, and the setup's choices were
-// cramped (task 068, the user 2026-11-11).
+// top rather than centered down it, and is DESKTOP_COLUMN_W dp wide at least, so the
+// menu doesn't float in a large window's middle and the setup's choices have room.
 let DESKTOP_TOP = 40.0;
 let DESKTOP_COLUMN_W = 440.0;
 
@@ -199,7 +173,7 @@ fn setup_height(u: f32) -> f32 { (gui::tap() + HEAD_GAP + choices_height() + PLA
 // Whether the setup's play moves into its head row in the title's place, the choices
 // scrolling under it to the screen's foot: in a phone's landscape, too short for the
 // column (prototypes/new-game.html), where play pinned under the choices would leave
-// them a view under 300 dp tall (the Pixel 7a's 288). Elsewhere play stays under them.
+// them a view under 300 dp tall. Elsewhere play stays under them.
 fn play_up(area: float4, u: f32) -> bool {
     return area.z >= area.w && gui::phone(area, u) && setup_height(u) > area.w - 2.0 * SETUP_MARGIN * u;
 }
@@ -400,25 +374,20 @@ fn sheet_board(width: f32, stage_h: f32, u: f32, height: f32, clear: f32) -> f32
     return size, y;
 }
 
-// Declares home for this frame in `area`, the screen's safe area, where layout puts its
-// parts, its pieces over the UI put in `over`, and sets l to where the board of n × n
-// squares goes and `room3d` to where a 3D board may go instead: the menu, or the setup
-// (`setup` NEW_GAME) with the choices in s. Returns what was tapped.
-// What continue goes back to (issue 1, prototypes/issue-1.html, take a): whether there
-// is a game to go back to, one played or set up, and whose it is, a strings key for the
-// row's note (CONTINUE_FRIEND..), or -1 for none. With none (a first run, a new player)
-// the row isn't shown, as Quit isn't where it doesn't fit; but for a new player who
-// hasn't learned the player's draughts (`learn`, task 026, prototypes/tutorial.html entry
-// b), How to play shows in its place, lit, its note the draughts it teaches. It goes once
-// the tutorial is done, a game is played or set up, or the player said they know how; a
-// player never asked (one from before the question) doesn't see it.
+// What continue goes back to: whether there is a game to go back to, one played or set
+// up, and whose it is, a strings key for the row's note (CONTINUE_FRIEND..), or -1 for
+// none. With none (a first run, a new player) the row isn't shown; but for a new player
+// who hasn't learned the player's draughts (`learn`), How to play shows in its place,
+// lit, its note the draughts it teaches. It goes once the tutorial is done, a game is
+// played or set up, or the player said they know how; a player never asked doesn't see
+// it.
 struct Resume {
     on:    bool = true,
     note:  i64  = -1,
     learn: bool = false,
 }
 
-// The menu's rows shown: ROWS, or one fewer while there is no game to continue (issue 1).
+// The menu's rows shown: ROWS, or one fewer while there is no game to continue.
 fn rows_of(resume: Resume) -> i64 { if resume.on || resume.learn { ROWS } else { ROWS - 1 } }
 
 // The name of draughts `variant`, a strings key.
@@ -469,7 +438,7 @@ fn named_end(g: gui::Gui&, s: settings::Settings&, across: f32) -> f32 {
     return end;
 }
 
-// Where the player's chip goes, a tap tall: mirroring the way out `way` (2026-11-09), EDGE
+// Where the player's chip goes, a tap tall: mirroring the way out `way`, EDGE
 // dp from the top and from `side`, the left of the board's side of the screen (the safe
 // area's left in portrait, the column's right edge in landscape), so it is never on the
 // column. With a name that would come within 16 dp of the way out or of the board `b`
@@ -645,7 +614,7 @@ fn today_dots(g: gui::Gui&, r: float4, t: settings::Today&) {
 // screen's X closes at once: the game is kept, and Android's own back doesn't ask either.
 fn asks_quit() -> bool { gui::desktop_scale > 0.0 }
 
-// The quit's question (asks_quit, 2026-11-12): over the dimmed home (`screen`, the whole
+// The quit's question (asks_quit): over the dimmed home (`screen`, the whole
 // window), a glass card centered in the safe area `area`, the question over cancel and
 // quit side by side, quit lit and the keys' first choice, so Enter or A answers it and
 // Escape or B (the shell's back) cancels. A press outside the card cancels too. Returns
@@ -712,9 +681,8 @@ fn draughts_width(g: gui::Gui&, k: i64, least: f32) -> f32 {
 
 // Draughts i's tile in the row: a third of it when every name fits a third with room
 // either side; else each tile its name's width and an even share of the rest, so a long
-// name keeps the body face ("Rahvusvaheline", 130 dp, beside a landscape third of 113),
-// each at least a tap wide. Thirds too where the names leave no room to share: a name too
-// wide for its third then takes the small face.
+// name keeps the body face, each at least a tap wide. Thirds too where the names leave
+// no room to share: a name too wide for its third then takes the small face.
 fn draughts_tile(g: gui::Gui&, row: float4, i: i64) -> float4 {
     let u = g.scale;
     let count = settings::DRAUGHTS.len;
@@ -843,8 +811,9 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
         }
     } else {
         // The board for a friend's game: staying, the default, first, or turning to the
-        // side to move after each move (settings' `turns`), each with its icon over its word and note where the
-        // tile holds all three (a touch screen's 88 dp), without it where not (a desktop's).
+        // side to move after each move (settings' `turns`), each with its icon over its
+        // word and note where the tile holds all three (a touch screen's 88 dp), without
+        // the note where not (a desktop's).
         let turning = group(g, list, strings::SETUP_BOARD, gui::stacked());
         let words = g.faces[gui::BODY].ascent - g.faces[gui::BODY].descent + g.faces[gui::SMALL].ascent
                     - g.faces[gui::SMALL].descent;

@@ -1,40 +1,10 @@
-// A past game replayed (task 078's C, prototypes/history.html's replay view), opened from
-// its row on the results screen: the board at a move beside the game's whole move list,
-// to step through, and play from here, which plays the game on from the move shown. The
-// replay only shows: it has its own board and moves, never the game's, so it doesn't
-// become the game to continue, and nothing of it is written to the history or moves a
-// rating. The game played from it is the shell's (shell::play_from_here), and counts for
-// nothing either.
-//   Landscape: the steps a column of four taps at the board's left (to the start, back,
-//   on, to the end), the board the height less the margins, and at its right back, the
-//   title, and play from here over a glass holding what the move shown was and the list.
-//   Portrait: back, the title, and play from here, the board, the steps a row under it,
-//   then the glass.
-// Play from here stands at the head's right end, its icon beside its word, or over it
-// where that is too wide, back the same way; where the title has no room between them,
-// the two fill the head. It is dimmed at the end of a game that ended there. A line in
-// the small face over the board says that a game played from here doesn't count
-// (disclaimer), and why where that fits on it; the board gives way for it. The head says
-// what the game was (the result, the opponent and its rating, the date) on the title's
-// second line where it fits, else at the glass's top. Over the list a line names the move
-// shown with its mark and the mark's tip; each side's accuracy heads its column. The
-// list's moves are taps that jump there, 34 dp rows under the 88 dp rule, as a miss only
-// shows the next move, which the steps put right. The board takes no moves; its last
-// move's mark sits in a disc at its square's corner. Left and Right step the moves from
-// anywhere (gui::claim_sideways); the keys' focus on a move shows it. The positions are
-// played out from the moves once, as it opens, into fixed buffers; a frame allocates
-// nothing.
-//   The move shown (task 087): once its piece has arrived, its way in glow dots, a larger
-//   one at each stop, and its squares' numbers, fading in with its mark and the faded
-//   piece where it started. The best move from the position shown, on the board as the
-//   game's hint only while asked for: the bulb, a fifth step tile where the board's side
-//   holds five taps, else the glass's line for it as a thin tile. The glass says what was
-//   best after a marked move, and the best next move, or the move that is forced, or that
-//   the game ended. A desktop's large window centers the steps, the board, and a column
-//   of at most LARGE_COL dp, the column's words half again as large. On any desktop
-//   window back stands at the top left over the board's left edge, as on every other
-//   screen, the board under it level with the glass, the column's head keeping the title
-//   and play from here.
+// A past game replayed (prototypes/history.html's replay view), opened from its row on
+// the results screen: the board at a move beside the game's move list, the steps, and
+// play from here, which plays the game on from the move shown (shell::play_from_here).
+// The replay only shows, with its own board and moves: nothing of it reaches the game,
+// the history, or a rating. The positions are played out once, as it opens, into fixed
+// buffers; a frame allocates nothing. The list's rows are 34 dp, under the 88 dp tap,
+// as a miss only shows a nearby move, which the steps put right.
 namespace replay;
 import std;
 import math;
@@ -356,8 +326,7 @@ fn play_fit(g: gui::Gui&, head: f32, with_back: bool = true) -> i64, f32, f32, b
     let tap = gui::tap() * u;
     let name = gui::text_width(g, gui::LABEL, strings::get(strings::REPLAY_TITLE)) + GAP * u;
     // Beside, the word keeps back's room at the sides (gui::back_width), so the two tiles
-    // match: LABEL_PAD alone left the word against the tile's right edge, the icon's own
-    // margin making its left look wider.
+    // match and the word doesn't sit against the tile's right edge.
     let beside = (2.0 * (gui::side() + 4.0) + 34.0 + 12.0) * u + gui::text_width(g, gui::HEADING, word);
     let over = max(tap, gui::text_width(g, gui::HEADING, word) + 2.0 * gui::LABEL_PAD * u);
     guard with_back else {
@@ -501,7 +470,7 @@ fn say(r: Replay&, g: gui::Gui&, box: float4, icon: i64, style: i64, words: cons
 // After a marked move, the best there instead: the star and "The best was 31-26". Where
 // it is a `tap` (beside the bulb tile: the tablet, a desktop), lit under the mouse as the
 // list's moves are; true when tapped, which goes back to the position it was best in and
-// shows it on the board (2026-11-14).
+// shows it on the board.
 fn was_line(r: Replay&, g: gui::Gui&, box: float4, tap: bool) -> bool {
     let p .= r.plies[r.ply - 1];
     let v .= rules::VARIANTS[r.game.variant];
@@ -566,8 +535,7 @@ fn next_line(r: Replay&, g: gui::Gui&, box: float4, tile: bool) -> bool {
     return clicked;
 }
 
-// The line over the board in r saying that a game played from here doesn't count
-// (2026-11-13: by the board, where it needs no tap; over it, read before the board): in
+// The line over the board in r saying that a game played from here doesn't count: in
 // the small face, dim as settings' notes, centered; with why (replay.no_count_why) where
 // that fits on the line, else only that it doesn't (replay.no_count), its glyphs drawn
 // smaller where even that is wider than the line. Returns whether it said why.
@@ -592,8 +560,7 @@ fn disclaimer(g: gui::Gui&, r: float4, face: i64 = gui::SMALL) -> bool {
 // desktop window in landscape has over the board a head row of its own (`back`, from the
 // board's left edge, as wide) holding back and, in its middle, the line over the board,
 // level with the column's head; the board gives up the row's height and GAP, its top
-// level with the glass's (2026-11-14: back had been at the column's head, top right,
-// where no other screen has it, and crammed beside play from here in a narrow window).
+// level with the glass's, so back stands top left as on every other screen.
 struct Layout {
     head:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     board: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -613,8 +580,7 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
     let note = NOTE * k * u;
     if c.z > c.w {
         let least = (if big { LARGE_SIDE } else { MIN_SIDE }) * u;
-        // Back's own row over the board on any desktop window: a narrow column had back and
-        // play from here stacked and crammed side by side in its head (2026-11-14).
+        // Back's own row over the board on any desktop window.
         let own = gui::desktop_scale > 0.0;
         let row = if own { tap + GAP * u } else { 0.0 };
         let over = if own { 0.0 } else { note };
@@ -784,7 +750,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
         }
         gui::text(g, r.body, float4 { at + (2.0 * DISC + 8.0) * ku, heads.y, half, heads.w }, t[..], 1.0, 0.0, gui::LEFT);
     }
-    // The marks explained at the glass's foot, under the list (task 078's B).
+    // The marks explained at the glass's foot, under the list.
     if o.five { game::legend(g, gui::cut_bottom(c, game::legend_h(g, c.z, k, r.small)), k, r.small, r.body); }
     r.rows = c.w / (ROW * ku);
     list(r, g, float4 { o.glass.x, c.y, o.glass.z, c.w }, c.x, c.z, now, ask);

@@ -10,8 +10,7 @@ import os;
 // game with its variant, undo history, clocks, and whom it is against at which skill, one
 // flat value (docs/architecture/README.md, "Game state is a value"). VERSION changes when
 // its layout does; an image of another layout doesn't verify, and the app starts afresh.
-// Version 4 keeps `unset`, the game being one nobody set up, so home's Continue stays
-// hidden for it after a restart (issue 1).
+// `unset` is a game nobody set up, for which home's Continue stays hidden.
 let VERSION = 4;
 
 struct Saved {
@@ -89,8 +88,7 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
           && s.clock.kind >= 0 && s.clock.kind < clock::KINDS && s.skill >= 0 && s.skill <= 100
     else { return false; }
     bring_back(sh, s);
-    // An image written before KINDS' `kept` may name a puzzle; the puzzles to pick from
-    // come back for it, as for any screen kept as another.
+    // A screen comes back as KINDS' `kept` names it: a puzzle as the puzzles to pick from.
     sh.screen = KINDS[s.screen].kept;
     apply_prefs(sh);
     return true;
@@ -146,9 +144,8 @@ fn unpark(sh: Shell&) {
     apply_prefs(sh);
 }
 
-// Version 3's layout, before `unset`, read as version 4 with the game set up, which
-// every game kept then was or is played (temporary: drop it once the release after
-// 2026-11-12 has been out a while).
+// Version 3's layout, without `unset`, read as version 4 with the game set up, as every
+// game kept then was. Temporary, until version 3 images are gone from the field.
 struct Saved3 {
     version:   i64,
     screen:    i64,

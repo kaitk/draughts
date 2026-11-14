@@ -1,6 +1,5 @@
-// The games played, a past game replayed, and a game played on from it (task 074, task
-// 078): the shell's side of results.goose and replay.goose, which only show. Part of the
-// shell's namespace.
+// The games played, a past game replayed, and a game played on from it: the shell's side
+// of results.goose and replay.goose, which only show. Part of the shell's namespace.
 namespace shell;
 import std;
 import os;

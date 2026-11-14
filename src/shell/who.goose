@@ -1,4 +1,4 @@
-// Who's playing (prototypes/profiles.html, take a; rendering.md, "Home"): home's face
+// Who's playing (prototypes/profiles.html; rendering.md, "Home"): home's face
 // beside the wordmark opens a glass card over the dimmed home with a face per player, its
 // name under it, the player playing lit with the glow ring, then + while there is room.
 // A face switches to that player and closes the card. The pencil puts a badge on each
@@ -13,7 +13,7 @@
 // keyboard.
 //
 // Done on a new player's sheet, and on a fresh install's first, asks "do you know how to
-// play?" (task 026, prototypes/tutorial.html, ask a): the player's face over the question
+// play?" (prototypes/tutorial.html, ask a): the player's face over the question
 // and two answers, show me (how to play, lit) and I know how; back or a tap outside
 // closes it unanswered, and home's How to play row stays for them (shell::resume).
 namespace who;
@@ -23,7 +23,7 @@ import vec;
 let CLOSED = 0;
 let PICKING = 1;            // who's playing
 let SHEET = 2;              // a player's sheet
-let ASKING = 3;             // a new player's "do you know how to play?" (task 026)
+let ASKING = 3;             // a new player's "do you know how to play?"
 
 // What the card asks the shell for.
 let NOTHING = gui::ASK_NOTHING;
@@ -199,8 +199,8 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
             let nf = gui::fitting(g, gui::BODY, p.name[..], inner.z);
             gui::text(g, nf, inner, p.name[..], 1.0, 0.0, gui::CENTER);
             if w.editing {
-                // A dark disc with a light rim under the pencil: over the face's light
-                // picture a faint white disc left the pencil hard to see.
+                // A dark disc with a light rim under the pencil, so it reads over the
+                // face's light picture.
                 let b = float4 { tr.x + tr.z - 48.0 * u, tr.y + 8.0 * u, 40.0 * u, 40.0 * u };
                 gui::fill(g, b, float4 { 1.0, 1.0, 1.0, 0.85 }, 20.0 * u);
                 gui::fill(g, gui::inset(b, 2.0 * u), float4 { 0.16, 0.12, 0.10, 0.95 }, 18.0 * u);

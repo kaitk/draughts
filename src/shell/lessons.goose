@@ -1,4 +1,4 @@
-// How to play (task 026): the shell's side of tutorial.goose, opening it and going where
+// How to play: the shell's side of tutorial.goose, opening it and going where
 // its end's card asks. Part of the shell's namespace.
 namespace shell;
 import std;
@@ -6,7 +6,7 @@ import std;
 // How many steps of the player's draughts' tutorial they have played.
 fn learned(sh: Shell&) -> i64 { sh.prefs.learned[clamp(sh.prefs.variant, 0, rules::VARIANT_COUNT - 1)] }
 
-// Opens how to play in the player's draughts (task 026), from `from` (HOME or PICKER),
+// Opens how to play in the player's draughts, from `from` (HOME or PICKER),
 // where its back goes: at the step after those played, or the first once all are.
 fn learn(sh: Shell&, from: i64, now: f64) {
     let v = sh.prefs.variant as u8;

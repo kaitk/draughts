@@ -1,40 +1,9 @@
-// The app's screens, with no graphics: home, the game, settings, and the puzzles, and
-// which one shows (docs/architecture/rendering.md, "Home", "Game screen";
-// docs/architecture/puzzles.md, "The screen"). Each frame it declares the screen showing
-// and switches when that asks: home's continue opens the game, new game opens
-// the setup in home's column, whose play starts the game; puzzles opens
-// the puzzles to pick from, and a pick plays that puzzle, whose next plays the one after;
-// settings opens from home, the game, and a puzzle, and goes back where it came from.
-// It holds the settings, puts them where they act (apply_prefs), and
-// says when they changed, for the app to write and apply; and where the board goes this
-// frame, turned when the child plays black, and how blurred the photograph behind it
-// is, and the pieces the screen shows over the UI, for the app to draw. Settings show
-// their own board, the preview, beside them; home's setup its own too, the game its play
-// starts, at the start of the chosen draughts and turned for a child playing black
-// against the computer, which play then starts as it shows.
-// Home and settings, home and the game, and the puzzles to pick from and a puzzle switch
-// through a transition: the board slides and grows from one's place to the other's
-// (home's board sliding to settings', which shows their own once it is there; a
-// puzzle's board growing out of its tile), while the screen left fades out and the one
-// come to fades in, both drifting a little with the board and hidden where the board
-// passes, and the photograph goes from sharp to blurred or back. A tap during it lands
-// on the screen come to. The game counts no time and asks the computer for nothing
-// until its transition is over.
-// With the 3D board chosen (settings::raised) every screen with a board shows it: home's
-// and settings' fitted into the room they give it, the game and a puzzle round it in the
-// corners layout (panel::corners_in). A transition then moves and scales the one image
-// of it, drawn once through the larger end's view, from one end's bounds to the other's
-// (a puzzle's tile, which has no 3D board, crossfading it in or out).
-// Home's way out asks the app to stop (quit), which ends its loop; on a desktop it asks
-// first (home::ask_quit), as back on home's menu does there. Android's back, and Escape or
-// a gamepad's B on a desktop, go back a screen as its own back control does (back).
-// A game against the computer plays at the skill kept for its level, which each
-// finished game moves (ai::adapt). A replay's play from here plays a past game on from
-// the move shown on the game screen, the game in progress set aside meanwhile
-// (play_from_here): that game counts for nothing, and its way out goes back to the
-// replay. Tests run it headless. What is kept of the game is in
-// saved.goose, switching and changing players in roster.goose, the results, a replay, and
-// a game from it in past.goose, how to play in lessons.goose.
+// The app's screens, with no graphics, and which one shows (docs/architecture/
+// rendering.md, "Home", "Game screen"; puzzles.md, "The screen"): each frame declares the
+// screen showing, switches when it asks, through a transition where KINDS says so, and
+// tells the app where the board goes and what changed. Tests run it headless. The kept
+// game is in saved.goose, the players in roster.goose, the results and replays in
+// past.goose, how to play in lessons.goose.
 namespace shell;
 import std;
 import vec;
@@ -69,17 +38,17 @@ let GAME = 1;
 let SETTINGS = 2;
 let PICKER = 3;             // the puzzles to pick from
 let PUZZLE = 4;             // one puzzle
-let RESULTS = 5;            // the games played (results.goose, task 074)
-let REPLAY = 6;             // a past game replayed (replay.goose, task 078)
-let TUTORIAL = 7;           // how to play (tutorial.goose, task 026)
+let RESULTS = 5;            // the games played (results.goose)
+let REPLAY = 6;             // a past game replayed (replay.goose)
+let TUTORIAL = 7;           // how to play (tutorial.goose)
 let SCREENS = 8;
 
 // What sets the screens apart where the shell runs none of their code: whose board each
 // shows (board_of; home's setup shows its own), how blurred it shows the photograph,
 // where back goes, which switches to or from it are drawn as a transition, and the screen
-// a game kept on it comes back on (saved.goose). Their
-// code is chosen in the three functions after the table, its frame, its still frame,
-// and whether it moves: a new screen is a row here and an arm in each.
+// a game kept on it comes back on (saved.goose). Their code is chosen in the three
+// functions after the table, its frame, its still frame, and whether it moves: a new
+// screen is a row here and an arm in each.
 struct Kind {
     board: i64,     // GAME the game's, SETTINGS the preview, PUZZLE the puzzle's, REPLAY the replay's, TUTORIAL its own
     blur:  f32,     // 0 the photograph as it is, 1 blurred and dimmed
@@ -104,8 +73,8 @@ let DURATION = 0.25;        // seconds a transition takes
 let DRIFT = 40.0;           // dp the screens' UI drifts along with the board in one
 
 // What a frame of the shell leaves for the app, each field set every frame (frame) but
-// `quit`. The app reads it and writes none of it; it lives in the shell (Shell.out) and is passed by
-// reference, so its pieces aren't copied.
+// `quit`. The app reads it and writes none of it; it lives in the shell (Shell.out) and
+// is passed by reference, so its pieces aren't copied.
 struct Frame {
     changed: bool = false,          // anything on screen changed
     screen:  i64  = HOME,           // the screen showing
@@ -137,8 +106,8 @@ struct Frame {
     keyboard: i64  = 0,
     // The settings changed, and no transition runs: the app writes them and applies what
     // is its own (the language, the season's photograph). Once a transition is over for
-    // a change made by the tap that started it: the write flushes to disk, 13 to 17 ms on
-    // the tablet, too long for the frame that starts it moving.
+    // a change made by the tap that started it: the write flushes to disk, too long for
+    // the frame that starts it moving.
     save: bool = false,
     quit: bool = false,             // home's way out was tapped: the app stops (stays set)
 }
@@ -179,7 +148,7 @@ struct Shell {
     went_view: view3d::View = view3d::View {},
     came_view: view3d::View = view3d::View {},
     puzzle:    puzzle::Play,                  // the puzzle playing, or last played
-    // How to play (task 026), and the screen it was opened from, where its back goes:
+    // How to play, and the screen it was opened from, where its back goes:
     // home (its row, or a new player's question) or the puzzles' library.
     lesson:      tutorial::Lesson,
     lesson_from: i64 = HOME,
@@ -210,7 +179,7 @@ struct Shell {
     // A file the games are read from in place of the playing player's history, for
     // screenshots (the app's --history), or empty.
     history_file: u8[..512] = [],
-    // The daily puzzles (today.goose, task 088): the local date, days since the epoch, as
+    // The daily puzzles (today.goose): the local date, days since the epoch, as
     // the app hands it in (frame's `day`; a test sets it here), -1 while unknown; the set
     // whose library is read (puzzles::load_library), -1 none, and its text, the library's
     // built-in file (a test may index its own into puzzles::library and set it here); and
@@ -398,7 +367,7 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 // it is false, changing nothing: there back leaves the app as the system's does. In a
 // transition it acts on the screen come to, as a tap does.
 fn back(sh: Shell&, now: f64) -> bool {
-    // The game's moves' sheet, or a mark's tip, closes first (task 078); so does settings'
+    // The game's moves' sheet, or a mark's tip, closes first; so does settings'
     // language list.
     if sh.screen == GAME && game::close_sheet(sh.game) { return true; }
     if sh.screen == SETTINGS && sh.prefs.languages_open {
@@ -463,13 +432,13 @@ fn play(sh: Shell&, now: f64) {
 }
 
 // What home's continue goes back to: the game and whose it is; none while the game is
-// one nobody set up (`unset`) with no move played (issue 1).
+// one nobody set up (`unset`) with no move played.
 fn resume(sh: Shell&) -> home::Resume {
     let gm .= sh.game;
     let on = !sh.unset || gm.b.rec.history.len > 0 || gm.computer >= 0;
     // A new player, asked whether they know how to play (`first_start_done`), who hasn't
     // learned their draughts, nor said they know how, nor begun a game against the
-    // computer: How to play in continue's place (task 026).
+    // computer: How to play in continue's place.
     let p .= sh.prefs;
     let learn = !on && p.first_start_done && !p.knows && p.games == 0 && learned(sh) < tutorial::count(p.variant as u8);
     return home::Resume { on: on, note: home::resume_note(gm.computer, gm.level), learn: learn };
@@ -546,7 +515,7 @@ fn open(sh: Shell&, first: bool) {
 }
 
 // The puzzles are the set of the player's draughts (puzzles::set_of), and its library of
-// daily puzzles beside it (task 088). The draughts change in home's setup, in settings,
+// daily puzzles beside it. The draughts change in home's setup, in settings,
 // or with the player; home, where every way to the puzzles starts, reads the other set
 // then, and the picker starts at its library. The library's own switch reads it at once
 // (load_set). Then today's puzzles (sync_daily).
@@ -770,7 +739,7 @@ fn puzzle_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
 // The puzzle's layout, which how to play shares, for a board of `variant`, turned with
 // `flip`, seen through camera `cam` at `now`: round the 3D board when it is chosen, else
 // the flat board with its panels beside it. It keeps its own play panel's height in a
-// small window for now (task 050).
+// small window.
 fn side_layout(sh: Shell&, area: float4, u: f32, variant: u8, flip: bool, cam: rig::Rig&, now: f64) -> panel::Layout {
     let n = rules::VARIANTS[variant].size;
     var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, false) }
@@ -1071,9 +1040,8 @@ fn turned(sh: Shell&, setup: i64) -> bool {
 // to the side to move (settings' `turns`; game.goose's rig::face).
 fn flat_turned(sh: Shell&) -> bool { sh.game.computer < 0 && sh.game.turns && rig::faces_far(sh.game.cam) }
 
-// The flat board's turn in a friend's game is a fade (2026-11-12; at once it was too
-// quick to follow): the pieces fade out over FLAT_FADE seconds still on the side they
-// were, then in on the turned board. Returns their opacity while it runs, negative while
+// The flat board's turn in a friend's game is a fade, slow enough to follow: the pieces
+// fade out over FLAT_FADE seconds still on the side they were, then in on the turned board. Returns their opacity while it runs, negative while
 // they fade out (the board not yet turned), or 2 when no fade runs. The squares look the
 // same turned, so only the pieces change.
 let FLAT_FADE = 0.15;
@@ -1100,9 +1068,9 @@ fn which(screen: i64) -> i64 { KINDS[screen].board }
 // The board on screen at rest.
 fn shown(sh: Shell&) -> board::Board& { board_of(sh, sh.screen) }
 
-// Fills the board this frame shows (sh.out.shows) for the frame at `now`, where sh.out.layout
-// puts it, and returns it for the app to draw; the game's with its win (game::cheer),
-// which fades with the game screen in a transition.
+// Fills the board this frame shows (sh.out.shows) for the frame at `now`, where
+// sh.out.layout puts it, and returns it for the app to draw; the game's with its win
+// (game::cheer), which fades with the game screen in a transition.
 fn fill(sh: Shell&, now: f64) -> board::Board& {
     let b .= board_of(sh, sh.out.shows);
     board::fill(b, sh.out.layout, now);
