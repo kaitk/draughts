@@ -572,19 +572,12 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // the screen as far as that allows (a phone's landscape, back beside the rows).
     let y0 = if landscape { page.y + max(0.0, floor(0.5 * (page.w - (head + first + per * row_h + (per - 1) * gap + end)) + 0.5)) }
              else { page.y };
-    // A tablet whose rows reach up beside back (16:9, Today open) keeps them centered on
-    // the screen, back's clearance mirrored on the right, rather than pushed against it,
-    // where they still fit the height that way (Today's tiles may wrap when narrower).
-    let clear = page.x - whole.x;
-    // At 4:3 the mirrored room is narrower than two columns: then two of the narrowest,
-    // centered as far as back allows.
-    let mirrored = float4 { page.x, page.y, min(page.z, max(whole.z - 2.0 * clear, 2.0 * NARROWEST * u + gap)), page.w };
-    let mirror_w = cols * min((mirrored.z - (cols - 1) * gap) / cols, COLUMN * u) + (cols - 1) * gap;
-    let mirror_first = if opened { today_h(g, mirror_w, n_today, phone) + gap } else { first };
-    let mirror_fits = mirrored.z >= 2.0 * NARROWEST * u + gap &&
-                      head + mirror_first + per * row_h + (per - 1) * gap + end <= page.w;
-    let room = if landscape && y0 >= whole.y + gui::tap() * u + gap { whole }
-               else if landscape && !phone && mirror_fits { mirrored } else { page };
+    // On a tablet where only the title row reaches up beside back (Today open, 16:9 or
+    // 4:3), the rows under it start below back's foot and take the whole width, centered
+    // on it, and the title row alone keeps clear of back.
+    let foot = whole.y + gui::tap() * u + gap;
+    let room = if landscape && (y0 >= foot || !phone && y0 + head >= foot) { whole } else { page };
+    let top_room = if landscape && y0 < foot { page } else { room };
     let col_w = min((room.z - (cols - 1) * gap) / cols, COLUMN * u);
     let w = cols * col_w + (cols - 1) * gap;
     if opened {
@@ -595,8 +588,9 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let y = if landscape { page.y + max(0.0, floor(0.5 * (page.w - h) + 0.5)) } else { page.y };
     let x = max(room.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
     // The title row as wide as the rows, or as the title and the switch beside it want.
-    let top_w = if beside { min(room.z, max(w, title_width(g) + how_w + 24.0 * u + sw_w)) } else { w };
-    let top_x = max(room.x, min(x, whole.x + floor(0.5 * (whole.z - top_w) + 0.5)));
+    let top_wanted = if beside { min(top_room.z, max(w, title_width(g) + how_w + 24.0 * u + sw_w)) } else { w };
+    let top_x = max(top_room.x, min(x, whole.x + floor(0.5 * (whole.z - top_wanted) + 0.5)));
+    let top_w = min(top_wanted, top_room.x + top_room.z - top_x);
     var top = float4 { top_x, y, top_w, if beside { sw_h } else { gui::tap() * u } };
     if !landscape {
         if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }

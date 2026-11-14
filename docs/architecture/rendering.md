@@ -833,8 +833,8 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   doesn't fit (a small window, a 9:16 phone with its insets) they keep it and scroll, in
   either orientation. They center on the screen:
   in a tablet's landscape the title and the rows start below back, so they take the
-  whole width, or, where they reach up beside back (Today's row open, a 16:9 tablet),
-  keep back's clearance on both sides as long as they still fit the height; in a phone's, where
+  whole width; where only the title row reaches up beside back (Today's row open), the
+  title row keeps clear of back and the rows under it still take the whole width; in a phone's, where
   the rows reach back's height, they center as far as clearing back allows. A row opens the theme's
   page: back (at the left in landscape, in the head in portrait), the theme's mark,
   name, and count, over its levels as glass rows, each its level's mark (three rising
