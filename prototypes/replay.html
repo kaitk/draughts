@@ -8,19 +8,22 @@
 <script src="draughts.js"></script>
 <style>
   /* A past game's replay (docs/architecture/rendering.md, "A game's replay"), opened at
-     move 20 of the shared game, white's blunder; the steps work (the arrows, the keys,
-     the list). What task 087 adds, its takes as ?take=a|b|c|d (the script says each):
+     move 20 of the shared game, white's blunder, or at ?ply=N (60: black's king capture,
+     30x39x50); the steps work (the arrows, the keys, the list). What task 087 adds, as
+     the user settled it (2026-11-14):
      - The move shown, once its piece has arrived (a step on plays it; any other step
-       shows it at once): a faded piece where it started, the squares it went through
-       shaded, and its way in dots (the user's pick, 2026-11-14).
-     - The best move from the position shown, none where the move is forced (the glass
-       says the side must take, or has one move); after a marked move the glass says
-       which was best instead.
+       shows it at once): a faded piece where it started, its way in dots, a larger dot
+       at each stop of a capture, and the squares it stood on shaded (where it started,
+       each stop, where it ended; not the squares it passed over).
+     - The best move from the position shown, on the board only when asked for: the bulb
+       tile under the steps, or a tap on the glass's line for it, shows it as the hint
+       (a ring on its piece, a light ghost and a ring where it goes, a ring at each stop)
+       and keeps it on through the steps until turned off. None where the move is forced:
+       the glass says the side must take, or has one move. After a marked move the glass
+       says which was best instead.
      - A desktop's large window: the board, the steps, and a column of at most 760 dp
        centered as one, the column's words half again as large, taps 64 dp (task 069).
-     ?grid=1 shows the four takes' boards side by side, at move 30's king capture, with
-     the steps over them; a board's tap opens its take. Portrait: the head, the board,
-     the steps in a row, the glass. */
+     Portrait: the head, the board, the steps in a row, the glass. */
   .rep { --k: 1; --tap: 88px; --col: 1fr; display: grid; grid-template-columns: var(--tap) auto minmax(300px, var(--col)); gap: 24px; }
   .steps { display: flex; flex-direction: column; justify-content: center; gap: 16px; }
   .steps .tile { padding: 0; min-width: var(--tap); min-height: var(--tap); }
@@ -43,6 +46,8 @@
   .say b { font-weight: 700; color: var(--fg); }
   .say .icon { flex: none; width: calc(22px * var(--k)); height: calc(22px * var(--k)); color: var(--glow); }
   .say[hidden] { display: none; }
+  .say.ask { cursor: pointer; }
+  .say.ask.on .icon { fill: color-mix(in srgb, var(--glow) 35%, transparent); }
   .rule { border-bottom: 1px solid rgb(255 255 255 / 0.12); margin-top: 10px; }
   .acc { display: grid; grid-template-columns: calc(30px * var(--k)) 1fr 1fr; padding: 8px 0 4px; font-size: calc(17px * var(--k)); }
   .acc span { display: flex; gap: 6px; align-items: center; }
@@ -72,9 +77,6 @@
   .trail circle { fill: var(--glow); }
   .trail .stop { fill: none; stroke: var(--glow); stroke-width: 0.06; }
   .trail path { fill: none; stroke: var(--glow); stroke-width: 0.07; stroke-dasharray: 0.16 0.14; stroke-linecap: round; }
-  .trail.best circle { fill: rgb(255 255 255 / 0.9); }
-  .trail.best .stop { fill: none; stroke: rgb(255 255 255 / 0.9); }
-  .bestring { position: absolute; inset: 14%; z-index: 2; border-radius: 50%; border: calc(0.45 * var(--u)) dashed rgb(255 255 255 / 0.9); }
   .mover { position: absolute; inset: 1.1%; pointer-events: none; z-index: 3; }
   .mover > div { position: absolute; width: 10%; height: 10%; left: 0; top: 0; }
   .piece.gone { visibility: hidden; }
@@ -101,16 +103,6 @@
     #board { width: min(var(--h) - 26px * var(--k), var(--w) - var(--tap) - 420px - 48px); }
     .steps .tile .icon { width: 30px; height: 30px; }
   }
-  /* ?grid=1: the takes side by side. */
-  .grid { display: flex; flex-direction: column; gap: 16px; }
-  .grid .bar { display: flex; gap: 12px; align-items: center; }
-  .grid .bar .tile { min-width: 72px; min-height: 72px; padding: 0; }
-  .grid .bar .tile.dim { opacity: 0.35; }
-  .grid #gmove { margin-left: 12px; font-size: 26px; }
-  .cells { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-items: start; }
-  .cell { display: flex; flex-direction: column; gap: 10px; font-size: 18px; color: var(--fg-dim); }
-  .cell .board { width: 100%; }
-  @container (orientation: portrait) { .cells { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
 <body data-screen="board">
@@ -118,7 +110,7 @@
   <div class="steps">
     <a class="tile glass" data-icon="first" data-go="first"></a><a class="tile glass" data-icon="left" data-go="back"></a>
     <a class="tile glass" data-icon="right" data-go="on"></a><a class="tile glass" data-icon="last" data-go="last"></a>
-    <span class="sep"></span><a class="tile glass on" data-icon="hint" id="besttile" title="Best move"></a>
+    <span class="sep"></span><a class="tile glass" data-icon="hint" id="besttile" title="Best move"></a>
   </div>
   <div class="mid"><div class="note" id="note">A game from here doesn't count: it isn't saved and doesn't change your rating</div><div id="board"></div></div>
   <div class="col">
@@ -136,25 +128,8 @@
     </section>
   </div>
 </main>
-<main class="screen grid">
-  <div class="bar"><a class="tile glass" data-icon="first" data-go="first"></a><a class="tile glass" data-icon="left" data-go="back"></a>
-    <a class="tile glass" data-icon="right" data-go="on"></a><a class="tile glass" data-icon="last" data-go="last"></a><span id="gmove"></span></div>
-  <div class="cells" id="cells"></div>
-</main>
 <script>
   const D = Draughts, Q = new URLSearchParams(location.search);
-  // The takes (task 087), the way always as dots (the user, 2026-11-14):
-  // a: the whole way shaded, the best move in the hint's look (a ring on its piece, a
-  //    light ghost and a ring where it goes), the bulb tile turning it off and on;
-  // b: as a, only the first and last squares shaded, as built;
-  // c: the whole way shaded, the best move as a second way in white dots to a dashed
-  //    ring, no ghost, with the bulb tile;
-  // d: the whole way shaded, the best move in the glass's words only.
-  const TAKES = { a: { shade: 'path', best: 'hint' }, b: { shade: 'ends', best: 'hint' },
-    c: { shade: 'path', best: 'trail' }, d: { shade: 'path', best: 'none' } };
-  const NAMES = { a: 'a: the whole way, the best move as the hint', b: 'b: only its ends, the best move as the hint',
-    c: 'c: the whole way, the best move as white dots', d: 'd: the whole way, the best move in words only' };
-  const TAKE = TAKES[Q.get('take')] ? Q.get('take') : 'a', GRID = Q.get('grid') === '1';
 
   // The shared game with each capture's whole way and, for each position, the move the
   // engine judged best there (src/ai/judge.goose at the judge's depth; none where the
@@ -202,7 +177,7 @@
 
   // A way's dots, from square centre to centre, clear of the pieces at its ends, and a
   // larger dot at each stop between.
-  function dots(w, cls) {
+  function dots(w) {
     const pts = w.map((n) => { const [x, r] = xy(n); return [x + 0.5, r + 0.5]; });
     let svg = '';
     for (let i = 1; i < pts.length; i++) {
@@ -214,15 +189,15 @@
       }
     }
     for (let i = 1; i < pts.length - 1; i++) svg += `<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="0.12"/>`;
-    return `<svg class="trail ind ${cls}" viewBox="0 0 10 10">${svg}</svg>`;
+    return `<svg class="trail ind" viewBox="0 0 10 10">${svg}</svg>`;
   }
 
-  let ply = GRID ? 60 : 39, best = true;
+  let ply = +Q.get('ply') || 39, best = false;
   const anims = [];
 
-  // Board el at ply k under take t. moving: the move into k plays first, its piece
+  // Board el at ply k. moving: the move into k plays first, its piece
   // hidden at its square under a mover, the pieces it takes there until it passes them.
-  function draw(el, k, moving, t) {
+  function draw(el, k, moving) {
     const p = POS[k], opts = { n: 10, view: 'flat', white: [], black: [], kings: [], marks: {} };
     const put = (n, c) => { opts[c.toLowerCase() === 'w' ? 'white' : 'black'].push(alg(n)); if (c === 'W' || c === 'B') opts.kings.push(alg(n)); };
     for (const [n, c] of Object.entries(p)) put(n, c);
@@ -234,26 +209,20 @@
     let html = '';
     if (g) {
       const w = ways(g.m), from = w[0], to = w[w.length - 1];
-      // The squares it went through, its last a little more.
-      const shaded = t.shade === 'path' ? passes(w) : [from, to];
-      for (const s of shaded) sq(s).insertAdjacentHTML('afterbegin', `<div class="shade ind${s === to ? ' end' : ''}"></div>`);
+      // The squares it stood on, its last a little more.
+      for (const s of w) sq(s).insertAdjacentHTML('afterbegin', `<div class="shade ind${s === to ? ' end' : ''}"></div>`);
       sq(from).insertAdjacentHTML('beforeend', `<div class="piece ghost ind ${pieceOf(POS[k - 1][from])}"></div>`);
       const disc = { '*': ['var(--glow)', D.icon('star')], '?!': ['#ffd75a', '?!'], '?': ['#ff9a3c', '?'], '??': ['var(--forced)', '??'] }[MARK[k - 1]];
       if (disc) sq(to).insertAdjacentHTML('beforeend', `<span class="mark ind" style="--c: ${disc[0]}; color: #fff">${disc[1]}</span>`);
-      html += dots(w, '');
+      html += dots(w);
     }
-    // The best move from here: none where the move is forced.
+    // The best move from here, when asked for: none where the move is forced.
     const b = GAME[k] && GAME[k].b;
-    if (b && best && t.best !== 'none') {
+    if (b && best) {
       const w = ways(b), from = w[0], to = w[w.length - 1];
-      if (t.best === 'hint') {
-        sq(from).insertAdjacentHTML('beforeend', '<div class="ringmark ind"></div>');
-        sq(to).insertAdjacentHTML('beforeend', `<div class="piece hintghost ${pieceOf(p[from])}"></div><div class="ringmark ind"></div>`);
-        for (const s of w.slice(1, -1)) sq(s).insertAdjacentHTML('beforeend', '<div class="target via ind"></div>');
-      } else {
-        html += dots(w, 'best');
-        sq(to).insertAdjacentHTML('beforeend', '<div class="bestring ind"></div>');
-      }
+      sq(from).insertAdjacentHTML('beforeend', '<div class="ringmark ind"></div>');
+      sq(to).insertAdjacentHTML('beforeend', `<div class="piece hintghost ${pieceOf(p[from])}"></div><div class="ringmark ind"></div>`);
+      for (const s of w.slice(1, -1)) sq(s).insertAdjacentHTML('beforeend', '<div class="target via ind"></div>');
     }
     el.insertAdjacentHTML('beforeend', html);
     D.paint();
@@ -297,6 +266,8 @@
     better.hidden = !(g && ['?!', '?', '??'].includes(mk) && g.b && g.b !== g.m);
     if (!better.hidden) better.innerHTML = `${D.icon('star')}<span>The best was <b>${g.b}</b></span>`;
     const next = document.getElementById('next'), here = GAME[ply];
+    next.classList.toggle('ask', !!(here && here.b));
+    next.classList.toggle('on', best);
     next.innerHTML = !here ? `${D.icon('crown')}<span>The game ended here</span>`
       : here.b ? `${D.icon('hint')}<span>Best next for ${here.who}: <b>${here.b}</b></span>`
       : `${D.icon('lock')}<span>${here.who[0].toUpperCase() + here.who.slice(1)} ${here.m.includes('x') ? 'must take' : 'has one move'}: <b>${here.m}</b></span>`;
@@ -312,13 +283,8 @@
   function show(k, moving) {
     while (anims.length) anims[0].finish();
     ply = Math.max(0, Math.min(N, k));
-    if (GRID) {
-      for (const el of document.querySelectorAll('.cell .board')) draw(el, ply, moving, TAKES[el.dataset.take]);
-      document.getElementById('gmove').innerHTML = GAME[ply - 1] ? `${label(ply - 1)} ${D.mark(MARK[ply - 1] || '')}` : 'The start';
-    } else {
-      draw(document.getElementById('board'), ply, moving, TAKES[TAKE]);
-      glass();
-    }
+    draw(document.getElementById('board'), ply, moving);
+    glass();
     document.querySelectorAll('[data-go="first"], [data-go="back"]').forEach((t) => t.classList.toggle('dim', ply === 0));
     document.querySelectorAll('[data-go="on"], [data-go="last"]').forEach((t) => t.classList.toggle('dim', ply === N));
   }
@@ -333,20 +299,15 @@
     if (e.key === 'ArrowRight' && ply < N) show(ply + 1, true);
     if (e.key === 'ArrowLeft') show(ply - 1);
   });
-  if (GRID) {
-    document.querySelector('main.rep').remove();
-    const rest = location.search.replace(/[?&](grid|take)=[^&]*/g, '').replace(/^&/, '');
-    document.getElementById('cells').innerHTML = Object.keys(TAKES).map((k) =>
-      `<a class="cell" href="?take=${k}${rest ? '&' + rest : ''}"><div class="board" data-take="${k}"></div><span>${NAMES[k]}</span></a>`).join('');
-    document.querySelectorAll('.cell .board').forEach((el) => D.board(el, { n: 10, view: 'flat' }));
-  } else {
-    document.querySelector('main.grid').remove();
-    document.getElementById('rows').addEventListener('click', (e) => { const m = e.target.closest('[data-ply]'); if (m) show(+m.dataset.ply); });
-    const tile = document.getElementById('besttile');
-    if (TAKES[TAKE].best === 'none') tile.remove(); else tile.addEventListener('click', () => { best = !best; tile.classList.toggle('on', best); show(ply); });
-    document.getElementById('legend').innerHTML = [['*', 'best'], ['?!', 'not the best'], ['?', 'a mistake'], ['??', 'a blunder']]
-      .map(([k, w]) => `<span>${D.mark(k)} ${w}</span>`).join('');
-  }
+  document.getElementById('rows').addEventListener('click', (e) => { const m = e.target.closest('[data-ply]'); if (m) show(+m.dataset.ply); });
+  // The best move on the board: asked for by the bulb tile or the glass's line, kept
+  // through the steps.
+  const tile = document.getElementById('besttile');
+  const ask = () => { best = !best; tile.classList.toggle('on', best); show(ply); };
+  tile.addEventListener('click', ask);
+  document.getElementById('next').addEventListener('click', () => { if (GAME[ply] && GAME[ply].b) ask(); });
+  document.getElementById('legend').innerHTML = [['*', 'best'], ['?!', 'not the best'], ['?', 'a mistake'], ['??', 'a blunder']]
+    .map(([k, w]) => `<span>${D.mark(k)} ${w}</span>`).join('');
   D.init();
   show(ply);
 </script>

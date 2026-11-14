@@ -22,23 +22,21 @@ The user's notes on the results and the replay (2026-11-14):
 opened at move 20, white's blunder. `?device=desktop` and `?device=ultrawide` show a 27"
 and a 34" ultrawide's full window.
 
-The move shown: the piece at 30% where it started, its way in dots (the user's pick of
-dots, a dashed line, or none, 2026-11-14), a larger dot at a capture's stop, and the
-squares shaded. All of it, with the mark's disc, fades in over 0.25 s once a step's piece
-has slid in; a jump or a step back shows it at once. A forced move shows no best move on
-the board; the glass says "Black must take: 22x33x24" (or "has one move").
+Settled with the user (2026-11-14):
 
-The first round's separate options showed too little difference at move 20, a one-square
-step (the user), so they are four takes, `?take=a|b|c|d`, and `?grid=1` shows all four
-side by side at move 30's king capture (30x39x50), the steps working over them:
-
-- a: the whole way shaded, the best move as the hint (a ring on its piece, a light ghost
-  and a ring where it goes), the bulb tile under the steps turning it off and on.
-- b: as a, only the first and last squares shaded, as built.
-- c: the whole way shaded, the best move as a second way in white dots to a dashed ring,
-  no ghost, with the bulb tile.
-- d: the whole way shaded, the best move in the glass's words only.
-
+- The move shown: the piece at 30% where it started, its way in dots (dots, a dashed
+  line, or none: dots), a larger dot at a capture's stop, and the squares it stood on
+  shaded, where it started, each stop, and where it ended, the last a little more;
+  neither the squares it passed over (a take shading the whole way was wrong: the user
+  meant each stop) nor only its ends, as built. All of it, with the mark's disc, fades
+  in over 0.25 s once a step's piece has slid in; a jump or a step back shows it at once.
+- The best move as the hint (a ring on its piece, a light ghost and a ring where it
+  goes, a ring at each stop), on the board only when asked for: the bulb tile under the
+  steps, or a tap on the glass's line for it, turns it on, and it stays on through the
+  steps until turned off. Set aside: white dots to a dashed ring, and words only.
+- A forced move shows no best move on the board; the glass says "Black must take:
+  22x33x24" (or "has one move").
+- `?ply=60` opens at black's king capture (30x39x50), where the stops show.
 - The glass: under the move shown, after a ?!, ?, or ?? move, "The best was 31-26" with
   the star; then the line for the next move ("Best next for white: 31-26", or forced,
   or "The game ended here").
@@ -63,9 +61,9 @@ marks are made up and disagree with the engine's in places (the engine finds 15-
       the best exact score), the line needs a field (`best=`, a move per ply, empty where
       forced or not judged). Games already written have none: the replay then shows no
       best move.
-- [ ] The replay's board: the faded piece, the shaded way, the trail, after the move's
+- [ ] The replay's board: the faded piece, the shaded stops, the dots, after the move's
       animation; the best move as the hint's ghost and rings (`board::ghost_on`,
-      `glow_on`), under the chosen take.
+      `glow_on`) while asked for, with the bulb tile in the steps' column.
 - [ ] The replay's glass: the best-was and best-next lines (strings in English and
       Estonian).
 - [ ] A desktop's replay and results as the prototype: a capped column and list, larger
@@ -75,7 +73,7 @@ marks are made up and disagree with the engine's in places (the engine finds 15-
 
 ## Acceptance criteria
 
-- [ ] The takes chosen by the user
+- [x] The takes chosen by the user (2026-11-14)
 - [ ] Built, with headless tests of the history's best moves and the replay's marks
 - [ ] Shot on Windows at 1280 × 800, 2560 × 1440, and 3440 × 1440, then the tablet over
       USB
