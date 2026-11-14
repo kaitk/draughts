@@ -9,12 +9,18 @@
 //                                            checks say of a puzzle made of that line
 //   build/puzzles find SIDE GOAL MOVES MINE THEIRS COUNT [SEED [KINGS [CORE]]]
 //                                            game-like positions that make a puzzle: see find
+//   build/puzzles batch SEED [PER [SECONDS]] the daily library's puzzles, every kind (KINDS);
+//                                            with --traps, the trap kinds (TRAP_KINDS)
+//   build/puzzles games SEED [GAMES [SKILL [NODES]]]  puzzles from the computer's games
+//   build/puzzles rate FILE                  each puzzle's difficulty estimate
+//   build/puzzles tempt FILE                 a library's traps, by kind and band (tempts)
 //
 // try and find take `--variant NAME` (international by default; russian, brazilian) for
 // the rules and the board, and find `--rows N`, the rows from its own back row a side's
-// camp spans (the board's size less 3 by default: 7 of 10, 5 of 8), and `--tempo`: a take
+// camp spans (the board's size less 3 by default: 7 of 10, 5 of 8), `--tempo`: a take
 // in more moves starts with a free tempo, a quiet move no reply captures after, rather
-// than a shot.
+// than a shot, and `--trap MASK`: only puzzles with a trap of those kinds (tempts' bits:
+// 1 crown, 2 bigger, 4 grab, 16 run, 32 any).
 //
 // For each puzzle it prints its theme, level, goal, pieces, the moves that solve it, and
 // what the checks found (puzzles::check), and the moves it turns down that win as much
@@ -35,6 +41,8 @@ let LOSING = -50;           // a root score this far under even loses material (
 var variant: u8 = rules::INTERNATIONAL;
 var camp_rows = 0;
 var tempo = false;          // find: a take in more moves starts with a quiet move, not a shot
+var trap_mask = 0;          // find: keep only puzzles with a trap of these kinds (TEMPT_NAMES' bits), --trap MASK
+var traps = false;          // batch: run TRAP_KINDS, --traps
 
 // The computer's view of pz: its best move, and every move it scores within 50 of that,
 // appended to out, each marked if it doesn't solve the puzzle; then any right first
@@ -316,7 +324,7 @@ fn find(side: i64, goal: const u8[:], k: i64, mine: i64, theirs: i64, count: i64
         let p = placed(r, mine, theirs, kings, core);
         var pz = puzzle_of(p, goal, k);
         var line: u8[>..] = [];
-        guard candidate(s, pz, line, st, if tempo { TEMPO } else { SHOT }) else { continue; }
+        guard candidate(s, pz, line, st, if tempo { TEMPO } else { SHOT }, trap_mask) else { continue; }
         var black: u8[>..] = [];
         if side == rules::BLACK { guard turn(s, pz, black) else { continue; } }
         let shown: const u8[:] = if side == rules::BLACK { black[..] } else { line[..] };
@@ -328,19 +336,62 @@ fn find(side: i64, goal: const u8[:], k: i64, mine: i64, theirs: i64, count: i64
 // A game-like position for find: the solver's `mine` men in a camp, white to move,
 // `kings` of them made kings, and the other side's `theirs`, round core's men; its
 // piece counts short when the camps had no room.
-fn placed(r: rng&, mine: i64, theirs: i64, kings: i64, core: rules::Position) -> rules::Position {
+fn placed(r: rng&, mine: i64, theirs: i64, kings: i64, core: rules::Position, runners: i64 = 0, short_by: i64 = 1,
+          baits: i64 = 0) -> rules::Position {
     var p = core;
     p.side = rules::WHITE;
     p.variant = variant;
-    camp(p, r, rules::WHITE, mine - popcount(core.pieces[0]), kings);
-    camp(p, r, rules::BLACK, theirs - popcount(core.pieces[1]), 0);
+    run_ahead(p, r, runners, short_by);
+    camp(p, r, rules::WHITE, mine - popcount(p.pieces[0]), kings);
+    camp(p, r, rules::BLACK, theirs - popcount(core.pieces[1]) - baits, 0);
+    bait(p, r, baits);
     return p;
+}
+
+// Places `n` black men each in front of a white man with the square beyond it free, so
+// white has captures to choose from (a trap's bigger capture).
+fn bait(p: rules::Position&, r: rng&, n: i64) {
+    let v .= rules::VARIANTS[variant];
+    var placed_n = 0;
+    var tries = 0;
+    while placed_n < n && tries < 1000 {
+        tries++;
+        let x = rand_int(r, v.size);
+        let y = rand_int(r, v.size);
+        let w = rules::bit_at(v, x, y);
+        guard w >= 0 && p.pieces[0] & rules::bit(w) != 0 else { continue; }
+        let dx = if rand_int(r, 2) == 0 { -1 } else { 1 };
+        let a = rules::bit_at(v, x + dx, y + 1);
+        let b = rules::bit_at(v, x + 2 * dx, y + 2);
+        guard a >= 0 && b >= 0 && (p.pieces[0] | p.pieces[1]) & (rules::bit(a) | rules::bit(b)) == 0 else { continue; }
+        guard v.promotion[1] & rules::bit(a) == 0 else { continue; }
+        p.pieces[1] |= rules::bit(a);
+        placed_n++;
+    }
+}
+
+// Places `n` white men on free squares of the row `short_by` rows short of crowning (1:
+// the row before it), where a trap's habit moves start: crowning at once, or running to
+// the row before crowning.
+fn run_ahead(p: rules::Position&, r: rng&, n: i64, short_by: i64) {
+    let v .= rules::VARIANTS[variant];
+    let y = v.size - 1 - short_by;
+    var placed_n = 0;
+    var tries = 0;
+    while placed_n < n && tries < 100 {
+        tries++;
+        let b = rules::bit_at(v, rand_int(r, v.size), y);
+        guard b >= 0 && (p.pieces[0] | p.pieces[1]) & rules::bit(b) == 0 else { continue; }
+        p.pieces[0] |= rules::bit(b);
+        placed_n++;
+    }
 }
 
 // How far positions get through candidate's filters, for the pass rates.
 struct Stages {
     tried:  i64 = 0,            // positions looked at
     cheap:  i64 = 0,            // past the cheap guards: moves to choose from, no capture for the other side
+    lured:  i64 = 0,            // a trap asked for: a habit's move that loses (lure)
     solved: i64 = 0,            // the goal forced in k and not fewer
     shaped: i64 = 0,            // a line the screen plays, of the shape asked
     sound:  i64 = 0,            // every check passed
@@ -350,6 +401,7 @@ struct Stages {
 let SHOT = 0;               // every reply to the first move is a capture
 let TEMPO = 1;              // no reply is a capture, and each gives men
 let EITHER = 2;             // any quiet first move (positions from games)
+let CAPTURE_FIRST = 3;      // a capture due, a choice among captures (Russian's bigger capture)
 
 // Whether pz, its start, goal, and moves set, makes a puzzle: exactly one right move at
 // each of the solver's turns within its moves and not fewer, every check passed
@@ -357,9 +409,10 @@ let EITHER = 2;             // any quiet first move (positions from games)
 // more moves starts as `first` says; a one-move take has a capture due. Each has two
 // moves at least to choose from. The other side has no capture were it to move; for the
 // safe move it has a shot (puzzles::shot), the threat the move answers, and the solver
-// has no capture due. Sets pz's one line, its text in `line`, and counts in st how far
-// it got.
-fn candidate(s: puzzles::Solver&, pz: puzzles::Puzzle&, line: u8[>..]&, st: Stages&, first: i64) -> bool {
+// has no capture due. With `trap` (tempts' bits) it is a trap puzzle: a wrong first move
+// of one of those habits loses (tempts), looked for cheaply before the solver's search
+// (lure). Sets pz's one line, its text in `line`, and counts in st how far it got.
+fn candidate(s: puzzles::Solver&, pz: puzzles::Puzzle&, line: u8[>..]&, st: Stages&, first: i64, trap: i64 = 0) -> bool {
     let p = pz.start;
     let k = pz.moves;
     var legal: rules::Moves = [];
@@ -371,8 +424,9 @@ fn candidate(s: puzzles::Solver&, pz: puzzles::Puzzle&, line: u8[>..]&, st: Stag
     rules::generate(p, legal);
     let take = pz.goal == puzzles::TAKE;
     let safe = pz.goal == puzzles::SAFE;
-    guard legal.len >= 2 && (!take || (legal[0].captured != 0) == (k == 1)) && (!safe || legal[0].captured == 0)
-    else { return false; }
+    let due = legal.len > 0 && legal[0].captured != 0;
+    let due_ok = if first == CAPTURE_FIRST { due } else { due == (k == 1) };
+    guard legal.len >= 2 && (!take || due_ok) && (!safe || legal[0].captured == 0) else { return false; }
     var q = p;
     q.side = 1 - p.side;
     rules::generate(q, legal);
@@ -381,15 +435,23 @@ fn candidate(s: puzzles::Solver&, pz: puzzles::Puzzle&, line: u8[>..]&, st: Stag
     puzzles::begin(s, pz);
     // The threat a safe move answers: were the other side to move, it would have a shot.
     guard !safe || puzzles::shot(s, q, puzzles::SAFE_DEPTH) else { return false; }
+    if trap != 0 {
+        guard lure(s, pz, trap) else { return false; }
+        st.lured++;
+        puzzles::begin(s, pz);
+    }
     guard puzzles::wins(s, p, k) && (k == 1 || !puzzles::wins(s, p, k - 1)) else { return false; }
     st.solved++;
     guard screen_line(s, pz, line) else { return false; }
-    if take && k > 1 && first != EITHER {
+    if take && k > 1 && first != EITHER && first != CAPTURE_FIRST {
         // A shot: every reply to the first move is a capture; or a free tempo: none is,
         // and each gives men.
         let p1 = puzzles::after(p, puzzles::as_played(p, pz.lines[0].plies[0], legal));
         rules::generate(p1, legal);
         guard legal.len > 0 && (legal[0].captured != 0) == (first == SHOT) else { return false; }
+    }
+    if trap != 0 {
+        guard tempts(s, pz) & trap != 0 else { return false; }
     }
     st.shaped++;
     var out:  u8[>..] = [];
@@ -502,12 +564,17 @@ fn fresh(pz: puzzles::Puzzle&) -> bool {
     return true;
 }
 
-// Keeps the course's puzzles (the variant's built-in set), so none is found again.
+// Keeps the course's puzzles (the variant's built-in set) and the built-in library's, so
+// none is found again.
 fn keep_course() {
     var set = puzzles::Set { list: [] };
     var err: u8[>..] = [];
     guard puzzles::parse(puzzles::file(variant), set, err) else { abort(err); }
     for pz in set.list { fresh(pz); }
+    guard puzzles::load_library(variant) else { abort("the built-in library doesn't read"); }
+    let text = puzzles::library_file(variant);
+    var pz = puzzle_of(rules::start(variant), "win", 1);
+    for i in puzzles::library.list.len { if puzzles::entry_of(text, puzzles::library, i, pz) { fresh(pz); } }
 }
 
 // A puzzle as the library writes it, one a line: theme and level, goal, position, line,
@@ -518,42 +585,86 @@ fn entry(pz: puzzles::Puzzle&, line: const u8[:], source: const u8[:]) {
           " | ", line, " | ", source);
 }
 
+// The habits a trap catches, a bit each (tempts): crowning at once, the bigger capture,
+// a grab that wins at a glance, running to the row before crowning; and give to win,
+// which no trap is, and any of the four.
+let CROWN_TRAP = 1;
+let BIGGER = 2;
+let GRAB = 4;
+let GIVE = 8;
+let RUN = 16;
+let ANY_TRAP = 32;
+
 // A kind of puzzle batch looks for: the goal and moves, the men in the camps, kings, and
 // how a take in more moves starts.
 struct Kind {
-    name:   const u8[:],
-    goal:   const u8[:],
-    k:      i64,
-    mine:   i64,
-    theirs: i64,
-    kings:  i64,
-    first:  i64,
-    share:  i64,            // batch keeps PER times this many: the hard kinds more, so the library reaches far past the course
+    name:     const u8[:],
+    goal:     const u8[:],
+    k:        i64,
+    mine:     i64,
+    theirs:   i64,
+    kings:    i64,
+    first:    i64,
+    share:    i64,          // batch keeps PER times this many: the hard kinds more, so the library reaches far past the course
+    trap:     i64 = 0,      // a trap puzzle of these kinds (tempts' bits), else 0
+    runners:  i64 = 0,      // men of the solver's placed `short_by` rows short of crowning, round which the camps go
+    short_by: i64 = 1,
+    baits:    i64 = 0,      // men of the other side's placed where the solver's men can take them (bait)
 }
 
 // The kinds batch runs, easy to hard: more men round a motif make it harder to see, and
 // more moves harder to read.
 let KINDS: Kind[] = [
-    Kind { name: "capture-8", goal: "take 2", k: 1, mine: 8, theirs: 8, kings: 0, first: SHOT, share: 1 },
-    Kind { name: "capture-13", goal: "take 3", k: 1, mine: 13, theirs: 13, kings: 0, first: SHOT, share: 1 },
-    Kind { name: "shot2-10", goal: "take 2", k: 2, mine: 10, theirs: 10, kings: 0, first: SHOT, share: 1 },
-    Kind { name: "shot2-15", goal: "take 2", k: 2, mine: 15, theirs: 15, kings: 0, first: SHOT, share: 3 },
-    Kind { name: "shot3-12", goal: "take 3", k: 2, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3 },
-    Kind { name: "shot3m-12", goal: "take 2", k: 3, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3 },
-    Kind { name: "shot3m-14", goal: "take 2", k: 3, mine: 14, theirs: 14, kings: 0, first: SHOT, share: 3 },
-    Kind { name: "shot4m-14", goal: "take 2", k: 4, mine: 14, theirs: 14, kings: 0, first: SHOT, share: 3 },
-    Kind { name: "shot3t-12", goal: "take 3", k: 3, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3 },
-    Kind { name: "shot4m-12", goal: "take 2", k: 4, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3 },
-    Kind { name: "tempo-10", goal: "take 1", k: 2, mine: 10, theirs: 10, kings: 0, first: TEMPO, share: 1 },
-    Kind { name: "crown1-7", goal: "crown", k: 1, mine: 7, theirs: 7, kings: 0, first: SHOT, share: 1 },
-    Kind { name: "crown2-8", goal: "crown", k: 2, mine: 8, theirs: 8, kings: 0, first: SHOT, share: 1 },
-    Kind { name: "crown3-9", goal: "crown", k: 3, mine: 9, theirs: 9, kings: 0, first: SHOT, share: 3 },
-    Kind { name: "king1-8", goal: "take 3", k: 1, mine: 8, theirs: 9, kings: 1, first: SHOT, share: 1 },
-    Kind { name: "king2-9", goal: "take 2", k: 2, mine: 9, theirs: 10, kings: 1, first: SHOT, share: 1 },
-    Kind { name: "king3-10", goal: "take 2", k: 3, mine: 10, theirs: 11, kings: 1, first: SHOT, share: 3 },
-    Kind { name: "king3-12", goal: "take 2", k: 3, mine: 12, theirs: 13, kings: 1, first: SHOT, share: 3 },
-    Kind { name: "safe-10", goal: "safe", k: 1, mine: 10, theirs: 10, kings: 0, first: SHOT, share: 1 },
-    Kind { name: "safe-15", goal: "safe", k: 1, mine: 15, theirs: 15, kings: 0, first: SHOT, share: 3 },
+    Kind { name: "capture-8", goal: "take 2", k: 1, mine: 8, theirs: 8, kings: 0, first: SHOT, share: 1, .. },
+    Kind { name: "capture-13", goal: "take 3", k: 1, mine: 13, theirs: 13, kings: 0, first: SHOT, share: 1, .. },
+    Kind { name: "shot2-10", goal: "take 2", k: 2, mine: 10, theirs: 10, kings: 0, first: SHOT, share: 1, .. },
+    Kind { name: "shot2-15", goal: "take 2", k: 2, mine: 15, theirs: 15, kings: 0, first: SHOT, share: 3, .. },
+    Kind { name: "shot3-12", goal: "take 3", k: 2, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3, .. },
+    Kind { name: "shot3m-12", goal: "take 2", k: 3, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3, .. },
+    Kind { name: "shot3m-14", goal: "take 2", k: 3, mine: 14, theirs: 14, kings: 0, first: SHOT, share: 3, .. },
+    Kind { name: "shot4m-14", goal: "take 2", k: 4, mine: 14, theirs: 14, kings: 0, first: SHOT, share: 3, .. },
+    Kind { name: "shot3t-12", goal: "take 3", k: 3, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3, .. },
+    Kind { name: "shot4m-12", goal: "take 2", k: 4, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3, .. },
+    Kind { name: "tempo-10", goal: "take 1", k: 2, mine: 10, theirs: 10, kings: 0, first: TEMPO, share: 1, .. },
+    Kind { name: "crown1-7", goal: "crown", k: 1, mine: 7, theirs: 7, kings: 0, first: SHOT, share: 1, .. },
+    Kind { name: "crown2-8", goal: "crown", k: 2, mine: 8, theirs: 8, kings: 0, first: SHOT, share: 1, .. },
+    Kind { name: "crown3-9", goal: "crown", k: 3, mine: 9, theirs: 9, kings: 0, first: SHOT, share: 3, .. },
+    Kind { name: "king1-8", goal: "take 3", k: 1, mine: 8, theirs: 9, kings: 1, first: SHOT, share: 1, .. },
+    Kind { name: "king2-9", goal: "take 2", k: 2, mine: 9, theirs: 10, kings: 1, first: SHOT, share: 1, .. },
+    Kind { name: "king3-10", goal: "take 2", k: 3, mine: 10, theirs: 11, kings: 1, first: SHOT, share: 3, .. },
+    Kind { name: "king3-12", goal: "take 2", k: 3, mine: 12, theirs: 13, kings: 1, first: SHOT, share: 3, .. },
+    Kind { name: "safe-10", goal: "safe", k: 1, mine: 10, theirs: 10, kings: 0, first: SHOT, share: 1, .. },
+    Kind { name: "safe-15", goal: "safe", k: 1, mine: 15, theirs: 15, kings: 0, first: SHOT, share: 3, .. },
+];
+
+// The trap puzzles' kinds (task 088, "the obvious move is wrong"), which batch runs with
+// --traps: each keeps a puzzle only if a wrong first move of its habit loses (tempts),
+// most round men placed where the habit starts. A crown trap: a man one step from
+// crowning, whose king is caught; the bigger capture: Russian's free choice, black men
+// placed where white can take them; a run: a man two steps from crowning, taken on the
+// row before it. Grabs had kinds of their own and found none the library lacked in 3 min
+// a draughts (2026-11-14): too rare in camps for the filter alone. A crown trap in a
+// crown puzzle can't be one (the king caught makes crowning at once no crown), nor any
+// trap in a safe move's (its wrong moves must leave no capture due).
+let TRAP_KINDS: Kind[] = [
+    Kind { name: "crowntrap-t1", goal: "take 1", k: 2, mine: 10, theirs: 10, kings: 0, first: EITHER, share: 1,
+           trap: CROWN_TRAP, runners: 1, short_by: 1 },
+    Kind { name: "crowntrap-s2", goal: "take 2", k: 2, mine: 10, theirs: 10, kings: 0, first: SHOT, share: 1,
+           trap: CROWN_TRAP, runners: 1, short_by: 1 },
+    Kind { name: "crowntrap-t2", goal: "take 2", k: 2, mine: 12, theirs: 12, kings: 0, first: EITHER, share: 1,
+           trap: CROWN_TRAP, runners: 1, short_by: 1 },
+    Kind { name: "bigger-1", goal: "take 1", k: 1, mine: 9, theirs: 9, kings: 0, first: SHOT, share: 1, trap: BIGGER,
+           baits: 2, .. },
+    Kind { name: "bigger-m2", goal: "take 2", k: 2, mine: 11, theirs: 11, kings: 0, first: CAPTURE_FIRST, share: 1,
+           trap: BIGGER, baits: 2, .. },
+    Kind { name: "run-c2", goal: "crown", k: 2, mine: 8, theirs: 8, kings: 0, first: SHOT, share: 1, trap: RUN, runners: 1,
+           short_by: 2 },
+    Kind { name: "run-c3", goal: "crown", k: 3, mine: 9, theirs: 9, kings: 0, first: SHOT, share: 1, trap: RUN, runners: 1,
+           short_by: 2 },
+    Kind { name: "run-t1", goal: "take 1", k: 2, mine: 10, theirs: 10, kings: 0, first: EITHER, share: 1, trap: RUN,
+           runners: 1, short_by: 2 },
+    Kind { name: "run-t2", goal: "take 2", k: 2, mine: 12, theirs: 12, kings: 0, first: EITHER, share: 1, trap: RUN,
+           runners: 1, short_by: 2 },
 ];
 
 // Runs every kind (KINDS; on 8x8 its men scaled to the board, the safe move and the
@@ -566,9 +677,12 @@ fn batch(seed: u64, per: i64, seconds: f64) {
     let small = rules::VARIANTS[variant].size == 8;
     keep_course();
     print("variant ", rules::VARIANT_NAMES[variant]);
-    for kind in KINDS {
+    let kinds: const Kind[:] = if traps { TRAP_KINDS[..] } else { KINDS[..] };
+    for kind in kinds {
         let goal_ok, _, ok = puzzles::parse_goal(kind.goal);
         guard ok && !(small && (goal_ok == puzzles::SAFE || kind.kings > 0 && kind.k > 1)) else { continue; }
+        // Only Russian's captures are a free choice: elsewhere the most must be taken.
+        guard kind.trap != BIGGER || variant == rules::RUSSIAN else { continue; }
         let mine = if small { (kind.mine * 12 + 10) / 20 } else { kind.mine };
         let theirs = if small { (kind.theirs * 12 + 10) / 20 } else { kind.theirs };
         var st = Stages { .. };
@@ -576,11 +690,12 @@ fn batch(seed: u64, per: i64, seconds: f64) {
         var dups = 0;
         let begun = time();
         while found < per * kind.share && time() - begun < seconds * kind.share {
-            let p = placed(r, mine, theirs, kind.kings, rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: variant });
+            let p = placed(r, mine, theirs, kind.kings, rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: variant },
+                           kind.runners, kind.short_by, kind.baits);
             guard popcount(p.pieces[0]) == mine && popcount(p.pieces[1]) == theirs else { continue; }
             var pz = puzzle_of(p, kind.goal, kind.k);
             var line: u8[>..] = [];
-            guard candidate(s, pz, line, st, kind.first) else { continue; }
+            guard candidate(s, pz, line, st, kind.first, kind.trap) else { continue; }
             var black: u8[>..] = [];
             let turned_round = rand_int(r, 3) == 0;
             if turned_round { guard turn(s, pz, black) else { continue; } }
@@ -601,7 +716,7 @@ fn report(name: const u8[:], st: Stages&, dups: i64, found: i64, seconds: f64) {
     format_flt(t, seconds, 1);
     var each: u8[>..] = [];
     format_flt(each, seconds / max(found as f64, 1.0), 2);
-    write_stderr(str(name, ": ", st.tried, " tried, ", st.cheap, " cheap, ", st.solved, " solved, ", st.shaped,
+    write_stderr(str(name, ": ", st.tried, " tried, ", st.cheap, " cheap, ", st.lured, " lured, ", st.solved, " solved, ", st.shaped,
                      " shaped, ", st.sound, " sound, ", dups, " seen, ", found, " kept; ", t, " s, ", each,
                      " s a puzzle\n"));
 }
@@ -930,6 +1045,36 @@ fn before_crown(v: rules::Variant&, side: i64) -> u64 {
     return m;
 }
 
+// Whether p (pz's start, the solver to move) has a move of one of the habits in `mask`
+// that loses material with best play over the puzzle's moves and a reply more: tempts'
+// trap looked for before the puzzle is solved, so the solver searches only positions
+// that may make one. The right move isn't known yet, so a bigger capture is one bigger
+// than the least.
+fn lure(s: puzzles::Solver&, pz: puzzles::Puzzle&, mask: i64) -> bool {
+    let p = pz.start;
+    let v .= rules::VARIANTS[p.variant];
+    puzzles::begin(s, pz);
+    let near = before_crown(v, p.side);
+    var legal: rules::Moves = [];
+    rules::generate(p, legal);
+    var least = 64;
+    for m in legal { least = min(least, popcount(m.captured)); }
+    var all: puzzles::Short[..rules::MAX_MOVES] = [];
+    for m in legal { all.push(puzzles::short(m)); }
+    let any = mask & ANY_TRAP != 0;
+    for m in all {
+        let q = puzzles::after(p, m);
+        var k = 0;
+        if m.crowned { k |= CROWN_TRAP; }
+        if popcount(m.captured) > least { k |= BIGGER; }
+        if p.kings & rules::bit(m.from) == 0 && near & rules::bit(m.to) != 0 && !m.crowned { k |= RUN; }
+        if (any || mask & GRAB != 0) && puzzles::value(s, q, 1, -puzzles::WON - 1, puzzles::WON + 1) >= 1 { k |= GRAB; }
+        guard k & mask != 0 || any && k != 0 else { continue; }
+        if puzzles::value(s, q, 2 * pz.moves + 1, -puzzles::WON - 1, puzzles::WON + 1) < 0 { return true; }
+    }
+    return false;
+}
+
 // Which of the kinds pz's first turn has, a bit each.
 fn tempts(s: puzzles::Solver&, pz: puzzles::Puzzle&) -> i64 {
     let p = pz.start;
@@ -949,14 +1094,14 @@ fn tempts(s: puzzles::Solver&, pz: puzzles::Puzzle&) -> i64 {
         let q = puzzles::after(p, m);
         let glance = puzzles::value(s, q, 1, -puzzles::WON - 1, puzzles::WON + 1);
         var k = 0;
-        if right_glance < 0 && glance >= right_glance && glance >= 0 { k |= 8; }
+        if right_glance < 0 && glance >= right_glance && glance >= 0 { k |= GIVE; }
         let deep = puzzles::value(s, q, 2 * pz.moves + 1, -puzzles::WON - 1, puzzles::WON + 1);
         if deep < 0 {
-            if m.crowned { k |= 1; }
-            if popcount(m.captured) > popcount(right.captured) { k |= 2; }
-            if glance >= 1 { k |= 4; }
-            if p.kings & rules::bit(m.from) == 0 && near & rules::bit(m.to) != 0 && !m.crowned { k |= 16; }
-            if k & 23 != 0 { k |= 32; }
+            if m.crowned { k |= CROWN_TRAP; }
+            if popcount(m.captured) > popcount(right.captured) { k |= BIGGER; }
+            if glance >= 1 { k |= GRAB; }
+            if p.kings & rules::bit(m.from) == 0 && near & rules::bit(m.to) != 0 && !m.crowned { k |= RUN; }
+            if k & (CROWN_TRAP | BIGGER | GRAB | RUN) != 0 { k |= ANY_TRAP; }
         }
         kinds |= k;
     }
@@ -1038,6 +1183,18 @@ fn main() {
             if known { variant = named; }
             guard known else { abort(str("not a variant: ", all[i + 1])); }
             i += 2;
+            continue;
+        }
+        if i + 1 < all.len && all[i] == "--trap" {
+            let n, ok = parse_int(all[i + 1]);
+            guard ok && n >= 1 else { abort("--trap takes tempt's bits: 1 crown, 2 bigger, 4 grab, 16 run, 32 any"); }
+            trap_mask = n;
+            i += 2;
+            continue;
+        }
+        if all[i] == "--traps" {
+            traps = true;
+            i++;
             continue;
         }
         if all[i] == "--tempo" {
