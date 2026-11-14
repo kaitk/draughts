@@ -48,3 +48,54 @@ its line then winning more than the count or ending with a capture due, so none 
 listed cleanly. Each position had a man added or moved instead, named in its source,
 which kept its line and its lesson (Russian's 6 still the double answered by a double,
 its 13's single now taken back). Both sets report none since.
+
+## Daily puzzles
+
+Children who had solved every themed puzzle asked for more, and solved all three
+draughts' sets in a day (2026-11-14). Adding puzzles by hand doesn't scale, and a count
+over thousands on home would only discourage. So (2026-11-14, task 087):
+
+- **The themed sets stay as the course**: they teach the motifs in order, are checked by
+  hand, and keep the stars by id. They gate the daily puzzles and seed the puzzle rating.
+- **A few puzzles a day from a large library**, picked by the local date and the player,
+  so a child can't do too many at once and none pile up on a missed day. 4 a day by
+  default; 3, 5, or 10 in settings.
+- **Generated, not imported.** Every position stays our own, as the course's are.
+  GoDraughts' puzzles are proprietary; Lidraughts publishes no puzzle export or data
+  license (its 2,000+ International puzzles were built by its community); Lichess's
+  public-domain database is chess only; and in the EU a collection's substantial
+  extraction is covered by the database right though one position is a fact. Generating
+  on the device was rejected: finding and checking a good puzzle costs search time and
+  curation. The library is built offline (`tools/puzzles.goose`) and embedded, about
+  150 bytes a puzzle.
+- **After Lichess's generator** (`lichess-puzzler`): positions from games as a second
+  source, rejecting a start already won; one clear move at each turn (ours stricter, by
+  exact search); each position once; a cheap pass then a strict one; themes tagged by
+  detectors over the line, so the pick keeps to the themes a child has opened. Lichess's
+  difficulty comes from players' attempts (Glicko-2); with no data leaving the device,
+  ours is estimated offline from the computer as judge (how many skills miss the move),
+  the line's shape, and the motif's level, and checked against kabe.ee's five puzzles for
+  grown-ups (kept in `tools/`, never shipped) and later the user's children's solves.
+- **The course is the floor**: the course's puzzles are easy next to real ones, so the
+  library reaches well past its hardest, and a child's rating climbs fast at first.
+- **A puzzle rating per player and draughts**, Elo's against the puzzle's difficulty,
+  stars a partial score (3 = 1.0, 2 = 0.6, 1 = 0.3), the step large while it is new;
+  seeded from the course's stars; moved only by a puzzle's first try. Not shown as a
+  number on the puzzle screen.
+- **A day's shape**: a warm-up below the rating, the middle at it, a stretch above.
+
+On the screen (2026-11-14, prototyped and chosen):
+
+- Home's Puzzles row shows today's dots, a check once all are solved; before Today
+  opens, the puzzles solved in the player's draughts, not stars.
+- No streak of days anywhere: it makes a missed day a loss, which pushes a child rather
+  than inviting one.
+- Today's puzzles are tiles inside a Today row heading the library, each its level's
+  bars and its stars; the row's mark turns to the moon and its note to "New puzzles
+  tomorrow" once all are solved. A page of its own for today was rejected as not needed.
+- Today opens once Learn is solved, all of it: Learn is the rules, which a daily puzzle
+  may use. Gating on the other themes too was rejected as too strict (a young child would
+  stall on Safe move); the pick keeps to the themes opened instead. Until then How to play
+  heads the library and the locked Today ends it; once it opens, Today heads the list and
+  How to play is a tile beside the title in landscape, the list's last row in portrait.
+- No "one more" after the day's set: the moon ends the day.
