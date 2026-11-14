@@ -1227,7 +1227,8 @@ leave the legend out for the list's rows.
 as one, the column at least 420 dp and at most 760, and draws the column's words a face
 larger (the body face in the label's, the small in the heading's) and its sizes 1.5
 times; the line over the board too. The steps are 64 dp taps, their icons half the tile.
-Back stands at the top left there, as on every other screen: in a head row of its own
+On any desktop window in landscape, large or not, back stands at the top left, as on
+every other screen: in a head row of its own
 over the board, its left edge at the board's (`Layout.back`), the line over the board
 in that row's middle, level with back and centered on the board, kept clear of back on
 both sides. The board gives up that row's height and the gap under it, so its top and

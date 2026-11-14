@@ -459,13 +459,15 @@ fn main() {
     g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
     gui::short_dp = 800.0;
 
-    // A desktop's windows (a display scale of 1): 1280 × 800 and a 27" screen's full
+    // A desktop's windows (a display scale of 1): 1160 × 940, not large, its column narrow
+    // (back in its own row over the board there too, so play from here has the column's
+    // head and needn't stack beside back); 1280 × 800 and a 27" screen's full
     // window, both large (gui::large), the column at most LARGE_COL dp, the steps, the
     // board, and the column centered as one, the words half again as large; and an
     // ultrawide's full window, capped at gui::WIDEST times its height.
     strings::use(strings::EN);
     gui::desktop_scale = 1.0;
-    for d in [float2 { 1280.0, 800.0 }, float2 { 2560.0, 1440.0 }, float2 { 3440.0, 1440.0 }] {
+    for d in [float2 { 1160.0, 940.0 }, float2 { 1280.0, 800.0 }, float2 { 2560.0, 1440.0 }, float2 { 3440.0, 1440.0 }] {
         drive::size = d;
         g.scale = gui::scale_of(d.x, d.y);
         gui::test_faces(g);
@@ -491,7 +493,8 @@ fn main() {
               sh.past.replay.k, " times, the column ", (o.glass.z / g.scale + 0.5) as i64, " dp, centered ",
               abs(left - right) < 1.0, "; back at the top left over the board ", top_left, ", the board's and glass's tops level ",
               abs(b.y - o.glass.y) < 0.5, ", play from here at the column's head ", play.x >= o.glass.x - 0.5 && play.y < b.y,
-              ", the line level with back ", line_level);
+              ", the line level with back ", line_level, "; play from here ", (play.z / g.scale + 0.5) as i64, " x ",
+              (play.w / g.scale + 0.5) as i64, " dp");
     }
     gui::desktop_scale = 0.0;
 }

@@ -31,9 +31,10 @@
 //   holds five taps, else the glass's line for it as a thin tile. The glass says what was
 //   best after a marked move, and the best next move, or the move that is forced, or that
 //   the game ended. A desktop's large window centers the steps, the board, and a column
-//   of at most LARGE_COL dp, the column's words half again as large; back stands at its
-//   top left over the board's left edge, as on every other screen, the board under it
-//   level with the glass, the column's head keeping the title and play from here.
+//   of at most LARGE_COL dp, the column's words half again as large. On any desktop
+//   window back stands at the top left over the board's left edge, as on every other
+//   screen, the board under it level with the glass, the column's head keeping the title
+//   and play from here.
 namespace replay;
 import std;
 import math;
@@ -584,11 +585,12 @@ fn disclaimer(g: gui::Gui&, r: float4, face: i64 = gui::SMALL) -> bool {
 // step tile, BULB_GAP further down, where the board's side holds five taps (`five`: the
 // tablet, a desktop); else it is the glass's line. A desktop's large window (`big`)
 // keeps the column LARGE_SIDE dp at least and LARGE_COL at most, the steps, the board,
-// and the column centered as one, and its line over the board LARGE times as tall; over
-// the board a head row of its own (`back`, from the board's left edge, as wide) holding
-// back and, in its middle, the line over the board, level with the column's head; the
-// board gives up the row's height and GAP, its top level with the glass's (2026-11-14:
-// back had been at the column's head, top right, where no other screen has it).
+// and the column centered as one, and its line over the board LARGE times as tall. Any
+// desktop window in landscape has over the board a head row of its own (`back`, from the
+// board's left edge, as wide) holding back and, in its middle, the line over the board,
+// level with the column's head; the board gives up the row's height and GAP, its top
+// level with the glass's (2026-11-14: back had been at the column's head, top right,
+// where no other screen has it, and crammed beside play from here in a narrow window).
 struct Layout {
     head:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     board: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -608,8 +610,11 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
     let note = NOTE * k * u;
     if c.z > c.w {
         let least = (if big { LARGE_SIDE } else { MIN_SIDE }) * u;
-        let row = if big { tap + GAP * u } else { 0.0 };
-        let over = if big { 0.0 } else { note };
+        // Back's own row over the board on any desktop window: a narrow column had back and
+        // play from here stacked and crammed side by side in its head (2026-11-14).
+        let own = gui::desktop_scale > 0.0;
+        let row = if own { tap + GAP * u } else { 0.0 };
+        let over = if own { 0.0 } else { note };
         let size = max(min(c.w - row - over, c.z - tap - (GAP + BESIDE) * u - least), 0.0);
         var col = c.z - tap - (GAP + BESIDE) * u - size;
         if big { col = min(col, LARGE_COL * u); }
@@ -624,7 +629,7 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
         for i in 4 { o.steps[i] = float4 { x0, top + i * (tap + gap), tap, tap }; }
         if o.five { o.bulb = float4 { x0, top + 4.0 * (tap + gap) + extra, tap, tap }; }
         let x = o.board.x + size + BESIDE * u;
-        if big {
+        if own {
             o.back = float4 { o.board.x, y0, size, tap };
             o.note = float4 { o.board.x, y0 + 0.5 * (tap - note), size, note };
             o.head = float4 { x, y0, col, tap };
@@ -647,7 +652,7 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
         for i in 4 { o.steps[i] = float4 { steps.x + i * (w + GAP * u), steps.y, w, tap }; }
         o.glass = c;
     }
-    if !big { o.note = float4 { o.board.x, o.board.y - note, o.board.z, note }; }
+    if o.back.z == 0.0 { o.note = float4 { o.board.x, o.board.y - note, o.board.z, note }; }
     return o;
 }
 
@@ -678,7 +683,8 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     r.focused = g.focus;
 
     let o = layout(area, u, big);
-    let arrange, back_w, play_w, titled = play_fit(g, o.head.z, !big);
+    let own = o.back.z > 0.0; // back in a row of its own over the board
+    let arrange, back_w, play_w, titled = play_fit(g, o.head.z, !own);
     let v .= rules::VARIANTS[r.game.variant];
     l = board::layout_at(o.board.x, o.board.y, o.board.z, u, v.size);
     l.flip = turned(r);
@@ -698,22 +704,22 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     // The head: back, the title and the game where they fit, and play from here.
     gui::group(g, GROUP_HEAD);
     var head = o.head;
-    let back_at = if big { float4 { o.back.x, o.back.y, back_w, o.back.w } } else { gui::cut_left(head, back_w) };
-    if gui::back(g, BACK_ID, back_at, strings::get(strings::NAV_BACK), !big && arrange == gui::STACKED) { ask = BACK; }
+    let back_at = if own { float4 { o.back.x, o.back.y, back_w, o.back.w } } else { gui::cut_left(head, back_w) };
+    if gui::back(g, BACK_ID, back_at, strings::get(strings::NAV_BACK), !own && arrange == gui::STACKED) { ask = BACK; }
     let at = gui::cut_right(head, play_w);
     let icon = if r.game.level == history::FRIEND { gui::FRIEND } else { gui::COMPUTER };
     if gui::labelled(g, PLAY_ID, at, icon, 34.0, strings::get(strings::REPLAY_PLAY), gui::HEADING, arrange, gui::PRIMARY,
                      playable(r)) {
         ask = PLAY;
     }
-    if !big { gui::cut_left(head, gui::PAD_WIDE * u); }
+    if !own { gui::cut_left(head, gui::PAD_WIDE * u); }
     gui::cut_right(head, GAP * u);
     let in_head = titled && title(g, head, r.game);
 
-    // Over the board, that a game from here doesn't count; not a tap. On a desktop's large
-    // window it shares back's row, kept clear of back on both sides so it stays centered.
+    // Over the board, that a game from here doesn't count; not a tap. On a desktop it
+    // shares back's row, kept clear of back on both sides so it stays centered.
     r.note = o.note;
-    if big {
+    if own {
         let clear = back_w + GAP * u;
         r.note = float4 { o.note.x + clear, o.note.y, max(o.note.z - 2.0 * clear, 0.0), o.note.w };
     }
