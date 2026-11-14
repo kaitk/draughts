@@ -5,7 +5,8 @@
 // the screen; in portrait it is a sheet along the bottom, and settings is a gear alone
 // beside the wordmark, so the sheet leaves the board its room. Puzzles notes the puzzles
 // solved of those there are in the player's draughts until Today opens, then today's
-// puzzles as dots, filled as they are solved, and a check once all are (task 088).
+// puzzles as dots, filled as they are solved, and a check once all are, "New tomorrow"
+// before it where it fits (task 088).
 //
 // New game opens the setup in the same column (prototypes/new-game.html, take c): back
 // and the title, then a row of tiles per choice, lit as in settings: whom to play (a
@@ -589,8 +590,11 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
 }
 
 // Today's puzzles at the right of the Puzzles row r, as gui::row puts its note: a dot
-// each, filled in the glow once solved, or a check once all are.
+// each, filled in the glow once solved; once all are, a check, and before it the note
+// that new ones come tomorrow where it keeps TOMORROW_GAP clear of the row's label.
 let DONE = 26.0;
+let TOMORROW_GAP = 16.0;    // dp between the row's label and the note at least
+let CHECK_GAP = 4.0;        // dp between the note and the check's box (the check is inset in it)
 fn today_dots(g: gui::Gui&, r: float4, t: settings::Today&) {
     let u = g.scale;
     let n = t.picked.list.len;
@@ -600,6 +604,13 @@ fn today_dots(g: gui::Gui&, r: float4, t: settings::Today&) {
     if picker::today_solved(t) >= n {
         let k = DONE * u;
         gui::glyph_icon(g, gui::center(gui::cut_right(c, k), k, k), gui::CHECK, gui::ON, 0.0, 1.0);
+        gui::cut_right(c, CHECK_GAP * u);
+        // The label's end as gui::row puts it: after its side, its icon, and their gap.
+        let label = r.x + (18.0 + 34.0 + 18.0) * u + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES));
+        let note = strings::get(strings::DAILY_HOME_TOMORROW);
+        if label + TOMORROW_GAP * u + gui::text_width(g, gui::SMALL, note) <= c.x + c.z {
+            gui::text(g, gui::SMALL, c, note, 0.66, 0.0, gui::RIGHT);
+        }
         return;
     }
     picker::dots(g, gui::cut_right(c, picker::dots_w(n, u)), n, t.stars[..], -1);

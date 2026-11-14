@@ -83,6 +83,7 @@ let KEYS = [
     "replay.best_was", "replay.next_white", "replay.next_black", "replay.take_white", "replay.take_black",
     "replay.one_white", "replay.one_black", "replay.ended",
     "daily.today", "daily.left", "daily.tomorrow", "settings.daily", "daily.warmup", "daily.stretch",
+    "daily.home_tomorrow",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -272,7 +273,9 @@ let SETTINGS_DAILY = 223;
 // A daily puzzle's slot under its goal: the first of the day's, and the last.
 let DAILY_WARMUP = 224;
 let DAILY_STRETCH = 225;
-let COUNT = 226;
+// Home's Puzzles row once all of today's are solved: its note before the check, where it fits.
+let DAILY_HOME_TOMORROW = 226;
+let COUNT = 227;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

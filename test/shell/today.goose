@@ -21,6 +21,9 @@
 // clear of every tile); and the slot's word under the goal, "Warm-up" on the first and
 // "A bit harder" on the last, none on the middle ones nor a course puzzle, inside its
 // panel, over nothing, and next as on the middle one, round the 3D board and flat.
+// Last, home with all of today's solved at those sizes and the iPhone 13 mini's, in
+// English and Estonian: the note that new ones come tomorrow before the check where it
+// fits, clear of the row's label, and the check alone where it doesn't.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -124,6 +127,102 @@ fn home_line(g: gui::Gui&) -> u8[>..] {
     var at: float4[..16] = [];
     let lit, ringed, dim = dots(g, at);
     return str("dots ", lit, " filled ", dim, " not, check ", icons(g, gui::CHECK));
+}
+
+fn inside(a: float4, b: float4) -> bool {
+    return a.x >= b.x - 0.5 && a.y >= b.y - 0.5 && a.x + a.z <= b.x + b.z + 0.5 && a.y + a.w <= b.y + b.w + 0.5;
+}
+
+// Home's Puzzles row once all of today's are solved: the check, and the note before it
+// (its glyphs the row's dimmed ones) where the note fits between the label's end and
+// the check, home::TOMORROW_GAP clear of the label; where it doesn't, the check alone.
+// The room is what the label's advances leave before the check's gap, in dp; the note
+// shows exactly when it wants no more, inside the row, clear of the label and the check.
+fn home_note(g: gui::Gui&) -> u8[>..] {
+    let u = g.scale;
+    var check = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for q in g.quads { if q.look.x == gui::ICON && q.look.z == gui::CHECK { check = q.rect; } }
+    var row = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for q in g.quads {
+        guard q.look.x == gui::BUTTON && inside(check, q.rect) else { continue; }
+        if row.z == 0.0 || q.rect.z * q.rect.w < row.z * row.w { row = q.rect; }
+    }
+    var n = 0;
+    var box = float4 { 0.0, 0.0, 0.0, 0.0 };
+    var label_end: f32 = 0.0;
+    for q in g.quads {
+        guard q.look.x == gui::TEXT && inside(q.rect, row) else { continue; }
+        guard abs(q.color.w - 0.66) < 0.01 else {
+            label_end = max(label_end, q.rect.x + q.rect.z);
+            continue;
+        }
+        if n == 0 { box = q.rect; }
+        else {
+            let x1 = max(box.x + box.z, q.rect.x + q.rect.z);
+            box.x = min(box.x, q.rect.x);
+            box.z = x1 - box.x;
+        }
+        n++;
+    }
+    let label = row.x + (18.0 + 34.0 + 18.0) * u + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES));
+    let room = check.x - home::CHECK_GAP * u - label - home::TOMORROW_GAP * u;
+    let wants = gui::text_width(g, gui::SMALL, strings::get(strings::DAILY_HOME_TOMORROW));
+    var out: u8[>..] = [];
+    format(out, "room ", floor(room / u + 0.5) as i64, " dp, the note wants ", floor(wants / u + 0.5) as i64, ": ");
+    if n == 0 { format(out, "the check alone"); } else { format(out, "the note, ", n, " glyphs"); }
+    var wrong: u8[>..] = [];
+    if (n > 0) != (wants <= room) { format(wrong, " shown ", n > 0, " where it fits ", wants <= room, ";"); }
+    if n > 0 {
+        if box.x < label_end + home::TOMORROW_GAP * u - 0.5 { format(wrong, " near the label;"); }
+        if box.x + box.z > check.x { format(wrong, " over the check;"); }
+    }
+    if icons(g, gui::CHECK) != 1 { format(wrong, " no check;"); }
+    if wrong.len > 0 { format(out, ";", wrong); } else { format(out, ", in place"); }
+    return out;
+}
+
+// Home with all of today's solved at the tablet's, a 20:9 phone's at 480 dp, and the
+// iPhone 13 mini's sizes, both ways, in English and Estonian: home_note's line each; then
+// on the tablet in landscape a note too long for its room, which leaves the check alone.
+fn homes(text: const u8[:], g: gui::Gui&) {
+    let sizes = [float2 { 1920.0, 1200.0 }, float2 { 1200.0, 1920.0 }, float2 { 2400.0, 1080.0 }, float2 { 1080.0, 2400.0 },
+                 float2 { 2436.0, 1125.0 }, float2 { 1125.0, 2436.0 }];
+    let dps: f32[6] = [800.0, 800.0, 480.0, 480.0, 500.0, 500.0];
+    let insets = [float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 0.0, 0.0, 0.0, 0.0 },
+                  float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 150.0, 0.0, 150.0, 63.0 }, float4 { 0.0, 150.0, 0.0, 102.0 }];
+    let names = ["the tablet, landscape", "the tablet, portrait", "a 20:9 phone at 480 dp, landscape",
+                 "a 20:9 phone at 480 dp, portrait", "the iPhone 13 mini, landscape", "the iPhone 13 mini, portrait"];
+    for lang in [strings::EN, strings::ET] {
+        strings::use(lang);
+        print("home with all of today's solved, ", strings::LANGUAGES[lang], ":");
+        for size, i in sizes {
+            gui::short_dp = dps[i];
+            drive::size = size;
+            g.scale = gui::scale_of(size.x, size.y);
+            gui::test_faces(g);
+            g.insets = insets[i];
+            var sh = fresh(text);
+            learn_all(sh);
+            home(sh, g, 0.0);
+            for k in sh.prefs.today[SET].picked.list.len { sh.prefs.today[SET].stars[k] = 3; }
+            home(sh, g, 1.0);
+            print("  ", names[i], ": ", home_note(g));
+        }
+    }
+    g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
+    gui::short_dp = 800.0;
+    drive::size = sizes[0];
+    g.scale = gui::scale_of(drive::size.x, drive::size.y);
+    gui::test_faces(g);
+    strings::use(strings::EN);
+    strings::table[strings::DAILY_HOME_TOMORROW] = "New puzzles come tomorrow";
+    var sh = fresh(text);
+    learn_all(sh);
+    home(sh, g, 0.0);
+    for k in sh.prefs.today[SET].picked.list.len { sh.prefs.today[SET].stars[k] = 3; }
+    home(sh, g, 1.0);
+    print("  a longer note, the tablet, landscape: ", home_note(g));
+    strings::use(strings::EN);
 }
 
 fn library(sh: shell::Shell&, g: gui::Gui&, now: f64) {
@@ -446,6 +545,9 @@ fn main() {
     // The layouts.
     layouts(text, g, 4);
     layouts(text, g, 10);
+
+    // Home's note before the check.
+    homes(text, g);
 }
 
 // The built-in International library's first lines (2026-11-14), before it had ids: the

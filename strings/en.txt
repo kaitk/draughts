@@ -249,10 +249,12 @@ how.win_line = Take all the other side’s pieces, or leave them no move. Take t
 how.win_well = You won!
 
 # The daily puzzles (task 088): the library's Today row, its note, and settings' row.
-daily.today = Today
+daily.today = Today’s puzzles
 daily.left = {} to go
-daily.tomorrow = New puzzles tomorrow
+daily.tomorrow = New ones tomorrow
 settings.daily = Puzzles a day
 # Under a daily puzzle's goal: the day's first, and its last.
 daily.warmup = Warm-up
 daily.stretch = A bit harder
+# Home's Puzzles row once all of today's are solved, before its check where it fits.
+daily.home_tomorrow = New tomorrow

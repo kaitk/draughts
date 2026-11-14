@@ -248,9 +248,10 @@ how.win_line = Löö kõik vastase nupud või jäta ta käiguta. Löö viimane!
 how.win_well = Sa võitsid!
 
 # The daily puzzles (task 088).
-daily.today = Täna
+daily.today = Tänased ülesanded
 daily.left = Veel {}
-daily.tomorrow = Homme uued ülesanded
+daily.tomorrow = Homme uued
 settings.daily = Ülesandeid päevas
 daily.warmup = Soojendus
 daily.stretch = Veidi raskem
+daily.home_tomorrow = Homme uued

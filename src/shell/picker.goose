@@ -20,8 +20,8 @@
 // The daily puzzles (task 088, prototypes/puzzles.html?daily=b): until Learn is solved,
 // all of it, How to play heads the list and a locked Today row ends it, across the
 // columns ("Solve n more in Learn"). Once it is, Today's row heads the list across the
-// columns: its mark (a calendar, the moon once all are solved), "Today", a note ("n to
-// go", or "New puzzles tomorrow"), and today's puzzles as tiles, beside them where they
+// columns: its mark (a calendar, the moon once all are solved), "Today's puzzles", a note
+// ("n to go", or "New ones tomorrow"), and today's puzzles as tiles, beside them where they
 // fit and under them where they don't, each its level's bars (the warm-up one, the middle
 // two, the stretch three) over its stars, the first unsolved lit; a tile opens its
 // puzzle. How to play is then a tile with its mark beside the title in landscape, and its
