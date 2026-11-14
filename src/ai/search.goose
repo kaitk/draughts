@@ -1,16 +1,10 @@
-// Alpha-beta as a machine that can stop after any node and go on later, so the game
-// can think a few milliseconds a frame on the thread that draws (docs/architecture/ai.md).
-// The recursion is unrolled into one frame per ply in `Engine.plies`: entering a node
-// fills its frame and pushes a child, and a child's value comes back to the frame
-// below it. Negamax, fail-soft, with iterative deepening, a transposition table, and
-// moves ordered by the table's move, captures, killers, and history.
+// Alpha-beta as a machine that can stop after any node and go on later: the recursion
+// is unrolled into one frame per ply in `Engine.plies`, and a child's value comes back
+// to the frame below it. Negamax, fail-soft, iterative deepening, a transposition table.
 //
 // A node searches `d` more plies of free moves and at most `h` more plies in all. At
 // d = 0 it goes on only while the side to move must capture (captures are forced, so
-// there is no standing pat); at h = 0 it stops wherever it is. h is how far a level
-// sees, and nothing is searched past it.
-//
-// Nothing here allocates: frames, moves, and the table are made once by `init`.
+// there is no standing pat); at h = 0 it stops wherever it is.
 namespace ai;
 import std;
 import rules from "../rules";
@@ -79,13 +73,11 @@ fn init(e: Engine&) {
 // Sets up a search of p, which has at least two moves: `depth` plies of free moves and
 // `extra` more of forced captures, root moves within `margin` of the best scored
 // exactly, and at most `limit` nodes once an iteration has finished: the iteration under
-// way when they run out is dropped, and the last finished one answers.
-// The game's draw counts at p (e.root_draw) and the keys of its positions before p
-// (e.past) are the caller's: ai::start sets them.
+// way when they run out is dropped, and the last finished one answers. e.root_draw and
+// e.past are the caller's.
 fn begin(e: Engine&, p: rules::Position, depth: i64, extra: i64, margin: i64, limit: i64) {
-    // A new generation leaves the earlier searches' entries unread: clearing 4 MB took
-    // longer than easy's whole search. Once every 255 searches it wraps, and the table is
-    // cleared so no entry of the generation's last use is left.
+    // A new generation leaves the earlier searches' entries unread, which is far cheaper
+    // than clearing 4 MB. When it wraps, the table is cleared so no stale entry matches.
     if e.gen == 255 {
         for &t in e.tt { t = Entry { .. }; }
         e.gen = 0;
@@ -188,15 +180,15 @@ fn enter(e: Engine&) {
     let pl .= e.plies[ply];
     let f .= pl.f;
     f.tt = -1;
-    // The table's entry answers the node only when it was searched as far: a value
-    // from another depth would make the result depend on what was searched before.
-    // A draw on the way here scores 0, unless the side to move has no move: a win on
-    // the drawing move is a win.
+    // A draw scores 0, unless the side to move has no move: a win on the drawing move
+    // is a win.
     if ply > 0 && drawn(e, ply) {
         rules::generate(f.pos, pl.moves);
         leave(e, if pl.moves.len == 0 { -(WIN - ply) } else { 0 });
         return;
     }
+    // The table's entry answers the node only when it was searched as far: a value
+    // from another depth would make the result depend on what was searched before.
     let slot = (f.key & TT_MASK) as i64;
     if ply > 0 && e.use_tt && e.tt[slot].key == f.key && e.tt[slot].gen == e.gen {
         let t = e.tt[slot];

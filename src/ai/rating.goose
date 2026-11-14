@@ -1,16 +1,12 @@
-// Ratings on the Elo scale (task 074): the computer's at a skill, and a player's after a
+// Ratings on the Elo scale: the computer's at a skill, and a player's after a
 // game against it. Pure integer arithmetic but for the expected score's power of ten.
 namespace ai;
 import std;
 import math;
 
-// The computer's rating at the skills measured, from self-play between neighbours
-// (`build/aimatch international A B 200`, 2026-11-11): each gap 400 · log10 of the
-// stronger side's score over the weaker's, draws halves, anchored at skill 0 = 500. The
-// gaps jump where a skill first sees another ply (12, 25: params' depth) and are small
-// between. The chain from 8 to 25 (849) was scaled to 775, between it and the two
-// skills' own match (700). Russian's gaps came out a little smaller (8 to 25: 440 for
-// 0 to 8's 72). 60 to 90 scored 6.5 of 200 (589); 90 to 100 98.5 (5).
+// The computer's rating at the skills measured by self-play between neighbours
+// (tools/aimatch.goose), anchored at skill 0 = 500. The gaps jump where a skill first
+// sees another ply (params' depth).
 let RATED_SKILLS:  i64[12] = [0, 8, 12, 16, 20, 25, 30, 40, 50, 60, 90, 100];
 let SKILL_RATINGS: i64[12] = [500, 587, 940, 983, 1009, 1362, 1384, 1644, 1900, 2127, 2716, 2721];
 

@@ -93,8 +93,9 @@ fn main() {
 
     // Traps: black's c5-d4 forces white's capture, either way, and black takes two back:
     // c3 and the man that took (from e3 over to c5, or from c3 over to e5; a7 and g7 keep
-    // the capture from going on). c5-b4 is no trap: b6 can't take back from the edge. The flying king offers nothing; the triple
-    // must capture, so its threats are the capture's; the opening has no trap.
+    // the capture from going on). c5-b4 is no trap: b6 can't take back from the edge. The
+    // flying king offers nothing; the triple must capture, so its threats are the
+    // capture's; the opening has no trap.
     let shot = "W:Wa1,c3,e3:Ba7,b6,c5,f6,g7,h8";
     for name, i in ["the shot", "flying king", "triple", "start"] {
         let variant: u8 = if i == 1 { rules::INTERNATIONAL } else { rules::RUSSIAN };

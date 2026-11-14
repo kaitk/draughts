@@ -1,20 +1,15 @@
-// The computer player: pure Goose over `rules`, with no graphics, so tests run it
-// headless (docs/architecture/ai.md). It is weaker the way a person is weaker, not the
-// way a crippled engine is: a level sees a fixed number of plies and never past them,
-// so it misses only what shows deeper, and it picks among the moves it sees as good
-// with chances that fall off with how much worse each is, from one skill setting for
-// the whole game.
+// The computer player, over `rules` with no graphics (docs/architecture/ai.md). It is
+// weaker the way a person is: a skill sees a fixed number of plies and picks among the
+// moves it sees as good, with chances falling off with how much worse each is.
 //
 //   var e = ai::Engine { .. };
 //   ai::init(e);                                  once: the table and the frames
 //   ai::start(e, position, skill, seed);          a move to find
-//   while !ai::step(e, 10000) { a newer ask? }    the app's worker thread looks for a
-//                                                 newer ask every 10000 nodes, about
-//                                                 2 ms on the tablet's big cores
+//   while !ai::step(e, 10000) { a newer ask? }    a slice of thinking, in nodes
 //   let m = ai::reply(e);                         one of position's legal moves
 //
-// The same skill, position, and seed give the same move, however the thinking is cut
-// into steps and on any machine: the search counts nodes, never time.
+// The same skill, position, and seed give the same move however the thinking is sliced
+// and on any machine: the search counts nodes, never time.
 namespace ai;
 import std;
 import rules from "../rules";
@@ -30,20 +25,18 @@ let HARD = 2;
 let LEVELS = 3;
 
 // Skill runs 0 to 100. Each level starts at its own and adapts between its floor and
-// its top: easy starts a step above its floor, so a young child's first loss brings it
-// to the floor, and a grown-up's first win lifts it clear of its plainest mistakes (the
-// user's call, 2026-11-11; it started at the floor from 2026-11-09).
+// its top: easy starts a step above its floor, so a first loss brings it to the floor
+// and a first win lifts it clear of its plainest mistakes.
 let LEVEL_SKILL: i64[LEVELS] = [8, 40, 90];
-let LEVEL_FLOOR: i64[LEVELS] = [0, 25, 70];   // the lowest a level adapts to (medium never under 25)
-let LEVEL_TOP:   i64[LEVELS] = [30, 60, 100]; // the highest
+let LEVEL_FLOOR: i64[LEVELS] = [0, 25, 70];
+let LEVEL_TOP:   i64[LEVELS] = [30, 60, 100];
 let STEP = 4;               // how far one win or loss moves the skill
 let FIRST_STEP = 8;         // how far it moves over a player's first games against a level
 let FIRST_GAMES = 3;        // how many games that is
 let FIRST_WIN = 16;         // how far a win in a player's very first game against a level moves it
 
 // The most nodes a search takes once its first iteration has finished: the iteration
-// under way then is dropped. It bounds hard's reply time: see tasks and
-// docs/architecture/ai.md for the speed on the tablet.
+// under way then is dropped. It bounds hard's reply time.
 let NODE_LIMIT = 800000;
 
 // The widest margin: well under a man, so positional terms never pass off a move that
@@ -60,16 +53,14 @@ let PROBE_EXTRA = 4;
 let PROBE_LIMIT = 20000;
 let MAX_PROBES = 12;
 
-// Overlooking the child's captures, as a person errs: where captures are around, more
-// the more pieces a capture takes and the further it starts from the piece just moved
-// (docs/architecture/ai.md, "Levels"). Each reply capture after each of its moves is
-// seen or not by its own seeded chance, in 1/1000: MISS by the pieces it takes (1, 2, 3,
-// 4 or more) at skill 0 in a tense position, next to the moved piece, fading with the
-// square of the way left to SURE, where it is none; times FAR by how far it starts from
-// that piece, in quarters; times QUIET in percent where no capture is around.
+// Overlooking the child's captures, as a person errs (docs/architecture/ai.md, "Levels").
+// Each reply capture is missed by its own seeded chance, in 1/1000: MISS by the pieces it
+// takes (1, 2, 3, 4+) at skill 0, fading with the square of the way left to SURE; times
+// FAR, in quarters, by how far it starts from the piece just moved; times QUIET, in
+// percent, where no capture is around.
 let MISS: i64[4] = [25, 240, 300, 450];
-let SURE: i64[4] = [15, 25, 65, 65];   // from these skills on it sees every such capture
-let FAR:  i64[4] = [4, 5, 6, 8];       // a step away (as a capture of the moved piece starts), 2, 3, 4 or more
+let SURE: i64[4] = [15, 25, 65, 65];
+let FAR:  i64[4] = [4, 5, 6, 8];       // 1 (next to it), 2, 3, 4 or more steps away
 let QUIET = 10;
 let LAND = 1;               // Engine.overlook: it missed a capture of the piece it moved
 let OPEN = 2;               // or another of the child's captures
@@ -224,12 +215,9 @@ fn begin_move(e: Engine&, p: rules::Position, skill: i64, seed: u64) {
     e.phase = MAIN;
 }
 
-// Sets up finding a move for p at `skill` as far as what it overlooks goes: the
-// skill's chances, whether a capture is around p (its side must capture, or the other
-// side could were it its turn: a piece of its is attacked), and the seed of what it
-// overlooks, apart from the one of its choices among moves, so those stay as they were
-// where nothing is overlooked. Two move generations into the first frame's buffer,
-// before the search fills it.
+// Sets up what the move for p at `skill` overlooks: the skill's chances, whether a
+// capture is around p (either side could take), and a seed of its own, apart from the
+// choices among moves. Uses the first frame's move buffer before the search fills it.
 fn notice(e: Engine&, p: rules::Position, skill: i64, seed: u64) {
     e.position = p;
     e.params = params(skill);

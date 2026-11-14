@@ -1,7 +1,6 @@
-// How good a played move was (task 074): the position before it searched at full
-// strength, nothing overlooked, and the played move's score set against the best's as a
-// fall in the mover's expected result. Pure, as the rest of the engine; the app runs it
-// on the computer's worker between its other asks (src/app/think.goose).
+// How good a played move was: the position before it searched at full strength, nothing
+// overlooked, and the played move's score set against the best's as a fall in the mover's
+// expected result.
 //
 //   ai::judge_start(e, past, p);                  p: the position before the move
 //   while !ai::judge_step(e, 10000) { a newer ask? }
@@ -43,15 +42,14 @@ let SCALE = 250.0;
 // position that is a fall of 0.23 and more, a blunder whatever the bound.
 let JUDGE_MARGIN = 250;
 let JUDGE_SKILL = 100;      // the depth it sees: hard's at its top
-let JUDGE_LIMIT = 300000;   // the most nodes it takes (the node limit): about 0.1 s on the tablet's big cores
+let JUDGE_LIMIT = 300000;   // the most nodes it takes (the node limit)
 
 struct Verdict {
     mark:   i64 = NOT_JUDGED,
     loss:   i64 = 0,        // the fall in the expected result, thousandths (at least, for a bound)
     best:   i64 = 0,        // the best move's score, hundredths of a man for the mover
     played: i64 = 0,        // the played move's, or its upper bound
-    // The move the search found best from the position, for a replay (task 087); none
-    // where the position had one move.
+    // The move the search found best, for a replay; none where the position had one move.
     best_move: rules::Move = rules::Move { .. },
     has_best:  bool        = false,
 }

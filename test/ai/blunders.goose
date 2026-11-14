@@ -2,7 +2,7 @@
 // games the computer played against itself, neither easy's skill 15 nor medium's or
 // hard's start, under any of several seeds, plays a move after which the opponent's
 // captures win a man or more, when another move loses less that way, unless it
-// overlooked one of them. Easy and medium now and then overlook a capture the child
+// overlooked one of them. Easy and medium sometimes overlook a capture the child
 // can make (ai::overlooked), as a person does: easy's start, skill 0, any, more the
 // more pieces it takes; skill 15 only one of two pieces or more, medium three or more,
 // hard none. Moves that overlooked something, and those of them that hung a piece, are

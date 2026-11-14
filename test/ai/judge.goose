@@ -1,12 +1,12 @@
-// A played move judged (ai/judge.goose, task 074): every legal move of a position marked
+// A played move judged (ai/judge.goose): every legal move of a position marked
 // by the fall in the mover's expected result, as the full-strength search scores it.
 // International's start, where every first move is sound and none may come out worse
 // than an inaccuracy; and a Russian position where c3-d4 gives a man for nothing (e5
 // takes it, landing on c3), g3-f4 offers an exchange (e5xg3, h2xf4), and g3-h4 and the
 // rest keep more men but let the win go: the hanging move must be a blunder, g3-f4 best,
 // and letting a forced win go for under six men a blunder too, as lidraughts marks it.
-// The hint, in a game where black's d8-c7 let e3-f4 win and the old shallower hint gave
-// g3-f4, a blunder (2026-11-14): judged, the hint followed is always best. Then the
+// The hint, in a game where black's d8-c7 let e3-f4 win and a shallower search would
+// give g3-f4, a blunder: judged, the hint followed is always best. Then the
 // marks' cut-offs and the accuracy at a few falls, and the computer's ratings and a
 // player's rating after a game (ai/rating.goose).
 import std;

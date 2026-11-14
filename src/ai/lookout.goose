@@ -1,8 +1,6 @@
-// The lookout's threats (docs/architecture/ai.md, "The lookout"): pure functions over
-// `rules`, no graphics, so tests run them headless. What the other side could take or
-// crown on were it its turn now, or once the side to move plays a move, each sorted by
-// how plain it is to see. The game shows the kinds a player of its skill would miss
-// (shown()); nothing here allocates, the caller passes the move buffer.
+// The lookout's threats (docs/architecture/ai.md, "The lookout"): what the other side
+// could take or crown on were it its turn now, or once the side to move plays a move,
+// each sorted by how plain it is to see. The caller passes the move buffer.
 namespace lookout;
 import std;
 
@@ -16,13 +14,8 @@ let JUMP = 5;       // a man crowning through a capture
 let TRAP = 6;       // a sacrifice that, once the forced capture is made, wins more (traps())
 let KINDS = 7;
 
-// The skill from which each kind is left to the player (docs/architecture/ai.md, "The
-// lookout"): the computer's own horizon at that skill, as the game matches it to the
-// player. From 15 it sees every one-piece capture next to its piece, and a man one step
-// from crowning is as plain; from 25 every two-piece capture, and a flying king's from
-// afar is as easy to miss; a crowning through a capture is a small combination, left
-// from medium's start; three pieces or more show through medium. Hard's skills, 70 and
-// up, show nothing.
+// The skill from which each kind is left to the player: the computer's own horizon at
+// that skill.
 let UNTIL: i64[KINDS] = [15, 25, 25, 70, 15, 40, 70];
 
 // The pieces or squares of each kind (pieces for the captures, the crowning squares for
@@ -84,9 +77,8 @@ fn all(s: Seen&) -> u64, u64 {
 // pieces than it gave with its best capture then. Three plies: its moves, the forced
 // replies, its captures. The pieces it would win, as they stand in q (the piece that made
 // the forced capture on the square it took from). None while q's side must capture: its
-// captures are threats of their own. Three move buffers on the stack; run on the app's
-// worker, as it takes more than the other threats (a move generation for each of the
-// side's moves and each forced reply).
+// captures are threats of their own. Costlier than the other threats: a move
+// generation for each of the side's moves and each forced reply.
 fn traps(q: rules::Position) -> u64 {
     var first:   rules::Moves = [];
     var replies: rules::Moves = [];
