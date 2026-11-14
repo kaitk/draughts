@@ -83,8 +83,11 @@
   Draughts.board(document.getElementById('board'), Draughts.start(8));
   // Task 087's takes: ?daily=a puts today's dots in Puzzles' row in place of the course's
   // count, ?daily=b the dots and the streak of days; ?today=N puzzles solved (2), of 4.
+  // ?locked=1, before Today opens: the puzzles solved in the player's draughts, not stars.
   const daily = Draughts.params.get('daily'), today = Number(Draughts.params.get('today') ?? 2);
-  if (daily === 'a' || daily === 'b') {
+  if (Draughts.params.get('locked') === '1') {
+    document.querySelector('.item[href="puzzles.html"] small').textContent = '31 / 74';
+  } else if (daily === 'a' || daily === 'b') {
     document.querySelector('.item[href="puzzles.html"] small').innerHTML =
       (daily === 'b' ? `<span class="streak">${Draughts.icon('flame')}5</span>` : '') + Draughts.dots(today, 4);
   }

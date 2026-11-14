@@ -88,16 +88,16 @@
   // Task 087's takes: ?daily=a a Today row heading the library, its dots, opening today's
   // page (daily.html); ?daily=b the row with today's puzzles in it as tiles, each its
   // level's bars and its stars, a tile opening its puzzle. ?today=N solved (2) of 4;
-  // ?streak=1 adds the days in a row. ?locked=1 before Learn is solved: How to play and
-  // the locked Today share a row. Once Today opens, How to play is a tile beside the title.
+  // ?streak=1 adds the days in a row. ?locked=1 before Learn is solved: How to play heads
+  // the list as built, and the locked Today ends it. Once Today opens, How to play is a tile beside the title.
   const daily = P.get('daily'), today = Number(P.get('today') ?? 2), locked = P.get('locked') === '1';
   const streak = P.get('streak') === '1' ? `<span class="streak">${icon('flame')}5</span>` : '';
   const STARS = [3, 2, 1, 2], LEVEL = [1, 2, 2, 3];
   const left = today >= 4 ? 'New puzzles tomorrow' : `${4 - today} to go`;
   let row = '';
   if (locked && (daily === 'a' || daily === 'b')) {
-    row = `<a class="theme glass locked"><span class="disc">${icon('lock')}</span><b>Today</b>` +
-      `<small class="note">Solve 10 more in Learn</small></a>` + howRow(false);
+    rows.insertAdjacentHTML('beforeend', `<a class="theme glass wide locked"><span class="disc">${icon('lock')}</span><b>Today</b>` +
+      `<small class="note">Solve 10 more in Learn</small></a>`);
   } else if (daily === 'a') {
     row = `<a class="theme glass wide" href="daily.html?today=${today}"><span class="disc">${icon('today')}</span><b>Today</b>` +
       `<span class="end">${streak}${Draughts.dots(today, 4)}</span><small class="note">${left}</small></a>`;

@@ -165,10 +165,12 @@ a new `daily.html`), checked with `agent-browser`, then chosen. The proposals:
   its stars, a tile opening its puzzle (`puzzles.html?daily=b`); the row's mark turns to
   the moon and its note to "New puzzles tomorrow" once all are solved. Today's own page
   (`daily.html`) is then not needed.
-- How to play and Today share the first row: while Today is locked, its locked row and
-  How to play's stand side by side; once it opens, Today takes the whole row, and How to
-  play becomes a tile with its mark beside the title in landscape, and ends the list in
-  portrait, where the title row has no room.
+- How to play and Today: while Today is locked, How to play heads the list as now and
+  Today's locked row ends it ("Solve n more in Learn"); once it opens, Today heads the
+  list across the columns, and How to play becomes a tile with its mark beside the title
+  in landscape, and ends the list in portrait, where the title row has no room.
+- Home's Puzzles row before Today opens: the puzzles solved in the player's draughts,
+  not stars ("31 / 74"); after, today's dots.
 - Today opens once Learn is solved, all of it, not half: Learn is the rules, which a daily
   puzzle may use. Gating on the other themes too was rejected as too strict (a young
   child would stall on Safe move); the daily pick keeps to the themes opened instead.
