@@ -24,6 +24,24 @@
   .theme b { font-weight: 400; font-size: 30px; align-self: end; }
   .theme small { align-self: end; display: flex; align-items: center; gap: 6px; }
   .theme small .icon { width: 16px; height: 16px; color: var(--glow); }
+  /* How to play's row as built, and task 087's Today row: across the columns, heading them. */
+  .wide { grid-column: 1 / -1; min-height: 104px; }
+  .wide .disc { background: color-mix(in srgb, var(--glow) 40%, transparent); }
+  .wide.locked .disc { background: rgb(255 255 255 / 0.1); }
+  .wide.locked b, .wide.locked .disc .icon { opacity: 0.45; }
+  .wide .dots, .wide .streak { grid-row: span 2; }
+  .wide .end { grid-row: span 2; display: flex; align-items: center; gap: 22px; }
+  .wide .dots i { width: 18px; height: 18px; }
+  .wide .streak { font-size: 26px; }
+  .wide .streak .icon { width: 30px; height: 30px; }
+  .wide .note { grid-column: 2; align-self: start; }
+  .mini { grid-row: span 2; display: flex; gap: 10px; }
+  .mini .tile { min-width: 0; width: 76px; min-height: 76px; padding: 0; flex-direction: column; gap: 6px; }
+  .mini .tile .icon { width: 18px; height: 18px; }
+  .mini .rise { display: flex; align-items: end; gap: 3px; height: 18px; }
+  .mini .rise i { width: 5px; border-radius: 2px; background: rgb(255 255 255 / 0.3); }
+  .mini .rise i.on { background: var(--fg); }
+  .mini .st { display: flex; color: var(--glow); }
   .bar { grid-column: 2 / 4; align-self: start; height: 8px; border-radius: 4px; background: rgb(255 255 255 / 0.12); }
   .bar i { display: block; height: 100%; border-radius: inherit; background: var(--glow); }
   @container (max-height: 599px) and (orientation: landscape) {
@@ -37,6 +55,7 @@
     .joined .tile { flex: 1; min-width: 0; }
     .rows { grid-template-columns: minmax(0, 600px); }
     .theme { min-height: 96px; }
+    .mini { grid-column: 1 / -1; grid-row: auto; justify-content: space-between; padding-bottom: 16px; }
   }
 </style>
 </head>
@@ -55,6 +74,34 @@
   document.getElementById('rows').innerHTML = THEMES.map(([ic, name, n, all]) =>
     `<a class="theme glass" href="puzzle.html"><span class="disc">${Draughts.icon(ic)}</span><b>${name}</b>` +
     `<small>${Draughts.icon('star')}${n} / ${all}</small><span class="bar"><i style="width:${100 * n / all}%"></i></span></a>`).join('');
+  const rows = document.getElementById('rows'), P = Draughts.params, icon = Draughts.icon;
+  rows.insertAdjacentHTML('afterbegin', `<a class="theme glass wide" href="tutorial.html"><span class="disc">${icon('hint')}</span>` +
+    `<b>How to play</b><small>${icon('check')}8 / 8 steps</small><span class="bar"><i style="width:100%"></i></span></a>`);
+  // Task 087's takes: ?daily=a a Today row heading the library, its dots and the streak,
+  // opening today's page (daily.html); ?daily=b the row with today's puzzles in it as
+  // tiles, each its level's bars and its stars, a tile opening its puzzle.
+  // ?today=N solved (2) of 4; ?locked=1 before half of Learn is solved.
+  const daily = P.get('daily'), today = Number(P.get('today') ?? 2), locked = P.get('locked') === '1';
+  const STARS = [3, 2, 0, 0], LEVEL = [1, 2, 2, 3];
+  let row = '';
+  if (locked && (daily === 'a' || daily === 'b')) {
+    row = `<a class="theme glass wide locked"><span class="disc">${icon('lock')}</span><b>Today</b>` +
+      `<small class="note">Solve 4 more in Learn</small></a>`;
+  } else if (daily === 'a') {
+    row = `<a class="theme glass wide" href="daily.html?today=${today}"><span class="disc">${icon('today')}</span><b>Today</b>` +
+      `<span class="end"><span class="streak">${icon('flame')}5</span>${Draughts.dots(today, 4)}</span>` +
+      `<small class="note">${today >= 4 ? 'New puzzles tomorrow' : `${4 - today} to go`}</small></a>`;
+  } else if (daily === 'b') {
+    const tiles = LEVEL.map((lv, i) => {
+      const won = i < today ? STARS[i] || 1 : 0, lit = i === today ? ' on' : '';
+      return `<a class="tile${lit}" href="puzzle.html?daily=1"><span class="rise">${[1, 2, 3].map((k) =>
+        `<i class="${k <= lv ? 'on' : ''}" style="height:${6 * k}px"></i>`).join('')}</span>` +
+        `<span class="st">${[0, 1, 2].map((k) => icon(k < won ? 'star' : 'starOff')).join('')}</span></a>`;
+    }).join('');
+    row = `<div class="theme glass wide"><span class="disc">${icon('today')}</span><b>Today</b>` +
+      `<span class="mini">${tiles}</span><small class="note"><span class="streak">${icon('flame')}5</span></small></div>`;
+  }
+  if (row) rows.insertAdjacentHTML('afterbegin', row);
   Draughts.init();
 </script>
 </body>

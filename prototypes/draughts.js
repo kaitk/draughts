@@ -165,6 +165,10 @@ const Draughts = (() => {
     captures: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 11c1-5 11-5 12 0"/><path d="M15.5 9.5 18 11l1-3"/>',
     target: '<circle cx="12" cy="12" r="7"/><circle class="solid" cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
     shield: '<path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6z"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+    moon: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+    flame: '<path class="solid" d="M12 2.5c1.2 3.6 6 6 6 11.2a6 6 0 0 1-12 0c0-2.8 1.5-4.5 2.8-5.9.3 1.7 1 2.8 2.2 3.3-.3-3.3.2-6 1-8.6z"/>',
+    today: '<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle class="solid" cx="12" cy="15" r="2.2"/>',
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.7 3.8 5.7 3.8 9s-1.2 6.3-3.8 9c-2.6-2.7-3.8-5.7-3.8-9S9.4 5.7 12 3z"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
@@ -515,6 +519,11 @@ const Draughts = (() => {
   const MARKS = { '*': ['best', ''], '?!': ['q0', '?!'], '?': ['q1', '?'], '??': ['q2', '??'] };
   const mark = (k) => (MARKS[k] ? `<i class="mk ${MARKS[k][0]}">${MARKS[k][1] || icon('star')}</i>` : '');
 
+  // Today's puzzles as dots, the solved ones filled in the glow; a check once all are
+  // (task 087's takes).
+  const dots = (done, n, now = -1) => (done >= n ? `<span class="dots all">${icon('check')}</span>`
+    : `<span class="dots">${Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : i === now ? 'now' : ''}"></i>`).join('')}</span>`);
+
   function init() {
     for (const w of [400, 700]) {
       document.head.insertAdjacentHTML('beforeend',
@@ -540,5 +549,5 @@ const Draughts = (() => {
     document.fonts.ready.then(later);
   }
 
-  return { settings, icon, board, start, init, sync: later, paint: () => Paint.all(), game, PLIES, mark };
+  return { settings, params, dots, icon, board, start, init, sync: later, paint: () => Paint.all(), game, PLIES, mark };
 })();

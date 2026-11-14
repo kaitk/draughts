@@ -23,6 +23,8 @@
   .goal b { display: block; font-weight: 400; }
   .stars { display: flex; gap: 6px; color: var(--glow); }
   .stars .icon { width: 44px; height: 44px; }
+  .today { margin-top: auto; }
+  .today + .next { margin-top: 8px; }
   .next { margin-top: auto; width: 100%; flex-direction: column; min-height: 132px; gap: 8px; font-size: 26px; }
   .next .icon { width: 48px; height: 48px; }
   @container (max-height: 599px) and (orientation: landscape) {
@@ -69,6 +71,12 @@
 </main>
 <script>
   document.getElementById('stars').innerHTML = Draughts.icon('star').repeat(3);
+  // Task 087's take: ?daily=1, one of today's puzzles: back goes to today's page, and
+  // today's dots stand over next (this one the third of four).
+  if (Draughts.params.get('daily') === '1') {
+    document.querySelector('.left .tile[href]').href = 'daily.html';
+    document.querySelector('.next').insertAdjacentHTML('beforebegin', `<span class="today">${Draughts.dots(2, 4, 2)}</span>`);
+  }
   Draughts.board(document.getElementById('board'), {
     white: ['a1', 'f2', 'c3', 'e3', 'g3'], black: ['d6', 'h6', 'b8', 'f6', 'g7'],
   });

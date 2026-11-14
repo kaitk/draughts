@@ -21,6 +21,16 @@ library of thousands on home's "93 / 222" counter would only discourage. The pla
 The UI's prototypes are made and chosen first, in the session that wrote this task;
 the build starts in a new one after.
 
+## How hard the library must go
+
+The themed sets are made for children and are easy next to real puzzles: the user's
+children solved all three draughts' sets in a day (2026-11-14), and the kabe.ee page's
+warm-up (below) is one the user would need to set up on a board to start thinking
+about. So the course is the floor, not the middle: the library's difficulties must
+reach well past the course's hardest, up to puzzles that make a grown-up player think,
+and a child's rating must climb fast at first (a large step while it is new, as Glicko's
+deviation does) rather than start them among puzzles they have outgrown.
+
 ## Why generate, not import
 
 Every position in the sets is our own (`docs/architecture/puzzles.md`, "source"), so
@@ -95,6 +105,15 @@ No analytics, by design, so a puzzle's difficulty is estimated offline from:
 
 Blended into one number per puzzle in the generated file. Checked against real solves:
 a few weeks of the user's children's results per puzzle, read from the player files.
+
+Calibration references, used to check the estimate and never shipped: kabe.ee's
+"Kabeülesandeid isadele" (2021-11-13), five Russian 8×8 puzzles for grown-ups who
+aren't players, white to win, labeled by its author from warm-up (1) through "already
+harder" (3) to "here you have to think" (4), lines of five moves and one of eight. The
+positions are diagram images, so they are transcribed by hand; the page shows no solve
+counts. The user finds them medium to hard, not a warm-up (2026-11-14): the author's
+labels order them, but the estimate should place them by the user's reading, and by how
+the user's children find them.
 
 ## The player's rating
 

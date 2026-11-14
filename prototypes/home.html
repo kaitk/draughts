@@ -26,6 +26,7 @@
   .item.primary { background: color-mix(in srgb, var(--glow) 24%, transparent); }
   .item small { margin-left: auto; display: flex; align-items: center; gap: 8px; }
   .item small .icon { width: 24px; height: 24px; opacity: 0.66; }
+  .item small .dots .icon, .item small .streak .icon { opacity: 1; }
   .item.outlined { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
   .stage { position: relative; display: grid; place-items: center; padding: 112px 40px 40px; }
   #board { width: min(100%, var(--h) - 88px); }
@@ -80,6 +81,13 @@
 </main>
 <script>
   Draughts.board(document.getElementById('board'), Draughts.start(8));
+  // Task 087's takes: ?daily=a puts today's dots in Puzzles' row in place of the course's
+  // count, ?daily=b the dots and the streak of days; ?today=N puzzles solved (2), of 4.
+  const daily = Draughts.params.get('daily'), today = Number(Draughts.params.get('today') ?? 2);
+  if (daily === 'a' || daily === 'b') {
+    document.querySelector('.item[href="puzzles.html"] small').innerHTML =
+      (daily === 'b' ? `<span class="streak">${Draughts.icon('flame')}5</span>` : '') + Draughts.dots(today, 4);
+  }
   Draughts.init();
 </script>
 </body>
