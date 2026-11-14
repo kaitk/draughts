@@ -93,6 +93,15 @@ On the screen (2026-11-14, prototyped and chosen):
   heads the library and the locked Today ends it; once it opens, Today heads the list and
   How to play is a tile beside the title in landscape, the list's last row in portrait.
 - No "one more" after the day's set: the moon ends the day.
+- **Today opens in every draughts once Learn is solved in any one** (2026-11-14,
+  replacing the same day's "Today opens once Learn is solved" per draughts): a player
+  who knows the rules from one draughts shouldn't grind another's simple Learn puzzles
+  to reach its daily ones; the daily pick keeps to the themes opened in the draughts
+  shown, Captures always among them. A draughts' first puzzle rating is then the best
+  the player has in any draughts, a rating there or one from its course's stars, so it
+  doesn't start at the floor of a course not played; its large first steps correct it.
+  Rejected: seeding from the draughts' own course alone, which puts a player who
+  learned elsewhere back on the easiest puzzles.
 - Today's row's head, its mark and words, opens a puzzle (2026-11-14): the first
   unsolved, or the first once all are, as a replay for stars. A tap there did nothing,
   though the mark looks like a theme row's, which opens. The head is a tile of its own

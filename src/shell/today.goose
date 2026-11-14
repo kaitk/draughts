@@ -31,7 +31,7 @@ fn today_of(sh: Shell&) -> settings::Today& { return sh.prefs.today[puzzles::loa
 fn sync_daily(sh: Shell&) {
     guard sh.screen == HOME || sh.screen == PICKER else { return; }
     let set = puzzles::loaded;
-    guard sh.day >= 0 && picker::today_open(sh.prefs.stars[set]) else { return; }
+    guard sh.day >= 0 && picker::today_open(sh.prefs) else { return; }
     if today_of(sh).day != sh.day { new_day(sh); }
     let d .= sh.daily;
     guard d.set != set || d.day != today_of(sh).day || d.player != playing_id(sh) else { return; }
@@ -53,14 +53,11 @@ fn opened_themes(stars: const u8[:]) -> u64 {
 }
 
 // Picks today's puzzles for the playing player in the set shown, and saves them: the
-// rating seeded first if it has none, from all the course's stars against three a puzzle.
+// rating seeded first if it has none (first_rating).
 fn new_day(sh: Shell&) {
     let set = puzzles::loaded;
     let p .= sh.prefs;
-    if p.puzzle_rating[set] == 0 {
-        let won, all = picker::totals(p.stars[set]);
-        p.puzzle_rating[set] = puzzles::first_puzzle_rating(won, all);
-    }
+    if p.puzzle_rating[set] == 0 { p.puzzle_rating[set] = first_rating(p); }
     let t .= p.today[set];
     puzzles::pick(puzzles::library, sh.day, playing_id(sh), p.puzzle_rating[set], opened_themes(p.stars[set]), p.seen[set],
                   p.daily_count, t.picked);
@@ -69,6 +66,26 @@ fn new_day(sh: Shell&) {
     for id in t.picked.list { p.seen[set][id / 64] |= rules::bit(id % 64); }
     sh.daily.set = -1;
     sh.changed = true;
+}
+
+// A draughts' first puzzle rating: the best the player has in any draughts, a rating
+// there or else one from its course's stars against three a puzzle. Today opens in every
+// draughts once one draughts' Learn is solved (picker::today_open), so a player who
+// learned elsewhere starts where they stand there, not at the floor of a course they
+// haven't played; the rating's large first steps move it quickly if that is too high.
+fn first_rating(p: settings::Settings&) -> i64 {
+    var best = 0;
+    for v in puzzles::SETS {
+        var r = p.puzzle_rating[v];
+        if r == 0 {
+            let c .= puzzles::course(v as u8);
+            var won = 0;
+            for id in c.ids { if id >= 1 && id <= puzzles::MAX_PUZZLES { won += p.stars[v][id]; } }
+            r = puzzles::first_puzzle_rating(won, 3 * c.ids.len);
+        }
+        best = max(best, r);
+    }
+    return best;
 }
 
 // Reads today's puzzles from the library into sh.daily; false if one doesn't read.

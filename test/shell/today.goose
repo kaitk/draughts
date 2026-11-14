@@ -15,7 +15,9 @@
 // The test library's ids run against its order, so a record by id is read through the
 // index. A player's file from before the library had ids, its puzzles kept by their
 // lines then, reads today's puzzles and those had as the same puzzles of the built-in
-// library, whose first puzzles' ids are those lines.
+// library, whose first puzzles' ids are those lines. Learn solved in any draughts opens
+// Today in all: Russian's alone opens International's, whose first rating is the best
+// the player has, Russian's course's or Russian's rating.
 // Then the layouts at the tablet's size and a 20:9 phone's at 480 dp in both orientations,
 // four and ten a day: the library (every tap 88 dp at least, none off the screen nor over
 // another, Today's tiles in the picker's ids) and a daily puzzle (its dots on the screen,
@@ -496,7 +498,7 @@ fn main() {
     }
     home(sh, g, 0.0);
     let solved, all = picker::solved_all(sh.prefs.stars[SET]);
-    print("Learn but one: open ", picker::today_open(sh.prefs.stars[SET]), ", ", picker::today_more(sh.prefs.stars[SET]),
+    print("Learn but one: open ", picker::today_open(sh.prefs), ", ", picker::today_more(sh.prefs.stars[SET]),
           " more; home notes ", solved, " / ", all, ", ", home_line(g));
     library(sh, g, 0.1);
     print("  the library: ", library_line(sh, g), "; ", record(sh));
@@ -505,7 +507,7 @@ fn main() {
     learn_all(sh);
     sh.changed = false;
     home(sh, g, 0.2);
-    print("all of Learn: open ", picker::today_open(sh.prefs.stars[SET]), "; ", record(sh), "; to save ", sh.changed);
+    print("all of Learn: open ", picker::today_open(sh.prefs), "; ", record(sh), "; to save ", sh.changed);
     print("  home: ", home_line(g));
     var written: u8[>..] = [];
     settings::write(sh.prefs, written);
@@ -584,12 +586,44 @@ fn main() {
     // seen bits' puzzles are those of the lines they named then.
     old_file();
 
+    // Learn solved in Russian alone opens Today in International.
+    elsewhere(text, g);
+
     // The layouts.
     layouts(text, g, 4);
     layouts(text, g, 10);
 
     // Home's note before the check.
     homes(text, g);
+}
+
+// Russian's Learn solved, International's not touched, International's set shown: one
+// Learn puzzle short, Today stays shut; all of it, Today opens there too, and the day's
+// rating starts from Russian's course stars, the best the player has; a Russian rating
+// of 900 already, it starts from that.
+fn elsewhere(text: const u8[:], g: gui::Gui&) {
+    let c .= puzzles::course(rules::RUSSIAN);
+    var learn = 0;
+    for t in c.themes { if t == puzzles::LEARN { learn++; } }
+    for rated in [0, 900] {
+        var sh = fresh(text);
+        sh.prefs.puzzle_rating[rules::RUSSIAN] = rated;
+        var k = 0;
+        for id, i in c.ids {
+            guard c.themes[i] == puzzles::LEARN else { continue; }
+            k++;
+            if k < learn || rated > 0 { sh.prefs.stars[rules::RUSSIAN][id] = 3; }
+        }
+        if rated == 0 {
+            home(sh, g, 0.0);
+            print("Russian's Learn but one, International shown: open ", picker::today_open(sh.prefs), ", today's ",
+                  sh.prefs.today[SET].picked.list.len);
+            for id, i in c.ids { if c.themes[i] == puzzles::LEARN { sh.prefs.stars[rules::RUSSIAN][id] = 3; } }
+        }
+        home(sh, g, 1.0);
+        print("Russian's Learn", if rated > 0 { ", rated 900" } else { "" }, ": open ", picker::today_open(sh.prefs), ", ", home_line(g),
+              "; ", record(sh));
+    }
 }
 
 // The built-in International library's first lines from before it had ids: the

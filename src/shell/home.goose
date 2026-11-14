@@ -537,7 +537,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     let icons = [gui::NEXT, gui::NEW_GAME, gui::PUZZLE];
     let keys = [strings::HOME_CONTINUE, strings::HOME_NEW_GAME, strings::HOME_PUZZLES];
     let set = puzzles::loaded;
-    let daily = picker::today_open(s.stars[set]);
+    let daily = picker::today_open(s);
     for i in first..ROWS {
         let r = at[1 + i - first];
         var stars: u8[..64] = [];

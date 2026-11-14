@@ -82,6 +82,49 @@ fn load(variant: u8 = rules::INTERNATIONAL) -> bool {
     return parse(file(loaded), all, err);
 }
 
+// The sets built into the program, each a draughts' own.
+let SETS = [rules::INTERNATIONAL, rules::RUSSIAN, rules::BRAZILIAN];
+
+// Each built-in set's puzzles by id and theme, read from its file's `id` and `theme`
+// lines alone, so one draughts' course can be weighed while another's is loaded (the
+// shell's Today, opened by any draughts' Learn). Read once, at the first course().
+struct Ids {
+    ids:    i64[..MAX_PUZZLES] = [],
+    themes: i64[..MAX_PUZZLES] = [],
+}
+var courses: Ids[rules::VARIANT_COUNT] = [Ids {}; rules::VARIANT_COUNT];
+var coursed = false;
+
+// The built-in set's puzzles of `variant`'s set (set_of) by id and theme.
+fn course(variant: u8) -> Ids& {
+    if !coursed {
+        for set in SETS { index_course(file(set as u8), courses[set]); }
+        coursed = true;
+    }
+    return courses[set_of(variant)];
+}
+
+fn index_course(text: const u8[:], out: Ids&) {
+    out.ids.clear();
+    out.themes.clear();
+    var rest = text;
+    while rest.len > 0 {
+        let raw, after, found = split_once(rest, '\n');
+        rest = after;
+        let kept, comment, has_hash = split_once(raw, '#');
+        let l = trim(kept);
+        let key, value, spaced = split_once(l, ' ');
+        if key == "id" && out.ids.len < MAX_PUZZLES {
+            let id, ok = parse_int(trim(value));
+            out.ids.push(if ok { id } else { 0 });
+            out.themes.push(-1);
+        } else if key == "theme" && out.themes.len > 0 {
+            for name, i in THEME_NAMES { if trim(value) == name { out.themes[out.themes.len - 1] = i; } }
+        }
+        if !found { break; }
+    }
+}
+
 // The index in set of the puzzle with `id`, or -1.
 fn find(set: Set&, id: i64) -> i64 {
     for p, i in set.list { if p.id == id { return i; } }

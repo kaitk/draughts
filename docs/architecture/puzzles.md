@@ -185,7 +185,7 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
   child is to find the move ([product](../product.md)). The selection, the
   glow, and a wrong move's flash still show.
 - **Themes**: Learn is open; the others open once half of Learn is solved, and Today
-  ([daily puzzles](#daily-puzzles)) once all of it is,
+  ([daily puzzles](#daily-puzzles)) once all of it is in any one draughts,
   and inside a theme everything is open. A theme's page lights its first puzzle without
   stars.
 - **Next** opens the puzzle after it in its theme, and after the theme's last the
@@ -206,9 +206,10 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
 
 ## Daily puzzles
 
-A few puzzles a day from a large library, at the player's level, once the player's
-draughts' Learn is solved. The course above stays: it teaches the motifs in order, keeps
-its stars by id, opens Today, and seeds the rating.
+A few puzzles a day from a large library, at the player's level, in every draughts once
+Learn is solved in any one of them (`picker::today_open`, over each built-in set's ids
+and themes, `puzzles::course`). The course above stays: it teaches the motifs in order,
+keeps its stars by id, opens Today, and seeds the rating.
 
 **The library** is a file per draughts, `src/puzzles/library-international.txt`,
 `library-russian.txt`, and `library-brazilian.txt`, built into the program, one puzzle a
@@ -270,8 +271,9 @@ none comes again. The puzzle screen names the warm-up and the stretch under the 
 
 **The puzzle rating**, per player and draughts, is Elo's against the puzzle's difficulty:
 stars are the score (3 = 1.0, 2 = 0.6, 1 = 0.3), the step 96 at first, falling by 6 a
-puzzle to 24, so a child's rating climbs fast while it is new. It starts from the course,
-350 plus 600 times the share of its stars won. Only a puzzle's first solve moves it; a
+puzzle to 24, so a child's rating climbs fast while it is new. It starts from the best the
+player has in any draughts (`shell::first_rating`): a rating there, or else one from that
+draughts' course, 350 plus 600 times the share of its stars won. Only a puzzle's first solve moves it; a
 daily puzzle may be played again the same day for stars. It isn't shown on the puzzle
 screen.
 

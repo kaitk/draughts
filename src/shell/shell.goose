@@ -809,7 +809,8 @@ fn in_tile(sh: Shell&, spot: float4, scale: f32) -> board::Layout {
 // frame both show them: `spot` the tile the board grows out of, `variant` the switch's.
 fn declare_picker(sh: Shell&, g: gui::Gui&, area: float4, spot: float4&, variant: i64&) -> i64, i64 {
     let pick, item = picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant,
-                                   learned(sh), tutorial::count(sh.prefs.variant as u8), today_of(sh), sh.puzzle.daily);
+                                   learned(sh), tutorial::count(sh.prefs.variant as u8), today_of(sh), sh.puzzle.daily,
+                                   picker::today_open(sh.prefs));
     return pick, item;
 }
 

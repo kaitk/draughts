@@ -60,12 +60,28 @@ fn to_open(stars: const u8[:]) -> i64 {
 // Whether a theme is open: Learn always, the others once half of Learn is solved.
 fn open(stars: const u8[:], theme: i64) -> bool { theme == puzzles::LEARN || to_open(stars) == 0 }
 
-// How many of Learn's puzzles are still to solve before Today opens: all of
-// Learn, the rules a daily puzzle may use; 0 once it is open. A set read with no Learn
-// (none read yet) keeps it shut.
+// How many of the set's Learn puzzles are still to solve before Today opens: all of
+// Learn, the rules a daily puzzle may use.
 fn today_more(stars: const u8[:]) -> i64 { puzzles::theme_count(puzzles::all, puzzles::LEARN) - solved(stars, puzzles::LEARN) }
-fn today_open(stars: const u8[:]) -> bool {
-    return puzzles::theme_count(puzzles::all, puzzles::LEARN) > 0 && today_more(stars) <= 0;
+
+// Whether Today is open, in every draughts: all of Learn solved in any one draughts'
+// course (docs/decisions/puzzles.md, 2026-11-14).
+fn today_open(s: settings::Settings&) -> bool {
+    for set in puzzles::SETS { if learned(s.stars[set], set) { return true; } }
+    return false;
+}
+
+// Whether every Learn puzzle of the built-in set of `set` has stars; false for a set
+// with no Learn.
+fn learned(stars: const u8[:], set: i64) -> bool {
+    let c .= puzzles::course(set as u8);
+    var n = 0;
+    for id, i in c.ids {
+        guard c.themes[i] == puzzles::LEARN else { continue; }
+        guard id >= 1 && id < stars.len && stars[id] > 0 else { return false; }
+        n++;
+    }
+    return n > 0;
 }
 
 // The puzzles of the set solved, any stars, and how many it has: home's note before Today
@@ -155,9 +171,9 @@ fn line_h(g: gui::Gui&, face: i64) -> f32 { g.faces[face].ascent - g.faces[face]
 // playing (its place in them, or -1), whose tile the board grows out of: a tap on one
 // returns TODAY and its place.
 fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&, variant: i64&,
-         learned: i64, steps: i64, today: settings::Today&, today_at: i64) -> i64, i64 {
+         learned: i64, steps: i64, today: settings::Today&, today_at: i64, opened: bool) -> i64, i64 {
     if theme < 0 {
-        let pick, item = library(g, area, stars, at, theme, spot, variant, learned, steps, today, today_at);
+        let pick, item = library(g, area, stars, at, theme, spot, variant, learned, steps, today, today_at, opened);
         return pick, item;
     }
     let pick, item = page(g, area, stars, at, theme, spot);
@@ -526,7 +542,7 @@ fn learn_tile(g: gui::Gui&, r: float4) -> bool {
 // play's row, or Today's once it is open (frame), and under them Today's locked row, or
 // in portrait How to play's once Today is open.
 fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&,
-           variant: i64&, learned: i64, steps: i64, today: settings::Today&, today_at: i64) -> i64, i64 {
+           variant: i64&, learned: i64, steps: i64, today: settings::Today&, today_at: i64, opened: bool) -> i64, i64 {
     let u = g.scale;
     let landscape = area.z >= area.w;
     let phone = gui::phone(area, u);
@@ -534,7 +550,6 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     var pick = NOTHING;
     var item = -1;
     let gap = gui::PAD * u;
-    let opened = today_open(stars);
     let n_today = today.picked.list.len;
     // How to play beside the title once Today heads the list, in landscape.
     let how_tile = opened && landscape;
