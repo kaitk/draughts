@@ -53,7 +53,7 @@ its 13's single now taken back). Both sets report none since.
 
 Children who had solved every themed puzzle asked for more, and solved all three
 draughts' sets in a day (2026-11-14). Adding puzzles by hand doesn't scale, and a count
-over thousands on home would only discourage. So (2026-11-14, task 087):
+over thousands on home would only discourage. So (2026-11-14, task 088):
 
 - **The themed sets stay as the course**: they teach the motifs in order, are checked by
   hand, and keep the stars by id. They gate the daily puzzles and seed the puzzle rating.

@@ -17,7 +17,7 @@
 // their fades. In landscape the board is right of the list; in portrait above it. The
 // language list closes on a tap outside it and on back, which then stays on settings.
 // The game's lookout, off for a new player, is kept in the file too, and the puzzles a
-// day (task 087), chosen in the Game section's last row.
+// day (task 088), chosen in the Game section's last row.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -49,7 +49,7 @@ let MISTAKES = 17;
 let MOVES = 18;
 let LIST_OFF = 19;          // the moves panel's row (task 074): off, the moves, marks
 let LIST_MARKS = 21;
-let DAILY_10 = 25;          // puzzles a day (task 087): 3, 4, 5, 10
+let DAILY_10 = 25;          // puzzles a day (task 088): 3, 4, 5, 10
 let TILES = 26;
 let ENGLISH = 26;           // the language list's rows, after the screen's tiles
 let EESTI = 27;

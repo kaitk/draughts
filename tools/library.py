@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds a daily-puzzle library from tools/puzzles.goose's output (task 087).
+"""Builds a daily-puzzle library from tools/puzzles.goose's output (task 088).
 
     tools/library.py merge OUT IN...     joins `batch`/`games` outputs, keeping each puzzle once:
                                          by its position, and by its line and side to move

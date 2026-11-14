@@ -136,7 +136,7 @@ let NEW_GAME = 45;          // home's new game: a light piece jumping a dark one
 let TURNS = 46;             // the setup's board turning to who plays: two arcs chasing round,
 let STAYS = 47;             // and staying: a board with an arrow up it
 let HOW = 48;               // how to play: a finger tapping, a ring over its tip (task 026)
-let TODAY = 49;             // the daily puzzles (task 087): a calendar with today's dot,
+let TODAY = 49;             // the daily puzzles (task 088): a calendar with today's dot,
 let MOON = 50;              // and once all are solved, a crescent moon
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the

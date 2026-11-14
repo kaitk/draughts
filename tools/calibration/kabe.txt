@@ -1,4 +1,4 @@
-# Calibration references for the daily puzzles' difficulty (task 087), never shipped:
+# Calibration references for the daily puzzles' difficulty (task 088), never shipped:
 # kabe.ee's "Kabeülesandeid isadele" (2021-11-13), five Russian puzzles for grown-ups
 # who aren't players, white to win, in the author's order from the warm-up (1) through
 # "already harder" (3) to "here you have to think" (4). Transcribed by hand from the

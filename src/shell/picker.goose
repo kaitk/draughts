@@ -17,7 +17,7 @@
 // prototypes/tutorial.html entry b): its mark, its name, the steps played of the
 // switch's draughts' tutorial, and a bar of them; it is never needed to open a theme. The sharp photograph shows behind it, and no board.
 //
-// The daily puzzles (task 087, prototypes/puzzles.html?daily=b): until Learn is solved,
+// The daily puzzles (task 088, prototypes/puzzles.html?daily=b): until Learn is solved,
 // all of it, How to play heads the list and a locked Today row ends it, across the
 // columns ("Solve n more in Learn"). Once it is, Today's row heads the list across the
 // columns: its mark (a calendar, the moon once all are solved), "Today", a note ("n to
@@ -41,7 +41,7 @@ let BACK = gui::ASK_BACK;   // home
 let SHOWN = gui::ASK_SHOWN; // a theme's page opened or left: drawn again
 let SWITCHED = -10;         // other draughts chosen on the library's switch
 let LEARN = -11;            // how to play, the library's first row (task 026)
-let TODAY = -100;           // today's puzzle k tapped is TODAY - k (task 087), k under puzzles::MAX_DAILY
+let TODAY = -100;           // today's puzzle k tapped is TODAY - k (task 088), k under puzzles::MAX_DAILY
 let TODAY_IDS = gui::PICKER_IDS + 30;          // today's tiles, one id each
 
 let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING, gui::SHIELD];
@@ -71,7 +71,7 @@ fn to_open(stars: const u8[:]) -> i64 {
 // Whether a theme is open: Learn always, the others once half of Learn is solved.
 fn open(stars: const u8[:], theme: i64) -> bool { theme == puzzles::LEARN || to_open(stars) == 0 }
 
-// How many of Learn's puzzles are still to solve before Today opens (task 087): all of
+// How many of Learn's puzzles are still to solve before Today opens (task 088): all of
 // Learn, the rules a daily puzzle may use; 0 once it is open. A set read with no Learn
 // (none read yet) keeps it shut.
 fn today_more(stars: const u8[:]) -> i64 { puzzles::theme_count(puzzles::all, puzzles::LEARN) - solved(stars, puzzles::LEARN) }
@@ -91,7 +91,7 @@ fn solved_all(stars: const u8[:]) -> i64, i64 {
 // stretch 3 (puzzles::target's shape).
 fn slot_level(k: i64, n: i64) -> i64 { if k == 0 { 1 } else if k == n - 1 { 3 } else { 2 } }
 
-// Today's dots (task 087): n of them `d` pixels across and `gap` apart, centered in r,
+// Today's dots (task 088): n of them `d` pixels across and `gap` apart, centered in r,
 // those with stars in `won` filled in the glow, puzzle `ring` (or none, -1) ringed in it,
 // the rest dim; home's note and over a daily puzzle's next. Smaller where r is narrower
 // than they want (ten over a phone's next).
@@ -154,7 +154,7 @@ fn line_h(g: gui::Gui&, face: i64) -> f32 { g.faces[face].ascent - g.faces[face]
 // `theme`), SWITCHED (having set `variant`, the player's draughts, from the library's
 // switch), the index in puzzles::all of a puzzle tapped, or NOTHING.
 //
-// With `today`, the player's daily puzzles in the set (task 087), and `today_at` the one
+// With `today`, the player's daily puzzles in the set (task 088), and `today_at` the one
 // playing (its place in them, or -1), whose tile the board grows out of: a tap on one
 // returns TODAY - its place.
 fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&, variant: i64&,
@@ -349,7 +349,7 @@ fn title(g: gui::Gui&, r: float4) {
 // How wide the title wants to be.
 fn title_width(g: gui::Gui&) -> f32 { gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES)) }
 
-// Today's row (task 087): its padding, its mark, and its gap after the mark, as How to
+// Today's row (task 088): its padding, its mark, and its gap after the mark, as How to
 // play's row; its tiles a tap square each, TODAY_GAP apart at least, and under the head
 // where they don't fit beside it, TODAY_FOOT dp above the row's foot.
 let TODAY_GAP = 10.0;
@@ -507,7 +507,7 @@ fn today_locked(g: gui::Gui&, r: float4, stars: const u8[:], phone: bool) {
     name_note(g, c, strings::get(strings::DAILY_TODAY), more[..], true);
 }
 
-// How to play as a tile beside the title (task 087, once Today heads the list in
+// How to play as a tile beside the title (task 088, once Today heads the list in
 // landscape): its mark on glass, a tap square. True when tapped.
 fn learn_tile(g: gui::Gui&, r: float4) -> bool {
     gui::glass(g, r, 22.0);

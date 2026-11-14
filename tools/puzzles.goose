@@ -611,7 +611,7 @@ let OPENING = 4;            // plies played at random first, so games differ
 let SHOT_MOVES = 4;         // the most of the solver's moves a puzzle from a game takes
 let EVEN = 60;              // the side that moved before the puzzle scored its move at least this (a man is 100)
 
-// Puzzles from the computer's own games (task 087, after lichess-puzzler): `games`
+// Puzzles from the computer's own games (task 088, after lichess-puzzler): `games`
 // games of the computer against itself at `skill`, `nodes` a move, from `OPENING`
 // random plies. A position is a candidate where the material is even, no side up a man
 // or a king, and the side that just moved scored its move as roughly even (EVEN): the
@@ -690,7 +690,7 @@ fn games(seed: u64, count: i64, skill: i64, nodes: i64) {
     report(name, st, dups, found, time() - begun);
 }
 
-// The difficulty estimate (task 087): no play data leaves the device, so a puzzle's
+// The difficulty estimate (task 088): no play data leaves the device, so a puzzle's
 // difficulty is judged offline from the computer as judge, the line's shape, and the
 // motif's level, blended into one number on the players' rating scale.
 let RATE_STEP = 5;          // skills tried, 0 to 100 in these steps

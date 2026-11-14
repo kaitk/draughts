@@ -1,4 +1,4 @@
-// The daily puzzles in the shell (shell/today.goose, task 087), headless, on a test
+// The daily puzzles in the shell (shell/today.goose, task 088), headless, on a test
 // library of 200 one-move captures written as the generated file is, difficulties 300 to
 // 2290, Captures and Shots by turns. Today is locked until Learn is solved, all of it: the
 // library ends with its locked row, home notes the puzzles solved in the set. Once open,

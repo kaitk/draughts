@@ -70,7 +70,7 @@ let MOVES_NAMES = ["hidden", "list", "marks"];
 // afresh; one moved from it has had its first games.
 let OLD_SKILL = [10, 40, 90];
 let CLOCK_NAMES = ["none", "5+3", "10+5"];
-// Puzzles a day, the parent's choice in settings (task 087).
+// Puzzles a day, the parent's choice in settings (task 088).
 let DAILY_COUNTS = [3, 4, 5, 10];
 
 // A day's daily puzzles as a player had them: the day (days since the epoch by the local
@@ -123,7 +123,7 @@ struct Settings {
     // play when asked as a new player (`how_to_play = known`), which keeps home's row away.
     learned: i64[rules::VARIANT_COUNT] = [0; rules::VARIANT_COUNT],
     knows:   bool                      = false,
-    // The daily puzzles (task 087), by the set's variant (puzzles::set_of): the puzzle
+    // The daily puzzles (task 088), by the set's variant (puzzles::set_of): the puzzle
     // rating, 0 until it is seeded from the course's stars, and how many first solves have
     // moved it (`puzzle_rating.international = 812 14`); the library's puzzles had, a bit
     // each (`seen.international = 0:3 5:80`, the words that aren't 0 by their index, in

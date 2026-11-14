@@ -109,7 +109,7 @@ fn main() {
     s.first_start_done = true;
     s.season = 1;
     s.stars[rules::INTERNATIONAL][2] = 3;
-    // The daily puzzles' keys (task 087): the rating and its count, the puzzles had, a
+    // The daily puzzles' keys (task 088): the rating and its count, the puzzles had, a
     // day's record, and the puzzles a day.
     s.puzzle_rating[rules::INTERNATIONAL] = 812;
     s.puzzle_rated[rules::INTERNATIONAL] = 14;

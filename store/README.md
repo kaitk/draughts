@@ -51,7 +51,7 @@ Store's rules are in `app-store.md`, "Screenshots".
 
 ## Screenshots and the feature graphic
 
-A new set, taken 2026-11-14 from `main` at `e7ee00e` for the daily puzzles (task 087)
+A new set, taken 2026-11-14 from `main` at `e7ee00e` for the daily puzzles (task 088)
 and the last days' layouts, waits for the user's approval in `2026-11-14/`:
 `play/phone/`, `play/tablet/`, `app-store/iphone-6.9/` (and `-raw/`), and
 `app-store/ipad-13-landscape/`, with the names and sizes below; its own `upload/` of

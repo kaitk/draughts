@@ -1,4 +1,4 @@
-# 087: Daily puzzles from a large generated library, at the player's level
+# 088: Daily puzzles from a large generated library, at the player's level
 
 Status: in-progress
 

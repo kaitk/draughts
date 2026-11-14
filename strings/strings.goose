@@ -263,7 +263,7 @@ let REPLAY_NEXT = 213;      // white's, then black's (+ side)
 let REPLAY_TAKE = 215;      // a forced capture, white's then black's
 let REPLAY_ONE = 217;       // an only move that isn't a capture, white's then black's
 let REPLAY_ENDED = 219;
-// The daily puzzles (task 087): the library's Today row, its note while some are left
+// The daily puzzles (task 088): the library's Today row, its note while some are left
 // ("{} to go") and once all are solved, and settings' puzzles a day.
 let DAILY_TODAY = 220;
 let DAILY_LEFT = 221;

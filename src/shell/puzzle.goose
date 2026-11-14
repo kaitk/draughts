@@ -18,7 +18,7 @@
 // the goal says so, the stars won pop in, and next lights; nothing covers the board.
 // A star stays at the least, so a puzzle solved is one, two, or three stars.
 //
-// One of today's puzzles (task 087, prototypes/puzzle.html?daily=1) plays the same, a
+// One of today's puzzles (task 088, prototypes/puzzle.html?daily=1) plays the same, a
 // copy of it read from the library in place of one of the set's, and today's dots stand
 // over next: those solved filled in the glow, this one ringed in it.
 namespace puzzle;
@@ -81,7 +81,7 @@ struct Play {
     won:       i64      = 0,     // stars won, once solved
     grab:      float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (board::touch)
     cam:       rig::Rig = rig::Rig {},          // and the camera its buttons move (board/rig.goose)
-    // One of today's puzzles (task 087): its place in today's, else -1 for the set's at
+    // One of today's puzzles (task 088): its place in today's, else -1 for the set's at
     // `index`; the puzzle itself, read from the library (open_daily); and today's count
     // and the stars won in each, for the dots over next, which the shell keeps up.
     daily:   i64                    = -1,
@@ -317,7 +317,7 @@ fn animating(pl: Play&, g: gui::Gui&, now: f64) -> bool {
 }
 
 let RESTART_ASK = gui::ASK_RESTART;
-let DOT = 14.0;             // today's dots over next (task 087), dp across,
+let DOT = 14.0;             // today's dots over next (task 088), dp across,
 let DOT_GAP = 7.0;          // and apart,
 let DOT_ABOVE = 8.0;        // and above next
 

@@ -26,7 +26,7 @@ import drive from "../drive";
 
 let LANGUAGE = 1;           // the language button, after back
 let FIRST_TILE = 2;         // the list's first tile: the Background row's Photo
-let TILES = 26;             // the tiles of the list's rows, puzzles a day's four too (task 087), and back and the language
+let TILES = 26;             // the tiles of the list's rows, puzzles a day's four too (task 088), and back and the language
 
 fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
 

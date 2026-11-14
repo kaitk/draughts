@@ -1,4 +1,4 @@
-// The daily puzzles in the shell (task 087; docs/architecture/puzzles.md, "Daily
+// The daily puzzles in the shell (task 088; docs/architecture/puzzles.md, "Daily
 // puzzles"): a few a day from the set's library (puzzles::load_library), picked by the
 // local date, which the app hands in (Shell.day), and the player, at the player's puzzle
 // rating, once Learn is solved (picker::today_open). A new day, seen from home or the

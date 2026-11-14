@@ -4,7 +4,7 @@
 // season or by the date; the board, flat, or raised in the season's own material or its
 // wood, stone, or carved board, each a picture; the kings, auto, crown, or stack), then
 // Game (move hints, the moves panel beside the game with a line saying what the
-// chosen one shows, and the puzzles a day, 3, 4, 5, or 10, task 087), then the privacy
+// chosen one shows, and the puzzles a day, 3, 4, 5, or 10, task 088), then the privacy
 // note. The draughts are chosen in home's setup and
 // the puzzles' library, whether a friend's game turns the board in home's setup. The
 // preview beside the list is home's board as the choices make it: the player's draughts'
@@ -122,7 +122,7 @@ let BOARD_ROW = 2;
 let KINGS_ROW = 3;
 let HINTS_ROW = 4;
 let MOVES_ROW = 5;
-let DAILY_ROW = 6;          // puzzles a day (task 087), its tiles the numbers of DAILY_COUNTS
+let DAILY_ROW = 6;          // puzzles a day (task 088), its tiles the numbers of DAILY_COUNTS
 let ROWS = 7;
 let LOOK_ROWS = 4;
 let ROW_NAMES = [strings::SETTINGS_BACKGROUND, strings::SETTINGS_THEME, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS,

@@ -5,7 +5,7 @@
 // the screen; in portrait it is a sheet along the bottom, and settings is a gear alone
 // beside the wordmark, so the sheet leaves the board its room. Puzzles notes the puzzles
 // solved of those there are in the player's draughts until Today opens, then today's
-// puzzles as dots, filled as they are solved, and a check once all are (task 087).
+// puzzles as dots, filled as they are solved, and a check once all are (task 088).
 //
 // New game opens the setup in the same column (prototypes/new-game.html, take c): back
 // and the title, then a row of tiles per choice, lit as in settings: whom to play (a

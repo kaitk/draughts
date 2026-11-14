@@ -210,7 +210,7 @@ struct Shell {
     // A file the games are read from in place of the playing player's history, for
     // screenshots (the app's --history), or empty.
     history_file: u8[..512] = [],
-    // The daily puzzles (today.goose, task 087): the local date, days since the epoch, as
+    // The daily puzzles (today.goose, task 088): the local date, days since the epoch, as
     // the app hands it in (frame's `day`; a test sets it here), -1 while unknown; the set
     // whose library is read (puzzles::load_library), -1 none, and its text, the library's
     // built-in file (a test may index its own into puzzles::library and set it here); and
@@ -540,7 +540,7 @@ fn open(sh: Shell&, first: bool) {
 }
 
 // The puzzles are the set of the player's draughts (puzzles::set_of), and its library of
-// daily puzzles beside it (task 087). The draughts change in home's setup, in settings,
+// daily puzzles beside it (task 088). The draughts change in home's setup, in settings,
 // or with the player; home, where every way to the puzzles starts, reads the other set
 // then, and the picker starts at its library. The library's own switch reads it at once
 // (load_set). Then today's puzzles (sync_daily).

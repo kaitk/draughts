@@ -50,7 +50,7 @@ int64_t draughts_locales(draughts_text out) {
 }
 
 // The local date as days since the epoch (1970-01-01 is 0), for the daily puzzles
-// (task 087): the time now moved by the zone's offset, daylight saving's too, over a
+// (task 088): the time now moved by the zone's offset, daylight saving's too, over a
 // day's seconds. Windows' struct tm has no tm_gmtoff: there the offset is the local
 // time's fields read back as UTC, less now.
 #include <time.h>

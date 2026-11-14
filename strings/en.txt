@@ -248,7 +248,7 @@ how.win = Win
 how.win_line = Take all the other side’s pieces, or leave them no move. Take the last one!
 how.win_well = You won!
 
-# The daily puzzles (task 087): the library's Today row, its note, and settings' row.
+# The daily puzzles (task 088): the library's Today row, its note, and settings' row.
 daily.today = Today
 daily.left = {} to go
 daily.tomorrow = New puzzles tomorrow

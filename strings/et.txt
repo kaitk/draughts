@@ -247,7 +247,7 @@ how.win = Võida
 how.win_line = Löö kõik vastase nupud või jäta ta käiguta. Löö viimane!
 how.win_well = Sa võitsid!
 
-# The daily puzzles (task 087).
+# The daily puzzles (task 088).
 daily.today = Täna
 daily.left = Veel {}
 daily.tomorrow = Homme uued ülesanded
