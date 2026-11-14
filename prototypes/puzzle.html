@@ -104,14 +104,15 @@
   // ?daily=1, one of today's puzzles: back goes to the library, and today's dots stand
   // over next (at its left in portrait). Takes for the day's shape (task 088), with
   // ?daily=1: &shape=bars the dots as the Today tiles' rising bars, &shape=word the slot's
-  // word under the goal's line, &shape=both; &slot=0..n-1 the one playing (1), those
+  // word under the goal's line (the warm-up's and the stretch's; none for the
+  // middle ones), &shape=both; &slot=0..n-1 the one playing (1), those
   // before it solved; &n=4|10 puzzles a day (4); &lang=et the page in Estonian.
   const P = Draughts.params, et = P.get('lang') === 'et';
   const WORDS = {
     en: { back: 'Back', settings: 'Settings', restart: 'Start over', next: 'Next', goal: 'Win 2 men', turn: 'White to move',
-      slot: ['Warm-up', 'Your level', 'A bit harder'] },
+      slot: ['Warm-up', '', 'A bit harder'] },
     et: { back: 'Tagasi', settings: 'Seaded', restart: 'Alusta uuesti', next: 'Edasi', goal: 'Võida 2 nuppu', turn: 'Valgete käik',
-      slot: ['Soojendus', 'Sinu tasemel', 'Veidi raskem'] },
+      slot: ['Soojendus', '', 'Veidi raskem'] },
   }[et ? 'et' : 'en'];
   if (et) {
     document.documentElement.lang = 'et';
@@ -126,7 +127,8 @@
       `<i class="${k < slot ? 'on' : k === slot ? 'now' : ''}">${'<b></b>'.repeat(level(k))}</i>`).join('')}</span>`;
     const today = shape === 'bars' || shape === 'both' ? bars() : Draughts.dots(slot, n, slot);
     document.querySelector('.next').insertAdjacentHTML('beforebegin', `<span class="today">${today}</span>`);
-    if (shape === 'word' || shape === 'both') {
+    // The middle slots, at the player's level, say nothing: only the warm-up and the stretch are named.
+    if ((shape === 'word' || shape === 'both') && level(slot) !== 2) {
       document.querySelector('.goal small').insertAdjacentHTML('afterend', `<span class="slot">${WORDS.slot[level(slot) - 1]}</span>`);
     }
     // Shrunk to fit the panel where they don't (ten on a phone), as picker::dots does. At

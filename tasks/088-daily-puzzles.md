@@ -423,8 +423,9 @@ staying as built:
 - `&shape=bars`: today's dots as the tiles' rising bars, one group per puzzle (the
   level mark's lit bars only: one, two, three), solved ones in the glow, the one playing
   white in a glow ring as a chosen tile, the rest white at 30%.
-- `&shape=word`: "Warm-up", "Your level", "A bit harder" ("Soojendus", "Sinu tasemel",
-  "Veidi raskem") in the small face and the glow under whose move it is; the dots kept.
+- `&shape=word`: "Warm-up" or "A bit harder" ("Soojendus", "Veidi raskem") in the small
+  face and the glow under whose move it is, the middle puzzles at the player's level
+  without a word (2026-11-14); the dots kept.
 - `&shape=both`: the two together.
 - `&slot=0..n-1` the one playing (1), those before it solved; `&n=4|10`; `&lang=et`.
 
@@ -433,7 +434,7 @@ and 3, 4 and 10 a day, English and Estonian:
 
 - The word fits everywhere the goal's lines do: in the small face, it is no wider than
   "White to move"/"Valgete käik" (the Pixel in portrait shrinks "Võida 2 nuppu" to 18 px,
-  the word stays 17). Next keeps its size in every take (200 x 132 tablet, 160 x 96
+  "Veidi raskem" stays 17). Next keeps its size in every take (200 x 132 tablet, 160 x 96
   phone in landscape).
 - The bars are about twice the dots' width (4 a day: 74 px against 49). At 10 a day in a
   landscape panel they shrink to 65% (tablet) and 52% (phone), still readable; in
