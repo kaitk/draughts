@@ -590,7 +590,9 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // The title row as wide as the rows, or as the title and the switch beside it want.
     let top_wanted = if beside { min(top_room.z, max(w, title_width(g) + how_w + 24.0 * u + sw_w)) } else { w };
     let top_x = max(top_room.x, min(x, whole.x + floor(0.5 * (whole.z - top_wanted) + 0.5)));
-    let top_w = min(top_wanted, top_room.x + top_room.z - top_x);
+    // It ends with the rows where its title and switch fit before their right edge.
+    let top_need = if beside { title_width(g) + how_w + 24.0 * u + sw_w } else { 0.0 };
+    let top_w = min(min(top_wanted, top_room.x + top_room.z - top_x), max(x + w, top_x + top_need) - top_x);
     var top = float4 { top_x, y, top_w, if beside { sw_h } else { gui::tap() * u } };
     if !landscape {
         if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
