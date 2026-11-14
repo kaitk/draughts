@@ -1,4 +1,4 @@
-// The keys' focus (task 072; rendering.md, "Keys"): the controls a frame offers it, in
+// The keys' focus (rendering.md, "Keys"): the controls a frame offers it, in
 // the order declared, and the next frame's begin moving it among them by their rects; Enter
 // presses the focused one. A gamepad will feed the same moves through gui::Input. Part of
 // gui, in its namespace; gui.goose's Gui keeps the state.
@@ -29,9 +29,8 @@ struct Spot {
 // to the next group (`tab`); a focused control the last frame didn't declare (the screen
 // changed) hands it to the new screen's primary. Left and Right a screen claimed
 // (claim_sideways) move nothing here. Enter with nothing focused focuses the
-// primary and presses it in the same frame (on the board, its cursor's first square): a
-// gamepad's first press is most often A (a PS5 pad's cross), and one that only showed the
-// focus read as a press lost.
+// primary and presses it in the same frame (on the board, its cursor's first square), so
+// a gamepad's first press, most often A, isn't spent on only showing the focus.
 fn focus_keys(g: Gui&, input: Input) {
     let moved = input.at.x != g.pointer.at.x || input.at.y != g.pointer.at.y;
     if input.pressed || input.wheel != 0.0 || moved { g.focus = 0; }

@@ -12,10 +12,9 @@ import vec;
 import .focus;
 import .words;
 
-// The UI's quads a frame, past which gui::add drops them unseen. A long game's move list
-// on a desktop (every row's glyphs and marks) and its win's card come to about 600; 512
-// lost the card (2026-11-14, test/shell/long_game). 64 bytes each. What a frame drops
-// is counted (Gui's dropped), which the app prints and the tests' drive reports.
+// The UI's quads a frame, 64 bytes each, past which gui::add drops them. A long game's
+// move list on a desktop with its win's card needs about 600. What a frame drops is
+// counted (Gui's dropped), which the app prints and the tests' drive reports.
 let MAX_QUADS = 2048;
 let MAX_IDS = 32;
 let MAX_SPOTS = 128;        // the controls a frame offers the keys' focus (Spot)
@@ -23,14 +22,14 @@ let MAX_GROUPS = 8;         // the groups they come in (gui::group)
 let PRESS = 0.12;           // seconds a button takes to go down or up
 
 // The layout's shorter side in dp: 800, or what the development flag --dp sets, to try
-// how a phone looks with fewer dp across (task 030).
+// how a phone looks with fewer dp across.
 var short_dp: f32 = 800.0;
 
 // A floor on the scale in physical size, F × the display's scale (Android's density /
 // 160): a phone's dp then stays at least F of Android's, where the short side / 800
-// would make them smaller. F is 0.75 (picked 2026-11-08): the Pixel 7a lays out about 549
-// dp across; 0 would keep the scale the short side's alone. The app sets display_scale on Android, and the development flags
-// --density-floor F and --display-scale S try them (docs/development.md).
+// would make them smaller; 0 would keep the scale the short side's alone. The app sets
+// display_scale on Android, and the development flags --density-floor F and
+// --display-scale S try them (docs/development.md).
 let DENSITY_FLOOR = 0.75;
 var density_floor: f32 = DENSITY_FLOOR;
 var display_scale: f32 = 0.0;
@@ -38,13 +37,11 @@ var display_scale: f32 = 0.0;
 // On a desktop (the Mac, Windows), a ceiling on the scale in physical size: DESKTOP_DP
 // points a dp, the display's scale × DESKTOP_DP pixels, so a large window or a full
 // screen gives its room to the board and keeps the controls the size a mouse wants,
-// where the short side / 800 would grow them as for a hand. 0.75 (2026-11-11): an 88 dp
-// row is 66 points, a 17 dp note about 13. The ceiling grows with the window's shorter
-// side, from DESKTOP_DP at DESKTOP_SMALL points to DESKTOP_DP_LARGE at DESKTOP_LARGE (a
-// 27" screen's full window), as the board's frame does (panel::framed_in): at 0.75 the
-// controls looked too small on a 27" screen, seen from further away (task 068, the user
-// 2026-11-11). The app sets desktop_scale on a desktop unless --touch asks for a touch
-// screen's sizes; 0 is no ceiling (a phone, a tablet, the tests).
+// where the short side / 800 would grow them as for a hand. The ceiling grows with the
+// window's shorter side, from DESKTOP_DP at DESKTOP_SMALL points to DESKTOP_DP_LARGE at
+// DESKTOP_LARGE (a 27" screen's full window, seen from further away), as the board's
+// frame does (panel::framed_in). The app sets desktop_scale on a desktop unless --touch
+// asks for a touch screen's sizes; 0 is no ceiling (a phone, a tablet, the tests).
 let DESKTOP_DP = 0.75;
 let DESKTOP_DP_LARGE = 0.9;
 let DESKTOP_SMALL = 1000.0;
@@ -126,17 +123,17 @@ let ZOOM_OUT = 35;
 let SHOWCASE = 36;          // and the showcase, a board on an orbit
 let EYE = 37;               // the lookout on: an open eye
 let EYE_OFF = 38;           // and off: the eye struck through
-let FIRST = 39;             // a replay's steps (task 078): to the start, a chevron at a bar,
+let FIRST = 39;             // a replay's steps: to the start, a chevron at a bar,
 let PREV = 40;              // back one, a chevron left,
 let FWD = 41;               // on one, a chevron right,
 let LAST = 42;              // and to the end, a chevron at a bar
-let CHEVRON_UP = 43;        // the moves' line and sheet (task 078): a chevron up, and down;
+let CHEVRON_UP = 43;        // the moves' line and sheet: a chevron up, and down;
 let CHEVRON_DOWN = 44;      // FWD and PREV, the replay's, point right and left
 let NEW_GAME = 45;          // home's new game: a light piece jumping a dark one
 let TURNS = 46;             // the setup's board turning to who plays: two arcs chasing round,
 let STAYS = 47;             // and staying: a board with an arrow up it
-let HOW = 48;               // how to play: a finger tapping, a ring over its tip (task 026)
-let TODAY = 49;             // the daily puzzles (task 088): a calendar with today's dot,
+let HOW = 48;               // how to play: a finger tapping, a ring over its tip
+let TODAY = 49;             // the daily puzzles: a calendar with today's dot,
 let MOON = 50;              // and once all are solved, a crescent moon
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
@@ -338,11 +335,11 @@ let HOME_IDS = 300;         // home's menu and a new game's setup
 let SETTINGS_IDS = 400;
 let WHO_IDS = 500;          // who's playing, and a player's sheet
 let PICKER_IDS = 600;       // the puzzles to pick from: the library, a theme's page, its puzzles
-let RESULTS_IDS = 1300;     // the games played (task 074)
-let REPLAY_IDS = 1600;      // a past game's replay (task 078)
-let TUTORIAL_IDS = 2200;    // how to play (task 026): its panel and its end's card
+let RESULTS_IDS = 1300;     // the games played
+let REPLAY_IDS = 1600;      // a past game's replay
+let TUTORIAL_IDS = 2200;    // how to play: its panel and its end's card
 
-// One scrolling list a frame (task 050; rendering.md, "Scrolling"): what scroll_begin
+// One scrolling list a frame (rendering.md, "Scrolling"): what scroll_begin
 // keeps across frames. A plain drag and the wheel, no fling.
 let SCROLL_ID = 9000;       // the drag's id while it holds the pointer
 let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, RESULTS_IDS, REPLAY_IDS, TUTORIAL_IDS,
@@ -461,14 +458,14 @@ let PAD_WIDE = 16.0;
 // The tap's size in dp, tap(): a tile's or a row's height, and the least a tap is
 // across (rendering.md, "Controls"); every screen's tiles and the panels' heights follow
 // it. TAP on a touch screen, the floor for small hands; on a desktop (desktop_scale above
-// 0) DESKTOP_TAP, the size a mouse wants (task 069, the user 2026-11-11).
+// 0) DESKTOP_TAP, the size a mouse wants.
 let TAP = 88.0;
 let DESKTOP_TAP = 64.0;
 fn tap() -> f32 { if desktop_scale > 0.0 { DESKTOP_TAP } else { TAP } }
 
 // A tile with its icon or picture over its word is at least STACKED_TAP tall, stacked():
-// under it a word on two lines, a picture, or the hint's pips crowd it (task 069, the
-// user 2026-11-11). A touch screen's tap is over it already.
+// under it a word on two lines, a picture, or the hint's pips crowd it. A touch screen's
+// tap is over it already.
 let STACKED_TAP = 72.0;
 fn stacked() -> f32 { max(tap(), STACKED_TAP) }
 
@@ -487,7 +484,7 @@ fn phone(area: float4, s: f32) -> bool { min(area.z, area.w) < PHONE * s }
 // Whether an area at s pixels a dp is a desktop's large window: on a desktop, at least
 // LARGE_W × LARGE_H dp (a 27" screen's full window is 2844 × 1600, a 1280 × 800 window
 // 1707 × 1067). The replay's column and the results' list keep a readable width there,
-// centered, and their words are half again as large (task 087, 2026-11-14).
+// centered, and their words are half again as large.
 let LARGE_W = 1700.0;
 let LARGE_H = 1000.0;
 fn large(area: float4, s: f32) -> bool { desktop_scale > 0.0 && area.z >= LARGE_W * s && area.w >= LARGE_H * s }
@@ -495,7 +492,7 @@ fn large(area: float4, s: f32) -> bool { desktop_scale > 0.0 && area.z >= LARGE_
 // On a desktop, no screen lays out wider than WIDEST times its height: an ultrawide
 // screen's full window (21:9, 2.4) keeps the middle at 1.9, the photograph still filling
 // it, so the panels stay by the board and lists keep a readable width; 16:9 and 16:10
-// are under it (task 087, 2026-11-14).
+// are under it.
 let WIDEST = 1.9;
 
 // The safe area of a screen width × height pixels: where the screens lay out. On a
@@ -613,9 +610,8 @@ fn inside(r: float4, p: float2) -> bool { p.x >= r.x && p.x < r.x + r.z && p.y >
 fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
     focus_keys(g, input);
     if !g.pointer.down && !g.pointer.pressed { g.active = 0; }
-    // A press on the UI is the UI's until the frame after its release: kept no longer,
-    // or the board's keys, which need the pointer off it, stayed shut after a tap on a
-    // button until the next press (a gamepad's A on the board after a tap on settings).
+    // A press on the UI is the UI's until the frame after its release and no longer:
+    // the board's keys need the pointer off it.
     if input.pressed || (!input.down && !input.released) { g.took = false; }
     g.acted = false;
     g.holding = false;
@@ -711,7 +707,7 @@ fn set_down(g: Gui&, id: i64, down: bool) {
     }
 }
 
-// How far widget id is lit by the mouse over it (task 066, rendering.md, "Controls"),
+// How far widget id is lit by the mouse over it (rendering.md, "Controls"),
 // 0..1, eased as a press is; 0 for any but the hovered tile and the one it left.
 fn hover(g: Gui&, id: i64) -> f32 {
     guard id != 0 else { return 0.0; }
@@ -759,7 +755,7 @@ fn glass(g: Gui&, r: float4, radius: f32) {
 
 // Glass's tint alone under a tile that stands without a panel (the way back, the game's
 // way out in landscape, the moves' line): no border, highlight, or shadow of its own, so
-// the tile looks as it does on a panel rather than doubly edged (the user, 2026-11-13).
+// the tile looks as it does on a panel rather than doubly edged.
 fn under_tile(g: Gui&, r: float4, radius: f32) {
     take(g, r);
     add(g, Quad { rect: r, look: float4 { GLASS, radius * g.scale, 0.0, 0.0 },
@@ -980,10 +976,10 @@ let NOTE_ICON_GAP = 6.0;
 
 // A choice tile (prototypes/settings.html): a picture of size `pic` (centered across)
 // with a label under it, lit in the glow color when on. The picture is a season's
-// thumbnail (kind, a theme; 4 more its plain fade), or for -1 the glow's tint with a sun. A choice that isn't
-// `enabled` is dimmed and takes no tap. With `beside`, a slim tile: the picture at the
-// left and the label after it, centered down the tile (settings' theme in a small window,
-// task 050). True when it is tapped.
+// thumbnail (kind, a theme; 4 more its plain fade), or for -1 the glow's tint with a sun.
+// A choice that isn't `enabled` is dimmed and takes no tap. With `beside`, a slim tile:
+// the picture at the left and the label after it, centered down the tile (settings'
+// theme in a small window). True when it is tapped.
 let BESIDE_GAP = 8.0;       // dp between a slim choice's picture and its label
 fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:], on: bool, enabled: bool,
           beside: bool = false) -> bool {
@@ -1313,7 +1309,7 @@ fn glow_text(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, align: i64) 
 // Text s in face `face` broken at its spaces into lines as wide as r at most, from r's
 // top down, each lined up by `align`, at opacity a, a line `step` times the face's height
 // below the last; a word wider than r alone on its line. Returns the height the lines
-// take; with `draw` false it only measures (the tutorial's lines, task 026).
+// take; with `draw` false it only measures.
 fn wrapped(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, align: i64, step: f32 = 1.25, draw: bool = true) -> f32 {
     let f .= g.faces[face];
     let lh = f.ascent - f.descent;
@@ -1344,9 +1340,8 @@ fn wrapped(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, align: i64, st
 
 // Text as text() draws it at full opacity, over a soft dark halo, for a title bare on the
 // photograph (the library's): the coverage atlas has no blur, so the halo is eight dark
-// copies in a ring 2 dp out at 20% each and one 2 dp down at 35% (the player's chip's
-// takes b and e, rendering.md, "Controls", Players; 3 dp at 10% left spring's birch bark
-// too bright round the letters). Nine more quads a glyph.
+// copies in a ring 2 dp out at 20% each and one 2 dp down at 35%. Nine more quads a
+// glyph.
 fn shadowed(g: Gui&, face: i64, r: float4, s: const u8[:], align: i64) {
     let d = 2.0 * g.scale;
     let ring = float4 { 0.0, 0.0, 0.0, 0.2 };
