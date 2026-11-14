@@ -82,6 +82,7 @@ let KEYS = [
     "month.jul", "month.aug", "month.sep", "month.oct", "month.nov", "month.dec",
     "replay.best_was", "replay.next_white", "replay.next_black", "replay.take_white", "replay.take_black",
     "replay.one_white", "replay.one_black", "replay.ended",
+    "daily.today", "daily.left", "daily.tomorrow", "settings.daily",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -262,7 +263,13 @@ let REPLAY_NEXT = 213;      // white's, then black's (+ side)
 let REPLAY_TAKE = 215;      // a forced capture, white's then black's
 let REPLAY_ONE = 217;       // an only move that isn't a capture, white's then black's
 let REPLAY_ENDED = 219;
-let COUNT = 220;
+// The daily puzzles (task 087): the library's Today row, its note while some are left
+// ("{} to go") and once all are solved, and settings' puzzles a day.
+let DAILY_TODAY = 220;
+let DAILY_LEFT = 221;
+let DAILY_TOMORROW = 222;
+let SETTINGS_DAILY = 223;
+let COUNT = 224;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

@@ -22,6 +22,8 @@ let IOS = 2;
 extern fn draughts_platform() -> i64;
 // The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
+// The local date as days since the epoch, for the daily puzzles (locale.c).
+extern fn draughts_local_day() -> i64;
 // The app's storage folder, ending in a separator (storage.c); returns how many bytes.
 extern fn draughts_storage(out: u8[:]) -> i64;
 // The insets around the window's safe area in pixels (left, top, right, bottom) and the
@@ -166,6 +168,7 @@ fn screenshot(path: const u8[:]) { host_gpu::screenshot(path); }
 // The app's storage folder into `out`, and the system's locales; each returns its bytes.
 fn storage(out: u8[:]) -> const u8[:] { out[..draughts_storage(out)] }
 fn locales(out: u8[:]) -> const u8[:] { out[..draughts_locales(out)] }
+fn local_day() -> i64 { draughts_local_day() }
 
 fn wake_in(ms: i64) { draughts_wake_in(ms); }
 fn first_frame() { draughts_first_frame(); }

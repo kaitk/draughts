@@ -8,34 +8,34 @@ home: draughts russian, lit -1, the set russian of 46, 4 themes, 7 tiles, home's
 the smallest window's list dragged: 300 dp down
 Russian tapped: 0 dp down, the first row at 16,324 467x96
 the tablet, landscape:
-  international: 11 tiles, back 24,24 134x88, the switch 858,94 394x88 (162 122 102), the first row 182,314 531x124, 1 lines of title, 346 quads, all in place
-  brazilian: 9 tiles, back 24,24 134x88, the switch 848,162 394x88 (162 122 102), the first row 34,382 600x124, 1 lines of title, 273 quads, all in place
-  russian: 9 tiles, back 24,24 134x88, the switch 848,162 394x88 (162 122 102), the first row 34,382 600x124, 1 lines of title, 274 quads, all in place
+  international: 11 tiles, back 24,24 134x88, the switch 858,36 394x88 (162 122 102), the first row 182,256 531x124, 1 lines of title, 376 quads, all in place
+  brazilian: 9 tiles, back 24,24 134x88, the switch 858,104 394x88 (162 122 102), the first row 182,324 531x124, 1 lines of title, 303 quads, all in place
+  russian: 9 tiles, back 24,24 134x88, the switch 858,104 394x88 (162 122 102), the first row 182,324 531x124, 1 lines of title, 304 quads, all in place
 the tablet, portrait:
-  international: 11 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,348 600x124, 1 lines of title, 346 quads, all in place
-  brazilian: 9 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,348 600x124, 1 lines of title, 273 quads, all in place
-  russian: 9 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,348 600x124, 1 lines of title, 274 quads, all in place
+  international: 11 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,348 600x122, 1 lines of title, 376 quads, all in place
+  brazilian: 9 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,348 600x124, 1 lines of title, 303 quads, all in place
+  russian: 9 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,348 600x124, 1 lines of title, 304 quads, all in place
 a 20:9 phone at 480 dp, landscape:
-  international: 11 tiles, back 16,16 134x88, the switch 653,20 394x88 (162 122 102), the first row 174,224 432x96, 1 lines of title, 346 quads, all in place
-  brazilian: 9 tiles, back 16,16 134x88, the switch 653,38 394x88 (162 122 102), the first row 174,242 432x96, 1 lines of title, 273 quads, all in place
-  russian: 9 tiles, back 16,16 134x88, the switch 653,38 394x88 (162 122 102), the first row 174,242 432x96, 1 lines of title, 274 quads, all in place
+  international: 11 tiles, back 16,16 134x88, the switch 653,20 394x88 (162 122 102), the first row 174,224 432x96, 1 lines of title, 376 quads, all in place
+  brazilian: 9 tiles, back 16,16 134x88, the switch 653,20 394x88 (162 122 102), the first row 174,224 432x96, 1 lines of title, 303 quads, all in place
+  russian: 9 tiles, back 16,16 134x88, the switch 653,20 394x88 (162 122 102), the first row 174,224 432x96, 1 lines of title, 304 quads, all in place
 a 20:9 phone at 480 dp, portrait:
-  international: 11 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,324 448x96, 1 lines of title, 346 quads, all in place
-  brazilian: 9 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,324 448x96, 1 lines of title, 273 quads, all in place
-  russian: 9 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,324 448x96, 1 lines of title, 274 quads, all in place
+  international: 11 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,324 448x94, 1 lines of title, 376 quads, all in place
+  brazilian: 9 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,324 448x96, 1 lines of title, 303 quads, all in place
+  russian: 9 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,324 448x96, 1 lines of title, 304 quads, all in place
 a 20:9 phone at 480 dp, portrait, Estonian:
-  international: 11 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,324 448x96, 1 lines of title, 368 quads, all in place
-  brazilian: 9 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,324 448x96, 1 lines of title, 296 quads, all in place
-  russian: 9 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,324 448x96, 1 lines of title, 297 quads, all in place
+  international: 11 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,324 448x94, 1 lines of title, 395 quads, all in place
+  brazilian: 9 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,324 448x96, 1 lines of title, 323 quads, all in place
+  russian: 9 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,324 448x96, 1 lines of title, 324 quads, all in place
 a 20:9 phone at 480 dp, landscape, Estonian:
-  international: 11 tiles, back 16,16 158x88, the switch 657,20 390x88 (172 122 88), the first row 198,224 420x96, 1 lines of title, 368 quads, all in place
-  brazilian: 9 tiles, back 16,16 158x88, the switch 657,38 390x88 (172 122 88), the first row 198,242 420x96, 1 lines of title, 296 quads, all in place
-  russian: 9 tiles, back 16,16 158x88, the switch 657,38 390x88 (172 122 88), the first row 198,242 420x96, 1 lines of title, 297 quads, all in place
+  international: 11 tiles, back 16,16 158x88, the switch 657,20 390x88 (172 122 88), the first row 198,224 420x96, 1 lines of title, 395 quads, all in place
+  brazilian: 9 tiles, back 16,16 158x88, the switch 657,20 390x88 (172 122 88), the first row 198,224 420x96, 1 lines of title, 323 quads, all in place
+  russian: 9 tiles, back 16,16 158x88, the switch 657,20 390x88 (172 122 88), the first row 198,224 420x96, 1 lines of title, 324 quads, all in place
 the smallest iPad window:
-  international: 11 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,324 467x96, 1 lines of title, 346 quads, all in place
-  brazilian: 9 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,324 467x96, 1 lines of title, 273 quads, all in place
-  russian: 9 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,324 467x96, 1 lines of title, 274 quads, all in place
+  international: 11 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,324 467x96, 1 lines of title, 376 quads, all in place
+  brazilian: 9 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,324 467x96, 1 lines of title, 303 quads, all in place
+  russian: 9 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,324 467x96, 1 lines of title, 304 quads, all in place
 the smallest iPad window, Estonian:
-  international: 11 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,324 467x96, 1 lines of title, 368 quads, all in place
-  brazilian: 9 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,324 467x96, 1 lines of title, 296 quads, all in place
-  russian: 9 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,324 467x96, 1 lines of title, 297 quads, all in place
+  international: 11 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,324 467x96, 1 lines of title, 395 quads, all in place
+  brazilian: 9 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,324 467x96, 1 lines of title, 323 quads, all in place
+  russian: 9 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,324 467x96, 1 lines of title, 324 quads, all in place

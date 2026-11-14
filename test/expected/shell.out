@@ -1,22 +1,22 @@
-start: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 65, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
+start: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 64, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
 the wordmark's piece: 1, crowned 1.0, no ring true
 the player's chip at vec4<f32> { 464.0, 24.0, 88.0, 88.0 }, faces 1
 continue: game, sharp false, board at vec4<f32> { 280.0, 40.0, 720.0, 11.52 }, glyphs 67, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
-home: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 65, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
-puzzles: puzzles, sharp true, board at vec4<f32> { -2560.0, 0.0, 640.0, 10.240001 }, glyphs 298, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
-back from the puzzles: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 65, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
+home: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 64, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
+puzzles: puzzles, sharp true, board at vec4<f32> { -2560.0, 0.0, 640.0, 10.240001 }, glyphs 325, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
+back from the puzzles: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 64, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
 settings: settings, board at vec4<f32> { 566.07996, 54.079987, 691.84, 11.069441 }, sharp true, its first frame drawn true, the next false
 back from settings: home
 settings from the game: settings
 back from settings: game, sharp false, board at vec4<f32> { 280.0, 40.0, 720.0, 11.52 }, glyphs 62, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
-a friend's setup: home, tiles 15, small boards 3, picture = fox;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = friend;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
-Russian, 5+3: changed true, picture = fox;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = friend;draughts = russian;level = easy;color = white;clock = 5+3;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
+a friend's setup: home, tiles 15, small boards 3, picture = fox;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = friend;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4;
+Russian, 5+3: changed true, picture = fox;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = friend;draughts = russian;level = easy;color = white;clock = 5+3;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4;
 back: setup 0, home
 play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 1, computer -1, level 0, skill 8, number 0, turned false
 the computer's setup: tiles 15, pieces over the UI 2
 draughts tiles: 160.0 120.0 100.0, the first's name in the body face true
-play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 2, computer 0, level 2, skill 90, number 0, turned true; picture = fox;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = russian;level = hard;color = black;clock = 10+5;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 1;moves = marks;
-home: new game notes hard; glyphs 76, turned true
+play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 2, computer 0, level 2, skill 90, number 0, turned true; picture = fox;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = russian;level = hard;color = black;clock = 10+5;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 1;moves = marks;daily_count = 4;
+home: new game notes hard; glyphs 75, turned true
 portrait: board vec4<f32> { 80.0, 128.0, 640.0, 10.240001 }, sheet from 834.0, clear true
 portrait setup: board vec4<f32> { 198.0, 40.0, 404.0, 6.464 }, sheet from 484.0, clear true
 draughts tiles: 239.0 239.0 239.0, the first's name in the body face true

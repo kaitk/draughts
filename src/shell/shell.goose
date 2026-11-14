@@ -62,6 +62,7 @@ import .replay;
 import .tutorial;
 import .past;
 import .lessons;
+import .today;
 
 let HOME = 0;
 let GAME = 1;
@@ -209,6 +210,15 @@ struct Shell {
     // A file the games are read from in place of the playing player's history, for
     // screenshots (the app's --history), or empty.
     history_file: u8[..512] = [],
+    // The daily puzzles (today.goose, task 087): the local date, days since the epoch, as
+    // the app hands it in (frame's `day`; a test sets it here), -1 while unknown; the set
+    // whose library is read (puzzles::load_library), -1 none, and its text, the library's
+    // built-in file (a test may index its own into puzzles::library and set it here); and
+    // today's puzzles read from it.
+    day:          i64         = -1,
+    library:      i64         = -1,
+    library_text: const u8[:] = "",
+    daily:        Daily       = Daily {},
 }
 
 // The screen showing for this frame, taking the pointer and doing what it asks: `fresh`
@@ -248,7 +258,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
             var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
             var variant = sh.prefs.variant;
             picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant,
-                          learned(sh), tutorial::count(sh.prefs.variant as u8));
+                          learned(sh), tutorial::count(sh.prefs.variant as u8), today_of(sh), sh.puzzle.daily);
             l = in_tile(sh, spot, g.scale);
         },
         PUZZLE => {
@@ -462,11 +472,13 @@ fn resume(sh: Shell&) -> home::Resume {
 // One frame, after gui::begin, on a screen width × height pixels, each screen laid out in
 // its safe area (gui::safe, the insets in g). The app hands in what only it knows: whether
 // the 3D board, when chosen, is ready to draw, and whether an image of it shows
-// (Shell.ready3d). Returns what the frame leaves for the app (Frame).
+// (Shell.ready3d), and the local date (Shell.day; -1 leaves it as it is). Returns what the
+// frame leaves for the app (Frame).
 fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: bool = true,
-         shown3d: bool = true) -> Frame& {
+         shown3d: bool = true, day: i64 = -1) -> Frame& {
     sh.ready3d = ready3d;
     sh.shown3d = shown3d;
+    if day >= 0 { sh.day = day; }
     // A switch happens in a frame that declared the old screen, so the first frame of the
     // new one is a change, however long ago the tap was.
     let fresh = sh.drawn != sh.screen;
@@ -527,13 +539,15 @@ fn open(sh: Shell&, first: bool) {
     if first && sh.players.fresh { who::first_run(sh.who, sh.players); }
 }
 
-// The puzzles are the set of the player's draughts (puzzles::set_of). The draughts
-// change in home's setup, in settings, or with the player; home, where every way to the
-// puzzles starts, reads the other set then, and the picker starts at its library. The
-// library's own switch reads it at once (load_set).
+// The puzzles are the set of the player's draughts (puzzles::set_of), and its library of
+// daily puzzles beside it (task 087). The draughts change in home's setup, in settings,
+// or with the player; home, where every way to the puzzles starts, reads the other set
+// then, and the picker starts at its library. The library's own switch reads it at once
+// (load_set). Then today's puzzles (sync_daily).
 fn sync_puzzles(sh: Shell&) {
-    guard sh.screen == HOME else { return; }
-    load_set(sh);
+    if sh.screen == HOME { load_set(sh); }
+    if (sh.screen == HOME || sh.screen == PICKER) && sh.library != puzzles::loaded { load_library(sh); }
+    sync_daily(sh);
 }
 
 // Reads the set of the player's draughts where another is loaded: no puzzle is open, and
@@ -541,9 +555,18 @@ fn sync_puzzles(sh: Shell&) {
 fn load_set(sh: Shell&) {
     guard puzzles::set_of(sh.prefs.variant as u8) != puzzles::loaded else { return; }
     puzzles::load(sh.prefs.variant as u8);
+    load_library(sh);
     sh.puzzle = puzzle::new();
     sh.theme = -1;
     apply_prefs(sh);
+}
+
+// Reads the library of daily puzzles of the set loaded, today's to be read again from it.
+fn load_library(sh: Shell&) {
+    puzzles::load_library(puzzles::loaded);
+    sh.library = puzzles::loaded;
+    sh.library_text = puzzles::library_file(puzzles::loaded);
+    sh.daily.set = -1;
 }
 
 fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
@@ -766,19 +789,27 @@ fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     sh.out.layout = l.board;
     let ev, changed = puzzle::frame(pl, g, l, now, sh.out.over);
     aimed(sh, l, pl.cam, now);
-    // Solved: the stars kept are the most it has won.
-    if ev.solved {
+    // Solved: the stars kept are the most it has won; one of today's moves the rating
+    // the first time.
+    if ev.solved && pl.daily >= 0 { daily_solved(sh, pl.daily, pl.won); }
+    if ev.solved && pl.daily < 0 {
         let id = puzzle::current(pl).id;
         if pl.won > sh.prefs.stars[puzzles::loaded][id] {
             sh.prefs.stars[puzzles::loaded][id] = pl.won as u8;
             sh.changed = true;
         }
     }
-    if ev.go == puzzle::PUZZLES { go_to(sh, PICKER, now); }
+    if ev.go == puzzle::PUZZLES {
+        if pl.daily >= 0 { sh.theme = -1; }
+        go_to(sh, PICKER, now);
+    }
     if ev.go == puzzle::SETTINGS {
         open_settings(sh, PUZZLE, now);
     }
-    if ev.go == puzzle::NEXT {
+    if ev.go == puzzle::NEXT && pl.daily >= 0 {
+        // On through today's, and after the last back to the library.
+        daily_next(sh, pl.daily, now);
+    } else if ev.go == puzzle::NEXT {
         // On inside the theme, and after its last back to the library.
         let i = pl.index + 1;
         if i < puzzles::all.list.len && puzzles::all.list[i].theme == sh.theme { play_puzzle(sh, i, now); }
@@ -805,7 +836,8 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
     var variant = sh.prefs.variant;
     let pick = picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant,
-                             learned(sh), tutorial::count(sh.prefs.variant as u8));
+                             learned(sh), tutorial::count(sh.prefs.variant as u8), today_of(sh), sh.puzzle.daily);
+    let daily = pick <= picker::TODAY && pick > picker::TODAY - puzzles::MAX_DAILY;
     if pick == picker::LEARN { learn(sh, PICKER, now); }
     if pick == picker::SWITCHED {
         // The library's switch is settings' draughts: new games' too, saved as settings
@@ -817,10 +849,12 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         go_up(sh, HOME, now);
     } else if pick >= 0 {
         play_puzzle(sh, pick, now);
+    } else if daily {
+        play_daily(sh, picker::TODAY - pick, now);
     }
     // No board at rest: it lies off the screen. Coming from a puzzle, or going to one,
     // it is the puzzle's, in its tile.
-    if sh.from == PUZZLE || pick >= 0 { sh.out.layout = in_tile(sh, spot, g.scale); }
+    if sh.from == PUZZLE || pick >= 0 || daily { sh.out.layout = in_tile(sh, spot, g.scale); }
     else { sh.out.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.out.layout.n); }
     return pick != picker::NOTHING;
 }

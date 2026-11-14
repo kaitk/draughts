@@ -246,3 +246,9 @@ how.way_well = Tammiks ja edasi tammina.
 how.win = Võida
 how.win_line = Löö kõik vastase nupud või jäta ta käiguta. Löö viimane!
 how.win_well = Sa võitsid!
+
+# The daily puzzles (task 087).
+daily.today = Täna
+daily.left = Veel {}
+daily.tomorrow = Homme uued ülesanded
+settings.daily = Ülesandeid päevas

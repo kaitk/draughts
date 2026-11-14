@@ -291,8 +291,9 @@ fn delete_files(ps: Players&, id: i64) {
     if file_exists(path) { delete_file(path); }
 }
 
-// Starting again clears these of settings s: the stars, and the computer's skill and
-// games; the picture, the name, the look, and the setup stay.
+// Starting again clears these of settings s: the stars, the daily puzzles' rating, the
+// puzzles had, and today's, and the computer's skill and games; the picture, the name,
+// the look, the setup, and the puzzles a day stay.
 fn clear_progress(s: settings::Settings&) {
     let fresh = settings::Settings {};
     s.stars = fresh.stars;
@@ -301,4 +302,8 @@ fn clear_progress(s: settings::Settings&) {
     s.games = fresh.games;
     s.rating = fresh.rating;
     s.rated = fresh.rated;
+    s.puzzle_rating = fresh.puzzle_rating;
+    s.puzzle_rated = fresh.puzzle_rated;
+    s.seen = fresh.seen;
+    s.today = fresh.today;
 }

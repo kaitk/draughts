@@ -24,6 +24,7 @@ fn enter(sh: Shell&, index: i64, s: settings::Settings) {
     sh.screen = screen;
     sh.puzzle = puzzle::new();
     sh.theme = -1;
+    sh.daily.set = -1;
     sh.setup = home::NO_SETUP;
     sh.changed = true;
     apply_prefs(sh);
@@ -91,6 +92,7 @@ fn start_again(sh: Shell&, index: i64) {
         sh.game = game::new(sh.prefs.variant as u8);
         sh.puzzle = puzzle::new();
         sh.theme = -1;
+        sh.daily.set = -1;
         sh.changed = true;
         apply_prefs(sh);
         return;

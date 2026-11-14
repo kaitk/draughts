@@ -26,7 +26,7 @@ import drive from "../drive";
 
 let LANGUAGE = 1;           // the language button, after back
 let FIRST_TILE = 2;         // the list's first tile: the Background row's Photo
-let TILES = 22;
+let TILES = 26;             // the tiles of the list's rows, puzzles a day's four too (task 087), and back and the language
 
 fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
 
@@ -65,7 +65,7 @@ fn layout(g: gui::Gui&, name: const u8[:]) {
     let n = drive::tiles(g);
     if n != TILES { format(wrong, " ", n, " tiles;"); }
     var narrow: f32 = 1.0e9;
-    var low: f32 = 1.0e9;
+    var low:    f32 = 1.0e9;
     var small = 0;
     for i in n {
         let r = drive::rect(g, i);

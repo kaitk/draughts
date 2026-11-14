@@ -23,57 +23,63 @@ played_medium = 0
 played_hard = 0
 games = 0
 moves = marks
+daily_count = 5
+seen.russian = 63:ffffffffffffffff
+puzzle_rating.international = 812 14
+seen.international = 0:3 5:80
+daily.international = 20406 12:3 40:0 55:0 70:0
 stars.international = 2:3
 
 written again the same: true
+odd daily keys: count 4, rating 0, seen 0, day -1
 an unknown picture: fox, a long name: 'Aleksander t' (12 characters), first start done false
 typed A, a tab, š, DEL, an emoji, ’, b, erased one, c: 'Aš’c'
-migrated: *1 fox; stars 5, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1, first start done true
+migrated: *1 fox; stars 5, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1, first start done true
   game-1.bin
-  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 12;skill_medium = 44;skill_hard = 95;played_easy = 3;played_medium = 3;played_hard = 3;games = 7;moves = marks;stars.international = 1:3 4:2;
+  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 12;skill_medium = 44;skill_hard = 95;played_easy = 3;played_medium = 3;played_hard = 3;games = 7;moves = marks;daily_count = 4;stars.international = 1:3 4:2;
   settings.txt: language = et;player = 1;
-killed after player-1.txt: *1 fox; stars 5, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1
+killed after player-1.txt: *1 fox; stars 5, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1
   game-1.bin
-  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 12;skill_medium = 44;skill_hard = 95;played_easy = 3;played_medium = 3;played_hard = 3;games = 7;moves = marks;stars.international = 1:3 4:2;
+  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 12;skill_medium = 44;skill_hard = 95;played_easy = 3;played_medium = 3;played_hard = 3;games = 7;moves = marks;daily_count = 4;stars.international = 1:3 4:2;
   settings.txt: language = et;player = 1;
-killed after the rename: *1 fox; stars 5, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1
+killed after the rename: *1 fox; stars 5, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1
   game-1.bin
-  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 12;skill_medium = 44;skill_hard = 95;played_easy = 3;played_medium = 3;played_hard = 3;games = 7;moves = marks;stars.international = 1:3 4:2;
+  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 12;skill_medium = 44;skill_hard = 95;played_easy = 3;played_medium = 3;played_hard = 3;games = 7;moves = marks;daily_count = 4;stars.international = 1:3 4:2;
   settings.txt: language = et;player = 1;
-a fresh install: *1 fox; stars 0, skill 8 40 90, games 0, season -1, hints 0, game 10x10 after 0 moves, language -1, first start done false
-  player-1.txt: picture = fox;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
+a fresh install: *1 fox; stars 0, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 8 40 90, games 0, season -1, hints 0, game 10x10 after 0 moves, language -1, first start done false
+  player-1.txt: picture = fox;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4;
   settings.txt: language = system;player = 1;
 the first free picture: hare
-added: 1 fox, *2 hare Mia; stars 0, skill 8 40 90, games 0, season -1, hints 0, game 10x10 after 0 moves, language 1, first start done false
-back to the fox: *1 fox, 2 hare Mia; stars 5, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1
-to Mia: 1 fox, *2 hare Mia; stars 2, skill 8 40 90, games 0, season 3, hints 0, game 10x10 after 2 moves, language 1
+added: 1 fox, *2 hare Mia; stars 0, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 8 40 90, games 0, season -1, hints 0, game 10x10 after 0 moves, language 1, first start done false
+back to the fox: *1 fox, 2 hare Mia; stars 5, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1
+to Mia: 1 fox, *2 hare Mia; stars 2, puzzle rating 700 3, seen 21, day 20406, 10 a day, skill 8 40 90, games 0, season 3, hints 0, game 10x10 after 2 moves, language 1
   game-1.bin
   game-2.bin
-  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 12;skill_medium = 44;skill_hard = 95;played_easy = 3;played_medium = 3;played_hard = 3;games = 7;moves = marks;stars.international = 1:3 4:2;
-  player-2.txt: picture = hare;name = Mia;season = summer;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;stars.international = 5:2;
+  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 12;skill_medium = 44;skill_hard = 95;played_easy = 3;played_medium = 3;played_hard = 3;games = 7;moves = marks;daily_count = 4;stars.international = 1:3 4:2;
+  player-2.txt: picture = hare;name = Mia;season = summer;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 10;puzzle_rating.international = 700 3;seen.international = 0:15;daily.international = 20406 7:0;stars.international = 5:2;
   settings.txt: language = et;player = 2;
 four: 1 fox, 2 hare Mia, 3 bear, *4 hedgehog, a fifth added false, free id 0
-the fox started again: *1 fox, 2 hare Mia, 3 bear, 4 hedgehog; stars 0, skill 8 40 90, games 0, season 1, hints 1, game 8x8 after 0 moves, language 1
-Mia started again: 1 fox, *2 hare Mia, 3 bear, 4 hedgehog; stars 0, skill 8 40 90, games 0, season 3, hints 0, game 10x10 after 0 moves, language 1
+the fox started again: *1 fox, 2 hare Mia, 3 bear, 4 hedgehog; stars 0, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 8 40 90, games 0, season 1, hints 1, game 8x8 after 0 moves, language 1
+Mia started again: 1 fox, *2 hare Mia, 3 bear, 4 hedgehog; stars 0, puzzle rating 0 0, seen 0, day -1, 10 a day, skill 8 40 90, games 0, season 3, hints 0, game 10x10 after 0 moves, language 1
   game-1.bin
   game-3.bin
   game-4.bin
-  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
-  player-2.txt: picture = hare;name = Mia;season = summer;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
-  player-3.txt: picture = bear;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
-  player-4.txt: picture = hedgehog;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
+  player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4;
+  player-2.txt: picture = hare;name = Mia;season = summer;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 10;
+  player-3.txt: picture = bear;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4;
+  player-4.txt: picture = hedgehog;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4;
   settings.txt: language = et;player = 2;
 the bear removed: 1 fox, *2 hare Mia, 4 hedgehog
-Mia removed: *1 fox, 4 hedgehog; stars 0, skill 8 40 90, games 0, season 1, hints 1, game 8x8 after 0 moves, language 1
+Mia removed: *1 fox, 4 hedgehog; stars 0, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 8 40 90, games 0, season 1, hints 1, game 8x8 after 0 moves, language 1
 added again: 1 fox, *2 hare, 4 hedgehog
 the fox removed: *2 hare, 4 hedgehog
 the hare removed: *4 hedgehog, the last removed false, still *4 hedgehog
   game-4.bin
-  player-4.txt: picture = hedgehog;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
+  player-4.txt: picture = hedgehog;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4;
   settings.txt: language = et;player = 4;
 read again: *4 hedgehog
 renamed: *1 hare, 4 frog Isa
   game-4.bin
-  player-1.txt: picture = hare;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
-  player-4.txt: picture = frog;name = Isa;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;
+  player-1.txt: picture = hare;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4;
+  player-4.txt: picture = frog;name = Isa;season = by-date;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4;
   settings.txt: language = et;player = 1;

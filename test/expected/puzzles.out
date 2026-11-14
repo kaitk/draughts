@@ -1,6 +1,6 @@
 loaded: true, 74 puzzles
 puzzles: picker library
-  tiles 11, locks 5, lit 1, stars won 1, out 0, marks 1 1 1 1 1
+  tiles 11, locks 6, lit 1, stars won 1, out 0, marks 1 1 1 1 1
 captures tapped: picker library
 learn tapped: picker learn
   tiles 13, locks 0, lit 1, stars won 0, out 36, levels 1 1 1
@@ -38,8 +38,8 @@ puzzle 33: puzzle 33, B:W27,28,31,37,42,47:B1,8,13,16,17,21, playing, misses 0, 
 read back: 2 1 3; the older key 3, odd ones ignored: 0 0
 puzzles: picker captures
 back: picker library
-  tiles 11, locks 5, lit 1, stars won 1, out 0
-six of Learn solved: tiles 11, locks 0, lit 1, stars won 6, out 0
+  tiles 11, locks 6, lit 1, stars won 1, out 0
+six of Learn solved: tiles 11, locks 1, lit 1, stars won 6, out 0
   17 took 11, the reply: puzzle 20, W:W6,47:B27, playing, misses 0, stars 3, moves left 1
 Learn's last solved: puzzle 20, B:WK1,47:B27, solved, misses 0, stars 3, moves left 1
 next: picker library

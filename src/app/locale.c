@@ -3,7 +3,8 @@
 // from the Java side, and on iOS from NSLocale. On Android and iOS the program links SDL
 // and calls it directly (platform.h);
 // on the Mac the program's C is linked on its own and SDL is in the goose binary, so a
-// direct call wouldn't link, and SDL's two functions are looked up when called.
+// direct call wouldn't link, and SDL's two functions are looked up when called. And the
+// local date, for the daily puzzles (draughts_local_day, at the end).
 
 #include "platform.h"
 #include <stdint.h>
@@ -46,4 +47,24 @@ int64_t draughts_locales(draughts_text out) {
     }
     sdl_free(locales);
     return n;
+}
+
+// The local date as days since the epoch (1970-01-01 is 0), for the daily puzzles
+// (task 087): the time now moved by the zone's offset, daylight saving's too, over a
+// day's seconds. Windows' struct tm has no tm_gmtoff: there the offset is the local
+// time's fields read back as UTC, less now.
+#include <time.h>
+
+int64_t draughts_local_day(void) {
+    time_t now = time(NULL);
+    struct tm local;
+#if defined(_WIN32)
+    localtime_s(&local, &now);
+    long long offset = (long long)_mkgmtime(&local) - (long long)now;
+#else
+    localtime_r(&now, &local);
+    long long offset = (long long)local.tm_gmtoff;
+#endif
+    long long s = (long long)now + offset;
+    return (int64_t)((s >= 0 ? s : s - 86399) / 86400);
 }

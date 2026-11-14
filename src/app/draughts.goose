@@ -108,6 +108,9 @@ fn main() {
     var released = false;
     var most_dropped = 0;
     var thinker = think::Thinker {};
+    // The local date for the daily puzzles (shell::frame's `day`), read again each second.
+    var day = host::local_day();
+    var day_read = host::time();
     while host::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
         if host::frame_count() == 2 { host::first_frame(); }
@@ -132,6 +135,10 @@ fn main() {
             }
         }
         let now = host::time();
+        if now >= day_read + 1.0 {
+            day = host::local_day();
+            day_read = now;
+        }
         let s = host::screen_size();
         if s.x != size.x || s.y != size.y {
             size = s;
@@ -200,7 +207,7 @@ fn main() {
         // be changing then), and it eases back from grey: when the last frame showed it.
         if sh.out.raised && render::moving3d(rd) { dirty = true; }
         if want == shell::DROPPED { render::drop3d(rd); }
-        let out .= shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d);
+        let out .= shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d, day);
         if out.changed { dirty = true; }
         // The UI's quads past gui::MAX_QUADS are dropped unseen: said whenever a frame
         // drops more than any before, so it shows in a run's output rather than as a

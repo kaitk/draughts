@@ -1,13 +1,15 @@
 // The players' files (shell/players.goose), headless, in a folder of their own: a
 // player's file reads back what was written, picture, name, and first start with the
-// rest; a name keeps only characters the faces draw, up to 12. A settings.txt from
+// rest, the daily puzzles' keys too (an odd one left at its default); a name keeps only
+// characters the faces draw, up to 12. A settings.txt from
 // before players migrates to player 1 (the fox, no name, the first start done) with
 // game.bin as game-1.bin, and settings.txt keeps only the language and the player; the
 // app killed after any step migrates again to the same files. A fresh install starts
 // with one player at the defaults. Adding a player takes the lowest free id and switches
 // to them at the defaults with a new game; switching writes the leaving player's game
-// and settings and reads the other's; starting again clears the stars, the computer's
-// skill and games, and the saved game, and keeps the rest; removing deletes the files,
+// and settings and reads the other's; starting again clears the stars, the daily
+// puzzles' rating, the puzzles had, and today's, the computer's skill and games, and the
+// saved game, and keeps the rest (the puzzles a day too); removing deletes the files,
 // never the last player, and removing the player who is playing makes the first left
 // play.
 import std;
@@ -67,7 +69,9 @@ fn listed(sh: shell::Shell&) -> u8[>..] {
 fn state(sh: shell::Shell&) -> u8[>..] {
     var won = 0;
     for x in sh.prefs.stars[rules::INTERNATIONAL] { won += x; }
-    return str("stars ", won, ", skill ", sh.prefs.skill[0], " ", sh.prefs.skill[1], " ", sh.prefs.skill[2], ", games ",
+    let v = rules::INTERNATIONAL;
+    return str("stars ", won, ", puzzle rating ", sh.prefs.puzzle_rating[v], " ", sh.prefs.puzzle_rated[v], ", seen ",
+               sh.prefs.seen[v][0], ", day ", sh.prefs.today[v].day, ", ", sh.prefs.daily_count, " a day, skill ", sh.prefs.skill[0], " ", sh.prefs.skill[1], " ", sh.prefs.skill[2], ", games ",
                sh.prefs.games, ", season ", sh.prefs.season, ", hints ", sh.prefs.hints, ", game ",
                rules::VARIANTS[sh.game.b.variant].size, "x", rules::VARIANTS[sh.game.b.variant].size, " after ",
                sh.game.b.history.len, " moves, language ", sh.prefs.language);
@@ -105,12 +109,26 @@ fn main() {
     s.first_start_done = true;
     s.season = 1;
     s.stars[rules::INTERNATIONAL][2] = 3;
+    // The daily puzzles' keys (task 087): the rating and its count, the puzzles had, a
+    // day's record, and the puzzles a day.
+    s.puzzle_rating[rules::INTERNATIONAL] = 812;
+    s.puzzle_rated[rules::INTERNATIONAL] = 14;
+    s.seen[rules::INTERNATIONAL][0] = 0x3;
+    s.seen[rules::INTERNATIONAL][5] = 0x80;
+    s.seen[rules::RUSSIAN][63] = 0xFFFFFFFFFFFFFFFF;
+    s.today[rules::INTERNATIONAL].day = 20406;
+    for i, k in [12, 40, 55, 70] { s.today[rules::INTERNATIONAL].picked.list.push(i); }
+    s.today[rules::INTERNATIONAL].stars[0] = 3;
+    s.daily_count = 5;
     var out: u8[>..] = [];
     settings::write(s, out);
     print("a player's file:\n", out);
     var again: u8[>..] = [];
     settings::write(settings::parse(out), again);
     print("written again the same: ", again == out);
+    let bent = settings::parse("daily_count = 7\npuzzle_rating.russian = 50 2\nseen.brazilian = 64:1 x:2\ndaily.russian = 20406 3:4\n");
+    print("odd daily keys: count ", bent.daily_count, ", rating ", bent.puzzle_rating[rules::RUSSIAN], ", seen ",
+          bent.seen[rules::BRAZILIAN][0], ", day ", bent.today[rules::RUSSIAN].day);
     let odd = settings::parse("picture = unicorn\nname = Aleksander the Great\nfirst_start = maybe\n");
     print("an unknown picture: ", players::ANIMALS[odd.picture], ", a long name: '", odd.name[..], "' (",
           players::length(odd.name[..]), " characters), first start done ", odd.first_start_done);
@@ -167,6 +185,12 @@ fn main() {
     play_one(sh);
     play_one(sh);
     sh.prefs.stars[rules::INTERNATIONAL][5] = 2;
+    sh.prefs.puzzle_rating[rules::INTERNATIONAL] = 700;
+    sh.prefs.puzzle_rated[rules::INTERNATIONAL] = 3;
+    sh.prefs.seen[rules::INTERNATIONAL][0] = 0x15;
+    sh.prefs.today[rules::INTERNATIONAL].day = 20406;
+    sh.prefs.today[rules::INTERNATIONAL].picked.list.push(7);
+    sh.prefs.daily_count = 10;
     sh.prefs.season = 3;
     written(sh);
     shell::switch_player(sh, 0);

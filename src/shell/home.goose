@@ -3,8 +3,9 @@
 // continue, new game with the last opponent, puzzles, the games played, and settings,
 // each an icon and a word. In landscape the column stands at the left, its left edge off
 // the screen; in portrait it is a sheet along the bottom, and settings is a gear alone
-// beside the wordmark, so the sheet leaves the board its room. Puzzles notes the stars
-// won of those there are.
+// beside the wordmark, so the sheet leaves the board its room. Puzzles notes the puzzles
+// solved of those there are in the player's draughts until Today opens, then today's
+// puzzles as dots, filled as they are solved, and a check once all are (task 087).
 //
 // New game opens the setup in the same column (prototypes/new-game.html, take c): back
 // and the title, then a row of tiles per choice, lit as in settings: whom to play (a
@@ -541,11 +542,13 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     let ways = [CONTINUE, NEW_GAME, PUZZLES];
     let icons = [gui::NEXT, gui::NEW_GAME, gui::PUZZLE];
     let keys = [strings::HOME_CONTINUE, strings::HOME_NEW_GAME, strings::HOME_PUZZLES];
+    let set = puzzles::loaded;
+    let daily = picker::today_open(s.stars[set]);
     for i in first..ROWS {
         let r = at[1 + i - first];
         var stars: u8[..64] = [];
-        let won, all = picker::totals(s.stars[puzzles::loaded]);
-        strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
+        let won, all = picker::solved_all(s.stars[set]);
+        if !daily { strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]); }
         // New game notes the opponent its setup keeps, the computer's icon and level or a
         // friend's; it is outlined under continue, and lit in its place where continue
         // isn't shown (a first run), the keys' first choice then.
@@ -562,6 +565,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == first, true, i == 1, mark) {
             pick = ways[i];
         }
+        if i == 2 && daily { today_dots(g, r, s.today[set]); }
     }
     // The games: the player's rating in their draughts once they have one.
     var rating: u8[..16] = [];
@@ -582,6 +586,26 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         gui::scroll_end(g);
     }
     return pick;
+}
+
+// Today's puzzles at the right of the Puzzles row r, as gui::row puts its note: a dot
+// each, filled in the glow once solved, or a check once all are.
+let DOT = 14.0;
+let DOT_GAP = 7.0;
+let DONE = 26.0;
+fn today_dots(g: gui::Gui&, r: float4, t: settings::Today&) {
+    let u = g.scale;
+    let n = t.picked.list.len;
+    guard n > 0 else { return; }
+    var c = r;
+    gui::cut_right(c, 18.0 * u);
+    if picker::today_solved(t) >= n {
+        let k = DONE * u;
+        gui::glyph_icon(g, gui::center(gui::cut_right(c, k), k, k), gui::CHECK, gui::ON, 0.0, 1.0);
+        return;
+    }
+    let w = (n * DOT + (n - 1) * DOT_GAP) * u;
+    picker::dots(g, gui::cut_right(c, w), n, t.stars[..], -1, DOT * u, DOT_GAP * u);
 }
 
 // Whether quitting asks first (ask_quit): on a desktop, where a gamepad's B or Escape on

@@ -3,8 +3,9 @@
 // on one glass: Look (the background, the photograph or the plain fade; the theme, a
 // season or by the date; the board, flat, or raised in the season's own material or its
 // wood, stone, or carved board, each a picture; the kings, auto, crown, or stack), then
-// Game (move hints, and the moves panel beside the game with a line saying what the
-// chosen one shows), then the privacy note. The draughts are chosen in home's setup and
+// Game (move hints, the moves panel beside the game with a line saying what the
+// chosen one shows, and the puzzles a day, 3, 4, 5, or 10, task 087), then the privacy
+// note. The draughts are chosen in home's setup and
 // the puzzles' library, whether a friend's game turns the board in home's setup. The
 // preview beside the list is home's board as the choices make it: the player's draughts'
 // size, the kings, and what the move hints show, on a fixed position. In landscape the
@@ -121,11 +122,12 @@ let BOARD_ROW = 2;
 let KINGS_ROW = 3;
 let HINTS_ROW = 4;
 let MOVES_ROW = 5;
-let ROWS = 6;
+let DAILY_ROW = 6;          // puzzles a day (task 087), its tiles the numbers of DAILY_COUNTS
+let ROWS = 7;
 let LOOK_ROWS = 4;
 let ROW_NAMES = [strings::SETTINGS_BACKGROUND, strings::SETTINGS_THEME, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS,
-                 strings::SETTINGS_HINTS, strings::SETTINGS_MOVES];
-let ROW_TILES = [2, 5, 5, 3, 2, 3];
+                 strings::SETTINGS_HINTS, strings::SETTINGS_MOVES, strings::SETTINGS_DAILY];
+let ROW_TILES = [2, 5, 5, 3, 2, 3, 4];
 let MOST_TILES = 5;
 let SECTION_ICONS = [gui::SUN, gui::TARGET];
 let SECTION_TITLES = [strings::SETTINGS_LOOK, strings::SETTINGS_GAME];
@@ -144,15 +146,22 @@ let BOARD_PIC = -4;
 let FLAT_PIC = -8;
 
 // Ids, from gui::SETTINGS_IDS: back 0, the language button 1, the languages' rows from 2,
-// the catch round their list 6 and under it 7, the tiles from 10 (10 a row), the list 70.
+// the catch round their list 6 and under it 7, the tiles from 10 (10 a row), the list 80.
 let LANGUAGE_ID = gui::SETTINGS_IDS + 1;
 let LANGUAGE_ROWS = gui::SETTINGS_IDS + 2;
 let OUTSIDE_ID = gui::SETTINGS_IDS + 6;
 let POPUP_ID = gui::SETTINGS_IDS + 7;
-let LIST = gui::SETTINGS_IDS + 70;
+let LIST = gui::SETTINGS_IDS + 80;
 
 // Whether a row's tiles are pictures (gui::choice) rather than words.
 fn pictured(row: i64) -> bool { row <= BOARD_ROW }
+
+// Tile i of a row's words: its word, or for puzzles a day its number.
+fn label(row: i64, i: i64) -> u8[..64] {
+    var out: u8[..64] = [];
+    if row == DAILY_ROW { format(out, DAILY_COUNTS[i]); } else { out.append(strings::get(word(row, i))); }
+    return out;
+}
 
 // Tile i of a row's word.
 fn word(row: i64, i: i64) -> i64 {
@@ -181,9 +190,9 @@ fn moves_note_lines(g: gui::Gui&, w: f32) -> i64 {
 // gui::side() either side.
 fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
     let u = g.scale;
-    let label = strings::get(word(row, i));
-    if pictured(row) { return max(gui::tap() * u, max(PIC_W * u, gui::text_width(g, gui::SMALL, label)) + 2.0 * PIC_IN * u); }
-    return max(gui::tap() * u, gui::text_width(g, gui::BODY, label) + 2.0 * gui::side() * u);
+    let words = label(row, i);
+    if pictured(row) { return max(gui::tap() * u, max(PIC_W * u, gui::text_width(g, gui::SMALL, words[..])) + 2.0 * PIC_IN * u); }
+    return max(gui::tap() * u, gui::text_width(g, gui::BODY, words[..]) + 2.0 * gui::side() * u);
 }
 
 // Whether tile i of a row is the one chosen in s.
@@ -193,6 +202,7 @@ fn chosen(s: Settings&, row: i64, i: i64) -> bool {
     if row == BOARD_ROW { return if i == FLAT_TILE { s.board == FLAT } else { s.board == RAISED && s.material == i - 1 }; }
     if row == KINGS_ROW { return s.kings == i; }
     if row == HINTS_ROW { return s.hints == i; }
+    if row == DAILY_ROW { return s.daily_count == DAILY_COUNTS[i]; }
     return s.moves == i;
 }
 
@@ -207,6 +217,7 @@ fn choose(s: Settings&, row: i64, i: i64) {
     if row == KINGS_ROW { s.kings = i; }
     if row == HINTS_ROW { s.hints = i; }
     if row == MOVES_ROW { s.moves = i; }
+    if row == DAILY_ROW { s.daily_count = DAILY_COUNTS[i]; }
 }
 
 // The picture tile i of a row shows (the widgets' look.z): the background's the theme
@@ -225,7 +236,8 @@ fn picture_of(s: Settings&, row: i64, i: i64) -> i64 {
 fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
     let u = g.scale;
     let id = gui::SETTINGS_IDS + 10 + 10 * row + i;
-    let label = strings::get(word(row, i));
+    let words = label(row, i);
+    let label = words[..];
     let on = chosen(s, row, i);
     var tapped = false;
     if pictured(row) {
@@ -307,11 +319,12 @@ fn list_at(g: gui::Gui&, r: float4) -> List {
             at.name = float4 { r.x + 4.0 * u, y + (NAME_H - 24.0) * u, r.z - 4.0 * u, 24.0 * u };
             y += NAME_H * u;
             y += lay(g, row, float4 { r.x, y, r.z, 0.0 }, at.tiles);
-        }
-        if section == 1 {
-            let n = moves_note_lines(g, r.z - 8.0 * u);
-            l.says = float4 { r.x + 4.0 * u, y + NOTE_TOP * u, r.z - 8.0 * u, n * line };
-            y += NOTE_TOP * u + n * line;
+            // The move list's note under its tiles.
+            if row == MOVES_ROW {
+                let n = moves_note_lines(g, r.z - 8.0 * u);
+                l.says = float4 { r.x + 4.0 * u, y + NOTE_TOP * u, r.z - 8.0 * u, n * line };
+                y += NOTE_TOP * u + n * line;
+            }
         }
         y += SECTION_END * u;
         l.rule[section] = float4 { r.x, y, r.z, max(1.0, floor(u + 0.5)) };

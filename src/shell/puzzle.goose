@@ -17,6 +17,10 @@
 // glows. Solved,
 // the goal says so, the stars won pop in, and next lights; nothing covers the board.
 // A star stays at the least, so a puzzle solved is one, two, or three stars.
+//
+// One of today's puzzles (task 087, prototypes/puzzle.html?daily=1) plays the same, a
+// copy of it read from the library in place of one of the set's, and today's dots stand
+// over next: those solved filled in the glow, this one ringed in it.
 namespace puzzle;
 import std;
 import math;
@@ -77,23 +81,44 @@ struct Play {
     won:       i64      = 0,     // stars won, once solved
     grab:      float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (board::touch)
     cam:       rig::Rig = rig::Rig {},          // and the camera its buttons move (board/rig.goose)
+    // One of today's puzzles (task 087): its place in today's, else -1 for the set's at
+    // `index`; the puzzle itself, read from the library (open_daily); and today's count
+    // and the stars won in each, for the dots over next, which the shell keeps up.
+    daily:   i64                    = -1,
+    day_n:   i64                    = 0,
+    day_won: u8[puzzles::MAX_DAILY] = [0; puzzles::MAX_DAILY],
+    own:     puzzles::Puzzle,
 }
 
 // A puzzle never shows a selected piece's targets, whatever the move hints setting: the
 // child is to find the move (docs/product.md).
 fn new() -> Play {
     var pl = Play { b: board::new(rules::INTERNATIONAL), s: puzzles::Solver { moves: [], stack: [] }, path: [],
-                    tried: rules::Move { .. }, .. };
+                    tried: rules::Move { .. }, own: default<puzzles::Puzzle>(), .. };
     pl.b.hints = board::MISTAKES;
     pl.b.by_hand = true;
     return pl;
 }
 
-fn current(pl: Play&) -> puzzles::Puzzle& { return puzzles::all.list[pl.index]; }
+fn current(pl: Play&) -> puzzles::Puzzle& {
+    if pl.daily >= 0 { return pl.own; }
+    return puzzles::all.list[pl.index];
+}
 
 // Opens puzzle `index` of puzzles::all, from its start with three stars at stake.
 fn open(pl: Play&, index: i64) {
     pl.index = index;
+    pl.daily = -1;
+    rig::reset(pl.cam);
+    pl.misses = 0;
+    restart(pl);
+}
+
+// Opens today's puzzle at place k, pz, as open does one of the set's.
+fn open_daily(pl: Play&, pz: puzzles::Puzzle&, k: i64) {
+    pl.own = pz;
+    pl.daily = k;
+    pl.index = -1;
     rig::reset(pl.cam);
     pl.misses = 0;
     restart(pl);
@@ -292,6 +317,17 @@ fn animating(pl: Play&, g: gui::Gui&, now: f64) -> bool {
 }
 
 let RESTART_ASK = gui::ASK_RESTART;
+let DOT = 14.0;             // today's dots over next (task 087), dp across,
+let DOT_GAP = 7.0;          // and apart,
+let DOT_ABOVE = 8.0;        // and above next
+
+// Whether today's dots show: one of today's puzzles playing.
+fn shows_dots(pl: Play&) -> bool { pl.daily >= 0 && pl.day_n > 0 }
+
+// Today's dots in r, this one ringed.
+fn day_dots(pl: Play&, g: gui::Gui&, r: float4) {
+    picker::dots(g, r, pl.day_n, pl.day_won[..], pl.daily, DOT * g.scale, DOT_GAP * g.scale);
+}
 let CAMERA = 4;             // a camera button was tapped (panel_frame)
 
 // The goal's icon and words.
@@ -436,6 +472,11 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
         // Round the 3D board the panel is a short corner one (panel::corners_in): next
         // takes the shorter tile there.
         let next = gui::cut_bottom(right, if l.three { panel::stack_h() * u } else { panel::tall(l, u) });
+        // Today's dots over next.
+        if shows_dots(pl) {
+            gui::cut_bottom(right, DOT_ABOVE * u);
+            day_dots(pl, g, gui::cut_bottom(right, DOT * u));
+        }
         // Next keeps a gap from the stars round the 3D board too, where they shrink to it.
         if l.three { gui::cut_top(right, 8.0 * u); gui::cut_bottom(right, 8.0 * u); }
         else { gui::cut_bottom(right, gui::PAD * u); }
@@ -477,7 +518,19 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     gui::cut_left(top, 6.0 * u);
     goal(pl, g, top, 48.0, false, now, 52.0, over);
     stake(pl, g, stars_at, if solved { 48.0 } else { 40.0 }, 6.0, now);
-    if gui::labelled(g, panel::EYE_ID, gui::cut_top(right, gui::tap() * u), gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
+    // Today's dots over next where the bar has the room, else at next's left.
+    var row = float4 { right.x, right.y, right.z, gui::tap() * u };
+    if shows_dots(pl) {
+        if right.w >= (gui::tap() + DOT + DOT_ABOVE) * u {
+            day_dots(pl, g, gui::cut_top(right, DOT * u));
+            gui::cut_top(right, DOT_ABOVE * u);
+            row = float4 { right.x, right.y, right.z, gui::tap() * u };
+        } else {
+            let w = (pl.day_n * DOT + (pl.day_n - 1) * DOT_GAP + 2.0 * gui::PAD) * u;
+            day_dots(pl, g, gui::cut_left(row, w));
+        }
+    }
+    if gui::labelled(g, panel::EYE_ID, row, gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
                      style, on) {
         ask = NEXT;
     }

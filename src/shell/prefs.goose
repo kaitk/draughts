@@ -70,6 +70,17 @@ let MOVES_NAMES = ["hidden", "list", "marks"];
 // afresh; one moved from it has had its first games.
 let OLD_SKILL = [10, 40, 90];
 let CLOCK_NAMES = ["none", "5+3", "10+5"];
+// Puzzles a day, the parent's choice in settings (task 087).
+let DAILY_COUNTS = [3, 4, 5, 10];
+
+// A day's daily puzzles as a player had them: the day (days since the epoch by the local
+// date, -1 for none yet), the puzzles picked, as indexes into the set's library, and the
+// stars won in each, 0 while unsolved.
+struct Today {
+    day:    i64                    = -1,
+    picked: puzzles::Day           = puzzles::Day { list: [] },
+    stars:  u8[puzzles::MAX_DAILY] = [0; puzzles::MAX_DAILY],
+}
 
 struct Settings {
     // The player's picture (players::ANIMALS) and name, up to 12 characters, perhaps
@@ -112,6 +123,17 @@ struct Settings {
     // play when asked as a new player (`how_to_play = known`), which keeps home's row away.
     learned: i64[rules::VARIANT_COUNT] = [0; rules::VARIANT_COUNT],
     knows:   bool                      = false,
+    // The daily puzzles (task 087), by the set's variant (puzzles::set_of): the puzzle
+    // rating, 0 until it is seeded from the course's stars, and how many first solves have
+    // moved it (`puzzle_rating.international = 812 14`); the library's puzzles had, a bit
+    // each (`seen.international = 0:3 5:80`, the words that aren't 0 by their index, in
+    // hex); and today's record (`daily.international = 20406 12:3 40:0 55:0 70:0`, the day
+    // and each puzzle's library index and stars). And how many a day, DAILY_COUNTS.
+    puzzle_rating: i64[rules::VARIANT_COUNT]                      = [0; rules::VARIANT_COUNT],
+    puzzle_rated:  i64[rules::VARIANT_COUNT]                      = [0; rules::VARIANT_COUNT],
+    seen:          u64[puzzles::SEEN_WORDS][rules::VARIANT_COUNT] = [[0; puzzles::SEEN_WORDS]; rules::VARIANT_COUNT],
+    today:         Today[rules::VARIANT_COUNT]                    = [Today {}; rules::VARIANT_COUNT],
+    daily_count:   i64                                            = puzzles::DAILY_DEFAULT,
     // Whether settings' language list is open (settings::head). Not in the file.
     languages_open: bool = false,
 }
@@ -202,6 +224,10 @@ fn parse(text: const u8[:]) -> Settings {
             if kind == "rated" && n >= 0 { s.rated[rated_v] = n; }
             if kind == "learned" && n >= 0 { s.learned[rated_v] = n; }
         }
+        if key == "daily_count" && number {
+            for c in DAILY_COUNTS { if n == c { s.daily_count = c; } }
+        }
+        if has_of && rated_known { parse_daily(s, kind, puzzles::set_of(rated_v), value); }
         var set = -1;
         if key == "stars" { set = rules::INTERNATIONAL; }
         let dot, rest, has_dot = split_once(key, '.');
@@ -232,6 +258,71 @@ fn parse(text: const u8[:]) -> Settings {
         }
     }
     return s;
+}
+
+// The daily puzzles' keys of one set (Settings.puzzle_rating..): `kind` the key's part
+// before the dot, `value` what follows the `=`. What doesn't read is left at the default.
+fn parse_daily(s: Settings&, kind: const u8[:], set: u8, value: const u8[:]) {
+    if kind == "puzzle_rating" {
+        let r, n, both = split_once(value, ' ');
+        let rating, ok_r = parse_int(trim(r));
+        let count, ok_n = parse_int(trim(n));
+        if both && ok_r && ok_n && rating >= puzzles::LEAST_PUZZLE_RATING && count >= 0 {
+            s.puzzle_rating[set] = rating;
+            s.puzzle_rated[set] = count;
+        }
+    }
+    if kind == "seen" {
+        for one in split(value, ' ') {
+            let a, b, pair = split_once(one, ':');
+            let i, ok_i = parse_int(a);
+            let word, ok_w = parse_uint(b, 16);
+            if pair && ok_i && ok_w && i >= 0 && i < puzzles::SEEN_WORDS { s.seen[set][i] = word; }
+        }
+    }
+    if kind == "daily" {
+        var t = Today {};
+        var first = true;
+        for one in split(value, ' ') {
+            guard one.len > 0 else { continue; }
+            if first {
+                let day, ok = parse_int(one);
+                guard ok && day >= 0 else { return; }
+                t.day = day;
+                first = false;
+                continue;
+            }
+            let a, b, pair = split_once(one, ':');
+            let i, ok_i = parse_int(a);
+            let won, ok_w = parse_int(b);
+            guard pair && ok_i && ok_w && i >= 0 && i < puzzles::MAX_LIBRARY && won >= 0 && won <= 3 else { return; }
+            guard t.picked.list.len < puzzles::MAX_DAILY else { return; }
+            t.stars[t.picked.list.len] = won as u8;
+            t.picked.list.push(i);
+        }
+        if !first { s.today[set] = t; }
+    }
+}
+
+// The daily puzzles' keys of settings s (parse_daily), appended to out.
+fn write_daily(s: Settings&, out: u8[>..]&) {
+    format(out, "\ndaily_count = ", s.daily_count);
+    for v in rules::VARIANT_COUNT {
+        let name = rules::VARIANT_NAMES[v];
+        if s.puzzle_rating[v] > 0 { format(out, "\npuzzle_rating.", name, " = ", s.puzzle_rating[v], " ", s.puzzle_rated[v]); }
+        var first = true;
+        for word, i in s.seen[v] {
+            guard word != 0 else { continue; }
+            if first { format(out, "\nseen.", name, " ="); }
+            format(out, " ", i, ":");
+            format_uint(out, word, 16, 0, '0');
+            first = false;
+        }
+        let t .= s.today[v];
+        guard t.day >= 0 else { continue; }
+        format(out, "\ndaily.", name, " = ", t.day);
+        for i, k in t.picked.list { format(out, " ", i, ":", t.stars[k]); }
+    }
 }
 
 // A player's file for settings s, appended to out: all but the language.
@@ -279,6 +370,7 @@ fn write(s: Settings, out: u8[>..]&) {
         guard s.learned[v] > 0 else { continue; }
         format(out, "\nlearned.", rules::VARIANT_NAMES[v], " = ", s.learned[v]);
     }
+    write_daily(s, out);
     for set, v in s.stars {
         var first = true;
         for won, id in set {

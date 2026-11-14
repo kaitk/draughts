@@ -16,6 +16,16 @@
 // a tap (gui::tap()) at least. Over the themes, across the columns, How to play (task 026,
 // prototypes/tutorial.html entry b): its mark, its name, the steps played of the
 // switch's draughts' tutorial, and a bar of them; it is never needed to open a theme. The sharp photograph shows behind it, and no board.
+//
+// The daily puzzles (task 087, prototypes/puzzles.html?daily=b): until Learn is solved,
+// all of it, How to play heads the list and a locked Today row ends it, across the
+// columns ("Solve n more in Learn"). Once it is, Today's row heads the list across the
+// columns: its mark (a calendar, the moon once all are solved), "Today", a note ("n to
+// go", or "New puzzles tomorrow"), and today's puzzles as tiles, beside them where they
+// fit and under them where they don't, each its level's bars (the warm-up one, the middle
+// two, the stretch three) over its stars, the first unsolved lit; a tile opens its
+// puzzle. How to play is then a tile with its mark beside the title in landscape, and its
+// row ends the list in portrait, where the title row has no room.
 namespace picker;
 import std;
 import vec;
@@ -31,6 +41,8 @@ let BACK = gui::ASK_BACK;   // home
 let SHOWN = gui::ASK_SHOWN; // a theme's page opened or left: drawn again
 let SWITCHED = -10;         // other draughts chosen on the library's switch
 let LEARN = -11;            // how to play, the library's first row (task 026)
+let TODAY = -100;           // today's puzzle k tapped is TODAY - k (task 087), k under puzzles::MAX_DAILY
+let TODAY_IDS = gui::PICKER_IDS + 30;          // today's tiles, one id each
 
 let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING, gui::SHIELD];
 let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWNING, strings::THEME_SHOTS,
@@ -58,6 +70,51 @@ fn to_open(stars: const u8[:]) -> i64 {
 
 // Whether a theme is open: Learn always, the others once half of Learn is solved.
 fn open(stars: const u8[:], theme: i64) -> bool { theme == puzzles::LEARN || to_open(stars) == 0 }
+
+// How many of Learn's puzzles are still to solve before Today opens (task 087): all of
+// Learn, the rules a daily puzzle may use; 0 once it is open. A set read with no Learn
+// (none read yet) keeps it shut.
+fn today_more(stars: const u8[:]) -> i64 { puzzles::theme_count(puzzles::all, puzzles::LEARN) - solved(stars, puzzles::LEARN) }
+fn today_open(stars: const u8[:]) -> bool {
+    return puzzles::theme_count(puzzles::all, puzzles::LEARN) > 0 && today_more(stars) <= 0;
+}
+
+// The puzzles of the set solved, any stars, and how many it has: home's note before Today
+// opens.
+fn solved_all(stars: const u8[:]) -> i64, i64 {
+    var n = 0;
+    for p in puzzles::all.list { if stars[p.id] > 0 { n++; } }
+    return n, puzzles::all.list.len;
+}
+
+// The level of today's puzzle k of n, its bars: the warm-up 1, the middle ones 2, the
+// stretch 3 (puzzles::target's shape).
+fn slot_level(k: i64, n: i64) -> i64 { if k == 0 { 1 } else if k == n - 1 { 3 } else { 2 } }
+
+// Today's dots (task 087): n of them `d` pixels across and `gap` apart, centered in r,
+// those with stars in `won` filled in the glow, puzzle `ring` (or none, -1) ringed in it,
+// the rest dim; home's note and over a daily puzzle's next. Smaller where r is narrower
+// than they want (ten over a phone's next).
+fn dots(g: gui::Gui&, r: float4, n: i64, won: const u8[:], ring: i64, size: f32, space: f32) {
+    let k_fit = min(1.0, r.z / max(1.0, n * size + (n - 1) * space));
+    let d = floor(size * k_fit + 0.5);
+    let gap = space * k_fit;
+    for k in n {
+        let c = gui::cell(r, n, 1, d, d, gap, k);
+        if won[k] > 0 { gui::glow_fill(g, c, 1.0, 0.5 * d); }
+        else if k == ring {
+            gui::add(g, gui::Quad { rect: c, look: float4 { gui::RING, 0.5 * d, 1.0, 3.0 }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+        }
+        else { gui::fill(g, c, float4 { 1.0, 1.0, 1.0, 0.3 }, 0.5 * d); }
+    }
+}
+
+// How many of today's puzzles are solved.
+fn today_solved(t: settings::Today&) -> i64 {
+    var n = 0;
+    for k in t.picked.list.len { if t.stars[k] > 0 { n++; } }
+    return n;
+}
 
 // The first puzzle of a theme without stars, as its index in puzzles::all, or -1.
 fn first_open(stars: const u8[:], theme: i64) -> i64 {
@@ -96,9 +153,13 @@ fn line_h(g: gui::Gui&, face: i64) -> f32 { g.faces[face].ascent - g.faces[face]
 // a puzzle's board grows out of and shrinks back into. Returns BACK, SHOWN (having set
 // `theme`), SWITCHED (having set `variant`, the player's draughts, from the library's
 // switch), the index in puzzles::all of a puzzle tapped, or NOTHING.
+//
+// With `today`, the player's daily puzzles in the set (task 087), and `today_at` the one
+// playing (its place in them, or -1), whose tile the board grows out of: a tap on one
+// returns TODAY - its place.
 fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&, variant: i64&,
-         learned: i64 = 0, steps: i64 = 0) -> i64 {
-    if theme < 0 { return library(g, area, stars, at, theme, spot, variant, learned, steps); }
+         learned: i64, steps: i64, today: settings::Today&, today_at: i64) -> i64 {
+    if theme < 0 { return library(g, area, stars, at, theme, spot, variant, learned, steps, today, today_at); }
     return page(g, area, stars, at, theme, spot);
 }
 
@@ -288,12 +349,179 @@ fn title(g: gui::Gui&, r: float4) {
 // How wide the title wants to be.
 fn title_width(g: gui::Gui&) -> f32 { gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES)) }
 
+// Today's row (task 087): its padding, its mark, and its gap after the mark, as How to
+// play's row; its tiles a tap square each, TODAY_GAP apart at least, and under the head
+// where they don't fit beside it, TODAY_FOOT dp above the row's foot.
+let TODAY_GAP = 10.0;
+let TODAY_FOOT = 16.0;
+fn row_pads(phone: bool) -> f32, f32 {
+    if phone { return 12.0, 18.0; }
+    return 20.0, 26.0;
+}
+fn mark_dp(phone: bool) -> f32 { if phone { 56.0 } else { 72.0 } }
+fn mark_gap(phone: bool) -> f32 { if phone { 18.0 } else { 22.0 } }
+fn learn_dp(phone: bool) -> f32 { if phone { gui::tap() } else { 104.0 } }
+
+// How wide Today's words want to be: its name, or the longest note.
+fn today_words(g: gui::Gui&) -> f32 {
+    var left: u8[..64] = [];
+    strings::fill_in(left, strings::DAILY_LEFT, [10]);
+    return max(gui::text_width(g, gui::LABEL, strings::get(strings::DAILY_TODAY)),
+               max(gui::text_width(g, gui::SMALL, strings::get(strings::DAILY_TOMORROW)), gui::text_width(g, gui::SMALL, left[..])));
+}
+
+// How wide n of today's tiles are in a line.
+fn tiles_w(n: i64, u: f32) -> f32 { n * gui::tap() * u + max(n - 1, 0) * TODAY_GAP * u }
+
+// Whether today's n tiles fit beside the head of a row w pixels wide.
+fn today_beside(g: gui::Gui&, w: f32, n: i64, phone: bool) -> bool {
+    let u = g.scale;
+    let l, r = row_pads(phone);
+    let head = (l + r + mark_dp(phone) + mark_gap(phone) + 24.0) * u + today_words(g);
+    return n == 0 || head + tiles_w(n, u) <= w;
+}
+
+// How many of n tiles go in a line of a row w pixels wide, and in how many lines, as even
+// as they go.
+fn today_lines(w: f32, n: i64, phone: bool, u: f32) -> i64, i64 {
+    let l, r = row_pads(phone);
+    let fit = max(1, floor((w - (l + r) * u + TODAY_GAP * u) / ((gui::tap() + TODAY_GAP) * u)) as i64);
+    let lines = max(1, (n + fit - 1) / fit);
+    return (n + lines - 1) / lines, lines;
+}
+
+// How tall Today's row is, w pixels wide, with n puzzles: as How to play's with the tiles
+// beside its head, else the head and the tiles' lines under it.
+fn today_h(g: gui::Gui&, w: f32, n: i64, phone: bool) -> f32 {
+    let u = g.scale;
+    let head = learn_dp(phone) * u;
+    if today_beside(g, w, n, phone) { return max(head, (gui::tap() + 2.0 * 8.0) * u); }
+    let per, lines = today_lines(w, n, phone, u);
+    return head + lines * gui::tap() * u + (lines - 1) * TODAY_GAP * u + TODAY_FOOT * u;
+}
+
+// Today's mark, a disc `m` pixels across centered in r: the calendar on the glow at 40%,
+// the moon once all are solved; shut, plain at 6% with the lock.
+fn today_mark(g: gui::Gui&, r: float4, m: f32, icon: i64, opened: bool) {
+    let disc = gui::center(r, m, m);
+    if opened { gui::glow_fill(g, disc, 0.4, 0.5 * m); }
+    else { gui::fill(g, disc, float4 { 1.0, 1.0, 1.0, 0.06 }, 0.5 * m); }
+    let s = 0.57 * m;
+    gui::glyph_icon(g, gui::center(disc, s, s), icon, gui::PLAIN, 0.0, if opened { 1.0 } else { 0.45 });
+}
+
+// A name over a note in c, centered down it, the name dim with `dim`.
+fn name_note(g: gui::Gui&, c: float4, name: const u8[:], note: const u8[:], dim: bool) {
+    let u = g.scale;
+    let name_h = line_h(g, gui::LABEL);
+    let note_h = line_h(g, gui::SMALL);
+    var b = gui::center(c, c.z, name_h + 6.0 * u + note_h);
+    let top = gui::cut_top(b, name_h);
+    gui::cut_top(b, 6.0 * u);
+    gui::text(g, gui::fitting(g, gui::LABEL, name, top.z), top, name, if dim { 0.66 } else { 1.0 }, 0.0, gui::LEFT);
+    gui::text(g, gui::fitting(g, gui::SMALL, note, b.z), b, note, 0.66, 0.0, gui::LEFT);
+}
+
+// One of today's puzzles' tiles: its level's bars over its stars, lit if it is the first
+// unsolved. True when tapped.
+fn today_tile(g: gui::Gui&, k: i64, r: float4, level: i64, won: i64, lit: bool) -> bool {
+    let u = g.scale;
+    let tapped, pic = gui::pick(g, TODAY_IDS + k, r, 0.0, "", "", lit, true);
+    let bars = 26.0 * u;
+    let star = 16.0 * u;
+    var col = gui::center(r, r.z, bars + 8.0 * u + star);
+    gui::glyph_icon(g, gui::center(gui::cut_top(col, bars), bars, bars), gui::LEVEL + level - 1, gui::PLAIN, 0.0, 1.0);
+    gui::cut_top(col, 8.0 * u);
+    for i in 3 {
+        let cell = gui::cell(col, 3, 1, star, star, 1.0 * u, i);
+        if i < won { gui::glyph_icon(g, cell, gui::STAR, gui::ON, 0.0, 1.0); }
+        else { gui::glyph_icon(g, cell, gui::STAR_OFF, gui::PLAIN, 0.0, 0.28); }
+    }
+    return tapped;
+}
+
+// Today's row in r, open: its mark, its name and note, and its tiles. Sets `spot` to the
+// tile of puzzle `at`, or of one tapped. Returns the place of the one tapped, or -1.
+fn today_row(g: gui::Gui&, r: float4, t: settings::Today&, at: i64, spot: float4&, phone: bool) -> i64 {
+    let u = g.scale;
+    gui::glass(g, r, 22.0);
+    let n = t.picked.list.len;
+    let done = today_solved(t);
+    var c = r;
+    let pl, pr = row_pads(phone);
+    gui::cut_left(c, pl * u);
+    gui::cut_right(c, pr * u);
+    let beside = today_beside(g, r.z, n, phone);
+    var head = if beside { c } else { gui::cut_top(c, learn_dp(phone) * u) };
+    let m = mark_dp(phone) * u;
+    today_mark(g, gui::cut_left(head, m), m, if done >= n { gui::MOON } else { gui::TODAY }, true);
+    gui::cut_left(head, mark_gap(phone) * u);
+    var lines = c;
+    if beside { lines = gui::cut_right(head, tiles_w(n, u)); }
+    else { gui::cut_bottom(lines, TODAY_FOOT * u); }
+    var note: u8[..64] = [];
+    if done >= n { note.append(strings::get(strings::DAILY_TOMORROW)); }
+    else { strings::fill_in(note, strings::DAILY_LEFT, [n - done]); }
+    name_note(g, head, strings::get(strings::DAILY_TODAY), note[..], false);
+    // The tiles in lines as even as they go, each line spread across the row under the head
+    // (TODAY_GAP apart at least, 40 dp at most), or beside it at its right.
+    var per = n;
+    var unused_lines = 1;
+    if !beside { per, unused_lines = today_lines(r.z, n, phone, u); }
+    var lit = -1;
+    for k in n { if lit < 0 && t.stars[k] == 0 { lit = k; } }
+    var pick = -1;
+    let side = gui::tap() * u;
+    for k in n {
+        let line = k / per;
+        let in_line = min(per, n - line * per);
+        let gap = if beside || in_line < 2 { TODAY_GAP * u }
+                  else { clamp((lines.z - in_line * side) / (in_line - 1), TODAY_GAP * u, 40.0 * u) };
+        let w = in_line * side + (in_line - 1) * gap;
+        let x = lines.x + floor(0.5 * (lines.z - w) + 0.5) + (k - line * per) * (side + gap);
+        let y = if beside { lines.y + floor(0.5 * (lines.w - side) + 0.5) } else { lines.y + line * (side + TODAY_GAP * u) };
+        let tr = float4 { x, y, side, side };
+        if k == at { spot = tr; }
+        if today_tile(g, k, tr, slot_level(k, n), t.stars[k], k == lit) {
+            pick = k;
+            spot = tr;
+        }
+    }
+    return pick;
+}
+
+// Today's row while it is shut: its mark with the lock, its name, and how many more of
+// Learn's puzzles open it.
+fn today_locked(g: gui::Gui&, r: float4, stars: const u8[:], phone: bool) {
+    let u = g.scale;
+    gui::glass(g, r, 22.0);
+    var c = r;
+    let pl, pr = row_pads(phone);
+    gui::cut_left(c, pl * u);
+    gui::cut_right(c, pr * u);
+    let m = mark_dp(phone) * u;
+    today_mark(g, gui::cut_left(c, m), m, gui::LOCK, false);
+    gui::cut_left(c, mark_gap(phone) * u);
+    var more: u8[..64] = [];
+    strings::fill_in(more, strings::PUZZLES_LOCKED, [today_more(stars)]);
+    name_note(g, c, strings::get(strings::DAILY_TODAY), more[..], true);
+}
+
+// How to play as a tile beside the title (task 087, once Today heads the list in
+// landscape): its mark on glass, a tap square. True when tapped.
+fn learn_tile(g: gui::Gui&, r: float4) -> bool {
+    gui::glass(g, r, 22.0);
+    return gui::tile(g, gui::PICKER_IDS + 8, r, gui::HOW, gui::ROW, 22.0);
+}
+
 // The library: back, the title, the draughts switch, and a row per theme the set has.
 // In landscape the switch stands at the title row's right where the two fit, else (in
 // portrait, a small window) in a row of its own under the title. A tap on the switch
-// sets `variant` and returns SWITCHED, the list back at its top.
+// sets `variant` and returns SWITCHED, the list back at its top. Over the themes How to
+// play's row, or Today's once it is open (frame), and under them Today's locked row, or
+// in portrait How to play's once Today is open.
 fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&,
-           variant: i64&, learned: i64, steps: i64) -> i64 {
+           variant: i64&, learned: i64, steps: i64, today: settings::Today&, today_at: i64) -> i64 {
     let u = g.scale;
     let landscape = area.z >= area.w;
     let phone = gui::phone(area, u);
@@ -306,9 +534,14 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
         gui::cut_left(page, MARGIN * u);
     }
     let gap = gui::PAD * u;
+    let opened = today_open(stars);
+    let n_today = today.picked.list.len;
+    // How to play beside the title once Today heads the list, in landscape.
+    let how_tile = opened && landscape;
+    let how_w = if how_tile { (16.0 + gui::tap()) * u } else { 0.0 };
     let sw_w = switch_width(g);
     let sw_h = switch_row_h() * u;
-    let beside = landscape && title_width(g) + 24.0 * u + sw_w <= page.z;
+    let beside = landscape && title_width(g) + how_w + 24.0 * u + sw_w <= page.z;
     let head = if beside { sw_h + gap } else { gui::tap() * u + gap + sw_h + gap };
     // A variant's set may leave a theme out (Russian's has no king shots): its row too.
     var rows = 0;
@@ -317,28 +550,40 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // foldable, a 9:16 phone), down to the gui::tap() a tap wants; where even that doesn't
     // fit, they keep their height and scroll.
     var row_h = (if phone { 96.0 } else { 124.0 }) * u;
-    // How to play's row over them, across the columns.
-    let learn_h = (if phone { gui::tap() } else { 104.0 }) * u;
-    let first = learn_h + gap;
-    let fit = floor((page.w - head - first - (rows - 1) * gap) / rows);
+    // How to play's row over them, across the columns, or Today's once it is open, which
+    // is as tall as its tiles want at the width of one column, or of the two where there
+    // are two; and under them Today's locked row, or How to play's in portrait once Today
+    // is open.
+    let learn_h = learn_dp(phone) * u;
+    let one_w = min(page.z, COLUMN * u);
+    var first_h = if opened { today_h(g, one_w, n_today, phone) } else { learn_h };
+    var first = first_h + gap;
+    let end = if !opened || !landscape { gap + learn_h } else { 0.0 };
+    let fit = floor((page.w - head - first - end - (rows - 1) * gap) / rows);
     if !landscape && fit >= gui::tap() * u { row_h = min(row_h, fit); }
-    let one = first + rows * row_h + (rows - 1) * gap;
+    let one = first + rows * row_h + (rows - 1) * gap + end;
     // Two columns in landscape where two fit the width (a tablet, a wide window) or one
     // doesn't fit the height (a phone); one in portrait, scrolling where it must.
     let wide = page.z >= 2.0 * NARROWEST * u + gap;
     let cols = if landscape && rows > 1 && (wide || head + one > page.w) { 2 } else { 1 };
     let per = (rows + cols - 1) / cols;
-    let h = head + first + per * row_h + (per - 1) * gap;
-    let y = if landscape { page.y + max(0.0, floor(0.5 * (page.w - h) + 0.5)) } else { page.y };
     // Where the title and the rows start below back (a tablet's landscape), they take the
     // whole width and center on it; else they keep clear of back's column, centered on
     // the screen as far as that allows (a phone's landscape, back beside the rows).
-    let room = if landscape && y >= whole.y + gui::tap() * u + gap { whole } else { page };
+    let y0 = if landscape { page.y + max(0.0, floor(0.5 * (page.w - (head + first + per * row_h + (per - 1) * gap + end)) + 0.5)) }
+             else { page.y };
+    let room = if landscape && y0 >= whole.y + gui::tap() * u + gap { whole } else { page };
     let col_w = min((room.z - (cols - 1) * gap) / cols, COLUMN * u);
     let w = cols * col_w + (cols - 1) * gap;
+    if opened {
+        first_h = today_h(g, w, n_today, phone);
+        first = first_h + gap;
+    }
+    let h = head + first + per * row_h + (per - 1) * gap + end;
+    let y = if landscape { page.y + max(0.0, floor(0.5 * (page.w - h) + 0.5)) } else { page.y };
     let x = max(room.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
     // The title row as wide as the rows, or as the title and the switch beside it want.
-    let top_w = if beside { min(room.z, max(w, title_width(g) + 24.0 * u + sw_w)) } else { w };
+    let top_w = if beside { min(room.z, max(w, title_width(g) + how_w + 24.0 * u + sw_w)) } else { w };
     let top_x = max(room.x, min(x, whole.x + floor(0.5 * (whole.z - top_w) + 0.5)));
     var top = float4 { top_x, y, top_w, if beside { sw_h } else { gui::tap() * u } };
     if !landscape {
@@ -347,7 +592,16 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     }
     let sw = if beside { gui::cut_right(top, sw_w) } else { float4 { x, y + gui::tap() * u + gap, w, sw_h } };
     if beside { gui::cut_right(top, 24.0 * u); }
-    title(g, top);
+    if how_tile {
+        // How to play's tile after the title, as far along as the title's words.
+        let tw = min(title_width(g), top.z - how_w);
+        let tile = float4 { top.x + tw + 16.0 * u, top.y + floor(0.5 * (top.w - gui::tap() * u) + 0.5), gui::tap() * u,
+                            gui::tap() * u };
+        title(g, float4 { top.x, top.y, tw, top.w });
+        if learn_tile(g, tile) { pick = LEARN; }
+    } else {
+        title(g, top);
+    }
     if switch(g, sw, variant) {
         gui::scroll_set(g, LIBRARY_LIST, 0.0);
         pick = SWITCHED;
@@ -356,7 +610,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // under the title row, shown down to the screen's foot.
     let list_top = y + head;
     let view = float4 { area.x, list_top, area.z, g.insets.w + area.y + area.w - list_top };
-    let off = gui::scroll_begin(g, LIBRARY_LIST, view, first + per * row_h + (per - 1) * gap + gui::PAD_WIDE * u);
+    let off = gui::scroll_begin(g, LIBRARY_LIST, view, first + per * row_h + (per - 1) * gap + end + gui::PAD_WIDE * u);
     var k = 0;
     for t in puzzles::THEMES {
         guard puzzles::theme_count(puzzles::all, t) > 0 else { continue; }
@@ -368,8 +622,17 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
             pick = SHOWN;
         }
     }
-    // How to play over them, declared after them so the themes' tiles keep their order.
-    if learn_row(g, float4 { x, list_top - off, w, learn_h }, learned, steps, phone) { pick = LEARN; }
+    // The rows over and under them, declared after them so the themes' tiles keep their
+    // order: How to play, or Today, heading the list; Today shut, or How to play, ending it.
+    let foot = float4 { x, list_top - off + first + per * row_h + (per - 1) * gap + gap, w, learn_h };
+    if opened {
+        let tapped = today_row(g, float4 { x, list_top - off, w, first_h }, today, today_at, spot, phone);
+        if tapped >= 0 { pick = TODAY - tapped; }
+        if !landscape && learn_row(g, foot, learned, steps, phone) { pick = LEARN; }
+    } else {
+        if learn_row(g, float4 { x, list_top - off, w, learn_h }, learned, steps, phone) { pick = LEARN; }
+        today_locked(g, foot, stars, phone);
+    }
     gui::scroll_end(g);
     return pick;
 }

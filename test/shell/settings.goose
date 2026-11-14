@@ -16,7 +16,8 @@
 // plain no photograph is shown (the app then loads none) and the seasons' thumbnails are
 // their fades. In landscape the board is right of the list; in portrait above it. The
 // language list closes on a tap outside it and on back, which then stays on settings.
-// The game's lookout, off for a new player, is kept in the file too.
+// The game's lookout, off for a new player, is kept in the file too, and the puzzles a
+// day (task 087), chosen in the Game section's last row.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -48,9 +49,10 @@ let MISTAKES = 17;
 let MOVES = 18;
 let LIST_OFF = 19;          // the moves panel's row (task 074): off, the moves, marks
 let LIST_MARKS = 21;
-let TILES = 22;
-let ENGLISH = 22;           // the language list's rows, after the screen's tiles
-let EESTI = 23;
+let DAILY_10 = 25;          // puzzles a day (task 087): 3, 4, 5, 10
+let TILES = 26;
+let ENGLISH = 26;           // the language list's rows, after the screen's tiles
+let EESTI = 27;
 
 // Tile n's middle, the list scrolled first where it isn't whole in the list's view, as a
 // finger would scroll it.
@@ -199,6 +201,11 @@ fn main() {
     print("moves panel off: moves ", sh.prefs.moves, ", the game's ", sh.game.moves_shown, ", to write ", sh.changed);
     tap(sh, g, LIST_MARKS, 5.2);
     print("marks: moves ", sh.prefs.moves, ", the game's ", sh.game.moves_shown);
+    // Puzzles a day: 10, then 4 again.
+    tap(sh, g, DAILY_10, 5.3);
+    print("10 a day: ", sh.prefs.daily_count, ", to write ", sh.changed);
+    tap(sh, g, DAILY_10 - 2, 5.4);
+    print("4 a day: ", sh.prefs.daily_count);
     sh.changed = false;
     draughts(sh, g, rules::BRAZILIAN, 9.0);
     show(sh, "Brazilian");

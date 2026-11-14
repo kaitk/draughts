@@ -371,6 +371,15 @@ let FRAG = """
             d = min(d, min(arc(p, vec2(6.55, 14.75), 1.49, 2.45, 3.1415927), seg(p, vec2(7.7, 13.8), vec2(10.0, 15.5))));
             return min(d, arc(p, vec2(11.6, 6.5), 4.4, 3.1415927, 3.1415927));
         }
+        if (k == 49) {          // the daily puzzles (task 087): a calendar, its rings, and today's dot
+            float d = abs(box(p, vec2(12.0, 12.75), vec2(8.5, 7.75), 3.0));
+            d = min(d, seg(p, vec2(3.5, 10.0), vec2(20.5, 10.0)));
+            d = min(d, min(seg(p, vec2(8.0, 3.0), vec2(8.0, 7.0)), seg(p, vec2(16.0, 3.0), vec2(16.0, 7.0))));
+            return min(d, length(p - vec2(12.0, 15.0)) - 1.0);
+        }
+        if (k == 50) {          // all of today's solved: a crescent moon, a disc less one beside it
+            return abs(max(length(p - vec2(11.82, 12.18)) - 8.5, 7.42 - length(p - vec2(14.75, 9.25))));
+        }
         return 1e9;
     }
     // A player's badge's animal (badges/badges.goose): its signed distance at f, in a
