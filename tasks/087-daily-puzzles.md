@@ -174,7 +174,12 @@ a new `daily.html`), checked with `agent-browser`, then chosen. The proposals:
 - Today opens once Learn is solved, all of it, not half: Learn is the rules, which a daily
   puzzle may use. Gating on the other themes too was rejected as too strict (a young
   child would stall on Safe move); the daily pick keeps to the themes opened instead.
-- Open: one more after the day's set; the level's bars on the tiles; puzzles a day.
+- No "one more" after the day's set: the moon ends the day.
+- The level's bars stay on the tiles: which one is hard shows without words.
+- Puzzles a day: 4 by default; 3, 5, or 10 in settings.
+- A daily puzzle's screen shows today's dots over next (`puzzle.html?daily=1`); the
+  prototype places them only for the tablet's landscape, so the build fits them into
+  the puzzle's corner panels and portrait bar as the screen's other parts are.
 
 ## Acceptance criteria
 
