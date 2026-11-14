@@ -28,6 +28,15 @@ misses; it wasn't measured again. Rejected: keeping the earlier searches' entrie
 hints (their best move, a deeper result), which makes a reply depend on what was searched
 before, and tests and replays rely on it not doing so.
 
+The node limit stops a search mid-iteration and drops that iteration (2026-11-14, the
+code's comments corrected: they had said no iteration begins past it). Not beginning an
+iteration the last one's growth predicts won't finish was tried and rejected: hard took
+30 to 40% fewer nodes a move, but a prediction too high cost it a ply it would have
+finished, and over 120 games a variant of hard with it against hard without
+(`aimatch 90 90`) it scored 0.475 in Russian, 0.417 in International, and 0.517 in
+Brazilian, worse where hard sees least deep. The limit's nodes are its strength; the
+time it saves isn't needed.
+
 ## Levels
 
 - Medium starts at skill 40 (2026-11-08).
