@@ -8,8 +8,9 @@
 //   let v = ai::verdict(e, played);
 //
 // A score becomes an expected result through a logistic (expected), and the mark is
-// the fall in it (MARK_*), chess.com's cut-offs: a move that keeps a won game won is
-// no mistake whatever it gives back.
+// the fall in it (MARK_*), lidraughts' curve and cut-offs: a move that keeps a won game
+// won is no mistake whatever it gives back. The hint is the move this search finds best
+// (judged_best), so a hint followed is never marked down.
 namespace ai;
 import std;
 import math;
@@ -25,17 +26,21 @@ let MISTAKE = 5;            // ?
 let BLUNDER = 6;            // ??
 let MARKS = 7;
 
-// The falls in the expected result, in thousandths, from which each mark begins.
-let BEST_LOSS = 10;
-let INACCURACY_LOSS = 50;
-let MISTAKE_LOSS = 100;
-let BLUNDER_LOSS = 200;
+// The falls in the expected result, in thousandths, from which each mark begins:
+// lidraughts' 0.075, 0.15, and 0.30 of its win chance, which runs -1..1 (its
+// modules/analyse Advice.scala); best within about 0.04 of a man of the best.
+let BEST_LOSS = 4;
+let INACCURACY_LOSS = 38;
+let MISTAKE_LOSS = 75;
+let BLUNDER_LOSS = 150;
 
-// Hundredths of a man for the logistic's unit: a man up expects 0.73, two 0.88.
-let SCALE = 100.0;
+// Hundredths of a man for the logistic's unit, lidraughts' 0.004 a centipiece: a man up
+// expects 0.60, two 0.69. From an even position a mistake begins at 0.76 of a man lost,
+// a blunder at 1.55.
+let SCALE = 250.0;
 
 // Root moves this much under the best are only bounded, not scored: at an even
-// position that is a fall of 0.45 and more, a blunder whatever the bound.
+// position that is a fall of 0.23 and more, a blunder whatever the bound.
 let JUDGE_MARGIN = 250;
 let JUDGE_SKILL = 100;      // the depth it sees: hard's at its top
 let JUDGE_LIMIT = 300000;   // nodes after which it begins no new iteration: about 0.1 s on the tablet's big cores
@@ -108,18 +113,40 @@ fn verdict(e: Engine&, played: rules::Move&) -> Verdict {
     }
     guard k >= 0 else { return Verdict {}; }
     guard e.moves.len > 1 else { return Verdict { mark: ONLY, .. }; }
+    let at = best_at(e, k);
+    let best = e.score[at];
+    let played_score = e.score[k];
+    let loss = max(expected(best) - expected(played_score), 0);
+    return Verdict { mark: mark_of(loss), loss: loss, best: best, played: played_score, best_move: e.moves[at],
+                     has_best: true };
+}
+
+// The root move the judging search scored highest, the first among equals; `none` where
+// it scored none exactly (it always scores the best).
+fn best_at(e: Engine&, none: i64) -> i64 {
     var best = -INF;
-    var at = k;
+    var at = none;
     for i in e.root_count {
         if e.exact[i] && e.score[i] > best {
             best = e.score[i];
             at = i;
         }
     }
-    let played_score = e.score[k];
-    let loss = max(expected(best) - expected(played_score), 0);
-    return Verdict { mark: mark_of(loss), loss: loss, best: best, played: played_score, best_move: e.moves[at],
-                     has_best: true };
+    return at;
+}
+
+// The hint's move once judge_step is done: the move the judge would mark best, or the
+// one legal move.
+fn judged_best(e: Engine&) -> rules::Move {
+    guard e.moves.len > 1 else { return e.moves[0]; }
+    return e.moves[best_at(e, 0)];
+}
+
+// The hint's move for p at once, for tests: as the worker finds it.
+fn hint(e: Engine&, past: rules::Past&, p: rules::Position) -> rules::Move {
+    judge_start(e, past, p);
+    while !judge_step(e, 1 << 30) {}
+    return judged_best(e);
 }
 
 // The verdict at once, for tests and tools.

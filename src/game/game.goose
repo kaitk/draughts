@@ -35,7 +35,6 @@ import .sheet;
 let STEP = 2.0;             // seconds: the longest gap between two frames the clock counts
 let PAUSE = [0.8, 0.6, 0.45];   // seconds from the computer's turn to its move without a clock, by level
 let PULSE = 1.2;            // seconds: the computer's ring pulses once as it begins to think
-let HINT_UP = 15;           // the hint's search: this much above the skill of the side it plays against
 
 // What the screen asks the shell for: nothing, home (its back), or settings.
 let STAY = gui::ASK_NOTHING;
@@ -336,7 +335,7 @@ struct Ask {
     move:  rules::Move = rules::Move { .. },   // JUDGE: the move played from pos
 }
 
-// What an ask is for: the computer's move, the hint's (ai::helping), or the lookout's
+// What an ask is for: the computer's move, the hint's (ai::judged_best), or the lookout's
 // traps (ai's lookout::traps, no search).
 let THINK = 0;
 let HINT = 1;
@@ -365,15 +364,13 @@ fn open_ask(gm: Game&) -> i64 {
            else { gm.judging };
 }
 
-// That ask in full: the hint's searched at HINT_UP above the skill of the side it plays
-// against (the computer's, or against a friend the player's on their level), capped.
+// That ask in full: the hint is the move judging finds best, at full strength whatever
+// the level (ai::judged_best), so it never shows a move the judge marks down.
 fn ask_for(gm: Game&) -> Ask {
     var a = asking(gm);
     guard gm.asking == 0 else { return a; }
     if gm.hinting != 0 {
-        let against = if gm.computer >= 0 { gm.skill } else { gm.look_skill };
         a.id = gm.hinting;
-        a.skill = min(against + HINT_UP, 100);
         a.kind = HINT;
     } else if gm.trapping != 0 {
         a.id = gm.trapping;

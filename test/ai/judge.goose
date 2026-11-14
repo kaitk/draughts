@@ -3,7 +3,10 @@
 // International's start, where every first move is sound and none may come out worse
 // than an inaccuracy; and a Russian position where c3-d4 gives a man for nothing (e5
 // takes it, landing on c3), g3-f4 offers an exchange (e5xg3, h2xf4), and g3-h4 and the
-// rest keep everything: the hanging move must be a blunder, the others not. Then the
+// rest keep more men but let the win go: the hanging move must be a blunder, g3-f4 best,
+// and letting a forced win go for under six men a blunder too, as lidraughts marks it.
+// The hint, in a game where black's d8-c7 let e3-f4 win and the old shallower hint gave
+// g3-f4, a blunder (2026-11-14): judged, the hint followed is always best. Then the
 // marks' cut-offs and the accuracy at a few falls, and the computer's ratings and a
 // player's rating after a game (ai/rating.goose).
 import std;
@@ -45,6 +48,11 @@ fn main() {
     var moves: rules::Moves = [];
     rules::generate(p, moves);
     print("forced ", text(rules::RUSSIAN, moves[0]), "  ", NAMES[ai::judge(e, past, p, moves[0]).mark]);
+
+    let g = check::position(rules::RUSSIAN, "W:Wc1,e1,b2,d2,f2,h2,c3,e3,g3,d4,c5:Ba5,e5,b6,f6,h6,a7,c7,e7,f8,h8,h4");
+    var gpast = rules::Past { draw: rules::draw_start(g), before: [] };
+    let h = ai::hint(e, gpast, g);
+    print("hint ", text(rules::RUSSIAN, h), "  ", NAMES[ai::judge(e, gpast, g, h).mark]);
 
     print("expected at -300, -100, 0, 100, 300, won: ", ai::expected(-300), " ", ai::expected(-100), " ",
           ai::expected(0), " ", ai::expected(100), " ", ai::expected(300), " ", ai::expected(ai::WIN - 10));

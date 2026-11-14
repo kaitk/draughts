@@ -386,13 +386,12 @@ headless in `test/ai/lookout.goose`, and the game's `watch` (`src/game/game.goos
 
 ## The hint
 
-The hint's move is the computer's search for the side to move, asked of the worker as
-the computer's moves are (`game::HINT`): at 15 above the skill of the side it plays
-against (the computer's, or the player's at their level against a friend), at most 100,
-with nothing overlooked and no chance left for the other side (`ai::helping`), and the
-best move its main search scored rather than one the temper chooses (`ai::best`). It is
-asked on the first press, answered in at most hard's time (a fifth of a second on the
-tablet's big cores), and dropped if the position changes first; the loop looks for the
+The hint's move is the move [judging](#judging-a-move) finds best for the side to move,
+asked of the worker as the computer's moves are (`game::HINT`): the same search at full
+strength whatever the level, so a hint followed is always marked best
+(`ai::judged_best`). It is asked on the first press, answered in at most the judge's
+300,000 nodes (about a tenth of a second on the tablet's big cores), and dropped if the
+position changes first; the loop looks for the
 answer every 20 ms while it is on its way, drawing nothing meanwhile. Games with hints
 count toward the skill as any other.
 
@@ -402,10 +401,11 @@ Each move of a game, either side's, is judged after it is played (`src/ai/judge.
 the position before it searched as hard sees at its top (skill 100's depth, nothing
 overlooked, no gifts), at most 300,000 nodes, every root move within 2.5 men of the best
 scored exactly and the rest bounded. A score becomes the mover's expected result
-through a logistic, `1 / (1 + e^(−s/100))` with s in hundredths of a man (a man up 0.73,
-two 0.88), a won or lost score 1 or 0. The fall from the best move's to the played
-move's marks it, chess.com's cut-offs: under 0.01 best, under 0.05 good, then
-inaccuracy (?!), mistake (?) from 0.10, blunder (??) from 0.20; a position with one
+through a logistic, lidraughts' `1 / (1 + e^(−s/250))` with s in hundredths of a man (a
+man up 0.60, two 0.69), a won or lost score 1 or 0. The fall from the best move's to the
+played move's marks it, lidraughts' cut-offs: under 0.004 best, under 0.038 good, then
+inaccuracy (?!), mistake (?) from 0.075, blunder (??) from 0.15, which from an even
+position is a loss of 0.37, 0.76, and 1.55 men; a position with one
 legal move is the only move, not judged. A move that keeps a won game won is no
 mistake, whatever it gives back. A side's accuracy over a game is lichess's: each move's
 `103.17 · e^(−4.354 · fall) − 3.17` percent, averaged over its judged moves.

@@ -51,8 +51,10 @@ thread_fn worker() {
             ai::init(e);
             made = true;
         }
-        // A played move judged (task 074), dropped for any newer ask as a search is.
-        if ask.kind == game::JUDGE {
+        // A played move judged (task 074), or the hint: the move that judging finds
+        // best, so a hint followed is never marked down. Dropped for any newer ask as a
+        // search is.
+        if ask.kind == game::JUDGE || ask.kind == game::HINT {
             ai::judge_start(e, ask.past, ask.pos);
             var newer = false;
             var next = ask;
@@ -65,6 +67,14 @@ thread_fn worker() {
                 ask = next;
                 continue;
             }
+            if ask.kind == game::HINT {
+                let found = e.moves.len > 0;
+                let m = if found { ai::judged_best(e) } else { rules::Move { .. } };
+                qput(Thought { id: ask.id, move: m, found: found, close: 0, nodes: e.nodes, seconds: clock() - began,
+                               kind: ask.kind, pieces: 0 });
+                ask = qget<game::Ask>();
+                continue;
+            }
             let v = ai::verdict(e, ask.move);
             qput(Thought { id: ask.id, move: ask.move, found: true, close: 0, nodes: e.nodes, seconds: clock() - began,
                            kind: ask.kind, pieces: 0, mark: v.mark, loss: v.loss, best: v.best_move,
@@ -72,9 +82,6 @@ thread_fn worker() {
             ask = qget<game::Ask>();
             continue;
         }
-        // The hint's search sees all and leaves nothing, and gives the best it sees.
-        let hint = ask.kind == game::HINT;
-        ai::helping(e, hint);
         ai::start_after(e, ask.past, ask.pos, ask.skill, ask.seed);
         var newer = false;
         var next = ask;
@@ -89,7 +96,7 @@ thread_fn worker() {
         }
         let found = ai::has_reply(e);
         var m = rules::Move { .. };
-        if found { m = if hint { ai::best(e) } else { ai::reply(e) }; }
+        if found { m = ai::reply(e); }
         qput(Thought { id: ask.id, move: m, found: found, close: ai::close(e, pace::CLOSE), nodes: e.total_nodes,
                        seconds: clock() - began, kind: ask.kind, pieces: 0 });
         ask = qget<game::Ask>();

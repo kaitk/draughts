@@ -132,7 +132,7 @@ root struct Engine {
     use_tt:     bool             = true, // off only to test that the table changes no result
     node_limit: i64              = NODE_LIMIT,
     overlooks:  i64              = 100,  // percent of the overlook chances: 0 to measure without
-    gifts:      bool             = true, // whether it may leave the child a chance (off for a hint)
+    gifts:      bool             = true, // whether it may leave the child a chance
     blind:      bool,           // whether the search under way may overlook (only the main search)
     tense:      bool,           // whether a capture is around the position a move is found for
     hidden:     u64,            // the seed of what this move overlooks
@@ -281,35 +281,6 @@ fn step(e: Engine&, nodes: i64) -> bool {
 // The reply found: one of the position's legal moves. Only after step returned true,
 // and only when the position has a move.
 fn reply(e: Engine&) -> rules::Move { e.moves[e.chosen] }
-
-// The hint's move (game::Ask's HINT): searched as `skill` sees, with nothing overlooked
-// and no chance left for the other side, the best its main search scored, the first in
-// move order among equals, rather than one chosen by the temper. Sets the engine for it:
-// `helping` before start, best() once step is done.
-fn helping(e: Engine&, on: bool) {
-    e.overlooks = if on { 0 } else { 100 };
-    e.gifts = !on;
-}
-
-fn best(e: Engine&) -> rules::Move {
-    guard e.moves.len > 1 else { return e.moves[e.chosen]; }
-    var k = -1;
-    for i in e.moves.len {
-        if e.main_exact[i] && (k < 0 || e.main_score[i] > e.main_score[k]) { k = i; }
-    }
-    let i = if k >= 0 { k } else { e.chosen };
-    return e.moves[i];
-}
-
-// A hint's move for p at once, for tests: as the worker finds it.
-fn hint(e: Engine&, past: rules::Past&, p: rules::Position, skill: i64, seed: u64) -> rules::Move {
-    helping(e, true);
-    start_after(e, past, p, skill, seed);
-    while !step(e, 1 << 30) {}
-    let m = best(e);
-    helping(e, false);
-    return m;
-}
 
 // Whether there is a reply: false when the position has no legal move.
 fn has_reply(e: Engine&) -> bool { e.phase == READY && e.chosen >= 0 }

@@ -200,7 +200,8 @@ Asked for: a history of games and moves rated as GoDraughts rates them (task 074
 - **Marks by the fall in the expected result**, as lichess and chess.com mark moves,
   rather than by the score lost: a score lost in a won game is no mistake. Chess.com's
   cut-offs (0.05, 0.10, 0.20 of a game) over lichess's win-chance points, which are the
-  same at half the scale. The logistic's unit, a man, makes a man up 0.73, which a
+  same at half the scale (replaced by lidraughts', [below](#lidraughts-marks-and-the-judges-hint-2026-11-14)).
+  The logistic's unit, a man, makes a man up 0.73, which a
   draughts player reads as winning, more than a pawn up is in chess.
 - **One search a move** gives the best and the played move's score: the root's scores,
   bounded past a margin of 2.5 men, which at an even position is already a blunder.
@@ -217,3 +218,21 @@ Asked for: a history of games and moves rated as GoDraughts rates them (task 074
   current skill: it plays at the past game's skill.
 - **The computer rated from self-play**, not by guess, anchored at 500 for skill 0 so
   easy's start (587) sits under a new player's 800, as GoDraughts shows "Easy 800".
+
+## Lidraughts' marks and the judge's hint (2026-11-14)
+
+Asked for: the user doubted a ?? on a move the hint had shown. Replayed, the game's
+d8-c7 ?? and g3-f4 ?? held under a search a hundred times longer (e3-f4 won about two
+men), but the hint, searched at 15 above the computer's skill, gave g3-f4 up to skill 40.
+
+- **The hint is the judge's best move** (`ai::judged_best`), at full strength whatever
+  the level, replacing the hint at 15 above the opponent's skill: a hint the move list
+  then marks a blunder teaches nothing, and the judge's search (300,000 nodes) answers
+  within hard's time. A hint that plays down to the level was rejected for that.
+- **Lidraughts' curve and cut-offs** (its `modules/analyse` `Advice.scala`): a unit of
+  2.5 men and falls of 0.0375, 0.075, 0.15 of a game, replacing a unit of a man with
+  chess.com's 0.05, 0.10, 0.20. Ours marked about 1.8 times as harshly: a man lost from
+  an even game was a blunder, on lidraughts a mistake, and lidraughts is the draughts
+  reference. Best stays within about 0.04 of a man (0.004). Letting a forced win go for
+  under six men is now a blunder, as lidraughts' lost-win rule marks it; its separate
+  forced-win marks were not copied, the logistic coming close.

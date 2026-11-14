@@ -1,7 +1,6 @@
 // The hint on the game screen (game::press_hint, docs/product.md): a tile beside undo
 // move with a pip for each of a game's three hints. The first press asks for a move (the
-// app's worker searches it at 15 above the computer's skill, nothing overlooked, the best
-// it sees; this test answers at once with ai::hint, as the worker would); the answer
+// app's worker gives the move judging finds best, at full strength; this test answers at once with ai::hint, as the worker would); the answer
 // spends a pip and lights the piece to move with the puzzles' pulsing ring, the tile
 // asking Where to?; the second press shows a light ghost of the piece on its square, for
 // nothing more; the move ends it. Undo before the answer drops the ask, and an answer
@@ -50,11 +49,22 @@ fn tile(g: gui::Gui&) -> u8[>..] {
 fn answer(gm: game::Game&, e: ai::Engine&) {
     let ask = game::ask_for(gm);
     guard ask.id != 0 && ask.kind == game::HINT else { return; }
-    let m = ai::hint(e, ask.past, ask.pos, ask.skill, ask.seed);
+    let m = ai::hint(e, ask.past, ask.pos);
     var t: u8[>..] = [];
     rules::format_move(t, gm.b.variant, m);
-    print("  asked at skill ", ask.skill, ", answered ", t);
+    print("  answered ", t);
     game::hinted(gm, ask.id, m);
+}
+
+// A reply that leaves the other side no capture, so its next hint can be asked; the
+// first move where every one does.
+fn quiet_reply(p: rules::Position, moves: rules::Moves&) -> rules::Move {
+    var next: rules::Moves = [];
+    for &m in moves {
+        rules::generate(rules::play(p, m), next);
+        if next.len == 0 || next[0].captured == 0 { return m; }
+    }
+    return moves[0];
 }
 
 fn start(gm: game::Game&, fen: const u8[:], computer: i64, skill: i64) {
@@ -106,12 +116,12 @@ fn main() {
     drive::tap(gm, g, l, drive::at(l.board, "d2"), 20.3);
     drive::tap(gm, g, l, drive::at(l.board, "c3"), 20.4);
     drive::idle(gm, g, l, 21.0);
-    game::hinted(gm, late.id, ai::hint(e, late.past, late.pos, late.skill, late.seed));
+    game::hinted(gm, late.id, ai::hint(e, late.past, late.pos));
     drive::idle(gm, g, l, 21.1);
-    state(gm, g, "asked at skill 55, a move made before the answer");
+    state(gm, g, "a move made before the answer");
 
-    // A friend's game: white takes three hints, each played, black none; then white's
-    // tile is dim and black's still has three.
+    // A friend's game: white takes three hints, each played, black none and replying
+    // quietly; then white's tile is dim and black's still has three.
     let opening = "W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8";
     start(gm, opening, -1, 0);
     gm.look_skill = 25;
@@ -125,7 +135,7 @@ fn main() {
         drive::tap(gm, g, l, board::center(l.board, v, h.from), t + 0.3);
         drive::tap(gm, g, l, board::center(l.board, v, h.to), t + 0.4);
         drive::idle(gm, g, l, t + 1.0);
-        let r = gm.b.moves[0];
+        let r = quiet_reply(gm.b.pos, gm.b.moves);
         drive::tap(gm, g, l, board::center(l.board, v, r.from), t + 1.1);
         drive::tap(gm, g, l, board::center(l.board, v, r.path[1]), t + 1.2);
         drive::idle(gm, g, l, t + 2.0);
