@@ -1,10 +1,8 @@
-// The 3D board's model without graphics (model3d, task 061): the plan a theme is put on
-// in, step by step (render3d::theme_step runs each in a frame of its own), for the full
-// frame map and a mitred one, at a desktop's and a tablet's side and at a phone's, so
-// every row of each surface is baked once, in order, its mips with its last band; and
-// the photograph's light as harmonics: a grey photograph lights evenly (only the first
-// band, the mean, has light: the grey's linear value times 0.282 × 4π, 3.54), one lit
-// from above has its light in the y band too, and
+// The 3D board's model without graphics: the plan a theme is baked in, a step a frame,
+// for the full frame map and a mitred one at each side, so every row of each surface is
+// baked once, in order, its mips with its last band; and the photograph's light as
+// harmonics: a grey photograph lights evenly (only the mean band: the grey's linear value
+// times 0.282 × 4π, 3.54), one lit from above has light in the y band too, and
 // `toward_grey` takes a colored one's light to grey.
 import std;
 import vec;

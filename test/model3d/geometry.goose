@@ -1,9 +1,6 @@
-// The 3D board's measures in one place: src/model3d/mesh.goose holds them, the board's
-// taps (src/board/view3d.goose) take them from there, and the shaders' GLSL
-// (src/render3d/shaders.goose's FRAME block), which embed_shader compiles from a literal,
-// repeats them as `const float NAME = value;`. Each repeated value is read from the
-// shaders' source here and must equal the mesh's, or the lit shader's field, frame, and
-// pieces stop where the meshes don't.
+// The shaders' GLSL repeats the 3D board's measures from src/model3d/mesh.goose as
+// `const float NAME = value;` (embed_shader takes only a literal); each must equal the
+// mesh's, or the lit shader's field, frame, and pieces stop where the meshes don't.
 import std;
 import vec;
 import model3d from "../../src/model3d";

@@ -96,8 +96,7 @@ fn top_ao(u: f32) -> f32 {
 // at scale 1: the top sampled from top_height at TOP_ROWS, the outer edge rounded from
 // 89% of the radius into the side, the side, a small round at the foot, and the
 // underside. The top's rows only place it: the lit shader shades the top from
-// top_height at each pixel, so a few rows round the step do (task 042: 42 rows and 72
-// segments were about 9,200 triangles a piece, most of them 2 to 3 pixels).
+// top_height at each pixel, so a few rows round the step do.
 let TOP_ROWS = [0.0, 0.6, 0.625, 0.64, 0.655, 0.67, 0.69, 0.79, 0.89];
 let SEGMENTS = 48;
 fn piece_profile(p: Profile&) {
@@ -110,7 +109,6 @@ fn piece_profile(p: Profile&) {
         let n = normalize(float2 { -slope, 1.0 });
         p.point(u * r, h + top_height(u), n.x, n.y, top_ao(u));
     }
-    // The outer edge, rounded from 89% of the radius into the side.
     let er = r - EDGE_AT * r;
     p.arc(EDGE_AT * r, h - er, er, PI * 0.5, 0.0, 6, true, 1.0, 1.0);
     p.line(r, h - er, r, 0.025, 1.0, 0.92);

@@ -1,9 +1,6 @@
-// The 3D board's model, all it is but drawing (task 061): the board's and the pieces'
-// meshes (mesh.goose), the themes as data (looks.goose), the photograph's light as
-// spherical harmonics, the plain fade and its ambient, sRGB to linear and back, the light
-// turned with the board, and the plan of a theme's bake in steps. No graphics, so a
-// renderer draws it from data (render3d/, and a later goose-ngfx one), and it is tested
-// headless.
+// The 3D board's model, all it is but drawing: meshes, the themes as data, the
+// photograph's light, and the plan of a theme's bake in steps. No graphics, so either
+// renderer draws it from data and it is tested headless.
 namespace model3d;
 import std;
 import vec;
@@ -13,15 +10,14 @@ import .looks;
 
 // The baked surfaces' targets: the plan (the field and the frame's top seen from above),
 // `side` texels square, and the frame map, `side` wide. BAKE_SIDE, or PHONE_BAKE_SIDE on
-// a phone (render3d::set_bake), whose field spans at most about a thousand pixels: a
-// texel a pixel or more there, at a quarter of the memory (85 MB to 21 with a full frame
-// map). A mitred frame's map holds only its four bands (LIT_FRAG: 0.2 to 5.65 of the
-// map's 10.4 world units across), its rows at the same density: 44% less memory and bake.
+// a phone (render3d::set_bake), whose field spans at most about a thousand pixels. A
+// mitred frame's map holds only its four bands (LIT_FRAG: 0.2 to 5.65 of the map's 10.4
+// world units across), its rows at the same density.
 let BAKE_SIDE = 2048;
 let PHONE_BAKE_SIDE = 1024;
 let FRAME_MITRED_ROWS = 1152;   // at BAKE_SIDE, and in proportion at another side
 
-// The wood's model (task 039): 0 noise drawn out along the grain, 1 growth rings, 2
+// The wood's model: 0 noise drawn out along the grain, 1 growth rings, 2
 // growth rings with pores and a fibre relief, 3 the first with thin lines and pores laid
 // over it.
 let WOOD_MODELS = 4;
@@ -71,8 +67,7 @@ fn harmonics(px: const u8[:], size: i64, toward_grey: f32) -> float4[9] {
     // pi, 2 pi / 3 and pi / 4, and the result is over pi.
     let band: f32[3] = [1.0, 2.0 / 3.0, 0.25];
     var out: float4[9] = [float4_0; 9];
-    // Part way to grey (the theme's): autumn's forest is orange, and its full color
-    // tinted everything.
+    // Part way to grey (the theme's), so a strongly colored photograph doesn't tint everything.
     for k in 9 {
         let l = if k == 0 { 0 } else { if k < 4 { 1 } else { 2 } };
         let c = sh[k] * (4.0 * PI / total * band[l]);
@@ -99,12 +94,10 @@ fn fade(f: float4[3]&, x: f32, y: f32, w: f32, h: f32) -> float3 {
     return c * (1.0 - 0.3 * ease(0.15, 0.6, qx * qx + qy * qy));
 }
 
-// The ambient light of the plain fade (task 044), as harmonics() takes a photograph's:
-// the fade painted 64 texels square (harmonics() reads every eighth), laid round the board
-// as the photograph is. A fade is far darker than a photograph, so the result is scaled
-// to the dim ambient a theme without a photograph had (photo_part), which the Galaxy
-// A33's build without the photographs showed and the user liked (2026-11-09): the fade
-// tints the board's shadows, its brightness stays.
+// The ambient light of the plain fade, as harmonics() takes a photograph's: the fade
+// painted 64 texels square, laid round the board as the photograph is. A fade is far
+// darker than a photograph, so the result is scaled to no_photo_ambient's brightness: the
+// fade only tints the board's shadows.
 fn fade_harmonics(f: float4[3]&, grey: f32) -> float4[9] {
     let n = 64;
     var px: u8[64 * 64 * 4] = [0; 64 * 64 * 4];
@@ -145,9 +138,8 @@ fn spin(p: float3, degrees: f32) -> float3 {
     return float3 { c * p.x + s * p.z, p.y, c * p.z - s * p.x };
 }
 
-// The steps a theme is put on in (render3d::theme_step), each about 2.5 ms of the M1
-// Pro's, about 16 ms of the Pixel 7a's and 35 of a Galaxy A33's by task 015's ratios
-// (task 042): the start; the bake's pipeline made, drawing one row (its compile can't be
+// The steps a theme is put on in (render3d::theme_step), each small enough for a frame:
+// the start; the bake's pipeline made, drawing one row (its compile can't be
 // split: the largest step); the plan in PLAN_BANDS bands and the frame map in
 // FRAME_BANDS, each surface's mips with its last; the photograph's two pipelines made;
 // the photograph in its three parts (render3d::photo_part), the end with the last.

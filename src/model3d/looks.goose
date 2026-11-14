@@ -1,7 +1,7 @@
 // The board's looks as data: one flat struct of colors, roughness and material
 // parameters per theme, read by one bake and one set of shaders. Colors are sRGB (the
 // shaders take them linear); a surface's color is about how it reads lit from above,
-// tuned against the user's even-lit swatches (agents/design.md).
+// tuned against even-lit swatches (agents/design.md).
 namespace looks;
 import std;
 import vec;
@@ -11,11 +11,10 @@ let WINTER = 1;
 let SPRING = 2;
 let SUMMER = 3;
 let COUNT = 4;
-// Summer's variants (the user, 2026-11-09: summer clearly apart from autumn, the coast at
-// sunset), looks after the seasons': 0 summer() itself, 1 SUMMER_OAK wood 3's crisp grain
+// Summer's variants, looks after the seasons': 0 summer() itself, 1 SUMMER_OAK wood 3's crisp grain
 // in summer's palette, 2 SUMMER_PICKLED limewashed oak, 3 SUMMER_TEAK a teak deck frame
 // round sand and terracotta, 4 SUMMER_AMBER and 5 SUMMER_SERPENTINE a granite frame
-// carved with sun signs and trees of life filled with amber (task 041). T cycles the
+// carved with sun signs and trees of life filled with amber. T cycles the
 // seasons; --summer N and S pick the variant.
 let SUMMERS = 8;
 let SUMMER_OAK = 4;
@@ -23,11 +22,11 @@ let SUMMER_PICKLED = 5;
 let SUMMER_TEAK = 6;
 let SUMMER_AMBER = 7;
 let SUMMER_SERPENTINE = 8;
-// Spring's carved looks (task 041), shown for spring by Gpu.spring (shown()): 1 the elven
+// Spring's carved looks, shown for spring by Gpu.spring (shown()): 1 the elven
 // stone, 2 the Baltic folk oak.
 let SPRING_ELVEN = 9;
 let SPRING_BALTIC = 10;
-// Autumn's and winter's other material (task 080, 2026-11-13): autumn's stone and winter's
+// Autumn's and winter's other material: autumn's stone and winter's
 // wood beside the season's own, each its takes. Autumn's: 0 autumn() the wood, 1
 // AUTUMN_STONE travertine and red jasper in a dark brown marble, 2 AUTUMN_CARVED the same
 // field in a weathered stone frame carved with vines in rust leaves, 3 AUTUMN_PORPHYRY
@@ -43,13 +42,12 @@ let AUTUMN_PORPHYRY = 13;
 let WINTER_WOOD = 14;
 let WINTER_CARVED = 15;
 let WINTER_STAINED = 16;
-// The carved stones' plain siblings (task 080, the user 2026-11-13: each season a wood,
-// a stone, and a carved board): spring's elven stone and summer's amber granite with no
+// The carved stones' plain siblings, so each season has a wood, a stone, and a carved
+// board: spring's elven stone and summer's amber granite with no
 // carving, their frames one solid block. --spring 3 and --summer 6.
 let SPRING_STONE = 17;
 let SUMMER_STONE = 18;
-// Summer's carved board (the user, 2026-11-13: spring's Baltic oak, which had no place,
-// tuned for summer in place of the amber granite): --summer 7.
+// Summer's carved board, the Baltic oak tuned for summer: --summer 7.
 let SUMMER_CARVED = 19;
 
 struct Theme {
@@ -98,7 +96,7 @@ struct Theme {
     // How the frame is made: x 1 one solid block with the field carved out, the figure
     // running one way over the whole board; 0 four pieces mitred at 45°, the grain along
     // each side. y: the mitre joint's strength; z: 1 for stone (shaders::LIT_FRAG); w: 1
-    // the frame carved (Carving, task 041), its map's across along the profile.
+    // the frame carved (Carving), its map's across along the profile.
     build: float4,
     // The frame's caulked seams, as a teak deck's (shaders::BAKE_FRAG's frame_map): x a
     // plank's width across the frame's top (world units; 0 none), y a seam's half width,
@@ -148,22 +146,17 @@ fn shown(which: i64, spring: i64) -> i64 {
 }
 
 // The raised board's material, one for every season (settings' Board row, the player's
-// `material`; task 080): the season's own (AUTO), or its wood, stone, or carved board.
+// `material`): the season's own (AUTO), or its wood, stone, or carved board.
 // settings::MATERIAL_AUTO.. number them the same.
 let MATERIAL_AUTO = 0;
 let MATERIAL_WOOD = 1;
 let MATERIAL_STONE = 2;
 let MATERIAL_CARVED = 3;
 let MATERIALS = 4;
-// Each season's wood, stone, and carved look, by season (AUTUMN..SUMMER), the flags that
-// pick them in 03's table: autumn's maple and walnut (--autumn 0), sandstone and porphyry
-// (3), and rust vines in weathered stone (2); winter's limed ash (--winter 1), the slate
-// (0), and the Nordic band (2); spring's birch (--spring 0), ivory and jade (3), and the
-// elven stone (1); summer's sunset wood (--summer 0), the amber granite (6), and its signs
-// carved (4).
+// Each season's wood, stone, and carved look, by season (AUTUMN..SUMMER).
 let BY_MATERIAL = [[AUTUMN, AUTUMN_PORPHYRY, AUTUMN_CARVED], [WINTER_WOOD, WINTER, WINTER_CARVED],
                    [SPRING, SPRING_STONE, SPRING_ELVEN], [SUMMER, SUMMER_STONE, SUMMER_CARVED]];
-// What Auto is in each season, its look before the choice: autumn's wood, winter's stone,
+// What Auto is in each season: autumn's wood, winter's stone,
 // spring's carved stone, summer's wood.
 let OWN_MATERIAL = [MATERIAL_WOOD, MATERIAL_STONE, MATERIAL_CARVED, MATERIAL_WOOD];
 
@@ -189,8 +182,8 @@ fn autumn_look(n: i64) -> i64 { if n <= 0 { AUTUMN } else { AUTUMN_STONE + min(n
 fn winter_look(n: i64) -> i64 { if n <= 0 { WINTER } else { WINTER_WOOD + min(n, WINTERS - 1) - 1 } }
 
 // The wood's model a look is made with by default, -1 for any (the one chosen). The app's
-// and the prototype's --wood overrides it. The user's values (2026-11-09): summer and its
-// amber stone wood 2, spring's two carved looks wood 3.
+// and the prototype's --wood overrides it: summer and its amber stone wood 2, spring's two
+// carved looks wood 3.
 fn wood_for(look: i64) -> i64 {
     if look == WINTER_WOOD || look == WINTER_CARVED || look == WINTER_STAINED { return 2; }
     if look == SUMMER_OAK || look == SPRING_ELVEN || look == SPRING_STONE || look == SPRING_BALTIC || look == SUMMER_CARVED { return 3; }
@@ -253,7 +246,7 @@ fn autumn() -> Theme {
 
 // Honed, softly polished stone: pale grey-blue and dark slate squares with a calm
 // clouding and a few faint veins, a darker slate frame with a steel-blue rounded edge
-// (the reference's pale line left out: the user, 2026-11-09), ivory and dark slate
+// (no pale line), ivory and dark slate
 // pieces, darker than the reference's as the 2D board's are; `Winter Slate Checkers
 // Board.png` and `Cool Stone and Cream Texture Grid.png`.
 fn winter() -> Theme {
@@ -463,12 +456,11 @@ struct Finish {
 
 let PLAIN = Finish { varnish: 0.0, sanding: 0.0, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0, caulk: 1.0 };
 
-// "The same wood, very slightly more varnish and sanded a tiny bit more" (the user,
-// 2026-11-09), on the two woods kept for the game.
+// A touch of varnish and sanding, on the two woods kept for the game.
 let VARNISHED = Finish { varnish: 0.2, sanding: 0.15, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0,
                          caulk: 1.0 };
 
-// Wood 2's finish as the user tuned it in the panel (2026-11-09), the default wood's.
+// Wood 2's finish, the default wood's.
 let TUNED = Finish { varnish: 0.68, sanding: 0.835, grain: 1.01, rings: 1.002, warmth: 0.36, pickle: 0.0,
                      caulk: 1.0 };
 
@@ -478,7 +470,7 @@ let PICKLED = Finish { varnish: 0.0, sanding: 0.25, grain: 1.0, rings: 1.0, warm
 // Summer's teak: oiled, a satin sheen, the relief a little softened.
 let OILED = Finish { varnish: 0.3, sanding: 0.3, grain: 1.0, rings: 1.0, warmth: 0.1, pickle: 0.0, caulk: 1.0 };
 
-// Spring's two carved looks, wood 3 as the user tuned it in the panel (2026-11-09).
+// Spring's two carved looks, wood 3.
 let SPRING_FINISH = Finish { varnish: 0.335, sanding: 1.0, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0,
                              caulk: 1.0 };
 
@@ -493,9 +485,8 @@ fn finish(wood: i64) -> Finish {
     return PLAIN;
 }
 
-// The winter frame's marble (task 039), one solid block, its figure running one way:
-// 0 the slate as before (Theme.frame and its clouding), the others polished marbles.
-// Winter's frame is 2, as the user tuned it in the panel (2026-11-09).
+// The winter frame's marble, one solid block, its figure running one way: 0 the slate
+// (Theme.frame and its clouding), the others polished marbles. Winter's frame is 2.
 let MARBLES = 5;
 let MARBLE = 2;
 // Autumn's stone frame's own marble, past the ones M cycles (marble_for).
@@ -520,8 +511,7 @@ fn marble(which: i64) -> Marble {
                         form: float4 { 0.012, 0.15, 0.8, 0.15 },
                         veins: 1.0, wave: 1.0, polish: 0.8, tint: 0.0 };
     }
-    // Dark grey with soft, wavy, cloudy veining, toward the board's steel blue: the user's
-    // values from the panel (2026-11-09).
+    // Dark grey with soft, wavy, cloudy veining, toward the board's steel blue.
     if which == 2 {
         return Marble { base: float4 { 0.2, 0.205, 0.215, 0.5 }, vein: float4 { 0.46, 0.47, 0.48, 0.3 },
                         form: float4 { 0.04, 1.0, 0.3, 0.0 },
@@ -559,16 +549,14 @@ fn marble_for(look: i64, chosen: i64) -> i64 {
     return chosen;
 }
 
-// Spring's looks (task 041, the app's and the prototype's --spring): 0 the birch, 1 the
-// elven carved stone, 2 the Baltic folk carved oak.
+// Spring's looks (the app's and the prototype's --spring): 0 the birch, 1 the elven
+// carved stone, 2 the Baltic folk carved oak.
 let SPRINGS = 4;
-// The look spring shows by default is the elven stone (chosen on the tablet, 2026-11-09,
-// over the Baltic oak); --spring 0 is still the birch, 2 the Baltic oak.
+// The look spring shows by default: the elven stone.
 let SPRING_LOOK = 1;
 
 // Pale stone with a fine vine line carved along the frame, as in overgrown elven ruins
-// (the user's idea, 2026-11-09, toned down to their image `Mossy Elven Checkers in
-// Birchwood.png`, our own motifs): a soft, slightly weathered ivory stone frame, two thin
+// (after the reference image `Mossy Elven Checkers in Birchwood.png`, our own motifs): a soft, slightly weathered ivory stone frame, two thin
 // vines flowing along its top and outer face in a shallow cut outline, crossing over and
 // under, sage-tinted leaves, a leaf knot at each corner, moss in the hollows and along
 // the frame's edges; ivory stone light squares with faint veins and cloudy olive jade
@@ -614,7 +602,7 @@ fn elven() -> Theme {
 // geometric ornament (diamonds with a cross in each, zigzags, a running meander between
 // two lines), a sun wheel in each corner and a tree of life in the middle of the far and
 // near sides, the cut showing the lighter wood under the oil; pale birch light squares
-// and green-stained dark ones, dark oak and pale birch pieces (the user's image `Baltic
+// and green-stained dark ones, dark oak and pale birch pieces (the reference image `Baltic
 // Folk Carved Checkers Board.png`, colors measured from it, our own forms). Spring's
 // light; wood 2, oiled (wood_for, finish_for).
 fn baltic() -> Theme {
@@ -670,7 +658,7 @@ fn summer_carved() -> Theme {
 // carved along its top with sun signs, a tree of life in the middle of the far and near
 // sides and small runic marks between (our own strokes), the cuts filled with amber;
 // summer's warmth in honed stone squares, warm sandstone and a deep reddish stone, pale
-// limestone and reddish pieces (the user's image `Amber-Carved Stone Checkers in the
+// limestone and reddish pieces (the reference image `Amber-Carved Stone Checkers in the
 // Forest.png` but its squares). Summer's light.
 fn summer_amber() -> Theme {
     var t = summer();
@@ -752,7 +740,7 @@ fn autumn_carved() -> Theme {
     t.stone = float4 { 0.06, 0.12, 0.15, 0.6 };
     t.frame_ring = float4 { 0.3, 8.0, 0.0, 0.0 };
     // Mitred for the carving's bands, but no joint drawn: a stone frame shows no seam at
-    // its corners (the user, 2026-11-13), as the elven one.
+    // its corners, as the elven one.
     t.build = float4 { 0.0, 0.0, 0.0, 1.0 };
     t.fill = float4 { 0.72, 0.38, 0.14, 0.7 };
     return t;
@@ -773,8 +761,7 @@ fn autumn_porphyry() -> Theme {
     t.frame_surface = float4 { 0.0, 1.5, 0.0, 0.2 };
     t.stone = float4 { 0.04, 0.16, 0.15, 1.0 };
     t.frame_ring = float4 { 0.2, 8.0, 0.0, 0.0 };
-    // One solid block with the field cut out: a stone frame shows no seam at its corners
-    // (the user, 2026-11-13).
+    // One solid block with the field cut out: a stone frame shows no seam at its corners.
     t.build = float4 { 1.0, 0.0, 0.0, 0.0 };
     t.light_piece = float4 { 0.9, 0.8, 0.64, 0.5 };
     t.dark_piece = float4 { 0.3, 0.14, 0.13, 0.36 };
@@ -849,7 +836,7 @@ struct Carving {
     // round them, on the top and the outer face; 1 the folk band cut in (diamonds,
     // zigzags, a meander, a sun wheel in the corners, a tree of life mid-side); 2 signs
     // cut in (sun signs, trees of life, runic marks), for amber; 3 none, only the moss
-    // along the edges and the lichen (a plain stone weathered, task 080)
+    // along the edges and the lichen (a plain stone weathered)
     motif:  i64,
     depth:  f32,    // how deep the cut is, world units (a square is 1)
     scale:  f32,    // the motifs' repeats per side
@@ -863,17 +850,15 @@ struct Carving {
     pattern: i64 = 0,
 }
 
-// The user's values for the carved looks (2026-11-09): spring's elven stone and Baltic oak,
-// summer's amber stone.
+// The carved looks' carvings: spring's elven stone and Baltic oak, summer's amber stone.
 let ELVEN = Carving { motif: 0, depth: 0.023, scale: 23.685, moss: 0.49, amber: 0.0, lichen: 0.0, warmth: 0.52,
                       jade: 0.64 };
 let BALTIC = Carving { motif: 2, depth: 0.015, scale: 3.0, moss: 0.0, amber: 0.655, lichen: 0.0, warmth: 0.0,
                        jade: 0.62 };
 let AMBER_TUNED = Carving { motif: 2, depth: 0.02, scale: 3.0, moss: 0.5, amber: 0.55, lichen: 0.085, warmth: 0.0,
                             jade: 0.5 };
-// The plain stones' weathering (motif 3, nothing cut; the user 2026-11-13: moss and
-// lichen so the plain stone isn't bare, then better as a whole, cracks and veins): hairline
-// cracks with moss in them, spring's mossier, summer's with a little lichen.
+// The plain stones' weathering (motif 3, nothing cut), so a plain stone isn't bare:
+// hairline cracks with moss in them, spring's mossier, summer's with a little lichen.
 let MOSSY = Carving { motif: 3, depth: 0.006, scale: 1.0, moss: 0.8, amber: 0.0, lichen: 0.0, warmth: 0.52,
                       jade: 0.64 };
 let WEATHERED = Carving { motif: 3, depth: 0.006, scale: 1.0, moss: 0.5, amber: 0.0, lichen: 0.08, warmth: 0.0,
@@ -885,8 +870,8 @@ let AMBER = Carving { motif: 2, depth: 0.02, scale: 12.0, moss: 0.5, amber: 0.55
 // winter's Nordic band: the folk band cut into smoked oak, its sun wheels as snowflakes.
 let AUTUMN_VINES = Carving { motif: 0, depth: 0.023, scale: 23.685, moss: 0.15, amber: 0.0, lichen: 0.0, warmth: 0.0,
                              jade: 0.5 };
-// The user's values (2026-11-13, the panel): zigzags with their crosses only, a shallow
-// cut, its fill a little glossy, the dark squares deeper.
+// The Nordic band: zigzags with their crosses only, a shallow cut, its fill a little
+// glossy, the dark squares deeper.
 let NORDIC = Carving { motif: 1, depth: 0.003, scale: 6.0, moss: 0.0, amber: 0.41, lichen: 0.0, warmth: 0.14,
                        jade: 1.0, pattern: 1 };
 

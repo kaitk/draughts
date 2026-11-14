@@ -1,8 +1,6 @@
-// The raised board's material (looks::of, task 080): each season's look for Auto, Wood,
-// Stone, and Carved, as the flags of 03's table pick them, so the settings' choice shows
-// the board tools/board_shot or the app shows. Auto is the season's own look,
-// the one it had before the choice (autumn's wood, winter's stone, spring's carved, and
-// summer's wood), and a material the file doesn't know is Auto too.
+// The raised board's material (looks::of): each season's look for Auto, Wood, Stone, and
+// Carved, as the flags pick them. Auto is the season's own look (autumn's wood, winter's
+// stone, spring's carved, summer's wood), and an unknown material is Auto too.
 import std;
 import vec;
 import model3d from "../../src/model3d";
