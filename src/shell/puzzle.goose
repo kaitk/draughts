@@ -20,7 +20,8 @@
 //
 // One of today's puzzles (task 088, prototypes/puzzle.html?daily=1) plays the same, a
 // copy of it read from the library in place of one of the set's, and today's dots stand
-// over next: those solved filled in the glow, this one ringed in it.
+// over next: those solved filled in the glow, this one ringed in it. Under the goal's
+// lines the day's first says "Warm-up" in the glow, its last "A bit harder".
 namespace puzzle;
 import std;
 import math;
@@ -322,6 +323,24 @@ let DOT_ABOVE = 8.0;        // dp: today's dots (picker::dots, task 088) above n
 // Whether today's dots show: one of today's puzzles playing.
 fn shows_dots(pl: Play&) -> bool { pl.daily >= 0 && pl.day_n > 0 }
 
+// The word under the goal's lines naming the day's slot (task 088): "Warm-up" on today's
+// first, "A bit harder" on its last, else -1: the middle ones, at the player's level, say
+// nothing, nor does a puzzle outside today's.
+fn slot_word(pl: Play&) -> i64 {
+    guard shows_dots(pl) else { return -1; }
+    if pl.daily == 0 { return strings::DAILY_WARMUP; }
+    if pl.daily == pl.day_n - 1 { return strings::DAILY_STRETCH; }
+    return -1;
+}
+
+// The height the slot's word adds under the goal's lines: 2 dp and a line in the small
+// face, or nothing.
+fn slot_h(pl: Play&, g: gui::Gui&) -> f32 {
+    guard slot_word(pl) >= 0 else { return 0.0; }
+    let s .= g.faces[gui::SMALL];
+    return 2.0 * g.scale + s.ascent - s.descent;
+}
+
 // Today's dots in r, this one ringed.
 fn day_dots(pl: Play&, g: gui::Gui&, r: float4) {
     picker::dots(g, r, pl.day_n, pl.day_won[..], pl.daily);
@@ -426,7 +445,8 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
         gui::text(g, face, inner, said, 1.0, 0.0, gui::LEFT);
         return;
     }
-    // The goal, and under it in the small face whose puzzle it is.
+    // The goal, and under it in the small face whose puzzle it is, then on today's first
+    // and last the slot's word in the glow.
     let face = gui::fitting(g, gui::LABEL, text, c.z);
     let f .= g.faces[face];
     let small .= g.faces[gui::SMALL];
@@ -434,10 +454,17 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
     let sh = small.ascent - small.descent;
     let side = to_move(pz);
     let align = if stacked { gui::CENTER } else { gui::LEFT };
-    var both = if stacked { gui::cut_top(c, lh + 4.0 * u + sh) } else { gui::center(c, c.z, lh + 4.0 * u + sh) };
+    let h = lh + 4.0 * u + sh + slot_h(pl, g);
+    var both = if stacked { gui::cut_top(c, h) } else { gui::center(c, c.z, h) };
     gui::text(g, face, gui::cut_top(both, lh), text, 1.0, 0.0, align);
     gui::cut_top(both, 4.0 * u);
-    gui::text(g, gui::fitting(g, gui::SMALL, side, both.z), both, side, 0.66, 0.0, align);
+    gui::text(g, gui::fitting(g, gui::SMALL, side, both.z), gui::cut_top(both, sh), side, 0.66, 0.0, align);
+    let slot = slot_word(pl);
+    if slot >= 0 {
+        let word = strings::get(slot);
+        gui::cut_top(both, 2.0 * u);
+        gui::glow_text(g, gui::fitting(g, gui::SMALL, word, both.z), both, word, 1.0, align);
+    }
 }
 
 // Declares the panels: the left one as the game's, its back going to the theme; on the right
@@ -483,7 +510,8 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
         let words = f.ascent - f.descent + 4.0 * u + s.ascent - s.descent;
         let goal_h = 72.0 * u + 8.0 * u + max(48.0 * u, words);
         // The piece over the goal as over the game's turn words, where it fits above the
-        // goal and the stars; else beside the goal's icon.
+        // goal and the stars; else beside the goal's icon. Today's slot word (slot_h)
+        // doesn't move it, so it stands as on the day's other puzzles.
         let above = right.w >= (18.0 + 72.0 + 18.0 + 16.0 + 56.0) * u + goal_h;
         if above {
             gui::cut_top(right, 18.0 * u);
@@ -492,7 +520,13 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
         } else {
             gui::cut_top(right, 14.0 * u);
         }
-        goal(pl, g, gui::cut_top(right, goal_h), 72.0, true, now, if above { 0.0 } else { 72.0 }, over);
+        // The slot's word under the goal's lines; where that leaves the stars less than
+        // the 56 dp they take, the goal's icon (and the piece beside it) gives up as much
+        // as the word took, so the stars keep the size they have on the day's others.
+        let slot = max(48.0 * u, words + slot_h(pl, g)) - max(48.0 * u, words);
+        let give = clamp(56.0 * u - (right.w - goal_h - slot), 0.0, slot);
+        let icon = 72.0 - give / u;
+        goal(pl, g, gui::cut_top(right, goal_h + slot - give), icon, true, now, if above { 0.0 } else { icon }, over);
         // The gap and the stars shrink to the room left above next, so a short corner panel
         // round the 3D board doesn't run them into next's tile; smaller too where the
         // panel is narrowed near square.

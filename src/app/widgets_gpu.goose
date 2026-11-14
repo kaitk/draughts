@@ -585,10 +585,12 @@ let FRAG = """
             return;
         }
         if (kind == 4) {
-            // A glyph: the atlas's coverage (R8) over the quad, in the text color.
+            // A glyph: the atlas's coverage (R8) over the quad, in the text color, its own
+            // (extra.z's 1), or the glow color (its 0.5, gui::GLOW_TEXT).
             vec2 t = (p - v_rect.xy) / v_rect.zw;
             float a = texture(atlas, mix(v_look.yz, vec2(v_look.w, v_extra.y), t)).r * v_color.a;
-            result = vec4((mod(v_extra.z, 2.0) > 0.5 ? v_color.rgb : text.rgb) * a, a);
+            float tint = mod(v_extra.z, 2.0);
+            result = vec4((tint > 0.75 ? v_color.rgb : tint > 0.25 ? glow.rgb : text.rgb) * a, a);
             return;
         }
         if (kind == 7) {

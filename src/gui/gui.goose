@@ -218,7 +218,7 @@ struct Quad {
     rect:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y, width, height in pixels
     color: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // straight alpha
     look:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // kind, corner radius in pixels, icon, pressed 0..1
-    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_WARN; z: text in `color` (1), + ON_BOARD; w: faded out, 0..1
+    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_WARN; z: text in `color` (1) or the glow color (GLOW_TEXT), + ON_BOARD; w: faded out, 0..1
 }
 
 // The pointer this frame, and what was typed while text input is on. A quick tap can be
@@ -1263,6 +1263,15 @@ fn text_width(g: Gui&, face: i64, s: const u8[:]) -> f32 {
 // pixels after each character. Glyphs land on whole pixels.
 fn text(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, spacing: f32, align: i64) {
     write(g, face, r, s, float4 { 1.0, 1.0, 1.0, a }, false, spacing, align, false);
+}
+
+// Text s as text() lays it, in the theme's glow color: its glyphs' extra.z GLOW_TEXT,
+// which the renderer reads beside ON_BOARD and CLIP.
+let GLOW_TEXT = 0.5;
+fn glow_text(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, align: i64) {
+    let first = g.quads.len;
+    write(g, face, r, s, float4 { 1.0, 1.0, 1.0, a }, false, 0.0, align, false);
+    for k in first..g.quads.len { if g.quads[k].look.x == TEXT { g.quads[k].extra.z = GLOW_TEXT; } }
 }
 
 // Text s in face `face` broken at its spaces into lines as wide as r at most, from r's
