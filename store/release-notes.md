@@ -4,21 +4,89 @@ Each version's notes for the GitHub release (the desktop builds) and the stores'
 new": Play's in en-GB and et (500 characters each), the App Store's in en-GB alone (no
 App Store localization yet, `app-store.md`). Newest first.
 
-## 0.7.8 (2026-11-14, pre-release)
+## 0.8.0 (2026-11-14)
+
+The first release with the daily puzzles; the 0.7.8 pre-release's notes are folded in.
+Android, iPhone, and the Mac come from 0.5.0, Windows and Linux from 0.5.1.
 
 ### GitHub release
 
 ```markdown
-A pre-release with daily puzzles.
+Daily puzzles at your level, a stronger computer, and a tidier game screen.
+
+Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, at [github.com/kaitk/draughts](https://github.com/kaitk/draughts). No ads, no tracking, no accounts; it works offline.
 
 **New**
 
-- **Daily puzzles.** Once Learn is solved, a few puzzles a day (4 by default; 3, 5, or 10 in settings) at the player's own level: a warm-up, two at their level, and a stretch. They come from a library of over 7,000 puzzles, International's, Russian's, and Brazilian's, reaching well past the course to ones that make a grown-up think. Home shows today's puzzles as dots, and the library's Today row holds them; a new set comes each day, and none repeats.
-- A puzzle rating per player and draughts, started from the stars won in the course, moves fast at first and settles with time.
+- **Daily puzzles.** Once Learn is solved, a few puzzles a day (4 by default; 3, 5, or 10 in settings) at the player's own level: a warm-up, two at their level, and one a bit harder. They come from a library of over 7,000 puzzles for International, Russian, and Brazilian draughts, among them traps that punish a careless move, reaching well past the course to ones that make a grown-up think. Home shows today's puzzles as dots, and the library's Today's puzzles row holds them; a new set comes each day, and none repeats.
+- **A puzzle rating** per player and draughts, started from the stars won in the course, moves fast at first and settles with time.
 
 **Better**
 
-- The puzzles' library stays centred on a tablet's wide screen.
+- **The computer plays stronger:** it now weighs men running for the crown, kings on the main road, kings that are stuck, and how the men are spread across the board.
+- **The replay shows each move** on the board, shaded at every stop with its start faded, and the best move when asked: tap the line saying what was best to see it there. Marks are closer to lidraughts'.
+- On a phone held upright, what each side has taken sits on a card of its own beside the last move, in place of one wide bar.
+- The game's move list is only as tall as its moves.
+- Results show each game's blunders, and their list fits the games played.
+- The puzzles' title sits beside back, and the library stays centred on a tablet's wide screen.
+- The win's card says who won, and a long game's move list no longer hides it.
+- Desktop windows get a larger replay and results and a layout capped for ultrawide screens, and a new player starts on the 3D board.
+- The 3D board takes less memory on phones.
+
+**Windows** (64-bit, Windows 10 or 11): download `Draughts-0.8.0-windows-x64.zip`, extract it, and run `Draughts.exe`. Nothing to install. Your graphics driver must support Vulkan, which current NVIDIA, AMD, and Intel drivers do. The app is not signed yet, so on the first run Windows shows "Windows protected your PC": choose **More info**, then **Run anyway**.
+
+**macOS** (Apple silicon, macOS 13.3 or later): download `Draughts-0.8.0-macos-arm64.zip`, open it, and move Draughts to Applications. It is signed and notarized.
+
+**Linux** (64-bit, glibc 2.35 or later: Ubuntu 22.04, Debian 12, Fedora 36, SteamOS, and their successors): download `Draughts-0.8.0-linux-x64.tar.gz`, extract it, and run `Draughts/draughts`. To add it to your applications menu, run `Draughts/install.sh` (`install.sh --remove` takes it away). Your graphics driver must support Vulkan, which Mesa and NVIDIA's driver do.
+
+**Android and iPhone/iPad:** from Google Play and the App Store.
+
+SHA-256:
+- `Draughts-0.8.0-windows-x64.zip`: (to come)
+- `Draughts-0.8.0-macos-arm64.zip`: (to come)
+- `Draughts-0.8.0-linux-x64.tar.gz`: (to come)
+```
+
+### Play, en-GB (399 of 500)
+
+```text
+• Daily puzzles at your level once Learn is solved: a warm-up, two at your level, and one a bit harder
+• Over 7,000 puzzles for International, Russian, and Brazilian draughts
+• A puzzle rating that grows with you
+• A stronger computer
+• The replay shows each move and the best one when asked
+• Results show each game's blunders
+• Tidier game screen on phones
+• Open source: github.com/kaitk/draughts
+```
+
+### Play, et (392 of 500)
+
+```text
+• Iga päev ülesanded sinu tasemel, kui õppimine on läbi: soojendus, kaks sinu tasemel ja üks veidi raskem
+• Üle 7000 ülesande rahvusvahelises, vene ja brasiilia kabes
+• Ülesannete reiting, mis kasvab koos sinuga
+• Tugevam arvuti
+• Kordus näitab iga käiku ja soovi korral parimat
+• Tulemustes iga mängu suured vead
+• Telefonis selgem mänguvaade
+• Avatud lähtekoodiga: github.com/kaitk/draughts
+```
+
+### App Store, en-GB (657 of 4,000)
+
+```text
+• Daily puzzles at your level once Learn is solved: a warm-up, two at your level, and one a bit harder, new each day
+• Over 7,000 puzzles for International, Russian, and Brazilian draughts, among them traps that punish a careless move
+• A puzzle rating per player and draughts that grows with you
+• A stronger computer
+• The replay shows each move on the board, and the best move when asked
+• Results show each game's blunders
+• On an iPhone held upright, what each side has taken sits on its own card beside the last move
+• The win's card says who won
+• The 3D board takes less memory
+
+Draughts is open source (MIT or Apache 2.0): github.com/kaitk/draughts
 ```
 
 ## 0.5.1 (2026-11-14, pre-release, Windows and Linux)
