@@ -1,11 +1,6 @@
-// The moves where the moves panel has no room, and the marks explained (task 078,
-// prototypes/history.html's take d and its B; docs/architecture/rendering.md, "The moves
-// panel"). On a phone the moves' line (panel::Layout.line): in landscape a tile at the
-// left column's foot with the last moves' rows, in portrait the last move in the bar
-// between what each side has taken; its tap opens the moves' sheet, every move two a row,
-// each side's accuracy and the marks' legend at its foot. On the always-shown panel (a
-// tablet's, a desktop's) a marked move explains itself in a tip, under the mouse or on a
-// touch. Nothing allocates: words go through fixed buffers.
+// The moves where the moves panel has no room, and the marks explained
+// (docs/architecture/rendering.md, "The moves panel"): on a phone the moves' line, whose
+// tap opens the moves' sheet; on the always-shown panel a marked move's tip.
 namespace game;
 import std;
 import vec;
@@ -25,8 +20,7 @@ let LEGEND_ROW = 24.0;      // dp: a line of the legend, two marks to it,
 let LEGEND_TOP = 8.0;       // under a rule this far above it
 let LEGEND_GLYPH = 26.0;    // dp a mark takes before its word
 
-// Where a marked move showed in the moves panel (moves_list), for its tip: its words and
-// its mark, and the note's index.
+// Where a marked move showed in the moves panel, for its tip, and the note's index.
 struct MarkAt {
     rect: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
     ply:  i64    = -1,
@@ -47,18 +41,15 @@ fn legend_one(g: gui::Gui&, w: f32, k: f32 = 1.0, face: i64 = gui::SMALL) -> boo
 
 fn legend_word(m: u8) -> const u8[:] { strings::get(strings::MARK_ONLY + 2 * (m as i64 - ai::ONLY)) }
 
-// The legend's height in pixels in a room w pixels wide (legend): one line where its
-// four marks fit it, else two.
+// The legend's height in pixels in a room w pixels wide: one line or two.
 fn legend_h(g: gui::Gui&, w: f32, k: f32 = 1.0, face: i64 = gui::SMALL) -> f32 {
     let lines: f32 = if legend_one(g, w, k, face) { 1.0 } else { 2.0 };
     return (LEGEND_TOP + lines * LEGEND_ROW + (lines - 1.0) * 4.0 + 4.0) * k * g.scale;
 }
 
-// The marks explained (task 078's B, the user's choice of both): the best's star, ?!, ?,
-// and ?? each with its word (strings::MARK_BEST..), dim, under a rule at the top of r, all
-// four on one line where they fit r's width, else two to a line; legend_h(g, r.z) pixels
-// tall. The moves' sheet has it at its foot, a past game's replay under its list, a
-// desktop's large one `k` times as large, its words in `face` and its marks in `marks`.
+// The marks explained: each mark with its word, dim, under a rule at the top of r, on one
+// line where they fit, else two to a line; legend_h(g, r.z) pixels tall. `k` scales it,
+// its words in `face` and its marks in `marks`.
 fn legend(g: gui::Gui&, r: float4, k: f32 = 1.0, face: i64 = gui::SMALL, marks: i64 = gui::BODY) {
     let u = g.scale * k;
     gui::fill(g, float4 { r.x, r.y, r.z, max(1.0, g.scale) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
@@ -77,8 +68,8 @@ fn legend(g: gui::Gui&, r: float4, k: f32 = 1.0, face: i64 = gui::SMALL, marks: 
     }
 }
 
-// The sheet's foot in r: a rule, then each side's piece and its accuracy over its judged
-// moves ("84%"), or a dash while none is judged.
+// The sheet's foot in r: a rule, then each side's piece and its accuracy, or a dash while
+// none of its moves is judged.
 fn moves_foot(gm: Game&, g: gui::Gui&, r: float4, over: board::Overlay&) {
     let u = g.scale;
     gui::fill(g, float4 { r.x, r.y + 4.0 * u, r.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
@@ -104,9 +95,8 @@ fn moves_foot(gm: Game&, g: gui::Gui&, r: float4, over: board::Overlay&) {
 }
 
 // The moves' line where the layout has one and the setting shows the moves; true when
-// tapped, which opens the sheet. A tile (landscape), or a bare tap round a pill (the
-// portrait bar). Offered to the keys with the way out. Before the first move there is
-// no list to open: no tap, no chevron, its words centered.
+// tapped, which opens the sheet. A tile in landscape, a pill in portrait. Before the
+// first move there is nothing to open.
 fn moves_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool {
     guard l.line_as != panel::LINE_NONE && gm.moves_shown != 0 else { return false; }
     let u = g.scale;
@@ -135,10 +125,8 @@ fn moves_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) 
     return clicked;
 }
 
-// The landscape line's inside: a head naming the sheet it opens, "Move list" and a
-// chevron over a rule (none before the first move); the last rows of the moves as the
-// sheet lists them, the newest at its foot, the earlier faded, the last move lit; and where the layout has no room for what each side has taken, its counts at
-// the head.
+// The landscape line's inside: a head with a chevron, the taken counts where the layout
+// puts them there, and the last rows of the moves, the earlier faded.
 fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     let u = g.scale;
     let r = l.line;
@@ -197,9 +185,9 @@ fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     }
 }
 
-// The portrait line's pill, centered in l.line, as wide as it holds: the last move's
-// number ("23." for white's, "23…" for black's), the move, its mark where marks show, and
-// a chevron up, down while the sheet is open; before the first move, the words saying so.
+// The portrait line's pill, centered in l.line: the last move's number ("23." for
+// white's, "23…" for black's), the move, its mark, and a chevron, down while the sheet
+// is open.
 fn bar_line(gm: Game&, g: gui::Gui&, l: panel::Layout) {
     let u = g.scale;
     let ns .= gm.notes;
@@ -252,11 +240,8 @@ fn bar_line(gm: Game&, g: gui::Gui&, l: panel::Layout) {
 }
 
 // The moves' sheet, open: in landscape from the screen's left edge to the board's, the
-// board left whole and playable; in portrait from the foot up to the board's middle, a dim
-// layer over the screen above it. Its head (a chevron and "Move list") closes it, as does
-// the dim layer, or back (close_sheet); under the head every move two a row, the last lit,
-// and where marks show each side's accuracy and the legend at its foot. The head is the
-// screen's first choice for the keys. True when closed.
+// board still playable; in portrait from the foot up to the board's middle over a dim
+// layer. Its head or the dim layer closes it. True when closed.
 fn moves_sheet(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool {
     let u = g.scale;
     let bottom = l.line_as == panel::LINE_BAR;
@@ -309,9 +294,8 @@ fn close_sheet(gm: Game&) -> bool {
     return true;
 }
 
-// The pieces over the UI as the portrait sheet leaves them: those under its top `top`
-// gone, as it covers them; those above it kept whole, as pieces over the UI draw over the
-// dim layer too, and faded they showed the pieces they overlap through them.
+// The pieces over the UI under the portrait sheet's top `top` gone; those above it kept
+// whole, not faded, since faded they would show what they overlap.
 fn dim_under(over: board::Overlay&, top: f32) {
     var k = 0;
     for i in over.len {
@@ -342,11 +326,9 @@ fn mark_under(gm: Game&, p: float2) -> i64 {
     return -1;
 }
 
-// A mark's tip, before anything else this frame takes the pointer (task 078's B,
-// prototypes/history.html's `explain=pop`): on the moves panel, where marks show. Under the
-// mouse (a desktop) it shows while the pointer is on a marked move. On a touch, a tap on a
-// marked move shows it; the next tap anywhere only closes it, going no further, unless it
-// is on another marked move, which the tip moves to. Returns whether the tip changed.
+// A mark's tip, before anything else this frame takes the pointer. Under the mouse it
+// shows while the pointer is on a marked move; on a touch a tap shows it and the next tap
+// only closes it, unless it is on another marked move. Returns whether the tip changed.
 fn tips(gm: Game&, g: gui::Gui&, l: panel::Layout) -> bool {
     let was = gm.tip;
     guard l.moves.z > 0.0 && gm.moves_shown == 2 && l.line_as == panel::LINE_NONE else {
@@ -390,11 +372,9 @@ fn tips(gm: Game&, g: gui::Gui&, l: panel::Layout) -> bool {
     return gm.tip != was;
 }
 
-// The tip, over the marked move it explains as the panel showed it this frame (above it,
-// or under it where the safe area's top is too near): the mark in its colored disc, its
-// name (the tip's words before their colon), the move ("20. 33-29"), and the tip's line
-// (strings::MARK_*_TIP) under them, wrapped. Pieces over the UI under it go. Returns
-// whether it went, its move no longer in view.
+// The tip above the marked move (under it near the safe area's top): the mark in its
+// disc, its name (the tip's words before their colon), the move, and the tip's line
+// wrapped. Returns whether it went, its move no longer in view.
 let TIP_W = 320.0;
 let TIP_PAD = 14.0;
 let TIP_DISC = 46.0;

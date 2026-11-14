@@ -2,8 +2,8 @@
 // running; white's first move starts black's clock without adding white's increment;
 // later moves add the increment to the side that moved; a take back runs the clock of
 // the side to move again, or none back at the start; the running clock shows whole
-// seconds rounded up, turns warn under a minute and low at 20 and under, and its time running out flags that side and
-// stops it; no clock never runs.
+// seconds rounded up, turns warn under a minute and low at 20 and under, and its time
+// running out flags that side and stops it; no clock never runs.
 import std;
 import rules from "../../src/rules";
 import board from "../../src/board";

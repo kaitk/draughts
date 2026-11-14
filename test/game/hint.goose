@@ -1,12 +1,13 @@
 // The hint on the game screen (game::press_hint, docs/product.md): a tile beside undo
 // move with a pip for each of a game's three hints. The first press asks for a move (the
-// app's worker gives the move judging finds best, at full strength; this test answers at once with ai::hint, as the worker would); the answer
-// spends a pip and lights the piece to move with the puzzles' pulsing ring, the tile
-// asking Where to?; the second press shows a light ghost of the piece on its square, for
-// nothing more; the move ends it. Undo before the answer drops the ask, and an answer
-// that comes after is ignored. With no hint left, while a capture is due, or on the
-// computer's turn the tile takes no press. Against a friend each side has its own three.
-// The ring pulses as the puzzles' does, then holds still, so nothing animates after.
+// judge's best move at full strength; this test answers at once with ai::hint, as the
+// worker would); the answer spends a pip and lights the piece to move with the puzzles'
+// pulsing ring, the tile asking Where to?; the second press shows a light ghost of the
+// piece on its square, for nothing more; the move ends it. Undo before the answer drops
+// the ask, and an answer that comes after is ignored. With no hint left, while a capture
+// is due, or on the computer's turn the tile takes no press. Against a friend each side
+// has its own three. The ring pulses as the puzzles' does, then holds still, so nothing
+// animates after.
 import std;
 import vec;
 import rules from "../../src/rules";

@@ -1,4 +1,4 @@
-// The board played with the keys (board::keys, task 072), headless through the game's
+// The board played with the keys (board::keys), headless through the game's
 // frames: the board is one control to the keys' focus, a grid of its squares, and the
 // screen's first choice, so the first arrow puts its cursor on the side to move's movable
 // piece nearest the bottom middle, and Enter with nothing focused puts it there and

@@ -1,7 +1,7 @@
 // When a piece that must capture shows how many pieces it takes, as pips (Piece.ring.z),
-// played through the game's frames and pointer (2026-11-09, docs/product.md). Showing
-// the count up front gave the capture away, so on mistakes only, the default, it is a
-// mistake's hint: no pips until a wrong move, a wrong square or a touch on a piece that
+// played through the game's frames and pointer (docs/product.md). The count up front
+// would give the capture away, so on mistakes only, the default, it is a mistake's
+// hint: no pips until a wrong move, a wrong square or a touch on a piece that
 // can't move because another must capture; from it they show until the capture ends,
 // counting down jump by jump, and another mistake partway shows what is left.
 // A new turn starts with none. With move hints they show at once and count down. The 3D

@@ -1,7 +1,6 @@
 // Anywhere on a capture's landing square plays that capture: black against the computer
-// on the turned International board (task 048, a report that a king was made to take
-// where the player didn't mean), a king with four landings beyond the piece it takes and
-// a man with two captures. Each capture is chosen by a tap on the piece and a tap at 25
+// on the turned International board, a king with four landings beyond the piece it
+// takes and a man with two captures. Each capture is chosen by a tap on the piece and a tap at 25
 // points spread over its landing square (to 0.4 of a square from its center), and by a
 // drag dropped there, on the flat board and the 3D board, at the tablet's size in
 // landscape and portrait. On the 3D board a tap goes to the field under the finger, and

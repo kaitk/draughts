@@ -1,12 +1,7 @@
-// The game's moves as played, each with its mark once judged (task 074): what the moves
-// panel lists and the history keeps. The moves aren't kept beside the board: they are
-// read off its record (rules::Record.history, the position before each move), so
-// undo, start over, and a saved game brought back need nothing of their own. A move's
-// mark is kept while the move stays in the game; a move taken back loses it, and a
-// saved game brought back is judged again.
-//
-// Judging asks the worker (game::JUDGE) for the oldest move not yet judged, after the
-// computer's move, the hint, and the lookout's traps, so the game never waits on it.
+// The game's moves as played, each with its mark once judged, and the moves panel. The
+// moves are read off the board's record, so undo, start over, and a saved game need
+// nothing of their own; a move taken back loses its mark. Judging asks the worker for
+// the oldest unjudged move, so the game never waits on it.
 namespace game;
 import std;
 
@@ -15,8 +10,7 @@ struct Note {
     move:   rules::Move     = rules::Move { .. },
     mark:   u8              = 0,        // ai::NOT_JUDGED, ONLY, BEST..
     loss:   i16             = 0,        // the fall in the mover's expected result, thousandths
-    // The best move from `before` as the judge found it, for the history (a replay shows
-    // it); none for an only move or one not judged.
+    // The judge's best move from `before`; none for an only move or one not judged.
     best:     rules::Move = rules::Move { .. },
     has_best: bool        = false,
 }
@@ -39,9 +33,8 @@ fn move_between(p: rules::Position, q: rules::Position, out: rules::Moves&) -> r
 }
 
 // Brings the notes in line with the board's history: keeps those whose move still
-// stands, drops the rest, and adds the moves played since, unjudged. The oldest note
-// goes with the oldest history step when the history is full. Returns whether they
-// changed. Runs only when the history or the position changed (the caller's check).
+// stands, drops the rest, and adds the moves played since, unjudged. Returns whether
+// they changed.
 fn sync_notes(gm: Game&) -> bool {
     let b .= gm.b;
     let ns .= gm.notes;
@@ -160,11 +153,8 @@ fn all_judged(gm: Game&) -> bool {
     return true;
 }
 
-// The moves panel (task 074, prototypes/history.html): the moves as numbered rows, white's
-// and black's side by side, the last that fit, the latest move lit; after each its mark
-// where marks show: a star in the glow color for the best, ?! gold, ? orange, ?? the
-// forced-capture red, nothing for a good or only move or one not yet judged. Nothing
-// allocates: each line is built in a fixed buffer.
+// The moves panel: numbered rows, white's and black's move side by side, the latest lit,
+// each followed by its mark where marks show.
 let MOVES_FADE = 40.0;      // dp at the list's top and foot over which rows past them fade
 let MOVES_LIST = gui::PANEL_IDS + 16;  // the list's id (gui::scroll_begin)
 let MOVES_NUMBER = 32.0;    // dp the moves' numbers take ("19." in the small face, 22)
@@ -199,15 +189,13 @@ fn mark_text(mark: u8) -> const u8[:], float4 {
     return "", gui::GOLD;
 }
 
-// Whether a mark shows after its move: the best's star, ?!, ?, and ??; a good or only
-// move, or one not judged yet, shows none.
+// Whether a mark shows after its move: a good or only move, or one not judged, has none.
 fn shows_mark(mark: u8) -> bool {
     return mark == ai::BEST || mark == ai::INACCURACY || mark == ai::MISTAKE || mark == ai::BLUNDER;
 }
 
-// A move's mark in row r from x, in the body face's line, at opacity a: the best's star
-// MARK_STAR dp across, the others as text. Returns how wide it is (mark_width), 0 for none.
-// A desktop's large replay draws it in a larger `face`, the star `k` times as large.
+// A move's mark in row r from x at opacity a: the best's star, the others as text in
+// `face`, the star scaled by `k`. Returns its width (mark_width), 0 for none.
 let MARK_STAR = 16.0;
 fn mark_at(g: gui::Gui&, x: f32, r: float4, mark: u8, a: f32 = 1.0, face: i64 = gui::BODY, k: f32 = 1.0) -> f32 {
     let u = g.scale;
@@ -222,17 +210,15 @@ fn mark_at(g: gui::Gui&, x: f32, r: float4, mark: u8, a: f32 = 1.0, face: i64 = 
     return gui::text_width(g, face, t);
 }
 
-// How wide mark_at draws a mark, 0 for none, for what is laid out round it first.
+// How wide mark_at draws a mark, 0 for none.
 fn mark_width(g: gui::Gui&, mark: u8, face: i64 = gui::BODY, k: f32 = 1.0) -> f32 {
     if mark == ai::BEST { return MARK_STAR * k * g.scale; }
     let t, c = mark_text(mark);
     return if t.len > 0 { gui::text_width(g, face, t) } else { 0.0 };
 }
 
-// Note 0's ply in the whole game, white's first move 0: the moves played before the
-// game's start (one played on from a replay's move, Game.ply0), those the history dropped,
-// and one for a game set up with black to move, which leaves white's half of its first
-// row empty.
+// Note 0's ply in the whole game, white's first move 0: the plies before the game's start
+// (Game.ply0), those the history dropped, and one for a set-up game with black to move.
 fn first_ply(gm: Game&) -> i64 {
     let black: i64 = if gm.ply0 == 0 && gm.b.rec.start.side == rules::BLACK { 1 } else { 0 };
     return gm.ply0 + gm.notes_from + black;
@@ -244,12 +230,9 @@ fn row_of(gm: Game&, i: i64) -> i64, bool {
     return a / 2 + 1, a % 2 == 1;
 }
 
-// The panel in l.moves, if the layout has room for it and the setting shows it: a head,
-// "Move list" over a rule, as a phone's moves' line has, with what each side has taken
-// as counts at its right where the layout puts them there (`counts`, the panel above a
-// 4:3 tablet's 3D board), and the list under it. The glass is only as tall as its rows
-// (one, saying there are no moves yet, before the first), growing a row a move up to the
-// room the layout keeps for it (l.moves), then scrolling.
+// The panel in l.moves, if there is room and the setting shows it: a head, with the
+// taken counts at its right when l.counts, over the list. The glass grows with its rows
+// up to l.moves, then scrolls.
 fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     guard gm.moves_shown != 0 && l.moves.z > 0.0 && l.moves.w > 0.0 else { return; }
     let u = g.scale;
@@ -272,11 +255,9 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&)
     moves_list(gm, g, room, MOVES_LIST, true);
 }
 
-// The moves as rows in r, a list scrolled within it (`id`, gui::scroll_begin): every
-// move, at its foot (the latest) when a move is added or the list is shown again; the
-// rows past either edge fade out there. With `record`, the marked moves' rects go to
-// gm.marks_at, for their tips (sheet.goose). Before the first move it says so, dim, where
-// the first row will be, so the glass isn't blank.
+// The moves as rows in r, a list scrolled within it (`id`), scrolled to the latest when
+// a move is added or the list is shown again. With `record`, the marked moves' rects go to
+// gm.marks_at for their tips. Before the first move it says there are none.
 fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
     let u = g.scale;
     let ns .= gm.notes;
@@ -323,8 +304,7 @@ fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
             gui::text(g, gui::BODY, cell, line[..], 1.0, 0.0, gui::LEFT);
             guard marks else { continue; }
             let mw = mark_at(g, cell.x + w + MARK_GAP * u, cell, n.mark);
-            // The whole move is its mark's touch, its words and its mark, as far as the
-            // view shows it.
+            // The whole move, words and mark, is its tip's touch, clipped to the view.
             let mid = y + 0.5 * panel::MOVES_ROW * u;
             if record && mw > 0.0 && mid > view.y && mid < view.y + view.w && gm.marks_at.len < MAX_MARKS_AT {
                 let top = max(y, view.y);

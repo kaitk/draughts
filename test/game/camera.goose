@@ -1,16 +1,16 @@
-// The camera buttons on the game screen round the 3D board (task 015, the user's
-// decisions of 2026-11-09), through the shell with the 3D board chosen, on the tablet's
-// landscape at 1280 × 800 (a dp a pixel): the three round buttons under the play panel;
-// the view button easing to the top view and back in 0.6 s, drawn only while it moves;
-// the zoom framing the playing field in the room clear of the panels and the buttons, in
-// the top view too; the showcase, whose drags turn and tip the camera and move no piece,
-// its angle kept once it is off, with the view button's dot, and a move tapped through
-// that angle; a game against a friend turning the board 180° after each move, keeping
-// its size (its bounds as at rest mid-turn), the showcase's angle easing back with it, black's move tapped through the turned board, and
-// a new game putting it back (with settings' turn on); against the computer no turn; a
-// friend's game with the turn off in the top view, zoomed, not turning, and the view at
-// rest again against the computer; the flat board turned for black's turn with the turn
-// on, its pieces fading out and in on the turned board; a puzzle's buttons.
+// The camera buttons on the game screen round the 3D board, through the shell with the
+// 3D board chosen, on the tablet's landscape at 1280 × 800 (a dp a pixel): the three
+// round buttons under the play panel; the view button easing to the top view and back in
+// 0.6 s, drawn only while it moves; the zoom framing the playing field in the room clear
+// of the panels and the buttons, in the top view too; the showcase, whose drags turn and
+// tip the camera and move no piece, its angle kept once it is off, with the view
+// button's dot, and a move tapped through that angle; a game against a friend turning
+// the board 180° after each move, keeping its size (its bounds as at rest mid-turn), the
+// showcase's angle easing back with it, black's move tapped through the turned board,
+// and a new game putting it back (with settings' turn on); against the computer no turn;
+// a friend's game with the turn off in the top view, zoomed, not turning, and the view
+// at rest again against the computer; the flat board turned for black's turn with the
+// turn on, its pieces fading out and in on the turned board; a puzzle's buttons.
 import std;
 import vec;
 import math;

@@ -1,17 +1,16 @@
-// The game against the computer (game/), headless: the game asks for the computer's
-// move once its turn begins, and this test answers at once with ai::think, as the app's
+// The game against the computer (game/), headless: the game asks for the computer's move
+// once its turn begins, and this test answers at once with ai::think, as the app's
 // worker does later. The answer is one of the position's legal moves; it is played only
 // after the level's pause, or against the clock the time a player of its level would
 // take (except a first move as white and a single move), through the board's animation,
-// its clock running meanwhile and gaining the increment after; as the computer begins
-// to think its piece's ring on the panel pulses once, and the child can't move its
-// pieces. Take back takes back the child's
-// move and the computer's reply, or, while the computer thinks, drops its ask and takes
-// back the child's move; an answer to a dropped ask is ignored, and so is one after
-// leaving the game, which asks again on return. When the child plays black the computer
-// moves first, and take back does nothing before the child's first move. A game that
-// ends reports its result once, for the shell to move the skill. Once the reply has
-// landed nothing animates, so the app draws nothing more.
+// its clock running meanwhile and gaining the increment after; as the computer begins to
+// think its piece's ring on the panel pulses once, and the child can't move its pieces.
+// Take back takes back the child's move and the computer's reply, or, while the computer
+// thinks, drops its ask and takes back the child's move; an answer to a dropped ask is
+// ignored, and so is one after leaving the game, which asks again on return. When the
+// child plays black the computer moves first, and take back does nothing before the
+// child's first move. A game that ends reports its result once, for the shell to move
+// the skill. Once the reply has landed nothing animates, so the app draws nothing more.
 import std;
 import vec;
 import rules from "../../src/rules";

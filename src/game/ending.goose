@@ -1,6 +1,5 @@
 // The game's end on screen (rendering.md, "Controls", A win, A draw): the win's cheer on
-// the board and its card, the draw's card with why, and the timing of both. Part of the
-// game's namespace: game.goose's frame starts them and calls them each frame.
+// the board and its card, and the draw's card with why.
 namespace game;
 import std;
 import math;
@@ -11,10 +10,8 @@ import board from "../board";
 import gui from "../gui";
 import strings from "../../strings";
 
-// A win (rendering.md, "Controls", A win), in seconds since it: the winning piece lifts
-// with its ring; a ring of glow passes across the winner's other pieces outward from it,
-// each lifting a little with its square lit; the board dims under the winning piece; the
-// card slides up as it fades in, and the crowned piece fades in on it. Then it is still.
+// A win's timing, in seconds since it: the winning piece lifts, a glow passes outward
+// across the winner's other pieces, the board dims, and the card slides up.
 let LIFT = 0.35;            // the winning piece lifts, easing out
 let WAVE_AT = 0.15;         // the glow reaches a piece on the next square then,
 let WAVE_STEP = 0.08;       // one a square farther this much later,
@@ -25,9 +22,7 @@ let CARD_AT = 1.0;          // the card slides up SLIDE dp as it fades in over 0
 let SLIDE = 28.0;
 let CROWN_AT = 1.2;         // the crowned piece fades in over 0.5 s
 let STILL = 1.7;            // still from here, or once the glow has passed the farthest piece
-// A draw (rendering.md, "Controls", A draw), calm: the board dims as the win's does over
-// 0.6 s, and the card with both pieces, "Draw", and why slides up as it fades in from
-// DRAW_CARD; still from DRAW_STILL. Nothing lifts or glows.
+// A draw's timing: the board dims over DRAW_DIM and the card slides up from DRAW_CARD.
 let DRAW_DIM = 0.6;
 let DRAW_CARD = 0.1;
 let DRAW_STILL = 0.8;
@@ -40,10 +35,8 @@ fn moment(gm: Game&, now: f64) -> f64 {
     return now - gm.won_at + skip;
 }
 
-// The win begins: the winning piece is the last move's, the winner's whichever way the
-// game ended (the side that ran out of moves or time was to move after it), unless the
-// move is still showing or there was none. The celebration is still once the card is in
-// and the glow has passed the winner's farthest piece.
+// The win begins: the winning piece is the last move's, unless the move is still showing
+// or there was none. It is still once the glow has passed the winner's farthest piece.
 fn aim(gm: Game&, won: i64) {
     let b .= gm.b;
     let v .= rules::VARIANTS[b.variant];
@@ -73,12 +66,9 @@ fn span(t: f64, a: f64, b: f64) -> f64 { clamp((t - a) / (b - a), 0.0, 1.0) }
 fn ease_out(x: f64) -> f64 { 1.0 - (1.0 - x) * (1.0 - x) * (1.0 - x) }
 fn bump(x: f64) -> f64 { if x <= 0.0 || x >= 1.0 { 0.0 } else { sin(PI * x) } }
 
-// The win on the board, after board::fill (shell::fill): the board dims under the winning
-// piece, which lifts with its ring and is drawn last, over the others; the glow passes
-// the winner's other pieces, each lifting a little with its ring and its square lit. A
-// piece lifts 6% of its size and grows 5%. The pieces are on their squares: the win
-// waits for the move to show. `share` scales it all, the dim, the lifts, and the glow,
-// as the game screen fades out or in through a transition.
+// The win on the board, after board::fill: the board dims, the winning piece lifts and
+// is drawn last, and the glow lifts the winner's other pieces a little. `share` scales
+// it all as the game screen fades through a transition.
 fn cheer(gm: Game&, l: board::Layout, now: f64, share: f32 = 1.0) {
     if gm.drawn_at >= 0.0 {
         let b .= gm.b;
@@ -140,13 +130,9 @@ fn spot_of(gm: Game&, pl: panel::Layout, sq: i64) -> float2, f32 {
     return float2 { s.x, s.y }, s.z;
 }
 
-// The end's cards (celebrate, settle) share their size, their place, their buttons, and
-// how they come in. Their size on board l: 40 dp above and below, 56 dp at the sides;
-// the buttons 112 dp × gui::tap(), 20 dp apart. On a board under panel::BOARD all but the
-// buttons' height shrink with it (`fit`), the buttons' width down to gui::tap() (`button`):
-// the win's 356 × 300 dp, 49% of the tablet's board, comes to 52% of the smallest (the
-// foldable's 520 dp) where it would be 68%. Returns fit, button, and the card's width
-// in pixels.
+// The end cards' size on board l: 40 dp margins, buttons 112 dp × gui::tap() 20 dp
+// apart. On a board under panel::BOARD all but the buttons' height shrink with it
+// (`fit`), the buttons' width down to gui::tap(). Returns fit, button width, card width.
 fn card_size(l: board::Layout) -> f32, f32, f32 {
     let u = l.scale;
     let fit: f32 = min(1.0, l.board.z / (panel::BOARD * u));
@@ -187,17 +173,12 @@ fn card_end(g: gui::Gui&, row: float4, fit: f32, button: f32, u: f32, first: i64
     return ask, drop;
 }
 
-// The card over the dimmed board once the pieces have answered: the winner's piece,
-// crowned, fading in over restart or back; it slides up as it fades in, its taps where
-// it is at rest. On the 3D board it is placed by the board's bounds on screen and the
-// winning piece where the perspective shows it. Returns panel::RESTART, panel::BACK, or
-// panel::NOTHING.
+// The win's card: the winner's crowned piece and who won over back and play again.
+// Returns panel::RESTART, panel::BACK, or panel::NOTHING.
 fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, over: board::Overlay&) -> i64 {
     let t = moment(gm, now);
     guard t >= CARD_AT else { return panel::NOTHING; }
     let u = pl.board.scale;
-    // The piece, who won in the label face as the draw's card says "Draw", a 28 dp gap,
-    // the buttons (card_size).
     let fit, button, width = card_size(pl.board);
     let head .= g.faces[gui::LABEL];
     let say = head.ascent - head.descent;
@@ -231,11 +212,9 @@ fn reason(gm: Game&, draw: i64, out: u8[..64]&) {
     strings::fill_in(out, key, [rules::draw_moves(gm.b.pos, draw)]);
 }
 
-// The draw's card over the dimmed board (rendering.md, "Controls", A draw): both pieces side
-// by side, "Draw", and why, over back and play again, sliding up as it fades in, its
-// taps where it is at rest. Sized and placed as the win's card, kept off the piece that
-// made the last move; on a board under 540 dp the words say it, and the pieces are left
-// out. Returns panel::RESTART, panel::BACK, or panel::NOTHING.
+// The draw's card: both pieces, "Draw", and why, over back and play again, kept off the
+// last move's piece; on a board under 540 dp without the pieces. Returns panel::RESTART,
+// panel::BACK, or panel::NOTHING.
 fn settle(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, over: board::Overlay&) -> i64 {
     let t = now - gm.drawn_at;
     guard t >= DRAW_CARD else { return panel::NOTHING; }

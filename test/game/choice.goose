@@ -1,6 +1,5 @@
 // Several captures of one piece each, black to move against the computer on the turned
-// International board (task 048: a report that a king was made to take where it was
-// taken back). A king's capture may land on any free square beyond the piece it takes,
+// International board. A king's capture may land on any free square beyond the piece it takes,
 // and a man's capture is as good when both take one, so each is the player's to choose.
 // Each capture the rules allow, every landing of the king's, is played here through the
 // game screen by a tap on the piece and a tap on the square, and by a drag, with hints on

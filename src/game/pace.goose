@@ -1,15 +1,7 @@
 // How long the computer takes over a move against the clock, as a player of its level
-// would (docs/architecture/ai.md, "Against the clock"), with no graphics. The search still
-// stops at its own depth; this only decides when its move is played, so its strength
-// never changes. It spends a share of what it could spend each move and keep its clock
-// (the time left over the moves still to come, plus the increment), more on hard than
-// on easy; more when several moves are about as good, less when one stands out; at
-// once, after the level's pause, when it has a single move; and the first moves of a
-// game quickly, as a player knows them, longer as the game opens up. Medium and hard
-// see a choice among captures at once; easy, like a weak player, has to look whenever
-// a piece can be taken, and takes much longer then. Its clock keeps it from running
-// low: it never spends more than a tenth of what is left, so with the increment it
-// can't lose on time.
+// would (docs/architecture/ai.md, "Against the clock"). It only decides when the move is
+// played, never the search, and spends at most a tenth of its clock, so it can't lose on
+// time.
 namespace pace;
 import std;
 import rules from "../rules";
@@ -27,9 +19,7 @@ let SPARE = 10.0;               // it spends at most a tenth of its clock on a m
 let OPENING = 12;               // plies: the first moves take a growing part of the time
 
 // Whether a piece can be taken around move `m` in `p`: the side to move must capture,
-// the other side could capture were it its turn (a piece of the mover's is attacked),
-// or it can capture once `m` is played (the move offers or allows one). Two move
-// generations into fixed buffers on the stack, once a move.
+// a piece of the mover's is attacked, or `m` offers or allows a capture.
 fn tense(p: rules::Position, m: rules::Move) -> bool {
     guard m.captured == 0 else { return true; }
     var moves: rules::Moves = [];

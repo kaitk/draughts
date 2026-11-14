@@ -1,8 +1,6 @@
-// A game's clocks, with no graphics (docs/architecture/rendering.md, "Clocks"): the
-// time each side has left, the increment a move adds, and which side's clock runs. The
-// game advances it by the time that passed on screen; it never reads a clock of its own,
-// so a test drives it with any times. The clock starts with the first move: white's
-// first move is untimed, then black's clock runs. The side whose time runs out loses.
+// A game's clocks, with no graphics: the time each side has left and which runs. The
+// game advances it by the time that passed on screen, never reading a clock of its own.
+// White's first move is untimed; the side whose time runs out loses.
 namespace clock;
 import std;
 import math;
@@ -65,7 +63,6 @@ fn stop(c: Clock&) { c.running = -1; }
 // time is out.
 fn shown(c: Clock&, side: i64) -> i64 { ceil(c.left[side]) as i64 }
 
-// Whether `side`'s clock runs under a minute, and whether at 20 seconds or under.
 fn warn(c: Clock&, side: i64) -> bool { c.running == side && shown(c, side) < WARN }
 fn low(c: Clock&, side: i64) -> bool { c.running == side && shown(c, side) <= LOW }
 

@@ -4,14 +4,14 @@
 // and settings ask the shell for them; a press that starts on a panel never moves a
 // piece and one that starts on the board never presses a tile; a win starts the
 // celebration once the move has shown, its card comes after the pieces have answered,
-// and its restart starts over (the celebration's moments: test/game/win.goose). With a 5+3 clock: no clock runs before the first move,
-// the running one counts the time between frames but not a pause, adds the increment,
-// asks for a frame only when its shown time changes, turns gold under a minute and red at
-// 20 seconds or under (the waiting clock never), and
-// ends the game on a flag. Against the computer playing white the board is turned, the
-// game says when the computer is to move, and the child can't move its pieces (the
-// computer's moves: test/game/computer.goose). In portrait the panels are above and
-// below the board.
+// and its restart starts over (the celebration's moments: test/game/win.goose). With a
+// 5+3 clock: no clock runs before the first move, the running one counts the time
+// between frames but not a pause, adds the increment, asks for a frame only when its
+// shown time changes, turns gold under a minute and red at 20 seconds or under (the
+// waiting clock never), and ends the game on a flag. Against the computer playing white
+// the board is turned, the game says when the computer is to move, and the child can't
+// move its pieces (the computer's moves: test/game/computer.goose). In portrait the
+// panels are above and below the board.
 import std;
 import vec;
 import rules from "../../src/rules";
