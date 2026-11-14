@@ -1,8 +1,8 @@
 # App Store Connect: listing and answers
 
 What App Store Connect asks for Draughts on iPhone and iPad, and the answers, drafted
-2026-11-09 for a submission not yet made (task 046). Apple's rules were read that day
-from Apple's own pages, linked where each is used; check them again before submitting.
+2026-11-09 and first submitted with 0.2.0 on 2026-11-12. Apple's rules were read on
+2026-11-09 from Apple's own pages, linked where each is used; check them again before submitting.
 The counts are Python's `len`, and bytes for the keywords, as Apple counts them;
 `store/preview/build.py` checks them.
 
@@ -225,10 +225,9 @@ On first start the app asks whether the player knows how to play; "No" starts a 
 - **iPhone and iPad** (2026-11-09): the Info.plist offers both (`UIDeviceFamily` 1, 2),
   so iPad screenshots are required. `UIRequiresFullScreen` is deprecated in iPadOS 26
   and will be ignored, so the app follows a resized window instead.
-- **The account:** a separate personal Apple ID made for the store, after Apple locked
-  the first one mid-enrolment, unpaid (task 046); its enrolment as an individual is
-  pending (2026-11-10). No
-  Apple ID, team id, or device identifier is written here (the repo is public).
+- **The account:** a separate personal Apple ID made for the store, enrolled as an
+  individual. No Apple ID, team id, or device identifier is written here (the repo is
+  public).
 - **The account's enrolment** (read 2026-11-09): an Apple Account with two-factor
   authentication and the legal name as first and last name; enrolled on the web, as the
   Apple Developer app bills the phone's own Apple Account. A free app needs no Paid Apps
@@ -251,29 +250,17 @@ size is scaled down for the smaller ones, as is the 13" iPad's.
 | iPhone 6.9" (Dynamic Island, large) | 1320 × 2868 (also 1290 × 2796, 1260 × 2736) | Yes, one iPhone set | iPhone 16 Pro Max simulator, 1320 × 2868 |
 | iPad 13" | 2064 × 2752 (or 2048 × 2732) | Yes, since the app runs on iPad | iPad Pro 13-inch (M4) simulator, 2064 × 2752 |
 
-Taken 2026-11-09 from headless simulators (`simctl`, no Simulator.app window), iOS 26.4,
-the status bar hidden by the app, into
-`~/Downloads/draughts-store/screenshots/app-store-0.2/iphone-6.9/` and `ipad-13/`, outside
-git (retaken into `app-store-0.3/`, then 2026-11-10 into `2026-11-10/app-store/`; see
-`README.md`); each in English and Estonian, though the listing takes only the English:
-
-1. `01-home-3d-winter`: home on the 3D board, winter, with the player's chip (Mia the fox)
-2. `02-game-autumn`: International on the flat board, a capture of two shown, move hints on
-3. `03-game-3d-summer`: the same position on the 3D board, summer (in 2026-11-10's set,
-   awaiting approval, a quiet position: the lookout's piece greyed, the hint ready)
-4. `04-puzzles-spring`: the library of six themes, some solved
-5. `05-puzzle-winter`: a Shots puzzle, black to move, mid-solve
-6. `06-settings-autumn`: settings (on the iPhone the Game tab, as no flag opens Look)
-7. `07-computer-summer`: the computer's setup
+Taken from headless simulators (`simctl`, no Simulator.app window), the status bar hidden
+by the app; the sets, their scenes, and how they were made are in `README.md`,
+"Screenshots and the feature graphic". Landscape needs the simulator turned, which
+`simctl` can't do headless, so simulator shots are portrait only.
 
 Search results usually show an app's first three portrait screenshots, so those carry the board.
 **The iPhone slot changed** (seen 2026-11-12): App Store Connect's version page now asks
 for "iPhone with Dynamic Island (medium display)", 6.1" and 6.3", at 1206 × 2622 or
 1179 × 2556 (landscape the same turned), and refuses 1320 × 2868 there; it showed no
 6.9" slot. The 6.9" shots scaled to 1206 × 2622 (1207 wide, a pixel cropped) went in from
-`upload/app-store-0.3/iphone-6.3/`. Its tabs also listed "iPhone Duo".
-
-Landscape needs the simulator turned, which `simctl` can't do headless; portrait only.
+`upload/app-store-0.3/iphone-6.3/`.
 
 ## Estonian text (not entered: no App Store localization)
 

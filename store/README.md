@@ -26,8 +26,7 @@ open store/preview/play.html store/preview/app-store.html
 shows what would be pasted. Each page switches language and device set (`?lang=et`,
 `?set=tablet` or `?device=ipad`, `&full=1` for the whole phone page in one screenshot)
 and lists each text's length against its limit beside it. They approximate the stores'
-layouts of 2026-11; the consoles' own previews have the last word. Screenshots of them
-are in `~/Downloads/draughts-store/preview/`.
+layouts; the consoles' own previews have the last word.
 
 ## Play's image rules
 
@@ -45,102 +44,70 @@ them again before an upload.
 | Icon | 512 × 512, 32-bit PNG with alpha, at most 1,024 KB |
 | Video | Optional, one YouTube URL; recommended for games, which some Play surfaces show only with one |
 
-The tablet's own 16:10 (2560 × 1600) doesn't fit the tablet slots, so the tablet's shots
-are taken at 16:9: `--size 1280x720`, 2560 × 1440 on the Mac's Retina screen. The App
-Store's rules are in `app-store.md`, "Screenshots".
+The App Store's rules are in `app-store.md`, "Screenshots".
 
 ## Screenshots and the feature graphic
 
-A new set, taken 2026-11-14 from `main` at `e7ee00e` for the daily puzzles (task 088)
-and the last days' layouts, waits for the user's approval in `2026-11-14/`:
-`play/phone/`, `play/tablet/`, `app-store/iphone-6.9/` (and `-raw/`), and
-`app-store/ipad-13-landscape/`, with the names and sizes below; its own `upload/` of
-flattened copies, with the iPhone 6.3" scale; a contact sheet per device type
-(`contact-*.png`); `check.txt`, each image against the rules and what was seen in it; and
-the `scripts/` that made them. The made-up player has Learn solved, so 04 shows the
-library with Today open, two of the day's four solved, and home's Puzzles row its dots.
-Play's and the iPad's shots ran the headless copy with each run's own folder as the
-storage folder; the iPhone's, the simulator. The tablet's and the iPad's 04 were retaken
-from `c912e34`, which centres the library's rows below back and ends its title row with
-them; every shot is in its `upload/`. It supersedes
-the 2026-11-10 set, never approved. Until it is approved, the sets below stay current.
+All images stay outside git in `~/Downloads/draughts-store/`. Upload from its `upload/`:
+the sets flattened to 24-bit RGB, since both stores refuse alpha, with
+`magick IN -background black -alpha remove -alpha off -type TrueColor OUT`.
 
-The current sets, outside git, taken 2026-11-09 from `main` at `78c7029`, each scene in
-English and Estonian, with 04 and 06 retaken from `503e27a` for settings' new layout and
-privacy note and the library's centring, and 03 from `96d70e0` for the 3D board's capture
-pips (the old ones in each set's `replaced/`; the 0.2 sets, from `1824780`, kept beside
-them):
+A new set from `main` at `e7ee00e` (the tablet's and the iPad's 04 from `c912e34`) waits
+for the user's approval in `2026-11-14/`: `play/phone/`, `play/tablet/`,
+`app-store/iphone-6.9/` (and `-raw/`), and `app-store/ipad-13-landscape/`, with its own
+`upload/`, a contact sheet per device type, `check.txt` (each image against the rules),
+and the `scripts/` that made them. Until it is approved, the current sets are:
 
 | Folder | Size | For | Made with |
 | --- | --- | --- | --- |
 | `screenshots/play-0.3/phone/` | 1080 × 1920, 9:16, laid out at 548 dp (a 1080 px phone at the 0.75 density floor) | Play's phone slot | The app's headless copy, `--frames` |
 | `screenshots/play-0.3/tablet/` | 2560 × 1440, 16:9 | Play's 7" and 10" tablet slots | The app's headless copy, `--frames` |
 | `screenshots/app-store-0.3/iphone-6.9/` | 1320 × 2868 | The App Store's iPhone 6.9" set | An iPhone 16 Pro Max simulator, iOS 26.4, headless |
-| `2026-11-12/upload/app-store/ipad-13-landscape/` | 2752 × 2064 | The App Store's iPad 13" set, landscape, in place of the portrait one (the user, 2026-11-12) | The app's headless copy at `--size 2752x2064 --inset 0,0,0,15.5`, from `dcc1f17`; its `scripts/` say how |
-| `upload/app-store-0.3/iphone-6.3/` | 1206 × 2622 | The App Store's iPhone slot as it is since 2026-11 (medium display, 6.1" and 6.3") | The 6.9" set scaled, `magick -resize 1207x2622^ -gravity center -extent 1206x2622` |
-| `screenshots/app-store-0.3/ipad-13/` | 2064 × 2752 | The App Store's iPad 13" set | An iPad Pro 13-inch (M4) simulator, iOS 26.4, headless |
+| `upload/app-store-0.3/iphone-6.3/` | 1206 × 2622 | The App Store's medium iPhone slot (6.1" and 6.3") | The 6.9" set scaled, `magick -resize 1207x2622^ -gravity center -extent 1206x2622` |
+| `2026-11-12/upload/app-store/ipad-13-landscape/` | 2752 × 2064 | The App Store's iPad 13" set, landscape | The app's headless copy at `--size 2752x2064 --inset 0,0,0,15.5`; its `scripts/` say how |
 
-Upload from `~/Downloads/draughts-store/upload/`: the same sets flattened to 24-bit RGB
-(the Play and iPad shots are RGBA, though opaque, and both stores refuse alpha), made with
-`magick IN -background black -alpha remove -alpha off -type TrueColor OUT`.
+The seven scenes, in upload order, each a season so all four show:
 
-The seven scenes, in the order to upload, each a season so all four show:
-
-1. `01-home-3d-winter`: home on the 3D board, winter, with the player's chip
+1. `01-home-3d-winter`: home on the 3D board, with the player's chip
 2. `02-game-autumn`: International on the flat board, a selected man's capture of two
-   shown with move hints on, autumn
-3. `03-game-3d-summer`: the same position on the 3D board, summer; in the 2026-11-10
-   set, that position without black's 22, so no capture is due: the lookout on (the
-   player at easy), white's man on 30 drained grey as black's 24 could take it, the hint
-   ready with its three pips, and the captured pieces in the bar
-4. `04-puzzles-spring`: the library of six themes, some solved, spring
-5. `05-puzzle-winter`: a Shots puzzle (55), black to move, after the first move and the
-   reply, the capturing man selected, winter
-6. `06-settings-autumn`: settings; on Play's phone the Look tab (a local build), on the
-   iPhone the Game tab
-7. `07-computer-summer`: the computer's setup, summer
+   shown with move hints on
+3. `03-game-3d-summer`: a position on the 3D board with the lookout on, a threatened man
+   drained grey, the hint ready, and the captured pieces in the bar
+4. `04-puzzles-spring`: the library, some themes solved
+5. `05-puzzle-winter`: a Shots puzzle mid-solution, the capturing man selected
+6. `06-settings-autumn`: settings
+7. `07-computer-summer`: the computer's setup
 
-The player is made up (Mia the fox, with some stars): `play-0.1/player-1.txt` and
-`settings.txt`, written into the Mac's app data and into each simulator's container (each
-copied aside first and put back after). Play's shots come from one batch of 28 runs of the
-app's headless copy (`agents/testing.md`; about a minute, no window), its loop's break
-also waiting for 6 s of the clock so every fade has finished (`mkxshot-0.3.py` makes it);
-the phone's Look tab needs a second, local build with `group: i64 = 1` in
-`src/shell/settings.goose`'s `Settings`, never committed: no flag picks the tab. The
-simulator draws the Dynamic Island into its framebuffer, so the iPhone shots have it
-painted over with what the app draws there, the season's photograph alone:
-`island_fill.py` takes the same cover crop from `design/backgrounds/masters/` and fits its
-blur and colour to the pixels around the island (`iphone-6.9-raw/` keeps them as taken).
-The scripts that took them are kept beside the sets.
+How they are made:
 
-The feature graphic is `feature-0.2/feature-render-close-name.png` (1024 × 500, no alpha;
-chosen by the user 2026-11-09): the autumn 3D board close at a low angle, rendered
-headless from a copy of the app without its UI, with home's king and "Draughts" in
-Libertinus Sans top-left over the blurred forest. Its `README.md` and `fgshot.py` say how
-it was rendered. The Estonian listing may take its own, with "Kabe" (Play takes a feature
-graphic per language). `play-0.1/feature-graphic-draft.png`, the flat first draft, is
-superseded. The older sets
-(`play/`, `apple-*`, `play-0.1/`, before the 3D board, the sixth theme, and the Russian
-puzzles) are superseded.
+- The player is made up (Mia the fox): `play-0.1/player-1.txt` and `settings.txt`,
+  copied into the app data or the simulator's container, the originals put back after.
+- Play's and the iPad's shots are one batch of runs of the headless copy
+  (`agents/testing.md`), each waiting 6 s of the clock so every fade has finished. Play's
+  phone shows settings' Look tab, which needs a local build with `group: i64 = 1` in
+  `src/shell/settings.goose`'s `Settings`, never committed.
+- The simulator draws the Dynamic Island into its framebuffer, so `island_fill.py` paints
+  it over with the season's photograph from `design/backgrounds/masters/`.
+- The tablet's own 16:10 doesn't fit Play's tablet slots, so its shots are 16:9:
+  `--size 1280x720`, 2560 × 1440 on a Retina screen.
 
-The App Store's product-page art (2026-11-12, optional, changeable without a build):
-`apple-header-0.1/`, the same board rendered again at 6000 × 2930 and cropped to the
-Header's 5244 × 2950 and 3840 × 1646 and Search Results' 3840 × 2560, each with home's
-king and "Draughts" (`-name`) and without (`-plain`); its `README.md` says how.
-
-The icons: `icon/play-512.png` and `icon/apple-1024.png`, from `scripts/icon.py --store`.
+The feature graphic is `feature-0.2/feature-render-close-name.png` (1024 × 500, no
+alpha): the autumn 3D board close at a low angle, rendered headless without the UI, with
+home's king and "Draughts" over the blurred forest; its `README.md` and `fgshot.py` say
+how. The Estonian listing may take its own, with "Kabe". The App Store's optional
+product-page art is in `apple-header-0.1/`, with its own `README.md`. The icons are
+`icon/play-512.png` and `icon/apple-1024.png`, from `scripts/icon.py --store`.
 
 ## Placeholders
 
-Replace these everywhere in this folder before anything is published (the developer name
-and the contact email are filled in):
+The values to put in place of these wherever they are left in this folder:
 
 | Placeholder | Value |
 | --- | --- |
-| `{DEVELOPER}` | Gideonic: the developer name on Play (the user, 2026-11-09); on the App Store an individual's legal name is shown instead |
-| `{CONTACT_EMAIL}` | kaitkasak@proton.me: the contact address both stores show or ask for (the user, 2026-11-10; Gmail was blocked), also the Play developer account's login |
-| `{PRIVACY_URL}` | https://kaitk.github.io/draughts/privacy/ (live 2026-11-09, from the `gh-pages` branch) |
-| `{SUPPORT_URL}` | https://kaitk.github.io/draughts/ (the App Store's support page, live 2026-11-09, `gh-pages`) |
+| `{DEVELOPER}` | Gideonic: the developer name on Play; on the App Store an individual's legal name is shown instead |
+| `{CONTACT_EMAIL}` | kaitkasak@proton.me: the contact address both stores show or ask for, also the Play developer account's login |
+| `{PRIVACY_URL}` | https://kaitk.github.io/draughts/privacy/ (from the `gh-pages` branch) |
+| `{SUPPORT_URL}` | https://kaitk.github.io/draughts/ (the App Store's support page, `gh-pages`) |
 
 ```sh
 grep -rn '{DEVELOPER}\|{CONTACT_EMAIL}\|{PRIVACY_URL}\|{SUPPORT_URL}' store/   # what is left
@@ -159,7 +126,7 @@ opens logged out before giving it to a store.
 The application id is `io.github.kaitk.draughts` (2026-11-08), set as `APP_ID` in
 `scripts/native.py`. The bundle id is `io.github.kaitk.draughts.app`,
 `BUNDLE_ID` in `scripts/ios.py`: a free team on a locked Apple ID holds the plain one, so
-the suffixed one is kept for good (2026-11-12, `tasks/046-app-store-release.md`). Nobody
+the suffixed one is kept for good (2026-11-12). Nobody
 checks a reverse-domain id against the domain, so nothing need be served at its address. The version is `VERSION_NAME` in `native.py`, shared by
 both platforms, with the build numbers `VERSION_CODE` in `scripts/android.py` and
 `BUILD_NUMBER` in `scripts/ios.py`.
