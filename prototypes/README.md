@@ -13,7 +13,7 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 | `puzzles.html` | The puzzles' library: the draughts switch and a row per theme |
 | `puzzle.html` | One puzzle in the game's layout |
 | `results.html` | The results: the rating per draughts, by level, the games played |
-| `replay.html` | A past game at move 20, its steps working, with the whole list and the marks' legend; task 087's takes: the move shown as a faded piece where it started, the squares it went through, and `?trail=dots\|dash\|none` (`?shade=path\|ends`); the best move from the position in the hint's look, `?best=tile\|always\|text`; a desktop's larger column |
+| `replay.html` | A past game at move 20, its steps working, with the whole list and the marks' legend; task 087's takes `?take=a\|b\|c\|d` (the move shown as a faded piece where it started, its way in dots, the whole way or its ends shaded; the best move as the hint, as white dots, or in words), `?grid=1` all four side by side at a king's capture; a desktop's larger column |
 | `players.html` | Who's playing, over home |
 | `settings.html` | Settings beside the preview board; one group at a time on a phone |
 | `tutorial.html` | How to play as built (ask a, entry b, the tap icon, chosen 2026-11-13), its takes kept as parameters: a new player's question, the steps per draughts, the end's ways on, home's and the library's rows |
