@@ -252,3 +252,5 @@ daily.today = Täna
 daily.left = Veel {}
 daily.tomorrow = Homme uued ülesanded
 settings.daily = Ülesandeid päevas
+daily.warmup = Soojendus
+daily.stretch = Veidi raskem

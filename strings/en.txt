@@ -253,3 +253,6 @@ daily.today = Today
 daily.left = {} to go
 daily.tomorrow = New puzzles tomorrow
 settings.daily = Puzzles a day
+# Under a daily puzzle's goal: the day's first, and its last.
+daily.warmup = Warm-up
+daily.stretch = A bit harder

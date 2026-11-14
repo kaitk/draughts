@@ -82,7 +82,7 @@ let KEYS = [
     "month.jul", "month.aug", "month.sep", "month.oct", "month.nov", "month.dec",
     "replay.best_was", "replay.next_white", "replay.next_black", "replay.take_white", "replay.take_black",
     "replay.one_white", "replay.one_black", "replay.ended",
-    "daily.today", "daily.left", "daily.tomorrow", "settings.daily",
+    "daily.today", "daily.left", "daily.tomorrow", "settings.daily", "daily.warmup", "daily.stretch",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -269,7 +269,10 @@ let DAILY_TODAY = 220;
 let DAILY_LEFT = 221;
 let DAILY_TOMORROW = 222;
 let SETTINGS_DAILY = 223;
-let COUNT = 224;
+// A daily puzzle's slot under its goal: the first of the day's, and the last.
+let DAILY_WARMUP = 224;
+let DAILY_STRETCH = 225;
+let COUNT = 226;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];
