@@ -358,7 +358,10 @@ What `src/app/think.goose` needed, from `reference.md` section 22 and spec 11.2:
 - The computer player's search runs at about 9 million nodes a second built on an M-series
   Mac, 1 million through `goose run`, and 4 million on the tablet's big cores, 1.5 million
   on its little ones (`tools/aibench.goose`, `scripts/android_cli.sh`). A larger table
-  isn't always faster: clearing it each search and cache misses cost.
+  isn't always faster: cache misses cost. The table is never cleared between searches;
+  a generation byte per entry makes earlier searches' entries misses (2026-11-14). perft
+  runs at about 45 M positions a second in International built on the Mac since a move
+  is 16 bytes (`rules::Move` without its stops, 2026-11-14).
 
 ## New in v2026.4 (2026-11-06)
 
