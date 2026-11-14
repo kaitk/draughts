@@ -13,7 +13,7 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 | `puzzles.html` | The puzzles' library: the draughts switch and a row per theme |
 | `puzzle.html` | One puzzle in the game's layout |
 | `results.html` | The results: the rating per draughts, by level, the games played |
-| `replay.html` | A past game at move 20, with the whole list and the marks' legend |
+| `replay.html` | A past game at move 20, its steps working, with the whole list and the marks' legend; task 087's takes: the move shown as a faded piece where it started, the squares it went through, and `?trail=dots\|dash\|none` (`?shade=path\|ends`); the best move from the position in the hint's look, `?best=tile\|always\|text`; a desktop's larger column |
 | `players.html` | Who's playing, over home |
 | `settings.html` | Settings beside the preview board; one group at a time on a phone |
 | `tutorial.html` | How to play as built (ask a, entry b, the tap icon, chosen 2026-11-13), its takes kept as parameters: a new player's question, the steps per draughts, the end's ways on, home's and the library's rows |
@@ -25,8 +25,11 @@ Every page takes the same few parameters, none needed:
 - `?bg=plain`: the plain fade in place of the photograph.
 - `?board=3d`: the raised board where the page has one.
 - `?device=tablet|pixel|iphone`, or with `-portrait` (`pixel-portrait`): the screen at
-  that device's size in dp with its safe area's insets, scaled to fit the window.
-  Without it the window is the screen.
+  that device's size in dp with its safe area's insets, scaled to fit the window;
+  `mac|desktop|ultrawide`, a MacBook's, a 27" screen's, and a 34" ultrawide's full window
+  in a desktop's dp. Without it the window is the screen. A desktop's large window
+  (`min-width: 1700px` and `min-height: 1000px`) lays out no wider than 1.9 times its
+  height, as `gui::safe` does.
 
 Each page lays out by the size of its screen with container queries: landscape, a phone
 in landscape (under 600 dp tall), and portrait. They are drawn from the app's screens and
