@@ -1,9 +1,7 @@
-// The daily puzzles (docs/architecture/puzzles.md, "Daily puzzles"): a large library
-// generated offline (tools/puzzles.goose) and built into the program, a few a day picked
-// by the date and the player at the player's level, and the player's puzzle rating that
-// a solve moves. Pure functions over value types and fixed tables: nothing allocates
-// once the library's index is read, which load_library does at start and when the
-// player's draughts change, never while a screen is drawn.
+// The daily puzzles (docs/architecture/puzzles.md, "Daily puzzles"): a library built
+// into the program, a few a day picked by the date and the player at the player's level,
+// and the puzzle rating a solve moves. Nothing allocates once load_library has read the
+// index.
 namespace puzzles;
 import std;
 import math;
@@ -37,9 +35,8 @@ let STAR_SCORE: i64[4] = [0, 30, 60, 100]; // a solve's score in percent by its 
 struct Entry { id: i64, difficulty: i64, theme: i64, level: i64, at: i64, len: i64 }
 
 // The index: the entries in the file's order, by difficulty, which pick searches; and
-// where each id's entry is in the list, -1 for an id not in the library. A player's file
-// keeps the puzzles had and today's by id, which a new library keeps (tools/library.py),
-// so adding puzzles moves none of them.
+// where each id's entry is in the list, -1 for an id not in the library. Players' files
+// keep puzzles by id, which stay put as the library grows.
 struct Library {
     list:    Entry[..MAX_LIBRARY],
     variant: u8               = rules::INTERNATIONAL,
@@ -186,17 +183,11 @@ fn target(rating: i64, i: i64, n: i64) -> i64 {
 // Whether library puzzle `id` is among those had, a bit each by id.
 fn is_seen(seen: u64[SEEN_WORDS]&, id: i64) -> bool { seen[id / 64] & rules::bit(id % 64) != 0 }
 
-// The day's puzzles for a player (docs/architecture/puzzles.md, "Daily puzzles"): `n` of
-// them from lib, by `day` (days since the epoch, by the local date) and `player`, so a
-// day's set comes again the same all day and differs between players. Each slot has its
-// target (target) around `rating`, the player's at the day's start; of the library's
-// puzzles in the themes of `themes` (a bit per theme) not yet had (`seen`, by id) nor
-// picked today, it takes one of the NEAR nearest the target within WINDOW of it (or of
-// the FEW nearest, where the library is sparse), by the hash of the day, player, and
-// slot, and keeps its id. A day mixes its themes: a theme it hasn't had yet is taken
-// first, among the nearest, else within VARIETY of the target, else any (the hard end
-// is mostly shots, its rarer themes used up first). Fewer than n when the library has
-// too few left.
+// The day's puzzles for a player: `n` of them from lib, the same all day for `day` (days
+// since the epoch, local date) and `player`. Each slot takes, by a hash of the day,
+// player, and slot, one puzzle near its target around `rating`, in `themes` (a bit per
+// theme), not `seen` and not already picked, preferring themes the day hasn't had.
+// Fewer than n when the library has too few left.
 fn pick(lib: Library&, day: i64, player: i64, rating: i64, themes: u64, seen: u64[SEEN_WORDS]&, n: i64, out: Day&) {
     out.list.clear();
     let count = min(n, MAX_DAILY);
@@ -274,7 +265,7 @@ fn first_puzzle_rating(stars: i64, all: i64) -> i64 {
 }
 
 // The rating after a first try at a puzzle of `difficulty` solved with `stars` (1 to 3),
-// `rated` puzzles having moved it before: Elo's expected score against the difficulty,
+// `rated_before` puzzles having moved it before: Elo's expected score against the difficulty,
 // the step large while the rating is new and falling to K_LEAST.
 fn rated(rating: i64, rated_before: i64, difficulty: i64, stars: i64) -> i64 {
     let k = max(K_LEAST, K_FIRST - K_FALL * rated_before);

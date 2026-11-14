@@ -1,7 +1,7 @@
 // The puzzle format and its goals (docs/architecture/puzzles.md). A file that breaks
 // the format is refused at its first mistake, with the line and what is wrong: an
 // unknown key, a goal that isn't one, a move that isn't legal, a capture's stops off its
-// path, a puzzle with no line, an id given twice, a line outside a puzzle, the old `tier`
+// path, a puzzle with no line, an id given twice, a line outside a puzzle, a `tier`
 // in place of a theme and level, a theme that isn't one. Then what puzzles::check
 // refuses that the format allows: a line ending with a capture due, a right move along
 // a line that no line lists, a take winning more than its count, and a crown that makes
@@ -13,8 +13,8 @@
 // reply the screen plays is the one that resists longest, and the hint is the first
 // right move's piece. A wrong move is shown its answer when the other side takes
 // something back with it (puzzles::answer): a capture back, a shot's first move; a
-// wrong move nothing answers so has none. International's Captures puzzle 32 as it was,
-// its man on 39, had a second double, 39x28x37, which 21x32x41 takes back.
+// wrong move nothing answers so has none. International's Captures puzzle 32 with
+// its man on 39 has a second double, 39x28x37, which 21x32x41 takes back.
 import std;
 import rules from "../../src/rules";
 import puzzles from "../../src/puzzles";
@@ -136,7 +136,7 @@ fn main() {
     // A position whose quiet moves lose the man to a reply: f8-g9 is taken by h10.
     var guard_ = puzzle("W:W13,46,47:B4,21,22", "crown", 2);
     judge(s, guard_, "13-8 13-9");
-    // Captures 32 as it was: the second double is taken back by a double.
+    // Captures 32 with its man on 39: the second double is taken back by a double.
     var double = puzzle("W:W25,27,39,43,44,50:B3,4,21,26,32,33", "take 2", 1);
     judge(s, double, "27x38x29 39x28x37");
 }

@@ -1,15 +1,12 @@
 // The built-in Russian puzzles (puzzles/russian.txt): they load, and every one passes
-// puzzles::check (each line legal and reaching the goal with its last move, the goal
-// forced within the puzzle's moves and not in fewer, every move that is right where a
-// line has the solver to move listed, each line ending quiet with a take's count won
-// exactly and a crown's king made, no move along a line sharing its squares with
-// another, a source), printed with its theme, level, side, goal, pieces, and the first
-// moves that solve it, and the moves it turns down that win as much a move later
-// (puzzles::rivals, a report for each to be decided, not a refusal); then the count per level of each theme the set has, and how many
-// are black's. Russian's own rules are what make it: men capture backward, no capture
-// has to take the most, and a man crowned mid-capture goes on as a king. The computer
-// player's view of them is tools/puzzles.goose's, too slow for TinyCC, and
-// `test/perft.py puzzles russian puzzles/russian.txt` replays every line independently.
+// puzzles::check, printed with its theme, level, side, goal, pieces, the first moves
+// that solve it, and the moves it turns down that win as much a move later
+// (puzzles::rivals, a report, not a refusal); then the count per level of each theme
+// the set has, and how many are black's. Russian's own rules are what make it: men
+// capture backward, no capture has to take the most, and a man crowned mid-capture goes
+// on as a king. The computer player's view of them is tools/puzzles.goose's, too slow
+// for TinyCC, and `test/perft.py puzzles russian puzzles/russian.txt` replays every line
+// independently.
 import std;
 import rules from "../../src/rules";
 import puzzles from "../../src/puzzles";

@@ -1,19 +1,17 @@
 // The daily puzzles' libraries as built into the program (docs/architecture/puzzles.md,
 // "Daily puzzles"), International's, Russian's, and Brazilian's: each reads, holds no
 // more than the index can, is sorted by difficulty, and every puzzle in it reads from
-// its line, with a theme its variant's set has, and every CHECKED-th puzzle (all of
-// them: about 9 s for the three through TinyCC) passes the course's checks
-// (puzzles::check), as tools/puzzles.goose checked each one when it found it. Ids stay
-// for good: the first library's puzzles, whose ids were their lines then and which
-// players' files keep, are still found by them.
+// its line, with a theme its variant's set has, and every CHECKED-th puzzle passes
+// puzzles::check. Ids stay for good: puzzles players' files already keep are still
+// found by them.
 import std;
 import rules from "../../src/rules";
 import puzzles from "../../src/puzzles";
 
 let CHECKED = 1;
 
-// Puzzles of the first libraries (2026-11-14) by the id a player's file knows them by:
-// the first, one in the middle, and the last line then.
+// Puzzles by the id players' files know them by, from the start, middle, and end of
+// the first libraries.
 struct Kept { variant: u8, id: i64, fen: const u8[:] }
 let FIRST: Kept[] = [
     Kept { variant: rules::INTERNATIONAL, id: 0, fen: "B:W16,21,26,28,32,33,42:B15,20,24,25,29,30,34" },

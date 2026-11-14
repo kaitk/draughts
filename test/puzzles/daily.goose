@@ -2,14 +2,14 @@
 // puzzles"), on a small library of the course's positions written as the generated
 // file is, their ids out of the file's order. The index reads each line's id,
 // difficulty, and theme, finds a puzzle by its id, and refuses a line that isn't one, an
-// id given twice, and one past the index's room. A day's pick is the same for the same day and player, differs between
-// days and between players, keeps the day's shape (a warm-up under the rating, the
-// middle at it, a stretch over it), keeps to the themes given and skips the puzzles
-// already had, never takes one twice in a day, and mixes the day's themes (s and c by
-// turns where both are near); a library with too few gives fewer.
-// The rating starts from the course's stars, moves a long way on the first puzzles and
-// less later, up on a solve of a hard one and less on an easy one, and a solve with one
-// star at its level lowers it.
+// id given twice, and one past the index's room. A day's pick is the same for the same
+// day and player, differs between days and between players, keeps the day's shape (a
+// warm-up under the rating, the middle at it, a stretch over it), keeps to the themes
+// given and skips the puzzles already had, never takes one twice in a day, and mixes the
+// day's themes (s and c by turns where both are near); a library with too few gives
+// fewer. The rating starts from the course's stars, moves a long way on the first
+// puzzles and less later, up on a solve of a hard one and less on an easy one, and a
+// solve with one star at its level lowers it.
 import std;
 import rules from "../../src/rules";
 import puzzles from "../../src/puzzles";

@@ -2,11 +2,8 @@
 // written in, read into a fixed table, and whether a move solves one (solve.goose). A
 // puzzle is a position, a goal (win so many men, become a king, win, or find the only
 // safe move), and the lines that solve it; any line that reaches the goal counts.
-// The puzzles are built into the program and read once at start (load()); tests and
-// tools/puzzles.goose read and check them the same way.
-//
-// Nothing here allocates once loaded: the set is a fixed table, and the solver searches
-// with buffers the caller owns.
+// Nothing allocates once load() has read the set into its fixed table; the solver
+// searches with buffers the caller owns.
 namespace puzzles;
 import std;
 import rules from "../rules";

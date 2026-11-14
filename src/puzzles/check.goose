@@ -1,14 +1,6 @@
 // What makes a puzzle sound, for test/puzzles/ and tools/puzzles.goose
-// (docs/architecture/puzzles.md, "Checks"): each line is legal and reaches the goal
-// with its last move and not before; the goal can be reached within the puzzle's moves
-// whatever the replies, and not in fewer; every move that is right where a line has the
-// solver to move is a line's move there, so the file lists every way in and on; each
-// line ends quiet, no capture due for either side against any reply (a safe move's
-// replies aside), a take's line wins its count exactly, and a crown's line ends with
-// the king made; a safe puzzle's every other move loses to a shot; no move along a line
-// shares its squares with another legal move, which a tap couldn't tell apart; and it
-// says where it came from. Beyond the checks, rivals reports the moves a take puzzle
-// turns down that win as much a move later.
+// (docs/architecture/puzzles.md, "Checks"). Beyond the checks, rivals reports the moves
+// a take puzzle turns down that win as much a move later.
 namespace puzzles;
 import std;
 import rules from "../rules";
@@ -170,8 +162,7 @@ fn safe_check(s: Solver&, pz: Puzzle&, out: u8[>..]&) -> i64 {
 // The moves a take puzzle turns down that win its count all the same, given one more
 // move each: at each of the solver's turns along a line, a wrong move after which the
 // solver still ends `count` up with best play over the moves left and RIVAL_PLIES more,
-// the captures due beyond. The child sees such a move refused that wins as much, only
-// a move later (the 2026-11-09 report). A report, not a refusal: each appended to out
+// the captures due beyond. A report, not a refusal: each appended to out
 // as the puzzle's id and the move; returns how many. Lines sharing the moves so far are
 // looked at once.
 fn rivals(s: Solver&, pz: Puzzle&, out: u8[>..]&) -> i64 {
