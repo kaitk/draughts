@@ -108,10 +108,11 @@ marks are made up and disagree with the engine's in places (the engine finds 15-
       with this): back one move to where it was best, the best move turned on; lit under
       the mouse, as the next move's line now is. `test/shell/replay` taps it.
 - [x] Back at the top left on a desktop's large window (2026-11-14): a head row over the
-      line over the board, its left edge at the board's; the board's top level with the
-      glass's, the title and play from here at the column's head. Board 904 dp at 1280 ×
-      800 (was 980; its line now the short one in the tests' faces) and 1437 at 2560 ×
-      1440 and 3440 × 1440 (was 1513). Not the tablet: a row there would cost its board
+      board, its left edge at the board's, the line over the board in the row's middle,
+      level with back (first under the row, which pushed everything down: the user moved
+      it up); the board's top level with the glass's, the title and play from here at the
+      column's head. Board 943 dp at 1280 × 800 (was 980; its line the short one there,
+      kept clear of back) and 1476 at 2560 × 1440 and 3440 × 1440 (was 1513). Not the tablet: a row there would cost its board
       100 dp of 726. Shot on Windows at 2560 × 1440, 1280 × 800, 3440 × 1440
       (`--touch off`) and the tablet at move 60: right.
 - [ ] Home's menu glass on an ultrawide runs from the window's edge to the capped area's

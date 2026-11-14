@@ -170,9 +170,11 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
     var moves = 0;
     for s in g.spots { if s.id >= replay::MOVE_ID { moves++; } }
     let rows = floor(10.0 * sh.past.replay.rows + 0.5) / 10.0;
-    // The line saying a game from here doesn't count: over the board, as wide, on no tile.
+    // The line saying a game from here doesn't count: over the board, centered on it and no
+    // wider, on no tile (right over it; a desktop's large window in back's row).
     let note = sh.past.replay.note;
-    var over = abs(note.y + note.w - b.y) < 0.5 && abs(note.x - b.x) < 0.5 && abs(note.z - b.z) < 0.5;
+    var over = note.y + note.w <= b.y + 0.5 && note.x >= b.x - 0.5 && note.x + note.z <= b.x + b.z + 0.5 &&
+               abs(note.x + 0.5 * note.z - (b.x + 0.5 * b.z)) < 0.5;
     for i in n {
         let q = drive::rect(g, i);
         if note.x < q.x + q.z - 0.5 && q.x < note.x + note.z - 0.5 && note.y < q.y + q.w - 0.5 && q.y < note.y + note.w - 0.5 { over = false; }
@@ -476,17 +478,20 @@ fn main() {
         let e = replay::EDGE * g.scale;
         let left = o.steps[0].x - safe.x - e;
         let right = safe.x + safe.z - e - (o.glass.x + o.glass.z);
-        // Back at the top left, over the board's left edge and above the line over it; the
-        // board's top level with the glass's; play from here at the column's head.
+        // Back at the top left, over the board's left edge, the line over the board level
+        // with it in its row; the board's top level with the glass's; play from here at the
+        // column's head.
         let back = spot(g, replay::BACK_ID);
         let play = spot(g, replay::PLAY_ID);
         let b = sh.out.layout.board;
         let note = sh.past.replay.note;
-        let top_left = abs(back.x - b.x) < 0.5 && back.y + back.w <= note.y + 0.5 && back.x + back.z <= b.x + b.z;
+        let top_left = abs(back.x - b.x) < 0.5 && back.y + back.w <= b.y + 0.5;
+        let line_level = abs(note.y + 0.5 * note.w - (back.y + 0.5 * back.w)) < 0.5;
         print("  a desktop's ", d.x as i64, " x ", d.y as i64, ": ", check(g, sh, safe), "; large ", big, ", words ",
               sh.past.replay.k, " times, the column ", (o.glass.z / g.scale + 0.5) as i64, " dp, centered ",
               abs(left - right) < 1.0, "; back at the top left over the board ", top_left, ", the board's and glass's tops level ",
-              abs(b.y - o.glass.y) < 0.5, ", play from here at the column's head ", play.x >= o.glass.x - 0.5 && play.y < b.y);
+              abs(b.y - o.glass.y) < 0.5, ", play from here at the column's head ", play.x >= o.glass.x - 0.5 && play.y < b.y,
+              ", the line level with back ", line_level);
     }
     gui::desktop_scale = 0.0;
 }

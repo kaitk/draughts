@@ -117,8 +117,9 @@ Tuned by eye on the Mac and a 27" screen (task 068, the user, 2026-11-11):
   words take the next face up (the body face's 20 dp to the label's 30, about 1.5×)
   rather than glyphs scaled up and blurred. The head's tiles keep their 64 dp and words.
   2026-11-14: back moved from the column's head (top right) to a row over the board, at
-  its left edge, since every other screen has back at the top left; the board gives up
-  that row and its top is level with the glass's, the title and play from here staying
+  its left edge, since every other screen has back at the top left, the line over the
+  board in that row's middle level with back (the user: under the row it pushed
+  everything down); the board gives up that row and its top is level with the glass's, the title and play from here staying
   at the column's head. The tablet's landscape kept as it was: there a row over the board
   would cost it 100 dp of its 726 (14%), the board being the point of the screen, and
   the user had found the tablet fine.

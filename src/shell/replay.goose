@@ -585,10 +585,10 @@ fn disclaimer(g: gui::Gui&, r: float4, face: i64 = gui::SMALL) -> bool {
 // tablet, a desktop); else it is the glass's line. A desktop's large window (`big`)
 // keeps the column LARGE_SIDE dp at least and LARGE_COL at most, the steps, the board,
 // and the column centered as one, and its line over the board LARGE times as tall; over
-// the line a head row of its own (`back`, from the board's left edge, as wide), the board
-// giving up its height and GAP, its top level with the glass's, the column's head level
-// with back (2026-11-14: back had been at the column's head, top right, where no other
-// screen has it).
+// the board a head row of its own (`back`, from the board's left edge, as wide) holding
+// back and, in its middle, the line over the board, level with the column's head; the
+// board gives up the row's height and GAP, its top level with the glass's (2026-11-14:
+// back had been at the column's head, top right, where no other screen has it).
 struct Layout {
     head:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     board: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -609,12 +609,13 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
     if c.z > c.w {
         let least = (if big { LARGE_SIDE } else { MIN_SIDE }) * u;
         let row = if big { tap + GAP * u } else { 0.0 };
-        let size = max(min(c.w - row - note, c.z - tap - (GAP + BESIDE) * u - least), 0.0);
+        let over = if big { 0.0 } else { note };
+        let size = max(min(c.w - row - over, c.z - tap - (GAP + BESIDE) * u - least), 0.0);
         var col = c.z - tap - (GAP + BESIDE) * u - size;
         if big { col = min(col, LARGE_COL * u); }
         let x0 = c.x + 0.5 * (c.z - (tap + (GAP + BESIDE) * u + size + col));
-        let y0 = c.y + 0.5 * (c.w - row - size - note);
-        o.board = float4 { x0 + tap + GAP * u, y0 + row + note, size, size };
+        let y0 = c.y + 0.5 * (c.w - row - size - over);
+        o.board = float4 { x0 + tap + GAP * u, y0 + row + over, size, size };
         o.five = size >= 5.0 * tap + 4.0 * GAP * u;
         let n: f32 = if o.five { 5.0 } else { 4.0 };
         let extra = if o.five { BULB_GAP * u } else { 0.0 };
@@ -625,6 +626,7 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
         let x = o.board.x + size + BESIDE * u;
         if big {
             o.back = float4 { o.board.x, y0, size, tap };
+            o.note = float4 { o.board.x, y0 + 0.5 * (tap - note), size, note };
             o.head = float4 { x, y0, col, tap };
             o.glass = float4 { x, o.board.y, col, size };
         } else {
@@ -645,7 +647,7 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
         for i in 4 { o.steps[i] = float4 { steps.x + i * (w + GAP * u), steps.y, w, tap }; }
         o.glass = c;
     }
-    o.note = float4 { o.board.x, o.board.y - note, o.board.z, note };
+    if !big { o.note = float4 { o.board.x, o.board.y - note, o.board.z, note }; }
     return o;
 }
 
@@ -708,9 +710,14 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     gui::cut_right(head, GAP * u);
     let in_head = titled && title(g, head, r.game);
 
-    // Over the board, that a game from here doesn't count; not a tap.
+    // Over the board, that a game from here doesn't count; not a tap. On a desktop's large
+    // window it shares back's row, kept clear of back on both sides so it stays centered.
     r.note = o.note;
-    r.why = disclaimer(g, o.note, r.small);
+    if big {
+        let clear = back_w + GAP * u;
+        r.note = float4 { o.note.x + clear, o.note.y, max(o.note.z - 2.0 * clear, 0.0), o.note.w };
+    }
+    r.why = disclaimer(g, r.note, r.small);
 
     // The glass: the game where the head had no room for it, the move shown, what was best
     // instead (not on a phone in landscape, which keeps its rows), the line for the next
