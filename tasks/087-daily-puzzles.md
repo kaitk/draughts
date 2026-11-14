@@ -18,8 +18,8 @@ library of thousands on home's "93 / 222" counter would only discourage. The pla
   shape: a warm-up below the player's rating, two at it, a stretch above.
 - **Home's counter** shows today's progress, not a total over thousands.
 
-Execution starts in a new session, once the UI below is agreed and the generation
-sample has been looked at.
+The UI's prototypes are made and chosen first, in the session that wrote this task;
+the build starts in a new one after.
 
 ## Why generate, not import
 
@@ -41,6 +41,46 @@ which look more like real games than camps do.
 Size: a puzzle is about 150 bytes of text, so 3,000 per draughts is about 450 KB
 embedded, small next to the backgrounds' 9.7 MB. Generating on the device is rejected:
 finding and checking a good puzzle costs search time and curation.
+
+## Against the open generators
+
+Read 2026-11-14: Lichess's `lichess-puzzler` (its `generator/generator.py` and
+`tagger/cook.py`), the widely used open generator, and `chess-variant-puzzler`
+(Fairy-Stockfish, the same scheme for variants). Lidraughts' 2,000+ International
+puzzles were built by its community, not generated; automatic generation from games was
+only a plan.
+
+What Lichess does, and what we take:
+
+- **Positions from real games, not composed.** It scans 300 M games' positions for a
+  sudden swing, the side to move's winning chances rising by 0.6 or more to at least
+  +2 pawns, and builds the line from there. Taken: the computer's games as a second
+  source beside `find`'s camps.
+- **Sources tiered by quality**: games by stronger players and slower clocks rank
+  higher, and lower tiers lose the shortest puzzles. Taken: mine hard skill's games,
+  and keep one-movers only for the easiest end.
+- **Not already won**: a position already up material, or already scoring over +3, is
+  rejected; the puzzle has to be the moment it turns. Taken: the start roughly even by
+  the computer's score, no side up a man.
+- **One clear move at each turn**: the best move's winning chances 0.7 over the second
+  best, else rejected; the line ends on the solver's move, and stops once the gain is in.
+  Ours is stricter already, by exact search: exactly one move reaches the goal at each
+  turn, and the line ends quiet (`puzzles::check`).
+- **Dedup**: each position kept once, and one puzzle per game. Taken.
+- **Two passes**: a cheap pass with loose filters, then a strict one deeper. Ours is
+  the same: `find`'s guards, then the solver and the checks.
+- **Themes tagged by detectors over the line**, not by where a puzzle came from:
+  `sacrifice` when the solver is two points down at some point, length tags by plies
+  (one move, short, long, very long), and others by pattern. Taken: tag each generated
+  puzzle's motif from its line (a shot by men given then taken, crowning, a king's
+  capture, the safe move, the free tempo), so the daily pick can keep to the themes the
+  child has opened.
+- **Difficulty comes from players, not the generator**: each puzzle is rated like a
+  player (Glicko-2) from every attempt, and the next puzzle is picked near the player's
+  rating, with easier and harder settings shifting it (about ±300 and ±600). Not
+  possible for us without data leaving the device, hence the estimate below; the day's
+  shape is the offsets.
+- **Bad puzzles go by votes.** No votes here; the user's look at samples stands in.
 
 ## Difficulty without play data
 
