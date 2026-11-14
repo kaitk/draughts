@@ -1,4 +1,4 @@
-before: ratings 800/0 800/0 800/0 800/0; skills 8 40 90, played 0 0 0; games 7; history 4 lines, 1441 bytes
+before: ratings 800/0 800/0 800/0 800/0; skills 8 40 90, played 0 0 0; games 7; history 4 lines, 2198 bytes
 the newest game's replay: screen 6 (replay 6), move 80 of 80, the game over there true
 at the end, play from here tapped: playable false, screen 6, from the replay false
 played from move 30: screen 1 (game 1), from the replay true, doesn't count true; international against the computer as black at level 1, skill 40; the replay's position true, white to move; clock 0; moves 0
@@ -17,5 +17,5 @@ the friend's game from move 11: screen 1 (game 1), from the replay true, doesn't
 the Russian game from move 10: screen 1 (game 1), from the replay true, doesn't count true; russian against the computer as black at level 1, skill 40; the replay's position true, white to move; clock 0; moves 0
   won: winner white, screen 1; nothing kept changed: true, the game kept open for its marks false, the image kept true
   the card's back: screen 6, from the replay false
-after: ratings 800/0 800/0 800/0 800/0; skills 8 40 90, played 0 0 0; games 7; history 4 lines, 1441 bytes
+after: ratings 800/0 800/0 800/0 800/0; skills 8 40 90, played 0 0 0; games 7; history 4 lines, 2198 bytes
 the game in progress as it was: true; home's continue on: true

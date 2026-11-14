@@ -80,6 +80,8 @@ let KEYS = [
     "date.format",
     "month.jan", "month.feb", "month.mar", "month.apr", "month.may", "month.jun",
     "month.jul", "month.aug", "month.sep", "month.oct", "month.nov", "month.dec",
+    "replay.best_was", "replay.next_white", "replay.next_black", "replay.take_white", "replay.take_black",
+    "replay.one_white", "replay.one_black", "replay.ended",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -252,7 +254,15 @@ let HOW_MOVE_AGAIN = 165;
 let HOW_STEP = 166;
 let DATE_FORMAT = 199;      // a date's pattern (date.goose), and the months' short names
 let MONTH_JAN = 200;        // from January, MONTH_JAN + month - 1
-let COUNT = 212;
+// A replay's lines for the best move (task 087), each followed by the move: what was best
+// in place of a marked move, the best next for the side to move, or the move it must
+// make; and the end of the game.
+let REPLAY_BEST_WAS = 212;
+let REPLAY_NEXT = 213;      // white's, then black's (+ side)
+let REPLAY_TAKE = 215;      // a forced capture, white's then black's
+let REPLAY_ONE = 217;       // an only move that isn't a capture, white's then black's
+let REPLAY_ENDED = 219;
+let COUNT = 220;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

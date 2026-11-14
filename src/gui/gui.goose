@@ -479,6 +479,14 @@ fn side() -> f32 { if desktop_scale > 0.0 { DESKTOP_SIDE } else { WORD_SIDE } }
 let PHONE = 600.0;
 fn phone(area: float4, s: f32) -> bool { min(area.z, area.w) < PHONE * s }
 
+// Whether an area at s pixels a dp is a desktop's large window: on a desktop, at least
+// LARGE_W × LARGE_H dp (a 27" screen's full window is 2844 × 1600, a 1280 × 800 window
+// 1707 × 1067). The replay's column and the results' list keep a readable width there,
+// centered, and their words are half again as large (task 087, 2026-11-14).
+let LARGE_W = 1700.0;
+let LARGE_H = 1000.0;
+fn large(area: float4, s: f32) -> bool { desktop_scale > 0.0 && area.z >= LARGE_W * s && area.w >= LARGE_H * s }
+
 // On a desktop, no screen lays out wider than WIDEST times its height: an ultrawide
 // screen's full window (21:9, 2.4) keeps the middle at 1.9, the photograph still filling
 // it, so the panels stay by the board and lists keep a readable width; 16:9 and 16:10

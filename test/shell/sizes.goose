@@ -122,6 +122,21 @@ fn seen(g: gui::Gui&, n: i64) -> float4 {
     return if w > 0.0 && h > 0.0 { float4 { x, y, w, h } } else { float4 { 0.0, 0.0, 0.0, 0.0 } };
 }
 
+// The tap round tile r: the smallest control the keys' focus was offered whose rect
+// holds r, else r itself. A thin tile may have a tap a tap tall round it (the replay's
+// line for the best move on a phone, 44 dp, its tap 88).
+fn tap_of(g: gui::Gui&, r: float4) -> float4 {
+    var best = r;
+    var found = false;
+    for s in g.spots {
+        let q = s.rect;
+        guard q.x <= r.x + 0.5 && q.y <= r.y + 0.5 && q.x + q.z >= r.x + r.z - 0.5 && q.y + q.w >= r.y + r.w - 0.5 else { continue; }
+        if !found || q.z * q.w < best.z * best.w { best = q; }
+        found = true;
+    }
+    return best;
+}
+
 // What the last frame declared on screen `what`: its tiles, the smallest tap across and
 // down, the board, and anything out of place. `board_shows` when the screen has a board,
 // `card` when the win's card sits on it.
@@ -140,16 +155,17 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     for i in n {
         let r = drive::rect(g, i);
         let tap = style(g, i) < gui::CLOCK_RUN || style(g, i) > gui::CLOCK_WARN;
+        let t = tap_of(g, r);
         if tap {
-            narrow = min(narrow, r.z);
-            low = min(low, r.w);
+            narrow = min(narrow, t.z);
+            low = min(low, t.w);
         }
         // A list's rows past the safe area's foot scroll into it (the puzzles' library).
         let below = listed(g, i) && r.y >= safe.y && r.x >= safe.x && r.x + r.z <= safe.x + safe.z;
         if !inside(r, safe) && !below { format(wrong, " tile ", i, " off the safe area;"); }
         for j in i { if overlaps(seen(g, i), seen(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
         if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - 2) { format(wrong, " tile ", i, " on the board;"); }
-        if tap && (r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5) { small++; }
+        if tap && (t.z < gui::TAP * u - 0.5 || t.w < gui::TAP * u - 0.5) { small++; }
     }
     if small > 0 { format(wrong, " ", small, " taps under 88 dp;"); }
     format(line, ", smallest ", whole(narrow / u), " x ", whole(low / u), " dp");

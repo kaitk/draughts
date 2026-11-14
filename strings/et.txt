@@ -190,6 +190,14 @@ replay.no_count = Siit mängitud mäng ei lähe arvesse
 replay.start = Algseis, enne esimest käiku
 replay.play = Mängi siit edasi
 replay.no_count_why = Siit mängitud mäng ei lähe arvesse: seda ei salvestata ja reiting ei muutu
+replay.best_was = Parim oli
+replay.next_white = Valgete parim käik:
+replay.next_black = Mustade parim käik:
+replay.take_white = Valged peavad lööma:
+replay.take_black = Mustad peavad lööma:
+replay.one_white = Valgetel on üks käik:
+replay.one_black = Mustadel on üks käik:
+replay.ended = Mäng lõppes siin
 
 quit.ask = Kas soovid väljuda?
 quit.cancel = Tühista

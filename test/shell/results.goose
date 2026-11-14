@@ -107,4 +107,29 @@ fn main() {
         print(names[i], ": ", check(g, float4 { 0.0, 0.0, size.x, size.y }));
     }
     gui::short_dp = 800.0;
+
+    // A desktop's windows (a display scale of 1), large ones (gui::large): the whole at most
+    // results::LARGE_W dp wide and centered, the rows 96 dp; then an ultrawide's.
+    gui::desktop_scale = 1.0;
+    for size in [float2 { 1280.0, 800.0 }, float2 { 2560.0, 1440.0 }, float2 { 3440.0, 1440.0 }] {
+        drive::size = size;
+        g.scale = gui::scale_of(size.x, size.y);
+        gui::test_faces(g);
+        sh.drawn = -1;
+        drive::idle(sh, g, tick());
+        drive::idle(sh, g, tick());
+        let safe = gui::safe(g, size.x, size.y);
+        var row = float4 { 0.0, 0.0, 0.0, 0.0 };
+        var back = float4 { 0.0, 0.0, 0.0, 0.0 };
+        for s in g.spots {
+            if s.id == results::ROW_ID { row = s.rect; }
+            if s.id == results::BACK_ID { back = s.rect; }
+        }
+        let left = back.x - safe.x;
+        let right = safe.x + safe.z - (row.x + row.z);
+        print("a desktop's ", size.x as i64, " x ", size.y as i64, ": ", check(g, safe), "; large ", gui::large(safe, g.scale),
+              ", from back to the list's right ", ((row.x + row.z - back.x) / g.scale + 0.5) as i64, " dp, a row ",
+              (row.w / g.scale + 0.5) as i64, " dp tall, centered ", abs(left - right) < 14.0 * g.scale);
+    }
+    gui::desktop_scale = 0.0;
 }

@@ -1,6 +1,6 @@
 # 087: The replay's move shown, the best move, and the desktop's results
 
-Status: in progress (the width cap built 2026-11-14; the replay's look chosen, to build)
+Status: in progress (built and shot on Windows 2026-11-14; the tablet over USB left)
 
 The user's notes on the results and the replay (2026-11-14):
 
@@ -81,36 +81,54 @@ marks are made up and disagree with the engine's in places (the engine finds 15-
       `TRACE_GHOST` (30%) where it started; `Board.hint_via` rings a hint's stops while
       its ghost shows (cleared by `show` and `start_move`). Shot on Windows at 1280 × 800
       (`--screen replay --ply 15`, a capture): right.
-- [ ] The replay's dots and numbers, drawn as UI over the board after the move's
-      animation, as `replay::badge` draws the mark: glow discs along the path from square
-      centre to centre, clear of the end pieces (0.42 of a square), 0.3 of a square apart,
-      a larger one at each stop; the squares' numbers (`rules::format_square`) at the
-      path's squares, and at the best move's while it shows, top left, bold, 20% of a
-      square and 11 dp at least, over a dark halo (`gui::shadowed` is the halo's model).
-- [ ] The best move on the board while asked for: `Replay.best` (off at first, kept
-      through the steps); each frame at rest, where `plies[ply].has_best`,
-      `board::glow_on(from)`, `ghost_on(to)`, `hint_via` the stops between; off, glow and
-      hint_to -1. The bulb: a fifth step tile under the four, 8 dp further, where a
-      landscape board holds five taps (the tablet, a desktop); else the glass's best
-      line is the toggle, a thin 44 dp tile with its tap 88 dp (phones, portrait). A
-      `--best` dev flag for shots.
-- [ ] The replay's glass: the best-was and best-next lines (strings in English and
-      Estonian).
-- [ ] A desktop's replay and results as the prototype: a capped column and list, larger
-      words.
+- [x] The replay's dots and numbers (2026-11-14): UI over the board, `replay::dots_of`
+      and `replay::numbers`, as specified; no bold face in the atlas, so a number is drawn
+      twice half a pixel apart over a halo of eight dark copies. They, the mark's disc,
+      and the faded piece (`Board.trace_a`) fade in over 0.25 s once the piece has
+      arrived (`replay::revealed`, `replay::animating` keeps frames coming); the squares'
+      shading still comes in at once, being the board shader's bits (a fade there would
+      need a uniform in both renderers' shaders: left out).
+- [x] The best move on the board while asked for (2026-11-14): `replay::show_best` sets
+      `glow`, `hint_to`, and `hint_via` each frame at rest, their pulse times -1 so they
+      stay lit and still (`glow_on` each frame would pulse forever and keep drawing).
+      The bulb a fifth step tile where the board's side holds five taps and 48 dp (the
+      tablet's 726 dp, the foldable's 527, a desktop), dimmed where the position has no
+      best move; else the glass's line, a 44 dp tile with an 88 dp tap. `--best on`.
+      `Ply.only` marks a forced position: no best there, the line says it is forced.
+- [x] The glass's lines, `replay.best_was`, `replay.next_*`, `replay.take_*`,
+      `replay.one_*`, `replay.ended` in English and Estonian; shown where the game has
+      best moves. Portrait and a phone's landscape drop the legend; a phone's landscape
+      the best-was line.
+- [x] A desktop's large window (`gui::large`, 1700 × 1000 dp: the 27" full window and a
+      1280 × 800 one): the replay's column 420 to 760 dp, centered with the steps and
+      board, its faces a size up (body to label, small to heading) and sizes 1.5×; the
+      results at most 1640 dp, centered, a face up, rows 96 dp, panel 480. The replay's
+      head keeps its 64 dp tiles and faces.
 - [ ] Home's menu glass on an ultrawide runs from the window's edge to the capped area's
       (352 px wider at 3440): fine for now, maybe not bled there later.
 
-Then the glass's lines (the best was, best next, forced, the game ended; strings in
-`strings/en.txt` and `et.txt`, `replay.*`), the desktop's replay column (at most 760
-dp, larger faces) and results (at most 1640 dp), `test/shell/replay` checks (the best
-moves read, the bulb's place at test/shell/sizes' sizes, taps 88 dp), and the docs
-(`docs/architecture/rendering.md`'s replay and results sections, a decision in
-`docs/decisions/rendering.md`).
+Tests (2026-11-14): `test/drive`'s past games carry best moves (`-` for an only move);
+`test/shell/replay` checks the best moves read (61 of 80, the 19 forced with none), the
+bulb on, kept through a step, nothing at a forced move and the bulb dimmed there, the
+marks' fade (0 while moving, 0.5 at 0.125 s, 1 at 0.25 s), the dots (a quiet move 3, the
+four-square capture 27 with 2 at stops, kept 0.42 from the ends and 0.28 from the stops)
+and numbered squares, the bulb's place and the taps at every size (88 dp, the line's
+tile's tap included), and the desktops (both large, the column 579 dp at 1280 × 800 and
+760 at 2560 × 1440 and 3440 × 1440, centered). `test/shell/results` the desktops (the
+whole 1580 dp from back to the list's right, rows 96 dp, centered); `test/shell/sizes`
+measures each tile by the tap round it.
+
+Shot on Windows (2026-11-14, `build/shots/`, a history from the shared game with the
+engine's marks and best moves): the tablet's 1280 × 800 at move 60 (the king's capture,
+its stop dot at 39 and numbers 30, 39, 50), 39 (forced, "Black must take: 22x33x24"),
+and 19 with the best on ("The best was 27-21", 10-14 on the board); the desktop at
+1280 × 800, 2560 × 1440, 3440 × 1440 (`--touch off`), the Pixel's landscape and portrait
+(the line a lit tile), the results at 2560 × 1440. Right as the prototype. Quads: 589 at
+most on a desktop. The tablet over USB waits for the Mac (no adb on this PC).
 
 ## Acceptance criteria
 
 - [x] The takes chosen by the user (2026-11-14)
-- [ ] Built, with headless tests of the history's best moves and the replay's marks
-- [ ] Shot on Windows at 1280 × 800, 2560 × 1440, and 3440 × 1440, then the tablet over
-      USB
+- [x] Built, with headless tests of the history's best moves and the replay's marks
+- [x] Shot on Windows at 1280 × 800, 2560 × 1440, and 3440 × 1440 (2026-11-14)
+- [ ] The tablet over USB

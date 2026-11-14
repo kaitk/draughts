@@ -39,10 +39,10 @@ let LEGEND: u8[4] = [ai::BEST, ai::INACCURACY, ai::MISTAKE, ai::BLUNDER];
 let LEGEND_GAP = 18.0;      // dp after a mark's word where all four share a line
 
 // Whether the legend's four marks and their words fit one line w pixels wide.
-fn legend_one(g: gui::Gui&, w: f32) -> bool {
+fn legend_one(g: gui::Gui&, w: f32, k: f32 = 1.0, face: i64 = gui::SMALL) -> bool {
     let u = g.scale;
     var need: f32 = 0.0;
-    for m in LEGEND { need += (LEGEND_GLYPH + LEGEND_GAP) * u + gui::text_width(g, gui::SMALL, legend_word(m)); }
+    for m in LEGEND { need += (LEGEND_GLYPH + LEGEND_GAP) * k * u + gui::text_width(g, face, legend_word(m)); }
     return need <= w;
 }
 
@@ -50,29 +50,30 @@ fn legend_word(m: u8) -> const u8[:] { strings::get(strings::MARK_ONLY + 2 * (m 
 
 // The legend's height in pixels in a room w pixels wide (legend): one line where its
 // four marks fit it, else two.
-fn legend_h(g: gui::Gui&, w: f32) -> f32 {
-    let lines: f32 = if legend_one(g, w) { 1.0 } else { 2.0 };
-    return (LEGEND_TOP + lines * LEGEND_ROW + (lines - 1.0) * 4.0 + 4.0) * g.scale;
+fn legend_h(g: gui::Gui&, w: f32, k: f32 = 1.0, face: i64 = gui::SMALL) -> f32 {
+    let lines: f32 = if legend_one(g, w, k, face) { 1.0 } else { 2.0 };
+    return (LEGEND_TOP + lines * LEGEND_ROW + (lines - 1.0) * 4.0 + 4.0) * k * g.scale;
 }
 
 // The marks explained (task 078's B, the user's choice of both): the best's star, ?!, ?,
 // and ?? each with its word (strings::MARK_BEST..), dim, under a rule at the top of r, all
 // four on one line where they fit r's width, else two to a line; legend_h(g, r.z) pixels
-// tall. The moves' sheet has it at its foot, a past game's replay under its list.
-fn legend(g: gui::Gui&, r: float4) {
-    let u = g.scale;
-    gui::fill(g, float4 { r.x, r.y, r.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
-    let one = legend_one(g, r.z);
+// tall. The moves' sheet has it at its foot, a past game's replay under its list, a
+// desktop's large one `k` times as large, its words in `face` and its marks in `marks`.
+fn legend(g: gui::Gui&, r: float4, k: f32 = 1.0, face: i64 = gui::SMALL, marks: i64 = gui::BODY) {
+    let u = g.scale * k;
+    gui::fill(g, float4 { r.x, r.y, r.z, max(1.0, g.scale) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
+    let one = legend_one(g, r.z, k, face);
     let half = 0.5 * r.z;
     var x = r.x;
     for m, i in LEGEND {
         let word = legend_word(m);
-        let ww = gui::text_width(g, gui::SMALL, word);
+        let ww = gui::text_width(g, face, word);
         let cell = if one { float4 { x, r.y + LEGEND_TOP * u, (LEGEND_GLYPH + LEGEND_GAP) * u + ww, LEGEND_ROW * u } }
                    else { float4 { r.x + (i % 2) * half, r.y + (LEGEND_TOP + (i / 2) * (LEGEND_ROW + 4.0)) * u, half, LEGEND_ROW * u } };
-        mark_at(g, cell.x + 2.0 * u, cell, m, 0.9);
+        mark_at(g, cell.x + 2.0 * u, cell, m, 0.9, marks, k);
         let room = float4 { cell.x + LEGEND_GLYPH * u, cell.y, cell.z - (LEGEND_GLYPH + 6.0) * u, cell.w };
-        gui::text(g, gui::SMALL, room, word, 0.7, 0.0, gui::LEFT);
+        gui::text(g, face, room, word, 0.7, 0.0, gui::LEFT);
         x += cell.z;
     }
 }

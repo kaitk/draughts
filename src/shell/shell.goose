@@ -277,6 +277,7 @@ fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
         GAME => game::animating(sh.game, g, now) || flat_fade(sh, now) <= 1.0,
         PUZZLE => puzzle::animating(sh.puzzle, g, now),
         TUTORIAL => tutorial::animating(sh.lesson, g, now),
+        REPLAY => replay::animating(sh.past.replay, now) || gui::animating(g),
         _ => board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now)
              || (sh.screen == HOME && rig::moving(sh.demo, now)),
     };

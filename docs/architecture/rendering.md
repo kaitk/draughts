@@ -1129,6 +1129,11 @@ portrait the panel is above the list. Only the rows in view are declared. Each r
 tap, the whole of it, its blunders' count too, lit under the mouse and by a press: it
 opens the game's replay.
 
+On a desktop's large window (`gui::large`: at least 1700 × 1000 dp, a 27" screen's full
+window or a 1280 × 800 one) the whole is at most 1640 dp wide and centered; the panel is
+480 dp wide, the rows 96 dp tall, the opponent and the counts in the label face, the date
+and the headings in the body face, the signs and cells a quarter larger.
+
 #### A game's replay
 
 `src/shell/replay.goose` shows a finished game at any of its moves, opened at its end.
@@ -1185,8 +1190,41 @@ row: it jumps there. The rows are under the 88 dp rule: a miss shows the neighbo
 move, which the steps put right. On the board, every square the last move stood on is
 shaded as the game shades its two (where it started, each stop of a capture, where it
 ended; not the squares it passed over), with the piece faded to 30% where it started
-(`Board.trace`, task 087), and its mark sits in a disc at the square's top right corner once the piece
+(`Board.trace`), and its mark sits in a disc at the square's top right corner once the piece
 has arrived: the star on the glow color, `?!` gold, `?` orange, `??` red.
+
+**The move shown** on the board, once its piece has arrived: its way in dots of the glow
+color from square centre to centre, 0.3 of a square apart and 0.12 across, clear of the
+pieces at its ends (0.42 of a square) and of each stop (0.28), with a dot 0.24 across at
+each stop of a capture; and the numbers of the squares it stood on, as the list writes
+them, in each square's top left corner, a fifth of a square tall and 11 dp at least,
+white at 90% over a dark halo. These, the mark's disc, and the faded piece fade in over
+0.25 s (`replay::revealed`); a jump or a step back shows them at once. The dots and
+numbers are UI over the board (`replay::dots_of`, `replay::numbers`).
+
+**The best move** from the position shown (`Ply.best`, from the history's `best=`), shown
+only while asked for and kept through the steps until turned off (`Replay.best`): on the
+board as the game's hint, a ring on its piece, a light ghost and a ring where it goes,
+a ring at each stop (`replay::show_best`, set each frame the board is at rest, lit and
+still), and its squares' numbers. None where the move is forced. It is asked for with
+the bulb: in landscape where the board's side holds five taps (the tablet, a desktop) a
+fifth step tile under the four, 8 dp further down, lit in the glow color while the move
+shows and dimmed where there is none; elsewhere (phones, portrait) the glass's line for
+the next move, a 44 dp tile whose tap is a tap tall, white at 10% or lit in the glow
+color with a glow border. On the tablet that line is a tap too.
+
+**The glass's lines** under the move shown: after a `?!`, `?`, or `??` move with another
+best, the star and "The best was 27-21" (not on a phone in landscape, which keeps its
+rows); then, where the game has best moves, the line for the next move: the bulb and
+"Best next for black: 10-14", or a lock and "Black must take: 22x33x24" ("has one move"
+for a quiet one), or a crown and "The game ended here". Moves are written with every
+stop of a capture; the words dimmed, the move bright. Portrait and a phone's landscape
+leave the legend out for the list's rows.
+
+**A desktop's large window** (`gui::large`) centers the steps, the board, and the column
+as one, the column at least 420 dp and at most 760, and draws the column's words a face
+larger (the body face in the label's, the small in the heading's) and its sizes 1.5
+times; the line over the board too. The steps are 64 dp taps, their icons half the tile.
 
 The board takes no taps; it is always the flat one, with no hint, undo, or turn panel.
 A step on plays that one move on the board as the game does (`board::start_move`); any

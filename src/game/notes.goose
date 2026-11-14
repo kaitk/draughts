@@ -17,8 +17,8 @@ struct Note {
     loss:   i16             = 0,        // the fall in the mover's expected result, thousandths
     // The best move from `before` as the judge found it, for the history (a replay shows
     // it); none for an only move or one not judged.
-    best:     rules::Move   = rules::Move { .. },
-    has_best: bool          = false,
+    best:     rules::Move = rules::Move { .. },
+    has_best: bool        = false,
 }
 
 type Notes = Note[..board::MAX_HISTORY];
@@ -211,25 +211,26 @@ fn shows_mark(mark: u8) -> bool {
 
 // A move's mark in row r from x, in the body face's line, at opacity a: the best's star
 // MARK_STAR dp across, the others as text. Returns how wide it is (mark_width), 0 for none.
+// A desktop's large replay draws it in a larger `face`, the star `k` times as large.
 let MARK_STAR = 16.0;
-fn mark_at(g: gui::Gui&, x: f32, r: float4, mark: u8, a: f32 = 1.0) -> f32 {
+fn mark_at(g: gui::Gui&, x: f32, r: float4, mark: u8, a: f32 = 1.0, face: i64 = gui::BODY, k: f32 = 1.0) -> f32 {
     let u = g.scale;
     if mark == ai::BEST {
-        let k = MARK_STAR * u;
-        gui::glyph_icon(g, float4 { x, r.y + 0.5 * (r.w - k), k, k }, gui::STAR, gui::PLAIN, 0.0, 0.9 * a);
-        return k;
+        let s = MARK_STAR * k * u;
+        gui::glyph_icon(g, float4 { x, r.y + 0.5 * (r.w - s), s, s }, gui::STAR, gui::PLAIN, 0.0, 0.9 * a);
+        return s;
     }
     let t, c = mark_text(mark);
     guard t.len > 0 else { return 0.0; }
-    gui::colored(g, gui::BODY, float4 { x, r.y, r.z, r.w }, t, float4 { c.x, c.y, c.z, c.w * a }, gui::LEFT);
-    return gui::text_width(g, gui::BODY, t);
+    gui::colored(g, face, float4 { x, r.y, r.z, r.w }, t, float4 { c.x, c.y, c.z, c.w * a }, gui::LEFT);
+    return gui::text_width(g, face, t);
 }
 
 // How wide mark_at draws a mark, 0 for none, for what is laid out round it first.
-fn mark_width(g: gui::Gui&, mark: u8) -> f32 {
-    if mark == ai::BEST { return MARK_STAR * g.scale; }
+fn mark_width(g: gui::Gui&, mark: u8, face: i64 = gui::BODY, k: f32 = 1.0) -> f32 {
+    if mark == ai::BEST { return MARK_STAR * k * g.scale; }
     let t, c = mark_text(mark);
-    return if t.len > 0 { gui::text_width(g, gui::BODY, t) } else { 0.0 };
+    return if t.len > 0 { gui::text_width(g, face, t) } else { 0.0 };
 }
 
 // Note 0's ply in the whole game, white's first move 0: the moves played before the

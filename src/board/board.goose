@@ -139,8 +139,8 @@ struct Board {
     selected: i64,              // a bit, or -1
     // The selected piece's ways (`select`): its captures, every way to each (rules::ways),
     // or its quiet moves. A capture made stop by stop follows any of them (`follow`).
-    ways:     rules::Moves,
-    steps:    rules::Path,      // the stops of a capture tapped so far, after the selected piece's square
+    ways:  rules::Moves,
+    steps: rules::Path,         // the stops of a capture tapped so far, after the selected piece's square
     // A tap that kept a stop shows the piece hopping there from the square before
     // (`hop_from`, a bit) from `hop_at`, as a move's hop: a drop needs none, the finger
     // carried it (2026-11-11, issue 1).
@@ -149,7 +149,7 @@ struct Board {
     hop_to:   i64,
     // A press on the selected piece where it stands: let go without a drag, it is put
     // down, nothing selected (2026-11-11, issue 1).
-    again:    bool,
+    again: bool,
     // A puzzle's board: a capture is made stop by stop as in a game (`follow`), but
     // nothing shows the way: no count on the pieces that must capture, no pieces to
     // take after a wrong square, and no next stop after two.
@@ -196,8 +196,10 @@ struct Board {
     // best move, task 087): bits.
     hint_via: u64,
     // A replay's look of the last move (task 087): every square it stood on shaded, where
-    // it started, each stop, and where it ended, and a faded piece where it started.
-    trace: bool,
+    // it started, each stop, and where it ended, and a faded piece where it started,
+    // `trace_a` of TRACE_GHOST as it fades in once the piece has arrived.
+    trace:   bool,
+    trace_a: f32 = 1.0,
     // The lookout (game::watch): the side to move's pieces in danger, drained (a held
     // piece's on the square it was taken from), and the other side's crowning squares,
     // shaded under a dark ghost king. Cleared by a move, set again once it has shown.
@@ -639,8 +641,8 @@ fn between(v: rules::Variant&, a: i64, c: i64) -> u64 {
     let dx: i64 = if to_x > v.x_of[a] { 1 } else { -1 };
     let dy: i64 = if v.y_of[c] > v.y_of[a] { 1 } else { -1 };
     var out: u64 = 0;
-    var x: i64 = v.x_of[a] + dx;
-    var y: i64 = v.y_of[a] + dy;
+    var x:   i64 = v.x_of[a] + dx;
+    var y:   i64 = v.y_of[a] + dy;
     while x != to_x {
         out |= rules::bit(rules::bit_at(v, x, y));
         x += dx;
@@ -1206,7 +1208,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
             let from = rules::bit(b.last.from);
             if (b.pos.pieces[rules::WHITE] | b.pos.pieces[rules::BLACK]) & from == 0 {
                 let king = b.pos.kings & rules::bit(b.last.to) != 0 && !b.last.crowned;
-                add(b, center(l, v, b.last.from), r, 0.0, b.pos.side == rules::WHITE, king, 0.0, TRACE_GHOST, 0.0);
+                add(b, center(l, v, b.last.from), r, 0.0, b.pos.side == rules::WHITE, king, 0.0, TRACE_GHOST * b.trace_a, 0.0);
             }
         }
     }

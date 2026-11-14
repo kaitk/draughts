@@ -109,6 +109,28 @@ Tuned by eye on the Mac and a 27" screen (task 068, the user, 2026-11-11):
   cap in `gui::safe` covers every screen, rather than a width per screen; a 16:9 or 16:10
   screen is unchanged. Not blurring the photograph there (the user's option): it is
   magnified 1.68×, softer than on a 27" screen (1.25×) but less than on a 4K one (1.9×).
+- A desktop's large window (`gui::large`, at least 1700 × 1000 dp: a 27" screen's full
+  window, and a 1280 × 800 one) centers the replay's steps, board, and column as one, the
+  column at most 760 dp, and the results at most 1640 dp; their words a face larger
+  (2026-11-14, task 087; the user: on a 27" screen the replay's words were small and its
+  column and the results' list too wide). The faces are baked at fixed sizes, so larger
+  words take the next face up (the body face's 20 dp to the label's 30, about 1.5×)
+  rather than glyphs scaled up and blurred. The head's tiles keep their 64 dp and words.
+- The replay's move shown and best move (2026-11-14, task 087, the user's choices among
+  prototypes/replay.html's takes): the way in glow dots with a larger one at each stop,
+  the squares' numbers at its stops, and the best move as the game's hint (a ring on its
+  piece, a light ghost and a ring where it goes, a ring at each stop), shown only while
+  asked for and kept through the steps. The dots and numbers are UI drawn over the board,
+  as the mark's disc is, so the board's shader is unchanged; they, the disc, and the faded
+  piece where the move started fade in over 0.25 s once the piece has arrived, while the
+  squares' shading comes in at once, being the shader's bits. The bulb is a fifth step
+  tile where the board's side holds five taps (the tablet's 726 dp, a desktop), else the
+  glass's line for the best move as a 44 dp tile whose tap is 88 dp tall, as a fifth tile
+  doesn't fit a phone's column of four (400 dp of the Pixel's 432) or row. Portrait and a
+  phone's landscape drop the marks' legend for rows, and a phone's landscape the line
+  saying what was best. Rejected: white dots to a dashed ring, and the best move in words
+  only; shading every square a capture passed over. The numbers have no bold face in the
+  atlas: drawn twice half a pixel apart over a dark halo of eight copies.
 
 ### Small windows
 

@@ -11,6 +11,7 @@
 // inside the safe area, with why or without, and the frame's quads under gui::MAX_QUADS.
 import std;
 import vec;
+import math;
 import os;
 import rules from "../../src/rules";
 import board from "../../src/board";
@@ -61,6 +62,61 @@ fn shown(sh: shell::Shell&) -> u8[>..] {
     if b.moving { s.append(", moving"); }
     if b.has_last { format(s, ", last ", drive::name(rules::VARIANTS[b.variant], b.last.from), "-",
                            drive::name(rules::VARIANTS[b.variant], b.last.to)); }
+    return s;
+}
+
+// The best move on the board: the hint's piece, where it goes, and its stops ringed, and
+// whether they are the best move from the position shown.
+fn hint(sh: shell::Shell&) -> u8[>..] {
+    let r .= sh.past.replay;
+    let b .= r.b;
+    guard b.glow >= 0 else { return str("no best move on the board"); }
+    let v .= rules::VARIANTS[b.variant];
+    let m = r.plies[r.ply].best;
+    let right = b.glow == m.from as i64 && b.hint_to == m.to as i64 && popcount(b.hint_via) == max(m.path.len - 2, 0);
+    return str("the best move ", drive::name(v, b.glow), "-", drive::name(v, b.hint_to), " on the board, ", popcount(b.hint_via),
+               " stops ringed, ", if right { "right" } else { "WRONG" });
+}
+
+// The squares numbered on the board, by name.
+fn numbered(sh: shell::Shell&) -> u8[>..] {
+    let v .= rules::VARIANTS[sh.past.replay.b.variant];
+    var s: u8[>..] = [];
+    var left = replay::numbered(sh.past.replay);
+    while left != 0 {
+        if s.len > 0 { s.push(' '); }
+        s.append(drive::name(v, ctz(left) as i64));
+        left &= left - 1;
+    }
+    return s;
+}
+
+// The move shown's way in dots on the board as the last frame laid it out: how many, the
+// stops' larger ones, and how near a small one comes to the squares' centres at its ends
+// and at its stops, in squares; and the squares numbered.
+fn dots(sh: shell::Shell&) -> u8[>..] {
+    let r .= sh.past.replay;
+    let l = sh.out.layout;
+    let v .= rules::VARIANTS[r.b.variant];
+    let m = r.plies[r.ply - 1].move;
+    var ds: replay::Dots = [];
+    replay::dots_of(l, v, m, ds);
+    let sq = l.inner.w;
+    var large = 0;
+    var ends:  f32 = 1.0e9;
+    var stops: f32 = 1.0e9;
+    for d in ds {
+        if d.z > 0.1 * sq { large++; continue; }
+        for s, i in m.path {
+            let c = board::center(l, v, s as i64);
+            let k = sqrt((d.x - c.x) * (d.x - c.x) + (d.y - c.y) * (d.y - c.y)) / sq;
+            if i == 0 || i == m.path.len - 1 { ends = min(ends, k); } else { stops = min(stops, k); }
+        }
+    }
+    var s = str(m.path.len, " squares stood on, ", ds.len, " dots, ", large, " at stops; nearest the ends ",
+                floor(100.0 * ends + 0.5) / 100.0);
+    if large > 0 { format(s, ", the stops ", floor(100.0 * stops + 0.5) / 100.0); }
+    format(s, "; numbered ", numbered(sh));
     return s;
 }
 
@@ -125,8 +181,21 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
     let back = spot(g, replay::BACK_ID);
     let play = spot(g, replay::PLAY_ID);
     let level = abs(back.w - play.w) < 0.5 && abs(back.y - play.y) < 0.5;
+    // The taps but the list's moves: the smallest across, inside the safe area. The bulb:
+    // a fifth step tile, or the glass's line for the best move as a thin tile.
+    var tap: f32 = 1.0e9;
+    var taps_in = true;
+    var bulb = "none";
+    for s in g.spots {
+        guard s.id < replay::MOVE_ID else { continue; }
+        tap = min(tap, min(s.rect.z, s.rect.w) / g.scale);
+        if !within(s.rect, safe) { taps_in = false; }
+        if s.id == replay::BULB_ID { bulb = "a step tile"; }
+        if s.id == replay::BEST_LINE_ID { bulb = "the glass's line"; }
+    }
     return str(n, " tiles, smallest ", (least + 0.5) as i64, " dp, inside ", inside, ", apart ", apart, ", off the board ",
-               off_board, "; board ", (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; the line ",
+               off_board, "; taps ", (tap + 0.5) as i64, " dp at least, inside ", taps_in, "; the bulb ", bulb, "; board ",
+               (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; the line ",
                if sh.past.replay.why { "why" } else { "short" }, ", over the board ", over, ", inside ", within(note, safe),
                "; back and play from here level ", level, "; ",
                moves, " moves listed, ", rows, " rows in view; quads ", g.quads.len);
@@ -238,6 +307,72 @@ fn main() {
     drive::idle(sh, g, tick());
     print("Left: focus on move ", g.focus - replay::MOVE_ID + 1, ", ", shown(sh));
 
+    // The best moves read from the history: one for each move but the forced, which have
+    // none even where the line names one.
+    var bests = 0;
+    var forced = 0;
+    var both = 0;
+    var forced_at = -1;
+    var free_at = -1;
+    var widest = -1;
+    for p, i in sh.past.replay.plies {
+        if p.has_best { bests++; }
+        if p.only { forced++; }
+        if p.only && p.has_best { both++; }
+        if p.only && forced_at < 0 && i > 0 { forced_at = i; }
+        // A move with a best move whose next has one too, for the bulb kept through a step.
+        let next = i + 1 < sh.past.replay.plies.len && sh.past.replay.plies[i + 1].has_best && !sh.past.replay.plies[i + 1].only;
+        if !p.only && p.has_best && next && free_at < 0 && i > 10 { free_at = i; }
+        if p.move.captured != 0 && (widest < 0 || p.move.path.len > sh.past.replay.plies[widest].move.path.len) { widest = i; }
+    }
+    print("the best moves read: ", bests, " of ", sh.past.replay.plies.len, ", ", forced, " forced, ", both, " of them with one");
+    // The bulb, a fifth step tile on the tablet: the best move from the position shown on
+    // the board as the hint, kept through the steps, none where the move is forced.
+    replay::go(sh.past.replay, free_at, 0.0);
+    drive::idle(sh, g, tick());
+    print("at move ", free_at, ": ", hint(sh));
+    press(sh, g, replay::BULB_ID);
+    drive::idle(sh, g, tick());
+    print("the bulb: on ", sh.past.replay.best, ", ", hint(sh), "; numbered ", numbered(sh));
+    press(sh, g, replay::STEP_ID + 2);
+    drive::idle(sh, g, tick());
+    drive::idle(sh, g, tick());
+    print("on: ", shown(sh), ", the best move on ", sh.past.replay.best, ", a best move here ", replay::has_best(sh.past.replay),
+          ", ", hint(sh));
+    if forced_at >= 0 {
+        replay::go(sh.past.replay, forced_at, 0.0);
+        drive::idle(sh, g, tick());
+        print("at move ", forced_at, ", forced: ", hint(sh), "; the bulb still on ", sh.past.replay.best);
+        press(sh, g, replay::BULB_ID);
+        drive::idle(sh, g, tick());
+        print("  the bulb there, dimmed, changes nothing: on ", sh.past.replay.best);
+    }
+    replay::go(sh.past.replay, free_at, 0.0);
+    drive::idle(sh, g, tick());
+    press(sh, g, replay::BULB_ID);
+    drive::idle(sh, g, tick());
+    print("the bulb again: on ", sh.past.replay.best, ", ", hint(sh));
+
+    // The move shown's marks: once its piece has arrived, fading in over 0.25 s, drawn
+    // while they fade; at once after a jump.
+    replay::go(sh.past.replay, free_at, 0.0);
+    drive::idle(sh, g, tick());
+    print("a jump: its marks ", replay::revealed(sh.past.replay, now));
+    press(sh, g, replay::STEP_ID + 2);
+    let arrives = sh.past.replay.rest_at;
+    print("on: its marks ", replay::revealed(sh.past.replay, now), " while the piece moves");
+    board::update(sh.past.replay.b, arrives + 0.001);
+    print("  as it arrives ", replay::revealed(sh.past.replay, arrives), ", 0.125 s on ",
+          replay::revealed(sh.past.replay, arrives + 0.125), ", 0.25 s on ", replay::revealed(sh.past.replay, arrives + 0.25),
+          "; drawn while they fade ", replay::animating(sh.past.replay, arrives + 0.1), ", after ",
+          replay::animating(sh.past.replay, arrives + 0.3));
+    drive::idle(sh, g, tick());
+    print("  ", dots(sh));
+    // A capture's way: its stops' dots and numbers.
+    replay::go(sh.past.replay, widest + 1, 0.0);
+    drive::idle(sh, g, tick());
+    print("the capture of the most stops, move ", widest + 1, ": ", dots(sh));
+
     // Back: the results as they were, then the Russian game, its captures' stops left out.
     press(sh, g, replay::BACK_ID);
     drive::idle(sh, g, tick());
@@ -302,4 +437,29 @@ fn main() {
     }
     g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
     gui::short_dp = 800.0;
+
+    // A desktop's windows (a display scale of 1): 1280 × 800 and a 27" screen's full
+    // window, both large (gui::large), the column at most LARGE_COL dp, the steps, the
+    // board, and the column centered as one, the words half again as large; and an
+    // ultrawide's full window, capped at gui::WIDEST times its height.
+    strings::use(strings::EN);
+    gui::desktop_scale = 1.0;
+    for d in [float2 { 1280.0, 800.0 }, float2 { 2560.0, 1440.0 }, float2 { 3440.0, 1440.0 }] {
+        drive::size = d;
+        g.scale = gui::scale_of(d.x, d.y);
+        gui::test_faces(g);
+        replay::go(sh.past.replay, 31, 0.0);
+        drive::idle(sh, g, tick());
+        drive::idle(sh, g, tick());
+        let safe = gui::safe(g, d.x, d.y);
+        let big = gui::large(safe, g.scale);
+        let o = replay::layout(safe, g.scale, big);
+        let e = replay::EDGE * g.scale;
+        let left = o.steps[0].x - safe.x - e;
+        let right = safe.x + safe.z - e - (o.glass.x + o.glass.z);
+        print("  a desktop's ", d.x as i64, " x ", d.y as i64, ": ", check(g, sh, safe), "; large ", big, ", words ",
+              sh.past.replay.k, " times, the column ", (o.glass.z / g.scale + 0.5) as i64, " dp, centered ",
+              abs(left - right) < 1.0);
+    }
+    gui::desktop_scale = 0.0;
 }

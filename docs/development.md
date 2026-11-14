@@ -124,7 +124,8 @@ step (from 1; `--step end` its end's card), its `--tap`s on its board, `--screen
 new player's question over home, `--screen replay` the
 replay of the newest game in the history, at its end or at `--ply N` (0 the start;
 `--history FILE` reads the games from a history file in place of the player's, for
-shots: `--history games.txt --screen replay --ply 39 --frames 12`; `--go here` then plays
+shots: `--history games.txt --screen replay --ply 39 --frames 12`; `--best on` shows the
+best move on its board, as the bulb does; `--go here` then plays
 from that move, as the replay's play from here does), and `--puzzle ID` that puzzle,
 whose taps go to its board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or
 `home`, `game`, `play`, `puzzles`, `puzzle`) switches there on the second frame through

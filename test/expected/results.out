@@ -6,3 +6,6 @@ tablet landscape: 4 tiles, smallest 88 dp, inside true, apart true, quads 334
 tablet portrait: 4 tiles, smallest 88 dp, inside true, apart true, quads 384
 phone landscape: 4 tiles, smallest 88 dp, inside true, apart true, quads 249
 phone portrait: 4 tiles, smallest 88 dp, inside true, apart true, quads 279
+a desktop's 1280 x 800: 4 tiles, smallest 64 dp, inside true, apart true, quads 391; large true, from back to the list's right 1580 dp, a row 96 dp tall, centered true
+a desktop's 2560 x 1440: 4 tiles, smallest 64 dp, inside true, apart true, quads 534; large true, from back to the list's right 1580 dp, a row 96 dp tall, centered true
+a desktop's 3440 x 1440: 4 tiles, smallest 64 dp, inside true, apart true, quads 534; large true, from back to the list's right 1580 dp, a row 96 dp tall, centered true

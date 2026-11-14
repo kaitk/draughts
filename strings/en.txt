@@ -191,6 +191,14 @@ replay.no_count = A game from here doesn't count
 replay.start = The start, before the first move
 replay.play = Play from here
 replay.no_count_why = A game from here doesn't count: it isn't saved and doesn't change your rating
+replay.best_was = The best was
+replay.next_white = Best next for white:
+replay.next_black = Best next for black:
+replay.take_white = White must take:
+replay.take_black = Black must take:
+replay.one_white = White has one move:
+replay.one_black = Black has one move:
+replay.ended = The game ended here
 
 quit.ask = Quit Draughts?
 quit.cancel = Cancel

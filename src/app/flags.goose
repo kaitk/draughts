@@ -76,7 +76,8 @@ struct Flags {
     // --history FILE: the games the results screen and a replay read, in place of the
     // playing player's history (a history file's lines, shell/history.goose)
     history: u8[..512],
-    ply:     i64 = -1,      // --ply N: a replay at its Nth move (0 the start), else at its end
+    ply:     i64  = -1,     // --ply N: a replay at its Nth move (0 the start), else at its end
+    best:    bool = false,  // --best on: the replay's best move shown on its board (the bulb)
     // --variant international|brazilian|russian: a new game of that draughts, and the
     // puzzles' set; with a setup open, its choice
     variant: i64 = -1,
@@ -166,6 +167,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--moves" && v == "off" { f.moves = settings::MOVES_HIDDEN; }
         if a == "--sheet" && v == "on" { f.sheet = true; }
         if a == "--languages" && v == "open" { f.languages = true; }
+        if a == "--best" && v == "on" { f.best = true; }
         if a == "--tip" {
             let n, ok = parse_int(v);
             if ok && n >= 1 { f.tip = n - 1; }
