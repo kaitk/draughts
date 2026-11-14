@@ -70,6 +70,9 @@ struct Play {
     day_n:   i64                    = 0,
     day_won: u8[puzzles::MAX_DAILY] = [0; puzzles::MAX_DAILY],
     own:     puzzles::Puzzle,
+    // Solved with the keys leading (a keyboard's or a gamepad's): the next frame gives
+    // next the focus, once it is offered (panel_frame).
+    to_next: bool = false,
 }
 
 // A puzzle never shows a selected piece's targets, whatever the move hints setting: the
@@ -118,6 +121,7 @@ fn restart(pl: Play&) {
     pl.path.clear();
     pl.missed_at = -100.0;
     pl.won = 0;
+    pl.to_next = false;
 }
 
 // The stars still at stake, or won.
@@ -282,6 +286,9 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     if panel::board_keys(g, l, b, mine, now) { changed = true; }
     if mine {
         ev.solved = judge(pl, history, wrong_at, now);
+        // The keys lead while they have a focus (the mouse or a touch lets it go): solved
+        // with them, Enter or a gamepad's A goes on to next.
+        if ev.solved && g.focus != 0 { pl.to_next = true; }
         // Next was declared above, before the board took the pointer: a press or a drop
         // that starts or ends a piece's wait changes how next looks, and a drop is the
         // finger's last event, so the frame after is drawn too, as after a click.
@@ -485,6 +492,11 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     let style = if solved { gui::CHOSEN } else { gui::PLAIN };
     let on = solved || (pl.state == PLAYING && board::waiting(pl.b) >= 0);
     let word = strings::get(strings::PUZZLE_NEXT);
+    // Solved with the keys: next takes their focus, unless the pointer took the lead since.
+    if pl.to_next && solved {
+        if g.focus != 0 { g.focus = panel::EYE_ID; }
+        pl.to_next = false;
+    }
     if landscape {
         // Round the 3D board the panel is a short corner one (panel::corners_in): next
         // takes the shorter tile there.

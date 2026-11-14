@@ -166,6 +166,10 @@ fed389b.
   was too faint, a stronger fill read as chosen.
 - Enter with nothing focused focuses and presses the screen's primary (2026-11-12): a
   gamepad's first press doing nothing looked broken.
+- A puzzle solved with the keys gives next their focus (2026-11-14), so Enter or a
+  gamepad's A goes on. The keys lead while a focus is held (`gui::Gui.focus` not 0),
+  which the mouse or a touch lets go, so a pointer's solve focuses nothing. Rejected:
+  focusing next always, which rings it on a touch screen.
 - The board is one grid control whose cursor visits every square (task 072). Rejected: a
   cursor jumping between movable pieces (it gives away which must capture), dark squares
   only (up and down then need a rule). Enter is a tap, one path through `board::press`.

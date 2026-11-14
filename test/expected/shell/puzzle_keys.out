@@ -1,0 +1,7 @@
+read: true
+the first arrow: focus on the board
+32x21 by Enter: solved true, focus on the board
+  the frames after: focus on next
+  Enter: the puzzle of id 2, focus on the board
+32x21 by taps: solved true, focus on none
+32x21 by Enter, then the mouse: solved true, focus on none

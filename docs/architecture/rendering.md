@@ -266,7 +266,8 @@ history ([where](../decisions/rendering.md#controls)).
   and ringed (2 dp, 3 dp outside, `gui::RING_W`, `RING_GAP`). The first arrow focuses the
   screen's primary control; later ones go to the nearest control that way, weighting the
   gap across twice. Mouse movement lets the focus go. `--keys down,enter` presses keys for
-  a shot.
+  a shot. A puzzle solved while the keys hold a focus hands it to next
+  (`puzzle::Play.to_next`).
 - **The board with the keys** is one control, a grid of squares (`gui::grid`,
   `board::keys`): arrows move a cursor as the screen shows the board, Enter on a dark
   square is a tap (`board::press`), an arrow past the edge leaves for the nearest control.
