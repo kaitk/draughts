@@ -84,8 +84,11 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
         widths[i] = max(gui::tap() * u, gui::text_width(g, gui::BODY, name) + 2.0 * gui::side() * u);
         all += widths[i];
     }
-    let title_x = head.x + gui::back_width(g, back) + gui::PAD_WIDE * u;
-    let own_row = title_x + all > head.x + head.z;
+    // head is what back left; the title follows back, and the switch takes a row of its
+    // own where the title and it don't both fit beside back.
+    let title = strings::get(strings::RESULTS_TITLE);
+    let title_x = head.x + gui::PAD_WIDE * u;
+    let own_row = title_x + gui::text_width(g, gui::LABEL, title) + GAP * u + all > head.x + head.z;
     var tiles: float4[3] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3];
     var right = head.x + head.z;
     if own_row {
@@ -105,7 +108,6 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
         }
         right -= GAP * u;
     }
-    let title = strings::get(strings::RESULTS_TITLE);
     let room = right - title_x;
     if gui::text_width(g, gui::LABEL, title) <= room {
         gui::text(g, gui::LABEL, float4 { title_x, head.y, room, head.w }, title, 1.0, 0.0, gui::LEFT);

@@ -1136,10 +1136,11 @@ legend.
 
 ### The results screen
 
-The games played (`src/shell/results.goose`), reached from home's results row. Back and the title head it, the three draughts as tiles
+The games played (`src/shell/results.goose`), reached from home's results row. Back and the title head it, the title 16 dp after back,
+the three draughts as tiles
 at its right on one glass, 4 dp round them and between, as the puzzles' draughts switch,
 each its name and the player's rating there (a row of their own under the head where
-they don't fit beside back). In landscape a panel at the left holds the rating (36 dp
+they and the title don't both fit beside back). In landscape a panel at the left holds the rating (36 dp
 figures) and the results against each level (the level's name and its rating at the
 player's skill there, then won, drawn, lost: a crown, `=`, an X, each with its count;
 left out where the panel can't hold them in the height); at the right the games in that draughts, newest first, in a scrolling list
