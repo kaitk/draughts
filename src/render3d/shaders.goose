@@ -112,8 +112,7 @@ let EMPTY_FRAG = """
     """;
 
 // The crown on a king's face as a signed distance, drawn once into its map (CROWN_FRAG,
-// render3d::crown_map) rather than in every king's pixel, three times for its slope
-// (task 059: it held the lit shader's spill).
+// render3d::crown_map) rather than in every king's pixel, three times for its slope.
 let CROWN_FN = """
     // The crown on a king's face, in units of the piece's radius, traced from the 3D
     // reference's king: a body with three points, the side ones reaching out, its edges
@@ -230,10 +229,8 @@ let LIT_FRAG = """
     // The key light's shadow, from a point pushed off the surface along its normal: a
     // 5 × 5 texel box with bilinear edges in 9 hardware-compared taps, their places and
     // weights from where the point falls in its texel (Castaño's filter, as The Witness
-    // has it); the 16 taps 1.25 texels apart it replaced covered the same 5 texels. On a
-    // phone (SHADOW_FEW first) a 3 × 3 box in 4 taps: half the A33's cost of the 9 (task
-    // 081), its edges stepped where a tablet's or a desktop's larger pieces show them. On
-    // a desktop (SHADOW_MANY) a 7 × 7 box in 16 taps, softer (task 086).
+    // has it). On a phone (SHADOW_FEW first) a 3 × 3 box in 4 taps, its edges stepped where
+    // larger pieces would show them. On a desktop (SHADOW_MANY) a 7 × 7 box in 16 taps, softer.
     float shadow(vec3 p, vec3 n) {
         float nl = clamp(dot(n, light_dir.xyz), 0.0, 1.0);
         vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
@@ -256,7 +253,7 @@ let LIT_FRAG = """
         return sum * (1.0 / 16.0);
     #else
     #ifdef SHADOW_MANY
-        // A desktop's: a 7 × 7 box in 16 taps, softer (task 086).
+        // A desktop's: a 7 × 7 box in 16 taps.
         vec4 w0 = vec4(5.0 * f.x - 6.0, 11.0 * f.x - 28.0, -(11.0 * f.x + 17.0), -(5.0 * f.x + 1.0));
         vec4 u = vec4((4.0 * f.x - 5.0) / w0.x - 3.0, (4.0 * f.x - 16.0) / w0.y - 1.0,
                       -(7.0 * f.x + 5.0) / w0.z + 1.0, -f.x / w0.w + 3.0) / size.x;
@@ -626,8 +623,8 @@ let FULL_VERT = """
     }
     """;
 
-// The plain background in place of the photograph (task 044; prototypes/draughts.js's
-// paintPlain, take b): the page at the top to a deep tone of the frame at the foot, a
+// The plain background in place of the photograph (prototypes/draughts.js's paintPlain):
+// the page at the top to a deep tone of the frame at the foot, a
 // faint light of the dark square behind the middle, wider than tall, and the corners a
 // little darker. `px` is in pixels from the screen's top left, `s` the screen's size,
 // the colors in linear light; the result in sRGB, dithered by under half a level so the
@@ -729,8 +726,8 @@ let SHADOW_CATCHER_FRAG = """
 
 // The board's surfaces, baked once per theme into two targets: albedo and roughness
 // (sRGB), and the normal's x and z. mode.x 0 bakes the plan of the field and its inlay,
-// seen from above; 1 the frame map, its grain along u. mode.y: the wood's model (task
-// 039, board3d's --wood): 0 noise drawn out along the grain, 1 growth rings, 2 growth
+// seen from above; 1 the frame map, its grain along u. mode.y: the wood's model
+// (--wood): 0 noise drawn out along the grain, 1 growth rings, 2 growth
 // rings with pores and a fibre relief, 3 the first with thin lines and pores laid over
 // it. size: the target in texels, then in world units. The rest is the theme's
 // (looks::Theme): each surface's color and roughness and its figure.
@@ -1034,7 +1031,7 @@ let BAKE_FRAG = """
     }
 
     // Marble, polished, one solid block whose figure runs one way (a stone frame with
-    // mode.w > 0; task 039). Perlin's turbulent marble without the sine: the veins are
+    // mode.w > 0). Perlin's turbulent marble without the sine: the veins are
     // contours of a ramp across the flow plus a domain-warped noise (Quilez's warp,
     // noise of the point moved by noise of noise), so they run long and one way,
     // wander, merge and part, never close into rings as contours of noise alone do.
@@ -1185,7 +1182,7 @@ let BAKE_FRAG = """
         return c;
     }
 
-    // The carved frame (task 041, carve.w), its motif carve_more.x: 0 two thin vines in
+    // The carved frame (carve.w), its motif carve_more.x: 0 two thin vines in
     // low relief on the frame's top and outer face, interlaced over and under, slender
     // leaves in the eyes between their crossings and a pair at each crossing, a leaf knot
     // (a boss, a ring, four leaves) on each corner's diagonal, a shallow outline cut round
@@ -1395,8 +1392,7 @@ let BAKE_FRAG = """
     // far and near sides; between them the runs carve_more.w picks (looks::Carving.pattern):
     // 0 zigzags and a meander by turns, 1 zigzags only, 2 the meander only, 3 none. A
     // zigzag starts and ends on the band's middle, a whole number of its periods, so it
-    // runs into the diamonds' points as one chain (2026-11-13: clipped at a peak, its ends
-    // stopped short of the diamond as stubs).
+    // runs into the diamonds' points as one chain.
     float folk(float x, float y, float rc, float side) {
         float xc = C_INNER + rc * 0.25 * PI;
         float n = max(floor(carve.y * 0.5 + 0.5), 2.0);
@@ -1676,8 +1672,8 @@ let BAKE_FRAG = """
         return w;
     }
 
-    // One call of wood() for every surface: each call site was compiled in full, and
-    // the pipeline took seconds to make on a phone.
+    // One call of wood() for every surface: each call site compiles in full, and a phone
+    // makes the pipeline slowly.
     Wood at(vec2 p) {
         Cut c = mode.x < 0.5 ? plan(p) : frame_map(p);
         Wood w = wood(c.q, c.seed, c.base, c.k, c.f, c.ring);
@@ -1702,8 +1698,7 @@ let BAKE_FRAG = """
         }
         // Each sample and its neighbours along x and y, for the normal, in a loop the
         // compiler can't unroll (its count comes from the block): unrolled, the whole
-        // wood was compiled three times over, and the pipeline took 2.5 s to make on the
-        // Pixel 7a.
+        // wood compiles three times over.
         float relief = 0.0015 * (mode.x < 0.5 ? surface.w : frame_surface.y);
         Wood w;
         vec2 hn = vec2(0.0);
@@ -1801,9 +1796,7 @@ let BLUR_FRAG = """
 // the kept image in the screen's pass (render3d::marks_over): the pulsing must-capture
 // rings, the flash, the hint's pulsing ring, their phases from the Pulse block. That pass
 // has no depth target, so the shader tests the kept depth (a 1x copy of the board's,
-// made with it) itself, at the pixel's middle. Against the 4x pass's own test the rings
-// differ only along the pieces' outlines, by fewer pixels than four taps mixed as the
-// samples gave (task 015).
+// made with it) itself, at the pixel's middle.
 let MARKS_PULSE = "#define PULSE 1\n";
 let MARKS_FRAG = """
     layout(location = 0) in vec3 v_pos;
@@ -2015,8 +2008,8 @@ let COPY_FRAG = """
     """;
 
 // The kept backdrop (render3d::keep_backdrop: BACKDROP_FRAG at full opacity, the
-// screen's size) laid texel for texel at opacity draw.x: a fetch for a pixel where the
-// backdrop's grade, vignette, and fade are 2 cycles and 30 registers (task 059).
+// screen's size) laid texel for texel at opacity draw.x: a fetch a pixel rather than the
+// backdrop's grade, vignette, and fade.
 let KEPT_FRAG = """
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D kept;

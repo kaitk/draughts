@@ -1,9 +1,6 @@
-// Recording the 3D board's renderer (render3d.goose) through gfx: its shaders
-// (shaders.goose, smaa.goose) and pipelines, its buffers, and every pass, one forward pass
-// into a 4× multisampled target resolved into a picture, or SMAA after a 1x pass. In
-// namespace render3d, as render3d.goose, which holds what is drawn and when and calls
-// these on an Own (`o.bake(g, ...)`): gfx's here, goose-ngfx's (render3d_ngfx::Own) in the
-// build that holds both (src/ngfx/render3d_ngfx.goose), each call resolved by o's type.
+// The 3D board's recording through gfx: its shaders, pipelines, buffers, and passes, one
+// forward pass multisampled and resolved, or SMAA after a 1x pass. render3d.goose calls
+// these on an Own; src/ngfx/render3d_ngfx.goose is the ngfx build's twin.
 namespace render3d;
 import std;
 import vec;
@@ -39,8 +36,6 @@ struct Own {
 extern fn draughts_photo_id(kind: i64, decoded: i64) -> u32;
 fn photo(own: Own&, kind: i64, decoded: i64) -> Texture { Texture { draughts_photo_id(kind, decoded) } }
 
-// The few calls render3d.goose makes itself: submit and wait, release, a color target,
-// one cleared and nothing drawn, a buffer's bytes, a target with `mips` levels.
 fn gpu_flush(own: Own&) { gfx::flush(); }
 fn gpu_release(own: Own&, t: Texture) { gfx::release(t); }
 fn gpu_target(own: Own&, w: i64, h: i64) -> Texture { gfx::render_target(w, h, gfx::RGBA8) }
@@ -72,7 +67,6 @@ fn photo_pipelines(own: Own&, g: render3d::Gpu&) {
     gfx::end_pass();
 }
 
-// The shadow map, from the key light.
 fn shadow_pass(own: Own&, g: render3d::Gpu&) {
     let f = g.frame;
     var sp = gfx::PassDesc { depth: g.shadow_map };
@@ -186,14 +180,13 @@ struct Blur { dir: float4 }
 
 let SAMPLES = 4;
 
-// The pass's samples on a device whose ready 3D board can't keep up with its display
-// (task 081, src/app/display.c): on the Galaxy A33's Mali-G68 2× draws a quarter faster
-// than 4×, and the user found the moving board fine at it.
+// The pass's samples on a device whose 3D board can't keep up with its display
+// (src/app/display.c).
 let FEW_SAMPLES = 2;
 
-// How the pass is antialiased (set_aa, the app's --aa and its A key, task 071): 4×
-// multisampled, or drawn at 1x and SMAA 1x after it (smaa.goose), or neither. The
-// values are the ngfx build's.
+// How the pass is antialiased (set_aa, the app's --aa and its A key): 4× multisampled,
+// or drawn at 1x and SMAA 1x after it (smaa.goose), or neither. The values are the ngfx
+// build's.
 let AA_OFF = 0;
 
 let AA_SMAA = 2;
@@ -277,9 +270,8 @@ fn photo_part(own: Own&, g: render3d::Gpu&, kind: i64, grey: f32, sh: float4[9]&
 fn bake(own: Own&, g: render3d::Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mode: f32,
         extent: float2, t: looks::Theme&, y0: i64 = 0, y1: i64 = -1, mips: bool = true) {
     // Not cleared: the bake writes every texel, and a cleared target SDL finds still
-    // referenced (as a new one is) it cycles into a second copy kept for good, 85 MB for
-    // the four surfaces on the Pixel 7a. Only rows y0 to y1 when given (theme_step's
-    // bands), the mips after the last.
+    // referenced (as a new one is) it cycles into a second copy kept for good. Only rows
+    // y0 to y1 when given (theme_step's bands), the mips after the last.
     var pass = gfx::PassDesc { clear_color: false };
     pass.color[0] = albedo;
     pass.color[1] = normal;
@@ -325,8 +317,8 @@ fn pass_targets(own: Own&, g: render3d::Gpu&) {
         g.weights = gfx::render_target(g.size.x, g.size.y, gfx::RGBA8);
     }
     // 16-bit depth is plenty between NEAR 2 and FAR 40 for a scene 10 to 20 away (a step
-    // about 0.003 at 20, under the marks' 0.004 lift), and half of 32-bit's memory, which
-    // SDL can't keep in tile memory: 20 MB less at 4× on the Pixel 7a.
+    // about 0.003 at 20, under the marks' 0.004 lift), at half of 32-bit's memory, which
+    // SDL can't keep in tile memory.
     g.depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH16, usage: gfx::DEPTH_TARGET,
                                               width: g.size.x, height: g.size.y,
                                               samples: own.samples });
@@ -433,7 +425,7 @@ fn depth_target(size: int2) -> gfx::Texture {
 
 // Makes everything the renderer draws with: the meshes, the buffers, the pipelines, the
 // baked surfaces' and the photograph's targets. Then apply() puts a theme on it.
-// `samples` 4 is the multisampled pass; 1 draws straight into the target (measuring).
+// `samples` 4 is the multisampled pass; 1 draws straight into the target.
 // `look` how the shadow is filtered (SHADOW_9..; set_shadow).
 fn setup(own: Own&, g: render3d::Gpu&, samples: i32 = SAMPLES, look: i32 = render3d::SHADOW_9) {
     own.samples = samples;
@@ -498,9 +490,8 @@ fn setup(own: Own&, g: render3d::Gpu&, samples: i32 = SAMPLES, look: i32 = rende
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
     let quad_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::QUAD_VERT);
     lit_pipelines(own, g, look);
-    // Both faces into the shadow map, as ngfx's: with the back ones culled, the light leaked
-    // through a texel where a piece's top curves away from it, its front faces' edges
-    // there meeting almost end-on (a light dot in the shadow, task 086).
+    // Both faces into the shadow map: with back faces culled the light leaks through where
+    // a piece's top curves away from it, its front faces meeting almost end-on.
     g.shadow = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),
                              gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true,
                                                  depth_bias: 1.0, depth_bias_slope: 1.5 });
@@ -617,7 +608,7 @@ fn backdrop(own: Own&, g: render3d::Gpu&, alpha: f32, size: int2) {
 }
 
 // Draws the kept image (draw() into g.image with its backdrop) over the open pass's
-// target as it is: the prototype, under its tuning panel.
+// target as it is.
 fn copy(own: Own&, g: render3d::Gpu&) {
     gfx::bind(g.copy);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.image, g.linear);

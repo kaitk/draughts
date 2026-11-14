@@ -1,31 +1,13 @@
-// The 3D board's renderer (task 015), shared by the app (src/app/draw3d.goose) and the
-// board pictures' shooter (tools/board_shot.goose): the meshes and the themes (src/model3d/, which holds
-// all of the board but drawing) put on the GPU, the surfaces baked there in the steps
-// model3d plans, the season's photograph blurred into the backdrop with its ambient
-// taken, the shadow map, and one forward pass into a picture, antialiased.
+// The 3D board's renderer, for the app (src/app/draw3d.goose) and tools/board_shot: what
+// it draws and when (the state, a theme's steps, what is stale, each frame's order).
+// Recording goes through `o`, the renderer's own state: render3d::Own with
+// render3d_gpu.goose on gfx, or render3d_ngfx::Own (src/ngfx/render3d_ngfx.goose); each
+// recording function is generic over o's type.
 //
-// This file is what it draws and when: the state, the theme's steps, what is stale, and
-// each frame's order. Recording it is the renderer's, through `o`, what the renderer
-// alone holds: render3d::Own and render3d_gpu.goose's calls on it, gfx's (its shaders in
-// shaders.goose and smaa.goose), or render3d_ngfx::Own in the build that holds both
-// (src/ngfx/render3d_ngfx.goose). Each function that records is generic over o's type, so
-// each call (`o.bake(g, ...)`) resolves to one renderer's at compile time.
-//
-// The one package besides app/ that draws, and only the app and tools/board_shot import
-// it; the game's packages stay headless (docs/architecture/README.md).
-// What it draws comes as data: the camera's matrix and eye (view3d::matrix), the
-// instances and the field's occlusion and marks (view3d::Scene, laid out as the shaders
-// read them), and model3d's meshes, looks, and harmonics.
-//
-// Frame structure: the shadow map (1024², 16-bit, from the key light) only when the
-// pieces stand differently; then one pass: the blurred photograph as a backdrop, the
-// pieces and the board lit (front to back), the board's soft shadow on nothing round
-// it, the field's marks that hold still added. The marks that pulse (a must-capture ring, a wrong move's flash, a
-// hint's ring) are drawn apart, over the kept image in the screen's pass each frame
-// (marks_over), against a 1x depth of the board kept with the image. No post pass, no
-// discard, nothing temporal. Nothing is made or released while drawing but the targets
-// on a resize, and the pass's targets, the kept backdrop, and the kept depth again after
-// rest() gave them back once the board left the screen or the app went to the background.
+// A frame: the shadow map only when the pieces moved, then one pass (the backdrop, the
+// pieces and the board lit front to back, the board's soft shadow, the still marks). The
+// pulsing marks are drawn over the kept image each frame (marks_over) against a kept 1x
+// depth. Nothing is made or released while drawing but targets on a resize or after rest().
 namespace render3d;
 import std;
 import vec;
@@ -135,13 +117,12 @@ struct Bake {
     lichen:        float4,  // looks::LICHEN
 }
 
-// The shadow map: 1024² keeps the soft shadows as they were at 2048² (the lit shader's
-// filter spreads over 5 of its texels), at a quarter of the memory.
+// The shadow map's side: the lit shader's filter spreads over 5 of its texels.
 let SHADOW_SIZE = 1024;
 
 // How the lit shader filters the key light's shadow (set_shadow): 9 hardware-compared
-// taps over 5 × 5 texels, a tablet's; 16 over 7 × 7, softer, a desktop's (task 086); 4
-// over 3 × 3, a phone's (task 081).
+// taps over 5 × 5 texels, a tablet's; 16 over 7 × 7, softer, a desktop's; 4 over 3 × 3,
+// a phone's.
 let SHADOW_9 = 0;
 let SHADOW_16 = 1;
 let SHADOW_4 = 2;
@@ -226,7 +207,7 @@ struct Gpu {
     warm_color:     Texture,   // 4 × 4 targets warm() makes the pipelines on
     warm_depth:     Texture,
     no_photo:       bool,           // no photograph built in for the theme (photo_part), or plain
-    plain:          bool,           // the plain fade behind (task 044), set before a theme's steps
+    plain:          bool,           // the plain fade behind, set before a theme's steps
     fade:           float4[3],      // its colors (app/theme.goose's fade_top, low, light), linear
     size:           int2,
     linear:         Sampler,
@@ -286,9 +267,8 @@ fn bake_surfaces<O>(o: O&, g: Gpu&, plan: bool = true, frame: bool = true) {
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1
-// pixel. The full chain runs to the longer side's 1: a mitred frame map's (2048 × 1152)
-// last level would be 1 × 0 in SDL's mip blits, a zero-height blit that loses the device
-// on a Mali-G68 (the Galaxy A33; docs/goose-findings.md). Nothing samples that far down.
+// pixel: past it SDL's mip blits are zero-height, which loses the device on Mali
+// (docs/goose-findings.md). Nothing samples that far down.
 fn baked<O>(o: O&, w: i64, h: i64, format: i32) -> Texture {
     var mips = 1;
     while min(w, h) >> mips > 0 { mips++; }
@@ -387,7 +367,7 @@ fn theme_begin<O>(o: O&, g: Gpu&, which: i64, n: i64) -> bool {
 }
 
 // A flat marble frame's normal is the same everywhere (BAKE_FRAG writes it so, and its
-// mips are it too): once baked, its map, 22 MB with mips, is given back for a 4 × 4 of
+// mips are it too): once baked, its map is given back for a 4 × 4 of
 // that value, which samples the same. full_frame() makes the map again to bake into.
 fn flat_frame<O>(o: O&, g: Gpu&) {
     let t = look(g, g.look);
@@ -491,12 +471,10 @@ fn light(g: Gpu&) {
 // a little more, for its sides' feet, which the light's slant moves out by up to 0.45.
 let PLAN_REACH: f32 = 5.1;
 
-// The key light's map projected along the light onto the board's plane (task 086): a
-// point's texel is where the light's ray through it meets y = 0, its depth how far along
-// the ray, so the field and the frame fill the map at one texel size, square, with
-// nothing round them. A square view along the light, 13.2 wide, slanted 1.25× across the
-// field, gave it 2.1× fewer texels. An oblique, affine projection whose handedness is a
-// view's along the light.
+// The key light's map projected along the light onto the board's plane: a point's texel
+// is where the light's ray through it meets y = 0, its depth how far along the ray, so
+// the field and the frame fill the map at one texel size with nothing round them. An
+// oblique, affine projection whose handedness is a view's along the light.
 fn plan_light(l: float3) -> Mat {
     let k = 1.0 / PLAN_REACH;
     let a: f32 = -1.0 / 14.0;          // depth: 0.5 at the origin, nearer the light lower
@@ -674,8 +652,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
 // it was drawn (all of it the first time and for a new board size): a square's piece,
 // anywhere over it, darkens the field within OCC_REACH squares of its own
 // (shaders::OCC_FRAG's 5 × 5), so the changed squares and that many round them,
-// scissored. A moving piece redraws about 6 × 6 squares of the 64; a still board,
-// nothing. Recording only, before the board's pass.
+// scissored. Recording only, before the board's pass.
 let OCC_REACH = 2;
 fn same4(a: float4, b: float4) -> bool { a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w }
 fn occlusion<O>(o: O&, g: Gpu&) {
@@ -722,8 +699,8 @@ fn occlusion<O>(o: O&, g: Gpu&) {
 
 // The backdrop drawn at full opacity into g.kept_backdrop when what it is drawn from
 // changed (a size, a photograph, a look, the plain fade), so the screen's frames lay it
-// with a fetch a pixel (shaders::KEPT_FRAG) instead of grading the photograph each frame
-// (task 059: 7% of the Pixel 7a's GPU cycles a frame). Before draw()'s passes, which
+// with a fetch a pixel (shaders::KEPT_FRAG) rather than grade the photograph each frame.
+// Before draw()'s passes, which
 // come with every change but the photograph's alone; till the next, backdrop() draws
 // it as it was. Recording only.
 fn keep_backdrop<O>(o: O&, g: Gpu&, size: int2) {

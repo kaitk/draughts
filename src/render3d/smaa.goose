@@ -1,13 +1,10 @@
-// SMAA 1x over the 3D board's pass drawn at 1x (render3d.goose's antialias, --aa smaa;
-// task 071): edges from the colors' luma, the blending weights for them from SMAA's area
-// and search tables, and each pixel blended with its neighbours by them. Three passes,
-// each a full-screen triangle. The shader is SMAA's own (third_party/smaa/SMAA.hlsl,
-// through tools/smaa_glsl.py's smaa.glsl, two conversions rewritten) with its porting
-// macros, as the ngfx build's smaa.slang has them. Gamma-space colors are blended as
-// they are, as the MSAA resolve of the same RGBA8 target averages them.
+// SMAA 1x over the 3D board's pass drawn at 1x (--aa smaa): edges from luma, blending
+// weights from SMAA's area and search tables, then the neighbourhood blend, each a
+// full-screen triangle. The shader is SMAA's own (smaa.glsl, from tools/smaa_glsl.py).
+// Gamma-space colors blend as they are, as the MSAA resolve of the same target does.
 //
-// One linear sampler for every texture, gfx's samplers going with their textures: SMAA's
-// point samples all fall on texel centres, where linear reads the same.
+// One linear sampler for every texture: SMAA's point samples fall on texel centres,
+// where linear reads the same.
 namespace smaa;
 
 // SMAA_RT_METRICS: 1 / width, 1 / height, width, height; a uniform of each stage. Each
@@ -16,10 +13,9 @@ let VS_METRICS = """
     #define SMAA_INCLUDE_PS 0
     layout(set = 1, binding = 0) uniform Metrics { vec4 metrics; };
     """;
-// SMAA's functions take their textures as sampler parameters, which the Pixel 7a's Mali
-// driver crashes compiling (in its SPIR-V front end, on the sampler's address as a call's
-// argument; task 071). So the textures are globals under the names SMAA's bodies use,
-// declared before smaa.glsl, and smaa.glsl's parameters are unused ints (tools/smaa_glsl.py).
+// Mali's driver crashes compiling a sampler passed as a function's argument, so the
+// textures are globals under the names SMAA's bodies use, declared before smaa.glsl, and
+// smaa.glsl's sampler parameters are unused ints (tools/smaa_glsl.py).
 // Each stage compiles all of SMAA's pixel functions, so the names a pass doesn't bind
 // stand for one it does: only functions the pass never calls read them.
 let EDGES_TEX = """
