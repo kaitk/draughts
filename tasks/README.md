@@ -64,7 +64,8 @@ Open:
 - Release: 029 Google Play, 046 the App Store (after 043, iOS), 036 the announcement
   after the Play release; 075 the Linux build and release, built in WSL, its checks on
   the Bazzite PC.
-- Content and play: 037 the puzzle set by theme, 038 players, 074 the games' history,
+- Content and play: 037 the puzzle set by theme, 087 daily puzzles from a large generated
+  library at the player's level (UI to agree first), 038 players, 074 the games' history,
   marked moves, and a rating (built on the `history` branch, its takes to choose).
   087 the replay's move shown and best move (prototyped and chosen, to build), the desktop's
   results, and a desktop window capped at 1.9 times its height (built).
