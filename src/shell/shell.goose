@@ -233,7 +233,8 @@ fn screen_frame(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool, c
         RESULTS => results_screen(sh, g, area, now, fresh),
         REPLAY => replay_screen(sh, g, area, now, fresh),
         TUTORIAL => tutorial_screen(sh, g, area, now),
-        _ => home_screen(sh, g, area, now),
+        HOME => home_screen(sh, g, area, now),
+        _ => no_screen(sh.screen),
     };
 }
 
@@ -271,11 +272,13 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
             results::frame(g, area, sh.prefs, sh.past.games, variant);
             l = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, l.n);
         },
-        _ => {
+        HOME => {
             home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room, resume(sh));
             l.flip = turned(sh, sh.left);
             sh.went_view = home_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
         },
+        // The replay and how to play switch through no transition (KINDS' `with`).
+        _ => no_screen(screen),
     }
 }
 
@@ -287,10 +290,14 @@ fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
         PUZZLE => puzzle::animating(sh.puzzle, g, now),
         TUTORIAL => tutorial::animating(sh.lesson, g, now),
         REPLAY => replay::animating(sh.past.replay, now) || gui::animating(g),
-        _ => board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now)
-             || (sh.screen == HOME && rig::moving(sh.demo, now)),
+        HOME, SETTINGS, PICKER, RESULTS => board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now)
+                                           || (sh.screen == HOME && rig::moving(sh.demo, now)),
+        _ => no_screen(sh.screen),
     };
 }
+
+// Traps a screen the dispatch above has no arm for: a row added to KINDS needs one in each.
+fn no_screen(screen: i64) { abort(str("shell: no arm for screen ", screen)); }
 
 fn new(variant: u8) -> Shell {
     let g = game::new(variant);
