@@ -37,6 +37,44 @@ finished, and over 120 games a variant of hard with it against hard without
 Brazilian, worse where hard sees least deep. The limit's nodes are its strength; the
 time it saves isn't needed.
 
+## Evaluation (2026-11-14)
+
+Hard reaches 9 to 12 plies in Russian and Brazilian and 7 to 8 in International, so what
+it knows at the leaves limits it. Three terms cheap on the bitboards were added to
+material, advance, back row, and centre: a runaway man (worth most of a king, less the
+further it has to go), a king on the main road (+10), a king with no empty square beside
+it (−25), and men unevenly spread over the wings (−2 a man). New hard against old hard,
+both at skill 90 and 800,000 nodes, 180 games a variant (`aimatch 90 90`, each side's
+evaluation switched in a measuring copy), wins, draws, losses for the new:
+
+| | Russian | International | Brazilian |
+| --- | --- | --- | --- |
+| Hard (90), new against old | 52, 94, 34: 0.550 | 74, 76, 30: 0.622 | 46, 107, 27: 0.553 |
+| Medium (40), new against old, 400 games | 162, 110, 128: 0.542 | 202, 103, 95: 0.634 | 162, 116, 122: 0.550 |
+| Easy (8), new against old, 400 games | 177, 61, 162: 0.519 | 187, 64, 149: 0.547 | 165, 60, 175: 0.487 |
+
+Medium and hard are stronger, most in International, where a runaway decides more games
+past the search's reach; easy, which sees one free ply and chooses widely, is as before
+within the noise (about 2.5 points at 400 games). The ladder the levels and adapting rely
+on is unchanged: every pair in the architecture's levels table measured again within its
+noise (Russian easy at 0 against 10 without overlooks 93, 76, 231 against 92, 79, 229;
+15 against 0 334, 39, 27 against 323, 46, 31; medium against easy's top 258, 79, 63 against
+255, 84, 61; International 15 against 8 325, 45, 30 against 339, 33, 28), so the table, the
+skills, and the ratings stand. A man stays 100: the judge's marks on the same moves, judged
+with each evaluation (moves of skills 8 and 40, 600 in Russian and International), kept
+their mistakes and blunders (?!, ?, ?? 15, 24, 7 before, 11, 21, 5 after), a few best moves
+becoming good as the finer evaluation tells near-equal moves apart. Hard searches about 2%
+fewer nodes a second (9.2 M against 9.3 M built on the Mac). The puzzles' own check still
+finds the engine playing every built-in puzzle's right move, though it now scores four
+safe-move first moves below −0.5 of a man (`build/puzzles`'s note), where it gave about 0.
+
+Rejected: trading down when ahead (the lead times 2 over the pieces on the board), which
+measured the same (0.539, 0.622, 0.556 with it) and would have stretched scores past a man
+of 100, moving the judge's marks and the margins; tempo, which the advance table already
+counts; and endgame tables of kings against men, which the search and the draw counts reach
+in the positions a child plays. Not tuned: each weight is a first, plain value; the next
+gains are in measuring them one at a time.
+
 ## Levels
 
 - Medium starts at skill 40 (2026-11-08).

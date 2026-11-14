@@ -1,16 +1,16 @@
 calm: stage 0, asking false, left 3 3, move -, glow -, ghost -, tile plain
 pressed: stage 0, asking true, left 3 3, move -, glow -, ghost -, tile plain
-  answered e3-f4
-answered: stage 1, asking false, left 2 3, move e3-f4, glow e3, ghost -, tile lit
+  answered b2-c3
+answered: stage 1, asking false, left 2 3, move b2-c3, glow b2, ghost -, tile lit
   animating while it pulses true, at 4.9 s false
-pressed again: stage 2, asking false, left 2 3, move e3-f4, glow e3, ghost f4, tile lit
-and again: stage 2, asking false, left 2 3, move e3-f4, glow e3, ghost f4, tile lit
+pressed again: stage 2, asking false, left 2 3, move b2-c3, glow b2, ghost c3, tile lit
+and again: stage 2, asking false, left 2 3, move b2-c3, glow b2, ghost c3, tile lit
   still at 9 s: animating false
 the move played: stage 0, asking false, left 2 3, move -, glow -, ghost -, tile dim
 a move made before the answer: stage 0, asking false, left 3 3, move -, glow -, ghost -, tile dim
-  answered c3-b4
-  answered b2-c3
-  answered e3-f4
+  answered g3-f4
+  answered h2-g3
+  answered g3-h4
 white's three spent, white to move: stage 0, asking false, left 0 3, move -, glow -, ghost -, tile dim
 pressed with none left: stage 0, asking false, left 0 3, move -, glow -, ghost -, tile dim
 a capture due: stage 0, asking false, left 3 3, move -, glow -, ghost -, tile dim

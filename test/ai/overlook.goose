@@ -99,7 +99,9 @@ fn main() {
     position(e, "moves a man where it is taken, quiet", "W:Wc3,h2,g1,g3:Be5,h6,a7", "c3-d4", 0);
     // a5-b6 gives three men for none. Easy plays it now and then, though g5's danger,
     // which it sees, draws it to g5-f6 or f2-g3 even when it overlooks a7's capture;
-    // from 65 on nothing does. Medium's share shows in the rates above.
-    position(e, "gives three men, tense", "W:Wa5,d4,f2,g5:Ba7,h6", "a5-b6", 0);
-    position(e, "gives three men, tense", "W:Wa5,d4,f2,g5:Ba7,h6", "a5-b6", 65);
+    // from 65 on nothing does. Medium's share shows in the rates above. Black's d8 keeps
+    // d4's way to the far row closed: without it d4-e5 or d4-c5 makes a runaway man, which
+    // easy prefers to anything a5-b6 seems to offer (2026-11-14).
+    position(e, "gives three men, tense", "W:Wa5,d4,f2,g5:Ba7,d8,h6", "a5-b6", 0);
+    position(e, "gives three men, tense", "W:Wa5,d4,f2,g5:Ba7,d8,h6", "a5-b6", 65);
 }

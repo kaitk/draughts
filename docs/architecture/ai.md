@@ -156,9 +156,18 @@ On a worker the frame loop draws as it would without the computer
 - **Evaluation**, in hundredths of a man, for the side to move: a man 100, a king 300
   (150 in English, whose kings don't fly); a man gains as it advances, most near the far
   row; a man on its own back row 3 to 4, for keeping kings out; a man on a central square 3.
+  A runaway man, one nothing can stop from crowning (the other side has no king, the
+  squares ahead of it out to the far row, widening a column a row, are empty, and no man
+  stands diagonally behind it to take it backward), gains the king's worth over a man's
+  divided by its rows to go plus one: 100 a row from crowning in International, 50 three
+  rows off; only men in their far half are looked at. A king on the long diagonal from a1
+  (Russian's main road) gains 10, a king with no empty square beside it loses 25, and a
+  side loses 2 for each man more on one wing than the other.
   The weights follow from the variant's fields: the king's from flying, the rows' from the
   board's size, so Brazilian has International's king on Russian's 8×8 rows.
-  All of it is integer arithmetic on the bitboards.
+  All of it is integer arithmetic on the bitboards, the masks made once per variant;
+  a man is still 100, so the margins, the temper, and the judge's logistic keep their
+  meaning ([why these terms](../decisions/ai.md#evaluation-2026-11-14)).
 
 Nothing allocates per node: the frames, their move buffers (`rules::Moves`, 512 moves of
 16 bytes), and the table are made once, about 4.7 MB in all, the table 4 MB of it.

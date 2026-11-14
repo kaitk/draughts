@@ -16,7 +16,7 @@ W:Wa5,d4,f2,g3:Ba7,h6: a5-b6 then a7:c5:e3:g1, three men from next to it, quiet;
 W:Wa5,d4,f2,g5:Ba7,h6: a5-b6 then a7:c5:e3:g1, three men from next to it, tense; overlooked at skill 0, 10, 15, 25, 40, 65: 1190 862 716 471 176 0 of 4000
 W:Wc3,h2,g1,g3:Be5,h6,a7: c3-d4 moves a man where it is taken, quiet
   skill 0, overlooks off 0, as in play 0, a thousand times over 6 of 40
-W:Wa5,d4,f2,g5:Ba7,h6: a5-b6 gives three men, tense
-  skill 0, overlooks off 0, as in play 1, a thousand times over 5 of 40
-W:Wa5,d4,f2,g5:Ba7,h6: a5-b6 gives three men, tense
+W:Wa5,d4,f2,g5:Ba7,d8,h6: a5-b6 gives three men, tense
+  skill 0, overlooks off 0, as in play 1, a thousand times over 9 of 40
+W:Wa5,d4,f2,g5:Ba7,d8,h6: a5-b6 gives three men, tense
   skill 65, overlooks off 0, as in play 0, a thousand times over 0 of 40

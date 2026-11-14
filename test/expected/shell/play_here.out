@@ -4,7 +4,7 @@ at the end, play from here tapped: playable false, screen 6, from the replay fal
 played from move 30: screen 1 (game 1), from the replay true, doesn't count true; international against the computer as black at level 1, skill 40; the replay's position true, white to move; clock 0; moves 0
   the image kept is the game in progress's: true; home's continue still on: true
   the computer asked at skill 40
-  a move and the computer's answer: screen 1 (game 1), from the replay true, doesn't count true; international against the computer as black at level 1, skill 40; the replay's position false, white to move; clock 0; moves 2; listed 16. 41-36  16… 10-14  
+  a move and the computer's answer: screen 1 (game 1), from the replay true, doesn't count true; international against the computer as black at level 1, skill 40; the replay's position false, white to move; clock 0; moves 2; listed 16. 41-36  16… 15-20  
   the hint: its piece lit true, hints left 2
   the lookout turned on, from off, the setting following true
   undo: screen 1 (game 1), from the replay true, doesn't count true; international against the computer as black at level 1, skill 40; the replay's position true, white to move; clock 0; moves 0; notes 0

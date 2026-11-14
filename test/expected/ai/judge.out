@@ -1,7 +1,7 @@
 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
-  31-26  best  loss 3  best 0  played -3
+  31-26  good  loss 6  best 0  played -6
   32-27  good  loss 4  best 0  played -4
-  33-28  best  loss 3  best 0  played -3
+  33-28  good  loss 6  best 0  played -6
   34-29  best  loss 0  best 0  played 0
   35-30  best  loss 3  best 0  played -3
   31-27  best  loss 3  best 0  played -3
@@ -9,10 +9,10 @@ W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,
   33-29  best  loss 3  best 0  played -3
   34-30  best  loss 0  best 0  played 0
 W:Wh2,c3,g3:Be5,a7,h8
-  c3-b4  ??  loss 173  best 29985  played 391
+  c3-b4  ??  loss 233  best 29985  played 298
   g3-f4  best  loss 0  best 29985  played 29985
-  c3-d4  ??  loss 497  best 29985  played 3
-  g3-h4  ??  loss 229  best 29985  played 303
+  c3-d4  ??  loss 406  best 29985  played 95
+  g3-h4  ??  loss 311  best 29985  played 199
 forced c3:e5  only
 hint e3-f4  best
 expected at -300, -100, 0, 100, 300, won: 231 401 500 599 769 1000
