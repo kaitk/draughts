@@ -35,7 +35,7 @@ come from and stops them, measured as task 055 does (`agents/testing.md`, "Frame
 
 1. On the iPhone, the Metal tables against `display-vsyncs-interval` and the app's own
    stamps at acquire and commit; then whether a present at a chosen time holds the drift
-   off (a patch to SDL, so a note first). The free team can't run `poc/pace.goose`; a
+   off (a patch to SDL, so a note first). The free team can't run `tools/pace.goose`; a
    temporary flag that draws almost nothing rules the drawing out instead.
 2. The Pixel's single 3D drop over a longer run.
 3. A moving board and a transition recorded on Windows.

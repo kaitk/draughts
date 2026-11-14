@@ -21,7 +21,7 @@ refreshes by design; a count must not overlap it.
 | Galaxy A33, 90 Hz | 0 | every other frame (23 ms of GPU work), a steady 60 |
 | iPhone 13 mini, 60 Hz | 0 to 5 (pacing: task 056) | 1 |
 
-The flat board's loop does 1.0 ms of CPU work a frame; `poc/pace.goose` ruled out the
+The flat board's loop does 1.0 ms of CPU work a frame; `tools/pace.goose` ruled out the
 pacing itself (no drop in 1815 frames, also with a busy GPU and the app's uploads).
 
 The 3D board needs room to spare at the clock the Android GPU governor picks, not just at

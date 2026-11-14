@@ -15,7 +15,7 @@ Built 2026-11-09:
   zigzags, and meanders, a sun wheel on each corner, a tree of life mid-side.
 - Summer 4 and 5, amber stone (`summer_amber`, `summer_serpentine`): granite with sun signs
   and runes filled with amber, 5 in limestone and serpentine as in the image.
-- `--spring N` and `--summer N` pick them in the app and `poc/3d` (G); P opens the tuning
+- `--spring N` and `--summer N` pick them in the app (G); P opens the tuning
   panel, V prints a `looks::Carving`.
 
 How it is made: one carving, its motif a parameter (`BAKE_FRAG`'s `carving`: `vines`,

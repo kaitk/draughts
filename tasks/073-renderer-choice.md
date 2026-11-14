@@ -23,7 +23,8 @@ first.
    FXAA was removed (2026-11-12, the user: ugly, not worth its speed over SMAA).
 4. **Both in one executable** (on `renderer-choice`, `3926908`, `c298f16`): gfx's
    recorders copied as `*_gfx`, ngfx's named `*_ngfx`, and a facade of each twin's name
-   calling one or the other by `nx::ngfx_on` (`src/ngfx/render3d/nx.goose`). Apple links
+   calling one or the other by `nx::ngfx_on`, since replaced by one seam,
+   `backend::with` (2026-11-14, [decisions](../docs/decisions/rendering.md#two-renderers)). Apple links
    Metal 4 weakly through the NoGraphicsAPI fork's `below-26` (`f57ffae`), so macOS 13.3
    and iOS 16 still start. The executable is 17.9 MB against gfx's 15.4.
 5. **Choosing** (`db88532`): `--renderer auto|gfx|ngfx`; Android is always gfx; the
