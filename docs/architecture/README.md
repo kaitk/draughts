@@ -181,7 +181,9 @@ flash, `board::Layout`, `gui::Quad`, and `theme::Theme`; to the 3D board,
 The development flags are `src/app/dev.goose`: those that set up the shell at launch
 (`dev::setup`), and those that act while the loop runs (`--tap`, `--go`, `--win`,
 `--hold`, `--bench`, `--rest`, `--frames`), which the loop calls at fixed points of a
-frame; with none of them given, its calls do nothing.
+frame; with none of them given, its calls do nothing. `--bench` draws each frame through
+`bench::frame` (`src/app/bench.goose`) in place of `render::frame`, timing it and what
+the 3D board draws ahead of it, so the drawing holds no measuring.
 
 Android's back (the gesture or the button) and Escape on the Mac go back a screen, as
 the screen's own back or home control does (`shell::back`): a setup to home's menu, the

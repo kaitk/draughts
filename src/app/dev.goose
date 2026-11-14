@@ -1,6 +1,7 @@
 // The development flags (flags.goose, docs/development.md "Run on the Mac"): those that
 // set up the shell at launch (setup), and those that act while the loop runs: --mouse's pointer, --tap's taps, --go's switch, --win's and --hold's moments, --bench's
-// frame times, --rest's CPU and footprint, and --frames' count and screenshot. The loop
+// start and end (its frames timed in bench.goose), --rest's CPU and footprint, and
+// --frames' count and screenshot. The loop
 // calls in at fixed points of a frame, and with none of these flags given each call does
 // nothing.
 namespace dev;
@@ -16,21 +17,16 @@ extern fn draughts_footprint_mb() -> f64;
 extern fn draughts_threads(out: u8[:]) -> i64;
 
 struct Dev {
-    go:     i64  = -1,          // --go's screen, -1 once switched
-    tapped: i64  = 0,           // --tap's taps played so far
-    shown:  bool = false,       // --sheet's sheet and --tip's tip shown
-    keyed:  i64  = 0,           // --keys' keys pressed so far
-    // --bench N on the flat board: N whole frames, from the shell's fill to the GPU done,
-    // each waited for (cpu: up to the submit); then N as the loop draws them, frame to
-    // frame. In seconds; draw3d::Bench times the 3D board.
-    bench2d:     draw3d::Bench = draw3d::Bench {},
-    flat_bench:  bool          = false, // this frame is one of the flat board's bench
-    drawn_at:    f64           = 0.0,   // when this frame's drawing began (clock())
-    rest_at:     f64           = -1.0,  // --rest: when the rest began, and the CPU time then
-    rest_cpu:    f64           = 0.0,
-    rested:      bool          = false,
-    rest_passes: i64           = 0, // frame()'s returns during --rest, and the frames drawn
-    rest_draws:  i64           = 0,
+    go:          i64          = -1,    // --go's screen, -1 once switched
+    tapped:      i64          = 0,     // --tap's taps played so far
+    shown:       bool         = false, // --sheet's sheet and --tip's tip shown
+    keyed:       i64          = 0,     // --keys' keys pressed so far
+    bench:       bench::Bench = bench::Bench {},  // --bench's frames (bench.goose)
+    rest_at:     f64          = -1.0,  // --rest: when the rest began, and the CPU time then
+    rest_cpu:    f64          = 0.0,
+    rested:      bool         = false,
+    rest_passes: i64          = 0, // frame()'s returns during --rest, and the frames drawn
+    rest_draws:  i64          = 0,
 }
 
 fn new(f: flags::Flags&) -> Dev { Dev { go: f.go, .. } }
@@ -174,7 +170,7 @@ fn before(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, now: f64) {
 // After the shell's frame and the settings' writes: --tap's next tap, on the game's board
 // when it is the child's turn or on a puzzle's when it takes one. True when it tapped,
 // a change to draw. --bench then starts timing: the 3D board 2 s after the launch,
-// settled (draw3d.goose), and the flat board's frames.
+// settled, and the flat board's frames (bench::start).
 fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, r: render::Renderer&, now: f64) -> bool {
     let d3 .= r.d3;
     var dirty = false;
@@ -216,10 +212,7 @@ fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, r: r
         dirty = true;
         g.acted = true;
     }
-    if f.bench > 0 && sh.out.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = f.bench; }
-    if d3.bench.n > 0 { dirty = true; }
-    dv.flat_bench = f.bench > 0 && !sh.out.raised && now > 2.0 && dv.bench2d.i < 2 * f.bench;
-    if dv.flat_bench { dirty = true; }
+    if bench::start(dv.bench, f, sh.out.raised, d3.draws, now) { dirty = true; }
     return dirty;
 }
 
@@ -237,36 +230,13 @@ fn pointer(dv: Dev&, f: flags::Flags&, input: gui::Input) -> gui::Input {
     return i;
 }
 
-// Before the frame's drawing, from the shell's fill on.
-fn drawing(dv: Dev&) { dv.drawn_at = clock(); }
-
-// After the frame's pass ended: the flat board's bench times it, its first N frames each
-// waited for, then N as the loop draws them.
-fn drawn(dv: Dev&, f: flags::Flags&) {
-    guard dv.flat_bench else { return; }
-    let t0 = dv.drawn_at;
-    let bn .= dv.bench2d;
-    if bn.i < f.bench {
-        bn.cpu.push(clock() - t0);
-        render::wait();
-        bn.all.push(clock() - t0);
-    } else {
-        // The presented frames' start, for the compositor's count of them.
-        if bn.i == f.bench { print("bench2d: presenting"); }
-        if bn.i > f.bench { bn.gap.push(t0 - bn.last); }
-        bn.last = t0;
-    }
-    bn.i++;
-}
-
-// Whether the 3D board's bench waits for each frame now: its first two phases do, slower
-// than the loop draws them, and aren't paced.
-fn waited3d(r: render::Renderer&) -> bool { r.d3.bench.n > 0 && r.d3.bench.i < 2 * r.d3.bench.n }
+// Whether the 3D board's bench waits for each frame now, so the display's pacing leaves
+// it out (bench::waited3d).
+fn waited3d(dv: Dev&) -> bool { bench::waited3d(dv.bench) }
 
 // At the frame's end, whether drawn or not; true when the loop should end: --frames'
 // count reached, or a bench done.
 fn after(dv: Dev&, f: flags::Flags&, r: render::Renderer&, drew: bool, size: int2, now: f64) -> bool {
-    let d3 .= r.d3;
     if f.frames > 0 && host::frame_count() >= f.frames { return true; }
     // A --frames run counts frames, not seconds: none waits for an event, so the
     // computer's reply or a transition is the same number of frames as without the wait.
@@ -294,19 +264,7 @@ fn after(dv: Dev&, f: flags::Flags&, r: render::Renderer&, drew: bool, size: int
         let k = draughts_threads(names[..]);
         if k > 0 { print("rest: threads' CPU since the launch: ", names[..k]); }
     }
-    if draw3d::bench_done(d3) { return true; }
-    if f.bench > 0 && dv.bench2d.i >= 2 * f.bench {
-        print("bench2d: presented");
-        var line: u8[>..] = [];
-        format(line, "bench2d: summary, ", size.x, "x", size.y, ", ", f.bench, " frames each: cpu ",
-               draw3d::median(dv.bench2d.cpu), " ms; waited ");
-        draw3d::spread(line, dv.bench2d.all);
-        format(line, "; presented ");
-        draw3d::rates(line, dv.bench2d.gap);
-        print(line);
-        return true;
-    }
-    return false;
+    return bench::done(dv.bench, f, r, size);
 }
 
 // After the loop: --frames' screenshot, and what the 3D board's preparing and drawing

@@ -63,95 +63,16 @@ struct Drawer {
     pulses:    i64                                   = 0,     // those that changed only the pulsing marks
     setup_ms:  f64                                   = 0.0,   // the renderer's setup,
     apply_ms:  f64                                   = 0.0,   // and prepare()'s steps in all, waited
-    first_ms:  f64                                   = 0.0,   // the first frame drawn, waited for
-    timed:     bool                                  = false, // --bench: the first frame waited for and timed
     live:      bool                                  = false, // --keep off: the backdrop never kept (render3d's live)
     themed:    i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
     warmed:    i64                                   = 0,     // and its next pipeline (WARM_STEPS: done)
     prep_ms:   f64[..48]                             = [],    // each prepare() step's time
     fresh:     bool                                  = false, // just made ready: draw all again
+    again:     bool                                  = false, // the image drawn again, its shadow map as it is (the bench)
     appear_at: f64                                   = -1.0,  // when its first image showed, -1 none yet
     grey_at:   f64                                   = -1.0,  // when the image began easing grey or back, -1 settled
     grey_from: f32                                   = 0.0,   // from how grey
     grey_to:   f32                                   = 0.0,   // to how grey: 1 while a new theme is prepared
-    bench:     Bench                                 = Bench {},
-}
-
-// --bench N (measuring, task 015): N frames drawing the 3D board and its shadow map, as
-// while a piece moves, each submitted and waited for; N drawing the board alone, waited
-// for; N as the loop draws them, frame to frame; then N as a pulsing ring draws them, a
-// ring round every piece: the kept depth's pass, waited for, and the screen's part (the
-// backdrop, the image, the rings over it), waited for, and that part without the rings.
-// Times in seconds.
-struct Bench {
-    n:     i64          = 0,
-    i:     i64          = 0,
-    cpu:   f64[..1024]  = [],
-    all:   f64[..1024]  = [],
-    pass:  f64[..1024]  = [],
-    gap:   f64[..1024]  = [],
-    depth: f64[..1024]  = [],
-    over:  f64[..1024]  = [],
-    plain: f64[..1024]  = [],
-    last:  f64          = 0.0,
-    into:  gpu::Texture = gpu::Texture { 0 },  // where the pulse phase draws (gpu::bench_target)
-}
-
-let BENCH_PHASES = 4;
-
-fn median(xs: f64[..1024]&) -> f64 { return percentile(xs, 50); }
-
-// The time p percent of xs take at most, in ms (sorts xs).
-fn percentile(xs: f64[..1024]&, p: i64) -> f64 {
-    guard xs.len > 0 else { return 0.0; }
-    sort(xs[..xs.len]);
-    return xs[min(xs.len * p / 100, xs.len - 1)] * 1000.0;
-}
-
-// Frames presented frame to frame, gaps in seconds: "avg A / 1% low L fps", the average
-// over their whole time and the rate of the 99th percentile's gap.
-fn rates(line: u8[>..]&, gaps: f64[..1024]&) {
-    var sum = 0.0;
-    for x in gaps { sum += x; }
-    let avg = if sum > 0.0 { gaps.len / sum } else { 0.0 };
-    let p99 = percentile(gaps, 99);
-    format(line, "avg ", floor(avg * 10.0 + 0.5) / 10.0, " / 1% low ",
-           floor((if p99 > 0.0 { 1000.0 / p99 } else { 0.0 }) * 10.0 + 0.5) / 10.0, " fps");
-}
-
-// A frame's times waited, in seconds: "P50 a / P99 b ms".
-fn spread(line: u8[>..]&, xs: f64[..1024]&) {
-    format(line, "P50 ", floor(percentile(xs, 50) * 100.0 + 0.5) / 100.0, " / P99 ",
-           floor(percentile(xs, 99) * 100.0 + 0.5) / 100.0, " ms");
-}
-
-// Whether the bench has timed all its frames; it prints them then.
-fn bench_done(d: Drawer&) -> bool {
-    let b .= d.bench;
-    guard b.n > 0 && b.i >= BENCH_PHASES * b.n else { return false; }
-    // The bake again, warm: its pipeline made.
-    for k in 2 {
-        let t0 = clock();
-        render3d::bake_surfaces(d.gpu, k == 0, k == 1);
-        print("bench3d: bake warm, ", if k == 0 { "plan" } else { "frame map" }, " ", (clock() - t0) * 1000.0, " ms");
-    }
-    var longest = 0.0;
-    for ms in d.prep_ms { longest = max(longest, ms); }
-    print("bench3d: prepared in ", d.prep_ms.len, " steps, ", d.apply_ms, " ms in all (setup ", d.setup_ms,
-          " ms, the longest step ", longest, " ms), first frame ", d.first_ms, " ms");
-    print("bench3d: ", d.size.x, "x", d.size.y, " with the shadow map: cpu ", median(b.cpu),
-          " ms, cpu+gpu waited ", median(b.all), " ms; the pass alone waited ", median(b.pass),
-          " ms; presented frame to frame ", median(b.gap), " ms (", b.n, " frames each)");
-    var line: u8[>..] = [];
-    format(line, "bench3d: summary, waited with the shadow map ");
-    spread(line, b.all);
-    format(line, "; presented ");
-    rates(line, b.gap);
-    print(line);
-    print("bench3d: pulsing, a ring round every piece: the kept depth ", median(b.depth),
-          " ms waited; the screen's part with the rings ", median(b.over), " ms waited, without ", median(b.plain),
-          " ms");
-    return true;
 }
 
 // The look for the app's theme, the season's (theme::WOOD.. number the seasons as
@@ -316,7 +237,7 @@ fn drop(d: Drawer&) {
     guard d.ready else { return; }
     render3d::release(d.gpu);
     d = Drawer { aa: d.aa, samples: d.samples, look: d.look, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
-                spring: d.spring, want: d.want, timed: d.timed, .. };
+                spring: d.spring, want: d.want, .. };
 }
 
 // The A key (task 071's comparison): the pass's antialiasing switched to the renderer's
@@ -374,7 +295,6 @@ fn rest(d: Drawer&, now: f64) -> f64 {
 // again only for another view or board.
 fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2, kind: i64,
          plain: bool, which: i64 = 0, hold: bool = false) {
-    let t0 = clock();
     d.gpu.live = d.live;
     d.redraw = false;
     d.shadow = false;
@@ -386,37 +306,23 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
         return;
     }
     var force = d.fresh;
+    let again = d.again;
     d.fresh = false;
-    let bn .= d.bench;
-    let phase = if bn.n > 0 && bn.i < BENCH_PHASES * bn.n { bn.i / bn.n } else { -1 };
-    // The presented frames' start and end, for the compositor's count of them
-    // (scripts/device_perf.sh).
-    if phase == 2 && bn.i == 2 * bn.n { print("bench3d: presenting"); }
-    if phase == 3 && bn.i == 3 * bn.n { print("bench3d: presented"); }
-    if phase == 2 {
-        if bn.i > 2 * bn.n { bn.gap.push(t0 - bn.last); }
-        bn.last = t0;
-    }
+    d.again = false;
     if size.x != d.size.x || size.y != d.size.y {
         d.size = size;
         force = true;
     }
     d.frames++;
-    d.redraw = false;
-    d.shadow = false;
-    if phase == 3 {
-        bench_pulse(d, b, l, v, now, size);
-        return;
-    }
-    guard force || phase >= 0 || !hold || which != d.which || !view3d::same_view(d.drawn.view, v) else { return; }
+    guard force || again || !hold || which != d.which || !view3d::same_view(d.drawn.view, v) else { return; }
     d.which = which;
     view3d::fill(d.scene, b, l, v, now);
     let c = view3d::changes(d.drawn, d.scene);
     // The board turned under the light (a hot-seat turn): the light turns with it, so it
     // keeps its place on screen, and the shadows are drawn again.
     let turned = v.turn != d.gpu.turn;
-    d.redraw = force || phase >= 0 || c & view3d::DRAW != 0 || turned;
-    d.shadow = force || phase == 0 || phase == 2 || c & view3d::SHADOW != 0 || turned;
+    d.redraw = force || again || c & view3d::DRAW != 0 || turned;
+    d.shadow = force || c & view3d::SHADOW != 0 || turned;
     if !d.redraw {
         // Only the pulsing marks moved: show() draws them at their new phase.
         if c & view3d::MARKS != 0 {
@@ -457,17 +363,6 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     if d.appear_at < 0.0 { d.appear_at = now; }
     // A new theme's first image: back from grey.
     if d.grey_to > 0.0 { grey_towards(d, 0.0, now); }
-    if phase == 0 || phase == 1 {
-        let t2 = clock();
-        gpu::flush();
-        if phase == 0 { bn.cpu.push(t2 - t0); bn.all.push(clock() - t0); }
-        else { bn.pass.push(clock() - t0); }
-    }
-    if phase >= 0 { bn.i++; }
-    if d.draws == 1 && d.timed {
-        gpu::flush();
-        d.first_ms = (clock() - t0) * 1000.0;
-    }
 }
 
 // Lays the kept image over the screen's open pass (the app's photograph drawn in it, or
@@ -491,48 +386,4 @@ fn show(d: Drawer&, blur: f32, place: float4, fade0: f32, size: int2, now: f64) 
     let whole = float4 { place.x - r.x * k, place.y - r.y * k, size.x * k, size.y * k };
     render3d::show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, whole, min(fade, 1.0), size, grey);
     if d.drawn.pulsing { render3d::marks_over(d.gpu, d.drawn.pulse, d.drawn.next, d.drawn.cursor, whole, min(fade, 1.0), size); }
-}
-
-// The bench's last phase: its first frame draws the board with a pulsing ring round every
-// piece and keeps its depth; each frame then times the kept depth's pass, and the
-// screen's part of a pulsing frame with the rings and without, each waited for, drawn
-// where gpu::bench_target says.
-fn bench_pulse(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2) {
-    let bn .= d.bench;
-    if bn.i == 3 * bn.n {
-        view3d::fill(d.scene, b, l, v, now);
-        let s .= d.scene;
-        for i in 100 { if s.squares[2 * i].w > 0.5 { s.field[i].z = 1.0; } }
-        s.pulsing = true;
-        d.upload.clear();
-        for x in s.inst { d.upload.push(x); }
-        render3d::place(d.gpu, d.upload[..d.upload.len], d.alphas[..0], s.squares[..], s.field[..], s.lit[..],
-                        s.selected, s.dim, true);
-        let m = view3d::matrix(v, size.x, size.y);
-        render3d::draw(d.gpu, render3d::Mat { c0: m.c0, c1: m.c1, c2: m.c2, c3: m.c3 }, v.eye, gpu::no_texture(), size,
-                       false, false, true);
-        d.drawn = d.scene;
-        d.draws++;
-        d.redraw = true;
-        gpu::flush();
-    }
-    let into = gpu::bench_target(bn.into, size);
-    let t0 = clock();
-    render3d::draw_depth(d.gpu);
-    gpu::flush();
-    let t1 = clock();
-    for rings in 2 {
-        let t2 = clock();
-        gpu::begin_pass(into, float4 { 0.0, 0.0, 0.0, 1.0 });
-        render3d::backdrop(d.gpu, 1.0, size);
-        render3d::show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
-        if rings == 0 {
-            render3d::marks_over(d.gpu, d.scene.pulse, d.scene.next, -1.0, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
-        }
-        gpu::end_pass();
-        gpu::flush();
-        if rings == 0 { bn.over.push(clock() - t2); } else { bn.plain.push(clock() - t2); }
-    }
-    bn.depth.push(t1 - t0);
-    bn.i++;
 }

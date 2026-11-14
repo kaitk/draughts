@@ -111,8 +111,8 @@ struct Flags {
     // --material auto|wood|stone|carved: the raised board's material for the run
     // (settings::MATERIAL_AUTO..), as settings' Board row sets it
     material: i64 = -1,
-    // --bench N: times N of the board's frames, then quits (draw3d.goose; the flat board's
-    // in draughts.goose)
+    // --bench N: times N of the board's frames, then quits (bench.goose, the 3D board's
+    // and the flat board's)
     bench: i64 = 0,
     // --keep off: the UI and the 3D backdrop drawn as they come each frame, never kept as
     // layers (widgets::prepare, render3d::keep_backdrop), to measure their work alone

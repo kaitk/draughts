@@ -8,7 +8,7 @@ measure tasks 070, 071, and 077 compare the renderers by (agents/testing.md, Fra
 EXE runs `--size full --screen game --variant russian --theme wood --board 3d --no-vsync
 --bench 300` and the flags after it (`--aa off`, say), under `xctrace record` with a
 watchdog, as a record can hang after its app exits. From the trace: the bench's loop
-phase, the third of its last 4 × N presents (src/app/draw3d.goose's Bench); the union of
+phase, the third of its last 4 × N presents (src/app/bench.goose); the union of
 the process's GPU intervals over it a frame (whatever their depth, which is Instruments
 stacking what runs at once, not nesting); the overlap, their sum over the union; and the
 GPU's performance states over the same window. Compare builds at the same states (full

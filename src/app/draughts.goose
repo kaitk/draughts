@@ -42,6 +42,7 @@ import .draw3d;
 import .render;
 import .flags;
 import .dev;
+import .bench;
 
 // Seconds between looks for the hint's answer while it is on its way (think::frame).
 let HINT_POLL = 0.02;
@@ -263,7 +264,6 @@ fn main() {
         if hidden { dirty = true; }
         let drew = !hidden && (dirty || shell::animating(sh, g, now));
         if drew {
-            dev::drawing(dv);
             // The board the screen shows, its draw lists filled, and what the shell's frame
             // left: on the 3D board its image moves in a transition, drawn once.
             var frame = render::Frame { board: shell::fill(sh, now), layout: l, over: out.over[..], quads: g.quads[..],
@@ -271,16 +271,16 @@ fn main() {
                                         which: shell::which(out.shows), hold: out.hold, place: out.place,
                                         fade:  out.fade, blur: out.blur, hole: out.hole, tall: out.tall, now: now,
                                         size: size };
-            render::frame(rd, frame);
+            // --bench times the frame round its drawing (bench.goose).
+            if f.bench > 0 { bench::frame(dv.bench, f, rd, frame); } else { render::frame(rd, frame); }
             dirty = false;
-            dev::drawn(dv, f);
         }
         // A 3D board too slow for its display draws fewer samples, and if still too slow
         // the display goes to 60 Hz while it draws (tasks 056 and 081, display.c): a 90 Hz
         // display shows 60 frames a second two refreshes and one in turn, where at 60
         // each shows for one. The 3D bench's frames that wait for each are left out
         // (dev::waited3d).
-        let paced = drew && out.raised && ready3d && shown3d && !dev::waited3d(rd);
+        let paced = drew && out.raised && ready3d && shown3d && !dev::waited3d(dv);
         if on_android && host::pace_3d(paced, now) { render::fewer_samples(rd); }
         // Settings' thumbnails load in the first frame that draws nothing once the launch's
         // first frame is on screen, so settings' first opening doesn't wait for them; the

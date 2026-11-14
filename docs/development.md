@@ -900,7 +900,8 @@ shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`)
 drawing the board alone, waited for; 300 as the loop draws them, frame to frame; then
 300 as a pulsing ring draws them, a ring round every piece (the kept depth's pass, and
 the screen's part with the rings and without, each waited for), and quits. It prints those medians, the steps getting the board ready (their count, their
-sum, the setup, and the longest), the first frame, and the bake again warm (`src/app/draw3d.goose`).
+sum, the setup, and the longest), the first frame, and the bake again warm (`src/app/bench.goose`, a wrapper the loop calls
+in place of `render::frame` while `--bench` is given, so the drawing holds no measuring).
 A waited frame includes the submit and the wait, about 5 ms on the Pixel 7a for an empty
 pass, so it is an upper bound; the frame to frame time is held at the display's rate.
 Let the device cool between series (`adb shell dumpsys thermalservice`, status 0):
