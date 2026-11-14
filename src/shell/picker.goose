@@ -551,7 +551,9 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let how_w = if how_tile { (16.0 + gui::tap()) * u } else { 0.0 };
     let sw_w = switch_width(g);
     let sw_h = switch_row_h() * u;
-    let beside = landscape && title_width(g) + how_w + 24.0 * u + sw_w <= page.z;
+    // The title, How to play's tile, and the switch along one row.
+    let along = title_width(g) + how_w + 24.0 * u + sw_w;
+    let beside = landscape && along <= page.z;
     let head = if beside { sw_h + gap } else { gui::tap() * u + gap + sw_h + gap };
     // A variant's set may leave a theme out (Russian's has no king shots): its row too.
     var rows = 0;
@@ -585,9 +587,9 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // On a tablet where only the title row reaches up beside back (Today open, 16:9 or
     // 4:3), the rows under it start below back's foot and take the whole width, centered
     // on it, and the title row alone keeps clear of back.
-    let foot = whole.y + gui::tap() * u + gap;
-    let room = if landscape && (y0 >= foot || !phone && y0 + head >= foot) { whole } else { page };
-    let top_room = if landscape && y0 < foot { page } else { room };
+    let back_foot = whole.y + gui::tap() * u + gap;
+    let room = if landscape && (y0 >= back_foot || !phone && y0 + head >= back_foot) { whole } else { page };
+    let top_room = if landscape && y0 < back_foot { page } else { room };
     let col_w = min((room.z - (cols - 1) * gap) / cols, COLUMN * u);
     let w = cols * col_w + (cols - 1) * gap;
     if opened {
@@ -598,10 +600,10 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let y = if landscape { page.y + max(0.0, floor(0.5 * (page.w - h) + 0.5)) } else { page.y };
     let x = max(room.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
     // The title row as wide as the rows, or as the title and the switch beside it want.
-    let top_wanted = if beside { min(top_room.z, max(w, title_width(g) + how_w + 24.0 * u + sw_w)) } else { w };
+    let top_wanted = if beside { min(top_room.z, max(w, along)) } else { w };
     let top_x = max(top_room.x, min(x, whole.x + floor(0.5 * (whole.z - top_wanted) + 0.5)));
     // It ends with the rows where its title and switch fit before their right edge.
-    let top_need = if beside { title_width(g) + how_w + 24.0 * u + sw_w } else { 0.0 };
+    let top_need = if beside { along } else { 0.0 };
     let top_w = min(min(top_wanted, top_room.x + top_room.z - top_x), max(x + w, top_x + top_need) - top_x);
     var top = float4 { top_x, y, top_w, if beside { sw_h } else { gui::tap() * u } };
     if !landscape {
@@ -642,14 +644,14 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     }
     // The rows over and under them, declared after them so the themes' tiles keep their
     // order: How to play, or Today, heading the list; Today shut, or How to play, ending it.
-    let foot = float4 { x, list_top - off + first + per * row_h + (per - 1) * gap + gap, w, learn_h };
+    let end_row = float4 { x, list_top - off + first + per * row_h + (per - 1) * gap + gap, w, learn_h };
     if opened {
         let tapped = today_row(g, float4 { x, list_top - off, w, first_h }, today, today_at, spot, phone);
         if tapped >= 0 { pick = TODAY - tapped; }
-        if !landscape && learn_row(g, foot, learned, steps, phone) { pick = LEARN; }
+        if !landscape && learn_row(g, end_row, learned, steps, phone) { pick = LEARN; }
     } else {
         if learn_row(g, float4 { x, list_top - off, w, learn_h }, learned, steps, phone) { pick = LEARN; }
-        today_locked(g, foot, stars, phone);
+        today_locked(g, end_row, stars, phone);
     }
     gui::scroll_end(g);
     return pick;
