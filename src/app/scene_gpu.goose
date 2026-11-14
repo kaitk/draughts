@@ -18,50 +18,8 @@ let FADE_FRAG = """
 
 struct Fade { to: float4, top: float4, low: float4, light: float4 }
 
-let BLUR_FRAG = """
-    layout(location = 0) in vec2 v_uv;
-    layout(location = 0) out vec4 result;
-    layout(set = 2, binding = 0) uniform sampler2D src;
-    // One texel's step in the source, sigma in source texels, one target pixel in uv.
-    layout(set = 3, binding = 0) uniform Blur { vec4 dir; };
-    void main() {
-        vec2 uv = gl_FragCoord.xy * dir.w;
-        vec3 sum = vec3(0.0);
-        float total = 0.0;
-        for (int i = -17; i <= 17; i++) {
-            float w = exp(-0.5 * float(i * i) / (dir.z * dir.z));
-            sum += w * texture(src, uv + float(i) * dir.xy).rgb;
-            total += w;
-        }
-        result = vec4(sum / total, 1.0);
-    }
-    """;
-
+// The blur and the shrink are the 3D board's too, one text each (src/render3d/shaders.goose).
 struct Blur { dir: float4 }
-
-// Averages a part of the source into a part of the target. Each target pixel takes taps
-// spread evenly across its footprint, about two source texels apart, each a bilinear
-// average of four texels: shrinking 4×, 2 × 2 taps on the texels' corners are an exact
-// box of 4 × 4 texels.
-let SHRINK_FRAG = """
-    layout(location = 0) in vec2 v_uv;
-    layout(location = 0) out vec4 result;
-    layout(set = 2, binding = 0) uniform sampler2D src;
-    // The source's part in uv (origin, size), the target's in pixels (origin, size).
-    layout(set = 3, binding = 0) uniform Shrink { vec4 from; vec4 to; };
-    void main() {
-        vec2 pixel = from.zw / to.zw;
-        vec2 uv = from.xy + (gl_FragCoord.xy - to.xy) * pixel;
-        ivec2 n = max(ivec2(ceil(pixel * vec2(textureSize(src, 0)) * 0.5)), ivec2(1));
-        vec3 sum = vec3(0.0);
-        for (int y = 0; y < n.y; y++) {
-            for (int x = 0; x < n.x; x++) {
-                sum += texture(src, uv + ((vec2(x, y) + 0.5) / vec2(n) - 0.5) * pixel).rgb;
-            }
-        }
-        result = vec4(sum / float(n.x * n.y), 1.0);
-    }
-    """;
 
 struct Shrink { from: float4, to: float4 }
 
@@ -75,8 +33,8 @@ fn black() -> gpu::Texture {
     return none;
 }
 
-fn shrinker() -> gpu::Pipeline { gfx::pipeline(gpu::full_vert(), embed_shader("frag", SHRINK_FRAG), gfx::PipelineDesc {}) }
-fn blurrer() -> gpu::Pipeline { gfx::pipeline(gpu::full_vert(), embed_shader("frag", BLUR_FRAG), gfx::PipelineDesc {}) }
+fn shrinker() -> gpu::Pipeline { gfx::pipeline(gpu::full_vert(), embed_shader("frag", shaders::SHRINK_FRAG), gfx::PipelineDesc {}) }
+fn blurrer() -> gpu::Pipeline { gfx::pipeline(gpu::full_vert(), embed_shader("frag", shaders::BLUR_FRAG), gfx::PipelineDesc {}) }
 fn fader() -> gpu::Pipeline {
     gfx::pipeline(gpu::full_vert(), embed_shader("frag", shaders::FADE_FN, FADE_FRAG), gfx::PipelineDesc {})
 }

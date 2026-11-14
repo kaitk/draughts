@@ -273,7 +273,7 @@ fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
         nx::bind(g.shrink);
         var r = no_root();
         slot(r, 0, sharp, g.linear);
-        r.u = blocks([float4 { render3d::PHOTO_SIZE, render3d::PHOTO_SIZE, 0.0, 0.0 }]);
+        r.u = blocks([float4 { 0.0, 0.0, 1.0, 1.0 }, float4 { 0.0, 0.0, render3d::PHOTO_SIZE, render3d::PHOTO_SIZE }]);
         ngfx::draw(ngfx::root(r), 3);
         ngfx::end_pass();
         settle();
@@ -451,8 +451,8 @@ fn setup(g: Gpu&, aa: i32 = AA, look: i32 = render3d::SHADOW_9) {
     g.piece_ib = nx::buffer(bytes_of(indices));
     g.piece_count = indices.len;
 
-    var empty: float4[render3d::SQUARES] = [float4_0; render3d::SQUARES];
-    var none:  float4[render3d::SQUARES] = [float4 { 0.0, 0.0, 0.0, -1.0 }; render3d::SQUARES];
+    var empty:      float4[render3d::SQUARES]        = [float4_0; render3d::SQUARES];
+    var none:       float4[render3d::SQUARES]        = [float4 { 0.0, 0.0, 0.0, -1.0 }; render3d::SQUARES];
     var no_squares: float4[render3d::SQUARE_ENTRIES] = [float4_0; render3d::SQUARE_ENTRIES];
     g.instances = nx::buffer(render3d::MAX_INSTANCES * 32, bytes_of(empty[..2]));
     g.instance_count = 0;

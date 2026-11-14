@@ -1718,16 +1718,23 @@ let BAKE_FRAG = """
     }
     """;
 
-// The photograph shrunk to a small copy, and blurred: as src/app/scene.goose does it
-// behind the 2D game (docs/architecture/rendering.md, "Scene and glass").
+// The photograph shrunk to a small copy, and blurred: the 3D board's backdrop and
+// src/app/scene.goose's behind the 2D game, which draws with these two texts as they are
+// (docs/architecture/rendering.md, "Scene and glass").
+//
+// SHRINK_FRAG averages a part of the source into a part of the target. Each target pixel
+// takes taps spread evenly across its footprint, about two source texels apart, each a
+// bilinear average of four texels: shrinking 4×, 2 × 2 taps on the texels' corners are an
+// exact box of 4 × 4 texels.
 let SHRINK_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D src;
-    layout(set = 3, binding = 0) uniform Shrink { vec4 to; };
+    // The source's part in uv (origin, size), the target's in pixels (origin, size).
+    layout(set = 3, binding = 0) uniform Shrink { vec4 from; vec4 to; };
     void main() {
-        vec2 pixel = 1.0 / to.xy;
-        vec2 uv = gl_FragCoord.xy * pixel;
+        vec2 pixel = from.zw / to.zw;
+        vec2 uv = from.xy + (gl_FragCoord.xy - to.xy) * pixel;
         ivec2 n = max(ivec2(ceil(pixel * vec2(textureSize(src, 0)) * 0.5)), ivec2(1));
         vec3 sum = vec3(0.0);
         for (int y = 0; y < n.y; y++) {
@@ -1743,6 +1750,7 @@ let BLUR_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D src;
+    // One texel's step in the source, sigma in source texels, one target pixel in uv.
     layout(set = 3, binding = 0) uniform Blur { vec4 dir; };
     void main() {
         vec2 uv = gl_FragCoord.xy * dir.w;

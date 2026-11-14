@@ -35,8 +35,8 @@ UI_FS = [*THEMED, "draw_gpu::MAN_BLOCK", "widgets_gpu::FRAG"]
 MODULES = [
     ("compose", FULL, ["widgets_gpu::COMPOSE_FRAG"], False),
     ("fade", FULL, ["shaders::FADE_FN", "scene_gpu::FADE_FRAG"], False),
-    ("blur", FULL, ["scene_gpu::BLUR_FRAG"], False),
-    ("shrink", FULL, ["scene_gpu::SHRINK_FRAG"], False),
+    ("blur", FULL, ["shaders::BLUR_FRAG"], False),
+    ("shrink", FULL, ["shaders::SHRINK_FRAG"], False),
     ("board", FULL, [*THEMED, "draw_gpu::BOARD_FRAG"], False),
     ("pieces", ["draw_gpu::SHARED_BLOCK", "draw_gpu::STACK_BLOCK", "draw_gpu::PIECE_VERT"],
      [*THEMED, "draw_gpu::MAN_BLOCK", "draw_gpu::STACK_BLOCK", "draw_gpu::PIECE_FRAG"], False),

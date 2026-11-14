@@ -168,7 +168,7 @@ struct Draw { draw: float4 }
 // the fade's colors in linear light (shaders::FADE_FN).
 struct Backdrop { draw: float4, fade_top: float4, fade_low: float4, fade_light: float4 }
 
-struct Shrink { to: float4 }
+struct Shrink { from: float4, to: float4 }  // shaders::SHRINK_FRAG's: source part in uv, target part in pixels
 
 struct Pulse { pulse: float4, place: float4, more: float4 }
 
@@ -236,7 +236,8 @@ fn photo_part(g: render3d::Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
         gfx::begin_pass(g.small, gfx::Texture { 0 }, float4_0);
         gfx::bind(g.shrink);
         gfx::bind_texture(gfx::FRAGMENT, 0, sharp, g.linear);
-        gfx::uniforms(gfx::FRAGMENT, 0, Shrink { float4 { render3d::PHOTO_SIZE, render3d::PHOTO_SIZE, 0.0, 0.0 } });
+        gfx::uniforms(gfx::FRAGMENT, 0, Shrink { float4 { 0.0, 0.0, 1.0, 1.0 },
+                                                float4 { 0.0, 0.0, render3d::PHOTO_SIZE, render3d::PHOTO_SIZE } });
         gfx::draw(3);
         gfx::end_pass();
         gfx::release(sharp);
@@ -450,8 +451,8 @@ fn setup(g: render3d::Gpu&, samples: i32 = SAMPLES, look: i32 = render3d::SHADOW
     g.piece_ib = gfx::index_buffer(bytes_of(indices));
     g.piece_count = indices.len;
 
-    var empty: float4[render3d::SQUARES] = [float4_0; render3d::SQUARES];
-    var none:  float4[render3d::SQUARES] = [float4 { 0.0, 0.0, 0.0, -1.0 }; render3d::SQUARES];
+    var empty:      float4[render3d::SQUARES]        = [float4_0; render3d::SQUARES];
+    var none:       float4[render3d::SQUARES]        = [float4 { 0.0, 0.0, 0.0, -1.0 }; render3d::SQUARES];
     var no_squares: float4[render3d::SQUARE_ENTRIES] = [float4_0; render3d::SQUARE_ENTRIES];
     g.instances = gfx::buffer(gfx::BUFFER_STORAGE, render3d::MAX_INSTANCES * 32, bytes_of(empty[..2]));
     g.instance_count = 0;

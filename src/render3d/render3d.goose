@@ -40,7 +40,9 @@ extern fn draughts_photo_id(kind: i64, decoded: i64) -> u32;
 
 fn draughts_photo(kind: i64, decoded: i64) -> Texture { Texture { draughts_photo_id(kind, decoded) } }
 
-// Laid out as the shaders' blocks (shaders::FRAME), std140: all vec4s and mat4s.
+// Laid out as the shaders' blocks (shaders::FRAME), std140: all vec4s and mat4s, each
+// a multiple of 16 bytes, so the two match field for field when their sizes do
+// (frame_matches, checked as a theme is put on).
 struct Frame {
     view_proj:       Mat,
     light_view_proj: Mat,
@@ -64,6 +66,48 @@ struct Frame {
     frame_build:     float4,
     frame_surface:   float4,
     frame_map:       float4,
+}
+
+// The bytes of the uniform block `name` in GLSL `text` of vec4s and mat4s alone, std140,
+// or -1 for any other member, which Frame's layout doesn't follow.
+fn block_size(text: const u8[:], name: const u8[:]) -> i64 {
+    let head = str("uniform ", name, " {");
+    var rest: const u8[:] = text;
+    var inside = false;
+    var size = 0;
+    while rest.len > 0 {
+        let line, after, more = split_once(rest, "\n");
+        rest = if more { after } else { "" };
+        let t = trim(line);
+        if !inside {
+            inside = t.len >= head.len && t[t.len - head.len..] == head[..];
+            continue;
+        }
+        if t.len >= 2 && t[..2] == "};" { return size; }
+        guard t.len > 0 && !(t.len >= 2 && t[..2] == "//") else { continue; }
+        let kind, member, spaced = split_once(t, " ");
+        guard spaced else { return -1; }
+        let bytes = if kind == "vec4" { 16 } else if kind == "mat4" { 64 } else { -1 };
+        guard bytes > 0 else { return -1; }
+        // An array's count, `sh[9];`.
+        var count = 1;
+        let before, tail, arrayed = split_once(member, "[");
+        if arrayed {
+            let digits, closing, closed = split_once(tail, "]");
+            let n, ok = parse_int(digits);
+            guard closed && ok else { return -1; }
+            count = n;
+        }
+        size += bytes * count;
+    }
+    return -1;
+}
+
+// Whether Frame is as large as shaders::FRAME's block: a field added to one and not the
+// other shifts every field after it, which nothing else would catch.
+fn frame_matches(g: Gpu&) -> bool {
+    let one: Frame[1] = [g.frame];
+    return bytes_of(one[..]).len == block_size(shaders::FRAME, "Frame");
 }
 
 struct Bake {
@@ -317,6 +361,7 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
 fn theme_begin(g: Gpu&, which: i64, n: i64) -> bool {
     own_carving(g, looks::shown(which, g.spring));
     guard which != g.look || n != g.n else { return false; }
+    if !frame_matches(g) { abort("render3d::Frame and shaders::FRAME differ in size"); }
     let t = look(g, which);
     g.look = which;
     g.n = n;
