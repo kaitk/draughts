@@ -110,7 +110,7 @@ fn parse_move(p: rules::Position, text: const u8[:], moves: rules::Moves&) -> Pl
     var found = -1;
     for m, i in moves {
         guard m.from == stops[0] && m.to == stops[stops.len - 1] else { continue; }
-        guard stops.len == 2 || m.path == stops else { continue; }
+        guard stops.len == 2 || rules::way_of(p, m).path == stops else { continue; }
         // A capture's end alone must name one move.
         guard found < 0 else { return Ply { from: 0, to: 0, captured: 0 }, false; }
         found = i;

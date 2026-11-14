@@ -27,7 +27,7 @@ fn state(gm: game::Game&, g: gui::Gui&, what: const u8[:]) {
     let b .= gm.b;
     let v .= rules::VARIANTS[b.variant];
     var t: u8[>..] = [];
-    if gm.hint_stage > 0 { rules::format_move(t, b.variant, gm.hint_move); } else { t.append("-"); }
+    if gm.hint_stage > 0 { rules::format_move(t, b.pos, gm.hint_move); } else { t.append("-"); }
     print(what, ": stage ", gm.hint_stage, ", asking ", gm.hinting != 0, ", left ", gm.hints[0], " ", gm.hints[1],
           ", move ", t, ", glow ", drive::name(v, b.glow), ", ghost ", drive::name(v, b.hint_to), ", tile ",
           tile(g));
@@ -52,7 +52,7 @@ fn answer(gm: game::Game&, e: ai::Engine&) {
     guard ask.id != 0 && ask.kind == game::HINT else { return; }
     let m = ai::hint(e, ask.past, ask.pos);
     var t: u8[>..] = [];
-    rules::format_move(t, gm.b.variant, m);
+    rules::format_move(t, ask.pos, m);
     print("  answered ", t);
     game::hinted(gm, ask.id, m);
 }
@@ -138,7 +138,7 @@ fn main() {
         drive::idle(gm, g, l, t + 1.0);
         let r = quiet_reply(gm.b.pos, gm.b.moves);
         drive::tap(gm, g, l, board::center(l.board, v, r.from), t + 1.1);
-        drive::tap(gm, g, l, board::center(l.board, v, r.path[1]), t + 1.2);
+        drive::tap(gm, g, l, board::center(l.board, v, rules::way_of(gm.b.pos, r).path[1]), t + 1.2);
         drive::idle(gm, g, l, t + 2.0);
         t += 3.0;
     }

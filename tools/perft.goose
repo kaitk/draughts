@@ -61,7 +61,7 @@ fn main() {
             let n = rules::perft(rules::play(p, moves[i]), depth - 1);
             total += n;
             var line: u8[>..] = [];
-            rules::format_move(line, variant, moves[i]);
+            rules::format_move(line, p, moves[i]);
             print(line, " ", n);
         }
         print("total ", total);

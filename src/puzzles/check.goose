@@ -20,7 +20,7 @@ fn move_text(out: u8[>..]&, p: rules::Position, m: Short, moves: rules::Moves&) 
     rules::generate(p, moves);
     for c in moves {
         guard c.from == m.from && c.to == m.to && c.captured == m.captured else { continue; }
-        rules::format_move(out, p.variant, c);
+        rules::format_move(out, p, c);
         return;
     }
 }

@@ -65,14 +65,14 @@ fn format_game(out: u8[>..]&, g: Game&, notes: game::Notes&) {
     out.append("\tmoves=");
     for &n, i in notes {
         if i > 0 { out.push(' '); }
-        rules::format_move(out, g.variant as u8, n.move);
+        rules::format_move(out, n.before, n.move);
     }
     // The best move from the position before each, `-` for none (an only move, or one
     // not judged): what a replay shows when asked (task 087).
     out.append("\tbest=");
     for &n, i in notes {
         if i > 0 { out.push(' '); }
-        if n.has_best { rules::format_move(out, g.variant as u8, n.best); } else { out.push('-'); }
+        if n.has_best { rules::format_move(out, n.before, n.best); } else { out.push('-'); }
     }
 }
 

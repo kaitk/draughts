@@ -65,7 +65,7 @@ fn judge(s: puzzles::Solver&, pz: puzzles::Puzzle&, words: const u8[:]) {
             let a = puzzles::answer(s, r);
             rules::generate(r, moves);
             text.append(if a >= 0 { ", answered by " } else { ", no answer" });
-            if a >= 0 { rules::format_move(text, rules::INTERNATIONAL, moves[a]); }
+            if a >= 0 { rules::format_move(text, r, moves[a]); }
         }
         text.append("; ");
     }
@@ -122,12 +122,12 @@ fn main() {
     let r = puzzles::reply(s, after, 1);
     rules::generate(after, moves);
     var said: u8[>..] = [];
-    rules::format_move(said, rules::INTERNATIONAL, moves[r]);
+    rules::format_move(said, after, moves[r]);
     let next = rules::play(after, moves[r]);
     let m = puzzles::right_move(s, next, 1);
     rules::generate(next, moves);
     var then: u8[>..] = [];
-    rules::format_move(then, rules::INTERNATIONAL, moves[m]);
+    rules::format_move(then, next, moves[m]);
     let solved = puzzles::judge(s, next, puzzles::short(moves[m]), 1);
     let h = puzzles::right_move(s, shot.start, 2);
     rules::generate(shot.start, moves);

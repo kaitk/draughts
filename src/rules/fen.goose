@@ -113,7 +113,12 @@ fn parse_fen(text: const u8[:], variant: u8) -> Position, bool {
     return p, true;
 }
 
-fn format_move(out: u8[>..]&, variant: u8, m: Move) {
+// Move m of position p in PDN: `32-28`, or a capture's stops, `28x19x10` (`c3:e5:c7` where
+// squares are written a1..h8).
+fn format_move(out: u8[>..]&, p: Position, m: Move) { format_move(out, p.variant, way_of(p, m)); }
+
+// The same for a move with its stops.
+fn format_move(out: u8[>..]&, variant: u8, m: Way) {
     let v .= VARIANTS[variant];
     if m.captured == 0 {
         format_square(out, v, m.from);

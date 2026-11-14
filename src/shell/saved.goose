@@ -47,7 +47,7 @@ fn checksum(data: const u8[:]) -> u64 {
 fn kept_of(sh: Shell&) -> Saved {
     let b .= sh.game.b;
     return Saved { version: VERSION, unset: sh.unset, screen: KINDS[sh.screen].kept, variant: b.variant, start: b.rec.start,
-                   pos: b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.rec.history,
+                   pos:   b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.rec.history,
                    clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
                    number: sh.game.number, counted: sh.game.counted };
 }
@@ -106,7 +106,7 @@ fn bring_back(sh: Shell&, s: Saved&) {
     board::show(b, s.pos);
     b.rec.history = s.history;
     b.has_last = s.has_last;
-    b.last = rules::Move { from: s.last_from, to: s.last_to, .. };
+    b.last = rules::Way { from: s.last_from, to: s.last_to, .. };
     gm.clock = s.clock;
     gm.counted = s.counted;
     gm.turn = b.pos.side;
@@ -174,7 +174,7 @@ fn old(image: const u8[:], out: Saved[>..]&) -> bool {
     out = [];
     out.push(Saved { version: VERSION, unset: false, screen: t.screen, variant: t.variant, start: t.start, pos: t.pos,
                      last_from: t.last_from, last_to: t.last_to, has_last: t.has_last, history: t.history,
-                     clock: t.clock, computer: t.computer, level: t.level, skill: t.skill, number: t.number,
+                     clock:     t.clock, computer: t.computer, level: t.level, skill: t.skill, number: t.number,
                      counted: t.counted });
     return true;
 }

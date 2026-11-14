@@ -83,7 +83,7 @@ fn main() {
             var s = lookout::Seen {};
             lookout::after(p, m, s, buf);
             var t: u8[>..] = [];
-            rules::format_move(t, rules::RUSSIAN, m);
+            rules::format_move(t, p, m);
             let line .= lines.push([]);
             line.append(str(name, " after ", t, ": ", kinds(rules::RUSSIAN, s)));
         }
@@ -112,7 +112,7 @@ fn main() {
     rules::generate(sp, moves);
     for &m in moves {
         var t: u8[>..] = [];
-        rules::format_move(t, rules::RUSSIAN, m);
+        rules::format_move(t, sp, m);
         print("  after ", t, ": ", squares(rules::RUSSIAN, lookout::traps(rules::play(sp, m))));
     }
 

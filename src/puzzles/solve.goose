@@ -53,7 +53,7 @@ fn net(s: Solver&, q: rules::Position) -> i64 {
 fn short(m: rules::Move&) -> Short { Short { from: m.from, to: m.to, crowned: m.crowned, captured: m.captured } }
 
 fn after(q: rules::Position, m: Short) -> rules::Position {
-    return rules::play(q, rules::Move { from: m.from, to: m.to, crowned: m.crowned, captured: m.captured, path: [] });
+    return rules::play(q, rules::Move { from: m.from, to: m.to, crowned: m.crowned, captured: m.captured });
 }
 
 // Pushes q's legal moves on the stack; returns where they start.

@@ -90,7 +90,7 @@ fn play(sh: shell::Shell&, text: const u8[:]) {
     let b .= sh.game.b;
     for i in b.moves.len {
         var t: u8[>..] = [];
-        rules::format_move(t, b.variant, b.moves[i]);
+        rules::format_move(t, b.pos, b.moves[i]);
         guard t == text else { continue; }
         board::play_chosen(b, i, now);
         return;
@@ -101,7 +101,7 @@ fn play(sh: shell::Shell&, text: const u8[:]) {
 // The first legal move's name on the game's board.
 fn first_move(sh: shell::Shell&) -> u8[>..] {
     var t: u8[>..] = [];
-    rules::format_move(t, sh.game.b.variant, sh.game.b.moves[0]);
+    rules::format_move(t, sh.game.b.pos, sh.game.b.moves[0]);
     return t;
 }
 
@@ -135,7 +135,7 @@ fn numbers(sh: shell::Shell&) -> u8[>..] {
     for i in min(sh.game.notes.len, 2) {
         let n, black = game::row_of(sh.game, i);
         var m: u8[>..] = [];
-        rules::format_move(m, sh.game.b.variant, sh.game.notes[i].move);
+        rules::format_move(m, sh.game.notes[i].before, sh.game.notes[i].move);
         format(s, n, if black { "… " } else { ". " }, m, "  ");
     }
     return s;

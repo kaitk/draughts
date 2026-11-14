@@ -1,0 +1,11 @@
+W:WK2,K5,K15,36,K46,K47,K48,K49:BK4,K8,K9,13,18,19,22,K24,K27,30,31,35,40,K41,K42,K43,K44
+407 moves of 512 room
+  taking 6: 407
+  from 46: 98 moves, 137 ways
+  from 47: 75 moves, 113 ways
+  from 48: 89 moves, 121 ways
+  from 49: 44 moves, 77 ways
+  from 15: 43 moves, 43 ways
+  from 5: 58 moves, 58 ways
+the most ways of one piece 137 of 512 room
+first ways that end at their move's end, a stop a piece: 407

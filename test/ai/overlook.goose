@@ -26,7 +26,7 @@ fn find(p: rules::Position, text: const u8[:]) -> rules::Move {
     rules::generate(p, moves);
     for i in moves.len {
         var t: u8[>..] = [];
-        rules::format_move(t, p.variant, moves[i]);
+        rules::format_move(t, p, moves[i]);
         if t[..] == text { return moves[i]; }
     }
     print("no move ", text, " in ", rules::fen(p));
@@ -63,7 +63,7 @@ fn hangs(e: ai::Engine&, fen: const u8[:], bad: const u8[:], skill: i64, overloo
     for seed: u64 in SEEDS {
         let m = ai::think(e, p, skill, seed);
         var t: u8[>..] = [];
-        rules::format_move(t, rules::RUSSIAN, m);
+        rules::format_move(t, p, m);
         if t[..] == bad { n += 1; }
     }
     e.overlooks = 100;

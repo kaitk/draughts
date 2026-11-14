@@ -16,9 +16,9 @@ import check from "../";
 
 let NAMES = ["-", "only", "best", "good", "?!", "?", "??"];
 
-fn text(variant: u8, m: rules::Move&) -> u8[>..] {
+fn text(p: rules::Position, m: rules::Move) -> u8[>..] {
     var t: u8[>..] = [];
-    rules::format_move(t, variant, m);
+    rules::format_move(t, p, m);
     return t;
 }
 
@@ -30,7 +30,7 @@ fn judge_all(e: ai::Engine&, variant: u8, fen: const u8[:]) {
     print(rules::fen(p));
     for i in moves.len {
         let v = ai::judge(e, past, p, moves[i]);
-        print("  ", text(variant, moves[i]), "  ", NAMES[v.mark], "  loss ", v.loss, "  best ", v.best, "  played ", v.played);
+        print("  ", text(p, moves[i]), "  ", NAMES[v.mark], "  loss ", v.loss, "  best ", v.best, "  played ", v.played);
     }
 }
 
@@ -47,12 +47,12 @@ fn main() {
     var past = rules::Past { draw: rules::draw_start(p), before: [] };
     var moves: rules::Moves = [];
     rules::generate(p, moves);
-    print("forced ", text(rules::RUSSIAN, moves[0]), "  ", NAMES[ai::judge(e, past, p, moves[0]).mark]);
+    print("forced ", text(p, moves[0]), "  ", NAMES[ai::judge(e, past, p, moves[0]).mark]);
 
     let g = check::position(rules::RUSSIAN, "W:Wc1,e1,b2,d2,f2,h2,c3,e3,g3,d4,c5:Ba5,e5,b6,f6,h6,a7,c7,e7,f8,h8,h4");
     var gpast = rules::Past { draw: rules::draw_start(g), before: [] };
     let h = ai::hint(e, gpast, g);
-    print("hint ", text(rules::RUSSIAN, h), "  ", NAMES[ai::judge(e, gpast, g, h).mark]);
+    print("hint ", text(g, h), "  ", NAMES[ai::judge(e, gpast, g, h).mark]);
 
     print("expected at -300, -100, 0, 100, 300, won: ", ai::expected(-300), " ", ai::expected(-100), " ",
           ai::expected(0), " ", ai::expected(100), " ", ai::expected(300), " ", ai::expected(ai::WIN - 10));

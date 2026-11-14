@@ -36,9 +36,15 @@ fn number(sq: i64) -> i64 {
     return -1;
 }
 
-fn move_text(m: rules::Move) -> u8[>..] {
+fn move_text(p: rules::Position, m: rules::Move) -> u8[>..] {
     var t: u8[>..] = [];
-    rules::format_move(t, V, m);
+    rules::format_move(t, p, m);
+    return t;
+}
+
+fn move_text(w: rules::Way) -> u8[>..] {
+    var t: u8[>..] = [];
+    rules::format_move(t, V, w);
     return t;
 }
 
@@ -60,7 +66,7 @@ fn played(gm: game::Game&) -> u8[>..] {
     var lost = false;
     for m in gm.b.moves {
         guard m.captured != 0 else { continue; }
-        format(white_takes, " ", move_text(m));
+        format(white_takes, " ", move_text(gm.b.pos, m));
         if m.captured & rules::bit(gm.b.last.to) != 0 { lost = true; }
     }
     if white_takes.len == 0 { format(white_takes, " none"); }
@@ -95,7 +101,7 @@ fn rings(gm: game::Game&, l: panel::Layout, now: f64) -> u8[>..] {
     return t;
 }
 
-fn same(a: rules::Move, b: rules::Move) -> bool { a.from == b.from && a.to == b.to && a.captured == b.captured }
+fn same(a, b) -> bool { a.from == b.from && a.to == b.to && a.captured == b.captured }
 
 // A press at p, a drag to q over a few frames, and a release there.
 fn drag(gm: game::Game&, g: gui::Gui&, l: panel::Layout, p: float2, q: float2, now: f64) {
@@ -109,6 +115,8 @@ fn drag(gm: game::Game&, g: gui::Gui&, l: panel::Layout, p: float2, q: float2, n
 
 fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], what: const u8[:]) {
     print("== ", what, ": ", fen);
+    let start, parsed = rules::parse_fen(fen, V);
+    assert(parsed);
     var t = 0.0;
     var fails = 0;
     for hints in [board::MISTAKES, board::MOVES] {
@@ -116,7 +124,7 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
         let opts = gm.b.moves;
         if hints == board::MISTAKES {
             var all: u8[>..] = [];
-            for m in opts { format(all, " ", move_text(m)); }
+            for m in opts { format(all, " ", move_text(start, m)); }
             print("captures:", all);
         }
         // The must-capture rings and counts: none up front on mistakes only, a count of
@@ -149,7 +157,7 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
                 let ok = gm.b.rec.history.len == 1 && same(gm.b.move, m);
                 if !ok { fails++; }
                 if hints == board::MISTAKES && !by_drag || !ok {
-                    print("  ", move_text(m), if by_drag { " by a drag" } else { " by taps" }, ": ", played(gm),
+                    print("  ", move_text(start, m), if by_drag { " by a drag" } else { " by taps" }, ": ", played(gm),
                           if ok { "" } else { "  <- not the one chosen" });
                 }
                 t += 10.0;
@@ -181,7 +189,7 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
             let ok = wrong == 0 && gm.b.rec.history.len == 1 && same(gm.b.move, m);
             if !ok {
                 fails++;
-                print("  after the stray taps, ", move_text(m), ": ", played(gm), "  <- not the one chosen");
+                print("  after the stray taps, ", move_text(start, m), ": ", played(gm), "  <- not the one chosen");
             }
             t += 10.0;
         }
@@ -235,7 +243,7 @@ fn raised(g: gui::Gui&, fen: const u8[:]) {
             count++;
             if !(sh.game.b.rec.history.len == 1 && same(sh.game.b.move, m)) {
                 fails++;
-                print("  3D ", move_text(m), if by_drag { " by a drag" } else { " by taps" }, ": ", played(sh.game),
+                print("  3D ", move_text(p, m), if by_drag { " by a drag" } else { " by taps" }, ": ", played(sh.game),
                       "  <- not the one chosen");
             }
             t += 10.0;

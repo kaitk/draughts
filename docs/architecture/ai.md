@@ -43,7 +43,7 @@ for the search:
   take back never waits for a stale reply. The answer carries the move, the nodes, and
   the time it took.
 - The worker starts at the first ask, so a game against a friend costs no thread and
-  none of the engine's 6 MB; with the lookout on, its traps start the thread but not the
+  none of the engine's 4.7 MB; with the lookout on, its traps start the thread but not the
   engine, which is made at the first search. The hint and the lookout's traps are asks
   too (`game::open_ask`: the computer's move first, then the hint's, then the traps), and
   the answer says which it is for (`think::Thought.kind`).
@@ -158,8 +158,8 @@ On a worker the frame loop draws as it would without the computer
   board's size, so Brazilian has International's king on Russian's 8×8 rows.
   All of it is integer arithmetic on the bitboards.
 
-Nothing allocates per node: the frames, their move buffers (`rules::Moves`, 512 moves),
-and the table are made once, about 6 MB in all.
+Nothing allocates per node: the frames, their move buffers (`rules::Moves`, 512 moves of
+16 bytes), and the table are made once, about 4.7 MB in all, the table 4 MB of it.
 
 ## Levels
 

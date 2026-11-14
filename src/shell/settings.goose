@@ -68,7 +68,7 @@ fn stage(b: board::Board&, s: Settings&, now: f64) {
     let k = (v.size - 8) / 2;
     board::set(b, rules::Position { pieces: [squares(v, PREVIEW_WHITE, k), squares(v, PREVIEW_BLACK, k)],
                                     kings: squares(v, PREVIEW_KINGS, k), side: rules::WHITE, variant: b.variant });
-    b.last = rules::Move { from: square(v, "d6", k) as u8, to: square(v, "e5", k) as u8, .. };
+    b.last = rules::Way { from: square(v, "d6", k) as u8, to: square(v, "e5", k) as u8, .. };
     b.has_last = true;
     b.hints = s.hints;
     b.king_look = if raised(s) { raised_king_look(s) } else { king_look(s) };

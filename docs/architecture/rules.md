@@ -58,10 +58,14 @@ computer player, and the tests share it.
   whether men capture backward, flying kings, the majority rule, what crowning mid-capture
   does, who moves first, and how squares are written. English is implemented from the
   same fields and checked by perft, though the app doesn't offer it yet.
-- **Move** (`rules::Move`): start and end square, the bitboard of pieces taken, whether
-  it crowns, and the stops from start to end, for showing the move. `rules::generate`
-  fills a `rules::Moves` buffer the caller owns (512 moves), so generating allocates
-  nothing.
+- **Move** (`rules::Move`): start and end square, the bitboard of pieces taken, and
+  whether it crowns, 16 bytes. `rules::generate` fills a `rules::Moves` buffer the caller
+  owns (512 moves), so generating allocates nothing. The most found in any position is
+  407, International captures of six by six flying kings (`test/rules/most_moves`).
+- **Way** (`rules::Way`): a move with its stops from start to end, for showing it. Only
+  the board needs them: `rules::ways` gives every way a piece captures (a move made stop
+  by stop may take any), and `rules::way_of` a move's first way, the one generate meets
+  first, which the board animates and the move's text (`28x19x10`) writes.
 
 ## Draws
 

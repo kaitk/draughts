@@ -24,7 +24,7 @@ fn show(variant: u8, fen: const u8[:]) {
         let m = moves[i];
         var text: u8[>..] = [];
         text.append("  ");
-        rules::format_move(text, variant, m);
+        rules::format_move(text, p, m);
         if m.captured != 0 { format(text, "  takes ", popcount(m.captured)); }
         if m.crowned { text.append("  crowned"); }
         let line .= lines.push([]);
@@ -96,7 +96,7 @@ fn walk(variant: u8, fen: const u8[:], script: const u8[:][:], how: Walk, plies:
         for i in moves.len {
             let m = moves[i];
             text.clear();
-            rules::format_move(text, variant, m);
+            rules::format_move(text, p, m);
             if ply <= script.len {
                 if text == script[ply - 1] { pick = i; }
                 continue;
@@ -144,7 +144,7 @@ fn walk(variant: u8, fen: const u8[:], script: const u8[:][:], how: Walk, plies:
             print("  ", ply, ": the counts from the positions differ");
         }
         text.clear();
-        rules::format_move(text, variant, m);
+        rules::format_move(text, p, m);
         var out: u8[>..] = [];
         format(out, "  ", ply, " ", text);
         let before = out.len;

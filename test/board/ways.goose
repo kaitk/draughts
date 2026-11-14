@@ -42,7 +42,7 @@ fn drawn(b: board::Board&, l: board::Layout, now: f64) -> u8[>..] {
     return str("none");
 }
 
-fn way(m: rules::Move&) -> u8[>..] {
+fn way(m: rules::Way&) -> u8[>..] {
     var t: u8[>..] = [];
     for s, i in m.path { format(t, if i > 0 { ":" } else { "" }, name(s)); }
     return t;
@@ -54,9 +54,10 @@ fn main() {
     assert(ok);
     var b = board::new(V);
     board::set(b, p);
-    var w: rules::Moves = [];
+    var w: rules::Ways = [];
     rules::ways(p, b.moves[0].from, w);
-    print("the move kept: ", way(b.moves[0]), ", ways: ", w.len);
+    let kept = rules::way_of(p, b.moves[0]);
+    print("the move kept: ", way(kept), ", ways: ", w.len);
 
     tap(b, l, "c1", 0.0);
     tap(b, l, "e3", 1.0);

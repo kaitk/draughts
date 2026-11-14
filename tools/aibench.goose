@@ -49,7 +49,7 @@ fn bench(e: ai::Engine&, variant: u8, fen: const u8[:], slowest: f64[]&, nodes: 
         let m = ai::think(e, p, ai::level_skill(level), 1);
         let dt = clock() - t0;
         var text: u8[>..] = [];
-        rules::format_move(text, variant, m);
+        rules::format_move(text, p, m);
         print("  level ", level, ": ", text, "  depth ", e.seen, "  nodes ", e.total_nodes,
               "  ", (dt * 1000.0) as i64, " ms");
         slowest[level] = max(slowest[level], dt);

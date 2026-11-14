@@ -167,7 +167,7 @@ fn right_moves(s: puzzles::Solver&, p: rules::Position, k: i64, out: u8[>..]&) -
     for m in legal {
         guard puzzles::judge(s, p, puzzles::short(m), k) != puzzles::WRONG else { continue; }
         out.append(" ");
-        rules::format_move(out, p.variant, m);
+        rules::format_move(out, p, m);
         n++;
     }
     return n;
@@ -199,7 +199,7 @@ fn screen_line(s: puzzles::Solver&, pz: puzzles::Puzzle&, out: u8[>..]&, given: 
         let m = legal[i];
         let solved = puzzles::judge(s, q, puzzles::short(m), k - left) == puzzles::SOLVED;
         if out.len > 0 { out.append(" "); }
-        rules::format_move(out, q.variant, m);
+        rules::format_move(out, q, m);
         line.plies.push(puzzles::Ply { from: m.from, to: m.to, captured: m.captured });
         q = rules::play(q, m);
         guard !solved else { return true; }
@@ -213,7 +213,7 @@ fn screen_line(s: puzzles::Solver&, pz: puzzles::Puzzle&, out: u8[>..]&, given: 
         guard j >= 0 else { return false; }
         rules::generate(q, legal);
         out.append(" ");
-        rules::format_move(out, q.variant, legal[j]);
+        rules::format_move(out, q, legal[j]);
         line.plies.push(puzzles::Ply { from: legal[j].from, to: legal[j].to, captured: legal[j].captured });
         q = rules::play(q, legal[j]);
     }
@@ -237,7 +237,7 @@ fn try_position(fen: const u8[:], goal: const u8[:], moves: const u8[:], given: 
         var all:  rules::Moves = [];
         rules::generate(p, all);
         for m in all {
-            rules::format_move(each, p.variant, m);
+            rules::format_move(each, p, m);
             format(each, " ", puzzles::value(s, rules::play(p, m), puzzles::SAFE_DEPTH, -2000, 2000), "; ");
         }
         print("each: ", each);

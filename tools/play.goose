@@ -16,7 +16,7 @@ import ai from "../src/ai";
 
 let MAX_PLIES = 600;
 
-fn show(p: rules::Position, human: u8, last: rules::Move, has_last: bool) {
+fn show(p: rules::Position, human: u8, last: rules::Way, has_last: bool) {
     let v .= rules::VARIANTS[p.variant];
     var at: i64[100];
     for i in 100 { at[i] = -1; }
@@ -105,7 +105,7 @@ fn main() {
     var history: rules::Position[..MAX_PLIES] = [];
     var p = rules::start(variant);
     var past = rules::Past { draw: rules::draw_start(p), before: [] };
-    var last = rules::Move { .. };
+    var last = rules::Way { .. };
     var has_last = false;
     var line: u8[>..] = [];
     var text: u8[>..] = [];
@@ -127,14 +127,14 @@ fn main() {
             let m = ai::think_after(e, past, p, skill, history.len as u64);
             let ms = ((clock() - t0) * 1000.0) as i64;
             text.clear();
-            rules::format_move(text, variant, m);
+            rules::format_move(text, p, m);
             print("computer: ", text, "   (", ms, " ms, depth ", e.seen, ", ", e.total_nodes,
                   " nodes)");
             history.push(p);
             let q = rules::play(p, m);
             rules::pass(past, p, m, q);
+            last = rules::way_of(p, m);
             p = q;
-            last = m;
             has_last = true;
             continue;
         }
@@ -145,7 +145,7 @@ fn main() {
             if i > 0 { list.append("   "); }
             format(list, i + 1);
             list.append(") ");
-            rules::format_move(list, variant, m);
+            rules::format_move(list, p, m);
         }
         print(list);
         write_stdout("> ");
@@ -171,7 +171,7 @@ fn main() {
         for m, i in moves {
             guard chosen < 0 else { break; }
             text.clear();
-            rules::format_move(text, variant, m);
+            rules::format_move(text, p, m);
             if text == t { chosen = i; }
         }
         guard chosen >= 0 else { print("Not a legal move here."); continue; }

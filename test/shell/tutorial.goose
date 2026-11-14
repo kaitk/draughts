@@ -40,7 +40,7 @@ fn spot(g: gui::Gui&, id: i64) -> float4 {
 fn press(sh: shell::Shell&, g: gui::Gui&, id: i64) { drive::tap(sh, g, drive::middle(spot(g, id)), tick()); }
 
 // A move as text: from, its stops, and its end, x between them for a capture.
-fn said(v: rules::Variant&, m: rules::Move&) -> u8[>..] {
+fn said(v: rules::Variant&, m: rules::Way&) -> u8[>..] {
     var s = str(drive::name(v, m.from));
     let sep = if m.captured != 0 { "x" } else { "-" };
     for p in m.path { if p != m.to && p != m.from { format(s, sep, drive::name(v, p)); } }
@@ -53,7 +53,7 @@ fn said(v: rules::Variant&, m: rules::Move&) -> u8[>..] {
 fn play_first(sh: shell::Shell&, g: gui::Gui&) {
     let b .= shell::shown(sh);
     let v .= rules::VARIANTS[b.variant];
-    let m = b.moves[0];
+    let m = rules::way_of(b.pos, b.moves[0]);
     drive::tap(sh, g, drive::at(sh.out.layout, drive::name(v, m.from)), tick());
     for p in m.path {
         guard p != m.to && p != m.from else { continue; }
@@ -81,7 +81,10 @@ fn main() {
             let s = tutorial::current(ls);
             let vv .= rules::VARIANTS[v];
             var moves: u8[>..] = [];
-            for m in ls.b.moves { format(moves, " ", said(vv, m)); }
+            for m in ls.b.moves {
+                let w = rules::way_of(ls.b.pos, m);
+                format(moves, " ", said(vv, w));
+            }
             print("  ", k + 1, " ", strings::get(strings::HOW_STEP + 3 * s), ": ", rules::fen(ls.b.pos), ",", moves[..],
                   if board::must_capture(ls.b) { " (must take)" } else { "" });
         }

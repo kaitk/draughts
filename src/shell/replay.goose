@@ -103,11 +103,11 @@ let GROUP_LIST = 2;
 // from the position before it as the judge found it (none for an only move, one not
 // judged, or a game written before the history kept them).
 struct Ply {
-    move:     rules::Move = rules::Move { .. },
-    best:     rules::Move = rules::Move { .. },
-    has_best: bool        = false,
-    only:     bool        = false,      // the position before had this one legal move
-    mark:     u8          = 0,          // ai::NOT_JUDGED..BLUNDER
+    move:     rules::Way = rules::Way { .. },
+    best:     rules::Way = rules::Way { .. },
+    has_best: bool       = false,
+    only:     bool       = false,       // the position before had this one legal move
+    mark:     u8         = 0,           // ai::NOT_JUDGED..BLUNDER
 }
 
 struct Replay {
@@ -145,11 +145,11 @@ fn new() -> Replay { Replay { b: board::new(rules::INTERNATIONAL), .. } }
 
 // The legal move of `legal` a history's word stands for (rules::format_move's text), or
 // its from and to alone, as a capture written without its stops; -1 for none.
-fn find(legal: rules::Moves&, variant: u8, word: const u8[:], said: u8[>..]&) -> i64 {
-    let v .= rules::VARIANTS[variant];
+fn find(legal: rules::Moves&, p: rules::Position, word: const u8[:], said: u8[>..]&) -> i64 {
+    let v .= rules::VARIANTS[p.variant];
     for i in legal.len {
         said.clear();
-        rules::format_move(said, variant, legal[i]);
+        rules::format_move(said, p, legal[i]);
         if said[..] == word { return i; }
     }
     for i in legal.len {
@@ -182,17 +182,17 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
         guard word.len > 0 else { continue; }
         guard r.plies.len < MAX_PLIES else { break; }
         rules::generate(p, legal);
-        let i = find(legal, variant, word, said);
+        let i = find(legal, p, word, said);
         guard i >= 0 else { break; }
         let k = r.plies.len;
         let c = if k < marks.len { (marks[k] as i64) - '0' } else { 0 };
         let mark = if c >= 0 && c < ai::MARKS { c } else { ai::NOT_JUDGED };
-        var ply = Ply { move: legal[i], only: legal.len == 1, mark: mark as u8, .. };
+        var ply = Ply { move: rules::way_of(p, legal[i]), only: legal.len == 1, mark: mark as u8, .. };
         // The best move's word, if the line has one for this move: a legal move of p.
         if k < bests.len && bests[k] != "-" {
-            let j = find(legal, variant, bests[k], said);
+            let j = find(legal, p, bests[k], said);
             if j >= 0 {
-                ply.best = legal[j];
+                ply.best = rules::way_of(p, legal[j]);
                 ply.has_best = true;
                 r.any_best = true;
             }
@@ -397,7 +397,7 @@ fn number_of(r: Replay&, i: i64) -> i64, bool {
     return k / 2 + 1, k % 2 == 1;
 }
 
-fn as_move(p: Ply&) -> rules::Move { p.move }
+fn as_move(p: Ply&) -> rules::Move { rules::move_of(p.move) }
 
 // The width of a move's mark after it in the list, its gap before it, 0 for none; the
 // mark drawn as the moves panel draws it (game::mark_at), in the column's face.
@@ -408,9 +408,9 @@ fn mark_width(r: Replay&, g: gui::Gui&, mark: u8) -> f32 {
 
 // A move with every stop of a capture, as the glass's lines about the best move write it
 // ("22x33x24"); a quiet move from-to.
-fn way_text(t: gui::Text&, v: rules::Variant&, m: rules::Move&) {
+fn way_text(t: gui::Text&, v: rules::Variant&, m: rules::Way&) {
     guard m.captured != 0 && m.path.len > 2 else {
-        game::notation(t, v, m);
+        game::notation(t, v, rules::move_of(m));
         return;
     }
     t.clear();
@@ -891,7 +891,7 @@ fn put_dot(out: Dots&, x: f32, y: f32, rad: f32) { if out.len < MAX_DOTS { out.p
 // The way of move m on the board in dots, into out: from square centre to centre,
 // DOT_STEP of a square apart, clear of the pieces at its ends (DOT_END) and of the stops
 // between (DOT_STOP), and a larger dot at each stop.
-fn dots_of(l: board::Layout, v: rules::Variant&, m: rules::Move&, out: Dots&) {
+fn dots_of(l: board::Layout, v: rules::Variant&, m: rules::Way&, out: Dots&) {
     out.clear();
     let sq = l.inner.w;
     let n = m.path.len;

@@ -111,7 +111,7 @@ fn main() {
     print("mistakes only");
     var gm = game::new(I);
     begin(gm, PHOTO, rules::WHITE, board::MISTAKES);
-    let k = gm.b.moves[0];
+    let k = rules::way_of(gm.b.pos, gm.b.moves[0]);
     state(gm, "the start");
     tap(gm, k.from);
     state(gm, str(named(k.from), " picked"));

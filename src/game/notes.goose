@@ -184,7 +184,7 @@ fn push_square(out: Line&, v: rules::Variant&, b: i64) {
 
 // A move as the panel shows it: from and to, a capture's stops left out ("28x19",
 // "c3:e5").
-fn notation(out: Line&, v: rules::Variant&, m: rules::Move&) {
+fn notation(out: Line&, v: rules::Variant&, m: rules::Move) {
     out.clear();
     push_square(out, v, m.from);
     out.push(if m.captured == 0 { '-' } else if v.algebraic { ':' } else { 'x' });

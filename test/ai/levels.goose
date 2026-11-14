@@ -10,9 +10,9 @@ import rules from "../../src/rules";
 import ai from "../../src/ai";
 import check from "../";
 
-fn move_text(variant: u8, m: rules::Move) -> u8[>..] {
+fn move_text(p: rules::Position, m: rules::Move) -> u8[>..] {
     var t: u8[>..] = [];
-    rules::format_move(t, variant, m);
+    rules::format_move(t, p, m);
     return t;
 }
 
@@ -41,7 +41,7 @@ fn shot(e: ai::Engine&, variant: u8, fen: const u8[:]) {
             let r = e.plies[0].moves[i];
             if r.from == m.from && r.to == m.to && r.captured == m.captured { score = e.score[i]; }
         }
-        print("  level ", level, ": ", move_text(variant, m), "  ", score_text(score));
+        print("  level ", level, ": ", move_text(p, m), "  ", score_text(score));
     }
 }
 
@@ -58,7 +58,7 @@ fn seeds(e: ai::Engine&, variant: u8, fen: const u8[:]) {
         for seed: u64 in 1..5 {
             let once = ai::think(e, p, ai::level_skill(level), seed);
             text.append(" ");
-            text.append(move_text(variant, once));
+            text.append(move_text(p, once));
             ai::start(e, p, ai::level_skill(level), seed);
             while !ai::step(e, 7) {}
             let sliced = ai::reply(e);

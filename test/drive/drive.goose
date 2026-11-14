@@ -198,11 +198,11 @@ fn past_line(variant: u8, plies: i64, time: i64) -> u8[>..] {
         guard legal.len > 0 else { break; }
         let m = legal[(7 * k + 3) % legal.len];
         if k > 0 { moves.push(' '); }
-        rules::format_move(moves, variant, m);
+        rules::format_move(moves, p, m);
         marks.push(('1' + k % 6) as u8);
         // The best move as the judge writes it: another legal move, - for an only move.
         if k > 0 { best.push(' '); }
-        if legal.len == 1 { best.push('-'); } else { rules::format_move(best, variant, legal[(5 * k + 1) % legal.len]); }
+        if legal.len == 1 { best.push('-'); } else { rules::format_move(best, p, legal[(5 * k + 1) % legal.len]); }
         p = rules::play(p, m);
     }
     return str("time=", time, "\tdraughts=", rules::VARIANT_NAMES[variant],

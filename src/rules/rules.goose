@@ -10,7 +10,9 @@
 // squares per row: 36 bits for 8×8 and 55 for 10×10. Steps: up-left +h,
 // up-right +h + 1, down-left -(h + 1), down-right -h.
 //
-// Nothing here allocates: moves go into a `Moves` buffer the caller owns.
+// Nothing here allocates: moves go into a `Moves` buffer the caller owns. A move is
+// its ends and the pieces it takes; its stops, which only the board shows, are a `Way`
+// (`ways`, `way_of`).
 namespace rules;
 import std;
 import .fen;
@@ -42,8 +44,15 @@ let CROWN_ENDS_MOVE = 2;    // English: crowned, and the move ends
 // Room for the longest move: a capture's stops, from the start square on.
 // A 10×10 board has 32 squares a piece can be captured on.
 let MAX_PATH = 34;
-// Room for every legal move of any position reached in play, with margin.
+// Room for every legal move of a position. Flying kings under the majority rule make
+// the most: an International position with 407 captures of six pieces each, by six kings
+// (test/rules/most_moves.goose), was the most a search over positions found; quiet moves
+// stay under a hundred, Russian's and Brazilian's 8×8 under seventy (2026-11-14).
 let MAX_MOVES = 512;
+// Room for a piece's ways (`ways`): more than its moves where several ways make one, 137
+// for one king of the 407 moves. A search found contrived positions whose king has more
+// than this; past it the rest are dropped, and the board can't follow them stop by stop.
+let MAX_WAYS = 512;
 
 struct Variant {
     size:          i64,     // squares per side: 8 or 10
@@ -69,12 +78,20 @@ struct Variant {
 // A position: pieces by side, which of them are kings, side to move, variant.
 struct Position { pieces: u64[2], kings: u64, side: u8, variant: u8 }
 
-// A move: where the piece starts and ends, the pieces it takes, whether it
-// is crowned, and its stops (from first, to last) for showing it.
-struct Move { from: u8, to: u8, crowned: bool, captured: u64, path: u8[..MAX_PATH] }
+// A move: where the piece starts and ends, the pieces it takes, and whether it is
+// crowned. 16 bytes: the search, perft, the game's notes, and the saves keep these.
+struct Move { from: u8, to: u8, crowned: bool, captured: u64 }
 
 type Moves = Move[..MAX_MOVES];
 type Path = u8[..MAX_PATH];
+
+// A move with its stops, from first to last, for showing it: a capture made stop by stop
+// may take any of a move's ways, and the board animates the one taken.
+struct Way { from: u8, to: u8, crowned: bool, captured: u64, path: Path }
+
+type Ways = Way[..MAX_WAYS];
+
+fn move_of(w: Way&) -> Move { Move { from: w.from, to: w.to, crowned: w.crowned, captured: w.captured } }
 
 fn bit(n: i64) -> u64 { (1 as u64) << n }
 
@@ -138,7 +155,6 @@ struct Search {
     occ:   u64,     // every piece but the one moving
     first: i64,     // where this piece's captures start in the buffer
     best:  i64,     // the most pieces any capture so far takes, under the majority rule
-    all:   bool,    // every way kept, not one per end and pieces taken (`ways`)
 }
 
 // Whether a piece on sq can take anything, with `taken` already taken.
@@ -158,34 +174,51 @@ fn can_take(v: Variant&, s: Search&, sq: i64, king: bool, taken: u64) -> bool {
     return false;
 }
 
-// Adds a finished capture, unless the same piece already has one with the same
-// end and the same pieces taken, or the majority rule rules it out. Keeping every way
-// (`ways`), a full buffer drops the rest rather than stopping.
-fn record(v: Variant&, s: Search&, to: i64, crowned: bool, taken: u64, path: Path&,
-          out: Moves&) {
+// Adds a finished capture, unless the majority rule rules it out: into a `Moves`, once per
+// end and pieces taken for the same piece; into `Ways`, every way, a full buffer dropping
+// the rest rather than stopping; into a `Find`, the first way of the move it looks for.
+fn record(v: Variant&, s: Search&, to: i64, crowned: bool, taken: u64, path: Path&, out) {
     if v.majority {
         let n = popcount(taken);
         if n < s.best { return; }
         if n > s.best {
             s.best = n;
-            out.clear();
+            drop_all(out);
             s.first = 0;
         }
     }
-    if s.all {
-        guard out.len < MAX_MOVES else { return; }
-    } else {
-        for i in s.first..out.len {
-            if out[i].to == to && out[i].captured == taken { return; }
-        }
-    }
-    assert(out.len < MAX_MOVES);
-    out.push(Move { from: s.from, to: to as u8, crowned: crowned, captured: taken, path: path });
+    keep(s, to as u8, crowned, taken, path, out);
 }
 
+fn keep(s: Search&, to: u8, crowned: bool, taken: u64, path: Path&, out: Moves&) {
+    for i in s.first..out.len {
+        if out[i].to == to && out[i].captured == taken { return; }
+    }
+    assert(out.len < MAX_MOVES);
+    out.push(Move { from: s.from, to: to, crowned: crowned, captured: taken });
+}
+
+fn keep(s: Search&, to: u8, crowned: bool, taken: u64, path: Path&, out: Ways&) {
+    guard out.len < MAX_WAYS else { return; }
+    out.push(Way { from: s.from, to: to, crowned: crowned, captured: taken, path: path });
+}
+
+// The way to look for (`way_of`): the first of a move's ways, as generate meets them.
+struct Find { to: u8, captured: u64, path: Path, found: bool }
+
+fn keep(s: Search&, to: u8, crowned: bool, taken: u64, path: Path&, out: Find&) {
+    guard !out.found && to == out.to && taken == out.captured else { return; }
+    out.path = path;
+    out.found = true;
+}
+
+fn drop_all(out: Moves&) { out.clear(); }
+fn drop_all(out: Ways&) { out.clear(); }
+fn drop_all(out: Find&) {}
+
 // Every way the piece on sq continues its capture, recorded when it can't.
-recursive fn jump(v: Variant&, s: Search&, sq: i64, king: bool, crowned: bool, taken: u64,
-                  path: Path&, out: Moves&) {
+recursive fn jump<T>(v: Variant&, s: Search&, sq: i64, king: bool, crowned: bool, taken: u64,
+                     path: Path&, out: T&) {
     var found = false;
     for d in 4 {
         let step = v.delta[d];
@@ -253,7 +286,7 @@ fn captures(p: Position, v: Variant&, out: Moves&) {
                else { (opp << -step) & (empty << (-2 * step)) };
     }
     var movers = (own & ~p.kings & men) | (own & p.kings);
-    var s = Search { side: side, from: 0, opp: opp, occ: 0, first: 0, best: 1, all: false };
+    var s = Search { side: side, from: 0, opp: opp, occ: 0, first: 0, best: 1 };
     var path: Path = [];
     while movers != 0 {
         let from = ctz(movers);
@@ -274,7 +307,7 @@ fn can_take_from(p: Position, sq: i64) -> bool {
     let v .= VARIANTS[p.variant];
     guard sq >= 0 && p.pieces[p.side] & bit(sq) != 0 else { return false; }
     let s = Search { side: p.side, from: sq as u8, opp: p.pieces[1 - p.side],
-                     occ: occupied(p) & ~bit(sq), first: 0, best: 1, all: false };
+                     occ: occupied(p) & ~bit(sq), first: 0, best: 1 };
     return can_take(v, s, sq, p.kings & bit(sq) != 0, 0);
 }
 
@@ -284,15 +317,33 @@ fn can_take_from(p: Position, sq: i64) -> bool {
 // and take the same pieces on from either is two ways to one move. Under the majority
 // rule only this piece's longest captures, which are legal when the piece has a move at
 // all. Empty when the piece can't take.
-fn ways(p: Position, sq: i64, out: Moves&) {
+fn ways(p: Position, sq: i64, out: Ways&) {
     out.clear();
     let v .= VARIANTS[p.variant];
     guard sq >= 0 && p.pieces[p.side] & bit(sq) != 0 else { return; }
     var s = Search { side: p.side, from: sq as u8, opp: p.pieces[1 - p.side], occ: occupied(p) & ~bit(sq),
-                     first: 0, best: 1, all: true };
+                     first: 0, best: 1 };
     var path: Path = [];
     path.push(sq as u8);
     jump(v, s, sq, p.kings & bit(sq) != 0, false, 0, path, out);
+}
+
+// Move m of p with its stops: a quiet move's two squares, a capture's first way as
+// generate meets it, the way a move found by generate was always shown.
+fn way_of(p: Position, m: Move) -> Way {
+    var w = Way { from: m.from, to: m.to, crowned: m.crowned, captured: m.captured, path: [] };
+    w.path.push(m.from);
+    if m.captured == 0 {
+        w.path.push(m.to);
+        return w;
+    }
+    let v .= VARIANTS[p.variant];
+    var s = Search { side: p.side, from: m.from, opp: p.pieces[1 - p.side], occ: occupied(p) & ~bit(m.from),
+                     first: 0, best: 1 };
+    var f = Find { to: m.to, captured: m.captured, path: [], found: false };
+    jump(v, s, m.from, p.kings & bit(m.from) != 0, false, 0, w.path, f);
+    if f.found { w.path = f.path; } else { w.path.push(m.to); }
+    return w;
 }
 
 fn quiet(p: Position, v: Variant&, out: Moves&) {
@@ -329,9 +380,7 @@ fn quiet(p: Position, v: Variant&, out: Moves&) {
 
 fn add_quiet(out: Moves&, from: i64, to: i64, crowned: bool) {
     assert(out.len < MAX_MOVES);
-    let m .= out.push(Move { from: from as u8, to: to as u8, crowned: crowned, .. });
-    m.path.push(from as u8);
-    m.path.push(to as u8);
+    out.push(Move { from: from as u8, to: to as u8, crowned: crowned, captured: 0 });
 }
 
 // Every legal move of p into out, which it empties first. Capturing is

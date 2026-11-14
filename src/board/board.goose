@@ -131,7 +131,7 @@ struct Board {
     selected: i64,              // a bit, or -1
     // The selected piece's ways (`select`): its captures, every way to each (rules::ways),
     // or its quiet moves. A capture made stop by stop follows any of them (`follow`).
-    ways:  rules::Moves,
+    ways:  rules::Ways,
     steps: rules::Path,         // the stops of a capture tapped so far, after the selected piece's square
     // A tap that kept a stop shows the piece hopping there from the square before
     // (`hop_from`, a bit) from `hop_at`, as a move's hop: a drop needs none, the finger
@@ -161,13 +161,13 @@ struct Board {
     // piece starts from if it was dropped there; `back`, a move shown sliding back.
     moving:    bool,
     back:      bool,
-    move:      rules::Move,
+    move:      rules::Way,
     before:    rules::Position,
     since:     f64,
     drop:      float2,
     dropped:   bool,
     skip:      i64,             // the hops of the move already made by hand, not shown again
-    last:      rules::Move,
+    last:      rules::Way,
     has_last:  bool,
     pulse_end: f64,
     // The pieces the legal captures take, pulsing beside the pieces that must take them,
@@ -284,7 +284,7 @@ fn undo(b: Board&) -> bool {
     let s, ok = rules::record_pop(b.rec);
     guard ok else { return false; }
     b.has_last = s.has_last;
-    b.last = rules::Move { from: s.last_from, to: s.last_to, .. };
+    b.last = rules::Way { from: s.last_from, to: s.last_to, .. };
     show(b, s.pos);
     return true;
 }
@@ -325,7 +325,7 @@ fn slide_back(b: Board&, m: rules::Move, now: f64, mistake: bool = true) -> bool
     let side = 1 - b.pos.side;
     let king = b.pos.kings & rules::bit(m.to) != 0;
     undo(b);
-    b.move = m;
+    b.move = rules::way_of(b.pos, m);
     b.before = b.pos;
     b.moving = true;
     b.back = true;
@@ -355,13 +355,13 @@ fn select(b: Board&, sq: i64) {
         rules::ways(b.pos, sq, b.ways);
     } else {
         b.ways.clear();
-        for m in b.moves { if m.from == sq { b.ways.push(m); } }
+        for m in b.moves { if m.from == sq { b.ways.push(rules::way_of(b.pos, m)); } }
     }
 }
 
 // Whether move m is the selected piece's and makes the stops tapped so far, with more of
 // its way still to come.
-fn on_steps(b: Board&, m: rules::Move&) -> bool {
+fn on_steps(b: Board&, m: rules::Way&) -> bool {
     guard m.from == b.selected && m.path.len > b.steps.len + 1 else { return false; }
     for s, k in b.steps { if m.path[k + 1] != s { return false; } }
     return true;
@@ -485,9 +485,9 @@ fn waiting(b: Board&) -> i64 {
 
 fn start_move(b: Board&, i: i64, now: f64) {
     rules::record_push(b.rec, rules::Step { pos: b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last });
-    b.move = b.moves[i];
+    b.move = rules::way_of(b.pos, b.moves[i]);
     b.before = b.pos;
-    b.pos = rules::play(b.pos, b.move);
+    b.pos = rules::play(b.pos, b.moves[i]);
     rules::generate(b.pos, b.moves);
     b.moving = true;
     b.since = now;
@@ -543,7 +543,7 @@ fn play_way(b: Board&, i: i64, now: f64) {
 fn abandon(b: Board&, now: f64) -> bool {
     let at = waiting(b);
     guard at >= 0 && !b.moving else { return false; }
-    var m = rules::Move { from: b.selected as u8, to: at as u8, crowned: false, captured: 0, path: [] };
+    var m = rules::Way { from: b.selected as u8, to: at as u8, crowned: false, captured: 0, path: [] };
     m.path.push(b.selected as u8);
     for s in b.steps { m.path.push(s); }
     let king = b.pos.kings & rules::bit(b.selected) != 0;
@@ -615,7 +615,7 @@ fn between(v: rules::Variant&, a: i64, c: i64) -> u64 {
 // How opaque a captured piece on `m` is `t` into the move: it goes see-through (TAKEN) as
 // the mover hops over it, so a king's way back past it stays in view, and fades out
 // after the last hop.
-fn taken_alpha(v: rules::Variant&, mv: rules::Move&, m: u64, t: f64) -> f32 {
+fn taken_alpha(v: rules::Variant&, mv: rules::Way&, m: u64, t: f64) -> f32 {
     let fade_at = hops(mv) as f64 * HOP;
     guard t <= fade_at else {
         return (TAKEN * (1.0 - clamp((t - fade_at) / FADE, 0.0, 1.0))) as f32;
@@ -643,7 +643,10 @@ fn missed(b: Board&, sq: i64, now: f64) {
     b.steps = made;
     b.misses++;
     if b.misses == 1 {
-        for m in b.moves { if on_steps(b, m) { b.outtaken |= m.captured; } }
+        for m in b.moves {
+            let w = rules::way_of(b.pos, m);
+            if on_steps(b, w) { b.outtaken |= m.captured; }
+        }
         b.outtaken &= ~jumped(b);
     }
     if b.misses == 2 { b.kept_at = now; }
@@ -913,10 +916,10 @@ fn showcase(cam: rig::Rig&, g: gui::Gui&, input: gui::Input, three: bool, pitch:
     return true, rig::drive(cam, input.at, input.down, input.pressed, input.released, g.scale, pitch, now);
 }
 
-fn hops(m: rules::Move&) -> i64 { max(m.path.len - 1, 1) }
+fn hops(m: rules::Way&) -> i64 { max(m.path.len - 1, 1) }
 
 // How long the move takes: a quiet move one hop, a capture one per stop, then the fade.
-fn duration(m: rules::Move&) -> f64 {
+fn duration(m: rules::Way&) -> f64 {
     let fade = if m.captured != 0 { FADE } else { 0.0 };
     return hops(m) * HOP + fade;
 }

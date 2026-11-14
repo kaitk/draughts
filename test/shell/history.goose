@@ -79,7 +79,7 @@ fn play(sh: shell::Shell&, text: const u8[:], now: f64) {
     let b .= sh.game.b;
     for i in b.moves.len {
         var t: u8[>..] = [];
-        rules::format_move(t, b.variant, b.moves[i]);
+        rules::format_move(t, b.pos, b.moves[i]);
         guard t == text else { continue; }
         board::play_chosen(b, i, now);
         return;
@@ -90,7 +90,7 @@ fn play(sh: shell::Shell&, text: const u8[:], now: f64) {
 fn notes(sh: shell::Shell&) -> u8[>..] {
     var s: u8[>..] = [];
     for &n in sh.game.notes {
-        rules::format_move(s, sh.game.b.variant, n.move);
+        rules::format_move(s, n.before, n.move);
         format(s, " ", NAMES[n.mark], ", ");
     }
     return s;

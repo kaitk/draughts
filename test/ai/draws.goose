@@ -8,9 +8,9 @@ import rules from "../../src/rules";
 import ai from "../../src/ai";
 import check from "../";
 
-fn text(variant: u8, m: rules::Move&) -> u8[>..] {
+fn text(p: rules::Position, m: rules::Move) -> u8[>..] {
     var t: u8[>..] = [];
-    rules::format_move(t, variant, m);
+    rules::format_move(t, p, m);
     return t;
 }
 
@@ -24,7 +24,7 @@ fn search(e: ai::Engine&, variant: u8, fen: const u8[:], line: const u8[:][:], p
         rules::generate(p, moves);
         var found = false;
         for i in moves.len {
-            guard text(variant, moves[i]) == want else { continue; }
+            guard text(p, moves[i]) == want else { continue; }
             let q = rules::play(p, moves[i]);
             rules::pass(past, p, moves[i], q);
             p = q;
@@ -37,8 +37,8 @@ fn search(e: ai::Engine&, variant: u8, fen: const u8[:], line: const u8[:][:], p
     for way in 2 {
         let m = if way == 0 { ai::think_after(e, past, p, 100, 1) } else { ai::think(e, p, 100, 1) };
         var score = 0;
-        for i in e.moves.len { if text(variant, e.moves[i]) == drawing { score = e.main_score[i]; } }
-        print("  ", if way == 0 { "as played: " } else { "afresh:    " }, text(variant, m), ", ", drawing, " scores ", score);
+        for i in e.moves.len { if text(p, e.moves[i]) == drawing { score = e.main_score[i]; } }
+        print("  ", if way == 0 { "as played: " } else { "afresh:    " }, text(p, m), ", ", drawing, " scores ", score);
     }
 }
 

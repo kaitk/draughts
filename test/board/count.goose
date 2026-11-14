@@ -138,7 +138,7 @@ fn main() {
 
     var gm = game::new(I);
     begin(gm, I, PHOTO, rules::WHITE);
-    let k = gm.b.moves[0];
+    let k = rules::way_of(gm.b.pos, gm.b.moves[0]);
     var way: u8[>..] = [];
     for s in k.path { format(way, named(gm, s), " "); }
     print("the child's king, its way ", way);

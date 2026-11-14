@@ -29,7 +29,7 @@ fn number(sq: i64) -> i64 {
     return -1;
 }
 
-fn same(a: rules::Move, b: rules::Move) -> bool { a.from == b.from && a.to == b.to && a.captured == b.captured }
+fn same(a, b) -> bool { a.from == b.from && a.to == b.to && a.captured == b.captured }
 
 // A point of the flat layout at height h on the 3D board, on the screen.
 fn on_screen(sh: shell::Shell&, flat: float2, h: f32) -> float2 {

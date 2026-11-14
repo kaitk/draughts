@@ -28,9 +28,15 @@ import drive from "../drive";
 let UNDO = 3;
 let RESTART = 2;
 
-fn move_text(variant: u8, m: rules::Move) -> u8[>..] {
+fn move_text(p: rules::Position, m: rules::Move) -> u8[>..] {
     var t: u8[>..] = [];
-    rules::format_move(t, variant, m);
+    rules::format_move(t, p, m);
+    return t;
+}
+
+fn move_text(variant: u8, w: rules::Way) -> u8[>..] {
+    var t: u8[>..] = [];
+    rules::format_move(t, variant, w);
     return t;
 }
 
@@ -43,9 +49,9 @@ fn answer(gm: game::Game&, e: ai::Engine&) -> u8[>..] {
     var legal: rules::Moves = [];
     rules::generate(ask.pos, legal);
     var found = false;
-    for c in legal { if c.from == m.from && c.to == m.to && c.captured == m.captured && c.path == m.path { found = true; } }
+    for c in legal { if c.from == m.from && c.to == m.to && c.captured == m.captured { found = true; } }
     game::answer(gm, ask.id, m, ai::close(e, pace::CLOSE));
-    return str("ask ", ask.id, " at skill ", ask.skill, " seed ", ask.seed, ": ", move_text(gm.b.variant, m), ", legal ", found);
+    return str("ask ", ask.id, " at skill ", ask.skill, " seed ", ask.seed, ": ", move_text(ask.pos, m), ", legal ", found);
 }
 
 fn seconds(t: f64) -> u8[>..] {

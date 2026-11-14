@@ -110,7 +110,7 @@ fn main() {
                             } else {
                                 hangs[level] += 1;
                                 var t: u8[>..] = [];
-                                rules::format_move(t, variant, m);
+                                rules::format_move(t, p, m);
                                 print("  skill ", skill, " seed ", seed, " hangs in ", rules::fen(p), ": ", t);
                             }
                         }

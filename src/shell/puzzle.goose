@@ -187,10 +187,10 @@ fn missed(pl: Play&, now: f64) {
 fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) -> bool {
     let b .= pl.b;
     if b.rec.history.len > history {
-        let m = b.move;
+        let m = rules::move_of(b.move);
         played(pl, m);
         let what = puzzles::judge(pl.s, b.before, puzzles::short(m), pl.left);
-        pl.at = b.since + board::duration(m);
+        pl.at = b.since + board::duration(b.move);
         if what == puzzles::SOLVED {
             pl.won = stars(pl);
             pl.state = SOLVED;
@@ -253,7 +253,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         changed = true;
     }
     if pl.state == SHOWN && !b.moving && now >= pl.at + SHOW_HOLD {
-        let m = b.move;
+        let m = rules::move_of(b.move);
         board::slide_back(b, m, now, false);
         pl.state = UNSHOW;
         changed = true;

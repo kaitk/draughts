@@ -30,6 +30,18 @@ or outside the mask. Positions are values, so undo is a stack of them.
 `rules::generate` fills a buffer the caller owns (`rules::Moves`, 512 moves), so
 generating allocates nothing.
 
+A move carries no stops (2026-11-14): `rules::Move` is its ends, the pieces it takes, and
+whether it crowns, 16 bytes, and the stops are a `rules::Way` that only the board asks for
+(`ways`, `way_of`). Each move had held 34 stops inline, 64 bytes, so a `Moves` buffer was
+32 KB and the computer's 64 frames 2 MB, copied into notes, asks, and the board's lists;
+perft ran at 16.7 M positions a second in International and 12.1 in Russian, now 44.7 and
+33.6, with the same counts and every test's output unchanged. A move's text and the board's
+animation recompute its first way, which is the way generate always kept. `MAX_MOVES` stays
+512: a search over positions found one with 407 moves (`test/rules/most_moves`), so no
+lower bound holds with room to spare. Rejected: encoding the stops compactly in the
+move (each a direction and a distance, still 25 bytes for 33 stops) and a separate stops
+query per square for every move generated.
+
 ## Draws
 
 A game is drawn at once when a rule's count ends; nobody claims it, since an app has no

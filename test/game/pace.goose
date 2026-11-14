@@ -152,7 +152,8 @@ fn play(e: ai::Engine&, variant: u8, level: i64, kind: i64, seed: i64, spent: Sp
         }
         guard c.flag < 0 else { return ply; }
         clock::moved(c, side);
-        shown = board::duration(m);
+        let w = rules::way_of(p, m);
+        shown = board::duration(w);
         let q = rules::play(p, m);
         rules::pass(past, p, m, q);
         p = q;
