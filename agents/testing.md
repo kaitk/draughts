@@ -95,7 +95,7 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   tablet's and a phone's size (`who`), every screen with a board on the 3D board (home's and
   settings' bounds at eight sizes, a puzzle tapped through the perspective with its ghost
   and hint ring, the win's card on the 3D bounds, the transitions moving one image:
-  `screens3d`), home's 3D board turned by a drag on it, kept in its room, and at rest
+  `screens3d`), a long game's win on a 2560 × 1440 desktop, its full move list and the card all within `gui::MAX_QUADS` (`long_game`), home's 3D board turned by a drag on it, kept in its room, and at rest
   again once home is left (`home_turn`), the 3D board getting ready: a still mark in its place, taps on it left
   alone while the panels answer, then ready (`wait3d`), the computer's skill moving
   across games, home's X closing the app and where it sits, Android's back and Escape

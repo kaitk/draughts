@@ -12,7 +12,10 @@ import vec;
 import .focus;
 import .words;
 
-let MAX_QUADS = 512;
+// The UI's quads a frame, past which gui::add drops them unseen. A long game's move list
+// on a desktop (every row's glyphs and marks) and its win's card come to about 600; 512
+// lost the card (2026-11-14, test/shell/long_game). 64 bytes each.
+let MAX_QUADS = 2048;
 let MAX_IDS = 32;
 let MAX_SPOTS = 128;        // the controls a frame offers the keys' focus (Spot)
 let MAX_GROUPS = 8;         // the groups they come in (gui::group)
