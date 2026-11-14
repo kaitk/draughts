@@ -4,6 +4,23 @@ Each version's notes for the GitHub release (the desktop builds) and the stores'
 new": Play's in en-GB and et (500 characters each), the App Store's in en-GB alone (no
 App Store localization yet, `app-store.md`). Newest first.
 
+## 0.7.8 (2026-11-14, pre-release)
+
+### GitHub release
+
+```markdown
+A pre-release with daily puzzles.
+
+**New**
+
+- **Daily puzzles.** Once Learn is solved, a few puzzles a day (4 by default; 3, 5, or 10 in settings) at the player's own level: a warm-up, two at their level, and a stretch. They come from a library of over 7,000 puzzles, International's, Russian's, and Brazilian's, reaching well past the course to ones that make a grown-up think. Home shows today's puzzles as dots, and the library's Today row holds them; a new set comes each day, and none repeats.
+- A puzzle rating per player and draughts, started from the stars won in the course, moves fast at first and settles with time.
+
+**Better**
+
+- The puzzles' library stays centred on a tablet's wide screen.
+```
+
 ## 0.5.1 (2026-11-14, pre-release, Windows and Linux)
 
 ### GitHub release
