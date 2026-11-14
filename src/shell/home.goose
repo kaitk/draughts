@@ -1,6 +1,6 @@
 // Home, the title menu (prototypes/home.html; rendering.md, "Home"): the board as the
 // game stands beside one glass column, a sheet in portrait, holding the wordmark and the
-// menu's rows, or a new game's setup (prototypes/new-game.html). The way out, an X or a
+// menu's rows, or a new game's setup (prototypes/setup.html). The way out, an X or a
 // Quit row, and the player's chip, which opens who's playing (who.goose), sit off the
 // column at the board's side.
 namespace home;
@@ -172,7 +172,7 @@ fn setup_height(u: f32) -> f32 { (gui::tap() + HEAD_GAP + choices_height() + PLA
 
 // Whether the setup's play moves into its head row in the title's place, the choices
 // scrolling under it to the screen's foot: in a phone's landscape, too short for the
-// column (prototypes/new-game.html), where play pinned under the choices would leave
+// column (prototypes/setup.html), where play pinned under the choices would leave
 // them a view under 300 dp tall. Elsewhere play stays under them.
 fn play_up(area: float4, u: f32) -> bool {
     return area.z >= area.w && gui::phone(area, u) && setup_height(u) > area.w - 2.0 * SETUP_MARGIN * u;

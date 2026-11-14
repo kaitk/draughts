@@ -165,7 +165,7 @@ hold the loop; Windows does and shows the last frame unscaled
 
 Frosted glass panels over a scene, thin light borders, flat buttons, after Snowtime's UI
 ([repo](https://github.com/Snowhound/snowtime)) and the seasonal design boards made with
-`prototypes/design-boards-prompt.md`. The HTML prototypes settled the values; they use only
+an image model. The HTML prototypes settled the values; they use only
 what this renderer draws cheaply.
 
 ### Seasons and themes
@@ -331,14 +331,14 @@ fits, and quitting asks first (`home::ask_quit`). The player's chip mirrors the 
 top left (`home::player_spot`). The board keeps clear of both and isn't shown under
 128 dp (`board::SMALLEST`).
 
-**New game** (`prototypes/new-game.html`) opens the setup in the same column: whom to play
+**New game** (`prototypes/setup.html`) opens the setup in the same column: whom to play
 (a friend, or the computer easy, medium, hard), which draughts (International, Brazilian,
 Russian), the child's pieces against the computer or whether the board turns with a
 friend, and the clock; then play. Choices are kept in the player's file. The board beside
 it is the game play will start, so nothing jumps; it switches at once rather than
 crossfading. Where the choices don't fit they scroll between the head and play.
 
-**Settings** (`prototypes/settings-takes.html`'s take b, `src/shell/settings.goose`): back,
+**Settings** (`prototypes/settings.html`, `src/shell/settings.goose`): back,
 the title, and the language button pinned on top, then one scrolling list: **Look**
 (Background, Theme, Board: Flat, Raised, Wood, Stone, Carved; Kings), **Game** (Move hints,
 Move list), and the privacy note. A new player starts on Raised on a desktop and on Flat

@@ -30,7 +30,8 @@ pieces; the design boards still set the layout, glass, and controls.
 ## How the user makes images
 
 - Design boards and backgrounds come from ChatGPT; the user asks for the prompts
-  (`prototypes/design-boards-prompt.md`, `design/backgrounds/README.md`) and saves the
+  (the design boards' prompt is in git history at fed389b,
+  `prototypes/design-boards-prompt.md`; the backgrounds' in `design/backgrounds/README.md`) and saves the
   results to `~/Downloads`.
 - Final backgrounds get an AI upscale on the user's Windows desktop (RTX 4090, ComfyUI)
   with Snowtime's pipeline. Originals and masters stay local and out of git,
