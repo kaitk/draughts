@@ -11,6 +11,7 @@ import math;
 import vec;
 import rules from "../rules";
 import gui from "../gui";
+import model3d from "../model3d";
 import .view3d;
 import .rig;
 

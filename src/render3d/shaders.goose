@@ -6,7 +6,8 @@
 // harmonics taken from the photograph, a mild tonemap). The wood is baked once at
 // startup by the bake shader into textures with mips.
 //
-// The board's measures are repeated here from mesh.goose: keep them in step.
+// The board's measures are repeated here from mesh.goose, as embed_shader takes only a
+// literal: test/model3d/geometry checks each against the mesh's.
 namespace shaders;
 
 // The block every 3D shader reads: vertex set 1 or fragment set 3, binding 0. FRAME_SET
@@ -43,7 +44,7 @@ let FRAME = """
         vec4 frame_map;      // x: the frame map's height over its width
     };
     const float PI = 3.14159265;
-    // The board's sizes, kept in step with mesh.goose's and src/board/view3d.goose's.
+    // The board's sizes, mesh.goose's (test/model3d/geometry checks them).
     const float FIELD = 4.0;
     const float INNER = 4.1;
     const float FRAME_W = 0.5;

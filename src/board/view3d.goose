@@ -33,20 +33,19 @@ let NEAR: f32 = 2.0;
 let FAR:  f32 = 40.0;
 
 // The board: the field's half width, the dark inlay round it, the frame round that, its
-// top above the field, and the board's underside. Kept in step with
-// src/model3d/mesh.goose's and src/render3d/shaders.goose's constants of these names.
-let FIELD:     f32 = 4.0;
-let INNER:     f32 = 4.1;
-let FRAME_W:   f32 = 0.5;
-let FRAME_TOP: f32 = 0.05;
-let BOTTOM:    f32 = -0.7;
+// top above the field, and the board's underside; the meshes' own (src/model3d/mesh.goose).
+let FIELD     = mesh::FIELD;
+let INNER     = mesh::INNER;
+let FRAME_W   = mesh::FRAME_W;
+let FRAME_TOP = mesh::FRAME_TOP;
+let BOTTOM    = mesh::BOTTOM;
 
 // A piece on 8 × 8, where a square is 1: 88% of a square across, its height 33% of its
 // diameter; a 10 × 10 board's pieces are scaled by its smaller square (`unit`). The
 // selected piece lifts LIFT and grows to GROW: the 2D board's lift of 1.1% of the board
 // (board::fill) is LIFT here, so any 2D lift maps by the same ratio (`lift_of`).
-let RADIUS:    f32 = 0.44;
-let HEIGHT:    f32 = 0.29;
+let RADIUS    = mesh::RADIUS;
+let HEIGHT    = mesh::HEIGHT;
 let LIFT:      f32 = 0.07;
 let GROW:      f32 = 1.05;
 let FLAT_LIFT: f32 = 0.011;   // the 2D board's selected lift, of the board's side

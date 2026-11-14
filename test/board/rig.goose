@@ -12,6 +12,7 @@ import math;
 import rules from "../../src/rules";
 import gui from "../../src/gui";
 import board from "../../src/board";
+import model3d from "../../src/model3d";
 
 fn r1(x: f32) -> f64 { floor((x as f64) * 10.0 + 0.5) / 10.0 }
 

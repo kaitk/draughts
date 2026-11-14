@@ -135,7 +135,8 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
 
 `ai`, `board`, and `puzzles` build on `rules`, `board` also on `gui`'s pointer
-(`board::touch`); `game` on `board`, `gui`, `strings`, and `ai`'s lookout
+(`board::touch`) and on `model3d`'s measures of the 3D board (`mesh::FIELD`.., which
+`view3d` picks through); `game` on `board`, `gui`, `strings`, and `ai`'s lookout
 (`game::watch`); `shell` on `game` and `ai`; `render3d` on `model3d` and nothing of the
 game's; the app on all of them. What crosses to the renderer (`render::Frame`) is flat
 and fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the

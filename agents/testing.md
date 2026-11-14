@@ -143,7 +143,8 @@ whenever a frame drops more than before (2026-11-14).
   needed (`overlook`), and draws scored 0, steered into when behind and clear of when ahead (`draws`)), `model3d`
   (the 3D board's bake in steps, every row of each surface once, and the photograph's
   light as harmonics: `plan`; each season's look for each material, as the flags pick
-  them: `material`), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
+  them: `material`; the board's measures in the shaders' GLSL equal to the mesh's, which the
+  taps' geometry takes as they are: `geometry`), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
   refuses beyond the format, what a move does to each goal, and every built-in puzzle
   passing `puzzles::check`, with its counts by theme and level: `set` International's,
   `russian_set` Russian's, `brazilian_set` Brazilian's). A new puzzle is checked with

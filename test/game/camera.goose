@@ -16,6 +16,7 @@ import vec;
 import math;
 import rules from "../../src/rules";
 import board from "../../src/board";
+import model3d from "../../src/model3d";
 import gui from "../../src/gui";
 import strings from "../../strings";
 import game from "../../src/game";
