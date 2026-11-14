@@ -19,26 +19,35 @@ text names no age, since the hard level and puzzles are hard for grown-ups too
 ([9898842](https://support.google.com/googleplay/android-developer/answer/9898842), read
 2026-11-09).
 
-## Short description (79 of 80)
+## Short description (73 of 80)
 
 ```text
-Draughts on a 2D or 3D board: play the computer or a friend, solve 166 puzzles.
+Draughts in 2D or 3D: play the computer or a friend, solve daily puzzles.
 ```
 
-## Full description (2,418 of 4,000)
+## Full description (3,284 of 4,000)
 
 ```text
 A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
 
+LEARN
+• New to draughts? How to play teaches it in short steps played on the board, for each kind of draughts, then leads on to the puzzles or a first game.
+
 PLAY
 • Play the computer at three levels: easy, medium, and hard. It adjusts a little after each game, so it stays a fair match.
-• Or play a friend on the same tablet or phone, taking turns (on one device, not online).
+• Or play a friend on the same tablet or phone, taking turns (on one device, not online), the board turning to whoever plays or staying put.
 • Three kinds of draughts: International on the 10 × 10 board, and Brazilian and Russian on 8 × 8.
 • Move by tapping a piece and its square, or by dragging it. Undo a move, or start over.
 • Play without a clock, or with 5 or 10 minutes each, plus 3 or 5 seconds a move.
 
+YOUR GAMES
+• Results keeps your past games and a rating against the computer.
+• Replay any of them move by move, each move marked from best to mistake, and play on from any move to try another line.
+
 PUZZLES
-• 166 puzzles: 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 each for Russian and Brazilian draughts in four.
+• Daily puzzles: once Learn is solved, a few puzzles a day at your level (4 by default; 3, 5, or 10 in settings): a warm-up, two at your level, and one a bit harder. They come from over 7,000 for International, Russian, and Brazilian draughts, among them traps that punish a careless move, and none repeats.
+• A puzzle rating for each player and kind of draughts, which moves fast at first and settles with time.
+• The course: 166 puzzles, 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 each for Russian and Brazilian draughts in four.
 • Each theme goes from easy to harder, and some puzzles are played with black.
 • Learn comes first and shows the rules in action; the other themes open once half of it is solved.
 • Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
@@ -53,8 +62,8 @@ MOVE HINTS
 • Capturing is compulsory: the piece that must capture is marked, with a dot for each piece it will take.
 
 THE BOARD
-• A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.
-• Four seasons, each a picture with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.
+• A flat board, or a 3D one with light and soft shadows, which you can turn by hand.
+• Four seasons, each a picture with its own board in wood, stone, or carved.
 • The season follows the date, or stays on the one you choose; or a plain background in the colours of the board.
 
 FOR EVERYONE
@@ -66,6 +75,8 @@ NOTHING ELSE
 • No ads, no in-app purchases, no accounts, and no internet: everything stays on the device.
 
 Draughts runs on phones and tablets, in portrait and landscape.
+
+Draughts is open source, under the MIT or Apache 2.0 licence: github.com/kaitk/draughts
 ```
 
 ## What the text leans on

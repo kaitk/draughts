@@ -14,26 +14,35 @@ Kabe
 
 The same as the launcher's name (`strings/et.txt`), as the English is "Draughts".
 
-## Short description (73 of 80)
+## Short description (74 of 80)
 
 ```text
-Kabe 2D- või 3D-laual: mängi arvuti või sõbraga ja lahenda 166 ülesannet.
+Kabe 2D- või 3D-laual: mängi arvuti või sõbraga, lahenda päeva ülesandeid.
 ```
 
-## Full description (2,497 of 4,000)
+## Full description (3,361 of 4,000)
 
 ```text
 Rahulik kabemäng mängimiseks ja õppimiseks: suured nupud, lame 2D- või ruumiline 3D-laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
 
+ÕPI
+• Kabe on uus? „Kuidas mängida“ õpetab seda lühikeste sammudega laual, iga kabeliigi jaoks, ja juhatab edasi ülesannete või esimese partii juurde.
+
 MÄNGI
 • Mängi arvutiga kolmel tasemel: kerge, keskmine ja raske. Pärast iga partiid kohaneb arvuti veidi, et mäng jääks tasavägiseks.
-• Või mängi sõbraga samas tahvelarvutis või telefonis, kordamööda käies (ühes seadmes, mitte võrgus).
+• Või mängi sõbraga samas tahvelarvutis või telefonis, kordamööda käies (ühes seadmes, mitte võrgus); laud pöörab käija poole või jääb paigale.
 • Kolm kabeliiki: rahvusvaheline kabe 10 × 10 laual ning Brasiilia ja vene kabe 8 × 8 laual.
 • Käi nuppu ja siis ruutu puudutades või lohista nupp kohale. Võta käik tagasi või alusta uuesti.
 • Mängi kellata või ajakontrolliga: kummalgi 5 või 10 minutit, lisaks 3 või 5 sekundit käigule.
 
+SINU MÄNGUD
+• Tulemustes on sinu varasemad partiid ja reiting arvuti vastu.
+• Vaata neid käik-käigult üle, iga käik hinnatud parimast veani, ja mängi mis tahes käigust edasi, et proovida teist teed.
+
 ÜLESANDED
-• 166 ülesannet: 74 rahvusvahelises kabes kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 nii vene kui ka Brasiilia kabes neljas teemas.
+• Tänased ülesanded: kui Õpi on lahendatud, iga päev mõni ülesanne sinu tasemel (vaikimisi 4; seadetes 3, 5 või 10): soojendus, kaks sinu tasemel ja üks veidi raskem. Need tulevad enam kui 7000 ülesande seast rahvusvahelises, vene ja Brasiilia kabes, nende hulgas lõksud, mis karistavad hooletut käiku, ja ükski ei kordu.
+• Ülesannete reiting igale mängijale ja kabeliigile: alguses liigub see kiiresti, hiljem rahuneb.
+• Kursus: 166 ülesannet, 74 rahvusvahelises kabes kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 nii vene kui ka Brasiilia kabes neljas teemas.
 • Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.
 • Esimesena tuleb Õpi, mis näitab reegleid mängu käigus; teised teemad avanevad, kui sellest on pool lahendatud.
 • Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab kõigi kolme tähe nimel uuesti proovida.
@@ -48,8 +57,8 @@ VIHJED
 • Löömine on kohustuslik: nupp, mis peab lööma, on märgitud täpiga iga löödava nupu kohta.
 
 KABELAUD
-• Lame laud või ruumiline 3D-laud valguse ja varjudega, mida saab avalehel käega pöörata.
-• Neli aastaaega, igaühel oma pilt ja laud: sügisene puit, talvine kivi, kevadine nikerdatud kivi ja suvine päikeseloojang.
+• Lame laud või ruumiline 3D-laud valguse ja pehmete varjudega, mida saab käega pöörata.
+• Neli aastaaega, igaühel oma pilt ja laud: puidust, kivist või nikerdatud.
 • Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid; või ühevärviline taust laua toonides, ilma pildita.
 
 KÕIGILE
@@ -61,6 +70,8 @@ MITTE MIDAGI LIIGSET
 • Reklaamide, rakendusesiseste ostude ja kontodeta ning internetita: kõik jääb seadmesse.
 
 Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
+
+Kabe on avatud lähtekoodiga, MIT või Apache 2.0 litsentsi all: github.com/kaitk/draughts
 ```
 
 ## Wording notes
@@ -91,3 +102,8 @@ Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
   decides), "lauavaade" for "välimus" (the app's tab is
   Välimus), and dropping "3D" beside "ruumiline" (the app's Board row shows both). The
   user reads the new lines before an upload.
+- Added 2026-11-14 for 0.8.0: "Õpi", "Sinu mängud", and the daily puzzles as
+  "Tänased ülesanded" (`daily.today`), "Soojendus" and "Veidi raskem" as the app names
+  them, "Kuidas mängida" (`how.title`), the materials "puidust, kivist või nikerdatud"
+  (`material.*`). The user reads these lines before an upload.
+
