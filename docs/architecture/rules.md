@@ -28,12 +28,9 @@ strike rule).
 
 Under the majority rule a piece that can take fewer than another has no move, though a
 child sees it can take; `rules::can_take_from` tells such a piece from one with no
-capture, for the board to say why (rendering.md, "States"). Checked on the board with
-several capturing pieces, equal and unequal, a king and a man, and captures through a
-shared first stop, in International, Brazilian, and Russian (`test/board/several`). A man's capture that reaches or passes the far row, tapped and dropped on the
-turned board, alone, going on past it, and beside a longer capture, is checked in
-`test/board/stuck`; the board shows a far-row square passed as a stop the piece waits on
-(rendering.md, "States").
+capture, for the board to say why (rendering.md, "States"; `test/board/several`). A
+man's capture that passes the far row shows that square as a stop the piece waits on
+(`test/board/stuck`).
 
 Flying kings must land, after a capture, on a square from which the capture goes on, if
 any such square exists. Russian states this rule; in International and Brazilian the
@@ -119,7 +116,7 @@ fold over it (`record_past`, cached until the record or the position changes, an
 `record_past_to` for a move played earlier, which judging needs), the moves panel reads
 its moves off it, and the saved game keeps its start and steps. The board holds one
 (`board::Board.rec`) beside the position it shows; nothing else of the game's past is
-kept in the board or the game screen (2026-11-14).
+kept in the board or the game screen.
 
 ## Text
 

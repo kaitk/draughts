@@ -139,7 +139,7 @@ The search keeps each position's moves on one fixed stack in a `puzzles::Solver`
 caller owns, so it allocates nothing and needs little native stack. The 74 puzzles cost
 at most 3,545 positions to check (a safe move among eight, whose every other move is
 searched for the shot it allows), 0.2 ms built;
-the longest line is five plies, within `MAX_PLIES` (8). Russian's 46 cost at most 161
+the longest line is five plies, within `MAX_PLIES` (16). Russian's 46 cost at most 161
 (a shot of three moves), their longest line five plies too.
 
 ## The screen
@@ -235,25 +235,19 @@ free tempo, crowning, a king's shots, the safe move, among 8 to 15 men a side), 
 those with exactly one right move at each turn that pass every check above, keeps each
 once by its position and by its line, the course's included, and turns a third for
 black. Each puzzle's theme and level are read off its line: a safe move, a crown, a
-king's capture, men given or a free tempo (shots), else a capture. Some are traps, made
-by their own kinds (`batch --traps`): the move a player is used to making is there and
-loses, and only a quieter one wins (below). `tools/puzzles.goose
+king's capture, men given or a free tempo (shots), else a capture. `tools/puzzles.goose
 games` takes positions from the computer's own games, where the material is even and the
 side that just moved thought its move even, and the game then won men. `tools/puzzles.goose
 rate` estimates each difficulty, and `tools/library.py` joins, dedups, and writes the file
 ([development](../development.md#daily-puzzles)).
 
-**Traps** are some of the library, not most: puzzles where the move a player is used to
-making is there and loses, and only a quieter one wins. `tools/puzzles.goose tempts`
-reads a puzzle's first turn for a wrong move of a habit's kind that loses material with
-best play over the puzzle's moves and two plies more: crowning at once (the king is
-caught), the bigger of Russian's free choice of captures, a grab that wins a man at a
-glance, a man run to the row before crowning and taken. `batch --traps` makes them as
-it makes the rest, with kinds that place a man one or two steps from crowning, or black
-men white can take, and keep a position only if such a move is there and loses (a cheap
-look first, `lure`) and `tempts` finds the trap in the checked puzzle. They take the
-themes their lines read as (shots, crowning, captures), so the pick mixes them in with
-the rest at every level.
+**Traps** are some of the library, not most: the move a player is used to making is
+there and loses with best play, and only a quieter one wins: crowning at once (the king
+is caught), the bigger of Russian's free choice of captures, a grab that wins a man at a
+glance, a man run to the row before crowning and taken. `batch --traps` makes them from
+kinds that place a man near crowning or black men white can take, keeping a position
+only if `tempts` finds such a move in the checked puzzle. They take the themes their
+lines read as, so the pick mixes them in at every level.
 
 **The difficulty** is estimated on the rating's scale, with no play data: how many of the
 computer's skills 0, 5, ..., 100 (searching as a hint does) miss the right first move,
@@ -335,18 +329,12 @@ the independent generator, checking each move and each position's moves against
 `build/perft`; for Russian, which has no published perft table, it is the only
 independent check. `scripts/test.sh` runs it on all three files.
 
-`tools/puzzles.goose try FEN GOAL MOVES [LINE]` shows the moves that are right, the line
-the screen would play (after LINE's moves, when given, which shows where a rival leads),
-and what the checks say of it. `find SIDE GOAL MOVES MINE THEIRS
-COUNT [SEED [KINGS [CORE]]]` turns up positions to compose from: the solver's and the other
-side's men placed in camps as in a game (each next man beside or behind one of its own,
-on its own side of the board), some of the solver's made kings, with exactly one right
-move at each of the solver's turns, every check passed, and the game going on after the
-line; a take in more moves must be a shot, its first move answered by a capture, and a
-safe move must answer a threat, a shot the other side would have were it to move. CORE
-is a motif's skeleton for white, its men in every position and the camps filled round
-them; the named shots were found that way. For black it finds the puzzle for white and turns the board round, checking it again. Both
-take `--variant NAME` (International by default), and find `--rows N`, the rows from its
-own back row a camp spans (the board's size less 3 by default), and `--tempo`, which
-asks a take in more moves to start with a free tempo instead: a quiet move that no reply
-captures after, every reply giving men.
+`tools/puzzles.goose try FEN GOAL MOVES [LINE]` shows the right moves, the line the
+screen would play, and what the checks say. `find SIDE GOAL MOVES MINE THEIRS COUNT
+[SEED [KINGS [CORE]]]` places both sides' men in game-like camps and keeps positions
+with exactly one right move at each turn that pass every check, the game going on after
+the line; a take in more moves must be a shot, and a safe move must answer a threat.
+CORE is a motif's skeleton for white, filled round with camps; black's puzzles are
+white's turned round. Both take `--variant NAME` (International by default); find also
+takes `--rows N`, the rows a camp spans, and `--tempo`, a take that starts with a free
+tempo.
