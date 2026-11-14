@@ -397,6 +397,13 @@ whenever a frame drops more than before (2026-11-14).
   it: the 3D board's view is aimed again after the game's frame (`shell::game_screen`),
   or a change with no animation behind it (the hot-seat turn put at once) showed a frame
   late, and draw on demand then never drew it (2026-11-09).
+- A daily puzzle headless (task 088, 2026-11-14): no flag opens one, so a temporary
+  `--daily K` (never committed) in `flags.goose` and `dev::before` does, once
+  `sh.day >= 0` and from the second frame: `shell::load_library`, Learn's stars set in
+  memory, `sh.screen = shell::PICKER`, `shell::sync_daily`, `shell::play_daily(sh, K,
+  now)`, `sh.changed = false`. On the Mac `GOOSE_GFX_HEADLESS=1 build/draughts ...
+  --frames N` from a folder under `build/` shoots and exits by itself; the player's
+  files were left byte-identical (checked with `diff -r` against a copy).
 - The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
   shader, so a native crop beside the prototype's at the same scale shows a shader
   change exactly (the stacked king was checked that way).
