@@ -24,9 +24,7 @@ goal is the balance.
   and any square passed between stops costs no star (2026-11-11, issue 1: a king's
   capture tapped through its squares lost stars).
 - A wrong move shows why (2026-11-09): when the other side answers it by taking something
-  back, that answer plays, holds, and slides back before the wrong move does. Until then
-  every wrong move slid back 0.35 s after it landed, as one without such an answer still
-  does.
+  back, that answer plays, holds, and slides back before the wrong move does.
 
 ## Checks
 
@@ -37,17 +35,10 @@ goal is the balance.
 
 ### Rivals
 
-The 2026-11-09 report: International's second Captures puzzle refused a good move. Its
-other double, taking two too, was taken back at once by a double; its man on 39 moved to
-34, so the backward double is the one capture that takes most. `puzzles::rivals` was
-added to report such moves, as a report rather than a refusal until each is decided.
-
-Six rivals were then fixed (2026-11-09): International's King shots 78 and Russian's 6,
-9, 13, 20, and 45 each had a rival that needed two more of the solver's moves, not one,
-its line then winning more than the count or ending with a capture due, so none could be
-listed cleanly. Each position had a man added or moved instead, named in its source,
-which kept its line and its lesson (Russian's 6 still the double answered by a double,
-its 13's single now taken back). Both sets report none since.
+`puzzles::rivals` reports a move as good as the solution (2026-11-09), as a report rather
+than a refusal, after International's second Captures puzzle refused a good move. Six
+rivals that needed two more of the solver's moves were fixed by adding or moving a man,
+each named in its source, keeping the line and its lesson; both sets report none since.
 
 ## Daily puzzles
 
@@ -60,22 +51,17 @@ over thousands on home would only discourage. So (2026-11-14, task 088):
 - **A few puzzles a day from a large library**, picked by the local date and the player,
   so a child can't do too many at once and none pile up on a missed day. 4 a day by
   default; 3, 5, or 10 in settings.
-- **Generated, not imported.** Every position stays our own, as the course's are.
-  GoDraughts' puzzles are proprietary; Lidraughts publishes no puzzle export or data
-  license (its 2,000+ International puzzles were built by its community); Lichess's
-  public-domain database is chess only; and in the EU a collection's substantial
-  extraction is covered by the database right though one position is a fact. Generating
-  on the device was rejected: finding and checking a good puzzle costs search time and
+- **Generated, not imported.** Every position stays our own: GoDraughts' puzzles are
+  proprietary, Lidraughts publishes no puzzle data license, Lichess's public-domain
+  database is chess only, and the EU's database right covers a collection's substantial
+  extraction. Generating on the device was rejected: a good puzzle costs search time and
   curation. The library is built offline (`tools/puzzles.goose`) and embedded, about
   150 bytes a puzzle.
-- **After Lichess's generator** (`lichess-puzzler`): positions from games as a second
-  source, rejecting a start already won; one clear move at each turn (ours stricter, by
-  exact search); each position once; a cheap pass then a strict one; themes tagged by
-  detectors over the line, so the pick keeps to the themes a child has opened. Lichess's
-  difficulty comes from players' attempts (Glicko-2); with no data leaving the device,
-  ours is estimated offline from the computer as judge (how many skills miss the move),
-  the line's shape, and the motif's level, and checked against kabe.ee's five puzzles for
-  grown-ups (kept in `tools/`, never shipped) and later the user's children's solves.
+- **After Lichess's generator** (`lichess-puzzler`): one clear move at each turn (ours by
+  exact search), each position once, a cheap pass then a strict one, themes tagged by
+  detectors over the line. With no data leaving the device, difficulty is estimated
+  offline (how many skills miss the move, the line's shape, the motif's level), checked
+  against kabe.ee's five puzzles for grown-ups (in `tools/`, never shipped).
 - **The course is the floor**: the course's puzzles are easy next to real ones, so the
   library reaches well past its hardest, and a child's rating climbs fast at first.
 - **A puzzle rating per player and draughts**, Elo's against the puzzle's difficulty,
@@ -99,8 +85,8 @@ On the screen (2026-11-14, prototyped and chosen):
 - No streak of days anywhere: it makes a missed day a loss, which pushes a child rather
   than inviting one.
 - Today's puzzles are tiles inside a Today row heading the library, each its level's
-  bars and its stars; the row's mark turns to the moon and its note to "New puzzles
-  tomorrow" once all are solved. A page of its own for today was rejected as not needed.
+  bars and its stars; the row's mark turns to the moon once all are solved. A page of its
+  own for today was rejected as not needed.
 - Today opens once Learn is solved, all of it: Learn is the rules, which a daily puzzle
   may use. Gating on the other themes too was rejected as too strict (a young child would
   stall on Safe move); the pick keeps to the themes opened instead. Until then How to play

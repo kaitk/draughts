@@ -31,36 +31,15 @@ or outside the mask. Positions are values, so undo is a stack of them.
 generating allocates nothing.
 
 A move carries no stops (2026-11-14): `rules::Move` is its ends, the pieces it takes, and
-whether it crowns, 16 bytes, and the stops are a `rules::Way` that only the board asks for
-(`ways`, `way_of`). Each move had held 34 stops inline, 64 bytes, so a `Moves` buffer was
-32 KB and the computer's 64 frames 2 MB, copied into notes, asks, and the board's lists;
-perft ran at 16.7 M positions a second in International and 12.1 in Russian, now 44.7 and
-33.6, with the same counts and every test's output unchanged. A move's text and the board's
-animation recompute its first way, which is the way generate always kept. `MAX_MOVES` stays
-512: a search over positions found one with 407 moves (`test/rules/most_moves`), so no
-lower bound holds with room to spare. Rejected: encoding the stops compactly in the
-move (each a direction and a distance, still 25 bytes for 33 stops) and a separate stops
-query per square for every move generated.
+whether it crowns, 16 bytes; the stops are a `rules::Way` that only the board asks for
+(`ways`, `way_of`). At 64 bytes with 34 stops inline, the computer's frames took 2 MB;
+perft went from 16.7 M to 44.7 M positions a second in International, with the same
+counts. `MAX_MOVES` stays 512: a search found a position with 407 moves
+(`test/rules/most_moves`). Rejected: stops encoded compactly in the move (still 25
+bytes), and a stops query per square for every move generated.
 
-## Draws
-
-A game is drawn at once when a rule's count ends; nobody claims it, since an app has no
-arbiter. The federations' exceptions that need judgment ("unless either side can win",
-"a winning position"), Russian 6.1.8.7 (an arbiter's call), and 6.1.10.4 (competition
-clocks) aren't built.
-
-The sources, where they differ: lidraughts follows IDF's text for Russian, and Brazilian
-leaflets give other numbers. The app follows Russia's 2022 sport rules, FMJD's Annex 1
-for International (read from a copy, as fmjd.org's own is gone), and FMJD's draughts-64
-text for Brazilian.
-
-The game keeps no counts of its own: it folds them over its undo history whenever the
-position changes, so undo and a saved game bring them back with no new state.
-
-The game's record (where it began, the positions before each move, and its past for draws)
-is a value of the rules', `rules::Record`, held by the board (2026-11-14). It had been the
-board widget's own fields beside its selection and animation, with the game screen caching
-the draw counts on it; undo, the draws, judging, and saving now work on the record, and the
-board, a widget, only holds it. Rejected: putting it in `game/`, which the board can't
-import (`board` is a leaf under `game`), and keeping the draw counts as they're played,
-which undo and a saved game would then have to rebuild anyway.
+The game's record (where it began, the positions before each move, its past for draws) is
+a value of the rules', `rules::Record`, held by the board (2026-11-14), not the board
+widget's own fields; undo, the draws, judging, and saving work on it. Rejected: putting it
+in `game/`, which the board can't import, and keeping the draw counts as they're played,
+which undo and a saved game would have to rebuild anyway.

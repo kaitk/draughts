@@ -1,1404 +1,429 @@
 # Rendering decisions
 
 The decisions behind drawing, the UI, the look, the 3D board, and frames, dated, with
-their reasons, what they rejected, and the measurements behind them. The headings follow
+their reasons and what they rejected. The headings follow
 [Architecture: Rendering](../architecture/rendering.md), which says how it works now.
+Superseded entries are one line; the full history is in git (`git log -S` on a phrase).
 
 ## Drawing
 
-The screen's pass has no depth target, and in the Android build gfx never cycles the
-screen (the fork's `screen-without-depth`). Together they kept SDL from a second 64 MiB block after
-the first rotation, about 70 MB of graphics memory on the tablet, before SDL's blocks
-were sized to their resources ([GPU memory](#gpu-memory)).
+The screen's pass has no depth target, and on Android gfx never cycles the screen (the
+fork's `screen-without-depth`): together they kept SDL from a second 64 MiB block after
+the first rotation, about 70 MB on the tablet.
 
 ### Two renderers
 
-One seam between the app and its renderer, at compile time below it (2026-11-14), replacing
-the facades of 2026-11-12 ([decisions](README.md), "Both renderers in one executable by
-facades") and their copied tree. Before, `scripts/ngfx.py` copied `src/` into
-`build/ngfx/tree/`, rewrote gfx's recorders' namespace lines (`draw_gpu` compiled again as
-`draw_gfx`), and laid seven facade files over them, about 100 forwarders of the form `if
-nx::ngfx_on { X_ngfx::f() } else { X_gfx::f() }`, with `photo_gpu.h` the same in C by
-`#define`d names. Now the drawers take a backend `be` and are generic over its type: each
-calls the few calls every drawer makes on `be` itself and its recorder on a field
-(`be.draw.board(...)`, `be.r3d.bake(...)`), which Goose resolves by the field's type at
-compile time, so each drawer is compiled once per backend and calls that renderer's
-recorder directly. The choice is one `if`, in `backend::with`, which `render.goose` and
-`host.goose` call; the seam's functions are `backend::with` and `backend::open`, one file
-per root (`src/app/backend.goose` for gfx alone, `src/ngfx/backend.goose` holding both),
-and the ngfx build is a second root (`src/ngfx/draughts_ngfx.goose`) over the same program
-(`src/app/app.goose`), with no copy and no rewriting. The recorders stayed as they were,
-gfx's in `src/app/` and `src/render3d/` under their names and goose-ngfx's in `src/ngfx/`,
-each taking its state as its first parameter (`render3d::Own`, held by the backend, not
-`render3d::Gpu`); the photograph's upload is `photo.c`'s for gfx and `photo_ngfx.c`'s for
-goose-ngfx over one shared `draughts_photo_with`. Goose: 150 lines fewer, Python 85. The
-gfx executable is 16 KB smaller, and nothing moved in `--bench 60` headless at 1280 × 800
-(medians of eight runs, the builds in turn, before → after): gfx's flat waited P50 0.59 →
-0.58 ms, 3D 1.28 → 1.27; goose-ngfx's flat 0.68 → 0.67, 3D 1.36 → 1.36; the frame's CPU
-time the same to 0.002 ms on both. Shots of home and the game, flat and 3D, on both
-renderers match the commit before within 1 of 255.
-
-Rejected: the split at `render::frame`, one renderer interface with each renderer drawing
-the whole frame, which duplicates the shared drawers (`draw3d`, `draw`, `scene`,
-`widgets`, `render3d.goose`, about 2,000 lines) or leaves them to one renderer; a list of
-pass commands the drawers fill and each renderer replays, which is the wrapper over single
-GPU calls rejected on 2026-11-10 under another name and costs a copy of every draw's data;
-and the facades kept but in the repository, gfx's recorders renamed apart, which needs a
-forwarding facade per recorder in the gfx build too, the rejection of 2026-11-12. The
-recorder's calls stay as many as before (each renderer's ~60), as they record whole passes
-in each API's own terms; only their dispatch went.
+One seam between the app and its renderer (2026-11-14), replacing the facades and copied
+tree of 2026-11-12 ([decisions](README.md#the-codes-layout)). The drawers take a backend
+`be` and are generic over its type: each calls its recorder on a field
+(`be.draw.board(...)`, `be.r3d.bake(...)`), which Goose resolves by the field's type, so
+each drawer is compiled once per backend and calls that renderer directly. The choice is
+one `if`, in `backend::with`, one file per root (`src/app/backend.goose` for gfx alone,
+`src/ngfx/backend.goose` holding both); the ngfx build is a second root
+(`src/ngfx/draughts_ngfx.goose`) over the same program (`src/app/app.goose`). Goose 150
+lines fewer, Python 85, the gfx executable 16 KB smaller; `--bench 60` and shots on both
+renderers unchanged. Rejected: splitting at `render::frame`, each renderer drawing the
+whole frame (duplicates about 2,000 lines of shared drawers); a list of pass commands
+each renderer replays (the wrapper over single GPU calls rejected 2026-11-10, plus a copy
+of every draw's data); and the facades kept in the repository, needing a forwarding
+facade per recorder in the gfx build too.
 
 ## UI layer
 
-The UI's shader is built three times, its base kinds, the icons, and the players' faces,
-each drawn in runs in the quads' order (2026-11-10, task 063): one shader for all held 64
-registers for every UI pixel, each of the three 32.
-
-The quads are shaded only where they show (2026-11-10, task 063). With the three
-pipelines, the UI drawn live costs half the GPU cycles it did on the Pixel 7a (0.61M →
-0.30M a frame on the flat game), measured with `--keep off`. Tried and dropped: a glyph's
-atlas place interpolated (malioc's fewer varyings read, nothing on the Pixel, which pays
-for the varyings declared), the quads read from the storage buffer in the fragment shader
-(4 load/store cycles a pixel), and `mediump` varyings. Not done: with the plain
-background, glass works the fade out a pixel at a time (about 1.3 of glass's 4 cycles); a
-texture of it would save that but smear its dither.
-
-The UI is kept as a layer while it stands still (task 059): its quads were a quarter of
-the 3D frame's GPU cycles on the Pixel 7a while only the board moved.
-
-Layout stays rect-cutting with `gui::stack`. If it outgrows that (wrapping text, menus
-like Snowtime's), copy [Clay](https://github.com/nicbarker/clay)'s model, a per-frame
-layout tree with grow, fit, and fixed sizing, rather than link it: its API is C macros,
-which Goose can't call directly. A Clay-like engine was weighed again in task 061
-(2026-11-10) and left out, `gui::stack` covering what it would give.
+- The UI's shader is built three times (base kinds, icons, players' faces), each at 32
+  registers where one shader held 64; quads are shaded only where they show (2026-11-10,
+  task 063). The UI drawn live went from 0.61M to 0.30M GPU cycles a frame on the Pixel
+  7a. Rejected: interpolated atlas places, quads read in the fragment shader, `mediump`
+  varyings.
+- The UI is kept as a layer while it stands still (task 059): its quads were a quarter of
+  the 3D frame's GPU cycles on the Pixel 7a while only the board moved.
+- Layout stays rect-cutting with `gui::stack` (weighed again 2026-11-10). If it outgrows
+  that, copy [Clay](https://github.com/nicbarker/clay)'s model rather than link it: its
+  API is C macros Goose can't call.
 
 ### Screen sizes and the safe area
 
-The density floor is 0.75 (2026-11-08). Without a floor a phone draws the tablet's layout
-into its 64 mm short side: an 88 dp tap is 7.0 mm on the Pixel 7a against 16.3 on the
-tablet, the 17 dp notes 1.4 mm. At 0.75 an 88 dp tap is about 10.5 mm on any phone and
-the notes 2 mm. Going further buys nothing on the board, whose size the phone's width
-fixes whatever the scale, and at 1 every layout would have to work 360 dp across. Going
-less (0.69) leaves taps at 9.3 mm and still needs most of the same layout work.
-
-Settings in landscape ends the look group's glass below its tiles over a bottom inset
-(2026-11-09). Rejected: running it on to the screen's bottom edge, which left it mostly
-empty below. Under a top inset in landscape the page's top padding gives up to 12 dp of
-its 24 (2026-11-09), so the 13" and 11" iPad keep both groups.
-
-A desktop's window is laid out for a mouse by default (2026-11-11): the scale stops at
-0.75 points a dp (`gui::DESKTOP_DP`), and `--touch on` gives a touch screen's sizes. With
-the short side always 800 dp, a Mac window 800 points tall had 88-point rows and a full
-screen larger still, sized for a hand on a screen a mouse uses; a desktop build (and a
-Steam one later, with a controller) wants them the size of a desktop's controls. The
-layouts already hold over 1600 dp, so a ceiling on the scale gives most of a desktop
-layout at once. A second set of desktop sizes (44 dp rows, text that shrinks less than
-the tiles) was rejected then, as it would double every layout's dp values (about 330 of
-them, in 16 files); it is replaced (2026-11-11) by one desktop value each for the tap
-and a tile's side room (below). At 1200 dp (0.67 points) the notes were 11 points, too
-small.
-
-On a desktop the landscape board, flat or 3D, and its corner panels stand in a frame
-(2026-11-11): from margin to margin the board crowded a large screen. A frame round the
-whole layout, not a smaller board alone, keeps the board's top level with the panels'.
-The user found 85% of the full board the most pleasing on a large screen and 92% right
-on a smaller one, so the frame grows with the window's height, from 4% of it a side up
-to 1000 points to 7.5% at 1440. It is at most 1.45 times as wide as tall round the flat
-board: on a 27" screen the panels at the window's edges stood small and far from the
-board. Round the 3D board 1.7: at 1.45 its near edge, which must clear the panels, held
-it, so it shrank, sat lower than the panels' tops, and pressed against them; from 1.7
-its height holds it, its top level with theirs. The 3D board
-is framed with its panels: framing the panels alone shrank it about as much, since its
-near edge must clear them, and left the two boards' screens unlike.
-
-Tuned by eye on the Mac and a 27" screen (task 068, the user, 2026-11-11):
-
-- The ceiling grows from 0.75 points a dp at a 1000-point shorter side to 0.9 at 1440:
-  at 0.75 the controls looked too small on a 27" screen, seen from further away. A
-  MacBook's full screen moves only to about 0.78.
-- Where the width holds the flat board (1280 × 800), its frame shrinks to the board's
-  height and centers: the board, centered down a taller frame, sat 25 points below the
-  panels' tops. Settings' preview moves up to the game group's top for the same reason
-  (it was centered down the page beside groups that start under the title row).
-- Home's menu and the setups start at the column's top, 440 dp wide at least: centered
-  on a large window the menu floated in the middle, and the setup's choices were cramped
-  in 360 dp.
-- A desktop's tiles are 64 dp tall and keep 12 dp beside their words (2026-11-11, task
-  069), where the ceiling on the scale alone left a touch screen's 88 and 16 looking
-  fat under a mouse. One value each, `gui::tap()` and `gui::side()`, not a set of
-  desktop sizes: the tap is named once and the panels' heights are sums of their rows,
-  so no screen has a desktop branch. 72, 64, and 56 dp were shot at 1280 × 800, a
-  MacBook's full screen, and 27"; 64 was picked. Tiles with their icon or picture over
-  their word stay at 72 dp at least (`gui::stacked()`): at 64 undo move's word dropped
-  to the small face on one line, and settings' seasons and kings ran over their tiles.
-  The play's corner panel grows to hold the clocks over undo move rather than shrinking
-  with the left column, where at 56 whose turn ran into the hint.
-  Kept as tuned numbers, a few dp over their parts: a puzzle's play panel (504 dp, its
-  parts 495) and a phone's narrow one (368, 362).
-- The left corner's settings and start over are 20 dp apart, as from their glass's top
-  and bottom (2026-11-11), on every screen: the glass was as tall as the play panel, and
-  the 36 dp between them read loose. The left column is then 16 dp shorter than the play
-  panel on a touch screen; the corners already differ in a puzzle and on a phone.
-
-- No desktop window lays out wider than 1.9 times its height (2026-11-14, task 087; the
-  user: the game should work on an ultrawide, not look perfect): on a 3440 × 1440
-  window home's menu, the results' list, and settings ran across the whole width. One
-  cap in `gui::safe` covers every screen, rather than a width per screen; a 16:9 or 16:10
-  screen is unchanged. Not blurring the photograph there (the user's option): it is
-  magnified 1.68×, softer than on a 27" screen (1.25×) but less than on a 4K one (1.9×).
-- A desktop's large window (`gui::large`, at least 1700 × 1000 dp: a 27" screen's full
-  window, and a 1280 × 800 one) centers the replay's steps, board, and column as one, the
-  column at most 760 dp, and the results at most 1640 dp; their words a face larger
-  (2026-11-14, task 087; the user: on a 27" screen the replay's words were small and its
-  column and the results' list too wide). The faces are baked at fixed sizes, so larger
-  words take the next face up (the body face's 20 dp to the label's 30, about 1.5×)
-  rather than glyphs scaled up and blurred. The head's tiles keep their 64 dp and words.
-  2026-11-14: back moved from the column's head (top right) to a row over the board, at
-  its left edge, since every other screen has back at the top left, the line over the
-  board in that row's middle level with back (the user: under the row it pushed
-  everything down); the board gives up that row and its top is level with the glass's, the title and play from here staying
-  at the column's head. The tablet's landscape kept as it was: there a row over the board
-  would cost it 100 dp of its 726 (14%), the board being the point of the screen, and
-  the user had found the tablet fine. The same day the row went to every desktop window
-  in landscape, large or not: in a 1160 × 940 window the column (300 dp) had back and
-  play from here stacked side by side in 64 dp tiles, their words crammed and play from
-  here's running past its tile (the user: fix them).
-- The replay's move shown and best move (2026-11-14, task 087, the user's choices among
-  prototypes/replay.html's takes): the way in glow dots with a larger one at each stop,
-  the squares' numbers at its stops, and the best move as the game's hint (a ring on its
-  piece, a light ghost and a ring where it goes, a ring at each stop), shown only while
-  asked for and kept through the steps. The dots and numbers are UI drawn over the board,
-  as the mark's disc is, so the board's shader is unchanged; they, the disc, and the faded
-  piece where the move started fade in over 0.25 s once the piece has arrived, while the
-  squares' shading comes in at once, being the shader's bits. The bulb is a fifth step
-  tile where the board's side holds five taps (the tablet's 726 dp, a desktop), else the
-  glass's line for the best move as a 44 dp tile whose tap is 88 dp tall, as a fifth tile
-  doesn't fit a phone's column of four (400 dp of the Pixel's 432) or row. Portrait and a
-  phone's landscape drop the marks' legend for rows, and a phone's landscape the line
-  saying what was best. Rejected: white dots to a dashed ring, and the best move in words
-  only; shading every square a capture passed over. The numbers have no bold face in the
-  atlas: drawn twice half a pixel apart over a dark halo of eight copies.
+- The density floor is 0.75 (2026-11-08): an 88 dp tap is then about 10.5 mm on any
+  phone, against 7.0 mm on the Pixel 7a without a floor. At 1 every layout would have to
+  work 360 dp across; at 0.69 taps are 9.3 mm for most of the same work.
+- A desktop is laid out for a mouse (2026-11-11, task 068): the scale's ceiling grows from
+  0.75 points a dp at a 1000-point shorter side to 0.9 at 1440; `--touch on` gives touch
+  sizes. Rejected: a second set of desktop sizes (about 330 dp values in 16 files).
+- A desktop's tiles are 64 dp tall with 12 dp beside their words (`gui::tap()`,
+  `gui::side()`, 2026-11-11, task 069): 72, 64, and 56 were shot, 64 picked. Tiles with
+  an icon over their word stay at 72 at least (`gui::stacked()`).
+- On a desktop the landscape board and its corner panels stand in a frame (2026-11-11)
+  that grows with the window's height, 4% a side at 1000 points to 7.5% at 1440, at most
+  1.45 times as wide as tall round the flat board and 1.7 round the 3D one, so the
+  board's top stays level with the panels'.
+- No desktop window lays out wider than 1.9 times its height (2026-11-14, task 087): one
+  cap in `gui::safe` rather than a width per screen, so an ultrawide works.
+- A large desktop window (`gui::large`, 1700 × 1000 dp) centers the replay and results
+  and sets their words a face larger (the next baked face, not scaled glyphs), 2026-11-14.
+- On a desktop in landscape the replay's back is a row over the board at its left, as
+  every screen has back at the top left (2026-11-14). The tablet keeps its layout: the
+  row would cost its board 14%.
+- The replay's move shown and best move (2026-11-14, task 087): glow dots along the way,
+  the squares' numbers at its stops, and the best move drawn as the game's hint, shown
+  only while asked for. They are UI over the board, so the board's shader is unchanged.
+  Rejected: white dots to a dashed ring, the best move in words only.
 
 ### Small windows
 
-iPadOS 26's resizable windows got the compact layout (2026-11-09, task 050). Headless, the
-smallest window's 3D game board went from about 200 dp wide to about 350, and home's board
-from none to about 160 dp. Settings' slim theme tiles fixed Board's foot, which had been
-33 dp under its glass's (`test/shell/sizes`' last line).
+iPadOS 26's resizable windows get the compact layout (2026-11-09, task 050).
 
-- Compact's controls are under the 88 dp floor, accepted for compact only (2026-11-09).
-- The gap under home's wordmark row is 12 dp, the gear's reach, so its 88 dp tap keeps
-  off Continue's (2026-11-10); it was 8.
+- Compact's controls are under the 88 dp floor, accepted for compact only.
 - No fling in scrolling lists (2026-11-09).
 - No screen moves out of the way of iPadOS's window control (2026-11-09): back and the
-  chip are large and still easy to tap beside the dots, and a control that steps aside in
-  a window only is one that moves. A margin clear of the dots was built and taken out
-  (task 050).
+  chip are large enough beside the dots, and a control that moves in a window only is
+  worse. A margin clear of the dots was built and taken out.
 
 ### Window resizing
 
-A Mac window being resized shows the last frame scaled to fit over a cover of the
-backdrop (task 058). Rejected:
-
-- Drawing live during the drag: it needs the loop's body run from SDL's 60 Hz expose in an
-  event watch, from inside gfx's own `frame()`, which Goose may not allow, and Metal's
-  frame lags the window's size by one, so the edges wobble.
-- A cover over the stretched frame, taken off after the next frame: it flickered on
-  mouse-up and switched too suddenly.
-
-Windows' modal size loop shows the last frame unscaled, black where the window grew, and
-that is kept (2026-11-10): the Mac's look there would need a gfx patch presenting the
-backdrop and the last frame from SDL's 60 Hz expose, the swapchain made again each tick.
-An iPad's window (the 11" iPad Pro simulator, iOS 26.4) lays out live.
+A Mac window being resized shows the last frame scaled over a cover of the backdrop
+(task 058). Rejected: drawing live during the drag (the loop run from SDL's expose
+inside gfx's `frame()`, and Metal's frame lags the size by one), and a cover removed
+after the next frame (it flickered). Windows' modal size loop shows the last frame
+unscaled, black where the window grew (2026-11-10): the Mac's look would need a gfx
+patch.
 
 ## Look
 
-The HTML prototypes settled the look's values on 2026-11-07.
-
-### Seasons and themes
-
-The seasons' values come from the design boards (2026-11-07). Summer's sunset (2026-11-07)
-takes the summer photograph's evening sky, where the design boards' sea greens were cold
-against it and close to spring's sage.
+The HTML prototypes settled the look's values on 2026-11-07, the seasons' from the design
+boards; summer takes the photograph's evening sky, where the boards' sea greens were cold.
+The pieces' light is soft, from above and toward the top; a strong light pool was set aside.
 
 ### Themes kept for later
 
-Set aside, not rejected: candidates for another season's photograph, a theme setting, or
-a later board. Values as in the table above.
+Set aside, not rejected, for another season or a theme setting:
 
-| | Sand and pine (2026-11-07) | Sea (the design boards' summer, until 2026-11-07) |
+| | Sand and pine | Sea (the design boards' summer) |
 | --- | --- | --- |
-| Light square | `#e6cfa6` | `#c7d5c6` |
-| Dark square | `#56603f` | `#2e5546` |
+| Light / dark square | `#e6cfa6` / `#56603f` | `#c7d5c6` / `#2e5546` |
 | Frame | `#33361f` | `#1d3a30` |
-| Light piece | `#f7efdf` | `#f6f1e4` |
-| Dark piece | `#b5603f` (terracotta) | `#b56a57` (terracotta) |
+| Light / dark piece | `#f7efdf` / `#b5603f` | `#f6f1e4` / `#b56a57` |
 | Crown on a light piece | `#56603f` | `#2e5546` |
 | Glow | `#ffc67a` | `#86e7d3` |
-| Glass tint | `#3a2a1e` at 50% | `#1e4a4a` at 40% |
-| Glass copy dimmed to | 0.8 | 0.75 |
-| Text | `#fbf3e6` | `#f4f8f2` |
-| Page under the scene | `#1e1a12` | `#0d1c1c` |
+| Glass tint, copy dimmed to | `#3a2a1e` at 50%, 0.8 | `#1e4a4a` at 40%, 0.75 |
+| Text, page | `#fbf3e6`, `#1e1a12` | `#f4f8f2`, `#0d1c1c` |
 | Square surface | soft mottling, like sand | plain sheen |
-
-Sand and pine is warm sand with olive pine squares; it suits the summer photograph too,
-but its olive sits nearer spring's greens than the sunset does.
 
 ### Scene and glass
 
-- Behind the flat game the photograph is blurred. Tried and set aside on 2026-11-07: the
-  sharp photograph (busy behind the board), a plain painted tabletop, and generated
-  tabletop pictures with a crafted board (task 016, cancelled).
-- The 3D board floats in front of the scene with no room or table modelled. A painted
-  backdrop with a real table comes later only if this falls short.
-- ASTC in 6 × 6 blocks (2026-11-08): it looks the same as the JPEG and 4 × 4 side by side
-  at the tablet's and a phone's size, sharp behind home and blurred, and is nearer the
-  master than the JPEG (44 to 45 dB against 40 to 41, summer 40 against 37.5); 4 × 4
-  (4 MB) buys nothing visible. Rejected: PNG, at about 5 MB a season, and AVIF, which
-  needs libavif and an AV1 decoder on both platforms to save about 1 MB.
-- Loading the photograph in the frame after the lit tile, after a `gfx::flush()`, took a
-  season change's longest frame on the tablet from 54 to 66 ms to 22 ms.
-- The JPEG and ASTC masters went into git on 2026-11-10.
-- One size for every screen (2026-11-08): sizing the photograph by the screen's density
-  (1024 to 1536 on a dense phone) would save at most 1 MB in SDL's shared block and needs
-  several encodings or a choice at load.
-- The plain background was added on 2026-11-09 (`prototypes/plain.html`, fade b).
-- Glass is a pre-blurred copy, not a live blur: Snowtime measured live backdrop blur
-  costing more than its weather animation, and switched to a copy of the background
-  blurred once (its `docs/architecture/scene.md`).
-- The blurred copies stay as they are (2026-11-08): smaller copies (a sigma-5.6 blur at
-  512 keeps its look at 256 or 128), a dual-filter (Kawase) chain, sampling a mip of the
-  photograph, and copies blurred offline and shipped compressed were weighed and dropped.
-  The two copies are 1.25 MiB together inside SDL's shared 16 MiB block, so none would
-  save measurable memory, and the blur runs only on a season change. The thumbnails as
-  ASTC (0.4 MB) were dropped the same way.
-
-### Light
-
-The pieces' soft light from above and toward the top was chosen on 2026-11-07. A strong
-light pool and, with the tabletops, a crafted board with a soft light were tried that day
-and set aside.
+- The flat game's photograph is blurred (2026-11-07). Rejected: the sharp photograph
+  (busy behind the board), a painted tabletop, generated tabletop pictures (task 016).
+- The 3D board floats in front of the scene with no room or table modelled.
+- Photographs are ASTC 6 × 6 (2026-11-08): it looks as the JPEG and 4 × 4 do and is
+  nearer the master than the JPEG (44 to 45 dB against 40 to 41). Rejected: PNG (about
+  5 MB a season), AVIF (libavif and an AV1 decoder to save about 1 MB).
+- One photograph size for every screen (2026-11-08): sizing by density saves at most 1 MB.
+- The photograph loads in the frame after the lit tile, after a `gfx::flush()`: a season
+  change's longest frame on the tablet went from 54 to 66 ms to 22.
+- Glass is a copy blurred once, not a live blur: Snowtime measured live blur costing more
+  than its weather animation. The copies stay as they are (2026-11-08): they are
+  1.25 MiB inside SDL's shared block and blur only on a season change, so smaller copies,
+  a Kawase chain, a mip, or offline copies would save nothing measurable.
 
 ### Controls
 
-The prototypes `back.html`, `win.html`, `draw.html`, `gear.html`, `exit.html`,
-`puzzles.html`, and `chip.html` were removed on 2026-11-10 once built or superseded; they
-are in git history before that day.
+The prototypes were cut to one plain page per screen on 2026-11-13; every take these
+entries name is in git history at 086f47d.
 
-On 2026-11-13 the prototypes were cut to one plain page per screen as built, a base to
-copy for a new idea, because the takes, switches, and option panels had piled up and made
-the pages slow and buggy. Every take these decisions name (`badges.html`, `boards.html`,
-`coach.html`, `first-start.html`, `game-captured.html`, `game3d.html`, `history.html`,
-`issue-1.html`, `plain.html`, `profiles.html`, `puzzle-set.html`, and the takes and
-parameters of the old `game.html`, `home.html`, `settings.html`, and `puzzle.html`) is
-in git history at 086f47d.
+**Input**
 
-- The tile under the mouse lights on a desktop (task 066, 2026-11-11), as a faint form of
-  the chosen tile's glow (the glow at 8%, about a third of chosen's 22%, and a 1 dp
-  border at 40%), whatever the tile's style, so the mouse shows in the theme's color
-  everywhere and a child still tells the tile they picked from the one the mouse is
-  over; a lit tile brightens its own glow instead. A fade of the press's 0.12 s, not a
-  motion: growing or lifting would make the screen busy under a child's mouse and blur
-  the press, the one thing that moves a tile, and a fade that short keeps a sweep along
-  a row from flickering. The prototypes' white at 16% when hovered was a browser's
-  `:hover`, never built. Never on Android or with `--touch on`: Android leaves the
-  pointer where the last touch was, which would leave the tapped tile lit. The hovered
-  tile is the topmost found over a frame, made hovered at the next frame's start,
-  rather than the first `hold` the pointer is over, which flipped between a card and
-  its tiles each frame (`shell/who.goose` holds the whole screen behind its card).
-- The arrow keys move a focus and Enter presses it (task 072, 2026-11-11), built once in
-  `gui` from what every control already declares, so each screen gets it without code
-  of its own and a gamepad later feeds the same moves. Nearest that way by the controls'
-  rects rather than the order declared, which suits a column and a grid alike (the
-  setups, settings). The focus is ringed (2026-11-11, the user agreeing): a glow ring
-  outside the control. The hover's light alone was too faint, and on a lit control
-  (Continue, a chosen tile) showed nothing; a stronger fill would be taken for a
-  chosen tile.
-- Enter with nothing focused focuses the screen's primary and presses it at once
-  (2026-11-12): on the board, the cursor's first piece is chosen. It used to do nothing,
-  so a gamepad's first press, most often A, looked like the gamepad not working, even
-  after a finger's tap had let the focus go (a PS5 pad on the tablet, and before on the
-  Mac). This replaces focusing with the first press and pressing with the second, from
-  earlier that day: the user found a second press for a control already shown odd. A
-  blind first press on another screen presses its primary, a lit row as a rule.
-- The board takes the keys as one grid control with a cursor (2026-11-11, task 072):
-  the cursor goes over every square, light ones too, one at a time, and Enter is a tap
-  on its square. Rejected: a cursor that jumps only between the pieces that can move and
-  their targets, which is quicker but gives away which pieces must capture, as showing
-  the count up front would (2026-11-09), and leaves no room for the mistakes a child
-  learns from; a cursor on the dark squares alone, whose up and down have two squares to
-  choose from and so need a rule to learn. Enter as a tap keeps one path through
-  `board::press` for the finger, the mouse, and the keys.
-- The board's cursor is a glow line just inside its square (2026-11-11, task 072; agreed
-  with the user 2026-11-12), as the focus ring is round a control, rather
-  than task 067's lit square, which the last move's tint already is. On the 3D board it
-  is drawn with the marks over the kept image, so a move of it doesn't draw the board.
-- Groups and Tab (2026-11-11): the game's screen is three groups, the way out, the
-  board, and the play panel, which Tab and a gamepad's shoulder buttons step between,
-  each coming back to where it was. Arrows alone would cross the board square by square
-  to get from one panel to the other.
-- Fullscreen by Alt and Enter or F11 (2026-11-12), the keys Windows' and Linux's games
-  and browsers use, borderless at the desktop's resolution (the fork's `set_fullscreen`),
-  so switching changes no display mode. Enter with Alt is fullscreen's only, not a press
-  as well. A setting for it waits (task 064).
-- A gamepad through SDL's gamepad API in the program's C (2026-11-11), as the safe area
-  is read: goose_gfx has none (docs/goose-findings.md). It feeds the same moves as the
-  keys, so the screens know nothing of it. B is back, as Escape and Android's back are.
-- A gamepad at rest costs nothing (2026-11-12): SDL doesn't read the gamepads on its own,
-  the program does when its loop runs, and on Apple's systems the GameController
-  framework reads them, its change handler waking the loop. Rejected: SDL's own reading,
-  every millisecond while one is open (5% of a core idle on the Mac with a PS5 pad); the
-  loop waking 30 times a second on Apple's systems too (1.5%: each wake goes through
-  AppKit). On Android too (2026-11-12): with SDL's HIDAPI off, Android reads the pad and
-  hands each change to SDL as it happens, and the event that makes ends the loop's wait;
-  a PS5 pad on a cable worked so on the tablet, plugged in mid-game and again later.
-  On Windows (2026-11-12) nothing outside the program says a pad was used (an Xbox pad's
-  XInput can only be polled, and SDL reads a PS5 pad's reports in its own update), so
-  goose_gfx's idle wait reads the pads every 16 ms while the window has focus and ends
-  the wait only on a press or a stick moved a quarter of its way (the fork's
-  `gamepad-idle-wait`, since folded into `gamepad-wake`): 0.4 to 0.6% of a core idle with a PS5 pad, the loop waking once a
-  second. Rejected: the loop waking 30 times a second to read it (4.3%: each wake runs the
-  whole loop); the same wait on Apple's systems and Android, where the system wakes the
-  loop for nothing.
-- goose_gfx owns the gamepad (2026-11-12), and `src/app/pad.c` is gone: this replaces
-  2026-11-11's gamepad in the program's C, and the program's half of the entry above
-  (its hints, its reads, its event watch, its GameController handler). The fork's gfx
-  already opened the pads and read them in its idle wait, so the pad was read twice. Now
-  gfx reads them each frame on every platform and keeps a press let go between frames
-  as its edges; its idle wait reads them every 16 ms unless the system wakes it, which
-  it does with the open flag `SYSTEM_GAMEPADS` (the fork's `gamepad-wake`): SDL's HIDAPI
-  off on Apple's systems and Android, and on Apple's a GameController change handler
-  ending the wait when a button changes or a stick leaves or comes back to the middle.
-  `host::keys` reads gfx's gamepad functions, declared in `keys.goose` as the release's
-  `gfx.goose` lacks them, and keeps the stick as the D-pad and its hysteresis: a menu's
-  wish, not gfx's, as a game reads the stick as a stick. The flag isn't gfx's default
-  either: the system's drivers know fewer pads and give less of them (a PlayStation
-  pad's touchpad, motion, and light bar), which a game may want; without it the 16 ms
-  read works everywhere for about 0.5% of a core. Windows idle with a PS5 pad, `--rest
-  25`: 0.56%, the loop waking once a second, as before.
+- The tile under the mouse lights on a desktop (task 066, 2026-11-11): the chosen tile's
+  glow at 8% and a 1 dp border at 40%, faded over 0.12 s, never a motion, which would
+  make the screen busy. Never on Android or with `--touch on`, where the pointer stays
+  at the last touch. The hovered tile is the topmost found over a frame.
+- Arrow keys move a focus by the controls' rects, Enter presses (task 072, 2026-11-11),
+  built once in `gui`. The focus is a glow ring outside the control: the hover's light
+  was too faint, a stronger fill read as chosen.
+- Enter with nothing focused focuses and presses the screen's primary (2026-11-12): a
+  gamepad's first press doing nothing looked broken.
+- The board is one grid control whose cursor visits every square (task 072). Rejected: a
+  cursor jumping between movable pieces (it gives away which must capture), dark squares
+  only (up and down then need a rule). Enter is a tap, one path through `board::press`.
+  The cursor is a glow line inside its square, drawn over the 3D board's kept image.
+- Tab and a gamepad's shoulders step between the game screen's three groups (2026-11-11).
+  Fullscreen is Alt+Enter or F11, borderless at the desktop's resolution (2026-11-12).
+- goose_gfx owns the gamepad (2026-11-12, replacing 2026-11-11's `src/app/pad.c`). With
+  `SYSTEM_GAMEPADS` (the fork's `gamepad-wake`) the system wakes the idle wait on Apple's
+  systems and Android; on Windows the idle wait reads the pads every 16 ms, about 0.5% of
+  a core. Rejected: SDL's own reading (5% of a core idle on the Mac), waking 30 times a
+  second (1.5% on the Mac, 4.3% on Windows). `host::keys` keeps the stick as a D-pad.
 
 **The game screen**
 
-- `prototypes/game.html`, chosen 2026-11-07 over three other takes: each control a glass
-  tile with an icon and a word, as on home, since icons alone (three arrows for undo,
-  restart, and back) confused.
-- Landscape only where the flat board fills at least about 2/3 of the height, else
-  portrait (2026-11-09): a near-square window's landscape had a small board between
-  square-ish panels.
-- The flat game's controls are the 3D screen's (2026-11-09, task 054): the UI round the
-  board only, the boards untouched. The board stayed as it was, and the flat screen's
-  corner panels near square are no wider than the old panels, 192 dp.
-- A puzzle on the flat board takes the game's corner panels in landscape too
-  (2026-11-11), replacing its panels as tall as the board, which no screen uses now: the
-  two screens looked unrelated, settings far from start over. Its play panel is as tall
-  as what it holds, 504 dp, not the game's 352, at which the piece went beside the goal
-  and next shrank.
-- Landscape panels narrow to 192 px where the board would be under 720 px (2026-11-08).
-  Rows are 88 px, the floor for small hands (2026-11-08). Portrait's bar tiles take each
-  word's width and an even share of the rest where thirds don't fit (2026-11-08).
-- The child's pieces are at the bottom against the computer, the board turned when the
-  child plays black (2026-11-08).
-- A tile's icon and word are centered on it, side by side or stacked, on every tile
-  (2026-11-11). This replaces the landscape column's left-aligned layout (the icon 14 dp
-  from the left, `gui::BESIDE`) for settings, start over, and the hint: under back, which
-  was already centered, they looked misaligned.
-
-**The way back** (`back.html`'s take b, chosen 2026-11-09 over a, the arrow alone): one
-control on every screen that leaves. It replaced buttons named for where they went
-("Home" on the game, "Puzzles" on a puzzle), which children read as different controls,
-and a bare arrow on the puzzles and settings; take back became "Undo move" ("Võta käik
-tagasi") so it says it is about the move, not the screen. On a phone in landscape
-settings' title row is wider for it: the preview board went from 431 to 400 dp at 540 dp,
-and from 285 to 219 in Estonian at 480 with the Pixel's insets.
-
-**Clocks**: black's clock runs only after white's first move (2026-11-08), so a child can
-settle before anything counts. The running clock's gold under a minute and red at 0:20
-came on 2026-11-09.
-
-**A draw** (`draw.html`'s take a, chosen 2026-11-09).
+- Each control a glass tile with an icon and a word (`game.html`, 2026-11-07): icons
+  alone confused. The icon and word are centered on every tile (2026-11-11).
+- Landscape only where the flat board fills about 2/3 of the height, else portrait
+  (2026-11-09). Rows are 88 dp, the floor for small hands (2026-11-08).
+- The flat game takes the 3D screen's corner panels (task 054, 2026-11-09), a puzzle too
+  (2026-11-11), its play panel as tall as it holds, 504 dp.
+- The child's pieces are at the bottom against the computer (2026-11-08).
+- One way back on every screen that leaves (`back.html` take b, 2026-11-09), replacing
+  buttons named for where they went, which children read as different controls; take
+  back became "Undo move".
+- Black's clock starts after white's first move (2026-11-08); the running clock goes gold
+  under a minute and red at 0:20 (2026-11-09).
+- In landscape the way out's tiles stand alone, each on glass's tint (`gui::under_tile`)
+  with no glass border or shadow (2026-11-13): on full glass they looked too glassy. A
+  panel only where it holds what isn't a tile; a small window's compact bar keeps its.
+- On every touch screen in landscape the way out is back and settings side by side over
+  start over, 204 dp tall (2026-11-13): the board fits better. A desktop keeps the three
+  stacked.
+- A tablet squarer than 3:2 in landscape takes a phone's 192 dp panels on the 3D board
+  (2026-11-13): 4:3's board grows from 693 to 762 dp.
+- In portrait the camera buttons are a row under the board at the right (2026-11-13); in
+  landscape a row centered under the play or moves panel, or a column at the right edge.
 
 **Home**
 
-- `prototypes/home.html`, chosen 2026-11-07 over the icon tiles and two other takes.
-- The bare gear in portrait (`gear.html`'s take a, chosen 2026-11-08). Rejected: the
-  88 dp quiet tile, which looked too big beside the wordmark, and the X's round glass
-  button, which the X itself later left. The wordmark's letters close up where the gear
-  leaves them too little room (2026-11-08).
-- The menu's rows close up from 2 dp apart to about 1 where the gear's reach doesn't fit
-  (2026-11-10): the Pixel 7a in landscape had overlapped Continue's tap.
-- Continue's note says whose game it goes back to, "A friend" or "The computer · easy"
-  (2026-11-11, issue 1, `prototypes/issue-1.html` take a). The row isn't shown while the
-  game is one nobody set up (none kept: a fresh install, a new player) with no move
-  played, as Quit isn't where it doesn't fit (2026-11-12, take b; it replaces a's dim row
-  of 2026-11-11, which the user found weaker than none). Whether the game was set up is
-  kept with it (`Saved.unset`, version 4), so a restart doesn't bring the row back; a
-  version 3 image still reads, as a game set up, until that reading is dropped.
-  Rejected for now: continue going back to a puzzle too (c), which the shell doesn't
-  track and Puzzles already reaches.
-- The X closes the app (`exit.html`'s take b, chosen 2026-11-08 as a round glass button;
-  made a bare X, `gear.html`'s `x=d`, on 2026-11-09 to match the bare gear). Rejected: a
-  quiet last row, which would take the portrait board's room and lengthen the sheet
-  phones can't fit; a door, which reads less surely at 34 dp; and a power sign, which
-  suggests turning the tablet off.
-- On a desktop's landscape column the way out is a last row, Quit, under settings
-  (2026-11-11, task 072), narrowing the decision above against a last row: a desktop's
-  window is where a quit in the menu is expected, the landscape column has room for it,
-  and a row is reached by the arrow keys in the menu's order where a corner X is not.
-  The X shows only where the row doesn't (the portrait sheet, a column too short for it,
-  a touch screen), as settings is the gear or a row, never both. Rejected: the row in
-  the portrait sheet, for the reason above; both the row and the X at once.
-- On a desktop, quitting asks first (2026-11-12, the user): a card over home dimmed,
-  "Quit Draughts?" with cancel and quit, quit the keys' first choice, for Quit, the X,
-  and Escape or a gamepad's B on the menu, which had closed the window at once and was
-  easily pressed by a gamepad going back. It narrows the X's "at once, asking nothing" to
-  touch screens, where the X sits apart in a corner, Android's own back doesn't ask, and
-  the game is kept anyway. Rejected: asking on touch screens too, a dialog for a child
-  who meant to close it.
-- On iOS home has no way out, neither the X nor a row (2026-11-09, task 043): Apple's
-  guidelines say an app never quits itself, the system's home gesture leaves it, and an
-  app that ends its own process looks like a crash and risks App Review. The game is
-  written when the app goes to the background, so nothing is lost. Rejected: the X
-  ending the process, as on Android.
-- A desktop's menu rows stand 56 dp under the wordmark rather than 34 (2026-11-12, the
-  user): at a desktop's smaller scale 34 read as the rows crowding the title.
-- The board keeps 40 dp above and below, down to 24 where a setup's tall sheet near
-  square would leave it under 40% of the width (2026-11-08).
-- The setups (2026-11-08): the child's colour against the computer, every tile 88 dp tall
-  at least, two columns in a landscape too short for one, ending on one line, the
-  draughts' tiles taking their names' width with an even share of the rest, and the
-  setup's board switching at once rather than crossfading. Easy is the default level for
-  a new player (2026-11-09).
-- The language is only in settings (2026-11-07): kids who can't read yet don't need it on
-  home, and a tablet set to one language can still play in another.
-- One New game row, the opponent chosen in the setup (2026-11-13, task 080,
-  `prototypes/new-game.html` take c). It replaces the A friend and The computer rows of
-  2026-11-07 and the setups of 2026-11-08: a friend's game on a tablet is rare (it was the
-  only way to play before the computer player), and two rows made the rarer choice as
-  prominent as the common one. The setup's first row is whom to play, A friend, Easy,
-  Medium, Hard, the computer's level folded into it, so the two opponents' setups have
-  the same rows (the pieces, or the board's turning for a friend) and the column never
-  jumps; the opponent is kept (`opponent = friend|computer`), so a child who always plays
-  the computer taps New game and Play. New game notes the kept opponent, as the
-  computer's row noted its level, and is outlined under Continue, lit in its place on a
-  first run. The column widens to 400 dp so the four tiles are a tap wide each. Where it
-  is too short, the choices scroll with Play pinned under them, and in a phone's
-  landscape Play moves into the head row in the title's place: it replaces the two
-  paired columns of 2026-11-08, which a 400 dp first row doesn't fit. Rejected: take a,
-  an Opponent row of its own over the level's, which made the column overflow the
-  tablet's landscape; take b, the opponent as a two-part switch in the head row beside
-  back, crushed on a phone's landscape where Play needs that row.
-- Whether a friend's game turns the board is the setup's (2026-11-13, task 080), its
-  last-but-one row for a friend, Stays "for both" or Turns "to who plays", Stays the
-  default as before and, since 2026-11-13 (the user), the first of the two. It replaces settings' Board row's third tile (2026-11-12): the
-  turning is a choice about that game, not a look, and in settings it read as if it
-  always applied. The setup's board turns once round when Turns is chosen, as settings'
-  preview did. Settings' Board row is flat or raised again, which on a 20:9 phone at
-  540 dp in portrait puts both groups back on one page (the preview 228 dp) where the
-  wider row had needed the tabs.
+- `home.html` (2026-11-07). The bare gear in portrait (2026-11-08): the 88 dp tile looked
+  too big beside the wordmark.
+- Continue says whose game it is ("A friend", "The computer · easy") and isn't shown for a
+  game nobody set up with no move played (`Saved.unset`, 2026-11-12).
+- The X closes the app at once on touch screens (2026-11-08/09). Rejected: a last row (it
+  costs the portrait board), a door, a power sign.
+- On a desktop's landscape column the way out is a Quit row (task 072, 2026-11-11), the X
+  only where the row doesn't fit. Quitting on a desktop asks first (2026-11-12): a
+  gamepad's B going back had closed the window.
+- On iOS home has no way out (task 043, 2026-11-09): Apple's guidelines say an app never
+  quits itself.
+- One New game row, the opponent chosen in the setup (2026-11-13, task 080, `new-game`
+  take c), replacing the A friend and The computer rows: a friend's game is rare, and two
+  rows made it as prominent as the common one. The setup's first row is A friend, Easy,
+  Medium, Hard; the opponent is kept. Where the column is short the choices scroll with
+  Play pinned. Rejected: an Opponent row (overflowed the tablet's landscape), a switch in
+  the head row (no room on a phone).
+- Whether a friend's game turns the board is the setup's (2026-11-13), Stays by default:
+  it is a choice about that game, not a look, and in settings it read as always applying.
+- The language is only in settings (2026-11-07).
+- The results screen is a row on home's menu (2026-11-12), named Results: Games blurred
+  with the rows that start a game. Where the row would shrink the board, the menu scrolls.
 
-**Settings** (`prototypes/settings.html`, regrouped 2026-11-07)
+**Settings**
 
-- No draughts row (2026-11-11, issue 1, `prototypes/issue-1.html` take a): home's setup
-  and the puzzles' library each choose the draughts, and here it read as if it changed
-  the game in progress. The preview shows the player's draughts. Rejected: the row kept
-  as "Draughts for new games and puzzles" (b), a third way to one choice; shown read-only
-  as the game's (c), a row that takes no tap among rows that do.
-- The tutorial's row (one tile, learn the moves) comes with the tutorial, taken out until
-  then so the tablet's landscape shows both groups (2026-11-09).
-- The privacy note's place, at the group's title row or the glass's foot, so it moves no
-  layout (2026-11-09).
-- The theme's tiles, by the date last, so the four seasons keep one row on a phone
-  (2026-11-08). Every tile 88 px tall and wide at least (2026-11-08).
-- Where the choices have 60 dp to spare (16:9 and wider), every name's column widens to
-  the switch's 180 dp (2026-11-09): the board beside them went from 639 to 583 dp there.
-- Near square the names go above the tiles and the column narrows (2026-11-08); where
-  that fails, the board goes on top with the groups side by side under it, so a widening
-  window goes from portrait to landscape without tabs between (2026-11-09, task 050).
-- In landscape the groups go under the title row, the room left below them (2026-11-11),
-  not centered down the column: on a large desktop window, with room to spare, they
-  floated in its middle; the tablet's moved up a few dp.
-- The tabs stand on glass (2026-11-09): a plain tile alone was hard to read over a bright
-  photograph. In portrait a group's glass is its own height (2026-11-09): the game's
-  glass as tall as the look's had ended in empty glass under its rows.
-- Back over its word in portrait (2026-11-08, 2026-11-09): at 548 dp "Settings" had
-  61 dp beside the worded back and the language, and "Seaded" 45 and was left out.
-- One list that scrolls, no tabs (2026-11-13, task 080, `prototypes/settings-takes.html`
-  take b): Look (Background, Theme, Board, Kings), then Game (Move hints, Move list), then
-  the privacy note, under back, the title, and the language pinned above it, fading at its
-  foot as home's menu does. In landscape a 480 dp column at the left whose glass runs off
-  the screen's edge, the preview the rest; in portrait the preview a band at the top, 40%
-  of the height on a tablet and 30% on a phone, the list under it. It replaces the two
-  glass groups (2026-11-07) and every layout made to fit them: the names at the tiles'
-  left, the groups side by side, the phone's Game and Look tabs (2026-11-09), the slim
-  theme tiles of a small window, the look group's glass ending over a bottom inset, and
-  the preview levelled with the game group on a desktop. A list
-  that scrolls where scrolling is plain to see packs nothing behind tabs, and the preview
-  needn't be large to show the look. Rejected: take a, a Material row under Board shown
-  only while the board is raised, a row that comes and goes; take c, the seasons' tiles
-  as their boards with a material per season, which hid the photographs the theme is
-  chosen by.
-- The board's material folded into the Board row (2026-11-13, take b): Flat, Raised (the
-  season's own, tagged "auto"), Wood, Stone, Carved, each a picture of the theme shown's
-  board, the materials' pictures its near left corner close up (a frame's grain or
-  carving, where the whole board at 76 × 50 dp showed none), Raised's whole to set it
-  against Flat. No row that means nothing on a flat board.
-- The photograph or the plain fade is a Background row of two pictures, first in Look
-  (2026-11-13), replacing the switch beside the theme's name (2026-11-09) and its
-  halves under the 88 dp floor in a name's column.
-- The language is a button in the title row, the globe as it was (`GLOBES.a`), its code,
-  and a chevron, opening a small list (2026-11-13). It replaces the languages' tiles on
-  glass in the title row (2026-11-07), which took its width from the title as languages
-  are added, and a Language section at the list's foot (the prototypes' `langui=foot`),
-  out of sight below the fold. Tried in the app the same day and set back: a wireframe
-  globe (`GLOBES.b`), a languages icon after Lucide's (`GLOBES.f`, a glyph and an A), and
-  the Earth (`GLOBES.c`, a ring round three continents). Rejected in the prototype: the
-  codes as two tiles in the title row (`langui=seg`), a globe in a ring (e), a speech
-  bubble with an A (d), and the glyphs in two bubbles (g) or with arrows between them
-  (h).
+- One list that scrolls, no tabs (2026-11-13, task 080, `settings-takes` take b): Look
+  (Background, Theme, Board, Kings), Game (Move hints, Move list), the privacy note. A
+  480 dp column in landscape; the preview a band at the top in portrait. It replaces the
+  two glass groups and their tabs. Rejected: a Material row shown only while raised, a
+  material per season.
+- The board's material is in the Board row: Flat, Raised (the season's, "auto"), Wood,
+  Stone, Carved, each a picture of the board (2026-11-13).
+- No draughts row (2026-11-11): home's setup and the library choose it, and here it read
+  as changing the game in progress.
+- The move list's setting is here alone (task 078, 2026-11-13), a line under the chosen
+  tile saying what it shows.
+- The language is a button in the title row, the globe, its code and a chevron opening a
+  list (2026-11-13), replacing tiles that grew with each language.
 
-**The puzzle picker** (`puzzles.html`'s take a, a library list, chosen 2026-11-09).
-Rejected: b's large theme tiles, which shrink long Estonian names and hold the fewest
-themes a screen, and c's library beside the theme, which needs two scrolling panes.
+**The puzzle picker**
 
-- The library's rows are glass lit only while pressed (2026-11-09): a plain tile barely
-  showed over the photograph.
-- The rows' marks and stars, `prototypes/puzzle-set.html`'s take b (2026-11-09), its
-  Continue row and "Next: Easy 3" left out.
-- The draughts switch, `prototypes/puzzle-set.html`'s take a (2026-11-09). Rejected: b's
-  name under the title opening a list, and c's setup tiles with the themes as a grid.
-- The title is shadowed (2026-11-09), as it sat partly over spring's and autumn's birch
-  bark at the tablet's and iPad's sizes; until the switch it was left out in landscape
-  under 600 dp tall.
-- In a tablet's landscape the rows take the whole width (2026-11-09); they had kept clear
-  of back's column too, which pushed them against the right edge: 183 dp left of them, 27
-  right at 16:9.
-- The title row tops the rows as settings' tops its list (2026-11-14, chosen by the
-  user): as wide as the rows and lined up with their left edge, back there, the title
-  20 dp after it, the switch at the row's right wherever the three fit; where the worded
-  back doesn't fit beside them (a tablet's portrait), back keeps only its arrow in a
-  tap's square rather than the switch dropping a row, which a phone's portrait still
-  does. The rows start under it, centered across the page. It replaces
-  back alone in a column at the left in landscape with the title under it beside the
-  switch, the rows centered down the screen (a desktop's window left a large gap under
-  back), and in portrait the title row inset to the centered column.
+- A library list (`puzzles.html` take a, 2026-11-09). Rejected: large theme tiles (shrink
+  long Estonian names), a library beside the theme (two scrolling panes).
+- Rows are glass, lit while pressed; the draughts switch on one glass (2026-11-09).
+- The title row tops the rows, back at their left, the switch at the right; where the
+  worded back doesn't fit, back keeps its arrow only (2026-11-14).
 
-**A puzzle** (`prototypes/puzzle.html`, take c, chosen 2026-11-08). A selected piece's
-targets never show (2026-11-08). The turn piece beside the goal in a short landscape panel
-(`turn=a`, chosen 2026-11-09 over `turn=b`, beside everywhere, since over the goal the
-tablet shows it as the game does).
+**A puzzle**: `puzzle.html` take c (2026-11-08). A selected piece's targets never show.
 
-**Players** (`prototypes/profiles.html`, take a, chosen 2026-11-09)
+**Players** (`profiles.html` take a, 2026-11-09)
 
-- The name on a glass pill (2026-11-09, `chip.html`'s take d), so it reads on a bright
-  photograph.
-- The chip mirrors the X (2026-11-09, after the tablet). This gave back the room first
-  kept above the board for the chip (`badges.html?home=2`, where it stood above the
-  board's top left corner): the tablet's landscape board is back at 120 dp from the top,
-  the foldable's portrait went from 339 to 411 dp, 4:3's portrait 407 to 479, a 20:9
-  phone's landscape at 480 dp 328 to 336 (291 to 299 with the Pixel 7a's insets, 346 to
-  349 at 540 dp).
-- A badge is home's king with its animal in the crown's place (2026-11-09, `badges.html`
-  direction 1).
-- While a name is typed on a phone the field keeps above the keyboard (2026-11-13, a
-  tester's phone hid it): in portrait the sheet hides its pictures; in landscape, where
-  the head and the name's title alone put the field near the keyboard's top, the card is
-  the head with the field in the title's place. The head shows the name as typed, a new
-  player's too. A tablet's keyboard leaves room, so its sheet stays whole. A desktop has
-  no keyboard on screen, so its sheet doesn't move at all (2026-11-14: it had jumped to
-  the top as the name was tapped). Reading the keyboard's height was set aside: SDL
-  doesn't give it on Android, and the card doesn't scroll.
+- The name on a glass pill; the chip mirrors the X, giving the board back its room.
+- A badge is home's king with its animal in the crown's place.
+- While a name is typed on a phone the field stays above the keyboard (2026-11-13). SDL
+  doesn't give the keyboard's height on Android, so the sheet hides its pictures in
+  portrait and shrinks to the head in landscape. A desktop's sheet doesn't move.
 
 ### How to play
 
-Task 026, `prototypes/tutorial.html`, 2026-11-13 (replaces task 019's first start,
-`first-start.html`: which draughts, learn the moves or just play, then the tutorial, on
-pages of their own before home):
+Task 026, `tutorial.html`, 2026-11-13, replacing the earlier first-start pages:
 
-- A new player is asked "Do you know how to play?" right after their sheet's done, on
-  the card (take a), with two answers: Show me and I know how. The tutorial teaches the
-  player's own draughts (International for a new one) rather than asking which first
-  (take b put the setup's draughts row on the card, take c a card of its own after Show
-  me): one question, and the library's switch reaches the others. A fresh install's first
-  player is asked the same way, so there are no pages of a first start apart from it.
-- How to play lives in two places (entry b): lit in continue's place on home while a
-  player asked hasn't learned their draughts, nor said they know how, nor begun a game,
-  and always as the puzzles' library's first row, across the columns. A row on home
-  always (entry a) cost a row for something done once; the library alone (entry c) hid
-  it from a new player. Settings' tutorial row, taken out on 2026-11-09, doesn't come back:
-  the library's row, switched by draughts, is it.
-- Each step is played on the board, the moves shown, and next lights once it is played.
-  The first step has the other side answer and the child move again, so the turns show. The end hands over to the puzzles' Learn theme or a new game.
-- The icon is a finger tapping with a ring over its tip (take `tap`), chosen over a
-  piece's dotted path, the diagonal arrow, a graduation cap, and a question mark: it is
-  the gesture the steps ask for, reads without words, and isn't the Learn puzzles' book
-  nor the hint's bulb.
-- Russian draughts' tutorial has its own steps where its rules differ: any capture may be
-  chosen, and a man crowned in the middle of a capture goes on as a king.
+- A new player is asked "Do you know how to play?" on their card; the tutorial teaches
+  their own draughts rather than asking which (one question; the library's switch reaches
+  the others).
+- How to play is lit in Continue's place on home until learned, skipped, or a game begun,
+  and always the library's first row. Rejected: a row on home always, the library alone.
+- Each step is played on the board. The icon is a finger tapping.
+- Russian has its own steps where its rules differ.
 
 ### The lookout and the hint
 
-`prototypes/coach.html`, round 3, take a, chosen 2026-11-09. In compact, the hint and undo
-move go to icons alone with clocks and where the words would leave whose turn too little
-room, for Estonian's undo move (2026-11-10).
+`coach.html` round 3 take a (2026-11-09). In compact, hint and undo go to icons where
+words would crowd whose turn (2026-11-10).
 
 ### What each side has taken
 
-Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 2026-11-09.
+Task 052, `game-captured.html` take a in its `row` look (2026-11-09).
 
 ### The moves panel and the results screen
 
-Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
+Task 074 (2026-11-11) and 078 (2026-11-13):
 
-- The moves panel under the play panel in landscape (take a), where at least four rows
-  fit: the play panel and the way out stay as built. Take b (under the left panel) had
-  290 dp beside what each side has taken; take c (the play panel grown) moved hint and
-  undo to the column's foot.
-- On the 3D board the panel is five rows, as wide as the play panel, with the camera's
-  buttons in a row under it; the board clears both as it clears the panels, about 11%
-  smaller at the tablet's landscape. With the setting at off the board is as before.
-- No panel in portrait or on a phone in landscape yet: the prototype found under four
-  rows' room there.
-- The panel scrolls through the whole game (2026-11-12): showing only its last five
-  rows on the 3D board left no way to see the rest (the user). On a desktop it runs on
-  where that costs the board nothing, and the 3D frame widens to 2.0 while it shows:
-  the board was cut by its zoom or shrank while the window had room at the sides.
-- The setting is a Move list row in settings' game group, under move hints (2026-11-12),
-  since issue 1 took the draughts' row out; it replaces the results screen as its place
-  (2026-11-11, when a third row there left the preview board at 0 dp at several sizes).
-  The tablet's settings are unchanged; where the game group shows alone its board is
-  smaller: a 16:9 phone in portrait 366 to 248 dp (282 to 163 with insets), the 4:3
-  tablet's landscape 402 to 305, a foldable's 373 to 242; a 20:9 phone at 540 dp, none.
-  The results screen keeps its three tiles too until the user has seen both.
-- The results screen is a row on home's menu (2026-11-12; the user: nobody would look in
-  the players' card), and stays a tile beside the pencil in who's playing. Where the row
-  would cost the board its size, the menu keeps its height and scrolls, the next row
-  showing faded at the foot, rather than shrinking the board (on the iPhone 13 mini
-  310 dp to about 220). Replaces 2026-11-11's who's-playing only. A screen with no inset
-  at its foot gives up 28 dp of board so the next row's word shows (a tablet in
-  portrait, 479 to 451 dp).
-- Who's playing loses its tile of three rising bars (2026-11-13; the user: it makes no
-  sense there now): the games are home's row, at every size, and the card is about who
-  plays. Replaces 2026-11-12's tile kept beside the pencil.
-- The results screen is named Results, Tulemused in Estonian (2026-11-12): Games, Mängud,
-  blurred with home's rows that start a game. A Gemini review of the Estonian picked it
-  too; History (Ajalugu) left out the rating, Statistics was dry for a child, and Progress
-  (Areng) read as a school report. Its string keys are `results.*`.
-- Before the first move the panel says "No moves yet", "Käike veel pole" (2026-11-12,
-  the user, after GoDraughts' panel), dim where the first row will be. It replaces row one waiting, from
-  earlier that day (its number and a faint glow where the first move would stand), which
-  read as an empty stub. Rejected: no panel until the first move (the board would shrink
-  and shift as it is made).
-- "No moves yet" is centered, in the panel across its first row and in a phone's moves'
-  line, and the line has no chevron and takes no tap until the first move (2026-11-13,
-  the user: the arrow opened an empty list). Replaces 2026-11-12's words at the left.
-- The moves' line in landscape and the moves panel have a head, "Move list" over a
-  rule, the line's with its chevron at the right (2026-11-13, the user's pick of three
-  tried on the Mac). It replaces the chevron alone in the line's top right corner, which
-  sat apart from everything in it. Rejected: the chevron beside the last move (the
-  rows lost its width, and white's mark ran into black's move).
-- In landscape the way out's three tiles stand alone, each on its own glass, as wide as
-  the column, 12 dp apart (2026-11-13, the user: back stood wider than the two in the
-  panel under it, and those looked lighter). It replaces 2026-11-09's back over a panel
-  of settings and start over; back is still the same control in the same corner on
-  every screen. The column is 288 dp, not 336. A phone's moves' line has the same glass.
-- A tile standing without a panel (back on every screen, the way out in landscape, the
-  moves' line) sits on glass's tint alone, `gui::under_tile`, with no border, highlight,
-  or shadow of the glass's (2026-11-13, the user: such tiles looked too glassy). On full
-  glass it was edged twice and shadowed twice; now it looks as a tile on a panel does.
-- A panel only where it holds what isn't a tile (2026-11-13, the user): the portrait
-  bar loses its panel, its three tiles each on glass's tint as in landscape, the game's
-  row under them (what each side has taken, the moves' pill) a strip of glass of its
-  own, 42 dp, showing once it holds something. The bar is 32 dp shorter: the 4:3
-  tablet's portrait board grows from 670 to 710 dp, a foldable's from 586 to 626; the
-  others move up. A small window's compact bar keeps its panel, its icons and catches
-  sharing it.
-- The moves panel stands under the way out on a tablet and a desktop (2026-11-13, the
-  user: the screen was right-heavy, and moves usually sit at the left), 16 dp under its
-  tiles, 24 on a desktop. It replaces task 074's take a, the panel under the play panel;
-  take b, rejected then for its 290 dp beside what each side has taken, has the column's
-  freed 48 dp now. What each side has taken goes under the play panel on the flat board
-  while the moves panel shows, and the 3D board's camera buttons stay a column at the
-  right, so the board is larger (the tablet's 802 to 832 dp across in the transition).
-  A phone keeps its moves' line.
-- On every touch screen in landscape, a tablet's as a phone's, the way out is back and
-  settings side by side over start over, each its icon over its word, a column 204 dp
-  tall (2026-11-13, the user: the board fits better). The desktop keeps the three under
-  each other, its tiles shorter. With the moves panel the tablet's 3D board is about
-  861 dp across, 898 without it, where the three under each other left 830.
-- A tablet squarer than 3:2 in landscape (4:3, a foldable) takes a phone's narrow
-  panels, 192 dp, on the 3D board (2026-11-13, the user: its board looked small). Its
-  board is held by the width between the panels, not the height: 4:3's grows from 693
-  to 762 dp, a foldable's from 628 to 697. Measured and set aside: the play panel only as
-  tall as it holds (+6 dp) and the camera buttons in a row (none). The camera buttons
-  keep a tablet's size.
-- There the moves panel stands above the 3D board (2026-11-13, the user: tons of room
-  there), between the corner panels and level with their tops, down to the board at
-  rest, which keeps its size, at least three rows; what each side has taken shows as
-  counts at its head's right, as a phone's short moves' line has them. Where three
-  rows don't fit it goes under the way out as on other tablets. It stops a row short of
-  the board at rest where the top view's board reaches higher (2026-11-13, the user), so
-  that view shrinks less; sized to clear the top view entirely, it fell back to the left
-  on 4:3.
-- In portrait the camera buttons are always a row at the right edge under the board
-  (2026-11-13, the user: a column there, beside nothing, looked like wasted space). It
-  replaces a column wherever the board kept its width beside it; the board keeps its
-  size, the screen's stack centered down the safe area 32 dp higher or lower.
-- The move list's setting is settings' alone (2026-11-13, task 078; the user: once is
-  enough), replacing 2026-11-12's three tiles kept on the results screen too. There its
-  words alone (Off, Moves, Marks) didn't say what each shows, so a line under the
-  chosen one says it ("The moves, each marked by how good it was"), in the small face
-  and dim as the privacy note: beside the tiles, centered down them, where the group's
-  width leaves room (the look's rows are wider, so most landscapes), else under them.
-  Under them always cost the stacked landscapes their preview board (the tablet's
-  242 to 137 dp), so beside is first. The results screen's freed panel shows the levels'
-  results on a phone in landscape too, where the move list's row had crowded them out.
-- The results screen's draughts tiles stand on one glass, 4 dp round them and between,
-  as the puzzles' draughts switch does (2026-11-13, task 078): alone they were faint
-  glass on a bright photograph (a phone in landscape over winter's snow). The same fix
-  as settings' tabs, each on glass (2026-11-09).
-- A past game replays on a screen of its own, opened by a touch anywhere on its results
-  row, its `??` count too (2026-11-13, task 078's C, from the prototype's `view=replay`).
-  The row's count opening a tip instead was rejected: a row with two targets is a miss
-  waiting to happen for a child, and a key at the column's head is to say what `??`
-  counts (task 078's B).
-  - Landscape puts the steps in a column of four taps at the board's left, the column at
-    its right for back, the title, and the list (chosen from the prototype); under the
-    board would cost it a tap's height on a phone. Portrait puts them in a row under the
-    board. The board gives way only where the column would be under 300 dp (a 9:16
-    phone's landscape: 329 dp) or the glass under 220 dp in portrait (a 9:16 phone at 480
-    dp: 284; 300 dp, the prototype's, left it 204).
-  - It opens at the game's end, its list at its foot as the moves panel's is: the row
-    stands for the game as it ended. Opening at the start was rejected as a step away
-    from what was tapped.
-  - The list's moves are 34 dp taps, under the 88 dp rule: a miss only shows the
-    neighbouring move, which the steps put right, and 88 dp rows would show four moves
-    on a phone. They are drawn as the moves panel's rows, no tiles, so `test/shell/sizes`
-    counts the steps and back as the screen's taps.
-  - The keys: Left and Right step the moves from anywhere, as a chess site's replay does,
-    rather than moving the focus by the controls' rects, which left them dead ends from
-    the column of steps (`gui::claim_sideways`). The focus on a move shows it, so Up and
-    Down in the list step a whole move.
-  - It counts for nothing: it has a board and moves of its own, never the game's, so no
-    flag is needed to keep it out of the history, the ratings, or the game to continue.
-    A step on plays the move on the board as the game does; a jump shows its position at
-    once, as playing every move between would take seconds.
-  - The board is the flat one even with the 3D board chosen, as the prototype has it:
-    the replay is a page for reading moves, and a 3D board would leave less room for the
-    list. The positions are played out with the rules once, as the replay opens, from
-    the moves the history keeps; the file keeps no positions, as the moves give them.
-  - The game's line goes under the title where it fits beside nothing else, else at the
-    top of the glass; the prototype's card on the tablet (result, opponent, date, side,
-    "Rating then: 1031 → 1023") was left out for now, as the results row says the
-    rating's change already.
-- A replay plays on from any move (2026-11-13, task 078, the user's correction): "my
-  whole point was to let the game be replayed at any point and THAT doesn't count and
-  isn't stored or used for AI toughness changes or rating". This replaces the replay's
-  own "Doesn't count" pill by its title (2026-11-13, task 078's C): the replay only
-  shows, so it needs no label; the game played from it is what doesn't count, and says so.
-  - Play from here stands in the replay's head, at its right end, as back stands at its
-    left: one row the screen already has, which costs the board nothing and the list a
-    line at most (the game's line then heads the glass). On a phone the title, then back's
-    width, give way before the button leaves the head; on the tablet's narrow column it
-    is a row over the glass, which has rows to spare (26 moves in view to 20). A row on
-    every screen, over or under the list, was rejected: tried first, it took a 9:16
-    phone's landscape at 480 dp from 6 moves in view to 2 and its portrait board from 284
-    to 184 dp. By the steps there is no room on a phone, whose column of steps already
-    spans the board.
-  - The game from it keeps everything of the past game a player would expect: draughts,
-    opponent, level and skill, side, the side to move. No clock, since the history keeps
-    no clock setting; recording one was more than this needed.
-  - Start over goes back to the replay's position, not the draughts' start: trying a line
-    again is the point of playing from a move, and leaving is one tap on back.
-  - Back goes to the replay, not home: the game was opened from there, and the replay
-    keeps the move it showed, so another line can be tried from the next move.
-  - The game in progress is set aside rather than replaced: the game screen, the worker,
-    and the app's 3D board all read `shell.game`, so the game from the replay takes that
-    place and the other waits in `shell.parked` (the saved image, 15 KB, with its hints
-    and marks, 53 KB in all), which `shell::save` writes in its place. A second
-    `game::Game` (132 KB) or a second game screen was rejected for its size and for every
-    reader it would have to learn about.
-  - "Doesn't count" sits on the way out's top edge, half in the margin over it (replaced
-    the same day by the replay's note, below): the way out is the same rect in every
-    layout, so the label needs no room of its own and moves no panel. White ink on the light glow colors (winter's) read faintly; dark ink,
-    as the replay's mark discs have, reads on all of them. In the play panel's whose-turn
-    line it would have crowded a panel tuned to what it holds; a row of its own would
-    have cost a phone's moves' line or the portrait board.
-  - Its moves are numbered on from the replay's (`Game.ply0`): "16." from move 30 reads as
-    the same game. Doing so made the moves panel number a game by where it began
-    (`game::first_ply`) rather than by its first note's side, which also numbers a game
-    whose undo history dropped an odd number of moves right.
-- "Doesn't count" is a note on the replay, under play from here (replaced the same day by
-  a card behind an info sign, below), no longer a pill on
-  the game screen's way out (2026-11-13, task 078, the user: "no need to put the
-  'doesn't count' on the back button, IMO confusing. Rather as an info bulletin next to
-  the button that triggers the replay run"). This replaces the pill on the way out's top
-  edge, from earlier that day: on back and settings it read as being about those
-  buttons, and the note belongs where the choice to play on is made, before the game
-  starts. The game itself still counts for nothing, as before.
-  - At the glass's top, right under the button in landscape: one rule for every layout,
-    and the head has no room beside the button on a phone. Its full text says why (not
-    saved, no rating changed), in the small face and dim as settings' notes, with an info
-    sign, a faint disc with an "i", as the gui has no info glyph.
-  - It leaves the list the rows it had, up to three (the move shown and one either side:
-    with fewer the list's scroll hides or fades the move shown); in portrait the board
-    gives way for it down to 300 dp, as the portrait glass was already at its least.
-    Where the list would lose rows, the short text takes the game's line's place, as the
-    results row it was opened from says what the game was; the short text over the list
-    left a phone's landscape two faded rows. Rejected: dropping it on small phones (the
-    iPhone 13 mini's landscape would have had none), and in the head in place of the
-    title (about 110 dp on a phone, five lines).
-- Why a game from the replay doesn't count is a card behind an info sign beside play
-  from here (replaced the same day by a line under the board, below), no longer a note at
-  the glass's top (2026-11-13, task 078, as the user agreed). This replaces the note under the button from earlier that day: on the Pixel
-  7a in landscape it left the list about three rows of moves, and its short form took
-  the game's line's place on small phones. The card costs the list nothing.
-  - The sign is an 88 dp tap of its own at the button's right (a 28 dp disc drawn in
-    it), not a spot on the button: a tap on the button always plays. It takes its width
-    from the head, so on a phone the title, back's width, and then the button's icon
-    give way first; where none of that fits, the button and the sign share a row, as the
-    button did alone. A sign on the button's corner, its tap over the button's, was
-    rejected for the taps it would take from the button; one at the glass's corner was
-    tried and dropped, as the game's line beside it ran under the sign on a small phone.
-  - The card is the mark tips' (`game::card`): the same glass, disc, head, and wrapped
-    line, and the same dismissal (the mouse on a desktop; on touch the next tap only
-    closes it), so the app explains things one way. It hangs under the sign's tap, not
-    its disc, to leave the button's word in view, and widens for its head where 320 dp
-    would shrink it.
-  - The game's line is back everywhere. In portrait the board takes back what it gave
-    the note (the tablet 729 to 752 dp, the Pixel 472 to 492).
-  - Rows in view in `test/shell/replay` (its faces, wider than the font), before and
-    after: the Pixel 7a's landscape 3.3 to 4.6, its portrait 3.0 to 3.6 (the board 472 to
-    492 dp), the tablet's landscape 7.9 to 9.7, its portrait 3.0 to 3.1 (the board 729 to
-    752), the iPhone 13 mini's landscape 3.1 to 2.9 (the sign takes the title's room,
-    and the game's line, back from the short note's place, heads the glass).
-- A game from the replay not counting is a line under the board (replaced the same day
-  by a line over it, below), no longer a card behind an info sign (2026-11-13, task
-  078). This replaces the info sign from earlier that day:
-  the user disliked the sign and the head it crowded (on the Pixel 7a's landscape in
-  Estonian back shrank to its arrow over its word, play from here to its words alone on
-  two lines, the title went, and the open card covered the board), and a line by the
-  board needs no tap to be read.
-  - One line in the small face, dim as settings' notes, as wide as the board and centered
-    under it: why (not saved, no rating changed) where that fits on the line (the
-    tablet), else only that it doesn't count (the phones). Under the board rather than
-    over it: over, it would sit between the head and the board in portrait and read as
-    the head's; under, it reads as a caption of the position a game would start from.
-  - The board gives way for it, not the list: in landscape by the line's 26 dp (the Pixel
-    7a at 540 dp 450 to 424 dp, the tablet 752 to 726, the iPhone 13 mini 422 to 396), in
-    portrait by 14 dp, the line taking the 12 dp gap over the steps (the Pixel 492 to 478,
-    the tablet 752 to 738). The list keeps every row the sign's removal gave it.
-  - The head is back as before the sign (back, the title, play from here with its icon),
-    with two changes so its tiles look right in Estonian: play from here keeps back's
-    room at its sides (it had 8 dp, its word against the tile's right edge while the
-    icon's own margin widened its left), and the two tiles go the same way, both icon
-    beside word or both stacked, the title giving way before either stacks. Rejected:
-    keeping the title and stacking the button beside a wide back (the tablet's column),
-    which made the two tiles look unrelated; there the button takes a row over the glass
-    again.
-- The replay's line is over the board, not under it, everywhere (2026-11-13, task 078;
-  the user: "it absolutely must be above (in fact I'd put it above everywhere I
-  think)"). This replaces the line under the board from earlier that day, whose reason,
-  that over it would read as the head's in portrait, the user weighed the other way: the
-  line is read before the board, as what the position shown is for.
-  - It costs what it did: in landscape the board gives way by its 26 dp, the two
-    centered in the height; in portrait it takes the 12 dp gap under the head, the board
-    giving 14 dp. Boards and rows in view (`test/shell/replay`) are unchanged by the move
-    alone: the Pixel 7a's landscape 424 dp, 4.6 rows, its portrait 478, 3.6; the tablet's
-    landscape 726 and portrait 738, 3.1 rows; the iPhone 13 mini's landscape 396, 2.9.
-  - Where the title has given way, back and play from here fill the head with 12 dp
-    between them (the user, of the gap the title left: "there is a bit too much space
-    there, if it's an easy fix let's do it"): in halves where the button's word fits in
-    its half, else the button as wide as its word needs and back the rest, both still the
-    same way and a tap tall. Halves everywhere would set the button's word in a
-    smaller face in Estonian while back had room to spare. With the room the gap held,
-    the iPhone 13 mini's landscape now has its tiles icon beside word, as the Pixel 7a's
-    portrait in Estonian has.
-  - Play from here never takes a row of its own (the user, of the tablet's landscape:
-    "agree this is odd, why can't the replay info be below it instead?"): it shares the
-    head with back everywhere, stacking with it where side by side they don't fit, as on
-    a phone, and the game's line heads the glass where the title has no room. This
-    replaces the tablet's row over the glass from earlier that day. The tablet's 356 dp
-    column fits both side by side in its font; its list goes from 9.7 to 12.6 rows in
-    view in the tests' faces (10.6 to 12.6 in English), the foldable's and 4:3's
-    landscape 9.7 to 12.6.
-- A phone's moves, where the panel has no room (2026-11-13, task 078's A, the user's
-  choice from `prototypes/history.html`'s take d), replacing 2026-11-11's no panel in
-  portrait or on a phone in landscape:
-  - Landscape (`fit=row`, as directed 2026-11-12): back and settings side by side over
-    start over free 132 dp of the left column, so what each side has taken stays under
-    it and a line a tap tall or more fits at the foot; the board keeps its size. The
-    other fit, `slim` (the column as built, the line as tall as the 47 dp left under it,
-    the catch as counts in it), was under a tap on the Pixel 7a and moved the catch to
-    the 3D board's top. Where the catch has no room (the iPhone 13 mini at its points,
-    354 dp tall) the tiles are a tap high and the catch counts at the line's head, as
-    prototyped; at its density floor (470 dp) it isn't needed.
-  - The line opens a sheet over the screen's left part, to the board's edge, rather than
-    a screen of its own: the board stays whole and playable beside the list.
-  - Portrait (`port=bar`): only the last move, in the bar's row between the catches,
-    costing the board nothing. The strip under the play row (`port=strip`) showed more
-    moves but took the iPhone's board from 256 to 192 dp. It applies to a tablet's
-    portrait too (task 074's open question 3): no panel had room there either, and it
-    costs nothing. The sheet rises from the foot to the board's middle under a dim layer,
-    which takes the taps above it: the board half hidden shouldn't be played.
-  - The catches beside the portrait line are pieces where both fit their side at 70%,
-    the least a row takes them, else counts: at full size, as prototyped, a tablet's
-    late game turned to counts though its pieces fit.
-  - Pieces over the UI draw over everything, the dim layer too: those under the sheet are
-    left out, those above it kept whole. Faded with the layer, a catch's pieces showed
-    each other through.
-- Marks explained (2026-11-13, task 078's B, the user's choice: both). A legend at the
-  foot of a list one opens (the phone's sheet, the replay): nothing to find or dismiss,
-  for a child who doesn't know a mark can be touched, at the cost of one or two rows. A
-  tip on the always-shown panel (a tablet's, a desktop's): there a legend would take
-  rows from a panel that is always on screen. The tip's touch is the whole move, under
-  the 88 dp rule as the rows take no other tap, and it names the move it explains, so a
-  miss is plain; the next tap only closes it, so a tap meant to close it never plays or
-  presses something under it. No new strings: the tip's name is its `mark.*_tip` text up
-  to the colon. The tip isn't in the sheets or the replay for now (their legend says it).
-
-- The moves panel's glass is only as tall as what it holds, growing a row a move up to
-  the room the layout keeps, then scrolling (2026-11-14, a proposal from the screens'
-  consistency review, the user to pick from its before and after shots). It replaces the
-  glass down to the bottom margin from the start, which stood mostly empty, "No moves
-  yet" at its top, for the first moves of every game. The layout keeps the same room, so
-  the board doesn't move as the glass grows.
+- The moves panel stands under the way out on a tablet and a desktop (2026-11-13): moves
+  usually sit at the left and the screen was right-heavy. On a tablet squarer than 3:2 it
+  stands above the 3D board where three rows fit. Its glass grows a row a move up to its
+  room (2026-11-14); the layout keeps the room, so the board doesn't move.
+- The panel scrolls through the whole game (2026-11-12). Before the first move it says
+  "No moves yet", centered (2026-11-12/13). The panel and a phone's line have a "Move
+  list" head (2026-11-13).
+- A phone's moves (task 078's A, `history.html` take d): in landscape a line under what
+  each side has taken, opening a sheet beside the board, which stays playable; in
+  portrait only the last move in the bar, opening a sheet from the foot under a dim
+  layer. Rejected: a strip under the play row (the iPhone's board 256 to 192 dp).
+- Marks explained (task 078's B): a legend at the foot of lists one opens, a tip on the
+  always-shown panel. The tip's next tap only closes it.
+- Who's playing has no results tile (2026-11-13): the games are home's row.
+- A past game replays on its own screen, opened from its results row (task 078's C). It
+  opens at the game's end, on the flat board even with 3D chosen, and its positions are
+  played out from the kept moves. Its list's moves are 34 dp taps: a miss shows the next
+  move, which the steps correct. Left and Right step the moves from anywhere.
+- Play from here (2026-11-13): a game from any move of a replay that is neither saved nor
+  rated. It shares the replay's head with back; start over returns to the replay's
+  position and back to the replay. The game in progress waits in `shell.parked` (53 KB)
+  rather than a second `game::Game` (132 KB). Its moves are numbered on from the replay's
+  (`Game.ply0`).
+- That such a game doesn't count is one dim line over the replay's board (2026-11-13):
+  read before the board, as what the position is for. It replaced, the same day, a pill
+  on the way out, a note under the button, an info sign with a card, and a line under
+  the board (`git log --grep 'replay' --since 2026-11-13`).
 
 ### Board and pieces
 
-**The flat board**
-
-- The lip, the pieces' flat tops with one groove, and the wood theme's warm tones and calm
-  grain follow the close-up boards chosen on 2026-11-07, which read better than the first
-  design boards' frameless board and two-ringed pieces.
-- Kings in a 3D board are a stack of two plain discs, as kings are in Estonian play
-  (2026-11-07). A stack's selected or must-capture ring goes round its foot (2026-11-08).
+**The flat board**: the lip, flat-topped pieces with one groove, and calm warm wood follow
+the close-up boards chosen 2026-11-07. Kings are a stack of two discs, as in Estonian
+play; a stack's rings go round its foot (2026-11-08).
 
 **The 3D board**
 
-- The game screen round it, `prototypes/game3d.html`'s `corners` (2026-11-09). The flat
-  game takes the same panels (task 054).
-- The portrait camera at 65° down (2026-11-09), and the camera buttons,
-  `prototypes/game3d.html`'s placement `a` (2026-11-09). Their row in landscape
-  centered under the play or moves panel, on the game and puzzle screens alike
-  (2026-11-13, the user): flush right it hung off the panel's edge; the column, where
-  it fits, stays at the right edge.
-- The pieces' occlusion of the field into a map only where squares changed (task 059):
-  a texel a field pixel reads instead of the loop; the dropped bake drew shadow and
-  occlusion with every shadow map. A piece's occlusion is centered where it is, not on
-  the square it is over, and reaches over 5 × 5 squares (task 086, 2026-11-13): a
-  moving piece's snapped from square to square, at times onto a square beside it, and
-  the 3 × 3 cut it off in a straight line. Two float4s a square for it; a jump's piece
-  over the one it takes leaves it the square (the lower foot keeps it).
-- A dark king's crown gold (`#e9c46a`) on the 3D board too, as on the flat one, rather
-  than the look's crown color, a deeper tone of the piece that was hard to see on the
-  dark kings on the tablet (2026-11-12).
-- The crown into a 256² map drawn once at setup (task 059): evaluated three times a pixel
-  for its slope, it was a third of a frame with 16 kings on the Pixel 7a.
-- The renderer's backdrop kept as an image (task 059): its grade each frame was 7% of the
-  Pixel 7a's GPU cycles.
-- With the plain fade, the board's ambient is scaled to the dim ambient a theme without a
-  photograph had: the look the Galaxy A33's build without photographs showed, which the
-  plain background comes from.
-- Getting ready a step a frame (task 042). The old image eased toward grey while a new
-  theme bakes (2026-11-09).
-- Spring's default 3D look is `looks::elven`, chosen on the tablet on 2026-11-09. The
-  defaults of `--wood`, `--marble`, and `--summer` were settled the same day (task 039),
-  the other models kept beside them.
-- The raised board's material is one choice for every season (2026-11-13, task 080):
-  Auto, the season's own look as before (autumn's wood, winter's stone, spring's carved
-  stone, summer's wood), or Wood, Stone, or Carved, each season's board in it
-  (`looks::of`, the table in task 080's 03), kept as the player's `material`. One
-  choice is simpler to show and to say. Rejected: a material per season, each season remembering its own,
-  which settings would have had to show as each season's boards (take c), and which
-  matters only to a child who likes one season's stone and another's wood. The seasons'
-  flags still pick a look over it, for tuning. Replaces task 045's list of every
-  alternative look to choose from.
-- Settings' board pictures are shots of the 3D board baked into one 640 × 420 atlas in
-  git (2026-11-13, `scripts/board_thumbs.py`; 81 KB as JPEG, 117 KB as ASTC), loaded with
-  the seasons' thumbnails into their texture. Rejected: drawing each thumbnail with the
-  renderer at run time, which would bake every season's look in every material, and a
-  second texture for them, a binding more in the UI's shader and its ngfx root.
-- Against a friend the board's 180° turn keeps its size and eases on a sine over 0.7 s
-  (2026-11-12, tried on the tablet). It was a cubic ease, refitted at each angle: it
-  crept, then swung through the middle at 390° a second while shrinking to keep its
-  corners clear of the panels and growing back, which drew the eye. Fitted as at rest,
-  its corners pass over the panels for a moment. 1.1 s and 0.8 s were tried and felt
-  long once the size held still.
-- A friend's game doesn't turn the board by default, on either board, and on the 3D
-  board begins in the top view, zoomed (2026-11-12, the user). Two players sit at either
-  side of the tablet, so a board that turns every move makes the far one watch it spin,
-  and the top view reads alike from both sides where the angle at rest favours the near
-  one. Turning is settings' Turns with a friend, a third tile in the Board row, which
-  adds no row (a third row in the game group had left the preview board 0 dp at some
-  sizes, above); on a 20:9 phone at 540 dp the wider Board row puts settings in its two
-  tabs, its board 237 to 447 dp. Rejected: a fourth camera button for it, which every
-  layout round the 3D board would have had to make room for in friend games.
-  Replaces the turn on every friend game on the 3D board, from task 015. (The tile moved
-  into home's setup on 2026-11-13, under **Home**.) The flat
-  board's turn fades its pieces out and in, 0.15 s each way: at once it was too quick to
-  follow. Rejected for now: the pieces swinging round the middle on arcs (a quarter turn
-  puts them over light squares), and the board shrinking and growing (it moves the board).
+- The game screen round it is `game3d.html`'s `corners`; the portrait camera at 65° down
+  (2026-11-09).
+- The pieces' occlusion of the field goes into a map only where squares changed (task
+  059), centered on the piece and reaching 5 × 5 squares (task 086, 2026-11-13): 3 × 3
+  cut it off in a line.
+- The crown is a 256² map drawn once (task 059): evaluated live it was a third of a frame
+  with 16 kings on the Pixel 7a. The backdrop is kept as an image: its grade was 7% of
+  the frame. A dark king's crown is gold, as on the flat board (2026-11-12).
+- With the plain fade, the board's ambient is dimmed as a theme without a photograph.
+- Getting ready is a step a frame (task 042).
+- The raised board's material is one choice for every season (task 080, 2026-11-13):
+  Auto, Wood, Stone, or Carved (`looks::of`), kept as the player's `material`. Rejected:
+  a material per season, which matters only to a child liking one season's stone and
+  another's wood.
+- Settings' board pictures are shots baked into one 640 × 420 atlas in git
+  (`scripts/board_thumbs.py`, 117 KB as ASTC). Rejected: drawing them at run time (every
+  look baked), a second texture (another binding in the UI's shader).
+- The 180° turn keeps its size and eases on a sine over 0.7 s (2026-11-12): refitting it
+  at each angle drew the eye. The flat board's turn fades its pieces 0.15 s each way.
+- A friend's game doesn't turn the board by default, and on the 3D board begins in the
+  top view (2026-11-12): the far player would watch it spin every move.
 
 **States and captures**
 
-- Prototype `game.html?count=a`'s pips for a capture's count. Rejected: take b, a badge
-  with the number, which needs a child who reads digits.
-- Before 2026-11-09 nothing said how far a capture went (reported 2026-11-09: a child's
-  lone king on the turned board with a capture of four), and then the 3D board drew no
-  pips, as its scene never read `ring.z`; both fixed that day. The count shows on mistakes
-  only from a mistake while a capture is due (2026-11-09); it showed whatever the hints
-  before, which gave the capture away. Once shown it stays to the capture's end,
-  counting down (2026-11-12, the user): hiding it at the next right jump, as from
-  2026-11-09, took away a count the child had already been given.
-- The must-capture pulse ends once a move is played (2026-11-09). It ran on through the
-  move and rang the next side's capturers, so after a child's capture on the turned board
-  the computer's man beside the child's pieces pulsed red as if it were the child's to
-  move (reported 2026-11-09, two pieces each taking one).
-- A capture of many jumps is never played by itself in a game either (2026-11-09). Until
-  then a game played a capture once only one went on from the stops made, so a child whose
-  first jump played the whole of it never learned the way. Before that (reported
-  2026-11-09, International, a black man's capture over a far-row square it only passes,
-  the board turned), the piece went back to its square with the stop ringed, and picked
-  up again it forgot the stop: dropped, such a capture was made only by its last square.
-- The 3D board lights a missed capture's next stops (2026-11-09); it never showed them
-  before.
+- A capture's count is pips (`count=a`); a number needs a child who reads digits. It shows
+  on a mistake while a capture is due, and stays, counting down, to the capture's end
+  (2026-11-12).
+- The must-capture pulse ends once a move is played (2026-11-09).
+- A capture of many jumps is never played by itself in a game (2026-11-09), so the child
+  learns the way. The 3D board lights a missed capture's next stops.
 - A puzzle's board makes captures by hand with none of the game's help (2026-11-08).
-- The pieces a capture has jumped go see-through (0.35) until it ends, on both boards, in a
-  game and a puzzle, made stop by stop or played as a move (2026-11-12, asked for puzzles:
-  a king's capture that turns back round had the taken pieces in its way). The rules keep
-  them on the board until the capture ends, so they stay, only faint. Before, they stayed
-  whole until the move ended and then faded out.
-- Issue 1 (2026-11-11), the board's taps:
-  - A capture made stop by stop may take any of its ways (`rules::ways`), not only the one
-    the move list keeps for each end and pieces taken: a king's other way was a miss and
-    cost a puzzle's stars. The move plays along the way tapped.
-  - An empty square the piece passes on its way to a next stop (a king's flight, or
-    squares past a jumped piece before the one it must land on) is no stop and no mistake:
-    a tap there does nothing (`board::passes`). Rejected: moving the piece there, which
-    the rules don't have as a stop.
-  - A last square further on plays the capture when every way going there takes the same
-    pieces, one move whichever way, as before (2026-11-12: the user kept that; a stricter
-    rule of one way alone, tried on 2026-11-11, is dropped).
-  - A tap on a stop shows the piece hopping there over the move's hop (`board::hop`); it
-    jumped before, on both boards (the issue saw the flat one, where taps are the way;
-    the 3D board fills from the same lists). A drop needs none.
-  - A tap on the selected piece puts it down (released without a drag), as Enter on it does. A tap on a piece
-    waiting on a stop still does nothing, so a child who taps the piece before each jump
-    keeps the stops.
+- Pieces a capture has jumped go see-through (0.35) until it ends (2026-11-12): a king's
+  capture turning back had them in its way.
+- Taps during a capture (2026-11-11): any of its ways may be taken (`rules::ways`); a
+  square passed on the way is no stop and no mistake (`board::passes`); a last square
+  further on plays the capture when every way there takes the same pieces; a stop shows
+  the piece hopping (`board::hop`); a tap on the selected piece puts it down.
 
 ## Fonts
 
-Libertinus Sans, the face of a reference liked for its look (arXiv 2611.07289), in the
-style of Optima. Tenor Sans, Belleza, and Marcellus were compared with it in Estonian
-text; all four have õ ä ö ü š ž. Tenor Sans, which the proof of concept uses, is the
-runner-up: clean and wide, but one weight only. Marcellus has small serifs, further from
-Optima. If titles want more character, Tenor Sans could set them and Libertinus the rest;
-one face is the default, for one atlas.
+Libertinus Sans, in the style of Optima. Tenor Sans (the proof of concept's), Belleza, and
+Marcellus were compared in Estonian; Tenor Sans is the runner-up, one weight only. One
+face, for one atlas.
 
-The title and the figures hold only their characters, as those two faces were 71% of the
-atlas's area with every glyph. With one byte a texel and only the rows used, the texture
-went from power-of-two RGBA to R8:
-
-At 1024 texels wide, the texture's size by scale:
-
-| Screen (scale) | Before: every glyph, RGBA, power of two | R8, the rows used |
-| --- | --- | --- |
-| A 720 × 1280 phone at low density (0.9) | 1024 rows, 4 MiB | 261 rows, 0.25 MiB |
-| The Galaxy tablet; a 720 × 1280 phone at xhdpi (1.5) | 2048 rows, 8 MiB | 630 rows, 0.62 MiB |
-| The Pixel 7a (1.97) | 4096 rows, 16 MiB | 1023 rows, 1.0 MiB |
-| 2880 × 1920 (2.4) | 8192 rows, 32 MiB | 1482 rows, 1.45 MiB |
+The title and figures faces hold only their characters (they were 71% of the atlas), and
+the atlas is R8 with only the rows used: on the Pixel 7a 1.0 MiB where every glyph in
+power-of-two RGBA took 16 MiB.
 
 ## GPU memory
 
-Large allocations are their own size (`patches/SDL/0003`). Upstream rounds them up to
-64 MiB blocks that later large resources share: on the tablet the screen (9.6 MiB) and
-the photograph (16.3) would take a whole 64 MiB block.
-
-`gfx::flush()` between short-lived small resources took the tablet's GL mtrack at home
-from 60.7 to 36.4 MB, and after three season changes from 57.3 to 40.9.
-
-Exact allocations, not rounded to 4 or 8 MiB (2026-11-08): the count of allocations is
-  the same either way, one per large resource, and rounding wastes half a step each on
-  average (about 10 or 22 MiB on the tablet). It would pay only if a freed block were
-  kept and taken by a later resource of nearly its size, but SDL makes the new screen or
-  photograph before it releases the old one, so the old block is still in use when the
-  new one wants it; and keeping freed blocks for reuse is how a large block stays alive
-  for a small tenant, the 64 MiB blocks' trouble. A smaller fixed block shared as
-  upstream does (16 or 32 MiB) still needs its own for anything larger (the largest
-  tablet's screen, a 3D MSAA target) and stays alive while any tenant lives; SDL has no
-  `VK_KHR_dedicated_allocation` plumbing, and an exact plain allocation already gives
-  the memory back.
-
-Not done: drawing straight into the swapchain, dropping gfx's screen copy, which would
-save only the screen's 9.6 MiB for a large gfx patch; and halving the computer's worker's
-tables, which would save about 3 MB, not worth checking what it costs in strength.
-
-Giving back what malloc keeps after the launch (`mallopt(M_PURGE_ALL, 0)`) took the
-native heap at home from 42.6 to 26.7 MB.
-
-The 3D bake stopped clearing its four surfaces (2026-11-09): each had kept a cycled second
-copy, 85 MB on the Pixel 7a.
-
-The 3D board gives back what only drawing it needs at rest (task 071, 2026-11-11): the
-pass's targets, the kept backdrop, and the kept depth, a second after the pass last drew.
-The 3D game at rest in winter: the Mac (1280 × 800 window) 356 → 225 MB on gfx and 311 →
-226 on ngfx; the iPhone 13 mini 243 → 152 on gfx and 223 → 160 on ngfx. The cost is the
-first draw after a rest: +4 ms on the M1 Pro, +13 ms on the iPhone (one 60 Hz refresh
-late, at the start of a response, never inside an animation). A second, not at once:
-a hover or a drag draws again within it. A flat marble frame's normal map, constant,
-is a 4 × 4 (22 MB).
-
-The 3D board keeps the pass's targets while it is on screen (2026-11-14, replacing the
-second at rest above): they go back once a screen without the board shows, or the app on
-a phone or tablet goes to the background, never while the game sits still. Every move
-after a pause of a second paid the remade targets' first touch, +4 ms on the M1 Pro and
-+13 ms on the iPhone 13 mini, a refresh late at the start of the move, and the targets
-made and given back again and again cost allocations on every turn, for memory no other
-app wanted while ours was in front. The headless 3D game at 1280 × 800 on the Mac now holds
-171 MB at rest against 144 (the 4× color and depth, the kept depth and backdrop); the ngfx
-build, whose 4× targets are memoryless, 153 against 146. What a
-background app holds is what the system weighs, and that is unchanged. iOS gives them back
-at the first frame without focus, before it is in the background, where no GPU work may be
-submitted. Rejected: a longer delay (another number to tune, the same first touch after
-it).
-
-A phone's screen bakes the plan and the frame map at 1024 texels a side (2026-11-14):
-its field spans at most about a thousand pixels, so 2048 gave about two texels a pixel,
-which the anisotropic filter averaged away. Each texel takes the 2 × 2 samples the full
-bake has there, averaged as its first mip would be (`BAKE_FRAG`'s `tone.w`): baked at 1024
-plainly, the wood's furrows and pores, a texel or two of the bake across, came out twice
-as coarse, the frame's grain streaky (98 of 255 against the 2048 bake on a 1080 × 2400
-shot); averaged, within 35 to 45 of 255 at a few pixels in each season. The bake costs
-what it did (a quarter of the texels, four samples each), and the memory a quarter: the
-headless 3D game at the Pixel 7a's size on the Mac at rest, 149 → 116 MB on gfx and
-140 → 91 on ngfx, the pass's targets kept as above. Phones are told by `gui::phone`, the
-layouts' test (under 600 dp across the shorter side), so iPhones take it, tablets and
-desktops keep 2048, and a narrow desktop window takes 1024 too, its field as small. A
-screen that crosses the line (a foldable opened) bakes again in the theme's steps, the
-image shown meanwhile. Rejected: the plan's normal as RG8 besides, its blue holds the
-cavity's occlusion and its alpha the normal's y, whose shortening in the mips widens the
-roughness; dropping them changes the look, and keeping them needs a second target.
-
-Not done: the plan's normal as RG8 (it would need a second bake
-pipeline, the frame's normal uses all four channels), the plan and frame maps without
-their top level (the anisotropic filter samples it on the tilted board), the photograph's
-two 512² working copies (2 MB). Apple's memoryless storage for the MSAA targets would
-remove them for good without the first draw's cost, but SDL picks the storage mode, not
-gfx.
-
-gfx keeps 4× MSAA as the 3D board's antialiasing, and SMAA stays a choice for comparing
-(`--aa smaa`, the A key; task 071, 2026-11-11). The two look alike: SMAA differs from
-MSAA by 4 to 5 of 255 at the edges and by 0.1 elsewhere, and side by side at 4× on a
-27" screen neither was clearly better. MSAA is the cheaper on every GPU measured: at full
-screen on the M1 Pro 3.05 ms of GPU a frame against SMAA's 3.49, and on the Pixel 7a's
-Mali 11.4 ms a frame waited against 12.5 (none: 11.5), where 4× MSAA stays on the tile
-and SMAA's three passes each store a full-screen target. SMAA's one gain, half the
-pass's memory while drawing (49 MB against 98 at 2560 × 1600), mostly went with the
-targets given back at rest. The ngfx build keeps SMAA, as goose-ngfx has no MSAA, and 2 × 2 supersampling to compare;
-its FXAA is gone (2026-11-12): it blurred the surfaces and dotted thin highlights, and
-its speed over SMAA, a few tenths of a millisecond (tasks 070 and 074), wasn't worth that
-look. Rejected: keeping it as a cheaper choice for slow GPUs, which take SMAA or none.
-
-2× MSAA for a slow device (2026-11-13, task 081), in part replacing gfx's 4× above: on
-Android, once 60 frames of the ready 3D board average over 1.25 refreshes of the display,
-the pass draws 2× from then on (`render3d::FEW_SAMPLES`), and only if 60 more frames at 2×
-are still that slow does the app ask for 60 Hz (the rule below, which came first before). The
-Galaxy A33's Mali-G68 draws 2× a quarter cheaper than 4× (task 042), unlike the Pixel 7a's
-G710, where MSAA is free, and the user moved the board at 2× on the A33 and found it fine.
-The same timing as the 60 Hz rule, so one measure decides both, and the Pixel 7a (60 frames
-on its 60 Hz display) and the tablet (90 on 90) keep 4×. Fewer samples come first, as
-they keep the display's rate where 60 Hz gives it up. Rejected: a list of slow GPUs (the
-measure finds them, as `auto` does for the renderer); SMAA or none as the fallback (SMAA
-costs more than 4× MSAA on Mali, none shows the edges); deciding again later, back to 4×
-when the board would keep up (a pass's targets made again mid-game, for a gain no one sees).
-
-The ngfx build draws 4× MSAA by default too (2026-11-12, task 077), replacing its SMAA
-default above, now that NoGraphicsAPI's fork and goose-ngfx have multisampling: the pass
-into 4× color and depth that are transient (memoryless on Metal, never stored) and
-resolved into the picture as the pass ends, as gfx's is. On the M1 Pro at full screen
-its frame takes 3.05 ms of GPU against SMAA's 3.37, and while drawing it holds 12 MB less
-GPU memory at 1280 × 800 than SMAA or gfx's MSAA; it looks as gfx's does (within 11 of
-255 where SMAA differed by up to 119). It is still 2% over gfx's MSAA (2.99 ms), so the
-Mac's `auto` keeps gfx first (task 073). SMAA and 2 × 2 supersampling stay choices for
-comparing (`--aa`, the A key going MSAA, SMAA, none, supersampling).
+- Large allocations are their own size (`patches/SDL/0003`), not upstream's shared 64 MiB
+  blocks, and exact, not rounded (2026-11-08): SDL makes the new screen before releasing
+  the old, so a freed block can't be reused, and rounding wastes 10 to 22 MiB.
+- `gfx::flush()` between short-lived resources took the tablet's GL mtrack at home from
+  60.7 to 36.4 MB; `mallopt(M_PURGE_ALL, 0)` after launch the native heap from 42.6 to
+  26.7 MB.
+- The 3D bake doesn't clear its surfaces (2026-11-09): each kept a cycled copy, 85 MB on
+  the Pixel 7a.
+- The 3D board gave back its pass's targets a second after it last drew (2026-11-11);
+  replaced on 2026-11-14: it keeps them while it is on screen, giving them back once a
+  screen without the board shows or the app goes to the background (iOS at the first
+  frame without focus). The second's release cost every move after a pause +4 ms on the
+  M1 Pro and +13 ms on the iPhone 13 mini, and allocations on every turn, for memory no
+  other app wanted while ours was in front; the headless 3D game at 1280 × 800 holds 171
+  MB at rest against 144 (ngfx, memoryless 4× targets, 153 against 146). Rejected: a
+  longer delay.
+- A phone bakes the plan and the frame map at 1024 texels a side (2026-11-14), each texel
+  the average of the full bake's 2 × 2 samples (`BAKE_FRAG`'s `tone.w`): its field spans
+  about a thousand pixels, so 2048 gave two texels a pixel. Baked at 1024 plainly, the
+  wood came out twice as coarse (98 of 255 off the 2048 bake); averaged, 35 to 45. Memory
+  at the Pixel 7a's size 149 → 116 MB on gfx, 140 → 91 on ngfx. Phones are `gui::phone`,
+  so a narrow desktop window takes 1024 too. Rejected: the plan's normal as RG8, whose
+  dropped channels change the look.
+- Not done: drawing straight into the swapchain (9.6 MiB for a large gfx patch), halving
+  the worker's tables (3 MB).
+- Antialiasing is 4× MSAA on both renderers (gfx; ngfx from 2026-11-12, task 077): SMAA
+  looks the same and costs more (M1 Pro 3.05 against 3.49 ms; Pixel 7a 11.4 against
+  12.5). SMAA, none, and 2 × 2 supersampling stay for comparing (`--aa`, the A key).
+  ngfx's FXAA is gone: it blurred surfaces.
+- 2× MSAA for a slow device (task 081, 2026-11-13): on Android, once 60 frames of the
+  ready 3D board average over 1.25 refreshes, the pass drops to 2×
+  (`render3d::FEW_SAMPLES`), and asks for 60 Hz only if still that slow. The A33's
+  Mali-G68 draws 2× a quarter cheaper; the Pixel 7a and tablet keep 4×. Rejected: a list
+  of slow GPUs, SMAA or none as the fallback, switching back mid-game.
 
 ## The 3D board on devices
 
-A new player starts on the 3D board on a desktop and on the flat board on a phone or a
-tablet (2026-11-14, `settings::default_board`): a desktop's window has room for it, so
-there was no reason to start there flat. A player's file keeps the board they had, and
-`board = 2d` is now read as flat rather than left to the default.
+The current numbers are in [the architecture](../architecture/rendering.md); how they came
+to be is in tasks 042, 059, 071, 081, and 086.
 
-The measurements as they were taken, kept here as the architecture keeps only the
-current ones. Taken with the app's `--bench 300`, `scripts/idle_cpu.sh`, and
-`dumpsys meminfo` on 2026-11-09; the three Android devices again on 2026-11-10 with
-`scripts/device_perf.sh`, the release built from 1aaf406; the iPhone with
-`scripts/ios_perf.py`, its development build from 1c25f33, the same app code with
-`--rest`. The tablet again from 4d50eb2's release, after task 059 (its 3D memory 30 MB
-more: the kept backdrop and UI layers, 9 MB each, and the occlusion and crown maps). The
-release's frames and the idle table were taken on 2026-11-10.
-
-Measured with the app's `--bench 300` ([development](../development.md#time-the-3d-board)),
-idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest (2026-11-09; the
-three Android devices again 2026-11-10 with `scripts/device_perf.sh`, the release built
-from 1aaf406; the iPhone with `scripts/ios_perf.py`, its development build from 1c25f33, the
-same app code with `--rest`, which counts its own CPU time and footprint). The tablet
-again from 4d50eb2's release, after task 059 (its 3D memory 30 MB more: the kept
-backdrop and UI layers, 9 MB each, and the occlusion and crown maps).
-
-The release at rest, idle 20 to 30 s:
-
-| Device | Board | Idle program thread | GL mtrack | EGL mtrack | Total PSS |
-| --- | --- | --- | --- | --- | --- |
-| Galaxy Tab A11+, 1920 × 1200 | 2D, a game | 0.04 to 0.08% | 37 MB | 55 to 60 MB | 133 to 141 MB |
-| Galaxy Tab A11+ | 3D, a game | 0.28 to 0.32% | 210 MB | 32 MB | 295 MB |
-| Pixel 7a, 2400 × 1080 | 2D, a game | 0.08% | 45 MB | 73 MB | 159 MB |
-| Pixel 7a | 3D, a game | 0.04% | 215 MB | 73 MB | 324 MB |
-| Galaxy A33 5G, 2400 × 1080 | 2D, a game | 0.04% | 35 MB | 43 MB | 116 MB |
-| Galaxy A33 5G | 3D, a game | 0.04% | 197 MB | 29 MB | 275 MB |
-| iPhone 13 mini, 2340 × 1080 | 2D, a game | 0.08% | | | 59 MB footprint |
-| iPhone 13 mini | 3D, a game | 0.08% | | | 204 MB footprint |
-
-- **The tablet's frame** while the board moves (the first baseline, 1920 × 1200 at 90 Hz):
-  the forward pass alone 10.9 ms at 1×, the whole budget; MSAA 4× adds 3.2 ms (6.3 ms
-  and 72 MB more without the fork's `msaa-resolve-without-store`, which keeps the samples and the depth
-  from being stored); the shadow map 2 ms on the frames that draw it; the CPU's part
-  about 0.4 ms. It renders as the Mac does. After task 042's cuts (2026-11-10): the
-  frame with the shadow map, as while a piece moves, 10.5 ms waited, the pass alone
-  (the camera turning) 9.9, presented 12.8 ms frame to frame; 90 Hz kept. The release, 2026-11-10, 1000 frames: waited P50
-  10.6 / P99 12.7 ms, the pass alone 10.0; the compositor counts 17% of the frames on
-  screen for two refreshes, 78 fps on average, 45 at the 1% low (task 055). The flat board's
-  whole frame (`bench2d`) 10.2 ms waited, and no frame dropped (`scripts/device_perf.sh`).
-  After task 059's four changes (2026-11-10, debuggable test builds of fab1757 and c7d23bf
-  beside the app, two runs each): waited P50 10.6 to 10.9 → 9.2 to 9.4 / P99 12.8 to 12.9
-  → 10.9 to 11.2 ms, the pass alone 10.0 to 10.3 → 9.0 to 9.1, presented 12.9 → 11.0 ms
-  frame to frame; the compositor counts 90 fps at the 1% low and no frame dropped (17%
-  before). With 16 crowned kings 12.2 → 9.0 ms waited, 31% dropped → none. The release
-  from 4d50eb2, 1000 frames: waited P50 9.22 / P99 12.13 ms, the pass alone 8.96, 90 fps
-  on average and at the 1% low, none dropped; the flat board's 9.39 ms waited, none dropped. The GPU's clock
-  stays near its top (1047 MHz) in both, so the frame times show the work. Baking the
-  field's shadow and occlusion into a map with the shadow map was dropped
-  (2026-11-09): it took the camera's turn to 8.4 ms but every frame that draws the
-  shadow map to 11.5.
-- **The Pixel 7a** (60 Hz): the pass 14.0 ms waited for International, 13.0 for Russian,
-  presented every 16.6 ms; 2026-11-10, 1000 frames: waited P50 13.5 / P99 16.0 ms, and the
-  compositor counts 1 of 995 frames on screen for two refreshes (the flat board's none, its
-  frame 11.8 ms waited); the theme applied at launch in 0.76 s (the bake, its
-  pipeline made), the first frame 0.31 s.
-- **The Galaxy A33** (90 Hz, thermal status 3): the pass 36 ms waited at first, about
-  28 fps while the board moves; after the frame cost's first cuts the pass 19.3 ms and
-  about 39 fps (25.7 ms frame to frame); the theme applied in 1.66 s, the first frame 0.35 s. Its Mali-G68 lost the device
-  on a texture's mip level 0 pixels high ([findings](../goose-findings.md)); the bake's
-  mips now end at the shorter side's 1 pixel (`render3d::baked`). 2026-11-10, 1000
-  frames: the 3D frame waited P50 23.2 / P99 26.0 ms (the pass alone 17.1), on screen for
-  two refreshes every other frame, a steady 60 fps; the flat board's 15.6 ms waited, and
-  no frame dropped.
-- **60 Hz for a slow 3D board** (task 056): on Android, once 60 frames of the ready 3D
-  board average over 1.25 refreshes of a display faster than 60 Hz, the app asks for 60
-  Hz on its surface (`ANativeWindow_setFrameRate`, `src/app/display.c`) whenever the 3D
-  board draws, and for the display's own rate otherwise: 60 frames on a 90 Hz display
-  show two refreshes and one in turn. A device that holds its display's rate keeps it.
-  The Galaxy A33 ignores it: its "High" motion smoothness holds 90 Hz whatever an app asks.
-  The tablet's frames fit its 90 Hz since task 059 (they averaged about 1.15 refreshes
-  before, and it kept 90, chosen over an even 60); the Pixel 7a's display is at 60 already.
-- **Where the moving 3D frame goes** (task 059, Streamline on the Pixel 7a, after its
-  four changes): GPU active 7.01M → 4.70M cycles a frame, fragment-bound (the tiler 3%
-  of the GPU's time), not bandwidth-bound (0.6 GB/s), little overdraw. The lit fragment
-  shader still holds 64 registers (half occupancy on the G615). The UI's live cost was
-  1.45M cycles a frame, 24%, paid only when the UI changes now that it is kept
-  (`widgets::prepare`), and the backdrop's grade 0.43M when it changes; after task 063
-  the two together 1.54M → 0.99M (the moving 3D game with `--keep off`: 6.76M → 6.21M a
-  frame, 5.22M kept), the UI's part about halved. Ranked and not yet tried: the pieces' shadows on the field analytic (a disc's stadium along the light) in place
-  of the shadow map's pass and its 9 taps on every lit pixel; fp16 for colors, the
-  harmonics, the tonemap, and the varyings (no shader uses 16-bit yet); MSAA 4× read
-  again at 2,208 triangles a piece; a lower render scale for the 3D pass, last.
-- **2× MSAA before 60 Hz** (task 081, 2026-11-13): the same timing first drops the pass to
-  2× MSAA, on a display of any rate, and asks for 60 Hz only if the board is still that
-  slow at 2× (see "gfx keeps 4× MSAA" above).
-- **The shadow map's pass culls nothing** (task 086, 2026-11-13, replacing task 084's
-  back-face culling), as ngfx's never did. With the back faces culled, the light leaked
-  through single texels where a piece's top curves away from it: the front faces' edges
-  before and behind that fold meet almost end-on to the light, and rounding leaves a
-  sample between them. The leaks were 084's "few single pixels" (500 to 800 of a
-  1920 × 1200 shot of the full board, every one lighter than with both faces), and with
-  the map fitted to the board (task 086's prototype) one showed as a light dot in a raised
-  piece's shadow. Drawing both faces changes nothing else, as the nearer face wins the
-  depth test, and costs the A33 about 0.15 M cycles on a frame the pieces move (the map's
-  share 0.81 to 0.84 M → 0.96 to 1.01 M), nothing at rest. Task 084's record: culling back
-  faces saved the A33's frame with the shadow map about 0.15 ms, about 1% of it.
-  Front-face culling, which usually lets the depth bias shrink, was rejected: the pieces'
-  undersides lie within a shadow texel of their feet, so with `shadow()`'s offsets as they
-  are it left acne bands on the pieces' feet or rims at a depth bias from −2 to 1, and
-  pulled the shadows off the pieces at 4.
-- **The pieces' shadow filtered by screen** (task 081, 2026-11-13, replacing its 4 taps
-  on every device): 9 hardware-compared taps over 5 × 5 texels of the 1024² map on a
-  tablet and a desktop, 4 over 3 × 3 on a phone (`gui::phone`, under 600 dp across the
-  shorter side, as the layouts tell a phone). The 4 taps save the A33 7% of its frame,
-  and their stills differed from the 9's only along the edges; in motion, on a tablet's
-  and a desktop's larger pieces, their texel steps crawl along each edge. One shader, the
-  phone's with `SHADOW_FEW` defined; the lit pipelines are made again only when the
-  screen crosses the line (`render3d::set_shadow`). Rejected: the slow-device timing
-  (`pace_3d`), which decides only after the board has drawn too slowly for a while, so a
-  phone would start on the 9 and the Pixel 7a keep them; and one shader branching on a
-  uniform, which would hold the 9 taps' registers in the A33's shader too.
-- **A desktop's shadow in 16 taps** (task 086, 2026-11-13, the user, replacing task
-  081's 9 on a desktop): Castaño's 7 × 7 texel box in 16 hardware-compared taps
-  (`shaders::SHADOW_MANY`, `render3d::SHADOW_16`) on a desktop and on iOS, iPhones too
-  (the platform, not its screen: Apple's GPUs all afford them, the user, 2026-11-13), 9
-  over 5 × 5 on an Android tablet, 4 over 3 × 3 on an Android phone as before
-  (`draw3d::screen_shadow`, `render3d::set_shadow`). The user, seeing the fitted map's
-  edge a bit sharp, judged them in motion on the Mac: 16 "looks very good", 9 decent. The
-  16 cost 0.5 to 0.6 M cycles a frame more than the 9 when forced on the A33 (10.6
-  against 10.1 M at rest), which no desktop's GPU feels; a phone keeps the 4, which save
-  the A33 7% of its frame, and a tablet's 9. A phone is still told by its screen, not
-  timed: the slow-device timing stays rejected as above. Rejected: the 9 taps over a
-  1.5-texel grid (a 7.5-texel box for the 9's cost), which stippled along every edge, as
-  each tap still compares only the map's own 2 × 2 texels; and an analytic shadow of each
-  piece's cylinder on a phone's field (0.1 to 0.5 M cycles over the 4 taps on the A33,
-  soft and contact-hardening), which works for discs alone, not chess pieces, and reads
-  the squares buffer, which holds one piece a square.
-- **The shadow map fitted to the board** (task 086, 2026-11-13, the user, replacing a
-  square view ±6.6 along the light): the map projected along the light onto the board's
-  plane (`render3d::plan_light`), an oblique, affine map, so the field and the frame fill
-  it at one square texel size, 2.1× the texels the field had, the 9 and the 4 taps as
-  they were. A piece's shadow steps half as far as it moves, which the user judged in
-  motion on the Mac and the A33: "a bit too sharp but not too bad, and while moving
-  there is a ton less artifacts". It costs the A33 what the square view did (10.3 to
-  10.8 M cycles a moving frame against 10.2 to 10.6, at rest 9.4 to 10.0 against 9.4 to
-  9.8, within the runs' spread), and showed no acne with the depth bias unchanged.
-  Rejected: the field's shadow baked when the pieces move (contact-hardening PCSS into a
-  map over the plan, one tap a field pixel), the best look, but the whole map's bake
-  cost the A33 8.7 M cycles a moving frame (34 fps), and the user would rather not bake;
-  a wider filter, PCF on a rotated disc, and PCSS per pixel, too many taps for the A33 or
-  noise sliding as the camera turns; VSM, EVSM, and MSM, a blur over a 4 to 16 MB map on
-  every change for what the field's taps alone need; soft shadow volumes, drawn again on
-  every frame the camera moves and too much overdraw on a tiler; analytic disc shadows,
-  discs only, kept in mind for a phone. The candidates and sources are in task 086's
-  file.
-- **Three shadow filters kept** (2026-11-14, reviewed): 4, 9, and 16 taps stay, each
-  measured or judged for its own screens above. Two would put the Android tablet on one
-  of its neighbours: the 4, whose texel steps crawl along a tablet's larger pieces (task
-  081), or the 16, 0.5 to 0.6 M cycles a frame over the 9 on a Mali (forced on the A33,
-  task 086), which the tablet's Mali-G615 MC2 would pay too. They cost one `#ifdef` in
-  `shadow()` and one written Slang module each on ngfx; only one lit pipeline pair is
-  ever made (`render3d::set_shadow`). Rejected: one filter for phones and tablets alike
-  by screen size alone, untimed on the tablet.
-- **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
-  flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
+- 60 Hz for a slow 3D board (task 056): the timing above asks for 60 Hz on the surface
+  (`ANativeWindow_setFrameRate`) while the 3D board draws. The A33 ignores it.
+- Baking the field's shadow with the shadow map was dropped (2026-11-09): the camera's
+  turn went to 8.4 ms but every frame drawing the shadow map to 11.5.
+- The shadow map's pass culls nothing (task 086, 2026-11-13, replacing task 084's
+  back-face culling): culling leaked light through single texels where a piece's top
+  curves away; both faces cost the A33 about 0.15M cycles on a moving frame. Front-face
+  culling left acne on the pieces' feet.
+- Shadow taps by platform (tasks 081 and 086, 2026-11-13): 16 over 7 × 7 texels on a
+  desktop and iOS (`SHADOW_MANY`), 9 over 5 × 5 on an Android tablet, 4 over 3 × 3 on an
+  Android phone (`gui::phone`, `render3d::set_shadow`), the 4 saving the A33 7% of its
+  frame. Told by screen, not timed: timing starts a phone on the 9. Rejected: one shader
+  branching on a uniform (the 9's registers on the A33), 9 taps over a wider grid
+  (stippled), an analytic disc shadow (discs only).
+- The shadow map is fitted to the board along the light (`render3d::plan_light`, task
+  086), 2.1× the field's texels, for the same cost on the A33. Rejected: baking the
+  field's shadow when pieces move (8.7M cycles on the A33), PCSS, VSM family, shadow
+  volumes; the list is in task 086.
+- Three shadow filters kept (2026-11-14, reviewed): two would put the Android tablet on
+  the 4, whose steps crawl on its larger pieces, or the 16, 0.5 to 0.6 M cycles a frame
+  over the 9 on a Mali. They cost an `#ifdef` and a Slang module each; one lit pipeline
+  pair is ever made. Rejected: one filter for phones and tablets by screen size alone.
+- A new player starts on the 3D board on a desktop and flat on a phone or tablet
+  (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
+- Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
+  board's 0.3 (task 042).
 
 ## When a frame reaches the screen
 
 goose_gfx records a frame and its blit into the window's image in one command buffer.
-Submitting the frame before the wait and the blit apart was measured worse: the window
-has 3 surfaces and the compositor holds two, so the blit waits for one and the frame
-after it for the blit.
+Submitting the frame before the wait and the blit apart was worse: the window has 3
+surfaces and the compositor holds two, so the blit waited for one and the frame for the
+blit.
 
 ## Frames and battery
 
-- The idle table and the Mac's and Windows' footprints were taken with `--rest 25` on
-  2026-11-10.
 - A drop that leaves a piece waiting draws the frame after too (2026-11-08): a puzzle's
-  next stayed dim on the Pixel 7a, as a drop is a finger's last event.
-- The wake timer for a running clock (2026-11-08): measured on the tablet, the clock was
-  drawn 6 ms later each second, up to a second late, and skipped a second every two and a
-  half minutes.
+  next stayed dim on the Pixel 7a.
+- A running clock has its own wake timer (2026-11-08): without it the tablet drew the
+  clock 6 ms later each second and skipped a second every two and a half minutes.
