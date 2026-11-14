@@ -214,6 +214,8 @@ fed389b.
   too big beside the wordmark.
 - Continue says whose game it is ("A friend", "The computer · easy") and isn't shown for a
   game nobody set up with no move played (`Saved.unset`, 2026-11-12).
+- Continue isn't shown for a game won or drawn (2026-11-15): it is done, its replay in the
+  results, and continuing it only showed its end again. New game is the first row then.
 - The X closes the app at once on touch screens (2026-11-08/09). Rejected: a last row (it
   costs the portrait board), a door, a power sign.
 - On a desktop's landscape column the way out is a Quit row (task 072, 2026-11-11), the X
@@ -244,6 +246,10 @@ fed389b.
   Stone, Carved, each a picture of the board (2026-11-13).
 - No draughts row (2026-11-11): home's setup and the library choose it, and here it read
   as changing the game in progress.
+- The preview is in the draughts of the board settings opened over, not the one a new
+  game would start in (2026-11-15): home's game in progress in International beside a
+  Brazilian setup made the board change size between the two, the 3D board's buttons
+  jumping during the transition.
 - The move list's setting is here alone (task 078, 2026-11-13), a line under the chosen
   tile saying what it shows.
 - The language is a button in the title row, the globe, its code and a chevron opening a

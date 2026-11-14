@@ -3,7 +3,8 @@
 // While the game is one nobody set up (none kept: a fresh install, a new player) and no
 // move was played in it, the row isn't shown, New game's the first and lit in its place;
 // a game set up from home's setup, or a move played, shows it, New game outlined under it.
-// New game notes the setup's opponent: the computer's level, or a friend.
+// New game notes the setup's opponent: the computer's level, or a friend. A game won or
+// drawn is done: no continue, New game first and lit.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -91,4 +92,14 @@ fn main() {
     show(sh, "a new player's game");
     board::play_chosen(sh.game.b, 0, 10.0);
     show(sh, "a move played in it");
+
+    // A game won (black, to move, has no piece left) is done: its replay is in the results,
+    // nothing to continue, and New game is the first row again, lit.
+    let p, ok = rules::parse_fen("B:W28,33:B", rules::INTERNATIONAL);
+    board::set(sh.game.b, p);
+    print("a won game: winner ", game::winner(sh.game), " (white ", rules::WHITE, "), read ", ok);
+    show(sh, "  then");
+    shell::go_to(sh, shell::HOME, 12.0);
+    drive::idle(sh, g, 14.0);
+    print("  new game: ", new_game(g, 0));
 }

@@ -46,10 +46,11 @@ fn squares(v: rules::Variant&, list: const u8[:], k: i64) -> u64 {
     return bits;
 }
 
-// Sets b up as the preview of settings s at `now`: the draughts they start a new game
-// on, their kings, and what their move hints show.
-fn stage(b: board::Board&, s: Settings&, now: f64) {
-    b.variant = s.variant as u8;
+// Sets b up as the preview of settings s at `now` in `variant`, the draughts of the board
+// settings opened over, so the board keeps its size between the two; their kings, and what
+// their move hints show.
+fn stage(b: board::Board&, s: Settings&, now: f64, variant: u8) {
+    b.variant = variant;
     let v .= rules::VARIANTS[b.variant];
     let k = (v.size - 8) / 2;
     board::set(b, rules::Position { pieces: [squares(v, PREVIEW_WHITE, k), squares(v, PREVIEW_BLACK, k)],

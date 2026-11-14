@@ -8,3 +8,6 @@ the computer's game set up, easy: continue shown, note "The computer · easy"
   back home, a tap on the first row: the game
 a new player's game: continue hidden, note "A friend"
 a move played in it: continue shown, note "A friend"
+a won game: winner 0 (white 0), read true
+  then: continue hidden, note "A friend"
+  new game: lit, its note's icon the computer

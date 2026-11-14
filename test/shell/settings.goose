@@ -79,7 +79,7 @@ fn draughts(sh: shell::Shell&, g: gui::Gui&, v: i64, now: f64) {
     sh.prefs.variant = v;
     sh.changed = true;
     shell::apply_prefs(sh);
-    settings::stage(sh.preview, sh.prefs, now);
+    settings::stage(sh.preview, sh.prefs, now, v as u8);
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, now);
 }
 

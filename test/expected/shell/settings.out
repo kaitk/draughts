@@ -79,16 +79,16 @@ tiles 26 of 26, the kings' tiles' pieces 2: 1.0 and 2.0
 the list: scrolls
 landscape: the board right of the list, clear true
 opened, defaults:
-  preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, targets 0, stops 0, wrong ring at 53.0 flash 0.0, rings pulsing 2 still 0, kings drawn 1.0, animating true
-  preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, targets 0, stops 0, wrong ring at 53.0 flash 0.8333333, rings pulsing 2 still 0, kings drawn 1.0, animating true
+  preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.0, rings pulsing 2 still 0, kings drawn 1.0, animating true
+  preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.8333333, rings pulsing 2 still 0, kings drawn 1.0, animating true
 after the flash:
-  preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, targets 0, stops 0, wrong ring at 53.0 flash 0.2, rings pulsing 2 still 0, kings drawn 1.0, animating true
+  preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.2, rings pulsing 2 still 0, kings drawn 1.0, animating true
 after the pulse:
-  preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, targets 0, stops 0, wrong ring at 53.0 flash 0.2, rings pulsing 0 still 2, kings drawn 1.0, animating false
+  preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.2, rings pulsing 0 still 2, kings drawn 1.0, animating false
 summer: picture = fox;season = summer;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 1
 3D: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
 all moves: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = moves;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves true, kings 2
-  preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, selected 4,4, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 2.0, animating false
+  preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, selected 3,3, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 2.0, animating false
 Russian: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = moves;lookout = off;kings = auto;opponent = computer;draughts = russian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves true, kings 2
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, selected 3,3, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 2.0, animating false
 stack: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves true, kings 2

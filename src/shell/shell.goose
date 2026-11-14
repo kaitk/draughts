@@ -434,7 +434,8 @@ fn play(sh: Shell&, now: f64) {
 // one nobody set up (`unset`) with no move played.
 fn resume(sh: Shell&) -> home::Resume {
     let gm .= sh.game;
-    let on = !sh.unset || gm.b.rec.history.len > 0 || gm.computer >= 0;
+    // A game won or drawn is done (its replay is in the results): nothing to continue.
+    let on = (!sh.unset || gm.b.rec.history.len > 0 || gm.computer >= 0) && !game::ended(gm);
     // A new player, asked whether they know how to play (`first_start_done`), who hasn't
     // learned their draughts, nor said they know how, nor begun a game against the
     // computer: How to play in continue's place.
@@ -880,7 +881,10 @@ fn put(over: board::Overlay&, p: board::Piece, a: f32, d: float2) {
 fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
     // The preview shows the settings as they are on opening and after each change; on
     // opening, its wrong move flashes once the board has arrived.
-    if fresh { settings::stage(sh.preview, sh.prefs, now + (1.0 - progress(sh, now)) * DURATION); }
+    // The preview in the draughts of the board settings opened over, which it stands in
+    // for, so the board keeps its size: settings has no draughts of its own.
+    let variant = board_of(sh, sh.back).variant;
+    if fresh { settings::stage(sh.preview, sh.prefs, now + (1.0 - progress(sh, now)) * DURATION, variant); }
     let changed = board::update(sh.preview, now);
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     let ask = settings::frame(sh.prefs, sh.out.over, g, sh.out.layout, area, strings::current, room);
@@ -891,7 +895,7 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     sh.came_view = dragged_view(sh, v, room, now);
     if ask == settings::CHANGED {
         apply_prefs(sh);
-        settings::stage(sh.preview, sh.prefs, now);
+        settings::stage(sh.preview, sh.prefs, now, variant);
         sh.changed = true;
     }
     if ask == settings::BACK { go_to(sh, sh.back, now); }
