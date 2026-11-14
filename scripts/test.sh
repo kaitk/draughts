@@ -1,6 +1,7 @@
 #!/bin/sh
 # Every check of the rules, stopping at the first that fails:
 #
+# 0. scripts/strings_keys.py --check: strings/keys.goose is what strings/en.txt makes.
 # 1. goose check of the app: every shader its embed_shader calls compile, as the app's
 #    build compiles them (a GLSL error is a Goose compile error), in half a second.
 # 2. test/run_tests.py: the programs under test/<area>/ against their golden output.
@@ -24,6 +25,7 @@ esac
 GOOSE=${GOOSE:-$root/build/$release}
 export GOOSE
 
+python3 scripts/strings_keys.py --check
 (cd src/app && "$GOOSE" check draughts.goose)
 echo "== app checked, its shaders compiled"
 

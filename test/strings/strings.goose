@@ -1,23 +1,24 @@
 // The string table (strings/): every language file has every key and nothing else, so
 // a key missing from a translation fails here rather than showing English on screen; the
-// checker finds each kind of mistake; the key constants name the keys they should; and
-// the language is picked from the system's preferred locales, English when none has a
-// file.
+// checker finds each kind of mistake; the runs of keys code steps through by offset
+// (MARK_ONLY + 2 * mark) hold together in en.txt, whose order makes the constants
+// (scripts/strings_keys.py); and the language is picked from the system's preferred
+// locales, English when none has a file.
 import std;
 import strings from "../../strings";
 
-let NAMED = [
-    "language.name", "app.name", "home.continue", "setup.friend", "home.new_game",
-    "home.puzzles", "home.settings", "level.easy", "level.medium",
-    "level.hard", "settings.theme", "settings.by_date", "settings.board",
-    "settings.hints", "settings.kings", "season.winter", "season.spring",
-    "season.summer", "season.autumn", "hints.mistakes", "hints.moves", "board.flat",
-    "board.raised", "settings.game", "settings.look", "settings.tutorial",
-    "kings.auto", "kings.crown", "kings.stack",
-    "tutorial.learn", "players.who", "players.new", "players.picture", "players.name", "players.start_again",
-    "players.remove", "players.hold", "settings.background", "background.photo", "background.plain",
-    "material.wood", "material.stone", "material.carved", "material.auto",
-];
+// Keys from `first` every `stride`, as code steps through them, against their names.
+fn run(first: i64, stride: i64, names: const u8[:][:]) -> i64 {
+    var wrong = 0;
+    for name, i in names {
+        let k = first + stride * i;
+        if k >= strings::COUNT || strings::KEYS[k] != name {
+            print("key ", k, " isn't ", name);
+            wrong++;
+        }
+    }
+    return wrong;
+}
 
 fn main() {
     var bad = 0;
@@ -43,31 +44,26 @@ fn main() {
     let n = strings::problems(broken, out);
     print("a broken file: ", n, " problems");
     print(out);
-    // The constants name the keys they index.
+    // The runs code steps through by offset.
     assert(strings::KEYS.len == strings::COUNT);
-    let ks = [strings::LANGUAGE_NAME, strings::APP_NAME, strings::HOME_CONTINUE,
-              strings::SETUP_FRIEND, strings::HOME_NEW_GAME, strings::HOME_PUZZLES,
-              strings::HOME_SETTINGS, strings::LEVEL_EASY,
-              strings::LEVEL_MEDIUM, strings::LEVEL_HARD, strings::SETTINGS_THEME,
-              strings::SETTINGS_BY_DATE, strings::SETTINGS_BOARD, strings::SETTINGS_HINTS,
-              strings::SETTINGS_KINGS, strings::SEASON_WINTER, strings::SEASON_SPRING,
-              strings::SEASON_SUMMER, strings::SEASON_AUTUMN, strings::HINTS_MISTAKES,
-              strings::HINTS_MOVES, strings::BOARD_FLAT, strings::BOARD_RAISED,
-              strings::SETTINGS_GAME, strings::SETTINGS_LOOK, strings::SETTINGS_TUTORIAL,
-              strings::KINGS_AUTO,
-              strings::KINGS_CROWN, strings::KINGS_STACK,
-              strings::TUTORIAL_LEARN, strings::PLAYERS_WHO, strings::PLAYERS_NEW, strings::PLAYERS_PICTURE,
-              strings::PLAYERS_NAME, strings::PLAYERS_START_AGAIN, strings::PLAYERS_REMOVE, strings::PLAYERS_HOLD,
-              strings::SETTINGS_BACKGROUND, strings::BACKGROUND_PHOTO, strings::BACKGROUND_PLAIN,
-              strings::MATERIAL_WOOD, strings::MATERIAL_STONE, strings::MATERIAL_CARVED, strings::MATERIAL_AUTO];
-    var wrong = 0;
-    for k, i in ks {
-        if strings::KEYS[k] != NAMED[i] {
-            print("constant ", i, " names ", strings::KEYS[k], ", not ", NAMED[i]);
-            wrong++;
-        }
-    }
-    print("constants: ", ks.len, " checked, ", wrong, " wrong");
+    var wrong = run(strings::PICK_EASY, 1, ["pick.easy", "pick.medium", "pick.hard"]);
+    wrong += run(strings::MARK_ONLY, 2, ["mark.only", "mark.best", "mark.good", "mark.inaccuracy", "mark.mistake", "mark.blunder"]);
+    wrong += run(strings::MARK_ONLY_TIP, 2, ["mark.only_tip", "mark.best_tip", "mark.good_tip", "mark.inaccuracy_tip",
+                                             "mark.mistake_tip", "mark.blunder_tip"]);
+    wrong += run(strings::HOW_STEP, 3, ["how.move", "how.jump", "how.must", "how.chain", "how.most", "how.any",
+                                        "how.king", "how.fly", "how.afar", "how.way", "how.win"]);
+    wrong += run(strings::HOW_STEP + 1, 3, ["how.move_line", "how.jump_line", "how.must_line", "how.chain_line",
+                                            "how.most_line", "how.any_line", "how.king_line", "how.fly_line",
+                                            "how.afar_line", "how.way_line", "how.win_line"]);
+    wrong += run(strings::HOW_STEP + 2, 3, ["how.move_well", "how.jump_well", "how.must_well", "how.chain_well",
+                                            "how.most_well", "how.any_well", "how.king_well", "how.fly_well",
+                                            "how.afar_well", "how.way_well", "how.win_well"]);
+    wrong += run(strings::MONTH_JAN, 1, ["month.jan", "month.feb", "month.mar", "month.apr", "month.may", "month.jun",
+                                         "month.jul", "month.aug", "month.sep", "month.oct", "month.nov", "month.dec"]);
+    wrong += run(strings::REPLAY_NEXT, 1, ["replay.next_white", "replay.next_black"]);
+    wrong += run(strings::REPLAY_TAKE, 1, ["replay.take_white", "replay.take_black"]);
+    wrong += run(strings::REPLAY_ONE, 1, ["replay.one_white", "replay.one_black"]);
+    print("runs stepped through by offset: ", wrong, " wrong");
     print("the languages' own names: ", strings::name_of(strings::EN), ", ", strings::name_of(strings::ET));
     bad += wrong;
     // The strings each language shows.

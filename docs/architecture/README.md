@@ -221,7 +221,10 @@ returns.
 - **Strings by key.** Every user-facing string comes from `strings/<lang>.txt`
   (`key = text` per line), built into the program with `embed_file`. Code names a string
   by its constant (`strings::HOME_CONTINUE`) and `strings::get` returns a view into the
-  embedded file, so looking one up allocates nothing. English is the default and fills in
+  embedded file, so looking one up allocates nothing. The keys and their constants are
+  generated from `en.txt` in its order (`scripts/strings_keys.py` writes
+  `strings/keys.goose`, and `scripts/test.sh` fails while it is stale), so a new string is
+  a line in `en.txt` and the script run. English is the default and fills in
   any key a translation lacks; Estonian is `et.txt`. The language is the first of the
   system's preferred locales (SDL's, through `src/app/locale.c`) that has a file, else
   English. A language is a new file plus its code in `strings::LANGUAGES`;

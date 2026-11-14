@@ -6,7 +6,7 @@ a broken file: 4 problems
   not key = text: no text here
   missing: home.puzzles
 
-constants: 44 checked, 0 wrong
+runs stepped through by offset: 0 wrong
 the languages' own names: English, Eesti
 en: Draughts / Continue / All moves
 et: Kabe / Jätka / Kõik käigud

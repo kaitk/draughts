@@ -1,5 +1,6 @@
-# English, the default language. One string per line: key = text. The keys are
-# strings::KEYS (strings/strings.goose); every language file has all of them.
+# English, the default language. One string per line: key = text. Its keys, in its order,
+# are strings::KEYS: scripts/strings_keys.py makes strings/keys.goose from this file, a
+# comment right above a key going with its constant. Every language file has all of them.
 
 language.name = English
 app.name = Draughts
@@ -8,7 +9,10 @@ home.continue = Continue
 home.new_game = New game
 home.puzzles = Puzzles
 home.settings = Settings
+# A desktop's way out on home, the last row.
 home.quit = Quit
+# Continue's note: whose game it goes back to (home::menu), the computer's at each
+# level.
 continue.friend = A friend
 continue.easy = The computer · easy
 continue.medium = The computer · medium
@@ -17,6 +21,7 @@ continue.hard = The computer · hard
 level.easy = easy
 level.medium = medium
 level.hard = hard
+# Home's new game's note for a friend, as level.easy.. for the computer.
 level.friend = a friend
 
 settings.game = Game
@@ -27,9 +32,11 @@ settings.by_date = By date
 settings.board = Board
 settings.hints = Move hints
 settings.kings = Kings
+# Settings' Background row (task 080): the photograph or the plain fade.
 settings.background = Background
 background.photo = Photo
 background.plain = Plain
+# The privacy note at the end of settings' game group.
 settings.privacy = Privacy: Draughts collects nothing. Everything stays on this device.
 
 season.winter = Winter
@@ -42,6 +49,8 @@ hints.moves = All moves
 
 board.flat = Flat
 board.raised = Raised
+# The raised board's materials, its Board row's tiles after Flat and Raised, and the tag
+# on Raised, the theme's own board.
 material.wood = Wood
 material.stone = Stone
 material.carved = Carved
@@ -62,7 +71,9 @@ won.white = White wins
 won.black = Black wins
 
 setup.draughts = Draughts
+# The setup's first row: a friend, or the computer at a level.
 setup.against = Play against
+# The setup's first tile to play against.
 setup.friend = A friend
 setup.color = Your pieces
 setup.clock = Clock
@@ -87,10 +98,12 @@ clock.blitz_note = +3 s a move
 clock.rapid = 10 min
 clock.rapid_note = +5 s a move
 
+# Stars won of those there are: "{} / {}".
 puzzles.stars = {} / {}
 puzzle.next = Next
 puzzle.try_again = Try again
 puzzle.solved = Solved
+# "{}", the men to win, more than one.
 goal.take = Win {} men
 goal.crown = Become a king
 goal.win = Win the game
@@ -102,28 +115,40 @@ players.picture = Picture
 players.name = Name
 players.start_again = Start again
 players.remove = Remove
+# Under start again and remove: how they are done.
 players.hold = Hold
+# One man to win.
 goal.take_one = Win a man
 puzzle.white_to_move = White to move
 puzzle.black_to_move = Black to move
 
+# The themes' names, in puzzles::THEME_NAMES' order.
 theme.learn = Learn
 theme.captures = Captures
 theme.crowning = Crowning
 theme.shots = Shots
 theme.king_shots = King shots
 theme.safe_move = Safe move
+# A theme's levels: easy, harder, hardest.
 puzzles.level1 = Easy
 puzzles.level2 = Harder
 puzzles.level3 = Hardest
+# "{}", the puzzles still to solve in Learn to open a theme.
 puzzles.locked = Solve {} more in Learn
+# Where the 3D board goes while it gets ready.
 board.preparing = Setting up the board…
 
+# A drawn game's word, where "White wins" goes; then why, on the draw's card, with
+# "{}" each side's moves the count was of.
 draw = Draw
 draw.repeat = Same position three times
 draw.kings = {} moves by kings only
 draw.balance = {} moves without a capture or a new king
 draw.lone = The lone king held out
+# The countdown under whose turn: "{}" moves, more than one; the strong side must take
+# the lone king within "{}" of its moves; the position come twice, and under it a third
+# time draws; the short form between the clocks, over or before the moves left, and
+# before "2/3" for the position come twice.
 count.draw = Draw in {} moves
 count.draw_one = Draw in 1 move
 count.white = White must win in {} moves
@@ -135,14 +160,19 @@ count.third = A third time is a draw
 count.short = Draw in
 count.repeated = Repeat
 
+# The lookout's toggle (the threats past the player's sight), the hint's tile, and its
+# word once it has lit the piece to move.
 game.lookout = Lookout
 game.hint = Hint
 game.where_to = Where to?
 
+# The moves panel's row (task 074): hidden, the list, or the list with marks.
 settings.moves = Move list
 moves.hidden = Off
 moves.list = Moves
 moves.marks = Marks
+# The results screen (task 074): its title, the rating's heading, the levels' results'
+# heading, a game against a friend in the list, and the list with no game yet.
 results.title = Results
 results.rating = Rating
 results.computer = Against the computer
@@ -152,6 +182,7 @@ results.none = No games yet
 # A date as the language writes it: {d} the day, {dd} the day in two figures, {mm} the
 # month in two figures, {mon} its short name (month.*), {y} the year.
 date.format = {d} {mon} {y}
+# The months' short names from January: MONTH_JAN + month - 1.
 month.jan = Jan
 month.feb = Feb
 month.mar = Mar
@@ -165,15 +196,21 @@ month.oct = Oct
 month.nov = Nov
 month.dec = Dec
 
+# The moves panel before the first move.
 moves.none = No moves yet
+# A friend's setup: the board turns to who plays, or stays, the same for both, each with
+# its note; and the row's name.
 board.turns = Turns
 board.turns_note = to who plays
 board.stays = Stays
 board.stays_note = for both
 setup.board = The board
+# Settings' move list: what the chosen tile shows, under the row.
 moves.hidden_note = No move list during a game
 moves.list_note = The game's moves, listed during play
 moves.marks_note = The moves, each marked by how good it was
+# A mark's word (the list's legend), then its _tip line (the popover); in ai::judge's
+# order from ONLY.
 mark.only = only move
 mark.only_tip = Only move: there was no other
 mark.best = best
@@ -186,11 +223,19 @@ mark.mistake = a mistake
 mark.mistake_tip = Mistake: this move lowered the chance to win
 mark.blunder = a blunder
 mark.blunder_tip = Blunder: this move lost much of the chance to win
+# A past game's replay (task 078): its title, the label on a game played from a replay's
+# move, which counts for nothing, the line over its list at the start, before the first
+# move, its button that plays on from the move shown, and why a game from it doesn't
+# count, in full (2026-11-13).
 replay.title = Replay
 replay.no_count = A game from here doesn't count
 replay.start = The start, before the first move
 replay.play = Play from here
 replay.no_count_why = A game from here doesn't count: it isn't saved and doesn't change your rating
+# A replay's lines for the best move (task 087), each followed by the move: what was best
+# in place of a marked move, the best next for the side to move (white's, then black's),
+# or the move it must make, a capture or an only move (white's then black's); and the end
+# of the game.
 replay.best_was = The best was
 replay.next_white = Best next for white:
 replay.next_black = Best next for black:
@@ -200,9 +245,15 @@ replay.one_white = White has one move:
 replay.one_black = Black has one move:
 replay.ended = The game ended here
 
+# A desktop's quit asks first (home::ask_quit): the question, and the button that keeps
+# the app open.
 quit.ask = Quit Draughts?
 quit.cancel = Cancel
 
+# How to play (task 026): home's row, the library's, the tutorial's; a new player's
+# question, and its answers; "{} short steps", under show me; the end's card; the last
+# step's next; "{} / {} steps", the library's row; the end's way home; the first step's
+# lines while the other side moves, and after.
 how.title = How to play
 how.ask = Do you know how to play?
 how.show = Show me
@@ -214,6 +265,8 @@ how.step_count = {} / {} steps
 how.home = Home
 how.move_reply = Now the other side moves.
 how.move_again = Your turn again. Move a piece forward.
+# The steps, three keys each from how.move (strings::HOW_STEP): the rule's name, its
+# line, and what is said once it is played; in the order tutorial::STEPS names them.
 how.move = Move
 how.move_line = Tap your piece, then a lit square. A piece steps one square forward on the diagonal.
 how.move_well = That is the game: you move, then they move.
