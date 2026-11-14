@@ -31,20 +31,29 @@ let K_LEAST = 24;           // the step once settled
 let K_FALL = 6;             // how much the step falls with each puzzle rated
 let STAR_SCORE: i64[4] = [0, 30, 60, 100]; // a solve's score in percent by its stars (3 = 1.0, 2 = 0.6, 1 = 0.3)
 
-// A library puzzle as the index keeps it: its difficulty and theme, and where its line
-// of text is in the built-in file.
-struct Entry { difficulty: i64, theme: i64, level: i64, at: i64, len: i64 }
+// A library puzzle as the index keeps it: its id, its difficulty and theme, and where
+// its line of text is in the built-in file.
+struct Entry { id: i64, difficulty: i64, theme: i64, level: i64, at: i64, len: i64 }
 
-struct Library { list: Entry[..MAX_LIBRARY], variant: u8 = rules::INTERNATIONAL }
+// The index: the entries in the file's order, by difficulty, which pick searches; and
+// where each id's entry is in the list, -1 for an id not in the library. A player's file
+// keeps the puzzles had and today's by id, which a new library keeps (tools/library.py),
+// so adding puzzles moves none of them.
+struct Library {
+    list:    Entry[..MAX_LIBRARY],
+    variant: u8               = rules::INTERNATIONAL,
+    place:   i16[MAX_LIBRARY] = [-1; MAX_LIBRARY],
+}
 
 var library:        Library;
 var library_loaded: u8 = rules::INTERNATIONAL;
 
 // A variant's library file, as built into the program: one puzzle a line,
 //
-//   difficulty | theme level | goal in moves | position | line
+//   id | difficulty | theme level | goal in moves | position | line
 //
-// sorted by difficulty; `#` starts a comment, and a `variant` line names the rules.
+// sorted by difficulty, each id under MAX_LIBRARY and given once for good; `#` starts a
+// comment, and a `variant` line names the rules.
 fn library_file(variant: u8 = rules::INTERNATIONAL) -> const u8[:] {
     let set = set_of(variant);
     if set == rules::RUSSIAN { return embed_file("library-russian.txt"); }
@@ -53,7 +62,7 @@ fn library_file(variant: u8 = rules::INTERNATIONAL) -> const u8[:] {
 }
 
 // Reads the index of the library a player of `variant` is shown into `library`: each
-// line's difficulty, theme, and place, not its position or line, which entry_of reads
+// line's id, difficulty, theme, and place, not its position or line, which entry_of reads
 // for one puzzle when it is wanted. False if a line isn't one, which test/puzzles/ rules
 // out.
 fn load_library(variant: u8 = rules::INTERNATIONAL) -> bool {
@@ -64,6 +73,7 @@ fn load_library(variant: u8 = rules::INTERNATIONAL) -> bool {
 fn index_library(text: const u8[:], lib: Library&) -> bool {
     lib.list.clear();
     lib.variant = rules::INTERNATIONAL;
+    for i in MAX_LIBRARY { lib.place[i] = -1; }
     var at = 0;
     while at < text.len {
         var end = at;
@@ -75,56 +85,71 @@ fn index_library(text: const u8[:], lib: Library&) -> bool {
             lib.variant = named;
         } else if l.len > 0 && l[0] != '#' {
             guard lib.list.len < MAX_LIBRARY else { return false; }
-            let d, rest, ok1 = split_once(l, '|');
+            let n, after_id, ok0 = split_once(l, '|');
+            let d, rest, ok1 = split_once(after_id, '|');
             let tl, _, ok2 = split_once(rest, '|');
             let name, lv, ok3 = split_once(trim(tl), ' ');
+            let id, ok_id = parse_int(trim(n));
             let difficulty, ok4 = parse_int(trim(d));
             let level, ok5 = parse_int(trim(lv));
             var theme = -1;
-            for n, i in THEME_NAMES { if trim(name) == n { theme = i; } }
-            guard ok1 && ok2 && ok3 && ok4 && ok5 && theme >= 0 else { return false; }
-            lib.list.push(Entry { difficulty: difficulty, theme: theme, level: level, at: at, len: end - at });
+            for t, i in THEME_NAMES { if trim(name) == t { theme = i; } }
+            guard ok0 && ok_id && ok1 && ok2 && ok3 && ok4 && ok5 && theme >= 0 else { return false; }
+            guard id >= 0 && id < MAX_LIBRARY && lib.place[id] < 0 else { return false; }
+            lib.place[id] = lib.list.len as i16;
+            lib.list.push(Entry { id: id, difficulty: difficulty, theme: theme, level: level, at: at, len: end - at });
         }
         at = end + 1;
     }
     return true;
 }
 
-// Library puzzle i (an index into lib) read into pz from its line of text, its id i + 1;
-// whether it reads.
+// Where library puzzle `id` is in lib's list, or -1 if lib has none of that id.
+fn place_of(lib: Library&, id: i64) -> i64 {
+    guard id >= 0 && id < MAX_LIBRARY else { return -1; }
+    return lib.place[id];
+}
+
+// Library puzzle i (an index into lib's list) read into pz from its line of text, its id
+// plus one as pz's (a course's ids start at 1); whether it reads.
 fn entry_of(text: const u8[:], lib: Library&, i: i64, pz: Puzzle&) -> bool {
     guard i >= 0 && i < lib.list.len else { return false; }
     let e = lib.list[i];
     guard parse_entry(text[e.at..e.at + e.len], lib.variant, pz) else { return false; }
-    pz.id = i + 1;
+    pz.id = e.id + 1;
     pz.theme = e.theme;
     pz.level = e.level;
     return true;
 }
 
-// A library line read into pz: its goal, moves, position, and its one line. Its theme
-// and level come from the index.
+// Library puzzle `id` read into pz (entry_of); whether lib has it and it reads.
+fn entry_by_id(text: const u8[:], lib: Library&, id: i64, pz: Puzzle&) -> bool {
+    return entry_of(text, lib, place_of(lib, id), pz);
+}
+
+// A library line read into pz: its goal, moves, position, and its one line. Its id,
+// theme, and level come from the index.
 fn parse_entry(l: const u8[:], variant: u8, pz: Puzzle&) -> bool {
-    var fields: const u8[:][..5] = [];
+    var fields: const u8[:][..6] = [];
     var rest:   const u8[:]      = l;
-    while fields.len < 5 {
+    while fields.len < 6 {
         let a, b, more = split_once(rest, '|');
         fields.push(trim(a));
         rest = b;
         guard more else { break; }
     }
-    guard fields.len == 5 else { return false; }
-    let goal_part, k_part, has_k = split_once(fields[2], " in ");
+    guard fields.len == 6 else { return false; }
+    let goal_part, k_part, has_k = split_once(fields[3], " in ");
     guard has_k else { return false; }
     let k, ok_k = parse_int(trim(k_part));
     let g, count, ok_g = parse_goal(goal_part);
-    let start, ok_p = rules::parse_fen(fields[3], variant);
+    let start, ok_p = rules::parse_fen(fields[4], variant);
     guard ok_k && ok_g && ok_p else { return false; }
     pz = Puzzle { id: 1, theme: 0, level: 1, goal: g, count: count, start: start, moves: k, lines: [], told: true };
     let line .= pz.lines.push(Line { plies: [] });
     var q = start;
     var legal: rules::Moves = [];
-    for word in split(fields[4], ' ') {
+    for word in split(fields[5], ' ') {
         guard word.len > 0 else { continue; }
         guard line.plies.len < MAX_PLIES else { return false; }
         let ply, ok = parse_move(q, word, legal);
@@ -135,7 +160,7 @@ fn parse_entry(l: const u8[:], variant: u8, pz: Puzzle&) -> bool {
     return line.plies.len > 0;
 }
 
-// A day's puzzles: indexes into the library, in the order they are played.
+// A day's puzzles: their library ids, in the order they are played.
 struct Day { list: i64[..MAX_DAILY] }
 
 // A mixing hash (splitmix64's finish), so the day's choices look random but come again
@@ -157,15 +182,17 @@ fn target(rating: i64, i: i64, n: i64) -> i64 {
     return rating + (i - 1) * 100 / max(middle, 1) - 50 * (middle - 1) / max(middle, 1);
 }
 
-fn is_seen(seen: u64[SEEN_WORDS]&, i: i64) -> bool { seen[i / 64] & rules::bit(i % 64) != 0 }
+// Whether library puzzle `id` is among those had, a bit each by id.
+fn is_seen(seen: u64[SEEN_WORDS]&, id: i64) -> bool { seen[id / 64] & rules::bit(id % 64) != 0 }
 
 // The day's puzzles for a player (docs/architecture/puzzles.md, "Daily puzzles"): `n` of
 // them from lib, by `day` (days since the epoch, by the local date) and `player`, so a
 // day's set comes again the same all day and differs between players. Each slot has its
 // target (target) around `rating`, the player's at the day's start; of the library's
-// puzzles in the themes of `themes` (a bit per theme) not yet had (`seen`) nor picked
-// today, it takes one of the NEAR nearest the target within WINDOW of it (or of the FEW
-// nearest, where the library is sparse), by the hash of the day, player, and slot. Fewer than n when the library has too few left.
+// puzzles in the themes of `themes` (a bit per theme) not yet had (`seen`, by id) nor
+// picked today, it takes one of the NEAR nearest the target within WINDOW of it (or of
+// the FEW nearest, where the library is sparse), by the hash of the day, player, and
+// slot, and keeps its id. Fewer than n when the library has too few left.
 fn pick(lib: Library&, day: i64, player: i64, rating: i64, themes: u64, seen: u64[SEEN_WORDS]&, n: i64, out: Day&) {
     out.list.clear();
     let count = min(n, MAX_DAILY);
@@ -199,16 +226,17 @@ fn pick(lib: Library&, day: i64, player: i64, rating: i64, themes: u64, seen: u6
                 b++;
             }
             guard found < FEW || abs(lib.list[i].difficulty - t) <= WINDOW else { break; }
-            guard themes & rules::bit(lib.list[i].theme) != 0 && !is_seen(seen, i) else { continue; }
+            let id = lib.list[i].id;
+            guard themes & rules::bit(lib.list[i].theme) != 0 && !is_seen(seen, id) else { continue; }
             var taken = false;
-            for x in out.list { if x == i { taken = true; } }
+            for x in out.list { if x == id { taken = true; } }
             guard !taken else { continue; }
             near[found] = i;
             found++;
         }
         guard found > 0 else { continue; }
         let h = mix(mix((day as u64) * 1000003 + (player as u64)) + (slot as u64));
-        out.list.push(near[(h % (found as u64)) as i64]);
+        out.list.push(lib.list[near[(h % (found as u64)) as i64]].id);
     }
 }
 

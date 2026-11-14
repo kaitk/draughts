@@ -69,7 +69,7 @@ struct Flags {
     setup:   i64 = home::NO_SETUP,
     friend:  i64 = -1,      // 1 for --screen friend, 0 for computer
     puzzle:  i64 = -1,      // --puzzle ID: that puzzle, its taps on its board
-    library: i64 = -1,      // --library N: the N-th of the draughts' daily library (its line, 1 the easiest), as a puzzle
+    library: i64 = -1,      // --library N: the draughts' daily library puzzle of id N - 1 (tools/puzzles.goose tempt's N), as a puzzle
     // --step N: how to play's step N (from 1), its taps on its board; --step end its end's
     // card (STEP_END). --screen tutorial opens it, --screen ask a new player's question.
     step: i64  = -1,

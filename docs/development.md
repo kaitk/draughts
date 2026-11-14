@@ -362,7 +362,7 @@ build/puzzles rate tools/calibration/kabe.txt                      # the estimat
 ```
 
 To look a library over in the app, `build/draughts --variant international --library N`
-opens its N-th puzzle (1 the easiest) on the puzzle screen, the replies played, its
+opens its puzzle of id N - 1 (the number `tempt` prints) on the puzzle screen, the replies played, its
 stars and hint as any puzzle's, nothing kept: no rating moved, no day's record.
 
 `rate` prints each puzzle's difficulty, then the misses and which skills found it (100

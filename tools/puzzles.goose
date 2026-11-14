@@ -963,9 +963,9 @@ fn tempts(s: puzzles::Solver&, pz: puzzles::Puzzle&) -> i64 {
     return kinds;
 }
 
-// Catalogs a library file (difficulty | theme level | goal in moves | position | line):
-// per kind, how many puzzles have it, by difficulty band; then a few examples of each
-// by their line number (--library N).
+// Catalogs a library file (id | difficulty | theme level | goal in moves | position |
+// line): per kind, how many puzzles have it, by difficulty band; then a few examples of
+// each by their id plus one (the app's --library N).
 fn tempt_file(path: const u8[:]) {
     var text: u8[>..] = [];
     guard read_file(path, text) else { abort(str("can't read ", path)); }
@@ -992,7 +992,7 @@ fn tempt_file(path: const u8[:]) {
             count[t * BANDS + band]++;
             if shown[t] < 4 && (t != 3 || i % 7 == 3) {
                 shown[t]++;
-                format(examples, "  ", TEMPT_NAMES[t], ": --library ", i + 1, " (", e.difficulty, ", ",
+                format(examples, "  ", TEMPT_NAMES[t], ": --library ", e.id + 1, " (", e.difficulty, ", ",
                        puzzles::THEME_NAMES[e.theme], ")\n");
             }
         }

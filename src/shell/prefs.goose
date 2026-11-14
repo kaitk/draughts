@@ -74,7 +74,7 @@ let CLOCK_NAMES = ["none", "5+3", "10+5"];
 let DAILY_COUNTS = [3, 4, 5, 10];
 
 // A day's daily puzzles as a player had them: the day (days since the epoch by the local
-// date, -1 for none yet), the puzzles picked, as indexes into the set's library, and the
+// date, -1 for none yet), the puzzles picked, by their ids in the set's library, and the
 // stars won in each, 0 while unsolved.
 struct Today {
     day:    i64                    = -1,
@@ -126,9 +126,9 @@ struct Settings {
     // The daily puzzles (task 088), by the set's variant (puzzles::set_of): the puzzle
     // rating, 0 until it is seeded from the course's stars, and how many first solves have
     // moved it (`puzzle_rating.international = 812 14`); the library's puzzles had, a bit
-    // each (`seen.international = 0:3 5:80`, the words that aren't 0 by their index, in
-    // hex); and today's record (`daily.international = 20406 12:3 40:0 55:0 70:0`, the day
-    // and each puzzle's library index and stars). And how many a day, DAILY_COUNTS.
+    // each by id (`seen.international = 0:3 5:80`, the words that aren't 0 by their index,
+    // in hex); and today's record (`daily.international = 20406 12:3 40:0 55:0 70:0`, the
+    // day and each puzzle's library id and stars). And how many a day, DAILY_COUNTS.
     puzzle_rating: i64[rules::VARIANT_COUNT]                      = [0; rules::VARIANT_COUNT],
     puzzle_rated:  i64[rules::VARIANT_COUNT]                      = [0; rules::VARIANT_COUNT],
     seen:          u64[puzzles::SEEN_WORDS][rules::VARIANT_COUNT] = [[0; puzzles::SEEN_WORDS]; rules::VARIANT_COUNT],

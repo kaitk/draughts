@@ -72,7 +72,7 @@ fn new_day(sh: Shell&) {
                   p.daily_count, t.picked);
     t.day = sh.day;
     t.stars = [0; puzzles::MAX_DAILY];
-    for i in t.picked.list { p.seen[set][i / 64] |= rules::bit(i % 64); }
+    for id in t.picked.list { p.seen[set][id / 64] |= rules::bit(id % 64); }
     sh.daily.set = -1;
     sh.changed = true;
 }
@@ -86,9 +86,9 @@ fn read_daily(sh: Shell&) -> bool {
     d.day = t.day;
     d.player = playing_id(sh);
     let text = sh.library_text;
-    for i in t.picked.list {
+    for id in t.picked.list {
         let pz .= d.list.push(default<puzzles::Puzzle>());
-        guard puzzles::entry_of(text, puzzles::library, i, pz) else {
+        guard puzzles::entry_by_id(text, puzzles::library, id, pz) else {
             d.list.clear();
             d.set = -1;
             return false;
@@ -114,15 +114,15 @@ fn play_daily(sh: Shell&, k: i64, now: f64 = 0.0) {
     go_to(sh, PUZZLE, now);
 }
 
-// Library puzzle i (an index into puzzles::library) on the puzzle screen, outside today's
+// Library puzzle `id` on the puzzle screen, outside today's
 // set, for looking the library over (the app's --library flag): its replies, stars, and
 // hint as any puzzle's, no dots, and nothing kept: no place in today's record to keep
 // stars in, no rating moved, next back to the library.
-fn play_library(sh: Shell&, i: i64, now: f64 = 0.0) {
+fn play_library(sh: Shell&, id: i64, now: f64 = 0.0) {
     // A run's flags open it before home or the library has read the library.
     if sh.library != puzzles::loaded || sh.library_text.len == 0 { load_library(sh); }
     var pz = default<puzzles::Puzzle>();
-    guard puzzles::entry_of(sh.library_text, puzzles::library, i, pz) else { return; }
+    guard puzzles::entry_by_id(sh.library_text, puzzles::library, id, pz) else { return; }
     puzzle::open_daily(sh.puzzle, pz, puzzles::MAX_DAILY);
     sh.puzzle.day_n = 0;
     sh.theme = -1;
@@ -137,8 +137,8 @@ fn daily_solved(sh: Shell&, k: i64, won: i64) {
     let t .= p.today[set];
     guard k >= 0 && k < t.picked.list.len else { return; }
     if t.stars[k] == 0 {
-        let i = t.picked.list[k];
-        if i < puzzles::library.list.len {
+        let i = puzzles::place_of(puzzles::library, t.picked.list[k]);
+        if i >= 0 {
             p.puzzle_rating[set] = puzzles::rated(p.puzzle_rating[set], p.puzzle_rated[set], puzzles::library.list[i].difficulty,
                                                   won);
             p.puzzle_rated[set] += 1;

@@ -11,6 +11,10 @@
 // the last back to the library, whose mark turns to the moon, and home shows a check in
 // place of the dots. The next day picks four more, none had before, from Shots too once one
 // is solved in the course; the setting's 5 a day, chosen today, counts from the next day.
+// The test library's ids run against its order, so a record by id is read through the
+// index. A player's file from before the library had ids, its puzzles kept by their
+// lines then, reads today's puzzles and those had as the same puzzles of the built-in
+// library, whose first puzzles' ids are those lines.
 // Then the layouts at the tablet's size and a 20:9 phone's at 480 dp in both orientations,
 // four and ten a day: the library (every tap 88 dp at least, none off the screen nor over
 // another, Today's tiles in the picker's ids) and a daily puzzle (its dots on the screen,
@@ -30,13 +34,14 @@ import drive from "../drive";
 let DAY = 20406;            // 2025-11-14
 let SET = rules::INTERNATIONAL;
 
-// The test library: one capture, 32x21 over 27, at each difficulty.
+// The test library: one capture, 32x21 over 27, at each difficulty, the ids from the
+// hardest.
 fn library_text() -> u8[>..] {
     var t: u8[>..] = [];
     t.append("# a test library\nvariant international\n");
     for i in 200 {
         let theme = if i % 2 == 0 { "captures 1" } else { "shots 2" };
-        format(t, 300 + 10 * i, " | ", theme, " | take 1 in 1 | W:W32,47:B27,5 | 32x21\n");
+        format(t, 199 - i, " | ", 300 + 10 * i, " | ", theme, " | take 1 in 1 | W:W32,47:B27,5 | 32x21\n");
     }
     return t;
 }
@@ -88,7 +93,8 @@ fn record(sh: shell::Shell&) -> u8[>..] {
     let t .= sh.prefs.today[SET];
     var out: u8[>..] = [];
     format(out, "day ", t.day, ",");
-    for i, k in t.picked.list {
+    for id, k in t.picked.list {
+        let i = puzzles::place_of(puzzles::library, id);
         format(out, " ", puzzles::library.list[i].difficulty, if puzzles::library.list[i].theme == puzzles::SHOTS { "s" } else { "c" },
                ":", t.stars[k]);
     }
@@ -351,7 +357,37 @@ fn main() {
     shell::start_again(sh, 0);
     print("started again: ", record(sh), ", ", sh.prefs.daily_count, " a day");
 
+    // A player's file from before ids, with the built-in library: its record's and its
+    // seen bits' puzzles are those of the lines they named then.
+    old_file();
+
     // The layouts.
     layouts(text, g, 4);
     layouts(text, g, 10);
+}
+
+// The built-in International library's first lines (2026-11-14), before it had ids: the
+// line a player's file then named a puzzle by, and its position.
+let OLD_LINES = [0, 12, 40, 55, 70];
+let OLD_FENS = ["B:W16,21,26,28,32,33,42:B15,20,24,25,29,30,34", "B:W23,31,32,35,36,40,41:B8,11,12,13,14,17,19",
+                "W:W35,43,45,47,48,49,50:B9,19,20,25,28,29,30", "B:W22,29,31,34,35,37,38,39:B4,9,10,14,15,19,20,24",
+                "W:W18,30,34,35,39,44,46,48:B1,3,12,16,21,23,24,31"];
+
+fn old_file() {
+    var sh = shell::new(SET);
+    sh.prefs = settings::parse("daily.international = 20406 12:3 40:0 55:0 70:0\nseen.international = 0:1001\n");
+    learn_all(sh);
+    shell::load_library(sh);
+    sh.day = DAY;
+    shell::read_daily(sh);
+    var same = 0;
+    for pz, k in sh.daily.list { if rules::fen(pz.start) == OLD_FENS[k + 1] { same++; } }
+    var had = 0;
+    var pz = default<puzzles::Puzzle>();
+    for line, k in OLD_LINES {
+        guard k == 0 || k == 1 else { continue; }
+        if puzzles::is_seen(sh.prefs.seen[SET], line) && puzzles::entry_by_id(sh.library_text, puzzles::library, line, pz) &&
+           rules::fen(pz.start) == OLD_FENS[k] { had++; }
+    }
+    print("a file from before ids: today's ", sh.daily.list.len, " read, ", same, " the same puzzles; had ", had, " of 2 the same");
 }
