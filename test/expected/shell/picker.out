@@ -3,38 +3,38 @@ the tablet, landscape:
   learn: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
   captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
   crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, 4 rows, all in place
+  shots: 27 tiles, lit 1, locks 0, stars 0, 5 rows, all in place
   king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 15 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
 the tablet, portrait:
   the library: 11 tiles, lit 1, locks 6, stars 1, 8 rows, all in place
   learn: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
   captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
   crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, 4 rows, all in place
+  shots: 27 tiles, lit 1, locks 0, stars 0, 6 rows, all in place
   king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 15 tiles, lit 1, locks 0, stars 0, 4 rows, all in place
 a 20:9 phone at 480 dp, landscape:
   the library: 11 tiles, lit 1, locks 6, stars 1, 5 rows, 2 below the foot (the list scrolls), all in place
   learn: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
   captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
   crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, 4 rows, all in place
+  shots: 27 tiles, lit 1, locks 0, stars 0, 5 rows, 6 below the foot (the list scrolls), all in place
   king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 15 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
 a 20:9 phone at 480 dp, portrait:
   the library: 11 tiles, lit 1, locks 6, stars 1, 8 rows, all in place
   learn: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
   captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
   crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, 6 rows, all in place
+  shots: 27 tiles, lit 1, locks 0, stars 0, 8 rows, all in place
   king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 15 tiles, lit 1, locks 0, stars 0, 5 rows, all in place
 the tablet, half of Learn solved:
   the library: 11 tiles, lit 1, locks 1, stars 6, 5 rows, all in place
   learn: 13 tiles, lit 1, locks 0, stars 18, 3 rows, all in place
   captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
   crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, 4 rows, all in place
+  shots: 27 tiles, lit 1, locks 0, stars 0, 5 rows, all in place
   king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 15 tiles, lit 1, locks 0, stars 0, 3 rows, all in place

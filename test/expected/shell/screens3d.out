@@ -18,7 +18,7 @@ flat home: raised false
 puzzle: raised true, tiles 4 on screen true, touched 0, kings drawn as 2
   tapped the piece's top on d4: selected d4
   tapped f6 on the field: moves played 1, moving true
-  a wrong move in puzzle 26 of 74
+  a wrong move in puzzle 26 of 84
   wrong move i1-h2 slid back: misses 1, fading instances 1, flash true
   misses 2, hint on e7, glow rings in the world's grid at 3.4 
 black to move: turned true, raised true

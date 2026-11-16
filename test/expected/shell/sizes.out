@@ -11,7 +11,7 @@ a foldable, landscape, 2208 x 1768:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -31,7 +31,7 @@ a foldable, portrait, 1768 x 2208:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -51,7 +51,7 @@ a foldable, portrait, 1768 x 2208:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -71,7 +71,7 @@ a foldable, portrait, 1768 x 2208:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -91,7 +91,7 @@ a 20:9 phone, landscape, 2400 x 1080:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -111,7 +111,7 @@ a 20:9 phone, portrait, 1080 x 2400:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -131,7 +131,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -151,7 +151,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -171,7 +171,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -191,7 +191,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -211,7 +211,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -231,7 +231,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -252,7 +252,7 @@ a foldable, landscape, 2208 x 1768:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -272,7 +272,7 @@ a foldable, portrait, 1768 x 2208:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -292,7 +292,7 @@ a foldable, portrait, 1768 x 2208:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -312,7 +312,7 @@ a foldable, portrait, 1768 x 2208:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -332,7 +332,7 @@ a 20:9 phone, landscape, 2400 x 1080:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -352,7 +352,7 @@ a 20:9 phone, portrait, 1080 x 2400:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -372,7 +372,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -392,7 +392,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -412,7 +412,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -432,7 +432,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -452,7 +452,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -472,7 +472,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -493,7 +493,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -513,7 +513,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -533,7 +533,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -553,7 +553,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -573,7 +573,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -593,7 +593,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -613,7 +613,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -633,7 +633,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -653,7 +653,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -674,7 +674,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -694,7 +694,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -714,7 +714,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -734,7 +734,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -754,7 +754,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -774,7 +774,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -794,7 +794,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -814,7 +814,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -834,7 +834,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -855,7 +855,7 @@ en, the tablet with its navigation bar:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -876,7 +876,7 @@ en, the tablet with its navigation bar:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -898,7 +898,7 @@ et, the tablet with its navigation bar:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -919,7 +919,7 @@ et, the tablet with its navigation bar:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -941,7 +941,7 @@ en, the iPads in landscape with their bars:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -962,7 +962,7 @@ en, the iPads in landscape with their bars:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -984,7 +984,7 @@ et, the iPads in landscape with their bars:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place
@@ -1005,7 +1005,7 @@ et, the iPads in landscape with their bars:
   settings: 27 tiles, a board, all in place
   the puzzles: 11 tiles, all in place
   the puzzles' Learn: 13 tiles, all in place
-  the puzzles' Shots: 21 tiles, all in place
+  the puzzles' Shots: 27 tiles, all in place
   a puzzle: 4 tiles, a board, all in place
   the turn piece: over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 7 tiles, a board, all in place

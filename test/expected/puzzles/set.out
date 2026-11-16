@@ -53,6 +53,12 @@ loaded: true
 70: shots 2, white, take 3 in 3, 18 pieces, 1 line; solved by 19-13
 71: shots 2, black, take 2 in 3, 18 pieces, 1 line; solved by 27-31
 72: shots 2, white, take 3 in 3, 18 pieces, 1 line; solved by 28-23
+95: shots 3, white, take 1 in 3, 24 pieces, 1 line; solved by 28-22
+96: shots 3, white, take 2 in 4, 20 pieces, 1 line; solved by 27-22
+97: shots 3, white, take 3 in 3, 28 pieces, 1 line; solved by 18-12
+98: shots 3, white, take 2 in 4, 28 pieces, 1 line; solved by 31-26
+99: shots 3, black, take 3 in 3, 26 pieces, 1 line; solved by 22-27
+100: shots 3, black, take 2 in 4, 28 pieces, 1 line; solved by 19-24
 73: king-shots 1, white, take 4 in 1, 12 pieces, 1 line; solved by 32x14x25x39x6
 74: king-shots 1, white, take 4 in 1, 12 pieces, 1 line; solved by 22x11x2x19x5
 75: king-shots 1, black, take 3 in 1, 11 pieces, 1 line; solved by 35x49x38x27
@@ -73,10 +79,14 @@ loaded: true
 92: safe-move 3, white, safe in 1, 16 pieces, 1 line; solved by 22-18
 93: safe-move 3, white, safe in 1, 14 pieces, 1 line; solved by 44-40
 94: safe-move 3, white, safe in 1, 16 pieces, 1 line; solved by 32-28
+101: safe-move 1, black, safe in 1, 12 pieces, 1 line; solved by 31-37
+102: safe-move 2, black, safe in 1, 14 pieces, 1 line; solved by 9-14
+103: safe-move 2, black, safe in 1, 16 pieces, 1 line; solved by 33-39
+104: safe-move 3, black, safe in 1, 18 pieces, 1 line; solved by 14-20
 learn: 12 puzzles, by level 4 4 4
 captures: 10 puzzles, by level 4 3 3
 crowning: 12 puzzles, by level 4 4 4
-shots: 20 puzzles, by level 10 10 0
+shots: 26 puzzles, by level 10 10 6
 king-shots: 10 puzzles, by level 4 3 3
-safe-move: 10 puzzles, by level 2 4 4
-74 puzzles, 18 black to move; at most 3545 positions a check; 0 problems; moves turned down that win as much a move later: 0
+safe-move: 14 puzzles, by level 3 6 5
+84 puzzles, 24 black to move; at most 4969 positions a check; 0 problems; moves turned down that win as much a move later: 0

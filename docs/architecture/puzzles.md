@@ -20,13 +20,12 @@ themes are a fixed list in code (`puzzles::THEME_NAMES`, their icons and names i
 | Learn | The rules in action: the first capture, backward, which capture isn't taken back, the king's long move and where it lands, the majority capture, passing the far row uncrowned. White to move. | 4, 4, 4 |
 | Captures | Finding the multi-capture: the double whose last stop is safe, the route that takes most and lands safe, four jumps, the landing a king picks. | 4, 3, 3 |
 | Crowning | To the far row: a capture that ends there, the breakthrough sacrifice, the breakthrough then the race, two men given for a crown. | 4, 4, 4 |
-| Shots | Give men, then take more: give one, take three or four (level 1, two moves); the double sacrifice, give two, take four or five (level 2, three moves). | 10, 10, 0 |
+| Shots | Give men, then take more: give one, take three or four (level 1, two moves); the double sacrifice, give two, take four or five (level 2, three moves); shots of three or four moves, the Haarlem shot and coup Philippe among them (level 3). | 10, 10, 6 |
 | King shots | The king as a weapon: its zigzag for three or four, a shot that opens the long diagonal for it, the double sacrifice for the king. | 4, 3, 3 |
-| Safe move | The one move that doesn't lose to a shot: each threat a give-one-take-two the other side would play, every other move allowing it; levels by how many moves there are to weigh (three, five to seven, eight to twelve). White to move. | 2, 4, 4 |
+| Safe move | The one move that doesn't lose to a shot: each threat a give-one-take-two the other side would play, every other move allowing it; levels by how many moves there are to weigh (three, five to seven, eight to twelve). | 3, 6, 5 |
 
-That is 74. 18 of them are black to move: none in Learn or Safe move, and between a
-quarter and a third of each other theme. Endgame and Opening traps come later, as do
-Shots' level 3 (named shots and game finishes).
+That is 84. 24 of them are black to move: none in Learn, and between a quarter and a
+third of each other theme. Endgame and Opening traps come later, as do game finishes.
 
 A puzzle is a block of `key value` lines, a blank line ending it; `#` starts a comment.
 
@@ -81,10 +80,11 @@ hand. Squares are written a1..h8, moves `c3-d4`, captures by their stops `c3:e5:
 | Captures | The double, not the single, among several captures; the route of three that lands safe, among up to five; four jumps, and a man crowned on the far row taking two more as a king. | 4, 3, 3 |
 | Crowning | A capture that ends on the far row, or crowns on the way and goes on; the breakthrough sacrifice; two men given for a crown. | 4, 3, 3 |
 | Shots | Give one, take three, onto the crowning square too (level 1, two moves); give one and take four through the crowning square, and the free tempo, a quiet move after which every move the other side has gives a man (level 2); give two, then take four or five through the crowning square (level 3, three moves). | 6, 5, 3 |
+| King shots | The flying king's long capture of two or three; one man given for the king to take three or four (level 2); two given, then the king takes four or five (level 3). | 4, 3, 3 |
+| Safe move | The one move that doesn't lose to a shot, as International's; 8×8 has fewer moves to weigh, so no level 3. | 7, 3, 0 |
 
-That is 46, 12 of them black to move (35% of the 34 outside Learn). The library shows
-only the themes a set has, so a Russian player sees four rows. Russian's ids are its own,
-from 1.
+That is 66, 18 of them black to move (33% of the 54 outside Learn). The library shows
+only the themes a set has. Russian's ids are its own, from 1.
 
 ## Brazilian's set
 
@@ -103,10 +103,12 @@ camps. Squares and moves are written as Russian's.
 | Captures | Two captures of the most, the lesser not allowed: the one not taken back, the one that leaves no man to be taken; three jumps up and back down; four past the far row uncrowned; a king's three that lands safe. | 4, 3, 3 |
 | Crowning | A capture that ends on the far row; the breakthrough sacrifice; two men given for a crown. | 4, 3, 3 |
 | Shots | Give one, take three, onto the crowning square too (level 1, two moves); give one and take four past the crowning square uncrowned, give two in one capture and take five, and the free tempo (level 2); give two, then take four or five, past the far row and crowned, or after giving a king (level 3, three moves). | 6, 5, 3 |
+| King shots | As Russian's, in Brazilian's rules, each position its own. | 4, 3, 3 |
+| Safe move | As Russian's, each position its own: the camps that make a safe move are few on 8×8, so the two sets share none. | 8, 2, 0 |
 
-That is 46, 13 of them black to move (38% of the 34 outside Learn); a Brazilian player
-sees four rows. 26 of them are Russian's positions (Learn 9, Crowning 9, Shots 8, and
-none of Captures, where majority's rule leaves Russian's choices a single legal move).
+That is 66, 19 of them black to move (35% of the 54 outside Learn). 26 of them are
+Russian's positions (Learn 9, Crowning 9, Shots 8, and none of Captures, where majority's
+rule leaves Russian's choices a single legal move).
 Brazilian's ids are its own, from 1. A variant with no set of its own (English, not
 offered) is shown International's (`puzzles::set_of`).
 
@@ -136,11 +138,10 @@ The piece the hint shows is the line's next move's, or the first right move's of
 lines.
 
 The search keeps each position's moves on one fixed stack in a `puzzles::Solver` the
-caller owns, so it allocates nothing and needs little native stack. The 74 puzzles cost
-at most 3,545 positions to check (a safe move among eight, whose every other move is
-searched for the shot it allows), 0.2 ms built;
-the longest line is five plies, within `MAX_PLIES` (16). Russian's 46 cost at most 161
-(a shot of three moves), their longest line five plies too.
+caller owns, so it allocates nothing and needs little native stack. The 84 puzzles cost
+at most 4,969 positions to check (a safe move, whose every other move is searched for
+the shot it allows); the longest line is seven plies (a shot of four moves), within
+`MAX_PLIES` (16). Russian's 66 cost at most 1,480 and Brazilian's 1,600 (a safe move).
 
 ## The screen
 

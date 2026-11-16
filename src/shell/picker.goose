@@ -799,10 +799,12 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         gui::text(g, gui::face_that_fits(g, gui::LABEL, name, head.z), head, name, 1.0, 0.0, gui::LEFT);
     }
     // In portrait the levels scroll under the head where they run past the page's foot
-    // (a small window), shown down to the screen's foot.
-    let scrolls = !landscape;
+    // (a small window), shown down to the screen's foot; in landscape too where they run
+    // past it (Shots' three levels on a phone), in their own column.
+    let scrolls = !landscape || h > room.w;
     if scrolls {
-        let view = float4 { area.x, y, area.z, g.insets.w + area.y + area.w - y };
+        let view = if landscape { float4 { x, y, w, g.insets.w + area.y + area.w - y } }
+                   else { float4 { area.x, y, area.z, g.insets.w + area.y + area.w - y } };
         y -= gui::scroll_begin(g, PAGE_LIST + t, view, lv + gui::PAD_WIDE * u);
     }
     let lit = first_open(stars, t);

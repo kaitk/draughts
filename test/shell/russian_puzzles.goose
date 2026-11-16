@@ -1,8 +1,8 @@
 // The puzzles of a Russian player (shell/shell.goose, sync_puzzles; puzzles::set_of):
 // headless, driven through the pointer. The app starts with International's set; a
 // player whose draughts are Russian gets Russian's on home, where every way to the
-// puzzles starts. Its library has the four themes Russian's set has, no King shots,
-// Learn open and the other three shut. Learn's ninth puzzle, a man crowned mid-capture,
+// puzzles starts. Its library has the six themes Russian's set has, Learn open and
+// the other five shut. Learn's ninth puzzle, a man crowned mid-capture,
 // is made by hand stop by stop: h4 takes g5 to f6, e7 to d8, where it is crowned, and
 // goes on as a king over c7 to b6, which solves it. The stars are kept under
 // `stars.russian`, and home counts them over Russian's set. Back to International on

@@ -45,8 +45,30 @@ loaded: true, the set brazilian
 44: shots 3, white, take 2 in 3, 14 pieces, 1 line; solved by c5-d6
 45: shots 3, white, take 2 in 3, 14 pieces, 1 line; solved by g3-f4
 46: shots 3, black, take 2 in 3, 14 pieces, 1 line; solved by a5-b4
+47: king-shots 1, white, take 2 in 1, 15 pieces, 1 line; solved by e3:c5:f8
+48: king-shots 1, white, take 3 in 1, 13 pieces, 1 line; solved by d2:h6:f8:d6
+49: king-shots 1, white, take 2 in 2, 17 pieces, 1 line; solved by b2-c3
+50: king-shots 1, black, take 2 in 1, 13 pieces, 1 line; solved by c7:f4:c1
+51: king-shots 2, white, take 2 in 2, 17 pieces, 1 line; solved by d4-c5
+52: king-shots 2, white, take 2 in 3, 15 pieces, 1 line; solved by b2-c3
+53: king-shots 2, black, take 2 in 2, 13 pieces, 1 line; solved by a5-b4
+54: king-shots 3, white, take 2 in 3, 15 pieces, 1 line; solved by f4-e5
+55: king-shots 3, white, take 2 in 3, 15 pieces, 1 line; solved by h2-g3
+56: king-shots 3, black, take 2 in 3, 17 pieces, 1 line; solved by c7-b6
+57: safe-move 1, white, safe in 1, 12 pieces, 1 line; solved by c5-d6
+58: safe-move 1, white, safe in 1, 16 pieces, 1 line; solved by d2-e3
+59: safe-move 1, white, safe in 1, 15 pieces, 1 line; solved by d4-c5
+60: safe-move 1, white, safe in 1, 15 pieces, 1 line; solved by c3-b4
+61: safe-move 1, white, safe in 1, 13 pieces, 1 line; solved by d2-c3
+62: safe-move 1, black, safe in 1, 16 pieces, 1 line; solved by f4-g3
+63: safe-move 1, black, safe in 1, 10 pieces, 1 line; solved by b4-c3
+64: safe-move 1, black, safe in 1, 21 pieces, 1 line; solved by f6-e5
+65: safe-move 2, white, safe in 1, 12 pieces, 1 line; solved by c5-d6
+66: safe-move 2, white, safe in 1, 14 pieces, 1 line; solved by a1-b2
 learn: 12 puzzles, by level 4 4 4
 captures: 10 puzzles, by level 4 3 3
 crowning: 10 puzzles, by level 4 3 3
 shots: 14 puzzles, by level 6 5 3
-46 puzzles, 13 black to move; at most 131 positions a check; 0 problems; moves turned down that win as much a move later: 0
+king-shots: 10 puzzles, by level 4 3 3
+safe-move: 10 puzzles, by level 8 2 0
+66 puzzles, 19 black to move; at most 1600 positions a check; 0 problems; moves turned down that win as much a move later: 0

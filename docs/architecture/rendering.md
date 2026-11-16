@@ -369,7 +369,8 @@ How to play's row, and Today's row once open, head the list
 row itself is a tile round them that opens the first unsolved, or the first once all are
 (`picker::today_row`). Rows are one column in portrait and two in
 landscape where they fit, scrolling where they don't. A theme's page lists its levels as
-rows of tiles with 0 to 3 stars.
+rows of tiles with 0 to 3 stars, scrolling under its head where they run past the foot
+(International's three levels of Shots on a small phone in landscape).
 
 **A puzzle** (`prototypes/puzzle.html`): the game's layout; on the right whose puzzle it
 is, the goal's icon and words, the three stars at stake, and next (dim until solved). A

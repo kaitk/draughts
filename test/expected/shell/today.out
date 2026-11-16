@@ -1,31 +1,31 @@
 the library: 200 puzzles
 Today's tiles' ids 611 to 618, the picker's 600 to 1199, How to play's 601
-Learn but one: open false, 1 more; home notes 11 / 74, dots 0 filled 0 not, check 0
+Learn but one: open false, 1 more; home notes 11 / 84, dots 0 filled 0 not, check 0
   the library: 0 tiles, lit -1, calendar 0, moon 0, locks 1, how to play's mark 1; day -1,; rating 0 after 0, 0 had
-all of Learn: open true; day 20406, 420c:0 480c:0 460c:0 700c:0; rating 447 after 0, 4 had; to save true
+all of Learn: open true; day 20406, 420c:0 460c:0 440c:0 680c:0; rating 435 after 0, 4 had; to save true
   home: dots 0 filled 4 not, check 0
   read back: day 20406, 4 puzzles, the same true
   the library: 4 tiles, lit 0, calendar 1, moon 0, locks 0, how to play's mark 1
-the same day again: day 20406, 420c:0 480c:0 460c:0 700c:0; rating 447 after 0, 4 had; to save false
+the same day again: day 20406, 420c:0 460c:0 440c:0 680c:0; rating 435 after 0, 4 had; to save false
 tile 0: the puzzle, today's 0, its dots 0 solved 1 this 3 to come
-  solved: the puzzle, today's 0, its dots 1 solved 0 this 3 to come; day 20406, 420c:3 480c:0 460c:0 700c:0; rating 491 after 1, 4 had
+  solved: the puzzle, today's 0, its dots 1 solved 0 this 3 to come; day 20406, 420c:3 460c:0 440c:0 680c:0; rating 481 after 1, 4 had
   next: the puzzle, today's 1, its dots 1 solved 1 this 2 to come
   back: the library, today's 1, its dots 0 solved 0 this 0 to come, the library: 4 tiles, lit 1, calendar 1, moon 0, locks 0, how to play's mark 1
   Today's row by its mark: the puzzle, today's 1, its dots 1 solved 1 this 2 to come
-  played again with a miss: won 2; day 20406, 420c:3 480c:0 460c:0 700c:0; rating 491 after 1, 4 had
+  played again with a miss: won 2; day 20406, 420c:3 460c:0 440c:0 680c:0; rating 481 after 1, 4 had
   the fourth: the puzzle, today's 3, its dots 3 solved 1 this 0 to come
-  solved: the puzzle, today's 3, its dots 4 solved 0 this 0 to come; day 20406, 420c:3 480c:1 460c:3 700c:3; rating 571 after 4, 4 had
+  solved: the puzzle, today's 3, its dots 4 solved 0 this 0 to come; day 20406, 420c:3 460c:1 440c:3 680c:3; rating 558 after 4, 4 had
   next after the last: the library, today's 3, its dots 0 solved 0 this 0 to come, the library: 4 tiles, lit -1, calendar 0, moon 1, locks 0, how to play's mark 1
   Today's row by its corner: the puzzle, today's 0, its dots 4 solved 0 this 0 to come
   home: dots 0 filled 0 not, check 1
-6 a day chosen: day 20406, 420c:3 480c:1 460c:3 700c:3; rating 571 after 4, 4 had
-the next day: day 20407, 440c:0 520c:0 500c:0 660c:0 720c:0 900c:0; rating 571 after 4, 10 had
+6 a day chosen: day 20406, 420c:3 460c:1 440c:3 680c:3; rating 558 after 4, 4 had
+the next day: day 20407, 480c:0 540c:0 600c:0 660c:0 720c:0 880c:0; rating 558 after 4, 10 had
   home: dots 0 filled 6 not, check 0
-a Shots puzzle solved, the day after: day 20408, 300c:0 550s:0 540c:0 620c:0 640c:0 840c:0; rating 571 after 4, 16 had
+a Shots puzzle solved, the day after: day 20408, 370s:0 520c:0 500c:0 640c:0 630s:0 860c:0; rating 558 after 4, 16 had
 started again: day -1,; rating 0 after 0, 0 had, 6 a day
 a file from before ids: today's 4 read, 4 the same puzzles; had 2 of 2 the same
 Russian's Learn but one, International shown: open false, today's 0
-Russian's Learn: open true, dots 0 filled 4 not, check 0; day 20406, 420c:0 440c:0 540c:0 760c:0; rating 506 after 0, 4 had
+Russian's Learn: open true, dots 0 filled 4 not, check 0; day 20406, 420c:0 380c:0 480c:0 700c:0; rating 459 after 0, 4 had
 Russian's Learn, rated 900: open true, dots 0 filled 4 not, check 0; day 20406, 580c:0 920c:0 940c:0 1140c:0; rating 900 after 0, 4 had
 the tablet, landscape, 4 a day:
   the library: 16 tiles, Today's 4, all in place
