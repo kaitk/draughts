@@ -351,6 +351,10 @@ Task 074 (2026-11-11) and 078 (2026-11-13):
 - Marks explained (task 078's B): a legend at the foot of lists one opens, a tip on the
   always-shown panel. The tip's next tap only closes it.
 - Who's playing has no results tile (2026-11-13): the games are home's row.
+- A face, a new player, or a removal on who's playing takes effect at the next frame's
+  start (`shell::change_player`, 2026-11-17), not in the frame that laid home out for the
+  player before: that frame drew the new player's pieces on the old size's board, and the
+  3D board kept that image while it was prepared for the new size.
 - A past game replays on its own screen, opened from its results row (task 078's C). It
   opens at the game's end, on the flat board even with 3D chosen, and its positions are
   played out from the kept moves. Its list's moves are 34 dp taps: a miss shows the next
