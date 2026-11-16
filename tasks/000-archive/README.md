@@ -151,6 +151,14 @@ and the commit that last has it.
   turned flat and 3D boards play the capture chosen (`test/game/choice`, `aim`). If it is
   seen again: a screenshot or the position, the taps, and which side's king.
   `048-equal-capture-choice.md`, `5a01306`
+- 037: A better puzzle set. Done 2026-11-16: a course per draughts in six themes (Learn,
+  Captures, Crowning, Shots, King shots, Safe move), International 84 puzzles and Russian
+  and Brazilian 66 each, about a third black to move outside Learn, every position our own
+  from `tools/puzzles.goose find` and checked by the engine and `test/perft.py`
+  ([puzzles](../../docs/architecture/puzzles.md)). Left over, no task: the children
+  playing it and the levels' order holding; the bomb, the heel shot, and the royal shot,
+  whose skeletons gave no puzzle the engine agreed with; no level-3 safe move on 8×8,
+  where no position had eight moves to weigh. `037-puzzle-set.md`, `8677578`
 - 039: Procedural wood for the 3D board. Done: growth rings with pores and a fibre
   relief the default wood, a black marble for winter's frame, summer's variants kept
   beside its look; the bake 0.27 to 0.30 s warm on the tablet; the defaults kept by the
