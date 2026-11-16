@@ -540,7 +540,9 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   (74°), Zoom frames the playing field (landscape only), Showcase lets a drag turn the
   board ±35° and tip it 35° to 80°; each eases over 0.6 s. The camera is plain data in
   `board/rig.goose`; `panel::apply_camera` fits it each frame. The zoom stands at the
-  room's bottom at the rest angle and in its middle in the top view. The game's view and
+  room's bottom at the rest angle and in its middle in the top view; on a desktop the top
+  view's room reaches to a gap above the window's foot, and the board sits lower where
+  what each side has taken holds it down. The game's view and
   zoom are kept in the player's file and come back at launch (`rig::choose`).
 - **Against a friend** the game starts in the zoomed top view (`rig::across_table`); with
   Turns it starts at rest and the board turns 180° after each move, the light keeping its
