@@ -6,12 +6,12 @@ App Store localization yet, `app-store.md`). Newest first.
 
 ## 0.9.0 (2026-11-16)
 
-Sound, a replay that opens where the game turned, and the desktop's 3D board.
+Sound, a replay that opens where the game turned, more puzzles, and the desktop's 3D board.
 
 ### GitHub release
 
 ```markdown
-Calm sounds, a replay that opens where the game turned, and a better 3D board on the desktop.
+Calm sounds, a replay that opens where the game turned, more puzzles, and a better 3D board on the desktop.
 
 Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, at [github.com/kaitk/draughts](https://github.com/kaitk/draughts). No ads, no tracking, no accounts; it works offline.
 
@@ -19,6 +19,7 @@ Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, 
 
 - **Sound.** A few calm sounds: a wooden knock for a move and a take, a kannel's notes for a crowning and a win, a solved puzzle as three low mallet notes, and the clock's warnings once a game. One sound a move, never a pile of them. Settings has a Sound section, a speaker that mutes and a slider whose thumb is a piece. It is off by default on phones and tablets, and at half on a desktop.
 - **Watch replay.** Once a game has ended, home offers its replay in Continue's place. A replay opens at the player's worst move, a lost game where it turned with the best move shown, and lists the player's side first.
+- **More puzzles.** Russian and Brazilian draughts gain King shots and Safe move, 20 puzzles each. International draughts gains a third level of Shots, among them the Haarlem shot and a coup Philippe, and safe moves with black to move.
 
 **Better**
 
@@ -26,6 +27,9 @@ Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, 
 - The screen dims and locks after 15 minutes with nobody playing, instead of staying lit while the app is open.
 - On the desktop's 3D board the top view's zoom sits in the middle of the window, the view and zoom are remembered, the board and the panels sit higher, and what each side has taken shows on two round cards that keep clear of the board.
 - A tap made while a move is still showing is kept, and the click that brings a desktop window to the front counts.
+- Summer's stone 3D board has veins and cracks of its own, and each season's stone cracks differently.
+- The results screen shows dates in your own time zone.
+- A puzzle theme's levels scroll in landscape when they don't fit.
 
 **Windows** (64-bit, Windows 10 or 11): download `Draughts-0.9.0-windows-x64-setup.exe` and run it (no administrator needed; it adds Draughts to the Start menu, and Settings › Apps removes it), or download `Draughts-0.9.0-windows-x64.zip`, extract it, and run `Draughts.exe`. Your graphics driver must support Vulkan, which current NVIDIA, AMD, and Intel drivers do. The app is not signed, so Windows shows "Windows protected your PC" once: choose **More info**, then **Run anyway**.
 
@@ -42,29 +46,31 @@ SHA-256:
 - `Draughts-0.9.0-linux-x64.tar.gz`: `LINUX_SHA`
 ```
 
-### Play, en-GB (394 of 500)
+### Play, en-GB (491 of 500)
 
 ```text
 • Calm sounds: a wooden knock for each move, a kannel for a crowning and a win; off by default, in Settings › Sound
 • Watch replay: a finished game's replay opens at your worst move, with the best move shown
+• More puzzles: King shots and Safe move in Russian and Brazilian, harder Shots in International
 • 3, 4, 6, or 8 daily puzzles a day
 • The screen dims and locks after 15 minutes with nobody playing
 • A tap made while a move is showing is kept
 • Open source: github.com/kaitk/draughts
 ```
 
-### Play, et (400 of 500)
+### Play, et (458 of 500)
 
 ```text
 • Rahulikud helid: puust koputus iga käigu juures, kannel tammiks saamisel ja võidul; vaikimisi väljas, Seaded › Heli
 • Vaata kordust: lõppenud mängu kordus avaneb sinu halvima käigu juures koos parima käiguga
+• Uued ülesanded vene, Brasiilia ja rahvusvahelises kabes
 • 3, 4, 6 või 8 päevaülesannet päevas
 • Ekraan tumeneb ja lukustub, kui keegi 15 minutit ei mängi
 • Käigu ajal tehtud puudutus ei lähe kaduma
 • Avatud lähtekoodiga: github.com/kaitk/draughts
 ```
 
-### App Store, en-GB (468 of 4,000)
+### App Store, en-GB (704 of 4,000)
 
 ```text
 • Calm sounds: a wooden knock for each move and take, a kannel for a crowning and a win, three low mallet notes for a solved puzzle; off by default, in Settings › Sound
@@ -72,6 +78,9 @@ SHA-256:
 • 3, 4, 6, or 8 daily puzzles a day
 • The screen dims and locks after 15 minutes with nobody playing
 • A tap made while a move is still showing is kept
+• More puzzles: King shots and Safe move in Russian and Brazilian draughts, and a third level of Shots in International draughts
+• Summer's stone board has veins and cracks of its own
+• Dates on the results screen are in your time zone
 ```
 
 ## 0.8.0 (2026-11-14)
