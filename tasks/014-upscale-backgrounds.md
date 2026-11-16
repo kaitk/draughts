@@ -18,6 +18,20 @@ For this app the target is smaller than Snowtime's 3840 px: the tablet is 1920 Ã
 square image covering it in both orientations needs 1920 px. Steps 2 and 3 at 2048 px
 may be enough, without step 4; try that first.
 
+Desktops want more: a square image covering a 3840 Ã— 2160 screen needs 3840 px. Make the
+3840 px master in the same run and scale it down to 2048 px for the mobile masters, so both
+come from one upscale.
+
+## Tried and set aside (2026-11-16)
+
+Real-ESRGAN-type upscalers on the Mac (upscayl-bin 20251207, Metal; UltraSharp, Remacri,
+Upscayl standard, high-fidelity, Nomos8kSC; about 40 s an image on an M1 Pro): they add
+no detail. The ChatGPT originals carry a fine mesh pattern, plain on rock, moss, and the
+birch's dark marks, and these models sharpen it into a visible net. Remacri and
+high-fidelity are the mildest; shrinking to 1000 px first removes the mesh but paints the
+rock in oil-paint strokes. So the enhance step (Qwen-Image edit, img2img) must be what
+removes the mesh and adds detail; a sharpening upscale alone won't do.
+
 ## Acceptance criteria
 
 - [ ] ComfyUI set up again on the desktop with the models above, versions recorded
