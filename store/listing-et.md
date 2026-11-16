@@ -20,7 +20,7 @@ The same as the launcher's name (`strings/et.txt`), as the English is "Draughts"
 Kabe 2D- või 3D-laual: mängi arvuti või sõbraga, lahenda päeva ülesandeid.
 ```
 
-## Full description (3,361 of 4,000)
+## Full description (3,788 of 4,000)
 
 ```text
 Rahulik kabemäng mängimiseks ja õppimiseks: suured nupud, lame 2D- või ruumiline 3D-laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
@@ -38,13 +38,14 @@ MÄNGI
 SINU MÄNGUD
 • Tulemustes on sinu varasemad partiid ja reiting arvuti vastu.
 • Vaata neid käik-käigult üle, iga käik hinnatud parimast veani, ja mängi mis tahes käigust edasi, et proovida teist teed.
+• Kui partii on lõppenud, avab „Vaata kordust“ avalehel selle sealt, kus mäng pöördus: sinu halvima käigu juures või kohas, kus kaotatud partii käest libises, koos parima käiguga.
 
 ÜLESANDED
-• Tänased ülesanded: kui Õpi on lahendatud, iga päev mõni ülesanne sinu tasemel (vaikimisi 4; seadetes 3, 5 või 10): soojendus, kaks sinu tasemel ja üks veidi raskem. Need tulevad enam kui 7000 ülesande seast rahvusvahelises, vene ja Brasiilia kabes, nende hulgas lõksud, mis karistavad hooletut käiku, ja ükski ei kordu.
+• Tänased ülesanded: kui Õpi on lahendatud, iga päev mõni ülesanne sinu tasemel (vaikimisi 4; seadetes 3, 6 või 8): soojendus, ülesanded sinu tasemel ja üks veidi raskem. Need tulevad ligi 8000 ülesande seast rahvusvahelises, vene ja Brasiilia kabes, nende hulgas lõksud, mis karistavad hooletut käiku, ja ükski ei kordu.
 • Ülesannete reiting igale mängijale ja kabeliigile: alguses liigub see kiiresti, hiljem rahuneb.
-• Kursus: 166 ülesannet, 74 rahvusvahelises kabes kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 nii vene kui ka Brasiilia kabes neljas teemas.
+• Kursus: 216 ülesannet, igas kabeliigis kuus teemat (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik): 84 rahvusvahelises kabes ning 66 nii vene kui ka Brasiilia kabes.
 • Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.
-• Esimesena tuleb Õpi, mis näitab reegleid mängu käigus; teised teemad avanevad, kui sellest on pool lahendatud.
+• Esimesena tuleb Õpi, mis näitab reegleid mängu käigus; teised teemad avanevad, kui sellest on pool lahendatud, ja tänased ülesanded, kui see on kõik lahendatud.
 • Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab kõigi kolme tähe nimel uuesti proovida.
 
 MÄNGIJAD
@@ -60,6 +61,9 @@ KABELAUD
 • Lame laud või ruumiline 3D-laud valguse ja pehmete varjudega, mida saab käega pöörata.
 • Neli aastaaega, igaühel oma pilt ja laud: puidust, kivist või nikerdatud.
 • Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid; või ühevärviline taust laua toonides, ilma pildita.
+
+HELI
+• Mõned rahulikud helid: puust koputus käigu juures, kandle noodid tammiks saamisel ja võidul ning madalad noodid lahendatud ülesande puhul. Vaikimisi väljas, sisse saab lülitada seadetes.
 
 KÕIGILE
 • Suured pildid ja ikoonid, et ka laps, kes veel lugeda ei oska, saaks ise hakkama.
@@ -92,7 +96,7 @@ Kabe on avatud lähtekoodiga, MIT või Apache 2.0 litsentsi all: github.com/kait
   "Mitte midagi liigset" ("nothing superfluous") for what the app leaves out.
 - "Tasavägine" (evenly matched) for "a fair match"; "partii" for a game played, so "mäng"
   isn't said twice; "ajakontroll" for the clock; "pooleliolev mäng" for the saved game.
-- The short description says "lahenda 166 ülesannet": "õpi see 166 ülesandega selgeks"
+- An earlier short description said "lahenda 166 ülesannet": "õpi see 166 ülesandega selgeks"
   read as learning the rules, which takes minutes, and "see" for "kabet" was clumsy.
 - Revised 2026-11-09 with a Gemini review (`agents/writing.md`): taken were "partii",
   "mängu käigus" for "in action", "kui sellest on pool
