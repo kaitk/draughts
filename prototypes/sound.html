@@ -21,6 +21,8 @@
        &view=preview|sounds|samples  beside the list: the preview board with a demo, the
                 list of sounds to try one by one, or Freesound's candidates, each cut into
                 single hits (tools/sound_samples.py makes samples/samples.js, local)
+       &take= &must= &crown= &win= &end=  a take on that moment (the Moments view lists
+                them): the taken pieces counted, a capture due elsewhere, and so on
        &move=ID.K &take=ID.K  hit K of Freesound sound ID as the move's or the take's sound;
                 a bare ID, any of its hits at random
        &kind=tablet|pixel|iphone|desktop  the insets, and the default: off on a touch
@@ -84,7 +86,7 @@
 
   .stage { position: fixed; display: grid; place-items: center; }
   .stage .demo { display: grid; justify-items: center; gap: 14px; }
-  .stage .bar { display: flex; gap: 10px; }
+  .stage .bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 0 12px; }
   .pill { display: inline-flex; align-items: center; gap: 8px; height: 56px; padding: 0 20px; border-radius: 28px; cursor: pointer;
     color: var(--fg); font-size: 18px; text-decoration: none; background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
   .pill.on { box-shadow: inset 0 0 0 2px var(--glow); }
@@ -142,7 +144,7 @@
   const D = Draughts, icon = D.icon;
   const control = get('control', ['slider', 'steps'], 'slider');
   const timbre = get('timbre', ['felt', 'wood', 'stone'], 'felt');
-  const view = get('view', ['preview', 'sounds', 'samples'], 'preview');
+  const view = get('view', ['preview', 'sounds', 'samples', 'moments'], 'preview');
   if (P.has('bare')) document.body.classList.add('bare');
 
   // The speaker's icons, as the app's icon shader would draw them: a rounded speaker,
@@ -228,7 +230,147 @@
     wood: { modes: [[680, 1, 0.032], [1630, 0.5, 0.02], [2750, 0.25, 0.011], [3900, 0.1, 0.007]], thump: [170, 0.5, 0.018], noise: 0.5, lp: 3400 },
     stone: { modes: [[1150, 1, 0.028], [2600, 0.45, 0.018], [4300, 0.2, 0.01]], thump: [200, 0.3, 0.012], noise: 0.45, lp: 4200 },
   };
-  const HZ = { D4: 293.7, A3: 220, E4: 329.6, G4: 392, A4: 440, B4: 493.9, D5: 587.3, E5: 659.3, 'F#5': 740, A5: 880 };
+  const HZ = { D3: 146.8, A3: 220, D4: 293.7, E4: 329.6, 'F#4': 370, G4: 392, A4: 440, B4: 493.9, D5: 587.3, E5: 659.3, 'F#5': 740,
+    G5: 784, A5: 880, B5: 987.8, D6: 1174.7, E6: 1318.5, 'F#6': 1480, A6: 1760 };
+
+  // ---- Moments: takes on the crowning, the win, and the end (&crown=, &win=, &end=) ---
+  // Wooden and wind instruments in a few lines of sample math each, all on D major's
+  // pentatonic scale (D E F# A B), so any of them sits with any other.
+  // A wooden flute: a few harmonics, a 60 ms breath in, vibrato after 150 ms, a dark
+  // breath of noise, an optional slur up from a lower note (glide), and a soft release.
+  function flute(f, dur, o = {}) {
+    const { h = [1, 0.22, 0.07, 0.03], att = 0.06, breath = 0.35, vib = 0.004, from = 0, seed = 3 } = o;
+    const x = new Float32Array(Math.round((dur + 0.3) * RATE)), r = rng(seed);
+    let ph = 0, n = 0;
+    for (let i = 0; i < x.length; i++) {
+      const t = i / RATE, a = Math.min(1, t / att) * (t < dur ? 1 : Math.exp(-(t - dur) / 0.07));
+      const base = from ? from * Math.pow(f / from, Math.min(1, t / 0.12)) : f;
+      ph += 2 * Math.PI * base * (1 + vib * Math.min(1, Math.max(0, (t - 0.15) / 0.2)) * Math.sin(2 * Math.PI * 5 * t)) / RATE;
+      let v = 0; h.forEach((g, k) => { v += g * Math.sin((k + 1) * ph); });
+      n += 0.15 * (r() - n);
+      x[i] = a * (v + breath * n * (0.5 + Math.exp(-t / 0.05)));
+    }
+    lowpass(x, f * 5);
+    return x;
+  }
+  // A plucked string (Karplus-Strong), as an Estonian kannel or a Finnish kantele: a
+  // soft noise burst round a delay line one period long, averaged and damped each pass.
+  function pluck(f, dur = 1.6, seed = 5, soft = 0.45) {
+    const x = new Float32Array(Math.round(dur * RATE)), L = Math.round(RATE / f), line = new Float32Array(L), r = rng(seed);
+    let y = 0; for (let k = 0; k < L; k++) { y += soft * (r() - y); line[k] = y; }
+    for (let i = 0, j = 0; i < x.length; i++, j = (j + 1) % L) {
+      const a = line[j], b = line[(j + 1) % L];
+      line[j] = 0.5 * (a + b) * 0.9965;
+      x[i] = a * Math.min(1, i / (RATE * 0.002));
+    }
+    lowpass(x, 2600);
+    return x;
+  }
+  // Decaying partials [ratio, gain, decay s], for the struck instruments.
+  function struck(f, parts, rise = 0.002, lp = 3000, len = 1.4) {
+    const x = new Float32Array(Math.round(len * RATE));
+    for (let i = 0; i < x.length; i++) {
+      const t = i / RATE; let v = 0;
+      for (const [ratio, g, d] of parts) v += g * Math.sin(2 * Math.PI * f * ratio * t) * Math.exp(-t / d);
+      x[i] = v * Math.min(1, t / rise);
+    }
+    lowpass(x, lp);
+    return x;
+  }
+  const kalimba = (f) => struck(f, [[1, 1, 0.7], [5.9, 0.18, 0.06], [2.0, 0.05, 0.2]], 0.0015, 3500);
+  const tongue = (f) => struck(f, [[1, 1, 0.6], [2.76, 0.16, 0.12], [4.1, 0.05, 0.05]], 0.003, 1600);   // a wooden tongue drum
+  const musicbox = (f) => struck(f, [[1, 1, 0.5], [3, 0.25, 0.1], [5.4, 0.1, 0.04]], 0.001, 5000, 1.0);
+  const block = (f) => struck(f, [[1, 1, 0.07], [2.48, 0.3, 0.03], [4.1, 0.08, 0.015]], 0.0008, 3200, 0.4); // a temple block
+  // Bamboo chimes stirred once: a few tubes struck at random within 0.8 s, dying away.
+  function bamboo(seed = 9) {
+    const r = rng(seed), tubes = [HZ.D5, HZ.E5, HZ['F#5'], HZ.A5, HZ.B5, HZ.D6], parts = [];
+    for (let k = 0; k < 9; k++) {
+      const f = tubes[Math.floor((r() + 1) / 2 * tubes.length) % tubes.length];
+      parts.push([0.05 + k * 0.07 + 0.04 * r(), struck(f * 0.5, [[1, 1, 0.12], [2.76, 0.5, 0.05], [5.4, 0.2, 0.02]], 0.001, 3000, 0.6).map((v) => v * (1 - k / 11))]);
+    }
+    return phrase(parts);
+  }
+  // A blackbird's two phrases: whistled sweeps, quick and quiet.
+  function bird() {
+    const x = new Float32Array(Math.round(0.9 * RATE));
+    const notes = [[0, 2000, 2600, 0.09], [0.12, 2600, 2200, 0.08], [0.32, 1900, 2900, 0.12], [0.5, 2900, 2500, 0.06], [0.58, 2500, 3100, 0.07]];
+    for (const [at, f0, f1, d] of notes) {
+      let ph = 0; const o = Math.round(at * RATE);
+      for (let i = 0; i < d * RATE; i++) {
+        const t = i / RATE, u = t / d, f = f0 + (f1 - f0) * u;
+        ph += 2 * Math.PI * f / RATE;
+        x[o + i] += Math.sin(ph) * Math.sin(Math.PI * u) * (1 + 0.3 * Math.sin(2 * Math.PI * 40 * t));
+      }
+    }
+    lowpass(x, 5000);
+    return x;
+  }
+  // Loudness matched: each moment's first 0.6 s to one RMS, the peak under 0.95.
+  function even(x) {
+    const n = Math.min(x.length, Math.round(0.6 * RATE)); let e = 0, m = 0;
+    for (let i = 0; i < n; i++) e += x[i] * x[i];
+    for (const v of x) m = Math.max(m, Math.abs(v));
+    const g = Math.min(0.3 / Math.sqrt(e / n + 1e-12), 0.95 / (m + 1e-9));
+    return x.map((v) => v * g);
+  }
+  const at = (dt, list) => phrase(list.map((b, k) => [k * dt, b]));
+  const MOMENTS = {
+    crown: {
+      marimba: ['Marimba', 'Two soft mallet notes, up a fifth (as before)', () => phrase([[0, note(HZ.G4)], [0.11, note(HZ.D5, 0.7)]])],
+      stack: ['A piece on a piece', 'As crowning by hand: the taken piece set on top, two small clicks. Only the board\'s own sounds', () => {
+        const click = { ...TIMBRES.wood, modes: TIMBRES.wood.modes.map(([h, g, d]) => [h * 1.5, g, d * 0.7]), thump: [0, 0, 1] };
+        return phrase([[0, knock(click, 71)], [0.09, knock(click, 72).map((v) => v * 0.55)]]);
+      }],
+      kannel: ['Kannel, two plucks', 'A plucked string up a fifth, as Estonia\'s kannel', () => at(0.12, [pluck(HZ.A4), pluck(HZ.E5)])],
+      kalimba: ['Kalimba', 'Two thumb-piano notes, up a fourth', () => at(0.13, [kalimba(HZ.A5), kalimba(HZ.D6)])],
+      flute: ['Flute, a slur up', 'One breath sliding up into A5', () => flute(HZ.A5, 0.45, { from: HZ.D5 })],
+      cuckoo: ['Ocarina cuckoo', 'Two notes down a third: a cuckoo\'s call, round and hollow', () => at(0.32, [flute(HZ.A5, 0.18, { h: [1, 0.04, 0.02], breath: 0.2, vib: 0 }), flute(HZ['F#5'], 0.32, { h: [1, 0.04, 0.02], breath: 0.2, vib: 0 })])],
+      blocks: ['Temple blocks', 'Two hollow wooden blocks, low then high', () => at(0.12, [block(HZ.A4), block(HZ.D5)])],
+      tongue: ['Tongue drum', 'One deep wooden note', () => tongue(HZ.D4)],
+      musicbox: ['Music box', 'Two small high notes', () => at(0.1, [musicbox(HZ.A5), musicbox(HZ.D6)])],
+    },
+    win: {
+      marimba: ['Marimba', 'Three mallet notes up (as before)', () => phrase([[0, note(HZ.D4, 0.5)], [0.14, note(HZ.A4, 0.5)], [0.28, note(HZ.D5, 0.7)]])],
+      kannel: ['Kannel, a strum', 'Five strings plucked upward, quickly, left to ring', () => at(0.07, [HZ.D4, HZ['F#4'], HZ.A4, HZ.D5, HZ['F#5']].map((f, k) => pluck(f, 2.2, 11 + k)))],
+      kannel2: ['Kannel, slow', 'Three plucks, unhurried', () => at(0.22, [pluck(HZ.A4, 2), pluck(HZ.D5, 2), pluck(HZ['F#5'], 2.4)])],
+      flute: ['Wooden flute', 'Three legato notes up, vibrato on the last', () => at(0.2, [flute(HZ.A4, 0.2), flute(HZ.D5, 0.2), flute(HZ['F#5'], 0.6)])],
+      recorder: ['Recorder, ta-da', 'Short then long, a little brighter', () => at(0.16, [flute(HZ.D5, 0.12, { h: [1, 0.4, 0.2, 0.1], att: 0.03 }), flute(HZ.A5, 0.55, { h: [1, 0.4, 0.2, 0.1], att: 0.03 })])],
+      panflute: ['Pan flute', 'Four airy notes up', () => at(0.15, [HZ.D5, HZ.E5, HZ['F#5'], HZ.A5].map((f, k) => flute(f, k === 3 ? 0.5 : 0.14, { h: [1, 0.08, 0.12], breath: 0.9, vib: 0.002, seed: 20 + k })))],
+      kalimba: ['Kalimba', 'A small tune of four', () => at(0.16, [HZ.D5, HZ['F#5'], HZ.A5, HZ.D6].map(kalimba))],
+      tongue: ['Tongue drum', 'Three deep wooden notes', () => at(0.2, [HZ.D4, HZ['F#4'], HZ.A4].map(tongue))],
+      blocks: ['Temple blocks', 'A run of four up', () => at(0.1, [HZ.D5, HZ.E5, HZ['F#5'], HZ.A5].map(block))],
+      musicbox: ['Music box', 'Four small notes', () => at(0.15, [HZ.A5, HZ.D6, HZ['F#6'], HZ.A6].map(musicbox))],
+      bamboo: ['Bamboo chimes', 'Wooden wind chimes stirred once: no tune, just a breeze', () => bamboo()],
+      duo: ['Ocarina and kannel', 'A held note over a strum', () => phrase([[0, at(0.07, [HZ.D4, HZ.A4, HZ.D5].map((f, k) => pluck(f, 2, 31 + k)))], [0.05, flute(HZ['F#5'], 0.7, { h: [1, 0.04, 0.02], breath: 0.2 }).map((v) => v * 0.6)]])],
+      bird: ['A blackbird', 'Two whistled phrases: spring\'s, maybe a season\'s own', () => bird()],
+    },
+    end: {
+      marimba: ['Marimba', 'Two low notes together (as before)', () => phrase([[0, note(HZ.A3, 0.8)], [0.02, note(HZ.E4, 0.8, 0.7)]])],
+      kannel: ['Kannel', 'Two low strings, let ring', () => at(0.09, [pluck(HZ.D3, 2.4, 41), pluck(HZ.A3, 2.4, 42)])],
+      flute: ['Wooden flute', 'One low note, fading', () => flute(HZ.D4, 0.7, { vib: 0.003 })],
+      tongue: ['Tongue drum', 'One low note', () => tongue(HZ.A3)],
+      kalimba: ['Kalimba', 'Two notes down', () => at(0.2, [kalimba(HZ.A4), kalimba(HZ.D4 * 2)])],
+    },
+  };
+  // A capture due elsewhere: not "no" but "look here", so other than the wrong move's.
+  const tapClick = () => ({ ...TIMBRES.wood, modes: TIMBRES.wood.modes.map(([h, g, d]) => [h * 1.25, g, d * 0.8]), thump: [150, 0.25, 0.01] });
+  MOMENTS.must = {
+    taptap: ['The piece taps twice', 'The piece that must capture knocks twice on its square, lightly: "here"', () => phrase([[0, knock(tapClick(), 81)], [0.11, knock(tapClick(), 82).map((v) => v * 0.8)]])],
+    question: ['A soft question', 'Two tongue-drum notes, up a step: "hm?"', () => at(0.16, [tongue(HZ.D4), tongue(HZ.E4)])],
+    kalimba: ['Kalimba, a nudge', 'One small note, twice', () => at(0.12, [kalimba(HZ.A5), kalimba(HZ.A5).map((v) => v * 0.7)])],
+    flute: ['Flute, "over here"', 'A short note bent up', () => flute(HZ.A5, 0.18, { from: HZ['F#5'], vib: 0 })],
+    wrong: ['As a wrong move', 'The same two low knocks', () => phrase([[0, knock(TIMBRES.felt, 41, 0.7)], [0.14, knock(TIMBRES.felt, 42, 0.66).map((v) => v * 0.6)]])],
+  };
+  // The taken pieces: the clicks (the move's own kind, or a sample), or a pick-up that
+  // counts them, a note per piece, as a game's map gives for what is picked up.
+  MOMENTS.take = {
+    clicks: ['Clicks', 'The taken pieces lifted off: the synthesized clicks, or the sample in &take=', null],
+    collect: ['Collected, one note each', 'A kalimba note per piece taken, up the scale, quick: a child hears how many', (n) => at(0.09, [HZ.D5, HZ.E5, HZ['F#5'], HZ.A5, HZ.B5, HZ.D6, HZ.E6, HZ['F#6']].slice(0, n).map(kalimba))],
+    gather: ['Gathered into the hand', 'The pieces clicked together one by one as they are picked up', (n) => at(0.07, Array.from({ length: n }, (_, k) => knock({ ...tapClick(), thump: [0, 0, 1] }, 90 + k, 1 + 0.03 * k).map((v) => v * (1 - k * 0.08))))],
+    musicbox: ['Music box, one note each', 'Small high notes, one a piece', (n) => at(0.09, [HZ.A5, HZ.B5, HZ.D6, HZ.E6, HZ['F#6'], HZ.A6, HZ.A6, HZ.A6].slice(0, n).map(musicbox))],
+  };
+  const DEFAULT = { crown: 'marimba', win: 'marimba', end: 'marimba', must: 'taptap', take: 'clicks' };
+  const pickOf = (kind) => (MOMENTS[kind][P.get(kind)] ? P.get(kind) : DEFAULT[kind]);
   // A sample from prototypes/samples/samples.js (tools/sound_samples.py): &move=ID.K and
   // &take=ID.K put hit K of Freesound sound ID in place of the knock or the take.
   const SAMPLES = window.SAMPLES || null;
@@ -262,11 +404,14 @@
     BANK.take = [take(phrase([[0, knock(click, 61).map((v) => v * 0.5)], [0.07, knock(click, 62).map((v) => v * 0.35)]]))];
     BANK.select = [take(knock({ ...click, noise: 0.2 }, 31))];
     BANK.wrong = [take(phrase([[0, knock(TIMBRES.felt, 41, 0.7)], [0.14, knock(TIMBRES.felt, 42, 0.66).map((v) => v * 0.6)]]))];
-    BANK.crown = [take(phrase([[0, note(HZ.G4)], [0.11, note(HZ.D5, 0.7)]]))];
+    BANK.crown = [take(even(MOMENTS.crown[pickOf('crown')][2]()))];
     BANK.star = [HZ.D5, HZ['F#5'], HZ.A5].map((f) => take(note(f, 0.5)));
     BANK.solved = [take(phrase([[0, note(HZ.D5, 0.45)], [0.12, note(HZ['F#5'], 0.45)], [0.24, note(HZ.A5, 0.8)]]))];
-    BANK.win = [take(phrase([[0, note(HZ.D4, 0.5)], [0.14, note(HZ.A4, 0.5)], [0.28, note(HZ.D5, 0.7)]]))];
-    BANK.end = [take(phrase([[0, note(HZ.A3, 0.8)], [0.02, note(HZ.E4, 0.8, 0.7)]]))];
+    BANK.win = [take(even(MOMENTS.win[pickOf('win')][2]()))];
+    BANK.end = [take(even(MOMENTS.end[pickOf('end')][2]()))];
+    BANK.must = [take(even(MOMENTS.must[pickOf('must')][2]()))];
+    // A counted take: one per number of pieces taken, 1 to 8.
+    if (pickOf('take') !== 'clicks') BANK.counted = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => take(even(MOMENTS.take[pickOf('take')][2](n))));
     // The clock: one note as it turns gold (under a minute), the same note three times as
     // it turns red (0:20). A4 sits in the chimes' pentatonic scale.
     BANK.gold = [take(note(HZ.A4, 0.4))];
@@ -280,7 +425,7 @@
     if (k.length) BANK.take = k.map((h) => ({ ...h, pitch: 1 }));
   }
   // Each sound's level against the move's: the moments well under the moves.
-  const GAIN = { move: 0.9, jump: 0.9, take: 0.5, select: 0.25, wrong: 0.4, crown: 0.06, star: 0.06, solved: 0.06, win: 0.045, end: 0.045, gold: 0.07, red: 0.07, sample: 0.9 };
+  const GAIN = { move: 0.9, jump: 0.9, take: 0.5, select: 0.25, wrong: 0.4, crown: 0.12, star: 0.06, solved: 0.06, win: 0.1, end: 0.1, moment: 0.1, must: 0.12, counted: 0.1, gold: 0.07, red: 0.07, sample: 0.9 };
   // The slider's level to a gain: -36 dB at its foot to 0 dB at the top, as the ear hears
   // loudness; a linear gain would put all the change in the slider's first fifth.
   const gainOf = (v) => (v <= 0 ? 0 : Math.pow(10, (v - 1) * 36 / 20));
@@ -473,8 +618,8 @@
     draw(); say(from ? 'Your move: white' : 'White to move: d4 must capture');
   }
   function wrong(q, why) {
-    play('wrong');
     const caps = legal(G.pos, 'w').filter((m) => m.taken.length);
+    play(caps.length && !G.step ? 'must' : 'wrong');
     G.error = q; G.forced = caps.length && !G.step ? [...new Set(caps.map((m) => m.path[0]))] : [];
     draw(); say(why);
     setTimeout(() => { G.error = null; draw(); }, 700);
@@ -488,7 +633,10 @@
     Object.assign(G, { sel: null, at: null, step: 0, cands: [], forced: [], last: [m.path[0], to] });
     draw();
     const next = c === 'w' ? 'b' : 'w', over = !legal(G.pos, next).length;
-    play(over ? (c === 'w' ? 'win' : 'end') : m.crown ? 'crown' : m.taken.length ? 'take' : 'move');
+    if (over) play(c === 'w' ? 'win' : 'end');
+    else if (m.crown) play('crown');
+    else if (m.taken.length) { if (BANK.counted) play('counted', m.taken.length - 1); else play('take'); }
+    else play('move');
     if (over) {
       G.over = true;
       say(c === 'w' ? 'You won: the soft close. "From the start" plays again' : 'The computer won: the plain close');
@@ -563,6 +711,18 @@
     ['gold', 'yes', 'The clock turns gold', 'One soft note as your clock goes under a minute.'],
     ['red', 'yes', 'The clock turns red', 'The same note three times as it reaches 0:20. Nothing after: a tick a second only makes a player more anxious.'],
   ];
+  // The moments' takes: each playable, and one tap to use it in the game.
+  function momentsView() {
+    const TITLE = { take: 'The taken pieces (plays three here)', must: 'A capture is due', crown: 'Crowned', win: 'A game won', end: 'A game lost or drawn' };
+    return `<div class="sounds glass"><p class="chosen">Each is matched in loudness and plays at the volume set (or half). ` +
+      `"Use" puts it in the game beside: play to the end or crown a man to hear it in place.</p>` +
+      ['take', 'must', 'crown', 'win', 'end'].map((kind) => `<h2>${TITLE[kind]}</h2>` + Object.entries(MOMENTS[kind]).map(([key, [title, what, make]]) =>
+        `<div class="row">${make ? `<button class="play" data-kind="${kind}" data-key="${key}">${playIcon}</button>` : '<span></span>'}` +
+        `<div><b>${title}</b><p>${what}</p></div>` +
+        (pickOf(kind) === key ? '<span class="tag yes">In use</span>' : `<a class="tag try" href="${link({ [kind]: key === DEFAULT[kind] ? null : key })}">Use</a>`) +
+        `</div>`).join('')).join('') + '</div>';
+  }
+  const momentCache = {};
   function soundsView() {
     const tag = { yes: 'Yes', try: 'To try', no: 'No' };
     return `<div class="sounds glass"><h2>The sounds, ${timbre}</h2>` + SOUNDS.map(([name, verdict, title, when, n]) =>
@@ -623,9 +783,19 @@
       `<a class="pill${view === 'preview' ? ' on' : ''}" href="${link({ view: null })}">Preview</a>` +
       `<a class="pill${view === 'sounds' ? ' on' : ''}" href="${link({ view: 'sounds' })}">Sounds</a>` +
       `<a class="pill${view === 'samples' ? ' on' : ''}" href="${link({ view: 'samples' })}">Samples</a>` +
+      `<a class="pill${view === 'moments' ? ' on' : ''}" href="${link({ view: 'moments' })}">Moments</a>` +
       ['felt', 'wood', 'stone'].map((t) => `<a class="pill${timbre === t ? ' on' : ''}" href="${link({ timbre: t === 'felt' ? null : t })}">${t[0].toUpperCase() + t.slice(1)}</a>`).join('') +
       `</div>`;
-    if (view === 'samples') {
+    if (view === 'moments') {
+      stage.innerHTML = `<div class="demo" style="width:100%;height:100%;grid-template-rows:auto minmax(0,1fr);padding-top:16px">${switcher}${momentsView()}</div>`;
+      stage.querySelectorAll('.play').forEach((b) => b.addEventListener('click', () => {
+        audioOn();
+        const id = `${b.dataset.kind}.${b.dataset.key}`;
+        momentCache[id] = momentCache[id] || even(MOMENTS[b.dataset.kind][b.dataset.key][2](3));
+        const v = state.muted || state.level === 0 ? 0.5 : state.level;
+        start(take(momentCache[id]), gainOf(v) * GAIN.moment);
+      }));
+    } else if (view === 'samples') {
       stage.innerHTML = `<div class="demo" style="width:100%;height:100%;grid-template-rows:auto minmax(0,1fr);padding-top:16px">${switcher}${samplesView()}</div>`;
       const last = {};
       stage.querySelectorAll('.src').forEach((row) => {

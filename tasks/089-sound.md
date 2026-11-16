@@ -29,6 +29,7 @@ that.
 | A puzzle solved | Three rising notes, or one per star as each pops in | Yes. Which version to pick is open |
 | A game's end | A win: a soft rising arpeggio. A loss or a draw: a plain, warm close | Yes. A loss never sounds sad or punishing; a four-year-old losing to Medium should hear an ending, not a judgment |
 | A wrong move | Two low soft knocks as the piece slides back | Yes (2026-11-16). Never a buzzer |
+| A capture due elsewhere | A piece or square chosen while another piece must capture: its own sound, "look here" rather than "no" (the piece taps twice, a soft question, a nudge) | Yes, other than the wrong move's (2026-11-16); which, to choose |
 | A piece picked up | A faint tick | No. It is the sound of your own tap |
 | Buttons, menus, tiles, scrolling | | No. UI clicks are the plainest bling, and a phone's own taps already make them where the user wants them |
 | The hint, the lookout | | No. Help stays quiet; a sound would make it feel like a reward |
@@ -72,6 +73,29 @@ On a phone it follows the media volume and, on iOS, the silent switch (the ambie
 session category, which also keeps the player's own music playing). The level belongs to
 the device, not the player, so it goes in the device's settings rather than a player's
 file.
+
+## The moments' takes
+
+The first win and crowning (marimba) were too much, and something else was wanted,
+perhaps a flute or another wooden instrument (2026-11-16). The Moments view
+(`&view=moments`) plays takes on each, synthesized, all on D major's pentatonic scale,
+and puts any one in the game (`&crown=`, `&win=`, `&end=`, `&must=`, `&take=`):
+
+- Crowned: a piece clicked onto a piece (crowning by hand, the board's own sound), a
+  kannel's two plucks, kalimba, a flute's slur up, an ocarina's cuckoo, temple blocks,
+  a tongue drum, a music box.
+- Won: a kannel strummed or plucked slowly (Estonia's instrument, Karplus-Strong), a
+  wooden flute's three notes, a recorder's ta-da, a pan flute, kalimba, a tongue drum,
+  temple blocks, a music box, bamboo chimes stirred once, ocarina over a kannel, a
+  blackbird (and perhaps each season its own: spring's blackbird, winter's...).
+- Lost or drawn: the kannel's low strings, a flute's low note, a tongue drum, kalimba.
+- The taken pieces: the clicks, or a pick-up that counts them, one note a piece
+  (kalimba or music box) or the pieces gathered into the hand one click each. Heroes
+  of Might and Magic II and III, calm games otherwise, gave picking things up on the map
+  a lot of sound (2026-11-16): taking pieces is this game's picking up, and counting
+  them tells a child how many.
+- Music: those games' calm soundtracks are a reference if music ever comes, off by
+  default with a slider of its own. Not in this task.
 
 ## Where the sounds come from
 
