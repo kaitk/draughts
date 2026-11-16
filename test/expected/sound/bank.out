@@ -1,8 +1,8 @@
-sounds 19: 6 moves, 4 takes
-in the mixer 1503 KB
+sounds 20: 6 moves, 4 takes
+in the mixer 1408 KB
 move: ok, 111 ms
 take: ok, 102 ms
-crown: ok, 1600 ms
+crown: ok, 378 ms
 wrong: ok, 208 ms
 must: ok, 208 ms
 gold: ok, 1459 ms
@@ -11,6 +11,7 @@ solved: ok, 2517 ms
 won: ok, 2369 ms
 lost: ok, 2962 ms
 drawn: ok, 2400 ms
+crown (computer): ok, 210 ms
 a stop four steps up plays: true
 a move's hits and a take's their own: true, one twice running: false
 at zero: open false, sounds 0

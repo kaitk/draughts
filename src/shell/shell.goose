@@ -484,7 +484,14 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: b
 // settings say nothing heard), and keeps one sound a move.
 fn gather_sound_events(sh: Shell&, out: Frame&) {
     out.sound_events.clear();
-    for c in sh.game.b.sound_events { sound_event::add(out.sound_events, c.kind, c.step); }
+    // The computer's man crowned has a sound of its own: the side that moved, the one not
+    // to move now, is the computer's.
+    let gb .= sh.game.b;
+    let computer_moved = sh.game.computer >= 0 && 1 - gb.pos.side == sh.game.computer;
+    for c in gb.sound_events {
+        let kind = if c.kind == sound_event::CROWN && computer_moved { sound_event::CROWN_COMPUTER } else { c.kind };
+        sound_event::add(out.sound_events, kind, c.step);
+    }
     for c in sh.puzzle.b.sound_events { sound_event::add(out.sound_events, c.kind, c.step); }
     for c in sh.lesson.b.sound_events { sound_event::add(out.sound_events, c.kind, c.step); }
     if sh.prefs.play_sample { sound_event::add(out.sound_events, sound_event::MOVE); }

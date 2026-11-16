@@ -19,7 +19,7 @@ let SR = 24000.0;
 // What can be played (play's `kind`).
 let MOVE = 0;               // a piece set down; play's `step`, a capture's stop, a whole tone up each
 let TAKE = 1;               // the taken pieces, once a capture
-let CROWN = 2;              // a kannel's two plucks up a fifth
+let CROWN = 2;              // two temple blocks up a fourth: the player's man, or a friend's, crowned
 let WRONG = 3;              // two low soft knocks, the second lower
 let MUST = 4;               // the same knocks, the second up: a capture due elsewhere
 let GOLD = 5;               // one mallet note: a clock under a minute
@@ -28,7 +28,8 @@ let SOLVED = 7;             // three mallet notes up, low: D4, F sharp, A
 let WON = 8;                // three notes up, lower and slower
 let LOST = 9;               // two low notes together: a close, never a sad one
 let DRAWN = 10;             // the kannel's two low strings
-let KINDS = 11;
+let CROWN_COMPUTER = 11;    // two low level knocks: the computer's man crowned
+let KINDS = 12;
 
 // Each sound's gain against the move's, as the prototype's set played them: the moments
 // well under the move, so the sound heard most is the loudest.
@@ -58,7 +59,6 @@ let FS4 = 370.0;            // F sharp
 let D4 = 293.7;
 let A4 = 440.0;
 let D5 = 587.3;
-let E5 = 659.3;
 
 let MOST_SOUNDS = 32;
 struct Bank {
@@ -137,14 +137,14 @@ fn build(bk: Bank&) {
 fn moment(kind: i64) -> f32[>..] {
     var x: f32[>..] = [];
     if kind == CROWN {
-        let a = pluck(A4);
+        let a = temple_block(A4);
         add(x, 0.0, a);
-        let b = pluck(E5);
-        add(x, 0.12, b);
+        let b = temple_block(D5);
+        add(x, 0.11, b);
         even(x);
         scale(x, CROWN_GAIN);
-    } else if kind == WRONG || kind == MUST {
-        x = knocks(if kind == WRONG { 0.66 } else { 0.84 });
+    } else if kind == WRONG || kind == MUST || kind == CROWN_COMPUTER {
+        x = if kind == CROWN_COMPUTER { knocks(0.6, 0.6) } else { knocks(if kind == WRONG { 0.66 } else { 0.84 }) };
         scale(x, KNOCKS_GAIN);
     } else {
         if kind == GOLD { x = note(A4, 0.4); }

@@ -20,7 +20,8 @@ let SOLVED = 8;             // a puzzle's last move
 let WON = 9;                // a game won: the child's against the computer, either side's against a friend
 let LOST = 10;              // a game lost to the computer
 let DRAWN = 11;
-let KINDS = 12;
+let CROWN_COMPUTER = 12;    // the computer's man crowned (the shell's, from a CROWN on the game's board)
+let KINDS = 13;
 
 struct Event {
     kind: i64 = NONE,
@@ -47,7 +48,7 @@ fn landing(captured: bool, crowned: bool) -> i64 {
 // move's end (a stop, a wrong move, a capture due, a clock), which is always kept.
 fn rank(kind: i64) -> i64 {
     if kind == SOLVED || kind == WON || kind == LOST || kind == DRAWN { return 4; }
-    if kind == CROWN { return 3; }
+    if kind == CROWN || kind == CROWN_COMPUTER { return 3; }
     if kind == TAKE { return 2; }
     return if kind == MOVE { 1 } else { 0 };
 }

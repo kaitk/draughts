@@ -66,6 +66,16 @@ The decisions behind the app's sounds, dated, with their reasons. How they work 
   crowning and a first win that were too much, and the prototype's other takes
   (flute, ocarina, kalimba, tongue drum, temple blocks, music box, a small orchestra,
   a blackbird).
+- The crowning two temple blocks up a fourth, and the computer's crowning two low level
+  felt knocks (2026-11-16), replacing the kannel's two plucks for both: the kannel rang
+  for 1.6 s and grated, and the same sound for the computer's king cheered for the
+  opponent. The computer's is muted and a little bad, in the family of the wrong move's
+  and the capture due's knocks but its own. Chosen from the takes in
+  `prototypes/sound-crown.html` (kept local, out of git): rejected for the player's a
+  lower, shorter kannel, a piece set on a piece (two move hits), the same with a note,
+  two mallet notes, and a harp pluck; for the computer's, the player's sound, knocks
+  falling, a muffled piece set on a piece, two low notes down, a dull string, and one
+  low block.
 - The sound prototypes removed once the app had the sounds (2026-11-16):
   `prototypes/sound.html` (every candidate playable in a game against a random computer),
   `sound-set.html` (the set and the moments' takes), `sound-codec.html` (the hits as PCM

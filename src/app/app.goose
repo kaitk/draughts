@@ -56,7 +56,7 @@ struct Loop {
 
 // The sound each sound event plays (board/sound_event.goose): a capture's stop is the move a step up.
 let SOUND_OF = [sound::MOVE, sound::MOVE, sound::TAKE, sound::CROWN, sound::WRONG, sound::MUST, sound::GOLD, sound::RED,
-                sound::SOLVED, sound::WON, sound::LOST, sound::DRAWN];
+                sound::SOLVED, sound::WON, sound::LOST, sound::DRAWN, sound::CROWN_COMPUTER];
 
 // The sounds (docs/architecture/sound.md): the volume followed, the device opened and the
 // sounds built once it is above zero and closed at zero, then this frame's sound events played.

@@ -36,7 +36,8 @@ volume was just set (`Settings.play_sample`), clears every board's list (the pre
 home's, and the replay's too, which play nothing), and keeps one sound a move
 (`sound_event::one_per_move`): of the events that end a move, the most important stays
 (the end, then a crowning, then the taken pieces, then the piece set down). Stops, wrong
-moves, and the clock always stay.
+moves, and the clock always stay. A `CROWN` on the game's board for a move the computer
+made becomes `CROWN_COMPUTER`.
 
 ## The bank
 
@@ -54,7 +55,8 @@ volume is one gain for all:
 | --- | --- | --- |
 | `MOVE` | One of six recorded hits at random, never the same twice running; a capture's stop a whole tone up a step (the mixer's pitch) | about 110 ms |
 | `TAKE` | One of four recorded hits, the same way | about 100 ms |
-| `CROWN` | A kannel's two plucks up a fifth (`pluck`, Karplus-Strong) | 1.6 s |
+| `CROWN` | Two temple blocks up a fourth (A4, D5; `temple_block`, three decaying partials): the player's man, or a friend's | 0.4 s |
+| `CROWN_COMPUTER` | Two low felt knocks, level (the knocks of `WRONG` at 0.6 of their pitch, both) | 0.2 s |
 | `WRONG`, `MUST` | Two low felt knocks (`knock`, modal), the second lower, or higher for `MUST` | 0.2 s |
 | `GOLD`, `RED` | A mallet note (`note`), and the same as ri-tai, short then long (`ritai`) | 1.5 s |
 | `SOLVED` | Three mallet notes up, low (D4, F sharp, A), 3 dB under the other moments | 2.5 s |

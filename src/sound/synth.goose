@@ -109,11 +109,12 @@ fn knock(seed: u32, pitch: f64) -> f32[>..] {
     return x;
 }
 
-// Two low soft knocks, the second at `second` of the knock's pitch and quieter: a wrong
-// move (lower), or a capture due elsewhere (pitched up, a warning but another one).
-fn knocks(second: f64) -> f32[>..] {
+// Two low soft knocks, the first at `first` of the knock's pitch, the second at `second`
+// and quieter: a wrong move (0.7 then lower), a capture due elsewhere (0.7 then pitched
+// up, a warning but another one), or the computer's man crowned (both low and level).
+fn knocks(second: f64, first: f64 = 0.7) -> f32[>..] {
     var x: f32[>..] = [];
-    let a = knock(41, 0.7);
+    let a = knock(41, first);
     add(x, 0.0, a);
     let b = knock(42, second);
     add(x, 0.14, b, 0.6);
@@ -132,6 +133,24 @@ fn note(f: f64, decay: f64, gain: f64 = 1.0) -> f32[>..] {
         x[i] = (gain * min(1.0, t / 0.012) * v) as f32;
     }
     lowpass(x, 1800.0);
+    return x;
+}
+
+// A temple block: a hollow wooden knock with a pitch, three partials of a struck block
+// (1, 2.48, 4.1) decaying within a tenth of a second, a 0.8 ms rise, and a low-pass.
+let BLOCK_RATIO = [1.0, 2.48, 4.1];
+let BLOCK_GAIN = [1.0, 0.3, 0.08];
+let BLOCK_DECAY = [0.07, 0.03, 0.015];
+fn temple_block(f: f64) -> f32[>..] {
+    var x: f32[>..] = [];
+    x.resize(frames(0.4), 0.0);
+    for i in x.len {
+        let t = i / SR;
+        var v = 0.0;
+        for k in 3 { v += BLOCK_GAIN[k] * sin(TAU * f * BLOCK_RATIO[k] * t) * exp(-t / BLOCK_DECAY[k]); }
+        x[i] = (min(1.0, t / 0.0008) * v) as f32;
+    }
+    lowpass(x, 3200.0);
     return x;
 }
 

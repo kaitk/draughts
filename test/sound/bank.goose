@@ -7,8 +7,8 @@ import math;
 import audio;
 import sound from "../../src/sound";
 
-let NAMES = ["move", "take", "crown", "wrong", "must", "gold", "red", "solved", "won", "lost", "drawn"];
-let MOST = [0.15, 0.15, 3.5, 0.5, 0.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5];
+let NAMES = ["move", "take", "crown", "wrong", "must", "gold", "red", "solved", "won", "lost", "drawn", "crown (computer)"];
+let MOST = [0.15, 0.15, 3.5, 0.5, 0.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 0.5];
 
 fn main() {
     var bk = sound::Bank {};
