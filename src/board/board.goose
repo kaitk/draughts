@@ -11,6 +11,7 @@ import model3d from "../model3d";
 import .view3d;
 import .rig;
 import .panel;
+import .heard;
 
 let MAX_PIECES = 48;        // 40 pieces on 10×10, the moving one, and margin
 let HOP = 0.2;              // seconds per square of a quiet move, per stop of a capture
@@ -190,6 +191,14 @@ struct Board {
     marks:  Marks,
     flash:  float4,             // x: the wrong move's square (y * size + x) or -1; y: its flash, 0..1; z: marks.next's dots, 0..1; w: the keys' cursor's square + 1, or 0
     dim:    f32,                // the board dimmed by, 0..1, under a win
+    // What happened that is heard (heard.goose), said as the animation gets there, for the
+    // shell to take each frame; the hops of the move shown already said; a cue its last
+    // landing says in its place (a puzzle's solve), or heard::NONE; and the stop a hand's
+    // hop lands on, as the stops before it.
+    heard:    heard::Cues = [],
+    sounded:  i64         = 0,
+    finale:   i64         = heard::NONE,
+    hop_step: i64         = 0,
 }
 
 fn new(variant: u8) -> Board {
@@ -295,6 +304,7 @@ fn slide_back(b: Board&, m: rules::Move, now: f64, mistake: bool = true) -> bool
     b.dropped = false;
     b.skip = 0;
     guard mistake else { return true; }
+    heard::say(b.heard, heard::WRONG);
     b.wrong = m.to;
     b.wrong_at = now;
     b.ghost = true;
@@ -469,14 +479,19 @@ fn start_move(b: Board&, i: i64, now: f64) {
     // Only release sets it: a move played by code must not start from the last drop.
     b.dropped = false;
     b.skip = 0;
+    b.sounded = 0;
+    b.finale = heard::NONE;
 }
 
 // Plays move i, the selected piece's, chosen by a tap or a drop. Made by hand, it is
 // shown from the stop the piece waits on: the hops before it are already behind it.
 fn play_chosen(b: Board&, i: i64, now: f64) {
     let skip = if waiting(b) >= 0 { b.steps.len } else { 0 };
+    // The last stop tapped before the hop to the one before it landed: that stop lands now.
+    if b.hop_at >= 0.0 && waiting(b) == b.hop_to { heard::say(b.heard, heard::STOP, b.hop_step); }
     start_move(b, i, now);
     b.skip = skip;
+    b.sounded = skip;
     b.since = now - skip * HOP;
 }
 
@@ -510,6 +525,7 @@ fn abandon(b: Board&, now: f64) -> bool {
     b.skip = 0;
     b.wrong = at;
     b.wrong_at = now;
+    heard::say(b.heard, heard::WRONG);
     b.ghost = true;
     b.ghost_of = float2 { b.pos.side, if king { 1.0 } else { 0.0 } };
     b.selected = -1;
@@ -589,6 +605,9 @@ fn taken_alpha(v: rules::Variant&, mv: rules::Way&, m: u64, t: f64) -> f32 {
 // right. A puzzle shows neither and forgets the stops.
 fn missed(b: Board&, sq: i64, now: f64) {
     let made = b.steps;
+    // Before the first stop, a square no capture goes to says another piece must capture
+    // (MUST); partway through one, it is a wrong stop.
+    heard::say(b.heard, if must_capture(b) && made.len == 0 { heard::MUST } else { heard::WRONG });
     mistake(b, sq, now);
     guard !b.by_hand && must_capture(b) else { return; }
     b.steps = made;
@@ -611,6 +630,9 @@ fn kept(b: Board&, before: i64, now: f64) {
 // A tap kept a stop (`kept`): the piece hops there from the square before it.
 fn hop(b: Board&, before: i64, now: f64) {
     guard b.steps.len > before else { return; }
+    // A hop still on its way when the next is tapped lands now, heard.
+    if b.hop_at >= 0.0 { heard::say(b.heard, heard::STOP, b.hop_step); }
+    b.hop_step = b.steps.len - 1;
     b.hop_from = if b.steps.len > 1 { b.steps[b.steps.len - 2] } else { b.selected };
     b.hop_to = b.steps[b.steps.len - 1];
     b.hop_at = now;
@@ -695,6 +717,7 @@ fn press(b: Board&, l: Layout, p: float2, now: f64) {
             return;
         }
         if must_capture(b) {
+            heard::say(b.heard, heard::MUST);
             if rules::can_take_from(b.pos, sq) { outnumbered(b, sq, now); } else { mistake(b, sq, now); }
         }
     }
@@ -741,6 +764,8 @@ fn release(b: Board&, l: Layout, p: float2, now: f64) {
         b.drop = p;
         b.dropped = true;
     } else if on_way {
+        // Dropped on a stop, the piece is there at once: its stop is heard now.
+        if b.steps.len > before { heard::say(b.heard, heard::STOP, b.steps.len - 1); }
         kept(b, before, now);
     } else if empty(b, sq) && !passes(b, sq) {
         missed(b, sq, now);
@@ -876,6 +901,7 @@ fn next_shown(b: Board&) -> bool {
 // when something ended, so the frame after an animation is drawn too.
 fn update(b: Board&, now: f64) -> bool {
     var ended = false;
+    hear(b, now);
     if b.moving && now - b.since >= duration(b.move) {
         b.moving = false;
         b.back = false;
@@ -894,6 +920,7 @@ fn update(b: Board&, now: f64) -> bool {
         ended = true;
     }
     if b.hop_at >= 0.0 && now >= b.hop_at + HOP {
+        if waiting(b) == b.hop_to { heard::say(b.heard, heard::STOP, b.hop_step); }
         b.hop_at = -1.0;
         ended = true;
     }
@@ -909,6 +936,21 @@ fn update(b: Board&, now: f64) -> bool {
         ended = true;
     }
     return ended;
+}
+
+// Says what the move shown has reached by `now`: each hop landed, a stop before the last
+// (heard::STOP, a whole tone up each) or the last landing (heard::landing, or the finale in
+// its place). A move sliding back says nothing: its mistake was said as it began.
+fn hear(b: Board&, now: f64) {
+    guard b.moving && !b.back else { return; }
+    let n = hops(b.move);
+    let reached = clamp(floor((now - b.since) / HOP + 1.0e-6) as i64, 0, n);
+    while b.sounded < reached {
+        b.sounded++;
+        if b.sounded < n { heard::say(b.heard, heard::STOP, b.sounded - 1); }
+        else if b.finale != heard::NONE { heard::say(b.heard, b.finale); }
+        else { heard::say(b.heard, heard::landing(b.move.captured != 0, b.move.crowned)); }
+    }
 }
 
 // Smoothstep, t in 0..1.

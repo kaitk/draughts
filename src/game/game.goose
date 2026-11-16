@@ -68,7 +68,7 @@ struct Game {
     answered: bool        = false,                  // whether its answer has come
     wait:     f64         = 0.0,                    // seconds from its turn to its move, once answered
     reply:    rules::Move = rules::Move { .. },
-    counted: bool = false,                          // the end was given to the shell (Event.ended)
+    counted:  bool        = false,                  // the end was given to the shell (Event.ended)
     // On the 3D board, a held piece's place against the finger on its plane, and the
     // camera its buttons move.
     grab: float2   = float2 { 0.0, 0.0 },
@@ -107,7 +107,7 @@ struct Game {
     moves_seen:  i64             = -1,  // the moves the panel's list was last scrolled to the foot for
     judging:     i64             = 0,
     judge_ply:   i64             = 0,
-    kept: bool = false,     // the end was given to the shell (Event.over)
+    kept:        bool            = false, // the end was given to the shell (Event.over)
     // The moves' sheet (sheet.goose): open or not; the note whose mark's tip shows, or -1,
     // and whether under the mouse; the marked move a touch went down on, or -1, and whether
     // the tip then took that press; the marked moves as the panel last showed them.
@@ -122,6 +122,8 @@ struct Game {
     // move numbers go on from, and that it counts for nothing.
     ply0:     i64  = 0,
     no_count: bool = false,
+    // The clocks' warnings heard so far (heard::chime), once a side a game.
+    chimes: heard::Chimes = heard::Chimes {},
 }
 
 // The pieces of each color taken so far: the start's pieces less those on the board. A
@@ -182,6 +184,7 @@ fn new(variant: u8) -> Game {
 fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i64, number: i64) {
     board::reset(gm.b, variant);
     gm.clock = clock::new(kind);
+    gm.chimes = heard::Chimes {};
     gm.computer = computer;
     gm.level = level;
     gm.skill = skill;
@@ -223,6 +226,7 @@ fn new_hints(gm: Game&) {
 fn restart(gm: Game&, now: f64 = 0.0) {
     board::restart(gm.b);
     gm.clock = clock::new(gm.clock.kind);
+    gm.chimes = heard::Chimes {};
     gm.turn = gm.b.pos.side;
     gm.won_at = -1.0;
     gm.drawn_at = -1.0;
@@ -516,6 +520,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         gm.drawn_at = now;
         gm.drawn_still = false;
         changed = true;
+        heard::say(b.heard, heard::DRAWN);
         if !gm.kept {
             gm.kept = true;
             ev.over = true;
@@ -533,6 +538,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         gm.won_at = now;
         aim(gm, won);
         changed = true;
+        heard::say(b.heard, if gm.computer >= 0 && won == gm.computer { heard::LOST } else { heard::WON });
         if !gm.kept {
             gm.kept = true;
             ev.over = true;
@@ -603,6 +609,11 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     // The computer's pieces show no count of what they must take: the child can't move them.
     b.quiet = gm.computer >= 0 && b.pos.side == gm.computer;
     if b.moves.len == 0 || drawn(gm) != rules::NO_DRAW { clock::stop(gm.clock); }
+    // A person's clock heard as it turns gold and as it turns red, once each a game.
+    for side in 2 {
+        heard::say(b.heard, heard::chime(gm.chimes, side, clock::warn(gm.clock, side), clock::low(gm.clock, side),
+                                         gm.computer != side));
+    }
     // A running clock draws once a second, when the time it shows changes.
     let shown = if gm.clock.running >= 0 { clock::shown(gm.clock, gm.clock.running) } else { -1 };
     if shown != gm.shown {

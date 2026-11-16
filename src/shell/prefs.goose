@@ -138,6 +138,9 @@ struct Settings {
     daily_count:   i64                                            = puzzles::DAILY_DEFAULT,
     // Whether settings' language list is open (settings::head). Not in the file.
     languages_open: bool = false,
+    // A change of the volume to be heard: the shell plays a move at the new level. Not in
+    // the file.
+    sounded: bool = false,
 }
 
 // How the flat board draws kings: auto is a crown there.

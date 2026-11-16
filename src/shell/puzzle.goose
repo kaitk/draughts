@@ -177,6 +177,8 @@ fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) -> bool {
         let what = puzzles::judge(pl.s, b.before, puzzles::short(m), pl.left);
         pl.at = b.since + board::duration(b.move);
         if what == puzzles::SOLVED {
+            // Its landing is heard as the puzzle solved, in place of the piece set down.
+            b.finale = heard::SOLVED;
             pl.won = stars(pl);
             pl.state = SOLVED;
             return true;

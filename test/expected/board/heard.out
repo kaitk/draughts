@@ -1,0 +1,38 @@
+A capture of three played by code, a frame every 50 ms:
+  heard at 200 ms: stop 0
+  heard at 400 ms: stop 1
+  heard at 600 ms: take
+The same tapped stop by stop:
+  heard at 350 ms: stop 0
+  tap 8 at 450 ms: stop 1
+  heard at 650 ms: take
+A drag dropped on a stop:
+  dropped on 33 at 100 ms: stop 0
+Wrong squares while a capture is due:
+  tap 46 at 0 ms: must
+  tap 41 at 200 ms: must
+  heard at 2200 ms: stop 0
+  tap 50 at 2300 ms: wrong
+A quiet move, a man crowned, a puzzle's last move:
+  heard at 300 ms: move
+  heard at 300 ms: crown
+  heard at 300 ms: solved
+One sound a move:
+  move -> move
+  stop 0, take, won -> stop 0, won
+  take, crown -> crown
+  crown, drawn -> drawn
+  move, lost -> lost
+  wrong, move, gold -> wrong, move, gold
+  must -> must
+The clocks:
+  side 1: nothing
+  side 1, under a minute: gold
+  side 1, under a minute: nothing
+  side 1: nothing
+  side 1, under a minute: nothing
+  side 1, under a minute, at 0:20: red
+  side 1, under a minute, at 0:20: nothing
+  side 0, under a minute, at 0:20: red
+  the computer's clock under a minute: nothing
+  straight to 0:20: red, then under a minute: nothing
