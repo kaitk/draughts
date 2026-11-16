@@ -390,6 +390,9 @@ play; a stack's rings go round its foot (2026-11-08).
   Auto, Wood, Stone, or Carved (`looks::of`), kept as the player's `material`. Rejected:
   a material per season, which matters only to a child liking one season's stone and
   another's wood.
+- The twelve looks as built stand (the user, 2026-11-16), summer's stone given veins and
+  cracks of its own, tuned in the 3D prototype's panel. Set aside: task 041's temple take,
+  the amber reading as an inlay, and the carved motifs' size against the images'.
 - Settings' board pictures are shots baked into one 640 × 420 atlas in git
   (`scripts/board_thumbs.py`, 117 KB as ASTC). Rejected: drawing them at run time (every
   look baked), a second texture (another binding in the UI's shader).

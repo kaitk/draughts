@@ -580,10 +580,11 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   | Autumn | wood | maple and walnut in cherry | sandstone and porphyry | rust vines in weathered stone |
   | Winter | stone | limed ash and smoked oak | slate in black marble | a Nordic band in smoked oak |
   | Spring | carved | birch | ivory and jade, veined | the elven stone |
-  | Summer | wood | the sunset wood | amber granite | amber signs in granite |
+  | Summer | wood | the sunset wood | amber granite, veined and cracked | amber signs in granite |
 
   `--autumn N`, `--winter N`, `--spring N`, `--summer N`, `--wood N`, and `--marble N`
-  pick a look or model over the material, for tuning.
+  pick a look or model over the material, for tuning. A plain stone's hairline cracks and
+  veins are laid out by its own seed (`looks::Carving.scale`), so no two share them.
 - **Wood and stone are baked** once into 2048² maps with mips (`shaders::BAKE_FRAG`) when
   getting ready and on a theme change, never per frame; on a phone's screen (`gui::phone`,
   a window as narrow too) into 1024² maps, each texel the average of the 2 × 2 the full

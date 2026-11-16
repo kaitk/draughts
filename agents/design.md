@@ -63,6 +63,14 @@ pieces; the design boards still set the layout, glass, and controls.
   2.5 units in its top ellipse and 3 in its side, or it fills in. ChatGPT is useful for
   ideas but places things loosely; the 3D prototype's `--jump` gave a real pose to draw
   from (`poc/3d/board3d.goose`, in the history before 2026-11-14).
+- Tuning a 3D look with sliders: the 3D prototype's panel (P, V or Print prints the
+  values) no longer builds against `src/render3d/`, so run it from the tree it last built
+  in: `git archive 29ae796^ | tar -x -C <scratch>`, link `third_party/goose_gfx`,
+  `third_party/smaa`, and `build/goose-v2026.4-macos-arm64` into it, copy the look's
+  current lines from `src/model3d/looks.goose` and the shader's in, then from its
+  `poc/3d` `goose build -o board3d board3d.goose` and `board3d --theme summer --summer 6
+  --panel` (the flags in its header). Its renderer is the older one, so carry back the
+  printed values, not its shots (2026-11-16, summer's stone).
 
 ## What has been tried and set aside
 

@@ -976,8 +976,11 @@ let BAKE_FRAG = """
         if (s < 0.5) {
             // Stone: a soft clouding and a few thin, faint veins, the roughness lowest in
             // the clear stone between them; veins lighter in dark stone, darker in pale.
-            float cloud = fbm(q * 0.55 + 4.7);
-            float r = abs(fbm(q * vec2(0.35, 0.5) + vec2(fbm(q * 0.8) * 1.4, 0.0)) - 0.5);
+            // A plain stone's own figure: its seed (looks::Carving.scale, 1 for the first)
+            // moves the field, so two stones don't share their veins.
+            vec2 qs = q + (carve_more.x > 2.5 ? (carve.y - 1.0) * vec2(17.3, 9.1) : vec2(0.0));
+            float cloud = fbm(qs * 0.55 + 4.7);
+            float r = abs(fbm(qs * vec2(0.35, 0.5) + vec2(fbm(qs * 0.8) * 1.4, 0.0)) - 0.5);
             float vein = 1.0 - smoothstep(0.0, 0.02, r);
             float pale = dot(base.rgb, vec3(0.33)) > 0.5 ? -1.0 : 1.0;
             w.albedo *= (1.0 + stone.y * (cloud - 0.5) * 2.0) * (1.0 + pale * stone.x * vein);
@@ -1510,8 +1513,8 @@ let BAKE_FRAG = """
         float motif = carve_more.x;
         if (motif > 2.5) {
             // 3: no motif, a plain stone weathered: its cracks, moss gathering in and
-            // along them.
-            vec2 c = cracks(q, 7.3 * band + 1.0);
+            // along them, laid out by its seed (carve.y, looks::Carving.scale).
+            vec2 c = cracks(q, 7.3 * band + carve.y);
             r.hollow = 0.6 * c.x;
             r.h = -carve.x * c.x;
             r.foot = 0.7 * c.y;
