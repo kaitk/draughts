@@ -741,6 +741,11 @@ fork). The release's own gfx presents every frame. The patched `frame()`:
 On Android `DraughtsActivity` keeps SDL's Java from listening to the accelerometer, which
 would wake the app 52 times a second ([findings](../goose-findings.md)).
 
+SDL keeps the screen on while the window is open. After 15 minutes with no touch, key,
+or computer move, `host::keep_screen` hands the screen back to the system's own timeout,
+which dims and locks it. The next touch keeps it on again. The idle loop's wake-up once
+a second is all the check needs.
+
 At rest over 25 s (`--rest 25`):
 
 | Where | Process CPU | `frame()` returns, draws |

@@ -257,10 +257,12 @@ fn run() {
         follow_keys(lp, h, rd, out);
         if out.quit { break; }
         // After shell::frame, so a game started over this frame is asked at its new skill.
-        if think::frame(thinker, sh.game) {
+        let moved = think::frame(thinker, sh.game);
+        if moved {
             lp.dirty = true;
             g.acted = true;
         }
+        host::keep_screen(h, moved || host::touched(input), now);
         if out.save { save_settings(lp, rd, sh, system_lang); }
         if out.screen == shell::SETTINGS { render::thumbs(rd); }
         if dev::after_shell(dv, f, sh, g, rd, now) { lp.dirty = true; }
@@ -296,4 +298,3 @@ fn run() {
     shell::write_game(sh);
     if sh.out.quit { host::close_app(); }
 }
-

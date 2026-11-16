@@ -13,6 +13,10 @@ let DESKTOP = 0;
 let ANDROID = 1;
 let IOS = 2;
 
+// Seconds nobody plays before the system's own timeout may dim and lock the screen. A
+// child thinking over a move keeps it lit; a game left lying doesn't keep it lit for hours.
+let SCREEN_IDLE = 900.0;
+
 // DESKTOP, ANDROID, or IOS.
 extern fn draughts_platform() -> i64;
 // The system's preferred locales, "et-EE,en-US"; returns how many bytes.
@@ -28,6 +32,8 @@ extern fn draughts_display(out: f32[:]) -> i64;
 extern fn draughts_choose_gpu();
 // Wakes the loop in ms milliseconds, where frame() waits for events.
 extern fn draughts_wake_in(ms: i64);
+// 1 lets the system's timeout dim and lock the screen; 0 keeps it on.
+extern fn draughts_screen_sleeps(allow: i64);
 // Tells Android the first frame is on screen, to lift the splash and the cover.
 extern fn draughts_first_frame();
 // Closes the app on Android and takes it out of recents; elsewhere the program's return does.
@@ -50,6 +56,8 @@ struct Host {
     text_on:   bool           = false,
     keyboard:  i64            = 0,
     repeat:    Repeat         = Repeat {}, // the arrow held (keys.goose)
+    played:    f64            = 0.0,       // when someone last touched, typed, or the computer moved
+    sleeps:    bool           = false,     // the screen is let sleep (keep_screen)
 }
 
 // Opens the window, filling the screen on a phone or a tablet or with `full`. Aborts if it can't.
@@ -141,6 +149,23 @@ fn locales(out: u8[:]) -> const u8[:] { out[..draughts_locales(out)] }
 fn local_day() -> i64 { draughts_local_day() }
 
 fn wake_in(ms: i64) { draughts_wake_in(ms); }
+
+// Whether this frame's input is someone at the app.
+fn touched(i: gui::Input) -> bool {
+    return i.down || i.pressed || i.released || i.wheel != 0.0 || i.typed.len > 0 || i.step != gui::STEP_NONE
+        || i.confirm || i.held || i.tab != 0;
+}
+
+// Keeps the screen on while the app is played, and once nobody has for SCREEN_IDLE lets
+// the system's timeout dim and lock it, until the next touch. The idle loop wakes at least
+// once a second (rendering.md), which is all the check needs.
+fn keep_screen(h: Host&, played: bool, now: f64) {
+    if played { h.played = now; }
+    let sleeps = now - h.played >= SCREEN_IDLE;
+    guard sleeps != h.sleeps else { return; }
+    draughts_screen_sleeps(if sleeps { 1 } else { 0 });
+    h.sleeps = sleeps;
+}
 fn first_frame() { draughts_first_frame(); }
 fn close_app() { draughts_close(); }
 fn leave() { draughts_leave(); }
