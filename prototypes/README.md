@@ -17,6 +17,7 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 | `players.html` | Who's playing, over home |
 | `settings.html` | Settings beside the preview board; one group at a time on a phone |
 | `sound.html` | Task 089: settings with a Sound section (`&control=slider\|steps`), and every sound playable: the preview a game against a random computer, the list (`&view=sounds`), or Freesound's candidates cut into hits (`&view=samples`, after `python3 tools/sound_samples.py`; `&move=ID.K`, `&take=ID.K`); `&timbre=felt\|wood\|stone`, `&kind=desktop` for a desktop's default |
+| `sound-set.html` | Task 089: the first version's sounds, each to play or all in a row, and the takes on the solved puzzle, the win, the end, and the clock's gold and red, one tap to choose (`&solved=` `&win=` `&end=` `&gold=` `&red=`); its synthesis is `sound.js`, shared with `sound.html` |
 | `tutorial.html` | How to play: a new player's question (`?view=ask`), the steps played on the board (`?view=step&step=N`, `&v=intl\|brazilian\|russian`), and the end's ways on (`?view=done`) |
 
 Every page takes the same few parameters, none needed:

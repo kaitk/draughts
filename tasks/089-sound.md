@@ -87,6 +87,12 @@ file.
   three, the clock's note at gold and three at red, and the Volume row as a slider with
   the speaker that mutes.
 
+`prototypes/sound-set.html` plays the whole set, and has takes on the five set by
+default (the solved puzzle, the win, the end, the clock's gold and red): the mallet
+notes against a small calm orchestra (harp, lute, pizzicato strings, soft horns,
+celesta, strings held, a bell), in the spirit of Heroes of Might and Magic II's score,
+never its tunes, besides the kannel and kalimba.
+
 ## The moments' takes
 
 The first win and crowning (marimba) were too much, and something else was wanted,
