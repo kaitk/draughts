@@ -334,7 +334,9 @@ player who hasn't learned yet, Watch replay in its place once the last game has 
 that game's [replay](#a-games-replay), whose back goes home), Puzzles (solved count, or today's dots once
 [daily puzzles](puzzles.md#daily-puzzles) open, smaller where they would come within
 16 dp of the label), the games played with the rating
-([results](#the-results-screen)), and Settings. Where the rows don't fit they scroll under
+([results](#the-results-screen)), and Settings. A row's note keeps 12 dp from its label,
+shrinking to fit down to 80% and left out below that (a long translation in landscape's
+360 dp column). Where the rows don't fit they scroll under
 the wordmark, fading at the foot. In portrait settings is a bare gear beside the wordmark.
 A bare X in the top right closes the app at once on a touch screen
 ([why](../decisions/rendering.md#controls)); on a desktop a Quit row replaces it where it

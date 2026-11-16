@@ -1,0 +1,4 @@
+both fit: label ends 160.0, note at 308.0 13.599999 tall, icon at -1.0
+a little long: the note shrunk: label ends 160.0, note at 172.00003 11.826086 tall, icon at -1.0
+too long: no note: label ends 265.0, note at -1.0 0.0 tall, icon at -1.0
+too long, with an icon: the icon alone: label ends 265.0, note at -1.0 0.0 tall, icon at 322.0
