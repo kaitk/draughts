@@ -448,9 +448,13 @@ fn resume(sh: Shell&) -> home::Resume {
     // computer: How to play in continue's place.
     let p .= sh.prefs;
     let learn = !on && !replay && p.first_start_done && !p.knows && p.games == 0 && learned(sh) < tutorial::count(p.variant as u8);
+    // A game won or lost on a clock run out says so (on_time).
     let won = game::winner(gm);
-    let ended_note = if won < 0 { strings::LAST_DRAW } else if gm.computer < 0 { strings::WON_WHITE + won }
-                     else if won == gm.computer { strings::LAST_LOST } else { strings::LAST_WON };
+    let on_time = gm.clock.flag >= 0;
+    let ended_note = if won < 0 { strings::LAST_DRAW }
+                     else if gm.computer < 0 { (if on_time { strings::WON_TIME_WHITE } else { strings::WON_WHITE }) + won }
+                     else if won == gm.computer { if on_time { strings::LAST_LOST_TIME } else { strings::LAST_LOST } }
+                     else if on_time { strings::LAST_WON_TIME } else { strings::LAST_WON };
     let ended_opponent = if gm.computer < 0 { strings::LEVEL_FRIEND } else { strings::LEVEL_EASY + clamp(gm.level, game::EASY, game::HARD) };
     return home::Resume { on: on, note: home::resume_note(gm.computer, gm.level), learn: learn, replay: replay,
                           ended_note: ended_note, ended_opponent: ended_opponent };

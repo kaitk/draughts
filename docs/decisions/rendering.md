@@ -221,7 +221,10 @@ fed389b.
   the empty place above: the game just played is the one a player wants to look back on,
   and the results list was two taps from it. It opens that game's replay at its end, its
   back going home. Its note says how it ended against whom ("You won · easy", "White
-  wins" for a friend's). It is outlined and New game lit: most players play again.
+  wins" for a friend's), and, for a game ended by a clock run out, that it was on time
+  ("You lost on time · easy", 2026-11-17): a one-move "You lost" read as a bug. Only home's
+  note says it; the history doesn't record how a game ended, so the replay and the results
+  don't, which is enough while the note is where a player sees the game just played.
   Rejected: "Last game" and *Viimane mäng* (flat), *Viimase mängu tulemused* (too long),
   "Show results" (read as the Results row), *Vaata üle* (unclear in Estonian), and going
   back to the ended game's screen (the 2026-11-15 reason). Its icon is Lucide's history,

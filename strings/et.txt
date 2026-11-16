@@ -16,6 +16,8 @@ home.replay = Vaata kordust
 last.won = Võitsid · {}
 last.lost = Kaotasid · {}
 last.draw = Viik · {}
+last.won_time = Võitsid ajaga · {}
+last.lost_time = Kaotasid ajaga · {}
 
 level.easy = kerge
 level.medium = keskmine
@@ -63,6 +65,8 @@ turn.white = Valgete käik
 turn.black = Mustade käik
 won.white = Valged võitsid
 won.black = Mustad võitsid
+won_time.white = Valged võitsid ajaga
+won_time.black = Mustad võitsid ajaga
 
 setup.draughts = Kabe
 setup.against = Vastane

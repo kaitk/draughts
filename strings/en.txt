@@ -24,6 +24,9 @@ home.replay = Watch replay
 last.won = You won · {}
 last.lost = You lost · {}
 last.draw = Draw · {}
+# A game that ended on a clock run out, as last.won and last.lost.
+last.won_time = You won on time · {}
+last.lost_time = You lost on time · {}
 
 level.easy = easy
 level.medium = medium
@@ -76,6 +79,9 @@ turn.white = White's turn
 turn.black = Black's turn
 won.white = White wins
 won.black = Black wins
+# A friend's game won on a clock run out, as won.white and won.black.
+won_time.white = White wins on time
+won_time.black = Black wins on time
 
 setup.draughts = Draughts
 # The setup's first row: a friend, or the computer at a level.
