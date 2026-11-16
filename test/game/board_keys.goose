@@ -1,19 +1,19 @@
-// The board played with the keys (board::keys), headless through the game's
-// frames: the board is one control to the keys' focus, a grid of its squares, and the
-// screen's first choice, so the first arrow puts its cursor on the side to move's movable
-// piece nearest the bottom middle, and Enter with nothing focused puts it there and
-// presses at once; the arrows move the cursor a square at a time, light
-// squares too; Enter on a dark square is a tap there, so it chooses a piece and then its
-// target, and a piece that can't move while another must capture is a mistake as a tap
-// is; Enter on a light square does nothing; with a piece chosen, the square under the
-// cursor is what the lookout would show (Board.over). An arrow past the board's edge
-// leaves it for the nearest control that way, and an arrow back comes in on the near
-// edge, in line. Tab steps through the groups (the way out, the board, the play panel)
-// and back to the cell the cursor had. On the turned board (black at the bottom) the
-// arrows go as the screen shows it, and on the 3D board's hot-seat turn too, the cursor
-// keeping its square as the board turns. On the computer's turn the cursor moves but Enter
-// plays nothing. Escape with a piece chosen puts it down (board::put_down). The mouse
-// moving lets the keys go: the cursor is gone.
+// The board played with the keys (board::keys), headless through the game's frames: the
+// board is one control to the keys' focus, a grid of its squares, and the screen's first
+// choice, so the first arrow puts its cursor on the side to move's movable piece nearest
+// the bottom middle, and Enter with nothing focused puts it there and presses at once;
+// the arrows move the cursor a square at a time, light squares too; Enter on a dark
+// square is a tap there, so it chooses a piece and then its target, and a piece that
+// can't move while another must capture is a mistake as a tap is; Enter on a light square
+// does nothing; with a piece chosen, the square under the cursor is what the lookout
+// would show (Board.target_under_pointer). An arrow past the board's edge leaves it for
+// the nearest control that way, and an arrow back comes in on the near edge, in line. Tab
+// steps through the groups (the way out, the board, the play panel) and back to the cell
+// the cursor had. On the turned board (black at the bottom) the arrows go as the screen
+// shows it, and on the 3D board's hot-seat turn too, the cursor keeping its square as the
+// board turns. On the computer's turn the cursor moves but Enter plays nothing. Escape
+// with a piece chosen puts it down (board::put_down). The mouse moving lets the keys go:
+// the cursor is gone.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -62,7 +62,7 @@ fn state(gm: game::Game&, g: gui::Gui&, changed: bool, what: const u8[:]) {
     let v .= rules::VARIANTS[b.variant];
     let on = if g.focus == panel::BOARD_ID { str("board") } else if g.focus == 0 { str("none") } else { str("control ", g.focus) };
     print(what, ": focus ", on, ", cursor ", cursor(b), ", chosen ", drive::name(v, b.selected), ", over ",
-          drive::name(v, b.over), ", wrong ", drive::name(v, b.wrong), ", moves made ", b.rec.history.len, ", changed ", changed);
+          drive::name(v, b.target_under_pointer), ", wrong ", drive::name(v, b.wrong), ", moves made ", b.rec.history.len, ", changed ", changed);
 }
 
 fn start(gm: game::Game&, fen: const u8[:], computer: i64) {
@@ -154,7 +154,7 @@ fn main() {
     gm.b.pos.side = rules::BLACK;
     rules::generate(gm.b.pos, gm.b.moves);
     var three = l;
-    three.three = true;
+    three.is_3d = true;
     three.view.rect = float4 { l.board.board.x, l.board.board.y, l.board.board.z, l.board.board.z };
     turn(gm, g, three, none, 180.0);
     state(gm, g, turn(gm, g, three, gui::STEP_DOWN, 180.0), "3D, turned: down");

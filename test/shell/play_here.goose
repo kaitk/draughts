@@ -227,10 +227,10 @@ fn main() {
     run(sh, g, e, 0.5);
     print("  the hint: its piece lit ", sh.game.hint_stage == 1, ", hints left ", sh.game.hints[rules::WHITE]);
     // The lookout's eye, the player's setting as in any game.
-    let look = sh.game.look;
+    let look = sh.game.lookout_on;
     press(sh, g, panel::EYE_ID);
-    print("  the lookout turned ", if sh.game.look { "on" } else { "off" }, ", from ", if look { "on" } else { "off" },
-          ", the setting following ", sh.prefs.lookout == sh.game.look);
+    print("  the lookout turned ", if sh.game.lookout_on { "on" } else { "off" }, ", from ", if look { "on" } else { "off" },
+          ", the setting following ", sh.prefs.lookout == sh.game.lookout_on);
     press(sh, g, panel::EYE_ID);
     // Undo takes back the player's move and the computer's.
     press(sh, g, gui::PANEL_IDS + 3);

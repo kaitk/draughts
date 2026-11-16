@@ -60,7 +60,7 @@ fn played(raised: bool, moves: i64, g: gui::Gui&) -> shell::Shell {
     if raised { sh.prefs.board = settings::RAISED; }
     sh.game = game::new(rules::RUSSIAN);
     shell::apply_prefs(sh);
-    sh.game.judge = false;
+    sh.game.judge_moves = false;
     sh.screen = shell::GAME;
     sh.drawn = shell::GAME;
     let b .= sh.game.b;

@@ -37,19 +37,19 @@ fn moment(gm: Game&, now: f64) -> f64 {
 
 // The win begins: the winning piece is the last move's, unless the move is still showing
 // or there was none. It is still once the glow has passed the winner's farthest piece.
-fn aim(gm: Game&, won: i64) {
+fn start_win_glow(gm: Game&, won: i64) {
     let b .= gm.b;
     let v .= rules::VARIANTS[b.variant];
     gm.won_on = -1;
-    gm.still = STILL;
-    gm.stilled = false;
+    gm.win_still_from = STILL;
+    gm.win_still_drawn = false;
     guard b.has_last && !b.moving && b.pos.pieces[won] & rules::bit(b.last.to) != 0 else { return; }
     gm.won_on = b.last.to;
     var left = b.pos.pieces[won];
     while left != 0 {
         let sq = ctz(left);
         left &= left - 1;
-        gm.still = max(gm.still, WAVE_AT + WAVE_STEP * apart(v, sq, gm.won_on) + WAVE);
+        gm.win_still_from = max(gm.win_still_from, WAVE_AT + WAVE_STEP * apart(v, sq, gm.won_on) + WAVE);
     }
 }
 
@@ -66,9 +66,9 @@ fn span(t: f64, a: f64, b: f64) -> f64 { clamp((t - a) / (b - a), 0.0, 1.0) }
 fn ease_out(x: f64) -> f64 { 1.0 - (1.0 - x) * (1.0 - x) * (1.0 - x) }
 fn bump(x: f64) -> f64 { if x <= 0.0 || x >= 1.0 { 0.0 } else { sin(PI * x) } }
 
-// The win on the board, after board::fill: the board dims, the winning piece lifts and
-// is drawn last, and the glow lifts the winner's other pieces a little. `share` scales
-// it all as the game screen fades through a transition.
+// The win on the board, after board::build_frame_pieces: the board dims, the winning
+// piece lifts and is drawn last, and the glow lifts the winner's other pieces a little.
+// `share` scales it all as the game screen fades through a transition.
 fn cheer(gm: Game&, l: board::Layout, now: f64, share: f32 = 1.0) {
     if gm.drawn_at >= 0.0 {
         let b .= gm.b;
@@ -116,16 +116,16 @@ fn cheer(gm: Game&, l: board::Layout, now: f64, share: f32 = 1.0) {
 // board's bounds on screen.
 fn card_area(pl: panel::Layout) -> float4 {
     let l = pl.board;
-    return if pl.three { pl.view.rect } else { float4 { l.board.x, l.board.y, l.board.z, l.board.z } };
+    return if pl.is_3d { pl.view.rect } else { float4 { l.board.x, l.board.y, l.board.z, l.board.z } };
 }
 
 // The piece on square `sq` on screen, its middle and its radius in pixels, for a card to
-// keep clear of: on the flat board the disc as board::fill draws it, on the 3D board its
-// top as the perspective shows it.
+// keep clear of: on the flat board the disc as board::build_frame_pieces draws it, on the
+// 3D board its top as the perspective shows it.
 fn spot_of(gm: Game&, pl: panel::Layout, sq: i64) -> float2, f32 {
     let l = pl.board;
     let at = board::center(l, rules::VARIANTS[gm.b.variant], sq);
-    guard pl.three else { return at, 0.39 * l.inner.w; }
+    guard pl.is_3d else { return at, 0.39 * l.inner.w; }
     let s = view3d::on_screen(pl.view, l, at);
     return float2 { s.x, s.y }, s.z;
 }
@@ -176,7 +176,7 @@ fn card_end(g: gui::Gui&, row: float4, fit: f32, button: f32, u: f32, first: i64
 
 // The win's card: the winner's crowned piece and who won over back and play again.
 // Returns panel::RESTART, panel::BACK, or panel::NOTHING.
-fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, over: board::Overlay&) -> i64 {
+fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ui_pieces: board::Overlay&) -> i64 {
     let t = moment(gm, now);
     guard t >= CARD_AT else { return panel::NOTHING; }
     let u = pl.board.scale;
@@ -196,9 +196,9 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ove
     let ask, drop = card_end(g, gui::cut_top(c, gui::tap_size() * u), fit, button, u, first, ease_out(span(t, CARD_AT, CARD_AT + 0.7)));
     spot.y += drop;
     let a = board::ease(span(t, CROWN_AT, STILL)) as f32;
-    let n = over.len;
-    panel::piece(over, spot, 44.0 * fit * u, won, gm.b.king_look, a, a);
-    if over.len > n { over[n].win.w = 1.0; }   // on the board, as the card is
+    let n = ui_pieces.len;
+    panel::piece(ui_pieces, spot, 44.0 * fit * u, won, gm.b.king_look, a, a);
+    if ui_pieces.len > n { ui_pieces[n].win.w = 1.0; }   // on the board, as the card is
     return ask;
 }
 
@@ -216,7 +216,7 @@ fn reason(gm: Game&, draw: i64, out: u8[..64]&) {
 // The draw's card: both pieces, "Draw", and why, over back and play again, kept off the
 // last move's piece; on a board under 540 dp without the pieces. Returns panel::RESTART,
 // panel::BACK, or panel::NOTHING.
-fn settle(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, over: board::Overlay&) -> i64 {
+fn draw_card(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, ui_pieces: board::Overlay&) -> i64 {
     let t = now - gm.drawn_at;
     guard t >= DRAW_CARD else { return panel::NOTHING; }
     let l = pl.board;
@@ -257,8 +257,8 @@ fn settle(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, over:
     let ask, drop = card_end(g, gui::cut_top(c, gui::tap_size() * u), fit, button, u, first, k);
     guard pieces else { return ask; }
     spot.y += drop;
-    let n = over.len;
-    panel::pair(over, spot, 44.0 * fit * u, 4.0 * fit * u, k as f32);
-    for i in n..over.len { over[i].win.w = 1.0; }   // on the board, as the card is
+    let n = ui_pieces.len;
+    panel::pair(ui_pieces, spot, 44.0 * fit * u, 4.0 * fit * u, k as f32);
+    for i in n..ui_pieces.len { ui_pieces[i].win.w = 1.0; }   // on the board, as the card is
     return ask;
 }

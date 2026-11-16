@@ -1,8 +1,8 @@
 // The game's 3D board, drawn by src/render3d/ from the scene the flat board's draw lists
-// fill (view3d::fill). It is drawn into a kept image only when its scene, view, size, or
-// theme changed; each frame lays that image under the UI, with the pulsing marks drawn
-// over it (render3d::marks_over). It is made ready a step a frame (prepare), and a new
-// theme shows the old image eased grey until done (docs/architecture/rendering.md).
+// fill (view3d::build_scene). It is drawn into a kept image only when its scene, view,
+// size, or theme changed; each frame lays that image under the UI, with the pulsing marks
+// drawn over it (render3d::marks_over). It is made ready a step a frame (prepare), and a
+// new theme shows the old image eased grey until done (docs/architecture/rendering.md).
 namespace draw3d;
 import std;
 import vec;
@@ -268,7 +268,7 @@ fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::V
     d.frames++;
     guard force || again || !hold || which != d.which || !view3d::same_view(d.drawn.view, v) else { return; }
     d.which = which;
-    view3d::fill(d.scene, b, l, v, now);
+    view3d::build_scene(d.scene, b, l, v, now);
     let c = view3d::changes(d.drawn, d.scene);
     // The board turned under the light (a hot-seat turn): the light turns with it, so it
     // keeps its place on screen, and the shadows are drawn again.

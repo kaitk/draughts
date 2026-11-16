@@ -42,7 +42,7 @@ fn main() {
     var b = board::new(rules::RUSSIAN);
     b.hints = board::MOVES;     // to see the targets; test/board/hints.goose has the default
     tap(b, l, "c3", 0.0);       // selects
-    board::fill(b, l, 0.0);
+    board::build_frame_pieces(b, l, 0.0);
     print("targets ", drive::marked(v, b.marks.target), ", pieces ", b.pieces.len);
     tap(b, l, "d4", 0.1);       // plays c3-d4
     board::update(b, 0.2);
@@ -56,7 +56,7 @@ fn main() {
     board::update(b, 1.0);
     board::press(b, l, from, 1.0);
     print("drag starts: ", board::drag(b, l, from + float2 { 30.0, 30.0 }), ", dragging ", b.dragging);
-    board::fill(b, l, 1.0);
+    board::build_frame_pieces(b, l, 1.0);
     print("dragged piece last: ", b.pieces[b.pieces.len - 1].at.x == from.x + 30.0);
     board::release(b, l, to, 1.1);
     board::update(b, 1.5);
@@ -64,7 +64,7 @@ fn main() {
 
     // White must take d4xf6; touching g3, which can't move, pulses d4's ring.
     tap(b, l, "g3", 2.0);
-    board::fill(b, l, 2.0);
+    board::build_frame_pieces(b, l, 2.0);
     var rings = 0;
     for i in b.pieces.len { if b.pieces[i].ring.x > 0.0 { rings++; } }
     print("rings ", rings, ", animating ", board::animating(b, 2.0), " then ", board::animating(b, 5.0),

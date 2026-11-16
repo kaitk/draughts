@@ -75,7 +75,7 @@ fn show(gm: game::Game&, what: const u8[:]) {
     var r: u8[>..] = [];
     format_flt(r, ring, 2);
     print(what, ": ", rules::fen(gm.b.pos), ", plies ", gm.b.rec.history.len, ", moving ", gm.b.moving, ", asking ",
-          gm.asking, left, ", ring ", r);
+          gm.ai_request_id, left, ", ring ", r);
 }
 
 fn main() {
@@ -135,12 +135,12 @@ fn main() {
     drive::tap(gm, g, l, drive::control(g, UNDO), a + 2.3);
     show(gm, "take back while it thinks");
     game::answer(gm, dropped.id, ai::think(e, dropped.pos, dropped.skill, dropped.seed), 1);
-    print("  the dropped ask's answer taken: ", gm.answered);
+    print("  the dropped ask's answer taken: ", gm.ai_answered);
     drive::tap(gm, g, l, drive::at(l.board, "c3"), a + 2.8);
     drive::tap(gm, g, l, drive::at(l.board, "b4"), a + 2.9);
     drive::idle(gm, g, l, a + 3.2);
     game::answer(gm, dropped.id, ai::think(e, dropped.pos, dropped.skill, dropped.seed), 1);
-    print("  after c3-b4, ask ", gm.asking, "; the old answer taken: ", gm.answered);
+    print("  after c3-b4, ask ", gm.ai_request_id, "; the old answer taken: ", gm.ai_answered);
 
     // Leaving the game drops the ask; the game asks again when it shows.
     game::pause(gm);
@@ -166,9 +166,9 @@ fn main() {
     game::start(gm, rules::RUSSIAN, clock::NONE, rules::WHITE, game::MEDIUM, 40, 3);
     drive::idle(gm, g, turned, 10.0);
     show(gm, "the child plays black");
-    let first = gm.asking;
+    let first = gm.ai_request_id;
     drive::tap(gm, g, turned, drive::control(g, UNDO), 10.1);
-    print("  take back: plies ", gm.b.rec.history.len, ", the same ask ", gm.asking == first);
+    print("  take back: plies ", gm.b.rec.history.len, ", the same ask ", gm.ai_request_id == first);
     print("  ", answer(gm, e));
     drive::idle(gm, g, turned, 10.59);
     show(gm, "0.6 s on medium, not over");

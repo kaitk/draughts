@@ -100,10 +100,10 @@ fn report(what: const u8[:], g: gui::Gui&, size: float2) {
         if top { rig::put(cam.top, 1.0); }
         var flat = l;
         if top { rig::put(cam.zoom, 0.0); }
-        panel::aim(flat, cam, 0.0);
+        panel::apply_camera(flat, cam, 0.0);
         rig::put(cam.zoom, 1.0);
         var z = l;
-        panel::aim(z, cam, 0.0);
+        panel::apply_camera(z, cam, 0.0);
         var off: u8[>..]      = [];
         var h:   view3d::Hull = [];
         view3d::hull(z.view, h, true);

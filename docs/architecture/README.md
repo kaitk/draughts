@@ -69,7 +69,7 @@ safe area, the wake timer, storage, locales, and Android's launch, back, and clo
 the renderer, `app/render`, which holds every drawer (`draw`, `draw3d`, `scene`,
 `widgets`) and every GPU handle. `main` calls these two and nothing of gfx. Each frame it
 hands `render::frame` one `render::Frame` of the app's own values: the board as
-`board::fill` left it, where it goes, the pieces over the UI, the UI's quads, the 3D
+`board::build_frame_pieces` left it, where it goes, the pieces over the UI, the UI's quads, the 3D
 board's view and place, the blur, and the transition's hole; the frame's pass begins and
 ends there. The glyphs, the badges, and the season's photograph reach the renderer as
 pixels: `text::bake` and `badges::atlas` return R8 bytes, `background.c` decodes into

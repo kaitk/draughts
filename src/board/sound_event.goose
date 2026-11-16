@@ -1,8 +1,9 @@
 // What the board and the game say happened, for the app's sounds (docs/architecture/
-// sound.md): sound events, with no sound of their own. The board adds one as its animation
-// gets there (a piece landing, a capture's stop) or as a move is refused; the game adds
-// its end and its clocks'. The app plays them once a frame, after `settle` has kept one
-// sound a move. Input says nothing: a tap is never heard, only what it did on the board.
+// sound.md): sound events, with no sound of their own. The board adds one as its
+// animation gets there (a piece landing, a capture's stop) or as a move is refused; the
+// game adds its end and its clocks'. The app plays them once a frame, after
+// `one_per_move` has kept one sound a move. Input says nothing: a tap is never heard,
+// only what it did on the board.
 namespace sound_event;
 import std;
 

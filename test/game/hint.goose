@@ -29,7 +29,7 @@ fn state(gm: game::Game&, g: gui::Gui&, what: const u8[:]) {
     let v .= rules::VARIANTS[b.variant];
     var t: u8[>..] = [];
     if gm.hint_stage > 0 { rules::format_move(t, b.pos, gm.hint_move); } else { t.append("-"); }
-    print(what, ": stage ", gm.hint_stage, ", asking ", gm.hinting != 0, ", left ", gm.hints[0], " ", gm.hints[1],
+    print(what, ": stage ", gm.hint_stage, ", asking ", gm.hint_request_id != 0, ", left ", gm.hints[0], " ", gm.hints[1],
           ", move ", t, ", glow ", drive::name(v, b.glow), ", ghost ", drive::name(v, b.hint_to), ", tile ",
           tile(g));
 }
@@ -126,7 +126,7 @@ fn main() {
     // quietly; then white's tile is dim and black's still has three.
     let opening = "W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8";
     start(gm, opening, -1, 0);
-    gm.look_skill = 25;
+    gm.lookout_skill = 25;
     var t = 30.0;
     for i in 3 {
         drive::idle(gm, g, l, t);
@@ -153,7 +153,7 @@ fn main() {
     drive::tap(gm, g, l, drive::control(g, HINT), 40.1);
     state(gm, g, "a capture due");
     start(gm, "B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8", -1, 0);
-    gm.look_skill = 25;
+    gm.lookout_skill = 25;
     gm.hints[0] = 0;
     drive::idle(gm, g, l, 50.0);
     drive::tap(gm, g, l, drive::control(g, HINT), 50.1);

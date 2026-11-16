@@ -226,7 +226,7 @@ fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: floa
     if ask == BACK || ask == SETTINGS { ev.go = ask; }
     if ask == gui::ASK_RESTART {
         restart(ls);
-        rig::settle(ls.cam, now);
+        rig::ease_to_rest(ls.cam, now);
     }
     if ask == NEXT && ls.state == PLAYED {
         if last(ls) { ls.state = END; }
@@ -235,11 +235,11 @@ fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: floa
             restart(ls);
         }
     }
-    let held, moved = board::showcase(ls.cam, g, input, l.three, l.pitch, now);
+    let held, moved = board::showcase(ls.cam, g, input, l.is_3d, l.pitch, now);
     if moved { changed = true; }
     let mine = !held && !g.press_on_ui && ready(ls);
     let history = b.rec.history.len;
-    if mine && board::touch(b, l.board, l.three, l.view, input, ls.grab, now) { changed = true; }
+    if mine && board::touch(b, l.board, l.is_3d, l.view, input, ls.grab, now) { changed = true; }
     if panel::board_keys(g, l, b, mine, now) { changed = true; }
     if mine && judge(ls, history) {
         ev.learned = ls.step + 1;
@@ -330,7 +330,7 @@ fn panel_frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     let word = strings::get(if last(ls) { strings::HOW_FINISH } else { strings::PUZZLE_NEXT });
     let icon = if last(ls) { gui::CHECK } else { gui::NEXT };
     if panel::columns(l) {
-        let next = gui::cut_bottom(right, if l.three { panel::stack_h() * u } else { panel::tall(l, u) });
+        let next = gui::cut_bottom(right, if l.is_3d { panel::stack_h() * u } else { panel::tall(l, u) });
         gui::cut_bottom(right, gui::PAD * u);
         gui::cut_top(right, 8.0 * u);
         dots(ls, g, gui::cut_top(right, 12.0 * u), 12.0, 8.0);
@@ -380,7 +380,7 @@ fn end_card(g: gui::Gui&, area: float4, screen: float4, over: board::Overlay&) -
     gui::press_widget(g, CARD, r, false);
     var c = gui::inset(r, CARD_PAD * u);
     gui::cut_top(c, 16.0 * u);
-    game::put(over, gui::center(gui::cut_top(c, king), king, king), 0.5 * king, rules::WHITE, board::CROWN, 1.0, false);
+    game::add_ui_piece(over, gui::center(gui::cut_top(c, king), king, king), 0.5 * king, rules::WHITE, board::CROWN, 1.0, false);
     gui::cut_top(c, 20.0 * u);
     gui::text(g, gui::face_that_fits(g, gui::LABEL, title, c.z), gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
     gui::cut_top(c, 20.0 * u);

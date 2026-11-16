@@ -31,7 +31,7 @@ fn board_at(gm: game::Game&, l: board::Layout, now: f64) -> u8[>..] {
     let b .= gm.b;
     let v .= rules::VARIANTS[b.variant];
     let r = 0.39 * l.inner.w;
-    board::fill(b, l, now);
+    board::build_frame_pieces(b, l, now);
     game::cheer(gm, l, now);
     var s: u8[>..] = [];
     for p in b.pieces {
@@ -106,7 +106,7 @@ fn main() {
     // 3.2 (h2) to 7.2 (a1) squares from it, so the glow has passed them all by 1.33 s.
     let w = win(gm, g, l, rules::RUSSIAN, "W:Wa1,c1,g1,b2,h2,e3:Bf4", "e3", "g5", 0.0);
     print("Russian, e3 takes f4 to g5: the winning piece ", drive::name(rules::VARIANTS[rules::RUSSIAN], gm.won_on),
-          ", still from ", r2(gm.still), " s");
+          ", still from ", r2(gm.win_still_from), " s");
     for t in [0.2, 0.5, 0.75, 1.2, 1.4, 2.5] {
         drive::idle(gm, g, l, w + t);
         print("  at ", t, " s: ", board_at(gm, l.board, w + t));
@@ -122,7 +122,7 @@ fn main() {
     let li = panel::layout(1280.0, 800.0, 10);
     let wi = win(gm, g, li, rules::INTERNATIONAL, "W:W14,46:B10", "h8", "j10", 20.0);
     print("International, h8 takes i9 to j10: the winning piece ",
-          drive::name(rules::VARIANTS[rules::INTERNATIONAL], gm.won_on), ", still from ", r2(gm.still), " s");
+          drive::name(rules::VARIANTS[rules::INTERNATIONAL], gm.won_on), ", still from ", r2(gm.win_still_from), " s");
     drive::idle(gm, g, li, wi + 1.4);
     print("  at 1.4 s: ", board_at(gm, li.board, wi + 1.4));
     print("  frames over 5 s: ", frames(gm, g, li, wi, wi + 5.0));

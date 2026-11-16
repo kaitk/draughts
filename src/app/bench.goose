@@ -141,7 +141,7 @@ fn pulse_on<B>(be: B&, b: Bench&, r: render::Renderer&, fr: render::Frame&) {
     let bn .= b.d3;
     let size = fr.size;
     if bn.i == 3 * bn.n {
-        view3d::fill(d.scene, fr.board, fr.layout, fr.view, fr.now);
+        view3d::build_scene(d.scene, fr.board, fr.layout, fr.view, fr.now);
         let s .= d.scene;
         for i in 100 { if s.squares[2 * i].w > 0.5 { s.field[i].z = 1.0; } }
         s.pulsing = true;

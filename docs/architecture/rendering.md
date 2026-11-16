@@ -397,7 +397,7 @@ What they show is in `docs/product.md` and [ai](ai.md#the-lookout).
   turn's line.
 - **The hint's tile** (`panel::hint_tile`): the bulb, its word, and three pips for the
   hints left; dim with none left or none to give.
-- **The marks** on the board (`board::fill`): a piece in danger is drained (greyed, darker,
+- **The marks** on the board (`board::build_frame_pieces`): a piece in danger is drained (greyed, darker,
   tinted red, `board::DRAINED`); a crowning square is shaded red under a ghost of the other
   side's king; the hint's piece takes the glow ring and its square a light ghost, pulsing
   twice then holding. A move clears them.
@@ -517,14 +517,14 @@ view, and each frame lays that image moved and scaled between the two ends' boun
 board in perspective, 52.5° down with a 31° field of view, fitted into a screen rectangle
 by a scale and shift in clip space; 65° down in portrait (`panel::PITCH_PORTRAIT`). A tap
 becomes a square by a ray through the perspective. Each frame's instances are filled from
-the flat board's draw lists (`board::fill`), so both views follow one state.
+the flat board's draw lists (`board::build_frame_pieces`), so both views follow one state.
 
 - **The screen round it** (`panel::corners_in`): the corner panels as above, the board as
   large as clears them.
 - **The camera buttons** (`gui::floating`): View cycles the rest angle and the top view
   (74°), Zoom frames the playing field (landscape only), Showcase lets a drag turn the
   board ±35° and tip it 35° to 80°; each eases over 0.6 s. The camera is plain data in
-  `board/rig.goose`; `panel::aim` fits it each frame.
+  `board/rig.goose`; `panel::apply_camera` fits it each frame.
 - **Against a friend** the game starts in the zoomed top view (`rig::across_table`); with
   Turns it starts at rest and the board turns 180° after each move, the light keeping its
   place on screen (`render3d::turn_light`).

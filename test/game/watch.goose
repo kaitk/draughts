@@ -50,7 +50,7 @@ fn start(gm: game::Game&, fen: const u8[:], computer: i64) {
     game::start(gm, rules::RUSSIAN, clock::NONE, computer, game::EASY, 0, 1);
     board::set(gm.b, check::position(rules::RUSSIAN, fen));
     gm.turn = gm.b.pos.side;
-    gm.look_skill = 0;
+    gm.lookout_skill = 0;
 }
 
 fn main() {
@@ -104,7 +104,7 @@ fn main() {
     show(gm, "b4 dragged over a5");
     drive::frame(gm, g0, l, drive::at(l.board, "b4"), false, false, true, 5.3);
     drive::idle(gm, g0, l, 5.4);
-    gm.look_skill = 25;
+    gm.lookout_skill = 25;
     drive::frame(gm, g0, l, drive::at(l.board, "b4"), true, true, false, 5.5);
     drive::frame(gm, g0, l, drive::at(l.board, "a5"), true, false, false, 5.6);
     show(gm, "the same at skill 25, a double jump left to the player");
@@ -115,11 +115,11 @@ fn main() {
     drive::idle(gm, g0, l, 6.0);
     show(gm, "king");
     start(gm, "W:Wc1,g1,h2,a3,g3,b4,c5:Bd2,e3,d6,a7,c7,e7,f8,h8", rules::BLACK);
-    gm.look_skill = 15;
+    gm.lookout_skill = 15;
     drive::idle(gm, g0, l, 6.1);
     show(gm, "king at skill 15");
     start(gm, calm, rules::BLACK);
-    gm.look_skill = 70;
+    gm.lookout_skill = 70;
     drive::idle(gm, g0, l, 6.2);
     show(gm, "calm at hard's 70");
 
@@ -149,7 +149,7 @@ fn main() {
     show(gm, "  a1 dragged over b2");
     drive::frame(gm, g0, l, drive::at(l.board, "a1"), false, false, true, 9.3);
     start(gm, shot, rules::BLACK);
-    gm.look_skill = 70;
+    gm.lookout_skill = 70;
     drive::idle(gm, g0, l, 9.4);
     print("at hard's 70: asked ", game::ask_for(gm).id != 0);
 

@@ -266,7 +266,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     }
     if ask == RESTART_ASK {
         restart(pl);
-        rig::settle(pl.cam, now);
+        rig::ease_to_rest(pl.cam, now);
         ev.go = STAY;
     }
     if ask == CAMERA { ev.go = STAY; }
@@ -275,16 +275,16 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         if board::abandon(b, now) { missed(pl, now); }
         ev.go = STAY;
     }
-    let held, moved = board::showcase(pl.cam, g, input, l.three, l.pitch, now);
+    let held, moved = board::showcase(pl.cam, g, input, l.is_3d, l.pitch, now);
     if moved { changed = true; }
     // The board is offered to the keys every frame, so their focus stays on it while the
     // player can't move; Enter on it is a tap only when the pointer could tap.
     let mine = !held && !g.press_on_ui && ready(pl) && b.pos.side == side;
     let history = b.rec.history.len;
     let wrong_at = b.wrong_at;
-    let waited = board::waiting(b);
+    let waited = board::capture_stop_square(b);
     // Through the perspective on the 3D board, as the game's.
-    if mine && board::touch(b, l.board, l.three, l.view, input, pl.grab, now) { changed = true; }
+    if mine && board::touch(b, l.board, l.is_3d, l.view, input, pl.grab, now) { changed = true; }
     if panel::board_keys(g, l, b, mine, now) { changed = true; }
     if mine {
         ev.solved = judge(pl, history, wrong_at, now);
@@ -294,7 +294,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         // Next was declared above, before the board took the pointer: a press or a drop
         // that starts or ends a piece's wait changes how next looks, and a drop is the
         // finger's last event, so the frame after is drawn too, as after a click.
-        if board::waiting(b) != waited { g.acted = true; }
+        if board::capture_stop_square(b) != waited { g.acted = true; }
     }
     return ev, changed;
 }
@@ -492,7 +492,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     var right = panel::play_area(g, l);
     let solved = pl.state == SOLVED;
     let style = if solved { gui::CHOSEN } else { gui::PLAIN };
-    let on = solved || (pl.state == PLAYING && board::waiting(pl.b) >= 0);
+    let on = solved || (pl.state == PLAYING && board::capture_stop_square(pl.b) >= 0);
     let word = strings::get(strings::PUZZLE_NEXT);
     // Solved with the keys: next takes their focus, unless the pointer took the lead since.
     if pl.to_next && solved {
@@ -502,14 +502,14 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     if landscape {
         // Round the 3D board the panel is a short corner one (panel::corners_in): next
         // takes the shorter tile there.
-        let next = gui::cut_bottom(right, if l.three { panel::stack_h() * u } else { panel::tall(l, u) });
+        let next = gui::cut_bottom(right, if l.is_3d { panel::stack_h() * u } else { panel::tall(l, u) });
         // Today's dots over next.
         if shows_dots(pl) {
             gui::cut_bottom(right, DOT_ABOVE * u);
             day_dots(pl, g, gui::cut_bottom(right, picker::DOT * u));
         }
         // Next keeps a gap from the stars round the 3D board too, where they shrink to it.
-        if l.three { gui::cut_top(right, 8.0 * u); gui::cut_bottom(right, 8.0 * u); }
+        if l.is_3d { gui::cut_top(right, 8.0 * u); gui::cut_bottom(right, 8.0 * u); }
         else { gui::cut_bottom(right, gui::PAD * u); }
         let f .= g.faces[gui::LABEL];
         let s .= g.faces[gui::SMALL];

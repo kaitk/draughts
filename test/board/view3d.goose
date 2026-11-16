@@ -115,7 +115,7 @@ fn main() {
         for c in [view3d::Camera {}, view3d::Camera { pitch: 52.5, yaw: 20.0 }, view3d::Camera { pitch: 75.0, yaw: -35.0 },
                   view3d::Camera { pitch: 52.5, yaw: 180.0 }] {
             let fv = view3d::fit(view3d::Camera {}, n, float4 { 24.0, 24.0, 1232.0, 752.0 }, view3d::BOTTOM_EDGE);
-            let tv = view3d::turned(fv, c);
+            let tv = view3d::with_camera_turn(fv, c);
             let l = flat(fv, n);
             print(n, " × ", n, " at ", c.pitch, "° down, turned ", c.yaw, "°: ", sweep(tv, bd, l), " of ", 5 * popcount(vr.mask),
                   " taps on their square");
@@ -179,7 +179,7 @@ fn main() {
           cell(l, view3d::to_flat(l, below)), " (", round2((below.y - middle(l, vr, c3).z) / u),
           " squares behind), picked ", drive::name(vr, board::hit(l, vr, view3d::pick(v, kb, l, kp))));
     // The same, turned round (yaw 180): c3's far edge from the other side.
-    let tv = view3d::turned(v, view3d::Camera { pitch: 52.5, yaw: 180.0 });
+    let tv = view3d::with_camera_turn(v, view3d::Camera { pitch: 52.5, yaw: 180.0 });
     let back = middle(l, vr, c3) + float3 { 0.0, 2.0 * view3d::HEIGHT * u, 0.9 * view3d::RADIUS * u };
     let bp = px(tv, back);
     let behind, ok3 = view3d::on_plane(tv, bp, 0.0);

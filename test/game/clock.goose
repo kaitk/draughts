@@ -16,8 +16,8 @@ import ai from "../../src/ai";
 fn show(c: clock::Clock&, what: const u8[:]) {
     var w: u8[..8] = [];
     var b: u8[..8] = [];
-    clock::text(clock::shown(c, 0), w);
-    clock::text(clock::shown(c, 1), b);
+    clock::text(clock::whole_seconds(c, 0), w);
+    clock::text(clock::whole_seconds(c, 1), b);
     print(what, ": white ", w, ", black ", b, ", running ", c.running, ", flag ", c.flag, ", warn ",
           clock::warn(c, 0), " ", clock::warn(c, 1), ", low ",
           clock::low(c, 0), " ", clock::low(c, 1), ", next in ", clock::until_next(c));
@@ -57,7 +57,7 @@ fn main() {
 
     var r = clock::new(clock::RAPID);
     var t: u8[..8] = [];
-    clock::text(clock::shown(r, 0), t);
+    clock::text(clock::whole_seconds(r, 0), t);
     print("10+5: ", t, ", on ", clock::on(r));
     var n = clock::new(clock::NONE);
     clock::moved(n, 0);

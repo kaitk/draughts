@@ -59,7 +59,7 @@ fn stage(b: board::Board&, s: Settings&, now: f64, variant: u8) {
     b.has_last = true;
     b.hints = s.hints;
     b.king_look = if raised(s) { raised_king_look(s) } else { king_look(s) };
-    b.still = true;
+    b.static_picture = true;
     if s.hints == board::MOVES {
         board::select(b, square(v, "d4", k));
     } else {
@@ -381,16 +381,16 @@ fn list(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: List&) -> i64 {
     return ask;
 }
 
-// game::put inside the list: a light piece (a king's tile's, the slider's thumb), centered in `spot`
-// with radius r: the pieces are drawn over the UI, past the list's clip, so each fades as
-// it scrolls out of the list's view, by how much of it is still inside, and is gone once
-// it is out.
+// game::add_ui_piece inside the list: a light piece (a king's tile's, the slider's
+// thumb), centered in `spot` with radius r: the pieces are drawn over the UI, past the
+// list's clip, so each fades as it scrolls out of the list's view, by how much of it is
+// still inside, and is gone once it is out.
 fn put_in_list(over: board::Overlay&, g: gui::Gui&, spot: float4, r: f32, king: i64, a: f32) {
     let v = g.scroll.view;
     let y = spot.y + 0.5 * spot.w;
     let inside = clamp((min(y - v.y, v.y + v.w - y) + r) / (2.0 * r), 0.0, 1.0);
     guard inside > 0.0 else { return; }
-    game::put(over, spot, r, rules::WHITE, king, a * inside, false);
+    game::add_ui_piece(over, spot, r, rules::WHITE, king, a * inside, false);
 }
 
 // The volume's row where list_at put it (`at`): its name, the speaker, and the slider. A

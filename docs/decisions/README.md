@@ -95,7 +95,7 @@ sizes are now the panel's (`panel::MOVES_ROW`, `MOVES_PAD`, `LINE_HEAD`), and
 `panel::game` takes `panel::Clocks` (made by `game::clocks`), so the board package builds
 on nothing of the screens'. Rejected: a package of its own, which seventy-odd roots
 declaring `game` would have to declare too; and `shell/`, which `game` can't import. The
-landscape 3D layout's special cases stay: its rows invert the 3D board's fit (`settle`),
+landscape 3D layout's special cases stay: its rows invert the 3D board's fit (`panel::fit_view`),
 which no closed rule gives, and the golden layouts must not move.
 
 ### The shell's frame and the panel's regions (2026-11-10)

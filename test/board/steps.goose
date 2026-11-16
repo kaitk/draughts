@@ -40,7 +40,7 @@ fn tap(b: board::Board&, l: board::Layout, n: i64, now: f64) {
 
 fn show(b: board::Board&, l: board::Layout, what: const u8[:], now: f64) {
     let v .= rules::VARIANTS[b.variant];
-    board::fill(b, l, now);
+    board::build_frame_pieces(b, l, now);
     print(what, ": selected ", drive::name(v, b.selected), ", stops ", b.steps.len, ", ringed ",
           drive::marked(v, b.marks.via), "targets ", drive::marked(v, b.marks.target), "wrong ", drive::name(v, b.wrong),
           ", moving ", b.moving);

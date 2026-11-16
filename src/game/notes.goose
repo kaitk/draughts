@@ -64,7 +64,7 @@ fn sync_notes(gm: Game&) -> bool {
         changed = true;
     }
     // A judge asked for a move no longer in the game is dropped.
-    if gm.judging != 0 && (gm.judge_ply >= ns.len || ns[gm.judge_ply].mark != ai::NOT_JUDGED) { gm.judging = 0; }
+    if gm.judge_request_id != 0 && (gm.judge_ply >= ns.len || ns[gm.judge_ply].mark != ai::NOT_JUDGED) { gm.judge_request_id = 0; }
     return changed;
 }
 
@@ -85,11 +85,11 @@ fn keep_notes(gm: Game&) -> bool {
 // Asks for the oldest unjudged move to be judged, unless a judge is asked already or
 // judging is off. The board at rest: a move still showing is judged once it has.
 fn next_judge(gm: Game&) {
-    guard gm.judge && gm.judging == 0 && !gm.b.moving else { return; }
+    guard gm.judge_moves && gm.judge_request_id == 0 && !gm.b.moving else { return; }
     for n, i in gm.notes {
         guard n.mark == ai::NOT_JUDGED else { continue; }
-        gm.asks += 1;
-        gm.judging = gm.asks;
+        gm.ai_request_count += 1;
+        gm.judge_request_id = gm.ai_request_count;
         gm.judge_ply = i;
         return;
     }
@@ -101,15 +101,15 @@ fn judge_ask(gm: Game&) -> Ask {
     let i = gm.judge_ply;
     var past = rules::Past { draw: rules::Draw {}, before: [] };
     rules::record_past_to(gm.b.rec, i, gm.b.pos, past);
-    return Ask { id: gm.judging, pos: gm.notes[i].before, past: past, skill: ai::JUDGE_SKILL, seed: 0, kind: JUDGE,
+    return Ask { id: gm.judge_request_id, pos: gm.notes[i].before, past: past, skill: ai::JUDGE_SKILL, seed: 0, kind: JUDGE,
                  move: gm.notes[i].move };
 }
 
 // The worker's verdict on the ask `id`: the note's mark, and the best move where there
 // was a choice. One for an ask no longer open is ignored. True when a mark was set.
 fn judged(gm: Game&, id: i64, mark: i64, loss: i64, best: rules::Move, has_best: bool) -> bool {
-    guard id != 0 && id == gm.judging else { return false; }
-    gm.judging = 0;
+    guard id != 0 && id == gm.judge_request_id else { return false; }
+    gm.judge_request_id = 0;
     guard gm.judge_ply < gm.notes.len else { return false; }
     let n .= gm.notes[gm.judge_ply];
     n.mark = mark as u8;
@@ -233,7 +233,7 @@ fn row_of(gm: Game&, i: i64) -> i64, bool {
 // The panel in l.moves, if there is room and the setting shows it: a head, with the
 // taken counts at its right when l.counts, over the list. The glass grows with its rows
 // up to l.moves, then scrolls.
-fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
+fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout, ui_pieces: board::Overlay&) {
     guard gm.moves_shown != 0 && l.moves.z > 0.0 && l.moves.w > 0.0 else { return; }
     let u = g.scale;
     let rows = max(1, (gm.notes.len + first_ply(gm) % 2 + 1) / 2);
@@ -249,8 +249,8 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&)
     if l.counts {
         let d = 18.0 * u;
         let row = float4 { words.x, words.y, words.z, words.w - 2.0 * u };
-        let w = panel::count_at(g, over, gm.taken, rules::WHITE, row, d, true);
-        panel::count_at(g, over, gm.taken, rules::BLACK, float4 { row.x, row.y, row.z - w - 14.0 * u, row.w }, d, true);
+        let w = panel::count_at(g, ui_pieces, gm.taken, rules::WHITE, row, d, true);
+        panel::count_at(g, ui_pieces, gm.taken, rules::BLACK, float4 { row.x, row.y, row.z - w - 14.0 * u, row.w }, d, true);
     }
     moves_list(gm, g, room, MOVES_LIST, true);
 }

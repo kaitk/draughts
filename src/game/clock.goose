@@ -61,10 +61,10 @@ fn stop(c: Clock&) { c.running = -1; }
 
 // The whole seconds a side's clock shows: rounded up, so it shows 0:00 only once the
 // time is out.
-fn shown(c: Clock&, side: i64) -> i64 { ceil(c.left[side]) as i64 }
+fn whole_seconds(c: Clock&, side: i64) -> i64 { ceil(c.left[side]) as i64 }
 
-fn warn(c: Clock&, side: i64) -> bool { c.running == side && shown(c, side) < WARN }
-fn low(c: Clock&, side: i64) -> bool { c.running == side && shown(c, side) <= LOW }
+fn warn(c: Clock&, side: i64) -> bool { c.running == side && whole_seconds(c, side) < WARN }
+fn low(c: Clock&, side: i64) -> bool { c.running == side && whole_seconds(c, side) <= LOW }
 
 // Seconds until the running clock shows another time, or -1 when none runs.
 fn until_next(c: Clock&) -> f64 {

@@ -58,15 +58,15 @@ fn begin(gm: game::Game&, fen: const u8[:], computer: i64, hints: i64) {
 fn state(gm: game::Game&, what: const u8[:]) {
     let b .= gm.b;
     let v .= rules::VARIANTS[I];
-    board::fill(b, l.board, now + 0.3);
+    board::build_frame_pieces(b, l.board, now + 0.3);
     var flat: u8[>..] = [];
     for pc in b.pieces {
         guard pc.ring.z > 0.0 else { continue; }
         format(flat, drive::name(v, board::hit(l.board, v, float2 { pc.at.x, pc.at.y })), " ", pc.ring.z as i64, " ");
     }
-    board::fill(b, l3.board, now + 0.3);
+    board::build_frame_pieces(b, l3.board, now + 0.3);
     var s = view3d::Scene {};
-    view3d::fill(s, b, l3.board, l3.view, now + 0.3);
+    view3d::build_scene(s, b, l3.board, l3.view, now + 0.3);
     var deep: u8[>..] = [];
     for i in 100 {
         if s.lit[i].z > 0.0 { format(deep, i / 10, ".", i % 10, " ", s.lit[i].z as i64, " "); }
@@ -88,9 +88,9 @@ fn state(gm: game::Game&, what: const u8[:]) {
     }
     if s.next < 1.0 {
         // A frame on, only the marks over the kept image are drawn again (MARKS, 4).
-        board::fill(b, l3.board, now + 0.4);
+        board::build_frame_pieces(b, l3.board, now + 0.4);
         var on = view3d::Scene {};
-        view3d::fill(on, b, l3.board, l3.view, now + 0.4);
+        view3d::build_scene(on, b, l3.board, l3.view, now + 0.4);
         print("    a frame on: changes ", view3d::changes(s, on), ", lit ", (on.next * 100.0 + 0.5) as i64, "%");
     }
 }

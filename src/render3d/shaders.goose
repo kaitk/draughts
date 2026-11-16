@@ -71,7 +71,7 @@ let SHADOW_MANY = "#define SHADOW_MANY 1\n";
 // buffer of two vec4s: the foot and scale; dark, crown, selected or stacked, seed).
 // draw.z: how opaque (a fading piece is drawn alone, blended); draw.w: the first
 // instance it draws. A seed of 1000 or more is a piece a win's dim leaves lit; one below
-// 0 a piece the lookout drains (view3d::fill), its figure from the seed's size.
+// 0 a piece the lookout drains (view3d::build_scene), its figure from the seed's size.
 let LIT_VERT = """
     layout(location = 0) in vec3 a_pos;
     layout(location = 1) in vec3 a_normal;

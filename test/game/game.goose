@@ -50,8 +50,8 @@ fn pieces() -> u8[>..] {
 fn clocks(gm: game::Game&, g: gui::Gui&) -> u8[>..] {
     var w: u8[..8] = [];
     var b: u8[..8] = [];
-    clock::text(clock::shown(gm.clock, 0), w);
-    clock::text(clock::shown(gm.clock, 1), b);
+    clock::text(clock::whole_seconds(gm.clock, 0), w);
+    clock::text(clock::whole_seconds(gm.clock, 1), b);
     var styles: u8[>..] = [];
     for q in g.quads {
         guard q.look.x == gui::BUTTON && q.extra.y >= gui::CLOCK_RUN else { continue; }
@@ -182,7 +182,7 @@ fn main() {
     // waiting one never; the flag ends the game as a win for white.
     var t = 503.0;
     for stop in [61, 59, 20, 19] {
-        while clock::shown(gm.clock, 1) > stop {
+        while clock::whole_seconds(gm.clock, 1) > stop {
             drive::frame(gm, g, l, away, false, false, false, t);
             t += 1.0;
         }

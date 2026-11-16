@@ -32,7 +32,7 @@ fn tap(b: board::Board&, l: board::Layout, at: const u8[:], now: f64) {
 // Where the selected piece is drawn, lifted and glowing, as the square under it ("-"
 // between squares), and how high.
 fn drawn(b: board::Board&, l: board::Layout, now: f64) -> u8[>..] {
-    board::fill(b, l, now);
+    board::build_frame_pieces(b, l, now);
     for p in b.pieces {
         if p.look.z == 1.0 {
             let sq = board::hit(l, rules::VARIANTS[V], float2 { p.at.x, p.at.y });
@@ -61,7 +61,7 @@ fn main() {
 
     tap(b, l, "c1", 0.0);
     tap(b, l, "e3", 1.0);
-    print("c1, then e3: waits on ", name(board::waiting(b)), ", wrong ", name(b.wrong));
+    print("c1, then e3: waits on ", name(board::capture_stop_square(b)), ", wrong ", name(b.wrong));
     tap(b, l, "c5", 2.0);
     tap(b, l, "a3", 3.0);
     tap(b, l, "c1", 4.0);
@@ -70,7 +70,7 @@ fn main() {
     board::set(b, p);
     tap(b, l, "c1", 10.0);
     tap(b, l, "c1", 11.0);
-    print("c1 twice, both ways end there, taking the same: selected ", name(b.selected), ", waits on ", name(board::waiting(b)),
+    print("c1 twice, both ways end there, taking the same: selected ", name(b.selected), ", waits on ", name(board::capture_stop_square(b)),
           ", playing ", b.moving, ", wrong ", name(b.wrong));
 
     // A tap on the selected piece puts it down; a drag from it plays.

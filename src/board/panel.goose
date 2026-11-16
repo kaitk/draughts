@@ -44,9 +44,9 @@ let GROUP_PLAY = 2;
 // degrees: past a quarter turn the arrows go as the turned board shows it.
 fn board_keys(g: gui::Gui&, l: Layout, b: board::Board&, mine: bool, now: f64, turn: f32 = 0.0) -> bool {
     gui::group(g, GROUP_BOARD);
-    let r = if l.three { l.view.rect } else { float4 { l.board.board.x, l.board.board.y, l.board.board.z, l.board.board.z } };
+    let r = if l.is_3d { l.view.rect } else { float4 { l.board.board.x, l.board.board.y, l.board.board.z, l.board.board.z } };
     var flat = l.board;
-    if l.three && turn > 90.0 && turn < 270.0 { flat.flip = !flat.flip; }
+    if l.is_3d && turn > 90.0 && turn < 270.0 { flat.flip = !flat.flip; }
     return board::keys(b, flat, g, BOARD_ID, r, mine, now);
 }
 
@@ -108,7 +108,7 @@ let COMPACT = 3;
 // Whether the panels are columns beside the board (landscape), not rows above and below it.
 fn columns(l: Layout) -> bool { l.mode == CORNERS }
 
-// Where the board and the panels beside it go, in pixels. A 3D board (`three`) is drawn
+// Where the board and the panels beside it go, in pixels. A 3D board (`is_3d`) is drawn
 // through `view`, its bounds on screen view.rect; `board` is then the flat layout the
 // board package plays on, a square in the bounds' middle at rest (`rest`), which taps
 // reach through the perspective (view3d::pick). The camera buttons stand in `buttons`, a
@@ -116,23 +116,23 @@ fn columns(l: Layout) -> bool { l.mode == CORNERS }
 // across; `view` is the camera as they have put it (aim), fitted into `box` clear of
 // `keep`, and zoomed into `room` (room.z 0 for no zoom).
 struct Layout {
-    board:   board::Layout,
-    left:    float4,      // x, y, width, height of what leaves the game: back over its panel (the bar above in portrait)
-    right:   float4,      // and of the one that plays it (below in portrait)
-    three:   bool         = false,
-    view:    view3d::View = view3d::View {},
-    rest:    view3d::View = view3d::View {},
-    pitch:   f32          = 0.0,
-    buttons: float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
-    count:   i64          = 0,
-    row:     bool         = false,
-    touch:   f32          = 0.0,
-    disc:    f32          = 0.0,
-    box:     float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
-    room:    float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
-    keep:    float4[5]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 5],
-    gap:     f32          = 0.0,
-    mode:    i64          = CORNERS,
+    board:     board::Layout,
+    left:      float4,    // x, y, width, height of what leaves the game: back over its panel (the bar above in portrait)
+    right:     float4,    // and of the one that plays it (below in portrait)
+    is_3d:     bool         = false,
+    view:      view3d::View = view3d::View {},
+    rest_view: view3d::View = view3d::View {},
+    pitch:     f32          = 0.0,
+    buttons:   float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
+    count:     i64          = 0,
+    row:       bool         = false,
+    touch:     f32          = 0.0,
+    disc:      f32          = 0.0,
+    box:       float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
+    room:      float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
+    keep:      float4[5]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 5],
+    gap:       f32          = 0.0,
+    mode:      i64          = CORNERS,
     // The portrait bar's room for its three tiles, above what each side has taken in a
     // game; `stacked` where each icon goes over its word.
     tiles:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -273,12 +273,12 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let buttons = if col { float4 { x1 - touch, y, touch, len } }
                       else { float4 { right.x + 0.5 * (right.z - len), min(y, area.y + height - touch), len, touch } };
         let box = float4 { area.x + gap, area.y + gap, width - 2.0 * gap, height - 2.0 * gap };
-        var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: left, right: right, three: true,
+        var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: left, right: right, is_3d: true,
                          pitch: PITCH_LANDSCAPE, buttons: buttons, count: 3, row: !col, touch: touch, disc: disc,
                          box: box, room: box, gap: gap, mode: CORNERS, area: safe, out_row: out_row(), .. };
         l.keep = [left, right, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 0.0, 0.0, 0.0, 0.0 }];
         let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
-        rest(l, settle(l, cam, n), s);
+        set_rest_view(l, fit_view(l, cam, n), s);
         guard game else { return l; }
         // A tablet squarer than 3:2: the moves panel above the board, between the corner
         // panels, what each side has taken as counts in its head.
@@ -287,12 +287,12 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
             let y = area.y + gap;
             // Down to the board at rest, a row shorter where the top view, whose board
             // reaches higher, needs it.
-            let up = settle(l, view3d::Camera { pitch: rig::TOP_PITCH, yaw: 0.0 }, n);
-            let at_rest = l.rest.rect.y - gap - y;
+            let up = fit_view(l, view3d::Camera { pitch: rig::TOP_PITCH, yaw: 0.0 }, n);
+            let at_rest = l.rest_view.rect.y - gap - y;
             let rows = ((at_rest / s - 2.0 * MOVES_PAD - LINE_HEAD) / MOVES_ROW) as i64;
             let h = min(at_rest, max(up.rect.y - gap - y, at_rest - MOVES_ROW * s));
             let top = float4 { x0, y, right.x - gap - x0, h };
-            if rows >= MOVES_TOP_LEAST && !view3d::touches(l.rest, top, 0.5 * gap) {
+            if rows >= MOVES_TOP_LEAST && !view3d::touches(l.rest_view, top, 0.5 * gap) {
                 l.moves = top;
                 l.keep[4] = top;
                 l.counts = true;
@@ -312,12 +312,12 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
                 let most = with_moves(l, lower, s, 0, n);
                 var lo = MOVES_3D;
                 var hi = ((most.moves.w / s - 2.0 * MOVES_PAD) / MOVES_ROW) as i64;
-                if hi > lo && most.rest.k >= 0.995 * base.rest.k { l = most; }
+                if hi > lo && most.rest_view.k >= 0.995 * base.rest_view.k { l = most; }
                 else {
                     while hi - lo > 1 {
                         let mid = (lo + hi) / 2;
                         let t = with_moves(base, lower, s, mid, n);
-                        if t.rest.k >= 0.995 * base.rest.k { lo = mid; l = t; } else { hi = mid; }
+                        if t.rest_view.k >= 0.995 * base.rest_view.k { lo = mid; l = t; } else { hi = mid; }
                     }
                 }
             }
@@ -326,7 +326,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         if moves && phone && l.moves.z <= 0.0 {
             row_fit(l, area, s, TAKEN_PHONE * s, left.x + left.z + BACK_GAP * s);
             l.keep[0] = float4 { left.x, left.y, left.z, area.y + height - gap - left.y };
-            rest(l, settle(l, cam, n), s);
+            set_rest_view(l, fit_view(l, cam, n), s);
             return l;
         }
         // What each side has taken: a line at the top between the panels where the board
@@ -335,7 +335,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let d = (if phone { TAKEN_PHONE } else { TAKEN_D }) * s;
         let x0 = left.x + left.z + gap;
         let bar = float4 { x0, area.y + gap, right.x - gap - x0, d + 2.0 * TAKEN_LINE_PAD * s };
-        if !view3d::touches(l.rest, bar, 0.5 * gap) {
+        if !view3d::touches(l.rest_view, bar, 0.5 * gap) {
             l.taken = bar;
             l.taken_as = TAKEN_BAR;
             l.taken_d = d;
@@ -345,8 +345,8 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         var under = l;
         if l.moves.z > 0.0 { under.taken_as = TAKEN_NONE; } else { under_left(under, area, s, d); }
         // Narrowed to clear the board's near edge, the bounds' widest, down to 3/4.
-        under.taken.z = min(under.taken.z, l.rest.rect.x - 0.5 * gap - under.taken.x);
-        if under.taken.z >= 0.75 * left.z && under.taken_as != TAKEN_NONE && !view3d::touches(l.rest, under.taken, 0.5 * gap)
+        under.taken.z = min(under.taken.z, l.rest_view.rect.x - 0.5 * gap - under.taken.x);
+        if under.taken.z >= 0.75 * left.z && under.taken_as != TAKEN_NONE && !view3d::touches(l.rest_view, under.taken, 0.5 * gap)
            && !overlaps(under.taken, buttons) {
             l.taken = under.taken;
             l.taken_as = under.taken_as;
@@ -358,7 +358,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         l.taken_as = TAKEN_BAR;
         l.taken_d = d;
         l.keep[3] = bar;
-        rest(l, settle(l, cam, n), s);
+        set_rest_view(l, fit_view(l, cam, n), s);
         return l;
     }
     let cam = view3d::Camera { pitch: portrait_pitch, yaw: 0.0 };
@@ -381,19 +381,19 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let buttons = float4 { x + w - len, box.y + h + m, len, touch };
     let play = float4 { x, buttons.y + touch + m, w, bottom };
     var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: float4 { x, y, w, top }, right: play,
-                     three: true, pitch: portrait_pitch, buttons: buttons, count: 2, row: true, touch: touch,
+                     is_3d: true, pitch: portrait_pitch, buttons: buttons, count: 2, row: true, touch: touch,
                      disc: disc, box: box, gap: gap, mode: bar.mode, area: area, .. };
     l.keep = [l.left, play, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 0.0, 0.0, 0.0, 0.0 }];
     bar_tiles(l, bar, game, phone, s, game && moves);
-    rest(l, view3d::fit(cam, n, box, view3d::MIDDLE), s);
+    set_rest_view(l, view3d::fit(cam, n, box, view3d::MIDDLE), s);
     portrait_sheet(l, l.view.rect.y + 0.5 * l.view.rect.w, s);
     return l;
 }
 
 // The view at rest, and the flat square the board package plays on, which stays while the
 // camera moves.
-fn rest(l: Layout&, v: view3d::View, s: f32) {
-    l.rest = v;
+fn set_rest_view(l: Layout&, v: view3d::View, s: f32) {
+    l.rest_view = v;
     l.view = v;
     l.board = view3d::square(v, s);
 }
@@ -409,7 +409,7 @@ fn clear(v: view3d::View, keep: float4[5]&, gap: f32, field: bool = false) -> bo
 // of the box, kept at its bottom and centered across, whose board clears the panels and
 // the buttons by half a gap, found by halving, the board shrinking as the share does; in
 // portrait as large as fits the box, in its middle.
-fn settle(l: Layout&, cam: view3d::Camera, n: i64) -> view3d::View {
+fn fit_view(l: Layout&, cam: view3d::Camera, n: i64) -> view3d::View {
     let box = l.box;
     guard l.count == 3 else { return view3d::fit(cam, n, box, view3d::MIDDLE); }
     let g = 0.5 * l.gap;
@@ -459,12 +459,12 @@ fn field_at(cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: 
 // The camera as the rig has it at `now`: fitted at the view's angle, zoomed by the zoom's
 // share, then turned by the hot-seat turn and tipped by the showcase, which keep the fit,
 // so the board stays its size through a turn. The flat layout stays.
-fn aim(l: Layout&, r: rig::Rig&, now: f64) {
-    guard l.three else { return; }
-    let n = l.rest.n;
+fn apply_camera(l: Layout&, r: rig::Rig&, now: f64) {
+    guard l.is_3d else { return; }
+    let n = l.rest_view.n;
     var fit = rig::base(r, l.pitch, now);
     fit.turn = 0.0;
-    var v = if fit.pitch == l.pitch { l.rest } else { settle(l, fit, n) };
+    var v = if fit.pitch == l.pitch { l.rest_view } else { fit_view(l, fit, n) };
     let z = if l.room.z > 0.0 { rig::value(r.zoom, now) } else { 0.0 };
     if z > 0.0 {
         let q = zoomed(l, fit, n);
@@ -472,14 +472,14 @@ fn aim(l: Layout&, r: rig::Rig&, now: f64) {
         v.c = v.c + (q.c - v.c) * z;
         v.rect = v.rect + (q.rect - v.rect) * z;
     }
-    l.view = view3d::turned(v, rig::camera(r, l.pitch, now));
+    l.view = view3d::with_camera_turn(v, rig::camera(r, l.pitch, now));
 }
 
 // The camera buttons round the 3D board: the view (a gold dot while the showcase has left
 // the board off its rest angle), the zoom in landscape, and the showcase, lit while on.
 // Returns whether one was tapped.
 fn camera(g: gui::Gui&, l: Layout, r: rig::Rig&, now: f64) -> bool {
-    guard l.three && l.count > 0 else { return false; }
+    guard l.is_3d && l.count > 0 else { return false; }
     let step = l.touch + BUTTON_GAP * g.scale;
     var tapped = false;
     for i in l.count {
@@ -696,7 +696,7 @@ fn with_moves(l0: Layout, area: float4, s: f32, rows: i64, n: i64) -> Layout {
     under(l, l.left, area, s, rows);
     guard l.moves.z > 0.0 else { return l; }
     l.keep[4] = l.moves;
-    rest(l, settle(l, view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 }, n), s);
+    set_rest_view(l, fit_view(l, view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 }, n), s);
     return l;
 }
 
@@ -827,11 +827,11 @@ struct Note {
 
 // Both pieces side by side, just touching, white on the left: a draw's mark where a
 // winner's piece goes. Each of radius r, overlapping by `overlap` pixels, at opacity a.
-fn pair(over: board::Overlay&, spot: float4, r: f32, overlap: f32, a: f32) {
+fn pair(ui_pieces: board::Overlay&, spot: float4, r: f32, overlap: f32, a: f32) {
     let w = 4.0 * r - overlap;
     let x = spot.x + 0.5 * (spot.z - w);
-    piece(over, float4 { x, spot.y, 2.0 * r, spot.w }, r, 0, 0, a, 0.0);
-    piece(over, float4 { x + 2.0 * r - overlap, spot.y, 2.0 * r, spot.w }, r, 1, 0, a, 0.0);
+    piece(ui_pieces, float4 { x, spot.y, 2.0 * r, spot.w }, r, 0, 0, a, 0.0);
+    piece(ui_pieces, float4 { x + 2.0 * r - overlap, spot.y, 2.0 * r, spot.w }, r, 1, 0, a, 0.0);
 }
 
 // Words in w pixels of face `face`: where they break in two, the lines as even as they
@@ -932,11 +932,11 @@ fn words(g: gui::Gui&, face: i64, r: float4&, s: const u8[:], a: f32) {
 // A piece of `side` over the UI centered in `spot` with radius r, at opacity a, a man (0)
 // or a king (board::CROWN, board::STACK), with a glow ring right round it as strong as
 // `ring`, 0 to 1.
-fn piece(over: board::Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: f32) {
-    guard over.len < board::OVER else { return; }
+fn piece(ui_pieces: board::Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: f32) {
+    guard ui_pieces.len < board::OVER else { return; }
     let x = spot.x + 0.5 * spot.z;
     let y = spot.y + 0.5 * spot.w;
-    over.push(board::Piece { at: float4 { x, y, r, 0.0 }, look: float4 { side, king, 0.0, a },
+    ui_pieces.push(board::Piece { at: float4 { x, y, r, 0.0 }, look: float4 { side, king, 0.0, a },
                              ring: float4 { 0.0, ring, 0.0, 0.0 } });
 }
 
@@ -952,7 +952,7 @@ struct Clocks {
 // One side's clock in r: its piece and its time, lit while it runs (gold under a
 // minute, red at 20 seconds or under), faint while it waits; its piece's ring as strong
 // as `ring`.
-fn clock_of(g: gui::Gui&, r: float4, c: Clocks&, side: i64, ring: f32, over: board::Overlay&) {
+fn clock_of(g: gui::Gui&, r: float4, c: Clocks&, side: i64, ring: f32, ui_pieces: board::Overlay&) {
     let u = g.scale;
     let runs = c.running == side;
     let style = c.style[side];
@@ -961,7 +961,7 @@ fn clock_of(g: gui::Gui&, r: float4, c: Clocks&, side: i64, ring: f32, over: boa
     gui::cut_left(room, 14.0 * u);
     gui::cut_right(room, 14.0 * u);
     let spot = gui::cut_left(room, 44.0 * u);
-    piece(over, spot, 22.0 * u, side, 0,
+    piece(ui_pieces, spot, 22.0 * u, side, 0,
           if runs { 1.0 } else { 0.7 }, ring);
     let t = c.text[side];
     // A clock narrowed for the lookout's eye beside it takes a smaller face where its
@@ -1295,11 +1295,11 @@ fn portrait_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
 // or the winner when `won`; when `drawn`, both pieces and "Draw" instead. The side to
 // move's piece has a ring as strong as `glow`; it pulses while the computer thinks. The
 // countdown before a draw, `note`, goes under whose turn, or in its short form between
-// clocks with no room for the line. Pieces shown on the panels go into `over`. Returns
-// the tile tapped this frame, if any. Without `out` the way out is left undeclared: the
-// moves' sheet covers it.
+// clocks with no room for the line. Pieces shown on the panels go into `ui_pieces`.
+// Returns the tile tapped this frame, if any. Without `out` the way out is left
+// undeclared: the moves' sheet covers it.
 fn game(g: gui::Gui&, l: Layout, c: Clocks, side: i64, won: bool, drawn: bool, note: Note&, thinking: bool,
-        glow: f32, over: board::Overlay&, help: Help = Help {}, out: bool = true) -> i64 {
+        glow: f32, ui_pieces: board::Overlay&, help: Help = Help {}, out: bool = true) -> i64 {
     let u = g.scale;
     let turn_key = if drawn { strings::DRAW }
                    else if won { if side == 0 { strings::WON_WHITE } else { strings::WON_BLACK } }
@@ -1344,13 +1344,13 @@ fn game(g: gui::Gui&, l: Layout, c: Clocks, side: i64, won: bool, drawn: bool, n
         let first = if l.board.flip { 0 } else { 1 };
         var rings: f32[2] = [0.0, 0.0];
         for s in 2 { if c.running == s || (thinking && s == side) { rings[s] = glow; } }
-        clock_of(g, p.clocks[0], c, first, rings[first], over);
+        clock_of(g, p.clocks[0], c, first, rings[first], ui_pieces);
         if p.short_as == SHORT_LINE { short_line(g, p.short, note); }
-        clock_of(g, p.clocks[1], c, 1 - first, rings[1 - first], over);
+        clock_of(g, p.clocks[1], c, 1 - first, rings[1 - first], ui_pieces);
         if p.short_as == SHORT_STACKED { short_stacked(g, p.short, note); }
     } else {
-        if drawn { pair(over, p.spot, p.r, p.overlap, 1.0); }
-        else { piece(over, p.spot, p.r, side, 0, 1.0, glow); }
+        if drawn { pair(ui_pieces, p.spot, p.r, p.overlap, 1.0); }
+        else { piece(ui_pieces, p.spot, p.r, side, 0, 1.0, glow); }
         turn_words(g, l, p.words, label, line, on.counting);
     }
     if p.name.z > 0.0 {
@@ -1462,8 +1462,8 @@ fn pips(g: gui::Gui&, r: float4, left: i64, a: f32) {
 
 // What each side has taken, where the layout puts it: `t` counts the pieces of each
 // color taken, so black's catch is t's white pieces. A catch on its own glass shows only
-// once a piece has been taken. The pieces go into `over`.
-fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Overlay&) {
+// once a piece has been taken. The pieces go into `ui_pieces`.
+fn taken(g: gui::Gui&, l: Layout, t: Taken, ui_pieces: board::Overlay&) {
     guard l.taken_as != TAKEN_NONE && l.taken.z > 0.0 && l.taken.w > 0.0 else { return; }
     let u = g.scale;
     let d = l.taken_d;
@@ -1482,8 +1482,8 @@ fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Overlay&) {
         }
         let gap = TAKEN_GAP * d;
         let y = inner.y + 0.5 * (inner.w - 2.0 * d - gap);
-        catch_row(over, t, first, float4 { inner.x, y, inner.z, d }, false);
-        catch_row(over, t, 1 - first, float4 { inner.x, y + d + gap, inner.z, d }, false);
+        catch_row(ui_pieces, t, first, float4 { inner.x, y, inner.z, d }, false);
+        catch_row(ui_pieces, t, 1 - first, float4 { inner.x, y + d + gap, inner.z, d }, false);
         return;
     }
     if l.taken_as == TAKEN_ROW {
@@ -1509,8 +1509,8 @@ fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Overlay&) {
             let x = if right { strip.x + strip.z - w } else { strip.x };
             gui::glass(g, float4 { x - inset, l.taken.y, w + 2.0 * inset, l.taken.w }, 0.5 * l.taken.w / u);
             let at = float4 { if right { strip.x + strip.z - half } else { strip.x }, strip.y, half, strip.w };
-            if counts { count_at(g, over, t, c, at, d, right); }
-            else { catch_row(over, t, c, float4 { at.x, y, half, d }, right); }
+            if counts { count_at(g, ui_pieces, t, c, at, d, right); }
+            else { catch_row(ui_pieces, t, c, float4 { at.x, y, half, d }, right); }
         }
         return;
     }
@@ -1532,20 +1532,20 @@ fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Overlay&) {
     let lb = row_len(t, b, d);
     let room = inner.z - mid;
     let wa = if la + lb <= room { la } else { room * la / (la + lb) };
-    catch_row(over, t, a, float4 { inner.x, inner.y, wa, d }, false);
-    catch_row(over, t, b, float4 { inner.x + wa + mid, inner.y, inner.z - wa - mid, d }, false);
+    catch_row(ui_pieces, t, a, float4 { inner.x, inner.y, wa, d }, false);
+    catch_row(ui_pieces, t, b, float4 { inner.x + wa + mid, inner.y, inner.z - wa - mid, d }, false);
 }
 
 // The pieces of color `c` taken as a count in r: a piece d across and the number after
 // it, from r's left, or ending at its right (`right`). Returns how wide it is.
-fn count_at(g: gui::Gui&, over: board::Overlay&, t: Taken, c: i64, r: float4, d: f32, right: bool) -> f32 {
+fn count_at(g: gui::Gui&, ui_pieces: board::Overlay&, t: Taken, c: i64, r: float4, d: f32, right: bool) -> f32 {
     let u = g.scale;
     let s = count_text(t, c);
     let tw = gui::text_width(g, gui::BODY, s[..s.len]);
     let gap = 6.0 * u;
     let w = d + gap + tw;
     let x = if right { r.x + r.z - w } else { r.x };
-    piece(over, float4 { x, r.y + 0.5 * (r.w - d), d, d }, 0.5 * d, c, 0, 1.0, 0.0);
+    piece(ui_pieces, float4 { x, r.y + 0.5 * (r.w - d), d, d }, 0.5 * d, c, 0, 1.0, 0.0);
     gui::text(g, gui::BODY, float4 { x + d + gap, r.y, tw, r.w }, s[..s.len], 1.0, 0.0, gui::LEFT);
     return w;
 }
@@ -1577,7 +1577,7 @@ fn row_len(t: Taken, c: i64, d: f32) -> f32 {
 // or ending at its right (`right`). A row that would run past r takes smaller pieces,
 // down to TAKEN_LEAST of r.w, then closer ones.
 let TAKEN_LEAST: f32 = 0.7;
-fn catch_row(over: board::Overlay&, t: Taken, c: i64, r: float4, right: bool) {
+fn catch_row(ui_pieces: board::Overlay&, t: Taken, c: i64, r: float4, right: bool) {
     let n = t.men[c] + t.kings[c];
     guard n > 0 && r.z > 0.0 else { return; }
     let both = t.men[c] > 0 && t.kings[c] > 0;
@@ -1592,7 +1592,7 @@ fn catch_row(over: board::Overlay&, t: Taken, c: i64, r: float4, right: bool) {
     for i in n {
         let king = i >= t.men[c];
         if king && i == t.men[c] && t.men[c] > 0 { x += gap; }
-        piece(over, float4 { x, y, d, d }, 0.5 * d, c, if king { board::CROWN } else { 0 }, 1.0, 0.0);
+        piece(ui_pieces, float4 { x, y, d, d }, 0.5 * d, c, if king { board::CROWN } else { 0 }, 1.0, 0.0);
         x += step;
     }
 }

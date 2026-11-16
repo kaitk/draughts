@@ -81,7 +81,7 @@ fn show(sh: shell::Shell&, g: gui::Gui&, what: const u8[:], now: f64) {
     let b .= shell::fill(sh, now);
     print(what, ": puzzle ", puzzle::current(pl).id, " ", puzzles::THEME_NAMES[puzzle::current(pl).theme], " ", puzzle::current(pl).level, ", ", STATES[pl.state],
           ", misses ", pl.misses, ", stars ", puzzle::stars(pl), ", selected ", drive::name(v, b.selected), " drawn on ",
-          drawn(sh, b), ", waits on ", drive::name(v, board::waiting(b)), ", ringed ", drive::marked(v, b.marks.via),
+          drawn(sh, b), ", waits on ", drive::name(v, board::capture_stop_square(b)), ", ringed ", drive::marked(v, b.marks.via),
           "targets ", drive::marked(v, b.marks.target), "wrong ", drive::name(v, b.wrong), ", next ", next(g));
 }
 

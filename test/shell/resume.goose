@@ -85,8 +85,8 @@ fn main() {
     var three: shell::Saved3[>..] = [];
     three.push(shell::Saved3 { version: 3, screen: shell::GAME, variant: b.variant, start: b.rec.start, pos: b.pos,
                                last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.rec.history,
-                               clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level,
-                               skill: sh.game.skill, number: sh.game.number, counted: sh.game.counted });
+                               clock:     sh.game.clock, computer: sh.game.computer, level: sh.game.level,
+                               skill: sh.game.skill, number: sh.game.number, end_sent_for_rating: sh.game.end_sent_for_rating });
     var old = to_bytes(three);
     let h = shell::checksum(old);
     for i in 8 { old.push(((h >> (8 * i)) & 0xFF) as u8); }

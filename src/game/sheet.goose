@@ -70,7 +70,7 @@ fn legend(g: gui::Gui&, r: float4, k: f32 = 1.0, face: i64 = gui::SMALL, marks: 
 
 // The sheet's foot in r: a rule, then each side's piece and its accuracy, or a dash while
 // none of its moves is judged.
-fn moves_foot(gm: Game&, g: gui::Gui&, r: float4, over: board::Overlay&) {
+fn moves_foot(gm: Game&, g: gui::Gui&, r: float4, ui_pieces: board::Overlay&) {
     let u = g.scale;
     gui::rounded_rect(g, float4 { r.x, r.y + 4.0 * u, r.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
     let t = tally(gm.notes);
@@ -79,7 +79,7 @@ fn moves_foot(gm: Game&, g: gui::Gui&, r: float4, over: board::Overlay&) {
     var x = row.x + 4.0 * u;
     var s: Line = [];
     for side in 2 {
-        panel::piece(over, float4 { x, row.y + 0.5 * (row.w - d), d, d }, 0.5 * d, side, 0, 1.0, 0.0);
+        panel::piece(ui_pieces, float4 { x, row.y + 0.5 * (row.w - d), d, d }, 0.5 * d, side, 0, 1.0, 0.0);
         x += d + 8.0 * u;
         s.clear();
         if t.accuracy[side] >= 0 {
@@ -97,7 +97,7 @@ fn moves_foot(gm: Game&, g: gui::Gui&, r: float4, over: board::Overlay&) {
 // The moves' line where the layout has one and the setting shows the moves; true when
 // tapped, which opens the sheet. A tile in landscape, a pill in portrait. Before the
 // first move there is nothing to open.
-fn moves_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool {
+fn moves_line(gm: Game&, g: gui::Gui&, l: panel::Layout, ui_pieces: board::Overlay&) -> bool {
     guard l.line_as != panel::LINE_NONE && gm.moves_shown != 0 else { return false; }
     let u = g.scale;
     gui::group(g, panel::GROUP_OUT);
@@ -121,13 +121,13 @@ fn moves_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) 
     gui::under_tile(g, l.line, 22.0);
     gui::add(g, gui::Quad { rect: l.line, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
                             extra: float4 { u, gui::PLAIN, lit, 0.0 } });
-    rows_line(gm, g, l, over);
+    rows_line(gm, g, l, ui_pieces);
     return clicked;
 }
 
 // The landscape line's inside: a head with a chevron, the taken counts where the layout
 // puts them there, and the last rows of the moves, the earlier faded.
-fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
+fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, ui_pieces: board::Overlay&) {
     let u = g.scale;
     let r = l.line;
     let k = LINE_CHEVRON * u;
@@ -144,8 +144,8 @@ fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     if l.counts {
         let head = gui::cut_top(inner, 26.0 * u);
         let d = 18.0 * u;
-        let w = panel::count_at(g, over, gm.taken, rules::BLACK, head, d, false);
-        panel::count_at(g, over, gm.taken, rules::WHITE, float4 { head.x + w + 14.0 * u, head.y, head.z - w - 14.0 * u, head.w },
+        let w = panel::count_at(g, ui_pieces, gm.taken, rules::BLACK, head, d, false);
+        panel::count_at(g, ui_pieces, gm.taken, rules::WHITE, float4 { head.x + w + 14.0 * u, head.y, head.z - w - 14.0 * u, head.w },
                         d, false);
     }
     guard ns.len > 0 else {
@@ -242,7 +242,7 @@ fn bar_line(gm: Game&, g: gui::Gui&, l: panel::Layout) {
 // The moves' sheet, open: in landscape from the screen's left edge to the board's, the
 // board still playable; in portrait from the foot up to the board's middle over a dim
 // layer. Its head or the dim layer closes it. True when closed.
-fn moves_sheet(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool {
+fn moves_sheet(gm: Game&, g: gui::Gui&, l: panel::Layout, ui_pieces: board::Overlay&) -> bool {
     let u = g.scale;
     let bottom = l.line_as == panel::LINE_BAR;
     var closed = false;
@@ -279,7 +279,7 @@ fn moves_sheet(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&)
     if clicked { closed = true; }
     if gm.moves_shown == 2 {
         legend(g, gui::cut_bottom(room, legend_h(g, room.z)));
-        moves_foot(gm, g, gui::cut_bottom(room, FOOT_H * u), over);
+        moves_foot(gm, g, gui::cut_bottom(room, FOOT_H * u), ui_pieces);
     }
     moves_list(gm, g, room, SHEET_LIST, false);
     return closed;
@@ -296,28 +296,28 @@ fn close_sheet(gm: Game&) -> bool {
 
 // The pieces over the UI under the portrait sheet's top `top` gone; those above it kept
 // whole, not faded, since faded they would show what they overlap.
-fn dim_under(over: board::Overlay&, top: f32) {
+fn dim_under(ui_pieces: board::Overlay&, top: f32) {
     var k = 0;
-    for i in over.len {
-        let p = over[i];
+    for i in ui_pieces.len {
+        let p = ui_pieces[i];
         guard p.at.y < top else { continue; }
-        over[k] = p;
+        ui_pieces[k] = p;
         k += 1;
     }
-    while over.len > k { over.pop(); }
+    while ui_pieces.len > k { ui_pieces.pop(); }
 }
 
 // The pieces over the UI that a tip in r covers, gone.
-fn clear_under(over: board::Overlay&, r: float4) {
+fn clear_under(ui_pieces: board::Overlay&, r: float4) {
     var k = 0;
-    for i in over.len {
-        let p = over[i];
+    for i in ui_pieces.len {
+        let p = ui_pieces[i];
         let d = p.at.z;
         guard p.at.x + d <= r.x || p.at.x - d >= r.x + r.z || p.at.y + d <= r.y || p.at.y - d >= r.y + r.w else { continue; }
-        over[k] = p;
+        ui_pieces[k] = p;
         k += 1;
     }
-    while over.len > k { over.pop(); }
+    while ui_pieces.len > k { ui_pieces.pop(); }
 }
 
 // The marked move under p as the moves panel last showed it, or -1.
@@ -378,7 +378,7 @@ fn tips(gm: Game&, g: gui::Gui&, l: panel::Layout) -> bool {
 let TIP_W = 320.0;
 let TIP_PAD = 14.0;
 let TIP_DISC = 46.0;
-fn tip(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool {
+fn tip(gm: Game&, g: gui::Gui&, l: panel::Layout, ui_pieces: board::Overlay&) -> bool {
     guard gm.tip >= 0 else { return false; }
     var at = float4 { 0.0, 0.0, 0.0, 0.0 };
     for m in gm.marks_at { if m.ply == gm.tip { at = m.rect; } }
@@ -427,7 +427,7 @@ fn tip(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool
     if y < a.y + 8.0 * u { y = at.y + at.w + 10.0 * u; }
     let box = float4 { x, y, tw, th };
     gui::glass(g, box, 20.0);
-    clear_under(over, box);
+    clear_under(ui_pieces, box);
     // The mark in its disc: the best's star on faint white, the others' glyphs on their color.
     let disc = float4 { x + TIP_PAD * u, y + TIP_PAD * u, TIP_DISC * u, TIP_DISC * u };
     if n.mark == ai::BEST {

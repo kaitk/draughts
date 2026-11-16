@@ -30,13 +30,13 @@ let SETTINGS = gui::ASK_SETTINGS;
 // What a frame tells the shell: where to go, and what happened to the game that it
 // keeps a count of.
 struct Event {
-    go:        i64  = STAY,
-    ended:     bool = false,    // a game against the computer ended, the first time
-    result:    i64  = 0,        // and how: 1 the child won, -1 lost, 0 drawn
-    restarted: bool = false,    // started over: the shell gives it a skill and number
-    looked:    bool = false,    // the lookout's eye turned on or off
-    over:      bool = false,    // any game ended, the first time, for the history
-    winner:    i64  = -1,       // its winner's side, or -1 for a draw
+    go:                i64  = STAY,
+    ended:             bool = false, // a game against the computer ended, the first time
+    result:            i64  = 0,     // and how: 1 the child won, -1 lost, 0 drawn
+    restarted:         bool = false, // started over: the shell gives it a skill and number
+    lookout_toggled:   bool = false,  // the lookout's eye turned on or off
+    ended_for_history: bool = false,    // any game ended, the first time, for the history
+    winner:            i64  = -1, // its winner's side, or -1 for a draw
 }
 
 // The computer's levels.
@@ -45,69 +45,69 @@ let MEDIUM = 1;
 let HARD = 2;
 
 struct Game {
-    b:        board::Board,
-    clock:    clock::Clock = clock::Clock {},
-    computer: i64          = -1,                    // the side the computer plays, or -1 for a friend
-    level:    i64          = MEDIUM,                // the computer's
-    skill:    i64          = 40,                    // the computer's for the whole game (ai::level_skill)
-    number:   i64          = 0,                     // the game's number, for the computer's seeds
-    turn:     u8           = 0,                     // the side to move as last seen, to tell a move was made
-    seen:     f64          = -1.0,                  // when the clock last counted, or -1 to count nothing next
-    shown:    i64          = -1,                    // the running clock's whole seconds as last drawn
-    won_at:   f64          = -1.0,                  // when the celebration began, or -1
-    won_on:   i64          = -1,                    // the winning piece's square, or -1 for none to lift
-    still:    f64          = STILL,                 // the celebration's moment from which it is still
-    stilled:  bool         = false,                 // whether its still frame has been drawn
+    b:                   board::Board,
+    clock:               clock::Clock = clock::Clock {},
+    computer:            i64          = -1,         // the side the computer plays, or -1 for a friend
+    level:               i64          = MEDIUM,     // the computer's
+    skill:               i64          = 40,         // the computer's for the whole game (ai::level_skill)
+    number:              i64          = 0,          // the game's number, for the computer's seeds
+    turn:                u8           = 0,          // the side to move as last seen, to tell a move was made
+    clock_counted_at:    f64          = -1.0,               // when the clock last counted, or -1 to count nothing next
+    clock_seconds_drawn: i64          = -1,                    // the running clock's whole seconds as last drawn
+    won_at:              f64          = -1.0,       // when the celebration began, or -1
+    won_on:              i64          = -1,         // the winning piece's square, or -1 for none to lift
+    win_still_from:      f64          = STILL,            // the celebration's moment from which it is still
+    win_still_drawn:     bool         = false,             // whether its still frame has been drawn
     // When a draw's ending began, or -1.
     drawn_at:    f64  = -1.0,
     drawn_still: bool = false,
     // The computer's turn: the move asked for, and its answer.
-    asks:     i64         = 0,                      // moves asked for so far, to number them
-    asking:   i64         = 0,                      // the one waited for, or 0
-    asked_at: f64         = 0.0,                    // when the computer's turn began
-    answered: bool        = false,                  // whether its answer has come
-    wait:     f64         = 0.0,                    // seconds from its turn to its move, once answered
-    reply:    rules::Move = rules::Move { .. },
-    counted:  bool        = false,                  // the end was given to the shell (Event.ended)
+    ai_request_count:    i64         = 0,                   // moves asked for so far, to number them
+    ai_request_id:       i64         = 0,                // the one waited for, or 0
+    asked_at:            f64         = 0.0,         // when the computer's turn began
+    ai_answered:         bool        = false,          // whether its answer has come
+    wait:                f64         = 0.0,         // seconds from its turn to its move, once answered
+    reply:               rules::Move = rules::Move { .. },
+    end_sent_for_rating: bool        = false,                  // the end was given to the shell (Event.ended)
     // On the 3D board, a held piece's place against the finger on its plane, and the
     // camera its buttons move.
     grab: float2   = float2 { 0.0, 0.0 },
     cam:  rig::Rig = rig::Rig {},
     // The lookout (docs/architecture/ai.md, "The lookout"): on or off, the skill whose
     // plain threats it leaves to the player, and what it last worked the threats out for.
-    look:       bool  = false,
-    look_skill: i64   = 0,
-    watched:    Watch = Watch {},
+    lookout_on:    bool  = false,
+    lookout_skill: i64   = 0,
+    lookout_cache: Watch = Watch {},
     // Its traps, searched on the worker: the ask's id, or 0, and the position it is for.
-    trapping: i64             = 0,
-    trap_pos: rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+    trap_request_id: i64             = 0,
+    trap_pos:        rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
     // The hint: hints left, each side's; how far the one shown has gone (1 the piece lit,
-    // 2 its square too); the ask, the position it is for (board::Board.shows), and the
-    // move once answered, lit on the next frame (`hint_new`).
-    hints:      i64[2]      = [panel::HINTS, panel::HINTS],
-    hint_stage: i64         = 0,
-    hinting:    i64         = 0,
-    hint_shows: i64         = -1,
-    hint_move:  rules::Move = rules::Move { .. },
-    hint_new:   bool        = false,
+    // 2 its square too); the ask, the position it is for (board::Board.positions_shown),
+    // and the move once answered, lit on the next frame (`hint_new`).
+    hints:                i64[2]      = [panel::HINTS, panel::HINTS],
+    hint_stage:           i64         = 0,
+    hint_request_id:      i64         = 0,
+    hint_positions_shown: i64         = -1,
+    hint_move:            rules::Move = rules::Move { .. },
+    hint_new:             bool        = false,
     // What each side has taken, as last counted at `taken_pos` after `taken_len` moves.
     taken:     panel::Taken    = panel::Taken {},
     taken_len: i64             = -1,
     taken_pos: rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
     // The moves as played and their marks (notes.goose): the plies the history dropped,
     // what they were last brought in line with, and the judge's ask id, or 0, and note.
-    notes:       Notes           = [],
-    notes_from:  i64             = 0,
-    notes_len:   i64             = -1,
-    notes_pos:   rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
-    scratch:     rules::Moves    = [],
-    judge:       bool            = true,
-    moves_shown: i64             = 2,   // the moves panel: 0 hidden, 1 the moves, 2 with marks (settings::MOVES_*)
-    turns:       bool            = false, // a friend's game turns the board to the side to move (settings' `turns`)
-    moves_seen:  i64             = -1,  // the moves the panel's list was last scrolled to the foot for
-    judging:     i64             = 0,
-    judge_ply:   i64             = 0,
-    kept:        bool            = false, // the end was given to the shell (Event.over)
+    notes:                Notes           = [],
+    notes_from:           i64             = 0,
+    notes_len:            i64             = -1,
+    notes_pos:            rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+    scratch:              rules::Moves    = [],
+    judge_moves:          bool            = true,
+    moves_shown:          i64             = 2, // the moves panel: 0 hidden, 1 the moves, 2 with marks (settings::MOVES_*)
+    turns:                bool            = false, // a friend's game turns the board to the side to move (settings' `turns`)
+    moves_seen:           i64             = -1, // the moves the panel's list was last scrolled to the foot for
+    judge_request_id:     i64             = 0,
+    judge_ply:            i64             = 0,
+    end_sent_for_history: bool            = false, // the end was given to the shell (Event.ended_for_history)
     // The moves' sheet (sheet.goose): open or not; the note whose mark's tip shows, or -1,
     // and whether under the mouse; the marked move a touch went down on, or -1, and whether
     // the tip then took that press; the marked moves as the panel last showed them.
@@ -165,11 +165,11 @@ fn count_taken(gm: Game&) -> bool {
 // What the lookout last worked its threats out for: whether it showed, the position,
 // and the held piece and the square under it.
 struct Watch {
-    on:       bool            = false,
-    pos:      rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
-    selected: i64             = -1,
-    over:     i64             = -1,
-    shows:    i64             = -1,     // board::Board.shows: a position shown again clears the marks
+    on:                   bool            = false,
+    pos:                  rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+    selected:             i64             = -1,
+    target_under_pointer: i64             = -1,
+    positions_shown:      i64             = -1, // board::Board.positions_shown: a position shown again clears the marks
 }
 
 fn new(variant: u8) -> Game {
@@ -190,14 +190,14 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.skill = skill;
     gm.number = number;
     gm.turn = gm.b.pos.side;
-    gm.seen = -1.0;
+    gm.clock_counted_at = -1.0;
     gm.won_at = -1.0;
     gm.drawn_at = -1.0;
-    gm.counted = false;
-    gm.kept = false;
-    gm.asking = 0;
-    gm.judging = 0;
-    gm.watched = Watch {};
+    gm.end_sent_for_rating = false;
+    gm.end_sent_for_history = false;
+    gm.ai_request_id = 0;
+    gm.judge_request_id = 0;
+    gm.lookout_cache = Watch {};
     gm.ply0 = 0;
     gm.no_count = false;
     new_hints(gm);
@@ -217,7 +217,7 @@ fn start_from(gm: Game&, p: rules::Position, ply: i64) {
 fn new_hints(gm: Game&) {
     gm.hints = [panel::HINTS, panel::HINTS];
     gm.hint_stage = 0;
-    gm.hinting = 0;
+    gm.hint_request_id = 0;
     gm.hint_new = false;
 }
 
@@ -230,12 +230,12 @@ fn restart(gm: Game&, now: f64 = 0.0) {
     gm.turn = gm.b.pos.side;
     gm.won_at = -1.0;
     gm.drawn_at = -1.0;
-    gm.counted = false;
-    gm.kept = false;
-    gm.asking = 0;
-    gm.judging = 0;
+    gm.end_sent_for_rating = false;
+    gm.end_sent_for_history = false;
+    gm.ai_request_id = 0;
+    gm.judge_request_id = 0;
     new_hints(gm);
-    rig::settle(gm.cam, now);
+    rig::ease_to_rest(gm.cam, now);
 }
 
 // What the panels show of clock c: each side's time, gold under a minute and red at 20
@@ -245,7 +245,7 @@ fn clocks(c: clock::Clock&) -> panel::Clocks {
     for side in 2 {
         cs.style[side] = if clock::low(c, side) { gui::CLOCK_LOW } else if clock::warn(c, side) { gui::CLOCK_WARN }
                          else if c.running == side { gui::CLOCK_RUN } else { gui::CLOCK_IDLE };
-        clock::text(clock::shown(c, side), cs.text[side]);
+        clock::text(clock::whole_seconds(c, side), cs.text[side]);
     }
     return cs;
 }
@@ -276,9 +276,9 @@ fn computer_to_move(gm: Game&) -> bool {
 // The app paused or the screen was left: the clock counts nothing until the frame after
 // the next, and the computer's and the judge's asks are dropped, asked again later.
 fn pause(gm: Game&) {
-    gm.seen = -1.0;
-    gm.asking = 0;
-    gm.judging = 0;
+    gm.clock_counted_at = -1.0;
+    gm.ai_request_id = 0;
+    gm.judge_request_id = 0;
 }
 
 // What the game asks the computer player for, id 0 for nothing. A flat value, so it can
@@ -302,30 +302,30 @@ let JUDGE = 3;              // a played move judged (notes.goose)
 fn asking(gm: Game&) -> Ask {
     // Moves vary between games, yet the same game replays the same.
     let seed = (gm.number as u64) * 1000 + gm.b.rec.history.len as u64;
-    return Ask { id: gm.asking, pos: gm.b.pos, past: past(gm), skill: gm.skill, seed: seed };
+    return Ask { id: gm.ai_request_id, pos: gm.b.pos, past: past(gm), skill: gm.skill, seed: seed };
 }
 
 // The ask the worker should have, by its id, or 0 for none: the first open of the
 // computer's move, the hint, the lookout's traps, and a move to judge, most waited on
 // first. A slot behind another keeps its ask until those before it are done.
 fn open_ask(gm: Game&) -> i64 {
-    return if gm.asking != 0 { gm.asking } else if gm.hinting != 0 { gm.hinting } else if gm.trapping != 0 { gm.trapping }
-           else { gm.judging };
+    return if gm.ai_request_id != 0 { gm.ai_request_id } else if gm.hint_request_id != 0 { gm.hint_request_id } else if gm.trap_request_id != 0 { gm.trap_request_id }
+           else { gm.judge_request_id };
 }
 
 // That ask in full. The hint is the judge's best move at full strength, so it never shows
 // a move the judge marks down.
 fn ask_for(gm: Game&) -> Ask {
     var a = asking(gm);
-    guard gm.asking == 0 else { return a; }
-    if gm.hinting != 0 {
-        a.id = gm.hinting;
+    guard gm.ai_request_id == 0 else { return a; }
+    if gm.hint_request_id != 0 {
+        a.id = gm.hint_request_id;
         a.kind = HINT;
-    } else if gm.trapping != 0 {
-        a.id = gm.trapping;
+    } else if gm.trap_request_id != 0 {
+        a.id = gm.trap_request_id;
         a.pos = gm.trap_pos;
         a.kind = TRAPS;
-    } else if gm.judging != 0 {
+    } else if gm.judge_request_id != 0 {
         return judge_ask(gm);
     }
     return a;
@@ -334,10 +334,10 @@ fn ask_for(gm: Game&) -> Ask {
 // The lookout's traps for the ask `id`, marked with the other threats, the held piece's
 // on the square it was taken from. An ask no longer open is ignored. True when shown.
 fn trapped(gm: Game&, id: i64, pieces: u64) -> bool {
-    guard id != 0 && id == gm.trapping else { return false; }
-    gm.trapping = 0;
-    let w .= gm.watched;
-    var p = pieces & gm.b.pos.pieces[gm.b.pos.side] | (if w.over >= 0 && pieces & rules::bit(w.over) != 0 { rules::bit(w.selected) } else { 0 });
+    guard id != 0 && id == gm.trap_request_id else { return false; }
+    gm.trap_request_id = 0;
+    let w .= gm.lookout_cache;
+    var p = pieces & gm.b.pos.pieces[gm.b.pos.side] | (if w.target_under_pointer >= 0 && pieces & rules::bit(w.target_under_pointer) != 0 { rules::bit(w.selected) } else { 0 });
     gm.b.danger |= p;
     return p != 0;
 }
@@ -352,8 +352,8 @@ fn can_hint(gm: Game&) -> bool {
 // The hint's move for the ask `id`: spends one of the side's hints and lights the piece
 // on the next frame. An ask no longer open is ignored.
 fn hinted(gm: Game&, id: i64, m: rules::Move) {
-    guard id != 0 && id == gm.hinting else { return; }
-    gm.hinting = 0;
+    guard id != 0 && id == gm.hint_request_id else { return; }
+    gm.hint_request_id = 0;
     let side = gm.b.pos.side;
     gm.hints[side] = max(gm.hints[side] - 1, 0);
     gm.hint_move = m;
@@ -362,17 +362,17 @@ fn hinted(gm: Game&, id: i64, m: rules::Move) {
 }
 
 // Whether an ask with no frames of its own is open, for the loop to wake for its answer.
-fn awaiting(gm: Game&) -> bool { gm.hinting != 0 || gm.trapping != 0 }
+fn awaiting(gm: Game&) -> bool { gm.hint_request_id != 0 || gm.trap_request_id != 0 }
 
 // The hint's tile pressed: the first press asks for the move, which lights the piece;
 // the second shows its square with a ghost of the piece.
 fn press_hint(gm: Game&, now: f64) {
     guard can_hint(gm) else { return; }
     let b .= gm.b;
-    if gm.hint_stage == 0 && gm.hinting == 0 && gm.hints[b.pos.side] > 0 {
-        gm.asks += 1;
-        gm.hinting = gm.asks;
-        gm.hint_shows = b.shows;
+    if gm.hint_stage == 0 && gm.hint_request_id == 0 && gm.hints[b.pos.side] > 0 {
+        gm.ai_request_count += 1;
+        gm.hint_request_id = gm.ai_request_count;
+        gm.hint_positions_shown = b.positions_shown;
     } else if gm.hint_stage == 1 {
         board::ghost_on(b, gm.hint_move.to, now);
         gm.hint_stage = 2;
@@ -383,9 +383,9 @@ fn press_hint(gm: Game&, now: f64) {
 // played after the level's pause, or while its clock runs after pace::seconds. An ask no
 // longer open is ignored.
 fn answer(gm: Game&, id: i64, m: rules::Move, close: i64) {
-    guard id != 0 && id == gm.asking else { return; }
+    guard id != 0 && id == gm.ai_request_id else { return; }
     gm.reply = m;
-    gm.answered = true;
+    gm.ai_answered = true;
     let level = clamp(gm.level, EASY, HARD);
     gm.wait = PAUSE[level];
     guard gm.clock.running == gm.computer else { return; }
@@ -405,7 +405,7 @@ fn take_back(gm: Game&) -> bool {
         board::undo(b);
         done = board::undo(b);
     }
-    if done { gm.asking = 0; }
+    if done { gm.ai_request_id = 0; }
     return done;
 }
 
@@ -413,18 +413,18 @@ fn take_back(gm: Game&) -> bool {
 // it has come and the pause is over. True when its move began.
 fn think(gm: Game&, now: f64) -> bool {
     guard computer_to_move(gm) else {
-        gm.asking = 0;
+        gm.ai_request_id = 0;
         return false;
     }
-    if gm.asking == 0 {
-        gm.asks += 1;
-        gm.asking = gm.asks;
+    if gm.ai_request_id == 0 {
+        gm.ai_request_count += 1;
+        gm.ai_request_id = gm.ai_request_count;
         gm.asked_at = now;
-        gm.answered = false;
+        gm.ai_answered = false;
     }
-    guard gm.answered && now >= gm.asked_at + gm.wait else { return false; }
+    guard gm.ai_answered && now >= gm.asked_at + gm.wait else { return false; }
     let b .= gm.b;
-    gm.asking = 0;
+    gm.ai_request_id = 0;
     for k in b.moves.len {
         let m .= b.moves[k];
         guard m.from == gm.reply.from && m.to == gm.reply.to && m.captured == gm.reply.captured else { continue; }
@@ -436,25 +436,25 @@ fn think(gm: Game&, now: f64) -> bool {
 
 // The computer's ring as it begins to think: full, fading and back once, then still.
 fn pulse(gm: Game&, now: f64) -> f32 {
-    guard gm.asking != 0 && now < gm.asked_at + PULSE else { return 1.0; }
+    guard gm.ai_request_id != 0 && now < gm.asked_at + PULSE else { return 1.0; }
     return (0.65 + 0.35 * cos(2.0 * PI * (now - gm.asked_at) / PULSE)) as f32;
 }
 
 // Seconds until the computer's move is due, for the app to wake then, or -1.
 fn due(gm: Game&, now: f64) -> f64 {
-    guard gm.asking != 0 && gm.answered else { return -1.0; }
+    guard gm.ai_request_id != 0 && gm.ai_answered else { return -1.0; }
     return max(gm.asked_at + gm.wait - now, 0.0);
 }
 
-// One frame, after gui::begin, its pieces over the UI put in `over`. Returns what the
+// One frame, after gui::begin, its pieces over the UI put in `ui_pieces`. Returns what the
 // shell should do and know, and whether anything on screen changed. `frozen` (a
 // transition into the game) counts no time and asks the computer for nothing.
-fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&, frozen: bool = false) -> Event, bool {
+fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::Overlay&, frozen: bool = false) -> Event, bool {
     let b .= gm.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
     var ev = Event {};
-    over.clear();
+    ui_pieces.clear();
     // A mark's tip first: a tap that only closes it goes no further.
     if tips(gm, g, l) { changed = true; }
     // The moves' sheet: in landscape it covers the way out, which isn't declared; in
@@ -463,26 +463,26 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     let open = gm.sheet;
     let cover = open && l.line_as == panel::LINE_BAR;
     if cover { gui::set_input_enabled(g, false); }
-    if !frozen && gm.seen >= 0.0 && clock::tick(gm.clock, min(now - gm.seen, STEP)) { changed = true; }
-    gm.seen = if frozen { -1.0 } else { now };
+    if !frozen && gm.clock_counted_at >= 0.0 && clock::tick(gm.clock, min(now - gm.clock_counted_at, STEP)) { changed = true; }
+    gm.clock_counted_at = if frozen { -1.0 } else { now };
 
     var won = winner(gm);
     let side = if won >= 0 { won } else { b.pos.side as i64 };
     var note = panel::Note {};
     countdown(gm, note);
     let beside = open && !cover;
-    let pick = panel::game(g, l, clocks(gm.clock), side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.asking != 0,
-                           pulse(gm, now), over, help(gm), !beside);
+    let pick = panel::game(g, l, clocks(gm.clock), side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.ai_request_id != 0,
+                           pulse(gm, now), ui_pieces, help(gm), !beside);
     if count_taken(gm) { changed = true; }
     if keep_notes(gm) { changed = true; }
     gm.marks_at.clear();
-    moves_panel(gm, g, l, over);
+    moves_panel(gm, g, l, ui_pieces);
     if beside {
         // A press on the sheet is the UI's, never the board's.
         gui::claim_press(g, gui::extend_to_screen_edge(g, l.sheet, l.area));
     } else {
-        panel::taken(g, l, gm.taken, over);
-        if moves_line(gm, g, l, over) {
+        panel::taken(g, l, gm.taken, ui_pieces);
+        if moves_line(gm, g, l, ui_pieces) {
             gm.sheet = true;
             changed = true;
         }
@@ -502,8 +502,8 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         panel::BACK => { ev.go = HOME; },
         panel::SETTINGS => { ev.go = SETTINGS; },
         panel::LOOKOUT => {
-            gm.look = !gm.look;
-            ev.looked = true;
+            gm.lookout_on = !gm.lookout_on;
+            ev.lookout_toggled = true;
         },
         panel::HINT => { press_hint(gm, now); },
         _ => {},
@@ -521,13 +521,13 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         gm.drawn_still = false;
         changed = true;
         sound_event::add(b.sound_events, sound_event::DRAWN);
-        if !gm.kept {
-            gm.kept = true;
-            ev.over = true;
+        if !gm.end_sent_for_history {
+            gm.end_sent_for_history = true;
+            ev.ended_for_history = true;
             ev.winner = -1;
         }
-        if gm.computer >= 0 && !gm.counted {
-            gm.counted = true;
+        if gm.computer >= 0 && !gm.end_sent_for_rating {
+            gm.end_sent_for_rating = true;
             ev.ended = true;
             ev.result = 0;
         }
@@ -536,27 +536,27 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         gm.won_at = -1.0;
     } else if gm.won_at < 0.0 {
         gm.won_at = now;
-        aim(gm, won);
+        start_win_glow(gm, won);
         changed = true;
         sound_event::add(b.sound_events, if gm.computer >= 0 && won == gm.computer { sound_event::LOST } else { sound_event::WON });
-        if !gm.kept {
-            gm.kept = true;
-            ev.over = true;
+        if !gm.end_sent_for_history {
+            gm.end_sent_for_history = true;
+            ev.ended_for_history = true;
             ev.winner = won;
         }
-        if gm.computer >= 0 && !gm.counted {
-            gm.counted = true;
+        if gm.computer >= 0 && !gm.end_sent_for_rating {
+            gm.end_sent_for_rating = true;
             ev.ended = true;
             ev.result = if won == gm.computer { -1 } else { 1 };
         }
     }
     if gm.won_at >= 0.0 {
         // The frame from which the celebration is still is drawn too, at rest.
-        if !gm.stilled && moment(gm, now) >= gm.still {
-            gm.stilled = true;
+        if !gm.win_still_drawn && moment(gm, now) >= gm.win_still_from {
+            gm.win_still_drawn = true;
             changed = true;
         }
-        let ask = celebrate(gm, g, l, won, now, over);
+        let ask = celebrate(gm, g, l, won, now, ui_pieces);
         if ask == panel::RESTART {
             restart(gm, now);
             ev.restarted = true;
@@ -568,7 +568,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
             gm.drawn_still = true;
             changed = true;
         }
-        let ask = settle(gm, g, l, draw, now, over);
+        let ask = draw_card(gm, g, l, draw, now, ui_pieces);
         if ask == panel::RESTART {
             restart(gm, now);
             ev.restarted = true;
@@ -576,10 +576,10 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         }
         if ask == panel::BACK { ev.go = HOME; }
     } else if !cover {
-        let held, moved = board::showcase(gm.cam, g, input, l.three, l.pitch, now);
+        let held, moved = board::showcase(gm.cam, g, input, l.is_3d, l.pitch, now);
         if moved { changed = true; }
         let mine = !held && !g.press_on_ui && b.pos.side != gm.computer;
-        if mine && board::touch(b, l.board, l.three, l.view, input, gm.grab, now) { changed = true; }
+        if mine && board::touch(b, l.board, l.is_3d, l.view, input, gm.grab, now) { changed = true; }
         if panel::board_keys(g, l, b, mine, now, rig::turn(gm.cam, now)) { changed = true; }
     }
     // Against a friend the board turns to face the side to move once a move has shown,
@@ -595,9 +595,9 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     gm.turn = b.pos.side;
     if watch(gm) { changed = true; }
     // The hint belongs to the position it was asked in.
-    if (gm.hint_stage > 0 || gm.hinting != 0) && b.shows != gm.hint_shows {
+    if (gm.hint_stage > 0 || gm.hint_request_id != 0) && b.positions_shown != gm.hint_positions_shown {
         gm.hint_stage = 0;
-        gm.hinting = 0;
+        gm.hint_request_id = 0;
         gm.hint_new = false;
         changed = true;
     }
@@ -607,7 +607,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         changed = true;
     }
     // The computer's pieces show no count of what they must take: the child can't move them.
-    b.quiet = gm.computer >= 0 && b.pos.side == gm.computer;
+    b.hide_counts = gm.computer >= 0 && b.pos.side == gm.computer;
     if b.moves.len == 0 || drawn(gm) != rules::NO_DRAW { clock::stop(gm.clock); }
     // A person's clock heard as it turns gold and as it turns red, once each a game.
     for side in 2 {
@@ -615,22 +615,22 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
                                          gm.computer != side));
     }
     // A running clock draws once a second, when the time it shows changes.
-    let shown = if gm.clock.running >= 0 { clock::shown(gm.clock, gm.clock.running) } else { -1 };
-    if shown != gm.shown {
-        gm.shown = shown;
+    let shown = if gm.clock.running >= 0 { clock::whole_seconds(gm.clock, gm.clock.running) } else { -1 };
+    if shown != gm.clock_seconds_drawn {
+        gm.clock_seconds_drawn = shown;
         changed = true;
     }
     // The sheet over everything, and a mark's tip over that.
     if cover {
         gui::set_input_enabled(g, true);
-        dim_under(over, l.sheet.y);
+        dim_under(ui_pieces, l.sheet.y);
     }
-    if open && moves_sheet(gm, g, l, over) {
+    if open && moves_sheet(gm, g, l, ui_pieces) {
         gm.sheet = false;
         gm.refocus = g.focus == SHEET_HEAD;
         changed = true;
     }
-    if tip(gm, g, l, over) { changed = true; }
+    if tip(gm, g, l, ui_pieces) { changed = true; }
     return ev, changed;
 }
 
@@ -638,7 +638,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
 // on, and no capture due.
 fn watching(gm: Game&) -> bool {
     let b .= gm.b;
-    return gm.look && !b.moving && b.pos.side != gm.computer && !ended(gm) && !board::must_capture(b);
+    return gm.lookout_on && !b.moving && b.pos.side != gm.computer && !ended(gm) && !board::must_capture(b);
 }
 
 // The lookout's marks on the board (Board.danger, crowns), worked out again only when the
@@ -647,33 +647,33 @@ fn watching(gm: Game&) -> bool {
 fn watch(gm: Game&) -> bool {
     let b .= gm.b;
     let on = watching(gm);
-    let over = if on { b.over } else { -1 };
-    let selected = if over >= 0 { b.selected } else { -1 };
-    let w .= gm.watched;
-    guard on != w.on || over != w.over || selected != w.selected || (on && (!rules::same(b.pos, w.pos) || b.shows != w.shows))
+    let target = if on { b.target_under_pointer } else { -1 };
+    let selected = if target >= 0 { b.selected } else { -1 };
+    let w .= gm.lookout_cache;
+    guard on != w.on || target != w.target_under_pointer || selected != w.selected || (on && (!rules::same(b.pos, w.pos) || b.positions_shown != w.positions_shown))
     else { return false; }
-    gm.watched = Watch { on: on, pos: b.pos, selected: selected, over: over, shows: b.shows };
+    gm.lookout_cache = Watch { on: on, pos: b.pos, selected: selected, target_under_pointer: target, positions_shown: b.positions_shown };
     let danger = b.danger;
     let crowns = b.crowns;
     b.danger = 0;
     b.crowns = 0;
-    gm.trapping = 0;
+    gm.trap_request_id = 0;
     if on {
         var buf: rules::Moves = [];
         var seen = lookout::Seen {};
         var k = -1;
-        if over >= 0 { for m, i in b.moves { if m.from == selected && m.to == over { k = i; } } }
+        if target >= 0 { for m, i in b.moves { if m.from == selected && m.to == target { k = i; } } }
         if k >= 0 { lookout::after(b.pos, b.moves[k], seen, buf); } else { lookout::now(b.pos, seen, buf); }
-        let d, c = lookout::shown(seen, gm.look_skill);
+        let d, c = lookout::shown(seen, gm.lookout_skill);
         b.danger = d;
         b.crowns = c;
         // The traps, on the worker: the other side to move, now or after the held move.
-        if gm.look_skill < lookout::UNTIL[lookout::TRAP] {
+        if gm.lookout_skill < lookout::UNTIL[lookout::TRAP] {
             var q = b.pos;
             q.side = 1 - q.side;
             if k >= 0 { q = rules::play(b.pos, b.moves[k]); }
-            gm.asks += 1;
-            gm.trapping = gm.asks;
+            gm.ai_request_count += 1;
+            gm.trap_request_id = gm.ai_request_count;
             gm.trap_pos = q;
         }
     }
@@ -683,41 +683,41 @@ fn watch(gm: Game&) -> bool {
 // What the play panel shows of the lookout and the hint.
 fn help(gm: Game&) -> panel::Help {
     let side = clamp(gm.b.pos.side as i64, 0, 1);
-    return panel::Help { look: gm.look, left: gm.hints[side], stage: gm.hint_stage, can: can_hint(gm) };
+    return panel::Help { look: gm.lookout_on, left: gm.hints[side], stage: gm.hint_stage, can: can_hint(gm) };
 }
 
 // Declares the screen as it stands, doing nothing, for a transition away from the game.
-fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&) {
-    over.clear();
+fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::Overlay&) {
+    ui_pieces.clear();
     let won = winner(gm);
     let side = if won >= 0 { won } else { gm.b.pos.side as i64 };
     var note = panel::Note {};
     countdown(gm, note);
     let draw = drawn(gm);
-    panel::game(g, l, clocks(gm.clock), side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over,
+    panel::game(g, l, clocks(gm.clock), side, won >= 0, draw != rules::NO_DRAW, note, gm.ai_request_id != 0, pulse(gm, now), ui_pieces,
                 help(gm));
     // Counted here too: a transition declares a game before its first frame of its own.
     count_taken(gm);
-    panel::taken(g, l, gm.taken, over);
+    panel::taken(g, l, gm.taken, ui_pieces);
     gm.marks_at.clear();
-    moves_panel(gm, g, l, over);
-    moves_line(gm, g, l, over);
+    moves_panel(gm, g, l, ui_pieces);
+    moves_line(gm, g, l, ui_pieces);
     panel::camera(g, l, gm.cam, now);
-    if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
-    if gm.drawn_at >= 0.0 { settle(gm, g, l, draw, now, over); }
+    if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, ui_pieces); }
+    if gm.drawn_at >= 0.0 { draw_card(gm, g, l, draw, now, ui_pieces); }
 }
 
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(gm: Game&, g: gui::Gui&, now: f64) -> bool {
-    let celebrating = (gm.won_at >= 0.0 && moment(gm, now) < gm.still) || (gm.drawn_at >= 0.0 && now - gm.drawn_at < DRAW_STILL);
-    let pulsing = gm.asking != 0 && (!gm.answered || now < gm.asked_at + PULSE);
+    let celebrating = (gm.won_at >= 0.0 && moment(gm, now) < gm.win_still_from) || (gm.drawn_at >= 0.0 && now - gm.drawn_at < DRAW_STILL);
+    let pulsing = gm.ai_request_id != 0 && (!gm.ai_answered || now < gm.asked_at + PULSE);
     return board::animating(gm.b, now) || gui::animating(g) || celebrating || pulsing || rig::moving(gm.cam, now);
 }
 
 // A piece of `side` over the UI centered in `spot` with radius r at opacity a: a man
 // (king 0) or a king as board::CROWN or board::STACK.
-fn put(over: board::Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: bool) {
-    panel::piece(over, spot, r, side, king, a, if ring { 1.0 } else { 0.0 });
+fn add_ui_piece(ui_pieces: board::Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: bool) {
+    panel::piece(ui_pieces, spot, r, side, king, a, if ring { 1.0 } else { 0.0 });
 }
 
 // The countdown before a draw, as the play panel words it: the moves left of the last

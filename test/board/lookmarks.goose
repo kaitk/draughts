@@ -1,10 +1,10 @@
-// The lookout's and the hint's marks on the board (board::fill, view3d::fill; the
-// rendering doc's "The lookout and the hint"): a piece in danger drained, solid and
-// still; a crowning square shaded under the other side's dark ghost king; the hint's
-// piece with its glow ring and, once shown, a light ghost of it on its square, whose
-// ring pulses as the puzzles' hint's does and then stays, lit. On the 3D board a
-// drained piece's seed is below 0, the shaded square's field.w 1, and only one ring
-// pulses at a time, drawn over the kept image (Scene.pulse). A move clears them all.
+// The lookout's and the hint's marks on the board (board::build_frame_pieces,
+// view3d::build_scene; the rendering doc's "The lookout and the hint"): a piece in danger
+// drained, solid and still; a crowning square shaded under the other side's dark ghost
+// king; the hint's piece with its glow ring and, once shown, a light ghost of it on its
+// square, whose ring pulses as the puzzles' hint's does and then stays, lit. On the 3D
+// board a drained piece's seed is below 0, the shaded square's field.w 1, and only one
+// ring pulses at a time, drawn over the kept image (Scene.pulse). A move clears them all.
 // A king position (Russian): black's d2 crowns on e1; c5 in danger.
 import std;
 import vec;
@@ -60,32 +60,32 @@ fn main() {
     board::set(b, check::position(rules::RUSSIAN, "W:Wc1,g1,h2,a3,g3,b4,c5:Bd2,e3,d6,a7,c7,e7,f8,h8"));
     b.danger = rules::bit(drive::square(v, "c5"));
     b.crowns = rules::bit(drive::square(v, "e1"));
-    board::fill(b, l, 0.0);
+    board::build_frame_pieces(b, l, 0.0);
     print("the lookout: c5 in danger, e1 a crowning square");
     pieces(b, l);
     var s = view3d::Scene {};
-    view3d::fill(s, b, pl3.board, pl3.view, 0.0);
+    view3d::build_scene(s, b, pl3.board, pl3.view, 0.0);
     scene(s);
     print("  animating: ", board::animating(b, 0.0));
 
     // The hint: c5's glow, pulsing, then its ghost on b6 whose ring pulses in its place.
     board::glow_on(b, drive::square(v, "c5"), 1.0);
-    board::fill(b, l, 1.5);
+    board::build_frame_pieces(b, l, 1.5);
     print("the hint's first step, at 0.5 s");
     pieces(b, l);
-    view3d::fill(s, b, pl3.board, pl3.view, 1.5);
+    view3d::build_scene(s, b, pl3.board, pl3.view, 1.5);
     scene(s);
     board::ghost_on(b, drive::square(v, "b6"), 2.0);
-    board::fill(b, l, 2.5);
+    board::build_frame_pieces(b, l, 2.5);
     print("its second step, 0.5 s on");
     pieces(b, l);
-    view3d::fill(s, b, pl3.board, pl3.view, 2.5);
+    view3d::build_scene(s, b, pl3.board, pl3.view, 2.5);
     scene(s);
     print("  animating: ", board::animating(b, 2.5), "; at 5 s: ", board::update(b, 5.0), ", ", board::animating(b, 5.0));
-    board::fill(b, l, 5.0);
+    board::build_frame_pieces(b, l, 5.0);
     print("still");
     pieces(b, l);
-    view3d::fill(s, b, pl3.board, pl3.view, 5.0);
+    view3d::build_scene(s, b, pl3.board, pl3.view, 5.0);
     scene(s);
 
     // The move clears every mark.
@@ -93,7 +93,7 @@ fn main() {
     for m, i in b.moves { if m.from == drive::square(v, "c5") && m.to == drive::square(v, "b6") { k = i; } }
     board::start_move(b, k, 6.0);
     board::update(b, 7.0);
-    board::fill(b, l, 7.0);
+    board::build_frame_pieces(b, l, 7.0);
     print("after c5-b6");
     pieces(b, l);
 }

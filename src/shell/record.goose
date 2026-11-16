@@ -20,8 +20,8 @@ struct Kept {
 // The time now, in seconds since the epoch: the shell's `wall` where a test set it.
 fn wall_time(sh: Shell&) -> i64 { if sh.wall >= 0.0 { sh.wall as i64 } else { time() as i64 } }
 
-// The game on the game screen ended (Event.over, `winner` a side or -1): its rating
-// moved against the computer, and the game written to the player's history.
+// The game on the game screen ended (Event.ended_for_history, `winner` a side or -1): its
+// rating moved against the computer, and the game written to the player's history.
 fn keep_game(sh: Shell&, winner: i64) {
     let gm .= sh.game;
     var g = history::Game { time: wall_time(sh), variant: gm.b.variant, winner: winner, .. };
@@ -48,7 +48,7 @@ fn keep_marks(sh: Shell&) {
     // A game from the replay is on the game screen: the kept game is set aside till it ends.
     guard k.open && !sh.past.trial else { return; }
     let gm .= sh.game;
-    guard gm.kept && gm.notes.len == k.plies else {
+    guard gm.end_sent_for_history && gm.notes.len == k.plies else {
         k.open = false;
         return;
     }

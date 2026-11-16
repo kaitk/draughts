@@ -1,15 +1,16 @@
-// The 3D board's frame from the game's state (view3d::fill), headless: it is
-// filled from the same draw lists the flat board draws (board::fill), so both follow one
-// state and one animation. A selected man lifted and grown, with its glow; a stacked king
-// two instances; a crowned king one; the last move's squares and the targets in the
-// world's grid, which a turned board turns; a move in flight with its hop and the pieces
-// it takes fading; the must-capture rings pulsing; a dragged piece; the field's marks as
-// the renderer reads them (the last move's tint, targets, the ring pulsing or still, the
-// flash's square). And what a new frame changes against the last drawn (view3d::changes):
-// nothing for the same frame, the draw for a mark or a ring, the shadow map too when a
-// piece moves or lifts; and while a ring pulses, a flash flashes, or a hint's ring pulses,
-// only the marks over the kept image (MARKS, their phases in Scene.pulse), so the 3D pass
-// runs once for the whole pulse, then again only when it ends.
+// The 3D board's frame from the game's state (view3d::build_scene), headless: it is
+// filled from the same draw lists the flat board draws (board::build_frame_pieces), so
+// both follow one state and one animation. A selected man lifted and grown, with its
+// glow; a stacked king two instances; a crowned king one; the last move's squares and the
+// targets in the world's grid, which a turned board turns; a move in flight with its hop
+// and the pieces it takes fading; the must-capture rings pulsing; a dragged piece; the
+// field's marks as the renderer reads them (the last move's tint, targets, the ring
+// pulsing or still, the flash's square). And what a new frame changes against the last
+// drawn (view3d::changes): nothing for the same frame, the draw for a mark or a ring, the
+// shadow map too when a piece moves or lifts; and while a ring pulses, a flash flashes,
+// or a hint's ring pulses, only the marks over the kept image (MARKS, their phases in
+// Scene.pulse), so the 3D pass runs once for the whole pulse, then again only when it
+// ends.
 import std;
 import vec;
 import math;
@@ -77,8 +78,8 @@ fn main() {
     board::release(b, l, drive::at(l, "c3"), 0.0);
     var s = view3d::Scene {};
     var was = view3d::Scene {};
-    board::fill(b, l, 0.1);
-    view3d::fill(s, b, l, v, 0.1);
+    board::build_frame_pieces(b, l, 0.1);
+    view3d::build_scene(s, b, l, v, 0.1);
     show(s, "c3 selected, the king on h4 a stack");
     let same = s;
     print("the same frame again changes ", view3d::changes(same, s));
@@ -86,29 +87,29 @@ fn main() {
     // Turned: the same position seen from black's side, c3's targets at the far side.
     var t = l;
     t.flip = true;
-    board::fill(b, t, 0.1);
+    board::build_frame_pieces(b, t, 0.1);
     var ts = view3d::Scene {};
-    view3d::fill(ts, b, t, v, 0.1);
+    view3d::build_scene(ts, b, t, v, 0.1);
     print("turned: selected ", v4(ts.selected), ", targets ", cells(8, ts.marks.target));
 
     // A crowned king: one instance with its crown.
     b.king_look = board::CROWN;
-    board::fill(b, l, 0.1);
+    board::build_frame_pieces(b, l, 0.1);
     was = s;
-    view3d::fill(s, b, l, v, 0.1);
+    view3d::build_scene(s, b, l, v, 0.1);
     print("crowned king: ", s.inst.len / 2, " instances, changes ", view3d::changes(was, s));
     b.king_look = board::STACK;
 
     // c3 to d4, halfway through its hop.
     board::press(b, l, drive::at(l, "d4"), 1.0);
-    board::fill(b, l, 1.1);
+    board::build_frame_pieces(b, l, 1.1);
     was = s;
-    view3d::fill(s, b, l, v, 1.1);
+    view3d::build_scene(s, b, l, v, 1.1);
     show(s, "c3 to d4, halfway");
     print("changes ", view3d::changes(was, s));
     board::update(b, 2.0);
-    board::fill(b, l, 2.0);
-    view3d::fill(s, b, l, v, 2.0);
+    board::build_frame_pieces(b, l, 2.0);
+    view3d::build_scene(s, b, l, v, 2.0);
     show(s, "c3 to d4 played");
 
     // Black must capture with c5: h8 touched is a wrong tap, its ring flashing and c5 pulsing;
@@ -117,8 +118,8 @@ fn main() {
     assert(ok2);
     board::set(b, q);
     board::press(b, l, drive::at(l, "h8"), 3.0);  // can't move while c5 must capture
-    board::fill(b, l, 3.2);
-    view3d::fill(s, b, l, v, 3.2);
+    board::build_frame_pieces(b, l, 3.2);
+    view3d::build_scene(s, b, l, v, 3.2);
     show(s, "h8 touched while c5 must capture");
     print("  pulse ", v4(s.pulse), ", pulsing ", s.pulsing);
     // The pulse and the flash run on: every frame until they end changes only the marks
@@ -129,8 +130,8 @@ fn main() {
     while t3 < 6.0 {
         was = s;
         board::update(b, t3 + 0.05);
-        board::fill(b, l, t3 + 0.05);
-        view3d::fill(s, b, l, v, t3 + 0.05);
+        board::build_frame_pieces(b, l, t3 + 0.05);
+        view3d::build_scene(s, b, l, v, t3 + 0.05);
         let c = view3d::changes(was, s);
         if c & view3d::DRAW != 0 { draws++; }
         if c == view3d::MARKS { marks++; }
@@ -142,8 +143,8 @@ fn main() {
     board::press(b, l, drive::at(l, "c5"), 10.0);
     board::press(b, l, drive::at(l, "e3"), 10.0);
     print("capture moving ", b.moving, ", ", rules::fen(b.pos));
-    board::fill(b, l, 10.0 + board::HOP + 0.09);
-    view3d::fill(s, b, l, v, 10.0 + board::HOP + 0.09);
+    board::build_frame_pieces(b, l, 10.0 + board::HOP + 0.09);
+    view3d::build_scene(s, b, l, v, 10.0 + board::HOP + 0.09);
     show(s, "c5 takes d4, the taken piece fading");
 
     // A drag: the piece held over the board, lifted higher and grown.
@@ -154,9 +155,9 @@ fn main() {
     board::press(b, l, drive::at(l, "c3"), 21.0);
     let to = drive::at(l, "d4");
     board::drag(b, l, to);
-    board::fill(b, l, 21.1);
+    board::build_frame_pieces(b, l, 21.1);
     was = s;
-    view3d::fill(s, b, l, v, 21.1);
+    view3d::build_scene(s, b, l, v, 21.1);
     show(s, "c3 dragged over d4");
     print("changes ", view3d::changes(was, s));
     // Only the targets' marks changing: drawn again, no shadow map.
@@ -165,7 +166,7 @@ fn main() {
     print("a mark changes ", view3d::changes(was, s));
     // The camera turned: drawn again.
     was = s;
-    s.view = view3d::turned(v, view3d::Camera { pitch: 52.5, yaw: 10.0 });
+    s.view = view3d::with_camera_turn(v, view3d::Camera { pitch: 52.5, yaw: 10.0 });
     print("the camera turned changes ", view3d::changes(was, s));
 
     // A hint's glow ring round c3: pulsing for its first 2.8 s, only the marks change; then
@@ -173,17 +174,17 @@ fn main() {
     board::update(b, 30.0);
     board::set(b, r);
     board::glow_on(b, rules::bit_at(vr, 2, 2), 30.0);
-    board::fill(b, l, 30.1);
-    view3d::fill(s, b, l, v, 30.1);
+    board::build_frame_pieces(b, l, 30.1);
+    view3d::build_scene(s, b, l, v, 30.1);
     print("hint pulsing: pulse ", v4(s.pulse), ", lit there ", r2(s.lit[s.pulse.z as i64].x));
     was = s;
-    board::fill(b, l, 30.4);
-    view3d::fill(s, b, l, v, 30.4);
+    board::build_frame_pieces(b, l, 30.4);
+    view3d::build_scene(s, b, l, v, 30.4);
     print("  a frame later changes ", view3d::changes(was, s), ", strength ", r2(s.pulse.w));
     board::update(b, 33.0);
     was = s;
-    board::fill(b, l, 33.0);
-    view3d::fill(s, b, l, v, 33.0);
+    board::build_frame_pieces(b, l, 33.0);
+    view3d::build_scene(s, b, l, v, 33.0);
     print("  still after 2.8 s changes ", view3d::changes(was, s), ", pulsing ", s.pulsing, ", glow rings lit at ",
           rings(s));
 }

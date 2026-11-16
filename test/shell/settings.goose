@@ -111,7 +111,7 @@ fn show(sh: shell::Shell&, what: const u8[:]) {
 // still animating.
 fn preview(sh: shell::Shell&, now: f64) {
     let b .= sh.preview;
-    board::fill(b, sh.out.layout, now);
+    board::build_frame_pieces(b, sh.out.layout, now);
     let v .= rules::VARIANTS[b.variant];
     var text: u8[>..] = [];
     format(text, "  preview ", v.size, "x", v.size, ", ", rules::fen(b.pos));

@@ -173,7 +173,7 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
     rules::generate(p, legal);
     r.over = legal.len == 0;
     board::reset(r.b, variant);
-    r.b.quiet = true;
+    r.b.hide_counts = true;
     r.b.by_hand = true;
     r.b.trace = true;
     r.ply = -1;

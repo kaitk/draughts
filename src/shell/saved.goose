@@ -14,22 +14,22 @@ import os;
 let VERSION = 4;
 
 struct Saved {
-    version:   i64,
-    unset:     bool,
-    screen:    i64,
-    variant:   u8,
-    start:     rules::Position,
-    pos:       rules::Position,
-    last_from: u8,
-    last_to:   u8,
-    has_last:  bool,
-    history:   rules::Step[..rules::MAX_HISTORY],
-    clock:     clock::Clock,
-    computer:  i64,
-    level:     i64,
-    skill:     i64,
-    number:    i64,
-    counted:   bool,
+    version:             i64,
+    unset:               bool,
+    screen:              i64,
+    variant:             u8,
+    start:               rules::Position,
+    pos:                 rules::Position,
+    last_from:           u8,
+    last_to:             u8,
+    has_last:            bool,
+    history:             rules::Step[..rules::MAX_HISTORY],
+    clock:               clock::Clock,
+    computer:            i64,
+    level:               i64,
+    skill:               i64,
+    number:              i64,
+    end_sent_for_rating: bool,
 }
 
 // FNV-1a over bytes, for the image's checksum: from_bytes checks an image's shape, not
@@ -48,7 +48,7 @@ fn kept_of(sh: Shell&) -> Saved {
     return Saved { version: VERSION, unset: sh.unset, screen: KINDS[sh.screen].kept, variant: b.variant, start: b.rec.start,
                    pos:   b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.rec.history,
                    clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
-                   number: sh.game.number, counted: sh.game.counted };
+                   number: sh.game.number, end_sent_for_rating: sh.game.end_sent_for_rating };
 }
 
 // The image of what is kept, then its checksum (8 bytes, little-endian), for the app to
@@ -106,11 +106,12 @@ fn bring_back(sh: Shell&, s: Saved&) {
     b.has_last = s.has_last;
     b.last = rules::Way { from: s.last_from, to: s.last_to, .. };
     gm.clock = s.clock;
-    gm.counted = s.counted;
+    gm.end_sent_for_rating = s.end_sent_for_rating;
     gm.turn = b.pos.side;
     sh.unset = s.unset;
-    // A game kept after its end was put in the player's history then (Event.over).
-    gm.kept = game::ended(gm);
+    // A game kept after its end was put in the player's history then
+    // (Event.ended_for_history).
+    gm.end_sent_for_history = game::ended(gm);
 }
 
 // The game in progress set aside while a game played from a replay shows (play_from_here):
@@ -147,21 +148,21 @@ fn unpark(sh: Shell&) {
 // Version 3's layout, without `unset`, read as version 4 with the game set up, as every
 // game kept then was. Temporary, until version 3 images are gone from the field.
 struct Saved3 {
-    version:   i64,
-    screen:    i64,
-    variant:   u8,
-    start:     rules::Position,
-    pos:       rules::Position,
-    last_from: u8,
-    last_to:   u8,
-    has_last:  bool,
-    history:   rules::Step[..rules::MAX_HISTORY],
-    clock:     clock::Clock,
-    computer:  i64,
-    level:     i64,
-    skill:     i64,
-    number:    i64,
-    counted:   bool,
+    version:             i64,
+    screen:              i64,
+    variant:             u8,
+    start:               rules::Position,
+    pos:                 rules::Position,
+    last_from:           u8,
+    last_to:             u8,
+    has_last:            bool,
+    history:             rules::Step[..rules::MAX_HISTORY],
+    clock:               clock::Clock,
+    computer:            i64,
+    level:               i64,
+    skill:               i64,
+    number:              i64,
+    end_sent_for_rating: bool,
 }
 
 fn old(image: const u8[:], out: Saved[>..]&) -> bool {
@@ -172,7 +173,7 @@ fn old(image: const u8[:], out: Saved[>..]&) -> bool {
     out.push(Saved { version: VERSION, unset: false, screen: t.screen, variant: t.variant, start: t.start, pos: t.pos,
                      last_from: t.last_from, last_to: t.last_to, has_last: t.has_last, history: t.history,
                      clock:     t.clock, computer: t.computer, level: t.level, skill: t.skill, number: t.number,
-                     counted: t.counted });
+                     end_sent_for_rating: t.end_sent_for_rating });
     return true;
 }
 

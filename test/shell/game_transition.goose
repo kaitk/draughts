@@ -86,7 +86,7 @@ fn share(k: i64, n: i64) -> const u8[:] { if k == 0 { "none" } else if k == n { 
 fn clocks(sh: shell::Shell&) -> u8[>..] {
     let gm .= sh.game;
     return str("black's clock ", round(100.0 * gm.clock.left[rules::BLACK]) / 100.0, ", runs ", gm.clock.running,
-               ", asking ", gm.asking != 0);
+               ", asking ", gm.ai_request_id != 0);
 }
 
 // The game opened straight on a screen of drive::size at `now`: its board, quads, and

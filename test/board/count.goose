@@ -59,7 +59,7 @@ fn begin(gm: game::Game&, variant: u8, fen: const u8[:], computer: i64) {
 fn counts(gm: game::Game&) -> u8[>..] {
     let b .= gm.b;
     let v .= rules::VARIANTS[b.variant];
-    board::fill(b, l.board, now + 0.3);     // a moment on, where a pulse shows
+    board::build_frame_pieces(b, l.board, now + 0.3);     // a moment on, where a pulse shows
     var out: u8[>..] = [];
     for pc in b.pieces {
         guard pc.ring.z > 0.0 else { continue; }
@@ -81,7 +81,7 @@ fn state(gm: game::Game&, what: const u8[:]) {
     if b.moving { rules::format_move(text, b.variant, b.move); } else { text.append("-"); }
     var lit: u8[>..] = [];
     if drive::marked(v, b.marks.next).len > 0 { lit = str("(", if b.flash.z < 1.0 { "pulsing" } else { "lit" }, ") "); }
-    print("  ", what, ": waits on ", drive::name(v, board::waiting(b)), ", counts ", shown, ", wrong ",
+    print("  ", what, ": waits on ", drive::name(v, board::capture_stop_square(b)), ", counts ", shown, ", wrong ",
           drive::name(v, b.wrong), ", pulsing ", rings, "next ", drive::marked(v, b.marks.next), lit, "playing ", text);
 }
 

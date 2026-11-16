@@ -142,7 +142,7 @@ fn main() {
     now = run(sh, g, e, now, 1.0);
     play(sh, "d4:f6", now);
     // The end's frame writes the game before the worker has judged its last move.
-    while sh.game.notes.len < 3 || !sh.game.kept { now = run(sh, g, e, now, 0.05); }
+    while sh.game.notes.len < 3 || !sh.game.end_sent_for_history { now = run(sh, g, e, now, 0.05); }
     print("ended: ", notes(sh), " waiting for marks ", sh.kept.open, ", tally accuracy ", game::tally(sh.game.notes).accuracy[0],
           " ", game::tally(sh.game.notes).accuracy[1]);
     now = run(sh, g, e, now, 2.0);

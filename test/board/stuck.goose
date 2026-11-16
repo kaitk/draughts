@@ -44,7 +44,7 @@ fn drop(gm: game::Game&, g: gui::Gui&, l: panel::Layout, a: float2, c: float2, n
 // the pieces pulsing red, and the move playing.
 fn state(b: board::Board&, l: board::Layout, what: const u8[:], now: f64) {
     let v .= rules::VARIANTS[b.variant];
-    board::fill(b, l, now);
+    board::build_frame_pieces(b, l, now);
     var rings: u8[>..] = [];
     var drawn: u8[>..] = [];
     drawn.append("-");
@@ -88,7 +88,7 @@ fn line(gm: game::Game&, g: gui::Gui&, l: panel::Layout, t: const u8[:], now: f6
         }
     } else {
         for i in 2..a.len {
-            let w = board::waiting(gm.b);
+            let w = board::capture_stop_square(gm.b);
             let from = if w >= 0 { drive::name(v, w) } else { str(t[a[1]..e[1]]) };
             drop(gm, g, l, drive::at(l.board, from), drive::at(l.board, t[a[i]..e[i]]), t0);
             t0 += 0.1;
@@ -168,7 +168,7 @@ fn main() {
     drive::frame(sh, g, a + (c - a) * 0.5, true, false, false, 1.12);
     drive::frame(sh, g, c, true, false, false, 1.14);
     drive::frame(sh, g, c, false, false, true, 1.16);
-    print("  the puzzle's man waits on ", drive::name(v, board::waiting(sh.puzzle.b)));
+    print("  the puzzle's man waits on ", drive::name(v, board::capture_stop_square(sh.puzzle.b)));
     sh.prefs.hints = board::MOVES;
     shell::apply_prefs(sh);
     shell::go_to(sh, shell::SETTINGS, 2.0);
@@ -182,7 +182,7 @@ fn main() {
     print("  the game: turned ", sh.out.layout.flip, ", by hand ", sh.game.b.by_hand);
     var now = 6.0;
     for to in ["e1", "g3", "e5"] {
-        let w = board::waiting(sh.game.b);
+        let w = board::capture_stop_square(sh.game.b);
         let from = if w >= 0 { drive::name(v, w) } else { str("c3") };
         let p = drive::at(sh.out.layout, from);
         let q = drive::at(sh.out.layout, to);

@@ -1,7 +1,7 @@
 // The 3D board's camera as plain data: the view (rest angle to top), the zoom, the
 // showcase's turn and tip under a drag, and the hot-seat turn to face the side to move.
 // Each is an `Ease` read at any moment by `value`; nothing here knows the screen, which
-// board/panel.goose fits the camera into (panel::aim).
+// board/panel.goose fits the camera into (panel::apply_camera).
 namespace rig;
 import std;
 import math;
@@ -17,10 +17,10 @@ let DRAG:  f32 = 0.3;       // degrees a dp of drag turns or tips it
 
 // A value easing from `from` to `to` over `length` seconds from `start`, in and out.
 struct Ease {
-    from:   f32 = 0.0,
-    to:     f32 = 0.0,
-    start:  f64 = 0.0,
-    length: f64 = 0.0,
+    from:   f32  = 0.0,
+    to:     f32  = 0.0,
+    start:  f64  = 0.0,
+    length: f64  = 0.0,
     soft:   bool = false,   // on soft_curve, whose middle is gentler than curve's
 }
 
@@ -158,7 +158,7 @@ fn drive(r: Rig&, at: float2, down: bool, pressed: bool, released: bool, scale: 
 }
 
 // The showcase's angle eased back to rest and its mode off: a new game, a hot-seat turn.
-fn settle(r: Rig&, now: f64, length: f64 = EASE) {
+fn ease_to_rest(r: Rig&, now: f64, length: f64 = EASE) {
     r.showcase = false;
     r.held = false;
     if r.swing.to != 0.0 || moving(r.swing, now) { go(r.swing, 0.0, now, length); }
@@ -181,7 +181,7 @@ fn face(r: Rig&, side: i64, now: f64) -> bool {
     // Kept under 360 between turns, so the angle doesn't grow.
     if !moving(r.turn, now) { put(r.turn, to); }
     go(r.turn, r.turn.to + 180.0, now, TURN);
-    settle(r, now, TURN);
+    ease_to_rest(r, now, TURN);
     return true;
 }
 

@@ -222,7 +222,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
             let p = game_layout(sh, area, g.scale, now);
             game::still(sh.game, g, p, now, over);
             l = p.board;
-            if p.three { sh.went_view = p.view; }
+            if p.is_3d { sh.went_view = p.view; }
         },
         SETTINGS => {
             settings::frame(sh.prefs, over, g, l, area, strings::current, room, rules::VARIANTS[sh.preview.variant].size);
@@ -238,7 +238,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
             let p = puzzle_layout(sh, area, g.scale, now);
             puzzle::panel_frame(sh.puzzle, g, p, now, over);
             l = p.board;
-            if p.three { sh.went_view = p.view; }
+            if p.is_3d { sh.went_view = p.view; }
         },
         RESULTS => {
             var variant = sh.past.variant;
@@ -296,10 +296,10 @@ fn apply_prefs(sh: Shell&) {
     gm.b.king_look = king_look(sh);
     sh.puzzle.b.king_look = king_look(sh);
     sh.lesson.b.king_look = king_look(sh);
-    gm.look = p.lookout;
+    gm.lookout_on = p.lookout;
     gm.moves_shown = p.moves;
     gm.turns = p.turns;
-    gm.look_skill = if gm.computer >= 0 { gm.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
+    gm.lookout_skill = if gm.computer >= 0 { gm.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
 }
 
 // The characters a face draws, for the faces baked with only those (rendering.md,
@@ -335,7 +335,7 @@ fn go_to(sh: Shell&, to: i64, now: f64) {
     let p = progress(sh, now);
     let back = sh.from == to && p < 1.0;
     if sh.screen == HOME { sh.left = sh.setup; }
-    if sh.screen == HOME || sh.screen == SETTINGS { rig::settle(sh.cam, now, DURATION); }
+    if sh.screen == HOME || sh.screen == SETTINGS { rig::ease_to_rest(sh.cam, now, DURATION); }
     sh.from = if animates(sh.screen, to) { sh.screen } else { -1 };
     sh.since = if back { now - (1.0 - p) * DURATION } else { now };
     sh.screen = to;
@@ -639,7 +639,7 @@ fn raise(sh: Shell&, g: gui::Gui&, crossing: bool, e: f32) {
     sh.out.raised = true;
     sh.out.view = if has_a && has_b { if a.k > b.k { a } else { b } } else if has_a { a } else { b };
     // At rest the screen's flat layout stays, which its camera's view may have moved away
-    // from (panel::aim); in a transition the drawn view's square.
+    // from (panel::apply_camera); in a transition the drawn view's square.
     guard crossing else {
         sh.out.place = sh.out.view.rect;
         return;
@@ -679,15 +679,15 @@ fn raise_in(sh: Shell&, room: float4, n: i64, u: f32, l: board::Layout&) -> view
 
 // Where the game puts the board and its panels, turned when the computer plays white:
 // round the 3D board when it is chosen (settings::raised), seen as its camera has it at
-// `now` (panel::aim), else the flat board's.
+// `now` (panel::apply_camera), else the flat board's.
 fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     let n = rules::VARIANTS[sh.game.b.variant].size;
     var l = if settings::raised(sh.prefs) {
         panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true, sh.prefs.moves != settings::MOVES_HIDDEN)
     }
             else { panel::layout_in(area, n, u, true, true, sh.prefs.moves != settings::MOVES_HIDDEN) };
-    l.board.flip = sh.game.computer == rules::WHITE || (!l.three && flat_turned(sh) != (flat_fade(sh, now) < 0.0));
-    panel::aim(l, sh.game.cam, now);
+    l.board.flip = sh.game.computer == rules::WHITE || (!l.is_3d && flat_turned(sh) != (flat_fade(sh, now) < 0.0));
+    panel::apply_camera(l, sh.game.cam, now);
     return l;
 }
 
@@ -699,8 +699,8 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     let p .= sh.prefs;
     let ev, changed = game::frame(sh.game, g, l, now, sh.out.over, frozen);
     // Its eye turned on or off: kept in the player's file.
-    if ev.looked {
-        p.lookout = sh.game.look;
+    if ev.lookout_toggled {
+        p.lookout = sh.game.lookout_on;
         sh.changed = true;
     }
     aimed(sh, l, sh.game.cam, now);
@@ -720,7 +720,7 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     // A game against the computer ended: won or lost, the child meets a stronger or weaker
     // one next; drawn, the same, a game played on its level all the same.
     let gm .= sh.game;
-    if ev.over { keep_game(sh, ev.winner); }
+    if ev.ended_for_history { keep_game(sh, ev.winner); }
     if ev.ended {
         let k = clamp(gm.level, game::EASY, game::HARD);
         sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, ev.result, sh.prefs.played[k]);
@@ -767,7 +767,7 @@ fn side_layout(sh: Shell&, area: float4, u: f32, variant: u8, flip: bool, cam: r
     var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, false) }
             else { panel::puzzle_in(area, n, u) };
     l.board.flip = flip;
-    panel::aim(l, cam, now);
+    panel::apply_camera(l, cam, now);
     return l;
 }
 
@@ -775,8 +775,8 @@ fn side_layout(sh: Shell&, area: float4, u: f32, variant: u8, flip: bool, cam: r
 // as the frame left it (a button tapped, a showcase drag, the board facing the side to
 // move shows at once), and the 3D board's view, where it is one, for the transition.
 fn aimed(sh: Shell&, l: panel::Layout&, cam: rig::Rig&, now: f64) {
-    panel::aim(l, cam, now);
-    if l.three { sh.came_view = l.view; }
+    panel::apply_camera(l, cam, now);
+    if l.is_3d { sh.came_view = l.view; }
 }
 
 // The puzzle for this frame. Returns whether anything on screen changed.
@@ -961,7 +961,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     }
     if sh.setup != home::NO_SETUP && rig::moving(sh.demo, now) {
         let spin = rig::value(sh.demo, now);
-        if sh.came_view.rect.z > 0.0 { sh.came_view = view3d::turned(sh.came_view, view3d::Camera { turn: spin, .. }); }
+        if sh.came_view.rect.z > 0.0 { sh.came_view = view3d::with_camera_turn(sh.came_view, view3d::Camera { turn: spin, .. }); }
         else { sh.out.layout.flip = spin > 90.0 && spin < 270.0; }
     }
     if card {
@@ -1106,7 +1106,7 @@ fn shown(sh: Shell&) -> board::Board& { board_of(sh, sh.screen) }
 // (game::cheer), which fades with the game screen in a transition.
 fn fill(sh: Shell&, now: f64) -> board::Board& {
     let b .= board_of(sh, sh.out.shows);
-    board::fill(b, sh.out.layout, now);
+    board::build_frame_pieces(b, sh.out.layout, now);
     let k = if which(sh.out.shows) == GAME { abs(flat_fade(sh, now)) } else { 2.0 };
     if k < 1.0 { for &p in b.pieces { p.look.w *= k; } }
     let share = if sh.screen == GAME { sh.mix } else if sh.from == GAME { 1.0 - sh.mix } else { 0.0 };

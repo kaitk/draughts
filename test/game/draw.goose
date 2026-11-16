@@ -1,4 +1,4 @@
-// A draw on the game screen (game::drawn, game::settle; prototypes/draw.html, take a),
+// A draw on the game screen (game::drawn, game::draw_card; prototypes/draw.html, take a),
 // headless. Russian king against king: 6.1.8.6 draws on the 10th ply. Each ply is
 // tapped as a child plays it, and after it has shown the play panel's countdown is
 // printed: from 5 moves left, its dots lit as many. The drawing move shows, then the
@@ -101,7 +101,7 @@ fn main() {
     print("drawn: ", why[..why.len], "; the clock runs for ", gm.clock.running);
     for k in [0.05, 0.3, 0.6, 1.0] {
         drive::idle(gm, g, l, d + k);
-        board::fill(gm.b, l.board, d + k);
+        board::build_frame_pieces(gm.b, l.board, d + k);
         game::cheer(gm, l.board, d + k);
         print("  at ", k, " s: board dim ", r2(gm.b.dim), ", piece dim ", r2(gm.b.pieces[0].win.x), "; card: ", card(g));
     }
@@ -133,9 +133,9 @@ fn main() {
     t = 100.0;
     for i in 9 { t = play(gm, g, l, LINE[2 * i], LINE[2 * i + 1], t); }
     gm.computer = rules::WHITE;
-    print("against the computer, before the drawing move: counted ", gm.counted);
+    print("against the computer, before the drawing move: counted ", gm.end_sent_for_rating);
     t = play(gm, g, l, "a1", "b2", t);
-    print("  drawn ", game::drawn(gm), ", counted ", gm.counted, ", result ", drive::result, "; asks the computer ",
+    print("  drawn ", game::drawn(gm), ", counted ", gm.end_sent_for_rating, ", result ", drive::result, "; asks the computer ",
           game::computer_to_move(gm));
 
     // A saved game: 9 plies in, saved and brought back, the countdown as it was.

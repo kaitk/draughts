@@ -25,7 +25,7 @@ fn targets(b: board::Board&) -> i64 {
 
 fn show(b: board::Board&, l: board::Layout, what: const u8[:], now: f64) {
     let v .= rules::VARIANTS[b.variant];
-    board::fill(b, l, now);
+    board::build_frame_pieces(b, l, now);
     var rings = 0;
     for i in b.pieces.len { if b.pieces[i].ring.x > 0.0 { rings++; } }
     print(what, ": selected ", drive::name(v, b.selected), ", targets ", targets(b), ", wrong ",

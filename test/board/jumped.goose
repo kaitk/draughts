@@ -41,7 +41,7 @@ fn alpha(b: board::Board&, l: board::Layout, n: i64) -> f32 {
 
 fn show(b: board::Board&, l: board::Layout, what: const u8[:], now: f64) {
     board::update(b, now);
-    board::fill(b, l, now);
+    board::build_frame_pieces(b, l, now);
     print(what, ": 38 ", alpha(b, l, 38), ", 22 ", alpha(b, l, 22), ", 12 ", alpha(b, l, 12),
           ", 5 ", alpha(b, l, 5));
 }

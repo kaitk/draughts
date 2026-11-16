@@ -52,7 +52,7 @@ fn ringed(b: board::Board&, l: board::Layout) -> u8[>..] {
 
 fn show(b: board::Board&, l: board::Layout, what: const u8[:], now: f64) {
     let v .= rules::VARIANTS[b.variant];
-    board::fill(b, l, now);
+    board::build_frame_pieces(b, l, now);
     var text: u8[>..] = [];
     if b.moving { rules::format_move(text, b.variant, b.move); }
     print("  ", what, ": selected ", drive::name(v, b.selected), ", wrong ", drive::name(v, b.wrong), ", pulsing ",
@@ -119,7 +119,7 @@ fn turned(fen: const u8[:], taps: const u8[:][:]) {
             drive::tap(gm, g, l, drive::at(l.board, t[at..end]), now);
             now += 0.1;
             let b .= gm.b;
-            board::fill(b, l.board, now);
+            board::build_frame_pieces(b, l.board, now);
             var rings: u8[>..] = [];
             for i in b.pieces.len {
                 let pc = b.pieces[i];

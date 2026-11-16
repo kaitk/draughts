@@ -89,7 +89,7 @@ fn stray(b: board::Board&, opts: rules::Moves&) -> i64 {
 // draws them: "46(1)" a ring and a count of one, "23" a ring alone (a piece to take).
 fn rings(gm: game::Game&, l: panel::Layout, now: f64) -> u8[>..] {
     let v .= rules::VARIANTS[V];
-    board::fill(gm.b, l.board, now);
+    board::build_frame_pieces(gm.b, l.board, now);
     var t: u8[>..] = [];
     for p in gm.b.pieces {
         guard p.ring.x > 0.0 || p.ring.z > 0.0 else { continue; }

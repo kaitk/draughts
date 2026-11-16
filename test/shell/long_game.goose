@@ -43,7 +43,7 @@ fn main() {
         if raised { sh.prefs.board = settings::RAISED; }
         sh.game = game::new(rules::INTERNATIONAL);
         shell::apply_prefs(sh);
-        sh.game.judge = false;
+        sh.game.judge_moves = false;
         sh.screen = shell::GAME;
         sh.drawn = shell::GAME;
         let b .= sh.game.b;

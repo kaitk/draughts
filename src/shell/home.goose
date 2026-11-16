@@ -505,7 +505,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     // run under the tap's clear left side, up to 12 dp from the gear.
     var mark = at[0];
     let piece = gui::cut_left(mark, 56.0 * u);
-    game::put(over, piece, 28.0 * u, rules::WHITE, board::CROWN,
+    game::add_ui_piece(over, piece, 28.0 * u, rules::WHITE, board::CROWN,
               1.0, false);
     gui::cut_left(mark, 14.0 * u);
     var pick = NOTHING;
@@ -805,7 +805,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
             let tapped, pic = gui::pick(g, COLOR_IDS + i, across(colors, 2, i, u), 30.0,
                                         strings::get(if i == 0 { strings::COLOR_WHITE } else { strings::COLOR_BLACK }), "",
                                         s.color == i, true);
-            game::put(over, pic, 15.0 * u, i, 0, 1.0, false);
+            game::add_ui_piece(over, pic, 15.0 * u, i, 0, 1.0, false);
             if tapped {
                 s.color = i;
                 ask = CHANGED;

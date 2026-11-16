@@ -36,7 +36,7 @@ fn show(sh: shell::Shell&, what: const u8[:]) {
     if sh.screen == shell::PUZZLE {
         let v .= rules::VARIANTS[pl.b.variant];
         format(text, ", puzzle ", puzzle::current(pl).id, ", ", rules::fen(pl.b.pos), ", ", STATES[pl.state], ", stars ",
-               puzzle::stars(pl), ", waits on ", drive::name(v, board::waiting(pl.b)));
+               puzzle::stars(pl), ", waits on ", drive::name(v, board::capture_stop_square(pl.b)));
     }
     print(text);
 }

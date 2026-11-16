@@ -1,6 +1,7 @@
 // The 3D board as plain math, with no graphics: its camera and fit on screen, a tap
 // turned into a square through the perspective, and each frame's instance data, filled
-// from the flat board's draw lists (board::fill) so both views share one state.
+// from the flat board's draw lists (board::build_frame_pieces) so both views share one
+// state.
 //
 // World units: the field spans -4..4 in x and z, so a square is 8 / n; y is up, the
 // field's top at 0; +z is the near side. x and z follow the flat layout's x and y
@@ -26,20 +27,20 @@ let FAR:  f32 = 40.0;
 
 // The board: the field's half width, the dark inlay round it, the frame round that, its
 // top above the field, and the board's underside; the meshes' own (src/model3d/mesh.goose).
-let FIELD     = mesh::FIELD;
-let INNER     = mesh::INNER;
-let FRAME_W   = mesh::FRAME_W;
+let FIELD = mesh::FIELD;
+let INNER = mesh::INNER;
+let FRAME_W = mesh::FRAME_W;
 let FRAME_TOP = mesh::FRAME_TOP;
-let BOTTOM    = mesh::BOTTOM;
+let BOTTOM = mesh::BOTTOM;
 
 // A piece where a square is 1, scaled by `unit` on 10 × 10. The selected piece lifts
 // LIFT and grows to GROW; the 2D board's FLAT_LIFT maps to LIFT (`lift_of`).
-let RADIUS    = mesh::RADIUS;
-let HEIGHT    = mesh::HEIGHT;
+let RADIUS = mesh::RADIUS;
+let HEIGHT = mesh::HEIGHT;
 let LIFT:      f32 = 0.07;
 let GROW:      f32 = 1.05;
 let FLAT_LIFT: f32 = 0.011;   // the 2D board's selected lift, of the board's side
-let FLAT_DRAG: f32 = 0.016;   // and a dragged piece's (board::fill)
+let FLAT_DRAG: f32 = 0.016;   // and a dragged piece's (board::build_frame_pieces)
 let FLAT_DISC: f32 = 0.39;    // the 2D disc's radius, of a square
 
 // The camera's angles, in degrees: pitch down from level and yaw round the board, both
@@ -95,7 +96,7 @@ fn spin(p: float3, degrees: f32) -> float3 {
 }
 
 // The view of `cam` keeping `fitted`'s k and c.
-fn turned(fitted: View, cam: Camera) -> View {
+fn with_camera_turn(fitted: View, cam: Camera) -> View {
     var v = fitted;
     place(v, cam);
     return v;
@@ -356,7 +357,7 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
         let xz, ok = on_plane(v, p, h);
         if ok { return to_flat(l, xz); }
     }
-    let waits = board::waiting(b);
+    let waits = board::capture_stop_square(b);
     var best: f32 = -1.0;
     var at = float2 { 0.0, 0.0 };
     var all = b.pos.pieces[rules::WHITE] | b.pos.pieces[rules::BLACK];
@@ -388,25 +389,25 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 // and the scale; then dark (0 or 1), 1 for a crowned disc or 0.5 a stack's upper disc, 1
 // for the selected piece or 2 a stack's lower disc, and a seed for its figure. A stacked
 // king is two instances. `state` runs beside it, two float4s an instance: opacity (a
-// captured piece fading), the must-capture ring (1 pulsing, 2 still), the glow ring
-// tight round it (0 to 1), the selected glow (0 to 1); then board::Piece.win as it is.
-// `squares` is the field's occlusion, two float4s a square of the world's grid
-// (row * n + column, row 0 the far side) for the piece over it: the top, the foot, the
-// radius, and 1 when a piece is there; then where its middle is (x, z), as a moving
-// piece is between squares. A jump's piece over the one it takes leaves it the square
-// (the lower foot keeps it). `marks` and `flash` are board::fill's, numbered by the
-// world's grid too; `selected` the selected piece's foot and radius (w 0 for none);
-// `dim` the board's under a win. `field` is the marks as shaders::MARKS_FRAG reads them,
-// a float4 a square of the world's grid: x the last move's tint (1), y a target's dot (1)
-// or a stop's ring (2), z the must-capture ring, 1 pulsing or 2 still, w 0 on a wrong
-// move's flashing square, 1 on a lookout's crowning square (shaded), else -1. A drained
-// piece (the lookout's danger, the crowning ghost king) has a seed below 0, -1 less its
-// seed. `lit` runs beside it, a float4 a square too: x the glow ring tight round the
-// piece standing there, 0 to 1; y the square lit by a win's glow passing, 0 to 1; z how
-// many pieces the piece standing there takes (board::Piece.ring.z), 0 for none; w a
-// capture's next stop (board::Marks.next), 1 lit still, 2 while it pulses, 0 none. Under
-// a win's dim the winning piece alone stays lit: its seed (kind's w) is SEED_LIT more,
-// which the shaders take off again for its figure.
+// captured piece fading), the must-capture ring (1 pulsing, 2 still), the glow ring tight
+// round it (0 to 1), the selected glow (0 to 1); then board::Piece.win as it is.
+// `squares` is the field's occlusion, two float4s a square of the world's grid (row * n +
+// column, row 0 the far side) for the piece over it: the top, the foot, the radius, and 1
+// when a piece is there; then where its middle is (x, z), as a moving piece is between
+// squares. A jump's piece over the one it takes leaves it the square (the lower foot
+// keeps it). `marks` and `flash` are board::build_frame_pieces's, numbered by the world's
+// grid too; `selected` the selected piece's foot and radius (w 0 for none); `dim` the
+// board's under a win. `field` is the marks as shaders::MARKS_FRAG reads them, a float4 a
+// square of the world's grid: x the last move's tint (1), y a target's dot (1) or a
+// stop's ring (2), z the must-capture ring, 1 pulsing or 2 still, w 0 on a wrong move's
+// flashing square, 1 on a lookout's crowning square (shaded), else -1. A drained piece
+// (the lookout's danger, the crowning ghost king) has a seed below 0, -1 less its seed.
+// `lit` runs beside it, a float4 a square too: x the glow ring tight round the piece
+// standing there, 0 to 1; y the square lit by a win's glow passing, 0 to 1; z how many
+// pieces the piece standing there takes (board::Piece.ring.z), 0 for none; w a capture's
+// next stop (board::Marks.next), 1 lit still, 2 while it pulses, 0 none. Under a win's
+// dim the winning piece alone stays lit: its seed (kind's w) is SEED_LIT more, which the
+// shaders take off again for its figure.
 //
 // What moves while nothing else does is drawn over the kept image each frame
 // (render3d::marks_over): `pulse` x the must-capture rings' phase at `now` (0 brightest,
@@ -453,9 +454,9 @@ fn mark_world(l: board::Layout, from: u32[4]&, to: u32[4]&) {
     }
 }
 
-// Fills s for the frame board::fill left in b, on the flat layout l, seen through v:
-// each 2D piece becomes one instance, or two for a stacked king.
-fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
+// Fills s for the frame board::build_frame_pieces left in b, on the flat layout l, seen
+// through v: each 2D piece becomes one instance, or two for a stacked king.
+fn build_scene(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     s.view = v;
     s.inst.clear();
     s.state.clear();
