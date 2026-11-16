@@ -137,7 +137,7 @@ def bundle(exe, out):
 
 
 DMG_WINDOW = (640, 427)                             # pt, mac/dmg-background.tiff's size
-DMG_ICONS = {"Draughts.app": (160, 70), "Applications": (480, 70)}   # on its strip, the arrow between
+DMG_ICONS = {"Draughts.app": (160, 200), "Applications": (480, 200)}  # on its card, the arrow between
 DMG_LAYOUT = """
 tell application "Finder"
   tell disk "{volume}"
