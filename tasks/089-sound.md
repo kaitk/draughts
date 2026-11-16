@@ -24,8 +24,8 @@ that.
 | --- | --- | --- |
 | A piece set down | When it lands, not at the tap; yours, the computer's, a friend's | Yes. The core sound. The computer's move tells a player who looked away that it's their turn |
 | A capture's landings | Each landing a whole tone above the last | Yes. A long capture climbs, and a child hears how many pieces it took without counting |
-| The taken pieces | Once, as the capture ends and the jumped pieces come off together | Yes. Once a capture, never once a jump: a sound per jump made a capture too busy (2026-11-16) |
-| Crowned | Two soft mallet notes after the landing | Yes. A real event, and a rare one |
+| The taken pieces | Once, in place of the last landing's knock, as the jumped pieces come off together | Yes. Once a capture, never once a jump: a sound per jump made a capture too busy (2026-11-16) |
+| Crowned | Two soft mallet notes, in place of the landing's knock | Yes. A real event, and a rare one |
 | A puzzle solved | Three rising notes, or one per star as each pops in | Yes. Which version to pick is open |
 | A game's end | A win: a soft rising arpeggio. A loss or a draw: a plain, warm close | Yes. A loss never sounds sad or punishing; a four-year-old losing to Medium should hear an ending, not a judgment |
 | A wrong move | Two low soft knocks as the piece slides back | Yes (2026-11-16). Never a buzzer |
@@ -48,7 +48,11 @@ How they sound:
 - Under one another: the moments are mixed well below the move (`GAIN` in the
   prototype), so the loudest sound is the one heard most.
 - Never the same twice in a row: the move has three takes, picked at random.
-- One moment at a time: a crowning that ends a game plays the end sound only.
+- One sound a move (2026-11-16): a move's most important event plays in place of the
+  others, never with them. The game's end, else a crowning, else the taken pieces, else
+  the piece set down. A capture's stops before its last keep their rising knocks, each
+  a step the player taps; the last landing plays the take (or the crowning, or the end)
+  instead of its knock. The clock's sounds and a wrong move are events of their own.
 - Tuned together: the notes are on one pentatonic scale (D), so any two that overlap
   sound fine.
 

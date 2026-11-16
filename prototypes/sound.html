@@ -468,19 +468,18 @@
     draw(); say(why);
     setTimeout(() => { G.error = null; draw(); }, 700);
   }
-  // Ends a move: the taken pieces off with one take sound, a crowning's notes, the end.
+  // Ends a move with one sound, the most important of it: the game's end, else a
+  // crowning, else the taken pieces coming off, else the piece set down.
   function finish(m, c) {
     const p = G.pos.get(m.path[0]), to = m.path[m.path.length - 1];
     G.pos.delete(m.path[0]); for (const t of m.taken) G.pos.delete(t);
     G.pos.set(to, { c, k: p.k || m.crown });
     Object.assign(G, { sel: null, at: null, step: 0, cands: [], forced: [], last: [m.path[0], to] });
     draw();
-    if (m.taken.length) setTimeout(() => play('take'), 90);
-    if (m.crown) setTimeout(() => play('crown'), 200);
-    const next = c === 'w' ? 'b' : 'w';
-    if (!legal(G.pos, next).length) {
+    const next = c === 'w' ? 'b' : 'w', over = !legal(G.pos, next).length;
+    play(over ? (c === 'w' ? 'win' : 'end') : m.crown ? 'crown' : m.taken.length ? 'take' : 'move');
+    if (over) {
       G.over = true;
-      setTimeout(() => play(c === 'w' ? 'win' : 'end'), 700);
       say(c === 'w' ? 'You won: the soft close. "From the start" plays again' : 'The computer won: the plain close');
       return;
     }
@@ -491,10 +490,10 @@
     say("The computer's move");
     G.sel = m.path[0]; G.cands = [m];
     const hop = (k) => {
-      G.at = m.path[k]; G.step = m.taken.length ? k : 0; draw();
-      play(m.taken.length ? 'jump' : 'move', m.taken.length ? k - 1 : -1);
-      if (k + 1 < m.path.length) setTimeout(() => hop(k + 1), 380);
-      else setTimeout(() => { G.busy = false; finish(m, 'b'); }, 120);
+      if (k + 1 === m.path.length) { G.busy = false; finish(m, 'b'); return; }
+      G.at = m.path[k]; G.step = k; draw();
+      play('jump', k - 1);
+      setTimeout(() => hop(k + 1), 380);
     };
     setTimeout(() => hop(1), 150);
   }
@@ -519,9 +518,8 @@
     }
     G.cands = fit; G.step += 1; G.at = q;
     const done = fit.find((m) => m.path.length === G.step + 1);
-    play(fit[0].taken.length ? 'jump' : 'move', fit[0].taken.length ? G.step - 1 : -1);
     if (done) finish(done, 'w');
-    else { draw(); say('And on: the next stop'); }
+    else { play('jump', G.step - 1); draw(); say('And on: the next stop'); }
   }
   function wireBoard() {
     const el = document.getElementById('board');
@@ -543,8 +541,8 @@
   const SOUNDS = [
     ['move', 'yes', 'A piece set down', 'As it lands, not at the tap: yours, the computer\'s, a friend\'s. Three takes on it picked at random, so a game of them never machine-guns.'],
     ['jump', 'yes', 'A capture\'s landings', 'Each landing of a capture a whole tone above the last, so a long capture climbs and a child hears how many it took. Play it: the five steps of one.', 5],
-    ['take', 'yes', 'The taken pieces', 'Once, as the capture ends and the jumped pieces come off: never one per jump.'],
-    ['crown', 'yes', 'Crowned', 'Two soft mallet notes after the landing.'],
+    ['take', 'yes', 'The taken pieces', 'In place of the last landing\'s knock, as the capture ends and the jumped pieces come off.'],
+    ['crown', 'yes', 'Crowned', 'Two soft mallet notes in place of the landing\'s knock (and of the take\'s).'],
     ['solved', 'yes', 'A puzzle solved', 'Three rising notes; or one per star as the stars pop in (the next row).'],
     ['star', 'try', 'A star, one at a time', 'In place of solved: a note per star as each pops in, so two stars sound less than three.', 3],
     ['win', 'yes', 'A game won', 'A soft rising arpeggio when the result shows.'],
