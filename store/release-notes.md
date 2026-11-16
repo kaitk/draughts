@@ -43,7 +43,7 @@ SHA-256:
 - `Draughts-0.9.0-windows-x64-setup.exe`: `WINDOWS_SETUP_SHA`
 - `Draughts-0.9.0-windows-x64.zip`: `WINDOWS_ZIP_SHA`
 - `Draughts-0.9.0-macos-arm64.dmg`: `832877a9e41c51bb960c5edabaff4bd99922c451e7f8172fdf741f8cfea0e1a0`
-- `Draughts-0.9.0-linux-x64.tar.gz`: `LINUX_SHA`
+- `Draughts-0.9.0-linux-x64.tar.gz`: `8711ebc6539fa456371984ae446afd572d3a137487f33e6ef8166810310b9301`
 ```
 
 ### Play, en-GB (491 of 500)

@@ -478,6 +478,15 @@ A Docker `ubuntu:22.04` container does as well (as root, without `sudo`): build 
 build/linux/release/Draughts/draughts | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1`
 should say `GLIBC_2.35`.
 
+On the Mac, Docker builds it as x64 under emulation in about ten minutes (0.9.0,
+2026-11-16), with `tools/linux_release_docker.sh` doing all of the above inside the
+container and leaving the archive in `/out`:
+
+```sh
+docker run --rm --platform linux/amd64 -v "$PWD":/src:ro -v "$PWD/build/linux/release":/out \
+    -v "$PWD/tools/linux_release_docker.sh":/build.sh:ro ubuntu:22.04 /build.sh
+```
+
 **The release.** Tagged as the shared version (`native.VERSION_NAME`):
 
 ```sh
