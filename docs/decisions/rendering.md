@@ -404,6 +404,10 @@ play; a stack's rings go round its foot (2026-11-08).
 - The zoom sits at the room's bottom at the rest angle and in its middle in the top view
   (2026-11-16): at the bottom the top view looked low on a desktop. Centered it is a bit
   smaller where the panels and buttons stand in the way (a tablet's field 735 dp, was 796).
+  On a desktop the top view's zoom reaches down past the frame margin to a gap above the
+  window's foot, and sits lower where the middle isn't clear (2026-11-16): held down by
+  what each side has taken, it left the space under it empty (field about 7% larger at
+  1204 × 758 pt). The rest angle and a tablet stay as they were.
 - The game's view and zoom are kept in the player's file (`view = top`, `zoom = on`) and
   come back at launch and with each game (2026-11-16), but not those a friend's game
   across the table sets for itself.

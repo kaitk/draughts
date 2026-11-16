@@ -274,9 +274,12 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let buttons = if col { float4 { x1 - touch, y, touch, len } }
                       else { float4 { right.x + 0.5 * (right.z - len), min(y, area.y + height - touch), len, touch } };
         let box = float4 { area.x + gap, area.y + gap, width - 2.0 * gap, height - 2.0 * gap };
+        // The top view's zoom may reach down past a desktop's frame margin to a gap above
+        // the window's foot (zoomed): the margin is for the board at rest.
+        let room = if gui::desktop_scale > 0.0 { float4 { box.x, box.y, box.z, safe.y + safe.w - gap - box.y } } else { box };
         var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: left, right: right, is_3d: true,
                          pitch: PITCH_LANDSCAPE, buttons: buttons, count: 3, row: !col, touch: touch, disc: disc,
-                         box: box, room: box, gap: gap, mode: CORNERS, area: safe, out_row: out_row(), .. };
+                         box: box, room: room, gap: gap, mode: CORNERS, area: safe, out_row: out_row(), .. };
         l.keep = [left, right, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 0.0, 0.0, 0.0, 0.0 }];
         let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
         set_rest_view(l, fit_view(l, cam, n), s);
@@ -431,21 +434,40 @@ fn fit_view(l: Layout&, cam: view3d::Camera, n: i64) -> view3d::View {
 // tops (view3d::outline's field), as large as fits the room, centered across it and, by
 // `up` (the share of the way to the top view), from the room's bottom at the rest angle
 // to its middle in the top view; its outline clear of the panels and the buttons by a
-// quarter gap, found by halving. The view's rect is the whole board's bounds, larger
-// than the room.
+// quarter gap, found by halving. The room is the box at the rest angle and in the top
+// view reaches to the window's foot (corners_in). Where the middle isn't clear it sits lower, at most to
+// the room's bottom (field_at's `low`), so space under the board isn't left unused while
+// what stands above it holds the board down. The view's rect is the whole board's
+// bounds, larger than the room.
 fn zoomed(l: Layout&, cam: view3d::Camera, n: i64, up: f32) -> view3d::View {
-    let room = l.room;
+    // The room reaches lower on the way to the top view: at the rest angle the near
+    // rows would crowd the window's edge.
+    var room = l.room;
+    if l.box.z > 0.0 { room.w = l.box.w + (l.room.w - l.box.w) * up; }
     let f = view3d::bounds(cam, n, true);
     let b = view3d::bounds(cam, n);
     var lo: f32 = 0.0;
     var hi = min(room.z / f.z, room.w / f.w);
-    let v = field_at(cam, n, room, f, b, hi, up);
-    if zoom_clear(l, v) { return v; }
+    let v, ok = zoom_at(l, cam, n, room, f, b, hi, up);
+    if ok { return v; }
     for i in 20 {
         let k = 0.5 * (lo + hi);
-        if zoom_clear(l, field_at(cam, n, room, f, b, k, up)) { lo = k; } else { hi = k; }
+        let t, clear = zoom_at(l, cam, n, room, f, b, k, up);
+        if clear { lo = k; } else { hi = k; }
     }
-    return field_at(cam, n, room, f, b, lo, up);
+    let w, _ = zoom_at(l, cam, n, room, f, b, lo, up);
+    return w;
+}
+
+// The zoom's view at k pixels a unit where it is clear: in its place, else, on a desktop
+// whose room reaches past the box, at the room's bottom; and whether either is. A tablet
+// keeps the middle (docs/decisions/rendering.md).
+fn zoom_at(l: Layout&, cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: f32,
+           up: f32) -> view3d::View, bool {
+    let v = field_at(cam, n, room, f, b, k, up, false);
+    if zoom_clear(l, v) || l.room.w <= l.box.w { return v, zoom_clear(l, v); }
+    let w = field_at(cam, n, room, f, b, k, up, true);
+    return w, zoom_clear(l, w);
 }
 
 // Whether the zoom's view v clears what stands round it by a quarter gap: the panels and
@@ -459,9 +481,13 @@ fn zoom_clear(l: Layout&, v: view3d::View) -> bool {
 
 // cam's view at k pixels a unit with the field's bounds f (at k 1) centered across the
 // room, at its bottom (`up` 0) or its middle (`up` 1); b the board's bounds, for the rect.
-fn field_at(cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: f32, up: f32) -> view3d::View {
+// `low`: as low as the room lets it, the field at its bottom at the rest angle and the
+// whole board in the top view, whose frame is seen whole.
+fn field_at(cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: f32, up: f32,
+            low: bool = false) -> view3d::View {
     let x = room.x + 0.5 * (room.z - f.z * k);
-    let y = room.y + (room.w - f.w * k) * (1.0 - 0.5 * up);
+    let below = (b.y + b.w - f.y - f.w) * up;   // the frame shown under the field
+    let y = if low { room.y + room.w - (f.w + below) * k } else { room.y + (room.w - f.w * k) * (1.0 - 0.5 * up) };
     let c = float2 { x - f.x * k, y - f.y * k };
     var v = view3d::View { k: k, c: c, rect: float4 { c.x + b.x * k, c.y + b.y * k, b.z * k, b.w * k }, n: n, .. };
     view3d::place(v, cam);
