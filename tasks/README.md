@@ -44,9 +44,8 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
   (the icon left), 036 the announcement after the Play release, 075 the Linux build and
   076 Wayland, 064 Steam (low priority, scoped only).
 - Content and play: 038 players.
-- Menus and layout: 080 the board's material; 072 keyboard and controller focus; 067 the
-  board under the mouse.
-- The 3D board: 041 carved looks, 042 the idle wakeup, 071 its memory.
+- Menus and layout: 072 keyboard and controller focus; 067 the board under the mouse.
+- The 3D board: 042 the idle wakeup, 071 its memory.
 - Frames: 055 the boards locked to the display's rate, 056 even pacing, 081 the A33 at
   60 fps.
 - Renderer: 065 NoGraphicsAPI through goose-ngfx, 073 the renderer chosen at run time,

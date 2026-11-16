@@ -194,6 +194,11 @@ and the commit that last has it.
   `docs/architecture/rendering.md` and `agents/testing.md`. The PC's per-pass captures
   and RenderDoc were left (the user, 2026-11-10: good enough).
   `059-3d-renderer-tuning.md`, `e2b8f8f`
+- 041: A carved spring board. Done 2026-11-16: carved looks as one carving with its motif
+  a parameter (vines, folk, signs), the elven stone spring's own, the Baltic oak and the
+  amber signs among the board's materials (task 080). Set aside by the user: the temple
+  take, the amber reading as an inlay, the motifs' size against the images'; the bakes
+  never measured on the Pixel 7a. `041-carved-spring-board.md`, `0439a72`
 - 044: A plain background. Done: settings' Theme row switches between the photograph and
   a fade per season's board (`prototypes/plain.html`'s fade b), the 3D board's ambient
   taken from the fade; on the tablet about 1 MB less than the ASTC photograph, and a
@@ -234,6 +239,12 @@ and the commit that last has it.
   the 232 dp board came from the prototype's 375 pt iPhone; the app lays the iPhone 13
   mini out at 500 dp, its landscape board 422 dp, and the user found it fine on the phone.
   `079-narrow-landscape-panels.md`, `1b14eb7`
+- 080: One new game on home, and settings looked at afresh. Done 2026-11-16: home's one
+  New game row with the opponent chosen in the setup (01), settings as one list with the
+  board's material in its Board row (02), and the raised board in wood, stone, carved, or
+  the season's own (03), its twelve looks picked by the user and summer's stone given
+  veins and cracks of its own ([rendering](../../docs/architecture/rendering.md)).
+  `080-new-game-and-settings/`, `0439a72`
 - 082: New game's icon. Done 2026-11-13: a light piece mid-jump over a dark one, flat
   isometric discs with a gap cut between them and an arc from behind, in the app and the
   home prototype. `082-new-game-icon.md`, `1e21ead`
