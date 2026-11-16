@@ -6,6 +6,7 @@
                                                                   build, and run it with those flags
     python scripts/windows.py src/app/draughts.goose --release    build/windows/release/
                                                                   Draughts-VERSION-windows-x64.zip
+                                                                  and -setup.exe
 
 Every build puts windows/draughts.ico into the executable's resources afterwards
 (embed_icon), as a .rc file linked in would, which Goose's build has no key for: Explorer
@@ -13,7 +14,9 @@ shows it, and SDL takes the first icon for the window and the taskbar.
 
 A release (docs/development.md, "Desktop releases") is the executable alone, as
 Draughts.exe, zipped: SDL and the C runtime are linked in, and Vulkan's loader is the
-system's. It is not signed.
+system's. Beside the zip, Inno Setup 6 builds an installer from windows/draughts.iss
+(its ISCC.exe in Program Files or the user's Programs, as winget puts it, or ISCC);
+without Inno Setup there is only the zip. Neither is signed.
 
 The release's own goose_gfx.lib lacks Draughts' changes. This builds goose_gfx's sources
 from the submodule (kaitk/goose_gfx's main), as Android and iOS do, into a copy of the
@@ -124,11 +127,22 @@ def gui_subsystem(exe):
     exe.write_bytes(data)
 
 
+def iscc():
+    """Inno Setup 6's compiler, or None."""
+    if os.environ.get("ISCC"):
+        return Path(os.environ["ISCC"])
+    for base in (os.environ.get("ProgramFiles(x86)"), os.environ.get("ProgramFiles"),
+                 os.environ.get("LOCALAPPDATA") and Path(os.environ["LOCALAPPDATA"], "Programs")):
+        if base and Path(base, "Inno Setup 6/ISCC.exe").exists():
+            return Path(base, "Inno Setup 6/ISCC.exe")
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("program", type=Path)
     ap.add_argument("--run", action="store_true", help="run it after building")
-    ap.add_argument("--release", action="store_true", help="Draughts.exe, zipped for a GitHub release")
+    ap.add_argument("--release", action="store_true", help="Draughts.exe, zipped, and its installer, for a GitHub release")
     ap.add_argument("args", nargs="*", help="the program's flags, after --")
     a = ap.parse_args()
     program = a.program.resolve()
@@ -143,6 +157,13 @@ def main():
         with zipfile.ZipFile(zipped, "w", zipfile.ZIP_DEFLATED) as z:
             z.write(exe, "Draughts.exe")
         print(zipped)
+        compiler = iscc()
+        if not compiler:
+            print("no Inno Setup 6 (winget install JRSoftware.InnoSetup, or set ISCC): no installer")
+            return
+        native.run(compiler, "/Qp", f"/DVersion={native.VERSION_NAME}", f"/DExe={exe}",
+                   f"/DOutDir={out}", native.ROOT / "windows/draughts.iss")
+        print(out / f"Draughts-{native.VERSION_NAME}-windows-x64-setup.exe")
         return
     if a.run:
         sys.exit(subprocess.run([str(exe), *a.args]).returncode)
