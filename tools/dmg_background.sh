@@ -1,15 +1,16 @@
 #!/bin/sh
 # mac/dmg-background.tiff: the Mac disk image's window background, 640 x 427 pt at 1x and
-# 2x: the App Store's search art without the name (store/README.md; local, in
-# ~/Downloads/draughts-store/apple-header-0.1/), with a glass card in its middle drawn as
-# the app's autumn glass is (docs/architecture/rendering.md, "Look"): the photo blurred,
+# 2x: a close render of the autumn 3D board's left corner (local, in
+# ~/Downloads/draughts-store/dmg-0.1/, whose README.md says how it was rendered), with a
+# glass card in its middle drawn as the app's autumn glass is (docs/architecture/rendering.md, "Look"): the photo blurred,
 # saturated 1.3 and dimmed to 0.9, tinted #2b1e18 at 66%, a white border at 14% and top
 # highlight at 12%, a shadow 0 12 32 -14 of black at 55%, corners of 28 pt. scripts/mac.py
 # places the app's and Applications' icons on it, an arrow in the text color between them.
 # Needs ImageMagick. Sizes below are the 2x image's pixels.
 set -e
 cd "$(dirname "$0")/.."
-src=${1:-$HOME/Downloads/draughts-store/apple-header-0.1/search-3840x2560-plain.png}
+src=${1:-$HOME/Downloads/draughts-store/dmg-0.1/board-1280x853.png}
+out=${2:-mac/dmg-background.tiff}
 tmp=$(mktemp -d)
 card="160,232 1120,600"      # x0,y0 x1,y1
 r=56
@@ -31,5 +32,5 @@ magick "$tmp/photo.png" \
 magick "$tmp/bg@2x.png" -resize 640x427 -units PixelsPerInch -density 72 "$tmp/bg.png"
 magick "$tmp/bg@2x.png" -units PixelsPerInch -density 144 "$tmp/bg@2x.png"
 tiffutil -cathidpicheck "$tmp/bg.png" "$tmp/bg@2x.png" -out "$tmp/bg.tiff" >/dev/null
-magick "$tmp/bg.tiff" -compress jpeg -quality 88 mac/dmg-background.tiff
+magick "$tmp/bg.tiff" -compress jpeg -quality 88 "$out"
 rm -r "$tmp"

@@ -417,9 +417,10 @@ The Mac, Windows, and Linux apps go out as files on a GitHub release, built loca
 **macOS.** `scripts/mac.py src/app/draughts.goose --release` builds
 `build/mac/release/Draughts.app` for macOS 13.3, Apple silicon only, signs it with the
 hardened runtime, and puts it in `Draughts-VERSION-macos-arm64.dmg`: the window where the
-app is dragged onto a link to Applications, over the App Store's board art
-(`mac/dmg-background.tiff`, made by `tools/dmg_background.sh` from the local store
-images), with the app's icon as the volume's. Finder lays the window out by AppleScript,
+app is dragged onto a link to Applications, on a card like the app's glass over a close
+render of the board's corner (`mac/dmg-background.tiff`, made by `tools/dmg_background.sh`
+from the local render in `~/Downloads/draughts-store/dmg-0.1/`), with the app's icon as
+the volume's. Finder lays the window out by AppleScript,
 so the first build asks to let the terminal control Finder. The image is signed,
 notarized, and stapled; the ticket covers the app inside it, as Zeiger's does
 (2026-11-16). `--no-notarize` stops before sending it to Apple. It needs, once per Mac:
