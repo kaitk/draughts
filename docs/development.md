@@ -112,6 +112,9 @@ The settings are in the app's storage folder (on the Mac
 `game-N.bin` each player's game. A run with `--fen`, `--tap`, `--screen`, `--frames`,
 `--variant`, `--clock`, or `--computer` neither reads nor writes the game, so shots don't
 depend on the last session. `--reset-skill` puts the playing player back to easy.
+A game against the computer that ends in such a run still moves the playing player's
+rating, skill, and games played in `player-N.txt`: for a shot of an ended game, a
+friend's (no `--computer`) moves nothing but `--history`'s file.
 
 On Android the flags go through the intent; `-S` stops the app first, since the
 `singleInstance` activity would otherwise come back with its old flags:

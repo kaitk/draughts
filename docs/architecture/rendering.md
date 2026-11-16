@@ -322,7 +322,9 @@ otherwise, and with the 3D board, portrait: a bar above the board and the play b
 **Home** (`prototypes/home.html`): the scene and the board, and one glass column with the
 wordmark and rows 88 dp tall: Continue (when there is a game to resume, `shell::resume`),
 New game with the setup's opponent at its end, How to play in Continue's place for a
-player who hasn't learned yet, Puzzles (solved count, or today's dots once
+player who hasn't learned yet, Watch replay in its place once the last game has ended
+(its note how it ended and against whom, outlined over New game, which is lit; it opens
+that game's [replay](#a-games-replay), whose back goes home), Puzzles (solved count, or today's dots once
 [daily puzzles](puzzles.md#daily-puzzles) open, smaller where they would come within
 16 dp of the label), the games played with the rating
 ([results](#the-results-screen)), and Settings. Where the rows don't fit they scroll under

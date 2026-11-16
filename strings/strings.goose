@@ -91,6 +91,23 @@ fn fill_in(out: u8[..64]&, k: i64, numbers: const i64[:]) {
     }
 }
 
+// The string for a key into out, its first {} replaced by `word`.
+fn fill_in_word(out: u8[..64]&, k: i64, word: const u8[:]) {
+    out.clear();
+    var rest = table[k];
+    var done = false;
+    while rest.len > 0 {
+        if !done && rest.len >= 2 && rest[0] == '{' && rest[1] == '}' {
+            for c in word { if out.len < 64 { out.push(c); } }
+            done = true;
+            rest = rest[2..];
+            continue;
+        }
+        if out.len < 64 { out.push(rest[0]); }
+        rest = rest[1..];
+    }
+}
+
 // A key's text in a language, as its file gives it, whichever language is current; ""
 // when the file lacks the key.
 fn text_of(lang: i64, k: i64) -> const u8[:] {

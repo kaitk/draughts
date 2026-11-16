@@ -29,6 +29,7 @@ let EXIT = gui::ASK_OWN + 4; // close the app
 let PLAYERS = gui::ASK_OWN + 5; // who's playing
 let RESULTS = gui::ASK_OWN + 6; // the games played (results.goose)
 let LEARN = gui::ASK_OWN + 7; // how to play
+let REPLAY = gui::ASK_OWN + 8; // the last game's replay
 let NO_SETUP = NOTHING;
 
 // Whether home shows its way out: not on iOS, where an app never closes itself (the app
@@ -380,15 +381,21 @@ fn sheet_board(width: f32, stage_h: f32, u: f32, height: f32, clear: f32) -> f32
 // who hasn't learned the player's draughts (`learn`), How to play shows in its place,
 // lit, its note the draughts it teaches. It goes once the tutorial is done, a game is
 // played or set up, or the player said they know how; a player never asked doesn't see
-// it.
+// it. Once the last game has ended (`replay`), Watch replay shows in its place, opening
+// that game's replay, outlined over New game, lit: its note how the game ended
+// (`ended_note`, LAST_WON.., or WON_WHITE.. for a friend's game won), its {} filled with
+// the opponent (`ended_opponent`, LEVEL_EASY.. or LEVEL_FRIEND).
 struct Resume {
-    on:    bool = true,
-    note:  i64  = -1,
-    learn: bool = false,
+    on:             bool = true,
+    note:           i64  = -1,
+    learn:          bool = false,
+    replay:         bool = false,
+    ended_note:     i64  = -1,
+    ended_opponent: i64  = -1,
 }
 
 // The menu's rows shown: ROWS, or one fewer while there is no game to continue.
-fn rows_of(resume: Resume) -> i64 { if resume.on || resume.learn { ROWS } else { ROWS - 1 } }
+fn rows_of(resume: Resume) -> i64 { if resume.on || resume.learn || resume.replay { ROWS } else { ROWS - 1 } }
 
 // The name of draughts `variant`, a strings key.
 fn draughts_key(variant: i64) -> i64 {
@@ -550,13 +557,21 @@ fn menu(ui_pieces: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: 
         let note = if i == 0 && resume.note >= 0 { strings::get(resume.note) }
                    else if i == 1 { strings::get(opponent) } else if i == 2 && all > 0 { stars[..] } else { "" };
         let mark = if i != 1 { gui::NO_ICON } else if s.friend { gui::FRIEND } else { gui::COMPUTER };
+        // Watch replay in continue's place (Resume.replay).
+        if i == 0 && resume.replay {
+            var said: u8[..64] = [];
+            strings::fill_in_word(said, resume.ended_note, if resume.ended_opponent >= 0 { strings::get(resume.ended_opponent) } else { "" });
+            if gui::row(g, ROW_IDS, r, gui::FIRST, strings::get(strings::HOME_REPLAY), said[..], false, true, true) { pick = REPLAY; }
+            continue;
+        }
         // How to play in continue's place (Resume.learn).
         if i == 0 && !resume.on {
             if gui::row(g, ROW_IDS, r, gui::HOW, strings::get(strings::HOW_TITLE),
                         strings::get(draughts_key(s.variant)), true, true) { pick = LEARN; }
             continue;
         }
-        if gui::row(g, ROW_IDS + i, r, icons[i], strings::get(keys[i]), note, i == first, true, i == 1, mark) {
+        let lit = i == first || (i == 1 && resume.replay);
+        if gui::row(g, ROW_IDS + i, r, icons[i], strings::get(keys[i]), note, lit, true, i == 1 && !lit, mark) {
             pick = ways[i];
         }
         if i == 2 && daily { today_dots(g, r, s.today[set]); }

@@ -15,6 +15,8 @@ struct Past {
     replay:   replay::Replay,
     replayed: bool = false,
     at:       f32  = 0.0,
+    // The replay is the last game's, opened from home's Watch replay: its back goes home.
+    from_home: bool = false,
     // The game on the game screen is one played from the replay (play_from_here), the
     // game in progress set aside in `parked` until it ends: it isn't written to the
     // history, moves no rating or skill, and isn't kept; the parked game is (save).
@@ -58,8 +60,29 @@ fn open_replay(sh: Shell&, index: i64, now: f64) {
     replay::open(sh.past.replay, sh.past.games[index], if found { line } else { text[..0] });
     sh.past.replay.b.king_look = king_look(sh);
     sh.past.replayed = true;
+    sh.past.from_home = false;
     go_to(sh, REPLAY, now);
 }
+
+// Home's Watch replay: the replay of the last game, the newest of its draughts in the
+// history, its back going home. With none there (the history unreadable), the results.
+fn open_last_game(sh: Shell&, now: f64) {
+    read_history(sh, sh.past.games);
+    let v = sh.game.b.variant as i64;
+    var i = sh.past.games.len - 1;
+    while i >= 0 && sh.past.games[i].variant != v { i -= 1; }
+    guard i >= 0 else {
+        go_to(sh, RESULTS, now);
+        return;
+    }
+    sh.past.variant = v;
+    open_replay(sh, i, now);
+    sh.past.replayed = false;
+    sh.past.from_home = true;
+}
+
+// Where a replay's back goes: home for the last game's, else the results.
+fn replay_up(sh: Shell&) -> i64 { if sh.past.from_home { HOME } else { RESULTS } }
 
 // A past game for this frame. Returns whether anything on screen changed.
 fn replay_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
@@ -67,7 +90,7 @@ fn replay_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) 
     let moved = board::update(r.b, now);
     sh.out.ui_pieces.clear();
     let ask = replay::frame(r, g, area, sh.out.layout, sh.out.ui_pieces, now, fresh);
-    if ask == replay::BACK { go_to(sh, RESULTS, now); }
+    if ask == replay::BACK { go_up(sh, replay_up(sh), now); }
     if ask == replay::PLAY { play_from_here(sh, now); }
     return moved || ask != replay::NOTHING;
 }

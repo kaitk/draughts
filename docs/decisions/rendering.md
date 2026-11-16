@@ -216,6 +216,14 @@ fed389b.
   game nobody set up with no move played (`Saved.unset`, 2026-11-12).
 - Continue isn't shown for a game won or drawn (2026-11-15): it is done, its replay in the
   results, and continuing it only showed its end again. New game is the first row then.
+- Watch replay takes Continue's place once the last game has ended (2026-11-16), replacing
+  the empty place above: the game just played is the one a player wants to look back on,
+  and the results list was two taps from it. It opens that game's replay at its end, its
+  back going home. Its note says how it ended against whom ("You won · easy", "White
+  wins" for a friend's). It is outlined and New game lit: most players play again.
+  Rejected: "Last game" and *Viimane mäng* (flat), *Viimase mängu tulemused* (too long),
+  "Show results" (read as the Results row), *Vaata üle* (unclear in Estonian), and going
+  back to the ended game's screen (the 2026-11-15 reason).
 - The X closes the app at once on touch screens (2026-11-08/09). Rejected: a last row (it
   costs the portrait board), a door, a power sign.
 - On a desktop's landscape column the way out is a Quit row (task 072, 2026-11-11), the X

@@ -400,7 +400,7 @@ fn back(sh: Shell&, now: f64) -> bool {
     } else if sh.screen == PICKER && sh.theme >= 0 {
         sh.theme = -1;
     } else {
-        let up = KINDS[sh.screen].up;
+        let up = if sh.screen == REPLAY { replay_up(sh) } else { KINDS[sh.screen].up };
         if up == RETURN { go_to(sh, sh.back, now); } else { go_up(sh, up, now); }
     }
     return true;
@@ -437,14 +437,21 @@ fn play(sh: Shell&, now: f64) {
 // one nobody set up (`unset`) with no move played.
 fn resume(sh: Shell&) -> home::Resume {
     let gm .= sh.game;
-    // A game won or drawn is done (its replay is in the results): nothing to continue.
+    // A game won, drawn, or lost is done: nothing to continue, its replay in its place
+    // once it is in the history.
     let on = (!sh.unset || gm.b.rec.history.len > 0 || gm.computer >= 0) && !game::ended(gm);
+    let replay = game::ended(gm) && gm.end_sent_for_history;
     // A new player, asked whether they know how to play (`first_start_done`), who hasn't
     // learned their draughts, nor said they know how, nor begun a game against the
     // computer: How to play in continue's place.
     let p .= sh.prefs;
-    let learn = !on && p.first_start_done && !p.knows && p.games == 0 && learned(sh) < tutorial::count(p.variant as u8);
-    return home::Resume { on: on, note: home::resume_note(gm.computer, gm.level), learn: learn };
+    let learn = !on && !replay && p.first_start_done && !p.knows && p.games == 0 && learned(sh) < tutorial::count(p.variant as u8);
+    let won = game::winner(gm);
+    let ended_note = if won < 0 { strings::LAST_DRAW } else if gm.computer < 0 { strings::WON_WHITE + won }
+                     else if won == gm.computer { strings::LAST_LOST } else { strings::LAST_WON };
+    let ended_opponent = if gm.computer < 0 { strings::LEVEL_FRIEND } else { strings::LEVEL_EASY + clamp(gm.level, game::EASY, game::HARD) };
+    return home::Resume { on: on, note: home::resume_note(gm.computer, gm.level), learn: learn, replay: replay,
+                          ended_note: ended_note, ended_opponent: ended_opponent };
 }
 
 // One frame, after gui::begin, on a screen width × height pixels, each screen laid out in
@@ -998,6 +1005,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         },
         home::PLAYERS => { player_card::open(sh.player_card); },
         home::RESULTS => { go_to(sh, RESULTS, now); },
+        home::REPLAY => { open_last_game(sh, now); },
         home::LEARN => { learn(sh, HOME, now); },
         home::PLAY => { play(sh, now); },
         _ => {},

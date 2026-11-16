@@ -1,0 +1,8 @@
+won against easy: watch replay, note "You won · easy"; the first row outlined, the second lit
+  a tap on it: a replay, at its end true, won by 0 (white 0)
+  back: home
+lost to easy: watch replay, note "You lost · easy"; the first row outlined, the second lit
+  a tap on it: a replay, won by 1 (black 1)
+  its back tile: home
+a friend's game: watch replay, note "White wins"; the first row outlined, the second lit
+a new game: continue, note ""; the first row lit, the second outlined

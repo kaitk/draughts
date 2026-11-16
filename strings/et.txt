@@ -12,6 +12,10 @@ continue.friend = Sõbraga
 continue.easy = Arvutiga · kerge
 continue.medium = Arvutiga · keskmine
 continue.hard = Arvutiga · raske
+home.replay = Vaata kordust
+last.won = Võitsid · {}
+last.lost = Kaotasid · {}
+last.draw = Viik · {}
 
 level.easy = kerge
 level.medium = keskmine

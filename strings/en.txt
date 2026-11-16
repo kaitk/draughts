@@ -17,6 +17,13 @@ continue.friend = A friend
 continue.easy = The computer · easy
 continue.medium = The computer · medium
 continue.hard = The computer · hard
+# Continue's place once the last game has ended: its replay (home::menu). The note says
+# how it ended, "{}" the opponent as level.easy.. or level.friend; a friend's game won
+# shows won.white or won.black instead.
+home.replay = Watch replay
+last.won = You won · {}
+last.lost = You lost · {}
+last.draw = Draw · {}
 
 level.easy = easy
 level.medium = medium
