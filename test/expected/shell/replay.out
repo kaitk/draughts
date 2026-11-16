@@ -1,5 +1,6 @@
 results: screen 5, 3 games
-its row tapped: screen 6 (replay 6), international, move 80 of 80, the board right, last h4-j2
+its row tapped: move 5, ?, by the player true, the bulb on true; the best move c3-a5 on the board, 0 stops ringed, right
+at its end: screen 6 (replay 6), international, move 80 of 80, the board right, last h4-j2
   the saved image on the replay is the one before: true, screen kept as home
 the start: move 0 of 80, the board right
 back: move 44 of 80, the board right, last a9-b8
@@ -33,7 +34,7 @@ on: its marks 0.0 while the piece moves
   2 squares stood on, 8 dots, 0 at stops; nearest the ends 0.42; numbered d6 b8
 the capture of the most stops, move 28: 4 squares stood on, 27 dots, 2 at stops; nearest the ends 0.42, the stops 0.28; numbered g3 e5 i5 c7
 back: screen 5, showing international, 3 games
-Russian's row: russian, move 40 of 40, the board right, last a7-c5
+Russian's row: russian, move 5 of 40, the board right, last g3-e5
 back: screen 5
 the history file as it was: true; the ratings as they were: true; the game in progress as it was: true
 en:

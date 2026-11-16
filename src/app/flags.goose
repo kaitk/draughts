@@ -74,7 +74,7 @@ struct Flags {
     // --history FILE: the games the results screen and a replay read, in place of the
     // playing player's history (a history file's lines, shell/history.goose)
     history: u8[..512],
-    ply:     i64  = -1,     // --ply N: a replay at its Nth move (0 the start), else at its end
+    ply:     i64  = -1,     // --ply N: a replay at its Nth move (0 the start), else where it opens
     best:    bool = false,  // --best on: the replay's best move shown on its board (the bulb)
     // --variant international|brazilian|russian: a new game of that draughts, and the
     // puzzles' set; with a setup open, its choice

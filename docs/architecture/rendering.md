@@ -444,7 +444,10 @@ window (`gui::large`) it is at most 1640 dp wide and drawn larger.
 
 #### A game's replay
 
-`src/shell/replay.goose` shows a finished game at any move, opened at its end: four step
+`src/shell/replay.goose` shows a finished game at any move. It opens where a game lost or
+drawn against the computer turned, the player's first blunder (else first mistake),
+compared with the best move there; any other game at its end. The moves' columns put the
+player's side first where the board is turned for them. It has four step
 tiles (start, back, on, end) beside or under the board, and a glass with the move shown,
 its mark and tip, each side's accuracy, and the moves as the moves panel draws them. A
 line over the board says a game from here doesn't count. On the board the last move's

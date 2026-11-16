@@ -132,8 +132,8 @@ fn find(legal: rules::Moves&, p: rules::Position, word: const u8[:], said: u8[>.
 }
 
 // Opens game g, whose history line is `line`: its moves played out from the draughts'
-// start, as far as each is legal, with their marks and best moves; shown at its end, the
-// best move off.
+// start, as far as each is legal, with their marks and best moves; shown where it turned
+// (turning_point) compared with the best move there, else at its end, the best move off.
 fn open(r: Replay&, g: history::Game, line: const u8[:]) {
     r.game = g;
     r.best = false;
@@ -180,7 +180,28 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
     r.focused = 0;
     r.seen = -1;
     go(r, r.plies.len, 0.0);
+    let at = turning_point(r);
+    if at >= 0 {
+        go(r, at + 1, 0.0);
+        r.best = r.plies[at].has_best;
+        show_position_at_move(r);
+    }
 }
+
+// Where a game lost or drawn against the computer turned: the player's first blunder,
+// else their first mistake; -1 for a game won, a friend's, or one with neither, which
+// open at the end.
+fn turning_point(r: Replay&) -> i64 {
+    guard r.game.level != history::FRIEND && history::result(r.game) <= 0 else { return -1; }
+    for mark in [ai::BLUNDER, ai::MISTAKE] {
+        for p, i in r.plies { if r.pos[i].side == r.game.side && p.mark == mark { return i; } }
+    }
+    return -1;
+}
+
+// The list's column side's moves stand in, 0 the left: the player's first where the board
+// is turned for them (board_flipped), as it shows their side nearest.
+fn column_of(r: Replay&, side: i64) -> i64 { if board_flipped(r) { 1 - side } else { side } }
 
 // Shows the move `ply` moves in (clamped to the game): a step on played on the board, any
 // other step, and every step while comparing, at once. True when another is shown.
@@ -730,7 +751,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, ui_pieces: b
     let heads = gui::cut_top(c, ROW * ku);
     var t: gui::Text = [];
     for side in 2 {
-        let at = heads.x + NUMBER * ku + side * half;
+        let at = heads.x + NUMBER * ku + column_of(r, side) * half;
         panel::piece(ui_pieces, float4 { at, heads.y, 2.0 * DISC * ku, heads.w }, DISC * ku, side, 0, 1.0, 0.0);
         t.clear();
         let acc = r.game.accuracy[side];
@@ -810,7 +831,7 @@ fn list(r: Replay&, g: gui::Gui&, view: float4, left: f32, width: f32, now: f64,
             guard i >= 0 && i < n else { continue; }
             let p .= r.plies[i];
             let id = MOVE_ID + i;
-            let cell = float4 { left + NUMBER * u + side * half, y, half, row_h };
+            let cell = float4 { left + NUMBER * u + column_of(r, side) * half, y, half, row_h };
             let clicked, press = gui::press_widget(g, id, cell);
             // Tab come to the list lands on the move shown.
             if i == r.ply - 1 { gui::mark_primary(g, id); }

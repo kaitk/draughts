@@ -57,16 +57,20 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
         board::set(b, p);
     }
     sh.screen = if f.screen >= 0 { f.screen } else if fen.len > 0 || f.taps.len > 0 || f.clock >= 0 || f.computer >= 0 { shell::GAME } else { shell::HOME };
-    // A replay: the newest game of the history read (--history's, else the player's), at
-    // --ply's move, opened from the results screen as its row's tap does.
+    // A replay: the newest game of the history read (--history's, else the player's), where
+    // it opens or at --ply's move, opened from the results screen as its row's tap does.
     if f.history.len > 0 { sh.history_file.append(f.history[..]); }
     if sh.screen == shell::REPLAY {
         sh.screen = shell::RESULTS;
         shell::read_history(sh, sh.past.games);
         sh.past.variant = if sh.past.games.len > 0 { sh.past.games[sh.past.games.len - 1].variant } else { sh.prefs.variant };
         shell::open_replay(sh, sh.past.games.len - 1, 0.0);
-        if f.ply >= 0 { replay::go(sh.past.replay, f.ply, 0.0); }
-        sh.past.replay.best = f.best;
+        // At --ply's move the bulb is --best's; without either, as the replay opened.
+        if f.ply >= 0 {
+            replay::go(sh.past.replay, f.ply, 0.0);
+            sh.past.replay.best = f.best;
+        }
+        if f.best { sh.past.replay.best = true; }
         replay::show_position_at_move(sh.past.replay);
         if sh.screen != shell::REPLAY { sh.screen = shell::RESULTS; }
     }

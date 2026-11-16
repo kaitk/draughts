@@ -85,6 +85,15 @@ fn run(sh: shell::Shell&, g: gui::Gui&, e: ai::Engine&, seconds: f64) {
     }
 }
 
+// The replay as it opened before it opened where a lost game turned: at its end, the
+// bulb off; the steps and play from here below start from there.
+fn at_end(sh: shell::Shell&) {
+    let r .= sh.past.replay;
+    r.best = false;
+    replay::go(r, r.plies.len, 0.0);
+    replay::show_position_at_move(r);
+}
+
 // Plays the move named `text` on the game's board, as a tap would.
 fn play(sh: shell::Shell&, text: const u8[:]) {
     let b .= sh.game.b;
@@ -189,6 +198,7 @@ fn main() {
     drive::idle(sh, g, tick());
     press(sh, g, results::ROW_ID);
     drive::idle(sh, g, tick());
+    at_end(sh);
     let r .= sh.past.replay;
     print("the newest game's replay: screen ", sh.screen, " (replay ", shell::REPLAY, "), move ", r.ply, " of ", r.plies.len,
           ", the game over there ", r.game_ended);
@@ -251,6 +261,7 @@ fn main() {
 
     // The friend's game at move 11, black to move: two sides of a friend's, numbered on.
     shell::open_replay(sh, 1, tick());
+    at_end(sh);
     replay::go(r, 11, 0.0);
     drive::idle(sh, g, tick());
     press(sh, g, replay::PLAY_ID);
@@ -269,6 +280,7 @@ fn main() {
 
     // The Russian game against the computer: won from the replay, it counts for nothing.
     shell::open_replay(sh, 0, tick());
+    at_end(sh);
     replay::go(r, 10, 0.0);
     drive::idle(sh, g, tick());
     press(sh, g, replay::PLAY_ID);

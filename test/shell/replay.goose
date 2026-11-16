@@ -237,6 +237,15 @@ fn same(a: i64[rules::VARIANT_COUNT], b: i64[rules::VARIANT_COUNT]) -> bool {
     return true;
 }
 
+// The replay as it opened before it opened where a lost game turned: at its end, the
+// bulb off; the steps below start from there.
+fn at_end(sh: shell::Shell&) {
+    let r .= sh.past.replay;
+    r.best = false;
+    replay::go(r, r.plies.len, 0.0);
+    replay::show_position_at_move(r);
+}
+
 fn main() {
     strings::use(strings::EN);
     let dir = folder();
@@ -274,10 +283,16 @@ fn main() {
     drive::idle(sh, g, tick());
     print("results: screen ", sh.screen, ", ", sh.past.games.len, " games");
 
-    // The first row, the newest game: its replay, at its end.
+    // The first row, the newest game, lost: its replay where it turned, the player's first
+    // blunder (this game has none), else first mistake, compared with the best move there. Then at its end, the bulb off.
     press(sh, g, results::ROW_ID);
     drive::idle(sh, g, tick());
-    print("its row tapped: screen ", sh.screen, " (replay ", shell::REPLAY, "), ", rules::VARIANT_NAMES[sh.past.replay.game.variant],
+    let opened .= sh.past.replay;
+    print("its row tapped: move ", opened.ply, ", ", ["-", "only", "best", "good", "?!", "?", "??"][opened.plies[opened.ply - 1].mark], ", by the player ",
+          opened.pos[opened.ply - 1].side == opened.game.side, ", the bulb on ", opened.best, "; ", hint(sh));
+    at_end(sh);
+    drive::idle(sh, g, tick());
+    print("at its end: screen ", sh.screen, " (replay ", shell::REPLAY, "), ", rules::VARIANT_NAMES[sh.past.replay.game.variant],
           ", ", shown(sh));
     let image = shell::save(sh);
     print("  the saved image on the replay is the one before: ", image == saved, ", screen kept as home");
