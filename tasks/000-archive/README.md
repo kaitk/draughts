@@ -249,3 +249,9 @@ and the commit that last has it.
   fitted to the board (`render3d::plan_light`), 16 taps on a desktop, 9 on a tablet, 4 on
   a phone. Left over, no task: the jump's occlusion blob pops off over the taken piece's
   square, as the squares buffer holds one piece a square. `086-better-shadows.md`, `314c3b5`
+- 089: Sound, calm and few. Done 2026-11-16: a few quiet sounds from the board's and the
+  game's own events (two recordings' hits as IMA ADPCM, the rest synthesized), off at
+  first on a phone or a tablet and half on a desktop, a Sound section with a speaker and a
+  slider; 19 sounds, 1503 KB in the mixer, made in about 30 ms on the Mac
+  ([sound](../../docs/architecture/sound.md)). Checked on the Mac and the Pixel 7a; left
+  over: the tablet's check and an iPhone's silent switch. `089-sound.md`, `4b28633`

@@ -43,7 +43,6 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 - Release: 029 Google Play (closed test running), 046 the App Store (in review), 043 iOS
   (the icon left), 036 the announcement after the Play release, 075 the Linux build and
   076 Wayland, 064 Steam (low priority, scoped only).
-- Sound: 089, a few quiet sounds, off at first on touch devices.
 - Content and play: 026 how to play, 037 the puzzle set, 088 daily puzzles, 038 players,
   074 the games' history and a rating, 087 the replay's moves and the desktop's results.
 - Menus and layout: 080 New game, settings as one list, and the board's material; 083 the
@@ -57,5 +56,4 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 - Later: 010 goose_gfx changes upstream, 013 season effects, 014 upscaled backgrounds,
   060 shared blocks for a second board game.
 
-Not in the MVP (2026-11-08): sound, which may come soon after, kept from being bling. To
-decide later: a puzzle rating and the computer's level shown as a rating.
+To decide later: a puzzle rating and the computer's level shown as a rating.
