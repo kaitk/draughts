@@ -4,8 +4,8 @@ Status: todo
 
 Draughts makes no sound. That was chosen for children on touch devices, and testers
 say it feels odd, most of all on a desktop. This task adds a few quiet sounds. They are
-off at first on a phone or tablet and at half on a desktop, and a Volume row in settings
-controls them. The sounds follow the same rule as the look: calm, few, no bling.
+off at first on a phone or tablet and on, at half, on a desktop (decided 2026-11-16),
+and a Volume row in settings controls them. The sounds follow the same rule as the look: calm, few, no bling.
 
 Prototyped in `prototypes/sound.html`, where every sound below plays as the app would
 make it.
@@ -90,6 +90,7 @@ file.
       knocks or silence
 - [ ] The sounds in the table's "Yes" rows play in the app, from the board's events, in
       a game, a puzzle, How to play, and the settings' preview
+- [x] Defaults decided (2026-11-16)
 - [ ] Off by default on Android and iOS, half on macOS, Windows, and Linux; the level
       kept per device
 - [ ] The audio device opened only while the level is above zero
