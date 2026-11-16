@@ -142,6 +142,19 @@ bounce) as the move and the take. Recorded hits are tried beside them:
 - Recording our own (a piece set down on the real board, a phone 10 to 20 cm away, 30
   takes) remains the surest way to get the sound right.
 
+## The recordings to download
+
+A free Freesound account (freesound.org, "Join"; an email and a password) downloads
+the originals. Into `design/sounds/` (local, out of git, as the backgrounds' originals):
+
+- `765866.wav`: MattyCauldron, "Chess Pieces", <https://freesound.org/people/MattyCauldron/sounds/765866/>,
+  WAV 48 kHz 24-bit stereo, 51.8 s, 14.2 MB, CC0. The move.
+- `733927.wav`: JJTaynos, "Chess Pieces Move (Close)", <https://freesound.org/people/JJTaynos/sounds/733927/>,
+  WAV 48 kHz 24-bit mono, 49.0 s, 6.8 MB, CC0. The take.
+
+The hits are cut from them with a script (as `tools/sound_samples.py` cut the previews),
+picked by ear, and only the cut hits go into git: a few short mono clips, tens of KB.
+
 ## Building it
 
 - Goose's `audio` module (goose_gfx) mixes PCM over SDL3 and has no file decoding, which
@@ -176,5 +189,6 @@ bounce) as the move and the take. Recorded hits are tried beside them:
 - [ ] The audio device opened only while the level is above zero
 - [ ] Checked on the Mac and on the tablet (and that the tablet's media volume and an
       iPhone's silent switch govern it)
-- [ ] `docs/decisions/` and `docs/architecture/` updated; `prototypes/sound.html` folded
-      into `settings.html` once built
+- [ ] `docs/decisions/` and `docs/architecture/` updated; the Volume row folded into
+      `prototypes/settings.html`, and `sound.html`, `sound-set.html`, `sound.js`, and
+      `tools/sound_samples.py` removed, the decision naming the commit that last has them
