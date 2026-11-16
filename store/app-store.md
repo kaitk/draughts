@@ -46,10 +46,10 @@ read 2026-11-09: name 2 to 30 characters, subtitle 30, promotional text 170 (cha
 without a new version), description 4000, keywords 100 bytes with each keyword over 2
 characters, What's New 4000 (from the second version), review notes 4000 bytes.
 
-### Promotional text (156 of 170)
+### Promotional text (158 of 170)
 
 ```text
-New: daily puzzles at your level, from over 7,000 for International, Russian, and Brazilian draughts, and a stronger computer. No ads, no accounts, offline.
+Play draughts on a 2D or 3D board against the computer or a friend, and solve puzzles: a course of 216, then new ones each day at your level. No ads, offline.
 ```
 
 ### Keywords (88 of 100 bytes)
@@ -62,7 +62,7 @@ Not repeated: the name's word (draughts), which Apple indexes anyway. No "kids",
 outside the Kids category would imply the audience (5.1.4(b)). No other app's name.
 "kabe" for people in Estonia searching the English storefront.
 
-### Description (3,220 of 4,000)
+### Description (3,659 of 4,000)
 
 ```text
 A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
@@ -80,13 +80,14 @@ PLAY
 YOUR GAMES
 • Results keeps your past games and a rating against the computer.
 • Replay any of them move by move, each move marked from best to mistake, and play on from any move to try another line.
+• Once a game has ended, Watch replay on the home screen opens it where it turned: at your worst move, or where a lost game slipped away, with the best move shown.
 
 PUZZLES
-• Daily puzzles: once Learn is solved, a few puzzles a day at your level (4 by default; 3, 5, or 10 in settings): a warm-up, two at your level, and one a bit harder. They come from over 7,000 for International, Russian, and Brazilian draughts, among them traps that punish a careless move, and none repeats.
+• Daily puzzles: once Learn is solved, a few puzzles a day at your level (4 by default; 3, 6, or 8 in settings): a warm-up, puzzles at your level, and one a bit harder. They come from nearly 8,000 for International, Russian, and Brazilian draughts, among them traps that punish a careless move, and none repeats.
 • A puzzle rating for each player and kind of draughts, which moves fast at first and settles with time.
-• The course: 166 puzzles, 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 each for Russian and Brazilian draughts in four.
+• The course: 216 puzzles in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move) for each kind of draughts: 84 for International, among them the Haarlem shot and a coup Philippe, and 66 each for Russian and Brazilian.
 • Each theme goes from easy to harder, and some puzzles are played with black.
-• Learn comes first and shows the rules in action; the other themes open once half of it is solved.
+• Learn comes first and shows the rules in action; the other themes open once half of it is solved, and the daily puzzles once all of it is.
 • Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
 
 PLAYERS
@@ -102,6 +103,9 @@ THE BOARD
 • A flat board, or a 3D one with light and soft shadows, which you can turn by hand.
 • Four seasons, each a picture with its own board in wood, stone, or carved.
 • The season follows the date, or stays on the one you choose; or a plain background in the colours of the board.
+
+SOUND
+• A few calm sounds: a wooden knock for a move, a kannel's notes for a crowning and a win, and low mallet notes for a solved puzzle. Off until you turn them on in Settings.
 
 FOR EVERYONE
 • Large buttons and pictures, so even players who can't read yet find their way.
@@ -203,9 +207,16 @@ release build (`docs/development.md`, "Run on iOS").
 ```text
 Draughts is a board game for all ages, simple enough for young children. It is open source (MIT or Apache 2.0), written by one developer in Goose, a small systems language, with the code at https://github.com/kaitk/draughts.
 
-It has no network code, no accounts, no ads, no purchases, no links out of the app, and no third-party SDKs; everything a player makes (an optional name, settings, stars, saved and past games) stays in the app's container.
+It has no network code, no accounts, no ads, no purchases, no links out of the app, and no third-party SDKs; everything a player makes (an optional name, settings, stars, saved and past games) stays in the app's container. Nothing is switched on remotely and nothing is hidden: every part is reached from the home screen, as below.
 
-On first start the app asks whether the player knows how to play; "No" starts a short lesson played on the board. New game on the home screen chooses the computer or a friend on the same device. The 3D board is chosen in Settings → Board. Puzzles open from the home screen; solving half of Learn opens the other themes. Results on the home screen lists past games, which can be replayed move by move.
+- First start: the app asks "Do you know how to play?"; "Show me" starts a short lesson played on the board. It is also under Puzzles, "How to play".
+- New game: the computer at three levels, or a friend on the same device; the kind of draughts, your pieces, and a clock.
+- Continue: the game in progress. Once a game has ended, "Watch replay" takes its place.
+- Results: past games and a rating against the computer; each game replays move by move.
+- Puzzles: "Learn" is open from the start, 12 short puzzles of one or two moves for each kind of draughts. The other themes open once half of Learn is solved, and "Today's puzzles" (the daily puzzles) once all 12 are solved in any one kind of draughts.
+- Settings (the gear on the home screen): the 3D board (Board), the picture (Theme), Sound, move hints, and the language.
+
+Two things change by design. The background's season follows the date unless a season is chosen in Settings, Theme, so the picture depends on the day. Sound is off until turned up in Settings, Sound.
 ```
 
 ## Builds and the account
