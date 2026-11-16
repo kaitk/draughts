@@ -432,7 +432,11 @@ the script signs ad hoc and stops before notarizing.
 **Windows.** `python scripts/windows.py src/app/draughts.goose --release` zips the
 executable alone into `build/windows/release/Draughts-VERSION-windows-x64.zip`: SDL and
 the C runtime are linked in, the icon `windows/draughts.ico` embedded, and it is marked a
-GUI program. It is unsigned, so SmartScreen warns on first run.
+GUI program. It is unsigned, so SmartScreen warns on first run. It stays an unsigned zip
+(2026-11-16): a code-signing certificate isn't worth its yearly cost for a free game, and
+Steam (task 064) is the Windows path, where downloads carry no mark of the web and
+SmartScreen doesn't ask. Rejected: an unsigned installer (Inno Setup), which only moves the
+warning from the game's first run to the install.
 
 **Linux.** `scripts/linux.py src/app/draughts.goose --release` writes
 `build/linux/release/Draughts-VERSION-linux-x64.tar.gz`: the stripped executable, a
