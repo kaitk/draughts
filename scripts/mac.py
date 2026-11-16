@@ -12,7 +12,9 @@ executable in build/mac/release/Draughts.app (Info.plist, the launcher's name pe
 language, the icon from ios/icon-1024.png compiled by actool), signs it with the
 keychain's "Developer ID Application" identity and the hardened runtime, has Apple's
 puts it beside a link to /Applications in build/mac/release/Draughts-VERSION-macos-arm64.dmg
-(the window where the app is dragged onto Applications), signs the image, has Apple's
+(the window where the app is dragged onto Applications, laid out by Finder over
+mac/dmg-background.tiff, so the first build asks to let the terminal control Finder),
+signs the image, has Apple's
 notary service check it (notarytool's keychain profile NOTARY_PROFILE), and staples the
 ticket to the image; the ticket covers the app inside. Without the identity it signs both
 ad hoc and stops before notarizing, which is enough to try the image on this Mac;
@@ -134,17 +136,65 @@ def bundle(exe, out):
     return app
 
 
+DMG_WINDOW = (640, 427)                             # pt, mac/dmg-background.tiff's size
+DMG_ICONS = {"Draughts.app": (160, 70), "Applications": (480, 70)}   # on its strip, the arrow between
+DMG_LAYOUT = """
+tell application "Finder"
+  tell disk "{volume}"
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set the bounds of container window to {{200, 120, {right}, {bottom}}}
+    set o to the icon view options of container window
+    set arrangement of o to not arranged
+    set icon size of o to 96
+    set text size of o to 13
+    set background picture of o to file ".background:background.tiff"
+    {positions}
+    update without registering applications
+    delay 1
+    close
+  end tell
+end tell
+"""
+
+
 def disk_image(app, dmg):
-    """dmg: a compressed, read-only image holding app and a link to /Applications."""
+    """dmg: a compressed, read-only image holding app and a link to /Applications, laid
+    out by Finder over mac/dmg-background.tiff, with the app's icon as the volume's."""
+    volume = "Draughts"
+    mount = Path("/Volumes") / volume
+    if mount.exists():
+        sys.exit(f"{mount} is mounted already: eject it first")
     stage = dmg.parent / "dmg"
     shutil.rmtree(stage, ignore_errors=True)
-    stage.mkdir()
+    (stage / ".background").mkdir(parents=True)
     native.run("ditto", app, stage / app.name)
     (stage / "Applications").symlink_to("/Applications")
-    dmg.unlink(missing_ok=True)
-    native.run("hdiutil", "create", "-volname", "Draughts", "-srcfolder", stage,
-               "-fs", "HFS+", "-format", "UDZO", "-imagekey", "zlib-level=9", dmg)
+    shutil.copy(native.ROOT / "mac/dmg-background.tiff", stage / ".background/background.tiff")
+    shutil.copy(app / "Contents/Resources/AppIcon.icns", stage / ".VolumeIcon.icns")
+    writable = dmg.with_suffix(".rw.dmg")
+    writable.unlink(missing_ok=True)
+    native.run("hdiutil", "create", "-volname", volume, "-srcfolder", stage, "-fs", "HFS+",
+               "-format", "UDRW", "-size", "200m", writable)
     shutil.rmtree(stage)
+    native.run("hdiutil", "attach", "-readwrite", "-noverify", "-noautoopen", writable)
+    try:
+        positions = "\n    ".join(f'set position of item "{n}" of container window to {{{x}, {y}}}'
+                                   for n, (x, y) in DMG_ICONS.items())
+        w, h = DMG_WINDOW
+        native.run("osascript", "-e", DMG_LAYOUT.format(
+            volume=volume, right=200 + w, bottom=120 + h, positions=positions))
+        native.run("xcrun", "SetFile", "-a", "C", mount)     # use .VolumeIcon.icns; after
+                                                             # Finder, which clears it
+        native.run("sync")
+    finally:
+        native.run("hdiutil", "detach", mount)
+    dmg.unlink(missing_ok=True)
+    native.run("hdiutil", "convert", writable, "-format", "UDZO", "-imagekey", "zlib-level=9",
+               "-o", dmg)
+    writable.unlink()
 
 
 def release(program, notarize):
