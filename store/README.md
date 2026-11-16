@@ -52,11 +52,16 @@ All images stay outside git in `~/Downloads/draughts-store/`. Upload from its `u
 the sets flattened to 24-bit RGB, since both stores refuse alpha, with
 `magick IN -background black -alpha remove -alpha off -type TrueColor OUT`.
 
-A new set from `main` at `e7ee00e` (the tablet's and the iPad's 04 from `c912e34`) waits
-for the user's approval in `2026-11-14/`: `play/phone/`, `play/tablet/`,
-`app-store/iphone-6.9/` (and `-raw/`), and `app-store/ipad-13-landscape/`, with its own
-`upload/`, a contact sheet per device type, `check.txt` (each image against the rules),
-and the `scripts/` that made them. Until it is approved, the current sets are:
+The set for 0.9.0, from `main` at `e77693f`, is in `2026-11-16/`: `play/phone/`,
+`play/tablet/`, `app-store/iphone-6.9/` (and `-raw/`), and `app-store/ipad-13-landscape/`,
+with its own `upload/` (the iPhone 6.3" set among them), a contact sheet per device type,
+`check.txt` (each image against the rules), and the `scripts/` that made them, with a
+README saying how. It replaces `2026-11-14/`, never uploaded. App Review rejected 0.8.0
+on 2026-11-16 under Guideline 5.6, features "hidden during review", while the App Store
+still showed the 0.3 screenshots, whose home differs from the build's; so every set
+uploaded shows only what that platform's build shows. The iPad's shots come from a
+headless copy that reports itself as iOS, since the desktop's draws a close button on
+home that iOS has not. The sets before it:
 
 | Folder | Size | For | Made with |
 | --- | --- | --- | --- |
