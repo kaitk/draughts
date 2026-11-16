@@ -9,8 +9,13 @@ import vec;
 // the blur is a fraction of it: 14 px at 1280 px is a sigma of 5.6 texels here.
 let SIZE = 512;
 
-// The sharp photograph's side where the JPEG is decoded; the ASTC image keeps its own.
-let SHARP_SIZE = 2048;
+// The sharp photograph's side where the JPEG is decoded (a desktop): its display's longer
+// side, so a fullscreen window shows it pixel for pixel, from 2048 to the image's 3840. The
+// ASTC image (a phone) keeps its own 2048.
+let SHARP_LEAST = 2048;
+let SHARP_MOST = 3840;
+extern fn draughts_display_side() -> i64;
+fn sharp_size() -> i64 { return clamp(draughts_display_side(), SHARP_LEAST, SHARP_MOST); }
 
 // The glass copy's side, and its blur: 24 px at 1280 px is 4.8 texels here, of which the
 // 512 px copy already has 2.8.
@@ -36,7 +41,7 @@ struct Scene {
 
 fn load<B>(be: B&, kind: i64, plain: bool = false) -> Scene {
     let sampler = be.scene.sampler();
-    let sharp = if plain { gpu::no_texture() } else { be.r3d.photo(kind, SHARP_SIZE) };
+    let sharp = if plain { gpu::no_texture() } else { be.r3d.photo(kind, sharp_size()) };
     if sharp.id == 0 {
         let none = be.scene.black();
         return Scene { photo: none, sharp: none, glass: none, sampler: sampler, has: false, plain: plain };

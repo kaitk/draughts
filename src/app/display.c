@@ -21,6 +21,15 @@
 
 typedef struct SDL_Window SDL_Window;
 typedef struct { int x, y, w, h; } SDL_Rect;
+typedef uint32_t SDL_DisplayID;
+typedef struct {
+    SDL_DisplayID displayID;
+    uint32_t format;
+    int w, h;
+    float pixel_density, refresh_rate;
+    int refresh_rate_numerator, refresh_rate_denominator;
+    void *internal;
+} SDL_DisplayMode;
 
 #if defined(_WIN32)
 extern bool SDL_SetHint(const char *name, const char *value);
@@ -56,6 +65,9 @@ extern bool SDL_GetWindowSafeArea(SDL_Window *window, SDL_Rect *rect);
 extern bool SDL_GetWindowSize(SDL_Window *window, int *w, int *h);
 extern bool SDL_GetWindowSizeInPixels(SDL_Window *window, int *w, int *h);
 extern float SDL_GetWindowDisplayScale(SDL_Window *window);
+extern SDL_DisplayID SDL_GetDisplayForWindow(SDL_Window *window);
+extern const SDL_DisplayMode *SDL_GetDesktopDisplayMode(SDL_DisplayID display);
+extern const SDL_DisplayMode *SDL_GetCurrentDisplayMode(SDL_DisplayID display);
 #else
 #include <dlfcn.h>
 #endif
@@ -66,6 +78,8 @@ static bool (*safe_area)(SDL_Window *, SDL_Rect *);
 static bool (*window_size)(SDL_Window *, int *, int *);
 static bool (*pixel_size)(SDL_Window *, int *, int *);
 static float (*display_scale)(SDL_Window *);
+static SDL_DisplayID (*display_of)(SDL_Window *);
+static const SDL_DisplayMode *(*desktop_mode)(SDL_DisplayID);
 static SDL_Window *window;
 
 // The program's one window, found once.
@@ -78,6 +92,8 @@ static SDL_Window *the_window(void) {
     window_size = SDL_GetWindowSize;
     pixel_size = SDL_GetWindowSizeInPixels;
     display_scale = SDL_GetWindowDisplayScale;
+    display_of = SDL_GetDisplayForWindow;
+    desktop_mode = SDL_GetDesktopDisplayMode;
 #else
     get_windows = (SDL_Window **(*)(int *))dlsym(RTLD_DEFAULT, "SDL_GetWindows");
     sdl_free = (void (*)(void *))dlsym(RTLD_DEFAULT, "SDL_free");
@@ -85,7 +101,10 @@ static SDL_Window *the_window(void) {
     window_size = (bool (*)(SDL_Window *, int *, int *))dlsym(RTLD_DEFAULT, "SDL_GetWindowSize");
     pixel_size = (bool (*)(SDL_Window *, int *, int *))dlsym(RTLD_DEFAULT, "SDL_GetWindowSizeInPixels");
     display_scale = (float (*)(SDL_Window *))dlsym(RTLD_DEFAULT, "SDL_GetWindowDisplayScale");
-    if (!get_windows || !sdl_free || !safe_area || !window_size || !pixel_size || !display_scale) return 0;
+    display_of = (SDL_DisplayID (*)(SDL_Window *))dlsym(RTLD_DEFAULT, "SDL_GetDisplayForWindow");
+    desktop_mode = (const SDL_DisplayMode *(*)(SDL_DisplayID))dlsym(RTLD_DEFAULT, "SDL_GetDesktopDisplayMode");
+    if (!get_windows || !sdl_free || !safe_area || !window_size || !pixel_size || !display_scale ||
+        !display_of || !desktop_mode) return 0;
 #endif
     int count = 0;
     SDL_Window **all = get_windows(&count);
@@ -115,6 +134,18 @@ int64_t draughts_display(draughts_floats out) {
     return 1;
 }
 
+// The longer side of the window's display in pixels, as the desktop has it, or 0 without a
+// window: the size a desktop decodes the season's photograph at (scene::sharp_size), so it
+// fills a fullscreen window pixel for pixel.
+int64_t draughts_display_side(void) {
+    if (!the_window()) return 0;
+    const SDL_DisplayMode *mode = desktop_mode(display_of(window));
+    if (!mode) return 0;
+    float density = mode->pixel_density > 0.0f ? mode->pixel_density : 1.0f;
+    int side = mode->w > mode->h ? mode->w : mode->h;
+    return (int64_t)(side * density + 0.5f);
+}
+
 // A 3D board too slow for its display: first fewer samples, then the display at 60 Hz while
 // it draws. On a 90 Hz display 60 frames a second show two refreshes and one in turn; at
 // 60 Hz each shows for one.
@@ -131,19 +162,8 @@ int64_t draughts_display(draughts_floats out) {
 #include <dlfcn.h>
 typedef struct ANativeWindow ANativeWindow;
 typedef uint32_t SDL_PropertiesID;
-typedef uint32_t SDL_DisplayID;
-typedef struct {
-    SDL_DisplayID displayID;
-    uint32_t format;
-    int w, h;
-    float pixel_density, refresh_rate;
-    int refresh_rate_numerator, refresh_rate_denominator;
-    void *internal;
-} SDL_DisplayMode;
 extern SDL_PropertiesID SDL_GetWindowProperties(SDL_Window *window);
 extern void *SDL_GetPointerProperty(SDL_PropertiesID props, const char *name, void *default_value);
-extern SDL_DisplayID SDL_GetDisplayForWindow(SDL_Window *window);
-extern const SDL_DisplayMode *SDL_GetCurrentDisplayMode(SDL_DisplayID display);
 
 enum { SLOW_AFTER = 60 };
 

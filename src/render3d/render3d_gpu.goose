@@ -224,7 +224,7 @@ fn photo_part(own: Own&, g: render3d::Gpu&, kind: i64, grey: f32, sh: float4[9]&
         return;
     }
     if k == 0 {
-        let sharp = photo(own, kind, 2048);
+        let sharp = photo(own, kind, render3d::PHOTO_SIZE);   // shrunk to it anyway: the small JPEG
         g.no_photo = sharp.id == 0;
         if g.no_photo {
             // No photograph built in: the page under the scene, and a dim ambient.

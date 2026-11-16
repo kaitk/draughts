@@ -3,15 +3,24 @@
 // glass"). Where the GPU samples ASTC the stored blocks are handed over as they are;
 // elsewhere the JPEG is decoded with stb_image and scaled down.
 //
-// Android and iOS devices embed only the ASTC files, which every GPU they target samples;
-// the iOS simulator keeps the JPEGs. An image whose file is missing is left out, and the
-// app shows the page color.
+// Android and iOS devices embed only the ASTC files, which every GPU they target samples.
+// Desktops embed only the JPEGs: each season at 3840 px for the sharp photograph, decoded
+// at the display's size, and at 512 px for the small uses (the blurred copies of the 3D
+// board, settings' thumbnails), which then decode a fraction of the pixels. Most of their
+// GPUs can't sample ASTC, and the Mac's would get only 2048 px from it. The iOS simulator
+// keeps both. An image whose file is missing is left out, and the app shows the page
+// color.
 
 #include "platform.h"
 #if defined(__ANDROID__) || (DRAUGHTS_IOS && !TARGET_OS_SIMULATOR)
 #define ASTC_ONLY 1
+#define JPEG_ONLY 0
+#elif DRAUGHTS_IOS
+#define ASTC_ONLY 0
+#define JPEG_ONLY 0
 #else
 #define ASTC_ONLY 0
+#define JPEG_ONLY 1
 #endif
 
 #if !ASTC_ONLY
@@ -45,33 +54,61 @@ enum { BLOCK = 6 };     // the ASTC blocks' side
 // clang takes in C11 too.
 #pragma clang diagnostic ignored "-Wc23-extensions"
 #if !ASTC_ONLY
-#if __has_embed("../../design/backgrounds/masters/autumn-01-2048.jpg")
+#if __has_embed("../../design/backgrounds/masters/autumn-01-3840.jpg")
 static const unsigned char autumn[] = {
-#embed "../../design/backgrounds/masters/autumn-01-2048.jpg"
+#embed "../../design/backgrounds/masters/autumn-01-3840.jpg"
     , 0 };
 #else
 static const unsigned char autumn[] = { 0 };
 #endif
-#if __has_embed("../../design/backgrounds/masters/winter-01-2048.jpg")
+#if __has_embed("../../design/backgrounds/masters/winter-01-3840.jpg")
 static const unsigned char winter[] = {
-#embed "../../design/backgrounds/masters/winter-01-2048.jpg"
+#embed "../../design/backgrounds/masters/winter-01-3840.jpg"
     , 0 };
 #else
 static const unsigned char winter[] = { 0 };
 #endif
-#if __has_embed("../../design/backgrounds/masters/spring-01-2048.jpg")
+#if __has_embed("../../design/backgrounds/masters/spring-01-3840.jpg")
 static const unsigned char spring[] = {
-#embed "../../design/backgrounds/masters/spring-01-2048.jpg"
+#embed "../../design/backgrounds/masters/spring-01-3840.jpg"
     , 0 };
 #else
 static const unsigned char spring[] = { 0 };
 #endif
-#if __has_embed("../../design/backgrounds/masters/summer-01-2048.jpg")
+#if __has_embed("../../design/backgrounds/masters/summer-01-3840.jpg")
 static const unsigned char summer[] = {
-#embed "../../design/backgrounds/masters/summer-01-2048.jpg"
+#embed "../../design/backgrounds/masters/summer-01-3840.jpg"
     , 0 };
 #else
 static const unsigned char summer[] = { 0 };
+#endif
+#if __has_embed("../../design/backgrounds/masters/autumn-01-512.jpg")
+static const unsigned char autumn_small[] = {
+#embed "../../design/backgrounds/masters/autumn-01-512.jpg"
+    , 0 };
+#else
+static const unsigned char autumn_small[] = { 0 };
+#endif
+#if __has_embed("../../design/backgrounds/masters/winter-01-512.jpg")
+static const unsigned char winter_small[] = {
+#embed "../../design/backgrounds/masters/winter-01-512.jpg"
+    , 0 };
+#else
+static const unsigned char winter_small[] = { 0 };
+#endif
+#if __has_embed("../../design/backgrounds/masters/spring-01-512.jpg")
+static const unsigned char spring_small[] = {
+#embed "../../design/backgrounds/masters/spring-01-512.jpg"
+    , 0 };
+#else
+static const unsigned char spring_small[] = { 0 };
+#endif
+#if __has_embed("../../design/backgrounds/masters/summer-01-512.jpg")
+static const unsigned char summer_small[] = {
+#embed "../../design/backgrounds/masters/summer-01-512.jpg"
+    , 0 };
+#else
+static const unsigned char summer_small[] = { 0 };
 #endif
 #if __has_embed("../../design/boards/boards.jpg")
 static const unsigned char boards[] = {
@@ -81,6 +118,7 @@ static const unsigned char boards[] = {
 static const unsigned char boards[] = { 0 };
 #endif
 #endif
+#if !JPEG_ONLY
 #if __has_embed("../../design/backgrounds/masters/autumn-01-2048-6x6.astc")
 static const unsigned char autumn_astc[] = {
 #embed "../../design/backgrounds/masters/autumn-01-2048-6x6.astc"
@@ -117,6 +155,13 @@ static const unsigned char boards_astc[] = {
 #else
 static const unsigned char boards_astc[] = { 0 };
 #endif
+#else
+static const unsigned char autumn_astc[] = { 0 };
+static const unsigned char winter_astc[] = { 0 };
+static const unsigned char spring_astc[] = { 0 };
+static const unsigned char summer_astc[] = { 0 };
+static const unsigned char boards_astc[] = { 0 };
+#endif
 
 // By theme: wood (autumn), stone (winter), birch (spring), sunset (summer); then BOARDS,
 // settings' board pictures in one atlas (scripts/board_thumbs.py), which is taken whole.
@@ -126,6 +171,11 @@ static const unsigned char *const jpegs[IMAGES] = { autumn, winter, spring, summ
 static const int64_t jpeg_lengths[IMAGES] = { sizeof autumn - 1, sizeof winter - 1,
                                               sizeof spring - 1, sizeof summer - 1,
                                               sizeof boards - 1 };
+// The seasons at 512 px, taken for a photograph decoded no larger (SMALL); the atlas has none.
+enum { SMALL = 512 };
+static const unsigned char *const smalls[BOARDS] = { autumn_small, winter_small, spring_small, summer_small };
+static const int64_t small_lengths[BOARDS] = { sizeof autumn_small - 1, sizeof winter_small - 1,
+                                               sizeof spring_small - 1, sizeof summer_small - 1 };
 #endif
 static const unsigned char *const astcs[IMAGES] = { autumn_astc, winter_astc, spring_astc,
                                                     summer_astc, boards_astc };
@@ -197,13 +247,19 @@ static void shrink(const unsigned char *px, int w, int x0, int y0, int side, int
 }
 
 // The JPEG's middle square, decoded and scaled down to `size` × `size` RGBA8 (as it is
-// when that is its side), or false. It decodes to RGBA, which stb converts with NEON. The
+// when that is its side or less), or false. It decodes to RGBA, which stb converts with NEON. The
 // pixels are stb's own, or the scaled copy's, given back by draughts_photo_done.
 static bool jpeg(int64_t kind, int size, draughts_pixels *out) {
-    if (jpeg_lengths[kind] == 0) return false;
+    const unsigned char *data = jpegs[kind];
+    int64_t len = jpeg_lengths[kind];
+    if (kind < BOARDS && size <= SMALL && small_lengths[kind] > 0) {
+        data = smalls[kind];
+        len = small_lengths[kind];
+    }
+    if (len == 0) return false;
     int w = 0, h = 0, n = 0;
-    unsigned char *px = stbi_load_from_memory(jpegs[kind], (int)jpeg_lengths[kind], &w, &h, &n, 4);
-    forget(jpegs[kind], jpeg_lengths[kind]);
+    unsigned char *px = stbi_load_from_memory(data, (int)len, &w, &h, &n, 4);
+    forget(data, len);
     if (!px) return false;
     int side = w < h ? w : h;
     unsigned char *owned = 0;
@@ -213,7 +269,8 @@ static bool jpeg(int64_t kind, int size, draughts_pixels *out) {
                                   .format = DRAUGHTS_RGBA8, .owned = px };
         return true;
     }
-    if (side == size && w == h) {
+    if (side <= size && w == h) {      // no larger than asked: as it is
+        size = side;
         owned = px;
     } else if (side > size) {           // it only scales down
         owned = malloc((size_t)size * size * 4);
