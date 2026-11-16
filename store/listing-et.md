@@ -14,10 +14,10 @@ Kabe
 
 The same as the launcher's name (`strings/et.txt`), as the English is "Draughts".
 
-## Short description (74 of 80)
+## Short description (77 of 80)
 
 ```text
-Kabe 2D- või 3D-laual: mängi arvuti või sõbraga, lahenda päeva ülesandeid.
+Kabe 2D- või 3D-laual: mängi arvuti või sõbraga, lahenda ülesandeid iga päev.
 ```
 
 ## Full description (3,985 of 4,000)
