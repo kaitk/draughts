@@ -309,3 +309,17 @@ and the commit that last has it.
   renamed to literal compound ones, area by area (gui, board and game, shell, the app,
   then `who` as `player_card`), with no test output changed; the naming bar is in
   `agents/goose.md`. `090-plain-names.md`, `ed96795`
+- 056: Even frame pacing. Merged 2026-11-16 into task 055, open, as
+  `055-locked-frame-rate/01-frame-pacing.md`.
+- 067: Light the board under the mouse. Merged 2026-11-16 into task 064, open, as
+  `064-steam-release/01-board-under-the-mouse.md`.
+- 073: One executable, the renderer chosen at run time. Merged 2026-11-16 into task 065,
+  open, as `065-ngfx-renderer/01-renderer-choice.md`.
+- 074: ngfx against gfx, uncapped, on Windows. Merged 2026-11-16 into task 065, open, as
+  `065-ngfx-renderer/02-uncapped-windows.md`.
+- 076: Wayland on Linux, for gfx and ngfx. Merged 2026-11-16 into task 010, open, as
+  `010-goose-gfx-upstream/01-linux-wayland.md`.
+- 077: ngfx's antialiasing on Apple, and NoGraphicsAPI on older systems. Merged
+  2026-11-16 into task 065, open, as `065-ngfx-renderer/03-msaa-and-older-apple.md`.
+- 081: The 3D board at 60 fps on the Galaxy A33. Merged 2026-11-16 into task 055, open, as
+  `055-locked-frame-rate/02-a33-60fps.md`.

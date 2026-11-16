@@ -12,6 +12,12 @@ ready for a refresh.
 Trap: the bench's first phase waits for the GPU after every frame, so its frames miss
 refreshes by design; a count must not overlap it.
 
+## Subtasks
+
+- `01-frame-pacing.md`: even pacing, the iPhone's flat board and the Pixel's 3D drop
+  (task 056 until 2026-11-16)
+- `02-a33-60fps.md`: the 3D board at 60 fps on the Galaxy A33 (task 081 until 2026-11-16)
+
 ## Measured, 2026-11-10 (release from 1aaf406)
 
 | Device | Flat: dropped of ~990 | 3D: dropped of ~990 |
@@ -19,7 +25,7 @@ refreshes by design; a count must not overlap it.
 | Tablet, 90 Hz | 0 | 172 (17%), 77 / 45 fps; none of 994 after task 059 |
 | Pixel 7a, 60 Hz | 0 | 1 |
 | Galaxy A33, 90 Hz | 0 | every other frame (23 ms of GPU work), a steady 60 |
-| iPhone 13 mini, 60 Hz | 0 to 5 (pacing: task 056) | 1 |
+| iPhone 13 mini, 60 Hz | 0 to 5 (pacing: task 055/01) | 1 |
 
 The flat board's loop does 1.0 ms of CPU work a frame; `tools/pace.goose` ruled out the
 pacing itself (no drop in 1815 frames, also with a busy GPU and the app's uploads).
@@ -33,5 +39,5 @@ the top one; task 042 holds the candidates for cutting its cost.
 - [x] The same on the Pixel 7a
 - [x] The same on the Galaxy A33
 - [ ] The 3D board drops no frame on the tablet and the Pixel 7a (the A33 at least a
-      steady rate): the tablet done; the Pixel 1 of 995 (task 056's longer run to check)
+      steady rate): the tablet done; the Pixel 1 of 995 (task 055/01's longer run to check)
 - [ ] A screen transition counted the same way

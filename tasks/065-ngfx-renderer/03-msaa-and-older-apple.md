@@ -1,10 +1,10 @@
-# 077: ngfx's antialiasing on Apple, and NoGraphicsAPI on older systems
+# 03: ngfx's antialiasing on Apple, and NoGraphicsAPI on older systems
 
 Status: in-progress (steps 1 and 3 done 2026-11-12, step 2 on the Mac; its Windows and
 Linux runs are the user's)
 
 ngfx exists in Draughts to show NoGraphicsAPI's author a real program on it and to back
-the pull requests (task 073). Two gaps stood in the way on Apple: ngfx's 3D frame was
+the pull requests (task 065/01). Two gaps stood in the way on Apple: ngfx's 3D frame was
 slower on the Mac, and NoGraphicsAPI wouldn't build for an app that also runs below macOS
 and iOS 26.
 
@@ -29,7 +29,7 @@ and iOS 26.
      its own SMAA. Where ngfx's extra 0.2 ms over its no-AA frame goes isn't known.
    - Memory while drawing, headless 1280 × 800: ngfx MSAA 179 MB, SMAA 195 to 197, gfx
      MSAA 181; alike at rest, where the targets are given back.
-   - The Mac's `auto` stays gfx first (task 073).
+   - The Mac's `auto` stays gfx first (task 065/01).
 3. **Building below 26** (the fork's `below-26`, `68a70eb`, in `ngfx` `3338bfb`;
    goose-ngfx `2adf0ff`): the Metal backend under a
    `#pragma clang attribute push` marking it available from 26, `create_device` calling
@@ -38,7 +38,7 @@ and iOS 26.
    probe has 12 weak Metal 4 imports and no strong one. The Simulator's SDK declares no
    Metal 4 types, so a Simulator build of Draughts leaves ngfx out. Decision:
    [decisions](../docs/decisions/README.md#the-stack). Not run on a system before 26
-   (task 073).
+   (task 065/01).
 
 ## For the user: Windows (RTX 4090) and the Bazzite PC (RX 6800)
 
@@ -55,10 +55,10 @@ Ask before pushing the fork's `msaa` and `ngfx`, goose-ngfx's `main`, and Draugh
    `--aot --cc clang` in the box). Pass: all 36, `ngfx_msaa` printing 204 204 102 0.
 3. **Draughts' ngfx build**: headless shots of the 13 screens on the 3D board at
    1280 × 800, `--frames 20000` (`agents/testing.md`), against gfx: within about 11 of
-   255 as on the Mac; and task 073's Windows shot check in the same sitting.
+   255 as on the Mac; and task 065/01's Windows shot check in the same sitting.
 4. **Benches**, three rounds interleaved: Windows `scripts/windows_perf.py` for gfx,
-   ngfx, and ngfx `FLAGS="--aa smaa"`, against task 074 (does ngfx keep its 26 to 41%
-   GPU-time lead with MSAA?); Bazzite on Wayland as task 076's table (does MSAA close
+   ngfx, and ngfx `FLAGS="--aa smaa"`, against task 065/02 (does ngfx keep its 26 to 41%
+   GPU-time lead with MSAA?); Bazzite on Wayland as task 010/01's table (does MSAA close
    RADV's 13% gap? That decides Linux's `auto`).
 
 ## Acceptance criteria
@@ -69,5 +69,5 @@ Ask before pushing the fork's `msaa` and `ngfx`, goose-ngfx's `main`, and Draugh
       passing; the ngfx build's `--aa msaa` measured on the Mac against gfx's
 - [ ] The same on Windows and Linux, run by the user (above)
 - [x] NoGraphicsAPI builds below 26 and fails at run time there (an older system to
-      check: task 073)
-- [ ] `docs/goose-findings.md` and task 073 updated
+      check: task 065/01)
+- [ ] `docs/goose-findings.md` and task 065/01 updated

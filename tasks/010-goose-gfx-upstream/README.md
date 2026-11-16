@@ -7,6 +7,11 @@ patches shrink to nothing and the Android build can drop its copy of goose_gfx's
 The user contributes to goose_gfx; prepare each change as a small, tested patch and
 description, and let the user send it.
 
+## Subtasks
+
+- `01-linux-wayland.md`: Wayland for gfx and ngfx, built and measured; its fork branches
+  offered upstream one at a time (task 076 until 2026-11-16)
+
 ## Acceptance criteria
 
 - [ ] Clip distance off at device creation (`patches/goose_gfx/0001-no-clip-distance.patch`),

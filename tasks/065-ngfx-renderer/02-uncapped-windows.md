@@ -1,11 +1,11 @@
-# 074: ngfx against gfx, uncapped, on Windows
+# 02: ngfx against gfx, uncapped, on Windows
 
 Status: in-progress (the runs done 2026-11-12; where ngfx's lower GPU time comes from,
 still open)
 
 Task 070 measured both renderers uncapped on the Mac. This does the same on the Windows
 PC (RTX 4090), full screen, every antialiasing way, with memory: whether ngfx earns being
-the default (`--renderer auto`, task 073), and whether the gap is ngfx's or a fault in gfx.
+the default (`--renderer auto`, task 065/01), and whether the gap is ngfx's or a fault in gfx.
 
 ## What it took to measure uncapped
 

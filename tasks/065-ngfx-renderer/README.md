@@ -10,7 +10,16 @@ wherever it's supported, chosen at run time, with gfx (SDL_GPU) as the fallback 
 Android ([decisions](../docs/decisions/README.md), `docs/product.md` item 6). This task is
 the prototype: a build-time choice on the `ngfx` branch. Draughts is ngfx's first real
 user, so ngfx changes as Draughts needs, in its own repository, with a release when this
-branch needs one. Task 073 carries it to main and to a run-time choice.
+branch needs one. Task 065/01 carries it to main and to a run-time choice.
+
+## Subtasks
+
+- `01-renderer-choice.md`: one executable, the renderer chosen at run time (task 073
+  until 2026-11-16)
+- `02-uncapped-windows.md`: ngfx against gfx, uncapped, on Windows (task 074 until
+  2026-11-16)
+- `03-msaa-and-older-apple.md`: ngfx's MSAA on Apple and NoGraphicsAPI on older systems
+  (task 077 until 2026-11-16)
 
 ## How it is built
 
@@ -73,14 +82,14 @@ for a free drawable, so they aren't comparable with gfx's (`agents/testing.md`).
   `msaa-resolve-without-store` (after `screen-without-depth`); `end-on-device-lost` and
   `ios-run-loop-wait` (after `draw-on-demand`); `window-only` (after `ios-run-loop-wait`).
   Added 2026-11-12: `no-vsync-immediate` on `main`, `gamepad-wake` (task 072),
-  `window-only-linux` (task 076). Once merged, Draughts drops the patches.
+  `window-only-linux` (task 010/01). Once merged, Draughts drops the patches.
 - `sebbbi/NoGraphicsAPI`, from `kaitk/NoGraphicsAPI`: `astc-6x6` (`03a36c3`).
 
 ## Left
 
 - Upstream NoGraphicsAPI's `ffd9f2a` (roots need a 16-byte stride) into the fork and ngfx.
 - Windows at goose-ngfx v0.5.0: its window and present changed since v0.3.0.
-- ngfx on an iPad and the simulator; presenting on Linux (task 076).
+- ngfx on an iPad and the simulator; presenting on Linux (task 010/01).
 - SMAA in the gfx build in place of 4× MSAA, if the tablet's numbers favour it.
 - Displays over 60 Hz on iOS need `CADisableMinimumFrameDurationOnPhone`, and
   `ios_perf.py`'s `HZ = 60` should read the display's rate.

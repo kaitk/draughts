@@ -1,6 +1,6 @@
-# 067: Light the board under the mouse
+# 01: Light the board under the mouse
 
-Status: todo (before task 064's Steam release)
+Status: todo (before the Steam release)
 
 Task 066 lights the glass tiles under the mouse on a desktop; the board doesn't answer
 the pointer until it is pressed. Show what a click would do there, on a desktop only

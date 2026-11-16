@@ -8,6 +8,11 @@ syncs the settings and saved game without it. Rough cost when scoped: two to thr
 of work, over at least five weeks of calendar for Valve's waits. Valve's rules change;
 check each against Steamworks' pages when doing this.
 
+## Subtasks
+
+- `01-board-under-the-mouse.md`: the board lit under the mouse, before the release
+  (task 067 until 2026-11-16)
+
 ## Valve's waits and fees
 
 - The Steam Direct fee, US$100 per app, paid once (recouped only past US$1,000 of
