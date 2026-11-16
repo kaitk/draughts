@@ -126,9 +126,13 @@ adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'
 
 ## Run on Windows
 
-Needs Visual Studio's Build Tools (`clang-cl`), Python, and Git Bash (for `patch`):
+Needs Visual Studio's Build Tools (`clang-cl`), Python, Git Bash (for `patch`), and for
+a release's installer Inno Setup 6 (`winget install JRSoftware.InnoSetup`). The
+submodules go in recursively, as on the Mac: goose_gfx's own SDL submodule is needed too,
+or goose_gfx's build stops at a missing `SDL_version.h`.
 
 ```sh
+git submodule update --init --recursive --depth 1
 mkdir -p build && cd build
 curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-windows-x64.zip
 unzip -q goose-v2026.4-windows-x64.zip && rm goose-v2026.4-windows-x64.zip
