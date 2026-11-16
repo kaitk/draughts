@@ -26,7 +26,8 @@
 // and the same way, icon beside or over word; the line saying a game from there doesn't
 // count lies inside the safe area right over the board, as wide, clear of the tiles and
 // every icon and word but its own. The game play from here starts is laid
-// out as any game.
+// out as any game. The results, with twelve games played, are laid out as any screen,
+// their list's rows past its foot scrolling into it.
 //
 // A line with anything wrong fails the test unless the failure is on `ALLOWED` below,
 // with its reason: a regression shows as an exit, not only as a line in the diff.
@@ -340,6 +341,16 @@ fn screens(g: gui::Gui&) {
     shell::play_from_here(replayed, 0.0);
     at_rest(replayed, g);
     report("a game from a replay", g, replayed, true, false);
+    // The results: the draughts, the rating's panel, and twelve games in the list.
+    let file = if is_dir("build") { "build/sizes-history.txt" } else { "sizes-history.txt" };
+    var games: u8[>..] = [];
+    for i in 12 { games.append(drive::past_line(rules::INTERNATIONAL, 20 + 2 * i, 1762826400 + i * 3600)); games.push('\n'); }
+    write_file(file, games);
+    var results = showing(shell::RESULTS, home::NO_SETUP);
+    results.history_file.append(file);
+    at_rest(results, g);
+    report("the results", g, results, false, false);
+    games_rows(g);
     // Black to move with no move left: white has won, and the card comes at once.
     var won = showing(shell::GAME, home::NO_SETUP);
     won.game = game::new(rules::RUSSIAN);
@@ -362,6 +373,28 @@ fn stacked(g: gui::Gui&, r: float4) -> bool {
         if q.look.x == gui::TEXT { word = q.rect; }
     }
     return word.y >= icon.y + icon.w - 0.5;
+}
+
+// The results' rows, which are taps on the list's glass rather than tiles: how many show,
+// each inside the safe area across and starting inside it (the list clips the last), and
+// each a tap at least.
+fn games_rows(g: gui::Gui&) {
+    let u = g.scale;
+    let safe = gui::safe(g, drive::size.x, drive::size.y);
+    var n = 0;
+    var wrong: u8[>..] = [];
+    for sp in g.spots {
+        guard sp.id >= results::ROW_ID && sp.id < results::IDS_END else { continue; }
+        n++;
+        let r = sp.rect;
+        if r.x < safe.x - 0.5 || r.x + r.z > safe.x + safe.z + 0.5 || r.y < safe.y - 0.5 || r.y >= safe.y + safe.w {
+            format(wrong, " row ", n, " off the safe area;");
+        }
+        if r.w < gui::tap_size() * u - 0.5 { format(wrong, " row ", n, " under a tap;"); }
+    }
+    if n == 0 { wrong.append(" none;"); }
+    print("  the results' rows: ", n, if wrong.len > 0 { ";" } else { ", in place" }, wrong);
+    check("the results' rows", wrong[..]);
 }
 
 // The replay's head: back and play from here, their sizes, whether the title shows

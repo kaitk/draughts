@@ -333,6 +333,13 @@ Task 074 (2026-11-11) and 078 (2026-11-13):
 - The panel scrolls through the whole game (2026-11-12). Before the first move it says
   "No moves yet", centered (2026-11-12/13). The panel and a phone's line have a "Move
   list" head (2026-11-13).
+- No accuracy summary at the panel's foot (the user, 2026-11-16): each side's accuracy
+  shows in a phone's sheet and the replay, after the moves; a running score beside a game
+  in progress adds little for a child. Rejected: the prototype's summary of accuracy and
+  marks counted under the panel.
+- The results' dates are the day a game ended in the local zone (2026-11-16), the app
+  reading the zone's offset as it reads the local day; they were UTC, a day off near
+  midnight.
 - A phone's moves (task 078's A, `history.html` take d): in landscape a line under what
   each side has taken, opening a sheet beside the board, which stays playable; in
   portrait only the last move in the bar, opening a sheet from the foot under a dim

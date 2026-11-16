@@ -49,6 +49,7 @@ struct Loop {
     released:     bool = false, // the launch's memory given back
     most_dropped: i64  = 0,
     day:          i64  = 0,     // the local date for the daily puzzles
+    zone:         i64  = 0,     // the local zone's offset from UTC in seconds, the games' dates in it
     day_read:     f64  = 0.0,
     level:        f32  = -1.0,  // the volume the sounds were last set to, and muted
     muted:        bool = false,
@@ -250,7 +251,7 @@ fn run() {
     var dv = dev::new(f);
     var g = gui::Gui {};
     var thinker = think::Thinker {};
-    var lp = Loop { day: host::local_day(), day_read: host::time(), .. };
+    var lp = Loop { day: host::local_day(), zone: host::utc_offset(), day_read: host::time(), .. };
     var bank = sound::Bank {};
     while host::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
@@ -260,6 +261,7 @@ fn run() {
         let now = host::time();
         if now >= lp.day_read + 1.0 {
             lp.day = host::local_day();
+            lp.zone = host::utc_offset();
             lp.day_read = now;
         }
         let scale = follow_screen(lp, h, f, g, rd, mobile, on_android);
@@ -276,7 +278,7 @@ fn run() {
         }
         dev::before(dv, f, sh, now);
         let ready3d, shown3d = follow_3d(lp, rd, sh, now);
-        let out .= shell::frame(sh, g, lp.size.x, lp.size.y, now, ready3d, shown3d, lp.day);
+        let out .= shell::frame(sh, g, lp.size.x, lp.size.y, now, ready3d, shown3d, lp.day, lp.zone);
         if out.changed { lp.dirty = true; }
         report_dropped(lp, g, sh);
         follow_keys(lp, h, rd, out);

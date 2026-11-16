@@ -441,9 +441,10 @@ there is no panel or line.
 
 `src/shell/results.goose`, from home's results row: the draughts as tiles with the
 player's rating there, a panel with the rating and the results against each level, and a
-scrolling list of the games, newest first: the result, the opponent and date, the rating's
-change, and the blunders as `?? n`. A row opens the game's replay. On a desktop's large
-window (`gui::large`) it is at most 1640 dp wide and drawn larger.
+scrolling list of the games, newest first: the result, the opponent and date (the day it
+ended in the local zone, `history::zone`), the rating's change, and the blunders as `?? n`.
+A row opens the game's replay. On a desktop's large window (`gui::large`) it is at most
+1640 dp wide and drawn larger.
 
 #### A game's replay
 

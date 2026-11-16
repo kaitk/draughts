@@ -459,13 +459,15 @@ fn resume(sh: Shell&) -> home::Resume {
 // One frame, after gui::begin, on a screen width × height pixels, each screen laid out in
 // its safe area (gui::safe, the insets in g). The app hands in what only it knows: whether
 // the 3D board, when chosen, is ready to draw, and whether an image of it shows
-// (Shell.ready3d), and the local date (Shell.day; -1 leaves it as it is). Returns what the
-// frame leaves for the app (Frame).
+// (Shell.ready3d), the local date (Shell.day; -1 leaves it as it is), and the local zone's
+// offset from UTC in seconds, which the games' dates are shown in (history::zone).
+// Returns what the frame leaves for the app (Frame).
 fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: bool = true,
-         shown3d: bool = true, day: i64 = -1) -> Frame& {
+         shown3d: bool = true, day: i64 = -1, zone: i64 = 0) -> Frame& {
     sh.ready3d = ready3d;
     sh.shown3d = shown3d;
     if day >= 0 { sh.day = day; }
+    history::zone = zone;
     // A switch happens in a frame that declared the old screen, so the first frame of the
     // new one is a change, however long ago the tap was.
     let fresh = sh.drawn != sh.screen;

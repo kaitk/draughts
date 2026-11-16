@@ -45,21 +45,26 @@ int64_t draughts_locales(draughts_text out) {
     return n;
 }
 
-// The local date as days since the epoch (1970-01-01 is 0): the time now moved by the
-// zone's offset, daylight saving's too, over a day's seconds. Windows' struct tm has no tm_gmtoff: there the offset is the local
-// time's fields read back as UTC, less now.
+// The local zone's offset from UTC now in seconds, daylight saving's too. Windows'
+// struct tm has no tm_gmtoff: there the offset is the local time's fields read back as
+// UTC, less now.
 #include <time.h>
 
-int64_t draughts_local_day(void) {
+int64_t draughts_utc_offset(void) {
     time_t now = time(NULL);
     struct tm local;
 #if defined(_WIN32)
     localtime_s(&local, &now);
-    long long offset = (long long)_mkgmtime(&local) - (long long)now;
+    return (int64_t)((long long)_mkgmtime(&local) - (long long)now);
 #else
     localtime_r(&now, &local);
-    long long offset = (long long)local.tm_gmtoff;
+    return (int64_t)local.tm_gmtoff;
 #endif
-    long long s = (long long)now + offset;
+}
+
+// The local date as days since the epoch (1970-01-01 is 0): the time now moved by the
+// zone's offset, over a day's seconds.
+int64_t draughts_local_day(void) {
+    long long s = (long long)time(NULL) + (long long)draughts_utc_offset();
     return (int64_t)((s >= 0 ? s : s - 86399) / 86400);
 }

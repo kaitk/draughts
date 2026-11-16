@@ -251,6 +251,14 @@ and the commit that last has it.
 - 070: ngfx against gfx, uncapped, on the Mac. Done 2026-11-11: `--no-vsync` on both
   builds; both renderers' uncapped numbers flat and 3D, and where ngfx was slower.
   `070-ngfx-uncapped-performance.md`, `314c3b5`
+- 074: Games' history, marked moves, and a rating. Done 2026-11-16: every move judged on
+  the worker and marked as lidraughts marks it, the games kept per player on a results
+  screen with a replay, an Elo rating per player and draughts against the computer's
+  rated levels ([ai](../../docs/architecture/ai.md#judging-a-move)); the results in
+  `test/shell/sizes`, their dates in the local zone. The panel's accuracy summary
+  cancelled by the user (2026-11-16, `docs/decisions/rendering.md`). Left over, no task:
+  the judging's CPU on the A33; its open questions (marks off for a new player, fewer
+  stars, the computer's rating beside its level). `074-game-history.md`, `aad08ca`
 - 083: Check 2026-11-13's layout changes on the devices. Done 2026-11-16: checked by the
   user on the tablet and the phones. `083-layout-device-check.md`, `94cf2d1`
 - 084: The shadow pass's culling and the iPhone's renderer. Done 2026-11-13: back faces

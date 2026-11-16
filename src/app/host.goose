@@ -23,6 +23,8 @@ extern fn draughts_platform() -> i64;
 extern fn draughts_locales(out: u8[:]) -> i64;
 // The local date as days since the epoch.
 extern fn draughts_local_day() -> i64;
+// The local zone's offset from UTC now, in seconds.
+extern fn draughts_utc_offset() -> i64;
 // The app's storage folder, ending in a separator; returns how many bytes.
 extern fn draughts_storage(out: u8[:]) -> i64;
 // The safe area's insets in pixels (left, top, right, bottom) and the display's scale,
@@ -150,6 +152,7 @@ fn screenshot(path: const u8[:]) { backend::with() { be => be.host.screenshot(pa
 fn storage(out: u8[:]) -> const u8[:] { out[..draughts_storage(out)] }
 fn locales(out: u8[:]) -> const u8[:] { out[..draughts_locales(out)] }
 fn local_day() -> i64 { draughts_local_day() }
+fn utc_offset() -> i64 { draughts_utc_offset() }
 
 fn wake_in(ms: i64) { draughts_wake_in(ms); }
 

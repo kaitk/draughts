@@ -43,7 +43,7 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 - Release: 029 Google Play (closed test running), 046 the App Store (in review), 043 iOS
   (the icon left), 036 the announcement after the Play release, 075 the Linux build and
   076 Wayland, 064 Steam (low priority, scoped only).
-- Content and play: 038 players, 074 the games' history and a rating.
+- Content and play: 038 players.
 - Menus and layout: 080 the board's material; 072 keyboard and controller focus; 067 the
   board under the mouse.
 - The 3D board: 041 carved looks, 042 the idle wakeup, 071 its memory.
