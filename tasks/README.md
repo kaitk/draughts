@@ -40,8 +40,7 @@ number ("task 004"), not by path.
 Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 `docs/product.md` is built.
 
-- Release: 029 Google Play (closed test running), 046 the App Store (in review), 043 iOS
-  (the icon left), 036 the announcement after the Play release, 075 the Linux build and
+- Release: 029 Google Play (closed test running), 046 the App Store (in review), 036 the announcement after the Play release, 075 the Linux build and
   076 Wayland, 064 Steam (low priority, scoped only).
 - Content and play: 038 players.
 - Menus and layout: 072 keyboard and controller focus; 067 the board under the mouse.

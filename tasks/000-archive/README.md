@@ -199,6 +199,10 @@ and the commit that last has it.
   amber signs among the board's materials (task 080). Set aside by the user: the temple
   take, the amber reading as an inlay, the motifs' size against the images'; the bakes
   never measured on the Pixel 7a. `041-carved-spring-board.md`, `0439a72`
+- 043: iOS. Done 2026-11-16: the app on iPhone and iPad through SDL on UIKit and SDL_GPU
+  on Metal, built by `scripts/ios.py` with no Xcode project, its icon and launch colour in
+  an asset catalog compiled by `actool`; 0.8.0 in App Store review
+  ([development](../../docs/development.md#run-on-ios)). `043-ios.md`, `dad88aa`
 - 044: A plain background. Done: settings' Theme row switches between the photograph and
   a fade per season's board (`prototypes/plain.html`'s fade b), the 3D board's ambient
   taken from the fade; on the tablet about 1 MB less than the ASTC photograph, and a

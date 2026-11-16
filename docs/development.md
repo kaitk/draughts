@@ -338,7 +338,10 @@ scripts/ios.py src/app/draughts.goose --device --run            # on an attached
 
 `scripts/ios.py` builds without an Xcode project, into `build/ios/<program>/sim/` or
 `device/`: one static executable (SDL without HIDAPI, whose CoreBluetooth App Store Connect
-refuses without a purpose string) and the bundle around it.
+refuses without a purpose string) and the bundle around it, the icon and the launch
+screen's colour compiled by `actool` from an asset catalog the script writes. Each data
+stack is reserved at 128 MB (`--stack-reserve 128M`): a stack that outgrows it stops the
+program.
 
 The privacy manifest declares a reason for each "required reason" API the binary imports
 (`ios.py`'s `PRIVACY_APIS`). Check the list again after an SDL or Goose update:
