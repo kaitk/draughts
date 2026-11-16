@@ -261,7 +261,7 @@ course rates 280 to about 1,300 and is the floor; the library reaches well past 
 the local date, which the app reads from the system and passes to the shell), the
 player's number, the puzzle rating at the day's start, the themes opened (Captures, and
 each theme with a puzzle solved in the course), and the puzzles already had: n puzzles
-(the setting, 3, 4, 5, or 10; 4 by default), the first a warm-up 250 under the rating,
+(the setting, 3, 4, 6, or 8; 4 by default), the first a warm-up 250 under the rating,
 the last a stretch 250 over it, those between at it, a theme the day hasn't had yet taken first (within 200 of the target) so a hard day, mostly shots, still mixes; each one of the 60 nearest its
 target within 75 of it, chosen by a hash of the day, player, and slot. The same day gives
 the same set all day; a missed day's puzzles are gone. Picked puzzles are marked had, so

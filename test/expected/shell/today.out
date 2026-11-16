@@ -1,5 +1,5 @@
 the library: 200 puzzles
-Today's tiles' ids 611 to 620, the picker's 600 to 1199, How to play's 601
+Today's tiles' ids 611 to 618, the picker's 600 to 1199, How to play's 601
 Learn but one: open false, 1 more; home notes 11 / 74, dots 0 filled 0 not, check 0
   the library: 0 tiles, lit -1, calendar 0, moon 0, locks 1, how to play's mark 1; day -1,; rating 0 after 0, 0 had
 all of Learn: open true; day 20406, 420c:0 480c:0 460c:0 700c:0; rating 447 after 0, 4 had; to save true
@@ -18,11 +18,11 @@ tile 0: the puzzle, today's 0, its dots 0 solved 1 this 3 to come
   next after the last: the library, today's 3, its dots 0 solved 0 this 0 to come, the library: 4 tiles, lit -1, calendar 0, moon 1, locks 0, how to play's mark 1
   Today's row by its corner: the puzzle, today's 0, its dots 4 solved 0 this 0 to come
   home: dots 0 filled 0 not, check 1
-5 a day chosen: day 20406, 420c:3 480c:1 460c:3 700c:3; rating 571 after 4, 4 had
-the next day: day 20407, 440c:0 520c:0 620c:0 680c:0 900c:0; rating 571 after 4, 9 had
-  home: dots 0 filled 5 not, check 0
-a Shots puzzle solved, the day after: day 20408, 300c:0 490s:0 630s:0 660c:0 850s:0; rating 571 after 4, 14 had
-started again: day -1,; rating 0 after 0, 0 had, 5 a day
+6 a day chosen: day 20406, 420c:3 480c:1 460c:3 700c:3; rating 571 after 4, 4 had
+the next day: day 20407, 440c:0 520c:0 500c:0 660c:0 720c:0 900c:0; rating 571 after 4, 10 had
+  home: dots 0 filled 6 not, check 0
+a Shots puzzle solved, the day after: day 20408, 300c:0 550s:0 540c:0 620c:0 640c:0 840c:0; rating 571 after 4, 16 had
+started again: day -1,; rating 0 after 0, 0 had, 6 a day
 a file from before ids: today's 4 read, 4 the same puzzles; had 2 of 2 the same
 Russian's Learn but one, International shown: open false, today's 0
 Russian's Learn: open true, dots 0 filled 4 not, check 0; day 20406, 420c:0 440c:0 540c:0 760c:0; rating 506 after 0, 4 had
@@ -75,10 +75,10 @@ a 20:9 phone at 480 dp, portrait, 4 a day:
     flat, the first: the warm-up's word, in place
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
-the tablet, landscape, 10 a day:
-  the library: 22 tiles, Today's 10, all in place
-  a daily puzzle: 4 tiles, 10 dots, all in place
-  on the 3D board: 4 tiles, 10 dots, all in place
+the tablet, landscape, 8 a day:
+  the library: 20 tiles, Today's 8, all in place
+  a daily puzzle: 4 tiles, 8 dots, all in place
+  on the 3D board: 4 tiles, 8 dots, all in place
     3D, the second: no word
     3D, the first: the warm-up's word, in place
     3D, the last: the harder one's word, in place
@@ -87,10 +87,10 @@ the tablet, landscape, 10 a day:
     flat, the first: the warm-up's word, in place
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
-the tablet, portrait, 10 a day:
-  the library: 22 tiles, Today's 10, all in place
-  a daily puzzle: 4 tiles, 10 dots, all in place
-  on the 3D board: 4 tiles, 10 dots, all in place
+the tablet, portrait, 8 a day:
+  the library: 20 tiles, Today's 8, all in place
+  a daily puzzle: 4 tiles, 8 dots, all in place
+  on the 3D board: 4 tiles, 8 dots, all in place
     3D, the second: no word
     3D, the first: the warm-up's word, in place
     3D, the last: the harder one's word, in place
@@ -99,10 +99,10 @@ the tablet, portrait, 10 a day:
     flat, the first: the warm-up's word, in place
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
-a 20:9 phone at 480 dp, landscape, 10 a day:
-  the library: 22 tiles, Today's 10, the list scrolls, all in place
-  a daily puzzle: 4 tiles, 10 dots, all in place
-  on the 3D board: 4 tiles, 10 dots, all in place
+a 20:9 phone at 480 dp, landscape, 8 a day:
+  the library: 20 tiles, Today's 8, the list scrolls, all in place
+  a daily puzzle: 4 tiles, 8 dots, all in place
+  on the 3D board: 4 tiles, 8 dots, all in place
     3D, the second: no word
     3D, the first: the warm-up's word, in place
     3D, the last: the harder one's word, in place
@@ -111,10 +111,10 @@ a 20:9 phone at 480 dp, landscape, 10 a day:
     flat, the first: the warm-up's word, in place
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
-a 20:9 phone at 480 dp, portrait, 10 a day:
-  the library: 22 tiles, Today's 10, the list scrolls, all in place
-  a daily puzzle: 4 tiles, 10 dots, all in place
-  on the 3D board: 4 tiles, 10 dots, all in place
+a 20:9 phone at 480 dp, portrait, 8 a day:
+  the library: 20 tiles, Today's 8, the list scrolls, all in place
+  a daily puzzle: 4 tiles, 8 dots, all in place
+  on the 3D board: 4 tiles, 8 dots, all in place
     3D, the second: no word
     3D, the first: the warm-up's word, in place
     3D, the last: the harder one's word, in place

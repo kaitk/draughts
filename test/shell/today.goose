@@ -11,7 +11,7 @@
 // day keeps the most stars and leaves the rating; next goes through today's set and after
 // the last back to the library, whose mark turns to the moon, and home shows a check in
 // place of the dots. The next day picks four more, none had before, from Shots too once one
-// is solved in the course; the setting's 5 a day, chosen today, counts from the next day.
+// is solved in the course; the setting's 6 a day, chosen today, counts from the next day.
 // The test library's ids run against its order, so a record by id is read through the
 // index. A player's file from before the library had ids, its puzzles kept by their
 // lines then, reads today's puzzles and those had as the same puzzles of the built-in
@@ -19,7 +19,7 @@
 // Today in all: Russian's alone opens International's, whose first rating is the best
 // the player has, Russian's course's or Russian's rating.
 // Then the layouts at the tablet's size and a 20:9 phone's at 480 dp in both orientations,
-// four and ten a day: the library (every tap 88 dp at least, none off the screen nor over
+// four and eight a day: the library (every tap 88 dp at least, none off the screen nor over
 // another, Today's tiles in the picker's ids) and a daily puzzle (its dots on the screen,
 // clear of every tile); and the slot's word under the goal, "Warm-up" on the first and
 // "A bit harder" on the last, none on the middle ones nor a course puzzle, inside its
@@ -570,11 +570,11 @@ fn main() {
     home(sh, g, 36.0);
     print("  home: ", home_line(g));
 
-    // Five a day from now, chosen today: today stays four.
+    // Six a day from now, chosen today: today stays four.
     settings::choose(sh.prefs, settings::DAILY_ROW, 2);
     library(sh, g, 37.0);
-    print("5 a day chosen: ", record(sh));
-    // The next day: five more, none had, still Captures alone.
+    print("6 a day chosen: ", record(sh));
+    // The next day: six more, none had, still Captures alone.
     sh.day = DAY + 1;
     home(sh, g, 38.0);
     print("the next day: ", record(sh));
@@ -602,7 +602,7 @@ fn main() {
 
     // The layouts.
     layouts(text, g, 4);
-    layouts(text, g, 10);
+    layouts(text, g, 8);
 
     // Home's note before the check.
     homes(text, g);

@@ -9,8 +9,8 @@ an id past the index: false
 the last id: true, at 0
 day 20000, player 1, rating 1200, 3 a day: 890s 1180c 1400c
 day 20000, player 1, rating 1200, 4 a day: 890s 1100c 1290s 1380c
-day 20000, player 1, rating 1200, 5 a day: 890s 1240c 1180c 1200c 1480c
-day 20000, player 1, rating 1200, 10 a day: 890s 1140c 1150s 1210s 1170s 1180c 1260c 1160c 1240c 1380c
+day 20000, player 1, rating 1200, 6 a day: 890s 1180c 1210s 1250s 1260c 1470s
+day 20000, player 1, rating 1200, 8 a day: 890s 1140c 1120c 1220c 1150s 1270s 1230s 1410s
 the same day again: true
 the next day: 940c 1250s 1150s 1380c
 another player: 1020c 1110s 1180c 1420c

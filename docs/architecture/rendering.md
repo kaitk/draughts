@@ -323,7 +323,8 @@ otherwise, and with the 3D board, portrait: a bar above the board and the play b
 wordmark and rows 88 dp tall: Continue (when there is a game to resume, `shell::resume`),
 New game with the setup's opponent at its end, How to play in Continue's place for a
 player who hasn't learned yet, Puzzles (solved count, or today's dots once
-[daily puzzles](puzzles.md#daily-puzzles) open), the games played with the rating
+[daily puzzles](puzzles.md#daily-puzzles) open, smaller where they would come within
+16 dp of the label), the games played with the rating
 ([results](#the-results-screen)), and Settings. Where the rows don't fit they scroll under
 the wordmark, fading at the foot. In portrait settings is a bare gear beside the wordmark.
 A bare X in the top right closes the app at once on a touch screen

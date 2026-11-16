@@ -69,7 +69,7 @@ fn main() {
     var seen: u64[puzzles::SEEN_WORDS] = [0; puzzles::SEEN_WORDS];
     let both = rules::bit(puzzles::CAPTURES) | rules::bit(puzzles::SHOTS);
     var d = puzzles::Day { list: [] };
-    for n in [3, 4, 5, 10] {
+    for n in [3, 4, 6, 8] {
         puzzles::pick(lib, 20000, 1, 1200, both, seen, n, d);
         print("day 20000, player 1, rating 1200, ", n, " a day:", show(lib, d));
     }

@@ -8,7 +8,7 @@ import math;
 import rules from "../rules";
 
 let MAX_LIBRARY = 4096;     // puzzles a variant's library may hold
-let MAX_DAILY = 10;         // puzzles a day at most (the setting's 3, 4, 5, or 10)
+let MAX_DAILY = 8;          // puzzles a day at most (the setting's 3, 4, 6, or 8)
 let DAILY_DEFAULT = 4;
 let SEEN_WORDS = MAX_LIBRARY / 64; // a bit for each library puzzle a player has had
 

@@ -50,7 +50,10 @@ over thousands on home would only discourage. So (2026-11-14, task 088):
   hand, and keep the stars by id. They gate the daily puzzles and seed the puzzle rating.
 - **A few puzzles a day from a large library**, picked by the local date and the player,
   so a child can't do too many at once and none pile up on a missed day. 4 a day by
-  default; 3, 5, or 10 in settings.
+  default; 3, 6, or 8 in settings (2026-11-16). They were 3, 5, and 10 from 2026-11-14:
+  ten dots ran into the Puzzles label in a desktop's narrow home column, and 5 was an odd
+  step. A file's 5 reads as 6 and its 10 as 8. Home's dots also shrink to keep clear of
+  the label, so no count nor language overlaps it.
 - **Generated, not imported.** Every position stays our own: GoDraughts' puzzles are
   proprietary, Lidraughts publishes no puzzle data license, Lichess's public-domain
   database is chess only, and the EU's database right covers a collection's substantial

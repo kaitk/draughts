@@ -120,7 +120,7 @@ fn main() {
     s.today[rules::INTERNATIONAL].day = 20406;
     for i, k in [12, 40, 55, 70] { s.today[rules::INTERNATIONAL].picked.list.push(i); }
     s.today[rules::INTERNATIONAL].stars[0] = 3;
-    s.daily_count = 5;
+    s.daily_count = 6;
     var out: u8[>..] = [];
     settings::write(s, out);
     print("a player's file:\n", out);
@@ -191,7 +191,7 @@ fn main() {
     sh.prefs.seen[rules::INTERNATIONAL][0] = 0x15;
     sh.prefs.today[rules::INTERNATIONAL].day = 20406;
     sh.prefs.today[rules::INTERNATIONAL].picked.list.push(7);
-    sh.prefs.daily_count = 10;
+    sh.prefs.daily_count = 8;
     sh.prefs.season = 3;
     written(sh);
     shell::switch_player(sh, 0);

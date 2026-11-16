@@ -583,8 +583,9 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
 }
 
 // Today's puzzles at the right of the Puzzles row r, as gui::row puts its note: a dot
-// each, filled in the glow once solved; once all are, a check, and before it the note
-// that new ones come tomorrow where it keeps TOMORROW_GAP clear of the row's label.
+// each, filled in the glow once solved, smaller where they would come within TOMORROW_GAP
+// of the row's label (a desktop's narrow column); once all are, a check, and before it
+// the note that new ones come tomorrow where it keeps that gap too.
 let DONE = 26.0;
 let TOMORROW_GAP = 16.0;    // dp between the row's label and the note at least
 let CHECK_GAP = 4.0;        // dp between the note and the check's box (the check is inset in it)
@@ -594,19 +595,20 @@ fn today_dots(g: gui::Gui&, r: float4, t: settings::Today&) {
     guard n > 0 else { return; }
     var c = r;
     gui::cut_right(c, 18.0 * u);
+    // The label's end as gui::row puts it: after its side, its icon, and their gap.
+    let label = r.x + (18.0 + 34.0 + 18.0) * u + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES));
     if picker::today_solved(t) >= n {
         let k = DONE * u;
         gui::glyph_icon(g, gui::center(gui::cut_right(c, k), k, k), gui::CHECK, gui::ON, 0.0, 1.0);
         gui::cut_right(c, CHECK_GAP * u);
-        // The label's end as gui::row puts it: after its side, its icon, and their gap.
-        let label = r.x + (18.0 + 34.0 + 18.0) * u + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES));
         let note = strings::get(strings::DAILY_HOME_TOMORROW);
         if label + TOMORROW_GAP * u + gui::text_width(g, gui::note_face(), note) <= c.x + c.z {
             gui::text(g, gui::note_face(), c, note, gui::NOTE_A, 0.0, gui::RIGHT);
         }
         return;
     }
-    picker::dots(g, gui::cut_right(c, picker::dots_w(n, u)), n, t.stars[..], -1);
+    let room = c.x + c.z - (label + TOMORROW_GAP * u);
+    picker::dots(g, gui::cut_right(c, clamp(room, 0.0, picker::dots_w(n, u))), n, t.stars[..], -1);
 }
 
 // Whether quitting asks first (ask_quit): on a desktop, where a gamepad's B or Escape on

@@ -53,7 +53,7 @@ let MISTAKES = 18;
 let MOVES = 19;
 let LIST_OFF = 20;          // the moves panel's row: off, the moves, marks
 let LIST_MARKS = 22;
-let DAILY_10 = 26;          // puzzles a day: 3, 4, 5, 10
+let DAILY_8 = 26;           // puzzles a day: 3, 4, 6, 8
 let TILES = 27;
 let ENGLISH = 27;           // the language list's rows, after the screen's tiles
 let EESTI = 28;
@@ -211,10 +211,13 @@ fn main() {
     tap(sh, g, LIST_MARKS, 5.2);
     print("marks: moves ", sh.prefs.moves, ", the game's ", sh.game.moves_shown);
     // Puzzles a day: 10, then 4 again.
-    tap(sh, g, DAILY_10, 5.3);
-    print("10 a day: ", sh.prefs.daily_count, ", to write ", sh.changed);
-    tap(sh, g, DAILY_10 - 2, 5.4);
+    tap(sh, g, DAILY_8, 5.3);
+    print("8 a day: ", sh.prefs.daily_count, ", to write ", sh.changed);
+    tap(sh, g, DAILY_8 - 2, 5.4);
     print("4 a day: ", sh.prefs.daily_count);
+    // A file from before the counts were 3, 4, 6, and 8 (2026-11-16): the nearest, up on a tie.
+    print("a file's 5 a day reads ", settings::parse("daily_count = 5\n").daily_count, ", 10 reads ",
+          settings::parse("daily_count = 10\n").daily_count, ", 1 reads ", settings::parse("daily_count = 1\n").daily_count);
     sh.changed = false;
     draughts(sh, g, rules::BRAZILIAN, 9.0);
     show(sh, "Brazilian");

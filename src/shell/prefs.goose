@@ -78,7 +78,15 @@ let MOVES_NAMES = ["hidden", "list", "marks"];
 let OLD_SKILL = [10, 40, 90];
 let CLOCK_NAMES = ["none", "5+3", "10+5"];
 // Puzzles a day, the parent's choice in settings.
-let DAILY_COUNTS = [3, 4, 5, 10];
+let DAILY_COUNTS = [3, 4, 6, 8];
+
+// The setting's count nearest n, the larger on a tie: a file from before 2026-11-16, when
+// the counts were 3, 4, 5, and 10, reads 5 as 6 and 10 as 8.
+fn nearest_count(n: i64) -> i64 {
+    var best = DAILY_COUNTS[0];
+    for c in DAILY_COUNTS { if abs(n - c) <= abs(n - best) { best = c; } }
+    return best;
+}
 
 // A day's daily puzzles as a player had them: the day (days since the epoch by the local
 // date, -1 for none yet), the puzzles picked, by their ids in the set's library, and the
@@ -248,9 +256,7 @@ fn parse(text: const u8[:]) -> Settings {
             if kind == "rated" && n >= 0 { s.rated[rated_v] = n; }
             if kind == "learned" && n >= 0 { s.learned[rated_v] = n; }
         }
-        if key == "daily_count" && number {
-            for c in DAILY_COUNTS { if n == c { s.daily_count = c; } }
-        }
+        if key == "daily_count" && number { s.daily_count = nearest_count(n); }
         if has_of && rated_known { parse_daily(s, kind, puzzles::set_of(rated_v), value); }
         var set = -1;
         if key == "stars" { set = rules::INTERNATIONAL; }

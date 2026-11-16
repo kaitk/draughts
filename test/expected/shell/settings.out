@@ -97,8 +97,9 @@ mistakes only: picture = fox;season = summer;background = photo;board = 3d;mater
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.06666667, rings pulsing 2 still 0, kings drawn 2.0, animating true
 moves panel off: moves 0, the game's 0, to write true
 marks: moves 2, the game's 2
-10 a day: 10, to write true
+8 a day: 8, to write true
 4 a day: 4
+a file's 5 a day reads 6, 10 reads 8, 1 reads 3
 Brazilian: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = stack;opponent = computer;draughts = brazilian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
 auto: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = brazilian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
 International: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
