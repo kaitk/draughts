@@ -52,7 +52,6 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
   60 fps.
 - Renderer: 065 NoGraphicsAPI through goose-ngfx, 073 the renderer chosen at run time,
   074 ngfx against gfx on Windows, 077 ngfx's MSAA and older Apple GPUs.
-- Code: 090 plain names, for a reader of English as a second language.
 - Later: 010 goose_gfx changes upstream, 013 season effects, 014 upscaled backgrounds,
   060 shared blocks for a second board game.
 

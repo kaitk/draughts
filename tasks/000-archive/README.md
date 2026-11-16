@@ -255,3 +255,7 @@ and the commit that last has it.
   slider; 19 sounds, 1503 KB in the mixer, made in about 30 ms on the Mac
   ([sound](../../docs/architecture/sound.md)). Checked on the Mac and the Pixel 7a; left
   over: the tablet's check and an iPhone's silent switch. `089-sound.md`, `4b28633`
+- 090: Plain names. Done: the review's 25 rows and the names checking them turned up
+  renamed to literal compound ones, area by area (gui, board and game, shell, the app,
+  then `who` as `player_card`), with no test output changed; the naming bar is in
+  `agents/goose.md`. `090-plain-names.md`, `ed96795`
