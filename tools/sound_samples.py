@@ -9,6 +9,7 @@ by; the one chosen is then downloaded in full quality from its page (a free acco
 and credited if its license asks for it. Needs ffmpeg.
 
     python3 tools/sound_samples.py
+    python3 tools/sound_samples.py originals   # design/sounds/'s full-quality hits
 """
 import base64, json, math, os, struct, subprocess, sys, urllib.request
 
@@ -62,9 +63,9 @@ def decode(path):
     return list(struct.unpack(f'<{len(raw) // 4}f', raw))
 
 
-def hits(x, take):
+def hits(x, take, rate=RATE, most=MAX_HITS):
     """Single hits: where 5 ms frames rise well over the quiet, kept to those quiet before."""
-    F = RATE // 200
+    F = rate // 200
     rms = [math.sqrt(sum(v * v for v in x[i:i + F]) / F) for i in range(0, len(x) - F, F)]
     if not rms:
         return []
@@ -87,15 +88,15 @@ def hits(x, take):
     found.sort()
     out = []
     for quiet, s, e in found:
-        if quiet > 0.35 or len(out) >= MAX_HITS:
+        if quiet > 0.35 or len(out) >= most:
             continue
-        a, b = max(0, s * F - RATE // 400), min(len(x), (e + 4) * F)
+        a, b = max(0, s * F - rate // 400), min(len(x), (e + 4) * F)
         h = x[a:b]
         n = len(h)
-        fi, fo = RATE // 500, min(n // 3, RATE // 40)
+        fi, fo = rate // 500, min(n // 3, rate // 40)
         h = [v * min(1, k / fi) * min(1, (n - k) / fo) for k, v in enumerate(h)]
         # Matched loudness: the first 80 ms's RMS to one level, the peak kept under 0.98.
-        head = h[:RATE * 80 // 1000]
+        head = h[:rate * 80 // 1000]
         r = math.sqrt(sum(v * v for v in head) / len(head)) + 1e-9
         g = min(0.12 / r, 0.98 / (max(abs(v) for v in h) + 1e-9))
         out.append((s, [v * g for v in h]))
@@ -105,6 +106,26 @@ def hits(x, take):
 
 def pcm(h):
     return base64.b64encode(struct.pack(f'<{len(h)}h', *(int(max(-1, min(1, v)) * 32767) for v in h))).decode()
+
+
+def originals():
+    """The full-quality originals in design/sounds/ (task 089), cut into hits at 48 kHz
+    as 32-bit floats, for prototypes/sound-codec.html to encode and compare."""
+    src = os.path.join(os.path.dirname(__file__), '..', 'design', 'sounds')
+    data = []
+    for sid, kind, title in [(765866, 'move', 'MattyCauldron, Chess Pieces'), (733927, 'take', 'JJTaynos, Chess Pieces Move (Close)')]:
+        raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', os.path.join(src, f'{sid}.wav'), '-ac', '1', '-ar', '48000', '-f', 'f32le', '-'],
+                             check=True, capture_output=True).stdout
+        x = list(struct.unpack(f'<{len(raw) // 4}f', raw))
+        hs = hits(x, kind == 'take', 48000, 12)
+        print(f'{sid}: {len(hs)} hits', file=sys.stderr)
+        data.append({'id': sid, 'kind': kind, 'title': title,
+                     'hits': [base64.b64encode(struct.pack(f'<{len(h)}f', *h)).decode() for h in hs]})
+    os.makedirs(OUT, exist_ok=True)
+    with open(os.path.join(OUT, 'originals.js'), 'w') as f:
+        f.write('// Made by tools/sound_samples.py originals from design/sounds/; local, out of git.\nwindow.ORIGINALS = ')
+        json.dump({'rate': 48000, 'list': data}, f)
+        f.write(';\n')
 
 
 def main():
@@ -134,4 +155,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    originals() if sys.argv[1:] == ['originals'] else main()

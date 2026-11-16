@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: sound storage</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<script src="samples/originals.js"></script>
+<style>
+  /* How to store the move's and the take's hits (task 089): each hit cut from the
+     full-quality original (48 kHz, from design/sounds/ by `tools/sound_samples.py
+     originals`), then encoded here as the build would and decoded as the app would:
+     16-bit PCM at 24 kHz and IMA ADPCM (4 bits) at 24 kHz, the two options (&more=1
+     adds both at 16 kHz, to see how far it goes). "Lost" plays only what a format throws away (the original less the
+     decoded), 4 times louder. Tick the hits to keep: the sizes add up the kept ones, and
+     the ticks go in the URL (&keep=) to send back. */
+  body { overflow: hidden; }
+  .set { position: fixed; inset: 0; display: grid; place-items: start center; padding: 16px; }
+  .panel { --r: 28px; border-radius: 28px; width: min(1080px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 16px 22px 24px; scrollbar-width: thin; }
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .head h1 { margin: 0; font-size: 30px; font-weight: 400; flex: 1; }
+  .head label { display: flex; align-items: center; gap: 8px; font-size: 16px; color: var(--fg-dim); }
+  .head input[type=range] { width: 150px; accent-color: var(--glow); }
+  .lead { margin: 6px 0 10px; font-size: 15px; line-height: 1.35; color: var(--fg-dim); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { padding: 6px 8px; text-align: left; white-space: nowrap; }
+  th { font-weight: 400; color: var(--fg-dim); font-size: 14px; }
+  tbody tr + tr td { border-top: 1px solid rgb(255 255 255 / 0.07); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-dim); }
+  h2 { margin: 18px 0 4px; font-size: 21px; font-weight: 400; }
+  .b { height: 36px; min-width: 44px; padding: 0 10px; border-radius: 10px; border: 0; cursor: pointer; color: var(--fg); font: inherit; font-size: 14px;
+    background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14); }
+  .b.lost { background: rgb(0 0 0 / 0.25); color: var(--fg-dim); }
+  .b.row { background: color-mix(in srgb, var(--glow) 22%, transparent); }
+  .sizes td { font-variant-numeric: tabular-nums; }
+  .sizes td:first-child { color: var(--fg); }
+  input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--glow); }
+  .warn { padding: 10px 14px; border-radius: 12px; background: rgb(160 40 30 / 0.35); }
+</style>
+</head>
+<body>
+<main class="set"><div class="panel glass" id="panel"></div></main>
+<script>
+  const P = new URLSearchParams(location.search);
+  const O = window.ORIGINALS;
+
+  // ---- The formats: encode as a build tool would, decode as the app would --------------
+  // 48 kHz to 24 or 16 kHz: a windowed-sinc low-pass just under the new Nyquist, every
+  // 2nd or 3rd sample kept. The app plays them at their own rate (audio::create_sound's
+  // sample_rate), the mixer resampling.
+  function down(x, k) {
+    const taps = 64 * k + 1, half = (taps - 1) / 2, fc = 0.45 / k, h = new Float32Array(taps);
+    let sum = 0;
+    for (let i = 0; i < taps; i++) {
+      const n = i - half, w = 0.42 - 0.5 * Math.cos(2 * Math.PI * i / (taps - 1)) + 0.08 * Math.cos(4 * Math.PI * i / (taps - 1));
+      h[i] = w * (n === 0 ? 2 * fc : Math.sin(2 * Math.PI * fc * n) / (Math.PI * n)); sum += h[i];
+    }
+    const out = new Float32Array(Math.ceil(x.length / k));
+    for (let o = 0; o < out.length; o++) {
+      let v = 0; const c = o * k;
+      for (let i = 0; i < taps; i++) { const j = c + i - half; if (j >= 0 && j < x.length) v += x[j] * h[i]; }
+      out[o] = v / sum;
+    }
+    return out;
+  }
+  const to16 = (x) => Int16Array.from(x, (v) => Math.max(-32768, Math.min(32767, Math.round(v * 32767))));
+  const from16 = (q) => Float32Array.from(q, (v) => v / 32767);
+  // IMA ADPCM: 4 bits a sample, the step adapting by the last code. The stream starts at
+  // predictor 0 and step index 0 (a hit starts from silence), two codes a byte. The
+  // decoder is decode() alone: the app's whole cost.
+  const STEPS = [7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
+    130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282,
+    1411, 1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493,
+    10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767];
+  const INDEX = [-1, -1, -1, -1, 2, 4, 6, 8];
+  function step(state, code) {
+    const st = STEPS[state.i];
+    let d = st >> 3;
+    if (code & 4) d += st; if (code & 2) d += st >> 1; if (code & 1) d += st >> 2;
+    state.p = Math.max(-32768, Math.min(32767, state.p + (code & 8 ? -d : d)));
+    state.i = Math.max(0, Math.min(88, state.i + INDEX[code & 7]));
+    return state.p;
+  }
+  function encode(q) {
+    const out = new Uint8Array(Math.ceil(q.length / 2)), s = { p: 0, i: 0 };
+    for (let n = 0; n < q.length; n++) {
+      const st = STEPS[s.i];
+      let diff = q[n] - s.p, code = 0;
+      if (diff < 0) { code = 8; diff = -diff; }
+      if (diff >= st) { code |= 4; diff -= st; }
+      if (diff >= st >> 1) { code |= 2; diff -= st >> 1; }
+      if (diff >= st >> 2) code |= 1;
+      step(s, code);
+      out[n >> 1] |= n & 1 ? code << 4 : code;
+    }
+    return out;
+  }
+  function decode(bytes, n) {
+    const out = new Int16Array(n), s = { p: 0, i: 0 };
+    for (let k = 0; k < n; k++) out[k] = step(s, (bytes[k >> 1] >> (k & 1 ? 4 : 0)) & 15);
+    return out;
+  }
+  const ALL_FORMATS = [
+    ['orig', 'Original', '48 kHz float', null],
+    ['pcm24', 'PCM 16-bit', '24 kHz', (x) => { const q = to16(down(x, 2)); return { y: from16(q), rate: 24000, bytes: q.length * 2 }; }],
+    ['adp24', 'ADPCM 4-bit', '24 kHz', (x) => { const q = to16(down(x, 2)), e = encode(q); return { y: from16(decode(e, q.length)), rate: 24000, bytes: e.length }; }],
+    ['pcm16', 'PCM 16-bit', '16 kHz', (x) => { const q = to16(down(x, 3)); return { y: from16(q), rate: 16000, bytes: q.length * 2 }; }],
+    ['adp16', 'ADPCM 4-bit', '16 kHz', (x) => { const q = to16(down(x, 3)), e = encode(q); return { y: from16(decode(e, q.length)), rate: 16000, bytes: e.length }; }],
+  ];
+  // The two options beside the original; &more=1 adds both at 16 kHz.
+  const FORMATS = P.has('more') ? ALL_FORMATS : ALL_FORMATS.slice(0, 3);
+
+  // ---- The hits ----------------------------------------------------------------------
+  const HITS = [];
+  if (O) for (const src of O.list) src.hits.forEach((b64, k) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)), x = new Float32Array(bytes.buffer);
+    const id = `${src.kind[0]}${k + 1}`, enc = { orig: { y: x, rate: 48000, bytes: x.length * 3 } };
+    for (const [key, , , f] of FORMATS) if (f) enc[key] = f(x);
+    HITS.push({ id, src, k, x, enc });
+  });
+  // "Lost": the original less the decoded, at 48 kHz (the decoded brought back up by
+  // linear interpolation, near enough to hear the codec's noise over the resampling's).
+  function lost(h, key) {
+    const e = h.enc[key], r = 48000 / e.rate, out = new Float32Array(h.x.length);
+    for (let i = 0; i < out.length; i++) {
+      const t = i / r, a = Math.floor(t), f = t - a, v = (e.y[a] || 0) * (1 - f) + (e.y[a + 1] || 0) * f;
+      out[i] = (h.x[i] - v) * 4;
+    }
+    return { y: out, rate: 48000 };
+  }
+
+  let ctx = null, level = 0.5;
+  const gainOf = (v) => (v <= 0 ? 0 : Math.pow(10, (v - 1) * 36 / 20));
+  function play(sig, gain, when = 0) {
+    if (!ctx) ctx = new AudioContext({ sampleRate: 48000 });
+    if (ctx.state === 'suspended') ctx.resume();
+    const b = ctx.createBuffer(1, sig.y.length, sig.rate); b.copyToChannel(sig.y, 0);
+    const s = ctx.createBufferSource(), g = ctx.createGain();
+    s.buffer = b; g.gain.value = gainOf(level) * gain; s.connect(g).connect(ctx.destination); s.start(ctx.currentTime + when);
+  }
+  const GAIN = { move: 0.9, take: 0.5 };   // as the set plays them
+  const keep = new Set((P.get('keep') || '').split(',').filter(Boolean));
+
+  function sizes() {
+    const kept = HITS.filter((h) => keep.has(h.id)), all = kept.length ? kept : HITS;
+    const kb = (n) => (n / 1024).toFixed(1) + ' KB';
+    return `<table class="sizes"><thead><tr><th>${kept.length ? `The ${kept.length} kept hits` : `All ${HITS.length} hits (tick some to keep)`}</th>` +
+      FORMATS.map(([, n, r]) => `<th>${n}, ${r}</th>`).join('') + '</tr></thead><tbody>' +
+      `<tr><td>In git (bytes stored)</td>${FORMATS.map(([key]) => `<td class="num">${kb(all.reduce((a, h) => a + h.enc[key].bytes, 0))}</td>`).join('')}</tr>` +
+      `<tr><td>In memory (the mixer's floats)</td>${FORMATS.map(([key]) => `<td class="num">${kb(all.reduce((a, h) => a + h.enc[key].y.length * 4, 0))}</td>`).join('')}</tr>` +
+      `<tr><td>Length</td>${FORMATS.map(([key]) => `<td class="num">${(all.reduce((a, h) => a + h.enc[key].y.length / h.enc[key].rate, 0)).toFixed(2)} s</td>`).join('')}</tr>` +
+      '</tbody></table>';
+  }
+  function render() {
+    const panel = document.getElementById('panel');
+    if (!O) { panel.innerHTML = '<p class="warn">Run <code>python3 tools/sound_samples.py originals</code> first (the WAVs in design/sounds/).</p>'; return; }
+    panel.innerHTML = `<div class="head"><h1>Storing the move and the take</h1>` +
+      `<label>Volume <input type="range" id="vol" min="0" max="1" step="0.01" value="${level}"></label></div>` +
+      `<p class="lead">Each hit as the original, then encoded and decoded as the build and the app would. "All" plays the hit in each format in a row, ` +
+      `0.6 s apart. "Lost" plays only what that format throws away, 4 times louder: silence means nothing is lost. Original sizes are as 24-bit.</p>` +
+      `<div id="sizes">${sizes()}</div>` +
+      O.list.map((src) => `<h2>${src.kind === 'move' ? 'The move' : 'The take'}: ${src.title} (Freesound ${src.id})</h2><table><thead><tr><th>Keep</th><th>Hit</th><th>ms</th>` +
+        FORMATS.map(([, n, r]) => `<th>${n}<br>${r}</th>`).join('') + '<th></th></tr></thead><tbody>' +
+        HITS.filter((h) => h.src === src).map((h) => `<tr><td><input type="checkbox" data-keep="${h.id}"${keep.has(h.id) ? ' checked' : ''}></td><td>${h.id}</td>` +
+          `<td class="num">${Math.round(h.x.length / 48)}</td>` +
+          FORMATS.map(([key]) => `<td><button class="b" data-h="${h.id}" data-f="${key}">▶</button>${key === 'orig' ? '' : ` <button class="b lost" data-h="${h.id}" data-lost="${key}">Lost</button>`}</td>`).join('') +
+          `<td><button class="b row" data-all="${h.id}">All</button></td></tr>`).join('') + '</tbody></table>').join('');
+    const hit = (id) => HITS.find((h) => h.id === id), gain = (h) => GAIN[h.src.kind];
+    panel.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { const h = hit(b.dataset.h); play(h.enc[b.dataset.f], gain(h)); });
+    panel.querySelectorAll('[data-lost]').forEach((b) => b.onclick = () => { const h = hit(b.dataset.h); play(lost(h, b.dataset.lost), gain(h)); });
+    panel.querySelectorAll('[data-all]').forEach((b) => b.onclick = () => { const h = hit(b.dataset.all); FORMATS.forEach(([key], i) => play(h.enc[key], gain(h), i * 0.6)); });
+    panel.querySelectorAll('[data-keep]').forEach((c) => c.onchange = () => {
+      if (c.checked) keep.add(c.dataset.keep); else keep.delete(c.dataset.keep);
+      const p = new URLSearchParams(location.search);
+      if (keep.size) p.set('keep', [...keep].join(',')); else p.delete('keep');
+      history.replaceState(null, '', `?${p}`);
+      document.getElementById('sizes').innerHTML = sizes();
+    });
+    document.getElementById('vol').oninput = (e) => { level = +e.target.value; };
+    Draughts.sync();
+  }
+  render();
+  Draughts.init();
+</script>
+</body>
+</html>
