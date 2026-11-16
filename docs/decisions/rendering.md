@@ -390,6 +390,12 @@ play; a stack's rings go round its foot (2026-11-08).
   at each angle drew the eye. The flat board's turn fades its pieces 0.15 s each way.
 - A friend's game doesn't turn the board by default, and on the 3D board begins in the
   top view (2026-11-12): the far player would watch it spin every move.
+- The zoom sits at the room's bottom at the rest angle and in its middle in the top view
+  (2026-11-16): at the bottom the top view looked low on a desktop. Centered it is a bit
+  smaller where the panels and buttons stand in the way (a tablet's field 735 dp, was 796).
+- The game's view and zoom are kept in the player's file (`view = top`, `zoom = on`) and
+  come back at launch and with each game (2026-11-16), but not those a friend's game
+  across the table sets for itself.
 
 **States and captures**
 

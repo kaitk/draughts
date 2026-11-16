@@ -7,7 +7,7 @@ the view tapped, 0.3 s on: 65.3° down, board turned 0.0°, bounds 229 113 823 x
   a second later: 0 redraws, animating false
 tapped again: 52.5° down, board turned 0.0°, bounds 205 180 869 x 596
 zoomed: 52.5° down, board turned 0.0°, bounds 145 189 990 x 678, 1.1 times the size; 35 redraws, animating false
-zoomed, the top view: 74.0° down, board turned 0.0°, bounds 201 66 877 x 771
+zoomed, the top view: 74.0° down, board turned 0.0°, bounds 235 67 810 x 711
 back: 52.5° down, board turned 0.0°, bounds 205 180 869 x 596, the same view as at first true
 showcase on: lit true, dot false
 dragged 60 left and 30 down: 61.5° down, board turned 0.0°, bounds 205 180 869 x 596; eye 2.2 12.8 7.8; selected -1, pressed -1, the position the same true, dot true
@@ -23,8 +23,8 @@ started over, turning back: 52.5° down, board turned 278.1°, bounds 205 180 86
   turned: 52.5° down, board turned 0.0°, bounds 205 180 869 x 596, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
 against the computer (white): 52.5° down, board turned 0.0°, bounds 205 180 869 x 596, the flat layout turned true
 after its move: 52.5° down, board turned 0.0°, bounds 205 180 869 x 596, black to move true
-a friend's game, no turn: 74.0° down, board turned 0.0°, bounds 201 66 877 x 771, zoomed true
-  after white's move: 74.0° down, board turned 0.0°, bounds 201 66 877 x 771, black to move true
+a friend's game, no turn: 74.0° down, board turned 0.0°, bounds 235 67 810 x 711, zoomed true
+  after white's move: 74.0° down, board turned 0.0°, bounds 235 67 810 x 711, black to move true
 then against the computer: 52.5° down, board turned 0.0°, bounds 205 180 869 x 596, zoomed false
 flat, a friend's game turning: turned false
   0.1 s into the turn: turned false, the pieces fading out, animating true

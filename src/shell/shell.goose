@@ -283,7 +283,8 @@ fn new(variant: u8) -> Shell {
     return sh;
 }
 
-// Puts the player's settings where they act: the game's move hints and lookout, the
+// Puts the player's settings where they act: the game's move hints, lookout, and the 3D
+// board's view and zoom, the
 // kings on the game's board and the puzzle's, and the skill whose plain threats the
 // lookout leaves to the player (against the computer the game's, against a friend the
 // player's on their level). Called whenever the settings change, the shell's own
@@ -297,6 +298,7 @@ fn apply_prefs(sh: Shell&) {
     sh.puzzle.b.king_look = king_look(sh);
     sh.lesson.b.king_look = king_look(sh);
     gm.lookout_on = p.lookout;
+    rig::choose(gm.cam, p.top, p.zoom);
     gm.moves_shown = p.moves;
     gm.turns = p.turns;
     gm.lookout_skill = if gm.computer >= 0 { gm.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
@@ -715,6 +717,12 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     // Its eye turned on or off: kept in the player's file.
     if ev.lookout_toggled {
         p.lookout = sh.game.lookout_on;
+        sh.changed = true;
+    }
+    // The view and the zoom chosen: kept too, but not a friend's game's across the table.
+    if ev.camera_tapped && !sh.game.cam.across && (p.top != rig::top(sh.game.cam) || p.zoom != rig::zoomed(sh.game.cam)) {
+        p.top = rig::top(sh.game.cam);
+        p.zoom = rig::zoomed(sh.game.cam);
         sh.changed = true;
     }
     aimed(sh, l, sh.game.cam, now);

@@ -427,29 +427,31 @@ fn fit_view(l: Layout&, cam: view3d::Camera, n: i64) -> view3d::View {
 }
 
 // The zoom (landscape): the playing field seen by `cam`, every square and the pieces'
-// tops (view3d::outline's field), as large as fits the room, at its bottom and centered
-// across it, its outline clear of the panels and the buttons by a quarter gap, found by
-// halving. The view's rect is the whole board's bounds, larger than the room.
-fn zoomed(l: Layout&, cam: view3d::Camera, n: i64) -> view3d::View {
+// tops (view3d::outline's field), as large as fits the room, centered across it and, by
+// `up` (the share of the way to the top view), from the room's bottom at the rest angle
+// to its middle in the top view; its outline clear of the panels and the buttons by a
+// quarter gap, found by halving. The view's rect is the whole board's bounds, larger
+// than the room.
+fn zoomed(l: Layout&, cam: view3d::Camera, n: i64, up: f32) -> view3d::View {
     let room = l.room;
     let f = view3d::bounds(cam, n, true);
     let b = view3d::bounds(cam, n);
     var lo: f32 = 0.0;
     var hi = min(room.z / f.z, room.w / f.w);
-    let v = field_at(cam, n, room, f, b, hi);
+    let v = field_at(cam, n, room, f, b, hi, up);
     if clear(v, l.keep, 0.25 * l.gap, true) { return v; }
     for i in 20 {
         let k = 0.5 * (lo + hi);
-        if clear(field_at(cam, n, room, f, b, k), l.keep, 0.25 * l.gap, true) { lo = k; } else { hi = k; }
+        if clear(field_at(cam, n, room, f, b, k, up), l.keep, 0.25 * l.gap, true) { lo = k; } else { hi = k; }
     }
-    return field_at(cam, n, room, f, b, lo);
+    return field_at(cam, n, room, f, b, lo, up);
 }
 
-// cam's view at k pixels a unit with the field's bounds f (at k 1) at the room's bottom,
-// centered across; b the board's bounds, for the rect.
-fn field_at(cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: f32) -> view3d::View {
+// cam's view at k pixels a unit with the field's bounds f (at k 1) centered across the
+// room, at its bottom (`up` 0) or its middle (`up` 1); b the board's bounds, for the rect.
+fn field_at(cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: f32, up: f32) -> view3d::View {
     let x = room.x + 0.5 * (room.z - f.z * k);
-    let y = room.y + room.w - f.w * k;
+    let y = room.y + (room.w - f.w * k) * (1.0 - 0.5 * up);
     let c = float2 { x - f.x * k, y - f.y * k };
     var v = view3d::View { k: k, c: c, rect: float4 { c.x + b.x * k, c.y + b.y * k, b.z * k, b.w * k }, n: n, .. };
     view3d::place(v, cam);
@@ -467,7 +469,7 @@ fn apply_camera(l: Layout&, r: rig::Rig&, now: f64) {
     var v = if fit.pitch == l.pitch { l.rest_view } else { fit_view(l, fit, n) };
     let z = if l.room.z > 0.0 { rig::value(r.zoom, now) } else { 0.0 };
     if z > 0.0 {
-        let q = zoomed(l, fit, n);
+        let q = zoomed(l, fit, n, rig::value(r.top, now));
         v.k += (q.k - v.k) * z;
         v.c = v.c + (q.c - v.c) * z;
         v.rect = v.rect + (q.rect - v.rect) * z;

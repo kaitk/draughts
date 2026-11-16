@@ -110,6 +110,8 @@ struct Settings {
     turns:            bool          = false,   // the setup's: a friend's game turns the board to the side to move (`turn = on`)
     hints:            i64           = board::MISTAKES,
     lookout:          bool          = false,   // the game's lookout, its eye on whose turn's line (`lookout = on`)
+    top:              bool          = false,   // the game's 3D board in the top view (`view = top`)
+    zoom:             bool          = false,   // and zoomed (`zoom = on`)
     kings:            i64           = AUTO,
     language:         i64           = SYSTEM, // strings::EN.., or SYSTEM; the device's, in settings.txt
     // The volume in percent, or VOLUME_DEFAULT; and muted at it (`sound = off`), the
@@ -211,6 +213,8 @@ fn parse(text: const u8[:]) -> Settings {
         if key == "turn" && value == "on" { s.turns = true; }
         if key == "hints" && value == "moves" { s.hints = board::MOVES; }
         if key == "lookout" && value == "on" { s.lookout = true; }
+        if key == "view" && value == "top" { s.top = true; }
+        if key == "zoom" && value == "on" { s.zoom = true; }
         if key == "kings" {
             for name, i in KING_NAMES { if value == name { s.kings = i; } }
         }
@@ -379,6 +383,8 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(if s.turns { "\nturn = on" } else { "\nturn = off" });
     out.append(if s.hints == board::MOVES { "\nhints = moves" } else { "\nhints = mistakes" });
     out.append(if s.lookout { "\nlookout = on" } else { "\nlookout = off" });
+    out.append(if s.top { "\nview = top" } else { "\nview = rest" });
+    out.append(if s.zoom { "\nzoom = on" } else { "\nzoom = off" });
     out.append("\nkings = ");
     out.append(KING_NAMES[s.kings]);
     out.append(if s.friend { "\nopponent = friend" } else { "\nopponent = computer" });

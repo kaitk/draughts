@@ -206,6 +206,16 @@ fn across_table(r: Rig&, friend: bool) {
     }
 }
 
+// The view and the zoom the player chose last (Settings.top, .zoom), put at once, unless
+// a friend's game across the table has set its own; one already there is left easing.
+fn choose(r: Rig&, top: bool, zoom: bool) {
+    guard !r.across else { return; }
+    let t: f32 = if top { 1.0 } else { 0.0 };
+    let z: f32 = if zoom { 1.0 } else { 0.0 };
+    if r.top.to != t { put(r.top, t); }
+    if r.zoom.to != z { put(r.zoom, z); }
+}
+
 // A new game: the turn put afresh with its first frame, the showcase off and at rest.
 // The view and the zoom stay as chosen.
 fn reset(r: Rig&) {
