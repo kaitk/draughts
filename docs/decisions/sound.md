@@ -59,7 +59,12 @@ The decisions behind the app's sounds, dated, with their reasons. How they work 
   and the loss mallet notes; a draw the kannel's two low strings. Rejected: a marimba
   crowning and a first win that were too much, and the prototype's other takes
   (flute, ocarina, kalimba, tongue drum, temple blocks, music box, a small orchestra,
-  a blackbird), kept for later in git history.
+  a blackbird).
+- The sound prototypes removed once the app had the sounds (2026-11-16):
+  `prototypes/sound.html` (every candidate playable in a game against a random computer),
+  `sound-set.html` (the set and the moments' takes), `sound-codec.html` (the hits as PCM
+  and ADPCM), their synthesis `sound.js`, and `tools/sound_samples.py`, which fetched the
+  Freesound candidates and cut the originals. Commit 06d8987 is the last that has them.
 
 ## Storing and making them
 

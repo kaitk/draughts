@@ -15,10 +15,7 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 | `results.html` | The results: the rating per draughts, by level, the games played |
 | `replay.html` | A past game at move 20, its steps working, with the whole list and the marks' legend; the move shown (a faded piece where it started, its way in dots, the squares it stood on shaded) and the best move ( on the board only when asked for); `?ply=60` a king's capture; a desktop's larger column |
 | `players.html` | Who's playing, over home |
-| `settings.html` | Settings beside the preview board; one group at a time on a phone |
-| `sound.html` | Task 089: settings with a Sound section (`&control=slider\|steps`), and every sound playable: the preview a game against a random computer, the list (`&view=sounds`), or Freesound's candidates cut into hits (`&view=samples`, after `python3 tools/sound_samples.py`; `&move=ID.K`, `&take=ID.K`); `&timbre=felt\|wood\|stone`, `&kind=desktop` for a desktop's default |
-| `sound-set.html` | Task 089: the first version's sounds, each to play or all in a row, and the takes on the solved puzzle, the win, the end, and the clock's gold and red, one tap to choose (`&solved=` `&win=` `&end=` `&gold=` `&red=`); its synthesis is `sound.js`, shared with `sound.html` |
-| `sound-codec.html` | Task 089: the move's and the take's hits from the full-quality originals (after `python3 tools/sound_samples.py originals`), each as the original, 16-bit PCM, and IMA ADPCM at 24 kHz (`&more=1` adds 16 kHz), with what each throws away, the sizes, and ticks to keep (`&keep=`) |
+| `settings.html` | Settings beside the preview board: Look, Sound (the Volume row: a speaker and a slider), and Game; one group at a time on a phone |
 | `tutorial.html` | How to play: a new player's question (`?view=ask`), the steps played on the board (`?view=step&step=N`, `&v=intl\|brazilian\|russian`), and the end's ways on (`?view=done`) |
 
 Every page takes the same few parameters, none needed:

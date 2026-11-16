@@ -18,7 +18,7 @@ store/preview/img/
 
 # Shots of the 3D boards for the prototypes, made with build/board_shot (tools/board_shot.goose, prototypes/README.md)
 prototypes/shots/
-# Freesound previews and their hits for prototypes/sound.html, made by tools/sound_samples.py
+# Freesound previews and hits the removed tools/sound_samples.py made (task 089); local
 prototypes/samples/
 # The sounds' original recordings stay local; task 089 says where they come from
 design/sounds/*.wav
