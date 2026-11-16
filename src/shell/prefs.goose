@@ -118,6 +118,9 @@ struct Settings {
     // speaker's tile. The device's, in settings.txt.
     volume: i64  = VOLUME_DEFAULT,
     muted:  bool = false,
+    // A desktop's window filling the screen (`window = full`), as Alt+Enter or F11 last left
+    // it. The device's, in settings.txt.
+    full: bool = false,
     // A new game's setup, kept for the next one: against a friend or the computer
     // (`opponent = friend|computer`, the computer by default), the draughts, the level,
     // the child's pieces, the clock.
@@ -222,6 +225,7 @@ fn parse(text: const u8[:]) -> Settings {
             for name, i in strings::LANGUAGES { if value == name { s.language = i; } }
         }
         if key == "sound" && value == "off" { s.muted = true; }
+        if key == "window" && value == "full" { s.full = true; }
         if key == "opponent" && value == "friend" { s.friend = true; }
         if key == "draughts" {
             let v, known = rules::variant_named(value);

@@ -176,7 +176,8 @@ fed389b.
   only (up and down then need a rule). Enter is a tap, one path through `board::press`.
   The cursor is a glow line inside its square, drawn over the 3D board's kept image.
 - Tab and a gamepad's shoulders step between the game screen's three groups (2026-11-11).
-  Fullscreen is Alt+Enter or F11, borderless at the desktop's resolution (2026-11-12).
+  Fullscreen is Alt+Enter or F11, borderless at the desktop's resolution (2026-11-12),
+  and the device's settings.txt remembers it for the next start (2026-11-16).
 - goose_gfx owns the gamepad (2026-11-12, replacing 2026-11-11's `src/app/pad.c`). With
   `SYSTEM_GAMEPADS` (the fork's `gamepad-wake`) the system wakes the idle wait on Apple's
   systems and Android; on Windows the idle wait reads the pads every 16 ms, about 0.5% of

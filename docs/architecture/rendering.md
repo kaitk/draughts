@@ -281,7 +281,9 @@ history ([where](../decisions/rendering.md#controls)).
 - **Groups**: Tab and Shift+Tab step between a screen's groups (`gui::group`), each
   remembering its last control.
 - **Fullscreen**: on a desktop Alt+Enter or F11 toggles it (`host::fullscreen_key`);
-  `--size full` opens fullscreen.
+  settings.txt keeps it (`window = full`) and the next start opens so, as does
+  `--size full`. The window's state at closing is kept too, so leaving by macOS's green
+  button sticks.
 - **A gamepad** is the keys (`host::keys`): D-pad or left stick move, A is Enter, B is
   Escape, the shoulders Shift+Tab and Tab. goose_gfx reads the first gamepad each frame,
   opened with `SYSTEM_GAMEPADS` so the system wakes gfx's idle wait on input (on Windows

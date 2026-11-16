@@ -160,13 +160,15 @@ fn report_dropped(lp: Loop&, g: gui::Gui&, sh: shell::Shell&) {
 
 // A switches the 3D board between MSAA and SMAA; Alt and Enter, or F11, a desktop's window
 // to fullscreen and back; neither while a name is typed, which keeps the keyboard up.
-fn follow_keys(lp: Loop&, h: host::Host&, rd: render::Renderer&, out: shell::Frame&) {
+fn follow_keys(lp: Loop&, h: host::Host&, rd: render::Renderer&, sh: shell::Shell&, out: shell::Frame&) {
     if !out.typing && host::aa_key() {
         render::toggle_aa(rd);
         lp.dirty = true;
     }
     if !out.typing && host::fullscreen_key() {
         host::toggle_fullscreen();
+        sh.prefs.full = !sh.prefs.full;
+        players::write(sh.players, sh.prefs);
         lp.dirty = true;
     }
     host::keyboard(h, out.typing, out.keyboard);
@@ -240,7 +242,7 @@ fn run() {
     let mobile = platform != host::DESKTOP;
     // An iOS app never closes itself, so home has no way out there.
     if on_ios { home::closable = false; }
-    var h = host::open(strings::get(strings::APP_NAME), f.width, f.height, f.full, f.no_vsync);
+    var h = host::open(strings::get(strings::APP_NAME), f.width, f.height, f.full || prefs.full, f.no_vsync);
     defer host::close();
 
     var sh = shell::new((if f.variant >= 0 { f.variant } else { prefs.variant }) as u8);
@@ -281,7 +283,7 @@ fn run() {
         let out .= shell::frame(sh, g, lp.size.x, lp.size.y, now, ready3d, shown3d, lp.day, lp.zone);
         if out.changed { lp.dirty = true; }
         report_dropped(lp, g, sh);
-        follow_keys(lp, h, rd, out);
+        follow_keys(lp, h, rd, sh, out);
         if out.quit { break; }
         // After shell::frame, so a game started over this frame is asked at its new skill.
         let moved = think::frame(thinker, sh.game);
@@ -323,6 +325,12 @@ fn run() {
         if dev::after(dv, f, rd, drew, lp.size, now) { break; }
     }
     dev::end(f, rd);
+    // The window as it closes is the next start's: macOS's green button also leaves
+    // fullscreen. Not in a run that --size full opened so.
+    if !mobile && !f.full && host::fullscreen() != sh.prefs.full {
+        sh.prefs.full = !sh.prefs.full;
+        players::write(sh.players, sh.prefs);
+    }
     sound::close(bank);
     shell::write_game(sh);
     if sh.out.quit { host::close_app(); }

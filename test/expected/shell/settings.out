@@ -143,4 +143,5 @@ the volume:
   pressed at the slider's left: volume 4 under 10 true; dragged on, down and a little off it: volume over 40 true, not scrolled true, heard 0, to write false
   let go further on: volume over 70 true, heard 1, to write true
   settings.txt at 64, muted: true, read back 64 true; a file without them: true true
+  fullscreen read back true; a file without it windowed true
   a desktop's default: 0.5
