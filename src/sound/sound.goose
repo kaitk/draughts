@@ -24,7 +24,7 @@ let WRONG = 3;              // two low soft knocks, the second lower
 let MUST = 4;               // the same knocks, the second up: a capture due elsewhere
 let GOLD = 5;               // one mallet note: a clock under a minute
 let RED = 6;                // the note as ri-tai: a clock at 0:20
-let SOLVED = 7;             // three notes up
+let SOLVED = 7;             // three mallet notes up, low: D4, F sharp, A
 let WON = 8;                // three notes up, lower and slower
 let LOST = 9;               // two low notes together: a close, never a sad one
 let DRAWN = 10;             // the kannel's two low strings
@@ -37,6 +37,7 @@ let TAKE_GAIN = 0.5;
 let CROWN_GAIN = 0.12;
 let KNOCKS_GAIN = 0.4;
 let MOMENT_GAIN = 0.1;
+let WIN_GAIN = 0.07;           // a solved puzzle and a win, 3 dB under the other moments
 
 // The volume's slider, 0..1, to a gain: -36 dB at its foot to 0 dB at the top, as the
 // ear hears loudness; a linear gain would put all the change in its first fifth.
@@ -53,12 +54,11 @@ let TOP_STEP = 9;
 let D3 = 146.8;
 let A3 = 220.0;
 let E4 = 329.6;
+let FS4 = 370.0;            // F sharp
 let D4 = 293.7;
 let A4 = 440.0;
 let D5 = 587.3;
 let E5 = 659.3;
-let F5 = 740.0;             // F sharp
-let A5 = 880.0;
 
 let MOST_SOUNDS = 32;
 struct Bank {
@@ -152,7 +152,7 @@ fn moment(kind: i64) -> f32[>..] {
             let a = note(A4, 0.4);
             x = ritai(a);
         }
-        if kind == SOLVED { three(x, 0.12, D5, F5, A5, 0.45, 0.8); }
+        if kind == SOLVED { three(x, 0.14, D4, FS4, A4, 0.5, 0.8); }
         if kind == WON { three(x, 0.14, D4, A4, D5, 0.5, 0.7); }
         if kind == LOST {
             let a = note(A3, 0.8);
@@ -167,7 +167,7 @@ fn moment(kind: i64) -> f32[>..] {
             add(x, 0.09, b);
         }
         even(x);
-        scale(x, MOMENT_GAIN);
+        scale(x, if kind == SOLVED || kind == WON { WIN_GAIN } else { MOMENT_GAIN });
     }
     return x;
 }

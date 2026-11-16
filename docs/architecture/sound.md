@@ -57,12 +57,13 @@ volume is one gain for all:
 | `CROWN` | A kannel's two plucks up a fifth (`pluck`, Karplus-Strong) | 1.6 s |
 | `WRONG`, `MUST` | Two low felt knocks (`knock`, modal), the second lower, or higher for `MUST` | 0.2 s |
 | `GOLD`, `RED` | A mallet note (`note`), and the same as ri-tai, short then long (`ritai`) | 1.5 s |
-| `SOLVED`, `WON` | Three mallet notes up | 2.6 s |
+| `SOLVED` | Three mallet notes up, low (D4, F sharp, A), 3 dB under the other moments | 2.5 s |
+| `WON` | Three mallet notes up (D4, A, D5), 3 dB under the other moments | 2.4 s |
 | `LOST` | Two low notes together | 3.0 s |
 | `DRAWN` | The kannel's two low strings | 2.4 s |
 
 Every sound's tail is cut once it stays under -54 dBFS (`trim`), with a 10 ms fade.
-All 19 come to 1537 KB of the mixer's `f32` and are made in about 30 ms on the Mac.
+All 19 come to 1503 KB of the mixer's `f32` and are made in about 30 ms on the Mac.
 `sound::play(bank, kind, step)` is one call to `audio::play`; the voices are the
 mixer's, so nothing allocates in the frame loop.
 

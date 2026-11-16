@@ -55,8 +55,14 @@ The decisions behind the app's sounds, dated, with their reasons. How they work 
   slides; Stone's alabaster move and a piece's bounce).
 - The rest is synthesized (2026-11-16): the crowning a kannel's two plucks up a fifth
   (Karplus-Strong; Estonia's instrument), a wrong move two low felt knocks, a capture due
-  the same knocks with the second pitched up, and the clock, the solved puzzle, the win,
-  and the loss mallet notes; a draw the kannel's two low strings. Rejected: a marimba
+  the same knocks with the second pitched up, and the clock, the win, and the loss mallet
+  notes; a draw the kannel's two low strings. A solved puzzle is three mallet notes up an
+  octave low, D4, F sharp, and A (2026-11-16), checked on the Pixel's speaker. Rejected:
+  the same notes an octave up (D5), which grated on the Mac, the brightest sound of the
+  set and the nearest to a reward's ding; and the kannel's two low plucks, too close to
+  the crowning, which a puzzle often plays just before. A solved puzzle and a won game
+  are 3 dB under the other moments (2026-11-16): at the moments' level they were a little
+  loud on the Mac and the Pixel. Rejected: a marimba
   crowning and a first win that were too much, and the prototype's other takes
   (flute, ocarina, kalimba, tongue drum, temple blocks, music box, a small orchestra,
   a blackbird).
@@ -78,7 +84,7 @@ The decisions behind the app's sounds, dated, with their reasons. How they work 
 - Everything at 24 kHz, tails cut once inaudible, and made only while the volume is
   above zero (2026-11-16); the device is opened only then and closed at zero, so a phone
   at its default never opens audio, takes no audio focus, and spends no battery on it.
-  Measured: 19 sounds, 1537 KB in the mixer (the task's guess was 0.5 to 1 MB; the
+  Measured: 19 sounds, 1503 KB in the mixer (the task's guess was 0.5 to 1 MB; the
   mallet notes' long tails are most of it), made in about 30 ms on the Mac at -O2.
   Rejected: making them at launch, which a phone at its default would pay for nothing.
 
