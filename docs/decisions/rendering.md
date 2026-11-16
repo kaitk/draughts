@@ -177,6 +177,13 @@ fed389b.
   The cursor is a glow line inside its square, drawn over the 3D board's kept image.
 - Tab and a gamepad's shoulders step between the game screen's three groups (2026-11-11).
   Fullscreen is Alt+Enter or F11, borderless at the desktop's resolution (2026-11-12).
+- A desktop opens in the mode its window was last left in (2026-11-16): the device's
+  `window = fullscreen` in settings.txt, beside the language, since the screen is the
+  device's and not a child's. The loop reads the window's flag each frame, so the Mac's
+  green button and a window manager count as the keys do. A run with `--size`, or with
+  flags that set up a game or take a screenshot, neither follows nor writes it. Rejected:
+  writing only on the keys (misses the green button), keeping the window's size and
+  place too (not asked for).
 - goose_gfx owns the gamepad (2026-11-12, replacing 2026-11-11's `src/app/pad.c`). With
   `SYSTEM_GAMEPADS` (the fork's `gamepad-wake`) the system wakes the idle wait on Apple's
   systems and Android; on Windows the idle wait reads the pads every 16 ms, about 0.5% of

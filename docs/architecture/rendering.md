@@ -279,8 +279,10 @@ history ([where](../decisions/rendering.md#controls)).
   over the kept image, so moving it doesn't redraw the board.
 - **Groups**: Tab and Shift+Tab step between a screen's groups (`gui::group`), each
   remembering its last control.
-- **Fullscreen**: on a desktop Alt+Enter or F11 toggles it (`host::fullscreen_key`);
-  `--size full` opens fullscreen.
+- **Fullscreen**: on a desktop Alt+Enter or F11 toggles it (`host::fullscreen_key`),
+  and the next start opens as the window was left (`window = fullscreen` in
+  settings.txt, `app::follow_window`); `--size full` opens fullscreen, `--size WxH` in a
+  window, either without writing it.
 - **A gamepad** is the keys (`host::keys`): D-pad or left stick move, A is Enter, B is
   Escape, the shoulders Shift+Tab and Tab. goose_gfx reads the first gamepad each frame,
   opened with `SYSTEM_GAMEPADS` so the system wakes gfx's idle wait on input (on Windows

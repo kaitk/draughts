@@ -52,6 +52,7 @@ struct Loop {
     day_read:     f64  = 0.0,
     level:        f32  = -1.0,  // the volume the sounds were last set to, and muted
     muted:        bool = false,
+    window:       bool = false, // a desktop's window mode is the device's, kept for the next start
 }
 
 // The sound each sound event plays (board/sound_event.goose): a capture's stop is the move a step up.
@@ -171,6 +172,16 @@ fn follow_keys(lp: Loop&, h: host::Host&, rd: render::Renderer&, out: shell::Fra
     host::keyboard(h, out.typing, out.keyboard);
 }
 
+// The window's mode as the system has it, so a change by the keys, the Mac's green
+// button, or the window manager is kept, and the next start opens the same way.
+fn follow_window(lp: Loop&, sh: shell::Shell&) {
+    guard lp.window else { return; }
+    let full = host::fullscreen();
+    guard full != sh.prefs.fullscreen else { return; }
+    sh.prefs.fullscreen = full;
+    players::write_device_keys(sh.players, sh.prefs);
+}
+
 // A tap in settings applies at once and is written (shell::Frame.save).
 fn save_settings(lp: Loop&, rd: render::Renderer&, sh: shell::Shell&, system_lang: i64) {
     players::write(sh.players, sh.prefs);
@@ -239,7 +250,11 @@ fn run() {
     let mobile = platform != host::DESKTOP;
     // An iOS app never closes itself, so home has no way out there.
     if on_ios { home::closable = false; }
-    var h = host::open(strings::get(strings::APP_NAME), f.width, f.height, f.full, f.no_vsync);
+    // A desktop opens as it was last left, unless --size says how, or the run's flags set
+    // up a game or take a screenshot; neither of those writes the mode.
+    let window = !mobile && keep && !f.sized;
+    let full = f.full || (window && prefs.fullscreen);
+    var h = host::open(strings::get(strings::APP_NAME), f.width, f.height, full, f.no_vsync);
     defer host::close();
 
     var sh = shell::new((if f.variant >= 0 { f.variant } else { prefs.variant }) as u8);
@@ -250,7 +265,7 @@ fn run() {
     var dv = dev::new(f);
     var g = gui::Gui {};
     var thinker = think::Thinker {};
-    var lp = Loop { day: host::local_day(), day_read: host::time(), .. };
+    var lp = Loop { day: host::local_day(), day_read: host::time(), window: window, .. };
     var bank = sound::Bank {};
     while host::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
@@ -280,6 +295,7 @@ fn run() {
         if out.changed { lp.dirty = true; }
         report_dropped(lp, g, sh);
         follow_keys(lp, h, rd, out);
+        follow_window(lp, sh);
         if out.quit { break; }
         // After shell::frame, so a game started over this frame is asked at its new skill.
         let moved = think::frame(thinker, sh.game);

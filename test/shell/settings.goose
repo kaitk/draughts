@@ -380,11 +380,11 @@ fn volume(sh: shell::Shell&, g: gui::Gui&) {
     print("  let go further on: volume over 70 ", sh.prefs.volume > 70, ", heard ", sh.out.sound_events.len, ", to write ",
           sh.changed);
     var device: u8[>..] = [];
-    players::write_device(sh.prefs.language, 64, true, 1, device);
+    players::write_device(sh.prefs.language, 64, true, true, 1, device);
     let back = settings::parse(device);
-    print("  settings.txt at 64, muted: ", device.len > 0, ", read back ", back.volume, " ", back.muted, "; a file without",
-          " them: ", settings::parse("language = en\n").volume == settings::VOLUME_DEFAULT,
-          " ", !settings::parse("language = en\n").muted);
+    print("  settings.txt at 64, muted, fullscreen: ", device.len > 0, ", read back ", back.volume, " ", back.muted, " ",
+          back.fullscreen, "; a file without them: ", settings::parse("language = en\n").volume == settings::VOLUME_DEFAULT,
+          " ", !settings::parse("language = en\n").muted, " ", !settings::parse("language = en\n").fullscreen);
     settings::default_volume = 50;
     var fresh = settings::Settings {};
     print("  a desktop's default: ", settings::volume_of(fresh));

@@ -136,5 +136,5 @@ the volume:
   the speaker: volume 50, muted false, heard 1, to write true
   pressed at the slider's left: volume 4 under 10 true; dragged on, down and a little off it: volume over 40 true, not scrolled true, heard 0, to write false
   let go further on: volume over 70 true, heard 1, to write true
-  settings.txt at 64, muted: true, read back 64 true; a file without them: true true
+  settings.txt at 64, muted, fullscreen: true, read back 64 true true; a file without them: true true true
   a desktop's default: 0.5

@@ -3,7 +3,7 @@
 // written. They are kept across runs as a small text file per player, one `key = value`
 // per line, which the app reads at start and writes after a change (players.goose): the
 // player's picture and name, whether they have had the first start, the screen's
-// choices but the language and the volume, which are the device's, a new game's setup (the opponent,
+// choices but the language, the volume, and the window, which are the device's, a new game's setup (the opponent,
 // and for a friend whether the board turns), the computer's
 // skill at each level, which moves after each game against it, how many games ended on
 // each level, how many games against it began, and the stars won in each puzzle
@@ -116,6 +116,9 @@ struct Settings {
     // speaker's tile. The device's, in settings.txt.
     volume: i64  = VOLUME_DEFAULT,
     muted:  bool = false,
+    // Whether a desktop's window fills the screen (`window = fullscreen`), as it was last
+    // left, so the next start opens the same way. The device's, in settings.txt.
+    fullscreen: bool = false,
     // A new game's setup, kept for the next one: against a friend or the computer
     // (`opponent = friend|computer`, the computer by default), the draughts, the level,
     // the child's pieces, the clock.
@@ -218,6 +221,7 @@ fn parse(text: const u8[:]) -> Settings {
             for name, i in strings::LANGUAGES { if value == name { s.language = i; } }
         }
         if key == "sound" && value == "off" { s.muted = true; }
+        if key == "window" && value == "fullscreen" { s.fullscreen = true; }
         if key == "opponent" && value == "friend" { s.friend = true; }
         if key == "draughts" {
             let v, known = rules::variant_named(value);
@@ -358,7 +362,7 @@ fn write_daily(s: Settings&, out: u8[>..]&) {
 // The volume, 0..1, as the slider has it: the device's, or the platform's default.
 fn volume_of(s: Settings&) -> f32 { (if s.volume >= 0 { s.volume } else { default_volume }) / 100.0 }
 
-// A player's file for settings s, appended to out: all but the language and the volume.
+// A player's file for settings s, appended to out: all but the device's keys.
 fn write(s: Settings, out: u8[>..]&) {
     out.append("picture = ");
     out.append(players::ANIMALS[clamp(s.picture, 0, players::ANIMALS.len - 1)]);

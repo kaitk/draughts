@@ -1,11 +1,12 @@
 // The players on one tablet (docs/architecture/README.md, "Players"), with no graphics:
 // up to four, each a picture, an optional name, and what a child makes their own (the
 // look, move hints, a new game's setup, the computer's skill and games, puzzle stars,
-// the first start, and the game in progress). The language, the volume, and who is
-// playing belong to the device.
+// the first start, and the game in progress). The language, the volume, a desktop's
+// window, and who is playing belong to the device.
 //
 // The files, in the app's storage folder: `settings.txt` keeps the device's keys
-// (`language`, `volume` and `sound` once changed, `player = N`); `player-N.txt` a player's keys as settings::write writes
+// (`language`, `volume` and `sound` once changed, `window = fullscreen` while it is,
+// `player = N`); `player-N.txt` a player's keys as settings::write writes
 // them; `game-N.bin` the player's saved game (shell::save). N is the player's id, 1 to 4,
 // the lowest free one for a new player; players show in the order of their ids. Each
 // file is written whole and atomically; starting again or removing deletes files.
@@ -46,6 +47,7 @@ struct Players {
     player:   i64  = -1,
     volume:   i64  = -2,
     muted:    bool = false,
+    full:     bool = false,
     // Whether this start found no player and no settings.txt before them: a fresh install,
     // whose child picks their badge first.
     fresh: bool = false,
@@ -131,26 +133,37 @@ fn named_player(text: const u8[:]) -> i64 {
 }
 
 // settings.txt for the device: the language (settings' language value), the volume once
-// it was changed and whether it is muted, and the player.
-fn write_device(language: i64, volume: i64, muted: bool, player: i64, out: u8[>..]&) {
+// it was changed and whether it is muted, whether the window fills the screen, and the
+// player.
+fn write_device(language: i64, volume: i64, muted: bool, full: bool, player: i64, out: u8[>..]&) {
     out.append("language = ");
     out.append(if language >= 0 { strings::LANGUAGES[language] } else { "system" });
     if volume >= 0 { format(out, "\nvolume = ", volume); }
     if muted { out.append("\nsound = off"); }
+    if full { out.append("\nwindow = fullscreen"); }
     format(out, "\nplayer = ", player, "\n");
 }
 
 fn store_device(ps: Players&, s: settings::Settings&, player: i64) {
-    guard files(ps) && (s.language != ps.language || s.volume != ps.volume || s.muted != ps.muted || player != ps.player)
+    guard files(ps) && (s.language != ps.language || s.volume != ps.volume || s.muted != ps.muted || s.fullscreen != ps.full
+            || player != ps.player)
     else { return; }
     var out: u8[>..] = [];
-    write_device(s.language, s.volume, s.muted, player, out);
+    write_device(s.language, s.volume, s.muted, s.fullscreen, player, out);
     if write_file_atomic(device_path(ps), out) {
         ps.language = s.language;
         ps.volume = s.volume;
         ps.muted = s.muted;
+        ps.full = s.fullscreen;
         ps.player = player;
     }
+}
+
+// Writes settings.txt alone, if a device's key in s changed: the window's mode, which
+// isn't a player's.
+fn write_device_keys(ps: Players&, s: settings::Settings&) {
+    guard ps.list.len > 0 else { return; }
+    store_device(ps, s, ps.list[ps.playing].id);
 }
 
 // A player's settings as their file has them; the defaults for one with no file.
@@ -217,6 +230,7 @@ fn load(ps: Players&, dir: const u8[:], games: bool) -> settings::Settings {
         ps.language = device.language;
         ps.volume = device.volume;
         ps.muted = device.muted;
+        ps.full = device.fullscreen;
         ps.player = id;
     }
     let device = settings::parse(text);
@@ -238,6 +252,7 @@ fn load(ps: Players&, dir: const u8[:], games: bool) -> settings::Settings {
     s.language = device.language;
     s.volume = device.volume;
     s.muted = device.muted;
+    s.fullscreen = device.fullscreen;
     store_device(ps, s, ps.list[ps.playing].id);
     return s;
 }
