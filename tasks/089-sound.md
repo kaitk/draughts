@@ -152,8 +152,27 @@ the originals. Into `design/sounds/` (local, out of git, as the backgrounds' ori
 - `733927.wav`: JJTaynos, "Chess Pieces Move (Close)", <https://freesound.org/people/JJTaynos/sounds/733927/>,
   WAV 48 kHz 24-bit mono, 49.0 s, 6.8 MB, CC0. The take.
 
-The hits are cut from them with a script (as `tools/sound_samples.py` cut the previews),
-picked by ear, and only the cut hits go into git: a few short mono clips, tens of KB.
+Downloaded 2026-11-16 and checked: both the originals (24-bit, 48 kHz, 51.83 s stereo
+and 48.98 s mono). The hits are cut from them (`tools/sound_samples.py originals`: 12
+for the move, 6 for the take, 53 to 123 ms each), picked by ear in
+`prototypes/sound-codec.html` (`&keep=`), and only the kept hits go into git.
+
+## Storing the hits (2026-11-16)
+
+IMA ADPCM, 4 bits a sample, mono at 24 kHz: no difference was heard from the original
+or from 16-bit PCM, on headphones. All 18 hits come to about 19 KB (16-bit PCM 77 KB, the
+24-bit originals about 230 KB); the kept ones less. The decoder is about 20 lines (the
+step table and `step` in `sound-codec.html`); each hit is a stream that starts at
+predictor 0 and step index 0. Measured against the original (signal to noise): PCM
+44 to 59 dB on the move's hits and 35 to 47 on the take's, ADPCM 32 to 44 and 28 to 38;
+most of what both lose is above 12 kHz, the 24 kHz rate's cut. Rejected: Ogg Vorbis
+and Opus, whose decoders (stb_vorbis about 5,000 lines of C) outweigh a second of
+audio many times; QOA, worth it only if more recordings come; parameters resynthesized
+from the recordings, which risks the synthetic sound again.
+
+At run time the mixer takes `f32` (`audio::create_sound`), so stored size and memory
+differ: everything is synthesized or decoded at 24 kHz, tails cut once inaudible, and
+only while the volume is above zero: about 0.5 to 1 MB then, nothing at the default off.
 
 ## Building it
 
