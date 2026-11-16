@@ -54,6 +54,7 @@ base.
 | Board | Flat 2D, GPU-drawn; move hints (moves or mistakes only), forced captures pulse, multi-jumps animate; tap or drag to move, a multi-jump by its last square or stop by stop |
 | Play | Pass-and-play; vs computer at 3 levels; either with no clock, 5+3, or 10+5 |
 | Puzzles | About 30 in 3 tiers, International 10×10 first (2026-11-08): find the capture; multi-jumps and crowning; shots and "the only safe move". Now a themed course per draughts, and once Learn is solved in any draughts a few daily puzzles (4 by default) from a large generated library at the player's level, reaching well past the course to puzzles that make a grown-up think (2026-11-14, [puzzles](architecture/puzzles.md#daily-puzzles)) |
+| Sound | A few quiet sounds from what happens on the board, never from a tap: a piece set down, a capture's stops climbing and its taken pieces, a crowning, a wrong move, a capture due, the clock's two warnings, a puzzle solved, a game's end. Off at first on a phone or a tablet, half on a desktop; a Volume row in settings (2026-11-16, [sound](architecture/sound.md)) |
 | Controls | Undo move, start over, back, settings; the lookout and the hint in a game; on home, an X that closes the app |
 | Language | English by default, from a string table picked by the system's locale; Estonian as a translation if it stays cheap, finished after the core gameplay (2026-11-07) |
 | Platforms | Android APK sideloaded onto the tablet; macOS for development. Every screen fits phones and tablets of any proportions, 9:20 to near square, in both orientations, with taps no smaller on the hand than about 10 mm (2026-11-08: phones fit rather than the app being listed for tablets only; [rendering](architecture/rendering.md#screen-sizes-and-the-safe-area)) |
@@ -66,7 +67,7 @@ base.
    (2026-11-07).
 2. **Learning.** Lessons on mini-boards (4×4, 6×6), one rule each, with icons and voice;
    100+ puzzles; endgame drills (2 kings vs 1, Petrov's triangle); child profiles with
-   stars; sound.
+   stars. Sound came earlier, with task 089 (2026-11-16).
 3. **Looks.** A 3D board from the same game state, and the glass UI from the prototypes
    and design boards. Settings' Board row chooses flat or 3D, the 3D board in the
    season's own material or its wood, stone, or carved board, and every screen with a

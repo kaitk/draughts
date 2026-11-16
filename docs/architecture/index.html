@@ -197,6 +197,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
   <li><b>The screen declares itself.</b> This is the heart. <code>shell::frame</code> calls the current screen (home, settings, the game, the puzzle list, a puzzle). The screen lays out its rectangles, declares its buttons, and handles the finger. A press that lands on a button belongs to the button; only otherwise does the board get it. Out comes a <code>shell::Frame</code>: what changed, where the board goes, how blurred the photograph is, and more (section 3).<span class="where">shell::frame → declare → home_screen / game_screen / settings_screen / picker_screen / puzzle_screen</span></li>
   <li><b>Pass notes to the computer.</b> If the game now wants a move, put the question on the worker's queue. If an answer has arrived, give it to the game.<span class="where">think::frame</span></li>
   <li><b>Settings changed?</b> The shell's frame says so (<code>save</code>). Write the player's file, switch language if needed, and schedule a new season photograph two frames later (so the tapped tile can light up first, before the 80 ms load).<span class="where">players::write · shell::wrote · season_in</span></li>
+  <li><b>Play the frame's sounds.</b> If the volume changed, open or close the audio device and make or free the sounds; then play the sounds the boards and the game reported this frame, one a move.<span class="where">app::play_sounds → sound::set_level, sound::play · shell::gather_sound_events</span></li>
   <li><b>Paint, only if needed.</b> If something changed or still moves: the board fills its draw lists, the loop packs everything the renderer needs into one <code>render::Frame</code>, and <code>render::frame</code> paints it all (section 4). Otherwise: nothing is drawn at all.<span class="where">shell::fill · render::Frame · render::frame</span></li>
   <li><b>Set the alarm.</b> If a clock is running, or the computer's move is due, or a hint is on its way, set a timer to wake the loop exactly then.<span class="where">shell::wake_in → clock::until_next, game::due · host::wake_in (wake.c)</span></li>
 </ol>
@@ -273,6 +274,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
     <div class="box pure"><b>model3d/</b><small>the 3D board's shapes and looks as numbers: meshes, colours, lighting, the bake's plan</small></div>
     <div class="box side"><b>strings/</b><small>all the words, by key, per language</small></div>
     <div class="box side"><b>badges/</b><small>animal badges baked to a distance field</small></div>
+    <div class="box"><b>sound/</b><small>the sounds: recorded hits and synthesized notes, made into the mixer only while the volume is up</small></div>
   </div></div>
 </div>
 <div class="legend"><span><i style="background:var(--amber-soft);border-color:var(--amber)"></i>touches the GPU (gfx / SDL)</span><span><i style="background:var(--paper)"></i>pure: no graphics, tested headless</span><span><i style="background:var(--slate-soft)"></i>helpers anyone may use</span></div>

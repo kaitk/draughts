@@ -341,8 +341,9 @@ crossfading. Where the choices don't fit they scroll between the head and play.
 
 **Settings** (`prototypes/settings.html`, `src/shell/settings.goose`): back,
 the title, and the language button pinned on top, then one scrolling list: **Look**
-(Background, Theme, Board: Flat, Raised, Wood, Stone, Carved; Kings), **Game** (Move hints,
-Move list), and the privacy note. A new player starts on Raised on a desktop and on Flat
+(Background, Theme, Board: Flat, Raised, Wood, Stone, Carved; Kings), **Sound** (Volume:
+a speaker and a slider, [sound](sound.md#the-setting)), **Game** (Move hints, Move list),
+and the privacy note. A new player starts on Raised on a desktop and on Flat
 on a phone or a tablet. Pictured rows show a 76 × 50 dp picture over the word
 (`gui::choice`). In landscape the list is a 480 dp column at the left and the preview the
 rest; in portrait the preview is a band on top. The preview is home's board moved there

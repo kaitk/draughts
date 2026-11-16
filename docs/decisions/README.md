@@ -13,6 +13,7 @@ One file per area, as the architecture has:
 - [ai.md](ai.md): the computer player, its levels, the lookout, and the hint
 - [puzzles.md](puzzles.md): the puzzles, their file, and their checks
 - [rendering.md](rendering.md): drawing, the UI, the look, the 3D board, frames, memory
+- [sound.md](sound.md): which sounds, how they are made and stored, and the Volume row
 
 ## The stack
 
