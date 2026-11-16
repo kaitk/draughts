@@ -342,6 +342,12 @@ Task 074 (2026-11-11) and 078 (2026-11-13):
   opens at the game's end, on the flat board even with 3D chosen, and its positions are
   played out from the kept moves. Its list's moves are 34 dp taps: a miss shows the next
   move, which the steps correct. Left and Right step the moves from anywhere.
+- A replay of a game lost or drawn against the computer opens where it turned, the
+  player's first blunder (else first mistake), with the bulb on (2026-11-16): that is
+  what the player came to see. A game won, a friend's, or one with neither opens at the
+  end. Rejected for a win: its worst move (the win is what a child wants to look at).
+  The moves' columns put the player's side first where the board is turned for them, so
+  a row reads the reply before the move it answers.
 - Play from here (2026-11-13): a game from any move of a replay that is neither saved nor
   rated. It shares the replay's head with back; start over returns to the replay's
   position and back to the replay. The game in progress waits in `shell.parked` (53 KB)
