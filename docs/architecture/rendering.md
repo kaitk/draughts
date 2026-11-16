@@ -540,7 +540,8 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   large as clears them.
 - **The camera buttons** (`gui::floating`): View cycles the rest angle and the top view
   (74°), Zoom frames the playing field (landscape only), Showcase lets a drag turn the
-  board ±35° and tip it 35° to 80°; each eases over 0.6 s. The camera is plain data in
+  board ±35° and tip it 35° to 80° (a drag past a limit turns back only from where it
+  reached it); each eases over 0.6 s. The camera is plain data in
   `board/rig.goose`; `panel::apply_camera` fits it each frame. The zoom stands at the
   room's bottom at the rest angle and in its middle in the top view; on a desktop the top
   view's room reaches to a gap above the window's foot, and the board sits lower where

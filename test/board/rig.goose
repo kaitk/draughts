@@ -65,6 +65,16 @@ fn main() {
     rig::drive(r, float2 { 120.0, 100.0 }, true, false, false, 2.0, rest, 10.45);
     rig::drive(r, float2 { 120.0, 100.0 }, false, false, true, 2.0, rest, 10.5);
     show("dragged 10 dp right by the pointer", r, rest, 10.5);
+    // Past the limit and back by the pointer, from -20°: 300 dp left asks 70°, stopped at
+    // 35°; 100 dp back right still asks 40°, past it; back where it was pressed, -20° again.
+    rig::drive(r, float2 { 600.0, 100.0 }, true, true, false, 2.0, rest, 10.6);
+    rig::drive(r, float2 { 0.0, 100.0 }, true, false, false, 2.0, rest, 10.62);
+    show("the pointer 300 dp left", r, rest, 10.62);
+    rig::drive(r, float2 { 200.0, 100.0 }, true, false, false, 2.0, rest, 10.64);
+    show("100 dp back: still at the limit", r, rest, 10.64);
+    rig::drive(r, float2 { 600.0, 100.0 }, true, false, false, 2.0, rest, 10.66);
+    rig::drive(r, float2 { 600.0, 100.0 }, false, false, true, 2.0, rest, 10.68);
+    show("back where it was pressed", r, rest, 10.68);
     rig::showcase_tap(r);
     show("off, the angle kept", r, rest, 11.0);
     show("still kept", r, rest, 20.0);

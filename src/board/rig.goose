@@ -62,7 +62,10 @@ fn put(e: Ease&, v: f32) {
 // field framed), the board's turn in degrees (180 more each hot-seat turn), and the
 // showcase's turn (`swing`, degrees round) and tip (`tilt`, degrees added to the view's
 // angle). `held` from a showcase press to its release, the pointer last at `last`, in
-// pixels. `ready` once the turn has been put where the game stands.
+// pixels, and the turn and the angle down it has asked for since the press (`asked`),
+// past the limits as it goes on: the board stops at a limit and moves again only once
+// the pointer is back where it reached it. `ready` once the turn has been put where the
+// game stands.
 struct Rig {
     top:      Ease   = Ease {},
     zoom:     Ease   = Ease {},
@@ -73,6 +76,7 @@ struct Rig {
     across:   bool   = false,   // the top view and the zoom set for a friend's game that doesn't turn
     held:     bool   = false,
     last:     float2 = float2 { 0.0, 0.0 },
+    asked:    float2 = float2 { 0.0, 0.0 },
     ready:    bool   = false,
 }
 
@@ -141,15 +145,20 @@ fn drag(r: Rig&, d: float2, rest: f32, now: f64) {
 }
 
 // The pointer in the showcase, `scale` pixels a dp: a press takes it, a drag moves the
-// camera, a release lets go. Returns whether the camera moved.
+// camera as drag does, keeping what it asked past a limit (Rig.asked), a release lets
+// go. Returns whether the pointer moved while held.
 fn drive(r: Rig&, at: float2, down: bool, pressed: bool, released: bool, scale: f32, rest: f32, now: f64) -> bool {
     if pressed {
         r.held = true;
         r.last = at;
+        r.asked = float2 { value(r.swing, now), pitch(r, rest, now) + value(r.tilt, now) };
     }
     var moved = false;
     if r.held && down && (at.x != r.last.x || at.y != r.last.y) {
-        drag(r, (at - r.last) * (1.0 / scale), rest, now);
+        let d = (at - r.last) * (1.0 / scale);
+        r.asked = float2 { r.asked.x - d.x * DRAG, r.asked.y + d.y * DRAG };
+        put(r.swing, clamp(r.asked.x, -SWING, SWING));
+        put(r.tilt, clamp(r.asked.y, LOW, HIGH) - pitch(r, rest, now));
         r.last = at;
         moved = true;
     }

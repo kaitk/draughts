@@ -280,6 +280,11 @@ fed389b.
   rest. The choices take their presses first, so a tap on one never moves the board and a
   drag from the board never presses one. Rejected: the angle carried between home and
   settings, which would leave a turned board in a screen opened to change something else.
+- A drag past the showcase's limits keeps what it asked (`Rig.asked`, 2026-11-17): the
+  board stops at ±35° or at 35° and 80° down, and turns back only once the pointer is
+  back where it reached the limit, so through a drag the pointer keeps its place on the
+  board. Turning back at once with the pointer's first move back made a drag to the edge
+  feel as if the board slipped from under the pointer.
 
 **The puzzle picker**
 
