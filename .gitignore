@@ -20,3 +20,5 @@ store/preview/img/
 prototypes/shots/
 # Freesound previews and their hits for prototypes/sound.html, made by tools/sound_samples.py
 prototypes/samples/
+# The sounds' original recordings stay local; task 089 says where they come from
+design/sounds/*.wav
