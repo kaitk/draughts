@@ -82,7 +82,10 @@ file.
   three or more good hits cut from it. No credit is owed (CC0).
 - Crowned: the kannel's two plucks (`pluck`, Karplus-Strong).
 - A capture due: the wrong move's knocks, the second up (`warn`).
-- Still to choose: the win, the end, the solved puzzle, and the volume control.
+- The first version ships with the prototype's defaults for the rest (2026-11-16): the
+  win's three marimba notes, the end's two low ones, the solved puzzle as one phrase of
+  three, the clock's note at gold and three at red, and the Volume row as a slider with
+  the speaker that mutes.
 
 ## The moments' takes
 
@@ -158,8 +161,7 @@ bounce) as the move and the take. Recorded hits are tried beside them:
 ## Acceptance criteria
 
 - [x] The move's and the take's sound, the crowning, and the capture due (2026-11-16)
-- [ ] The user picks: slider or steps; the win and the end; solved as one phrase or a
-      note per star
+- [x] The rest: the prototype's defaults for the first version (2026-11-16)
 - [ ] The sounds in the table's "Yes" rows play in the app, from the board's events, in
       a game, a puzzle, How to play, and the settings' preview
 - [x] Defaults decided (2026-11-16)
