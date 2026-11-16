@@ -61,7 +61,8 @@ on 2026-11-16 under Guideline 5.6, features "hidden during review", while the Ap
 still showed the 0.3 screenshots, whose home differs from the build's; so every set
 uploaded shows only what that platform's build shows. The iPad's shots come from a
 headless copy that reports itself as iOS, since the desktop's draws a close button on
-home that iOS has not. The sets before it:
+home that iOS has not. The App Store's sets are English only, as its listing is
+(`app-store.md`); Play's are in English and Estonian. The sets before it:
 
 | Folder | Size | For | Made with |
 | --- | --- | --- | --- |
