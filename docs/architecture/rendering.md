@@ -66,7 +66,7 @@ A small immediate-mode layer in Goose, drawn as Goose's Mini Minecraft draws its
 - `button(id, rect, icon)` returns true on release over the button it went down on. A
   fixed table holds per-id press state (0.12 s, `gui::PRESS`). A press that lands on the
   UI never reaches the board.
-- Calls append quads (`panel`, `button`, `icon`, `fill`, `text`) to one fixed array, reset
+- Calls append quads (`panel`, `button`, `icon`, `rounded_rect`, `text`) to one fixed array, reset
   each frame, drawn by instanced draws in order: one pipeline for icons, one for the
   players' faces, one for the rest, each shader at 32 registers
   ([why three](../decisions/rendering.md#ui-layer)).
@@ -115,10 +115,10 @@ gives the room to the board. `--touch on` lays a desktop window out as a touch s
 - Home's column stands 40 dp from the top, at least 440 dp wide (`home::DESKTOP_TOP`,
   `DESKTOP_COLUMN_W`).
 - No window lays out wider than 1.9 times its height (`gui::WIDEST`): `gui::safe` keeps
-  the middle of an ultrawide; the photograph and edge glass (`gui::bleed`) still fill it.
-- Taps are thinner: every tap-sized length is `gui::tap()` (88 dp touch, 64 desktop), a
-  worded tile's side room `gui::side()` (16 and 12), a tile with its icon over its word
-  `gui::stacked()` (at least 72 dp). The panels' heights are sums of their rows
+  the middle of an ultrawide; the photograph and edge glass (`gui::extend_to_screen_edge`) still fill it.
+- Taps are thinner: every tap-sized length is `gui::tap_size()` (88 dp touch, 64 desktop), a
+  worded tile's side room `gui::word_padding()` (16 and 12), a tile with its icon over its word
+  `gui::stacked_tile_height()` (at least 72 dp). The panels' heights are sums of their rows
   (`panel::corner_h`, `left_h`, `bar_h`, `play_h`), so they follow.
 
 The **safe area** is the window less its insets (camera cutout, gesture bar). SDL reports
@@ -257,12 +257,12 @@ history ([where](../decisions/rendering.md#controls)).
   ([Screen sizes](#screen-sizes-and-the-safe-area)); icons half the tile, strokes 2.4 of
   their 24-unit grid. A primary button is the glow at 22%.
 - **Under the mouse** (desktop only), a tile that takes a tap lights faintly in the glow
-  (8% and a 1 dp border at 40%), fading over `gui::PRESS`. `gui::hold` notes the topmost
+  (8% and a 1 dp border at 40%), fading over `gui::PRESS`. `gui::press_widget` notes the topmost
   tile each frame and the next frame's `gui::begin` makes it the hovered one. A frame is
   drawn only while the hover changes or fades (`gui::animating`). `--mouse X,Y` holds the
   pointer for a shot.
 - **The keys' focus** (`gui::focus_keys`): arrows move a focus among the controls each
-  `gui::hold` offers (`gui::Spot`), Enter or Space presses it. The focused control is lit
+  `gui::press_widget` offers (`gui::Spot`), Enter or Space presses it. The focused control is lit
   and ringed (2 dp, 3 dp outside, `gui::RING_W`, `RING_GAP`). The first arrow focuses the
   screen's primary control; later ones go to the nearest control that way, weighting the
   gap across twice. Mouse movement lets the focus go. `--keys down,enter` presses keys for
@@ -472,7 +472,7 @@ the game or a puzzle. Only one set of pieces is ever on screen. A tap lands on t
 come to; back turns a transition round. The clock and the computer wait until it ends.
 
 The shell keeps one transition (`shell::go_to`). Each frame it declares the screen left
-with no pointer (`gui::listen`, `game::still`), then the screen come to, fades each's
+with no pointer (`gui::set_input_enabled`, `game::still`), then the screen come to, fades each's
 quads (`gui::fade`, a quad's `extra.w`), and cuts the board's rect out of them
 (`shell.hole`) but for what lies on the board (`gui::on_board`). The board pass mixes
 the sharp and blurred photograph by one uniform. While a transition runs

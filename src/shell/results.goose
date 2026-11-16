@@ -70,7 +70,7 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
         whole.z = LARGE_W * u;
     }
     var c = gui::inset(whole, EDGE * u);
-    let row = gui::cut_top(c, gui::tap() * u);
+    let row = gui::cut_top(c, gui::tap_size() * u);
     gui::cut_top(c, GAP * u);
     let back = strings::get(strings::NAV_BACK);
     let back_w = gui::back_width(g, back);
@@ -85,7 +85,7 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     var all = 4.0 * rim;
     for i in 3 {
         let name = strings::get(settings::DRAUGHTS_KEYS[i]);
-        widths[i] = max(gui::tap() * u, gui::text_width(g, gui::BODY, name) + 2.0 * gui::side() * u);
+        widths[i] = max(gui::tap_size() * u, gui::text_width(g, gui::BODY, name) + 2.0 * gui::word_padding() * u);
         all += widths[i];
     }
     let title = strings::get(strings::RESULTS_TITLE);
@@ -230,8 +230,8 @@ fn list(g: gui::Gui&, area: float4, gs: history::Game[..history::MAX_GAMES]&, va
 fn row(g: gui::Gui&, id: i64, r: float4, x: history::Game&, lk: Look) -> bool {
     let u = g.scale;
     let ku = lk.k * u;
-    let clicked, p = gui::hold(g, id, r);
-    gui::fill(g, r, float4 { 1.0, 1.0, 1.0, 0.06 + 0.06 * gui::hover(g, id) + 0.08 * p }, 18.0 * u);
+    let clicked, p = gui::press_widget(g, id, r);
+    gui::rounded_rect(g, r, float4 { 1.0, 1.0, 1.0, 0.06 + 0.06 * gui::hover(g, id) + 0.08 * p }, 18.0 * u);
     var c = gui::inset(r, 16.0 * u);
     let res = outcome(x);
     let sign = gui::cut_left(c, ICON * ku);

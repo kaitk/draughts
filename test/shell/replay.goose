@@ -207,7 +207,7 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
     let why = if sh.past.replay.why { "why" } else { "short" };
     if !drive::verbose {
         return str(n, " tiles, inside ", inside, ", apart ", apart, ", off the board ", off_board, "; taps a tap at least ",
-                   tap >= gui::tap() - 0.5, ", inside ", taps_in, "; the bulb ", bulb, "; a board ", b.z > 0.0, ", inside ", board_in,
+                   tap >= gui::tap_size() - 0.5, ", inside ", taps_in, "; the bulb ", bulb, "; a board ", b.z > 0.0, ", inside ", board_in,
                    "; the line ", why, ", over the board ", over, ", inside ", within(note, safe),
                    "; back and play from here level ", level, "; moves listed ", moves > 0, "; quads under the limit ",
                    g.quads.len < gui::MAX_QUADS);

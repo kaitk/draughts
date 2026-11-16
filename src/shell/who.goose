@@ -55,7 +55,7 @@ let IDS_END = KNOWN_ID + 1;
 
 let HOLD = 1.5;             // seconds start again and remove are held
 
-// The parts, in dp: the head, the name's field, and the holds are gui::tap() tall.
+// The parts, in dp: the head, the name's field, and the holds are gui::tap_size() tall.
 let EDGE = 16.0;            // the card keeps from the safe area's edges
 let PAD = 24.0;             // the card's sides; 20 above, 24 below
 let GAP = 14.0;             // between the head and the rest
@@ -117,9 +117,9 @@ fn grid(ps: players::Players&, area: float4, u: f32) -> i64, i64, i64 {
 // window), the card in the safe area `area`. Returns what it asks for and, for SWITCH,
 // the player's place in the list.
 fn frame(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4, screen: float4) -> i64, i64 {
-    gui::fill(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
+    gui::rounded_rect(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
     // A tap on the dimmed home outside the card closes it.
-    let outside, unused = gui::hold(g, OUTSIDE_ID, screen, false);
+    let outside, unused = gui::press_widget(g, OUTSIDE_ID, screen, false);
     var ask = NOTHING;
     var index = -1;
     if w.state == SHEET {
@@ -140,7 +140,7 @@ fn frame(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4, screen: flo
 // The card's glass in r, which takes a press on it so it never reaches the dimmed home.
 fn card(g: gui::Gui&, r: float4) {
     gui::glass(g, r, 32.0);
-    gui::hold(g, CARD_ID, r, false);
+    gui::press_widget(g, CARD_ID, r, false);
 }
 
 // A glass round tile a tap across with an icon, as settings' back: true when tapped.
@@ -158,26 +158,26 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
     let title = strings::get(strings::PLAYERS_WHO);
     let room = area.z - 2.0 * (EDGE + PAD) * u;
     let tiles = per * t + (per - 1) * TILE_GAP;
-    let head = (2.0 * gui::tap() + 32.0) * u + gui::text_width(g, gui::LABEL, title);
+    let head = (2.0 * gui::tap_size() + 32.0) * u + gui::text_width(g, gui::LABEL, title);
     let width = min(max(tiles * u, head), room) + 2.0 * PAD * u;
-    let height = (20.0 + gui::tap() + GAP + rows * th + (rows - 1) * TILE_GAP + 24.0) * u;
+    let height = (20.0 + gui::tap_size() + GAP + rows * th + (rows - 1) * TILE_GAP + 24.0) * u;
     let r = gui::center(area, width, height);
     card(g, r);
     var c = float4 { r.x + PAD * u, r.y + 20.0 * u, r.z - 2.0 * PAD * u, r.w - 44.0 * u };
     var ask = NOTHING;
-    var row = gui::cut_top(c, gui::tap() * u);
+    var row = gui::cut_top(c, gui::tap_size() * u);
     gui::cut_top(c, GAP * u);
-    if glass_tile(g, BACK_ID, gui::cut_left(row, gui::tap() * u), gui::BACK, gui::PLAIN) {
+    if glass_tile(g, BACK_ID, gui::cut_left(row, gui::tap_size() * u), gui::BACK, gui::PLAIN) {
         w.state = CLOSED;
         ask = CHANGED;
     }
-    if glass_tile(g, EDIT_ID, gui::cut_right(row, gui::tap() * u), gui::PENCIL, if w.editing { gui::ON } else { gui::PLAIN }) {
+    if glass_tile(g, EDIT_ID, gui::cut_right(row, gui::tap_size() * u), gui::PENCIL, if w.editing { gui::ON } else { gui::PLAIN }) {
         w.editing = !w.editing;
         ask = CHANGED;
     }
     gui::cut_left(row, gui::PAD_WIDE * u);
     gui::cut_right(row, gui::PAD_WIDE * u);
-    let face = gui::fitting(g, gui::LABEL, title, row.z);
+    let face = gui::face_that_fits(g, gui::LABEL, title, row.z);
     if gui::text_width(g, face, title) <= row.z { gui::text(g, face, row, title, 1.0, 0.0, gui::LEFT); }
     // The faces, row by row, each row centered.
     for i in count {
@@ -192,18 +192,18 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
         let fr = gui::center(gui::cut_top(inner, fs), fs, fs);
         gui::cut_top(inner, 8.0 * u);
         if add {
-            gui::face(g, fr, -1, 1.0, false);
+            gui::player_badge(g, fr, -1, 1.0, false);
         } else {
             let p .= ps.list[i];
-            gui::face(g, fr, p.picture, 1.0, i == ps.playing);
-            let nf = gui::fitting(g, gui::BODY, p.name[..], inner.z);
+            gui::player_badge(g, fr, p.picture, 1.0, i == ps.playing);
+            let nf = gui::face_that_fits(g, gui::BODY, p.name[..], inner.z);
             gui::text(g, nf, inner, p.name[..], 1.0, 0.0, gui::CENTER);
             if w.editing {
                 // A dark disc with a light rim under the pencil, so it reads over the
                 // face's light picture.
                 let b = float4 { tr.x + tr.z - 48.0 * u, tr.y + 8.0 * u, 40.0 * u, 40.0 * u };
-                gui::fill(g, b, float4 { 1.0, 1.0, 1.0, 0.85 }, 20.0 * u);
-                gui::fill(g, gui::inset(b, 2.0 * u), float4 { 0.16, 0.12, 0.10, 0.95 }, 18.0 * u);
+                gui::rounded_rect(g, b, float4 { 1.0, 1.0, 1.0, 0.85 }, 20.0 * u);
+                gui::rounded_rect(g, gui::inset(b, 2.0 * u), float4 { 0.16, 0.12, 0.10, 0.95 }, 18.0 * u);
                 gui::glyph_icon(g, gui::center(b, 22.0 * u, 22.0 * u), gui::PENCIL, gui::PLAIN, 0.0, 1.0);
             }
         }
@@ -241,9 +241,9 @@ fn sheet_for(w: Who&, ps: players::Players&, index: i64) {
 // The pictures' size in dp and how many to a row, in a card whose content may be `room`
 // dp wide: six in a row, a tap to 112 dp; else three; three of a tap at the side (`wide`).
 fn pictures(room: f32, wide: bool) -> f32, i64 {
-    guard !wide else { return gui::tap(), 3; }
+    guard !wide else { return gui::tap_size(), 3; }
     let six = min(112.0, floor((min(room, 760.0 - 2.0 * PAD) - 5.0 * PIC_GAP) / 6.0));
-    guard six < gui::tap() else { return six, 6; }
+    guard six < gui::tap_size() else { return six, 6; }
     return min(112.0, floor((room - 2.0 * PIC_GAP) / 3.0)), 3;
 }
 
@@ -285,7 +285,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     // The head: back, the face (editing) and the name or the title, done.
     // The name while it is typed, so it shows where the keyboard covers the field.
     let title = if edit || (keys && w.name.len > 0) { w.name[..] } else { strings::get(strings::PLAYERS_NEW) };
-    let head = (2.0 * gui::tap() + 32.0 + (if edit { 72.0 } else { 0.0 })) * u + gui::text_width(g, gui::LABEL, title);
+    let head = (2.0 * gui::tap_size() + 32.0 + (if edit { 72.0 } else { 0.0 })) * u + gui::text_width(g, gui::LABEL, title);
     var content: f32 = 0.0;
     var right:   f32 = 0.0;   // wide: the right column's width
     if wide {
@@ -295,25 +295,25 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
         content = clamp(max(head, both), grid_w * u, room * u);
     }
     let stacked = holds > 0 && both > (if wide { right } else { content }) + 0.5;
-    let holds_h = if holds == 0 { 0.0 } else if stacked && holds == 2 { 2.0 * gui::tap() + ROW_GAP } else { gui::tap() };
-    let name_h = TITLE_H + ROW_GAP + gui::tap() + (if holds > 0 { ROW_GAP + holds_h } else { 0.0 });
+    let holds_h = if holds == 0 { 0.0 } else if stacked && holds == 2 { 2.0 * gui::tap_size() + ROW_GAP } else { gui::tap_size() };
+    let name_h = TITLE_H + ROW_GAP + gui::tap_size() + (if holds > 0 { ROW_GAP + holds_h } else { 0.0 });
     let pics_h = TITLE_H + ROW_GAP + grid_h;
     let body = if wide { max(pics_h, name_h) } else if bare { name_h } else { pics_h + GAP + name_h };
-    let height = (if line { 20.0 + gui::tap() + 24.0 } else { 20.0 + gui::tap() + GAP + body + 24.0 }) * u;
+    let height = (if line { 20.0 + gui::tap_size() + 24.0 } else { 20.0 + gui::tap_size() + GAP + body + 24.0 }) * u;
     var r = gui::center(area, content + 2.0 * PAD * u, height);
     // Clear of the keyboard while the name is typed.
     if keys { r.y = min(r.y, area.y + EDGE * u); }
     card(g, r);
     var c = float4 { r.x + PAD * u, r.y + 20.0 * u, r.z - 2.0 * PAD * u, r.w - 44.0 * u };
 
-    var row = gui::cut_top(c, gui::tap() * u);
+    var row = gui::cut_top(c, gui::tap_size() * u);
     gui::cut_top(c, GAP * u);
-    if glass_tile(g, SHEET_BACK_ID, gui::cut_left(row, gui::tap() * u), gui::BACK, gui::PLAIN) {
+    if glass_tile(g, SHEET_BACK_ID, gui::cut_left(row, gui::tap_size() * u), gui::BACK, gui::PLAIN) {
         w.state = if w.first { CLOSED } else { PICKING };
         w.typing = false;
         ask = CHANGED;
     }
-    let done = glass_tile(g, DONE_ID, gui::cut_right(row, gui::tap() * u), gui::CHECK, gui::PRIMARY) || entered;
+    let done = glass_tile(g, DONE_ID, gui::cut_right(row, gui::tap_size() * u), gui::CHECK, gui::PRIMARY) || entered;
     gui::cut_left(row, gui::PAD_WIDE * u);
     gui::cut_right(row, gui::PAD_WIDE * u);
     if line {
@@ -321,10 +321,10 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
         return finish(w, edit, done, ask);
     }
     if edit {
-        gui::face(g, gui::center(gui::cut_left(row, 56.0 * u), 56.0 * u, 56.0 * u), w.picture, 1.0, false);
+        gui::player_badge(g, gui::center(gui::cut_left(row, 56.0 * u), 56.0 * u, 56.0 * u), w.picture, 1.0, false);
         gui::cut_left(row, gui::PAD_WIDE * u);
     }
-    let tf = gui::fitting(g, gui::LABEL, title, row.z);
+    let tf = gui::face_that_fits(g, gui::LABEL, title, row.z);
     if gui::text_width(g, tf, title) <= row.z { gui::text(g, tf, row, title, 1.0, 0.0, gui::LEFT); }
 
     // The pictures, and the name with the holds: one over the other, or side by side.
@@ -346,7 +346,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
         let free = !players::taken(ps, a, w.target);
         let tapped, unused = gui::pick(g, PICTURE_IDS + a, cell, 0.0, "", "", a == w.picture, free);
         let s = (pic - 22.0) * u;
-        gui::face(g, gui::center(cell, s, s), a, if free { 1.0 } else { 0.3 }, false);
+        gui::player_badge(g, gui::center(cell, s, s), a, if free { 1.0 } else { 0.3 }, false);
         if tapped && a != w.picture {
             w.picture = a;
             ask = CHANGED;
@@ -354,11 +354,11 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     }
 
     heading(g, rest, strings::PLAYERS_NAME);
-    if field(w, g, gui::cut_top(rest, gui::tap() * u)) { ask = CHANGED; }
+    if field(w, g, gui::cut_top(rest, gui::tap_size() * u)) { ask = CHANGED; }
     if holds > 0 {
         gui::cut_top(rest, ROW_GAP * u);
         var hr = gui::cut_top(rest, holds_h * u);
-        let first = if stacked || holds == 1 { gui::cut_top(hr, gui::tap() * u) } else { gui::cut_left(hr, 0.5 * (hr.z - gui::PAD * u)) };
+        let first = if stacked || holds == 1 { gui::cut_top(hr, gui::tap_size() * u) } else { gui::cut_left(hr, 0.5 * (hr.z - gui::PAD * u)) };
         if stacked { gui::cut_top(hr, ROW_GAP * u); } else { gui::cut_left(hr, gui::PAD * u); }
         if hold(g, AGAIN_ID, first, gui::RESTART, strings::PLAYERS_START_AGAIN, false) { ask = AGAIN; }
         if holds == 2 && hold(g, REMOVE_ID, hr, gui::TRASH, strings::PLAYERS_REMOVE, true) {
@@ -412,7 +412,7 @@ fn typed(w: Who&, g: gui::Gui&) -> bool, bool {
 fn field(w: Who&, g: gui::Gui&, r: float4) -> bool {
     let u = g.scale;
     var changed = false;
-    gui::fill(g, r, float4 { 0.0, 0.0, 0.0, 0.18 }, 20.0 * u);
+    gui::rounded_rect(g, r, float4 { 0.0, 0.0, 0.0, 0.18 }, 20.0 * u);
     if gui::tile(g, NAME_ID, r, gui::NO_ICON, if w.typing { gui::CHOSEN } else { gui::QUIET }, 20.0) {
         w.typing = true;
         w.keyboard++;
@@ -432,7 +432,7 @@ fn field(w: Who&, g: gui::Gui&, r: float4) -> bool {
         let f .= g.faces[gui::LABEL];
         let x = c.x + gui::text_width(g, gui::LABEL, w.name[..]) + 2.0 * u;
         let h = f.ascent - f.descent;
-        gui::fill(g, float4 { floor(x + 0.5), c.y + 0.5 * (c.w - h), 2.0 * u, h }, float4 { 1.0, 1.0, 1.0, 0.85 }, 1.0 * u);
+        gui::rounded_rect(g, float4 { floor(x + 0.5), c.y + 0.5 * (c.w - h), 2.0 * u, h }, float4 { 1.0, 1.0, 1.0, 0.85 }, 1.0 * u);
     }
     return changed;
 }
@@ -472,7 +472,7 @@ fn asking(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64 {
     let pair = (2.0 * ANSWER_W + ANSWER_GAP) * u;
     let beside = pair + 2.0 * PAD * u <= room;
     let tile_w = if beside { ANSWER_W * u } else { min(room - 2.0 * PAD * u, 2.0 * ANSWER_W * u) };
-    let tile_h = (if beside { ANSWER_H } else { 1.5 * gui::tap() }) * u;
+    let tile_h = (if beside { ANSWER_H } else { 1.5 * gui::tap_size() }) * u;
     let tiles_w = if beside { pair } else { tile_w };
     let tiles_h = if beside { tile_h } else { 2.0 * tile_h + ANSWER_GAP * u };
     let line = g.faces[gui::LABEL].ascent - g.faces[gui::LABEL].descent;
@@ -484,9 +484,9 @@ fn asking(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64 {
     var c = gui::inset(r, PAD * u);
     gui::cut_top(c, 4.0 * u);
     let p .= ps.list[ps.playing];
-    gui::face(g, gui::center(gui::cut_top(c, fs), fs, fs), p.picture, 1.0, true);
+    gui::player_badge(g, gui::center(gui::cut_top(c, fs), fs, fs), p.picture, 1.0, true);
     gui::cut_top(c, 18.0 * u);
-    gui::text(g, gui::fitting(g, gui::LABEL, title, c.z), gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
+    gui::text(g, gui::face_that_fits(g, gui::LABEL, title, c.z), gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
     gui::cut_top(c, 24.0 * u);
     var tiles = gui::center(gui::cut_top(c, tiles_h), tiles_w, tiles_h);
     let a = if beside { gui::cut_left(tiles, tile_w) } else { gui::cut_top(tiles, tile_h) };

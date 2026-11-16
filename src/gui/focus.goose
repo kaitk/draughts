@@ -56,7 +56,7 @@ fn focus_keys(g: Gui&, input: Input) {
     g.focused = if at >= 0 { g.spots[at] } else { Spot {} };
     if at >= 0 && g.spots[at].group >= 0 && g.spots[at].group < MAX_GROUPS { g.group_focus[g.spots[at].group] = g.focus; }
     g.spots.clear();
-    g.deaf = false;
+    g.input_off = false;
     g.ring = false;
     g.group = 0;
 }
@@ -201,7 +201,7 @@ fn toward(g: Gui&, step: i64) -> i64 {
 // Offers control id over r to the keys' focus, unless a screen a transition leaves is
 // being declared.
 fn offer(g: Gui&, id: i64, r: float4) {
-    guard !g.deaf && g.spots.len < MAX_SPOTS else { return; }
+    guard !g.input_off && g.spots.len < MAX_SPOTS else { return; }
     g.spots.push(Spot { id: id, rect: r, primary: false, list: if g.scroll.open { g.scroll.id } else { 0 }, group: g.group, .. });
 }
 
@@ -216,7 +216,7 @@ fn group(g: Gui&, k: i64) { g.group = k; }
 // cell the focus takes when it comes by Tab or the first key. Returns the focused cell or
 // -1, and whether Enter pressed it this frame. It draws nothing: the caller shows the cell.
 fn grid(g: Gui&, id: i64, r: float4, cells: i64, home: i64) -> i64, bool {
-    guard !g.deaf else { return -1, false; }
+    guard !g.input_off else { return -1, false; }
     if g.spots.len < MAX_SPOTS {
         g.spots.push(Spot { id: id, rect: r, primary: false, list: 0, group: g.group, cells: cells,
                             home: clamp(home, 0, cells * cells - 1) });
@@ -228,21 +228,21 @@ fn grid(g: Gui&, id: i64, r: float4, cells: i64, home: i64) -> i64, bool {
 // Takes Left and Right for the screen's own this frame and the next (a replay steps
 // its moves with them): the next frame's begin moves no focus for them, and the screen
 // reads them in `g.pointer.step`. Called each frame that wants them.
-fn claim_sideways(g: Gui&) { g.sideways = !g.deaf; }
+fn claim_sideways(g: Gui&) { g.sideways = !g.input_off; }
 
 // Marks control id, just offered, as the screen's primary one (its first choice).
-fn prefer(g: Gui&, id: i64) {
+fn mark_primary(g: Gui&, id: i64) {
     let n = g.spots.len;
     if n > 0 && g.spots[n - 1].id == id { g.spots[n - 1].primary = true; }
 }
 
 // Whether Enter pressed control id this frame: it has the keys' focus.
-fn keyed(g: Gui&, id: i64) -> bool { !g.deaf && g.focus == id && g.pointer.confirm }
+fn keyed(g: Gui&, id: i64) -> bool { !g.input_off && g.focus == id && g.pointer.confirm }
 
 // Whether Enter holds control id down (a hold tile): it has the keys' focus and Enter is
 // down, pressed this frame or held since it went down on it. A press the hold let go of
 // (its ring full) stays up until Enter is pressed again.
 fn key_held(g: Gui&, id: i64) -> bool {
-    guard !g.deaf && g.focus == id && g.pointer.held else { return false; }
+    guard !g.input_off && g.focus == id && g.pointer.held else { return false; }
     return g.pointer.confirm || g.slots[slot(g, id)].down;
 }

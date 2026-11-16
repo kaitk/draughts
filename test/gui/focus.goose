@@ -29,8 +29,8 @@ fn screen(g: gui::Gui&, step: i64, confirm: bool, at: float2, now: f64, dim: boo
     }
     for i in 4 {
         let r = float4 { 360.0 + 100.0 * (i % 2), 70.0 + 100.0 * (i / 2), 88.0, 88.0 };
-        let clicked_tile, unused = gui::hold_if(g, 11 + i, r, !(dim && i == 3));
-        gui::fill(g, r, float4 { 1.0, 1.0, 1.0, 0.1 }, 16.0);
+        let clicked_tile, unused = gui::press_widget_if_on(g, 11 + i, r, !(dim && i == 3));
+        gui::rounded_rect(g, r, float4 { 1.0, 1.0, 1.0, 0.1 }, 16.0);
         if clicked_tile { format(clicked, " tile ", 11 + i); }
     }
     var rings = 0;
@@ -89,9 +89,9 @@ fn main() {
     print("  the next frame: focus ", g.focus);
 
     // A screen a transition leaves offers nothing: the arrow keeps the focus.
-    gui::listen(g, false);
+    gui::set_input_enabled(g, false);
     gui::row(g, 41, float4 { 20.0, 600.0, 300.0, 88.0 }, gui::NEXT, "other", "", true, true);
-    gui::listen(g, true);
+    gui::set_input_enabled(g, true);
     print("  declared deaf: offered ", g.spots.len);
     gui::begin(g, gui::Input { at: float2 { 50.0, 50.0 }, step: gui::STEP_DOWN, .. }, 1.0, now + 0.04);
     print("  down with nothing offered: focus ", g.focus);

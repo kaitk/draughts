@@ -63,7 +63,7 @@ fn overlaps(a: float4, b: float4) -> bool {
 }
 
 // Whether a lies wholly inside b: a tile in the Today row's own, declared after it, which
-// takes the presses over it (gui::hold, the last under the pointer).
+// takes the presses over it (gui::press_widget, the last under the pointer).
 fn within(a: float4, b: float4) -> bool {
     let e: f32 = 0.5;
     return a.x >= b.x - e && a.y >= b.y - e && a.x + a.z <= b.x + b.z + e && a.y + a.w <= b.y + b.w + e;

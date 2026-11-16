@@ -356,11 +356,11 @@ fn play_fit(g: gui::Gui&, head: f32, with_back: bool = true) -> i64, f32, f32, b
     let u = g.scale;
     let word = strings::get(strings::REPLAY_PLAY);
     let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
-    let tap = gui::tap() * u;
+    let tap = gui::tap_size() * u;
     let name = gui::text_width(g, gui::LABEL, strings::get(strings::REPLAY_TITLE)) + GAP * u;
     // Beside, the word keeps back's room at the sides (gui::back_width), so the two tiles
     // match and the word doesn't sit against the tile's right edge.
-    let beside = (2.0 * (gui::side() + 4.0) + 34.0 + 12.0) * u + gui::text_width(g, gui::HEADING, word);
+    let beside = (2.0 * (gui::word_padding() + 4.0) + 34.0 + 12.0) * u + gui::text_width(g, gui::HEADING, word);
     let over = max(tap, gui::text_width(g, gui::HEADING, word) + 2.0 * gui::LABEL_PAD * u);
     guard with_back else {
         let fits = head >= beside;
@@ -381,7 +381,7 @@ fn play_fit(g: gui::Gui&, head: f32, with_back: bool = true) -> i64, f32, f32, b
 // bulb is one too, gui::ON while the best move shows.
 fn step(g: gui::Gui&, id: i64, r: float4, icon: i64, on: bool, style: i64 = gui::PLAIN) -> bool {
     let u = g.scale;
-    let clicked, p = gui::hold(g, id, r);
+    let clicked, p = gui::press_widget(g, id, r);
     let a: f32 = if on { 1.0 } else { 0.35 };
     gui::add(g, gui::Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
                             extra: float4 { u, style, gui::hover(g, id), 0.0 } });
@@ -466,7 +466,7 @@ fn shown_line(r: Replay&, g: gui::Gui&, box: float4, over: board::Overlay&) {
     let rest = if cut > 0 { tip[cut + 1..] } else { tip };
     let indent = (2.0 * DISC + 10.0) * u;
     let second = float4 { box.x + indent, box.y + LINE * u, box.z - indent, LINE * u };
-    gui::text(g, gui::fitting(g, r.body, rest, second.z), second, rest, 0.8, 0.0, gui::LEFT);
+    gui::text(g, gui::face_that_fits(g, r.body, rest, second.z), second, rest, 0.8, 0.0, gui::LEFT);
 }
 
 // A line of the glass about the best move in box: an icon in `style` (gui::ON in the glow
@@ -484,7 +484,7 @@ fn say(r: Replay&, g: gui::Gui&, box: float4, icon: i64, style: i64, words: cons
         gui::push(t, " ");
         gui::push(t, way);
     }
-    let face = gui::fitting(g, r.body, t[..], room);
+    let face = gui::face_that_fits(g, r.body, t[..], room);
     gui::text(g, face, float4 { x, box.y, room, box.w }, words, 0.8, 0.0, gui::LEFT);
     guard way.len > 0 else { return; }
     let w = gui::text_width(g, face, t[..min(words.len + 1, t.len)]);
@@ -495,7 +495,7 @@ fn say(r: Replay&, g: gui::Gui&, box: float4, icon: i64, style: i64, words: cons
 fn lit_line(g: gui::Gui&, box: float4, hover: f32, press: f32) {
     guard hover > 0.0 || press > 0.0 else { return; }
     let u = g.scale;
-    gui::fill(g, float4 { box.x - 6.0 * u, box.y, box.z + 12.0 * u, box.w }, float4 { 1.0, 1.0, 1.0, 0.04 + 0.06 * hover + 0.08 * press },
+    gui::rounded_rect(g, float4 { box.x - 6.0 * u, box.y, box.z + 12.0 * u, box.w }, float4 { 1.0, 1.0, 1.0, 0.04 + 0.06 * hover + 0.08 * press },
               8.0 * u);
 }
 
@@ -525,15 +525,15 @@ fn best_line(r: Replay&, g: gui::Gui&, box: float4, tile: bool) -> bool {
     var clicked = false;
     var inner = box;
     if tile {
-        let tap = gui::tap() * u;
+        let tap = gui::tap_size() * u;
         let hit = float4 { box.x, box.y + 0.5 * (box.w - tap), box.z, tap };
-        let c, press = gui::hold(g, BEST_LINE_ID, hit);
+        let c, press = gui::press_widget(g, BEST_LINE_ID, hit);
         clicked = c;
         gui::add(g, gui::Quad { rect: box, look: float4 { gui::BUTTON, 14.0 * u, 0.0, press },
                                 extra: float4 { u, if r.best { gui::CHOSEN } else { gui::CHOICE }, gui::hover(g, BEST_LINE_ID), 0.0 } });
         inner = float4 { box.x + 12.0 * u, box.y, box.z - 24.0 * u, box.w };
     } else {
-        let c, press = gui::hold(g, BEST_LINE_ID, box, false);
+        let c, press = gui::press_widget(g, BEST_LINE_ID, box, false);
         clicked = c;
         lit_line(g, box, gui::hover(g, BEST_LINE_ID), press);
     }
@@ -582,7 +582,7 @@ struct Layout {
 fn layout(area: float4, u: f32, big: bool = false) -> Layout {
     var o = Layout {};
     var c = gui::inset(area, EDGE * u);
-    let tap = gui::tap() * u;
+    let tap = gui::tap_size() * u;
     let k: f32 = if big { LARGE } else { 1.0 };
     let note = NOTE * k * u;
     if c.z > c.w {
@@ -672,7 +672,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
         let to = if i == 0 { 0 } else if i == 1 { r.ply - 1 } else if i == 2 { r.ply + 1 } else { n };
         let on = if i < 2 { r.ply > 0 } else { r.ply < n };
         if step(g, STEP_ID + i, o.steps[i], icons[i], on) && go(r, to, now) { ask = SHOWN; }
-        if i == 2 { gui::prefer(g, STEP_ID + i); }
+        if i == 2 { gui::mark_primary(g, STEP_ID + i); }
     }
     var toggled = false;
     if o.five && step(g, BULB_ID, o.bulb, gui::HINT, has_best(r), if r.best { gui::ON } else { gui::PLAIN }) { toggled = true; }
@@ -725,7 +725,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     show_best(r);
     gui::cut_top(c, 8.0 * ku);
-    gui::fill(g, gui::cut_top(c, max(1.0, u)), float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
+    gui::rounded_rect(g, gui::cut_top(c, max(1.0, u)), float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
     let half = 0.5 * (c.z - NUMBER * ku);
     let heads = gui::cut_top(c, ROW * ku);
     var t: gui::Text = [];
@@ -811,9 +811,9 @@ fn list(r: Replay&, g: gui::Gui&, view: float4, left: f32, width: f32, now: f64,
             let p .= r.plies[i];
             let id = MOVE_ID + i;
             let cell = float4 { left + NUMBER * u + side * half, y, half, row_h };
-            let clicked, press = gui::hold(g, id, cell);
+            let clicked, press = gui::press_widget(g, id, cell);
             // Tab come to the list lands on the move shown.
-            if i == r.ply - 1 { gui::prefer(g, id); }
+            if i == r.ply - 1 { gui::mark_primary(g, id); }
             let mv = as_move(p);
             game::notation(m, v, mv);
             let w = gui::text_width(g, r.body, m[..]);
@@ -824,7 +824,7 @@ fn list(r: Replay&, g: gui::Gui&, view: float4, left: f32, width: f32, now: f64,
             if lit || g.focus == id || press > 0.0 || hover > 0.0 {
                 let shape = float4 { cell.x - 6.0 * u, cell.y + 3.0 * u, w + mark_width(r, g, p.mark) + 12.0 * u, cell.w - 6.0 * u };
                 if lit { gui::glow_fill(g, shape, 0.22 + 0.1 * press, 8.0 * u); }
-                else { gui::fill(g, shape, float4 { 1.0, 1.0, 1.0, 0.04 + 0.06 * hover + 0.08 * press }, 8.0 * u); }
+                else { gui::rounded_rect(g, shape, float4 { 1.0, 1.0, 1.0, 0.04 + 0.06 * hover + 0.08 * press }, 8.0 * u); }
             }
             // Moves after the one shown are dimmed: not yet played on the board.
             let a: f32 = if i < r.ply { 1.0 } else { 0.55 };
@@ -929,7 +929,7 @@ fn badge(g: gui::Gui&, l: board::Layout, v: rules::Variant&, p: Ply&, a: f32) {
         return;
     }
     let t, c = game::mark_text(p.mark);
-    gui::fill(g, r, float4 { c.x, c.y, c.z, c.w * a }, 0.5 * d);
+    gui::rounded_rect(g, r, float4 { c.x, c.y, c.z, c.w * a }, 0.5 * d);
     let ink = if p.mark == ai::BLUNDER { float4 { 1.0, 1.0, 1.0, a } } else { float4 { 0.1, 0.07, 0.03, a } };
     gui::colored(g, gui::SMALL, r, t, ink, gui::CENTER);
 }

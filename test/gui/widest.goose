@@ -1,15 +1,16 @@
 // gui::safe on a desktop keeps the screens to the window's middle WIDEST (1.9) times its
 // height: an ultrawide's full window loses its sides to the photograph, a 27" 16:9 and a
 // MacBook's 16:10 don't; a touch screen is never narrowed, a phone's 20:9 landscape
-// included. bleed carries a glass at the area's edge over the room beside it.
+// included. extend_to_screen_edge carries a glass at the area's edge over the room beside
+// it.
 import std;
 import vec;
 import gui from "../../src/gui";
 
 fn show(g: gui::Gui&, what: const u8[:], w: f32, h: f32) {
     let a = gui::safe(g, w, h);
-    let b = gui::bleed(g, float4 { a.x, a.y, 100.0, a.w }, a);
-    print(what, ": area ", a.x, " ", a.y, " ", a.z, " ", a.w, ", side ", g.side, ", a left glass bled ", b.x, " ", b.z);
+    let b = gui::extend_to_screen_edge(g, float4 { a.x, a.y, 100.0, a.w }, a);
+    print(what, ": area ", a.x, " ", a.y, " ", a.z, " ", a.w, ", side ", g.desktop_margin, ", a left glass bled ", b.x, " ", b.z);
 }
 
 fn main() {

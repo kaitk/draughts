@@ -220,7 +220,7 @@ fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: floa
         changed = true;
     }
     let ending = ls.state == END;
-    if ending { gui::listen(g, false); }
+    if ending { gui::set_input_enabled(g, false); }
     let ask = panel_frame(ls, g, l, now);
     if ask != STAY { changed = true; }
     if ask == BACK || ask == SETTINGS { ev.go = ask; }
@@ -237,7 +237,7 @@ fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: floa
     }
     let held, moved = board::showcase(ls.cam, g, input, l.three, l.pitch, now);
     if moved { changed = true; }
-    let mine = !held && !g.took && ready(ls);
+    let mine = !held && !g.press_on_ui && ready(ls);
     let history = b.rec.history.len;
     if mine && board::touch(b, l.board, l.three, l.view, input, ls.grab, now) { changed = true; }
     if panel::board_keys(g, l, b, mine, now) { changed = true; }
@@ -246,7 +246,7 @@ fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: floa
         changed = true;
     }
     if ending {
-        gui::listen(g, true);
+        gui::set_input_enabled(g, true);
         let go = end_card(g, area, screen, over);
         if go != STAY {
             ev.go = go;
@@ -273,7 +273,7 @@ fn dots(ls: Lesson&, g: gui::Gui&, r: float4, most: f32, most_gap: f32) {
         let c = float4 { r.x + i * (d + gap) * u, r.y + 0.5 * (r.w - d * u), d * u, d * u };
         if i < ls.step { gui::glow_fill(g, c, 0.6, 0.5 * d * u); }
         else if i == ls.step { gui::glow_fill(g, c, 1.0, 0.5 * d * u); }
-        else { gui::fill(g, c, float4 { 1.0, 1.0, 1.0, 0.22 }, 0.5 * d * u); }
+        else { gui::rounded_rect(g, c, float4 { 1.0, 1.0, 1.0, 0.22 }, 0.5 * d * u); }
     }
 }
 
@@ -294,7 +294,7 @@ fn words(ls: Lesson&, g: gui::Gui&, r: float4) {
     let u = g.scale;
     var c = r;
     let name = strings::get(strings::HOW_STEP + 3 * current(ls));
-    let nf = gui::fitting(g, gui::LABEL, name, c.z);
+    let nf = gui::face_that_fits(g, gui::LABEL, name, c.z);
     let nh = g.faces[nf].ascent - g.faces[nf].descent;
     gui::text(g, nf, gui::cut_top(c, nh), name, 1.0, 0.0, gui::LEFT);
     gui::cut_top(c, 10.0 * u);
@@ -361,28 +361,28 @@ let ANSWER_H = 150.0;       // and tall, side by side; a tap and a half one over
 let ANSWER_GAP = 16.0;
 fn end_card(g: gui::Gui&, area: float4, screen: float4, over: board::Overlay&) -> i64 {
     let u = g.scale;
-    gui::fill(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
-    gui::hold(g, CARD_OUTSIDE, screen, false);
+    gui::rounded_rect(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
+    gui::press_widget(g, CARD_OUTSIDE, screen, false);
     let title = strings::get(strings::HOW_DONE);
     let room = area.z - 2.0 * gui::PAD * u;
     let pair = 2.0 * ANSWER_W * u + ANSWER_GAP * u;
     let beside = pair + 2.0 * CARD_PAD * u <= room;
     let tile_w = if beside { ANSWER_W * u } else { min(room - 2.0 * CARD_PAD * u, 2.0 * ANSWER_W * u) };
-    let tile_h = (if beside { ANSWER_H } else { 1.5 * gui::tap() }) * u;
+    let tile_h = (if beside { ANSWER_H } else { 1.5 * gui::tap_size() }) * u;
     let tiles_w = if beside { pair } else { tile_w };
     let tiles_h = if beside { tile_h } else { 2.0 * tile_h + ANSWER_GAP * u };
     let line = g.faces[gui::LABEL].ascent - g.faces[gui::LABEL].descent;
     let king = 72.0 * u;
     let width = min(max(tiles_w, gui::text_width(g, gui::LABEL, title)) + 2.0 * CARD_PAD * u, room);
-    let height = (CARD_PAD + 16.0 + 20.0 + 20.0 + 12.0 + CARD_PAD) * u + king + line + tiles_h + gui::tap() * u;
+    let height = (CARD_PAD + 16.0 + 20.0 + 20.0 + 12.0 + CARD_PAD) * u + king + line + tiles_h + gui::tap_size() * u;
     let r = gui::center(area, width, min(height, area.w));
     gui::glass(g, r, 32.0);
-    gui::hold(g, CARD, r, false);
+    gui::press_widget(g, CARD, r, false);
     var c = gui::inset(r, CARD_PAD * u);
     gui::cut_top(c, 16.0 * u);
     game::put(over, gui::center(gui::cut_top(c, king), king, king), 0.5 * king, rules::WHITE, board::CROWN, 1.0, false);
     gui::cut_top(c, 20.0 * u);
-    gui::text(g, gui::fitting(g, gui::LABEL, title, c.z), gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
+    gui::text(g, gui::face_that_fits(g, gui::LABEL, title, c.z), gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
     gui::cut_top(c, 20.0 * u);
     var tiles = gui::center(gui::cut_top(c, tiles_h), tiles_w, tiles_h);
     let a = if beside { gui::cut_left(tiles, tile_w) } else { gui::cut_top(tiles, tile_h) };
@@ -396,7 +396,7 @@ fn end_card(g: gui::Gui&, area: float4, screen: float4, over: board::Overlay&) -
         go = NEW_GAME;
     }
     gui::cut_top(c, 12.0 * u);
-    let home_r = gui::center(gui::cut_top(c, gui::tap() * u), min(c.z, 240.0 * u), gui::tap() * u);
+    let home_r = gui::center(gui::cut_top(c, gui::tap_size() * u), min(c.z, 240.0 * u), gui::tap_size() * u);
     if gui::labelled(g, CARD_HOME, home_r, gui::BACK, 30.0, strings::get(strings::HOW_HOME), gui::BODY, gui::MIDDLE,
                      gui::QUIET) { go = HOME; }
     return go;

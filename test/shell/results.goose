@@ -46,7 +46,7 @@ fn check(g: gui::Gui&, area: float4) -> u8[>..] {
         }
     }
     if drive::verbose { return str(n, " tiles, smallest ", least as i64, " dp, inside ", inside, ", apart ", apart, ", quads ", g.quads.len); }
-    return str(n, " tiles, each a tap ", least >= gui::tap() - 0.5, ", inside ", inside, ", apart ", apart, ", quads under the limit ",
+    return str(n, " tiles, each a tap ", least >= gui::tap_size() - 0.5, ", inside ", inside, ", apart ", apart, ", quads under the limit ",
                g.quads.len < gui::MAX_QUADS);
 }
 

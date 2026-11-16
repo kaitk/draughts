@@ -381,7 +381,7 @@ fn play_here(g: gui::Gui&, sh: shell::Shell&) {
     var wrong: u8[>..] = [];
     if play.z <= 0.0 { wrong.append(" none;"); }
     if abs(play.y - back.y) > 0.5 { wrong.append(" not in the head;"); }
-    if min(min(play.z, play.w), min(back.z, back.w)) < gui::tap() * u - 0.5 { wrong.append(" under a tap;"); }
+    if min(min(play.z, play.w), min(back.z, back.w)) < gui::tap_size() * u - 0.5 { wrong.append(" under a tap;"); }
     if abs(play.w - back.w) > 0.5 { wrong.append(" not as tall as back;"); }
     if overlaps(play, back) { wrong.append(" on back;"); }
     if up != stacked(g, back) { wrong.append(" not the same way as back;"); }

@@ -49,9 +49,9 @@ facade per recorder in the gfx build too.
 - A desktop is laid out for a mouse (2026-11-11, task 068): the scale's ceiling grows from
   0.75 points a dp at a 1000-point shorter side to 0.9 at 1440; `--touch on` gives touch
   sizes. Rejected: a second set of desktop sizes (about 330 dp values in 16 files).
-- A desktop's tiles are 64 dp tall with 12 dp beside their words (`gui::tap()`,
-  `gui::side()`, 2026-11-11, task 069): 72, 64, and 56 were shot, 64 picked. Tiles with
-  an icon over their word stay at 72 at least (`gui::stacked()`).
+- A desktop's tiles are 64 dp tall with 12 dp beside their words (`gui::tap_size()`,
+  `gui::word_padding()`, 2026-11-11, task 069): 72, 64, and 56 were shot, 64 picked. Tiles with
+  an icon over their word stay at 72 at least (`gui::stacked_tile_height()`).
 - On a desktop the landscape board and its corner panels stand in a frame (2026-11-11)
   that grows with the window's height, 4% a side at 1000 points to 7.5% at 1440, at most
   1.45 times as wide as tall round the flat board and 1.7 round the 3D one, so the

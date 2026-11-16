@@ -802,7 +802,7 @@ fn keys(b: Board&, flat: Layout, g: gui::Gui&, id: i64, r: float4, mine: bool, n
     if flat.flip != b.cursor_flip && g.cell_of == id { g.cell = n * n - 1 - g.cell; }
     b.cursor_flip = flat.flip;
     let cell, enter = gui::grid(g, id, r, n, home_cell(b, flat));
-    gui::prefer(g, id);
+    gui::mark_primary(g, id);
     let was = b.cursor;
     let shows = b.shows;
     b.cursor = -1;
@@ -868,7 +868,7 @@ fn home_cell(b: Board&, l: Layout) -> i64 {
 // piece. Call before `touch`. Returns whether it had the pointer, and whether the board
 // moved.
 fn showcase(cam: rig::Rig&, g: gui::Gui&, input: gui::Input, three: bool, pitch: f32, now: f64) -> bool, bool {
-    guard !g.took && three && cam.showcase else { return false, false; }
+    guard !g.press_on_ui && three && cam.showcase else { return false, false; }
     return true, rig::drive(cam, input.at, input.down, input.pressed, input.released, g.scale, pitch, now);
 }
 

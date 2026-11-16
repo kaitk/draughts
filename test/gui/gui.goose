@@ -17,7 +17,7 @@ fn frame(g: gui::Gui&, at: float2, down: bool, pressed: bool, released: bool, no
     gui::panel(g, float4 { 0.0, 0.0, 300.0, 200.0 });
     let a = gui::button(g, 1, float4 { 20.0, 20.0, 88.0, 88.0 }, gui::UNDO);
     let b = gui::button(g, 2, float4 { 120.0, 20.0, 88.0, 88.0 }, gui::HINT);
-    print(what, ": a ", a, ", b ", b, ", took ", g.took, ", a pressed ", gui::pressed(g, 1),
+    print(what, ": a ", a, ", b ", b, ", took ", g.press_on_ui, ", a pressed ", gui::pressed(g, 1),
           ", animating ", gui::animating(g), ", acted ", g.acted, ", quads ", g.quads.len);
 }
 

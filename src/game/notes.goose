@@ -244,8 +244,8 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&)
     let head = gui::cut_top(room, (panel::MOVES_PAD + panel::LINE_HEAD) * u);
     let words = float4 { head.x + panel::MOVES_PAD * u, head.y + panel::MOVES_PAD * u, head.z - 2.0 * panel::MOVES_PAD * u, panel::LINE_HEAD * u };
     let word = strings::get(strings::SETTINGS_MOVES);
-    gui::text(g, gui::fitting(g, gui::SMALL, word, words.z), words, word, 0.7, 0.0, gui::LEFT);
-    gui::fill(g, float4 { words.x, words.y + words.w - 2.0 * u, words.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
+    gui::text(g, gui::face_that_fits(g, gui::SMALL, word, words.z), words, word, 0.7, 0.0, gui::LEFT);
+    gui::rounded_rect(g, float4 { words.x, words.y + words.w - 2.0 * u, words.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
     if l.counts {
         let d = 18.0 * u;
         let row = float4 { words.x, words.y, words.z, words.w - 2.0 * u };

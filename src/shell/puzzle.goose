@@ -279,7 +279,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     if moved { changed = true; }
     // The board is offered to the keys every frame, so their focus stays on it while the
     // player can't move; Enter on it is a tap only when the pointer could tap.
-    let mine = !held && !g.took && ready(pl) && b.pos.side == side;
+    let mine = !held && !g.press_on_ui && ready(pl) && b.pos.side == side;
     let history = b.rec.history.len;
     let wrong_at = b.wrong_at;
     let waited = board::waiting(b);
@@ -429,13 +429,13 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
         let said = strings::get(strings::PUZZLE_TRY_AGAIN);
         let arrow_w = (30.0 + 10.0) * u;
         let ends = 2.0 * gui::PAD_WIDE * u;
-        var face = gui::fitting(g, gui::HEADING, said, c.z - ends - arrow_w);
+        var face = gui::face_that_fits(g, gui::HEADING, said, c.z - ends - arrow_w);
         let arrow = face < gui::SMALL && gui::text_width(g, face, said) <= c.z - ends - arrow_w;
-        if !arrow { face = gui::fitting(g, gui::HEADING, said, c.z - ends); }
+        if !arrow { face = gui::face_that_fits(g, gui::HEADING, said, c.z - ends); }
         let w = min(c.z, ends + (if arrow { arrow_w } else { 0.0 }) + gui::text_width(g, face, said));
         let pill = if stacked { gui::center(gui::cut_top(c, 48.0 * u), w, 48.0 * u) }
                    else { gui::center(float4 { c.x, c.y, w, c.w }, w, 48.0 * u) };
-        gui::fill(g, pill, float4 { gui::RED.x, gui::RED.y, gui::RED.z, 0.16 }, 16.0 * u);
+        gui::rounded_rect(g, pill, float4 { gui::RED.x, gui::RED.y, gui::RED.z, 0.16 }, 16.0 * u);
         var inner = pill;
         gui::cut_left(inner, gui::PAD_WIDE * u);
         if arrow {
@@ -448,7 +448,7 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
     }
     // The goal, and under it in the small face whose puzzle it is, then on today's first
     // and last the slot's word in the glow.
-    let face = gui::fitting(g, gui::LABEL, text, c.z);
+    let face = gui::face_that_fits(g, gui::LABEL, text, c.z);
     let f .= g.faces[face];
     let small .= g.faces[gui::SMALL];
     let lh = f.ascent - f.descent;
@@ -459,12 +459,12 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
     var both = if stacked { gui::cut_top(c, h) } else { gui::center(c, c.z, h) };
     gui::text(g, face, gui::cut_top(both, lh), text, 1.0, 0.0, align);
     gui::cut_top(both, 4.0 * u);
-    gui::text(g, gui::fitting(g, gui::SMALL, side, both.z), gui::cut_top(both, sh), side, 0.66, 0.0, align);
+    gui::text(g, gui::face_that_fits(g, gui::SMALL, side, both.z), gui::cut_top(both, sh), side, 0.66, 0.0, align);
     let slot = slot_word(pl);
     if slot >= 0 {
         let word = strings::get(slot);
         gui::cut_top(both, 2.0 * u);
-        gui::glow_text(g, gui::fitting(g, gui::SMALL, word, both.z), both, word, 1.0, align);
+        gui::glow_text(g, gui::face_that_fits(g, gui::SMALL, word, both.z), both, word, 1.0, align);
     }
 }
 
@@ -557,12 +557,12 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     goal(pl, g, top, 48.0, false, now, 52.0, over);
     stake(pl, g, stars_at, if solved { 48.0 } else { 40.0 }, 6.0, now);
     // Today's dots over next where the bar has the room, else at next's left.
-    var row = float4 { right.x, right.y, right.z, gui::tap() * u };
+    var row = float4 { right.x, right.y, right.z, gui::tap_size() * u };
     if shows_dots(pl) {
-        if right.w >= (gui::tap() + picker::DOT + DOT_ABOVE) * u {
+        if right.w >= (gui::tap_size() + picker::DOT + DOT_ABOVE) * u {
             day_dots(pl, g, gui::cut_top(right, picker::DOT * u));
             gui::cut_top(right, DOT_ABOVE * u);
-            row = float4 { right.x, right.y, right.z, gui::tap() * u };
+            row = float4 { right.x, right.y, right.z, gui::tap_size() * u };
         } else {
             let w = (pl.day_n * picker::DOT + (pl.day_n - 1) * picker::DOT_GAP + 2.0 * gui::PAD) * u;
             day_dots(pl, g, gui::cut_left(row, w));

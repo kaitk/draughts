@@ -114,7 +114,7 @@ fn dots(g: gui::Gui&, r: float4, n: i64, won: const u8[:], ring: i64) {
         else if k == ring {
             gui::add(g, gui::Quad { rect: c, look: float4 { gui::RING, 0.5 * d, 1.0, 3.0 }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
         }
-        else { gui::fill(g, c, float4 { 1.0, 1.0, 1.0, 0.3 }, 0.5 * d); }
+        else { gui::rounded_rect(g, c, float4 { 1.0, 1.0, 1.0, 0.3 }, 0.5 * d); }
     }
 }
 
@@ -196,13 +196,13 @@ fn mark(g: gui::Gui&, r: float4, theme: i64, size: f32, opened: bool) {
     let m = size * u;
     let disc = gui::center(r, m, m);
     if opened { gui::glow_fill(g, disc, 0.2, 0.5 * m); }
-    else { gui::fill(g, disc, float4 { 1.0, 1.0, 1.0, 0.06 }, 0.5 * m); }
+    else { gui::rounded_rect(g, disc, float4 { 1.0, 1.0, 1.0, 0.06 }, 0.5 * m); }
     let s = 0.57 * m;
     gui::glyph_icon(g, gui::center(disc, s, s), MARKS[theme], gui::PLAIN, 0.0, if opened { 1.0 } else { 0.45 });
     guard !opened else { return; }
     let b = 30.0 * u;
     let badge = float4 { disc.x + disc.z + 4.0 * u - b, disc.y + disc.w + 4.0 * u - b, b, b };
-    gui::fill(g, badge, float4 { 1.0, 1.0, 1.0, 0.25 }, 0.5 * b);
+    gui::rounded_rect(g, badge, float4 { 1.0, 1.0, 1.0, 0.25 }, 0.5 * b);
     gui::glyph_icon(g, gui::center(badge, 18.0 * u, 18.0 * u), gui::LOCK, gui::PLAIN, 0.0, 1.0);
 }
 
@@ -255,15 +255,15 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
         gui::glyph_icon(g, gui::center(gui::cut_right(top, star), star, star), gui::STAR, gui::ON, 0.0, 1.0);
         gui::cut_right(top, gui::PAD * u);
         let bar = gui::cut_top(b, 8.0 * u);
-        gui::fill(g, bar, float4 { 1.0, 1.0, 1.0, 0.14 }, 4.0 * u);
+        gui::rounded_rect(g, bar, float4 { 1.0, 1.0, 1.0, 0.14 }, 4.0 * u);
         let k = (won as f32) / max(1, all);
         if k > 0.0 { gui::glow_fill(g, float4 { bar.x, bar.y, bar.z * k, bar.w }, 1.0, 4.0 * u); }
     } else {
         var more: u8[..64] = [];
         strings::fill_in(more, strings::PUZZLES_LOCKED, [to_open(stars)]);
-        gui::text(g, gui::fitting(g, gui::SMALL, more[..], b.z), b, more[..], 0.66, 0.0, gui::LEFT);
+        gui::text(g, gui::face_that_fits(g, gui::SMALL, more[..], b.z), b, more[..], 0.66, 0.0, gui::LEFT);
     }
-    gui::text(g, gui::fitting(g, gui::LABEL, name, top.z), top, name, if opened { 1.0 } else { 0.66 }, 0.0,
+    gui::text(g, gui::face_that_fits(g, gui::LABEL, name, top.z), top, name, if opened { 1.0 } else { 0.66 }, 0.0,
               gui::LEFT);
     return tapped && opened;
 }
@@ -300,9 +300,9 @@ fn learn_row(g: gui::Gui&, r: float4, learned: i64, steps: i64, phone: bool) -> 
     }
     gui::cut_right(top, gui::PAD * u);
     let name = strings::get(strings::HOW_TITLE);
-    gui::text(g, gui::fitting(g, gui::LABEL, name, top.z), top, name, 1.0, 0.0, gui::LEFT);
+    gui::text(g, gui::face_that_fits(g, gui::LABEL, name, top.z), top, name, 1.0, 0.0, gui::LEFT);
     let bar = gui::cut_top(b, 8.0 * u);
-    gui::fill(g, bar, float4 { 1.0, 1.0, 1.0, 0.14 }, 4.0 * u);
+    gui::rounded_rect(g, bar, float4 { 1.0, 1.0, 1.0, 0.14 }, 4.0 * u);
     let k = (done as f32) / max(1, steps);
     if k > 0.0 { gui::glow_fill(g, float4 { bar.x, bar.y, bar.z * k, bar.w }, 1.0, 4.0 * u); }
     return tapped;
@@ -311,15 +311,15 @@ fn learn_row(g: gui::Gui&, r: float4, learned: i64, steps: i64, phone: bool) -> 
 // The draughts switch (prototypes/puzzle-set.html): settings' draughts tiles, each
 // its name over its board's size, joined on one glass, 4 dp round them and between.
 let SWITCH_PAD = 4.0;
-fn switch_row_h() -> f32 { gui::tap() + 2.0 * SWITCH_PAD } // its tiles, a tap tall, and the glass round them
+fn switch_row_h() -> f32 { gui::tap_size() + 2.0 * SWITCH_PAD } // its tiles, a tap tall, and the glass round them
 
-// How wide draughts tile i wants to be: as settings' tiles, its words with gui::side()
-// either side, at least a tap.
+// How wide draughts tile i wants to be: as settings' tiles, its words with
+// gui::word_padding() either side, at least a tap.
 fn switch_tile_w(g: gui::Gui&, i: i64) -> f32 {
     let u = g.scale;
     let w = max(gui::text_width(g, gui::BODY, strings::get(settings::DRAUGHTS_KEYS[i])),
                 gui::text_width(g, gui::SMALL, strings::get(settings::DRAUGHTS_SIZES[i])));
-    return max(gui::tap() * u, w + 2.0 * gui::side() * u);
+    return max(gui::tap_size() * u, w + 2.0 * gui::word_padding() * u);
 }
 
 // How wide the switch wants to be.
@@ -357,7 +357,7 @@ fn switch(g: gui::Gui&, r: float4, variant: i64&) -> bool {
 // The title in r, bare on the photograph, centered down r.
 fn title(g: gui::Gui&, r: float4) {
     let name = strings::get(strings::HOME_PUZZLES);
-    let face = gui::fitting(g, gui::LABEL, name, r.z);
+    let face = gui::face_that_fits(g, gui::LABEL, name, r.z);
     // Bare on the photograph, over bright bark or snow at some sizes: a soft shadow.
     gui::shadowed(g, face, gui::center(r, r.z, line_h(g, face)), name, gui::LEFT);
 }
@@ -376,7 +376,7 @@ fn row_pads(phone: bool) -> f32, f32 {
 }
 fn mark_dp(phone: bool) -> f32 { if phone { 56.0 } else { 72.0 } }
 fn mark_gap(phone: bool) -> f32 { if phone { 18.0 } else { 22.0 } }
-fn learn_dp(phone: bool) -> f32 { if phone { gui::tap() } else { 104.0 } }
+fn learn_dp(phone: bool) -> f32 { if phone { gui::tap_size() } else { 104.0 } }
 
 // How wide Today's words want to be: its name, or the longest note.
 fn today_words(g: gui::Gui&) -> f32 {
@@ -387,7 +387,7 @@ fn today_words(g: gui::Gui&) -> f32 {
 }
 
 // How wide n of today's tiles are in a line.
-fn tiles_w(n: i64, u: f32) -> f32 { n * gui::tap() * u + max(n - 1, 0) * TODAY_GAP * u }
+fn tiles_w(n: i64, u: f32) -> f32 { n * gui::tap_size() * u + max(n - 1, 0) * TODAY_GAP * u }
 
 // Whether today's n tiles fit beside the head of a row w pixels wide.
 fn today_beside(g: gui::Gui&, w: f32, n: i64, phone: bool) -> bool {
@@ -401,7 +401,7 @@ fn today_beside(g: gui::Gui&, w: f32, n: i64, phone: bool) -> bool {
 // as they go.
 fn today_lines(w: f32, n: i64, phone: bool, u: f32) -> i64, i64 {
     let l, r = row_pads(phone);
-    let fit = max(1, floor((w - (l + r) * u + TODAY_GAP * u) / ((gui::tap() + TODAY_GAP) * u)) as i64);
+    let fit = max(1, floor((w - (l + r) * u + TODAY_GAP * u) / ((gui::tap_size() + TODAY_GAP) * u)) as i64);
     let lines = max(1, (n + fit - 1) / fit);
     return (n + lines - 1) / lines, lines;
 }
@@ -411,9 +411,9 @@ fn today_lines(w: f32, n: i64, phone: bool, u: f32) -> i64, i64 {
 fn today_h(g: gui::Gui&, w: f32, n: i64, phone: bool) -> f32 {
     let u = g.scale;
     let head = learn_dp(phone) * u;
-    if today_beside(g, w, n, phone) { return max(head, (gui::tap() + 2.0 * 8.0) * u); }
+    if today_beside(g, w, n, phone) { return max(head, (gui::tap_size() + 2.0 * 8.0) * u); }
     let per, lines = today_lines(w, n, phone, u);
-    return head + lines * gui::tap() * u + (lines - 1) * TODAY_GAP * u + TODAY_FOOT * u;
+    return head + lines * gui::tap_size() * u + (lines - 1) * TODAY_GAP * u + TODAY_FOOT * u;
 }
 
 // Today's mark, a disc `m` pixels across centered in r: the calendar on the glow at 40%,
@@ -421,7 +421,7 @@ fn today_h(g: gui::Gui&, w: f32, n: i64, phone: bool) -> f32 {
 fn today_mark(g: gui::Gui&, r: float4, m: f32, icon: i64, opened: bool) {
     let disc = gui::center(r, m, m);
     if opened { gui::glow_fill(g, disc, 0.4, 0.5 * m); }
-    else { gui::fill(g, disc, float4 { 1.0, 1.0, 1.0, 0.06 }, 0.5 * m); }
+    else { gui::rounded_rect(g, disc, float4 { 1.0, 1.0, 1.0, 0.06 }, 0.5 * m); }
     let s = 0.57 * m;
     gui::glyph_icon(g, gui::center(disc, s, s), icon, gui::PLAIN, 0.0, if opened { 1.0 } else { 0.45 });
 }
@@ -434,8 +434,8 @@ fn name_note(g: gui::Gui&, c: float4, name: const u8[:], note: const u8[:], dim:
     var b = gui::center(c, c.z, name_h + 6.0 * u + note_h);
     let top = gui::cut_top(b, name_h);
     gui::cut_top(b, 6.0 * u);
-    gui::text(g, gui::fitting(g, gui::LABEL, name, top.z), top, name, if dim { 0.66 } else { 1.0 }, 0.0, gui::LEFT);
-    gui::text(g, gui::fitting(g, gui::SMALL, note, b.z), b, note, 0.66, 0.0, gui::LEFT);
+    gui::text(g, gui::face_that_fits(g, gui::LABEL, name, top.z), top, name, if dim { 0.66 } else { 1.0 }, 0.0, gui::LEFT);
+    gui::text(g, gui::face_that_fits(g, gui::SMALL, note, b.z), b, note, 0.66, 0.0, gui::LEFT);
 }
 
 // One of today's puzzles' tiles: its level's bars over its stars, lit if it is the first
@@ -478,7 +478,7 @@ fn today_row(g: gui::Gui&, r: float4, t: settings::Today&, at: i64, spot: float4
     if beside { lines = gui::cut_right(head, tiles_w(n, u)); }
     else { gui::cut_bottom(lines, TODAY_FOOT * u); }
     // The row's tile, the whole row: the puzzles' tiles, declared after it, take the
-    // presses and the hover over them (gui::hold, the last under the pointer).
+    // presses and the hover over them (gui::press_widget, the last under the pointer).
     let opened = gui::tile(g, TODAY_ID, r, gui::NO_ICON, gui::ROW, 22.0);
     today_mark(g, mark_at, m, if done >= n { gui::MOON } else { gui::TODAY }, true);
     var note: u8[..64] = [];
@@ -493,7 +493,7 @@ fn today_row(g: gui::Gui&, r: float4, t: settings::Today&, at: i64, spot: float4
     var lit = -1;
     for k in n { if lit < 0 && t.stars[k] == 0 { lit = k; } }
     var pick = if opened && n > 0 { max(lit, 0) } else { -1 };
-    let side = gui::tap() * u;
+    let side = gui::tap_size() * u;
     for k in n {
         let line = k / per;
         let in_line = min(per, n - line * per);
@@ -552,7 +552,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let n_today = today.picked.list.len;
     // How to play beside the title once Today heads the list, in landscape.
     let how_tile = opened && landscape;
-    let how_w = if how_tile { (16.0 + gui::tap()) * u } else { 0.0 };
+    let how_w = if how_tile { (16.0 + gui::tap_size()) * u } else { 0.0 };
     let sw_w = switch_width(g);
     let sw_h = switch_row_h() * u;
     let rim = SWITCH_PAD * u;
@@ -566,14 +566,14 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // matters on a phone, whose rows take the page's width; settled once it is known.
     let rest = HEAD_GAP * u + title_width(g) + how_w + 24.0 * u + sw_w;
     let guess_w = if landscape { page.z } else { min(page.z, COLUMN * u) };
-    var beside = gui::tap() * u + rest <= guess_w;
-    var head = if beside { gui::tap() * u + gap } else { gui::tap() * u + gap + sw_h + gap };
+    var beside = gui::tap_size() * u + rest <= guess_w;
+    var head = if beside { gui::tap_size() * u + gap } else { gui::tap_size() * u + gap + sw_h + gap };
     // A variant's set may leave a theme out (Russian's has no king shots): its row too.
     var rows = 0;
     for t in puzzles::THEMES { if puzzles::theme_count(puzzles::all, t) > 0 { rows++; } }
     // In portrait the rows give up height to fit the page under the switch's row (a
-    // foldable, a 9:16 phone), down to the gui::tap() a tap wants; where even that doesn't
-    // fit, they keep their height and scroll.
+    // foldable, a 9:16 phone), down to the gui::tap_size() a tap wants; where even that
+    // doesn't fit, they keep their height and scroll.
     var row_h = (if phone { 96.0 } else { 124.0 }) * u;
     // How to play's row over them, across the columns, or Today's once it is open, which
     // is as tall as its tiles want at the width of one column, or of the two where there
@@ -585,7 +585,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     var first = first_h + gap;
     let end = if !opened || !landscape { gap + learn_h } else { 0.0 };
     let fit = floor((page.w - head - first - end - (rows - 1) * gap) / rows);
-    if !landscape && fit >= gui::tap() * u { row_h = min(row_h, fit); }
+    if !landscape && fit >= gui::tap_size() * u { row_h = min(row_h, fit); }
     let one = first + rows * row_h + (rows - 1) * gap + end;
     // Two columns in landscape where two fit the width (a tablet, a wide window) or one
     // doesn't fit the height (a phone); one in portrait, scrolling where it must.
@@ -602,21 +602,21 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let y = page.y;
     let x = page.x + floor(0.5 * (page.z - w) + 0.5);
     let worded = back_w(g) + rest <= w;
-    beside = worded || gui::tap() * u + rest <= w;
-    head = if beside { gui::tap() * u + gap } else { gui::tap() * u + gap + sw_h + gap };
+    beside = worded || gui::tap_size() * u + rest <= w;
+    head = if beside { gui::tap_size() * u + gap } else { gui::tap_size() * u + gap + sw_h + gap };
     // The switch at the row's right, ending with the rows.
     let named = worded || !beside;
-    let tapped, trail, top = gui::head(g, BACK_ID, float4 { x, y, w, gui::tap() * u }, strings::get(strings::NAV_BACK),
-                                       if named { back_w(g) } else { gui::tap() * u }, if named { gui::MIDDLE } else { gui::ARROW_ONLY },
+    let tapped, trail, top = gui::head(g, BACK_ID, float4 { x, y, w, gui::tap_size() * u }, strings::get(strings::NAV_BACK),
+                                       if named { back_w(g) } else { gui::tap_size() * u }, if named { gui::MIDDLE } else { gui::ARROW_ONLY },
                                        HEAD_GAP * u, if beside { sw_w } else { 0.0 }, if beside { 24.0 * u } else { 0.0 });
     if tapped { pick = BACK; }
     let sw = if beside { float4 { trail.x, trail.y - rim, sw_w, sw_h } }
-             else { float4 { x, y + gui::tap() * u + gap, w, sw_h } };
+             else { float4 { x, y + gui::tap_size() * u + gap, w, sw_h } };
     if how_tile {
         // How to play's tile after the title, as far along as the title's words.
         let tw = min(title_width(g), top.z - how_w);
-        let tile = float4 { top.x + tw + 16.0 * u, top.y + floor(0.5 * (top.w - gui::tap() * u) + 0.5), gui::tap() * u,
-                            gui::tap() * u };
+        let tile = float4 { top.x + tw + 16.0 * u, top.y + floor(0.5 * (top.w - gui::tap_size() * u) + 0.5), gui::tap_size() * u,
+                            gui::tap_size() * u };
         title(g, float4 { top.x, top.y, tw, top.w });
         if learn_tile(g, tile) { pick = LEARN; }
     } else {
@@ -697,7 +697,7 @@ fn levels_h(t: i64, fit: i64, side: f32, gap: f32, margin: f32, above: f32, betw
 // How tall theme t's levels are at least on a landscape page w pixels wide, its head in
 // the column under back: as page() lays them out.
 fn tightest(t: i64, w: f32, short: bool, phone: bool, u: f32) -> f32 {
-    let side = (if phone { gui::tap() } else { 96.0 }) * u;
+    let side = (if phone { gui::tap_size() } else { 96.0 }) * u;
     let gap = (if short { 8.0 } else { 10.0 }) * u;
     let pad_x = (if short { 12.0 } else { 16.0 }) * u;
     let pad_y = (if short { 4.0 } else { 14.0 }) * u;
@@ -734,16 +734,16 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         // Back as wide as its word wants, or a tap with the word under the arrow where the
         // levels wouldn't fit the height beside that (Shots on a phone with its insets).
         let stacked = tightest(t, room.z - back_w(g) - 24.0 * u, short, phone, u) > room.w;
-        column = gui::cut_left(room, if stacked { gui::tap() * u } else { back_w(g) });
-        if back(g, gui::cut_top(column, gui::tap() * u), stacked) { pick = SHOWN; }
+        column = gui::cut_left(room, if stacked { gui::tap_size() * u } else { back_w(g) });
+        if back(g, gui::cut_top(column, gui::tap_size() * u), stacked) { pick = SHOWN; }
         gui::cut_left(room, MARGIN * u);
     }
-    let side = (if phone { gui::tap() } else { 96.0 }) * u;
+    let side = (if phone { gui::tap_size() } else { 96.0 }) * u;
     var gap = (if short { 8.0 } else { 10.0 }) * u;
     var pad_x = (if short { 12.0 } else { 16.0 }) * u;
     var pad_y = (if short { 4.0 } else { 14.0 }) * u;
     var between = (if short { 6.0 } else { 14.0 }) * u;
-    let head_h = (if !landscape { gui::tap() } else if short { 52.0 } else { 72.0 }) * u;
+    let head_h = (if !landscape { gui::tap_size() } else if short { 52.0 } else { 72.0 }) * u;
     let label_h = 30.0 * u;
     let words = (if short { 96.0 } else { 120.0 }) * u;
     var label = words + 14.0 * u;       // the label beside the tiles, and its gap
@@ -796,7 +796,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         gui::text(g, gui::BODY, gui::cut_right(head, count_w + 8.0 * u), n[..], 0.66, 0.0, gui::LEFT);
         gui::cut_right(head, gui::PAD * u);
         let name = strings::get(NAMES[t]);
-        gui::text(g, gui::fitting(g, gui::LABEL, name, head.z), head, name, 1.0, 0.0, gui::LEFT);
+        gui::text(g, gui::face_that_fits(g, gui::LABEL, name, head.z), head, name, 1.0, 0.0, gui::LEFT);
     }
     // In portrait the levels scroll under the head where they run past the page's foot
     // (a small window), shown down to the screen's foot.
@@ -840,7 +840,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
             var mid = gui::center(r, r.z, s + 4.0 * u + line_h(g, gui::SMALL));
             gui::glyph_icon(g, gui::center(gui::cut_top(mid, s), s, s), gui::LEVEL + l, gui::PLAIN, 0.0, 1.0);
             gui::cut_top(mid, 4.0 * u);
-            gui::text(g, gui::fitting(g, gui::SMALL, word, r.z), mid, word, 0.66, 0.0, gui::CENTER);
+            gui::text(g, gui::face_that_fits(g, gui::SMALL, word, r.z), mid, word, 0.66, 0.0, gui::CENTER);
         }
         // The tiles from the left, or centered where the level stands over them; a short
         // last row centered under the others.

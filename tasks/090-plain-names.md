@@ -55,6 +55,54 @@ feature's name), `notes`, `sheet`, `cut_top` / `cut_left`, `hover`, `moving`, `g
 `by_hand`, `spot_of`, `labelled`, `pick`, `Settings.volume` / `muted` / `variant` /
 `level`.
 
+## The picks (2026-11-16)
+
+Checked against the code on 2026-11-16, which turned up the rows marked *new*. Printed
+labels in the tests (`"counted "`) stay, so no output needs a re-bless.
+
+| Area | Old | New |
+|---|---|---|
+| gui | `Gui.took`, `take` | `press_on_ui`, `claim_press` |
+| gui | `Gui.deaf`, `listen` | `input_off`, `set_input_enabled` |
+| gui | `hold`, `hold_if` (`gui::button` exists, so not `button`) | `press_widget`, `press_widget_if_on` |
+| gui | `turned` (*new*) | `mirrored_fade_start` |
+| gui | `face` | `player_badge` |
+| gui | `waiting` | `loading_text` |
+| gui | `tap()`, `stacked()`, `side()`, the field `Gui.side` | `tap_size()`, `stacked_tile_height()`, `word_padding()`, `desktop_margin` |
+| gui | `fitting`, `fill`, `bleed`, `prefer` | `face_that_fits`, `rounded_rect`, `extend_to_screen_edge`, `mark_primary` |
+| board, game | `Event.over`, `Board.over` and `Watch.over` | `ended_for_history`, `target_under_pointer` |
+| board, game, shell, app | `over: board::Overlay` params and fields (not `overlay`: `draw::overlay` is the dimming cover) | `ui_pieces` |
+| board, game | `Game.counted` (and `Saved.counted`), `Game.kept`, `Board.counted` | `end_sent_for_rating`, `end_sent_for_history`, `counts_shown_after_mistake` |
+| board | `Board.quiet` | `hide_counts` |
+| board | `rig::settle`, `panel::settle`, `ending::settle` (*new*, the draw's card) | `ease_to_rest`, `fit_view`, `draw_card` |
+| board | `panel::rest`, `Layout.rest` | `set_rest_view`, `rest_view` |
+| board, game | `panel::aim`, `ending::aim` | `apply_camera`, `start_win_glow` |
+| board | `view3d::turned` | `with_camera_turn` |
+| board, game | `clock::shown`, `Board.shows` (and `Watch.shows`, `Game.hint_shows`), `Game.shown` | `whole_seconds`, `positions_shown` (`hint_positions_shown`), `clock_seconds_drawn` |
+| game | `Game.seen`, `still`, `stilled` | `clock_counted_at`, `win_still_from`, `win_still_drawn` |
+| board | `Board.still`, `held` | `static_picture`, `rings_frozen` |
+| game | `asking`, `asks`, `answered`, `trapping`, `judging`, `hinting` (*new*), the bool `judge` | `ai_request_id`, `ai_request_count`, `ai_answered`, `trap_request_id`, `judge_request_id`, `hint_request_id`, `judge_moves` |
+| game | `Game.look`, `look_skill`, `watched`, `Event.looked` | `lookout_on`, `lookout_skill`, `lookout_cache`, `lookout_toggled` |
+| board | `board::waiting` | `capture_stop_square` |
+| board | `Board.again`, `kept_at` | `release_deselects`, `next_stops_pulse_at` |
+| board | `board::fill`, `view3d::fill` | `build_frame_pieces`, `build_scene` |
+| game | `game::put` | `add_ui_piece` |
+| board | `panel::Layout.three` | `is_3d` |
+| shell | `Replay.over` (*new*) | `game_ended` |
+| shell | `replay::settle` | `show_position_at_move` |
+| shell | `shell::turned`, `flat_turned`, `replay::turned` | `board_flipped`, `flat_board_flipped`, `board_flipped` |
+| shell | `shell::shown`, `Frame.shows` (*new*) | `board_on_screen`, `board_screen` |
+| shell | `tutorial::judge`, `puzzle::judge` | `handle_player_move` |
+| shell | `Shell.staged`, `went`, `came`, `left` | `showing_setup_board`, `from_layout`, `to_layout`, `setup_when_left` |
+| shell | `shell::fill`, `shell::put` | `build_frame_pieces`, `add_moved_ui_piece` || app | `render::rest`, `draw3d::rest`, `render3d::rest` (*new*) | `release_targets_unless_shown` (both), `release_targets` |
+| app | `render3d_ngfx::settle` (*new*) | `barrier_between_passes` |
+| last | the `who` namespace, its file and test, `Who`, `Shell.who` | `player_card` (`PlayerCard`, `Shell.player_card`), a commit of its own after the app's |
+
+Left as they are: `ai::judge` and `solve::judge` (they do grade a move), `rig::put`,
+`lookout::shown`, `looks::shown`, `draw3d::shows`, `who::hold` (a real 1.5 s hold), the
+GLSL `over()` (the compositing operator), and the other structs' `kept`, `seen`, `held`,
+`left`, and `look`.
+
 Not counted: `settings::put_in_list` (task 089) calls `game::put`, which row 24 renames.
 
 ## How

@@ -74,7 +74,7 @@ let ROW_GAP = 2.0;
 let ROW_COMPACT = 72.0;
 let MARK_COMPACT = 64.0;
 let RIM_COMPACT = 20.0;
-fn row_h(small: bool) -> f32 { if small { min(ROW_COMPACT, gui::tap()) } else { gui::tap() } }
+fn row_h(small: bool) -> f32 { if small { min(ROW_COMPACT, gui::tap_size()) } else { gui::tap_size() } }
 fn mark_h(small: bool) -> f32 { if small { MARK_COMPACT } else { MARK_H } }
 let MARK_H = 72.0;          // the wordmark's row
 let MARK_GAP = 34.0;        // under it in landscape; 14 beside settings' gear, down to 4
@@ -90,8 +90,8 @@ let CHIP_PILL_H = 49.0;     // its height (the face's 30 dp, 9 above and 10 belo
 let CHIP_RADIUS = 22.0;     // its corners,
 let CHIP_PAD = 40.0;        // and the tap's end, this past the name's
 
-// The setup's parts, in dp: back and the title, and play are gui::tap() tall, the tiles
-// with their icon over their word gui::stacked().
+// The setup's parts, in dp: back and the title, and play are gui::tap_size() tall, the
+// tiles with their icon over their word gui::stacked_tile_height().
 let HEAD_GAP = 18.0;
 let GROUP_H = 34.0;         // a choice's dim name over its tiles,
 let FIRST_GROUP_H = 26.0;   // the first's, under the head's gap
@@ -116,12 +116,12 @@ let LEVEL_NOTES = [strings::LEVEL_EASY, strings::LEVEL_MEDIUM, strings::LEVEL_HA
 
 // Where the way out is in the safe area `area`: its top right.
 fn corner(area: float4, u: f32) -> float4 {
-    float4 { area.x + area.z - (EDGE + gui::tap()) * u, area.y + EDGE * u, gui::tap() * u, gui::tap() * u }
+    float4 { area.x + area.z - (EDGE + gui::tap_size()) * u, area.y + EDGE * u, gui::tap_size() * u, gui::tap_size() * u }
 }
 
 // How far in dp the gear's tap reaches over and under the wordmark's row: 8, 12 in a
 // small window, none where the tap is no taller than the row (a desktop).
-fn reach(small: bool) -> f32 { max(0.0, 0.5 * (gui::tap() - mark_h(small))) }
+fn reach(small: bool) -> f32 { max(0.0, 0.5 * (gui::tap_size() - mark_h(small))) }
 
 // The gap under the wordmark in dp: MARK_GAP with settings a row of its own,
 // DESKTOP_MARK_GAP on a desktop; 14 beside the gear, less where the area's `height`
@@ -131,14 +131,14 @@ fn reach(small: bool) -> f32 { max(0.0, 0.5 * (gui::tap() - mark_h(small))) }
 fn mark_gap(gear: bool, rows: i64, height: f32, u: f32, small: bool = false) -> f32 {
     guard gear else { return if gui::desktop_scale > 0.0 { DESKTOP_MARK_GAP } else { MARK_GAP }; }
     guard !small else { return reach(true); }
-    return clamp(height / u - reach(false) - (MARK_H + rows * gui::tap() + (rows - 1) * ROW_GAP), reach(false), 14.0);
+    return clamp(height / u - reach(false) - (MARK_H + rows * gui::tap_size() + (rows - 1) * ROW_GAP), reach(false), 14.0);
 }
 
 // The gap between the menu's rows in dp: ROW_GAP, less, down to none, where the gap
 // under the wordmark can't give way any further (mark_gap).
 fn row_gap(gear: bool, rows: i64, height: f32, u: f32, small: bool = false) -> f32 {
     guard gear && !small else { return ROW_GAP; }
-    let left = height / u - reach(false) - MARK_H - mark_gap(gear, rows, height, u) - rows * gui::tap();
+    let left = height / u - reach(false) - MARK_H - mark_gap(gear, rows, height, u) - rows * gui::tap_size();
     return clamp(left / (rows - 1), 0.0, ROW_GAP);
 }
 
@@ -165,10 +165,10 @@ fn quit_row(landscape: bool, rows: i64, height: f32, u: f32, small: bool = false
 }
 
 // How tall the setup's choices are in dp: their groups, each a dim name over its tiles.
-fn choices_height() -> f32 { FIRST_GROUP_H + 3.0 * GROUP_H + 3.0 * gui::stacked() + BOARD_TILE_H }
+fn choices_height() -> f32 { FIRST_GROUP_H + 3.0 * GROUP_H + 3.0 * gui::stacked_tile_height() + BOARD_TILE_H }
 
 // How tall the setup's column is unscrolled: back and the title, the choices, and play.
-fn setup_height(u: f32) -> f32 { (gui::tap() + HEAD_GAP + choices_height() + PLAY_GAP + gui::tap()) * u }
+fn setup_height(u: f32) -> f32 { (gui::tap_size() + HEAD_GAP + choices_height() + PLAY_GAP + gui::tap_size()) * u }
 
 // Whether the setup's play moves into its head row in the title's place, the choices
 // scrolling under it to the screen's foot: in a phone's landscape, too short for the
@@ -222,7 +222,7 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, rows: i64, s: settings
     let height = area.w;
     let landscape = width >= height;
     let small = setup == NO_SETUP && gui::compact(g, area);
-    let clear = (EDGE + gui::tap() + 16.0) * u;
+    let clear = (EDGE + gui::tap_size() + 16.0) * u;
     let least_h = content_height(setup, rows, landscape, height, u, small);
     // With the menu, its results row: a row more where that leaves the board its size and
     // the menu on the screen, else the menu keeps its height and scrolls.
@@ -284,8 +284,8 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, rows: i64, s: settings
         var y = 0.5 * (height - size);
         // Where the board would reach the way out's row at the X or, on the menu, at the
         // player's badge (16 dp from either), the same choice.
-        let below = (EDGE + gui::tap() + 8.0) * u;
-        let start: f32 = if chip { EDGE + gui::tap() + 16.0 } else { 40.0 };
+        let below = (EDGE + gui::tap_size() + 8.0) * u;
+        let start: f32 = if chip { EDGE + gui::tap_size() + 16.0 } else { 40.0 };
         if y < below && (x + size > width - clear || x < stage.x + start * u) {
             let down = min(size, height - 24.0 * u - below);
             let left = min(size, width - clear - stage.x - start * u);
@@ -331,9 +331,9 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, rows: i64, s: settings
         col = float4 { area.x, area.y + height - sheet_h, width, sheet_h + 32.0 * u };
         content = float4 { area.x + 32.0 * u, area.y + height - sheet_h + rim, width - 64.0 * u, content_h };
         if full {
-            head = float4 { content.x, content.y, content.z - (gui::tap() + 16.0) * u, gui::tap() * u };
-            way = float4 { content.x + content.z - gui::tap() * u, content.y, gui::tap() * u, gui::tap() * u };
-            gui::cut_top(content, gui::tap() * u);
+            head = float4 { content.x, content.y, content.z - (gui::tap_size() + 16.0) * u, gui::tap_size() * u };
+            way = float4 { content.x + content.z - gui::tap_size() * u, content.y, gui::tap_size() * u, gui::tap_size() * u };
+            gui::cut_top(content, gui::tap_size() * u);
         }
         let stage_h = height - sheet_h;
         var size, y = sheet_board(width, stage_h, u, height, clear);
@@ -408,7 +408,7 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
     l = h.board;
     room3d = h.room3d;
     // The column or sheet runs on past the safe area to the screen's edges.
-    gui::glass(g, gui::bleed(g, h.col, area), 32.0);
+    gui::glass(g, gui::extend_to_screen_edge(g, h.col, area), 32.0);
     over.clear();
     var pick = if setup != NO_SETUP { choose(over, g, h.content, h.head, h.up, foot(g, area), s) }
                else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit, resume, h.scroll, foot(g, area)) };
@@ -422,8 +422,8 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
 // one, the badge's tap, CHIP_GAP, the name, and CHIP_PAD (the pill ends 16 dp past the name).
 fn chip_width(g: gui::Gui&, s: settings::Settings&, named: bool = true) -> f32 {
     let u = g.scale;
-    guard named && s.name.len > 0 else { return gui::tap() * u; }
-    return (gui::tap() + CHIP_GAP + CHIP_PAD) * u + gui::text_width(g, gui::LABEL, s.name[..]);
+    guard named && s.name.len > 0 else { return gui::tap_size() * u; }
+    return (gui::tap_size() + CHIP_GAP + CHIP_PAD) * u + gui::text_width(g, gui::LABEL, s.name[..]);
 }
 
 // Where a board in the way out's row must start, from the left of the board's side of
@@ -434,7 +434,7 @@ fn chip_width(g: gui::Gui&, s: settings::Settings&, named: bool = true) -> f32 {
 fn named_end(g: gui::Gui&, s: settings::Settings&, across: f32) -> f32 {
     let u = g.scale;
     let end = (EDGE + 16.0) * u + chip_width(g, s);
-    guard s.name.len > 0 && end <= across - (EDGE + gui::tap()) * u else { return 0.0; }
+    guard s.name.len > 0 && end <= across - (EDGE + gui::tap_size()) * u else { return 0.0; }
     return end;
 }
 
@@ -446,7 +446,7 @@ fn named_end(g: gui::Gui&, s: settings::Settings&, across: f32) -> f32 {
 // clear of that. The one place that places it.
 fn player_spot(g: gui::Gui&, area: float4, side: f32, b: float4, way: float4, s: settings::Settings&) -> float4 {
     let u = g.scale;
-    var r = float4 { side + EDGE * u, area.y + EDGE * u, chip_width(g, s), gui::tap() * u };
+    var r = float4 { side + EDGE * u, area.y + EDGE * u, chip_width(g, s), gui::tap_size() * u };
     let end = r.x + r.z + 16.0 * u;
     let board = b.z > 0.0 && end > b.x && b.y < r.y + r.w + 8.0 * u;
     if end > way.x || board { r.z = chip_width(g, s, false); }
@@ -458,17 +458,17 @@ fn player_spot(g: gui::Gui&, area: float4, side: f32, b: float4, way: float4, s:
 // pressed it lights as the X's does. True when it is tapped.
 fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
     let u = g.scale;
-    let named = r.z > gui::tap() * u + 0.5;
+    let named = r.z > gui::tap_size() * u + 0.5;
     if named {
         let w = gui::text_width(g, gui::LABEL, s.name[..]) + 2.0 * CHIP_PILL * u;
-        let pill = gui::center(float4 { r.x + (gui::tap() + CHIP_GAP - CHIP_PILL) * u, r.y, w, r.w }, w, CHIP_PILL_H * u);
+        let pill = gui::center(float4 { r.x + (gui::tap_size() + CHIP_GAP - CHIP_PILL) * u, r.y, w, r.w }, w, CHIP_PILL_H * u);
         gui::glass(g, pill, CHIP_RADIUS);
     }
     let clicked, p = gui::bare(g, CHIP_ID, r);
     let k = 1.0 - 0.04 * p;
     var c = r;
     let f = CHIP_FACE * u * k;
-    gui::face(g, gui::center(gui::cut_left(c, gui::tap() * u), f, f), s.picture, 1.0, false);
+    gui::player_badge(g, gui::center(gui::cut_left(c, gui::tap_size() * u), f, f), s.picture, 1.0, false);
     if named {
         gui::cut_left(c, CHIP_GAP * u);
         gui::text(g, gui::LABEL, c, s.name[..], 1.0, 0.0, gui::LEFT);
@@ -495,7 +495,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     var at:    float4[ROWS + 4]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; ROWS + 4];
     items[0].size = mark_h(small) * u;
     for i in rows_n {
-        items[1 + i].size = (if i < shown { row_h(small) } else { gui::tap() }) * u;
+        items[1 + i].size = (if i < shown { row_h(small) } else { gui::tap_size() }) * u;
         items[1 + i].gap = (if i == 0 { below } else { apart }) * u;
     }
     gui::stack(c, items[..rows_n + 1], at);
@@ -510,9 +510,9 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     gui::cut_left(mark, 14.0 * u);
     var pick = NOTHING;
     if gear {
-        let r = gui::center(gui::cut_right(mark, gui::tap() * u), gui::tap() * u, gui::tap() * u);
+        let r = gui::center(gui::cut_right(mark, gui::tap_size() * u), gui::tap_size() * u, gui::tap_size() * u);
         if gui::icon_button(g, GEAR_ID, r, gui::GEAR, GEAR_ICON) { pick = SETTINGS; }
-        mark.z += 0.5 * (gui::tap() - GEAR_ICON) * u;
+        mark.z += 0.5 * (gui::tap_size() - GEAR_ICON) * u;
     }
     // The name spaced out, less where the gear leaves it too little room (a phone).
     let name = strings::get(strings::APP_NAME);
@@ -627,8 +627,8 @@ let ASK_BUTTON = 150.0;     // a button's width at least
 let ASK_ICON = 28.0;
 fn ask_quit(g: gui::Gui&, area: float4, screen: float4) -> i64 {
     let u = g.scale;
-    gui::fill(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
-    let outside, unused = gui::hold(g, QUIT_OUTSIDE_ID, screen, false);
+    gui::rounded_rect(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
+    let outside, unused = gui::press_widget(g, QUIT_OUTSIDE_ID, screen, false);
     let title = strings::get(strings::QUIT_ASK);
     let cancel = strings::get(strings::QUIT_CANCEL);
     let quit = strings::get(strings::HOME_QUIT);
@@ -637,14 +637,14 @@ fn ask_quit(g: gui::Gui&, area: float4, screen: float4) -> i64 {
     let pair = 2.0 * button + ASK_GAP * u;
     let line = g.faces[gui::HEADING].ascent - g.faces[gui::HEADING].descent;
     let width = min(max(pair, gui::text_width(g, gui::HEADING, title)) + 2.0 * ASK_PAD * u, area.z);
-    let height = line + (3.0 * ASK_PAD + gui::tap()) * u;
+    let height = line + (3.0 * ASK_PAD + gui::tap_size()) * u;
     let r = gui::center(area, width, height);
     gui::glass(g, r, 32.0);
-    gui::hold(g, QUIT_CARD_ID, r, false);
+    gui::press_widget(g, QUIT_CARD_ID, r, false);
     var c = gui::inset(r, ASK_PAD * u);
     gui::text(g, gui::HEADING, gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
     gui::cut_top(c, ASK_PAD * u);
-    var row = gui::center(gui::cut_top(c, gui::tap() * u), pair, gui::tap() * u);
+    var row = gui::center(gui::cut_top(c, gui::tap_size() * u), pair, gui::tap_size() * u);
     var ask = NOTHING;
     if gui::labelled(g, QUIT_CANCEL_ID, gui::cut_left(row, button), gui::BACK, ASK_ICON, cancel, gui::BODY, gui::MIDDLE) {
         ask = BACK;
@@ -653,7 +653,7 @@ fn ask_quit(g: gui::Gui&, area: float4, screen: float4) -> i64 {
                      gui::PRIMARY) {
         ask = EXIT;
     }
-    gui::prefer(g, QUIT_ID);
+    gui::mark_primary(g, QUIT_ID);
     if ask == NOTHING && outside { ask = BACK; }
     return ask;
 }
@@ -701,10 +701,10 @@ fn draughts_tile(g: gui::Gui&, row: float4, i: i64) -> float4 {
             narrowest = min(narrowest, draughts_width(g, k, least));
         }
         share = spare / count;
-        guard narrowest + share < gui::tap() * u else { break; }
-        least = gui::tap();
+        guard narrowest + share < gui::tap_size() * u else { break; }
+        least = gui::tap_size();
     }
-    guard widest + 2.0 * gui::side() * u > third.z && share >= 0.0 else { return third; }
+    guard widest + 2.0 * gui::word_padding() * u > third.z && share >= 0.0 else { return third; }
     var x = row.x;
     for k in i { x += draughts_width(g, k, least) + share + TILE_GAP * u; }
     return float4 { x, row.y, draughts_width(g, i, least) + share, row.w };
@@ -737,8 +737,8 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
     var ask = NOTHING;
     var c = content;
     var head = apart;
-    if apart.z <= 0.0 { head = gui::cut_top(c, gui::tap() * u); }
-    let back = gui::cut_left(head, gui::tap() * u);
+    if apart.z <= 0.0 { head = gui::cut_top(c, gui::tap_size() * u); }
+    let back = gui::cut_left(head, gui::tap_size() * u);
     if gui::tile(g, SETUP_BACK_ID, back, gui::BACK, gui::PLAIN, 16.0) { ask = BACK; }
     var play = head;
     if up {
@@ -749,8 +749,8 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
         gui::cut_left(head, 14.0 * u);
         // The title in a smaller face where it is too wide for its room.
         let title = strings::get(strings::HOME_NEW_GAME);
-        gui::text(g, gui::fitting(g, gui::LABEL, title, head.z), head, title, 1.0, 0.0, gui::LEFT);
-        play = gui::cut_bottom(c, gui::tap() * u);
+        gui::text(g, gui::face_that_fits(g, gui::LABEL, title, head.z), head, title, 1.0, 0.0, gui::LEFT);
+        play = gui::cut_bottom(c, gui::tap_size() * u);
         gui::cut_bottom(c, PLAY_GAP * u);
     }
 
@@ -767,7 +767,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
     gui::cut_top(list, HEAD_GAP * u);
 
     // Whom to play: a friend, or the computer at a level, its icon and one to three pips.
-    let against = group(g, list, strings::SETUP_AGAINST, gui::stacked(), FIRST_GROUP_H);
+    let against = group(g, list, strings::SETUP_AGAINST, gui::stacked_tile_height(), FIRST_GROUP_H);
     for i in 4 {
         let on = if i == 0 { s.friend } else { !s.friend && s.level == i - 1 };
         let label = strings::get(if i == 0 { strings::SETUP_FRIEND } else { LEVEL_KEYS[i - 1] });
@@ -800,7 +800,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
 
     if !s.friend {
         // The child's pieces, each tile showing one.
-        let colors = group(g, list, strings::SETUP_COLOR, gui::stacked());
+        let colors = group(g, list, strings::SETUP_COLOR, gui::stacked_tile_height());
         for i in 2 {
             let tapped, pic = gui::pick(g, COLOR_IDS + i, across(colors, 2, i, u), 30.0,
                                         strings::get(if i == 0 { strings::COLOR_WHITE } else { strings::COLOR_BLACK }), "",
@@ -816,7 +816,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
         // side to move after each move (settings' `turns`), each with its icon over its
         // word and note where the tile holds all three (a touch screen's 88 dp), without
         // the note where not (a desktop's).
-        let turning = group(g, list, strings::SETUP_BOARD, gui::stacked());
+        let turning = group(g, list, strings::SETUP_BOARD, gui::stacked_tile_height());
         let words = g.faces[gui::BODY].ascent - g.faces[gui::BODY].descent + g.faces[gui::SMALL].ascent
                     - g.faces[gui::SMALL].descent;
         let icon: f32 = if words + 42.0 * u <= turning.w { 30.0 } else { 0.0 };
@@ -838,7 +838,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
     }
 
     // The clock.
-    let clocks = group(g, list, strings::SETUP_CLOCK, gui::stacked());
+    let clocks = group(g, list, strings::SETUP_CLOCK, gui::stacked_tile_height());
     let labels = [-1, strings::CLOCK_BLITZ, strings::CLOCK_RAPID];
     let notes = [strings::CLOCK_NONE, strings::CLOCK_BLITZ_NOTE, strings::CLOCK_RAPID_NOTE];
     for i in 3 {

@@ -153,7 +153,7 @@ formatting is stable). The compiler prints nothing on success; `--stats` gives a
 - Globals initialize in import order: a top-level `let` that takes another file's global
   is "used before it is assigned" unless that file is imported first. A top-level `let`
   built from a `var` is computed once before `main`: anything that changes at run time
-  (`gui::tap()`) is a function.
+  (`gui::tap_size()`) is a function.
 - One choice at run time over code compiled per type, the renderer's seam
   (`src/app/backend.goose`): `fn with<F>() { if on { F(&a) } else { F(&b) } }` runs a
   block `{ be => f(be) }` checked once per argument's type, so `f` and all it calls are

@@ -253,18 +253,18 @@ struct Slot {
 }
 
 struct Gui {
-    scale:   f32               = 1.0,
-    now:     f64               = 0.0,
-    input:   Input             = Input {},
-    active:  i64               = 0,     // the widget the pointer went down on, or 0
-    took:    bool              = false, // whether this press landed on the UI, not the board
-    acted:   bool              = false, // whether a widget was clicked this frame
-    holding: bool              = false, // whether a hold (hold_tile) is filling this frame
-    quads:   Quad[..MAX_QUADS] = [],
-    dropped: i64               = 0,     // the quads this frame dropped past MAX_QUADS
-    slots:   Slot[MAX_IDS]     = [Slot {}; MAX_IDS],
-    faces:   Face[FACES]       = [Face {}; FACES],
-    pointer: Input             = Input {}, // the frame's pointer, kept while input is off (listen)
+    scale:       f32               = 1.0,
+    now:         f64               = 0.0,
+    input:       Input             = Input {},
+    active:      i64               = 0, // the widget the pointer went down on, or 0
+    press_on_ui: bool              = false, // whether this press landed on the UI, not the board
+    acted:       bool              = false, // whether a widget was clicked this frame
+    holding:     bool              = false, // whether a hold (hold_tile) is filling this frame
+    quads:       Quad[..MAX_QUADS] = [],
+    dropped:     i64               = 0, // the quads this frame dropped past MAX_QUADS
+    slots:       Slot[MAX_IDS]     = [Slot {}; MAX_IDS],
+    faces:       Face[FACES]       = [Face {}; FACES],
+    pointer:     Input             = Input {}, // the frame's pointer, kept while input is off (set_input_enabled)
     // The mouse's hover on a desktop (desktop_scale > 0, hover): the tile lit under the
     // pointer, fading in from hover_at over PRESS, and the one it left, fading out from
     // left_at; `under` is the topmost tile the pointer is over as this frame declares
@@ -276,25 +276,28 @@ struct Gui {
     under:    i64 = 0,
     // The screen's edges outside its safe area, in pixels: left, top, right, bottom (a
     // phone's camera cutout and gesture bar). Taps and words stay inside (safe); the
-    // photograph, and glass that runs off the screen (bleed), reach the edges.
+    // photograph, and glass that runs off the screen (extend_to_screen_edge), reach the
+    // edges.
     insets: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
     // On a desktop, the room beside the safe area each side where the window is wider
-    // than WIDEST times its height, in pixels (safe sets it); bleed carries glass over it.
-    side: f32 = 0.0,
+    // than WIDEST times its height, in pixels (safe sets it); extend_to_screen_edge
+    // carries glass over it.
+    desktop_margin: f32 = 0.0,
     // The screen's one vertical scroll (scroll_begin): which list, its offset in pixels,
     // the press it may become a drag from, and whether it has.
     scroll: Scroll = Scroll {},
     // The keys' focus (rendering.md, "Keys"): the control an arrow key moved to, lit as
     // the mouse's hover lights one, which Enter presses; 0 while the mouse or a touch
     // leads. `spots` are the controls this frame offers it, in the order declared, which
-    // the next frame's begin moves the focus among; `deaf` while a screen a transition
-    // leaves is declared (listen), whose controls offer none. `focused` is the focused
-    // control's spot as the last frame laid it out, which its list scrolls into view.
-    focus:   i64               = 0,
-    spots:   Spot[..MAX_SPOTS] = [],
-    focused: Spot              = Spot {},
-    deaf:    bool              = false,
-    ring:    bool              = false, // the focused control was just held: its next quad gets the ring
+    // the next frame's begin moves the focus among; `input_off` while a screen a
+    // transition leaves is declared (set_input_enabled), whose controls offer none.
+    // `focused` is the focused control's spot as the last frame laid it out, which its
+    // list scrolls into view.
+    focus:     i64               = 0,
+    spots:     Spot[..MAX_SPOTS] = [],
+    focused:   Spot              = Spot {},
+    input_off: bool              = false,
+    ring:      bool              = false, // the focused control was just held: its next quad gets the ring
     // The group controls are offered in now (gui::group), and the control each group had
     // the focus on last, which Tab comes back to; the focused cell of a grid (gui::grid),
     // y * cells + x, and the grid it is of.
@@ -395,7 +398,7 @@ fn scroll_begin(g: Gui&, id: i64, view: float4, content: f32) -> f32 {
     if s.armed && i.down && !s.dragging && g.sliding == 0 && abs(i.at.y - s.from.y) > SLOP * g.scale && s.max > 0.0 {
         s.dragging = true;
         g.active = SCROLL_ID;
-        g.took = true;
+        g.press_on_ui = true;
     }
     if s.dragging && i.down { s.offset = s.start - (i.at.y - s.from.y); }
     if !i.down {
@@ -460,26 +463,27 @@ fn compact(g: Gui&, area: float4) -> bool { area.z < area.w && area.w < COMPACT 
 let PAD = 12.0;
 let PAD_WIDE = 16.0;
 
-// The tap's size in dp, tap(): a tile's or a row's height, and the least a tap is
+// The tap's size in dp, tap_size(): a tile's or a row's height, and the least a tap is
 // across (rendering.md, "Controls"); every screen's tiles and the panels' heights follow
 // it. TAP on a touch screen, the floor for small hands; on a desktop (desktop_scale above
 // 0) DESKTOP_TAP, the size a mouse wants.
 let TAP = 88.0;
 let DESKTOP_TAP = 64.0;
-fn tap() -> f32 { if desktop_scale > 0.0 { DESKTOP_TAP } else { TAP } }
+fn tap_size() -> f32 { if desktop_scale > 0.0 { DESKTOP_TAP } else { TAP } }
 
-// A tile with its icon or picture over its word is at least STACKED_TAP tall, stacked():
-// under it a word on two lines, a picture, or the hint's pips crowd it. A touch screen's
-// tap is over it already.
+// A tile with its icon or picture over its word is at least STACKED_TAP tall,
+// stacked_tile_height(): under it a word on two lines, a picture, or the hint's pips
+// crowd it. A touch screen's tap is over it already.
 let STACKED_TAP = 72.0;
-fn stacked() -> f32 { max(tap(), STACKED_TAP) }
+fn stacked_tile_height() -> f32 { max(tap_size(), STACKED_TAP) }
 
-// The room in dp a tile sized to its words keeps either side of them, side(): settings'
-// tiles and languages, the setup's draughts, the puzzles' draughts switch, and back, which
-// keeps 4 dp more for its arrow. WORD_SIDE on a touch screen, DESKTOP_SIDE on a desktop.
+// The room in dp a tile sized to its words keeps either side of them, word_padding():
+// settings' tiles and languages, the setup's draughts, the puzzles' draughts switch, and
+// back, which keeps 4 dp more for its arrow. WORD_SIDE on a touch screen, DESKTOP_SIDE on
+// a desktop.
 let WORD_SIDE = 16.0;
 let DESKTOP_SIDE = 12.0;
-fn side() -> f32 { if desktop_scale > 0.0 { DESKTOP_SIDE } else { WORD_SIDE } }
+fn word_padding() -> f32 { if desktop_scale > 0.0 { DESKTOP_SIDE } else { WORD_SIDE } }
 
 // Whether an area at s pixels a dp is a phone's: under PHONE dp across its shorter side.
 // A tablet's, a foldable's, and an iPad window's are wider.
@@ -501,29 +505,30 @@ fn large(area: float4, s: f32) -> bool { desktop_scale > 0.0 && area.z >= LARGE_
 let WIDEST = 1.9;
 
 // The safe area of a screen width × height pixels: where the screens lay out. On a
-// desktop, its middle WIDEST × its height at most (g.side the room left each side).
+// desktop, its middle WIDEST × its height at most (g.desktop_margin the room left each
+// side).
 fn safe(g: Gui&, width: f32, height: f32) -> float4 {
     let e = g.insets;
     let w = width - e.x - e.z;
     let h = height - e.y - e.w;
-    g.side = if desktop_scale > 0.0 { max(0.0, (w - WIDEST * h) * 0.5) } else { 0.0 };
-    return float4 { e.x + g.side, e.y, w - 2.0 * g.side, h };
+    g.desktop_margin = if desktop_scale > 0.0 { max(0.0, (w - WIDEST * h) * 0.5) } else { 0.0 };
+    return float4 { e.x + g.desktop_margin, e.y, w - 2.0 * g.desktop_margin, h };
 }
 
 // r, laid out in the safe area `area`, carried on to the screen's edges on each side
 // where it reaches the area's: a glass column or sheet that runs off the screen.
-fn bleed(g: Gui&, r: float4, area: float4) -> float4 {
+fn extend_to_screen_edge(g: Gui&, r: float4, area: float4) -> float4 {
     let e = g.insets;
     var b = r;
     if r.x <= area.x + 0.5 {
-        b.x -= e.x + g.side;
-        b.z += e.x + g.side;
+        b.x -= e.x + g.desktop_margin;
+        b.z += e.x + g.desktop_margin;
     }
     if r.y <= area.y + 0.5 {
         b.y -= e.y;
         b.w += e.y;
     }
-    if r.x + r.z >= area.x + area.z - 0.5 { b.z += e.z + g.side; }
+    if r.x + r.z >= area.x + area.z - 0.5 { b.z += e.z + g.desktop_margin; }
     if r.y + r.w >= area.y + area.w - 0.5 { b.w += e.w; }
     return b;
 }
@@ -620,7 +625,7 @@ fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
     }
     // A press on the UI is the UI's until the frame after its release and no longer:
     // the board's keys need the pointer off it.
-    if input.pressed || (!input.down && !input.released) { g.took = false; }
+    if input.pressed || (!input.down && !input.released) { g.press_on_ui = false; }
     g.acted = false;
     g.holding = false;
     g.input = input;
@@ -634,10 +639,10 @@ fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
     // to and fro never jumps.
     if g.under != g.hovered {
         let back = g.under != 0 && g.under == g.left;
-        let from = if back { turned(g, g.left_at) } else { now };
+        let from = if back { mirrored_fade_start(g, g.left_at) } else { now };
         if g.hovered != 0 {
             g.left = g.hovered;
-            g.left_at = turned(g, g.hover_at);
+            g.left_at = mirrored_fade_start(g, g.hover_at);
         } else if back {
             g.left = 0;
         }
@@ -649,9 +654,9 @@ fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
 
 // Whether what is declared from here on takes the pointer: not a screen a transition
 // leaves, which is declared with no pointer at all.
-fn listen(g: Gui&, on: bool) {
+fn set_input_enabled(g: Gui&, on: bool) {
     g.input = if on { g.pointer } else { Input { at: float2 { -1.0e9, -1.0e9 }, .. } };
-    g.deaf = !on;
+    g.input_off = !on;
 }
 
 // Fades quads first..last (as g.quads.len counted them) to `opacity` and moves them by
@@ -732,7 +737,7 @@ fn eased(g: Gui&, since: f64) -> f32 {
 
 // When the opposite fade would have begun to stand now where the one begun at `since`
 // stands: the ease is symmetric, so 1 - e(1 - t) is e(t).
-fn turned(g: Gui&, since: f64) -> f64 {
+fn mirrored_fade_start(g: Gui&, since: f64) -> f64 {
     let t = clamp((g.now - since) / PRESS, 0.0, 1.0);
     return g.now - (1.0 - t) * PRESS;
 }
@@ -752,11 +757,11 @@ fn animating(g: Gui&) -> bool {
 fn panel(g: Gui&, r: float4) { glass(g, r, 28.0); }
 
 // A press that lands on r belongs to the UI and never reaches the board.
-fn take(g: Gui&, r: float4) { if g.input.pressed && inside(r, g.input.at) { g.took = true; } }
+fn claim_press(g: Gui&, r: float4) { if g.input.pressed && inside(r, g.input.at) { g.press_on_ui = true; } }
 
 // A glass panel with corners of `radius` dp.
 fn glass(g: Gui&, r: float4, radius: f32) {
-    take(g, r);
+    claim_press(g, r);
     add(g, Quad { rect: r, look: float4 { GLASS, radius * g.scale, 0.0, 0.0 },
                   extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
 }
@@ -765,13 +770,13 @@ fn glass(g: Gui&, r: float4, radius: f32) {
 // way out in landscape, the moves' line): no border, highlight, or shadow of its own, so
 // the tile looks as it does on a panel rather than doubly edged.
 fn under_tile(g: Gui&, r: float4, radius: f32) {
-    take(g, r);
+    claim_press(g, r);
     add(g, Quad { rect: r, look: float4 { GLASS, radius * g.scale, 0.0, 0.0 },
                   extra: float4 { g.scale, 1.0, 0.0, 0.0 } });
 }
 
 // A plain rounded rect, such as a rule; `radius` in pixels.
-fn fill(g: Gui&, r: float4, color: float4, radius: f32) {
+fn rounded_rect(g: Gui&, r: float4, color: float4, radius: f32) {
     add(g, Quad { rect: r, color: color, look: float4 { FILL, radius, 0.0, 0.0 },
                   extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
 }
@@ -792,13 +797,13 @@ fn button(g: Gui&, id: i64, r: float4, icon: i64) -> bool { tile(g, id, r, icon,
 // it is pressed, 0..1. A `focusable` widget is offered to the keys' focus. A `keyhold`
 // one (hold_tile) is never clicked by Enter: Enter pressed on it goes down and stays down
 // while Enter is held, as the pointer held on it does.
-fn hold(g: Gui&, id: i64, r: float4, focusable: bool = true, keyhold: bool = false) -> bool, f32 {
+fn press_widget(g: Gui&, id: i64, r: float4, focusable: bool = true, keyhold: bool = false) -> bool, f32 {
     let over = inside(r, g.input.at);
     g.ring = false;
     if focusable { offer(g, id, r); }
     if g.input.pressed && over {
         g.active = id;
-        g.took = true;
+        g.press_on_ui = true;
     }
     let key = focusable && !keyhold && keyed(g, id);
     let held = (g.active == id && g.input.down && over) || (focusable && keyhold && key_held(g, id));
@@ -808,7 +813,7 @@ fn hold(g: Gui&, id: i64, r: float4, focusable: bool = true, keyhold: bool = fal
     // desktop, unless it is down on another widget or the board. Android leaves the
     // pointer where the last touch was, so a phone never hovers.
     if g.focus != 0 {
-        if g.focus == id && !g.deaf {
+        if g.focus == id && !g.input_off {
             g.under = id;
             g.ring = true;
         }
@@ -819,22 +824,23 @@ fn hold(g: Gui&, id: i64, r: float4, focusable: bool = true, keyhold: bool = fal
     return clicked, pressed(g, id);
 }
 
-// As hold for a widget that is on; one that is off takes a press but never goes down.
-fn hold_if(g: Gui&, id: i64, r: float4, on: bool) -> bool, f32 {
+// As press_widget for a widget that is on; one that is off takes a press but never goes
+// down.
+fn press_widget_if_on(g: Gui&, id: i64, r: float4, on: bool) -> bool, f32 {
     guard on else {
-        take(g, r);
+        claim_press(g, r);
         // Dimmed, it is never lit: one turned off under the mouse goes dark at once.
         if g.hovered == id { g.hovered = 0; }
         if g.left == id { g.left = 0; }
         return false, 0.0;
     }
-    return hold(g, id, r);
+    return press_widget(g, id, r);
 }
 
 // A tile in one of the looks PLAIN..ROW_PRIMARY with corner radius `radius` dp;
 // otherwise as button.
 fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool {
-    let clicked, p = hold(g, id, r);
+    let clicked, p = press_widget(g, id, r);
     add(g, Quad { rect: r, look: float4 { BUTTON, radius * g.scale, 0.0, p },
                   extra: float4 { g.scale, style, hover(g, id), 0.0 } });
     if icon != NO_ICON {
@@ -849,7 +855,7 @@ fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool
 // in portrait, rendering.md, "Home"): clear until pressed, then lit round as a pressed
 // row is. True when it is tapped.
 fn icon_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
-    let clicked, p = hold(g, id, r);
+    let clicked, p = press_widget(g, id, r);
     add(g, Quad { rect: r, look: float4 { BUTTON, 0.5 * min(r.z, r.w), 0.0, p }, extra: float4 { g.scale, ROW, hover(g, id), 0.0 } });
     let s = size * g.scale * (1.0 - 0.04 * p);
     glyph_icon(g, center(r, s, s), icon, ROW, p, 0.85);
@@ -862,7 +868,7 @@ fn icon_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
 // shrinking 8% and darkening with the press; its icon at `a` (the lookout's struck-through
 // eye, dim while off). True when it is tapped.
 fn floating(g: Gui&, id: i64, r: float4, disc: f32, icon: i64, on: bool, dot: bool, a: f32 = 1.0) -> bool {
-    let clicked, p = hold(g, id, r);
+    let clicked, p = press_widget(g, id, r);
     let d = disc * (1.0 - 0.08 * p);
     let flags = (if on { 1.0 } else { 0.0 }) + (if dot { 2.0 } else { 0.0 });
     add(g, Quad { rect: center(r, d, d), look: float4 { FLOAT, 0.5 * d, flags, p }, extra: float4 { g.scale, 0.0, hover(g, id), 0.0 } });
@@ -874,7 +880,7 @@ fn floating(g: Gui&, id: i64, r: float4, disc: f32, icon: i64, on: bool, dot: bo
 // A still mark in the middle of r saying something is getting ready (the 3D board): the
 // words s alone, with no glass, as it shows only a moment. Nothing in it moves, so it
 // needs no frames of its own.
-fn waiting(g: Gui&, r: float4, s: const u8[:]) {
+fn loading_text(g: Gui&, r: float4, s: const u8[:]) {
     let u = g.scale;
     let m = center(r, text_width(g, BODY, s) + 48.0 * u, 52.0 * u);
     text(g, BODY, m, s, 0.9, 0.0, CENTER);
@@ -883,7 +889,7 @@ fn waiting(g: Gui&, r: float4, s: const u8[:]) {
 // A player's face in r (their badge, players.goose's ANIMALS by index, drawn by
 // app/widgets.goose's badge(); or -1 for +, a faint disc), at opacity a, with the glow
 // ring when `lit`.
-fn face(g: Gui&, r: float4, animal: i64, a: f32, lit: bool) {
+fn player_badge(g: Gui&, r: float4, animal: i64, a: f32, lit: bool) {
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { FACE, 0.0, animal, if lit { 1.0 } else { 0.0 } },
                   extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
     if animal < 0 {
@@ -900,7 +906,7 @@ fn face(g: Gui&, r: float4, animal: i64, a: f32, lit: bool) {
 // how far the ring is, 0..1. The caller draws the tile's face over it.
 fn hold_tile(g: Gui&, id: i64, r: float4, radius: f32, seconds: f64, red: bool) -> bool, f32 {
     let key = key_held(g, id);
-    let unused, p = hold(g, id, r, true, true);
+    let unused, p = press_widget(g, id, r, true, true);
     let s .= g.slots[slot(g, id)];
     let held = ((g.active == id && g.input.down && inside(r, g.input.at)) || key) && s.down;
     let k = if held { clamp((g.now - s.since) / seconds, 0.0, 1.0) as f32 } else { 0.0 };
@@ -927,7 +933,7 @@ fn colored(g: Gui&, face: i64, r: float4, s: const u8[:], color: float4, align: 
 // white at 10% and a faint 1 px ring round it, shrinking 4% with the press. True when it
 // is tapped, and how far it is pressed, 0..1. The caller draws what is in it.
 fn bare(g: Gui&, id: i64, r: float4) -> bool, f32 {
-    let clicked, p = hold(g, id, r);
+    let clicked, p = press_widget(g, id, r);
     let k = 1.0 - 0.04 * p;
     let d = 0.5 * min(r.z, r.w);
     add(g, Quad { rect: center(r, r.z * k, r.w * k), look: float4 { BUTTON, d * k, 1.0, p },
@@ -963,8 +969,8 @@ let NOTE_A: f32 = 0.66;
 fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u8[:], primary: bool,
        on: bool, outlined: bool = false, note_icon: i64 = NO_ICON) -> bool {
     let u = g.scale;
-    let clicked, p = hold_if(g, id, r, on);
-    if primary { prefer(g, id); }
+    let clicked, p = press_widget_if_on(g, id, r, on);
+    if primary { mark_primary(g, id); }
     let style = if primary { ROW_PRIMARY } else if outlined { ROW_OUTLINE } else { ROW };
     add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * u, 0.0, p }, extra: float4 { u, style, hover(g, id), 0.0 } });
     let a: f32 = if on { 1.0 } else { 0.4 };
@@ -997,7 +1003,7 @@ let BESIDE_GAP = 8.0;       // dp between a slim choice's picture and its label
 fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:], on: bool, enabled: bool,
           beside: bool = false) -> bool {
     let u = g.scale;
-    let clicked, unused = hold_if(g, id, r, enabled);
+    let clicked, unused = press_widget_if_on(g, id, r, enabled);
     let a: f32 = if enabled { 1.0 } else { 0.4 };
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, (if beside { 14.0 } else { 16.0 }) * u, 0.0, 0.0 },
                   extra: float4 { u, if on { CHOSEN } else { CHOICE }, hover(g, id), 0.0 } });
@@ -1041,7 +1047,7 @@ fn tag(g: Gui&, picture: float4, word: const u8[:]) {
     let k = TAG_FACE / FACE_DP[SMALL] as f32;
     let w = k * text_width(g, SMALL, word) + 2.0 * TAG_SIDE * u;
     let r = float4 { picture.x + picture.z - TAG_IN * u - w, picture.y + picture.w - (TAG_IN + TAG_H) * u, w, TAG_H * u };
-    fill(g, r, float4 { 0.0, 0.0, 0.0, 0.55 }, 5.0 * u);
+    rounded_rect(g, r, float4 { 0.0, 0.0, 0.0, 0.55 }, 5.0 * u);
     write(g, SMALL, r, word, float4 { 1.0, 1.0, 1.0, 1.0 }, true, 0.0, CENTER, false, k);
 }
 
@@ -1055,7 +1061,7 @@ fn choice_beside_width(g: Gui&, pic: float2, label: const u8[:]) -> f32 {
 // when it is tapped.
 fn picture(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, on: bool) -> bool {
     let u = g.scale;
-    let clicked, unused = hold_if(g, id, r, true);
+    let clicked, unused = press_widget_if_on(g, id, r, true);
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, 1.0 }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
                   extra: float4 { u, if on { CHOSEN } else { CHOICE }, hover(g, id), 0.0 } });
     add(g, Quad { rect: center(r, pic.x, pic.y), color: float4 { 1.0, 1.0, 1.0, 1.0 },
@@ -1075,7 +1081,7 @@ let LABEL_PAD = 8.0;        // dp a labelled tile's word keeps from its sides at
 fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:], face: i64,
             arrange: i64, style: i64 = PLAIN, on: bool = true) -> bool {
     let u = g.scale;
-    let clicked, p = hold_if(g, id, r, on);
+    let clicked, p = press_widget_if_on(g, id, r, on);
     let a: f32 = if on { 1.0 } else { 0.35 };
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 22.0 * u, 0.0, p },
                   extra: float4 { u, style, hover(g, id), 0.0 } });
@@ -1091,13 +1097,13 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
         // them ("Võta käik tagasi" in half a corner panel).
         var two = face;
         var cut = if text_width(g, face, label) > room { lines_at(g, face, label, room, r.w - s - gap) } else { -1 };
-        if cut < 0 && text_width(g, fitting(g, face, label, room), label) > room {
+        if cut < 0 && text_width(g, face_that_fits(g, face, label, room), label) > room {
             while two < SMALL && cut < 0 {
                 two++;
                 cut = lines_at(g, two, label, room, r.w - s - gap);
             }
         }
-        let shown = if cut >= 0 { two } else { fitting(g, face, label, room) };
+        let shown = if cut >= 0 { two } else { face_that_fits(g, face, label, room) };
         let line = g.faces[shown].ascent - g.faces[shown].descent;
         let lines: f32 = if cut >= 0 { 2.0 } else { 1.0 };
         var c = center(r, r.z, s + gap + lines * line);
@@ -1112,7 +1118,7 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
         return clicked;
     }
     let gap = PAD * u;
-    let shown = fitting(g, face, label, r.z - labelled_width(g, size, "", face));
+    let shown = face_that_fits(g, face, label, r.z - labelled_width(g, size, "", face));
     var c = center(r, s + gap + text_width(g, shown, label), r.w);
     glyph_icon(g, center(cut_left(c, s), s, s), icon, PLAIN, p, a);
     cut_left(c, gap);
@@ -1126,13 +1132,13 @@ fn labelled_width(g: Gui&, size: f32, label: const u8[:], face: i64) -> f32 {
     return (2.0 * LABEL_PAD + size + 12.0) * g.scale + text_width(g, face, label);
 }
 
-// The way back (rendering.md, "Controls", The way back): one control on
-// every screen, the arrow and the word `label` ("Back") side by side on a glass tile,
-// a tap tall. back_width is how wide it is: its icon and word with side() and 4 dp at
-// either side, a tap at least.
+// The way back (rendering.md, "Controls", The way back): one control on every screen, the
+// arrow and the word `label` ("Back") side by side on a glass tile, a tap tall.
+// back_width is how wide it is: its icon and word with word_padding() and 4 dp at either
+// side, a tap at least.
 let BACK_ICON = 34.0;
 fn back_width(g: Gui&, label: const u8[:]) -> f32 {
-    return max(tap() * g.scale, (2.0 * (side() + 4.0) + BACK_ICON + 12.0) * g.scale + text_width(g, HEADING, label));
+    return max(tap_size() * g.scale, (2.0 * (word_padding() + 4.0) + BACK_ICON + 12.0) * g.scale + text_width(g, HEADING, label));
 }
 
 // The way back in r, on its own glass, or with `stacked` the arrow over the word in a
@@ -1156,7 +1162,7 @@ fn head_stacks(g: Gui&, label: const u8[:], width: f32, rest: f32) -> bool { bac
 // between them for the title, which the screen declares after the control.
 fn head(g: Gui&, id: i64, r: float4, label: const u8[:], back_w: f32, arrange: i64, left_gap: f32, trail_w: f32,
         right_gap: f32) -> bool, float4, float4 {
-    let h = tap() * g.scale;
+    let h = tap_size() * g.scale;
     var row = r;
     var tapped = false;
     if back_w > 0.0 {
@@ -1205,7 +1211,7 @@ fn lines_at(g: Gui&, face: i64, text: const u8[:], w: f32, h: f32) -> i64 {
 }
 
 // The largest of the faces from `face` down to SMALL that fits `text` in w pixels.
-fn fitting(g: Gui&, face: i64, text: const u8[:], w: f32) -> i64 {
+fn face_that_fits(g: Gui&, face: i64, text: const u8[:], w: f32) -> i64 {
     var f = face;
     while f < SMALL && text_width(g, f, text) > w { f++; }
     return f;
@@ -1218,7 +1224,7 @@ fn fitting(g: Gui&, face: i64, text: const u8[:], w: f32) -> i64 {
 fn pick(g: Gui&, id: i64, r: float4, pic: f32, label: const u8[:], note: const u8[:], on: bool,
         enabled: bool) -> bool, float4 {
     let u = g.scale;
-    let clicked, unused = hold_if(g, id, r, enabled);
+    let clicked, unused = press_widget_if_on(g, id, r, enabled);
     let a: f32 = if enabled { 1.0 } else { 0.4 };
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
                   extra: float4 { u, if on { CHOSEN } else { CHOICE }, hover(g, id), 0.0 } });
@@ -1264,7 +1270,7 @@ fn slider(g: Gui&, id: i64, r: float4, value: f32, off: bool) -> f32, bool, floa
     let over = inside(r, g.input.at);
     if g.input.pressed && over {
         g.active = id;
-        g.took = true;
+        g.press_on_ui = true;
     }
     var v = value;
     var let_go = false;
@@ -1273,7 +1279,7 @@ fn slider(g: Gui&, id: i64, r: float4, value: f32, off: bool) -> f32, bool, floa
         v = clamp((g.input.at.x - track.x) / max(track.z, 1.0), 0.0, 1.0);
         let_go = g.input.released;
     }
-    if g.focus == id && !g.deaf {
+    if g.focus == id && !g.input_off {
         g.under = id;
         g.ring = true;
         claim_sideways(g);
@@ -1305,7 +1311,7 @@ fn pips(g: Gui&, r: float4, full: i64, a: f32) {
     let u = g.scale;
     for i in 3 {
         let o: f32 = if i < full { 0.9 } else { 0.25 };
-        fill(g, cell(r, 3, 1, 10.0 * u, 10.0 * u, 5.0 * u, i), float4 { 1.0, 1.0, 1.0, o * a }, 5.0 * u);
+        rounded_rect(g, cell(r, 3, 1, 10.0 * u, 10.0 * u, 5.0 * u, i), float4 { 1.0, 1.0, 1.0, o * a }, 5.0 * u);
     }
 }
 
@@ -1313,7 +1319,7 @@ fn pips(g: Gui&, r: float4, full: i64, a: f32) {
 // runs, gold under a minute, red when low, faint while it waits. It takes a press, so a
 // press on it never reaches the board.
 fn clock_tile(g: Gui&, r: float4, style: i64) {
-    take(g, r);
+    claim_press(g, r);
     add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * g.scale, 0.0, 0.0 }, extra: float4 { g.scale, style, 0.0, 0.0 } });
 }
 

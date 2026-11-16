@@ -462,7 +462,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     if l.line_as == panel::LINE_NONE || gm.moves_shown == 0 { gm.sheet = false; }
     let open = gm.sheet;
     let cover = open && l.line_as == panel::LINE_BAR;
-    if cover { gui::listen(g, false); }
+    if cover { gui::set_input_enabled(g, false); }
     if !frozen && gm.seen >= 0.0 && clock::tick(gm.clock, min(now - gm.seen, STEP)) { changed = true; }
     gm.seen = if frozen { -1.0 } else { now };
 
@@ -479,7 +479,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     moves_panel(gm, g, l, over);
     if beside {
         // A press on the sheet is the UI's, never the board's.
-        gui::take(g, gui::bleed(g, l.sheet, l.area));
+        gui::claim_press(g, gui::extend_to_screen_edge(g, l.sheet, l.area));
     } else {
         panel::taken(g, l, gm.taken, over);
         if moves_line(gm, g, l, over) {
@@ -578,7 +578,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     } else if !cover {
         let held, moved = board::showcase(gm.cam, g, input, l.three, l.pitch, now);
         if moved { changed = true; }
-        let mine = !held && !g.took && b.pos.side != gm.computer;
+        let mine = !held && !g.press_on_ui && b.pos.side != gm.computer;
         if mine && board::touch(b, l.board, l.three, l.view, input, gm.grab, now) { changed = true; }
         if panel::board_keys(g, l, b, mine, now, rig::turn(gm.cam, now)) { changed = true; }
     }
@@ -622,7 +622,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     }
     // The sheet over everything, and a mark's tip over that.
     if cover {
-        gui::listen(g, true);
+        gui::set_input_enabled(g, true);
         dim_under(over, l.sheet.y);
     }
     if open && moves_sheet(gm, g, l, over) {

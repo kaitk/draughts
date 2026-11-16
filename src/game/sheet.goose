@@ -52,7 +52,7 @@ fn legend_h(g: gui::Gui&, w: f32, k: f32 = 1.0, face: i64 = gui::SMALL) -> f32 {
 // its words in `face` and its marks in `marks`.
 fn legend(g: gui::Gui&, r: float4, k: f32 = 1.0, face: i64 = gui::SMALL, marks: i64 = gui::BODY) {
     let u = g.scale * k;
-    gui::fill(g, float4 { r.x, r.y, r.z, max(1.0, g.scale) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
+    gui::rounded_rect(g, float4 { r.x, r.y, r.z, max(1.0, g.scale) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
     let one = legend_one(g, r.z, k, face);
     let half = 0.5 * r.z;
     var x = r.x;
@@ -72,7 +72,7 @@ fn legend(g: gui::Gui&, r: float4, k: f32 = 1.0, face: i64 = gui::SMALL, marks: 
 // none of its moves is judged.
 fn moves_foot(gm: Game&, g: gui::Gui&, r: float4, over: board::Overlay&) {
     let u = g.scale;
-    gui::fill(g, float4 { r.x, r.y + 4.0 * u, r.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
+    gui::rounded_rect(g, float4 { r.x, r.y + 4.0 * u, r.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
     let t = tally(gm.notes);
     let row = float4 { r.x, r.y + 8.0 * u, r.z, r.w - 8.0 * u };
     let d = 20.0 * u;
@@ -105,7 +105,7 @@ fn moves_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) 
     var clicked = false;
     var p: f32 = 0.0;
     if any {
-        let c, q = gui::hold(g, LINE_ID, l.line_tap);
+        let c, q = gui::press_widget(g, LINE_ID, l.line_tap);
         clicked = c;
         p = q;
     }
@@ -137,9 +137,9 @@ fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
         let head = gui::cut_top(inner, panel::LINE_HEAD * u);
         let word = strings::get(strings::SETTINGS_MOVES);
         let room = float4 { head.x, head.y, head.z - k - 4.0 * u, head.w };
-        gui::text(g, gui::fitting(g, gui::SMALL, word, room.z), room, word, 0.7, 0.0, gui::LEFT);
+        gui::text(g, gui::face_that_fits(g, gui::SMALL, word, room.z), room, word, 0.7, 0.0, gui::LEFT);
         gui::glyph_icon(g, float4 { head.x + head.z - k + 4.0 * u, head.y + 0.5 * (head.w - k), k, k }, gui::FWD, gui::PLAIN, 0.0, 0.8);
-        gui::fill(g, float4 { head.x, head.y + head.w - 2.0 * u, head.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
+        gui::rounded_rect(g, float4 { head.x, head.y + head.w - 2.0 * u, head.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
     }
     if l.counts {
         let head = gui::cut_top(inner, 26.0 * u);
@@ -150,7 +150,7 @@ fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     }
     guard ns.len > 0 else {
         let none = strings::get(strings::MOVES_NONE);
-        gui::text(g, gui::fitting(g, gui::BODY, none, inner.z), inner, none, 0.55, 0.0, gui::CENTER);
+        gui::text(g, gui::face_that_fits(g, gui::BODY, none, inner.z), inner, none, 0.55, 0.0, gui::CENTER);
         return;
     }
     let v .= rules::VARIANTS[gm.b.variant];
@@ -211,7 +211,7 @@ fn bar_line(gm: Game&, g: gui::Gui&, l: panel::Layout) {
         if marks { mark = ns[ns.len - 1].mark; }
     }
     let none = strings::get(strings::MOVES_NONE);
-    let face = if ns.len > 0 { gui::BODY } else { gui::fitting(g, gui::BODY, none, l.line.z - 2.0 * edge) };
+    let face = if ns.len > 0 { gui::BODY } else { gui::face_that_fits(g, gui::BODY, none, l.line.z - 2.0 * edge) };
     let nw = if ns.len > 0 { gui::text_width(g, gui::SMALL, number[..]) + 6.0 * u } else { 0.0 };
     let mw = if ns.len > 0 { gui::text_width(g, gui::BODY, move[..]) } else { gui::text_width(g, face, none) };
     var kw: f32 = 0.0;
@@ -248,13 +248,13 @@ fn moves_sheet(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&)
     var closed = false;
     gui::group(g, panel::GROUP_OUT);
     if bottom {
-        let above = gui::bleed(g, float4 { l.area.x, l.area.y, l.area.z, l.sheet.y - l.area.y }, l.area);
-        let tapped, unused = gui::hold(g, SHEET_DIM, above, false);
-        gui::fill(g, above, float4 { 0.0, 0.0, 0.0, SHADE }, 0.0);
+        let above = gui::extend_to_screen_edge(g, float4 { l.area.x, l.area.y, l.area.z, l.sheet.y - l.area.y }, l.area);
+        let tapped, unused = gui::press_widget(g, SHEET_DIM, above, false);
+        gui::rounded_rect(g, above, float4 { 0.0, 0.0, 0.0, SHADE }, 0.0);
         if tapped { closed = true; }
     }
     // Its corners round only where it ends on the screen; the others run off it.
-    var glass = gui::bleed(g, l.sheet, l.area);
+    var glass = gui::extend_to_screen_edge(g, l.sheet, l.area);
     let off = SHEET_R * u;
     if bottom { glass.w += off; } else {
         glass.x -= off;
@@ -262,11 +262,11 @@ fn moves_sheet(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&)
     }
     gui::glass(g, glass, SHEET_R);
     var room = l.sheet_in;
-    let head = gui::cut_top(room, gui::tap() * u);
+    let head = gui::cut_top(room, gui::tap_size() * u);
     // Opened by the keys, the focus goes from the line to the head.
     if g.focus == LINE_ID { g.focus = SHEET_HEAD; }
-    let clicked, p = gui::hold(g, SHEET_HEAD, head);
-    gui::prefer(g, SHEET_HEAD);
+    let clicked, p = gui::press_widget(g, SHEET_HEAD, head);
+    gui::mark_primary(g, SHEET_HEAD);
     gui::add(g, gui::Quad { rect: head, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
                             extra: float4 { u, gui::ROW, gui::hover(g, SHEET_HEAD), 0.0 } });
     let k = 30.0 * u;
@@ -274,7 +274,7 @@ fn moves_sheet(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&)
     gui::glyph_icon(g, float4 { head.x + 8.0 * u, head.y + 0.5 * (head.w - k), k, k }, chevron, gui::PLAIN, p, 0.85);
     let word = strings::get(strings::SETTINGS_MOVES);
     let wx = head.x + 8.0 * u + k + 12.0 * u;
-    gui::text(g, gui::fitting(g, gui::HEADING, word, head.x + head.z - wx), float4 { wx, head.y, head.x + head.z - wx, head.w },
+    gui::text(g, gui::face_that_fits(g, gui::HEADING, word, head.x + head.z - wx), float4 { wx, head.y, head.x + head.z - wx, head.w },
               word, 1.0, 0.0, gui::LEFT);
     if clicked { closed = true; }
     if gm.moves_shown == 2 {
@@ -354,7 +354,7 @@ fn tips(gm: Game&, g: gui::Gui&, l: panel::Layout) -> bool {
         if gm.tip_took {
             g.input.pressed = false;
             g.pointer.pressed = false;
-            g.took = true;
+            g.press_on_ui = true;
         }
     }
     if i.released {
@@ -431,12 +431,12 @@ fn tip(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool
     // The mark in its disc: the best's star on faint white, the others' glyphs on their color.
     let disc = float4 { x + TIP_PAD * u, y + TIP_PAD * u, TIP_DISC * u, TIP_DISC * u };
     if n.mark == ai::BEST {
-        gui::fill(g, disc, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.5 * disc.z);
+        gui::rounded_rect(g, disc, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.5 * disc.z);
         let k = 26.0 * u;
         gui::glyph_icon(g, gui::center(disc, k, k), gui::STAR, gui::PLAIN, 0.0, 1.0);
     } else {
         let t, c = mark_text(n.mark);
-        gui::fill(g, disc, c, 0.5 * disc.z);
+        gui::rounded_rect(g, disc, c, 0.5 * disc.z);
         let ink = if n.mark == ai::BLUNDER { float4 { 1.0, 1.0, 1.0, 1.0 } } else { float4 { 0.1, 0.07, 0.03, 1.0 } };
         gui::colored(g, gui::HEADING, disc, t, ink, gui::CENTER);
     }
@@ -459,7 +459,7 @@ fn tip(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool
     move.append(played[..]);
     let mw = gui::text_width(g, gui::SMALL, move[..]);
     gui::text(g, gui::SMALL, row, move[..], 0.66, 0.0, gui::RIGHT);
-    gui::text(g, gui::fitting(g, gui::HEADING, name, cw - mw - 10.0 * u), row, name, 1.0, 0.0, gui::LEFT);
+    gui::text(g, gui::face_that_fits(g, gui::HEADING, name, cw - mw - 10.0 * u), row, name, 1.0, 0.0, gui::LEFT);
     var ly = row.y + title + 6.0 * u;
     for k in lines {
         gui::text(g, gui::BODY, float4 { wx, ly, cw, lh }, said[starts[k]..ends[k]], 1.0, 0.0, gui::LEFT);

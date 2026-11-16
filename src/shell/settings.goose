@@ -189,12 +189,12 @@ fn moves_note_lines(g: gui::Gui&, w: f32) -> i64 {
 
 // How wide tile i of a row is, at least a tap: a picture tile its picture or its word in
 // the small face, whichever is wider, and PIC_IN either side; a word's its word with
-// gui::side() either side.
+// gui::word_padding() either side.
 fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
     let u = g.scale;
     let words = label(row, i);
-    if pictured(row) { return max(gui::tap() * u, max(PIC_W * u, gui::text_width(g, gui::SMALL, words[..])) + 2.0 * PIC_IN * u); }
-    return max(gui::tap() * u, gui::text_width(g, gui::BODY, words[..]) + 2.0 * gui::side() * u);
+    if pictured(row) { return max(gui::tap_size() * u, max(PIC_W * u, gui::text_width(g, gui::SMALL, words[..])) + 2.0 * PIC_IN * u); }
+    return max(gui::tap_size() * u, gui::text_width(g, gui::BODY, words[..]) + 2.0 * gui::word_padding() * u);
 }
 
 // Whether tile i of a row is the one chosen in s.
@@ -267,7 +267,7 @@ fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: 
 // closes its gaps down to LEAST_GAP first; else they wrap.
 fn lay(g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
     let u = g.scale;
-    let h = gui::stacked() * u;
+    let h = gui::stacked_tile_height() * u;
     let n = ROW_TILES[row];
     var sum: f32 = 0.0;
     for i in n { sum += min(tile_width(g, row, i), r.z); }
@@ -316,7 +316,7 @@ fn list_at(g: gui::Gui&, r: float4) -> List {
         l.title[section] = float4 { r.x, y, r.z, SECTION_H * u };
         y += SECTION_H * u;
         if section == SOUND_SECTION {
-            let h = gui::stacked() * u;
+            let h = gui::stacked_tile_height() * u;
             l.volume.name = float4 { r.x + 4.0 * u, y + (NAME_H - 24.0) * u, r.z - 4.0 * u, 24.0 * u };
             y += NAME_H * u;
             l.volume.tiles[0] = float4 { r.x, y, h, h };
@@ -368,7 +368,7 @@ fn list(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: List&) -> i64 {
                       gui::LEFT);
             for i in ROW_TILES[row] { if tile(s, over, g, row, i, at.tiles[i]) { ask = CHANGED; } }
         }
-        gui::fill(g, l.rule[section], float4 { 1.0, 1.0, 1.0, 0.1 }, 0.0);
+        gui::rounded_rect(g, l.rule[section], float4 { 1.0, 1.0, 1.0, 0.1 }, 0.0);
     }
     note_lines(g, strings::get(MOVES_NOTES[clamp(s.moves, 0, 2)]), l.says, true);
     // The privacy note (App Review Guideline 5.1.1(i); store/app-store.md): what the app
@@ -493,7 +493,7 @@ fn language_width(g: gui::Gui&) -> f32 {
 fn language_button(g: gui::Gui&, r: float4, shown: i64, open: bool) -> bool {
     let u = g.scale;
     gui::glass(g, r, 22.0);
-    let tapped, p = gui::hold(g, LANGUAGE_ID, r);
+    let tapped, p = gui::press_widget(g, LANGUAGE_ID, r);
     gui::add(g, gui::Quad { rect: r, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
                             extra: float4 { u, if open { gui::CHOSEN } else { gui::PLAIN }, gui::hover(g, LANGUAGE_ID), 0.0 } });
     var c = r;
@@ -518,7 +518,7 @@ fn popup_rect(g: gui::Gui&, button: float4) -> float4 {
         w = max(w, (2.0 * ROW_IN + CODE_W + TICK + 2.0 * POPUP_IN + 14.0) * u
                    + gui::text_width(g, gui::BODY, strings::name_of(i)));
     }
-    let h = strings::LANGUAGES.len * gui::tap() * u + 2.0 * POPUP_IN * u;
+    let h = strings::LANGUAGES.len * gui::tap_size() * u + 2.0 * POPUP_IN * u;
     return float4 { button.x + button.z - w, button.y + button.w + POPUP_GAP * u, w, h };
 }
 
@@ -526,16 +526,16 @@ fn popup_rect(g: gui::Gui&, button: float4) -> float4 {
 // switches to it, one outside closes the list. Returns CHANGED, SHOWN, or NOTHING.
 fn languages(s: Settings&, g: gui::Gui&, button: float4, screen: float4, shown: i64) -> i64 {
     let u = g.scale;
-    let outside, unused_o = gui::hold(g, OUTSIDE_ID, screen, false);
+    let outside, unused_o = gui::press_widget(g, OUTSIDE_ID, screen, false);
     let r = popup_rect(g, button);
     gui::glass(g, r, 20.0);
-    gui::hold(g, POPUP_ID, r, false);
+    gui::press_widget(g, POPUP_ID, r, false);
     var ask = NOTHING;
     var rows = gui::inset(r, POPUP_IN * u);
     for i in strings::LANGUAGES.len {
-        let row = gui::cut_top(rows, gui::tap() * u);
+        let row = gui::cut_top(rows, gui::tap_size() * u);
         let id = LANGUAGE_ROWS + i;
-        let tapped, p = gui::hold(g, id, row);
+        let tapped, p = gui::press_widget(g, id, row);
         let on = i == shown;
         gui::add(g, gui::Quad { rect: row, look: float4 { gui::BUTTON, 14.0 * u, 0.0, p },
                                 extra: float4 { u, if on { gui::ROW_PRIMARY } else { gui::ROW }, gui::hover(g, id), 0.0 } });
@@ -574,7 +574,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, button: float4&) -> i
     let label = strings::get(strings::NAV_BACK);
     let lw = language_width(g);
     let stacked = gui::head_stacks(g, label, r.z, 40.0 * u + lw + gui::text_width(g, gui::LABEL, title));
-    let bw = if stacked { gui::tap() * u } else { gui::back_width(g, label) };
+    let bw = if stacked { gui::tap_size() * u } else { gui::back_width(g, label) };
     let tapped, at, row = gui::head(g, BACK_ID, r, label, bw, if stacked { gui::STACKED } else { gui::MIDDLE }, 20.0 * u, lw,
                                     20.0 * u);
     if tapped { ask = BACK; }
@@ -583,7 +583,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, button: float4&) -> i
         s.languages_open = !s.languages_open;
         ask = SHOWN;
     }
-    let face = gui::fitting(g, gui::LABEL, title, row.z);
+    let face = gui::face_that_fits(g, gui::LABEL, title, row.z);
     if gui::text_width(g, face, title) <= row.z { gui::text(g, face, row, title, 1.0, 0.0, gui::LEFT); }
     return ask;
 }
@@ -598,10 +598,10 @@ fn preview_room(page: float4, size: f32) -> float4 {
 
 // Where the screen's parts go in `area`, the screen's safe area (layout): the glass, the
 // column at the left in landscape or the sheet under the preview's band in portrait,
-// before it runs on to the screen's edges (gui::bleed); the title row (`head`); the list,
-// its content's left and width (`list`, x and z) and its view, from under the title row
-// to the screen's foot (`view`); and the preview, `board`, and `room3d` where a 3D
-// preview goes instead.
+// before it runs on to the screen's edges (gui::extend_to_screen_edge); the title row
+// (`head`); the list, its content's left and width (`list`, x and z) and its view, from
+// under the title row to the screen's foot (`view`); and the preview, `board`, and
+// `room3d` where a 3D preview goes instead.
 struct Page {
     glass:  float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
     head:   float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -622,7 +622,7 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4, n: i64) -> Page {
         // screen; the preview in the rest.
         let x = area.x + COLUMN_IN * u;
         p.glass = float4 { area.x - COLUMN_IN * u, area.y, (COLUMN_W + 3.0 * COLUMN_IN) * u, area.w };
-        p.head = float4 { x, area.y + TOP * u, COLUMN_W * u, gui::tap() * u };
+        p.head = float4 { x, area.y + TOP * u, COLUMN_W * u, gui::tap_size() * u };
         let right = p.glass.x + p.glass.z;
         page = float4 { right, area.y, area.x + area.z - right, area.w };
     } else {
@@ -632,7 +632,7 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4, n: i64) -> Page {
         let band = floor((if phone { BAND_PHONE } else { BAND }) * area.w + 0.5);
         let side = (if phone { SIDE_PHONE } else { SIDE }) * u;
         p.glass = float4 { area.x, area.y + band, area.z, area.w - band + 32.0 * u };
-        p.head = float4 { area.x + side, area.y + band + TOP * u, area.z - 2.0 * side, gui::tap() * u };
+        p.head = float4 { area.x + side, area.y + band + TOP * u, area.z - 2.0 * side, gui::tap_size() * u };
         page = float4 { area.x, area.y, area.z, band };
     }
     let top = p.head.y + p.head.w + HEAD_GAP * u;
@@ -657,7 +657,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     let p = layout(s, g, area, n);
     l = p.board;
     room3d = p.room3d;
-    gui::glass(g, gui::bleed(g, p.glass, area), 32.0);
+    gui::glass(g, gui::extend_to_screen_edge(g, p.glass, area), 32.0);
     var button = float4 { 0.0, 0.0, 0.0, 0.0 };
     var ask = head(s, g, p.head, shown, button);
     // The list, under the title row down to the screen's foot, the inset under the safe

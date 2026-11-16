@@ -144,7 +144,7 @@ struct Shell {
     // Handed in by the app each frame (frame): whether the 3D board, when chosen, is
     // ready to draw (else it gets ready a step a frame, taps on it left alone), and
     // whether an image of it shows meanwhile (else a still mark in its place:
-    // gui::waiting's words).
+    // gui::loading_text's words).
     ready3d: bool = true,
     shown3d: bool = true,
     // Each end's 3D view this frame, rect.z 0 for none (raise).
@@ -586,15 +586,15 @@ fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> boo
     var gone: board::Overlay = [];
     let first = g.quads.len;
     if crossing {
-        gui::listen(g, false);
+        gui::set_input_enabled(g, false);
         still(sh, g, from, area, now, gone, sh.went);
-        gui::listen(g, true);
+        gui::set_input_enabled(g, true);
     }
     let middle = g.quads.len;
     let changed = g.input.pressed || g.input.released;
     // The 3D board not ready yet: a press is the UI's, never the board's (game and puzzle
     // touch the board only when the UI didn't take it); the panels work as ever.
-    if waiting3d(sh) && g.input.pressed { g.took = true; }
+    if waiting3d(sh) && g.input.pressed { g.press_on_ui = true; }
     let asked = screen_frame(sh, g, area, now, fresh, crossing);
     sh.came = sh.out.layout;
     sh.mix = 1.0;
@@ -607,7 +607,7 @@ fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> boo
     sh.out.tall = 0.0;
     raise(sh, g, crossing, e);
     // With no image of it yet, a still mark where the 3D board goes until it shows.
-    if sh.out.raised && waiting3d(sh) && !sh.shown3d { gui::waiting(g, sh.out.place, strings::get(strings::BOARD_PREPARING)); }
+    if sh.out.raised && waiting3d(sh) && !sh.shown3d { gui::loading_text(g, sh.out.place, strings::get(strings::BOARD_PREPARING)); }
     sh.out.blur = if crossing { blurred(from) + (blurred(was) - blurred(from)) * e } else { blurred(was) };
     // A switch this frame shows what was declared, and what the app fills and draws
     // agrees with it: the start of a transition, the screen left as it stands; one turned
@@ -913,7 +913,7 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
                               rules::VARIANTS[sh.preview.variant].size);
     let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
     // The preview turns under a drag as home's board does; the choices, the language
-    // list, and their glass take their presses first (g.took).
+    // list, and their glass take their presses first (g.press_on_ui).
     let moved = drag_board(sh, g, v, room, now);
     sh.came_view = dragged_view(sh, v, room, now);
     if ask == settings::CHANGED {
@@ -943,7 +943,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     // Who's playing, or the quit's question, over the menu: home under it takes no pointer.
     let card = sh.who.state != who::CLOSED && sh.setup == home::NO_SETUP;
     let asking = sh.quitting && !card;
-    if card || asking { gui::listen(g, false); }
+    if card || asking { gui::set_input_enabled(g, false); }
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     let still = !sh.prefs.turns;
     let pick = home::frame(sh.out.over, g, sh.out.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room,
@@ -969,13 +969,13 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         // after all the UI, so they would sit on the card: under it, home shows without
         // them.
         sh.out.over.clear();
-        gui::listen(g, true);
+        gui::set_input_enabled(g, true);
         if who_card(sh, g, area, now) { changed = true; }
     }
     if asking {
         sh.out.over.clear();
-        gui::listen(g, true);
-        let ask = home::ask_quit(g, area, gui::bleed(g, area, area));
+        gui::set_input_enabled(g, true);
+        let ask = home::ask_quit(g, area, gui::extend_to_screen_edge(g, area, area));
         if ask == home::EXIT { sh.out.quit = true; }
         if ask == home::BACK { sh.quitting = false; }
         if ask != home::NOTHING { changed = true; }
@@ -1019,13 +1019,13 @@ fn dragged_view(sh: Shell&, v: view3d::View, room: float4, now: f64) -> view3d::
 // off the UI, turns and tips it as the game's showcase does (rig::drive, its range and
 // rate); a press anywhere else does nothing new. Not in a transition, nor before the 3D
 // board is ready. Called after the screen's UI is declared, so a press its controls took
-// (g.took) never moves the board. Returns whether it moved.
+// (g.press_on_ui) never moves the board. Returns whether it moved.
 fn drag_board(sh: Shell&, g: gui::Gui&, v: view3d::View, room: float4, now: f64) -> bool {
     let r .= sh.cam;
     let input .= g.input;
     if input.pressed || v.rect.z <= 0.0 || sh.from >= 0 || waiting3d(sh) { r.held = false; }
     guard v.rect.z > 0.0 && sh.from < 0 && !waiting3d(sh) else { return false; }
-    let on = input.pressed && !g.took && view3d::on_board(dragged_view(sh, v, room, now), input.at);
+    let on = input.pressed && !g.press_on_ui && view3d::on_board(dragged_view(sh, v, room, now), input.at);
     guard on || r.held else { return false; }
     return rig::drive(r, input.at, input.down, on, input.released, g.scale, view3d::PITCH, now);
 }
@@ -1034,7 +1034,7 @@ fn drag_board(sh: Shell&, g: gui::Gui&, v: view3d::View, room: float4, now: f64)
 // adding one, saving one's picture and name, starting one again, removing one. Returns
 // whether anything on screen changed.
 fn who_card(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
-    let ask, index = who::frame(sh.who, sh.players, g, area, gui::bleed(g, area, area));
+    let ask, index = who::frame(sh.who, sh.players, g, area, gui::extend_to_screen_edge(g, area, area));
     let w .= sh.who;
     match ask {
         who::SWITCH => { switch_player(sh, index); },

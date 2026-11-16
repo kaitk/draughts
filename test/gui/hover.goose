@@ -26,7 +26,7 @@ fn frame(g: gui::Gui&, at: float2, down: bool, pressed: bool, now: f64, d_on: bo
     gui::panel(g, float4 { 0.0, 0.0, 300.0, 300.0 });
     gui::button(g, 1, A, gui::UNDO);
     gui::button(g, 2, B, gui::HINT);
-    gui::hold_if(g, 4, float4 { 120.0, 120.0, 88.0, 88.0 }, d_on);
+    gui::press_widget_if_on(g, 4, float4 { 120.0, 120.0, 88.0, 88.0 }, d_on);
     print(what, ": a ", milli(gui::hover(g, 1)), ", b ", milli(gui::hover(g, 2)),
           ", d ", milli(gui::hover(g, 4)), ", a's quad ", milli(lit_quad(g, A)), ", a pressed ",
           milli(gui::pressed(g, 1)), ", animating ", gui::animating(g));
