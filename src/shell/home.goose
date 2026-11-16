@@ -381,7 +381,7 @@ fn sheet_board(width: f32, stage_h: f32, u: f32, height: f32, clear: f32) -> f32
 // who hasn't learned the player's draughts (`learn`), How to play shows in its place,
 // lit, its note the draughts it teaches. It goes once the tutorial is done, a game is
 // played or set up, or the player said they know how; a player never asked doesn't see
-// it. Once the last game has ended (`replay`), Watch replay shows in its place, opening
+// it. Once the last game has ended (`replay`), Replay shows in its place, opening
 // that game's replay, outlined over New game, lit: its note how the game ended
 // (`ended_note`, LAST_WON.., or WON_WHITE.. for a friend's game won), its {} filled with
 // the opponent (`ended_opponent`, LEVEL_EASY.. or LEVEL_FRIEND).
@@ -557,7 +557,7 @@ fn menu(ui_pieces: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: 
         let note = if i == 0 && resume.note >= 0 { strings::get(resume.note) }
                    else if i == 1 { strings::get(opponent) } else if i == 2 && all > 0 { stars[..] } else { "" };
         let mark = if i != 1 { gui::NO_ICON } else if s.friend { gui::FRIEND } else { gui::COMPUTER };
-        // Watch replay in continue's place (Resume.replay).
+        // Replay in continue's place (Resume.replay).
         if i == 0 && resume.replay {
             var said: u8[..64] = [];
             strings::fill_in_word(said, resume.ended_note, if resume.ended_opponent >= 0 { strings::get(resume.ended_opponent) } else { "" });

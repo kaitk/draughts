@@ -15,7 +15,7 @@ struct Past {
     replay:   replay::Replay,
     replayed: bool = false,
     at:       f32  = 0.0,
-    // The replay is the last game's, opened from home's Watch replay: its back goes home.
+    // The replay is the last game's, opened from home's Replay: its back goes home.
     from_home: bool = false,
     // The game on the game screen is one played from the replay (play_from_here), the
     // game in progress set aside in `parked` until it ends: it isn't written to the
@@ -64,7 +64,7 @@ fn open_replay(sh: Shell&, index: i64, now: f64) {
     go_to(sh, REPLAY, now);
 }
 
-// Home's Watch replay: the replay of the last game, the newest of its draughts in the
+// Home's Replay: the replay of the last game, the newest of its draughts in the
 // history, its back going home. With none there (the history unreadable), the results.
 fn open_last_game(sh: Shell&, now: f64) {
     read_history(sh, sh.past.games);

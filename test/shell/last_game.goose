@@ -1,5 +1,5 @@
-// Home's Watch replay (shell::resume, home::Resume.replay): once the last game has ended
-// and is in the history, Watch replay shows in Continue's place, outlined, New game under
+// Home's Replay (shell::resume, home::Resume.replay): once the last game has ended
+// and is in the history, Replay shows in Continue's place, outlined, New game under
 // it lit; its note says how the game ended, against whom. A tap opens that game's replay
 // at its end, and the replay's back goes home, not to the results. A game won, lost, and
 // a friend's, and one lost on time each read their own note; a new game set up brings Continue back.

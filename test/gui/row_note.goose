@@ -1,6 +1,6 @@
 // A menu row's note keeps gui::NOTE_GAP from its label: drawn whole where both fit, shrunk
 // to fit where it would run into the label (a long translation in landscape's 360 dp
-// column, Estonian's "Vaata kordust" with "Kaotasid · raske"), and left out where it
+// column, a long label with "Kaotasid · raske"), and left out where it
 // would shrink below NOTE_LEAST, its icon then alone at the row's right.
 import std;
 import vec;

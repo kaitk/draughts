@@ -80,7 +80,7 @@ PLAY
 YOUR GAMES
 • Results keeps your past games and a rating against the computer.
 • Replay any of them move by move, each move marked from best to mistake, and play on from any move to try another line.
-• Once a game has ended, Watch replay on the home screen opens it where it turned: at your worst move, or where a lost game slipped away, with the best move shown.
+• Once a game has ended, Replay on the home screen opens it where it turned: at your worst move, or where a lost game slipped away, with the best move shown.
 
 PUZZLES
 • Daily puzzles: once Learn is solved, a few puzzles a day at your level (4 by default; 3, 6, or 8 in settings): a warm-up, puzzles at your level, and one a bit harder. They come from nearly 8,000 for International, Russian, and Brazilian draughts, among them traps that punish a careless move, and none repeats.
@@ -211,7 +211,7 @@ It has no network code, no accounts, no ads, no purchases, no links out of the a
 
 - First start: the app asks "Do you know how to play?"; "Show me" starts a short lesson played on the board. It is also under Puzzles, "How to play".
 - New game: the computer at three levels, or a friend on the same device; the kind of draughts, your pieces, and a clock.
-- Continue: the game in progress. Once a game has ended, "Watch replay" takes its place.
+- Continue: the game in progress. Once a game has ended, "Replay" takes its place.
 - Results: past games and a rating against the computer; each game replays move by move.
 - Puzzles: "Learn" is open from the start, 12 short puzzles of one or two moves for each kind of draughts. The other themes open once half of Learn is solved, and "Today's puzzles" (the daily puzzles) once all 12 are solved in any one kind of draughts.
 - Settings (the gear on the home screen): the 3D board (Board), the picture (Theme), Sound, move hints, and the language.

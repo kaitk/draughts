@@ -43,7 +43,7 @@ PLAY
 YOUR GAMES
 • Results keeps your past games and a rating against the computer.
 • Replay any of them move by move, each move marked from best to mistake, and play on from any move to try another line.
-• Once a game has ended, Watch replay on the home screen opens it where it turned: at your worst move, or where a lost game slipped away, with the best move shown.
+• Once a game has ended, Replay on the home screen opens it where it turned: at your worst move, or where a lost game slipped away, with the best move shown.
 
 PUZZLES
 • Daily puzzles: once Learn is solved, a few puzzles a day at your level (4 by default; 3, 6, or 8 in settings): a warm-up, puzzles at your level, and one a bit harder. They come from nearly 8,000 for International, Russian, and Brazilian draughts, among them traps that punish a careless move, and none repeats.

@@ -38,7 +38,7 @@ MÄNGI
 SINU MÄNGUD
 • Tulemuste alt leiad oma varasemad partiid ja reitingu arvuti vastu.
 • Vaata partiisid käik-käigult uuesti: iga käik on hinnatud parimast kuni veani ning igast seisust saad edasi mängida, et proovida teist jätku.
-• Pärast partii lõppu avab avalehe „Vaata kordust“ mängu murdepunktis – sinu halvima käigu juures või hetkes, mil kaotatud partii käest libises – ja näitab ka parimat käiku.
+• Pärast partii lõppu avab avalehe „Kordus“ mängu murdepunktis – sinu halvima käigu juures või hetkes, mil kaotatud partii käest libises – ja näitab ka parimat käiku.
 
 ÜLESANDED
 • Tänased ülesanded: kui teema Õpi on läbitud, ootab sind iga päev mõni sinu tasemele vastav ülesanne (vaikimisi 4; Seadetes 3, 6 või 8) – soojendus, sinu tasemel ülesanded ja üks pisut raskem. Need tulevad ligi 8000 ülesande seast kolmes kabeliigis, nende hulgas hooletut käiku karistavad lõksud, ja ükski ei kordu.

@@ -232,6 +232,11 @@ fed389b.
   chevron, tried first, read as a letter K. Rejected from eight takes: the arrow round a
   play triangle, play in a circle (reads as playing a game), a list with play, a piece in
   the arrow, rewind, a clapperboard, and a board with play.
+- The row is named "Replay" (*Kordus*), not "Watch replay" (*Vaata kordust*), since
+  2026-11-17: in the tablet's landscape column the longer label left "Võitsid · raske"
+  shrunk to its least, and "Kaotasid · raske", "You lost on time · medium", or any note
+  on time was left out (`gui::row`); the short label keeps every note, the longest "Kaotasid ajaga ·
+  keskmine", on the tablet and a 20:9 phone in both orientations.
 - The X closes the app at once on touch screens (2026-11-08/09). Rejected: a last row (it
   costs the portrait board), a door, a power sign.
 - On a desktop's landscape column the way out is a Quit row (task 072, 2026-11-11), the X
