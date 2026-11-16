@@ -43,10 +43,9 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 - Release: 029 Google Play (closed test running), 046 the App Store (in review), 043 iOS
   (the icon left), 036 the announcement after the Play release, 075 the Linux build and
   076 Wayland, 064 Steam (low priority, scoped only).
-- Content and play: 026 how to play, 037 the puzzle set, 088 daily puzzles, 038 players,
-  074 the games' history and a rating, 087 the replay's moves and the desktop's results.
-- Menus and layout: 080 New game, settings as one list, and the board's material; 083 the
-  layouts on devices; 072 keyboard and controller focus; 067 the board under the mouse.
+- Content and play: 037 the puzzle set, 038 players, 074 the games' history and a rating.
+- Menus and layout: 080 the board's material; 072 keyboard and controller focus; 067 the
+  board under the mouse.
 - The 3D board: 041 carved looks, 042 the idle wakeup, 071 its memory.
 - Frames: 055 the boards locked to the display's rate, 056 even pacing, 081 the A33 at
   60 fps.

@@ -110,6 +110,11 @@ and the commit that last has it.
   change; the decisions are in `docs/architecture/rendering.md` ("Board and pieces"), the
   device numbers in its "The 3D board on devices", the frame cost in task 042.
   `015-3d-board.md`, `f2b9acc`
+- 026: How to play, and a new player's way to it. Done 2026-11-16: the rules taught a
+  step at a time on the board in the player's draughts (International and Brazilian 9
+  steps, Russian 10), a new player asked after their sheet, a row on home until learned
+  and first in the puzzles' library; checked on the Mac and the tablet.
+  `026-first-start.md`, `94cf2d1`
 - 033: An icon per season. Cancelled (2026-11-09): one icon, autumn, shipped for the
   release; a seasonal icon costs its place on the home screen four times a year.
   `033-icon-per-season.md`, `a9d4cd6`
@@ -238,6 +243,8 @@ and the commit that last has it.
 - 070: ngfx against gfx, uncapped, on the Mac. Done 2026-11-11: `--no-vsync` on both
   builds; both renderers' uncapped numbers flat and 3D, and where ngfx was slower.
   `070-ngfx-uncapped-performance.md`, `314c3b5`
+- 083: Check 2026-11-13's layout changes on the devices. Done 2026-11-16: checked by the
+  user on the tablet and the phones. `083-layout-device-check.md`, `94cf2d1`
 - 084: The shadow pass's culling and the iPhone's renderer. Done 2026-11-13: back faces
   culled in the shadow pass (front-face culling gave acne at any bias); gfx won on the
   iPhone 13 mini, so `auto` stayed. `084-shadow-culling-and-ios-renderer.md`, `314c3b5`
@@ -249,6 +256,18 @@ and the commit that last has it.
   fitted to the board (`render3d::plan_light`), 16 taps on a desktop, 9 on a tablet, 4 on
   a phone. Left over, no task: the jump's occlusion blob pops off over the taken piece's
   square, as the squares buffer holds one piece a square. `086-better-shadows.md`, `314c3b5`
+- 087: The replay's move shown, the best move, and the desktop's results. Done
+  2026-11-16: the move's way in dots, its squares shaded and numbered, the best move kept
+  in the history and shown as the hint, desktop windows capped at 1.9 times their height;
+  checked on Windows and the tablet. Left over, no task: home's menu glass on an ultrawide
+  runs out to the window's edge. `087-replay-moves-and-desktop.md`, `94cf2d1`
+- 088: Daily puzzles from a large generated library, at the player's level. Done
+  2026-11-16: libraries of 3,579 International, 2,328 Russian, and 2,080 Brazilian
+  puzzles, generated offline and rated, a few a day picked by the date and a puzzle rating
+  per player ([puzzles](../../docs/architecture/puzzles.md)); checked on the Mac and the
+  tablet. Left over, no task: grab traps need a core that forces the 2-for-1, Russian's
+  bigger capture a better generator, the children's results against the estimate, and more
+  trap puzzles once the library has been tested with them. `088-daily-puzzles.md`, `94cf2d1`
 - 089: Sound, calm and few. Done 2026-11-16: a few quiet sounds from the board's and the
   game's own events (two recordings' hits as IMA ADPCM, the rest synthesized), off at
   first on a phone or a tablet and half on a desktop, a Sound section with a speaker and a
