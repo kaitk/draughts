@@ -24,7 +24,7 @@ that.
 | --- | --- | --- |
 | A piece set down | When it lands, not at the tap; yours, the computer's, a friend's | Yes. The core sound. The computer's move tells a player who looked away that it's their turn |
 | A capture's landings | Each landing a whole tone above the last | Yes. A long capture climbs, and a child hears how many pieces it took without counting |
-| A taken piece | A soft brush as it leaves the board, under the landing | Yes |
+| The taken pieces | Once, as the capture ends and the jumped pieces come off together | Yes. Once a capture, never once a jump: a sound per jump made a capture too busy (2026-11-16) |
 | Crowned | Two soft mallet notes after the landing | Yes. A real event, and a rare one |
 | A puzzle solved | Three rising notes, or one per star as each pops in | Yes. Which version to pick is open |
 | A game's end | A win: a soft rising arpeggio. A loss or a draw: a plain, warm close | Yes. A loss never sounds sad or punishing; a four-year-old losing to Medium should hear an ending, not a judgment |
@@ -73,8 +73,11 @@ file.
 
 The first synthesized knocks sounded like an 80s karate game, and the chimes were too
 loud (the user, 2026-11-16). The knock is now modal (a few inharmonic modes, a contact
-breath, a short thump of the board, no pitch glide), and the chimes are about 10 dB
-quieter. Recorded hits are tried beside them:
+breath, a short thump of the board, no pitch glide), and the chimes are about 14 dB
+quieter, the win three notes. The preview is a game to play (tap or drag, wrong squares,
+the computer at random), so the sounds are judged in play, not in a scripted demo.
+Stone tries Freesound's 351518 (a chess move on alabaster) and 646781 (a piece's
+bounce) as the move and the take. Recorded hits are tried beside them:
 
 - `tools/sound_samples.py` fetches about 30 Freesound candidates' public previews (no
   login), cuts each into single hits, matches their loudness, and writes
