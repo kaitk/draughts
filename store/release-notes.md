@@ -40,8 +40,8 @@ Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, 
 **Android and iPhone/iPad:** from Google Play and the App Store.
 
 SHA-256:
-- `Draughts-0.9.0-windows-x64-setup.exe`: `WINDOWS_SETUP_SHA`
-- `Draughts-0.9.0-windows-x64.zip`: `WINDOWS_ZIP_SHA`
+- `Draughts-0.9.0-windows-x64-setup.exe`: `54e217d5e1be01894cf7488fa8be49fdc1c7511e5d669bf0534d45fea001785d`
+- `Draughts-0.9.0-windows-x64.zip`: `a3a84da2f47eb9f674d1d33a711c025452edfdbd92007805d8b405eb6ebb55fa`
 - `Draughts-0.9.0-macos-arm64.dmg`: `53a3180b3e4ea7fec6acfa29a0c8f2f27cd976df2e3e25f347e63afa7f6f69ca`
 - `Draughts-0.9.0-linux-x64.tar.gz`: `0be38582059fad80a876bd6ec138dd173df592c7ec4dadf19e3385d15417d430`
 ```
