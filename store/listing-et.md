@@ -20,7 +20,7 @@ The same as the launcher's name (`strings/et.txt`), as the English is "Draughts"
 Kabe 2D- või 3D-laual: mängi arvuti või sõbraga, lahenda päeva ülesandeid.
 ```
 
-## Full description (4,106 of 4,000)
+## Full description (3,985 of 4,000)
 
 ```text
 Rahulik kabemäng nii mängimiseks kui ka õppimiseks: suured nupud, tasapinnaline 2D- või ruumiline 3D-laud ja ei midagi, mis mõtet mängult kõrvale viiks.
@@ -38,15 +38,15 @@ MÄNGI
 SINU MÄNGUD
 • Tulemuste alt leiad oma varasemad partiid ja reitingu arvuti vastu.
 • Vaata partiisid käik-käigult uuesti: iga käik on hinnatud parimast kuni veani ning igast seisust saad edasi mängida, et proovida teist jätku.
-• Pärast partii lõppu avab avalehe nupp „Vaata kordust“ mängu täpselt murdepunktis – sinu halvima käigu juures või hetkes, mil kaotatud partii käest libises – ja näitab ka parimat käiku.
+• Pärast partii lõppu avab avalehe „Vaata kordust“ mängu murdepunktis – sinu halvima käigu juures või hetkes, mil kaotatud partii käest libises – ja näitab ka parimat käiku.
 
 ÜLESANDED
-• Tänased ülesanded: kui teema Õpi on läbitud, ootab sind iga päev mõni sinu tasemele vastav ülesanne (vaikimisi 4; Seadetes 3, 6 või 8) – soojendus, sinu tasemel ülesanded ja üks pisut raskem. Need valitakse ligi 8000 rahvusvahelise, vene ja Brasiilia kabe ülesande hulgast, mille seas on ka hooletut käiku karistavaid lõkse, ning ükski ülesanne ei kordu.
+• Tänased ülesanded: kui teema Õpi on läbitud, ootab sind iga päev mõni sinu tasemele vastav ülesanne (vaikimisi 4; Seadetes 3, 6 või 8) – soojendus, sinu tasemel ülesanded ja üks pisut raskem. Need tulevad ligi 8000 ülesande seast kolmes kabeliigis, nende hulgas hooletut käiku karistavad lõksud, ja ükski ei kordu.
 • Igal mängijal ja kabeliigil on oma ülesannete reiting, mis alguses muutub kiiremini ja ajapikku stabiliseerub.
 • Kursus: 216 ülesannet kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) iga kabeliigi jaoks – 84 rahvusvahelises kabes, sealhulgas Haarlemi löök ja Philippe'i löök, ning 66 nii vene kui ka Brasiilia kabes.
 • Iga teema läheb lihtsamast keerulisemaks ja osa ülesandeid mängitakse mustadega.
-• Esimesena on kavas Õpi, mis tutvustab reegleid mängu käigus; teised teemad avanevad, kui sellest on pool lahendatud, ning Tänased ülesanded siis, kui kogu teema on läbitud.
-• Iga ülesande eest saab kuni kolm tähte, iga eksimus võtab ühe tähe vähemaks; lahendatud ülesannet saab kõigi kolme tähe püüdmiseks uuesti mängida.
+• Esimene on Õpi, mis tutvustab reegleid mängu käigus; teised teemad avanevad, kui sellest on pool lahendatud, ning Tänased ülesanded siis, kui kogu teema on läbitud.
+• Iga ülesande eest kuni kolm tähte, iga eksimus võtab ühe vähemaks; lahendatud ülesannet saab kolme tähe nimel uuesti mängida.
 
 MÄNGIJAD
 • Kuni neli mängijat ühes seadmes, igaühel oma loomapilt ja soovi korral nimi.
@@ -54,16 +54,16 @@ MÄNGIJAD
 • Mängija vahetamine käib avalehel kahe puudutusega.
 
 KÄIGUVIHJED
-• Vihjed, mis toetavad, aga ei mõtle sinu eest: vaikimisi ei ütle mäng midagi enne, kui teed vale käigu – siis näitab see ruutu ja selgitab põhjust. Päris esimesteks partiideks saab sisse lülitada ka kõigi võimalike käikude kuvamise.
+• Vihjed, mis toetavad, aga ei mõtle sinu eest: vaikimisi ei ütle mäng midagi enne, kui teed vale käigu – siis näitab see ruutu ja selgitab põhjust. Esimesteks partiideks saab sisse lülitada ka kõigi võimalike käikude kuvamise.
 • Löömine on kohustuslik: nupp, millega tuleb lüüa, on tähistatud ning iga löödavat nuppu märgib täpp.
 
 KABELAUD
 • Tasapinnaline laud või valguse ja pehmete varjudega ruumiline 3D-laud, mida saad sõrmega pöörata.
 • Neli aastaaega, igaühel oma taustapilt ning puidust, kivist või nikerdatud laud.
-• Aastaaeg vahetub kuupäeva järgi või püsib sinu valitul; soovi korral saad valida ka laua toonides ühevärvilise tausta.
+• Aastaaeg vahetub kuupäeva järgi või püsib sinu valitul; või vali laua toonides ühevärviline taust.
 
 HELI
-• Mõned rahulikud helid: puidune klõps käigul, kandlehelid tammiks saamisel ja võidu korral ning madalad pehmed puidused noodid ülesande lahendamisel. Helid on vaikimisi väljas, kuni need Seadetes sisse lülitad.
+• Mõned rahulikud helid: puidune klõps käigul, kandlehelid tammiks saamisel ja võidu korral ning madalad pehmed puidused noodid ülesande lahendamisel. Vaikimisi väljas, sisse saab lülitada Seadetes.
 
 KÕIGILE
 • Suured nupud ja pildid, et ka laps, kes veel lugeda ei oska, leiaks ise tee.

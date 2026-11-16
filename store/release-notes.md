@@ -58,10 +58,10 @@ SHA-256:
 • Open source: github.com/kaitk/draughts
 ```
 
-### Play, et (501 of 500)
+### Play, et (499 of 500)
 
 ```text
-• Rahulikud helid: puidune klõps käigul, kandleheli tammiks saamisel ja võidul (vaikimisi väljas, Seaded › Heli)
+• Rahulikud helid: puine klõps käigul, kandleheli tammiks saamisel ja võidul (vaikimisi väljas, Seaded › Heli)
 • Vaata kordust: lõppenud mäng avaneb su halvimal käigul ja näitab parimat käiku
 • Rohkem ülesandeid: „Tammi löögid“ ja „Ohutu käik“ vene ja Brasiilia kabes, raskemad „Kombinatsioonid“ rahvusvahelises
 • 3, 4, 6 või 8 tänast ülesannet päevas
