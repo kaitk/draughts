@@ -27,7 +27,7 @@ that.
 | The taken pieces | Once, in place of the last landing's knock, as the jumped pieces come off together | Yes. Once a capture, never once a jump: a sound per jump made a capture too busy (2026-11-16) |
 | Crowned | A kannel's two plucks up a fifth, in place of the landing's knock | Yes (the kannel chosen 2026-11-16). A real event, and a rare one |
 | A puzzle solved | Three rising notes, or one per star as each pops in | Yes. Which version to pick is open |
-| A game's end | A win: a soft rising arpeggio. A loss or a draw: a plain, warm close | Yes. A loss never sounds sad or punishing; a four-year-old losing to Medium should hear an ending, not a judgment |
+| A game's end | A win: a soft rising arpeggio. A loss: a plain, warm close. A draw: its own close, the kannel's two low strings (2026-11-16) | Yes. A loss never sounds sad or punishing; a four-year-old losing to Medium should hear an ending, not a judgment |
 | A wrong move | Two low soft knocks as the piece slides back | Yes (2026-11-16). Never a buzzer |
 | A capture due elsewhere | A piece or square chosen while another piece must capture: the wrong move's two knocks with the second pitched up, a warning but another one | Yes (2026-11-16) |
 | A piece picked up | A faint tick | No. It is the sound of your own tap |
@@ -35,7 +35,7 @@ that.
 | The hint, the lookout | | No. Help stays quiet; a sound would make it feel like a reward |
 | Stars, dots, today's moon | Except as the solved notes | No extra sounds |
 | The clock turns gold | One soft note as a player's clock goes under a minute, when it turns gold | Yes (2026-11-16) |
-| The clock turns red | The same note three times in a row at 0:20, when it turns red | Yes (2026-11-16). Nothing more after it, no flag sound (the end's sound says it) |
+| The clock turns red | The same note as ri-tai (a sixteenth and a dotted eighth: short, long) at 0:20, when it turns red (2026-11-16, in place of three in a row) | Yes (2026-11-16). Nothing more after it, no flag sound (the end's sound says it) |
 | A tick every second | | No. A tick a second makes a player more anxious, not more careful |
 | Music, ambience (wind, birds by season) | | No. Maybe never. The seasons' photographs already set the mood, and loops grate after ten minutes |
 | Voice | | Not in this task. Lessons may want it (`docs/product.md`), and that is its own decision |
@@ -83,12 +83,12 @@ file.
 - Crowned: the kannel's two plucks (`pluck`, Karplus-Strong).
 - A capture due: the wrong move's knocks, the second up (`warn`).
 - The first version ships with the prototype's defaults for the rest (2026-11-16): the
-  win's three marimba notes, the end's two low ones, the solved puzzle as one phrase of
-  three, the clock's note at gold and three at red, and the Volume row as a slider with
+  win's three marimba notes, a loss's two low ones, a draw's two low kannel strings, the solved puzzle as one phrase of
+  three, the clock's note at gold and as ri-tai at red, and the Volume row as a slider with
   the speaker that mutes.
 
-`prototypes/sound-set.html` plays the whole set, and has takes on the five set by
-default (the solved puzzle, the win, the end, the clock's gold and red): the mallet
+`prototypes/sound-set.html` plays the whole set, and has takes on the six set by
+default (the solved puzzle, the win, a loss, a draw, the clock's gold and red): the mallet
 notes against a small calm orchestra (harp, lute, pizzicato strings, soft horns,
 celesta, strings held, a bell), in the spirit of Heroes of Might and Magic II's score,
 never its tunes, besides the kannel and kalimba.

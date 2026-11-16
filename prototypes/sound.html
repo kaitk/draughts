@@ -263,10 +263,10 @@
     BANK.must = [take(even(MOMENTS.must[pickOf('must')][2]()))];
     // A counted take: one per number of pieces taken, 1 to 8.
     if (pickOf('take') !== 'clicks') BANK.counted = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => take(even(MOMENTS.take[pickOf('take')][2](n))));
-    // The clock: one note as it turns gold (under a minute), the same note three times as
-    // it turns red (0:20). A4 sits in the chimes' pentatonic scale.
+    // The clock: one note as it turns gold (under a minute), the same note as ri-tai (a
+    // sixteenth and a dotted eighth) as it turns red (0:20). A4 is on the chimes' scale.
     BANK.gold = [take(note(HZ.A4, 0.4))];
-    BANK.red = [take(phrase([[0, note(HZ.A4, 0.3)], [0.17, note(HZ.A4, 0.3)], [0.34, note(HZ.A4, 0.4)]]))];
+    BANK.red = [take(phrase([[0, note(HZ.A4, 0.06).map((v) => v * 0.8)], [0.15, note(HZ.A4, 0.4)]]))];   // ri-tai: a sixteenth, a dotted eighth
     const m = sampleHits(moveRef), k = sampleHits(takeRef);
     if (m.length) {
       // One hit: three pitches of it. Several: each as it is, picked at random.
@@ -561,7 +561,7 @@
     ['must', 'yes', 'A capture due elsewhere', 'The same knocks, the second pitched up: a warning, but another one.'],
     ['select', 'no', 'A piece picked up', 'A faint tick. Every tap making a sound is the bling the app keeps out.'],
     ['gold', 'yes', 'The clock turns gold', 'One soft note as your clock goes under a minute.'],
-    ['red', 'yes', 'The clock turns red', 'The same note three times as it reaches 0:20. Nothing after: a tick a second only makes a player more anxious.'],
+    ['red', 'yes', 'The clock turns red', 'The same note as ri-tai, short then long, as it reaches 0:20. Nothing after: a tick a second only makes a player more anxious.'],
   ];
   // The moments' takes: each playable, and one tap to use it in the game.
   function momentsView() {

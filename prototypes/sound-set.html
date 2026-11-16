@@ -10,9 +10,9 @@
 <script src="sound.js"></script>
 <style>
   /* The sound set (task 089): every sound the first version makes, each to play, then
-     the takes on the five not chosen by ear (a puzzle solved, a game won, lost or drawn,
-     the clock at gold and at red), each one tap to choose; the choice shows in the set
-     and in the URL (&solved= &win= &end= &gold= &red=), to send back. The move and the
+     the takes on the six not chosen by ear (a puzzle solved, a game won, lost, drawn, the
+     clock at gold and at red), each one tap to choose; the choice shows in the set
+     and in the URL (&solved= &win= &lost= &draw= &gold= &red=), to send back. The move and the
      take are Freesound hits (samples/samples.js, tools/sound_samples.py); the rest are
      synthesized in sound.js, as the app would. */
   body { overflow: hidden; }
@@ -71,7 +71,14 @@
   // Each [title, what, make]; made once, matched in loudness (even), played at M.
   const M = 0.1;
   const H = HZ;
-  const thrice = (b) => at(0.17, [b, b, b]);
+  // Ri-tai: a sixteenth and a dotted eighth at 100 to the quarter, short then long (the
+  // first note damped after its sixteenth, the second left to ring).
+  const SIXTEENTH = 0.15;
+  function ritai(b) {
+    const cut = Math.round(SIXTEENTH * RATE), fade = Math.round(0.05 * RATE);
+    const first = b.slice(0, cut + fade).map((v, i) => v * 0.8 * (i < cut ? 1 : 1 - (i - cut) / fade));
+    return phrase([[0, first], [SIXTEENTH, b]]);
+  }
   const OPTIONS = {
     solved: {
       mallet: ['Mallet notes', 'Three soft marimba notes up', () => at(0.12, [note(H.D5, 0.45), note(H['F#5'], 0.45), note(H.A5, 0.8)])],
@@ -97,7 +104,7 @@
       pizz: ['Pizzicato strings', 'A run of five up', () => at(0.09, [H.D5, H.E5, H['F#5'], H.A5, H.D6].map((f, k) => pizz(f, 271 + k)))],
       flute: ['Harp and flute', 'A harp chord and a wooden flute\'s note held over it', () => mix([[0, at(0.04, [H.D4, H.A4, H.D5].map((f, k) => harp(f, 2.2, 281 + k)))], [0.08, flute(H['F#5'], 0.7), 0.7]])],
     },
-    end: {
+    lost: {
       marimba: ['Marimba', 'Two low notes together', () => mix([[0, note(H.A3, 0.8)], [0.02, note(H.E4, 0.8, 0.7)]])],
       harp: ['Harp', 'Down a fifth, gently, left to ring', () => at(0.3, [harp(H.D4, 2.4, 301), harp(H.A3 * 1, 2.6, 302)])],
       strings: ['Strings', 'An open chord (A, D, E), neither glad nor sad, swelling and fading', () => pad([H.A3, H.D4, H.E4], 1.0, 0.45)],
@@ -115,16 +122,19 @@
       pizz: ['Pizzicato', 'One plucked string note', () => pizz(H.A4, 341)],
     },
     red: {
-      note: ['Mallet notes', 'The same note three times', () => thrice(note(H.A4, 0.3))],
-      harp: ['Harp', 'One note plucked three times', () => thrice(harp(H.A4, 1, 351))],
-      kannel: ['Kannel', 'One string three times', () => thrice(pluck(H.A4, 1, 361))],
-      celesta: ['Celesta', 'Three small bright notes', () => thrice(celesta(H.A5))],
-      block: ['Temple block', 'Three hollow knocks', () => thrice(block(H.A4))],
-      bell: ['A soft bell', 'Three quiet rings', () => thrice(bell(H.A5))],
-      pizz: ['Pizzicato', 'Three plucked notes', () => thrice(pizz(H.A4, 371))],
+      note: ['Mallet notes', 'The note as ri-tai: short, long', () => ritai(note(H.A4, 0.4))],
+      harp: ['Harp', 'One note plucked ri-tai', () => ritai(harp(H.A4, 1.2, 351))],
+      kannel: ['Kannel', 'One string plucked ri-tai', () => ritai(pluck(H.A4, 1.2, 361))],
+      celesta: ['Celesta', 'A small bright note, ri-tai', () => ritai(celesta(H.A5))],
+      block: ['Temple block', 'Two hollow knocks, short then long', () => ritai(block(H.A4))],
+      bell: ['A soft bell', 'A quiet ring, ri-tai', () => ritai(bell(H.A5))],
+      pizz: ['Pizzicato', 'A plucked note, ri-tai', () => ritai(pizz(H.A4, 371))],
     },
   };
-  const DEFAULT = { solved: 'mallet', win: 'marimba', end: 'marimba', gold: 'note', red: 'note' };
+  // A draw has a sound of its own, the kannel's low strings (2026-11-16); a loss keeps
+  // the takes it had, the same ones a draw chooses from.
+  OPTIONS.draw = OPTIONS.lost;
+  const DEFAULT = { solved: 'mallet', win: 'marimba', lost: 'marimba', draw: 'kannel', gold: 'note', red: 'note' };
   const chosen = {};
   for (const k of Object.keys(OPTIONS)) chosen[k] = OPTIONS[k][P.get(k)] ? P.get(k) : DEFAULT[k];
   const playOption = (kind, key, when = 0) => start({ x: made(`${kind}.${key}`, () => even(OPTIONS[kind][key][2]())) }, M, when);
@@ -146,12 +156,13 @@
     ['wrong', 'A wrong move', 'Two low soft knocks as the piece slides back, the second lower', 'Chosen', (w) => start({ x: knocks(0.66) }, 0.4, w)],
     ['must', 'A capture due elsewhere', 'The same knocks, the second pitched up: a warning, but another one', 'Chosen', (w) => start({ x: knocks(0.84) }, 0.4, w)],
     ['gold', 'The clock turns gold', 'Once, as a person\'s clock goes under a minute', 'gold', (w) => playOption('gold', chosen.gold, w)],
-    ['red', 'The clock turns red', 'Once, at 0:20; nothing after it, no tick a second', 'red', (w) => playOption('red', chosen.red, w)],
+    ['red', 'The clock turns red', 'Once, at 0:20, as ri-tai (a sixteenth and a dotted eighth); nothing after it, no tick a second', 'red', (w) => playOption('red', chosen.red, w)],
     ['solved', 'A puzzle solved', 'As the stars show', 'solved', (w) => playOption('solved', chosen.solved, w)],
     ['win', 'A game won', 'As the result shows; a game\'s last move plays this alone', 'win', (w) => playOption('win', chosen.win, w)],
-    ['end', 'A game lost or drawn', 'A plain close, never a sad one', 'end', (w) => playOption('end', chosen.end, w)],
+    ['lost', 'A game lost', 'A plain close, never a sad one', 'lost', (w) => playOption('lost', chosen.lost, w)],
+    ['draw', 'A game drawn', 'Its own close, neither won nor lost', 'draw', (w) => playOption('draw', chosen.draw, w)],
   ];
-  const TITLE = { solved: 'A puzzle solved', win: 'A game won', end: 'A game lost or drawn', gold: 'The clock turns gold', red: 'The clock turns red' };
+  const TITLE = { solved: 'A puzzle solved', win: 'A game won', lost: 'A game lost', draw: 'A game drawn', gold: 'The clock turns gold', red: 'The clock turns red' };
 
   function render() {
     const panel = document.getElementById('panel');
@@ -159,13 +170,13 @@
     panel.innerHTML = `<div class="head"><a class="pill" href="sound.html">${icon('back')}Settings</a><h1>The sound set</h1>` +
       `<label>Volume <input type="range" id="vol" min="0" max="1" step="0.01" value="${level}"></label>` +
       `<button class="pill" id="all">${playIcon}Play the set</button></div>` +
-      `<p class="lead">Every sound the first version makes, as the app would play it at this volume. Under it, the takes on the five chosen ` +
+      `<p class="lead">Every sound the first version makes, as the app would play it at this volume. Under it, the takes on the six set ` +
       `by default; choose one and it moves into the set (and the page's link, to send back).</p>${missing}` +
       `<h2>The set</h2>` + SET.map(([id, title, what, from], k) => {
         const tag = OPTIONS[from] ? `<span class="tag from">${OPTIONS[from][chosen[from]][0]}</span>` : `<span class="tag chosen">${from}</span>`;
         return `<div class="row"><button class="play" data-set="${k}">${playIcon}</button><div><b>${title}</b><p>${what}</p></div>${tag}</div>`;
       }).join('') +
-      Object.keys(OPTIONS).map((kind) => `<h2>${TITLE[kind]}<small>${Object.keys(OPTIONS[kind]).length} takes</small></h2>` +
+      ['solved', 'win', 'lost', 'draw', 'gold', 'red'].map((kind) => `<h2>${TITLE[kind]}<small>${Object.keys(OPTIONS[kind]).length} takes</small></h2>` +
         Object.entries(OPTIONS[kind]).map(([key, [title, what]]) =>
           `<div class="row${chosen[kind] === key ? ' on' : ''}"><button class="play" data-kind="${kind}" data-key="${key}">${playIcon}</button>` +
           `<div><b>${title}</b><p>${what}</p></div>` +
@@ -189,7 +200,7 @@
     // The set in a row, as a short game would bring them: 1.3 s apart, the long ones more.
     document.getElementById('all').addEventListener('click', () => {
       let w = 0;
-      SET.forEach(([id, , , , fn]) => { fn(w); w += id === 'stops' ? 2 : id === 'win' || id === 'end' || id === 'solved' ? 2.6 : 1.3; });
+      SET.forEach(([id, , , , fn]) => { fn(w); w += id === 'stops' ? 2 : id === 'win' || id === 'lost' || id === 'draw' || id === 'solved' ? 2.6 : 1.3; });
     });
     Draughts.sync();
   }
