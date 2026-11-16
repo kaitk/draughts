@@ -39,6 +39,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import native
@@ -185,8 +186,15 @@ def disk_image(app, dmg):
         positions = "\n    ".join(f'set position of item "{n}" of container window to {{{x}, {y}}}'
                                    for n, (x, y) in DMG_ICONS.items())
         w, h = DMG_WINDOW
-        native.run("osascript", "-e", DMG_LAYOUT.format(
-            volume=volume, right=200 + w, bottom=120 + h + TITLE_BAR, positions=positions))
+        layout = DMG_LAYOUT.format(volume=volume, right=200 + w, bottom=120 + h + TITLE_BAR,
+                                   positions=positions)
+        # Finder can take a few seconds to see a volume just attached (-1728).
+        for attempt in range(10):
+            if subprocess.run(["osascript", "-e", layout]).returncode == 0:
+                break
+            time.sleep(1)
+        else:
+            sys.exit("Finder never saw the disk image's volume")
         native.run("xcrun", "SetFile", "-a", "C", mount)     # use .VolumeIcon.icns; after
                                                              # Finder, which clears it
         native.run("sync")
