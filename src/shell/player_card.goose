@@ -16,7 +16,7 @@
 // play?" (prototypes/tutorial.html, ask a): the player's face over the question
 // and two answers, show me (how to play, lit) and I know how; back or a tap outside
 // closes it unanswered, and home's How to play row stays for them (shell::resume).
-namespace who;
+namespace player_card;
 import std;
 import vec;
 
@@ -65,7 +65,7 @@ let PIC_GAP = 10.0;
 let TITLE_H = 28.0;         // a dim name over the pictures and over the name
 let ROW_GAP = 10.0;
 
-struct Who {
+struct PlayerCard {
     state:    i64           = CLOSED,
     editing:  bool          = false,    // the pencil: a face opens its sheet
     target:   i64           = -1,       // the player the sheet is for, or -1 for a new one
@@ -78,13 +78,13 @@ struct Who {
 
 // A fresh install's first run: the sheet for the one player there is, so the child picks
 // their badge and perhaps a name; done or back closes it, and home shows.
-fn first_run(w: Who&, ps: players::Players&) {
+fn first_run(w: PlayerCard&, ps: players::Players&) {
     sheet_for(w, ps, 0);
     w.first = true;
 }
 
 // Opens who's playing.
-fn open(w: Who&) {
+fn open(w: PlayerCard&) {
     w.state = PICKING;
     w.first = false;
     w.editing = false;
@@ -92,7 +92,7 @@ fn open(w: Who&) {
 }
 
 // Android's back: the sheet goes back to the card, the card closes.
-fn back(w: Who&) {
+fn back(w: PlayerCard&) {
     w.typing = false;
     w.state = if w.state == SHEET && !w.first { PICKING } else { CLOSED };
 }
@@ -116,7 +116,7 @@ fn grid(ps: players::Players&, area: float4, u: f32) -> i64, i64, i64 {
 // Declares the card over home for this frame: the screen dimmed (`screen`, the whole
 // window), the card in the safe area `area`. Returns what it asks for and, for SWITCH,
 // the player's place in the list.
-fn frame(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4, screen: float4) -> i64, i64 {
+fn frame(w: PlayerCard&, ps: players::Players&, g: gui::Gui&, area: float4, screen: float4) -> i64, i64 {
     gui::rounded_rect(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
     // A tap on the dimmed home outside the card closes it.
     let outside, unused = gui::press_widget(g, OUTSIDE_ID, screen, false);
@@ -150,7 +150,7 @@ fn glass_tile(g: gui::Gui&, id: i64, r: float4, icon: i64, style: i64) -> bool {
 }
 
 // Who's playing: back, the title, the pencil; the faces.
-fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64 {
+fn picker(w: PlayerCard&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64 {
     let u = g.scale;
     let count, per, rows = grid(ps, area, u);
     let t = tile_w(area, u);
@@ -225,7 +225,7 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
 
 // Opens the sheet for the player at `index`, or -1 for a new one with the first free
 // picture.
-fn sheet_for(w: Who&, ps: players::Players&, index: i64) {
+fn sheet_for(w: PlayerCard&, ps: players::Players&, index: i64) {
     w.state = SHEET;
     w.target = index;
     w.typing = false;
@@ -257,7 +257,7 @@ fn hold_width(g: gui::Gui&, key: i64) -> f32 {
 
 // The sheet: back, the face and name or the title, done; the pictures, the name, and
 // for a player already there the holds.
-fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64 {
+fn sheet(w: PlayerCard&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64 {
     let u = g.scale;
     var ask = NOTHING;
     // The characters typed this frame go into the name before the head shows it; Return
@@ -371,7 +371,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
 }
 
 // The sheet's answer: done creates or saves, else ask.
-fn finish(w: Who&, edit: bool, done: bool, ask: i64) -> i64, i64 {
+fn finish(w: PlayerCard&, edit: bool, done: bool, ask: i64) -> i64, i64 {
     if done {
         players::trimmed(w.name);
         w.typing = false;
@@ -393,7 +393,7 @@ fn heading(g: gui::Gui&, c: float4&, key: i64) {
 
 // While the keyboard is up the characters typed go into the name, Return closing it and
 // standing for done. Whether any came, and whether Return did.
-fn typed(w: Who&, g: gui::Gui&) -> bool, bool {
+fn typed(w: PlayerCard&, g: gui::Gui&) -> bool, bool {
     var changed = false;
     var entered = false;
     for c in g.input.typed {
@@ -409,7 +409,7 @@ fn typed(w: Who&, g: gui::Gui&) -> bool, bool {
 // The name's field in r: a pencil, then the name, or "Name" faint while there is none and
 // it isn't typed; a caret after it while it is. A tap brings up the keyboard (`typed`,
 // above, takes what it types). True when the tap came.
-fn field(w: Who&, g: gui::Gui&, r: float4) -> bool {
+fn field(w: PlayerCard&, g: gui::Gui&, r: float4) -> bool {
     let u = g.scale;
     var changed = false;
     gui::rounded_rect(g, r, float4 { 0.0, 0.0, 0.0, 0.18 }, 20.0 * u);
@@ -465,7 +465,7 @@ fn hold(g: gui::Gui&, id: i64, r: float4, icon: i64, key: i64, red: bool) -> boo
 let ANSWER_W = 240.0;
 let ANSWER_H = 150.0;
 let ANSWER_GAP = 16.0;
-fn asking(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64 {
+fn asking(w: PlayerCard&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64 {
     let u = g.scale;
     let title = strings::get(strings::HOW_ASK);
     let room = area.z - 2.0 * EDGE * u;

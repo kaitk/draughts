@@ -30,7 +30,7 @@ fn main() {
         }
     }
     // Each screen's named ids against its range, by its place in gui::IDS.
-    let ends = [home::IDS_END, settings::IDS_END, who::IDS_END, picker::IDS_END, results::IDS_END, replay::IDS_END,
+    let ends = [home::IDS_END, settings::IDS_END, player_card::IDS_END, picker::IDS_END, results::IDS_END, replay::IDS_END,
                 tutorial::IDS_END];
     let ranges = [2, 3, 4, 5, 6, 7, 8];
     for e, k in ends {

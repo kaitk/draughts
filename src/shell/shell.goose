@@ -21,7 +21,7 @@ import .settings;
 import .picker;
 import .puzzle;
 import .players;
-import .who;
+import .player_card;
 import .saved;
 import .roster;
 import .history;
@@ -127,15 +127,15 @@ struct Shell {
     game:                game::Game,
     preview:             board::Board,        // the board beside settings, as they make it
     next:                board::Board,        // the board beside home's setup: the game its play starts
-    prefs:               settings::Settings = settings::Settings {}, // the playing player's, and the device's language
-    players:             players::Players   = players::Players {},
-    who:                 who::Who           = who::Who {}, // who's playing, over home's menu
-    quitting:            bool               = false, // a desktop's quit asks first, over home's menu (home::ask_quit)
-    changed:             bool               = false, // prefs changed since the app last wrote them (Frame.save)
-    drawn:               i64                = -1,    // the screen the last frame declared
-    back:                i64                = HOME,  // where settings goes back to
-    setup:               i64                = home::NO_SETUP, // home's column: the menu, or a setup
-    showing_setup_board: bool               = false,     // home shows `next`, having declared a setup this frame
+    prefs:               settings::Settings      = settings::Settings {}, // the playing player's, and the device's language
+    players:             players::Players        = players::Players {},
+    player_card:         player_card::PlayerCard = player_card::PlayerCard {}, // who's playing, over home's menu
+    quitting:            bool                    = false, // a desktop's quit asks first, over home's menu (home::ask_quit)
+    changed:             bool                    = false, // prefs changed since the app last wrote them (Frame.save)
+    drawn:               i64                     = -1,    // the screen the last frame declared
+    back:                i64                     = HOME,  // where settings goes back to
+    setup:               i64                     = home::NO_SETUP, // home's column: the menu, or a setup
+    showing_setup_board: bool                    = false, // home shows `next`, having declared a setup this frame
     // The game is one nobody set up, there being none kept (read_game: a fresh install, a
     // new player), until a game is set up or a move played in it (resume). Kept with the
     // game (saved.goose).
@@ -386,8 +386,8 @@ fn back(sh: Shell&, now: f64) -> bool {
         go_up(sh, sh.lesson_from, now);
         return true;
     }
-    if sh.screen == HOME && sh.who.state != who::CLOSED {
-        who::back(sh.who);
+    if sh.screen == HOME && sh.player_card.state != player_card::CLOSED {
+        player_card::back(sh.player_card);
     } else if sh.screen == HOME && sh.quitting {
         sh.quitting = false;
     } else if sh.screen == HOME {
@@ -466,8 +466,8 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: b
     let out .= sh.out;
     out.changed = changed || fresh;
     out.screen = sh.screen;
-    out.typing = sh.who.typing && sh.screen == HOME;
-    out.keyboard = sh.who.keyboard;
+    out.typing = sh.player_card.typing && sh.screen == HOME;
+    out.keyboard = sh.player_card.keyboard;
     out.save = sh.changed && sh.from < 0;
     gather_sound_events(sh, out);
     return sh.out;
@@ -533,7 +533,7 @@ fn launch(sh: Shell&, prefs: settings::Settings, ps: players::Players&) {
 fn open(sh: Shell&, first: bool) {
     apply_prefs(sh);
     read_game(sh);
-    if first && sh.players.fresh { who::first_run(sh.who, sh.players); }
+    if first && sh.players.fresh { player_card::first_run(sh.player_card, sh.players); }
 }
 
 // The puzzles are the set of the player's draughts (puzzles::set_of), and its library of
@@ -941,7 +941,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     if board::update(b, now) { changed = true; }
     let flip = board_flipped(sh, sh.setup);
     // Who's playing, or the quit's question, over the menu: home under it takes no pointer.
-    let card = sh.who.state != who::CLOSED && sh.setup == home::NO_SETUP;
+    let card = sh.player_card.state != player_card::CLOSED && sh.setup == home::NO_SETUP;
     let asking = sh.quitting && !card;
     if card || asking { gui::set_input_enabled(g, false); }
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -996,7 +996,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         home::EXIT => {
             if home::asks_quit() { sh.quitting = true; } else { sh.out.quit = true; }
         },
-        home::PLAYERS => { who::open(sh.who); },
+        home::PLAYERS => { player_card::open(sh.player_card); },
         home::RESULTS => { go_to(sh, RESULTS, now); },
         home::LEARN => { learn(sh, HOME, now); },
         home::PLAY => { play(sh, now); },
@@ -1034,31 +1034,31 @@ fn drag_board(sh: Shell&, g: gui::Gui&, v: view3d::View, room: float4, now: f64)
 // adding one, saving one's picture and name, starting one again, removing one. Returns
 // whether anything on screen changed.
 fn who_card(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
-    let ask, index = who::frame(sh.who, sh.players, g, area, gui::extend_to_screen_edge(g, area, area));
-    let w .= sh.who;
+    let ask, index = player_card::frame(sh.player_card, sh.players, g, area, gui::extend_to_screen_edge(g, area, area));
+    let w .= sh.player_card;
     match ask {
-        who::SWITCH => { switch_player(sh, index); },
-        who::CREATE => { add_player(sh, w.picture, w.name); },
-        who::SAVE => { edit_player(sh, index, w.picture, w.name); },
+        player_card::SWITCH => { switch_player(sh, index); },
+        player_card::CREATE => { add_player(sh, w.picture, w.name); },
+        player_card::SAVE => { edit_player(sh, index, w.picture, w.name); },
         _ => {},
     }
     // A new player, or a fresh install's first, is being asked whether they know how to
     // play: asked, whatever they answer (home's How to play row, resume).
-    if w.state == who::ASKING && !sh.prefs.first_start_done {
+    if w.state == player_card::ASKING && !sh.prefs.first_start_done {
         sh.prefs.first_start_done = true;
         sh.changed = true;
     }
     match ask {
-        who::AGAIN => { start_again(sh, index); },
-        who::REMOVE => { remove_player(sh, index); },
-        who::LEARN => { learn(sh, HOME, now); },
-        who::KNOWN => {
+        player_card::AGAIN => { start_again(sh, index); },
+        player_card::REMOVE => { remove_player(sh, index); },
+        player_card::LEARN => { learn(sh, HOME, now); },
+        player_card::KNOWN => {
             sh.prefs.knows = true;
             sh.changed = true;
         },
         _ => {},
     }
-    return ask != who::NOTHING;
+    return ask != player_card::NOTHING;
 }
 
 // Whether home's board is turned with its column showing `setup`, for a child playing

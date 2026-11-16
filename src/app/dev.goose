@@ -82,7 +82,7 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
             sh.lesson.state = tutorial::END;
         }
     }
-    if f.ask { sh.who.state = who::ASKING; }
+    if f.ask { sh.player_card.state = player_card::ASKING; }
     sh.setup = f.setup;
     // The settings file stays as it is unless a tap in the setup writes it.
     if f.setup != home::NO_SETUP {

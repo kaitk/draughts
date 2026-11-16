@@ -181,7 +181,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
   <li>Pick the <b>language</b>: the player's choice, else the first of the phone's languages that has a file, else English. Load the <b>puzzles</b> for the chosen draughts.<span class="where">host::locales · strings::pick, strings::use · puzzles::load</span></li>
   <li>Ask <b>which platform</b> this is (desktop, Android, iOS). Phones get a full-screen window, and on iOS home has no "close" button because iOS apps never close themselves.<span class="where">host::platform (launch.c)</span></li>
   <li><b>Open the window and the GPU</b>. On Windows, first tell SDL to use Vulkan. This is the first time anything graphical happens.<span class="where">host::open → draughts_choose_gpu (display.c), gfx::open</span></li>
-  <li>Make the <b>Shell</b>, the value that holds every screen and the game. Give it the player's settings, let the developer flags set up a game if they ask for one, then restore the <b>saved game</b> if there is one. A brand-new install opens on the "pick your badge" sheet.<span class="where">shell::new · shell::launch · dev::setup · shell::open → read_game, who::first_run</span></li>
+  <li>Make the <b>Shell</b>, the value that holds every screen and the game. Give it the player's settings, let the developer flags set up a game if they ask for one, then restore the <b>saved game</b> if there is one. A brand-new install opens on the "pick your badge" sheet.<span class="where">shell::new · shell::launch · dev::setup · shell::open → read_game, player_card::first_run</span></li>
   <li>Make the <b>renderer</b>. It makes all the painters at once: the flat-board drawer (it loads the season's photograph), the 3D-board drawer (empty for now; it gets ready a step at a time later), the UI drawer, and the text's state. Then the thinker (no thread yet).<span class="where">render::new → draw::new, draw3d::Drawer, widgets::new, text::Text · think::Thinker</span></li>
 </ol>
 <div class="note"><b>Worth knowing.</b> The computer's thread does not start here. It starts the first time the game actually asks for a move, so a game between two kids on one tablet never pays for the 6 MB search engine.</div>
@@ -298,18 +298,18 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 │  │  └─ rules::Position   <span class="c">a few u64 + side</span>
 │  ├─ clock::Clock
 │  ├─ computer, level, skill
-│  └─ asking / reply       <span class="c">the open question</span>
+│  └─ ai_request_id / reply <span class="c">the open question</span>
 ├─ preview  board::Board   <span class="c">settings' small board</span>
 ├─ next     board::Board   <span class="c">home's setup board</span>
 ├─ puzzle   puzzle::Play
 ├─ prefs    settings::Settings
 ├─ players  players::Players
-├─ who      who::Who       <span class="c">badge / name sheet</span>
+├─ player_card  player_card::PlayerCard  <span class="c">badge / name sheet</span>
 ├─ cam      rig::Rig       <span class="c">home's and settings' 3D board, dragged</span>
 └─ out      <span class="k">shell::Frame</span>   <span class="c">this frame's answer:</span>
    ├─ layout board::Layout <span class="c">where the board is</span>
    ├─ view   view3d::View  <span class="c">3D camera this frame</span>
-   └─ over   board::Overlay <span class="c">pieces over the UI</span></div>
+   └─ ui_pieces board::Overlay <span class="c">pieces over the UI</span></div>
 </div>
 <div>
 <div class="tree"><span class="c">// the painting side, locals in main()</span>

@@ -1,6 +1,6 @@
-// Who's playing and the player's sheet (shell/who.goose), headless. Home's chip, beside
-// the way out, opens the card over the dimmed home; a face switches to that player and
-// closes it, their look and game coming with them; + opens the sheet for a new player
+// Who's playing and the player's sheet (shell/player_card.goose), headless. Home's chip,
+// beside the way out, opens the card over the dimmed home; a face switches to that player
+// and closes it, their look and game coming with them; + opens the sheet for a new player
 // with the first free picture, and done adds them; the pencil puts a badge on each face,
 // and a face then opens its sheet, where the name is typed (a name's characters, Erase,
 // Return) and done saves it. Start again and remove are holds: let go at 0.5 s and
@@ -43,7 +43,7 @@ fn listed(sh: shell::Shell&) -> u8[>..] {
 
 fn state(sh: shell::Shell&) -> u8[>..] {
     let states = ["closed", "who's playing", "the sheet", "the question"];
-    return str(states[sh.who.state], if sh.who.editing { " (editing)" } else { "" }, if sh.who.typing { " (typing)" } else { "" },
+    return str(states[sh.player_card.state], if sh.player_card.editing { " (editing)" } else { "" }, if sh.player_card.typing { " (typing)" } else { "" },
                "; ", listed(sh), "; season ", sh.prefs.season, ", game ", rules::VARIANTS[sh.game.b.variant].size,
                " after ", sh.game.b.rec.history.len);
 }
@@ -101,11 +101,11 @@ fn report(what: const u8[:], g: gui::Gui&, first: i64) {
 
 // Home's tiles with the card closed; the card's tiles follow them when it is open.
 fn home_tiles(sh: shell::Shell&, g: gui::Gui&, now: f64) -> i64 {
-    let was = sh.who.state;
-    sh.who.state = who::CLOSED;
+    let was = sh.player_card.state;
+    sh.player_card.state = player_card::CLOSED;
     drive::idle(sh, g, now);
     let n = drive::tiles(g);
-    sh.who.state = was;
+    sh.player_card.state = was;
     drive::idle(sh, g, now);
     return n;
 }
@@ -118,7 +118,7 @@ fn hold(sh: shell::Shell&, g: gui::Gui&, p: float2, now: f64, seconds: f64) {
     var animating = true;
     while t <= seconds + 0.001 {
         drive::frame(sh, g, p, true, false, false, now + t);
-        animating = animating && (shell::animating(sh, g, now + t) || sh.who.state != who::SHEET);
+        animating = animating && (shell::animating(sh, g, now + t) || sh.player_card.state != player_card::SHEET);
         t += 0.1;
     }
     drive::frame(sh, g, p, false, false, true, now + seconds + 0.05);
@@ -136,16 +136,16 @@ fn type_text(sh: shell::Shell&, g: gui::Gui&, chars: const u32[:], now: f64) {
 
 // The card and a sheet (the player at `index`, or -1 for a new one) of shell s.
 fn layouts(s: shell::Shell&, g: gui::Gui&, name: const u8[:], index: i64, now: f64) {
-    s.who = who::Who {};
-    who::open(s.who);
+    s.player_card = player_card::PlayerCard {};
+    player_card::open(s.player_card);
     report(str(name, ", ", s.players.list.len, " players, who's playing"), g, home_tiles(s, g, now));
-    who::sheet_for(s.who, s.players, index);
+    player_card::sheet_for(s.player_card, s.players, index);
     drive::idle(s, g, now);
     report(str(name, ", ", if index < 0 { "a new player" } else { "a sheet" }), g, home_tiles(s, g, now));
-    s.who.typing = true;
+    s.player_card.typing = true;
     drive::idle(s, g, now);
     report(str(name, ", typing"), g, home_tiles(s, g, now));
-    s.who = who::Who {};
+    s.player_card = player_card::PlayerCard {};
 }
 
 var t: f64 = 0.0;
@@ -175,16 +175,16 @@ fn main() {
     // back, pencil, then the faces and +.
     print("the card's tiles: ", drive::tiles(g) - first);
     drive::tap(sh, g, card_tile(g, first, 3), tick());
-    print("+ tapped: ", state(sh), ", picture ", players::ANIMALS[sh.who.picture]);
+    print("+ tapped: ", state(sh), ", picture ", players::ANIMALS[sh.player_card.picture]);
     // The sheet: back, done, the six pictures, the name. Owl, a name, done.
     let sheet = home_tiles(sh, g, t);
     drive::tap(sh, g, card_tile(g, sheet, 2 + 3), tick());
     drive::tap(sh, g, card_tile(g, sheet, 8), tick());
-    print("the name tapped: ", state(sh), ", keyboard asked ", sh.who.keyboard);
+    print("the name tapped: ", state(sh), ", keyboard asked ", sh.player_card.keyboard);
     type_text(sh, g, [0x4D, 0x69, 0x61, 0x78, gui::ERASE], tick());
     // Return is done, as the check is: the player is added and the question comes.
     type_text(sh, g, [gui::ENTER], tick());
-    print("typed, Return: '", sh.who.name[..], "', ", state(sh), ", changed ", sh.changed);
+    print("typed, Return: '", sh.player_card.name[..], "', ", state(sh), ", changed ", sh.changed);
     // The question: asked once it shows; I know how closes it.
     let asked = home_tiles(sh, g, t);
     print("  asked ", sh.prefs.first_start_done, ", the question's tiles ", drive::tiles(g) - asked);
@@ -234,7 +234,7 @@ fn main() {
     // A fresh install's first run.
     var fresh = shell::new(rules::INTERNATIONAL);
     fresh.unset = true;         // no game kept, as on a fresh install (shell::read_game)
-    who::first_run(fresh.who, fresh.players);
+    player_card::first_run(fresh.player_card, fresh.players);
     drive::idle(fresh, g, tick());
     let at = home_tiles(fresh, g, t);
     print("first run: ", state(fresh), ", tiles ", drive::tiles(g) - at);

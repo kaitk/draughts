@@ -1,7 +1,7 @@
 // Home, the title menu (prototypes/home.html; rendering.md, "Home"): the board as the
 // game stands beside one glass column, a sheet in portrait, holding the wordmark and the
-// menu's rows, or a new game's setup (prototypes/setup.html). The way out, an X or a
-// Quit row, and the player's chip, which opens who's playing (who.goose), sit off the
+// menu's rows, or a new game's setup (prototypes/setup.html). The way out, an X or a Quit
+// row, and the player's chip, which opens who's playing (player_card.goose), sit off the
 // column at the board's side.
 namespace home;
 import std;
