@@ -186,6 +186,11 @@ struct Board {
     press_at:    float2,
     dragging:    bool,
     drag_at:     float2,
+    // A press while a move still slides or its taken pieces fade (`touch`), kept to be
+    // pressed once it has ended: where, and whether the pointer has gone up since.
+    queued_press:    bool,
+    queued_press_at: float2,
+    queued_release:  bool,
     // Filled by fill().
     pieces: Piece[..MAX_PIECES],
     marks:  Marks,
@@ -221,6 +226,7 @@ fn show(b: Board&, p: rules::Position) {
     b.outtaken = 0;
     b.pressed = -1;
     b.dragging = false;
+    b.queued_press = false;
     b.back = false;
     b.ghost = false;
     b.glow = -1;
@@ -776,10 +782,29 @@ fn release(b: Board&, l: Layout, p: float2, now: f64) {
 // (`three`) a point reaches the flat layout through view3d::pick; a held piece keeps the
 // offset where the finger took it (`grab`, the caller's), so a press doesn't move it.
 // Returns whether a drag moved a piece.
+// A press while a move still shows (the computer's reply sliding, or its taken pieces
+// fading after it has landed) is kept and pressed once the move has ended, with its
+// release if the pointer went up meanwhile, so a tap there isn't lost.
 fn touch(b: Board&, flat: Layout, three: bool, view: view3d::View, input: gui::Input, grab: float2&, now: f64) -> bool {
     let at = if three { view3d::pick(view, b, flat, input.at) } else { input.at };
-    if input.pressed {
+    if input.pressed && b.moving {
+        b.queued_press = true;
+        b.queued_press_at = at;
+        b.queued_release = false;
+    } else if input.pressed {
+        b.queued_press = false;
         press(b, flat, at, now);
+        if three && b.pressed >= 0 { grab = b.press_at - view3d::pick(view, b, flat, input.at); }
+    }
+    if input.released && b.queued_press { b.queued_release = true; }
+    if b.queued_press && !b.moving {
+        b.queued_press = false;
+        press(b, flat, b.queued_press_at, now);
+        if b.queued_release {
+            release(b, flat, b.queued_press_at, now);
+            b.target_under_pointer = -1;
+            return false;
+        }
         if three && b.pressed >= 0 { grab = b.press_at - view3d::pick(view, b, flat, input.at); }
     }
     let held = if three && b.pressed >= 0 { view3d::pick(view, b, flat, input.at) + grab } else { at };

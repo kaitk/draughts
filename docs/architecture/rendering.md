@@ -146,6 +146,10 @@ works; the extremes aren't polished.
   that takes the pointer. The wheel scrolls 40 dp a step; no fling. The list's quads carry
   `gui::CLIP` and the UI shader clips them to the view, still one draw. `test/gui/scroll`
   covers it.
+- **A tap while a move shows** (`board::touch`): a press while the last move slides or
+  its taken pieces fade is kept and pressed once it has ended, with its release if the
+  pointer went up meanwhile. On a desktop the click that brings the window to the front
+  counts too (`SDL_MOUSE_FOCUS_CLICKTHROUGH`, `src/app/display.c`).
 - **The window control** (iPadOS's three dots at the top left) may sit over back or the
   player's chip; no screen moves for it ([why](../decisions/rendering.md#small-windows)).
   UIKit's corner-adapted safe area reports its reach, should a screen need it.

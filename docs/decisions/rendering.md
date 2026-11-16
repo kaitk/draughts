@@ -272,6 +272,12 @@ fed389b.
 
 - A library list (`puzzles.html` take a, 2026-11-09). Rejected: large theme tiles (shrink
   long Estonian names), a library beside the theme (two scrolling panes).
+- No tap is lost to an animation or to the window's focus (2026-11-16): a press while a
+  move still shows waits for its end, and on a desktop the click that activates the
+  window counts. A tap right after the computer's reply, or after working in another
+  window, took two. Rejected: letting the press through mid-move (it would choose on a
+  board still changing), and the Mac's usual first click that only activates (a board
+  click only chooses a piece; a menu row's is what the player meant).
 - Rows are glass, lit while pressed; the draughts switch on one glass (2026-11-09).
 - The title row tops the rows, back at their left, the switch at the right; where the
   worded back doesn't fit, back keeps its arrow only (2026-11-14).

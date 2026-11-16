@@ -11,7 +11,9 @@
 //
 // The GPU driver: Vulkan on Windows, which SDL would otherwise pass over for Direct3D 12.
 // On Linux the app's id and name (Wayland's app id, X11's window class), which the desktop
-// matches to io.github.kaitk.draughts.desktop for the icon; gfx would say "Goose".
+// matches to io.github.kaitk.draughts.desktop for the icon; gfx would say "Goose". On a
+// desktop the click that brings the window to the front also counts, as in most games:
+// SDL drops it by default, so a tap after working in another window took two.
 
 #include "platform.h"
 #include <stdbool.h>
@@ -23,8 +25,11 @@ typedef struct { int x, y, w, h; } SDL_Rect;
 #if defined(_WIN32)
 extern bool SDL_SetHint(const char *name, const char *value);
 #elif defined(__linux__) && !defined(__ANDROID__)
+extern bool SDL_SetHint(const char *name, const char *value);
 extern bool SDL_SetHintWithPriority(const char *name, const char *value, int priority);
 enum { SDL_HINT_OVERRIDE = 2 };    // over gfx's own SDL_SetHint of the name
+#elif defined(__APPLE__) && !DRAUGHTS_SDL_LINKED
+#include <dlfcn.h>
 #endif
 
 // Asks SDL for the GPU driver the app draws with, before gfx opens the window: Vulkan on
@@ -33,9 +38,14 @@ enum { SDL_HINT_OVERRIDE = 2 };    // over gfx's own SDL_SetHint of the name
 void draughts_choose_gpu(void) {
 #if defined(_WIN32)
     SDL_SetHint("SDL_GPU_DRIVER", "vulkan");
+    SDL_SetHint("SDL_MOUSE_FOCUS_CLICKTHROUGH", "1");
 #elif defined(__linux__) && !defined(__ANDROID__)
     SDL_SetHintWithPriority("SDL_APP_ID", "io.github.kaitk.draughts", SDL_HINT_OVERRIDE);
     SDL_SetHintWithPriority("SDL_APP_NAME", "Draughts", SDL_HINT_OVERRIDE);
+    SDL_SetHint("SDL_MOUSE_FOCUS_CLICKTHROUGH", "1");
+#elif defined(__APPLE__) && !DRAUGHTS_SDL_LINKED
+    bool (*set_hint)(const char *, const char *) = (bool (*)(const char *, const char *))dlsym(RTLD_DEFAULT, "SDL_SetHint");
+    if (set_hint) set_hint("SDL_MOUSE_FOCUS_CLICKTHROUGH", "1");
 #endif
 }
 
