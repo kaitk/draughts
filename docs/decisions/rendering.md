@@ -223,7 +223,9 @@ fed389b.
   wins" for a friend's). It is outlined and New game lit: most players play again.
   Rejected: "Last game" and *Viimane mäng* (flat), *Viimase mängu tulemused* (too long),
   "Show results" (read as the Results row), *Vaata üle* (unclear in Estonian), and going
-  back to the ended game's screen (the 2026-11-15 reason).
+  back to the ended game's screen (the 2026-11-15 reason). Its icon is restart's arrow
+  round a play triangle (`gui::REPLAY`); the replay's to-the-start chevron, tried first,
+  read as a letter K.
 - The X closes the app at once on touch screens (2026-11-08/09). Rejected: a last row (it
   costs the portrait board), a door, a power sign.
 - On a desktop's landscape column the way out is a Quit row (task 072, 2026-11-11), the X

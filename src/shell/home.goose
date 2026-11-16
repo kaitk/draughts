@@ -561,7 +561,7 @@ fn menu(ui_pieces: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: 
         if i == 0 && resume.replay {
             var said: u8[..64] = [];
             strings::fill_in_word(said, resume.ended_note, if resume.ended_opponent >= 0 { strings::get(resume.ended_opponent) } else { "" });
-            if gui::row(g, ROW_IDS, r, gui::FIRST, strings::get(strings::HOME_REPLAY), said[..], false, true, true) { pick = REPLAY; }
+            if gui::row(g, ROW_IDS, r, gui::REPLAY, strings::get(strings::HOME_REPLAY), said[..], false, true, true) { pick = REPLAY; }
             continue;
         }
         // How to play in continue's place (Resume.learn).

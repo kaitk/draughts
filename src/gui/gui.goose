@@ -137,6 +137,7 @@ let TODAY = 49;             // the daily puzzles: a calendar with today's dot,
 let MOON = 50;              // and once all are solved, a crescent moon
 let SPEAKER_OFF = 51;       // the sound: a speaker struck through,
 let SPEAKER = 52;           // and with one to three arcs, 52 to 54, as loud as it is
+let REPLAY = 55;            // home's Watch replay: restart's arrow round a play triangle
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.

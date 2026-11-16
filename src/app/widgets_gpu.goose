@@ -384,6 +384,13 @@ let FRAG = """
             if (k >= 54) d = min(d, arc(p, vec2(12.9, 12.0), 9.6, -0.75, 1.5));
             return d;
         }
+        if (k == 55) {          // a game's replay: restart's arrow round, a play triangle in it
+            float d = arc(p, vec2(12.0, 12.0), 9.0, 3.9828, 5.4420);
+            d = min(d, seg(p, vec2(6.0, 5.3), vec2(3.0, 8.0)));
+            d = min(d, min(seg(p, vec2(3.0, 3.0), vec2(3.0, 8.0)), seg(p, vec2(3.0, 8.0), vec2(8.0, 8.0))));
+            d = min(d, min(seg(p, vec2(10.0, 8.8), vec2(15.2, 12.0)), seg(p, vec2(15.2, 12.0), vec2(10.0, 15.2))));
+            return min(d, seg(p, vec2(10.0, 15.2), vec2(10.0, 8.8)));
+        }
         return 1e9;
     }
     // A player's badge's animal (badges/badges.goose): its signed distance at f, in a
