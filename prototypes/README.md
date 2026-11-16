@@ -16,7 +16,7 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 | `replay.html` | A past game at move 20, its steps working, with the whole list and the marks' legend; the move shown (a faded piece where it started, its way in dots, the squares it stood on shaded) and the best move ( on the board only when asked for); `?ply=60` a king's capture; a desktop's larger column |
 | `players.html` | Who's playing, over home |
 | `settings.html` | Settings beside the preview board; one group at a time on a phone |
-| `sound.html` | Task 089: settings with a Sound section (`&control=slider\|steps`), and every sound playable: the preview's demo, or the list (`&view=sounds`); `&timbre=felt\|wood\|stone`, `&kind=desktop` for a desktop's default |
+| `sound.html` | Task 089: settings with a Sound section (`&control=slider\|steps`), and every sound playable: the preview's demo, the list (`&view=sounds`), or Freesound's candidates cut into hits (`&view=samples`, after `python3 tools/sound_samples.py`; `&move=ID.K`, `&take=ID.K`); `&timbre=felt\|wood\|stone`, `&kind=desktop` for a desktop's default |
 | `tutorial.html` | How to play: a new player's question (`?view=ask`), the steps played on the board (`?view=step&step=N`, `&v=intl\|brazilian\|russian`), and the end's ways on (`?view=done`) |
 
 Every page takes the same few parameters, none needed:

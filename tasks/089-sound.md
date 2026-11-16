@@ -67,6 +67,29 @@ session category, which also keeps the player's own music playing). The level be
 the device, not the player, so it goes in the device's settings rather than a player's
 file.
 
+## Where the sounds come from
+
+The first synthesized knocks sounded like an 80s karate game, and the chimes were too
+loud (the user, 2026-11-16). The knock is now modal (a few inharmonic modes, a contact
+breath, a short thump of the board, no pitch glide), and the chimes are about 10 dB
+quieter. Recorded hits are tried beside them:
+
+- `tools/sound_samples.py` fetches about 30 Freesound candidates' public previews (no
+  login), cuts each into single hits, matches their loudness, and writes
+  `prototypes/samples/samples.js` (local, out of git). The page's **Samples** view plays
+  them (127 hits) and makes any one the move's or the take's sound (`&move=ID.K`), so the
+  demo and the list use it.
+- The candidates: pieces set down (chess, a crokinole disc, Scrabble tiles, board game
+  counters), go stones on a wooden board, and slides. Most are CC0; the CC BY ones need
+  a credit (the about box or the store listing).
+- The one chosen is then downloaded at full quality from its page (a free Freesound
+  account), trimmed, faded, low-passed, and embedded as raw PCM
+  (`ffmpeg -i in.wav -f f32le -ac 1 -ar 48000 out.raw`); Goose's `audio` reads no files.
+- Sonniss's GDC bundles (free, royalty-free) are large archives with no search: browse
+  them by hand if Freesound has nothing that fits.
+- Recording our own (a piece set down on the real board, a phone 10 to 20 cm away, 30
+  takes) remains the surest way to get the sound right.
+
 ## Building it
 
 - Goose's `audio` module (goose_gfx) mixes PCM over SDL3 and has no file decoding, which
@@ -76,6 +99,9 @@ file.
 - Open the device only while the level is above zero, and close it when the level is set
   to zero: a phone at its default never opens audio, so it takes no audio focus and uses
   no battery for it.
+- Hits from a recording: the move's three takes are one hit at three pitches unless the
+  chosen recording has three good ones; a capture's landings are the same hit a tone up
+  each.
 - Play from the board's animation events (a piece landing, a piece removed, crowned),
   not from input, so a sound always lines up with what you see, whoever moved.
 - Nothing allocates in the frame loop: the voices are the mixer's, and a play is one call.
@@ -85,8 +111,8 @@ file.
 
 ## Acceptance criteria
 
-- [ ] The user picks: slider or steps; felt, wood, or stone (or the board's own material
-      on the raised board); solved as one phrase or a note per star; the wrong move's
+- [ ] The user picks: slider or steps; the move's and the take's sound (synthesized, a
+      Freesound hit, or recorded; or by the board's material on the raised board); solved as one phrase or a note per star; the wrong move's
       knocks or silence
 - [ ] The sounds in the table's "Yes" rows play in the app, from the board's events, in
       a game, a puzzle, How to play, and the settings' preview

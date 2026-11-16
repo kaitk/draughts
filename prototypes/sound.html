@@ -6,6 +6,7 @@
 <title>Draughts: sound</title>
 <link rel="stylesheet" href="draughts.css">
 <script src="draughts.js"></script>
+<script src="samples/samples.js"></script>
 <style>
   /* Sound (task 089): settings as built (one list, Look then Game) with a Sound section
      between them, and every sound the app might make, playable. The sounds are made here
@@ -16,8 +17,10 @@
        &control=slider|steps  the Sound row: a speaker button and a slider whose thumb is
                 a piece, or four tiles (off and three speakers, no words)
        &timbre=felt|wood|stone  the move's knock
-       &view=preview|sounds   beside the list: the preview board with a demo, or the list
-                of sounds to try one by one
+       &view=preview|sounds|samples  beside the list: the preview board with a demo, the
+                list of sounds to try one by one, or Freesound's candidates, each cut into
+                single hits (tools/sound_samples.py makes samples/samples.js, local)
+       &move=ID.K &take=ID.K  hit K of Freesound sound ID as the move's or the take's sound
        &kind=tablet|pixel|iphone|desktop  the insets, and the default: off on a touch
                 device, half on a desktop (else by the window). ?grid=1 the tablet and the phones, both ways */
   .bands { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
@@ -102,6 +105,17 @@
   .tag.try { background: rgb(255 255 255 / 0.14); }
   .tag.no { background: rgb(0 0 0 / 0.3); color: var(--fg-dim); }
 
+  .sounds .src { padding: 10px 0; }
+  .sounds .src + .src { border-top: 1px solid rgb(255 255 255 / 0.08); }
+  .sounds .src b { font-weight: 400; font-size: 17px; }
+  .sounds .src a { color: var(--fg-dim); font-size: 14px; }
+  .sounds .hits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+  .sounds .hit { width: 44px; height: 44px; border-radius: 12px; border: 0; cursor: pointer; color: var(--fg); font: inherit; font-size: 16px;
+    background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
+  .sounds .hit.on { box-shadow: inset 0 0 0 2px var(--glow); }
+  .sounds .use { margin-left: 8px; height: 44px; padding: 0 12px; border-radius: 12px; border: 0; cursor: pointer; color: var(--fg); font: inherit; font-size: 14px;
+    background: rgb(255 255 255 / 0.08); }
+  .sounds .chosen { margin: 0 0 8px; font-size: 15px; color: var(--fg-dim); }
   .grid { position: fixed; inset: 0; overflow: auto; padding: 16px; display: flex; flex-wrap: wrap; gap: 18px; align-content: flex-start;
     background: #15120f; z-index: 20; }
   .grid figure { margin: 0; display: grid; gap: 6px; }
@@ -126,7 +140,7 @@
   const D = Draughts, icon = D.icon;
   const control = get('control', ['slider', 'steps'], 'slider');
   const timbre = get('timbre', ['felt', 'wood', 'stone'], 'felt');
-  const view = get('view', ['preview', 'sounds'], 'preview');
+  const view = get('view', ['preview', 'sounds', 'samples'], 'preview');
   if (P.has('bare')) document.body.classList.add('bare');
 
   // The speaker's icons, as the app's icon shader would draw them: a rounded speaker,
@@ -164,36 +178,39 @@
   // A one-pole low-pass, in place: no ringing, so no edge.
   function lowpass(x, hz) { const a = 1 - Math.exp(-2 * Math.PI * hz / RATE); let y = 0; for (let i = 0; i < x.length; i++) { y += a * (x[i] - y); x[i] = y; } }
   function normalize(x, peak) { let m = 0; for (const v of x) m = Math.max(m, Math.abs(v)); if (m > 0) for (let i = 0; i < x.length; i++) x[i] *= peak / m; return x; }
-  // A knock: a piece set down. Modes are [ratio, gain, decay as a share of the body's];
-  // the pitch falls a little at the touch (glide), a breath of noise is the contact, a
-  // 4 ms rise keeps the start from clicking, and the low-pass takes the edge off.
+  // A knock: a piece set down, as modal synthesis makes one. The piece rings in a few
+  // inharmonic modes [Hz, gain, decay s], each a little detuned per take (seed); a
+  // 1.5 ms breath of noise is the contact; the board under it gives a short low thump
+  // [Hz, gain, decay s]; a 0.6 ms rise keeps the start from clicking, and a gentle
+  // low-pass keeps it muted. No pitch glide: that is what made a punch of it.
   function knock(o, seed = 1, pitch = 1) {
-    const len = o.decay * 7, x = new Float32Array(Math.round(len * RATE)), r = rng(seed), ph = o.modes.map(() => 0);
+    const x = new Float32Array(Math.round(0.25 * RATE)), r = rng(seed);
+    const modes = o.modes.map(([hz, gain, decay]) => [hz * pitch * (1 + 0.04 * r()), gain * (1 + 0.15 * r()), decay]);
+    const ph = modes.map(() => r() * Math.PI);
     let n = 0;
     for (let i = 0; i < x.length; i++) {
-      const t = i / RATE, rise = Math.min(1, t / 0.004), g = 1 + o.glide * Math.exp(-t / 0.012);
+      const t = i / RATE, rise = Math.min(1, t / 0.0006);
       let v = 0;
-      o.modes.forEach(([ratio, gain, share], k) => {
-        ph[k] += 2 * Math.PI * o.f * pitch * ratio * g / RATE;
-        v += gain * Math.sin(ph[k]) * Math.exp(-t / (o.decay * share));
-      });
-      n += 0.35 * (r() - n);   // noise, a little darkened already
-      x[i] = rise * (v + o.noise * n * Math.exp(-t / o.noiseDecay));
+      modes.forEach(([hz, gain, decay], k) => { v += gain * Math.sin(ph[k] + 2 * Math.PI * hz * t) * Math.exp(-t / decay); });
+      const [bh, bg, bd] = o.thump;
+      v += bg * Math.sin(2 * Math.PI * bh * t) * Math.exp(-t / bd) * Math.min(1, t / 0.002);
+      n += 0.5 * (r() - n);
+      x[i] = rise * (v + o.noise * n * Math.exp(-t / 0.0015));
     }
-    lowpass(x, o.lp); lowpass(x, o.lp * 1.4);
+    lowpass(x, o.lp);
     return normalize(x, 0.9);
   }
   // A mallet's note, soft: the fundamental, a quiet partial near 4 (as a marimba's bar),
-  // a slower rise than a knock, and long low-passed decay.
+  // a slow 12 ms rise, and a long low-passed decay.
   function note(f, decay = 0.55, gain = 1) {
     const x = new Float32Array(Math.round(decay * 6 * RATE));
     for (let i = 0; i < x.length; i++) {
-      const t = i / RATE, rise = Math.min(1, t / 0.007);
+      const t = i / RATE, rise = Math.min(1, t / 0.012);
       x[i] = gain * rise * (Math.sin(2 * Math.PI * f * t) * Math.exp(-t / decay)
-        + 0.18 * Math.sin(2 * Math.PI * f * 3.93 * t) * Math.exp(-t / (decay * 0.18))
-        + 0.06 * Math.sin(2 * Math.PI * f * 2 * t) * Math.exp(-t / (decay * 0.5)));
+        + 0.08 * Math.sin(2 * Math.PI * f * 3.93 * t) * Math.exp(-t / (decay * 0.15))
+        + 0.05 * Math.sin(2 * Math.PI * f * 2 * t) * Math.exp(-t / (decay * 0.5)));
     }
-    lowpass(x, 2400);
+    lowpass(x, 1800);
     return x;
   }
   // Notes laid one after another (seconds apart) into one buffer.
@@ -203,35 +220,50 @@
     for (const [at, b] of parts) { const o = Math.round(at * RATE); for (let i = 0; i < b.length; i++) x[o + i] += b[i]; }
     return x;
   }
-  // A brush: the taken piece slid off the board, noise swelling and fading under 700 Hz.
-  function brush(seed = 7) {
-    const x = new Float32Array(Math.round(0.24 * RATE)), r = rng(seed);
-    for (let i = 0; i < x.length; i++) { const t = i / RATE; x[i] = r() * Math.min(1, t / 0.03) * Math.exp(-t / 0.06); }
-    lowpass(x, 700); lowpass(x, 900);
-    return normalize(x, 0.9);
-  }
+  // The board's material under the piece: a cloth-covered board, bare wood, and stone.
   const TIMBRES = {
-    felt: { f: 150, decay: 0.055, glide: 0.25, noise: 0.25, noiseDecay: 0.006, lp: 1300, modes: [[1, 1, 1], [2.4, 0.22, 0.5]] },
-    wood: { f: 205, decay: 0.07, glide: 0.15, noise: 0.3, noiseDecay: 0.005, lp: 2200, modes: [[1, 1, 1], [2.76, 0.32, 0.45], [5.4, 0.07, 0.25]] },
-    stone: { f: 300, decay: 0.045, glide: 0.08, noise: 0.32, noiseDecay: 0.004, lp: 2800, modes: [[1, 1, 1], [2.1, 0.38, 0.7], [3.9, 0.14, 0.5]] },
+    felt: { modes: [[520, 1, 0.016], [1240, 0.4, 0.009], [2100, 0.15, 0.005]], thump: [130, 0.7, 0.014], noise: 0.4, lp: 2000 },
+    wood: { modes: [[680, 1, 0.032], [1630, 0.5, 0.02], [2750, 0.25, 0.011], [3900, 0.1, 0.007]], thump: [170, 0.5, 0.018], noise: 0.5, lp: 3400 },
+    stone: { modes: [[1150, 1, 0.028], [2600, 0.45, 0.018], [4300, 0.2, 0.01]], thump: [200, 0.3, 0.012], noise: 0.45, lp: 4200 },
   };
   const HZ = { D4: 293.7, A3: 220, E4: 329.6, G4: 392, A4: 440, B4: 493.9, D5: 587.3, E5: 659.3, 'F#5': 740, A5: 880 };
-  // Each sound's level against the move's, so the moments sit under the moves.
+  // A sample from prototypes/samples/samples.js (tools/sound_samples.py): &move=ID.K and
+  // &take=ID.K put hit K of Freesound sound ID in place of the knock or the take.
+  const SAMPLES = window.SAMPLES || null;
+  function sampleHit(ref) {
+    if (!SAMPLES || !ref) return null;
+    const [id, k] = ref.split('.').map(Number), src = SAMPLES.list.find((x) => x.id === id);
+    if (!src || !src.hits[k]) return null;
+    const bytes = Uint8Array.from(atob(src.hits[k]), (c) => c.charCodeAt(0)), pcm = new Int16Array(bytes.buffer);
+    return { x: Float32Array.from(pcm, (v) => v / 32768), rate: SAMPLES.rate };
+  }
+  const moveRef = P.get('move'), takeRef = P.get('take');
+  // Each bank entry is a list of takes, each { x, rate, pitch }.
+  const take = (x, pitch = 1) => ({ x, rate: RATE, pitch });
   function makeBank() {
     const t = TIMBRES[timbre];
-    BANK.move = [0.97, 1, 1.03].map((p, k) => knock(t, 11 + k, p));           // three, picked at random: no machine-gun repeats
-    BANK.jump = [0, 1, 2, 3, 4].map((k) => knock(t, 21 + k, Math.pow(2, (2 * k) / 12))); // each landing a whole tone up
-    BANK.take = [brush(7)];
-    BANK.select = [knock({ ...t, f: t.f * 2.2, decay: 0.02, noise: 0.15 }, 31)];
-    BANK.wrong = [phrase([[0, knock({ ...TIMBRES.felt, f: 105, decay: 0.07 }, 41)], [0.13, knock({ ...TIMBRES.felt, f: 98, decay: 0.07 }, 42).map((v) => v * 0.6)]])];
-    BANK.crown = [phrase([[0, note(HZ.G4)], [0.11, note(HZ.D5, 0.7)]])];
-    BANK.star = [HZ.D5, HZ['F#5'], HZ.A5].map((f) => note(f, 0.5));
-    BANK.solved = [phrase([[0, note(HZ.D5, 0.45)], [0.12, note(HZ['F#5'], 0.45)], [0.24, note(HZ.A5, 0.8)]])];
-    BANK.win = [phrase([[0, note(HZ.D4)], [0.1, note(HZ.A4)], [0.2, note(HZ.D5)], [0.3, note(HZ['F#5'], 0.9)]])];
-    BANK.end = [phrase([[0, note(HZ.A3, 0.8)], [0.02, note(HZ.E4, 0.8, 0.7)]])];
-    BANK.tick = [knock({ ...TIMBRES.wood, f: 900, decay: 0.012, noise: 0.2, lp: 2600 }, 51)];
+    BANK.move = [0, 1, 2].map((k) => take(knock(t, 11 + k)));   // three, picked at random: no machine-gun repeats
+    BANK.jump = [0, 1, 2, 3, 4].map((k) => take(knock(t, 21 + k, Math.pow(2, (2 * k) / 12)))); // each landing a whole tone up
+    // A taken piece lifted off and set by the others: two light clicks of piece on piece.
+    const click = { ...TIMBRES.wood, modes: TIMBRES.wood.modes.map(([h, g, d]) => [h * 1.7, g, d * 0.6]), thump: [0, 0, 1] };
+    BANK.take = [take(phrase([[0, knock(click, 61).map((v) => v * 0.5)], [0.07, knock(click, 62).map((v) => v * 0.35)]]))];
+    BANK.select = [take(knock({ ...click, noise: 0.2 }, 31))];
+    BANK.wrong = [take(phrase([[0, knock(TIMBRES.felt, 41, 0.7)], [0.14, knock(TIMBRES.felt, 42, 0.66).map((v) => v * 0.6)]]))];
+    BANK.crown = [take(phrase([[0, note(HZ.G4)], [0.11, note(HZ.D5, 0.7)]]))];
+    BANK.star = [HZ.D5, HZ['F#5'], HZ.A5].map((f) => take(note(f, 0.5)));
+    BANK.solved = [take(phrase([[0, note(HZ.D5, 0.45)], [0.12, note(HZ['F#5'], 0.45)], [0.24, note(HZ.A5, 0.8)]]))];
+    BANK.win = [take(phrase([[0, note(HZ.D4)], [0.1, note(HZ.A4)], [0.2, note(HZ.D5)], [0.3, note(HZ['F#5'], 0.9)]]))];
+    BANK.end = [take(phrase([[0, note(HZ.A3, 0.8)], [0.02, note(HZ.E4, 0.8, 0.7)]]))];
+    BANK.tick = [take(knock({ ...click, lp: 2600 }, 51))];
+    const m = sampleHit(moveRef), k = sampleHit(takeRef);
+    if (m) {
+      BANK.move = [0.97, 1, 1.03].map((p) => ({ ...m, pitch: p }));
+      BANK.jump = [0, 1, 2, 3, 4].map((j) => ({ ...m, pitch: Math.pow(2, (2 * j) / 12) }));
+    }
+    if (k) BANK.take = [{ ...k, pitch: 1 }];
   }
-  const GAIN = { move: 0.9, jump: 0.9, take: 0.35, select: 0.25, wrong: 0.5, crown: 0.3, star: 0.28, solved: 0.28, win: 0.26, end: 0.26, tick: 0.25 };
+  // Each sound's level against the move's: the moments well under the moves.
+  const GAIN = { move: 0.9, jump: 0.9, take: 0.5, select: 0.25, wrong: 0.4, crown: 0.1, star: 0.09, solved: 0.09, win: 0.08, end: 0.08, tick: 0.2, sample: 0.9 };
   // The slider's level to a gain: -36 dB at its foot to 0 dB at the top, as the ear hears
   // loudness; a linear gain would put all the change in the slider's first fifth.
   const gainOf = (v) => (v <= 0 ? 0 : Math.pow(10, (v - 1) * 36 / 20));
@@ -239,16 +271,19 @@
     if (!ctx) { ctx = new AudioContext({ sampleRate: RATE }); makeBank(); }
     if (ctx.state === 'suspended') ctx.resume();
   }
-  // Plays sound name (variant k, or a random one) at the setting's level, or at force.
+  function start(t, gain) {
+    const buf = ctx.createBuffer(1, t.x.length, t.rate); buf.copyToChannel(t.x, 0);
+    const src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = buf; src.playbackRate.value = t.pitch || 1; g.gain.value = gain;
+    src.connect(g).connect(ctx.destination); src.start();
+  }
+  // Plays sound name (take k, or a random one) at the setting's level, or at force.
   function play(name, k = -1, force = -1) {
     audioOn();
     const v = force >= 0 ? force : state.muted ? 0 : state.level;
     if (v <= 0) return;
-    const list = BANK[name], b = list[k >= 0 ? Math.min(k, list.length - 1) : Math.floor(Math.random() * list.length)];
-    const buf = ctx.createBuffer(1, b.length, RATE); buf.copyToChannel(b, 0);
-    const src = ctx.createBufferSource(), g = ctx.createGain();
-    src.buffer = buf; g.gain.value = gainOf(v) * GAIN[name];
-    src.connect(g).connect(ctx.destination); src.start();
+    const list = BANK[name];
+    start(list[k >= 0 ? Math.min(k, list.length - 1) : Math.floor(Math.random() * list.length)], gainOf(v) * GAIN[name]);
   }
 
   // ---- The list ---------------------------------------------------------------------
@@ -284,7 +319,7 @@
         STEPS.map((v, i) => `<a class="tile" data-step="${i}" aria-label="${['Off', 'Quiet', 'Medium', 'Loud'][i]}">${speaker(i === 0 ? -1 : i)}</a>`).join('') +
         `</div></div>`;
     }
-    return `<section><h2>${speaker(2)}Sound</h2>${row}<div class="notes" id="soundnote"></div></section>`;
+    return `<section><h2>${speaker(2)}Sound</h2>${row}</section>`;
   }
   function game() {
     return `<section><h2>${icon('target')}Game</h2>` +
@@ -308,8 +343,6 @@
       m.classList.toggle('on', v > 0);
     }
     document.querySelectorAll('#steps .tile').forEach((t) => t.classList.toggle('on', STEPS[+t.dataset.step] === state.level));
-    document.getElementById('soundnote').textContent = device === 'desktop'
-      ? 'A desktop starts at half.' : 'Off at first on a phone or tablet.';
   }
   function wireSound() {
     const s = document.getElementById('slider');
@@ -385,7 +418,7 @@
   const SOUNDS = [
     ['move', 'yes', 'A piece set down', 'As it lands, not at the tap: yours, the computer\'s, a friend\'s. Three takes on it picked at random, so a game of them never machine-guns.'],
     ['jump', 'yes', 'A capture\'s landings', 'Each landing of a capture a whole tone above the last, so a long capture climbs and a child hears how many it took. Play it: the five steps of one.', 5],
-    ['take', 'yes', 'A taken piece', 'A soft brush as it leaves the board, under the landing.'],
+    ['take', 'yes', 'A taken piece', 'Lifted off and set by the others: two light clicks, under the landing.'],
     ['crown', 'yes', 'Crowned', 'Two soft mallet notes after the landing.'],
     ['solved', 'yes', 'A puzzle solved', 'Three rising notes; or one per star as the stars pop in (the next row).'],
     ['star', 'try', 'A star, one at a time', 'In place of solved: a note per star as each pops in, so two stars sound less than three.', 3],
@@ -402,6 +435,27 @@
       `<div><b>${title}</b><p>${when}</p></div><span class="tag ${verdict}">${tag[verdict]}</span></div>`).join('') +
       `<div class="row"><span></span><div><b>Not at all</b><p>Buttons and menus, the hint, the lookout, scrolling, the dice of a new game: silence. No music.</p></div><span class="tag no">No</span></div>` +
       '</div>';
+  }
+
+  // Freesound's candidates, by kind, each hit a button; a row's last hit played can be
+  // made the move's or the take's sound (the demo and the sounds' list then use it).
+  function samplesView() {
+    if (!SAMPLES) return '<div class="sounds glass"><h2>No samples yet</h2><p>Run <code>python3 tools/sound_samples.py</code> to fetch them.</p></div>';
+    const name = (ref) => { if (!ref) return 'synthesized'; const [id, k] = ref.split('.'); const x = SAMPLES.list.find((y) => String(y.id) === id); return x ? `${x.title} #${+k + 1}` : ref; };
+    const KIND = { move: 'A piece set down', go: 'Go stones on a wooden board', take: 'Slid or lifted off' };
+    let html = `<div class="sounds glass"><h2>Freesound's candidates</h2>` +
+      `<p class="chosen">Move: ${name(moveRef)} · Take: ${name(takeRef)} · <a href="${link({ move: null, take: null })}">back to synthesized</a>. ` +
+      `Previews, matched in loudness; CC0 is free to use, CC BY needs a credit.</p>`;
+    for (const kind of ['move', 'go', 'take']) {
+      html += `<h2>${KIND[kind]}</h2>`;
+      for (const x of SAMPLES.list.filter((y) => y.kind === kind)) {
+        html += `<div class="src" data-id="${x.id}"><b>${x.title}</b> <span class="tag ${x.lic === 'zero' ? 'yes' : 'try'}">${x.lic === 'zero' ? 'CC0' : 'CC BY'}</span> ` +
+          `<a href="${x.page}" target="_blank">${x.user}</a><div class="hits">` +
+          x.hits.map((_, k) => `<button class="hit${moveRef === `${x.id}.${k}` || takeRef === `${x.id}.${k}` ? ' on' : ''}" data-k="${k}">${k + 1}</button>`).join('') +
+          `<button class="use" data-as="move">Use as move</button><button class="use" data-as="take">Use as take</button></div></div>`;
+      }
+    }
+    return html + '</div>';
   }
 
   function render() {
@@ -433,9 +487,26 @@
     const switcher = `<div class="bar">` +
       `<a class="pill${view === 'preview' ? ' on' : ''}" href="${link({ view: null })}">Preview</a>` +
       `<a class="pill${view === 'sounds' ? ' on' : ''}" href="${link({ view: 'sounds' })}">Sounds</a>` +
+      `<a class="pill${view === 'samples' ? ' on' : ''}" href="${link({ view: 'samples' })}">Samples</a>` +
       ['felt', 'wood', 'stone'].map((t) => `<a class="pill${timbre === t ? ' on' : ''}" href="${link({ timbre: t === 'felt' ? null : t })}">${t[0].toUpperCase() + t.slice(1)}</a>`).join('') +
       `</div>`;
-    if (view === 'sounds') {
+    if (view === 'samples') {
+      stage.innerHTML = `<div class="demo" style="width:100%;height:100%;grid-template-rows:auto minmax(0,1fr);padding-top:16px">${switcher}${samplesView()}</div>`;
+      const last = {};
+      stage.querySelectorAll('.src').forEach((row) => {
+        const id = row.dataset.id;
+        row.querySelectorAll('.hit').forEach((b) => b.addEventListener('click', () => {
+          audioOn();
+          last[id] = b.dataset.k;
+          row.querySelectorAll('.hit').forEach((h) => h.classList.toggle('on', h === b));
+          const v = state.muted || state.level === 0 ? 0.5 : state.level;
+          start({ ...sampleHit(`${id}.${b.dataset.k}`), pitch: 1 }, gainOf(v) * GAIN.sample);
+        }));
+        row.querySelectorAll('.use').forEach((b) => b.addEventListener('click', () => {
+          location.search = link({ [b.dataset.as]: `${id}.${last[id] || 0}`, view: 'samples' });
+        }));
+      });
+    } else if (view === 'sounds') {
       stage.innerHTML = `<div class="demo" style="width:100%;height:100%;grid-template-rows:auto minmax(0,1fr);padding-top:16px">${switcher}${soundsView()}</div>`;
       stage.querySelectorAll('.play').forEach((b) => b.addEventListener('click', () => {
         const name = b.dataset.sound, n = +b.dataset.n;
@@ -455,7 +526,7 @@
     const over = scroll.scrollHeight - scroll.clientHeight;
     const name = { tablet: 'Tablet', pixel: 'Pixel 7a', iphone: 'iPhone 13 mini', desktop: 'Desktop' }[device];
     document.body.insertAdjacentHTML('beforeend', `<div class="note">${name} ${W} × ${H} dp. The list ${over > 0 ? `scrolls ${over} dp` : 'fits'}; ` +
-      `${control}, ${timbre}.</div>`);
+      `${control}, ${timbre}; the sound starts ${device === 'desktop' ? 'at half on a desktop' : 'off on a touch device'}.</div>`);
     D.sync();
   }
 
