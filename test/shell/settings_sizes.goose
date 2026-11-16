@@ -92,7 +92,7 @@ fn layout(g: gui::Gui&, name: const u8[:]) {
     var flat = sh.prefs;
     flat.board = settings::FLAT;
     let b = settings::layout(flat, g, safe, rules::VARIANTS[sh.preview.variant].size).board.board;
-    let raised = sh.came_view.rect;
+    let raised = sh.to_view.rect;
     if b.z > 0.0 {
         if drive::verbose {
             format(out, "; preview ", whole(b.z / u), " dp, the 3D board ", whole(raised.z / u), " x ", whole(raised.w / u));

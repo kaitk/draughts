@@ -80,12 +80,12 @@ struct Ply {
 }
 
 struct Replay {
-    game:  history::Game                = history::Game {},
-    plies: Ply[..MAX_PLIES]             = [],
-    pos:   rules::Position[..POSITIONS] = [],
-    ply:   i64                          = 0,    // the moves shown played: 0 the start
-    over:  bool                         = false, // the last position has no move: the game ended there
-    b:     board::Board,
+    game:       history::Game                = history::Game {},
+    plies:      Ply[..MAX_PLIES]             = [],
+    pos:        rules::Position[..POSITIONS] = [],
+    ply:        i64                          = 0, // the moves shown played: 0 the start
+    game_ended: bool                         = false, // the last position has no move: the game ended there
+    b:          board::Board,
     // The move the keys' focus was on last frame (its tap's id), or 0; and the move the
     // list last scrolled to show, -1 none yet.
     focused: i64 = 0,
@@ -171,7 +171,7 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
         r.pos.push(p);
     }
     rules::generate(p, legal);
-    r.over = legal.len == 0;
+    r.game_ended = legal.len == 0;
     board::reset(r.b, variant);
     r.b.hide_counts = true;
     r.b.by_hand = true;
@@ -192,7 +192,7 @@ fn go(r: Replay&, ply: i64, now: f64) -> bool {
     r.ply = k;
     r.rest_at = -1.0;
     guard one else {
-        settle(r);
+        show_position_at_move(r);
         return true;
     }
     board::set(r.b, r.pos[before]);
@@ -202,7 +202,7 @@ fn go(r: Replay&, ply: i64, now: f64) -> bool {
         if at < 0 && x.from == m.from && x.to == m.to && x.captured == m.captured { at = i; }
     }
     guard at >= 0 else {
-        settle(r);
+        show_position_at_move(r);
         return true;
     }
     board::start_move(r.b, at, now);
@@ -214,7 +214,7 @@ fn go(r: Replay&, ply: i64, now: f64) -> bool {
 // The board at rest for the move shown: the position after it with it as the last move,
 // or, comparing, the position before it, where the move and the best one both start, with
 // no last move shaded (a third move on the board).
-fn settle(r: Replay&) {
+fn show_position_at_move(r: Replay&) {
     guard !comparing(r) else {
         board::set(r.b, r.pos[r.ply - 1]);
         return;
@@ -278,7 +278,7 @@ fn show_best(r: Replay&) {
 }
 
 // The board turned for a player who played black against the computer.
-fn turned(r: Replay&) -> bool { r.game.level != history::FRIEND && r.game.side == rules::BLACK }
+fn board_flipped(r: Replay&) -> bool { r.game.level != history::FRIEND && r.game.side == rules::BLACK }
 
 // The game's line: the opponent and its rating, and the date.
 fn game_text(t: gui::Text&, g: history::Game&) {
@@ -340,7 +340,7 @@ fn on_board(r: Replay&) -> i64 { if comparing(r) { r.ply - 1 } else { r.ply } }
 
 // Whether the position on the board can be played on from: any but the end of a game that
 // ended there.
-fn playable(r: Replay&) -> bool { on_board(r) < r.plies.len || !r.over }
+fn playable(r: Replay&) -> bool { on_board(r) < r.plies.len || !r.game_ended }
 
 // How back and play from here share the head, `head` pixels across: both icon beside
 // word (gui::MIDDLE) or both icon over word (gui::STACKED, play from here's word in a
@@ -424,7 +424,7 @@ fn way_text(t: gui::Text&, v: rules::Variant&, m: rules::Way&) {
 
 // What the move shown was, in r (two lines): the mover's piece, its number and move, its
 // mark, and the mark's tip, running on to the second line; at the start, a line saying so.
-fn shown_line(r: Replay&, g: gui::Gui&, box: float4, over: board::Overlay&) {
+fn shown_line(r: Replay&, g: gui::Gui&, box: float4, ui_pieces: board::Overlay&) {
     let u = g.scale * r.k;
     let first = float4 { box.x, box.y, box.z, LINE * u };
     guard r.ply > 0 else {
@@ -434,7 +434,7 @@ fn shown_line(r: Replay&, g: gui::Gui&, box: float4, over: board::Overlay&) {
     let i = r.ply - 1;
     let p .= r.plies[i];
     let side = r.pos[i].side as i64;
-    panel::piece(over, float4 { box.x, box.y, 2.0 * DISC * u, LINE * u }, DISC * u, side, 0, 1.0, 0.0);
+    panel::piece(ui_pieces, float4 { box.x, box.y, 2.0 * DISC * u, LINE * u }, DISC * u, side, 0, 1.0, 0.0);
     var x = box.x + (2.0 * DISC + 10.0) * u;
     let v .= rules::VARIANTS[r.game.variant];
     var t: gui::Text = [];
@@ -515,7 +515,7 @@ fn best_line(r: Replay&, g: gui::Gui&, box: float4, tile: bool) -> bool {
         return false;
     }
     guard p.has_best else {
-        if r.ply == r.plies.len && r.over { say(r, g, box, gui::CROWN, gui::PLAIN, strings::get(strings::REPLAY_ENDED), ""); }
+        if r.ply == r.plies.len && r.game_ended { say(r, g, box, gui::CROWN, gui::PLAIN, strings::get(strings::REPLAY_ENDED), ""); }
         return false;
     }
     let v .= rules::VARIANTS[r.game.variant];
@@ -633,9 +633,9 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
 }
 
 // The replay for this frame in `area`, its board put in l and the pieces it shows over
-// the UI in `over`; `fresh` its first frame, whose Left or Right was the screen's before.
-// Returns what it asks for.
-fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board::Overlay&, now: f64,
+// the UI in `ui_pieces`; `fresh` its first frame, whose Left or Right was the screen's
+// before. Returns what it asks for.
+fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, ui_pieces: board::Overlay&, now: f64,
          fresh: bool) -> i64 {
     let u = g.scale;
     var ask = NOTHING;
@@ -663,7 +663,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     let arrange, back_w, play_w, titled = play_fit(g, o.head.z, !own);
     let v .= rules::VARIANTS[r.game.variant];
     l = board::layout_at(o.board.x, o.board.y, o.board.z, u, v.size);
-    l.flip = turned(r);
+    l.flip = board_flipped(r);
 
     // The steps, and the bulb under them where it is a fifth tile.
     gui::group(g, GROUP_STEPS);
@@ -710,7 +710,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
         game_line(g, gui::cut_top(c, LINE * ku), r.game, r.small, k);
         gui::cut_top(c, 6.0 * ku);
     }
-    shown_line(r, g, gui::cut_top(c, 2.0 * LINE * ku), over);
+    shown_line(r, g, gui::cut_top(c, 2.0 * LINE * ku), ui_pieces);
     r.was = float4 { 0.0, 0.0, 0.0, 0.0 };
     if r.any_best {
         gui::group(g, GROUP_STEPS);
@@ -720,7 +720,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     if toggled && has_best(r) {
         r.best = !r.best;
-        settle(r);
+        show_position_at_move(r);
         ask = SHOWN;
     }
     show_best(r);
@@ -731,7 +731,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     var t: gui::Text = [];
     for side in 2 {
         let at = heads.x + NUMBER * ku + side * half;
-        panel::piece(over, float4 { at, heads.y, 2.0 * DISC * ku, heads.w }, DISC * ku, side, 0, 1.0, 0.0);
+        panel::piece(ui_pieces, float4 { at, heads.y, 2.0 * DISC * ku, heads.w }, DISC * ku, side, 0, 1.0, 0.0);
         t.clear();
         let acc = r.game.accuracy[side];
         if acc >= 0 {

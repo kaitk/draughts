@@ -244,12 +244,12 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
 // of every tile, icon, and word the frame declared.
 fn turn_piece(g: gui::Gui&, sh: shell::Shell&) {
     let u = g.scale;
-    guard sh.out.over.len == 1 else {
-        print("  the turn piece: ", sh.out.over.len, " pieces over the UI");
+    guard sh.out.ui_pieces.len == 1 else {
+        print("  the turn piece: ", sh.out.ui_pieces.len, " pieces over the UI");
         failures++;
         return;
     }
-    let p = sh.out.over[0];
+    let p = sh.out.ui_pieces[0];
     let r = p.at.z;
     let disc = float4 { p.at.x - r, p.at.y - r, 2.0 * r, 2.0 * r };
     var panel = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -453,7 +453,7 @@ fn taken(g: gui::Gui&) {
         var wrong: u8[>..] = [];
         var count = 0;
         var kings = 0;
-        for p in sh.out.over {
+        for p in sh.out.ui_pieces {
             guard p.at.z < 0.5 * panel::TAKEN_D * u + 0.5 else { continue; }
             count++;
             if p.look.y == board::CROWN { kings++; }

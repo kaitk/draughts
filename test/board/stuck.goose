@@ -192,7 +192,7 @@ fn main() {
         drive::frame(sh, g, q, false, false, true, now + 0.06);
         drive::idle(sh, g, now + 0.08);
         now += 0.1;
-        let b .= shell::fill(sh, now);
+        let b .= shell::build_frame_pieces(sh, now);
         state(b, sh.out.layout, str(from, " to ", to), now);
         print("    targets ", drive::marked(v, b.marks.target));
     }

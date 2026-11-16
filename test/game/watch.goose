@@ -67,7 +67,7 @@ fn main() {
     drive::idle(gm, g0, l, 1.2);
     show(gm, "its eye tapped");
     gui::begin(g0, gui::Input { at: drive::AWAY, .. }, l.board.scale, 1.3);
-    let go, changed = game::frame(gm, g0, l, 1.3, drive::over);
+    let go, changed = game::frame(gm, g0, l, 1.3, drive::ui_pieces);
     print("  an idle frame changes nothing: ", !changed);
 
     // b2 selected by a tap: the position's marks; dragged over c3, that move's.

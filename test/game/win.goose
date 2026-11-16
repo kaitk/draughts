@@ -55,7 +55,7 @@ fn card(g: gui::Gui&) -> u8[>..] {
         k++;
         if k > 5 { format(s, "tile at y ", r2(q.rect.y), " opacity ", r2(1.0 - q.extra.w), "; "); }
     }
-    for p in drive::over { if p.look.y > 0.5 { format(s, "crowned ", r2(p.look.w), " ring ", r2(p.ring.y)); } }
+    for p in drive::ui_pieces { if p.look.y > 0.5 { format(s, "crowned ", r2(p.look.w), " ring ", r2(p.ring.y)); } }
     return if s.len > 0 { s } else { str("none") };
 }
 
@@ -67,7 +67,7 @@ fn frames(gm: game::Game&, g: gui::Gui&, l: panel::Layout, from: f64, to: f64) -
     var t = from;
     while t < to {
         gui::begin(g, gui::Input { at: drive::AWAY, .. }, l.board.scale, t);
-        let go, changed = game::frame(gm, g, l, t, drive::over);
+        let go, changed = game::frame(gm, g, l, t, drive::ui_pieces);
         if changed || game::animating(gm, g, t) {
             n++;
             last = t;

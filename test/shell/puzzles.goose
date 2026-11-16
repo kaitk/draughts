@@ -200,11 +200,11 @@ fn main() {
     if drive::verbose { format(squares, ", 21 at ", f6, ", 23 at ", d6); }
     else { format(squares, ", 21 left of 23: ", drive::ok(f6.x < d6.x && abs(f6.y - d6.y) < 0.5)); }
     print("  turned ", sh.out.layout.flip, ", it says ", puzzle::to_move(puzzle::current(sh.puzzle)), ", its turn piece ",
-          sh.out.over[0].look.x, " lit ", sh.out.over[0].ring.y, squares);
+          sh.out.ui_pieces[0].look.x, " lit ", sh.out.ui_pieces[0].ring.y, squares);
     tap_number(sh, g, 21, 24.1);
     tap_number(sh, g, 23, 24.2);
     show(sh, "21 takes two");
-    print("  the turn piece unlit once solved: ", sh.out.over[0].ring.y == 0.0);
+    print("  the turn piece unlit once solved: ", sh.out.ui_pieces[0].ring.y == 0.0);
 
     // The stars read back from the file, and an older file's key; half of Learn solved
     // opens the other themes.

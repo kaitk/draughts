@@ -171,13 +171,13 @@ fn tap(ls: Lesson&, l: board::Layout, p: float2, now: f64) {
     let history = ls.b.rec.history.len;
     board::press(ls.b, l, p, now);
     board::release(ls.b, l, p, now);
-    judge(ls, history);
+    handle_player_move(ls, history);
 }
 
 // After the pointer has gone to the board: a move made counts. In the first step the
 // first move waits for the answer; any other move plays the step. Returns whether the
 // step was played.
-fn judge(ls: Lesson&, history: i64) -> bool {
+fn handle_player_move(ls: Lesson&, history: i64) -> bool {
     let b .= ls.b;
     guard b.rec.history.len > history else { return false; }
     ls.played++;
@@ -196,11 +196,11 @@ fn judge(ls: Lesson&, history: i64) -> bool {
 // area it centers in). Returns what the shell should do and know, and whether anything
 // on screen changed.
 fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: float4, now: f64,
-         over: board::Overlay&) -> Event, bool {
+         ui_pieces: board::Overlay&) -> Event, bool {
     let b .= ls.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
-    over.clear();
+    ui_pieces.clear();
     var ev = Event {};
     // The other side's answer in the first step, once the child's move has landed.
     if ls.state == REPLY && !b.moving && now >= ls.at + REPLY_PAUSE {
@@ -241,13 +241,13 @@ fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: floa
     let history = b.rec.history.len;
     if mine && board::touch(b, l.board, l.is_3d, l.view, input, ls.grab, now) { changed = true; }
     if panel::board_keys(g, l, b, mine, now) { changed = true; }
-    if mine && judge(ls, history) {
+    if mine && handle_player_move(ls, history) {
         ev.learned = ls.step + 1;
         changed = true;
     }
     if ending {
         gui::set_input_enabled(g, true);
-        let go = end_card(g, area, screen, over);
+        let go = end_card(g, area, screen, ui_pieces);
         if go != STAY {
             ev.go = go;
             changed = true;
@@ -359,7 +359,7 @@ let CARD_PAD = 28.0;
 let ANSWER_W = 240.0;       // dp a way on's tile is wide at most
 let ANSWER_H = 150.0;       // and tall, side by side; a tap and a half one over the other
 let ANSWER_GAP = 16.0;
-fn end_card(g: gui::Gui&, area: float4, screen: float4, over: board::Overlay&) -> i64 {
+fn end_card(g: gui::Gui&, area: float4, screen: float4, ui_pieces: board::Overlay&) -> i64 {
     let u = g.scale;
     gui::rounded_rect(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
     gui::press_widget(g, CARD_OUTSIDE, screen, false);
@@ -380,7 +380,7 @@ fn end_card(g: gui::Gui&, area: float4, screen: float4, over: board::Overlay&) -
     gui::press_widget(g, CARD, r, false);
     var c = gui::inset(r, CARD_PAD * u);
     gui::cut_top(c, 16.0 * u);
-    game::add_ui_piece(over, gui::center(gui::cut_top(c, king), king, king), 0.5 * king, rules::WHITE, board::CROWN, 1.0, false);
+    game::add_ui_piece(ui_pieces, gui::center(gui::cut_top(c, king), king, king), 0.5 * king, rules::WHITE, board::CROWN, 1.0, false);
     gui::cut_top(c, 20.0 * u);
     gui::text(g, gui::face_that_fits(g, gui::LABEL, title, c.z), gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
     gui::cut_top(c, 20.0 * u);

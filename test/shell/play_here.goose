@@ -191,7 +191,7 @@ fn main() {
     drive::idle(sh, g, tick());
     let r .= sh.past.replay;
     print("the newest game's replay: screen ", sh.screen, " (replay ", shell::REPLAY, "), move ", r.ply, " of ", r.plies.len,
-          ", the game over there ", r.over);
+          ", the game over there ", r.game_ended);
 
     // At the end of a game that ended there the button is dimmed and takes no tap.
     replay::go(r, r.plies.len - 1, 0.0);
@@ -204,11 +204,11 @@ fn main() {
     // Comparing the last move with the best, the board is at the position before it, which
     // can be played on from.
     r.best = true;
-    replay::settle(r);
+    replay::show_position_at_move(r);
     print("  comparing the last move: a best move there ", replay::has_best(r), ", playable ", replay::playable(r), ", from move ",
           replay::on_board(r));
     r.best = false;
-    replay::settle(r);
+    replay::show_position_at_move(r);
 
     // Move 30: white, the player, to move.
     replay::go(r, 30, 0.0);

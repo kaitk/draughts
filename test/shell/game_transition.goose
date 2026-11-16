@@ -45,7 +45,7 @@ fn on_board(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
     var pieces = 0;
     // On the board: ON_BOARD in extra.z under a scrolling list's CLIP, as the renderer reads it.
     for q in g.quads { if q.extra.z - gui::CLIP * floor(q.extra.z / gui::CLIP) >= gui::ON_BOARD { quads++; } }
-    for p in sh.out.over { if p.win.w > 0.5 { pieces++; } }
+    for p in sh.out.ui_pieces { if p.win.w > 0.5 { pieces++; } }
     if !drive::verbose { return str(if quads > 0 { "the card" } else { "no card" }, " and ", pieces, " piece"); }
     return str(quads, " quads and ", pieces, " piece");
 }
@@ -62,19 +62,19 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
         if q.extra.w > 0.5 { gone++; }
         if q.look.x == gui::MINI { minis++; }
     }
-    let b .= shell::fill(sh, now);
+    let b .= shell::build_frame_pieces(sh, now);
     var faint = 0;
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
     let small = if minis > 0 { str(", small boards ", minis) } else { str("") };
     if drive::verbose {
         print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
               ", mix ", pc(sh.mix), "%, blur ", pc(sh.out.blur), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone,
-              small, ", pieces ", b.pieces.len, " faint ", faint, ", over the UI ", sh.out.over.len, ", hole ", hole(sh),
+              small, ", pieces ", b.pieces.len, " faint ", faint, ", over the UI ", sh.out.ui_pieces.len, ", hole ", hole(sh),
               ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
     } else {
         print(what, " ", now, ": ", screen(sh), ", board ", sh.out.layout.n, "x", sh.out.layout.n, ", mix ", pc(sh.mix),
               "%, blur ", pc(sh.out.blur), "%, quads faded ", share(faded, g.quads.len), ", mostly ", share(gone, g.quads.len),
-              small, ", pieces ", b.pieces.len, " faint ", faint, ", over the UI ", sh.out.over.len, ", hole ", hole(sh),
+              small, ", pieces ", b.pieces.len, " faint ", faint, ", over the UI ", sh.out.ui_pieces.len, ", hole ", hole(sh),
               ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
     }
 }
@@ -99,7 +99,7 @@ fn straight(sh: shell::Shell&, now: f64) -> u8[>..] {
     sh.screen = shell::GAME;
     sh.drawn = shell::GAME;
     drive::idle(sh, h, now);
-    let s = str(rect(sh.out.layout.board), " ", sh.out.layout.flip, ", quads ", h.quads.len, ", over the UI ", sh.out.over.len,
+    let s = str(rect(sh.out.layout.board), " ", sh.out.layout.flip, ", quads ", h.quads.len, ", over the UI ", sh.out.ui_pieces.len,
                 ", blur ", pc(sh.out.blur));
     sh.screen = screen;
     sh.drawn = drawn;
@@ -131,7 +131,7 @@ fn lifted(b: board::Board&) -> u8[>..] {
 }
 
 fn arrived(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
-    return str(rect(sh.out.layout.board), " ", sh.out.layout.flip, ", quads ", g.quads.len, ", over the UI ", sh.out.over.len,
+    return str(rect(sh.out.layout.board), " ", sh.out.layout.flip, ", quads ", g.quads.len, ", over the UI ", sh.out.ui_pieces.len,
                ", blur ", pc(sh.out.blur));
 }
 
@@ -275,14 +275,14 @@ fn main() {
     drive::idle(sh, g, 25.0);
     print("won: ", ok, ", winner ", game::winner(sh.game), ", the card's back ", opacity(g, 4), ", on the board ",
           on_board(sh, g));
-    let gone .= shell::fill(sh, 25.0);
+    let gone .= shell::build_frame_pieces(sh, 25.0);
     print("  at rest: the board dimmed ", pc(gone.dim), "%, ", lifted(gone));
     drive::tap(sh, g, drive::control(g, 0), 26.0);
     for i in 1..6 {
         let t = 26.02 + 0.0625 * i;
         drive::idle(sh, g, t);
-        let b .= shell::fill(sh, t);
-        print("  ", t, ": ", screen(sh), ", the board dimmed ", pc(b.dim), "%, ", lifted(b), ", the card's back ", if sh.from >= 0 { opacity(g, 4) } else { -1.0 }, ", over the UI ", sh.out.over.len,
+        let b .= shell::build_frame_pieces(sh, t);
+        print("  ", t, ": ", screen(sh), ", the board dimmed ", pc(b.dim), "%, ", lifted(b), ", the card's back ", if sh.from >= 0 { opacity(g, 4) } else { -1.0 }, ", over the UI ", sh.out.ui_pieces.len,
               ", on the board ", on_board(sh, g), ", hole ", hole(sh));
     }
 

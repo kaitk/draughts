@@ -63,7 +63,7 @@ fn seconds(t: f64) -> u8[>..] {
 // panel (the side to move's piece over the UI).
 fn show(gm: game::Game&, what: const u8[:]) {
     var ring = 0.0;
-    for p in drive::over { ring = max(ring, p.ring.y); }
+    for p in drive::ui_pieces { ring = max(ring, p.ring.y); }
     var left: u8[>..] = [];
     if clock::on(gm.clock) {
         format(left, ", clocks ");

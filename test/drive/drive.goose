@@ -27,7 +27,7 @@ fn verbose_env() -> bool {
 fn ok(pass: bool) -> const u8[:] { if pass { "ok" } else { "WRONG" } }
 
 // The pieces the game screen puts over the UI, which the shell holds in the app.
-var over: board::Overlay;
+var ui_pieces: board::Overlay;
 // The result of the last game against the computer the game's frames said had ended
 // (game::Event), for a test to print; 0 until one has.
 var result: i64 = 0;
@@ -132,7 +132,7 @@ fn control(g: gui::Gui&, n: i64) -> float2 {
 fn frame(gm: game::Game&, g: gui::Gui&, l: panel::Layout, at: float2, down: bool, pressed: bool, released: bool,
          now: f64) -> i64 {
     gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.board.scale, now);
-    let ev, changed = game::frame(gm, g, l, now, over);
+    let ev, changed = game::frame(gm, g, l, now, ui_pieces);
     dropped(g);
     if ev.ended { result = ev.result; }
     return ev.go;

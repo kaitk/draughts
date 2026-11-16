@@ -109,7 +109,7 @@ fn main() {
     // before any frame of its own): nothing taken, not the last game's catch.
     game::start(gm, rules::RUSSIAN, 0, -1, 0, 0, 0);
     gui::begin(g, gui::Input { at: drive::AWAY }, l.board.scale, 5.0);
-    game::still(gm, g, l, 5.0, drive::over);
+    game::still(gm, g, l, 5.0, drive::ui_pieces);
     print("a new game in its transition: ", caught(gm.taken), ", ", small(g), " small pieces shown");
 }
 
@@ -120,7 +120,7 @@ fn caught(t: panel::Taken) -> u8[>..] {
 // The small pieces over the UI: what each side has taken.
 fn small(g: gui::Gui&) -> i64 {
     var n = 0;
-    for p in drive::over { if p.at.z < 0.5 * panel::TAKEN_D * g.scale + 0.5 { n++; } }
+    for p in drive::ui_pieces { if p.at.z < 0.5 * panel::TAKEN_D * g.scale + 0.5 { n++; } }
     return n;
 }
 
@@ -134,7 +134,7 @@ fn rows(g: gui::Gui&, l: panel::Layout) -> u8[>..] {
     var kings = 0;
     var side: f32 = 0.0;
     var inside = true;
-    for p in drive::over {
+    for p in drive::ui_pieces {
         guard p.at.z < 0.5 * panel::TAKEN_D * g.scale + 0.5 else { continue; }
         let r = l.taken;
         if p.at.x - p.at.z < r.x || p.at.x + p.at.z > r.x + r.z || p.at.y - p.at.z < r.y || p.at.y + p.at.z > r.y + r.w {

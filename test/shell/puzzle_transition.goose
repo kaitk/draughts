@@ -37,7 +37,7 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     let drawn = drive::idle(sh, g, now);
     var faded = 0;
     for q in g.quads { if q.extra.w > 0.0 { faded++; } }
-    let b .= shell::fill(sh, now);
+    let b .= shell::build_frame_pieces(sh, now);
     var faint = 0;
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
     if drive::verbose {

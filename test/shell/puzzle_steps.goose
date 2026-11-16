@@ -78,7 +78,7 @@ fn drawn(sh: shell::Shell&, b: board::Board&) -> u8[>..] {
 fn show(sh: shell::Shell&, g: gui::Gui&, what: const u8[:], now: f64) {
     let pl .= sh.puzzle;
     let v .= rules::VARIANTS[pl.b.variant];
-    let b .= shell::fill(sh, now);
+    let b .= shell::build_frame_pieces(sh, now);
     print(what, ": puzzle ", puzzle::current(pl).id, " ", puzzles::THEME_NAMES[puzzle::current(pl).theme], " ", puzzle::current(pl).level, ", ", STATES[pl.state],
           ", misses ", pl.misses, ", stars ", puzzle::stars(pl), ", selected ", drive::name(v, b.selected), " drawn on ",
           drawn(sh, b), ", waits on ", drive::name(v, board::capture_stop_square(b)), ", ringed ", drive::marked(v, b.marks.via),
@@ -176,7 +176,7 @@ fn main() {
     shell::play_puzzle(sh, 12, 50.0);
     drive::idle(sh, g, 50.0);
     drop(sh, g, 26, 17, 50.1);
-    let b .= shell::fill(sh, 50.2);
+    let b .= shell::build_frame_pieces(sh, 50.2);
     var black = 0;
     for p in b.pieces { if p.look.x == 1.0 { black++; } }
     print("dropped on 17, as the app sees it: next ", next(g), ", another frame asked ",

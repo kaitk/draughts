@@ -25,7 +25,7 @@ struct Past {
 // The games played: the history read as the screen opens, the draughts it shows at first
 // the setup's. Its board lies off the screen, as the puzzles' library's.
 fn results_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
-    sh.out.over.clear();
+    sh.out.ui_pieces.clear();
     if fresh && sh.past.replayed {
         gui::scroll_set(g, results::LIST, sh.past.at);
     } else if fresh {
@@ -65,8 +65,8 @@ fn open_replay(sh: Shell&, index: i64, now: f64) {
 fn replay_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
     let r .= sh.past.replay;
     let moved = board::update(r.b, now);
-    sh.out.over.clear();
-    let ask = replay::frame(r, g, area, sh.out.layout, sh.out.over, now, fresh);
+    sh.out.ui_pieces.clear();
+    let ask = replay::frame(r, g, area, sh.out.layout, sh.out.ui_pieces, now, fresh);
     if ask == replay::BACK { go_to(sh, RESULTS, now); }
     if ask == replay::PLAY { play_from_here(sh, now); }
     return moved || ask != replay::NOTHING;

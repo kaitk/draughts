@@ -29,7 +29,7 @@ fn tutorial_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let ls .= sh.lesson;
     var l = tutorial_layout(sh, area, g.scale, now);
     sh.out.layout = l.board;
-    let ev, changed = tutorial::frame(ls, g, l, area, gui::extend_to_screen_edge(g, area, area), now, sh.out.over);
+    let ev, changed = tutorial::frame(ls, g, l, area, gui::extend_to_screen_edge(g, area, area), now, sh.out.ui_pieces);
     aimed(sh, l, ls.cam, now);
     let v = clamp(ls.variant as i64, 0, rules::VARIANT_COUNT - 1);
     if ev.learned > sh.prefs.learned[v] {

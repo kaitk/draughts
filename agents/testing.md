@@ -67,7 +67,7 @@ before committing a change to `rules/`.
   `import check from "../";`) and, for the UI, the package `test/drive/` (`import drive
   from "../drive";`): squares by name (`drive::at`, `name`, `marked`), the tiles a frame
   declared (`tile`, `rect`, `control`), the pointer and keys (`frame`, `tap`, `idle`,
-  `key`), `drive::over`, `drive::size`, `drive::result`, `drive::ready3d`,
+  `key`), `drive::ui_pieces`, `drive::size`, `drive::result`, `drive::ready3d`,
   `drive::shown3d`, `drive::past_line`. Importing it means declaring every package it
   reaches; `test/run_tests.py` skips the directories in its `PACKAGES`.
 - A test that lays out text calls `gui::test_faces` and `strings::use` first. To lay out

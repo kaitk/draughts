@@ -51,7 +51,7 @@ fn said(v: rules::Variant&, m: rules::Way&) -> u8[>..] {
 
 // Plays the board's first legal move by taps: its piece, then each stop to its end.
 fn play_first(sh: shell::Shell&, g: gui::Gui&) {
-    let b .= shell::shown(sh);
+    let b .= shell::board_on_screen(sh);
     let v .= rules::VARIANTS[b.variant];
     let m = rules::way_of(b.pos, b.moves[0]);
     drive::tap(sh, g, drive::at(sh.out.layout, drive::name(v, m.from)), tick());
@@ -114,7 +114,7 @@ fn main() {
         if k == 0 {
             print("  the first move: ", state(sh));
             settle(sh, g, 1.5);
-            let b .= shell::shown(sh);
+            let b .= shell::board_on_screen(sh);
             print("  the answer: ", state(sh), ", last ", drive::name(rules::VARIANTS[b.variant], b.last.from), "-",
                   drive::name(rules::VARIANTS[b.variant], b.last.to), ", glowing ",
                   if b.glow >= 0 { drive::name(rules::VARIANTS[b.variant], b.glow) } else { str("none") });

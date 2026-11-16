@@ -49,19 +49,19 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
         if q.extra.w > 0.0 { faded++; }
         if q.extra.w > 0.5 { gone++; }
     }
-    let b .= shell::fill(sh, now);
+    let b .= shell::build_frame_pieces(sh, now);
     var faint = 0;
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
     let wrong = if b.flash.x >= 0.0 { ", a wrong move" } else { "" };
     if drive::verbose {
         print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
               ", mix ", round(100.0 * sh.mix), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone, ", pieces ",
-              b.pieces.len, " faint ", faint, wrong, ", over the UI ", sh.out.over.len, ", hole ", hole(sh), ", drawn ", drawn,
+              b.pieces.len, " faint ", faint, wrong, ", over the UI ", sh.out.ui_pieces.len, ", hole ", hole(sh), ", drawn ", drawn,
               ", animating ", shell::animating(sh, g, now));
     } else {
         print(what, " ", now, ": ", screen(sh), ", board ", sh.out.layout.n, "x", sh.out.layout.n, ", mix ",
               round(100.0 * sh.mix), "%, quads faded ", share(faded, g.quads.len), ", mostly ", share(gone, g.quads.len),
-              ", pieces ", b.pieces.len, " faint ", faint, wrong, ", over the UI ", sh.out.over.len, ", hole ", hole(sh),
+              ", pieces ", b.pieces.len, " faint ", faint, wrong, ", over the UI ", sh.out.ui_pieces.len, ", hole ", hole(sh),
               ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
     }
 }
@@ -85,7 +85,7 @@ fn main() {
     drive::frame(sh, g, settings_row, true, true, false, 1.0);
     let first = drive::frame(sh, g, settings_row, false, false, true, 1.02);
     print("tapped settings: ", screen(sh), ", from home ", sh.from == shell::HOME, ", drawn ", first, " with home's board ",
-          sh.out.layout.board == home_at, " at ", round(100.0 * sh.mix), "%, its pieces ", shell::fill(sh, 1.02).pieces.len,
+          sh.out.layout.board == home_at, " at ", round(100.0 * sh.mix), "%, its pieces ", shell::build_frame_pieces(sh, 1.02).pieces.len,
           ", hole ", hole(sh));
     var y = home_at.y;
     var up = true;
@@ -116,7 +116,7 @@ fn main() {
     drive::frame(sh, g, back_at, true, true, false, 6.0);
     drive::frame(sh, g, back_at, false, false, true, 6.02);
     print("tapped back: ", screen(sh), ", settings' board ", sh.out.layout.board == settings_at, ", the preview's pieces ",
-          shell::fill(sh, 6.02).pieces.len, ", hole ", hole(sh));
+          shell::build_frame_pieces(sh, 6.02).pieces.len, ", hole ", hole(sh));
     look(sh, g, 6.04, "  ");
     look(sh, g, 6.145, "  ");
     drive::idle(sh, g, 6.5);

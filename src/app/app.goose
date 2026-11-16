@@ -183,9 +183,9 @@ fn save_settings(lp: Loop&, rd: render::Renderer&, sh: shell::Shell&, system_lan
 
 fn draw(dv: dev::Dev&, f: flags::Flags&, rd: render::Renderer&, sh: shell::Shell&, g: gui::Gui&,
         out: shell::Frame&, size: int2, now: f64) {
-    var frame = render::Frame { board: shell::fill(sh, now), layout: out.layout, over: out.over[..], quads: g.quads[..],
+    var frame = render::Frame { board: shell::build_frame_pieces(sh, now), layout: out.layout, over: out.ui_pieces[..], quads: g.quads[..],
                                 clip:  g.scroll.view, raised: out.raised, view: out.view,
-                                which: shell::which(out.shows), hold: out.hold, place: out.place,
+                                which: shell::which(out.board_screen), hold: out.hold, place: out.place,
                                 fade:  out.fade, blur: out.blur, hole: out.hole, tall: out.tall, now: now,
                                 size: size };
     if f.bench > 0 { bench::frame(dv.bench, f, rd, frame); } else { render::frame(rd, frame); }

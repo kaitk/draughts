@@ -153,7 +153,7 @@ fn main() {
         while t < 6.0 && pl.state != puzzle::PLAYING { drive::idle(sh, g, t); t += 0.05; }
         drive::idle(sh, g, t + 0.1);
         var scene = view3d::Scene {};
-        let b .= shell::fill(sh, t + 0.1);
+        let b .= shell::build_frame_pieces(sh, t + 0.1);
         view3d::build_scene(scene, b, sh.out.layout, sh.out.view, t + 0.1);
         var fading = 0;
         var i = 0;
@@ -172,7 +172,7 @@ fn main() {
         let until = t + 3.0;
         while t < until && (pl.state != puzzle::PLAYING || pl.b.moving) { drive::idle(sh, g, t); t += 0.05; }
         drive::idle(sh, g, t + 0.1);
-        let b2 .= shell::fill(sh, t + 4.0);
+        let b2 .= shell::build_frame_pieces(sh, t + 4.0);
         view3d::build_scene(scene, b2, sh.out.layout, sh.out.view, t + 4.0);
         var glows: u8[>..] = [];
         for k in sh.out.layout.n * sh.out.layout.n { if scene.lit[k].x > 0.0 { format(glows, k / sh.out.layout.n, ".", k % sh.out.layout.n, " "); } }
@@ -215,7 +215,7 @@ fn main() {
           " the 3D bounds ", inside(card, w.out.view.rect), ", centered across them ",
           abs(card.x + 0.5 * card.z - (w.out.view.rect.x + 0.5 * w.out.view.rect.z)) < 1.0, ", clear of the winning piece ", clear);
     var ws = view3d::Scene {};
-    let wb .= shell::fill(w, t);
+    let wb .= shell::build_frame_pieces(w, t);
     view3d::build_scene(ws, wb, w.out.layout, w.out.view, t);
     var lit = 0;
     var i = 1;

@@ -42,7 +42,7 @@ let CARD_RESTART = 6;
 // The overlay's pieces: side, opacity, ring.
 fn pieces() -> u8[>..] {
     var s: u8[>..] = [];
-    for p in drive::over { format(s, if p.look.x > 0.5 { "black" } else { "white" }, " ", p.look.w, " ", p.ring.y, "; "); }
+    for p in drive::ui_pieces { format(s, if p.look.x > 0.5 { "black" } else { "white" }, " ", p.look.w, " ", p.ring.y, "; "); }
     return s;
 }
 
@@ -142,7 +142,7 @@ fn main() {
     drive::frame(gm, g, l, away, false, false, false, 11.0);
     print("after: celebrating since ", gm.won_at, ", over the UI ", pieces(), "tiles ", drive::tiles(g));
     drive::frame(gm, g, l, away, false, false, false, 13.0);
-    print("at 2.0 s: over the UI ", pieces(), "the winner crowned ", drive::over[drive::over.len - 1].look.y, ", tiles ",
+    print("at 2.0 s: over the UI ", pieces(), "the winner crowned ", drive::ui_pieces[drive::ui_pieces.len - 1].look.y, ", tiles ",
           drive::tiles(g), ", animating at 8 s ", game::animating(gm, g, 19.0));
     print("back on the card asks for home: ", drive::tap(gm, g, l, drive::control(g, CARD_BACK), 19.1) == game::HOME);
     drive::tap(gm, g, l, drive::control(g, CARD_RESTART), 19.2);
@@ -159,12 +159,12 @@ fn main() {
     drive::tap(gm, g, l, drive::at(l.board, "c3"), 30.0);
     drive::tap(gm, g, l, drive::at(l.board, "d4"), 30.1);
     gui::begin(g, gui::Input {}, l.board.scale, 30.6);
-    let a, drawn_a = game::frame(gm, g, l, 30.6, drive::over);
+    let a, drawn_a = game::frame(gm, g, l, 30.6, drive::ui_pieces);
     print("c3-d4: ", clocks(gm, g), "; over the UI ", pieces());
     gui::begin(g, gui::Input {}, l.board.scale, 30.9);
-    let b, drawn_b = game::frame(gm, g, l, 30.9, drive::over);
+    let b, drawn_b = game::frame(gm, g, l, 30.9, drive::ui_pieces);
     gui::begin(g, gui::Input {}, l.board.scale, 31.15);
-    let c, drawn_c = game::frame(gm, g, l, 31.15, drive::over);
+    let c, drawn_c = game::frame(gm, g, l, 31.15, drive::ui_pieces);
     print("frames at 0.5, 0.8, 1.05 s on black's clock: drawn ", drawn_a, " ", drawn_b, " ", drawn_c, "; ",
           clocks(gm, g));
     // A pause: the frame after it counts nothing, however long it was.

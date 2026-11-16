@@ -117,8 +117,8 @@ fn main() {
     let off = float2 { -1.0, -1.0 };
     drive::frame(sh, g, off, false, false, false, 0.0);
     show(sh, g, "start");
-    print("the wordmark's piece: ", sh.out.over.len, ", crowned ", sh.out.over[0].look.y,
-          ", no ring ", sh.out.over[0].ring.y == 0.0);
+    print("the wordmark's piece: ", sh.out.ui_pieces.len, ", crowned ", sh.out.ui_pieces[0].look.y,
+          ", no ring ", sh.out.ui_pieces[0].ring.y == 0.0);
     // The player's chip, mirroring the way out: the last tile but one, and their face.
     var faces = 0;
     for q in g.quads { if q.look.x == gui::FACE { faces++; } }
@@ -188,7 +188,7 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, 4), 7.5);            // hard
     tiles = 0;
     for q in g.quads { if q.look.x == gui::BUTTON { tiles++; } }
-    print("the computer's setup: tiles ", tiles, ", pieces over the UI ", sh.out.over.len);
+    print("the computer's setup: tiles ", tiles, ", pieces over the UI ", sh.out.ui_pieces.len);
     print("draughts tiles: ", draughts_widths(g));
     drive::tap(sh, g, drive::tile(g, 9), 7.7);            // black
     drive::tap(sh, g, drive::tile(g, 12), 7.8);           // 10+5

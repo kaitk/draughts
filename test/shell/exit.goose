@@ -82,13 +82,13 @@ fn check(what: const u8[:], setup: i64) {
     // Home itself asks for EXIT.
     var l = sh.out.layout;
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
-    var over: board::Overlay = [];
+    var ui_pieces: board::Overlay = [];
     var h = gui::Gui {};
     gui::test_faces(h);
     gui::begin(h, gui::Input { at: at, down: true, pressed: true, .. }, u, 3.0);
-    home::frame(over, h, l, 10, float4 { 0.0, 0.0, drive::size.x, drive::size.y }, setup, sh.prefs, room);
+    home::frame(ui_pieces, h, l, 10, float4 { 0.0, 0.0, drive::size.x, drive::size.y }, setup, sh.prefs, room);
     gui::begin(h, gui::Input { at: at, released: true, .. }, u, 3.02);
-    print("  home asks for EXIT: ", home::frame(over, h, l, 10, float4 { 0.0, 0.0, drive::size.x, drive::size.y }, setup, sh.prefs, room) == home::EXIT);
+    print("  home asks for EXIT: ", home::frame(ui_pieces, h, l, 10, float4 { 0.0, 0.0, drive::size.x, drive::size.y }, setup, sh.prefs, room) == home::EXIT);
 }
 
 fn main() {

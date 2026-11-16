@@ -35,7 +35,7 @@ fn key(gm: game::Game&, g: gui::Gui&, l: panel::Layout, step: i64, confirm: bool
        at: float2 = float2 { -1.0, -1.0 }) -> bool {
     now += 0.5;
     gui::begin(g, gui::Input { at: at, step: step, confirm: confirm, tab: tab, .. }, l.board.scale, now);
-    let ev, changed = game::frame(gm, g, l, now, drive::over);
+    let ev, changed = game::frame(gm, g, l, now, drive::ui_pieces);
     return changed;
 }
 

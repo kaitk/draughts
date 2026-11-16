@@ -58,7 +58,7 @@ fn card(g: gui::Gui&) -> u8[>..] {
         if k > 5 { format(s, "tile at y ", r2(q.rect.y), " opacity ", r2(1.0 - q.extra.w), "; "); }
     }
     var on = 0;
-    for p in drive::over { if p.win.w > 0.5 { on++; } }
+    for p in drive::ui_pieces { if p.win.w > 0.5 { on++; } }
     format(s, "pieces on it ", on);
     return s;
 }
@@ -110,7 +110,7 @@ fn main() {
     var u = d;
     while u < d + 5.0 {
         gui::begin(g, gui::Input { at: drive::AWAY, .. }, l.board.scale, u);
-        let go, changed = game::frame(gm, g, l, u, drive::over);
+        let go, changed = game::frame(gm, g, l, u, drive::ui_pieces);
         if changed || game::animating(gm, g, u) {
             n++;
             last = u;
@@ -176,8 +176,8 @@ fn shape(g: gui::Gui&, name: const u8[:], l: panel::Layout, counting: bool) {
         n.fig.push('3');
     }
     gui::begin(g, gui::Input { at: drive::AWAY, .. }, l.board.scale, 0.0);
-    drive::over.clear();
-    panel::game(g, l, game::clocks(c), 0, false, false, n, false, 1.0, drive::over);
+    drive::ui_pieces.clear();
+    panel::game(g, l, game::clocks(c), 0, false, false, n, false, 1.0, drive::ui_pieces);
     var s: u8[>..] = [];
     format(s, name, ":");
     for q in g.quads {

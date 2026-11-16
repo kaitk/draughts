@@ -26,7 +26,7 @@ import drive from "../drive";
 // puts them: every piece inside the board, and the layout as many squares across as the
 // board's draughts has.
 fn whole(sh: shell::Shell&, now: f64) -> bool {
-    let b .= shell::fill(sh, now);
+    let b .= shell::build_frame_pieces(sh, now);
     let r = sh.out.layout.board;
     var inside = sh.out.layout.n == rules::VARIANTS[b.variant].size;
     for p in b.pieces { inside = inside && p.at.x > r.x && p.at.x < r.x + r.z && p.at.y > r.y && p.at.y < r.y + r.z; }
@@ -36,7 +36,7 @@ fn whole(sh: shell::Shell&, now: f64) -> bool {
 // What the board shows at `now`: its size and position, whether white's pieces are at the
 // bottom of the screen, and whether it lies whole.
 fn shows(sh: shell::Shell&, now: f64) -> u8[>..] {
-    let b .= shell::fill(sh, now);
+    let b .= shell::build_frame_pieces(sh, now);
     let mid = sh.out.layout.board.y + 0.5 * sh.out.layout.board.z;
     var low = 0;
     var white = 0;

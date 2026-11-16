@@ -169,7 +169,7 @@ fn missed(pl: Play&, now: f64) {
 // After the pointer has gone to the board: a move made is judged, a mistake tapped is a
 // miss. `history` and `wrong_at` are the board's from before. Returns whether the move
 // solved the puzzle.
-fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) -> bool {
+fn handle_player_move(pl: Play&, history: i64, wrong_at: f64, now: f64) -> bool {
     let b .= pl.b;
     if b.rec.history.len > history {
         let m = rules::move_of(b.move);
@@ -210,16 +210,16 @@ fn tap(pl: Play&, l: board::Layout, p: float2, now: f64) {
     let wrong_at = pl.b.wrong_at;
     board::press(pl.b, l, p, now);
     board::release(pl.b, l, p, now);
-    judge(pl, history, wrong_at, now);
+    handle_player_move(pl, history, wrong_at, now);
 }
 
 // One frame, after gui::begin. Returns what the shell should do and know (Event) and
 // whether anything on screen changed.
-fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&) -> Event, bool {
+fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::Overlay&) -> Event, bool {
     let b .= pl.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
-    over.clear();
+    ui_pieces.clear();
     let side = current(pl).start.side;
     // The reply to a right move, once it has landed and a moment passed; the slide back
     // of a wrong one.
@@ -259,7 +259,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     }
 
     var ev = Event {};
-    let ask = panel_frame(pl, g, l, now, over);
+    let ask = panel_frame(pl, g, l, now, ui_pieces);
     if ask != STAY {
         changed = true;
         ev.go = ask;
@@ -287,7 +287,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     if mine && board::touch(b, l.board, l.is_3d, l.view, input, pl.grab, now) { changed = true; }
     if panel::board_keys(g, l, b, mine, now) { changed = true; }
     if mine {
-        ev.solved = judge(pl, history, wrong_at, now);
+        ev.solved = handle_player_move(pl, history, wrong_at, now);
         // The keys lead while they have a focus (the mouse or a touch lets it go): solved
         // with them, Enter or a gamepad's A goes on to next.
         if ev.solved && g.focus != 0 { pl.to_next = true; }
@@ -388,7 +388,7 @@ fn turn_ring(pl: Play&) -> f32 {
 // before the icon as the game's turn piece that wide, beside it in landscape (the
 // two over the words) and leading the row in portrait.
 fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: f64, disc: f32,
-        over: board::Overlay&) {
+        ui_pieces: board::Overlay&) {
     let u = g.scale;
     let pz .= current(pl);
     let d = disc * u;
@@ -405,14 +405,14 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
             // As far apart as the panel lets them, 20 dp at most.
             let gap = clamp(row.z - d - s, 0.0, 20.0 * u);
             row = gui::center(row, d + gap + s, row.w);
-            panel::piece(over, gui::cut_left(row, d), 0.5 * d, pz.start.side, 0, 1.0, turn_ring(pl));
+            panel::piece(ui_pieces, gui::cut_left(row, d), 0.5 * d, pz.start.side, 0, 1.0, turn_ring(pl));
             gui::cut_left(row, gap);
         }
         icon = gui::center(row, s, s);
         gui::cut_top(c, 8.0 * u);
     } else {
         if d > 0.0 {
-            panel::piece(over, gui::center(gui::cut_left(c, d), d, d), 0.5 * d, pz.start.side, 0, 1.0, turn_ring(pl));
+            panel::piece(ui_pieces, gui::center(gui::cut_left(c, d), d, d), 0.5 * d, pz.start.side, 0, 1.0, turn_ring(pl));
             gui::cut_left(c, gui::PAD * u);
         }
         // In the row the pill takes the goal's icon's place while it shows (a portrait
@@ -472,12 +472,12 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
 // right whose puzzle it is as the game's turn piece (72 dp over the goal in landscape,
 // beside its icon where the panel is too short for that, a phone's; 52 dp leading the
 // goal's row in portrait), the goal, the stars, and next, a tall tile in landscape, a
-// wide one in portrait. The piece goes into `over`. Next is lit once the puzzle is
+// wide one in portrait. The piece goes into `ui_pieces`. Next is lit once the puzzle is
 // solved; before, it is dim and takes no tap, but while a piece
 // waits partway through a capture it wakes, unlit, to say the move is done, which a
 // capture left partway isn't. Round the 3D board, the camera buttons (panel::camera).
 // Returns PUZZLES, SETTINGS, NEXT, RESTART_ASK, CAMERA, or STAY.
-fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&) -> i64 {
+fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::Overlay&) -> i64 {
     let u = g.scale;
     let landscape = panel::columns(l);
     var ask = STAY;
@@ -521,7 +521,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
         let above = right.w >= (18.0 + 72.0 + 18.0 + 16.0 + 56.0) * u + goal_h;
         if above {
             gui::cut_top(right, 18.0 * u);
-            panel::piece(over, gui::cut_top(right, 72.0 * u), 36.0 * u, current(pl).start.side, 0, 1.0, turn_ring(pl));
+            panel::piece(ui_pieces, gui::cut_top(right, 72.0 * u), 36.0 * u, current(pl).start.side, 0, 1.0, turn_ring(pl));
             gui::cut_top(right, 18.0 * u);
         } else {
             gui::cut_top(right, 14.0 * u);
@@ -532,7 +532,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
         let slot = max(48.0 * u, words + slot_h(pl, g)) - max(48.0 * u, words);
         let give = clamp(56.0 * u - (right.w - goal_h - slot), 0.0, slot);
         let icon = 72.0 - give / u;
-        goal(pl, g, gui::cut_top(right, goal_h + slot - give), icon, true, now, if above { 0.0 } else { icon }, over);
+        goal(pl, g, gui::cut_top(right, goal_h + slot - give), icon, true, now, if above { 0.0 } else { icon }, ui_pieces);
         // The gap and the stars shrink to the room left above next, so a short corner panel
         // round the 3D board doesn't run them into next's tile; smaller too where the
         // panel is narrowed near square.
@@ -554,7 +554,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     let star_room = 3.0 * 44.0 * u + 2.0 * 8.0 * u;
     let stars_at = gui::cut_right(top, star_room);
     gui::cut_left(top, 6.0 * u);
-    goal(pl, g, top, 48.0, false, now, 52.0, over);
+    goal(pl, g, top, 48.0, false, now, 52.0, ui_pieces);
     stake(pl, g, stars_at, if solved { 48.0 } else { 40.0 }, 6.0, now);
     // Today's dots over next where the bar has the room, else at next's left.
     var row = float4 { right.x, right.y, right.z, gui::tap_size() * u };

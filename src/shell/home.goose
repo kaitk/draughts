@@ -402,16 +402,16 @@ fn resume_note(computer: i64, level: i64) -> i64 {
     return [strings::CONTINUE_EASY, strings::CONTINUE_MEDIUM, strings::CONTINUE_HARD][clamp(level, 0, 2)];
 }
 
-fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
+fn frame(ui_pieces: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
          s: settings::Settings&, room3d: float4&, resume: Resume = Resume {}) -> i64 {
     let h = layout(g, n, area, setup, rows_of(resume), s);
     l = h.board;
     room3d = h.room3d;
     // The column or sheet runs on past the safe area to the screen's edges.
     gui::glass(g, gui::extend_to_screen_edge(g, h.col, area), 32.0);
-    over.clear();
-    var pick = if setup != NO_SETUP { choose(over, g, h.content, h.head, h.up, foot(g, area), s) }
-               else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit, resume, h.scroll, foot(g, area)) };
+    ui_pieces.clear();
+    var pick = if setup != NO_SETUP { choose(ui_pieces, g, h.content, h.head, h.up, foot(g, area), s) }
+               else { menu(ui_pieces, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit, resume, h.scroll, foot(g, area)) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if setup == NO_SETUP && player_chip(g, player_spot(g, area, h.side, l.board, h.way, s), s) { pick = PLAYERS; }
     if closable && !h.quit && gui::bare_x(g, CROSS_ID, h.way, gui::CLOSE, CROSS) { pick = EXIT; }
@@ -481,7 +481,7 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
 // (portrait, and a short landscape). With `scroll`, c is a row short of them: the rows
 // scroll under the wordmark down to `foot` (y in pixels, the screen's safe foot), the
 // lowest fading out while there are more below.
-fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
+fn menu(ui_pieces: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
         small: bool = false, quit: bool = false, resume: Resume = Resume {}, scroll: bool = false, foot: f32 = 0.0) -> i64 {
     let u = g.scale;
     // The wordmark, then the rows and the results row, settings as the next where it isn't
@@ -505,7 +505,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     // run under the tap's clear left side, up to 12 dp from the gear.
     var mark = at[0];
     let piece = gui::cut_left(mark, 56.0 * u);
-    game::add_ui_piece(over, piece, 28.0 * u, rules::WHITE, board::CROWN,
+    game::add_ui_piece(ui_pieces, piece, 28.0 * u, rules::WHITE, board::CROWN,
               1.0, false);
     gui::cut_left(mark, 14.0 * u);
     var pick = NOTHING;
@@ -731,7 +731,7 @@ fn play_row(g: gui::Gui&, r: float4) -> bool {
 // title's place, and the list runs on down to `foot` (y in pixels, the screen's foot).
 // Every tile is declared in one order whatever the layout: back, whom to play, the
 // draughts, the pieces or the board's turning, the clock, play.
-fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, up: bool, foot: f32,
+fn choose(ui_pieces: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, up: bool, foot: f32,
           s: settings::Settings&) -> i64 {
     let u = g.scale;
     var ask = NOTHING;
@@ -805,7 +805,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
             let tapped, pic = gui::pick(g, COLOR_IDS + i, across(colors, 2, i, u), 30.0,
                                         strings::get(if i == 0 { strings::COLOR_WHITE } else { strings::COLOR_BLACK }), "",
                                         s.color == i, true);
-            game::add_ui_piece(over, pic, 15.0 * u, i, 0, 1.0, false);
+            game::add_ui_piece(ui_pieces, pic, 15.0 * u, i, 0, 1.0, false);
             if tapped {
                 s.color = i;
                 ask = CHANGED;

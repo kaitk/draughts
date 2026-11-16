@@ -166,8 +166,8 @@ fn main() {
     var sh = shell::new(rules::RUSSIAN);
     sh.screen = shell::SETTINGS;
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
-    print("tiles ", drive::tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.out.over.len, ": ",
-          sh.out.over[0].look.y, " and ", sh.out.over[1].look.y);
+    print("tiles ", drive::tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.out.ui_pieces.len, ": ",
+          sh.out.ui_pieces[0].look.y, " and ", sh.out.ui_pieces[1].look.y);
     if drive::verbose { print("the list: ", g.scroll.view, " scrolls ", g.scroll.max, " px"); }
     else { print("the list: ", if g.scroll.max > 0.0 { "scrolls" } else { "still" }); }
     // The board is right of the list: every tile and the glass end left of it.

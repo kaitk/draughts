@@ -235,7 +235,7 @@ fn picture_of(s: Settings&, row: i64, i: i64) -> i64 {
 }
 
 // Declares tile i of a row in r. True when a tap changed s.
-fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
+fn tile(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
     let u = g.scale;
     let id = TILE_IDS + MOST_TILES * row + i;
     let words = label(row, i);
@@ -254,7 +254,7 @@ fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: 
         // The crown's and the stack's tiles each show their king.
         let king = row == KINGS_ROW && i != AUTO;
         let picked, pic = gui::pick(g, id, r, if king { KING_PIC } else { 0.0 }, label, "", on, true);
-        if king { put_in_list(over, g, pic, 15.0 * u, i, 1.0); }
+        if king { put_in_list(ui_pieces, g, pic, 15.0 * u, i, 1.0); }
         tapped = picked;
     }
     guard tapped else { return false; }
@@ -349,7 +349,7 @@ fn list_at(g: gui::Gui&, r: float4) -> List {
 
 // Declares the list where list_at put it. Returns CHANGED when a tap changed s, SHOWN
 // while the volume is dragged, or NOTHING.
-fn list(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: List&) -> i64 {
+fn list(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: List&) -> i64 {
     let u = g.scale;
     var ask = NOTHING;
     for section in SECTIONS {
@@ -359,14 +359,14 @@ fn list(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: List&) -> i64 {
         gui::cut_left(title, gui::PAD * u);
         gui::text(g, gui::HEADING, title, strings::get(SECTION_TITLES[section]), 1.0, 0.0, gui::LEFT);
         if section == SOUND_SECTION {
-            let heard = volume_row(s, over, g, l.volume);
+            let heard = volume_row(s, ui_pieces, g, l.volume);
             if heard != NOTHING { ask = heard; }
         }
         for row in FROM_ROW[section]..TO_ROW[section] {
             let at .= l.row[row];
             gui::text(g, gui::SMALL, at.name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
                       gui::LEFT);
-            for i in ROW_TILES[row] { if tile(s, over, g, row, i, at.tiles[i]) { ask = CHANGED; } }
+            for i in ROW_TILES[row] { if tile(s, ui_pieces, g, row, i, at.tiles[i]) { ask = CHANGED; } }
         }
         gui::rounded_rect(g, l.rule[section], float4 { 1.0, 1.0, 1.0, 0.1 }, 0.0);
     }
@@ -385,12 +385,12 @@ fn list(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: List&) -> i64 {
 // thumb), centered in `spot` with radius r: the pieces are drawn over the UI, past the
 // list's clip, so each fades as it scrolls out of the list's view, by how much of it is
 // still inside, and is gone once it is out.
-fn put_in_list(over: board::Overlay&, g: gui::Gui&, spot: float4, r: f32, king: i64, a: f32) {
+fn put_in_list(ui_pieces: board::Overlay&, g: gui::Gui&, spot: float4, r: f32, king: i64, a: f32) {
     let v = g.scroll.view;
     let y = spot.y + 0.5 * spot.w;
     let inside = clamp((min(y - v.y, v.y + v.w - y) + r) / (2.0 * r), 0.0, 1.0);
     guard inside > 0.0 else { return; }
-    game::add_ui_piece(over, spot, r, rules::WHITE, king, a * inside, false);
+    game::add_ui_piece(ui_pieces, spot, r, rules::WHITE, king, a * inside, false);
 }
 
 // The volume's row where list_at put it (`at`): its name, the speaker, and the slider. A
@@ -398,7 +398,7 @@ fn put_in_list(over: board::Overlay&, g: gui::Gui&, spot: float4, r: f32, king: 
 // slider sets the level as it is dragged and unmutes. Each is heard as it is let go
 // (Settings.play_sample). Returns CHANGED when a tap or a release changed s, to be written,
 // SHOWN while the slider is dragged, or NOTHING.
-fn volume_row(s: Settings&, over: board::Overlay&, g: gui::Gui&, at: Row&) -> i64 {
+fn volume_row(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, at: Row&) -> i64 {
     let u = g.scale;
     gui::text(g, gui::SMALL, at.name, strings::get(strings::SETTINGS_VOLUME), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
               gui::LEFT);
@@ -422,7 +422,7 @@ fn volume_row(s: Settings&, over: board::Overlay&, g: gui::Gui&, at: Row&) -> i6
         s.muted = false;
     }
     if let_go { changed = true; }
-    put_in_list(over, g, spot, THUMB_R * u, 0, if off { 0.55 } else { 1.0 });
+    put_in_list(ui_pieces, g, spot, THUMB_R * u, 0, if off { 0.55 } else { 1.0 });
     if changed { s.play_sample = true; }
     return if changed { CHANGED } else if slid != v { SHOWN } else { NOTHING };
 }
@@ -648,12 +648,12 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4, n: i64) -> Page {
 // Declares the screen for this frame in `area`, the screen's safe area, where layout puts
 // its parts, with `shown` the language showing, and sets l to where the preview goes, and
 // `room3d` to where a 3D preview goes instead. The kings' tiles put their pieces in
-// `over`. Returns BACK, CHANGED after a tap changed s, SHOWN after the language list
+// `ui_pieces`. Returns BACK, CHANGED after a tap changed s, SHOWN after the language list
 // opened or closed, or NOTHING.
-fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
+fn frame(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
          room3d: float4&, n: i64) -> i64 {
     let u = g.scale;
-    over.clear();
+    ui_pieces.clear();
     let p = layout(s, g, area, n);
     l = p.board;
     room3d = p.room3d;
@@ -667,7 +667,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     let off = gui::scroll_begin(g, LIST, p.view, content);
     let listed = g.quads.len;
     let laid = list_at(g, float4 { p.list.x, p.list.y - off, p.list.z, 0.0 });
-    let listed_ask = list(s, over, g, laid);
+    let listed_ask = list(s, ui_pieces, g, laid);
     if listed_ask != NOTHING { ask = listed_ask; }
     gui::fade_edges(g, listed, p.view, 0.0, p.view.y + content - off - (p.view.y + p.view.w), FADE * u);
     gui::scroll_end(g);
