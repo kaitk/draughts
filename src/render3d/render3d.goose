@@ -7,7 +7,8 @@
 // A frame: the shadow map only when the pieces moved, then one pass (the backdrop, the
 // pieces and the board lit front to back, the board's soft shadow, the still marks). The
 // pulsing marks are drawn over the kept image each frame (marks_over) against a kept 1x
-// depth. Nothing is made or released while drawing but targets on a resize or after rest().
+// depth. Nothing is made or released while drawing but targets on a resize or after
+// release_targets().
 namespace render3d;
 import std;
 import vec;
@@ -292,12 +293,12 @@ fn targets<O>(o: O&, g: Gpu&, size: int2) {
 // next draw() keeps it again. The kept image shows the board until it changes; the next
 // draw() makes the rest again. Not inside a pass: it submits what was recorded, as
 // released textures are freed after the next submit is done, and none comes at rest.
-fn rest<O>(o: O&, g: Gpu&) {
+fn release_targets<O>(o: O&, g: Gpu&) {
     give_back(o, g);
     o.gpu_flush();
 }
 
-// rest()'s releases, also before a resize's new targets.
+// What release_targets() releases, also before a resize's new targets.
 fn give_back<O>(o: O&, g: Gpu&) {
     let held = [g.color, g.depth, g.edges, g.weights, g.kept_depth, g.kept_backdrop];
     for t in held { if t.id != 0 { o.gpu_release(t); } }
@@ -309,7 +310,7 @@ fn give_back<O>(o: O&, g: Gpu&) {
     g.kept_backdrop = Texture { 0 };
 }
 
-// Whether rest() has anything to give back.
+// Whether release_targets() has anything to give back.
 fn resting(g: Gpu&) -> bool {
     return g.color.id == 0 && g.depth.id == 0 && g.edges.id == 0 && g.weights.id == 0 && g.kept_depth.id == 0
            && g.kept_backdrop.id == 0;

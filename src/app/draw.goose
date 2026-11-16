@@ -69,18 +69,18 @@ fn new<B>(be: B&, kind: i64, plain: bool, timed: bool = false) -> Drawer {
 
 // Before the screen's pass: the board's pieces (`flat`; the 3D board draws its own) and
 // those drawn over the UI.
-fn upload<B>(be: B&, d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout, width: f32, height: f32,
+fn upload<B>(be: B&, d: Drawer&, b: board::Board&, ui_pieces: const board::Piece[:], l: board::Layout, width: f32, height: f32,
           flat: bool) {
     if flat {
         for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
         be.draw.upload(d.upload, b.pieces.len);
     }
-    pieces_over(be, d, over, l, width, height);
+    pieces_over(be, d, ui_pieces, l, width, height);
 }
 
-fn pieces_over<B>(be: B&, d: Drawer&, over: const board::Piece[:], l: board::Layout, width: f32, height: f32) {
-    d.over_count = min(over.len, board::OVER);
-    for i in d.over_count { d.over_upload[i] = over[i]; }
+fn pieces_over<B>(be: B&, d: Drawer&, ui_pieces: const board::Piece[:], l: board::Layout, width: f32, height: f32) {
+    d.over_count = min(ui_pieces.len, board::OVER);
+    for i in d.over_count { d.over_upload[i] = ui_pieces[i]; }
     if d.over_count > 0 { be.draw.upload_over(d.over_upload, d.over_count); }
     // The disc's side is 0.55% of the board deep, whatever a piece's size; the same for
     // the pieces over the UI where no board shows (a setup on a short phone).

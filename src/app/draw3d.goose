@@ -238,9 +238,9 @@ fn screen_bake(d: Drawer&, small: bool) {
 // What only drawing needs (the pass's targets, the kept backdrop and depth) is kept while
 // the board is on screen, so a move after a pause draws at once, and given back once it
 // isn't. The next draw makes them again.
-fn rest<B>(be: B&, d: Drawer&, shown: bool) {
+fn release_targets_unless_shown<B>(be: B&, d: Drawer&, shown: bool) {
     guard d.ready && !shown && !render3d::resting(d.gpu) else { return; }
-    render3d::rest(be.r3d, d.gpu);
+    render3d::release_targets(be.r3d, d.gpu);
 }
 
 // Draws b, seen through v, into the kept image if anything it shows changed. `which` tells
@@ -256,7 +256,8 @@ fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::V
         d.frames++;
         return;
     }
-    // Back on screen after rest() with marks pulsing: the depth they test is drawn again.
+    // Back on screen after release_targets() with marks pulsing: the depth they test is
+    // drawn again.
     var force = d.fresh || (d.drawn.pulsing && render3d::resting(d.gpu));
     let again = d.again;
     d.fresh = false;

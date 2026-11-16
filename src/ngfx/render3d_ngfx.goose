@@ -64,7 +64,7 @@ fn shadow_pass(own: Own&, g: Gpu&) {
     nx::bind(g.shadow);
     draw_meshes(own, g, frame_addr(own, g), 1.0);
     ngfx::end_pass();
-    settle();
+    barrier_between_passes();
 }
 
 // draw()'s one pass, at the scale antialiasing draws it at, then antialiased into
@@ -113,7 +113,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         ngfx::draw(ngfx::root(m), 6);
     }
     ngfx::end_pass();
-    settle();
+    barrier_between_passes();
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
     antialias(own, g, target, size);
 }
@@ -130,7 +130,7 @@ fn occ_pass(own: Own&, g: Gpu&, x0: i64, y0: i64, x1: i64, y1: i64) {
     r.buf0 = nx::address(g.squares);
     ngfx::draw(ngfx::root(r), 3);
     ngfx::end_pass();
-    settle();
+    barrier_between_passes();
 }
 
 // The backdrop at full opacity into the kept one.
@@ -140,7 +140,7 @@ fn kept_pass(own: Own&, g: Gpu&) {
     nx::begin_pass(pass);
     draw_backdrop(own, g, frame_addr(own, g), 1.0);
     ngfx::end_pass();
-    settle();
+    barrier_between_passes();
 }
 
 let mat_identity = Mat { c0: float4 { 1.0, 0.0, 0.0, 0.0 }, c1: float4 { 0.0, 1.0, 0.0, 0.0 },
@@ -199,7 +199,7 @@ fn pass_target(own: Own&, g: Gpu&, w: i64, h: i64, format: i32, usage: i32) -> n
 
 // What a pass wrote, before what comes after reads or writes it again: between passes,
 // as ngfx wants, where SDL_GPU orders passes itself.
-fn settle() {
+fn barrier_between_passes() {
     ngfx::barrier(ngfx::TARGET_WRITE | ngfx::FRAGMENT_READ, ngfx::TARGET_WRITE | ngfx::FRAGMENT_READ);
 }
 
@@ -264,7 +264,7 @@ fn photo_part(own: Own&, g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) 
             // No photograph built in: the page under the scene, and a dim ambient.
             nx::begin_pass(g.photo, nx::Texture { 0 }, float4 { 0.11, 0.078, 0.063, 1.0 });
             ngfx::end_pass();
-            settle();
+            barrier_between_passes();
             for i in 9 { sh[i] = float4_0; }
             sh[0] = model3d::no_photo_ambient();
             return;
@@ -276,7 +276,7 @@ fn photo_part(own: Own&, g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) 
         r.u = blocks([float4 { 0.0, 0.0, 1.0, 1.0 }, float4 { 0.0, 0.0, render3d::PHOTO_SIZE, render3d::PHOTO_SIZE }]);
         ngfx::draw(ngfx::root(r), 3);
         ngfx::end_pass();
-        settle();
+        barrier_between_passes();
         // Given back once the GPU is done with it.
         ngfx::flush();
         nx::release(sharp);
@@ -300,7 +300,7 @@ fn blur(own: Own&, g: Gpu&, from: nx::Texture, to: nx::Texture, dir: float4) {
     r.u = blocks([dir]);
     ngfx::draw(ngfx::root(r), 3);
     ngfx::end_pass();
-    settle();
+    barrier_between_passes();
 }
 
 // Bakes one surface of the theme into its albedo-and-roughness and normal targets, and
@@ -338,7 +338,7 @@ fn bake(own: Own&, g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h:
     r.u = ngfx::frame_data(bytes_of(u));
     ngfx::draw(ngfx::root(r), 3);
     ngfx::end_pass();
-    settle();
+    barrier_between_passes();
     guard mips else { return; }
     mip_chain(own, g, albedo);
     mip_chain(own, g, normal);
@@ -355,14 +355,14 @@ fn mip_chain(own: Own&, g: Gpu&, t: nx::Texture) {
         nx::bind(own.mip);
         ngfx::draw(ngfx::root(MipRoot { src: nx::index(t), level: (level - 1) as u32, pad0: 0, pad1: 0 }), 3);
         ngfx::end_pass();
-        settle();
+        barrier_between_passes();
     }
 }
 
 struct MipRoot { src: u32, level: u32, pad0: u32, pad1: u32 }
 
 // The pass's target (at twice the size for AA_SSAA, 4× for AA_MSAA) and its depth, and
-// SMAA's, at g.size, made for a draw after rest() gave them back.
+// SMAA's, at g.size, made for a draw after release_targets() gave them back.
 fn pass_targets(own: Own&, g: Gpu&) {
     guard g.depth.id == 0 else { return; }
     let size = g.size;
@@ -506,7 +506,7 @@ fn setup(own: Own&, g: Gpu&, samples: i32 = SAMPLES, look: i32 = render3d::SHADO
     nx::bind(crown);
     ngfx::draw(ngfx::root(no_root()), 3);
     ngfx::end_pass();
-    settle();
+    barrier_between_passes();
     ngfx::flush();
     nx::release(crown);
     g.frame = default<render3d::Frame>();
@@ -545,10 +545,10 @@ fn antialias(own: Own&, g: Gpu&, target: nx::Texture, size: int2) {
             nx::bind(p);
             ngfx::draw(ngfx::root(r), 3);
             ngfx::end_pass();
-            if i < 2 { settle(); }
+            if i < 2 { barrier_between_passes(); }
         }
     }
-    settle();
+    barrier_between_passes();
 }
 
 // The lit module's root (r3d_lit.slang's header): the frame, the instances, the vertices,
@@ -577,7 +577,7 @@ fn draw_depth(own: Own&, g: Gpu&) {
     nx::bind(g.depth_only);
     draw_meshes(own, g, frame_addr(own, g), 0.0);
     ngfx::end_pass();
-    settle();
+    barrier_between_passes();
 }
 
 // The pulsing marks (shaders::MARKS_FRAG with PULSE) over the open pass's target of

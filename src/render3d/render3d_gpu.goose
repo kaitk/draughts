@@ -304,7 +304,7 @@ fn bake(own: Own&, g: render3d::Gpu&, albedo: gfx::Texture, normal: gfx::Texture
 }
 
 // The pass's target (multisampled, or SMAA's input and its edges and weights) and its
-// depth at g.size, made for a draw after rest() gave them back.
+// depth at g.size, made for a draw after release_targets() gave them back.
 fn pass_targets(own: Own&, g: render3d::Gpu&) {
     guard g.depth.id == 0 else { return; }
     if g.aa == AA_MSAA {

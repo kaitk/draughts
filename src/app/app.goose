@@ -183,7 +183,7 @@ fn save_settings(lp: Loop&, rd: render::Renderer&, sh: shell::Shell&, system_lan
 
 fn draw(dv: dev::Dev&, f: flags::Flags&, rd: render::Renderer&, sh: shell::Shell&, g: gui::Gui&,
         out: shell::Frame&, size: int2, now: f64) {
-    var frame = render::Frame { board: shell::build_frame_pieces(sh, now), layout: out.layout, over: out.ui_pieces[..], quads: g.quads[..],
+    var frame = render::Frame { board: shell::build_frame_pieces(sh, now), layout: out.layout, ui_pieces: out.ui_pieces[..], quads: g.quads[..],
                                 clip:  g.scroll.view, raised: out.raised, view: out.view,
                                 which: shell::which(out.board_screen), hold: out.hold, place: out.place,
                                 fade:  out.fade, blur: out.blur, hole: out.hole, tall: out.tall, now: now,
@@ -314,7 +314,7 @@ fn run() {
         }
         // The 3D pass keeps its targets while the board shows, and gives them back for a
         // screen without it or a phone's app losing focus on its way to the background.
-        render::rest(rd, out.raised && !(mobile && !host::focused()));
+        render::release_targets_unless_shown(rd, out.raised && !(mobile && !host::focused()));
         set_wake(lp, h, sh, now);
         // A widget declared before a click changed it draws again next frame.
         if g.acted { lp.dirty = true; }

@@ -544,7 +544,7 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
 - **Off the screen** the pass's MSAA targets, the kept backdrop, and the kept depth go
   back: they stay while the board shows, so a move after a pause draws at once, and go at
   the frame's end once a screen without the board shows or the app on a phone or tablet
-  goes to the background (`draw3d::rest`, `render3d::rest`); the next draw makes them
+  goes to the background (`draw3d::release_targets_unless_shown`, `render3d::release_targets`); the next draw makes them
   again (about 4 ms more on an M1 Pro, 13 ms on an iPhone 13 mini).
 - **Ambient light** is nine spherical harmonics from the blurred photograph, or from the
   plain fade scaled to a dim ambient (`model3d::no_photo_ambient`).

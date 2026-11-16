@@ -17,22 +17,22 @@ struct Renderer {
 
 // What a frame draws, as shell::Frame describes it.
 struct Frame {
-    board:  board::Board&,
-    layout: board::Layout,
-    over:   const board::Piece[:],
-    quads:  const gui::Quad[:],
-    clip:   float4,
-    raised: bool,
-    view:   view3d::View,
-    which:  i64,
-    hold:   bool,
-    place:  float4,
-    fade:   f32,
-    blur:   f32,
-    hole:   float4,
-    tall:   f32,
-    now:    f64,
-    size:   int2,
+    board:     board::Board&,
+    layout:    board::Layout,
+    ui_pieces: const board::Piece[:],
+    quads:     const gui::Quad[:],
+    clip:      float4,
+    raised:    bool,
+    view:      view3d::View,
+    which:     i64,
+    hold:      bool,
+    place:     float4,
+    fade:      f32,
+    blur:      f32,
+    hole:      float4,
+    tall:      f32,
+    now:       f64,
+    size:      int2,
 }
 
 fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer { backend::with() { be => made(be, kind, plain, f) } }
@@ -89,7 +89,7 @@ fn appearing3d(r: Renderer&, now: f64) -> bool { draw3d::appearing(r.d3, now) }
 fn moving3d(r: Renderer&) -> bool { r.d3.fresh || draw3d::greying(r.d3) }
 
 // At a frame's end: the 3D pass gives back its targets unless the board is `shown`.
-fn rest(r: Renderer&, shown: bool) { backend::with() { be => draw3d::rest(be, r.d3, shown) } }
+fn release_targets_unless_shown(r: Renderer&, shown: bool) { backend::with() { be => draw3d::release_targets_unless_shown(be, r.d3, shown) } }
 
 // Gives back all the 3D board holds, and puts the flat game's cover back under a
 // resizing window (resize.c).
@@ -114,7 +114,7 @@ fn draw_frame<B>(be: B&, r: Renderer&, f: Frame&) {
     if f.raised {
         draw3d::frame(be, r.d3, f.board, f.layout, f.view, f.now, f.size, r.d.kind, r.d.scene.plain, f.which, f.hold);
     }
-    draw::upload(be, r.d, f.board, f.over, f.layout, width, height, !f.raised);
+    draw::upload(be, r.d, f.board, f.ui_pieces, f.layout, width, height, !f.raised);
     // No depth target: nothing tests depth, and asking would make gfx keep a window-sized one.
     be.begin_pass(be.screen(), r.d.colors.page);
     if f.raised {

@@ -28,7 +28,7 @@ fn init(g: Gpu&) {
 }
 
 // Nothing: the pieces go into each frame's memory.
-fn buffers(g: Gpu&, all: const board::Piece[:], over: const board::Piece[:]) {}
+fn buffers(g: Gpu&, all: const board::Piece[:], ui_pieces: const board::Piece[:]) {}
 
 // The first n of `all` into this frame's memory, the board's or those over the UI.
 fn upload(g: Gpu&, all: const board::Piece[:], n: i64) {
@@ -42,9 +42,9 @@ fn board(g: Gpu&, sc: scene::Scene&, t: theme::Theme, u: draw::BoardUniforms) {
                                       smp: nx::index(sc.sampler), unused: 0, theme: t, u: u }), 3);
 }
 
-fn men(g: Gpu&, over: bool, t: theme::Theme, view: draw::View, time: float4, hole: float4, n: i64) {
+fn men(g: Gpu&, over_ui: bool, t: theme::Theme, view: draw::View, time: float4, hole: float4, n: i64) {
     guard n > 0 else { return; }
     nx::bind(g.piece_pipeline);
-    ngfx::draw_instanced(ngfx::root(PieceRoot { pieces: if over { g.overlay } else { g.pieces }, pad0: 0, pad1: 0,
+    ngfx::draw_instanced(ngfx::root(PieceRoot { pieces: if over_ui { g.overlay } else { g.pieces }, pad0: 0, pad1: 0,
                                                 view: view, theme: t, time: time, hole: hole }), 6, n);
 }

@@ -441,9 +441,9 @@ fn init(g: Gpu&) {
 }
 
 // The pieces' buffers, as large as the drawer's arrays.
-fn buffers(g: Gpu&, all: const board::Piece[:], over: const board::Piece[:]) {
+fn buffers(g: Gpu&, all: const board::Piece[:], ui_pieces: const board::Piece[:]) {
     g.pieces = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(all));
-    g.overlay = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(over));
+    g.overlay = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(ui_pieces));
 }
 
 // The board's pieces, the first n of `all`, and those over the UI likewise; each buffer
@@ -461,11 +461,11 @@ fn board(g: Gpu&, sc: scene::Scene&, t: theme::Theme, u: draw::BoardUniforms) {
     gfx::draw(3);
 }
 
-// n pieces, the board's or with `over` those over the UI, at `time` (Clock's), none
+// n pieces, the board's or with `over_ui` those over the UI, at `time` (Clock's), none
 // inside `hole`, in the open pass.
-fn men(g: Gpu&, over: bool, t: theme::Theme, view: draw::View, time: float4, hole: float4, n: i64) {
+fn men(g: Gpu&, over_ui: bool, t: theme::Theme, view: draw::View, time: float4, hole: float4, n: i64) {
     gfx::bind(g.piece_pipeline);
-    gfx::bind_storage_buffer(gfx::VERTEX, 0, if over { g.overlay } else { g.pieces });
+    gfx::bind_storage_buffer(gfx::VERTEX, 0, if over_ui { g.overlay } else { g.pieces });
     gfx::uniforms(gfx::VERTEX, 0, view);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: time, hole: hole });
