@@ -396,6 +396,11 @@ play; a stack's rings go round its foot (2026-11-08).
 - The game's view and zoom are kept in the player's file (`view = top`, `zoom = on`) and
   come back at launch and with each game (2026-11-16), but not those a friend's game
   across the table sets for itself.
+- On a desktop the 3D game's frame is raised by half its top margin (2026-11-16): the
+  board, its near edge low and thick, looked low at rest and zoomed. What each side has
+  taken above it is two cards either side of the middle, as in portrait, and the zoom keeps
+  the whole board under them, frame and all; on a tablet, with no margin to give, only the
+  field, else its top view's zoom was no larger than the board at rest.
 
 **States and captures**
 

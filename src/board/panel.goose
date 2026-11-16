@@ -251,7 +251,8 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let phone = gui::phone(area, s);   // NARROW panels
     let safe = area;
     if landscape(area, s) {
-        let area = framed_in(area, s, if game && moves { FRAME_WIDE_MOVES } else { FRAME_WIDE_3D });
+        // Raised by half the top margin: the board, near edge low, looked low.
+        let area = framed_in(area, s, if game && moves { FRAME_WIDE_MOVES } else { FRAME_WIDE_3D }, FRAME_UP_3D);
         let width = area.z;
         let height = area.w;
         // A tablet squarer than 3:2 takes NARROW panels: its board is held by the width
@@ -439,12 +440,21 @@ fn zoomed(l: Layout&, cam: view3d::Camera, n: i64, up: f32) -> view3d::View {
     var lo: f32 = 0.0;
     var hi = min(room.z / f.z, room.w / f.w);
     let v = field_at(cam, n, room, f, b, hi, up);
-    if clear(v, l.keep, 0.25 * l.gap, true) { return v; }
+    if zoom_clear(l, v) { return v; }
     for i in 20 {
         let k = 0.5 * (lo + hi);
-        if clear(field_at(cam, n, room, f, b, k, up), l.keep, 0.25 * l.gap, true) { lo = k; } else { hi = k; }
+        if zoom_clear(l, field_at(cam, n, room, f, b, k, up)) { lo = k; } else { hi = k; }
     }
     return field_at(cam, n, room, f, b, lo, up);
+}
+
+// Whether the zoom's view v clears what stands round it by a quarter gap: the panels and
+// the buttons its field, the frame passing under them, and on a desktop, whose frame
+// stands raised (FRAME_UP_3D), the cards of what each side has taken at the top the whole
+// board. A tablet has no room to spare: its zoom would be no larger than the board at rest.
+fn zoom_clear(l: Layout&, v: view3d::View) -> bool {
+    guard clear(v, l.keep, 0.25 * l.gap, true) else { return false; }
+    return l.taken_as != TAKEN_BAR || gui::desktop_scale <= 0.0 || !view3d::touches(v, l.taken, 0.25 * l.gap);
 }
 
 // cam's view at k pixels a unit with the field's bounds f (at k 1) centered across the
@@ -539,14 +549,16 @@ let FRAME_LARGE = 1440.0;
 let FRAME_WIDE = 1.45;
 let FRAME_WIDE_3D = 1.7;
 let FRAME_WIDE_MOVES = 2.0;
-fn framed_in(area: float4, s: f32, wide: f32 = FRAME_WIDE) -> float4 {
+let FRAME_UP_3D = 0.5;
+// `up` moves that share of the top margin to the bottom.
+fn framed_in(area: float4, s: f32, wide: f32 = FRAME_WIDE, up: f32 = 0.0) -> float4 {
     guard gui::desktop_scale > 0.0 else { return area; }
     let k = clamp((area.w / gui::desktop_scale - FRAME_SMALL) / (FRAME_LARGE - FRAME_SMALL), 0.0, 1.0);
     // A share of the height less the margins on each side: 4% leaves the board 92%, 7.5% 85%.
     let m = (0.04 + 0.035 * k) * (area.w - 2.0 * GAP * s);
     let h = area.w - 2.0 * m;
     let w = min(area.z - 2.0 * m, wide * h);
-    return float4 { area.x + 0.5 * (area.z - w), area.y + m, w, h };
+    return float4 { area.x + 0.5 * (area.z - w), area.y + m * (1.0 - up), w, h };
 }
 
 // The flat board's frame on a desktop: framed_in's, and where the width holds the board
@@ -1517,17 +1529,28 @@ fn taken(g: gui::Gui&, l: Layout, t: Taken, ui_pieces: board::Overlay&) {
         return;
     }
     guard any else { return; }
-    // One line on its glass: TAKEN_LINE's the far side's catch first, the bar's white's
-    // catch first, as portrait's row; the bar as wide as what it holds.
-    let a = if l.taken_as == TAKEN_LINE { first } else { rules::BLACK };
+    if l.taken_as == TAKEN_BAR {
+        // Each side's catch on a card of its own, as wide as it, either side of the bar's
+        // middle: white's (black's pieces) at the left, as portrait's row has them.
+        let inset = TAKEN_CARD_PAD * u;
+        let mid = r.x + 0.5 * r.z;
+        let half = 0.5 * (r.z - TAKEN_CARD_GAP * u) - 2.0 * inset;
+        for k in 2 {
+            let c = if k == 0 { rules::BLACK } else { rules::WHITE };
+            guard t.men[c] + t.kings[c] > 0 else { continue; }
+            let w = min(row_len(t, c, d), half);
+            let x = if k == 0 { mid - 0.5 * TAKEN_CARD_GAP * u - inset - w } else { mid + 0.5 * TAKEN_CARD_GAP * u + inset };
+            gui::glass(g, float4 { x - inset, r.y, w + 2.0 * inset, r.w }, 0.5 * r.w / u);
+            catch_row(ui_pieces, t, c, float4 { x, r.y + 0.5 * (r.w - d), w, d }, false);
+        }
+        return;
+    }
+    // One line on its glass, the far side's catch first.
+    let a = first;
     let b = 1 - a;
     let mid = (if row_len(t, a, d) > 0.0 && row_len(t, b, d) > 0.0 { 24.0 } else { 0.0 }) * u;
-    var glass = r;
-    if l.taken_as == TAKEN_BAR {
-        let w = min(r.z, row_len(t, a, d) + mid + row_len(t, b, d) + 2.0 * edge);
-        glass = float4 { r.x + 0.5 * (r.z - w), r.y, w, r.w };
-    }
-    gui::panel(g, glass);
+    let glass = r;
+    gui::glass(g, glass, min(28.0, 0.5 * glass.w / u));
     let inner = float4 { glass.x + edge, glass.y + 0.5 * (glass.w - d), glass.z - 2.0 * edge, d };
     // Each catch in at most its share of the room, as long as it wants.
     let la = row_len(t, a, d);

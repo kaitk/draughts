@@ -111,7 +111,8 @@ gives the room to the board. `--touch on` lays a desktop window out as a touch s
 - The landscape game and puzzle stand in a frame (`panel::framed_in`): 4% to 7.5% of the
   height on each side, at most 1.45 times as wide as tall round the flat board and 1.7
   round the 3D one, so the panels stay near the board; `panel::flat_frame` centers it down
-  a window whose width limits the board.
+  a window whose width limits the board. The 3D board's frame has half its top margin moved
+  to the bottom (`panel::FRAME_UP_3D`).
 - Home's column stands 40 dp from the top, at least 440 dp wide (`home::DESKTOP_TOP`,
   `DESKTOP_COLUMN_W`).
 - No window lays out wider than 1.9 times its height (`gui::WIDEST`): `gui::safe` keeps
@@ -416,8 +417,9 @@ What they show is in `docs/product.md` and [ai](ai.md#the-lookout).
 `game::taken` counts each color's start pieces less those on the board, men and kings
 apart (kings from the undo history), once a move has shown. They are drawn as piece
 instances over the UI (`panel::taken`): on glass under the left corner panel in flat
-landscape, above the board between the corner panels in 3D landscape where it clears,
-under the bar in portrait, each side's on a card of its own once it has taken something.
+landscape, above the board between the corner panels in 3D landscape where it clears
+(on a desktop the zoom keeps the whole board under it), under the bar in portrait, each
+side's on a card of its own once it has taken something, its ends round.
 A puzzle shows none.
 
 ### The moves panel
