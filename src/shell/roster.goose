@@ -7,17 +7,21 @@ import vec;
 import os;
 
 // The player at `index` of the list plays from now on, with settings s and the device's
-// language: their game, or a new one of their draughts, on home's menu; the puzzles from
+// language and volume: their game, or a new one of their draughts, on home's menu; the puzzles from
 // the start. The app writes and applies their settings (changed): their look and the
 // device's file naming them.
 fn enter(sh: Shell&, index: i64, s: settings::Settings) {
     let ps .= sh.players;
     let language = sh.prefs.language;
+    let volume = sh.prefs.volume;
+    let muted = sh.prefs.muted;
     ps.playing = index;
     sh.prefs = s;
     sh.prefs.picture = ps.list[index].picture;
     sh.prefs.name = ps.list[index].name;
     sh.prefs.language = language;
+    sh.prefs.volume = volume;
+    sh.prefs.muted = muted;
     sh.game = game::new(sh.prefs.variant as u8);
     let screen = sh.screen;
     read_game(sh);

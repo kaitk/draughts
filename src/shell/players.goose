@@ -1,11 +1,11 @@
 // The players on one tablet (docs/architecture/README.md, "Players"), with no graphics:
 // up to four, each a picture, an optional name, and what a child makes their own (the
 // look, move hints, a new game's setup, the computer's skill and games, puzzle stars,
-// the first start, and the game in progress). The language and who is playing belong to
-// the device.
+// the first start, and the game in progress). The language, the volume, and who is
+// playing belong to the device.
 //
 // The files, in the app's storage folder: `settings.txt` keeps the device's keys
-// (`language`, `player = N`); `player-N.txt` a player's keys as settings::write writes
+// (`language`, `volume` and `sound` once changed, `player = N`); `player-N.txt` a player's keys as settings::write writes
 // them; `game-N.bin` the player's saved game (shell::save). N is the player's id, 1 to 4,
 // the lowest free one for a new player; players show in the order of their ids. Each
 // file is written whole and atomically; starting again or removing deletes files.
@@ -42,8 +42,10 @@ struct Players {
     games: bool = false,
     // The device's keys as settings.txt last had them, so it is written only when one
     // changes.
-    language: i64 = -2,
-    player:   i64 = -1,
+    language: i64  = -2,
+    player:   i64  = -1,
+    volume:   i64  = -2,
+    muted:    bool = false,
     // Whether this start found no player and no settings.txt before them: a fresh install,
     // whose child picks their badge first.
     fresh: bool = false,
@@ -128,19 +130,25 @@ fn named_player(text: const u8[:]) -> i64 {
     return id;
 }
 
-// settings.txt for the device: the language (settings' language value), and the player.
-fn write_device(language: i64, player: i64, out: u8[>..]&) {
+// settings.txt for the device: the language (settings' language value), the volume once
+// it was changed and whether it is muted, and the player.
+fn write_device(language: i64, volume: i64, muted: bool, player: i64, out: u8[>..]&) {
     out.append("language = ");
     out.append(if language >= 0 { strings::LANGUAGES[language] } else { "system" });
+    if volume >= 0 { format(out, "\nvolume = ", volume); }
+    if muted { out.append("\nsound = off"); }
     format(out, "\nplayer = ", player, "\n");
 }
 
-fn store_device(ps: Players&, language: i64, player: i64) {
-    guard files(ps) && (language != ps.language || player != ps.player) else { return; }
+fn store_device(ps: Players&, s: settings::Settings&, player: i64) {
+    guard files(ps) && (s.language != ps.language || s.volume != ps.volume || s.muted != ps.muted || player != ps.player)
+    else { return; }
     var out: u8[>..] = [];
-    write_device(language, player, out);
+    write_device(s.language, s.volume, s.muted, player, out);
     if write_file_atomic(device_path(ps), out) {
-        ps.language = language;
+        ps.language = s.language;
+        ps.volume = s.volume;
+        ps.muted = s.muted;
         ps.player = player;
     }
 }
@@ -165,7 +173,7 @@ fn store(ps: Players&, id: i64, s: settings::Settings&) {
 fn write(ps: Players&, s: settings::Settings&) {
     guard ps.list.len > 0 else { return; }
     store(ps, ps.list[ps.playing].id, s);
-    store_device(ps, s.language, ps.list[ps.playing].id);
+    store_device(ps, s, ps.list[ps.playing].id);
 }
 
 // From a settings.txt without `player` (`text`, perhaps empty: a fresh install) to the
@@ -183,7 +191,7 @@ fn migrate(ps: Players&, text: const u8[:]) {
     let old = str(ps.dir[..], "game.bin");
     if file_exists(old) { rename_file(old, game_path(ps, 1)); }
     ps.language = -2;
-    store_device(ps, s.language, 1);
+    store_device(ps, s, 1);
 }
 
 // Reads the players at start from storage folder `dir` ("" for none), migrating a
@@ -205,10 +213,13 @@ fn load(ps: Players&, dir: const u8[:], games: bool) -> settings::Settings {
         migrate(ps, text);
         id = 1;
     } else {
-        ps.language = settings::parse(text).language;
+        let device = settings::parse(text);
+        ps.language = device.language;
+        ps.volume = device.volume;
+        ps.muted = device.muted;
         ps.player = id;
     }
-    let language = settings::parse(text).language;
+    let device = settings::parse(text);
     var s = settings::Settings {};
     for k in 1..MAX_PLAYERS + 1 {
         guard files(ps) && file_exists(player_path(ps, k)) else { continue; }
@@ -224,8 +235,10 @@ fn load(ps: Players&, dir: const u8[:], games: bool) -> settings::Settings {
         ps.list.push(Player { id: 1, .. });
         store(ps, 1, s);
     }
-    s.language = language;
-    store_device(ps, language, ps.list[ps.playing].id);
+    s.language = device.language;
+    s.volume = device.volume;
+    s.muted = device.muted;
+    store_device(ps, s, ps.list[ps.playing].id);
     return s;
 }
 

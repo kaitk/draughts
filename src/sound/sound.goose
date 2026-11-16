@@ -194,7 +194,7 @@ fn pick(bk: Bank&, n: i64, last: i64) -> i64 {
 
 // The mixer's sound for `kind` (its hit picked at random for a move or a take), or -1.
 fn sound_of(bk: Bank&, kind: i64) -> i64 {
-    if kind == MOVE || kind == TAKE {
+    if kind == MOVE {
         guard bk.moves > 0 else { return -1; }
         bk.last[0] = pick(bk, bk.moves, bk.last[0]);
         return bk.last[0];

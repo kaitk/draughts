@@ -6,14 +6,14 @@ home 1024 x 768 at 800 dp: raised true, on screen true, tiles touched 0 of 7, fl
 home 768 x 1024 at 800 dp: raised true, on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
 home 2400 x 1080 at 540 dp: raised true, on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
 home 1080 x 2400 at 540 dp: raised true, on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-settings 1280 x 800 at 800 dp: raised true, on screen true, tiles touched 0 of 26, flat square in the middle true, drawn as placed true
-settings 800 x 1280 at 800 dp: raised true, on screen true, tiles touched 0 of 26, flat square in the middle true, drawn as placed true
-settings 1768 x 2208 at 800 dp: raised true, on screen true, tiles touched 0 of 26, flat square in the middle true, drawn as placed true
-settings 2208 x 1768 at 800 dp: raised true, on screen true, tiles touched 0 of 26, flat square in the middle true, drawn as placed true
-settings 1024 x 768 at 800 dp: raised true, on screen true, tiles touched 0 of 26, flat square in the middle true, drawn as placed true
-settings 768 x 1024 at 800 dp: raised true, on screen true, tiles touched 0 of 26, flat square in the middle true, drawn as placed true
-settings 2400 x 1080 at 540 dp: raised true, on screen true, tiles touched 0 of 26, flat square in the middle true, drawn as placed true
-settings 1080 x 2400 at 540 dp: raised true, on screen true, tiles touched 0 of 26, flat square in the middle true, drawn as placed true
+settings 1280 x 800 at 800 dp: raised true, on screen true, tiles touched 0 of 27, flat square in the middle true, drawn as placed true
+settings 800 x 1280 at 800 dp: raised true, on screen true, tiles touched 0 of 27, flat square in the middle true, drawn as placed true
+settings 1768 x 2208 at 800 dp: raised true, on screen true, tiles touched 0 of 27, flat square in the middle true, drawn as placed true
+settings 2208 x 1768 at 800 dp: raised true, on screen true, tiles touched 0 of 27, flat square in the middle true, drawn as placed true
+settings 1024 x 768 at 800 dp: raised true, on screen true, tiles touched 0 of 27, flat square in the middle true, drawn as placed true
+settings 768 x 1024 at 800 dp: raised true, on screen true, tiles touched 0 of 27, flat square in the middle true, drawn as placed true
+settings 2400 x 1080 at 540 dp: raised true, on screen true, tiles touched 0 of 27, flat square in the middle true, drawn as placed true
+settings 1080 x 2400 at 540 dp: raised true, on screen true, tiles touched 0 of 27, flat square in the middle true, drawn as placed true
 flat home: raised false
 puzzle: raised true, tiles 4 on screen true, touched 0, kings drawn as 2
   tapped the piece's top on d4: selected d4

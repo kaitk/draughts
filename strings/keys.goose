@@ -230,6 +230,9 @@ let KEYS = [
     "daily.warmup",
     "daily.stretch",
     "daily.home_tomorrow",
+    "settings.sound",
+    "settings.volume",
+    "settings.mute",
 ];
 
 let LANGUAGE_NAME = 0;
@@ -514,4 +517,10 @@ let DAILY_WARMUP = 223;
 let DAILY_STRETCH = 224;
 // Home's Puzzles row once all of today's are solved, before its check where it fits.
 let DAILY_HOME_TOMORROW = 225;
-let COUNT = 226;
+// Settings' Sound section, between Look and Game.
+let SETTINGS_SOUND = 226;
+// Its one row: the speaker's tile, which mutes and unmutes, and the slider.
+let SETTINGS_VOLUME = 227;
+// The speaker's tile's name, for a screen reader: it turns the sound off and on.
+let SETTINGS_MUTE = 228;
+let COUNT = 229;

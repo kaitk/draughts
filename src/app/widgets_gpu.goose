@@ -373,6 +373,17 @@ let FRAG = """
         if (k == 50) {          // all of today's solved: a crescent moon, a disc less one beside it
             return abs(max(length(p - vec2(11.82, 12.18)) - 8.5, 7.42 - length(p - vec2(14.75, 9.25))));
         }
+        if (k >= 51 && k <= 54) {   // the sound: a speaker, struck through when off (51), else 1 to 3 arcs
+            const vec2 c[7] = vec2[](vec2(3.5, 9.5), vec2(7.0, 9.5), vec2(11.5, 5.5), vec2(11.5, 18.5), vec2(7.0, 14.5),
+                                     vec2(3.5, 14.5), vec2(3.5, 9.5));
+            float d = 1e9;
+            for (int i = 0; i < 6; i++) d = min(d, seg(p, c[i], c[i + 1]));
+            if (k == 51) return min(d, min(seg(p, vec2(16.0, 9.5), vec2(21.0, 14.5)), seg(p, vec2(21.0, 9.5), vec2(16.0, 14.5))));
+            d = min(d, arc(p, vec2(12.9, 12.0), 2.9, -0.75, 1.5));
+            if (k >= 53) d = min(d, arc(p, vec2(12.9, 12.0), 6.2, -0.75, 1.5));
+            if (k >= 54) d = min(d, arc(p, vec2(12.9, 12.0), 9.6, -0.75, 1.5));
+            return d;
+        }
         return 1e9;
     }
     // A player's badge's animal (badges/badges.goose): its signed distance at f, in a

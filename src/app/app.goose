@@ -5,6 +5,7 @@
 import std;
 import vec;
 import os;
+import audio;
 import rules from "../rules";
 import board from "../board";
 import strings from "../../strings";
@@ -49,6 +50,24 @@ struct Loop {
     most_dropped: i64  = 0,
     day:          i64  = 0,     // the local date for the daily puzzles
     day_read:     f64  = 0.0,
+    level:        f32  = -1.0,  // the volume the sounds were last set to, and muted
+    muted:        bool = false,
+}
+
+// The sound each cue plays (board/heard.goose): a capture's stop is the move a step up.
+let SOUND_OF = [sound::MOVE, sound::MOVE, sound::TAKE, sound::CROWN, sound::WRONG, sound::MUST, sound::GOLD, sound::RED,
+                sound::SOLVED, sound::WON, sound::LOST, sound::DRAWN];
+
+// The sounds (docs/architecture/sound.md): the volume followed, the device opened and the
+// sounds built once it is above zero and closed at zero, then this frame's cues played.
+fn hear(lp: Loop&, bk: sound::Bank&, out: shell::Frame&, s: settings::Settings&) {
+    let level = settings::level(s);
+    if level != lp.level || s.muted != lp.muted {
+        lp.level = level;
+        lp.muted = s.muted;
+        if !sound::set_level(bk, level, s.muted) { print("sound: ", audio::error()); }
+    }
+    for c in out.cues { sound::play(bk, SOUND_OF[c.kind], c.step); }
 }
 
 // The theme a season setting picks: its own, or by the date.
@@ -199,8 +218,13 @@ fn run() {
     var folder: u8[512] = [0; 512];
     let dir = host::storage(folder);
     var players_read = players::Players {};
-    // A new player starts on the 3D board on a desktop, on the flat one elsewhere.
-    if host::platform() == host::DESKTOP { settings::default_board = settings::RAISED; }
+    // A new player starts on the 3D board on a desktop, on the flat one elsewhere; the
+    // device's sound starts at half on a desktop and off on a phone or a tablet.
+    if host::platform() == host::DESKTOP {
+        settings::default_board = settings::RAISED;
+        settings::default_volume = 50;
+    }
+    host::sound_session();
     let prefs = players::load(players_read, dir, keep);
     if kind < 0 { kind = theme_for(prefs.season); }
     var locales: u8[256] = [0; 256];
@@ -227,6 +251,7 @@ fn run() {
     var g = gui::Gui {};
     var thinker = think::Thinker {};
     var lp = Loop { day: host::local_day(), day_read: host::time(), .. };
+    var bank = sound::Bank {};
     while host::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
         if host::frame_count() == 2 { host::first_frame(); }
@@ -264,6 +289,7 @@ fn run() {
         }
         host::keep_screen(h, moved || host::touched(input), now);
         if out.save { save_settings(lp, rd, sh, system_lang); }
+        hear(lp, bank, out, sh.prefs);
         if out.screen == shell::SETTINGS { render::thumbs(rd); }
         if dev::after_shell(dv, f, sh, g, rd, now) { lp.dirty = true; }
         // iOS ends an app that uses the GPU in the background, and SDL doesn't block the
@@ -295,6 +321,7 @@ fn run() {
         if dev::after(dv, f, rd, drew, lp.size, now) { break; }
     }
     dev::end(f, rd);
+    sound::close(bank);
     shell::write_game(sh);
     if sh.out.quit { host::close_app(); }
 }

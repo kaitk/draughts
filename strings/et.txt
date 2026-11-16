@@ -254,3 +254,7 @@ settings.daily = Ülesandeid päevas
 daily.warmup = Soojendus
 daily.stretch = Veidi raskem
 daily.home_tomorrow = Homme uued
+
+settings.sound = Heli
+settings.volume = Helitugevus
+settings.mute = Vaigista

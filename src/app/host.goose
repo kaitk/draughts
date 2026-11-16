@@ -42,6 +42,8 @@ extern fn draughts_close();
 extern fn draughts_leave();
 // Gives the memory malloc keeps for freed blocks back to the system; Android only.
 extern fn draughts_release_memory();
+// Asks iOS for the ambient audio session before audio opens (sound.c).
+extern fn draughts_sound_session();
 // Android: times the 3D board's frames against the display; 1, once, when they first
 // can't keep up, and if still slow asks for 60 Hz while it draws. `drawing` is 1 when
 // this pass drew it.
@@ -89,6 +91,7 @@ fn screen_size() -> int2 { gfx::screen_size() }
 fn focused() -> bool { gfx::focused() }
 
 fn platform() -> i64 { draughts_platform() }
+fn sound_session() { draughts_sound_session(); }
 
 fn read_display(h: Host&) { draughts_display(h.display); }
 

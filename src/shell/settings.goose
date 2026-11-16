@@ -1,6 +1,6 @@
 // Settings (prototypes/settings.html; rendering.md, "Settings"): back, the title, and
-// the language button pinned at the top, one scrolling list of the Look and Game rows
-// under them, and a preview of home's board as the choices make it. A tap applies at
+// the language button pinned at the top, one scrolling list of the Look, Sound, and Game
+// rows under them, and a preview of home's board as the choices make it. A tap applies at
 // once. The values, the file they are kept in, and its keys are in prefs.goose.
 namespace settings;
 import std;
@@ -102,7 +102,8 @@ let SLACK = 0.5;            // px a row may pass its width by without wrapping
 let PREVIEW_SHARE = 0.94;
 
 // The settings in the list's order, each one's name and how many tiles; the first four
-// are the look's, the last two the game's.
+// are the look's, the last three the game's. The Sound section between them has one row of
+// its own, the volume (volume_row).
 let BACKGROUND_ROW = 0;
 let THEME_ROW = 1;
 let BOARD_ROW = 2;
@@ -116,8 +117,17 @@ let ROW_NAMES = [strings::SETTINGS_BACKGROUND, strings::SETTINGS_THEME, strings:
                  strings::SETTINGS_HINTS, strings::SETTINGS_MOVES, strings::SETTINGS_DAILY];
 let ROW_TILES = [2, 5, 5, 3, 2, 3, 4];
 let MOST_TILES = 5;
-let SECTION_ICONS = [gui::SUN, gui::TARGET];
-let SECTION_TITLES = [strings::SETTINGS_LOOK, strings::SETTINGS_GAME];
+let SECTIONS = 3;
+let SOUND_SECTION = 1;
+let SECTION_ICONS = [gui::SUN, gui::SPEAKER + 1, gui::TARGET];
+let SECTION_TITLES = [strings::SETTINGS_LOOK, strings::SETTINGS_SOUND, strings::SETTINGS_GAME];
+let FROM_ROW = [0, LOOK_ROWS, LOOK_ROWS];
+let TO_ROW = [LOOK_ROWS, LOOK_ROWS, ROWS];
+// The volume's row (prototypes/settings.html): the speaker's tile, which mutes and unmutes
+// keeping the level, then the slider in the rest, its thumb a light piece; the level a
+// muted speaker brings back when it is at zero.
+let THUMB_R = 20.0;
+let UNMUTED = 50;
 
 // The Board row's tiles: flat, then raised in the season's own material (MATERIAL_AUTO)
 // and in each other one, tile i the material i - 1.
@@ -140,7 +150,9 @@ let LANGUAGE_ROWS = LANGUAGE_ID + 1; // the languages' rows,
 let OUTSIDE_ID = LANGUAGE_ROWS + strings::LANGUAGES.len; // the catch round their list,
 let POPUP_ID = OUTSIDE_ID + 1;      // and under it
 let TILE_IDS = POPUP_ID + 1;        // the rows' tiles, MOST_TILES a row
-let LIST = TILE_IDS + ROWS * MOST_TILES;
+let MUTE_ID = TILE_IDS + ROWS * MOST_TILES; // the volume's speaker
+let SLIDER_ID = MUTE_ID + 1;        // and its slider
+let LIST = SLIDER_ID + 1;
 let IDS_END = LIST + 1;
 
 // Whether a row's tiles are pictures (gui::choice) rather than words.
@@ -242,7 +254,7 @@ fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: 
         // The crown's and the stack's tiles each show their king.
         let king = row == KINGS_ROW && i != AUTO;
         let picked, pic = gui::pick(g, id, r, if king { KING_PIC } else { 0.0 }, label, "", on, true);
-        if king { game::put(over, pic, 15.0 * u, rules::WHITE, i, 1.0, false); }
+        if king { put_in_list(over, g, pic, 15.0 * u, i, 1.0); }
         tapped = picked;
     }
     guard tapped else { return false; }
@@ -284,12 +296,13 @@ struct Row {
     tiles: float4[MOST_TILES] = [float4 { 0.0, 0.0, 0.0, 0.0 }; MOST_TILES],
 }
 struct List {
-    title:   float4[2] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 2],
-    rule:    float4[2] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 2],
-    row:     Row[ROWS] = [Row {}; ROWS],
-    says:    float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
-    privacy: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
-    h:       f32       = 0.0,
+    title:   float4[SECTIONS] = [float4 { 0.0, 0.0, 0.0, 0.0 }; SECTIONS],
+    rule:    float4[SECTIONS] = [float4 { 0.0, 0.0, 0.0, 0.0 }; SECTIONS],
+    row:     Row[ROWS]        = [Row {}; ROWS],
+    volume:  Row              = Row {},  // the volume's name, and its speaker and slider (tiles 0 and 1)
+    says:    float4           = float4 { 0.0, 0.0, 0.0, 0.0 },
+    privacy: float4           = float4 { 0.0, 0.0, 0.0, 0.0 },
+    h:       f32              = 0.0,
 }
 
 // The list from r's top left, as wide as r.
@@ -298,13 +311,19 @@ fn list_at(g: gui::Gui&, r: float4) -> List {
     let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
     var l = List {};
     var y = r.y;
-    for section in 2 {
+    for section in SECTIONS {
         y += SECTION_TOP * u;
         l.title[section] = float4 { r.x, y, r.z, SECTION_H * u };
         y += SECTION_H * u;
-        let first = if section == 0 { 0 } else { LOOK_ROWS };
-        let end = if section == 0 { LOOK_ROWS } else { ROWS };
-        for row in first..end {
+        if section == SOUND_SECTION {
+            let h = gui::stacked() * u;
+            l.volume.name = float4 { r.x + 4.0 * u, y + (NAME_H - 24.0) * u, r.z - 4.0 * u, 24.0 * u };
+            y += NAME_H * u;
+            l.volume.tiles[0] = float4 { r.x, y, h, h };
+            l.volume.tiles[1] = float4 { r.x + h + TILE_GAP * u, y, r.z - h - TILE_GAP * u, h };
+            y += h;
+        }
+        for row in FROM_ROW[section]..TO_ROW[section] {
             let at .= l.row[row];
             at.name = float4 { r.x + 4.0 * u, y + (NAME_H - 24.0) * u, r.z - 4.0 * u, 24.0 * u };
             y += NAME_H * u;
@@ -328,23 +347,26 @@ fn list_at(g: gui::Gui&, r: float4) -> List {
     return l;
 }
 
-// Declares the list where list_at put it. True when a tap changed s.
-fn list(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: List&) -> bool {
+// Declares the list where list_at put it. Returns CHANGED when a tap changed s, SHOWN
+// while the volume is dragged, or NOTHING.
+fn list(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: List&) -> i64 {
     let u = g.scale;
-    var changed = false;
-    for section in 2 {
+    var ask = NOTHING;
+    for section in SECTIONS {
         var title = l.title[section];
         gui::glyph_icon(g, gui::center(gui::cut_left(title, 30.0 * u), 28.0 * u, 28.0 * u), SECTION_ICONS[section],
                         gui::PLAIN, 0.0, 0.85);
         gui::cut_left(title, gui::PAD * u);
         gui::text(g, gui::HEADING, title, strings::get(SECTION_TITLES[section]), 1.0, 0.0, gui::LEFT);
-        let first = if section == 0 { 0 } else { LOOK_ROWS };
-        let end = if section == 0 { LOOK_ROWS } else { ROWS };
-        for row in first..end {
+        if section == SOUND_SECTION {
+            let heard = volume_row(s, over, g, l.volume);
+            if heard != NOTHING { ask = heard; }
+        }
+        for row in FROM_ROW[section]..TO_ROW[section] {
             let at .= l.row[row];
             gui::text(g, gui::SMALL, at.name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
                       gui::LEFT);
-            for i in ROW_TILES[row] { if tile(s, over, g, row, i, at.tiles[i]) { changed = true; } }
+            for i in ROW_TILES[row] { if tile(s, over, g, row, i, at.tiles[i]) { ask = CHANGED; } }
         }
         gui::fill(g, l.rule[section], float4 { 1.0, 1.0, 1.0, 0.1 }, 0.0);
     }
@@ -356,7 +378,53 @@ fn list(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: List&) -> bool {
     let icon = SHIELD * u;
     gui::glyph_icon(g, float4 { p.x - (SHIELD + SHIELD_GAP) * u, p.y, icon, icon }, gui::SHIELD, gui::PLAIN, 0.0, NOTE_A);
     note_lines(g, strings::get(strings::SETTINGS_PRIVACY), p, true);
-    return changed;
+    return ask;
+}
+
+// game::put inside the list: a light piece (a king's tile's, the slider's thumb), centered in `spot`
+// with radius r: the pieces are drawn over the UI, past the list's clip, so each fades as
+// it scrolls out of the list's view, by how much of it is still inside, and is gone once
+// it is out.
+fn put_in_list(over: board::Overlay&, g: gui::Gui&, spot: float4, r: f32, king: i64, a: f32) {
+    let v = g.scroll.view;
+    let y = spot.y + 0.5 * spot.w;
+    let inside = clamp((min(y - v.y, v.y + v.w - y) + r) / (2.0 * r), 0.0, 1.0);
+    guard inside > 0.0 else { return; }
+    game::put(over, spot, r, rules::WHITE, king, a * inside, false);
+}
+
+// The volume's row where list_at put it (`at`): its name, the speaker, and the slider. A
+// tap on the speaker mutes or unmutes, or at zero brings the sound back at UNMUTED; the
+// slider sets the level as it is dragged and unmutes. Each is heard as it is let go
+// (Settings.sounded). Returns CHANGED when a tap or a release changed s, to be written,
+// SHOWN while the slider is dragged, or NOTHING.
+fn volume_row(s: Settings&, over: board::Overlay&, g: gui::Gui&, at: Row&) -> i64 {
+    let u = g.scale;
+    gui::text(g, gui::SMALL, at.name, strings::get(strings::SETTINGS_VOLUME), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
+              gui::LEFT);
+    let v = level(s);
+    let off = s.muted || v <= 0.0;
+    let icon = if off { gui::SPEAKER_OFF } else if v < 0.34 { gui::SPEAKER } else if v < 0.67 { gui::SPEAKER + 1 }
+               else { gui::SPEAKER + 2 };
+    var changed = false;
+    if gui::tile(g, MUTE_ID, at.tiles[0], icon, if off { gui::CHOICE } else { gui::CHOSEN }, 16.0) {
+        if v <= 0.0 {
+            s.volume = UNMUTED;
+            s.muted = false;
+        } else {
+            s.muted = !s.muted;
+        }
+        changed = true;
+    }
+    let slid, let_go, spot = gui::slider(g, SLIDER_ID, at.tiles[1], v, off);
+    if slid != v || let_go {
+        s.volume = round(100.0 * slid) as i64;
+        s.muted = false;
+    }
+    if let_go { changed = true; }
+    put_in_list(over, g, spot, THUMB_R * u, 0, if off { 0.55 } else { 1.0 });
+    if changed { s.sounded = true; }
+    return if changed { CHANGED } else if slid != v { SHOWN } else { NOTHING };
 }
 
 // The notes' opacity: the move list's and the privacy note, dim as the settings' names.
@@ -599,7 +667,8 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     let off = gui::scroll_begin(g, LIST, p.view, content);
     let listed = g.quads.len;
     let laid = list_at(g, float4 { p.list.x, p.list.y - off, p.list.z, 0.0 });
-    if list(s, over, g, laid) { ask = CHANGED; }
+    let listed_ask = list(s, over, g, laid);
+    if listed_ask != NOTHING { ask = listed_ask; }
     gui::fade_edges(g, listed, p.view, 0.0, p.view.y + content - off - (p.view.y + p.view.w), FADE * u);
     gui::scroll_end(g);
     if s.languages_open {

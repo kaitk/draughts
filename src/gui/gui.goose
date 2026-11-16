@@ -135,6 +135,8 @@ let STAYS = 47;             // and staying: a board with an arrow up it
 let HOW = 48;               // how to play: a finger tapping, a ring over its tip
 let TODAY = 49;             // the daily puzzles: a calendar with today's dot,
 let MOON = 50;              // and once all are solved, a crescent moon
+let SPEAKER_OFF = 51;       // the sound: a speaker struck through,
+let SPEAKER = 52;           // and with one to three arcs, 52 to 54, as loud as it is
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -304,6 +306,9 @@ struct Gui {
     // set by the frame that declares it, read by the next frame's begin, which then moves
     // no focus for them and leaves them in `pointer.step`.
     sideways: bool = false,
+    // The slider the pointer went down on and still holds (slider), or 0: a scrolling list
+    // never takes its drag.
+    sliding: i64 = 0,
 }
 
 // The keys' focus ring (rendering.md, "Controls"): RING_W dp in the glow color, RING_GAP
@@ -387,7 +392,7 @@ fn scroll_begin(g: Gui&, id: i64, view: float4, content: f32) -> f32 {
         s.from = i.at;
         s.start = s.offset;
     }
-    if s.armed && i.down && !s.dragging && abs(i.at.y - s.from.y) > SLOP * g.scale && s.max > 0.0 {
+    if s.armed && i.down && !s.dragging && g.sliding == 0 && abs(i.at.y - s.from.y) > SLOP * g.scale && s.max > 0.0 {
         s.dragging = true;
         g.active = SCROLL_ID;
         g.took = true;
@@ -609,7 +614,10 @@ fn inside(r: float4, p: float2) -> bool { p.x >= r.x && p.x < r.x + r.z && p.y >
 // among the controls the last frame offered.
 fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
     focus_keys(g, input);
-    if !g.pointer.down && !g.pointer.pressed { g.active = 0; }
+    if !g.pointer.down && !g.pointer.pressed {
+        g.active = 0;
+        g.sliding = 0;
+    }
     // A press on the UI is the UI's until the frame after its release and no longer:
     // the board's keys need the pointer off it.
     if input.pressed || (!input.down && !input.released) { g.took = false; }
@@ -1236,6 +1244,53 @@ fn pick(g: Gui&, id: i64, r: float4, pic: f32, label: const u8[:], note: const u
     }
     if note.len > 0 { text(g, SMALL, cut_top(c, small), note, 0.66 * a, 0.0, CENTER); }
     return clicked, picture;
+}
+
+// A slider (rendering.md, "Controls"): its strip r, a tap tall, takes the pointer, which
+// sets the value as it goes down and as it drags along, whatever the strip's list does;
+// in it a rounded track SLIDER_TRACK dp tall, filled up to the value in the glow color,
+// dimmer while `off`. Its thumb is the caller's to draw (a piece), centered on the spot
+// returned, SLIDER_THUMB dp across. With the keys' focus, Left and Right step the value by
+// SLIDER_STEP. Returns the value, whether it was let go (the pointer released or a key
+// stepped it) this frame, and the thumb's spot.
+let SLIDER_THUMB = 44.0;
+let SLIDER_TRACK = 10.0;
+let SLIDER_STEP: f32 = 0.1;
+fn slider(g: Gui&, id: i64, r: float4, value: f32, off: bool) -> f32, bool, float4 {
+    let u = g.scale;
+    let half = 0.5 * SLIDER_THUMB * u;
+    let track = float4 { r.x + half, r.y + 0.5 * (r.w - SLIDER_TRACK * u), r.z - 2.0 * half, SLIDER_TRACK * u };
+    offer(g, id, r);
+    let over = inside(r, g.input.at);
+    if g.input.pressed && over {
+        g.active = id;
+        g.took = true;
+    }
+    var v = value;
+    var let_go = false;
+    if g.active == id && (g.input.down || g.input.released) {
+        g.sliding = id;
+        v = clamp((g.input.at.x - track.x) / max(track.z, 1.0), 0.0, 1.0);
+        let_go = g.input.released;
+    }
+    if g.focus == id && !g.deaf {
+        g.under = id;
+        g.ring = true;
+        claim_sideways(g);
+        let step = g.pointer.step;
+        if step == STEP_LEFT || step == STEP_RIGHT {
+            v = clamp(v + (if step == STEP_LEFT { -SLIDER_STEP } else { SLIDER_STEP }), 0.0, 1.0);
+            let_go = true;
+        }
+    } else if desktop_scale > 0.0 && over && (!g.input.down || g.active == id) {
+        g.under = id;
+    }
+    if let_go { g.acted = true; }
+    add(g, Quad { rect: track, color: float4 { 1.0, 1.0, 1.0, 0.16 }, look: float4 { FILL, 0.5 * track.w, 0.0, 0.0 },
+                  extra: float4 { u, 0.0, 0.0, 0.0 } });
+    glow_fill(g, float4 { track.x, track.y, v * track.z, track.w }, if off { 0.25 } else { 0.8 }, 0.5 * track.w);
+    let spot = float4 { track.x + v * track.z - half, r.y + 0.5 * r.w - half, 2.0 * half, 2.0 * half };
+    return v, let_go, spot;
 }
 
 // A small board of n × n squares at the start of a game, `rows` rows of men a side,

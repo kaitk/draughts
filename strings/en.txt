@@ -309,3 +309,10 @@ daily.warmup = Warm-up
 daily.stretch = A bit harder
 # Home's Puzzles row once all of today's are solved, before its check where it fits.
 daily.home_tomorrow = New tomorrow
+
+# Settings' Sound section, between Look and Game.
+settings.sound = Sound
+# Its one row: the speaker's tile, which mutes and unmutes, and the slider.
+settings.volume = Volume
+# The speaker's tile's name, for a screen reader: it turns the sound off and on.
+settings.mute = Mute

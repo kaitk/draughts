@@ -48,14 +48,15 @@ let STONE = 12;
 let CARVED = 13;
 let AUTO = 14;
 let STACK = 16;
-let MISTAKES = 17;
-let MOVES = 18;
-let LIST_OFF = 19;          // the moves panel's row: off, the moves, marks
-let LIST_MARKS = 21;
-let DAILY_10 = 25;          // puzzles a day: 3, 4, 5, 10
-let TILES = 26;
-let ENGLISH = 26;           // the language list's rows, after the screen's tiles
-let EESTI = 27;
+let MUTE = 17;              // the Sound section's speaker; its slider is no tile
+let MISTAKES = 18;
+let MOVES = 19;
+let LIST_OFF = 20;          // the moves panel's row: off, the moves, marks
+let LIST_MARKS = 22;
+let DAILY_10 = 26;          // puzzles a day: 3, 4, 5, 10
+let TILES = 27;
+let ENGLISH = 27;           // the language list's rows, after the screen's tiles
+let EESTI = 28;
 
 // Tile n's middle, the list scrolled first where it isn't whole in the list's view, as a
 // finger would scroll it.
@@ -334,4 +335,55 @@ fn main() {
     settings::write(lookout, on);
     print("the lookout: off by default ", !settings::Settings {}.lookout, ", on read back ", settings::parse(on).lookout,
           ", off read back ", !settings::parse("lookout = off\n").lookout);
+    volume(raised, g);
+}
+
+// The Sound section's volume (decided 2026-11-16): off by default on a phone or a tablet,
+// half on a desktop (settings::default_volume, which the app sets at launch). The speaker
+// at zero brings the sound back at half; then it mutes and unmutes, keeping the level. The
+// slider sets the level as it is dragged, which is drawn but neither written nor heard,
+// and on release the level is written and a move heard at it. The level is the device's:
+// settings.txt keeps `volume` once it was changed, and `sound = off` while muted.
+fn volume(sh: shell::Shell&, g: gui::Gui&) {
+    print("the volume:");
+    sh.screen = shell::SETTINGS;
+    drive::size = float2 { 1280.0, 800.0 };
+    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 20.0);
+    print("  by default ", settings::level(sh.prefs), ", muted ", sh.prefs.muted);
+    var t = 20.1;
+    for k in 3 {
+        let at = seen(sh, g, MUTE, t);
+        drive::frame(sh, g, at, true, true, false, t);
+        drive::frame(sh, g, at, false, false, true, t + 0.02);
+        print("  the speaker: volume ", sh.prefs.volume, ", muted ", sh.prefs.muted, ", heard ", sh.out.cues.len,
+              ", to write ", sh.changed);
+        sh.changed = false;
+        t += 0.1;
+    }
+    // The slider is the strip right of the speaker, as tall.
+    let m = drive::rect(g, MUTE);
+    let right = g.scroll.view.x + g.scroll.view.z;
+    let y = m.y + 0.5 * m.w;
+    let from = float2 { m.x + m.z + 40.0, y };
+    drive::frame(sh, g, from, true, true, false, t);
+    let quarter = sh.prefs.volume;
+    var heard = sh.out.cues.len;
+    drive::frame(sh, g, float2 { from.x + 0.5 * (right - from.x), y + 30.0 }, true, false, false, t + 0.1);
+    heard += sh.out.cues.len;
+    print("  pressed at the slider's left: volume ", quarter, " under 10 ", quarter < 10, "; dragged on, down and a little",
+          " off it: volume over 40 ", sh.prefs.volume > 40, ", not scrolled ", g.scroll.offset == 0.0, ", heard ", heard,
+          ", to write ", sh.changed);
+    drive::frame(sh, g, float2 { right - 60.0, y }, false, false, true, t + 0.2);
+    print("  let go further on: volume over 70 ", sh.prefs.volume > 70, ", heard ", sh.out.cues.len, ", to write ",
+          sh.changed);
+    var device: u8[>..] = [];
+    players::write_device(sh.prefs.language, 64, true, 1, device);
+    let back = settings::parse(device);
+    print("  settings.txt at 64, muted: ", device.len > 0, ", read back ", back.volume, " ", back.muted, "; a file without",
+          " them: ", settings::parse("language = en\n").volume == settings::VOLUME_DEFAULT,
+          " ", !settings::parse("language = en\n").muted);
+    settings::default_volume = 50;
+    var fresh = settings::Settings {};
+    print("  a desktop's default: ", settings::level(fresh));
+    settings::default_volume = 0;
 }

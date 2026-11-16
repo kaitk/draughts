@@ -12,4 +12,5 @@ won: ok, 2553 ms
 lost: ok, 2962 ms
 drawn: ok, 2400 ms
 a stop four steps up plays: true
+a move's hits and a take's their own: true, one twice running: false
 at zero: open false, sounds 0
