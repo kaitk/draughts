@@ -21,7 +21,8 @@
        &view=preview|sounds|samples  beside the list: the preview board with a demo, the
                 list of sounds to try one by one, or Freesound's candidates, each cut into
                 single hits (tools/sound_samples.py makes samples/samples.js, local)
-       &move=ID.K &take=ID.K  hit K of Freesound sound ID as the move's or the take's sound
+       &move=ID.K &take=ID.K  hit K of Freesound sound ID as the move's or the take's sound;
+                a bare ID, any of its hits at random
        &kind=tablet|pixel|iphone|desktop  the insets, and the default: off on a touch
                 device, half on a desktop (else by the window). ?grid=1 the tablet and the phones, both ways */
   .bands { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
@@ -238,6 +239,14 @@
     const bytes = Uint8Array.from(atob(src.hits[k]), (c) => c.charCodeAt(0)), pcm = new Int16Array(bytes.buffer);
     return { x: Float32Array.from(pcm, (v) => v / 32768), rate: SAMPLES.rate };
   }
+  // A ref of ID.K is that hit; a bare ID is every hit of that recording, one picked at
+  // random each time it plays.
+  function sampleHits(ref) {
+    if (!SAMPLES || !ref) return [];
+    if (ref.includes('.')) { const h = sampleHit(ref); return h ? [h] : []; }
+    const src = SAMPLES.list.find((x) => String(x.id) === ref);
+    return src ? src.hits.map((_, k) => sampleHit(`${ref}.${k}`)) : [];
+  }
   // Stone tries Freesound's chess move on alabaster and a chess piece's bounce
   // (2026-11-16); &move= and &take= still override it.
   const PRESET = { stone: { move: '351518.0', take: '646781.0' } };
@@ -262,12 +271,13 @@
     // it turns red (0:20). A4 sits in the chimes' pentatonic scale.
     BANK.gold = [take(note(HZ.A4, 0.4))];
     BANK.red = [take(phrase([[0, note(HZ.A4, 0.3)], [0.17, note(HZ.A4, 0.3)], [0.34, note(HZ.A4, 0.4)]]))];
-    const m = sampleHit(moveRef), k = sampleHit(takeRef);
-    if (m) {
-      BANK.move = [0.97, 1, 1.03].map((p) => ({ ...m, pitch: p }));
-      BANK.jump = [0, 1, 2, 3, 4].map((j) => ({ ...m, pitch: Math.pow(2, (2 * j) / 12) }));
+    const m = sampleHits(moveRef), k = sampleHits(takeRef);
+    if (m.length) {
+      // One hit: three pitches of it. Several: each as it is, picked at random.
+      BANK.move = m.length > 1 ? m.map((h) => ({ ...h, pitch: 1 })) : [0.97, 1, 1.03].map((p) => ({ ...m[0], pitch: p }));
+      BANK.jump = [0, 1, 2, 3, 4].map((j) => ({ hits: m, pitch: Math.pow(2, (2 * j) / 12) }));
     }
-    if (k) BANK.take = [{ ...k, pitch: 1 }];
+    if (k.length) BANK.take = k.map((h) => ({ ...h, pitch: 1 }));
   }
   // Each sound's level against the move's: the moments well under the moves.
   const GAIN = { move: 0.9, jump: 0.9, take: 0.5, select: 0.25, wrong: 0.4, crown: 0.06, star: 0.06, solved: 0.06, win: 0.045, end: 0.045, gold: 0.07, red: 0.07, sample: 0.9 };
@@ -279,6 +289,7 @@
     if (ctx.state === 'suspended') ctx.resume();
   }
   function start(t, gain) {
+    if (t.hits) t = { ...t.hits[Math.floor(Math.random() * t.hits.length)], pitch: t.pitch };
     const buf = ctx.createBuffer(1, t.x.length, t.rate); buf.copyToChannel(t.x, 0);
     const src = ctx.createBufferSource(), g = ctx.createGain();
     src.buffer = buf; src.playbackRate.value = t.pitch || 1; g.gain.value = gain;
@@ -565,7 +576,7 @@
   // made the move's or the take's sound (the demo and the sounds' list then use it).
   function samplesView() {
     if (!SAMPLES) return '<div class="sounds glass"><h2>No samples yet</h2><p>Run <code>python3 tools/sound_samples.py</code> to fetch them.</p></div>';
-    const name = (ref) => { if (!ref) return 'synthesized'; const [id, k] = ref.split('.'); const x = SAMPLES.list.find((y) => String(y.id) === id); return x ? `${x.title} #${+k + 1}` : ref; };
+    const name = (ref) => { if (!ref) return 'synthesized'; const [id, k] = ref.split('.'); const x = SAMPLES.list.find((y) => String(y.id) === id); return x ? `${x.title} ${k === undefined ? '(any hit)' : `#${+k + 1}`}` : ref; };
     const KIND = { move: 'A piece set down', go: 'Go stones on a wooden board', take: 'Slid or lifted off' };
     let html = `<div class="sounds glass"><h2>Freesound's candidates</h2>` +
       `<p class="chosen">Move: ${name(moveRef)} · Take: ${name(takeRef)} · <a href="${link({ move: null, take: null })}">back to synthesized</a>. ` +
