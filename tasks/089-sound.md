@@ -28,12 +28,14 @@ that.
 | Crowned | Two soft mallet notes after the landing | Yes. A real event, and a rare one |
 | A puzzle solved | Three rising notes, or one per star as each pops in | Yes. Which version to pick is open |
 | A game's end | A win: a soft rising arpeggio. A loss or a draw: a plain, warm close | Yes. A loss never sounds sad or punishing; a four-year-old losing to Medium should hear an ending, not a judgment |
-| A wrong move | Two low soft knocks as the piece slides back | Try it in play. The red flash and "try again" may say enough. If it stays, it must never sound like a buzzer |
+| A wrong move | Two low soft knocks as the piece slides back | Yes (2026-11-16). Never a buzzer |
 | A piece picked up | A faint tick | No. It is the sound of your own tap |
 | Buttons, menus, tiles, scrolling | | No. UI clicks are the plainest bling, and a phone's own taps already make them where the user wants them |
 | The hint, the lookout | | No. Help stays quiet; a sound would make it feel like a reward |
 | Stars, dots, today's moon | Except as the solved notes | No extra sounds |
-| The clock running low | A tick a second in the last ten | Not now; only if players with a clock ask |
+| The clock turns gold | One soft note as a player's clock goes under a minute, when it turns gold | Yes (2026-11-16) |
+| The clock turns red | The same note three times in a row at 0:20, when it turns red | Yes (2026-11-16). Nothing more after it, no flag sound (the end's sound says it) |
+| A tick every second | | No. A tick a second makes a player more anxious, not more careful |
 | Music, ambience (wind, birds by season) | | No. Maybe never. The seasons' photographs already set the mood, and loops grate after ten minutes |
 | Voice | | Not in this task. Lessons may want it (`docs/product.md`), and that is its own decision |
 
@@ -99,6 +101,9 @@ quieter. Recorded hits are tried beside them:
 - Open the device only while the level is above zero, and close it when the level is set
   to zero: a phone at its default never opens audio, so it takes no audio focus and uses
   no battery for it.
+- The clock's two sounds play for a person's clock only (both against a friend, never
+  the computer's), once each a game per side: an increment that lifts the time back
+  over a line doesn't arm it again.
 - Hits from a recording: the move's three takes are one hit at three pitches unless the
   chosen recording has three good ones; a capture's landings are the same hit a tone up
   each.
@@ -112,8 +117,8 @@ quieter. Recorded hits are tried beside them:
 ## Acceptance criteria
 
 - [ ] The user picks: slider or steps; the move's and the take's sound (synthesized, a
-      Freesound hit, or recorded; or by the board's material on the raised board); solved as one phrase or a note per star; the wrong move's
-      knocks or silence
+      Freesound hit, or recorded; or by the board's material on the raised board);
+      solved as one phrase or a note per star
 - [ ] The sounds in the table's "Yes" rows play in the app, from the board's events, in
       a game, a puzzle, How to play, and the settings' preview
 - [x] Defaults decided (2026-11-16)

@@ -254,7 +254,10 @@
     BANK.solved = [take(phrase([[0, note(HZ.D5, 0.45)], [0.12, note(HZ['F#5'], 0.45)], [0.24, note(HZ.A5, 0.8)]]))];
     BANK.win = [take(phrase([[0, note(HZ.D4)], [0.1, note(HZ.A4)], [0.2, note(HZ.D5)], [0.3, note(HZ['F#5'], 0.9)]]))];
     BANK.end = [take(phrase([[0, note(HZ.A3, 0.8)], [0.02, note(HZ.E4, 0.8, 0.7)]]))];
-    BANK.tick = [take(knock({ ...click, lp: 2600 }, 51))];
+    // The clock: one note as it turns gold (under a minute), the same note three times as
+    // it turns red (0:20). A4 sits in the chimes' pentatonic scale.
+    BANK.gold = [take(note(HZ.A4, 0.4))];
+    BANK.red = [take(phrase([[0, note(HZ.A4, 0.3)], [0.17, note(HZ.A4, 0.3)], [0.34, note(HZ.A4, 0.4)]]))];
     const m = sampleHit(moveRef), k = sampleHit(takeRef);
     if (m) {
       BANK.move = [0.97, 1, 1.03].map((p) => ({ ...m, pitch: p }));
@@ -263,7 +266,7 @@
     if (k) BANK.take = [{ ...k, pitch: 1 }];
   }
   // Each sound's level against the move's: the moments well under the moves.
-  const GAIN = { move: 0.9, jump: 0.9, take: 0.5, select: 0.25, wrong: 0.4, crown: 0.1, star: 0.09, solved: 0.09, win: 0.08, end: 0.08, tick: 0.2, sample: 0.9 };
+  const GAIN = { move: 0.9, jump: 0.9, take: 0.5, select: 0.25, wrong: 0.4, crown: 0.1, star: 0.09, solved: 0.09, win: 0.08, end: 0.08, gold: 0.1, red: 0.1, sample: 0.9 };
   // The slider's level to a gain: -36 dB at its foot to 0 dB at the top, as the ear hears
   // loudness; a linear gain would put all the change in the slider's first fifth.
   const gainOf = (v) => (v <= 0 ? 0 : Math.pow(10, (v - 1) * 36 / 20));
@@ -424,9 +427,10 @@
     ['star', 'try', 'A star, one at a time', 'In place of solved: a note per star as each pops in, so two stars sound less than three.', 3],
     ['win', 'yes', 'A game won', 'A soft rising arpeggio when the result shows.'],
     ['end', 'yes', 'A game lost or drawn', 'A plain, warm close: never a sad trombone for a four-year-old.'],
-    ['wrong', 'try', 'A wrong move', 'Two low soft knocks as the piece slides back. Or nothing: the red flash and "try again" may say enough.'],
+    ['wrong', 'yes', 'A wrong move', 'Two low soft knocks as the piece slides back.'],
     ['select', 'no', 'A piece picked up', 'A faint tick. Every tap making a sound is the bling the app keeps out.'],
-    ['tick', 'no', 'The clock running low', 'A tick a second in the last ten. Later, if players with a clock ask.'],
+    ['gold', 'yes', 'The clock turns gold', 'One soft note as your clock goes under a minute.'],
+    ['red', 'yes', 'The clock turns red', 'The same note three times as it reaches 0:20. Nothing after: a tick a second only makes a player more anxious.'],
   ];
   function soundsView() {
     const tag = { yes: 'Yes', try: 'To try', no: 'No' };
