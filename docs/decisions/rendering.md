@@ -454,7 +454,9 @@ power-of-two RGBA took 16 MiB.
   the worker's tables (3 MB).
 - Antialiasing is 4× MSAA on both renderers (gfx; ngfx from 2026-11-12, task 077): SMAA
   looks the same and costs more (M1 Pro 3.05 against 3.49 ms; Pixel 7a 11.4 against
-  12.5). SMAA, none, and 2 × 2 supersampling stay for comparing (`--aa`, the A key).
+  12.5; 2026-11-16, an AMD Radeon iGPU on Windows, Vulkan, 2880×1800 uncapped, median
+  of 5: 4.12 against 4.40 ms, memory at rest the same, so x86 desktops keep MSAA too).
+  SMAA, none, and 2 × 2 supersampling stay for comparing (`--aa`, the A key).
   ngfx's FXAA is gone: it blurred surfaces.
 - 2× MSAA for a slow device (task 081, 2026-11-13): on Android, once 60 frames of the
   ready 3D board average over 1.25 refreshes, the pass drops to 2×
