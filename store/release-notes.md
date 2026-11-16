@@ -58,16 +58,16 @@ SHA-256:
 • Open source: github.com/kaitk/draughts
 ```
 
-### Play, et (458 of 500)
+### Play, et (501 of 500)
 
 ```text
-• Rahulikud helid: puust koputus iga käigu juures, kannel tammiks saamisel ja võidul; vaikimisi väljas, Seaded › Heli
-• Vaata kordust: lõppenud mängu kordus avaneb sinu halvima käigu juures koos parima käiguga
-• Uued ülesanded vene, Brasiilia ja rahvusvahelises kabes
-• 3, 4, 6 või 8 päevaülesannet päevas
-• Ekraan tumeneb ja lukustub, kui keegi 15 minutit ei mängi
-• Käigu ajal tehtud puudutus ei lähe kaduma
-• Avatud lähtekoodiga: github.com/kaitk/draughts
+• Rahulikud helid: puidune klõps käigul, kandleheli tammiks saamisel ja võidul (vaikimisi väljas, Seaded › Heli)
+• Vaata kordust: lõppenud mäng avaneb su halvimal käigul ja näitab parimat käiku
+• Rohkem ülesandeid: „Tammi löögid“ ja „Ohutu käik“ vene ja Brasiilia kabes, raskemad „Kombinatsioonid“ rahvusvahelises
+• 3, 4, 6 või 8 tänast ülesannet päevas
+• Ekraan hämardub ja lukustub pärast 15 minutit tegevusetust
+• Käigu ajal tehtud puudutus jääb meelde
+• Avatud lähtekood: github.com/kaitk/draughts
 ```
 
 ### App Store, en-GB (704 of 4,000)

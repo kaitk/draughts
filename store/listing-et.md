@@ -20,62 +20,62 @@ The same as the launcher's name (`strings/et.txt`), as the English is "Draughts"
 Kabe 2D- või 3D-laual: mängi arvuti või sõbraga, lahenda päeva ülesandeid.
 ```
 
-## Full description (3,788 of 4,000)
+## Full description (4,106 of 4,000)
 
 ```text
-Rahulik kabemäng mängimiseks ja õppimiseks: suured nupud, lame 2D- või ruumiline 3D-laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
+Rahulik kabemäng nii mängimiseks kui ka õppimiseks: suured nupud, tasapinnaline 2D- või ruumiline 3D-laud ja ei midagi, mis mõtet mängult kõrvale viiks.
 
 ÕPI
-• Kabe on uus? „Kuidas mängida“ õpetab seda lühikeste sammudega laual, iga kabeliigi jaoks, ja juhatab edasi ülesannete või esimese partii juurde.
+• Kabe on sulle uus? „Kuidas mängida“ teeb iga kabeliigi reeglid laual lühikeste sammudega selgeks ning juhatab sind edasi ülesannete või esimese partii juurde.
 
 MÄNGI
-• Mängi arvutiga kolmel tasemel: kerge, keskmine ja raske. Pärast iga partiid kohaneb arvuti veidi, et mäng jääks tasavägiseks.
-• Või mängi sõbraga samas tahvelarvutis või telefonis, kordamööda käies (ühes seadmes, mitte võrgus); laud pöörab käija poole või jääb paigale.
+• Mängi arvuti vastu kolmel raskusastmel: kerge, keskmine ja raske. Iga partii järel kohandub arvuti pisut, et mäng püsiks tasavägine.
+• Või mängi sõbraga kordamööda samas tahvelarvutis või telefonis (ühes seadmes, mitte võrgus) – laud kas pöördub käija poole või püsib paigal.
 • Kolm kabeliiki: rahvusvaheline kabe 10 × 10 laual ning Brasiilia ja vene kabe 8 × 8 laual.
-• Käi nuppu ja siis ruutu puudutades või lohista nupp kohale. Võta käik tagasi või alusta uuesti.
-• Mängi kellata või ajakontrolliga: kummalgi 5 või 10 minutit, lisaks 3 või 5 sekundit käigule.
+• Käimiseks puuduta nuppu ja seejärel ruutu või lohista nupp kohale. Käigu saab tagasi võtta ja partii uuesti alustada.
+• Mängi ilma kellata või ajaga: mõlemal 5 või 10 minutit ning igale käigule 3 või 5 lisasekundit.
 
 SINU MÄNGUD
-• Tulemustes on sinu varasemad partiid ja reiting arvuti vastu.
-• Vaata neid käik-käigult üle, iga käik hinnatud parimast veani, ja mängi mis tahes käigust edasi, et proovida teist teed.
-• Kui partii on lõppenud, avab „Vaata kordust“ avalehel selle sealt, kus mäng pöördus: sinu halvima käigu juures või kohas, kus kaotatud partii käest libises, koos parima käiguga.
+• Tulemuste alt leiad oma varasemad partiid ja reitingu arvuti vastu.
+• Vaata partiisid käik-käigult uuesti: iga käik on hinnatud parimast kuni veani ning igast seisust saad edasi mängida, et proovida teist jätku.
+• Pärast partii lõppu avab avalehe nupp „Vaata kordust“ mängu täpselt murdepunktis – sinu halvima käigu juures või hetkes, mil kaotatud partii käest libises – ja näitab ka parimat käiku.
 
 ÜLESANDED
-• Tänased ülesanded: kui Õpi on lahendatud, iga päev mõni ülesanne sinu tasemel (vaikimisi 4; seadetes 3, 6 või 8): soojendus, ülesanded sinu tasemel ja üks veidi raskem. Need tulevad ligi 8000 ülesande seast rahvusvahelises, vene ja Brasiilia kabes, nende hulgas lõksud, mis karistavad hooletut käiku, ja ükski ei kordu.
-• Ülesannete reiting igale mängijale ja kabeliigile: alguses liigub see kiiresti, hiljem rahuneb.
-• Kursus: 216 ülesannet, igas kabeliigis kuus teemat (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik): 84 rahvusvahelises kabes ning 66 nii vene kui ka Brasiilia kabes.
-• Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.
-• Esimesena tuleb Õpi, mis näitab reegleid mängu käigus; teised teemad avanevad, kui sellest on pool lahendatud, ja tänased ülesanded, kui see on kõik lahendatud.
-• Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab kõigi kolme tähe nimel uuesti proovida.
+• Tänased ülesanded: kui teema Õpi on läbitud, ootab sind iga päev mõni sinu tasemele vastav ülesanne (vaikimisi 4; Seadetes 3, 6 või 8) – soojendus, sinu tasemel ülesanded ja üks pisut raskem. Need valitakse ligi 8000 rahvusvahelise, vene ja Brasiilia kabe ülesande hulgast, mille seas on ka hooletut käiku karistavaid lõkse, ning ükski ülesanne ei kordu.
+• Igal mängijal ja kabeliigil on oma ülesannete reiting, mis alguses muutub kiiremini ja ajapikku stabiliseerub.
+• Kursus: 216 ülesannet kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) iga kabeliigi jaoks – 84 rahvusvahelises kabes, sealhulgas Haarlemi löök ja Philippe'i löök, ning 66 nii vene kui ka Brasiilia kabes.
+• Iga teema läheb lihtsamast keerulisemaks ja osa ülesandeid mängitakse mustadega.
+• Esimesena on kavas Õpi, mis tutvustab reegleid mängu käigus; teised teemad avanevad, kui sellest on pool lahendatud, ning Tänased ülesanded siis, kui kogu teema on läbitud.
+• Iga ülesande eest saab kuni kolm tähte, iga eksimus võtab ühe tähe vähemaks; lahendatud ülesannet saab kõigi kolme tähe püüdmiseks uuesti mängida.
 
 MÄNGIJAD
-• Ühes seadmes kuni neli mängijat, igaühel oma loomapilt ja soovi korral nimi.
-• Igal mängijal on oma välimus, vihjed, tähed, arvuti tase ja pooleliolev mäng.
-• Mängijat saab avalehel vahetada kahe puudutusega.
+• Kuni neli mängijat ühes seadmes, igaühel oma loomapilt ja soovi korral nimi.
+• Igal mängijal säilivad oma kujundus, käiguvihjed, tähed, arvuti tase ja pooleliolev partii.
+• Mängija vahetamine käib avalehel kahe puudutusega.
 
-VIHJED
-• Vihjed, mis aitavad, kuid ei mõtle mängija eest: vaikimisi ei näita mäng midagi enne, kui käik on vale; siis näitab see ruutu ja põhjust. Esimesteks mängudeks saab sisse lülitada ka kõigi võimalike käikude näitamise.
-• Löömine on kohustuslik: nupp, mis peab lööma, on märgitud täpiga iga löödava nupu kohta.
+KÄIGUVIHJED
+• Vihjed, mis toetavad, aga ei mõtle sinu eest: vaikimisi ei ütle mäng midagi enne, kui teed vale käigu – siis näitab see ruutu ja selgitab põhjust. Päris esimesteks partiideks saab sisse lülitada ka kõigi võimalike käikude kuvamise.
+• Löömine on kohustuslik: nupp, millega tuleb lüüa, on tähistatud ning iga löödavat nuppu märgib täpp.
 
 KABELAUD
-• Lame laud või ruumiline 3D-laud valguse ja pehmete varjudega, mida saab käega pöörata.
-• Neli aastaaega, igaühel oma pilt ja laud: puidust, kivist või nikerdatud.
-• Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid; või ühevärviline taust laua toonides, ilma pildita.
+• Tasapinnaline laud või valguse ja pehmete varjudega ruumiline 3D-laud, mida saad sõrmega pöörata.
+• Neli aastaaega, igaühel oma taustapilt ning puidust, kivist või nikerdatud laud.
+• Aastaaeg vahetub kuupäeva järgi või püsib sinu valitul; soovi korral saad valida ka laua toonides ühevärvilise tausta.
 
 HELI
-• Mõned rahulikud helid: puust koputus käigu juures, kandle noodid tammiks saamisel ja võidul ning madalad noodid lahendatud ülesande puhul. Vaikimisi väljas, sisse saab lülitada seadetes.
+• Mõned rahulikud helid: puidune klõps käigul, kandlehelid tammiks saamisel ja võidu korral ning madalad pehmed puidused noodid ülesande lahendamisel. Helid on vaikimisi väljas, kuni need Seadetes sisse lülitad.
 
 KÕIGILE
-• Suured pildid ja ikoonid, et ka laps, kes veel lugeda ei oska, saaks ise hakkama.
-• Piisavalt lihtne esimeseks partiiks, kuid raske tase ja raskeimad ülesanded panevad proovile ka täiskasvanu.
-• Eesti ja inglise keeles, vastavalt seadme keelele.
+• Suured nupud ja pildid, et ka laps, kes veel lugeda ei oska, leiaks ise tee.
+• Piisavalt lihtne esimeseks partiiks, samas pakuvad raske tase ja keerukaimad ülesanded pinget ka täiskasvanule.
+• Eesti ja inglise keeles, seadme keele järgi.
 
-MITTE MIDAGI LIIGSET
-• Reklaamide, rakendusesiseste ostude ja kontodeta ning internetita: kõik jääb seadmesse.
+EI MIDAGI ÜLELIIGSET
+• Ei mingeid reklaame, rakendusesiseseid oste, kontosid ega internetti – kõik püsib sinu seadmes.
 
-Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
+Kabe töötab telefonides ja tahvelarvutites nii püst- kui ka rõhtpaigutuses.
 
-Kabe on avatud lähtekoodiga, MIT või Apache 2.0 litsentsi all: github.com/kaitk/draughts
+Kabe on avatud lähtekoodiga (MIT või Apache 2.0 litsents): github.com/kaitk/draughts
 ```
 
 ## Wording notes
