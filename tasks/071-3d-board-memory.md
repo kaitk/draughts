@@ -1,6 +1,6 @@
 # 071: Where the 3D board's memory goes
 
-Status: in progress (the tablet's and the A33's memory numbers not yet)
+Status: in progress (the A33's memory numbers not yet)
 
 The 3D game at rest held about 200 MB more than the flat one on both renderers. This
 breaks the 3D board's share down and takes what it can from it, for both builds. gfx
@@ -39,9 +39,25 @@ Not done: the plan's normal as RG8 (a second bake pipeline), dropping the maps' 
 (the anisotropic filter samples it), the photograph's working copies (2 MB); Apple's
 memoryless MSAA targets need SDL to choose the storage mode (a note for the user).
 
+The tablet (Galaxy Tab A11+, portrait 1200 × 1920), 2026-11-17: each commit a debug
+`--id-suffix` build beside the app, `--screen game --board 3d`, `dumpsys meminfo` 25 s
+after the start, three runs each (within 5 MB):
+
+| 3D game at rest, tablet | total PSS | Graphics | GL mtrack |
+| --- | --- | --- | --- |
+| before (56ad433) | 302 MB | 240 MB | 212 MB |
+| after (ab7fb13) | 237 MB | 176 MB | 148 MB |
+| main (bc3b140) | 318 MB | 253 MB | 226 MB |
+
+The savings took 65 MB on the tablet. main holds 81 MB more than ab7fb13: a bisect on the
+tablet found c4e79b7 (2026-11-14), which keeps the pass's targets while the board is on
+screen, a recorded trade (`docs/decisions/rendering.md`, GPU memory): every move after a
+pause paid the remade targets' first touch. The rest came in before it (162 MB of GL at
+2606d7d against 148).
+
 ## Left
 
-The tablet's and the A33's numbers before and after (neither attached when measured).
+The A33's numbers before and after (not attached when measured).
 
 ## Acceptance criteria
 
@@ -49,4 +65,4 @@ The tablet's and the A33's numbers before and after (neither attached when measu
       `footprint`, on both builds
 - [x] Each saving tried measured at rest, its look checked against the build before
 - [ ] The kept savings on both builds, with the Mac's, the iPhone's, and the A33's
-      numbers before and after recorded here
+      numbers before and after recorded here (the tablet's in, 2026-11-17)
