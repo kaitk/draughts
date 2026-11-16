@@ -137,7 +137,8 @@ def bundle(exe, out):
 
 
 DMG_WINDOW = (640, 427)                             # pt, mac/dmg-background.tiff's size
-DMG_ICONS = {"Draughts.app": (160, 200), "Applications": (480, 200)}  # on its card, the arrow between
+TITLE_BAR = 28                                      # pt: Finder's bounds include it
+DMG_ICONS = {"Draughts.app": (160, 185), "Applications": (480, 185)}  # on its card, the arrow between
 DMG_LAYOUT = """
 tell application "Finder"
   tell disk "{volume}"
@@ -185,7 +186,7 @@ def disk_image(app, dmg):
                                    for n, (x, y) in DMG_ICONS.items())
         w, h = DMG_WINDOW
         native.run("osascript", "-e", DMG_LAYOUT.format(
-            volume=volume, right=200 + w, bottom=120 + h, positions=positions))
+            volume=volume, right=200 + w, bottom=120 + h + TITLE_BAR, positions=positions))
         native.run("xcrun", "SetFile", "-a", "C", mount)     # use .VolumeIcon.icns; after
                                                              # Finder, which clears it
         native.run("sync")
