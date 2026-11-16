@@ -69,6 +69,26 @@ formatting is stable). The compiler prints nothing on success; `--stats` gives a
 - `os::args()` for a program's arguments (on Android from the intent's `args` extra);
   `exit(code)`. A built program takes its flags right after the executable, no `--`.
 
+## Names
+
+A name says literally what a thing is or does, for a reader of English as a second
+language (a Finnish or Estonian programmer), who should never need the body to know it.
+
+- Plain compound words pass: `sound_event`, `add_sound_events`, `put_in_list`,
+  `press_on_ui`, `ai_request_id`, `tap_size()`. Even `sound_cue` passes; a bare `cue`
+  does not.
+- Figurative or idiomatic single words fail: `deaf` (now `input_off`), `took`
+  (`press_on_ui`), `settle` (`ease_to_rest`, `fit_view`), `quiet` (`hide_counts`), and
+  so do bare adjectives or participles for a value (`fitting`, `still`, `seen`).
+- One name never does two jobs: `over` was a game's end, the square under the pointer,
+  and the pieces over the UI (`ended_for_history`, `target_under_pointer`, `ui_pieces`).
+  Grep a new name first: a field and a function of the same word (`side()` and `g.side`)
+  count as two jobs.
+- A function that returns a size or a value is named for it (`stacked_tile_height()`),
+  not a verb; one that acts is named for its action (`claim_press`, `release_targets`).
+- Terms of the trade stay (`lerp`, `quad`, `uv`, `rig`, GLSL's `over`), and so do the
+  app's feature names (`lookout`, `glass`).
+
 ## Packages and files
 
 - A package is a directory with `name.goose`. A program declares each package once, in

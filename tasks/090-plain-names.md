@@ -1,6 +1,6 @@
 # 090: Plain names
 
-Status: todo
+Status: done
 
 Some of the code's most-used names are single figurative English words (`deaf`, `took`,
 `settle`, `quiet`) or one word doing several unrelated jobs (`over` means three things).
@@ -115,7 +115,7 @@ Not counted: `settings::put_in_list` (task 089) calls `game::put`, which row 24 
 
 ## Acceptance criteria
 
-- [ ] The rows to rename chosen, with their names
-- [ ] Renamed, area by area, the tests passing after each
-- [ ] No old name left in `src/`, `test/`, `tools/`, or `docs/`
-- [ ] `agents/goose.md` (or `agents/writing.md`) states the naming bar, so new code keeps it
+- [x] The rows to rename chosen, with their names
+- [x] Renamed, area by area, the tests passing after each
+- [x] No old name left in `src/`, `test/`, `tools/`, or `docs/`
+- [x] `agents/goose.md` (or `agents/writing.md`) states the naming bar, so new code keeps it
