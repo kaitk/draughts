@@ -223,9 +223,11 @@ fed389b.
   wins" for a friend's). It is outlined and New game lit: most players play again.
   Rejected: "Last game" and *Viimane mäng* (flat), *Viimase mängu tulemused* (too long),
   "Show results" (read as the Results row), *Vaata üle* (unclear in Estonian), and going
-  back to the ended game's screen (the 2026-11-15 reason). Its icon is restart's arrow
-  round a play triangle (`gui::REPLAY`); the replay's to-the-start chevron, tried first,
-  read as a letter K.
+  back to the ended game's screen (the 2026-11-15 reason). Its icon is Lucide's history,
+  restart's arrow round a clock's hands (`gui::REPLAY`): the replay's to-the-start
+  chevron, tried first, read as a letter K. Rejected from eight takes: the arrow round a
+  play triangle, play in a circle (reads as playing a game), a list with play, a piece in
+  the arrow, rewind, a clapperboard, and a board with play.
 - The X closes the app at once on touch screens (2026-11-08/09). Rejected: a last row (it
   costs the portrait board), a door, a power sign.
 - On a desktop's landscape column the way out is a Quit row (task 072, 2026-11-11), the X
@@ -342,10 +344,11 @@ Task 074 (2026-11-11) and 078 (2026-11-13):
   opens at the game's end, on the flat board even with 3D chosen, and its positions are
   played out from the kept moves. Its list's moves are 34 dp taps: a miss shows the next
   move, which the steps correct. Left and Right step the moves from anywhere.
-- A replay of a game lost or drawn against the computer opens where it turned, the
-  player's first blunder (else first mistake), with the bulb on (2026-11-16): that is
-  what the player came to see. A game won, a friend's, or one with neither opens at the
-  end. Rejected for a win: its worst move (the win is what a child wants to look at).
+- A replay of a game against the computer, won or lost, opens at the player's first
+  blunder (else first mistake), with the bulb on (2026-11-16): the review is for a grown-up
+  improving, and that move is what they came to see. A friend's game, or one with
+  neither, opens at the end. Rejected: a won game at its end (a child rarely opens the
+  review at all).
   The moves' columns put the player's side first where the board is turned for them, so
   a row reads the reply before the move it answers.
 - Play from here (2026-11-13): a game from any move of a replay that is neither saved nor

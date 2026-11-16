@@ -188,11 +188,11 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
     }
 }
 
-// Where a game lost or drawn against the computer turned: the player's first blunder,
-// else their first mistake; -1 for a game won, a friend's, or one with neither, which
-// open at the end.
+// The player's move most worth a look in a game against the computer, won or lost: their
+// first blunder, else their first mistake; -1 for a friend's game or one with neither,
+// which open at the end.
 fn turning_point(r: Replay&) -> i64 {
-    guard r.game.level != history::FRIEND && history::result(r.game) <= 0 else { return -1; }
+    guard r.game.level != history::FRIEND else { return -1; }
     for mark in [ai::BLUNDER, ai::MISTAKE] {
         for p, i in r.plies { if r.pos[i].side == r.game.side && p.mark == mark { return i; } }
     }

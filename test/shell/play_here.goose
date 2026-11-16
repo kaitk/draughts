@@ -85,7 +85,7 @@ fn run(sh: shell::Shell&, g: gui::Gui&, e: ai::Engine&, seconds: f64) {
     }
 }
 
-// The replay as it opened before it opened where a lost game turned: at its end, the
+// The replay as it opened before it opened at the player's worst move: at its end, the
 // bulb off; the steps and play from here below start from there.
 fn at_end(sh: shell::Shell&) {
     let r .= sh.past.replay;

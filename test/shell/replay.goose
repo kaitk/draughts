@@ -237,7 +237,7 @@ fn same(a: i64[rules::VARIANT_COUNT], b: i64[rules::VARIANT_COUNT]) -> bool {
     return true;
 }
 
-// The replay as it opened before it opened where a lost game turned: at its end, the
+// The replay as it opened before it opened at the player's worst move: at its end, the
 // bulb off; the steps below start from there.
 fn at_end(sh: shell::Shell&) {
     let r .= sh.past.replay;
@@ -283,7 +283,7 @@ fn main() {
     drive::idle(sh, g, tick());
     print("results: screen ", sh.screen, ", ", sh.past.games.len, " games");
 
-    // The first row, the newest game, lost: its replay where it turned, the player's first
+    // The first row, the newest game: its replay at the player's first
     // blunder (this game has none), else first mistake, compared with the best move there. Then at its end, the bulb off.
     press(sh, g, results::ROW_ID);
     drive::idle(sh, g, tick());
