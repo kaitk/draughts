@@ -25,11 +25,11 @@ that.
 | A piece set down | When it lands, not at the tap; yours, the computer's, a friend's | Yes. The core sound. The computer's move tells a player who looked away that it's their turn |
 | A capture's landings | Each landing a whole tone above the last | Yes. A long capture climbs, and a child hears how many pieces it took without counting |
 | The taken pieces | Once, in place of the last landing's knock, as the jumped pieces come off together | Yes. Once a capture, never once a jump: a sound per jump made a capture too busy (2026-11-16) |
-| Crowned | Two soft mallet notes, in place of the landing's knock | Yes. A real event, and a rare one |
+| Crowned | A kannel's two plucks up a fifth, in place of the landing's knock | Yes (the kannel chosen 2026-11-16). A real event, and a rare one |
 | A puzzle solved | Three rising notes, or one per star as each pops in | Yes. Which version to pick is open |
 | A game's end | A win: a soft rising arpeggio. A loss or a draw: a plain, warm close | Yes. A loss never sounds sad or punishing; a four-year-old losing to Medium should hear an ending, not a judgment |
 | A wrong move | Two low soft knocks as the piece slides back | Yes (2026-11-16). Never a buzzer |
-| A capture due elsewhere | A piece or square chosen while another piece must capture: its own sound, "look here" rather than "no" (the piece taps twice, a soft question, a nudge) | Yes, other than the wrong move's (2026-11-16); which, to choose |
+| A capture due elsewhere | A piece or square chosen while another piece must capture: the wrong move's two knocks with the second pitched up, a warning but another one | Yes (2026-11-16) |
 | A piece picked up | A faint tick | No. It is the sound of your own tap |
 | Buttons, menus, tiles, scrolling | | No. UI clicks are the plainest bling, and a phone's own taps already make them where the user wants them |
 | The hint, the lookout | | No. Help stays quiet; a sound would make it feel like a reward |
@@ -73,6 +73,16 @@ On a phone it follows the media volume and, on iOS, the silent switch (the ambie
 session category, which also keeps the player's own music playing). The level belongs to
 the device, not the player, so it goes in the device's settings rather than a player's
 file.
+
+## Chosen so far (2026-11-16)
+
+- A move: MattyCauldron's "Chess Pieces" (Freesound 765866, CC0), any of its hits at
+  random; a capture's taken pieces: JJTaynos's "Chess Pieces Move (Close)" (733927,
+  CC0), the closer sound. Both download at full quality from Freesound, and each needs
+  three or more good hits cut from it. No credit is owed (CC0).
+- Crowned: the kannel's two plucks (`pluck`, Karplus-Strong).
+- A capture due: the wrong move's knocks, the second up (`warn`).
+- Still to choose: the win, the end, the solved puzzle, and the volume control.
 
 ## The moments' takes
 
@@ -147,9 +157,9 @@ bounce) as the move and the take. Recorded hits are tried beside them:
 
 ## Acceptance criteria
 
-- [ ] The user picks: slider or steps; the move's and the take's sound (synthesized, a
-      Freesound hit, or recorded; or by the board's material on the raised board);
-      solved as one phrase or a note per star
+- [x] The move's and the take's sound, the crowning, and the capture due (2026-11-16)
+- [ ] The user picks: slider or steps; the win and the end; solved as one phrase or a
+      note per star
 - [ ] The sounds in the table's "Yes" rows play in the app, from the board's events, in
       a game, a puzzle, How to play, and the settings' preview
 - [x] Defaults decided (2026-11-16)

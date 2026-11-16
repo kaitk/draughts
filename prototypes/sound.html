@@ -16,8 +16,9 @@
      (audio::create_sound over an f32 array). No sound files.
        &control=slider|steps  the Sound row: a speaker button and a slider whose thumb is
                 a piece, or four tiles (off and three speakers, no words)
-       &timbre=felt|wood|stone  the move's knock; stone is two Freesound hits where
-                samples/samples.js is made
+       &timbre=chosen|felt|wood|stone  the move's and the take's sound: chosen (the
+                default) and stone are Freesound hits where samples/samples.js is made,
+                felt and wood synthesized
        &view=preview|sounds|samples  beside the list: the preview board with a demo, the
                 list of sounds to try one by one, or Freesound's candidates, each cut into
                 single hits (tools/sound_samples.py makes samples/samples.js, local)
@@ -143,7 +144,7 @@
   };
   const D = Draughts, icon = D.icon;
   const control = get('control', ['slider', 'steps'], 'slider');
-  const timbre = get('timbre', ['felt', 'wood', 'stone'], 'felt');
+  const timbre = get('timbre', ['chosen', 'felt', 'wood', 'stone'], 'chosen');
   const view = get('view', ['preview', 'sounds', 'samples', 'moments'], 'preview');
   if (P.has('bare')) document.body.classList.add('bare');
 
@@ -359,6 +360,7 @@
     question: ['A soft question', 'Two tongue-drum notes, up a step: "hm?"', () => at(0.16, [tongue(HZ.D4), tongue(HZ.E4)])],
     kalimba: ['Kalimba, a nudge', 'One small note, twice', () => at(0.12, [kalimba(HZ.A5), kalimba(HZ.A5).map((v) => v * 0.7)])],
     flute: ['Flute, "over here"', 'A short note bent up', () => flute(HZ.A5, 0.18, { from: HZ['F#5'], vib: 0 })],
+    warn: ['The wrong knocks, the second up', 'Still a warning, but rising: "this one, not that"', () => phrase([[0, knock(TIMBRES.felt, 41, 0.7)], [0.14, knock(TIMBRES.felt, 42, 0.84).map((v) => v * 0.6)]])],
     wrong: ['As a wrong move', 'The same two low knocks', () => phrase([[0, knock(TIMBRES.felt, 41, 0.7)], [0.14, knock(TIMBRES.felt, 42, 0.66).map((v) => v * 0.6)]])],
   };
   // The taken pieces: the clicks (the move's own kind, or a sample), or a pick-up that
@@ -369,7 +371,9 @@
     gather: ['Gathered into the hand', 'The pieces clicked together one by one as they are picked up', (n) => at(0.07, Array.from({ length: n }, (_, k) => knock({ ...tapClick(), thump: [0, 0, 1] }, 90 + k, 1 + 0.03 * k).map((v) => v * (1 - k * 0.08))))],
     musicbox: ['Music box, one note each', 'Small high notes, one a piece', (n) => at(0.09, [HZ.A5, HZ.B5, HZ.D6, HZ.E6, HZ['F#6'], HZ.A6, HZ.A6, HZ.A6].slice(0, n).map(musicbox))],
   };
-  const DEFAULT = { crown: 'marimba', win: 'marimba', end: 'marimba', must: 'taptap', take: 'clicks' };
+  // The user's picks so far (2026-11-16): the kannel for a crowning, the wrong knocks with
+  // the second up for a capture due.
+  const DEFAULT = { crown: 'kannel', win: 'marimba', end: 'marimba', must: 'warn', take: 'clicks' };
   const pickOf = (kind) => (MOMENTS[kind][P.get(kind)] ? P.get(kind) : DEFAULT[kind]);
   // A sample from prototypes/samples/samples.js (tools/sound_samples.py): &move=ID.K and
   // &take=ID.K put hit K of Freesound sound ID in place of the knock or the take.
@@ -391,12 +395,14 @@
   }
   // Stone tries Freesound's chess move on alabaster and a chess piece's bounce
   // (2026-11-16); &move= and &take= still override it.
-  const PRESET = { stone: { move: '351518.0', take: '646781.0' } };
+  // Chosen (the default, 2026-11-16): MattyCauldron's chess pieces for a move, any of its
+  // hits, and JJTaynos's closer ones for the take, both CC0.
+  const PRESET = { chosen: { move: '765866', take: '733927' }, stone: { move: '351518.0', take: '646781.0' } };
   const moveRef = P.get('move') || (SAMPLES && PRESET[timbre]?.move), takeRef = P.get('take') || (SAMPLES && PRESET[timbre]?.take);
   // Each bank entry is a list of takes, each { x, rate, pitch }.
   const take = (x, pitch = 1) => ({ x, rate: RATE, pitch });
   function makeBank() {
-    const t = TIMBRES[timbre];
+    const t = TIMBRES[timbre] || TIMBRES.felt;
     BANK.move = [0, 1, 2].map((k) => take(knock(t, 11 + k)));   // three, picked at random: no machine-gun repeats
     BANK.jump = [0, 1, 2, 3, 4].map((k) => take(knock(t, 21 + k, Math.pow(2, (2 * k) / 12)))); // each landing a whole tone up
     // A taken piece lifted off and set by the others: two light clicks of piece on piece.
@@ -425,7 +431,7 @@
     if (k.length) BANK.take = k.map((h) => ({ ...h, pitch: 1 }));
   }
   // Each sound's level against the move's: the moments well under the moves.
-  const GAIN = { move: 0.9, jump: 0.9, take: 0.5, select: 0.25, wrong: 0.4, crown: 0.12, star: 0.06, solved: 0.06, win: 0.1, end: 0.1, moment: 0.1, must: 0.12, counted: 0.1, gold: 0.07, red: 0.07, sample: 0.9 };
+  const GAIN = { move: 0.9, jump: 0.9, take: 0.5, select: 0.25, wrong: 0.4, crown: 0.12, star: 0.06, solved: 0.06, win: 0.1, end: 0.1, moment: 0.1, must: 0.4, counted: 0.1, gold: 0.07, red: 0.07, sample: 0.9 };
   // The slider's level to a gain: -36 dB at its foot to 0 dB at the top, as the ear hears
   // loudness; a linear gain would put all the change in the slider's first fifth.
   const gainOf = (v) => (v <= 0 ? 0 : Math.pow(10, (v - 1) * 36 / 20));
@@ -701,12 +707,13 @@
     ['move', 'yes', 'A piece set down', 'As it lands, not at the tap: yours, the computer\'s, a friend\'s. Three takes on it picked at random, so a game of them never machine-guns.'],
     ['jump', 'yes', 'A capture\'s landings', 'Each landing of a capture a whole tone above the last, so a long capture climbs and a child hears how many it took. Play it: the five steps of one.', 5],
     ['take', 'yes', 'The taken pieces', 'In place of the last landing\'s knock, as the capture ends and the jumped pieces come off.'],
-    ['crown', 'yes', 'Crowned', 'Two soft mallet notes in place of the landing\'s knock (and of the take\'s).'],
+    ['crown', 'yes', 'Crowned', 'A kannel\'s two plucks in place of the landing\'s knock (and of the take\'s).'],
     ['solved', 'yes', 'A puzzle solved', 'Three rising notes; or one per star as the stars pop in (the next row).'],
     ['star', 'try', 'A star, one at a time', 'In place of solved: a note per star as each pops in, so two stars sound less than three.', 3],
     ['win', 'yes', 'A game won', 'A soft rising arpeggio when the result shows.'],
     ['end', 'yes', 'A game lost or drawn', 'A plain, warm close: never a sad trombone for a four-year-old.'],
     ['wrong', 'yes', 'A wrong move', 'Two low soft knocks as the piece slides back.'],
+    ['must', 'yes', 'A capture due elsewhere', 'The same knocks, the second pitched up: a warning, but another one.'],
     ['select', 'no', 'A piece picked up', 'A faint tick. Every tap making a sound is the bling the app keeps out.'],
     ['gold', 'yes', 'The clock turns gold', 'One soft note as your clock goes under a minute.'],
     ['red', 'yes', 'The clock turns red', 'The same note three times as it reaches 0:20. Nothing after: a tick a second only makes a player more anxious.'],
@@ -784,7 +791,7 @@
       `<a class="pill${view === 'sounds' ? ' on' : ''}" href="${link({ view: 'sounds' })}">Sounds</a>` +
       `<a class="pill${view === 'samples' ? ' on' : ''}" href="${link({ view: 'samples' })}">Samples</a>` +
       `<a class="pill${view === 'moments' ? ' on' : ''}" href="${link({ view: 'moments' })}">Moments</a>` +
-      ['felt', 'wood', 'stone'].map((t) => `<a class="pill${timbre === t ? ' on' : ''}" href="${link({ timbre: t === 'felt' ? null : t })}">${t[0].toUpperCase() + t.slice(1)}</a>`).join('') +
+      ['chosen', 'felt', 'wood', 'stone'].map((t) => `<a class="pill${timbre === t ? ' on' : ''}" href="${link({ timbre: t === 'chosen' ? null : t, move: null, take: null })}">${t[0].toUpperCase() + t.slice(1)}</a>`).join('') +
       `</div>`;
     if (view === 'moments') {
       stage.innerHTML = `<div class="demo" style="width:100%;height:100%;grid-template-rows:auto minmax(0,1fr);padding-top:16px">${switcher}${momentsView()}</div>`;
@@ -793,7 +800,7 @@
         const id = `${b.dataset.kind}.${b.dataset.key}`;
         momentCache[id] = momentCache[id] || even(MOMENTS[b.dataset.kind][b.dataset.key][2](3));
         const v = state.muted || state.level === 0 ? 0.5 : state.level;
-        start(take(momentCache[id]), gainOf(v) * GAIN.moment);
+        start(take(momentCache[id]), gainOf(v) * GAIN[b.dataset.kind === 'must' ? 'must' : 'moment']);
       }));
     } else if (view === 'samples') {
       stage.innerHTML = `<div class="demo" style="width:100%;height:100%;grid-template-rows:auto minmax(0,1fr);padding-top:16px">${switcher}${samplesView()}</div>`;
