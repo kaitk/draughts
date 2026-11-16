@@ -149,7 +149,7 @@ struct Settings {
     languages_open: bool = false,
     // A change of the volume to be heard: the shell plays a move at the new level. Not in
     // the file.
-    sounded: bool = false,
+    play_sample: bool = false,
 }
 
 // How the flat board draws kings: auto is a crown there.
@@ -350,7 +350,7 @@ fn write_daily(s: Settings&, out: u8[>..]&) {
 }
 
 // The volume, 0..1, as the slider has it: the device's, or the platform's default.
-fn level(s: Settings&) -> f32 { (if s.volume >= 0 { s.volume } else { default_volume }) / 100.0 }
+fn volume_of(s: Settings&) -> f32 { (if s.volume >= 0 { s.volume } else { default_volume }) / 100.0 }
 
 // A player's file for settings s, appended to out: all but the language and the volume.
 fn write(s: Settings, out: u8[>..]&) {

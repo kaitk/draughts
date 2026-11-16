@@ -110,9 +110,9 @@ struct Frame {
     // the frame that starts it moving.
     save: bool = false,
     quit: bool = false,             // home's way out was tapped: the app stops (stays set)
-    // What is heard this frame (board/heard.goose), one sound a move: the game's, a
+    // What is heard this frame (board/sound_event.goose), one sound a move: the game's, a
     // puzzle's, and How to play's boards, and the volume's own sound in settings.
-    cues: heard::Cues = [],
+    sound_events: sound_event::Events = [],
 }
 
 // What the app does with the 3D board before a frame (board3d): it is chosen, so the app
@@ -469,26 +469,26 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: b
     out.typing = sh.who.typing && sh.screen == HOME;
     out.keyboard = sh.who.keyboard;
     out.save = sh.changed && sh.from < 0;
-    hear(sh, out);
+    gather_sound_events(sh, out);
     return sh.out;
 }
 
-// Takes this frame's cues off the boards that play (a replay and the boards of home and
+// Takes this frame's sound events off the boards that play (a replay and the boards of home and
 // settings say nothing heard), and keeps one sound a move.
-fn hear(sh: Shell&, out: Frame&) {
-    out.cues.clear();
-    for c in sh.game.b.heard { heard::say(out.cues, c.kind, c.step); }
-    for c in sh.puzzle.b.heard { heard::say(out.cues, c.kind, c.step); }
-    for c in sh.lesson.b.heard { heard::say(out.cues, c.kind, c.step); }
-    if sh.prefs.sounded { heard::say(out.cues, heard::MOVE); }
-    sh.prefs.sounded = false;
-    sh.game.b.heard.clear();
-    sh.puzzle.b.heard.clear();
-    sh.lesson.b.heard.clear();
-    sh.preview.heard.clear();
-    sh.next.heard.clear();
-    sh.past.replay.b.heard.clear();
-    heard::settle(out.cues);
+fn gather_sound_events(sh: Shell&, out: Frame&) {
+    out.sound_events.clear();
+    for c in sh.game.b.sound_events { sound_event::add(out.sound_events, c.kind, c.step); }
+    for c in sh.puzzle.b.sound_events { sound_event::add(out.sound_events, c.kind, c.step); }
+    for c in sh.lesson.b.sound_events { sound_event::add(out.sound_events, c.kind, c.step); }
+    if sh.prefs.play_sample { sound_event::add(out.sound_events, sound_event::MOVE); }
+    sh.prefs.play_sample = false;
+    sh.game.b.sound_events.clear();
+    sh.puzzle.b.sound_events.clear();
+    sh.lesson.b.sound_events.clear();
+    sh.preview.sound_events.clear();
+    sh.next.sound_events.clear();
+    sh.past.replay.b.sound_events.clear();
+    sound_event::one_per_move(out.sound_events);
 }
 
 // The app has written the settings Frame.save asked it to.

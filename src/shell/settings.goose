@@ -396,13 +396,13 @@ fn put_in_list(over: board::Overlay&, g: gui::Gui&, spot: float4, r: f32, king: 
 // The volume's row where list_at put it (`at`): its name, the speaker, and the slider. A
 // tap on the speaker mutes or unmutes, or at zero brings the sound back at UNMUTED; the
 // slider sets the level as it is dragged and unmutes. Each is heard as it is let go
-// (Settings.sounded). Returns CHANGED when a tap or a release changed s, to be written,
+// (Settings.play_sample). Returns CHANGED when a tap or a release changed s, to be written,
 // SHOWN while the slider is dragged, or NOTHING.
 fn volume_row(s: Settings&, over: board::Overlay&, g: gui::Gui&, at: Row&) -> i64 {
     let u = g.scale;
     gui::text(g, gui::SMALL, at.name, strings::get(strings::SETTINGS_VOLUME), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
               gui::LEFT);
-    let v = level(s);
+    let v = volume_of(s);
     let off = s.muted || v <= 0.0;
     let icon = if off { gui::SPEAKER_OFF } else if v < 0.34 { gui::SPEAKER } else if v < 0.67 { gui::SPEAKER + 1 }
                else { gui::SPEAKER + 2 };
@@ -423,7 +423,7 @@ fn volume_row(s: Settings&, over: board::Overlay&, g: gui::Gui&, at: Row&) -> i6
     }
     if let_go { changed = true; }
     put_in_list(over, g, spot, THUMB_R * u, 0, if off { 0.55 } else { 1.0 });
-    if changed { s.sounded = true; }
+    if changed { s.play_sample = true; }
     return if changed { CHANGED } else if slid != v { SHOWN } else { NOTHING };
 }
 

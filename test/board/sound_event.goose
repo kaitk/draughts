@@ -1,11 +1,11 @@
-// What the board says is heard (board/heard.goose), and the rule that keeps one sound a
+// What the board says is heard (board/sound_event.goose), and the rule that keeps one sound a
 // move. A capture played by code (the computer's) says each stop before its last as its
 // hop lands, a whole tone up each, then the taken pieces once, at its last landing; the
 // same capture tapped stop by stop says each stop as the piece's hop lands there, one
 // dropped on a stop at once. A quiet move says the piece set down as it lands, a man
 // crowned the crowning in its place, a puzzle's last move its finale. A square no capture
 // goes to says another piece must capture before the first stop and is a wrong stop after
-// it; a piece that can't move while another must capture says MUST. Of one frame's cues
+// it; a piece that can't move while another must capture says MUST. Of one frame's events
 // those that end a move give way to the most important: the end, then a crowning, the
 // taken pieces, the piece set down. The clock's gold and red are said once a side a game,
 // never for the computer's clock, and an increment doesn't arm them again. The king of
@@ -30,21 +30,21 @@ fn sq(n: i64) -> u8[>..] {
     return drive::name(v, v.bit_of[n]);
 }
 
-fn said(cs: heard::Cues&) -> u8[>..] {
+fn said(cs: sound_event::Events&) -> u8[>..] {
     var out: u8[>..] = [];
     for c, i in cs {
         if i > 0 { out.append(", "); }
         out.append(NAMES[c.kind]);
-        if c.kind == heard::STOP { format(out, " ", c.step); }
+        if c.kind == sound_event::STOP { format(out, " ", c.step); }
     }
     return out;
 }
 
-// The board's cues up to `now`, taken off it, printed if any.
-fn heard_by(b: board::Board&, now: f64, what: const u8[:]) {
+// The board's sound events up to `now`, taken off it, printed if any.
+fn events_by(b: board::Board&, now: f64, what: const u8[:]) {
     board::update(b, now);
-    if b.heard.len > 0 { print("  ", what, " at ", ms(now), ": ", said(b.heard)); }
-    b.heard.clear();
+    if b.sound_events.len > 0 { print("  ", what, " at ", ms(now), ": ", said(b.sound_events)); }
+    b.sound_events.clear();
 }
 
 fn ms(t: f64) -> u8[>..] { str(round(1000.0 * t) as i64, " ms") }
@@ -53,7 +53,7 @@ fn ms(t: f64) -> u8[>..] { str(round(1000.0 * t) as i64, " ms") }
 fn frames(b: board::Board&, from: i64, to: i64) {
     var t = from;
     while t <= to {
-        heard_by(b, t / 1000.0, "heard");
+        events_by(b, t / 1000.0, "heard");
         t += 50;
     }
 }
@@ -63,15 +63,15 @@ fn tap(b: board::Board&, l: board::Layout, n: i64, now: f64) {
     board::update(b, now);
     board::press(b, l, p, now);
     board::release(b, l, p, now);
-    if b.heard.len > 0 { print("  tap ", n, " at ", ms(now), ": ", said(b.heard)); }
-    b.heard.clear();
+    if b.sound_events.len > 0 { print("  tap ", n, " at ", ms(now), ": ", said(b.sound_events)); }
+    b.sound_events.clear();
 }
 
 fn settled(list: const i64[:]) {
-    var cs: heard::Cues = [];
-    for k in list { heard::say(cs, k); }
+    var cs: sound_event::Events = [];
+    for k in list { sound_event::add(cs, k); }
     let before = said(cs);
-    heard::settle(cs);
+    sound_event::one_per_move(cs);
     print("  ", before, " -> ", said(cs));
 }
 
@@ -102,7 +102,7 @@ fn main() {
     board::press(b, l, drive::at(l, sq(47)), 0.0);
     board::drag(b, l, drive::at(l, sq(47)) + float2 { 40.0, -40.0 });
     board::release(b, l, drive::at(l, sq(33)), 0.1);
-    heard_by(b, 0.1, "dropped on 33");
+    events_by(b, 0.1, "dropped on 33");
 
     print("Wrong squares while a capture is due:");
     board::set(b, king);
@@ -125,39 +125,39 @@ fn main() {
     board::set(b, crown);
     tap(b, l, 7, 0.0);
     tap(b, l, 1, 0.1);
-    b.finale = heard::NONE;
+    b.finale = sound_event::NONE;
     frames(b, 150, 350);
     board::set(b, quiet);
     tap(b, l, 33, 0.0);
     tap(b, l, 29, 0.1);
-    b.finale = heard::SOLVED;
+    b.finale = sound_event::SOLVED;
     frames(b, 150, 350);
 
     print("One sound a move:");
-    settled([heard::MOVE]);
-    settled([heard::STOP, heard::TAKE, heard::WON]);
-    settled([heard::TAKE, heard::CROWN]);
-    settled([heard::CROWN, heard::DRAWN]);
-    settled([heard::MOVE, heard::LOST]);
-    settled([heard::WRONG, heard::MOVE, heard::GOLD]);
-    settled([heard::MUST]);
+    settled([sound_event::MOVE]);
+    settled([sound_event::STOP, sound_event::TAKE, sound_event::WON]);
+    settled([sound_event::TAKE, sound_event::CROWN]);
+    settled([sound_event::CROWN, sound_event::DRAWN]);
+    settled([sound_event::MOVE, sound_event::LOST]);
+    settled([sound_event::WRONG, sound_event::MOVE, sound_event::GOLD]);
+    settled([sound_event::MUST]);
 
     print("The clocks:");
-    var ch = heard::Chimes {};
+    var ch = sound_event::Chimes {};
     let steps = [[1, 0, 0], [1, 1, 0], [1, 1, 0], [1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 1, 1], [0, 1, 1]];
     for st in steps {
         let side = st[0];
         let warn = st[1] == 1;
         let low = st[2] == 1;
-        let c = heard::chime(ch, side, warn, low, true);
+        let c = sound_event::chime(ch, side, warn, low, true);
         print("  side ", side, if warn { ", under a minute" } else { "" }, if low { ", at 0:20" } else { "" }, ": ",
-              if c == heard::NONE { "nothing" } else { NAMES[c] });
+              if c == sound_event::NONE { "nothing" } else { NAMES[c] });
     }
-    var computer = heard::Chimes {};
+    var computer = sound_event::Chimes {};
     print("  the computer's clock under a minute: ",
-          if heard::chime(computer, 1, true, false, false) == heard::NONE { "nothing" } else { "WRONG" });
-    var straight = heard::Chimes {};
-    let first = heard::chime(straight, 0, true, true, true);
-    let then = heard::chime(straight, 0, true, false, true);
-    print("  straight to 0:20: ", NAMES[first], ", then under a minute: ", if then == heard::NONE { "nothing" } else { "WRONG" });
+          if sound_event::chime(computer, 1, true, false, false) == sound_event::NONE { "nothing" } else { "WRONG" });
+    var straight = sound_event::Chimes {};
+    let first = sound_event::chime(straight, 0, true, true, true);
+    let then = sound_event::chime(straight, 0, true, false, true);
+    print("  straight to 0:20: ", NAMES[first], ", then under a minute: ", if then == sound_event::NONE { "nothing" } else { "WRONG" });
 }

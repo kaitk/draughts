@@ -54,20 +54,20 @@ struct Loop {
     muted:        bool = false,
 }
 
-// The sound each cue plays (board/heard.goose): a capture's stop is the move a step up.
+// The sound each sound event plays (board/sound_event.goose): a capture's stop is the move a step up.
 let SOUND_OF = [sound::MOVE, sound::MOVE, sound::TAKE, sound::CROWN, sound::WRONG, sound::MUST, sound::GOLD, sound::RED,
                 sound::SOLVED, sound::WON, sound::LOST, sound::DRAWN];
 
 // The sounds (docs/architecture/sound.md): the volume followed, the device opened and the
-// sounds built once it is above zero and closed at zero, then this frame's cues played.
-fn hear(lp: Loop&, bk: sound::Bank&, out: shell::Frame&, s: settings::Settings&) {
-    let level = settings::level(s);
+// sounds built once it is above zero and closed at zero, then this frame's sound events played.
+fn play_sounds(lp: Loop&, bk: sound::Bank&, out: shell::Frame&, s: settings::Settings&) {
+    let level = settings::volume_of(s);
     if level != lp.level || s.muted != lp.muted {
         lp.level = level;
         lp.muted = s.muted;
         if !sound::set_level(bk, level, s.muted) { print("sound: ", audio::error()); }
     }
-    for c in out.cues { sound::play(bk, SOUND_OF[c.kind], c.step); }
+    for c in out.sound_events { sound::play(bk, SOUND_OF[c.kind], c.step); }
 }
 
 // The theme a season setting picks: its own, or by the date.
@@ -289,7 +289,7 @@ fn run() {
         }
         host::keep_screen(h, moved || host::touched(input), now);
         if out.save { save_settings(lp, rd, sh, system_lang); }
-        hear(lp, bank, out, sh.prefs);
+        play_sounds(lp, bank, out, sh.prefs);
         if out.screen == shell::SETTINGS { render::thumbs(rd); }
         if dev::after_shell(dv, f, sh, g, rd, now) { lp.dirty = true; }
         // iOS ends an app that uses the GPU in the background, and SDL doesn't block the

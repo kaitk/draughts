@@ -84,14 +84,14 @@ struct Event {
 
 struct Lesson {
     b:       board::Board,
-    variant: u8       = rules::INTERNATIONAL,
-    step:    i64      = 0,    // in steps(variant)
-    state:   i64      = PLAYING,
-    played:  i64      = 0,     // the child's moves in this step
-    glowed:  bool     = false, // the piece to move has glowed for this turn
-    at:      f64      = 0.0,   // when the child's move lands (REPLY)
-    grab:    float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (board::touch)
-    cam:     rig::Rig = rig::Rig {},          // and the camera its buttons move
+    variant: u8               = rules::INTERNATIONAL,
+    step:    i64              = 0, // in steps(variant)
+    state:   i64              = PLAYING,
+    played:  i64              = 0,     // the child's moves in this step
+    glowed:  bool             = false, // the piece to move has glowed for this turn
+    at:      f64              = 0.0,   // when the child's move lands (REPLY)
+    grab:    float2           = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (board::touch)
+    cam:     rig::Rig         = rig::Rig {},  // and the camera its buttons move
     steps:   i64[..MAX_STEPS] = [],           // steps(variant), as it was opened
 }
 
@@ -260,7 +260,6 @@ fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: floa
 fn animating(ls: Lesson&, g: gui::Gui&, now: f64) -> bool {
     return board::animating(ls.b, now) || gui::animating(g) || ls.state == REPLY || rig::moving(ls.cam, now);
 }
-
 
 // The steps as dots, `most` dp across and `most_gap` apart from r's left, smaller where
 // they wouldn't fit r's width: those played lit at 60%, this one lit.

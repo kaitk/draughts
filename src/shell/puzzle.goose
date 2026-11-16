@@ -178,7 +178,7 @@ fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) -> bool {
         pl.at = b.since + board::duration(b.move);
         if what == puzzles::SOLVED {
             // Its landing is heard as the puzzle solved, in place of the piece set down.
-            b.finale = heard::SOLVED;
+            b.finale = sound_event::SOLVED;
             pl.won = stars(pl);
             pl.state = SOLVED;
             return true;

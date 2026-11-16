@@ -349,13 +349,13 @@ fn volume(sh: shell::Shell&, g: gui::Gui&) {
     sh.screen = shell::SETTINGS;
     drive::size = float2 { 1280.0, 800.0 };
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 20.0);
-    print("  by default ", settings::level(sh.prefs), ", muted ", sh.prefs.muted);
+    print("  by default ", settings::volume_of(sh.prefs), ", muted ", sh.prefs.muted);
     var t = 20.1;
     for k in 3 {
         let at = seen(sh, g, MUTE, t);
         drive::frame(sh, g, at, true, true, false, t);
         drive::frame(sh, g, at, false, false, true, t + 0.02);
-        print("  the speaker: volume ", sh.prefs.volume, ", muted ", sh.prefs.muted, ", heard ", sh.out.cues.len,
+        print("  the speaker: volume ", sh.prefs.volume, ", muted ", sh.prefs.muted, ", heard ", sh.out.sound_events.len,
               ", to write ", sh.changed);
         sh.changed = false;
         t += 0.1;
@@ -367,14 +367,14 @@ fn volume(sh: shell::Shell&, g: gui::Gui&) {
     let from = float2 { m.x + m.z + 40.0, y };
     drive::frame(sh, g, from, true, true, false, t);
     let quarter = sh.prefs.volume;
-    var heard = sh.out.cues.len;
+    var heard = sh.out.sound_events.len;
     drive::frame(sh, g, float2 { from.x + 0.5 * (right - from.x), y + 30.0 }, true, false, false, t + 0.1);
-    heard += sh.out.cues.len;
+    heard += sh.out.sound_events.len;
     print("  pressed at the slider's left: volume ", quarter, " under 10 ", quarter < 10, "; dragged on, down and a little",
           " off it: volume over 40 ", sh.prefs.volume > 40, ", not scrolled ", g.scroll.offset == 0.0, ", heard ", heard,
           ", to write ", sh.changed);
     drive::frame(sh, g, float2 { right - 60.0, y }, false, false, true, t + 0.2);
-    print("  let go further on: volume over 70 ", sh.prefs.volume > 70, ", heard ", sh.out.cues.len, ", to write ",
+    print("  let go further on: volume over 70 ", sh.prefs.volume > 70, ", heard ", sh.out.sound_events.len, ", to write ",
           sh.changed);
     var device: u8[>..] = [];
     players::write_device(sh.prefs.language, 64, true, 1, device);
@@ -384,6 +384,6 @@ fn volume(sh: shell::Shell&, g: gui::Gui&) {
           " ", !settings::parse("language = en\n").muted);
     settings::default_volume = 50;
     var fresh = settings::Settings {};
-    print("  a desktop's default: ", settings::level(fresh));
+    print("  a desktop's default: ", settings::volume_of(fresh));
     settings::default_volume = 0;
 }

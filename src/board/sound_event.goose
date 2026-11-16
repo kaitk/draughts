@@ -1,9 +1,9 @@
 // What the board and the game say happened, for the app's sounds (docs/architecture/
-// sound.md): cues, with no sound of their own. The board says a cue as its animation
+// sound.md): sound events, with no sound of their own. The board adds one as its animation
 // gets there (a piece landing, a capture's stop) or as a move is refused; the game adds
 // its end and its clocks'. The app plays them once a frame, after `settle` has kept one
 // sound a move. Input says nothing: a tap is never heard, only what it did on the board.
-namespace heard;
+namespace sound_event;
 import std;
 
 let NONE = -1;
@@ -21,18 +21,18 @@ let LOST = 10;              // a game lost to the computer
 let DRAWN = 11;
 let KINDS = 12;
 
-struct Cue {
+struct Event {
     kind: i64 = NONE,
     step: i64 = 0,
 }
 
-// A frame's cues: more than a frame ever says, and any past it are dropped.
+// A frame's sound events: more than a frame ever says, and any past it are dropped.
 let MOST = 8;
-type Cues = Cue[..MOST];
+type Events = Event[..MOST];
 
-fn say(cs: Cues&, kind: i64, step: i64 = 0) {
+fn add(cs: Events&, kind: i64, step: i64 = 0) {
     guard cs.len < MOST && kind != NONE else { return; }
-    cs.push(Cue { kind: kind, step: step });
+    cs.push(Event { kind: kind, step: step });
 }
 
 // A move's landing: crowned, else the taken pieces, else the piece set down.
@@ -41,8 +41,8 @@ fn landing(captured: bool, crowned: bool) -> i64 {
     return if captured { TAKE } else { MOVE };
 }
 
-// How much a cue that ends a move says, to keep the most of a move's: the game's end,
-// then a crowning, then the taken pieces, then the piece set down; 0 for a cue that is no
+// How much an event that ends a move says, to keep the most of a move's: the game's end,
+// then a crowning, then the taken pieces, then the piece set down; 0 for an event that is no
 // move's end (a stop, a wrong move, a capture due, a clock), which is always kept.
 fn rank(kind: i64) -> i64 {
     if kind == SOLVED || kind == WON || kind == LOST || kind == DRAWN { return 4; }
@@ -51,13 +51,13 @@ fn rank(kind: i64) -> i64 {
     return if kind == MOVE { 1 } else { 0 };
 }
 
-// One sound a move: of a frame's cues, those that end a move give way to the most
+// One sound a move: of a frame's events, those that end a move give way to the most
 // important of them, which keeps its place; the rest stay in their order.
-fn settle(cs: Cues&) {
+fn one_per_move(cs: Events&) {
     var best = -1;
     for c, i in cs { if rank(c.kind) > 0 && (best < 0 || rank(c.kind) > rank(cs[best].kind)) { best = i; } }
     guard best >= 0 else { return; }
-    var kept: Cues = [];
+    var kept: Events = [];
     for c, i in cs { if rank(c.kind) == 0 || i == best { kept.push(c); } }
     cs = kept;
 }
@@ -69,9 +69,9 @@ struct Chimes {
     red:  bool[2] = [false, false],
 }
 
-// The cue for `side`'s clock: GOLD the first time it runs under a minute (`warn`), RED the
+// The event for `side`'s clock: GOLD the first time it runs under a minute (`warn`), RED the
 // first time at 0:20 (`low`), which also spends the gold; nothing for the computer's
-// clock (`person` false), or a cue said already.
+// clock (`person` false), or an event said already.
 fn chime(ch: Chimes&, side: i64, warn: bool, low: bool, person: bool) -> i64 {
     guard person && side >= 0 && side < 2 else { return NONE; }
     if low && !ch.red[side] {
