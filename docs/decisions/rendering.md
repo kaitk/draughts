@@ -295,6 +295,20 @@ fed389b.
   board. Turning back at once with the pointer's first move back made a drag to the edge
   feel as if the board slipped from under the pointer.
 
+- About, a small row at the list's foot beside the privacy note (2026-11-17, task 092,
+  `prototypes/settings.html?about=tablet`), opens a card of the build, the graphics, and what the
+  3D board uses, with Copy for a bug report. It shows, it sets nothing. Rejected: a
+  Graphics section with the antialiasing and the shadows as choices. The renderer is
+  chosen at start, SMAA looks as MSAA does and costs more, and the 3D board's knobs are
+  tuned per device (below); a player's choice would mostly undo that. Its tiles are 40 dp,
+  a rare choice's size, each with a tap round it; the card's notes say only what the app
+  lowered by itself (2× MSAA), not what it asked for.
+- The battery saver caps the frames, not the look (2026-11-17, task 092): with the
+  system's saver on, Android asks for 60 Hz; the 3D board's antialiasing and shadows stay.
+  iOS caps itself and a desktop's GPU costs little, so neither is capped. Rejected: a
+  saver setting of the app's own, and a lower 3D board in saver mode before a measurement
+  shows it saves enough.
+
 **The puzzle picker**
 
 - A library list (`puzzles.html` take a, 2026-11-09). Rejected: large theme tiles (shrink

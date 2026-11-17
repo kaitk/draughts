@@ -53,6 +53,20 @@ struct Loop {
     day_read:     f64  = 0.0,
     level:        f32  = -1.0,  // the volume the sounds were last set to, and muted
     muted:        bool = false,
+    saver:        i64  = -1,    // the system's battery saver (follow_saver): 1 on, 0 off, -1 unknown
+}
+
+// The system's battery saver, read at start and whenever the app gets the focus back,
+// as it is turned on and off outside the app. While it is on, Android's display is asked
+// for 60 Hz (display.c); iOS caps itself, and a desktop's GPU costs little. Settings'
+// About shows it.
+fn follow_saver(lp: Loop&, sh: shell::Shell&) {
+    let saver = host::draughts_battery_saver();
+    guard saver != lp.saver else { return; }
+    lp.saver = saver;
+    host::draughts_cap_60(if saver == 1 { 1 } else { 0 });
+    sh.about.saver = saver;
+    lp.dirty = true;
 }
 
 // The sound each sound event plays (board/sound_event.goose): a capture's stop is the move a step up.
@@ -71,6 +85,52 @@ fn play_sounds(lp: Loop&, bk: sound::Bank&, out: shell::Frame&, s: settings::Set
     for c in out.sound_events { sound::play(bk, SOUND_OF[c.kind], c.step); }
 }
 
+// Settings' About's build (settings::About): its version, which the About row shows,
+// commit, and the commit's date, at start.
+fn fill_build(a: settings::About&) {
+    var text: u8[256] = [0; 256];
+    let n = host::draughts_about_build(text);
+    let version, rest, unused_v = split_once(text[..n], '|');
+    let commit, date, unused_c = split_once(rest, '|');
+    a.version.resize(0);
+    a.version.append(version[..min(version.len, 24)]);
+    a.commit.resize(0);
+    a.commit.append(commit[..min(commit.len, 40)]);
+    a.date.resize(0);
+    a.date.append(date[..min(date.len, 16)]);
+}
+
+// The rest of About while it is open: the system's filled once, as it first opens (the
+// GPU's name asks Metal or Vulkan, about.c); the renderer's and the 3D board's each
+// frame, as the A key or a slow device may change them. True on the frame that first
+// filled it, which draws it again.
+fn fill_about(a: settings::About&, rd: render::Renderer&) -> bool {
+    let first = !a.filled;
+    if first {
+        var text: u8[256] = [0; 256];
+        let k = host::draughts_about_system(text);
+        a.system.resize(0);
+        a.system.append(text[..min(k, 96)]);
+        let m = host::draughts_about_gpu(text);
+        a.gpu.resize(0);
+        a.gpu.append(text[..min(m, 96)]);
+        a.renderer.resize(0);
+        a.renderer.append(backend::renderer_name());
+        let driver = backend::driver();
+        // "metal" and "vulkan" as their makers write them.
+        a.driver.resize(0);
+        for c, i in driver[..min(driver.len, 24)] { a.driver.push(if i == 0 && c >= 'a' && c <= 'z' { c - 32 } else { c }); }
+        a.filled = true;
+    }
+    a.refresh = round(host::draughts_about_refresh()) as i64;
+    let aa, lowered = render::aa_shown(rd);
+    a.aa = aa;
+    a.lowered = lowered;
+    a.taps = render::shadow_taps(rd);
+    a.surfaces = render::surfaces_side(rd);
+    return first;
+}
+
 // The theme a season setting picks: its own, or by the date.
 fn theme_for(season: i64) -> i64 {
     return if season >= 0 { season } else { theme::for_month(theme::month(time())) };
@@ -85,6 +145,7 @@ fn season_changed(rd: render::Renderer&, sh: shell::Shell&) -> bool {
 // has focus; a Mac window started from a terminal never has it, so desktops leave it out.
 fn follow_focus(lp: Loop&, sh: shell::Shell&, mobile: bool) {
     if lp.focused && !host::focused() { shell::write_game(sh); }
+    if !lp.focused && host::focused() { follow_saver(lp, sh); }
     if mobile && (!lp.focused || !host::focused()) { shell::pause(sh); }
     lp.focused = host::focused();
 }
@@ -246,6 +307,8 @@ fn run() {
     defer host::close();
 
     var sh = shell::new((if f.variant >= 0 { f.variant } else { prefs.variant }) as u8);
+    fill_build(sh.about);
+    sh.about.capped = on_android;
     shell::launch(sh, prefs, players_read);
     dev::setup(f, sh, prefs);
     shell::open(sh, keep);
@@ -254,6 +317,7 @@ fn run() {
     var g = gui::Gui {};
     var thinker = think::Thinker {};
     var lp = Loop { day: host::local_day(), zone: host::utc_offset(), day_read: host::time(), .. };
+    follow_saver(lp, sh);
     var bank = sound::Bank {};
     while host::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
@@ -293,6 +357,12 @@ fn run() {
         }
         host::keep_screen(h, moved || host::touched(input), now);
         if out.save { save_settings(lp, rd, sh, system_lang); }
+        if out.about && fill_about(sh.about, rd) { lp.dirty = true; }
+        if out.copy_about {
+            var text: u8[..2048] = [];
+            settings::about_text(sh.prefs, sh.about, text);
+            host::copy_text(text[..]);
+        }
         play_sounds(lp, bank, out, sh.prefs);
         if out.screen == shell::SETTINGS { render::thumbs(rd); }
         if dev::after_shell(dv, f, sh, g, rd, now) { lp.dirty = true; }

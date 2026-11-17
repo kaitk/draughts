@@ -110,6 +110,10 @@ struct Frame {
     // the frame that starts it moving.
     save: bool = false,
     quit: bool = false,             // home's way out was tapped: the app stops (stays set)
+    // Settings' About is open: the app fills Shell.about (settings::About) and keeps it
+    // current; and its Copy was tapped this frame: the app puts its text on the clipboard.
+    about:      bool = false,
+    copy_about: bool = false,
     // What is heard this frame (board/sound_event.goose), one sound a move: the game's, a
     // puzzle's, and How to play's boards, and the volume's own sound in settings.
     sound_events: sound_event::Events = [],
@@ -128,6 +132,7 @@ struct Shell {
     preview:     board::Board,                // the board beside settings, as they make it
     next:        board::Board,                // the board beside home's setup: the game its play starts
     prefs:       settings::Settings      = settings::Settings {}, // the playing player's, and the device's language
+    about:       settings::About         = settings::About {},    // what settings' About shows, the app's to fill
     players:     players::Players        = players::Players {},
     player_card: player_card::PlayerCard = player_card::PlayerCard {}, // who's playing, over home's menu
     // The card's switch, new player, or removal, done at the next frame's start (who_card).
@@ -228,7 +233,8 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, ui_piece
             if p.is_3d { sh.from_view = p.view; }
         },
         SETTINGS => {
-            settings::frame(sh.prefs, ui_pieces, g, l, area, strings::current, room, rules::VARIANTS[sh.preview.variant].size);
+            settings::frame(sh.prefs, ui_pieces, g, l, area, strings::current, room, rules::VARIANTS[sh.preview.variant].size,
+                            sh.about);
             sh.from_view = dragged_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
         },
         PICKER => {
@@ -374,11 +380,15 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 // it is false, changing nothing: there back leaves the app as the system's does. In a
 // transition it acts on the screen come to, as a tap does.
 fn back(sh: Shell&, now: f64) -> bool {
-    // The game's moves' sheet, or a mark's tip, closes first; so does settings'
-    // language list.
+    // The game's moves' sheet, or a mark's tip, closes first; so do settings' language
+    // list and About.
     if sh.screen == GAME && game::close_sheet(sh.game) { return true; }
     if sh.screen == SETTINGS && sh.prefs.languages_open {
         sh.prefs.languages_open = false;
+        return true;
+    }
+    if sh.screen == SETTINGS && sh.prefs.about_open {
+        sh.prefs.about_open = false;
         return true;
     }
     // A game from the replay goes back to it.
@@ -488,6 +498,9 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: b
     out.typing = sh.player_card.typing && sh.screen == HOME;
     out.keyboard = sh.player_card.keyboard;
     out.save = sh.changed && sh.from < 0;
+    out.about = sh.screen == SETTINGS && sh.prefs.about_open;
+    out.copy_about = sh.prefs.copy_about;
+    sh.prefs.copy_about = false;
     gather_sound_events(sh, out);
     return sh.out;
 }
@@ -942,11 +955,11 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     let changed = board::update(sh.preview, now);
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     let ask = settings::frame(sh.prefs, sh.out.ui_pieces, g, sh.out.layout, area, strings::current, room,
-                              rules::VARIANTS[sh.preview.variant].size);
+                              rules::VARIANTS[sh.preview.variant].size, sh.about);
     let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
     // The preview turns under a drag as home's board does; the choices, the language
-    // list, and their glass take their presses first (g.press_on_ui).
-    let moved = drag_board(sh, g, v, room, now);
+    // list, and their glass take their presses first (g.press_on_ui). Not under About's card.
+    let moved = !sh.prefs.about_open && drag_board(sh, g, v, room, now);
     sh.to_view = dragged_view(sh, v, room, now);
     if ask == settings::CHANGED {
         apply_prefs(sh);

@@ -29,6 +29,7 @@ struct Flags {
     moves:      i64  = -1,  // --moves off|list|marks: the player's move list (settings::MOVES_*)
     sheet:      bool = false, // --sheet on: the game's moves' sheet open once the taps have played
     languages:  bool = false, // --languages open: settings' language list open
+    about:      bool = false, // --about open: settings' About open
     tip:        i64  = -1,  // --tip N: the tip of the game's move N (from 1) shown once the taps have played
     // --hints moves: the selected piece's targets (board::MOVES); mistakes only by default
     hints: i64 = -1,
@@ -165,6 +166,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--moves" && v == "off" { f.moves = settings::MOVES_HIDDEN; }
         if a == "--sheet" && v == "on" { f.sheet = true; }
         if a == "--languages" && v == "open" { f.languages = true; }
+        if a == "--about" && v == "open" { f.about = true; }
         if a == "--best" && v == "on" { f.best = true; }
         if a == "--tip" {
             let n, ok = parse_int(v);

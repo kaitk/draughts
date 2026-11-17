@@ -1,6 +1,6 @@
 // The program's own C (all of src/app/draughts.build's: scripts/ngfx.py checks), and
 // this build's own.
-c_sources = ["../app/background.c", "../app/display.c", "../app/gfx_fork.c", "../app/launch.c", "../app/locale.c",
+c_sources = ["../app/about.c", "../app/background.c", "../app/display.c", "../app/gfx_fork.c", "../app/launch.c", "../app/locale.c",
              "../app/memory.c", "../app/photo.c", "../app/resize.c", "../app/sound.c", "../app/storage.c", "../app/wake.c",
              "photo_ngfx.c", "renderer.c"];
 c_include = ["../app", "../../build/ngfx", "../../build/ngfx/goose-ngfx/native",

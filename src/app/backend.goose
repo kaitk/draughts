@@ -10,6 +10,10 @@ var gfx_backend: gpu::Gfx;
 
 fn with<F>() { F(&gfx_backend) }
 
+// The renderer drawing, and its graphics API as it names it, for settings' About.
+fn renderer_name() -> const u8[:] { "gfx" }
+fn driver() -> u8[>..] { gfx::driver() }
+
 fn open(title: const u8[:], width: i64, height: i64, flags: i64, no_vsync: bool) {
     host_gpu::open(title, width, height, flags, no_vsync);
 }

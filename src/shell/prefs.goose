@@ -163,6 +163,10 @@ struct Settings {
     // A change of the volume to be heard: the shell plays a move at the new level. Not in
     // the file.
     play_sample: bool = false,
+    // Whether settings' About card is open (about.goose), and its Copy tapped, for the app
+    // to put its text on the clipboard (Frame.copy_about). Not in the file.
+    about_open: bool = false,
+    copy_about: bool = false,
 }
 
 // How the flat board draws kings: auto is a crown there.

@@ -51,8 +51,9 @@ makes the choice ([architecture](README.md#code-layout)) and holds both. Both ro
 goose-ngfx's shaders are gfx's GLSL, written as Slang at each build into
 `build/ngfx/shaders/` (`scripts/ngfx_2d_shaders.py`, `ngfx_3d_shaders.py`) and compiled
 ahead into `build/ngfx/blobs/`, which `src/ngfx/` embeds. `scripts/ngfx.py` also links the
-goose-ngfx checkout at `build/ngfx/goose-ngfx` and writes the app's version for the crash
-marker (`build/ngfx/draughts_version.h`).
+goose-ngfx checkout at `build/ngfx/goose-ngfx`. Every build script writes the app's
+version and commit into `build/draughts_version.h` (`scripts/native.py`), which settings'
+About shows and the crash marker is keyed by.
 
 ## UI layer
 
@@ -356,15 +357,26 @@ crossfading. Where the choices don't fit they scroll between the head and play.
 the title, and the language button pinned on top, then one scrolling list: **Look**
 (Background, Theme, Board: Flat, Raised, Wood, Stone, Carved; Kings), **Sound** (Volume:
 a speaker and a slider, [sound](sound.md#the-setting)), **Game** (Move hints, Move list),
-and the privacy note. A new player starts on Raised on a desktop and on Flat
-on a phone or a tablet. Pictured rows show a 76 × 50 dp picture over the word
-(`gui::choice`). In landscape the list is a 480 dp column at the left and the preview the
+and the privacy note with a small About row beside it. A new player starts on Raised on
+a desktop and on Flat on a phone or a tablet. Pictured rows show a 76 × 50 dp picture
+over the word (`gui::choice`). In landscape the list is a 480 dp column at the left and the preview the
 rest; in portrait the preview is a band on top. The preview is home's board moved there
 (see [Transitions](#transitions)), set to one fixed capture position that shows what the
 move hints do; the 3D preview turns under a drag as home's board does (see [Board and
 pieces](#board-and-pieces)). The language button opens a small list of the languages in
 themselves.
 `test/shell/settings_sizes` checks the sizes.
+
+**About** (`prototypes/settings.html?about=tablet`, `src/shell/about.goose`) is a glass card over
+the dimmed settings, for a bug report: the version, commit and its date, and the system;
+the renderer (gfx or ngfx), its driver, the GPU's name, the display's refresh rate, and
+the system's battery saver; and what the 3D board uses now: its antialiasing (with a note
+when a slow device lowered it to 2×), its shadow's taps, and its surfaces' side, dim with
+a note while the board is flat. Copy puts it all on the clipboard. Two columns where one
+doesn't fit (a phone in landscape). The row, Copy, and close are 40 dp tiles, each taking
+a tap round it. The app fills the card (`app.goose`'s `fill_about`, `about.c`): the build
+at start, the system and the GPU's name (from Metal, or a Vulkan instance of its own) the
+first time it opens, the rest each frame it shows.
 
 **The puzzles** (`prototypes/puzzles.html`): a library of themes and a theme's page. The
 library has back, the title, the draughts switch (the setup's choice, one setting), and a
@@ -768,6 +780,12 @@ fork). The release's own gfx presents every frame. The patched `frame()`:
 
 On Android `DraughtsActivity` keeps SDL's Java from listening to the accelerometer, which
 would wake the app 52 times a second ([findings](../goose-findings.md)).
+
+The system's battery saver (Android's power save mode, Apple's Low Power Mode, Windows'
+battery saver; `draughts_battery_saver`) is read at start and whenever the app gets the
+focus back. While it is on, Android's display is asked for 60 Hz (`draughts_cap_60`, the
+same request as a slow 3D board's). iOS needs nothing: the app runs at 60 Hz there, and
+iOS caps a ProMotion iPad itself in Low Power Mode. A desktop isn't capped.
 
 SDL keeps the screen on while the window is open. After 15 minutes with no touch, key,
 or computer move, `host::keep_screen` hands the screen back to the system's own timeout,

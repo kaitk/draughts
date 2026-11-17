@@ -10,9 +10,8 @@ The program is src/ngfx/draughts_ngfx.goose, the second root beside the gfx buil
 src/app/draughts.goose: the same app (src/app/app.goose), gfx's backend and goose-ngfx's,
 and src/ngfx/backend.goose, which chooses one at start. The gfx-only build is untouched.
 This makes what that root needs from outside the repository, all in build/ngfx/: a link
-to the goose-ngfx checkout (goose-ngfx, which the root declares its package from), the
-app's version and commit for the crash marker (draughts_version.h), and the Slang shaders
-compiled ahead into ngfx's blobs (blobs/), which the app embeds, so it runs no shader
+to the goose-ngfx checkout (goose-ngfx, which the root declares its package from), and the
+Slang shaders compiled ahead into ngfx's blobs (blobs/), which the app embeds, so it runs no shader
 compiler: the 2D shaders and the 3D board's, written from gfx's GLSL into shaders/ by
 ngfx_2d_shaders.py and ngfx_3d_shaders.py, and src/ngfx/shaders/, what they include and
 the shaders ngfx alone has, with SMAA's (third_party/smaa), which smaa.slang includes.
@@ -78,8 +77,9 @@ def rel(frm, to):
 
 
 def prepare():
-    """build/ngfx/'s link to the checkout (a junction on Windows, which needs no rights) and
-    draughts_version.h; and a check that the root's sidecar has all of the app's C."""
+    """build/ngfx/'s link to the checkout (a junction on Windows, which needs no rights), the
+    version header (native.write_version), and a check that the root's sidecar has all of
+    the app's C."""
     OUT.mkdir(parents=True, exist_ok=True)
     if not LINK.exists() or LINK.resolve() != NGFX:
         if LINK.is_symlink() or LINK.exists():
@@ -89,8 +89,7 @@ def prepare():
             _winapi.CreateJunction(str(NGFX), str(LINK))
         else:
             LINK.symlink_to(NGFX, target_is_directory=True)
-    commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    write_if_changed(OUT / "draughts_version.h", f'#define DRAUGHTS_VERSION "{native.VERSION_NAME} {commit}"\n')
+    native.write_version()
     app = {p.name for p in native.sidecar(ROOT / "src/app/draughts.goose", "c_sources")}
     ours = {p.name for p in native.sidecar(ROOTFILE, "c_sources")}
     assert app <= ours, f"src/ngfx/draughts_ngfx.build lacks the app's {sorted(app - ours)}"

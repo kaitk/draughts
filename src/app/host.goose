@@ -50,6 +50,22 @@ extern fn draughts_sound_session();
 // can't keep up, and if still slow asks for 60 Hz while it draws. `drawing` is 1 when
 // this pass drew it.
 extern fn draughts_pace_3d(drawing: i64, now: f64) -> i64;
+// Settings' About (about.c): "version|commit|date" of the build, the system's name and
+// version with the CPU's, and the GPU's name, each returning how many bytes; and the
+// display's refresh rate in Hz, 0 where unknown.
+extern fn draughts_about_build(out: u8[:]) -> i64;
+extern fn draughts_about_system(out: u8[:]) -> i64;
+extern fn draughts_about_gpu(out: u8[:]) -> i64;
+extern fn draughts_about_refresh() -> f32;
+// The system's battery saver: 1 on, 0 off, -1 where it can't be asked (about.c). And on
+// Android, the display asked for 60 Hz while `on` is 1 (display.c).
+extern fn draughts_battery_saver() -> i64;
+extern fn draughts_cap_60(on: i64);
+
+// Puts text on the system's clipboard (settings' About's Copy).
+fn copy_text(text: const u8[:]) {
+    if !gfx::set_clipboard(text) { print("clipboard: ", gfx::error()); }
+}
 
 struct Host {
     display:   f32[5]         = [0.0; 5],

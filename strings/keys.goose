@@ -241,6 +241,29 @@ let KEYS = [
     "settings.sound",
     "settings.volume",
     "settings.mute",
+    "about.row",
+    "about.copy",
+    "about.copied",
+    "about.build",
+    "about.graphics",
+    "about.board_3d",
+    "about.version",
+    "about.commit",
+    "about.system",
+    "about.renderer",
+    "about.driver",
+    "about.gpu",
+    "about.display",
+    "about.antialiasing",
+    "about.shadows",
+    "about.taps",
+    "about.surfaces",
+    "about.saver",
+    "about.on",
+    "about.off",
+    "about.capped",
+    "about.lowered",
+    "about.not_in_use",
 ];
 
 let LANGUAGE_NAME = 0;
@@ -544,4 +567,40 @@ let SETTINGS_SOUND = 234;
 let SETTINGS_VOLUME = 235;
 // The speaker's tile's name, for a screen reader: it turns the sound off and on.
 let SETTINGS_MUTE = 236;
-let COUNT = 237;
+// Settings' About: its row at the foot, beside the privacy note, and the dialog it opens
+// over settings, of the build and what the app draws with. The values (versions, names,
+// "4× MSAA") stay as they are in every language.
+let ABOUT_ROW = 237;
+let ABOUT_COPY = 238;
+let ABOUT_COPIED = 239;
+// The dialog's three groups.
+let ABOUT_BUILD = 240;
+let ABOUT_GRAPHICS = 241;
+let ABOUT_BOARD_3D = 242;
+// The build's lines.
+let ABOUT_VERSION = 243;
+let ABOUT_COMMIT = 244;
+let ABOUT_SYSTEM = 245;
+// The graphics' lines: the renderer (gfx or ngfx), its graphics API, the GPU's name, and
+// the display's refresh rate.
+let ABOUT_RENDERER = 246;
+let ABOUT_DRIVER = 247;
+let ABOUT_GPU = 248;
+let ABOUT_DISPLAY = 249;
+// The 3D board's lines: its antialiasing, its shadow's filter as "{} taps", and the side
+// of its baked surfaces in pixels.
+let ABOUT_ANTIALIASING = 250;
+let ABOUT_SHADOWS = 251;
+let ABOUT_TAPS = 252;
+let ABOUT_SURFACES = 253;
+// The system's battery saver, on or off; and under it, on Android, that it keeps the
+// display at 60 Hz.
+let ABOUT_SAVER = 254;
+let ABOUT_ON = 255;
+let ABOUT_OFF = 256;
+let ABOUT_CAPPED = 257;
+// Under the antialiasing when the app lowered it from 4× MSAA for a slow device.
+let ABOUT_LOWERED = 258;
+// Under the 3D board's group while the board is flat.
+let ABOUT_NOT_IN_USE = 259;
+let COUNT = 260;

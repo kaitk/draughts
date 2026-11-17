@@ -28,9 +28,23 @@ import drive from "../drive";
 
 let LANGUAGE = 1;           // the language button, after back
 let FIRST_TILE = 2;         // the list's first tile: the Background row's Photo
-let TILES = 27;             // the list's rows' tiles, puzzles a day's four too, the speaker, back, language
+let TILES = 28;             // the list's rows' tiles, puzzles a day's four too, the speaker, back, language, About
 
 fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
+
+// The tap round tile r: the smallest control the keys' focus was offered whose rect
+// holds r, else r itself; the About row is small, its tap a tap round it (sizes.goose's).
+fn tap_of(g: gui::Gui&, r: float4) -> float4 {
+    var best = r;
+    var found = false;
+    for s in g.spots {
+        let q = s.rect;
+        guard q.x <= r.x + 0.5 && q.y <= r.y + 0.5 && q.x + q.z >= r.x + r.z - 0.5 && q.y + q.w >= r.y + r.w - 0.5 else { continue; }
+        if !found || q.z * q.w < best.z * best.w { best = q; }
+        found = true;
+    }
+    return best;
+}
 
 fn inside_across(r: float4, a: float4) -> bool { r.x >= a.x - 0.5 && r.x + r.z <= a.x + a.z + 0.5 }
 
@@ -80,7 +94,7 @@ fn layout(g: gui::Gui&, name: const u8[:]) {
     var low:    f32 = 1.0e9;
     var small = 0;
     for i in n {
-        let r = drive::rect(g, i);
+        let r = tap_of(g, drive::rect(g, i));
         narrow = min(narrow, r.z);
         low = min(low, r.w);
         if r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5 { small++; }

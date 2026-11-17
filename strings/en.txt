@@ -329,3 +329,40 @@ settings.sound = Sound
 settings.volume = Volume
 # The speaker's tile's name, for a screen reader: it turns the sound off and on.
 settings.mute = Mute
+
+# Settings' About: its row at the foot, beside the privacy note, and the dialog it opens
+# over settings, of the build and what the app draws with. The values (versions, names,
+# "4× MSAA") stay as they are in every language.
+about.row = About
+about.copy = Copy
+about.copied = Copied
+# The dialog's three groups.
+about.build = Build
+about.graphics = Graphics
+about.board_3d = 3D board
+# The build's lines.
+about.version = Version
+about.commit = Commit
+about.system = System
+# The graphics' lines: the renderer (gfx or ngfx), its graphics API, the GPU's name, and
+# the display's refresh rate.
+about.renderer = Renderer
+about.driver = Driver
+about.gpu = GPU
+about.display = Display
+# The 3D board's lines: its antialiasing, its shadow's filter as "{} taps", and the side
+# of its baked surfaces in pixels.
+about.antialiasing = Antialiasing
+about.shadows = Shadows
+about.taps = {} taps
+about.surfaces = Surfaces
+# The system's battery saver, on or off; and under it, on Android, that it keeps the
+# display at 60 Hz.
+about.saver = Battery saver
+about.on = On
+about.off = Off
+about.capped = Frames capped at 60 Hz
+# Under the antialiasing when the app lowered it from 4× MSAA for a slow device.
+about.lowered = Lowered: the device draws too slowly for 4×
+# Under the 3D board's group while the board is flat.
+about.not_in_use = Not in use: the board is flat.

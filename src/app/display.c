@@ -126,7 +126,7 @@ int64_t draughts_display(draughts_floats out) {
 // display faster than 60, it asks for 60 Hz whenever the 3D board draws. Android only
 // (ANativeWindow_setFrameRate, API 30, looked up since the app runs from 29), asked again
 // when the surface changes: a new surface starts with no rate of its own. Some displays
-// ignore it.
+// ignore it. With the battery saver on (draughts_cap_60) it asks for 60 Hz always.
 #if defined(__ANDROID__)
 #include <dlfcn.h>
 typedef struct ANativeWindow ANativeWindow;
@@ -169,6 +169,11 @@ static void ask_rate(float hz) {
     }
 }
 
+// The battery saver on (draughts_cap_60): the display asked for 60 Hz whatever draws.
+static int capped;
+
+void draughts_cap_60(int64_t on) { capped = on != 0; }
+
 int64_t draughts_pace_3d(int64_t drawing, double now) {
     // 0: timed for fewer samples; 1: at fewer, timed for 60 Hz; 2: 60 Hz asked; 3: at
     // fewer on a 60 Hz display, timed no more.
@@ -191,9 +196,12 @@ int64_t draughts_pace_3d(int64_t drawing, double now) {
         }
     }
     last = drawing ? now : -1.0;
-    ask_rate(slow == 2 && drawing ? 60.0f : 0.0f);
+    ask_rate(capped || (slow == 2 && drawing) ? 60.0f : 0.0f);
     return fewer;
 }
 #else
 int64_t draughts_pace_3d(int64_t drawing, double now) { (void)drawing; (void)now; return 0; }
+// iOS keeps the app at 60 Hz (no ProMotion key in its Info.plist) and caps a ProMotion
+// iPad itself in Low Power Mode; a desktop isn't capped, its GPU's cost small.
+void draughts_cap_60(int64_t on) { (void)on; }
 #endif

@@ -15,8 +15,7 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 | `results.html` | The results: the rating per draughts, by level, the games played |
 | `replay.html` | A past game at move 20, its steps working, with the whole list and the marks' legend; the move shown (a faded piece where it started, its way in dots, the squares it stood on shaded) and the best move ( on the board only when asked for); `?ply=60` a king's capture; a desktop's larger column |
 | `players.html` | Who's playing, over home |
-| `settings.html` | Settings beside the preview board: Look, Sound (the Volume row: a speaker and a slider), and Game; one group at a time on a phone |
-| `settings-about.html` | A take (being chosen): an About row at the game group's foot opening a dialog of the build, the graphics, and what the 3D board uses now; `?about=mac\|tablet\|a33\|iphone\|flat` a device's sample values, `&open=0` closed |
+| `settings.html` | Settings beside the preview board: Look, Sound (the Volume row: a speaker and a slider), and Game, with About at its foot; one group at a time on a phone; `?about=mac\|tablet\|a33\|iphone\|flat` About's card open with a device's sample values |
 | `tutorial.html` | How to play: a new player's question (`?view=ask`), the steps played on the board (`?view=step&step=N`, `&v=intl\|brazilian\|russian`), and the end's ways on (`?view=done`) |
 
 Every page takes the same few parameters, none needed:

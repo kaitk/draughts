@@ -28,11 +28,15 @@ let MARKER = "renderer-start.txt";
 // Whether ngfx draws, else gfx, set once by open(); the two backends, the chosen one's
 // filled as it draws.
 var ngfx_on = false;
-var gfx_backend: gpu::Gfx;
+var gfx_backend:  gpu::Gfx;
 var ngfx_backend: gpu_ngfx::Ngfx;
 
 // The block, given the chosen backend.
 fn with<F>() { if ngfx_on { F(&ngfx_backend) } else { F(&gfx_backend) } }
+
+// The renderer drawing, and its graphics API as it names it, for settings' About.
+fn renderer_name() -> const u8[:] { if ngfx_on { "ngfx" } else { "gfx" } }
+fn driver() -> u8[>..] { if ngfx_on { ngfx::driver() } else { gfx::driver() } }
 
 // --renderer's value, "auto" without it.
 fn renderer_flag() -> const u8[:] {

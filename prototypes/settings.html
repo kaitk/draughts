@@ -76,6 +76,42 @@
     .top .tile.back { flex-direction: column; gap: 2px; padding: 0; font-size: 20px; }
     .top .end .icon { display: none; }
   }
+
+  /* About (rendering.md, "Settings"): privacy and a small About row at the game group's
+     foot; the row opens a card over a dimmed settings, its lines in three groups, the 3D
+     board's dim while flat. */
+  .foot { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
+  .foot > small { flex: 1; font-size: 15px; line-height: 1.2; color: var(--fg-dim); }
+  /* The small tiles: the Photo and Plain switch's size. */
+  .small.tile { min-width: 40px; min-height: 40px; gap: 6px; padding: 0 12px; font-size: 15px; border-radius: 12px; }
+  .small.tile .icon { width: 20px; height: 20px; }
+  .about-row { flex: none; }
+  .about-row small { font-size: 14px; color: var(--fg-dim); }
+  .veil { position: absolute; inset: 0; z-index: 5; display: none; place-items: center; background: rgb(0 0 0 / 0.42); }
+  .veil.open { display: grid; }
+  .dialog { --r: 24px; display: grid; gap: 14px; width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 18px 22px 20px; }
+  .dialog .head { display: flex; align-items: center; gap: 14px; }
+  .dialog .head h1 { flex: 1; font-size: 28px; }
+  .dialog .head h1 small { display: block; font-size: 15px; color: var(--fg-dim); font-weight: normal; }
+  .dialog .head { align-items: flex-start; }
+  .dialog .head .tile[aria-label] { padding: 0; }
+  .dialog section h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-dim); margin-bottom: 4px; }
+  .dialog dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 18px; font-size: 18px; }
+  .dialog dt { color: var(--fg-dim); }
+  .dialog dd { margin: 0; }
+  .dialog dd small { display: block; font-size: 14px; color: var(--fg-dim); line-height: 1.2; }
+  .dialog section.off dl { opacity: 0.45; }
+  .dialog .why { font-size: 15px; color: var(--fg-dim); }
+  .samples { position: fixed; right: 8px; bottom: 8px; z-index: 9; font: 13px system-ui; color: #fff; background: rgb(0 0 0 / 0.5); padding: 4px 8px; border-radius: 8px; }
+  .samples a { color: #fff; margin-left: 6px; }
+  .cols, .col { display: grid; gap: 14px; align-content: start; }
+  /* A phone in landscape: the 3D board's lines beside the rest, Copy under them. */
+  @container (max-height: 599px) {
+    .dialog { width: min(860px, 100%); gap: 8px; padding: 12px 20px 14px; }
+    .cols { grid-template-columns: 1fr 1fr; gap: 28px; }
+    .dialog dl { font-size: 16px; gap: 2px 14px; }
+    .dialog .head h1 { font-size: 24px; }
+  }
 </style>
 </head>
 <body>
@@ -106,17 +142,28 @@
         </div></div>
       </section>
       <section class="group glass game">
-        <h2 data-icon="target">Game<small>Privacy: Draughts collects nothing. Everything stays on this device.</small></h2>
+        <h2 data-icon="target">Game</h2>
         <div class="setting"><h3>Move hints</h3><div class="tiles">
           <a class="tile on">Mistakes only</a><a class="tile">All moves</a></div></div>
         <div class="setting"><h3>Move list</h3><div class="tiles">
           <a class="tile">Off</a><a class="tile">Moves</a><a class="tile on">Marks</a>
           <small class="note">The moves, each marked by how good it was</small></div></div>
+        <div class="foot"><small>Privacy: Draughts collects nothing. Everything stays on this device.</small>
+          <a class="tile small about-row" id="about-open"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle class="solid" cx="12" cy="7.6" r="1.1"/></svg>About<small id="about-short"></small></a></div>
       </section>
     </div>
   </div>
   <div class="preview"><div id="board"></div></div>
+  <div class="veil" id="veil"><section class="dialog glass" role="dialog" aria-labelledby="about-title">
+    <div class="head"><h1 id="about-title">Draughts<small id="ver"></small></h1>
+      <a class="tile small" id="copy">Copy</a><a class="tile small" data-icon="x" aria-label="Close" id="about-close"></a></div>
+    <div class="cols"><div class="col">
+    <section><h2>Build</h2><dl id="build"></dl></section>
+    <section><h2>Graphics</h2><dl id="gfx"></dl></section></div><div class="col">
+    <section id="board3d"><h2>3D board</h2><dl id="r3d"></dl><p class="why" id="why"></p></section></div></div>
+  </section></div>
 </main>
+<div class="samples">Sample: <span id="picks"></span></div>
 <script>
   const D = Draughts;
   document.getElementById('themes').innerHTML = ['winter', 'spring', 'summer', 'autumn'].map((s) =>
@@ -157,6 +204,46 @@
     show();
   });
   show();
+  // The About dialog's values, one device's each (?about=mac|tablet|a33|iphone|flat):
+  // what the app would read from its build, SDL, and render3d at the moment it opens.
+  const ABOUT = {
+    mac:    { os: 'macOS 26.1 · arm64', renderer: 'SDL GPU (gfx)', driver: 'Metal', gpu: 'Apple M1 Pro',
+              aa: '4× MSAA', shadow: '16 taps', bake: '2048', rate: '120 Hz', saver: 'Off' },
+    tablet: { os: 'Android 15 · arm64', renderer: 'SDL GPU (gfx)', driver: 'Vulkan 1.3', gpu: 'Mali-G57',
+              aa: '4× MSAA', shadow: '9 taps', bake: '2048', rate: '90 Hz', saver: 'Off' },
+    a33:    { os: 'Android 14 · arm64', renderer: 'SDL GPU (gfx)', driver: 'Vulkan 1.1', gpu: 'Mali-G68',
+              aa: '2× MSAA', aaWhy: 'lowered: the device draws too slowly for 4×', shadow: '4 taps', bake: '1024',
+              rate: '60 Hz', saver: 'Off' },
+    iphone: { os: 'iOS 26.1 · arm64', renderer: 'ngfx', driver: 'Metal', gpu: 'Apple A15 GPU',
+              aa: '4× MSAA', shadow: '16 taps', bake: '1024', rate: '60 Hz', rateWhy: 'capped by the battery saver', saver: 'On', saverWhy: 'from the system' },
+    flat:   { os: 'Android 15 · arm64', renderer: 'SDL GPU (gfx)', driver: 'Vulkan 1.3', gpu: 'Mali-G57', flat: true,
+              aa: '4× MSAA', shadow: '9 taps', bake: '2048', rate: '90 Hz', saver: 'Off' },
+  };
+  const pick = new URLSearchParams(location.search).get('about') || 'tablet';
+  const a = ABOUT[pick] || ABOUT.tablet;
+  const VERSION = '0.2.0', HASH = 'edb1595', DATE = '2026-11-17';
+  const rows = (list) => list.map(([k, v, why]) => `<dt>${k}</dt><dd>${v}${why ? `<small>${why}</small>` : ''}</dd>`).join('');
+  document.getElementById('ver').textContent = `${VERSION} (${HASH})`;
+  document.getElementById('about-short').textContent = VERSION;
+  document.getElementById('build').innerHTML = rows([['Version', VERSION], ['Commit', `${HASH} · ${DATE}`], ['System', a.os]]);
+  document.getElementById('gfx').innerHTML = rows([['Renderer', a.renderer], ['Driver', a.driver], ['GPU', a.gpu],
+    ['Display', a.rate, a.rateWhy], ['Battery saver', a.saver, a.saverWhy]]);
+  document.getElementById('r3d').innerHTML = rows([['Antialiasing', a.aa, a.aaWhy], ['Shadows', a.shadow],
+    ['Surfaces', `${a.bake} × ${a.bake}`]]);
+  document.getElementById('board3d').classList.toggle('off', !!a.flat);
+  document.getElementById('why').textContent = a.flat ? 'Not in use: the board is flat. These apply once it is raised.' : '';
+  document.getElementById('picks').innerHTML = Object.keys(ABOUT).map((k) =>
+    `<a href="?about=${k}&open=1"${k === pick ? ' style="font-weight:bold"' : ''}>${k}</a>`).join('');
+  const veil = document.getElementById('veil');
+  const open = (on) => veil.classList.toggle('open', on);
+  document.getElementById('about-open').addEventListener('click', () => open(true));
+  document.getElementById('about-close').addEventListener('click', () => open(false));
+  veil.addEventListener('click', (e) => { if (e.target === veil) open(false); });
+  document.getElementById('copy').addEventListener('click', () => {
+    navigator.clipboard?.writeText(veil.querySelector('.dialog').innerText.replace(/Copy\n*/, ''));
+    document.getElementById('copy').textContent = 'Copied';
+  });
+  open(new URLSearchParams(location.search).has('about') && new URLSearchParams(location.search).get('open') !== '0');
   D.init();
 </script>
 </body>
