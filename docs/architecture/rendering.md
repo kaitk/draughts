@@ -205,13 +205,14 @@ and value noise in the board shader, never a regular stripe.
   the season is picked the sharp texture is averaged down to 512 × 512 on the GPU and
   blurred once (sigma 5.6 texels), a 1 MB texture. A square image cropped by the long side
   needs no new blur for a new screen size.
-- **Stored** twice per season at 2048 × 2048, embedded in the program with C23 `#embed`:
-  as ASTC 6 × 6 (1.87 MB each, from the masters with `astcenc`,
-  `design/backgrounds/README.md`), sampled as stored; and as JPEG at quality 85, the
-  fallback for a GPU without ASTC and for the release's own gfx, which lacks compressed
-  formats ([why 6 × 6](../decisions/rendering.md#scene-and-glass)). Android embeds only
-  the ASTC (7.5 MB of `libmain.so`) and no stb_image. A checkout without the images still
-  builds and shows the page color (`__has_embed`).
+- **Stored** per season at 2048 × 2048, embedded in the program with C23 `#embed`, as
+  ASTC 6 × 6 (1.87 MB each, from the masters with `astcenc`,
+  `design/backgrounds/README.md`), sampled as stored, and as JPEG at quality 85, decoded
+  ([why 6 × 6](../decisions/rendering.md#scene-and-glass)). Android and iOS embed only the
+  ASTC (7.5 MB of `libmain.so`) and no stb_image; Windows and Linux only the JPEG, which
+  their GPUs need. The Mac embeds both: the ASTC for its GPU, the JPEG for a plain
+  `goose build` with the Goose release's own gfx, which lacks compressed formats. A
+  checkout without the images still builds and shows the page color (`__has_embed`).
 - **Loading**: `src/app/background.c` decodes (no graphics API) and `src/app/photo.c`
   uploads through gfx's C API, with no copy on the data stack. Compressed formats come
   from the fork's `compressed-textures` ([findings](../goose-findings.md)). Where ASTC

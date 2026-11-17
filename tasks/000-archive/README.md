@@ -323,3 +323,8 @@ and the commit that last has it.
   2026-11-16 into task 065, open, as `065-ngfx-renderer/03-msaa-and-older-apple.md`.
 - 081: The 3D board at 60 fps on the Galaxy A33. Merged 2026-11-16 into task 055, open, as
   `055-locked-frame-rate/02-a33-60fps.md`.
+- 014: Upscale the backgrounds with real detail. Cancelled 2026-11-17: 3840 px masters
+  (Qwen-Image 2.1 img2img at 0.3, then SeedVR2) lost the originals' mesh, but the user
+  found them faker, the detail wrong, and kept the originals. The work, its 4K desktop
+  loading, and the results are on branch `bg-4k`; Windows and Linux dropped ASTC from it.
+  `014-upscale-backgrounds.md`, `063ba7b` (branch `bg-4k`)
