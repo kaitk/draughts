@@ -43,6 +43,9 @@ struct Frame {
     frame_build:     float4,
     frame_surface:   float4,
     frame_map:       float4,
+    light_scatter:   float4,
+    dark_scatter:    float4,
+    piece_wear:      float4,
 }
 
 // The bytes of the uniform block `name` in GLSL `text` of vec4s and mat4s alone, std140,
@@ -453,8 +456,11 @@ fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
     f.grade = t.grade;
     f.tint = model3d::linear4(t.tint);
     f.frame_build = t.build;
-    f.frame_map = float4 { (g.frame_rows as f32) / g.side, 0.0, 0.0, 0.0 };
+    f.frame_map = float4 { (g.frame_rows as f32) / g.side, t.mineral, 0.0, 0.0 };
     f.frame_surface = t.frame_surface;
+    f.light_scatter = model3d::linear4(t.light_scatter);
+    f.dark_scatter = model3d::linear4(t.dark_scatter);
+    f.piece_wear = t.piece_wear;
     g.shadow_dirty = true;
 }
 

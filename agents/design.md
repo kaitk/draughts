@@ -71,6 +71,10 @@ pieces; the design boards still set the layout, glass, and controls.
   `poc/3d` `goose build -o board3d board3d.goose` and `board3d --theme summer --summer 6
   --panel` (the flags in its header). Its renderer is the older one, so carry back the
   printed values, not its shots (2026-11-16, summer's stone).
+- The pieces' values have a tuner of their own on the current renderer,
+  `tools/piece_tune.goose` (task 094): B toggles scattering on the pieces.
+  Its Pieces slider previews Plastic, Jade or Wood independently of the board.
+  Spring stone has Jade and Plastic as profiles 0 and 1 for `board_shot`.
 
 ## What has been tried and set aside
 

@@ -41,7 +41,13 @@ let FRAME = """
                              // line's strength; z: 1 for stone, its u leaning at the ends;
                              // w: 1 carved
         vec4 frame_surface;  // w: how much smoother the frame's rounded edge is
-        vec4 frame_map;      // x: the frame map's height over its width
+        vec4 frame_map;      // x: map height / width, y: piece mineral
+        // The pieces' scattering, light and dark (looks::Theme): rgb its tint, linear, w
+        // its strength; their wear: x the roughness's unevenness, y the worn edges'
+        // dullness, z each piece's own tone.
+        vec4 light_scatter;
+        vec4 dark_scatter;
+        vec4 piece_wear;
     };
     const float PI = 3.14159265;
     // The board's sizes, mesh.goose's (test/model3d/geometry checks them).
@@ -86,14 +92,44 @@ let LIT_VERT = """
     layout(location = 4) out vec3 v_local;
     layout(location = 5) flat out vec4 v_kind;
     layout(location = 6) flat out float v_alpha;
+    layout(location = 7) out vec2 v_wear;
+    layout(location = 8) out vec3 v_scatter;
     void main() {
         vec3 world = a_pos;
         vec4 kind = vec4(0.0);
+        v_wear = vec2(1.0);
+        v_scatter = vec3(0.0);
         if (draw.x > 0.5) {
             int i = gl_InstanceIndex + int(draw.w);
             vec4 a = inst[i * 2];
             kind = inst[i * 2 + 1];
             world = a.xyz + a_pos * a.w;
+            float seed = mod(abs(kind.w), 1000.0);
+            float patchiness = 0.25 * (sin(a_pos.x * 9.0 + a_pos.y * 5.0 + seed * 2.3)
+                                     + sin(a_pos.z * 11.0 - a_pos.y * 4.0 + seed * 1.7));
+            // Distance down the rounded shoulder in units of its profile radius.
+            float shoulder = clamp(1.0 - (HEIGHT - a_pos.y) / (RADIUS * (1.0 - EDGE_AT)), 0.0, 1.0);
+            float side = 1.0 - max(a_normal.y, 0.0);
+            v_wear.x = 1.0 + piece_wear.x * patchiness + 0.15 * piece_wear.y * shoulder * side;
+            v_wear.y = 1.0 + piece_wear.z * (2.0 * fract(sin(seed * 12.9898 + 4.1) * 43758.5453) - 1.0);
+            // Trace from just under the surface toward the key to the first
+            // entry through the cylinder wall or cap. A short path from an
+            // adjacent surface supplies more light than one across the body.
+            vec4 scatter = kind.x > 0.5 ? dark_scatter : light_scatter;
+            vec3 l = light_dir.xyz;
+            vec3 q = a_pos - 0.035 * a_normal;
+            float lateral = max(dot(l.xz, l.xz), 0.0001);
+            float along = dot(q.xz, l.xz);
+            float wall = (sqrt(max(0.0, along * along + lateral *
+                          (RADIUS * RADIUS - dot(q.xz, q.xz)))) - along) / lateral;
+            float cap = (HEIGHT - q.y) / max(l.y, 0.001);
+            vec2 entry = (q.xz + wall * l.xz) / RADIUS;
+            float incidence = wall < cap ? dot(entry, l.xz) : l.y;
+            float path = max(0.0, min(wall, cap));
+            float contact = smoothstep(0.0, 0.035, a_pos.y);
+            if (kind.z == 2.0) contact *= smoothstep(0.0, 0.035, HEIGHT - a_pos.y);
+            v_scatter = scatter.rgb * (scatter.w * max(incidence, 0.0) *
+                        exp2(-path * 12.0) * contact);
         }
         v_world = world;
         v_normal = a_normal;
@@ -160,6 +196,8 @@ let LIT_FRAG = """
     layout(location = 4) in vec3 v_local;
     layout(location = 5) flat in vec4 v_kind;
     layout(location = 6) flat in float v_alpha;
+    layout(location = 7) in vec2 v_wear;
+    layout(location = 8) in vec3 v_scatter;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D plan_albedo;
     layout(set = 2, binding = 1) uniform sampler2D plan_normal;
@@ -433,7 +471,47 @@ let LIT_FRAG = """
             bool dark = v_kind.x > 0.5;
             vec4 m = dark ? dark_piece : light_piece;
             rough = m.a;
-            if (dark) {
+            if (frame_map.y > 0.5) {
+                // One continuous cut through the disc, including its side. Shift
+                // the stone for each piece so adjacent men have different cuts.
+                float seed = mod(v_kind.w < 0.0 ? -1.0 - v_kind.w : v_kind.w, 1000.0);
+                vec3 cut = lp + seed * 1.73;
+                float cloud = noise3(cut * 5.5);
+                float body = cloud - 0.5;
+                if (frame_map.y > 2.5 && dark) {
+                    // Cloudy inclusions and folded pale bands in polished green jade.
+                    vec3 grain = vec3(cut.x * 1.6 + cut.z, cut.y, cut.z * 0.55);
+                    float folds = noise3(grain * 7.0 + 1.8 * body);
+                    float flecks = noise3(cut * 34.0);
+                    float milk = smoothstep(0.20, 0.90, folds + 0.30 * body + 0.16 * (flecks - 0.5));
+                    vec3 inclusion = mix(m.rgb * vec3(0.60, 0.64, 0.53),
+                                         m.rgb + vec3(0.11, 0.14, 0.07), milk);
+                    albedo = max(vec3(0.0), mix(m.rgb, inclusion, piece_fig.y * (1.6 + 1.7 * fract(seed * 0.382))));
+                    rough += piece_fig.y * (flecks - 0.5) * 0.16;
+                } else if (frame_map.y > 2.5) {
+                    // Milky white pockets blend into a cooler body. Each cut carries
+                    // a different balance of porcelain white and pale celadon.
+                    float milk = smoothstep(0.24, 0.76, cloud + 0.3 * (fract(seed * 0.618) - 0.5)
+                                           + 0.16 * (noise3(cut * 15.0) - 0.5));
+                    vec3 inclusion = mix(m.rgb * vec3(0.69, 0.82, 0.80),
+                                         m.rgb + vec3(0.14, 0.09, 0.10), milk);
+                    albedo = mix(m.rgb, inclusion, piece_fig.x * (0.3 + 3.7 * fract(seed * 0.382)));
+                } else {
+                    if (frame_map.y > 1.5) {
+                        // A bent mineral seam crossing the broad cloudy inclusions.
+                        float offset = fract(seed * 0.618) - 0.5;
+                        float seam = abs(dot(lp, vec3(1.3, 0.6, 0.8)) + 0.95 * body + offset);
+                        float width = max(fwidth(seam), 0.015);
+                        float vein = 1.0 - smoothstep(0.018, 0.018 + width, seam);
+                        body += (dark ? 0.55 : -0.8) * vein;
+                    } else {
+                        body += noise3(cut * 27.0) - 0.5;
+                    }
+                    float figure = dark ? piece_fig.y : piece_fig.x;
+                    albedo = m.rgb * max(0.1, 1.0 + 2.0 * figure * body);
+                    rough += 0.12 * figure * body;
+                }
+            } else if (dark) {
                 // Smooth satin with a faint figure, drawn out a little across the disc.
                 vec3 g = lp + mod(abs(v_kind.w), 1000.0) * 3.17;
                 float st = 1.0 + 6.0 * piece_fig.z;
@@ -458,6 +536,8 @@ let LIT_FRAG = """
             float rho = length(lp.xz);
             float u = rho / RADIUS;
             float span = max(1.5 * length(vec2(dFdx(u), dFdy(u))), 0.004);
+            albedo *= v_wear.y;
+            rough = clamp(rough * v_wear.x, 0.05, 1.0);
             if (u < EDGE_AT && lp.y > 0.5 * HEIGHT) {
                 vec2 radial = rho > 1e-5 ? lp.xz / rho : vec2(0.0);
                 float q = 0.25 * span;
@@ -541,7 +621,7 @@ let LIT_FRAG = """
         // little toward the light, so they leave them to the baked occlusion.
         float vis = shadow(mat > 1.5 ? p + l * 0.03 : p, n) * micro;
         vec3 light = light_color.rgb * light_dir.w;
-        vec3 direct = (albedo * (diff / PI) + spec) * light * vis;
+        vec3 direct = (albedo * ((diff + v_scatter) / PI) + spec) * light * vis;
         // The photograph's light: diffuse from the harmonics, specular from them along
         // the reflection, through the DFG fit, under the occlusion.
         vec3 irr = sh_eval(n) * params.z;

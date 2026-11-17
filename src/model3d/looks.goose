@@ -105,7 +105,28 @@ struct Theme {
     // A carved frame's fill (sRGB; shaders::BAKE_FRAG's carving): the vines' leaves'
     // tint, the folk band's freshly cut wood, or the amber in the signs; w: how much.
     fill: float4,
+    // The pieces' faked subsurface scattering (shaders::LIT_FRAG), light and dark: the
+    // tint (sRGB) of the light reaching past the terminator and through a rim the key
+    // light is behind, w: how strong. Strong on light stone and bone, faint on dark wood.
+    light_scatter: float4,
+    dark_scatter:  float4,
+    // The pieces' wear: x how uneven the roughness is across a piece, y how much duller
+    // its worn edges are, z how far each piece's tone strays from its fellows'.
+    piece_wear: float4,
+    // Mineral figure on the pieces: 0 turned wood, 1 granular stone, 2 veined stone, 3 white and green jade.
+    mineral: f32 = 0.0,
 }
+
+// The pieces' scattering by material, which looks of one material share: ivory, bone,
+// and pale stone; pale wood (maple, birch, ash); dark wood; dark stone; jade, a little
+// translucent and green through. Then their wear: turned wood, honed stone.
+let IVORY_SCATTER = float4 { 1.0, 0.74, 0.54, 0.6 };
+let PALE_WOOD_SCATTER = float4 { 1.0, 0.7, 0.45, 0.45 };
+let DARK_WOOD_SCATTER = float4 { 0.9, 0.45, 0.25, 0.12 };
+let DARK_STONE_SCATTER = float4 { 0.62, 0.6, 0.62, 0.08 };
+let JADE_SCATTER = float4 { 0.55, 0.8, 0.4, 0.25 };
+let WOOD_WEAR = float4 { 0.3, 0.5, 0.04, 0.0 };
+let STONE_WEAR = float4 { 0.4, 0.6, 0.05, 0.0 };
 
 fn get(which: i64) -> Theme {
     if which == WINTER { return winter(); }
@@ -246,6 +267,9 @@ fn autumn() -> Theme {
         build:         float4 { 0.0, 1.0, 0.0, 0.0 },
         seam:          float4_0,
         fill:          float4_0,
+        light_scatter: PALE_WOOD_SCATTER,
+        dark_scatter:  DARK_WOOD_SCATTER,
+        piece_wear:    WOOD_WEAR,
     };
 }
 
@@ -287,6 +311,10 @@ fn winter() -> Theme {
         build:         float4 { 1.0, 0.0, 1.0, 0.0 },
         seam:          float4_0,
         fill:          float4_0,
+        light_scatter: IVORY_SCATTER,
+        dark_scatter:  DARK_STONE_SCATTER,
+        mineral: 1.0,
+        piece_wear:    STONE_WEAR,
     };
 }
 
@@ -329,6 +357,9 @@ fn spring() -> Theme {
         build:         float4 { 0.0, 1.0, 0.0, 0.0 },
         seam:          float4_0,
         fill:          float4_0,
+        light_scatter: PALE_WOOD_SCATTER,
+        dark_scatter:  DARK_WOOD_SCATTER,
+        piece_wear:    WOOD_WEAR,
     };
 }
 
@@ -369,6 +400,9 @@ fn summer() -> Theme {
         build:         float4 { 0.0, 1.0, 0.0, 0.0 },
         seam:          float4_0,
         fill:          float4_0,
+        light_scatter: PALE_WOOD_SCATTER,
+        dark_scatter:  DARK_WOOD_SCATTER,
+        piece_wear:    WOOD_WEAR,
     };
 }
 
@@ -584,9 +618,9 @@ fn elven() -> Theme {
         light_ring:    float4 { 0.05, 5.0, 0.03, 0.0 },
         dark_ring:     float4 { 0.6, 4.5, 0.15, 0.0 },
         frame_ring:    float4 { 0.06, 4.0, 0.0, 0.0 },
-        light_piece:   float4 { 0.86, 0.81, 0.72, 0.42 },
-        dark_piece:    float4 { 0.37, 0.41, 0.26, 0.28 },
-        piece_fig:     float4 { 0.04, 0.25, 0.0, 0.55 },
+        light_piece:   float4 { 0.89, 0.89, 0.87, 0.31 },
+        dark_piece:    float4 { 0.30, 0.35, 0.21, 0.23 },
+        piece_fig:     float4 { 0.055, 0.25, 0.0, 0.55 },
         crown:         float4 { 0.37, 0.41, 0.26, 0.0 },
         edge:          float4 { 0.0, 0.0, 0.0, 0.0 },
         line:          float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -600,6 +634,10 @@ fn elven() -> Theme {
         build:         float4 { 0.0, 0.0, 0.0, 1.0 },
         seam:          float4_0,
         fill:          float4 { 0.52, 0.6, 0.38, 0.75 },
+        light_scatter: float4 { 0.93, 0.96, 0.89, 0.12 },
+        dark_scatter:  JADE_SCATTER,
+        mineral: 3.0,
+        piece_wear:    STONE_WEAR,
     };
 }
 
@@ -687,6 +725,10 @@ fn summer_amber() -> Theme {
     t.crown = float4 { 0.36, 0.17, 0.13, 0.0 };
     t.build = float4 { 0.0, 0.5, 0.0, 1.0 };
     t.fill = float4 { 0.95, 0.64, 0.16, 1.0 };
+    t.light_scatter = IVORY_SCATTER;
+    t.dark_scatter = DARK_STONE_SCATTER;
+    t.piece_wear = STONE_WEAR;
+    t.mineral = 1.0;
     return t;
 }
 
@@ -703,6 +745,8 @@ fn summer_serpentine() -> Theme {
     t.dark_piece = float4 { 0.26, 0.29, 0.2, 0.32 };
     t.crown = float4 { 0.26, 0.29, 0.2, 0.0 };
     t.key_color = float4 { 1.0, 0.95, 0.88, 0.0 };
+    t.dark_scatter = JADE_SCATTER;
+    t.mineral = 2.0;
     return t;
 }
 
@@ -731,6 +775,10 @@ fn autumn_stone() -> Theme {
     t.piece_fig = float4 { 0.04, 0.2, 0.0, 0.45 };
     t.crown = float4 { 0.34, 0.17, 0.11, 0.0 };
     t.build = float4 { 1.0, 0.0, 1.0, 0.0 };
+    t.light_scatter = IVORY_SCATTER;
+    t.dark_scatter = DARK_STONE_SCATTER;
+    t.piece_wear = STONE_WEAR;
+    t.mineral = 2.0;
     return t;
 }
 
@@ -771,6 +819,7 @@ fn autumn_porphyry() -> Theme {
     t.light_piece = float4 { 0.9, 0.8, 0.64, 0.5 };
     t.dark_piece = float4 { 0.3, 0.14, 0.13, 0.36 };
     t.crown = float4 { 0.3, 0.14, 0.13, 0.0 };
+    t.mineral = 1.0;
     return t;
 }
 
@@ -800,6 +849,10 @@ fn winter_wood() -> Theme {
     t.crown = float4 { 0.22, 0.23, 0.25, 0.0 };
     t.edge = float4_0;
     t.build = float4 { 0.0, 1.0, 0.0, 0.0 };
+    t.light_scatter = PALE_WOOD_SCATTER;
+    t.dark_scatter = DARK_WOOD_SCATTER;
+    t.piece_wear = WOOD_WEAR;
+    t.mineral = 0.0;
     return t;
 }
 
