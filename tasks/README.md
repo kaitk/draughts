@@ -47,7 +47,8 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 - Menus and layout: 072 keyboard and controller focus.
 - Small fixes: 091, built; the mouse drag on Windows left to check.
 - Settings: 092 About and the battery saver's cap, built; the devices left to check.
-- The 3D board: 042 the idle wakeup, 071 its memory.
+- The 3D board: 042 the idle wakeup, 071 its memory, 094 the pieces' materials, 095 a
+  table under it.
 - Frames: 055 the boards locked to the display's rate, with even pacing and the A33 at
   60 fps.
 - Renderer: 065 NoGraphicsAPI through goose-ngfx, with the renderer chosen at run time,
