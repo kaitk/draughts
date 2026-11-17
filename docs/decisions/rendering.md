@@ -134,6 +134,15 @@ Set aside, not rejected, for another season or a theme setting:
   nearer the master than the JPEG (44 to 45 dB against 40 to 41). Rejected: PNG (about
   5 MB a season), AVIF (libavif and an AV1 decoder to save about 1 MB).
 - One photograph size for every screen (2026-11-08): sizing by density saves at most 1 MB.
+  Replaced for desktops on 2026-11-17 (below); phones and tablets keep 2048.
+- Desktops get the photographs at 3840 px as JPEG, decoded at the display's longer side
+  from 2048 to 3840, and embed no ASTC (2026-11-17, task 014): their GPUs mostly can't
+  sample it, and a 4K screen showed 2048 px enlarged. Shrinking at decode gives each
+  screen the photograph about pixel for pixel without mipmaps in both renderers. A 512 px
+  JPEG serves the small uses so they don't decode 3840. The Windows program went from
+  17.3 to 14.4 MB; a load from 21 to about 84 ms at 2560 px, only at start and on a
+  season change. Rejected: lossy WebP (about 40% smaller at the same PSNR, 2.6 MB in all,
+  not worth a second decoder); AVIF and JPEG XL (their decoders); BC7 (14.7 MB a season).
 - The photograph loads in the frame after the lit tile, after a `gfx::flush()`: a season
   change's longest frame on the tablet went from 54 to 66 ms to 22.
 - Glass is a copy blurred once, not a live blur: Snowtime measured live blur costing more

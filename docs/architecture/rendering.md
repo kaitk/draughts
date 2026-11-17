@@ -205,19 +205,23 @@ and value noise in the board shader, never a regular stripe.
   the season is picked the sharp texture is averaged down to 512 × 512 on the GPU and
   blurred once (sigma 5.6 texels), a 1 MB texture. A square image cropped by the long side
   needs no new blur for a new screen size.
-- **Stored** twice per season at 2048 × 2048, embedded in the program with C23 `#embed`:
-  as ASTC 6 × 6 (1.87 MB each, from the masters with `astcenc`,
-  `design/backgrounds/README.md`), sampled as stored; and as JPEG at quality 85, the
-  fallback for a GPU without ASTC and for the release's own gfx, which lacks compressed
-  formats ([why 6 × 6](../decisions/rendering.md#scene-and-glass)). Android embeds only
-  the ASTC (7.5 MB of `libmain.so`) and no stb_image. A checkout without the images still
-  builds and shows the page color (`__has_embed`).
+- **Stored** per season, embedded in the program with C23 `#embed`, made from 3840 px
+  masters (`design/backgrounds/README.md`). Phones and tablets embed only ASTC 6 × 6 at
+  2048 × 2048 (1.87 MB each), which their GPUs sample as stored
+  ([why 6 × 6](../decisions/rendering.md#scene-and-glass)): 7.5 MB of Android's
+  `libmain.so`, and no stb_image. Desktops embed only JPEGs at quality 85: 3840 × 3840
+  (1.4 to 1.9 MB) for the sharp photograph, and 512 × 512 (60 to 78 KB) for the 3D board's
+  blurred copy and settings' thumbnails. The iOS simulator keeps both. A checkout without
+  the images still builds and shows the page color (`__has_embed`).
 - **Loading**: `src/app/background.c` decodes (no graphics API) and `src/app/photo.c`
   uploads through gfx's C API, with no copy on the data stack. Compressed formats come
-  from the fork's `compressed-textures` ([findings](../goose-findings.md)). Where ASTC
-  isn't taken, the JPEG is decoded with stb_image into a 16 MB texture. A season loads in
-  the frame after its lit tile shows, after a `gfx::flush()`; only the current season is
-  resident, and the embedded pages are given back once read (`madvise`).
+  from the fork's `compressed-textures` ([findings](../goose-findings.md)). A desktop
+  decodes the sharp JPEG with stb_image and box-shrinks it to its display's longer side,
+  2048 to 3840 px (`scene::sharp_size`), so a fullscreen window shows it pixel for pixel:
+  about 84 ms on a Windows desktop at 2560 px (21 ms before, at 2048), and a 59 MB texture at
+  3840. A season loads in the frame after its lit tile shows, after a `gfx::flush()`; only
+  the current season is resident, and the embedded pages are given back once read
+  (`madvise`).
 - **Settings' thumbnails** (`scene::thumbs`): each photograph shrunk on the GPU in turn,
   waiting after each, into one 160 × 2520 texture (1.6 MB) of 160 × 105 px slots: four
   photographs, four plain fades, and sixteen board pictures from the atlas

@@ -120,7 +120,7 @@
 <script>
   const D = Draughts;
   document.getElementById('themes').innerHTML = ['winter', 'spring', 'summer', 'autumn'].map((s) =>
-    `<a class="tile pic" href="?season=${s}"><span class="thumb" style="background-image:url(../design/backgrounds/masters/${s}-01-2048.jpg)"></span>${s[0].toUpperCase() + s.slice(1)}</a>`).join('') +
+    `<a class="tile pic" href="?season=${s}"><span class="thumb" style="background-image:url(../design/backgrounds/masters/${s}-01-3840.jpg)"></span>${s[0].toUpperCase() + s.slice(1)}</a>`).join('') +
     `<a class="tile pic on"><span class="thumb">${D.icon('sun')}</span>By date</a>`;
   // The preview's fixed position: white must capture, with the man on d4 or the king on h6.
   D.board(document.getElementById('board'), {

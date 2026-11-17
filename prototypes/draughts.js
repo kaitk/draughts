@@ -110,7 +110,7 @@ const Draughts = (() => {
   function loadScene() {
     const img = new Image();
     img.onload = () => { scene = img; sync(); };
-    img.src = `../design/backgrounds/masters/${settings.season}-01-2048.jpg`;
+    img.src = `../design/backgrounds/masters/${settings.season}-01-3840.jpg`;
     document.body.style.backgroundImage = `url("${img.src}")`;
   }
 
