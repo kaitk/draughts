@@ -4,8 +4,8 @@ Status: todo
 
 The 3D board floats over a blurred photograph. Set it on a polished table top instead, as
 in the concept art (`design/manor/library-table-01.png`, `hall-winter-table-02.png`,
-local; task 093 on the `manor-room` branch): mahogany, deep red-brown with a fine straight
-grain and a ribbon figure, polished but soft. Procedural like the board's woods, baked at
+local; task 093): mahogany, deep red-brown with a fine straight grain and a ribbon
+figure, polished but soft. Procedural like the board's woods, baked at
 setup by the same bake (`src/model3d/looks.goose`, `shaders::BAKE_FRAG`), a look's table
 being more data: mahogany in autumn, another wood (walnut, oak) where a season wants it.
 

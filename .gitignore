@@ -22,3 +22,4 @@ prototypes/shots/
 prototypes/samples/
 # The sounds' original recordings stay local; task 089 says where they come from
 design/sounds/*.wav
+design/manor/*.png

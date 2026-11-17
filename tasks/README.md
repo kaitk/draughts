@@ -54,6 +54,7 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 - Renderer: 065 NoGraphicsAPI through goose-ngfx, with the renderer chosen at run time,
   the uncapped Windows runs, and MSAA and older Apple GPUs.
 - Upstream: 010 goose_gfx changes, Wayland's branches among them.
+- The manor room: 093, a whole room around the 3D board; exploratory, concept art only.
 - Later: 013 season effects, 060 shared blocks for a second board game.
 
 To decide later: a puzzle rating and the computer's level shown as a rating.
