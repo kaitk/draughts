@@ -106,6 +106,9 @@ split is in [the code's layout](README.md#the-codes-layout).
   blobs to exist: with `NGFX_SLANGC` it compiles them, and without it (CI) it writes empty
   ones dated 1970, which a real build sees as stale and compiles. Rejected: building the
   ngfx program in CI, which needs slangc and the Vulkan SDK there.
+- `icon.py` moved to `tools/assets/`, with the other asset makers, replacing its place in
+  `scripts/` (above): `scripts/ios.py` took only the shipped icon's path from it, which is
+  now `IOS_ICON` in `scripts/native.py`.
 
 ## Rejected (2026-11-18)
 

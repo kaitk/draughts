@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Make the app icon's images from a season's master, with ImageMagick.
 
-    scripts/icon.py                  write platform/android/res/mipmap-*/ic_launcher_foreground.png
-    scripts/icon.py --store          also the Play and Apple icons, into ~/Downloads/draughts-store/icon/
-                                     (scripts/ios.py makes the Apple one itself, into build/, for the bundle)
-    scripts/icon.py autumn --res DIR --store
-                                     another season's foreground PNGs into DIR, and its store
-                                     icons into ~/Downloads/draughts-store/icon/autumn/
+    tools/assets/icon.py           write platform/android/res/mipmap-*/ic_launcher_foreground.png
+    tools/assets/icon.py --store   also the Play and Apple icons, into ~/Downloads/draughts-store/icon/
+                                   (scripts/ios.py makes the Apple one itself, into build/, for the bundle)
+    tools/assets/icon.py autumn --res DIR --store
+                                   another season's foreground PNGs into DIR, and its store
+                                   icons into ~/Downloads/draughts-store/icon/autumn/
 
 The season is SHIPPED unless named; only SHIPPED is written into platform/android/res. Its master is
 design/icon/master-SEASON.png, kept local (design/icon/README.md). The scene's box is
@@ -24,12 +24,14 @@ from the same box: a scene that changes shape needs it redrawn.
 import argparse
 import re
 import subprocess
+import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "scripts"))
+from native import IOS_ICON, ROOT  # noqa: E402
+
 ICON = ROOT / "design/icon"
 RES = ROOT / "platform/android/res"
-IOS_ICON = ROOT / "platform/ios/icon-1024.png"     # the shipped season's iOS icon, in git as platform/android/res is
 STORE = Path.home() / "Downloads/draughts-store/icon"
 
 SHIPPED = "autumn"     # the season in platform/android/res; design/icon/README.md says how to switch

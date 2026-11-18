@@ -102,7 +102,7 @@ alpha): the autumn 3D board close at a low angle, rendered headless without the 
 home's king and "Draughts" over the blurred forest; its `README.md` and `fgshot.py` say
 how. The Estonian listing may take its own, with "Kabe". The App Store's optional
 product-page art is in `apple-header-0.1/`, with its own `README.md`. The icons are
-`icon/play-512.png` and `icon/apple-1024.png`, from `scripts/icon.py --store`.
+`icon/play-512.png` and `icon/apple-1024.png`, from `tools/assets/icon.py --store`.
 
 ## Placeholders
 

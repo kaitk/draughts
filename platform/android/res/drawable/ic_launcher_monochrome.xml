@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The icon's monochrome layer, for Android 13's themed icons: the winter jump drawn from
      the master's geometry in dp of the 108 dp canvas, with the scene 64 dp wide and centred
-     as scripts/icon.py places the foreground. The board's top face and side as lines (the
+     as tools/assets/icon.py places the foreground. The board's top face and side as lines (the
      side thickened from 2.3 to 3 dp so its lines stay apart), broken where the arc and the
      king stand in front; the dark piece and the king's two discs as a face and side bands;
      the arc tapering from 2 dp to its ends. Redraw it when the scene changes shape. -->

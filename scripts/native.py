@@ -25,6 +25,9 @@ APP_ID = "io.github.kaitk.draughts"
 # The version people see: Android's versionName and iOS's CFBundleShortVersionString.
 # Each platform's build number is its own script's (VERSION_CODE, BUILD_NUMBER).
 VERSION_NAME = "0.9.0"
+# The shipped season's 1024 px icon, in git, for the iOS bundle: tools/assets/icon.py
+# writes it when the shipped season changes.
+IOS_ICON = ROOT / "platform/ios/icon-1024.png"
 
 
 def write_version():

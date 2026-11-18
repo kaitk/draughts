@@ -23,8 +23,8 @@ here (the id, the version, full screen, the launch screen in the icon's backgrou
 the launcher's name per language (<lang>.lproj/InfoPlist.strings from strings/<lang>.txt's
 app.name), the icon and the launch screen's colour in an asset catalog compiled by
 actool into Assets.car (the shipped season's icon, platform/ios/icon-1024.png, made by
-scripts/icon.py), and the privacy manifest, PrivacyInfo.xcprivacy. A simulator build is
-signed ad hoc; a device build with the Mac's development
+tools/assets/icon.py), and the privacy manifest, PrivacyInfo.xcprivacy. A simulator build
+is signed ad hoc; a device build with the Mac's development
 identity and a provisioning profile for the app's id (docs/development.md, "Run on
 iOS"), made once through Xcode when missing; no team, identity, or device id is ever
 written into the repo.
@@ -47,10 +47,9 @@ import sys
 import time
 from pathlib import Path
 
-import icon
 import ngfx
-from native import (ROOT, VERSION_NAME, app_id_of, app_names, copy_sources, goose_to_c, program_name,
-                    run, sidecar)
+from native import (IOS_ICON, ROOT, VERSION_NAME, app_id_of, app_names, copy_sources, goose_to_c,
+                    program_name, run, sidecar)
 
 # The bundle id, not Android's native.APP_ID: a free team on a locked Apple ID holds that
 # one, and this one is kept for good (2026-11-12, tasks/046-app-store-release.md). Another
@@ -91,12 +90,6 @@ def icon_background():
     return "#" + re.search(r'name="icon_background">#([0-9a-fA-F]{6})<', xml).group(1).lower()
 
 
-def apple_icon():
-    """The shipped season's 1024 px icon, in git (platform/ios/icon-1024.png), as scripts/icon.py
-    writes it with platform/android/res's foregrounds when the shipped season changes."""
-    return icon.IOS_ICON
-
-
 def asset_catalog(work, app, device):
     """The icon and the launch screen's colour as an asset catalog under work, compiled
     by actool into the bundle's Assets.car and its icon PNGs; returns the Info.plist keys
@@ -107,7 +100,7 @@ def asset_catalog(work, app, device):
     info = {"info": {"author": "xcode", "version": 1}}
     icons = catalog / f"{APP_ICON}.appiconset"
     icons.mkdir(parents=True)
-    shutil.copy(apple_icon(), icons / "icon-1024.png")
+    shutil.copy(IOS_ICON, icons / "icon-1024.png")
     (icons / "Contents.json").write_text(json.dumps(dict(info, images=[
         {"filename": "icon-1024.png", "idiom": "universal", "platform": "ios",
          "size": "1024x1024"}]), indent=2))

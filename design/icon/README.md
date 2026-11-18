@@ -26,10 +26,10 @@ are in `../prompts.md`).
 ```sh
 cp ~/Downloads/draughts-store/icon/master-winter-jump-1254.png design/icon/master-winter.png
 cp ~/Downloads/draughts-store/icon/master-autumn-jump-1254.png design/icon/master-autumn.png
-scripts/icon.py            # the shipped season (SHIPPED, autumn) into platform/android/res/mipmap-* and
+tools/assets/icon.py       # the shipped season (SHIPPED, autumn) into platform/android/res/mipmap-* and
                            # platform/ios/icon-1024.png (the iOS bundle's), in git
-scripts/icon.py --store    # also play-512.png and apple-1024.png, into ~/Downloads/draughts-store/icon/
-scripts/icon.py winter --res /tmp/winter-res --store
+tools/assets/icon.py --store # also play-512.png and apple-1024.png, into ~/Downloads/draughts-store/icon/
+tools/assets/icon.py winter --res /tmp/winter-res --store
                            # another season: its foreground PNGs where --res says (never
                            # platform/android/res), its store icons into ~/Downloads/draughts-store/icon/winter/
 ```
@@ -51,7 +51,7 @@ replace it before an iOS release.
 
 In one commit:
 
-1. Set `SHIPPED` in `scripts/icon.py` and run it: it rewrites the five foreground PNGs in
+1. Set `SHIPPED` in `tools/assets/icon.py` and run it: it rewrites the five foreground PNGs in
    `platform/android/res/mipmap-*`. With `--store` it also rewrites `play-512.png` and
    `apple-1024.png` in `~/Downloads/draughts-store/icon/`; those are autumn's, and
    winter's are in its `winter/` folder.
