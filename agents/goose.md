@@ -259,7 +259,7 @@ What `src/app/think.goose` needed (`reference.md` section 22, spec 11.2):
 - Workers still running when `main` returns are killed.
 - Each data stack reserves 2 GB of address space (`goose build --stacks` lists them); iOS
   maps far less, so its build passes `--stack-reserve 128M` (`scripts/ios.py`).
-- Threads work on Android as on the Mac (`tools/android_cli.sh`).
+- Threads work on Android as on the Mac (`tools/android_cli.py`).
 
 ## Speed
 

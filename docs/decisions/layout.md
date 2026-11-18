@@ -109,6 +109,9 @@ split is in [the code's layout](README.md#the-codes-layout).
 - `icon.py` moved to `tools/assets/`, with the other asset makers, replacing its place in
   `scripts/` (above): `scripts/ios.py` took only the shipped icon's path from it, which is
   now `IOS_ICON` in `scripts/native.py`.
+- `tools/android_cli.sh` became `tools/android_cli.py`, which takes the NDK, its clang,
+  and adb from `scripts/android.py` and the Goose-to-C step from `scripts/native.py`, so
+  an NDK or Goose update changes one place.
 
 ## Rejected (2026-11-18)
 

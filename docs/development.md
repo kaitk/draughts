@@ -213,11 +213,11 @@ goose build -o build/aimatch tools/aimatch.goose
 build/aimatch russian 90 40 20      # skill 90 against 40, 20 games, colors swapped
 goose build -o build/play tools/play.goose
 build/play russian easy white       # play it yourself in the terminal
-tools/android_cli.sh tools/aibench.goose                          # the same on a device
+tools/android_cli.py tools/aibench.goose                          # the same on a device
 ```
 
 Each tool's header lists its options ([computer player](architecture/ai.md));
-`tools/android_cli.sh` runs any headless Goose program on a device, no APK.
+`tools/android_cli.py` runs any headless Goose program on a device, no APK.
 
 ## Check the puzzles
 
