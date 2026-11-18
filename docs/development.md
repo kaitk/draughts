@@ -147,6 +147,34 @@ leaves the app running after its line, so close it; a `--bench` run quits by its
 settings are in `%APPDATA%\kaitk\draughts\`. `test/run_tests.py` takes the Windows
 release there.
 
+### Direct3D 12 (the `direct3d12` branch)
+
+The app runs on Direct3D 12 with `SDL_GPU_DRIVER=direct3d12` only when Goose carries
+`patches/goose/0001-cute-spirv-direct3d12.patch`: the release's cute_spirv writes storage
+buffers that AMD's driver reads as zeros, and keeps GLSL names FXC rejects
+([Goose findings](goose-findings.md)). Build that Goose from its v2026.4 tag and put its
+`goose.exe` in a copy of the release:
+
+```sh
+cd ~/projects/goose/goose            # a Goose checkout
+git switch -c d3d12 v2026.4 && git apply <draughts>/patches/goose/0001-cute-spirv-direct3d12.patch
+cmake -B build-d3d12 -DCMAKE_BUILD_TYPE=Release -DGOOSE_BUILTIN_LIBS=all -DGOOSE_VERSION=v2026.4
+cmake --build build-d3d12 --config Release --parallel
+cd <draughts>
+cp -r build/goose-v2026.4-windows-x64 build/goose-d3d12
+cp ~/projects/goose/goose/build-d3d12/Release/goose.exe build/goose-d3d12/
+rm -rf ~/projects/goose/goose/build-d3d12   # see below
+rm -rf build/windows/goose                 # and again when going back to the release
+GOOSE_RELEASE=build/goose-d3d12 python scripts/windows.py src/app/draughts.goose
+SDL_GPU_DRIVER=direct3d12 build/windows/draughts.exe
+```
+
+A `goose.exe` built from source links its build tree's goose_gfx (upstream's) while that
+tree exists, not the copy's `pkg/gfx` (the fork's), so delete or move the tree once the
+executable is copied; `goose build -v` shows the response file it links. FXC compiles
+every shader at each launch, about 4 s on a black window. The patch for cute_framework,
+with its tests, is `patches/cute_framework/` (task 010's subtask 03).
+
 ## Run on Linux
 
 Needs a C compiler with `#embed` (GCC 15 or Clang 19 and later), Python 3, Vulkan's

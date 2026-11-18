@@ -1,0 +1,809 @@
+diff --git a/third_party/cute_spirv/cute_spirv.h b/third_party/cute_spirv/cute_spirv.h
+index 3d2c8f30..ac1a9cd1 100644
+--- a/third_party/cute_spirv/cute_spirv.h
++++ b/third_party/cute_spirv/cute_spirv.h
+@@ -6274,6 +6274,12 @@ typedef struct cspv_tp
+ 	// prints as a capture gated on u_cspv_site.
+ 	bool es_cs;
+ 	CK_DYNA cspv_stmt** cs_sites;
++	// HLSL: interned words FXC rejects as identifiers (see cspv_tp_id), and the
++	// storage-buffer write helpers of the function being printed (see
++	// cspv_hlsl_ssbo_write), numbered across the shader.
++	CK_MAP(int) hlsl_reserved;
++	CK_SDYNA char* hlsl_helpers;
++	int hlsl_helper_count;
+ } cspv_tp;
+ 
+ // HLSL spellings of the CF-GLSL types (samplers/images are declared specially
+@@ -6300,8 +6306,11 @@ static const char* cspv_hlsl_type_name(cspv_type* t)
+ 	}
+ }
+ 
++static const char* cspv_tp_id(cspv_tp* g, const char* name);
++
+ static const char* cspv_tp_type_name(cspv_tp* g, cspv_type* t)
+ {
++	if (g->hlsl && t->kind == CSPV_T_STRUCT) return cspv_tp_id(g, t->name);
+ 	// MSL shares HLSL's value-type spellings (float4, float4x4, ...).
+ 	return (g->hlsl || g->msl) ? cspv_hlsl_type_name(t) : cspv_type_name(t);
+ }
+@@ -6323,15 +6332,75 @@ static void cspv_tp_pop_shadows(cspv_tp* g)
+ 	while ((int)asize(g->shadows) > mark) apop(g->shadows);
+ }
+ 
++// A user identifier as the target spells it: in HLSL, one FXC rejects as a name
++// (`line`, `point`, `matrix`, `float2`, ...) gains a trailing underscore, as the
++// WGSL backend does. `name` must be interned.
++static const char* cspv_tp_id(cspv_tp* g, const char* name)
++{
++	if (!g->hlsl || !map_has(g->hlsl_reserved, (uint64_t)(uintptr_t)name)) return name;
++	char buf[160];
++	snprintf(buf, sizeof(buf), "%s_", name);
++	return sintern(buf);
++}
++
++static void cspv_hlsl_init_reserved(cspv_tp* g)
++{
++	// HLSL keywords and reserved words that are not also GLSL keywords.
++	static const char* words[] = {
++		"AppendStructuredBuffer", "asm", "asm_fragment", "auto", "BlendState", "Buffer", "ByteAddressBuffer",
++		"catch", "cbuffer", "centroid", "char", "class", "column_major", "compile", "compile_fragment",
++		"CompileShader", "ComputeShader", "const_cast", "ConsumeStructuredBuffer", "delete",
++		"DepthStencilState", "DepthStencilView", "DomainShader", "dynamic_cast", "enum", "explicit", "export",
++		"extern", "friend", "fxgroup", "GeometryShader", "goto", "groupshared", "Hullshader", "inline",
++		"InputPatch", "interface", "line", "lineadj", "linear", "LineStream", "long", "matrix", "mutable",
++		"namespace", "new", "nointerpolation", "noperspective", "NULL", "operator", "OutputPatch", "packoffset",
++		"pass", "pixelfragment", "PixelShader", "point", "PointStream", "private", "protected", "public",
++		"RasterizerState", "register", "reinterpret_cast", "RenderTargetView", "row_major", "RWBuffer",
++		"RWByteAddressBuffer", "RWStructuredBuffer", "RWTexture1D", "RWTexture1DArray", "RWTexture2D",
++		"RWTexture2DArray", "RWTexture3D", "sampler", "SamplerComparisonState", "SamplerState", "shared",
++		"short", "signed", "sizeof", "snorm", "stateblock", "stateblock_state", "static", "static_cast",
++		"string", "StructuredBuffer", "tbuffer", "technique", "technique10", "technique11", "template",
++		"texture", "Texture1D", "Texture1DArray", "Texture2D", "Texture2DArray", "Texture2DMS",
++		"Texture2DMSArray", "Texture3D", "TextureCube", "TextureCubeArray", "throw", "triangle", "triangleadj",
++		"TriangleStream", "try", "typedef", "typename", "uniform", "union", "unorm", "unsigned", "using",
++		"vector", "vertexfragment", "VertexShader", "virtual", "volatile",
++		// HLSL-only intrinsics this printer emits, which a user function must not overload.
++		"asfloat", "asint", "asuint", "atan2", "ddx", "ddy", "DeviceMemoryBarrier", "f16tof32", "f32tof16",
++		"frac", "GroupMemoryBarrier", "GroupMemoryBarrierWithGroupSync", "InterlockedAdd", "InterlockedAnd",
++		"InterlockedCompareStore", "InterlockedExchange", "InterlockedMax", "InterlockedMin", "InterlockedOr",
++		"InterlockedXor", "lerp", "mul", "rsqrt", "saturate",
++	};
++	for (int i = 0; i < (int)(sizeof(words) / sizeof(words[0])); i++) {
++		map_set(g->hlsl_reserved, (uint64_t)(uintptr_t)sintern(words[i]), 1);
++	}
++	// Scalar, vector, and matrix type names (no global or function may take one).
++	static const char* scalars[] = {
++		"bool", "int", "uint", "dword", "half", "float", "double",
++		"min16float", "min10float", "min16int", "min12int", "min16uint",
++	};
++	for (int i = 0; i < (int)(sizeof(scalars) / sizeof(scalars[0])); i++) {
++		char buf[32];
++		map_set(g->hlsl_reserved, (uint64_t)(uintptr_t)sintern(scalars[i]), 1);
++		for (int n = 1; n <= 4; n++) {
++			snprintf(buf, sizeof(buf), "%s%d", scalars[i], n);
++			map_set(g->hlsl_reserved, (uint64_t)(uintptr_t)sintern(buf), 1);
++			for (int m = 1; m <= 4; m++) {
++				snprintf(buf, sizeof(buf), "%s%dx%d", scalars[i], n, m);
++				map_set(g->hlsl_reserved, (uint64_t)(uintptr_t)sintern(buf), 1);
++			}
++		}
++	}
++}
++
+ static const char* cspv_tp_name(cspv_tp* g, const char* name)
+ {
+ 	for (int i = (int)asize(g->shadows) - 1; i >= 0; i--) {
+-		if (g->shadows[i] == name) return name;
++		if (g->shadows[i] == name) return cspv_tp_id(g, name);
+ 	}
+ 	for (int i = 0; i < (int)asize(g->rename_from); i++) {
+ 		if (g->rename_from[i] == name) return g->rename_to[i];
+ 	}
+-	return name;
++	return cspv_tp_id(g, name);
+ }
+ 
+ // True when `name` is an emulated storage member visible at this point (interned
+@@ -6359,6 +6428,7 @@ static void cspv_tp_indent(cspv_tp* g)
+ // `type name` with any array suffix after the name.
+ static void cspv_tp_var(cspv_tp* g, cspv_type* t, const char* name)
+ {
++	name = cspv_tp_id(g, name);
+ 	if (t->kind == CSPV_T_ARRAY) sfmt_append(g->ctx->tp_out, "%s %s[%d]", cspv_tp_type_name(g, t->elem), name, t->cols);
+ 	else sfmt_append(g->ctx->tp_out, "%s %s", cspv_tp_type_name(g, t), name);
+ }
+@@ -6466,6 +6536,9 @@ static void cspv_tp_expr_node(cspv_tp* g, cspv_expr* e, int prec);
+ static void cspv_tp_stmt(cspv_tp* g, cspv_stmt* s);
+ static void cspv_hlsl_call(cspv_tp* g, cspv_expr* e);
+ static void cspv_msl_call(cspv_tp* g, cspv_expr* e);
++static cspv_decl* cspv_hlsl_ssbo(cspv_tp* g, cspv_expr* e);
++static const char* cspv_hlsl_ssbo_name(cspv_tp* g, cspv_decl* d);
++static bool cspv_hlsl_ssbo_write(cspv_tp* g, cspv_expr* lv, int op, const char* atomic, cspv_expr* cmp, cspv_expr* rhs);
+ 
+ // Print `e` converted to `want`'s element kind where ES requires an explicit
+ // conversion. Integer literals convert in place (1 -> 1.0 / 1u); everything
+@@ -6995,7 +7068,7 @@ static void cspv_tp_expr_node(cspv_tp* g, cspv_expr* e, int prec)
+ 			}
+ 		}
+ 		cspv_tp_expr(g, e->u.member.base, 15);
+-		sfmt_append(g->ctx->tp_out, ".%s", e->u.member.member);
++		sfmt_append(g->ctx->tp_out, ".%s", cspv_tp_id(g, e->u.member.member));
+ 		break;
+ 
+ 	case CSPV_E_INDEX:
+@@ -7010,6 +7083,16 @@ static void cspv_tp_expr_node(cspv_tp* g, cspv_expr* e, int prec)
+ 				break;
+ 			}
+ 		}
++		if (g->hlsl) {
++			// Storage-buffer element: assembled by the buffer's load helper.
++			cspv_decl* bd = cspv_hlsl_ssbo(g, e->u.index.base);
++			if (bd) {
++				sfmt_append(g->ctx->tp_out, "%s_ld(", cspv_hlsl_ssbo_name(g, bd));
++				cspv_tp_expr(g, e->u.index.index, 0);
++				spush(g->ctx->tp_out, ')');
++				break;
++			}
++		}
+ 		if (!g->hlsl && !g->msl && e->u.index.base->kind == CSPV_E_REF) {
+ 			int slot; cspv_type* elem;
+ 			if (cspv_tp_es_ssbo(g, e->u.index.base->u.name, &slot, &elem)) {
+@@ -7056,13 +7139,11 @@ static void cspv_tp_expr_node(cspv_tp* g, cspv_expr* e, int prec)
+ 			// buffer-length query).
+ 			cspv_expr* b = e->u.member.base;
+ 			cspv_type* bt = cspv_tp_rtype(g, b);
+-			cspv_decl* bd = cspv_tp_named_buffer_member(g, b);
++			cspv_decl* bd = g->hlsl ? cspv_hlsl_ssbo(g, b) : NULL;
+ 			if (bt && bt->kind == CSPV_T_ARRAY && bt->cols >= 0) {
+ 				sfmt_append(g->ctx->tp_out, "%d", bt->cols);
+-			} else if (g->hlsl && bd) {
+-				sfmt_append(g->ctx->tp_out, "int(%s_%s_len())", bd->instance_name, bd->member_names[0]);
+-			} else if (g->hlsl && b->kind == CSPV_E_REF) {
+-				sfmt_append(g->ctx->tp_out, "int(%s_len())", b->u.name);
++			} else if (bd) {
++				sfmt_append(g->ctx->tp_out, "int(%s_len())", cspv_hlsl_ssbo_name(g, bd));
+ 			} else {
+ 				sappend(g->ctx->tp_out, "0"); // Unreachable for the supported subset.
+ 			}
+@@ -7121,6 +7202,7 @@ static void cspv_tp_expr_node(cspv_tp* g, cspv_expr* e, int prec)
+ 	case CSPV_E_UNARY: {
+ 		int op = e->u.un.op;
+ 		if (op == CSPV_P_INC || op == CSPV_P_DEC) {
++			if (g->hlsl && cspv_hlsl_ssbo_write(g, e->u.un.e, op, NULL, NULL, NULL)) break;
+ 			int myprec = e->u.un.postfix ? 15 : 14;
+ 			bool paren = myprec < prec;
+ 			if (paren) spush(g->ctx->tp_out, '(');
+@@ -7148,6 +7230,7 @@ static void cspv_tp_expr_node(cspv_tp* g, cspv_expr* e, int prec)
+ 		int op = e->u.bin.op;
+ 		cspv_expr* l = e->u.bin.l;
+ 		cspv_expr* r = e->u.bin.r;
++		if (g->hlsl && cspv_tp_is_assign_op(op) && cspv_hlsl_ssbo_write(g, l, op, NULL, NULL, r)) break;
+ 		int myprec = cspv_tp_prec(op);
+ 		bool paren = myprec < prec;
+ 		if (paren) spush(g->ctx->tp_out, '(');
+@@ -8484,6 +8567,11 @@ static void cspv_hlsl_call(cspv_tp* g, cspv_expr* e)
+ 
+ 	// Atomics (statement position only, enforced by validation).
+ 	const char* atomic = cspv_hlsl_atomic(name);
++	if (atomic || !strcmp(name, "atomicExchange") || !strcmp(name, "atomicCompSwap")) {
++		// Into a storage-buffer element: the buffer's own Interlocked* methods.
++		bool swap = !strcmp(name, "atomicCompSwap");
++		if (cspv_hlsl_ssbo_write(g, args[0], 0, name, swap ? args[1] : NULL, args[swap ? 2 : 1])) return;
++	}
+ 	if (atomic) {
+ 		sfmt_append(*out, "%s(", atomic);
+ 		cspv_tp_expr(g, args[0], 2);
+@@ -8519,7 +8607,7 @@ static void cspv_hlsl_call(cspv_tp* g, cspv_expr* e)
+ 
+ 	// User function or remaining intrinsic: sampler-typed arguments expand into
+ 	// their _tex/_smp pair (matching the expanded parameter lists).
+-	sfmt_append(*out, "%s(", rn ? rn : name);
++	sfmt_append(*out, "%s(", rn ? rn : cspv_tp_id(g, name));
+ 	for (int i = 0; i < argc; i++) {
+ 		if (i) sappend(*out, ", ");
+ 		cspv_expr* a = args[i];
+@@ -8536,6 +8624,61 @@ static void cspv_hlsl_call(cspv_tp* g, cspv_expr* e)
+ // before any printing so an errorf cannot leak printer state.
+ static void cspv_hlsl_validate_expr(cspv_ctx* ctx, cspv_expr* e, bool stmt_root);
+ 
++// True when `e` names a storage buffer's runtime array (`member`, or
++// `inst.member`). Shadowing locals are not tracked here, so a local named like
++// one is checked as one.
++static bool cspv_hlsl_validate_is_ssbo(cspv_ctx* ctx, cspv_expr* e)
++{
++	for (int i = 0; i < (int)asize(ctx->decls); i++) {
++		cspv_decl* d = ctx->decls + i;
++		if (d->kind != CSPV_D_BLOCK || !d->is_buffer || d->num_members != 1) continue;
++		if (e->kind == CSPV_E_REF && !d->instance_name && d->member_names[0] == e->u.name) return true;
++		if (e->kind == CSPV_E_MEMBER && e->u.member.base->kind == CSPV_E_REF &&
++		    d->instance_name == e->u.member.base->u.name && d->member_names[0] == e->u.member.member) {
++			return true;
++		}
++	}
++	return false;
++}
++
++// When the write target `e` lies in a storage-buffer element, checks that a
++// write helper can address it (see cspv_hlsl_ssbo_write) and returns true.
++static bool cspv_hlsl_validate_ssbo_target(cspv_ctx* ctx, cspv_expr* e)
++{
++	bool inner_swizzle = false;
++	for (cspv_expr* c = e; c->kind == CSPV_E_INDEX || c->kind == CSPV_E_MEMBER; ) {
++		if (c->kind == CSPV_E_INDEX) {
++			if (cspv_hlsl_validate_is_ssbo(ctx, c->u.index.base)) {
++				if (inner_swizzle) cspv_errorf(ctx, e->line, "a swizzle inside a storage buffer write target is not supported in HLSL output");
++				return true;
++			}
++			c = c->u.index.base;
++		} else {
++			cspv_type* bt = c->u.member.base->rtype;
++			if (bt && bt->kind == CSPV_T_VEC && c != e) inner_swizzle = true;
++			c = c->u.member.base;
++		}
++	}
++	return false;
++}
++
++// True when `e` writes into a storage-buffer element (whose target it checks).
++static bool cspv_hlsl_validate_ssbo_write(cspv_ctx* ctx, cspv_expr* e)
++{
++	bool write = (e->kind == CSPV_E_BINARY && cspv_tp_is_assign_op(e->u.bin.op)) ||
++	             (e->kind == CSPV_E_UNARY && (e->u.un.op == CSPV_P_INC || e->u.un.op == CSPV_P_DEC));
++	return write && cspv_hlsl_validate_ssbo_target(ctx, e->kind == CSPV_E_BINARY ? e->u.bin.l : e->u.un.e);
++}
++
++// Rejects a storage-buffer write where its value would be used (write helpers
++// return nothing).
++static void cspv_hlsl_validate_no_ssbo_write(cspv_ctx* ctx, cspv_expr* e)
++{
++	if (cspv_hlsl_validate_ssbo_write(ctx, e)) {
++		cspv_errorf(ctx, e->line, "storage buffer writes must be statements in HLSL output");
++	}
++}
++
+ static void cspv_hlsl_validate_expr_children(cspv_ctx* ctx, cspv_expr* e)
+ {
+ 	switch (e->kind) {
+@@ -8580,7 +8723,20 @@ static void cspv_hlsl_validate_expr(cspv_ctx* ctx, cspv_expr* e, bool stmt_root)
+ 		if (atomic && !stmt_root) {
+ 			cspv_errorf(ctx, e->line, "atomic results are not supported in HLSL output; call '%s' as a statement", name);
+ 		}
++		if (atomic && asize(e->u.call.args)) cspv_hlsl_validate_ssbo_target(ctx, e->u.call.args[0]);
++		// Storage-buffer elements are loaded by value, so they cannot be out/inout arguments.
++		for (int i = 0; i < (int)asize(ctx->decls); i++) {
++			cspv_decl* d = ctx->decls + i;
++			if (d->kind != CSPV_D_FUNC || d->name != name || d->num_params != (int)asize(e->u.call.args)) continue;
++			for (int p = 0; p < d->num_params; p++) {
++				if (d->params[p].qual && cspv_hlsl_validate_ssbo_target(ctx, e->u.call.args[p])) {
++					cspv_errorf(ctx, e->line, "a storage buffer element as an out/inout argument is not supported in HLSL output ('%s')", name);
++				}
++			}
++		}
+ 	}
++	if (!stmt_root) cspv_hlsl_validate_no_ssbo_write(ctx, e);
++	else cspv_hlsl_validate_ssbo_write(ctx, e);
+ 	cspv_hlsl_validate_expr_children(ctx, e);
+ }
+ 
+@@ -8590,7 +8746,10 @@ static void cspv_hlsl_validate_stmt(cspv_ctx* ctx, cspv_stmt* s)
+ 	case CSPV_S_BLOCK: for (int i = 0; i < (int)asize(s->u.block); i++) cspv_hlsl_validate_stmt(ctx, s->u.block[i]); break;
+ 	case CSPV_S_DECL:
+ 		for (cspv_stmt* n = s; n; n = n->u.decl.next_decl) {
+-			if (n->u.decl.init) cspv_hlsl_validate_expr(ctx, n->u.decl.init, true);
++			if (n->u.decl.init) {
++				cspv_hlsl_validate_no_ssbo_write(ctx, n->u.decl.init);
++				cspv_hlsl_validate_expr(ctx, n->u.decl.init, true);
++			}
+ 		}
+ 		break;
+ 	case CSPV_S_EXPR: cspv_hlsl_validate_expr(ctx, s->u.expr, true); break;
+@@ -8622,13 +8781,6 @@ static void cspv_hlsl_validate_stmt(cspv_ctx* ctx, cspv_stmt* s)
+ 	}
+ }
+ 
+-// Natural (tightly packed) HLSL size of a structured-buffer member type.
+-static int cspv_hlsl_natural_size(cspv_type* t)
+-{
+-	if (t->kind == CSPV_T_VEC) return t->cols * 4;
+-	return 4; // Scalars (buffer-block struct fields are scalars or vectors only).
+-}
+-
+ // GLSL struct constructors have no HLSL/MSL equivalent: emit a factory per
+ // struct (skipped when a field is an array; validation rejects those ctors).
+ static void cspv_tp_struct_factory(cspv_tp* g, cspv_type* t)
+@@ -8637,70 +8789,308 @@ static void cspv_tp_struct_factory(cspv_tp* g, cspv_type* t)
+ 	if (g->hlsl) {
+ 		// FXC's ?: operator only accepts numeric operands; struct-typed
+ 		// ternaries print as calls to this select helper instead.
++		const char* tn = cspv_tp_type_name(g, t);
+ 		sfmt_append(ctx->tp_out, "%s cf_select_%s(bool c_, %s a_, %s b_) { if (c_) return a_; return b_; }\n",
+-			t->name, t->name, t->name, t->name);
++			tn, t->name, tn, tn);
+ 	}
+ 	for (int i = 0; i < (int)asize(t->field_types); i++) {
+ 		if (t->field_types[i]->kind == CSPV_T_ARRAY) return;
+ 	}
+-	sfmt_append(ctx->tp_out, "%s cf_make_%s(", t->name, t->name);
++	sfmt_append(ctx->tp_out, "%s cf_make_%s(", cspv_tp_type_name(g, t), t->name);
+ 	for (int i = 0; i < (int)asize(t->field_types); i++) {
+ 		if (i) sappend(ctx->tp_out, ", ");
+-		sfmt_append(ctx->tp_out, "%s %s", cspv_tp_type_name(g, t->field_types[i]), t->field_names[i]);
++		sfmt_append(ctx->tp_out, "%s %s", cspv_tp_type_name(g, t->field_types[i]), cspv_tp_id(g, t->field_names[i]));
+ 	}
+-	sfmt_append(ctx->tp_out, ") { %s s_; ", t->name);
++	sfmt_append(ctx->tp_out, ") { %s s_; ", cspv_tp_type_name(g, t));
+ 	for (int i = 0; i < (int)asize(t->field_types); i++) {
+-		sfmt_append(ctx->tp_out, "s_.%s = %s; ", t->field_names[i], t->field_names[i]);
++		const char* f = cspv_tp_id(g, t->field_names[i]);
++		sfmt_append(ctx->tp_out, "s_.%s = %s; ", f, f);
+ 	}
+ 	sappend(ctx->tp_out, "return s_; }\n");
+ }
+ 
+-// Emit a struct definition. Buffer structs gain explicit padding so HLSL's
+-// tight structured-buffer packing lands each member on its std430 offset.
+-static void cspv_hlsl_struct(cspv_tp* g, cspv_type* t, bool buffer_layout)
++// Emit a struct definition. Storage buffers holding it load and store each
++// field at its std430 offset (cspv_hlsl_ssbo_leaves), so it needs no padding.
++static void cspv_hlsl_struct(cspv_tp* g, cspv_type* t)
+ {
+ 	cspv_ctx* ctx = g->ctx;
+-	sfmt_append(ctx->tp_out, "struct %s\n{\n", t->name);
+-	int natural = 0;
+-	int pad_index = 0;
++	sfmt_append(ctx->tp_out, "struct %s\n{\n", cspv_tp_type_name(g, t));
+ 	for (int i = 0; i < (int)asize(t->field_types); i++) {
+-		cspv_type* ft = t->field_types[i];
+-		if (buffer_layout) {
+-			int align = 0, size = 0;
+-			cspv_std430_layout(ctx, ft, 0, &align, &size);
+-			int target = (natural + align - 1) / align * align;
+-			while (natural < target) {
+-				int gap = (target - natural) / 4;
+-				int n = gap > 4 ? 4 : gap;
+-				if (n == 1) sfmt_append(ctx->tp_out, "\tfloat cf_pad%d;\n", pad_index++);
+-				else sfmt_append(ctx->tp_out, "\tfloat%d cf_pad%d;\n", n, pad_index++);
+-				natural += n * 4;
+-			}
+-			natural += cspv_hlsl_natural_size(ft);
+-		}
+ 		spush(ctx->tp_out, '\t');
+-		cspv_tp_var(g, ft, t->field_names[i]);
++		cspv_tp_var(g, t->field_types[i], t->field_names[i]);
+ 		sappend(ctx->tp_out, ";\n");
+ 	}
+-	if (buffer_layout) {
+-		int align = 0, size = 0;
+-		cspv_std430_layout(ctx, t, 0, &align, &size);
+-		while (natural < size) {
+-			int gap = (size - natural) / 4;
+-			int n = gap > 4 ? 4 : gap;
+-			if (n == 1) sfmt_append(ctx->tp_out, "\tfloat cf_pad%d;\n", pad_index++);
+-			else sfmt_append(ctx->tp_out, "\tfloat%d cf_pad%d;\n", n, pad_index++);
+-			natural += n * 4;
++	sappend(ctx->tp_out, "};\n");
++}
++
++//--------------------------------------------------------------------------------------------------
++// HLSL storage buffers.
++//
++// SDL_GPU's D3D12 backend views every storage buffer as raw (R32_TYPELESS with
++// the RAW flag on its SRV and UAV), the view a ByteAddressBuffer takes and the
++// one SPIRV-Cross's HLSL expects. A StructuredBuffer read through a raw view is
++// undefined: NVIDIA's driver returns the data, AMD's returns zeros and drops
++// writes. So each SSBO is a (RW)ByteAddressBuffer whose elements load and store
++// at their std430 byte offsets. A read calls the buffer's `<name>_ld(i)`, which
++// assembles the element. Each write into an element -- an assignment, compound
++// assignment, ++/--, or atomic -- calls a helper of its own, `<name>_st<n>(i,
++// <dynamic indices>, [compare,] value)`, printed ahead of its function.
++
++// The SSBO an index base `e` names (an unshadowed member of an unnamed buffer
++// block, or `inst.member` of a named one), or NULL.
++static cspv_decl* cspv_hlsl_ssbo(cspv_tp* g, cspv_expr* e)
++{
++	if (e->kind == CSPV_E_MEMBER) return cspv_tp_named_buffer_member(g, e);
++	if (e->kind != CSPV_E_REF) return NULL;
++	for (int i = (int)asize(g->shadows) - 1; i >= 0; i--) {
++		if (g->shadows[i] == e->u.name) return NULL;
++	}
++	for (int i = 0; i < (int)asize(g->ctx->decls); i++) {
++		cspv_decl* d = g->ctx->decls + i;
++		if (d->kind == CSPV_D_BLOCK && d->is_buffer && !d->instance_name && d->num_members == 1 &&
++		    d->member_names[0] == e->u.name) {
++			return d;
+ 		}
+ 	}
+-	sappend(ctx->tp_out, "};\n");
++	return NULL;
++}
++
++// The resource an SSBO prints as: its member's name, or `inst_member`.
++static const char* cspv_hlsl_ssbo_name(cspv_tp* g, cspv_decl* d)
++{
++	if (!d->instance_name) return cspv_tp_id(g, d->member_names[0]);
++	char buf[256];
++	snprintf(buf, sizeof(buf), "%s_%s", d->instance_name, d->member_names[0]);
++	return sintern(buf);
++}
++
++// std430 array stride of `t`.
++static int cspv_hlsl_stride(cspv_ctx* ctx, cspv_type* t)
++{
++	int align = 0, size = 0;
++	cspv_std430_layout(ctx, t, 0, &align, &size);
++	return (size + align - 1) / align * align;
++}
++
++// std430 offset of field `k` in struct `t`.
++static int cspv_hlsl_field_offset(cspv_ctx* ctx, cspv_type* t, int k)
++{
++	int offset = 0;
++	for (int i = 0; i < k; i++) {
++		int fa = 0, fs = 0;
++		cspv_std430_layout(ctx, t->field_types[i], 0, &fa, &fs);
++		offset = (offset + fa - 1) / fa * fa + fs;
++	}
++	int fa = 0, fs = 0;
++	cspv_std430_layout(ctx, t->field_types[k], 0, &fa, &fs);
++	return (offset + fa - 1) / fa * fa;
++}
++
++// The bit cast from a raw load's uint/uintN to `t`'s element kind.
++static const char* cspv_hlsl_from_bits(cspv_type* t)
++{
++	switch (cspv_elem_type(t)->kind) {
++	case CSPV_T_FLOAT: return "asfloat";
++	case CSPV_T_INT: return "asint";
++	default: return "";
++	}
++}
++
++// Prints statements that load (`load`) or store `path`, a value of type `t`, at
++// byte `cf_a + off` of buffer `buf`: each scalar or vector at its std430 offset
++// (buffer-block struct fields are scalars or vectors only).
++static void cspv_hlsl_ssbo_leaves(cspv_tp* g, CK_SDYNA char** out, bool load, const char* buf, cspv_type* t, int off, const char* path)
++{
++	if (t->kind == CSPV_T_STRUCT) {
++		char sub[512];
++		for (int i = 0; i < (int)asize(t->field_types); i++) {
++			snprintf(sub, sizeof(sub), "%s.%s", path, cspv_tp_id(g, t->field_names[i]));
++			cspv_hlsl_ssbo_leaves(g, out, load, buf, t->field_types[i], off + cspv_hlsl_field_offset(g->ctx, t, i), sub);
++		}
++		return;
++	}
++	static const char* width[5] = { "", "", "2", "3", "4" };
++	int n = t->kind == CSPV_T_VEC ? t->cols : 1;
++	if (load) sfmt_append(*out, "\t%s = %s(%s.Load%s(cf_a + %d));\n", path, cspv_hlsl_from_bits(t), buf, width[n], off);
++	else sfmt_append(*out, "\t%s.Store%s(cf_a + %d, asuint(%s));\n", buf, width[n], off, path);
++}
++
++// Declares SSBO `d`: the resource, its element count, and its load helper.
++static void cspv_hlsl_ssbo_decl(cspv_tp* g, cspv_decl* d)
++{
++	CK_SDYNA char** out = &g->ctx->tp_out;
++	const char* name = cspv_hlsl_ssbo_name(g, d);
++	cspv_type* elem = d->member_types[0]->elem;
++	int stride = cspv_hlsl_stride(g->ctx, elem);
++	const char* type = cspv_tp_type_name(g, elem);
++	sfmt_append(*out, "%sByteAddressBuffer %s : register(%c%d, space%d);\n",
++		d->readonly ? "" : "RW", name, d->readonly ? 't' : 'u', d->binding, d->set);
++	sfmt_append(*out, "uint %s_len() { uint b; %s.GetDimensions(b); return b / %du; }\n", name, name, stride);
++	sfmt_append(*out, "%s %s_ld(uint cf_i)\n{\n\tuint cf_a = cf_i * %du;\n\t%s cf_v;\n", type, name, stride, type);
++	cspv_hlsl_ssbo_leaves(g, out, true, name, elem, 0, "cf_v");
++	sappend(*out, "\treturn cf_v;\n}\n");
++}
++
++// Loads or stores a scalar or vector lvalue `v` of `n` components, component k
++// at byte `cf_a + comps[k] * 4` (one Load/StoreN when they are consecutive).
++static void cspv_hlsl_ssbo_comps(CK_SDYNA char** out, bool load, const char* buf, cspv_type* t, const int* comps, int n, const char* v)
++{
++	static const char* width[5] = { "", "", "2", "3", "4" };
++	bool run = true;
++	for (int k = 1; k < n; k++) run = run && comps[k] == comps[0] + k;
++	if (run) {
++		if (load) sfmt_append(*out, "\t%s = %s(%s.Load%s(cf_a + %d));\n", v, cspv_hlsl_from_bits(t), buf, width[n], comps[0] * 4);
++		else sfmt_append(*out, "\t%s.Store%s(cf_a + %d, asuint(%s));\n", buf, width[n], comps[0] * 4, v);
++		return;
++	}
++	for (int k = 0; k < n; k++) {
++		if (load) sfmt_append(*out, "\t%s[%d] = %s(%s.Load(cf_a + %d));\n", v, k, cspv_hlsl_from_bits(t), buf, comps[k] * 4);
++		else sfmt_append(*out, "\t%s.Store(cf_a + %d, asuint(%s[%d]));\n", buf, comps[k] * 4, v, k);
++	}
++}
++
++// The element access an SSBO write's target `lv` starts from (`buf[i]`), or NULL
++// when `lv` lies outside every SSBO. Fills `chain` with the member and index
++// nodes between them, outermost first.
++static cspv_expr* cspv_hlsl_ssbo_root(cspv_tp* g, cspv_expr* lv, cspv_expr** chain, int* n, cspv_decl** d)
++{
++	*n = 0;
++	for (cspv_expr* e = lv; *n < 16; ) {
++		if (e->kind == CSPV_E_INDEX) {
++			*d = cspv_hlsl_ssbo(g, e->u.index.base);
++			if (*d) return e;
++			chain[(*n)++] = e;
++			e = e->u.index.base;
++		} else if (e->kind == CSPV_E_MEMBER) {
++			chain[(*n)++] = e;
++			e = e->u.member.base;
++		} else {
++			return NULL;
++		}
++	}
++	return NULL;
++}
++
++// When `lv` lies in an SSBO element, prints a call to a new write helper for it
++// and returns true. `op` is an assignment operator, CSPV_P_INC, or CSPV_P_DEC;
++// or 0 for `atomic` (atomicAdd, ..., atomicCompSwap, which also takes `cmp`).
++// `rhs` is the value written, NULL for ++/--. Statement position only
++// (validated), so the helper returns nothing.
++static bool cspv_hlsl_ssbo_write(cspv_tp* g, cspv_expr* lv, int op, const char* atomic, cspv_expr* cmp, cspv_expr* rhs)
++{
++	cspv_expr* chain[16];
++	int n = 0;
++	cspv_decl* d = NULL;
++	cspv_expr* root = cspv_hlsl_ssbo_root(g, lv, chain, &n, &d);
++	if (!root) return false;
++	cspv_ctx* ctx = g->ctx;
++	CK_SDYNA char** out = &g->hlsl_helpers;
++	const char* buf = cspv_hlsl_ssbo_name(g, d);
++
++	// Walk from the element to `lv`: a field adds its constant offset, a vector
++	// subscript a dynamic one (a helper parameter), a swizzle picks components.
++	cspv_type* t = d->member_types[0]->elem;
++	int off = 0;
++	cspv_expr* dyn = NULL;
++	int comps[4] = { 0, 1, 2, 3 };
++	for (int k = n - 1; k >= 0; k--) {
++		cspv_expr* c = chain[k];
++		if (c->kind == CSPV_E_MEMBER && t->kind == CSPV_T_STRUCT) {
++			for (int i = 0; i < (int)asize(t->field_names); i++) {
++				if (!strcmp(t->field_names[i], c->u.member.member)) {
++					off += cspv_hlsl_field_offset(ctx, t, i);
++					t = t->field_types[i];
++					break;
++				}
++			}
++		} else if (c->kind == CSPV_E_MEMBER) {
++			// Swizzle (validation keeps it last).
++			const char* s = c->u.member.member;
++			for (int i = 0; s[i] && i < 4; i++) {
++				const char* p = strchr("xyzwrgbastpq", s[i]);
++				comps[i] = p ? (int)(p - "xyzwrgbastpq") % 4 : 0;
++			}
++			t = cspv_tp_rtype(g, c);
++		} else {
++			dyn = c->u.index.index;
++			t = cspv_elem_type(t);
++		}
++	}
++	int ncomp = t->kind == CSPV_T_VEC ? t->cols : 1;
++
++	// The value's type: the target's for =, ++/--, and atomics; for a compound
++	// assignment, the right side's after balancing its element kind to the
++	// target's, as the plain printer does.
++	cspv_type* vt = t;
++	if (op != '=' && op != CSPV_P_INC && op != CSPV_P_DEC && !atomic) {
++		cspv_type* rt = cspv_tp_rtype(g, rhs);
++		vt = rt;
++		if (cspv_tp_numeric(t) && cspv_tp_numeric(rt) && cspv_elem_type(t)->kind != cspv_elem_type(rt)->kind &&
++		    op != CSPV_P_SHL_ASSIGN && op != CSPV_P_SHR_ASSIGN) {
++			vt = cspv_vec_type(ctx, cspv_elem_type(t), cspv_num_components(rt));
++		}
++	}
++
++	// The helper.
++	int id = g->hlsl_helper_count++;
++	sfmt_append(*out, "void %s_st%d(uint cf_i", buf, id);
++	if (dyn) sappend(*out, ", uint cf_j");
++	if (cmp) sfmt_append(*out, ", %s cf_c", cspv_tp_type_name(g, t));
++	if (rhs) sfmt_append(*out, ", %s cf_v", cspv_tp_type_name(g, vt));
++	sfmt_append(*out, ")\n{\n\tuint cf_a = cf_i * %du + %du%s;\n", cspv_hlsl_stride(ctx, d->member_types[0]->elem), off,
++		dyn ? " + cf_j * 4u" : "");
++	if (atomic) {
++		if (!strcmp(atomic, "atomicExchange")) {
++			sfmt_append(*out, "\tuint cf_r;\n\t%s.InterlockedExchange(cf_a, asuint(cf_v), cf_r);\n", buf);
++		} else if (cmp) {
++			sfmt_append(*out, "\t%s.InterlockedCompareStore(cf_a, asuint(cf_c), asuint(cf_v));\n", buf);
++		} else {
++			// Interlocked* on an int value is the signed operation.
++			sfmt_append(*out, "\t%s.%s(cf_a, cf_v);\n", buf, cspv_hlsl_atomic(atomic));
++		}
++	} else if (op == '=' && t->kind == CSPV_T_STRUCT) {
++		cspv_hlsl_ssbo_leaves(g, out, false, buf, t, 0, "cf_v");
++	} else if (op == '=') {
++		cspv_hlsl_ssbo_comps(out, false, buf, t, comps, ncomp, "cf_v");
++	} else {
++		// Read, modify, write.
++		sfmt_append(*out, "\t%s cf_o;\n", cspv_tp_type_name(g, t));
++		cspv_hlsl_ssbo_comps(out, true, buf, t, comps, ncomp, "cf_o");
++		if (op == CSPV_P_INC || op == CSPV_P_DEC) {
++			sfmt_append(*out, "\tcf_o %s 1;\n", op == CSPV_P_INC ? "+=" : "-=");
++		} else if (op == CSPV_P_MUL_ASSIGN && vt->kind == CSPV_T_MAT) {
++			sappend(*out, "\tcf_o = mul(cf_o, cf_v);\n");
++		} else {
++			sfmt_append(*out, "\tcf_o %s cf_v;\n", cspv_tp_op_str(op));
++		}
++		cspv_hlsl_ssbo_comps(out, false, buf, t, comps, ncomp, "cf_o");
++	}
++	sappend(*out, "}\n");
++
++	// The call.
++	sfmt_append(ctx->tp_out, "%s_st%d(", buf, id);
++	cspv_tp_expr(g, root->u.index.index, 2);
++	if (dyn) {
++		sappend(ctx->tp_out, ", ");
++		cspv_tp_expr(g, dyn, 2);
++	}
++	if (cmp) {
++		sappend(ctx->tp_out, ", ");
++		cspv_tp_expr_to(g, cmp, t, 2);
++	}
++	if (rhs) {
++		sappend(ctx->tp_out, ", ");
++		cspv_tp_expr_to(g, rhs, vt, 2);
++	}
++	spush(ctx->tp_out, ')');
++	return true;
+ }
+ 
+ static void cspv_hlsl_func(cspv_tp* g, cspv_decl* d)
+ {
+ 	cspv_ctx* ctx = g->ctx;
+ 	bool is_main = d->name == g_cspv_kw.kw_main;
+-	sfmt_append(ctx->tp_out, "%s %s(", cspv_tp_type_name(g, d->type), is_main ? "cf_main_" : d->name);
++	sfmt_append(ctx->tp_out, "%s %s(", cspv_tp_type_name(g, d->type), is_main ? "cf_main_" : cspv_tp_id(g, d->name));
+ 	cspv_tp_push_shadows(g);
+ 	bool first = true;
+ 	for (int i = 0; i < d->num_params; i++) {
+@@ -8750,25 +9140,12 @@ static void cspv_emit_hlsl(cspv_ctx* ctx)
+ 		}
+ 	}
+ 
+-	// Struct types referenced by storage buffers use std430-padded layouts.
+-	CK_DYNA cspv_type** buffer_structs = NULL;
+-	for (int i = 0; i < (int)asize(ctx->decls); i++) {
+-		cspv_decl* d = ctx->decls + i;
+-		if (d->kind != CSPV_D_BLOCK || !d->is_buffer) continue;
+-		cspv_type* elem = d->member_types[0]->elem;
+-		if (elem->kind != CSPV_T_STRUCT) continue;
+-		bool seen = false;
+-		for (int j = 0; j < (int)asize(buffer_structs); j++) {
+-			if (buffer_structs[j] == elem) { seen = true; break; }
+-		}
+-		if (!seen) apush(buffer_structs, elem);
+-	}
+-
+ 	cspv_tp gg;
+ 	memset(&gg, 0, sizeof(gg));
+ 	gg.ctx = ctx;
+ 	gg.hlsl = true;
+ 	cspv_tp* g = &gg;
++	cspv_hlsl_init_reserved(g);
+ 
+ 	// ---- Prologue: helpers shared by every shader (FXC strips the unused). ----
+ 	ctx->tp_out = NULL;
+@@ -8839,16 +9216,11 @@ static void cspv_emit_hlsl(cspv_ctx* ctx)
+ 	for (int i = 0; i < (int)asize(ctx->decls); i++) {
+ 		cspv_decl* d = ctx->decls + i;
+ 		switch (d->kind) {
+-		case CSPV_D_STRUCT: {
+-			bool buffer_layout = false;
+-			for (int j = 0; j < (int)asize(buffer_structs); j++) {
+-				if (buffer_structs[j] == d->type) { buffer_layout = true; break; }
+-			}
++		case CSPV_D_STRUCT:
+ 			spush(ctx->tp_out, '\n');
+-			cspv_hlsl_struct(g, d->type, buffer_layout);
++			cspv_hlsl_struct(g, d->type);
+ 			cspv_tp_struct_factory(g, d->type);
+ 			break;
+-		}
+ 
+ 		case CSPV_D_GLOBAL:
+ 			sappend(ctx->tp_out, d->is_const ? "static const " : "static ");
+@@ -8869,21 +9241,12 @@ static void cspv_emit_hlsl(cspv_ctx* ctx)
+ 
+ 		case CSPV_D_BLOCK:
+ 			if (d->is_buffer) {
+-				cspv_type* elem = d->member_types[0]->elem;
+-				const char* elem_name = cspv_hlsl_type_name(elem);
+-				// Named instances collapse to one `inst_member` resource (the
+-				// member printer rewrites `inst.member` accesses to match).
+-				char resname[128];
+-				if (d->instance_name) snprintf(resname, sizeof(resname), "%s_%s", d->instance_name, d->member_names[0]);
+-				else snprintf(resname, sizeof(resname), "%s", d->member_names[0]);
+-				sfmt_append(ctx->tp_out, "%sStructuredBuffer<%s> %s : register(%c%d, space%d);\n",
+-					d->readonly ? "" : "RW", elem_name, resname,
+-					d->readonly ? 't' : 'u', d->binding, d->set);
+-				sfmt_append(ctx->tp_out, "uint %s_len() { uint c, s; %s.GetDimensions(c, s); return c; }\n", resname, resname);
++				// Named instances collapse to one `inst_member` resource.
++				cspv_hlsl_ssbo_decl(g, d);
+ 			} else {
+ 				// std140 offsets -> explicit packoffsets (HLSL cbuffer packing
+ 				// diverges from std140 for vec3-after-scalar and similar cases).
+-				sfmt_append(ctx->tp_out, "\ncbuffer %s : register(b%d, space%d)\n{\n", d->name, d->binding, d->set);
++				sfmt_append(ctx->tp_out, "\ncbuffer %s : register(b%d, space%d)\n{\n", cspv_tp_id(g, d->name), d->binding, d->set);
+ 				int offset = 0;
+ 				for (int j = 0; j < d->num_members; j++) {
+ 					int align = 0, size = 0;
+@@ -8913,7 +9276,7 @@ static void cspv_emit_hlsl(cspv_ctx* ctx)
+ 			} else {
+ 				const char* elem = cspv_hlsl_image_elem(d->type->cols);
+ 				sfmt_append(ctx->tp_out, "%sTexture2D<%s> %s : register(%c%d, space%d);\n",
+-					d->readonly ? "" : "RW", elem, d->name,
++					d->readonly ? "" : "RW", elem, cspv_tp_id(g, d->name),
+ 					d->readonly ? 't' : 'u', d->binding, d->set);
+ 			}
+ 			break;
+@@ -8924,11 +9287,24 @@ static void cspv_emit_hlsl(cspv_ctx* ctx)
+ 			sappend(ctx->tp_out, ";\n");
+ 			break;
+ 
+-		case CSPV_D_FUNC:
++		case CSPV_D_FUNC: {
++			// The function's storage-buffer write helpers print ahead of it.
++			CK_SDYNA char* before = ctx->tp_out;
++			ctx->tp_out = NULL;
+ 			spush(ctx->tp_out, '\n');
+ 			cspv_hlsl_func(g, d);
++			CK_SDYNA char* body = ctx->tp_out;
++			ctx->tp_out = before;
++			if (!sempty(g->hlsl_helpers)) {
++				spush(ctx->tp_out, '\n');
++				sappend(ctx->tp_out, g->hlsl_helpers);
++				sclear(g->hlsl_helpers);
++			}
++			sappend(ctx->tp_out, body);
++			sfree(body);
+ 			break;
+ 		}
++		}
+ 	}
+ 
+ 	// ---- Entry wrapper: stage IO structs + a main() bridging the statics. ----
+@@ -8954,13 +9330,13 @@ static void cspv_emit_hlsl(cspv_ctx* ctx)
+ 		for (int i = 0; i < (int)asize(ctx->decls); i++) {
+ 			cspv_decl* d = ctx->decls + i;
+ 			if (d->kind != CSPV_D_INOUT || !d->is_input) continue;
+-			sfmt_append(ctx->tp_out, "\t%s = cf_in.%s_in;\n", d->name, d->name);
++			sfmt_append(ctx->tp_out, "\t%s = cf_in.%s_in;\n", cspv_tp_id(g, d->name), cspv_tp_id(g, d->name));
+ 		}
+ 		sappend(ctx->tp_out, "\tgl_VertexIndex = (int)cf_vid;\n\tgl_InstanceIndex = (int)cf_iid;\n\tcf_main_();\n\tcf_vs_out cf_out;\n\tcf_out.cf_position = gl_Position;\n");
+ 		for (int i = 0; i < (int)asize(ctx->decls); i++) {
+ 			cspv_decl* d = ctx->decls + i;
+ 			if (d->kind != CSPV_D_INOUT || d->is_input) continue;
+-			sfmt_append(ctx->tp_out, "\tcf_out.%s_out = %s;\n", d->name, d->name);
++			sfmt_append(ctx->tp_out, "\tcf_out.%s_out = %s;\n", cspv_tp_id(g, d->name), cspv_tp_id(g, d->name));
+ 		}
+ 		sappend(ctx->tp_out, "\treturn cf_out;\n}\n");
+ 	} else if (ctx->stage == CSPV_STAGE_FRAGMENT) {
+@@ -8986,14 +9362,14 @@ static void cspv_emit_hlsl(cspv_ctx* ctx)
+ 		for (int i = 0; i < (int)asize(ctx->decls); i++) {
+ 			cspv_decl* d = ctx->decls + i;
+ 			if (d->kind != CSPV_D_INOUT || !d->is_input) continue;
+-			sfmt_append(ctx->tp_out, "\t%s = cf_in.%s_in;\n", d->name, d->name);
++			sfmt_append(ctx->tp_out, "\t%s = cf_in.%s_in;\n", cspv_tp_id(g, d->name), cspv_tp_id(g, d->name));
+ 		}
+ 		sappend(ctx->tp_out, "\tcf_main_();\n\tcf_ps_out cf_out;\n");
+ 		if (ctx->frag_depth_var) sappend(ctx->tp_out, "\tcf_out.cf_depth = gl_FragDepth;\n");
+ 		for (int i = 0; i < (int)asize(ctx->decls); i++) {
+ 			cspv_decl* d = ctx->decls + i;
+ 			if (d->kind != CSPV_D_INOUT || d->is_input) continue;
+-			sfmt_append(ctx->tp_out, "\tcf_out.%s_out = %s;\n", d->name, d->name);
++			sfmt_append(ctx->tp_out, "\tcf_out.%s_out = %s;\n", cspv_tp_id(g, d->name), cspv_tp_id(g, d->name));
+ 		}
+ 		sappend(ctx->tp_out, "\treturn cf_out;\n}\n");
+ 	} else {
+@@ -9009,7 +9385,8 @@ static void cspv_emit_hlsl(cspv_ctx* ctx)
+ 			"}\n");
+ 	}
+ 
+-	afree(buffer_structs);
++	map_free(gg.hlsl_reserved);
++	sfree(gg.hlsl_helpers);
+ 	afree(gg.rename_from);
+ 	afree(gg.rename_to);
+ 	afree(gg.shadows);
