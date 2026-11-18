@@ -52,6 +52,31 @@ fn made<B>(be: B&, kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     return r;
 }
 
+// The 3D board's antialiasing as settings' About shows it ("4× MSAA"), and whether the
+// app lowered it for a slow device (draw3d::fewer_samples).
+fn aa_shown(r: Renderer&) -> u8[..24], bool {
+    let d .= r.d3;
+    var out: u8[..24] = [];
+    let msaa = d.aa == render3d::AA_MSAA;
+    if msaa { format(out, d.samples, "× MSAA"); }
+    else if d.aa == render3d::AA_OFF { out.append("off"); }
+    else { backend::with() { be => out.append(upper(be.r3d.aa_name(d.aa))) } }
+    return out, msaa && d.samples < render3d::SAMPLES;
+}
+
+// A name in capitals, "smaa" as SMAA.
+fn upper(s: const u8[:]) -> u8[..8] {
+    var out: u8[..8] = [];
+    for c in s { if out.len < 8 { out.push(if c >= 'a' && c <= 'z' { c - 32 } else { c }); } }
+    return out;
+}
+
+// The 3D board's shadow taps (render3d::SHADOW_4..16) and its surfaces' side.
+fn shadow_taps(r: Renderer&) -> i64 {
+    return if r.d3.look == render3d::SHADOW_16 { 16 } else if r.d3.look == render3d::SHADOW_4 { 4 } else { 9 };
+}
+fn surfaces_side(r: Renderer&) -> i64 { r.d3.side }
+
 fn toggle_aa(r: Renderer&) { backend::with() { be => draw3d::toggle_aa(be, r.d3) } }
 
 fn fewer_samples(r: Renderer&) { backend::with() { be => draw3d::fewer_samples(be, r.d3) } }

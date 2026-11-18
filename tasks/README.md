@@ -40,19 +40,21 @@ number ("task 004"), not by path.
 Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 `docs/product.md` is built.
 
-- Release: 029 Google Play (closed test running), 046 the App Store (in review), 043 iOS
-  (the icon left), 036 the announcement after the Play release, 075 the Linux build and
-  076 Wayland, 064 Steam (low priority, scoped only).
-- Content and play: 026 how to play, 037 the puzzle set, 088 daily puzzles, 038 players,
-  074 the games' history and a rating, 087 the replay's moves and the desktop's results.
-- Menus and layout: 080 New game, settings as one list, and the board's material; 083 the
-  layouts on devices; 072 keyboard and controller focus; 067 the board under the mouse.
-- The 3D board: 041 carved looks, 042 the idle wakeup, 071 its memory.
-- Frames: 055 the boards locked to the display's rate, 056 even pacing, 081 the A33 at
+- Release: 029 Google Play (closed test running), 046 the App Store (in review), 036 the
+  announcement after the Play release, 075 the Linux build, 064 Steam (low priority,
+  scoped only; the board under the mouse first).
+- Content and play: 038 the badges' final silhouettes.
+- Menus and layout: 072 keyboard and controller focus.
+- Small fixes: 091, built; the mouse drag on Windows left to check.
+- Settings: 092 About and the battery saver's cap, built; the devices left to check.
+- The 3D board: 042 the idle wakeup, 071 its memory, 094 the pieces' materials, 095 a
+  table under it.
+- Frames: 055 the boards locked to the display's rate, with even pacing and the A33 at
   60 fps.
-- Renderer: 065 NoGraphicsAPI through goose-ngfx, 073 the renderer chosen at run time,
-  074 ngfx against gfx on Windows, 077 ngfx's MSAA and older Apple GPUs.
-- Later: 010 goose_gfx changes upstream, 013 season effects, 014 upscaled backgrounds,
-  060 shared blocks for a second board game.
+- Renderer: 065 NoGraphicsAPI through goose-ngfx, with the renderer chosen at run time,
+  the uncapped Windows runs, and MSAA and older Apple GPUs.
+- Upstream: 010 goose_gfx changes, Wayland's branches among them.
+- The manor room: 093, a whole room around the 3D board; exploratory, concept art only.
+- Later: 013 season effects, 060 shared blocks for a second board game.
 
 To decide later: a puzzle rating and the computer's level shown as a rating.

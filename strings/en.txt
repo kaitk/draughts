@@ -20,10 +20,13 @@ continue.hard = The computer · hard
 # Continue's place once the last game has ended: its replay (home::menu). The note says
 # how it ended, "{}" the opponent as level.easy.. or level.friend; a friend's game won
 # shows won.white or won.black instead.
-home.replay = Watch replay
+home.replay = Replay
 last.won = You won · {}
 last.lost = You lost · {}
 last.draw = Draw · {}
+# A game that ended on a clock run out, as last.won and last.lost.
+last.won_time = You won on time · {}
+last.lost_time = You lost on time · {}
 
 level.easy = easy
 level.medium = medium
@@ -76,6 +79,9 @@ turn.white = White's turn
 turn.black = Black's turn
 won.white = White wins
 won.black = Black wins
+# A friend's game won on a clock run out, as won.white and won.black.
+won_time.white = White wins on time
+won_time.black = Black wins on time
 
 setup.draughts = Draughts
 # The setup's first row: a friend, or the computer at a level.
@@ -323,3 +329,40 @@ settings.sound = Sound
 settings.volume = Volume
 # The speaker's tile's name, for a screen reader: it turns the sound off and on.
 settings.mute = Mute
+
+# Settings' About: its row at the foot, beside the privacy note, and the dialog it opens
+# over settings, of the build and what the app draws with. The values (versions, names,
+# "4× MSAA") stay as they are in every language.
+about.row = About
+about.copy = Copy
+about.copied = Copied
+# The dialog's three groups.
+about.build = Build
+about.graphics = Graphics
+about.board_3d = 3D board
+# The build's lines.
+about.version = Version
+about.commit = Commit
+about.system = System
+# The graphics' lines: the renderer (gfx or ngfx), its graphics API, the GPU's name, and
+# the display's refresh rate.
+about.renderer = Renderer
+about.driver = Driver
+about.gpu = GPU
+about.display = Display
+# The 3D board's lines: its antialiasing, its shadow's filter as "{} taps", and the side
+# of its baked surfaces in pixels.
+about.antialiasing = Antialiasing
+about.shadows = Shadows
+about.taps = {} taps
+about.surfaces = Surfaces
+# The system's battery saver, on or off; and under it, on Android, that it keeps the
+# display at 60 Hz.
+about.saver = Battery saver
+about.on = On
+about.off = Off
+about.capped = Frames capped at 60 Hz
+# Under the antialiasing when the app lowered it from 4× MSAA for a slow device.
+about.lowered = Lowered: the device draws too slowly for 4×
+# Under the 3D board's group while the board is flat.
+about.not_in_use = Not in use: the board is flat.

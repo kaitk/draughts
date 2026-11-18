@@ -1,4 +1,4 @@
-# 076: Wayland on Linux, for gfx and ngfx
+# 01: Wayland on Linux, for gfx and ngfx
 
 Status: in-progress (built, run, and measured on the Bazzite PC 2026-11-12; the pull
 requests, the user's, left)
@@ -47,7 +47,7 @@ At rest (`--rest 25`) on Wayland: 0.01 to 0.02% CPU on both renderers, nothing d
 
 Both hold 60 capped. The release SDL's spiky 1% lows (task 075's 158) were its own, not
 XWayland's. On RADV ngfx presents 7 to 13% fewer frames than gfx, unlike the RTX 4090
-(task 074); a GPU trace (`RADV_THREAD_TRACE` or RGP) would say why. ngfx's flat capped
+(task 065/02); a GPU trace (`RADV_THREAD_TRACE` or RGP) would say why. ngfx's flat capped
 waited time counts the wait for the window's image.
 
 Nothing here grabs a Wayland window non-interactively: the screenshot portal waits on a

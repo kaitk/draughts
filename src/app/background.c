@@ -4,14 +4,22 @@
 // elsewhere the JPEG is decoded with stb_image and scaled down.
 //
 // Android and iOS devices embed only the ASTC files, which every GPU they target samples;
-// the iOS simulator keeps the JPEGs. An image whose file is missing is left out, and the
-// app shows the page color.
+// Windows and Linux only the JPEGs, as their GPUs mostly can't sample ASTC. The Mac keeps
+// both: its GPU samples the ASTC through the goose_gfx fork, and a plain `goose build`,
+// with the Goose release's own gfx and no compressed formats, decodes the JPEG. So does
+// the iOS simulator. An image whose file is missing is left out, and the app shows the
+// page color.
 
 #include "platform.h"
 #if defined(__ANDROID__) || (DRAUGHTS_IOS && !TARGET_OS_SIMULATOR)
 #define ASTC_ONLY 1
 #else
 #define ASTC_ONLY 0
+#endif
+#if defined(_WIN32) || (defined(__linux__) && !defined(__ANDROID__))
+#define JPEG_ONLY 1
+#else
+#define JPEG_ONLY 0
 #endif
 
 #if !ASTC_ONLY
@@ -81,6 +89,7 @@ static const unsigned char boards[] = {
 static const unsigned char boards[] = { 0 };
 #endif
 #endif
+#if !JPEG_ONLY
 #if __has_embed("../../design/backgrounds/masters/autumn-01-2048-6x6.astc")
 static const unsigned char autumn_astc[] = {
 #embed "../../design/backgrounds/masters/autumn-01-2048-6x6.astc"
@@ -115,6 +124,13 @@ static const unsigned char boards_astc[] = {
 #embed "../../design/boards/boards-6x6.astc"
     , 0 };
 #else
+static const unsigned char boards_astc[] = { 0 };
+#endif
+#else
+static const unsigned char autumn_astc[] = { 0 };
+static const unsigned char winter_astc[] = { 0 };
+static const unsigned char spring_astc[] = { 0 };
+static const unsigned char summer_astc[] = { 0 };
 static const unsigned char boards_astc[] = { 0 };
 #endif
 

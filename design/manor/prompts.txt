@@ -1,0 +1,75 @@
+Manor concept prompts (task 093/01). Images stay local here (.gitignore).
+
+The concept, fixed for now (2026-11-17):
+- style-01.png: the library, the upper floor's middle room on the garden side; warm
+  afternoon sun from the left. The wood board.
+- upper-hall-02.png: the hall at the top of the stairs, glazed doors onto the balcony over
+  the entrance portico; morning sun. The stone board.
+- garden-facade-01.png: the house from the park, trees within metres of the windows.
+
+Each room gets two framings, as the app would show them:
+- Menu: the home screen. The window is in focus and the picture; the board waits on its
+  table at the side, soft and out of focus.
+- Play: the camera where a player's eyes would be, the board and table in focus, the
+  room soft behind.
+
+What works with ChatGPT: few nouns and a mood. It draws every noun it is given, each on
+its own, so long lists of details fail; it redraws rather than edits, so "the same room"
+in a new chat gives a new room. Attach the concept image instead of describing it.
+Gemini may keep an attached room closer: try both. One prompt per new chat, the concept
+image attached fresh each time. Earlier rounds' prompts are in git history.
+
+Save results as <room>-<framing>-NN.png: library-menu-01.png, library-table-01.png,
+library-desk-01.png, hall-menu-01.png, hall-table-01.png.
+
+========================================================================
+Library (attach style-01.png; for the window, also garden-facade-01.png)
+========================================================================
+
+--- 1. Menu: the window ---
+The room in the first attached image, seen from a few steps inside, the camera turned toward the nearer of the two windows on the left. The window is sharp and bright: the deep niche, the curtains, the old trees of the park close outside in autumn colour, low afternoon sun glowing through the leaves. In the foreground at the side, softly out of focus, the round table with a wooden draughts board waiting on it. Calm, warm, inviting. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+--- 2. Play: the round table ---
+The room in the first attached image, seen from where a player sits at the round table: looking down at the table at about 50 degrees, close, with a long lens. A wooden draughts board with flat round pieces mid-game fills much of the frame, sharp; the table's edge and the vase of flowers at its side; the room behind soft and out of focus. Low afternoon sun from the windows on the left falls across the board in a warm streak, broken by the soft shadows of the window bars, the curtain, and branches outside. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+--- 3. Play: the writing desk ---
+library-desk-01.png had the desk standing out in the room and the board too big for it.
+The room in the first attached image, seen from where a player sits at the mahogany writing desk that stands against the wall right beside the window on the left: looking down at the desk at about 50 degrees, close, with a long lens. A small wooden draughts board with flat round pieces mid-game lies on the desk with room around it; at the back of the desk, against the wall, a short row of old German books in worn brown half-leather with gilt Fraktur titles on their spines. The room behind soft and out of focus. Low afternoon sun from the window on the left falls across the board in a warm streak, broken by the soft shadows of the window bars, the curtain, and branches outside. Like a still from a period film on 35 mm film. No people. Landscape 3:2.
+
+========================================================================
+Upper hall (attach upper-hall-02.png)
+========================================================================
+
+--- 4. Menu: the balcony doors ---
+The hall in the attached image, the camera turned toward the glazed balcony doors. The doors are sharp and bright: the columns and balustrade of the balcony, the autumn trees beyond, clear low morning sun streaming in. In the foreground at the side, softly out of focus, the table with a grey stone draughts board waiting on it. Cool, bright, airy. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+--- 5. Play: the table by the doors ---
+The hall in the attached image, seen from where a player sits at the table by the balcony doors, on the side across from the doors, so they are on the left: looking down at the table at about 50 degrees, close, with a long lens. A grey stone draughts board with flat round pieces mid-game fills much of the frame, sharp; the hall behind soft and out of focus. Clear low morning sun from the doors on the left falls across the board, broken by the soft shadows of the doors' glazing bars and the sheer curtain. Cool, bright, airy. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+========================================================================
+Upper hall through the seasons (attach upper-hall-02.png)
+========================================================================
+The same view as the concept, the table where it is; only the season changes. The hall
+faces north-east: summer mornings bring sun straight in, spring's comes in low and
+slanting, and in winter no sun reaches it, only the white light off the snow.
+
+--- 6. Winter ---
+The hall in the attached image, the same view with everything where it is, on a January morning. The balcony doors are closed; snow lies on the balcony, the balustrade, and the bare trees beyond. No sunshine: soft, cool white light from the snow fills the hall, and a lamp glows warm on a side table. Quiet and still. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+--- 7. Spring ---
+The hall in the attached image, the same view with everything where it is, on a May morning. One balcony door stands open; the trees beyond are in fresh pale green leaf, and lilacs bloom below the balcony. Low, clear morning sun slants in across the floor. Light and fresh. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+--- 8. Summer ---
+The hall in the attached image, the same view with everything where it is, on an early July morning. Both balcony doors stand open and the sheer curtains stir; the trees beyond are dark green and full. Bright morning sun pours straight in across the floor and the table. Warm and airy. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+========================================================================
+Upper hall in winter: menu and play (attach hall-winter-01.png)
+========================================================================
+hall-winter-01.png kept the hall as it was, the doors closed and snow outside; still a
+chess set, and a little gloomy. The stone board's two framings from it.
+
+--- 9. Winter menu: the balcony doors ---
+The hall in the attached image on the same winter morning, the camera turned toward the closed balcony doors. The doors are sharp and bright: the snowy balustrade and the column, the white trees beyond, soft light from the snow. In the foreground at the side, softly out of focus, the small table with a grey stone draughts board waiting on it, its flat round pieces set out. A warm lamp glows somewhere behind. Cool and quiet, but inviting. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+--- 10. Winter play: the table by the doors ---
+The hall in the attached image on the same winter morning, seen from where a player sits at the small table, on the side across from the balcony doors, so they are on the left: looking down at the table at about 50 degrees, close, with a long lens. A grey stone draughts board with flat round pieces mid-game fills much of the frame, sharp, the table's edge around it; the hall behind soft and out of focus, a warm lamp glowing far behind. Soft, cool white light from the snowy doors on the left falls evenly across the board, with soft shadows and the faint shape of the glazing bars. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.

@@ -25,7 +25,7 @@ text names no age, since the hard level and puzzles are hard for grown-ups too
 Draughts in 2D or 3D: play the computer or a friend, solve daily puzzles.
 ```
 
-## Full description (3,284 of 4,000)
+## Full description (3,723 of 4,000)
 
 ```text
 A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
@@ -43,13 +43,14 @@ PLAY
 YOUR GAMES
 • Results keeps your past games and a rating against the computer.
 • Replay any of them move by move, each move marked from best to mistake, and play on from any move to try another line.
+• Once a game has ended, Replay on the home screen opens it where it turned: at your worst move, or where a lost game slipped away, with the best move shown.
 
 PUZZLES
-• Daily puzzles: once Learn is solved, a few puzzles a day at your level (4 by default; 3, 5, or 10 in settings): a warm-up, two at your level, and one a bit harder. They come from over 7,000 for International, Russian, and Brazilian draughts, among them traps that punish a careless move, and none repeats.
+• Daily puzzles: once Learn is solved, a few puzzles a day at your level (4 by default; 3, 6, or 8 in settings): a warm-up, puzzles at your level, and one a bit harder. They come from nearly 8,000 for International, Russian, and Brazilian draughts, among them traps that punish a careless move, and none repeats.
 • A puzzle rating for each player and kind of draughts, which moves fast at first and settles with time.
-• The course: 166 puzzles, 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 each for Russian and Brazilian draughts in four.
+• The course: 216 puzzles in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move) for each kind of draughts: 84 for International, among them the Haarlem shot and a coup Philippe, and 66 each for Russian and Brazilian.
 • Each theme goes from easy to harder, and some puzzles are played with black.
-• Learn comes first and shows the rules in action; the other themes open once half of it is solved.
+• Learn comes first and shows the rules in action; the other themes open once half of it is solved, and the daily puzzles once all of it is.
 • Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
 
 PLAYERS
@@ -65,6 +66,9 @@ THE BOARD
 • A flat board, or a 3D one with light and soft shadows, which you can turn by hand.
 • Four seasons, each a picture with its own board in wood, stone, or carved.
 • The season follows the date, or stays on the one you choose; or a plain background in the colours of the board.
+
+SOUND
+• A few calm sounds: a wooden knock for a move, a kannel's notes for a crowning and a win, and low mallet notes for a solved puzzle. Off until you turn them on in Settings.
 
 FOR EVERYONE
 • Large buttons and pictures, so even a child who can't read yet finds their way.

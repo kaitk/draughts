@@ -54,9 +54,12 @@ let MOVES = 19;
 let LIST_OFF = 20;          // the moves panel's row: off, the moves, marks
 let LIST_MARKS = 22;
 let DAILY_8 = 26;           // puzzles a day: 3, 4, 6, 8
-let TILES = 27;
-let ENGLISH = 27;           // the language list's rows, after the screen's tiles
-let EESTI = 28;
+let ABOUT = 27;             // the About row, beside the privacy note
+let TILES = 28;
+let ENGLISH = 28;           // the language list's rows, after the screen's tiles
+let EESTI = 29;
+let COPY = 28;              // About's card's Copy and close, after the screen's tiles
+let CLOSE = 29;
 
 // Tile n's middle, the list scrolled first where it isn't whole in the list's view, as a
 // finger would scroll it.
@@ -280,6 +283,33 @@ fn main() {
     show(sh, "English");
     strings::use(strings::EN);
 
+    // About: its row opens a card over the screen, which takes no tap; Copy asks the app
+    // to copy its text, and a tap outside the card or back closes it. Its tiles are small
+    // but their taps a tap at least. The app fills what it shows as it opens.
+    sh.about.filled = true;
+    sh.about.version.append("1.2.3");
+    sh.about.aa.append("4× MSAA");
+    tap(sh, g, ABOUT, 9.51);
+    let about_row = drive::rect(g, ABOUT);
+    print("About: open ", sh.prefs.about_open, ", asks the app to fill it ", sh.out.about, ", tiles ", drive::tiles(g),
+          ", the row ", drive::ok(about_row.w < gui::TAP * g.scale), " smaller than a tap");
+    drive::tap(sh, g, drive::tile(g, PLAIN), 9.52);
+    print("a tap on Plain under the card: plain ", sh.prefs.plain, ", open ", sh.prefs.about_open);
+    drive::tap(sh, g, drive::tile(g, COPY), 9.53);
+    print("Copy: copied ", sh.about.copied, ", open ", sh.prefs.about_open);
+    var copied: u8[..2048] = [];
+    settings::about_text(sh.prefs, sh.about, copied);
+    let first, unused_rest, unused_more = split_once(copied[..], '\n');
+    print("its text's first line: ", first);
+    drive::tap(sh, g, drive::tile(g, CLOSE), 9.54);
+    print("close: open ", sh.prefs.about_open, ", tiles ", drive::tiles(g));
+    tap(sh, g, ABOUT, 9.55);
+    drive::tap(sh, g, float2 { 2.0, 2.0 }, 9.56);
+    print("a tap outside: open ", sh.prefs.about_open, ", on settings ", sh.screen == shell::SETTINGS);
+    tap(sh, g, ABOUT, 9.57);
+    print("back: went back ", !shell::back(sh, 9.58) || sh.screen != shell::SETTINGS, ", open ", sh.prefs.about_open);
+    drive::idle(sh, g, 9.59);
+
     // Plain keeps the season (by the date here) and its board, shows no photograph, and
     // is kept in the file; the seasons' thumbnails show their fades.
     print("the row: ", strings::get(settings::ROW_NAMES[settings::BACKGROUND_ROW]), ", photo shown ",
@@ -382,9 +412,10 @@ fn volume(sh: shell::Shell&, g: gui::Gui&) {
     var device: u8[>..] = [];
     players::write_device(sh.prefs.language, 64, true, true, 1, device);
     let back = settings::parse(device);
-    print("  settings.txt at 64, muted, fullscreen: ", device.len > 0, ", read back ", back.volume, " ", back.muted, " ",
-          back.fullscreen, "; a file without them: ", settings::parse("language = en\n").volume == settings::VOLUME_DEFAULT,
-          " ", !settings::parse("language = en\n").muted, " ", !settings::parse("language = en\n").fullscreen);
+    print("  settings.txt at 64, muted: ", device.len > 0, ", read back ", back.volume, " ", back.muted, "; a file without",
+          " them: ", settings::parse("language = en\n").volume == settings::VOLUME_DEFAULT,
+          " ", !settings::parse("language = en\n").muted);
+    print("  fullscreen read back ", back.full, "; a file without it windowed ", !settings::parse("language = en\n").full);
     settings::default_volume = 50;
     var fresh = settings::Settings {};
     print("  a desktop's default: ", settings::volume_of(fresh));

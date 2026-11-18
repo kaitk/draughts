@@ -51,8 +51,9 @@ makes the choice ([architecture](README.md#code-layout)) and holds both. Both ro
 goose-ngfx's shaders are gfx's GLSL, written as Slang at each build into
 `build/ngfx/shaders/` (`scripts/ngfx_2d_shaders.py`, `ngfx_3d_shaders.py`) and compiled
 ahead into `build/ngfx/blobs/`, which `src/ngfx/` embeds. `scripts/ngfx.py` also links the
-goose-ngfx checkout at `build/ngfx/goose-ngfx` and writes the app's version for the crash
-marker (`build/ngfx/draughts_version.h`).
+goose-ngfx checkout at `build/ngfx/goose-ngfx`. Every build script writes the app's
+version and commit into `build/draughts_version.h` (`scripts/native.py`), which settings'
+About shows and the crash marker is keyed by.
 
 ## UI layer
 
@@ -111,7 +112,8 @@ gives the room to the board. `--touch on` lays a desktop window out as a touch s
 - The landscape game and puzzle stand in a frame (`panel::framed_in`): 4% to 7.5% of the
   height on each side, at most 1.45 times as wide as tall round the flat board and 1.7
   round the 3D one, so the panels stay near the board; `panel::flat_frame` centers it down
-  a window whose width limits the board.
+  a window whose width limits the board. The 3D board's frame has half its top margin moved
+  to the bottom (`panel::FRAME_UP_3D`).
 - Home's column stands 40 dp from the top, at least 440 dp wide (`home::DESKTOP_TOP`,
   `DESKTOP_COLUMN_W`).
 - No window lays out wider than 1.9 times its height (`gui::WIDEST`): `gui::safe` keeps
@@ -204,13 +206,14 @@ and value noise in the board shader, never a regular stripe.
   the season is picked the sharp texture is averaged down to 512 × 512 on the GPU and
   blurred once (sigma 5.6 texels), a 1 MB texture. A square image cropped by the long side
   needs no new blur for a new screen size.
-- **Stored** twice per season at 2048 × 2048, embedded in the program with C23 `#embed`:
-  as ASTC 6 × 6 (1.87 MB each, from the masters with `astcenc`,
-  `design/backgrounds/README.md`), sampled as stored; and as JPEG at quality 85, the
-  fallback for a GPU without ASTC and for the release's own gfx, which lacks compressed
-  formats ([why 6 × 6](../decisions/rendering.md#scene-and-glass)). Android embeds only
-  the ASTC (7.5 MB of `libmain.so`) and no stb_image. A checkout without the images still
-  builds and shows the page color (`__has_embed`).
+- **Stored** per season at 2048 × 2048, embedded in the program with C23 `#embed`, as
+  ASTC 6 × 6 (1.87 MB each, from the masters with `astcenc`,
+  `design/backgrounds/README.md`), sampled as stored, and as JPEG at quality 85, decoded
+  ([why 6 × 6](../decisions/rendering.md#scene-and-glass)). Android and iOS embed only the
+  ASTC (7.5 MB of `libmain.so`) and no stb_image; Windows and Linux only the JPEG, which
+  their GPUs need. The Mac embeds both: the ASTC for its GPU, the JPEG for a plain
+  `goose build` with the Goose release's own gfx, which lacks compressed formats. A
+  checkout without the images still builds and shows the page color (`__has_embed`).
 - **Loading**: `src/app/background.c` decodes (no graphics API) and `src/app/photo.c`
   uploads through gfx's C API, with no copy on the data stack. Compressed formats come
   from the fork's `compressed-textures` ([findings](../goose-findings.md)). Where ASTC
@@ -279,10 +282,10 @@ history ([where](../decisions/rendering.md#controls)).
   over the kept image, so moving it doesn't redraw the board.
 - **Groups**: Tab and Shift+Tab step between a screen's groups (`gui::group`), each
   remembering its last control.
-- **Fullscreen**: on a desktop Alt+Enter or F11 toggles it (`host::fullscreen_key`),
-  and the next start opens as the window was left (`window = fullscreen` in
-  settings.txt, `app::follow_window`); `--size full` opens fullscreen, `--size WxH` in a
-  window, either without writing it.
+- **Fullscreen**: on a desktop Alt+Enter or F11 toggles it (`host::fullscreen_key`);
+  settings.txt keeps it (`window = full`) and the next start opens so, as does
+  `--size full`. The window's state at closing is kept too, so leaving by macOS's green
+  button sticks.
 - **A gamepad** is the keys (`host::keys`): D-pad or left stick move, A is Enter, B is
   Escape, the shoulders Shift+Tab and Tab. goose_gfx reads the first gamepad each frame,
   opened with `SYSTEM_GAMEPADS` so the system wakes gfx's idle wait on input (on Windows
@@ -328,12 +331,14 @@ otherwise, and with the 3D board, portrait: a bar above the board and the play b
 **Home** (`prototypes/home.html`): the scene and the board, and one glass column with the
 wordmark and rows 88 dp tall: Continue (when there is a game to resume, `shell::resume`),
 New game with the setup's opponent at its end, How to play in Continue's place for a
-player who hasn't learned yet, Watch replay in its place once the last game has ended
-(its note how it ended and against whom, outlined over New game, which is lit; it opens
+player who hasn't learned yet, Replay in its place once the last game has ended
+(its note how it ended and against whom, on time where a clock ran out, outlined over New game, which is lit; it opens
 that game's [replay](#a-games-replay), whose back goes home), Puzzles (solved count, or today's dots once
 [daily puzzles](puzzles.md#daily-puzzles) open, smaller where they would come within
 16 dp of the label), the games played with the rating
-([results](#the-results-screen)), and Settings. Where the rows don't fit they scroll under
+([results](#the-results-screen)), and Settings. A row's note keeps 12 dp from its label,
+shrinking to fit down to 80% and left out below that (a long translation in landscape's
+360 dp column). Where the rows don't fit they scroll under
 the wordmark, fading at the foot. In portrait settings is a bare gear beside the wordmark.
 A bare X in the top right closes the app at once on a touch screen
 ([why](../decisions/rendering.md#controls)); on a desktop a Quit row replaces it where it
@@ -352,15 +357,26 @@ crossfading. Where the choices don't fit they scroll between the head and play.
 the title, and the language button pinned on top, then one scrolling list: **Look**
 (Background, Theme, Board: Flat, Raised, Wood, Stone, Carved; Kings), **Sound** (Volume:
 a speaker and a slider, [sound](sound.md#the-setting)), **Game** (Move hints, Move list),
-and the privacy note. A new player starts on Raised on a desktop and on Flat
-on a phone or a tablet. Pictured rows show a 76 × 50 dp picture over the word
-(`gui::choice`). In landscape the list is a 480 dp column at the left and the preview the
+and the privacy note with a small About row beside it. A new player starts on Raised on
+a desktop and on Flat on a phone or a tablet. Pictured rows show a 76 × 50 dp picture
+over the word (`gui::choice`). In landscape the list is a 480 dp column at the left and the preview the
 rest; in portrait the preview is a band on top. The preview is home's board moved there
 (see [Transitions](#transitions)), set to one fixed capture position that shows what the
 move hints do; the 3D preview turns under a drag as home's board does (see [Board and
 pieces](#board-and-pieces)). The language button opens a small list of the languages in
 themselves.
 `test/shell/settings_sizes` checks the sizes.
+
+**About** (`prototypes/settings.html?about=tablet`, `src/shell/about.goose`) is a glass card over
+the dimmed settings, for a bug report: the version, commit and its date, and the system;
+the renderer (gfx or ngfx), its driver, the GPU's name, the display's refresh rate, and
+the system's battery saver; and what the 3D board uses now: its antialiasing (with a note
+when a slow device lowered it to 2×), its shadow's taps, and its surfaces' side, dim with
+a note while the board is flat. Copy puts it all on the clipboard. Two columns where one
+doesn't fit (a phone in landscape). The row, Copy, and close are 40 dp tiles, each taking
+a tap round it. The app fills the card (`app.goose`'s `fill_about`, `about.c`): the build
+at start, the system and the GPU's name (from Metal, or a Vulkan instance of its own) the
+first time it opens, the rest each frame it shows.
 
 **The puzzles** (`prototypes/puzzles.html`): a library of themes and a theme's page. The
 library has back, the title, the draughts switch (the setup's choice, one setting), and a
@@ -370,7 +386,8 @@ How to play's row, and Today's row once open, head the list
 row itself is a tile round them that opens the first unsolved, or the first once all are
 (`picker::today_row`). Rows are one column in portrait and two in
 landscape where they fit, scrolling where they don't. A theme's page lists its levels as
-rows of tiles with 0 to 3 stars.
+rows of tiles with 0 to 3 stars, scrolling under its head where they run past the foot
+(International's three levels of Shots on a small phone in landscape).
 
 **A puzzle** (`prototypes/puzzle.html`): the game's layout; on the right whose puzzle it
 is, the goal's icon and words, the three stars at stake, and next (dim until solved). A
@@ -418,8 +435,9 @@ What they show is in `docs/product.md` and [ai](ai.md#the-lookout).
 `game::taken` counts each color's start pieces less those on the board, men and kings
 apart (kings from the undo history), once a move has shown. They are drawn as piece
 instances over the UI (`panel::taken`): on glass under the left corner panel in flat
-landscape, above the board between the corner panels in 3D landscape where it clears,
-under the bar in portrait, each side's on a card of its own once it has taken something.
+landscape, above the board between the corner panels in 3D landscape where it clears
+(on a desktop the zoom keeps the whole board under it), under the bar in portrait, each
+side's on a card of its own once it has taken something, its ends round.
 A puzzle shows none.
 
 ### The moves panel
@@ -440,9 +458,10 @@ there is no panel or line.
 
 `src/shell/results.goose`, from home's results row: the draughts as tiles with the
 player's rating there, a panel with the rating and the results against each level, and a
-scrolling list of the games, newest first: the result, the opponent and date, the rating's
-change, and the blunders as `?? n`. A row opens the game's replay. On a desktop's large
-window (`gui::large`) it is at most 1640 dp wide and drawn larger.
+scrolling list of the games, newest first: the result, the opponent and date (the day it
+ended in the local zone, `history::zone`), the rating's change, and the blunders as `?? n`.
+A row opens the game's replay. On a desktop's large window (`gui::large`) it is at most
+1640 dp wide and drawn larger.
 
 #### A game's replay
 
@@ -534,8 +553,13 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   large as clears them.
 - **The camera buttons** (`gui::floating`): View cycles the rest angle and the top view
   (74°), Zoom frames the playing field (landscape only), Showcase lets a drag turn the
-  board ±35° and tip it 35° to 80°; each eases over 0.6 s. The camera is plain data in
-  `board/rig.goose`; `panel::apply_camera` fits it each frame.
+  board ±35° and tip it 35° to 80° (a drag past a limit turns back only from where it
+  reached it); each eases over 0.6 s. The camera is plain data in
+  `board/rig.goose`; `panel::apply_camera` fits it each frame. The zoom stands at the
+  room's bottom at the rest angle and in its middle in the top view; on a desktop the top
+  view's room reaches to a gap above the window's foot, and the board sits lower where
+  what each side has taken holds it down. The game's view and
+  zoom are kept in the player's file and come back at launch (`rig::choose`).
 - **Against a friend** the game starts in the zoomed top view (`rig::across_table`); with
   Turns it starts at rest and the board turns 180° after each move, the light keeping its
   place on screen (`render3d::turn_light`).
@@ -576,17 +600,20 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   | Autumn | wood | maple and walnut in cherry | sandstone and porphyry | rust vines in weathered stone |
   | Winter | stone | limed ash and smoked oak | slate in black marble | a Nordic band in smoked oak |
   | Spring | carved | birch | ivory and jade, veined | the elven stone |
-  | Summer | wood | the sunset wood | amber granite | amber signs in granite |
+  | Summer | wood | the sunset wood | amber granite, veined and cracked | amber signs in granite |
 
   `--autumn N`, `--winter N`, `--spring N`, `--summer N`, `--wood N`, and `--marble N`
-  pick a look or model over the material, for tuning.
+  pick a look or model over the material, for tuning. A plain stone's hairline cracks and
+  veins are laid out by its own seed (`looks::Carving.scale`), so no two share them.
 - **Wood and stone are baked** once into 2048² maps with mips (`shaders::BAKE_FRAG`) when
   getting ready and on a theme change, never per frame; on a phone's screen (`gui::phone`,
   a window as narrow too) into 1024² maps, each texel the average of the 2 × 2 the full
   bake has there, the same look at a quarter of the memory (`draw3d::screen_bake`): growth rings round a wandering
   pith with pores and fibre relief, colored by Beer's law, under a finish per look
   (`looks::Finish`); marble as contours of a warped ramp. The bake takes 37 ms on an M1
-  Pro and about 0.3 s on the Galaxy Tab A11+.
+  Pro and about 0.3 s on the Galaxy Tab A11+. On the A33 a wood prepares in about 2.3 s
+  and the stones in 2.7 to 2.8, 1.1 s of it the bake pipeline's compile whatever the look
+  (2026-11-13); every look bakes into the same targets, so memory is the same.
 
 ## Fonts
 
@@ -753,6 +780,12 @@ fork). The release's own gfx presents every frame. The patched `frame()`:
 
 On Android `DraughtsActivity` keeps SDL's Java from listening to the accelerometer, which
 would wake the app 52 times a second ([findings](../goose-findings.md)).
+
+The system's battery saver (Android's power save mode, Apple's Low Power Mode, Windows'
+battery saver; `draughts_battery_saver`) is read at start and whenever the app gets the
+focus back. While it is on, Android's display is asked for 60 Hz (`draughts_cap_60`, the
+same request as a slow 3D board's). iOS needs nothing: the app runs at 60 Hz there, and
+iOS caps a ProMotion iPad itself in Low Power Mode. A desktop isn't capped.
 
 SDL keeps the screen on while the window is open. After 15 minutes with no touch, key,
 or computer move, `host::keep_screen` hands the screen back to the system's own timeout,

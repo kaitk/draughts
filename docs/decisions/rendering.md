@@ -134,6 +134,15 @@ Set aside, not rejected, for another season or a theme setting:
   nearer the master than the JPEG (44 to 45 dB against 40 to 41). Rejected: PNG (about
   5 MB a season), AVIF (libavif and an AV1 decoder to save about 1 MB).
 - One photograph size for every screen (2026-11-08): sizing by density saves at most 1 MB.
+- Windows and Linux embed no ASTC (2026-11-17): their GPUs mostly can't sample it, so it
+  was 7.5 MB of dead weight; the Windows program went from 17.3 to 9.7 MB. The Mac keeps
+  both until the compressed formats are upstream in goose_gfx, so a plain `goose build`
+  still shows the photograph.
+- The backgrounds stay the Lanczos-enlarged originals (2026-11-17, task 014 cancelled):
+  3840 px masters redrawn with Qwen-Image 2.1 img2img and upscaled with SeedVR2 lost the
+  originals' mesh and had more detail, but looked faker, the detail wrong. Their steps,
+  the app's 4K desktop loading, and the results are on branch `bg-4k`; the masters are
+  kept locally (`design/backgrounds/masters/<season>-01-3840.png`, gitignored).
 - The photograph loads in the frame after the lit tile, after a `gfx::flush()`: a season
   change's longest frame on the tablet went from 54 to 66 ms to 22.
 - Glass is a copy blurred once, not a live blur: Snowtime measured live blur costing more
@@ -176,14 +185,8 @@ fed389b.
   only (up and down then need a rule). Enter is a tap, one path through `board::press`.
   The cursor is a glow line inside its square, drawn over the 3D board's kept image.
 - Tab and a gamepad's shoulders step between the game screen's three groups (2026-11-11).
-  Fullscreen is Alt+Enter or F11, borderless at the desktop's resolution (2026-11-12).
-- A desktop opens in the mode its window was last left in (2026-11-16): the device's
-  `window = fullscreen` in settings.txt, beside the language, since the screen is the
-  device's and not a child's. The loop reads the window's flag each frame, so the Mac's
-  green button and a window manager count as the keys do. A run with `--size`, or with
-  flags that set up a game or take a screenshot, neither follows nor writes it. Rejected:
-  writing only on the keys (misses the green button), keeping the window's size and
-  place too (not asked for).
+  Fullscreen is Alt+Enter or F11, borderless at the desktop's resolution (2026-11-12),
+  and the device's settings.txt remembers it for the next start (2026-11-16).
 - goose_gfx owns the gamepad (2026-11-12, replacing 2026-11-11's `src/app/pad.c`). With
   `SYSTEM_GAMEPADS` (the fork's `gamepad-wake`) the system wakes the idle wait on Apple's
   systems and Android; on Windows the idle wait reads the pads every 16 ms, about 0.5% of
@@ -227,7 +230,10 @@ fed389b.
   the empty place above: the game just played is the one a player wants to look back on,
   and the results list was two taps from it. It opens that game's replay at its end, its
   back going home. Its note says how it ended against whom ("You won · easy", "White
-  wins" for a friend's). It is outlined and New game lit: most players play again.
+  wins" for a friend's), and, for a game ended by a clock run out, that it was on time
+  ("You lost on time · easy", 2026-11-17): a one-move "You lost" read as a bug. Only home's
+  note says it; the history doesn't record how a game ended, so the replay and the results
+  don't, which is enough while the note is where a player sees the game just played.
   Rejected: "Last game" and *Viimane mäng* (flat), *Viimase mängu tulemused* (too long),
   "Show results" (read as the Results row), *Vaata üle* (unclear in Estonian), and going
   back to the ended game's screen (the 2026-11-15 reason). Its icon is Lucide's history,
@@ -235,6 +241,11 @@ fed389b.
   chevron, tried first, read as a letter K. Rejected from eight takes: the arrow round a
   play triangle, play in a circle (reads as playing a game), a list with play, a piece in
   the arrow, rewind, a clapperboard, and a board with play.
+- The row is named "Replay" (*Kordus*), not "Watch replay" (*Vaata kordust*), since
+  2026-11-17: in the tablet's landscape column the longer label left "Võitsid · raske"
+  shrunk to its least, and "Kaotasid · raske", "You lost on time · medium", or any note
+  on time was left out (`gui::row`); the short label keeps every note, the longest "Kaotasid ajaga ·
+  keskmine", on the tablet and a 20:9 phone in both orientations.
 - The X closes the app at once on touch screens (2026-11-08/09). Rejected: a last row (it
   costs the portrait board), a door, a power sign.
 - On a desktop's landscape column the way out is a Quit row (task 072, 2026-11-11), the X
@@ -278,6 +289,25 @@ fed389b.
   rest. The choices take their presses first, so a tap on one never moves the board and a
   drag from the board never presses one. Rejected: the angle carried between home and
   settings, which would leave a turned board in a screen opened to change something else.
+- A drag past the showcase's limits keeps what it asked (`Rig.asked`, 2026-11-17): the
+  board stops at ±35° or at 35° and 80° down, and turns back only once the pointer is
+  back where it reached the limit, so through a drag the pointer keeps its place on the
+  board. Turning back at once with the pointer's first move back made a drag to the edge
+  feel as if the board slipped from under the pointer.
+
+- About, a small row at the list's foot beside the privacy note (2026-11-17, task 092,
+  `prototypes/settings.html?about=tablet`), opens a card of the build, the graphics, and what the
+  3D board uses, with Copy for a bug report. It shows, it sets nothing. Rejected: a
+  Graphics section with the antialiasing and the shadows as choices. The renderer is
+  chosen at start, SMAA looks as MSAA does and costs more, and the 3D board's knobs are
+  tuned per device (below); a player's choice would mostly undo that. Its tiles are 40 dp,
+  a rare choice's size, each with a tap round it; the card's notes say only what the app
+  lowered by itself (2× MSAA), not what it asked for.
+- The battery saver caps the frames, not the look (2026-11-17, task 092): with the
+  system's saver on, Android asks for 60 Hz; the 3D board's antialiasing and shadows stay.
+  iOS caps itself and a desktop's GPU costs little, so neither is capped. Rejected: a
+  saver setting of the app's own, and a lower 3D board in saver mode before a measurement
+  shows it saves enough.
 
 **The puzzle picker**
 
@@ -340,6 +370,13 @@ Task 074 (2026-11-11) and 078 (2026-11-13):
 - The panel scrolls through the whole game (2026-11-12). Before the first move it says
   "No moves yet", centered (2026-11-12/13). The panel and a phone's line have a "Move
   list" head (2026-11-13).
+- No accuracy summary at the panel's foot (the user, 2026-11-16): each side's accuracy
+  shows in a phone's sheet and the replay, after the moves; a running score beside a game
+  in progress adds little for a child. Rejected: the prototype's summary of accuracy and
+  marks counted under the panel.
+- The results' dates are the day a game ended in the local zone (2026-11-16), the app
+  reading the zone's offset as it reads the local day; they were UTC, a day off near
+  midnight.
 - A phone's moves (task 078's A, `history.html` take d): in landscape a line under what
   each side has taken, opening a sheet beside the board, which stays playable; in
   portrait only the last move in the bar, opening a sheet from the foot under a dim
@@ -347,6 +384,10 @@ Task 074 (2026-11-11) and 078 (2026-11-13):
 - Marks explained (task 078's B): a legend at the foot of lists one opens, a tip on the
   always-shown panel. The tip's next tap only closes it.
 - Who's playing has no results tile (2026-11-13): the games are home's row.
+- A face, a new player, or a removal on who's playing takes effect at the next frame's
+  start (`shell::change_player`, 2026-11-17), not in the frame that laid home out for the
+  player before: that frame drew the new player's pieces on the old size's board, and the
+  3D board kept that image while it was prepared for the new size.
 - A past game replays on its own screen, opened from its results row (task 078's C). It
   opens at the game's end, on the flat board even with 3D chosen, and its positions are
   played out from the kept moves. Its list's moves are 34 dp taps: a miss shows the next
@@ -390,6 +431,9 @@ play; a stack's rings go round its foot (2026-11-08).
   Auto, Wood, Stone, or Carved (`looks::of`), kept as the player's `material`. Rejected:
   a material per season, which matters only to a child liking one season's stone and
   another's wood.
+- The twelve looks as built stand (the user, 2026-11-16), summer's stone given veins and
+  cracks of its own, tuned in the 3D prototype's panel. Set aside: task 041's temple take,
+  the amber reading as an inlay, and the carved motifs' size against the images'.
 - Settings' board pictures are shots baked into one 640 × 420 atlas in git
   (`scripts/board_thumbs.py`, 117 KB as ASTC). Rejected: drawing them at run time (every
   look baked), a second texture (another binding in the UI's shader).
@@ -397,6 +441,21 @@ play; a stack's rings go round its foot (2026-11-08).
   at each angle drew the eye. The flat board's turn fades its pieces 0.15 s each way.
 - A friend's game doesn't turn the board by default, and on the 3D board begins in the
   top view (2026-11-12): the far player would watch it spin every move.
+- The zoom sits at the room's bottom at the rest angle and in its middle in the top view
+  (2026-11-16): at the bottom the top view looked low on a desktop. Centered it is a bit
+  smaller where the panels and buttons stand in the way (a tablet's field 735 dp, was 796).
+  On a desktop the top view's zoom reaches down past the frame margin to a gap above the
+  window's foot, and sits lower where the middle isn't clear (2026-11-16): held down by
+  what each side has taken, it left the space under it empty (field about 7% larger at
+  1204 × 758 pt). The rest angle and a tablet stay as they were.
+- The game's view and zoom are kept in the player's file (`view = top`, `zoom = on`) and
+  come back at launch and with each game (2026-11-16), but not those a friend's game
+  across the table sets for itself.
+- On a desktop the 3D game's frame is raised by half its top margin (2026-11-16): the
+  board, its near edge low and thick, looked low at rest and zoomed. What each side has
+  taken above it is two cards either side of the middle, as in portrait, and the zoom keeps
+  the whole board under them, frame and all; on a tablet, with no margin to give, only the
+  field, else its top view's zoom was no larger than the board at rest.
 
 **States and captures**
 

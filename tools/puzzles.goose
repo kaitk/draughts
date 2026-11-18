@@ -517,8 +517,7 @@ fn shape_of(pz: puzzles::Puzzle&) -> Shape {
 
 // The theme and level a found puzzle belongs to, from its goal and its line (Shape), so
 // the daily pick can keep to the themes a child has opened: the safe move; crowning;
-// the king's captures; a shot (men given, or a free tempo); else a capture to find. A
-// variant whose set lacks a theme (Russian's and Brazilian's King shots) takes Shots.
+// the king's captures; a shot (men given, or a free tempo); else a capture to find.
 // Levels as the themes' own: a capture's by the pieces it takes, a shot's and a king's
 // by its moves and the men given, a crown's by its moves, a safe move's by the moves to
 // weigh.
@@ -529,10 +528,7 @@ fn motif(pz: puzzles::Puzzle&) -> i64, i64 {
     if pz.goal == puzzles::SAFE { return puzzles::SAFE_MOVE, if legal.len <= 4 { 1 } else if legal.len <= 7 { 2 } else { 3 }; }
     if pz.goal == puzzles::CROWN { return puzzles::CROWNING, clamp(pz.moves, 1, 3); }
     let deep = clamp(pz.moves - 1 + (if sh.given >= 2 { 1 } else { 0 }), 1, 3);
-    if sh.king {
-        let kings_theme = pz.start.variant == rules::INTERNATIONAL;
-        return if kings_theme { puzzles::KING_SHOTS } else { puzzles::SHOTS }, deep;
-    }
+    if sh.king { return puzzles::KING_SHOTS, deep; }
     if sh.given > 0 || sh.quiet { return puzzles::SHOTS, deep; }
     if pz.goal == puzzles::WIN { return puzzles::SHOTS, 3; }
     return puzzles::CAPTURES, if sh.most <= 2 { 1 } else if sh.most == 3 { 2 } else { 3 };
@@ -667,8 +663,7 @@ let TRAP_KINDS: Kind[] = [
            runners: 1, short_by: 2 },
 ];
 
-// Runs every kind (KINDS; on 8x8 its men scaled to the board, the safe move and the
-// king shots International's alone) for `seconds` each, keeping `per` puzzles of a kind
+// Runs every kind (KINDS; on 8x8 its men scaled to the board) for `seconds` each, keeping `per` puzzles of a kind
 // at most, a third of them turned for black, each new (fresh): one a line (entry), and
 // each kind's pass rates and cost on stderr.
 fn batch(seed: u64, per: i64, seconds: f64) {
@@ -679,8 +674,8 @@ fn batch(seed: u64, per: i64, seconds: f64) {
     print("variant ", rules::VARIANT_NAMES[variant]);
     let kinds: const Kind[:] = if traps { TRAP_KINDS[..] } else { KINDS[..] };
     for kind in kinds {
-        let goal_ok, _, ok = puzzles::parse_goal(kind.goal);
-        guard ok && !(small && (goal_ok == puzzles::SAFE || kind.kings > 0 && kind.k > 1)) else { continue; }
+        let _, _, ok = puzzles::parse_goal(kind.goal);
+        guard ok else { continue; }
         // Only Russian's captures are a free choice: elsewhere the most must be taken.
         guard kind.trap != BIGGER || variant == rules::RUSSIAN else { continue; }
         let mine = if small { (kind.mine * 12 + 10) / 20 } else { kind.mine };

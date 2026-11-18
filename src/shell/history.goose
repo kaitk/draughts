@@ -235,6 +235,10 @@ fn totals(games: Game[..MAX_GAMES]&) -> Totals {
     return t;
 }
 
+// The local zone's offset from UTC in seconds, the games' dates shown in it (shell::frame
+// sets it from the app's; 0, UTC, in the tests).
+var zone: i64 = 0;
+
 // The date of a time in seconds since the epoch, in UTC: year, month 1..12, day 1..31
 // (Howard Hinnant's days_from_civil inverse, as app/theme.goose's month).
 fn date(epoch: i64) -> i64, i64, i64 {

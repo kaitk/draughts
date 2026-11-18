@@ -137,7 +137,7 @@ before committing a change to `rules/`.
   runs without flags, and put it back after. A run with flags leaves `game-N.bin` alone.
 - Setups come from flags: `--screen computer --variant russian --computer white`; add
   `--lang en` when the Mac's settings name another language. Open settings' language list
-  with `--languages open`; pick the board with `--board` and `--material`. Settings with no
+  with `--languages open`, About with `--about open`; pick the board with `--board` and `--material`. Settings with no
   flag (the kings, say) are written into the player's file for the run.
 - `--keys ...,enter` on settings presses whatever the focus reached and writes the
   change.

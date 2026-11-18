@@ -110,6 +110,10 @@ struct Frame {
     // the frame that starts it moving.
     save: bool = false,
     quit: bool = false,             // home's way out was tapped: the app stops (stays set)
+    // Settings' About is open: the app fills Shell.about (settings::About) and keeps it
+    // current; and its Copy was tapped this frame: the app puts its text on the clipboard.
+    about:      bool = false,
+    copy_about: bool = false,
     // What is heard this frame (board/sound_event.goose), one sound a move: the game's, a
     // puzzle's, and How to play's boards, and the volume's own sound in settings.
     sound_events: sound_event::Events = [],
@@ -123,19 +127,23 @@ let KEPT = 1;
 let DROPPED = 2;
 
 struct Shell {
-    screen:              i64 = HOME,
-    game:                game::Game,
-    preview:             board::Board,        // the board beside settings, as they make it
-    next:                board::Board,        // the board beside home's setup: the game its play starts
-    prefs:               settings::Settings      = settings::Settings {}, // the playing player's, and the device's language
-    players:             players::Players        = players::Players {},
-    player_card:         player_card::PlayerCard = player_card::PlayerCard {}, // who's playing, over home's menu
-    quitting:            bool                    = false, // a desktop's quit asks first, over home's menu (home::ask_quit)
-    changed:             bool                    = false, // prefs changed since the app last wrote them (Frame.save)
-    drawn:               i64                     = -1,    // the screen the last frame declared
-    back:                i64                     = HOME,  // where settings goes back to
-    setup:               i64                     = home::NO_SETUP, // home's column: the menu, or a setup
-    showing_setup_board: bool                    = false, // home shows `next`, having declared a setup this frame
+    screen:      i64 = HOME,
+    game:        game::Game,
+    preview:     board::Board,                // the board beside settings, as they make it
+    next:        board::Board,                // the board beside home's setup: the game its play starts
+    prefs:       settings::Settings      = settings::Settings {}, // the playing player's, and the device's language
+    about:       settings::About         = settings::About {},    // what settings' About shows, the app's to fill
+    players:     players::Players        = players::Players {},
+    player_card: player_card::PlayerCard = player_card::PlayerCard {}, // who's playing, over home's menu
+    // The card's switch, new player, or removal, done at the next frame's start (who_card).
+    card_ask:            i64  = player_card::NOTHING,
+    card_index:          i64  = -1,
+    quitting:            bool = false,                    // a desktop's quit asks first, over home's menu (home::ask_quit)
+    changed:             bool = false,                    // prefs changed since the app last wrote them (Frame.save)
+    drawn:               i64  = -1,                       // the screen the last frame declared
+    back:                i64  = HOME,                     // where settings goes back to
+    setup:               i64  = home::NO_SETUP, // home's column: the menu, or a setup
+    showing_setup_board: bool = false, // home shows `next`, having declared a setup this frame
     // The game is one nobody set up, there being none kept (read_game: a fresh install, a
     // new player), until a game is set up or a move played in it (resume). Kept with the
     // game (saved.goose).
@@ -225,7 +233,8 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, ui_piece
             if p.is_3d { sh.from_view = p.view; }
         },
         SETTINGS => {
-            settings::frame(sh.prefs, ui_pieces, g, l, area, strings::current, room, rules::VARIANTS[sh.preview.variant].size);
+            settings::frame(sh.prefs, ui_pieces, g, l, area, strings::current, room, rules::VARIANTS[sh.preview.variant].size,
+                            sh.about);
             sh.from_view = dragged_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
         },
         PICKER => {
@@ -283,7 +292,8 @@ fn new(variant: u8) -> Shell {
     return sh;
 }
 
-// Puts the player's settings where they act: the game's move hints and lookout, the
+// Puts the player's settings where they act: the game's move hints, lookout, and the 3D
+// board's view and zoom, the
 // kings on the game's board and the puzzle's, and the skill whose plain threats the
 // lookout leaves to the player (against the computer the game's, against a friend the
 // player's on their level). Called whenever the settings change, the shell's own
@@ -297,6 +307,7 @@ fn apply_prefs(sh: Shell&) {
     sh.puzzle.b.king_look = king_look(sh);
     sh.lesson.b.king_look = king_look(sh);
     gm.lookout_on = p.lookout;
+    rig::choose(gm.cam, p.top, p.zoom);
     gm.moves_shown = p.moves;
     gm.turns = p.turns;
     gm.lookout_skill = if gm.computer >= 0 { gm.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
@@ -369,11 +380,15 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 // it is false, changing nothing: there back leaves the app as the system's does. In a
 // transition it acts on the screen come to, as a tap does.
 fn back(sh: Shell&, now: f64) -> bool {
-    // The game's moves' sheet, or a mark's tip, closes first; so does settings'
-    // language list.
+    // The game's moves' sheet, or a mark's tip, closes first; so do settings' language
+    // list and About.
     if sh.screen == GAME && game::close_sheet(sh.game) { return true; }
     if sh.screen == SETTINGS && sh.prefs.languages_open {
         sh.prefs.languages_open = false;
+        return true;
+    }
+    if sh.screen == SETTINGS && sh.prefs.about_open {
+        sh.prefs.about_open = false;
         return true;
     }
     // A game from the replay goes back to it.
@@ -446,9 +461,13 @@ fn resume(sh: Shell&) -> home::Resume {
     // computer: How to play in continue's place.
     let p .= sh.prefs;
     let learn = !on && !replay && p.first_start_done && !p.knows && p.games == 0 && learned(sh) < tutorial::count(p.variant as u8);
+    // A game won or lost on a clock run out says so (on_time).
     let won = game::winner(gm);
-    let ended_note = if won < 0 { strings::LAST_DRAW } else if gm.computer < 0 { strings::WON_WHITE + won }
-                     else if won == gm.computer { strings::LAST_LOST } else { strings::LAST_WON };
+    let on_time = gm.clock.flag >= 0;
+    let ended_note = if won < 0 { strings::LAST_DRAW }
+                     else if gm.computer < 0 { (if on_time { strings::WON_TIME_WHITE } else { strings::WON_WHITE }) + won }
+                     else if won == gm.computer { if on_time { strings::LAST_LOST_TIME } else { strings::LAST_LOST } }
+                     else if on_time { strings::LAST_WON_TIME } else { strings::LAST_WON };
     let ended_opponent = if gm.computer < 0 { strings::LEVEL_FRIEND } else { strings::LEVEL_EASY + clamp(gm.level, game::EASY, game::HARD) };
     return home::Resume { on: on, note: home::resume_note(gm.computer, gm.level), learn: learn, replay: replay,
                           ended_note: ended_note, ended_opponent: ended_opponent };
@@ -457,18 +476,21 @@ fn resume(sh: Shell&) -> home::Resume {
 // One frame, after gui::begin, on a screen width × height pixels, each screen laid out in
 // its safe area (gui::safe, the insets in g). The app hands in what only it knows: whether
 // the 3D board, when chosen, is ready to draw, and whether an image of it shows
-// (Shell.ready3d), and the local date (Shell.day; -1 leaves it as it is). Returns what the
-// frame leaves for the app (Frame).
+// (Shell.ready3d), the local date (Shell.day; -1 leaves it as it is), and the local zone's
+// offset from UTC in seconds, which the games' dates are shown in (history::zone).
+// Returns what the frame leaves for the app (Frame).
 fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: bool = true,
-         shown3d: bool = true, day: i64 = -1) -> Frame& {
+         shown3d: bool = true, day: i64 = -1, zone: i64 = 0) -> Frame& {
     sh.ready3d = ready3d;
     sh.shown3d = shown3d;
     if day >= 0 { sh.day = day; }
+    history::zone = zone;
     // A switch happens in a frame that declared the old screen, so the first frame of the
     // new one is a change, however long ago the tap was.
     let fresh = sh.drawn != sh.screen;
     sh.drawn = sh.screen;
-    let changed = declare(sh, g, gui::safe(g, width, height), now, fresh);
+    let switched = change_player(sh);
+    let changed = declare(sh, g, gui::safe(g, width, height), now, fresh) || switched;
     keep_marks(sh);
     let out .= sh.out;
     out.changed = changed || fresh;
@@ -476,6 +498,9 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: b
     out.typing = sh.player_card.typing && sh.screen == HOME;
     out.keyboard = sh.player_card.keyboard;
     out.save = sh.changed && sh.from < 0;
+    out.about = sh.screen == SETTINGS && sh.prefs.about_open;
+    out.copy_about = sh.prefs.copy_about;
+    sh.prefs.copy_about = false;
     gather_sound_events(sh, out);
     return sh.out;
 }
@@ -717,6 +742,12 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
         p.lookout = sh.game.lookout_on;
         sh.changed = true;
     }
+    // The view and the zoom chosen: kept too, but not a friend's game's across the table.
+    if ev.camera_tapped && !sh.game.cam.across && (p.top != rig::top(sh.game.cam) || p.zoom != rig::zoomed(sh.game.cam)) {
+        p.top = rig::top(sh.game.cam);
+        p.zoom = rig::zoomed(sh.game.cam);
+        sh.changed = true;
+    }
     aimed(sh, l, sh.game.cam, now);
     // A game from the replay counts for nothing: its end and start over change nothing
     // kept, and its way out goes back to the replay.
@@ -924,11 +955,11 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     let changed = board::update(sh.preview, now);
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     let ask = settings::frame(sh.prefs, sh.out.ui_pieces, g, sh.out.layout, area, strings::current, room,
-                              rules::VARIANTS[sh.preview.variant].size);
+                              rules::VARIANTS[sh.preview.variant].size, sh.about);
     let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
     // The preview turns under a drag as home's board does; the choices, the language
-    // list, and their glass take their presses first (g.press_on_ui).
-    let moved = drag_board(sh, g, v, room, now);
+    // list, and their glass take their presses first (g.press_on_ui). Not under About's card.
+    let moved = !sh.prefs.about_open && drag_board(sh, g, v, room, now);
     sh.to_view = dragged_view(sh, v, room, now);
     if ask == settings::CHANGED {
         apply_prefs(sh);
@@ -1048,24 +1079,27 @@ fn drag_board(sh: Shell&, g: gui::Gui&, v: view3d::View, room: float4, now: f64)
 // Who's playing over home for this frame, doing what it asks: switching to a player,
 // adding one, saving one's picture and name, starting one again, removing one. Returns
 // whether anything on screen changed.
+//
+// A switch, a new player, or a removal waits for the next frame's start (change_player):
+// this frame has laid home out for the player as it was, and its board drawn with
+// another player's pieces would be another size's, kept on screen while the 3D board is
+// prepared for the new size.
 fn who_card(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let ask, index = player_card::frame(sh.player_card, sh.players, g, area, gui::extend_to_screen_edge(g, area, area));
     let w .= sh.player_card;
-    match ask {
-        player_card::SWITCH => { switch_player(sh, index); },
-        player_card::CREATE => { add_player(sh, w.picture, w.name); },
-        player_card::SAVE => { edit_player(sh, index, w.picture, w.name); },
-        _ => {},
+    if ask == player_card::SWITCH || ask == player_card::CREATE || ask == player_card::REMOVE {
+        sh.card_ask = ask;
+        sh.card_index = index;
     }
+    if ask == player_card::SAVE { edit_player(sh, index, w.picture, w.name); }
     // A new player, or a fresh install's first, is being asked whether they know how to
-    // play: asked, whatever they answer (home's How to play row, resume).
-    if w.state == player_card::ASKING && !sh.prefs.first_start_done {
+    // play: asked, whatever they answer (home's How to play row, resume), once they play.
+    if w.state == player_card::ASKING && !sh.prefs.first_start_done && sh.card_ask == player_card::NOTHING {
         sh.prefs.first_start_done = true;
         sh.changed = true;
     }
     match ask {
         player_card::AGAIN => { start_again(sh, index); },
-        player_card::REMOVE => { remove_player(sh, index); },
         player_card::LEARN => { learn(sh, HOME, now); },
         player_card::KNOWN => {
             sh.prefs.knows = true;
@@ -1074,6 +1108,24 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         _ => {},
     }
     return ask != player_card::NOTHING;
+}
+
+// The card's switch, new player, or removal asked last frame (who_card), done before
+// this frame lays anything out. Returns whether there was one.
+fn change_player(sh: Shell&) -> bool {
+    let ask = sh.card_ask;
+    guard ask != player_card::NOTHING else { return false; }
+    sh.card_ask = player_card::NOTHING;
+    let w .= sh.player_card;
+    if ask == player_card::SWITCH { switch_player(sh, sh.card_index); }
+    if ask == player_card::CREATE { add_player(sh, w.picture, w.name); }
+    if ask == player_card::REMOVE { remove_player(sh, sh.card_index); }
+    // A new player is being asked whether they know how to play (who_card).
+    if w.state == player_card::ASKING && !sh.prefs.first_start_done {
+        sh.prefs.first_start_done = true;
+        sh.changed = true;
+    }
+    return true;
 }
 
 // Whether home's board is turned with its column showing `setup`, for a child playing

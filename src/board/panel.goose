@@ -251,7 +251,8 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let phone = gui::phone(area, s);   // NARROW panels
     let safe = area;
     if landscape(area, s) {
-        let area = framed_in(area, s, if game && moves { FRAME_WIDE_MOVES } else { FRAME_WIDE_3D });
+        // Raised by half the top margin: the board, near edge low, looked low.
+        let area = framed_in(area, s, if game && moves { FRAME_WIDE_MOVES } else { FRAME_WIDE_3D }, FRAME_UP_3D);
         let width = area.z;
         let height = area.w;
         // A tablet squarer than 3:2 takes NARROW panels: its board is held by the width
@@ -273,9 +274,12 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let buttons = if col { float4 { x1 - touch, y, touch, len } }
                       else { float4 { right.x + 0.5 * (right.z - len), min(y, area.y + height - touch), len, touch } };
         let box = float4 { area.x + gap, area.y + gap, width - 2.0 * gap, height - 2.0 * gap };
+        // The top view's zoom may reach down past a desktop's frame margin to a gap above
+        // the window's foot (zoomed): the margin is for the board at rest.
+        let room = if gui::desktop_scale > 0.0 { float4 { box.x, box.y, box.z, safe.y + safe.w - gap - box.y } } else { box };
         var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: left, right: right, is_3d: true,
                          pitch: PITCH_LANDSCAPE, buttons: buttons, count: 3, row: !col, touch: touch, disc: disc,
-                         box: box, room: box, gap: gap, mode: CORNERS, area: safe, out_row: out_row(), .. };
+                         box: box, room: room, gap: gap, mode: CORNERS, area: safe, out_row: out_row(), .. };
         l.keep = [left, right, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 0.0, 0.0, 0.0, 0.0 }];
         let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
         set_rest_view(l, fit_view(l, cam, n), s);
@@ -427,29 +431,63 @@ fn fit_view(l: Layout&, cam: view3d::Camera, n: i64) -> view3d::View {
 }
 
 // The zoom (landscape): the playing field seen by `cam`, every square and the pieces'
-// tops (view3d::outline's field), as large as fits the room, at its bottom and centered
-// across it, its outline clear of the panels and the buttons by a quarter gap, found by
-// halving. The view's rect is the whole board's bounds, larger than the room.
-fn zoomed(l: Layout&, cam: view3d::Camera, n: i64) -> view3d::View {
-    let room = l.room;
+// tops (view3d::outline's field), as large as fits the room, centered across it and, by
+// `up` (the share of the way to the top view), from the room's bottom at the rest angle
+// to its middle in the top view; its outline clear of the panels and the buttons by a
+// quarter gap, found by halving. The room is the box at the rest angle and in the top
+// view reaches to the window's foot (corners_in). Where the middle isn't clear it sits lower, at most to
+// the room's bottom (field_at's `low`), so space under the board isn't left unused while
+// what stands above it holds the board down. The view's rect is the whole board's
+// bounds, larger than the room.
+fn zoomed(l: Layout&, cam: view3d::Camera, n: i64, up: f32) -> view3d::View {
+    // The room reaches lower on the way to the top view: at the rest angle the near
+    // rows would crowd the window's edge.
+    var room = l.room;
+    if l.box.z > 0.0 { room.w = l.box.w + (l.room.w - l.box.w) * up; }
     let f = view3d::bounds(cam, n, true);
     let b = view3d::bounds(cam, n);
     var lo: f32 = 0.0;
     var hi = min(room.z / f.z, room.w / f.w);
-    let v = field_at(cam, n, room, f, b, hi);
-    if clear(v, l.keep, 0.25 * l.gap, true) { return v; }
+    let v, ok = zoom_at(l, cam, n, room, f, b, hi, up);
+    if ok { return v; }
     for i in 20 {
         let k = 0.5 * (lo + hi);
-        if clear(field_at(cam, n, room, f, b, k), l.keep, 0.25 * l.gap, true) { lo = k; } else { hi = k; }
+        let t, clear = zoom_at(l, cam, n, room, f, b, k, up);
+        if clear { lo = k; } else { hi = k; }
     }
-    return field_at(cam, n, room, f, b, lo);
+    let w, _ = zoom_at(l, cam, n, room, f, b, lo, up);
+    return w;
 }
 
-// cam's view at k pixels a unit with the field's bounds f (at k 1) at the room's bottom,
-// centered across; b the board's bounds, for the rect.
-fn field_at(cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: f32) -> view3d::View {
+// The zoom's view at k pixels a unit where it is clear: in its place, else, on a desktop
+// whose room reaches past the box, at the room's bottom; and whether either is. A tablet
+// keeps the middle (docs/decisions/rendering.md).
+fn zoom_at(l: Layout&, cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: f32,
+           up: f32) -> view3d::View, bool {
+    let v = field_at(cam, n, room, f, b, k, up, false);
+    if zoom_clear(l, v) || l.room.w <= l.box.w { return v, zoom_clear(l, v); }
+    let w = field_at(cam, n, room, f, b, k, up, true);
+    return w, zoom_clear(l, w);
+}
+
+// Whether the zoom's view v clears what stands round it by a quarter gap: the panels and
+// the buttons its field, the frame passing under them, and on a desktop, whose frame
+// stands raised (FRAME_UP_3D), the cards of what each side has taken at the top the whole
+// board. A tablet has no room to spare: its zoom would be no larger than the board at rest.
+fn zoom_clear(l: Layout&, v: view3d::View) -> bool {
+    guard clear(v, l.keep, 0.25 * l.gap, true) else { return false; }
+    return l.taken_as != TAKEN_BAR || gui::desktop_scale <= 0.0 || !view3d::touches(v, l.taken, 0.25 * l.gap);
+}
+
+// cam's view at k pixels a unit with the field's bounds f (at k 1) centered across the
+// room, at its bottom (`up` 0) or its middle (`up` 1); b the board's bounds, for the rect.
+// `low`: as low as the room lets it, the field at its bottom at the rest angle and the
+// whole board in the top view, whose frame is seen whole.
+fn field_at(cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: f32, up: f32,
+            low: bool = false) -> view3d::View {
     let x = room.x + 0.5 * (room.z - f.z * k);
-    let y = room.y + room.w - f.w * k;
+    let below = (b.y + b.w - f.y - f.w) * up;   // the frame shown under the field
+    let y = if low { room.y + room.w - (f.w + below) * k } else { room.y + (room.w - f.w * k) * (1.0 - 0.5 * up) };
     let c = float2 { x - f.x * k, y - f.y * k };
     var v = view3d::View { k: k, c: c, rect: float4 { c.x + b.x * k, c.y + b.y * k, b.z * k, b.w * k }, n: n, .. };
     view3d::place(v, cam);
@@ -467,7 +505,7 @@ fn apply_camera(l: Layout&, r: rig::Rig&, now: f64) {
     var v = if fit.pitch == l.pitch { l.rest_view } else { fit_view(l, fit, n) };
     let z = if l.room.z > 0.0 { rig::value(r.zoom, now) } else { 0.0 };
     if z > 0.0 {
-        let q = zoomed(l, fit, n);
+        let q = zoomed(l, fit, n, rig::value(r.top, now));
         v.k += (q.k - v.k) * z;
         v.c = v.c + (q.c - v.c) * z;
         v.rect = v.rect + (q.rect - v.rect) * z;
@@ -537,14 +575,16 @@ let FRAME_LARGE = 1440.0;
 let FRAME_WIDE = 1.45;
 let FRAME_WIDE_3D = 1.7;
 let FRAME_WIDE_MOVES = 2.0;
-fn framed_in(area: float4, s: f32, wide: f32 = FRAME_WIDE) -> float4 {
+let FRAME_UP_3D = 0.5;
+// `up` moves that share of the top margin to the bottom.
+fn framed_in(area: float4, s: f32, wide: f32 = FRAME_WIDE, up: f32 = 0.0) -> float4 {
     guard gui::desktop_scale > 0.0 else { return area; }
     let k = clamp((area.w / gui::desktop_scale - FRAME_SMALL) / (FRAME_LARGE - FRAME_SMALL), 0.0, 1.0);
     // A share of the height less the margins on each side: 4% leaves the board 92%, 7.5% 85%.
     let m = (0.04 + 0.035 * k) * (area.w - 2.0 * GAP * s);
     let h = area.w - 2.0 * m;
     let w = min(area.z - 2.0 * m, wide * h);
-    return float4 { area.x + 0.5 * (area.z - w), area.y + m, w, h };
+    return float4 { area.x + 0.5 * (area.z - w), area.y + m * (1.0 - up), w, h };
 }
 
 // The flat board's frame on a desktop: framed_in's, and where the width holds the board
@@ -1515,17 +1555,28 @@ fn taken(g: gui::Gui&, l: Layout, t: Taken, ui_pieces: board::Overlay&) {
         return;
     }
     guard any else { return; }
-    // One line on its glass: TAKEN_LINE's the far side's catch first, the bar's white's
-    // catch first, as portrait's row; the bar as wide as what it holds.
-    let a = if l.taken_as == TAKEN_LINE { first } else { rules::BLACK };
+    if l.taken_as == TAKEN_BAR {
+        // Each side's catch on a card of its own, as wide as it, either side of the bar's
+        // middle: white's (black's pieces) at the left, as portrait's row has them.
+        let inset = TAKEN_CARD_PAD * u;
+        let mid = r.x + 0.5 * r.z;
+        let half = 0.5 * (r.z - TAKEN_CARD_GAP * u) - 2.0 * inset;
+        for k in 2 {
+            let c = if k == 0 { rules::BLACK } else { rules::WHITE };
+            guard t.men[c] + t.kings[c] > 0 else { continue; }
+            let w = min(row_len(t, c, d), half);
+            let x = if k == 0 { mid - 0.5 * TAKEN_CARD_GAP * u - inset - w } else { mid + 0.5 * TAKEN_CARD_GAP * u + inset };
+            gui::glass(g, float4 { x - inset, r.y, w + 2.0 * inset, r.w }, 0.5 * r.w / u);
+            catch_row(ui_pieces, t, c, float4 { x, r.y + 0.5 * (r.w - d), w, d }, false);
+        }
+        return;
+    }
+    // One line on its glass, the far side's catch first.
+    let a = first;
     let b = 1 - a;
     let mid = (if row_len(t, a, d) > 0.0 && row_len(t, b, d) > 0.0 { 24.0 } else { 0.0 }) * u;
-    var glass = r;
-    if l.taken_as == TAKEN_BAR {
-        let w = min(r.z, row_len(t, a, d) + mid + row_len(t, b, d) + 2.0 * edge);
-        glass = float4 { r.x + 0.5 * (r.z - w), r.y, w, r.w };
-    }
-    gui::panel(g, glass);
+    let glass = r;
+    gui::glass(g, glass, min(28.0, 0.5 * glass.w / u));
     let inner = float4 { glass.x + edge, glass.y + 0.5 * (glass.w - d), glass.z - 2.0 * edge, d };
     // Each catch in at most its share of the room, as long as it wants.
     let la = row_len(t, a, d);

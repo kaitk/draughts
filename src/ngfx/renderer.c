@@ -3,7 +3,11 @@
 // device, and which GPU and driver it would run on, for the crash marker's key; and the
 // window shown once ngfx has opened it hidden. In draughts_ngfx.build's c_sources.
 #include "platform.h"
-#include "draughts_version.h"
+#if __has_include("../../build/draughts_version.h")
+#include "../../build/draughts_version.h"
+#else
+#define DRAUGHTS_VERSION "dev"
+#endif
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,8 +15,8 @@
 
 typedef struct { uint8_t *data; int64_t len; } draughts_bytes;
 
-// The app's version and the commit it was built from (DRAUGHTS_VERSION, which
-// scripts/ngfx.py writes into build/ngfx/draughts_version.h).
+// The app's version and the commit it was built from (DRAUGHTS_VERSION, which the build
+// scripts write into build/draughts_version.h, scripts/native.py).
 static const char version[] = DRAUGHTS_VERSION;
 
 // Which system this is: 0 macOS, 1 Windows, 2 Linux, 3 iOS.

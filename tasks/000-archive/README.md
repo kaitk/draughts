@@ -110,6 +110,11 @@ and the commit that last has it.
   change; the decisions are in `docs/architecture/rendering.md` ("Board and pieces"), the
   device numbers in its "The 3D board on devices", the frame cost in task 042.
   `015-3d-board.md`, `f2b9acc`
+- 026: How to play, and a new player's way to it. Done 2026-11-16: the rules taught a
+  step at a time on the board in the player's draughts (International and Brazilian 9
+  steps, Russian 10), a new player asked after their sheet, a row on home until learned
+  and first in the puzzles' library; checked on the Mac and the tablet.
+  `026-first-start.md`, `94cf2d1`
 - 033: An icon per season. Cancelled (2026-11-09): one icon, autumn, shipped for the
   release; a seasonal icon costs its place on the home screen four times a year.
   `033-icon-per-season.md`, `a9d4cd6`
@@ -146,6 +151,14 @@ and the commit that last has it.
   turned flat and 3D boards play the capture chosen (`test/game/choice`, `aim`). If it is
   seen again: a screenshot or the position, the taps, and which side's king.
   `048-equal-capture-choice.md`, `5a01306`
+- 037: A better puzzle set. Done 2026-11-16: a course per draughts in six themes (Learn,
+  Captures, Crowning, Shots, King shots, Safe move), International 84 puzzles and Russian
+  and Brazilian 66 each, about a third black to move outside Learn, every position our own
+  from `tools/puzzles.goose find` and checked by the engine and `test/perft.py`
+  ([puzzles](../../docs/architecture/puzzles.md)). Left over, no task: the children
+  playing it and the levels' order holding; the bomb, the heel shot, and the royal shot,
+  whose skeletons gave no puzzle the engine agreed with; no level-3 safe move on 8×8,
+  where no position had eight moves to weigh. `037-puzzle-set.md`, `8677578`
 - 039: Procedural wood for the 3D board. Done: growth rings with pores and a fibre
   relief the default wood, a black marble for winter's frame, summer's variants kept
   beside its look; the bake 0.27 to 0.30 s warm on the tablet; the defaults kept by the
@@ -181,6 +194,15 @@ and the commit that last has it.
   `docs/architecture/rendering.md` and `agents/testing.md`. The PC's per-pass captures
   and RenderDoc were left (the user, 2026-11-10: good enough).
   `059-3d-renderer-tuning.md`, `e2b8f8f`
+- 041: A carved spring board. Done 2026-11-16: carved looks as one carving with its motif
+  a parameter (vines, folk, signs), the elven stone spring's own, the Baltic oak and the
+  amber signs among the board's materials (task 080). Set aside by the user: the temple
+  take, the amber reading as an inlay, the motifs' size against the images'; the bakes
+  never measured on the Pixel 7a. `041-carved-spring-board.md`, `0439a72`
+- 043: iOS. Done 2026-11-16: the app on iPhone and iPad through SDL on UIKit and SDL_GPU
+  on Metal, built by `scripts/ios.py` with no Xcode project, its icon and launch colour in
+  an asset catalog compiled by `actool`; 0.8.0 in App Store review
+  ([development](../../docs/development.md#run-on-ios)). `043-ios.md`, `dad88aa`
 - 044: A plain background. Done: settings' Theme row switches between the photograph and
   a fade per season's board (`prototypes/plain.html`'s fade b), the 3D board's ambient
   taken from the fade; on the tablet about 1 MB less than the ASTC photograph, and a
@@ -221,6 +243,12 @@ and the commit that last has it.
   the 232 dp board came from the prototype's 375 pt iPhone; the app lays the iPhone 13
   mini out at 500 dp, its landscape board 422 dp, and the user found it fine on the phone.
   `079-narrow-landscape-panels.md`, `1b14eb7`
+- 080: One new game on home, and settings looked at afresh. Done 2026-11-16: home's one
+  New game row with the opponent chosen in the setup (01), settings as one list with the
+  board's material in its Board row (02), and the raised board in wood, stone, carved, or
+  the season's own (03), its twelve looks picked by the user and summer's stone given
+  veins and cracks of its own ([rendering](../../docs/architecture/rendering.md)).
+  `080-new-game-and-settings/`, `0439a72`
 - 082: New game's icon. Done 2026-11-13: a light piece mid-jump over a dark one, flat
   isometric discs with a gap cut between them and an arc from behind, in the app and the
   home prototype. `082-new-game-icon.md`, `1e21ead`
@@ -238,6 +266,16 @@ and the commit that last has it.
 - 070: ngfx against gfx, uncapped, on the Mac. Done 2026-11-11: `--no-vsync` on both
   builds; both renderers' uncapped numbers flat and 3D, and where ngfx was slower.
   `070-ngfx-uncapped-performance.md`, `314c3b5`
+- 074: Games' history, marked moves, and a rating. Done 2026-11-16: every move judged on
+  the worker and marked as lidraughts marks it, the games kept per player on a results
+  screen with a replay, an Elo rating per player and draughts against the computer's
+  rated levels ([ai](../../docs/architecture/ai.md#judging-a-move)); the results in
+  `test/shell/sizes`, their dates in the local zone. The panel's accuracy summary
+  cancelled by the user (2026-11-16, `docs/decisions/rendering.md`). Left over, no task:
+  the judging's CPU on the A33; its open questions (marks off for a new player, fewer
+  stars, the computer's rating beside its level). `074-game-history.md`, `aad08ca`
+- 083: Check 2026-11-13's layout changes on the devices. Done 2026-11-16: checked by the
+  user on the tablet and the phones. `083-layout-device-check.md`, `94cf2d1`
 - 084: The shadow pass's culling and the iPhone's renderer. Done 2026-11-13: back faces
   culled in the shadow pass (front-face culling gave acne at any bias); gfx won on the
   iPhone 13 mini, so `auto` stayed. `084-shadow-culling-and-ios-renderer.md`, `314c3b5`
@@ -249,6 +287,18 @@ and the commit that last has it.
   fitted to the board (`render3d::plan_light`), 16 taps on a desktop, 9 on a tablet, 4 on
   a phone. Left over, no task: the jump's occlusion blob pops off over the taken piece's
   square, as the squares buffer holds one piece a square. `086-better-shadows.md`, `314c3b5`
+- 087: The replay's move shown, the best move, and the desktop's results. Done
+  2026-11-16: the move's way in dots, its squares shaded and numbered, the best move kept
+  in the history and shown as the hint, desktop windows capped at 1.9 times their height;
+  checked on Windows and the tablet. Left over, no task: home's menu glass on an ultrawide
+  runs out to the window's edge. `087-replay-moves-and-desktop.md`, `94cf2d1`
+- 088: Daily puzzles from a large generated library, at the player's level. Done
+  2026-11-16: libraries of 3,579 International, 2,328 Russian, and 2,080 Brazilian
+  puzzles, generated offline and rated, a few a day picked by the date and a puzzle rating
+  per player ([puzzles](../../docs/architecture/puzzles.md)); checked on the Mac and the
+  tablet. Left over, no task: grab traps need a core that forces the 2-for-1, Russian's
+  bigger capture a better generator, the children's results against the estimate, and more
+  trap puzzles once the library has been tested with them. `088-daily-puzzles.md`, `94cf2d1`
 - 089: Sound, calm and few. Done 2026-11-16: a few quiet sounds from the board's and the
   game's own events (two recordings' hits as IMA ADPCM, the rest synthesized), off at
   first on a phone or a tablet and half on a desktop, a Sound section with a speaker and a
@@ -259,3 +309,22 @@ and the commit that last has it.
   renamed to literal compound ones, area by area (gui, board and game, shell, the app,
   then `who` as `player_card`), with no test output changed; the naming bar is in
   `agents/goose.md`. `090-plain-names.md`, `ed96795`
+- 056: Even frame pacing. Merged 2026-11-16 into task 055, open, as
+  `055-locked-frame-rate/01-frame-pacing.md`.
+- 067: Light the board under the mouse. Merged 2026-11-16 into task 064, open, as
+  `064-steam-release/01-board-under-the-mouse.md`.
+- 073: One executable, the renderer chosen at run time. Merged 2026-11-16 into task 065,
+  open, as `065-ngfx-renderer/01-renderer-choice.md`.
+- 074: ngfx against gfx, uncapped, on Windows. Merged 2026-11-16 into task 065, open, as
+  `065-ngfx-renderer/02-uncapped-windows.md`.
+- 076: Wayland on Linux, for gfx and ngfx. Merged 2026-11-16 into task 010, open, as
+  `010-goose-gfx-upstream/01-linux-wayland.md`.
+- 077: ngfx's antialiasing on Apple, and NoGraphicsAPI on older systems. Merged
+  2026-11-16 into task 065, open, as `065-ngfx-renderer/03-msaa-and-older-apple.md`.
+- 081: The 3D board at 60 fps on the Galaxy A33. Merged 2026-11-16 into task 055, open, as
+  `055-locked-frame-rate/02-a33-60fps.md`.
+- 014: Upscale the backgrounds with real detail. Cancelled 2026-11-17: 3840 px masters
+  (Qwen-Image 2.1 img2img at 0.3, then SeedVR2) lost the originals' mesh, but the user
+  found them faker, the detail wrong, and kept the originals. The work, its 4K desktop
+  loading, and the results are on branch `bg-4k`; Windows and Linux dropped ASTC from it.
+  `014-upscale-backgrounds.md`, `063ba7b` (branch `bg-4k`)

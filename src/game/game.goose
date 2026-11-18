@@ -35,6 +35,7 @@ struct Event {
     result:            i64  = 0,     // and how: 1 the child won, -1 lost, 0 drawn
     restarted:         bool = false, // started over: the shell gives it a skill and number
     lookout_toggled:   bool = false,  // the lookout's eye turned on or off
+    camera_tapped:     bool = false,  // a camera button tapped: the view or the zoom perhaps changed
     ended_for_history: bool = false,    // any game ended, the first time, for the history
     winner:            i64  = -1, // its winner's side, or -1 for a draw
 }
@@ -509,7 +510,10 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
         _ => {},
     }
     if pick != panel::NOTHING { changed = true; }
-    if panel::camera(g, l, gm.cam, now) { changed = true; }
+    if panel::camera(g, l, gm.cam, now) {
+        changed = true;
+        ev.camera_tapped = true;
+    }
 
     if !frozen && think(gm, now) { changed = true; }
     won = winner(gm);

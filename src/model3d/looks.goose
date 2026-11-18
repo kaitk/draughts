@@ -131,7 +131,12 @@ fn get(which: i64) -> Theme {
         t.stone = float4 { 0.2, t.stone.y, t.stone.z, t.stone.w };
         return t;
     }
-    if which == SUMMER_STONE { return plain(summer_amber()); }
+    if which == SUMMER_STONE {
+        // The amber granite, uncarved: fine veins in its squares, cracks joining them.
+        var t = plain(summer_amber());
+        t.stone = float4 { 0.16, 0.18, t.stone.z, t.stone.w };
+        return t;
+    }
     return autumn();
 }
 
@@ -839,7 +844,7 @@ struct Carving {
     // along the edges and the lichen (a plain stone weathered)
     motif:  i64,
     depth:  f32,    // how deep the cut is, world units (a square is 1)
-    scale:  f32,    // the motifs' repeats per side
+    scale:  f32,    // the motifs' repeats per side; a plain stone's (motif 3) seed for its cracks and veins
     moss:   f32,    // 0..1: how much moss settles in the hollows and along the edges
     amber:  f32,    // 0..1: how full of amber the cuts are (Theme.fill)
     lichen: f32,    // 0..1: lichen patches on the stone
@@ -861,7 +866,7 @@ let AMBER_TUNED = Carving { motif: 2, depth: 0.02, scale: 3.0, moss: 0.5, amber:
 // hairline cracks with moss in them, spring's mossier, summer's with a little lichen.
 let MOSSY = Carving { motif: 3, depth: 0.006, scale: 1.0, moss: 0.8, amber: 0.0, lichen: 0.0, warmth: 0.52,
                       jade: 0.64 };
-let WEATHERED = Carving { motif: 3, depth: 0.006, scale: 1.0, moss: 0.5, amber: 0.0, lichen: 0.08, warmth: 0.0,
+let WEATHERED = Carving { motif: 3, depth: 0.012, scale: 14.97, moss: 0.5, amber: 0.0, lichen: 0.125, warmth: 0.0,
                           jade: 0.5 };
 let AMBER = Carving { motif: 2, depth: 0.02, scale: 12.0, moss: 0.5, amber: 0.55, lichen: 0.5, warmth: 0.0,
                       jade: 0.5 };

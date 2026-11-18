@@ -1,41 +1,41 @@
-the library: draughts international, lit 0, the set international of 74, 6 themes, 11 tiles, home's count 3 / 222, changed false
-Russian tapped: draughts russian, lit 2, the set russian of 46, 4 themes, 9 tiles, home's count 2 / 138, changed true
-Brazilian tapped: draughts brazilian, lit 1, the set brazilian of 46, 4 themes, 9 tiles, home's count 1 / 138, changed true
-International tapped: draughts international, lit 0, the set international of 74, 6 themes, 11 tiles, home's count 3 / 222, changed true
-International tapped: draughts international, lit 0, the set international of 74, 6 themes, 11 tiles, home's count 3 / 222, changed false
+the library: draughts international, lit 0, the set international of 84, 6 themes, 11 tiles, home's count 3 / 252, changed false
+Russian tapped: draughts russian, lit 2, the set russian of 66, 6 themes, 11 tiles, home's count 2 / 198, changed true
+Brazilian tapped: draughts brazilian, lit 1, the set brazilian of 66, 6 themes, 11 tiles, home's count 1 / 198, changed true
+International tapped: draughts international, lit 0, the set international of 84, 6 themes, 11 tiles, home's count 3 / 252, changed true
+International tapped: draughts international, lit 0, the set international of 84, 6 themes, 11 tiles, home's count 3 / 252, changed false
 the file: draughts = russian
-home: draughts russian, lit -1, the set russian of 46, 4 themes, 7 tiles, home's count 2 / 138, changed true
+home: draughts russian, lit -1, the set russian of 66, 6 themes, 7 tiles, home's count 2 / 198, changed true
 the smallest window's list dragged: down
 Russian tapped: at the top, the first row in view: ok
 the tablet, landscape:
   international: 11 tiles, the switch beside back, 1 lines of title, all in place
-  brazilian: 9 tiles, the switch beside back, 1 lines of title, all in place
-  russian: 9 tiles, the switch beside back, 1 lines of title, all in place
+  brazilian: 11 tiles, the switch beside back, 1 lines of title, all in place
+  russian: 11 tiles, the switch beside back, 1 lines of title, all in place
 the tablet, portrait:
   international: 11 tiles, the switch under back, 1 lines of title, all in place
-  brazilian: 9 tiles, the switch under back, 1 lines of title, all in place
-  russian: 9 tiles, the switch under back, 1 lines of title, all in place
+  brazilian: 11 tiles, the switch under back, 1 lines of title, all in place
+  russian: 11 tiles, the switch under back, 1 lines of title, all in place
 a 20:9 phone at 480 dp, landscape:
   international: 11 tiles, the switch beside back, 1 lines of title, all in place
-  brazilian: 9 tiles, the switch beside back, 1 lines of title, all in place
-  russian: 9 tiles, the switch beside back, 1 lines of title, all in place
+  brazilian: 11 tiles, the switch beside back, 1 lines of title, all in place
+  russian: 11 tiles, the switch beside back, 1 lines of title, all in place
 a 20:9 phone at 480 dp, portrait:
   international: 11 tiles, the switch under back, 1 lines of title, all in place
-  brazilian: 9 tiles, the switch under back, 1 lines of title, all in place
-  russian: 9 tiles, the switch under back, 1 lines of title, all in place
+  brazilian: 11 tiles, the switch under back, 1 lines of title, all in place
+  russian: 11 tiles, the switch under back, 1 lines of title, all in place
 a 20:9 phone at 480 dp, portrait, Estonian:
   international: 11 tiles, the switch under back, 1 lines of title, all in place
-  brazilian: 9 tiles, the switch under back, 1 lines of title, all in place
-  russian: 9 tiles, the switch under back, 1 lines of title, all in place
+  brazilian: 11 tiles, the switch under back, 1 lines of title, all in place
+  russian: 11 tiles, the switch under back, 1 lines of title, all in place
 a 20:9 phone at 480 dp, landscape, Estonian:
   international: 11 tiles, the switch beside back, 1 lines of title, all in place
-  brazilian: 9 tiles, the switch beside back, 1 lines of title, all in place
-  russian: 9 tiles, the switch beside back, 1 lines of title, all in place
+  brazilian: 11 tiles, the switch beside back, 1 lines of title, all in place
+  russian: 11 tiles, the switch beside back, 1 lines of title, all in place
 the smallest iPad window:
   international: 11 tiles, the switch under back, 1 lines of title, all in place
-  brazilian: 9 tiles, the switch under back, 1 lines of title, all in place
-  russian: 9 tiles, the switch under back, 1 lines of title, all in place
+  brazilian: 11 tiles, the switch under back, 1 lines of title, all in place
+  russian: 11 tiles, the switch under back, 1 lines of title, all in place
 the smallest iPad window, Estonian:
   international: 11 tiles, the switch under back, 1 lines of title, all in place
-  brazilian: 9 tiles, the switch under back, 1 lines of title, all in place
-  russian: 9 tiles, the switch under back, 1 lines of title, all in place
+  brazilian: 11 tiles, the switch under back, 1 lines of title, all in place
+  russian: 11 tiles, the switch under back, 1 lines of title, all in place

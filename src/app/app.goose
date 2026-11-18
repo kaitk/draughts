@@ -49,10 +49,24 @@ struct Loop {
     released:     bool = false, // the launch's memory given back
     most_dropped: i64  = 0,
     day:          i64  = 0,     // the local date for the daily puzzles
+    zone:         i64  = 0,     // the local zone's offset from UTC in seconds, the games' dates in it
     day_read:     f64  = 0.0,
     level:        f32  = -1.0,  // the volume the sounds were last set to, and muted
     muted:        bool = false,
-    window:       bool = false, // a desktop's window mode is the device's, kept for the next start
+    saver:        i64  = -1,    // the system's battery saver (follow_saver): 1 on, 0 off, -1 unknown
+}
+
+// The system's battery saver, read at start and whenever the app gets the focus back,
+// as it is turned on and off outside the app. While it is on, Android's display is asked
+// for 60 Hz (display.c); iOS caps itself, and a desktop's GPU costs little. Settings'
+// About shows it.
+fn follow_saver(lp: Loop&, sh: shell::Shell&) {
+    let saver = host::draughts_battery_saver();
+    guard saver != lp.saver else { return; }
+    lp.saver = saver;
+    host::draughts_cap_60(if saver == 1 { 1 } else { 0 });
+    sh.about.saver = saver;
+    lp.dirty = true;
 }
 
 // The sound each sound event plays (board/sound_event.goose): a capture's stop is the move a step up.
@@ -71,6 +85,52 @@ fn play_sounds(lp: Loop&, bk: sound::Bank&, out: shell::Frame&, s: settings::Set
     for c in out.sound_events { sound::play(bk, SOUND_OF[c.kind], c.step); }
 }
 
+// Settings' About's build (settings::About): its version, which the About row shows,
+// commit, and the commit's date, at start.
+fn fill_build(a: settings::About&) {
+    var text: u8[256] = [0; 256];
+    let n = host::draughts_about_build(text);
+    let version, rest, unused_v = split_once(text[..n], '|');
+    let commit, date, unused_c = split_once(rest, '|');
+    a.version.resize(0);
+    a.version.append(version[..min(version.len, 24)]);
+    a.commit.resize(0);
+    a.commit.append(commit[..min(commit.len, 40)]);
+    a.date.resize(0);
+    a.date.append(date[..min(date.len, 16)]);
+}
+
+// The rest of About while it is open: the system's filled once, as it first opens (the
+// GPU's name asks Metal or Vulkan, about.c); the renderer's and the 3D board's each
+// frame, as the A key or a slow device may change them. True on the frame that first
+// filled it, which draws it again.
+fn fill_about(a: settings::About&, rd: render::Renderer&) -> bool {
+    let first = !a.filled;
+    if first {
+        var text: u8[256] = [0; 256];
+        let k = host::draughts_about_system(text);
+        a.system.resize(0);
+        a.system.append(text[..min(k, 96)]);
+        let m = host::draughts_about_gpu(text);
+        a.gpu.resize(0);
+        a.gpu.append(text[..min(m, 96)]);
+        a.renderer.resize(0);
+        a.renderer.append(backend::renderer_name());
+        let driver = backend::driver();
+        // "metal" and "vulkan" as their makers write them.
+        a.driver.resize(0);
+        for c, i in driver[..min(driver.len, 24)] { a.driver.push(if i == 0 && c >= 'a' && c <= 'z' { c - 32 } else { c }); }
+        a.filled = true;
+    }
+    a.refresh = round(host::draughts_about_refresh()) as i64;
+    let aa, lowered = render::aa_shown(rd);
+    a.aa = aa;
+    a.lowered = lowered;
+    a.taps = render::shadow_taps(rd);
+    a.surfaces = render::surfaces_side(rd);
+    return first;
+}
+
 // The theme a season setting picks: its own, or by the date.
 fn theme_for(season: i64) -> i64 {
     return if season >= 0 { season } else { theme::for_month(theme::month(time())) };
@@ -85,6 +145,7 @@ fn season_changed(rd: render::Renderer&, sh: shell::Shell&) -> bool {
 // has focus; a Mac window started from a terminal never has it, so desktops leave it out.
 fn follow_focus(lp: Loop&, sh: shell::Shell&, mobile: bool) {
     if lp.focused && !host::focused() { shell::write_game(sh); }
+    if !lp.focused && host::focused() { follow_saver(lp, sh); }
     if mobile && (!lp.focused || !host::focused()) { shell::pause(sh); }
     lp.focused = host::focused();
 }
@@ -160,26 +221,18 @@ fn report_dropped(lp: Loop&, g: gui::Gui&, sh: shell::Shell&) {
 
 // A switches the 3D board between MSAA and SMAA; Alt and Enter, or F11, a desktop's window
 // to fullscreen and back; neither while a name is typed, which keeps the keyboard up.
-fn follow_keys(lp: Loop&, h: host::Host&, rd: render::Renderer&, out: shell::Frame&) {
+fn follow_keys(lp: Loop&, h: host::Host&, rd: render::Renderer&, sh: shell::Shell&, out: shell::Frame&) {
     if !out.typing && host::aa_key() {
         render::toggle_aa(rd);
         lp.dirty = true;
     }
     if !out.typing && host::fullscreen_key() {
         host::toggle_fullscreen();
+        sh.prefs.full = !sh.prefs.full;
+        players::write(sh.players, sh.prefs);
         lp.dirty = true;
     }
     host::keyboard(h, out.typing, out.keyboard);
-}
-
-// The window's mode as the system has it, so a change by the keys, the Mac's green
-// button, or the window manager is kept, and the next start opens the same way.
-fn follow_window(lp: Loop&, sh: shell::Shell&) {
-    guard lp.window else { return; }
-    let full = host::fullscreen();
-    guard full != sh.prefs.fullscreen else { return; }
-    sh.prefs.fullscreen = full;
-    players::write_device_keys(sh.players, sh.prefs);
 }
 
 // A tap in settings applies at once and is written (shell::Frame.save).
@@ -250,14 +303,12 @@ fn run() {
     let mobile = platform != host::DESKTOP;
     // An iOS app never closes itself, so home has no way out there.
     if on_ios { home::closable = false; }
-    // A desktop opens as it was last left, unless --size says how, or the run's flags set
-    // up a game or take a screenshot; neither of those writes the mode.
-    let window = !mobile && keep && !f.sized;
-    let full = f.full || (window && prefs.fullscreen);
-    var h = host::open(strings::get(strings::APP_NAME), f.width, f.height, full, f.no_vsync);
+    var h = host::open(strings::get(strings::APP_NAME), f.width, f.height, f.full || prefs.full, f.no_vsync);
     defer host::close();
 
     var sh = shell::new((if f.variant >= 0 { f.variant } else { prefs.variant }) as u8);
+    fill_build(sh.about);
+    sh.about.capped = on_android;
     shell::launch(sh, prefs, players_read);
     dev::setup(f, sh, prefs);
     shell::open(sh, keep);
@@ -265,7 +316,8 @@ fn run() {
     var dv = dev::new(f);
     var g = gui::Gui {};
     var thinker = think::Thinker {};
-    var lp = Loop { day: host::local_day(), day_read: host::time(), window: window, .. };
+    var lp = Loop { day: host::local_day(), zone: host::utc_offset(), day_read: host::time(), .. };
+    follow_saver(lp, sh);
     var bank = sound::Bank {};
     while host::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
@@ -275,6 +327,7 @@ fn run() {
         let now = host::time();
         if now >= lp.day_read + 1.0 {
             lp.day = host::local_day();
+            lp.zone = host::utc_offset();
             lp.day_read = now;
         }
         let scale = follow_screen(lp, h, f, g, rd, mobile, on_android);
@@ -291,11 +344,10 @@ fn run() {
         }
         dev::before(dv, f, sh, now);
         let ready3d, shown3d = follow_3d(lp, rd, sh, now);
-        let out .= shell::frame(sh, g, lp.size.x, lp.size.y, now, ready3d, shown3d, lp.day);
+        let out .= shell::frame(sh, g, lp.size.x, lp.size.y, now, ready3d, shown3d, lp.day, lp.zone);
         if out.changed { lp.dirty = true; }
         report_dropped(lp, g, sh);
-        follow_keys(lp, h, rd, out);
-        follow_window(lp, sh);
+        follow_keys(lp, h, rd, sh, out);
         if out.quit { break; }
         // After shell::frame, so a game started over this frame is asked at its new skill.
         let moved = think::frame(thinker, sh.game);
@@ -305,6 +357,12 @@ fn run() {
         }
         host::keep_screen(h, moved || host::touched(input), now);
         if out.save { save_settings(lp, rd, sh, system_lang); }
+        if out.about && fill_about(sh.about, rd) { lp.dirty = true; }
+        if out.copy_about {
+            var text: u8[..2048] = [];
+            settings::about_text(sh.prefs, sh.about, text);
+            host::copy_text(text[..]);
+        }
         play_sounds(lp, bank, out, sh.prefs);
         if out.screen == shell::SETTINGS { render::thumbs(rd); }
         if dev::after_shell(dv, f, sh, g, rd, now) { lp.dirty = true; }
@@ -337,6 +395,12 @@ fn run() {
         if dev::after(dv, f, rd, drew, lp.size, now) { break; }
     }
     dev::end(f, rd);
+    // The window as it closes is the next start's: macOS's green button also leaves
+    // fullscreen. Not in a run that --size full opened so.
+    if !mobile && !f.full && host::fullscreen() != sh.prefs.full {
+        sh.prefs.full = !sh.prefs.full;
+        players::write(sh.players, sh.prefs);
+    }
     sound::close(bank);
     shell::write_game(sh);
     if sh.out.quit { host::close_app(); }

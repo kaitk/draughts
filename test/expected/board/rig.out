@@ -16,6 +16,9 @@ the showcase:
   dragged far right and up at 10.2 s: 35.0° down, swung -35.0°, board turned 0.0°, zoom 0.0, dot, showcase on
   and back a little at 10.3 s: 50.0° down, swung -17.0°, board turned 0.0°, zoom 0.0, dot, showcase on
   dragged 10 dp right by the pointer at 10.5 s: 50.0° down, swung -20.0°, board turned 0.0°, zoom 0.0, dot, showcase on
+  the pointer 300 dp left at 10.62 s: 50.0° down, swung 35.0°, board turned 0.0°, zoom 0.0, dot, showcase on
+  100 dp back: still at the limit at 10.64 s: 50.0° down, swung 35.0°, board turned 0.0°, zoom 0.0, dot, showcase on
+  back where it was pressed at 10.68 s: 50.0° down, swung -20.0°, board turned 0.0°, zoom 0.0, dot, showcase on
   off, the angle kept at 11.0 s: 50.0° down, swung -20.0°, board turned 0.0°, zoom 0.0, dot
   still kept at 20.0 s: 50.0° down, swung -20.0°, board turned 0.0°, zoom 0.0, dot
   the view tapped: back to rest first at 20.3 s: 51.3° down, swung -10.0°, board turned 0.0°, zoom 0.0, moving

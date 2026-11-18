@@ -1,12 +1,13 @@
-// Home's Watch replay (shell::resume, home::Resume.replay): once the last game has ended
-// and is in the history, Watch replay shows in Continue's place, outlined, New game under
+// Home's Replay (shell::resume, home::Resume.replay): once the last game has ended
+// and is in the history, Replay shows in Continue's place, outlined, New game under
 // it lit; its note says how the game ended, against whom. A tap opens that game's replay
 // at its end, and the replay's back goes home, not to the results. A game won, lost, and
-// a friend's each read their own note; a new game set up brings Continue back.
+// a friend's, and one lost on time each read their own note; a new game set up brings Continue back.
 //
 // The games, Russian: against the computer (black, easy) W:Wc3:Bd4, c3:e5 takes its last
 // piece; then W:Wh2:Bf4, h2-g3, and the computer's capture takes white's; a friend's
-// W:Wc3:Bd4, c3:e5, white winning.
+// W:Wc3:Bd4, c3:e5, white winning; on a blitz clock, W:Wa1,c1:Bf8,h8, a1-b2 and white's
+// time run out after the computer's answer.
 import std;
 import vec;
 import os;
@@ -67,8 +68,8 @@ fn play(sh: shell::Shell&, text: const u8[:], now: f64) {
     print("  no move ", text);
 }
 
-fn setup(sh: shell::Shell&, fen: const u8[:], computer: i64) {
-    game::start(sh.game, rules::RUSSIAN, clock::NONE, computer, game::EASY, 8, 1);
+fn setup(sh: shell::Shell&, fen: const u8[:], computer: i64, kind: i64 = clock::NONE) {
+    game::start(sh.game, rules::RUSSIAN, kind, computer, game::EASY, 8, 1);
     board::set(sh.game.b, check::position(rules::RUSSIAN, fen));
     sh.game.turn = sh.game.b.pos.side;
     sh.screen = shell::GAME;
@@ -167,6 +168,16 @@ fn main() {
     now = run(sh, g, e, now, 2.0);
     now = home(sh, g, now);
     show(sh, g, "a friend's game");
+
+    // Lost on time to the computer: white's clock run out after the computer's answer.
+    setup(sh, "W:Wa1,c1:Bf8,h8", rules::BLACK, clock::BLITZ);
+    now = run(sh, g, e, now + 1.0, 0.2);
+    play(sh, "a1-b2", now);
+    now = run(sh, g, e, now, 4.0);
+    sh.game.clock.left[rules::WHITE] = 0.1;
+    now = run(sh, g, e, now, 1.0);
+    now = home(sh, g, now);
+    show(sh, g, "lost on time");
 
     // A new game set up: Continue again.
     setup(sh, "W:Wc3:Bf6", rules::BLACK);

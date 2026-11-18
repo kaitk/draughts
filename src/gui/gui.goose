@@ -137,7 +137,7 @@ let TODAY = 49;             // the daily puzzles: a calendar with today's dot,
 let MOON = 50;              // and once all are solved, a crescent moon
 let SPEAKER_OFF = 51;       // the sound: a speaker struck through,
 let SPEAKER = 52;           // and with one to three arcs, 52 to 54, as loud as it is
-let REPLAY = 55;            // home's Watch replay: restart's arrow round a clock's hands
+let REPLAY = 55;            // home's Replay: restart's arrow round a clock's hands
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -981,11 +981,17 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
     glyph_icon(g, center(cut_left(c, 34.0 * u), 34.0 * u, 34.0 * u), icon, style, 0.0, 0.85 * a);
     cut_left(c, 18.0 * u);
     text(g, LABEL, c, label, a, 0.0, LEFT);
-    text(g, note_face(), c, note, NOTE_A * a, 0.0, RIGHT);
+    // The note keeps NOTE_GAP dp from the label: shrunk to fit, down to NOTE_LEAST of its
+    // size, and left out below that (a long translation in landscape's narrow column).
+    let icon_w = if note_icon != NO_ICON { (NOTE_ICON + (if note.len > 0 { NOTE_ICON_GAP } else { 0.0 })) * u } else { 0.0 };
+    let full = text_width(g, note_face(), note);
+    let room = c.z - text_width(g, LABEL, label) - NOTE_GAP * u - icon_w;
+    let k: f32 = if full <= room { 1.0 } else if room >= NOTE_LEAST * full { room / full } else { 0.0 };
+    if k > 0.0 { write(g, note_face(), c, note, float4 { 1.0, 1.0, 1.0, NOTE_A * a }, false, 0.0, RIGHT, false, k); }
     if note_icon != NO_ICON {
         // The note's icon, NOTE_ICON dp, NOTE_ICON_GAP left of its word (or alone).
-        let w = text_width(g, note_face(), note);
-        let x = c.x + c.z - w - (if note.len > 0 { NOTE_ICON_GAP * u } else { 0.0 }) - NOTE_ICON * u;
+        let w = k * full;
+        let x = c.x + c.z - w - (if k > 0.0 && note.len > 0 { NOTE_ICON_GAP * u } else { 0.0 }) - NOTE_ICON * u;
         glyph_icon(g, float4 { x, c.y + 0.5 * (c.w - NOTE_ICON * u), NOTE_ICON * u, NOTE_ICON * u }, note_icon, style, 0.0,
                    NOTE_A * a, 2.0);
     }
@@ -993,6 +999,8 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
 }
 let NOTE_ICON = 20.0;
 let NOTE_ICON_GAP = 6.0;
+let NOTE_GAP = 12.0;        // dp a row's note keeps from its label
+let NOTE_LEAST: f32 = 0.8;  // the least a note shrinks to before it is left out
 
 // A choice tile (prototypes/settings.html): a picture of size `pic` (centered across)
 // with a label under it, lit in the glow color when on. The picture is a season's

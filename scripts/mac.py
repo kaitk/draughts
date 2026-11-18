@@ -4,16 +4,22 @@
     scripts/mac.py src/app/draughts.goose                     build build/draughts
     scripts/mac.py src/app/draughts.goose --run -- --board 3d build, and run it with those flags
     scripts/mac.py src/app/draughts.goose --release           Draughts.app, signed and notarized,
-                                                              zipped for a GitHub release
+                                                              in a disk image for a GitHub release
+    scripts/mac.py src/app/draughts.goose --release --no-notarize   the same, signed but not notarized
 
 A release (docs/development.md, "Desktop releases") builds for MIN_MACOS, wraps the
 executable in build/mac/release/Draughts.app (Info.plist, the launcher's name per
 language, the icon from ios/icon-1024.png compiled by actool), signs it with the
 keychain's "Developer ID Application" identity and the hardened runtime, has Apple's
-notary service check it (notarytool's keychain profile NOTARY_PROFILE), staples the
-ticket, and zips it as build/mac/release/Draughts-VERSION-macos-arm64.zip. Without the
-identity it signs ad hoc and stops before notarizing, which is enough to try the bundle
-on this Mac; DRAUGHTS_MAC_IDENTITY names an identity, DRAUGHTS_NOTARY_PROFILE a profile.
+puts it beside a link to /Applications in build/mac/release/Draughts-VERSION-macos-arm64.dmg
+(the window where the app is dragged onto Applications, laid out by Finder over
+mac/dmg-background.tiff, so the first build asks to let the terminal control Finder),
+signs the image, has Apple's
+notary service check it (notarytool's keychain profile NOTARY_PROFILE), and staples the
+ticket to the image; the ticket covers the app inside. Without the identity it signs both
+ad hoc and stops before notarizing, which is enough to try the image on this Mac;
+--no-notarize stops there too with the identity. DRAUGHTS_MAC_IDENTITY names an identity,
+DRAUGHTS_NOTARY_PROFILE a profile.
 
 The release's own libgoose_gfx.a presents every frame, so the app at rest spins at the
 display's rate. This builds goose_gfx's sources from the submodule (kaitk/goose_gfx's
@@ -33,6 +39,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import native
@@ -130,8 +137,77 @@ def bundle(exe, out):
     return app
 
 
-def release(program):
-    """The signed, notarized Draughts.app, zipped (the module's docstring)."""
+DMG_WINDOW = (640, 427)                             # pt, mac/dmg-background.tiff's size
+TITLE_BAR = 28                                      # pt: Finder's bounds include it
+DMG_ICONS = {"Draughts.app": (160, 185), "Applications": (480, 185)}  # on its card, the arrow between
+DMG_LAYOUT = """
+tell application "Finder"
+  tell disk "{volume}"
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set the bounds of container window to {{200, 120, {right}, {bottom}}}
+    set o to the icon view options of container window
+    set arrangement of o to not arranged
+    set icon size of o to 96
+    set text size of o to 13
+    set background picture of o to file ".background:background.tiff"
+    {positions}
+    update without registering applications
+    delay 1
+    close
+  end tell
+end tell
+"""
+
+
+def disk_image(app, dmg):
+    """dmg: a compressed, read-only image holding app and a link to /Applications, laid
+    out by Finder over mac/dmg-background.tiff, with the app's icon as the volume's."""
+    volume = "Draughts"
+    mount = Path("/Volumes") / volume
+    if mount.exists():
+        sys.exit(f"{mount} is mounted already: eject it first")
+    stage = dmg.parent / "dmg"
+    shutil.rmtree(stage, ignore_errors=True)
+    (stage / ".background").mkdir(parents=True)
+    native.run("ditto", app, stage / app.name)
+    (stage / "Applications").symlink_to("/Applications")
+    shutil.copy(native.ROOT / "mac/dmg-background.tiff", stage / ".background/background.tiff")
+    shutil.copy(app / "Contents/Resources/AppIcon.icns", stage / ".VolumeIcon.icns")
+    writable = dmg.with_suffix(".rw.dmg")
+    writable.unlink(missing_ok=True)
+    native.run("hdiutil", "create", "-volname", volume, "-srcfolder", stage, "-fs", "HFS+",
+               "-format", "UDRW", "-size", "200m", writable)
+    shutil.rmtree(stage)
+    native.run("hdiutil", "attach", "-readwrite", "-noverify", "-noautoopen", writable)
+    try:
+        positions = "\n    ".join(f'set position of item "{n}" of container window to {{{x}, {y}}}'
+                                   for n, (x, y) in DMG_ICONS.items())
+        w, h = DMG_WINDOW
+        layout = DMG_LAYOUT.format(volume=volume, right=200 + w, bottom=120 + h + TITLE_BAR,
+                                   positions=positions)
+        # Finder can take a few seconds to see a volume just attached (-1728).
+        for attempt in range(10):
+            if subprocess.run(["osascript", "-e", layout]).returncode == 0:
+                break
+            time.sleep(1)
+        else:
+            sys.exit("Finder never saw the disk image's volume")
+        native.run("xcrun", "SetFile", "-a", "C", mount)     # use .VolumeIcon.icns; after
+                                                             # Finder, which clears it
+        native.run("sync")
+    finally:
+        native.run("hdiutil", "detach", mount)
+    dmg.unlink(missing_ok=True)
+    native.run("hdiutil", "convert", writable, "-format", "UDZO", "-imagekey", "zlib-level=9",
+               "-o", dmg)
+    writable.unlink()
+
+
+def release(program, notarize):
+    """The signed, notarized Draughts.app in a disk image (the module's docstring)."""
     os.environ["MACOSX_DEPLOYMENT_TARGET"] = MIN_MACOS
     out = OUT / "release"
     out.mkdir(parents=True, exist_ok=True)
@@ -139,22 +215,25 @@ def release(program):
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
     app = bundle(exe, out)
     who = identity()
-    zipped = out / f"Draughts-{native.VERSION_NAME}-macos-arm64.zip"
-    zipped.unlink(missing_ok=True)
+    dmg = out / f"Draughts-{native.VERSION_NAME}-macos-arm64.dmg"
     if not who:
         native.run("codesign", "--force", "--sign", "-", app)
-        print(f"\nno Developer ID Application identity: {app} is signed ad hoc, not notarized,"
-              " and not zipped (docs/development.md, \"Desktop releases\")")
+        disk_image(app, dmg)
+        print(f"\nno Developer ID Application identity: {dmg} is signed ad hoc and not notarized"
+              " (docs/development.md, \"Desktop releases\")")
         return
     native.run("codesign", "--force", "--options", "runtime", "--timestamp", "--sign", who, app)
     native.run("codesign", "--verify", "--strict", "--verbose=2", app)
-    native.run("ditto", "-c", "-k", "--keepParent", app, zipped)
-    native.run("xcrun", "notarytool", "submit", zipped, "--keychain-profile", NOTARY_PROFILE, "--wait")
-    native.run("xcrun", "stapler", "staple", app)
-    zipped.unlink()
-    native.run("ditto", "-c", "-k", "--keepParent", app, zipped)
-    native.run("spctl", "--assess", "--type", "execute", "--verbose", app)
-    print(f"\n{zipped}")
+    disk_image(app, dmg)
+    native.run("codesign", "--force", "--timestamp", "--sign", who, dmg)
+    if not notarize:
+        print(f"\n{dmg} is signed, not notarized")
+        return
+    native.run("xcrun", "notarytool", "submit", dmg, "--keychain-profile", NOTARY_PROFILE, "--wait")
+    native.run("xcrun", "stapler", "staple", dmg)
+    native.run("spctl", "--assess", "--type", "open", "--context", "context:primary-signature",
+               "--verbose", dmg)
+    print(f"\n{dmg}")
 
 
 def main():
@@ -162,12 +241,13 @@ def main():
     ap.add_argument("program", type=Path)
     ap.add_argument("-o", type=Path, help="the executable (build/<program> by default)")
     ap.add_argument("--run", action="store_true", help="run it after building")
-    ap.add_argument("--release", action="store_true", help="Draughts.app, signed, notarized, and zipped")
+    ap.add_argument("--release", action="store_true", help="Draughts.app, signed and notarized, in a disk image")
+    ap.add_argument("--no-notarize", action="store_true", help="with --release: sign, but don't notarize")
     ap.add_argument("args", nargs="*", help="the program's flags, after --")
     a = ap.parse_args()
     program = a.program.resolve()
     if a.release:
-        return release(program)
+        return release(program, not a.no_notarize)
     exe = (a.o or native.ROOT / "build" / program.stem).resolve()
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
     if a.run:

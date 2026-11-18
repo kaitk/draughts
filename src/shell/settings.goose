@@ -12,6 +12,7 @@ import gui from "../gui";
 import game from "../game";
 import strings from "../../strings";
 import .prefs;
+import .about;
 
 // What the screen asks for (gui::ASK_NOTHING..): SHOWN when the language list opens or
 // closes.
@@ -95,6 +96,7 @@ let NOTE_TOP = 6.0;         // between the move list's tiles and their note
 let SHIELD = 22.0;          // the privacy note's shield,
 let SHIELD_GAP = 10.0;      // and its gap to the words
 let FOOT_GAP = 16.0;        // under the privacy note, over the screen's inset
+let ABOUT_GAP = 14.0;       // between the privacy note and the About row
 let FADE = 72.0;            // dp at the list's foot over which a row fades out, as home's
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
 // The preview's share of the room it is given, each way: the rest a margin round it.
@@ -152,7 +154,12 @@ let POPUP_ID = OUTSIDE_ID + 1;      // and under it
 let TILE_IDS = POPUP_ID + 1;        // the rows' tiles, MOST_TILES a row
 let MUTE_ID = TILE_IDS + ROWS * MOST_TILES; // the volume's speaker
 let SLIDER_ID = MUTE_ID + 1;        // and its slider
-let LIST = SLIDER_ID + 1;
+let ABOUT_ID = SLIDER_ID + 1;       // the About row (about.goose),
+let ABOUT_OUTSIDE_ID = ABOUT_ID + 1; // the catch round its card,
+let ABOUT_CARD_ID = ABOUT_OUTSIDE_ID + 1; // the card,
+let ABOUT_COPY_ID = ABOUT_CARD_ID + 1; // its Copy,
+let ABOUT_CLOSE_ID = ABOUT_COPY_ID + 1; // and its close
+let LIST = ABOUT_CLOSE_ID + 1;
 let IDS_END = LIST + 1;
 
 // Whether a row's tiles are pictures (gui::choice) rather than words.
@@ -290,7 +297,7 @@ fn lay(g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
 
 // Where the list's parts go (list_at), from its top: each section's title and the rule
 // after it, each setting's dim name and its tiles, the move list's note, the privacy
-// note (its shield at its left), and how tall it all is.
+// note (its shield at its left) and the About row at its right, and how tall it all is.
 struct Row {
     name:  float4             = float4 { 0.0, 0.0, 0.0, 0.0 },
     tiles: float4[MOST_TILES] = [float4 { 0.0, 0.0, 0.0, 0.0 }; MOST_TILES],
@@ -302,11 +309,12 @@ struct List {
     volume:  Row              = Row {},  // the volume's name, and its speaker and slider (tiles 0 and 1)
     says:    float4           = float4 { 0.0, 0.0, 0.0, 0.0 },
     privacy: float4           = float4 { 0.0, 0.0, 0.0, 0.0 },
+    about:   float4           = float4 { 0.0, 0.0, 0.0, 0.0 },
     h:       f32              = 0.0,
 }
 
-// The list from r's top left, as wide as r.
-fn list_at(g: gui::Gui&, r: float4) -> List {
+// The list from r's top left, as wide as r; `a` for the About row's width.
+fn list_at(g: gui::Gui&, r: float4, a: About&) -> List {
     let u = g.scale;
     let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
     var l = List {};
@@ -339,17 +347,22 @@ fn list_at(g: gui::Gui&, r: float4) -> List {
         l.rule[section] = float4 { r.x, y, r.z, max(1.0, floor(u + 0.5)) };
         y += l.rule[section].w + SECTION_END * u;
     }
+    // The privacy note, and the About row at its right, centered on it.
     let text_x = (4.0 + SHIELD + SHIELD_GAP) * u;
-    let n = note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { 0.0, 0.0, r.z - text_x, 0.0 }, false);
-    l.privacy = float4 { r.x + text_x, y, r.z - text_x, n * line };
-    y += n * line + FOOT_GAP * u;
+    let about_w = about_row_width(g, a);
+    let text_w = r.z - text_x - about_w - ABOUT_GAP * u;
+    let n = note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { 0.0, 0.0, text_w, 0.0 }, false);
+    let foot = max(n * line, SMALL_H * u);
+    l.privacy = float4 { r.x + text_x, y + 0.5 * (foot - n * line), text_w, n * line };
+    l.about = float4 { r.x + r.z - about_w, y + 0.5 * (foot - SMALL_H * u), about_w, SMALL_H * u };
+    y += foot + FOOT_GAP * u;
     l.h = y - r.y;
     return l;
 }
 
 // Declares the list where list_at put it. Returns CHANGED when a tap changed s, SHOWN
-// while the volume is dragged, or NOTHING.
-fn list(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: List&) -> i64 {
+// while the volume is dragged or when About opens, or NOTHING.
+fn list(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: List&, a: About&) -> i64 {
     let u = g.scale;
     var ask = NOTHING;
     for section in SECTIONS {
@@ -378,6 +391,12 @@ fn list(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: List&) -> i64
     let icon = SHIELD * u;
     gui::glyph_icon(g, float4 { p.x - (SHIELD + SHIELD_GAP) * u, p.y, icon, icon }, gui::SHIELD, gui::PLAIN, 0.0, NOTE_A);
     note_lines(g, strings::get(strings::SETTINGS_PRIVACY), p, true);
+    if small_tile(g, ABOUT_ID, l.about, strings::get(strings::ABOUT_ROW), a.version[..], gui::NO_ICON) {
+        s.about_open = true;
+        s.languages_open = false;
+        a.copied = false;
+        ask = SHOWN;
+    }
     return ask;
 }
 
@@ -648,12 +667,15 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4, n: i64) -> Page {
 // Declares the screen for this frame in `area`, the screen's safe area, where layout puts
 // its parts, with `shown` the language showing, and sets l to where the preview goes, and
 // `room3d` to where a 3D preview goes instead. The kings' tiles put their pieces in
-// `ui_pieces`. Returns BACK, CHANGED after a tap changed s, SHOWN after the language list
-// opened or closed, or NOTHING.
+// `ui_pieces`. With About open its card shows over the rest (about_card), which takes no
+// pointer. Returns BACK, CHANGED after a tap changed s, SHOWN after the language list or
+// About opened or closed or Copy was tapped (s.copy_about), or NOTHING.
 fn frame(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
-         room3d: float4&, n: i64) -> i64 {
+         room3d: float4&, n: i64, a: About&) -> i64 {
     let u = g.scale;
     ui_pieces.clear();
+    let about = s.about_open;
+    if about { gui::set_input_enabled(g, false); }
     let p = layout(s, g, area, n);
     l = p.board;
     room3d = p.room3d;
@@ -662,12 +684,12 @@ fn frame(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: board::Layou
     var ask = head(s, g, p.head, shown, button);
     // The list, under the title row down to the screen's foot, the inset under the safe
     // area too, so its last row clears the inset once scrolled to the end.
-    let at = list_at(g, p.list);
+    let at = list_at(g, p.list, a);
     let content = at.h + g.insets.w;
     let off = gui::scroll_begin(g, LIST, p.view, content);
     let listed = g.quads.len;
-    let laid = list_at(g, float4 { p.list.x, p.list.y - off, p.list.z, 0.0 });
-    let listed_ask = list(s, ui_pieces, g, laid);
+    let laid = list_at(g, float4 { p.list.x, p.list.y - off, p.list.z, 0.0 }, a);
+    let listed_ask = list(s, ui_pieces, g, laid, a);
     if listed_ask != NOTHING { ask = listed_ask; }
     gui::fade_edges(g, listed, p.view, 0.0, p.view.y + content - off - (p.view.y + p.view.w), FADE * u);
     gui::scroll_end(g);
@@ -676,6 +698,20 @@ fn frame(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: board::Layou
         let screen = float4 { area.x - e.x, area.y - e.y, area.z + e.x + e.z, area.w + e.y + e.w };
         let picked = languages(s, g, button, screen, shown);
         if picked != NOTHING { ask = picked; }
+    }
+    if about {
+        // The pieces over the UI (the kings' tiles, the volume's thumb) would sit on the card.
+        ui_pieces.clear();
+        gui::set_input_enabled(g, true);
+        let e = g.insets;
+        let screen = float4 { area.x - e.x, area.y - e.y, area.z + e.x + e.z, area.w + e.y + e.w };
+        let asked = about_card(s, a, g, area, screen);
+        if asked == BACK { s.about_open = false; }
+        if asked == COPY {
+            s.copy_about = true;
+            a.copied = true;
+        }
+        if asked != NOTHING { ask = SHOWN; }
     }
     return ask;
 }

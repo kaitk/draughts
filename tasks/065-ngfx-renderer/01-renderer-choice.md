@@ -1,4 +1,4 @@
-# 073: One executable, the renderer chosen at run time
+# 01: One executable, the renderer chosen at run time
 
 Status: in-progress (steps 1 to 3 on main; steps 4 and 5 on the branch `renderer-choice`
 2026-11-12; step 6's device checks under way)
@@ -8,7 +8,7 @@ the device has it, gfx everywhere else and on Android, and a flag to force eithe
 user, 2026-11-11). The reason is NoGraphicsAPI's, not the app's: Draughts as a real
 program on its API, to show its author and to back the pull requests
 (`docs/goose-findings.md`). On the RTX 4090 ngfx takes 26 to 41% less GPU time a frame
-and 54 to 74 MB less GPU memory (task 074), so `auto` on Windows is the case to get right
+and 54 to 74 MB less GPU memory (task 065/02), so `auto` on Windows is the case to get right
 first.
 
 ## Done
@@ -38,7 +38,7 @@ first.
      that finds it picks gfx; an update or `--renderer ngfx` tries ngfx again.
      `DRAUGHTS_AUTO_NGFX=1` and `DRAUGHTS_RENDERER_TEST=fail|crash` exercise it.
    - `auto` by platform: ngfx first on Windows only; gfx first on the Mac and iOS (task
-     077) and on Linux (task 076).
+     065/03) and on Linux (task 010/01).
 
 Checked on the Mac at every step: shots of the 13 screens flat and 3D against the builds
 before (flat identical, 3D within 3 of 255 but the puzzle's 3D board's known noise);
@@ -53,11 +53,11 @@ takes gfx, 3D P50 9.43 ms at 119.9 fps; `--renderer ngfx` 60 fps.
   `--renderer gfx`, and `DRAUGHTS_RENDERER_TEST=fail` (the marker is
   `%APPDATA%\kaitk\draughts\renderer-start.txt`, deleted after). Then
   `EXE=build/ngfx/draughts.exe FLAGS="--renderer ngfx" python scripts/windows_perf.py`
-  and the same with `--renderer gfx`, against task 074's rows, and the 13 screens headless
+  and the same with `--renderer gfx`, against task 065/02's rows, and the 13 screens headless
   with each `--renderer` against main's builds.
 - **The Bazzite PC (RX 6800), the user**: the same; `auto` says `gfx first on Linux`;
   `--renderer ngfx` on Wayland and with `SDL_VIDEO_DRIVER=x11`; `DRAUGHTS_AUTO_NGFX=1` for
-  the Vulkan check and the hidden window; task 076's benches with each `--renderer`.
+  the Vulkan check and the hidden window; task 010/01's benches with each `--renderer`.
 - An iOS 16 to 25 device or a Mac before 26: none at hand, so the old-system path is
   unchecked.
 - The pull requests, one at a time, sent by the user (drafts in `build/notes/prs/`,

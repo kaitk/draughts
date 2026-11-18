@@ -295,8 +295,8 @@ fn opponent(t: gui::Text&, x: history::Game&) {
     gui::push_number(t, ai::skill_rating(x.skill));
 }
 
-// The day it was played, as the language writes a date.
+// The day it was played in the local zone, as the language writes a date.
 fn date(t: gui::Text&, x: history::Game&) {
-    let y, m, d = history::date(x.time);
+    let y, m, d = history::date(x.time + history::zone);
     strings::date(t, y, m, d);
 }

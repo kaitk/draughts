@@ -3,7 +3,7 @@
 // written. They are kept across runs as a small text file per player, one `key = value`
 // per line, which the app reads at start and writes after a change (players.goose): the
 // player's picture and name, whether they have had the first start, the screen's
-// choices but the language, the volume, and the window, which are the device's, a new game's setup (the opponent,
+// choices but the language and the volume, which are the device's, a new game's setup (the opponent,
 // and for a friend whether the board turns), the computer's
 // skill at each level, which moves after each game against it, how many games ended on
 // each level, how many games against it began, and the stars won in each puzzle
@@ -110,15 +110,17 @@ struct Settings {
     turns:            bool          = false,   // the setup's: a friend's game turns the board to the side to move (`turn = on`)
     hints:            i64           = board::MISTAKES,
     lookout:          bool          = false,   // the game's lookout, its eye on whose turn's line (`lookout = on`)
+    top:              bool          = false,   // the game's 3D board in the top view (`view = top`)
+    zoom:             bool          = false,   // and zoomed (`zoom = on`)
     kings:            i64           = AUTO,
     language:         i64           = SYSTEM, // strings::EN.., or SYSTEM; the device's, in settings.txt
     // The volume in percent, or VOLUME_DEFAULT; and muted at it (`sound = off`), the
     // speaker's tile. The device's, in settings.txt.
     volume: i64  = VOLUME_DEFAULT,
     muted:  bool = false,
-    // Whether a desktop's window fills the screen (`window = fullscreen`), as it was last
-    // left, so the next start opens the same way. The device's, in settings.txt.
-    fullscreen: bool = false,
+    // A desktop's window filling the screen (`window = full`), as Alt+Enter or F11 last left
+    // it. The device's, in settings.txt.
+    full: bool = false,
     // A new game's setup, kept for the next one: against a friend or the computer
     // (`opponent = friend|computer`, the computer by default), the draughts, the level,
     // the child's pieces, the clock.
@@ -161,6 +163,10 @@ struct Settings {
     // A change of the volume to be heard: the shell plays a move at the new level. Not in
     // the file.
     play_sample: bool = false,
+    // Whether settings' About card is open (about.goose), and its Copy tapped, for the app
+    // to put its text on the clipboard (Frame.copy_about). Not in the file.
+    about_open: bool = false,
+    copy_about: bool = false,
 }
 
 // How the flat board draws kings: auto is a crown there.
@@ -214,6 +220,8 @@ fn parse(text: const u8[:]) -> Settings {
         if key == "turn" && value == "on" { s.turns = true; }
         if key == "hints" && value == "moves" { s.hints = board::MOVES; }
         if key == "lookout" && value == "on" { s.lookout = true; }
+        if key == "view" && value == "top" { s.top = true; }
+        if key == "zoom" && value == "on" { s.zoom = true; }
         if key == "kings" {
             for name, i in KING_NAMES { if value == name { s.kings = i; } }
         }
@@ -221,7 +229,7 @@ fn parse(text: const u8[:]) -> Settings {
             for name, i in strings::LANGUAGES { if value == name { s.language = i; } }
         }
         if key == "sound" && value == "off" { s.muted = true; }
-        if key == "window" && value == "fullscreen" { s.fullscreen = true; }
+        if key == "window" && value == "full" { s.full = true; }
         if key == "opponent" && value == "friend" { s.friend = true; }
         if key == "draughts" {
             let v, known = rules::variant_named(value);
@@ -362,7 +370,7 @@ fn write_daily(s: Settings&, out: u8[>..]&) {
 // The volume, 0..1, as the slider has it: the device's, or the platform's default.
 fn volume_of(s: Settings&) -> f32 { (if s.volume >= 0 { s.volume } else { default_volume }) / 100.0 }
 
-// A player's file for settings s, appended to out: all but the device's keys.
+// A player's file for settings s, appended to out: all but the language and the volume.
 fn write(s: Settings, out: u8[>..]&) {
     out.append("picture = ");
     out.append(players::ANIMALS[clamp(s.picture, 0, players::ANIMALS.len - 1)]);
@@ -383,6 +391,8 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(if s.turns { "\nturn = on" } else { "\nturn = off" });
     out.append(if s.hints == board::MOVES { "\nhints = moves" } else { "\nhints = mistakes" });
     out.append(if s.lookout { "\nlookout = on" } else { "\nlookout = off" });
+    out.append(if s.top { "\nview = top" } else { "\nview = rest" });
+    out.append(if s.zoom { "\nzoom = on" } else { "\nzoom = off" });
     out.append("\nkings = ");
     out.append(KING_NAMES[s.kings]);
     out.append(if s.friend { "\nopponent = friend" } else { "\nopponent = computer" });

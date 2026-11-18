@@ -7,6 +7,8 @@ material = auto
 turn = off
 hints = mistakes
 lookout = off
+view = rest
+zoom = off
 kings = auto
 opponent = computer
 draughts = international
@@ -32,6 +34,8 @@ material = carved
 turn = on
 hints = moves
 lookout = off
+view = rest
+zoom = off
 kings = stack
 opponent = friend
 draughts = brazilian
@@ -59,6 +63,8 @@ material = auto
 turn = off
 hints = mistakes
 lookout = off
+view = rest
+zoom = off
 kings = auto
 opponent = computer
 draughts = international
@@ -75,7 +81,7 @@ games = 0
 moves = marks
 daily_count = 4
 
-tiles 27 of 27, the kings' tiles' pieces 3: 1.0 and 2.0
+tiles 28 of 28, the kings' tiles' pieces 3: 1.0 and 2.0
 the list: scrolls
 landscape: the board right of the list, clear true
 opened, defaults:
@@ -85,47 +91,54 @@ after the flash:
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.2, rings pulsing 2 still 0, kings drawn 1.0, animating true
 after the pulse:
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.2, rings pulsing 0 still 2, kings drawn 1.0, animating false
-summer: picture = fox;season = summer;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 1
-3D: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
-all moves: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = moves;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves true, kings 2
+summer: picture = fox;season = summer;background = photo;board = 2d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 1
+3D: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
+all moves: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = moves;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves true, kings 2
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, selected 3,3, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 2.0, animating false
-Russian: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = moves;lookout = off;kings = auto;opponent = computer;draughts = russian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves true, kings 2
+Russian: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = moves;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = russian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves true, kings 2
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, selected 3,3, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 2.0, animating false
-stack: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = moves;lookout = off;kings = stack;opponent = computer;draughts = russian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves true, kings 2
+stack: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = moves;lookout = off;view = rest;zoom = off;kings = stack;opponent = computer;draughts = russian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves true, kings 2
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, selected 3,3, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 2.0, animating false
-mistakes only: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = stack;opponent = computer;draughts = russian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
+mistakes only: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = stack;opponent = computer;draughts = russian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.06666667, rings pulsing 2 still 0, kings drawn 2.0, animating true
 moves panel off: moves 0, the game's 0, to write true
 marks: moves 2, the game's 2
 8 a day: 8, to write true
 4 a day: 4
 a file's 5 a day reads 6, 10 reads 8, 1 reads 3
-Brazilian: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = stack;opponent = computer;draughts = brazilian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
-auto: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = brazilian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
-International: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
-wood: picture = fox;season = summer;background = photo;board = 3d;material = wood;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
-stone: picture = fox;season = summer;background = photo;board = 3d;material = stone;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
-flat: picture = fox;season = summer;background = photo;board = 2d;material = stone;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 1
-carved: picture = fox;season = summer;background = photo;board = 3d;material = carved;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
+Brazilian: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = stack;opponent = computer;draughts = brazilian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
+auto: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = brazilian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
+International: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
+wood: picture = fox;season = summer;background = photo;board = 3d;material = wood;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
+stone: picture = fox;season = summer;background = photo;board = 3d;material = stone;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
+flat: picture = fox;season = summer;background = photo;board = 2d;material = stone;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 1
+carved: picture = fox;season = summer;background = photo;board = 3d;material = carved;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
 the Board row's lit tile: 13
-raised, the season's own: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
-the language list open true, tiles 29, changed false, each row 88 dp tall at least: ok
-Eesti: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 1, changed true, game's board hints moves false, kings 2
-closed: true, tiles 27
-by the date: picture = fox;season = by-date;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 1, changed true, game's board hints moves false, kings 2
+raised, the season's own: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language -1, changed true, game's board hints moves false, kings 2
+the language list open true, tiles 30, changed false, each row 88 dp tall at least: ok
+Eesti: picture = fox;season = summer;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 1, changed true, game's board hints moves false, kings 2
+closed: true, tiles 28
+by the date: picture = fox;season = by-date;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 1, changed true, game's board hints moves false, kings 2
 a tap outside: open false, on settings true, language 1
 back: went back false, open false
-English: picture = fox;season = by-date;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 0, changed true, game's board hints moves false, kings 2
+English: picture = fox;season = by-date;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 0, changed true, game's board hints moves false, kings 2
+About: open true, asks the app to fill it true, tiles 30, the row ok smaller than a tap
+a tap on Plain under the card: plain false, open true
+Copy: copied true, open true
+its text's first line: Draughts 1.2.3
+close: open false, tiles 28
+a tap outside: open false, on settings true
+back: went back false, open false
 the row: Background, photo shown true, pictures -2 -3 1 2 3 0 -1 -8 -4 -5 -6 -7
-plain: picture = fox;season = by-date;background = plain;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 0, changed true, game's board hints moves false, kings 2
+plain: picture = fox;season = by-date;background = plain;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 0, changed true, game's board hints moves false, kings 2
 plain: photo shown false, read back plain true season -1, pictures -2 -3 5 6 7 4 -1 -8 -4 -5 -6 -7
-photo: picture = fox;season = by-date;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 0, changed true, game's board hints moves false, kings 2
+photo: picture = fox;season = by-date;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = auto;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 0, changed true, game's board hints moves false, kings 2
 photo: photo shown true
 in Estonian: Taust, Teema
-portrait: the board above the list, clear true, tiles 27
-portrait stack: picture = fox;season = by-date;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;kings = stack;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 0, changed true, game's board hints moves false, kings 2
+portrait: the board above the list, clear true, tiles 28
+portrait stack: picture = fox;season = by-date;background = photo;board = 3d;material = auto;turn = off;hints = mistakes;lookout = off;view = rest;zoom = off;kings = stack;opponent = computer;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks;daily_count = 4; language 0, changed true, game's board hints moves false, kings 2
 back: true
-a file's board = 3d, material = stone: raised true, material 2, tiles 27 of 27
+a file's board = 3d, material = stone: raised true, material 2, tiles 28 of 28
 kings stack taps: true; board and material kept in the file: true true
 an unknown material is auto: true
 the lookout: off by default true, on read back true, off read back true
@@ -136,5 +149,6 @@ the volume:
   the speaker: volume 50, muted false, heard 1, to write true
   pressed at the slider's left: volume 4 under 10 true; dragged on, down and a little off it: volume over 40 true, not scrolled true, heard 0, to write false
   let go further on: volume over 70 true, heard 1, to write true
-  settings.txt at 64, muted, fullscreen: true, read back 64 true true; a file without them: true true true
+  settings.txt at 64, muted: true, read back 64 true; a file without them: true true
+  fullscreen read back true; a file without it windowed true
   a desktop's default: 0.5

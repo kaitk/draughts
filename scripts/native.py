@@ -24,7 +24,30 @@ SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
 APP_ID = "io.github.kaitk.draughts"
 # The version people see: Android's versionName and iOS's CFBundleShortVersionString.
 # Each platform's build number is its own script's (VERSION_CODE, BUILD_NUMBER).
-VERSION_NAME = "0.8.0"
+VERSION_NAME = "0.9.0"
+
+
+def write_version():
+    """build/draughts_version.h: the version, the commit it is built from (-dirty when the
+    tree has changes), and the commit's date, which settings' About shows and the build
+    holding both renderers keys its crash marker by (src/app/about.c, src/ngfx/renderer.c).
+    Written only when it changes, so a build that changes nothing compiles nothing again.
+    Without git (a copy of the sources) the commit is "unknown"."""
+    def git(*a):
+        r = subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True)
+        return r.stdout.strip() if r.returncode == 0 else ""
+    commit = git("rev-parse", "--short", "HEAD") or "unknown"
+    if commit != "unknown" and git("status", "--porcelain", "--untracked-files=no"):
+        commit += "-dirty"
+    date = git("log", "-1", "--format=%cs")
+    text = (f'#define DRAUGHTS_VERSION_NAME "{VERSION_NAME}"\n'
+            f'#define DRAUGHTS_COMMIT "{commit}"\n'
+            f'#define DRAUGHTS_COMMIT_DATE "{date}"\n'
+            f'#define DRAUGHTS_VERSION "{VERSION_NAME} {commit}"\n')
+    path = ROOT / "build/draughts_version.h"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists() or path.read_text(encoding="utf-8") != text:
+        path.write_bytes(text.encode())
 
 
 def run(*cmd, cwd=None, env=None, capture=False, check=True):
@@ -49,6 +72,7 @@ def sidecar(program, key):
 
 def goose_to_c(program, gen, *flags):
     """The program's C (gen/program.c) and the runtime's (gen/goose_runtime.c)."""
+    write_version()
     gen.mkdir(parents=True, exist_ok=True)
     run(GOOSE, "-o", gen / "program.c", *flags, program, cwd=program.parent)
     run(GOOSE, "--emit-runtime", gen / "goose_runtime.c")
@@ -93,6 +117,7 @@ def patched_goose(out, release, exe, lib, compile, archive, obj=".o", section="T
     windows.py) build with. compile(c, o) and archive(lib, objs) give the platform's
     commands. The library is rebuilt only when the sources (gfx's and SDL's version) or the
     commands change: a stamp beside it holds their hash. Returns the copy's goose."""
+    write_version()
     goose = out / "goose"
     if not goose.exists():
         if not (release / exe).exists():

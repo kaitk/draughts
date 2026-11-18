@@ -15,6 +15,7 @@ fn enter(sh: Shell&, index: i64, s: settings::Settings) {
     let language = sh.prefs.language;
     let volume = sh.prefs.volume;
     let muted = sh.prefs.muted;
+    let full = sh.prefs.full;
     ps.playing = index;
     sh.prefs = s;
     sh.prefs.picture = ps.list[index].picture;
@@ -22,6 +23,7 @@ fn enter(sh: Shell&, index: i64, s: settings::Settings) {
     sh.prefs.language = language;
     sh.prefs.volume = volume;
     sh.prefs.muted = muted;
+    sh.prefs.full = full;
     sh.game = game::new(sh.prefs.variant as u8);
     let screen = sh.screen;
     read_game(sh);

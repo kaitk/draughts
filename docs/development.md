@@ -9,8 +9,8 @@ The app builds from a Mac (Apple silicon), from Windows (x64), and from Linux (x
 | Linux app | Linux | `scripts/linux.py src/app/draughts.goose` | [Run on Linux](#run-on-linux) |
 | Android APK | Mac, Windows | `scripts/android.py src/app/draughts.goose --run` | [Run on Android](#run-on-android) |
 | Android release (APK and AAB for Play) | Mac, Windows, with an upload key | `scripts/android.py src/app/draughts.goose --release` | [Release builds](#release-builds) |
-| macOS release (signed, notarized zip) | Mac, with a Developer ID | `scripts/mac.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
-| Windows release (zip) | Windows | `python scripts/windows.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
+| macOS release (signed, notarized disk image) | Mac, with a Developer ID | `scripts/mac.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
+| Windows release (zip and installer) | Windows | `python scripts/windows.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
 | Linux release (tar.gz) | Linux, in an Ubuntu 22.04 container | `CC=clang-20 scripts/linux.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
 | iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py src/app/draughts.goose --run`, `--device --run` | [Run on iOS](#run-on-ios) |
 | Rules tests | Mac, Windows, Linux | `scripts/test.sh` | [Test the rules](#test-the-rules) |
@@ -126,9 +126,13 @@ adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'
 
 ## Run on Windows
 
-Needs Visual Studio's Build Tools (`clang-cl`), Python, and Git Bash (for `patch`):
+Needs Visual Studio's Build Tools (`clang-cl`), Python, Git Bash (for `patch`), and for
+a release's installer Inno Setup 6 (`winget install JRSoftware.InnoSetup`). The
+submodules go in recursively, as on the Mac: goose_gfx's own SDL submodule is needed too,
+or goose_gfx's build stops at a missing `SDL_version.h`.
 
 ```sh
+git submodule update --init --recursive --depth 1
 mkdir -p build && cd build
 curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-windows-x64.zip
 unzip -q goose-v2026.4-windows-x64.zip && rm goose-v2026.4-windows-x64.zip
@@ -334,7 +338,10 @@ scripts/ios.py src/app/draughts.goose --device --run            # on an attached
 
 `scripts/ios.py` builds without an Xcode project, into `build/ios/<program>/sim/` or
 `device/`: one static executable (SDL without HIDAPI, whose CoreBluetooth App Store Connect
-refuses without a purpose string) and the bundle around it.
+refuses without a purpose string) and the bundle around it, the icon and the launch
+screen's colour compiled by `actool` from an asset catalog the script writes. Each data
+stack is reserved at 128 MB (`--stack-reserve 128M`): a stack that outgrows it stops the
+program.
 
 The privacy manifest declares a reason for each "required reason" API the binary imports
 (`ios.py`'s `PRIVACY_APIS`). Check the list again after an SDL or Goose update:
@@ -416,8 +423,14 @@ The Mac, Windows, and Linux apps go out as files on a GitHub release, built loca
 
 **macOS.** `scripts/mac.py src/app/draughts.goose --release` builds
 `build/mac/release/Draughts.app` for macOS 13.3, Apple silicon only, signs it with the
-hardened runtime, notarizes and staples it, and writes `Draughts-VERSION-macos-arm64.zip`.
-It needs, once per Mac:
+hardened runtime, and puts it in `Draughts-VERSION-macos-arm64.dmg`: the window where the
+app is dragged onto a link to Applications, on a card like the app's glass over a close
+render of the board's corner (`mac/dmg-background.tiff`, made by `tools/dmg_background.sh`
+from the local render in `~/Downloads/draughts-store/dmg-0.1/`), with the app's icon as
+the volume's. Finder lays the window out by AppleScript,
+so the first build asks to let the terminal control Finder. The image is signed,
+notarized, and stapled; the ticket covers the app inside it, as Zeiger's does
+(2026-11-16). `--no-notarize` stops before sending it to Apple. It needs, once per Mac:
 
 1. A **Developer ID Application** certificate in the login keychain, which only the
    team's Account Holder can create (Xcode → Settings → Accounts → Manage Certificates,
@@ -432,11 +445,13 @@ the script signs ad hoc and stops before notarizing.
 **Windows.** `python scripts/windows.py src/app/draughts.goose --release` zips the
 executable alone into `build/windows/release/Draughts-VERSION-windows-x64.zip`: SDL and
 the C runtime are linked in, the icon `windows/draughts.ico` embedded, and it is marked a
-GUI program. It is unsigned, so SmartScreen warns on first run. It stays an unsigned zip
-(2026-11-16): a code-signing certificate isn't worth its yearly cost for a free game, and
-Steam (task 064) is the Windows path, where downloads carry no mark of the web and
-SmartScreen doesn't ask. Rejected: an unsigned installer (Inno Setup), which only moves the
-warning from the game's first run to the install.
+GUI program. Beside it, Inno Setup 6 (`winget install JRSoftware.InnoSetup`) builds
+`Draughts-VERSION-windows-x64-setup.exe` from `windows/draughts.iss`: per user, so no
+administrator is asked for, with a Start menu entry and an uninstaller. Both are unsigned
+(2026-11-16): SmartScreen warns once, at the installer, or at the zip's first run, and the
+installed game then starts without a warning. A code-signing certificate isn't worth its
+yearly cost for a free game; Steam (task 064) is the signed-free Windows path, where
+downloads carry no mark of the web and SmartScreen doesn't ask.
 
 **Linux.** `scripts/linux.py src/app/draughts.goose --release` writes
 `build/linux/release/Draughts-VERSION-linux-x64.tar.gz`: the stripped executable, a
@@ -463,11 +478,21 @@ A Docker `ubuntu:22.04` container does as well (as root, without `sudo`): build 
 build/linux/release/Draughts/draughts | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1`
 should say `GLIBC_2.35`.
 
+On the Mac, Docker builds it as x64 under emulation in about ten minutes (0.9.0,
+2026-11-16), with `tools/linux_release_docker.sh` doing all of the above inside the
+container and leaving the archive in `/out`:
+
+```sh
+docker run --rm --platform linux/amd64 -v "$PWD":/src:ro -v "$PWD/build/linux/release":/out \
+    -v "$PWD/tools/linux_release_docker.sh":/build.sh:ro ubuntu:22.04 /build.sh
+```
+
 **The release.** Tagged as the shared version (`native.VERSION_NAME`):
 
 ```sh
-gh release create v0.2.0 build/mac/release/Draughts-0.2.0-macos-arm64.zip \
-    Draughts-0.2.0-windows-x64.zip --title "Draughts 0.2.0" --notes "..."
+gh release create v0.2.0 build/mac/release/Draughts-0.2.0-macos-arm64.dmg \
+    Draughts-0.2.0-windows-x64.zip Draughts-0.2.0-windows-x64-setup.exe \
+    Draughts-0.2.0-linux-x64.tar.gz --title "Draughts 0.2.0" --notes "..."
 ```
 
 ## Time the 3D board

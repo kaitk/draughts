@@ -415,7 +415,9 @@ mistake, whatever it gives back. A side's accuracy over a game is lichess's: eac
 
 The game asks the worker for it (`game::JUDGE`, `src/game/notes.goose`) after the
 computer's move, the hint, and the lookout's traps, the oldest move not yet judged
-first, so nobody waits on it; a newer ask drops it and it is asked again after. The
+first, so nobody waits on it; a newer ask drops it and it is asked again after. A move
+costs 25 ms to judge on average on the M1 Pro, 43 at most (`build/judgebench`,
+2026-11-11), about 50 ms on the tablet's big cores. The
 moves are read off the game's record (`rules::Record`), so a move taken back loses its mark and a
 saved game brought back is judged again.
 

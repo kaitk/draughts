@@ -8,6 +8,11 @@ syncs the settings and saved game without it. Rough cost when scoped: two to thr
 of work, over at least five weeks of calendar for Valve's waits. Valve's rules change;
 check each against Steamworks' pages when doing this.
 
+## Subtasks
+
+- `01-board-under-the-mouse.md`: the board lit under the mouse, before the release
+  (task 067 until 2026-11-16)
+
 ## Valve's waits and fees
 
 - The Steam Direct fee, US$100 per app, paid once (recouped only past US$1,000 of
@@ -34,8 +39,8 @@ check each against Steamworks' pages when doing this.
 - [ ] Linux: a `scripts/linux.py` build that runs in the Steam Runtime (sniper), if Goose
       builds or ships for Linux.
 - [ ] Desktop play: the controls a mouse's size (done 2026-11-11, `gui::DESKTOP_DP`) and
-      the tile under the mouse lit (task 066); fullscreen by a setting and Alt+Enter (Alt+Enter
-      and F11 done 2026-11-12), the window's size remembered,
+      the tile under the mouse lit (task 066); fullscreen by Alt+Enter and F11 (done 2026-11-12),
+      remembered for the next start (done 2026-11-16), the window's size remembered,
       a minimum window size, and every screen checked at 1080p, 1440p, and 4K with the
       mouse alone.
 - [ ] Controllers: every screen played with a gamepad alone, with a visible focus and

@@ -1,7 +1,7 @@
 // The draughts switch on the puzzles' library (shell/picker.goose,
 // prototypes/puzzle-set.html), headless, driven through the pointer. The switch is
-// settings' draughts: a tap on Russian shows Russian's set and its four themes, on
-// Brazilian Brazilian's own set and its four, on International its six; each tap sets
+// settings' draughts: a tap on Russian shows Russian's set and its six themes, on
+// Brazilian Brazilian's own set and its six, on International its six; each tap sets
 // the player's draughts, written to the player's file as settings writes them, and
 // home's count follows, each set's stars apart. A tap on the lit tile changes nothing. A
 // list scrolled down (a small window) is back at its top after a switch. Then the library with each draughts chosen at the tablet's size in
