@@ -40,7 +40,7 @@ number ("task 004"), not by path.
 Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 `docs/product.md` is built.
 
-- Release: 029 Google Play (closed test running), 046 the App Store (in review), 036 the
+- Release: 096 ngfx shipped on Mac, iOS and Windows as 0.9.1, 029 Google Play (closed test running), 046 the App Store (in review), 036 the
   announcement after the Play release, 075 the Linux build, 064 Steam (low priority,
   scoped only; the board under the mouse first).
 - Content and play: 038 the badges' final silhouettes.
