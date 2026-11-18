@@ -51,5 +51,7 @@ This replaces passing `src/main/draughts_ngfx.goose` (2026-11-18,
 - [ ] Release builds made and run: macOS (signed and notarized), iOS (TestFlight),
       Windows, Android, Linux, each picking the renderer the table says
 - [ ] Shipped ids unchanged: `io.github.kaitk.draughts`, `io.github.kaitk.draughts.app`
+- [ ] Once everything else is done, checked on the Mac, in the iOS Simulator, and on the
+      Pixel 7a over USB
 - [ ] Version 0.9.1, released to the stores and the downloads
 - [ ] The showcase post's renderer claims match what ships
