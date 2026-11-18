@@ -30,15 +30,16 @@ Open upstream, with their `docs/stdlib.md` companions in Goose:
 | #14 | `msaa-resolve-without-store` (on #12): MSAA resolved without storing samples | #372 |
 | #15 | `draw-on-demand`: `WAIT_WHEN_IDLE`, opt-in | #373 |
 | issue #16 | `window-only`, `window-only-linux`: the window without a device, for another renderer | |
+| #17 | `headless-apple`: headless on macOS keeps the default video driver | none |
+| #18 | `macos-tested` (on #17): the macOS column, and two `test/window` fixes | none |
+| #19 | `end-on-device-lost` (on #15): `frame()` ends on Vulkan's lost device | none |
+| #20 | `gamepad-wake` (on #15): pads read in `frame()` and the wait | none |
 
-Ready on the fork, to send after #15 settles (each says "Builds on #15"):
-`end-on-device-lost` (Vulkan's loss only; Direct3D 12's removal perhaps added first) and
-`gamepad-wake` (pads read in `frame()` and the wait). `window-only` and
-`window-only-linux` wait for the answer on #16. Not yet a branch: `gfx::safe_area()`,
+`window-only` and `window-only-linux` wait for the answer on #16. Not yet a branch: `gfx::safe_area()`,
 beside upstream's `display_scale()`, for the MacBook notch in full screen as well as
 phones. Each new API needs its Goose `docs/stdlib.md` companion, as above.
 
-Ready to send, from gfx's suite, `test/window` and showcase on the Mac (2026-11-18,
+#17 and #18 (sent 2026-11-18), from gfx's suite, `test/window` and showcase on the Mac (2026-11-18,
 M1 Pro, macOS 26, Goose `master` `745901f` built with upstream `main`'s gfx in `build/goose`,
 gfx in `build/gfx-mac`, both local):
 
@@ -75,8 +76,7 @@ Not yet on the tablet, nor on an iOS device.
 ## Next
 
 1. Check the move to `b8cd74b` on the tablet over USB (idle CPU, `install -r`).
-2. Send 12 and 13 (`headless-apple`, `macos-tested`), then the rest as #15 settles.
-3. `audio-pause`, once built: with sound on, SDL's audio thread mixes silence the whole
+2. `audio-pause`, once built: with sound on, SDL's audio thread mixes silence the whole
    session (the Pixel 7a at rest: 4.5% of a core, against 0.12% for the program's thread),
    as gfx's audio has no pause. A fork branch with `audio::pause(on)` and its Goose
    `docs/stdlib.md` companion; Draughts pauses a few seconds after the last sound and
