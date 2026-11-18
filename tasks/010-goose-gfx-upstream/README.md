@@ -74,7 +74,12 @@ threads: the open sound device, which this didn't change. Not yet on the tablet.
 
 1. Check the move to `b8cd74b` on the tablet over USB (idle CPU, `install -r`).
 2. Send 12 and 13 (`headless-apple`, `macos-tested`), then the rest as #15 settles.
-3. Why the Pixel's audio threads take about 4.5% of a core at rest, with sound on.
+3. `audio-pause`, once built: with sound on, SDL's audio thread mixes silence the whole
+   session (the Pixel 7a at rest: 4.5% of a core, against 0.12% for the program's thread),
+   as gfx's audio has no pause. A fork branch with `audio::pause(on)` and its Goose
+   `docs/stdlib.md` companion; Draughts pauses a few seconds after the last sound and
+   resumes on a press. Measure the resume's delay to the first sound on the Pixel and the
+   A33, then offer it upstream.
 
 ## Acceptance criteria
 
