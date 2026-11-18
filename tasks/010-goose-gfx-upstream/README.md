@@ -34,10 +34,10 @@ Open upstream, with their `docs/stdlib.md` companions in Goose:
 | issue #16 | `window-only`, `window-only-linux`: the window without a device, for another renderer | |
 | #17 | `headless-apple`: headless on macOS keeps the default video driver | none |
 | #18 | `macos-tested` (on #17): the macOS column, and two `test/window` fixes | none |
-| #19 (draft) | `end-on-device-lost` (on #15): `frame()` ends on Vulkan's lost device | none |
+| #19 (draft) | `end-on-device-lost` (on #15): `frame()` ends on Vulkan's lost device | #376 (draft) |
 | #20 (draft) | `gamepad-wake` (on #15): pads read in `frame()` and the wait | none |
 
-#19 and #20 stay drafts until #15 settles. `window-only` and `window-only-linux` wait for the answer on #16. Not yet a branch: `gfx::safe_area()`,
+#19 and #20, and Goose #376, stay drafts until #15 settles. `window-only` and `window-only-linux` wait for the answer on #16. Not yet a branch: `gfx::safe_area()`,
 beside upstream's `display_scale()`, for the MacBook notch in full screen as well as
 phones. Each new API needs its Goose `docs/stdlib.md` companion, as above.
 
