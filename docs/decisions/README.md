@@ -26,6 +26,11 @@ One file per area, as the architecture has:
   `VK_EXT_descriptor_heap` and mesh shaders, which mobile GPUs lack.
 - Vulkan on Windows (2026-11-10): SDL's default, Direct3D 12, took 5 s at each launch for
   FXC to compile the HLSL; Vulkan takes SPIR-V compiled with the program.
+- Direct3D 12 on a branch, not `main` (2026-11-18): it draws as Vulkan does only with a
+  Goose built with a cute_spirv patch (storage buffers and HLSL keywords, task 010's
+  subtask 03), and no build ships it. The `direct3d12` branch keeps that patch, the one
+  for cute_framework, and how to build it; `main` takes the drawing changes that are
+  portable anyway (the widgets draw each run from instance 0, as Direct3D 12 needs).
 - goose_gfx from the user's fork (2026-11-12): the submodule follows `kaitk/goose_gfx`'s
   `main`, each change also a branch on upstream `main`. It replaces patches applied to
   upstream's `v1` at build time, which kept every change twice. The build takes only
