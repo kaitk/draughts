@@ -12,7 +12,7 @@ import gui from "../gui";
 import strings from "../../strings";
 
 // What the card shows, filled by the app (app.goose's fill_about) when it opens: the
-// version, commit, and its date (build/draughts_version.h; empty in a plain build), the
+// version, commit, and its date (build/draughts_version.c), the
 // system, the renderer ("gfx", "ngfx") and its graphics API, the GPU's name (empty where
 // none is known), and the display's refresh rate in Hz (0 where unknown). Then the 3D
 // board's: its antialiasing ("4× MSAA"), whether the app lowered it for a slow device, its

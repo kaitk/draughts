@@ -1,6 +1,6 @@
-// Draughts on gfx alone, the build every platform ships: the app (src/app/) on gfx's
-// backend (src/gfx/backend.goose). scripts/mac.py builds it, and draughts_ngfx.goose
-// beside it, the same program holding goose-ngfx too (docs/development.md).
+// Draughts on gfx alone, the build Android and Linux ship: the app (src/app/) on gfx's
+// backend (src/gfx/backend.goose). The other platforms ship draughts_ngfx.goose beside it,
+// the same program holding goose-ngfx too, and build this one with --gfx-only.
 
 import rules from "../rules";
 import board from "../board";

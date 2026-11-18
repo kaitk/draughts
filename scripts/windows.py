@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""Build a Goose program for Windows with the patched goose_gfx, and optionally run it.
+"""Build Draughts for Windows with the patched goose_gfx, and optionally run it.
 
-    python scripts/windows.py src/main/draughts.goose              build build/windows/draughts.exe
-    python scripts/windows.py src/main/draughts_ngfx.goose         build build/windows/draughts_ngfx.exe,
-                                                                  holding goose-ngfx too (scripts/ngfx.py)
-    python scripts/windows.py src/main/draughts.goose --run -- --board 3d
-                                                                  build, and run it with those flags
-    python scripts/windows.py src/main/draughts.goose --release    build/windows/release/
-                                                                  Draughts-VERSION-windows-x64.zip
-                                                                  and -setup.exe
+    python scripts/windows.py                  build build/windows/draughts_ngfx.exe, the app
+                                               as it ships: gfx and goose-ngfx (scripts/ngfx.py)
+    python scripts/windows.py --gfx-only       build build/windows/draughts.exe, gfx alone
+    python scripts/windows.py --run -- --board 3d
+                                               build, and run it with those flags
+    python scripts/windows.py --release        build/windows/release/
+                                               Draughts-VERSION-windows-x64.zip and -setup.exe
 
 Every build puts platform/windows/draughts.ico into the executable's resources afterwards
 (embed_icon), as a .rc file linked in would, which Goose's build has no key for: Explorer
@@ -143,14 +142,11 @@ def iscc():
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("program", type=Path)
+    native.add_program_args(ap)
     ap.add_argument("--run", action="store_true", help="run it after building")
     ap.add_argument("--release", action="store_true", help="Draughts.exe, zipped, and its installer, for a GitHub release")
-    ap.add_argument("args", nargs="*", help="the program's flags, after --")
-    a = ap.parse_args()
-    program = a.program.resolve()
-    if a.release and ngfx.uses_ngfx(program):
-        sys.exit("the build holding goose-ngfx isn't released")
+    a = native.parse_args(ap)
+    program = native.program_to_build(a, ngfx_ships=True)
     ngfx.prepare(program)
     exe = OUT / f"{program.stem}.exe"
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)

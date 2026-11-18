@@ -37,10 +37,44 @@ This replaces passing `src/main/draughts_ngfx.goose` (2026-11-18,
 ## Known problems
 
 - The iOS Simulator build of ngfx fails: the Simulator SDK lacks the Metal 4 types
-  (`MTL4CommandBuffer` and others). The Simulator may have to run gfx only.
+  (`MTL4CommandBuffer` and others). `scripts/ios.py` builds gfx alone for the Simulator.
 - CI clones goose-ngfx's default branch, unpinned.
 - Since the layout refactor, no release build, Windows or Linux build, or device run has
   been checked. The tablet check of goose_gfx `b8cd74b` is still open (task 010).
+
+## Checked (2026-11-18)
+
+- The ids, read from the built APK (`io.github.kaitk.draughts`) and the iOS Simulator's
+  and release's `.app` (`io.github.kaitk.draughts.app`, named Draughts).
+- The Mac (M1 Pro, macOS 26.3.1): `renderer: ngfx (auto)`, `--renderer gfx` on gfx, the 3D
+  game drawn on ngfx. The iOS Simulator (iPhone 13 mini): gfx, the 3D game in portrait.
+  The Pixel 7a: a build beside Play's (`--id-suffix check`, as Play's signature can't be
+  installed over), first start and the 3D game.
+
+- The release builds (0.9.1): the Mac's disk image signed, notarized, and stapled, every
+  part built for macOS 13.3 and goose-ngfx's Metal 4 classes imported weakly (not started
+  on a macOS older than 26: none at hand); the iOS `.ipa` (0.9.1, build 6) and Android's
+  APK and AAB (version code 7), not uploaded.
+
+## Windows and Linux releases
+
+On Windows, with the Vulkan SDK, goose-ngfx beside the repository (or `NGFX`) on its
+`main`, and slangc 2026.18.2 or later in `NGFX_SLANGC`:
+
+1. `python scripts/windows.py --release`: the zip and the installer in
+   `build/windows/release/`.
+2. `build\windows\draughts_ngfx.exe --frames 10` prints `renderer: ngfx (auto: <GPU>|<driver>|0.9.1 <commit>)`,
+   and `--renderer gfx` draws on gfx.
+3. The installer over 0.9.0 keeps the settings; settings' About shows 0.9.1 and the commit.
+4. `Get-FileHash -Algorithm SHA256` of both files, for `store/release-notes.md`.
+
+On Linux, gfx alone:
+
+1. `scripts/linux_release_docker.sh`, or `CC=clang-20 scripts/linux.py --release` in the
+   `draughts-jammy` box: the newest glibc it needs is 2.35.
+2. The tarball's `Draughts/draughts` starts on Wayland and with `SDL_VIDEO_DRIVER=x11`;
+   settings' About shows 0.9.1 and the commit.
+3. `sha256sum` of the tarball.
 
 ## Acceptance criteria
 

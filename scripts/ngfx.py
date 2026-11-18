@@ -139,7 +139,7 @@ def uses_ngfx(program):
 
 
 def prepare(program, sdk=None):
-    """build/ngfx/ for the program if it uses goose-ngfx: the link, the version header, and
+    """build/ngfx/ for the program if it uses goose-ngfx: the link, the version's C, and
     the blobs, their metallibs for sdk (iphoneos for iOS and iPadOS) or the Mac. Returns
     whether it does."""
     if not uses_ngfx(program):

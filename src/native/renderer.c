@@ -3,11 +3,6 @@
 // device, and which GPU and driver it would run on, for the crash marker's key; and the
 // window shown once ngfx has opened it hidden. In draughts_ngfx.build's c_sources.
 #include "platform.h"
-#if __has_include("../../build/draughts_version.h")
-#include "../../build/draughts_version.h"
-#else
-#define DRAUGHTS_VERSION "dev"
-#endif
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -15,9 +10,9 @@
 
 typedef struct { uint8_t *data; int64_t len; } draughts_bytes;
 
-// The app's version and the commit it was built from (DRAUGHTS_VERSION, which the build
-// scripts write into build/draughts_version.h, scripts/native.py).
-static const char version[] = DRAUGHTS_VERSION;
+// The app's version and the commit it was built from (build/draughts_version.c, which the
+// build scripts write, scripts/native.py).
+extern const char draughts_version[];
 
 // Which system this is: 0 macOS, 1 Windows, 2 Linux, 3 iOS.
 int64_t draughts_os(void) {
@@ -63,7 +58,7 @@ int64_t draughts_ngfx_check(draughts_bytes out) {
     sysctlbyname("kern.osproductversion", os, &size, 0, 0);
     char text[512];
     bool ok = family(device, supports, FAMILY_APPLE7) && family(device, supports, FAMILY_METAL4);
-    if (ok) snprintf(text, sizeof text, "%s|%s|%s", gpu, os, version);
+    if (ok) snprintf(text, sizeof text, "%s|%s|%s", gpu, os, draughts_version);
     else snprintf(text, sizeof text, "%s is not an Apple7 GPU with Metal 4", gpu);
     ((void (*)(void *, SEL))objc_msgSend)(device, sel_registerName("release"));
     return ok ? put(out, text) : -put(out, text);
@@ -143,7 +138,7 @@ int64_t draughts_ngfx_check(draughts_bytes out) {
         properties(list[i], &p);
         if (p.apiVersion < v14 || !has_all(list[i], extensions)) continue;
         if (ok && p.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) continue;
-        snprintf(text, sizeof text, "%s|%08x|%s", p.deviceName, p.driverVersion, version);
+        snprintf(text, sizeof text, "%s|%08x|%s", p.deviceName, p.driverVersion, draughts_version);
         ok = true;
         discrete = p.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
     }

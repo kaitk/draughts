@@ -20,6 +20,21 @@ a newer SDL fixes it. SDL `main` still had every entry below on 2026-11-18 (rele
 
 ## Goose
 
+### The native build cache ignores headers and the deployment target
+
+`goose build` compiles a C file of `c_sources` again only when the file itself changes,
+not a header it includes; and it configures a package's CMake build once, keeping its
+`CMAKE_OSX_DEPLOYMENT_TARGET` (empty unless `MACOSX_DEPLOYMENT_TARGET` was set the first
+time) for every later build. A Mac release of 0.9.1 carried an old version from a stale
+`about.o`, and goose-ngfx's Metal 4 classes as strong imports, built for macOS 26, so it
+would not start before macOS 26.
+
+- Here: the version is a C file, `build/draughts_version.c`, in both sidecars' `c_sources`;
+  `scripts/mac.py` sets `MACOSX_DEPLOYMENT_TARGET` for every build and stops a release that
+  imports a Metal 4 class strongly.
+- Upstream: a dependency file per object (`-MD`) for `c_sources`, and the deployment
+  target (and the compiler's other environment) in the native build's cache key.
+
 ### Direct3D 12: `gl_InstanceIndex` leaves out the draw's first instance
 
 A draw with a first instance reads `gl_InstanceIndex` from 0 on Direct3D 12 and from the

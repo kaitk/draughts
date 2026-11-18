@@ -4,16 +4,21 @@ The app builds from a Mac (Apple silicon), from Windows (x64), and from Linux (x
 
 | Build | From | Command | Section |
 | --- | --- | --- | --- |
-| macOS app | Mac | `scripts/mac.py src/main/draughts.goose` | [Run on the Mac](#run-on-the-mac) |
-| Windows app | Windows | `python scripts/windows.py src/main/draughts.goose` | [Run on Windows](#run-on-windows) |
-| Linux app | Linux | `scripts/linux.py src/main/draughts.goose` | [Run on Linux](#run-on-linux) |
-| Android APK | Mac, Windows | `scripts/android.py src/main/draughts.goose --run` | [Run on Android](#run-on-android) |
-| Android release (APK and AAB for Play) | Mac, Windows, with an upload key | `scripts/android.py src/main/draughts.goose --release` | [Release builds](#release-builds) |
-| macOS release (signed, notarized disk image) | Mac, with a Developer ID | `scripts/mac.py src/main/draughts.goose --release` | [Desktop releases](#desktop-releases) |
-| Windows release (zip and installer) | Windows | `python scripts/windows.py src/main/draughts.goose --release` | [Desktop releases](#desktop-releases) |
-| Linux release (tar.gz) | Linux, in an Ubuntu 22.04 container | `CC=clang-20 scripts/linux.py src/main/draughts.goose --release` | [Desktop releases](#desktop-releases) |
-| iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py src/main/draughts.goose --run`, `--device --run` | [Run on iOS](#run-on-ios) |
+| macOS app | Mac | `scripts/mac.py` | [Run on the Mac](#run-on-the-mac) |
+| Windows app | Windows | `python scripts/windows.py` | [Run on Windows](#run-on-windows) |
+| Linux app | Linux | `scripts/linux.py` | [Run on Linux](#run-on-linux) |
+| Android APK | Mac, Windows | `scripts/android.py --run` | [Run on Android](#run-on-android) |
+| Android release (APK and AAB for Play) | Mac, Windows, with an upload key | `scripts/android.py --release` | [Release builds](#release-builds) |
+| macOS release (signed, notarized disk image) | Mac, with a Developer ID | `scripts/mac.py --release` | [Desktop releases](#desktop-releases) |
+| Windows release (zip and installer) | Windows | `python scripts/windows.py --release` | [Desktop releases](#desktop-releases) |
+| Linux release (tar.gz) | Linux, in an Ubuntu 22.04 container | `CC=clang-20 scripts/linux.py --release` | [Desktop releases](#desktop-releases) |
+| iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py --run`, `--device --run` | [Run on iOS](#run-on-ios) |
 | Rules tests | Mac, Windows, Linux | `scripts/test.sh` | [Test the rules](#test-the-rules) |
+
+With no program, each script builds the app as it ships on its platform: both renderers
+(`src/main/draughts_ngfx.goose`) on macOS, iOS, and Windows, gfx alone
+(`src/main/draughts.goose`) on Android, Linux, and the iOS Simulator. `--gfx-only` builds
+gfx alone, and a program path builds that program (`scripts/mac.py tools/pace.goose`).
 
 ## Toolchain
 
@@ -30,6 +35,8 @@ On the Mac:
 | Python | `python3` | 3.x |
 | bundletool | `build/bundletool-1.18.3/`, fetched by `scripts/android.py --release` | 1.18.3 |
 | Xcode | `/Applications/Xcode.app`, for the iOS SDKs, clang, `simctl`, and `devicectl` | 26.4 |
+| goose-ngfx | a checkout beside this repository (`../goose-ngfx`); `NGFX` overrides it | its `main` |
+| slangc | `NGFX_SLANGC` names it | 2026.18.2 or later |
 | astcenc | `build/astcenc-5.7.0/bin/astcenc`, from the [release](https://github.com/ARM-software/astc-encoder/releases/tag/5.7.0) (not in Homebrew) | 5.7.0 |
 
 Set up from a fresh clone:
@@ -59,11 +66,11 @@ layer with the same changes.
 ## Run on the Mac
 
 ```sh
-scripts/mac.py src/main/draughts.goose     # build/draughts
+scripts/mac.py                             # build/draughts_ngfx
 cd src/main
-../../build/draughts
-../../build/draughts --theme sunset --size 800x1280
-../../build/draughts --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
+../../build/draughts_ngfx
+../../build/draughts_ngfx --theme sunset --size 800x1280
+../../build/draughts_ngfx --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
 ```
 
 The app is built, not run through `goose run`, which refuses a program that starts a
@@ -126,8 +133,8 @@ adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'
 
 ## Run on Windows
 
-Needs Visual Studio's Build Tools (`clang-cl`), Python, Git Bash (for `patch`), and for
-a release's installer Inno Setup 6 (`winget install JRSoftware.InnoSetup`). The
+Needs Visual Studio's Build Tools (`clang-cl`), Python, Git Bash (for `patch`), the Vulkan
+SDK, goose-ngfx and slangc as on the Mac, and for a release's installer Inno Setup 6 (`winget install JRSoftware.InnoSetup`). The
 submodules go in recursively, as on the Mac: goose_gfx's own SDL submodule is needed too,
 or goose_gfx's build stops at a missing `SDL_version.h`.
 
@@ -137,8 +144,8 @@ mkdir -p build && cd build
 curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-windows-x64.zip
 unzip -q goose-v2026.4-windows-x64.zip && rm goose-v2026.4-windows-x64.zip
 cd ..
-python scripts/windows.py src/main/draughts.goose                 # build/windows/draughts.exe
-python scripts/windows.py src/main/draughts.goose --run -- --board 3d --screen game
+python scripts/windows.py                 # build/windows/draughts_ngfx.exe
+python scripts/windows.py --run -- --board 3d --screen game
 ```
 
 The script builds goose_gfx into `build/windows/goose/` (delete it after the release
@@ -160,8 +167,8 @@ mkdir -p build && cd build
 curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-linux-x64.tar.gz
 tar xzf goose-v2026.4-linux-x64.tar.gz && rm goose-v2026.4-linux-x64.tar.gz
 cd ..
-scripts/linux.py src/main/draughts.goose                # build/linux/draughts
-scripts/linux.py src/main/draughts.goose --run -- --board 3d --screen game
+scripts/linux.py                # build/linux/draughts
+scripts/linux.py --run -- --board 3d --screen game
 ```
 
 The script builds goose_gfx into `build/linux/goose/` and SDL from the submodule with
@@ -176,8 +183,8 @@ the `build/linux/SDL/libSDL3.a` it left. SELinux there refuses TinyCC's code in 
 so run `test/run_tests.py --build`.
 
 ```sh
-distrobox enter draughts-jammy -- env CC=clang-20 scripts/linux.py src/main/draughts.goose
-scripts/linux.py src/main/draughts.goose               # then on the host
+distrobox enter draughts-jammy -- env CC=clang-20 scripts/linux.py
+scripts/linux.py               # then on the host
 ```
 
 `scripts/linux.py src/main/draughts_ngfx.goose` builds the ngfx renderer
@@ -263,7 +270,7 @@ Blocker** off (Settings → Security and privacy). Use USB mode **Transferring f
 allow the computer's key; `adb devices` should list it.
 
 ```sh
-scripts/android.py src/main/draughts.goose --run     # build, install, start
+scripts/android.py --run     # build, install, start
 adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 ```
 
@@ -297,7 +304,7 @@ sdk="$LOCALAPPDATA/Android/Sdk"
     "extras;google;usb_driver"
 winget install -e --id Kitware.CMake --scope user
 winget install -e --id Ninja-build.Ninja
-python scripts/android.py src/main/draughts.goose --run
+python scripts/android.py --run
 ```
 
 A device Windows doesn't list at all is on a charge-only cable.
@@ -310,7 +317,7 @@ past that where the saved games matter: copy the key from the computer that inst
 app, or install beside it:
 
 ```sh
-scripts/android.py src/main/draughts.goose --run --id-suffix test   # io.github.kaitk.draughts.test
+scripts/android.py --run --id-suffix test   # io.github.kaitk.draughts.test
 ```
 
 The script never uninstalls. `--debuggable` marks the APK for a GPU profiler on a device
@@ -334,11 +341,15 @@ within one frame, which `gfx::mouse_down` never sees.
 ## Run on iOS
 
 ```sh
-scripts/ios.py src/main/draughts.goose --run                     # build, and run in the simulator
-scripts/ios.py src/main/draughts.goose --shot build/ios/home.png # run, wait 3 s, save the screen
-scripts/ios.py src/main/draughts.goose --console --args "--screen game --lang et"
-scripts/ios.py src/main/draughts.goose --device --run            # on an attached iPhone or iPad
+scripts/ios.py --run                     # build, and run in the simulator
+scripts/ios.py --shot build/ios/home.png # run, wait 3 s, save the screen
+scripts/ios.py --console --args "--screen game --lang et"
+scripts/ios.py --device --run            # on an attached iPhone or iPad
 ```
+
+The simulator's build is gfx alone, as the Simulator's SDK lacks Metal 4's types; a device
+build holds both renderers and takes goose-ngfx's `goose.h` from its Mac build, so run
+`scripts/mac.py` once first.
 
 `scripts/ios.py` builds without an Xcode project, into `build/ios/<program>/sim/` or
 `device/`: one static executable (SDL without HIDAPI, whose CoreBluetooth App Store Connect
@@ -369,7 +380,7 @@ Management).
 ## Release builds
 
 ```sh
-scripts/android.py src/main/draughts.goose --release   # draughts-release.apk and .aab
+scripts/android.py --release   # draughts-release.apk and .aab
 ```
 
 A release is signed with the upload key and also makes the bundle Play takes, both in
@@ -407,8 +418,8 @@ disk image), and check the backup with `keytool -list -keystore upload-key.jks`.
 ### The App Store build
 
 ```sh
-scripts/ios.py src/main/draughts.goose --release            # build/ios/draughts/Draughts.ipa
-scripts/ios.py src/main/draughts.goose --release --upload   # and upload it to App Store Connect
+scripts/ios.py --release            # build/ios/draughts_ngfx/Draughts.ipa
+scripts/ios.py --release --upload   # and upload it to App Store Connect
 ```
 
 The device build signed with the App Store profile's Apple Distribution identity. Raise
@@ -425,7 +436,7 @@ repo:
 
 The Mac, Windows, and Linux apps go out as files on a GitHub release, built locally.
 
-**macOS.** `scripts/mac.py src/main/draughts.goose --release` builds
+**macOS.** `scripts/mac.py --release` builds
 `build/mac/release/Draughts.app` for macOS 13.3, Apple silicon only, signs it with the
 hardened runtime, and puts it in `Draughts-VERSION-macos-arm64.dmg`: the window where the
 app is dragged onto a link to Applications, on a card like the app's glass over a close
@@ -446,7 +457,7 @@ notarized, and stapled; the ticket covers the app inside it, as Zeiger's does
 `DRAUGHTS_MAC_IDENTITY` and `DRAUGHTS_NOTARY_PROFILE` override them. Without the identity
 the script signs ad hoc and stops before notarizing.
 
-**Windows.** `python scripts/windows.py src/main/draughts.goose --release` zips the
+**Windows.** `python scripts/windows.py --release` zips the
 executable alone into `build/windows/release/Draughts-VERSION-windows-x64.zip`: SDL and
 the C runtime are linked in, the icon `platform/windows/draughts.ico` embedded, and it is marked a
 GUI program. Beside it, Inno Setup 6 (`winget install JRSoftware.InnoSetup`) builds
@@ -457,7 +468,7 @@ installed game then starts without a warning. A code-signing certificate isn't w
 yearly cost for a free game; Steam (task 064) is the signed-free Windows path, where
 downloads carry no mark of the web and SmartScreen doesn't ask.
 
-**Linux.** `scripts/linux.py src/main/draughts.goose --release` writes
+**Linux.** `scripts/linux.py --release` writes
 `build/linux/release/Draughts-VERSION-linux-x64.tar.gz`: the stripped executable, a
 `.desktop` file, the icon, and `install.sh` (`--remove` undoes it). The executable needs a
 glibc as new as the one it was built against, so build it in an Ubuntu 22.04 container
@@ -474,7 +485,7 @@ sudo apt-get install -y libwayland-dev libxkbcommon-dev libdecor-0-dev wayland-p
 curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/llvm.gpg >/dev/null
 echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-20 main" | sudo tee /etc/apt/sources.list.d/llvm.list
 sudo apt-get update && sudo apt-get install -y clang-20
-CC=clang-20 scripts/linux.py src/main/draughts.goose --release
+CC=clang-20 scripts/linux.py --release
 ```
 
 A Docker `ubuntu:22.04` container does as well (as root, without `sudo`): build in a

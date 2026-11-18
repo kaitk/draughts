@@ -1,7 +1,7 @@
 // What settings' About shows of the build and the system (shell's settings::About,
 // filled by app.goose): the version and commit the build scripts write into
-// build/draughts_version.h (scripts/native.py), the system's name and version and the
-// CPU's, and the GPU's name. A plain `goose build` has no header and says "dev".
+// build/draughts_version.c (scripts/native.py), the system's name and version and the
+// CPU's, and the GPU's name.
 //
 // The GPU's name comes from Metal on Apple's systems and from Vulkan elsewhere, asked
 // once, the first time About opens: Vulkan's needs an instance of its own (gfx's SDL
@@ -12,13 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if __has_include("../../build/draughts_version.h")
-#include "../../build/draughts_version.h"
-#else
-#define DRAUGHTS_VERSION_NAME "dev"
-#define DRAUGHTS_COMMIT ""
-#define DRAUGHTS_COMMIT_DATE ""
-#endif
+extern const char draughts_version_name[], draughts_commit[], draughts_commit_date[];
 
 typedef struct { uint8_t *data; int64_t len; } draughts_bytes;
 
@@ -31,7 +25,10 @@ static int64_t put(draughts_bytes out, const char *text) {
 
 // "version|commit|date".
 int64_t draughts_about_build(draughts_bytes out) {
-    return put(out, DRAUGHTS_VERSION_NAME "|" DRAUGHTS_COMMIT "|" DRAUGHTS_COMMIT_DATE);
+    char text[128];
+    snprintf(text, sizeof text, "%s|%s|%s", draughts_version_name, draughts_commit,
+             draughts_commit_date);
+    return put(out, text);
 }
 
 #if defined(__aarch64__) || defined(_M_ARM64)

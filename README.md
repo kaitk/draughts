@@ -96,36 +96,35 @@ The whole app in plain words, from launch to one tap followed to the computer's 
 
 Draughts is two Goose programs over one app, both in `src/main/`:
 
-- `src/main/draughts.goose` draws through goose_gfx alone. This is the build that ships
-  on every platform: Android, iOS, macOS, Windows, and Linux.
 - `src/main/draughts_ngfx.goose` holds goose-ngfx (NoGraphicsAPI) too and picks a
-  renderer when it starts (`--renderer auto|gfx|ngfx`). It is a development build, made
-  by the same scripts on the Mac, Windows, and Linux, and by `scripts/ios.py` for an
-  iPhone or iPad.
+  renderer when it starts (`--renderer auto|gfx|ngfx`). This is the build that ships on
+  macOS, iOS, and Windows.
+- `src/main/draughts.goose` draws through goose_gfx alone. This is the build that ships
+  on Android and Linux, and the iOS Simulator runs it.
 
 Each root holds only `main`, which calls `run`, the main loop in `src/app/app.goose`.
 Its `.build` sidecar lists the program's C, which is in `src/native/`.
 
 ## Building and running
 
-Every build script takes `src/main/draughts.goose`, and all but Android's take
-`src/main/draughts_ngfx.goose` too, and writes into `build/`. The scripts need the submodule and the pinned Goose
+Every build script builds the app as it ships on its platform when given no program,
+`--gfx-only` builds `src/main/draughts.goose` in its place, and each writes into `build/`. The scripts need the submodule and the pinned Goose
 release in `build/`; [development](docs/development.md#toolchain) sets these up. On a Mac with Apple
 silicon:
 
 ```sh
-scripts/mac.py src/main/draughts.goose          # build/draughts
-build/draughts --board 3d
+scripts/mac.py                  # build/draughts_ngfx
+build/draughts_ngfx --board 3d
 ```
 
 | Platform | Build from | Command | More |
 | --- | --- | --- | --- |
-| macOS | Mac | `scripts/mac.py src/main/draughts.goose` | [Run on the Mac](docs/development.md#run-on-the-mac) |
-| Windows | Windows | `python scripts/windows.py src/main/draughts.goose --run` | [Run on Windows](docs/development.md#run-on-windows) |
-| Linux | Linux | `scripts/linux.py src/main/draughts.goose --run` | [Run on Linux](docs/development.md#run-on-linux) |
-| Android | Mac, Windows | `scripts/android.py src/main/draughts.goose --run`: build, install over USB, start | [Run on Android](docs/development.md#run-on-android) |
-| iOS | Mac with Xcode | `scripts/ios.py src/main/draughts.goose --run` in the Simulator, `--device --run` on an iPhone | [Run on iOS](docs/development.md#run-on-ios) |
-| Both renderers | Mac, Windows, Linux | `scripts/mac.py src/main/draughts_ngfx.goose --run`, likewise `windows.py` and `linux.py`, with a goose-ngfx checkout (`NGFX`) and slangc (`NGFX_SLANGC`) | [Two renderers](docs/architecture/rendering.md#two-renderers) |
+| macOS | Mac | `scripts/mac.py` | [Run on the Mac](docs/development.md#run-on-the-mac) |
+| Windows | Windows | `python scripts/windows.py --run` | [Run on Windows](docs/development.md#run-on-windows) |
+| Linux | Linux | `scripts/linux.py --run` | [Run on Linux](docs/development.md#run-on-linux) |
+| Android | Mac, Windows | `scripts/android.py --run`: build, install over USB, start | [Run on Android](docs/development.md#run-on-android) |
+| iOS | Mac with Xcode | `scripts/ios.py --run` in the Simulator, `--device --run` on an iPhone | [Run on iOS](docs/development.md#run-on-ios) |
+| goose-ngfx's part | Mac, Windows, Linux | a goose-ngfx checkout (`NGFX`) and slangc (`NGFX_SLANGC`) for the builds holding both renderers; `scripts/linux.py src/main/draughts_ngfx.goose` builds it on Linux | [Two renderers](docs/architecture/rendering.md#two-renderers) |
 
 `--release` makes the store and download builds; [development](docs/development.md) has
 them, the development flags, and how to measure a device.

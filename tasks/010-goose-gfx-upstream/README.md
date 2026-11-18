@@ -78,12 +78,14 @@ Not yet on the tablet, nor on an iOS device.
 ## Next
 
 1. Check the move to `b8cd74b` on the tablet over USB (idle CPU, `install -r`).
-2. `audio-pause`, once built: with sound on, SDL's audio thread mixes silence the whole
-   session (the Pixel 7a at rest: 4.5% of a core, against 0.12% for the program's thread),
-   as gfx's audio has no pause. A fork branch with `audio::pause(on)` and its Goose
-   `docs/stdlib.md` companion; Draughts pauses a few seconds after the last sound and
-   resumes on a press. Measure the resume's delay to the first sound on the Pixel and the
-   A33, then offer it upstream.
+2. `audio-pause`, set aside (2026-11-18): with sound on, SDL's audio thread runs the whole
+   session (the Pixel 7a at rest: 4.5% of a core, against 0.12% for the program's thread).
+   A pause doesn't stop it: SDL 3.4.16's device thread skips a paused stream but still
+   writes silence to the device every buffer (`src/audio/SDL_audio.c`). Closing the
+   device after a quiet stretch does, but `audio::open` blocks its caller while SDL's audio
+   starts: on the Mac 32 ms on average, 145 at worst, and `close` up to 153, ten rounds
+   each, which on the press that reopens it is a stutter. Sound is off by default on
+   phones and tablets, so this stays until gfx can open its device off the main thread.
 
 ## Acceptance criteria
 

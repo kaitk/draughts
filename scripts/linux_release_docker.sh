@@ -18,7 +18,7 @@ mkdir -p build && cd build
 curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-linux-x64.tar.gz
 tar xzf goose-v2026.4-linux-x64.tar.gz && rm goose-v2026.4-linux-x64.tar.gz
 cd ..
-CC=clang-20 python3 scripts/linux.py src/main/draughts.goose --release
+CC=clang-20 python3 scripts/linux.py --release
 objdump -T build/linux/release/Draughts/draughts | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1
 cp build/linux/release/Draughts-*-linux-x64.tar.gz /out/
 sha256sum /out/*.tar.gz

@@ -1,6 +1,7 @@
 // Draughts holding both renderers, gfx and goose-ngfx, one chosen when it starts
-// (src/ngfx/backend.goose, in place of src/gfx/backend.goose). The platform scripts build
-// it, after scripts/ngfx.py makes what build/ngfx/ holds.
+// (src/ngfx/backend.goose, in place of src/gfx/backend.goose): the build macOS, iOS, and
+// Windows ship. Their scripts build it by default, after scripts/ngfx.py makes what
+// build/ngfx/ holds.
 
 import ngfx from "../../build/ngfx/goose-ngfx";
 import rules from "../rules";

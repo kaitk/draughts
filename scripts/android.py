@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Build a Goose program into an Android APK, without Gradle, and optionally install it.
+"""Build Draughts into an Android APK, without Gradle, and optionally install it.
 
-    scripts/android.py src/main/draughts.goose    build build/android/<name>/<name>.apk
-    scripts/android.py src/main/draughts.goose --run
-                                                 build, install over adb, and start it
-    scripts/android.py src/main/draughts.goose --release
-                                                 <name>-release.apk and <name>-release.aab
-                                                 beside it, signed with the upload key, for Play
+    scripts/android.py                build build/android/draughts/draughts.apk, the app as
+                                      it ships: gfx alone, as goose-ngfx has no Android build
+    scripts/android.py --run          build, install over adb, and start it
+    scripts/android.py --release      draughts-release.apk and draughts-release.aab beside it,
+                                      signed with the upload key, for Play
+    scripts/android.py tools/pace.goose
+                                      build another Goose program, build/android/pace/pace.apk
 
 Steps: Goose writes the program's C and the runtime's C; goose_gfx's sources are copied
 from the submodule (kaitk/goose_gfx's main), and SDL is copied and patches/SDL applied; CMake with the
@@ -45,8 +46,8 @@ import zipfile
 from pathlib import Path
 
 import ngfx
-from native import (ROOT, VERSION_NAME, WINDOWS, app_id_of, app_names, copy_sources, goose_to_c,
-                    run, sidecar)
+from native import (ROOT, VERSION_NAME, WINDOWS, add_program_args, app_id_of, app_names, copy_sources,
+                    goose_to_c, program_to_build, run, sidecar)
 
 # Android Studio's default SDK on each host, unless ANDROID_HOME names one.
 SDK = Path(os.environ.get("ANDROID_HOME", Path(os.environ.get("LOCALAPPDATA", "")) / "Android/Sdk"
@@ -60,7 +61,7 @@ PLATFORM = Path(os.environ.get("ANDROID_PLATFORM", SDK / "platforms/android-36")
 # which lets `adb shell am start -n ID/.DraughtsActivity` work, and needs no change if the
 # id ever does before the first upload. The versionName is native.VERSION_NAME.
 ACTIVITY = "io.github.kaitk.draughts.DraughtsActivity"
-VERSION_CODE = 6          # raised for every upload to Play
+VERSION_CODE = 7          # raised for every upload to Play
 MIN_SDK = "29"
 TARGET_SDK = "36"         # what Play requires of new apps and updates from 2026-08-31
 UPLOAD_KEY = Path(os.environ.get("DRAUGHTS_UPLOAD_KEY",
@@ -154,7 +155,7 @@ def write_app_names(res_dir):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("program", type=Path)
+    add_program_args(ap)
     ap.add_argument("--run", action="store_true", help="install over adb and start it")
     ap.add_argument("--id-suffix", default="",
                     help="append .SUFFIX to the application id, to install a test build beside the app")
@@ -164,7 +165,7 @@ def main():
                     help="mark the APK debuggable, for GPU profilers (Streamline, AGI) on a device that isn't rooted")
     args = ap.parse_args()
     if args.debuggable and args.release: sys.exit("--debuggable is for test builds, not a release")
-    program = args.program.resolve()
+    program = program_to_build(args, ngfx_ships=False)
     if ngfx.uses_ngfx(program):
         sys.exit("goose-ngfx has no Android build")
     name = program.stem

@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""Build a Goose program into an iOS app, without an Xcode project, and optionally run it.
+"""Build Draughts into an iOS app, without an Xcode project, and optionally run it.
 
-    scripts/ios.py src/main/draughts.goose        build build/ios/<name>/sim/<Name>.app
-    scripts/ios.py src/main/draughts.goose --run  build, install in the simulator, and start it
-    scripts/ios.py src/main/draughts.goose --run --args "--screen game"
-                                                 the same, with development flags
-    scripts/ios.py src/main/draughts.goose --shot out.png --wait 4
-                                                 run, wait, and save the simulator's screen
-    scripts/ios.py src/main/draughts.goose --device --run
-                                                 build for the attached iPhone, sign, install, start
-    scripts/ios.py src/main/draughts_ngfx.goose --device --run
-                                                 the same holding both renderers (task 073), in its place
-    scripts/ios.py src/main/draughts.goose --release [--upload]
-                                                 build/ios/draughts/Draughts.ipa, signed for the
-                                                 App Store, and uploaded to App Store Connect
+    scripts/ios.py                build build/ios/draughts/sim/Draughts.app for the
+                                  simulator: gfx alone, as the Simulator's SDK lacks Metal 4
+    scripts/ios.py --run          build, install in the simulator, and start it
+    scripts/ios.py --run --args "--screen game"
+                                  the same, with development flags
+    scripts/ios.py --shot out.png --wait 4
+                                  run, wait, and save the simulator's screen
+    scripts/ios.py --device --run build build/ios/draughts_ngfx/device/Draughts.app, the app
+                                  as it ships: gfx and goose-ngfx; sign, install, start it
+    scripts/ios.py --device --gfx-only --run
+                                  the same with gfx alone, in its place
+    scripts/ios.py --release [--upload]
+                                  build/ios/draughts_ngfx/Draughts.ipa, signed for the
+                                  App Store, and uploaded to App Store Connect
 
 Steps, as scripts/android.py's: Goose writes the program's C and the runtime's C;
 goose_gfx's sources are copied from the submodule, and SDL is copied and
@@ -48,15 +49,15 @@ import time
 from pathlib import Path
 
 import ngfx
-from native import (IOS_ICON, ROOT, VERSION_NAME, app_id_of, app_names, copy_sources, goose_to_c,
-                    program_name, run, sidecar)
+from native import (IOS_ICON, ROOT, VERSION_NAME, add_program_args, app_id_of, app_names,
+                    copy_sources, goose_to_c, program_name, program_to_build, run, sidecar)
 
 # The bundle id, not Android's native.APP_ID: a free team on a locked Apple ID holds that
 # one, and this one is kept for good (2026-11-12, tasks/046-app-store-release.md). Another
 # program gets BUNDLE_ID.<name> (native.app_id_of). CFBundleShortVersionString is
 # native.VERSION_NAME.
 BUNDLE_ID = "io.github.kaitk.draughts.app"
-BUILD_NUMBER = "5"        # CFBundleVersion, raised for every upload
+BUILD_NUMBER = "6"        # CFBundleVersion, raised for every upload
 # A release build's App Store profile and the upload's API key ids, outside the repo
 # (docs/development.md, "Release builds"); DRAUGHTS_IOS_PROFILE, DRAUGHTS_ASC_PROPERTIES.
 RELEASE_PROFILE = "~/.config/draughts/draughts-app-store.mobileprovision"
@@ -137,7 +138,7 @@ def privacy_manifest(app):
         plistlib.dump(manifest, f)
 
 
-def write_bundle(app, exe, app_id, title, device, min_ios=MIN_IOS, label=""):
+def write_bundle(app, exe, app_id, title, device):
     """The .app: the executable, Info.plist, the launcher's name per language, the icon
     and the launch screen's colour (Assets.car), and the privacy manifest."""
     if app.exists():
@@ -146,7 +147,7 @@ def write_bundle(app, exe, app_id, title, device, min_ios=MIN_IOS, label=""):
     shutil.copy(exe, app / title)
     assets = asset_catalog(app.parent, app, device)
     privacy_manifest(app)
-    names = {lang: name + label for lang, name in app_names().items()}
+    names = app_names()
     platform = "iPhoneOS" if device else "iPhoneSimulator"
     sdk = "iphoneos" if device else "iphonesimulator"
     sdk_version = run("xcrun", "--sdk", sdk, "--show-sdk-version", capture=True).strip()
@@ -177,7 +178,7 @@ def write_bundle(app, exe, app_id, title, device, min_ios=MIN_IOS, label=""):
         "DTCompiler": "com.apple.compilers.llvm.clang.1_0",
         "BuildMachineOSBuild": run("sw_vers", "-buildVersion", capture=True).strip(),
         "LSRequiresIPhoneOS": True,
-        "MinimumOSVersion": min_ios,
+        "MinimumOSVersion": MIN_IOS,
         "UIDeviceFamily": [1, 2],
         "UIRequiredDeviceCapabilities": ["arm64", "metal"],
         # A launch screen makes iOS give the app the whole screen at its own size; without
@@ -272,7 +273,7 @@ def goose_h(ngfx_dir):
             found.append(header)
     if not found:
         sys.exit(f"no goose.h from a Mac build of {ngfx_dir}: "
-                 "build src/main/draughts_ngfx.goose with scripts/mac.py first")
+                 "build the app with scripts/mac.py first")
     return max(found, key=lambda h: h.stat().st_mtime).parent
 
 
@@ -421,7 +422,7 @@ def upload(ipa_path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("program", type=Path)
+    add_program_args(ap)
     ap.add_argument("--device", action="store_true", help="build for an iPhone, not the simulator")
     ap.add_argument("--run", action="store_true", help="install and start it")
     ap.add_argument("--args", default="", help="the program's flags, as one string")
@@ -435,25 +436,21 @@ def main():
     ap.add_argument("--upload", action="store_true",
                     help="with --release, upload the .ipa to App Store Connect")
     args = ap.parse_args()
-    program = args.program.resolve()
     if args.release:
         if args.run or args.shot or args.console:
             sys.exit("a release build can't be run here: TestFlight installs it")
-        if ngfx.uses_ngfx(program):
-            sys.exit("the build holding goose-ngfx isn't released")
         args.device = True
     elif args.upload:
         sys.exit("--upload needs --release")
+    program = program_to_build(args, ngfx_ships=args.device)
+    if not args.device and ngfx.uses_ngfx(program):
+        sys.exit("goose-ngfx doesn't build for the simulator: its SDK lacks Metal 4's types")
     name = program.stem
     app_id = app_id_of(program, BUNDLE_ID)
     title = "Draughts" if program_name(program) == "draughts" else name
     out = ROOT / "build/ios" / name
-    min_ios, label, ngfx_cmake = MIN_IOS, "", []
+    ngfx_cmake = []
     if ngfx.prepare(program, "iphoneos"):
-        # The gfx build's id (its sidecar's output): the iPhone wouldn't verify a new id of
-        # the team (2026-11-11), so this replaces the gfx build, keeping its data, and the
-        # gfx build goes back on to compare.
-        label = " ngfx"
         # From MIN_IOS too: NoGraphicsAPI links Metal 4 weakly and fails at run time before
         # iOS 26, where gfx draws (docs/decisions/README.md, the stack).
         ngfx_cmake = [f"-DGOOSE_NGFX={ngfx.NGFX}", f"-DGOOSE_H_DIR={goose_h(ngfx.NGFX)}"]
@@ -469,7 +466,7 @@ def main():
         "-DCMAKE_SYSTEM_NAME=iOS",
         f"-DCMAKE_OSX_SYSROOT={'iphoneos' if args.device else 'iphonesimulator'}",
         "-DCMAKE_OSX_ARCHITECTURES=arm64",
-        f"-DCMAKE_OSX_DEPLOYMENT_TARGET={min_ios}",
+        f"-DCMAKE_OSX_DEPLOYMENT_TARGET={MIN_IOS}",
         "-DCMAKE_BUILD_TYPE=Release", *ngfx_cmake,
         f"-DGOOSE_PROGRAM_C={gen / 'program.c'}",
         f"-DGOOSE_RUNTIME_C={gen / 'goose_runtime.c'}",
@@ -481,7 +478,7 @@ def main():
 
     # 3. The bundle, signed.
     app = out / plat / f"{title}.app"
-    write_bundle(app, native / "main", app_id, title, args.device, min_ios, label)
+    write_bundle(app, native / "main", app_id, title, args.device)
     if args.release:
         release_signing(app, out / plat, app_id)
     elif args.device:

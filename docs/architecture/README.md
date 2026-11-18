@@ -57,8 +57,9 @@ measuring a device, `tools/assets/` for making assets), `docs/`, and the rest. B
 `app/` means `src/app/`, and so on.
 
 **The programs are `main/`'s two roots**, and nothing else is there:
-`main/draughts.goose`, the build that ships, and `main/draughts_ngfx.goose`, the same
-program holding goose-ngfx too. Each declares the packages and picks its renderer's
+`main/draughts.goose`, gfx alone, which Android and Linux ship, and
+`main/draughts_ngfx.goose`, the same program holding goose-ngfx too, which macOS, iOS,
+and Windows ship. Each declares the packages and picks its renderer's
 `backend`; both call `run` in `app/app.goose`. Their `.build` sidecars list the
 program's C, all of it in `native/`.
 
@@ -106,8 +107,8 @@ hidden window of gfx's, gfx alone if that fails, and a marker that sends the nex
 to gfx if ngfx never presented a frame on this GPU, driver, and app. ngfx's shaders are
 gfx's GLSL written as Slang at each build (`scripts/ngfx_2d_shaders.py`,
 `ngfx_3d_shaders.py`), so each has one source; `src/ngfx/shaders/` holds only what they
-include, ngfx's own antialiasing and mip passes, and SMAA's wrapper. The platform scripts
-build that root. The gfx build is what ships.
+include, ngfx's own antialiasing and mip passes, and SMAA's wrapper. The scripts of
+macOS, iOS, and Windows build that root by default, and the gfx root with `--gfx-only`.
 
 The targets this keeps open, each replacing or adding to `app/` and the renderers alone:
 

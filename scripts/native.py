@@ -24,18 +24,20 @@ SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
 APP_ID = "io.github.kaitk.draughts"
 # The version people see: Android's versionName and iOS's CFBundleShortVersionString.
 # Each platform's build number is its own script's (VERSION_CODE, BUILD_NUMBER).
-VERSION_NAME = "0.9.0"
+VERSION_NAME = "0.9.1"
 # The shipped season's 1024 px icon, in git, for the iOS bundle: tools/assets/icon.py
 # writes it when the shipped season changes.
 IOS_ICON = ROOT / "platform/ios/icon-1024.png"
 
 
 def write_version():
-    """build/draughts_version.h: the version, the commit it is built from (-dirty when the
+    """build/draughts_version.c: the version, the commit it is built from (-dirty when the
     tree has changes), and the commit's date, which settings' About shows and the build
     holding both renderers keys its crash marker by (src/native/about.c, src/native/renderer.c).
-    Written only when it changes, so a build that changes nothing compiles nothing again.
-    Without git (a copy of the sources) the commit is "unknown"."""
+    A C file in the sidecars' c_sources, not a header: Goose's build compiles a C file
+    again when it changes, not when a header it includes does. Written only when it
+    changes, so a build that changes nothing compiles nothing again. Without git (a copy
+    of the sources) the commit is "unknown"."""
     def git(*a):
         r = subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True)
         return r.stdout.strip() if r.returncode == 0 else ""
@@ -43,11 +45,12 @@ def write_version():
     if commit != "unknown" and git("status", "--porcelain", "--untracked-files=no"):
         commit += "-dirty"
     date = git("log", "-1", "--format=%cs")
-    text = (f'#define DRAUGHTS_VERSION_NAME "{VERSION_NAME}"\n'
-            f'#define DRAUGHTS_COMMIT "{commit}"\n'
-            f'#define DRAUGHTS_COMMIT_DATE "{date}"\n'
-            f'#define DRAUGHTS_VERSION "{VERSION_NAME} {commit}"\n')
-    path = ROOT / "build/draughts_version.h"
+    text = ("// Written by scripts/native.py (write_version).\n"
+            f'const char draughts_version_name[] = "{VERSION_NAME}";\n'
+            f'const char draughts_commit[] = "{commit}";\n'
+            f'const char draughts_commit_date[] = "{date}";\n'
+            f'const char draughts_version[] = "{VERSION_NAME} {commit}";\n')
+    path = ROOT / "build/draughts_version.c"
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists() or path.read_text(encoding="utf-8") != text:
         path.write_bytes(text.encode())
@@ -81,6 +84,38 @@ def program_name(program):
     roots get one each."""
     m = re.search(r'\boutput\s*=\s*"([^"]*)"', sidecar_text(program))
     return m.group(1) if m else program.stem
+
+
+GFX_ROOT = ROOT / "src/main/draughts.goose"
+BOTH_ROOT = ROOT / "src/main/draughts_ngfx.goose"
+
+
+def add_program_args(ap):
+    ap.add_argument("program", type=Path, nargs="?",
+                    help="a Goose program (a tool, a bench); the app as it ships here by default")
+    ap.add_argument("--gfx-only", action="store_true",
+                    help="the app without goose-ngfx (src/main/draughts.goose)")
+
+
+def parse_args(ap):
+    """The arguments, and in a.args the program's flags after --, which argparse would
+    take for the optional program."""
+    argv = sys.argv[1:]
+    cut = argv.index("--") if "--" in argv else len(argv)
+    a = ap.parse_args(argv[:cut])
+    a.args = argv[cut + 1:]
+    return a
+
+
+def program_to_build(a, ngfx_ships):
+    """The program the script was given, else the app as it ships on the platform: both
+    renderers where ngfx_ships, gfx alone elsewhere or with --gfx-only. A release builds
+    the app only."""
+    if a.program and (a.gfx_only or a.release):
+        sys.exit(("--release" if a.release else "--gfx-only") + " builds the app: give no program")
+    if a.program:
+        return a.program.resolve()
+    return BOTH_ROOT if ngfx_ships and not a.gfx_only else GFX_ROOT
 
 
 def app_id_of(program, base=APP_ID):

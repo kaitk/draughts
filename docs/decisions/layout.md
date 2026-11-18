@@ -113,6 +113,27 @@ split is in [the code's layout](README.md#the-codes-layout).
   and adb from `scripts/android.py` and the Goose-to-C step from `scripts/native.py`, so
   an NDK or Goose update changes one place.
 
+## What ships, and what the scripts build (2026-11-18, task 096)
+
+- macOS, iOS, and Windows ship `src/main/draughts_ngfx.goose`, both renderers, chosen at
+  start with gfx to fall back on ([rendering](../architecture/rendering.md#two-renderers));
+  Android and Linux ship `src/main/draughts.goose`: goose-ngfx has no Android build, and
+  on Linux gfx measured faster (task 065). This replaces gfx shipping everywhere, with the
+  ngfx root a development build that every `--release` refused (above).
+- With no program, each platform script builds the app as it ships there, and
+  `--release` builds the same; `--gfx-only` builds the gfx root in its place, to compare
+  the renderers or as the way out if ngfx breaks a release; a program path builds that
+  program, for tools and benches. A release takes no program, so it is always the app.
+  This replaces passing `src/main/draughts_ngfx.goose` to get both renderers (above).
+  Rejected: `--gfx`, which reads as if the default lacked gfx.
+- The iOS Simulator builds gfx alone, as its SDK lacks Metal 4's types
+  (`MTL4CommandBuffer`); `scripts/ios.py` builds both renderers for `--device` and
+  `--release`, and refuses the ngfx root for the Simulator.
+- The ids stay: both sidecars' `output` gives them. The iOS build holding goose-ngfx no
+  longer adds " ngfx" to the launcher's name, now that it is the app. Build folders keep
+  the file's name (`build/draughts_ngfx`, `build/ios/draughts_ngfx/`), so the two roots'
+  builds still don't overwrite each other.
+
 ## Rejected (2026-11-18)
 
 - Dropping `src/` and putting the packages at the root: the root would mix the

@@ -178,13 +178,13 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 <div class="tablewrap"><table>
 <thead><tr><th>Folder</th><th>Holds</th></tr></thead>
 <tbody>
-<tr><td><code>src/main/</code></td><td>The two programs, a few lines each: <code>main()</code> calls <code>run()</code>. <code>draughts.goose</code> draws through goose_gfx and is the one that ships. <code>draughts_ngfx.goose</code> holds goose-ngfx too and picks one when it starts. Each has a <code>.build</code> file beside it naming the C it needs.</td></tr>
+<tr><td><code>src/main/</code></td><td>The two programs, a few lines each: <code>main()</code> calls <code>run()</code>. <code>draughts.goose</code> draws through goose_gfx alone and ships on Android and Linux. <code>draughts_ngfx.goose</code> holds goose-ngfx too, picks one when it starts, and ships on macOS, iOS, and Windows. Each has a <code>.build</code> file beside it naming the C it needs.</td></tr>
 <tr><td><code>src/app/</code></td><td>The loop, the host, the renderer and its drawers, the font, the colours, the computer's thread, and the developer flags.</td></tr>
 <tr><td><code>src/gfx/</code>, <code>src/ngfx/</code></td><td>The two recorders, the only code that calls a graphics library. Each turns what the drawers ask for into GPU work for its renderer (section 4).</td></tr>
 <tr><td><code>src/native/</code></td><td>The few jobs done in C: the storage folder, the languages, the display and safe area, the alarm, the sound device, and the photograph.</td></tr>
 <tr><td><code>src/rules/</code> … <code>src/badges/</code></td><td>Everything else, the floors of section 5. All of it is plain code, tested with no window.</td></tr>
 <tr><td><code>platform/</code></td><td>What each system needs around the program: Android's activity and resources, the iOS project, the desktop icons, the Windows installer.</td></tr>
-<tr><td><code>scripts/</code></td><td>One build script per platform, each given the program: <code>scripts/mac.py src/main/draughts.goose</code>. Also the test run.</td></tr>
+<tr><td><code>scripts/</code></td><td>One build script per platform, each building the app as it ships there: <code>scripts/mac.py</code>. Also the test run.</td></tr>
 <tr><td><code>tools/</code></td><td>Programs for whoever works on it: perft, the computer's benchmarks, the puzzle checker, device measurements (<code>perf/</code>), and the scripts that make pictures and sounds (<code>assets/</code>).</td></tr>
 <tr><td><code>test/</code>, <code>strings/</code>, <code>assets/</code></td><td>The tests and their expected output, the words in each language, and the fonts, badges, and sounds.</td></tr>
 <tr><td><code>third_party/</code>, <code>patches/</code></td><td>goose_gfx with SDL, as a submodule, and the patches applied to SDL when it builds.</td></tr>
@@ -248,7 +248,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 </ul>
 
 <h2>4. The renderer</h2>
-<p><code>render::Renderer</code> holds every painter and everything they keep on the GPU. Each painter decides what to draw; a small recorder per renderer puts it on the GPU: gfx's (<code>src/gfx/</code>) in the app that ships, goose-ngfx's (<code>src/ngfx/</code>) in the build of <code>src/main/draughts_ngfx.goose</code>. The loop hands it a <code>render::Frame</code> of plain values: the board as <code>shell::build_frame_pieces</code> left it, its layout, the pieces over the UI and the UI's quads (as slices), the 3D board's camera, the blur, the hole, the time, and the screen's size. <code>render::frame</code> then paints, always in the same order:</p>
+<p><code>render::Renderer</code> holds every painter and everything they keep on the GPU. Each painter decides what to draw; a small recorder per renderer puts it on the GPU: gfx's (<code>src/gfx/</code>) in both programs, goose-ngfx's (<code>src/ngfx/</code>) in <code>src/main/draughts_ngfx.goose</code>. The loop hands it a <code>render::Frame</code> of plain values: the board as <code>shell::build_frame_pieces</code> left it, its layout, the pieces over the UI and the UI's quads (as slices), the 3D board's camera, the blur, the hole, the time, and the screen's size. <code>render::frame</code> then paints, always in the same order:</p>
 <ol class="steps">
   <li><b>Work that can't happen on the screen.</b> Copy the UI's quads up, draw the 3D board's picture into its own texture if the 3D board is on, and copy up the pieces.<span class="where">widgets::prepare · draw3d::frame · draw::upload</span></li>
   <li><b>Open the screen's pass.</b><span class="where">gfx::begin_pass</span></li>

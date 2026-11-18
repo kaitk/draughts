@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Build a Goose program for the Mac with the patched goose_gfx, and optionally run it.
+"""Build Draughts for the Mac with the patched goose_gfx, and optionally run it.
 
-    scripts/mac.py src/main/draughts.goose                     build build/draughts
-    scripts/mac.py src/main/draughts_ngfx.goose                build build/draughts_ngfx, holding
-                                                              goose-ngfx too (scripts/ngfx.py)
-    scripts/mac.py src/main/draughts.goose --run -- --board 3d build, and run it with those flags
-    scripts/mac.py src/main/draughts.goose --release           Draughts.app, signed and notarized,
-                                                              in a disk image for a GitHub release
-    scripts/mac.py src/main/draughts.goose --release --no-notarize   the same, signed but not notarized
+    scripts/mac.py                             build build/draughts_ngfx, the app as it ships:
+                                               gfx and goose-ngfx (scripts/ngfx.py)
+    scripts/mac.py --gfx-only                  build build/draughts, gfx alone
+    scripts/mac.py --run -- --board 3d         build, and run it with those flags
+    scripts/mac.py tools/pace.goose            build another Goose program, build/pace
+    scripts/mac.py --release                   Draughts.app, signed and notarized,
+                                               in a disk image for a GitHub release
+    scripts/mac.py --release --no-notarize     the same, signed but not notarized
 
 A release (docs/development.md, "Desktop releases") builds for MIN_MACOS, wraps the
 executable in build/mac/release/Draughts.app (Info.plist, the launcher's name per
@@ -56,12 +57,14 @@ def patched_goose():
     """build/mac/goose/: the release with libgoose_gfx.a rebuilt from the patched sources."""
     return native.patched_goose(
         OUT, RELEASE, "goose", "libgoose_gfx.a",
-        lambda c, o: ["clang", "-c", "-O2", "-DNDEBUG", "-I", native.SDL / "include", c, "-o", o],
+        lambda c, o: ["clang", "-c", "-O2", "-DNDEBUG", f"-mmacosx-version-min={MIN_MACOS}",
+                      "-I", native.SDL / "include", c, "-o", o],
         lambda lib, objs: ["ar", "rcs", lib, *objs])
 
 
-MIN_MACOS = "13.3"            # a release's LSMinimumSystemVersion and deployment target: the
-                              # Goose release's libSDL3.a and runtime are built for 13.3
+MIN_MACOS = "13.3"            # every build's deployment target and a release's
+                              # LSMinimumSystemVersion: the Goose release's libSDL3.a and
+                              # runtime are built for 13.3
 NOTARY_PROFILE = os.environ.get("DRAUGHTS_NOTARY_PROFILE", "draughts-notary")
 CATEGORY = "public.app-category.board-games"
 
@@ -210,13 +213,25 @@ def disk_image(app, dmg):
     writable.unlink()
 
 
+def check_weak_metal(exe):
+    """Stops a release whose Metal 4 classes are imported strongly: before macOS 26 dyld
+    would refuse to start it, before it could fall back to gfx. Goose builds a package's
+    C once and keeps it, whatever the deployment target (docs/goose-findings.md)."""
+    strong = [line.split()[1] for line in native.run("dyld_info", "-imports", exe, capture=True).splitlines()
+              if "(from Metal)" in line and "MTL4" in line and "[weak-import]" not in line]
+    if strong:
+        sys.exit(f"{exe} imports {len(strong)} Metal 4 classes strongly ({strong[0]}...): goose-ngfx's C "
+                 f"was built for a newer macOS than {MIN_MACOS}. Delete its build under "
+                 "~/.goose/build/pkg/local/ and build again")
+
+
 def release(program, notarize):
     """The signed, notarized Draughts.app in a disk image (the module's docstring)."""
-    os.environ["MACOSX_DEPLOYMENT_TARGET"] = MIN_MACOS
     out = OUT / "release"
     out.mkdir(parents=True, exist_ok=True)
     exe = out / "draughts"
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
+    check_weak_metal(exe)
     app = bundle(exe, out)
     who = identity()
     dmg = out / f"Draughts-{native.VERSION_NAME}-macos-arm64.dmg"
@@ -242,19 +257,17 @@ def release(program, notarize):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("program", type=Path)
+    native.add_program_args(ap)
     ap.add_argument("-o", type=Path, help="the executable (build/<program> by default)")
     ap.add_argument("--run", action="store_true", help="run it after building")
     ap.add_argument("--release", action="store_true", help="Draughts.app, signed and notarized, in a disk image")
     ap.add_argument("--no-notarize", action="store_true", help="with --release: sign, but don't notarize")
-    ap.add_argument("args", nargs="*", help="the program's flags, after --")
-    a = ap.parse_args()
-    program = a.program.resolve()
-    if a.release:
-        if ngfx.uses_ngfx(program):
-            sys.exit("the build holding goose-ngfx isn't released")
-        return release(program, not a.no_notarize)
+    a = native.parse_args(ap)
+    os.environ["MACOSX_DEPLOYMENT_TARGET"] = MIN_MACOS
+    program = native.program_to_build(a, ngfx_ships=True)
     ngfx.prepare(program)
+    if a.release:
+        return release(program, not a.no_notarize)
     exe = (a.o or native.ROOT / "build" / program.stem).resolve()
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
     if a.run:

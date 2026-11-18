@@ -30,8 +30,8 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
 
 ### Two renderers
 
-gfx ships everywhere; the build holding goose-ngfx too (`src/main/draughts_ngfx.goose`) draws the same
-frames through either, chosen at start (`--renderer auto|gfx|ngfx`). The drawers (`draw`,
+The build holding goose-ngfx too (`src/main/draughts_ngfx.goose`) ships on macOS, iOS, and
+Windows, gfx alone on Android and Linux; it draws the same frames through either, chosen at start (`--renderer auto|gfx|ngfx`). The drawers (`draw`,
 `scene`, `widgets`, `draw3d`, `render3d`) are shared: each records through a backend
 handed to it, `be`, calling the few calls every drawer makes on it (`be.flush()`,
 `be.begin_pass(...)`) and its own recorder on a field (`be.draw.board(...)`,
@@ -52,7 +52,7 @@ goose-ngfx's shaders are gfx's GLSL, written as Slang at each build into
 `build/ngfx/shaders/` (`scripts/ngfx_2d_shaders.py`, `ngfx_3d_shaders.py`) and compiled
 ahead into `build/ngfx/blobs/`, which `src/ngfx/` embeds. `scripts/ngfx.py` also links the
 goose-ngfx checkout at `build/ngfx/goose-ngfx`. Every build script writes the app's
-version and commit into `build/draughts_version.h` (`scripts/native.py`), which settings'
+version and commit into `build/draughts_version.c` (`scripts/native.py`), which settings'
 About shows and the crash marker is keyed by.
 
 ## UI layer
