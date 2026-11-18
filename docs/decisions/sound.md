@@ -48,7 +48,7 @@ The decisions behind the app's sounds, dated, with their reasons. How they work 
   Pieces" (Freesound 765866, CC0) for a move and JJTaynos's "Chess Pieces Move (Close)"
   (733927, CC0) for the taken pieces. No credit is owed. Kept by ear: the move's hits 1,
   2, 3, 9, 10, and 11 (the more muted ones) and the take's 2, 4, 5, and 6 (the four least
-  like a move), as `tools/sound_hits.py` numbers them. The originals stay local in
+  like a move), as `tools/assets/sound_hits.py` numbers them. The originals stay local in
   `design/sounds/`; download them from the Freesound pages (a free account) to rebuild.
   Rejected: synthesized knocks, the first of which sounded like an 80s karate game, and
   about 30 other Freesound candidates (chess, crokinole, Scrabble tiles, go stones,

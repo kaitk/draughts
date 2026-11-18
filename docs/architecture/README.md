@@ -50,12 +50,12 @@ feeds them the pointer and the time and draws what they leave.
 **The program's code is under `src/`**, as the tests are under
 `test/`: `src/` holds the packages and the app, one directory each, and the top level
 keeps what isn't the program's Goose: `test/`, `tools/`, `strings/` (the text and its
-loader, shared with the build scripts), `assets/`, `android/`, `scripts/`, `docs/`, and
+loader, shared with the build scripts), `assets/`, `platform/android/`, `scripts/`, `docs/`, and
 the rest. Below, `app/` means `src/app/`, and so on.
 
 **The rule: only `app/` imports `gfx` or calls SDL or the platform.** The
 packages hand it flat, fixed-size data and take back the pointer and the time; nothing
-outside `app/` (and `android/`, the build scripts) knows what draws or what it runs on.
+outside `app/` (and `platform/android/`, the build scripts) knows what draws or what it runs on.
 One package is drawing code outside `app/`: `render3d/`, the 3D board's renderer, which
 the app and `tools/board_shot.goose` (settings' board pictures) share. Its recording (`render3d_gpu`) imports
 gfx, and only those two programs import it; no package of the game does. What the 3D board
@@ -103,7 +103,7 @@ The targets this keeps open, each replacing or adding to `app/` alone:
   of it, the camera and its fit into the layout, a tap turned into a square by a ray
   through the perspective, and each frame's instances, stays plain math in `board/`
   (`view3d`), tested headless.
-- **Other platforms on SDL:** iOS (UIKit, SDL_GPU on Metal; `ios/` and
+- **Other platforms on SDL:** iOS (UIKit, SDL_GPU on Metal; `platform/ios/` and
   `scripts/ios.py`, [development](../development.md#run-on-ios)), and desktop Windows and Linux (SDL_GPU on
   Vulkan, on Linux in a Wayland window, or X11's without Wayland; built by
   `scripts/windows.py` and `scripts/linux.py`, which builds SDL itself): a build script and shims beside the Android ones (storage, locales, the

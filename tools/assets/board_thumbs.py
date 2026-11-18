@@ -2,7 +2,7 @@
 """Make the board pictures settings' Board row shows, one atlas, with tools/board_shot.goose
 and ImageMagick.
 
-    scripts/board_thumbs.py          write design/boards/boards.jpg and boards-6x6.astc
+    tools/assets/board_thumbs.py          write design/boards/boards.jpg and boards-6x6.astc
 
 Each season's board in its wood, stone, and carved look (docs/architecture/rendering.md,
 "Settings"; the looks are looks::of's) is shot headless with build/board_shot, built here
@@ -17,8 +17,11 @@ app embeds (src/native/background.c); its PNG master stays in build/.
 It needs astcenc (docs/development.md).
 """
 import subprocess
+import sys
+from pathlib import Path
 
-from native import GOOSE, ROOT
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "scripts"))
+from native import GOOSE, ROOT  # noqa: E402
 
 OUT = ROOT / "design/boards"
 WORK = ROOT / "build/board-thumbs"

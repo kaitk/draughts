@@ -1,4 +1,4 @@
-// The app's IMA ADPCM decoder against tools/sound_hits.py's encoder: each embedded hit's
+// The app's IMA ADPCM decoder against tools/assets/sound_hits.py's encoder: each embedded hit's
 // samples and a checksum of its decoded 16-bit values, which the tool writes as this
 // test's expected output when it builds assets/sounds/hits.bin. A decoder that drifts by
 // one step in one sample changes a checksum.

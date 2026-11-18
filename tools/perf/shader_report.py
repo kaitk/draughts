@@ -8,9 +8,9 @@ writes them to build/shaders/<name>.<stage>, checks each with glslangValidator (
 Vulkan SDK's) into SPIR-V, and, when malioc is on PATH (Arm Performance Studio), prints
 its report for the given cores.
 
-    python scripts/shader_report.py                     # extract and check only
-    python scripts/shader_report.py --core Mali-G615    # and malioc's report (the tablet)
-    python scripts/shader_report.py --core Mali-G710 --core Mali-G68
+    python tools/perf/shader_report.py                     # extract and check only
+    python tools/perf/shader_report.py --core Mali-G615    # and malioc's report (the tablet)
+    python tools/perf/shader_report.py --core Mali-G710 --core Mali-G68
 """
 import argparse
 import os
@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # A part names a constant of src/render3d/shaders.goose, or of another file as file.NAME.
 SOURCES = {"": os.path.join(ROOT, "src", "render3d", "shaders.goose"),
            "draw.": os.path.join(ROOT, "src", "app", "draw.goose"),

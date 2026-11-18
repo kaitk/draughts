@@ -3,16 +3,16 @@
 # ANDROID_SERIAL names), on both boards in the same game scene: Russian, wood, the start.
 # With the release installed and the screen kept on (adb shell svc power stayon true).
 #
-#   scripts/device_perf.sh [frames]     default 1000 (the bench's most)
-#   BOARDS=flat scripts/device_perf.sh  one board only (flat or 3d)
+#   tools/perf/device_perf.sh [frames]     default 1000 (the bench's most)
+#   BOARDS=flat tools/perf/device_perf.sh  one board only (flat or 3d)
 #
 # Per board, once the device is cool: the bench (--bench N), and over its presented
 # frames the compositor's own count (SurfaceFlinger's timestats): how long each frame
 # stayed on screen, which no clock in the app can tell. From that: frames per second on
 # average and at the 1% low (the 99th percentile's frame), the frame time's P50 and P99,
 # and how many frames were dropped (the one before on screen for more than one refresh). Then the app
-# opened again and left at rest: its idle CPU for 25 s (scripts/idle_cpu.sh) and memory.
-P=$(sed -n 's/^APP_ID = "\(.*\)"/\1/p' "$(dirname "$0")/native.py")   # the application id
+# opened again and left at rest: its idle CPU for 25 s (tools/perf/idle_cpu.sh) and memory.
+P=$(sed -n 's/^APP_ID = "\(.*\)"/\1/p' "$(dirname "$0")/../../scripts/native.py")   # the application id
 N=${1:-1000}
 A=$P/.DraughtsActivity
 SCENE="--screen game --theme wood --variant russian"
@@ -28,7 +28,7 @@ await() { adb logcat -m 1 -e "$1" >/dev/null; }
 # (build/android/draughts/draughts-release.apk) and the commit it was built from.
 apk=$(adb shell pm path $P | sed -n 's/^package://p' | tr -d '\r' | head -1)
 sum=$(adb shell sha256sum "$apk" | cut -d' ' -f1)
-built="$(dirname "$0")/../build/android/draughts/draughts-release.apk"
+built="$(dirname "$0")/../../build/android/draughts/draughts-release.apk"
 if [ -f "$built" ] && [ "$( (sha256sum "$built" 2>/dev/null || shasum -a 256 "$built") | cut -d' ' -f1)" = "$sum" ]; then
   echo "build: the release built here from $(cat "${built%.apk}.commit" 2>/dev/null || echo 'an unrecorded commit'), sha256 $(echo $sum | cut -c1-12)"
 else

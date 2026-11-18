@@ -17,12 +17,12 @@
 
 Steps, as scripts/android.py's: Goose writes the program's C and the runtime's C;
 goose_gfx's sources are copied from the submodule, and SDL is copied and
-patches/SDL applied; CMake with Ninja and Xcode's clang builds ios/CMakeLists.txt, one
+patches/SDL applied; CMake with Ninja and Xcode's clang builds platform/ios/CMakeLists.txt, one
 executable with SDL linked statically; the bundle is the executable, an Info.plist written
 here (the id, the version, full screen, the launch screen in the icon's background),
 the launcher's name per language (<lang>.lproj/InfoPlist.strings from strings/<lang>.txt's
 app.name), the icon and the launch screen's colour in an asset catalog compiled by
-actool into Assets.car (the shipped season's icon, ios/icon-1024.png, made by
+actool into Assets.car (the shipped season's icon, platform/ios/icon-1024.png, made by
 scripts/icon.py), and the privacy manifest, PrivacyInfo.xcprivacy. A simulator build is
 signed ad hoc; a device build with the Mac's development
 identity and a provisioning profile for the app's id (docs/development.md, "Run on
@@ -83,14 +83,14 @@ PRIVACY_APIS = {
 
 def icon_background():
     """The shipped icon's background, the colour Android's window and splash take
-    (android/res/values/colors.xml), as #rrggbb."""
-    xml = (ROOT / "android/res/values/colors.xml").read_text()
+    (platform/android/res/values/colors.xml), as #rrggbb."""
+    xml = (ROOT / "platform/android/res/values/colors.xml").read_text()
     return "#" + re.search(r'name="icon_background">#([0-9a-fA-F]{6})<', xml).group(1).lower()
 
 
 def apple_icon():
-    """The shipped season's 1024 px icon, in git (ios/icon-1024.png), as scripts/icon.py
-    writes it with android/res's foregrounds when the shipped season changes."""
+    """The shipped season's 1024 px icon, in git (platform/ios/icon-1024.png), as scripts/icon.py
+    writes it with platform/android/res's foregrounds when the shipped season changes."""
     return icon.IOS_ICON
 
 
@@ -472,7 +472,7 @@ def main():
 
     # 2. goose_gfx's C layers and SDL, patched copies (native.py), then the executable.
     gfx_src, sdl_src = copy_sources(out, ROOT / "build/ios/SDL_src")
-    run("cmake", "-S", ROOT / "ios", "-B", native, "-G", "Ninja",
+    run("cmake", "-S", ROOT / "platform/ios", "-B", native, "-G", "Ninja",
         "-DCMAKE_SYSTEM_NAME=iOS",
         f"-DCMAKE_OSX_SYSROOT={'iphoneos' if args.device else 'iphonesimulator'}",
         "-DCMAKE_OSX_ARCHITECTURES=arm64",
@@ -512,7 +512,7 @@ def main():
     else:
         run("codesign", "--force", "--sign", "-", "--timestamp=none", app)
     # The commit it was built from, beside it, for the measurements that name their build
-    # (scripts/ios_perf.py): "dirty" when the sources differed from it.
+    # (tools/perf/ios_perf.py): "dirty" when the sources differed from it.
     head = subprocess.run(["git", "log", "-1", "--format=%h %cs"], cwd=ROOT, capture_output=True,
                           text=True).stdout.strip()
     dirty = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", "src", "strings", "assets", "ios"],

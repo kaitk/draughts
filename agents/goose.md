@@ -120,7 +120,7 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - On the Mac it links as its own dylib with no undefined symbols, so it can't call SDL
   directly: look functions up with `dlsym(RTLD_DEFAULT, ...)`. On Android it links
   libSDL3.so directly (`src/native/locale.c`).
-- iOS-only Objective-C goes in `ios/` on `ios/CMakeLists.txt`'s executable, never in
+- iOS-only Objective-C goes in `platform/ios/` on `platform/ios/CMakeLists.txt`'s executable, never in
   `c_sources`; the C calls it under `#if DRAUGHTS_IOS`. SDL's `UIWindow` comes from
   `SDL_PROP_WINDOW_UIKIT_WINDOW_POINTER`.
 - Java: `SDL_GetAndroidJNIEnv()` and `SDL_GetAndroidActivity()`, then `GetObjectClass`
@@ -252,7 +252,7 @@ What `src/app/think.goose` needed (`reference.md` section 22, spec 11.2):
 - Workers still running when `main` returns are killed.
 - Each data stack reserves 2 GB of address space (`goose build --stacks` lists them); iOS
   maps far less, so its build passes `--stack-reserve 128M` (`scripts/ios.py`).
-- Threads work on Android as on the Mac (`scripts/android_cli.sh`).
+- Threads work on Android as on the Mac (`tools/android_cli.sh`).
 
 ## Speed
 

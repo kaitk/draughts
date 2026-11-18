@@ -3,12 +3,12 @@
 # Goose program (SDLThread) and of the whole process, and how often the program's thread
 # went to sleep. Touch nothing while it runs. The app must be running.
 #
-#   scripts/idle_cpu.sh [seconds]      default 60
+#   tools/perf/idle_cpu.sh [seconds]      default 60
 #
 # An idle board should show a fraction of a percent and about one voluntary switch a
 # second (frame()'s wait). A spinning loop shows near 100% and almost no voluntary
 # switches.
-P=$(sed -n 's/^APP_ID = "\(.*\)"/\1/p' "$(dirname "$0")/native.py")   # the application id
+P=$(sed -n 's/^APP_ID = "\(.*\)"/\1/p' "$(dirname "$0")/../../scripts/native.py")   # the application id
 S=${1:-60}
 pid=$(adb shell pidof $P | tr -d '\r')
 [ -n "$pid" ] || { echo "$P is not running" >&2; exit 1; }

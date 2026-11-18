@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Windows' rows of the README's performance table, as scripts/device_perf.sh takes an
+"""Windows' rows of the README's performance table, as tools/perf/device_perf.sh takes an
 Android device's and ios_perf.py the iPhone's: both boards full screen in the same game
 scene (Russian, wood, the start).
 
-    python scripts/windows_perf.py [frames]     default 1000; build first with
+    python tools/perf/windows_perf.py [frames]     default 1000; build first with
                                                 scripts/windows.py src/main/draughts.goose
-    BOARDS=3d python scripts/windows_perf.py    one board; REST=0 leaves the rest out
-    EXE=build/ngfx/draughts.exe FLAGS="--aa smaa" python scripts/windows_perf.py
+    BOARDS=3d python tools/perf/windows_perf.py    one board; REST=0 leaves the rest out
+    EXE=build/ngfx/draughts.exe FLAGS="--aa smaa" python tools/perf/windows_perf.py
                                                 another build, and flags added to each run
-    SIZE=1280x800 python scripts/windows_perf.py  a window in place of full screen
+    SIZE=1280x800 python tools/perf/windows_perf.py  a window in place of full screen
 
 Per board: the bench (--bench N) with PresentMon recording the app's presents, and of
 those between the bench's "presenting" and "presented" lines (stamped here as they
@@ -37,7 +37,7 @@ import ctypes
 from ctypes import wintypes
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 EXE = (ROOT / os.environ.get("EXE", "build/windows/draughts.exe")).resolve()
 SCENE = ["--size", os.environ.get("SIZE", "full"), "--screen", "game", "--theme", "wood", "--variant", "russian",
          *os.environ.get("FLAGS", "").split()]

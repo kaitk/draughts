@@ -223,7 +223,7 @@ and value noise in the board shader, never a regular stripe.
 - **Settings' thumbnails** (`scene::thumbs`): each photograph shrunk on the GPU in turn,
   waiting after each, into one 160 × 2520 texture (1.6 MB) of 160 × 105 px slots: four
   photographs, four plain fades, and sixteen board pictures from the atlas
-  `design/boards/boards.jpg` / `boards-6x6.astc`, made by `scripts/board_thumbs.py` from `tools/board_shot.goose`'s shot of each look.
+  `design/boards/boards.jpg` / `boards-6x6.astc`, made by `tools/assets/board_thumbs.py` from `tools/board_shot.goose`'s shot of each look.
 - **The plain background** (settings' Background row; the player's `background =
   photo|plain`): a fade matched to the season's board in place of the photograph, from the
   theme's page color at the top to a deep tone of its frame at the foot, a faint light of
@@ -682,8 +682,8 @@ Adding large resources:
 ## The 3D board on devices
 
 Measured with `--bench 300` ([development](../development.md#time-the-3d-board)), idle with
-`scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest, Android with
-`scripts/device_perf.sh` on a release build, the iPhone with `scripts/ios_perf.py`
+`tools/perf/idle_cpu.sh`, memory with `dumpsys meminfo` at rest, Android with
+`tools/perf/device_perf.sh` on a release build, the iPhone with `tools/perf/ios_perf.py`
 (`--rest`). How the numbers came to be:
 [decisions](../decisions/rendering.md#the-3d-board-on-devices).
 

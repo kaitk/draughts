@@ -45,7 +45,7 @@ SDL_OPTIONS = ["-DSDL_SHARED=OFF", "-DSDL_STATIC=ON", "-DSDL_TEST_LIBRARY=OFF", 
                "-DSDL_RENDER=OFF", "-DSDL_OPENGL=OFF", "-DSDL_OPENGLES=OFF", "-DSDL_KMSDRM=OFF",
                "-DSDL_WAYLAND=ON", "-DSDL_X11=ON"]
 APP_ID = native.APP_ID    # SDL's app id too (src/native/display.c)
-ICON = native.ROOT / f"linux/{APP_ID}.png"    # windows/draughts.ico's 256 px
+ICON = native.ROOT / f"platform/linux/{APP_ID}.png"    # platform/windows/draughts.ico's 256 px
 
 
 def sdl():

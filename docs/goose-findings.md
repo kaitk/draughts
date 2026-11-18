@@ -306,7 +306,7 @@ tablet 207.5 MB, 138.9 without).
 
 ### SDL is static, but SDL's Android Java loads `libSDL3.so`
 
-- Here: `android/CMakeLists.txt` builds SDL shared and compiles gfx's sources itself.
+- Here: `platform/android/CMakeLists.txt` builds SDL shared and compiles gfx's sources itself.
 - Upstream: possibly an Android path in gfx's CMake.
 
 ## NoGraphicsAPI and goose-ngfx
@@ -426,5 +426,5 @@ device on the zero-extent blit.
 
 ## Settled
 
-Android's stdout and stderr go to logcat through `android/stdio_to_logcat.c`, the usual
+Android's stdout and stderr go to logcat through `platform/android/stdio_to_logcat.c`, the usual
 shim, with nothing to propose.

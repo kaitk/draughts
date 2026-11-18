@@ -11,4 +11,4 @@ so idle CPU stays where task 005 left it.
 
 - [ ] One effect per season, tried in the prototypes first
 - [ ] A setting turns effects off
-- [ ] Idle with effects settled: `scripts/idle_cpu.sh` as before (task 005's numbers)
+- [ ] Idle with effects settled: `tools/perf/idle_cpu.sh` as before (task 005's numbers)

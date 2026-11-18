@@ -8,13 +8,13 @@
                                                                   Draughts-VERSION-windows-x64.zip
                                                                   and -setup.exe
 
-Every build puts windows/draughts.ico into the executable's resources afterwards
+Every build puts platform/windows/draughts.ico into the executable's resources afterwards
 (embed_icon), as a .rc file linked in would, which Goose's build has no key for: Explorer
 shows it, and SDL takes the first icon for the window and the taskbar.
 
 A release (docs/development.md, "Desktop releases") is the executable alone, as
 Draughts.exe, zipped: SDL and the C runtime are linked in, and Vulkan's loader is the
-system's. Beside the zip, Inno Setup 6 builds an installer from windows/draughts.iss
+system's. Beside the zip, Inno Setup 6 builds an installer from platform/windows/draughts.iss
 (its ISCC.exe in Program Files or the user's Programs, as winget puts it, or ISCC);
 without Inno Setup there is only the zip. Neither is signed.
 
@@ -71,7 +71,7 @@ def patched_goose():
         obj=".obj", section="Run on Windows")
 
 
-ICON = native.ROOT / "windows/draughts.ico"   # the iOS icon in a rounded square, 16 to 256 px
+ICON = native.ROOT / "platform/windows/draughts.ico"   # the iOS icon in a rounded square, 16 to 256 px
 
 
 def embed_icon(exe, ico=ICON):
@@ -162,7 +162,7 @@ def main():
             print("no Inno Setup 6 (winget install JRSoftware.InnoSetup, or set ISCC): no installer")
             return
         native.run(compiler, "/Qp", f"/DVersion={native.VERSION_NAME}", f"/DExe={exe}",
-                   f"/DOutDir={out}", native.ROOT / "windows/draughts.iss")
+                   f"/DOutDir={out}", native.ROOT / "platform/windows/draughts.iss")
         print(out / f"Draughts-{native.VERSION_NAME}-windows-x64-setup.exe")
         return
     if a.run:

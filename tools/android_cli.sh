@@ -2,8 +2,8 @@
 # Builds a headless Goose program (no gfx) as a plain Android executable, pushes it to
 # the tablet, and runs it there with the arguments given, printing its output:
 #
-#   scripts/android_cli.sh tools/aibench.goose
-#   scripts/android_cli.sh tools/perft.goose russian 9
+#   tools/android_cli.sh tools/aibench.goose
+#   tools/android_cli.sh tools/perft.goose russian 9
 #
 # No APK and no SDL: the program's C and the Goose runtime's C, compiled with the NDK's
 # clang at -O2 as `goose build` compiles them on the Mac, into build/android/cli/.

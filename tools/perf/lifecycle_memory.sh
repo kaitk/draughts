@@ -4,9 +4,9 @@
 # memory (KB) and the pid after each cycle, then any errors in logcat. The rotation
 # settings are restored at the end. The app must be running.
 #
-#   scripts/lifecycle_memory.sh [cycles]      default 20
-P=$(sed -n 's/^APP_ID = "\(.*\)"/\1/p' "$(dirname "$0")/native.py")   # the application id
-A=$P/$(sed -n 's/^ACTIVITY = "\(.*\)"/\1/p' "$(dirname "$0")/android.py")
+#   tools/perf/lifecycle_memory.sh [cycles]      default 20
+P=$(sed -n 's/^APP_ID = "\(.*\)"/\1/p' "$(dirname "$0")/../../scripts/native.py")   # the application id
+A=$P/$(sed -n 's/^ACTIVITY = "\(.*\)"/\1/p' "$(dirname "$0")/../../scripts/android.py")
 N=${1:-20}
 acc=$(adb shell settings get system accelerometer_rotation)
 rot=$(adb shell settings get system user_rotation)

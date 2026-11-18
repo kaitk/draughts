@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """Make the app icon's images from a season's master, with ImageMagick.
 
-    scripts/icon.py                  write android/res/mipmap-*/ic_launcher_foreground.png
+    scripts/icon.py                  write platform/android/res/mipmap-*/ic_launcher_foreground.png
     scripts/icon.py --store          also the Play and Apple icons, into ~/Downloads/draughts-store/icon/
                                      (scripts/ios.py makes the Apple one itself, into build/, for the bundle)
     scripts/icon.py autumn --res DIR --store
                                      another season's foreground PNGs into DIR, and its store
                                      icons into ~/Downloads/draughts-store/icon/autumn/
 
-The season is SHIPPED unless named; only SHIPPED is written into android/res. Its master is
+The season is SHIPPED unless named; only SHIPPED is written into platform/android/res. Its master is
 design/icon/master-SEASON.png, kept local (design/icon/README.md). The scene's box is
 measured on it, the pixels whose red is more than SCENE_ABOVE over the mean of the master's
 four corners (its background), and the box is scaled to SCENE_DP and centred in each image,
 so a new master with a larger or moved scene, or another background, needs no edits here.
 design/icon/foreground-SEASON.png, the scene alone on transparency at the master's size and
 place, is used for the adaptive icon's foreground when it exists; otherwise the opaque
-master is, its corners matching the background colour (android/res/values/colors.xml), which
+master is, its corners matching the background colour (platform/android/res/values/colors.xml), which
 the script prints.
 
-The monochrome layer is drawn by hand (android/res/drawable/ic_launcher_monochrome.xml)
+The monochrome layer is drawn by hand (platform/android/res/drawable/ic_launcher_monochrome.xml)
 from the same box: a scene that changes shape needs it redrawn.
 """
 import argparse
@@ -28,11 +28,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ICON = ROOT / "design/icon"
-RES = ROOT / "android/res"
-IOS_ICON = ROOT / "ios/icon-1024.png"     # the shipped season's iOS icon, in git as android/res is
+RES = ROOT / "platform/android/res"
+IOS_ICON = ROOT / "platform/ios/icon-1024.png"     # the shipped season's iOS icon, in git as platform/android/res is
 STORE = Path.home() / "Downloads/draughts-store/icon"
 
-SHIPPED = "autumn"     # the season in android/res; design/icon/README.md says how to switch
+SHIPPED = "autumn"     # the season in platform/android/res; design/icon/README.md says how to switch
 SCENE_DP = 64          # inside the 66 dp safe zone, with a dp spare for the arc's glow
 CANVAS_DP = 108        # the adaptive icon's layers
 VISIBLE_DP = 72        # what a launcher shows of them, and what the store icons show

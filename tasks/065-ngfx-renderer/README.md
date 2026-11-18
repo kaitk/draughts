@@ -27,7 +27,7 @@ branch needs one. Task 065/01 carries it to main and to a run-time choice.
   it (`host`, `render`, `scene`, `draw`, `widgets`, `photo.c`, `render3d`); `src/app/` is
   untouched. The package is a checkout (`NGFX`, slangc from `NGFX_SLANGC`).
 - Shaders are compiled ahead into ngfx's blobs and embedded
-  (`tools/ngfx_shaders.goose.in`); the 3D board's modules are written from
+  (`scripts/ngfx_shaders.goose.in`); the 3D board's modules are written from
   `render3d/shaders.goose`'s GLSL at every build (`scripts/ngfx_3d_shaders.py`), so both
   builds keep one source. `mip.slang` makes sRGB mips, which ngfx's `generate_mips` can't.
 - ngfx has no SDL: it takes the native window, and Draughts' gfx opens it `WINDOW_ONLY`

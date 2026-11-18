@@ -11,8 +11,8 @@
 Steps: Goose writes the program's C and the runtime's C; goose_gfx's sources are copied
 from the submodule (kaitk/goose_gfx's main), and SDL is copied and patches/SDL applied; CMake with the
 NDK builds
-libSDL3.so and libmain.so (android/CMakeLists.txt); javac and d8 compile SDL's Java
-glue from the patched copy and DraughtsActivity; aapt2 compiles android/res (the icon and the theme) and the
+libSDL3.so and libmain.so (platform/android/CMakeLists.txt); javac and d8 compile SDL's Java
+glue from the patched copy and DraughtsActivity; aapt2 compiles platform/android/res (the icon and the theme) and the
 launcher's name per language (res/values*/strings.xml, written from strings/<lang>.txt's
 app.name) and links them with the manifest, giving it APP_ID and the version; zipfile adds the dex and
 the stripped libraries, the libraries stored uncompressed; zipalign aligns them to 16 KB;
@@ -55,7 +55,7 @@ NDK = Path(os.environ.get("ANDROID_NDK", SDK / "ndk/29.0.14206865"))
 BUILD_TOOLS = Path(os.environ.get("ANDROID_BUILD_TOOLS", SDK / "build-tools/36.0.0"))
 PLATFORM = Path(os.environ.get("ANDROID_PLATFORM", SDK / "platforms/android-36"))
 # The application id is native.APP_ID. aapt2's --rename-manifest-package gives it to the
-# app, so that line alone sets it; the Java code's package (android/java/) is the same name,
+# app, so that line alone sets it; the Java code's package (platform/android/java/) is the same name,
 # which lets `adb shell am start -n ID/.DraughtsActivity` work, and needs no change if the
 # id ever does before the first upload. The versionName is native.VERSION_NAME.
 ACTIVITY = "io.github.kaitk.draughts.DraughtsActivity"
@@ -178,7 +178,7 @@ def main():
     # libmain.so.
     gfx_src, sdl_src = copy_sources(out, ROOT / "build/android/SDL_src")
     # Configured every time, so a change to the sidecar is seen; it is quick once done.
-    run("cmake", "-S", ROOT / "android", "-B", native, "-G", "Ninja",
+    run("cmake", "-S", ROOT / "platform/android", "-B", native, "-G", "Ninja",
         f"-DCMAKE_TOOLCHAIN_FILE={NDK / 'build/cmake/android.toolchain.cmake'}",
         "-DANDROID_ABI=arm64-v8a", f"-DANDROID_PLATFORM=android-{MIN_SDK}",
         "-DCMAKE_BUILD_TYPE=Release",
@@ -206,7 +206,7 @@ def main():
     classes.mkdir()
     # SDL's Java from the patched copy, as its C is (patches/SDL).
     java = sorted(str(p) for p in (sdl_src / "android-project/app/src/main/java").rglob("*.java"))
-    java += sorted(str(p) for p in (ROOT / "android/java").rglob("*.java"))
+    java += sorted(str(p) for p in (ROOT / "platform/android/java").rglob("*.java"))
     run("javac", "-nowarn", "-Xlint:-options", "-source", "8", "-target", "8",
         "-bootclasspath", android_jar, "-d", classes, *java)
     run(D8, "--release", "--min-api", MIN_SDK, "--lib", android_jar,
@@ -219,9 +219,9 @@ def main():
     res = out / "res.zip"
     names_dir, names = out / "res_strings", out / "res_strings.zip"
     write_app_names(names_dir)
-    run(BUILD_TOOLS / "aapt2", "compile", "--dir", ROOT / "android/res", "-o", res)
+    run(BUILD_TOOLS / "aapt2", "compile", "--dir", ROOT / "platform/android/res", "-o", res)
     run(BUILD_TOOLS / "aapt2", "compile", "--dir", names_dir, "-o", names)
-    link = [BUILD_TOOLS / "aapt2", "link", "--manifest", ROOT / "android/AndroidManifest.xml",
+    link = [BUILD_TOOLS / "aapt2", "link", "--manifest", ROOT / "platform/android/AndroidManifest.xml",
             "-I", android_jar, res, names, "--rename-manifest-package", app_id,
             "--version-code", VERSION_CODE, "--version-name", VERSION_NAME,
             "--min-sdk-version", MIN_SDK, "--target-sdk-version", TARGET_SDK]
@@ -250,7 +250,7 @@ def main():
     unaligned.unlink()
     check_zip_pages(aligned)
     # The commit it was built from, beside it, for the measurements that name their build
-    # (scripts/device_perf.sh): "dirty" when the sources differed from it.
+    # (tools/perf/device_perf.sh): "dirty" when the sources differed from it.
     head = subprocess.run(["git", "log", "-1", "--format=%h %cs"], cwd=ROOT, capture_output=True,
                           text=True).stdout.strip()
     dirty = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", "src", "strings", "assets", "android"],

@@ -4,8 +4,8 @@ Status: in-progress
 
 While something moves, every frame should be on screen for exactly one refresh: both
 boards locked to the display's rate on every device. Counted by the compositor
-(`scripts/device_perf.sh`: SurfaceFlinger's timestats over the bench's presented frames;
-`scripts/ios_perf.py` with Instruments' Animation Hitches on the iPhone), as the app's own
+(`tools/perf/device_perf.sh`: SurfaceFlinger's timestats over the bench's presented frames;
+`tools/perf/ios_perf.py` with Instruments' Animation Hitches on the iPhone), as the app's own
 clock can't tell how long a frame stayed on screen. A dropped frame is one that wasn't
 ready for a refresh.
 

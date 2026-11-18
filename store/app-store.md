@@ -156,7 +156,7 @@ read 2026-11-09). Answer each as it stands; the facts:
 Expected: **4+**.
 
 **No links out** stays a rule though the app isn't in Kids: it opens no URL (no
-`SDL_OpenURL` or `http` in `src/` or `ios/`, 2026-11-09), and has no purchases, rating
+`SDL_OpenURL` or `http` in `src/` or `platform/ios/`, 2026-11-09), and has no purchases, rating
 prompt, or share sheet.
 
 ## Privacy policy inside the app

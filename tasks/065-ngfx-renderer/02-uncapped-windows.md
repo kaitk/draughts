@@ -13,9 +13,9 @@ the default (`--renderer auto`, task 065/01), and whether the gap is ngfx's or a
   `vsync` (`kaitk/NoGraphicsAPI` `e50736d`, `vsync-option` for a pull request), and gfx
   asks for immediate before mailbox (`kaitk/goose_gfx`'s `no-vsync-immediate`).
 - Uncapped, NVIDIA flips ngfx's swapchain only while its window is in front, so
-  `scripts/windows_perf.py` brings the window to the front once it shows. With vsync both
+  `tools/perf/windows_perf.py` brings the window to the front once it shows. With vsync both
   flip alike, so the app as run is unaffected.
-- `scripts/windows_perf.py` prints the bench's peak private bytes and the 3D CPU a frame,
+- `tools/perf/windows_perf.py` prints the bench's peak private bytes and the 3D CPU a frame,
   and takes `SIZE=WxH` for a window.
 
 ## The runs (2026-11-12)

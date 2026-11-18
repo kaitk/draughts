@@ -435,7 +435,7 @@ play; a stack's rings go round its foot (2026-11-08).
   cracks of its own, tuned in the 3D prototype's panel. Set aside: task 041's temple take,
   the amber reading as an inlay, and the carved motifs' size against the images'.
 - Settings' board pictures are shots baked into one 640 × 420 atlas in git
-  (`scripts/board_thumbs.py`, 117 KB as ASTC). Rejected: drawing them at run time (every
+  (`tools/assets/board_thumbs.py`, 117 KB as ASTC). Rejected: drawing them at run time (every
   look baked), a second texture (another binding in the UI's shader).
 - The 180° turn keeps its size and eases on a sine over 0.7 s (2026-11-12): refitting it
   at each angle drew the eye. The flat board's turn fades its pieces 0.15 s each way.

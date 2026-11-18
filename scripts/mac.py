@@ -9,11 +9,11 @@
 
 A release (docs/development.md, "Desktop releases") builds for MIN_MACOS, wraps the
 executable in build/mac/release/Draughts.app (Info.plist, the launcher's name per
-language, the icon from ios/icon-1024.png compiled by actool), signs it with the
+language, the icon from platform/ios/icon-1024.png compiled by actool), signs it with the
 keychain's "Developer ID Application" identity and the hardened runtime, has Apple's
 puts it beside a link to /Applications in build/mac/release/Draughts-VERSION-macos-arm64.dmg
 (the window where the app is dragged onto Applications, laid out by Finder over
-mac/dmg-background.tiff, so the first build asks to let the terminal control Finder),
+platform/mac/dmg-background.tiff, so the first build asks to let the terminal control Finder),
 signs the image, has Apple's
 notary service check it (notarytool's keychain profile NOTARY_PROFILE), and staples the
 ticket to the image; the ticket covers the app inside. Without the identity it signs both
@@ -81,7 +81,7 @@ def app_icon(out):
     shutil.rmtree(work, ignore_errors=True)
     icon = work / "AppIcon.icon"
     (icon / "Assets").mkdir(parents=True)
-    shutil.copy(native.ROOT / "ios/icon-1024.png", icon / "Assets/icon.png")
+    shutil.copy(native.ROOT / "platform/ios/icon-1024.png", icon / "Assets/icon.png")
     (icon / "icon.json").write_text(json.dumps({
         "fill": "automatic",
         "groups": [{
@@ -138,7 +138,7 @@ def bundle(exe, out):
     return app
 
 
-DMG_WINDOW = (640, 427)                             # pt, mac/dmg-background.tiff's size
+DMG_WINDOW = (640, 427)                             # pt, platform/mac/dmg-background.tiff's size
 TITLE_BAR = 28                                      # pt: Finder's bounds include it
 DMG_ICONS = {"Draughts.app": (160, 185), "Applications": (480, 185)}  # on its card, the arrow between
 DMG_LAYOUT = """
@@ -165,7 +165,7 @@ end tell
 
 def disk_image(app, dmg):
     """dmg: a compressed, read-only image holding app and a link to /Applications, laid
-    out by Finder over mac/dmg-background.tiff, with the app's icon as the volume's."""
+    out by Finder over platform/mac/dmg-background.tiff, with the app's icon as the volume's."""
     volume = "Draughts"
     mount = Path("/Volumes") / volume
     if mount.exists():
@@ -175,7 +175,7 @@ def disk_image(app, dmg):
     (stage / ".background").mkdir(parents=True)
     native.run("ditto", app, stage / app.name)
     (stage / "Applications").symlink_to("/Applications")
-    shutil.copy(native.ROOT / "mac/dmg-background.tiff", stage / ".background/background.tiff")
+    shutil.copy(native.ROOT / "platform/mac/dmg-background.tiff", stage / ".background/background.tiff")
     shutil.copy(app / "Contents/Resources/AppIcon.icns", stage / ".VolumeIcon.icns")
     writable = dmg.with_suffix(".rw.dmg")
     writable.unlink(missing_ok=True)

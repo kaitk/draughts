@@ -135,7 +135,7 @@ static const unsigned char boards_astc[] = { 0 };
 #endif
 
 // By theme: wood (autumn), stone (winter), birch (spring), sunset (summer); then BOARDS,
-// settings' board pictures in one atlas (scripts/board_thumbs.py), which is taken whole.
+// settings' board pictures in one atlas (tools/assets/board_thumbs.py), which is taken whole.
 enum { BOARDS = 4, IMAGES = 5 };
 #if !ASTC_ONLY
 static const unsigned char *const jpegs[IMAGES] = { autumn, winter, spring, summer, boards };

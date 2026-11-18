@@ -1,6 +1,6 @@
 // The recorded hits (docs/architecture/sound.md): a move's and the taken pieces', cut from
 // two recordings and stored as IMA ADPCM at 24 kHz in assets/sounds/hits.bin, which
-// tools/sound_hits.py writes and the app embeds. Decoded once, as sound is turned on.
+// tools/assets/sound_hits.py writes and the app embeds. Decoded once, as sound is turned on.
 //
 // The file, little-endian: the counts of move hits and of take hits (u16 each), then each
 // hit, the moves first: its samples (u32) and its 4-bit codes, two a byte, the first in

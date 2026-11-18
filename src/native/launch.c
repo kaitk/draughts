@@ -1,4 +1,4 @@
-// What the program tells DraughtsActivity (android/java/), from the program's thread.
+// What the program tells DraughtsActivity (platform/android/java/), from the program's thread.
 //
 // draughts_first_frame: the first frame is on screen, so the activity lifts the splash
 // and the cover it keeps over SDL's surface, which shows black until then. Called once.

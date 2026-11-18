@@ -146,8 +146,8 @@ src/          the program: one directory per package, and the app
   app/          the main loop, the GPU drawing, and the platform's C
 strings/      the text, one file per language
 assets/       the fonts and the badges
-android/      the manifest, the activity, resources, and the native build
-ios/          the iOS entry point and its native build
+platform/android/      the manifest, the activity, resources, and the native build
+platform/ios/          the iOS entry point and its native build
 scripts/      the Android and iOS builds, the icon, and device measurements
 tools/        perft, computer-player benchmarks, a terminal player, the puzzle checker
 test/         headless tests with expected output

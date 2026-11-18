@@ -10,7 +10,7 @@ and iOS 26.
 
 ## Done
 
-1. **Where the Mac's gap is** (`scripts/mac_gpu_time.py`, M1 Pro, 3D full screen
+1. **Where the Mac's gap is** (`tools/perf/mac_gpu_time.py`, M1 Pro, 3D full screen
    3600 × 2260, three rounds at the GPU's Maximum): without antialiasing ngfx takes 2.50
    ms a frame against gfx's 2.67, 6% less. The whole gap was SMAA (0.85 to 0.9 ms on
    either) against MSAA (0.35 ms on the tiled GPU), which NoGraphicsAPI lacked.
@@ -56,7 +56,7 @@ Ask before pushing the fork's `msaa` and `ngfx`, goose-ngfx's `main`, and Draugh
 3. **Draughts' ngfx build**: headless shots of the 13 screens on the 3D board at
    1280 × 800, `--frames 20000` (`agents/testing.md`), against gfx: within about 11 of
    255 as on the Mac; and task 065/01's Windows shot check in the same sitting.
-4. **Benches**, three rounds interleaved: Windows `scripts/windows_perf.py` for gfx,
+4. **Benches**, three rounds interleaved: Windows `tools/perf/windows_perf.py` for gfx,
    ngfx, and ngfx `FLAGS="--aa smaa"`, against task 065/02 (does ngfx keep its 26 to 41%
    GPU-time lead with MSAA?); Bazzite on Wayland as task 010/01's table (does MSAA close
    RADV's 13% gap? That decides Linux's `auto`).

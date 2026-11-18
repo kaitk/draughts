@@ -211,11 +211,11 @@ goose build -o build/aimatch tools/aimatch.goose
 build/aimatch russian 90 40 20      # skill 90 against 40, 20 games, colors swapped
 goose build -o build/play tools/play.goose
 build/play russian easy white       # play it yourself in the terminal
-scripts/android_cli.sh tools/aibench.goose                          # the same on a device
+tools/android_cli.sh tools/aibench.goose                          # the same on a device
 ```
 
 Each tool's header lists its options ([computer player](architecture/ai.md));
-`scripts/android_cli.sh` runs any headless Goose program on a device, no APK.
+`tools/android_cli.sh` runs any headless Goose program on a device, no APK.
 
 ## Check the puzzles
 
@@ -320,7 +320,7 @@ the C, CMake with the NDK builds `libSDL3.so` and `libmain.so` (SDL copied to
 Java, `aapt2` links the resources, and `zipalign -P 16` and `apksigner` finish the APK,
 whose libraries the script checks are on 16 KB pages. The id is `io.github.kaitk.draughts`; `APP_ID` and `VERSION_NAME` are set at the top of
 `scripts/native.py`, `VERSION_CODE` at the top of `scripts/android.py`. Delete
-`build/android/<program>/native` after changing `android/CMakeLists.txt`.
+`build/android/<program>/native` after changing `platform/android/CMakeLists.txt`.
 
 Check screens at other sizes on the Mac first (`--size`, `--dp`, `--inset`,
 `test/shell/sizes`), then on devices over USB; the README's "Tested on" lists them. Act
@@ -425,7 +425,7 @@ The Mac, Windows, and Linux apps go out as files on a GitHub release, built loca
 `build/mac/release/Draughts.app` for macOS 13.3, Apple silicon only, signs it with the
 hardened runtime, and puts it in `Draughts-VERSION-macos-arm64.dmg`: the window where the
 app is dragged onto a link to Applications, on a card like the app's glass over a close
-render of the board's corner (`mac/dmg-background.tiff`, made by `tools/dmg_background.sh`
+render of the board's corner (`platform/mac/dmg-background.tiff`, made by `tools/assets/dmg_background.sh`
 from the local render in `~/Downloads/draughts-store/dmg-0.1/`), with the app's icon as
 the volume's. Finder lays the window out by AppleScript,
 so the first build asks to let the terminal control Finder. The image is signed,
@@ -444,9 +444,9 @@ the script signs ad hoc and stops before notarizing.
 
 **Windows.** `python scripts/windows.py src/main/draughts.goose --release` zips the
 executable alone into `build/windows/release/Draughts-VERSION-windows-x64.zip`: SDL and
-the C runtime are linked in, the icon `windows/draughts.ico` embedded, and it is marked a
+the C runtime are linked in, the icon `platform/windows/draughts.ico` embedded, and it is marked a
 GUI program. Beside it, Inno Setup 6 (`winget install JRSoftware.InnoSetup`) builds
-`Draughts-VERSION-windows-x64-setup.exe` from `windows/draughts.iss`: per user, so no
+`Draughts-VERSION-windows-x64-setup.exe` from `platform/windows/draughts.iss`: per user, so no
 administrator is asked for, with a Start menu entry and an uninstaller. Both are unsigned
 (2026-11-16): SmartScreen warns once, at the installer, or at the zip's first run, and the
 installed game then starts without a warning. A code-signing certificate isn't worth its
@@ -479,12 +479,12 @@ build/linux/release/Draughts/draughts | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tai
 should say `GLIBC_2.35`.
 
 On the Mac, Docker builds it as x64 under emulation in about ten minutes (0.9.0,
-2026-11-16), with `tools/linux_release_docker.sh` doing all of the above inside the
+2026-11-16), with `scripts/linux_release_docker.sh` doing all of the above inside the
 container and leaving the archive in `/out`:
 
 ```sh
 docker run --rm --platform linux/amd64 -v "$PWD":/src:ro -v "$PWD/build/linux/release":/out \
-    -v "$PWD/tools/linux_release_docker.sh":/build.sh:ro ubuntu:22.04 /build.sh
+    -v "$PWD/scripts/linux_release_docker.sh":/build.sh:ro ubuntu:22.04 /build.sh
 ```
 
 **The release.** Tagged as the shared version (`native.VERSION_NAME`):
@@ -509,11 +509,11 @@ board). The app's own clock can't tell how long a frame stayed on screen, so the
 table's frames ([rendering](architecture/rendering.md#the-releases-frames)) come from
 the platform's counter, each by its script:
 
-- `scripts/device_perf.sh`: Android, SurfaceFlinger's timestats between the bench's
+- `tools/perf/device_perf.sh`: Android, SurfaceFlinger's timestats between the bench's
   `presenting` and `presented` lines, then idle CPU and memory.
-- `scripts/ios_perf.py`: the iPhone, Instruments' Animation Hitches, and `--rest 25`'s
+- `tools/perf/ios_perf.py`: the iPhone, Instruments' Animation Hitches, and `--rest 25`'s
   CPU and footprint at rest.
-- `python scripts/windows_perf.py`: Windows full screen, PresentMon's console exe in
+- `python tools/perf/windows_perf.py`: Windows full screen, PresentMon's console exe in
   `build/presentmon/`.
 
 The bench's first phase drops frames by design, so a count must not overlap it. Let a
@@ -525,7 +525,7 @@ has the numbers.
 
 ```sh
 adb shell svc power stayon true    # Android pauses the app when the screen sleeps
-scripts/idle_cpu.sh 60             # with the app running on the device, untouched
+tools/perf/idle_cpu.sh 60             # with the app running on the device, untouched
 adb shell svc power stayon false
 ```
 
@@ -536,7 +536,7 @@ An idle board should use a fraction of a percent of a core with about one wakeup
 ## Check memory over the Android lifecycle
 
 ```sh
-scripts/lifecycle_memory.sh 20     # with the app running on the device
+tools/perf/lifecycle_memory.sh 20     # with the app running on the device
 ```
 
 Each cycle goes home and back, then rotates to portrait and back, printing PSS, native

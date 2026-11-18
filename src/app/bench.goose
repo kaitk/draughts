@@ -2,7 +2,7 @@
 // place of render::frame, so the drawing holds nothing of the measuring. The 3D board,
 // once drawn 2 s after the launch, times N frames with its shadow map, N without, N as
 // the loop draws them, and N with a pulsing ring round every piece; the flat board N
-// whole frames, then N as the loop draws them. scripts/device_perf.sh, ios_perf.py,
+// whole frames, then N as the loop draws them. tools/perf/device_perf.sh, ios_perf.py,
 // windows_perf.py, and mac_gpu_time.py read the lines it prints.
 namespace bench;
 import std;
@@ -99,7 +99,7 @@ fn frame(b: Bench&, f: flags::Flags&, r: render::Renderer&, fr: render::Frame&) 
         }
         bn.i++;
     } else if phase == 2 {
-        // The presented frames' start and end, for scripts/device_perf.sh.
+        // The presented frames' start and end, for tools/perf/device_perf.sh.
         let t0 = clock();
         if bn.i == 2 * bn.n { print("bench3d: presenting"); }
         if bn.i > 2 * bn.n { bn.gap.push(t0 - bn.last); }

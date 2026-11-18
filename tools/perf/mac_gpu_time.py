@@ -2,8 +2,8 @@
 """The 3D board's GPU time a frame on the Mac, from Instruments' Metal System Trace: the
 measure tasks 070, 071, and 077 compare the renderers by (agents/testing.md, Frame pacing).
 
-    scripts/mac_gpu_time.py EXE [flags...]    record EXE's 3D bench full screen and print
-    scripts/mac_gpu_time.py --trace T PROC N  read a trace already recorded
+    tools/perf/mac_gpu_time.py EXE [flags...]    record EXE's 3D bench full screen and print
+    tools/perf/mac_gpu_time.py --trace T PROC N  read a trace already recorded
 
 EXE runs `--size full --screen game --variant russian --theme wood --board 3d --no-vsync
 --bench 300` and the flags after it (`--aa off`, say), under `xctrace record` with a

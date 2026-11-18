@@ -1,5 +1,5 @@
 #!/bin/sh
-# mac/dmg-background.tiff: the Mac disk image's window background, 640 x 427 pt at 1x and
+# platform/mac/dmg-background.tiff: the Mac disk image's window background, 640 x 427 pt at 1x and
 # 2x: a close render of the autumn 3D board's left corner (local, in
 # ~/Downloads/draughts-store/dmg-0.1/, whose README.md says how it was rendered), with a
 # glass card in its middle drawn as the app's autumn glass is (docs/architecture/rendering.md, "Look"): the photo blurred,
@@ -8,7 +8,7 @@
 # places the app's and Applications' icons on it, an arrow in the text color between them.
 # Needs ImageMagick. Sizes below are the 2x image's pixels.
 set -e
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 src=${1:-$HOME/Downloads/draughts-store/dmg-0.1/board-1280x853.png}
 out=${2:-mac/dmg-background.tiff}
 tmp=$(mktemp -d)

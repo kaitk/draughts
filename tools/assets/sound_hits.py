@@ -15,11 +15,11 @@ It also writes test/expected/sound/adpcm.out, what test/sound/adpcm.goose must p
 from decoding the embedded file: each hit's samples and a checksum of its decoded 16-bit
 values, so the app's decoder is checked against this encoder's own. Needs ffmpeg.
 
-    python3 tools/sound_hits.py
+    python3 tools/assets/sound_hits.py
 """
 import math, os, struct, subprocess, sys
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 SOURCES = os.path.join(ROOT, 'design', 'sounds')
 OUT = os.path.join(ROOT, 'assets', 'sounds', 'hits.bin')
 EXPECTED = os.path.join(ROOT, 'test', 'expected', 'sound', 'adpcm.out')

@@ -71,7 +71,7 @@ mixer's, so nothing allocates in the frame loop.
 
 ### The recorded hits
 
-`tools/sound_hits.py` cuts the kept hits from the two recordings in `design/sounds/`
+`tools/assets/sound_hits.py` cuts the kept hits from the two recordings in `design/sounds/`
 (local; [decisions](../decisions/sound.md#how-they-sound) says where to get them), brings
 them down to 24 kHz, encodes them as IMA ADPCM, and writes `assets/sounds/hits.bin`
 (10 KB), which `src/sound/hits.goose` embeds. The file: the move's and the take's hit

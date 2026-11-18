@@ -12,7 +12,7 @@ set(GOOSE_RUNTIME_C "" CACHE FILEPATH "The Goose runtime's C, from goose --emit-
 # The program's own C and its include directories, from its .build sidecar.
 set(GOOSE_PROGRAM_SOURCES "" CACHE STRING "The sidecar's c_sources")
 set(GOOSE_PROGRAM_INCLUDE "" CACHE STRING "The sidecar's c_include")
-set(GOOSE_GFX "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/goose_gfx")
+set(GOOSE_GFX "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/goose_gfx")
 # goose_gfx's src/ with patches/goose_gfx applied (scripts/ios.py makes the copy).
 set(GOOSE_GFX_SRC "${GOOSE_GFX}/src" CACHE PATH "goose_gfx's C layers")
 # SDL with patches/SDL applied (scripts/ios.py makes the copy).

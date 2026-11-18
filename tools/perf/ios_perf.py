@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""The iPhone's rows of the README's performance table, as scripts/device_perf.sh takes
+"""The iPhone's rows of the README's performance table, as tools/perf/device_perf.sh takes
 an Android device's: both boards in the same game scene (Russian, wood, the start).
 
-    scripts/ios_perf.py [frames] [flags...]
+    tools/perf/ios_perf.py [frames] [flags...]
                                         default 1000; the development build installed
                                         (scripts/ios.py src/main/draughts.goose --device --run);
                                         flags go to the app, as --renderer ngfx
@@ -30,7 +30,7 @@ import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "scripts"))
 from ios import BUNDLE_ID as APP_ID, device  # noqa: E402
 from native import ROOT  # noqa: E402
 

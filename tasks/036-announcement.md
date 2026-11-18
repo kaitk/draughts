@@ -31,12 +31,12 @@ Checked against the stores 2026-11-08 (recheck the week of the announcement):
 
 On the release build, on the tablet and the Pixel 7a, each with date and commit:
 
-- Idle CPU (`scripts/idle_cpu.sh 60`) at rest, in settings, a puzzle, a running clock
-- Memory (`scripts/lifecycle_memory.sh 20`): PSS, native heap, graphics
+- Idle CPU (`tools/perf/idle_cpu.sh 60`) at rest, in settings, a puzzle, a running clock
+- Memory (`tools/perf/lifecycle_memory.sh 20`): PSS, native heap, graphics
 - Frame times during a move, a win, a transition
 - APK and AAB download size, split into `libSDL3.so`, `libmain.so`, the photographs
 - Cold launch (`adb shell am start -S -W`)
-- The computer's slowest hard reply (`scripts/android_cli.sh tools/aibench.goose`)
+- The computer's slowest hard reply (`tools/android_cli.sh tools/aibench.goose`)
 - Lines of Goose by directory, the tests' count and time, build times, commits
 
 ## Angles

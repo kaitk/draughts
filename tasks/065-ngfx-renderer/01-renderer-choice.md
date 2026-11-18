@@ -52,7 +52,7 @@ takes gfx, 3D P50 9.43 ms at 119.9 fps; `--renderer ngfx` 60 fps.
   `build\ngfx\draughts.exe` alone (it should print `renderer: ngfx (auto: ...)`),
   `--renderer gfx`, and `DRAUGHTS_RENDERER_TEST=fail` (the marker is
   `%APPDATA%\kaitk\draughts\renderer-start.txt`, deleted after). Then
-  `EXE=build/ngfx/draughts.exe FLAGS="--renderer ngfx" python scripts/windows_perf.py`
+  `EXE=build/ngfx/draughts.exe FLAGS="--renderer ngfx" python tools/perf/windows_perf.py`
   and the same with `--renderer gfx`, against task 065/02's rows, and the 13 screens headless
   with each `--renderer` against main's builds.
 - **The Bazzite PC (RX 6800), the user**: the same; `auto` says `gfx first on Linux`;

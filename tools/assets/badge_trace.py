@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Trace a badge's silhouette (black on white PNG) into assets/badges/<animal>.svg.
 
-    tools/badge_trace.py fox ~/Downloads/fox.png
+    tools/assets/badge_trace.py fox ~/Downloads/fox.png
 
 Thresholds the image, traces it with potrace, and sets the SVG's viewBox to the square
 around the shape's smallest enclosing circle, with a margin, so the badge drawing
@@ -51,7 +51,7 @@ def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
     name, png = sys.argv[1], os.path.expanduser(sys.argv[2])
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     with tempfile.TemporaryDirectory() as tmp:
         pbm = os.path.join(tmp, "in.pbm")
         subprocess.run(["magick", png, "-colorspace", "gray", "-threshold", "50%", pbm],
@@ -66,7 +66,7 @@ def main():
     svg = re.sub(r'viewBox="[^"]*"', vb, svg, count=1)
     svg = re.sub(r"<\?xml.*?\?>\s*|<!DOCTYPE.*?>\s*|<metadata>.*?</metadata>\s*", "", svg,
                  flags=re.S)
-    note = (f"<!-- Traced from {os.path.basename(png)} by tools/badge_trace.py; the viewBox "
+    note = (f"<!-- Traced from {os.path.basename(png)} by tools/assets/badge_trace.py; the viewBox "
             f"is the square round the shape's enclosing circle. -->\n")
     svg = re.sub(r"(<svg[^>]*>\n?)", lambda m: m[1] + note, svg, count=1)
     dst = os.path.join(root, "assets", "badges", f"{name}.svg")

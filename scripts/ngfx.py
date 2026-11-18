@@ -132,7 +132,7 @@ def shaders(sdk=None):
     tools = OUT / "tools"
     tools.mkdir(parents=True, exist_ok=True)
     tool = tools / "ngfx_shaders.goose"
-    write_if_changed(tool, (ROOT / "tools/ngfx_shaders.goose.in").read_text(encoding="utf-8")
+    write_if_changed(tool, (ROOT / "scripts/ngfx_shaders.goose.in").read_text(encoding="utf-8")
                      .replace("@NGFX@", rel(tools, NGFX)))
     env = {"NGFX_METAL_SDK": sdk} if sdk else None
     if sys.platform.startswith("linux"):    # TinyCC can't run under SELinux (Fedora's, Bazzite's)

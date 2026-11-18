@@ -1,5 +1,5 @@
 // One headless shot of the 3D board in a season's look and material, for settings' Board
-// row (scripts/board_thumbs.py): the 3D reference's position from the app's camera
+// row (tools/assets/board_thumbs.py): the 3D reference's position from the app's camera
 // (view3d's), drawn by the app's renderer (src/render3d/) in front of the season's
 // photograph, the look picked as the app picks it (looks::of), its wood and finish as
 // draw3d::choose_look gives them.

@@ -102,7 +102,7 @@ fn thumbs<B>(be: B&) -> gpu::Texture {
     }
     be.scene.end();
     be.scene.done(fade);
-    // The board pictures (scripts/board_thumbs.py): an atlas of slot-sized cells, a row a season.
+    // The board pictures (tools/assets/board_thumbs.py): an atlas of slot-sized cells, a row a season.
     let boards = be.r3d.photo(BOARDS, SIZE);
     if boards.id != 0 {
         let copy = be.scene.shrinker();

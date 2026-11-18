@@ -11,7 +11,7 @@ before committing a change to `rules/`.
   `test/run_tests.py` alone compiles no app shader, so after a shader change run
   `scripts/test.sh` or build the app. The program's own C (`src/native/*.c`) only a build
   compiles.
-- Badge art: `tools/badge_trace.py <animal> <png>` traces a black-on-white silhouette into
+- Badge art: `tools/assets/badge_trace.py <animal> <png>` traces a black-on-white silhouette into
   `assets/badges/<animal>.svg`; then `test/run_tests.py --bless badges`.
 - A frame holds `gui::MAX_QUADS` quads; one past it prints `gui: N quads dropped` (in a
   test's output and in the app). A layout test can print `g.quads.len`.
@@ -229,7 +229,7 @@ process, "owned unmapped (graphics)" GPU-only heaps and textures.
 
 - `--bench 60` and `--rest 4` run headless too; `--rest` keeps running after its line:
   take `footprint` then and kill it. Compare medians of five runs, builds in turn.
-- `scripts/windows_perf.py` (`EXE=`, `FLAGS=`): PresentMon's GPU busy time is the frame
+- `tools/perf/windows_perf.py` (`EXE=`, `FLAGS=`): PresentMon's GPU busy time is the frame
   time both builds report alike. Uncapped, ngfx flips only while its window is in front:
   check the present mode on every run and never run two benches at once.
 - A real window is driven from Python with ctypes: `SetProcessDPIAware()`, find the window
@@ -254,7 +254,7 @@ process, "owned unmapped (graphics)" GPU-only heaps and textures.
 ## On the tablet and phones
 
 What can't run headless is checked on a device with scripts that print numbers:
-`scripts/lifecycle_memory.sh` and `scripts/idle_cpu.sh`, at the end of a larger iteration
+`tools/perf/lifecycle_memory.sh` and `tools/perf/idle_cpu.sh`, at the end of a larger iteration
 or when a change may move idle or memory. A run during which the device was touched isn't
 an idle figure; one while charging has no battery estimate, so CPU time is the measure.
 
@@ -295,7 +295,7 @@ an idle figure; one while charging has no battery estimate, so CPU time is the m
 - A worktree links only the toolchains into a `build/` of its own: `build/ios/` holds
   CMake caches tied to one checkout.
 - Rotating the simulator: `simctl` can't, so a throwaway constructor in a file added to
-  `ios/CMakeLists.txt` calls `requestGeometryUpdateWithPreferences:`; record with `xcrun
+  `platform/ios/CMakeLists.txt` calls `requestGeometryUpdateWithPreferences:`; record with `xcrun
   simctl io booted recordVideo --codec h264 --force out.mp4`.
 
 ## Frame pacing
@@ -306,9 +306,9 @@ an idle figure; one while charging has no battery estimate, so CPU time is the m
   and `metal-gpu-intervals` (parse the large export with `iterparse`). `xctrace` can hang
   after its app exits: run it under a 2-minute watchdog. GPU time is the union of the
   app's `metal-gpu-intervals` in a window of presents, whatever their `event-depth`;
-  compare builds only at the same GPU performance state. `scripts/mac_gpu_time.py EXE
+  compare builds only at the same GPU performance state. `tools/perf/mac_gpu_time.py EXE
   --aa off` records and reads one 3D bench.
-- **The iPhone:** `scripts/ios_perf.py` (Animation Hitches; `--renderer` passes flags).
+- **The iPhone:** `tools/perf/ios_perf.py` (Animation Hitches; `--renderer` passes flags).
   For GPU time, launch with `ios_perf.launch(..., console=True)`, attach Metal System
   Trace with its `record`, and take the union of `metal-gpu-intervals` over the loop
   phase, counted from the end (attaching misses the first presents).
@@ -320,7 +320,7 @@ an idle figure; one while charging has no battery estimate, so CPU time is the m
 
 ## GPU profiling
 
-- `scripts/shader_report.py --core Mali-G615` (or G710, G68) with Arm's `malioc` on PATH:
+- `tools/perf/shader_report.py --core Mali-G615` (or G710, G68) with Arm's `malioc` on PATH:
   each shader's registers, spills, and cycles. Weigh a feature with a scratch copy that
   replaces it by a constant.
 - Streamline on the Pixel 7a (a `--debuggable` build): push gatord with
