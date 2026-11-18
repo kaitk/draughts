@@ -173,8 +173,25 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 <p>When nothing moves, the app sleeps. A ticking clock sets an alarm to wake it at the next second. That is why the battery lasts.</p>
 <p>That is it. The rest is detail, and there is quite a lot of detail.</p>
 
+<h2 id="where-things-live">Where things live</h2>
+<p>The code is in <code>src/</code>, one folder per package. Around it are the files each platform needs and the scripts that build it all.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Folder</th><th>Holds</th></tr></thead>
+<tbody>
+<tr><td><code>src/main/</code></td><td>The two programs, a few lines each: <code>main()</code> calls <code>run()</code>. <code>draughts.goose</code> draws through goose_gfx and is the one that ships. <code>draughts_ngfx.goose</code> holds goose-ngfx too and picks one when it starts. Each has a <code>.build</code> file beside it naming the C it needs.</td></tr>
+<tr><td><code>src/app/</code></td><td>The loop, the host, the renderer and its drawers, the font, the colours, the computer's thread, and the developer flags.</td></tr>
+<tr><td><code>src/gfx/</code>, <code>src/ngfx/</code></td><td>The two recorders, the only code that calls a graphics library. Each turns what the drawers ask for into GPU work for its renderer (section 4).</td></tr>
+<tr><td><code>src/native/</code></td><td>The few jobs done in C: the storage folder, the languages, the display and safe area, the alarm, the sound device, and the photograph.</td></tr>
+<tr><td><code>src/rules/</code> … <code>src/badges/</code></td><td>Everything else, the floors of section 5. All of it is plain code, tested with no window.</td></tr>
+<tr><td><code>platform/</code></td><td>What each system needs around the program: Android's activity and resources, the iOS project, the desktop icons, the Windows installer.</td></tr>
+<tr><td><code>scripts/</code></td><td>One build script per platform, each given the program: <code>scripts/mac.py src/main/draughts.goose</code>. Also the test run.</td></tr>
+<tr><td><code>tools/</code></td><td>Programs for whoever works on it: perft, the computer's benchmarks, the puzzle checker, device measurements (<code>perf/</code>), and the scripts that make pictures and sounds (<code>assets/</code>).</td></tr>
+<tr><td><code>test/</code>, <code>strings/</code>, <code>assets/</code></td><td>The tests and their expected output, the words in each language, and the fonts, badges, and sounds.</td></tr>
+<tr><td><code>third_party/</code>, <code>patches/</code></td><td>goose_gfx with SDL, as a submodule, and the patches applied to SDL when it builds.</td></tr>
+</tbody></table></div>
+
 <h2>1. Waking up</h2>
-<p>All of this is in <code>run()</code> in <code>src/app/app.goose</code>, which the program's <code>main()</code> (<code>src/main/draughts.goose</code>) calls, before the loop starts. It runs once. <code>main()</code> never calls the graphics library itself: it asks <code>host</code> for the platform and <code>render</code> for the pictures.</p>
+<p>All of this is in <code>run()</code> in <code>src/app/app.goose</code>, which the program's <code>main()</code> (<code>src/main/draughts.goose</code>) calls, before the loop starts. It runs once. <code>run()</code> never calls the graphics library itself: it asks <code>host</code> for the platform and <code>render</code> for the pictures.</p>
 <ol class="steps">
   <li>Read the <b>developer flags</b> (<code>--screen game</code>, <code>--fen …</code>, <code>--frames 30</code> and so on). On a phone there are none, so everything takes its normal value.<span class="where">flags::parse · src/app/flags.goose</span></li>
   <li>Ask the system for the <b>storage folder</b>, then read the players and the playing player's settings from it.<span class="where">host::storage (storage.c) · players::load</span></li>
@@ -231,7 +248,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 </ul>
 
 <h2>4. The renderer</h2>
-<p><code>render::Renderer</code> holds every painter and everything they keep on the GPU. Each painter decides what to draw; a small recorder per renderer, its <code>_gpu</code> file, puts it on the GPU: gfx's in the app that ships, goose-ngfx's (<code>src/ngfx/</code>) in the build <code>scripts/ngfx.py</code> makes. The loop hands it a <code>render::Frame</code> of plain values: the board as <code>shell::build_frame_pieces</code> left it, its layout, the pieces over the UI and the UI's quads (as slices), the 3D board's camera, the blur, the hole, the time, and the screen's size. <code>render::frame</code> then paints, always in the same order:</p>
+<p><code>render::Renderer</code> holds every painter and everything they keep on the GPU. Each painter decides what to draw; a small recorder per renderer puts it on the GPU: gfx's (<code>src/gfx/</code>) in the app that ships, goose-ngfx's (<code>src/ngfx/</code>) in the build <code>scripts/ngfx.py</code> makes. The loop hands it a <code>render::Frame</code> of plain values: the board as <code>shell::build_frame_pieces</code> left it, its layout, the pieces over the UI and the UI's quads (as slices), the 3D board's camera, the blur, the hole, the time, and the screen's size. <code>render::frame</code> then paints, always in the same order:</p>
 <ol class="steps">
   <li><b>Work that can't happen on the screen.</b> Copy the UI's quads up, draw the 3D board's picture into its own texture if the 3D board is on, and copy up the pieces.<span class="where">widgets::prepare · draw3d::frame · draw::upload</span></li>
   <li><b>Open the screen's pass.</b><span class="where">gfx::begin_pass</span></li>
@@ -240,9 +257,9 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
   <li><b>Close the pass.</b> The next <code>host::frame()</code> shows it.<span class="where">gfx::end_pass</span></li>
 </ol>
 <h3>Pixels handed over from C</h3>
-<p>A few jobs are done in C: decoding the season's photograph, the cover a Mac window shows while you drag its edge. The C code never touches the GPU. It hands pixels over, and the renderer uploads them.</p>
+<p>A few jobs are done in C, in <code>src/native/</code>: decoding the season's photograph, the cover a Mac window shows while you drag its edge. The C code never touches the GPU. It hands pixels over, and the renderer uploads them.</p>
 <ul>
-  <li><code>background.c</code> fills a <code>draughts_pixels</code> (<code>photo.h</code>) that points straight into the photograph's compressed blocks baked into the app, or into the decoded JPEG. The renderer's own C, <code>photo.c</code>, uploads them through its renderer's <code>photo_gpu.h</code> (<code>draughts_photo_id</code>) and gives them back (<code>draughts_photo_done</code>). No copy is made on the way.</li>
+  <li><code>background.c</code> fills a <code>draughts_pixels</code> (<code>photo.h</code>) that points straight into the photograph's compressed blocks baked into the app, or into the decoded JPEG. The renderer's own C uploads them, <code>photo.c</code> through gfx's C API and <code>photo_ngfx.c</code> through goose-ngfx's (<code>draughts_photo_id</code>), and gives them back (<code>draughts_photo_done</code>). No copy is made on the way.</li>
   <li><code>resize.c</code> takes pixels the renderer reads back (<code>draw::cover_with</code>), and only where a cover shows at all (<code>draughts_resize_covers</code>: the Mac).</li>
   <li>The font's glyphs (<code>text::bake</code>) and the badges' animals (<code>badges::atlas</code>) come out as one byte per pixel, built in Goose; <code>widgets</code> uploads both.</li>
 </ul>
@@ -252,9 +269,14 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 </div>
 
 <div class="wide">
-<div class="layers" role="img" aria-label="Package layers from rules at the bottom to app at the top">
+<div class="layers" role="img" aria-label="Package layers from rules at the bottom to the programs at the top">
+  <div class="layer"><div class="lab">Programs</div><div class="row">
+    <div class="box"><b>main/</b><small>draughts (gfx) · draughts_ngfx (both renderers): each calls app's run()</small></div>
+  </div></div>
   <div class="layer"><div class="lab">Paints</div><div class="row">
-    <div class="box gpu"><b>app/</b><small>main loop · host (window, input, the phone's C) · render, and its drawers: draw (flat board), draw3d, widgets (UI quads), scene (photo, blur) · text (font) · theme · think (worker) · dev (benchmarks, screenshots)</small></div>
+    <div class="box gpu"><b>app/</b><small>main loop · host (window, input) · render, and its drawers: draw (flat board), draw3d, widgets (UI quads), scene (photo, blur) · text (font) · theme · think (worker) · dev (benchmarks, screenshots)</small></div>
+    <div class="box gpu"><b>gfx/ · ngfx/</b><small>the recorders: what the drawers ask for, as GPU work for goose_gfx or goose-ngfx</small></div>
+    <div class="box gpu"><b>native/</b><small>the C: storage, languages, display, alarm, sound device, the photograph</small></div>
     <div class="box gpu"><b>render3d/</b><small>the 3D board on the GPU: shaders, buffers, the shadow map, multisampling, the theme's bake</small></div>
   </div></div>
   <div class="layer"><div class="lab">Screens</div><div class="row">
@@ -312,7 +334,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
    └─ ui_pieces board::Overlay <span class="c">pieces over the UI</span></div>
 </div>
 <div>
-<div class="tree"><span class="c">// the painting side, locals in main()</span>
+<div class="tree"><span class="c">// the painting side, locals in run()</span>
 <span class="a">rd  render::Renderer</span>
     ├─ <span class="a">d  draw::Drawer</span>     <span class="c">flat board + photo</span>
     │  └─ scene            <span class="c">photograph, blurs, colors</span>
@@ -429,7 +451,7 @@ host::input ──▶ <span class="k">g</span> ──▶ shell::frame(<span clas
 <h2>7. One tap, followed all the way</h2>
 <p>You play against the computer. You tap your piece, then the square to move to. Here is the trip.</p>
 <ol class="steps">
-  <li>The loop wakes on the touch. <code>host::input</code> reads it into a <code>gui::Input</code>, and <code>gui::begin</code> hands it to the UI layer.<span class="where">draughts.goose, the loop · host.goose</span></li>
+  <li>The loop wakes on the touch. <code>host::input</code> reads it into a <code>gui::Input</code>, and <code>gui::begin</code> hands it to the UI layer.<span class="where">app.goose, the loop · host.goose</span></li>
   <li><code>shell::frame</code> → <code>game_screen</code> → <code>game::frame</code>. The panels declare their buttons first (<code>panel::game</code>). Your finger is not on any of them, so the press goes to the board.<span class="where">shell.goose → game.goose → panel.goose</span></li>
   <li><code>board::press</code> turns the point into a square (through the 3D camera's ray if the board is 3D), finds your piece among the legal moves and selects it. Its targets light up. The frame is dirty, so it gets painted.<span class="where">board.goose · view3d::pick for 3D</span></li>
   <li>Second tap, on a target. <code>board::release</code> picks the move, starts the move's animation, and plays it on the position using <code>rules</code>.<span class="where">board.goose → rules.goose</span></li>
@@ -448,7 +470,7 @@ host::input ──▶ <span class="k">g</span> ──▶ shell::frame(<span clas
 <tr><td>Nothing allocates in the loop</td><td>Memory for a frame lives in fixed arrays sized at the start. No garbage, no hiccups.</td></tr>
 <tr><td>Draw only on change</td><td>A still screen costs nothing. Battery is the main feature nobody sees.</td></tr>
 <tr><td>Game state is a value</td><td>A position is a few numbers. Undo is a stack of them; saving is writing the value (about 15 KB) with a checksum.</td></tr>
-<tr><td>Only render paints</td><td><code>main()</code> calls <code>host</code> and <code>render</code>, never the graphics library. The rest is tested headless, and a different renderer could replace <code>render</code> and its drawers without touching the rest.</td></tr>
+<tr><td>Only render paints</td><td><code>run()</code> calls <code>host</code> and <code>render</code>, never the graphics library. The rest is tested headless, and a different renderer could replace <code>render</code> and its drawers without touching the rest.</td></tr>
 <tr><td>Screens return, not reach</td><td>A screen hands back a <code>shell::Frame</code>, the game a <code>game::Event</code>. Nobody sets a flag for someone else to clear.</td></tr>
 <tr><td>No text in code</td><td>Every word comes from <code>strings/en.txt</code>, <code>et.txt</code>, … by key.</td></tr>
 <tr><td>Assets are baked in</td><td>Shaders, fonts, puzzles, photographs live inside the binary. No file loading on the phone except the player's own files.</td></tr>
@@ -479,7 +501,7 @@ host::input ──▶ <span class="k">g</span> ──▶ shell::frame(<span clas
 <tr><td>season / theme</td><td>The background photograph and colours: winter, spring, summer, autumn, by date unless chosen.</td></tr>
 </tbody></table></div>
 
-<footer>Written from <code>src/app/app.goose</code>, <code>host.goose</code>, <code>render.goose</code>, <code>think.goose</code>, <code>src/shell/shell.goose</code>, and <code>src/game/</code>. The loop's exact order is in <code>main()</code>; when this page and the code disagree, the code is right. The detail is in the <a href="https://github.com/kaitk/draughts/tree/main/docs/architecture">architecture's Markdown pages</a>, and the decisions behind it in <a href="https://github.com/kaitk/draughts/tree/main/docs/decisions">the decisions</a>.</footer>
+<footer>Written from <code>src/app/app.goose</code>, <code>host.goose</code>, <code>render.goose</code>, <code>think.goose</code>, <code>src/shell/shell.goose</code>, and <code>src/game/</code>. The loop's exact order is in <code>run()</code>; when this page and the code disagree, the code is right. The detail is in the <a href="https://github.com/kaitk/draughts/tree/main/docs/architecture">architecture's Markdown pages</a>, and the decisions behind it in <a href="https://github.com/kaitk/draughts/tree/main/docs/decisions">the decisions</a>.</footer>
 </div>
 </body>
 </html>

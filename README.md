@@ -87,7 +87,7 @@ Release builds in a game, frames as they reached the screen:
   number of plies and picks among the good moves it sees, as a person of that level would.
 
 The whole app in plain words, from launch to one tap followed to the computer's reply:
-[Draughts from above](docs/architecture/index.html). More in
+[Draughts from above](https://kaitk.github.io/draughts/architecture/). More in
 [docs/architecture/](docs/architecture/README.md): [rendering](docs/architecture/rendering.md),
 [rules](docs/architecture/rules.md), [computer player](docs/architecture/ai.md),
 [puzzles](docs/architecture/puzzles.md).
@@ -142,6 +142,9 @@ originals stay local (`design/backgrounds/README.md`).
 
 ## Layout
 
+[Where things live](https://kaitk.github.io/draughts/architecture/#where-things-live)
+says what each folder is for, in plain words.
+
 ```text
 src/            the program's Goose and C
   main/           the two programs' roots and their .build sidecars
@@ -181,7 +184,7 @@ tasks/          the work, one file per task
 ## Documentation
 
 - [Product](docs/product.md): what the app is for, the MVP, and what follows
-- [Draughts from above](docs/architecture/index.html): the app's start-up, loop, packages,
+- [Draughts from above](https://kaitk.github.io/draughts/architecture/): the app's start-up, loop, packages,
   and threads, in plain words
 - [Architecture](docs/architecture/README.md): how the app works
 - [Decisions](docs/decisions/README.md): each design decision, dated, with its reason and

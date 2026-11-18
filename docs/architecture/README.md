@@ -1,7 +1,7 @@
 # Architecture
 
 How the app works, as it is now. This file holds the stack, how the code is laid out, and
-the rules every part of it keeps. [Draughts from above](index.html) tells the
+the rules every part of it keeps. [Draughts from above](https://kaitk.github.io/draughts/architecture/) tells the
 whole app in plain words: the start-up, the loop, the packages, and the threads. The rest
 is by area:
 
