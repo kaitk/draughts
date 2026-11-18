@@ -15,7 +15,8 @@ request; a session prepares each as a small, tested branch and description.
 ## goose_gfx, in the order to send them
 
 Branches of `kaitk/goose_gfx`, each on upstream `main` (two commits behind it on
-2026-11-18: rebase before sending). A branch under another goes after it.
+2026-11-18: rebase before sending). A branch on another goes after it. The
+prepared descriptions are local, in `build/notes/gfx-prs/`.
 
 1. `no-clip-distance`: device made with clip distances off, which Mali GPUs lack
    (13 lines).
@@ -26,15 +27,22 @@ Branches of `kaitk/goose_gfx`, each on upstream `main` (two commits behind it on
    depth not stored.
 5. `compressed-textures`: BC and ASTC formats, block-aware sizes,
    `format_supported`.
-6. `draw-on-demand`: no present for a frame that drew nothing, then wait for an event;
-   to make opt-in first.
-7. `end-on-device-lost` (on 6): quit once on a lost device instead of spinning.
-8. `ios-run-loop-wait` (on 6): the idle wait in the iOS run loop, not a 1 ms poll.
-9. `gamepad-wake` (on 8): pads read in `frame()` and the wait, `SYSTEM_GAMEPADS`.
-10. `window-only` (on 8): `WINDOW_ONLY`, the window without a device; an issue first,
-    as it adds the most API.
-11. `window-only-linux` (on 10): the Wayland or X11 handles (subtask 01).
-12. Not yet a branch: `gfx::safe_area()`, beside upstream's `display_scale()` (#7).
+6. `draw-on-demand`: `WAIT_WHEN_IDLE`, opt-in: no present for a frame that drew nothing,
+   then wait for an event. Draughts passes the flag once its submodule follows.
+7. `end-on-device-lost` (on 6): quit once on a lost device instead of spinning; Vulkan's
+   loss only, Direct3D 12's removal perhaps added first.
+8. `window-only` (on 6 once restacked): `WINDOW_ONLY`, the window without a device; an
+   issue first, as it adds the most API. Then `window-only-linux` (subtask 01).
+9. Not yet a branch: `gfx::safe_area()`, beside upstream's `display_scale()` (#7), for
+   the MacBook notch in full screen as well as phones.
+
+Held in the fork (2026-11-18), since upstream gfx targets the desktop (its tested
+platforms are Windows, Linux, and macOS):
+
+- `ios-run-loop-wait`: iOS is outside upstream's platforms, and the fix belongs in SDL
+  (`02-sdl.md`).
+- `gamepad-wake`: split first. Reading the pads in `frame()` and the wait goes upstream
+  on 6; `SYSTEM_GAMEPADS` (Apple and Android, Objective-C through the runtime) stays.
 
 ## Acceptance criteria
 
