@@ -1927,7 +1927,7 @@ let MARKS_FRAG = """
             c += glow.rgb * more.x * dot_at(length(fract(g) - 0.5), wg);
         }
         // The keys' cursor: a glow line round its square just inside the edge, its corners
-        // rounded, as the flat board's (src/app/draw_gpu.goose).
+        // rounded, as the flat board's (src/gfx/draw_gpu.goose).
         if (q.x >= 0 && q.y >= 0 && q.x < int(n) && q.y < int(n) && float(q.y * int(n) + q.x) == more.y) {
             vec2 e = abs(fract(g) - 0.5);
             vec2 dd = e - vec2(0.43 - 0.12);

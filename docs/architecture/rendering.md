@@ -43,7 +43,7 @@ recorder, with no branch.
 The one seam is `backend`, a file per root: `with`, which runs a block on the chosen
 backend, and `open`, which chooses it and opens the window. `render.goose`'s calls that
 reach the GPU and `host.goose`'s window calls each run their drawer in
-`backend::with() { be => ... }`. The gfx build's `src/app/backend.goose` hands gfx's
+`backend::with() { be => ... }`. The gfx build's `src/gfx/backend.goose` hands gfx's
 backend; `src/ngfx/backend.goose`, in the second root `src/main/draughts_ngfx.goose`,
 makes the choice ([architecture](README.md#code-layout)) and holds both. Both roots run
 `src/app/app.goose`'s program.

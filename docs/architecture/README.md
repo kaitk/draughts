@@ -78,13 +78,13 @@ copy, and `resize.c` takes the pixels the renderer reads back for a Mac window's
 Each drawer is what it draws, renderer-free, and records through a backend it is handed
 (`be`): the few calls every drawer makes on it (`be.flush()`, `be.target(...)`) and a
 recorder per drawer on its fields (`be.draw`, `be.scene`, `be.widgets`, `be.r3d` for the
-3D board, `be.host` for the window). gfx's backend is `gpu::Gfx` (`src/app/gpu.goose`)
+3D board, `be.host` for the window). gfx's backend is `gpu::Gfx` (`src/gfx/gpu.goose`)
 over `draw_gpu`, `scene_gpu`, `widgets_gpu`, `render3d_gpu`, and `host_gpu`; `photo.c`
 uploads the photograph. The drawers are generic over the backend's type, so each call
 resolves at compile time to one renderer's recorder. The one seam is `backend`
 ([rendering](rendering.md#two-renderers)): `render.goose` and `host.goose` run their
 drawers in `backend::with`, and `backend::open` opens the window. The gfx build's root
-(`src/main/draughts.goose`) takes `src/app/backend.goose`, gfx's alone;
+(`src/main/draughts.goose`) takes `src/gfx/backend.goose`, gfx's alone;
 `src/main/draughts_ngfx.goose`, a second root over the same program (`src/app/app.goose`),
 adds goose-ngfx's backend (`gpu_ngfx::Ngfx`, `src/ngfx/`'s `_ngfx` recorders,
 `photo_ngfx.c`, and `nx`, which gives goose-ngfx's calls gfx's handle types) and its own

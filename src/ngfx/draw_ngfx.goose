@@ -1,5 +1,5 @@
 // Recording the board's draws (draw.goose) through goose-ngfx, beside gfx's
-// src/app/draw_gpu.goose in the build that holds both (draughts_ngfx.goose): its shaders, written from that file's GLSL
+// src/gfx/draw_gpu.goose in the build that holds both (draughts_ngfx.goose): its shaders, written from that file's GLSL
 // (scripts/ngfx_2d_shaders.py) and built ahead, and the pieces copied into each frame's
 // memory, which their draw pulls them from.
 namespace draw_ngfx;

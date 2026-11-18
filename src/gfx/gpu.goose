@@ -2,10 +2,16 @@
 // a backend `be`, calling the functions below on it (`be.flush()`) and each recorder on
 // its field (`be.draw.board(...)`), resolved by be's type at compile time. goose-ngfx's
 // backend is gpu_ngfx::Ngfx (src/ngfx/).
+// The entry of the package src/gfx/, which the roots declare as gpu (a package can't be
+// named gfx, goose_gfx's name); the gfx-only root imports its backend.goose, the seam.
 namespace gpu;
 import std;
 import vec;
 import gfx;
+import .draw_gpu;
+import .scene_gpu;
+import .widgets_gpu;
+import .host_gpu;
 
 type Texture = gfx::Texture;
 type Sampler = gfx::Sampler;

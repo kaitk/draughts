@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The ngfx build's 2D shaders, the flat board's, the scene's, and the UI's, written from
-gfx's GLSL in src/app/draw_gpu.goose, scene_gpu.goose, and widgets_gpu.goose (task 073),
+gfx's GLSL in src/gfx/draw_gpu.goose, scene_gpu.goose, and widgets_gpu.goose (task 073),
 as ngfx_3d_shaders.py writes the 3D board's, so each shader has one source. scripts/ngfx.py
 calls sources() at every build; on its own it prints them into a folder to read:
 
@@ -20,9 +20,9 @@ from ngfx_glsl import Stage, source, strings, unique, write_entries, write_stage
 ROOT = Path(__file__).resolve().parent.parent
 SOURCES = {
     "shaders": ROOT / "src/render3d/shaders.goose",
-    "draw_gpu": ROOT / "src/app/draw_gpu.goose",
-    "scene_gpu": ROOT / "src/app/scene_gpu.goose",
-    "widgets_gpu": ROOT / "src/app/widgets_gpu.goose",
+    "draw_gpu": ROOT / "src/gfx/draw_gpu.goose",
+    "scene_gpu": ROOT / "src/gfx/scene_gpu.goose",
+    "widgets_gpu": ROOT / "src/gfx/widgets_gpu.goose",
 }
 S = {f"{ns}::{name}": text for ns, path in SOURCES.items() for name, text in strings(path).items()}
 

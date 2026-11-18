@@ -39,7 +39,7 @@ formatting is stable). The compiler prints nothing on success; `--stats` gives a
   fields are, so a root's `padN` fields stay out of every literal.
 - `type Name = T;` names a type. An alias of another package's struct builds it by
   literal (`gpu::Texture { 0 }`), and overloads on aliases of different structs resolve
-  (`src/app/gpu.goose`).
+  (`src/gfx/gpu.goose`).
 - A test file may hold its helpers' shared state in a top-level `var`.
 - `guard cond else { continue; }` for early exits; `if` and `match` are expressions, no
   ternary.
@@ -175,7 +175,7 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   built from a `var` is computed once before `main`: anything that changes at run time
   (`gui::tap_size()`) is a function.
 - One choice at run time over code compiled per type, the renderer's seam
-  (`src/app/backend.goose`): `fn with<F>() { if on { F(&a) } else { F(&b) } }` runs a
+  (`src/gfx/backend.goose`): `fn with<F>() { if on { F(&a) } else { F(&b) } }` runs a
   block `{ be => f(be) }` checked once per argument's type, so `f` and all it calls are
   generic and call `be`'s functions directly. A HOF needs its `<F>` and returns the
   block's value as that `if` expression (`return F(x)` of a valueless block is "cannot
@@ -229,7 +229,7 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - `smoothstep(a, b, x)` with `a > b` is undefined: write `1.0 - smoothstep(b, a, x)`.
 - Metal keywords (`thread`, `device`, `constant`, `kernel`) as GLSL names fail only on
   the Mac's pipeline build.
-- A GLSL change in `src/app/*_gpu.goose` or `src/render3d/shaders.goose` reaches the
+- A GLSL change in `src/gfx/*_gpu.goose` or `src/render3d/shaders.goose` reaches the
   ngfx build through `scripts/ngfx_2d_shaders.py` and `ngfx_3d_shaders.py`. A GLSL
   built-in no shader used before gets a rename in `ngfx_glsl.py`'s `Stage.parse` and a
   `glsl_` function in `src/ngfx/shaders/glsl.slang`; a new 2D pipeline a row in

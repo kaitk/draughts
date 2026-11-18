@@ -1,4 +1,4 @@
-// The window's GPU half for goose-ngfx, beside gfx's src/app/host_gpu.goose in the build
+// The window's GPU half for goose-ngfx, beside gfx's src/gfx/host_gpu.goose in the build
 // that holds both (draughts_ngfx.goose): gfx opens the window WINDOW_ONLY, with gfx's
 // input, events, and wait and no device, and ngfx draws into it.
 namespace host_ngfx;

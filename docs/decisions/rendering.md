@@ -18,7 +18,7 @@ tree of 2026-11-12 ([decisions](README.md#the-codes-layout)). The drawers take a
 `be` and are generic over its type: each calls its recorder on a field
 (`be.draw.board(...)`, `be.r3d.bake(...)`), which Goose resolves by the field's type, so
 each drawer is compiled once per backend and calls that renderer directly. The choice is
-one `if`, in `backend::with`, one file per root (`src/app/backend.goose` for gfx alone,
+one `if`, in `backend::with`, one file per root (`src/gfx/backend.goose` for gfx alone,
 `src/ngfx/backend.goose` holding both); the ngfx build is a second root
 (`src/main/draughts_ngfx.goose`) over the same program (`src/app/app.goose`). Goose 150
 lines fewer, Python 85, the gfx executable 16 KB smaller; `--bench 60` and shots on both

@@ -1,4 +1,4 @@
-// goose-ngfx's backend, beside gfx's gpu::Gfx (src/app/gpu.goose) in the build that holds
+// goose-ngfx's backend, beside gfx's gpu::Gfx (src/gfx/gpu.goose) in the build that holds
 // both: each recorder's state, the 3D board's what only ngfx holds, the window's half, and
 // the few calls the drawers make on the backend itself. Handles are gfx's types (nx).
 // The entry of the package src/ngfx/, which the root declares as gpu_ngfx (a package

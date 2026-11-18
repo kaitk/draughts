@@ -1,5 +1,5 @@
 // Recording the scene's passes (scene.goose) through goose-ngfx, beside gfx's
-// src/app/scene_gpu.goose in the build that holds both (draughts_ngfx.goose): the shaders are written from that file's
+// src/gfx/scene_gpu.goose in the build that holds both (draughts_ngfx.goose): the shaders are written from that file's
 // GLSL (scripts/ngfx_2d_shaders.py) and built ahead, the pipelines made once and kept,
 // and each pass's writes made visible to the passes after it that sample them.
 namespace scene_ngfx;
