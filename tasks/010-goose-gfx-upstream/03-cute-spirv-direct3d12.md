@@ -1,13 +1,19 @@
 # 010.03: Direct3D 12's HLSL from cute_spirv, and the first instance
 
-Status: in-progress (the cute_spirv patch built and tested; not sent)
+Status: in-progress (Direct3D 12 draws as Vulkan does on the `direct3d12` branch; the
+cute_spirv patch not sent)
 
 On Direct3D 12 on AMD, Goose's shaders that use storage buffers draw nothing or collapse,
 and one that names a local `line` stops the app. Both causes are in cute_spirv's HLSL
 (`docs/goose-findings.md`, both entries proven on 2026-11-18). One patch fixes both. It
 goes to cute_framework, which owns cute_spirv, and Goose then copies the header again, as
 its `third_party/cute_spirv/README.md` says. A third difference, the draw's first
-instance, still breaks Draughts' widgets there and has no fix yet.
+instance, broke Draughts' widgets there; the branch fixes it in Draughts.
+
+Windows draws through Vulkan and there is no plan to ship Direct3D 12, so the Draughts
+side lives on the `direct3d12` branch, not `main`: the widgets' change, both patches in
+`patches/goose/` and `patches/cute_framework/`, and how to build it in
+`docs/development.md` ("Direct3D 12"). Merge `main` into it now and then.
 
 ## The cute_spirv patch
 
@@ -22,9 +28,10 @@ instance, still breaks Draughts' widgets there and has no fix yet.
 - Names FXC rejects (keywords, scalar/vector/matrix type names) and user functions named
   like an intrinsic the printer emits (`lerp`, `frac`, `mul`...) gain a trailing `_` in
   the HLSL only, as the WGSL backend does.
-- Where it is (local only, not in git): `build/notes/upstream/cute_framework-hlsl-d3d12.patch`
+- Where it is: on the `direct3d12` branch,
+  `patches/cute_framework/0001-cute-spirv-direct3d12.patch`
   (the header and 38 checks added to `tools/cute_spirv_test.c`) and
-  `build/notes/upstream/goose-cute_spirv.patch`. In `~/projects/goose/goose`, the local
+  `patches/goose/0001-cute-spirv-direct3d12.patch`. In `~/projects/goose/goose`, the local
   branch `hlsl-byteaddress-ssbo` (`a66a8fb7`, on v2026.4).
 - cute_framework's own `SDL_GPU` path compiles this HLSL with FXC on Direct3D 12
   (`src/cute_graphics_sdlgpu.cpp`), which SDL tries before Vulkan on Windows, so its
@@ -40,8 +47,10 @@ with built-in IDs. `widgets_gpu::run` draws each run of quads with
 first run's quads: words cut short ("Dra" for "Draughts"), icons as solid squares.
 `gl_VertexIndex` with a first vertex is the same case. Two fixes, either or both:
 
-- Draughts: pass `first` in the widgets' uniform and add it in the shader, or draw each
-  run from instance 0 of its own buffer range. Cheap, and portable on every backend.
+- Draughts (done on the branch, `150b893`): each run draws from instance 0, and its first
+  quad comes in a vertex uniform (`QuadRun`) that the shader adds. The 2D pieces draw
+  from 0 already, and the 3D board passes its offset in `draw.w`. It is portable on every
+  backend, so `main` could take it whenever it likes.
 - goose_gfx/Goose: a hidden uniform with the first instance and vertex that cute_spirv's
   HLSL adds to the IDs (SPIRV-Cross's `SPIRV_Cross_VertexInfo`), or reject a nonzero first
   instance on Direct3D 12, or document it in `gfx.goose`. Raise it as an issue first.
@@ -66,7 +75,14 @@ first run's quads: words cut short ("Dra" for "Draughts"), icons as solid square
   3.45 (20.32). What remains is the first instance. Bench windowed, 300 frames:
   Direct3D 12 639.8 fps average against Vulkan's 626.7; full screen 181.9 against 167.6;
   `--rest 10` 0.0% CPU on both. FXC still takes about 4 s at each launch.
-- Screenshots and logs: `build/notes/showcase/`, `build/notes/patched/` (local).
+- With the widgets' fix too (the branch): Direct3D 12 against Vulkan, mean per channel,
+  flat board 0.00, 3D board 2.30, with MSAA 1.11, About 0.29; the largest single
+  difference 1, 18, 15, and 16 of 255, spread thinly over the photograph and the board,
+  with no pixel off by more than 32. Vulkan against the release's build: 0.00, 0.03,
+  0.49, 0.13. Bench windowed: Direct3D 12 693.7 fps against Vulkan's 641.1; full screen
+  183.9 against 174.3; `--rest 10` 0.3% CPU on both. Draughts' tests pass.
+- Screenshots and logs: `build/notes/showcase/`, `build/notes/patched/`,
+  `build/notes/branch/` (local).
 
 ## Acceptance criteria
 
@@ -74,8 +90,8 @@ first run's quads: words cut short ("Dra" for "Draughts"), icons as solid square
       and the measurements above
 - [ ] Once merged: Goose's `third_party/cute_spirv` copied again with its README's commit,
       offered to Goose
-- [ ] The first instance: Draughts' widgets made portable, or kept as they are with the
-      reason here; a goose_gfx issue raised
-- [ ] Draughts on Direct3D 12 matches Vulkan on every screen (flat, 3D with and without
-      MSAA, About), checked on the Radeon 680M
+- [x] The first instance: Draughts' widgets made portable (on the branch)
+- [ ] A goose_gfx issue raised about the first instance and vertex on Direct3D 12
+- [x] Draughts on Direct3D 12 matches Vulkan on every screen (flat, 3D with and without
+      MSAA, About), checked on the Radeon 680M (on the branch, with the patched Goose)
 - [ ] `docs/goose-findings.md` updated as each lands
