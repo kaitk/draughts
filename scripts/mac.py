@@ -25,7 +25,8 @@ The release's own libgoose_gfx.a presents every frame, so the app at rest spins 
 display's rate. This builds goose_gfx's sources from the submodule (kaitk/goose_gfx's
 main, with every change Draughts needs), as Android, iOS, and Windows (scripts/windows.py)
 do, into a copy of the release (build/mac/goose/), and builds the program with that copy's
-goose: its gfx presents only what was drawn and then waits for an event (draw-on-demand),
+goose: its gfx can present only what was drawn and then wait for an event (WAIT_WHEN_IDLE,
+which the app opens with),
 and samples ASTC where the GPU takes it (compressed-textures). SDL is the release's own libSDL3.a, which is goose_gfx's SDL submodule's commit.
 
 The copy is made once; delete build/mac/goose/ after the release changes. The release is

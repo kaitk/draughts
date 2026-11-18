@@ -60,16 +60,21 @@ Held in the fork, since upstream gfx targets the desktop (Windows, Linux, macOS)
 `ios-run-loop-wait` (iOS isn't upstream's; the fix belongs in SDL, `02-sdl.md`) and
 `system-gamepads` (`SYSTEM_GAMEPADS`: Apple and Android, Objective-C through the runtime).
 
-`upstream-series-next` merges every branch, held ones included: what Draughts builds from
-next. The fork's `main` (`15de5e0`, the submodule's pin) still has the older versions,
-with draw on demand always on.
+`upstream-series-next` merges every branch, held ones included. The fork's `main`
+(`b8cd74b`, the submodule's pin since 2026-11-18) merges it into the old `main` (`15de5e0`,
+whose tree it replaces, so every earlier pin stays reachable) and then `headless-apple`.
+Draughts opens with `WAIT_WHEN_IDLE` and `SYSTEM_GAMEPADS`, as draw on demand is now
+opt-in. At rest on the Mac (a game, flat, 25 s): gfx 0.017% of a core, ngfx 0.037%, the
+loop 26 times, nothing drawn; headless shots and `scripts/test.sh` pass. On the Pixel 7a
+(the `.dev` install; the main app there has another signature), 60 s at home: the program's
+thread 0.12%, 60 wakeups, but the process 4.8%, nearly all of it AAudio's and SDL's audio
+threads: the open sound device, which this didn't change. Not yet on the tablet.
 
 ## Next
 
-1. Merge `upstream-series-next` and `headless-apple` into the fork's `main` (a merge, not a reset, so every
-   commit the submodule has pinned stays reachable).
-2. Move the submodule to it; Draughts opens with `WAIT_WHEN_IDLE` and `SYSTEM_GAMEPADS`
-   to keep drawing on demand. Check on the Mac, then the tablet.
+1. Check the move to `b8cd74b` on the tablet over USB (idle CPU, `install -r`).
+2. Send 12 and 13 (`headless-apple`, `macos-tested`), then the rest as #15 settles.
+3. Why the Pixel's audio threads take about 4.5% of a core at rest, with sound on.
 
 ## Acceptance criteria
 

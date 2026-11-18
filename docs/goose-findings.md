@@ -8,10 +8,10 @@ them.
 
 Draughts builds gfx from `kaitk/goose_gfx`'s `main` (the submodule): upstream `main` with
 every change below merged in, each also a branch of its own on upstream `main`, offered
-upstream one at a time (`upstream-series` is all of them; task 065 lists which stack on
-which). NoGraphicsAPI changes are branches of `kaitk/NoGraphicsAPI`, merged into its
-`ngfx`, which goose-ngfx follows, each a pull request to `sebbbi/NoGraphicsAPI`. None of
-these pull requests is opened yet; the user opens them.
+upstream one at a time (`upstream-series-next` is all of them, `main` merges it and
+`headless-apple`; task 010 lists which stack on which). NoGraphicsAPI changes are branches of `kaitk/NoGraphicsAPI`, merged into its
+`ngfx`, which goose-ngfx follows, each a pull request to `sebbbi/NoGraphicsAPI`. The user
+opens every pull request (task 010 lists which are open).
 
 SDL entries are for the user only: SDL's `CLAUDE.md` asks that no AI-written code or text
 go into its reports or pull requests, so any report is the user's own. Check first whether
@@ -146,8 +146,8 @@ SDL_GPU's Metal backend takes only a driver that makes Metal views, which offscr
 doesn't. On the Mac every `GOOSE_GFX_HEADLESS=1` run fails with "no GPU device", and
 Goose's suite skips its gfx tests rather than failing them (2026-11-18).
 
-- Here: `kaitk/goose_gfx`'s `headless-apple` leaves the default driver (Cocoa) on Apple's
-  systems; until it is in the fork's `main`, `SDL_VIDEO_DRIVER=cocoa` does the same.
+- Here: `kaitk/goose_gfx`'s `headless-apple`, in the fork's `main`, leaves the default
+  driver (Cocoa) on Apple's systems; `SDL_VIDEO_DRIVER=cocoa` does the same.
 - Upstream: the same (task 010).
 
 ### FXC compiles every shader again at each launch on Direct3D 12
@@ -285,13 +285,14 @@ tablet 207.5 MB, 138.9 without).
 
 ### `frame()` presents every frame, so an idle program redraws at the display rate
 
-- Here: `kaitk/goose_gfx`'s `draw-on-demand`: `frame()` presents only when something used
-  the GPU or the window needs it, and after a frame that drew nothing waits for an event
+- Here: `kaitk/goose_gfx`'s `draw-on-demand`, the open flag `WAIT_WHEN_IDLE` (256) since
+  2026-11-18 (always on before), which the app passes: `frame()` presents only when
+  something used the GPU or the window needs it, and after a frame that drew nothing waits for an event
   (up to 1 s). After Android recreates the surface it retries the present for up to 8
   frames. It needs the Android busy-wait workaround and, on iOS, `ios-run-loop-wait`
   (below). The Mac at rest: 8.2% of a core before, 0.03% after.
-- Upstream: the same, opt-in (`gfx::set_wait_when_idle(true)` or an `open` flag); skipping
-  the present of an empty frame could be the default.
+- Upstream: the same flag, #15; skipping the present of an empty frame could be the
+  default.
 
 ### SDL_GPU requires `shaderClipDistance`, which Mali GPUs lack
 

@@ -17,6 +17,10 @@ let IOS = 2;
 // child thinking over a move keeps it lit; a game left lying doesn't keep it lit for hours.
 let SCREEN_IDLE = 900.0;
 
+// gfx's open flag, the fork's (gfx.goose's): a frame that drew nothing isn't presented, and
+// the next frame() waits for an event, up to a second (rendering.md, "Frames and battery").
+let WAIT_WHEN_IDLE = 256;
+
 // DESKTOP, ANDROID, or IOS.
 extern fn draughts_platform() -> i64;
 // The system's preferred locales, "et-EE,en-US"; returns how many bytes.
@@ -82,9 +86,10 @@ struct Host {
 
 // Opens the window, filling the screen on a phone or a tablet or with `full`. Aborts if it can't.
 fn open(title: const u8[:], width: i64, height: i64, full: bool, no_vsync: bool) -> Host {
-    // The system reads a gamepad where it can, and wakes the idle app when it is used.
+    // Drawn on demand; the system reads a gamepad where it can, and wakes the idle app when
+    // it is used.
     let shown = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
-    let flags = shown | SYSTEM_GAMEPADS;
+    let flags = shown | WAIT_WHEN_IDLE | SYSTEM_GAMEPADS;
     draughts_choose_gpu();
     backend::open(title, width, height, flags, no_vsync);
     return Host { erase: gfx::scancode("Backspace"), enter: gfx::scancode("Return"), pad_enter: gfx::scancode("Keypad Enter"), .. };

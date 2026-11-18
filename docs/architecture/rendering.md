@@ -764,9 +764,11 @@ while gfx::frame() {
 }
 ```
 
-This is the fork's `draw-on-demand` ([findings](../goose-findings.md)), in every build
-(`scripts/android.py`, `ios.py`, `mac.py`, `windows.py`, `linux.py` build goose_gfx from the
-fork). The release's own gfx presents every frame. The patched `frame()`:
+This is goose_gfx's `WAIT_WHEN_IDLE` open flag, which `host::open` passes with
+`SYSTEM_GAMEPADS`: the fork's `draw-on-demand`, proposed upstream as an opt-in flag
+([findings](../goose-findings.md)), in every build (`scripts/android.py`, `ios.py`,
+`mac.py`, `windows.py`, `linux.py` build goose_gfx from the fork). Without the flag, and
+with the release's own gfx, `frame()` presents every frame. With it, `frame()`:
 
 - presents only if something used the GPU, or the window needs the screen again
   (exposed, restored, resized, back in the foreground);
@@ -800,6 +802,7 @@ At rest over 25 s (`--rest 25`):
 | iPhone 13 mini, a game, flat or 3D | 0.08% | 26, none |
 | iPhone 13 mini, a clock running | 0.52% | 51, 26 |
 | Mac, home | 0.03% (8.2% with the release's gfx) | 27, none |
+| Mac, a game, flat, gfx or ngfx | 0.02 or 0.04% | 26, none |
 | Mac, a clock running | 0.17% | 51, 26 |
 | Windows, home | 0.06% | 27, none |
 | Windows, full screen, a game, flat or 3D | 0.06 to 0.18% | 27, none |

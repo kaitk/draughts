@@ -21,7 +21,7 @@ without Inno Setup there is only the zip. Neither is signed.
 The release's own goose_gfx.lib lacks Draughts' changes. This builds goose_gfx's sources
 from the submodule (kaitk/goose_gfx's main), as Android and iOS do, into a copy of the
 release (build/windows/goose/), and builds the program with that copy's goose: its gfx
-draws only when something changed (draw-on-demand), and so on. SDL is the release's own, linked
+draws only when something changed (WAIT_WHEN_IDLE, which the app opens with), and so on. SDL is the release's own, linked
 statically; patches/SDL are for Android and iOS. The app draws through Vulkan there, as on
 Android (src/app/display.c).
 
