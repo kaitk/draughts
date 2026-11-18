@@ -106,8 +106,8 @@ hidden window of gfx's, gfx alone if that fails, and a marker that sends the nex
 to gfx if ngfx never presented a frame on this GPU, driver, and app. ngfx's shaders are
 gfx's GLSL written as Slang at each build (`scripts/ngfx_2d_shaders.py`,
 `ngfx_3d_shaders.py`), so each has one source; `src/ngfx/shaders/` holds only what they
-include, ngfx's own antialiasing and mip passes, and SMAA's wrapper. `scripts/ngfx.py`
-builds that root. The gfx build is what ships.
+include, ngfx's own antialiasing and mip passes, and SMAA's wrapper. The platform scripts
+build that root. The gfx build is what ships.
 
 The targets this keeps open, each replacing or adding to `app/` and the renderers alone:
 

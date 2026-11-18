@@ -6,7 +6,7 @@ scene (Russian, wood, the start).
     python tools/perf/windows_perf.py [frames]     default 1000; build first with
                                                 scripts/windows.py src/main/draughts.goose
     BOARDS=3d python tools/perf/windows_perf.py    one board; REST=0 leaves the rest out
-    EXE=build/ngfx/draughts.exe FLAGS="--aa smaa" python tools/perf/windows_perf.py
+    EXE=build/windows/draughts_ngfx.exe FLAGS="--aa smaa" python tools/perf/windows_perf.py
                                                 another build, and flags added to each run
     SIZE=1280x800 python tools/perf/windows_perf.py  a window in place of full screen
 

@@ -30,7 +30,7 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
 
 ### Two renderers
 
-gfx ships everywhere; the build holding goose-ngfx too (`scripts/ngfx.py`) draws the same
+gfx ships everywhere; the build holding goose-ngfx too (`src/main/draughts_ngfx.goose`) draws the same
 frames through either, chosen at start (`--renderer auto|gfx|ngfx`). The drawers (`draw`,
 `scene`, `widgets`, `draw3d`, `render3d`) are shared: each records through a backend
 handed to it, `be`, calling the few calls every drawer makes on it (`be.flush()`,

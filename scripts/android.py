@@ -44,7 +44,8 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-from native import (APP_ID, ROOT, VERSION_NAME, WINDOWS, app_names, copy_sources, goose_to_c,
+import ngfx
+from native import (ROOT, VERSION_NAME, WINDOWS, app_id_of, app_names, copy_sources, goose_to_c,
                     run, sidecar)
 
 # Android Studio's default SDK on each host, unless ANDROID_HOME names one.
@@ -164,9 +165,10 @@ def main():
     args = ap.parse_args()
     if args.debuggable and args.release: sys.exit("--debuggable is for test builds, not a release")
     program = args.program.resolve()
+    if ngfx.uses_ngfx(program):
+        sys.exit("goose-ngfx has no Android build")
     name = program.stem
-    # Another program (tools/pace.goose) gets its own id, so it installs beside the app.
-    app_id = APP_ID if name == "draughts" else f"{APP_ID}.{name}"
+    app_id = app_id_of(program)
     if args.id_suffix: app_id += "." + args.id_suffix
     out = ROOT / "build/android" / name
     gen, native, apk_dir = out / "gen", out / "native", out / "apk"

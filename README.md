@@ -100,16 +100,16 @@ Draughts is two Goose programs over one app, both in `src/main/`:
   on every platform: Android, iOS, macOS, Windows, and Linux.
 - `src/main/draughts_ngfx.goose` holds goose-ngfx (NoGraphicsAPI) too and picks a
   renderer when it starts (`--renderer auto|gfx|ngfx`). It is a development build, made
-  by `scripts/ngfx.py` on the Mac, Windows, and Linux, and by `scripts/ios.py --ngfx` for
-  an iPhone or iPad.
+  by the same scripts on the Mac, Windows, and Linux, and by `scripts/ios.py` for an
+  iPhone or iPad.
 
 Each root holds only `main`, which calls `run`, the main loop in `src/app/app.goose`.
 Its `.build` sidecar lists the program's C, which is in `src/native/`.
 
 ## Building and running
 
-Every build script takes `src/main/draughts.goose` (`scripts/ngfx.py` builds its twin
-from it) and writes into `build/`. The scripts need the submodule and the pinned Goose
+Every build script takes `src/main/draughts.goose`, and all but Android's take
+`src/main/draughts_ngfx.goose` too, and writes into `build/`. The scripts need the submodule and the pinned Goose
 release in `build/`; [development](docs/development.md#toolchain) sets these up. On a Mac with Apple
 silicon:
 
@@ -125,7 +125,7 @@ build/draughts --board 3d
 | Linux | Linux | `scripts/linux.py src/main/draughts.goose --run` | [Run on Linux](docs/development.md#run-on-linux) |
 | Android | Mac, Windows | `scripts/android.py src/main/draughts.goose --run`: build, install over USB, start | [Run on Android](docs/development.md#run-on-android) |
 | iOS | Mac with Xcode | `scripts/ios.py src/main/draughts.goose --run` in the Simulator, `--device --run` on an iPhone | [Run on iOS](docs/development.md#run-on-ios) |
-| Both renderers | Mac, Windows, Linux | `scripts/ngfx.py src/main/draughts.goose --run`, with a goose-ngfx checkout (`NGFX`) and slangc (`NGFX_SLANGC`) | [Two renderers](docs/architecture/rendering.md#two-renderers) |
+| Both renderers | Mac, Windows, Linux | `scripts/mac.py src/main/draughts_ngfx.goose --run`, likewise `windows.py` and `linux.py`, with a goose-ngfx checkout (`NGFX`) and slangc (`NGFX_SLANGC`) | [Two renderers](docs/architecture/rendering.md#two-renderers) |
 
 `--release` makes the store and download builds; [development](docs/development.md) has
 them, the development flags, and how to measure a device.

@@ -2,6 +2,8 @@
 """Build a Goose program for the Mac with the patched goose_gfx, and optionally run it.
 
     scripts/mac.py src/main/draughts.goose                     build build/draughts
+    scripts/mac.py src/main/draughts_ngfx.goose                build build/draughts_ngfx, holding
+                                                              goose-ngfx too (scripts/ngfx.py)
     scripts/mac.py src/main/draughts.goose --run -- --board 3d build, and run it with those flags
     scripts/mac.py src/main/draughts.goose --release           Draughts.app, signed and notarized,
                                                               in a disk image for a GitHub release
@@ -44,6 +46,7 @@ import time
 from pathlib import Path
 
 import native
+import ngfx
 
 RELEASE = Path(os.environ.get("GOOSE_RELEASE", native.ROOT / "build/goose-v2026.4-macos-arm64"))
 OUT = native.ROOT / "build/mac"
@@ -248,7 +251,10 @@ def main():
     a = ap.parse_args()
     program = a.program.resolve()
     if a.release:
+        if ngfx.uses_ngfx(program):
+            sys.exit("the build holding goose-ngfx isn't released")
         return release(program, not a.no_notarize)
+    ngfx.prepare(program)
     exe = (a.o or native.ROOT / "build" / program.stem).resolve()
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
     if a.run:

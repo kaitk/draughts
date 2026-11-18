@@ -1,47 +1,33 @@
-#!/usr/bin/env python3
-"""Build Draughts holding both renderers, gfx and goose-ngfx (NoGraphicsAPI), one chosen
-when it starts (task 073), and optionally run it.
+"""What a build of src/main/draughts_ngfx.goose needs from outside the repository, made in
+build/ngfx/ before the build (task 073). scripts/mac.py, windows.py, linux.py, and ios.py
+call prepare() with the program they are given, which does nothing for any other
+program.
 
-    python scripts/ngfx.py src/main/draughts.goose              build build/ngfx/draughts(.exe)
-    python scripts/ngfx.py src/main/draughts.goose --run -- --renderer gfx --screen game
-                                                               build, and run it with those flags
+The root holds both renderers, gfx and goose-ngfx (NoGraphicsAPI), one chosen when it
+starts (src/ngfx/backend.goose). It needs a link to the goose-ngfx checkout
+(build/ngfx/goose-ngfx, which the root declares its package from), and the Slang shaders
+compiled ahead into ngfx's blobs (build/ngfx/blobs/), which the app embeds, so it runs no
+shader compiler: the 2D shaders and the 3D board's, written from gfx's GLSL into
+build/ngfx/shaders/ by ngfx_2d_shaders.py and ngfx_3d_shaders.py, and src/ngfx/shaders/,
+what they include and the shaders ngfx alone has, with SMAA's (third_party/smaa), which
+smaa.slang includes.
 
-The program is src/main/draughts_ngfx.goose, the second root beside the gfx build's
-src/main/draughts.goose: the same app (src/app/app.goose), gfx's backend and goose-ngfx's,
-and src/ngfx/backend.goose, which chooses one at start. The gfx-only build is untouched.
-This makes what that root needs from outside the repository, all in build/ngfx/: a link
-to the goose-ngfx checkout (goose-ngfx, which the root declares its package from), and the
-Slang shaders compiled ahead into ngfx's blobs (blobs/), which the app embeds, so it runs no shader
-compiler: the 2D shaders and the 3D board's, written from gfx's GLSL into shaders/ by
-ngfx_2d_shaders.py and ngfx_3d_shaders.py, and src/ngfx/shaders/, what they include and
-the shaders ngfx alone has, with SMAA's (third_party/smaa), which smaa.slang includes.
-
-Needs a goose-ngfx checkout (NGFX, else ../goose-ngfx or ../goose/goose-ngfx beside this repository),
-slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs (its
-docs/development.md: on Windows the Vulkan SDK and Visual Studio's Build Tools; on the
-Mac Xcode with its Metal toolchain; on Linux the Vulkan SDK and CMake, so in the goose
-distrobox on Bazzite). The program is built with the Goose release's copy whose gfx is
-built from the submodule (scripts/mac.py, windows.py, linux.py), for gfx's WINDOW_ONLY:
-gfx's window, input, and events, with ngfx drawing into the window, on Linux a Wayland
-surface or an X11 window, whichever SDL opened.
+Needs a goose-ngfx checkout (NGFX, else ../goose-ngfx or ../goose/goose-ngfx beside this
+repository), slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs
+(its docs/development.md: on Windows the Vulkan SDK and Visual Studio's Build Tools; on
+the Mac Xcode with its Metal toolchain; on Linux the Vulkan SDK and CMake). The desktop
+scripts build it with their patched gfx, for gfx's WINDOW_ONLY: gfx's window, input, and
+events, with ngfx drawing into the window, on Linux a Wayland surface or an X11 window,
+whichever SDL opened. Android has no ngfx build.
 """
-import argparse
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
 import native
 import ngfx_2d_shaders
 import ngfx_3d_shaders
-
-if native.WINDOWS:
-    import windows as platform_build
-elif sys.platform.startswith("linux"):
-    import linux as platform_build
-else:
-    import mac as platform_build
 
 ROOT = native.ROOT
 OUT = ROOT / "build/ngfx"
@@ -52,7 +38,6 @@ NGFX = Path(os.environ.get("NGFX") or next(
     (p for p in (ROOT.parent / "goose-ngfx", ROOT.parent / "goose/goose-ngfx") if p.exists()),
     ROOT.parent / "goose-ngfx")).resolve()
 LINK = OUT / "goose-ngfx"
-EXE = ".exe" if native.WINDOWS else ""
 
 
 def copy_if_changed(src, dst):
@@ -76,10 +61,9 @@ def rel(frm, to):
     return os.path.relpath(to, frm).replace("\\", "/")
 
 
-def prepare():
-    """build/ngfx/'s link to the checkout (a junction on Windows, which needs no rights), the
-    version header (native.write_version), and a check that the root's sidecar has all of
-    the app's C."""
+def make_link():
+    """build/ngfx/'s link to the checkout (a junction on Windows, which needs no rights), and
+    a check that the root's sidecar has all of the app's C."""
     OUT.mkdir(parents=True, exist_ok=True)
     if not LINK.exists() or LINK.resolve() != NGFX:
         if LINK.is_symlink() or LINK.exists():
@@ -89,18 +73,15 @@ def prepare():
             _winapi.CreateJunction(str(NGFX), str(LINK))
         else:
             LINK.symlink_to(NGFX, target_is_directory=True)
-    native.write_version()
     app = {p.name for p in native.sidecar(ROOT / "src/main/draughts.goose", "c_sources")}
     ours = {p.name for p in native.sidecar(ROOTFILE, "c_sources")}
     assert app <= ours, f"src/main/draughts_ngfx.build lacks the app's {sorted(app - ours)}"
 
 
-def shaders(sdk=None):
-    """The Slang modules compiled into blobs in build/ngfx/blobs/, where stale:
-    src/ngfx/shaders/ and those written from gfx's GLSL (ngfx_2d_shaders.py,
-    ngfx_3d_shaders.py), side by side in build/ngfx/shaders/. sdk names the SDK the
-    metallibs are for (NGFX_METAL_SDK, iphoneos for iOS and iPadOS), else the Mac's; the
-    blobs of another SDK's are all made again."""
+def write_sources():
+    """build/ngfx/shaders/: src/ngfx/shaders/, those written from gfx's GLSL
+    (ngfx_2d_shaders.py, ngfx_3d_shaders.py), and SMAA's. Returns the Slang files, and the
+    ones of them that are modules, each compiled into a blob, not parts others include."""
     gen = OUT / "shaders"
     gen.mkdir(parents=True, exist_ok=True)
     hand = {f.name: f for f in (ROOT / "src/ngfx/shaders").glob("*.slang")}
@@ -111,11 +92,19 @@ def shaders(sdk=None):
             f.unlink()
     for name, f in hand.items():
         copy_if_changed(f, gen / name)
-    smaa = ROOT / "third_party/smaa"
-    copy_if_changed(smaa / "SMAA.hlsl", gen / "SMAA.hlsl")
+    copy_if_changed(ROOT / "third_party/smaa/SMAA.hlsl", gen / "SMAA.hlsl")
     for name, text in written.items():
         write_if_changed(gen / name, text)
     src = sorted(gen.glob("*.slang"))
+    parts = ["common.slang", "glsl.slang", "r3d.slang", "r3d_frame.slang"]
+    return src, [f for f in src if f.name not in parts]
+
+
+def shaders(sdk=None):
+    """The blobs in build/ngfx/blobs/, compiled where stale. sdk names the SDK the
+    metallibs are for (NGFX_METAL_SDK, iphoneos for iOS and iPadOS), else the Mac's; the
+    blobs of another SDK's are all made again."""
+    src, modules = write_sources()
     out = BLOBS
     out.mkdir(parents=True, exist_ok=True)
     made_for = out / "sdk.txt"
@@ -123,10 +112,9 @@ def shaders(sdk=None):
         for f in out.glob("*.blob"):
             f.unlink()
         made_for.write_text(sdk or "")
-    newest = max(f.stat().st_mtime for f in [*src, gen / "SMAA.hlsl"])
-    parts = ["common.slang", "glsl.slang", "r3d.slang", "r3d_frame.slang"]
-    stale = [f for f in src if f.name not in parts
-             and (not (out / (f.stem + ".blob")).exists() or (out / (f.stem + ".blob")).stat().st_mtime < newest)]
+    newest = max(f.stat().st_mtime for f in [*src, OUT / "shaders/SMAA.hlsl"])
+    stale = [f for f in modules
+             if not (out / (f.stem + ".blob")).exists() or (out / (f.stem + ".blob")).stat().st_mtime < newest]
     if not stale:
         return
     tools = OUT / "tools"
@@ -149,33 +137,20 @@ def check_setup():
         sys.exit("set NGFX_SLANGC to slangc 2026.18.2 or later (goose-ngfx's docs/development.md)")
 
 
-def ios_root():
-    """The root for iOS and iPadOS (scripts/ios.py --ngfx), its blobs' metallibs compiled
-    for iphoneos, as a Mac's don't load there (the next Mac build compiles them again)."""
+def uses_ngfx(program):
+    """Whether the program declares goose-ngfx from build/ngfx/, as draughts_ngfx.goose does."""
+    return "build/ngfx/goose-ngfx" in Path(program).read_text(encoding="utf-8")
+
+
+def prepare(program, sdk=None):
+    """build/ngfx/ for the program if it uses goose-ngfx: the link, the version header, and
+    the blobs, their metallibs for sdk (iphoneos for iOS and iPadOS) or the Mac. Returns
+    whether it does."""
+    if not uses_ngfx(program):
+        return False
     check_setup()
-    prepare()
-    shaders("iphoneos")
-    return ROOTFILE
+    make_link()
+    native.write_version()
+    shaders(sdk)
+    return True
 
-
-def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("program", type=Path, help="the gfx build's root, src/main/draughts.goose")
-    ap.add_argument("--run", action="store_true", help="run it after building")
-    ap.add_argument("args", nargs="*", help="the program's flags, after --")
-    a = ap.parse_args()
-    check_setup()
-    if a.program.resolve() != ROOT / "src/main/draughts.goose":
-        sys.exit(f"{a.program}: only src/main/draughts.goose has a twin holding both renderers")
-    prepare()
-    shaders()
-    exe = OUT / f"draughts{EXE}"
-    # gfx from the patched sources, as the gfx build's: the window comes from gfx opened
-    # WINDOW_ONLY (kaitk/goose_gfx's window-only), and ngfx draws into it.
-    native.run(platform_build.patched_goose(), "build", "-o", exe, ROOTFILE.name, cwd=ROOTFILE.parent)
-    if a.run:
-        sys.exit(subprocess.run([str(exe), *a.args]).returncode)
-
-
-if __name__ == "__main__":
-    main()

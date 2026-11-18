@@ -178,8 +178,8 @@ distrobox enter draughts-jammy -- env CC=clang-20 scripts/linux.py src/main/drau
 scripts/linux.py src/main/draughts.goose               # then on the host
 ```
 
-`scripts/ngfx.py src/main/draughts.goose` builds the ngfx renderer (`build/ngfx/draughts`;
-slangc in `NGFX_SLANGC`, a Mesa with `VK_EXT_descriptor_heap`).
+`scripts/linux.py src/main/draughts_ngfx.goose` builds the ngfx renderer
+(`build/linux/draughts_ngfx`; slangc in `NGFX_SLANGC`, a Mesa with `VK_EXT_descriptor_heap`).
 
 ## Test the rules
 

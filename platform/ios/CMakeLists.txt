@@ -62,7 +62,7 @@ set_source_files_properties(${GOOSE_PROGRAM_C} PROPERTIES COMPILE_DEFINITIONS "m
 set_source_files_properties(${GOOSE_RUNTIME_C} PROPERTIES COMPILE_OPTIONS "-w")
 set_source_files_properties(${GOOSE_GFX_SRC}/ui/ui_nuklear.c PROPERTIES COMPILE_OPTIONS "-w")
 
-# --- goose-ngfx, for the ngfx build (scripts/ios.py --ngfx, task 065) ----------------------
+# --- goose-ngfx, for the ngfx build (src/main/draughts_ngfx.goose, task 065) ---------------
 # Its CMake builds NoGraphicsAPI and the layer for the SDK, its shaders compiled for it.
 # goose.h, which the layer and the program's C include, is the compiler's: the one it wrote
 # for the package's build on the Mac (scripts/ios.py finds it).

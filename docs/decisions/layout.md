@@ -72,6 +72,28 @@ split is in [the code's layout](README.md#the-codes-layout).
 - `icon.py` stays in `scripts/`: it makes the icons, but `scripts/ios.py` imports it for
   the shipped icon's path.
 
+## Building the two programs (2026-11-18)
+
+- Each platform's script builds whichever root it is given: `scripts/mac.py
+  src/main/draughts_ngfx.goose` builds the program holding goose-ngfx, as
+  `windows.py`, `linux.py`, and `ios.py` do. A root that declares goose-ngfx from
+  `build/ngfx/` gets that folder made first (`scripts/ngfx.py`, now a module the scripts
+  call). This replaces two ways of asking for it: `scripts/ngfx.py`, which took the gfx
+  root and swapped in its twin, and `scripts/ios.py --ngfx`. Android has no ngfx build,
+  so `android.py` refuses that root, and every `--release` refuses it, as only the gfx
+  build ships. Rejected: `--ngfx` on every script, which keeps a flag that only says
+  which file to build, and a gfx root that can't be built alone.
+- The app's ids come from the sidecar's `output = "draughts";`, which both roots set,
+  not from the file's name: a program named `draughts` gets `io.github.kaitk.draughts` on
+  Android and `io.github.kaitk.draughts.app` on iOS, and another program (`tools/pace.goose`)
+  gets `<id>.<name>` as before (`scripts/native.py`, `app_id_of`). So the ngfx root keeps
+  the gfx build's id on an iPhone, as `--ngfx` did (an iPhone wouldn't verify a new id of
+  the team, 2026-11-11). `output` is a key Goose knows, the executable's name, and a
+  sidecar can hold no key of our own. Build folders and executables are still named after
+  the file (`build/draughts_ngfx`, `build/ios/draughts_ngfx/`), so the two builds don't
+  overwrite each other. Rejected: a list of the app's roots in `scripts/native.py`,
+  which keeps the id tied to file paths.
+
 ## Rejected (2026-11-18)
 
 - Dropping `src/` and putting the packages at the root: the root would mix the

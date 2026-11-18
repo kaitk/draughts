@@ -5,3 +5,6 @@ c_sources = ["../native/about.c", "../native/background.c", "../native/display.c
              "../native/resize.c", "../native/sound.c", "../native/storage.c", "../native/wake.c"];
 c_include = ["../../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
              "../../third_party/goose_gfx/src/gfx", "../../third_party/goose_gfx/third_party/SDL/src/video/khronos"];
+// The app's name for both roots: the build scripts give it the app's ids
+// (scripts/native.py, app_id_of).
+output = "draughts";

@@ -9,7 +9,7 @@
                                                  run, wait, and save the simulator's screen
     scripts/ios.py src/main/draughts.goose --device --run
                                                  build for the attached iPhone, sign, install, start
-    scripts/ios.py src/main/draughts.goose --device --run --ngfx
+    scripts/ios.py src/main/draughts_ngfx.goose --device --run
                                                  the same holding both renderers (task 073), in its place
     scripts/ios.py src/main/draughts.goose --release [--upload]
                                                  build/ios/draughts/Draughts.ipa, signed for the
@@ -48,11 +48,14 @@ import time
 from pathlib import Path
 
 import icon
-from native import ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run, sidecar
+import ngfx
+from native import (ROOT, VERSION_NAME, app_id_of, app_names, copy_sources, goose_to_c, program_name,
+                    run, sidecar)
 
 # The bundle id, not Android's native.APP_ID: a free team on a locked Apple ID holds that
 # one, and this one is kept for good (2026-11-12, tasks/046-app-store-release.md). Another
-# program gets BUNDLE_ID.<name>. CFBundleShortVersionString is native.VERSION_NAME.
+# program gets BUNDLE_ID.<name> (native.app_id_of). CFBundleShortVersionString is
+# native.VERSION_NAME.
 BUNDLE_ID = "io.github.kaitk.draughts.app"
 BUILD_NUMBER = "5"        # CFBundleVersion, raised for every upload
 # A release build's App Store profile and the upload's API key ids, outside the repo
@@ -266,7 +269,7 @@ def device():
 def goose_h(ngfx_dir):
     """The folder of the goose.h the compiler wrote for goose-ngfx's build on the Mac,
     which the ngfx build's C includes: Goose writes it only for the native parts it builds
-    itself, so ngfx's Mac build (its blob compiler's, scripts/ngfx.py) comes first."""
+    itself, so ngfx's Mac build (its blob compiler's, ngfx.prepare) comes first."""
     home = Path(os.environ.get("GOOSE_HOME", Path.home() / ".goose"))
     found = []
     for jit in home.glob("build/pkg/local/*/*/goose_jit_ngfx.dylib"):
@@ -275,7 +278,8 @@ def goose_h(ngfx_dir):
         if header.exists() and cache.exists() and str(ngfx_dir) in cache.read_text(errors="replace"):
             found.append(header)
     if not found:
-        sys.exit(f"no goose.h from a Mac build of {ngfx_dir}: run scripts/ngfx.py first")
+        sys.exit(f"no goose.h from a Mac build of {ngfx_dir}: "
+                 "build src/main/draughts_ngfx.goose with scripts/mac.py first")
     return max(found, key=lambda h: h.stat().st_mtime).parent
 
 
@@ -433,34 +437,30 @@ def main():
     ap.add_argument("--wait", type=float, default=3.0)
     ap.add_argument("--console", action="store_true",
                     help="run, and stay attached to the program's output until it ends")
-    ap.add_argument("--ngfx", action="store_true",
-                    help="hold both renderers, gfx and goose-ngfx (NGFX, NGFX_SLANGC; scripts/ngfx.py), "
-                         "one chosen at start, in place of the gfx build, under its id")
     ap.add_argument("--release", action="store_true",
                     help="build for the App Store: signed with the App Store profile, as an .ipa")
     ap.add_argument("--upload", action="store_true",
                     help="with --release, upload the .ipa to App Store Connect")
     args = ap.parse_args()
+    program = args.program.resolve()
     if args.release:
-        if args.run or args.shot or args.console or args.ngfx:
+        if args.run or args.shot or args.console:
             sys.exit("a release build can't be run here: TestFlight installs it")
+        if ngfx.uses_ngfx(program):
+            sys.exit("the build holding goose-ngfx isn't released")
         args.device = True
     elif args.upload:
         sys.exit("--upload needs --release")
-    program = args.program.resolve()
     name = program.stem
-    app_id = BUNDLE_ID if name == "draughts" else f"{BUNDLE_ID}.{name}"
-    title = "Draughts" if name == "draughts" else name
+    app_id = app_id_of(program, BUNDLE_ID)
+    title = "Draughts" if program_name(program) == "draughts" else name
     out = ROOT / "build/ios" / name
     min_ios, label, ngfx_cmake = MIN_IOS, "", []
-    if args.ngfx:
-        # The root holding both renderers (scripts/ngfx.py), its blobs made for iphoneos.
-        import ngfx
-        program = ngfx.ios_root()
-        # The gfx build's id: the iPhone wouldn't verify a new id of the team (2026-11-11),
-        # so this replaces the gfx build, keeping its data, and the gfx build goes back on
-        # to compare.
-        out, label = out.with_name(name + "-ngfx"), " ngfx"
+    if ngfx.prepare(program, "iphoneos"):
+        # The gfx build's id (its sidecar's output): the iPhone wouldn't verify a new id of
+        # the team (2026-11-11), so this replaces the gfx build, keeping its data, and the
+        # gfx build goes back on to compare.
+        label = " ngfx"
         # From MIN_IOS too: NoGraphicsAPI links Metal 4 weakly and fails at run time before
         # iOS 26, where gfx draws (docs/decisions/README.md, the stack).
         ngfx_cmake = [f"-DGOOSE_NGFX={ngfx.NGFX}", f"-DGOOSE_H_DIR={goose_h(ngfx.NGFX)}"]

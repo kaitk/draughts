@@ -20,7 +20,7 @@ GOOSE = Path(os.environ.get("GOOSE", ROOT / ("build/goose-v2026.4-windows-x64/go
 SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
 # The application id on Android (2026-11-08): Play fixes it for good at the first upload.
 # iOS has its own, scripts/ios.py's BUNDLE_ID. Another program (tools/pace.goose) gets
-# APP_ID.<name>, so it installs beside the app.
+# APP_ID.<name> (app_id_of).
 APP_ID = "io.github.kaitk.draughts"
 # The version people see: Android's versionName and iOS's CFBundleShortVersionString.
 # Each platform's build number is its own script's (VERSION_CODE, BUILD_NUMBER).
@@ -59,15 +59,31 @@ def run(*cmd, cwd=None, env=None, capture=False, check=True):
     return r.stdout if capture else r
 
 
+def sidecar_text(program):
+    """The program's .build sidecar without its comments, or "" if it has none."""
+    build = program.with_suffix(".build")
+    return re.sub(r"//[^\n]*", "", build.read_text()) if build.exists() else ""
+
+
 def sidecar(program, key):
     """The paths a list in the program's .build sidecar names, made absolute."""
-    build = program.with_suffix(".build")
-    if not build.exists():
-        return []
-    text = re.sub(r"//[^\n]*", "", build.read_text())
-    m = re.search(rf"\b{key}\s*=\s*\[([^\]]*)\]", text)
+    m = re.search(rf"\b{key}\s*=\s*\[([^\]]*)\]", sidecar_text(program))
     names = re.findall(r'"([^"]*)"', m.group(1)) if m else []
     return [(program.parent / n).resolve() for n in names]
+
+
+def program_name(program):
+    """The sidecar's output, else the file's name. Both roots in src/main/ set
+    output = "draughts". Build folders are named after the file instead, so the two
+    roots get one each."""
+    m = re.search(r'\boutput\s*=\s*"([^"]*)"', sidecar_text(program))
+    return m.group(1) if m else program.stem
+
+
+def app_id_of(program, base=APP_ID):
+    """base for the app, base.<name> for another program, so it installs beside the app."""
+    name = program_name(program)
+    return base if name == "draughts" else f"{base}.{name}"
 
 
 def goose_to_c(program, gen, *flags):

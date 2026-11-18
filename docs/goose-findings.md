@@ -84,7 +84,8 @@ SELinux: libtcc's `mprotect` is refused.
 `--header` lacks `gs_bld_append`. goose-ngfx's C needs it on iOS.
 
 - Here: `scripts/ios.py`'s `goose_h` takes the one written for goose-ngfx's Mac build under
-  `~/.goose/build/pkg/local/`, so `scripts/ngfx.py` must have run first.
+  `~/.goose/build/pkg/local/`, so a Mac build of `src/main/draughts_ngfx.goose` must have run
+  first.
 - Upstream: `goose --emit-header goose.h`, beside `--emit-runtime`.
 
 ### `pad` and `block` are keywords everywhere

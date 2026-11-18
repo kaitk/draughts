@@ -2,6 +2,8 @@
 """Build a Goose program for Linux (x64) with the patched goose_gfx, and optionally run it.
 
     scripts/linux.py src/main/draughts.goose               build build/linux/draughts
+    scripts/linux.py src/main/draughts_ngfx.goose          build build/linux/draughts_ngfx, holding
+                                                          goose-ngfx too (scripts/ngfx.py)
     scripts/linux.py src/main/draughts.goose --run -- --board 3d
                                                           build, and run it with those flags
     scripts/linux.py src/main/draughts.goose --release     build/linux/release/
@@ -36,6 +38,7 @@ import tarfile
 from pathlib import Path
 
 import native
+import ngfx
 
 RELEASE = Path(os.environ.get("GOOSE_RELEASE", native.ROOT / "build/goose-v2026.4-linux-x64"))
 OUT = native.ROOT / "build/linux"
@@ -160,6 +163,9 @@ def main():
     ap.add_argument("args", nargs="*", help="the program's flags, after --")
     a = ap.parse_args()
     program = a.program.resolve()
+    if a.release and ngfx.uses_ngfx(program):
+        sys.exit("the build holding goose-ngfx isn't released")
+    ngfx.prepare(program)
     exe = OUT / program.stem
     # Goose takes a compiler by path, or by the names clang, gcc, and cc only.
     cc = {"GOOSE_CC": shutil.which(os.environ["CC"])} if os.environ.get("CC") else None
