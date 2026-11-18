@@ -15,7 +15,8 @@ these pull requests is opened yet; the user opens them.
 
 SDL entries are for the user only: SDL's `CLAUDE.md` asks that no AI-written code or text
 go into its reports or pull requests, so any report is the user's own. Check first whether
-a newer SDL fixes it.
+a newer SDL fixes it. SDL `main` still had every entry below on 2026-11-18 (release
+3.4.20); task 010's `02-sdl.md` lists what to send.
 
 ## Goose
 
@@ -324,9 +325,9 @@ UIKit has no `WaitEventTimeout` or `SendWakeupEvent`, so the wait polls with a 1
 
 ### The Android safe area includes the system gestures' strips
 
-- Here: `0002-safe-area-without-system-gestures.patch` leaves `systemGestures` out and
-  takes `tappableElement` and `mandatorySystemGestures` only at the sides and bottom.
-  `scripts/android.py` compiles SDL's Java from the patched copy.
+- Here: `DraughtsActivity`'s `SDLSurface` subclass runs SDL's `onApplyWindowInsets`, then
+  sends its own insets: `systemGestures` left out, `tappableElement` and
+  `mandatorySystemGestures` only at the sides and bottom (a patch until 2026-11-18).
 - Upstream: possibly a hint choosing which insets make the safe area.
 
 ### SDL_GPU's Vulkan allocator rounds large resources up to 64 MiB blocks
