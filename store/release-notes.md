@@ -6,7 +6,7 @@ App Store localization yet, `app-store.md`). Newest first.
 
 ## 0.9.1 (2026-11-18)
 
-A second renderer on the Mac, iPhone, iPad, and Windows, and Settings › About. Linux follows.
+A second renderer on the Mac, iPhone, iPad, and Windows, and Settings › About.
 
 ### GitHub release
 
@@ -33,12 +33,15 @@ Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, 
 
 **macOS** (Apple silicon, macOS 13.3 or later): download `Draughts-0.9.1-macos-arm64.dmg`, open it, and drag Draughts to Applications. It is signed and notarized.
 
+**Linux** (64-bit, glibc 2.35 or later: Ubuntu 22.04, Debian 12, Fedora 36, SteamOS, and their successors): download `Draughts-0.9.1-linux-x64.tar.gz`, extract it, and run `Draughts/draughts`. To add it to your applications menu, run `Draughts/install.sh` (`install.sh --remove` takes it away). Your graphics driver must support Vulkan, which Mesa and NVIDIA's driver do.
+
 **Android and iPhone/iPad:** from Google Play and the App Store.
 
 SHA-256:
 - `Draughts-0.9.1-windows-x64-setup.exe`: `68a4f7520ee41597768f16a71c362988c7148c5b0c10d8b8146253374edb1331`
 - `Draughts-0.9.1-windows-x64.zip`: `f222f8c1a59f662503c1a6465990aa9300d46d477ef65518dd5f4a9ed9b9c8f3`
 - `Draughts-0.9.1-macos-arm64.dmg`: `f9d06dc33a2a84319796c4f7378aab0c0e12f87d6a2a4fdbb6a52c7c2b5d9620`
+- `Draughts-0.9.1-linux-x64.tar.gz`: `3859e63dd45b0b71f6230dd43dff29ae663f5f6d75c52f429ab48a23aff87e29`
 ```
 
 ### Play, en-GB (273 of 500)
