@@ -142,7 +142,9 @@ python scripts/windows.py src/main/draughts.goose --run -- --board 3d --screen g
 ```
 
 The script builds goose_gfx into `build/windows/goose/` (delete it after the release
-changes); SDL is the release's, linked statically. The app draws through Vulkan. `--rest`
+changes); SDL is the release's, linked statically. The app draws through Vulkan; Direct3D
+12 needs a patched Goose, built as the `direct3d12` branch's copy of this section says
+([decision](decisions/README.md#the-stack)). `--rest`
 leaves the app running after its line, so close it; a `--bench` run quits by itself. The
 settings are in `%APPDATA%\kaitk\draughts\`. `test/run_tests.py` takes the Windows
 release there.

@@ -17,13 +17,14 @@ let COMPOSE_FRAG = """
 let VERT = """
     layout(std430, set = 0, binding = 0) readonly buffer Quads { vec4 q[]; };
     layout(set = 1, binding = 0) uniform View { vec4 screen; vec4 hole; vec4 clip; };
+    layout(set = 1, binding = 1) uniform Run { vec4 run; };   // x: the run's first quad
     layout(location = 0) out vec2 v_px;
     layout(location = 1) flat out vec4 v_rect;
     layout(location = 2) flat out vec4 v_color;
     layout(location = 3) flat out vec4 v_look;
     layout(location = 4) flat out vec4 v_extra;
     void main() {
-        int i = gl_InstanceIndex * 4;
+        int i = (int(run.x) + gl_InstanceIndex) * 4;
         vec4 rect = q[i];
         vec4 look = q[i + 2];
         vec4 extra = q[i + 3];
@@ -757,17 +758,23 @@ fn compose_layer(g: Gpu&, layer: gpu::Texture, sampler: gpu::Sampler) {
     gfx::draw(3);
 }
 
+// The vertex shader's Run block: the run's first quad, added to gl_InstanceIndex. Each run
+// draws from instance 0, since Direct3D 12's SV_InstanceID leaves out a draw's first
+// instance where Vulkan's gl_InstanceIndex counts from it.
+struct QuadRun { first: f32, pad 12 }
+
 // `count` quads from `first`, all drawn by pipeline p, in the open pass.
 fn run(g: Gpu&, p: i64, first: i64, count: i64, s: scene::Scene&, t: theme::Theme, view: widgets::View,
        atlas: gpu::Texture, thumbs: gpu::Texture, badges: gpu::Texture) {
     gfx::bind(g.pipelines[p]);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, g.quads);
     gfx::uniforms(gfx::VERTEX, 0, view);
+    gfx::uniforms(gfx::VERTEX, 1, QuadRun { first: first });
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     gfx::uniforms(gfx::FRAGMENT, 1, view);
     gfx::bind_texture(gfx::FRAGMENT, 0, s.glass, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 1, atlas, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 2, thumbs, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 3, badges, s.sampler);
-    gfx::draw(6, count, 0, first);
+    gfx::draw_instanced(6, count);
 }
