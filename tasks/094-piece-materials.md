@@ -1,6 +1,15 @@
 # 094: The pieces' materials
 
-Status: todo
+Status: todo (parked)
+
+A first version is on the branch `task-094-piece-materials`, kept as an option to improve
+further: per-channel wrapped diffuse and light through the rim, wear from the vertex
+shader, a slider tuner (`tools/piece_tune.goose`) with profiles, and `board_shot` flags.
+The user, 2026-11-17: it looks OKish, not yet worth its cost (the board pass on the Mac
+about 1.72 → 1.81 ms), and draughts pieces are plastic anyway. To be worth it, the scattering would need the pieces
+to have materials of their own too: veined marble pieces on the marble boards, say, where
+today every look's pieces are one color with a faint mottling. The branch's copy of this
+file says what was built, measured, and set aside.
 
 The 3D pieces read as plastic next to the concept art (`design/manor/library-table-01.png`,
 `hall-winter-table-02.png`, local; task 093): there the light pieces glow warm at their

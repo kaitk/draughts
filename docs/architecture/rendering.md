@@ -129,8 +129,8 @@ them (`SDL_GetWindowSafeArea`, read each frame with the display scale by
 runs off an edge reach the screen's edges; everything else is placed in the safe rect as
 in a whole window of that size (`gui::safe`, `shell::frame`). The scale stays the whole
 short side's, the same in both orientations. Layouts hold down to a safe area of 443 ×
-801 dp. `patches/SDL/0002` keeps the back gesture's side strips and the top swipe strip
-inside the safe area, since taps there still reach the window. A change of insets or scale
+801 dp. `DraughtsActivity`'s surface keeps the back gesture's side strips and the top swipe
+strip inside the safe area, since taps there still reach the window. A change of insets or scale
 redraws, as a new size does; when the screen turns, insets and size arrive a frame or two
 apart and the layout follows each.
 

@@ -2,12 +2,14 @@ package io.github.kaitk.draughts;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Insets;
 import android.hardware.Sensor;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
@@ -76,10 +78,34 @@ public class DraughtsActivity extends SDLActivity {
         return args.trim().split("\\s+");
     }
 
-    // SDL's surface, with its accelerometer left off.
+    // SDL's surface, with its accelerometer left off and its safe area without the
+    // system gestures' strips.
     static class QuietSurface extends SDLSurface {
         QuietSurface(Context context) {
             super(context);
+        }
+
+        // SDL counts systemGestures(), which with gesture navigation holds the back
+        // gesture's strips down both sides, where taps still reach the window, and would
+        // take them from a portrait phone's width; and mandatorySystemGestures() and
+        // tappableElement() at the top, where with the bars hidden both can hold the strip
+        // a swipe pulls the bars down from (tappableElement() on a Samsung tablet). So the
+        // safe area here leaves out the cutout, the bars while shown, the gesture bar, and
+        // anything tappable of the system's at the sides and the bottom. SDL's own call
+        // runs first, for the keyboard; this one's insets replace its.
+        @Override
+        public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+            WindowInsets result = super.onApplyWindowInsets(v, insets);
+            if (Build.VERSION.SDK_INT >= 30 /* Android 11 (R) */) {
+                Insets bars = insets.getInsets(WindowInsets.Type.systemBars() |
+                                               WindowInsets.Type.displayCutout());
+                Insets tap = insets.getInsets(WindowInsets.Type.tappableElement());
+                Insets gestures = insets.getInsets(WindowInsets.Type.mandatorySystemGestures());
+                Insets safe = Insets.max(bars, Insets.of(tap.left, 0, tap.right,
+                                                         Math.max(tap.bottom, gestures.bottom)));
+                SDLActivity.onNativeInsetsChanged(safe.left, safe.right, safe.top, safe.bottom);
+            }
+            return result;
         }
 
         @Override
