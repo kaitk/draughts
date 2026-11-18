@@ -9,6 +9,10 @@
   took stay in its file (`tasks/README.md`).
 - Lead with the decision, behavior, or action, then explain why. Use concrete facts and
   cut filler.
+- For a new or rewritten doc section, and for text that goes upstream (a pull request's
+  description, another project's docs), run the `google-style` skill's editing pass
+  (`.claude/skills/google-style/`, from Snowtime). An upstream text is about that
+  project: Draughts appears only as where the change was tested (2026-11-18).
 - `docs/architecture/` says how the app works now: no dates, tasks, history, or people.
   Its current per-device numbers stay there; how they came to be does not.
 - Record a decision in `docs/decisions/`, in the area's file, with its date, its reason,
