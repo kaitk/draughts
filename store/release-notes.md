@@ -4,6 +4,61 @@ Each version's notes for the GitHub release (the desktop builds) and the stores'
 new": Play's in en-GB and et (500 characters each), the App Store's in en-GB alone (no
 App Store localization yet, `app-store.md`). Newest first.
 
+## 0.9.1 (2026-11-18)
+
+A second renderer on the Mac, iPhone, iPad, and Windows, and Settings › About. Linux follows.
+
+### GitHub release
+
+```markdown
+A second renderer on the Mac, iPhone, and iPad, and on Windows: Draughts draws through Metal 4 where the system has it, and through the first renderer elsewhere.
+
+Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, at [github.com/kaitk/draughts](https://github.com/kaitk/draughts). No ads, no tracking, no accounts; it works offline.
+
+**New**
+
+- **A second renderer.** On macOS 26 with an M1 or newer, Draughts draws through Metal 4 (goose-ngfx, built on NoGraphicsAPI); on an older Mac it draws as before. It picks one when it starts, and if Metal 4 ever fails to show a frame, the next start uses the other.
+- **The second renderer on Windows.** On Windows with Vulkan 1.4, the descriptor heap, and mesh shaders, Draughts draws through the second renderer as well, and through the first elsewhere.
+- **Settings › About.** The app's version, the graphics in use, and the 3D board's, with Copy for a bug report.
+
+**Better**
+
+- The window opens fullscreen or not, as it was last left.
+- The 3D board's zoomed top view reaches down to the window's foot, about 7% larger.
+- Turning the 3D board past its edge turns back from where the pointer stopped.
+- Home's Replay says when the last game was won or lost on time.
+- Fixed: a frame could show one player's pieces on another's board when switching players.
+
+**Windows** (64-bit, Windows 10 or 11): download `Draughts-0.9.1-windows-x64-setup.exe` and run it (no administrator needed; it adds Draughts to the Start menu, and Settings › Apps removes it), or download `Draughts-0.9.1-windows-x64.zip`, extract it, and run `Draughts.exe`. Your graphics driver must support Vulkan, which current NVIDIA, AMD, and Intel drivers do. The app is not signed, so Windows shows "Windows protected your PC" once: choose **More info**, then **Run anyway**.
+
+**macOS** (Apple silicon, macOS 13.3 or later): download `Draughts-0.9.1-macos-arm64.dmg`, open it, and drag Draughts to Applications. It is signed and notarized.
+
+**Android and iPhone/iPad:** from Google Play and the App Store.
+
+SHA-256:
+- `Draughts-0.9.1-windows-x64-setup.exe`: `68a4f7520ee41597768f16a71c362988c7148c5b0c10d8b8146253374edb1331`
+- `Draughts-0.9.1-windows-x64.zip`: `f222f8c1a59f662503c1a6465990aa9300d46d477ef65518dd5f4a9ed9b9c8f3`
+- `Draughts-0.9.1-macos-arm64.dmg`: `f9d06dc33a2a84319796c4f7378aab0c0e12f87d6a2a4fdbb6a52c7c2b5d9620`
+```
+
+### Play, en-GB (273 of 500)
+
+```text
+• Settings › About: the app's version and graphics, with Copy for a bug report
+• Home's Replay says when the last game was won or lost on time
+• Fixed: a frame could show one player's pieces on another's board when switching players
+• Open source: github.com/kaitk/draughts
+```
+
+### Play, et (279 of 500)
+
+```text
+• Seaded › Teave: rakenduse versioon ja graafika, nupuga Kopeeri veateate jaoks
+• Avalehe Kordus ütleb, kui viimane mäng võideti või kaotati ajaga
+• Parandatud: mängijat vahetades võis üks kaader näidata ühe mängija nuppe teise laual
+• Avatud lähtekood: github.com/kaitk/draughts
+```
+
 ## 0.9.0 (2026-11-16)
 
 Sound, a replay that opens where the game turned, more puzzles, and the desktop's 3D board.
