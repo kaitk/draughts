@@ -20,31 +20,83 @@ a newer SDL fixes it. SDL `main` still had every entry below on 2026-11-18 (rele
 
 ## Goose
 
+### Direct3D 12: `gl_InstanceIndex` leaves out the draw's first instance
+
+A draw with a first instance reads `gl_InstanceIndex` from 0 on Direct3D 12 and from the
+first instance on Vulkan: cute_spirv's HLSL takes it from `SV_InstanceID`, which never
+includes `StartInstanceLocation`, and SDL's `SDL_gpu.h` says `first_instance` is not
+portable with built-in instance IDs. A one-instance draw with first instance 2 lit pixel 2
+of 4 on Vulkan and pixel 0 on Direct3D 12 (Radeon 680M, 2026-11-18). `gl_VertexIndex` and
+`first_vertex` are the same case. With the storage-buffer fix below, this is what still
+differs in Draughts there: `widgets_gpu::run` draws each run of quads with
+`gfx::draw(6, count, 0, first)`, so every run after the first reads the first run's quads.
+Words are cut short ("Dra" for "Draughts") and icons draw as solid squares.
+
+- Here: nothing; Windows draws through Vulkan. Passing `first` in a uniform, or drawing
+  each run from instance 0 of its own slice, would make the widgets portable.
+- Upstream: in goose_gfx, pass the first instance and vertex to the shader (a hidden
+  uniform that cute_spirv's HLSL adds to `SV_InstanceID` and `SV_VertexID`, as
+  SPIRV-Cross's `SPIRV_Cross_VertexInfo` does), or reject a nonzero first instance on
+  Direct3D 12; or document it in `gfx.goose`.
+
 ### Direct3D 12: storage buffers read as structured buffers SDL doesn't bind
 
 Draughts draws through Vulkan on Windows, so this shows only with `SDL_GPU_DRIVER=direct3d12`.
 There every shader that reads a storage buffer in its vertex stage draws nothing or
 collapses: the flat board's pieces, every widget and all text, and the 3D board's 40 pieces
-drawn as one in a corner. Shaders without one draw as on Vulkan. Goose's HLSL declares an
-SSBO as `StructuredBuffer<float4>`, while SDL 3.4.16's Direct3D 12 backend makes storage
-buffer views raw (`R32_TYPELESS`, `D3D12_BUFFER_SRV_FLAG_RAW`, stride 0), as for a
-`ByteAddressBuffer`, which is what SPIRV-Cross emits. The cause fits every screen but isn't
-proven; the debug layer printed nothing (Radeon 680M, 2026-11-18). Goose v2026.4.
+drawn as one in a corner. Compute writes go wrong too. cute_spirv's HLSL (v1.11, in Goose
+v2026.4 and cute_framework `master`) declares an SSBO as `StructuredBuffer<T>`, while SDL
+3.4.16's Direct3D 12 backend makes every storage buffer view raw (`R32_TYPELESS`,
+`D3D12_BUFFER_SRV_FLAG_RAW`, stride 0), the view a `ByteAddressBuffer` takes and the one
+SPIRV-Cross's HLSL expects. AMD's driver reads zeros through the mismatch. goose_gfx's
+showcase matched Vulkan on an RTX 3080, so NVIDIA's apparently tolerates it (not checked
+here).
+
+Proven on a Radeon 680M (driver 32.0.21045.16010, Windows 11 26H2, 2026-11-18):
+
+- goose_gfx's showcase on Direct3D 12 failed 3 of its 12 checks (ground, cubes, sparks)
+  and differed from Vulkan by 30 to 32 per channel. The same executable with only the five
+  SSBO shaders' declarations and accesses rewritten to `ByteAddressBuffer`
+  `Load4`/`Store4` passed all 12 and differed by 0.46 to 0.48.
+- A compute test of struct elements (field, swizzle, and whole-element stores, `+=`,
+  `++`, every atomic) wrote every thread's result into element 0 on Direct3D 12; with the
+  fix its 50 lines match Vulkan's.
+- The debug layer (installed, and on through `GOOSE_GFX_DEBUG=1`) prints nothing: the core
+  layer doesn't check a shader's buffer type against its view, and SDL doesn't enable
+  GPU-based validation.
+
+Fixed in a cute_spirv patch: an SSBO is a `(RW)ByteAddressBuffer`. Each read calls a
+per-buffer loader that assembles the element at its std430 offsets, and each write
+(assignment, compound assignment, `++`/`--`, atomic) calls a helper of its own.
+`.length()` is the byte size over the stride. With it, Goose's own tests pass on
+Direct3D 12 here (the release fails `gfx_compute` and `gfx_render`); cute_framework's
+transpiler tests pass (1544 checks, 38 of them new, which fail without it); the showcase
+passes on both drivers; and Draughts' board, pieces, and widgets' shapes draw on Direct3D 12
+as on Vulkan (flat board 1.6 per channel apart, 3D 4.4, About 3.5; the rest is the first
+instance above). cute_framework's own `SDL_GPU` path feeds this HLSL to FXC on Direct3D 12,
+which SDL tries before Vulkan on Windows, so its storage buffers break the same way on AMD.
 
 - Here: nothing; Windows draws through Vulkan.
-- Upstream: emit `ByteAddressBuffer` and `Load4` for SSBOs, as SPIRV-Cross does.
+- Upstream: the patch to cute_framework's `libraries/cute/cute_spirv.h` with its tests,
+  then Goose copies the header again (its README's procedure).
 
 ### Direct3D 12: HLSL keywords are kept as GLSL names
 
 `embed_shader` writes GLSL identifiers into the HLSL unchanged, so one that is an HLSL
 keyword compiles to SPIR-V and MSL but fails FXC at run time on Windows: `float line` in
 `shaders::cracks` stops the app with `error X3000: syntax error: unexpected token 'line'`
-(2026-11-18; found first 2026-11-10). Goose v2026.4.
+(2026-11-18; found first 2026-11-10). Goose v2026.4. Run through FXC, 49 such names fail
+as locals (`line`, `point`, `triangle`, `linear`, `shared`, `matrix`, `vector`, `texture`,
+`string`, `sampler`, ...), and type names (`float2`, `half`, `dword`) fail as globals and
+functions. `sample` and `precise` pass. A user function named like an intrinsic the printer
+emits (`lerp` for `mix`) catches the printer's own calls.
+
+Fixed in the same cute_spirv patch, as its WGSL backend does: such a name gains a trailing
+underscore in the HLSL only (variables, fields, functions, struct types, stage inputs and
+outputs). Draughts built with it runs `cracks` unchanged on Direct3D 12.
 
 - Here: nothing; Windows draws through Vulkan.
-- Upstream: rename identifiers that are HLSL keywords (`line`, `point`, `triangle`,
-  `sample`, `linear`, `precise`, `shared`, `matrix`, `vector`, ...) when writing the HLSL,
-  as SPIRV-Cross does, or reject them when compiling the shader.
+- Upstream: the same patch as the storage buffers above.
 
 ### `embed_shader` drops `mediump`, so no shader runs in fp16
 
