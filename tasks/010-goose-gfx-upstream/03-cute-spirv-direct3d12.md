@@ -8,10 +8,10 @@ and one that names a local `line` stops the app. Both causes are in cute_spirv's
 (`docs/goose-findings.md`, both entries proven on 2026-11-18). One patch fixes both. It
 goes to cute_framework, which owns cute_spirv, and Goose then copies the header again, as
 its `third_party/cute_spirv/README.md` says. A third difference, the draw's first
-instance, broke Draughts' widgets there; the branch fixes it in Draughts.
+instance, broke Draughts' widgets there; `main` fixes it in Draughts.
 
-Windows draws through Vulkan and there is no plan to ship Direct3D 12, so the Draughts
-side lives on the `direct3d12` branch, not `main`: the widgets' change, both patches in
+Windows draws through Vulkan and there is no plan to ship Direct3D 12, so the rest of
+the Draughts side lives on the `direct3d12` branch, not `main`: both patches in
 `patches/goose/` and `patches/cute_framework/`, and how to build it in
 `docs/development.md` ("Direct3D 12"). Merge `main` into it now and then.
 
@@ -47,10 +47,10 @@ with built-in IDs. `widgets_gpu::run` draws each run of quads with
 first run's quads: words cut short ("Dra" for "Draughts"), icons as solid squares.
 `gl_VertexIndex` with a first vertex is the same case. Two fixes, either or both:
 
-- Draughts (done on the branch, `150b893`): each run draws from instance 0, and its first
-  quad comes in a vertex uniform (`QuadRun`) that the shader adds. The 2D pieces draw
-  from 0 already, and the 3D board passes its offset in `draw.w`. It is portable on every
-  backend, so `main` could take it whenever it likes.
+- Draughts (done, on `main` too): each run draws from instance 0, and its first quad
+  comes in a vertex uniform (`QuadRun`) that the shader adds. The 2D pieces draw from 0
+  already, and the 3D board passes its offset in `draw.w`. Vulkan draws as before (0.00
+  to 0.27 per channel from the earlier build, within a run's spread).
 - goose_gfx/Goose: a hidden uniform with the first instance and vertex that cute_spirv's
   HLSL adds to the IDs (SPIRV-Cross's `SPIRV_Cross_VertexInfo`), or reject a nonzero first
   instance on Direct3D 12, or document it in `gfx.goose`. Raise it as an issue first.
@@ -90,7 +90,7 @@ first run's quads: words cut short ("Dra" for "Draughts"), icons as solid square
       and the measurements above
 - [ ] Once merged: Goose's `third_party/cute_spirv` copied again with its README's commit,
       offered to Goose
-- [x] The first instance: Draughts' widgets made portable (on the branch)
+- [x] The first instance: Draughts' widgets made portable
 - [ ] A goose_gfx issue raised about the first instance and vertex on Direct3D 12
 - [x] Draughts on Direct3D 12 matches Vulkan on every screen (flat, 3D with and without
       MSAA, About), checked on the Radeon 680M (on the branch, with the patched Goose)

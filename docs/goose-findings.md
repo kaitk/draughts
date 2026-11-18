@@ -32,9 +32,9 @@ differs in Draughts there: `widgets_gpu::run` draws each run of quads with
 `gfx::draw(6, count, 0, first)`, so every run after the first reads the first run's quads.
 Words are cut short ("Dra" for "Draughts") and icons draw as solid squares.
 
-- Here: nothing on `main`; Windows draws through Vulkan. The `direct3d12` branch draws
-  each widget run from instance 0 with its first quad in a uniform, and with the patched
-  Goose matches Vulkan on every screen.
+- Here: the widgets draw each run from instance 0 with its first quad in a uniform
+  (`widgets_gpu::run`), which is portable anyway. With the patched Goose (the `direct3d12`
+  branch) every screen matches Vulkan.
 - Upstream: in goose_gfx, pass the first instance and vertex to the shader (a hidden
   uniform that cute_spirv's HLSL adds to `SV_InstanceID` and `SV_VertexID`, as
   SPIRV-Cross's `SPIRV_Cross_VertexInfo` does), or reject a nonzero first instance on
