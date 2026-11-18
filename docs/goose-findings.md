@@ -20,6 +20,32 @@ a newer SDL fixes it. SDL `main` still had every entry below on 2026-11-18 (rele
 
 ## Goose
 
+### Direct3D 12: storage buffers read as structured buffers SDL doesn't bind
+
+Draughts draws through Vulkan on Windows, so this shows only with `SDL_GPU_DRIVER=direct3d12`.
+There every shader that reads a storage buffer in its vertex stage draws nothing or
+collapses: the flat board's pieces, every widget and all text, and the 3D board's 40 pieces
+drawn as one in a corner. Shaders without one draw as on Vulkan. Goose's HLSL declares an
+SSBO as `StructuredBuffer<float4>`, while SDL 3.4.16's Direct3D 12 backend makes storage
+buffer views raw (`R32_TYPELESS`, `D3D12_BUFFER_SRV_FLAG_RAW`, stride 0), as for a
+`ByteAddressBuffer`, which is what SPIRV-Cross emits. The cause fits every screen but isn't
+proven; the debug layer printed nothing (Radeon 680M, 2026-11-18). Goose v2026.4.
+
+- Here: nothing; Windows draws through Vulkan.
+- Upstream: emit `ByteAddressBuffer` and `Load4` for SSBOs, as SPIRV-Cross does.
+
+### Direct3D 12: HLSL keywords are kept as GLSL names
+
+`embed_shader` writes GLSL identifiers into the HLSL unchanged, so one that is an HLSL
+keyword compiles to SPIR-V and MSL but fails FXC at run time on Windows: `float line` in
+`shaders::cracks` stops the app with `error X3000: syntax error: unexpected token 'line'`
+(2026-11-18; found first 2026-11-10). Goose v2026.4.
+
+- Here: nothing; Windows draws through Vulkan.
+- Upstream: rename identifiers that are HLSL keywords (`line`, `point`, `triangle`,
+  `sample`, `linear`, `precise`, `shared`, `matrix`, `vector`, ...) when writing the HLSL,
+  as SPIRV-Cross does, or reject them when compiling the shader.
+
 ### `embed_shader` drops `mediump`, so no shader runs in fp16
 
 Goose's GLSL compiler (`shaderc.c`, SPIR-V from cute_spirv) parses `mediump` and drops it:
@@ -112,6 +138,17 @@ The export's wrapper seems to start from the data stacks' base rather than their
 - Upstream: possibly an `os` function naming the platform.
 
 ## goose_gfx
+
+### FXC compiles every shader again at each launch on Direct3D 12
+
+goose_gfx turns Goose's HLSL into DXBC with FXC when `gfx::pipeline` is called, on the
+main thread, keeping nothing: about 4 s on a black window at every launch on a Radeon
+680M laptop, 5 s on a desktop (2026-11-18, 2026-11-10). Vulkan takes SPIR-V compiled at
+build time.
+
+- Here: nothing; Windows draws through Vulkan. A DXBC cache on disk made a later launch
+  0.6 s (`patches/goose_gfx/0007-dxbc-cache.patch` at `fc7ae44`).
+- Upstream: the cache in goose_gfx; or Goose embedding DXBC or DXIL beside the HLSL.
 
 ### No gamepad in the release
 
