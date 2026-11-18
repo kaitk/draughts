@@ -11,6 +11,8 @@ request; a session prepares each as a small, tested branch and description.
 - `01-linux-wayland.md`: Wayland for gfx and ngfx, built and measured; its fork branches
   offered upstream one at a time (task 076 until 2026-11-16)
 - `02-sdl.md`: what to send SDL, in the user's own words
+- `03-cute-spirv-direct3d12.md`: cute_spirv's HLSL storage buffers and keywords, fixed
+  for cute_framework and then Goose; the first instance on Direct3D 12 still open
 
 ## goose_gfx, in the order to send them
 

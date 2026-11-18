@@ -37,7 +37,7 @@ Words are cut short ("Dra" for "Draughts") and icons draw as solid squares.
 - Upstream: in goose_gfx, pass the first instance and vertex to the shader (a hidden
   uniform that cute_spirv's HLSL adds to `SV_InstanceID` and `SV_VertexID`, as
   SPIRV-Cross's `SPIRV_Cross_VertexInfo` does), or reject a nonzero first instance on
-  Direct3D 12; or document it in `gfx.goose`.
+  Direct3D 12; or document it in `gfx.goose` (task 010's subtask 03).
 
 ### Direct3D 12: storage buffers read as structured buffers SDL doesn't bind
 
@@ -78,7 +78,7 @@ which SDL tries before Vulkan on Windows, so its storage buffers break the same 
 
 - Here: nothing; Windows draws through Vulkan.
 - Upstream: the patch to cute_framework's `libraries/cute/cute_spirv.h` with its tests,
-  then Goose copies the header again (its README's procedure).
+  then Goose copies the header again (its README's procedure). Task 010's subtask 03.
 
 ### Direct3D 12: HLSL keywords are kept as GLSL names
 
