@@ -38,6 +38,24 @@ Ready on the fork, to send after #15 settles (each says "Builds on #15"):
 beside upstream's `display_scale()`, for the MacBook notch in full screen as well as
 phones. Each new API needs its Goose `docs/stdlib.md` companion, as above.
 
+Ready to send, from gfx's suite, `test/window` and showcase on the Mac (2026-11-18,
+M1 Pro, macOS 26, Goose `master` `745901f` built with upstream `main`'s gfx in `build/goose`,
+gfx in `build/gfx-mac`, both local):
+
+- `headless-apple` (12): since upstream #8 headless opens SDL's offscreen driver, which
+  SDL_GPU's Metal backend refuses, so every headless program on macOS has no GPU device and
+  Goose's suite skipped its 10 rendering gfx and ui tests and 4 gfx samples. Apple's
+  systems keep Cocoa. `upstream-series-next` takes #8, so the fork's `main` needs it too.
+- `macos-tested` (13, on 12): the macOS column filled in, and two `test/window` fixes:
+  `run_window_test.py` linked no native showcase on any platform (Goose's runtime object,
+  since Goose `d285793`), and the showcase's input check failed with no focus, which macOS
+  doesn't give a window a terminal starts.
+
+With both: Goose builds with gfx (no warnings from gfx) and without; the suite passes with
+gfx at -O0, -O2, and TinyCC, and without it skipping them; `run_input_test.py` passes;
+`run_window_test.py` passes in-process and with clang on Metal, screenshots identical.
+Goose's own `completion bash, run` fails either way.
+
 Held in the fork, since upstream gfx targets the desktop (Windows, Linux, macOS):
 `ios-run-loop-wait` (iOS isn't upstream's; the fix belongs in SDL, `02-sdl.md`) and
 `system-gamepads` (`SYSTEM_GAMEPADS`: Apple and Android, Objective-C through the runtime).
@@ -48,11 +66,9 @@ with draw on demand always on.
 
 ## Next
 
-1. Run gfx's suite and showcase on a Mac once, for the macOS column of upstream's
-   "Platforms tested" table (`docs/gfx.md`: macOS "not run"), and draft that PR.
-2. Merge `upstream-series-next` into the fork's `main` (a merge, not a reset, so every
+1. Merge `upstream-series-next` and `headless-apple` into the fork's `main` (a merge, not a reset, so every
    commit the submodule has pinned stays reachable).
-3. Move the submodule to it; Draughts opens with `WAIT_WHEN_IDLE` and `SYSTEM_GAMEPADS`
+2. Move the submodule to it; Draughts opens with `WAIT_WHEN_IDLE` and `SYSTEM_GAMEPADS`
    to keep drawing on demand. Check on the Mac, then the tablet.
 
 ## Acceptance criteria

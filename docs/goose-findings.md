@@ -139,6 +139,17 @@ The export's wrapper seems to start from the data stacks' base rather than their
 
 ## goose_gfx
 
+### Headless has no GPU device on macOS since upstream #8
+
+Upstream `main` (`7ff752f`, #8) opens headless video with SDL's offscreen driver first, and
+SDL_GPU's Metal backend takes only a driver that makes Metal views, which offscreen
+doesn't. On the Mac every `GOOSE_GFX_HEADLESS=1` run fails with "no GPU device", and
+Goose's suite skips its gfx tests rather than failing them (2026-11-18).
+
+- Here: `kaitk/goose_gfx`'s `headless-apple` leaves the default driver (Cocoa) on Apple's
+  systems; until it is in the fork's `main`, `SDL_VIDEO_DRIVER=cocoa` does the same.
+- Upstream: the same (task 010).
+
 ### FXC compiles every shader again at each launch on Direct3D 12
 
 goose_gfx turns Goose's HLSL into DXBC with FXC when `gfx::pipeline` is called, on the
