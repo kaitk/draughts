@@ -195,7 +195,9 @@ By default the tests run in batches through TinyCC, but the few whose search is 
 there (`SLOW` in `test/run_tests.py`) build at -O2 beside the batches. The times are a
 10-core M-series Mac's. GitHub Actions runs `scripts/test.sh` on every push and pull
 request (`.github/workflows/test.yml`) on Ubuntu 22.04, then builds the app with
-`scripts/linux.py` and Clang 20, so a C error in the program's own C fails it too.
+`scripts/linux.py` and Clang 20, so a C error in the program's own C fails it too. With
+`NGFX` naming a goose-ngfx checkout, `scripts/test.sh` also checks
+`src/main/draughts_ngfx.goose`; CI clones goose-ngfx for it.
 
 `scripts/test.sh` also builds `tools/perft.goose` into `build/perft`, which counts moves
 from a position (`build/perft russian 9`, `build/perft international 8 FEN --divide`), and

@@ -1,4 +1,4 @@
-// The program's own C (all of draughts.build's: scripts/ngfx.py checks), and this
+// The program's own C (all of draughts.build's: scripts/check_roots.py checks), and this
 // build's own.
 c_sources = ["../native/about.c", "../native/background.c", "../native/display.c", "../native/gfx_fork.c",
              "../native/launch.c", "../native/locale.c", "../native/memory.c", "../native/photo.c",

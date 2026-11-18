@@ -42,7 +42,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang-20
 
+      # goose check of the root holding goose-ngfx too: scripts/ngfx.py puts empty stand-ins
+      # for its shaders' blobs, as CI has no slangc.
+      - name: Fetch goose-ngfx
+        run: git clone --depth 1 https://github.com/kaitk/goose-ngfx.git ../goose-ngfx
+
       - name: Test
+        env:
+          NGFX: ${{ github.workspace }}/../goose-ngfx
         run: scripts/test.sh
 
       - name: Build the app

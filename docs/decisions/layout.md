@@ -93,6 +93,19 @@ split is in [the code's layout](README.md#the-codes-layout).
   the file (`build/draughts_ngfx`, `build/ios/draughts_ngfx/`), so the two builds don't
   overwrite each other. Rejected: a list of the app's roots in `scripts/native.py`,
   which keeps the id tied to file paths.
+- The two roots' copies of the package imports, and the two sidecars' copies of the C and
+  include lists, are checked, not shared: `scripts/check_roots.py`, run by
+  `scripts/test.sh`, fails when the ngfx root lacks one of the gfx root's imports, adds
+  one whose name doesn't hold `ngfx`, or its sidecar lacks one of the gfx sidecar's C
+  files or include paths, or names another `output`. It replaces `scripts/ngfx.py`'s
+  check of the C alone (above). Goose still gives no way to share them. Rejected: writing
+  `draughts_ngfx.build` from `draughts.build` at build time, which leaves a file in
+  `src/main/` that `goose check` needs but git doesn't hold.
+- `scripts/test.sh` runs `goose check` on `src/main/draughts_ngfx.goose` when `NGFX` names
+  a goose-ngfx checkout, and CI clones goose-ngfx for it. The check needs the shaders'
+  blobs to exist: with `NGFX_SLANGC` it compiles them, and without it (CI) it writes empty
+  ones dated 1970, which a real build sees as stale and compiles. Rejected: building the
+  ngfx program in CI, which needs slangc and the Vulkan SDK there.
 
 ## Rejected (2026-11-18)
 

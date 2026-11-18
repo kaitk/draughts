@@ -9,7 +9,10 @@ before committing a change to `rules/`.
 - `scripts/test.sh` first runs `goose check` on the app, which compiles every shader its
   `embed_shader` calls reach (a GLSL error is a compile error) in half a second.
   `test/run_tests.py` alone compiles no app shader, so after a shader change run
-  `scripts/test.sh` or build the app. The program's own C (`src/native/*.c`) only a build
+  `scripts/test.sh` or build the app. With `NGFX` set it checks `draughts_ngfx.goose` too
+  (`scripts/ngfx.py`, which compiles its shaders with `NGFX_SLANGC`, or else puts empty
+  stand-ins for them, as CI does); `scripts/check_roots.py` checks the two roots and their
+  sidecars list the same packages and C. The program's own C (`src/native/*.c`) only a build
   compiles.
 - Badge art: `tools/assets/badge_trace.py <animal> <png>` traces a black-on-white silhouette into
   `assets/badges/<animal>.svg`; then `test/run_tests.py --bless badges`.

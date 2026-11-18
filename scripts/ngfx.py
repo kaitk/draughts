@@ -1,7 +1,7 @@
 """What a build of src/main/draughts_ngfx.goose needs from outside the repository, made in
 build/ngfx/ before the build (task 073). scripts/mac.py, windows.py, linux.py, and ios.py
 call prepare() with the program they are given, which does nothing for any other
-program.
+program. Run by itself (scripts/test.sh), it runs goose check on the root.
 
 The root holds both renderers, gfx and goose-ngfx (NoGraphicsAPI), one chosen when it
 starts (src/ngfx/backend.goose). It needs a link to the goose-ngfx checkout
@@ -62,8 +62,7 @@ def rel(frm, to):
 
 
 def make_link():
-    """build/ngfx/'s link to the checkout (a junction on Windows, which needs no rights), and
-    a check that the root's sidecar has all of the app's C."""
+    """build/ngfx/'s link to the checkout (a junction on Windows, which needs no rights)."""
     OUT.mkdir(parents=True, exist_ok=True)
     if not LINK.exists() or LINK.resolve() != NGFX:
         if LINK.is_symlink() or LINK.exists():
@@ -73,9 +72,6 @@ def make_link():
             _winapi.CreateJunction(str(NGFX), str(LINK))
         else:
             LINK.symlink_to(NGFX, target_is_directory=True)
-    app = {p.name for p in native.sidecar(ROOT / "src/main/draughts.goose", "c_sources")}
-    ours = {p.name for p in native.sidecar(ROOTFILE, "c_sources")}
-    assert app <= ours, f"src/main/draughts_ngfx.build lacks the app's {sorted(app - ours)}"
 
 
 def write_sources():
@@ -154,3 +150,26 @@ def prepare(program, sdk=None):
     shaders(sdk)
     return True
 
+
+def check():
+    """goose check of the root, as scripts/test.sh runs it. Without NGFX_SLANGC (CI), an
+    empty stand-in for each blob not compiled yet, since check needs the files to exist;
+    its time is 0, so a build compiles it."""
+    if not (NGFX / "ngfx.goose").exists():
+        sys.exit(f"no goose-ngfx checkout at {NGFX}: clone it beside this repository or set NGFX")
+    make_link()
+    native.write_version()
+    if os.environ.get("NGFX_SLANGC"):
+        shaders()
+    else:
+        BLOBS.mkdir(parents=True, exist_ok=True)
+        for f in write_sources()[1]:
+            blob = BLOBS / (f.stem + ".blob")
+            if not blob.exists():
+                blob.write_bytes(b"")
+                os.utime(blob, (0, 0))
+    native.run(native.GOOSE, "check", ROOTFILE.name, cwd=ROOTFILE.parent)
+
+
+if __name__ == "__main__":
+    check()

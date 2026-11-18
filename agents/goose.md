@@ -119,7 +119,7 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 ## The program's C
 
 - It is in `src/native/` and goes in `c_sources` in both roots' `.build` sidecars
-  (`src/main/draughts.build`, `draughts_ngfx.build`; `scripts/ngfx.py` checks), compiled by
+  (`src/main/draughts.build`, `draughts_ngfx.build`; `scripts/check_roots.py` checks), compiled by
   the system clang, so C23 `#embed` works. A slice arrives as `struct { T *data; int64_t
   len; }` by value. The compiled C is cached by its source: touch the `.c` after a file
   it embeds changes (included headers are tracked). A missing `embed_file` path is a

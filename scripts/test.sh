@@ -1,9 +1,11 @@
 #!/bin/sh
 # Every check of the rules, stopping at the first that fails:
 #
-# 0. scripts/strings_keys.py --check: strings/keys.goose is what strings/en.txt makes.
+# 0. scripts/strings_keys.py --check: strings/keys.goose is what strings/en.txt makes;
+#    scripts/check_roots.py: the ngfx root and its sidecar hold all the gfx root's.
 # 1. goose check of the app: every shader its embed_shader calls compile, as the app's
 #    build compiles them (a GLSL error is a Goose compile error), in half a second.
+#    With NGFX set, the root holding goose-ngfx too (scripts/ngfx.py).
 # 2. test/run_tests.py: the programs under test/<area>/ against their golden output.
 # 3. tools/perft.goose, built natively: move counts from each start position
 #    against published values (International, English, Brazilian) and against
@@ -26,8 +28,13 @@ GOOSE=${GOOSE:-$root/build/$release}
 export GOOSE
 
 python3 scripts/strings_keys.py --check
+python3 scripts/check_roots.py
 (cd src/main && "$GOOSE" check draughts.goose)
 echo "== app checked, its shaders compiled"
+if [ -n "$NGFX" ]; then
+    python3 scripts/ngfx.py
+    echo "== ngfx build checked"
+fi
 
 test/run_tests.py
 
