@@ -9,7 +9,7 @@ its current help, not this file. The App Store is task 046.
 
 ## Done
 
-- The release build: `scripts/android.py src/app/draughts.goose --release` signs the APK
+- The release build: `scripts/android.py src/main/draughts.goose --release` signs the APK
   and the AAB with the upload key (`docs/development.md`, "The upload key"), 16 KB-aligned,
   `bundletool validate` passing. 0.1.0 (2026-11-08): APK 11.4 MB, AAB 9.1 MB, no
   permissions, target SDK 36.

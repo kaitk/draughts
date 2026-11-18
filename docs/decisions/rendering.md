@@ -20,7 +20,7 @@ tree of 2026-11-12 ([decisions](README.md#the-codes-layout)). The drawers take a
 each drawer is compiled once per backend and calls that renderer directly. The choice is
 one `if`, in `backend::with`, one file per root (`src/app/backend.goose` for gfx alone,
 `src/ngfx/backend.goose` holding both); the ngfx build is a second root
-(`src/ngfx/draughts_ngfx.goose`) over the same program (`src/app/app.goose`). Goose 150
+(`src/main/draughts_ngfx.goose`) over the same program (`src/app/app.goose`). Goose 150
 lines fewer, Python 85, the gfx executable 16 KB smaller; `--bench 60` and shots on both
 renderers unchanged. Rejected: splitting at `render::frame`, each renderer drawing the
 whole frame (duplicates about 2,000 lines of shared drawers); a list of pass commands
@@ -187,7 +187,7 @@ fed389b.
 - Tab and a gamepad's shoulders step between the game screen's three groups (2026-11-11).
   Fullscreen is Alt+Enter or F11, borderless at the desktop's resolution (2026-11-12),
   and the device's settings.txt remembers it for the next start (2026-11-16).
-- goose_gfx owns the gamepad (2026-11-12, replacing 2026-11-11's `src/app/pad.c`). With
+- goose_gfx owns the gamepad (2026-11-12, replacing 2026-11-11's `src/native/pad.c`). With
   `SYSTEM_GAMEPADS` (the fork's `gamepad-wake`) the system wakes the idle wait on Apple's
   systems and Android; on Windows the idle wait reads the pads every 16 ms, about 0.5% of
   a core. Rejected: SDL's own reading (5% of a core idle on the Mac), waking 30 times a

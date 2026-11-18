@@ -2,12 +2,12 @@
 """Build Draughts holding both renderers, gfx and goose-ngfx (NoGraphicsAPI), one chosen
 when it starts (task 073), and optionally run it.
 
-    python scripts/ngfx.py src/app/draughts.goose              build build/ngfx/draughts(.exe)
-    python scripts/ngfx.py src/app/draughts.goose --run -- --renderer gfx --screen game
+    python scripts/ngfx.py src/main/draughts.goose              build build/ngfx/draughts(.exe)
+    python scripts/ngfx.py src/main/draughts.goose --run -- --renderer gfx --screen game
                                                                build, and run it with those flags
 
-The program is src/ngfx/draughts_ngfx.goose, the second root beside the gfx build's
-src/app/draughts.goose: the same app (src/app/app.goose), gfx's backend and goose-ngfx's,
+The program is src/main/draughts_ngfx.goose, the second root beside the gfx build's
+src/main/draughts.goose: the same app (src/app/app.goose), gfx's backend and goose-ngfx's,
 and src/ngfx/backend.goose, which chooses one at start. The gfx-only build is untouched.
 This makes what that root needs from outside the repository, all in build/ngfx/: a link
 to the goose-ngfx checkout (goose-ngfx, which the root declares its package from), and the
@@ -45,7 +45,7 @@ else:
 
 ROOT = native.ROOT
 OUT = ROOT / "build/ngfx"
-ROOTFILE = ROOT / "src/ngfx/draughts_ngfx.goose"
+ROOTFILE = ROOT / "src/main/draughts_ngfx.goose"
 BLOBS = OUT / "blobs"
 # The checkout NGFX names, else one beside this repository (../goose-ngfx, or ../goose/goose-ngfx).
 NGFX = Path(os.environ.get("NGFX") or next(
@@ -90,9 +90,9 @@ def prepare():
         else:
             LINK.symlink_to(NGFX, target_is_directory=True)
     native.write_version()
-    app = {p.name for p in native.sidecar(ROOT / "src/app/draughts.goose", "c_sources")}
+    app = {p.name for p in native.sidecar(ROOT / "src/main/draughts.goose", "c_sources")}
     ours = {p.name for p in native.sidecar(ROOTFILE, "c_sources")}
-    assert app <= ours, f"src/ngfx/draughts_ngfx.build lacks the app's {sorted(app - ours)}"
+    assert app <= ours, f"src/main/draughts_ngfx.build lacks the app's {sorted(app - ours)}"
 
 
 def shaders(sdk=None):
@@ -160,13 +160,13 @@ def ios_root():
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("program", type=Path, help="the gfx build's root, src/app/draughts.goose")
+    ap.add_argument("program", type=Path, help="the gfx build's root, src/main/draughts.goose")
     ap.add_argument("--run", action="store_true", help="run it after building")
     ap.add_argument("args", nargs="*", help="the program's flags, after --")
     a = ap.parse_args()
     check_setup()
-    if a.program.resolve() != ROOT / "src/app/draughts.goose":
-        sys.exit(f"{a.program}: only src/app/draughts.goose has a twin holding both renderers")
+    if a.program.resolve() != ROOT / "src/main/draughts.goose":
+        sys.exit(f"{a.program}: only src/main/draughts.goose has a twin holding both renderers")
     prepare()
     shaders()
     exe = OUT / f"draughts{EXE}"

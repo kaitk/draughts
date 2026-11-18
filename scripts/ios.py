@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """Build a Goose program into an iOS app, without an Xcode project, and optionally run it.
 
-    scripts/ios.py src/app/draughts.goose        build build/ios/<name>/sim/<Name>.app
-    scripts/ios.py src/app/draughts.goose --run  build, install in the simulator, and start it
-    scripts/ios.py src/app/draughts.goose --run --args "--screen game"
+    scripts/ios.py src/main/draughts.goose        build build/ios/<name>/sim/<Name>.app
+    scripts/ios.py src/main/draughts.goose --run  build, install in the simulator, and start it
+    scripts/ios.py src/main/draughts.goose --run --args "--screen game"
                                                  the same, with development flags
-    scripts/ios.py src/app/draughts.goose --shot out.png --wait 4
+    scripts/ios.py src/main/draughts.goose --shot out.png --wait 4
                                                  run, wait, and save the simulator's screen
-    scripts/ios.py src/app/draughts.goose --device --run
+    scripts/ios.py src/main/draughts.goose --device --run
                                                  build for the attached iPhone, sign, install, start
-    scripts/ios.py src/app/draughts.goose --device --run --ngfx
+    scripts/ios.py src/main/draughts.goose --device --run --ngfx
                                                  the same holding both renderers (task 073), in its place
-    scripts/ios.py src/app/draughts.goose --release [--upload]
+    scripts/ios.py src/main/draughts.goose --release [--upload]
                                                  build/ios/draughts/Draughts.ipa, signed for the
                                                  App Store, and uploaded to App Store Connect
 

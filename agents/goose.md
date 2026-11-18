@@ -112,27 +112,27 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 
 ## The program's C
 
-- It goes in `c_sources` in the `.build` sidecar (`src/app/draughts.build`), compiled by
+- It goes in `c_sources` in the `.build` sidecar (`src/main/draughts.build`), compiled by
   the system clang, so C23 `#embed` works. A slice arrives as `struct { T *data; int64_t
   len; }` by value. The compiled C is cached by its source: touch the `.c` after a file
   it embeds changes (included headers are tracked). A missing `embed_file` path is a
   compile error; embed optional files from the C side.
 - On the Mac it links as its own dylib with no undefined symbols, so it can't call SDL
   directly: look functions up with `dlsym(RTLD_DEFAULT, ...)`. On Android it links
-  libSDL3.so directly (`src/app/locale.c`).
+  libSDL3.so directly (`src/native/locale.c`).
 - iOS-only Objective-C goes in `ios/` on `ios/CMakeLists.txt`'s executable, never in
   `c_sources`; the C calls it under `#if DRAUGHTS_IOS`. SDL's `UIWindow` comes from
   `SDL_PROP_WINDOW_UIKIT_WINDOW_POINTER`.
 - Java: `SDL_GetAndroidJNIEnv()` and `SDL_GetAndroidActivity()`, then `GetObjectClass`
   on the activity; `FindClass` from the program's thread doesn't find the app's classes
-  (`src/app/launch.c`).
+  (`src/native/launch.c`).
 - goose_gfx's window: `SDL_GetWindows` (one, cached) for the safe area and display scale
-  (`src/app/display.c`); the safe area is in window coordinates, points on the Mac.
+  (`src/native/display.c`); the safe area is in window coordinates, points on the Mac.
 - It can call goose_gfx's C API (`gfx_api.h`) and return a `gs_gfx_texture` to an
-  `extern fn ... -> gfx::Texture` (`src/app/background.c`).
+  `extern fn ... -> gfx::Texture` (`src/native/background.c`).
 - A gfx function only the fork adds: an `extern fn ... = "gs_gfx_..."` of the program's
   (`src/app/keys.goose`) plus a `__attribute__((weak))` stand-in in the C
-  (`src/app/gfx_fork.c`), so a plain `goose build` against the release's gfx still links;
+  (`src/native/gfx_fork.c`), so a plain `goose build` against the release's gfx still links;
   the build scripts link the fork's gfx C. A constant gfx adds is a `let` of the
   program's.
 - The `goose` binary exports SDL's and gfx's symbols, so a `goose run` on the desktop

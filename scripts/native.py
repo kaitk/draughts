@@ -30,7 +30,7 @@ VERSION_NAME = "0.9.0"
 def write_version():
     """build/draughts_version.h: the version, the commit it is built from (-dirty when the
     tree has changes), and the commit's date, which settings' About shows and the build
-    holding both renderers keys its crash marker by (src/app/about.c, src/ngfx/renderer.c).
+    holding both renderers keys its crash marker by (src/native/about.c, src/native/renderer.c).
     Written only when it changes, so a build that changes nothing compiles nothing again.
     Without git (a copy of the sources) the commit is "unknown"."""
     def git(*a):

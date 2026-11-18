@@ -48,4 +48,4 @@ jobs:
       - name: Build the app
         env:
           CC: clang-20
-        run: scripts/linux.py src/app/draughts.goose
+        run: scripts/linux.py src/main/draughts.goose

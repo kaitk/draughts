@@ -1,0 +1,7 @@
+// The program's own C (src/native/), and gfx's C API header's folder. scripts/android.py
+// and scripts/ios.py read c_sources and c_include from here too.
+c_sources = ["../native/about.c", "../native/background.c", "../native/display.c", "../native/gfx_fork.c",
+             "../native/launch.c", "../native/locale.c", "../native/memory.c", "../native/photo.c",
+             "../native/resize.c", "../native/sound.c", "../native/storage.c", "../native/wake.c"];
+c_include = ["../../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
+             "../../third_party/goose_gfx/src/gfx", "../../third_party/goose_gfx/third_party/SDL/src/video/khronos"];

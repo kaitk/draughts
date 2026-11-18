@@ -9,7 +9,7 @@ before committing a change to `rules/`.
 - `scripts/test.sh` first runs `goose check` on the app, which compiles every shader its
   `embed_shader` calls reach (a GLSL error is a compile error) in half a second.
   `test/run_tests.py` alone compiles no app shader, so after a shader change run
-  `scripts/test.sh` or build the app. The program's own C (`src/app/*.c`) only a build
+  `scripts/test.sh` or build the app. The program's own C (`src/native/*.c`) only a build
   compiles.
 - Badge art: `tools/badge_trace.py <animal> <png>` traces a black-on-white silhouette into
   `assets/badges/<animal>.svg`; then `test/run_tests.py --bless badges`.
@@ -155,11 +155,11 @@ before committing a change to `rules/`.
 - A hovered tile: `--mouse X,Y` (window pixels) and `--touch off`. Clicks and mouse moves
   can't be posted from the agent's shell (no Accessibility rights): for a UI path, a
   local copy that feeds `gui::begin` presses; for `--rest`, the real mouse.
-- In a shell loop, run each shot from `src/app` with `< /dev/null` and stdout to
+- In a shell loop, run each shot from `src/main` with `< /dev/null` and stdout to
   `/dev/null`, under `perl -e 'alarm 30; exec @ARGV'` (the Mac has no `timeout`), and at
   most about four at a time, or runs hang.
 - In a worktree, copy `design/backgrounds/masters/*.jpg` from the main checkout (ignored
-  by git) and touch `src/app/background.c`, or shots show the page color.
+  by git) and touch `src/native/background.c`, or shots show the page color.
 - The prototypes don't port the board and piece shaders: check a shader change on native
   crops before and after. The port is in git history at fed389b.
 
@@ -173,7 +173,7 @@ before committing a change to `rules/`.
   1/60 s a call) and `dirty = true;` heading the loop, so `--frames N` is N loops at the
   same moments. To compare two commits, `git archive` each into the scratchpad with
   `third_party/goose_gfx` and `build/goose-v2026.4-macos-arm64` linked in and build each
-  from its `src/app` with `build/mac/goose/goose build`. Never commit such copies.
+  from its `src/main` with `build/mac/goose/goose build`. Never commit such copies.
 - State with no flag (a daily puzzle, a scrolled list, the camera, a season mid-run, a
   held piece) is set from a temporary flag in the copy only, never committed.
 - Compare with ImageMagick (Python has no PIL here): `magick a.png b.png -compose

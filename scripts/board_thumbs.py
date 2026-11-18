@@ -12,7 +12,7 @@ settings prototype's `.thumb.corner` (a background 290% wide at 3% 93%). The cel
 CELL pixels, the picture's 76 × 50 dp at about 2.1 pixels a dp, the densest screen's;
 four across (Auto, Wood, Stone, Carved) and four down by the app's theme (autumn, winter,
 spring, summer, theme.goose's order). The atlas is in git as the JPEG and the ASTC file the
-app embeds (src/app/background.c); its PNG master stays in build/.
+app embeds (src/native/background.c); its PNG master stays in build/.
 
 It needs astcenc (docs/development.md).
 """
@@ -93,7 +93,7 @@ def main():
         print(f, (OUT / f).stat().st_size, "bytes")
     # background.c #embeds the atlas, and the build keeps its object while the .c file is
     # unchanged: touch it, or the app goes on showing the old pictures (2026-11-13).
-    (ROOT / "src/app/background.c").touch()
+    (ROOT / "src/native/background.c").touch()
 
 
 if __name__ == "__main__":

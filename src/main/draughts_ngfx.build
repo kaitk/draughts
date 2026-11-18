@@ -1,0 +1,9 @@
+// The program's own C (all of draughts.build's: scripts/ngfx.py checks), and this
+// build's own.
+c_sources = ["../native/about.c", "../native/background.c", "../native/display.c", "../native/gfx_fork.c",
+             "../native/launch.c", "../native/locale.c", "../native/memory.c", "../native/photo.c",
+             "../native/resize.c", "../native/sound.c", "../native/storage.c", "../native/wake.c",
+             "../native/photo_ngfx.c", "../native/renderer.c"];
+c_include = ["../../build/ngfx", "../../build/ngfx/goose-ngfx/native",
+             "../../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
+             "../../third_party/goose_gfx/src/gfx", "../../third_party/goose_gfx/third_party/SDL/src/video/khronos"];

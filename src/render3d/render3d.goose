@@ -317,7 +317,7 @@ fn resting(g: Gpu&) -> bool {
 }
 
 // Puts a theme on the board (looks::AUTUMN..), its surfaces baked for n squares a side,
-// with the photograph `photo` (the app's theme, src/app/background.c's kind; -1 the
+// with the photograph `photo` (the app's theme, src/native/background.c's kind; -1 the
 // theme's own): bakes the surfaces into the same targets, blurs the photograph and takes
 // its ambient, and fills the frame's block with its light and colors. Only what changed
 // is done again; outside the frame loop's steady state: at setup, on a theme change, a

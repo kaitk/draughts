@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Build a Goose program into an Android APK, without Gradle, and optionally install it.
 
-    scripts/android.py src/app/draughts.goose    build build/android/<name>/<name>.apk
-    scripts/android.py src/app/draughts.goose --run
+    scripts/android.py src/main/draughts.goose    build build/android/<name>/<name>.apk
+    scripts/android.py src/main/draughts.goose --run
                                                  build, install over adb, and start it
-    scripts/android.py src/app/draughts.goose --release
+    scripts/android.py src/main/draughts.goose --release
                                                  <name>-release.apk and <name>-release.aab
                                                  beside it, signed with the upload key, for Play
 

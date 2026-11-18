@@ -22,7 +22,7 @@ it saves enough.
 2. The About row and card (`src/shell/about.goose`), strings in English and Estonian,
    40 dp tiles each with a tap round it; `test/shell/settings` taps through it, and
    `settings_sizes` counts a small tile's tap.
-3. The app fills it (`fill_about`, `src/app/about.c`); Copy through `gfx::set_clipboard`.
+3. The app fills it (`fill_about`, `src/native/about.c`); Copy through `gfx::set_clipboard`.
 4. The battery saver read per platform (`draughts_battery_saver`), shown in the card, and
    Android's 60 Hz (`draughts_cap_60`).
 

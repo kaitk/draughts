@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Build a Goose program for Windows with the patched goose_gfx, and optionally run it.
 
-    python scripts/windows.py src/app/draughts.goose              build build/windows/draughts.exe
-    python scripts/windows.py src/app/draughts.goose --run -- --board 3d
+    python scripts/windows.py src/main/draughts.goose              build build/windows/draughts.exe
+    python scripts/windows.py src/main/draughts.goose --run -- --board 3d
                                                                   build, and run it with those flags
-    python scripts/windows.py src/app/draughts.goose --release    build/windows/release/
+    python scripts/windows.py src/main/draughts.goose --release    build/windows/release/
                                                                   Draughts-VERSION-windows-x64.zip
                                                                   and -setup.exe
 
@@ -23,7 +23,7 @@ from the submodule (kaitk/goose_gfx's main), as Android and iOS do, into a copy 
 release (build/windows/goose/), and builds the program with that copy's goose: its gfx
 draws only when something changed (WAIT_WHEN_IDLE, which the app opens with), and so on. SDL is the release's own, linked
 statically; patches/SDL are for Android and iOS. The app draws through Vulkan there, as on
-Android (src/app/display.c).
+Android (src/native/display.c).
 
 The copy is made once; delete build/windows/goose/ after the release changes. clang-cl is
 the one in Visual Studio (found with vswhere), or CLANG_CL; the release is

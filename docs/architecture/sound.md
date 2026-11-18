@@ -86,7 +86,7 @@ encoder.
 the volume or the mute changed and plays `Frame.sound_events`, a `STOP` as a `MOVE` at
 its step. At launch a desktop's default volume is set to half
 (`settings::default_volume`), and on iOS the ambient audio session is asked for before
-audio opens (`src/app/sound.c`, `SDL_AUDIO_CATEGORY`), so the silent switch mutes the app
+audio opens (`src/native/sound.c`, `SDL_AUDIO_CATEGORY`), so the silent switch mutes the app
 and the player's music keeps playing.
 
 ## The setting

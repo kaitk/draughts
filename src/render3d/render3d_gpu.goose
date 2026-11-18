@@ -31,7 +31,7 @@ struct Own {
 }
 
 // Theme `kind`'s photograph, or 0 when it isn't built in: the ASTC image as stored, or
-// the JPEG decoded and scaled down to `decoded` square (src/app/photo.c and
+// the JPEG decoded and scaled down to `decoded` square (src/native/photo.c and
 // background.c, which the app and tools/board_shot both compile).
 extern fn draughts_photo_id(kind: i64, decoded: i64) -> u32;
 fn photo(own: Own&, kind: i64, decoded: i64) -> Texture { Texture { draughts_photo_id(kind, decoded) } }
@@ -181,7 +181,7 @@ struct Blur { dir: float4 }
 let SAMPLES = 4;
 
 // The pass's samples on a device whose 3D board can't keep up with its display
-// (src/app/display.c).
+// (src/native/display.c).
 let FEW_SAMPLES = 2;
 
 // How the pass is antialiased (set_aa, the app's --aa and its A key): 4× multisampled,

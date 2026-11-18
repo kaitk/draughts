@@ -48,7 +48,7 @@ takes gfx, 3D P50 9.43 ms at 119.9 fps; `--renderer ngfx` 60 fps.
 
 ## Left
 
-- **Windows (RTX 4090), the user**: `python scripts/ngfx.py src/app/draughts.goose`, then
+- **Windows (RTX 4090), the user**: `python scripts/ngfx.py src/main/draughts.goose`, then
   `build\ngfx\draughts.exe` alone (it should print `renderer: ngfx (auto: ...)`),
   `--renderer gfx`, and `DRAUGHTS_RENDERER_TEST=fail` (the marker is
   `%APPDATA%\kaitk\draughts\renderer-start.txt`, deleted after). Then

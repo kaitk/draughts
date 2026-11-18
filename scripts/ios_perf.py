@@ -4,7 +4,7 @@ an Android device's: both boards in the same game scene (Russian, wood, the star
 
     scripts/ios_perf.py [frames] [flags...]
                                         default 1000; the development build installed
-                                        (scripts/ios.py src/app/draughts.goose --device --run);
+                                        (scripts/ios.py src/main/draughts.goose --device --run);
                                         flags go to the app, as --renderer ngfx
 
 Per board: the bench (--bench N) with Instruments' Animation Hitches recorded through it,

@@ -1,8 +1,8 @@
-// Draughts holding both renderers, gfx and goose-ngfx, one chosen when it starts
-// (backend.goose, in place of src/app/backend.goose). Built by scripts/ngfx.py, which
-// makes what build/ngfx/ holds.
+// Draughts on gfx alone, the build every platform ships: the app (src/app/) on gfx's
+// backend (src/app/backend.goose). scripts/mac.py builds it, scripts/ngfx.py builds
+// draughts_ngfx.goose beside it, the same program holding goose-ngfx too
+// (docs/development.md).
 
-import ngfx from "../../build/ngfx/goose-ngfx";
 import rules from "../rules";
 import board from "../board";
 import strings from "../../strings";
@@ -16,13 +16,6 @@ import model3d from "../model3d";
 import render3d from "../render3d";
 import sound from "../sound";
 import app from "../app";
-import .nx;
-import .gpu_ngfx;
-import .draw_ngfx;
-import .scene_ngfx;
-import .widgets_ngfx;
-import .host_ngfx;
-import .render3d_ngfx;
-import .backend;
+import app.backend;
 
 fn main() { run(); }

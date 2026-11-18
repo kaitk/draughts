@@ -1,5 +1,5 @@
 // The season's photograph uploaded through goose-ngfx's C API (render3d_ngfx::photo),
-// beside gfx's in src/app/photo.c in the build that holds both (draughts_ngfx.goose).
+// beside gfx's in src/native/photo.c in the build that holds both (draughts_ngfx.goose).
 #include <stdint.h>
 #include "photo.h"
 #include "ngfx_api.h"

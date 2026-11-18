@@ -10,7 +10,7 @@ run is in `docs/development.md` (Run on Linux, Desktop releases).
 
 ## What was settled (2026-11-12)
 
-- The program's C calls SDL directly on Linux (`src/app/platform.h`): the Mac's `dlsym`
+- The program's C calls SDL directly on Linux (`src/native/platform.h`): the Mac's `dlsym`
   lookups found nothing in an executable that exports no SDL symbols.
 - The release is built in an Ubuntu 22.04 distrobox with Clang 20 (gcc 11 has no
   `#embed`) and asks for glibc 2.35; built on a newer system it asks for what Fedora

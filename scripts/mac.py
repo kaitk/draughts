@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Build a Goose program for the Mac with the patched goose_gfx, and optionally run it.
 
-    scripts/mac.py src/app/draughts.goose                     build build/draughts
-    scripts/mac.py src/app/draughts.goose --run -- --board 3d build, and run it with those flags
-    scripts/mac.py src/app/draughts.goose --release           Draughts.app, signed and notarized,
+    scripts/mac.py src/main/draughts.goose                     build build/draughts
+    scripts/mac.py src/main/draughts.goose --run -- --board 3d build, and run it with those flags
+    scripts/mac.py src/main/draughts.goose --release           Draughts.app, signed and notarized,
                                                               in a disk image for a GitHub release
-    scripts/mac.py src/app/draughts.goose --release --no-notarize   the same, signed but not notarized
+    scripts/mac.py src/main/draughts.goose --release --no-notarize   the same, signed but not notarized
 
 A release (docs/development.md, "Desktop releases") builds for MIN_MACOS, wraps the
 executable in build/mac/release/Draughts.app (Info.plist, the launcher's name per

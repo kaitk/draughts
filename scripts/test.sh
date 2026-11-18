@@ -26,7 +26,7 @@ GOOSE=${GOOSE:-$root/build/$release}
 export GOOSE
 
 python3 scripts/strings_keys.py --check
-(cd src/app && "$GOOSE" check draughts.goose)
+(cd src/main && "$GOOSE" check draughts.goose)
 echo "== app checked, its shaders compiled"
 
 test/run_tests.py

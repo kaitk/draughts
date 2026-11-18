@@ -51,7 +51,7 @@ let SUMMER_STONE = 18;
 let SUMMER_CARVED = 19;
 
 struct Theme {
-    photo: i64,             // the season's photograph, src/app/background.c's kind
+    photo: i64,             // the season's photograph, src/native/background.c's kind
     // The bake: each surface's color and roughness, then its figure: how far the grain
     // wanders, the broad figure's contrast, the fine streaks' contrast, and how far it
     // is drawn out along the grain (1 wood; 0 stone, which mottles instead).

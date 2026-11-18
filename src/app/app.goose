@@ -1,5 +1,5 @@
-// Draughts, the program both roots run: the gfx build's src/app/draughts.goose and the
-// one holding goose-ngfx too, src/ngfx/draughts_ngfx.goose. It draws only when something
+// Draughts, the program both roots run: the gfx build's src/main/draughts.goose and the
+// one holding goose-ngfx too, src/main/draughts_ngfx.goose. It draws only when something
 // changed (docs/architecture/rendering.md). Every flag is a field of flags::Flags.
 
 import std;

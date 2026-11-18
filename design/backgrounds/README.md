@@ -16,7 +16,7 @@ a fresh checkout shows the photographs. The originals and the PNG masters stay l
 (`.gitignore`), and this README says how to make the masters again from them; replacing
 the images (task 014) means replacing the eight tracked files, each replacement adding
 its size to git's history. The app builds each season's JPEG and ASTC file into the
-program from `masters/` (`src/app/background.c`,
+program from `masters/` (`src/native/background.c`,
 [rendering](../../docs/architecture/rendering.md#scene-and-glass)). Both are made from the
 lossless PNG master, never one from the other; the final images (task 014) take the
 same steps.

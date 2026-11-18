@@ -1,6 +1,6 @@
 // The season's photograph made into a texture through gfx's C API, so the embedded ASTC
 // blocks reach the GPU with no copy on the program's data stack (goose-ngfx's upload is
-// src/ngfx/photo_ngfx.c).
+// src/native/photo_ngfx.c).
 
 #include <stdint.h>
 #include "photo.h"

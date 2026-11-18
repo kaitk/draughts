@@ -174,7 +174,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 <p>That is it. The rest is detail, and there is quite a lot of detail.</p>
 
 <h2>1. Waking up</h2>
-<p>All of this is in <code>main()</code> in <code>src/app/draughts.goose</code>, before the loop starts. It runs once. <code>main()</code> never calls the graphics library itself: it asks <code>host</code> for the platform and <code>render</code> for the pictures.</p>
+<p>All of this is in <code>main()</code> in <code>src/main/draughts.goose</code>, before the loop starts. It runs once. <code>main()</code> never calls the graphics library itself: it asks <code>host</code> for the platform and <code>render</code> for the pictures.</p>
 <ol class="steps">
   <li>Read the <b>developer flags</b> (<code>--screen game</code>, <code>--fen …</code>, <code>--frames 30</code> and so on). On a phone there are none, so everything takes its normal value.<span class="where">flags::parse · src/app/flags.goose</span></li>
   <li>Ask the system for the <b>storage folder</b>, then read the players and the playing player's settings from it.<span class="where">host::storage (storage.c) · players::load</span></li>
@@ -479,7 +479,7 @@ host::input ──▶ <span class="k">g</span> ──▶ shell::frame(<span clas
 <tr><td>season / theme</td><td>The background photograph and colours: winter, spring, summer, autumn, by date unless chosen.</td></tr>
 </tbody></table></div>
 
-<footer>Written from <code>src/app/draughts.goose</code>, <code>host.goose</code>, <code>render.goose</code>, <code>think.goose</code>, <code>src/shell/shell.goose</code>, and <code>src/game/</code>. The loop's exact order is in <code>main()</code>; when this page and the code disagree, the code is right. The detail is in the <a href="https://github.com/kaitk/draughts/tree/main/docs/architecture">architecture's Markdown pages</a>, and the decisions behind it in <a href="https://github.com/kaitk/draughts/tree/main/docs/decisions">the decisions</a>.</footer>
+<footer>Written from <code>src/main/draughts.goose</code>, <code>host.goose</code>, <code>render.goose</code>, <code>think.goose</code>, <code>src/shell/shell.goose</code>, and <code>src/game/</code>. The loop's exact order is in <code>main()</code>; when this page and the code disagree, the code is right. The detail is in the <a href="https://github.com/kaitk/draughts/tree/main/docs/architecture">architecture's Markdown pages</a>, and the decisions behind it in <a href="https://github.com/kaitk/draughts/tree/main/docs/decisions">the decisions</a>.</footer>
 </div>
 </body>
 </html>

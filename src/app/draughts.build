@@ -1,6 +1,0 @@
-// The program's own C, and gfx's C API header's folder. scripts/android.py and
-// scripts/ios.py read c_sources and c_include from here too.
-c_sources = ["about.c", "background.c", "display.c", "gfx_fork.c", "launch.c", "locale.c", "memory.c", "photo.c",
-             "resize.c", "sound.c", "storage.c", "wake.c"];
-c_include = ["../../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
-             "../../third_party/goose_gfx/src/gfx", "../../third_party/goose_gfx/third_party/SDL/src/video/khronos"];

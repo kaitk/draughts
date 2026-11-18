@@ -23,7 +23,7 @@ come from and stops them, measured as task 055 does (`agents/testing.md`, "Frame
 - **Galaxy A33:** flat board 2 of 1000 late, the same drift on Android (the loop is paced
   by `dequeueBuffer`/`queueBuffer`). The 3D board is GPU-bound at 60 frames a second,
   shown as two refreshes and one in turn on the 90 Hz display. The app asks for 60 Hz on
-  its surface while a slow 3D board moves (`src/app/display.c`), but the A33's "High"
+  its surface while a slow 3D board moves (`src/native/display.c`), but the A33's "High"
   motion smoothness fixes the display at 90, so only the user's Standard setting gives
   even motion there. The tablet keeps 90 (the user chose that over an even 60).
 - **Windows** (RTX 4090, 165 Hz): none dropped of ~970 on either board.

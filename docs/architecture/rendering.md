@@ -44,7 +44,7 @@ The one seam is `backend`, a file per root: `with`, which runs a block on the ch
 backend, and `open`, which chooses it and opens the window. `render.goose`'s calls that
 reach the GPU and `host.goose`'s window calls each run their drawer in
 `backend::with() { be => ... }`. The gfx build's `src/app/backend.goose` hands gfx's
-backend; `src/ngfx/backend.goose`, in the second root `src/ngfx/draughts_ngfx.goose`,
+backend; `src/ngfx/backend.goose`, in the second root `src/main/draughts_ngfx.goose`,
 makes the choice ([architecture](README.md#code-layout)) and holds both. Both roots run
 `src/app/app.goose`'s program.
 
@@ -125,7 +125,7 @@ gives the room to the board. `--touch on` lays a desktop window out as a touch s
 
 The **safe area** is the window less its insets (camera cutout, gesture bar). SDL reports
 them (`SDL_GetWindowSafeArea`, read each frame with the display scale by
-`src/app/display.c`). The app draws behind the cutout, so the photograph and glass that
+`src/native/display.c`). The app draws behind the cutout, so the photograph and glass that
 runs off an edge reach the screen's edges; everything else is placed in the safe rect as
 in a whole window of that size (`gui::safe`, `shell::frame`). The scale stays the whole
 short side's, the same in both orientations. Layouts hold down to a safe area of 443 ×
@@ -151,7 +151,7 @@ works; the extremes aren't polished.
 - **A tap while a move shows** (`board::touch`): a press while the last move slides or
   its taken pieces fade is kept and pressed once it has ended, with its release if the
   pointer went up meanwhile. On a desktop the click that brings the window to the front
-  counts too (`SDL_MOUSE_FOCUS_CLICKTHROUGH`, `src/app/display.c`).
+  counts too (`SDL_MOUSE_FOCUS_CLICKTHROUGH`, `src/native/display.c`).
 - **The window control** (iPadOS's three dots at the top left) may sit over back or the
   player's chip; no screen moves for it ([why](../decisions/rendering.md#small-windows)).
   UIKit's corner-adapted safe area reports its reach, should a screen need it.
@@ -159,7 +159,7 @@ works; the extremes aren't polished.
 ### Window resizing
 
 While a Mac window's edge is dragged, Cocoa holds the main thread and the frame loop
-doesn't run. `src/app/resize.c` keeps the Metal layer's last frame its shape, scaled to
+doesn't run. `src/native/resize.c` keeps the Metal layer's last frame its shape, scaled to
 fit, over the window's content view showing the backdrop cover-cropped: the flat game's
 blurred photograph or page color, or the 3D board's graded backdrop (`draw3d::cover`).
 They are read back to the CPU only at a season or board change (`draw::cover_with`), never
@@ -214,7 +214,7 @@ and value noise in the board shader, never a regular stripe.
   their GPUs need. The Mac embeds both: the ASTC for its GPU, the JPEG for a plain
   `goose build` with the Goose release's own gfx, which lacks compressed formats. A
   checkout without the images still builds and shows the page color (`__has_embed`).
-- **Loading**: `src/app/background.c` decodes (no graphics API) and `src/app/photo.c`
+- **Loading**: `src/native/background.c` decodes (no graphics API) and `src/native/photo.c`
   uploads through gfx's C API, with no copy on the data stack. Compressed formats come
   from the fork's `compressed-textures` ([findings](../goose-findings.md)). Where ASTC
   isn't taken, the JPEG is decoded with stb_image into a 16 MB texture. A season loads in
@@ -661,7 +661,7 @@ about 27 MB. The swapchain is the driver's minimum: SDL asks for 2 images, but t
 `minImageCount` is 6, so it is most of what is left at every size.
 
 On the CPU, Android's Scudo keeps freed pages resident, so the app calls
-`mallopt(M_PURGE_ALL, 0)` once in the first idle frame after launch (`src/app/memory.c`,
+`mallopt(M_PURGE_ALL, 0)` once in the first idle frame after launch (`src/native/memory.c`,
 about 16 MB, 2 ms). The computer's worker's tables (about 5 MB, [ai](ai.md)) take memory
 only once it first plays.
 
@@ -707,7 +707,7 @@ Measured with `--bench 300` ([development](../development.md#time-the-3d-board))
   Mali-G68 loses the device on a mip level 0 pixels high, so the bake's mips stop at the
   shorter side's 1 pixel (`render3d::baked`; [findings](../goose-findings.md)).
 - **A slow 3D board** on Android: once 60 frames average over 1.25 refreshes
-  (`src/app/display.c`), the pass draws 2× MSAA (`render3d::FEW_SAMPLES`); if still slow
+  (`src/native/display.c`), the pass draws 2× MSAA (`render3d::FEW_SAMPLES`); if still slow
   on a display faster than 60 Hz, the app asks for 60 Hz while the 3D board draws
   (`ANativeWindow_setFrameRate`). The log says `3D board: too slow for the display, 2x
   MSAA`.
@@ -822,7 +822,7 @@ Rules that keep it so:
   the pointer, so when the board's input changes a tile's look the next frame is drawn too
   (`gui::Gui.acted`).
 - **A running clock** sets an SDL timer for when its shown time changes
-  (`src/app/wake.c`), pushing an event that ends the wait, so the second is drawn within
+  (`src/native/wake.c`), pushing an event that ends the wait, so the second is drawn within
   5 ms. `--frames` runs end every wait at once (`draughts_wake_now`).
 - **Work on another thread**: while the computer thinks its piece pulses, keeping frames
   coming; a longer think against the clock sets the timer for its move (`game::due`). A

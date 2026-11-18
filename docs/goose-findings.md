@@ -127,13 +127,13 @@ fn main() {
 
 The export's wrapper seems to start from the data stacks' base rather than their tops.
 
-- Here: no callbacks into Goose; the background's decoder (`src/app/background.c`) hands
-  the photograph to the renderer's C (`src/app/photo.c`).
+- Here: no callbacks into Goose; the background's decoder (`src/native/background.c`) hands
+  the photograph to the renderer's C (`src/native/photo.c`).
 - Upstream: a re-entrant export continues from the stacks' tops, or the spec forbids it.
 
 ### No way to ask which platform the program runs on
 
-- Here: `draughts_platform` in `src/app/launch.c`, from `__ANDROID__` and
+- Here: `draughts_platform` in `src/native/launch.c`, from `__ANDROID__` and
   `TARGET_OS_IPHONE`.
 - Upstream: possibly an `os` function naming the platform.
 
@@ -167,7 +167,7 @@ The release's `gfx.goose` declares no gamepad functions, though upstream `main` 
 since `d623f66` and the fork's `main` brings them.
 
 - Here: `src/app/keys.goose` declares them itself, with weak stand-ins in
-  `src/app/gfx_fork.c` for a plain `goose build`.
+  `src/native/gfx_fork.c` for a plain `goose build`.
 - At rest: SDL reads open pads every 1 ms, and on the Mac its HIDAPI thread took 5% of a
   core with a PS5 pad. The fork's `gamepad-wake` turns `SDL_HINT_AUTO_UPDATE_JOYSTICKS`
   off, reads the pads in `frame()` and every 16 ms of the idle wait, waking only on a
@@ -231,7 +231,7 @@ photograph is 16 MiB as RGBA8 against 1.8 MiB as ASTC 6 × 6.
 - Here: `kaitk/goose_gfx`'s `compressed-textures`: `BC1`, `BC3`, `BC7`, `ASTC_4x4` to
   `ASTC_8x8` (21 to 27, sampled only), whole-block byte counts, tight uploads, and
   `gs_gfx_format_supported(format, usage)`. The program calls gfx's C API itself
-  (`src/app/background.c`), with a weak stand-in answering no, so a plain `goose build`
+  (`src/native/background.c`), with a weak stand-in answering no, so a plain `goose build`
   decodes the JPEG instead.
 - Upstream: the formats and `format_supported` in `gfx.goose`, block-aware byte counts and
   `texel_size`; perhaps loading `.astc` or `.ktx2` from bytes.
@@ -271,7 +271,7 @@ tablet 207.5 MB, 138.9 without).
 
 ### No safe area and no display scale
 
-- Here: `src/app/display.c` reads `SDL_GetWindowSafeArea` and `SDL_GetWindowDisplayScale`
+- Here: `src/native/display.c` reads `SDL_GetWindowSafeArea` and `SDL_GetWindowDisplayScale`
   each frame (through `dlsym` on the Mac), since the program's Goose compiles against the
   release's `gfx.goose`.
 - Upstream: `gfx::safe_area() -> float4` (insets in pixels) and `gfx::display_scale() ->
@@ -414,7 +414,7 @@ device on the zero-extent blit.
 ### Launch flashes black between Android's splash and the first frame
 
 - Here: `DraughtsActivity` holds the splash and a navy cover until the program reports its
-  first presented frame over JNI (`src/app/launch.c`); the theme sets a navy navigation
+  first presented frame over JNI (`src/native/launch.c`); the theme sets a navy navigation
   bar.
 
 ### The Java side keeps the accelerometer on at 50 Hz

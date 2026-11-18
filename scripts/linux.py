@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Build a Goose program for Linux (x64) with the patched goose_gfx, and optionally run it.
 
-    scripts/linux.py src/app/draughts.goose               build build/linux/draughts
-    scripts/linux.py src/app/draughts.goose --run -- --board 3d
+    scripts/linux.py src/main/draughts.goose               build build/linux/draughts
+    scripts/linux.py src/main/draughts.goose --run -- --board 3d
                                                           build, and run it with those flags
-    scripts/linux.py src/app/draughts.goose --release     build/linux/release/
+    scripts/linux.py src/main/draughts.goose --release     build/linux/release/
                                                           Draughts-VERSION-linux-x64.tar.gz
 
 As scripts/windows.py does on Windows: goose_gfx's sources from the submodule
@@ -44,7 +44,7 @@ OUT = native.ROOT / "build/linux"
 SDL_OPTIONS = ["-DSDL_SHARED=OFF", "-DSDL_STATIC=ON", "-DSDL_TEST_LIBRARY=OFF", "-DSDL_CAMERA=OFF",
                "-DSDL_RENDER=OFF", "-DSDL_OPENGL=OFF", "-DSDL_OPENGLES=OFF", "-DSDL_KMSDRM=OFF",
                "-DSDL_WAYLAND=ON", "-DSDL_X11=ON"]
-APP_ID = native.APP_ID    # SDL's app id too (src/app/display.c)
+APP_ID = native.APP_ID    # SDL's app id too (src/native/display.c)
 ICON = native.ROOT / f"linux/{APP_ID}.png"    # windows/draughts.ico's 256 px
 
 

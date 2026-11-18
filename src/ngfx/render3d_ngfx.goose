@@ -1,6 +1,6 @@
 // Recording the 3D board's renderer (render3d.goose) through goose-ngfx, beside gfx's
 // recorder (src/render3d/render3d_gpu.goose) in the build that holds both
-// (src/ngfx/draughts_ngfx.goose): one forward pass, into 4× multisampled transient
+// (src/main/draughts_ngfx.goose): one forward pass, into 4× multisampled transient
 // targets resolved into the picture as gfx's is, or at the size antialiasing wants and
 // then SMAA or the 2 × 2 supersampled pass shrunk. The shaders are gfx's GLSL in
 // shaders.goose, written into Slang by scripts/ngfx_3d_shaders.py, each module with one

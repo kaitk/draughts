@@ -98,25 +98,25 @@ On a Mac with Apple silicon, from a clone with its submodule and the pinned Goos
 in `build/` ([docs/development.md](docs/development.md#toolchain) sets these up):
 
 ```sh
-scripts/mac.py src/app/draughts.goose    # build build/draughts with the fork's gfx
+scripts/mac.py src/main/draughts.goose    # build build/draughts with the fork's gfx
 build/draughts
 ```
 
-On Windows, `python scripts/windows.py src/app/draughts.goose` builds the same app
+On Windows, `python scripts/windows.py src/main/draughts.goose` builds the same app
 ([development](docs/development.md#run-on-windows)), and on Linux
-`python3 scripts/linux.py src/app/draughts.goose` ([development](docs/development.md#run-on-linux)).
+`python3 scripts/linux.py src/main/draughts.goose` ([development](docs/development.md#run-on-linux)).
 
 On an Android device with USB debugging on, with the Android SDK, NDK r29, and a JDK:
 
 ```sh
-scripts/android.py src/app/draughts.goose --run     # build the APK, install it, start it
+scripts/android.py src/main/draughts.goose --run     # build the APK, install it, start it
 ```
 
 For iOS, with Xcode (the Simulator, or an iPhone with a signing identity):
 
 ```sh
-scripts/ios.py src/app/draughts.goose --run             # the Simulator
-scripts/ios.py src/app/draughts.goose --device --run    # an iPhone
+scripts/ios.py src/main/draughts.goose --run             # the Simulator
+scripts/ios.py src/main/draughts.goose --device --run    # an iPhone
 ```
 
 The tests run headless:

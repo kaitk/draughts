@@ -4,7 +4,7 @@ Android device's and ios_perf.py the iPhone's: both boards full screen in the sa
 scene (Russian, wood, the start).
 
     python scripts/windows_perf.py [frames]     default 1000; build first with
-                                                scripts/windows.py src/app/draughts.goose
+                                                scripts/windows.py src/main/draughts.goose
     BOARDS=3d python scripts/windows_perf.py    one board; REST=0 leaves the rest out
     EXE=build/ngfx/draughts.exe FLAGS="--aa smaa" python scripts/windows_perf.py
                                                 another build, and flags added to each run
@@ -206,7 +206,7 @@ def rest(board):
 def main():
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
     if not EXE.exists():
-        sys.exit(f"no {EXE}: python scripts/windows.py src/app/draughts.goose")
+        sys.exit(f"no {EXE}: python scripts/windows.py src/main/draughts.goose")
     work = Path(tempfile.mkdtemp(prefix="windows_perf_"))
     commit = subprocess.run(["git", "log", "-1", "--format=%h %cs", "--", "src"], cwd=ROOT,
                             capture_output=True, text=True).stdout.strip()

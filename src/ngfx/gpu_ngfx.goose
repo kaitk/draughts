@@ -1,10 +1,18 @@
 // goose-ngfx's backend, beside gfx's gpu::Gfx (src/app/gpu.goose) in the build that holds
 // both: each recorder's state, the 3D board's what only ngfx holds, the window's half, and
 // the few calls the drawers make on the backend itself. Handles are gfx's types (nx).
+// The entry of the package src/ngfx/, which the root declares as gpu_ngfx (a package
+// can't be named ngfx, goose-ngfx's name); the root imports its backend.goose, the seam.
 namespace gpu_ngfx;
 import std;
 import vec;
 import ngfx;
+import .nx;
+import .draw_ngfx;
+import .scene_ngfx;
+import .widgets_ngfx;
+import .host_ngfx;
+import .render3d_ngfx;
 
 struct Ngfx {
     draw:    draw_ngfx::Gpu,

@@ -84,8 +84,8 @@ uploads the photograph. The drawers are generic over the backend's type, so each
 resolves at compile time to one renderer's recorder. The one seam is `backend`
 ([rendering](rendering.md#two-renderers)): `render.goose` and `host.goose` run their
 drawers in `backend::with`, and `backend::open` opens the window. The gfx build's root
-(`src/app/draughts.goose`) takes `src/app/backend.goose`, gfx's alone;
-`src/ngfx/draughts_ngfx.goose`, a second root over the same program (`src/app/app.goose`),
+(`src/main/draughts.goose`) takes `src/app/backend.goose`, gfx's alone;
+`src/main/draughts_ngfx.goose`, a second root over the same program (`src/app/app.goose`),
 adds goose-ngfx's backend (`gpu_ngfx::Ngfx`, `src/ngfx/`'s `_ngfx` recorders,
 `photo_ngfx.c`, and `nx`, which gives goose-ngfx's calls gfx's handle types) and its own
 `backend.goose`, whose `open` chooses: `--renderer gfx`, `ngfx`, or `auto`, each
@@ -108,7 +108,7 @@ The targets this keeps open, each replacing or adding to `app/` alone:
   Vulkan, on Linux in a Wayland window, or X11's without Wayland; built by
   `scripts/windows.py` and `scripts/linux.py`, which builds SDL itself): a build script and shims beside the Android ones (storage, locales, the
   launch cover, closing). On iOS the program's C calls SDL directly as on Android
-  (`src/app/platform.h`), `draughts_platform` tells the app where it runs, home has no
+  (`src/native/platform.h`), `draughts_platform` tells the app where it runs, home has no
   way out (`home::closable`), and nothing is drawn while the app hasn't focus: iOS ends
   an app that uses the GPU in the background, and SDL doesn't block the loop there.
 - **A second renderer**, the NoGraphicsAPI version through goose-ngfx on desktop and
@@ -145,7 +145,7 @@ flash, `board::Layout`, `gui::Quad`, and `theme::Theme`; to the 3D board,
 
 ### A frame
 
-`src/app/draughts.goose` runs one loop on every platform
+`src/main/draughts.goose` runs one loop on every platform
 ([rendering.md](rendering.md#frames-and-battery)):
 
 1. The window (`host`): when it loses focus the game is written (Android may kill a
@@ -197,7 +197,7 @@ requires) ([why](../decisions/README.md#the-apps-lifecycle)).
 
 The loop ends on Escape on home's menu or when home's X sets `Frame.quit`. The game is
 written; after home's X on Android the program calls `DraughtsActivity.closeApp()` over
-JNI (`src/app/launch.c`), which finishes the activity with `finishAndRemoveTask()`, so
+JNI (`src/native/launch.c`), which finishes the activity with `finishAndRemoveTask()`, so
 no card is left in recents. The next start is a fresh process that restores the game.
 
 ## Rules every part keeps
@@ -220,10 +220,10 @@ no card is left in recents. The next start is a fresh process that restores the 
   `strings/keys.goose`, and `scripts/test.sh` fails while it is stale), so a new string is
   a line in `en.txt` and the script run. English is the default and fills in
   any key a translation lacks. The language is the first of the system's preferred
-  locales (`src/app/locale.c`) that has a file, else English. A language is a new file
+  locales (`src/native/locale.c`) that has a file, else English. A language is a new file
   plus its code in `strings::LANGUAGES`; `test/strings/` fails on a key missing from any
   file.
-- **Kept in the app's storage folder** (SDL's pref path, through `src/app/storage.c`), per
+- **Kept in the app's storage folder** (SDL's pref path, through `src/native/storage.c`), per
   player ([players](#players)): the settings as a small `key = value` file
   (`player-N.txt`, `src/shell/prefs.goose`), written whole and atomically after a change;
   and the game as it stands, `game-N.bin`, written when the app is paused or quits,
