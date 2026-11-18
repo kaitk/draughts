@@ -68,7 +68,9 @@ opt-in. At rest on the Mac (a game, flat, 25 s): gfx 0.017% of a core, ngfx 0.03
 loop 26 times, nothing drawn; headless shots and `scripts/test.sh` pass. On the Pixel 7a
 (the `.dev` install; the main app there has another signature), 60 s at home: the program's
 thread 0.12%, 60 wakeups, but the process 4.8%, nearly all of it AAudio's and SDL's audio
-threads: the open sound device, which this didn't change. Not yet on the tablet.
+threads: the open sound device, which this didn't change. The iOS simulator (iPhone 13
+mini, `ios-run-loop-wait`'s new version): 0.056%, the loop 26 times in 25 s, nothing drawn.
+Not yet on the tablet, nor on an iOS device.
 
 ## Next
 
