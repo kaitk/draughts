@@ -107,12 +107,19 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   `shell::home::COMPUTER`. A package's namespaces come into every program that imports
   it, so keep them apart from the program's own. Importing one directory twice under
   two names is an error.
+- A root reaches files outside its own folder only through a package: `src/main/`'s
+  roots declare `import gpu from "../gfx";` and pick one more of its files with
+  `import gpu.backend;`. A package can't take a blessed or declared package's name, so
+  `src/gfx/`'s entry is `gpu.goose` and `src/ngfx/`'s is `gpu_ngfx.goose`
+  (`docs/decisions/layout.md`). Files of a package's folder that nothing imports aren't
+  compiled: `src/gfx/backend.goose` stays out of the ngfx build.
 - File functions (`read_file`, `write_file_atomic`, `file_exists`, `delete_file`,
   `rename_file`, `list_dir`) need `import os;` in every file that calls them.
 
 ## The program's C
 
-- It goes in `c_sources` in the `.build` sidecar (`src/main/draughts.build`), compiled by
+- It is in `src/native/` and goes in `c_sources` in both roots' `.build` sidecars
+  (`src/main/draughts.build`, `draughts_ngfx.build`; `scripts/ngfx.py` checks), compiled by
   the system clang, so C23 `#embed` works. A slice arrives as `struct { T *data; int64_t
   len; }` by value. The compiled C is cached by its source: touch the `.c` after a file
   it embeds changes (included headers are tracked). A missing `embed_file` path is a
@@ -175,7 +182,7 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   built from a `var` is computed once before `main`: anything that changes at run time
   (`gui::tap_size()`) is a function.
 - One choice at run time over code compiled per type, the renderer's seam
-  (`src/gfx/backend.goose`): `fn with<F>() { if on { F(&a) } else { F(&b) } }` runs a
+  (`src/ngfx/backend.goose`): `fn with<F>() { if on { F(&a) } else { F(&b) } }` runs a
   block `{ be => f(be) }` checked once per argument's type, so `f` and all it calls are
   generic and call `be`'s functions directly. A HOF needs its `<F>` and returns the
   block's value as that `if` expression (`return F(x)` of a valueless block is "cannot

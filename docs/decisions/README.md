@@ -9,6 +9,8 @@ its full text left to git history (`git log -S '<phrase>' -- docs/decisions`).
 One file per area, as the architecture has:
 
 - This file: the stack, the code's layout, the players, and the app's lifecycle
+- [layout.md](layout.md): where the programs, their C, the renderers, the platforms, the
+  build scripts, and the tools are
 - [rules.md](rules.md): the variants, the engine's representation, and the draws
 - [ai.md](ai.md): the computer player, its levels, the lookout, and the hint
 - [puzzles.md](puzzles.md): the puzzles, their file, and their checks
@@ -48,6 +50,8 @@ One file per area, as the architecture has:
 
 - Packages with no graphics, each tested headless; only `app/` imports `gfx` or calls SDL
   or the platform (2026-11-08), so a second renderer or platform replaces `app/` alone.
+  Since 2026-11-18 that is `app/`, the renderers' `gfx/` and `ngfx/`, and the C in
+  `native/` ([layout](layout.md)).
   The program is under `src/`, the tests under `test/` (2026-11-09).
 - `render3d/` is a package outside `app/` that no game package imports (2026-11-09). Its
   gfx-free half is `model3d/`, tested headless (2026-11-10).

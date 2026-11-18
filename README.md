@@ -92,72 +92,90 @@ The whole app in plain words, from launch to one tap followed to the computer's 
 [rules](docs/architecture/rules.md), [computer player](docs/architecture/ai.md),
 [puzzles](docs/architecture/puzzles.md).
 
+## Where the program starts
+
+Draughts is two Goose programs over one app, both in `src/main/`:
+
+- `src/main/draughts.goose` draws through goose_gfx alone. This is the build that ships
+  on every platform: Android, iOS, macOS, Windows, and Linux.
+- `src/main/draughts_ngfx.goose` holds goose-ngfx (NoGraphicsAPI) too and picks a
+  renderer when it starts (`--renderer auto|gfx|ngfx`). It is a development build, made
+  by `scripts/ngfx.py` on the Mac, Windows, and Linux, and by `scripts/ios.py --ngfx` for
+  an iPhone or iPad.
+
+Each root holds only `main`, which calls `run`, the main loop in `src/app/app.goose`.
+Its `.build` sidecar lists the program's C, which is in `src/native/`.
+
 ## Building and running
 
-On a Mac with Apple silicon, from a clone with its submodule and the pinned Goose release
-in `build/` ([docs/development.md](docs/development.md#toolchain) sets these up):
+Every build script takes `src/main/draughts.goose` (`scripts/ngfx.py` builds its twin
+from it) and writes into `build/`. The scripts need the submodule and the pinned Goose
+release in `build/`; [development](docs/development.md#toolchain) sets these up. On a Mac with Apple
+silicon:
 
 ```sh
-scripts/mac.py src/main/draughts.goose    # build build/draughts with the fork's gfx
-build/draughts
+scripts/mac.py src/main/draughts.goose          # build/draughts
+build/draughts --board 3d
 ```
 
-On Windows, `python scripts/windows.py src/main/draughts.goose` builds the same app
-([development](docs/development.md#run-on-windows)), and on Linux
-`python3 scripts/linux.py src/main/draughts.goose` ([development](docs/development.md#run-on-linux)).
+| Platform | Build from | Command | More |
+| --- | --- | --- | --- |
+| macOS | Mac | `scripts/mac.py src/main/draughts.goose` | [Run on the Mac](docs/development.md#run-on-the-mac) |
+| Windows | Windows | `python scripts/windows.py src/main/draughts.goose --run` | [Run on Windows](docs/development.md#run-on-windows) |
+| Linux | Linux | `scripts/linux.py src/main/draughts.goose --run` | [Run on Linux](docs/development.md#run-on-linux) |
+| Android | Mac, Windows | `scripts/android.py src/main/draughts.goose --run`: build, install over USB, start | [Run on Android](docs/development.md#run-on-android) |
+| iOS | Mac with Xcode | `scripts/ios.py src/main/draughts.goose --run` in the Simulator, `--device --run` on an iPhone | [Run on iOS](docs/development.md#run-on-ios) |
+| Both renderers | Mac, Windows, Linux | `scripts/ngfx.py src/main/draughts.goose --run`, with a goose-ngfx checkout (`NGFX`) and slangc (`NGFX_SLANGC`) | [Two renderers](docs/architecture/rendering.md#two-renderers) |
 
-On an Android device with USB debugging on, with the Android SDK, NDK r29, and a JDK:
-
-```sh
-scripts/android.py src/main/draughts.goose --run     # build the APK, install it, start it
-```
-
-For iOS, with Xcode (the Simulator, or an iPhone with a signing identity):
-
-```sh
-scripts/ios.py src/main/draughts.goose --run             # the Simulator
-scripts/ios.py src/main/draughts.goose --device --run    # an iPhone
-```
+`--release` makes the store and download builds; [development](docs/development.md) has
+them, the development flags, and how to measure a device.
 
 The tests run headless:
 
 ```sh
 python3 test/run_tests.py
-scripts/test.sh                 # also perft and a random-game check of the rules
+scripts/test.sh                 # also the app's shaders, perft, and a random-game check
 ```
 
 The season photographs the app embeds are in `design/backgrounds/masters/`; their
-originals stay local (`design/backgrounds/README.md`). [docs/development.md](docs/development.md) has the rest: the toolchain, development
-flags, the Android and release builds, and how to measure idle CPU and memory.
+originals stay local (`design/backgrounds/README.md`).
 
 ## Layout
 
 ```text
-src/          the program: one directory per package, and the app
-  rules/        the rules of each variant, pure functions with no graphics
-  ai/           the computer player
-  puzzles/      the puzzles and their checks
-  board/        the board's logic and draw lists
-  render3d/     the 3D board's renderer: meshes, shaders, and its looks
-  gui/          the UI layer: layout, glass, buttons, text
-  game/         the game screen and its clock
-  shell/        home, settings, puzzles, players, and which screen shows
-  badges/       the players' animal badges
-  app/          the main loop, the GPU drawing, and the platform's C
-strings/      the text, one file per language
-assets/       the fonts and the badges
-platform/android/      the manifest, the activity, resources, and the native build
-platform/ios/          the iOS entry point and its native build
-scripts/      the Android and iOS builds, the icon, and device measurements
-tools/        perft, computer-player benchmarks, a terminal player, the puzzle checker
-test/         headless tests with expected output
-patches/      patches to goose_gfx and SDL, applied to a copy at build time
-third_party/  goose_gfx, as a submodule, with SDL and Nuklear
-store/        the Play and App Store listings, their previews, and the privacy policy
-design/       the icon's, backgrounds', and tabletops' sources and how they were made
-prototypes/   HTML prototypes of the UI, compared before building in Goose
-docs/         product scope, architecture, decisions, development
-tasks/        the work, one file per task
+src/            the program's Goose and C
+  main/           the two programs' roots and their .build sidecars
+  app/            the main loop, the drawers, the window, the flags, and the bench
+  gfx/            the goose_gfx renderer
+  ngfx/           the goose-ngfx renderer and its shaders
+  native/         the program's C: storage, locales, the safe area, the photographs
+  rules/          the rules of each variant, pure functions with no graphics
+  ai/             the computer player
+  puzzles/        the puzzles and their checks
+  board/          the board's logic, layout, and draw lists
+  game/           the game screen and its clock
+  shell/          home, settings, puzzles, players, and which screen shows
+  gui/            the UI layer: layout, glass, buttons, text
+  model3d/        the 3D board's meshes and looks, with no graphics
+  render3d/       the 3D board's renderer
+  sound/          the sounds
+  badges/         the players' animal badges
+strings/        the text, one file per language
+assets/         the fonts, the badges, and the sounds
+platform/       each platform's files: Android's activity and resources, iOS's project,
+                the desktop icons, the Windows installer
+scripts/        the builds, one per platform, and the test run
+tools/          perft, the computer's benchmarks, a terminal player, the puzzle checker
+  perf/           device and frame measurements
+  assets/         the scripts that make the board pictures, badges, and sounds
+test/           headless tests with their expected output
+patches/        patches to SDL, applied to a copy at build time
+third_party/    goose_gfx, as a submodule, with SDL and Nuklear; SMAA
+store/          the Play and App Store listings, their previews, and the privacy policy
+design/         the icon's, backgrounds', and tabletops' sources and how they were made
+prototypes/     HTML prototypes of the UI, checked before building in Goose
+docs/           product scope, architecture, decisions, development
+tasks/          the work, one file per task
 ```
 
 ## Documentation

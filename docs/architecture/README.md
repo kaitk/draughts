@@ -49,14 +49,24 @@ feeds them the pointer and the time and draws what they leave.
 
 **The program's code is under `src/`**, as the tests are under
 `test/`: `src/` holds the packages and the app, one directory each, and the top level
-keeps what isn't the program's Goose: `test/`, `tools/`, `strings/` (the text and its
-loader, shared with the build scripts), `assets/`, `platform/android/`, `scripts/`, `docs/`, and
-the rest. Below, `app/` means `src/app/`, and so on.
+keeps what isn't the program's Goose: `test/`, `strings/` (the text and its loader,
+shared with the build scripts), `assets/`, `platform/` (each platform's files the build
+takes: Android's manifest and activity, iOS's CMake project, the desktop icons),
+`scripts/` (the builds), `tools/` (programs for development, `tools/perf/` for
+measuring a device, `tools/assets/` for making assets), `docs/`, and the rest. Below,
+`app/` means `src/app/`, and so on.
 
-**The rule: only `app/` imports `gfx` or calls SDL or the platform.** The
-packages hand it flat, fixed-size data and take back the pointer and the time; nothing
-outside `app/` (and `platform/android/`, the build scripts) knows what draws or what it runs on.
-One package is drawing code outside `app/`: `render3d/`, the 3D board's renderer, which
+**The programs are `main/`'s two roots**, and nothing else is there:
+`main/draughts.goose`, the build that ships, and `main/draughts_ngfx.goose`, the same
+program holding goose-ngfx too. Each declares the packages and picks its renderer's
+`backend`; both call `run` in `app/app.goose`. Their `.build` sidecars list the
+program's C, all of it in `native/`.
+
+**The rule: only `app/` and the renderers, `gfx/` and `ngfx/`, import `gfx` or call
+SDL or the platform**, the platform through the program's C in `native/`. The packages
+hand them flat, fixed-size data and take back the pointer and the time; nothing else
+(but `platform/` and the build scripts) knows what draws or what it runs on.
+One package is drawing code outside these: `render3d/`, the 3D board's renderer, which
 the app and `tools/board_shot.goose` (settings' board pictures) share. Its recording (`render3d_gpu`) imports
 gfx, and only those two programs import it; no package of the game does. What the 3D board
 is but drawing, its meshes, looks, light, and the plan of its bake, is `model3d/`, which
@@ -67,7 +77,7 @@ platform, `app/host` (the window, the frame's end and clock, the screen's size a
 focus, the pointer, keys and typed text, the screenshot, and the program's C for the
 safe area, the wake timer, storage, locales, and Android's launch, back, and close), and
 the renderer, `app/render`, which holds every drawer (`draw`, `draw3d`, `scene`,
-`widgets`) and every GPU handle. `main` calls these two and nothing of gfx. Each frame it
+`widgets`) and, through the renderer's package, every GPU handle. `main` calls these two and nothing of gfx. Each frame it
 hands `render::frame` one `render::Frame` of the app's own values: the board as
 `board::build_frame_pieces` left it, where it goes, the pieces over the UI, the UI's quads, the 3D
 board's view and place, the blur, and the transition's hole; the frame's pass begins and
@@ -81,7 +91,9 @@ recorder per drawer on its fields (`be.draw`, `be.scene`, `be.widgets`, `be.r3d`
 3D board, `be.host` for the window). gfx's backend is `gpu::Gfx` (`src/gfx/gpu.goose`)
 over `draw_gpu`, `scene_gpu`, `widgets_gpu`, `render3d_gpu`, and `host_gpu`; `photo.c`
 uploads the photograph. The drawers are generic over the backend's type, so each call
-resolves at compile time to one renderer's recorder. The one seam is `backend`
+resolves at compile time to one renderer's recorder. `gfx/` is a package the roots
+declare as `gpu`, as `ngfx/` is `gpu_ngfx`: a package can't take the name of goose_gfx's
+`gfx` or goose-ngfx's `ngfx`. The one seam is `backend`
 ([rendering](rendering.md#two-renderers)): `render.goose` and `host.goose` run their
 drawers in `backend::with`, and `backend::open` opens the window. The gfx build's root
 (`src/main/draughts.goose`) takes `src/gfx/backend.goose`, gfx's alone;
@@ -97,7 +109,7 @@ gfx's GLSL written as Slang at each build (`scripts/ngfx_2d_shaders.py`,
 include, ngfx's own antialiasing and mip passes, and SMAA's wrapper. `scripts/ngfx.py`
 builds that root. The gfx build is what ships.
 
-The targets this keeps open, each replacing or adding to `app/` alone:
+The targets this keeps open, each replacing or adding to `app/` and the renderers alone:
 
 - **The 3D board** ([rendering](rendering.md#board-and-pieces)): drawn by `render3d/` from `app/`; what the board needs
   of it, the camera and its fit into the layout, a tap turned into a square by a ray
@@ -131,8 +143,12 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | `src/render3d/` | The 3D board's renderer, shared by the app and `tools/board_shot.goose`: its shaders, the meshes and surfaces on the GPU, the surfaces' bake, the photograph's blur, the shadow map, and the multisampled pass ([rendering.md](rendering.md#board-and-pieces)) |
 | `src/sound/` | The sounds ([sound.md](sound.md)): the recorded hits decoded from IMA ADPCM, the rest synthesized, made into goose_gfx's mixer only while the volume is above zero, and played by one call; the events that play them are the board's (`board/sound_event.goose`) |
 | `src/badges/` | The players' animal badges: their SVGs from `assets/badges/` baked at startup into a distance-field atlas |
-| `src/app/` | The program: the main loop, the platform (`host`), the renderer (`render`) over the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder and the photograph's upload) |
-| `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
+| `src/app/` | The app: the main loop, the platform (`host`), the renderer (`render`) and its drawers of the board, the pieces, the UI's quads, the season's photograph and its blurs, and the 3D board, the font atlas, the themes, the computer's worker thread, the development flags, and the bench |
+| `src/gfx/` | gfx's backend (`gpu::Gfx`): the drawers' recorders through gfx (`draw_gpu`, `scene_gpu`, `widgets_gpu`), the window's GPU half (`host_gpu`), and the gfx build's `backend` |
+| `src/ngfx/` | goose-ngfx's backend (`gpu_ngfx::Ngfx`): its recorders, `nx`, its hand-written shaders, and the `backend` that chooses a renderer at start |
+| `src/native/` | The program's C: the storage folder, locales, the safe area and the display, the clock's wake timer, the launch and closing, the JPEG decoder and the photograph's upload to each renderer, and the renderer check |
+| `src/main/` | The two programs' roots and their sidecars |
+| `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks; device measurements in `tools/perf/` and asset makers in `tools/assets/` |
 
 `ai`, `board`, and `puzzles` build on `rules`, `board` also on `gui`'s pointer
 (`board::touch`) and on `model3d`'s measures of the 3D board (`mesh::FIELD`.., which
@@ -145,7 +161,7 @@ flash, `board::Layout`, `gui::Quad`, and `theme::Theme`; to the 3D board,
 
 ### A frame
 
-`src/main/draughts.goose` runs one loop on every platform
+`run` (`src/app/app.goose`) is one loop on every platform
 ([rendering.md](rendering.md#frames-and-battery)):
 
 1. The window (`host`): when it loses focus the game is written (Android may kill a
