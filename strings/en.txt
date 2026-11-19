@@ -275,7 +275,7 @@ how.done = You know the moves!
 how.finish = Done
 how.step_count = {} / {} steps
 how.home = Home
-how.back = Back
+how.back = Previous
 how.move_reply = Now the other side moves.
 how.move_again = Your turn again. Move a piece forward.
 # The steps, three keys each from how.move (strings::HOW_STEP): the rule's name, its
