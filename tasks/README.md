@@ -44,7 +44,7 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
   announcement after the Play release, 075 the Linux build, 064 Steam (low priority,
   scoped only; the board under the mouse first).
 - Content and play: 038 the badges' final silhouettes.
-- Menus and layout: 072 keyboard and controller focus; 097 How to play within reach while learning.
+- Menus and layout: 072 keyboard and controller focus; 098 How to play within reach while learning.
 - Small fixes: 091, built; the mouse drag on Windows left to check.
 - Settings: 092 About and the battery saver's cap, built; the devices left to check.
 - The 3D board: 042 the idle wakeup, 071 its memory, 094 the pieces' materials (parked on its branch), 095 a
