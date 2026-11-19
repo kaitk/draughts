@@ -27,33 +27,28 @@ SOURCES = {
 S = {f"{ns}::{name}": text for ns, path in SOURCES.items() for name, text in strings(path).items()}
 
 # The pipelines: name, vertex parts, fragment parts (as the gfx recorders' embed_shader
-# calls name them), and whether the root carries the run's first instance.
+# calls name them).
 FULL = ["shaders::FULL_VERT"]
 THEMED = ["shaders::FADE_FN", "draw_gpu::THEME_BLOCK", "draw_gpu::SHARED_BLOCK"]
 UI_VS = ["draw_gpu::SHARED_BLOCK", "widgets_gpu::VERT"]
 UI_FS = [*THEMED, "draw_gpu::MAN_BLOCK", "widgets_gpu::FRAG"]
 MODULES = [
-    ("compose", FULL, ["widgets_gpu::COMPOSE_FRAG"], False),
-    ("fade", FULL, ["shaders::FADE_FN", "scene_gpu::FADE_FRAG"], False),
-    ("blur", FULL, ["shaders::BLUR_FRAG"], False),
-    ("shrink", FULL, ["shaders::SHRINK_FRAG"], False),
-    ("board", FULL, [*THEMED, "draw_gpu::BOARD_FRAG"], False),
+    ("compose", FULL, ["widgets_gpu::COMPOSE_FRAG"]),
+    ("fade", FULL, ["shaders::FADE_FN", "scene_gpu::FADE_FRAG"]),
+    ("blur", FULL, ["shaders::BLUR_FRAG"]),
+    ("shrink", FULL, ["shaders::SHRINK_FRAG"]),
+    ("board", FULL, [*THEMED, "draw_gpu::BOARD_FRAG"]),
     ("pieces", ["draw_gpu::SHARED_BLOCK", "draw_gpu::STACK_BLOCK", "draw_gpu::PIECE_VERT"],
-     [*THEMED, "draw_gpu::MAN_BLOCK", "draw_gpu::STACK_BLOCK", "draw_gpu::PIECE_FRAG"], False),
-    ("ui_base", UI_VS, ["widgets_gpu::BASE", *UI_FS], True),
-    ("ui_icons", UI_VS, ["widgets_gpu::ICONS", *UI_FS], True),
-    ("ui_faces", UI_VS, ["widgets_gpu::FACES", *UI_FS], True),
+     [*THEMED, "draw_gpu::MAN_BLOCK", "draw_gpu::STACK_BLOCK", "draw_gpu::PIECE_FRAG"]),
+    ("ui_base", UI_VS, ["widgets_gpu::BASE", *UI_FS]),
+    ("ui_icons", UI_VS, ["widgets_gpu::ICONS", *UI_FS]),
+    ("ui_faces", UI_VS, ["widgets_gpu::FACES", *UI_FS]),
 ]
-
-# Hand-written, beside what is generated: SV_InstanceID counts from 0 whatever the draw's
-# first instance (goose-ngfx's docs/design.md), where gl_InstanceIndex counts from it, so
-# a run of quads from `first` (widgets_gpu::run) takes it from the root.
-FIRST = "int(instance + root.first)"
 
 VEC4S = {"vec4", "uvec4", "ivec4"}
 
 
-def module(name, vs_parts, fs_parts, first):
+def module(name, vs_parts, fs_parts):
     vs = Stage("vs", source([S[p] for p in vs_parts]))
     fs = Stage("fs", source([S[p] for p in fs_parts]))
     blocks = unique((vs, fs), "blocks")
@@ -62,7 +57,7 @@ def module(name, vs_parts, fs_parts, first):
     assert not any(shadow for _, shadow in textures), "a compare sampler in a 2D shader"
     for bname, fields in blocks:
         assert all(t in VEC4S and n == 1 for t, _, n in fields), f"{bname}: only vec4s are laid out here"
-    uints = [t for t, _ in textures] + (["smp"] if textures else []) + (["first"] if first else [])
+    uints = [t for t, _ in textures] + (["smp"] if textures else [])
     pad = (-(8 * len(buffers) + 4 * len(uints)) % 16) // 4
 
     out = []
@@ -82,7 +77,7 @@ def module(name, vs_parts, fs_parts, first):
     for b in buffers:
         w(f"    vec4* {b};")
     for u in uints:
-        w(f"    uint {u};{'  // hand-written: FIRST' if u == 'first' else ''}")
+        w(f"    uint {u};")
     for i in range(pad):
         w(f"    uint pad{i};")
     for _, fields in blocks:
@@ -100,13 +95,13 @@ def module(name, vs_parts, fs_parts, first):
 
     write_stage(w, vs, "vs", load(vs))
     write_stage(w, fs, "fs", load(fs))
-    write_entries(w, vs, fs, instance=FIRST if first else "int(instance)")
+    write_entries(w, vs, fs, instance="int(instance)")
     return "\n".join(out) + "\n"
 
 
 def sources():
     """Each file's name and text: a module per pipeline."""
-    return {f"{name}.slang": module(name, vs, fs, first) for name, vs, fs, first in MODULES}
+    return {f"{name}.slang": module(name, vs, fs) for name, vs, fs in MODULES}
 
 
 def main():

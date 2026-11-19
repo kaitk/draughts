@@ -11,13 +11,12 @@ import ngfx;
 import gui from "../gui";
 
 // The quads' root (ui_base, ui_icons, and ui_faces alike) and compose's, as their
-// shaders' headers lay them out; `first`, the run's first quad, is the one field gfx's
-// shaders have no block for: gfx draws from a first instance, which SV_InstanceID leaves
-// out.
+// shaders' headers lay them out: `run` is gfx's Run block, x the run's first quad.
 struct Root {
     quads: u64,
-    glass: u32, atlas: u32, thumbs: u32, badges: u32, smp: u32, first: u32,
+    glass: u32, atlas: u32, thumbs: u32, badges: u32, smp: u32, pad0: u32,
     view:  widgets::View,
+    run:   float4,
     theme: theme::Theme,
 }
 struct ComposeRoot { layer: u32, smp: u32, pad0: u32, pad1: u32 }
@@ -61,6 +60,7 @@ fn run(g: Gpu&, p: i64, first: i64, count: i64, s: scene::Scene&, t: theme::Them
     nx::bind(g.pipelines[p]);
     ngfx::draw_instanced(ngfx::root(Root { quads: g.addr, glass: nx::index(s.glass), atlas: nx::index(atlas),
                                            thumbs: nx::index(thumbs), badges: nx::index(badges),
-                                           smp: nx::index(s.sampler), first: first as u32, view: view, theme: t }),
+                                           smp: nx::index(s.sampler), pad0: 0, view: view,
+                                           run: float4 { first, 0.0, 0.0, 0.0 }, theme: t }),
                          6, count);
 }
