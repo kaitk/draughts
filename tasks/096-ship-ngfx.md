@@ -55,6 +55,10 @@ This replaces passing `src/main/draughts_ngfx.goose` (2026-11-18,
   part built for macOS 13.3 and goose-ngfx's Metal 4 classes imported weakly (not started
   on a macOS older than 26: none at hand); the iOS `.ipa` (0.9.1, build 6) and Android's
   APK and AAB (version code 7), not uploaded.
+- 2026-11-19: ngfx drew the glass light with dark text (its widget root lacked gfx's new
+  Run block, shifting the theme by one), fixed in 27db1df. The Mac's 0.9.1 disk image on
+  the release was swapped for one built from 4516be5, and the iOS `.ipa` (0.9.1, build 6)
+  rebuilt from it; Windows still needs the same rebuild and swap.
 
 ## Windows and Linux releases
 
