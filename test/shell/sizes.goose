@@ -302,6 +302,12 @@ fn screens(g: gui::Gui&) {
     learning.unset = false;
     at_rest(learning, g);
     report("home, still learning", g, learning, true, false);
+    // How to play at its second step, back a step on beside or over next.
+    var lesson = showing(shell::HOME, home::NO_SETUP);
+    lesson.prefs.learned[lesson.prefs.variant] = 1;
+    shell::learn(lesson, shell::HOME, 0.0);
+    at_rest(lesson, g);
+    report("how to play", g, lesson, true, false);
     var friend = showing(shell::HOME, home::NEW_GAME);
     friend.prefs.friend = true;
     at_rest(friend, g);

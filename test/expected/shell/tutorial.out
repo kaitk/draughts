@@ -47,12 +47,14 @@ next before the move takes a tap: false
   played: step 8 played, played 1, learned 8, next lit true, changed true
   played: step 9 played, played 1, learned 9, next lit true, changed true
   played: step 10 played, played 1, learned 10, next lit true, changed true
-the end: step 10 end, played 1, learned 10, next lit false, the card's ways 7
+the end: step 10 end, played 1, learned 10, next lit false, the card's ways 8
 home's how to play row, done: false
 puzzles: screen 4 (puzzle 4), theme 0 (learn 0)
 from the library: screen 7, step 1
 back: screen 3 (the library 3)
 four played: opens at step 5
+back a step: step 4 playing, played 0, learned 4, next lit false
+back on the first step dimmed, taking no tap: true
 a game kept: continue true, rows 0 1 2 3, how to play declared true
 a game won: how to play false
 Russian's Learn 6 of 12 solved: how to play false

@@ -15,6 +15,11 @@ win is kept as `won = yes`. A new step, Kings jump on too (`W:WKa1:Bc3,f4`), fol
 take from afar in every draughts: the king takes c3 and must land on e5, the one square
 from which it takes f4.
 
+The tutorial gained back a step, and its Estonian was rewritten with the user as plain
+prose for children (`agents/writing.md`): *võtma* for a capture, *löök* for a shot, a side
+in the singular in a sentence. Gemini's passes kept nearly every stiff line; the user's
+corrections did the work.
+
 ## Acceptance criteria
 
 - [x] How to play shows under Continue while a game is kept, first and lit without one,
@@ -25,4 +30,7 @@ from which it takes f4.
   Gemini (kept as written).
 - [x] Every layout fits the four rows (`test/shell/sizes`, "home, still learning"); the
   iPad's smallest window has a fifth row under 88 dp, as its compact rows were accepted.
-- [ ] Checked on the Mac and on the tablet.
+- [x] Back a step in every layout (`test/shell/sizes`, "how to play"; `test/shell/tutorial`).
+- [x] Checked on the Mac: home's rows, the king step, back a step at tablet, phone
+  portrait, and phone landscape sizes, flat and 3D.
+- [ ] Checked on the tablet.

@@ -145,6 +145,17 @@ fn main() {
     lib.prefs.learned[rules::INTERNATIONAL] = 4;
     shell::learn(lib, shell::HOME, tick());
     print("four played: opens at step ", lib.lesson.step + 1);
+    // Back a step: the step before, played again from its start; the steps played kept.
+    settle(lib, g, 0.3);
+    press(lib, g, tutorial::PREV_ID);
+    settle(lib, g, 0.3);
+    print("back a step: ", state(lib));
+    lib.lesson.step = 0;
+    tutorial::restart(lib.lesson);
+    settle(lib, g, 0.3);
+    var dimmed = true;
+    for s in g.spots { if s.id == tutorial::PREV_ID { dimmed = false; } }
+    print("back on the first step dimmed, taking no tap: ", dimmed);
 
     // A game kept: How to play under Continue, not in its place, so a player who began
     // a game before learning still finds it.

@@ -241,9 +241,10 @@ let SHOWCASE = 2;
 // The layout round the 3D board in `area`: in landscape short panels in the top corners,
 // the board as large as clears them and the camera buttons by half a gap; in portrait
 // the bar, the board, the buttons, the play. `game`: the game's screen, with room for
-// what each side has taken; `moves`: the moves shown.
+// what each side has taken; `moves`: the moves shown; `taller`: dp more for the play in
+// portrait (how to play's back over next).
 fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT, small: bool = true,
-              game: bool = false, moves: bool = false) -> Layout {
+              game: bool = false, moves: bool = false, taller: f32 = 0.0) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
@@ -366,7 +367,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         return l;
     }
     let cam = view3d::Camera { pitch: portrait_pitch, yaw: 0.0 };
-    let bar = portrait_bar(area, s, small, game, true);
+    let bar = portrait_bar(area, s, small, game, true, taller);
     let gap = bar.gap;
     let top = bar.top;
     let bottom = bar.bottom;
@@ -604,8 +605,9 @@ fn flat_frame(area: float4, s: f32) -> float4 {
 // The flat board's layout in `area`, a screen's safe area, at s pixels a dp: in
 // landscape short corner panels (flat_corners); in portrait the bar and the play, as wide
 // as the area for the game (`game`). `moves`: the game shows its moves, as a panel or,
-// where that has no room, a line.
-fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = false, moves: bool = false) -> Layout {
+// where that has no room, a line. `taller`: dp more for the play in portrait.
+fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = false, moves: bool = false,
+             taller: f32 = 0.0) -> Layout {
     let width = area.z;
     let height = area.w;
     let phone = gui::phone(area, s);   // NARROW panels
@@ -618,7 +620,7 @@ fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = fals
         }
         return l;
     }
-    let bar = portrait_bar(area, s, small, game, game);
+    let bar = portrait_bar(area, s, small, game, game, taller);
     let compact = bar.mode == COMPACT;
     let gap = bar.gap;
     let top = bar.top;
@@ -680,7 +682,8 @@ fn portrait_sheet(l: Layout&, mid: f32, s: f32) {
 // The portrait bar's and play's heights and the margins in `area` at s pixels a dp:
 // compact in a small window (where `small` allows it), else the bar stacked where a third
 // of it is under STACK_W, and TAKEN_BAR_ROW taller in a game. The bar is as wide as the
-// area less the margins where `wide`, else as wide as the board.
+// area less the margins where `wide`, else as wide as the board; the play `taller` dp more
+// but in compact.
 struct Bar {
     mode:    i64  = PORTRAIT,
     gap:     f32  = 0.0,
@@ -688,12 +691,12 @@ struct Bar {
     bottom:  f32  = 0.0,
     stacked: bool = false,
 }
-fn portrait_bar(area: float4, s: f32, small: bool, game: bool, wide: bool) -> Bar {
+fn portrait_bar(area: float4, s: f32, small: bool, game: bool, wide: bool, taller: f32 = 0.0) -> Bar {
     let width = area.z;
     let height = area.w;
     let compact = small && height < gui::COMPACT * s;
     let gap = (if compact { GAP_COMPACT } else { GAP }) * s;
-    let bottom = (if compact { play_compact_h() } else { play_h() }) * s;
+    let bottom = (if compact { play_compact_h() } else { play_h() + taller }) * s;
     let across = if wide { width - 2.0 * gap }
                  else if width > height { min(width - 2.0 * gap, height - bar_h() * s - bottom - 4.0 * gap) }
                  else { width - 2.0 * gap };
@@ -761,9 +764,10 @@ fn under(l: Layout&, column: float4, area: float4, s: f32, most: i64) {
 }
 
 // A puzzle's layout on the flat board in `area` at s pixels a dp: layout_in's, in
-// landscape the play panel CORNER_PUZZLE tall for what it holds, and nothing taken shown.
-fn puzzle_in(area: float4, n: i64, s: f32) -> Layout {
-    var l = layout_in(area, n, s, false);
+// landscape the play panel CORNER_PUZZLE tall for what it holds, and nothing taken shown;
+// in portrait the play `taller` dp more.
+fn puzzle_in(area: float4, n: i64, s: f32, taller: f32 = 0.0) -> Layout {
+    var l = layout_in(area, n, s, false, false, false, taller);
     guard columns(l) else { return l; }
     l.right.w = min(CORNER_PUZZLE * s, flat_frame(area, s).w - 2.0 * GAP * s);
     l.taken_as = TAKEN_NONE;

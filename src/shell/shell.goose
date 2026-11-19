@@ -814,10 +814,11 @@ fn puzzle_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
 // `flip`, seen through camera `cam` at `now`: round the 3D board when it is chosen, else
 // the flat board with its panels beside it. It keeps its own play panel's height in a
 // small window.
-fn side_layout(sh: Shell&, area: float4, u: f32, variant: u8, flip: bool, cam: rig::Rig&, now: f64) -> panel::Layout {
+fn side_layout(sh: Shell&, area: float4, u: f32, variant: u8, flip: bool, cam: rig::Rig&, now: f64,
+               taller: f32 = 0.0) -> panel::Layout {
     let n = rules::VARIANTS[variant].size;
-    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, false) }
-            else { panel::puzzle_in(area, n, u) };
+    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, false, false, false, taller) }
+            else { panel::puzzle_in(area, n, u, taller) };
     l.board.flip = flip;
     panel::apply_camera(l, cam, now);
     return l;

@@ -17,9 +17,10 @@ fn learn(sh: Shell&, from: i64, now: f64) {
     go_to(sh, TUTORIAL, now);
 }
 
-// Where how to play puts the board and its panels: a puzzle's layout.
+// Where how to play puts the board and its panels: a puzzle's layout, its play in
+// portrait tall enough for back over next (tutorial::taller).
 fn tutorial_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
-    return side_layout(sh, area, u, sh.lesson.b.variant, false, sh.lesson.cam, now);
+    return side_layout(sh, area, u, sh.lesson.b.variant, false, sh.lesson.cam, now, tutorial::taller());
 }
 
 // How to play for this frame: the steps played kept in the player's file, and the end's

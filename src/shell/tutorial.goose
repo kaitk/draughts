@@ -3,7 +3,9 @@
 // moves shown (board::MOVES, the only place they show by default, docs/product.md). The
 // left panel is the puzzle's (back, settings, start over, which plays the step again);
 // the right one shows the steps as dots, the rule's name, its line, and next, dim until
-// the step's move is played, then lit with what the move showed in the line's place.
+// the step's move is played, then lit with what the move showed in the line's place;
+// beside or over next (under start over on a phone in landscape), back to the step
+// before, played again from its start.
 // Where nothing must be taken the piece to move glows, as a puzzle's hint does; where
 // something must, the board's pulse says which piece. The first step is a move, the other
 // side's answer, and a move again: the game's turns. The last step's next is done, which
@@ -67,6 +69,7 @@ let HOME = gui::ASK_OWN + 2;
 // What its panel asks for, besides BACK, SETTINGS, and gui::ASK_RESTART.
 let NEXT = gui::ASK_OWN + 3; // the panel's next was tapped
 let CAMERA = gui::ASK_OWN + 4; // a camera button was
+let PREV = gui::ASK_OWN + 5; // back to the step before
 
 // The ids: next is the panel's (panel::EYE_ID, as a puzzle's); the end's card's own.
 // Each on from the one before; test/gui/ids keeps IDS_END inside the range.
@@ -75,7 +78,8 @@ let CARD_PUZZLES = CARD + 1;
 let CARD_NEW_GAME = CARD_PUZZLES + 1;
 let CARD_HOME = CARD_NEW_GAME + 1;
 let CARD_OUTSIDE = CARD_HOME + 1;
-let IDS_END = CARD_OUTSIDE + 1;
+let PREV_ID = CARD_OUTSIDE + 1;     // the panel's back a step
+let IDS_END = PREV_ID + 1;
 
 // What a frame tells the shell: where to go, and the steps played so far when one was
 // played this frame (else -1), for the player's file.
@@ -150,6 +154,11 @@ fn restart(ls: Lesson&) {
     ls.state = PLAYING;
     ls.played = 0;
     ls.glowed = false;
+}
+
+// How many dp taller the play is in portrait, so back stands over next, each a tap tall.
+fn taller() -> f32 {
+    return max(0.0, 2.0 * gui::tap_size() + gui::PAD + 2.0 * panel::IN_ACROSS - panel::play_h());
 }
 
 // Whether this is the tutorial's last step.
@@ -229,6 +238,10 @@ fn frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, area: float4, screen: floa
     if ask == gui::ASK_RESTART {
         restart(ls);
         rig::ease_to_rest(ls.cam, now);
+    }
+    if ask == PREV && ls.step > 0 {
+        ls.step--;
+        restart(ls);
     }
     if ask == NEXT && ls.state == PLAYED {
         if last(ls) { ls.state = END; }
@@ -314,8 +327,10 @@ fn words(ls: Lesson&, g: gui::Gui&, r: float4) {
 
 // Declares the panels: the left one as a puzzle's; the right one with the dots, the
 // name and line, and next, a tall tile at the foot in landscape, at the right in
-// portrait. Round the 3D board, the camera buttons. Returns BACK, SETTINGS,
-// gui::ASK_RESTART, NEXT, CAMERA, or STAY.
+// portrait; back a step beside it in landscape (under start over where the panel is
+// narrower than two taps), over it in portrait.
+// Round the 3D board, the camera buttons. Returns BACK, SETTINGS, gui::ASK_RESTART, NEXT,
+// PREV, CAMERA, or STAY.
 fn panel_frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     let u = g.scale;
     var ask = STAY;
@@ -331,9 +346,18 @@ fn panel_frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     let style = if played { gui::CHOSEN } else { gui::PLAIN };
     let word = strings::get(if last(ls) { strings::HOW_FINISH } else { strings::PUZZLE_NEXT });
     let icon = if last(ls) { gui::CHECK } else { gui::NEXT };
+    let tap = gui::tap_size() * u;
+    let space = gui::PAD * u;
+    let two = 2.0 * tap + space;      // two taps and the gap between them
+    let back_on = ls.step > 0;
     if panel::columns(l) {
-        let next = gui::cut_bottom(right, if l.is_3d { panel::stack_h() * u } else { panel::tall(l, u) });
-        gui::cut_bottom(right, gui::PAD * u);
+        var next = gui::cut_bottom(right, if l.is_3d { panel::stack_h() * u } else { panel::tall(l, u) });
+        gui::cut_bottom(right, space);
+        // A narrow panel (a phone) has no room for it: under start over at the left.
+        let beside = next.z >= two;
+        let prev = if beside { gui::cut_left(next, tap) } else { float4 { l.left.x, l.left.y + l.left.w + space, l.left.z, tap } };
+        if beside { gui::cut_left(next, space); }
+        if gui::tile(g, PREV_ID, prev, gui::PREV, gui::PLAIN, 22.0, back_on) { ask = PREV; }
         gui::cut_top(right, 8.0 * u);
         dots(ls, g, gui::cut_top(right, 12.0 * u), 12.0, 8.0);
         gui::cut_top(right, 16.0 * u);
@@ -343,9 +367,14 @@ fn panel_frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
         if gui::labelled(g, panel::EYE_ID, next, icon, arrow, word, gui::HEADING, gui::STACKED, style, played) { ask = NEXT; }
         return ask;
     }
-    // Portrait: the dots, the name, and the line at the left, next at the right.
-    let next = gui::cut_right(right, min(200.0 * u, 0.36 * right.z));
-    gui::cut_right(right, gui::PAD * u);
+    // Portrait: the dots, the name, and the line at the left, next at the right, back over
+    // it (the play taller by taller()), or beside it in a small window's one row.
+    var next = gui::cut_right(right, min(200.0 * u, 0.36 * right.z));
+    gui::cut_right(right, space);
+    let over = next.w >= two;
+    let prev = if over { gui::cut_top(next, tap) } else { gui::cut_right(right, tap) };
+    if over { gui::cut_top(next, space); } else { gui::cut_right(right, space); }
+    if gui::tile(g, PREV_ID, prev, gui::PREV, gui::PLAIN, 22.0, back_on) { ask = PREV; }
     dots(ls, g, gui::cut_top(right, 12.0 * u), 10.0, 6.0);
     gui::cut_top(right, 10.0 * u);
     words(ls, g, right);

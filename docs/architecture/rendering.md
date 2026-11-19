@@ -400,7 +400,10 @@ stars pop in and next lights.
 
 **How to play** (`src/shell/tutorial.goose`, `prototypes/tutorial.html`): the rules one
 step at a time, each played on the board in a puzzle's layout with the moves shown: ten
-steps for International and Brazilian, eleven for Russian. The last opens a card offering
+steps for International and Brazilian, eleven for Russian. Back a step (a chevron, dim on
+the first step) plays the step before again: beside next in landscape, under start over
+where the panel is narrower than two taps (a phone), and over next in portrait, whose play
+panel grows to hold both. The last opens a card offering
 Puzzles, New game, and Home. Steps played are kept (`learned.<draughts> = n`).
 
 **Players** (`prototypes/players.html`; what a player holds:

@@ -355,6 +355,12 @@ Task 026, `tutorial.html`, 2026-11-13, replacing the earlier first-start pages:
 - A step for a king's multi-capture, after Kings take from afar, in every draughts
   (2026-11-19, task 097): a flying king may land on any free square behind a piece, but
   must land where it can take on, which the same tester found confusing.
+- Back a step in the tutorial (2026-11-19, task 097): a player who missed something can
+  look again. Beside next in landscape; under start over on a phone's narrow panel, which
+  has no room beside or over next; over next in portrait, the play panel about 16 dp
+  taller for it (`tutorial::taller`), the board that much smaller. Rejected: beside next
+  in portrait, which squeezed the line to about 100 dp on a phone, and tapping a step's
+  dot, each about 25 dp to hit.
 - Russian has its own steps where its rules differ.
 
 ### The lookout and the hint
