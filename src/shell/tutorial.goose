@@ -350,6 +350,7 @@ fn panel_frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     let space = gui::PAD * u;
     let two = 2.0 * tap + space;      // two taps and the gap between them
     let back_on = ls.step > 0;
+    let back_word = strings::get(strings::HOW_BACK);
     if panel::columns(l) {
         var next = gui::cut_bottom(right, if l.is_3d { panel::stack_h() * u } else { panel::tall(l, u) });
         gui::cut_bottom(right, space);
@@ -357,24 +358,25 @@ fn panel_frame(ls: Lesson&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
         let beside = next.z >= two;
         let prev = if beside { gui::cut_left(next, tap) } else { float4 { l.left.x, l.left.y + l.left.w + space, l.left.z, tap } };
         if beside { gui::cut_left(next, space); }
-        if gui::tile(g, PREV_ID, prev, gui::PREV, gui::PLAIN, 22.0, back_on) { ask = PREV; }
         gui::cut_top(right, 8.0 * u);
         dots(ls, g, gui::cut_top(right, 12.0 * u), 12.0, 8.0);
         gui::cut_top(right, 16.0 * u);
         words(ls, g, right);
         let h .= g.faces[gui::HEADING];
         let arrow = min(48.0, (next.w - h.ascent + h.descent) / u - 16.0);
+        if gui::labelled(g, PREV_ID, prev, gui::BACK, arrow, back_word, gui::HEADING, gui::STACKED, gui::PLAIN, back_on) { ask = PREV; }
         if gui::labelled(g, panel::EYE_ID, next, icon, arrow, word, gui::HEADING, gui::STACKED, style, played) { ask = NEXT; }
         return ask;
     }
     // Portrait: the dots, the name, and the line at the left, next at the right, back over
-    // it (the play taller by taller()), or beside it in a small window's one row.
+    // it (the play taller by taller()), or beside it in a small window's one row; both an
+    // arrow over a word.
     var next = gui::cut_right(right, min(200.0 * u, 0.36 * right.z));
     gui::cut_right(right, space);
     let over = next.w >= two;
     let prev = if over { gui::cut_top(next, tap) } else { gui::cut_right(right, tap) };
     if over { gui::cut_top(next, space); } else { gui::cut_right(right, space); }
-    if gui::tile(g, PREV_ID, prev, gui::PREV, gui::PLAIN, 22.0, back_on) { ask = PREV; }
+    if gui::labelled(g, PREV_ID, prev, gui::BACK, 40.0, back_word, gui::HEADING, gui::STACKED, gui::PLAIN, back_on) { ask = PREV; }
     dots(ls, g, gui::cut_top(right, 12.0 * u), 10.0, 6.0);
     gui::cut_top(right, 10.0 * u);
     words(ls, g, right);

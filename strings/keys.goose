@@ -196,6 +196,7 @@ let KEYS = [
     "how.finish",
     "how.step_count",
     "how.home",
+    "how.back",
     "how.move_reply",
     "how.move_again",
     "how.move",
@@ -506,7 +507,8 @@ let QUIT_ASK = 181;
 let QUIT_CANCEL = 182;
 // How to play: home's row, the library's, the tutorial's; a new player's
 // question, and its answers; "{} short steps", under show me; the end's card; the last
-// step's next; "{} / {} steps", the library's row; the end's way home; the first step's
+// step's next; "{} / {} steps", the library's row; the end's way home; back a step, beside
+// next; the first step's
 // lines while the other side moves, and after.
 let HOW_TITLE = 183;
 let HOW_ASK = 184;
@@ -517,96 +519,97 @@ let HOW_DONE = 188;
 let HOW_FINISH = 189;
 let HOW_STEP_COUNT = 190;
 let HOW_HOME = 191;
-let HOW_MOVE_REPLY = 192;
-let HOW_MOVE_AGAIN = 193;
+let HOW_BACK = 192;
+let HOW_MOVE_REPLY = 193;
+let HOW_MOVE_AGAIN = 194;
 // The steps, three keys each from how.move (strings::HOW_STEP): the rule's name, its
 // line, and what is said once it is played; in the order tutorial::STEPS names them.
-let HOW_MOVE = 194;
-let HOW_MOVE_LINE = 195;
-let HOW_MOVE_WELL = 196;
-let HOW_JUMP = 197;
-let HOW_JUMP_LINE = 198;
-let HOW_JUMP_WELL = 199;
-let HOW_MUST = 200;
-let HOW_MUST_LINE = 201;
-let HOW_MUST_WELL = 202;
-let HOW_CHAIN = 203;
-let HOW_CHAIN_LINE = 204;
-let HOW_CHAIN_WELL = 205;
-let HOW_MOST = 206;
-let HOW_MOST_LINE = 207;
-let HOW_MOST_WELL = 208;
-let HOW_ANY = 209;
-let HOW_ANY_LINE = 210;
-let HOW_ANY_WELL = 211;
-let HOW_KING = 212;
-let HOW_KING_LINE = 213;
-let HOW_KING_WELL = 214;
-let HOW_FLY = 215;
-let HOW_FLY_LINE = 216;
-let HOW_FLY_WELL = 217;
-let HOW_AFAR = 218;
-let HOW_AFAR_LINE = 219;
-let HOW_AFAR_WELL = 220;
-let HOW_KING_CHAIN = 221;
-let HOW_KING_CHAIN_LINE = 222;
-let HOW_KING_CHAIN_WELL = 223;
-let HOW_WAY = 224;
-let HOW_WAY_LINE = 225;
-let HOW_WAY_WELL = 226;
-let HOW_WIN = 227;
-let HOW_WIN_LINE = 228;
-let HOW_WIN_WELL = 229;
+let HOW_MOVE = 195;
+let HOW_MOVE_LINE = 196;
+let HOW_MOVE_WELL = 197;
+let HOW_JUMP = 198;
+let HOW_JUMP_LINE = 199;
+let HOW_JUMP_WELL = 200;
+let HOW_MUST = 201;
+let HOW_MUST_LINE = 202;
+let HOW_MUST_WELL = 203;
+let HOW_CHAIN = 204;
+let HOW_CHAIN_LINE = 205;
+let HOW_CHAIN_WELL = 206;
+let HOW_MOST = 207;
+let HOW_MOST_LINE = 208;
+let HOW_MOST_WELL = 209;
+let HOW_ANY = 210;
+let HOW_ANY_LINE = 211;
+let HOW_ANY_WELL = 212;
+let HOW_KING = 213;
+let HOW_KING_LINE = 214;
+let HOW_KING_WELL = 215;
+let HOW_FLY = 216;
+let HOW_FLY_LINE = 217;
+let HOW_FLY_WELL = 218;
+let HOW_AFAR = 219;
+let HOW_AFAR_LINE = 220;
+let HOW_AFAR_WELL = 221;
+let HOW_KING_CHAIN = 222;
+let HOW_KING_CHAIN_LINE = 223;
+let HOW_KING_CHAIN_WELL = 224;
+let HOW_WAY = 225;
+let HOW_WAY_LINE = 226;
+let HOW_WAY_WELL = 227;
+let HOW_WIN = 228;
+let HOW_WIN_LINE = 229;
+let HOW_WIN_WELL = 230;
 // The daily puzzles: the library's Today row, its note, and settings' row.
-let DAILY_TODAY = 230;
-let DAILY_LEFT = 231;
-let DAILY_TOMORROW = 232;
-let SETTINGS_DAILY = 233;
+let DAILY_TODAY = 231;
+let DAILY_LEFT = 232;
+let DAILY_TOMORROW = 233;
+let SETTINGS_DAILY = 234;
 // Under a daily puzzle's goal: the day's first, and its last.
-let DAILY_WARMUP = 234;
-let DAILY_STRETCH = 235;
+let DAILY_WARMUP = 235;
+let DAILY_STRETCH = 236;
 // Home's Puzzles row once all of today's are solved, before its check where it fits.
-let DAILY_HOME_TOMORROW = 236;
+let DAILY_HOME_TOMORROW = 237;
 // Settings' Sound section, between Look and Game.
-let SETTINGS_SOUND = 237;
+let SETTINGS_SOUND = 238;
 // Its one row: the speaker's tile, which mutes and unmutes, and the slider.
-let SETTINGS_VOLUME = 238;
+let SETTINGS_VOLUME = 239;
 // The speaker's tile's name, for a screen reader: it turns the sound off and on.
-let SETTINGS_MUTE = 239;
+let SETTINGS_MUTE = 240;
 // Settings' About: its row at the foot, beside the privacy note, and the dialog it opens
 // over settings, of the build and what the app draws with. The values (versions, names,
 // "4× MSAA") stay as they are in every language.
-let ABOUT_ROW = 240;
-let ABOUT_COPY = 241;
-let ABOUT_COPIED = 242;
+let ABOUT_ROW = 241;
+let ABOUT_COPY = 242;
+let ABOUT_COPIED = 243;
 // The dialog's three groups.
-let ABOUT_BUILD = 243;
-let ABOUT_GRAPHICS = 244;
-let ABOUT_BOARD_3D = 245;
+let ABOUT_BUILD = 244;
+let ABOUT_GRAPHICS = 245;
+let ABOUT_BOARD_3D = 246;
 // The build's lines.
-let ABOUT_VERSION = 246;
-let ABOUT_COMMIT = 247;
-let ABOUT_SYSTEM = 248;
+let ABOUT_VERSION = 247;
+let ABOUT_COMMIT = 248;
+let ABOUT_SYSTEM = 249;
 // The graphics' lines: the renderer (gfx or ngfx), its graphics API, the GPU's name, and
 // the display's refresh rate.
-let ABOUT_RENDERER = 249;
-let ABOUT_DRIVER = 250;
-let ABOUT_GPU = 251;
-let ABOUT_DISPLAY = 252;
+let ABOUT_RENDERER = 250;
+let ABOUT_DRIVER = 251;
+let ABOUT_GPU = 252;
+let ABOUT_DISPLAY = 253;
 // The 3D board's lines: its antialiasing, its shadow's filter as "{} taps", and the side
 // of its baked surfaces in pixels.
-let ABOUT_ANTIALIASING = 253;
-let ABOUT_SHADOWS = 254;
-let ABOUT_TAPS = 255;
-let ABOUT_SURFACES = 256;
+let ABOUT_ANTIALIASING = 254;
+let ABOUT_SHADOWS = 255;
+let ABOUT_TAPS = 256;
+let ABOUT_SURFACES = 257;
 // The system's battery saver, on or off; and under it, on Android, that it keeps the
 // display at 60 Hz.
-let ABOUT_SAVER = 257;
-let ABOUT_ON = 258;
-let ABOUT_OFF = 259;
-let ABOUT_CAPPED = 260;
+let ABOUT_SAVER = 258;
+let ABOUT_ON = 259;
+let ABOUT_OFF = 260;
+let ABOUT_CAPPED = 261;
 // Under the antialiasing when the app lowered it from 4× MSAA for a slow device.
-let ABOUT_LOWERED = 261;
+let ABOUT_LOWERED = 262;
 // Under the 3D board's group while the board is flat.
-let ABOUT_NOT_IN_USE = 262;
-let COUNT = 263;
+let ABOUT_NOT_IN_USE = 263;
+let COUNT = 264;

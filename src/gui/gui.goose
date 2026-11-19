@@ -839,16 +839,15 @@ fn press_widget_if_on(g: Gui&, id: i64, r: float4, on: bool) -> bool, f32 {
 }
 
 // A tile in one of the looks PLAIN..ROW_PRIMARY with corner radius `radius` dp;
-// otherwise as button. One that isn't `on` is drawn at 35% and takes no tap, as labelled.
-fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32, on: bool = true) -> bool {
-    let clicked, p = press_widget_if_on(g, id, r, on);
-    let a: f32 = if on { 1.0 } else { 0.35 };
-    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, radius * g.scale, 0.0, p },
+// otherwise as button.
+fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool {
+    let clicked, p = press_widget(g, id, r);
+    add(g, Quad { rect: r, look: float4 { BUTTON, radius * g.scale, 0.0, p },
                   extra: float4 { g.scale, style, hover(g, id), 0.0 } });
     if icon != NO_ICON {
         // Icons are half the tile (44 dp in an 88 dp one), scaled with it and with the press.
         let s = 0.5 * min(r.z, r.w) * (1.0 - 0.04 * p);
-        glyph_icon(g, center(r, s, s), icon, style, p, a);
+        glyph_icon(g, center(r, s, s), icon, style, p, 1.0);
     }
     return clicked;
 }

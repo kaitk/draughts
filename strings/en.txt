@@ -263,7 +263,8 @@ quit.cancel = Cancel
 
 # How to play: home's row, the library's, the tutorial's; a new player's
 # question, and its answers; "{} short steps", under show me; the end's card; the last
-# step's next; "{} / {} steps", the library's row; the end's way home; the first step's
+# step's next; "{} / {} steps", the library's row; the end's way home; back a step, beside
+# next; the first step's
 # lines while the other side moves, and after.
 how.title = How to play
 how.ask = Do you know how to play?
@@ -274,6 +275,7 @@ how.done = You know the moves!
 how.finish = Done
 how.step_count = {} / {} steps
 how.home = Home
+how.back = Back
 how.move_reply = Now the other side moves.
 how.move_again = Your turn again. Move a piece forward.
 # The steps, three keys each from how.move (strings::HOW_STEP): the rule's name, its

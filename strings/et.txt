@@ -218,6 +218,7 @@ how.done = Käigud on sul selged!
 how.finish = Valmis
 how.step_count = {} / {} sammu
 how.home = Avaleht
+how.back = Tagasi
 how.move_reply = Nüüd käib vastane.
 how.move_again = Jälle sinu kord. Käi nupuga edasi.
 how.move = Käik
