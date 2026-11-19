@@ -43,8 +43,14 @@ Repeat this for new strings or another language.
   longer labels on the Mac in both orientations with `--lang <code>`.
 - The Estonian terms: Eesti Kabeliit's rules write *lööma* for capture, *kabend* for a
   piece, *kivi* for a man and *kabe* for a king; sides are named in the plural (Valged,
-  Mustad). The app itself says *nupp* for a piece and *tamm* for a king, with *lööma*
-  for capture (its puzzles, draw lines, and How to play); a new string follows the app.
+  Mustad). The app itself says *nupp* for a piece and *tamm* for a king. The Estonian
+  is plain spoken prose a second-grader reads at once, not rulebook language: capture is
+  *võtma* (*Pead võtma*, *Võta nii palju, kui saad*), not the official *lööma*, which
+  reads as kantseliit to a child; *viltu* for diagonal, *teise serva* for the far side.
+  Never a bare "Tamm!" nor a king with a crown beside it: *tamm* is also an oak, which
+  has a crown. A saying is used as people say it (*Kaks on parem kui üks!*). How to play
+  follows this (2026-11-19); the theme names, draw lines, and replay still say *lööma*.
+  A brief for Gemini says all of this, or it keeps the stiff wording as correct.
   English "either" is *ükskõik kumb* or *mõlemad*: bare *kumbki* reads as "neither"
   (2026-11-13). The tightest labels are "Rahvusvaheline" (the setups' tiles size to their
   words, `home::draughts_tile`) and "Kuupäev"/"Tänane" on settings' background tile.
