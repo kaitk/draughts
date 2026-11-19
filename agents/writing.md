@@ -46,7 +46,8 @@ Repeat this for new strings or another language.
   Mustad). The app itself says *nupp* for a piece and *tamm* for a king. The Estonian
   is plain spoken prose a second-grader reads at once, not rulebook language: capture is
   *võtma* (*Pead võtma*, *Võta nii palju, kui saad*), not the official *lööma*, which
-  reads as kantseliit to a child; *viltu* for diagonal, *teise serva* for the far side.
+  reads as kantseliit to a child; *teise serva* for the far side, and *diagonaal* kept
+  (*Tamm saab käia diagonaalidel ükskõik kui kaugele*), not *viltu*.
   Never a bare "Tamm!" nor a king with a crown beside it: *tamm* is also an oak, which
   has a crown. A saying is used as people say it (*Kaks on parem kui üks!*). How to play
   follows this (2026-11-19); the theme names, draw lines, and replay still say *lööma*.
