@@ -40,7 +40,7 @@ Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, 
 SHA-256:
 - `Draughts-0.9.1-windows-x64-setup.exe`: `68a4f7520ee41597768f16a71c362988c7148c5b0c10d8b8146253374edb1331`
 - `Draughts-0.9.1-windows-x64.zip`: `f222f8c1a59f662503c1a6465990aa9300d46d477ef65518dd5f4a9ed9b9c8f3`
-- `Draughts-0.9.1-macos-arm64.dmg`: `f9d06dc33a2a84319796c4f7378aab0c0e12f87d6a2a4fdbb6a52c7c2b5d9620`
+- `Draughts-0.9.1-macos-arm64.dmg`: `bda8a7b99e012dd77a74fe036229b84eab3b32008ee5d69e334e53dbf8556481`
 - `Draughts-0.9.1-linux-x64.tar.gz`: `3859e63dd45b0b71f6230dd43dff29ae663f5f6d75c52f429ab48a23aff87e29`
 ```
 
