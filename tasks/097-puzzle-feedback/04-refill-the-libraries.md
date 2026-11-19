@@ -144,32 +144,37 @@ count before 097:
 | Russian | crowning 1 2, captures 2 3 | 41 → 18 | 25 |
 | Brazilian | captures 1 4, captures 2 9 | 62 → 24 | 51 |
 
-On the machine, from the repository's root, for each variant V (one at a time, ten
-processes; Windows: Git Bash), KINDS:
+## Refilled on the Windows PC (2026-11-20)
 
-- International: `safe-10,safe-15` (traps), then `king3-10,king3-12,shot3m-12,shot3m-14,shot4m-12,shot4m-14,shot3t-12,tempo-10` (hard)
-- Russian: `crown1-7,capture-8,capture-13`, then `shot3m-12,shot3m-14,shot4m-12,shot4m-14,shot3t-12`
-- Brazilian: `capture-8,capture-13`, then the same hard kinds as Russian
+The three draughts at once, five processes each (8 cores, 16 threads, below normal
+priority), the short themes' kinds then the hard ones, `batch SEED 1000 SECONDS --kinds`.
+`batch` runs a kind for SECONDS times its share (3 for the hard kinds), so the plan's
+2,700 would have run some 11 hours; SECONDS was set from the shares instead:
 
-```sh
-goose build -o build/puzzles tools/puzzles.goose
-mkdir -p build/work/V && cd build/work/V
-for s in 1 2 3 4 5 6 7 8 9 10; do ../../puzzles --variant V batch $((9900+s)) 1000 2700 --kinds KINDS > find-$s.txt 2> find-$s.log & done; wait
-python3 ../../../tools/library.py merge merged.txt find-*.txt
-../../puzzles rate merged.txt > rated.txt
-python3 ../../../tools/library.py candidates cand.txt ../../../src/puzzles/library-V.txt rated.txt
-for i in 0 1 2 3 4 5 6 7 8 9; do ../../puzzles kings cand.txt $i 10 --every > kings-$i.txt & done; wait
-python3 ../../../tools/library.py passed passed.txt cand.txt kings-*.txt
-python3 ../../../tools/pick.py --src merged.txt ../../../tasks/097-puzzle-feedback/targets-V.txt picked.txt passed.txt
-cd ../../.. && python3 tools/library.py assemble src/puzzles/library-V.txt V build/work/V/picked.txt
-python3 test/run_tests.py --bless library   # read the diff first: counts only
-scripts/test.sh
-```
+| | Kinds, SECONDS | Hard kinds, SECONDS | Total |
+|---|---|---|---|
+| International | `safe-10,safe-15`, 600 (40 min) | `king3-10,king3-12,shot3m-12,shot3m-14,shot4m-12,shot4m-14,shot3t-12,tempo-10`, 545 (200 min) | 240 min |
+| Russian | `crown1-7,capture-8,capture-13`, 600 (30 min) | `shot3m-12,shot3m-14,shot4m-12,shot4m-14,shot3t-12`, 840 (210 min) | 240 min |
+| Brazilian | `capture-8,capture-13`, 900 (30 min) | as Russian's | 240 min |
 
-`batch SEED PER SECONDS`: SECONDS a kind, so 2,700 (45 minutes) over two kinds' groups
-is about the 90-minute cap; give traps more if they still come short. Check `rate`'s and
-`candidates`' usage in the tools if an argument has moved. `pick.py` prints what is still
-short; record it here, with the bands, and commit each variant.
+Then `merge`, `split` and `rate`, and a scratch filter before `candidates`
+(`build/work/keep.py`): only the theme levels the targets hold and, for shots and king
+shots, no more than 300 under the easiest target of that level, so a hard target isn't
+filled by a far easier puzzle and the kings check runs on fewer; then `kings --every`,
+`passed`, `pick.py`, `assemble`, and the tests. Python on Windows writes the library with
+CRLF; convert it back to LF before committing.
+
+**International**: 11,444 found (about 120 safe moves, most of the safe kinds' sound
+positions seen before), 9,551 new, 968 kept by the filter, 222 passed the kings check
+and `PREFERS` (745 failed), all 105 targets picked: 84 of 1600 and over; the 22 safe
+moves rate 516 to 1,400, lower than the lost ones, as the count was what they were for.
+Every theme and level is back to its count before 097 or more; 3,662 puzzles.
+
+| International | 200 | 400 | 600 | 800 | 1000 | 1200 | 1400 | 1600+ |
+|---|---|---|---|---|---|---|---|---|
+| Before 097 | 166 | 124 | 868 | 764 | 1,069 | 212 | 144 | 232 |
+| Before this refill | 178 | 135 | 874 | 744 | 1,078 | 249 | 159 | 140 |
+| Now | 178 | 140 | 878 | 749 | 1,081 | 251 | 161 | 224 |
 
 ## Built-in puzzles to replace
 
