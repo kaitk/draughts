@@ -262,3 +262,15 @@ fn quiet(p: rules::Position, moves: rules::Moves&, replies: bool = true) -> bool
 
 // The pieces on the board.
 fn pieces(p: rules::Position) -> i64 { popcount(p.pieces[0] | p.pieces[1]) }
+
+// Whether a puzzle starting with a capture gives a real choice: three legal moves or
+// more, or two of the solver's moves or more. A puzzle rated CHOICE_FROM or more must
+// (2026-11-19); under it, a choice of two captures one move deep is a beginner's. A
+// quiet first move is always a choice.
+let CHOICE_FROM = 500;
+
+fn real_choice(pz: Puzzle&) -> bool {
+    var moves: rules::Moves = [];
+    rules::generate(pz.start, moves);
+    return moves.len == 0 || moves[0].captured == 0 || moves.len >= 3 || pz.moves >= 2;
+}

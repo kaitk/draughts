@@ -13,13 +13,14 @@ moves" (05 to 07, and 04's real choice).
 - 01 [The wrong move's whole line](01-whole-line.md): done on branch `wrong-move-line`.
 - 02 [Kings in the solver](02-kings-in-the-solver.md): done, an offline check by the computer player.
 - 03 [Take puzzles and kings](03-take-puzzles-and-kings.md): done; the built-in puzzles to replace are listed in 04.
-- 04 [Refill the libraries](04-refill-the-libraries.md): todo, after 05 to 07; from 500 up a
-  capture puzzle must offer a real choice (3 or more legal moves, 2 or more pieces able to
-  capture, or 2 or more moves): 33 International, 28 Russian, 31 Brazilian to drop or
-  re-rate, under 500 kept for beginners.
+- 04 [Refill the libraries](04-refill-the-libraries.md): in progress. From 500 up a
+  capture puzzle needs a real choice (3 or more legal moves or 2 or more moves): 52
+  dropped, 9 re-rated under 500; 9 Russian one-glance captures the engine plays otherwise
+  dropped. International refilled but 6 safe moves, Russian but 3; Brazilian's 159 to do
+  (its batch done, resume steps in 04); the built-in replacements open.
 - 05 [Today's themes by rating](05-themes-by-rating.md): done.
 - 06 [A faster ramp for a flawless record](06-flawless-ramp.md): done.
-- 07 [One-glance captures and International 32](07-one-glance-and-32.md): todo.
+- 07 [One-glance captures and International 32](07-one-glance-and-32.md): done.
 
 ## Acceptance criteria
 

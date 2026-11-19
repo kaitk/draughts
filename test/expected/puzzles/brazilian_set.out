@@ -28,7 +28,7 @@ loaded: true, the set brazilian
 27: crowning 2, white, crown in 2, 8 pieces, 1 line; solved by g5-f6
 28: crowning 2, white, crown in 2, 8 pieces, 1 line; solved by c5-b6
 29: crowning 2, black, crown in 2, 10 pieces, 1 line; solved by b4-c3
-30: crowning 3, white, crown in 3, 8 pieces, 1 line; solved by c3-b4
+67: crowning 3, white, crown in 3, 10 pieces, 1 line; solved by a3-b4
 31: crowning 3, black, crown in 3, 10 pieces, 1 line; solved by f4-e3
 32: crowning 3, black, crown in 3, 10 pieces, 1 line; solved by f4-e3
 33: shots 1, white, take 2 in 2, 12 pieces, 1 line; solved by b2-c3
@@ -62,7 +62,7 @@ loaded: true, the set brazilian
 61: safe-move 1, white, safe in 1, 13 pieces, 1 line; solved by d2-c3
 62: safe-move 1, black, safe in 1, 16 pieces, 1 line; solved by f4-g3
 63: safe-move 1, black, safe in 1, 10 pieces, 1 line; solved by b4-c3
-64: safe-move 1, black, safe in 1, 21 pieces, 1 line; solved by f6-e5
+68: safe-move 1, black, safe in 1, 12 pieces, 1 line; solved by f8-e7
 65: safe-move 2, white, safe in 1, 12 pieces, 1 line; solved by c5-d6
 66: safe-move 2, white, safe in 1, 14 pieces, 1 line; solved by a1-b2
 learn: 12 puzzles, by level 4 4 4

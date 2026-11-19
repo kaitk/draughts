@@ -10,7 +10,8 @@
 //   build/puzzles find SIDE GOAL MOVES MINE THEIRS COUNT [SEED [KINGS [CORE]]]
 //                                            game-like positions that make a puzzle: see find
 //   build/puzzles batch SEED [PER [SECONDS]] the daily library's puzzles, every kind (KINDS);
-//                                            with --traps, the trap kinds (TRAP_KINDS)
+//                                            with --traps, the trap kinds (TRAP_KINDS);
+//                                            with --kinds NAME,NAME, only those
 //   build/puzzles games SEED [GAMES [SKILL [NODES]]]  puzzles from the computer's games
 //   build/puzzles rate FILE                  each puzzle's difficulty estimate
 //   build/puzzles tempt FILE                 a library's traps, by kind and band (tempts)
@@ -46,6 +47,7 @@ var camp_rows = 0;
 var tempo = false;          // find: a take in more moves starts with a quiet move, not a shot
 var trap_mask = 0;          // find: keep only puzzles with a trap of these kinds (TEMPT_NAMES' bits), --trap MASK
 var traps = false;          // batch: run TRAP_KINDS, --traps
+var only_kinds: const u8[:] = "";   // batch: run only these kinds, comma-separated, --kinds NAME,NAME
 
 // The computer's view of pz: its best move, and every move it scores within 50 of that,
 // appended to out, each marked if it doesn't solve the puzzle; then any right first
@@ -678,7 +680,7 @@ fn batch(seed: u64, per: i64, seconds: f64) {
     let kinds: const Kind[:] = if traps { TRAP_KINDS[..] } else { KINDS[..] };
     for kind in kinds {
         let _, _, ok = puzzles::parse_goal(kind.goal);
-        guard ok else { continue; }
+        guard ok && (only_kinds.len == 0 || named(only_kinds, kind.name)) else { continue; }
         // Only Russian's captures are a free choice: elsewhere the most must be taken.
         guard kind.trap != BIGGER || variant == rules::RUSSIAN else { continue; }
         let mine = if small { (kind.mine * 12 + 10) / 20 } else { kind.mine };
@@ -707,6 +709,12 @@ fn batch(seed: u64, per: i64, seconds: f64) {
         }
         report(kind.name, st, dups, found, time() - begun);
     }
+}
+
+// Whether `name` is one of a comma-separated list's.
+fn named(list: const u8[:], name: const u8[:]) -> bool {
+    for x in split(list, ',') { if trim(x) == name { return true; } }
+    return false;
 }
 
 fn report(name: const u8[:], st: Stages&, dups: i64, found: i64, seconds: f64) {
@@ -822,6 +830,8 @@ struct Rating {
     pieces:     i64      = 0,     // on the board: more to read round the motif
     crowns:     bool     = false, // the line lets the other side crown, which a child is taught never to allow
     level:      i64      = 1,     // the motif's level (motif)
+    glance:     bool     = false, // one move, and only one meets the goal at a glance (at_a_glance)
+    choice:     bool     = true,  // a real choice (puzzles::real_choice), which a puzzle rated puzzles::CHOICE_FROM or more needs
     difficulty: i64      = 0,
     pattern:    u8[..32] = [], // which skills found it, 100 down to 0
 }
@@ -885,6 +895,8 @@ fn rate(e: ai::Engine&, pz: puzzles::Puzzle&) -> Rating {
     r.crowns = sh.lets_crown;
     let theme, level = motif(pz);
     r.level = level;
+    r.glance = at_a_glance(pz, legal);
+    r.choice = puzzles::real_choice(pz);
     // How many skills miss it: a move the shallow skills find by luck (all moves alike
     // to them, the first taken) counts once, not as the lowest that finds it.
     var skill = 100;
@@ -912,6 +924,18 @@ fn rate(e: ai::Engine&, pz: puzzles::Puzzle&) -> Rating {
     return r;
 }
 
+// Whether the goal names the move: a puzzle of one move where only one legal move
+// crowns, for a crown, or takes as many as the goal's N, for a take. A child counts and
+// is done, however the computer, reading on past the goal, scores the moves.
+fn at_a_glance(pz: puzzles::Puzzle&, legal: rules::Moves&) -> bool {
+    guard pz.moves == 1 && legal.len > 1 else { return false; }
+    var meet = 0;
+    for m in legal {
+        if (pz.goal == puzzles::CROWN && m.crowned) || (pz.goal == puzzles::TAKE && popcount(m.captured) >= pz.count) { meet++; }
+    }
+    return meet == 1;
+}
+
 // One number from the parts, on the players' rating scale. The computer as judge
 // weighs most; the shape and the motif's level after it. Checked against kabe.ee's five
 // (tools/calibration/adult_beginners.txt), which it must place medium to hard and in their
@@ -919,7 +943,9 @@ fn rate(e: ai::Engine&, pz: puzzles::Puzzle&) -> Rating {
 fn blend(r: Rating&) -> i64 {
     let weigh = log2(max(r.legal, 2) / 2.0);
     let crowd = log2(max(r.pieces, 6) / 6.0);
-    var d = 400.0 + 10.0 * r.misses + 50.0 * (r.moves - 1) + 30.0 * r.given + 60.0 * weigh + 10.0 * min(r.rivals, 6) +
+    // At a glance the computer's misses don't count: they come from its reading on.
+    let misses = if r.glance { 0 } else { r.misses };
+    var d = 400.0 + 10.0 * misses + 50.0 * (r.moves - 1) + 30.0 * r.given + 60.0 * weigh + 10.0 * min(r.rivals, 6) +
             50.0 * crowd + 40.0 * (r.level - 1);
     if r.crowns { d += 80.0; }
     if r.forced { d -= 120.0; }
@@ -961,7 +987,7 @@ fn parse_entry(text: const u8[:], variant_of: u8, pz: puzzles::Puzzle&) -> bool 
 }
 
 // Rates every puzzle of a library file (or a course's file, its blocks), each printed as
-// `difficulty | misses pattern | moves given legal forced rivals pieces crowns level | the entry`.
+// `difficulty | misses pattern | moves given legal forced rivals pieces crowns level glance choice | the entry`.
 fn rate_file(path: const u8[:]) {
     var text: u8[>..] = [];
     guard read_file(path, text) else { abort(str("can't read ", path)); }
@@ -1018,7 +1044,8 @@ fn screen_line_text(pz: puzzles::Puzzle&, out: u8[>..]&) {
 
 fn print_rating(r: Rating&, entry_text: const u8[:]) {
     print(r.difficulty, " | ", r.misses, " ", r.pattern, " | ", r.moves, " ", r.given, " ", r.legal, " ",
-          if r.forced { 1 } else { 0 }, " ", r.rivals, " ", r.pieces, " ", if r.crowns { 1 } else { 0 }, " ", r.level, " | ",
+          if r.forced { 1 } else { 0 }, " ", r.rivals, " ", r.pieces, " ", if r.crowns { 1 } else { 0 }, " ", r.level, " ",
+          if r.glance { 1 } else { 0 }, " ", if r.choice { 1 } else { 0 }, " | ",
           entry_text);
 }
 
@@ -1179,6 +1206,7 @@ fn tempt_file(path: const u8[:]) {
 // goal is the king, and the computer player judges by material.
 let KING_MARGIN = 50;
 let KING_NODES = 8000000;   // the computer player's nodes for one puzzle's first moves
+let PREFER_MARGIN = 50;     // --every: a wrong first move scored this far above a right one is the engine's choice
 
 // Whether the line from q makes a king for either side: each side's best by the solver's
 // value over `depth` plies, then the captures due.
@@ -1276,6 +1304,7 @@ struct KingCounts {
     checked: i64[puzzles::THEMES] = [0; puzzles::THEMES],
     failed:  i64[puzzles::THEMES] = [0; puzzles::THEMES],
     strict:  i64[puzzles::THEMES] = [0; puzzles::THEMES],
+    prefers: i64[puzzles::THEMES] = [0; puzzles::THEMES],
 }
 
 var every_puzzle = false;   // kings: check every puzzle, kings made or not (a control), --every
@@ -1284,7 +1313,10 @@ var every_puzzle = false;   // kings: check every puzzle, kings made or not (a c
 // printing a line for each one checked: its id (`label`), theme, goal, the gap (the
 // least by which the engine scores a right first move over a wrong one, of the pairs
 // where either makes a king), the strict gap over every pair, each move's score (`*`
-// where it makes a king), and DISAGREES when the gap is under KING_MARGIN.
+// where it makes a king), and DISAGREES when the gap is under KING_MARGIN. With --every,
+// PREFERS when the engine scores a wrong first move PREFER_MARGIN or more above a right
+// one: the puzzle would teach a move weaker than another (2026-11-19). Neither fails a
+// crown puzzle, nor one whose every right move wins by force.
 fn king_check(s: puzzles::Solver&, e: ai::Engine&, pz: puzzles::Puzzle&, label: i64, c: KingCounts&) {
     var kings: bool[rules::MAX_MOVES] = [false; rules::MAX_MOVES];
     let any = king_moves(s, pz, kings);
@@ -1326,8 +1358,11 @@ fn king_check(s: puzzles::Solver&, e: ai::Engine&, pz: puzzles::Puzzle&, label: 
     let fails = gap < KING_MARGIN && low <= ai::WON && pz.goal != puzzles::CROWN;
     if fails { c.failed[pz.theme]++; }
     if strict < KING_MARGIN && low <= ai::WON && pz.goal != puzzles::CROWN { c.strict[pz.theme]++; }
+    let prefers = every_puzzle && strict <= -PREFER_MARGIN && low <= ai::WON && pz.goal != puzzles::CROWN;
+    if prefers { c.prefers[pz.theme]++; }
     print(label, " | ", puzzles::THEME_NAMES[pz.theme], " ", pz.level, " | ", goal_text(pz), " in ", pz.moves, " | gap ", gap,
-          " | strict ", strict, " | depth ", depth, " | right", right, " | wrong", wrong, if fails { " | DISAGREES" } else { "" });
+          " | strict ", strict, " | depth ", depth, " | right", right, " | wrong", wrong, if fails { " | DISAGREES" } else { "" },
+          if prefers { " | PREFERS" } else { "" });
 }
 
 // The kings check over a built-in set's file or a library's (every `parts`-th puzzle
@@ -1362,11 +1397,12 @@ fn kings_file(path: const u8[:], part: i64, parts: i64) {
     }
     var line: u8[>..] = [];
     for t in puzzles::THEMES {
-        format(line, " ", puzzles::THEME_NAMES[t], " ", c.checked[t], " ", c.failed[t], " ", c.strict[t], ";");
+        format(line, " ", puzzles::THEME_NAMES[t], " ", c.checked[t], " ", c.failed[t], " ", c.strict[t], " ", c.prefers[t], ";");
     }
     var secs: u8[>..] = [];
     format_flt(secs, time() - begun, 0);
-    print("# ", total, " puzzles, ", secs, " s; by theme, checked, failed, and failed by every pair:", line);
+    print("# ", total, " puzzles, ", secs, " s; by theme, checked, failed, failed by every pair, and the engine preferring a wrong move:",
+          line);
 }
 
 fn main() {
@@ -1392,6 +1428,11 @@ fn main() {
         if all[i] == "--every" {
             every_puzzle = true;
             i++;
+            continue;
+        }
+        if i + 1 < all.len && all[i] == "--kinds" {
+            only_kinds = all[i + 1];
+            i += 2;
             continue;
         }
         if all[i] == "--traps" {

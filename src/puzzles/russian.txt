@@ -165,13 +165,13 @@ line a5:c7:e5:g3
 source own, motif: the route that takes most and lands safe; found by tools/puzzles.goose find --variant russian from game-like camps, verified by the engine
 
 # black takes three, down and back up
-id 18
+id 67
 theme captures
 level 2
 goal take 3
-position B:Wb2,c3,e3,g3,b4,e5:Bf4,g5,f6,h6,g7,d8
-line f6:d4:f2:h4
-source own, motif: the route that takes most and lands safe; found by tools/puzzles.goose find --variant russian from game-like camps, verified by the engine
+position B:We1,h2,a3,c3,e3,g3,h4,c5:Bd4,e5,g5,d6,f6,c7,e7,h8
+line d6:b4:d2:f4
+source own, motif: the route that takes most and lands safe; found by tools/puzzles.goose batch --variant russian from game-like camps, verified by the engine
 
 # five captures to choose from; one takes three
 id 19
@@ -275,13 +275,13 @@ line b4-c3 b2:d4 c5:e3:g1
 source own, motif: the breakthrough sacrifice; found by tools/puzzles.goose find --variant russian from game-like camps, verified by the engine
 
 # give two, then crown by taking c7
-id 30
+id 68
 theme crowning
 level 3
 goal crown
-position W:Wc3,g3,d4,c5:Ba5,b6,a7,c7
-line c3-b4 a5:c3:e5 c5-d6 e5-d4 d6:b8
-source own, motif: the breakthrough sacrifice, then the race; found by tools/puzzles.goose find --variant russian from game-like camps, verified by the engine
+position W:Wf2,c3,e3,a5,e5:Bb6,a7,c7,b8,h8
+line e3-d4 h8-g7 e5-d6 c7:e5 d4:f6:h8
+source own, motif: the breakthrough sacrifice, then the race; found by tools/puzzles.goose batch --variant russian from game-like camps, verified by the engine
 
 # black gives two and crowns with three
 id 31

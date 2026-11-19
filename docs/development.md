@@ -254,8 +254,9 @@ done; wait
 grep -h DISAGREES kings-*.txt
 ```
 
-`--every` checks every puzzle, kings made or not, and marks with `*` the moves that make
-one.
+`--every` checks every puzzle, kings made or not, marks with `*` the moves that make
+one, and `PREFERS` on a puzzle where the computer player scores a wrong first move 50 or
+more above a right one (crowning and forced wins aside).
 
 ## Daily puzzles
 
@@ -271,12 +272,23 @@ done; wait
 tools/library.py merge merged.txt find-*.txt                       # each puzzle once
 tools/library.py split merged.txt 10 rate-in
 for i in 0 1 2 3 4 5 6 7 8 9; do build/puzzles rate rate-in-$i.txt > rate-out-$i.txt & done; wait
-tools/library.py assemble src/puzzles/library-international.txt international rate-out-*.txt
+tools/library.py candidates cand.txt src/puzzles/library-international.txt rate-out-*.txt
+for i in 0 1 2 3 4 5 6 7 8 9; do build/puzzles kings cand.txt $i 10 --every > kings-$i.txt & done; wait
+tools/library.py passed passed.txt cand.txt kings-*.txt             # the kings check, the engine agreeing
+tools/library.py assemble src/puzzles/library-international.txt international passed.txt
 build/puzzles rate tools/calibration/adult_beginners.txt           # the estimate's calibration
 ```
 
-Trap puzzles come from `batch ... --traps`, added the same way; `assemble` keeps a
-library's puzzles and their ids. In the app, `--library N` opens a library's puzzle (id
+`batch --kinds NAME,NAME` runs only those kinds, to refill a theme. A candidates file
+holds at most 4,096 puzzles, so a larger batch goes through `candidates`, `kings`, and
+`passed` in parts, and `assemble` takes every part's `passed` file. A new puzzle
+passes the kings check and the engine's agreement (`PREFERS`, under "Check the
+puzzles"); `assemble` leaves out a capture rated 500 or more without a real choice
+([puzzles](architecture/puzzles.md#daily-puzzles)). Trap puzzles come from `batch ...
+--traps`, added the same way; `assemble` keeps a
+library's puzzles and their ids. When `rate` changes, `tools/library.py rerate
+src/puzzles/library-V.txt rate-out-*.txt` gives the puzzles rated again their new
+difficulty, ids kept, and sorts the file again. In the app, `--library N` opens a library's puzzle (id
 N - 1), and `--puzzler NAME:RATING` sets up a player at that rating for the day's puzzles.
 
 ## Run on Android

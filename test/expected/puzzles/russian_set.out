@@ -16,7 +16,7 @@ loaded: true, the set russian
 15: captures 1, black, take 2 in 1, 12 pieces, 1 line; solved by b6:d4:f2
 16: captures 1, white, take 2 in 1, 14 pieces, 1 line; solved by e3:c5:a7
 17: captures 2, white, take 3 in 1, 10 pieces, 1 line; solved by a5:c7:e5:g3
-18: captures 2, black, take 3 in 1, 12 pieces, 1 line; solved by f6:d4:f2:h4
+67: captures 2, black, take 3 in 1, 16 pieces, 1 line; solved by d6:b4:d2:f4
 19: captures 2, white, take 3 in 1, 10 pieces, 1 line; solved by c3:e5:c7:a5
 20: captures 3, white, take 4 in 1, 11 pieces, 1 line; solved by f4:h6:f8:c5:a7
 21: captures 3, black, take 4 in 1, 12 pieces, 1 line; solved by c5:a3:c1:f4:h2
@@ -28,7 +28,7 @@ loaded: true, the set russian
 27: crowning 2, white, crown in 2, 8 pieces, 1 line; solved by g5-f6
 28: crowning 2, white, crown in 2, 8 pieces, 1 line; solved by c5-b6
 29: crowning 2, black, crown in 2, 10 pieces, 1 line; solved by b4-c3
-30: crowning 3, white, crown in 3, 8 pieces, 1 line; solved by c3-b4
+68: crowning 3, white, crown in 3, 10 pieces, 1 line; solved by e3-d4
 31: crowning 3, black, crown in 3, 10 pieces, 1 line; solved by f4-e3
 32: crowning 3, black, crown in 3, 10 pieces, 1 line; solved by f4-e3
 33: shots 1, white, take 2 in 2, 12 pieces, 1 line; solved by b2-c3

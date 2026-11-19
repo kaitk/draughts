@@ -1,9 +1,10 @@
 // The daily puzzles' libraries as built into the program (docs/architecture/puzzles.md,
 // "Daily puzzles"), International's, Russian's, and Brazilian's: each reads, holds no
 // more than the index can, is sorted by difficulty, and every puzzle in it reads from
-// its line, with a theme its variant's set has, and every CHECKED-th puzzle passes
-// puzzles::check. Ids stay for good: puzzles players' files already keep are still
-// found by them.
+// its line, with a theme its variant's set has, every CHECKED-th puzzle passes
+// puzzles::check, and every capture-first puzzle rated puzzles::CHOICE_FROM or more
+// gives a real choice (puzzles::real_choice). Ids stay for good: puzzles players' files
+// already keep are still found by them.
 import std;
 import rules from "../../src/rules";
 import puzzles from "../../src/puzzles";
@@ -37,6 +38,7 @@ fn main() {
         var unread = 0;
         var problems = 0;
         var checked = 0;
+        var no_choice = 0;
         var themes: i64[puzzles::THEMES] = [0; puzzles::THEMES];
         var highest = -1;
         var pz = puzzles::Puzzle { id: 0, theme: 0, level: 1, goal: 0, count: 1, start: rules::start(variant), moves: 0, lines: [],
@@ -48,6 +50,10 @@ fn main() {
             guard puzzles::entry_of(text, lib, i, pz) && pz.start.variant == variant else {
                 unread++;
                 continue;
+            }
+            if e.difficulty >= puzzles::CHOICE_FROM && !puzzles::real_choice(pz) {
+                print("  ", e.id, ": rated ", e.difficulty, ", no real choice");
+                no_choice++;
             }
             guard i % CHECKED == 0 else { continue; }
             var out:  u8[>..] = [];
@@ -63,7 +69,8 @@ fn main() {
         let most = if lib.list.len > 0 { lib.list[lib.list.len - 1].difficulty } else { 0 };
         print(rules::VARIANT_NAMES[variant], ": read ", ok, ", ", lib.list.len, " puzzles (at most ", puzzles::MAX_LIBRARY,
               "), sorted ", sorted, ", difficulty ", least, " to ", most, ", unread ", unread, ";", per, "; ", checked,
-              " checked, ", problems, " problems; ids 0 to ", highest);
+              " checked, ", problems, " problems, ", no_choice, " without a real choice from ", puzzles::CHOICE_FROM,
+              "; ids 0 to ", highest);
         var same = 0;
         var asked = 0;
         for k in FIRST {

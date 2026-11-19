@@ -277,13 +277,13 @@ line b4-c3 b2:d4 c5:e3:g1
 source own, motif: the breakthrough sacrifice; found by tools/puzzles.goose find --variant russian, Russian's puzzle 29 rechecked under Brazilian rules, verified by the engine
 
 # give two, then crown by taking c7
-id 30
+id 67
 theme crowning
 level 3
 goal crown
-position W:Wc3,g3,d4,c5:Ba5,b6,a7,c7
-line c3-b4 a5:c3:e5 c5-d6 e5-d4 d6:b8
-source own, motif: the breakthrough sacrifice; found by tools/puzzles.goose find --variant russian, Russian's puzzle 30 rechecked under Brazilian rules, verified by the engine
+position W:Wh2,a3,e3,g3,f4:Ba5,b6,c7,g7,h8
+line a3-b4 a5:c3 e3-d4 c3:e5 f4:d6:b8
+source own, motif: the breakthrough sacrifice; found by tools/puzzles.goose batch --variant brazilian from game-like camps, verified by the engine
 
 # black gives two and crowns with three
 id 31
@@ -591,13 +591,13 @@ line b4-c3
 source own, motif: the safe move against a shot; found by tools/puzzles.goose find --variant brazilian from game-like camps, turned for black, verified by the engine
 
 # every other move allows white a shot
-id 64
+id 68
 theme safe-move
 level 1
 goal safe
-position B:Wa1,c1,e1,g1,b2,d2,f2,a3,g5,h6:Bc3,e3,g3,b4,d4,f4,h4,c5,d6,f6,e7
-line f6-e5
-source own, motif: the safe move against a shot; found by tools/puzzles.goose find --variant brazilian from game-like camps, turned for black, verified by the engine
+position B:Wd2,a3,c3,e3,d4,e5:Bb4,a5,c5,b6,h6,f8
+line f8-e7
+source own, motif: the safe move against a shot; found by tools/puzzles.goose batch --variant brazilian from game-like camps, verified by the engine
 
 # every other move allows black a shot
 id 65

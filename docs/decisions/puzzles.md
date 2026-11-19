@@ -9,6 +9,15 @@ Each theme is a short curve of its own in three levels, easy to hardest (2026-11
 Learn's set was three tiers of ten before; it keeps the ids it had then, and the new
 puzzles start at 31, so a child's stars stay with the puzzle that won them.
 
+International's Captures puzzle 32 is a choice again (2026-11-19): black's men on 13 and
+22 make a forward double, 27x18x9, which 3x14 takes back, beside the backward 27x38x29,
+and a white man on 47 keeps black's men on the left from running through to crown (the
+computer player scored the right move −219 without it). Moving its man from 39 to 34 on
+2026-11-09 had taken away the other double, taken back by 21x32x41, which a child saw
+turned down with no reason shown ([rivals](#rivals)), and left the right move the only
+legal one. A wrong move's line now shows why it is wrong. Putting the man back on 39 was
+rejected: it would bring back the very move reported then.
+
 A take puzzle's goal shows as "Win 2 men" ("Win a man" for one) (2026-11-09). Rejected:
 "Capture 2", which a child counting the three pieces a shot takes reads wrong, as the
 goal is the balance.
@@ -60,6 +69,28 @@ goal is the balance.
   library puzzles failed and were dropped (192 International, 92 Russian, 122
   Brazilian), their ids kept unused. Built-in puzzles that fail are replaced, not
   dropped, and so is one where a wrong move wins by force, which beats crowning.
+- A capture puzzle rated 500 or more must give a real choice (2026-11-19, task 097): three
+  legal first moves or more, or two of the solver's moves or more. A tester found the
+  easy puzzles "just forced moves"; a choice of two captures one move deep is a
+  beginner's puzzle, rated high only where the computer player read past the goal. 61
+  library puzzles lacked one (29 International, 4 Russian, 28 Brazilian); 9 that `rate`
+  now puts under 500 were rated again, the other 52 dropped, their ids kept unused.
+  Counting two pieces able to capture as a choice was set aside: it kept 25 two-way
+  captures from two pieces, the same choice of two.
+- New library puzzles must not have the computer player prefer a wrong first move
+  (2026-11-19, task 097): at full skill it may score no wrong first move 50 or more
+  above a right one, crowning and right moves that win by force aside (`kings --every`,
+  `PREFERS`). A puzzle whose answer the engine judges weaker teaches a weaker move. Over
+  the libraries' non-crowning puzzles the gap of the right move over the best wrong one
+  gathers at −25 to 25 (ties) and near −100 (a man worse), so 50, half a man, as in the
+  kings check. 9 of the 25 Russian one-glance captures re-rated the same day failed and
+  were dropped (Russian 2025, at −20, is a tie and stays). The rest of the libraries
+  that failed it were dropped too (2026-11-19), 110 International, 43 Russian, and 41
+  Brazilian still there, as a trap whose wrong move the engine prefers is the confusing
+  puzzle a tester hit; spare puzzles of the same theme and level replaced all but 15
+  International safe moves and a capture in Russian and Brazilian. The replacements rate
+  lower, the computer's misses having made the dropped ones hard: International's 1600
+  and over fell from 209 to 140 (task 097, subtask 04).
 - A wrong first move's line may run eight plies at most (2026-11-19): a tester shown 13
   plies of exchanges couldn't follow them. Cutting the line on screen was set aside, as
   no place partway says what the move lost.
@@ -108,6 +139,16 @@ over thousands on home would only discourage. So (2026-11-14, task 088):
   seeded from the course's stars; moved only by a puzzle's first try. Not shown as a
   number on the puzzle screen.
 - **A day's shape**: a warm-up below the rating, the middle at it, a stretch above.
+- **A capture the goal names is easy** (2026-11-19): a puzzle of one move where only one
+  legal move meets the goal at a glance, the one capture that crowns or takes the goal's
+  N, counts none of the computer's misses in its difficulty, which puts it under 500.
+  The computer misses such a move only by reading past the goal, where a child counts the
+  pieces and is done; 27 library puzzles were rated 500 to 1,461 that way (25 Russian,
+  most of them a king's or a crowned man's capture, 1 International, 1 Brazilian). They
+  were rated again, keeping their ids, and now rate 300 to 406. Dropping them was
+  rejected: they are sound, checked puzzles, and a beginner's warm-up needs easy ones.
+  Rating them at a fixed number was rejected too: the rest of the estimate (the pieces,
+  the moves to weigh, the motif's level) still orders them.
 - **Traps are some, not most** (2026-11-14): puzzles where the habitual move (crowning
   at once, the bigger capture, running a man home) is there and loses teach most, as in
   chess, but a library of them would teach suspicion of every natural move. A few

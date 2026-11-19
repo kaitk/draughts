@@ -18,7 +18,7 @@ themes are a fixed list in code (`puzzles::THEME_NAMES`, their icons and names i
 | Theme | What it teaches | Levels 1, 2, 3 |
 |---|---|---|
 | Learn | The rules in action: the first capture, backward, which capture isn't taken back, the king's long move and where it lands, the majority capture, passing the far row uncrowned. White to move. | 4, 4, 4 |
-| Captures | Finding the multi-capture: the double whose last stop is safe, the route that takes most and lands safe, four jumps, the landing a king picks. | 4, 3, 3 |
+| Captures | Finding the multi-capture: the double whose last stop is safe, beside one taken back, the route that takes most and lands safe, four jumps, the landing a king picks. | 4, 3, 3 |
 | Crowning | To the far row: a capture that ends there, the breakthrough sacrifice, the breakthrough then the race, two men given for a crown. | 4, 4, 4 |
 | Shots | Give men, then take more: give one, take three or four (level 1, two moves); the double sacrifice, give two, take four or five (level 2, three moves); shots of three or four moves, the Haarlem shot and coup Philippe among them (level 3). | 10, 10, 6 |
 | King shots | The king as a weapon: its zigzag for three or four, a shot that opens the long diagonal for it, the double sacrifice for the king. | 4, 3, 3 |
@@ -139,7 +139,7 @@ lines.
 
 The search keeps each position's moves on one fixed stack in a `puzzles::Solver` the
 caller owns, so it allocates nothing and needs little native stack. The 84 puzzles cost
-at most 8,942 positions to check (a safe move, whose every other move is searched for
+at most 14,507 positions to check (a safe move, whose every other move is searched for
 the shot it allows, and its wrong moves' lines played out); the longest line is seven
 plies (a shot of four moves), within `MAX_PLIES` (16). Russian's 66 cost at most 2,960
 and Brazilian's 2,928.
@@ -262,8 +262,19 @@ lines read as, so the pick mixes them in at every level.
 computer's skills 0, 5, ..., 100 (searching as a hint does) miss the right first move,
 the line's shape (the solver's moves, men given, the moves to weigh at the first turn, a
 first move forced as a capture, moves that look as good to a shallow search, the pieces
-on the board, and a line that lets the other side crown), and the motif's level. The
-course rates 280 to about 1,300 and is the floor; the library reaches well past it.
+on the board, and a line that lets the other side crown), and the motif's level. A
+puzzle of one move where only one legal move meets the goal at a glance, the one capture
+that crowns or takes the goal's N, counts no misses: the goal names the move, and the
+computer misses it only by reading past the goal. So it rates in the easiest band, under
+500. The course rates 280 to about 1,300 and is the floor; the library reaches well past
+it.
+
+**A real choice from 500 up**: a puzzle whose first move is a capture and that rates 500
+or more (`puzzles::CHOICE_FROM`) must give a real choice, three legal first moves or
+more or two of the solver's moves or more (`puzzles::real_choice`). Under 500 a choice
+of two captures one move deep stays, a beginner's puzzle. `rate` prints the choice as
+its shape's last number, `tools/library.py assemble` leaves out a puzzle rated 500 or
+more without one, and `test/puzzles/library` checks every library puzzle.
 
 **The day** is picked by `puzzles::pick` from the local day (days since the epoch by
 the local date, which the app reads from the system and passes to the shell), the
@@ -353,7 +364,11 @@ full skill scores each first move exactly, and the puzzle passes when every righ
 scores at least 50 above every wrong one, of the pairs where either makes a king, or
 when every right move wins by force. A crown puzzle always passes: its goal is the king,
 and the computer player judges by material. Every library puzzle passes
-([why](../decisions/puzzles.md#checks)).
+([why](../decisions/puzzles.md#checks)). With `--every` it scores every puzzle's first
+moves, kings made or not, and marks `PREFERS` where the computer player scores a wrong
+first move 50 or more above a right one, crowning and right moves that win by force
+aside: such a puzzle teaches a move weaker than another. Puzzles added to a library pass
+it.
 `test/perft.py puzzles international src/puzzles/international.txt` (and `russian
 src/puzzles/russian.txt`, `brazilian src/puzzles/brazilian.txt`) plays every line with
 the independent generator, checking each move and each position's moves against
