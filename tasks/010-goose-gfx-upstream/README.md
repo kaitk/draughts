@@ -35,7 +35,7 @@ Open upstream, with their `docs/stdlib.md` companions in Goose:
 | #18 | `macos-tested`: the macOS column, and two `test/window` fixes | none |
 | #19 | `end-on-device-lost` (on #15): `frame()` ends on Vulkan's lost device | #376 |
 | #20 | `gamepad-wake` (on #15): pads read in `frame()`, the idle wait 16 ms with a pad open | none |
-| #21 | `window-only` (on #15): `WINDOW_ONLY`, the window without a device, for another renderer (issue #16) | not yet |
+| #21 | `window-only` (on #15): `WINDOW_ONLY`, the window without a device, for another renderer (issue #16) | #378 (draft) |
 
 Each branch is one commit, as upstream squash-merges (2026-11-19). Not yet a branch: `gfx::safe_area()`,
 beside upstream's `display_scale()`, for the MacBook notch in full screen as well as
