@@ -3,7 +3,7 @@
 //   goose build -o build/piece_tune tools/piece_tune.goose
 //   cd tools && ../build/piece_tune [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
 //                    [--size 1600x1000] [any of board_shot's pieces' flags]
-//                    [--pieces Plastic|Jade|Wood|Slate|Onyx] [--key game|left|right]
+//                    [--pieces Plastic|Jade|Wood|Slate|Marble] [--marble N] [--key game|left|right]
 //                    [--scatter off|on] [--board-scatter off|on] [--board-strength 0..1]
 //                    [--board-radius 0.02..0.6] [--board-color 0..3]
 //                    [--yaw DEG] [--pitch DEG] [--near 0.25..1.5] [--shot out.png]
@@ -23,12 +23,11 @@ import render3d from "../src/render3d";
 import .pieces3d;
 
 let PANEL_W: f32 = 330.0;
-let PANEL_H: f32 = 455.0;
+let PANEL_H: f32 = 540.0;
 let ROW:     f32 = 21.0;
 // looks::AUTUMN.. and MATERIAL_AUTO.. in this order.
 let SEASONS = ["autumn", "winter", "spring", "summer"];
 let MATERIALS = ["auto", "wood", "stone", "carved"];
-
 // A label with its value, and a slider.
 fn slider(c: ui::Context, name: const u8[:], v: f32&, lo: f32, hi: f32) {
     let ratios: f32[2] = [0.45, 0.55];
@@ -41,7 +40,7 @@ fn slider(c: ui::Context, name: const u8[:], v: f32&, lo: f32, hi: f32) {
     ui::slider_float(c, lo, v, hi, (hi - lo) / 400.0);
 }
 
-fn choice(c: ui::Context, name: const u8[:], v: i64&, names: const u8[:][]) {
+fn choice(c: ui::Context, name: const u8[:], v: i64&, names: const u8[:][:]) {
     let ratios: f32[2] = [0.45, 0.55];
     ui::layout_row(c, ui::DYNAMIC, ROW, ratios);
     ui::label(c, str(name, " ", names[v]), ui::TEXT_LEFT);
@@ -63,14 +62,11 @@ fn selected_pieces(shown: i64, material: i64, profile: i64) -> pieces3d::Pieces 
     }
     if material == 4 || material == 5 {
         var p = pieces3d::of_look(looks::WINTER);
-        p.mineral = if material == 4 { -2.0 } else { -3.0 };
-        // Satin ivory with honed slate or polished onyx (task 094's winter pass).
-        p.light_piece = float4 { 0.87, 0.835, 0.75, 0.4 };
-        p.dark_piece = if material == 4 { float4 { 0.17, 0.195, 0.225, 0.6 } }
-                       else { float4 { 0.09, 0.1, 0.115, 0.13 } };
-        p.piece_fig = float4 { 0.08, if material == 4 { 0.3 } else { 0.25 }, 0.0, 1.0 };
-        p.light_scatter = float4 { 0.93, 0.90, 0.83, 0.24 };
-        p.dark_scatter.w = 0.0;
+        if material == 5 {
+            p.mineral = -3.0;
+            p.dark_piece = float4 { 0.075, 0.08, 0.085, 0.15 };
+            p.piece_fig.y = 0.2;
+        }
         return p;
     }
     return pieces3d::profile(shown, profile);
@@ -97,7 +93,16 @@ fn scalar(argv: u8[:][>..]&, name: const u8[:], initial: f32, lo: f32, hi: f32) 
     return v as f32;
 }
 
+// The first six values scale the chosen slab. Polish is absolute (1 is glossy).
+let SLAB_FLAGS = ["--slab-base", "--slab-strength", "--slab-spacing", "--slab-width",
+                  "--slab-branches", "--slab-cloud", "--slab-polish"];
+let SLAB_LOW:  f32[7] = [0.0, 0.0, 0.25, 0.05, 0.0, 0.0, 0.0];
+let SLAB_HIGH: f32[7] = [5.0, 2.0, 3.0, 4.0, 3.0, 3.0, 1.0];
+
 fn main() {
+    let presets, labels, found = split_once(trim(embed_file("strings/en.txt")), "\n\n");
+    let marble_names = split(presets, '\n');
+    let slab_labels = split(labels, '\n');
     let argv = args();
     var w = 1600;
     var h = 1000;
@@ -119,7 +124,18 @@ fn main() {
     var r3d = default<render3d::Own>();
     render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
     render3d::set_aa(r3d, g, render3d::AA);
-    render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
+    // Winter's frame's marble (looks::marble): --marble N.
+    var marble = scalar(argv, "--marble", looks::MARBLE, 0.0, looks::MARBLES - 1) as i64;
+    var shown_marble = marble;
+    render3d::choose(g, -1, marble, looks::SPRING_LOOK);
+    var slabs = default<f32[7][looks::MARBLES]>();
+    for i in looks::MARBLES { slabs[i] = looks::slab_defaults(i); }
+    if marble >= 5 {
+        for flag, i in SLAB_FLAGS {
+            slabs[marble][i] = scalar(argv, flag, slabs[marble][i], SLAB_LOW[i], SLAB_HIGH[i]);
+        }
+        g.stone = looks::slab_material(marble, slabs[marble]);
+    }
     var shown = pieces3d::put_look(r3d, g, season, material);
     var p = pieces3d::of_look(shown);
     pieces3d::place(r3d, g);
@@ -135,7 +151,7 @@ fn main() {
         let k, ok = parse_int(argv[pf]);
         if ok { chosen = k; }
     }
-    let sets = ["Board default", "Plastic", "Jade", "Wood", "Slate", "Onyx"];
+    let sets = ["Board default", "Plastic", "Jade", "Wood", "Slate", "Marble"];
     let lights = ["game", "left", "right"];
     var direction = pick(argv, "--key", lights, 0);
     var last_direction = -1;
@@ -151,6 +167,7 @@ fn main() {
     let look_scatter = looks::get(shown).board_scatter;
     var board_scatter = pick(argv, "--board-scatter", ["off", "on"], if look_scatter.x > 0.0 { 1 } else { 0 }) == 1;
     var side = 0;
+    var edit_marble = true;
     // The board's scattering: the fraction of its diffuse light that leaves the body,
     // and how far it travels there in world units (a square is 1).
     var board_strength = scalar(argv, "--board-strength", if look_scatter.x > 0.0 { look_scatter.x } else { 0.5 }, 0.0, 1.0);
@@ -174,6 +191,7 @@ fn main() {
         ui::input_from_gfx(c);
         if gfx::key_pressed("B") { scattering = !scattering; }
         var defaults = false;
+        var slab_changed = false;
         var report = gfx::key_pressed("P") || (frames == 1 && print_initial);
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         if ui::begin(c, "Material comparison", ui::rect(10.0, 10.0, PANEL_W, PANEL_H), flags) {
@@ -183,38 +201,76 @@ fn main() {
             choice(c, "Pieces", piece_material, sets);
             choice(c, "Key", direction, lights);
             if piece_material != previous {
-                scattering = piece_material != 1;
                 p = selected_pieces(shown, piece_material, chosen);
+                scattering = p.light_scatter.w + p.dark_scatter.w > 0.0;
                 dark_brightness = model3d::dark_brightness(p.mineral);
             }
             ui::layout_row_dynamic(c, ROW + 4.0, 1);
             ui::checkbox_label(c, "Subsurface scattering (B)", scattering);
+            if shown == looks::WINTER {
+                choice(c, "Marble", marble, marble_names);
+            }
             if shown == looks::SPRING_STONE || shown == looks::SPRING_ELVEN {
                 ui::checkbox_label(c, "Board SSS", board_scatter);
                 slider(c, "Board strength", board_strength, 0.0, 1.0);
                 slider(c, "Board radius", board_radius, 0.02, 0.6);
                 slider(c, "Board color", board_color, 0.0, 3.0);
             }
-            choice(c, "Tune", side, ["Dark", "Light"]);
-            if side == 0 {
-                slider(c, "Scattering", p.dark_scatter.w, 0.0, 2.0);
-                slider(c, "Brightness", dark_brightness, 0.25, 2.0);
-                slider(c, "Texture", p.piece_fig.y, 0.0, 0.6);
-                slider(c, "Roughness", p.dark_piece.w, 0.1, 1.0);
-            } else {
-                slider(c, "Scattering", p.light_scatter.w, 0.0, 2.0);
-                slider(c, "Texture", p.piece_fig.x, 0.0, 1.0);
-                slider(c, "Roughness", p.light_piece.w, 0.1, 1.0);
+            let slab = shown == looks::WINTER && marble >= 5;
+            if slab {
+                ui::layout_row_dynamic(c, ROW, 1);
+                ui::checkbox_label(c, slab_labels[SLAB_FLAGS.len + 1], edit_marble);
             }
-            if piece_material == 3 {
-                slider(c, "Varnish", p.piece_fig.z, 0.0, 1.0);
-                slider(c, "Relief", p.piece_fig.w, 0.0, 3.0);
+            let tune_slab = slab && edit_marble;
+            if tune_slab {
+                for i in SLAB_FLAGS.len {
+                    let before = slabs[marble][i];
+                    slider(c, slab_labels[i], slabs[marble][i], SLAB_LOW[i], SLAB_HIGH[i]);
+                    if before != slabs[marble][i] {
+                        slabs[marble][i] = round(slabs[marble][i] * 1000.0) / 1000.0;
+                        slab_changed = true;
+                    }
+                }
+            } else {
+                choice(c, "Tune", side, ["Dark", "Light"]);
+                if side == 0 {
+                    slider(c, "Scattering", p.dark_scatter.w, 0.0, 2.0);
+                    slider(c, "Brightness", dark_brightness, 0.25, 2.0);
+                    slider(c, "Texture", p.piece_fig.y, 0.0, 1.0);
+                    slider(c, "Roughness", p.dark_piece.w, 0.1, 1.0);
+                } else {
+                    slider(c, "Scattering", p.light_scatter.w, 0.0, 2.0);
+                    slider(c, "Texture", p.piece_fig.x, 0.0, 1.0);
+                    slider(c, "Roughness", p.light_piece.w, 0.1, 1.0);
+                }
+                if piece_material == 3 {
+                    slider(c, "Varnish", p.piece_fig.z, 0.0, 1.0);
+                    slider(c, "Relief", p.piece_fig.w, 0.0, 3.0);
+                }
             }
             ui::layout_row_dynamic(c, ROW + 4.0, 2);
             if ui::button_label(c, "Print (P)") { report = true; }
-            if ui::button_label(c, "Reset material") { defaults = true; }
+            if tune_slab {
+                if ui::button_label(c, slab_labels[SLAB_FLAGS.len]) {
+                    slabs[marble] = looks::slab_defaults(marble);
+                    slab_changed = true;
+                }
+            } else if ui::button_label(c, "Reset material") { defaults = true; }
         }
         ui::end(c);
+        if marble != shown_marble {
+            shown_marble = marble;
+            render3d::choose(g, -1, marble);
+            if marble >= 5 { g.stone = looks::slab_material(marble, slabs[marble]); }
+            g.look = -1;
+            shown = pieces3d::put_look(r3d, g, season, material);
+            pieces3d::place(r3d, g);
+            last_direction = -1;
+        }
+        else if slab_changed {
+            g.stone = looks::slab_material(marble, slabs[marble]);
+            render3d::bake_surfaces(r3d, g);
+        }
         if season != shown_season || material != shown_material {
             shown_season = season;
             shown_material = material;
@@ -251,10 +307,6 @@ fn main() {
             g.shadow_dirty = true;
             last_direction = direction;
         }
-        if shown == looks::WINTER {
-            g.frame.edge = model3d::linear4(float4 { 0.32, 0.405, 0.51, 0.56 });
-            g.frame.line = model3d::linear4(float4 { 0.58, 0.66, 0.76, 0.44 });
-        }
         g.frame.frame_map.z = board_radius;
         g.frame.params.y = board_color;
         g.frame.frame_map.w = if board_scatter && (shown == looks::SPRING_STONE || shown == looks::SPRING_ELVEN) { board_strength } else { 0.0 };
@@ -262,6 +314,13 @@ fn main() {
             var out: u8[>..] = [];
             format(out, "../build/piece_tune --season ", SEASONS[season], " --material ", MATERIALS[material]);
             if piece_material > 0 { format(out, " --pieces ", sets[piece_material]); }
+            if shown == looks::WINTER { format(out, " --marble ", marble); }
+            if shown == looks::WINTER && marble >= 5 {
+                for flag, i in SLAB_FLAGS {
+                    format(out, " ", flag, " ");
+                    pieces3d::num(out, slabs[marble][i]);
+                }
+            }
             format(out, " --key ", lights[direction], " --scatter ", if scattering { "on" } else { "off" },
                    " --board-scatter ", if board_scatter { "on" } else { "off" }, " --board-strength ");
             pieces3d::num(out, board_strength);

@@ -605,7 +605,7 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   | Season | Auto | Wood | Stone | Carved |
   | --- | --- | --- | --- | --- |
   | Autumn | wood | maple and walnut in cherry | sandstone and porphyry | rust vines in weathered stone |
-  | Winter | stone | limed ash and smoked oak | slate in black marble | a Nordic band in smoked oak |
+  | Winter | stone | limed ash and smoked oak | Cloud breccia with ivory and slate pieces | a Nordic band in smoked oak |
   | Spring | carved | birch | ivory and jade, veined | the elven stone |
   | Summer | wood | the sunset wood | amber granite, veined and cracked | amber signs in granite |
 
@@ -617,7 +617,9 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   a window as narrow too) into 1024² maps, each texel the average of the 2 × 2 the full
   bake has there, the same look at a quarter of the memory (`draw3d::screen_bake`): growth rings round a wandering
   pith with pores and fibre relief, colored by Beer's law, under a finish per look
-  (`looks::Finish`); marble as contours of a warped ramp. The bake takes 37 ms on an M1
+  (`looks::Finish`); flowing marble as contours of a warped ramp. Winter’s black marble has forked
+  seams with clouded mineral pockets. Its frame takes one continuous cut and each dark
+  square takes its own. The bake takes 37 ms on an M1
   Pro and about 0.3 s on the Galaxy Tab A11+. On the A33 a wood prepares in about 2.3 s
   and the stones in 2.7 to 2.8, 1.1 s of it the bake pipeline's compile whatever the look
   (2026-11-13); every look bakes into the same targets, so memory is the same.

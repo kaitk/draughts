@@ -30,7 +30,7 @@ let SPRING_BALTIC = 10;
 // wood beside the season's own, each its takes. Autumn's: 0 autumn() the wood, 1
 // AUTUMN_STONE travertine and red jasper in a dark brown marble, 2 AUTUMN_CARVED the same
 // field in a weathered stone frame carved with vines in rust leaves, 3 AUTUMN_PORPHYRY
-// golden sandstone and porphyry in a speckled dark stone. Winter's: 0 winter() the slate,
+// golden sandstone and porphyry in a speckled dark stone. Winter's: 0 winter() the black marble,
 // 1 WINTER_WOOD limed ash and smoked oak, 2 WINTER_CARVED the same in a smoked oak frame
 // carved with a Nordic band, 3 WINTER_STAINED birch and blue-grey stained birch. --autumn
 // N and --winter N pick them.
@@ -278,11 +278,7 @@ fn autumn() -> Theme {
     };
 }
 
-// Honed, softly polished stone: pale grey-blue and dark slate squares with a calm
-// clouding and a few faint veins, a darker slate frame with a steel-blue rounded edge
-// (no pale line), ivory and dark slate
-// pieces, darker than the reference's as the 2D board's are; `Winter Slate Checkers
-// Board.png` and `Cool Stone and Cream Texture Grid.png`.
+// Pale stone and polished Cloud breccia with satin ivory and honed slate pieces.
 fn winter() -> Theme {
     return Theme {
         photo:         1,
@@ -300,12 +296,12 @@ fn winter() -> Theme {
         light_ring:    float4_0,
         dark_ring:     float4_0,
         frame_ring:    float4_0,
-        light_piece:   float4 { 0.86, 0.82, 0.76, 0.52 },
-        dark_piece:    float4 { 0.205, 0.225, 0.255, 0.3 },
-        piece_fig:     float4 { 0.03, 0.05, 0.0, 0.4 },
+        light_piece:   float4 { 0.87, 0.835, 0.75, 0.4 },
+        dark_piece:    float4 { 0.17, 0.195, 0.225, 0.3 },
+        piece_fig:     float4 { 0.08, 0.3, 0.0, 1.0 },
         crown:         float4 { 0.2, 0.22, 0.27, 0.0 },
-        edge:          float4 { 0.36, 0.42, 0.48, 0.6 },
-        line:          float4 { 0.82, 0.88, 0.95, 0.0 },
+        edge:          float4_0,
+        line:          float4_0,
         key:           float4 { -0.45, 0.8, -0.55, 3.2 },
         key_color:     float4 { 0.96, 0.97, 1.0, 0.0 },
         bounce:        float4 { 0.75, 0.72, 0.68, 2.0 },
@@ -316,9 +312,9 @@ fn winter() -> Theme {
         build:         float4 { 1.0, 0.0, 1.0, 0.0 },
         seam:          float4_0,
         fill:          float4_0,
-        light_scatter: IVORY_SCATTER,
-        dark_scatter:  DARK_STONE_SCATTER,
-        mineral:       1.0,
+        light_scatter: float4 { 0.93, 0.9, 0.83, 0.0 },
+        dark_scatter:  float4 { 0.62, 0.6, 0.62, 0.0 },
+        mineral:       -2.0,
         piece_wear:    STONE_WEAR,
     };
 }
@@ -529,12 +525,12 @@ fn finish(wood: i64) -> Finish {
     return PLAIN;
 }
 
-// The winter frame's marble, one solid block, its figure running one way: 0 the slate
-// (Theme.frame and its clouding), the others polished marbles. Winter's frame is 2.
-let MARBLES = 5;
-let MARBLE = 2;
+// Marble 0 uses the look's slate, 1 to 4 change the frame, and 5 to 8 also change
+// winter's dark squares. Winter defaults to tuned Cloud breccia.
+let MARBLES = 9;
+let MARBLE = 7;
 // Autumn's stone frame's own marble, past the ones M cycles (marble_for).
-let EMPERADOR = 5;
+let EMPERADOR = MARBLES;
 
 struct Marble {
     base: float4,   // the stone (sRGB), w: its clouding
@@ -548,7 +544,28 @@ struct Marble {
     tint:   f32,    // 0..1: the colors toward the board's steel blue, their lightness kept
 }
 
+fn slab_defaults(marble: i64) -> f32[7] {
+    if marble == MARBLE { return [2.207, 0.55, 1.062, 0.592, 3.0, 1.0, 0.85]; }
+    return [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, marble_base(marble).polish];
+}
+
+fn slab_material(marble: i64, settings: f32[7]) -> Marble {
+    var m = marble_base(marble);
+    m.base.x *= settings[0];
+    m.base.y *= settings[0];
+    m.base.z *= settings[0];
+    m.veins = settings[1];
+    m.form *= float4 { settings[2], settings[3], settings[4], settings[5] };
+    m.polish = settings[6];
+    return m;
+}
+
 fn marble(which: i64) -> Marble {
+    if which == MARBLE { return slab_material(which, slab_defaults(which)); }
+    return marble_base(which);
+}
+
+fn marble_base(which: i64) -> Marble {
     // Nero Marquina: black with crisp white veins and a fine network of cracks.
     if which == 1 {
         return Marble { base: float4 { 0.075, 0.075, 0.08, 0.25 }, vein: float4 { 0.88, 0.88, 0.86, 0.6 },
@@ -574,6 +591,15 @@ fn marble(which: i64) -> Marble {
                         form: float4 { 0.008, 0.25, 0.2, 1.0 },
                         veins: 1.0, wave: 1.2, polish: 0.8, tint: 0.0 };
     }
+    // Cut slabs. Form sets spacing, seam width, cross-vein strength and cloudy pockets.
+    if which >= 5 && which < MARBLES {
+        let forms = [float4 { 1.25, 0.022, 0.32, 0.7 }, float4 { 0.48, 0.009, 0.92, 0.16 },
+                     float4 { 1.0, 0.026, 0.48, 1.12 }, float4 { 1.75, 0.014, 0.16, 0.25 }];
+        let white: f32[4] = [0.89, 0.65, 0.74, 0.95];
+        let v = white[which - 5];
+        return Marble { base: float4 { 0.065, 0.067, 0.072, 0.3 }, vein: float4 { v, v, v, 0.0 },
+                        form: forms[which - 5], veins: 1.0, wave: 1.0, polish: 0.85, tint: 0.0 };
+    }
     // Dark brown with golden cream veins and a network of fine cracks, as Emperador
     // Dark is: autumn's stone frame.
     if which == EMPERADOR {
@@ -590,6 +616,7 @@ fn marble(which: i64) -> Marble {
 fn marble_for(look: i64, chosen: i64) -> i64 {
     if look == AUTUMN_STONE { return EMPERADOR; }
     if look == AUTUMN_CARVED || look == AUTUMN_PORPHYRY || look == SPRING_STONE || look == SUMMER_STONE { return 0; }
+    if chosen >= 5 && look != WINTER { return 0; }
     return chosen;
 }
 
@@ -853,6 +880,7 @@ fn winter_wood() -> Theme {
     t.dark_piece = float4 { 0.22, 0.23, 0.25, 0.34 };
     t.piece_fig = float4 { 0.03, 0.15, 0.3, 0.4 };
     t.crown = float4 { 0.22, 0.23, 0.25, 0.0 };
+    t.line = float4 { 0.82, 0.88, 0.95, 0.0 };
     t.edge = float4_0;
     t.build = float4 { 0.0, 1.0, 0.0, 0.0 };
     t.light_scatter = PALE_WOOD_SCATTER;

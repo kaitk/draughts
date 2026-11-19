@@ -526,6 +526,237 @@ and after on the right:
 ../build/piece_tune --season autumn --pieces Wood --key game --near 0.3 --pitch -12 --yaw 18
 ```
 
+## Winter in black granite, and granite pieces in place of onyx (2026-11-19)
+
+The user's review of winter: the onyx aliased and was bland; the slate was better. They
+asked for the board itself in a more complex, lifelike, blacker polished stone, such as
+the "black granites", with pieces inspired by it.
+
+- **The granite in the bake.** A stone surface whose ring has a w now carries granite
+  crystals (`figure()` in BAKE_FRAG, `crystal()`): Worley cells about 0.018 across, with
+  finer ones between them, each crystal its own tone.
+  - **Dark stone:** three quarters are black, a fifth are grey feldspar with a soft
+    translucent halo, and 3% are bronze flecks, as in black galaxy granite.
+  - **Pale stone:** mostly pale, with grey quartz and a few black specks.
+  - **Relief:** each crystal's face tilts a little and is flush at its edges, so the
+    polish breaks into glints. The rest of the stone's relief is polished away. Before
+    that, it mirrored the snowy sky as a grey cloud over the frame.
+  - **Grain boundaries:** a thin darker line.
+- **`looks::WINTER_GRANITE`** (`winter_granite()`), on winter's photograph and light:
+  - polished black granite squares (0.12 sRGB, roughness 0.1)
+  - a black granite frame with a polished black rounded edge (it takes its own figure,
+    not the chosen marble)
+  - pale grey granite squares, honed
+  - satin ivory and black granite pieces.
+
+  For now it is the picker's fifth board, granite; it isn't in the app's menus.
+- **Granite pieces** (frame_map.y -3, the picker's Granite) replace the onyx. They use
+  the board's tones in the disc's 3D space: feldspar with a halo, finer specks, and
+  bronze flecks a little glossier. Each fades to its mean below a pixel. Roughness is
+  0.18, up from the onyx's 0.13. The 1:1 crops at playing size show no shimmer on the
+  lip or groove.
+
+Verdict: the granite board reads as black stone, speckled, its frame and dark squares one
+stone. Granite pieces on it are calm black at playing size and speckled up close.
+Slate pieces on the granite board are the other good pairing. The slate board is
+unchanged. Both renderers build (`goose check`, and `scripts/ngfx.py` with the
+goose-ngfx checkout).
+
+`build/winter-granite-review.jpg`: the slate board and the granite board, each with
+Slate and Granite pieces, at the game key. `build/winter-granite-closeups.jpg`: the
+granite board close under the game and the low left key.
+
+```sh
+../build/piece_tune --season winter --material granite --pieces Granite --key game
+../build/piece_tune --season winter --material granite --pieces Slate --key game
+../build/piece_tune --season winter --material granite --pieces Granite --key left --pitch -28 --near 0.45 --yaw 20
+```
+
+## Denser walnut, and black marble in place of the granite (2026-11-19)
+
+The user liked the maple pieces. For the walnut, the relief was too coarse; they wanted it
+denser, with the brightness nearer 0.6. They didn't like the granite on either the board
+or the pieces. Instead they asked for versions of winter's own board material, in the
+look of the black marbles sold as "black granite": a black ground with white veins that
+crack and branch (their reference sheet of countertop images).
+
+- **Walnut.** Its streaks are now 80 a unit across (maple keeps 40), so the figure and
+  its relief under the varnish are twice as dense. `model3d::dark_brightness` is 0.6 for
+  turned wood (mineral -1), which the picker's Wood set starts with. No look in the
+  game uses that mineral. `build/wood-walnut-dense.jpg` shows before on the left and
+  after on the right.
+- **What winter's board is.** The squares are honed slate: pale grey-blue, and dark
+  slate with a calm clouding and a few faint veins. The frame is one solid block of
+  marble 2, a polished dark grey with soft, wavy, cloudy veins, tinted toward the
+  board's steel blue. Its rounded edge is steel blue.
+- **The granite is gone:** the crystals in the bake, the look, and the granite pieces.
+- **Fracture veins** (`fractured()` in BAKE_FRAG, chosen by `looks::Marble.cracks`, the
+  bake's `fracture`). The veins run along cracks, which are the edges of Worley cells in
+  a field warped by noise.
+  - The cells are stretched about 2:1, 30 degrees off the board's x, so the veins run on
+    and branch rather than closing into polygons.
+  - There are three sizes, each sparser and thinner than the last, each finer one more
+    jagged: the main veins, with a width varying along them and a soft halo; a broken
+    finer network; and hairlines.
+  - The black has broad soft clouds, and now and then a pale patch where veins gather.
+- **Four new marbles:**
+
+  | Marble | Look |
+  | --- | --- |
+  | 6 | Bold white veins that branch, with a network between them |
+  | 7 | A fine grey web with hairlines (Anhara's) |
+  | 8 | Cloudy black with soft halos round crisp white veins |
+  | 9 | Clear black with a few thin sharp veins, far apart |
+
+  The existing flowing marbles are 1, Nero Marquina, 3, blue-black, and 4, threads.
+- **`looks::WINTER_MARBLE`**, the picker's fifth board (marble). Its dark squares and
+  frame are cut from the chosen marble, each square its own slab, so the veins break at
+  the seams as tiles' do (a stone surface's `ring.w`). The pale squares are winter's
+  honed stone. The pieces are satin ivory and black marble.
+- **Marble pieces** (frame_map.y -3, the picker's Marble). They use the same fracture
+  veins as a sheet through the disc: the face's plan, leaning a little, so a vein runs
+  straight on down the side. Each line is at least a pixel wide, fainter where narrower.
+- **The picker's Marble slider** (`--marble N`, printed) shows on winter's boards and
+  bakes the board again.
+
+Verdict: 6 and 9 come closest to the references; 8 is the softest, and 7 the busiest. At
+playing size the veins are sparse enough not to fight the pieces. At 1:1
+(`build/winter-marble-1to1.png`) there is no shimmer on the frame's veins or the pieces'.
+Spring stone and the winter slate board are unchanged (0 differing pixels). Both
+renderers build. The ngfx bake now takes the shown marble (`marble_of`, `stone_of`) and
+the carving's pattern, as the gfx bake does: it had passed the chosen marble and 0.
+
+`build/winter-marble-review.jpg` shows marbles 6 to 9 at the game view, and
+`build/winter-marble-close.jpg` the same up close.
+
+```sh
+../build/piece_tune --season winter --material marble --pieces Marble --marble 6 --key game
+../build/piece_tune --season winter --material marble --pieces Marble --marble 9 --key game
+../build/piece_tune --season autumn --pieces Wood --key game --pitch -28 --near 0.45 --yaw 20
+```
+
+## The marble board set aside, marble pieces kept (2026-11-19)
+
+The user kept the denser walnut. The marble board didn't convince them, and the board
+material goes to a separate attempt, with the user's reference sheet saved locally as
+`build/black-marble-references.png`. Winter's board is back to its slate and marble 2
+frame, pixel-identical to before. Removed: `looks::WINTER_MARBLE`, marbles 6 to 9, the
+fracture bake (`fractured()`, the bake's `fracture`), and `Marble.cracks`. Commit d2f5f85
+still holds them. Kept: the ngfx bake passing the shown marble and the carving's pattern,
+and the picker's Marble slider for the winter frame (marbles 0 to 4).
+
+**Marble pieces, tuned on the slate board.** Each piece now has its own share of veins,
+and some are nearly clear. The main veins jitter at a finer scale, so they kink as cracks
+do. Each vein has a faint halo, so it lies in the stone rather than on it. The finer
+veins appear only near a main vein, in short lengths. This replaces the even network
+that read as cracked glass up close. `build/winter-marble-pieces.jpg` shows playing size
+and the close view:
+
+```sh
+../build/piece_tune --season winter --material stone --pieces Marble --key game
+../build/piece_tune --season winter --material stone --pieces Marble --key game --pitch -28 --near 0.45 --yaw 200
+```
+
+The user then asked for the veins to be much fainter. The Marble set's dark Texture
+starts at 0.2, down from 0.5, so the veins are about 40% as bright. The image was taken
+again at 0.2.
+
+## Handover (2026-11-19)
+
+Winter pieces candidate for now, the user's (honed slate with a lower roughness, ivory):
+
+```sh
+../build/piece_tune --season winter --material stone --pieces Slate --marble 2 --key game --scatter on --board-scatter off --brightness 0.6 --light 0.87,0.835,0.75,0.4 --dark 0.17,0.195,0.225,0.305 --figure 0.08,0.3,0.0,1.0 --wear 0.4,0.6,0.05,0.0 --light-scatter 0.93,0.9,0.83,0.24 --dark-scatter 0.62,0.6,0.62,0.0 --yaw 51.348 --pitch -5.016 --near 1.0
+```
+
+It is not yet in `looks::winter()`, which still shows mineral 1 pieces. Open, for the
+next session (Codex): the winter board material in the look of black marbles, see the
+section above; marble pieces with sliders for how their veins are made, and the user
+found Texture 0.9 better there; and alabaster for the light pieces.
+
+## Winter black marble slabs (2026-11-19)
+
+The Marble slider has four more positions for winter stone. Each dark square cuts
+the same stone at its own angle and offset. The frame takes one continuous cut.
+The bake lays a narrow branch alongside a kinked seam, opening the gap between
+them and tapering both. Grey shoulders give the wider mineral pockets depth.
+The width of a bake texel sets the coverage of the finest threads.
+
+| Marble | Verdict at the board |
+| --- | --- |
+| 5 · Calcite forks | Closest to the large reference. Small white pockets punctuate the front rail, and the thin branches leave room for the pieces. |
+| 6 · Silver web | Best for play. Grey forks remain visible through the middle ranks without competing with the ivory men. The close view shows the finer crossings. |
+| 7 · Cloud breccia | Broad, smoky pockets with dark slivers inside. The richest close view, though the pale patch on the right draws the eye during play. |
+| 8 · White lightning | The sparsest cut. A few sharp white seams stand out across nearly clear slabs. The branching is easiest to see up close. |
+
+From `tools/`, these commands reproduce both views for each numbered stone.
+Omit `--shot` to open the picker. The local contact sheet is
+`build/winter-marble.jpg`, in slider order with playing size on the left.
+
+```sh
+for n in 5 6 7 8; do
+  ../build/piece_tune --season winter --material stone --pieces Marble --key game \
+    --marble "$n" --size 960x600 --shot "../build/marble-$n-game.png"
+  ../build/piece_tune --season winter --material stone --pieces Marble --key game \
+    --marble "$n" --size 960x600 --pitch -20 --near 0.6 --shot "../build/marble-$n-close.png"
+done
+```
+
+The Mac saved 1920 × 1200 pixels for the 960 × 600 window. The 1:1 center crops in
+`build/crops.png` show the thin branches fading into the ground and the darker
+inclusions inside the broad seams. Against the parent commit, ImageMagick's AE was
+0 pixels for default winter stone and 0 for spring stone, both with Marble pieces
+and the game light. The app passed `goose check` and the ngfx app built with Slang.
+The USB tablet check is pending. `adb devices` listed no device.
+
+### Tuning the slabs
+
+Select winter stone and Marble 5 through 8 to tune the frame and dark squares
+together. Base brightness changes the black ground. Vein strength changes the
+contrast of the whole pattern, down to plain stone at zero. Spacing and width
+control the distance between seams and their thickness. Branch strength adjusts
+the crossing veins, Cloud pockets adjusts the pale deposits, and Polish adjusts the
+finish. The Pieces selector stays available above the board controls.
+
+The picker remembers each slab separately until it closes. Reset marble restores
+the selected preset. Press P to print the command with all seven settings. A Mac
+capture replayed from a printed custom Silver web command matched at AE 0, as did
+the untouched Silver web preset against its original playing-size shot.
+
+### Winter stone default (2026-11-19)
+
+Winter stone now uses the tuned Cloud breccia with ivory and slate pieces. The
+dark pieces have roughness 0.3. The picker opens on the board sliders. Clear Tune board marble and choose
+Dark or Light to edit the pieces.
+From `tools/`, this opens the chosen setup at the saved viewing angle:
+
+```sh
+../build/winter_marble_tune --season winter --material stone --pieces Slate --yaw 7.594 --pitch 4.068
+```
+
+At 960 × 600 points the default and the explicit settings with dark roughness
+0.3 matched at AE 0. The local capture is `build/winter-chosen.png`.
+
+The Mac game benchmark used three runs per build, 300 frames per measurement,
+at 1280 × 800 physical pixels with shadows. The command arguments were
+`--size 640x400 --theme stone --material stone --screen game --board 3d --bench 300`.
+The change includes the new live piece shader as well as the baked board.
+
+| Waited frame time | Previous winter | Cloud breccia and slate |
+| --- | --- | --- |
+| P50 per run, ms | 3.47, 3.28, 3.34 | 3.31, 3.33, 3.03 |
+| P99 per run, ms | 5.72, 7.88, 6.38 | 7.41, 6.59, 7.00 |
+
+Median frame time stayed within the run-to-run spread. The tail was noisier.
+No USB tablet was connected for this measurement.
+
+The edge review found two independent effects. Winter board scattering was already
+zero. The ivory pieces now have zero scattering too. The frame had a steel-blue
+edge tint and a pale line around the top. Both are off so the marble continues
+around the curve. The Mac comparison is `build/winter-rim-comparison.jpg`, with
+the revised frame on the right. Vein strength still starts at 0.55 for mobile
+review. No USB device was attached.
+
 ## Acceptance criteria
 
 - [ ] The piece shader scatters light by the looks' strength and tint per material

@@ -450,7 +450,7 @@ fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
     f.piece_fig = t.piece_fig;
     f.crown = model3d::linear4(t.crown);
     f.edge = model3d::linear4(t.edge);
-    if marbled(g, t) { f.edge.w = 0.0; }
+    if marbled(g, t) && !(g.look == looks::WINTER && g.marble >= 5) { f.edge.w = 0.0; }
     f.line = model3d::linear4(t.line);
     f.bounce = model3d::linear4(t.bounce);
     f.grade = t.grade;
@@ -565,16 +565,17 @@ fn set_wood<O>(o: O&, g: Gpu&, model: i64) {
 fn tune<O>(o: O&, g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Marble) {
     let t = look(g, g.look);
     let wood_changed = wood != g.wood || finish != g.finish;
+    let slab_changed = g.look == looks::WINTER && (g.marble >= 5 || marble >= 5);
     let marble_changed = marble != g.marble || stone != g.stone;
     g.wood = clamp(wood, 0, model3d::WOOD_MODELS - 1);
     g.finish = finish;
     g.marble = clamp(marble, 0, looks::MARBLES - 1);
     g.stone = stone;
-    let plan = wood_changed && t.light_fig.w > 0.5;
+    let plan = (wood_changed && t.light_fig.w > 0.5) || (slab_changed && marble_changed);
     let frame = (wood_changed && t.frame_fig.w > 0.5) || (marble_changed && t.frame_fig.w < 0.5 && t.build.w < 0.5);
     if plan || frame { bake_surfaces(o, g, plan, frame); }
     g.frame.edge = model3d::linear4(t.edge);
-    if marbled(g, t) { g.frame.edge.w = 0.0; }
+    if marbled(g, t) && !(g.look == looks::WINTER && g.marble >= 5) { g.frame.edge.w = 0.0; }
 }
 
 // Takes look `id`'s own carving (looks::carving_for) when it isn't the one g has: a

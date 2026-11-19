@@ -1,0 +1,19 @@
+0 slate
+1 Nero Marquina
+2 grey cloud
+3 blue-black
+4 threads
+5 calcite forks
+6 silver web
+7 cloud breccia
+8 white lightning
+
+Base brightness
+Vein strength
+Vein spacing
+Vein width
+Branch strength
+Cloud pockets
+Polish
+Reset marble
+Tune board marble

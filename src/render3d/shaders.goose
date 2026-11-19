@@ -460,7 +460,9 @@ let LIT_FRAG = """
         vec3 fq = vec3(across * 150.0, lp.y * 150.0, along * 2.0);
         float fine = 1.0 - smoothstep(0.5, 1.2, fwidth(fq.x) + fwidth(fq.y));
         float fibre = 0.5 + fine * (0.6 * noise3(fq + o) + 0.4 * noise3(fq * vec3(0.37, 0.37, 0.35) + o.yzx) - 0.5);
-        vec3 sq = vec3(across * 40.0, lp.y * 40.0, along * 0.6) + o.zxy;
+        // Walnut's streaks are denser, as on its squares.
+        float sf = dark ? 80.0 : 40.0;
+        vec3 sq = vec3(across * sf, lp.y * sf, along * 0.6 * sf / 40.0) + o.zxy;
         float streak = noise3(sq);
         streak = mix(0.5, streak, 1.0 - smoothstep(0.4, 1.0, fwidth(sq.x) + fwidth(sq.y)));
         // Pores, filled by the varnish: faint darker dashes along the grain, more in the
@@ -481,8 +483,25 @@ let LIT_FRAG = """
         return pow(base, vec3(1.0 + a));
     }
 
+    // The nearest and second nearest of jittered cells (Worley's): their distances.
+    vec2 piece_cells(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        float d1 = 8.0;
+        float d2 = 8.0;
+        for (int y = -1; y <= 1; y++) {
+            for (int x = -1; x <= 1; x++) {
+                vec2 o = vec2(float(x), float(y));
+                vec2 c = o + vec2(hash13(vec3(i + o, 1.0)), hash13(vec3(i + o, 2.0))) * 0.9 + 0.05 - f;
+                float d = dot(c, c);
+                if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) { d2 = d; }
+            }
+        }
+        return vec2(sqrt(d1), sqrt(d2));
+    }
+
     // Winter's stones in the disc's own 3D space (frame_map.y -2 honed slate, -3
-    // polished onyx, the light men satin ivory with either). base linear.
+    // polished black marble, the light men satin ivory with either). base linear.
     vec3 piece_winter(vec3 lp, vec3 ng, vec3 to_eye, float seed, vec3 base, float figure, bool dark,
                       bool onyx, inout float rough) {
         vec3 o = vec3(hash_of(seed, 2.3), hash_of(seed, 5.9), hash_of(seed, 8.1)) * 41.0;
@@ -520,18 +539,38 @@ let LIT_FRAG = """
             rough -= 0.5 * a;
             return base * max(vec3(0.0), 1.0 + a * vec3(0.85, 1.0, 1.2));
         }
-        // Polished onyx: black chalcedony, a few restrained curved bands round an axis
-        // off the piece, seen through the polish a little below the surface (the view
-        // refracted, 0.02 deep), so they lie under it and shift with the eye.
-        vec3 deep = lp + refract(-to_eye, ng, 1.0 / 1.54) * 0.02;
-        float side = hash_of(seed, 6.6) * 2.0 * PI;
-        vec2 axis = vec2(cos(side), sin(side)) * (0.9 + 0.8 * hash_of(seed, 7.7));
-        float d = length(deep.xz - axis) + 0.35 * deep.y + 0.03 * noise3(deep * 7.0 + o);
-        float b = noise3(vec3(d * 16.0, seed, 0.5));
-        float fade = 1.0 - smoothstep(0.3, 0.8, fwidth(d * 16.0));
-        float band = smoothstep(0.45, 0.85, b) * fade;
-        float haze = noise3(deep * 9.0 + o.zyx);
-        return base * (1.0 + figure * 2.0 * (haze - 0.5)) + figure * band * vec3(0.022, 0.026, 0.034);
+        // Polished black marble, fracture veins as in the black marbles sold as black
+        // granite: white veins along cracks that branch and meet, lying in the stone
+        // (a soft halo round each), a few broken finer ones near them, a faint cloud.
+        // A vein is a sheet through the stone, so the pattern on the face runs on
+        // straight down the side (the face's plan, leaning a little). Each piece its own
+        // cut and its own share of veins, some nearly clear. Lines at least a pixel
+        // wide, fainter where narrower.
+        vec2 pp = lp.xz + lp.y * vec2(0.35, 0.2) + o.xy;
+        vec2 r = vec2(0.866 * pp.x + 0.5 * pp.y, -0.5 * pp.x + 0.866 * pp.y);
+        vec2 w1 = vec2(noise3(vec3(pp * 0.9, 1.0)), noise3(vec3(pp * 0.9, 5.0))) - 0.5;
+        vec2 p = vec2(r.x * 0.45, r.y) * 2.0 + 0.9 * w1;
+        float texel = max(length(fwidth(p)), 1e-4);
+        float share = 0.35 + 0.9 * hash_of(seed, 6.2);
+        vec2 j1 = p + 0.05 * (vec2(noise3(vec3(p * 4.0, 2.0)), noise3(vec3(p * 4.0, 7.0))) - 0.5);
+        vec2 c1 = piece_cells(j1 * 0.9);
+        float d1 = (c1.y - c1.x) * 0.5 / 0.9;
+        float n1 = noise3(vec3(p * 1.7, 4.0));
+        float wide = 0.008 * (0.2 + 1.8 * n1 * n1);
+        float shown = smoothstep(0.5, 0.62, noise3(vec3(p * 0.6, 13.0)) + 0.15 * (share - 0.8));
+        float core = (1.0 - smoothstep(0.5 * wide, wide + texel, d1)) * min(wide / texel, 1.0);
+        float halo = exp(-d1 / 0.02) * 0.12;
+        float v = max(core, halo) * shown;
+        // The finer ones only near a shown main vein, broken into short lengths.
+        vec2 c2 = piece_cells(j1 * 4.0 + 17.0);
+        float d2 = (c2.y - c2.x) * 0.5 / 4.0;
+        float near_main = shown * exp(-d1 / 0.08);
+        float some = near_main * smoothstep(0.5, 0.65, noise3(vec3(p * 5.0, 3.0)));
+        v = max(v, 0.4 * some * (1.0 - smoothstep(0.0015, 0.003 + texel, d2)) * min(0.003 / texel, 1.0));
+        float cloud = noise3(vec3(p * 1.3, 51.0)) - 0.5;
+        v = clamp(v * figure * 2.0 * share, 0.0, 1.0);
+        rough += 0.04 * v;
+        return mix(base * (1.0 + 0.5 * figure * cloud), vec3(0.8, 0.8, 0.79), v);
     }
 
     // A height h (world units) as a normal's tilt, from its screen derivatives
@@ -1488,6 +1527,51 @@ let BAKE_FRAG = """
         float halo = exp(-dist / (0.015 + 0.1 * soft)) * (0.2 + 0.8 * soft);
         return strength * max(core, 0.6 * halo);
     }
+    // Coverage of a mineral ribbon averaged across one bake texel.
+    float ribbon(float d, float w, float pixel) {
+        return clamp((min(d + pixel, w) - max(d - pixel, -w)) / (2.0 * pixel), 0.0, 1.0);
+    }
+    // One family of seams. Each changes heading at irregular knots. A daughter
+    // opens from the same trace, then dies out or rejoins it at the next knot.
+    float calcite(vec2 q, float spacing, float width, float pockets, float pixel) {
+        float row = floor(q.y / spacing + 0.5);
+        float t = q.x / spacing + 13.7 * row;
+        float k = floor(t);
+        float u = fract(t);
+        vec2 knot = vec2(k, row);
+        float a = h12(knot);
+        float b = h12(knot + vec2(1.0, 0.0));
+        float fork = min(u * 2.7, (1.0 - u) * 1.6);
+        float grit = fbm3(q * 21.0);
+        float jog = (vnoise(vec2(t * 8.0, row)) - 0.5) * 0.08 + (grit - 0.5) * 0.05;
+        float d = q.y - spacing * (row + (mix(a, b, u) - 0.5) * 0.57 + jog);
+        float milk = smoothstep(0.42, 0.78, fbm3(q * 3.2));
+        float w = width * (0.09 + milk * milk * (1.0 + 3.6 * pockets)) * (0.45 + grit);
+        float spread = (h12(knot + 4.6) - 0.5) * spacing * 0.53 * fork;
+        float daughter = d - spread - fork * (vnoise(q * 14.0) - 0.5) * 0.05;
+        float life = smoothstep(0.17, 0.68, vnoise(vec2(t * 1.35, row + 9.3)));
+        float core = ribbon(d, w, pixel);
+        float twig = ribbon(daughter, width * (0.07 + 0.44 * milk), pixel);
+        float cloud = exp(-abs(d + w) / (0.009 + w * 2.6)) * milk * pockets;
+        // Dark host rock caught inside a thick seam, in broken slivers along the cut.
+        float inclusion = fbm3(vec2(q.x * 37.0, q.y * 108.0));
+        float grains = mix(1.0, 0.16 + 0.84 * smoothstep(0.29, 0.68, inclusion),
+                           smoothstep(0.003, 0.025, w));
+        return life * (max(core * grains, twig * (0.35 + 0.5 * a)) * (0.30 + grit) + cloud * 0.30);
+    }
+
+    vec4 black_slab(vec2 p, float pixel) {
+        vec2 q = vec2(dot(p, vec2(0.86, 0.51)), dot(p, vec2(-0.51, 0.86)));
+        q.y += (fbm3(q * 1.4) - 0.5) * 0.24;
+        float v = calcite(q, marble_form.x, marble_form.y, marble_form.w, pixel);
+        vec2 crosscut = vec2(q.y + q.x * 0.31, q.x - q.y * 0.31) + 8.2;
+        float fine = calcite(crosscut, marble_form.x * 0.68, marble_form.y * 0.47, 0.5, pixel);
+        float haze = fbm3(p * 3.7);
+        vec3 ground = srgb(marble_base.rgb) * (0.55 + 1.1 * haze);
+        return vec4(mix(ground, srgb(marble_vein.rgb), clamp(marble.x * max(v, fine * marble_form.z), 0.0, 1.0)),
+                    mix(0.5, 0.06, marble.z) + 0.035 * haze);
+    }
+
     Wood marble_at(vec2 q) {
         float texel = size.z / size.x;
         float veins = marble.x;
@@ -2101,6 +2185,25 @@ let BAKE_FRAG = """
         vec2 origin = mode.x < 0.5 ? 0.5 * size.zw : vec2(0.0);
         int n = int(tone.w + 0.5);
         vec2 p = (floor(gl_FragCoord.xy) * float(n) + 0.5 * float(n)) * texel - origin;
+        if (mode.w >= 5.0 && mode.w < 9.0) {
+            bool frame_cut = mode.x > 0.5;
+            vec2 sq = floor((p + FIELD) * (mode.z / (2.0 * FIELD)));
+            if (frame_cut || (max(abs(p.x), abs(p.y)) < FIELD && mod(sq.x + sq.y, 2.0) > 0.5)) {
+                vec2 q = p.yx;
+                float shade = 1.0;
+                if (!frame_cut) {
+                    Cut c = plan(p);
+                    float angle = 6.283 * h12(sq);
+                    vec2 axis = vec2(cos(angle), sin(angle));
+                    q = vec2(dot(p, axis), dot(p, vec2(-axis.y, axis.x))) + c.seed * 2.3;
+                    shade = c.shade;
+                }
+                out_albedo = black_slab(q, 0.55 * float(n) * max(texel.x, texel.y));
+                out_albedo.rgb *= shade;
+                out_normal = vec4(0.5, 0.5, 1.0, 1.0);
+                return;
+            }
+        }
         if (mode.x > 0.5 && mode.w > 0.5 && frame_fig.w < 0.5 && carve.w < 0.5) {
             // A marble frame, flat: once a texel, no relief to take the normal from.
             Wood m = marble_at(p.yx);

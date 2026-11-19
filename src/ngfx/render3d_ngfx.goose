@@ -319,8 +319,8 @@ fn bake(own: Own&, g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h:
     let fi = g.finish;
     // Samples a side a texel: a phone's half-size surface sampled as the full one, averaged.
     let fine = model3d::BAKE_SIDE / w;
-    let m = g.stone;
-    let u: render3d::Bake[1] = [render3d::Bake { float4 { mode, g.wood, g.n, g.marble },
+    let m = render3d::stone_of(g);
+    let u: render3d::Bake[1] = [render3d::Bake { float4 { mode, g.wood, g.n, render3d::marble_of(g) },
                                            float4 { w * fine, h * fine, extent.x, extent.y },
                                            t.light_sq, t.light_fig, t.dark_sq, t.dark_fig,
                                            t.inlay, t.inlay_fig, t.frame, t.frame_fig,
@@ -332,7 +332,7 @@ fn bake(own: Own&, g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h:
                                            m.base, m.vein, m.form, t.seam,
                                            float4 { g.carving.depth, g.carving.scale, g.carving.moss, t.build.w },
                                            looks::MOSS,
-                                           float4 { g.carving.motif, g.carving.amber, g.carving.lichen, 0.0 },
+                                           float4 { g.carving.motif, g.carving.amber, g.carving.lichen, g.carving.pattern },
                                            t.fill, looks::LICHEN }];
     var r = no_root();
     r.u = ngfx::frame_data(bytes_of(u));

@@ -94,7 +94,7 @@ struct Flags {
     hold: f64 = -1.0,       // --hold T: keeps a transition at T of the way, 0..1
     win:  f64 = -1.0,       // --win T: keeps a win at T seconds into its celebration
     // --wood N, --marble N, --summer N, --spring N, --autumn N, --winter N: a season's 3D
-    // look by its index (looks::SUMMERS, AUTUMNS, WINTERS; wood 0..3, marble 0..4,
+    // look by its index (looks::SUMMERS, AUTUMNS, WINTERS; wood 0..3, marble 0..8,
     // spring 0..3) over the player's material, for tuning; -1 not given
     wood:   i64 = -1,
     marble: i64 = -1,

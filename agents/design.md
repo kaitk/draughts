@@ -73,11 +73,14 @@ pieces; the design boards still set the layout, glass, and controls.
   printed values, not its shots (2026-11-16, summer's stone).
 - The pieces' values have a tuner of their own on the current renderer,
   `tools/piece_tune.goose` (task 094): B toggles scattering on the pieces.
-  Its Pieces slider previews Plastic, Jade, maple and walnut (Wood), or ivory with
-  Slate or Onyx, independently of the board. Key moves the shadow projection with
-  the light. Compare on minus off at each key position, with the camera fixed.
-  The spring Stone board has its own scattering switch, with its strength (the
-  fraction), radius and color depth independent and printed (task 094). Run the picker from
+  Its Pieces slider previews Plastic, Jade, maple and walnut (Wood, with Varnish and
+  Relief sliders), or ivory with Slate or polished black Marble, independently of the
+  board. On winter's stone board the Marble slider (and `--marble N`) picks the frame's
+  marble. Key moves the shadow
+  projection with the light. Compare on minus off at each key position, with the camera
+  fixed. The spring Stone board has its own scattering switch, with its strength (the
+  fraction), radius and color depth independent and printed (task 094). Its defaults are
+  the look's, which the game uses on a desktop. Run the picker from
   `tools/`. With `--shot` it saves the board without the controls.
   Spring stone has Jade and Plastic as profiles 0 and 1 for `board_shot`.
 

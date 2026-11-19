@@ -34,7 +34,8 @@ fn linear(c: f32) -> f32 {
 
 fn linear4(c: float4) -> float4 { float4 { linear(c.x), linear(c.y), linear(c.z), c.w } }
 
-fn dark_brightness(mineral: f32) -> f32 { if mineral == 3.0 { 0.65 } else { 1.0 } }
+// The dark pieces' brightness: jade's 0.65, turned walnut's 0.6 (task 094), else 1.
+fn dark_brightness(mineral: f32) -> f32 { if mineral == 3.0 { 0.65 } else if mineral == -1.0 { 0.6 } else { 1.0 } }
 
 fn dark_piece_color(c: float4, brightness: f32) -> float4 {
     let rgb = linear4(c);

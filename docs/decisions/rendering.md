@@ -586,6 +586,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
 
+- Winter stone uses Cloud breccia on the dark squares and frame, with satin ivory
+  and dark slate pieces at 0.3 roughness (2026-11-19). The subdued veins keep the
+  pieces distinct while the close view shows the mineral pockets. This replaces
+  the slate squares and grey-cloud marble frame. Marble 2 remains selectable.
+  The frame keeps its marble through the rounded edge because the blue tint and
+  outer line gave it a halo. The ivory and slate pieces use zero scattering.
+
 ## When a frame reaches the screen
 
 goose_gfx records a frame and its blit into the window's image in one command buffer.
