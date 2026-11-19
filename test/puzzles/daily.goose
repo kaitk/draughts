@@ -9,7 +9,10 @@
 // day's themes (s and c by turns where both are near); a library with too few gives
 // fewer. The rating starts from the course's stars, moves a long way on the first
 // puzzles and less later, up on a solve of a hard one and less on an easy one, and a
-// solve with one star at its level lowers it.
+// solve with one star at its level lowers it. While every rated try has had three stars
+// the step stays at its first; the first miss, and every try after it, takes the step by
+// count. A rating of 600 opens Crowning, Shots, and King shots to the pick, 800 Safe move
+// too; a beginner's opens none.
 import std;
 import rules from "../../src/rules";
 import puzzles from "../../src/puzzles";
@@ -100,4 +103,20 @@ fn main() {
     print("settled, three stars at 1600: ", puzzles::rated(1200, 40, 1600, 3), "; at 800: ", puzzles::rated(1200, 40, 800, 3));
     print("one star at its level: ", puzzles::rated(1200, 40, 1200, 1), "; two: ", puzzles::rated(1200, 40, 1200, 2));
     print("never under ", puzzles::rated(110, 0, 2000, 1));
+    r = 650;
+    line.clear();
+    for k in 8 {
+        r = puzzles::rated(r, k, 1100, 3, true);
+        format(line, " ", r);
+    }
+    print("eight flawless solves at 1100 from 650:", line);
+    print("flawless after 12, three stars at 1600: ", puzzles::rated(1200, 12, 1600, 3, true), "; a miss there, two stars: ",
+          puzzles::rated(1200, 12, 1600, 2, true), ", as after a miss before: ", puzzles::rated(1200, 12, 1600, 2));
+
+    for rating in [450, 599, 600, 799, 800, 1500] {
+        let t = puzzles::themes_by_rating(rating);
+        var names: u8[>..] = [];
+        for name, i in puzzles::THEME_NAMES { if t & rules::bit(i) != 0 { format(names, " ", name); } }
+        print("rating ", rating, " opens:", if names.len == 0 { " none" } else { names[..] });
+    }
 }

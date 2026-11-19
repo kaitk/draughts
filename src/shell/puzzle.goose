@@ -20,17 +20,19 @@ let PLAYING = 0;
 let ANSWER = 1;             // a right move shows, then the reply comes
 let BACK = 2;               // a wrong move shows, then it slides back
 let SOLVED = 3;
-let SHOW = 4;               // a wrong move shows, then the answer that shows why comes
-let SHOWN = 5;              // the answer shows, then it slides back
-let UNSHOW = 6;             // the answer slides back, then the wrong move does
+let SHOW = 4;               // a wrong move shows, marked a miss once it lands, then the answer that shows why comes
+let SHOWN = 5;              // the answer's line plays on and holds; then, or at a tap, it is gone and the move slides back
 
 let REPLY_PAUSE = 0.5;      // seconds from a right move landing to the reply
 let BACK_PAUSE = 0.35;      // from a wrong move landing to its sliding back
 let SHOW_PAUSE = 0.4;       // from a wrong move landing to the answer that shows why
-let SHOW_HOLD = 0.8;        // from the answer landing to its sliding back, the wrong move after it
+let LINE_PAUSE = 0.45;      // between the moves of the answer's line
+let SHOW_HOLD = 0.8;        // from the line's last move landing to its going
+let LINE_MAX = 16;          // the answer's line's moves shown at most
 let TRY_AGAIN = 2.0;        // "try again" shows this long after a miss
 let POP = 0.6;              // a star won pops in
 let POP_GAP = 0.15;         // and the next a little after
+let AGAIN_ID = gui::PANEL_IDS + 17;  // "try again" while the answer's line shows: a tap ends it
 let STAKE = 3;
 let GLOW_AFTER = 2;         // misses before the piece to move glows
 
@@ -58,7 +60,9 @@ struct Play {
     path:      puzzles::Ply[..puzzles::MAX_PLIES],  // the moves played since the start
     at:        f64 = 0.0,     // when the move shown lands (ANSWER, BACK, SHOW, SHOWN, SOLVED)
     tried:     rules::Move,   // the wrong move, to slide back after its answer
-    answer:    i64      = -1, // the answer to it that shows why, in the board's moves (SHOW)
+    answer:    i64      = -1, // the answer's next move, in the board's moves (SHOW, SHOWN); -1 at its end
+    line:      rules::Move[..LINE_MAX], // the answer's line on the board, taken back at its end (SHOWN)
+    line_left: i64      = 0,  // its plies left of puzzles::SHOW_DEPTH (puzzles::answer_next)
     missed_at: f64      = -100.0,
     won:       i64      = 0,     // stars won, once solved
     grab:      float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (board::touch)
@@ -73,13 +77,14 @@ struct Play {
     // Solved with the keys leading (a keyboard's or a gamepad's): the next frame gives
     // next the focus, once it is offered (panel_frame).
     to_next: bool = false,
+    skip:    bool = false,    // "try again" tapped while the answer's line shows
 }
 
 // A puzzle never shows a selected piece's targets, whatever the move hints setting: the
 // child is to find the move (docs/product.md).
 fn new() -> Play {
     var pl = Play { b: board::new(rules::INTERNATIONAL), s: puzzles::Solver { moves: [], stack: [] }, path: [],
-                    tried: rules::Move { .. }, own: default<puzzles::Puzzle>(), .. };
+                    tried: rules::Move { .. }, line: [], own: default<puzzles::Puzzle>(), .. };
     pl.b.hints = board::MISTAKES;
     pl.b.by_hand = true;
     return pl;
@@ -166,6 +171,38 @@ fn missed(pl: Play&, now: f64) {
     pl.missed_at = now;
 }
 
+// Whether the answer's line shows, the miss marked: a tap ends it.
+fn showing(pl: Play&) -> bool { (pl.state == SHOW && pl.missed_at >= pl.at) || pl.state == SHOWN }
+
+// The answer's line gone at once and the wrong move sliding back, "try again" showing a
+// while longer.
+fn unshow(pl: Play&, now: f64) {
+    let b .= pl.b;
+    for _ in pl.line.len { board::undo(b); }
+    pl.line.clear();
+    let king = b.pos.kings & rules::bit(pl.tried.to) != 0;
+    board::slide_back(b, pl.tried, now, false);
+    // The ring and the ghost as any wrong move's, its sound already heard as it landed.
+    b.wrong = pl.tried.to;
+    b.wrong_at = now;
+    b.ghost = true;
+    b.ghost_of = float2 { b.pos.side, if king { 1.0 } else { 0.0 } };
+    pl.path.pop();
+    pl.answer = -1;
+    pl.missed_at = now;
+    pl.state = PLAYING;
+}
+
+// Plays the answer's line's next move, pl.answer, and finds the one after it.
+fn line_on(pl: Play&, now: f64) {
+    let b .= pl.b;
+    pl.line.push(b.moves[pl.answer]);
+    board::start_move(b, pl.answer, now);
+    pl.at = now + board::duration(b.move);
+    pl.line_left--;
+    pl.answer = if pl.line.len < LINE_MAX { puzzles::answer_next(pl.s, b.pos, pl.line_left) } else { -1 };
+}
+
 // After the pointer has gone to the board: a move made is judged, a mistake tapped is a
 // miss. `history` and `wrong_at` are the board's from before. Returns whether the move
 // solved the puzzle.
@@ -232,21 +269,33 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
         pl.state = PLAYING;
         changed = true;
     }
-    // A wrong move's answer, its hold, and its sliding back before the move's own.
+    // A wrong move with an answer is a miss as it lands: its ring flashes and "try again"
+    // shows while the answer's line plays on, until the pieces it wins are taken. After
+    // a hold, or at once at a tap, the line is gone and the move slides back.
+    if pl.state == SHOW && !b.moving && pl.missed_at < pl.at {
+        b.wrong = pl.tried.to;
+        b.wrong_at = now;
+        b.rings_frozen = false;
+        sound_event::add(b.sound_events, sound_event::WRONG);
+        missed(pl, now);
+        changed = true;
+    }
     if pl.state == SHOW && !b.moving && now >= pl.at + SHOW_PAUSE {
-        board::start_move(b, pl.answer, now);
-        pl.at = now + board::duration(b.move);
+        pl.line.clear();
+        pl.line_left = puzzles::SHOW_DEPTH;
         pl.state = SHOWN;
+        line_on(pl, now);
         changed = true;
     }
-    if pl.state == SHOWN && !b.moving && now >= pl.at + SHOW_HOLD {
-        let m = rules::move_of(b.move);
-        board::slide_back(b, m, now, false);
-        pl.state = UNSHOW;
+    if pl.state == SHOWN && !b.moving && now >= pl.at + LINE_PAUSE && pl.answer >= 0 {
+        line_on(pl, now);
         changed = true;
     }
-    let unshown = pl.state == UNSHOW && !b.moving;
-    if unshown || (pl.state == BACK && !b.moving && now >= pl.at + BACK_PAUSE) {
+    if pl.state == SHOWN && !b.moving && now >= pl.at + SHOW_HOLD && pl.answer < 0 {
+        unshow(pl, now);
+        changed = true;
+    }
+    if pl.state == BACK && !b.moving && now >= pl.at + BACK_PAUSE {
         board::slide_back(b, pl.tried, now);
         pl.path.pop();
         missed(pl, now);
@@ -270,6 +319,14 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
         ev.go = STAY;
     }
     if ask == CAMERA { ev.go = STAY; }
+    // A tap on "try again" or the board ends the answer's line at once; the board's tap
+    // goes no further.
+    if showing(pl) && (pl.skip || (input.pressed && !g.press_on_ui)) {
+        g.press_on_ui = true;
+        unshow(pl, now);
+        changed = true;
+    }
+    pl.skip = false;
     if ask == NEXT && pl.state != SOLVED {
         // A capture left partway: the piece slides back, and it is a miss.
         if board::abandon(b, now) { missed(pl, now); }
@@ -302,7 +359,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(pl: Play&, g: gui::Gui&, now: f64) -> bool {
     let popping = pl.state == SOLVED && now < pl.at + POP + (STAKE - 1) * POP_GAP;
-    let wrong = pl.state == BACK || pl.state == SHOW || pl.state == SHOWN || pl.state == UNSHOW;
+    let wrong = pl.state == BACK || pl.state == SHOW || pl.state == SHOWN;
     return board::animating(pl.b, now) || gui::animating(g) || pl.state == ANSWER || wrong || popping
            || now < pl.missed_at + TRY_AGAIN || rig::moving(pl.cam, now);
 }
@@ -394,7 +451,7 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
     let d = disc * u;
     var words: u8[..64] = [];
     goal_words(pz, words);
-    let again = pl.state != SOLVED && now < pl.missed_at + TRY_AGAIN;
+    let again = pl.state != SOLVED && (showing(pl) || now < pl.missed_at + TRY_AGAIN);
     let text = if pl.state == SOLVED { strings::get(strings::PUZZLE_SOLVED) } else { words[..] };
     let s = icon_size * u;
     var c = r;
@@ -435,6 +492,10 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
         let w = min(c.z, ends + (if arrow { arrow_w } else { 0.0 }) + gui::text_width(g, face, said));
         let pill = if stacked { gui::center(gui::cut_top(c, 48.0 * u), w, 48.0 * u) }
                    else { gui::center(float4 { c.x, c.y, w, c.w }, w, 48.0 * u) };
+        if showing(pl) {
+            let tapped, _ = gui::press_widget(g, AGAIN_ID, pill);
+            if tapped { pl.skip = true; }
+        }
         gui::rounded_rect(g, pill, float4 { gui::RED.x, gui::RED.y, gui::RED.z, 0.16 }, 16.0 * u);
         var inner = pill;
         gui::cut_left(inner, gui::PAD_WIDE * u);

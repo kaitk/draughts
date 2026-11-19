@@ -30,10 +30,12 @@ seen.russian = 63:ffffffffffffffff
 puzzle_rating.international = 812 14
 seen.international = 0:3 5:80
 daily.international = 20406 12:3 40:0 55:0 70:0
+puzzle_rating.brazilian = 1010 5 flawless
 stars.international = 2:3
 
 written again the same: true
 odd daily keys: count 8, rating 0, seen 0, day -1
+flawless: rated 14 without the mark false, none rated true, rated 5 marked true
 an unknown picture: fox, a long name: 'Aleksander t' (12 characters), first start done false
 typed A, a tab, š, DEL, an emoji, ’, b, erased one, c: 'Aš’c'
 migrated: *1 fox; stars 5, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1, first start done true
@@ -54,7 +56,7 @@ a fresh install: *1 fox; stars 0, puzzle rating 0 0, seen 0, day -1, 4 a day, sk
 the first free picture: hare
 added: 1 fox, *2 hare Mia; stars 0, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 8 40 90, games 0, season -1, hints 0, game 10x10 after 0 moves, language 1, first start done false
 back to the fox: *1 fox, 2 hare Mia; stars 5, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 12 44 95, games 7, season 1, hints 1, game 8x8 after 1 moves, language 1
-to Mia: 1 fox, *2 hare Mia; stars 2, puzzle rating 700 3, seen 21, day 20406, 8 a day, skill 8 40 90, games 0, season 3, hints 0, game 10x10 after 2 moves, language 1
+to Mia: 1 fox, *2 hare Mia; stars 2, puzzle rating 700 3, seen 21, day 20406, 8 a day, skill 8 40 90, games 0, season 3, hints 0, game 10x10 after 2 moves, language 1, flawless false
   game-1.bin
   game-2.bin
   player-1.txt: picture = fox;first_start = done;season = winter;background = photo;board = 2d;material = auto;turn = off;hints = moves;lookout = off;view = rest;zoom = off;kings = stack;opponent = computer;draughts = russian;level = hard;color = black;clock = 5+3;skill_easy = 12;skill_medium = 44;skill_hard = 95;played_easy = 3;played_medium = 3;played_hard = 3;games = 7;moves = marks;daily_count = 4;stars.international = 1:3 4:2;
@@ -62,7 +64,7 @@ to Mia: 1 fox, *2 hare Mia; stars 2, puzzle rating 700 3, seen 21, day 20406, 8 
   settings.txt: language = et;player = 2;
 four: 1 fox, 2 hare Mia, 3 bear, *4 hedgehog, a fifth added false, free id 0
 the fox started again: *1 fox, 2 hare Mia, 3 bear, 4 hedgehog; stars 0, puzzle rating 0 0, seen 0, day -1, 4 a day, skill 8 40 90, games 0, season 1, hints 1, game 8x8 after 0 moves, language 1
-Mia started again: 1 fox, *2 hare Mia, 3 bear, 4 hedgehog; stars 0, puzzle rating 0 0, seen 0, day -1, 8 a day, skill 8 40 90, games 0, season 3, hints 0, game 10x10 after 0 moves, language 1
+Mia started again: 1 fox, *2 hare Mia, 3 bear, 4 hedgehog; stars 0, puzzle rating 0 0, seen 0, day -1, 8 a day, skill 8 40 90, games 0, season 3, hints 0, game 10x10 after 0 moves, language 1, flawless true
   game-1.bin
   game-3.bin
   game-4.bin

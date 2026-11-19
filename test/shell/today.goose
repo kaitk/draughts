@@ -17,7 +17,12 @@
 // lines then, reads today's puzzles and those had as the same puzzles of the built-in
 // library, whose first puzzles' ids are those lines. Learn solved in any draughts opens
 // Today in all: Russian's alone opens International's, whose first rating is the best
-// the player has, Russian's course's or Russian's rating.
+// the player has, Russian's course's or Russian's rating, whose 900 opens Shots to the
+// pick with no Shots puzzle solved. With Learn alone solved, a rating of 599 opens only
+// what the course has (Learn, and Captures always), 600 Crowning, Shots, and King shots
+// too, 800 Safe move as well. Three first solves of three stars keep the rating's step
+// at its first; a fourth of one star ends that and takes the step by count, and a
+// replay leaves both.
 // Then the layouts at the tablet's size and a 20:9 phone's at 480 dp in both orientations,
 // four and eight a day: the library (every tap 88 dp at least, none off the screen nor over
 // another, Today's tiles in the picker's ids) and a daily puzzle (its dots on the screen,
@@ -600,6 +605,9 @@ fn main() {
     // Learn solved in Russian alone opens Today in International.
     elsewhere(text, g);
 
+    // Themes by the rating, and the step while the record is flawless.
+    by_rating(text, g);
+
     // The layouts.
     layouts(text, g, 4);
     layouts(text, g, 8);
@@ -635,6 +643,36 @@ fn elsewhere(text: const u8[:], g: gui::Gui&) {
         print("Russian's Learn", if rated > 0 { ", rated 900" } else { "" }, ": open ", picker::today_open(sh.prefs), ", ", home_line(g),
               "; ", record(sh));
     }
+}
+
+// The themes the day may pick with Learn alone solved, by the rating; then four first
+// solves, three stars thrice and then one, each one's rating and record, beside the
+// ratings the step by count alone gives.
+fn by_rating(text: const u8[:], g: gui::Gui&) {
+    var sh = fresh(text);
+    learn_all(sh);
+    for rating in [599, 600, 800] {
+        let t = shell::opened_themes(sh.prefs.stars[SET], rating);
+        var names: u8[>..] = [];
+        for name, i in puzzles::THEME_NAMES { if t & rules::bit(i) != 0 { format(names, " ", name); } }
+        print("Learn alone, rating ", rating, ":", names);
+    }
+    home(sh, g, 0.0);
+    var by_count = sh.prefs.puzzle_rating[SET];
+    var line:  u8[>..] = [];
+    var plain: u8[>..] = [];
+    for k in 4 {
+        let won = if k == 3 { 1 } else { 3 };
+        let i = puzzles::place_of(puzzles::library, sh.prefs.today[SET].picked.list[k]);
+        by_count = puzzles::rated(by_count, k, puzzles::library.list[i].difficulty, won);
+        shell::daily_solved(sh, k, won);
+        format(line, " ", sh.prefs.puzzle_rating[SET], if sh.prefs.puzzle_flawless[SET] { " flawless," } else { "," });
+        format(plain, " ", by_count);
+    }
+    print("first solves 3, 3, 3, 1 from ", sh.prefs.today[SET].picked.list.len, ":", line, " by count alone", plain);
+    shell::daily_solved(sh, 3, 3);
+    print("  the last played again for three: ", sh.prefs.puzzle_rating[SET], " after ", sh.prefs.puzzle_rated[SET], ", flawless ",
+          sh.prefs.puzzle_flawless[SET]);
 }
 
 // The built-in International library's first lines from before it had ids: the

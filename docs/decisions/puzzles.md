@@ -25,8 +25,44 @@ goal is the balance.
   capture tapped through its squares lost stars).
 - A wrong move shows why (2026-11-09): when the other side answers it by taking something
   back, that answer plays, holds, and slides back before the wrong move does.
+- A wrong move shows the whole line (2026-11-19), replacing the answer alone: the
+  answer and every move after it play until the board shows what the line wins, then
+  hold and slide back move by move. A shot's first move is often a sacrifice that wins
+  the other side a piece, and a tester who saw only that (a safe move's 34-40, met by
+  50-45) couldn't tell why the move was wrong.
+- The miss shows as a wrong move with an answer lands, and the line ends at once
+  (2026-11-19), replacing its sliding back move by move: the ring and "try again" came
+  only after the line had played forward and back, 14 s for seven plies, and the
+  player had to sit through both. A tap on "try again" or the board ends it sooner.
 
 ## Checks
+
+- No line may leave the other side a king (2026-11-19). The solver counts a king as a
+  man, so a take that gives one away looked like a win; 67 library puzzles did (53
+  International, 4 Russian, 10 Brazilian, with the long lines below) and were dropped,
+  their ids kept unused. A king given and taken back stays, a shot's motif. Counting a
+  king as three men in the solver was tried and set aside: at three plies it can't tell
+  a king that lasts from one taken at once, and turned right safe moves wrong (Russian's
+  64, whose g3-f4 the computer player rates best) and wrong ones right (the library's
+  2833).
+- Where a king is made, the computer player judges the first moves (2026-11-19), offline
+  in `tools/puzzles.goose`, while the app's solver keeps counting a king as a man. A
+  king worth three men in the solver, with or without two plies more past a king made,
+  disagreed with the computer player both ways (Russian's 64, the library's 2833) and was
+  rejected. Wherever a first move's line makes a king for either side, the computer
+  player at full skill scores every first move exactly; a puzzle passes when each right
+  move scores at least 50 (half a man) above each wrong one, of the pairs where either
+  makes a king, or when every right move wins by force. 50 sits in the trough between
+  ties (−25 to 25) and a man won (about 100). Comparing every pair was rejected: it fails
+  puzzles with no king made as often, so it measures rivals, not kings. A crown puzzle
+  always passes: its goal is the king, and the computer player judges by material (a
+  third of them would fail, mostly where another move scores as well as crowning). 406
+  library puzzles failed and were dropped (192 International, 92 Russian, 122
+  Brazilian), their ids kept unused. Built-in puzzles that fail are replaced, not
+  dropped, and so is one where a wrong move wins by force, which beats crowning.
+- A wrong first move's line may run eight plies at most (2026-11-19): a tester shown 13
+  plies of exchanges couldn't follow them. Cutting the line on screen was set aside, as
+  no place partway says what the move lost.
 
 - A line must end quiet (2026-11-08): a puzzle that stops with a capture on the board
   shows the child more to play than it let them.
@@ -117,3 +153,26 @@ On the screen (2026-11-14, prototyped and chosen):
   piece beside it shrink rather than the stars. Rejected: today's dots drawn as the
   tiles' rising bars, which need a key for a child and grow too thin at 10 a day on a
   phone in portrait.
+
+A tester found the easy daily puzzles "just forced moves" (2026-11-19, task 097):
+
+- **Themes open by the puzzle rating too** (2026-11-19): Crowning, Shots, and King shots
+  at 600, Safe move at 800, as well as by a puzzle solved in the course. A grown-up who
+  solved Learn and went to Today got only Captures, most of International's under 500 a
+  choice between two captures one move deep, and the picks stayed near 500 while the
+  rating climbed past 900. The thresholds are guesses where the libraries' quiet puzzles
+  begin. A flawless International player with Learn alone solved now gets Captures in a
+  quarter of the picks from the second day, not all of them; a young beginner, who
+  doesn't reach 600, sees no change. Rejected: opening every theme with Today, which
+  puts shots and safe moves before a child who has met neither in the course.
+- **The rating's step stays at its first while flawless** (2026-11-19): while every
+  rated first try has had three stars, the step stays 96; the first miss returns it to
+  the fall by count, as a game's skill moves more after early wins
+  ([AI: Levels](ai.md#levels)). Simulated with the themes above, a flawless
+  International player from 470 reached 1,000 on day 8 and 1,500 on day 18, 4 puzzles a
+  day; now on days 4 and 7. Children are hardly touched: few have a flawless first day
+  and almost none a second. A file from before keeps a rating flawless only if no puzzle
+  had moved it, as which tries had three stars wasn't kept. Rejected: a flawless day
+  moving the rating up to its stretch, a jump past what the player has shown; and
+  starting the fall from 96 at the first miss, which keeps the step large just when the
+  rating has met the player's level.

@@ -120,7 +120,7 @@ puzzle.solved = Solved
 goal.take = Win {} men
 goal.crown = Become a king
 goal.win = Win the game
-goal.safe = Stay safe
+goal.safe = Avoid the trap
 
 players.who = Who's playing?
 players.new = New player

@@ -1,6 +1,8 @@
 // The players' files (shell/players.goose), headless, in a folder of their own: a
 // player's file reads back what was written, picture, name, and first start with the
-// rest, the daily puzzles' keys too (an odd one left at its default); a name keeps only
+// rest, the daily puzzles' keys too (an odd one left at its default; a rating still
+// flawless marked so, and one from a file without the mark flawless only with none rated);
+// a name keeps only
 // characters the faces draw, up to 12. A settings.txt from
 // before players migrates to player 1 (the fox, no name, the first start done) with
 // game.bin as game-1.bin, and settings.txt keeps only the language and the player; the
@@ -8,7 +10,7 @@
 // with one player at the defaults. Adding a player takes the lowest free id and switches
 // to them at the defaults with a new game; switching writes the leaving player's game
 // and settings and reads the other's; starting again clears the stars, the daily
-// puzzles' rating, the puzzles had, and today's, the computer's skill and games, and the
+// puzzles' rating, its flawless record, the puzzles had, and today's, the computer's skill and games, and the
 // saved game, and keeps the rest (the puzzles a day too); removing deletes the files,
 // never the last player, and removing the player who is playing makes the first left
 // play.
@@ -114,6 +116,9 @@ fn main() {
     // day's record, and the puzzles a day.
     s.puzzle_rating[rules::INTERNATIONAL] = 812;
     s.puzzle_rated[rules::INTERNATIONAL] = 14;
+    s.puzzle_flawless[rules::INTERNATIONAL] = false;
+    s.puzzle_rating[rules::BRAZILIAN] = 1010;
+    s.puzzle_rated[rules::BRAZILIAN] = 5;
     s.seen[rules::INTERNATIONAL][0] = 0x3;
     s.seen[rules::INTERNATIONAL][5] = 0x80;
     s.seen[rules::RUSSIAN][63] = 0xFFFFFFFFFFFFFFFF;
@@ -130,6 +135,9 @@ fn main() {
     let bent = settings::parse("daily_count = 7\npuzzle_rating.russian = 50 2\nseen.brazilian = 64:1 x:2\ndaily.russian = 20406 3:4\n");
     print("odd daily keys: count ", bent.daily_count, ", rating ", bent.puzzle_rating[rules::RUSSIAN], ", seen ",
           bent.seen[rules::BRAZILIAN][0], ", day ", bent.today[rules::RUSSIAN].day);
+    let marks = settings::parse("puzzle_rating.international = 812 14\npuzzle_rating.russian = 470 0\npuzzle_rating.brazilian = 1010 5 flawless\n");
+    print("flawless: rated 14 without the mark ", marks.puzzle_flawless[rules::INTERNATIONAL], ", none rated ",
+          marks.puzzle_flawless[rules::RUSSIAN], ", rated 5 marked ", marks.puzzle_flawless[rules::BRAZILIAN]);
     let odd = settings::parse("picture = unicorn\nname = Aleksander the Great\nfirst_start = maybe\n");
     print("an unknown picture: ", players::ANIMALS[odd.picture], ", a long name: '", odd.name[..], "' (",
           players::length(odd.name[..]), " characters), first start done ", odd.first_start_done);
@@ -188,6 +196,7 @@ fn main() {
     sh.prefs.stars[rules::INTERNATIONAL][5] = 2;
     sh.prefs.puzzle_rating[rules::INTERNATIONAL] = 700;
     sh.prefs.puzzle_rated[rules::INTERNATIONAL] = 3;
+    sh.prefs.puzzle_flawless[rules::INTERNATIONAL] = false;
     sh.prefs.seen[rules::INTERNATIONAL][0] = 0x15;
     sh.prefs.today[rules::INTERNATIONAL].day = 20406;
     sh.prefs.today[rules::INTERNATIONAL].picked.list.push(7);
@@ -199,7 +208,7 @@ fn main() {
     print("back to the fox: ", listed(sh), "; ", state(sh));
     shell::switch_player(sh, 1);
     written(sh);
-    print("to Mia: ", listed(sh), "; ", state(sh));
+    print("to Mia: ", listed(sh), "; ", state(sh), ", flawless ", sh.prefs.puzzle_flawless[rules::INTERNATIONAL]);
     files(dir2);
     shell::add_player(sh, 2, none);
     written(sh);
@@ -217,7 +226,7 @@ fn main() {
     written(sh);
     shell::start_again(sh, 1);
     written(sh);
-    print("Mia started again: ", listed(sh), "; ", state(sh));
+    print("Mia started again: ", listed(sh), "; ", state(sh), ", flawless ", sh.prefs.puzzle_flawless[rules::INTERNATIONAL]);
     files(dir2);
     // Removing the bear (not playing), then Mia (playing): the fox, first left, plays.
     shell::remove_player(sh, 2);

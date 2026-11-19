@@ -21,6 +21,13 @@ let WINDOW = 75;            // how far from the target they may be, once FEW are
 let FEW = 8;
 let VARIETY = 200;          // how far from the target a theme the day hasn't had yet may be
 
+// The puzzle ratings that open themes to the day's pick without the course: Crowning,
+// Shots, and King shots at the first, Safe move at the second, where the libraries'
+// quiet puzzles begin. A grown-up who solves Learn alone would otherwise get only
+// Captures, mostly a choice between two captures, as the rating climbs past them.
+let SHOTS_RATING = 600;
+let SAFE_MOVE_RATING = 800;
+
 // The puzzle rating, Elo's, on the scale the library's difficulties are estimated on.
 let FIRST_PUZZLE_RATING = 350;   // a player with no star in the course
 let COURSE_SPAN = 600;           // what the whole course at three stars adds to it
@@ -180,6 +187,14 @@ fn target(rating: i64, i: i64, n: i64) -> i64 {
     return rating + (i - 1) * 100 / max(middle, 1) - 50 * (middle - 1) / max(middle, 1);
 }
 
+// The themes a puzzle rating opens to the day's pick, a bit each, whatever the course.
+fn themes_by_rating(rating: i64) -> u64 {
+    var themes: u64 = 0;
+    if rating >= SHOTS_RATING { themes |= rules::bit(CROWNING) | rules::bit(SHOTS) | rules::bit(KING_SHOTS); }
+    if rating >= SAFE_MOVE_RATING { themes |= rules::bit(SAFE_MOVE); }
+    return themes;
+}
+
 // Whether library puzzle `id` is among those had, a bit each by id.
 fn is_seen(seen: u64[SEEN_WORDS]&, id: i64) -> bool { seen[id / 64] & rules::bit(id % 64) != 0 }
 
@@ -265,10 +280,13 @@ fn first_puzzle_rating(stars: i64, all: i64) -> i64 {
 }
 
 // The rating after a first try at a puzzle of `difficulty` solved with `stars` (1 to 3),
-// `rated_before` puzzles having moved it before: Elo's expected score against the difficulty,
-// the step large while the rating is new and falling to K_LEAST.
-fn rated(rating: i64, rated_before: i64, difficulty: i64, stars: i64) -> i64 {
-    let k = max(K_LEAST, K_FIRST - K_FALL * rated_before);
+// `rated_before` puzzles having moved it before, `flawless` if each of them had three
+// stars: Elo's expected score against the difficulty, the step large while the rating is
+// new and falling to K_LEAST. While the record stays flawless, this try's three stars
+// too, the step stays K_FIRST, so a strong player climbs fast; the first miss returns
+// it to the fall by count.
+fn rated(rating: i64, rated_before: i64, difficulty: i64, stars: i64, flawless: bool = false) -> i64 {
+    let k = if flawless && stars == 3 { K_FIRST } else { max(K_LEAST, K_FIRST - K_FALL * rated_before) };
     let expected = 1.0 / (1.0 + pow(10.0, (difficulty - rating) / 400.0));
     let score = STAR_SCORE[clamp(stars, 0, 3)] / 100.0;
     let moved = k * (score - expected);

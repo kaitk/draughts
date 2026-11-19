@@ -149,15 +149,18 @@ struct Settings {
     won:     bool                      = false,
     // The daily puzzles, by the set's variant (puzzles::set_of): the puzzle
     // rating, 0 until it is seeded from the course's stars, and how many first solves have
-    // moved it (`puzzle_rating.international = 812 14`); the library's puzzles had, a bit
+    // moved it (`puzzle_rating.international = 812 14`), with `flawless` after them while
+    // every one had three stars (a file without it is flawless only with none rated, as
+    // before 2026-11-19); the library's puzzles had, a bit
     // each by id (`seen.international = 0:3 5:80`, the words that aren't 0 by their index,
     // in hex); and today's record (`daily.international = 20406 12:3 40:0 55:0 70:0`, the
     // day and each puzzle's library id and stars). And how many a day, DAILY_COUNTS.
-    puzzle_rating: i64[rules::VARIANT_COUNT]                      = [0; rules::VARIANT_COUNT],
-    puzzle_rated:  i64[rules::VARIANT_COUNT]                      = [0; rules::VARIANT_COUNT],
-    seen:          u64[puzzles::SEEN_WORDS][rules::VARIANT_COUNT] = [[0; puzzles::SEEN_WORDS]; rules::VARIANT_COUNT],
-    today:         Today[rules::VARIANT_COUNT]                    = [Today {}; rules::VARIANT_COUNT],
-    daily_count:   i64                                            = puzzles::DAILY_DEFAULT,
+    puzzle_rating:   i64[rules::VARIANT_COUNT]                      = [0; rules::VARIANT_COUNT],
+    puzzle_rated:    i64[rules::VARIANT_COUNT]                      = [0; rules::VARIANT_COUNT],
+    puzzle_flawless: bool[rules::VARIANT_COUNT]                     = [true; rules::VARIANT_COUNT],
+    seen:            u64[puzzles::SEEN_WORDS][rules::VARIANT_COUNT] = [[0; puzzles::SEEN_WORDS]; rules::VARIANT_COUNT],
+    today:           Today[rules::VARIANT_COUNT]                    = [Today {}; rules::VARIANT_COUNT],
+    daily_count:     i64                                            = puzzles::DAILY_DEFAULT,
     // Whether settings' language list is open (settings::head). Not in the file.
     languages_open: bool = false,
     // A change of the volume to be heard: the shell plays a move at the new level. Not in
@@ -306,12 +309,14 @@ fn parse(text: const u8[:]) -> Settings {
 // before the dot, `value` what follows the `=`. What doesn't read is left at the default.
 fn parse_daily(s: Settings&, kind: const u8[:], set: u8, value: const u8[:]) {
     if kind == "puzzle_rating" {
-        let r, n, both = split_once(value, ' ');
+        let r, rest, both = split_once(trim(value), ' ');
+        let n, mark, _ = split_once(trim(rest), ' ');
         let rating, ok_r = parse_int(trim(r));
         let count, ok_n = parse_int(trim(n));
         if both && ok_r && ok_n && rating >= puzzles::LEAST_PUZZLE_RATING && count >= 0 {
             s.puzzle_rating[set] = rating;
             s.puzzle_rated[set] = count;
+            s.puzzle_flawless[set] = count == 0 || trim(mark) == "flawless";
         }
     }
     if kind == "seen" {
@@ -351,7 +356,10 @@ fn write_daily(s: Settings&, out: u8[>..]&) {
     format(out, "\ndaily_count = ", s.daily_count);
     for v in rules::VARIANT_COUNT {
         let name = rules::VARIANT_NAMES[v];
-        if s.puzzle_rating[v] > 0 { format(out, "\npuzzle_rating.", name, " = ", s.puzzle_rating[v], " ", s.puzzle_rated[v]); }
+        if s.puzzle_rating[v] > 0 {
+            format(out, "\npuzzle_rating.", name, " = ", s.puzzle_rating[v], " ", s.puzzle_rated[v]);
+            if s.puzzle_flawless[v] && s.puzzle_rated[v] > 0 { out.append(" flawless"); }
+        }
         var first = true;
         for word, i in s.seen[v] {
             guard word != 0 else { continue; }

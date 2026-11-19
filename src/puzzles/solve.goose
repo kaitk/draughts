@@ -238,3 +238,28 @@ fn answer(s: Solver&, r: rules::Position) -> i64 {
     s.stack.resize(base);
     return best;
 }
+
+// The next move of the answer's line, at q with `depth` of SHOW_DEPTH's plies left after
+// the answer: each side's best by value, then the captures due. Returns its index in
+// q's legal moves, or -1 once the line is over: no capture due, and the board already
+// shows what the line wins.
+fn answer_next(s: Solver&, q: rules::Position, depth: i64) -> i64 {
+    rules::generate(q, s.moves);
+    guard s.moves.len > 0 else { return -1; }
+    let quiet = s.moves[0].captured == 0;
+    if quiet && (depth <= 0 || value(s, q, depth, -WON - 1, WON + 1) == net(s, q)) { return -1; }
+    let base = push_moves(s, q);
+    let end = s.stack.len;
+    let mine = q.side == s.side;
+    var best = -1;
+    var top = 0;
+    for i in base..end {
+        let v = value(s, after(q, s.stack[i]), depth - 1, -WON - 1, WON + 1);
+        if best < 0 || (mine && v > top) || (!mine && v < top) {
+            best = i - base;
+            top = v;
+        }
+    }
+    s.stack.resize(base);
+    return best;
+}

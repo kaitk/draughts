@@ -14,6 +14,9 @@
 //   build/puzzles games SEED [GAMES [SKILL [NODES]]]  puzzles from the computer's games
 //   build/puzzles rate FILE                  each puzzle's difficulty estimate
 //   build/puzzles tempt FILE                 a library's traps, by kind and band (tempts)
+//   build/puzzles kings FILE [PART PARTS]    the computer player's scores of the first moves
+//                                            where a line makes a king (king_check), every
+//                                            PARTS-th puzzle from the PART-th
 //
 // try and find take `--variant NAME` (international by default; russian, brazilian) for
 // the rules and the board, and find `--rows N`, the rows from its own back row a side's
@@ -1167,6 +1170,205 @@ fn tempt_file(path: const u8[:]) {
     print(examples);
 }
 
+// The kings check (docs/decisions/puzzles.md, "Checks"): the solver counts a king as a
+// man, so where a first move's line makes a king, the computer player, which counts a
+// flying king as three men, judges the first moves instead. A puzzle passes when it
+// scores every right first move at least KING_MARGIN above every wrong one, or sees a
+// forced win after each right one: in a small position it sees the game's end, and a
+// wrong move that wins too is no fault of the puzzle's. A crown puzzle never fails: its
+// goal is the king, and the computer player judges by material.
+let KING_MARGIN = 50;
+let KING_NODES = 8000000;   // the computer player's nodes for one puzzle's first moves
+
+// Whether the line from q makes a king for either side: each side's best by the solver's
+// value over `depth` plies, then the captures due.
+fn line_crowns(s: puzzles::Solver&, q0: rules::Position, depth: i64) -> bool {
+    var q = q0;
+    var d = depth;
+    var legal: rules::Moves = [];
+    for _ in 40 {
+        rules::generate(q, legal);
+        guard legal.len > 0 && (d > 0 || legal[0].captured != 0) else { break; }
+        var all: puzzles::Short[..rules::MAX_MOVES] = [];
+        for m in legal { all.push(puzzles::short(m)); }
+        let mine = q.side == s.side;
+        var best = 0;
+        var top = 0;
+        for m, i in all {
+            let v = puzzles::value(s, puzzles::after(q, m), d - 1, -puzzles::WON - 1, puzzles::WON + 1);
+            if i == 0 || (mine && v > top) || (!mine && v < top) {
+                best = i;
+                top = v;
+            }
+        }
+        if all[best].crowned { return true; }
+        q = puzzles::after(q, all[best]);
+        d--;
+    }
+    return false;
+}
+
+// Whether the screen's answer to a wrong move, at r, makes a king.
+fn answer_crowns(s: puzzles::Solver&, r: rules::Position) -> bool {
+    var legal: rules::Moves = [];
+    var q = r;
+    var i = puzzles::answer(s, r);
+    var d = puzzles::SHOW_DEPTH;
+    var plies = 0;
+    while i >= 0 && plies < 40 {
+        rules::generate(q, legal);
+        if legal[i].crowned { return true; }
+        q = rules::play(q, legal[i]);
+        plies++;
+        d--;
+        i = puzzles::answer_next(s, q, d);
+    }
+    return false;
+}
+
+// Which of pz's first moves (rules::generate's order) make a king on their lines, for
+// either side: the file's lines and the screen's answer after each, a wrong move's answer
+// as the screen plays it, and each move's best play by the solver over SHOW_DEPTH plies.
+// Returns whether any does.
+fn king_moves(s: puzzles::Solver&, pz: puzzles::Puzzle&, kings: bool[rules::MAX_MOVES]&) -> bool {
+    var legal: rules::Moves = [];
+    puzzles::begin(s, pz);
+    rules::generate(pz.start, legal);
+    var firsts: puzzles::Short[..rules::MAX_MOVES] = [];
+    for m in legal { firsts.push(puzzles::short(m)); }
+    for m, i in firsts {
+        let r = puzzles::after(pz.start, m);
+        kings[i] = m.crowned || line_crowns(s, r, puzzles::SHOW_DEPTH) ||
+                   (puzzles::judge(s, pz.start, m, pz.moves) == puzzles::WRONG && answer_crowns(s, r));
+    }
+    for line in pz.lines {
+        var p = pz.start;
+        var crowns = false;
+        for ply in line.plies {
+            let m = puzzles::as_played(p, ply, legal);
+            if m.crowned { crowns = true; }
+            p = puzzles::after(p, m);
+        }
+        if crowns || line_crowns(s, p, puzzles::SHOW_DEPTH) {
+            kings[puzzles::index_of(pz.start, line.plies[0], legal)] = true;
+        }
+    }
+    var any = false;
+    for i in firsts.len { if kings[i] { any = true; } }
+    return any;
+}
+
+// The computer player at full skill scores every legal move of p exactly, a full window
+// at the root, as deep as `nodes` allow: the scores land in e.score in rules::generate's
+// order. Returns the depth reached; p has at least two moves.
+fn exact_scores(e: ai::Engine&, p: rules::Position, nodes: i64) -> i64 {
+    e.past.clear();
+    e.root_draw = rules::draw_start(p);
+    let pr = ai::params(100);
+    ai::begin(e, p, pr.depth, pr.extra, 2 * ai::INF, nodes);
+    while e.searching { ai::run(e, 1 << 30); }
+    return e.finished;
+}
+
+// Counts of the kings check, per theme: puzzles checked, and those that fail by the
+// pairs with a king (king_check) and by every pair.
+struct KingCounts {
+    checked: i64[puzzles::THEMES] = [0; puzzles::THEMES],
+    failed:  i64[puzzles::THEMES] = [0; puzzles::THEMES],
+    strict:  i64[puzzles::THEMES] = [0; puzzles::THEMES],
+}
+
+var every_puzzle = false;   // kings: check every puzzle, kings made or not (a control), --every
+
+// Checks pz by the computer player if a first move's line makes a king (king_moves),
+// printing a line for each one checked: its id (`label`), theme, goal, the gap (the
+// least by which the engine scores a right first move over a wrong one, of the pairs
+// where either makes a king), the strict gap over every pair, each move's score (`*`
+// where it makes a king), and DISAGREES when the gap is under KING_MARGIN.
+fn king_check(s: puzzles::Solver&, e: ai::Engine&, pz: puzzles::Puzzle&, label: i64, c: KingCounts&) {
+    var kings: bool[rules::MAX_MOVES] = [false; rules::MAX_MOVES];
+    let any = king_moves(s, pz, kings);
+    guard any || every_puzzle else { return; }
+    var legal: rules::Moves = [];
+    rules::generate(pz.start, legal);
+    guard legal.len > 1 else { return; }
+    c.checked[pz.theme]++;
+    let depth = exact_scores(e, pz.start, KING_NODES);
+    var right: u8[>..]                = [];
+    var wrong: u8[>..]                = [];
+    var ok:    bool[rules::MAX_MOVES] = [false; rules::MAX_MOVES];
+    var low = ai::INF;
+    for i in legal.len {
+        let m = puzzles::short(legal[i]);
+        ok[i] = puzzles::judge(s, pz.start, m, pz.moves) != puzzles::WRONG;
+        var text: u8[>..] = [];
+        text.append(" ");
+        puzzles::move_text(text, pz.start, m, legal);
+        format(text, if kings[i] { "* " } else { " " }, e.score[i]);
+        if ok[i] {
+            right.append(text);
+            low = min(low, e.score[i]);
+        } else {
+            wrong.append(text);
+        }
+    }
+    var gap = ai::INF;
+    var strict = ai::INF;
+    for r in legal.len {
+        guard ok[r] else { continue; }
+        for w in legal.len {
+            guard !ok[w] else { continue; }
+            strict = min(strict, e.score[r] - e.score[w]);
+            if kings[r] || kings[w] { gap = min(gap, e.score[r] - e.score[w]); }
+        }
+    }
+    // Every right move wins by force: a wrong one that wins too is no fault of the puzzle's.
+    let fails = gap < KING_MARGIN && low <= ai::WON && pz.goal != puzzles::CROWN;
+    if fails { c.failed[pz.theme]++; }
+    if strict < KING_MARGIN && low <= ai::WON && pz.goal != puzzles::CROWN { c.strict[pz.theme]++; }
+    print(label, " | ", puzzles::THEME_NAMES[pz.theme], " ", pz.level, " | ", goal_text(pz), " in ", pz.moves, " | gap ", gap,
+          " | strict ", strict, " | depth ", depth, " | right", right, " | wrong", wrong, if fails { " | DISAGREES" } else { "" });
+}
+
+// The kings check over a built-in set's file or a library's (every `parts`-th puzzle
+// from the `part`-th, to share a library among processes), then the counts per theme.
+fn kings_file(path: const u8[:], part: i64, parts: i64) {
+    var text: u8[>..] = [];
+    guard read_file(path, text) else { abort(str("can't read ", path)); }
+    var s = puzzles::Solver { moves: [], stack: [] };
+    var e = ai::Engine { .. };
+    ai::init(e);
+    var c = KingCounts { .. };
+    var total = 0;
+    let begun = time();
+    if find(text[..], "\nid ") >= 0 {
+        var set = puzzles::Set { list: [] };
+        var err: u8[>..] = [];
+        guard puzzles::parse(text, set, err) else { abort(err); }
+        for pz, i in set.list {
+            guard i % parts == part else { continue; }
+            total++;
+            king_check(s, e, pz, pz.id, c);
+        }
+    } else {
+        var lib = puzzles::Library { list: [] };
+        guard puzzles::index_library(text, lib) else { abort("not a library"); }
+        var pz = puzzle_of(rules::start(lib.variant), "win", 1);
+        for x, i in lib.list {
+            guard i % parts == part && puzzles::entry_of(text, lib, i, pz) else { continue; }
+            total++;
+            king_check(s, e, pz, x.id, c);
+        }
+    }
+    var line: u8[>..] = [];
+    for t in puzzles::THEMES {
+        format(line, " ", puzzles::THEME_NAMES[t], " ", c.checked[t], " ", c.failed[t], " ", c.strict[t], ";");
+    }
+    var secs: u8[>..] = [];
+    format_flt(secs, time() - begun, 0);
+    print("# ", total, " puzzles, ", secs, " s; by theme, checked, failed, and failed by every pair:", line);
+}
+
 fn main() {
     // The flags first, wherever they are; the words left are the command.
     let all = args();
@@ -1185,6 +1387,11 @@ fn main() {
             guard ok && n >= 1 else { abort("--trap takes tempt's bits: 1 crown, 2 bigger, 4 grab, 16 run, 32 any"); }
             trap_mask = n;
             i += 2;
+            continue;
+        }
+        if all[i] == "--every" {
+            every_puzzle = true;
+            i++;
             continue;
         }
         if all[i] == "--traps" {
@@ -1244,6 +1451,13 @@ fn main() {
     }
     if argv.len >= 3 && argv[1] == "tempt" {
         tempt_file(argv[2]);
+        return;
+    }
+    if argv.len >= 3 && argv[1] == "kings" {
+        let part, ok_p = parse_int(if argv.len >= 4 { argv[3] } else { "0" });
+        let parts, ok_n = parse_int(if argv.len >= 5 { argv[4] } else { "1" });
+        guard ok_p && ok_n && parts >= 1 && part >= 0 && part < parts else { abort("kings FILE [PART PARTS]"); }
+        kings_file(argv[2], part, parts);
         return;
     }
     if argv.len >= 3 && argv[1] == "rate" {

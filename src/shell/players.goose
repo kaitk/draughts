@@ -322,6 +322,7 @@ fn clear_progress(s: settings::Settings&) {
     s.rated = fresh.rated;
     s.puzzle_rating = fresh.puzzle_rating;
     s.puzzle_rated = fresh.puzzle_rated;
+    s.puzzle_flawless = fresh.puzzle_flawless;
     s.seen = fresh.seen;
     s.today = fresh.today;
 }

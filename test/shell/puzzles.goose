@@ -132,9 +132,9 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, 3), 6.1);              // next
     show(sh, "next");
 
-    // Puzzle 7: c3 takes d4 into f6's reach, a wrong move. Black's answer, 23x32x43,
-    // plays 0.4 s after it lands and holds 0.8 s; then it slides back, and the move after
-    // it with the red ring, a miss. Twice, and the piece to move glows.
+    // Puzzle 7: c3 takes d4 into f6's reach, a wrong move, a miss as it lands with the red
+    // ring. Black's answer, 23x32x43, plays 0.4 s after and holds 0.8 s; then it is gone
+    // and the move slides back. Twice, and the piece to move glows.
     shell::play_puzzle(sh, index(7));
     drive::idle(sh, g, 10.0);
     show(sh, "puzzle 7");
@@ -151,7 +151,7 @@ fn main() {
     drive::idle(sh, g, 12.0);
     show(sh, "  held");
     drive::idle(sh, g, 12.4);
-    show(sh, "  the answer sliding back");
+    show(sh, "  the answer gone, the move sliding back");
     drive::idle(sh, g, 13.0);
     show(sh, "  then the move");
     drive::idle(sh, g, 14.5);

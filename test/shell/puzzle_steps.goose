@@ -129,7 +129,8 @@ fn main() {
     tap(sh, g, 20, 20.5);
     print("  then 20: ", STATES[sh.puzzle.state], ", playing ", named(sh.puzzle.b.move.from), "x",
           named(sh.puzzle.b.move.to));
-    // Taken back by 21x32: the answer shows, then both slide back.
+    // Taken back by 21x32: the answer shows, then is gone and the move slides back, its
+    // ring over by 24.5 s.
     for t in [21.0, 21.5, 22.0, 23.0, 23.5, 24.0, 24.5] { drive::idle(sh, g, t); }
     show(sh, g, "  slid back", 24.5);
     drag(sh, g, 38, 27, 25.5);

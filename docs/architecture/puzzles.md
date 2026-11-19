@@ -139,9 +139,10 @@ lines.
 
 The search keeps each position's moves on one fixed stack in a `puzzles::Solver` the
 caller owns, so it allocates nothing and needs little native stack. The 84 puzzles cost
-at most 4,969 positions to check (a safe move, whose every other move is searched for
-the shot it allows); the longest line is seven plies (a shot of four moves), within
-`MAX_PLIES` (16). Russian's 66 cost at most 1,480 and Brazilian's 1,600 (a safe move).
+at most 8,942 positions to check (a safe move, whose every other move is searched for
+the shot it allows, and its wrong moves' lines played out); the longest line is seven
+plies (a shot of four moves), within `MAX_PLIES` (16). Russian's 66 cost at most 2,960
+and Brazilian's 2,928.
 
 ## The screen
 
@@ -157,15 +158,21 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
   capture left partway (below). A puzzle solved keeps the most stars it has won. Start
   over begins the puzzle again with the misses kept, or afresh once it is solved.
 - **A wrong move shows why**: when the other side answers it by
-  taking something back, a capture back or a shot's first move, that answer plays on
-  the board as a reply does, holds, and slides back, and then the wrong move slides back
-  as any does; the child sees why it was wrong. A move that is wrong without such an
-  answer (one that wins too little, or a quiet move that doesn't lead on) slides back
-  0.35 s after it lands. The answer is `puzzles::answer`, the solver's
-  search, not the computer player's, which lives on its worker: of the other side's
-  replies, the one after which the solver ends worst over three plies and the captures
-  due beyond, if that is less than the solver has after its move. It is a miss once, as
-  any wrong move; the stars and the hint's glow are as for any miss.
+  taking something back, a capture back or a shot's first move, the move is a miss as
+  it lands: its square's red ring flashes, its sound plays, and "try again" shows. The
+  answer plays on the board 0.4 s later, as a reply does, and the line it starts plays
+  on, 0.45 s between moves, until the board shows what it wins; it holds 0.8 s and is
+  gone at once, and the wrong move slides back with its ring, "try again" showing 2 s
+  from then. A tap on "try again" or the board ends the line at any point; the
+  child sees why it was wrong without waiting for it. A move that is wrong without such an answer (one that wins too little, or a
+  quiet move that doesn't lead on) slides back 0.35 s after it lands. The answer is
+  `puzzles::answer`, the solver's search, not the computer player's, which lives on its
+  worker: of the other side's replies, the one after which the solver ends worst over
+  three plies and the captures due beyond, if that is less than the solver has after
+  its move. Each move after it is `puzzles::answer_next`, each side's best by the same
+  search, until no capture is due and the rest of the three plies changes nothing. The
+  checks keep it to eight plies (below), about 7 s. It is a miss once, as any wrong
+  move; the stars and the hint's glow are as for any miss.
 - **Captures of many jumps** are made by hand, as children often make them jump by
   jump. A tap or a drop on a stop leaves the piece waiting there for
   the next jump; it never plays the rest of the way by itself, which would solve the
@@ -260,8 +267,10 @@ course rates 280 to about 1,300 and is the floor; the library reaches well past 
 
 **The day** is picked by `puzzles::pick` from the local day (days since the epoch by
 the local date, which the app reads from the system and passes to the shell), the
-player's number, the puzzle rating at the day's start, the themes opened (Captures, and
-each theme with a puzzle solved in the course), and the puzzles already had: n puzzles
+player's number, the puzzle rating at the day's start, the themes opened, and the
+puzzles already had. The themes opened are Captures, each theme with a puzzle solved in
+the course, and those the rating opens (`puzzles::themes_by_rating`): Crowning, Shots,
+and King shots from 600, Safe move from 800, of the themes the set has. The day is n puzzles
 (the setting, 3, 4, 6, or 8; 4 by default), the first a warm-up 250 under the rating,
 the last a stretch 250 over it, those between at it, a theme the day hasn't had yet taken first (within 200 of the target) so a hard day, mostly shots, still mixes; each one of the 60 nearest its
 target within 75 of it, chosen by a hash of the day, player, and slot. The same day gives
@@ -272,14 +281,17 @@ none comes again. The puzzle screen names the warm-up and the stretch under the 
 
 **The puzzle rating**, per player and draughts, is Elo's against the puzzle's difficulty:
 stars are the score (3 = 1.0, 2 = 0.6, 1 = 0.3), the step 96 at first, falling by 6 a
-puzzle to 24, so a child's rating climbs fast while it is new. It starts from the best the
+puzzle to 24, so a child's rating climbs fast while it is new. While every puzzle that
+has moved it had three stars, the step stays 96; the first with fewer takes the step by
+the count, as if the record had never been flawless. It starts from the best the
 player has in any draughts (`shell::first_rating`): a rating there, or else one from that
 draughts' course, 350 plus 600 times the share of its stars won. Only a puzzle's first solve moves it; a
 daily puzzle may be played again the same day for stars. It isn't shown on the puzzle
 screen.
 
 **Kept** in the player's file beside the stars: `puzzle_rating.international = 812 14`
-(the rating and the puzzles that moved it), `seen.international = 0:3 5:80` (the
+(the rating and the puzzles that moved it, then `flawless` while every one of them had
+three stars; a line without it is flawless only when no puzzle has moved it), `seen.international = 0:3 5:80` (the
 library's puzzles had by id, by word of 64), `daily.international = 20406 1203:3 877:0
 ...` (the day, and each of its puzzles' ids with the stars won, 0 unsolved), and `daily_count =
 4`. Starting again clears them but the count.
@@ -307,6 +319,12 @@ puzzle, and by `tools/puzzles.goose`) refuses a puzzle when:
   right move leaving no shot is its being right (above);
 - a take's line wins more or fewer than its count, or a crown's line ends without a
   king made (a goal reached only by leaving the other side no move);
+- a line leaves the other side a king more than it had, by the line's end or the best
+  answer after it, as the screen would play it: the puzzle would teach a trade a game
+  loses, since the solver counts a king as a man. A king given and taken back, a shot's,
+  is fine;
+- a wrong first move's line, as the screen plays it, runs more than eight plies: a
+  child can't follow the exchanges to what they win;
 - along a line, another legal move goes from and to the same squares, which a tap
   couldn't tell apart;
 - it has no source.
@@ -326,6 +344,16 @@ whose last stop is safe. Both sets report none.
 whether the moves it rates best solve the puzzle, a second engine sharing only the
 rules with the solver, and whether it scores a right first move as losing material
 (under −50, half a man). It plays for material, so it is not asked about crowning.
+
+The solver counts a king as a man, so `build/puzzles kings FILE` checks every puzzle
+where a king is made, by either side, on a first move's line: the move itself, the
+solver's best play after it over three plies and the captures due, a wrong move's line as
+the screen plays it, or a file's line and the answer after it. The computer player at
+full skill scores each first move exactly, and the puzzle passes when every right move
+scores at least 50 above every wrong one, of the pairs where either makes a king, or
+when every right move wins by force. A crown puzzle always passes: its goal is the king,
+and the computer player judges by material. Every library puzzle passes
+([why](../decisions/puzzles.md#checks)).
 `test/perft.py puzzles international src/puzzles/international.txt` (and `russian
 src/puzzles/russian.txt`, `brazilian src/puzzles/brazilian.txt`) plays every line with
 the independent generator, checking each move and each position's moves against

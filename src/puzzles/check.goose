@@ -6,6 +6,7 @@ import std;
 import rules from "../rules";
 
 let RIVAL_PLIES = 2;        // a rival's one more move, and the reply to it
+let LONG_LINE = 8;          // the most plies a wrong first move's line may run on screen
 
 // A legal move of p as PDN writes it, with every stop.
 fn move_text(out: u8[>..]&, p: rules::Position, m: Short, moves: rules::Moves&) {
@@ -77,6 +78,21 @@ fn check(s: Solver&, pz: Puzzle&, out: u8[>..]&, ways: u8[>..]&) -> i64 {
         n++;
     }
     if pz.goal == SAFE { n += safe_check(s, pz, out); }
+    // A wrong first move's line, as the screen plays it, short enough for a child to
+    // follow (2026-11-19).
+    rules::generate(pz.start, moves);
+    var firsts: Short[..rules::MAX_MOVES] = [];
+    for m in moves { firsts.push(short(m)); }
+    for m in firsts {
+        guard judge(s, pz.start, m, pz.moves) == WRONG else { continue; }
+        let r = after(pz.start, m);
+        let plies, _ = shown_line(s, r, answer(s, r), SHOW_DEPTH);
+        guard plies > LONG_LINE else { continue; }
+        var t: u8[>..] = [];
+        move_text(t, pz.start, m, moves);
+        format(out, "  ", t, "'s answer runs ", plies, " plies\n");
+        n++;
+    }
     // Every move that is right where a line has the solver to move must be a line's
     // move there: the file lists every way on, not only every way in. Lines sharing
     // the moves so far are checked once, at the first of them.
@@ -121,6 +137,15 @@ fn check(s: Solver&, pz: Puzzle&, out: u8[>..]&, ways: u8[>..]&) -> i64 {
         // that none wins anything is the move's being right.
         if !quiet(p, moves, pz.goal != SAFE) {
             format(out, "  line ", li + 1, " ends with a capture due\n");
+            n++;
+        }
+        // Nor may a line leave the other side a king more, on it or by the best answer
+        // after: a puzzle mustn't teach a trade a game would lose (2026-11-19). A king
+        // given and taken back is a shot's.
+        let _, end = shown_line(s, p, answer_next(s, p, SHOW_DEPTH), SHOW_DEPTH);
+        let other = 1 - s.side;
+        if popcount(end.pieces[other] & end.kings) > popcount(pz.start.pieces[other] & pz.start.kings) {
+            format(out, "  line ", li + 1, " gives the other side a king\n");
             n++;
         }
         if pz.goal == TAKE && net(s, p) != pz.count {
@@ -192,6 +217,25 @@ fn rivals(s: Solver&, pz: Puzzle&, out: u8[>..]&) -> i64 {
         }
     }
     return n;
+}
+
+// The line the puzzle screen plays from r, its first move k in r's legal moves (-1: none)
+// with `left` of SHOW_DEPTH's plies left before it (answer_next): its plies and where
+// it ends.
+fn shown_line(s: Solver&, r: rules::Position, k: i64, left: i64) -> i64, rules::Position {
+    var moves: rules::Moves = [];
+    var q = r;
+    var i = k;
+    var d = left;
+    var plies = 0;
+    while i >= 0 && plies < 40 {
+        rules::generate(q, moves);
+        q = rules::play(q, moves[i]);
+        plies++;
+        d--;
+        i = answer_next(s, q, d);
+    }
+    return plies, q;
 }
 
 // Whether two lines have the same first n moves.

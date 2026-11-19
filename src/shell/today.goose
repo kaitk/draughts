@@ -43,11 +43,13 @@ fn sync_daily(sh: Shell&) {
 }
 
 // The themes today's puzzles may come from: Captures, and each theme the set has with a
-// puzzle solved in the course.
-fn opened_themes(stars: const u8[:]) -> u64 {
+// puzzle solved in the course or opened by the puzzle rating (puzzles::themes_by_rating).
+fn opened_themes(stars: const u8[:], rating: i64) -> u64 {
     var themes = rules::bit(puzzles::CAPTURES);
+    let by_rating = puzzles::themes_by_rating(rating);
     for t in puzzles::THEMES {
-        if puzzles::theme_count(puzzles::all, t) > 0 && picker::solved(stars, t) > 0 { themes |= rules::bit(t); }
+        guard puzzles::theme_count(puzzles::all, t) > 0 else { continue; }
+        if picker::solved(stars, t) > 0 || by_rating & rules::bit(t) != 0 { themes |= rules::bit(t); }
     }
     return themes;
 }
@@ -59,8 +61,8 @@ fn new_day(sh: Shell&) {
     let p .= sh.prefs;
     if p.puzzle_rating[set] == 0 { p.puzzle_rating[set] = first_rating(p); }
     let t .= p.today[set];
-    puzzles::pick(puzzles::library, sh.day, playing_id(sh), p.puzzle_rating[set], opened_themes(p.stars[set]), p.seen[set],
-                  p.daily_count, t.picked);
+    puzzles::pick(puzzles::library, sh.day, playing_id(sh), p.puzzle_rating[set], opened_themes(p.stars[set], p.puzzle_rating[set]),
+                  p.seen[set], p.daily_count, t.picked);
     t.day = sh.day;
     t.stars = [0; puzzles::MAX_DAILY];
     for id in t.picked.list { p.seen[set][id / 64] |= rules::bit(id % 64); }
@@ -141,7 +143,8 @@ fn play_library(sh: Shell&, id: i64, now: f64 = 0.0) {
 }
 
 // Today's puzzle at place k solved with `won` stars: the most kept, and its first solve
-// moves the puzzle rating by the library's difficulty of it.
+// moves the puzzle rating by the library's difficulty of it, the record staying flawless
+// while every first solve has three stars.
 fn daily_solved(sh: Shell&, k: i64, won: i64) {
     let set = puzzles::loaded;
     let p .= sh.prefs;
@@ -151,8 +154,9 @@ fn daily_solved(sh: Shell&, k: i64, won: i64) {
         let i = puzzles::place_of(puzzles::library, t.picked.list[k]);
         if i >= 0 {
             p.puzzle_rating[set] = puzzles::rated(p.puzzle_rating[set], p.puzzle_rated[set], puzzles::library.list[i].difficulty,
-                                                  won);
+                                                  won, p.puzzle_flawless[set]);
             p.puzzle_rated[set] += 1;
+            p.puzzle_flawless[set] = p.puzzle_flawless[set] && won == 3;
         }
     }
     if won > t.stars[k] { t.stars[k] = won as u8; }

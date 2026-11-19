@@ -26,7 +26,12 @@ started again: day -1,; rating 0 after 0, 0 had, 6 a day
 a file from before ids: today's 4 read, 4 the same puzzles; had 2 of 2 the same
 Russian's Learn but one, International shown: open false, today's 0
 Russian's Learn: open true, dots 0 filled 4 not, check 0; day 20406, 420c:0 380c:0 480c:0 700c:0; rating 459 after 0, 4 had
-Russian's Learn, rated 900: open true, dots 0 filled 4 not, check 0; day 20406, 580c:0 920c:0 940c:0 1140c:0; rating 900 after 0, 4 had
+Russian's Learn, rated 900: open true, dots 0 filled 4 not, check 0; day 20406, 630s:0 920c:0 850s:0 1160c:0; rating 900 after 0, 4 had
+Learn alone, rating 599: learn captures
+Learn alone, rating 600: learn captures crowning shots king-shots
+Learn alone, rating 800: learn captures crowning shots king-shots safe-move
+first solves 3, 3, 3, 1 from 4: 481 flawless, 526 flawless, 562 flawless, 559, by count alone 481 523 555 553
+  the last played again for three: 559 after 4, flawless false
 the tablet, landscape, 4 a day:
   the library: 16 tiles, Today's 4, all in place
   a daily puzzle: 4 tiles, 4 dots, all in place

@@ -101,7 +101,7 @@ puzzle.solved = Lahendatud
 goal.take = Võida {} nuppu
 goal.crown = Saa tammiks
 goal.win = Võida mäng
-goal.safe = Päästa nupp
+goal.safe = Väldi lõksu
 
 players.who = Kes mängib?
 players.new = Uus mängija

@@ -241,6 +241,22 @@ test/perft.py puzzles international src/puzzles/international.txt  # the lines, 
 `test/puzzles/` runs the same checks on every puzzle without the engine
 ([puzzles](architecture/puzzles.md#checks)).
 
+The kings check scores every first move with the computer player where a line makes a
+king, about a second a puzzle; it prints a line for each puzzle it checks, `DISAGREES`
+on those that fail, and the counts by theme last. The three libraries take about ten
+minutes on ten processes:
+
+```sh
+build/puzzles kings src/puzzles/russian.txt                          # a built-in set
+for i in 0 1 2 3 4 5 6 7 8 9; do                                     # a library, a tenth each
+  build/puzzles kings src/puzzles/library-international.txt $i 10 > kings-$i.txt &
+done; wait
+grep -h DISAGREES kings-*.txt
+```
+
+`--every` checks every puzzle, kings made or not, and marks with `*` the moves that make
+one.
+
 ## Daily puzzles
 
 The daily libraries are generated, rated, and assembled per draughts
