@@ -1,4 +1,4 @@
-international: 9 steps
+international: 10 steps
   1 Move: W:W37:B13,14, c3-b4 c3-d4
   2 Jump to take: W:W32:B11,28, d4xf6 (must take)
   3 You must take: W:W37,39:B14,32, c3xe5 (must take)
@@ -7,8 +7,9 @@ international: 9 steps
   6 Become a king: W:W7:B29, c9-b10K c9-d10K
   7 Kings fly: W:WK32:B16, d4-c5 d4-b6 d4-e5 d4-f6 d4-g7 d4-h8 d4-i9 d4-j10 d4-c3 d4-b2 d4-a1 d4-e3 d4-f2 d4-g1
   8 Kings take from afar: W:WK46:B32, a1xe5 a1xf6 a1xg7 a1xh8 a1xi9 a1xj10 (must take)
-  9 Win: W:W38,47:B33, e3xg5 (must take)
-brazilian: 9 steps
+  9 Kings jump on too: W:WK46:B33,37, a1xe5xg3 a1xe5xh2 a1xe5xi1 (must take)
+  10 Win: W:W38,47:B33, e3xg5 (must take)
+brazilian: 10 steps
   1 Move: W:Wc3:Bf8,h8, c3-b4 c3-d4
   2 Jump to take: W:Wd4:Be5,b8, d4xf6 (must take)
   3 You must take: W:Wc3,g3:Bd4,h8, c3xe5 (must take)
@@ -17,8 +18,9 @@ brazilian: 9 steps
   6 Become a king: W:Wc7:Bg5, c7-b8K c7-d8K
   7 Kings fly: W:WKd4:Ba7, d4-c5 d4-b6 d4-e5 d4-f6 d4-g7 d4-h8 d4-c3 d4-b2 d4-a1 d4-e3 d4-f2 d4-g1
   8 Kings take from afar: W:WKa1:Bd4, a1xe5 a1xf6 a1xg7 a1xh8 (must take)
-  9 Win: W:Wc1,e3:Bf4, e3xg5 (must take)
-russian: 10 steps
+  9 Kings jump on too: W:WKa1:Bc3,f4, a1xe5xg3 a1xe5xh2 (must take)
+  10 Win: W:Wc1,e3:Bf4, e3xg5 (must take)
+russian: 11 steps
   1 Move: W:Wc3:Bf8,h8, c3-b4 c3-d4
   2 Jump to take: W:Wd4:Be5,b8, d4xf6 (must take)
   3 You must take: W:Wc3,g3:Bd4,h8, c3xe5 (must take)
@@ -27,9 +29,10 @@ russian: 10 steps
   6 Become a king: W:Wc7:Bg5, c7-b8K c7-d8K
   7 Kings fly: W:WKd4:Ba7, d4-c5 d4-b6 d4-e5 d4-f6 d4-g7 d4-h8 d4-c3 d4-b2 d4-a1 d4-e3 d4-f2 d4-g1
   8 Kings take from afar: W:WKa1:Bd4, a1xe5 a1xf6 a1xg7 a1xh8 (must take)
-  9 Crowned on the way: W:Wb6:Bf6,c7, b6xd8xg5K b6xd8xh4K (must take)
-  10 Win: W:Wc1,e3:Bf4, e3xg5 (must take)
-home's first row how to play: true
+  9 Kings jump on too: W:WKa1:Bc3,f4, a1xe5xg3 a1xe5xh2 (must take)
+  10 Crowned on the way: W:Wb6:Bf6,c7, b6xd8xg5K b6xd8xh4K (must take)
+  11 Win: W:Wc1,e3:Bf4, e3xg5 (must take)
+home's how to play row: true
 how to play: screen 7 (7), step 1 playing, played 0, learned 0, next lit false
 next before the move takes a tap: false
   the first move: step 1 playing, played 1, learned 0, next lit false
@@ -43,9 +46,13 @@ next before the move takes a tap: false
   played: step 7 played, played 1, learned 7, next lit true, changed true
   played: step 8 played, played 1, learned 8, next lit true, changed true
   played: step 9 played, played 1, learned 9, next lit true, changed true
-the end: step 9 end, played 1, learned 9, next lit false, the card's ways 7
-home's first row how to play, done: false
+  played: step 10 played, played 1, learned 10, next lit true, changed true
+the end: step 10 end, played 1, learned 10, next lit false, the card's ways 7
+home's how to play row, done: false
 puzzles: screen 4 (puzzle 4), theme 0 (learn 0)
 from the library: screen 7, step 1
 back: screen 3 (the library 3)
 four played: opens at step 5
+a game kept: continue true, rows 0 1 2 3, how to play declared true
+a game won: how to play false
+Russian's Learn 6 of 12 solved: how to play false

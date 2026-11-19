@@ -36,12 +36,12 @@ let NO_SETUP = NOTHING;
 // sets it at launch).
 var closable = true;
 
-let ROWS = 3;               // continue, new game, puzzles; the games and settings after them
+let ROWS = 4;               // continue, how to play, new game, puzzles; the games and settings after them
 
 // The widget ids, from gui::HOME_IDS, each on from the one before by as many as it takes,
 // so no two meet; test/gui/ids keeps IDS_END inside home's range.
 let GEAR_ID = gui::HOME_IDS;        // settings' gear beside the wordmark
-let ROW_IDS = GEAR_ID + 1;          // the menu's first ROWS rows (continue or How to play, new game, puzzles),
+let ROW_IDS = GEAR_ID + 1;          // the menu's first ROWS rows (continue or replay, how to play, new game, puzzles),
 let RESULTS_ID = ROW_IDS + ROWS;    // the games,
 let SETTINGS_ID = RESULTS_ID + 1;   // settings,
 let QUIT_ROW_ID = SETTINGS_ID + 1;  // and Quit as rows
@@ -377,11 +377,11 @@ fn sheet_board(width: f32, stage_h: f32, u: f32, height: f32, clear: f32) -> f32
 
 // What continue goes back to: whether there is a game to go back to, one played or set
 // up, and whose it is, a strings key for the row's note (CONTINUE_FRIEND..), or -1 for
-// none. With none (a first run, a new player) the row isn't shown; but for a new player
-// who hasn't learned the player's draughts (`learn`), How to play shows in its place,
-// lit, its note the draughts it teaches. It goes once the tutorial is done, a game is
-// played or set up, or the player said they know how; a player never asked doesn't see
-// it. Once the last game has ended (`replay`), Replay shows in its place, opening
+// none. With none (a first run, a new player) the row isn't shown. For a player still
+// learning (`learn`, shell::past_basics), How to play shows under it, or first and lit
+// where it isn't shown, its note the draughts it teaches; a player never asked whether
+// they know how to play doesn't see it. Once the last game has ended (`replay`), Replay
+// shows in continue's place, opening
 // that game's replay, outlined over New game, lit: its note how the game ended
 // (`ended_note`, LAST_WON.., or WON_WHITE.. for a friend's game won), its {} filled with
 // the opponent (`ended_opponent`, LEVEL_EASY.. or LEVEL_FRIEND).
@@ -394,8 +394,18 @@ struct Resume {
     ended_opponent: i64  = -1,
 }
 
-// The menu's rows shown: ROWS, or one fewer while there is no game to continue.
-fn rows_of(resume: Resume) -> i64 { if resume.on || resume.learn || resume.replay { ROWS } else { ROWS - 1 } }
+// Whether menu row i (continue or replay, how to play, new game, puzzles) shows.
+fn shows(resume: Resume, i: i64) -> bool {
+    if i == 0 { return resume.on || resume.replay; }
+    return i != 1 || resume.learn;
+}
+
+// How many of the menu's first ROWS rows show.
+fn rows_of(resume: Resume) -> i64 {
+    var n = 0;
+    for i in ROWS { if shows(resume, i) { n++; } }
+    return n;
+}
 
 // The name of draughts `variant`, a strings key.
 fn draughts_key(variant: i64) -> i64 {
@@ -495,7 +505,6 @@ fn menu(ui_pieces: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: 
     // the gear, and Quit last with `quit`.
     let more = if quit { 2 } else { 1 };
     let rows = rows_of(resume);
-    let first = ROWS - rows;    // the first row shown: Continue's, or Friend's without it
     let shown = rows + 1;       // with the results row
     let rows_n = if gear { shown } else { shown + more };
     var items: gui::Item[ROWS + 4] = [gui::Item {}; ROWS + 4];
@@ -540,23 +549,18 @@ fn menu(ui_pieces: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: 
         for k in 1..rows_n + 1 { at[k].y -= off; }
         listed = g.quads.len;
     }
-    let ways = [CONTINUE, NEW_GAME, PUZZLES];
-    let icons = [gui::NEXT, gui::NEW_GAME, gui::PUZZLE];
-    let keys = [strings::HOME_CONTINUE, strings::HOME_NEW_GAME, strings::HOME_PUZZLES];
+    let ways = [CONTINUE, LEARN, NEW_GAME, PUZZLES];
+    let icons = [gui::NEXT, gui::HOW, gui::NEW_GAME, gui::PUZZLE];
+    let keys = [strings::HOME_CONTINUE, strings::HOW_TITLE, strings::HOME_NEW_GAME, strings::HOME_PUZZLES];
     let set = puzzles::loaded;
     let daily = picker::today_open(s);
-    for i in first..ROWS {
-        let r = at[1 + i - first];
-        var stars: u8[..64] = [];
-        let won, all = picker::solved_all(s.stars[set]);
-        if !daily { strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]); }
-        // New game notes the opponent its setup keeps, the computer's icon and level or a
-        // friend's; it is outlined under continue, and lit in its place where continue
-        // isn't shown (a first run), the keys' first choice then.
-        let opponent = if s.friend { strings::LEVEL_FRIEND } else { LEVEL_NOTES[s.level] };
-        let note = if i == 0 && resume.note >= 0 { strings::get(resume.note) }
-                   else if i == 1 { strings::get(opponent) } else if i == 2 && all > 0 { stars[..] } else { "" };
-        let mark = if i != 1 { gui::NO_ICON } else if s.friend { gui::FRIEND } else { gui::COMPUTER };
+    var k = 0;                  // the rows shown so far
+    for i in ROWS {
+        guard shows(resume, i) else { continue; }
+        let r = at[1 + k];
+        // The first row shown is lit, the keys' first choice; after Replay, New game is.
+        let lit = if resume.replay { i == 2 } else { k == 0 };
+        k++;
         // Replay in continue's place (Resume.replay).
         if i == 0 && resume.replay {
             var said: u8[..64] = [];
@@ -564,17 +568,20 @@ fn menu(ui_pieces: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: 
             if gui::row(g, ROW_IDS, r, gui::REPLAY, strings::get(strings::HOME_REPLAY), said[..], false, true, true) { pick = REPLAY; }
             continue;
         }
-        // How to play in continue's place (Resume.learn).
-        if i == 0 && !resume.on {
-            if gui::row(g, ROW_IDS, r, gui::HOW, strings::get(strings::HOW_TITLE),
-                        strings::get(draughts_key(s.variant)), true, true) { pick = LEARN; }
-            continue;
-        }
-        let lit = i == first || (i == 1 && resume.replay);
-        if gui::row(g, ROW_IDS + i, r, icons[i], strings::get(keys[i]), note, lit, true, i == 1 && !lit, mark) {
+        var stars: u8[..64] = [];
+        let won, all = picker::solved_all(s.stars[set]);
+        if !daily { strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]); }
+        // New game notes the opponent its setup keeps, the computer's icon and level or a
+        // friend's; it is outlined where it isn't lit.
+        let opponent = if s.friend { strings::LEVEL_FRIEND } else { LEVEL_NOTES[s.level] };
+        let note = if i == 0 && resume.note >= 0 { strings::get(resume.note) }
+                   else if i == 1 { strings::get(draughts_key(s.variant)) }
+                   else if i == 2 { strings::get(opponent) } else if i == 3 && all > 0 { stars[..] } else { "" };
+        let mark = if i != 2 { gui::NO_ICON } else if s.friend { gui::FRIEND } else { gui::COMPUTER };
+        if gui::row(g, ROW_IDS + i, r, icons[i], strings::get(keys[i]), note, lit, true, i == 2 && !lit, mark) {
             pick = ways[i];
         }
-        if i == 2 && daily { today_dots(g, r, s.today[set]); }
+        if i == 3 && daily { today_dots(g, r, s.today[set]); }
     }
     // The games: the player's rating in their draughts once they have one.
     var rating: u8[..16] = [];

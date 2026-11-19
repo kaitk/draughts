@@ -448,6 +448,14 @@ fn play(sh: Shell&, now: f64) {
     sh.unset = false;
 }
 
+// Whether a player is past the basics, and home's How to play row gone for good: they
+// have played a tutorial to its end in any draughts, won a game against the computer, or
+// solved the Learn puzzles that open the other themes, in any draughts.
+fn past_basics(p: settings::Settings&) -> bool {
+    for v in rules::VARIANT_COUNT { if p.learned[v] >= tutorial::count(v as u8) { return true; } }
+    return p.won || picker::themes_open(p);
+}
+
 // What home's continue goes back to: the game and whose it is; none while the game is
 // one nobody set up (`unset`) with no move played.
 fn resume(sh: Shell&) -> home::Resume {
@@ -456,11 +464,9 @@ fn resume(sh: Shell&) -> home::Resume {
     // once it is in the history.
     let on = (!sh.unset || gm.b.rec.history.len > 0 || gm.computer >= 0) && !game::ended(gm);
     let replay = game::ended(gm) && gm.end_sent_for_history;
-    // A new player, asked whether they know how to play (`first_start_done`), who hasn't
-    // learned their draughts, nor said they know how, nor begun a game against the
-    // computer: How to play in continue's place.
+    // A player still learning: How to play on home.
     let p .= sh.prefs;
-    let learn = !on && !replay && p.first_start_done && !p.knows && p.games == 0 && learned(sh) < tutorial::count(p.variant as u8);
+    let learn = p.first_start_done && !past_basics(p);
     // A game won or lost on a clock run out says so (on_time).
     let won = game::winner(gm);
     let on_time = gm.clock.flag >= 0;
@@ -770,6 +776,7 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
         let k = clamp(gm.level, game::EASY, game::HARD);
         sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, ev.result, sh.prefs.played[k]);
         sh.prefs.played[k] += 1;
+        if ev.result > 0 { sh.prefs.won = true; }
         sh.changed = true;
     }
     // Played again or started over: a new game, at its level's skill as it is now, and
@@ -1101,10 +1108,6 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     match ask {
         player_card::AGAIN => { start_again(sh, index); },
         player_card::LEARN => { learn(sh, HOME, now); },
-        player_card::KNOWN => {
-            sh.prefs.knows = true;
-            sh.changed = true;
-        },
         _ => {},
     }
     return ask != player_card::NOTHING;

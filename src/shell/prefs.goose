@@ -143,10 +143,10 @@ struct Settings {
     // its id; 0 for one not solved.
     stars: u8[puzzles::MAX_PUZZLES + 1][rules::VARIANT_COUNT] = [[0; puzzles::MAX_PUZZLES + 1]; rules::VARIANT_COUNT],
     // How to play: the steps played in each draughts' tutorial (`learned.russian
-    // = 4`), all of them once it is done; and whether the player said they know how to
-    // play when asked as a new player (`how_to_play = known`), which keeps home's row away.
+    // = 4`), all of them once it is done; and whether the player has won a game against
+    // the computer (`won = yes`). Either takes home's How to play row away (shell::past_basics).
     learned: i64[rules::VARIANT_COUNT] = [0; rules::VARIANT_COUNT],
-    knows:   bool                      = false,
+    won:     bool                      = false,
     // The daily puzzles, by the set's variant (puzzles::set_of): the puzzle
     // rating, 0 until it is seeded from the course's stars, and how many first solves have
     // moved it (`puzzle_rating.international = 812 14`); the library's puzzles had, a bit
@@ -207,7 +207,7 @@ fn parse(text: const u8[:]) -> Settings {
         }
         if key == "name" { players::set_name(s.name, value); }
         if key == "first_start" && value == "done" { s.first_start_done = true; }
-        if key == "how_to_play" && value == "known" { s.knows = true; }
+        if key == "won" && value == "yes" { s.won = true; }
         if key == "season" {
             for name, i in SEASON_NAMES { if value == name { s.season = SEASON_KINDS[i]; } }
         }
@@ -379,7 +379,7 @@ fn write(s: Settings, out: u8[>..]&) {
         out.append(s.name[..]);
     }
     if s.first_start_done { out.append("\nfirst_start = done"); }
-    if s.knows { out.append("\nhow_to_play = known"); }
+    if s.won { out.append("\nwon = yes"); }
     out.append("\nseason = ");
     var season = "by-date";
     for kind, i in SEASON_KINDS { if s.season == kind { season = SEASON_NAMES[i]; } }

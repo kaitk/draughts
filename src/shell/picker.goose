@@ -67,21 +67,34 @@ fn today_more(stars: const u8[:]) -> i64 { puzzles::theme_count(puzzles::all, pu
 // Whether Today is open, in every draughts: all of Learn solved in any one draughts'
 // course (docs/decisions/puzzles.md, 2026-11-14).
 fn today_open(s: settings::Settings&) -> bool {
-    for set in puzzles::SETS { if learned(s.stars[set], set) { return true; } }
+    for set in puzzles::SETS {
+        let k, n = learn_solved(s.stars[set], set);
+        if n > 0 && k == n { return true; }
+    }
     return false;
 }
 
-// Whether every Learn puzzle of the built-in set of `set` has stars; false for a set
-// with no Learn.
-fn learned(stars: const u8[:], set: i64) -> bool {
+// Whether the other themes are open in any draughts: half of its course's Learn solved,
+// as to_open counts in the set loaded.
+fn themes_open(s: settings::Settings&) -> bool {
+    for set in puzzles::SETS {
+        let k, n = learn_solved(s.stars[set], set);
+        if n > 0 && k >= (n + 1) / 2 { return true; }
+    }
+    return false;
+}
+
+// How many of the Learn puzzles of the built-in set of `set` have stars, and how many it has.
+fn learn_solved(stars: const u8[:], set: i64) -> i64, i64 {
     let c .= puzzles::course(set as u8);
+    var k = 0;
     var n = 0;
     for id, i in c.ids {
         guard c.themes[i] == puzzles::LEARN else { continue; }
-        guard id >= 1 && id < stars.len && stars[id] > 0 else { return false; }
         n++;
+        if id >= 1 && id < stars.len && stars[id] > 0 { k++; }
     }
-    return n > 0;
+    return k, n;
 }
 
 // The puzzles of the set solved, any stars, and how many it has: home's note before Today

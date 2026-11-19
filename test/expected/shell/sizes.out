@@ -3,6 +3,7 @@ a foldable, landscape, 2208 x 1768:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -25,6 +26,7 @@ a foldable, portrait, 1768 x 2208:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -47,6 +49,7 @@ a foldable, portrait, 1768 x 2208:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -69,6 +72,7 @@ a foldable, portrait, 1768 x 2208:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -91,6 +95,7 @@ a 20:9 phone, landscape, 2400 x 1080:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -113,6 +118,7 @@ a 20:9 phone, portrait, 1080 x 2400:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -135,6 +141,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -157,6 +164,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -179,6 +187,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -201,6 +210,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -223,6 +233,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -245,6 +256,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, no board, all in place
   the computer's setup: 15 tiles, no board, all in place
   the game: 5 tiles, a board, all in place
@@ -268,6 +280,7 @@ a foldable, landscape, 2208 x 1768:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -290,6 +303,7 @@ a foldable, portrait, 1768 x 2208:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -312,6 +326,7 @@ a foldable, portrait, 1768 x 2208:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -334,6 +349,7 @@ a foldable, portrait, 1768 x 2208:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -356,6 +372,7 @@ a 20:9 phone, landscape, 2400 x 1080:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -378,6 +395,7 @@ a 20:9 phone, portrait, 1080 x 2400:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -400,6 +418,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -422,6 +441,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -444,6 +464,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -466,6 +487,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -488,6 +510,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -510,6 +533,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, no board, all in place
   the computer's setup: 15 tiles, no board, all in place
   the game: 5 tiles, a board, all in place
@@ -533,6 +557,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -555,6 +580,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -577,6 +603,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -599,6 +626,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -621,6 +649,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -643,6 +672,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -665,6 +695,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -687,6 +718,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -709,6 +741,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, no board, all in place
   the computer's setup: 15 tiles, no board, all in place
   the game: 5 tiles, a board, all in place
@@ -732,6 +765,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -754,6 +788,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -776,6 +811,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -798,6 +834,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -820,6 +857,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -842,6 +880,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -864,6 +903,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -886,6 +926,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: round, mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 6 tiles, a board, all in place
@@ -908,6 +949,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, no board, all in place
   the computer's setup: 15 tiles, no board, all in place
   the game: 5 tiles, a board, all in place
@@ -931,6 +973,7 @@ en, the tablet with its navigation bar:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -954,6 +997,7 @@ en, the tablet with its navigation bar:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -978,6 +1022,7 @@ et, the tablet with its navigation bar:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -1001,6 +1046,7 @@ et, the tablet with its navigation bar:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -1025,6 +1071,7 @@ en, the iPads in landscape with their bars:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -1048,6 +1095,7 @@ en, the iPads in landscape with their bars:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -1072,6 +1120,7 @@ et, the iPads in landscape with their bars:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -1095,6 +1144,7 @@ et, the iPads in landscape with their bars:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
   home's chip, named: mirroring the X on the board's side, off the column and the board
+  home, still learning: 8 tiles, a board, all in place
   a friend's setup: 15 tiles, a board, all in place
   the computer's setup: 15 tiles, a board, all in place
   the game: 5 tiles, a board, all in place
@@ -1120,6 +1170,7 @@ the puzzles' Learn row: theme 0, tiles 11 then 13
 the iPad's smallest window: settings' 28 tiles, the list scrolling, a preview
 the iPad's smallest window, home:
   home: 7 tiles, a board; 4 taps under 88 dp;
+  home, still learning: 8 tiles, a board; 5 taps under 88 dp;
   the setup: 15 tiles, no board, all in place
   the setup's choices scroll
 the iPad's smallest window, the game:

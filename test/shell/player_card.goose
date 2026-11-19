@@ -169,7 +169,7 @@ fn main() {
     let way = drive::rect(g, home - 1);
     if drive::verbose { print("home's chip at ", chip, ", the way out at ", way); }
     else { print("home's chip in the way out's row, left of it: ", drive::ok(abs(chip.y - way.y) < 0.5 && chip.x + chip.z <= way.x)); }
-    drive::tap(sh, g, drive::tile(g, home - 2), tick());
+    drive::tap(sh, g, drive::tile(g, home_tiles(sh, g, t) - 2), tick());
     print("chip tapped: ", state(sh));
     let first = home_tiles(sh, g, t);
     // back, pencil, then the faces and +.
@@ -189,18 +189,20 @@ fn main() {
     let asked = home_tiles(sh, g, t);
     print("  asked ", sh.prefs.first_start_done, ", the question's tiles ", drive::tiles(g) - asked);
     drive::tap(sh, g, card_tile(g, asked, 1), tick());
-    print("I know how: ", state(sh), ", knows ", sh.prefs.knows, ", home's first row how to play ", shell::resume(sh).learn);
+    print("I know how: ", state(sh), ", won ", sh.prefs.won, ", home's how to play row ", shell::resume(sh).learn);
     sh.changed = false;
     // A tap on the player's game, then back to the fox through the card.
-    drive::tap(sh, g, drive::tile(g, home - 2), tick());
+    drive::tap(sh, g, drive::tile(g, home_tiles(sh, g, t) - 2), tick());
     let card = home_tiles(sh, g, t);
     drive::tap(sh, g, card_tile(g, card, 2), tick());
     print("the fox's face: ", state(sh), ", changed ", sh.changed);
-    // The pencil, then Mia's face: her sheet.
-    drive::tap(sh, g, drive::tile(g, home - 2), tick());
-    drive::tap(sh, g, card_tile(g, card, 1), tick());
+    // The pencil, then Mia's face: her sheet. The fox, never asked, has no How to play
+    // row, Mia had: the card's tiles come after fewer of home's.
+    let fox = home_tiles(sh, g, t);
+    drive::tap(sh, g, drive::tile(g, fox - 2), tick());
+    drive::tap(sh, g, card_tile(g, fox, 1), tick());
     print("the pencil: ", state(sh));
-    drive::tap(sh, g, card_tile(g, card, 3), tick());
+    drive::tap(sh, g, card_tile(g, fox, 3), tick());
     print("Mia's face: ", state(sh), ", the sheet's tiles ", drive::tiles(g) - home_tiles(sh, g, t));
     let mine = home_tiles(sh, g, t);
     // The holds: start again, then remove (Mia is not playing).
@@ -219,7 +221,7 @@ fn main() {
     hold(sh, g, remove, tick(), 1.6);
     print("  ", state(sh));
     // The fox's own sheet, now the last player: no remove.
-    drive::tap(sh, g, card_tile(g, card, 2), tick());
+    drive::tap(sh, g, card_tile(g, fox, 2), tick());
     print("the last player's sheet: ", state(sh), ", tiles ", drive::tiles(g) - home_tiles(sh, g, t));
     // Back: to the card, then closed.
     shell::back(sh, tick());
@@ -227,7 +229,7 @@ fn main() {
     shell::back(sh, tick());
     print("back: ", state(sh));
     // Outside the card.
-    drive::tap(sh, g, drive::tile(g, home - 2), tick());
+    drive::tap(sh, g, drive::tile(g, home_tiles(sh, g, t) - 2), tick());
     drive::tap(sh, g, float2 { 4.0, drive::size.y - 4.0 }, tick());
     print("a tap outside the card: ", state(sh));
 
@@ -248,10 +250,10 @@ fn main() {
     let q = home_tiles(fresh, g, t);
     drive::tap(fresh, g, card_tile(g, q, 0), tick());
     print("show me: screen ", fresh.screen, " (how to play ", shell::TUTORIAL, "), step ", fresh.lesson.step, " of ",
-          tutorial::count(fresh.lesson.variant), ", knows ", fresh.prefs.knows);
+          tutorial::count(fresh.lesson.variant), ", won ", fresh.prefs.won);
     shell::back(fresh, tick());
     drive::idle(fresh, g, tick());
-    print("back: screen ", fresh.screen, ", home's first row how to play ", shell::resume(fresh).learn);
+    print("back: screen ", fresh.screen, ", home's how to play row ", shell::resume(fresh).learn);
 
     // The layouts.
     var many = shell::new(rules::INTERNATIONAL);

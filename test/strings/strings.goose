@@ -51,13 +51,13 @@ fn main() {
     wrong += run(strings::MARK_ONLY_TIP, 2, ["mark.only_tip", "mark.best_tip", "mark.good_tip", "mark.inaccuracy_tip",
                                              "mark.mistake_tip", "mark.blunder_tip"]);
     wrong += run(strings::HOW_STEP, 3, ["how.move", "how.jump", "how.must", "how.chain", "how.most", "how.any",
-                                        "how.king", "how.fly", "how.afar", "how.way", "how.win"]);
+                                        "how.king", "how.fly", "how.afar", "how.king_chain", "how.way", "how.win"]);
     wrong += run(strings::HOW_STEP + 1, 3, ["how.move_line", "how.jump_line", "how.must_line", "how.chain_line",
                                             "how.most_line", "how.any_line", "how.king_line", "how.fly_line",
-                                            "how.afar_line", "how.way_line", "how.win_line"]);
+                                            "how.afar_line", "how.king_chain_line", "how.way_line", "how.win_line"]);
     wrong += run(strings::HOW_STEP + 2, 3, ["how.move_well", "how.jump_well", "how.must_well", "how.chain_well",
                                             "how.most_well", "how.any_well", "how.king_well", "how.fly_well",
-                                            "how.afar_well", "how.way_well", "how.win_well"]);
+                                            "how.afar_well", "how.king_chain_well", "how.way_well", "how.win_well"]);
     wrong += run(strings::MONTH_JAN, 1, ["month.jan", "month.feb", "month.mar", "month.apr", "month.may", "month.jun",
                                          "month.jul", "month.aug", "month.sep", "month.oct", "month.nov", "month.dec"]);
     wrong += run(strings::REPLAY_TAKE, 1, ["replay.take_white", "replay.take_black"]);

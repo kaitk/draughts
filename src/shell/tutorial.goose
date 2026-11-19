@@ -11,8 +11,8 @@
 // home, the draughts just learned kept.
 //
 // The steps follow the draughts (rules.md): International and Brazilian take the most and
-// crown a man only where its capture ends, nine steps; Russian may take any capture and
-// crowns on the way, ten. Each step's position is a FEN on the board's lower left, so one
+// crown a man only where its capture ends, ten steps; Russian may take any capture and
+// crowns on the way, eleven. Each step's position is a FEN on the board's lower left, so one
 // serves both sizes but the crowning step's, a row from the far side.
 namespace tutorial;
 import std;
@@ -34,12 +34,14 @@ let ANY = 5;                // Russian: either capture
 let KING = 6;
 let FLY = 7;
 let AFAR = 8;
-let WAY = 9;                // Russian: crowned in the middle of a capture, on as a king
-let WIN = 10;
-let MAX_STEPS = 10;
+let KING_CHAIN = 9;         // a king jumps on, landing where it can take the next
+let WAY = 10;               // Russian: crowned in the middle of a capture, on as a king
+let WIN = 11;
+let MAX_STEPS = 11;
 // Each step's position, white to move, by step; KING's is KING_8 or KING_10.
 let FENS = ["W:Wc3:Bf8,h8", "W:Wd4:Be5,b8", "W:Wc3,g3:Bd4,h8", "W:Wa3:Bb4,d6,f6,b8", "W:Wb2,f2:Bc3,g3,g5",
-            "W:Wb2,f2:Bc3,g3,g5", "", "W:WKd4:Ba7", "W:WKa1:Bd4", "W:Wb6:Bc7,f6", "W:We3,c1:Bf4"];
+            "W:Wb2,f2:Bc3,g3,g5", "", "W:WKd4:Ba7", "W:WKa1:Bd4",
+            "W:WKa1:Bc3,f4", "W:Wb6:Bc7,f6", "W:We3,c1:Bf4"];
 let KING_8 = "W:Wc7:Bg5";
 let KING_10 = "W:Wc9:Bg5";
 // The first step's answer, whatever the child played: f8-e7, nothing taken either way.
@@ -109,7 +111,7 @@ fn steps(variant: u8, out: i64[..MAX_STEPS]&) {
     let russian = variant == rules::RUSSIAN;
     for s in [MOVE, JUMP, MUST, CHAIN] { out.push(s); }
     out.push(if russian { ANY } else { MOST });
-    for s in [KING, FLY, AFAR] { out.push(s); }
+    for s in [KING, FLY, AFAR, KING_CHAIN] { out.push(s); }
     if russian { out.push(WAY); }
     out.push(WIN);
 }

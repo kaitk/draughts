@@ -343,6 +343,18 @@ Task 026, `tutorial.html`, 2026-11-13, replacing the earlier first-start pages:
 - How to play is lit in Continue's place on home until learned, skipped, or a game begun,
   and always the library's first row. Rejected: a row on home always, the library alone.
 - Each step is played on the board. The icon is a finger tapping.
+- Home's How to play stays for a player still learning, under Continue or Replay where one
+  shows, else first and lit, until they have played a tutorial to its end in any draughts,
+  won a game against the computer, or solved the half of Learn that opens the other themes
+  (2026-11-19, task 097; `shell::past_basics`). It replaces "until learned, skipped, or a
+  game begun": a tester who took the game for checkers answered "I know how" or began a
+  game, and then found the tutorial only in settings and the library. "I know how" now
+  only skips the tutorial offered then. Rejected: the row on home for good, which clutters
+  the menu once the rules are known. A win against a friend doesn't count, since
+  pass-and-play always has a winner.
+- A step for a king's multi-capture, after Kings take from afar, in every draughts
+  (2026-11-19, task 097): a flying king may land on any free square behind a piece, but
+  must land where it can take on, which the same tester found confusing.
 - Russian has its own steps where its rules differ.
 
 ### The lookout and the hint

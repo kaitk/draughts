@@ -330,8 +330,10 @@ otherwise, and with the 3D board, portrait: a bar above the board and the play b
 
 **Home** (`prototypes/home.html`): the scene and the board, and one glass column with the
 wordmark and rows 88 dp tall: Continue (when there is a game to resume, `shell::resume`),
-New game with the setup's opponent at its end, How to play in Continue's place for a
-player who hasn't learned yet, Replay in its place once the last game has ended
+How to play for a player still learning (under Continue or Replay, else first and lit;
+gone once a tutorial is played to its end, a game against the computer won, or the other
+puzzle themes opened, `shell::past_basics`), New game with the setup's opponent at its
+end, Replay in Continue's place once the last game has ended
 (its note how it ended and against whom, on time where a clock ran out, outlined over New game, which is lit; it opens
 that game's [replay](#a-games-replay), whose back goes home), Puzzles (solved count, or today's dots once
 [daily puzzles](puzzles.md#daily-puzzles) open, smaller where they would come within
@@ -397,8 +399,8 @@ goes out; where the other side would answer it, that answer plays first
 stars pop in and next lights.
 
 **How to play** (`src/shell/tutorial.goose`, `prototypes/tutorial.html`): the rules one
-step at a time, each played on the board in a puzzle's layout with the moves shown: nine
-steps for International and Brazilian, ten for Russian. The last opens a card offering
+step at a time, each played on the board in a puzzle's layout with the moves shown: ten
+steps for International and Brazilian, eleven for Russian. The last opens a card offering
 Puzzles, New game, and Home. Steps played are kept (`learned.<draughts> = n`).
 
 **Players** (`prototypes/players.html`; what a player holds:

@@ -56,6 +56,8 @@ let ALLOWED = [
     // A small window's (gui::compact) menu rows, the results row with them, are 72 dp,
     // under the floor, accepted for compact only (rendering.md, "Compact").
     Allowed { under: "the iPad's smallest window", what: "home", wrong: " 4 taps under 88 dp;" },
+    // And with How to play under Continue, a row more.
+    Allowed { under: "the iPad's smallest window", what: "home, still learning", wrong: " 5 taps under 88 dp;" },
     // Its game bar's three tiles are 72 x 64 dp, the same acceptance.
     Allowed { under: "the iPad's smallest window", what: "the game", wrong: " 3 taps under 88 dp;" },
 ];
@@ -294,6 +296,12 @@ fn screens(g: gui::Gui&) {
     at_rest(home, g);
     report("home", g, home, true, false);
     chip(g, home);
+    // Home's fullest menu: a game kept, and How to play under Continue (shell::resume).
+    var learning = showing(shell::HOME, home::NO_SETUP);
+    learning.prefs.first_start_done = true;
+    learning.unset = false;
+    at_rest(learning, g);
+    report("home, still learning", g, learning, true, false);
     var friend = showing(shell::HOME, home::NEW_GAME);
     friend.prefs.friend = true;
     at_rest(friend, g);
@@ -564,6 +572,11 @@ fn small_window(g: gui::Gui&) {
     var home = showing(shell::HOME, home::NO_SETUP);
     at_rest(home, g);
     report("home", g, home, true, false);
+    var learning = showing(shell::HOME, home::NO_SETUP);
+    learning.prefs.first_start_done = true;
+    learning.unset = false;
+    at_rest(learning, g);
+    report("home, still learning", g, learning, true, false);
     // The setup, too short for its column: its choices scroll between the head and play.
     var setup = showing(shell::HOME, home::NEW_GAME);
     at_rest(setup, g);

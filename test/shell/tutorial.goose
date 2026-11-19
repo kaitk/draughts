@@ -4,7 +4,9 @@
 // first step's answer between the child's two moves, next lit only once a step is played,
 // the steps kept in the player's settings, the end's card, and its puzzles opening the
 // Learn theme's first puzzle in the draughts learned. Then home's How to play row: shown
-// for a player asked and not yet done, gone once done.
+// for a player asked and not yet done, gone once done; under Continue while a game is
+// kept; and gone for good once a game against the computer is won or half of Learn,
+// which opens the other themes, is solved in any draughts.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -100,8 +102,8 @@ fn main() {
     sh.unset = true;
     sh.prefs.first_start_done = true;
     drive::idle(sh, g, tick());
-    print("home's first row how to play: ", shell::resume(sh).learn);
-    press(sh, g, home::ROW_IDS);
+    print("home's how to play row: ", shell::resume(sh).learn);
+    press(sh, g, home::ROW_IDS + 1);
     settle(sh, g, 0.5);
     print("how to play: screen ", sh.screen, " (", shell::TUTORIAL, "), ", state(sh));
     // Next takes no tap before the step is played.
@@ -125,7 +127,7 @@ fn main() {
         settle(sh, g, 0.3);
     }
     print("the end: ", state(sh), ", the card's ways ", drive::tiles(g));
-    print("home's first row how to play, done: ", shell::resume(sh).learn);
+    print("home's how to play row, done: ", shell::resume(sh).learn);
     press(sh, g, tutorial::CARD_PUZZLES);
     settle(sh, g, 0.5);
     print("puzzles: screen ", sh.screen, " (puzzle ", shell::PUZZLE, "), theme ", sh.theme, " (learn ", puzzles::LEARN, ")");
@@ -143,4 +145,32 @@ fn main() {
     lib.prefs.learned[rules::INTERNATIONAL] = 4;
     shell::learn(lib, shell::HOME, tick());
     print("four played: opens at step ", lib.lesson.step + 1);
+
+    // A game kept: How to play under Continue, not in its place, so a player who began
+    // a game before learning still finds it.
+    var kept = shell::new(rules::INTERNATIONAL);
+    kept.prefs.first_start_done = true;
+    kept.unset = false;
+    drive::idle(kept, g, tick());
+    let r = shell::resume(kept);
+    var rows: u8[>..] = [];
+    for i in home::ROWS { if home::shows(r, i) { format(rows, " ", i); } }
+    var below = false;
+    for s in g.spots { if s.id == home::ROW_IDS + 1 { below = true; } }
+    print("a game kept: continue ", r.on, ", rows", rows[..], ", how to play declared ", below);
+    kept.prefs.won = true;
+    print("a game won: how to play ", shell::resume(kept).learn);
+    kept.prefs.won = false;
+    // Half of Russian's Learn solved opens its other themes: past the basics there too.
+    let c .= puzzles::course(rules::RUSSIAN);
+    var n = 0;
+    for id, i in c.ids { if c.themes[i] == puzzles::LEARN { n++; } }
+    var k = 0;
+    for id, i in c.ids {
+        if c.themes[i] == puzzles::LEARN && 2 * k < n {
+            kept.prefs.stars[rules::RUSSIAN][id] = 1;
+            k++;
+        }
+    }
+    print("Russian's Learn ", k, " of ", n, " solved: how to play ", shell::resume(kept).learn);
 }
