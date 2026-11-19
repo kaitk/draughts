@@ -575,6 +575,14 @@ to be is in tasks 042, 059, 071, 081, and 086.
   pair is ever made. Rejected: one filter for phones and tablets by screen size alone.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
+- The spring stone board scatters light through its stone on a desktop only
+  (2026-11-19, task 094; `looks::Theme.board_scatter`, `render3d::scatter_allowed`): 16
+  shadow taps over a disc sized by each channel's reach, the square's figure seen a
+  little below the surface, its painted cracks and veins keeping their pigment.
+  Measured +0.35 ms in the board pass at 1280 × 800 on an M1 Pro (5.42 to 5.77 ms
+  median over eight alternating runs). Phones and tablets keep it off until timed.
+  Rejected: scattering along the frame's cracks (they are thin painted lines), and
+  tying it to the 16-tap shadow filter (it would turn on for iOS).
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
 

@@ -446,7 +446,7 @@ fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
     f.params = float4 { t.ambient.x, 0.0, t.ambient.y, n };
     f.glow = t.glow;
     f.light_piece = model3d::linear4(t.light_piece);
-    f.dark_piece = model3d::linear4(t.dark_piece);
+    f.dark_piece = model3d::dark_piece_color(t.dark_piece, model3d::dark_brightness(t.mineral));
     f.piece_fig = t.piece_fig;
     f.crown = model3d::linear4(t.crown);
     f.edge = model3d::linear4(t.edge);
@@ -461,7 +461,24 @@ fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
     f.light_scatter = model3d::linear4(t.light_scatter);
     f.dark_scatter = model3d::linear4(t.dark_scatter);
     f.piece_wear = t.piece_wear;
+    board_scatter(g);
     g.shadow_dirty = true;
+}
+
+// Whether the board may scatter light through its stone: on a desktop only (set at
+// startup by the app). It adds 16 shadow taps a board pixel, about 0.35 ms at
+// 1280 × 800 on an M1 Pro (task 094), not yet timed on a phone or tablet.
+var scatter_allowed = false;
+
+// The look's board scattering (looks::Theme.board_scatter) into the frame's block where
+// it is allowed, else off.
+fn board_scatter(g: Gpu&) {
+    guard g.look >= 0 else { return; }
+    let s = look(g, g.look).board_scatter;
+    let on = scatter_allowed && s.x > 0.0;
+    g.frame.frame_map.z = s.y;
+    g.frame.frame_map.w = if on { s.x } else { 0.0 };
+    g.frame.params.y = s.z;
 }
 
 // The key light, from the upper left of the screen, turned with the board (g.turn) so it

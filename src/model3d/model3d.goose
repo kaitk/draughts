@@ -34,6 +34,13 @@ fn linear(c: f32) -> f32 {
 
 fn linear4(c: float4) -> float4 { float4 { linear(c.x), linear(c.y), linear(c.z), c.w } }
 
+fn dark_brightness(mineral: f32) -> f32 { if mineral == 3.0 { 0.65 } else { 1.0 } }
+
+fn dark_piece_color(c: float4, brightness: f32) -> float4 {
+    let rgb = linear4(c);
+    return float4 { rgb.x * brightness, rgb.y * brightness, rgb.z * brightness, rgb.w };
+}
+
 // Nine spherical harmonics of the photograph's light, convolved with the cosine and over
 // pi, so the shader's sum is the irradiance a white Lambert surface sends back. The
 // photograph is laid over the sphere as a latitude-longitude map, its middle straight

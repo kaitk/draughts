@@ -20,7 +20,8 @@ let FRAME = """
         vec4 light_dir;      // toward the light; w: its intensity
         vec4 light_color;
         vec4 sh[9];          // the photograph's irradiance over pi, rgb
-        vec4 params;         // x: exposure, y: unused, z: ambient scale,
+        vec4 params;         // x: exposure, y: the board scattering's color depth
+                             // (body_color), z: ambient scale,
                              // w: squares per side (a square is 8 / w)
         vec4 screen;         // xy: the target's size in pixels, z: the board dimmed by (a win)
         vec4 glow;           // rgb: the theme's glow color, w: its strength
@@ -321,6 +322,61 @@ let LIT_FRAG = """
     #endif
     }
 
+    // One hardware-compared tap of the key's shadow at q (its bilinear edge only).
+    float shadow_tap(vec3 q) {
+        vec4 s = light_view_proj * vec4(q, 1.0);
+        return texture(shadow_map, vec3(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5, s.z - 0.0015));
+    }
+
+    // The board's scattering (frame_map.w its fraction, z its radius in world units):
+    // the key's light that entered the stone round p, from 16 taps on a golden-angle
+    // disc in the surface's plane (a Vogel disc: no ring of copies where a shadow's edge
+    // crosses it), each channel weighting a tap by exp(-r / reach), its reach 0.35 to 1
+    // of 0.45 the radius by how little the body absorbs it. `center` is the shadow at p.
+    // Each pixel of a 2 × 2 quad turns the disc its own quarter (and each quad by a hash
+    // of where it is on screen, still while nothing moves), and the quad's pixels share
+    // their results through the derivatives: three discs' taps a pixel, so what copies of
+    // a shadow's edge remain blur into a faint grain. Called where every pixel of a
+    // triangle takes the same branch (the board's scattering is on or off for it).
+    vec3 scatter_spread(vec3 p, vec3 ng, float radius, vec3 k, float center) {
+        vec3 t1 = abs(ng.y) > 0.9 ? vec3(1.0, 0.0, 0.0) : normalize(cross(vec3(0.0, 1.0, 0.0), ng));
+        vec3 t2 = cross(ng, t1);
+        vec3 q = p + ng * 0.006;
+        vec3 reach = 0.45 * radius * k;
+        vec3 sum = vec3(center);
+        vec3 weight = vec3(1.0);
+        vec2 corner = mod(floor(gl_FragCoord.xy), 2.0);
+        float turn = 6.2832 * hash13(vec3(floor(gl_FragCoord.xy * 0.5), 1.0)) + 1.5708 * (corner.x + 2.0 * corner.y);
+        for (int i = 0; i < 16; i++) {
+            float r = radius * sqrt((float(i) + 0.5) / 16.0);
+            float a = float(i) * 2.39996 + turn;
+            float s = shadow_tap(q + (t1 * cos(a) + t2 * sin(a)) * r);
+            vec3 w = exp(-r / reach);
+            sum += w * s;
+            weight += w;
+        }
+        vec3 v = sum / weight;
+        vec2 side = 1.0 - 2.0 * corner;
+        return (3.0 * v + side.x * dFdx(v) + side.y * dFdy(v)) / 3.0;
+    }
+
+    // A painted line's pigment over the body: the surface over its blur, fully where
+    // it clearly differs (a dark or a pale vein), 0.4 of it in the fine mottling.
+    vec3 pigment_of(vec3 surface, vec3 blur) {
+        vec3 ratio = surface / max(blur, vec3(1e-3));
+        float apart = abs(1.0 - dot(ratio, vec3(0.2126, 0.7152, 0.0722)));
+        return mix(vec3(1.0), ratio, 0.4 + 0.6 * smoothstep(0.1, 0.3, apart));
+    }
+
+    // The color light takes on a long path through the body: the body's color to the
+    // power 1 + params.y (the board scattering's color depth), its luminance kept, so
+    // the cream warms and the olive deepens.
+    vec3 body_color(vec3 c) {
+        vec3 lum = vec3(0.2126, 0.7152, 0.0722);
+        vec3 d = pow(max(c, vec3(1e-4)), vec3(1.0 + params.y));
+        return d * (dot(c, lum) / max(dot(d, lum), 1e-4));
+    }
+
     // The frame's short inner wall's occlusion of the field, as a long wall: too sharp
     // (FRAME_TOP across) for the pieces' map, and two square roots.
     float wall_occlusion(vec3 p) {
@@ -342,6 +398,152 @@ let LIT_FRAG = """
     float top_ao(float u) {
         float c = (u - 0.634) / 0.026;
         return 1.0 - 0.05 * (1.0 - u) - 0.3 * exp(-c * c);
+    }
+
+    float hash_of(float seed, float k) { return hash13(vec3(seed, k, 7.31)); }
+
+    // Turned wood (frame_map.y -1), the board's growth rings (BAKE_FRAG's rings()) in
+    // the disc's own 3D space, so a ring is one surface through the face, the lip and
+    // the turned side. The disc is cut from a plank, its grain along `along` at the
+    // piece's own angle; the log's pith runs along the grain below the face, d deep and
+    // c to one side: quarter-sawn cuts (flatness 0) put it far aside and draw near
+    // straight lines, flat-sawn ones (1) put it under the face, leaning, and draw arches.
+    // The radius wobbles, the years are uneven, each late wood its own strength (a few
+    // years dark); fibres
+    // and pores run along the grain; the color darkens by Beer's law. On the turned side
+    // the end grain, where the surface faces along the grain, soaks the finish darker.
+    // Anything finer than a pixel fades to its mean (fwidth). base linear, figure 1 the
+    // board's strength; maple light, walnut dark (the autumn look's square values).
+    vec3 piece_wood(vec3 lp, vec3 ng, float seed, vec3 base, float figure, bool dark, inout float rough,
+                    out float relief) {
+        vec3 o = vec3(hash_of(seed, 1.7), hash_of(seed, 9.3), hash_of(seed, 4.1)) * 37.0;
+        float turn = hash_of(seed, 0.5) * PI;
+        vec2 dir = vec2(cos(turn), sin(turn));
+        float along = dot(lp.xz, dir);
+        float across = dot(lp.xz, vec2(-dir.y, dir.x));
+        float rw = dark ? 0.06 : 0.05;                       // a year's width
+        vec3 k = dark ? vec3(0.7, 0.7, 0.6) : vec3(0.3, 0.5, 0.45);   // wander, broad, fibre
+        float late_dark = dark ? 0.3 : 0.4;
+        float late_start = dark ? 0.8 : 0.6;             // walnut's rings are faint and thin
+        float pores = dark ? 0.35 : 0.3;
+        float flatness = clamp((dark ? 0.5 : 0.25) + (hash_of(seed, 2.1) - 0.5) * 0.9, 0.0, 1.0);
+        float side = hash_of(seed, 3.7) > 0.5 ? 1.0 : -1.0;
+        float d = mix(0.1, 1.2, flatness) * (0.6 + 0.8 * hash_of(seed, 5.3));
+        float c = side * mix(2.0 + 2.0 * hash_of(seed, 6.1), 0.5 * (hash_of(seed, 6.1) - 0.5), flatness);
+        float axis = noise3(vec3(along * 0.6, 0.5, 0.5) + o) - 0.5;
+        float lean = (hash_of(seed, 8.8) - 0.5) * 0.5 * flatness;
+        float dd = max(d + lean * along + axis * 0.3 * flatness + (HEIGHT - lp.y), 0.02);
+        float r = length(vec2(across - c - axis * 0.4, dd));
+        r += rw * k.x * 3.0 * (noise3(vec3(across * 1.6, lp.y * 1.6, along * 0.5) + o) - 0.5);
+        r += rw * k.x * 0.8 * (noise3(vec3(across * 6.0, lp.y * 6.0, along * 0.9) + o) - 0.5);
+        r += rw * 0.25 * (noise3(vec3(across * 14.0, lp.y * 14.0, along * 4.0) + o.yzx) - 0.5);
+        float t = r / rw;
+        t += 1.2 * (noise3(vec3(t * 0.3, seed, 0.5)) - 0.5);
+        float year = floor(t);
+        float ph = t - year;
+        float ft = fwidth(t);
+        float e = max(0.06, 1.5 * ft);
+        // Its rise kept before its edge (smoothstep's edges reversed are undefined).
+        float late = smoothstep(min(late_start, 1.0 - 2.0 * e), 1.0 - e, ph);
+        late *= mix(late, 1.0, 0.3) * (1.0 - smoothstep(1.0 - e, 1.0, ph));
+        // Each year's late wood its own strength, now and then a dark year that can be
+        // followed over the lip and down the side.
+        float strength = hash_of(year + seed * 13.0, 4.4);
+        late *= 0.5 + strength + 0.5 * smoothstep(0.9, 0.98, strength);
+        float ring_seen = 1.0 - smoothstep(0.15, 0.4, ft);
+        late = mix(0.12, late, ring_seen);
+        float early = 1.0 - smoothstep(0.0, 0.5, ph);
+        // Fibres along the grain as the board's (BAKE_FRAG's rings()): fine across it
+        // (in across and the height), long along, three widths, each fading to its mean
+        // where it is finer than a pixel; at playing size the middle one is the streaks
+        // the squares show.
+        vec3 fq = vec3(across * 150.0, lp.y * 150.0, along * 2.0);
+        float fine = 1.0 - smoothstep(0.5, 1.2, fwidth(fq.x) + fwidth(fq.y));
+        float fibre = 0.5 + fine * (0.6 * noise3(fq + o) + 0.4 * noise3(fq * vec3(0.37, 0.37, 0.35) + o.yzx) - 0.5);
+        vec3 sq = vec3(across * 40.0, lp.y * 40.0, along * 0.6) + o.zxy;
+        float streak = noise3(sq);
+        streak = mix(0.5, streak, 1.0 - smoothstep(0.4, 1.0, fwidth(sq.x) + fwidth(sq.y)));
+        // Pores, filled by the varnish: faint darker dashes along the grain, more in the
+        // early wood, never rough.
+        vec3 pq = vec3(across * 110.0, lp.y * 110.0, along * 9.0);
+        float pore = smoothstep(0.8, 0.92, noise3(pq + o.zxy)) * pores * mix(0.6, 1.4, early);
+        pore *= 1.0 - smoothstep(0.6, 1.4, fwidth(pq.x) + fwidth(pq.y));
+        float broad = noise3(vec3(across * 1.2, lp.y * 1.2, along * 0.25) + o);
+        // End grain: where the turned side faces along the grain, soaking the finish.
+        float end = abs(dot(ng.xz, dir)) * (1.0 - abs(ng.y));
+        float a = figure * (late_dark * (late - 0.08) + k.z * ((fibre - 0.5) * 0.7 + (streak - 0.5) * 1.1)
+                            + k.y * (broad - 0.5) * 1.5 + 0.25 * pore) + 0.3 * end * end;
+        // Under the varnish the wood is satin and its figure slightly sunk: the late
+        // wood, the streaks and the pores take a little relief (world units), which
+        // breaks up the sheen as the squares' baked relief does.
+        relief = -0.0012 * late * ring_seen - 0.0005 * (streak - 0.5) - 0.0004 * (fibre - 0.5) - 0.0006 * pore;
+        rough += 0.04 * (0.5 - streak) + 0.06 * (1.0 - min(late, 1.0)) * ring_seen + 0.1 * end;
+        return pow(base, vec3(1.0 + a));
+    }
+
+    // Winter's stones in the disc's own 3D space (frame_map.y -2 honed slate, -3
+    // polished onyx, the light men satin ivory with either). base linear.
+    vec3 piece_winter(vec3 lp, vec3 ng, vec3 to_eye, float seed, vec3 base, float figure, bool dark,
+                      bool onyx, inout float rough) {
+        vec3 o = vec3(hash_of(seed, 2.3), hash_of(seed, 5.9), hash_of(seed, 8.1)) * 41.0;
+        if (!dark) {
+            // Satin ivory: warm cream, a fine growth figure along the tusk the slab was
+            // cut from (close uneven lines, drawn out along it), warmer where darker as
+            // Beer's law has it, and a faint broad cloud. Lines finer than a pixel fade.
+            float turn = hash_of(seed, 0.5) * PI;
+            vec2 dir = vec2(cos(turn), sin(turn));
+            float along = dot(lp.xz, dir);
+            float across = dot(lp.xz, vec2(-dir.y, dir.x)) + 0.03 * noise3(lp * 4.0 + o);
+            vec3 q = vec3(across * 90.0, lp.y * 90.0, along * 5.0);
+            float line = 0.65 * noise3(q + o) + 0.35 * noise3(q * vec3(2.3, 2.3, 1.7) + o.zxy);
+            line = mix(0.5, line, 1.0 - smoothstep(0.4, 1.0, fwidth(q.x) + fwidth(q.y)));
+            float cloud = noise3(lp * 5.0 + o.yzx);
+            float a = figure * (2.0 * (line - 0.5) + 1.2 * (cloud - 0.5));
+            rough += 0.06 * (cloud - 0.5);
+            return base * max(vec3(0.0), 1.0 - a * vec3(0.55, 0.75, 1.25));
+        }
+        if (!onyx) {
+            // Honed slate: cleavage layers at 20 to 35 degrees to the face, each piece
+            // its own way, so the face cuts several as soft tide marks and the turned
+            // side shows them as slanting strata, never level rings; finer laminae and a fine grain, the lighter
+            // layers a little bluer and smoother.
+            float lean = 0.35 + 0.35 * hash_of(seed, 1.1);
+            float way = hash_of(seed, 3.3) * 2.0 * PI;
+            vec3 tilt = normalize(vec3(cos(way) * lean, 1.0, sin(way) * lean));
+            float h = dot(lp, tilt) + 0.02 * noise3(lp * 5.0 + o);
+            float layer = noise3(vec3(h * 55.0, 0.5, seed));
+            float lam = noise3(vec3(h * 240.0, 1.5, seed + 0.5));
+            lam = mix(0.5, lam, 1.0 - smoothstep(0.4, 1.0, fwidth(h * 240.0)));
+            float grain = noise3(lp * 280.0 + o);
+            grain = mix(0.5, grain, 1.0 - smoothstep(0.4, 1.0, fwidth(lp.x * 280.0) + fwidth(lp.z * 280.0)));
+            float a = figure * (1.6 * (layer - 0.5) + 0.7 * (lam - 0.5) + 0.6 * (grain - 0.5));
+            rough -= 0.5 * a;
+            return base * max(vec3(0.0), 1.0 + a * vec3(0.85, 1.0, 1.2));
+        }
+        // Polished onyx: black chalcedony, a few restrained curved bands round an axis
+        // off the piece, seen through the polish a little below the surface (the view
+        // refracted, 0.02 deep), so they lie under it and shift with the eye.
+        vec3 deep = lp + refract(-to_eye, ng, 1.0 / 1.54) * 0.02;
+        float side = hash_of(seed, 6.6) * 2.0 * PI;
+        vec2 axis = vec2(cos(side), sin(side)) * (0.9 + 0.8 * hash_of(seed, 7.7));
+        float d = length(deep.xz - axis) + 0.35 * deep.y + 0.03 * noise3(deep * 7.0 + o);
+        float b = noise3(vec3(d * 16.0, seed, 0.5));
+        float fade = 1.0 - smoothstep(0.3, 0.8, fwidth(d * 16.0));
+        float band = smoothstep(0.45, 0.85, b) * fade;
+        float haze = noise3(deep * 9.0 + o.zyx);
+        return base * (1.0 + figure * 2.0 * (haze - 0.5)) + figure * band * vec3(0.022, 0.026, 0.034);
+    }
+
+    // A height h (world units) as a normal's tilt, from its screen derivatives
+    // (Mikkelsen's bump mapping of unparametrized surfaces): no tangents needed.
+    vec3 bumped(vec3 n, vec3 p, float h) {
+        vec3 dpx = dFdx(p);
+        vec3 dpy = dFdy(p);
+        vec3 r1 = cross(dpy, n);
+        vec3 r2 = cross(n, dpx);
+        float det = dot(dpx, r1);
+        vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
+        return normalize(abs(det) * n - grad);
     }
 
     vec3 tonemap(vec3 c) {
@@ -372,6 +574,18 @@ let LIT_FRAG = """
         vec3 albedo;
         float rough;
         float top_var = 0.0;     // the spread of a shader-made normal over the pixel
+        // The board's scattering (frame_map.w > 0): the fraction leaving the body, its
+        // color, how far it spreads, and what came in through the frame's top (colored).
+        vec3 ng = n;
+        float sss_f = 0.0;
+        vec3 body = vec3(0.0);
+        vec3 travelled = vec3(0.0);
+        float sss_radius = 0.0;
+        vec3 through = vec3(0.0);
+        // A wood piece's varnish (frame_map.y -1): the figure's relief under it, and the
+        // coat's strength (piece_fig.z) over the satin wood.
+        float relief = 0.0;
+        float coat = 0.0;
         if (mat < 0.5) {
             // The field: the baked plan, seen from above.
             vec2 uv = (p.xz + INNER) / (2.0 * INNER);
@@ -381,6 +595,39 @@ let LIT_FRAG = """
             rough = a.a;
             n = normalize(vec3(t.x, sqrt(max(1.0 - dot(t, t), 0.0)), t.y));
             ao *= texture(field_occ, uv).r * wall_occlusion(p);
+            if (frame_map.w > 0.0) {
+                // The light that leaves the body: the albedo blurred over half the
+                // radius and seen a little below the surface, at half the radius deep
+                // along the view refracted into the stone (index 1.55: at a grazing
+                // view it leans at most 40 degrees, 0.85 of the depth aside), so the
+                // figure lies under a clear skin. The deep point stays in its own
+                // square. A painted vein keeps its pigment where the light leaves
+                // (pigment_of).
+                float radius = frame_map.z;
+                vec3 to_eye = normalize(eye.xyz - p);
+                float lod = log2(max(0.5 * radius * float(textureSize(plan_albedo, 0).x) / (2.0 * INNER), 1.0));
+                vec3 blur = textureLod(plan_albedo, uv, lod).rgb;
+                float side = 2.0 * FIELD / params.w;
+                vec2 local = mod(p.xz + FIELD, side);
+                float lean = length(to_eye.xz) / 1.55;
+                vec2 away = -to_eye.xz / max(length(to_eye.xz), 1e-4);
+                vec2 deep_xz = p.xz + away * (0.5 * radius * lean / sqrt(1.0 - lean * lean));
+                float margin = min(0.5 * radius, 0.45 * side);
+                vec2 cell = p.xz - local;
+                deep_xz = clamp(deep_xz, cell + margin, cell + side - margin);
+                vec3 deep = textureLod(plan_albedo, (deep_xz + INNER) / (2.0 * INNER), lod).rgb;
+                vec3 pigment = pigment_of(albedo, blur);
+                // Each square is its own stone: within the blur's reach of its seam
+                // (and on the inlay round the field) the body is the surface's own.
+                float seam = min(min(local.x, local.y), side - max(local.x, local.y));
+                float inside = max(abs(p.x), abs(p.z)) < FIELD ? smoothstep(0.3 * radius, 0.9 * radius, seam) : 0.0;
+                body = mix(albedo, deep * pigment, inside);
+                travelled = body_color(body);
+                // Sparse translucent inclusions through the volume carry light further.
+                float pocket = smoothstep(0.62, 0.8, noise3(p * vec3(4.0, 4.0, 6.0) + 7.3));
+                sss_f = clamp(frame_map.w * (1.0 + 0.6 * pocket), 0.0, 1.0);
+                sss_radius = radius * (1.0 + 0.8 * pocket);
+            }
         } else if (mat < 1.5) {
             // The frame, mapped from where the point is, so the figure runs on unbroken
             // over the top, the rounded edge and the side, round the corners too, as in
@@ -440,6 +687,31 @@ let LIT_FRAG = """
                 bool along_x = a2.y > a2.x;
                 if ((along_x && p.z < 0.0) || (!along_x && p.x > 0.0)) bit = -bit;
             }
+            if (frame_map.w > 0.0) {
+                // The frame's body as the field's (its thin cracks are painted: they
+                // keep their pigment and carry no light of their own). Light that
+                // entered the top leaves lower down the rounded edge and the side,
+                // each channel fading by its own reach.
+                float radius = frame_map.z;
+                float lod = log2(max(0.5 * radius * float(textureSize(frame_albedo, 0).x) / FRAME_SPAN, 1.0));
+                vec3 blur = textureLod(frame_albedo, fuv, lod).rgb;
+                vec3 pigment = pigment_of(albedo, blur);
+                body = blur * pigment;
+                travelled = body_color(blur) * pigment;
+                sss_f = clamp(frame_map.w, 0.0, 1.0);
+                sss_radius = radius;
+                // It fades in over the rounded edge (no line where the top ends), in
+                // the body's own color near the top, the deeper tint lower down.
+                float turned = 1.0 - smoothstep(0.55, 0.98, ng.y);
+                if (turned > 0.0) {
+                    vec2 outward = normalize(ng.xz + vec2(1e-4));
+                    vec3 top = vec3(p.x - outward.x * 0.06, FRAME_TOP + 0.006, p.z - outward.y * 0.06);
+                    float depth = max(FRAME_TOP - p.y, 0.0);
+                    vec3 reach = radius * (0.35 + 0.65 * travelled / max(max(travelled.r, travelled.g), max(travelled.b, 1e-4)));
+                    through = turned * 0.5 * shadow_tap(top) * max(light_dir.y, 0.0) * exp(-depth / reach)
+                            * mix(body, travelled, clamp(depth / radius, 0.0, 1.0));
+                }
+            }
             n = normalize(n * sqrt(max(1.0 - dot(t, t), 0.0)) + tan * t.x + bit * t.y);
             if (frame_build.x < 0.5) {
                 // The glued mitre: a thin dark joint on the diagonal, through the top,
@@ -471,7 +743,15 @@ let LIT_FRAG = """
             bool dark = v_kind.x > 0.5;
             vec4 m = dark ? dark_piece : light_piece;
             rough = m.a;
-            if (frame_map.y > 0.5) {
+            if (frame_map.y < -0.5 && frame_map.y > -1.5) {
+                albedo = piece_wood(lp, normalize(v_normal), mod(abs(v_kind.w), 1000.0), m.rgb,
+                                    3.0 * (dark ? piece_fig.y : piece_fig.x), dark, rough, relief);
+                relief *= piece_fig.w;
+                coat = piece_fig.z;
+            } else if (frame_map.y < -0.5) {
+                albedo = piece_winter(lp, normalize(v_normal), normalize(eye.xyz - p), mod(abs(v_kind.w), 1000.0),
+                                      m.rgb, dark ? piece_fig.y : piece_fig.x, dark, frame_map.y < -2.5, rough);
+            } else if (frame_map.y > 0.5) {
                 // One continuous cut through the disc, including its side. Shift
                 // the stone for each piece so adjacent men have different cuts.
                 float seed = mod(v_kind.w < 0.0 ? -1.0 - v_kind.w : v_kind.w, 1000.0);
@@ -489,13 +769,18 @@ let LIT_FRAG = """
                     albedo = max(vec3(0.0), mix(m.rgb, inclusion, piece_fig.y * (1.6 + 1.7 * fract(seed * 0.382))));
                     rough += piece_fig.y * (flecks - 0.5) * 0.16;
                 } else if (frame_map.y > 2.5) {
-                    // Milky white pockets blend into a cooler body. Each cut carries
-                    // a different balance of porcelain white and pale celadon.
+                    // Milky pockets in a warm cream body, in the board's palette: each cut
+                    // its own balance of warm cream and a faint olive cloud. Texture past
+                    // 0.3 adds the pale squares' thin olive-grey veins.
                     float milk = smoothstep(0.24, 0.76, cloud + 0.3 * (fract(seed * 0.618) - 0.5)
                                            + 0.16 * (noise3(cut * 15.0) - 0.5));
-                    vec3 inclusion = mix(m.rgb * vec3(0.69, 0.82, 0.80),
-                                         m.rgb + vec3(0.14, 0.09, 0.10), milk);
-                    albedo = mix(m.rgb, inclusion, piece_fig.x * (0.3 + 3.7 * fract(seed * 0.382)));
+                    vec3 inclusion = mix(m.rgb * vec3(0.84, 0.83, 0.72),
+                                         m.rgb + vec3(0.07, 0.05, 0.02), milk);
+                    albedo = mix(m.rgb, inclusion, min(piece_fig.x * (0.3 + 3.7 * fract(seed * 0.382)), 1.0));
+                    float wave = abs(noise3(cut * 3.5 + 0.8 * body) - 0.5);
+                    float vein = 1.0 - smoothstep(0.0, 0.025 + 0.6 * fwidth(wave), wave);
+                    float veins = smoothstep(0.3, 0.9, piece_fig.x) * (0.5 + fract(seed * 0.73));
+                    albedo *= 1.0 - veins * vein * vec3(0.22, 0.2, 0.32);
                 } else {
                     if (frame_map.y > 1.5) {
                         // A bent mineral seam crossing the broad cloudy inclusions.
@@ -592,6 +877,11 @@ let LIT_FRAG = """
             if (v_kind.z > 1.5) ao *= mix(1.0, 0.65, smoothstep(HEIGHT - 0.05, HEIGHT, lp.y));
         }
 
+        // The coat lies smooth over the shape; the wood under it takes the relief.
+        // Derivatives outside the branch: a quad straddling a piece's edge stays defined.
+        vec3 n_coat = n;
+        vec3 n_bump = bumped(n, p, relief);
+        if (relief != 0.0) n = n_bump;
         vec3 v = normalize(eye.xyz - p);
         vec3 l = light_dir.xyz;
         float nov = max(dot(n, v), 1e-4);
@@ -611,6 +901,8 @@ let LIT_FRAG = """
         a = max(a, 0.0079);
         vec3 f0 = vec3(0.04);
         vec3 spec = d_ggx(noh, a) * v_smith(nov, nl, a) * f_schlick(f0, voh) * nl;
+        // Under a varnish the wood's own sheen is the softer one (the coat's below).
+        spec *= 1.0 - 0.6 * coat;
         float wrap = 0.2;
         float diff = clamp((nol + wrap) / (1.0 + wrap), 0.0, 1.0) / (1.0 + wrap);
         // Filament's micro-shadowing from the occlusion, on the field only: on the
@@ -619,15 +911,52 @@ let LIT_FRAG = """
         micro = nol > 0.0 && mat < 0.5 ? micro * micro : 1.0;
         // A piece's lip and groove are finer than a shadow texel: its lookups start a
         // little toward the light, so they leave them to the baked occlusion.
-        float vis = shadow(mat > 1.5 ? p + l * 0.03 : p, n) * micro;
+        float center = shadow(mat > 1.5 ? p + l * 0.03 : p, n);
+        float vis = center * micro;
         vec3 light = light_color.rgb * light_dir.w;
-        vec3 direct = (albedo * ((diff + v_scatter) / PI) + spec) * light * vis;
+        vec3 direct;
         // The photograph's light: diffuse from the harmonics, specular from them along
         // the reflection, through the DFG fit, under the occlusion.
         vec3 irr = sh_eval(n) * params.z;
         vec3 env = sh_eval(reflect(-v, n)) * params.z;
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * a - 1.0)) - 1.0 + ao, 0.0, 1.0);
-        vec3 ambient = albedo * irr * ao + env * env_brdf(f0, rough, nov) * spec_ao;
+        vec3 ambient;
+        if (sss_f > 0.0) {
+            // The board's scattering: a fraction of the diffuse leaves the body in its
+            // color, lit over the geometric normal (the relief softened) with the
+            // surface's wrap, so lit flat stone keeps its brightness. What left near where it entered keeps the body's
+            // color; what the spread brought from farther (scatter_spread's excess over
+            // the shadow here) and what came through the frame's top takes the deeper
+            // tint of the longer path. Only deep occlusion darkens it (a piece's contact,
+            // a crack's inside): the open field's, 0.85 or so, would dim the lit stone.
+            vec3 k = 0.35 + 0.65 * travelled / max(max(travelled.r, travelled.g), max(travelled.b, 1e-4));
+            vec3 spread = scatter_spread(p, ng, sss_radius, k, center);
+            float flat_diff = clamp((dot(ng, l) + 0.2) / 1.2, 0.0, 1.0) / 1.2;
+            vec3 body_light = (flat_diff * (center * body + max(spread - center, 0.0) * travelled) + through)
+                            * clamp((ao - 0.45) / 0.4, 0.0, 1.0);
+            direct = ((albedo * (diff * (1.0 - sss_f) / PI) + spec) * vis + sss_f * body_light / PI) * light;
+            ambient = mix(albedo * irr, body * sh_eval(ng) * params.z, sss_f) * ao
+                    + env * env_brdf(f0, rough, nov) * spec_ao;
+        } else {
+            direct = (albedo * ((diff + v_scatter) / PI) + spec) * light * vis;
+            ambient = albedo * irr * ao + env * env_brdf(f0, rough, nov) * spec_ao;
+        }
+        if (coat > 0.0) {
+            // The varnish: a thin clear coat (index 1.5) over the smooth shape, its own
+            // sharper lobe; what it reflects doesn't reach the wood under it.
+            float nlc = clamp(dot(n_coat, l), 0.0, 1.0);
+            float novc = max(dot(n_coat, v), 1e-4);
+            float nohc = clamp(dot(n_coat, hv), 0.0, 1.0);
+            vec3 cu = dFdx(n_coat);
+            vec3 cv = dFdy(n_coat);
+            float ac = 0.16 * 0.16;
+            ac = sqrt(clamp(ac * ac + min(0.3 * (dot(cu, cu) + dot(cv, cv)) + top_var, 0.3), 0.0, 1.0));
+            float fc = coat * f_schlick(vec3(0.04), voh).x;
+            float fe = coat * env_brdf(vec3(0.04), 0.16, novc).x;
+            vec3 spec_c = vec3(d_ggx(nohc, ac) * v_smith(novc, nlc, ac) * fc * nlc);
+            direct = direct * (1.0 - fc) + spec_c * light * vis;
+            ambient = ambient * (1.0 - fe) + sh_eval(reflect(-v, n_coat)) * params.z * fe * spec_ao;
+        }
         if (mat > 1.5) {
             // The lit board's light on a piece's side: what faces down and out sees the
             // board round it, lit by the key from above.

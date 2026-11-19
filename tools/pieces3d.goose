@@ -76,7 +76,7 @@ fn put_look(r3d: render3d::Own&, g: render3d::Gpu&, season: i64, material: i64) 
 
 // The pieces' values of a look (looks::Theme's fields of the same names, sRGB).
 struct Pieces {
-    mineral: f32,
+    mineral:       f32,
     light_piece:   float4,
     dark_piece:    float4,
     piece_fig:     float4,
@@ -135,11 +135,11 @@ fn before(p: Pieces) -> Pieces {
 
 // Writes the values into the frame's block as render3d::theme_end does, colors linear;
 // the next draw shows them.
-fn put(g: render3d::Gpu&, p: Pieces) {
+fn put(g: render3d::Gpu&, p: Pieces, brightness: f32) {
     let f .= g.frame;
     f.frame_map.y = p.mineral;
     f.light_piece = model3d::linear4(p.light_piece);
-    f.dark_piece = model3d::linear4(p.dark_piece);
+    f.dark_piece = model3d::dark_piece_color(p.dark_piece, brightness);
     f.piece_fig = p.piece_fig;
     f.light_scatter = model3d::linear4(p.light_scatter);
     f.dark_scatter = model3d::linear4(p.dark_scatter);
@@ -167,6 +167,10 @@ fn read_flags(argv: u8[:][>..]&, p: Pieces&, shown: i64) {
         guard ok && k >= 0 && k < profiles(shown) else { abort(str("--profile: 0 to ", profiles(shown) - 1)); }
         p = profile(shown, k);
     }
+    read_values(argv, p);
+}
+
+fn read_values(argv: u8[:][>..]&, p: Pieces&) {
     for a, i in argv {
         guard i + 1 < argv.len || a == "--before" else { continue; }
         if a == "--light-scatter" { p.light_scatter = numbers(argv[i + 1], p.light_scatter); }

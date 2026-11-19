@@ -1,9 +1,12 @@
 // Compare piece scattering. B toggles it while preserving the materials.
 // Drag to orbit, scroll to zoom, R resets the camera.
 //   goose build -o build/piece_tune tools/piece_tune.goose
-//   build/piece_tune [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
+//   cd tools && ../build/piece_tune [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
 //                    [--size 1600x1000] [any of board_shot's pieces' flags]
-//                    [--shot out.png]   # the window saved after a few frames, then closed
+//                    [--pieces Plastic|Jade|Wood|Slate|Onyx] [--key game|left|right]
+//                    [--scatter off|on] [--board-scatter off|on] [--board-strength 0..1]
+//                    [--board-radius 0.02..0.6] [--board-color 0..3]
+//                    [--yaw DEG] [--pitch DEG] [--near 0.25..1.5] [--shot out.png]
 
 import std;
 import vec;
@@ -20,7 +23,7 @@ import render3d from "../src/render3d";
 import .pieces3d;
 
 let PANEL_W: f32 = 330.0;
-let PANEL_H: f32 = 510.0;
+let PANEL_H: f32 = 455.0;
 let ROW:     f32 = 21.0;
 // looks::AUTUMN.. and MATERIAL_AUTO.. in this order.
 let SEASONS = ["autumn", "winter", "spring", "summer"];
@@ -45,16 +48,31 @@ fn choice(c: ui::Context, name: const u8[:], v: i64&, names: const u8[:][]) {
     ui::slider_int(c, 0, v, names.len - 1, 1);
 }
 
-fn heading(c: ui::Context, text: const u8[:]) {
-    ui::layout_row_dynamic(c, ROW, 1);
-    ui::label(c, text, ui::TEXT_LEFT);
-}
-
 // Preview a piece set on any board. Board default also accepts board_shot's profile.
 fn selected_pieces(shown: i64, material: i64, profile: i64) -> pieces3d::Pieces {
     if material == 1 { return pieces3d::profile(looks::SPRING_STONE, 1); }
     if material == 2 { return pieces3d::of_look(looks::SPRING_STONE); }
-    if material == 3 { return pieces3d::of_look(looks::AUTUMN); }
+    if material == 3 {
+        var p = pieces3d::of_look(looks::AUTUMN);
+        p.mineral = -1.0;
+        p.light_piece = float4 { 0.89, 0.77, 0.60, 0.5 };
+        p.dark_piece = float4 { 0.36, 0.235, 0.16, 0.5 };
+        // z: the varnish coat's strength, w: the figure's relief under it.
+        p.piece_fig = float4 { 0.3, 0.3, 0.6, 1.0 };
+        return p;
+    }
+    if material == 4 || material == 5 {
+        var p = pieces3d::of_look(looks::WINTER);
+        p.mineral = if material == 4 { -2.0 } else { -3.0 };
+        // Satin ivory with honed slate or polished onyx (task 094's winter pass).
+        p.light_piece = float4 { 0.87, 0.835, 0.75, 0.4 };
+        p.dark_piece = if material == 4 { float4 { 0.17, 0.195, 0.225, 0.6 } }
+                       else { float4 { 0.09, 0.1, 0.115, 0.13 } };
+        p.piece_fig = float4 { 0.08, if material == 4 { 0.3 } else { 0.25 }, 0.0, 1.0 };
+        p.light_scatter = float4 { 0.93, 0.90, 0.83, 0.24 };
+        p.dark_scatter.w = 0.0;
+        return p;
+    }
     return pieces3d::profile(shown, profile);
 }
 
@@ -69,6 +87,14 @@ fn pick(argv: u8[:][>..]&, name: const u8[:], names: const u8[:][], otherwise: i
     for n, i in names { if argv[at] == n { return i; } }
     abort(str(name, ": no ", argv[at]));
     return otherwise;
+}
+
+fn scalar(argv: u8[:][>..]&, name: const u8[:], initial: f32, lo: f32, hi: f32) -> f32 {
+    let at = flag_value(argv, name);
+    if at < 0 { return initial; }
+    let v, ok = parse_flt(argv[at]);
+    guard ok && v >= lo && v <= hi else { abort(str("invalid ", name)); }
+    return v as f32;
 }
 
 fn main() {
@@ -96,7 +122,6 @@ fn main() {
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
     var shown = pieces3d::put_look(r3d, g, season, material);
     var p = pieces3d::of_look(shown);
-    pieces3d::read_flags(argv, p, shown);
     pieces3d::place(r3d, g);
 
     let scale = max(gfx::screen_size().x as f32 / w, 1.0);
@@ -110,18 +135,35 @@ fn main() {
         let k, ok = parse_int(argv[pf]);
         if ok { chosen = k; }
     }
-    let sets = ["Board default", "Plastic", "Jade", "Wood"];
+    let sets = ["Board default", "Plastic", "Jade", "Wood", "Slate", "Onyx"];
     let lights = ["game", "left", "right"];
     var direction = pick(argv, "--key", lights, 0);
     var last_direction = -1;
     var piece_material = pick(argv, "--pieces", sets, 0);
-    if piece_material != 0 { p = selected_pieces(shown, piece_material, chosen); }
-    var scattering = pick(argv, "--scatter", ["off", "on"], if piece_material == 1 { 0 } else { 1 }) == 1;
-    var dark_brightness: f32 = 1.0;
-    var yaw:   f32 = 0.0;
-    var pitch: f32 = 0.0;
-    var near:  f32 = 1.0;
+    if piece_material == 0 {
+        pieces3d::read_flags(argv, p, shown);
+    } else {
+        p = selected_pieces(shown, piece_material, chosen);
+        pieces3d::read_values(argv, p);
+    }
+    var scattering = pick(argv, "--scatter", ["off", "on"], if p.light_scatter.w + p.dark_scatter.w > 0.0 { 1 } else { 0 }) == 1;
+    // The board's scattering starts as the look has it on a desktop (Theme.board_scatter).
+    let look_scatter = looks::get(shown).board_scatter;
+    var board_scatter = pick(argv, "--board-scatter", ["off", "on"], if look_scatter.x > 0.0 { 1 } else { 0 }) == 1;
+    var side = 0;
+    // The board's scattering: the fraction of its diffuse light that leaves the body,
+    // and how far it travels there in world units (a square is 1).
+    var board_strength = scalar(argv, "--board-strength", if look_scatter.x > 0.0 { look_scatter.x } else { 0.5 }, 0.0, 1.0);
+    var board_radius = scalar(argv, "--board-radius", if look_scatter.x > 0.0 { look_scatter.y } else { 0.2 }, 0.02, 0.6);
+    // How deeply the light that travelled takes on the stone's color (0 not at all).
+    var board_color = scalar(argv, "--board-color", if look_scatter.x > 0.0 { look_scatter.z } else { 1.0 }, 0.0, 3.0);
+    var dark_brightness = scalar(argv, "--brightness", model3d::dark_brightness(p.mineral), 0.25, 2.0);
+    var yaw:   f32 = scalar(argv, "--yaw", 0.0, -360.0, 360.0);
+    var pitch: f32 = scalar(argv, "--pitch", 0.0, -30.0, 30.0);
+    var near:  f32 = scalar(argv, "--near", 1.0, 0.25, 1.5);
     let shot = flag_value(argv, "--shot");
+    var print_initial = false;
+    for arg in argv { if arg == "--print" { print_initial = true; } }
     var frames = 0;
     while gfx::frame() {
         frames += 1;
@@ -132,6 +174,7 @@ fn main() {
         ui::input_from_gfx(c);
         if gfx::key_pressed("B") { scattering = !scattering; }
         var defaults = false;
+        var report = gfx::key_pressed("P") || (frames == 1 && print_initial);
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         if ui::begin(c, "Material comparison", ui::rect(10.0, 10.0, PANEL_W, PANEL_H), flags) {
             choice(c, "season", season, SEASONS);
@@ -142,20 +185,33 @@ fn main() {
             if piece_material != previous {
                 scattering = piece_material != 1;
                 p = selected_pieces(shown, piece_material, chosen);
-                dark_brightness = 1.0;
+                dark_brightness = model3d::dark_brightness(p.mineral);
             }
             ui::layout_row_dynamic(c, ROW + 4.0, 1);
             ui::checkbox_label(c, "Subsurface scattering (B)", scattering);
-            heading(c, "Dark pieces");
-            slider(c, "Scattering", p.dark_scatter.w, 0.0, 2.0);
-            slider(c, "Brightness", dark_brightness, 0.25, 2.0);
-            slider(c, "Texture", p.piece_fig.y, 0.0, 0.6);
-            slider(c, "Roughness", p.dark_piece.w, 0.1, 1.0);
-            heading(c, "Light pieces");
-            slider(c, "Scattering", p.light_scatter.w, 0.0, 2.0);
-            slider(c, "Texture", p.piece_fig.x, 0.0, 0.3);
-            slider(c, "Roughness", p.light_piece.w, 0.1, 1.0);
-            ui::layout_row_dynamic(c, ROW + 4.0, 1);
+            if shown == looks::SPRING_STONE || shown == looks::SPRING_ELVEN {
+                ui::checkbox_label(c, "Board SSS", board_scatter);
+                slider(c, "Board strength", board_strength, 0.0, 1.0);
+                slider(c, "Board radius", board_radius, 0.02, 0.6);
+                slider(c, "Board color", board_color, 0.0, 3.0);
+            }
+            choice(c, "Tune", side, ["Dark", "Light"]);
+            if side == 0 {
+                slider(c, "Scattering", p.dark_scatter.w, 0.0, 2.0);
+                slider(c, "Brightness", dark_brightness, 0.25, 2.0);
+                slider(c, "Texture", p.piece_fig.y, 0.0, 0.6);
+                slider(c, "Roughness", p.dark_piece.w, 0.1, 1.0);
+            } else {
+                slider(c, "Scattering", p.light_scatter.w, 0.0, 2.0);
+                slider(c, "Texture", p.piece_fig.x, 0.0, 1.0);
+                slider(c, "Roughness", p.light_piece.w, 0.1, 1.0);
+            }
+            if piece_material == 3 {
+                slider(c, "Varnish", p.piece_fig.z, 0.0, 1.0);
+                slider(c, "Relief", p.piece_fig.w, 0.0, 3.0);
+            }
+            ui::layout_row_dynamic(c, ROW + 4.0, 2);
+            if ui::button_label(c, "Print (P)") { report = true; }
             if ui::button_label(c, "Reset material") { defaults = true; }
         }
         ui::end(c);
@@ -170,7 +226,7 @@ fn main() {
         }
         if defaults {
             p = selected_pieces(shown, piece_material, chosen);
-            dark_brightness = 1.0;
+            dark_brightness = model3d::dark_brightness(p.mineral);
         }
         if gfx::key_pressed("R") {
             yaw = 0.0;
@@ -195,10 +251,44 @@ fn main() {
             g.shadow_dirty = true;
             last_direction = direction;
         }
-        pieces3d::put(g, p);
-        g.frame.dark_piece.x *= dark_brightness;
-        g.frame.dark_piece.y *= dark_brightness;
-        g.frame.dark_piece.z *= dark_brightness;
+        if shown == looks::WINTER {
+            g.frame.edge = model3d::linear4(float4 { 0.32, 0.405, 0.51, 0.56 });
+            g.frame.line = model3d::linear4(float4 { 0.58, 0.66, 0.76, 0.44 });
+        }
+        g.frame.frame_map.z = board_radius;
+        g.frame.params.y = board_color;
+        g.frame.frame_map.w = if board_scatter && (shown == looks::SPRING_STONE || shown == looks::SPRING_ELVEN) { board_strength } else { 0.0 };
+        if report {
+            var out: u8[>..] = [];
+            format(out, "../build/piece_tune --season ", SEASONS[season], " --material ", MATERIALS[material]);
+            if piece_material > 0 { format(out, " --pieces ", sets[piece_material]); }
+            format(out, " --key ", lights[direction], " --scatter ", if scattering { "on" } else { "off" },
+                   " --board-scatter ", if board_scatter { "on" } else { "off" }, " --board-strength ");
+            pieces3d::num(out, board_strength);
+            out.append(" --board-radius ");
+            pieces3d::num(out, board_radius);
+            out.append(" --board-color ");
+            pieces3d::num(out, board_color);
+            out.append(" --brightness ");
+            pieces3d::num(out, dark_brightness);
+            pieces3d::flag4(out, "--light", p.light_piece);
+            pieces3d::flag4(out, "--dark", p.dark_piece);
+            pieces3d::flag4(out, "--figure", p.piece_fig);
+            pieces3d::flag4(out, "--wear", p.piece_wear);
+            pieces3d::flag4(out, "--light-scatter", p.light_scatter);
+            pieces3d::flag4(out, "--dark-scatter", p.dark_scatter);
+            if piece_material == 0 && chosen > 0 { format(out, " --profile ", chosen); }
+            if yaw != 0.0 || pitch != 0.0 || near != 1.0 {
+                out.append(" --yaw ");
+                pieces3d::num(out, yaw);
+                out.append(" --pitch ");
+                pieces3d::num(out, pitch);
+                out.append(" --near ");
+                pieces3d::num(out, near);
+            }
+            print(out);
+        }
+        pieces3d::put(g, p, dark_brightness);
         if !scattering {
             g.frame.light_scatter.w = 0.0;
             g.frame.dark_scatter.w = 0.0;

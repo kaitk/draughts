@@ -115,6 +115,11 @@ struct Theme {
     piece_wear: float4,
     // Mineral figure on the pieces: 0 turned wood, 1 granular stone, 2 veined stone, 3 white and green jade.
     mineral: f32 = 0.0,
+    // The board's subsurface scattering (shaders::LIT_FRAG, task 094), on desktops only
+    // (render3d::board_scatter): x the fraction of its diffuse light that leaves the
+    // stone's body, y how far it travels in world units (a square is 1), z how deeply
+    // the light that travelled takes the stone's color. 0 off.
+    board_scatter: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
 }
 
 // The pieces' scattering by material, which looks of one material share: ivory, bone,
@@ -313,7 +318,7 @@ fn winter() -> Theme {
         fill:          float4_0,
         light_scatter: IVORY_SCATTER,
         dark_scatter:  DARK_STONE_SCATTER,
-        mineral: 1.0,
+        mineral:       1.0,
         piece_wear:    STONE_WEAR,
     };
 }
@@ -618,9 +623,9 @@ fn elven() -> Theme {
         light_ring:    float4 { 0.05, 5.0, 0.03, 0.0 },
         dark_ring:     float4 { 0.6, 4.5, 0.15, 0.0 },
         frame_ring:    float4 { 0.06, 4.0, 0.0, 0.0 },
-        light_piece:   float4 { 0.89, 0.89, 0.87, 0.31 },
+        light_piece:   float4 { 0.875, 0.8, 0.735, 0.109 },
         dark_piece:    float4 { 0.30, 0.35, 0.21, 0.23 },
-        piece_fig:     float4 { 0.055, 0.25, 0.0, 0.55 },
+        piece_fig:     float4 { 0.8, 0.25, 0.0, 0.55 },
         crown:         float4 { 0.37, 0.41, 0.26, 0.0 },
         edge:          float4 { 0.0, 0.0, 0.0, 0.0 },
         line:          float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -634,10 +639,11 @@ fn elven() -> Theme {
         build:         float4 { 0.0, 0.0, 0.0, 1.0 },
         seam:          float4_0,
         fill:          float4 { 0.52, 0.6, 0.38, 0.75 },
-        light_scatter: float4 { 0.93, 0.96, 0.89, 0.12 },
+        light_scatter: float4 { 0.96, 0.88, 0.81, 0.435 },
         dark_scatter:  JADE_SCATTER,
-        mineral: 3.0,
+        mineral:       3.0,
         piece_wear:    STONE_WEAR,
+        board_scatter: float4 { 0.7, 0.3, 1.5, 0.0 },
     };
 }
 

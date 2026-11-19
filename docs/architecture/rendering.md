@@ -579,7 +579,8 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   pieces' occlusion of the field goes into a 512² map only where squares changed; a
   king's crown is baked once into a 256² map. One 4× multisampled forward pass (the
   board's shadow, the lit board and pieces with the key light's shadow from a 1024² map,
-  filtered more taps on desktop and iOS than on Android) draws into a kept image, only when
+  filtered more taps on desktop and iOS than on Android; on a desktop the spring stone
+  board also lets the key light scatter through its stone) draws into a kept image, only when
   the 3D scene changed (`view3d::changes`); each drawn frame lays it over the backdrop,
   itself kept (`render3d::keep_backdrop`), under the UI.
 - **Off the screen** the pass's MSAA targets, the kept backdrop, and the kept depth go

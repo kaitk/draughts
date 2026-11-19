@@ -75,7 +75,7 @@ fn main() {
     let shown = pieces3d::put_look(r3d, g, season, material);
     var pieces = pieces3d::of_look(shown);
     pieces3d::read_flags(argv, pieces, shown);
-    pieces3d::put(g, pieces);
+    pieces3d::put(g, pieces, model3d::dark_brightness(pieces.mineral));
     pieces3d::place(r3d, g);
 
     let view, eye = pieces3d::camera(gfx::screen_size());
