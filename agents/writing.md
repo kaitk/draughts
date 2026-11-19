@@ -50,7 +50,9 @@ Repeat this for new strings or another language.
   (*Tamm saab käia diagonaalidel ükskõik kui kaugele*), not *viltu*.
   Never a bare "Tamm!" nor a king with a crown beside it: *tamm* is also an oak, which
   has a crown. A saying is used as people say it (*Kaks on parem kui üks!*). How to play
-  follows this (2026-11-19); the theme names, draw lines, and replay still say *lööma*.
+  follows this (2026-11-19). The English gives the split: a capture is *võtmine* (*võtma*),
+  a shot, a combination's blow, is *löök* (*Tammi löögid*). A side in a sentence is singular
+  (*Valge pidi võtma*); *Valged*, *Mustad* name the pieces' colors.
   A brief for Gemini says all of this, or it keeps the stiff wording as correct.
   English "either" is *ükskõik kumb* or *mõlemad*: bare *kumbki* reads as "neither"
   (2026-11-13). The tightest labels are "Rahvusvaheline" (the setups' tiles size to their
