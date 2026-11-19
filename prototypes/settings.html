@@ -112,6 +112,19 @@
     .dialog dl { font-size: 16px; gap: 2px 14px; }
     .dialog .head h1 { font-size: 24px; }
   }
+  /* One list that scrolls (rendering.md, "Settings"): the sections under their headings,
+     and in Look the chosen board's sub-section under its small heading. */
+  .groups.glass { --r: 24px; overflow-y: auto; min-height: 0; padding-bottom: 8px; }
+  .group + .group { border-top: 1px solid rgb(255 255 255 / 0.12); }
+  #lookrows { display: grid; gap: 10px; }
+  .look h4 { margin: 4px 0 -2px; font-size: 15px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-dim); }
+  .thumb.fade { background: linear-gradient(rgb(255 255 255 / 0.25), rgb(0 0 0 / 0.3)); }
+  .thumb.flatpic { background: repeating-conic-gradient(rgb(255 255 255 / 0.5) 0 25%, rgb(0 0 0 / 0.35) 0 50%) 0 0 / 16px 16px; }
+  .thumb { position: relative; }
+  .tag { position: absolute; right: 3px; bottom: 2px; font: 11px/1.3 system-ui; font-style: normal; padding: 0 4px; border-radius: 6px; background: rgb(0 0 0 / 0.55); color: #fff; }
+  #shot { display: none; width: 100%; height: 100%; object-fit: contain; }
+  .preview.raised #shot { display: block; }
+  .preview.raised #board { display: none; }
 </style>
 </head>
 <body>
@@ -122,26 +135,19 @@
       <div class="tabs"><a class="tile glass" data-icon="target">Game</a><a class="tile glass on" data-icon="sun">Look</a></div>
       <div class="end glass" data-icon="globe"><a class="tile on">English</a><a class="tile">Eesti</a></div>
     </div>
-    <div class="groups">
-      <section class="group glass look">
+    <div class="groups glass">
+      <section class="group look">
         <h2 data-icon="sun">Look</h2>
-        <div class="setting"><div><h3>Theme</h3><div class="switch"><a class="tile on">Photo</a><a class="tile">Plain</a></div></div>
-          <div class="tiles" id="themes"></div></div>
-        <div class="setting"><h3>Board</h3><div class="tiles">
-          <a class="tile on">Flat<small>2D</small></a><a class="tile">Raised<small>3D</small></a>
-          <a class="tile">Turns<small>(with a friend)</small></a></div></div>
-        <div class="setting"><h3>Kings</h3><div class="tiles">
-          <a class="tile on">Auto</a><a class="tile"><span class="piece solo white king kp"></span>Crown</a>
-          <a class="tile"><span class="stack"><span class="piece solo white king kp"></span></span>Stack</a></div></div>
+        <div id="lookrows"></div>
       </section>
-      <section class="group glass sound">
+      <section class="group sound">
         <h2 id="sound-title">Sound</h2>
         <div class="setting"><h3>Volume</h3><div class="volume">
           <a class="tile" id="mute" aria-label="Mute"></a>
           <div class="slider" id="slider"><div class="track"><div class="fill"></div></div><div class="knob"><div class="piece white"></div></div></div>
         </div></div>
       </section>
-      <section class="group glass game">
+      <section class="group game">
         <h2 data-icon="target">Game</h2>
         <div class="setting"><h3>Move hints</h3><div class="tiles">
           <a class="tile on">Mistakes only</a><a class="tile">All moves</a></div></div>
@@ -153,7 +159,7 @@
       </section>
     </div>
   </div>
-  <div class="preview"><div id="board"></div></div>
+  <div class="preview"><div id="board"></div><img id="shot" alt=""></div>
   <div class="veil" id="veil"><section class="dialog glass" role="dialog" aria-labelledby="about-title">
     <div class="head"><h1 id="about-title">Draughts<small id="ver"></small></h1>
       <a class="tile small" id="copy">Copy</a><a class="tile small" data-icon="x" aria-label="Close" id="about-close"></a></div>
@@ -166,9 +172,51 @@
 <div class="samples">Sample: <span id="picks"></span></div>
 <script>
   const D = Draughts;
-  document.getElementById('themes').innerHTML = ['winter', 'spring', 'summer', 'autumn'].map((s) =>
-    `<a class="tile pic" href="?season=${s}"><span class="thumb" style="background-image:url(../design/backgrounds/masters/${s}-01-2048.jpg)"></span>${s[0].toUpperCase() + s.slice(1)}</a>`).join('') +
-    `<a class="tile pic on"><span class="thumb">${D.icon('sun')}</span>By date</a>`;
+  // The Look section (2026-11-20, take b as the user changed it): Theme, then Board, the
+  // main choice, its five tiles as before (Flat, Raised auto, Wood, Stone, Carved). Under
+  // it a sub-section for the board chosen, with only the rows that board uses: the flat
+  // board's Background (Photo, Plain) and Kings; the 3D board's Pieces (Natural, the board's
+  // own material; Smooth, as before task 094), Background (Photo, Plain, Table), and Kings.
+  // ?season= ?board=flat|raised ?material=auto|wood|stone|carved ?pieces=natural|smooth
+  // ?bg=photo|plain|table
+  const q = new URLSearchParams(location.search);
+  const L = { season: q.get('season') || 'winter', board: q.get('board') || 'raised', material: q.get('material') || 'auto',
+              pieces: q.get('pieces') || 'natural', bg: q.get('bg') || 'photo' };
+  const SEASONS = ['winter', 'spring', 'summer', 'autumn'], ATLAS = ['autumn', 'winter', 'spring', 'summer'];
+  const cap = (s) => s[0].toUpperCase() + s.slice(1);
+  const photo = (s) => `../design/backgrounds/masters/${s}-01-2048.jpg`;
+  const shown = () => L.season === 'date' ? 'winter' : L.season;
+  // A picture from design/boards/boards.jpg: the season's row, cell k (own, wood, stone, carved).
+  const atlas = (k) => `background:url(../design/boards/boards.jpg) ${-k * 62}px ${-ATLAS.indexOf(shown()) * 40.7}px / 248px 162.75px`;
+  const pic = (style, tag = '') => `<span class="thumb" style="${style}">${tag ? `<i class="tag">${tag}</i>` : ''}</span>`;
+  const tile = (key, val, inner, word, on = L[key] === val) =>
+    `<a class="tile pic${on ? ' on' : ''}" data-k="${key}" data-v="${val}">${inner}${word}</a>`;
+  const row = (name, html) => `<div class="setting"><h3>${name}</h3><div class="tiles">${html}</div></div>`;
+  function look() {
+    const s = shown(), raised = L.board === 'raised';
+    if (!raised && L.bg === 'table') L.bg = 'photo';
+    const themes = SEASONS.map((x) => tile('season', x, pic(`background-image:url(${photo(x)})`), cap(x))).join('') +
+      tile('season', 'date', `<span class="thumb">${D.icon('sun')}</span>`, 'By date');
+    const boards = tile('board', 'flat', '<span class="thumb flatpic"></span>', 'Flat') +
+      ['auto', 'wood', 'stone', 'carved'].map((m, k) =>
+        tile('material', m, pic(atlas(k), k ? '' : 'auto'), k ? cap(m) : 'Raised', raised && L.material === m)).join('');
+    const pieces = tile('pieces', 'natural', pic(`background-image:url(shots/pieces-natural-${s}.jpg)`), 'Natural') +
+      tile('pieces', 'smooth', pic(`background-image:url(shots/pieces-smooth-${s}.jpg)`), 'Smooth');
+    const bg = tile('bg', 'photo', pic(`background-image:url(${photo(s)})`), 'Photo') +
+      tile('bg', 'plain', '<span class="thumb fade"></span>', 'Plain') +
+      (raised ? tile('bg', 'table', pic('background-image:url(shots/table.jpg)'), 'Table') : '');
+    const kings = ['Auto', 'Crown', 'Stack'].map((w, i) =>
+      `<a class="tile${i ? '' : ' on'}">${i ? '<span class="piece solo white king kp"></span>' : ''}${w}</a>`).join('');
+    document.getElementById('lookrows').innerHTML = row('Theme', themes) + row('Board', boards) +
+      `<h4>${raised ? '3D board' : 'Flat board'}</h4>` +
+      (raised ? row('Pieces', pieces) : '') + row('Background', bg) + row('Kings', kings);
+    document.querySelectorAll('[data-k]').forEach((a) => a.onclick = () => {
+      if (a.dataset.k === 'material') { L.board = 'raised'; L.material = a.dataset.v; } else L[a.dataset.k] = a.dataset.v;
+      look();
+    });
+    document.querySelector('.preview').classList.toggle('raised', raised);
+    document.getElementById('shot').src = L.bg === 'table' && (s === 'winter' || s === 'autumn') ? `shots/table-${s}.png` : `shots/natural-${s}.png`;
+  }
   // The preview's fixed position: white must capture, with the man on d4 or the king on h6.
   D.board(document.getElementById('board'), {
     white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
@@ -244,6 +292,7 @@
     document.getElementById('copy').textContent = 'Copied';
   });
   open(new URLSearchParams(location.search).has('about') && new URLSearchParams(location.search).get('open') !== '0');
+  look();
   D.init();
 </script>
 </body>
