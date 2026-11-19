@@ -26,18 +26,18 @@ Open upstream, with their `docs/stdlib.md` companions in Goose:
 | goose_gfx | Branch | Goose docs |
 |---|---|---|
 | #10 | `no-clip-distance`: device made without clip distances, which Mali GPUs lack | none |
-| #11 | `no-vsync-immediate`: `NO_VSYNC` asks for immediate before mailbox | none |
+| #11 (merged) | `no-vsync-immediate`: `NO_VSYNC` asks for immediate before mailbox | none |
 | #12 | `screen-without-depth`: the screen's depth made on first `screen_depth()`, the screen not cycled | #370 |
 | #13 | `compressed-textures`: BC and ASTC formats, `format_supported`; a KTX2 loader offered as the next PR | #371 |
 | #14 | `msaa-resolve-without-store` (on #12): MSAA resolved without storing samples | #372 |
 | #15 | `draw-on-demand`: `WAIT_WHEN_IDLE`, opt-in | #373 |
-| issue #16 | `window-only`, `window-only-linux`: the window without a device, for another renderer | |
-| #17 | `headless-apple`: headless on macOS keeps the default video driver | none |
-| #18 | `macos-tested` (on #17): the macOS column, and two `test/window` fixes | none |
-| #19 (draft) | `end-on-device-lost` (on #15): `frame()` ends on Vulkan's lost device | #376 (draft) |
-| #20 (draft) | `gamepad-wake` (on #15): pads read in `frame()` and the wait | none |
+| #17 (merged) | `headless-apple`: headless on macOS keeps the default video driver | none |
+| #18 | `macos-tested`: the macOS column, and two `test/window` fixes | none |
+| #19 | `end-on-device-lost` (on #15): `frame()` ends on Vulkan's lost device | #376 |
+| #20 | `gamepad-wake` (on #15): pads read in `frame()`, the idle wait 16 ms with a pad open | none |
+| #21 | `window-only` (on #15): `WINDOW_ONLY`, the window without a device, for another renderer (issue #16) | not yet |
 
-#19 and #20, and Goose #376, stay drafts until #15 settles. `window-only` and `window-only-linux` wait for the answer on #16. Not yet a branch: `gfx::safe_area()`,
+Each branch is one commit, as upstream squash-merges (2026-11-19). Not yet a branch: `gfx::safe_area()`,
 beside upstream's `display_scale()`, for the MacBook notch in full screen as well as
 phones. Each new API needs its Goose `docs/stdlib.md` companion, as above.
 
