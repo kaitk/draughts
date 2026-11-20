@@ -3,7 +3,9 @@
 
     python3 tools/materials/parquet.py OUT_DIR
 
-Writes parquet.png (RGB, sRGB albedo). The planks run at 45 degrees to the tile's edges,
+Writes parquet.png: RGB the albedo (sRGB), A the perceptual roughness (linear, Filament's
+`roughness`, squared in the shader), and parquet_height.png (L8: 1 the planks' face, 0 the
+joint's bottom, JOINT_DEPTH_MM deep), optional. The planks run at 45 degrees to the tile's edges,
 so the floor's rows of points run along the texture's x. One tile is
 TILE_REPEATS * PLANK_RATIO * sqrt(2) plank widths a side (printed when baked).
 """
@@ -22,7 +24,7 @@ PLANK_RATIO = 5         # plank length in widths (7 x 35 cm; the download's are 
 TILE_REPEATS = 2        # herringbone periods a tile holds (2: 40 distinct planks, 0.99 m)
 SEED = 11
 
-# Colour: sRGB albedo of the mean plank, from library-parquet-01 made a little less red
+# Colour (all to check under our light): sRGB albedo of the mean plank, from library-parquet-01 made a little less red
 # to meet style-01's floor; planks vary in lightness and a little in hue.
 BASE = '#56331a'
 PLANK_LIGHTNESS = 0.22  # +- share each plank's lightness varies
@@ -31,9 +33,17 @@ CONTRAST = (1.2, 1.3, 1.45)  # how strongly the grain darkens or lightens, per c
                         # scale): darks go deeper brown, as oiled oak's do
 
 JOINT_MM = 0.7          # the dark gap between planks
-JOINT_DARK = 0.45       # its colour as a share of the wood's
+JOINT_DARK = 0.45       # guess: its colour as a share of the wood's (dirt in the gap)
 BEVEL_MM = 2.5          # planks darken a little this close to their edges (wear, wax)
-BEVEL_DARK = 0.12
+BEVEL_DARK = 0.12       # guess
+
+# Roughness (perceptual), waxed oak. All guesses, to tune under our light.
+ROUGH = (0.35, 0.50)    # guess: a plank's range; each plank draws its own
+ROUGH_ALONG = 0.04      # guess: +- along the grain (the oak's slow streaks)
+ROUGH_PORES = 0.12      # guess: open pores this much rougher
+ROUGH_JOINT = 0.80      # guess: the joints
+ROUGH_WORN = -0.06      # guess: the worn edge (the bevel) this much smoother
+JOINT_DEPTH_MM = 1.0    # the height map's depth at a joint; the bevel falls 0.3 mm
 
 OAK = dict(
     seed=SEED,
@@ -80,7 +90,7 @@ def bake(out):
     plank = ((r * m * k + s) * 2 + (~horiz)).astype(np.int64)
 
     w = PLANK_W_CM
-    shade = cm.oak(along * w, across * w, plank, OAK)
+    shade, pores, streak = cm.oak(along * w, across * w, plank, OAK)
 
     lin = cm.to_linear(cm.hex_rgb(BASE))
     light = 1 + PLANK_LIGHTNESS * (cm.rand(plank, SEED + 20) * 2 - 1)
@@ -95,8 +105,20 @@ def bake(out):
     bevel = 1 - BEVEL_DARK * np.clip(1 - edge / BEVEL_MM, 0, 1) ** 2
     col = col * (bevel * (JOINT_DARK + (1 - JOINT_DARK) * joint))[..., None]
 
-    col = col.reshape(SIZE, SUPERSAMPLE, SIZE, SUPERSAMPLE, 3).mean((1, 3))
-    cm.save(os.path.join(out, 'parquet.png'), cm.to_srgb(col))
+    lo, hi = ROUGH
+    rough = (lo + (hi - lo) * cm.rand(plank, SEED + 22) + ROUGH_ALONG * streak
+             + ROUGH_PORES * pores)
+    worn = np.clip(1 - edge / BEVEL_MM, 0, 1) ** 2
+    rough = rough + ROUGH_WORN * worn
+    rough = rough * joint + ROUGH_JOINT * (1 - joint)
+    height = 1 - (0.3 / JOINT_DEPTH_MM) * worn
+    height = height * joint
+
+    def down(a):
+        return a.reshape(SIZE, SUPERSAMPLE, SIZE, SUPERSAMPLE, *a.shape[2:]).mean((1, 3))
+
+    cm.save(os.path.join(out, 'parquet.png'), cm.to_srgb(down(col)), np.clip(down(rough), 0, 1))
+    cm.save(os.path.join(out, 'parquet_height.png'), down(height))
     tile_m = side * w / 100
     print(f'tile {tile_m:.3f} m a side, {SIZE / tile_m / 100:.1f} px/cm; '
           f'planks {w:g} x {w * k:g} cm, {2 * m * m * k} a tile')

@@ -25,7 +25,10 @@ def load(path, mode='RGB'):
     return np.asarray(Image.open(path).convert(mode), np.float32) / 255.0
 
 
-def save(path, a):
+def save(path, a, alpha=None):
+    """Saves an sRGB image; alpha (linear, as roughness is) goes in A if given."""
+    if alpha is not None:
+        a = np.concatenate([a, alpha[..., None]], -1)
     a = np.clip(a * 255.0 + 0.5, 0, 255).astype(np.uint8)
     Image.fromarray(a).save(path, optimize=True)
     print(f'wrote {path} {a.shape[1]}x{a.shape[0]}')
@@ -211,8 +214,9 @@ def rand(key, seed):
 # cut through by the face, with pores along the grain and a few ray flecks.
 
 def oak(along, across, board, p):
-    """Shade of oak at plank-local coords in cm (along the grain, across it), about
-    -1..1 a pixel (pores and latewood dark), for integer board ids. Flat-sawn: the
+    """Oak at plank-local coords in cm (along the grain, across it), for integer board
+    ids: its shade, about -1..1 (pores and latewood dark); how open its pores are, 0..1
+    (for roughness); and a slow streak along the grain, about -1..1. Flat-sawn: the
     growth rings of a log whose pith lies under the face, ring-porous, so each ring
     starts with a band of open pores. p: the wood's parameters (see the bakers' heads).
     With p['along_period_cm'], everything repeats along the grain at that length."""
@@ -262,8 +266,9 @@ def oak(along, across, board, p):
     x, n = noise_along(8.0)
     streak = fbm(x, across / 0.5 + jitter, 2, seed + 10, (n, 0))
 
-    return (-p['early_dark'] * early * (0.3 + 0.7 * pores)
-            - p['pore_dark'] * pores * (1 - early) * p['pore_spread']
-            - p['late_dark'] * late
-            + p['figure'] * tone + p['streak'] * streak)
-
+    open_pores = early * (0.3 + 0.7 * pores) + pores * (1 - early) * p['pore_spread']
+    shade = (-p['early_dark'] * early * (0.3 + 0.7 * pores)
+             - p['pore_dark'] * pores * (1 - early) * p['pore_spread']
+             - p['late_dark'] * late
+             + p['figure'] * tone + p['streak'] * streak)
+    return shade, np.clip(open_pores, 0, 1), streak

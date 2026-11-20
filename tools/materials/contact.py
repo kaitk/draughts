@@ -32,6 +32,14 @@ def save_jpg(img, path, size=None):
     img.convert('RGB').save(path, quality=90)
 
 
+def split(out, name):
+    """An RGBA bake's albedo and roughness as images of their own, for the page."""
+    im = Image.open(os.path.join(out, name + '.png'))
+    if im.mode == 'RGBA':
+        im.convert('RGB').save(os.path.join(out, f'c_{name}_albedo.png'))
+        im.getchannel('A').save(os.path.join(out, f'c_{name}_rough.png'))
+
+
 def tiled(out, name, scale):
     im = Image.open(os.path.join(out, name + '.png')).convert('RGB')
     w, h = im.size
@@ -41,7 +49,7 @@ def tiled(out, name, scale):
             big.paste(im, (i * w, j * h))
     save_jpg(big, os.path.join(out, f'c_{name}_3x3.jpg'), (int(w * 3 * scale), int(h * 3 * scale)))
     # From afar: box-filtered in linear light to an eighth, as a mip level would be.
-    far = cm.downscale(cm.load(os.path.join(out, name + '.png')), 8)
+    far = cm.downscale(cm.load(os.path.join(out, name + '.png'))[..., :3], 8)
     far = np.tile(far, (6, 6, 1))
     Image.fromarray((np.clip(far, 0, 1) * 255 + 0.5).astype(np.uint8)).save(
         os.path.join(out, f'c_{name}_far.png'))
@@ -67,6 +75,8 @@ def main(out):
 
     for name in ('wallpaper_preview', 'parquet', 'wainscot_oak'):
         tiled(out, name, 0.5)
+    for name in ('parquet', 'wainscot_oak'):
+        split(out, name)
     has_rug = os.path.exists(os.path.join(out, 'rug.png'))
 
     def fig(src, caption, cls=''):
@@ -74,8 +84,9 @@ def main(out):
 
     sections = [
         ('Wallpaper', 'wallpaper_mask.png: L8, 1024 px, one tile 1.4 m a side (7.3 px/cm). '
-         'Tinted from ground and gold (see wallpaper.py).', [
+         'Tinted from ground and gold, roughness from it too (wallpaper_rough.png, L8; see wallpaper.py).', [
             fig('wallpaper_preview.png', 'flat, tinted'),
+            fig('wallpaper_rough.png', 'roughness: 0.85 ground, 0.6 gold'),
             fig('wallpaper_mask.png', 'the mask'),
             fig('c_wallpaper_preview_3x3.jpg', 'tiled 3x3 (4.2 m)'),
             fig('c_wallpaper_preview_far.png', 'from afar: an eighth, 6x6'),
@@ -83,17 +94,20 @@ def main(out):
             fig('c_style_wall.jpg', 'style-01, the back wall'),
             fig('c_src_crop-wallpaper-01.jpg', 'crop-wallpaper-01'),
         ]),
-        ('Parquet', 'parquet.png: RGB sRGB, 1024 px, one tile 0.99 m a side (10.3 px/cm); '
+        ('Parquet', 'parquet.png: RGB albedo (sRGB) and A roughness (linear), 1024 px, one tile 0.99 m a side (10.3 px/cm); '
          'oak planks 7 x 35 cm, 40 a tile.', [
-            fig('parquet.png', 'flat'),
+            fig('c_parquet_albedo.png', 'albedo, flat'),
+            fig('c_parquet_rough.png', 'roughness (A): 0.35-0.5 a plank, joints 0.8'),
+            fig('parquet_height.png', 'height (optional): joints 1 mm, bevels'),
             fig('c_parquet_3x3.jpg', 'tiled 3x3 (3 m)'),
             fig('c_parquet_far.png', 'from afar: an eighth, 6x6 (6 m)'),
             fig('c_style_floor.jpg', 'style-01, the floor'),
             fig('c_src_library-parquet-01.jpg', 'library-parquet-01 (the download)'),
         ]),
-        ('Wainscot oak', 'wainscot_oak.png: RGB sRGB, 1024 px, one tile 0.50 m a side '
+        ('Wainscot oak', 'wainscot_oak.png: RGB albedo (sRGB) and A roughness (linear), 1024 px, one tile 0.50 m a side '
          '(20.5 px/cm), grain along y; rails swap u and v.', [
-            fig('wainscot_oak.png', 'flat'),
+            fig('c_wainscot_oak_albedo.png', 'albedo, flat'),
+            fig('c_wainscot_oak_rough.png', 'roughness (A): 0.38-0.48 a board'),
             fig('c_wainscot_oak_3x3.jpg', 'tiled 3x3 (1.5 m)'),
             fig('c_wainscot_oak_far.png', 'from afar: an eighth, 6x6'),
             fig('c_src_crop-wainscot-01.jpg', 'crop-wainscot-01'),
@@ -103,7 +117,7 @@ def main(out):
     ]
     if has_rug:
         sections.append(('Rug', 'rug.png: RGB sRGB, 1536 x 1126, the whole rug, 3 x 2.2 m '
-                         '(5.1 px/cm).', [
+                         '(5.1 px/cm). Roughness 1.0 throughout: no map.', [
             fig('rug.png', 'flat', 'wide'),
             fig('c_src_library-rug-01.jpg', 'library-rug-01 (the download)', 'wide'),
             fig('c_style_rug.jpg', 'style-01, the rug'),
@@ -132,7 +146,7 @@ figcaption {{ color: var(--muted); font-size: 13px; margin-top: 4px; }}
 <h1>Library materials</h1>
 <p>Baked by tools/materials/*.py. Each material flat, tiled 3x3 to show seams, from afar
 (box-filtered to an eighth in linear light, as a mip level), and beside the concepts.
-Click an image to open it full size.</p>
+Roughness is perceptual (Filament's), shown as grey: white is 1. Click an image to open it full size.</p>
 {body}
 <script>document.querySelectorAll('img').forEach(i => i.onclick = () => window.open(i.src));</script>
 </body></html>

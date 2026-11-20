@@ -3,7 +3,9 @@
 
     python3 tools/materials/wainscot.py OUT_DIR
 
-Writes wainscot_oak.png (RGB, sRGB albedo), tileable, the grain along y. The panelling
+Writes wainscot_oak.png, tileable, the grain along y: RGB the albedo (sRGB), A the
+perceptual roughness (linear, Filament's `roughness`). No height map: the mouldings
+are geometry. The panelling
 is geometry; stiles map it as it is, rails with u and v swapped, so the grain runs
 along each piece. Boards are glued edge to edge, so they meet without a gap.
 """
@@ -21,13 +23,18 @@ TILE_CM = 50.0          # the tile's side; 20 px/cm, as the wainscot is seen nea
 BOARDS = 4              # boards across a tile (12.5 cm each, as wide as a stile)
 SEED = 23
 
-# Colour: sRGB albedo, darker and redder than the floor (style-01's wainscot; the
+# Colour (all to check under our light): sRGB albedo, darker and redder than the floor (style-01's wainscot; the
 # download's is far more orange than the concepts).
 BASE = '#46240f'
 BOARD_LIGHTNESS = 0.12
 BOARD_HUE = 0.04
 CONTRAST = (1.1, 1.25, 1.5)
 BOARD_EDGE = 0.04       # the faint darkening where two boards are glued
+
+# Roughness (perceptual), waxed oak. All guesses, to tune under our light.
+ROUGH = (0.38, 0.48)    # guess: a board's range
+ROUGH_ALONG = 0.04      # guess: +- along the grain
+ROUGH_PORES = 0.12      # guess: open pores this much rougher
 
 OAK = dict(
     seed=SEED,
@@ -55,7 +62,7 @@ def bake(out):
     board = np.floor(across / board_w).astype(np.int64)
     local = across - board * board_w
 
-    shade = cm.oak(along, local, board, OAK)
+    shade, pores, streak = cm.oak(along, local, board, OAK)
     lin = cm.to_linear(cm.hex_rgb(BASE))
     light = 1 + BOARD_LIGHTNESS * (cm.rand(board, SEED + 20) * 2 - 1)
     hue = BOARD_HUE * (cm.rand(board, SEED + 21) * 2 - 1)
@@ -64,8 +71,13 @@ def bake(out):
     glue = 1 - BOARD_EDGE * np.clip(1 - edge, 0, 1)
     col = lin * tint * (light * glue)[..., None] * np.exp(np.array(CONTRAST) * shade[..., None])
 
-    col = col.reshape(SIZE, SUPERSAMPLE, SIZE, SUPERSAMPLE, 3).mean((1, 3))
-    cm.save(os.path.join(out, 'wainscot_oak.png'), cm.to_srgb(col))
+    lo, hi = ROUGH
+    rough = lo + (hi - lo) * cm.rand(board, SEED + 22) + ROUGH_ALONG * streak + ROUGH_PORES * pores
+
+    def down(a):
+        return a.reshape(SIZE, SUPERSAMPLE, SIZE, SUPERSAMPLE, *a.shape[2:]).mean((1, 3))
+
+    cm.save(os.path.join(out, 'wainscot_oak.png'), cm.to_srgb(down(col)), np.clip(down(rough), 0, 1))
     print(f'tile {TILE_CM / 100:.2f} m a side, {SIZE / TILE_CM:.1f} px/cm; '
           f'{BOARDS} boards of {board_w:g} cm')
 

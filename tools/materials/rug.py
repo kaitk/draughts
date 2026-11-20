@@ -3,7 +3,8 @@
 
     python3 tools/materials/rug.py OUT_DIR
 
-Writes rug.png (RGB, sRGB albedo), the whole rug edge to edge, not a tile. The download
+Writes rug.png (RGB, sRGB albedo), the whole rug edge to edge, not a tile. No roughness
+map: wool pile is roughness 1.0 throughout. The download
 is a 3:2 rug seen straight down; it is stretched to 3:2.2 along its width, which also
 brings its narrower top and bottom borders nearer the sides'. Its light is evened out:
 the side-to-side and top-to-bottom differences its mirror symmetry shows, and the
@@ -24,7 +25,7 @@ WIDTH = 1536            # px along the length (5.1 px/cm)
 BOX = (18.5, 12.5, 1517.5, 996.5)
 SMOOTH = 0.12           # light is what varies slower than this share of the rug's width
 BORDER = 0.10           # the border ring the corner darkening is measured in, as a share
-WEAVE = 0.035           # the pile's knot-to-knot variation, +- share of lightness
+WEAVE = 0.035           # guess: the pile's knot-to-knot variation, +- share of lightness
 KNOT_MM = 2.5
 SEED = 5
 
