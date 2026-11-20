@@ -1731,7 +1731,11 @@ let TABLE_FRAG = """
         ao *= 1.0 - 0.15 * (craze + dent);
         // The board standing on it hides the sky near its foot.
         float foot = round_box(p.xz, vec2(INNER + FRAME_W), FRAME_W);
-        ao *= 1.0 - 0.6 * (1.0 - smoothstep(0.0, 1.4, foot)) * step(TABLE_TOP - 0.01, p.y);
+        float on_table = step(TABLE_TOP - 0.01, p.y);
+        ao *= 1.0 - 0.6 * (1.0 - smoothstep(0.0, 1.4, foot)) * on_table;
+        // The crease where it meets the table, tight: the sky and the polish's reflection
+        // (spec_ao, the board's side in it too) dim at the foot.
+        ao *= mix(1.0, mix(0.35, 1.0, smoothstep(0.0, 0.12, foot)), on_table);
         float top_var = 0.0;
         // The top takes the baked normal; the edge and what is under keep the mesh's.
         if (top) {
