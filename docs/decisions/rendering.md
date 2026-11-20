@@ -135,9 +135,14 @@ Set aside, not rejected, for another season or a theme setting:
   5 MB a season), AVIF (libavif and an AV1 decoder to save about 1 MB).
 - One photograph size for every screen (2026-11-08): sizing by density saves at most 1 MB.
 - Windows and Linux embed no ASTC (2026-11-17): their GPUs mostly can't sample it, so it
-  was 7.5 MB of dead weight; the Windows program went from 17.3 to 9.7 MB. The Mac keeps
-  both until the compressed formats are upstream in goose_gfx, so a plain `goose build`
-  still shows the photograph.
+  was 7.5 MB of dead weight; the Windows program went from 17.3 to 9.7 MB.
+- The Mac app ships ASTC alone (2026-11-20), replacing "the Mac keeps both" of
+  2026-11-17: a release carries only the format it uses. The Apple GPU samples ASTC as
+  the iPhone's does, at 1.9 MB a season against the JPEG's 16 MB texture and its decode;
+  the disk image went from 17.2 to 13.2 MB with LZMA. The gfx root keeps both until the
+  compressed formats are upstream in goose_gfx, so a plain `goose build` still shows the
+  photograph. Rejected: JPEG alone (about 8.6 MB to download, 14 MB more resident, and
+  another path than the iPhone's).
 - The backgrounds stay the Lanczos-enlarged originals (2026-11-17, task 014 cancelled):
   3840 px masters redrawn with Qwen-Image 2.1 img2img and upscaled with SeedVR2 lost the
   originals' mesh and had more detail, but looked faker, the detail wrong. Their steps,

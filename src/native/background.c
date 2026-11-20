@@ -4,14 +4,15 @@
 // elsewhere the JPEG is decoded with stb_image and scaled down.
 //
 // Android and iOS devices embed only the ASTC files, which every GPU they target samples;
-// Windows and Linux only the JPEGs, as their GPUs mostly can't sample ASTC. The Mac keeps
-// both: its GPU samples the ASTC through the goose_gfx fork, and a plain `goose build`,
-// with the Goose release's own gfx and no compressed formats, decodes the JPEG. So does
-// the iOS simulator. An image whose file is missing is left out, and the app shows the
-// page color.
+// Windows and Linux only the JPEGs, as their GPUs mostly can't sample ASTC. The Mac app as
+// it ships (src/main/draughts_ngfx.build sets DRAUGHTS_ASTC_ONLY) embeds only the ASTC,
+// which the scripts' gfx fork and ngfx sample; the gfx root keeps both, so a plain
+// `goose build`, with the Goose release's own gfx and no compressed formats, decodes the
+// JPEG. So does the iOS simulator. An image whose file is missing is left out, and the
+// app shows the page color.
 
 #include "platform.h"
-#if defined(__ANDROID__) || (DRAUGHTS_IOS && !TARGET_OS_SIMULATOR)
+#if defined(__ANDROID__) || (DRAUGHTS_IOS && !TARGET_OS_SIMULATOR) || defined(DRAUGHTS_ASTC_ONLY)
 #define ASTC_ONLY 1
 #else
 #define ASTC_ONLY 0

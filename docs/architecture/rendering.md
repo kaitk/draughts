@@ -211,8 +211,9 @@ and value noise in the board shader, never a regular stripe.
   `design/backgrounds/README.md`), sampled as stored, and as JPEG at quality 85, decoded
   ([why 6 × 6](../decisions/rendering.md#scene-and-glass)). Android and iOS embed only the
   ASTC (7.5 MB of `libmain.so`) and no stb_image; Windows and Linux only the JPEG, which
-  their GPUs need. The Mac embeds both: the ASTC for its GPU, the JPEG for a plain
-  `goose build` with the Goose release's own gfx, which lacks compressed formats. A
+  their GPUs need. The Mac app (the ngfx root, `DRAUGHTS_ASTC_ONLY`) embeds only the
+  ASTC; the gfx root embeds both on the Mac, the JPEG for a plain `goose build` with the
+  Goose release's own gfx, which lacks compressed formats. A
   checkout without the images still builds and shows the page color (`__has_embed`).
 - **Loading**: `src/native/background.c` decodes (no graphics API) and `src/native/photo.c`
   uploads through gfx's C API, with no copy on the data stack. Compressed formats come
