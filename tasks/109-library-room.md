@@ -55,7 +55,9 @@ from the hall wall, 0 to 7 m. Facing the stove's end, the windows are on the lef
   oak.
 - Windows: three alike, their middles at x 1.5, 4.5 and 7.5; 1.1 by 2.5 m, the sills
   0.8 m up. Niches 1.3 m wide with straight reveals, square to the wall (not splayed),
-  rounded tops, the casement near the outer face; the inner shutters fold flat against
+  topped by a shallow segmental arch (not a half circle), the casement near the outer
+  face and rectangular, as `style-01`'s: two leaves, above a transom at two thirds of
+  its height small panes 3 across a leaf and 4 up, below it 2 large panes a leaf; the inner shutters fold flat against
   the reveals; lace curtains; white sills on the panelling, with vases, plants and small
   things moved as the shots want.
 - The door from the hall: a double door 1.4 m wide in the middle of the hall wall,
@@ -126,7 +128,7 @@ be thought through with the room, not taken from one picture:
   cut-out (`library-oak-01`); a whole tree line comes redrawn and cartoony. A panel to the
   side matches in kind, not in place, and its sky differs: panels join with a cut at a
   trunk, the sky drawn by us behind tree lines cut from the panels.
-- The layers put together (`build/notes/chatgpt-109/round-6/mock/mock.py`, local): the
+- The layers put together (`design/manor/outside/park.py`): the
   three far panels on a cylinder, their skies cut by a smooth sky fitted to them, joined
   at trunks, over a sky of ours, the oak at 40 m. The panels' seams hide in the crowns;
   `library-far-01`'s haze turns half transparent and still reads as haze. Through the
@@ -135,6 +137,11 @@ be thought through with the room, not taken from one picture:
   show slivers of a few degrees. So the middle window's view, some 30° across, carries
   the game; the band's sides serve the home screen and standing views. The oak dead
   ahead fills the middle window, and lit from the front it stands out of the backlit band.
+- Chosen (the user, 2026-11-20): work on from these layers and redo what looks ugly once
+  the room renders; haze and depth of field blur the far band and much of its roughness.
+  The script's defaults set the tree line at about 110 m and the oak at 70 m, 22° right
+  of straight out, so the middle window keeps the lake and the sun's glow; seen through
+  the windows the band at 60 m crowded them. To move once rendered.
 
 ## Acceptance criteria
 
@@ -144,6 +151,7 @@ be thought through with the room, not taken from one picture:
 - [x] One layout chosen by the user: our plan, `style-01` for the look
 - [x] The room's plan written here: walls, windows, doors, stove, bookcases, desk,
       table, rug, sizes in metres, for task 106 to model from
-- [ ] The park outside thought through and its layers' images made, the user choosing
+- [x] The park outside thought through and its layers' images made, the user choosing
+      (round 6; the backlit oak and the spruce group's cut-out wait for the renders)
 - [ ] Task 106's prompts and images (the simplified home shot, the window) brought in
       line with the chosen room
