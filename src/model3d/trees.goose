@@ -1,7 +1,7 @@
 // A tree outside the window, grown from a seed (task 105), and its shadow as the sun sees
 // it: a trunk and limbs branching with taper and droop (after Weber and Penn, Creation and
 // Rendering of Realistic Trees, 1995), leaves as small ellipses clustered on the twigs.
-// Only the parts whose shadow can come through the window are kept, in fixed buffers.
+// Only the parts whose shadow can come through the window are kept, up to fixed counts.
 // draw_map() bakes how much of the sun passes into four layers, each blurred by the sun's
 // disc at its distance, so the gaps between leaves become round flecks. Plain data, tested
 // headless; render3d uploads the map once when the room is put on.
@@ -14,8 +14,8 @@ import std;
 import vec;
 import math;
 
-let MAX_SEGMENTS = 6000;
-let MAX_LEAVES = 20000;
+let MAX_SEGMENTS = 8000;
+let MAX_LEAVES = 40000;
 
 // The trunk 0, limbs 1, branches 2, twigs 3, and the fine twigs 4.
 let LEVELS = 5;
@@ -26,10 +26,11 @@ struct Segment { a: float3, b: float3, ra: f32, rb: f32, level: i32 }
 // (radians), length and width.
 struct Leaf { at: float3, angle: f32, length: f32, width: f32 }
 
-struct Tree {
-    segments: Segment[..MAX_SEGMENTS],
-    leaves:   Leaf[..MAX_LEAVES],
-    left_out: i64,      // parts that didn't fit the buffers
+// Filled at setup only, as the room is put on: `var t = trees::Tree { .. };`.
+root struct Tree {
+    segments: Segment[>..] = [],    // at most MAX_SEGMENTS
+    leaves:   Leaf[>..]    = [],    // at most MAX_LEAVES
+    left_out: i64          = 0,     // parts past those counts
 }
 
 // What the tree is (rooms::Room's tree, crown and foliage).
@@ -203,7 +204,11 @@ recursive fn grow_branch(t: Tree&, s: Spec&, v: View&, b: Branch) {
         n = i + 1;
     }
     guard n > 0 else { return; }
-    if level >= 3 && s.leafy > 0.0 { add_leaves(t, s, v, d, points, n, level); }
+    // The leaves on dice of their own, so the branches are the same with or without them.
+    if level >= 3 && s.leafy > 0.0 {
+        var leaf_dice = Dice { mixed(b.dice ^ 0x5DEECE66D) };
+        add_leaves(t, s, v, leaf_dice, points, n, level);
+    }
     guard level < LEVELS - 1 else { return; }
     let count = CHILDREN_OF[level];
     let start = START_OF[level];
@@ -239,14 +244,14 @@ fn add_leaves(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i64
     var count = floor(want) as i64;
     if roll(d) < want - count { count++; }
     for j in count {
-        // Most toward the tip.
-        let f = 1.0 - 0.7 * roll(d) * roll(d);
+        // Along the outer four fifths, a little more toward the tip.
+        let f = 1.0 - 0.8 * roll(d) * (0.5 + 0.5 * roll(d));
         let at = f * n;
         let i = min(floor(at) as i64, n - 1);
         let foot = points[i] + (points[i + 1] - points[i]) * (at - i);
         let out = normalize(roll_ball(d) + float3 { 0.0, -0.3 * s.hang, 0.0 });
         let length = s.leaf * roll_between(d, 0.75, 1.2);
-        let middle = foot + out * (length * 0.6);
+        let middle = foot + out * (length * 0.9);
         let m = on_map(v, middle);
         guard clear_of_wall(v, middle) && on_square(v, m, length) else { continue; }
         // Turned along its stalk as the sun sees it, foreshortened by its tilt.

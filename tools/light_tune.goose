@@ -9,7 +9,7 @@
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
-//       [--table board|flame] [--window on|off] [--leaves tree|noise] [--seed N]
+//       [--table board|flame] [--window on|off] [--leaves tree|noise] [--seed N] [--wind-time S]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)] [--azimuth DEG] [--sun-height DEG]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 
@@ -206,6 +206,8 @@ fn report(r: rooms::Room, take: i64) {
     room_line(out, "lamp_color:", r.lamp_color);
     out.append("    exposure:   ");
     num(out, r.exposure);
+    out.append(",\n    tree_blur:  ");
+    num(out, r.tree_blur);
     out.append(",\n");
     room_line(out, "pattern:   ", r.pattern);
     room_line(out, "window:    ", r.window);
@@ -271,6 +273,8 @@ fn main() {
     room.foliage = four(argv, "--foliage", room.foliage);
     room.leaves = four(argv, "--trees", room.leaves);
     room.wind = four(argv, "--wind", room.wind);
+    room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
+    render3d::wind_time = number(argv, "--wind-time", 0.0);
     g.room = room;
     g.room_tuned = true;
     render3d::window_pattern = pattern == 1;
@@ -369,6 +373,7 @@ fn main() {
             slider(c, "Leaf wide", room.foliage.y, 0.2, 1.2);
             slider(c, "Leaf lets", room.foliage.z, 0.0, 1.0);
             slider(c, "Trunk away", room.foliage.w, 5.0, 300.0);
+            slider(c, "Tree blur", room.tree_blur, 0.1, 3.0);
             slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
             if g.tree_ms > 0.0 {
                 ui::layout_row_dynamic(c, ROW, 1);

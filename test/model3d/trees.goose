@@ -7,7 +7,7 @@ import math;
 import model3d from "../../src/model3d";
 
 fn show(name: const u8[:], r: rooms::Room) {
-    var t = default<trees::Tree>();
+    var t = trees::Tree { .. };
     let s = rooms::tree_spec(r);
     let v = rooms::tree_view(r);
     trees::grow(t, s, v);
@@ -19,7 +19,7 @@ fn show(name: const u8[:], r: rooms::Room) {
     for layer in 4 { format(line, " ", floor(trees::passing(map, layer) * 100.0 + 0.5) as i64); }
     print(line);
     // Grown again from the same seed: the same tree.
-    var again = default<trees::Tree>();
+    var again = trees::Tree { .. };
     trees::grow(again, s, v);
     if again.segments.len != t.segments.len || again.leaves.len != t.leaves.len { print("    grown again, another tree"); }
     // Every part kept falls on the map.

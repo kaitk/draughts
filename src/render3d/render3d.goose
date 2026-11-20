@@ -699,7 +699,7 @@ fn tree_or_stand_in(g: Gpu&) -> Texture { if g.tree_map.id != 0 { g.tree_map } e
 
 // What the tree's map is baked from.
 fn tree_key(r: rooms::Room) -> float4[10] {
-    return [r.tree, r.crown, r.foliage, r.leaves, r.window, r.panes, r.opening, r.key, float4_0, float4_0];
+    return [r.tree, r.crown, r.foliage, r.leaves, r.window, r.panes, r.opening, r.key, float4 { r.tree_blur, 0.0, 0.0, 0.0 }, float4_0];
 }
 
 // The tree grown and its shadow drawn on the CPU, then put on the GPU with its mips:
@@ -714,7 +714,7 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     let v = rooms::tree_view(r);
     var map: u8[>..] = [];
     {
-        var t = default<trees::Tree>();
+        var t = trees::Tree { .. };
         trees::grow(t, s, v);
         trees::draw_map(t, s, v, map);
     }

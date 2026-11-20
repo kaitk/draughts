@@ -25,6 +25,9 @@ struct Room {
     lamp:       float4,
     lamp_color: float4,
     exposure:   f32 = 1.0,
+    // How soft the tree's shadows are against the sun's disc alone (1 as the sun makes
+    // them; less is sharper than a real sun allows, for flecks as fine as the concept's).
+    tree_blur: f32 = 0.3,
     // The window the key comes through, its shadow on the key (shaders::LIGHT_FN's
     // window_light; world units, a square is 1, about 3.3 cm): x how much of the key the
     // shade keeps out (0 no pattern), y how fast the penumbra widens with the distance
@@ -53,13 +56,13 @@ struct Room {
     // The tree outside, its shadow baked (task 105, trees.goose) in place of the leaves'
     // noise above: x 1 the tree, 0 the noise; y its seed; z its trunk's height; w how many
     // of its leaves it has (0 bare, 1 full).
-    tree: float4 = float4 { 1.0, 6.0, 120.0, 1.5 },
+    tree: float4 = float4 { 1.0, 4.0, 70.0, 1.8 },
     // x, y the trunk's foot along the wall and up from where the board's middle sees the
     // sun through it; z how crooked its limbs (0 straight, 1 an oak's); w how its twigs hang.
-    crown: float4 = float4 { 12.0, -90.0, 0.5, 0.3 },
+    crown: float4 = float4 { 0.0, -45.0, 0.5, 0.3 },
     // A leaf: x its length, y its width against it, z how much of the sun it lets through;
     // w how far beyond the window the trunk stands.
-    foliage: float4 = float4 { 0.6, 0.7, 0.25, 8.0 },
+    foliage: float4 = float4 { 0.35, 0.7, 0.3, 30.0 },
 }
 
 // The library on the garden side, south-west, a mid-October afternoon
@@ -93,6 +96,8 @@ let WINTER = Room {
     lamp:       float4 { 120.0, 15.0, 0.15, 0.0 },
     lamp_color: float4 { 1.0, 0.7, 0.4, 0.0 },
     pattern:    float4 { 0.0, 0.012, 0.0, 0.0 },
+    tree:       float4 { 1.0, 6.0, 70.0, 0.0 },
+    crown:      float4 { 0.0, -45.0, 1.0, 0.3 },
     ..
 };
 
@@ -111,8 +116,8 @@ let WINTER_SUN = Room {
     lamp_color: float4_0,
     opening:    float4 { 2.0, 5.0, 3.0, 0.6 },
     leaves:     float4 { 0.35, 0.8, 150.0, 0.12 },
-    tree:       float4 { 1.0, 6.0, 120.0, 0.0 },
-    crown:      float4 { 12.0, -90.0, 1.0, 0.3 },
+    tree:       float4 { 1.0, 6.0, 70.0, 0.0 },
+    crown:      float4 { 0.0, -45.0, 1.0, 0.3 },
     ..
 };
 
@@ -130,8 +135,9 @@ let SPRING = Room {
     lamp:       float4_0,
     lamp_color: float4_0,
     leaves:     float4 { 0.4, 0.6, 100.0, 0.15 },
-    tree:       float4 { 1.0, 5.0, 120.0, 0.7 },
-    foliage:    float4 { 0.45, 0.6, 0.35, 8.0 },
+    tree:       float4 { 1.0, 4.0, 70.0, 0.9 },
+    crown:      float4 { 0.0, -60.0, 0.5, 0.3 },
+    foliage:    float4 { 0.3, 0.6, 0.3, 30.0 },
     ..
 };
 
@@ -148,8 +154,8 @@ let SUMMER = Room {
     floor:      float4 { 0.45, 0.3, 0.22, 0.12 },
     lamp:       float4_0,
     lamp_color: float4_0,
-    tree:       float4 { 1.0, 6.0, 120.0, 2.0 },
-    foliage:    float4 { 0.7, 0.7, 0.2, 8.0 },
+    tree:       float4 { 1.0, 4.0, 70.0, 2.4 },
+    foliage:    float4 { 0.4, 0.7, 0.2, 30.0 },
     ..
 };
 
@@ -272,5 +278,5 @@ fn tree_view(r: Room) -> trees::View {
     let span = max(x1 - x0, y1 - ya) + 8.0;
     let sun: f32 = 0.0093;
     return trees::View { shear, middle, span, (r.window.x + r.foliage.w) / facing, facing,
-                         sun * (1.0 + r.leaves.w), -r.foliage.w };
+                         sun * r.tree_blur, -r.foliage.w };
 }
