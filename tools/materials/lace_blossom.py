@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """Prototype: way c of lace_crisp.py with its big flowers drawn in the download's hand.
 
-    python3 tools/materials/lace_blossom.py OUT_DIR
+    python3 tools/materials/lace_blossom.py OUT_DIR [--seed N] [--tilt MIN,MAX | 0] [--near]
+
+--seed places and picks the blossoms (5); each blossom's tilt and warp come from its own
+seed, drawn from that. --tilt tips every blossom out of the cloth by MIN to MAX degrees
+(on: TILT_DEG, 4 to 25; 0, the default, keeps them as drawn); --near is the variant tuned toward the
+download (NEAR, NEAR_GROW, NEAR_TILT). The library's copies:
+    lace_blossom.py build/notes/lace-library/d --seed 5
+    lace_blossom.py build/notes/lace-library/d-tilted --seed 5 --tilt 4,25
+    lace_blossom.py build/notes/lace-library/d-near --seed 5 --near
 
 The download's big flowers are wild roses: five broad petals, a shallow notch in each
 tip, wavy edges, petals overlapping at the base, fine lines fanning from the centre with
@@ -34,6 +42,15 @@ KINDS = {
     'half_open': (0.45, 0.75, 5, 0.85, 0.70),
 }
 
+# The download's blossoms are never quite head on: each tips out of the cloth by a few to
+# 25 degrees (added to its kind's own turn, as the root of the sum of squares), its near
+# side a little wider than its far (PERSP times the tilt's sine, across the flower), and
+# its whole shape bends gently (WARP of its radius, two slow waves each way). Drawn from
+# the flower's own seed, so the rest of the bake stays as it was without them.
+TILT_DEG = (4.0, 25.0)
+PERSP = 0.22
+WARP = 0.05
+
 
 def petal_shape(s, t, L, fan_l, fan_r, notch, wave, wph, rng_lobes):
     """A petal fanning from its base along s: a broad rounded tip with a shallow notch and
@@ -53,10 +70,9 @@ def petal_shape(s, t, L, fan_l, fan_r, notch, wave, wph, rng_lobes):
 class Blossom:
     """One flower's petals and boss, drawn on a Canvas at centre c, radius R."""
 
-    def __init__(self, kind, rng):
+    def __init__(self, kind, rng, tilt=None):
         k, slope, n, length, fan = KINDS[kind]
-        self.kind, self.k, self.slope, self.n = kind, k, slope, n
-        self.lift = np.sqrt(max(0.0, 1 - k * k))
+        self.kind, self.slope, self.n = kind, slope, n
         base = rng.uniform(0, 2 * np.pi)
         self.petals = []
         for i in range(n):
@@ -76,6 +92,15 @@ class Blossom:
         self.holes = rng.integers(9, 12)
         self.hole_jit = rng.uniform(0.8, 1.2, 16)
         self.seed = rng.integers(1 << 30)
+        self.persp, self.warp = 0.0, None
+        if tilt:
+            own = np.random.default_rng(self.seed)
+            extra = np.radians(own.uniform(*tilt))
+            k = np.cos(min(np.hypot(np.arccos(k), extra), 1.25))
+            self.persp = PERSP * np.sin(extra)
+            self.warp = own.uniform(0, 2 * np.pi, 4)
+        self.k = k
+        self.lift = np.sqrt(max(0.0, 1 - k * k))
 
     def project(self, u, v, z):
         """Flower plane (u right, v toward the viewer's bottom, z out of the face) to the
@@ -97,13 +122,21 @@ class Blossom:
         return inv[0, 0] * x + inv[0, 1] * y, inv[1, 0] * x + inv[1, 1] * y
 
     def draw(self, cv, c, R, rot):
-        pad = R * 1.4
+        pad = R * 1.6
         ix, X, Y = cv.box(c[0] - pad, c[1] - pad, c[0] + pad, c[1] + pad)
         if ix is None:
             return
         cr, sr = np.cos(rot), np.sin(rot)
         x, y = X - c[0], Y - c[1]
         X, Y = cr * x + sr * y, -sr * x + cr * y          # into the flower's turned frame
+        if self.warp is not None:
+            p = self.warp
+            X, Y = (X + WARP * R * (np.sin(1.7 * Y / R + p[0]) + 0.5 * np.sin(2.3 * (X + Y) / R + p[1])),
+                    Y + WARP * R * (np.sin(1.9 * X / R + p[2]) + 0.5 * np.sin(2.1 * (X - Y) / R + p[3])))
+        if self.persp:
+            # The near side (down the turned frame) is nearer the eye: larger.
+            s = 1 + self.persp * np.clip(Y / R, -1.4, 1.4)
+            X, Y = X / s, Y / s
         # Far petals first (their tips up the screen), the boss among them, near last.
         order = sorted(self.petals, key=lambda p: np.sin(p['a']))
         boss_at = sum(1 for p in order if np.sin(p['a']) < 0.15 - 0.6 * (1 - self.k))
@@ -203,14 +236,14 @@ def bud(cv, c, R, rot, rng):
 VARIANTS = ['face', 'face6', 'three_quarter', 'side', 'half_open', 'bud']
 
 
-def draw_variant(cv, kind, c, R, rot, rng):
+def draw_variant(cv, kind, c, R, rot, rng, tilt=None):
     if kind == 'bud':
         bud(cv, c, R, rot, rng)
     else:
-        Blossom(kind, rng).draw(cv, c, R, rot)
+        Blossom(kind, rng, tilt).draw(cv, c, R, rot)
 
 
-def variant_sheet(out, cloth, net):
+def variant_sheet(out, cloth, net, tilt=None):
     """Each variant three times, large: 14 cm cells."""
     cell = 600
     rows = 2
@@ -220,7 +253,7 @@ def variant_sheet(out, cloth, net):
         for i in range(rows):
             R = mm(30) if kind != 'bud' else mm(18)
             draw_variant(cv, kind, (j * cell + cell / 2, i * cell + cell / 2), R,
-                         rng.uniform(-0.4, 0.4) if kind != 'face' else rng.uniform(0, 6.3), rng)
+                         rng.uniform(-0.4, 0.4) if kind != 'face' else rng.uniform(0, 6.3), rng, tilt)
     sd, vein, half = cv.finish()
     m = lc.render(sd, vein, half, (_tile(cloth[0], cv.h, cv.w), _tile(cloth[1], cv.h, cv.w)))
     big = np.maximum(_tile(lace.tiled(net, lace.NET_REPEAT), cv.h, cv.w), m)
@@ -229,12 +262,14 @@ def variant_sheet(out, cloth, net):
     lace.save_jpg(os.path.join(out, 'variants_backlit.jpg'), b)
 
 
-def regrow(sd, half, wrap_y=True, seed=5):
+def regrow(sd, half, wrap_y=True, seed=5, tilt=None, find=None, spacing=30.0, r_max=33.0):
     """Way c's search for the traced flowers (its widest blobs), each redrawn as one of
     the variants: a round blob face on or at three-quarters, a long one from the side or
-    half open, its squash across the blob's long axis; neighbours differ."""
+    half open, its squash across the blob's long axis; neighbours differ. find, if given,
+    is the silhouette searched (sd's own otherwise); flowers are spacing mm apart at the
+    least, r_max mm in radius at the most."""
     f = 4
-    inside = lace.box((sd < 0).astype(np.float32), f) > 0.5
+    inside = lace.box(((sd if find is None else find) < 0).astype(np.float32), f) > 0.5
     depth = lc.edt_band(~inside, 28, wrap_y) * f
     cv = lc.Canvas(sd.shape[0], sd.shape[1], wrap_y)
     cv.sd, cv.half = sd.copy(), half.copy()
@@ -250,8 +285,8 @@ def regrow(sd, half, wrap_y=True, seed=5):
             break
         dx = (xx - x + ww // 2) % ww - ww // 2
         dy = (yy - y + hh // 2) % hh - hh // 2 if wrap_y else yy - y
-        near = dx * dx + dy * dy < (mm(30) / f) ** 2
-        # The blob's long axis from its second moments within 30 mm.
+        near = dx * dx + dy * dy < (mm(spacing) / f) ** 2
+        # The blob's long axis from its second moments within spacing.
         m = near & inside
         ex, ey = dx[m].astype(np.float64), dy[m].astype(np.float64)
         cxx, cyy, cxy = (ex * ex).mean(), (ey * ey).mean(), (ex * ey).mean()
@@ -263,7 +298,7 @@ def regrow(sd, half, wrap_y=True, seed=5):
         d[near] = 0
     placed = []
     for x, y, dep, aspect, axis in found:
-        R = float(np.clip(dep * 2.8, mm(15), mm(33)))
+        R = float(np.clip(dep * 2.8, mm(15), mm(r_max)))
         if aspect > 1.45:
             pool = ['side', 'half_open', 'three_quarter']
         elif aspect > 1.2:
@@ -282,15 +317,15 @@ def regrow(sd, half, wrap_y=True, seed=5):
             rot = axis                                    # squash across the long axis
             rot = (rot + np.pi / 2) % np.pi - np.pi / 2    # facing up the curtain
             rot += rng.normal(0, 0.15)
-        tilt = KINDS[kind][0] if kind in KINDS else 0.6
+        squash = KINDS[kind][0] if kind in KINDS else 0.6
         if kind != 'face':
-            R = float(min(R / np.sqrt(max(tilt, 0.5)), mm(34)))
-        kk = max(tilt, 0.55)
+            R = float(min(R / np.sqrt(max(squash, 0.5)), mm(r_max + 1)))
+        kk = max(squash, 0.55)
         ix, X, Y = cv.box(x - R * 1.2, y - R * 1.2, x + R * 1.2, y + R * 1.2)
         cr, sr = np.cos(rot), np.sin(rot)
         u, v = cr * (X - x) + sr * (Y - y), -sr * (X - x) + cr * (Y - y)
         cv.sd[ix] = np.maximum(cv.sd[ix], R * 1.06 - np.hypot(u, v / kk))
-        draw_variant(cv, kind, (x, y), R if kind != 'bud' else R * 0.75, rot, rng)
+        draw_variant(cv, kind, (x, y), R if kind != 'bud' else R * 0.75, rot, rng, tilt)
     print(f'regrew {len(found)} flowers:', ', '.join(q[2] for q in placed))
     return cv.finish()
 
@@ -299,14 +334,28 @@ def _tile(a, h, w):
     return np.tile(a, (-(-h // a.shape[0]), -(-w // a.shape[1])))[:h, :w]
 
 
-def bake(out):
+# --near: toward the download, more of its veins carved into the traced leaves and more of
+# its half stitch kept (lace_crisp.sharpen's vein_ramp and half_level), fewer and larger
+# flowers as its are (regrow's spacing and r_max), and a wider tilt. A slimmer outline
+# (sharpen's shape at 0.60, 0.65) parts the leaves but loses the stems.
+NEAR = dict(vein_ramp=(0.12, 0.24), half_level=0.84)
+NEAR_GROW = dict(spacing=44.0, r_max=37.0)
+NEAR_TILT = (8.0, 32.0)
+
+
+def bake(out, seed=5, tilt=None, near=False):
     src_path = cm.source('library-lace-01.png')
     src = cm.load(src_path)
     net = lace.net_tile()
     cloth = (lc.weave('whole'), lc.weave('half'))
-    variant_sheet(out, cloth, net)
-    sd_a, half_a = lc.sharpen(lc.source_tile(src), N, N)
-    sd, vein, half = regrow(sd_a, half_a)
+    variant_sheet(out, cloth, net, tilt)
+    tile = lc.source_tile(src)
+    sd_a, half_a = lc.sharpen(tile, N, N)
+    find = None
+    if near:                                    # the flowers found as without it
+        find = sd_a
+        sd_a, half_a = lc.sharpen(tile, N, N, **NEAR)
+    sd, vein, half = regrow(sd_a, half_a, seed=seed, tilt=tilt, find=find, **(NEAR_GROW if near else {}))
     motif = lc.render(sd, vein, half, cloth)
 
     def hem_c_motifs(cv, g, traced=lc.hem_motifs_traced(src)):     # way c's, unchanged
@@ -321,7 +370,8 @@ def bake(out):
         lace.save_jpg(os.path.join(out, f'd_close{i + 2}.jpg'), np.concatenate([f, b], 1))
     srcflower = np.asarray(Image.open(src_path).convert('RGB'), np.float32)[240:500, 120:380] / 255
     crops = [srcflower]
-    for path in (os.path.join(out, '..', 'materials-lace-3', 'c_close.jpg'), os.path.join(out, 'd_close.jpg')):
+    for path in (os.path.join(out, '..', 'materials-lace-3', 'c_close.jpg'),
+                 os.path.join(out, '..', 'c', 'c_close.jpg'), os.path.join(out, 'd_close.jpg')):
         if os.path.exists(path):
             crops.append(np.asarray(Image.open(path), np.float32)[:, :1024] / 255)
     lc.compare_strip(out, crops)
@@ -335,7 +385,7 @@ def write_contact(out, mean):
     def fig(src, caption, cls=''):
         return f'<figure class="{cls}"><img src="{src}"><figcaption>{caption}</figcaption></figure>'
 
-    c = '../materials-lace-3/'
+    c = '../materials-lace-3/' if os.path.isdir(os.path.join(out, '..', 'materials-lace-3')) else '../c/'
     rows = [
         ('The blossoms alone', 'Each variant twice, 8 cm cells at full detail: face on (five petals), face on '
          '(six), three-quarters, from the side, half open, a bud.', [
@@ -406,7 +456,15 @@ roses in the download's hand, by tools/materials/lace_blossom.py. Mean field cov
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    near = '--near' in args
+    args = [a for a in args if a != '--near']
+    opts = dict(zip(args[1::2], args[2::2]))
+    if not args or len(args) % 2 != 1 or set(opts) - {'--seed', '--tilt'}:
         sys.exit(__doc__)
-    os.makedirs(sys.argv[1], exist_ok=True)
-    bake(sys.argv[1])
+    tilt = opts.get('--tilt', '0')
+    tilt = None if tilt == '0' else TILT_DEG if tilt == 'on' else tuple(float(v) for v in tilt.split(','))
+    if near and '--tilt' not in opts:
+        tilt = NEAR_TILT
+    os.makedirs(args[0], exist_ok=True)
+    bake(args[0], int(opts.get('--seed', 5)), tilt, near)

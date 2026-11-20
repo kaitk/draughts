@@ -4,6 +4,10 @@ over it, and the scalloped hem as a strip of its own.
 
     python3 tools/materials/lace.py OUT_DIR
 
+The library's copy (lace-2, the old bake): `lace.py build/notes/lace-library/lace-2`. No seed: the net's
+jitter is hashed (cm.rand's seeds 11 and 12, the thread's wobble 13), so it bakes the same
+every time.
+
 Writes, all coverage (linear, 0 where light passes, 1 solid):
 - lace_net.png (L8, NET_SIZE px, NET_M a side): the tulle, hexagonal bobbinet, made here.
   It repeats NET_REPEAT times a motif tile, so its UV is the motif's times NET_REPEAT.

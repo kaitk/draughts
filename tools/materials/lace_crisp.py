@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """Prototype: the library's lace with crisp motifs, two ways, beside lace.py's bake.
 
-    python3 tools/materials/lace_crisp.py OUT_DIR
+    python3 tools/materials/lace_crisp.py OUT_DIR [--ways abc] [--seed N]
+
+--ways bakes only those ways; --seed replaces the way's seed (SEEDS: b grows from 7, its
+hem from HEM_SEED 11; c regrows its flowers from 5; a has none). The library's copies:
+    lace_crisp.py build/notes/lace-library/a --ways a
+    lace_crisp.py build/notes/lace-library/b --ways b --seed 7
+    lace_crisp.py build/notes/lace-library/c --ways c --seed 5
+Each writes TAG_motif_full.png and TAG_hem_full.png (the motif and hem at full detail)
+beside its previews, for lace_compare.py. With all three ways it also writes contact.html.
 
 Both ways draw at the field's full detail, 4096 px a tile (0.137 mm a px, as the net's 16
 tiles do), as distances: the motifs' silhouette as a signed distance (negative inside),
@@ -143,19 +151,21 @@ def source_tile(src):
     return cm.seam_tile(c, lace.OVERLAP, cost_img=lace.blur(c, 2.0))
 
 
-def sharpen(c, h, w, wrap_y=True):
-    """Silhouette (sd), carved veins and the half stitch from a coverage tile c."""
+def sharpen(c, h, w, wrap_y=True, vein_ramp=(0.16, 0.28), half_level=0.78, shape=lace.SHAPE):
+    """Silhouette (sd), carved veins and the half stitch from a coverage tile c: veins
+    where the coverage dips by vein_ramp under its surroundings, half stitch where its
+    level is under half_level; the outline where the smoothed coverage passes shape."""
     rs = (lambda a, hh, ww: cm.resize_periodic(a, hh, ww)) if wrap_y else \
         (lambda a, hh, ww: cm.resize_periodic(cm.resize(a, a.shape[1], hh), hh, ww))
     bl = (lambda a, s: lace.blur(a, s, True)) if wrap_y else lace.blur
-    sil = lace.ramp(rs(bl(c, lace.SHAPE_BLUR), h // 4, w // 4), lace.SHAPE)
+    sil = lace.ramp(rs(bl(c, lace.SHAPE_BLUR), h // 4, w // 4), shape)
     sil = sil * lace.ramp(bl(sil, lace.SUPPORT), lace.SUPPORT_MIN)
     inside = trace(sil > 0.5, 4, wrap_y=wrap_y)[:h, :w] > 0.5
-    vein = lace.ramp(rs(bl(c, lace.VEIN_AROUND) - bl(c, lace.DETAIL_BLUR), h, w), (0.16, 0.28))
+    vein = lace.ramp(rs(bl(c, lace.VEIN_AROUND) - bl(c, lace.DETAIL_BLUR), h, w), vein_ramp)
     inside &= ~(vein > 0.5)
     sd = signed(inside, wrap_y=wrap_y)
     level = rs(bl(c, 2.5), h, w)
-    half = (level < 0.78).astype(np.float32)
+    half = (level < half_level).astype(np.float32)
     return sd, half
 
 
@@ -496,7 +506,7 @@ def hem_strip(motif_fn, cloth, field_motif):
 
 
 def hem_motifs_grown(cv, g):
-    rng = np.random.default_rng(11)
+    rng = np.random.default_rng(HEM_SEED)
     P = HEM['period']
     sub = Canvas(cv.h, cv.w, wrap_y=False)
     for s in range(2):
@@ -616,6 +626,9 @@ def views(out, tag, motif, hem, net, close_at):
     f, b = lace.shade(hc)
     lace.save_jpg(os.path.join(out, f'{tag}_hem_close.jpg'), np.concatenate([f, b], 1))
     lace.save_jpg(os.path.join(out, f'{tag}_border_rgb.jpg'), cm.resize(hem, 1024, 384))
+    # The motif and the hem at full detail, for lace_compare.py and later tuning.
+    cm.save(os.path.join(out, f'{tag}_motif_full.png'), motif)
+    cm.save(os.path.join(out, f'{tag}_hem_full.png'), hem)
     return tile.mean()
 
 
@@ -658,7 +671,11 @@ def compare_strip(out, crops):
     strip.save(os.path.join(out, 'compare_flower.jpg'), quality=90)
 
 
-def bake(out):
+SEEDS = dict(b=7, c=5)      # way b's growth (its hem's is HEM_SEED), way c's regrown flowers
+HEM_SEED = 11
+
+
+def bake(out, ways='abc', seed=None):
     src_path = cm.source('library-lace-01.png')
     src = cm.load(src_path)
     net = lace.net_tile()
@@ -666,26 +683,32 @@ def bake(out):
     stats = {}
 
     # Way a.
-    c = source_tile(src)
-    sd_a, half_a = sharpen(c, N, N)
-    motif_a = render(sd_a, np.full_like(sd_a, BIG), half_a, cloth)
-    hem_a = hem_strip(hem_motifs_traced(src), cloth, motif_a)
-    stats['a'] = views(out, 'a', motif_a, hem_a, net, (1500 * 4 // 4 * 1, 1000))
-    cm.save(os.path.join(out, 'a_motif.png'), lace.box(motif_a, 4))
+    if 'a' in ways or 'c' in ways:
+        c = source_tile(src)
+        sd_a, half_a = sharpen(c, N, N)
+    if 'a' in ways:
+        motif_a = render(sd_a, np.full_like(sd_a, BIG), half_a, cloth)
+        hem_a = hem_strip(hem_motifs_traced(src), cloth, motif_a)
+        stats['a'] = views(out, 'a', motif_a, hem_a, net, (1500, 1000))
+        cm.save(os.path.join(out, 'a_motif.png'), lace.box(motif_a, 4))
 
     # Way c.
-    sd_c, vein_c, half_c = regrow_flowers(sd_a, half_a)
-    motif_c = render(sd_c, vein_c, half_c, cloth)
+    if 'c' in ways:
+        seed_c = SEEDS['c'] if seed is None else seed
+        sd_c, vein_c, half_c = regrow_flowers(sd_a, half_a, seed=seed_c)
+        motif_c = render(sd_c, vein_c, half_c, cloth)
 
-    def hem_c_motifs(cv, g, traced=hem_motifs_traced(src)):
-        sd, _, half = traced(cv, g)
-        return regrow_flowers(sd, half, wrap_y=False)
-    hem_c = hem_strip(hem_c_motifs, cloth, motif_c)
-    stats['c'] = views(out, 'c', motif_c, hem_c, net, (1500, 1000))
-    cm.save(os.path.join(out, 'c_motif.png'), lace.box(motif_c, 4))
+        def hem_c_motifs(cv, g, traced=hem_motifs_traced(src)):
+            sd, _, half = traced(cv, g)
+            return regrow_flowers(sd, half, wrap_y=False, seed=seed_c)
+        hem_c = hem_strip(hem_c_motifs, cloth, motif_c)
+        stats['c'] = views(out, 'c', motif_c, hem_c, net, (1500, 1000))
+        cm.save(os.path.join(out, 'c_motif.png'), lace.box(motif_c, 4))
+    if 'b' not in ways:
+        return
 
     # Way b.
-    sd_b, vein_b, half_b = grow_field()
+    sd_b, vein_b, half_b = grow_field(SEEDS['b'] if seed is None else seed)
     motif_b = render(sd_b, vein_b, half_b, cloth)
     hem_b = hem_strip(hem_motifs_grown, cloth, motif_b)
     close_b = (1200, 400)
@@ -698,6 +721,8 @@ def bake(out):
         f, b = lace.shade(np.roll(big, (-close_b[0], -close_b[1]), (0, 1))[:1024, :1024])
         lace.save_jpg(os.path.join(out, f'b_encoded{size}_close.jpg'), np.concatenate([f, b], 1))
 
+    if ways != 'abc':
+        return
     # The same flower patch side by side: download (source px), lace-2, a, b.
     old = os.path.join(os.path.dirname(os.path.abspath(out)), 'materials-lace-2', 'lace_close.png')
     srcflower = np.asarray(Image.open(src_path).convert('RGB'), np.float32)[240:500, 120:380] / 255
@@ -806,7 +831,10 @@ figcaption {{ color: var(--muted); font-size: 13px; margin-top: 4px; }}
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    opts = dict(zip(args[1::2], args[2::2]))
+    if not args or len(args) % 2 != 1 or set(opts) - {'--ways', '--seed'}:
         sys.exit(__doc__)
-    os.makedirs(sys.argv[1], exist_ok=True)
-    bake(sys.argv[1])
+    os.makedirs(args[0], exist_ok=True)
+    seed = opts.get('--seed')
+    bake(args[0], opts.get('--ways', 'abc'), None if seed is None else int(seed))
