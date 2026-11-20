@@ -210,6 +210,11 @@ short and straight.
   God of War's *Interactive Wind and Vegetation* (GDC) for a wind field if ever needed.
   The Witcher 3's wind (SpeedTree's, by all accounts, tuned strong) is unpublished.
 
+- The maple's leaves read better but could still improve (the user, 2026-11-20): lobes
+  that survive the blur (larger leaves near the window, a sharper near layer), leaves
+  turned more variedly so not every one shows its full outline, clusters of a few
+  leaves overlapping as on a real twig.
+
 ## Acceptance criteria
 
 - [ ] A generated tree whose shadow reads as branches and leaves, not noise, on the board
