@@ -99,7 +99,7 @@ common ones:
 | `--size WxH`, `--size full` | the window, in points on the Mac; `full` fills the screen |
 | `--dp N`, `--inset L,T,R,B` | a phone's layout: its shorter side in dp, its safe area in dp |
 | `--touch on\|off`, `--mouse X,Y`, `--keys down,enter` | a desktop laid out as touch or not, the pointer held, keys pressed one a frame |
-| `--theme`, `--lang`, `--hints`, `--background`, `--board 3d\|flat`, `--material`, `--moves` | override the settings for the run without writing them |
+| `--theme`, `--lang`, `--hints`, `--background photo\|plain\|table`, `--pieces natural\|smooth`, `--board 3d\|flat`, `--material`, `--moves` | override the settings for the run without writing them |
 | `--fen POS`, `--tap c3` | a game from a position, squares tapped on the first frames |
 | `--variant`, `--clock 5+3`, `--computer white\|black`, `--level` | a new game of that kind |
 | `--screen NAME` | open a screen: `game`, `settings`, `setup`, `friend`, `computer`, `puzzles`, `results`, `tutorial` (`--step N`), `ask`, `replay` (`--ply N`, `--history FILE`, `--best on`) |

@@ -191,6 +191,7 @@ struct Gpu {
     frame_rows:     i64,            // the frame map's rows: `side`, or the mitred bands'
     frame_flat:     bool,           // frame_normal is flat_frame()'s 4 × 4, not the map's
     table:          bool,           // the table under the board (set_table), its map baked
+    smooth:         bool,           // settings' Smooth pieces (looks::smooth), put on by theme_end
     table_albedo:   Texture,        // with the theme's surfaces, at model3d::table_size
     table_normal:   Texture,
     table_wear:     Texture,        // its wear's tile, at model3d::wear_side (wear_at)
@@ -552,7 +553,7 @@ fn theme_step<O>(o: O&, g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
 // apply()'s end: the key light, and the look's colors in the frame's block.
 fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
     flat_frame(o, g);
-    let t = look(g, which);
+    let t = pieces_of(g, which);
     // The key light, from the upper left; the photograph's ambient.
     light(g);
     let f .= g.frame;
@@ -647,6 +648,12 @@ fn stone_of(g: Gpu&) -> looks::Marble {
 
 // The look `which` as g shows it: spring's chosen look with its carving.
 fn look(g: Gpu&, which: i64) -> looks::Theme { looks::variant(which, g.spring, g.carving) }
+
+// The look with its pieces as settings' Pieces has them: its own material, or Smooth.
+fn pieces_of(g: Gpu&, which: i64) -> looks::Theme {
+    let t = look(g, which);
+    return if g.smooth { looks::smooth(t, looks::shown(which, g.spring)) } else { t };
+}
 
 // Chooses the wood's model and the marble, each with its own finish or look, and
 // spring's look, before apply() bakes them (-1 keeps what is chosen): the app's --wood,

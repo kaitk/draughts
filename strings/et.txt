@@ -35,6 +35,7 @@ settings.kings = Tammid
 settings.background = Taust
 background.photo = Foto
 background.plain = Lihtne
+background.table = Laud
 settings.privacy = Privaatsus: Kabe ei kogu sinu kohta midagi. Kõik jääb sinu seadmesse.
 
 season.winter = Talv
@@ -51,6 +52,11 @@ material.wood = Puit
 material.stone = Kivi
 material.carved = Nikerdatud
 material.auto = teema järgi
+settings.pieces = Nupud
+pieces.natural = Laua moodi
+pieces.smooth = Tavalised
+settings.for_3d = 3D-laud
+settings.for_flat = Lame laud
 
 kings.auto = Laua järgi
 kings.crown = Kroon

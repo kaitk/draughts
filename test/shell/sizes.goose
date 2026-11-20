@@ -167,7 +167,13 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
         // A list's rows past the safe area's foot scroll into it (the puzzles' library).
         let below = listed(g, i) && r.y >= safe.y && r.x >= safe.x && r.x + r.z <= safe.x + safe.z;
         if !inside(r, safe) && !below { format(wrong, " tile ", i, " off the safe area;"); }
-        for j in i { if overlaps(seen(g, i), seen(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
+        // Settings' language list's rows, the last two, lie over the list's tiles, as it does.
+        let popup = sh.prefs.languages_open && i >= n - 2;
+        for j in i {
+            if overlaps(seen(g, i), seen(g, j)) && !(popup && j < n - 2) {
+                format(wrong, " tiles ", j, " and ", i, " overlap;");
+            }
+        }
         if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - 2) { format(wrong, " tile ", i, " on the board;"); }
         if tap && (t.z < gui::TAP * u - 0.5 || t.w < gui::TAP * u - 0.5) { small++; }
     }

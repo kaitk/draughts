@@ -15,6 +15,10 @@ let FLAME = 1;
 let COUNT = 2;
 let NAMES = ["board", "flame"];
 
+// The table each look stands on with settings' Table background: the flame mahogany for
+// every look till each board has a table of its own.
+fn for_look(look: i64) -> i64 { FLAME }
+
 struct Table {
     wood:  float4,          // sRGB and the polish's roughness on the top
     fig:   float4,          // as looks::Theme.light_fig

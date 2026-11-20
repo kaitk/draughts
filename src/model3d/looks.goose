@@ -134,7 +134,7 @@ let WOOD_WEAR = float4 { 0.3, 0.5, 0.04, 0.0 };
 let STONE_WEAR = float4 { 0.4, 0.6, 0.05, 0.0 };
 
 fn get(which: i64) -> Theme {
-    if which == WINTER { return winter(); }
+    if which == WINTER { return marble_pieces(winter()); }
     if which == SPRING { return spring(); }
     if which == SUMMER { return summer(); }
     if which == SUMMER_OAK { return summer_oak(); }
@@ -163,7 +163,58 @@ fn get(which: i64) -> Theme {
         t.stone = float4 { 0.16, 0.18, t.stone.z, t.stone.w };
         return t;
     }
+    if which == AUTUMN { return turned(autumn()); }
     return autumn();
+}
+
+// Autumn's own board's pieces: turned maple and walnut under a varnish (task 094, the
+// user's, 2026-11-19), the denser walnut.
+fn turned(t_in: Theme) -> Theme {
+    var t = t_in;
+    t.mineral = -1.0;
+    t.light_piece = float4 { 0.89, 0.77, 0.60, 0.5 };
+    t.dark_piece = float4 { 0.36, 0.235, 0.16, 0.5 };
+    // z the varnish coat's strength, w the figure's relief under it
+    t.piece_fig = float4 { 0.3, 0.3, 0.6, 1.0 };
+    return t;
+}
+
+// Winter stone's own board's pieces: ivory and black marble with faint white veins (task
+// 094's Marble set, the user's for winter stone over the honed slate, 2026-11-20).
+fn marble_pieces(t_in: Theme) -> Theme {
+    var t = t_in;
+    t.mineral = -3.0;
+    t.dark_piece = float4 { 0.075, 0.08, 0.085, 0.15 };
+    t.piece_fig.y = 0.2;
+    return t;
+}
+
+// The pieces as they were before task 094, settings' Smooth: one color with a faint
+// mottling, no figure of the material, no scattering, no wear. The looks whose pieces
+// took new colors with their material get their old ones back.
+fn smooth(t_in: Theme, which: i64) -> Theme {
+    var t = t_in;
+    t.mineral = 0.0;
+    t.light_scatter.w = 0.0;
+    t.dark_scatter.w = 0.0;
+    t.piece_wear = float4 { 0.0, 0.0, 0.0, 0.0 };
+    if which == AUTUMN {
+        let a = autumn();
+        t.light_piece = a.light_piece;
+        t.dark_piece = a.dark_piece;
+        t.piece_fig = a.piece_fig;
+    }
+    if which == WINTER {
+        t.light_piece = float4 { 0.86, 0.82, 0.76, 0.52 };
+        t.dark_piece = float4 { 0.205, 0.225, 0.255, 0.3 };
+        t.piece_fig = float4 { 0.03, 0.05, 0.0, 0.4 };
+    }
+    if which == SPRING_ELVEN || which == SPRING_STONE {
+        t.light_piece = float4 { 0.86, 0.81, 0.72, 0.42 };
+        t.dark_piece = float4 { 0.37, 0.41, 0.26, 0.28 };
+        t.piece_fig = float4 { 0.04, 0.25, 0.0, 0.55 };
+    }
+    return t;
 }
 
 // The look shown for `which` with spring's look `spring` (SPRING_LOOK..): spring's

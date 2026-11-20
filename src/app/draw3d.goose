@@ -24,7 +24,7 @@ struct Drawer {
     autumn:    i64                                   = -1, // --autumn, --winter: theirs (looks::AUTUMNS, WINTERS)
     winter:    i64                                   = -1,
     spring:    i64                                   = -1, // --spring: spring's look (looks::SPRINGS)
-    want:      i64                                   = looks::MATERIAL_AUTO, // the material asked for (want_material)
+    want:      i64                                   = looks::MATERIAL_AUTO, // the material asked for (want_look)
     material:  i64                                   = looks::MATERIAL_AUTO, // and the one the board is set up with
     size:      int2                                  = int2 { 0, 0 },
     scene:     view3d::Scene                         = view3d::Scene {}, // this frame's
@@ -40,7 +40,11 @@ struct Drawer {
     setup_ms:  f64                                   = 0.0,   // the renderer's setup,
     apply_ms:  f64                                   = 0.0,   // and prepare()'s steps in all, waited
     live:      bool                                  = false, // --keep off: the backdrop never kept (render3d's live)
-    table:     i64                                   = -1,    // --table: the board on that table (tables::BOARD_WOOD..)
+    table:     i64                                   = -1,    // --table: the board on that table always (tables::BOARD_WOOD..)
+    on_table:  bool                                  = false, // settings' Table background asked for (want_look),
+    tabled:    bool                                  = false, // and the board set up on it
+    smooth:    bool                                  = false, // settings' Smooth pieces asked for,
+    smoothed:  bool                                  = false, // and the ones put on
     themed:    i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
     warmed:    i64                                   = 0,     // and its next pipeline (WARM_STEPS: done)
     prep_ms:   f64[..48]                             = [],    // each prepare() step's time
@@ -62,9 +66,13 @@ fn look_of(kind: i64, d: Drawer&) -> i64 {
     return looks::of(kind, d.want);
 }
 
-// A new material prepares the board again, as a new theme does; the image shown turns
-// grey at once, not when the steps start a frame or two later.
-fn want_material(d: Drawer&, material: i64) {
+// Settings' choices for the 3D board: its material, the table under it, and Smooth pieces.
+// A new material prepares the board again, as a new theme does, the image shown grey at
+// once, not when the steps start a frame or two later; the table bakes only its own steps
+// and the photograph's; the pieces take only the theme's last step.
+fn want_look(d: Drawer&, material: i64, table: bool, smooth: bool) {
+    d.on_table = table || d.table >= 0;
+    d.smooth = smooth;
     if material != d.want && material != d.material && shows(d) {
         d.grey_from = 1.0;
         d.grey_to = 1.0;
@@ -73,14 +81,19 @@ fn want_material(d: Drawer&, material: i64) {
     d.want = material;
 }
 
+// The table under a look: --table's take, else the look's own (tables::for_look).
+fn table_take(d: Drawer&, look: i64) -> i64 { if d.table >= 0 { d.table } else { tables::for_look(look) } }
+
+// The theme's steps before the table's: what putting the table on or off takes again.
+fn table_steps() -> i64 { return 2 + model3d::PLAN_BANDS + model3d::FRAME_BANDS; }
+
 fn set_up<B>(be: B&, d: Drawer&) {
     let t0 = clock();
     be.r3d.setup(d.gpu, render3d::SAMPLES, d.look);
     render3d::set_bake(d.gpu, d.side);
     be.r3d.set_aa(d.gpu, d.aa, d.samples);
     render3d::choose(d.gpu, d.wood, d.marble, d.spring);
-    d.gpu.table = d.table >= 0;
-    if d.table >= 0 { d.gpu.table_spec = tables::get(d.table); }
+    if d.table >= 0 { d.on_table = true; }
     d.ready = true;
     d.setup_ms = (clock() - t0) * 1000.0;
 }
@@ -97,6 +110,7 @@ fn choose_look(d: Drawer&, kind: i64) -> i64 {
     let wood = if d.wood >= 0 { d.wood } else if own >= 0 { own } else { model3d::WOOD_MODEL };
     render3d::choose(d.gpu, wood, -1);
     d.gpu.finish = looks::finish_for(shown, d.gpu.wood);
+    d.gpu.table_spec = tables::get(table_take(d, look));
     return look;
 }
 
@@ -104,6 +118,7 @@ fn choose_look(d: Drawer&, kind: i64) -> i64 {
 // only the screen-sized targets are left for its first frame.
 fn ready(d: Drawer&, kind: i64, n: i64, plain: bool) -> bool {
     return d.ready && d.kind == kind && d.material == d.want && d.n == n && d.plain == plain
+           && d.tabled == d.on_table && d.smoothed == d.smooth
            && d.themed == model3d::THEME_STEPS && d.warmed == render3d::WARM_STEPS;
 }
 
@@ -143,7 +158,8 @@ fn prepare<B>(be: B&, d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
     let t0 = clock();
     if !d.ready {
         set_up(be, d);
-    } else if d.kind != kind || d.material != d.want || d.n != n || d.plain != plain || d.themed < model3d::THEME_STEPS {
+    } else if d.kind != kind || d.material != d.want || d.n != n || d.plain != plain || d.tabled != d.on_table
+              || d.smoothed != d.smooth || d.themed < model3d::THEME_STEPS {
         if d.kind != kind || d.material != d.want || d.n != n {
             if shows(d) && d.grey_to < 1.0 { grey_towards(d, 1.0, now); }
             d.kind = kind;
@@ -155,9 +171,20 @@ fn prepare<B>(be: B&, d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
             d.plain = plain;
             d.themed = min(d.themed, photo_steps());
         }
+        if d.tabled != d.on_table {
+            d.tabled = d.on_table;
+            d.gpu.table = d.tabled;
+            d.themed = min(d.themed, table_steps());
+        }
+        if d.smoothed != d.smooth {
+            d.smoothed = d.smooth;
+            d.gpu.smooth = d.smooth;
+            d.themed = min(d.themed, model3d::THEME_STEPS - 1);
+        }
         let t = theme::get(kind);
         d.gpu.plain = plain;
         d.gpu.fade = [t.fade_top, t.fade_low, t.fade_light];
+        if !d.tabled && d.themed >= table_steps() && d.themed < photo_steps() { d.themed = photo_steps(); }
         let look = if d.themed == 0 { choose_look(d, kind) } else { d.gpu.look };
         render3d::theme_step(be.r3d, d.gpu, look, n, kind, d.themed);
         d.themed++;
@@ -195,7 +222,7 @@ fn drop<B>(be: B&, d: Drawer&) {
     guard d.ready else { return; }
     be.r3d.release(d.gpu);
     d = Drawer { aa: d.aa, samples: d.samples, look: d.look, side: d.side, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
-                spring: d.spring, want: d.want, table: d.table, .. };
+                spring: d.spring, want: d.want, table: d.table, on_table: d.on_table, smooth: d.smooth, .. };
 }
 
 // The A key: the renderer's next antialiasing.

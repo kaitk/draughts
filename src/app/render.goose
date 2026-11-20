@@ -104,8 +104,9 @@ fn has_thumbs(r: Renderer&) -> bool { r.w.thumbs.id != 0 }
 // Submits what is drawn and waits for the GPU.
 fn wait() { backend::with() { be => be.flush() } }
 
-// The player's material for the 3D board (settings::MATERIAL_AUTO..); a new one prepares it again.
-fn material(r: Renderer&, m: i64) { draw3d::want_material(r.d3, m); }
+// The player's 3D board: its material (settings::MATERIAL_AUTO..), the table under it, and
+// Smooth pieces; a change prepares what it takes again (draw3d::want_look).
+fn look3d(r: Renderer&, m: i64, table: bool, smooth: bool) { draw3d::want_look(r.d3, m, table, smooth); }
 
 // moving3d: just made ready, or easing grey or back, so the next frame draws too.
 fn ready3d(r: Renderer&, n: i64) -> bool { draw3d::ready(r.d3, r.d.kind, n, r.d.scene.plain) }

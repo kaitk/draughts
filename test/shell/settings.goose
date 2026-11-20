@@ -33,19 +33,20 @@ import shell from "../../src/shell";
 import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
-// The tiles in the order the screen declares them: back and the language button in the
-// title row, then the list's.
+// The tiles in the order the screen declares them with the board flat: back and the
+// language button in the title row, then the list's. The 3D board's own (NATURAL, SMOOTH,
+// TABLE) have no place there: at() finds each where the screen shows it.
 let BACK = 0;
 let LANGUAGE = 1;
-let PHOTO = 2;              // the Background row: the photograph, or the plain fade
-let PLAIN = 3;
-let SUMMER = 6;
-let BY_DATE = 8;
-let FLAT = 9;               // the Board row: flat, raised, and its materials
-let RAISED = 10;
-let WOOD = 11;
-let STONE = 12;
-let CARVED = 13;
+let SUMMER = 4;
+let BY_DATE = 6;
+let FLAT = 7;               // the Board row: flat, raised, and its materials
+let RAISED = 8;
+let WOOD = 9;
+let STONE = 10;
+let CARVED = 11;
+let PHOTO = 12;             // the Background row: the photograph, or the plain fade
+let PLAIN = 13;
 let AUTO = 14;
 let STACK = 16;
 let MUTE = 17;              // the Sound section's speaker; its slider is no tile
@@ -60,17 +61,37 @@ let ENGLISH = 28;           // the language list's rows, after the screen's tile
 let EESTI = 29;
 let COPY = 28;              // About's card's Copy and close, after the screen's tiles
 let CLOSE = 29;
+let NATURAL = 100;          // the 3D board's: its Pieces row,
+let SMOOTH = 101;
+let TABLE = 102;            // and Background's third tile
+let OWN_3D = 3;             // the tiles the 3D board shows that the flat one doesn't
+
+// Where tile n is declared: on the 3D board its Pieces row comes before Background, whose
+// third tile, the table, comes before the kings.
+fn at(sh: shell::Shell&, n: i64) -> i64 {
+    guard settings::raised(sh.prefs) else { return n; }
+    if n == NATURAL { return PHOTO; }
+    if n == SMOOTH { return PHOTO + 1; }
+    if n == TABLE { return PLAIN + 3; }
+    if n == PHOTO || n == PLAIN { return n + 2; }
+    if n >= AUTO { return n + OWN_3D; }
+    return n;
+}
+
+// The list's tiles: the 3D board shows OWN_3D more.
+fn listed(sh: shell::Shell&) -> i64 { if settings::raised(sh.prefs) { TILES + OWN_3D } else { TILES } }
 
 // Tile n's middle, the list scrolled first where it isn't whole in the list's view, as a
 // finger would scroll it.
 fn seen(sh: shell::Shell&, g: gui::Gui&, n: i64, now: f64) -> float2 {
-    let r = drive::rect(g, n);
+    let k = at(sh, n);
+    let r = drive::rect(g, k);
     let v = g.scroll.view;
-    if n >= PHOTO && n < TILES && (r.y < v.y || r.y + r.w > v.y + v.w) {
+    if k > LANGUAGE && k < listed(sh) && (r.y < v.y || r.y + r.w > v.y + v.w) {
         gui::scroll_set(g, settings::LIST, g.scroll.offset + r.y + 0.5 * r.w - (v.y + 0.5 * v.w));
         drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, now);
     }
-    return drive::tile(g, n);
+    return drive::tile(g, k);
 }
 
 // A tap on tile n, scrolled to first.
@@ -169,7 +190,7 @@ fn main() {
     var sh = shell::new(rules::RUSSIAN);
     sh.screen = shell::SETTINGS;
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
-    print("tiles ", drive::tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.out.ui_pieces.len, ": ",
+    print("tiles ", drive::tiles(g), " of ", listed(sh), ", the kings' tiles' pieces ", sh.out.ui_pieces.len, ": ",
           sh.out.ui_pieces[0].look.y, " and ", sh.out.ui_pieces[1].look.y);
     if drive::verbose { print("the list: ", g.scroll.view, " scrolls ", g.scroll.max, " px"); }
     else { print("the list: ", if g.scroll.max > 0.0 { "scrolls" } else { "still" }); }
@@ -257,10 +278,10 @@ fn main() {
     tap(sh, g, LANGUAGE, 9.3);
     if drive::verbose {
         print("the language list open ", sh.prefs.languages_open, ", tiles ", drive::tiles(g), ", changed ", sh.changed,
-              ", each row ", drive::rect(g, ENGLISH).w / g.scale, " dp tall");
+              ", each row ", drive::rect(g, at(sh, ENGLISH)).w / g.scale, " dp tall");
     } else {
         print("the language list open ", sh.prefs.languages_open, ", tiles ", drive::tiles(g), ", changed ", sh.changed,
-              ", each row 88 dp tall at least: ", drive::ok(drive::rect(g, ENGLISH).w >= gui::TAP * g.scale - 0.5));
+              ", each row 88 dp tall at least: ", drive::ok(drive::rect(g, at(sh, ENGLISH)).w >= gui::TAP * g.scale - 0.5));
     }
     sh.changed = false;
     tap(sh, g, EESTI, 9.31);
@@ -290,18 +311,18 @@ fn main() {
     sh.about.version.append("1.2.3");
     sh.about.aa.append("4× MSAA");
     tap(sh, g, ABOUT, 9.51);
-    let about_row = drive::rect(g, ABOUT);
+    let about_row = drive::rect(g, at(sh, ABOUT));
     print("About: open ", sh.prefs.about_open, ", asks the app to fill it ", sh.out.about, ", tiles ", drive::tiles(g),
           ", the row ", drive::ok(about_row.w < gui::TAP * g.scale), " smaller than a tap");
-    drive::tap(sh, g, drive::tile(g, PLAIN), 9.52);
+    drive::tap(sh, g, drive::tile(g, at(sh, PLAIN)), 9.52);
     print("a tap on Plain under the card: plain ", sh.prefs.plain, ", open ", sh.prefs.about_open);
-    drive::tap(sh, g, drive::tile(g, COPY), 9.53);
+    drive::tap(sh, g, drive::tile(g, at(sh, COPY)), 9.53);
     print("Copy: copied ", sh.about.copied, ", open ", sh.prefs.about_open);
     var copied: u8[..2048] = [];
     settings::about_text(sh.prefs, sh.about, copied);
     let first, unused_rest, unused_more = split_once(copied[..], '\n');
     print("its text's first line: ", first);
-    drive::tap(sh, g, drive::tile(g, CLOSE), 9.54);
+    drive::tap(sh, g, drive::tile(g, at(sh, CLOSE)), 9.54);
     print("close: open ", sh.prefs.about_open, ", tiles ", drive::tiles(g));
     tap(sh, g, ABOUT, 9.55);
     drive::tap(sh, g, float2 { 2.0, 2.0 }, 9.56);
@@ -333,7 +354,7 @@ fn main() {
     // Portrait: the board in a band on top, the list under it.
     drive::size = float2 { 800.0, 1280.0 };
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 10.0);
-    let first = drive::rect(g, PHOTO);
+    let first = drive::rect(g, at(sh, PHOTO));
     let clear = sh.out.layout.board.y + sh.out.layout.board.z < g.scroll.view.y && g.scroll.view.y < first.y;
     if drive::verbose {
         print("portrait: board at ", sh.out.layout.board, ", the list from ", g.scroll.view.y, ", clear ", clear,
@@ -354,7 +375,7 @@ fn main() {
     raised.prefs = settings::parse("board = 3d\nmaterial = stone\n");
     drive::frame(raised, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
     print("a file's board = 3d, material = stone: raised ", settings::raised(raised.prefs), ", material ",
-          raised.prefs.material, ", tiles ", drive::tiles(g), " of ", TILES);
+          raised.prefs.material, ", tiles ", drive::tiles(g), " of ", listed(raised));
     tap(raised, g, STACK, 1.0);
     var kept: u8[>..] = [];
     settings::write(raised.prefs, kept);
@@ -394,17 +415,18 @@ fn volume(sh: shell::Shell&, g: gui::Gui&) {
         t += 0.1;
     }
     // The slider is the strip right of the speaker, as tall.
-    let m = drive::rect(g, MUTE);
+    let m = drive::rect(g, at(sh, MUTE));
     let right = g.scroll.view.x + g.scroll.view.z;
     let y = m.y + 0.5 * m.w;
     let from = float2 { m.x + m.z + 40.0, y };
+    let scrolled = g.scroll.offset;
     drive::frame(sh, g, from, true, true, false, t);
     let quarter = sh.prefs.volume;
     var heard = sh.out.sound_events.len;
     drive::frame(sh, g, float2 { from.x + 0.5 * (right - from.x), y + 30.0 }, true, false, false, t + 0.1);
     heard += sh.out.sound_events.len;
     print("  pressed at the slider's left: volume ", quarter, " under 10 ", quarter < 10, "; dragged on, down and a little",
-          " off it: volume over 40 ", sh.prefs.volume > 40, ", not scrolled ", g.scroll.offset == 0.0, ", heard ", heard,
+          " off it: volume over 40 ", sh.prefs.volume > 40, ", not scrolled ", g.scroll.offset == scrolled, ", heard ", heard,
           ", to write ", sh.changed);
     drive::frame(sh, g, float2 { right - 60.0, y }, false, false, true, t + 0.2);
     print("  let go further on: volume over 70 ", sh.prefs.volume > 70, ", heard ", sh.out.sound_events.len, ", to write ",

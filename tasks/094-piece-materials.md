@@ -764,3 +764,11 @@ review. No USB device was attached.
 - [ ] `board_shot` shoots versions with the values as flags; the chosen ones in the looks,
       with shots of each season before and after in this file
 - [ ] No change to the frame's GPU time measurable on the Mac; the A33 checked at the end
+
+### In the game (2026-11-20)
+
+Settings' Pieces row on the 3D board chooses each look's own pieces ("Matching", "Laua
+moodi") or the pieces as before this task ("Classic", "Tavalised"; `looks::smooth`).
+Winter stone's own are the Marble set, ivory and black marble with faint veins
+(`looks::marble_pieces`), chosen over the honed slate; autumn's wood board's the turned
+maple and denser walnut (`looks::turned`).

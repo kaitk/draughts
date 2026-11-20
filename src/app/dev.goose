@@ -49,7 +49,11 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
     if f.lookout >= 0 { sh.prefs.lookout = f.lookout == 1; }
     if f.moves >= 0 { sh.prefs.moves = f.moves; }
     if f.hints >= 0 { sh.prefs.hints = f.hints; }
-    if f.background >= 0 { sh.prefs.plain = f.background == 1; }
+    if f.background >= 0 {
+        sh.prefs.table = f.background == 2;
+        if f.background < 2 { sh.prefs.plain = f.background == 1; }
+    }
+    if f.pieces >= 0 { sh.prefs.smooth = f.pieces == 1; }
     let fen .= f.fen;
     if fen.len > 0 {
         let b .= sh.game.b;

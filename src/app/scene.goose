@@ -17,13 +17,21 @@ let SHARP_SIZE = 2048;
 let GLASS_SIZE = 256;
 let GLASS_SIGMA = 3.9;
 
-// Settings' thumbnails in one texture: the four seasons' photographs at the picture's
-// 76 × 50 dp shape, under them the four plain fades, then the board pictures.
+// Settings' thumbnails in one texture, slots of the picture's 76 × 50 dp shape laid
+// THUMB_COLS across, a row after another: the four seasons' photographs, the four plain
+// fades, then each season's BOARD_PICTURES (tools/assets/board_thumbs.py): its four
+// boards, then the pieces Natural and Smooth and the board on its table, each in the four
+// materials. In a grid, as a column was taller than a phone's GPU takes.
 let THUMB_W = 160;
 let THUMB_H = 105;
+let THUMB_COLS = 8;
 let SEASON_SLOTS = 8;
-let BOARD_PICTURES = 4;
+let BOARD_PICTURES = 16;
 let THUMBS = SEASON_SLOTS + 4 * BOARD_PICTURES;
+let THUMB_ROWS = (THUMBS + THUMB_COLS - 1) / THUMB_COLS;
+
+// Slot k's place in the thumbnails, in pixels.
+fn slot(k: i64) -> float4 { float4 { (k % THUMB_COLS) * THUMB_W, (k / THUMB_COLS) * THUMB_H, THUMB_W, THUMB_H } }
 
 struct Scene {
     photo:   gpu::Texture,     // the blurred copy, or a 1×1 stand-in when there is none
@@ -77,7 +85,7 @@ fn release<B>(be: B&, s: Scene&) {
 
 // Settings' thumbnails (THUMB_W..THUMBS above); a season without a photograph is black.
 fn thumbs<B>(be: B&) -> gpu::Texture {
-    let t = be.target(THUMB_W, THUMBS * THUMB_H);
+    let t = be.target(THUMB_COLS * THUMB_W, THUMB_ROWS * THUMB_H);
     let sampler = be.scene.sampler();
     let shrink = be.scene.shrinker();
     let crop: f32 = THUMB_H as f32 / THUMB_W;
@@ -87,7 +95,7 @@ fn thumbs<B>(be: B&) -> gpu::Texture {
         be.scene.begin(t, kind == 0);
         if photo.id != 0 {
             be.scene.shrink(shrink, sampler, photo, float4 { 0.0, (1.0 - crop) * 0.5, 1.0, crop },
-                              float4 { 0.0, kind * THUMB_H, THUMB_W, THUMB_H });
+                              slot(kind));
         }
         be.scene.end();
         // One photograph at a time: four at once would take SDL a second 16 MiB block that stays.
@@ -98,7 +106,7 @@ fn thumbs<B>(be: B&) -> gpu::Texture {
     be.scene.begin(t, false);
     for kind in 4 {
         let c = theme::get(kind);
-        be.scene.fade(fade, float4 { 0.0, (4 + kind) * THUMB_H, THUMB_W, THUMB_H }, c.fade_top, c.fade_low, c.fade_light);
+        be.scene.fade(fade, slot(4 + kind), c.fade_top, c.fade_low, c.fade_light);
     }
     be.scene.end();
     be.scene.done(fade);
@@ -107,12 +115,12 @@ fn thumbs<B>(be: B&) -> gpu::Texture {
     if boards.id != 0 {
         let copy = be.scene.shrinker();
         be.scene.begin(t, false);
-        let cell: f32 = 1.0 / BOARD_PICTURES;
+        let cw: f32 = 1.0 / BOARD_PICTURES;
+        let ch: f32 = 1.0 / 4.0;
         for k in 4 * BOARD_PICTURES {
             let row = k / BOARD_PICTURES;
             let col = k % BOARD_PICTURES;
-            be.scene.shrink(copy, sampler, boards, float4 { col * cell, row * cell, cell, cell },
-                              float4 { 0.0, (SEASON_SLOTS + k) * THUMB_H, THUMB_W, THUMB_H });
+            be.scene.shrink(copy, sampler, boards, float4 { col * cw, row * ch, cw, ch }, slot(SEASON_SLOTS + k));
         }
         be.scene.end();
         be.scene.done(copy);

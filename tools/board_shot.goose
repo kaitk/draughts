@@ -11,7 +11,7 @@
 //                            [--material auto|wood|stone|carved] [--table board|flame]
 //                            [--light-scatter R,G,B,S] [--dark-scatter R,G,B,S]
 //                            [--wear UNEVEN,EDGES,TONE] [--light R,G,B,ROUGH]
-//                            [--dark R,G,B,ROUGH] [--figure X,Y,Z,W] [--before]
+//                            [--dark R,G,B,ROUGH] [--figure X,Y,Z,W] [--before] [--smooth]
 //                            [--profile K]   # pieces3d::profile, before the other flags
 
 import std;
@@ -28,6 +28,12 @@ import render3d from "../src/render3d";
 import .pieces3d;
 
 // The index of the flag's value in argv, or -1.
+// Whether a flag without a value is given.
+fn has(argv: u8[:][>..]&, name: const u8[:]) -> bool {
+    for a in argv { if a == name { return true; } }
+    return false;
+}
+
 fn flag(argv: u8[:][>..]&, name: const u8[:]) -> i64 {
     for a, i in argv {
         if a == name && i + 1 < argv.len { return i + 1; }
@@ -76,7 +82,8 @@ fn main() {
     g.table = take >= 0;
     if take >= 0 { g.table_spec = tables::get(take); }
     let shown = pieces3d::put_look(r3d, g, season, material);
-    var pieces = pieces3d::of_look(shown);
+    // --smooth: settings' Smooth pieces (looks::smooth).
+    var pieces = if has(argv, "--smooth") { pieces3d::smooth_of(shown) } else { pieces3d::of_look(shown) };
     pieces3d::read_flags(argv, pieces, shown);
     pieces3d::put(g, pieces, model3d::dark_brightness(pieces.mineral));
     pieces3d::place(r3d, g);

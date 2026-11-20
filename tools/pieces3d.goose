@@ -91,6 +91,13 @@ fn of_look(shown: i64) -> Pieces {
                     light_scatter: t.light_scatter, dark_scatter: t.dark_scatter, piece_wear: t.piece_wear };
 }
 
+// The pieces as settings' Smooth shows them on a look (looks::smooth).
+fn smooth_of(shown: i64) -> Pieces {
+    let t = looks::smooth(looks::get(shown), shown);
+    return Pieces { mineral: t.mineral, light_piece: t.light_piece, dark_piece: t.dark_piece, piece_fig: t.piece_fig,
+                    light_scatter: t.light_scatter, dark_scatter: t.dark_scatter, piece_wear: t.piece_wear };
+}
+
 // Profiles: sets of the pieces' values kept beside a look's own (profile 0), to compare
 // and return to while tuning; the one chosen goes into looks.goose. How many a look has,
 // its own counted.

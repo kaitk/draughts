@@ -46,6 +46,8 @@ settings.kings = Kings
 settings.background = Background
 background.photo = Photo
 background.plain = Plain
+# The 3D board's third background: the board on a table.
+background.table = Table
 # The privacy note at the end of settings' game group.
 settings.privacy = Privacy: Draughts collects nothing. Everything stays on this device.
 
@@ -65,6 +67,13 @@ material.wood = Wood
 material.stone = Stone
 material.carved = Carved
 material.auto = auto
+# Settings' Pieces row on the 3D board: the board's own material, or one smooth color as
+# before; and the small heading under the Board row over the rows that board uses.
+settings.pieces = Pieces
+pieces.natural = Matching
+pieces.smooth = Classic
+settings.for_3d = 3D board
+settings.for_flat = Flat board
 
 kings.auto = Auto
 kings.crown = Crown

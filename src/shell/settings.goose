@@ -83,6 +83,8 @@ let SECTION_TOP = 6.0;      // above a section's title,
 let SECTION_H = 40.0;       // its icon and title,
 let SECTION_END = 14.0;     // under its last row, and again under the rule after it
 let NAME_H = 34.0;          // a setting's dim name over its tiles
+let BOARD_TOP = 18.0;       // above the heading over the board's own rows,
+let BOARD_H = 26.0;         // and the heading
 let TILE_GAP = 10.0;
 // A row of pictures closes its gaps down to this before it wraps: the five across a phone
 // in portrait (the iPhone 13 mini's 468 dp, 7 dp apart).
@@ -103,21 +105,31 @@ let SLACK = 0.5;            // px a row may pass its width by without wrapping
 // preview_room's 0.03 is half of what is left.
 let PREVIEW_SHARE = 0.94;
 
-// The settings in the list's order, each one's name and how many tiles; the first four
-// are the look's, the last three the game's. The Sound section between them has one row of
-// its own, the volume (volume_row).
-let BACKGROUND_ROW = 0;
-let THEME_ROW = 1;
-let BOARD_ROW = 2;
-let KINGS_ROW = 3;
-let HINTS_ROW = 4;
-let MOVES_ROW = 5;
-let DAILY_ROW = 6;          // puzzles a day, its tiles the numbers of DAILY_COUNTS
-let ROWS = 7;
-let LOOK_ROWS = 4;
-let ROW_NAMES = [strings::SETTINGS_BACKGROUND, strings::SETTINGS_THEME, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS,
-                 strings::SETTINGS_HINTS, strings::SETTINGS_MOVES, strings::SETTINGS_DAILY];
-let ROW_TILES = [2, 5, 5, 3, 2, 3, 4];
+// The settings in the list's order, each one's name and how many tiles at most; the first
+// five are the look's, the last three the game's. The Sound section between them has one
+// row of its own, the volume (volume_row). The look's: the theme, then the board, the main
+// choice, and under it, under a small heading saying which board, the rows that board uses
+// (shown_row, tiles): the 3D board's pieces and its third background, the table.
+let THEME_ROW = 0;
+let BOARD_ROW = 1;
+let PIECES_ROW = 2;
+let BACKGROUND_ROW = 3;
+let KINGS_ROW = 4;
+let HINTS_ROW = 5;
+let MOVES_ROW = 6;
+let DAILY_ROW = 7;          // puzzles a day, its tiles the numbers of DAILY_COUNTS
+let ROWS = 8;
+let LOOK_ROWS = 5;
+let ROW_NAMES = [strings::SETTINGS_THEME, strings::SETTINGS_BOARD, strings::SETTINGS_PIECES, strings::SETTINGS_BACKGROUND,
+                 strings::SETTINGS_KINGS, strings::SETTINGS_HINTS, strings::SETTINGS_MOVES, strings::SETTINGS_DAILY];
+let ROW_TILES = [5, 5, 2, 3, 3, 2, 3, 4];
+let TABLE_TILE = 2;         // Background's third, the 3D board's
+
+// Whether a row shows: the pieces only for the 3D board.
+fn shown_row(s: Settings&, row: i64) -> bool { row != PIECES_ROW || raised(s) }
+
+// How many tiles a row shows: the table only for the 3D board.
+fn tiles(s: Settings&, row: i64) -> i64 { if row == BACKGROUND_ROW && !raised(s) { TABLE_TILE } else { ROW_TILES[row] } }
 let MOST_TILES = 5;
 let SECTIONS = 3;
 let SOUND_SECTION = 1;
@@ -137,12 +149,16 @@ let FLAT_TILE = 0;
 let BOARD_WORDS = [strings::BOARD_FLAT, strings::BOARD_RAISED, strings::MATERIAL_WOOD, strings::MATERIAL_STONE,
                    strings::MATERIAL_CARVED];
 // The pictures the widgets draw (gui::PICTURE's look.z): the theme shown's photograph and
-// fade, its board pictures (its own raised board whole, then its wood's, stone's, and
-// carved board's near corner, from -4 down), and the faint picture under the flat board.
+// fade, its board pictures (board_pic), and the faint picture under the flat board.
 let PHOTO_PIC = -2;
 let FADE_PIC = -3;
-let BOARD_PIC = -4;
 let FLAT_PIC = -8;
+
+// The theme shown's board picture j (scene::BOARD_PICTURES, tools/assets/board_thumbs.py):
+// 0 its own raised board whole, 1 to 3 its wood's, stone's, and carved board's near corner;
+// then a light and a dark piece Natural (4 + m), Smooth (8 + m), and the board on its
+// table (12 + m), on the board in material m (MATERIAL_AUTO..).
+fn board_pic(j: i64) -> i64 { -16 - j }
 
 // The widget ids, from gui::SETTINGS_IDS, each on from the one before by as many as it
 // takes, so no two meet; test/gui/ids keeps IDS_END inside settings' range.
@@ -163,7 +179,7 @@ let LIST = ABOUT_CLOSE_ID + 1;
 let IDS_END = LIST + 1;
 
 // Whether a row's tiles are pictures (gui::choice) rather than words.
-fn pictured(row: i64) -> bool { row <= BOARD_ROW }
+fn pictured(row: i64) -> bool { row <= BACKGROUND_ROW }
 
 // Tile i of a row's words: its word, or for puzzles a day its number.
 fn label(row: i64, i: i64) -> u8[..64] {
@@ -174,7 +190,8 @@ fn label(row: i64, i: i64) -> u8[..64] {
 
 // Tile i of a row's word.
 fn word(row: i64, i: i64) -> i64 {
-    if row == BACKGROUND_ROW { return [strings::BACKGROUND_PHOTO, strings::BACKGROUND_PLAIN][i]; }
+    if row == BACKGROUND_ROW { return [strings::BACKGROUND_PHOTO, strings::BACKGROUND_PLAIN, strings::BACKGROUND_TABLE][i]; }
+    if row == PIECES_ROW { return [strings::PIECES_NATURAL, strings::PIECES_SMOOTH][i]; }
     if row == THEME_ROW { return if i == BY_DATE_TILE { strings::SETTINGS_BY_DATE } else { SEASON_KEYS[i] }; }
     if row == BOARD_ROW { return BOARD_WORDS[i]; }
     if row == KINGS_ROW { return KING_KEYS[i]; }
@@ -206,7 +223,11 @@ fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
 
 // Whether tile i of a row is the one chosen in s.
 fn chosen(s: Settings&, row: i64, i: i64) -> bool {
-    if row == BACKGROUND_ROW { return s.plain == (i == 1); }
+    if row == BACKGROUND_ROW {
+        let table = raised(s) && s.table;
+        return if i == TABLE_TILE { table } else { !table && s.plain == (i == 1) };
+    }
+    if row == PIECES_ROW { return s.smooth == (i == 1); }
     if row == THEME_ROW { return s.season == (if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] }); }
     if row == BOARD_ROW { return if i == FLAT_TILE { s.board == FLAT } else { s.board == RAISED && s.material == i - 1 }; }
     if row == KINGS_ROW { return s.kings == i; }
@@ -217,7 +238,11 @@ fn chosen(s: Settings&, row: i64, i: i64) -> bool {
 
 // Chooses tile i of a row in s.
 fn choose(s: Settings&, row: i64, i: i64) {
-    if row == BACKGROUND_ROW { s.plain = i == 1; }
+    if row == BACKGROUND_ROW {
+        s.table = i == TABLE_TILE;
+        if i != TABLE_TILE { s.plain = i == 1; }
+    }
+    if row == PIECES_ROW { s.smooth = i == 1; }
     if row == THEME_ROW { s.season = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] }; }
     if row == BOARD_ROW {
         s.board = if i == FLAT_TILE { FLAT } else { RAISED };
@@ -230,15 +255,18 @@ fn choose(s: Settings&, row: i64, i: i64) {
 }
 
 // The picture tile i of a row shows (the widgets' look.z): the background's the theme
-// shown's photograph or fade; a season's its photograph, or with plain its fade (4 on), by
-// the date's the glow's tint with a sun (-1); the board's the theme shown's.
+// shown's photograph or fade, or its board on the table; a season's its photograph, or
+// with plain its fade (4 on), by the date's the glow's tint with a sun (-1); the board's
+// and the pieces' the theme shown's in the material chosen.
 fn picture_of(s: Settings&, row: i64, i: i64) -> i64 {
-    if row == BACKGROUND_ROW { return if i == 0 { PHOTO_PIC } else { FADE_PIC }; }
+    let m = clamp(s.material, 0, 3);
+    if row == BACKGROUND_ROW { return if i == 0 { PHOTO_PIC } else if i == 1 { FADE_PIC } else { board_pic(12 + m) }; }
+    if row == PIECES_ROW { return board_pic(4 + 4 * i + m); }
     if row == THEME_ROW {
         let kind = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] };
-        return if kind >= 0 && s.plain { kind + 4 } else { kind };
+        return if kind >= 0 && !photo_shown(s) { kind + 4 } else { kind };
     }
-    return if i == FLAT_TILE { FLAT_PIC } else { BOARD_PIC - (i - 1) };
+    return if i == FLAT_TILE { FLAT_PIC } else { board_pic(i - 1) };
 }
 
 // Declares tile i of a row in r. True when a tap changed s.
@@ -272,10 +300,9 @@ fn tile(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, row: i64, i: i64
 // Where a row's tiles go, from r's top left across its width, into `at`; returns how tall
 // they are. They keep TILE_GAP apart on one line; a row of pictures that doesn't fit so
 // closes its gaps down to LEAST_GAP first; else they wrap.
-fn lay(g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
+fn lay(g: gui::Gui&, row: i64, n: i64, r: float4, at: float4[:]) -> f32 {
     let u = g.scale;
     let h = gui::stacked_tile_height() * u;
-    let n = ROW_TILES[row];
     var sum: f32 = 0.0;
     for i in n { sum += min(tile_width(g, row, i), r.z); }
     var gap = TILE_GAP * u;
@@ -304,6 +331,7 @@ struct Row {
 }
 struct List {
     title:   float4[SECTIONS] = [float4 { 0.0, 0.0, 0.0, 0.0 }; SECTIONS],
+    board:   float4           = float4 { 0.0, 0.0, 0.0, 0.0 },  // the heading over the board's own rows
     rule:    float4[SECTIONS] = [float4 { 0.0, 0.0, 0.0, 0.0 }; SECTIONS],
     row:     Row[ROWS]        = [Row {}; ROWS],
     volume:  Row              = Row {},  // the volume's name, and its speaker and slider (tiles 0 and 1)
@@ -314,7 +342,7 @@ struct List {
 }
 
 // The list from r's top left, as wide as r; `a` for the About row's width.
-fn list_at(g: gui::Gui&, r: float4, a: About&) -> List {
+fn list_at(s: Settings&, g: gui::Gui&, r: float4, a: About&) -> List {
     let u = g.scale;
     let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
     var l = List {};
@@ -332,10 +360,16 @@ fn list_at(g: gui::Gui&, r: float4, a: About&) -> List {
             y += h;
         }
         for row in FROM_ROW[section]..TO_ROW[section] {
+            guard shown_row(s, row) else { continue; }
+            if row == BOARD_ROW + 1 {
+                y += BOARD_TOP * u;
+                l.board = float4 { r.x + 4.0 * u, y, r.z - 4.0 * u, BOARD_H * u };
+                y += BOARD_H * u;
+            }
             let at .= l.row[row];
             at.name = float4 { r.x + 4.0 * u, y + (NAME_H - 24.0) * u, r.z - 4.0 * u, 24.0 * u };
             y += NAME_H * u;
-            y += lay(g, row, float4 { r.x, y, r.z, 0.0 }, at.tiles);
+            y += lay(g, row, tiles(s, row), float4 { r.x, y, r.z, 0.0 }, at.tiles);
             // The move list's note under its tiles.
             if row == MOVES_ROW {
                 let n = moves_note_lines(g, r.z - 8.0 * u);
@@ -376,10 +410,15 @@ fn list(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: List&, a: Abo
             if heard != NOTHING { ask = heard; }
         }
         for row in FROM_ROW[section]..TO_ROW[section] {
+            guard shown_row(s, row) else { continue; }
+            if row == BOARD_ROW + 1 {
+                let which = if raised(s) { strings::SETTINGS_FOR_3D } else { strings::SETTINGS_FOR_FLAT };
+                gui::text(g, gui::BODY, l.board, strings::get(which), 0.9, 0.0, gui::LEFT);
+            }
             let at .= l.row[row];
             gui::text(g, gui::SMALL, at.name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
                       gui::LEFT);
-            for i in ROW_TILES[row] { if tile(s, ui_pieces, g, row, i, at.tiles[i]) { ask = CHANGED; } }
+            for i in tiles(s, row) { if tile(s, ui_pieces, g, row, i, at.tiles[i]) { ask = CHANGED; } }
         }
         gui::rounded_rect(g, l.rule[section], float4 { 1.0, 1.0, 1.0, 0.1 }, 0.0);
     }
@@ -684,11 +723,11 @@ fn frame(s: Settings&, ui_pieces: board::Overlay&, g: gui::Gui&, l: board::Layou
     var ask = head(s, g, p.head, shown, button);
     // The list, under the title row down to the screen's foot, the inset under the safe
     // area too, so its last row clears the inset once scrolled to the end.
-    let at = list_at(g, p.list, a);
+    let at = list_at(s, g, p.list, a);
     let content = at.h + g.insets.w;
     let off = gui::scroll_begin(g, LIST, p.view, content);
     let listed = g.quads.len;
-    let laid = list_at(g, float4 { p.list.x, p.list.y - off, p.list.z, 0.0 }, a);
+    let laid = list_at(s, g, float4 { p.list.x, p.list.y - off, p.list.z, 0.0 }, a);
     let listed_ask = list(s, ui_pieces, g, laid, a);
     if listed_ask != NOTHING { ask = listed_ask; }
     gui::fade_edges(g, listed, p.view, 0.0, p.view.y + content - off - (p.view.y + p.view.w), FADE * u);

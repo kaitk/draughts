@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Make the board pictures settings' Board row shows, one atlas, with tools/board_shot.goose
-and ImageMagick.
+"""Make the board pictures settings' Board, Pieces, and Background rows show, one atlas,
+with tools/board_shot.goose and ImageMagick.
 
     tools/assets/board_thumbs.py          write design/boards/boards.jpg and boards-6x6.astc
 
@@ -10,8 +10,12 @@ with the pinned Goose, at SHOT, then cut to a tile's picture: the season's own b
 material Auto) whole, and each material's board at its near left corner close up, as the
 settings prototype's `.thumb.corner` (a background 290% wide at 3% 93%). The cells are
 CELL pixels, the picture's 76 × 50 dp at about 2.1 pixels a dp, the densest screen's;
-four across (Auto, Wood, Stone, Carved) and four down by the app's theme (autumn, winter,
-spring, summer, theme.goose's order). The atlas is in git as the JPEG and the ASTC file the
+sixteen across and four down by the app's theme (autumn, winter, spring, summer,
+theme.goose's order). Across: the four boards (Auto, Wood, Stone, Carved); then on each of
+the four, in that order, a light and a dark piece close up, Natural, then Smooth
+(board_shot's --smooth); then the board's near left corner on its table
+(tables::for_look's, shot wider so the table shows past the board), as the settings
+prototype has them (scene::BOARD_PICTURES). The atlas is in git as the JPEG and the ASTC file the
 app embeds (src/native/background.c); its PNG master stays in build/.
 
 It needs astcenc (docs/development.md).
@@ -41,6 +45,13 @@ CROP_AT = {}
 # (Auto), as looks::OWN_MATERIAL has it.
 SEASONS = [("autumn", "wood"), ("winter", "stone"), ("spring", "carved"), ("summer", "wood")]
 MATERIALS = ["wood", "stone", "carved"]
+# The pieces' crops in the shot's pixels: a light piece near and a dark one far, side by
+# side; and the table's shot, wider, and its crop round the board's near left corner.
+LIGHT_AT = (321, 640, 168, 220)
+DARK_AT = (511, 285, 168, 220)
+TABLE_SHOT = (2400, 1200)
+TABLE_AT = (60, 420, 1140, 750)
+TABLE = "flame"         # tables::for_look's, every look's for now
 
 
 def run(*args, cwd=None):
@@ -69,6 +80,25 @@ def corner(shot, out, at=CORNER_AT):
         "-filter", "Lanczos", "-resize", f"{CELL[0]}x{CELL[1]}!", out)
 
 
+def crop(shot, at, out):
+    x, y, w, h = at
+    run("magick", shot, "-crop", f"{w}x{h}+{x}+{y}", "+repage", out)
+
+
+def pieces(shot, out):
+    """A light piece and a dark one side by side, close up."""
+    light, dark = out.with_suffix(".l.png"), out.with_suffix(".d.png")
+    crop(shot, LIGHT_AT, light)
+    crop(shot, DARK_AT, dark)
+    run("magick", light, dark, "+append", "-filter", "Lanczos", "-resize", f"{CELL[0]}x{CELL[1]}!", out)
+
+
+def table(shot, out):
+    """The board's near left corner on its table."""
+    crop(shot, TABLE_AT, out)
+    run("magick", out, "-filter", "Lanczos", "-resize", f"{CELL[0]}x{CELL[1]}!", out)
+
+
 def main():
     WORK.mkdir(parents=True, exist_ok=True)
     OUT.mkdir(parents=True, exist_ok=True)
@@ -84,6 +114,23 @@ def main():
         for k, m in enumerate(MATERIALS):
             corner(WORK / f"{season}-{m}.png", WORK / f"{season}-{k + 1}.png", CROP_AT.get((season, m), CORNER_AT))
             cells.append(WORK / f"{season}-{k + 1}.png")
+        looks = [own, *MATERIALS]
+        for m in looks:
+            smooth = WORK / f"{season}-{m}-smooth.png"
+            run(SHOOTER, smooth, "--size", f"{SHOT[0]}x{SHOT[1]}", "--season", season, "--material", m, "--smooth")
+            on_table = WORK / f"{season}-{m}-table.png"
+            run(SHOOTER, on_table, "--size", f"{TABLE_SHOT[0]}x{TABLE_SHOT[1]}", "--season", season, "--material", m,
+                "--table", TABLE)
+        for kind in ("natural", "smooth"):
+            for m in looks:
+                shot = WORK / (f"{season}-{m}.png" if kind == "natural" else f"{season}-{m}-smooth.png")
+                cell = WORK / f"{season}-{m}-{kind}-cell.png"
+                pieces(shot, cell)
+                cells.append(cell)
+        for m in looks:
+            cell = WORK / f"{season}-{m}-table-cell.png"
+            table(WORK / f"{season}-{m}-table.png", cell)
+            cells.append(cell)
         row = WORK / f"{season}-row.png"
         run("magick", *cells, "+append", row)
         rows.append(row)

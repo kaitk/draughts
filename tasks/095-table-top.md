@@ -90,13 +90,28 @@ Tune with versions side by side from `tools/board_shot.goose`, as task 094 does.
   task 094 brings.
 - The wear's look at the takes' values: the flame's patina is faint (scratches 0.12),
   so it shows mostly in the highlight; tune it with the polish in the tuner.
-- Props from the concept art (task 093: the vase and its lace, books, a lamp) may do more
-  for the scene than more work on the surface.
-- The room behind hardly shows at the game's views, so the backdrop past the table can
-  wait for task 093.
-- Settings: the table is a backdrop of its own beside none and the photograph. Decide
-  how the settings lay out once the pieces get their own materials too (auto, standard,
-  heavier ones like spring's jade; task 094) before adding the table's row and strings.
+- Next, in this order (the user, 2026-11-20), not all in one session:
+  1. The taken pieces on the table beside the board: task 099, the first, before any
+     prop, as a small thing that makes the scene alive.
+  2. Two tables: the round one, and a writing desk improved on from the concept art
+     (`design/manor/library-desk-01.png`, `library-table-01.png`, local), trying the
+     desk's usual green leather writing surface. Each look's take is
+     `tables::for_look` (the flame mahogany for every look till then).
+  3. Props, from the concept art: a book at the side, perhaps a candlestick, and an
+     antique chess clock, which would suit it best: a German one of about 1900, as the
+     manor is Baltic German, a modelling session of its own (task 100). The vase and
+     its lace, books, and a lamp (task 093) after.
+- The room behind hardly shows at the game's views in landscape, but past the round
+  table's edge it does in portrait, on the phone in both views (the user, 2026-11-20):
+  the board on its table needs the room in some form, a real floor at least. Till then
+  the board on its table is never in front of the season's photograph, which read as
+  odd once the board was grounded: the plain fade is behind it (`settings::photo_shown`,
+  2026-11-20). Before merging: think the options settings allows through again (the
+  user holds the merge, 2026-11-20).
+- Settings (2026-11-20, the user's take b of the settings prototype): the table is
+  Background's third tile, Table, which only the 3D board shows (`table = on` in the
+  player's file; the flat board shows the photo or plain kept under it). Switching it
+  bakes only the table's steps and the photograph's (draw3d::table_steps).
 - Device numbers (GPU time, memory, prepare time) on the Mac and the A33 against before,
   as the acceptance criteria ask; the table's maps are about 45 MB at the full side
   (2048 square, two maps with mips), 11 MB on a phone.
@@ -108,6 +123,6 @@ Tune with versions side by side from `tools/board_shot.goose`, as task 094 does.
 - [ ] A procedural mahogany top under the board, lit and shadowed with it, in each season
 - [ ] The board's soft reflection in it
 - [ ] Its far edge soft against the photograph, at every view and on every screen size
-- [ ] A setting for the table, with its strings in every language
+- [x] A setting for the table, with its strings in every language
 - [ ] Shots of each season in this file; GPU time and memory recorded on the Mac and the
       A33 against before

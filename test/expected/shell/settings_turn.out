@@ -3,9 +3,9 @@ dragged on the board: yaw 30.0, pitch 67.5, frames drawn 7 of 7, the view drawn 
 let go: frames drawn at rest 0, yaw 30.0, pitch 67.5
 a season tapped: the setting changed true, the angle kept true
 a drag from a setting onto the board: the angle kept true, nothing changed true
-a drag from the board let go over a setting: yaw 35.0, pitch 54.9, nothing changed true
+a drag from the board let go over a setting: yaw 35.0, pitch 35.0, nothing changed true
 the language list open true, a drag on the board closes it true and the angle kept true
-back: screen home true, halfway yaw -17.5, pitch 53.7, at its end yaw 0.0, pitch 52.5
+back: screen home true, halfway yaw -17.5, pitch 43.8, at its end yaw 0.0, pitch 52.5
 home: yaw 0.0, pitch 52.5, drawn at rest 0
 home dragged to yaw -18.0, pitch 61.5, settings opened: yaw 0.0, pitch 52.5, the view as at first true
 settings dragged to yaw 18.0, pitch 43.5, out to the game and back: yaw 0.0, pitch 52.5, the view as at first true, drawn at rest 0

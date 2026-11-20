@@ -222,9 +222,20 @@ and value noise in the board shader, never a regular stripe.
   the frame after its lit tile shows, after a `gfx::flush()`; only the current season is
   resident, and the embedded pages are given back once read (`madvise`).
 - **Settings' thumbnails** (`scene::thumbs`): each photograph shrunk on the GPU in turn,
-  waiting after each, into one 160 × 2520 texture (1.6 MB) of 160 × 105 px slots: four
-  photographs, four plain fades, and sixteen board pictures from the atlas
-  `design/boards/boards.jpg` / `boards-6x6.astc`, made by `tools/assets/board_thumbs.py` from `tools/board_shot.goose`'s shot of each look.
+  waiting after each, into one 1280 × 945 texture (4.8 MB) of 160 × 105 px slots, 8
+  across: four photographs, four plain fades, and sixteen pictures a season from the
+  atlas `design/boards/boards.jpg` / `boards-6x6.astc` (2560 × 420), made by
+  `tools/assets/board_thumbs.py` from `tools/board_shot.goose`'s shots of each look: its
+  four boards, then on each a light and a dark piece Matching and Classic, and the board on
+  its table.
+- **The table** (settings' Background row's third tile on the 3D board; the player's
+  `table = on`): the 3D board on a round table (task 095), the take `tables::for_look`
+  gives each look. Putting it on or off bakes only the table's steps and the
+  photograph's again (`draw3d::table_steps`). Behind it is always the plain fade, never
+  the photograph (`settings::photo_shown`), till there is a room.
+- **The pieces' finish** (settings' Pieces row on the 3D board; `pieces = natural|smooth`):
+  Matching is the look's own material (task 094); Classic the pieces as before it, one
+  color with a faint mottling (`looks::smooth`), which takes only the theme's last step.
 - **The plain background** (settings' Background row; the player's `background =
   photo|plain`): a fade matched to the season's board in place of the photograph, from the
   theme's page color at the top to a deep tone of its frame at the foot, a faint light of
@@ -358,7 +369,9 @@ crossfading. Where the choices don't fit they scroll between the head and play.
 
 **Settings** (`prototypes/settings.html`, `src/shell/settings.goose`): back,
 the title, and the language button pinned on top, then one scrolling list: **Look**
-(Background, Theme, Board: Flat, Raised, Wood, Stone, Carved; Kings), **Sound** (Volume:
+(Theme; Board: Flat, Raised, Wood, Stone, Carved; then under a heading naming the board
+the rows it uses: the 3D board's Pieces, Matching or Classic, and Background, Photo, Plain
+or Table; the flat board's Background, Photo or Plain; Kings), **Sound** (Volume:
 a speaker and a slider, [sound](sound.md#the-setting)), **Game** (Move hints, Move list),
 and the privacy note with a small About row beside it. A new player starts on Raised on
 a desktop and on Flat on a phone or a tablet. Pictured rows show a 76 × 50 dp picture

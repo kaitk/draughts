@@ -27,8 +27,10 @@ import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
 let LANGUAGE = 1;           // the language button, after back
-let FIRST_TILE = 2;         // the list's first tile: the Background row's Photo
-let TILES = 28;             // the list's rows' tiles, puzzles a day's four too, the speaker, back, language, About
+let FIRST_TILE = 2;         // the list's first tile: the Theme row's first season
+// The list's rows' tiles on the 3D board (its Pieces and the Background's table with them),
+// puzzles a day's four too, the speaker, back, language, About.
+let TILES = 31;
 
 fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
 
@@ -86,8 +88,8 @@ fn layout(g: gui::Gui&, name: const u8[:]) {
         out.append(if landscape { "the column" } else { "the sheet" });
         out.append(if g.scroll.max > 0.0 { ", the list scrolls" } else { ", the list still" });
     }
-    format(out, "; background ", row_of(g, FIRST_TILE, 2), ", theme ", row_of(g, FIRST_TILE + 2, 5), ", board ",
-           row_of(g, FIRST_TILE + 7, 5));
+    format(out, "; theme ", row_of(g, FIRST_TILE, 5), ", board ", row_of(g, FIRST_TILE + 5, 5), ", pieces ",
+           row_of(g, FIRST_TILE + 10, 2), ", background ", row_of(g, FIRST_TILE + 12, 3));
     let n = drive::tiles(g);
     if n != TILES { format(wrong, " ", n, " tiles;"); }
     var narrow: f32 = 1.0e9;

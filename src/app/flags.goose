@@ -23,7 +23,8 @@ struct Flags {
     height:     i64  = 800,
     full:       bool = false, // --size full: the desktop's window fills the screen
     theme:      i64  = -1,  // --theme wood|stone|birch|sunset: the board, else the season's
-    background: i64  = -1,  // --background photo|plain: 0 the photograph, 1 the plain fade
+    background: i64  = -1,  // --background photo|plain|table: 0 the photograph, 1 the plain fade, 2 the 3D board's table
+    pieces:     i64  = -1,  // --pieces natural|smooth: 0 the board's own material, 1 smooth
     board:      i64  = -1,  // --board 3d|flat: settings::RAISED or settings::FLAT
     lookout:    i64  = -1,  // --lookout on|off: the player's lookout, 1 on, 0 off
     moves:      i64  = -1,  // --moves off|list|marks: the player's move list (settings::MOVES_*)
@@ -161,6 +162,9 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--theme" && theme::by_name(v) >= 0 { f.theme = theme::by_name(v); }
         if a == "--background" && v == "photo" { f.background = 0; }
         if a == "--background" && v == "plain" { f.background = 1; }
+        if a == "--background" && v == "table" { f.background = 2; }
+        if a == "--pieces" && v == "natural" { f.pieces = 0; }
+        if a == "--pieces" && v == "smooth" { f.pieces = 1; }
         if a == "--board" && v == "3d" { f.board = settings::RAISED; }
         if a == "--board" && v == "flat" { f.board = settings::FLAT; }
         if a == "--material" { for name, k in settings::MATERIAL_NAMES { if v == name { f.material = k; } } }

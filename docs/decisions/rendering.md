@@ -279,6 +279,21 @@ fed389b.
   material per season.
 - The board's material is in the Board row: Flat, Raised (the season's, "auto"), Wood,
   Stone, Carved, each a picture of the board (2026-11-13).
+- Look's rows (2026-11-20, the user's take b of the settings prototype, as changed by
+  them): Theme, then Board, the main choice, then under a small heading naming the board
+  only the rows that board uses: the 3D board's Pieces and Background with a third tile,
+  Table; the flat board's Background; Kings. Replaces Background first (2026-11-13
+  above). The 3D board's two rows add three tiles, which the user judged fine. Rejected:
+  a 3D board card the Board row opens (the user: no cards), a Look group per board, the
+  3D board's rows dimmed on the flat board, Table as a row of its own.
+- A board on the table has the plain fade behind it, never the season's photograph
+  (2026-11-20): a landscape behind a grounded table read as odd. A floor or a room is to
+  come (task 095).
+- The 3D pieces follow the board (2026-11-20): Matching (Laua moodi), the look's own
+  material, or Classic (Tavalised), as before task 094, each a picture of a light and a dark piece on the board
+  chosen. Rejected: Auto with a material picked apart from the board (the user ties the
+  pieces to the board); the words Natural and Smooth (Looduslik, Sile), which said too
+  little. Winter stone's own pieces are black marble, over the honed slate.
 - No draughts row (2026-11-11): home's setup and the library choose it, and here it read
   as changing the game in progress.
 - The preview is in the draughts of the board settings opened over, not the one a new
@@ -457,8 +472,11 @@ play; a stack's rings go round its foot (2026-11-08).
 - The twelve looks as built stand (the user, 2026-11-16), summer's stone given veins and
   cracks of its own, tuned in the 3D prototype's panel. Set aside: task 041's temple take,
   the amber reading as an inlay, and the carved motifs' size against the images'.
-- Settings' board pictures are shots baked into one 640 × 420 atlas in git
-  (`tools/assets/board_thumbs.py`, 117 KB as ASTC). Rejected: drawing them at run time (every
+- Settings' board pictures are shots baked into one atlas in git
+  (`tools/assets/board_thumbs.py`): 640 × 420 and 117 KB as ASTC, then 2560 × 420 and
+  478 KB with the Pieces and Table pictures (2026-11-20), each season's sixteen. The
+  thumbnails lay their slots 8 across (2026-11-20): in one column, 72 slots were 7560 px
+  tall, past the 4096 some phones' GPUs take. Rejected: drawing them at run time (every
   look baked), a second texture (another binding in the UI's shader).
 - The 180° turn keeps its size and eases on a sine over 0.7 s (2026-11-12): refitting it
   at each angle drew the eye. The flat board's turn fades its pieces 0.15 s each way.

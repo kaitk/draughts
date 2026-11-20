@@ -566,19 +566,22 @@ let FRAG = """
     #ifdef UI_BASE
         if (kind == 5) {
             // A picture: a thumbnail, cover-cropped, a season's photograph (its theme,
-            // 0 to 3) or its plain fade (4 to 7), a board picture (8 on, four a theme:
+            // 0 to 3) or its plain fade (4 to 7), a board picture (8 on, sixteen a theme:
             // its own raised board whole, then its wood's, stone's, and carved board's
-            // corner), the theme shown's photograph (-2) or fade (-3) or board picture
-            // (-4 to -7); for -1 a faint glow tint, and for -8 white at 6% (the flat board's).
+            // corner; then the pieces Natural, Smooth, and the board on its table, each in
+            // the four materials), the theme shown's photograph (-2) or fade (-3) or board
+            // picture (-16 - j for its j); for -1 a faint glow tint, and for -8 white at 6%
+            // (the flat board's). The slots are 8 across (scene::THUMB_COLS), 9 down.
             float a = cover(box(p, c, h, r)) * v_color.a;
             int k = int(v_look.z);
             if (k == -2) k = theme_index();
             if (k == -3) k = theme_index() + 4;
-            if (k <= -4 && k >= -7) k = 8 + 4 * theme_index() + (-4 - k);
+            if (k <= -16 && k >= -31) k = 8 + 16 * theme_index() + (-16 - k);
             vec2 t = (p - v_rect.xy) / v_rect.zw;
             if (k == -1) a *= 0.23;
             if (k == -8) a *= 0.06;
-            vec3 pc = k >= 0 ? texture(thumbs, vec2(t.x, (float(k) + t.y) / 24.0)).rgb
+            vec2 cell = vec2(float(k % 8) + t.x, float(k / 8) + t.y) / vec2(8.0, 9.0);
+            vec3 pc = k >= 0 ? texture(thumbs, cell).rgb
                              : k == -1 ? mix(vec3(1.0), glow.rgb, 0.78) : vec3(1.0);
             result = vec4(pc * a, a);
             return;

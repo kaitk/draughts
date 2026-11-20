@@ -25,7 +25,7 @@ import drive from "../drive";
 // Settings' tiles in the order the screen declares them (test/shell/settings).
 let BACK = 0;
 let LANGUAGE = 1;
-let SUMMER = 6;
+let SUMMER = 4;
 
 fn r1(x: f32) -> f64 { floor((x as f64) * 10.0 + 0.5) / 10.0 }
 

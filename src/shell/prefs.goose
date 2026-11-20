@@ -107,6 +107,11 @@ struct Settings {
     plain:            bool          = false,   // the plain fade in place of the photograph (`background = plain`)
     board:            i64           = FLAT,    // the Board row's: flat, or raised (the 3D board)
     material:         i64           = MATERIAL_AUTO, // and the raised board's material
+    // The 3D board's own: on a table, Background's third tile, which the flat board
+    // shows as photo or plain (`table = on`); and its pieces Smooth, as before their
+    // materials (`pieces = smooth`), else the board's own material
+    table:            bool          = false,
+    smooth:           bool          = false,
     turns:            bool          = false,   // the setup's: a friend's game turns the board to the side to move (`turn = on`)
     hints:            i64           = board::MISTAKES,
     lookout:          bool          = false,   // the game's lookout, its eye on whose turn's line (`lookout = on`)
@@ -179,8 +184,10 @@ fn king_look(s: Settings) -> i64 { if s.kings == board::STACK { board::STACK } e
 fn raised(s: Settings) -> bool { s.board == RAISED }
 
 // Whether the season's photograph is shown, or the plain fade in its place: with plain
-// the app decodes, uploads, and holds no photograph.
-fn photo_shown(s: Settings) -> bool { !s.plain }
+// the app decodes, uploads, and holds no photograph. A board on the table is never in
+// front of the photograph, whose landscape behind a table grounded in a room read as odd
+// (the user, 2026-11-20): the fade until the room (task 093).
+fn photo_shown(s: Settings) -> bool { !s.plain && !(raised(s) && s.table) }
 
 // How the 3D board draws kings: auto is a stack of two plain discs there.
 fn raised_king_look(s: Settings) -> i64 { if s.kings == board::CROWN { board::CROWN } else { board::STACK } }
@@ -215,6 +222,8 @@ fn parse(text: const u8[:]) -> Settings {
             for name, i in SEASON_NAMES { if value == name { s.season = SEASON_KINDS[i]; } }
         }
         if key == "background" && value == "plain" { s.plain = true; }
+        if key == "table" && value == "on" { s.table = true; }
+        if key == "pieces" && value == "smooth" { s.smooth = true; }
         if key == "board" && value == "3d" { s.board = RAISED; }
         if key == "board" && value == "2d" { s.board = FLAT; }
         if key == "material" {
@@ -393,9 +402,11 @@ fn write(s: Settings, out: u8[>..]&) {
     for kind, i in SEASON_KINDS { if s.season == kind { season = SEASON_NAMES[i]; } }
     out.append(season);
     out.append(if s.plain { "\nbackground = plain" } else { "\nbackground = photo" });
+    out.append(if s.table { "\ntable = on" } else { "\ntable = off" });
     out.append(if s.board == RAISED { "\nboard = 3d" } else { "\nboard = 2d" });
     out.append("\nmaterial = ");
     out.append(MATERIAL_NAMES[clamp(s.material, 0, MATERIAL_NAMES.len - 1)]);
+    out.append(if s.smooth { "\npieces = smooth" } else { "\npieces = natural" });
     out.append(if s.turns { "\nturn = on" } else { "\nturn = off" });
     out.append(if s.hints == board::MOVES { "\nhints = moves" } else { "\nhints = mistakes" });
     out.append(if s.lookout { "\nlookout = on" } else { "\nlookout = off" });
