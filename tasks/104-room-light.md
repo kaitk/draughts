@@ -15,7 +15,7 @@ Look development: right on the Mac first, tuning and device numbers at the end.
 
 | Season | Room and hour | Key | Fill and ambient |
 | --- | --- | --- | --- |
-| Autumn | The library, south-west, a mid-October afternoon (`library-table-01`, `library-autumn-01/02`) | Low sun (about 18°) from the left and behind, deep amber, strong; long shadows | Dim and warm: dark panelling and wallpaper; the window's sky a weak cool lobe from the left |
+| Autumn | The library, south-west, a mid-October afternoon (`library-table-01`, `library-autumn-02`) | Low sun (about 18°) from the left and behind, deep amber, strong; long shadows | Dim and warm: dark panelling and wallpaper; the window's sky a weak cool lobe from the left |
 | Winter | The upper hall, north-east, a January morning, no sun (`hall-winter-table-01/02`) | The snowy doors on the left: broad, cool white, about 30°, weak, its shadow soft and faint | Strong cool light from the left, pale blue-grey plaster all round, a faint warm lamp far behind |
 | Spring | The upper hall on a May morning (prompts 7) | Low clear morning sun (about 25°) from the left, near white, crisp | Bright and airy: a cool sky from the left, a little green from the trees, pale walls |
 | Summer | The season's photograph: an evening by the sea | Low rose-gold evening sun (about 14°) from the left and behind, strong | Brighter than autumn's: a violet-blue sky lobe, warm walls |

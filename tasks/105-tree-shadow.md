@@ -17,7 +17,7 @@ The trees outside the windows in the concept frames are the ones to cast (the us
 - `library-menu-01.png`: the park's old broadleaves close outside the library's window,
   a thick dark trunk rising through the right pane, limbs reaching across, a loose crown
   of yellow leaves with sky between the clusters, the low sun flaring through them.
-- `library-autumn-01.png` and `-02.png`: the same seen from inside, orange palmate leaves
+- `library-autumn-02.png`: the same seen from inside, orange palmate leaves
   (maples) right by the panes, a trunk and branches in the lower panes.
 - `garden-facade-01.png`: the park from outside, old trees within metres of the windows,
   a broad oak with heavy crooked limbs at the left, slimmer trunks with thin hanging
