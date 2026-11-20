@@ -369,7 +369,9 @@ def grow_field(seed=7):
 
 HEM = dict(period=N // 2, edge_mid=mm(203), edge_cusp=mm(172), lobes=7, lobe_mm=9.0,
            band_mm=15, gap_mm=4.0, garland_mid=mm(66), mesh_mm=4.2, mesh_thread_mm=0.55,
-           picot_mm=3.6, picot_r_mm=1.35)
+           picot_mm=3.6, picot_r_mm=1.35, scallops=1)
+# scallops: the edge's scallops under each garland arc, each with lobes lobes (the
+# download has two small ones; ways c and d one large one)
 
 
 def hem_geometry(cv):
@@ -380,24 +382,27 @@ def hem_geometry(cv):
     y, x = np.mgrid[0:h, 0:w].astype(np.float32)
     lx = (x % P) - P / 2                         # from the scallop's middle
 
-    def circle_y(mid, cusp, up):                 # an arc through mid at 0 and cusp at +-P/2
+    Ps = P / HEM.get('scallops', 1)             # an edge scallop's width
+    ls = (x % Ps) - Ps / 2                       # from its middle
+
+    def circle_y(mid, cusp, up):                 # an arc through mid at 0 and cusp at +-Ps/2
         s = abs(mid - cusp)
-        R = ((P / 2) ** 2 + s * s) / (2 * s)
-        sag = R - np.sqrt(np.maximum(R * R - lx * lx, 0))
+        R = ((Ps / 2) ** 2 + s * s) / (2 * s)
+        sag = R - np.sqrt(np.maximum(R * R - ls * ls, 0))
         return mid - sag if not up else mid - sag
 
-    edge = circle_y(HEM['edge_mid'], HEM['edge_cusp'], False)   # the big scallop's line
+    edge = circle_y(HEM['edge_mid'], HEM['edge_cusp'], False)   # the scallops' line
     # Distance up from the edge, roughly: the arcs are shallow, so y does.
     up = edge - y
     # Lobes along the edge: rounded bumps, notched between, with picots round each.
-    arc = (lx + P / 2) / P * HEM['lobes']
+    arc = (ls + Ps / 2) / Ps * HEM['lobes']
     k = np.floor(arc)
     f = arc - k - 0.5
     lobe = mm(HEM['lobe_mm']) * np.sqrt(np.clip(1 - (2 * f) ** 2, 0, 1))
     outer = up + lobe                            # > 0 inside the cloth
     sd = -outer
     # Picots: small loops standing out of the lobe's rim.
-    lob_len = P / HEM['lobes']
+    lob_len = Ps / HEM['lobes']
     n_pic = max(3, int(lob_len / mm(HEM['picot_mm'])) - 2)
     vein = np.full((h, w), BIG, np.float32)
     picots = np.full((h, w), BIG, np.float32)
@@ -408,7 +413,7 @@ def hem_geometry(cv):
     keep = (pk > 0) & (pk < n_pic - 1)
     pr = mm(HEM['picot_r_mm'])
     cx = (pk + 0.5) / n_pic - 0.5                # of the lobe
-    px_ = lx + P / 2 - (k + 0.5 + cx) * lob_len
+    px_ = ls + Ps / 2 - (k + 0.5 + cx) * lob_len
     py_ = y - (rim_y + pr * 0.45)
     ring = np.abs(np.hypot(px_, py_) - pr * 0.6) - pr * 0.27
     ring = np.maximum(ring, -(py_ + pr * 0.45 + 1.5))   # only below the rim: no ring inside the cloth
@@ -416,7 +421,7 @@ def hem_geometry(cv):
     sd = np.minimum(sd, picots)
     # The eyelet band: one wheel a lobe, then a double gimp line along the band's top.
     band = mm(HEM['band_mm'])
-    ex = lx + P / 2 - (k + 0.5) * lob_len
+    ex = ls + Ps / 2 - (k + 0.5) * lob_len
     ey = up - band * 0.45
     er = np.hypot(ex, ey)
     holes = np.where(er < mm(2.6), np.abs(er - mm(1.6)) - mm(0.7), BIG)   # the wheel's ring open

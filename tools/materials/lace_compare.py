@@ -5,7 +5,7 @@ framing and physical scale, labelled on each image.
     python3 tools/materials/lace_compare.py build/notes/lace-library build/notes/lace-compare
 
 LIBRARY_DIR holds one folder a way, as the bakers' headers make them (lace-2, b, c, d,
-d-tilted, d-near); OUT_DIR gets index.html and its tiles. The download's scale is
+d-tilted, d-near, e, e-hem2); OUT_DIR gets index.html and its tiles. The download's scale is
 lace.py's: 2 * REPEAT source px a TILE_M tile. Field windows are in metres from the
 download's field corner (FIELD's x0, y0), where our traced ways' tile starts too; hem
 windows in metres from a garland's cusp across and from the lowest edge of the hem up.
@@ -30,13 +30,16 @@ FIELD_ROWS = (lace.FIELD[1], lace.BORDER_ROWS[0])
 GPT = '#ff9f1c'                                # ChatGPT's labels
 OURS = '#4cc9f0'                               # ours
 WAYS = [  # folder, file tag, label, one line
-    ('d-tilted', 'd', 'd-tilted', 'wild roses, tilted and warped (current best)'),
+    ('e', 'e', 'e, structured', 'flowers by their boss, stems and leaves from the download'),
+    ('e-hem2', 'e', 'e, two scallops', 'e with the hem\'s two small scallops an arc'),
+    ('d-tilted', 'd', 'd-tilted', 'wild roses, tilted and warped'),
     ('d', 'd', 'd', 'wild roses, face on'),
     ('c', 'c', 'c', 'traced layout, rosette flowers'),
     ('b', 'b', 'b', 'grown from scratch, own layout'),
     ('lace-2', None, 'lace-2', 'old bake, cut straight from the download'),
 ]
 NEAR = ('d-near', 'd', 'd-near', 'd-tilted tuned toward the download')
+HEM_ONLY = {'e-hem2'}                          # the same field as the way before it
 
 # name, metres (x, y, w, h), output px (w, h)
 FIELD_VIEWS = [
@@ -256,7 +259,7 @@ def build(lib, out):
         rows = []
         for vi, (vname, win, size) in enumerate(views_):
             if part == 'field':
-                covs = [(w, wy.field(win, size)) for w, wy in ways]
+                covs = [(w, wy.field(win, size)) for w, wy in ways if w[0] not in HEM_ONLY]
                 gpt = lambda n, extra='': gpt_tile(n, win, size, x0, y0, field_valid, extra)
             else:
                 covs = [(w, wy.hem(win, size)) for w, wy in ways]
@@ -275,12 +278,13 @@ def build(lib, out):
         for vi in (0, 1):
             vname, win, size = FIELD_VIEWS[vi]
             cov = near.field(win, size)
-            dt = dict(ways)[WAYS[0]] if WAYS[0] in dict(ways) else None
+            dt_way = next(w for w in WAYS if w[0] == 'd-tilted')
+            dt = dict(ways).get(dt_way)
             tiles = [gpt_tile(f'near{vi}_chatgpt.jpg', win, size, x0, y0, field_valid)]
             tiles.append(our_tile(f'near{vi}_front.jpg', NEAR, cov, 'front'))
             tiles.append(our_tile(f'near{vi}_backlit.jpg', NEAR, cov, 'backlit'))
             if dt is not None:
-                tiles.append(our_tile(f'near{vi}_dtilted.jpg', WAYS[0], dt.field(win, size), 'front'))
+                tiles.append(our_tile(f'near{vi}_dtilted.jpg', dt_way, dt.field(win, size), 'front'))
             rows.append((f'As close as we get: {vname}', NEAR_NOTES[vi], tiles, size))
         sections.append(('As close as possible to ChatGPT\'s', rows))
     write_page(out, sections, [w for w, _ in ways])
