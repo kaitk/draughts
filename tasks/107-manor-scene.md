@@ -21,7 +21,11 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       fixed (task 105)
 - [ ] The tiers' table: each effect and its quality per tier, at build time (task 104)
 - [ ] The options in settings: the room's light, the tree, the neutral light; thought
-      through with the background's options before merging (tasks 095, 104)
+      through with the background's options before merging (tasks 095, 104). The way
+      agreed (the user, 2026-11-20): one setting, Light, for the 3D board on its table:
+      Neutral, Room, Sunlit window. In the game the window's pattern is still and light,
+      the dapple mostly on the table and the board's edges so the squares read; the
+      dense dapple, the wind, and the dust are the home screen's, by tier, not a setting
 - [ ] Device numbers on the Mac and the A33, against before (tasks 104, 105)
 
 ## The home screen's shot (autumn)

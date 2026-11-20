@@ -139,6 +139,13 @@ the light is settled (the user, 2026-11-20).
   a rise only in the sunlit air (not closed form), and drawing over the kept image for
   the home screen (`marks_over`'s way, against the kept depth).
 
+- The game and the home screen apart (the user, 2026-11-20): few would want the wind and
+  a board half in shade while playing; on the home screen it is nice. So the game's
+  pattern is still and lighter (a profile of its own per room, the shade kept off the
+  squares' middle), and the library's dense dapple (task 105, half the board in shade, as
+  `library-table-01`) with the wind is the home screen's. The settings: Light, Neutral,
+  Room, or Sunlit window (epic 107).
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac
