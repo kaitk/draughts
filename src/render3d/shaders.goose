@@ -195,6 +195,55 @@ let CROWN_FRAG = """
     void main() { result = vec4(crown((gl_FragCoord.xy / CROWN_SIZE - 0.5) * (2.0 * CROWN_SPAN)), 0.0, 0.0, 1.0); }
     """;
 
+// The light's functions LIT_FRAG and TABLE_FRAG share: GGX, its visibility and Fresnel,
+// the split sum's fit, the room's harmonics, and the sRGB curve.
+let LIGHT_FN = """
+    // Filament's GGX, its height-correlated Smith visibility, Schlick's Fresnel.
+    float d_ggx(float noh, float a) {
+        float a2 = a * a;
+        float f = (noh * a2 - noh) * noh + 1.0;
+        return a2 / (PI * f * f);
+    }
+
+    float v_smith(float nov, float nol, float a) {
+        float a2 = a * a;
+        float l = nov * sqrt((-nol * a2 + nol) * nol + a2);
+        float v = nol * sqrt((-nov * a2 + nov) * nov + a2);
+        return 0.5 / (l + v);
+    }
+
+    vec3 f_schlick(vec3 f0, float voh) {
+        float f = pow(1.0 - voh, 5.0);
+        return f0 + (1.0 - f0) * f;
+    }
+
+    // Karis's fit of the split-sum's DFG for mobile.
+    vec3 env_brdf(vec3 f0, float rough, float nov) {
+        vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
+        vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
+        vec4 r = rough * c0 + c1;
+        float a004 = min(r.x * r.x, exp2(-9.28 * nov)) * r.x + r.y;
+        vec2 ab = vec2(-1.04, 1.04) * a004 + r.zw;
+        return f0 * ab.x + ab.y;
+    }
+
+    vec3 sh_eval(vec3 n) {
+        vec3 r = sh[0].rgb * 0.282095
+               + sh[1].rgb * (0.488603 * n.y) + sh[2].rgb * (0.488603 * n.z)
+               + sh[3].rgb * (0.488603 * n.x)
+               + sh[4].rgb * (1.092548 * n.x * n.y) + sh[5].rgb * (1.092548 * n.y * n.z)
+               + sh[6].rgb * (0.315392 * (3.0 * n.y * n.y - 1.0))
+               + sh[7].rgb * (1.092548 * n.x * n.z)
+               + sh[8].rgb * (0.546274 * (n.x * n.x - n.z * n.z));
+        return max(r, vec3(0.0));
+    }
+
+    vec3 to_srgb(vec3 c) {
+        c = clamp(c, 0.0, 1.0);
+        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+    }
+    """;
+
 let LIT_FRAG = """
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
@@ -233,42 +282,6 @@ let LIT_FRAG = """
                    mix(mix(hash13(i + vec3(0, 0, 1)), hash13(i + vec3(1, 0, 1)), u.x),
                        mix(hash13(i + vec3(0, 1, 1)), hash13(i + vec3(1, 1, 1)), u.x), u.y),
                    u.z);
-    }
-
-    // Filament's GGX, its height-correlated Smith visibility, Schlick's Fresnel.
-    float d_ggx(float noh, float a) {
-        float a2 = a * a;
-        float f = (noh * a2 - noh) * noh + 1.0;
-        return a2 / (PI * f * f);
-    }
-    float v_smith(float nov, float nol, float a) {
-        float a2 = a * a;
-        float l = nov * sqrt((-nol * a2 + nol) * nol + a2);
-        float v = nol * sqrt((-nov * a2 + nov) * nov + a2);
-        return 0.5 / (l + v);
-    }
-    vec3 f_schlick(vec3 f0, float voh) {
-        float f = pow(1.0 - voh, 5.0);
-        return f0 + (1.0 - f0) * f;
-    }
-    // Karis's fit of the split-sum's DFG for mobile.
-    vec3 env_brdf(vec3 f0, float rough, float nov) {
-        vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
-        vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
-        vec4 r = rough * c0 + c1;
-        float a004 = min(r.x * r.x, exp2(-9.28 * nov)) * r.x + r.y;
-        vec2 ab = vec2(-1.04, 1.04) * a004 + r.zw;
-        return f0 * ab.x + ab.y;
-    }
-    vec3 sh_eval(vec3 n) {
-        vec3 r = sh[0].rgb * 0.282095
-               + sh[1].rgb * (0.488603 * n.y) + sh[2].rgb * (0.488603 * n.z)
-               + sh[3].rgb * (0.488603 * n.x)
-               + sh[4].rgb * (1.092548 * n.x * n.y) + sh[5].rgb * (1.092548 * n.y * n.z)
-               + sh[6].rgb * (0.315392 * (3.0 * n.y * n.y - 1.0))
-               + sh[7].rgb * (1.092548 * n.x * n.z)
-               + sh[8].rgb * (0.546274 * (n.x * n.x - n.z * n.z));
-        return max(r, vec3(0.0));
     }
 
     // The key light's shadow, from a point pushed off the surface along its normal: a
@@ -611,10 +624,6 @@ let LIT_FRAG = """
         c *= np / peak;
         float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
         return mix(c, vec3(np), g);
-    }
-    vec3 to_srgb(vec3 c) {
-        c = clamp(c, 0.0, 1.0);
-        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
     }
 
     void main() {
@@ -1168,39 +1177,6 @@ let TABLE_FRAG = """
     // A vector in the second layer's tile turned back into the world's.
     vec2 turn_back(vec2 v) { return vec2(TURN.x * v.x + TURN.y * v.y, TURN.x * v.y - TURN.y * v.x); }
 
-    float d_ggx(float noh, float a) {
-        float a2 = a * a;
-        float f = (noh * a2 - noh) * noh + 1.0;
-        return a2 / (PI * f * f);
-    }
-    float v_smith(float nov, float nol, float a) {
-        float a2 = a * a;
-        float l = nov * sqrt((-nol * a2 + nol) * nol + a2);
-        float v = nol * sqrt((-nov * a2 + nov) * nov + a2);
-        return 0.5 / (l + v);
-    }
-    vec3 f_schlick(vec3 f0, float voh) {
-        float f = pow(1.0 - voh, 5.0);
-        return f0 + (1.0 - f0) * f;
-    }
-    vec3 env_brdf(vec3 f0, float rough, float nov) {
-        vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
-        vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
-        vec4 r = rough * c0 + c1;
-        float a004 = min(r.x * r.x, exp2(-9.28 * nov)) * r.x + r.y;
-        vec2 ab = vec2(-1.04, 1.04) * a004 + r.zw;
-        return f0 * ab.x + ab.y;
-    }
-    vec3 sh_eval(vec3 n) {
-        vec3 r = sh[0].rgb * 0.282095
-               + sh[1].rgb * (0.488603 * n.y) + sh[2].rgb * (0.488603 * n.z)
-               + sh[3].rgb * (0.488603 * n.x)
-               + sh[4].rgb * (1.092548 * n.x * n.y) + sh[5].rgb * (1.092548 * n.y * n.z)
-               + sh[6].rgb * (0.315392 * (3.0 * n.y * n.y - 1.0))
-               + sh[7].rgb * (1.092548 * n.x * n.z)
-               + sh[8].rgb * (0.546274 * (n.x * n.x - n.z * n.z));
-        return max(r, vec3(0.0));
-    }
     vec3 tonemap(vec3 c) {
         float x = min(c.r, min(c.g, c.b));
         float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
@@ -1213,10 +1189,6 @@ let TABLE_FRAG = """
         c *= np / peak;
         float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
         return mix(c, vec3(np), g);
-    }
-    vec3 to_srgb(vec3 c) {
-        c = clamp(c, 0.0, 1.0);
-        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
     }
 
     float round_box(vec2 p, vec2 b, float r) {

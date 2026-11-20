@@ -383,21 +383,21 @@ fn set_aa(own: Own&, g: render3d::Gpu&, aa: i32, samples: i32 = SAMPLES) {
 // SHADOW_MANY) and the pieces in one material (render3d::PIECES_..).
 fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
     if look == render3d::SHADOW_4 {
-        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
-        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG);
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG);
     }
     if look == render3d::SHADOW_16 {
-        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
-        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG);
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG);
     }
-    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
-    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG);
+    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG);
 }
 
 // The lit pass's pipelines, the board's and a fading piece's, their shadow filtered as
@@ -423,7 +423,7 @@ fn set_shadow(own: Own&, g: render3d::Gpu&, look: i32) {
 }
 
 // The pieces' material (render3d::PIECES_..) from the next draw on: the lit pipelines
-// made again if it changes, marked relit for the caller to warm.
+// made again if it changes, marked pieces_unwarmed for the caller to warm.
 fn set_pieces(own: Own&, g: render3d::Gpu&, pieces: i32) {
     guard pieces != g.pieces else { return; }
     g.pieces = pieces;
@@ -432,7 +432,7 @@ fn set_pieces(own: Own&, g: render3d::Gpu&, pieces: i32) {
     gfx::release(g.lit);
     gfx::release(g.fading);
     lit_pipelines(own, g, g.shadow_look);
-    g.relit = true;
+    g.pieces_unwarmed = true;
 }
 
 // The bake's pipeline for a surface (render3d::bake_kind), made the first time it is wanted.
@@ -569,7 +569,7 @@ fn setup(own: Own&, g: render3d::Gpu&, samples: i32 = SAMPLES, look: i32 = rende
     let quad_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::QUAD_VERT);
     lit_pipelines(own, g, look);
     g.table_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
-                                embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TABLE_FRAG),
+                                embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::TABLE_FRAG),
                                 gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
                                                     blend: gfx::BLEND_PREMULTIPLIED });
     // Both faces into the shadow map: with back faces culled the light leaks through where
@@ -719,7 +719,7 @@ fn warm(own: Own&, g: render3d::Gpu&, k: i64) {
         own.warm_kept = depth_target(int2 { 4, 4 });
     }
     var pass = gfx::PassDesc {};
-    if k < 4 || k == 11 {
+    if k < 4 || k == render3d::WARM_STEPS - 1 {
         pass.color[0] = g.warm_color;
         pass.depth = g.warm_depth;
     } else if k == 4 {

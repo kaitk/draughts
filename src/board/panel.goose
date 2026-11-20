@@ -185,7 +185,7 @@ let TAKEN_PAD = 16.0;       // dp: either side inside their glass
 let TAKEN_ROWS_PAD = 14.0;  // dp: above and below two rows on their glass
 let TAKEN_LINE_PAD = 8.0;   // dp: above and below one line
 
-// How many pieces of each color have been taken, men and kings apart (game::taken).
+// How many pieces of each color have been taken, men and kings apart (board::taken).
 struct Taken {
     men:   i64[2] = [0, 0],
     kings: i64[2] = [0, 0],

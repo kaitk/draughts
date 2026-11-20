@@ -440,7 +440,7 @@ struct Scene {
     discs:  float4[..MAX_DISCS] = [],
     disc_r: f32                 = 0.0,
 }
-let MAX_DISCS = 48;
+let MAX_DISCS = 48;     // render3d::MAX_DISCS and TABLE_FRAG's discs[48] the same
 
 // A board square's number (y * size + x, as board::Marks numbers it) in the world's grid
 // (row * n + column, row 0 the far side): the flat layout's turn is the world's.

@@ -8,54 +8,54 @@ import std;
 import vec;
 
 struct Drawer {
-    gpu:       render3d::Gpu                         = default<render3d::Gpu>(),
-    ready:     bool                                  = false,
-    aa:        i32                                   = render3d::AA, // --aa and the A key: render3d's AA_OFF..
-    samples:   i32                                   = render3d::SAMPLES, // MSAA's, fewer on a slow device
-    look:      i32                                   = render3d::SHADOW_9, // how the shadow is filtered (screen_shadow)
-    side:      i64                                   = model3d::BAKE_SIDE, // the surfaces' side (screen_bake)
-    kind:      i64                                   = -1, // the app's theme the board was set up with
-    plain:     bool                                  = false, // and whether behind it the plain fade
-    which:     i64                                   = -1, // the board drawn (the shell's which())
-    n:         i64                                   = 0,
-    wood:      i64                                   = -1, // --wood, --marble: -1 the renderer's own
-    marble:    i64                                   = -1,
-    summer:    i64                                   = -1, // --summer: summer's variant (looks::SUMMERS), -1 not given
-    autumn:    i64                                   = -1, // --autumn, --winter: theirs (looks::AUTUMNS, WINTERS)
-    winter:    i64                                   = -1,
-    spring:    i64                                   = -1, // --spring: spring's look (looks::SPRINGS)
-    want:      i64                                   = looks::MATERIAL_AUTO, // the material asked for (want_look)
-    material:  i64                                   = looks::MATERIAL_AUTO, // and the one the board is set up with
-    size:      int2                                  = int2 { 0, 0 },
-    scene:     view3d::Scene                         = view3d::Scene {}, // this frame's
-    drawn:     view3d::Scene                         = view3d::Scene {}, // the last one drawn
-    upload:    float4[..2 * render3d::MAX_INSTANCES] = [],
-    alphas:    f32[..render3d::MAX_INSTANCES]        = [],    // the fading instances' opacity, last in upload
-    redraw:    bool                                  = false, // this frame drew the 3D board,
-    shadow:    bool                                  = false, // and the shadow map first
-    frames:    i64                                   = 0,     // frames that showed the 3D board,
-    draws:     i64                                   = 0,     // those that drew it,
-    shadows:   i64                                   = 0,     // and the shadow map;
-    pulses:    i64                                   = 0,     // those that changed only the pulsing marks
-    setup_ms:  f64                                   = 0.0,   // the renderer's setup,
-    apply_ms:  f64                                   = 0.0,   // and prepare()'s steps in all, waited
-    live:      bool                                  = false, // --keep off: the backdrop never kept (render3d's live)
-    table:     i64                                   = -1,    // --table: the board on that table always (tables::BOARD_WOOD..)
-    on_table:  bool                                  = false, // settings' Table background asked for (want_look),
-    tabled:    bool                                  = false, // and the board set up on it
-    smooth:    bool                                  = false, // settings' Smooth pieces asked for,
-    smoothed:  bool                                  = false, // and the ones put on
-    themed:    i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
-    warmed:    i64                                   = 0,     // and its next pipeline (WARM_STEPS: done)
-    prep_ms:   f64[..48]                             = [],    // each prepare() step's time
-    bar_total: f64                                   = 0.0,   // progress(): what there was to do, in left_ms's ms,
-    bar_done:  f64                                   = 0.0,   // and how far it has come, 0 to 1
-    fresh:     bool                                  = false, // just made ready: draw all again
-    again:     bool                                  = false, // the image drawn again, its shadow map as it is (the bench)
-    appear_at: f64                                   = -1.0,  // when its first image showed, -1 none yet
-    grey_at:   f64                                   = -1.0,  // when the image began easing grey or back, -1 settled
-    grey_from: f32                                   = 0.0,   // from how grey
-    grey_to:   f32                                   = 0.0,   // to how grey: 1 while a new theme is prepared
+    gpu:         render3d::Gpu                         = default<render3d::Gpu>(),
+    ready:       bool                                  = false,
+    aa:          i32                                   = render3d::AA, // --aa and the A key: render3d's AA_OFF..
+    samples:     i32                                   = render3d::SAMPLES, // MSAA's, fewer on a slow device
+    look:        i32                                   = render3d::SHADOW_9, // how the shadow is filtered (screen_shadow)
+    side:        i64                                   = model3d::BAKE_SIDE, // the surfaces' side (screen_bake)
+    kind:        i64                                   = -1, // the app's theme the board was set up with
+    plain:       bool                                  = false, // and whether behind it the plain fade
+    which:       i64                                   = -1, // the board drawn (the shell's which())
+    n:           i64                                   = 0,
+    wood:        i64                                   = -1, // --wood, --marble: -1 the renderer's own
+    marble:      i64                                   = -1,
+    summer:      i64                                   = -1, // --summer: summer's variant (looks::SUMMERS), -1 not given
+    autumn:      i64                                   = -1, // --autumn, --winter: theirs (looks::AUTUMNS, WINTERS)
+    winter:      i64                                   = -1,
+    spring:      i64                                   = -1, // --spring: spring's look (looks::SPRINGS)
+    want:        i64                                   = looks::MATERIAL_AUTO, // the material asked for (want_look)
+    material:    i64                                   = looks::MATERIAL_AUTO, // and the one the board is set up with
+    size:        int2                                  = int2 { 0, 0 },
+    scene:       view3d::Scene                         = view3d::Scene {}, // this frame's
+    drawn:       view3d::Scene                         = view3d::Scene {}, // the last one drawn
+    upload:      float4[..2 * render3d::MAX_INSTANCES] = [],
+    alphas:      f32[..render3d::MAX_INSTANCES]        = [],    // the fading instances' opacity, last in upload
+    redraw:      bool                                  = false, // this frame drew the 3D board,
+    shadow:      bool                                  = false, // and the shadow map first
+    frames:      i64                                   = 0,     // frames that showed the 3D board,
+    draws:       i64                                   = 0,     // those that drew it,
+    shadows:     i64                                   = 0,     // and the shadow map;
+    pulses:      i64                                   = 0,     // those that changed only the pulsing marks
+    setup_ms:    f64                                   = 0.0,   // the renderer's setup,
+    apply_ms:    f64                                   = 0.0,   // and prepare()'s steps in all, waited
+    live:        bool                                  = false, // --keep off: the backdrop never kept (render3d's live)
+    table:       i64                                   = -1,    // --table: the board on that table always (tables::BOARD_WOOD..)
+    on_table:    bool                                  = false, // settings' Table background asked for (want_look),
+    table_set:   bool                                  = false, // and the board set up on it
+    classic:     bool                                  = false, // settings' Classic pieces asked for,
+    classic_set: bool                                  = false, // and the ones put on
+    themed:      i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
+    warmed:      i64                                   = 0,     // and its next pipeline (WARM_STEPS: done)
+    prep_ms:     f64[..48]                             = [],    // each prepare() step's time
+    bar_total:   f64                                   = 0.0,   // progress(): what there was to do, in left_ms's ms,
+    bar_done:    f64                                   = 0.0,   // and how far it has come, 0 to 1
+    fresh:       bool                                  = false, // just made ready: draw all again
+    again:       bool                                  = false, // the image drawn again, its shadow map as it is (the bench)
+    appear_at:   f64                                   = -1.0,  // when its first image showed, -1 none yet
+    grey_at:     f64                                   = -1.0,  // when the image began easing grey or back, -1 settled
+    grey_from:   f32                                   = 0.0,   // from how grey
+    grey_to:     f32                                   = 0.0,   // to how grey: 1 while a new theme is prepared
 }
 
 // The look for the app's theme in the material asked for, unless a flag picks the
@@ -68,13 +68,13 @@ fn look_of(kind: i64, d: Drawer&) -> i64 {
     return looks::of(kind, d.want);
 }
 
-// Settings' choices for the 3D board: its material, the table under it, and Smooth pieces.
+// Settings' choices for the 3D board: its material, the table under it, and Classic pieces.
 // A new material prepares the board again, as a new theme does, the image shown grey at
 // once, not when the steps start a frame or two later; the table bakes only its own steps
 // and the photograph's; the pieces take only the theme's last step.
-fn want_look(d: Drawer&, material: i64, table: bool, smooth: bool) {
+fn want_look(d: Drawer&, material: i64, table: bool, classic: bool) {
     d.on_table = table || d.table >= 0;
-    d.smooth = smooth;
+    d.classic = classic;
     if material != d.want && material != d.material && shows(d) {
         d.grey_from = 1.0;
         d.grey_to = 1.0;
@@ -95,7 +95,6 @@ fn set_up<B>(be: B&, d: Drawer&) {
     render3d::set_bake(d.gpu, d.side);
     be.r3d.set_aa(d.gpu, d.aa, d.samples);
     render3d::choose(d.gpu, d.wood, d.marble, d.spring);
-    if d.table >= 0 { d.on_table = true; }
     d.ready = true;
     d.setup_ms = (clock() - t0) * 1000.0;
 }
@@ -120,7 +119,7 @@ fn choose_look(d: Drawer&, kind: i64) -> i64 {
 // only the screen-sized targets are left for its first frame.
 fn ready(d: Drawer&, kind: i64, n: i64, plain: bool) -> bool {
     return d.ready && d.kind == kind && d.material == d.want && d.n == n && d.plain == plain
-           && d.tabled == d.on_table && d.smoothed == d.smooth
+           && d.table_set == d.on_table && d.classic_set == d.classic
            && d.themed == model3d::THEME_STEPS && d.warmed == render3d::WARM_STEPS;
 }
 
@@ -160,12 +159,12 @@ fn left_ms(d: Drawer&, kind: i64, n: i64, plain: bool) -> f64 {
     }
     if d.kind != kind || d.material != d.want || d.n != n { themed = 0; }
     if d.plain != plain { themed = min(themed, photo_steps()); }
-    if d.tabled != d.on_table {
+    if d.table_set != d.on_table {
         themed = min(themed, table_steps());
         if d.on_table { warmed = 0; }
     }
-    if d.smoothed != d.smooth { themed = min(themed, model3d::THEME_STEPS - 1); }
-    if themed == 0 || d.smoothed != d.smooth || !d.ready { warmed = 0; }
+    if d.classic_set != d.classic { themed = min(themed, model3d::THEME_STEPS - 1); }
+    if themed == 0 || d.classic_set != d.classic || !d.ready { warmed = 0; }
     for k in themed..model3d::THEME_STEPS {
         guard d.on_table || k < table_steps() || k >= photo_steps() else { continue; }
         ms += theme_ms(k);
@@ -225,8 +224,8 @@ fn prepare<B>(be: B&, d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
     let t0 = clock();
     if !d.ready {
         set_up(be, d);
-    } else if d.kind != kind || d.material != d.want || d.n != n || d.plain != plain || d.tabled != d.on_table
-              || d.smoothed != d.smooth || d.themed < model3d::THEME_STEPS {
+    } else if d.kind != kind || d.material != d.want || d.n != n || d.plain != plain || d.table_set != d.on_table
+              || d.classic_set != d.classic || d.themed < model3d::THEME_STEPS {
         if d.kind != kind || d.material != d.want || d.n != n {
             if shows(d) && d.grey_to < 1.0 { grey_towards(d, 1.0, now); }
             d.kind = kind;
@@ -238,28 +237,28 @@ fn prepare<B>(be: B&, d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
             d.plain = plain;
             d.themed = min(d.themed, photo_steps());
         }
-        if d.tabled != d.on_table {
-            d.tabled = d.on_table;
-            d.gpu.table = d.tabled;
+        if d.table_set != d.on_table {
+            d.table_set = d.on_table;
+            d.gpu.table = d.table_set;
             d.themed = min(d.themed, table_steps());
-            if d.tabled { d.warmed = 0; }
+            if d.table_set { d.warmed = 0; }
         }
-        if d.smoothed != d.smooth {
-            d.smoothed = d.smooth;
-            d.gpu.smooth = d.smooth;
+        if d.classic_set != d.classic {
+            d.classic_set = d.classic;
+            d.gpu.classic = d.classic;
             d.themed = min(d.themed, model3d::THEME_STEPS - 1);
         }
         let t = theme::get(kind);
         d.gpu.plain = plain;
         d.gpu.fade = [t.fade_top, t.fade_low, t.fade_light];
-        if !d.tabled && d.themed >= table_steps() && d.themed < photo_steps() { d.themed = photo_steps(); }
+        if !d.table_set && d.themed >= table_steps() && d.themed < photo_steps() { d.themed = photo_steps(); }
         let look = if d.themed == 0 { choose_look(d, kind) } else { d.gpu.look };
         render3d::theme_step(be.r3d, d.gpu, look, n, kind, d.themed);
         d.themed++;
         // New pieces' pipelines (render3d::set_pieces) are made in the warm steps, not the
         // first frame that draws them.
-        if d.gpu.relit {
-            d.gpu.relit = false;
+        if d.gpu.pieces_unwarmed {
+            d.gpu.pieces_unwarmed = false;
             d.warmed = 0;
         }
     } else {
@@ -296,7 +295,7 @@ fn drop<B>(be: B&, d: Drawer&) {
     guard d.ready else { return; }
     be.r3d.release(d.gpu);
     d = Drawer { aa: d.aa, samples: d.samples, look: d.look, side: d.side, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
-                spring: d.spring, want: d.want, table: d.table, on_table: d.on_table, smooth: d.smooth, .. };
+                spring: d.spring, want: d.want, table: d.table, on_table: d.on_table, classic: d.classic, .. };
 }
 
 // The A key: the renderer's next antialiasing.
@@ -349,7 +348,7 @@ fn release_targets_unless_shown<B>(be: B&, d: Drawer&, shown: bool) {
 
 // v seen from where its bounds are put at `place` (x, y, width; the height follows), as
 // show() moves the image drawn through v: its scale and its center moved with them.
-fn moved(v: view3d::View, place: float4) -> view3d::View {
+fn view_at_place(v: view3d::View, place: float4) -> view3d::View {
     guard v.rect.z > 0.0 && place.z > 0.0 else { return v; }
     let k = place.z / v.rect.z;
     var m = v;
@@ -364,11 +363,11 @@ fn moved(v: view3d::View, place: float4) -> view3d::View {
 // transition) the image is drawn again only for another view or board, and show() moves
 // it to `place`; but a board on the table is drawn again each frame through v moved there,
 // as the table fills the screen round it wherever the board goes.
-fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, v0: view3d::View, now: f64, size: int2, kind: i64,
-         plain: bool, which: i64 = 0, hold0: bool = false, place: float4 = float4_0) {
-    let on_table = d.gpu.table && hold0;
-    let v = if on_table { moved(v0, place) } else { v0 };
-    let hold = hold0 && !on_table;
+fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, asked_view: view3d::View, now: f64, size: int2, kind: i64,
+         plain: bool, which: i64 = 0, asked_hold: bool = false, place: float4 = float4_0) {
+    let on_table = d.gpu.table && asked_hold;
+    let v = if on_table { view_at_place(asked_view, place) } else { asked_view };
+    let hold = asked_hold && !on_table;
     d.gpu.live = d.live;
     d.redraw = false;
     d.shadow = false;
@@ -390,7 +389,7 @@ fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, v0: view3d::
     d.frames++;
     guard force || again || !hold || which != d.which || !view3d::same_view(d.drawn.view, v) else { return; }
     d.which = which;
-    view3d::build_scene(d.scene, b, l, v, now, d.tabled);
+    view3d::build_scene(d.scene, b, l, v, now, d.table_set);
     let c = view3d::changes(d.drawn, d.scene);
     // The board turned under the light (a hot-seat turn): the light turns with it, so it
     // keeps its place on screen, and the shadows are drawn again.

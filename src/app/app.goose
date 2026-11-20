@@ -200,7 +200,7 @@ fn follow_screen(lp: Loop&, h: host::Host&, f: flags::Flags&, g: gui::Gui&, rd: 
 // again each time. Returns whether it is ready and whether it shows.
 fn follow_3d(lp: Loop&, rd: render::Renderer&, sh: shell::Shell&, now: f64) -> bool, bool {
     let want = shell::board3d(sh);
-    render::look3d(rd, sh.prefs.material, sh.prefs.table, sh.prefs.smooth);
+    render::look3d(rd, sh.prefs.material, sh.prefs.table, sh.prefs.classic);
     let ready = want != shell::WANTED || render::ready3d(rd, shell::board_n(sh));
     let shown = render::shown3d(rd);
     // Only a screen showing the board prepares it, so only there is it waited for.

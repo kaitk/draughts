@@ -40,10 +40,10 @@ let PIECES: i32[3][12] = [
 
 // What the tuner shows besides the layout.
 struct Setup {
-    took: panel::Taken = panel::Taken { men: [9, 7], kings: [1, 2] },
-    n:    i64          = 0,     // SQUARES's
-    flip: bool         = false,
-    look: i64          = 0,     // KING_LOOKS's
+    taken: panel::Taken = panel::Taken { men: [9, 7], kings: [1, 2] },
+    n:     i64          = 0,    // SQUARES's
+    flip:  bool         = false,
+    look:  i64          = 0,    // KING_LOOKS's
 }
 
 fn squares_of(st: Setup) -> i64 { if st.n == 1 { 10 } else { 8 } }
@@ -66,7 +66,7 @@ fn place(r3d: render3d::Own&, g: render3d::Gpu&, st: Setup) {
         squares[2 * (p[0] * n + p[1])] = float4 { view3d::HEIGHT * u, 0.0, view3d::RADIUS * u, 1.0 };
         squares[2 * (p[0] * n + p[1]) + 1] = float4 { x, z, 0.0, 0.0 };
     }
-    taken3d::lay_counts(s, st.took, n, st.flip, if st.look == 1 { board::STACK } else { board::CROWN });
+    taken3d::lay_counts(s, st.taken, n, st.flip, if st.look == 1 { board::STACK } else { board::CROWN });
     render3d::place(r3d, g, s.inst[..s.inst.len], fades[..0], squares[..], marks[..], lit[..], float4_0, 0.0, true);
     render3d::table_discs(g, s.discs[..], s.disc_r);
 }
@@ -91,10 +91,10 @@ fn num(out: u8[>..]&, v: f32) {
 }
 
 // The command that shows the same again, and the layout as a Goose literal for
-// taken3d::HEAPS.
-fn report(h: taken3d::Heap, st: Setup, season: i64, material: i64, take: i64, yaw: f32, pitch: f32, far: f32) {
+// taken3d::TABLE_LAYOUTS.
+fn report(h: taken3d::TableLayout, st: Setup, season: i64, material: i64, take: i64, yaw: f32, pitch: f32, far: f32) {
     var out: u8[>..] = [];
-    format(out, "../build/taken_tune --layout ", taken3d::NAMES[h.layout], " --out ");
+    format(out, "../build/taken_tune --layout ", taken3d::NAMES[h.kind], " --out ");
     num(out, h.out);
     out.append(" --along ");
     num(out, h.along);
@@ -105,11 +105,11 @@ fn report(h: taken3d::Heap, st: Setup, season: i64, material: i64, take: i64, ya
     format(out, " --stack ", h.stack, " --askew ");
     num(out, h.askew);
     out.append(" --kings ");
-    num(out, h.kings);
+    num(out, h.kings_along);
     out.append(" --kings-out ");
     num(out, h.kings_out);
-    format(out, " --seed ", h.seed, " --white-took ", st.took.men[rules::BLACK], ",", st.took.kings[rules::BLACK],
-           " --black-took ", st.took.men[rules::WHITE], ",", st.took.kings[rules::WHITE], " --squares ", SQUARES[st.n],
+    format(out, " --seed ", h.seed, " --white-took ", st.taken.men[rules::BLACK], ",", st.taken.kings[rules::BLACK],
+           " --black-took ", st.taken.men[rules::WHITE], ",", st.taken.kings[rules::WHITE], " --squares ", SQUARES[st.n],
            " --king-look ", KING_LOOKS[st.look], " --season ", SEASONS[season], " --material ", MATERIALS[material],
            " --table ", tables::NAMES[take]);
     if st.flip { out.append(" --flip"); }
@@ -119,8 +119,8 @@ fn report(h: taken3d::Heap, st: Setup, season: i64, material: i64, take: i64, ya
     num(out, pitch);
     out.append(" --distance ");
     num(out, far);
-    out.append("\n    Heap { layout: ");
-    out.append(upper(taken3d::NAMES[h.layout]));
+    out.append("\n    TableLayout { kind: ");
+    out.append(upper(taken3d::NAMES[h.kind]));
     out.append(", out: ");
     num(out, h.out);
     out.append(", along: ");
@@ -131,8 +131,8 @@ fn report(h: taken3d::Heap, st: Setup, season: i64, material: i64, take: i64, ya
     num(out, h.spread);
     format(out, ", stack: ", h.stack, ", askew: ");
     num(out, h.askew);
-    out.append(", kings: ");
-    num(out, h.kings);
+    out.append(", kings_along: ");
+    num(out, h.kings_along);
     out.append(", kings_out: ");
     num(out, h.kings_out);
     format(out, ", seed: ", h.seed, " },");
@@ -213,7 +213,7 @@ fn whole(argv: u8[:][>..]&, name: const u8[:], otherwise: i64) -> i64 {
 }
 
 // --white-took MEN,KINGS: the men and kings of color c taken, into t.
-fn took(argv: u8[:][>..]&, name: const u8[:], t: panel::Taken&, c: i64) {
+fn read_taken(argv: u8[:][>..]&, name: const u8[:], t: panel::Taken&, c: i64) {
     let at = flag_value(argv, name);
     guard at > 0 else { return; }
     let a, b, ok = split_once(argv[at], ",");
@@ -224,15 +224,15 @@ fn took(argv: u8[:][>..]&, name: const u8[:], t: panel::Taken&, c: i64) {
     t.kings[c] = clamp(k, 0, taken3d::MOST);
 }
 
-fn same(a: taken3d::Heap, b: taken3d::Heap) -> bool {
-    return a.layout == b.layout && a.out == b.out && a.along == b.along && a.turn == b.turn && a.spread == b.spread
-           && a.stack == b.stack && a.askew == b.askew && a.kings == b.kings && a.kings_out == b.kings_out
+fn same(a: taken3d::TableLayout, b: taken3d::TableLayout) -> bool {
+    return a.kind == b.kind && a.out == b.out && a.along == b.along && a.turn == b.turn && a.spread == b.spread
+           && a.stack == b.stack && a.askew == b.askew && a.kings_along == b.kings_along && a.kings_out == b.kings_out
            && a.seed == b.seed;
 }
 
 fn same_setup(a: Setup, b: Setup) -> bool {
-    return a.took.men[0] == b.took.men[0] && a.took.men[1] == b.took.men[1] && a.took.kings[0] == b.took.kings[0]
-           && a.took.kings[1] == b.took.kings[1] && a.flip == b.flip && a.look == b.look;
+    return a.taken.men[0] == b.taken.men[0] && a.taken.men[1] == b.taken.men[1] && a.taken.kings[0] == b.taken.kings[0]
+           && a.taken.kings[1] == b.taken.kings[1] && a.flip == b.flip && a.look == b.look;
 }
 
 fn main() {
@@ -252,23 +252,23 @@ fn main() {
     var material = pick(argv, "--material", MATERIALS, looks::MATERIAL_AUTO);
     var take = pick(argv, "--table", tables::NAMES, tables::FLAME);
     var layout = pick(argv, "--layout", taken3d::NAMES, taken3d::STACKS);
-    var hp = taken3d::HEAPS[layout];
+    var hp = taken3d::TABLE_LAYOUTS[layout];
     hp.out = number(argv, "--out", hp.out);
     hp.along = number(argv, "--along", hp.along);
     hp.turn = number(argv, "--turn", hp.turn);
     hp.spread = number(argv, "--spread", hp.spread);
     hp.stack = whole(argv, "--stack", hp.stack);
     hp.askew = number(argv, "--askew", hp.askew);
-    hp.kings = number(argv, "--kings", hp.kings);
+    hp.kings_along = number(argv, "--kings", hp.kings_along);
     hp.kings_out = number(argv, "--kings-out", hp.kings_out);
     hp.seed = whole(argv, "--seed", hp.seed);
     var st = Setup {};
-    took(argv, "--white-took", st.took, rules::BLACK);
-    took(argv, "--black-took", st.took, rules::WHITE);
+    read_taken(argv, "--white-took", st.taken, rules::BLACK);
+    read_taken(argv, "--black-took", st.taken, rules::WHITE);
     st.n = pick(argv, "--squares", SQUARES, 0);
     st.look = pick(argv, "--king-look", KING_LOOKS, 0);
     st.flip = has(argv, "--flip");
-    taken3d::heap = hp;
+    taken3d::table_layout = hp;
     guard gfx::open("Draughts: the taken pieces' tuning", w, h, gfx::WINDOW_RESIZABLE) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
@@ -316,14 +316,14 @@ fn main() {
             slider(c, "Spread", hp.spread, 0.9, 1.6);
             count(c, "Most a stack", hp.stack, 1, 8);
             slider(c, "Askew", hp.askew, 0.0, 0.6);
-            slider(c, "Kings along", hp.kings, -6.0, 3.0);
+            slider(c, "Kings along", hp.kings_along, -6.0, 3.0);
             slider(c, "Kings out", hp.kings_out, -2.0, 3.0);
             count(c, "Seed", hp.seed, 0, 40);
             heading(c, "What was taken");
-            count(c, "White took men", st.took.men[rules::BLACK], 0, taken3d::MOST);
-            count(c, "White took kings", st.took.kings[rules::BLACK], 0, taken3d::MOST);
-            count(c, "Black took men", st.took.men[rules::WHITE], 0, taken3d::MOST);
-            count(c, "Black took kings", st.took.kings[rules::WHITE], 0, taken3d::MOST);
+            count(c, "White took men", st.taken.men[rules::BLACK], 0, taken3d::MOST);
+            count(c, "White took kings", st.taken.kings[rules::BLACK], 0, taken3d::MOST);
+            count(c, "Black took men", st.taken.men[rules::WHITE], 0, taken3d::MOST);
+            count(c, "Black took kings", st.taken.kings[rules::WHITE], 0, taken3d::MOST);
             choice(c, "King look", st.look, KING_LOOKS);
             choice(c, "Squares", st.n, SQUARES);
             choice(c, "Board turned", flip, ["no", "yes"]);
@@ -343,9 +343,9 @@ fn main() {
         st.flip = flip == 1;
         if layout != shown_layout {
             shown_layout = layout;
-            hp = taken3d::HEAPS[layout];
+            hp = taken3d::TABLE_LAYOUTS[layout];
         }
-        hp.layout = layout;
+        hp.kind = layout;
         if season != shown_season || material != shown_material || take != shown_take || st.n != shown_n {
             shown_season = season;
             shown_material = material;
@@ -353,13 +353,13 @@ fn main() {
             shown_n = st.n;
             g.table_spec = tables::get(take);
             render3d::tune_table(r3d, g, g.table_spec);
-            taken3d::heap = hp;
+            taken3d::table_layout = hp;
             put_look(r3d, g, season, material, st);
             shown = hp;
             shown_st = st;
         }
         if !same(hp, shown) || !same_setup(st, shown_st) {
-            taken3d::heap = hp;
+            taken3d::table_layout = hp;
             place(r3d, g, st);
             shown = hp;
             shown_st = st;

@@ -12,8 +12,8 @@ settings prototype's `.thumb.corner` (a background 290% wide at 3% 93%). The cel
 CELL pixels, the picture's 76 × 50 dp at about 2.1 pixels a dp, the densest screen's;
 sixteen across and four down by the app's theme (autumn, winter, spring, summer,
 theme.goose's order). Across: the four boards (Auto, Wood, Stone, Carved); then on each of
-the four, in that order, a light and a dark piece close up, Natural, then Smooth
-(board_shot's --smooth); then the board's near left corner on its table
+the four, in that order, a light and a dark piece close up, Matching, then Classic
+(board_shot's --classic); then the board's near left corner on its table
 (tables::for_look's, shot wider so the table shows past the board), as the settings
 prototype has them (scene::BOARD_PICTURES). The atlas is in git as the JPEG and the ASTC file the
 app embeds (src/native/background.c); its PNG master stays in build/.
@@ -116,14 +116,14 @@ def main():
             cells.append(WORK / f"{season}-{k + 1}.png")
         looks = [own, *MATERIALS]
         for m in looks:
-            smooth = WORK / f"{season}-{m}-smooth.png"
-            run(SHOOTER, smooth, "--size", f"{SHOT[0]}x{SHOT[1]}", "--season", season, "--material", m, "--smooth")
+            classic = WORK / f"{season}-{m}-classic.png"
+            run(SHOOTER, classic, "--size", f"{SHOT[0]}x{SHOT[1]}", "--season", season, "--material", m, "--classic")
             on_table = WORK / f"{season}-{m}-table.png"
             run(SHOOTER, on_table, "--size", f"{TABLE_SHOT[0]}x{TABLE_SHOT[1]}", "--season", season, "--material", m,
                 "--table", TABLE)
-        for kind in ("natural", "smooth"):
+        for kind in ("matching", "classic"):
             for m in looks:
-                shot = WORK / (f"{season}-{m}.png" if kind == "natural" else f"{season}-{m}-smooth.png")
+                shot = WORK / (f"{season}-{m}.png" if kind == "matching" else f"{season}-{m}-classic.png")
                 cell = WORK / f"{season}-{m}-{kind}-cell.png"
                 pieces(shot, cell)
                 cells.append(cell)

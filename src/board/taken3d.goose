@@ -1,10 +1,10 @@
 // What each side has taken, lying on the table beside the 3D board (view3d::build_scene,
 // on a board on its table): beside the board at the side of the one that took them, the
-// kings apart from the men, each piece as the board's are. A heap's layout places each piece by
-// its number alone, so a capture adds one and leaves the rest where they lay; the layout
-// is the same every time, laid out by a fixed hash.
+// kings apart from the men, each piece as the board's are. A layout places each piece by
+// its number alone, so a capture adds one and leaves the rest where they lay; it is the
+// same every time, laid out by a fixed hash.
 //
-// Each layout has its own values (HEAPS), which tools/taken_tune puts on sliders.
+// Each layout has its own values (TABLE_LAYOUTS), which tools/taken_tune puts on sliders.
 namespace taken3d;
 import std;
 import math;
@@ -21,39 +21,39 @@ let TOWERS = 3;
 let LAYOUTS = 4;
 let NAMES = ["stacks", "row", "heap", "towers"];
 
-// A layout and its values. `out` and `along` place the men's middle in world units: out
+// A layout (`kind`, STACKS..) and its values. `out` and `along` place the men's middle in world units: out
 // from the board's side, along it toward the taker's end. `turn` turns the group (degrees);
 // `spread` its spacing, in pieces across; `stack` the most pieces a stack holds; `askew`
-// how far each piece lies off the one under it, of a radius; `kings` and `kings_out` where
+// how far each piece lies off the one under it, of a radius; `kings_along` and `kings_out` where
 // the kings lie from the men's middle, in pieces across, along (less toward the far end)
 // and out; `seed` the hash's.
-struct Heap {
-    layout:    i64 = STACKS,
-    out:       f32 = 1.4,
-    along:     f32 = 1.6,
-    turn:      f32 = 0.0,
-    spread:    f32 = 1.0,
-    stack:     i64 = 4,
-    askew:     f32 = 0.12,
-    kings:     f32 = -3.2,
-    kings_out: f32 = 0.0,
-    seed:      i64 = 1,
+struct TableLayout {
+    kind:        i64 = STACKS,
+    out:         f32 = 1.4,
+    along:       f32 = 1.6,
+    turn:        f32 = 0.0,
+    spread:      f32 = 1.0,
+    stack:       i64 = 4,
+    askew:       f32 = 0.12,
+    kings_along: f32 = -3.2,
+    kings_out:   f32 = 0.0,
+    seed:        i64 = 1,
 }
 
-let HEAPS: Heap[LAYOUTS] = [
-    Heap { layout: STACKS, out: 1.4, along: 2.3, turn: 8.0, spread: 1.0, stack: 4, askew: 0.14, kings: 1.9, kings_out: 0.2, seed: 3 },
-    Heap { layout: ROW, out: 0.9, along: 4.2, turn: -5.0, spread: 1.0, stack: 2, askew: 0.2, kings: -6.6, kings_out: 0.4, seed: 5 },
-    Heap { layout: HEAP, out: 1.6, along: 1.6, turn: 0.0, spread: 1.0, stack: 3, askew: 0.3, kings: 2.8, kings_out: 0.0, seed: 7 },
-    Heap { layout: TOWERS, out: 1.2, along: 2.7, turn: 4.0, spread: 1.0, stack: 5, askew: 0.06, kings: 1.6, kings_out: 0.4, seed: 2 },
+let TABLE_LAYOUTS: TableLayout[LAYOUTS] = [
+    TableLayout { kind: STACKS, out: 1.4, along: 2.3, turn: 8.0, spread: 1.0, stack: 4, askew: 0.14, kings_along: 1.9, kings_out: 0.2, seed: 3 },
+    TableLayout { kind: ROW, out: 0.9, along: 4.2, turn: -5.0, spread: 1.0, stack: 2, askew: 0.2, kings_along: -6.6, kings_out: 0.4, seed: 5 },
+    TableLayout { kind: HEAP, out: 1.6, along: 1.6, turn: 0.0, spread: 1.0, stack: 3, askew: 0.3, kings_along: 2.8, kings_out: 0.0, seed: 7 },
+    TableLayout { kind: TOWERS, out: 1.2, along: 2.7, turn: 4.0, spread: 1.0, stack: 5, askew: 0.06, kings_along: 1.6, kings_out: 0.4, seed: 2 },
 ];
 
 // The layout the game shows: the tuner changes it.
-var heap: Heap = HEAPS[STACKS];
+var table_layout: TableLayout = TABLE_LAYOUTS[STACKS];
 
 let EDGE: f32 = mesh::INNER + mesh::FRAME_W;    // the board's side, out from its middle
 let MOST = 20;                                  // the most pieces of a kind a side can take
-let ARC: f32 = 1.2;
-let ROW_LONG = 6;                               // a row's most places before the next                             // how high a carried piece rises (world units)
+let ARC: f32 = 1.2;                             // how high a carried piece rises (world units)
+let ROW_LONG = 6;                               // a row's most places before the next
 
 // A number in 0..1 from a few integers, the same every time.
 fn hash(a: i64, b: i64, seed: i64) -> f32 {
@@ -62,48 +62,48 @@ fn hash(a: i64, b: i64, seed: i64) -> f32 {
     x = x ^ (x >> 16);
     return (x & 0xFFFFFF) / 16777216.0;
 }
-fn wobble(a: i64, b: i64, seed: i64) -> f32 { 2.0 * hash(a, b, seed) - 1.0 }
+fn signed_hash(a: i64, b: i64, seed: i64) -> f32 { 2.0 * hash(a, b, seed) - 1.0 }
 
 // Where the men lie: out, along (in pieces across, from the men's middle), and how many
 // pieces lie under each; the first `n`, each placed by its number and the ones before.
 type Spots = float3[..MOST];
 
-fn men(h: Heap, n: i64, out: Spots&) {
+fn men_spots(h: TableLayout, n: i64, out: Spots&) {
     out.clear();
     let s = h.spread;
     let k = h.askew * 0.5;      // a radius is half a piece across
     let per = max(h.stack, 1);
     for i in min(n, MOST) {
-        if h.layout == STACKS || h.layout == TOWERS {
+        if h.kind == STACKS || h.kind == TOWERS {
             let j = i / per;
             let level = i % per;
             var base = float2 { 0.0, 0.0 };
-            if h.layout == STACKS {
+            if h.kind == STACKS {
                 // Two staggered columns, the second half a stack farther along.
                 let col = j % 2;
                 let row = j / 2;
                 base = float2 { (col - 0.5) * 1.06 * s, -(row + 0.5 * col) * 1.08 * s };
-                base += float2 { wobble(j, 1, h.seed), wobble(j, 2, h.seed) } * 0.1 * s;
+                base += float2 { signed_hash(j, 1, h.seed), signed_hash(j, 2, h.seed) } * 0.1 * s;
             } else {
-                base = float2 { wobble(j, 1, h.seed) * 0.08 * s, -(j as f32) * 1.1 * s };
+                base = float2 { signed_hash(j, 1, h.seed) * 0.08 * s, -(j as f32) * 1.1 * s };
             }
-            let p = base + float2 { wobble(i, 3, h.seed), wobble(i, 4, h.seed) } * k;
+            let p = base + float2 { signed_hash(i, 3, h.seed), signed_hash(i, 4, h.seed) } * k;
             out.push(float3 { p.x, p.y, level });
-        } else if h.layout == ROW {
+        } else if h.kind == ROW {
             // A loose row, wavy, a piece now and then dropped on the one before; past
             // ROW_LONG places a second row starts farther out.
             let last = if i > 0 { out[i - 1] } else { float3 { 0.0, 0.0, -1.0 } };
             let lower = if i > 0 { (last.z as i64) + 1 } else { 0 };
             if i > 0 && lower < per && hash(i, 5, h.seed) < 0.35 {
-                let p = float2 { last.x, last.y } + float2 { wobble(i, 3, h.seed), wobble(i, 4, h.seed) } * k;
+                let p = float2 { last.x, last.y } + float2 { signed_hash(i, 3, h.seed), signed_hash(i, 4, h.seed) } * k;
                 out.push(float3 { p.x, p.y, lower });
             } else {
                 var flat = 0;
                 for q in out { if q.z < 0.5 { flat++; } }
                 let row = flat / ROW_LONG;
                 let at = flat % ROW_LONG;
-                let along = -(at * 1.12 + 0.5 * row + 0.2 * wobble(i, 6, h.seed)) * s;
-                let across = (row * 1.15 + 0.3 * sin(0.8 * along + h.seed)) * s + wobble(i, 7, h.seed) * 0.16 * s;
+                let along = -(at * 1.12 + 0.5 * row + 0.2 * signed_hash(i, 6, h.seed)) * s;
+                let across = (row * 1.15 + 0.3 * sin(0.8 * along + h.seed)) * s + signed_hash(i, 7, h.seed) * 0.16 * s;
                 out.push(float3 { across, along, 0.0 });
             }
         } else {
@@ -112,15 +112,19 @@ fn men(h: Heap, n: i64, out: Spots&) {
             if i < ground {
                 var p = float2 { 0.0, 0.0 };
                 if i > 0 {
-                    let a = (i - 1) * (PI / 3.0) + 0.4 * wobble(i, 8, h.seed);
+                    let a = (i - 1) * (PI / 3.0) + 0.4 * signed_hash(i, 8, h.seed);
                     p = float2 { cos(a), sin(a) } * (1.06 + 0.12 * hash(i, 9, h.seed)) * s;
                 }
                 out.push(float3 { p.x, p.y, 0.0 });
             } else {
                 let on = (i * 3 + h.seed) % ground;
                 var level: i64 = 1;
-                for q in out { if (q.x - out[on].x) * (q.x - out[on].x) + (q.y - out[on].y) * (q.y - out[on].y) < 0.25 && q.z as i64 >= level { level = (q.z as i64) + 1; } }
-                let p = float2 { out[on].x, out[on].y } + float2 { wobble(i, 3, h.seed), wobble(i, 4, h.seed) } * k;
+                let at = float2 { out[on].x, out[on].y };
+                for q in out {
+                    let d = float2 { q.x, q.y } - at;
+                    if dot(d, d) < 0.25 && q.z as i64 >= level { level = (q.z as i64) + 1; }
+                }
+                let p = at + float2 { signed_hash(i, 3, h.seed), signed_hash(i, 4, h.seed) } * k;
                 out.push(float3 { p.x, p.y, level });
             }
         }
@@ -129,14 +133,14 @@ fn men(h: Heap, n: i64, out: Spots&) {
 
 // Where the kings lie: apart, flat, in a short staggered pair of rows, each alone so its
 // crown shows (a stacked king is two pieces of its own).
-fn kings(h: Heap, n: i64, out: Spots&) {
+fn king_spots(h: TableLayout, n: i64, out: Spots&) {
     out.clear();
     let s = h.spread;
     for i in min(n, MOST) {
         let col = i % 2;
         let row = i / 2;
-        let p = float2 { h.kings_out + (col - 0.5) * 1.08 * s, h.kings - (row + 0.5 * col) * 1.1 * s }
-        + float2 { wobble(i, 11, h.seed), wobble(i, 12, h.seed) } * 0.08 * s;
+        let p = float2 { h.kings_out + (col - 0.5) * 1.08 * s, h.kings_along - (row + 0.5 * col) * 1.1 * s }
+        + float2 { signed_hash(i, 11, h.seed), signed_hash(i, 12, h.seed) } * 0.08 * s;
         out.push(float3 { p.x, p.y, 0.0 });
     }
 }
@@ -145,7 +149,7 @@ fn kings(h: Heap, n: i64, out: Spots&) {
 // at the board's right as white sees it, black's at its left, mirrored, both on the near
 // half where the game's landscape panels leave the table in view; a turned board
 // (`flip`) swaps them. r is the piece's radius and `height` its own.
-fn world(h: Heap, taker: i64, flip: bool, spot: float3, r: f32, height: f32) -> float3 {
+fn world_spot(h: TableLayout, taker: i64, flip: bool, spot: float3, r: f32, height: f32) -> float3 {
     let a = radians(h.turn);
     let c = cos(a);
     let s = sin(a);
@@ -192,17 +196,21 @@ fn lay(s: view3d::Scene&, b: board::Board&, l: board::Layout, now: f64) {
             m &= m - 1;
             let king = b.before.kings & rules::bit(sq) != 0;
             let n = if king { kings_n } else { men_n };
-            if king { kings(heap, n + 1, spots); } else { men(heap, n + 1, spots); }
-            let to = world(heap, mover, l.flip, spots[n], r, height);
+            if king { king_spots(table_layout, n + 1, spots); } else { men_spots(table_layout, n + 1, spots); }
+            let to = world_spot(table_layout, mover, l.flip, spots[n], r, height);
             let from2 = view3d::to_world(l, board::center(l, v, sq));
             let from = float3 { from2.x, 0.0, from2.y };
             var p = from + (to - from) * k;
             p.y += ARC * sin(PI * k);
-            put(s, p, u, caught, king, b.king_look, (if king { 440 } else { 400 }) + 64 * mover + n, alpha);
+            put(s, p, u, caught, king, b.king_look, seed_of(king, mover, n), alpha);
             if king { kings_n++; } else { men_n++; }
         }
     }
 }
+
+// The figure's seed of the i-th man or king the side `taker` has taken: past the board's
+// pieces' (view3d::build_scene numbers them from 0), apart for each side and kind.
+fn seed_of(king: bool, taker: i64, i: i64) -> i64 { 400 + (if king { 40 } else { 0 }) + 64 * taker + i }
 
 // One piece of color c (rules::WHITE..) at foot p, scale u: an instance, two for a
 // stacked king, and its disc over the table.
@@ -245,9 +253,9 @@ fn lay_counts(s: view3d::Scene&, t: panel::Taken, n: i64, flip: bool, king_look:
     var spots: Spots = [];
     for taker in 2 {
         let c = 1 - taker;
-        men(heap, t.men[c], spots);
-        for q, i in spots { put(s, world(heap, taker, flip, q, r, height), u, c, false, king_look, 400 + 64 * taker + i, 1.0); }
-        kings(heap, t.kings[c], spots);
-        for q, i in spots { put(s, world(heap, taker, flip, q, r, height), u, c, true, king_look, 440 + 64 * taker + i, 1.0); }
+        men_spots(table_layout, t.men[c], spots);
+        for q, i in spots { put(s, world_spot(table_layout, taker, flip, q, r, height), u, c, false, king_look, seed_of(false, taker, i), 1.0); }
+        king_spots(table_layout, t.kings[c], spots);
+        for q, i in spots { put(s, world_spot(table_layout, taker, flip, q, r, height), u, c, true, king_look, seed_of(true, taker, i), 1.0); }
     }
 }

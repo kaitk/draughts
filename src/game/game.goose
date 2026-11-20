@@ -127,9 +127,6 @@ struct Game {
     chimes: sound_event::Chimes = sound_event::Chimes {},
 }
 
-// The pieces of each color taken so far (board::taken).
-fn taken(b: board::Board&) -> panel::Taken { board::taken(b) }
-
 // Counts what each side has taken again when the board at rest shows another position
 // than it was counted for. Returns whether the counts may have changed.
 fn count_taken(gm: Game&) -> bool {
@@ -139,7 +136,7 @@ fn count_taken(gm: Game&) -> bool {
     let q = gm.taken_pos;
     guard gm.taken_len != b.rec.history.len || p.pieces[0] != q.pieces[0] || p.pieces[1] != q.pieces[1]
           || p.kings != q.kings || p.side != q.side || p.variant != q.variant else { return false; }
-    gm.taken = taken(b);
+    gm.taken = board::taken(b);
     gm.taken_len = b.rec.history.len;
     gm.taken_pos = p;
     return true;

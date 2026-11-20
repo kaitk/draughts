@@ -20,7 +20,7 @@ let GLASS_SIGMA = 3.9;
 // Settings' thumbnails in one texture, slots of the picture's 76 × 50 dp shape laid
 // THUMB_COLS across, a row after another: the four seasons' photographs, the four plain
 // fades, then each season's BOARD_PICTURES (tools/assets/board_thumbs.py): its four
-// boards, then the pieces Natural and Smooth and the board on its table, each in the four
+// boards, then the pieces Matching and Classic and the board on its table, each in the four
 // materials. In a grid, as a column was taller than a phone's GPU takes.
 let THUMB_W = 160;
 let THUMB_H = 105;

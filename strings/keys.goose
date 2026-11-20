@@ -51,8 +51,8 @@ let KEYS = [
     "material.carved",
     "material.auto",
     "settings.pieces",
-    "pieces.natural",
-    "pieces.smooth",
+    "pieces.matching",
+    "pieces.classic",
     "settings.for_3d",
     "settings.for_flat",
     "kings.auto",
@@ -335,11 +335,11 @@ let MATERIAL_WOOD = 42;
 let MATERIAL_STONE = 43;
 let MATERIAL_CARVED = 44;
 let MATERIAL_AUTO = 45;
-// Settings' Pieces row on the 3D board: the board's own material, or one smooth color as
+// Settings' Pieces row on the 3D board: the board's own material, or one plain color as
 // before; and the small heading under the Board row over the rows that board uses.
 let SETTINGS_PIECES = 46;
-let PIECES_NATURAL = 47;
-let PIECES_SMOOTH = 48;
+let PIECES_MATCHING = 47;
+let PIECES_CLASSIC = 48;
 let SETTINGS_FOR_3D = 49;
 let SETTINGS_FOR_FLAT = 50;
 let KINGS_AUTO = 51;

@@ -1,6 +1,15 @@
 # 094: The pieces' materials
 
-Status: in-progress
+Status: in-progress (on the `table-top` branch, 2026-11-20: built; the A33 and the
+before-and-after shots left)
+
+Where it stands (2026-11-20): every look's pieces have their own material, scattering
+and wear (`looks::Theme`), shown as settings' Matching pieces; Classic keeps the plain
+pieces of before. Autumn's wood board has turned maple and walnut, winter stone ivory
+and black marble on a Cloud breccia slab, spring's stone milk and green jade, and the
+spring stone board scatters the key light on desktops. Each look compiles only its own
+variant of the lit shader. The dated sections below are how it got there; the tools'
+flags in them were current on their dates.
 
 The 3D pieces read as plastic next to the concept art (`design/manor/library-table-01.png`,
 `hall-winter-table-02.png`, local; task 093): there the light pieces glow warm at their
@@ -25,7 +34,7 @@ the same crop.
 
 Run the Mac tuner from `tools/` with `../build/piece_tune`. It opens on spring.
 The Board and Pieces controls select independently. Board default follows the board.
-Plastic is the original smooth spring pair. Jade, Wood, Slate and Onyx preview the
+Plastic is the original smooth spring pair. Jade, Wood, Slate and Marble preview the
 experiments below. B toggles piece scattering while preserving the cut, roughness,
 wear and camera. Tune selects which side’s scattering, texture and roughness to edit.
 Dark pieces also have a brightness slider. Drag outside the panel to orbit, scroll to
@@ -670,7 +679,7 @@ Winter pieces candidate for now, the user's (honed slate with a lower roughness,
 ```
 
 It is not yet in `looks::winter()`, which still shows mineral 1 pieces. Open, for the
-next session (Codex): the winter board material in the look of black marbles, see the
+next session: the winter board material in the look of black marbles, see the
 section above; marble pieces with sliders for how their veins are made, and the user
 found Texture 0.9 better there; and alabaster for the light pieces.
 
@@ -725,13 +734,13 @@ the untouched Silver web preset against its original playing-size shot.
 
 ### Winter stone default (2026-11-19)
 
-Winter stone now uses the tuned Cloud breccia with ivory and slate pieces. The
-dark pieces have roughness 0.3. The picker opens on the board sliders. Clear Tune board marble and choose
-Dark or Light to edit the pieces.
+Winter stone now uses the tuned Cloud breccia with ivory and slate pieces (black marble
+pieces since 2026-11-20, "In the game" below). The dark pieces have roughness 0.3. The
+picker opens on the board sliders; choose Dark or Light to edit the pieces.
 From `tools/`, this opens the chosen setup at the saved viewing angle:
 
 ```sh
-../build/winter_marble_tune --season winter --material stone --pieces Slate --yaw 7.594 --pitch 4.068
+../build/piece_tune --season winter --material stone --pieces Slate --yaw 7.594 --pitch 4.068
 ```
 
 At 960 × 600 points the default and the explicit settings with dark roughness
@@ -759,8 +768,8 @@ review. No USB device was attached.
 
 ## Acceptance criteria
 
-- [ ] The piece shader scatters light by the looks' strength and tint per material
-- [ ] Roughness and tone vary across and between pieces, without banding from afar
+- [x] The piece shader scatters light by the looks' strength and tint per material
+- [x] Roughness and tone vary across and between pieces, without banding from afar
 - [ ] `board_shot` shoots versions with the values as flags; the chosen ones in the looks,
       with shots of each season before and after in this file
 - [ ] No change to the frame's GPU time measurable on the Mac; the A33 checked at the end

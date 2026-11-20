@@ -67,11 +67,11 @@ material.wood = Wood
 material.stone = Stone
 material.carved = Carved
 material.auto = auto
-# Settings' Pieces row on the 3D board: the board's own material, or one smooth color as
+# Settings' Pieces row on the 3D board: the board's own material, or one plain color as
 # before; and the small heading under the Board row over the rows that board uses.
 settings.pieces = Pieces
-pieces.natural = Matching
-pieces.smooth = Classic
+pieces.matching = Matching
+pieces.classic = Classic
 settings.for_3d = 3D board
 settings.for_flat = Flat board
 

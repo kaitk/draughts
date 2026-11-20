@@ -284,7 +284,7 @@ fn set_pieces(own: Own&, g: Gpu&, pieces: i32) {
     nx::release(g.lit);
     nx::release(g.fading);
     lit_pipelines(own, g, g.shadow_look);
-    g.relit = true;
+    g.pieces_unwarmed = true;
 }
 
 // The bake's pipeline for a surface (render3d::bake_kind), made the first time it is wanted.
@@ -760,7 +760,7 @@ fn warm(own: Own&, g: Gpu&, k: i64) {
         own.warm_kept = depth_target(int2 { 4, 4 });
     }
     var pass = nx::PassDesc {};
-    if k < 4 || k == 11 {
+    if k < 4 || k == render3d::WARM_STEPS - 1 {
         pass.color[0] = g.warm_color;
         pass.depth = g.warm_depth;
         // The backdrop is drawn in the pass too, and at 1x into the screen (below).

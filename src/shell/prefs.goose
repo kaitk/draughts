@@ -108,10 +108,10 @@ struct Settings {
     board:            i64           = FLAT,    // the Board row's: flat, or raised (the 3D board)
     material:         i64           = MATERIAL_AUTO, // and the raised board's material
     // The 3D board's own: on a table, Background's third tile, which the flat board
-    // shows as photo or plain (`table = on`); and its pieces Smooth, as before their
-    // materials (`pieces = smooth`), else the board's own material
+    // shows as photo or plain (`table = on`); and its pieces Classic, as before their
+    // materials (`pieces = classic`), else the board's own material
     table:    bool = false,
-    smooth:   bool = false,
+    classic:  bool = false,
     turns:    bool = false,                    // the setup's: a friend's game turns the board to the side to move (`turn = on`)
     hints:    i64  = board::MISTAKES,
     lookout:  bool = false,                    // the game's lookout, its eye on whose turn's line (`lookout = on`)
@@ -183,11 +183,14 @@ fn king_look(s: Settings) -> i64 { if s.kings == board::STACK { board::STACK } e
 // Whether the game is played on the 3D board, chosen in the Board row.
 fn raised(s: Settings) -> bool { s.board == RAISED }
 
+// Whether the board stands on the table: the 3D board with Table as its background.
+fn on_table(s: Settings) -> bool { return raised(s) && s.table; }
+
 // Whether the season's photograph is shown, or the plain fade in its place: with plain
 // the app decodes, uploads, and holds no photograph. A board on the table is never in
-// front of the photograph, whose landscape behind a table grounded in a room read as odd
-// (the user, 2026-11-20): the fade until the room (task 093).
-fn photo_shown(s: Settings) -> bool { !s.plain && !(raised(s) && s.table) }
+// front of the photograph, whose landscape behind a table grounded in a room read as odd:
+// the plain fade is behind it (docs/decisions/rendering.md).
+fn photo_shown(s: Settings) -> bool { !s.plain && !on_table(s) }
 
 // How the 3D board draws kings: auto is a stack of two plain discs there.
 fn raised_king_look(s: Settings) -> i64 { if s.kings == board::CROWN { board::CROWN } else { board::STACK } }
@@ -223,7 +226,7 @@ fn parse(text: const u8[:]) -> Settings {
         }
         if key == "background" && value == "plain" { s.plain = true; }
         if key == "table" && value == "on" { s.table = true; }
-        if key == "pieces" && value == "smooth" { s.smooth = true; }
+        if key == "pieces" && value == "classic" { s.classic = true; }
         if key == "board" && value == "3d" { s.board = RAISED; }
         if key == "board" && value == "2d" { s.board = FLAT; }
         if key == "material" {
@@ -406,7 +409,7 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(if s.board == RAISED { "\nboard = 3d" } else { "\nboard = 2d" });
     out.append("\nmaterial = ");
     out.append(MATERIAL_NAMES[clamp(s.material, 0, MATERIAL_NAMES.len - 1)]);
-    out.append(if s.smooth { "\npieces = smooth" } else { "\npieces = natural" });
+    out.append(if s.classic { "\npieces = classic" } else { "\npieces = matching" });
     out.append(if s.turns { "\nturn = on" } else { "\nturn = off" });
     out.append(if s.hints == board::MOVES { "\nhints = moves" } else { "\nhints = mistakes" });
     out.append(if s.lookout { "\nlookout = on" } else { "\nlookout = off" });

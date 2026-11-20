@@ -53,7 +53,7 @@ fn selected_pieces(shown: i64, material: i64, profile: i64) -> pieces3d::Pieces 
     if material == 2 { return pieces3d::of_look(looks::SPRING_STONE); }
     if material == 3 {
         var p = pieces3d::of_look(looks::AUTUMN);
-        p.mineral = -1.0;
+        p.mineral = looks::MINERAL_TURNED_WOOD;
         p.light_piece = float4 { 0.89, 0.77, 0.60, 0.5 };
         p.dark_piece = float4 { 0.36, 0.235, 0.16, 0.5 };
         // z: the varnish coat's strength, w: the figure's relief under it.
@@ -63,7 +63,7 @@ fn selected_pieces(shown: i64, material: i64, profile: i64) -> pieces3d::Pieces 
     if material == 4 || material == 5 {
         var p = pieces3d::of_look(looks::WINTER);
         if material == 5 {
-            p.mineral = -3.0;
+            p.mineral = looks::MINERAL_WINTER_MARBLE;
             p.dark_piece = float4 { 0.075, 0.08, 0.085, 0.15 };
             p.piece_fig.y = 0.2;
         }
@@ -99,10 +99,14 @@ let SLAB_FLAGS = ["--slab-base", "--slab-strength", "--slab-spacing", "--slab-wi
 let SLAB_LOW:  f32[7] = [0.0, 0.0, 0.25, 0.05, 0.0, 0.0, 0.0];
 let SLAB_HIGH: f32[7] = [5.0, 2.0, 3.0, 4.0, 3.0, 3.0, 1.0];
 
+// The marbles' names (looks::MARBLES), and the slab sliders' labels in SLAB_FLAGS' order,
+// then the reset button's and the board marble checkbox's.
+let MARBLE_NAMES = ["slate", "Nero Marquina", "grey cloud", "blue-black", "threads", "calcite forks",
+                    "silver web", "cloud breccia", "white lightning"];
+let SLAB_LABELS = ["Base brightness", "Vein strength", "Vein spacing", "Vein width", "Branch strength",
+                   "Cloud pockets", "Polish", "Reset marble", "Tune board marble"];
+
 fn main() {
-    let presets, labels, found = split_once(trim(embed_file("strings/en.txt")), "\n\n");
-    let marble_names = split(presets, '\n');
-    let slab_labels = split(labels, '\n');
     let argv = args();
     var w = 1600;
     var h = 1000;
@@ -130,7 +134,7 @@ fn main() {
     render3d::choose(g, -1, marble, looks::SPRING_LOOK);
     var slabs = default<f32[7][looks::MARBLES]>();
     for i in looks::MARBLES { slabs[i] = looks::slab_defaults(i); }
-    if marble >= 5 {
+    if looks::is_slab(marble) {
         for flag, i in SLAB_FLAGS {
             slabs[marble][i] = scalar(argv, flag, slabs[marble][i], SLAB_LOW[i], SLAB_HIGH[i]);
         }
@@ -208,7 +212,7 @@ fn main() {
             ui::layout_row_dynamic(c, ROW + 4.0, 1);
             ui::checkbox_label(c, "Subsurface scattering (B)", scattering);
             if shown == looks::WINTER {
-                choice(c, "Marble", marble, marble_names);
+                choice(c, "Marble", marble, MARBLE_NAMES);
             }
             if shown == looks::SPRING_STONE || shown == looks::SPRING_ELVEN {
                 ui::checkbox_label(c, "Board SSS", board_scatter);
@@ -216,16 +220,16 @@ fn main() {
                 slider(c, "Board radius", board_radius, 0.02, 0.6);
                 slider(c, "Board color", board_color, 0.0, 3.0);
             }
-            let slab = shown == looks::WINTER && marble >= 5;
+            let slab = shown == looks::WINTER && looks::is_slab(marble);
             if slab {
                 ui::layout_row_dynamic(c, ROW, 1);
-                ui::checkbox_label(c, slab_labels[SLAB_FLAGS.len + 1], edit_marble);
+                ui::checkbox_label(c, SLAB_LABELS[SLAB_FLAGS.len + 1], edit_marble);
             }
             let tune_slab = slab && edit_marble;
             if tune_slab {
                 for i in SLAB_FLAGS.len {
                     let before = slabs[marble][i];
-                    slider(c, slab_labels[i], slabs[marble][i], SLAB_LOW[i], SLAB_HIGH[i]);
+                    slider(c, SLAB_LABELS[i], slabs[marble][i], SLAB_LOW[i], SLAB_HIGH[i]);
                     if before != slabs[marble][i] {
                         slabs[marble][i] = round(slabs[marble][i] * 1000.0) / 1000.0;
                         slab_changed = true;
@@ -251,7 +255,7 @@ fn main() {
             ui::layout_row_dynamic(c, ROW + 4.0, 2);
             if ui::button_label(c, "Print (P)") { report = true; }
             if tune_slab {
-                if ui::button_label(c, slab_labels[SLAB_FLAGS.len]) {
+                if ui::button_label(c, SLAB_LABELS[SLAB_FLAGS.len]) {
                     slabs[marble] = looks::slab_defaults(marble);
                     slab_changed = true;
                 }
@@ -261,7 +265,7 @@ fn main() {
         if marble != shown_marble {
             shown_marble = marble;
             render3d::choose(g, -1, marble);
-            if marble >= 5 { g.stone = looks::slab_material(marble, slabs[marble]); }
+            if looks::is_slab(marble) { g.stone = looks::slab_material(marble, slabs[marble]); }
             g.look = -1;
             shown = pieces3d::put_look(r3d, g, season, material);
             pieces3d::place(r3d, g);
@@ -315,7 +319,7 @@ fn main() {
             format(out, "../build/piece_tune --season ", SEASONS[season], " --material ", MATERIALS[material]);
             if piece_material > 0 { format(out, " --pieces ", sets[piece_material]); }
             if shown == looks::WINTER { format(out, " --marble ", marble); }
-            if shown == looks::WINTER && marble >= 5 {
+            if shown == looks::WINTER && looks::is_slab(marble) {
                 for flag, i in SLAB_FLAGS {
                     format(out, " ", flag, " ");
                     pieces3d::num(out, slabs[marble][i]);

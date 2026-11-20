@@ -50,6 +50,16 @@ let SUMMER_STONE = 18;
 // Summer's carved board, the Baltic oak tuned for summer: --summer 7.
 let SUMMER_CARVED = 19;
 
+// Theme.mineral's codes: the pieces' material and figure. The pieces' shader takes them
+// as floats; the minerals are 1 and up, the winter and wood pieces below 0.
+let MINERAL_NONE:          f32 = 0.0;   // one color with a faint figure (Classic, plastic)
+let MINERAL_GRANULAR:      f32 = 1.0;   // granular stone
+let MINERAL_VEINED:        f32 = 2.0;   // veined stone
+let MINERAL_JADE:          f32 = 3.0;   // white and green jade
+let MINERAL_TURNED_WOOD:   f32 = -1.0;  // turned maple and walnut under a varnish
+let MINERAL_WINTER_SLATE:  f32 = -2.0;  // winter's honed slate
+let MINERAL_WINTER_MARBLE: f32 = -3.0;  // winter's ivory and black marble
+
 struct Theme {
     photo: i64,             // the season's photograph, src/native/background.c's kind
     // The bake: each surface's color and roughness, then its figure: how far the grain
@@ -113,8 +123,9 @@ struct Theme {
     // The pieces' wear: x how uneven the roughness is across a piece, y how much duller
     // its worn edges are, z how far each piece's tone strays from its fellows'.
     piece_wear: float4,
-    // Mineral figure on the pieces: 0 turned wood, 1 granular stone, 2 veined stone, 3 white and green jade.
-    mineral: f32 = 0.0,
+    // What the pieces are made of, one of the MINERAL_.. codes below: it picks their pipeline
+    // (render3d::pieces_kind) and, as frame_map.y, their figure in the shaders.
+    mineral: f32 = MINERAL_NONE,
     // The board's subsurface scattering (shaders::LIT_FRAG, task 094), on desktops only
     // (render3d::board_scatter): x the fraction of its diffuse light that leaves the
     // stone's body, y how far it travels in world units (a square is 1), z how deeply
@@ -163,15 +174,15 @@ fn get(which: i64) -> Theme {
         t.stone = float4 { 0.16, 0.18, t.stone.z, t.stone.w };
         return t;
     }
-    if which == AUTUMN { return turned(autumn()); }
+    if which == AUTUMN { return turned_wood_pieces(autumn()); }
     return autumn();
 }
 
 // Autumn's own board's pieces: turned maple and walnut under a varnish (task 094, the
 // user's, 2026-11-19), the denser walnut.
-fn turned(t_in: Theme) -> Theme {
+fn turned_wood_pieces(t_in: Theme) -> Theme {
     var t = t_in;
-    t.mineral = -1.0;
+    t.mineral = MINERAL_TURNED_WOOD;
     t.light_piece = float4 { 0.89, 0.77, 0.60, 0.5 };
     t.dark_piece = float4 { 0.36, 0.235, 0.16, 0.5 };
     // z the varnish coat's strength, w the figure's relief under it
@@ -179,22 +190,22 @@ fn turned(t_in: Theme) -> Theme {
     return t;
 }
 
-// Winter stone's own board's pieces: ivory and black marble with faint white veins (task
-// 094's Marble set, the user's for winter stone over the honed slate, 2026-11-20).
+// Winter stone's own board's pieces: ivory and black marble with faint white veins, chosen
+// over the honed slate of winter() (docs/decisions/rendering.md).
 fn marble_pieces(t_in: Theme) -> Theme {
     var t = t_in;
-    t.mineral = -3.0;
+    t.mineral = MINERAL_WINTER_MARBLE;
     t.dark_piece = float4 { 0.075, 0.08, 0.085, 0.15 };
     t.piece_fig.y = 0.2;
     return t;
 }
 
-// The pieces as they were before task 094, settings' Smooth: one color with a faint
+// The pieces as they were before task 094, settings Classic: one color with a faint
 // mottling, no figure of the material, no scattering, no wear. The looks whose pieces
 // took new colors with their material get their old ones back.
-fn smooth(t_in: Theme, which: i64) -> Theme {
+fn classic(t_in: Theme, which: i64) -> Theme {
     var t = t_in;
-    t.mineral = 0.0;
+    t.mineral = MINERAL_NONE;
     t.light_scatter.w = 0.0;
     t.dark_scatter.w = 0.0;
     t.piece_wear = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -329,7 +340,8 @@ fn autumn() -> Theme {
     };
 }
 
-// Pale stone and polished Cloud breccia with satin ivory and honed slate pieces.
+// Pale stone and polished Cloud breccia, with satin ivory and honed slate pieces that
+// looks::get puts black marble pieces in place of (marble_pieces).
 fn winter() -> Theme {
     return Theme {
         photo:         1,
@@ -365,7 +377,7 @@ fn winter() -> Theme {
         fill:          float4_0,
         light_scatter: float4 { 0.93, 0.9, 0.83, 0.0 },
         dark_scatter:  float4 { 0.62, 0.6, 0.62, 0.0 },
-        mineral:       -2.0,
+        mineral:       MINERAL_WINTER_SLATE,
         piece_wear:    STONE_WEAR,
     };
 }
@@ -579,6 +591,9 @@ fn finish(wood: i64) -> Finish {
 // Marble 0 uses the look's slate, 1 to 4 change the frame, and 5 to 8 also change
 // winter's dark squares. Winter defaults to tuned Cloud breccia.
 let MARBLES = 9;
+// The first of the cut slabs, 5 to MARBLES - 1: the ones that change winter's dark squares.
+let FIRST_SLAB = 5;
+fn is_slab(m: i64) -> bool { return m >= FIRST_SLAB && m < MARBLES; }
 let MARBLE = 7;
 // Autumn's stone frame's own marble, past the ones M cycles (marble_for).
 let EMPERADOR = MARBLES;
@@ -643,13 +658,13 @@ fn marble_base(which: i64) -> Marble {
                         veins: 1.0, wave: 1.2, polish: 0.8, tint: 0.0 };
     }
     // Cut slabs. Form sets spacing, seam width, cross-vein strength and cloudy pockets.
-    if which >= 5 && which < MARBLES {
+    if is_slab(which) {
         let forms = [float4 { 1.25, 0.022, 0.32, 0.7 }, float4 { 0.48, 0.009, 0.92, 0.16 },
                      float4 { 1.0, 0.026, 0.48, 1.12 }, float4 { 1.75, 0.014, 0.16, 0.25 }];
         let white: f32[4] = [0.89, 0.65, 0.74, 0.95];
-        let v = white[which - 5];
+        let v = white[which - FIRST_SLAB];
         return Marble { base: float4 { 0.065, 0.067, 0.072, 0.3 }, vein: float4 { v, v, v, 0.0 },
-                        form: forms[which - 5], veins: 1.0, wave: 1.0, polish: 0.85, tint: 0.0 };
+                        form: forms[which - FIRST_SLAB], veins: 1.0, wave: 1.0, polish: 0.85, tint: 0.0 };
     }
     // Dark brown with golden cream veins and a network of fine cracks, as Emperador
     // Dark is: autumn's stone frame.
@@ -667,7 +682,7 @@ fn marble_base(which: i64) -> Marble {
 fn marble_for(look: i64, chosen: i64) -> i64 {
     if look == AUTUMN_STONE { return EMPERADOR; }
     if look == AUTUMN_CARVED || look == AUTUMN_PORPHYRY || look == SPRING_STONE || look == SUMMER_STONE { return 0; }
-    if chosen >= 5 && look != WINTER { return 0; }
+    if is_slab(chosen) && look != WINTER { return 0; }
     return chosen;
 }
 
@@ -719,7 +734,7 @@ fn elven() -> Theme {
         fill:          float4 { 0.52, 0.6, 0.38, 0.75 },
         light_scatter: float4 { 0.96, 0.88, 0.81, 0.435 },
         dark_scatter:  JADE_SCATTER,
-        mineral:       3.0,
+        mineral:       MINERAL_JADE,
         piece_wear:    STONE_WEAR,
         board_scatter: float4 { 0.7, 0.3, 1.5, 0.0 },
     };
@@ -812,7 +827,7 @@ fn summer_amber() -> Theme {
     t.light_scatter = IVORY_SCATTER;
     t.dark_scatter = DARK_STONE_SCATTER;
     t.piece_wear = STONE_WEAR;
-    t.mineral = 1.0;
+    t.mineral = MINERAL_GRANULAR;
     return t;
 }
 
@@ -830,7 +845,7 @@ fn summer_serpentine() -> Theme {
     t.crown = float4 { 0.26, 0.29, 0.2, 0.0 };
     t.key_color = float4 { 1.0, 0.95, 0.88, 0.0 };
     t.dark_scatter = JADE_SCATTER;
-    t.mineral = 2.0;
+    t.mineral = MINERAL_VEINED;
     return t;
 }
 
@@ -862,7 +877,7 @@ fn autumn_stone() -> Theme {
     t.light_scatter = IVORY_SCATTER;
     t.dark_scatter = DARK_STONE_SCATTER;
     t.piece_wear = STONE_WEAR;
-    t.mineral = 2.0;
+    t.mineral = MINERAL_VEINED;
     return t;
 }
 
@@ -903,7 +918,7 @@ fn autumn_porphyry() -> Theme {
     t.light_piece = float4 { 0.9, 0.8, 0.64, 0.5 };
     t.dark_piece = float4 { 0.3, 0.14, 0.13, 0.36 };
     t.crown = float4 { 0.3, 0.14, 0.13, 0.0 };
-    t.mineral = 1.0;
+    t.mineral = MINERAL_GRANULAR;
     return t;
 }
 
@@ -937,7 +952,7 @@ fn winter_wood() -> Theme {
     t.light_scatter = PALE_WOOD_SCATTER;
     t.dark_scatter = DARK_WOOD_SCATTER;
     t.piece_wear = WOOD_WEAR;
-    t.mineral = 0.0;
+    t.mineral = MINERAL_NONE;
     return t;
 }
 

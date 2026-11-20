@@ -24,7 +24,7 @@ struct Flags {
     full:       bool = false, // --size full: the desktop's window fills the screen
     theme:      i64  = -1,  // --theme wood|stone|birch|sunset: the board, else the season's
     background: i64  = -1,  // --background photo|plain|table: 0 the photograph, 1 the plain fade, 2 the 3D board's table
-    pieces:     i64  = -1,  // --pieces natural|smooth: 0 the board's own material, 1 smooth
+    pieces:     i64  = -1,  // --pieces matching|classic: 0 the board's own material, 1 classic
     board:      i64  = -1,  // --board 3d|flat: settings::RAISED or settings::FLAT
     lookout:    i64  = -1,  // --lookout on|off: the player's lookout, 1 on, 0 off
     moves:      i64  = -1,  // --moves off|list|marks: the player's move list (settings::MOVES_*)
@@ -103,8 +103,8 @@ struct Flags {
     autumn: i64 = -1,
     winter: i64 = -1,
     spring: i64 = -1,
-    // --table board|flame (on: board): the 3D board on that take of the table
-    // (tables::BOARD_WOOD..; task 095), till it is a setting; -1 none
+    // --table board|flame|on (tables::NAMES; on: the game's take, tables::for_look): the 3D
+    // board on that take of the table whatever settings' Table says; -1 none
     table: i64 = -1,
     // --material auto|wood|stone|carved: the raised board's material for the run
     // (settings::MATERIAL_AUTO..), as settings' Board row sets it
@@ -163,8 +163,8 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--background" && v == "photo" { f.background = 0; }
         if a == "--background" && v == "plain" { f.background = 1; }
         if a == "--background" && v == "table" { f.background = 2; }
-        if a == "--pieces" && v == "natural" { f.pieces = 0; }
-        if a == "--pieces" && v == "smooth" { f.pieces = 1; }
+        if a == "--pieces" && v == "matching" { f.pieces = 0; }
+        if a == "--pieces" && v == "classic" { f.pieces = 1; }
         if a == "--board" && v == "3d" { f.board = settings::RAISED; }
         if a == "--board" && v == "flat" { f.board = settings::FLAT; }
         if a == "--material" { for name, k in settings::MATERIAL_NAMES { if v == name { f.material = k; } } }
@@ -311,12 +311,12 @@ fn parse(argv: u8[:][>..]) -> Flags {
             if ok && a == "--winter" { f.winter = clamp(n, 0, looks::WINTERS - 1); }
         }
         // --taken stacks|row|heap|towers: how what each side has taken lies on the table
-        // (taken3d::HEAPS; stacks the game's own).
+        // (taken3d::TABLE_LAYOUTS; stacks the game's own).
         if a == "--taken" {
-            for name, i in taken3d::NAMES { if v == name { taken3d::heap = taken3d::HEAPS[i]; } }
+            for name, i in taken3d::NAMES { if v == name { taken3d::table_layout = taken3d::TABLE_LAYOUTS[i]; } }
         }
         if a == "--table" {
-            f.table = if v == "on" { tables::BOARD_WOOD } else { -1 };
+            f.table = if v == "on" { tables::FLAME } else { -1 };
             for name, i in tables::NAMES { if v == name { f.table = i; } }
         }
         if a == "--rest" {

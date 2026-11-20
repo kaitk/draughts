@@ -15,7 +15,7 @@ flat board's taken pieces go to the panel. Without the table, nothing changes.
 
 ## Done (2026-11-20)
 
-- `src/board/taken3d.goose`: four layouts as data (`taken3d::HEAPS`), each placing a
+- `src/board/taken3d.goose`: four layouts as data (`taken3d::TABLE_LAYOUTS`), each placing a
   piece by its number alone (and the ones before it), so a capture adds one and moves
   none: short askew stacks in two staggered columns (`STACKS`, the game's), a loose wavy
   row with a piece now and then dropped on the one before and a second row past six
@@ -39,7 +39,7 @@ flat board's taken pieces go to the panel. Without the table, nothing changes.
 - `tools/taken_tune.goose` (`scripts/mac.py tools/taken_tune.goose`, run from `tools/`):
   the layout and its values, what each side took, the kings' look, 8 or 10 squares, the
   turned board, the season, board and table on sliders; P prints the command that shows
-  it again and the layout as a `Heap` literal. The game takes `--taken
+  it again and the layout as a `TableLayout` literal. The game takes `--taken
   stacks|row|heap|towers`.
 - Without the table: 3D shots of the game and a tap match before to 1 of 255; nothing is
   laid (`build_scene`'s `table` false). gfx and ngfx agree within 8 of 255 with the table.

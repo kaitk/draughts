@@ -229,10 +229,10 @@ and value noise in the board shader, never a regular stripe.
   four boards, then on each a light and a dark piece Matching and Classic, and the board on
   its table.
 - **The table** (settings' Background row's third tile on the 3D board; the player's
-  `table = on`): the 3D board on a round table (task 095), the take `tables::for_look`
+  `table = on`): the 3D board on a round table, the take `tables::for_look`
   gives each look. Putting it on or off bakes only the table's steps and the
   photograph's again (`draw3d::table_steps`). Behind it is always the plain fade, never
-  the photograph (`settings::photo_shown`), till there is a room.
+  the photograph (`settings::photo_shown`).
 - **What each side has taken** lies on the table beside the board (`taken3d`): white's
   catch at the board's right as white sees it, black's at its left, both on the near half
   where the landscape panels leave the table in view, the kings apart from the men and
@@ -246,9 +246,9 @@ and value noise in the board shader, never a regular stripe.
   pieces stay on the board, see-through, till the last hop, then are carried to their
   places in 0.5 s (`board::CARRY`, in place of the 0.18 s fade), rising 1.2 units and
   growing opaque on the way; an undo carries them back. The flat panels' counts stay.
-- **The pieces' finish** (settings' Pieces row on the 3D board; `pieces = natural|smooth`):
-  Matching is the look's own material (task 094); Classic the pieces as before it, one
-  color with a faint mottling (`looks::smooth`), which takes only the theme's last step.
+- **The pieces' finish** (settings' Pieces row on the 3D board; `pieces = matching|classic`):
+  Matching is the look's own material; Classic plain pieces of one
+  color with a faint mottling (`looks::classic`), which takes only the theme's last step.
 - **The plain background** (settings' Background row; the player's `background =
   photo|plain`): a fade matched to the season's board in place of the photograph, from the
   theme's page color at the top to a deep tone of its frame at the foot, a faint light of
@@ -634,7 +634,7 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   | Season | Auto | Wood | Stone | Carved |
   | --- | --- | --- | --- | --- |
   | Autumn | wood | maple and walnut in cherry | sandstone and porphyry | rust vines in weathered stone |
-  | Winter | stone | limed ash and smoked oak | Cloud breccia with ivory and slate pieces | a Nordic band in smoked oak |
+  | Winter | stone | limed ash and smoked oak | Cloud breccia with ivory and black marble pieces | a Nordic band in smoked oak |
   | Spring | carved | birch | ivory and jade, veined | the elven stone |
   | Summer | wood | the sunset wood | amber granite, veined and cracked | amber signs in granite |
 
@@ -651,7 +651,9 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   square takes its own. The bake takes 37 ms on an M1
   Pro and about 0.3 s on the Galaxy Tab A11+. On the A33 a wood prepares in about 2.3 s
   and the stones in 2.7 to 2.8, 1.1 s of it the bake pipeline's compile whatever the look
-  (2026-11-13); every look bakes into the same targets, so memory is the same.
+  (2026-11-13); every look bakes into the same targets, so memory is the same. The
+  table's two maps add about 45 MB at the full side (2048 square, with mips) and 11 MB on a
+  phone, only with the table.
 - **Shader variants:** a Mali compiles every branch of a shader, so the bake and the lit
   shader are built in variants and a look compiles only its own. The bake comes in three:
   the board's, the board's with winter's black marble slab, and the table's alone
@@ -660,8 +662,7 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   wood, winter's stones, a mineral: `render3d::PIECES_..`) for each shadow filter, and
   the board's scattering only in the desktop's (`SHADOW_16`). A theme whose pieces take
   another material makes the lit pipelines again and warms them (`set_pieces`). On the
-  Pixel 7a the board gets ready in about 1.9 s (main before task 094: 1.6 s; the one
-  shader with every material: 3.0 s), and with the table in about 2.8 s (2026-11-20).
+  Pixel 7a the board gets ready in about 1.9 s, and with the table in about 2.8 s.
 
 ## Fonts
 

@@ -1,4 +1,4 @@
-// What each side has taken (game::taken), headless: the start's pieces less
+// What each side has taken (board::taken), headless: the start's pieces less
 // those on the board, men and kings apart, a piece taken while a king counting as a king
 // from the undo history. On Russian 8 × 8: nothing at the start; an exchange of men; a
 // man taking a king; a king taking a man; a man crowned, moved off its edge, then taken
@@ -36,7 +36,7 @@ fn play(b: board::Board&, from: const u8[:], to: const u8[:]) -> bool {
 }
 
 fn show(what: const u8[:], b: board::Board&) {
-    let t = game::taken(b);
+    let t = board::taken(b);
     print(what, ": ", rules::fen(b.pos), "; white pieces taken: ", t.men[0], " men, ", t.kings[0], " kings; black: ", t.men[1],
           " men, ", t.kings[1], " kings");
 }

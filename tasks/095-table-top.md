@@ -1,6 +1,7 @@
 # 095: A table under the 3D board
 
-Status: in-progress (on the `table-top` branch, 2026-11-19: behind `--table board|flame`)
+Status: in-progress (on the `table-top` branch, 2026-11-20: settings' Table background;
+the device numbers and the merge's settings left)
 
 The 3D board floats over a blurred photograph. Set it on a polished table top instead, as
 in the concept art (`design/manor/library-table-01.png`, `hall-winter-table-02.png`,
@@ -91,7 +92,7 @@ Tune with versions side by side from `tools/board_shot.goose`, as task 094 does.
 - The wear's look at the takes' values: the flame's patina is faint (scratches 0.12),
   so it shows mostly in the highlight; tune it with the polish in the tuner.
 - Next, in this order (the user, 2026-11-20), not all in one session:
-  1. The taken pieces on the table beside the board: task 099, the first, before any
+  1. The taken pieces on the table beside the board (built, 2026-11-20): task 099, the first, before any
      prop, as a small thing that makes the scene alive.
   2. Two tables: the round one, and a writing desk improved on from the concept art
      (`design/manor/library-desk-01.png`, `library-table-01.png`, local), trying the
@@ -115,14 +116,16 @@ Tune with versions side by side from `tools/board_shot.goose`, as task 094 does.
 - Device numbers (GPU time, memory, prepare time) on the Mac and the A33 against before,
   as the acceptance criteria ask; the table's maps are about 45 MB at the full side
   (2048 square, two maps with mips), 11 MB on a phone.
-- To do later: LIT_FRAG and TABLE_FRAG repeat the light's functions (GGX, the harmonics,
-  the tone map); share them once task 094's shader changes are in.
+- Shared (2026-11-20): LIT_FRAG and TABLE_FRAG take the light's functions from
+  `shaders::LIGHT_FN`; their tone maps differ and stay apart.
 
 ## Acceptance criteria
 
 - [ ] A procedural mahogany top under the board, lit and shadowed with it, in each season
 - [ ] The board's soft reflection in it
-- [ ] Its far edge soft against the photograph, at every view and on every screen size
+- [ ] ~~Its far edge soft against the photograph, at every view and on every screen size~~
+      Dropped (2026-11-19, second round): the table is a backdrop of its own with a sharp
+      rim, and the plain fade, never the photograph, is behind it
 - [x] A setting for the table, with its strings in every language
 - [ ] Shots of each season in this file; GPU time and memory recorded on the Mac and the
       A33 against before

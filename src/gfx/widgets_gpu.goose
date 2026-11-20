@@ -568,7 +568,7 @@ let FRAG = """
             // A picture: a thumbnail, cover-cropped, a season's photograph (its theme,
             // 0 to 3) or its plain fade (4 to 7), a board picture (8 on, sixteen a theme:
             // its own raised board whole, then its wood's, stone's, and carved board's
-            // corner; then the pieces Natural, Smooth, and the board on its table, each in
+            // corner; then the pieces Matching, Classic, and the board on its table, each in
             // the four materials), the theme shown's photograph (-2) or fade (-3) or board
             // picture (-16 - j for its j); for -1 a faint glow tint, and for -8 white at 6%
             // (the flat board's). The slots are 8 across (scene::THUMB_COLS), 9 down.

@@ -53,7 +53,7 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
         sh.prefs.table = f.background == 2;
         if f.background < 2 { sh.prefs.plain = f.background == 1; }
     }
-    if f.pieces >= 0 { sh.prefs.smooth = f.pieces == 1; }
+    if f.pieces >= 0 { sh.prefs.classic = f.pieces == 1; }
     let fen .= f.fen;
     if fen.len > 0 {
         let b .= sh.game.b;

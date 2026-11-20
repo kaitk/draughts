@@ -279,21 +279,23 @@ fed389b.
   material per season.
 - The board's material is in the Board row: Flat, Raised (the season's, "auto"), Wood,
   Stone, Carved, each a picture of the board (2026-11-13).
-- Look's rows (2026-11-20, the user's take b of the settings prototype, as changed by
-  them): Theme, then Board, the main choice, then under a small heading naming the board
-  only the rows that board uses: the 3D board's Pieces and Background with a third tile,
-  Table; the flat board's Background; Kings. Replaces Background first (2026-11-13
-  above). The 3D board's two rows add three tiles, which the user judged fine. Rejected:
-  a 3D board card the Board row opens (the user: no cards), a Look group per board, the
-  3D board's rows dimmed on the flat board, Table as a row of its own.
+- Look's rows (2026-11-20, take b of the settings prototype, changed on review): Theme,
+  then Board, the main choice, then under a small heading naming the board only the rows
+  that board uses: the 3D board's Pieces and Background with a third tile, Table; the
+  flat board's Background; Kings. Replaces Background first (2026-11-13 above). The 3D
+  board's two rows add three tiles, judged fine. Rejected: a 3D board card the Board row
+  opens (no cards in settings), a Look group per board, the 3D board's rows dimmed on the
+  flat board, Table as a row of its own.
 - A board on the table has the plain fade behind it, never the season's photograph
   (2026-11-20): a landscape behind a grounded table read as odd. A floor or a room is to
   come (task 095).
 - The 3D pieces follow the board (2026-11-20): Matching (Laua moodi), the look's own
-  material, or Classic (Tavalised), as before task 094, each a picture of a light and a dark piece on the board
-  chosen. Rejected: Auto with a material picked apart from the board (the user ties the
-  pieces to the board); the words Natural and Smooth (Looduslik, Sile), which said too
-  little. Winter stone's own pieces are black marble, over the honed slate.
+  material, or Classic (Tavalised), the plain pieces of before task 094, each a picture of
+  a light and a dark piece on the board chosen. Rejected: Auto with a material picked
+  apart from the board (the pieces belong to the board); the words Natural and Smooth
+  (Looduslik, Sile), which said too little. Winter stone's own pieces are black marble,
+  over the honed slate: this replaces the satin ivory and dark slate pieces of the Cloud
+  breccia entry (2026-11-19, under "Board and pieces").
 - No draughts row (2026-11-11): home's setup and the library choose it, and here it read
   as changing the game in progress.
 - The preview is in the draughts of the board settings opened over, not the one a new
@@ -524,6 +526,15 @@ play; a stack's rings go round its foot (2026-11-08).
   further on plays the capture when every way there takes the same pieces; a stop shows
   the piece hopping (`board::hop`); a tap on the selected piece puts it down.
 
+- Winter stone uses Cloud breccia on the dark squares and frame, with satin ivory
+  and dark slate pieces at 0.3 roughness (2026-11-19). The subdued veins keep the
+  pieces distinct while the close view shows the mineral pockets. This replaces
+  the slate squares and grey-cloud marble frame. Marble 2 remains selectable.
+  The frame keeps its marble through the rounded edge because the blue tint and
+  outer line gave it a halo. The ivory and slate pieces use zero scattering. Its
+  pieces are now black marble (2026-11-20, "The 3D pieces follow the board", under
+  "Controls").
+
 ## Fonts
 
 Libertinus Sans, in the style of Optima. Tenor Sans (the proof of concept's), Belleza, and
@@ -632,13 +643,6 @@ to be is in tasks 042, 059, 071, 081, and 086.
   tying it to the 16-tap shadow filter (it would turn on for iOS).
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
-
-- Winter stone uses Cloud breccia on the dark squares and frame, with satin ivory
-  and dark slate pieces at 0.3 roughness (2026-11-19). The subdued veins keep the
-  pieces distinct while the close view shows the mineral pockets. This replaces
-  the slate squares and grey-cloud marble frame. Marble 2 remains selectable.
-  The frame keeps its marble through the rounded edge because the blue tint and
-  outer line gave it a halo. The ivory and slate pieces use zero scattering.
 
 ## When a frame reaches the screen
 

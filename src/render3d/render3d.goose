@@ -143,8 +143,9 @@ let PIECES_WOOD = 1;
 let PIECES_WINTER = 2;
 let PIECES_MINERAL = 3;
 fn pieces_kind(mineral: f32) -> i32 {
-    if mineral < -1.5 { PIECES_WINTER } else if mineral < -0.5 { PIECES_WOOD }
-    else if mineral > 0.5 { PIECES_MINERAL } else { PIECES_CLASSIC }
+    if mineral == looks::MINERAL_WINTER_SLATE || mineral == looks::MINERAL_WINTER_MARBLE { PIECES_WINTER }
+    else if mineral == looks::MINERAL_TURNED_WOOD { PIECES_WOOD }
+    else if mineral >= looks::MINERAL_GRANULAR { PIECES_MINERAL } else { PIECES_CLASSIC }
 }
 
 // The bake's pipeline for a surface (mode: 0 the plan, 1 the frame map, 2 and 3 the
@@ -154,7 +155,7 @@ let BAKE_SLAB = 1;
 let BAKE_TABLE = 2;
 fn bake_kind(g: Gpu&, mode: f32) -> i32 {
     let m = marble_of(g);
-    if mode > 1.5 { BAKE_TABLE } else if m >= 5 && m < 9 { BAKE_SLAB } else { BAKE_BOARD }
+    if mode > 1.5 { BAKE_TABLE } else if looks::is_slab(m) { BAKE_SLAB } else { BAKE_BOARD }
 }
 
 let PHOTO_SIZE = 512;
@@ -175,113 +176,113 @@ let SQUARE_ENTRIES = 2 * SQUARES;   // the occlusion's two float4s a square (pla
 
 // Everything on the GPU, made by setup() (the targets again on a resize).
 struct Gpu {
-    wood:           i64,            // the wood's model the surfaces are baked with
-    finish:         looks::Finish,  // and its finish
-    marble:         i64,            // the stone frame's marble (looks::MARBLE..), 0 slate
-    stone:          looks::Marble,  // and its look
-    spring:         i64,            // spring's look (looks::SPRING_LOOK..), 1 the carved
-    carving:        looks::Carving, // and the carving of a carved look shown,
-    carved:         i64,            // the look it is the carving of (looks::shown), -1 none yet
-    n:              i64,            // squares per side the plan is baked for
-    look:           i64,            // looks::AUTUMN.., and the photograph's kind
-    photo_kind:     i64,
-    board_vb:       Buffer,
-    board_ib:       Buffer,
-    board_count:    i64,
-    piece_vb:       Buffer,
-    piece_ib:       Buffer,
-    piece_count:    i64,
-    instances:      Buffer,
-    instance_count: i64,
-    solid:          i64,                    // the instances drawn opaque, first; the rest fade
-    alphas:         f32[MAX_INSTANCES],     // how opaque each fading one is
-    squares:        Buffer,
-    crown_map:      Texture,           // the crown's distance (shaders::CROWN_FRAG), drawn at setup
-    occ_map:        Texture,           // the pieces' occlusion of the field (occlusion())
-    occ_n:          i64,                    // the squares a side it was drawn for, 0 none yet
-    occ_squares:    float4[SQUARE_ENTRIES], // the squares it was drawn from
-    squares_now:    float4[SQUARE_ENTRIES], // and the ones place() last gave
-    marks:          Buffer,
-    glows:          Buffer,      // the field's glow rings and lit squares
-    marked:         bool,             // whether the board's pass has marks to draw
-    plan_albedo:    Texture,
-    plan_normal:    Texture,
-    side:           i64,            // the surfaces' side they are made at (model3d::BAKE_SIDE..), 0 none yet
-    want_side:      i64,            // and the one set_bake() asks for, 0 BAKE_SIDE
-    frame_albedo:   Texture,
-    frame_normal:   Texture,
-    frame_rows:     i64,            // the frame map's rows: `side`, or the mitred bands'
-    frame_flat:     bool,           // frame_normal is flat_frame()'s 4 × 4, not the map's
-    table:          bool,           // the table under the board (set_table), its map baked
-    smooth:         bool,           // settings' Smooth pieces (looks::smooth), put on by theme_end
-    table_albedo:   Texture,        // with the theme's surfaces, at model3d::table_size
-    table_normal:   Texture,
-    table_wear:     Texture,        // its wear's tile, at model3d::wear_side (wear_at)
-    table_wear_n:   Texture,
-    table_side:     i64,            // the side its maps are made at, 0 none
-    table_baked:    bool,           // its maps hold table_spec's wood
-    table_spec:     tables::Table,  // the table shown (tables::BOARD_WOOD.., or as tuned)
-    table_edge:     float4,         // the edge its mesh is made with (tables::Table.edge)
-    table_vb:       Buffer,
-    table_ib:       Buffer,
-    table_count:    i64,
-    table_lit:      Pipeline,
-    table_discs:    float4[MAX_DISCS], // what lies on it (table_discs()), for its shadows
-    table_disc_n:   float4,            // x how many, y their radius
-    photo:          Texture,
-    shadow_map:     Texture,
-    aa:             i32,            // AA_OFF.. (set_aa), the renderer's ways
-    color:          Texture,   // the pass's target (antialiasing's input) and its depth
-    edges:          Texture,   // SMAA's edges and blending weights, at the pass's size
-    weights:        Texture,
-    area:           Texture,   // SMAA's tables (third_party/smaa), made by set_aa
-    search:         Texture,
-    smaa_edges:     Pipeline,
-    smaa_weights:   Pipeline,
-    smaa_blend:     Pipeline,
-    depth:          Texture,
-    image:          Texture,   // what draw() resolves into when asked to keep it
-    kept_backdrop:  Texture,   // the backdrop at full opacity, g.size (keep_backdrop())
-    kept_for:       float4[7],      // what it was drawn from (backdrop_key())
-    live:           bool,           // the app's --keep off: the backdrop drawn each frame, never kept
-    photo_gen:      i64,            // counts photo_part()'s steps, each of which may change g.photo
-    kept_depth:     Texture,   // its depth at 1x, for the pulsing marks (marks_over)
-    warm_color:     Texture,   // 4 × 4 targets warm() makes the pipelines on
-    warm_depth:     Texture,
-    no_photo:       bool,           // no photograph built in for the theme (photo_part), or plain
-    plain:          bool,           // the plain fade behind, set before a theme's steps
-    fade:           float4[3],      // its colors (app/theme.goose's fade_top, low, light), linear
-    size:           int2,
-    linear:         Sampler,
-    aniso:          Sampler,
-    compare:        Sampler,
-    lit:            Pipeline,
-    fading:         Pipeline,  // the lit pass for a fading piece, blended
-    shadow:         Pipeline,
-    shadow_look:    i32,            // SHADOW_9.., how lit and fading filter the shadow (set_shadow)
-    pieces:         i32,            // PIECES_.., the pieces' material lit and fading draw (set_pieces)
-    relit:          bool,           // lit and fading made again for new pieces, not yet warmed
-    backdrop:       Pipeline,
-    catcher:        Pipeline,
-    glow:           Pipeline,
-    pulse:          Pipeline,  // the pulsing marks over the kept image (marks_over)
-    depth_only:     Pipeline,  // the kept depth
-    copy:           Pipeline,
-    show:           Pipeline,  // the kept image over what is there, anywhere (show())
-    occ:            Pipeline,  // the field's occlusion map (occlusion())
-    kept:           Pipeline,  // the kept backdrop laid on the screen (backdrop())
-    bake:           Pipeline,  // kept for a theme's rebake, with the photograph's
-    bake_slab:      Pipeline,  // the bake with the black marble slab, made when first wanted
-    bake_table:     Pipeline,  // the table's bake, made when first wanted
-    shrink:         Pipeline,
-    blur:           Pipeline,
-    small:          Texture,
-    across:         Texture,
-    frame:          Frame,
-    shadow_dirty:   bool,
-    turn:           f32,            // the board's turn (view3d::View.turn), the light turned with it
-    bake_ms:        f64,            // the last bake's time and the photograph's (measuring)
-    photo_ms:       f64,
+    wood:            i64,            // the wood's model the surfaces are baked with
+    finish:          looks::Finish,  // and its finish
+    marble:          i64,            // the stone frame's marble (looks::MARBLE..), 0 slate
+    stone:           looks::Marble,  // and its look
+    spring:          i64,            // spring's look (looks::SPRING_LOOK..), 1 the carved
+    carving:         looks::Carving, // and the carving of a carved look shown,
+    carved:          i64,            // the look it is the carving of (looks::shown), -1 none yet
+    n:               i64,            // squares per side the plan is baked for
+    look:            i64,            // looks::AUTUMN.., and the photograph's kind
+    photo_kind:      i64,
+    board_vb:        Buffer,
+    board_ib:        Buffer,
+    board_count:     i64,
+    piece_vb:        Buffer,
+    piece_ib:        Buffer,
+    piece_count:     i64,
+    instances:       Buffer,
+    instance_count:  i64,
+    solid:           i64,                   // the instances drawn opaque, first; the rest fade
+    alphas:          f32[MAX_INSTANCES],    // how opaque each fading one is
+    squares:         Buffer,
+    crown_map:       Texture,          // the crown's distance (shaders::CROWN_FRAG), drawn at setup
+    occ_map:         Texture,          // the pieces' occlusion of the field (occlusion())
+    occ_n:           i64,                    // the squares a side it was drawn for, 0 none yet
+    occ_squares:     float4[SQUARE_ENTRIES], // the squares it was drawn from
+    squares_now:     float4[SQUARE_ENTRIES], // and the ones place() last gave
+    marks:           Buffer,
+    glows:           Buffer,     // the field's glow rings and lit squares
+    marked:          bool,            // whether the board's pass has marks to draw
+    plan_albedo:     Texture,
+    plan_normal:     Texture,
+    side:            i64,           // the surfaces' side they are made at (model3d::BAKE_SIDE..), 0 none yet
+    want_side:       i64,           // and the one set_bake() asks for, 0 BAKE_SIDE
+    frame_albedo:    Texture,
+    frame_normal:    Texture,
+    frame_rows:      i64,           // the frame map's rows: `side`, or the mitred bands'
+    frame_flat:      bool,          // frame_normal is flat_frame()'s 4 × 4, not the map's
+    table:           bool,          // the table under the board (set_table), its map baked
+    classic:         bool,           // settings' Classic pieces (looks::classic), put on by theme_end
+    table_albedo:    Texture,       // with the theme's surfaces, at model3d::table_size
+    table_normal:    Texture,
+    table_wear:      Texture,       // its wear's tile, at model3d::wear_side (wear_at)
+    table_wear_n:    Texture,
+    table_side:      i64,           // the side its maps are made at, 0 none
+    table_baked:     bool,          // its maps hold table_spec's wood
+    table_spec:      tables::Table, // the table shown (tables::BOARD_WOOD.., or as tuned)
+    table_edge:      float4,        // the edge its mesh is made with (tables::Table.edge)
+    table_vb:        Buffer,
+    table_ib:        Buffer,
+    table_count:     i64,
+    table_lit:       Pipeline,
+    table_discs:     float4[MAX_DISCS], // what lies on it (table_discs()), for its shadows
+    table_disc_n:    float4,            // x how many, y their radius
+    photo:           Texture,
+    shadow_map:      Texture,
+    aa:              i32,           // AA_OFF.. (set_aa), the renderer's ways
+    color:           Texture,  // the pass's target (antialiasing's input) and its depth
+    edges:           Texture,  // SMAA's edges and blending weights, at the pass's size
+    weights:         Texture,
+    area:            Texture,  // SMAA's tables (third_party/smaa), made by set_aa
+    search:          Texture,
+    smaa_edges:      Pipeline,
+    smaa_weights:    Pipeline,
+    smaa_blend:      Pipeline,
+    depth:           Texture,
+    image:           Texture,  // what draw() resolves into when asked to keep it
+    kept_backdrop:   Texture,  // the backdrop at full opacity, g.size (keep_backdrop())
+    kept_for:        float4[7],     // what it was drawn from (backdrop_key())
+    live:            bool,          // the app's --keep off: the backdrop drawn each frame, never kept
+    photo_gen:       i64,           // counts photo_part()'s steps, each of which may change g.photo
+    kept_depth:      Texture,  // its depth at 1x, for the pulsing marks (marks_over)
+    warm_color:      Texture,  // 4 × 4 targets warm() makes the pipelines on
+    warm_depth:      Texture,
+    no_photo:        bool,          // no photograph built in for the theme (photo_part), or plain
+    plain:           bool,          // the plain fade behind, set before a theme's steps
+    fade:            float4[3],     // its colors (app/theme.goose's fade_top, low, light), linear
+    size:            int2,
+    linear:          Sampler,
+    aniso:           Sampler,
+    compare:         Sampler,
+    lit:             Pipeline,
+    fading:          Pipeline, // the lit pass for a fading piece, blended
+    shadow:          Pipeline,
+    shadow_look:     i32,           // SHADOW_9.., how lit and fading filter the shadow (set_shadow)
+    pieces:          i32,           // PIECES_.., the pieces' material lit and fading draw (set_pieces)
+    pieces_unwarmed: bool,                    // lit and fading made again for new pieces, not yet warmed
+    backdrop:        Pipeline,
+    catcher:         Pipeline,
+    glow:            Pipeline,
+    pulse:           Pipeline, // the pulsing marks over the kept image (marks_over)
+    depth_only:      Pipeline, // the kept depth
+    copy:            Pipeline,
+    show:            Pipeline, // the kept image over what is there, anywhere (show())
+    occ:             Pipeline, // the field's occlusion map (occlusion())
+    kept:            Pipeline, // the kept backdrop laid on the screen (backdrop())
+    bake:            Pipeline, // kept for a theme's rebake, with the photograph's
+    bake_slab:       Pipeline, // the bake with the black marble slab, made when first wanted
+    bake_table:      Pipeline, // the table's bake, made when first wanted
+    shrink:          Pipeline,
+    blur:            Pipeline,
+    small:           Texture,
+    across:          Texture,
+    frame:           Frame,
+    shadow_dirty:    bool,
+    turn:            f32,           // the board's turn (view3d::View.turn), the light turned with it
+    bake_ms:         f64,           // the last bake's time and the photograph's (measuring)
+    photo_ms:        f64,
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -394,7 +395,7 @@ fn table_block(g: Gpu&) -> TableBlock {
 // The pieces lying on the table (view3d::Scene.discs, taken3d::lay), each x, z, its foot's
 // and its top's height over the table, all of radius r, for the shadows TABLE_FRAG works
 // out from them: the shadow map covers only the board.
-let MAX_DISCS = 48;     // view3d::MAX_DISCS
+let MAX_DISCS = 48;     // view3d::MAX_DISCS, TABLE_FRAG's discs[48]
 fn table_discs(g: Gpu&, discs: const float4[:], r: f32) {
     let n = min(discs.len, MAX_DISCS);
     for i in n { g.table_discs[i] = discs[i]; }
@@ -607,7 +608,7 @@ fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
     f.piece_fig = t.piece_fig;
     f.crown = model3d::linear4(t.crown);
     f.edge = model3d::linear4(t.edge);
-    if marbled(g, t) && !(g.look == looks::WINTER && g.marble >= 5) { f.edge.w = 0.0; }
+    if marbled(g, t) && !(g.look == looks::WINTER && looks::is_slab(g.marble)) { f.edge.w = 0.0; }
     f.line = model3d::linear4(t.line);
     f.bounce = model3d::linear4(t.bounce);
     f.grade = t.grade;
@@ -691,10 +692,10 @@ fn stone_of(g: Gpu&) -> looks::Marble {
 // The look `which` as g shows it: spring's chosen look with its carving.
 fn look(g: Gpu&, which: i64) -> looks::Theme { looks::variant(which, g.spring, g.carving) }
 
-// The look with its pieces as settings' Pieces has them: its own material, or Smooth.
+// The look with its pieces as settings' Pieces has them: its own material, or Classic.
 fn pieces_of(g: Gpu&, which: i64) -> looks::Theme {
     let t = look(g, which);
-    return if g.smooth { looks::smooth(t, looks::shown(which, g.spring)) } else { t };
+    return if g.classic { looks::classic(t, looks::shown(which, g.spring)) } else { t };
 }
 
 // Chooses the wood's model and the marble, each with its own finish or look, and
@@ -728,7 +729,7 @@ fn set_wood<O>(o: O&, g: Gpu&, model: i64) {
 fn tune<O>(o: O&, g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Marble) {
     let t = look(g, g.look);
     let wood_changed = wood != g.wood || finish != g.finish;
-    let slab_changed = g.look == looks::WINTER && (g.marble >= 5 || marble >= 5);
+    let slab_changed = g.look == looks::WINTER && (looks::is_slab(g.marble) || looks::is_slab(marble));
     let marble_changed = marble != g.marble || stone != g.stone;
     g.wood = clamp(wood, 0, model3d::WOOD_MODELS - 1);
     g.finish = finish;
@@ -738,7 +739,7 @@ fn tune<O>(o: O&, g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone:
     let frame = (wood_changed && t.frame_fig.w > 0.5) || (marble_changed && t.frame_fig.w < 0.5 && t.build.w < 0.5);
     if plan || frame { bake_surfaces(o, g, plan, frame); }
     g.frame.edge = model3d::linear4(t.edge);
-    if marbled(g, t) && !(g.look == looks::WINTER && g.marble >= 5) { g.frame.edge.w = 0.0; }
+    if marbled(g, t) && !(g.look == looks::WINTER && looks::is_slab(g.marble)) { g.frame.edge.w = 0.0; }
 }
 
 // Takes look `id`'s own carving (looks::carving_for) when it isn't the one g has: a

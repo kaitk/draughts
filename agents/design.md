@@ -72,21 +72,23 @@ pieces; the design boards still set the layout, glass, and controls.
   --panel` (the flags in its header). Its renderer is the older one, so carry back the
   printed values, not its shots (2026-11-16, summer's stone).
 - The pieces' values have a tuner of their own on the current renderer,
-  `tools/piece_tune.goose` (task 094): B toggles scattering on the pieces.
-  Its Pieces slider previews Plastic, Jade, maple and walnut (Wood, with Varnish and
-  Relief sliders), or ivory with Slate or polished black Marble, independently of the
-  board. On winter's stone board the Marble slider (and `--marble N`) picks the frame's
-  marble. Key moves the shadow
-  projection with the light. Compare on minus off at each key position, with the camera
-  fixed. The spring Stone board has its own scattering switch, with its strength (the
-  fraction), radius and color depth independent and printed (task 094). Its defaults are
-  the look's, which the game uses on a desktop. Run the picker from
-  `tools/`. With `--shot` it saves the board without the controls.
-  Spring stone has Jade and Plastic as profiles 0 and 1 for `board_shot`.
-- What each side has taken, on the table: `tools/taken_tune.goose` (task 099), built
-  with `scripts/mac.py tools/taken_tune.goose` and run from `tools/`; P prints a command
-  that shows the same again and the layout's `Heap` literal for `taken3d::HEAPS`. Headless
-  with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`, as `table_tune`.
+  `tools/piece_tune.goose` (task 094), run from `tools/`. Its Pieces slider previews
+  Plastic, Jade, maple and walnut (Wood, with Varnish and Relief sliders), or ivory with
+  Slate or polished black Marble, independently of the board; B toggles their scattering.
+  On winter's stone board the Marble slider (and `--marble N`) picks the frame's marble;
+  the spring Stone board has its own scattering switch, its strength, radius and color
+  depth printed. Key moves the light with its shadow: compare on minus off at each key
+  position with the camera fixed. The defaults are the look's, which the game uses on a
+  desktop. `--shot` saves the board without the controls. Spring stone has Jade and
+  Plastic as profiles 0 and 1 for `board_shot`.
+- The table under the 3D board: `tools/table_tune.goose` (task 095), its take, season,
+  wood, age, polish, light and edge on sliders; P prints the table as Goose for
+  `src/model3d/tables.goose`.
+- What each side has taken, on the table: `tools/taken_tune.goose` (task 099); P prints a
+  command that shows the same again and the layout's `TableLayout` literal for
+  `taken3d::TABLE_LAYOUTS`.
+- The three tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
+  and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 
 ## What has been tried and set aside
 

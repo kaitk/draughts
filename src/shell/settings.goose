@@ -128,8 +128,8 @@ let TABLE_TILE = 2;         // Background's third, the 3D board's
 // Whether a row shows: the pieces only for the 3D board.
 fn shown_row(s: Settings&, row: i64) -> bool { row != PIECES_ROW || raised(s) }
 
-// How many tiles a row shows: the table only for the 3D board.
-fn tiles(s: Settings&, row: i64) -> i64 { if row == BACKGROUND_ROW && !raised(s) { TABLE_TILE } else { ROW_TILES[row] } }
+// How many tiles a row shows: Background without its last tile, the table, on the flat board.
+fn tiles(s: Settings&, row: i64) -> i64 { if row == BACKGROUND_ROW && !raised(s) { ROW_TILES[row] - 1 } else { ROW_TILES[row] } }
 let MOST_TILES = 5;
 let SECTIONS = 3;
 let SOUND_SECTION = 1;
@@ -156,7 +156,7 @@ let FLAT_PIC = -8;
 
 // The theme shown's board picture j (scene::BOARD_PICTURES, tools/assets/board_thumbs.py):
 // 0 its own raised board whole, 1 to 3 its wood's, stone's, and carved board's near corner;
-// then a light and a dark piece Natural (4 + m), Smooth (8 + m), and the board on its
+// then a light and a dark piece Matching (4 + m), Classic (8 + m), and the board on its
 // table (12 + m), on the board in material m (MATERIAL_AUTO..).
 fn board_pic(j: i64) -> i64 { -16 - j }
 
@@ -191,7 +191,7 @@ fn label(row: i64, i: i64) -> u8[..64] {
 // Tile i of a row's word.
 fn word(row: i64, i: i64) -> i64 {
     if row == BACKGROUND_ROW { return [strings::BACKGROUND_PHOTO, strings::BACKGROUND_PLAIN, strings::BACKGROUND_TABLE][i]; }
-    if row == PIECES_ROW { return [strings::PIECES_NATURAL, strings::PIECES_SMOOTH][i]; }
+    if row == PIECES_ROW { return [strings::PIECES_MATCHING, strings::PIECES_CLASSIC][i]; }
     if row == THEME_ROW { return if i == BY_DATE_TILE { strings::SETTINGS_BY_DATE } else { SEASON_KEYS[i] }; }
     if row == BOARD_ROW { return BOARD_WORDS[i]; }
     if row == KINGS_ROW { return KING_KEYS[i]; }
@@ -224,10 +224,10 @@ fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
 // Whether tile i of a row is the one chosen in s.
 fn chosen(s: Settings&, row: i64, i: i64) -> bool {
     if row == BACKGROUND_ROW {
-        let table = raised(s) && s.table;
+        let table = on_table(s);
         return if i == TABLE_TILE { table } else { !table && s.plain == (i == 1) };
     }
-    if row == PIECES_ROW { return s.smooth == (i == 1); }
+    if row == PIECES_ROW { return s.classic == (i == 1); }
     if row == THEME_ROW { return s.season == (if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] }); }
     if row == BOARD_ROW { return if i == FLAT_TILE { s.board == FLAT } else { s.board == RAISED && s.material == i - 1 }; }
     if row == KINGS_ROW { return s.kings == i; }
@@ -242,7 +242,7 @@ fn choose(s: Settings&, row: i64, i: i64) {
         s.table = i == TABLE_TILE;
         if i != TABLE_TILE { s.plain = i == 1; }
     }
-    if row == PIECES_ROW { s.smooth = i == 1; }
+    if row == PIECES_ROW { s.classic = i == 1; }
     if row == THEME_ROW { s.season = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] }; }
     if row == BOARD_ROW {
         s.board = if i == FLAT_TILE { FLAT } else { RAISED };

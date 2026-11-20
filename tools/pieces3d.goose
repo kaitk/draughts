@@ -91,9 +91,9 @@ fn of_look(shown: i64) -> Pieces {
                     light_scatter: t.light_scatter, dark_scatter: t.dark_scatter, piece_wear: t.piece_wear };
 }
 
-// The pieces as settings' Smooth shows them on a look (looks::smooth).
-fn smooth_of(shown: i64) -> Pieces {
-    let t = looks::smooth(looks::get(shown), shown);
+// The pieces as settings' Classic shows them on a look (looks::classic).
+fn classic_of(shown: i64) -> Pieces {
+    let t = looks::classic(looks::get(shown), shown);
     return Pieces { mineral: t.mineral, light_piece: t.light_piece, dark_piece: t.dark_piece, piece_fig: t.piece_fig,
                     light_scatter: t.light_scatter, dark_scatter: t.dark_scatter, piece_wear: t.piece_wear };
 }
@@ -110,7 +110,7 @@ fn profiles(shown: i64) -> i64 {
 fn profile(shown: i64, k: i64) -> Pieces {
     var p = of_look(shown);
     if (shown == looks::SPRING_STONE || shown == looks::SPRING_ELVEN) && k == 1 {
-        p.mineral = 0.0;
+        p.mineral = looks::MINERAL_NONE;
         p.light_piece = float4 { 0.86, 0.81, 0.72, 0.42 };
         p.dark_piece = float4 { 0.37, 0.41, 0.26, 0.28 };
         p.light_scatter = looks::IVORY_SCATTER;

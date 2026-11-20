@@ -62,7 +62,7 @@ struct Table {
 
 // Mahogany made as the board's frame is (looks::autumn's frame, the TUNED finish): its
 // growth rings, pores and fibre showing, under a glossy varnish, blotched and worn
-// lighter at the rim (the user's take, 2026-11-19).
+// lighter at the rim (2026-11-19).
 fn board_wood() -> Table {
     return Table {
         wood:    float4 { 0.42, 0.19, 0.11, 0.098 },
@@ -86,7 +86,7 @@ fn board_wood() -> Table {
 
 // Flame mahogany, two leaves of one log, little alike: deep red-brown, its figure swept
 // into dark flames and golden swirls, the rings and pores faint under it, glossy, worn
-// at the rim, a few dents and scratches (the user's tuning, 2026-11-19).
+// at the rim, a few dents and scratches (tuned 2026-11-19).
 fn flame() -> Table {
     return Table {
         wood:    float4 { 0.4, 0.17, 0.09, 0.1 },

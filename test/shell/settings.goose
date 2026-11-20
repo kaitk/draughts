@@ -34,7 +34,7 @@ import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
 // The tiles in the order the screen declares them with the board flat: back and the
-// language button in the title row, then the list's. The 3D board's own (NATURAL, SMOOTH,
+// language button in the title row, then the list's. The 3D board's own (MATCHING, CLASSIC,
 // TABLE) have no place there: at() finds each where the screen shows it.
 let BACK = 0;
 let LANGUAGE = 1;
@@ -61,8 +61,8 @@ let ENGLISH = 28;           // the language list's rows, after the screen's tile
 let EESTI = 29;
 let COPY = 28;              // About's card's Copy and close, after the screen's tiles
 let CLOSE = 29;
-let NATURAL = 100;          // the 3D board's: its Pieces row,
-let SMOOTH = 101;
+let MATCHING = 100;          // the 3D board's: its Pieces row,
+let CLASSIC = 101;
 let TABLE = 102;            // and Background's third tile
 let OWN_3D = 3;             // the tiles the 3D board shows that the flat one doesn't
 
@@ -70,8 +70,8 @@ let OWN_3D = 3;             // the tiles the 3D board shows that the flat one do
 // third tile, the table, comes before the kings.
 fn at(sh: shell::Shell&, n: i64) -> i64 {
     guard settings::raised(sh.prefs) else { return n; }
-    if n == NATURAL { return PHOTO; }
-    if n == SMOOTH { return PHOTO + 1; }
+    if n == MATCHING { return PHOTO; }
+    if n == CLASSIC { return PHOTO + 1; }
     if n == TABLE { return PLAIN + 3; }
     if n == PHOTO || n == PLAIN { return n + 2; }
     if n >= AUTO { return n + OWN_3D; }

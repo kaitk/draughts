@@ -53,8 +53,8 @@ material.stone = Kivi
 material.carved = Nikerdatud
 material.auto = teema järgi
 settings.pieces = Nupud
-pieces.natural = Laua moodi
-pieces.smooth = Tavalised
+pieces.matching = Laua moodi
+pieces.classic = Tavalised
 settings.for_3d = 3D-laud
 settings.for_flat = Lame laud
 
