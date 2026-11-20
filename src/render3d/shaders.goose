@@ -61,7 +61,7 @@ let FRAME = """
         // The single leaves: x their scale against the clumps, y how few gaps (a
         // threshold), z how soft each fleck's edge, w how much their shadows show in the open.
         vec4 twigs;
-        vec4 wind;           // the leaves' sway: x how far, y how fast, z the seconds
+        vec4 wind;           // x how strong, y how fast, z the seconds, w the leaves' ruffle in a gust
         // The tree outside, its shadow baked into tree_map (render3d::put_tree): x the
         // map's side in world units (0 no tree: the leaves' noise), zw its middle; its
         // layers' sway (the limbs, the near, middle and far leaves); x the blur's texels
@@ -268,30 +268,6 @@ let LIGHT_FN = """
         return max(r, vec3(0.0));
     }
 
-    // How much of the key the tree outside lets through to p (trees.goose): p carried
-    // along the key onto the map, which holds the tree as the sun sees it, blurred by the
-    // sun's disc at each layer's distance, so its gaps are round flecks. Farther from the
-    // window than the board's middle, its mips blur it more. Each layer sways on its own.
-    // x the limbs' light, y the leaves', the leaves blurred tree_blur.z mips more (with
-    // the noise's leaves inside the crown, its shape alone).
-    vec2 tree_light(vec3 p, vec3 l, vec2 nw, vec2 along, float toward) {
-        float back = dot(p.xz, nw) / toward;
-        vec2 m = vec2(dot(p.xz, along) - dot(l.xz, along) * back, p.y - l.y * back);
-        vec2 uv = (m - tree.zw) / tree.x + 0.5;
-        float more = max(back * back - 2.0 * tree_blur.y * back, 0.0);
-        float lod = 0.5 * log2(max(more * tree_blur.x * tree_blur.x, 1.0));
-        float tw = wind.z * wind.y;
-        vec2 gust = vec2(sin(tw * 0.9 + m.y * 0.05) + 0.5 * sin(tw * 2.3 + m.x * 0.07),
-                         0.6 * cos(tw * 0.7 + m.x * 0.05) + 0.3 * sin(tw * 1.9 + m.y * 0.09)) / tree.x;
-        vec2 flutter = vec2(sin(tw * 3.1 + m.y * 0.8), cos(tw * 2.7 + m.x * 0.8)) * (0.3 / tree.x);
-        float wood = textureLod(tree_map, uv + gust * tree_sway.x, lod).a;
-        float leafy = lod + tree_blur.z;
-        float near = textureLod(tree_map, uv + (gust + flutter) * tree_sway.y, leafy).r;
-        float middle = textureLod(tree_map, uv + (gust - flutter) * tree_sway.z, leafy).g;
-        float far = textureLod(tree_map, uv + (gust + flutter.yx) * tree_sway.w, leafy).b;
-        return vec2(wood, near * middle * far);
-    }
-
     float window_hash(vec2 p) {
         vec3 p3 = fract(vec3(p.xyx) * 0.1031);
         p3 += dot(p3, p3.yzx + 33.33);
@@ -305,16 +281,70 @@ let LIGHT_FN = """
                    mix(window_hash(i + vec2(0.0, 1.0)), window_hash(i + vec2(1.0, 1.0)), u.x), u.y);
     }
 
+    // The wind at m, a point of the tree's plane (rooms::Room.wind, after Crysis's
+    // vegetation and SpeedTree's wind): x a slow sway, -1..1, the whole tree leaning a
+    // little as one; y a gust, 0 mostly, toward 1 now and then, its front crossing the
+    // crown along the wall.
+    vec2 wind_at(vec2 m) {
+        float t = wind.z * wind.y;
+        float slow = 0.7 * sin(t * 0.55) + 0.3 * sin(t * 1.37 + 1.1);
+        float front = t - m.x * 0.015;
+        float gust = smoothstep(0.55, 1.0, (0.5 + 0.5 * sin(front * 0.21)) * (0.6 + 0.4 * sin(front * 0.53 + 2.0)));
+        return vec2(slow, gust);
+    }
+
+    // Leaves catching and losing the light in a gust: small patches each on their own
+    // phase, fast and tiny, the offset in the same units as m.
+    vec2 ruffle_at(vec2 m, float gust, float size) {
+        float t = wind.z * wind.y;
+        float phase = window_noise(m / size) * 6.2832;
+        return vec2(sin(t * 7.3 + phase), cos(t * 9.1 + phase * 1.7)) * (gust * wind.w * size);
+    }
+
+    // How much of the key the tree outside lets through to p (trees.goose): p carried
+    // along the key onto the map, which holds the tree as the sun sees it, blurred by the
+    // sun's disc at each layer's distance, so its gaps are round flecks. Farther from the
+    // window than the board's middle, its mips blur it more. Each layer sways on its own.
+    // x the limbs' light, y the leaves', the leaves blurred tree_blur.z mips more (with
+    // the noise's leaves inside the crown, its shape alone).
+    vec2 tree_light(vec3 p, vec3 l, vec2 nw, vec2 along, float toward) {
+        float back = dot(p.xz, nw) / toward;
+        vec2 m = vec2(dot(p.xz, along) - dot(l.xz, along) * back, p.y - l.y * back);
+        vec2 uv = (m - tree.zw) / tree.x + 0.5;
+        float more = max(back * back - 2.0 * tree_blur.y * back, 0.0);
+        float lod = 0.5 * log2(max(more * tree_blur.x * tree_blur.x, 1.0));
+        // The limbs lean as one, barely; each leaf layer shifts as a whole, a little more
+        // and on its own phase the farther out, more in a gust; in a gust their patches
+        // ruffle. Nothing bends a limb.
+        vec2 wa = wind_at(m);
+        vec2 dir = vec2(1.0, 0.15);
+        float t = wind.z * wind.y;
+        vec2 lean = dir * (wa.x + 1.5 * wa.y) / tree.x;
+        vec2 near_m = (dir * (wa.x + 2.0 * wa.y) + vec2(0.0, 0.4) * sin(t * 1.9 + 0.7)) / tree.x;
+        vec2 mid_m = (dir * (0.8 * wa.x + 2.0 * wa.y) + vec2(0.0, 0.4) * sin(t * 1.6 + 2.3)) / tree.x;
+        vec2 far_m = (dir * (0.6 * wa.x + 2.0 * wa.y) + vec2(0.0, 0.4) * sin(t * 1.3 + 4.1)) / tree.x;
+        vec2 flick = ruffle_at(m, wa.y, 0.6) / tree.x;
+        float wood = textureLod(tree_map, uv + lean * tree_sway.x, lod).a;
+        float leafy = lod + tree_blur.z;
+        float near = textureLod(tree_map, uv + near_m * tree_sway.y + flick, leafy).r;
+        float middle = textureLod(tree_map, uv + mid_m * tree_sway.z + flick.yx, leafy).g;
+        float far = textureLod(tree_map, uv + far_m * tree_sway.w - flick, leafy).b;
+        return vec2(wood, near * middle * far);
+    }
+
     // The noise's leaves at p, t along the key from the window's wall: clumps rounder
     // and softer the farther they are, and single leaves within them.
     float noise_leaves(vec3 p, vec3 l, vec2 along, float toward, float t) {
         float tl = t + leaves.z / toward;
         vec3 ql = p + l * tl;
         vec2 lw = vec2(dot(ql.xz, along), ql.y) * leaves.y;
-        // The wind sways the branches: slow gusts, each clump a little out of step.
+        // The wind: the canopy shifts with the sway, and in a gust warps a little, each
+        // clump out of step.
+        vec2 wa = wind_at(vec2(dot(ql.xz, along), ql.y));
         float tw = wind.z * wind.y;
-        lw += wind.x * vec2(sin(tw * 0.9 + lw.y * 0.7) + 0.5 * sin(tw * 2.3 + lw.x * 1.3),
-                            0.6 * cos(tw * 0.7 + lw.x * 0.5) + 0.3 * sin(tw * 1.9 + lw.y * 1.1));
+        float warp = 0.3 + 0.7 * wa.y;
+        lw += wind.x * (vec2(1.0, 0.15) * (wa.x + 1.5 * wa.y)
+                        + warp * vec2(sin(tw * 0.9 + lw.y * 0.7), 0.6 * cos(tw * 0.7 + lw.x * 0.5)));
         float n = 0.55 * window_noise(lw) + 0.3 * window_noise(lw * 2.03 + 7.1)
                 + 0.15 * window_noise(lw * 4.1 + 3.7);
         float ls = 0.02 + room.z * tl * leaves.y * leaves.w;
@@ -324,7 +354,7 @@ let LIGHT_FN = """
         // flutter faster than the branches sway.
         if (twigs.x > 0.0) {
             vec2 lf = lw * twigs.x;
-            lf += wind.x * twigs.x * 0.25 * vec2(sin(tw * 3.1 + lf.y * 0.9), cos(tw * 2.7 + lf.x * 0.8));
+            lf += ruffle_at(lf, wa.y, 1.0);
             float m = 0.65 * window_noise(lf) + 0.35 * window_noise(lf * 2.13 + 5.3);
             float gaps = smoothstep(twigs.y - twigs.z, twigs.y + twigs.z, m);
             open_sky = mix(gaps, mix(1.0, gaps, twigs.w), open_sky);

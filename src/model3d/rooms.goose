@@ -58,9 +58,10 @@ struct Room {
     // gaps between them (0.4 many, 0.7 few), z how soft a fleck's edge, w how much their
     // own shadows show where the sky is open.
     twigs: float4 = float4 { 4.0, 0.55, 0.06, 0.35 },
-    // The wind in the trees: x how far the leaves' shadows sway (in clumps; a tree's limbs
-    // sway x world units, its leaves z times more), y how fast.
-    wind: float4 = float4 { 0.12, 1.0, 3.0, 0.0 },
+    // The wind in the trees, mild: x how strong (the leaves' sway in world units; the
+    // limbs lean a tenth of it), y how fast, z how much more the leaves sway than the
+    // noise's canopy, w how much the leaves ruffle in a gust.
+    wind: float4 = float4 { 0.06, 1.0, 3.0, 0.5 },
     // The tree outside, its shadow baked (task 105, trees.goose) in place of the leaves'
     // noise above: x 1 the tree, 0 the noise, 2 both (its limbs, and the noise's leaves
     // where its crown has leaves, crown_blur); y its seed; z its trunk's height; w how many

@@ -668,7 +668,7 @@ fn put_room(g: Gpu&) {
     f.opening = r.opening;
     f.leaves = r.leaves;
     f.twigs = r.twigs;
-    f.wind = float4 { r.wind.x, r.wind.y, wind_time, 0.0 };
+    f.wind = float4 { r.wind.x, r.wind.y, wind_time, r.wind.w };
     put_tree(g, on && r.tree.x > 0.5);
     g.shadow_dirty = true;
 }
@@ -686,10 +686,10 @@ fn put_tree(g: Gpu&, on: bool) {
     for i in 10 { if !same4(key[i], g.tree_for[i]) { same = false; } }
     if !same { g.tree_stale = true; }
     f.tree = float4 { v.span, 0.0, v.middle.x, v.middle.y };
-    // The limbs sway the wind's x, the twigs and leaves more, the farther the more.
+    // The limbs lean a tenth of the leaves' sway, the leaf layers more the farther out.
     let w = r.wind.x;
     let more = r.wind.z;
-    f.tree_sway = float4 { w, w * more, w * more * 1.25, w * more * 1.5 };
+    f.tree_sway = float4 { w * 0.1, w * more, w * more * 1.15, w * more * 1.3 };
     let crown = if r.tree.x > 1.5 { max(r.crown_blur, 0.01) } else { 0.0 };
     f.tree_blur = float4 { v.blur * trees::SIDE / v.span, v.distance, crown, r.crown_fill };
 }

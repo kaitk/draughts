@@ -358,8 +358,9 @@ fn main() {
             slider(c, "Leaf gaps few", room.twigs.y, 0.2, 0.9);
             slider(c, "Fleck blur", room.twigs.z, 0.005, 0.3);
             slider(c, "In the open", room.twigs.w, 0.0, 1.0);
-            slider(c, "Wind", room.wind.x, 0.0, 0.6);
+            slider(c, "Wind", room.wind.x, 0.0, 0.3);
             slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
+            slider(c, "Ruffle", room.wind.w, 0.0, 2.0);
             heading(c, "The tree (T: noise, tree, both)");
             var shade = clamp(room.tree.x as i64, 0, 2);
             choice(c, "Leaves by", shade, ["noise", "tree", "both"]);

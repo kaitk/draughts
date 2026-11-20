@@ -149,6 +149,18 @@ short and straight.
   replaces it; the window's light, the sway, and the dapple stay. The generator could
   also write its tree out as a mesh to start a modelled one, or the billboards, from.
 
+- The wind made natural (2026-11-20, the user: the warping bent heavy branches; mild
+  wind, leaves ruffling now and then). After Crysis's vegetation (Sousa, GPU Gems 3,
+  ch. 16: a main bending of the whole tree, slow and rigid, and a detail bending of the
+  leaves, fast, small, each on its own phase), SpeedTree's gusts, and Habel and others'
+  physically guided trees (2009: thick limbs slow and barely moving, thin twigs faster
+  and more). LIGHT_FN's `wind_at` gives a slow sway and a gust whose front crosses the
+  crown; the limbs lean a tenth of the leaves' sway as one piece, never warped; each leaf
+  layer shifts whole, more and on its own phase the farther out; in a gust `ruffle_at`
+  flickers small patches of leaves fast and tiny. The noise's canopy keeps a soft warp,
+  scaled by the gust. `Room.wind`: strength, speed, the leaves against the limbs, ruffle;
+  mild by default (0.06).
+
 ## Acceptance criteria
 
 - [ ] A generated tree whose shadow reads as branches and leaves, not noise, on the board
