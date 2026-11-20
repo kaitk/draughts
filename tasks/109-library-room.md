@@ -126,6 +126,15 @@ be thought through with the room, not taken from one picture:
   cut-out (`library-oak-01`); a whole tree line comes redrawn and cartoony. A panel to the
   side matches in kind, not in place, and its sky differs: panels join with a cut at a
   trunk, the sky drawn by us behind tree lines cut from the panels.
+- The layers put together (`build/notes/chatgpt-109/round-6/mock/mock.py`, local): the
+  three far panels on a cylinder, their skies cut by a smooth sky fitted to them, joined
+  at trunks, over a sky of ours, the oak at 40 m. The panels' seams hide in the crowns;
+  `library-far-01`'s haze turns half transparent and still reads as haze. Through the
+  plan's windows, from the games table only the middle window shows the park: the side
+  windows' straight reveals, 0.8 m deep, hide it, and from the middle of the room they
+  show slivers of a few degrees. So the middle window's view, some 30° across, carries
+  the game; the band's sides serve the home screen and standing views. The oak dead
+  ahead fills the middle window, and lit from the front it stands out of the backlit band.
 
 ## Acceptance criteria
 
