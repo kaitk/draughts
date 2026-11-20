@@ -690,7 +690,8 @@ fn put_tree(g: Gpu&, on: bool) {
     let w = r.wind.x;
     let more = r.wind.z;
     f.tree_sway = float4 { w, w * more, w * more * 1.25, w * more * 1.5 };
-    f.tree_blur = float4 { v.blur * trees::SIDE / v.span, v.distance, 0.0, 0.0 };
+    let crown = if r.tree.x > 1.5 { max(r.crown_blur, 0.01) } else { 0.0 };
+    f.tree_blur = float4 { v.blur * trees::SIDE / v.span, v.distance, crown, r.crown_fill };
 }
 
 // The tree's map to bind, or another texture where none is baked: the shaders sample it

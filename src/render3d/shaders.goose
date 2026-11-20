@@ -272,7 +272,9 @@ let LIGHT_FN = """
     // along the key onto the map, which holds the tree as the sun sees it, blurred by the
     // sun's disc at each layer's distance, so its gaps are round flecks. Farther from the
     // window than the board's middle, its mips blur it more. Each layer sways on its own.
-    float tree_light(vec3 p, vec3 l, vec2 nw, vec2 along, float toward) {
+    // x the limbs' light, y the leaves', the leaves blurred tree_blur.z mips more (with
+    // the noise's leaves inside the crown, its shape alone).
+    vec2 tree_light(vec3 p, vec3 l, vec2 nw, vec2 along, float toward) {
         float back = dot(p.xz, nw) / toward;
         vec2 m = vec2(dot(p.xz, along) - dot(l.xz, along) * back, p.y - l.y * back);
         vec2 uv = (m - tree.zw) / tree.x + 0.5;
@@ -283,10 +285,11 @@ let LIGHT_FN = """
                          0.6 * cos(tw * 0.7 + m.x * 0.05) + 0.3 * sin(tw * 1.9 + m.y * 0.09)) / tree.x;
         vec2 flutter = vec2(sin(tw * 3.1 + m.y * 0.8), cos(tw * 2.7 + m.x * 0.8)) * (0.3 / tree.x);
         float wood = textureLod(tree_map, uv + gust * tree_sway.x, lod).a;
-        float near = textureLod(tree_map, uv + (gust + flutter) * tree_sway.y, lod).r;
-        float middle = textureLod(tree_map, uv + (gust - flutter) * tree_sway.z, lod).g;
-        float far = textureLod(tree_map, uv + (gust + flutter.yx) * tree_sway.w, lod).b;
-        return wood * near * middle * far;
+        float leafy = lod + tree_blur.z;
+        float near = textureLod(tree_map, uv + (gust + flutter) * tree_sway.y, leafy).r;
+        float middle = textureLod(tree_map, uv + (gust - flutter) * tree_sway.z, leafy).g;
+        float far = textureLod(tree_map, uv + (gust + flutter.yx) * tree_sway.w, leafy).b;
+        return vec2(wood, near * middle * far);
     }
 
     float window_hash(vec2 p) {
@@ -300,6 +303,33 @@ let LIGHT_FN = """
         vec2 u = f * f * (3.0 - 2.0 * f);
         return mix(mix(window_hash(i), window_hash(i + vec2(1.0, 0.0)), u.x),
                    mix(window_hash(i + vec2(0.0, 1.0)), window_hash(i + vec2(1.0, 1.0)), u.x), u.y);
+    }
+
+    // The noise's leaves at p, t along the key from the window's wall: clumps rounder
+    // and softer the farther they are, and single leaves within them.
+    float noise_leaves(vec3 p, vec3 l, vec2 along, float toward, float t) {
+        float tl = t + leaves.z / toward;
+        vec3 ql = p + l * tl;
+        vec2 lw = vec2(dot(ql.xz, along), ql.y) * leaves.y;
+        // The wind sways the branches: slow gusts, each clump a little out of step.
+        float tw = wind.z * wind.y;
+        lw += wind.x * vec2(sin(tw * 0.9 + lw.y * 0.7) + 0.5 * sin(tw * 2.3 + lw.x * 1.3),
+                            0.6 * cos(tw * 0.7 + lw.x * 0.5) + 0.3 * sin(tw * 1.9 + lw.y * 1.1));
+        float n = 0.55 * window_noise(lw) + 0.3 * window_noise(lw * 2.03 + 7.1)
+                + 0.15 * window_noise(lw * 4.1 + 3.7);
+        float ls = 0.02 + room.z * tl * leaves.y * leaves.w;
+        float open_sky = smoothstep(leaves.x - ls, leaves.x + ls, n);
+        // The single leaves within: under a clump only their gaps let the sun through,
+        // small round flecks; in the open their own small shadows, fainter. They
+        // flutter faster than the branches sway.
+        if (twigs.x > 0.0) {
+            vec2 lf = lw * twigs.x;
+            lf += wind.x * twigs.x * 0.25 * vec2(sin(tw * 3.1 + lf.y * 0.9), cos(tw * 2.7 + lf.x * 0.8));
+            float m = 0.65 * window_noise(lf) + 0.35 * window_noise(lf * 2.13 + 5.3);
+            float gaps = smoothstep(twigs.y - twigs.z, twigs.y + twigs.z, m);
+            open_sky = mix(gaps, mix(1.0, gaps, twigs.w), open_sky);
+        }
+        return open_sky;
     }
 
     // How much of the key reaches p through the window (rooms::Room's pattern): p traced
@@ -334,30 +364,14 @@ let LIGHT_FN = """
         // The leaves outside: the tree's baked shadow, or clumps of noise, rounder and
         // softer the farther they are.
         if (tree.x > 0.0) {
-            lit *= tree_light(p, l, nw, along, toward);
+            vec2 tr = tree_light(p, l, nw, along, toward);
+            // With the noise's leaves inside the tree's crown: its limbs, and the dapple
+            // where it has leaves; a bare tree's crown has none.
+            float crown = clamp((1.0 - tr.y) * tree_blur.w, 0.0, 1.0);
+            float leaves_lit = tree_blur.z > 0.0 ? mix(1.0, noise_leaves(p, l, along, toward, t), crown) : tr.y;
+            lit *= tr.x * leaves_lit;
         } else if (leaves.x > 0.0) {
-            float tl = t + leaves.z / toward;
-            vec3 ql = p + l * tl;
-            vec2 lw = vec2(dot(ql.xz, along), ql.y) * leaves.y;
-            // The wind sways the branches: slow gusts, each clump a little out of step.
-            float tw = wind.z * wind.y;
-            lw += wind.x * vec2(sin(tw * 0.9 + lw.y * 0.7) + 0.5 * sin(tw * 2.3 + lw.x * 1.3),
-                                0.6 * cos(tw * 0.7 + lw.x * 0.5) + 0.3 * sin(tw * 1.9 + lw.y * 1.1));
-            float n = 0.55 * window_noise(lw) + 0.3 * window_noise(lw * 2.03 + 7.1)
-                    + 0.15 * window_noise(lw * 4.1 + 3.7);
-            float ls = 0.02 + room.z * tl * leaves.y * leaves.w;
-            float open_sky = smoothstep(leaves.x - ls, leaves.x + ls, n);
-            // The single leaves within: under a clump only their gaps let the sun through,
-            // small round flecks; in the open their own small shadows, fainter. They
-            // flutter faster than the branches sway.
-            if (twigs.x > 0.0) {
-                vec2 lf = lw * twigs.x;
-                lf += wind.x * twigs.x * 0.25 * vec2(sin(tw * 3.1 + lf.y * 0.9), cos(tw * 2.7 + lf.x * 0.8));
-                float m = 0.65 * window_noise(lf) + 0.35 * window_noise(lf * 2.13 + 5.3);
-                float gaps = smoothstep(twigs.y - twigs.z, twigs.y + twigs.z, m);
-                open_sky = mix(gaps, mix(1.0, gaps, twigs.w), open_sky);
-            }
-            lit *= open_sky;
+            lit *= noise_leaves(p, l, along, toward, t);
         }
         return mix(1.0 - room.y, 1.0, lit);
     }

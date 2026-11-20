@@ -9,7 +9,7 @@
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
-//       [--table board|flame] [--window on|off] [--leaves tree|noise] [--seed N] [--wind-time S]
+//       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)] [--azimuth DEG] [--sun-height DEG]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 
@@ -208,6 +208,10 @@ fn report(r: rooms::Room, take: i64) {
     num(out, r.exposure);
     out.append(",\n    tree_blur:  ");
     num(out, r.tree_blur);
+    out.append(",\n    crown_blur: ");
+    num(out, r.crown_blur);
+    out.append(",\n    crown_fill: ");
+    num(out, r.crown_fill);
     out.append(",\n");
     room_line(out, "pattern:   ", r.pattern);
     room_line(out, "window:    ", r.window);
@@ -266,7 +270,7 @@ fn main() {
     room.key.x = number(argv, "--azimuth", room.key.x);
     room.key.y = number(argv, "--sun-height", room.key.y);
     let shade_at = flag_value(argv, "--leaves");
-    if shade_at > 0 { room.tree.x = if argv[shade_at] == "noise" { 0.0 } else { 1.0 }; }
+    if shade_at > 0 { room.tree.x = if argv[shade_at] == "noise" { 0.0 } else if argv[shade_at] == "both" { 2.0 } else { 1.0 }; }
     room.tree.y = number(argv, "--seed", room.tree.y);
     room.tree = four(argv, "--tree", room.tree);
     room.crown = four(argv, "--crown", room.crown);
@@ -303,7 +307,7 @@ fn main() {
         ui::input_from_gfx(c);
         var print_it = gfx::key_pressed("P");
         if gfx::key_pressed("W") { pattern = 1 - pattern; }
-        if gfx::key_pressed("T") { room.tree.x = 1.0 - room.tree.x; }
+        if gfx::key_pressed("T") { room.tree.x = (room.tree.x as i64 + 1) % 3; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
         if ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
@@ -356,10 +360,12 @@ fn main() {
             slider(c, "In the open", room.twigs.w, 0.0, 1.0);
             slider(c, "Wind", room.wind.x, 0.0, 0.6);
             slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
-            heading(c, "The tree (T: tree or noise)");
-            var shade = if room.tree.x > 0.5 { 1 } else { 0 };
-            choice(c, "Leaves by", shade, ["noise", "tree"]);
+            heading(c, "The tree (T: noise, tree, both)");
+            var shade = clamp(room.tree.x as i64, 0, 2);
+            choice(c, "Leaves by", shade, ["noise", "tree", "both"]);
             room.tree.x = shade;
+            slider(c, "Crown blur", room.crown_blur, 0.0, 6.0);
+            slider(c, "Crown fill", room.crown_fill, 0.0, 10.0);
             var seed = room.tree.y as i64;
             count(c, "Seed", seed, 0, 99);
             room.tree.y = seed;

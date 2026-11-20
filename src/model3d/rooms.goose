@@ -28,6 +28,12 @@ struct Room {
     // How soft the tree's shadows are against the sun's disc alone (1 as the sun makes
     // them; less is sharper than a real sun allows, for flecks as fine as the concept's).
     tree_blur: f32 = 0.3,
+    // With both (tree.x 2): how many mips softer the tree's leaves are taken, so they give
+    // the crown's shape and the noise's leaves its dapple.
+    crown_blur: f32 = 3.0,
+    // With both: how much of the crown's shade turns to the noise's dapple (its leaves'
+    // shade times this, up to all).
+    crown_fill: f32 = 3.0,
     // The window the key comes through, its shadow on the key (shaders::LIGHT_FN's
     // window_light; world units, a square is 1, about 3.3 cm): x how much of the key the
     // shade keeps out (0 no pattern), y how fast the penumbra widens with the distance
@@ -54,7 +60,8 @@ struct Room {
     // sway x world units, its leaves z times more), y how fast.
     wind: float4 = float4 { 0.12, 1.0, 3.0, 0.0 },
     // The tree outside, its shadow baked (task 105, trees.goose) in place of the leaves'
-    // noise above: x 1 the tree, 0 the noise; y its seed; z its trunk's height; w how many
+    // noise above: x 1 the tree, 0 the noise, 2 both (its limbs, and the noise's leaves
+    // where its crown has leaves, crown_blur); y its seed; z its trunk's height; w how many
     // of its leaves it has (0 bare, 1 full).
     tree: float4 = float4 { 1.0, 4.0, 70.0, 1.8 },
     // x, y the trunk's foot along the wall and up from where the board's middle sees the

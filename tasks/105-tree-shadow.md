@@ -121,6 +121,13 @@ trunk's place; the table's dark wood shows the pattern weakly; spring's pattern 
 leaves are ellipses (maple lobes lost in the blur anyway); the twigs of the bare oak are
 short and straight.
 
+- Both together (2026-11-20, the user agreeing): `Room.tree.x` 2 takes the tree's limbs
+  and its leaves' shade, blurred `crown_blur` mips more, as the crown's shape, and fills it
+  with the noise's dapple as far as `crown_fill` says. The limbs' long shadows and the
+  concept's even dapple together. A bare tree's crown has no leaves, so winter shows only
+  its branches (the user: in winter thinner bare branches in place of the leaves).
+  T in the tuner cycles noise, tree, both; `--leaves both`.
+
 ## Acceptance criteria
 
 - [ ] A generated tree whose shadow reads as branches and leaves, not noise, on the board
