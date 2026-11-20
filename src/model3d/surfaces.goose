@@ -6,7 +6,10 @@
 // stretch of wood shows twice side by side (shaders::ROOM_FRAG lays the herringbone).
 //
 // The room's frame: u along the window's wall, v into the room away from it, both from
-// the board's middle, as window_light places the window (rooms::Room.window).
+// the board's middle, as window_light places the window (rooms::Room.window). The room is
+// built in it once, (u, height, v) in world units, and shaders::ROOM_VERT turns it into
+// the world by the frame (frame_of) as the key's direction moves; the table's foot alone
+// (MAT_TURNED) is built in the world, as the table stands still.
 namespace surfaces;
 import std;
 import vec;
@@ -19,11 +22,17 @@ let FLOOR_Y: f32 = -23.56;
 
 // What a fragment of the room is (mesh::Vertex.mat's whole part; its fraction is the
 // piece's own random): the floor, a piece of oak (its uv the place in the wall's field),
-// the wallpaper, the table's turned foot.
-let MAT_FLOOR:  f32 = 4.0;
-let MAT_OAK:    f32 = 5.0;
-let MAT_PAPER:  f32 = 6.0;
-let MAT_TURNED: f32 = 7.0;
+// the wallpaper, the table's turned foot; the shell's (room_shell) lime plaster (its
+// fraction 0.5 on the cornice, whiter and smoother), white painted wood, glass and lace,
+// the last two drawn blended after the rest.
+let MAT_FLOOR:   f32 = 4.0;
+let MAT_OAK:     f32 = 5.0;
+let MAT_PAPER:   f32 = 6.0;
+let MAT_TURNED:  f32 = 7.0;
+let MAT_PLASTER: f32 = 8.0;
+let MAT_PAINT:   f32 = 9.0;
+let MAT_GLASS:   f32 = 10.0;
+let MAT_LACE:    f32 = 11.0;
 
 // The fields' sides in texels (a phone's half), and their sizes in world units: the
 // floor's 20 strips a plank wide, 1.3 m long, a texel 0.7 mm; the wall's ten boards
@@ -95,6 +104,12 @@ struct Look {
     // round the table (world units), w the path along the room
     paper: float4,     // the wallpaper's ground (sRGB) and roughness, where its mask is 0
     gold:  float4,     // its gold print (sRGB) and roughness, where the mask is 1
+    // The shell's (room_shell): the limewash at its plaster tone's 0 and 1 (sRGB, and
+    // roughness), the white paint, the lace's thread.
+    plaster_shade: float4,
+    plaster_light: float4,
+    paint:         float4,
+    lace_thread:   float4,
 }
 
 // The wallpaper: a dark grey paper, matte, and a muted gold print with a little sheen,
@@ -106,7 +121,18 @@ let LOOK = Look {
     worn:   float4 { 0.7, 0.5, 34.0, 0.5 },
     paper:  float4 { 0.239, 0.231, 0.196, 0.85 },
     gold:   float4 { 0.345, 0.314, 0.231, 0.6 },
+    // tools/materials/plaster.py's guesses, #d5cab5 and #efebe1; the windows' old white,
+    // #e6e0d3, an eggshell oil paint; lace.py's thread, #ddd3bf, cotton.
+    plaster_shade: float4 { 0.835, 0.792, 0.71, 0.92 },
+    plaster_light: float4 { 0.937, 0.922, 0.882, 0.86 },
+    paint:         float4 { 0.902, 0.878, 0.827, 0.45 },
+    lace_thread:   float4 { 0.867, 0.827, 0.749, 0.9 },
 };
+
+// The plaster's tone map (design/materials/plaster_tone.png) covers 4 m of wall a tile,
+// the lace's 0.56 m.
+let PLASTER_TILE: f32 = 4.0 * METRE;
+let LACE_TILE:    f32 = 0.56 * METRE;
 
 // The wallpaper's mask (design/materials/wallpaper_mask.png): its side in texels, and the
 // square of wall one tile covers, 1.4 m, style-01's flowers (a real paper of the period
@@ -178,26 +204,25 @@ let CAP_Z:     f32 = 1.7;
 let STILE_W:   f32 = 3.0;          // 9 cm
 let BAY:       f32 = 18.0;         // a panel and a stile, about 55 cm
 
-// The geometry's corners: the wall's local s, y, z. A wall's plane at v = away, facing
-// back toward the window (1, the hall's wall) or into the room (-1, the window's wall),
-// and its panelling's top, the cap's (the sill's on the window's wall), dy over CAP_TOP,
-// its cap `deep` times as deep.
+// The geometry's corners: the wall's local s, y, z, s along it from `o` (the room's u and
+// v) in the direction `d`, z out of it into the room along `n`; its panelling's top, the
+// cap's (the sill's on the window's wall), dy over CAP_TOP, its cap `deep` times as deep.
 struct Builder {
-    f:      Frame,
-    away:   f32,
-    facing: f32,
-    dy:     f32,
-    deep:   f32,
+    o:    float2,
+    d:    float2,
+    n:    float2,
+    dy:   f32,
+    deep: f32,
 }
 
 fn world(b: Builder, s: f32, y: f32, z: f32) -> float3 {
-    let xz = b.f.along * s + b.f.into * (b.away - b.facing * z);
-    return float3 { xz.x, FLOOR_Y + y, xz.y };
+    let uv = b.o + b.d * s + b.n * z;
+    return float3 { uv.x, FLOOR_Y + y, uv.y };
 }
 
 fn world_normal(b: Builder, n: float3) -> float3 {
-    let xz = b.f.along * n.x - b.f.into * (b.facing * n.z);
-    return normalize(float3 { xz.x, n.y, xz.y });
+    let uv = b.d * n.x + b.n * n.z;
+    return normalize(float3 { uv.x, n.y, uv.y });
 }
 
 // A quad of the wall's corners p (s, y, z), facing out of the wall (or toward `side`
@@ -219,7 +244,7 @@ fn quad(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, p: float3[4],
 // frame (the cap's nose).
 fn strip(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, prof: float3[], s0: f32, s1: f32, seed: i64,
          dy: f32 = 0.0, deep: f32 = 1.0) {
-    var pts: float3[..16] = [];
+    var pts: float3[..32] = [];
     for q in prof { pts.push(float3 { if q.x > FRAME_Z { FRAME_Z + (q.x - FRAME_Z) * deep } else { q.x }, q.y + dy, q.z }); }
     var total: f32 = 0.0;
     for k in 1..pts.len { total += length(float2 { pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y }); }
@@ -261,15 +286,25 @@ let PANEL_Z:  f32[8] = [0.75, 0.71, 0.56, 0.32, 0.22, 0.48, 0.56, 0.56];
 let PANEL_AO: f32[8] = [1.0, 0.97, 0.85, 0.62, 0.55, 0.93, 0.97, 1.0];
 fn panel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32, x1: f32, y0: f32, y1: f32,
          seed: i64, rail_low: Map, rail_high: Map, stile_left: Map, stile_right: Map) {
+    panel_ring(verts, indices, b, x0, x1, y0, y1, seed, rail_low, rail_high, stile_left, stile_right, PANEL_IN, PANEL_Z,
+               PANEL_AO);
+}
+
+// The panel with a ring of its own: eight points in from the opening's edge, out from
+// the wall, and their occlusion, the first four segments the frame's moulding, the last
+// point the field's corner.
+fn panel_ring(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32, x1: f32, y0: f32, y1: f32,
+              seed: i64, rail_low: Map, rail_high: Map, stile_left: Map, stile_right: Map, ring_in: f32[8], ring_z: f32[8],
+              ring_ao: f32[8]) {
     let pm = piece_map(seed, true, x0, y0, x1 - x0, y1 - y0, hash(seed, 7) < 0.5);
     let own = MAT_OAK + 0.9 * hash(seed, 9);
     for k in 7 {
-        let a = PANEL_IN[k];
-        let c = PANEL_IN[k + 1];
-        let za = PANEL_Z[k];
-        let zc = PANEL_Z[k + 1];
-        let oa = PANEL_AO[k];
-        let oc = PANEL_AO[k + 1];
+        let a = ring_in[k];
+        let c = ring_in[k + 1];
+        let za = ring_z[k];
+        let zc = ring_z[k + 1];
+        let oa = ring_ao[k];
+        let oc = ring_ao[k + 1];
         let moulding = k < 4;
         // bottom, right, top, left
         let sides: float3[4][4] = [
@@ -287,8 +322,8 @@ fn panel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32, x1:
             quad(verts, indices, b, q, uv, [oa, oa, oc, oc], own, outs[i]);
         }
     }
-    let f = PANEL_IN[7];
-    let z = PANEL_Z[7];
+    let f = ring_in[7];
+    let z = ring_z[7];
     let p: float3[4] = [float3 { x0 + f, y0 + f, z }, float3 { x1 - f, y0 + f, z }, float3 { x1 - f, y1 - f, z }, float3 { x0 + f, y1 - f, z }];
     var uv: float2[4] = [float2_0; 4];
     for j in 4 { uv[j] = place(pm, p[j].x, p[j].y); }
@@ -359,19 +394,13 @@ fn wainscot(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, first: i6
 // over it to WALL_TOP, the window's wall at v = -window_v panelled up to the sill
 // (`sill`, over the board's top, rooms::Room.window.z) and open above, as if all window,
 // and the table's turned foot.
-fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, f: Frame, away: f32, window_v: f32, sill: f32) {
+fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, away: f32, window_v: f32, sill: f32) {
     // The floor: one quad, its uv the room's u and v (ROOM_FRAG lays the planks).
-    let fb = verts.len as u32;
-    let corners: float2[4] = [float2 { -HALF_LONG, -window_v }, float2 { HALF_LONG, -window_v },
-                              float2 { HALF_LONG, away }, float2 { -HALF_LONG, away }];
-    for c in corners {
-        let xz = f.along * c.x + f.into * c.y;
-        verts.push(mesh::Vertex { float3 { xz.x, FLOOR_Y, xz.y }, float3 { 0.0, 1.0, 0.0 }, c, 1.0, MAT_FLOOR });
-    }
-    indices.append([fb, fb + 1, fb + 2, fb, fb + 2, fb + 3]);
-    let hall = Builder { f, away, 1.0, 0.0, 1.0 };
+    floor_quad(verts, indices, float2 { -HALF_LONG, -window_v }, float2 { HALF_LONG, away });
+    let hall = Builder { float2 { 0.0, away }, float2 { 1.0, 0.0 }, float2 { 0.0, -1.0 }, 0.0, 1.0 };
     wainscot(verts, indices, hall, 100);
-    let window = Builder { f, -window_v, -1.0, clamp(sill - FLOOR_Y, 16.0, CAP_TOP) - CAP_TOP, 2.5 };
+    let window = Builder { float2 { 0.0, -window_v }, float2 { 1.0, 0.0 }, float2 { 0.0, 1.0 },
+                           clamp(sill - FLOOR_Y, 16.0, CAP_TOP) - CAP_TOP, 2.5 };
     wainscot(verts, indices, window, 500);
     // The wallpaper, its uv along the wall and up it (ROOM_FRAG tiles its mask).
     let pp: float3[4] = [float3 { -HALF_LONG, CAP_TOP, 0.0 }, float3 { HALF_LONG, CAP_TOP, 0.0 },
@@ -380,7 +409,21 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, f: Frame, away: f32, win
                           float2 { HALF_LONG, WALL_TOP }, float2 { -HALF_LONG, WALL_TOP }];
     quad(verts, indices, hall, pp, puv, [0.8, 0.8, 1.0, 1.0], MAT_PAPER);
 
-    // The table's turned foot: a column on a round foot, from under its top to the floor.
+    table_foot(verts, indices);
+}
+
+// The floor over the room's u and v from `low` to `high`, one quad, its uv the room's u
+// and v (ROOM_FRAG lays the planks).
+fn floor_quad(verts: mesh::Vertex[>..]&, indices: u32[>..]&, low: float2, high: float2) {
+    let fb = verts.len as u32;
+    let corners: float2[4] = [low, float2 { high.x, low.y }, high, float2 { low.x, high.y }];
+    for c in corners { verts.push(mesh::Vertex { float3 { c.x, FLOOR_Y, c.y }, float3 { 0.0, 1.0, 0.0 }, c, 1.0, MAT_FLOOR }); }
+    indices.append([fb, fb + 1, fb + 2, fb, fb + 2, fb + 3]);
+}
+
+// The table's turned foot: a column on a round foot, from under its top to the floor, in
+// the world (MAT_TURNED: not turned with the room).
+fn table_foot(verts: mesh::Vertex[>..]&, indices: u32[>..]&) {
     var prof: mesh::Profile = [];
     let top = mesh::TABLE_TOP - 1.6;
     let y = FLOOR_Y;

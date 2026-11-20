@@ -61,6 +61,7 @@ struct Frame {
     gust_reach:      float4,
     disc_n:          float4,
     discs:           float4[MAX_DISCS],
+    room_axes:       float4,
 }
 
 // The bytes of the uniform block `name` in GLSL `text` of vec4s and mat4s alone, std140,
@@ -322,8 +323,16 @@ struct Gpu {
     wall_normal:  Texture,
     paper_mask:   Texture,          // the wallpaper's mask, R8 with its mips (surfaces::PAPER_SIDE)
     paper_tile:   f32,              // the wall a tile of it covers (world units), 0 surfaces::PAPER_TILE
-    room_frame:   surfaces::Frame,
-    room_for:     float4[2],        // what the mesh was made for: the key's x and z, the window's wall, the wall's v
+    room_frame:   surfaces::Frame,  // the room's frame this frame (put_room)
+    room_shell:   bool,             // the library's shell (room_shell::LIBRARY), not the panelled wall
+    room_for:     float4,           // what the mesh was made for: the window's wall and sill, the wall's v, the shell
+    mesh_ms:      f64,              // the mesh's making (measuring)
+    plaster_tone: Texture,          // the plaster's tone and the lace's coverage, R8 as the wallpaper's
+    lace_mask:    Texture,
+    glass_vb:     Buffer,           // the shell's glass and lace, drawn blended after the rest
+    glass_ib:     Buffer,
+    glass_count:  i64,
+    room_glass:   Pipeline,
     room_vb:      Buffer,
     room_ib:      Buffer,
     room_count:   i64,
@@ -469,11 +478,12 @@ fn tune_table<O>(o: O&, g: Gpu&, t: tables::Table) {
 }
 
 // Shows the room round the table or not (model3d::surfaces), its wall `away` into the
-// room: its oak is baked and its mesh made before the next draw (room_surfaces).
-fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY) {
+// room, or with `shell` the library's whole shell (room_shell::LIBRARY): its oak is baked
+// and its mesh made before the next draw (room_surfaces).
+fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY, shell: bool = false) {
     g.room_on = on;
-    if away != g.room_away { g.room_for[1] = float4_0; }
     g.room_away = away;
+    g.room_shell = shell;
 }
 
 // Whether the board's pass draws the room.
@@ -522,33 +532,52 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.room_baked = true;
         g.room_ms = (clock() - t0) * 1000.0;
     }
-    let l = g.frame.light_dir;
+    // The mesh, in the room's frame (ROOM_VERT turns it with the key): made again only
+    // for another room, or the panelled wall's room for another window or wall.
     let w = g.room.window;
-    let key: float4[2] = [float4 { l.x, l.z, w.y, w.x }, float4 { w.z, g.room_away, 1.0, 0.0 }];
-    guard g.room_vb.id == 0 || !same4(key[0], g.room_for[0]) || !same4(key[1], g.room_for[1]) else { return; }
-    g.room_frame = surfaces::frame_of(float3 { l.x, l.y, l.z }, g.room.window.y);
-    var verts:   mesh::Vertex[>..] = [];
-    var indices: u32[>..]          = [];
-    surfaces::build(verts, indices, g.room_frame, g.room_away, w.x, w.z);
+    let key = float4 { w.x, w.z, g.room_away, if g.room_shell { 1.0 } else { 0.0 } };
+    guard g.room_vb.id == 0 || !same4(key, g.room_for) else { return; }
+    let t0 = clock();
+    var verts:         mesh::Vertex[>..] = [];
+    var indices:       u32[>..]          = [];
+    var glass:         mesh::Vertex[>..] = [];
+    var glass_indices: u32[>..]          = [];
+    if g.room_shell { room_shell::build(verts, indices, glass, glass_indices, room_shell::LIBRARY); }
+    else { surfaces::build(verts, indices, g.room_away, w.x, w.z); }
     if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }
+    if g.glass_vb.id != 0 { o.gpu_release_mesh(g.glass_vb, g.glass_ib); }
     g.room_vb, g.room_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
     g.room_count = indices.len;
+    g.glass_count = glass_indices.len;
+    if g.glass_count > 0 { g.glass_vb, g.glass_ib = o.gpu_mesh(bytes_of(glass), bytes_of(glass_indices)); }
+    else {
+        g.glass_vb = Buffer { 0 };
+        g.glass_ib = Buffer { 0 };
+    }
     g.room_for = key;
+    g.mesh_ms = (clock() - t0) * 1000.0;
 }
 
-// The wallpaper's mask decoded (src/native/materials.c) and put on the GPU with its mips,
-// each level the mean of four texels of the one above; plain ground where it isn't built
-// in. Once, with the room's bake.
-extern fn draughts_wallpaper_mask(out: u8[:], side: i64) -> bool;
+// The room's masks decoded (src/native/materials.c) and put on the GPU with their mips:
+// the wallpaper's, the plaster's tone, the lace's. Once, with the room's bake.
 fn put_paper<O>(o: O&, g: Gpu&) {
     guard g.paper_mask.id == 0 else { return; }
+    g.paper_mask = put_mask(o, 0);
+    g.plaster_tone = put_mask(o, 1);
+    g.lace_mask = put_mask(o, 2);
+}
+
+// Mask `which` (draughts_material_mask's) on the GPU, R8 with its mips, each level the
+// mean of four texels of the one above; 0 where it isn't built in.
+extern fn draughts_material_mask(which: i64, out: u8[:], side: i64) -> bool;
+fn put_mask<O>(o: O&, which: i64) -> Texture {
     let side = surfaces::PAPER_SIDE;
     var mips = 0;
     while side >> mips > 0 { mips++; }
     var px: u8[>..] = [];
     px.resize(texels_with_mips(side), 0);
-    draughts_wallpaper_mask(px[0..side * side], side);
-    g.paper_mask = o.gpu_sampled(side, side, mips, R8);
+    draughts_material_mask(which, px[0..side * side], side);
+    let mask = o.gpu_sampled(side, side, mips, R8);
     var at = 0;
     for level in mips {
         let s = side >> level;
@@ -562,9 +591,10 @@ fn put_paper<O>(o: O&, g: Gpu&) {
                 }
             }
         }
-        o.gpu_upload(g.paper_mask, level, px[at..at + s * s]);
+        o.gpu_upload(mask, level, px[at..at + s * s]);
         at += s * s;
     }
+    return mask;
 }
 
 // A square texture's texels, `side` a side, with all its mips.
@@ -578,29 +608,45 @@ fn texels_with_mips(side: i64) -> i64 {
     return sum;
 }
 
-// The fields' memory in bytes: two RGBA8 targets each, with their mips; and the
-// wallpaper's mask, one byte a texel.
+// The fields' memory in bytes: two RGBA8 targets each, with their mips; and the three
+// masks, one byte a texel.
 fn room_bytes(g: Gpu&) -> i64 {
     guard g.room_side > 0 else { return 0; }
-    let paper = if g.paper_mask.id != 0 { texels_with_mips(surfaces::PAPER_SIDE) } else { 0 };
+    let paper = if g.paper_mask.id != 0 { 3 * texels_with_mips(surfaces::PAPER_SIDE) } else { 0 };
     return 4 * 4 * texels_with_mips(g.room_side) + paper;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the
 // room's shade (rooms::Room.bounce, linear, times its strength) and own exposure, and the
-// wall a tile of the wallpaper covers.
+// wall a tile of the wallpaper, the plaster's tone and the lace covers.
 struct SurfacesBlock {
-    plank: float4, planks: float4, worn: float4, paper: float4, gold: float4, axes: float4, place: float4, shade: float4,
-    tile:  float4,
+    plank:         float4,
+    planks:        float4,
+    worn:          float4,
+    paper:         float4,
+    gold:          float4,
+    axes:          float4,
+    place:         float4,
+    shade:         float4,
+    tile:          float4,
+    plaster_shade: float4,
+    plaster_light: float4,
+    paint:         float4,
+    lace_thread:   float4,
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     let k = surfaces::LOOK;
     let f = g.room_frame;
     let tile = if g.paper_tile > 0.0 { g.paper_tile } else { surfaces::PAPER_TILE };
+    // The window wall's and the far wall's v: the shell's, or the tuned window's and wall's.
+    let s = room_shell::LIBRARY;
+    let window_v = if g.room_shell { (s.walls[room_shell::WINDOW_WALL].a.y - s.table.y) * surfaces::METRE } else { g.room.window.x };
+    let away = if g.room_shell { s.table.y * surfaces::METRE } else { g.room_away };
     SurfacesBlock { k.plank, k.planks, k.worn, k.paper, k.gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
-                    float4 { g.room.window.x, g.room_away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
+                    float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
-                    float4 { tile, 0.0, 0.0, 0.0 } }
+                    float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light, k.paint,
+                    k.lace_thread }
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1
@@ -826,6 +872,10 @@ fn put_room(g: Gpu&) {
     let t = look(g, g.look);
     light(g);
     let f .= g.frame;
+    // The room's frame from the key and the window's wall: ROOM_VERT turns the room by it.
+    let l = f.light_dir;
+    g.room_frame = surfaces::frame_of(float3 { l.x, l.y, l.z }, r.window.y);
+    f.room_axes = float4 { g.room_frame.along.x, g.room_frame.along.y, g.room_frame.into.x, g.room_frame.into.y };
     f.light_color = model3d::f4(rooms::key_light(r), 0.0);
     f.sh = rooms::harmonics(r);
     f.params = float4 { t.ambient.x * r.exposure, f.params.y, 1.0, f.params.w };

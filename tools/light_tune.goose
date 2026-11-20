@@ -4,9 +4,11 @@
 // with its bars, curtain, and the trees' leaves. Drag to orbit, scroll to zoom, R resets
 // the camera, W switches the pattern (its leaves swaying in the wind), T the leaves between
 // the tree's baked shadow and the noise, K the wind's kind (rooms::WIND_KINDS: sines,
-// noise, still, branches), D the dust in the sunbeam, O the room round the table (its
-// herringbone oak floor and the panelled wall facing the window, model3d::surfaces), V
-// the view of the room from the window's side, L the wallpaper's tile between style-01's
+// noise, still, branches), D the dust in the sunbeam, O the room round the table (the
+// library's shell, room_shell::LIBRARY: its walls, wainscot, windows, doors, cornice and
+// ceiling; S switches it for the panelled wall facing the window alone, model3d::surfaces,
+// as it was), V the views in turn (the board, then the room's: room, window, hall, stove,
+// VIEWS), L the wallpaper's tile between style-01's
 // 1.4 m and a real paper's 0.65 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
@@ -23,9 +25,12 @@
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern|--bounce X,Y,Z,W]
 //       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
 //       [--dust on|off] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
-//       [--room-surfaces on|off] [--wall-away UNITS] [--room-exposure K] [--eye X,Y,Z --at X,Y,Z (a camera of its own)]
+//       [--room-surfaces on|off] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
+//       [--eye X,Y,Z --at X,Y,Z (a camera of its own, world units)]
+//       [--plan-eye X,Y,H --plan-at X,Y,H (one in the room's plan, metres: x along the window wall
+//       from the stove's end, y from the hall wall, H up from the floor)] [--fov DEG]
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
-//       [--view room] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
+//       [--view board|room|window|hall|stove] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
@@ -49,6 +54,25 @@ let ROW:     f32 = 20.0;
 let SEASONS = ["autumn", "winter", "spring", "summer"];
 let MATERIALS = ["auto", "wood", "stone", "carved"];
 let SQUARES = ["8", "10"];
+
+// The views (V cycles them): the board's orbit, then the room's from a person's eyes, in
+// the plan's metres (room_shell): the whole room from the far corner by the hall; the
+// window wall from the hall door; the hall wall from the window; the stove's end from the
+// far end. With the shell off, room is the view over the table to the panelled wall.
+let VIEWS = ["board", "room", "window", "hall", "stove"];
+let VIEW_EYES: float3[5] = [float3_0, float3 { 8.4, 0.6, 1.7 }, float3 { 4.5, 1.0, 1.6 }, float3 { 4.5, 6.3, 1.6 },
+                            float3 { 8.3, 3.5, 1.6 }];
+let VIEW_ATS: float3[5] = [float3_0, float3 { 2.6, 5.8, 1.3 }, float3 { 4.5, 7.0, 1.8 }, float3 { 4.5, 0.0, 1.3 },
+                           float3 { 0.0, 3.0, 1.4 }];
+
+// A point of the room's plan (metres, h up from the floor) in the world, as the room is
+// turned now.
+fn plan_point(g: render3d::Gpu&, p: float3) -> float3 {
+    let r = room_shell::room_of(room_shell::LIBRARY, float2 { p.x, p.y });
+    let f = g.room_frame;
+    let xz = f.along * r.x + f.into * r.y;
+    return float3 { xz.x, surfaces::FLOOR_Y + p.z * surfaces::METRE, xz.y };
+}
 
 // A mid-game position, dark on the far rows: (row, col, dark), row 0 the far side.
 let PIECES: i32[3][12] = [
@@ -438,8 +462,9 @@ fn main() {
     }
     render3d::window_pattern = pattern == 1;
     var room_on = flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "on";
+    var shell_on = !(flag_value(argv, "--shell") > 0 && argv[flag_value(argv, "--shell")] == "off");
     let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
-    render3d::show_room(g, room_on, away);
+    render3d::show_room(g, room_on, away, shell_on);
     g.paper_tile = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE) * surfaces::METRE;
     put_look(r3d, g, season, material, st);
 
@@ -458,7 +483,11 @@ fn main() {
     let own_eye = flag_value(argv, "--eye") > 0;
     var eye_at = four(argv, "--eye", float4_0);
     var look_at = four(argv, "--at", float4 { view3d::TARGET.x, view3d::TARGET.y, view3d::TARGET.z, 0.0 });
-    var room_view = has(argv, "--view") && argv[flag_value(argv, "--view")] == "room";
+    var view = pick(argv, "--view", VIEWS, 0);
+    let plan_eye = flag_value(argv, "--plan-eye") > 0;
+    let plan_eye_at = four(argv, "--plan-eye", float4_0);
+    let plan_look_at = four(argv, "--plan-at", float4 { 4.5, 5.8, 0.8, 0.0 });
+    let fov_flag = number(argv, "--fov", 0.0);
     let shot = flag_value(argv, "--shot");
     var meter = Meter { on: !(has(argv, "--fps") && argv[flag_value(argv, "--fps")] == "off"), wait: has(argv, "--fps-wait"), .. };
     let meter_for = number(argv, "--fps-seconds", 0.0) as f64;
@@ -487,7 +516,8 @@ fn main() {
             }
             if g.room_ms > 0.0 {
                 print("the room's oak baked in ", g.room_ms, " ms, ", g.room_side, " texels a side, ",
-                      render3d::room_bytes(g) / 1048576, " MiB");
+                      render3d::room_bytes(g) / 1048576, " MiB; its mesh made in ", g.mesh_ms, " ms, ",
+                      g.room_count / 3, " triangles and ", g.glass_count / 3, " of glass and lace");
             }
             break;
         }
@@ -497,7 +527,8 @@ fn main() {
         if gfx::key_pressed("T") { room.tree.x = (room.tree.x as i64 + 1) % 3; }
         if gfx::key_pressed("D") { dust_on = !dust_on; }
         if gfx::key_pressed("O") { room_on = !room_on; }
-        if gfx::key_pressed("V") { room_view = !room_view; }
+        if gfx::key_pressed("V") { view = (view + 1) % VIEWS.len; }
+        if gfx::key_pressed("S") { shell_on = !shell_on; }
         if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
         if gfx::key_pressed("F") { meter.on = !meter.on; }
         if gfx::key_pressed("G") { meter.wait = !meter.wait; }
@@ -544,13 +575,14 @@ fn main() {
             slider(c, "Gust length", room.gust.y, 0.3, 8.0);
             slider(c, "Gust every", room.gust.z, 3.0, 60.0);
             slider(c, "Gust reach", room.gust.w, 0.0, 1.0);
-            heading(c, "The room (O, V, L)");
+            heading(c, "The room (O, S, V, L)");
             var shown_surfaces: i64 = if room_on { 1 } else { 0 };
-            choice(c, "Floor, wall", shown_surfaces, ["off", "on"]);
+            choice(c, "Room", shown_surfaces, ["off", "on"]);
             room_on = shown_surfaces == 1;
-            var shown_view: i64 = if room_view { 1 } else { 0 };
-            choice(c, "View", shown_view, ["board", "room"]);
-            room_view = shown_view == 1;
+            var shown_shell: i64 = if shell_on { 1 } else { 0 };
+            choice(c, "Shell", shown_shell, ["wall", "library"]);
+            shell_on = shown_shell == 1;
+            choice(c, "View", view, VIEWS);
             ui::layout_row_dynamic(c, ROW, 1);
             ui::label(c, if g.paper_tile > 1.0 * surfaces::METRE { "Paper tile 1.4 m (L)" } else { "Paper tile 0.65 m (L)" },
                       ui::TEXT_LEFT);
@@ -647,7 +679,7 @@ fn main() {
         // Cheap enough to do each frame: the harmonics on the CPU and the shadow map.
         g.room = room;
         render3d::window_pattern = pattern == 1;
-        render3d::show_room(g, room_on, away);
+        render3d::show_room(g, room_on, away, shell_on);
         // A shot is taken at --wind-time itself.
         if shot < 0 { render3d::wind_time += gfx::delta_time() as f32; }
         render3d::put_room(g);
@@ -674,7 +706,15 @@ fn main() {
         if own_eye {
             eye = float3 { eye_at.x, eye_at.y, eye_at.z };
             target = float3 { look_at.x, look_at.y, look_at.z };
-        } else if room_view {
+        } else if plan_eye {
+            eye = plan_point(g, float3 { plan_eye_at.x, plan_eye_at.y, plan_eye_at.z });
+            target = plan_point(g, float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z });
+            fov = 55.0;
+        } else if view > 0 && shell_on && room_on {
+            eye = plan_point(g, VIEW_EYES[view]);
+            target = plan_point(g, VIEW_ATS[view]);
+            fov = 60.0;
+        } else if view > 0 {
             // From beside the window, a person's eyes high, over the table to the wall.
             let f = g.room_frame;
             let e2 = f.along * -15.0 + f.into * -30.0;
@@ -685,9 +725,10 @@ fn main() {
         }
         render3d::dust.count = if dust_on { motes } else { 0 };
         render3d::dust.focus = length(eye - target);
+        if fov_flag > 0.0 { fov = fov_flag; }
         // The near plane farther with the room, so 16-bit depth keeps its panels apart.
         let near: f32 = if room_on { clamp(0.2 * length(eye - target), 1.0, 12.0) } else { 1.0 };
-        let proj = gfx::perspective(fov * PI / 180.0, size.x as f32 / size.y, near, if room_on { 900.0 } else { 120.0 });
+        let proj = gfx::perspective(fov * PI / 180.0, size.x as f32 / size.y, near, if room_on { 600.0 } else { 120.0 });
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
         if meter.on && shot < 0 {

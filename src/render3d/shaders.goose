@@ -82,6 +82,9 @@ let FRAME = """
         // their radius; each disc x, z, its foot's and its top's height over the table.
         vec4 disc_n;
         vec4 discs[48];
+        // The room's frame (surfaces::Frame, render3d::put_room): u's direction in the
+        // world's x and z, then v's; ROOM_VERT turns the room's mesh by it.
+        vec4 room_axes;
     };
     const float PI = 3.14159265;
     // The board's sizes, mesh.goose's (test/model3d/geometry checks them).
@@ -1694,6 +1697,8 @@ let TABLE_FRAG = """
 // The room round the table (model3d::surfaces): the floor, the panelling, the wallpaper,
 // and the table's foot, one mesh, its world position, normal, uv (the floor's u and v in
 // the room, or a piece's place in the wall's field), occlusion and material.
+// The room's mesh is built in its own frame (u, height, v; surfaces.goose) and turned
+// into the world here, but for the table's foot (surfaces::MAT_TURNED), built in it.
 let ROOM_VERT = """
     layout(location = 0) in vec3 a_pos;
     layout(location = 1) in vec3 a_normal;
@@ -1703,24 +1708,32 @@ let ROOM_VERT = """
     layout(location = 1) out vec3 v_normal;
     layout(location = 2) out vec2 v_uv;
     layout(location = 3) out vec2 v_extra;
+    layout(location = 4) out vec3 v_local;
+    vec3 turned(vec3 a) {
+        vec2 xz = room_axes.xy * a.x + room_axes.zw * a.z;
+        return vec3(xz.x, a.y, xz.y);
+    }
     void main() {
-        vec3 pos = a_pos;
+        bool still = abs(a_extra.y - 7.0) < 0.5;
+        vec3 pos = still ? a_pos : turned(a_pos);
         v_world = pos;
-        v_normal = a_normal;
+        v_normal = still ? a_normal : turned(a_normal);
         v_uv = a_uv;
         v_extra = a_extra;
+        v_local = a_pos;
         gl_Position = view_proj * vec4(pos, 1.0);
     }
     """;
 
 // ROOM_FRAG's inputs and textures, before LIGHT_FN, which reads the tree's map: the two
 // fields of oak (BAKE_FRAG's modes 4 and 5), albedo and roughness, and the normal; the
-// wallpaper's mask.
+// wallpaper's mask, the plaster's tone, the lace's coverage (design/materials/).
 let ROOM_HEAD = """
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
     layout(location = 2) in vec2 v_uv;
     layout(location = 3) in vec2 v_extra;
+    layout(location = 4) in vec3 v_local;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D floor_albedo;
     layout(set = 2, binding = 1) uniform sampler2D floor_normal;
@@ -1728,6 +1741,8 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 3) uniform sampler2D wall_normal;
     layout(set = 2, binding = 4) uniform sampler2D tree_map;
     layout(set = 2, binding = 5) uniform sampler2D paper_mask;
+    layout(set = 2, binding = 6) uniform sampler2D plaster_tone;
+    layout(set = 2, binding = 7) uniform sampler2D lace_mask;
     """;
 
 // The room lit as the table is (TABLE_FRAG's light, its functions repeated here): the
@@ -1748,7 +1763,9 @@ let ROOM_FRAG = """
     // wall's v, y the panelled wall's, z the floor's field's size, w the wall's (world
     // units); shade: the light thrown back into the room's shade (rooms::Room.bounce),
     // linear, and w the room's exposure over the board's (rooms::Room.room_exposure);
-    // tile: x the wall a tile of the wallpaper's mask covers (world units).
+    // tile: the wall a tile of the wallpaper's mask covers, x, of the plaster's tone, y, of
+    // the lace, z (world units); the shell's limewash at its tone's 0 and 1, its paint and
+    // the lace's thread (sRGB, and roughness).
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -1759,6 +1776,10 @@ let ROOM_FRAG = """
         vec4 place;
         vec4 shade;
         vec4 tile;
+        vec4 plaster_shade;
+        vec4 plaster_light;
+        vec4 paint;
+        vec4 lace_thread;
     };
     // mesh.goose's and surfaces.goose's (test/model3d/geometry checks them).
     const float TABLE_R = 16.0;
@@ -1955,7 +1976,7 @@ let ROOM_FRAG = """
             // The table's foot hides the sky round it, and the walls along their feet.
             ao *= mix(0.55, 1.0, smoothstep(9.0, 22.0, r));
             ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
-        } else if (kind < 5.5 || kind > 6.5) {
+        } else if (kind < 5.5 || (kind > 6.5 && kind < 7.5)) {
             // The panelling and the table's foot: the wall's field at the piece's place,
             // the normal by the field's frame worked out from the derivatives.
             vec2 fuv = v_uv / place.w;
@@ -1977,12 +1998,53 @@ let ROOM_FRAG = """
             // Grime where the pieces meet, in the corners and grooves.
             albedo *= mix(0.55, 1.0, smoothstep(0.5, 1.0, ao));
             rough += 0.15 * (1.0 - ao);
-        } else {
+        } else if (kind < 6.5) {
             // The wallpaper: its mask, tiled along the wall and up it (the image's top up),
             // from the ground to the gold print.
             float m = texture(paper_mask, vec2(v_uv.x, -v_uv.y) / tile.x).r;
             albedo = mix(srgb(paper.rgb), srgb(gold.rgb), m);
             rough = mix(paper.a, gold.a, m);
+        } else if (kind < 8.5) {
+            // The shell's lime plaster: its tone laid on the face's plane in the room's frame,
+            // a slow noise over it so the 4 m tile's patches don't repeat; the cornice (own
+            // 0.5) a little whiter and smoother.
+            vec3 ln = abs(vec3(dot(ng.xz, axes.xy), ng.y, dot(ng.xz, axes.zw)));
+            vec2 pl = ln.y > max(ln.x, ln.z) ? v_local.xz : (ln.x > ln.z ? v_local.zy : v_local.xy);
+            float slow = 0.6 * vnoise(pl / 52.0 + 1.7) + 0.4 * vnoise(pl / 23.0 + 8.3);
+            float tone = clamp(texture(plaster_tone, pl / tile.y).r + 0.5 * (slow - 0.5), 0.0, 1.0);
+            float cornice = step(0.25, own);
+            tone = mix(tone, 1.0, 0.35 * cornice);
+            albedo = mix(srgb(plaster_shade.rgb), srgb(plaster_light.rgb), tone);
+            rough = mix(plaster_shade.a, plaster_light.a, tone) - 0.05 * cornice;
+        } else if (kind < 9.5) {
+            // White painted wood, a little uneven.
+            float m = vnoise(v_local.xz * 0.4 + v_local.y * 0.31);
+            albedo = srgb(paint.rgb) * (0.96 + 0.06 * m);
+            rough = paint.a + 0.1 * m;
+        } else {
+            // Glass and lace, blended over what is behind them (premultiplied).
+            vec3 v = normalize(eye.xyz - p);
+            vec3 nf = dot(ng, v) >= 0.0 ? ng : -ng;
+            vec3 c;
+            float a;
+            if (kind < 10.5) {
+                // The glass: the room's light reflected, by Fresnel.
+                float fres = 0.04 + 0.96 * pow(1.0 - clamp(dot(nf, v), 0.0, 1.0), 5.0);
+                c = sh_eval(reflect(-v, nf)) * params.z;
+                a = clamp(0.03 + fres, 0.0, 0.6);
+            } else {
+                // The lace: its coverage, lit from the room's side and through from the window's.
+                float cover = texture(lace_mask, v_uv / tile.z).r;
+                if (cover < 0.02) discard;
+                vec3 l = light_dir.xyz;
+                vec3 light = light_color.rgb * light_dir.w;
+                float lit = (max(dot(nf, l), 0.0) + 0.45 * max(-dot(nf, l), 0.0)) * window_light(p);
+                c = srgb(lace_thread.rgb) * (lit / PI * light + (sh_eval(nf) + 0.45 * sh_eval(-nf)) * params.z + shade.rgb);
+                a = 0.92 * cover;
+            }
+            c = tonemap(c * params.x * shade.w) * vec3(1.02, 1.0, 0.97);
+            result = vec4(to_srgb(c) * a * (1.0 - screen.z), a);
+            return;
         }
 
         vec3 v = normalize(eye.xyz - p);
