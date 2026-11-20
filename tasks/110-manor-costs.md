@@ -26,6 +26,18 @@ results, or keep baking at run time behind a loader when the room or a look is c
   Cheap while the room is a few draws; as the room and the outside fill up, test each
   object's bounds against the view, at least for the frames that redraw the kept backdrop
   and the home screen's pans.
+- The light tuner's frames with the wind on (its counter, F; headless, the Mac,
+  2026-11-20): the room's view (`--view room --room-surfaces on`) and the board's alike,
+  about 293 fps, 3.4 ms a frame, worst 4 to 5 ms, at 1600x1000 and at 2560x1600; waited
+  for the GPU each frame (`--fps-wait`), 4.2 to 4.4 ms. The same with the window off, the
+  wind still, or the shadow map not drawn again each frame, and up to 5120x3200: a
+  Metal System Trace shows the GPU 98 to 99.9% busy throughout, so it clocks down to
+  fill the time and the frame time hides the load. In those traces, a frame of the
+  room's view at 1600x1000 took about 1.8 ms of fragment work in the main pass, 0.7 ms
+  of vertex work and a 0.4 ms blit; at 2560x1600 3.9, 2.9 and 1.4 ms. The main pass's
+  vertex work is large for a few draws: look at it first. Measure the room's costs in
+  such traces at one GPU performance state, or by the counter only once a frame passes
+  about 3.4 ms; and in a window at the display's rate, which needs the user's screen.
 
 Add each new cost here as it lands, with its numbers.
 

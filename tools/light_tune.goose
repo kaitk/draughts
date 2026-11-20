@@ -6,8 +6,11 @@
 // the tree's baked shadow and the noise, K the wind's kind (rooms::WIND_KINDS: sines,
 // noise, still, branches), D the dust in the sunbeam, O the room round the table (its
 // herringbone oak floor and the panelled wall facing the window, model3d::surfaces), V
-// the view of the room from the window's side, P prints the room as Goose (and saves it in
-// build/light-tune.txt).
+// the view of the room from the window's side, F the frame counter in the corner (frames a
+// second, the frame's time and its worst over half a second, the time in the loop before
+// the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
+// frame so the loop's time is the CPU's and the GPU's, P prints the room as Goose
+// (and saves it in build/light-tune.txt).
 //
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
@@ -22,6 +25,8 @@
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--view room] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
+//       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
+//       [--fps-seconds S (print the counter each half second, quit after S)]
 
 import std;
 import vec;
@@ -55,6 +60,87 @@ struct Setup {
     n:     i64          = 0,    // SQUARES's
     flip:  bool         = false,
     look:  i64          = 0,    // KING_LOOKS's
+}
+
+// The frame counter (F): frames a second, the frame's time from one frame to the next,
+// its mean and worst, and the time in the loop before the frame is submitted (the CPU's
+// work and any wait for the GPU in it; with G all the GPU's work, waited for), each over
+// half a second. The tuner draws every frame; a gap of over half a second (the window
+// hidden) shows as idle until a new half second is measured.
+let METER_WINDOW: f64 = 0.5;
+
+struct Meter {
+    on:       bool = true,
+    wait:     bool = false, // each frame waited for, as --bench's first phase: CPU and GPU
+    start:    f64  = 0.0,   // the window's start
+    last:     f64  = 0.0,   // the last frame's start
+    frames:   i64  = 0,
+    sum:      f64  = 0.0,   // seconds, frame to frame
+    worst:    f64  = 0.0,
+    in_loop:  f64  = 0.0,   // seconds in the loop before the submit
+    idle_for: f64  = 0.0,   // the last gap, while no window is measured since
+    fps:      f64  = 0.0,   // the last window's
+    mean_ms:  f64  = 0.0,
+    worst_ms: f64  = 0.0,
+    loop_ms:  f64  = 0.0,
+    measured: bool = false,
+}
+
+// A new frame begins at `now`: false when it closed a half second's window.
+fn meter_frame(m: Meter&, now: f64) -> bool {
+    let dt = now - m.last;
+    let first = m.last == 0.0;
+    m.last = now;
+    if first || dt > METER_WINDOW {
+        if !first { m.idle_for = dt; }
+        m.measured = false;
+        m.start = now;
+        m.frames = 0;
+        m.sum = 0.0;
+        m.worst = 0.0;
+        m.in_loop = 0.0;
+        return false;
+    }
+    m.frames += 1;
+    m.sum += dt;
+    m.worst = max(m.worst, dt);
+    guard now - m.start >= METER_WINDOW else { return false; }
+    m.fps = m.frames as f64 / (now - m.start);
+    m.mean_ms = 1000.0 * m.sum / m.frames as f64;
+    m.worst_ms = 1000.0 * m.worst;
+    m.loop_ms = 1000.0 * m.in_loop / m.frames as f64;
+    m.measured = true;
+    m.start = now;
+    m.frames = 0;
+    m.sum = 0.0;
+    m.worst = 0.0;
+    m.in_loop = 0.0;
+    return true;
+}
+
+fn tenths(out: u8[..96]&, v: f64) { format(out, floor(v * 10.0 + 0.5) / 10.0); }
+
+// The counter's two lines into `a` and `b`, which the caller owns.
+fn meter_text(m: Meter&, a: u8[..96]&, b: u8[..96]&, still: bool) {
+    a.clear();
+    b.clear();
+    if !m.measured {
+        if m.idle_for > 0.0 {
+            format(a, "idle: nothing drawn for ");
+            tenths(a, m.idle_for);
+            a.append(" s");
+        } else { a.append("measuring"); }
+        return;
+    }
+    tenths(a, m.fps);
+    a.append(" fps, ");
+    tenths(a, m.mean_ms);
+    a.append(" ms a frame, worst ");
+    tenths(a, m.worst_ms);
+    b.append("in the loop ");
+    tenths(b, m.loop_ms);
+    b.append(if m.wait { " ms, the GPU waited for" } else { " ms, waits too; no GPU timer" });
+    if still { b.append(", the scene still"); }
 }
 
 fn squares_of(st: Setup) -> i64 { if st.n == 1 { 10 } else { 8 } }
@@ -366,9 +452,22 @@ fn main() {
     var look_at = four(argv, "--at", float4 { view3d::TARGET.x, view3d::TARGET.y, view3d::TARGET.z, 0.0 });
     var room_view = has(argv, "--view") && argv[flag_value(argv, "--view")] == "room";
     let shot = flag_value(argv, "--shot");
+    var meter = Meter { on: !(has(argv, "--fps") && argv[flag_value(argv, "--fps")] == "off"), wait: has(argv, "--fps-wait"), .. };
+    let meter_for = number(argv, "--fps-seconds", 0.0) as f64;
+    var meter_a: u8[..96] = [];
+    var meter_b: u8[..96] = [];
     var frames = 0;
     while gfx::frame() {
         frames++;
+        let frame_at = gfx::time();
+        let still = pattern == 0 || render3d::wind_kind == rooms::WIND_STILL || room.wind.y == 0.0;
+        if meter_frame(meter, frame_at) {
+            meter_text(meter, meter_a, meter_b, still);
+            if meter_for > 0.0 { print(meter_a[..], "; ", meter_b[..]); }
+        } else if !meter.measured {
+            meter_text(meter, meter_a, meter_b, still);
+        }
+        if meter_for > 0.0 && frame_at > meter_for { break; }
         if shot > 0 && frames == 6 {
             guard gfx::screenshot(argv[shot]) else { abort(str("could not save ", argv[shot])); }
             if g.tree_ms > 0.0 { print("the tree baked in ", g.tree_ms, " ms"); }
@@ -392,6 +491,8 @@ fn main() {
         if gfx::key_pressed("O") { room_on = !room_on; }
         if gfx::key_pressed("V") { room_view = !room_view; }
         if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
+        if gfx::key_pressed("F") { meter.on = !meter.on; }
+        if gfx::key_pressed("G") { meter.wait = !meter.wait; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
         if ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
@@ -573,6 +674,20 @@ fn main() {
         let proj = gfx::perspective(fov * PI / 180.0, size.x as f32 / size.y, near, if room_on { 900.0 } else { 120.0 });
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
+        if meter.on && shot < 0 {
+            let box_w: f32 = 420.0;
+            let at_x = gfx::screen_size().x / scale - box_w - 10.0;
+            if ui::begin(c, "Frames (F)", ui::rect(at_x, 10.0, box_w, 2.0 * ROW + 16.0),
+                         ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
+                ui::layout_row_dynamic(c, ROW, 1);
+                ui::label(c, meter_a[..], ui::TEXT_LEFT);
+                ui::layout_row_dynamic(c, ROW, 1);
+                ui::label(c, meter_b[..], ui::TEXT_LEFT);
+            }
+            ui::end(c);
+        }
         if shot < 0 { ui::render(c); }
+        if meter.wait { gfx::flush(); }
+        meter.in_loop += gfx::time() - frame_at;
     }
 }

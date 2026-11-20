@@ -102,6 +102,13 @@ pieces; the design boards still set the layout, glass, and controls.
   notes, `build/notes/room-oak-2/`). Before-and-after pairs of the tuner from an older
   commit: `git archive` it into a scratch folder, link `third_party/*`,
   `build/goose-v2026.4-macos-arm64` and `build/mac/goose` into it, and build there.
+- The light tuner's frame counter (F, top right): frames a second, the mean and worst
+  frame over half a second, and the time in the loop before the submit; G (`--fps-wait`)
+  waits for the GPU each frame, as `--bench`'s first phase. SDL's GPU has no timer
+  queries, so no GPU time: for that, a Metal System Trace (`agents/testing.md`).
+  `--fps-seconds S` prints each half second's line and quits, headless too. Uncapped on
+  the Mac the GPU clocks down until it is busy, so a light scene reads about 3.4 ms
+  whatever it draws; a cost shows once it passes that.
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

@@ -39,9 +39,10 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
 - [ ] The autumn board's frame, its outer sides, too rough seen at a glancing angle
       (the user, 2026-11-20): matte and streaky where waxed wood would catch a sheen; the
       squares are fine
-- [ ] An FPS counter in the light tuner (the user, 2026-11-20): frames a second and
+- [x] An FPS counter in the light tuner (the user, 2026-11-20): frames a second and
       the frame's time while it draws every frame (the wind on), to judge the high
-      mode's cost as the room fills
+      mode's cost as the room fills. F shows it, G waits for the GPU each frame; no GPU
+      timer in SDL's GPU; the first numbers in task 110
 - [ ] The high mode drawing every frame: on desktops, and on laptops and tablets on
       mains power, a setting forcing it (`docs/decisions/rendering.md`, "Frames and
       battery"); the game's clock ticking, the window's pattern swaying gently
