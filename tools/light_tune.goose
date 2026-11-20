@@ -2,7 +2,7 @@
 // (rooms::LIBRARY..) and its values on sliders: the sun's direction, height, color and
 // strength, how dark its shadow is, the window's sky, the walls, and the window's pattern
 // with its bars, curtain, and the trees' leaves. Drag to orbit, scroll to zoom, R resets
-// the camera, W switches the pattern, P prints the room as Goose (and saves it in
+// the camera, W switches the pattern (its leaves swaying in the wind), P prints the room as Goose (and saves it in
 // build/light-tune.txt).
 //
 //   scripts/mac.py tools/light_tune.goose
@@ -193,6 +193,7 @@ fn report(r: rooms::Room, take: i64) {
     room_line(out, "panes:     ", r.panes);
     room_line(out, "opening:   ", r.opening);
     room_line(out, "leaves:    ", r.leaves);
+    room_line(out, "wind:      ", r.wind);
     out.append("};");
     print(out);
     // Also kept in a file, as a window's tool has no terminal to read.
@@ -312,6 +313,8 @@ fn main() {
             slider(c, "Leaf size", room.leaves.y, 0.02, 1.0);
             slider(c, "Trees away", room.leaves.z, 0.0, 400.0);
             slider(c, "Leaf blur", room.leaves.w, 0.0, 1.0);
+            slider(c, "Wind", room.wind.x, 0.0, 0.6);
+            slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
             heading(c, "View (drag, scroll, R)");
             slider(c, "Distance", far, 0.4, 4.0);
             slider(c, "Height", pitch, 10.0, 89.0);
@@ -342,6 +345,7 @@ fn main() {
         // Cheap enough to do each frame: the harmonics on the CPU and the shadow map.
         g.room = room;
         render3d::window_pattern = pattern == 1;
+        render3d::wind_time += gfx::delta_time() as f32;
         render3d::put_room(g);
         if print_it { report(room, room_take); }
         if gfx::key_pressed("R") {

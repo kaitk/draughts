@@ -51,6 +51,7 @@ struct Frame {
     panes:           float4,
     opening:         float4,
     leaves:          float4,
+    wind:            float4,
     disc_n:          float4,
     discs:           float4[MAX_DISCS],
 }
@@ -635,6 +636,10 @@ fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
 // tiers' table exists a development switch (the tuner's, the app's --window).
 var window_pattern = false;
 
+// The seconds the leaves' shadows have swayed (rooms::Room.wind): the tuner's clock; the
+// app keeps them still at 0 for now, as a sway would draw every frame.
+var wind_time: f32 = 0.0;
+
 // The room's light where the board stands on its table (rooms::Room): its key in place
 // of the look's, its fill and walls as the ambient's harmonics, the look's exposure kept.
 // Over the photograph or the fade the look's own light stays.
@@ -654,6 +659,7 @@ fn put_room(g: Gpu&) {
     f.panes = r.panes;
     f.opening = r.opening;
     f.leaves = r.leaves;
+    f.wind = float4 { r.wind.x, r.wind.y, wind_time, 0.0 };
     g.shadow_dirty = true;
 }
 

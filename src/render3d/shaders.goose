@@ -58,6 +58,7 @@ let FRAME = """
         vec4 panes;
         vec4 opening;
         vec4 leaves;
+        vec4 wind;           // the leaves' sway: x how far, y how fast, z the seconds
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
         // their radius; each disc x, z, its foot's and its top's height over the table.
         vec4 disc_n;
@@ -303,6 +304,10 @@ let LIGHT_FN = """
             float tl = t + leaves.z / toward;
             vec3 ql = p + l * tl;
             vec2 lw = vec2(dot(ql.xz, along), ql.y) * leaves.y;
+            // The wind sways the branches: slow gusts, each clump a little out of step.
+            float tw = wind.z * wind.y;
+            lw += wind.x * vec2(sin(tw * 0.9 + lw.y * 0.7) + 0.5 * sin(tw * 2.3 + lw.x * 1.3),
+                                0.6 * cos(tw * 0.7 + lw.x * 0.5) + 0.3 * sin(tw * 1.9 + lw.y * 1.1));
             float n = 0.55 * window_noise(lw) + 0.3 * window_noise(lw * 2.03 + 7.1)
                     + 0.15 * window_noise(lw * 4.1 + 3.7);
             float ls = 0.02 + room.z * tl * leaves.y * leaves.w;
