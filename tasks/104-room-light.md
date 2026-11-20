@@ -120,6 +120,25 @@ the light is settled (the user, 2026-11-20).
   shader so nothing is uploaded a frame. Depends on the home screen's framing with the
   window (task 093), which the board on its table doesn't have yet.
 
+  Prototyped in the tuner (2026-11-20): `render3d::dust` (`Dust`: count, size, the lens's
+  blur, brightness, focus, the box over the table) and `shaders::DUST_VERT`, drawn last in
+  the board's pass by `draw_motes` in both renderers, one instanced draw of 6 vertices a
+  mote, added, depth tested. Each mote's place is its seed (a buffer filled once) and
+  `wind_time`: three sines for the wander, a slow rise and a current along x, wrapped in
+  the box and faded near its faces. Its light is `window_light` at its place, taken once
+  in the vertex shader (the tree's map read there), with forward scattering toward the
+  sun; its radius grows with its distance from the focus and its light thins over the
+  disc. Tuner: D, `--dust on`, `--motes N`, `--mote-size`, `--mote-blur`, `--mote-bright`,
+  `--exposure`; sliders for these and the rise and wander. Cost not measured; by estimate
+  well under 0.1 ms on the Mac (500 motes, 3000 `window_light` calls a frame, a few small
+  discs of fragments). Seen so far: the sun is low (18°), so the beam is nearly level and
+  over the board fills the whole view; the dust reads as a shaft only with a narrower
+  opening, a steeper sun, or a camera looking across the beam (the shots' dark variant:
+  one pane, 28°). The ngfx build compiles it (`r3d_dust`) but nothing draws it there yet,
+  as only the tuner, gfx alone, turns it on. Set aside: the pieces' shadows on the motes,
+  a rise only in the sunlit air (not closed form), and drawing over the kept image for
+  the home screen (`marks_over`'s way, against the kept depth).
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac
