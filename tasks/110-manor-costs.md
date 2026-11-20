@@ -25,6 +25,22 @@ results, or keep baking at run time behind a loader when the room or a look is c
 
 Add each new cost here as it lands, with its numbers.
 
+## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
+
+The cameras are few and mostly still, and the home screen is one scene that can be
+cheated around (the kept backdrop drawn once, baked light), so none of this is done ahead
+of need; the biggest cost first, when it shows.
+
+- Normal or parallax maps in place of geometry where the shape is shallow (mouldings,
+  joints, plaster); tessellation not, as phones' GPUs pay dearly for it.
+- Levels of detail for meshes, and smaller textures or mips for what is seen only from
+  afar.
+- Frustum culling (above).
+- Not a deferred renderer: it pays off with many lights, and the scene has one sun, its
+  bounce and the ambient; its G-buffer costs memory bandwidth, which the A33's tiled GPU
+  is short of, and makes MSAA harder. With many small lights (candles, a chandelier) a
+  tiled or clustered forward pass would be the step instead.
+
 ## Acceptance criteria
 
 - [ ] Each cost above measured on the Mac and the A33 (task 071's way for memory)
