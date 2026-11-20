@@ -143,6 +143,15 @@ be thought through with the room, not taken from one picture:
   The script's defaults set the tree line at about 110 m and the oak at 70 m, 22° right
   of straight out, so the middle window keeps the lake and the sun's glow; seen through
   the windows the band at 60 m crowded them. To move once rendered.
+- In the room (2026-11-21): the band and the oak in `design/materials/`, drawn through the
+  shell's three windows in the light tuner's room view (`model3d::view_out`, round the
+  middle window's middle on the wall's inner face); the sky worked out in the shader from
+  park.py's formula round the key's sun, with its disc and a halo, so it follows the key
+  and the wall's turn; the outside unlit, exposed 1.8 on its own through the room's
+  tonemap (`rooms::Room.outside`). No seam at the band's foot, no dark fringe round the
+  crowns; from the table only the middle window shows the park, the oak at its right
+  edge, the horizon at the eye's height. Soft from magnification until the depth of
+  field. Shots: `build/notes/room-outside/`.
 
 ## The shell built (2026-11-20)
 
@@ -174,7 +183,8 @@ above and the choices of `build/notes/plans/shell.md`:
 
 Rough on purpose, for the next passes: the casements' members are boxes, the shutters
 a box with three panels, the lace a flat sheet each side (lace.py's first bake), the
-glass a reflection only, the outside a plain sky. Shots: `build/notes/room-demo/`.
+glass a reflection only, the outside a plain sky (the park since 2026-11-21, above).
+Shots: `build/notes/room-demo/`.
 
 ## Acceptance criteria
 

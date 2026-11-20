@@ -68,6 +68,15 @@ results, or keep baking at run time behind a loader when the room or a look is c
   shell costs no more a pixel than the board and table do; vertex work stays small at 12k
   triangles. An earlier trace in a quieter minute: the room view at 1600x1000, 0.14 ms
   vertex and 1.5 ms fragment at 370 fps.
+- The view out of the shell's windows (2026-11-21, `model3d::view_out`): one draw of 898
+  triangles before the room, unlit; the band 2048 × 336 and the oak 584 × 392, RGBA8 sRGB
+  with no mips, 3.5 MiB (3,668,224 bytes), decoded and uploaded once with the room's bake
+  (with the panelled wall's room too); their PNGs add 0.7 MB to every build (the Mac's
+  draughts_ngfx 26.43 to 27.24 MB). The sky is worked out a pixel (an asin, an acos and
+  three exps) over all it shows. The light tuner's counter, headless at 1600x1000: the
+  room view 2.3 to 2.8 ms with it and 2.4 to 2.7 without (noise); from the games table at
+  the middle window 1.5 to 1.7 ms against 1.2 to 1.6, waited for 2.9 to 3.0 against 2.6
+  to 2.8. In the kept image, so nothing on a still frame.
 
 Add each new cost here as it lands, with its numbers.
 

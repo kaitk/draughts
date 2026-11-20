@@ -1,0 +1,7 @@
+centre 0.0, -1.2 m in the room's frame
+898 triangles, their materials in order: 12.0 13.0 14.0
+band corner uv 0.0,0.0: 110.0 m out at -64.0 deg, 26.26 m over the lawn
+band corner uv 1.0,0.0: 110.0 m out at 64.0 deg, 26.26 m over the lawn
+band corner uv 0.0,1.0: 110.0 m out at -64.0 deg, -14.05 m over the lawn
+band corner uv 1.0,1.0: 110.0 m out at 64.0 deg, -14.05 m over the lawn
+oak: 70.0 m out at 22.0 deg, 29.8 m wide, 20.0 m tall, its foot 0.0 m over the lawn; facing the centre 1.0; u 0 on its left as seen from the room: true

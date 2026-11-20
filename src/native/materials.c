@@ -1,6 +1,7 @@
 // The room's material masks, built into the program and decoded for the renderer's upload
 // (render3d::room_surfaces), one channel, 1024² each (design/materials/): the library's
-// wallpaper, the plaster's tone, the lace's coverage.
+// wallpaper, the plaster's tone, the lace's coverage. And the view out of its windows, RGBA:
+// the far band of trees and the oak (render3d::put_outside).
 // stb_image here decodes PNG alone and is static, apart from background.c's JPEG one.
 
 #include <stdbool.h>
@@ -42,6 +43,21 @@ static const unsigned char lace[] = {
 static const unsigned char lace[] = { 0 };
 #endif
 
+#if __has_embed("../../design/materials/outside_band.png")
+static const unsigned char band[] = {
+#embed "../../design/materials/outside_band.png"
+    , 0 };
+#else
+static const unsigned char band[] = { 0 };
+#endif
+#if __has_embed("../../design/materials/outside_oak.png")
+static const unsigned char oak[] = {
+#embed "../../design/materials/outside_oak.png"
+    , 0 };
+#else
+static const unsigned char oak[] = { 0 };
+#endif
+
 typedef struct { uint8_t *data; int64_t len; } bytes;
 
 // Mask `which` (0 the wallpaper, 1 the plaster's tone, 2 the lace) into `out`, side × side
@@ -54,6 +70,22 @@ bool draughts_material_mask(int64_t which, bytes out, int64_t side) {
     unsigned char *px = stbi_load_from_memory(png, (int)(len - 1), &w, &h, &n, 1);
     if (!px) return false;
     bool ok = w == side && h == side;
+    if (ok) memcpy(out.data, px, (size_t)out.len);
+    stbi_image_free(px);
+    return ok;
+}
+
+// Picture `which` of the view out (0 the far band, 1 the oak) into `out`, w × h RGBA8 as
+// stored (sRGB, premultiplied in linear light), or false when it isn't built in or isn't
+// that size.
+bool draughts_outside_picture(int64_t which, bytes out, int64_t w, int64_t h) {
+    const unsigned char *png = which == 1 ? oak : band;
+    size_t len = which == 1 ? sizeof oak : sizeof band;
+    if (len < 2 || out.len != w * h * 4) return false;
+    int pw = 0, ph = 0, n = 0;
+    unsigned char *px = stbi_load_from_memory(png, (int)(len - 1), &pw, &ph, &n, 4);
+    if (!px) return false;
+    bool ok = pw == w && ph == h;
     if (ok) memcpy(out.data, px, (size_t)out.len);
     stbi_image_free(px);
     return ok;

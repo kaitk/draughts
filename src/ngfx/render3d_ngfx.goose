@@ -93,7 +93,8 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
     pass.color[0] = if g.aa != AA_OFF { g.color } else { target };
     if g.aa == AA_MSAA { pass.resolve[0] = target; }
     nx::begin_pass(pass);
-    if backdrop { draw_backdrop(own, g, f, 1.0); }
+    if render3d::outside_shown(g) { draw_outside(own, g, f); }
+    else if backdrop { draw_backdrop(own, g, f, 1.0); }
 
     nx::bind(g.lit);
     draw_meshes(own, g, f, 0.0);
@@ -196,6 +197,23 @@ fn make_room(own: Own&, g: Gpu&) {
     g.room_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room.blob"),
                                 ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
     g.bake_room = module(embed_file("../../build/ngfx/blobs/r3d_bake_room.blob"));
+    g.outside = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_outside.blob"),
+                             ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
+}
+
+// The view out of the shell's windows (model3d::view_out), first in the pass in place of
+// the photograph: one draw, the sky, then the band, then the oak, each over the last;
+// r3d_outside.slang's header: Outside, the band, the oak.
+fn draw_outside(own: Own&, g: Gpu&, f: u64) {
+    nx::bind(g.outside);
+    var t = no_root();
+    t.frame = f;
+    let b: render3d::OutsideBlock[1] = [render3d::outside_block(g)];
+    t.u = ngfx::frame_data(bytes_of(b));
+    t.verts = nx::address(g.outside_vb);
+    slot(t, 0, g.outside_band, g.linear);
+    slot(t, 1, g.outside_oak, g.linear);
+    nx::draw_indexed(ngfx::root(t), g.outside_ib, 4, g.outside_count);
 }
 
 // The dust in the sunbeam over the open pass's target, added, hidden by what stands
@@ -879,16 +897,17 @@ fn release(own: Own&, g: Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map,
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
-                    g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask];
+                    g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
+                    g.outside_band, g.outside_oak];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib];
+                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
     for b in buffers { if b.id != 0 { nx::release(b); } }
     let samplers = [g.linear, own.point, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { nx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
-                     g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room, g.room_glass];
+                     g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();

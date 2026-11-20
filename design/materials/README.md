@@ -1,12 +1,14 @@
 # Materials
 
-Masks the 3D room's surfaces sample, built into the program from here
-(`src/native/materials.c`).
+Masks the 3D room's surfaces sample, and the pictures of the view out of its windows,
+built into the program from here (`src/native/materials.c`).
 
 | File | What it is |
 | --- | --- |
 | `wallpaper_mask.png` | The library's wallpaper: the gold flowers as one channel, 1024² L8, tileable, 0.6 MB. 0 is the ground, 1 the gold print; `shaders::ROOM_FRAG` tints it and keys its roughness from `surfaces::LOOK` and tiles it over 1.4 m of wall (`surfaces::PAPER_TILE`). In git. |
 | `plaster_tone.png` | The library's limewash (`tools/materials/plaster.py`): its tone, 1024² L8, tileable over 4 m (`surfaces::PLASTER_TILE`), 0.66 MB. `ROOM_FRAG` tints it from `surfaces::LOOK.plaster_shade` to `.plaster_light` in linear light, with a slow noise in the room's frame over it so the tile's patches don't repeat, on the ceiling, cornice, reveals and arches. In git. |
+| `outside_band.png` | The park's far tree line on a cylinder 110 m out (`tools/materials/outside.py`), 2048 × 336 RGBA over ±64° from straight out, 16 px a degree, rows linear in height from 14.05 m under the lawn to 26.26 m over it; sRGB, premultiplied in linear light, its sky cut to clear; 0.44 MB. `model3d::view_out` puts it on its cylinder round the middle window, `shaders::OUTSIDE_FRAG` draws it unlit. In git. |
+| `outside_oak.png` | The oak, 29.8 × 20 m, a billboard 70 m out at 22° right of straight out, 584 × 392 RGBA as the band, 0.26 MB. In git. |
 | `lace_mask.png` | The lace's coverage (`tools/materials/lace.py`, its first bake, a stand-in), 1024² L8 over 0.56 m (`surfaces::LACE_TILE`), 0.26 MB: 0 where the light passes, 1 the thread. In git. |
 
 To make the mask again, with numpy and Pillow from Homebrew and the downloads of
@@ -23,3 +25,13 @@ The baker also writes `wallpaper_preview.png` and `wallpaper_rough.png`, which s
 git: the shader takes the colours and roughness from the mask. The plaster and the lace the
 same way: `python3 tools/materials/plaster.py OUT_DIR` and `lace.py OUT_DIR`, then copy
 `plaster_tone.png` and `lace_mask.png` here and touch `src/native/materials.c`.
+
+The view out's band and oak, from task 109's panels and oak in `design/manor/outside/`
+(local), as `design/manor/outside/park.py` puts them together; the sky is worked out in the
+shader, so the baker's `outside_sky.png` stays out:
+
+```sh
+python3 -I tools/materials/outside.py OUT_DIR      # MANOR_DIR=<checkout>/design/manor from a worktree
+cp OUT_DIR/outside_band.png OUT_DIR/outside_oak.png design/materials/
+touch src/native/materials.c
+```

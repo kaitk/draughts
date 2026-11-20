@@ -8,7 +8,8 @@
 // library's shell, room_shell::LIBRARY: its walls, wainscot, windows, doors, cornice and
 // ceiling; S switches it for the panelled wall facing the window alone, model3d::surfaces,
 // as it was), V the views in turn (the board, then the room's: room, window, hall, stove,
-// VIEWS), L the wallpaper's tile between style-01's
+// VIEWS), U the view out of the shell's windows (model3d::view_out) or the plain sky behind
+// them as before, L the wallpaper's tile between style-01's
 // 1.4 m and a real paper's 0.65 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
@@ -26,6 +27,7 @@
 //       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
 //       [--dust on|off] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
 //       [--room-surfaces on|off] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
+//       [--outside on|off] [--outside-exposure K (rooms::Room's outside)]
 //       [--eye X,Y,Z --at X,Y,Z (a camera of its own, world units)]
 //       [--plan-eye X,Y,H --plan-at X,Y,H (one in the room's plan, metres: x along the window wall
 //       from the stove's end, y from the hall wall, H up from the floor)] [--fov DEG]
@@ -355,6 +357,8 @@ fn report(r: rooms::Room, take: i64) {
     room_line(out, "bounce:    ", r.bounce);
     out.append("    room_exposure: ");
     num(out, r.room_exposure);
+    out.append(",\n    outside:       ");
+    num(out, r.outside);
     out.append(",\n};");
     print(out);
     // Also kept in a file, as a window's tool has no terminal to read.
@@ -436,6 +440,7 @@ fn main() {
     room.pattern = four(argv, "--pattern", room.pattern);
     room.bounce = four(argv, "--bounce", room.bounce);
     room.room_exposure = number(argv, "--room-exposure", room.room_exposure);
+    room.outside = number(argv, "--outside-exposure", room.outside);
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
     room.exposure = number(argv, "--exposure", room.exposure);
     var motes = whole(argv, "--motes", 500);
@@ -450,6 +455,7 @@ fn main() {
     render3d::window_pattern = pattern == 1;
     var room_on = flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "on";
     var shell_on = !(flag_value(argv, "--shell") > 0 && argv[flag_value(argv, "--shell")] == "off");
+    var outside_on = !(flag_value(argv, "--outside") > 0 && argv[flag_value(argv, "--outside")] == "off");
     let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
     render3d::show_room(g, room_on, away, shell_on);
     g.paper_tile = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE) * surfaces::METRE;
@@ -537,6 +543,7 @@ fn main() {
         if gfx::key_pressed("O") { room_on = !room_on; }
         if gfx::key_pressed("V") { view = (view + 1) % VIEWS.len; }
         if gfx::key_pressed("S") { shell_on = !shell_on; }
+        if gfx::key_pressed("U") { outside_on = !outside_on; }
         if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
         if gfx::key_pressed("F") { meter.on = !meter.on; }
         if gfx::key_pressed("G") { meter.wait = !meter.wait; }
@@ -583,7 +590,7 @@ fn main() {
             slider(c, "Gust length", room.gust.y, 0.3, 8.0);
             slider(c, "Gust every", room.gust.z, 3.0, 60.0);
             slider(c, "Gust reach", room.gust.w, 0.0, 1.0);
-            heading(c, "The room (O, S, V, L)");
+            heading(c, "The room (O, S, V, U, L)");
             var shown_surfaces: i64 = if room_on { 1 } else { 0 };
             choice(c, "Room", shown_surfaces, ["off", "on"]);
             room_on = shown_surfaces == 1;
@@ -591,6 +598,10 @@ fn main() {
             choice(c, "Shell", shown_shell, ["wall", "library"]);
             shell_on = shown_shell == 1;
             choice(c, "View", view, VIEWS);
+            var shown_outside: i64 = if outside_on { 1 } else { 0 };
+            choice(c, "Outside", shown_outside, ["plain", "park"]);
+            outside_on = shown_outside == 1;
+            slider(c, "Outside's exposure", room.outside, 0.3, 2.5);
             ui::layout_row_dynamic(c, ROW, 1);
             ui::label(c, if g.paper_tile > 1.0 * surfaces::METRE { "Paper tile 1.4 m (L)" } else { "Paper tile 0.65 m (L)" },
                       ui::TEXT_LEFT);
@@ -731,9 +742,11 @@ fn main() {
             target = float3 { t2.x, -14.0, t2.y };
             fov = 50.0;
         }
-        // Behind the shell's windows a plain sky of ours (render3d's plain fade), not the
-        // season's photograph, until the park's layers come in (task 109).
+        // Behind the shell's windows the park (model3d::view_out), or with U a plain sky of
+        // ours (render3d's plain fade), not the season's photograph; the fade gives the
+        // board's ambient either way.
         g.plain = room_on && shell_on;
+        g.outside_on = outside_on;
         g.fade = [SKY_TOP, SKY_LOW, SKY_LIGHT];
         render3d::dust.count = if dust_on { motes } else { 0 };
         render3d::dust.focus = length(eye - target);

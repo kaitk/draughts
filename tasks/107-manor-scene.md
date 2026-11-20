@@ -62,6 +62,10 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       in `build/notes/room-demo/` (tasks 109, 110). Next: shadow fixes 1 to 3
       (`build/notes/plans/shadows.md`), the outside's layers, then the pieces refined one
       by one (the wainscot from the sketches, the window wall, the lace)
+- [x] The view out of the shell's three windows (2026-11-21): task 109's band and oak, the
+      sky worked out in the shader round the key's sun, exposed on its own
+      (`rooms::Room.outside`, 1.8); the room view only, the game keeps its photograph;
+      no blur baked, depth of field later (tasks 109, 110, `build/notes/room-outside/`)
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

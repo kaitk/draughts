@@ -338,6 +338,16 @@ struct Gpu {
     room_count:   i64,
     room_lit:     Pipeline,         // made when first wanted (make_room)
     bake_room:    Pipeline,
+    // The view out of the shell's windows (model3d::view_out), drawn first in its place of
+    // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
+    // pictures, the far band and the oak, RGBA8 sRGB with no mips.
+    outside_on:    bool,
+    outside:       Pipeline,
+    outside_vb:    Buffer,
+    outside_ib:    Buffer,
+    outside_count: i64,
+    outside_band:  Texture,
+    outside_oak:   Texture,
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -489,6 +499,17 @@ fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY, shell: bool = f
 // Whether the board's pass draws the room.
 fn room_shown(g: Gpu&) -> bool { g.room_on && g.room_baked && g.room_vb.id != 0 && g.room_lit.id != 0 }
 
+// Whether the board's pass draws the view out of the shell's windows in place of the
+// photograph.
+fn outside_shown(g: Gpu&) -> bool {
+    room_shown(g) && g.room_shell && g.outside_on && g.outside_vb.id != 0 && g.outside.id != 0
+}
+
+// OUTSIDE_FRAG's block: the exposure (rooms::Room.outside), the sun disc's brightness.
+struct OutsideBlock { exposure: float4 }
+let SUN_DISC: f32 = 30.0;
+fn outside_block(g: Gpu&) -> OutsideBlock { OutsideBlock { float4 { g.room.outside, SUN_DISC, 0.0, 0.0 } } }
+
 // An oak's bake (surfaces::Oak) in the slots of a theme BAKE_FRAG's oak reads.
 fn oak_theme(g: Gpu&, oak: surfaces::Oak) -> looks::Theme {
     var t = look(g, max(g.look, 0));
@@ -528,9 +549,18 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.finish = finish;
         o.gpu_flush();
         put_paper(o, g);
+        put_outside(o, g);
         g.room_side = side;
         g.room_baked = true;
         g.room_ms = (clock() - t0) * 1000.0;
+    }
+    // The view out of the shell's windows, round its middle window: made once.
+    if g.room_shell && g.outside_vb.id == 0 {
+        var verts:   mesh::Vertex[>..] = [];
+        var indices: u32[>..]          = [];
+        view_out::build(verts, indices, view_out::centre_of(room_shell::LIBRARY));
+        g.outside_vb, g.outside_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
+        g.outside_count = indices.len;
     }
     // The mesh, in the room's frame (ROOM_VERT turns it with the key): made again only
     // for another room, or the panelled wall's room for another window or wall.
@@ -565,6 +595,24 @@ fn put_paper<O>(o: O&, g: Gpu&) {
     g.paper_mask = put_mask(o, 0);
     g.plaster_tone = put_mask(o, 1);
     g.lace_mask = put_mask(o, 2);
+}
+
+// The view out's two pictures (src/native/materials.c) on the GPU, as stored: sRGB,
+// premultiplied in linear light, no mips, as they are only ever magnified. Once, with the
+// room's bake; 0 where they aren't built in.
+extern fn draughts_outside_picture(which: i64, out: u8[:], w: i64, h: i64) -> bool;
+fn put_outside<O>(o: O&, g: Gpu&) {
+    guard g.outside_band.id == 0 else { return; }
+    g.outside_band = put_picture(o, 0, view_out::BAND_TEXELS);
+    g.outside_oak = put_picture(o, 1, view_out::OAK_TEXELS);
+}
+fn put_picture<O>(o: O&, which: i64, size: int2) -> Texture {
+    var px: u8[>..] = [];
+    px.resize(4 * size.x * size.y, 0);
+    guard draughts_outside_picture(which, px[..], size.x, size.y) else { return Texture { 0 }; }
+    let t = o.gpu_sampled(size.x, size.y, 1, RGBA8_SRGB);
+    o.gpu_upload(t, 0, px[..]);
+    return t;
 }
 
 // Mask `which` (draughts_material_mask's) on the GPU, R8 with its mips, each level the
@@ -608,12 +656,15 @@ fn texels_with_mips(side: i64) -> i64 {
     return sum;
 }
 
-// The fields' memory in bytes: two RGBA8 targets each, with their mips; and the three
-// masks, one byte a texel.
+// The fields' memory in bytes: two RGBA8 targets each, with their mips; the three
+// masks, one byte a texel; the view out's two pictures, four.
 fn room_bytes(g: Gpu&) -> i64 {
     guard g.room_side > 0 else { return 0; }
     let paper = if g.paper_mask.id != 0 { 3 * texels_with_mips(surfaces::PAPER_SIDE) } else { 0 };
-    return 4 * 4 * texels_with_mips(g.room_side) + paper;
+    let b = view_out::BAND_TEXELS;
+    let k = view_out::OAK_TEXELS;
+    let outside = if g.outside_band.id != 0 { 4 * (b.x * b.y + k.x * k.y) } else { 0 };
+    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the

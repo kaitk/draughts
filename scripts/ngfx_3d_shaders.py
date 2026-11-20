@@ -64,7 +64,8 @@ MODULES = [
     ("r3d_kept", FULL, ["KEPT_FRAG"]),
     ("r3d_show", ["SHOW_VS", "SHOW_BLOCK", "SHOW_VERT"], ["SHOW_FS", "SHOW_BLOCK", "SHOW_FRAG"]),
     ("r3d_dust", ["VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["DUST_FRAG"]),
-    ("r3d_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "ROOM_FRAG"]),
+    ("r3d_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TONE_FN", "ROOM_FRAG"]),
+    ("r3d_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["FS_SET", "FRAME", "TONE_FN", "OUTSIDE_FRAG"]),
 ]
 
 def products(body):

@@ -87,6 +87,10 @@ struct Room {
     // a photograph's local tonemapping lifts a dark room round a bright subject: the dark
     // oak in a low sun is otherwise all in the tonemap's toe.
     room_exposure: f32 = 1.0,
+    // The view out of the library's windows (model3d::view_out), unlit, exposed on its own
+    // and through the room's tonemap: 1.8 takes the sky into the shoulder, as the
+    // concepts' bright windows do.
+    outside: f32 = 1.8,
 }
 
 // The library on the garden side, south-west, a mid-October afternoon

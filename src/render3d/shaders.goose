@@ -1890,6 +1890,114 @@ let ROOM_HEAD = """
     };
     """;
 
+// The room's tonemap, which the room (ROOM_FRAG) and the view out of its windows
+// (OUTSIDE_FRAG) share, so the window and the room sit on one curve: the board's curve,
+// its toe taken on the luminance and scaled into every channel: taking the least channel
+// off, as the board does, turns the room's dim oak orange.
+let TONE_FN = """
+    vec3 tonemap(vec3 c) {
+        float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
+        c *= (y < 0.04 ? 12.5 * y * y : y - 0.02) / y;
+        float peak = max(c.r, max(c.g, c.b));
+        const float start = 0.76;
+        if (peak < start) return c;
+        const float d = 1.0 - start;
+        float np = 1.0 - d * d / (peak + d - start);
+        c *= np / peak;
+        float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
+        return mix(c, vec3(np), g);
+    }
+    """;
+
+// The view out of the library's windows (model3d::view_out), turned with the room as
+// ROOM_VERT turns it: the sky's vertices are directions, put round the eye so it shows no
+// parallax; the band and the oak drawn eight times nearer the eye, inside the far plane,
+// which leaves the picture as it is. Depth is neither tested nor written.
+let OUTSIDE_VERT = """
+    layout(location = 0) in vec3 a_pos;
+    layout(location = 1) in vec3 a_normal;
+    layout(location = 2) in vec2 a_uv;
+    layout(location = 3) in vec2 a_extra;          // occlusion, material
+    layout(location = 0) out vec3 v_dir;
+    layout(location = 1) out vec2 v_uv;
+    layout(location = 2) out float v_mat;
+    vec3 turned(vec3 a) {
+        vec2 xz = room_axes.xy * a.x + room_axes.zw * a.z;
+        return vec3(xz.x, a.y, xz.y);
+    }
+    void main() {
+        bool sky = a_extra.y < 12.5;
+        // The normal is zero: read so the attributes keep mesh::Vertex's layout.
+        vec3 w = turned(a_pos + a_normal);
+        vec3 pos = sky ? eye.xyz + w * 200.0 : eye.xyz + (w - eye.xyz) * 0.125;
+        v_dir = sky ? w : w - eye.xyz;
+        v_uv = a_uv;
+        v_mat = a_extra.y;
+        gl_Position = view_proj * vec4(pos, 1.0);
+    }
+    """;
+
+// The view out, unlit, its own exposure (Outside.exposure.x, rooms::Room.outside) through
+// the room's tonemap and grade, dimmed with the board (screen.z). The sky is
+// design/manor/outside/park.py's, worked out here round the sun (light_dir): a zenith blue
+// paling to the horizon, warmer toward the sun, its glow, then the sun's disc and the
+// haze's halo round it; below the horizon a plain lawn, darker toward the house, which the
+// band's own lawn covers but under its foot. The band and the oak are premultiplied in
+// linear light and sampled as sRGB, so their crowns blend with no dark fringe. A level of
+// noise breaks the sky's bands.
+let OUTSIDE_FRAG = """
+    layout(location = 0) in vec3 v_dir;
+    layout(location = 1) in vec2 v_uv;
+    layout(location = 2) in float v_mat;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D band;
+    layout(set = 2, binding = 1) uniform sampler2D oak;
+    // x: the exposure; y: the sun disc's brightness over the sky's, linear.
+    layout(set = 3, binding = 1) uniform Outside { vec4 exposure; };
+    const vec3 ZENITH = vec3(0.6235, 0.7020, 0.8118);
+    const vec3 HOR_COOL = vec3(0.8392, 0.8667, 0.9020);
+    const vec3 HOR_WARM = vec3(0.9529, 0.8392, 0.6667);
+    const vec3 CORE = vec3(1.0, 0.9529, 0.8392);
+    const vec3 LAWN = vec3(0.505, 0.413, 0.122);
+    vec3 decode(vec3 c) {
+        return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+    }
+    vec3 encode(vec3 c) {
+        c = clamp(c, 0.0, 1.0);
+        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+    }
+    // The sky toward d, linear.
+    vec3 sky(vec3 d) {
+        vec3 s = normalize(light_dir.xyz);
+        float el = degrees(asin(clamp(d.y, -1.0, 1.0)));
+        float ang = degrees(acos(clamp(dot(d, s), -1.0, 1.0)));
+        float warm = exp(-(ang / 45.0) * (ang / 45.0));
+        vec3 c = mix(mix(HOR_COOL, HOR_WARM, warm), ZENITH, clamp(el / 40.0, 0.0, 1.0));
+        c += (CORE - c) * exp(-(ang / 7.0) * (ang / 7.0));
+        vec3 ground = LAWN * (1.0 - 0.35 * clamp(-el / 30.0, 0.0, 1.0));
+        c = mix(c, ground, clamp(-el, 0.0, 1.0));
+        c = decode(c);
+        // The sun's disc, half a degree across, its edge over a pixel, and the haze's
+        // bright halo round it.
+        float px = max(fwidth(ang), 1e-3);
+        float disc = 1.0 - smoothstep(0.27 - 0.5 * px, 0.27 + 0.5 * px, ang);
+        float halo = 1.5 * exp(-(ang / 1.2) * (ang / 1.2)) + 0.4 * exp(-(ang / 4.0) * (ang / 4.0));
+        return c + (disc * exposure.y + halo) * decode(CORE) * step(0.0, el);
+    }
+    void main() {
+        vec4 t;
+        if (v_mat < 12.5) t = vec4(sky(normalize(v_dir)), 1.0);
+        else if (v_mat < 13.5) {
+            // The band's ends faded over 2°, for the views along the wall.
+            t = texture(band, v_uv) * smoothstep(0.0, 0.0156, min(v_uv.x, 1.0 - v_uv.x));
+        } else t = texture(oak, v_uv);
+        vec3 c = t.rgb / max(t.a, 1e-4) * exposure.x;
+        c = tonemap(c) * vec3(1.02, 1.0, 0.97);
+        float n = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+        result = vec4((encode(c) + n / 255.0) * t.a * (1.0 - screen.z), t.a);
+    }
+    """;
+
 // The room lit as the table is (TABLE_FRAG's light, its functions repeated here): the
 // window's key with its pattern and the trees' dapple, the table's shadow, the room's
 // harmonics, a GGX highlight in the wax. The floor is laid here: a herringbone of
@@ -1916,21 +2024,6 @@ let ROOM_FRAG = """
         vec2 u = f * f * (3.0 - 2.0 * f);
         return mix(mix(h12(i), h12(i + vec2(1, 0)), u.x),
                    mix(h12(i + vec2(0, 1)), h12(i + vec2(1, 1)), u.x), u.y);
-    }
-
-    // The board's curve, its toe taken on the luminance and scaled into every channel:
-    // taking the least channel off, as the board does, turns the room's dim oak orange.
-    vec3 tonemap(vec3 c) {
-        float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
-        c *= (y < 0.04 ? 12.5 * y * y : y - 0.02) / y;
-        float peak = max(c.r, max(c.g, c.b));
-        const float start = 0.76;
-        if (peak < start) return c;
-        const float d = 1.0 - start;
-        float np = 1.0 - d * d / (peak + d - start);
-        c *= np / peak;
-        float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
-        return mix(c, vec3(np), g);
     }
 
     // How much of a line `half_w` either side of 0 a pixel `fp` wide at distance d covers

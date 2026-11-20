@@ -123,9 +123,15 @@ pieces; the design boards still set the layout, glass, and controls.
   wall from the stove's end, y from the hall wall, H up from the floor), `--fov DEG`. With
   the shell the room's light comes through its own windows (`shaders::LIGHT_FN`'s
   `shell_light`), not `--wall`/`--panes`, which still light the board and table; behind
-  the windows a plain sky (the plain fade, the tuner's `SKY_*`). `--dump-map` writes the
+  the windows the park (`model3d::view_out`: the sky worked out round the key's sun, the
+  band, the oak), or with `--outside off` (U) the plain sky as before (the plain fade, the
+  tuner's `SKY_*`, which give the board's ambient either way); the park's exposure is
+  `--outside-exposure K`, the slider "Outside's exposure" (`rooms::Room.outside`, printed
+  by P). The view toward the sun from the window's middle: `--plan-eye 4.5,6.6,1.6
+  --plan-at 4.84,7.54,1.93 --fov 30`. `--dump-map` writes the
   map the renderer bakes then (the shell's 2048 × 768). Its mesh's triangles and making
-  time print with a `--shot`'s bake line. The shot page: `build/notes/room-demo/`.
+  time print with a `--shot`'s bake line. The shot pages: `build/notes/room-demo/`,
+  `build/notes/room-outside/`.
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 
