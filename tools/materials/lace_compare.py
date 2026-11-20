@@ -5,7 +5,7 @@ framing and physical scale, labelled on each image.
     python3 tools/materials/lace_compare.py build/notes/lace-library build/notes/lace-compare
 
 LIBRARY_DIR holds one folder a way, as the bakers' headers make them (lace-2, b, c, d,
-d-tilted, d-near, e, e-hem2); OUT_DIR gets index.html and its tiles. The download's scale is
+d-tilted, d-near, f); OUT_DIR gets index.html and its tiles. The download's scale is
 lace.py's: 2 * REPEAT source px a TILE_M tile. Field windows are in metres from the
 download's field corner (FIELD's x0, y0), where our traced ways' tile starts too; hem
 windows in metres from a garland's cusp across and from the lowest edge of the hem up.
@@ -30,8 +30,7 @@ FIELD_ROWS = (lace.FIELD[1], lace.BORDER_ROWS[0])
 GPT = '#ff9f1c'                                # ChatGPT's labels
 OURS = '#4cc9f0'                               # ours
 WAYS = [  # folder, file tag, label, one line
-    ('e', 'e', 'e, structured', 'flowers by their boss, stems and leaves from the download'),
-    ('e-hem2', 'e', 'e, two scallops', 'e with the hem\'s two small scallops an arc'),
+    ('f', 'f', 'f, wild rose grammar', 'grown: trails, shoots, pinnate leaves, roses at the tips'),
     ('d-tilted', 'd', 'd-tilted', 'wild roses, tilted and warped'),
     ('d', 'd', 'd', 'wild roses, face on'),
     ('c', 'c', 'c', 'traced layout, rosette flowers'),
@@ -39,7 +38,7 @@ WAYS = [  # folder, file tag, label, one line
     ('lace-2', None, 'lace-2', 'old bake, cut straight from the download'),
 ]
 NEAR = ('d-near', 'd', 'd-near', 'd-tilted tuned toward the download')
-HEM_ONLY = {'e-hem2'}                          # the same field as the way before it
+HEM_ONLY = set()                               # ways whose field is the way before it's
 
 # name, metres (x, y, w, h), output px (w, h)
 FIELD_VIEWS = [
@@ -291,8 +290,8 @@ def build(lib, out):
 
 
 FIELD_NOTES = [
-    'One flower and its leaves, the same patch in every column (b grows its own layout, so '
-    'its patch is different). The download is only 173 px across here, so it is soft: judge '
+    'One flower and its leaves, the same patch in every column (b and f grow their own layouts, so '
+    'their patches differ; f is placed so a big rose sits here). The download is only 173 px across here, so it is soft: judge '
     'its shapes, not its sharpness. Look at the petals\' tilt, the boss, the leaves\' veins.',
     'Half a metre: flowers against leaves and the net. Look at how much is solid and how '
     'the flowers stand out of the trails.',
