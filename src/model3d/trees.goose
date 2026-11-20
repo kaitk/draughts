@@ -140,6 +140,7 @@ struct Species {
     paired:   bool,
     leaf:     f32,
     width:    f32,
+    spray:    f32 = 0.0,  // leaves spread round a twig, a ball this many of its segments wide
 }
 
 // A broadleaf of no kind in particular, the first take.
@@ -157,6 +158,7 @@ let BROADLEAF = Species {
     paired:   false,
     leaf:     1.0,
     width:    1.0,
+    spray:    0.0,
 };
 
 // Norway maple (library-autumn-01, -02): its twigs in opposite pairs, a dense rounded
@@ -171,10 +173,11 @@ let MAPLE = Species {
     crook:    [0.05, 0.2, 0.25, 0.2, 0.2],
     rise:     [0.0, 0.08, 0.05, 0.03, 0.0],
     hang:     [0.0, 0.0, 0.03, 0.1, 0.15],
-    leaves:   [0.0, 0.0, 0.0, 5.0, 12.0],
+    leaves:   [0.0, 0.0, 3.0, 8.0, 14.0],
     paired:   true,
     leaf:     1.6,
     width:    1.35,
+    spray:    1.2,
 };
 
 // Small-leaved lime (garden-facade-01, the manor park's common tree): a dense crown of
@@ -190,10 +193,11 @@ let LIME = Species {
     crook:    [0.05, 0.25, 0.3, 0.3, 0.25],
     rise:     [0.0, 0.1, 0.06, 0.02, 0.0],
     hang:     [0.0, 0.06, 0.12, 0.3, 0.35],
-    leaves:   [0.0, 0.0, 0.0, 6.0, 14.0],
+    leaves:   [0.0, 0.0, 4.0, 8.0, 14.0],
     paired:   false,
     leaf:     0.7,
     width:    1.15,
+    spray:    1.0,
 };
 
 // Oak (garden-facade-01's, and winter's bare take): heavy limbs turning at random in a
@@ -209,10 +213,11 @@ let OAK = Species {
     crook:    [0.12, 0.6, 0.7, 0.65, 0.55],
     rise:     [0.0, 0.04, 0.03, 0.02, 0.01],
     hang:     [0.0, 0.0, 0.02, 0.05, 0.05],
-    leaves:   [0.0, 0.0, 0.0, 3.0, 16.0],
+    leaves:   [0.0, 0.0, 0.0, 5.0, 16.0],
     paired:   false,
     leaf:     1.1,
     width:    0.7,
+    spray:    0.9,
 };
 
 let SPECIES_COUNT = 4;
@@ -297,7 +302,7 @@ recursive fn grow_branch(t: Tree&, s: Spec&, v: View&, b: Branch) {
     }
     guard n > 0 else { return; }
     // The leaves on dice of their own, so the branches are the same with or without them.
-    if level >= 3 && s.leafy > 0.0 {
+    if level >= 2 && s.leafy > 0.0 && species(s.kind).leaves[level] > 0.0 {
         var leaf_dice = Dice { mixed(b.dice ^ 0x5DEECE66D) };
         add_leaves(t, s, v, leaf_dice, points, n, level);
     }
@@ -326,7 +331,7 @@ recursive fn grow_branch(t: Tree&, s: Spec&, v: View&, b: Branch) {
         let child = Branch { foot, turned(along, tilt, round), child_length, child_radius, level + 1,
                              mixed(b.dice ^ ((c + 1) as u64 * 0x9E3779B97F4A7C15)) };
         // Left out where nothing it grows can fall on the map.
-        guard clear_of_wall(v, foot) && on_square(v, on_map(v, foot), (child_length * REACH + s.leaf * sp.leaf * 2.0) * k) else {
+        guard clear_of_wall(v, foot) && on_square(v, on_map(v, foot), (child_length * (REACH + sp.spray) + s.leaf * sp.leaf * 2.0) * k) else {
             continue;
         }
         grow_branch(t, s, v, child);
@@ -348,7 +353,11 @@ fn add_leaves(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i64
         let foot = points[i] + (points[i + 1] - points[i]) * (at - i);
         let out = normalize(roll_ball(d) + float3 { 0.0, -0.3 * s.hang, 0.0 });
         let length = s.leaf * sp.leaf * roll_between(d, 0.75, 1.2);
-        let middle = foot + out * (length * 0.9);
+        // On a short stalk, or sprayed round the twig in a loose ball, so the crown's
+        // outer shell fills with leaves and gaps between them.
+        let seg = points[i + 1] - points[i];
+        let step = sqrt(dot(seg, seg));
+        let middle = foot + out * (length * 0.9 + sp.spray * step * roll(d));
         let m = on_map(v, middle);
         guard clear_of_wall(v, middle) && on_square(v, m, length) else { continue; }
         // Turned along its stalk as the sun sees it, foreshortened by its tilt.

@@ -161,6 +161,29 @@ short and straight.
   scaled by the gust. `Room.wind`: strength, speed, the leaves against the limbs, ruffle;
   mild by default (0.06).
 
+- Tuning the library on the tree alone (2026-11-20, the user: the noise looks
+  unrealistic; trees and their crowns only for now, autumn first, small gusts). What the
+  search found (`tools/light_tune --dump-map` writes the map the sun sees; its middle
+  35% is what falls on the board):
+  - The map covers only about 26 units of the tree (the opening carried out to it, cut to
+    the table), the board its middle 9. So where the trunk stands decides everything: at
+    first the window looked at the trunk and two limbs, which no leaf setting changed.
+  - A tall far tree (400 units, 200 out) blurs by the sun's disc into a few soft blobs
+    and limbs, five to ten times less fine detail than a small near one (70 units, 30
+    out), the agent's scale model; the concept's flecks want the near one.
+  - Leaves strung along the twigs left the crown's shell sparse where the window looks.
+    `Species.spray` scatters a twig's leaves in a loose ball about it (a segment's
+    length times spray), and the outer branches (level 2) carry leaves too, so the
+    shell fills evenly with gaps: the maps now read as foliage.
+  - The library's default: the maple, trunk along 15, foot -50, leafy 1.5 (the board's
+    part lets through about 40%, the most fine detail of the grid). Winter's oak, bare,
+    is a fine net now, not a fishbone; spring's lime is sparse over the board.
+  - The tuner regrouped (the user): the scene, the tree, the wind, the sun at the top; the
+    window, the noise's leaves, and the light in detail (the room's profile) below.
+    `--wall`, `--panes`, `--opening` added.
+  - Shell sweeps: run them under bash; zsh doesn't split an unquoted `$args`, and every
+    flag silently went as one ignored word (a whole afternoon's sweeps were the default).
+
 ## Acceptance criteria
 
 - [ ] A generated tree whose shadow reads as branches and leaves, not noise, on the board

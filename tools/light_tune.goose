@@ -10,7 +10,8 @@
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
 //       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
-//       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)] [--azimuth DEG] [--sun-height DEG]
+//       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
+//       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 
 import std;
@@ -276,11 +277,33 @@ fn main() {
     room.crown = four(argv, "--crown", room.crown);
     room.foliage = four(argv, "--foliage", room.foliage);
     room.leaves = four(argv, "--trees", room.leaves);
+    room.window = four(argv, "--wall", room.window);
+    room.panes = four(argv, "--panes", room.panes);
+    room.opening = four(argv, "--opening", room.opening);
     room.wind = four(argv, "--wind", room.wind);
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
     render3d::wind_time = number(argv, "--wind-time", 0.0);
     g.room = room;
     g.room_tuned = true;
+    // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied.
+    let dump = flag_value(argv, "--dump-map");
+    if dump > 0 {
+        var t = trees::Tree { .. };
+        let sp = rooms::tree_spec(room);
+        let v = rooms::tree_view(room);
+        trees::grow(t, sp, v);
+        var map: u8[>..] = [];
+        trees::draw_map(t, sp, v, map);
+        var out: u8[>..] = [];
+        format(out, "P5\n", trees::SIDE, " ", trees::SIDE, "\n255\n");
+        for i in trees::SIDE * trees::SIDE {
+            let o = i * 4;
+            let k = (map[o] as i64) * (map[o + 1] as i64) / 255 * (map[o + 2] as i64) / 255 * (map[o + 3] as i64) / 255;
+            out.push(k as u8);
+        }
+        guard write_file(argv[dump], out[..]) else { abort("could not write the map"); }
+        print("map span ", v.span, " middle ", v.middle.x, ",", v.middle.y);
+    }
     render3d::window_pattern = pattern == 1;
     put_look(r3d, g, season, material, st);
 
@@ -316,27 +339,41 @@ fn main() {
             choice(c, "Season", season, SEASONS);
             choice(c, "Board", material, MATERIALS);
             choice(c, "Table", take, tables::NAMES);
-            heading(c, "Sun (the key)");
+            choice(c, "Pattern (W)", pattern, ["off", "on"]);
+            var shade = clamp(room.tree.x as i64, 0, 2);
+            choice(c, "Leaves by (T)", shade, ["noise", "tree", "both"]);
+            room.tree.x = shade;
+            heading(c, "The tree");
+            choice(c, "Kind", room.species, trees::SPECIES_NAMES);
+            var seed = room.tree.y as i64;
+            count(c, "Seed", seed, 0, 99);
+            room.tree.y = seed;
+            slider(c, "Leafy", room.tree.w, 0.0, 2.0);
+            slider(c, "Leaf long", room.foliage.x, 0.1, 4.0);
+            slider(c, "Leaf wide", room.foliage.y, 0.2, 1.2);
+            slider(c, "Leaf lets", room.foliage.z, 0.0, 1.0);
+            slider(c, "Tree blur", room.tree_blur, 0.1, 3.0);
+            slider(c, "Trunk along", room.crown.x, -100.0, 100.0);
+            slider(c, "Trunk foot", room.crown.y, -400.0, 0.0);
+            slider(c, "Trunk high", room.tree.z, 40.0, 600.0);
+            slider(c, "Trunk away", room.foliage.w, 5.0, 300.0);
+            slider(c, "Crooked", room.crown.z, 0.0, 1.5);
+            slider(c, "Twigs hang", room.crown.w, 0.0, 1.0);
+            if g.tree_ms > 0.0 {
+                ui::layout_row_dynamic(c, ROW, 1);
+                ui::label(c, str("baked in ", floor(g.tree_ms + 0.5) as i64, " ms"), ui::TEXT_LEFT);
+            }
+            heading(c, "Wind");
+            slider(c, "Wind", room.wind.x, 0.0, 0.3);
+            slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
+            slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
+            slider(c, "Ruffle", room.wind.w, 0.0, 2.0);
+            heading(c, "Sun");
             slider(c, "Round", room.key.x, -30.0, 150.0);
             slider(c, "Height", room.key.y, 3.0, 70.0);
             slider(c, "Strength", room.key.z, 0.0, 12.0);
             slider(c, "Shadow", room.key.w, 0.0, 1.0);
-            color_sliders(c, "Sun", room.key_color);
-            slider(c, "Exposure", room.exposure, 0.5, 2.0);
-            heading(c, "Window's sky (fill)");
-            slider(c, "Round", room.fill.x, -30.0, 150.0);
-            slider(c, "Height", room.fill.y, 0.0, 80.0);
-            slider(c, "Strength", room.fill.z, 0.0, 3.0);
-            slider(c, "Broad", room.fill.w, 0.0, 1.0);
-            color_sliders(c, "Sky", room.fill_color);
-            heading(c, "Room");
-            slider(c, "Walls", room.walls.w, 0.0, 1.0);
-            color_sliders(c, "Walls", room.walls);
-            slider(c, "Ceiling", room.ceiling.w, 0.0, 1.0);
-            slider(c, "Floor", room.floor.w, 0.0, 1.0);
-            slider(c, "Lamp", room.lamp.z, 0.0, 1.0);
-            heading(c, "Window's shadow (W)");
-            choice(c, "Pattern", pattern, ["off", "on"]);
+            heading(c, "Window");
             slider(c, "Shade", room.pattern.x, 0.0, 1.0);
             slider(c, "Softness", room.pattern.y, 0.0, 0.05);
             slider(c, "Wall away", room.window.x, 10.0, 80.0);
@@ -350,6 +387,7 @@ fn main() {
             slider(c, "Panes up", room.opening.y, 1.0, 6.0);
             slider(c, "Curtain in", room.opening.z, 0.0, 20.0);
             slider(c, "Lace lets", room.opening.w, 0.0, 1.0);
+            heading(c, "Noise leaves (noise, both)");
             slider(c, "Leaves", room.leaves.x, 0.0, 1.0);
             slider(c, "Leaf size", room.leaves.y, 0.02, 1.0);
             slider(c, "Trees away", room.leaves.z, 0.0, 400.0);
@@ -358,35 +396,21 @@ fn main() {
             slider(c, "Leaf gaps few", room.twigs.y, 0.2, 0.9);
             slider(c, "Fleck blur", room.twigs.z, 0.005, 0.3);
             slider(c, "In the open", room.twigs.w, 0.0, 1.0);
-            slider(c, "Wind", room.wind.x, 0.0, 0.3);
-            slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
-            slider(c, "Ruffle", room.wind.w, 0.0, 2.0);
-            heading(c, "The tree (T: noise, tree, both)");
-            var shade = clamp(room.tree.x as i64, 0, 2);
-            choice(c, "Leaves by", shade, ["noise", "tree", "both"]);
-            room.tree.x = shade;
             slider(c, "Crown blur", room.crown_blur, 0.0, 6.0);
             slider(c, "Crown fill", room.crown_fill, 0.0, 10.0);
-            choice(c, "Kind", room.species, trees::SPECIES_NAMES);
-            var seed = room.tree.y as i64;
-            count(c, "Seed", seed, 0, 99);
-            room.tree.y = seed;
-            slider(c, "Trunk high", room.tree.z, 40.0, 600.0);
-            slider(c, "Leafy", room.tree.w, 0.0, 2.0);
-            slider(c, "Trunk along", room.crown.x, -100.0, 100.0);
-            slider(c, "Trunk foot", room.crown.y, -400.0, 0.0);
-            slider(c, "Crooked", room.crown.z, 0.0, 1.5);
-            slider(c, "Twigs hang", room.crown.w, 0.0, 1.0);
-            slider(c, "Leaf long", room.foliage.x, 0.1, 4.0);
-            slider(c, "Leaf wide", room.foliage.y, 0.2, 1.2);
-            slider(c, "Leaf lets", room.foliage.z, 0.0, 1.0);
-            slider(c, "Trunk away", room.foliage.w, 5.0, 300.0);
-            slider(c, "Tree blur", room.tree_blur, 0.1, 3.0);
-            slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
-            if g.tree_ms > 0.0 {
-                ui::layout_row_dynamic(c, ROW, 1);
-                ui::label(c, str("baked in ", floor(g.tree_ms + 0.5) as i64, " ms"), ui::TEXT_LEFT);
-            }
+            heading(c, "Light in detail (the room's profile)");
+            color_sliders(c, "Sun", room.key_color);
+            slider(c, "Exposure", room.exposure, 0.5, 2.0);
+            slider(c, "Sky round", room.fill.x, -30.0, 150.0);
+            slider(c, "Sky height", room.fill.y, 0.0, 80.0);
+            slider(c, "Sky strength", room.fill.z, 0.0, 3.0);
+            slider(c, "Sky broad", room.fill.w, 0.0, 1.0);
+            color_sliders(c, "Sky", room.fill_color);
+            slider(c, "Walls", room.walls.w, 0.0, 1.0);
+            color_sliders(c, "Walls", room.walls);
+            slider(c, "Ceiling", room.ceiling.w, 0.0, 1.0);
+            slider(c, "Floor", room.floor.w, 0.0, 1.0);
+            slider(c, "Lamp", room.lamp.z, 0.0, 1.0);
             heading(c, "View (drag, scroll, R)");
             slider(c, "Distance", far, 0.4, 4.0);
             slider(c, "Height", pitch, 10.0, 89.0);

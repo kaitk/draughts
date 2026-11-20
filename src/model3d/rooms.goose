@@ -90,6 +90,11 @@ let AUTUMN = Room {
     lamp:       float4_0,
     lamp_color: float4_0,
     species:    1,
+    // The maple close by, the window looking into its crown's outer leaves (task 105's
+    // search: the board's part of the map lets through about 40% with the most fine
+    // detail; a tall far tree blurs to blobs).
+    tree:  float4 { 1.0, 4.0, 70.0, 1.5 },
+    crown: float4 { 15.0, -50.0, 0.5, 0.3 },
     ..
 };
 

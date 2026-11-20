@@ -87,7 +87,11 @@ pieces; the design boards still set the layout, glass, and controls.
 - What each side has taken, on the table: `tools/taken_tune.goose` (task 099); P prints a
   command that shows the same again and the layout's `TableLayout` literal for
   `taken3d::TABLE_LAYOUTS`.
-- The three tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
+- The room's light, the window, and the tree outside: `tools/light_tune.goose` (tasks 104
+  and 105); `--dump-map out.pgm` writes the tree's map as the sun sees it (the board falls
+  on its middle third), P prints the room as Goose for `src/model3d/rooms.goose`. Script
+  sweeps of its flags under bash: zsh passes an unquoted `$args` as one word.
+- The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 
 ## What has been tried and set aside
