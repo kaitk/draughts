@@ -293,12 +293,13 @@ let LIGHT_FN = """
         return vec2(slow, gust);
     }
 
-    // Leaves catching and losing the light in a gust: small patches each on their own
-    // phase, fast and tiny, the offset in the same units as m.
-    vec2 ruffle_at(vec2 m, float gust, float size) {
+    // Leaves turning in a gust: how far each small patch has turned, 0..1, on a phase of
+    // its own, fast. A weight to blend a leaf layer with itself nudged as a whole, so
+    // patches flip between two places and nothing is warped.
+    float ruffle_at(vec2 m, float gust, float size) {
         float t = wind.z * wind.y;
         float phase = window_noise(m / size) * 6.2832;
-        return vec2(sin(t * 7.3 + phase), cos(t * 9.1 + phase * 1.7)) * (gust * wind.w * size);
+        return gust * min(wind.w, 1.0) * (0.5 + 0.5 * sin(t * 7.3 + phase));
     }
 
     // How much of the key the tree outside lets through to p (trees.goose): p carried
@@ -323,12 +324,21 @@ let LIGHT_FN = """
         vec2 near_m = (dir * (wa.x + 2.0 * wa.y) + vec2(0.0, 0.4) * sin(t * 1.9 + 0.7)) / tree.x;
         vec2 mid_m = (dir * (0.8 * wa.x + 2.0 * wa.y) + vec2(0.0, 0.4) * sin(t * 1.6 + 2.3)) / tree.x;
         vec2 far_m = (dir * (0.6 * wa.x + 2.0 * wa.y) + vec2(0.0, 0.4) * sin(t * 1.3 + 4.1)) / tree.x;
-        vec2 flick = ruffle_at(m, wa.y, 0.6) / tree.x;
+        // The ruffle: the near and middle leaves blended with themselves nudged a leaf's
+        // width, patch by patch.
+        float turn = ruffle_at(m, wa.y, 1.5);
+        vec2 nudge = vec2(cos(t * 5.1), sin(t * 4.3)) * (0.35 / tree.x);
         float wood = textureLod(tree_map, uv + lean * tree_sway.x, lod).a;
         float leafy = lod + tree_blur.z;
-        float near = textureLod(tree_map, uv + near_m * tree_sway.y + flick, leafy).r;
-        float middle = textureLod(tree_map, uv + mid_m * tree_sway.z + flick.yx, leafy).g;
-        float far = textureLod(tree_map, uv + far_m * tree_sway.w - flick, leafy).b;
+        vec2 at_near = uv + near_m * tree_sway.y;
+        vec2 at_mid = uv + mid_m * tree_sway.z;
+        float near = textureLod(tree_map, at_near, leafy).r;
+        float middle = textureLod(tree_map, at_mid, leafy).g;
+        if (turn > 0.001) {
+            near = mix(near, textureLod(tree_map, at_near + nudge, leafy).r, turn);
+            middle = mix(middle, textureLod(tree_map, at_mid - nudge.yx, leafy).g, turn);
+        }
+        float far = textureLod(tree_map, uv + far_m * tree_sway.w, leafy).b;
         return vec2(wood, near * middle * far);
     }
 
@@ -354,7 +364,6 @@ let LIGHT_FN = """
         // flutter faster than the branches sway.
         if (twigs.x > 0.0) {
             vec2 lf = lw * twigs.x;
-            lf += ruffle_at(lf, wa.y, 1.0);
             float m = 0.65 * window_noise(lf) + 0.35 * window_noise(lf * 2.13 + 5.3);
             float gaps = smoothstep(twigs.y - twigs.z, twigs.y + twigs.z, m);
             open_sky = mix(gaps, mix(1.0, gaps, twigs.w), open_sky);

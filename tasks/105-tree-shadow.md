@@ -184,6 +184,13 @@ short and straight.
   - Shell sweeps: run them under bash; zsh doesn't split an unquoted `$args`, and every
     flag silently went as one ignored word (a whole afternoon's sweeps were the default).
 
+- The ruffle warped the leaves into swirls (the user's shot, 2026-11-20): it moved each
+  small patch of the map by its own offset, as large as the patch, which smears. Now
+  nothing moves the map unevenly: each leaf layer shifts whole, and in a gust the near and
+  middle layers blend, patch by patch, with themselves nudged a leaf's width as a whole,
+  so patches flip between two places like turning leaves (two more taps in a gust only).
+  The noise's single leaves lost their ruffle with it.
+
 ## Acceptance criteria
 
 - [ ] A generated tree whose shadow reads as branches and leaves, not noise, on the board
