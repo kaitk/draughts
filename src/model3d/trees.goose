@@ -141,6 +141,7 @@ struct Species {
     leaf:     f32,
     width:    f32,
     spray:    f32 = 0.0,  // leaves spread round a twig, a ball this many of its segments wide
+    lobes:    i64 = 0,    // 0 an ellipse; 5 a maple's palmate leaf, its lobes pointing out from the stalk
 }
 
 // A broadleaf of no kind in particular, the first take.
@@ -178,6 +179,7 @@ let MAPLE = Species {
     leaf:     1.6,
     width:    1.35,
     spray:    1.2,
+    lobes:    5,
 };
 
 // Small-leaved lime (garden-facade-01, the manor park's common tree): a dense crown of
@@ -439,7 +441,7 @@ fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
         }
         for &lf in t.leaves {
             guard layer_of_depth(lf.at.z, depth) == layer else { continue; }
-            draw_leaf(plane, vw, lf, 1.0 - sp.leaf_light);
+            draw_leaf(plane, vw, lf, 1.0 - sp.leaf_light, species(sp.kind).lobes);
         }
         let z = if z_count[layer] > 0.0 { z_sum[layer] / z_count[layer] } else { 0.0 };
         let across = max(vw.distance + z / vw.toward, 1.0) * vw.blur;
@@ -492,7 +494,7 @@ fn draw_segment(plane: f32[>..]&, v: View&, sg: Segment&) {
 }
 
 // A leaf, an ellipse, letting `blocks` of the sun's light stop where it covers.
-fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32) {
+fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32, lobes: i64) {
     let m = on_map(v, lf.at);
     let a = lf.length * 0.5;
     let b = max(lf.width * 0.5, 0.02);
@@ -512,7 +514,25 @@ fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32) {
             let gu = u / a;
             let gw = w / b;
             let k1 = max(sqrt(gu * gu + gw * gw), 1e-6);
-            let dist = k0 * (k0 - 1.0) / k1;
+            var dist = k0 * (k0 - 1.0) / k1;
+            if lobes > 0 {
+                // A palmate leaf: round, its radius waving with the lobes, pointed ones out
+                // from the stalk (+u) and to the sides, a notch where the stalk joins.
+                let r = sqrt(u * u + w * w);
+                let turn = atan2(w, u);
+                let wave = cos(lobes * turn);
+                let pointed = if wave > 0.0 { pow(wave, 0.6 as f32) } else { -pow(-wave, 1.5 as f32) };
+                let notch_from: f32 = 2.4;
+                let notch_to:   f32 = 3.1;
+                let notch = smoothstep(notch_from, notch_to, abs(turn));
+                // A maple's: broad, shallow sinuses, three big lobes and two small ones
+                // by the stalk.
+                let low_from: f32 = 1.6;
+                let low_to:   f32 = 2.6;
+                let low = smoothstep(low_from, low_to, abs(turn));
+                let edge = (0.84 + 0.16 * pointed) * (1.0 - 0.25 * low) * (1.0 - 0.45 * notch);
+                dist = (r - edge) * a;
+            }
             let cover = clamp(0.5 - dist / texel, 0.0, 1.0);
             guard cover > 0.0 else { continue; }
             plane[j * SIDE + i] *= 1.0 - blocks * cover;

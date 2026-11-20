@@ -191,6 +191,12 @@ short and straight.
   so patches flip between two places like turning leaves (two more taps in a gust only).
   The noise's single leaves lost their ruffle with it.
 
+- The maple's leaves palmate (the user, 2026-11-20: its distinct shape, as in the
+  concepts; the others are good): `Species.lobes`, 5 for the maple, drawn by the leaf's
+  radius waving round it, pointed lobes out from the stalk and to the sides, shallow
+  sinuses, the two by the stalk smaller, a notch where it joins. Through the sun's blur
+  the lobes show as the clusters' edges; larger leaves (Leaf long) keep more of them.
+
 ## Follow-ups
 
 - Try the wind of the literature, in a session of its own (a subagent, the user,
