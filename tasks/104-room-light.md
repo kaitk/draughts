@@ -178,6 +178,24 @@ the light is settled (the user, 2026-11-20).
     panels are cleaner than old panelling; the wallpaper is plain; the floor's fields
     at 85 MiB want halving for anything but the high mode.
 
+- The room's oak, a second pass (2026-11-20), judged against style-01 with the user:
+  - Browner: shellac and the light's ambering laid amber over an orange base, a red to
+    blue ratio near 9; the base, stain and shellac are paler and browner, the ambering
+    lighter (fields' means: floor (82,49,22) to (79,58,38), wall (59,31,13) to (51,29,14)).
+  - The tonemap's toe took the least channel off, which zeroed dark oak's blue and turned
+    the shade orange: ROOM_FRAG's copy takes the curve on the luminance and scales.
+  - Dark oak in the 18° sun sat all in the toe. The board and the room need different
+    settings here: `rooms::Room.bounce` (the shade's light, the room's surfaces only) and
+    `room_exposure` (the room over the board, a local exposure), the library 0.2 and 1.8;
+    tuner `--bounce`, `--room-exposure`. AUTUMN's key, fill and walls, the board's and
+    the table's light and tonemap are unchanged: the game camera's shot is identical.
+    Shaded floor (42,16,1) to (55,34,20), style-01's (57,40,25).
+  - The ray fleck: soft scattered flakes 1 to 4 cm tall, a shade lighter, greyer and
+    glossier, no longer bleaching the stain; the cathedrals kept.
+  - Short still: the table's top (the board's) now reads redder than the room; the
+    floor's sun patch is dimmer than style-01's; the sheen against the light is greyer;
+    no repetition or banding seen in the wide shots. `build/notes/room-oak-2/index.html`.
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac
