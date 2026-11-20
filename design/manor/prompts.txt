@@ -319,3 +319,14 @@ is outpainting, which the models do well, so it waits; first whether a cut-out t
 
 --- 44. The oak as a cut-out (attach library-park-01.png) ---
 Draw a new image from scratch: the great old oak standing alone in the attached image, the whole tree from its roots to the top of its crown, by itself on a transparent background: no lawn, no sky, no other trees, no lake. Seen as in the image, level, from about forty metres, the eyes a little over two metres above its foot. Lit as in the image: the low afternoon sun behind it and to the left, so we see its shaded side, the edges of its crown and its outer leaves glowing gold, the trunk dark. Its autumn leaves yellow and rusty orange, with gaps through the crown. Like a still from a period film on 35 mm film, sharp throughout. No text. Landscape 3:2.
+
+Verdict (library-oak-01.png, the second of the two ChatGPT offered; the first in
+set-aside/ as library-oak-01a.png): both came with real transparency, so cut-outs work.
+Composed at its true size for 40 m over library-far-01, the second stands in the park: a
+photograph's oak, its crown open with sky through it. Its orange is stronger and its light
+more frontal than the band's backlight; both tunable once layered. The first looked
+painted, lit with a sheen, and floated on a disc of ground. Its alpha's edge is soft: eat
+a pixel or two in when cut, or a pale halo shows over a darker band.
+
+--- 45. The far band continued to the right (attach library-far-01.png) ---
+Draw a new image from scratch: the park in the attached image, the camera turned about fifty degrees to the right from the same place, so the right third of the attached image becomes the left third of this one and the park runs on beyond it. The same level camera and 24 mm lens, the horizon at the same height. The same open lawn running flat to the gravel path along its far edge; behind the path the same band of tall old limes, maples and birches with a few dark spruces, at the same distance and height, closing the view, softened by haze; no lake here. The low afternoon sun now behind the camera's left shoulder, out of the picture, lighting the trees from the left, their left sides gold, their right sides in shade. Like a still from a period film on 35 mm film. No people, no house, no text. Landscape 3:2.
