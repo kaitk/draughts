@@ -310,3 +310,12 @@ behind the sill from the table.
 
 --- 43. The far band (attach library-park-01.png) ---
 Draw a new image from scratch: the far part of the park in the attached image, with everything near taken away: no maple, no oak, no spruces in front. Seen from the same place, the eyes a little over two metres above the lawn, the camera level, the horizon across the middle, through a 24 mm lens. The open lawn running away flat to a gravel path along its far edge; beyond it a calm lake glimpsed between tall old trees; a long band of tall old limes, maples and birches with a few dark spruces closing the view about a hundred metres off, softened by haze. A clear sky above them, pale and warm. The low afternoon sun just above the top left, out of the picture, the far trees backlit with bright rims, the lawn lit in long streaks. Like a still from a period film on 35 mm film. No people, no house, no text. Landscape 3:2.
+
+Verdict (library-far-01.png): a usable far band. Hazy, backlit, the sun's glow in the top
+left corner, the lake between the trees, a few spruces and birches. Its tree line stands
+nearer than asked, about 60 m by its height, still behind the oak's 40 m. The lawn still
+carries streaks of shadow from trees that are gone; ours anyway. Continuing it to the sides
+is outpainting, which the models do well, so it waits; first whether a cut-out tree works.
+
+--- 44. The oak as a cut-out (attach library-park-01.png) ---
+Draw a new image from scratch: the great old oak standing alone in the attached image, the whole tree from its roots to the top of its crown, by itself on a transparent background: no lawn, no sky, no other trees, no lake. Seen as in the image, level, from about forty metres, the eyes a little over two metres above its foot. Lit as in the image: the low afternoon sun behind it and to the left, so we see its shaded side, the edges of its crown and its outer leaves glowing gold, the trunk dark. Its autumn leaves yellow and rusty orange, with gaps through the crown. Like a still from a period film on 35 mm film, sharp throughout. No text. Landscape 3:2.
