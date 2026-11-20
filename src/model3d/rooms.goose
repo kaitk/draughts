@@ -299,3 +299,83 @@ fn tree_view(r: Room) -> trees::View {
     return trees::View { shear, middle, span, (r.window.x + r.foliage.w) / facing, facing,
                          sun * r.tree_blur, -r.foliage.w };
 }
+
+// The wind in the trees at a moment (Room.wind), for shaders::LIGHT_FN: now x the whole
+// tree's slow sway, -1..1; y the gust where the map's along is 0, 0..1; z the gust's
+// change a unit along the wall, as its front crosses the crown. Each layer's shift (the
+// limbs, the near, middle and far leaves) in the tree's map, a map of side `span`: xy in
+// calm air, zw what a full gust adds.
+struct Wind {
+    now:   float4,
+    shift: float4[4],
+}
+
+// The wind's noise (Zioma, GPU Gems 3, ch. 6): value noise of time, -1..1, a new random
+// value each unit, eased between, so it never repeats.
+fn wind_noise(x: f64) -> f64 {
+    let i = floor(x);
+    let f = x - i;
+    let a = wind_hash(i);
+    let b = wind_hash(i + 1.0);
+    return (a + (b - a) * f * f * (3.0 - 2.0 * f)) * 2.0 - 1.0;
+}
+
+fn wind_hash(p: f64) -> f64 {
+    var q = fract(p * 0.1031);
+    q *= q + 33.33;
+    q *= q + q;
+    return fract(q);
+}
+
+fn eased(a: f64, b: f64, x: f64) -> f64 {
+    let t = clamp((x - a) / (b - a), 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+
+// The gust at the seconds `front`, 0 mostly, toward 1 for about five seconds every
+// twenty or so: a quick noise let through only while a slow one is high.
+fn gust_at(front: f64) -> f64 {
+    let quick = eased(0.0, 0.9, wind_noise(front * 0.3 + 3.7));
+    return quick * eased(-0.4, 0.4, wind_noise(front * 0.05 + 8.1));
+}
+
+// The wind at `seconds` for a tree's map of side `span`. Two noises a layer, one along
+// the wind and one across it (Zioma): the limbs follow the whole tree's slow sway alone,
+// barely and as one piece; each leaf layer adds its own turbulence, quicker the farther
+// out, as thin twigs move faster and more than thick limbs (Habel and others, 2009), and
+// stronger in a gust, which pushes all along the wind. Each layer only shifts, whole.
+fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
+    let t = (seconds * r.wind.y) as f64;
+    // Where the gust's front is a unit along the wall later: 0.015 s.
+    let lag: f64 = 0.015;
+    let gust = gust_at(t);
+    let change = (gust_at(t - 10.0 * lag) - gust_at(t + 10.0 * lag)) / 20.0;
+    // Each channel's rate and seed: the limbs, the near, middle and far leaves.
+    let along_rate:  f64[4] = [0.22, 0.35, 0.42, 0.5];
+    let across_rate: f64[4] = [0.17, 0.3, 0.37, 0.45];
+    let along_seed:  f64[4] = [73.1, 0.0, 17.3, 41.9];
+    let across_seed: f64[4] = [91.3, 29.7, 53.1, 7.9];
+    // How far each layer sways in world units: the limbs a tenth of the leaves.
+    let w = r.wind.x;
+    let reach: f32[4] = [w * 0.1, w * r.wind.z, w * r.wind.z * 1.15, w * r.wind.z * 1.3];
+    let sway = wind_noise(t * along_rate[0] + along_seed[0]) as f32;
+    let sway_across = 0.3 * wind_noise(t * across_rate[0] + across_seed[0]) as f32;
+    var out = Wind { float4 { sway, gust as f32, change as f32, 0.0 }, [float4_0; 4] };
+    let dir = float2 { 1.0, 0.15 };
+    let cross_dir = float2 { -0.15, 1.0 };
+    let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
+    for i in 4 {
+        // In calm air, and what a full gust adds (the turbulence up by 0.8, a push of 2).
+        var calm = dir * sway + cross_dir * sway_across;
+        var pushed = dir * 1.5;
+        if i > 0 {
+            let along = wind_noise(t * along_rate[i] + along_seed[i]) as f32;
+            let across = wind_noise(t * across_rate[i] + across_seed[i]) as f32;
+            calm = calm + dir * (0.6 * along) + cross_dir * (0.3 * across);
+            pushed = dir * (2.0 + 0.8 * along) + cross_dir * (0.4 * across);
+        }
+        let k = reach[i] * unit;
+        out.shift[i] = float4 { calm.x * k, calm.y * k, pushed.x * k, pushed.y * k };
+    }
+    return out;
+}

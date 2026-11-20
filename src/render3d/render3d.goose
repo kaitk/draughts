@@ -54,8 +54,9 @@ struct Frame {
     twigs:           float4,
     wind:            float4,
     tree:            float4,
-    tree_sway:       float4,
     tree_blur:       float4,
+    wind_now:        float4,
+    tree_shift:      float4[4],
     disc_n:          float4,
     discs:           float4[MAX_DISCS],
 }
@@ -669,6 +670,10 @@ fn put_room(g: Gpu&) {
     f.leaves = r.leaves;
     f.twigs = r.twigs;
     f.wind = float4 { r.wind.x, r.wind.y, wind_time, r.wind.w };
+    let span = if on && r.tree.x > 0.5 { rooms::tree_view(r).span } else { 0.0 };
+    let wa = rooms::wind_at(r, wind_time, span);
+    f.wind_now = wa.now;
+    f.tree_shift = wa.shift;
     put_tree(g, on && r.tree.x > 0.5);
     g.shadow_dirty = true;
 }
@@ -686,10 +691,6 @@ fn put_tree(g: Gpu&, on: bool) {
     for i in 10 { if !same4(key[i], g.tree_for[i]) { same = false; } }
     if !same { g.tree_stale = true; }
     f.tree = float4 { v.span, 0.0, v.middle.x, v.middle.y };
-    // The limbs lean a tenth of the leaves' sway, the leaf layers more the farther out.
-    let w = r.wind.x;
-    let more = r.wind.z;
-    f.tree_sway = float4 { w * 0.1, w * more, w * more * 1.15, w * more * 1.3 };
     let crown = if r.tree.x > 1.5 { max(r.crown_blur, 0.01) } else { 0.0 };
     f.tree_blur = float4 { v.blur * trees::SIDE / v.span, v.distance, crown, r.crown_fill };
 }

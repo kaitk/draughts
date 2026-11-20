@@ -63,12 +63,16 @@ let FRAME = """
         vec4 twigs;
         vec4 wind;           // x how strong, y how fast, z the seconds, w the leaves' ruffle in a gust
         // The tree outside, its shadow baked into tree_map (render3d::put_tree): x the
-        // map's side in world units (0 no tree: the leaves' noise), zw its middle; its
-        // layers' sway (the limbs, the near, middle and far leaves); x the blur's texels
-        // a unit of distance, y the board middle's distance from the trunk's plane.
+        // map's side in world units (0 no tree: the leaves' noise), zw its middle; x the
+        // blur's texels a unit of distance, y the board middle's distance from the
+        // trunk's plane.
         vec4 tree;
-        vec4 tree_sway;
         vec4 tree_blur;
+        // The wind this frame (rooms::wind_at): x the whole tree's slow sway, y the gust
+        // at 0 along the wall, z its change a unit along; each layer's shift in the map
+        // (the limbs, the near, middle and far leaves), xy in calm air, zw a full gust's.
+        vec4 wind_now;
+        vec4 tree_shift[4];
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
         // their radius; each disc x, z, its foot's and its top's height over the table.
         vec4 disc_n;
@@ -281,16 +285,11 @@ let LIGHT_FN = """
                    mix(window_hash(i + vec2(0.0, 1.0)), window_hash(i + vec2(1.0, 1.0)), u.x), u.y);
     }
 
-    // The wind at m, a point of the tree's plane (rooms::Room.wind, after Crysis's
-    // vegetation and SpeedTree's wind): x a slow sway, -1..1, the whole tree leaning a
-    // little as one; y a gust, 0 mostly, toward 1 now and then, its front crossing the
-    // crown along the wall.
+    // The wind at m, a point of the tree's plane (rooms::wind_at, after Zioma's noise of
+    // time a layer): x the whole tree's slow sway, -1..1; y the gust, its front crossing
+    // the crown along the wall.
     vec2 wind_at(vec2 m) {
-        float t = wind.z * wind.y;
-        float slow = 0.7 * sin(t * 0.55) + 0.3 * sin(t * 1.37 + 1.1);
-        float front = t - m.x * 0.015;
-        float gust = smoothstep(0.55, 1.0, (0.5 + 0.5 * sin(front * 0.21)) * (0.6 + 0.4 * sin(front * 0.53 + 2.0)));
-        return vec2(slow, gust);
+        return vec2(wind_now.x, clamp(wind_now.y + wind_now.z * m.x, 0.0, 1.0));
     }
 
     // Leaves turning in a gust: how far each small patch has turned, 0..1, on a phase of
@@ -314,31 +313,25 @@ let LIGHT_FN = """
         vec2 uv = (m - tree.zw) / tree.x + 0.5;
         float more = max(back * back - 2.0 * tree_blur.y * back, 0.0);
         float lod = 0.5 * log2(max(more * tree_blur.x * tree_blur.x, 1.0));
-        // The limbs lean as one, barely; each leaf layer shifts as a whole, a little more
-        // and on its own phase the farther out, more in a gust; in a gust their patches
-        // ruffle. Nothing bends a limb.
-        vec2 wa = wind_at(m);
-        vec2 dir = vec2(1.0, 0.15);
+        // Each layer shifts as a whole, by its own noises along and across the wind
+        // (rooms::wind_at), the gust's share as its front reaches m. Nothing bends a limb.
+        float gust = wind_at(m).y;
         float t = wind.z * wind.y;
-        vec2 lean = dir * (wa.x + 1.5 * wa.y) / tree.x;
-        vec2 near_m = (dir * (wa.x + 2.0 * wa.y) + vec2(0.0, 0.4) * sin(t * 1.9 + 0.7)) / tree.x;
-        vec2 mid_m = (dir * (0.8 * wa.x + 2.0 * wa.y) + vec2(0.0, 0.4) * sin(t * 1.6 + 2.3)) / tree.x;
-        vec2 far_m = (dir * (0.6 * wa.x + 2.0 * wa.y) + vec2(0.0, 0.4) * sin(t * 1.3 + 4.1)) / tree.x;
         // The ruffle: the near and middle leaves blended with themselves nudged a leaf's
         // width, patch by patch.
-        float turn = ruffle_at(m, wa.y, 1.5);
+        float turn = ruffle_at(m, gust, 1.5);
         vec2 nudge = vec2(cos(t * 5.1), sin(t * 4.3)) * (0.35 / tree.x);
-        float wood = textureLod(tree_map, uv + lean * tree_sway.x, lod).a;
+        float wood = textureLod(tree_map, uv + tree_shift[0].xy + gust * tree_shift[0].zw, lod).a;
         float leafy = lod + tree_blur.z;
-        vec2 at_near = uv + near_m * tree_sway.y;
-        vec2 at_mid = uv + mid_m * tree_sway.z;
+        vec2 at_near = uv + tree_shift[1].xy + gust * tree_shift[1].zw;
+        vec2 at_mid = uv + tree_shift[2].xy + gust * tree_shift[2].zw;
         float near = textureLod(tree_map, at_near, leafy).r;
         float middle = textureLod(tree_map, at_mid, leafy).g;
         if (turn > 0.001) {
             near = mix(near, textureLod(tree_map, at_near + nudge, leafy).r, turn);
             middle = mix(middle, textureLod(tree_map, at_mid - nudge.yx, leafy).g, turn);
         }
-        float far = textureLod(tree_map, uv + far_m * tree_sway.w, leafy).b;
+        float far = textureLod(tree_map, uv + tree_shift[3].xy + gust * tree_shift[3].zw, leafy).b;
         return vec2(wood, near * middle * far);
     }
 

@@ -197,18 +197,35 @@ short and straight.
   sinuses, the two by the stalk smaller, a notch where it joins. Through the sun's blur
   the lobes show as the clusters' edges; larger leaves (Leaf long) keep more of them.
 
+- The literature's wind (2026-11-20, the first follow-up): the sines are gone. After
+  Zioma (GPU Gems 3, ch. 6), each layer shifts by two value noises of time, one along the
+  wind and one across it, a new random value every few seconds, eased between: irregular
+  and never repeating. The limbs follow only the whole tree's slow sway (one noise pair,
+  a new value every 4 to 6 s), a tenth as far as the leaves, as one piece. Each leaf layer
+  adds its own pair on top (a new value every 2 to 3 s), quicker the farther out (Habel and others, 2009: thick limbs
+  slow and barely moving, thin twigs faster and more), so the layers never move in step.
+  A gust is a quick noise let through only while a slow one is high: about five seconds
+  every twenty or so, 17% of the time; it pushes all layers along the wind and stirs the
+  leaves' own noise more. Its front still crosses the crown along the wall. The ruffle's
+  patch flip is kept as it was. Nothing warps the map: each layer only shifts, whole.
+  - The noise runs on the CPU, once a frame (`rooms::wind_at`, tested in
+    `test/model3d/wind.goose`): each layer's shift in calm air and what a full gust adds,
+    and the gust with its change along the wall, go to the shaders in the frame's block
+    (`wind_now`, `tree_shift[4]`, in place of `tree_sway`). A pixel only adds the gust's
+    share: about 20 ALU operations and no sines, where the sines took about 45 and seven
+    sines (`noise_leaves`' `wind_at` too). The taps are as before: four, six in a gust.
+  - Shots in the tuner, the library at a calm (40 s) and a gust (17.5 s), and eight frames
+    0.25 s apart across a gust's start, before and after, beside `library-table-01`; and
+    each layer's shift over a minute, before and after (`build/notes/wind/`, local). In a
+    gust the board shows less contrast, before as now: the ruffle blends the near and
+    middle leaves with themselves nudged.
+
 ## Follow-ups
 
-- Try the wind of the literature, in a session of its own (a subagent, the user,
-  2026-11-20): each leaf layer's whole shift and the limbs' lean from two noises, one
-  along the wind and one across it (Zioma, *GPU-Generated Procedural Wind Animations for
-  Trees*, GPU Gems 3, ch. 6), in place of the sines in LIGHT_FN's `wind_at` and
-  `tree_light`: irregular, never repeating, the shapes still rigid; turbulence so the
-  layers never move in step; the gust's front rolling across as now. Compare in the
-  tuner at a calm and a gust (`--wind-time`). Also read: Habel and others' physically
-  guided trees (Eurographics 2009, their 2D motion textures near our layer shifts), and
-  God of War's *Interactive Wind and Vegetation* (GDC) for a wind field if ever needed.
-  The Witcher 3's wind (SpeedTree's, by all accounts, tuned strong) is unpublished.
+- The literature's wind: done (above), for the user to judge in the tuner. If a wind
+  field is ever needed, God of War's *Interactive Wind and Vegetation* (GDC). The
+  Witcher 3's wind (SpeedTree's, by all accounts, tuned strong) is unpublished. The
+  ruffle still flips patches on a sine each; a noise there too if it shows a rhythm.
 
 - The maple's leaves read better but could still improve (the user, 2026-11-20): lobes
   that survive the blur (larger leaves near the window, a sharper near layer), leaves
