@@ -73,3 +73,41 @@ The hall in the attached image on the same winter morning, the camera turned tow
 
 --- 10. Winter play: the table by the doors ---
 The hall in the attached image on the same winter morning, seen from where a player sits at the small table, on the side across from the balcony doors, so they are on the left: looking down at the table at about 50 degrees, close, with a long lens. A grey stone draughts board with flat round pieces mid-game fills much of the frame, sharp, the table's edge around it; the hall behind soft and out of focus, a warm lamp glowing far behind. Soft, cool white light from the snowy doors on the left falls evenly across the board, with soft shadows and the faint shape of the glazing bars. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+========================================================================
+The home shot's pieces (task 106), autumn
+========================================================================
+The images the room is modelled and textured from. Swatches are straight on and evenly
+lit, as the app adds its own light; a swatch needn't tile, as the seams are made in
+cutting. crop-wallpaper-01.png and crop-wainscot-01.png are cut from style-01.png and
+library-menu-01.png to attach. Save as library-<piece>-NN.png.
+
+--- 11. The home shot, simplified (attach library-menu-01.png) ---
+The room in the attached image, the same view, made simpler: only the tall window with its deep white niche and lace curtains, the dark panelled wood below it, the patterned wallpaper around it, and in the foreground the round table with a wooden draughts board on it. The rest of the wall is plain. Late afternoon sun through the trees outside falls across the table. Calm and warm. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+--- 11b. The home shot, the windows alike (attach library-home-01.png and library-autumn-02.png) ---
+library-home-01.png made the far window smaller and squared the niches; in the room both windows are the same size, in deep niches with rounded tops.
+The room in the first attached image, the same view and light, with the two windows made as in the second image: both the same size, each in a deep white niche with a rounded top, the inner shutters folded into the sides. Keep the lace curtains, the panelled wood below, the round table and the draughts board. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+--- 12. The wallpaper (attach crop-wallpaper-01.png) ---
+The wallpaper in the attached image, seen flat and straight on, filling the whole frame: muted gold-brown flowers on a dark blue-grey ground, slightly faded paper. Even, soft light, no shadows, no frame or wall edges. Square.
+
+--- 13. The wainscot (attach crop-wainscot-01.png) ---
+The panelled wood in the attached image, seen flat and straight on: one stretch of dark oak wainscot, three raised panels between rails and stiles, a plain top rail and a skirting board, old wax polish. Even, soft light, no shadows. Landscape 3:1.
+
+--- 14. The window (attach library-autumn-02.png and style-01.png) ---
+The nearer window in the attached images, seen flat and straight on from the middle of the room, like an architect's elevation but photographed: the tall white painted casement with its glazing bars, the deep niche with its rounded top, white reveals and folded inner shutters, the wide white sill, the dark panelling below. No curtains. Outside only plain soft white daylight. Even light, no sun. Portrait 2:3.
+
+--- 15. The lace curtain (attach library-menu-01.png) ---
+The white lace curtain in the attached image, laid flat and seen straight on, filling the frame: fine cotton lace with a floral pattern and a scalloped bottom edge, against a pure black background. Even, soft light. Portrait 2:3.
+
+--- 16. Outside (attach library-menu-01.png and garden-facade-01.png) ---
+The park outside the window in the first attached image, seen from the window at first-floor height, the window itself not in the picture: old maples and limes in autumn yellow and orange close by, a thick dark trunk on the right, lawn with fallen leaves below, the low afternoon sun glowing through the crown and flaring. Like a still from a period film on 35 mm film. No people, no house, no text. Landscape 3:2.
+
+For the game's views later:
+
+--- 17. The parquet (attach style-01.png) ---
+The herringbone parquet floor in the attached image, seen from straight above, filling the frame: dark oak in a herringbone pattern, old polish, small wear. Even, soft light, no shadows, no furniture. Square.
+
+--- 18. The rug (attach style-01.png) ---
+The rug in the attached image, laid flat and seen from straight above, the whole rug in the frame: an old Persian rug in faded red, blue and cream, a wide border. Even, soft light, no shadows, on a plain dark floor. Landscape 3:2.
