@@ -33,6 +33,7 @@ On the Mac:
 | JDK | `javac` on `PATH` | OpenJDK 21 |
 | CMake, Ninja | Homebrew | |
 | Python | `python3` | 3.x |
+| numpy, Pillow | Homebrew (`brew install numpy pillow`), only for the room's material bakers in `tools/materials/` | |
 | bundletool | `build/bundletool-1.18.3/`, fetched by `scripts/android.py --release` | 1.18.3 |
 | Xcode | `/Applications/Xcode.app`, for the iOS SDKs, clang, `simctl`, and `devicectl` | 26.4 |
 | goose-ngfx | a checkout beside this repository (`../goose-ngfx`); `NGFX` overrides it | its `main` |

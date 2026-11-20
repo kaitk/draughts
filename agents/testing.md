@@ -182,7 +182,7 @@ before committing a change to `rules/`.
   from its `src/main` with `build/mac/goose/goose build`. Never commit such copies.
 - State with no flag (a daily puzzle, a scrolled list, the camera, a season mid-run, a
   held piece) is set from a temporary flag in the copy only, never committed.
-- Compare with ImageMagick (Python has no PIL here): `magick a.png b.png -compose
+- Compare with ImageMagick (Pillow is installed only for `tools/materials/`; the tests don't use it): `magick a.png b.png -compose
   difference -composite -alpha off -separate -evaluate-sequence max`, then `-format
   "%[fx:round(255*maxima)]" info:` for the largest difference, `-threshold 12.6%` with
   `-format "%[fx:round(mean*w*h)]" info:` for pixels over 32, and `-format '%@'` for
