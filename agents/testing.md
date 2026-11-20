@@ -132,6 +132,9 @@ before committing a change to `rules/`.
 
 - `--frames N` saves `draughts.png` after N drawn frames; a run with taps needs a few
   thousand frames for a move to play out, and a shot past the last animation never comes.
+  So `--board flat` with no taps never saves one: the flat board settles and stops drawing.
+  Shoot the photograph and the thumbnails on the 3D board, with `--background photo`, as
+  the Mac's own settings may hold plain.
   `--tap` takes up to 256 taps.
 - A windowed run reads and may write the Mac's settings in `~/Library/Application
   Support/kaitk/draughts/` (`settings.txt` names the player, `player-N.txt` their
