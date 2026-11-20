@@ -32,6 +32,8 @@ library in a real manor, believable and beautiful.
 
 Directions as seen in `style-01`: the windows on the left wall.
 
+- The sun stays where the library's light has it (`rooms::AUTUMN`): 18° up, 20° left of
+  straight out of the windows.
 - The upper floor, the garden side, behind the three middle windows under the pediment
   in `garden-facade-01`; it faces south-west, the low afternoon sun of the rooms' light
   (task 104).
@@ -47,7 +49,8 @@ Directions as seen in `style-01`: the windows on the left wall.
 - About 7 by 9 m, the ceiling about 4 m; the windows about 1.1 m by 2.5 m, the sills about
   0.8 m from the floor.
 
-Open: the open shelves on the right wall or on the fourth wall; the third door in the
+Open: the floor (Baltic manors' main rooms, the library among them, were mostly on the
+ground floor, the garden side; `style-01` was planned as the upper floor); the open shelves on the right wall or on the fourth wall; the third door in the
 right wall between the shelves or in the fourth wall.
 
 ## Acceptance criteria

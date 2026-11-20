@@ -111,6 +111,10 @@ The white lace curtain in the attached image, laid flat and seen straight on, fi
 --- 16. Outside (attach library-menu-01.png and garden-facade-01.png) ---
 The park outside the window in the first attached image, seen from the window at first-floor height, the window itself not in the picture: old maples and limes in autumn yellow and orange close by, a thick dark trunk on the right, lawn with fallen leaves below, the low afternoon sun glowing through the crown and flaring. Like a still from a period film on 35 mm film. No people, no house, no text. Landscape 3:2.
 
+--- 16b. Outside, wider (attach library-outside-01.png and garden-facade-01.png) ---
+Three windows see more of the park than one photograph's width. The library's sun (rooms::AUTUMN) is 18 degrees up and 20 degrees left of straight out of the windows, so through a 24 mm lens about a quarter in from the left. For the upper floor instead: "from a first-floor window, looking into the crowns, the lawn below".
+The park in the first attached image, the same trees and light, seen wider, as through a 24 mm lens: more of the park to the left and right, the low afternoon sun in the upper left, about a quarter in from the left edge, glowing through a crown. Seen from a ground-floor window of the house in the second image, a little above the lawn: old maples, limes and an oak close by, their trunks and lower crowns filling the view, sky between the crowns, fallen leaves on the lawn. Like a still from a period film on 35 mm film. No people, no house, no text. Landscape 3:2.
+
 For the game's views later:
 
 --- 17. The parquet (attach style-01.png) ---
