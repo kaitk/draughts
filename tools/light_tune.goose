@@ -65,6 +65,12 @@ let VIEW_EYES: float3[5] = [float3_0, float3 { 8.4, 0.6, 1.7 }, float3 { 4.5, 1.
 let VIEW_ATS: float3[5] = [float3_0, float3 { 2.6, 5.8, 1.3 }, float3 { 4.5, 7.0, 1.8 }, float3 { 4.5, 0.0, 1.3 },
                            float3 { 0.0, 3.0, 1.4 }];
 
+// The sky behind the shell's windows, linear: a mid-October afternoon's blue overhead,
+// paler and warmer to the horizon, the sun's side lighter.
+let SKY_TOP = float4 { 0.36, 0.52, 0.8, 1.0 };
+let SKY_LOW = float4 { 0.85, 0.84, 0.8, 1.0 };
+let SKY_LIGHT = float4 { 1.0, 0.86, 0.66, 1.0 };
+
 // A point of the room's plan (metres, h up from the floor) in the world, as the room is
 // turned now.
 fn plan_point(g: render3d::Gpu&, p: float3) -> float3 {
@@ -725,6 +731,10 @@ fn main() {
             target = float3 { t2.x, -14.0, t2.y };
             fov = 50.0;
         }
+        // Behind the shell's windows a plain sky of ours (render3d's plain fade), not the
+        // season's photograph, until the park's layers come in (task 109).
+        g.plain = room_on && shell_on;
+        g.fade = [SKY_TOP, SKY_LOW, SKY_LIGHT];
         render3d::dust.count = if dust_on { motes } else { 0 };
         render3d::dust.focus = length(eye - target);
         if fov_flag > 0.0 { fov = fov_flag; }
