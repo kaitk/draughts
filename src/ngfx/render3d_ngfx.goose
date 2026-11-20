@@ -122,6 +122,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 3, g.table_wear, g.aniso);
         slot(t, 4, g.table_wear_n, g.aniso);
         slot(t, 5, render3d::tree_or_stand_in(g), g.linear);
+        slot(t, 6, g.shadow_map, g.compare);
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
 
@@ -342,6 +343,19 @@ fn lit_blob(look: i32, pieces: i32) -> const u8[:] {
     return embed_file("../../build/ngfx/blobs/r3d_lit.blob");
 }
 
+// The table's module with its shadow filtered as `look` says, as the lit one's (lit_blob).
+fn table_blob(look: i32) -> const u8[:] {
+    if look == render3d::SHADOW_4 { return embed_file("../../build/ngfx/blobs/r3d_table_few.blob"); }
+    if look == render3d::SHADOW_16 { return embed_file("../../build/ngfx/blobs/r3d_table_many.blob"); }
+    return embed_file("../../build/ngfx/blobs/r3d_table.blob");
+}
+
+// The table's pipeline, its shadow filtered as `look` says (table_blob).
+fn table_pipeline(own: Own&, g: Gpu&, look: i32) {
+    g.table_lit = nx::pipeline(table_blob(look), ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true,
+                                                                       blend: ngfx::BLEND_PREMULTIPLIED });
+}
+
 // The lit pass's pipelines, the board's and a fading piece's (lit_blob).
 fn lit_pipelines(own: Own&, g: Gpu&, look: i32) {
     let lit = lit_blob(look, g.pieces);
@@ -350,14 +364,16 @@ fn lit_pipelines(own: Own&, g: Gpu&, look: i32) {
     g.shadow_look = look;
 }
 
-// The shadow filtered as `look` says from the next draw on: the lit pipelines made
-// again if it changes (render3d_gpu.goose's set_shadow).
+// The shadow filtered as `look` says from the next draw on: the lit and table pipelines
+// made again if it changes (render3d_gpu.goose's set_shadow).
 fn set_shadow(own: Own&, g: Gpu&, look: i32) {
     guard g.lit.id != 0 && look != g.shadow_look else { return; }
     ngfx::flush();
     nx::release(g.lit);
     nx::release(g.fading);
+    nx::release(g.table_lit);
     lit_pipelines(own, g, look);
+    table_pipeline(own, g, look);
 }
 
 // The pieces' material from the next draw on (render3d_gpu.goose's set_pieces).
@@ -650,9 +666,7 @@ fn setup(own: Own&, g: Gpu&, samples: i32 = SAMPLES, look: i32 = render3d::SHADO
     let depth = embed_file("../../build/ngfx/blobs/r3d_depth.blob");
     let marks = embed_file("../../build/ngfx/blobs/r3d_marks.blob");
     lit_pipelines(own, g, look);
-    g.table_lit = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table.blob"),
-                               ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true,
-                                                    blend: ngfx::BLEND_PREMULTIPLIED });
+    table_pipeline(own, g, look);
     g.shadow = nx::pipeline(depth, ngfx::PipelineDesc { depth_test: true, depth_write: true, depth_bias: 1.0,
                                                           depth_bias_slope: 1.5 });
     g.backdrop = module(embed_file("../../build/ngfx/blobs/r3d_backdrop.blob"), blend);

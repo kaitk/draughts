@@ -143,6 +143,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 3, g.table_wear, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 5, render3d::tree_or_stand_in(g), g.linear);
+        gfx::bind_texture(gfx::FRAGMENT, 6, g.shadow_map, g.compare);
         gfx::uniforms(gfx::VERTEX, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::table_block(g));
@@ -472,21 +473,39 @@ fn set_aa(own: Own&, g: render3d::Gpu&, aa: i32, samples: i32 = SAMPLES) {
 // SHADOW_MANY) and the pieces in one material (render3d::PIECES_..).
 fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
     if look == render3d::SHADOW_4 {
-        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG);
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
     }
     if look == render3d::SHADOW_16 {
-        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG);
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
     }
-    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG);
+    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
+}
+
+// The table's shader with its shadow filtered as `look` says, as the lit one's (lit_frag).
+fn table_frag(look: i32) -> const u8[:] {
+    if look == render3d::SHADOW_4 {
+        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_FRAG);
+    }
+    if look == render3d::SHADOW_16 {
+        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_FRAG);
+    }
+    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_FRAG);
+}
+
+// The table's pipeline, its shadow filtered as `look` says (table_frag).
+fn table_pipeline(own: Own&, g: render3d::Gpu&, look: i32) {
+    g.table_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT), table_frag(look),
+                                gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
+                                                    blend: gfx::BLEND_PREMULTIPLIED });
 }
 
 // The lit pass's pipelines, the board's and a fading piece's, their shadow filtered as
@@ -500,7 +519,7 @@ fn lit_pipelines(own: Own&, g: render3d::Gpu&, look: i32) {
     g.shadow_look = look;
 }
 
-// The shadow filtered as `look` says (SHADOW_9..) from the next draw on: the lit
+// The shadow filtered as `look` says (SHADOW_9..) from the next draw on: the lit and table
 // pipelines made again if it changes, the board drawn again by the caller. Never in the
 // frame loop's steady state: only when the screen turns from a phone's to a larger one.
 fn set_shadow(own: Own&, g: render3d::Gpu&, look: i32) {
@@ -508,7 +527,9 @@ fn set_shadow(own: Own&, g: render3d::Gpu&, look: i32) {
     gfx::flush();
     gfx::release(g.lit);
     gfx::release(g.fading);
+    gfx::release(g.table_lit);
     lit_pipelines(own, g, look);
+    table_pipeline(own, g, look);
 }
 
 // The pieces' material (render3d::PIECES_..) from the next draw on: the lit pipelines
@@ -658,10 +679,7 @@ fn setup(own: Own&, g: render3d::Gpu&, samples: i32 = SAMPLES, look: i32 = rende
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
     let quad_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::QUAD_VERT);
     lit_pipelines(own, g, look);
-    g.table_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
-                                embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::LIGHT_FN, shaders::TABLE_FRAG),
-                                gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
-                                                    blend: gfx::BLEND_PREMULTIPLIED });
+    table_pipeline(own, g, look);
     // Both faces into the shadow map: with back faces culled the light leaks through where
     // a piece's top curves away from it, its front faces meeting almost end-on.
     g.shadow = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),

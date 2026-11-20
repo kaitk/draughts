@@ -106,8 +106,8 @@ let VS_SET = "#define FRAME_SET 1\n";
 
 let FS_SET = "#define FRAME_SET 3\n";
 
-// LIT_FRAG's shadow in 4 taps or in 16, not 9 (shadow()): a phone's and a desktop's
-// (render3d::set_shadow).
+// LIT_FRAG's and TABLE_FRAG's shadow in 4 taps or in 16, not 9 (SHADOW_FN): a phone's
+// and a desktop's (render3d::set_shadow).
 let SHADOW_FEW = "#define SHADOW_FEW 1\n";
 let SHADOW_MANY = "#define SHADOW_MANY 1\n";
 
@@ -588,6 +588,67 @@ let LIT_HEAD = """
     layout(set = 2, binding = 7) uniform sampler2D tree_map;
     """;
 
+// The key light's shadow map filtered (map_shadow_at), which LIT_FRAG and TABLE_FRAG
+// share: after their heads, which bind shadow_map. SHADOW_FEW or SHADOW_MANY first picks
+// the taps.
+let SHADOW_FN = """
+    // The key light's shadow at q, a point already off its surface: a 5 × 5 texel box
+    // with bilinear edges in 9 hardware-compared taps, their places and weights from where
+    // the point falls in its texel (Castaño's filter, as The Witness has it). On a phone (SHADOW_FEW first) a 3 × 3 box in 4 taps, its edges stepped where
+    // larger pieces would show them. On a desktop (SHADOW_MANY) a 7 × 7 box in 16 taps, softer.
+    float map_shadow_at(vec3 q) {
+        vec4 s = light_view_proj * vec4(q, 1.0);
+        // Past the map, beside the board on its table: lit by the map.
+        if (abs(s.x) > 1.0 || abs(s.y) > 1.0) return 1.0;
+        vec2 size = vec2(textureSize(shadow_map, 0));
+        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5) * size;
+        float z = s.z - 0.0005;
+        vec2 base = floor(uv + 0.5);
+        vec2 f = uv + 0.5 - base;
+        base = (base - 0.5) / size;
+    #ifdef SHADOW_FEW
+        vec2 w0 = 3.0 - 2.0 * f;
+        vec2 w1 = 1.0 + 2.0 * f;
+        vec2 o0 = ((2.0 - f) / w0 - 1.0) / size;
+        vec2 o1 = (f / w1 + 1.0) / size;
+        float sum = w0.x * w0.y * texture(shadow_map, vec3(base + vec2(o0.x, o0.y), z))
+                  + w1.x * w0.y * texture(shadow_map, vec3(base + vec2(o1.x, o0.y), z))
+                  + w0.x * w1.y * texture(shadow_map, vec3(base + vec2(o0.x, o1.y), z))
+                  + w1.x * w1.y * texture(shadow_map, vec3(base + vec2(o1.x, o1.y), z));
+        return sum * (1.0 / 16.0);
+    #else
+    #ifdef SHADOW_MANY
+        // A desktop's: a 7 × 7 box in 16 taps.
+        vec4 w0 = vec4(5.0 * f.x - 6.0, 11.0 * f.x - 28.0, -(11.0 * f.x + 17.0), -(5.0 * f.x + 1.0));
+        vec4 u = vec4((4.0 * f.x - 5.0) / w0.x - 3.0, (4.0 * f.x - 16.0) / w0.y - 1.0,
+                      -(7.0 * f.x + 5.0) / w0.z + 1.0, -f.x / w0.w + 3.0) / size.x;
+        vec4 w1 = vec4(5.0 * f.y - 6.0, 11.0 * f.y - 28.0, -(11.0 * f.y + 17.0), -(5.0 * f.y + 1.0));
+        vec4 v = vec4((4.0 * f.y - 5.0) / w1.x - 3.0, (4.0 * f.y - 16.0) / w1.y - 1.0,
+                      -(7.0 * f.y + 5.0) / w1.z + 1.0, -f.y / w1.w + 3.0) / size.y;
+        float sum = 0.0;
+        for (int j = 0; j < 4; j++) {
+            for (int i = 0; i < 4; i++) {
+                sum += w0[i] * w1[j] * texture(shadow_map, vec3(base + vec2(u[i], v[j]), z));
+            }
+        }
+        return sum * (1.0 / 2704.0);
+    #else
+        vec3 w0 = vec3(4.0 - 3.0 * f.x, 7.0, 1.0 + 3.0 * f.x);
+        vec3 u = vec3((3.0 - 2.0 * f.x) / w0.x - 2.0, (3.0 + f.x) / 7.0, f.x / w0.z + 2.0) / size.x;
+        vec3 w1 = vec3(4.0 - 3.0 * f.y, 7.0, 1.0 + 3.0 * f.y);
+        vec3 v = vec3((3.0 - 2.0 * f.y) / w1.x - 2.0, (3.0 + f.y) / 7.0, f.y / w1.z + 2.0) / size.y;
+        float sum = 0.0;
+        for (int j = 0; j < 3; j++) {
+            for (int i = 0; i < 3; i++) {
+                sum += w0[i] * w1[j] * texture(shadow_map, vec3(base + vec2(u[i], v[j]), z));
+            }
+        }
+        return sum * (1.0 / 144.0);
+    #endif
+    #endif
+    }
+    """;
+
 let LIT_FRAG = """
     const float CROWN_SPAN = 0.6;       // render3d::crown_map
 
@@ -659,63 +720,11 @@ let LIT_FRAG = """
         return occ;
     }
 
-    // The key light's shadow, from a point pushed off the surface along its normal: a
-    // 5 × 5 texel box with bilinear edges in 9 hardware-compared taps, their places and
-    // weights from where the point falls in its texel (Castaño's filter, as The Witness
-    // has it). On a phone (SHADOW_FEW first) a 3 × 3 box in 4 taps, its edges stepped where
-    // larger pieces would show them. On a desktop (SHADOW_MANY) a 7 × 7 box in 16 taps, softer.
+    // The key light's shadow from the map, from a point pushed off the surface along its
+    // normal, the farther the more the surface turns from the light.
     float map_shadow(vec3 p, vec3 n) {
         float nl = clamp(dot(n, light_dir.xyz), 0.0, 1.0);
-        vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
-        vec4 s = light_view_proj * vec4(q, 1.0);
-        // Past the map, beside the board on its table: lit by the map.
-        if (abs(s.x) > 1.0 || abs(s.y) > 1.0) return 1.0;
-        vec2 size = vec2(textureSize(shadow_map, 0));
-        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5) * size;
-        float z = s.z - 0.0005;
-        vec2 base = floor(uv + 0.5);
-        vec2 f = uv + 0.5 - base;
-        base = (base - 0.5) / size;
-    #ifdef SHADOW_FEW
-        vec2 w0 = 3.0 - 2.0 * f;
-        vec2 w1 = 1.0 + 2.0 * f;
-        vec2 o0 = ((2.0 - f) / w0 - 1.0) / size;
-        vec2 o1 = (f / w1 + 1.0) / size;
-        float sum = w0.x * w0.y * texture(shadow_map, vec3(base + vec2(o0.x, o0.y), z))
-                  + w1.x * w0.y * texture(shadow_map, vec3(base + vec2(o1.x, o0.y), z))
-                  + w0.x * w1.y * texture(shadow_map, vec3(base + vec2(o0.x, o1.y), z))
-                  + w1.x * w1.y * texture(shadow_map, vec3(base + vec2(o1.x, o1.y), z));
-        return sum * (1.0 / 16.0);
-    #else
-    #ifdef SHADOW_MANY
-        // A desktop's: a 7 × 7 box in 16 taps.
-        vec4 w0 = vec4(5.0 * f.x - 6.0, 11.0 * f.x - 28.0, -(11.0 * f.x + 17.0), -(5.0 * f.x + 1.0));
-        vec4 u = vec4((4.0 * f.x - 5.0) / w0.x - 3.0, (4.0 * f.x - 16.0) / w0.y - 1.0,
-                      -(7.0 * f.x + 5.0) / w0.z + 1.0, -f.x / w0.w + 3.0) / size.x;
-        vec4 w1 = vec4(5.0 * f.y - 6.0, 11.0 * f.y - 28.0, -(11.0 * f.y + 17.0), -(5.0 * f.y + 1.0));
-        vec4 v = vec4((4.0 * f.y - 5.0) / w1.x - 3.0, (4.0 * f.y - 16.0) / w1.y - 1.0,
-                      -(7.0 * f.y + 5.0) / w1.z + 1.0, -f.y / w1.w + 3.0) / size.y;
-        float sum = 0.0;
-        for (int j = 0; j < 4; j++) {
-            for (int i = 0; i < 4; i++) {
-                sum += w0[i] * w1[j] * texture(shadow_map, vec3(base + vec2(u[i], v[j]), z));
-            }
-        }
-        return sum * (1.0 / 2704.0);
-    #else
-        vec3 w0 = vec3(4.0 - 3.0 * f.x, 7.0, 1.0 + 3.0 * f.x);
-        vec3 u = vec3((3.0 - 2.0 * f.x) / w0.x - 2.0, (3.0 + f.x) / 7.0, f.x / w0.z + 2.0) / size.x;
-        vec3 w1 = vec3(4.0 - 3.0 * f.y, 7.0, 1.0 + 3.0 * f.y);
-        vec3 v = vec3((3.0 - 2.0 * f.y) / w1.x - 2.0, (3.0 + f.y) / 7.0, f.y / w1.z + 2.0) / size.y;
-        float sum = 0.0;
-        for (int j = 0; j < 3; j++) {
-            for (int i = 0; i < 3; i++) {
-                sum += w0[i] * w1[j] * texture(shadow_map, vec3(base + vec2(u[i], v[j]), z));
-            }
-        }
-        return sum * (1.0 / 144.0);
-    #endif
-    #endif
+        return map_shadow_at(p + n * (0.004 + 0.012 * (1.0 - nl)));
     }
 
     // The key light's shadow: the map's, and outside the field (the frame, the pieces
@@ -1519,9 +1528,10 @@ let TABLE_VERT = """
 
 // The table lit as the board is (LIT_FRAG's light, its functions repeated here till the
 // two share them), its wood baked (BAKE_FRAG's mode 2) over its top seen from above. The
-// board's shadow on it and its occlusion near the board's foot are worked out from the
-// board's outline (no catcher over it); its light falls off away from the board
-// (Table.pool), as a lamp's or a window's would.
+// board's and its pieces' shadow on it come from the key's shadow map (SHADOW_FN) and the
+// board's outline, its occlusion near the board's foot from the outline (no catcher over
+// it); its light falls off away from the board (Table.pool), as a lamp's or a window's
+// would.
 // TABLE_FRAG's inputs and textures, before LIGHT_FN, which reads the tree's map.
 let TABLE_HEAD = """
     layout(location = 0) in vec3 v_world;
@@ -1538,6 +1548,8 @@ let TABLE_HEAD = """
     layout(set = 2, binding = 3) uniform sampler2D wear_map;
     layout(set = 2, binding = 4) uniform sampler2D wear_normal;
     layout(set = 2, binding = 5) uniform sampler2D tree_map;
+    // The key light's shadow map (SHADOW_FN): the board and the pieces on it.
+    layout(set = 2, binding = 6) uniform sampler2DShadow shadow_map;
     """;
 
 let TABLE_FRAG = """
@@ -1749,14 +1761,25 @@ let TABLE_FRAG = """
         float lit = mix(pool.y, 1.0, exp(-d * d));
         vec3 light = light_color.rgb * light_dir.w * lit;
         float vis = 1.0;
+        float hidden = 1.0;
         if (p.y > TABLE_TOP - 0.01) {
-            vis = board_shadow(p.xz);
+            // The board's and its pieces' shadow from the map, crisp, where the point is on
+            // it; the board's outline swept along the light past it and for the far
+            // edge's softness. The table isn't in the map, so the point is lifted only
+            // a little.
+            vis = min(map_shadow_at(p + vec3(0.0, 0.002, 0.0)), board_shadow(p.xz));
             vec2 ds = discs_shadow(p.xz);
             vis *= ds.x;
             ao *= ds.y;
+            hidden = vis;
             vis = mix(1.0, vis, room.x);
         }
-        vis *= window_light(p);
+        float pattern = window_light(p);
+        vis *= pattern;
+        // A broad key's shadow is fainter (room.x) for the wood's light, but the key's own
+        // image in the polish is hidden wherever the board or a piece hides the key: let
+        // through, its sheen showed under the board, which then floated.
+        float spec_vis = hidden * pattern;
         vec3 irr = sh_eval(n) * params.z * mix(1.0, lit, 0.5);
         vec3 wood = albedo * (diff / PI * light * vis + irr * ao);
 
@@ -1784,7 +1807,7 @@ let TABLE_FRAG = """
         // The key light is a window, not a point: its highlight in the polish is as broad
         // as coat.w's roughness, not the sun's pinpoint.
         float ak = max(ar, coat.w * coat.w);
-        vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * vis;
+        vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * spec_vis;
         vec3 r = reflect(-v, nc);
         vec3 env = sh_eval(r) * params.z * mix(1.0, lit, 0.5);
         // Near the board the polish shows the board's side in place of the room.
