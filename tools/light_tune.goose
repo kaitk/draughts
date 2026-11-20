@@ -3,13 +3,15 @@
 // strength, how dark its shadow is, the window's sky, the walls, and the window's pattern
 // with its bars, curtain, and the trees' leaves. Drag to orbit, scroll to zoom, R resets
 // the camera, W switches the pattern (its leaves swaying in the wind), T the leaves between
-// the tree's baked shadow and the noise, D the dust in the sunbeam, P prints the room as
-// Goose (and saves it in build/light-tune.txt).
+// the tree's baked shadow and the noise, K the wind's kind (rooms::WIND_KINDS: sines,
+// noise, still), D the dust in the sunbeam, P prints the room as Goose (and saves it in
+// build/light-tune.txt).
 //
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
 //       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
+//       [--wind-kind sines|noise|still]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern X,Y,Z,W]
 //       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
@@ -197,7 +199,7 @@ fn room_line(out: u8[>..]&, name: const u8[:], v: float4) {
 // The room as a Goose literal for rooms.goose.
 fn report(r: rooms::Room, take: i64) {
     var out: u8[>..] = [];
-    format(out, "// ", rooms::NAMES[take], "\nRoom {\n");
+    format(out, "// ", rooms::NAMES[take], ", the wind's kind ", rooms::WIND_KINDS[render3d::wind_kind], "\nRoom {\n");
     room_line(out, "key:       ", r.key);
     room_line(out, "key_color: ", r.key_color);
     room_line(out, "fill:      ", r.fill);
@@ -295,6 +297,7 @@ fn main() {
     render3d::dust.blur = number(argv, "--mote-blur", render3d::dust.blur);
     render3d::dust.bright = number(argv, "--mote-bright", render3d::dust.bright);
     render3d::wind_time = number(argv, "--wind-time", 0.0);
+    render3d::wind_kind = pick(argv, "--wind-kind", rooms::WIND_KINDS, rooms::WIND_NOISE);
     g.room = room;
     g.room_tuned = true;
     // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied.
@@ -344,6 +347,7 @@ fn main() {
         if gfx::key_pressed("W") { pattern = 1 - pattern; }
         if gfx::key_pressed("T") { room.tree.x = (room.tree.x as i64 + 1) % 3; }
         if gfx::key_pressed("D") { dust_on = !dust_on; }
+        if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
         if ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
@@ -377,6 +381,7 @@ fn main() {
                 ui::label(c, str("baked in ", floor(g.tree_ms + 0.5) as i64, " ms"), ui::TEXT_LEFT);
             }
             heading(c, "Wind");
+            choice(c, "Kind (K)", render3d::wind_kind, rooms::WIND_KINDS);
             slider(c, "Wind", room.wind.x, 0.0, 0.3);
             slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
             slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
@@ -466,7 +471,8 @@ fn main() {
         // Cheap enough to do each frame: the harmonics on the CPU and the shadow map.
         g.room = room;
         render3d::window_pattern = pattern == 1;
-        render3d::wind_time += gfx::delta_time() as f32;
+        // A shot is taken at --wind-time itself.
+        if shot < 0 { render3d::wind_time += gfx::delta_time() as f32; }
         render3d::put_room(g);
         if print_it { report(room, room_take); }
         if gfx::key_pressed("R") {

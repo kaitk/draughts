@@ -285,6 +285,10 @@ short and straight.
   field is ever needed, God of War's *Interactive Wind and Vegetation* (GDC). The
   Witcher 3's wind (SpeedTree's, by all accounts, tuned strong) is unpublished. The
   ruffle still flips patches on a sine each; a noise there too if it shows a rhythm.
+  The tuner switches the wind's kind live (2026-11-20, the user disliking the noise): K
+  or `--wind-kind sines|noise|still`, the sines restored as `rooms::wind_sines` and a
+  uniform branch on `wind_now.w` (shots match the old shader's within its run-to-run
+  pixel); the game stays on the noise till the user chooses.
 
 - The maple's leaves read better but could still improve (the user, 2026-11-20): lobes
   that survive the blur (larger leaves near the window, a sharper near layer), leaves

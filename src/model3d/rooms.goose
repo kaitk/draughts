@@ -382,3 +382,41 @@ fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
     }
     return out;
 }
+
+// The wind's kinds, to compare in the tuner (tools/light_tune's K): the sines it was
+// before the noises (wind_sines), the noises (wind_at), and none.
+let WIND_SINES = 0;
+let WIND_NOISE = 1;
+let WIND_STILL = 2;
+let WIND_KINDS = ["sines", "noise", "still"];
+
+// The wind of a kind (WIND_KINDS) at `seconds` for a tree's map of side `span`.
+fn wind_of(r: Room, kind: i64, seconds: f32, span: f32) -> Wind {
+    if kind == WIND_SINES { return wind_sines(r, seconds, span); }
+    if kind == WIND_STILL { return Wind { float4_0, [float4_0; 4] }; }
+    return wind_at(r, seconds, span);
+}
+
+// The wind as sines (after Crysis's vegetation and SpeedTree's wind): the whole tree's
+// slow sway, two sines; each leaf layer a little more and on its own phase across the
+// wind. The gust, peaks of two sines' product, its front crossing the crown, is made by
+// shaders::LIGHT_FN's wind_at (now.w 1).
+fn wind_sines(r: Room, seconds: f32, span: f32) -> Wind {
+    let t = seconds * r.wind.y;
+    let slow = 0.7 * sin(t * 0.55) + 0.3 * sin(t * 1.37 + 1.1);
+    let w = r.wind.x;
+    let reach: f32[4] = [w * 0.1, w * r.wind.z, w * r.wind.z * 1.15, w * r.wind.z * 1.3];
+    // The limbs, the near, middle and far leaves: their share of the sway, their push in
+    // a gust, and their sway across.
+    let share:  f32[4] = [1.0, 1.0, 0.8, 0.6];
+    let push:   f32[4] = [1.5, 2.0, 2.0, 2.0];
+    let across: f32[4] = [0.0, 0.4 * sin(t * 1.9 + 0.7), 0.4 * sin(t * 1.6 + 2.3), 0.4 * sin(t * 1.3 + 4.1)];
+    var out = Wind { float4 { slow, 0.0, 0.0, 1.0 }, [float4_0; 4] };
+    let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
+    for i in 4 {
+        let k = reach[i] * unit;
+        out.shift[i] = float4 { share[i] * slow * k, (0.15 * share[i] * slow + across[i]) * k,
+                                push[i] * k, 0.15 * push[i] * k };
+    }
+    return out;
+}

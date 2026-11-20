@@ -69,8 +69,9 @@ let FRAME = """
         vec4 tree;
         vec4 tree_blur;
         // The wind this frame (rooms::wind_at): x the whole tree's slow sway, y the gust
-        // at 0 along the wall, z its change a unit along; each layer's shift in the map
-        // (the limbs, the near, middle and far leaves), xy in calm air, zw a full gust's.
+        // at 0 along the wall, z its change a unit along, w 1 for the sines' gust
+        // (rooms::wind_sines); each layer's shift in the map (the limbs, the near, middle
+        // and far leaves), xy in calm air, zw a full gust's.
         vec4 wind_now;
         vec4 tree_shift[4];
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
@@ -287,8 +288,14 @@ let LIGHT_FN = """
 
     // The wind at m, a point of the tree's plane (rooms::wind_at, after Zioma's noise of
     // time a layer): x the whole tree's slow sway, -1..1; y the gust, its front crossing
-    // the crown along the wall.
+    // the crown along the wall. With the sines (wind_now.w 1, the tuner's), the gust is
+    // their product's peaks.
     vec2 wind_at(vec2 m) {
+        if (wind_now.w > 0.5) {
+            float front = wind.z * wind.y - m.x * 0.015;
+            float sines = (0.5 + 0.5 * sin(front * 0.21)) * (0.6 + 0.4 * sin(front * 0.53 + 2.0));
+            return vec2(wind_now.x, smoothstep(0.55, 1.0, sines));
+        }
         return vec2(wind_now.x, clamp(wind_now.y + wind_now.z * m.x, 0.0, 1.0));
     }
 

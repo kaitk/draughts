@@ -651,6 +651,9 @@ var window_pattern = false;
 // app keeps them still at 0 for now, as a sway would draw every frame.
 var wind_time: f32 = 0.0;
 
+// How the wind moves the leaves (rooms::WIND_KINDS): the tuner's switch.
+var wind_kind = rooms::WIND_NOISE;
+
 // The room's light where the board stands on its table (rooms::Room): its key in place
 // of the look's, its fill and walls as the ambient's harmonics, the look's exposure kept.
 // Over the photograph or the fade the look's own light stays.
@@ -671,9 +674,10 @@ fn put_room(g: Gpu&) {
     f.opening = r.opening;
     f.leaves = r.leaves;
     f.twigs = r.twigs;
-    f.wind = float4 { r.wind.x, r.wind.y, wind_time, r.wind.w };
+    let still = wind_kind == rooms::WIND_STILL;
+    f.wind = float4 { r.wind.x, r.wind.y, if still { 0.0 } else { wind_time }, r.wind.w };
     let span = if on && r.tree.x > 0.5 { rooms::tree_view(r).span } else { 0.0 };
-    let wa = rooms::wind_at(r, wind_time, span);
+    let wa = rooms::wind_of(r, wind_kind, wind_time, span);
     f.wind_now = wa.now;
     f.tree_shift = wa.shift;
     put_tree(g, on && r.tree.x > 0.5);
