@@ -24,7 +24,8 @@ let FLOOR_Y: f32 = -23.56;
 // piece's own random): the floor, a piece of oak (its uv the place in the wall's field),
 // the wallpaper, the table's turned foot; the shell's (room_shell) lime plaster (its
 // fraction 0.5 on the cornice, whiter and smoother), white painted wood (its fraction
-// over 0.5 the sills' stone), glass and lace, the last two drawn blended after the rest.
+// over 0.5 the sills' stone), glass and lace, the last two drawn blended after the rest;
+// the curtains' brass and their cord.
 let MAT_FLOOR:   f32 = 4.0;
 let MAT_OAK:     f32 = 5.0;
 let MAT_PAPER:   f32 = 6.0;
@@ -33,6 +34,8 @@ let MAT_PLASTER: f32 = 8.0;
 let MAT_PAINT:   f32 = 9.0;
 let MAT_GLASS:   f32 = 10.0;
 let MAT_LACE:    f32 = 11.0;
+let MAT_BRASS:   f32 = 12.0;
+let MAT_CORD:    f32 = 13.0;
 
 // The fields' sides in texels (a phone's half), and their sizes in world units: the
 // floor's 20 strips a plank wide, 1.3 m long, a texel 0.7 mm; the wall's ten boards
@@ -105,12 +108,22 @@ struct Look {
     paper: float4,     // the wallpaper's ground (sRGB) and roughness, where its mask is 0
     gold:  float4,     // its gold print (sRGB) and roughness, where the mask is 1
     // The shell's (room_shell): the limewash at its plaster tone's 0 and 1 (sRGB, and
-    // roughness), the white paint, the lace's thread, the sills' stone.
+    // roughness), the white paint, the lace's thread (and the tie-back's cord), the sills'
+    // stone.
     plaster_shade: float4,
     plaster_light: float4,
     paint:         float4,
     lace_thread:   float4,
     stone:         float4,
+    // The curtains' brass (rod, finials, brackets, hooks): its colour at normal incidence
+    // (sRGB) and roughness, all in this one place so another brass swaps in here.
+    brass: float4,
+    // The light of the window behind the lace, the sky and the park through the niche
+    // averaged, sRGB as the view out's sky has it (shaders::OUTSIDE_FRAG), exposed as the
+    // view out is (rooms::Room.outside) and lifted with the room's own exposure as the
+    // room's surfaces are; w how strongly the lace's thin parts scatter the sun forward,
+    // toward an eye looking through them at it.
+    lace_light: float4,
 }
 
 // The wallpaper: a dark warm brown-grey paper, matte, and a muted gold print with a little
@@ -131,12 +144,24 @@ let LOOK = Look {
     paint:         float4 { 0.776, 0.745, 0.682, 0.45 },
     lace_thread:   float4 { 0.867, 0.827, 0.749, 0.9 },
     stone:         float4 { 0.714, 0.698, 0.659, 0.55 },
+    // A plain brass, a placeholder until the gilt and brass study's material lands: its
+    // reflectance at normal incidence linear (0.91, 0.778, 0.423), #f5e4ae, 0.28 rough (a
+    // polished one reads as brown felt while the room reflects only its harmonics), no wear.
+    brass:      float4 { 0.959, 0.895, 0.682, 0.28 },
+    lace_light: float4 { 0.86, 0.84, 0.78, 0.5 },
 };
 
 // The plaster's tone map (design/materials/plaster_tone.png) covers 4 m of wall a tile,
 // the lace's 0.56 m.
 let PLASTER_TILE: f32 = 4.0 * METRE;
 let LACE_TILE:    f32 = 0.56 * METRE;
+
+// The curtains' lace (design/materials/lace_*.png): the field's tile, 1024 rows over
+// LACE_TILE, over the hem's strip, 384 rows (0.21 m), R8 with 8 mips (to 8 × 11); the ways
+// of it the tuner switches between while the choice is open.
+let LACE_TEXELS = int2 { 1024, 1408 };
+let LACE_MIPS = 8;
+let LACE_WAYS = ["f2", "f", "d"];
 
 // The wallpaper's mask (design/materials/wallpaper_mask.png): its side in texels, and the
 // square of wall one tile covers, 1.4 m, style-01's flowers (a real paper of the period

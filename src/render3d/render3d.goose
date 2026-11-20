@@ -328,8 +328,10 @@ struct Gpu {
     room_shell:   bool,             // the library's shell (room_shell::LIBRARY), not the panelled wall
     room_for:     float4,           // what the mesh was made for: the window's wall and sill, the wall's v, the shell
     mesh_ms:      f64,              // the mesh's making (measuring)
-    plaster_tone: Texture,          // the plaster's tone and the lace's coverage, R8 as the wallpaper's
-    lace_mask:    Texture,
+    plaster_tone: Texture,          // the plaster's tone, R8 as the wallpaper's
+    lace_mask:    Texture,          // the curtains' lace, R8 with its mips (surfaces::LACE_TEXELS)
+    lace_way:     i64,              // which lace (surfaces::LACE_WAYS), and the one on the GPU
+    lace_put:     i64,
     glass_vb:     Buffer,           // the shell's glass and lace, drawn blended after the rest
     glass_ib:     Buffer,
     glass_count:  i64,
@@ -555,6 +557,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.room_baked = true;
         g.room_ms = (clock() - t0) * 1000.0;
     }
+    put_paper(o, g);
     // The view out of the shell's windows, round its middle window: made once.
     if g.room_shell && g.outside_vb.id == 0 {
         var verts:   mesh::Vertex[>..] = [];
@@ -590,12 +593,55 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
 }
 
 // The room's masks decoded (src/native/materials.c) and put on the GPU with their mips:
-// the wallpaper's, the plaster's tone, the lace's. Once, with the room's bake.
+// the wallpaper's, the plaster's tone, once with the room's bake; the curtains' lace, again
+// when another way of it is asked for (the tuner's).
 fn put_paper<O>(o: O&, g: Gpu&) {
+    if g.lace_mask.id != 0 && g.lace_put != g.lace_way {
+        o.gpu_release(g.lace_mask);
+        g.lace_mask = Texture { 0 };
+    }
+    if g.lace_mask.id == 0 {
+        g.lace_mask = put_lace(o, g.lace_way);
+        g.lace_put = g.lace_way;
+    }
     guard g.paper_mask.id == 0 else { return; }
     g.paper_mask = put_mask(o, 0);
     g.plaster_tone = put_mask(o, 1);
-    g.lace_mask = put_mask(o, 2);
+}
+
+// The lace of `way` on the GPU, R8 with its mips down to where its sides stay even.
+extern fn draughts_lace_mask(way: i64, out: u8[:], w: i64, h: i64) -> bool;
+fn put_lace<O>(o: O&, way: i64) -> Texture {
+    let size = surfaces::LACE_TEXELS;
+    var px: u8[>..] = [];
+    px.resize(lace_bytes(), 0);
+    draughts_lace_mask(way, px[0..size.x * size.y], size.x, size.y);
+    let mask = o.gpu_sampled(size.x, size.y, surfaces::LACE_MIPS, R8);
+    var at = 0;
+    for level in surfaces::LACE_MIPS {
+        let w = size.x >> level;
+        let h = size.y >> level;
+        if level > 0 {
+            let up = at - 4 * w * h;
+            for y in h {
+                for x in w {
+                    let a = up + 2 * y * 2 * w + 2 * x;
+                    let sum = px[a] as i64 + px[a + 1] + px[a + 2 * w] + px[a + 2 * w + 1];
+                    px[at + y * w + x] = ((sum + 2) / 4) as u8;
+                }
+            }
+        }
+        o.gpu_upload(mask, level, px[at..at + w * h]);
+        at += w * h;
+    }
+    return mask;
+}
+
+// The lace's texels with its mips.
+fn lace_bytes() -> i64 {
+    var sum = 0;
+    for level in surfaces::LACE_MIPS { sum += (surfaces::LACE_TEXELS.x >> level) * (surfaces::LACE_TEXELS.y >> level); }
+    return sum;
 }
 
 // The view out's two pictures (src/native/materials.c) on the GPU, as stored: sRGB,
@@ -661,7 +707,7 @@ fn texels_with_mips(side: i64) -> i64 {
 // masks, one byte a texel; the view out's two pictures, four.
 fn room_bytes(g: Gpu&) -> i64 {
     guard g.room_side > 0 else { return 0; }
-    let paper = if g.paper_mask.id != 0 { 3 * texels_with_mips(surfaces::PAPER_SIDE) } else { 0 };
+    let paper = if g.paper_mask.id != 0 { 2 * texels_with_mips(surfaces::PAPER_SIDE) + lace_bytes() } else { 0 };
     let b = view_out::BAND_TEXELS;
     let k = view_out::OAK_TEXELS;
     let outside = if g.outside_band.id != 0 { 4 * (b.x * b.y + k.x * k.y) } else { 0 };
@@ -670,7 +716,8 @@ fn room_bytes(g: Gpu&) -> i64 {
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the
 // room's shade (rooms::Room.bounce, linear, times its strength) and own exposure, and the
-// wall a tile of the wallpaper, the plaster's tone and the lace covers.
+// wall a tile of the wallpaper, the plaster's tone and the lace covers; the curtains' brass
+// and the window's light behind their lace (linear, exposed as the view out).
 struct SurfacesBlock {
     plank:         float4,
     planks:        float4,
@@ -691,6 +738,8 @@ struct SurfacesBlock {
     shell_glass:   float4,
     stone:         float4,
     shell_ends:    float4,
+    brass:         float4,
+    lace_light:    float4,
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
@@ -731,7 +780,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
                     float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light, k.paint,
-                    k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0 }
+                    k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0, k.brass,
+                    model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w) }
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1

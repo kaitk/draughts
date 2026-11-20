@@ -9,7 +9,7 @@ built into the program from here (`src/native/materials.c`).
 | `plaster_tone.png` | The library's limewash (`tools/materials/plaster.py`): its tone, 1024² L8, tileable over 4 m (`surfaces::PLASTER_TILE`), 0.66 MB. `ROOM_FRAG` tints it from `surfaces::LOOK.plaster_shade` to `.plaster_light` in linear light, with a slow noise in the room's frame over it so the tile's patches don't repeat, on the ceiling, cornice, reveals and arches. In git. |
 | `outside_band.png` | The park's far tree line on a cylinder 110 m out (`tools/materials/outside.py`), 2048 × 336 RGBA over ±64° from straight out, 16 px a degree, rows linear in height from 14.05 m under the lawn to 26.26 m over it; sRGB, premultiplied in linear light, its sky cut to clear; 0.44 MB. `model3d::view_out` puts it on its cylinder round the middle window, `shaders::OUTSIDE_FRAG` draws it unlit. In git. |
 | `outside_oak.png` | The oak, 29.8 × 20 m, a billboard 70 m out at 22° right of straight out, 584 × 392 RGBA as the band, 0.26 MB. In git. |
-| `lace_mask.png` | The lace's coverage (`tools/materials/lace.py`, its first bake, a stand-in), 1024² L8 over 0.56 m (`surfaces::LACE_TILE`), 0.26 MB: 0 where the light passes, 1 the thread. In git. |
+| `lace_f2.png`, `lace_f.png`, `lace_d.png` | The curtains' lace, three ways of it while the choice is open (f2 shown, the light tuner's `--lace` picks another): the way's field tile (1024 rows over 0.56 m, `surfaces::LACE_TILE`) over its hem's border (384 rows, 0.21 m), 1024 × 1408 L8, 0.7 MB each: 0 where the light passes, 1 the thread. `tools/materials/lace_panel.py` puts each together from the lace library's bake (`tools/materials/lace_rose2.py` for f2, `lace_rose.py` for f, `lace_blossom.py` for d); `shaders::ROOM_FRAG` reads down the field's tile and on into the hem at the cloth's foot. In git; the two not chosen go once the user chooses. |
 
 To make the mask again, with numpy and Pillow from Homebrew and the downloads of
 `design/manor/` at hand (`library-wallpaper-mask-01.png`, `library-wallpaper-01.png`;
@@ -22,9 +22,15 @@ touch src/native/materials.c    # the compiled C is cached by its source
 ```
 
 The baker also writes `wallpaper_preview.png` and `wallpaper_rough.png`, which stay out of
-git: the shader takes the colours and roughness from the mask. The plaster and the lace the
-same way: `python3 tools/materials/plaster.py OUT_DIR` and `lace.py OUT_DIR`, then copy
-`plaster_tone.png` and `lace_mask.png` here and touch `src/native/materials.c`.
+git: the shader takes the colours and roughness from the mask. The plaster the same way:
+`python3 tools/materials/plaster.py OUT_DIR`, then copy `plaster_tone.png` here and touch
+`src/native/materials.c`. The lace, from a way's bake in the lace library:
+
+```sh
+python3 tools/materials/lace_rose2.py build/notes/lace-library/f2 --seed 4   # MANOR_DIR as its header says
+python3 tools/materials/lace_panel.py build/notes/lace-library f2 design/materials/lace_f2.png
+touch src/native/materials.c
+```
 
 The view out's band and oak, from task 109's panels and oak in `design/manor/outside/`
 (local), as `design/manor/outside/park.py` puts them together; the sky is worked out in the

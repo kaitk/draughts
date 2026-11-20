@@ -459,6 +459,7 @@ fn main() {
     let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
     render3d::show_room(g, room_on, away, shell_on);
     g.paper_tile = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE) * surfaces::METRE;
+    g.lace_way = pick(argv, "--lace", surfaces::LACE_WAYS, 0);
     // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied, as
     // the renderer bakes it (the room's on or off).
     let dump = flag_value(argv, "--dump-map");
@@ -547,6 +548,7 @@ fn main() {
         if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
         if gfx::key_pressed("F") { meter.on = !meter.on; }
         if gfx::key_pressed("G") { meter.wait = !meter.wait; }
+        if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
         if gfx::key_pressed("L") { g.paper_tile = (if g.paper_tile > 1.0 * surfaces::METRE { 0.65 } else { 1.4 }) * surfaces::METRE; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
@@ -590,7 +592,7 @@ fn main() {
             slider(c, "Gust length", room.gust.y, 0.3, 8.0);
             slider(c, "Gust every", room.gust.z, 3.0, 60.0);
             slider(c, "Gust reach", room.gust.w, 0.0, 1.0);
-            heading(c, "The room (O, S, V, U, L)");
+            heading(c, "The room (O, S, V, U, L, C)");
             var shown_surfaces: i64 = if room_on { 1 } else { 0 };
             choice(c, "Room", shown_surfaces, ["off", "on"]);
             room_on = shown_surfaces == 1;
@@ -602,6 +604,7 @@ fn main() {
             choice(c, "Outside", shown_outside, ["plain", "park"]);
             outside_on = shown_outside == 1;
             slider(c, "Outside's exposure", room.outside, 0.3, 2.5);
+            choice(c, "Lace (C)", g.lace_way, surfaces::LACE_WAYS);
             ui::layout_row_dynamic(c, ROW, 1);
             ui::label(c, if g.paper_tile > 1.0 * surfaces::METRE { "Paper tile 1.4 m (L)" } else { "Paper tile 0.65 m (L)" },
                       ui::TEXT_LEFT);

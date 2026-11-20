@@ -13,6 +13,7 @@ import .surfaces;
 import .trees;
 import .shell;
 import .shell_mesh;
+import .curtains;
 import .view_out;
 
 // The baked surfaces' targets: the plan (the field and the frame's top seen from above),

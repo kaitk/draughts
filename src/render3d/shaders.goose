@@ -444,17 +444,45 @@ let LIGHT_FN = """
         return smoothstep(-soft, soft, open);
     }
 
-    // The lace drawn back to each side (shell_mesh.goose's lace): whether w (metres) is
-    // behind one of its sheets, soft at the edges.
-    float behind_lace(vec2 w, float soft) {
-        float half_w = shell_niche.x;
-        float y = w.y;
-        float edge = y > 1.4 ? mix(half_w - 0.12, half_w - 0.02, (y - 1.4) / 2.28)
-                   : (y > 0.35 ? mix(half_w - 0.08, half_w - 0.12, (y - 0.35) / 1.05)
-                   : mix(half_w + 0.02, half_w - 0.08, (y - 0.05) / 0.3));
-        float outer = half_w + 0.08 + 0.22;
+    // The curtains' lace panels (model3d's curtains.goose): a panel's height, inner edge and
+    // outer edge (metres from the window's middle) at its outline's keys, shell.goose's
+    // LACE_INNER and LACE_OUTER, taken straight between them here.
+    const vec3 LACE_EDGES[6] = vec3[6](vec3(0.05, 0.585, 0.955), vec3(0.5, 0.615, 0.89), vec3(0.95, 0.645, 0.8),
+                                       vec3(1.6, 0.58, 0.85), vec3(2.6, 0.45, 0.89), vec3(3.7, 0.35, 0.9));
+    vec2 lace_edges(float y) {
+        vec2 e = LACE_EDGES[0].yz;
+        for (int i = 0; i < 5; i++) {
+            if (y > LACE_EDGES[i].x) {
+                float t = clamp((y - LACE_EDGES[i].x) / (LACE_EDGES[i + 1].x - LACE_EDGES[i].x), 0.0, 1.0);
+                e = mix(LACE_EDGES[i].yz, LACE_EDGES[i + 1].yz, t);
+            }
+        }
+        return e;
+    }
+
+    // Where uv (world units: across the cloth from its outer edge, up it from the hem) falls
+    // in the lace's mask: the field's tile (its first 1024 rows) repeating, on down into
+    // the hem's strip (its last 384 rows, 0.21 m) at the cloth's foot, at one scale.
+    vec2 lace_place(vec2 uv) {
+        float k = (0.375 * tile.z - uv.y) / tile.z;
+        float row = k > 0.0 ? 1.0 + min(k, 0.3745) : fract(k);
+        return vec2(uv.x / tile.z, row * (1024.0 / 1408.0));
+    }
+
+    // How much of the sun the lace in front of a niche lets on at w (metres from the
+    // window's middle, up from the floor, at its plane): its thread keeps out all but
+    // shell_glass.w, its pattern blurred to the shadow's softness, a little denser on the
+    // folds' flanks.
+    float lace_shadow(vec2 w, float soft) {
+        vec2 e = lace_edges(w.y);
         float x = abs(w.x);
-        return smoothstep(-soft, soft, min(x - edge, min(outer - x, min(y - 0.05, 3.68 - y))));
+        float inside = smoothstep(-soft, soft, min(min(x - e.x, e.y - x), min(w.y - 0.07, 3.7 - w.y)));
+        if (inside < 0.001) return 1.0;
+        float s = clamp((x - e.x) / (e.y - e.x), 0.0, 1.0);
+        vec2 uv = vec2((1.0 - s) * 1.2, w.y - 0.07) * shell.w;
+        float cover = textureLod(lace_mask, lace_place(uv), log2(max(soft * 1024.0 / 0.56, 1.0))).r;
+        float folds = 0.8 + 0.4 * (0.5 + 0.5 * sin(6.2831853 * 6.0 * s));
+        return mix(1.0, 1.0 - clamp(cover * folds, 0.0, 1.0) * (1.0 - shell_glass.w), inside);
     }
 
     // How much of the key reaches p through the shell's windows: p traced along the key to
@@ -497,8 +525,7 @@ let LIGHT_FN = """
             float tl = (shell.y - shell_glass.z - d) / toward;
             if (tl > 0.5) {
                 vec3 c = p + l * tl;
-                float behind = behind_lace(vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre, (0.03 + room.z * tl) / metre);
-                through *= mix(1.0, shell_glass.w, behind);
+                through *= lace_shadow(vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre, (0.03 + room.z * tl) / metre);
             }
             lit += through;
         }
@@ -1909,7 +1936,10 @@ let ROOM_HEAD = """
     // niche's width, the sill's height, the springing's, the arch's rise (metres); glass:
     // the glass planes' depths into the wall, the lace's distance out of it (world units), w
     // how much of the sun the lace lets through; stone: the sills' (sRGB, and roughness);
-    // ends: the end walls' u, x the stove's, y the far one's.
+    // ends: the end walls' u, x the stove's, y the far one's; brass: the curtains' (sRGB at
+    // normal incidence, and roughness); lace_light: the window's light behind the lace
+    // (linear, exposed as the view out, lifted with the room), w how strongly its thin parts scatter the sun
+    // forward.
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -1930,6 +1960,8 @@ let ROOM_HEAD = """
         vec4 shell_glass;
         vec4 stone;
         vec4 shell_ends;
+        vec4 brass;
+        vec4 lace_light;
     };
     """;
 
@@ -2154,6 +2186,7 @@ let ROOM_FRAG = """
         float ao = clamp(v_extra.x, 0.0, 1.0);
         vec3 albedo;
         float rough;
+        float metal = 0.0;
         vec3 n = ng;
         vec3 u_dir = vec3(axes.x, 0.0, axes.y);
         vec3 v_dir = vec3(axes.z, 0.0, axes.w);
@@ -2293,6 +2326,16 @@ let ROOM_FRAG = """
                 albedo = srgb(paint.rgb) * (0.96 + 0.06 * m);
                 rough = paint.a + 0.1 * m;
             }
+        } else if (kind > 11.5) {
+            // The curtains' brass, a metal; their cotton cord.
+            if (kind < 12.5) {
+                albedo = srgb(brass.rgb);
+                rough = brass.a;
+                metal = 1.0;
+            } else {
+                albedo = srgb(lace_thread.rgb) * 0.7;
+                rough = 0.9;
+            }
         } else {
             // Glass and lace, blended over what is behind them (premultiplied).
             vec3 v = normalize(eye.xyz - p);
@@ -2306,14 +2349,25 @@ let ROOM_FRAG = """
                 c = sh_eval(reflect(-v, nf)) * params.z;
                 a = clamp(0.6 * fres, 0.0, 0.5);
             } else {
-                // The lace: its coverage, lit from the room's side and through from the window's.
-                float cover = texture(lace_mask, v_uv / tile.z).r;
+                // The lace: its coverage, denser where the eye looks through it at a slant (the
+                // folds' flanks); lit from the room's side, and through from the window's: the
+                // sun on its back with the bars' and leaves' shadows, scattered forward where
+                // its thin parts stand between the eye and the sun (Henyey-Greenstein, g 0.5,
+                // over even scattering), and the sky and park behind the niche, as much of
+                // them as it sees (v_extra.x).
+                vec2 lg = vec2(1.0, -1024.0 / 1408.0) / tile.z;
+                float cover = textureGrad(lace_mask, lace_place(v_uv), dFdx(v_uv) * lg, dFdy(v_uv) * lg).r;
                 if (cover < 0.02) discard;
+                a = 1.0 - pow(1.0 - 0.8 * cover, 1.0 / max(abs(dot(nf, v)), 0.5));
                 vec3 l = light_dir.xyz;
                 vec3 light = light_color.rgb * light_dir.w;
-                float lit = (max(dot(nf, l), 0.0) + 0.45 * max(-dot(nf, l), 0.0)) * window_light(p);
-                c = srgb(lace_thread.rgb) * (lit / PI * light + (sh_eval(nf) + 0.45 * sh_eval(-nf)) * params.z + shade.rgb);
-                a = 0.92 * cover;
+                float sun = window_light(p);
+                float ahead = clamp(dot(v, -l), -1.0, 1.0);
+                float hg = 0.75 / pow(1.25 - ahead, 1.5);
+                vec3 through = shell_glass.w * (max(-dot(nf, l), 0.0) * sun * light / PI * (1.0 + lace_light.w * (1.0 - cover) * hg)
+                                                + lace_light.rgb * ao);
+                vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + sh_eval(nf) * params.z + shade.rgb;
+                c = srgb(lace_thread.rgb) * (front + through);
             }
             c = tonemap(c * params.x * shade.w) * vec3(1.02, 1.0, 0.97);
             result = vec4(to_srgb(c) * a * (1.0 - screen.z), a);
@@ -2329,7 +2383,7 @@ let ROOM_FRAG = """
         // softened ones (room.x).
         float vis = dot(ng, l) > 0.0 ? window_light(p) * table_shade(p, l) : 0.0;
         vec3 irr = (sh_eval(n) * params.z + shade.rgb) * ao;
-        vec3 base = albedo * (diff / PI * light * vis + irr);
+        vec3 base = albedo * (1.0 - metal) * (diff / PI * light * vis + irr);
 
         float nov = max(dot(n, v), 1e-4);
         float nl = clamp(nol, 0.0, 1.0);
@@ -2342,7 +2396,7 @@ let ROOM_FRAG = """
         float ar = clamp(rough, 0.05, 1.0);
         ar = ar * ar;
         ar = sqrt(clamp(ar * ar + min(2.0 * variance, 0.3), 0.0, 1.0));
-        vec3 f0 = vec3(0.04);
+        vec3 f0 = mix(vec3(0.04), albedo, metal);
         // The key is a window, not a point: its highlight no sharper than 0.25's.
         float ak = max(ar, 0.06);
         vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * vis;

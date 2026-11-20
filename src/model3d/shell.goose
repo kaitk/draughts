@@ -99,11 +99,34 @@ let PLINTH_BLOCK = 0.26;
 // the ceiling.
 let CORNICE_DROP = 0.26;
 let CORNICE_OUT = 0.46;
-// The lace (build/notes/windows/): on a brass rod 0.12 m off the wall at 3.68 m, out to
-// 0.22 m past the band either side.
+// The curtains (option A of build/notes/curtains/, curtains.goose): over each window a
+// 22 mm brass rod at 3.68 m, 0.12 m off the wall, 1.80 m long on brackets at ±0.82 m,
+// 45 mm ball finials; a lace panel each side, 1.20 m of cloth gathered on 0.55 m of rod
+// (a rod pocket, its top at 3.70 m), tied back at 0.95 m with a cream cord to a hook at
+// ±0.80 m, its hem about 0.05 m off the floor.
 let LACE_ROD = 3.68;
 let LACE_OFF = 0.12;
-let LACE_PAST = 0.22;
+let ROD_HALF = 0.90;
+let ROD_RADIUS = 0.011;
+let ROD_BRACKET = 0.82;
+let FINIAL_RADIUS = 0.0225;
+let LACE_TOP = 3.70;
+let LACE_HEM = 0.05;
+let LACE_FLAT = 1.20;
+let LACE_FOLDS = 6;
+let TIE_Y = 0.95;
+let TIE_HOOK = 0.80;
+// The right panel's outline over its drop (y, metres from the window's middle), the
+// left's mirrored: its inner edge, its outer edge, and its middle's distance off the wall,
+// keys a Catmull-Rom runs through (curtains.goose). From the rod the inner edge sweeps out
+// to the tie, then flares to the hem; the middle stands off the wainscot's cap (9 cm) over
+// it. shaders::LIGHT_FN's behind_lace has the edges too.
+let LACE_INNER: float2[6] = [float2 { 0.05, 0.585 }, float2 { 0.5, 0.615 }, float2 { 0.95, 0.645 }, float2 { 1.6, 0.58 },
+                             float2 { 2.6, 0.45 }, float2 { 3.7, 0.35 }];
+let LACE_OUTER: float2[6] = [float2 { 0.05, 0.955 }, float2 { 0.5, 0.89 }, float2 { 0.95, 0.8 }, float2 { 1.6, 0.85 },
+                             float2 { 2.6, 0.89 }, float2 { 3.7, 0.9 }];
+let LACE_MIDDLE: float2[8] = [float2 { 0.05, 0.135 }, float2 { 0.8, 0.135 }, float2 { 0.95, 0.11 }, float2 { 1.12, 0.15 },
+                              float2 { 1.35, 0.155 }, float2 { 1.8, 0.14 }, float2 { 2.6, 0.125 }, float2 { 3.7, 0.12 }];
 
 fn length_of(w: Wall) -> f32 { length(w.b - w.a) }
 fn direction(w: Wall) -> float2 { normalize(w.b - w.a) }

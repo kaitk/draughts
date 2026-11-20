@@ -5,7 +5,7 @@
 // build/notes/windows/), the doors (door 1), the floor, the ceiling and its cornice
 // (option B of build/notes/ceiling/). The glass and the lace go into a list of their own,
 // drawn blended after the rest. A first pass: the casements' members are plain boxes, the
-// shutters a box with three panels, the lace one flat sheet each side.
+// shutters a box with three panels.
 namespace room_shell;
 import std;
 import vec;
@@ -368,7 +368,7 @@ let ARCH_SEGMENTS = 12;
 
 // A window in wall b (metres, b's s at its middle): the band round the niche, the
 // reveals, the arch's soffit and the lunette over the casement, the sill board, the two
-// casements with their glass, the folded shutters, and the lace in front.
+// casements with their glass, the folded shutters, and the curtains (curtains.goose).
 fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&,
           wb: surfaces::Builder, o: Opening, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
@@ -448,7 +448,7 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
         let rows: float2[3] = [float2 { 0.9, 1.62 }, float2 { 1.72, 2.62 }, float2 { 2.72, 3.16 }];
         painted(verts, indices, f, 0.0, (SHUTTER_TO - SHUTTER_FROM) * m(), y0, y1, 0.05, rows[..], seed);
     }
-    lace(glass, glass_indices, b, o);
+    curtains(verts, indices, glass, glass_indices, b, o, seed);
 }
 
 // The two halves of a casement at the glass plane `g` metres into the wall from b's face:
@@ -510,24 +510,6 @@ fn casement(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>
     let gz = -(g + 0.018);
     quad_m(glass, glass_indices, b, [float3 { -gx, s + 0.03, gz }, float3 { gx, s + 0.03, gz }, float3 { gx, h - CASE_HEAD, gz },
                                      float3 { -gx, h - CASE_HEAD, gz }], surfaces::MAT_GLASS);
-}
-
-// The lace on its rod in front of the niche, drawn back to each side: a flat sheet from
-// the rod's end in to its edge, gathered narrower at the middle of its height.
-fn lace(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Builder, o: Opening) {
-    let w = 0.5 * o.width;
-    let out = w + BAND + LACE_PAST;
-    // The inner edge at the rod, gathered, at the knee, at the hem; the outer edge.
-    let ys:    f32[4] = [LACE_ROD, o.sill + 0.6, 0.35, 0.05];
-    let edge:  f32[4] = [w - 0.02, w - 0.12, w - 0.08, w + 0.02];
-    let outer: f32[4] = [out, out + 0.02, out + 0.04, out + 0.05];
-    for sx in SIDES {
-        for k in 3 {
-            quad_m(glass, glass_indices, b, [float3 { sx * edge[k + 1], ys[k + 1], LACE_OFF }, float3 { sx * outer[k + 1], ys[k + 1], LACE_OFF },
-                                             float3 { sx * outer[k], ys[k], LACE_OFF }, float3 { sx * edge[k], ys[k], LACE_OFF }],
-                   surfaces::MAT_LACE);
-        }
-    }
 }
 
 // Panelled painted wood (a door's leaf, a shutter's face) on b's plane from x0 to x1
