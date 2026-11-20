@@ -342,3 +342,11 @@ behind it with the sun's glow. Its path curls toward the house at the right edge
 
 --- 46. The far tree line as a cut-out (attach library-far-01.png) ---
 Draw a new image from scratch: the band of trees in the attached image by itself on a transparent background: no sky, no lawn, no path, no lake. The same trees at the same places and sizes, from their feet to their tops, in the same light: backlit by the low sun from the upper left, their rims gold, the haze softening the farther ones. Where the sky shows between their crowns and branches, leave it transparent. Sharp throughout. No text. Landscape 3:2.
+
+Verdict (library-far-cut-01.png): real transparency but redrawn, a little cartoony: crisp
+oversaturated leaves, the trees smaller and lower than in library-far-01, the haze behind
+the lake lost, and the crowns nearly solid, little sky through them. Not used. Cutting the
+sky out of the photographic panels ourselves keeps their look: a quick key by each row's
+brightest sky works on library-far-right-01's clear sky, fails in library-far-01's haze
+by the lake, which is as bright as the sky; a matting model (the Windows desktop's
+ComfyUI) is the next thing to try there, not another prompt.

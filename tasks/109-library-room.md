@@ -120,6 +120,12 @@ be thought through with the room, not taken from one picture:
   the far tree line and sky as a wide band (pictures put side by side; the blur hides
   the seams), the sun's glow ours. Each layer's images from ChatGPT once the look is
   chosen; a view out of the whole window wall from inside first, to judge the look.
+- What the images showed (round 6, `design/manor/prompts.txt` 41 to 46): the park as
+  `library-park-01` (against the sun, the maple close, the oak alone, spruces on the right,
+  the lake in the tree line). A single tree comes from ChatGPT as a usable transparent
+  cut-out (`library-oak-01`); a whole tree line comes redrawn and cartoony. A panel to the
+  side matches in kind, not in place, and its sky differs: panels join with a cut at a
+  trunk, the sky drawn by us behind tree lines cut from the panels.
 
 ## Acceptance criteria
 
