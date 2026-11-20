@@ -147,9 +147,9 @@ struct Species {
     // random about its stalk and tilted, facing the sun this much (0 the old way: lying
     // along its stalk as the sun sees it, its width shortened at random); the nearest
     // leaves this much larger at the house; the near layer's blur against the others'.
-    cluster:  i64 = 0,
-    face:     f32 = -1.0,
-    near:     f32 = 0.0,
+    cluster:   i64 = 0,
+    face:      f32 = 0.0,
+    near:      f32 = 0.0,
     near_blur: f32 = 1.0,
 }
 
@@ -174,24 +174,24 @@ let BROADLEAF = Species {
 // Norway maple (library-autumn-01, -02): its twigs in opposite pairs, a dense rounded
 // crown of fairly straight branches, big leaves, so larger flecks and fewer gaps.
 let MAPLE = Species {
-    segments: [8, 6, 4, 3, 2],
-    children: [8, 6, 6, 6, 0],
-    start:    [0.4, 0.15, 0.15, 0.2, 0.0],
-    angle:    [50.0, 45.0, 45.0, 45.0, 0.0],
-    ratio:    [0.55, 0.5, 0.45, 0.4, 0.0],
-    tip:      [0.35, 0.25, 0.3, 0.35, 0.4],
-    crook:    [0.05, 0.2, 0.25, 0.2, 0.2],
-    rise:     [0.0, 0.08, 0.05, 0.03, 0.0],
-    hang:     [0.0, 0.0, 0.03, 0.1, 0.15],
-    leaves:   [0.0, 0.0, 3.0, 8.0, 14.0],
-    paired:   true,
-    leaf:     1.6,
-    width:    1.35,
-    spray:    2.0,
-    lobes:    5,
-    cluster:  3,
-    face:     0.6,
-    near:     0.6,
+    segments:  [8, 6, 4, 3, 2],
+    children:  [8, 6, 6, 6, 0],
+    start:     [0.4, 0.15, 0.15, 0.2, 0.0],
+    angle:     [50.0, 45.0, 45.0, 45.0, 0.0],
+    ratio:     [0.55, 0.5, 0.45, 0.4, 0.0],
+    tip:       [0.35, 0.25, 0.3, 0.35, 0.4],
+    crook:     [0.05, 0.2, 0.25, 0.2, 0.2],
+    rise:      [0.0, 0.08, 0.05, 0.03, 0.0],
+    hang:      [0.0, 0.0, 0.03, 0.1, 0.15],
+    leaves:    [0.0, 0.0, 3.0, 8.0, 14.0],
+    paired:    true,
+    leaf:      1.6,
+    width:     1.35,
+    spray:     2.0,
+    lobes:     5,
+    cluster:   3,
+    face:      0.6,
+    near:      0.6,
     near_blur: 0.5,
 };
 

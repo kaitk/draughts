@@ -80,21 +80,24 @@ struct Room {
 // behind, deep amber, through the park's trees; dark panelling and wallpaper, so the
 // shade is warm.
 let AUTUMN = Room {
-    key:        float4 { 30.0, 18.0, 6.5, 0.85 },
+    key:        float4 { 30.0, 18.0, 7.0, 0.85 },
     key_color:  float4 { 1.0, 0.78, 0.56, 0.0 },
-    fill:       float4 { 15.0, 25.0, 0.6, 0.6 },
+    fill:       float4 { 15.0, 25.0, 0.45, 0.6 },
     fill_color: float4 { 0.75, 0.82, 1.0, 0.0 },
-    walls:      float4 { 0.45, 0.33, 0.24, 0.3 },
+    walls:      float4 { 0.45, 0.33, 0.24, 0.22 },
     ceiling:    float4 { 0.9, 0.85, 0.75, 0.12 },
     floor:      float4 { 0.4, 0.25, 0.15, 0.1 },
     lamp:       float4_0,
     lamp_color: float4_0,
     species:    1,
-    // The maple close by, the window looking into its crown's outer leaves (task 105's
-    // search: the board's part of the map lets through about 40% with the most fine
-    // detail; a tall far tree blurs to blobs).
-    tree:  float4 { 1.0, 4.0, 70.0, 1.5 },
-    crown: float4 { 15.0, -50.0, 0.5, 0.3 },
+    // The maple close by, the window looking into its crown's outer leaves, the board
+    // and the table under even dapple, the shade deep between the flecks (task 105's
+    // searches; a tall far tree blurs to blobs).
+    pattern:   float4 { 0.9, 0.012, 0.0, 0.0 },
+    tree:      float4 { 1.0, 11.0, 70.0, 1.0 },
+    crown:     float4 { -10.0, -60.0, 0.5, 0.3 },
+    foliage:   float4 { 0.4, 0.7, 0.15, 30.0 },
+    tree_blur: 0.2,
     ..
 };
 
