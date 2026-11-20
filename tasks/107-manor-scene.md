@@ -27,10 +27,11 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       the dapple mostly on the table and the board's edges so the squares read; the
       dense dapple, the wind, and the dust are the home screen's, by tier, not a setting
 - [ ] Device numbers on the Mac and the A33, against before (tasks 104, 105)
-- [ ] The gusts briefer and weaker (the user, 2026-11-20): their strength, length and
+- [x] The gusts briefer and weaker (the user, 2026-11-20): their strength, length and
       how often on `rooms::Room` with tuner flags, defaults about 1.5 to 2 s and about
       half today's push (a gust now lasts about 5 s every 20 and pushes the leaves about
-      3 times calm air's), each gust quickening only some regions of branches
+      3 times calm air's), each gust quickening only some regions of branches. Done:
+      1.75 s every 20 s, half the push, reaching about 0.4 of the crown (task 105)
 - [ ] The shadows in the light tuner (the user, 2026-11-20): the board casts none on the
       table, and the pieces cast shadows but don't shade themselves; checked in shots
       first, the pieces' own shadow perhaps the high mode's only. The user's shot of the

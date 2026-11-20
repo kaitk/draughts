@@ -1,5 +1,6 @@
-gusts: 26 in ten minutes, gusty 17% of the time
-limbs reach 12 thousandths of a unit, the near leaves 542
+gusts: 30 in ten minutes, gusty 5% of the time
+limbs reach 10 thousandths of a unit, the near leaves 429
 the limbs under a fifth of the leaves: true
 near and middle leaves out of step: true
-the branches' clock over a minute: 68, carried on the same: true
+the gust's largest step in a tenth of a second: 28 hundredths
+the branches' clock ahead in a gust at most 65 hundredths of a second, back at 0 as a stretch begins: true

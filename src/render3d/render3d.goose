@@ -58,6 +58,7 @@ struct Frame {
     wind_now:        float4,
     tree_shift:      float4[4],
     branches:        float4,
+    gust_reach:      float4,
     disc_n:          float4,
     discs:           float4[MAX_DISCS],
 }
@@ -813,11 +814,6 @@ var wind_time: f32 = 0.0;
 // How the wind moves the leaves (rooms::WIND_KINDS): the tuner's switch.
 var wind_kind = rooms::WIND_NOISE;
 
-// The branches' clock (rooms::branch_clock) and the wind's time it was taken at, carried
-// on from frame to frame; taken again from 0 when the time goes back.
-var branch_time:  f64 = 0.0;
-var branch_clock: f64 = 0.0;
-
 // The room's light where the board stands on its table (rooms::Room): its key in place
 // of the look's, its fill and walls as the ambient's harmonics, the look's exposure kept.
 // Over the photograph or the fade the look's own light stays.
@@ -839,21 +835,15 @@ fn put_room(g: Gpu&) {
     f.leaves = r.leaves;
     f.twigs = r.twigs;
     let still = wind_kind == rooms::WIND_STILL;
-    f.wind = float4 { r.wind.x, r.wind.y, if still { 0.0 } else { wind_time }, r.wind.w };
+    // The leaves' ruffle in a gust as strong as the noises' gusts are (the sines keep theirs).
+    let ruffle = if wind_kind == rooms::WIND_SINES { r.wind.w } else { r.wind.w * r.gust.x };
+    f.wind = float4 { r.wind.x, r.wind.y, if still { 0.0 } else { wind_time }, ruffle };
     let span = if on && r.tree.x > 0.5 { rooms::tree_view(r).span } else { 0.0 };
-    let t = (wind_time * r.wind.y) as f64;
-    if t < branch_time {
-        branch_time = 0.0;
-        branch_clock = 0.0;
-    }
-    if wind_kind == rooms::WIND_BRANCHES {
-        branch_clock = rooms::branch_clock(branch_time, branch_clock, t);
-        branch_time = t;
-    }
-    let wa = rooms::wind_of(r, wind_kind, wind_time, span, branch_clock);
+    let wa = rooms::wind_of(r, wind_kind, wind_time, span);
     f.wind_now = wa.now;
     f.tree_shift = wa.shift;
     f.branches = wa.branches;
+    f.gust_reach = wa.regions;
     put_tree(g, on && r.tree.x > 0.5);
     g.shadow_dirty = true;
 }

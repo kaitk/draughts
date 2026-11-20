@@ -62,6 +62,11 @@ struct Room {
     // limbs lean a tenth of it), y how fast, z how much more the leaves sway than the
     // noise's canopy, w how much the leaves ruffle in a gust.
     wind: float4 = float4 { 0.06, 1.0, 3.0, 0.5 },
+    // The gusts (gust_at): x how strong (1 as they were at first: the leaves pushed about
+    // three times calm air's sway and the branches' clock 2.5 times as fast), y how long
+    // one lasts and z the mean time from one to the next, in the wind's seconds; w how much
+    // of the crown one reaches (1 all of it, less only some regions of branches).
+    gust: float4 = float4 { 0.5, 1.75, 20.0, 0.4 },
     // The tree outside, its shadow baked (task 105, trees.goose) in place of the leaves'
     // noise above: x 1 the tree, 0 the noise, 2 both (its limbs, and the noise's leaves
     // where its crown has leaves, crown_blur); y its seed; z its trunk's height; w how many
@@ -322,11 +327,15 @@ fn tree_view(r: Room) -> trees::View {
 // limbs, the near, middle and far leaves) in the tree's map, a map of side `span`: xy in
 // calm air, zw what a full gust adds. With the branches (WIND_BRANCHES), their field:
 // x its clock, y its sway in calm air and z what a full gust adds, in the map, w its
-// noise's cells a unit.
+// noise's cells a unit. The gust's regions (gust_regions): x where its noise is along
+// the wind, in cells, y how far the branches' clock has run ahead in this gust, z and w
+// the noise's value where the gust starts to reach and how much more it takes to reach
+// fully (w 0: the whole crown).
 struct Wind {
     now:      float4,
     shift:    float4[4],
     branches: float4 = float4_0,
+    regions:  float4 = float4_0,
 }
 
 // The wind's noise (Zioma, GPU Gems 3, ch. 6): value noise of time, -1..1, a new random
@@ -351,11 +360,66 @@ fn eased(a: f64, b: f64, x: f64) -> f64 {
     return t * t * (3.0 - 2.0 * t);
 }
 
-// The gust at the seconds `front`, 0 mostly, toward 1 for about five seconds every
-// twenty or so: a quick noise let through only while a slow one is high.
-fn gust_at(front: f64) -> f64 {
-    let quick = eased(0.0, 0.9, wind_noise(front * 0.3 + 3.7));
-    return quick * eased(-0.4, 0.4, wind_noise(front * 0.05 + 8.1));
+// The gusts (Room.gust) at the seconds `front`: one in each stretch of gust.z seconds, at
+// a random moment in it and of a random size, rising quickly and falling slower over
+// gust.y seconds, 0 between; at least GUST_GAP from the stretch's ends, so a gust is over
+// all along the wall before the next stretch begins. The stretch `front` is in, and the
+// gust's start in it and its size.
+let GUST_GAP: f64 = 1.0;
+
+fn gust_length(g: float4) -> f64 { max(g.y as f64, 0.1) }
+fn gust_every(g: float4) -> f64 { max(g.z as f64, gust_length(g) + 2.0 * GUST_GAP + 0.5) }
+
+fn gust_stretch(g: float4, front: f64) -> f64, f64, f64 {
+    let every = gust_every(g);
+    let k = floor(front / every);
+    let start = k * every + GUST_GAP + wind_hash(k * 1.37 + 5.1) * (every - gust_length(g) - 2.0 * GUST_GAP);
+    return k, start, 0.6 + 0.4 * wind_hash(k * 2.71 + 19.3);
+}
+
+fn gust_at(g: float4, front: f64) -> f64 {
+    let k, start, size = gust_stretch(g, front);
+    let u = (front - start) / gust_length(g);
+    guard u > 0.0 && u < 1.0 else { return 0.0; }
+    return size * eased(0.0, 0.3, u) * (1.0 - eased(0.3, 1.0, u));
+}
+
+// How far the branches' clock has run ahead in the gust at `front`, in the wind's seconds:
+// a full gust of strength 1 runs it 2.5 times as fast, as the branches sway quicker then.
+// It goes back to 0 between gusts, where the gust is 0 all along the wall, and the shader
+// takes it only times the gust where it reaches, so nothing jumps.
+fn gust_clock(g: float4, front: f64) -> f64 {
+    let k, start, size = gust_stretch(g, front);
+    let end = min(front, start + gust_length(g));
+    guard end > start else { return 0.0; }
+    let steps = 16;
+    let dt = (end - start) / steps;
+    var sum = 0.0;
+    var a = gust_at(g, start);
+    for i in steps {
+        let b = gust_at(g, start + (i + 1) * dt);
+        sum += 0.5 * (a + b) * dt;
+        a = b;
+    }
+    return 1.5 * (g.x as f64) * sum;
+}
+
+// A branch's reach across, in world units: the cells of the branches' field and of the
+// gust's regions.
+let BRANCH_CELL: f32 = 6.0;
+
+// Where the gust at the wind's seconds `t` reaches (Wind.regions; shaders::LIGHT_FN's
+// wind_at): a slow noise over the tree's plane, BRANCH_CELL cells, drifting along the wind
+// and a new part of it each gust. Its edge is soft enough that, with the strongest
+// layer's push `push` (world units) over it, the shift changes by about a tenth of a unit
+// a unit at most, so no leaf's shape smears (branch_field's rule).
+fn gust_regions(g: float4, t: f64, push: f32) -> float4 {
+    guard g.w < 1.0 else { return float4 { 0.0, gust_clock(g, t) as f32, 0.0, 0.0 }; }
+    let k, start, size = gust_stretch(g, t);
+    let along = (k * 7.31) % 977.0 + 0.3 * (t - k * gust_every(g));
+    let soft = clamp(2.5 * push, 0.5, 1.2);
+    let middle = 0.5 + 0.5 * (0.5 - clamp(g.w, 0.0, 1.0));
+    return float4 { along as f32, gust_clock(g, t) as f32, middle - 0.5 * soft, soft };
 }
 
 // The wind at `seconds` for a tree's map of side `span`. Two noises a layer, one along
@@ -367,8 +431,8 @@ fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
     let t = (seconds * r.wind.y) as f64;
     // Where the gust's front is a unit along the wall later: 0.015 s.
     let lag: f64 = 0.015;
-    let gust = gust_at(t);
-    let change = (gust_at(t - 10.0 * lag) - gust_at(t + 10.0 * lag)) / 20.0;
+    let gust = gust_at(r.gust, t);
+    let change = (gust_at(r.gust, t - 10.0 * lag) - gust_at(r.gust, t + 10.0 * lag)) / 20.0;
     // Each channel's rate and seed: the limbs, the near, middle and far leaves.
     let along_rate:  f64[4] = [0.22, 0.35, 0.42, 0.5];
     let across_rate: f64[4] = [0.17, 0.3, 0.37, 0.45];
@@ -383,8 +447,10 @@ fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
     let dir = float2 { 1.0, 0.15 };
     let cross_dir = float2 { -0.15, 1.0 };
     let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
+    let strength = r.gust.x;
     for i in 4 {
-        // In calm air, and what a full gust adds (the turbulence up by 0.8, a push of 2).
+        // In calm air, and what a full gust of strength 1 adds (the turbulence up by 0.8, a
+        // push of 2).
         var calm = dir * sway + cross_dir * sway_across;
         var pushed = dir * 1.5;
         if i > 0 {
@@ -394,8 +460,11 @@ fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
             pushed = dir * (2.0 + 0.8 * along) + cross_dir * (0.4 * across);
         }
         let k = reach[i] * unit;
-        out.shift[i] = float4 { calm.x * k, calm.y * k, pushed.x * k, pushed.y * k };
+        let kg = k * strength;
+        out.shift[i] = float4 { calm.x * k, calm.y * k, pushed.x * kg, pushed.y * kg };
     }
+    // The farthest leaves' push at most: along 2.8, across 0.4.
+    out.regions = gust_regions(r.gust, t, 2.83 * reach[3] * strength);
     return out;
 }
 
@@ -408,47 +477,31 @@ let WIND_STILL = 2;
 let WIND_BRANCHES = 3;
 let WIND_KINDS = ["sines", "noise", "still", "branches"];
 
-// The wind of a kind (WIND_KINDS) at `seconds` for a tree's map of side `span`; `clock`
-// the branches' (branch_clock).
-fn wind_of(r: Room, kind: i64, seconds: f32, span: f32, clock: f64 = 0.0) -> Wind {
+// The wind of a kind (WIND_KINDS) at `seconds` for a tree's map of side `span`.
+fn wind_of(r: Room, kind: i64, seconds: f32, span: f32) -> Wind {
     if kind == WIND_SINES { return wind_sines(r, seconds, span); }
     if kind == WIND_STILL { return Wind { float4_0, [float4_0; 4], .. }; }
     var out = wind_at(r, seconds, span);
     if kind == WIND_BRANCHES {
         out.now.w = 2.0;
-        out.branches = branch_field(r, clock, span);
+        out.branches = branch_field(r, seconds * r.wind.y, span);
     }
     return out;
 }
 
 // The branches' field (shaders::LIGHT_FN's branch_sway): each leaf layer's lookup moved
-// by a slow noise over the tree's plane, its cells a branch's reach across (6 units), at
-// most two thirds of a leaf's width (0.25), so neighbouring regions sway apart and the
-// field's gradient stays under 0.13: no shape smears.
-fn branch_field(r: Room, clock: f64, span: f32) -> float4 {
+// by a slow noise over the tree's plane, its cells a branch's reach across (BRANCH_CELL),
+// at most two thirds of a leaf's width (0.25), so neighbouring regions sway apart and the
+// field's gradient stays under 0.13: no shape smears. Its clock is the wind's time `t`;
+// where a gust reaches, it runs ahead (gust_clock) and the sway grows by the gust's
+// strength.
+fn branch_field(r: Room, t: f64, span: f32) -> float4 {
     let most: f32 = 0.25;
     let reach = r.wind.x * r.wind.z;
     let calm = min(0.25 * reach, most);
     let gusty = min(0.9 * reach, most);
     let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
-    return float4 { clock as f32, calm * unit, (gusty - calm) * unit, 1.0 / 6.0 };
-}
-
-// The branches' clock from `from` (its value then `at`) to `to`, in the wind's time
-// (seconds times Room.wind.y): it runs 2.5 times as fast in a full gust, so the
-// branches sway quicker then, and never jumps as a gust comes and goes.
-fn branch_clock(from: f64, at: f64, to: f64) -> f64 {
-    guard to > from else { return at; }
-    let steps = ceil((to - from) / 0.25) as i64;
-    let dt = (to - from) / steps;
-    var c = at;
-    var a = gust_at(from);
-    for i in steps {
-        let b = gust_at(from + (i + 1) * dt);
-        c += dt * (1.0 + 0.75 * (a + b));
-        a = b;
-    }
-    return c;
+    return float4 { t as f32, calm * unit, (gusty - calm) * r.gust.x * unit, 1.0 / BRANCH_CELL };
 }
 
 // The wind as sines (after Crysis's vegetation and SpeedTree's wind): the whole tree's

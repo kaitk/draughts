@@ -102,6 +102,11 @@ pieces; the design boards still set the layout, glass, and controls.
   notes, `build/notes/room-oak-2/`). Before-and-after pairs of the tuner from an older
   commit: `git archive` it into a scratch folder, link `third_party/*`,
   `build/goose-v2026.4-macos-arm64` and `build/mac/goose` into it, and build there.
+- The light tuner's gusts (`rooms::Room.gust`): `--gust-strength K`, `--gust-length S`,
+  `--gust-every S` (the wind's seconds), `--gust-reach K` (how much of the crown, 1 all),
+  on sliders under Wind and printed by P. A sequence of a gust: shots at `--wind-time`
+  0.25 s apart, one run each; against the same times with `--gust-strength 0` for its
+  footprint (`build/notes/gusts/`).
 - The light tuner's frame counter (F, top right): frames a second, the mean and worst
   frame over half a second, and the time in the loop before the submit; G (`--fps-wait`)
   waits for the GPU each frame, as `--bench`'s first phase. SDL's GPU has no timer

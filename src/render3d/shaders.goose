@@ -72,10 +72,12 @@ let FRAME = """
         // at 0 along the wall, z its change a unit along, w 1 for the sines' gust
         // (rooms::wind_sines), 2 for the branches; each layer's shift in the map (the
         // limbs, the near, middle and far leaves), xy in calm air, zw a full gust's; the
-        // branches' field (rooms::branch_field).
+        // branches' field (rooms::branch_field); where the gust reaches
+        // (rooms::gust_regions).
         vec4 wind_now;
         vec4 tree_shift[4];
         vec4 branches;
+        vec4 gust_reach;
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
         // their radius; each disc x, z, its foot's and its top's height over the table.
         vec4 disc_n;
@@ -290,15 +292,21 @@ let LIGHT_FN = """
 
     // The wind at m, a point of the tree's plane (rooms::wind_at, after Zioma's noise of
     // time a layer): x the whole tree's slow sway, -1..1; y the gust, its front crossing
-    // the crown along the wall. With the sines (wind_now.w 1, the tuner's), the gust is
-    // their product's peaks.
+    // the crown along the wall, only in some regions of branches (rooms::gust_regions: a
+    // slow noise a branch's reach across, drifting along the wind). With the sines
+    // (wind_now.w 1, the tuner's), the gust is their product's peaks, all over the crown.
     vec2 wind_at(vec2 m) {
         if (abs(wind_now.w - 1.0) < 0.5) {
             float front = wind.z * wind.y - m.x * 0.015;
             float sines = (0.5 + 0.5 * sin(front * 0.21)) * (0.6 + 0.4 * sin(front * 0.53 + 2.0));
             return vec2(wind_now.x, smoothstep(0.55, 1.0, sines));
         }
-        return vec2(wind_now.x, clamp(wind_now.y + wind_now.z * m.x, 0.0, 1.0));
+        float g = clamp(wind_now.y + wind_now.z * m.x, 0.0, 1.0);
+        if (gust_reach.w > 0.0 && g > 0.0) {
+            float n = window_noise(m * (1.0 / 6.0) - vec2(1.0, 0.15) * gust_reach.x);
+            g *= smoothstep(gust_reach.z, gust_reach.z + gust_reach.w, n);
+        }
+        return vec2(wind_now.x, g);
     }
 
     // Leaves turning in a gust: how far each small patch has turned, 0..1, on a phase of
@@ -314,13 +322,14 @@ let LIGHT_FN = """
     // m moves in the map, by a slow field a branch's reach across, at most a leaf's width,
     // so neighbouring regions sway a little differently and no shape smears. Two value
     // noises, along and across the wind, each scrolled along it at its own pace, so the
-    // field changes its shape as it goes; the farther layers move more and quicker.
-    vec2 branch_sway(vec2 m, float layer, float gust) {
+    // field changes its shape as it goes; the farther layers move more and quicker, and
+    // quicker still where a gust reaches (its clock run ahead, rooms::gust_clock).
+    vec2 branch_sway(vec2 m, float layer, float gusted) {
         vec2 p = m * branches.w + vec2(37.1, 11.7) * layer;
-        float c = branches.x * (0.3 + 0.06 * layer);
+        float c = (branches.x + gusted * gust_reach.y) * (0.3 + 0.06 * layer);
         float along = window_noise(p - vec2(1.0, 0.15) * c);
         float across = window_noise(p.yx + vec2(5.3, 2.9) - vec2(0.4, 0.9) * (1.3 * c));
-        float a = (branches.y + gust * branches.z) * (0.8 + 0.1 * layer);
+        float a = (branches.y + gusted * branches.z) * (0.8 + 0.1 * layer);
         return a * vec2(2.0 * along - 1.0, 0.7 * (2.0 * across - 1.0));
     }
 

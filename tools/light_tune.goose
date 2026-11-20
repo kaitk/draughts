@@ -17,6 +17,7 @@
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
 //       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
 //       [--wind-kind sines|noise|still|branches]
+//       [--gust X,Y,Z,W | --gust-strength K --gust-length S --gust-every S --gust-reach K (rooms::Room's gust)]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern|--bounce X,Y,Z,W]
 //       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
@@ -316,6 +317,7 @@ fn report(r: rooms::Room, take: i64) {
     room_line(out, "leaves:    ", r.leaves);
     room_line(out, "twigs:     ", r.twigs);
     room_line(out, "wind:      ", r.wind);
+    room_line(out, "gust:      ", r.gust);
     room_line(out, "tree:      ", r.tree);
     room_line(out, "crown:     ", r.crown);
     room_line(out, "foliage:   ", r.foliage);
@@ -392,6 +394,11 @@ fn main() {
     room.panes = four(argv, "--panes", room.panes);
     room.opening = four(argv, "--opening", room.opening);
     room.wind = four(argv, "--wind", room.wind);
+    room.gust = four(argv, "--gust", room.gust);
+    room.gust.x = number(argv, "--gust-strength", room.gust.x);
+    room.gust.y = number(argv, "--gust-length", room.gust.y);
+    room.gust.z = number(argv, "--gust-every", room.gust.z);
+    room.gust.w = number(argv, "--gust-reach", room.gust.w);
     room.key = four(argv, "--key", room.key);
     room.fill = four(argv, "--fill", room.fill);
     room.walls = four(argv, "--walls", room.walls);
@@ -531,6 +538,10 @@ fn main() {
             slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
             slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
             slider(c, "Ruffle", room.wind.w, 0.0, 2.0);
+            slider(c, "Gust strength", room.gust.x, 0.0, 2.0);
+            slider(c, "Gust length", room.gust.y, 0.3, 8.0);
+            slider(c, "Gust every", room.gust.z, 3.0, 60.0);
+            slider(c, "Gust reach", room.gust.w, 0.0, 1.0);
             heading(c, "The room (O, V)");
             var shown_surfaces: i64 = if room_on { 1 } else { 0 };
             choice(c, "Floor, wall", shown_surfaces, ["off", "on"]);

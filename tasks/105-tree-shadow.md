@@ -247,6 +247,21 @@ short and straight.
     0.25 s apart across a gust's start side by side as a GIF: `build/notes/wind-branches/`
     (local).
 
+- The gusts briefer, weaker and local (2026-11-20, the user): `Room.gust` holds their
+  strength, length, mean time apart and reach (0.5, 1.75 s, 20 s, 0.4; tuner flags
+  `--gust-strength`, `--gust-length`, `--gust-every`, `--gust-reach`, or `--gust`). One
+  gust in each stretch of `every` seconds, at a random moment and size, rising over 30%
+  of its length and falling over the rest, 0 between (`rooms::gust_at`): over 0.2 for
+  1.2 s on average where it was 4 s, 30 in ten minutes where it was 26. Half the push and
+  the ruffle. Only some regions of the crown take it: a slow noise in 6-unit cells over
+  the tree's plane (`gust_regions`), drifting along the wind and a new part of it each
+  gust, its edge soft enough that the push changes by about a tenth of a unit a unit.
+  The branches' clock now runs at the wind's time, and where a gust reaches it runs
+  ahead (`gust_clock`, back to 0 between gusts), so no state is carried frame to frame.
+  The sines keep their own gust. At a gust's peak 1% of the board's view moves by over
+  6% where 12% did. Frames, footprints and the curves: `build/notes/gusts/` (local).
+  One value noise more a pixel, only while a gust is on.
+
 - The two renderers on shadow-map frames (2026-11-20): a reported 5 ms more for ngfx on
   frames that draw the shadow map again, with the window's pattern on, didn't show in any
   measure. `--background table --window on --bench 300`, the waited frame's P50 with the
