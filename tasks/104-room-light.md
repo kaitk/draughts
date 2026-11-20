@@ -1,6 +1,6 @@
 # 104: The board's light per season, and the window's shadow
 
-Status: in-progress (on the branch `room-light`, 2026-11-20: a first look per season)
+Status: in-progress (on the branch `room-light`, 2026-11-20: the rooms, the cheap pattern, and the tuner; tuning next)
 
 The 3D board on its table (task 095) is lit the same way in every season: one key light
 from the upper left, a little warmer or cooler per look, and a dim ambient from the plain
@@ -74,12 +74,29 @@ comparing, and the desktop has it on, as the stone board's scattering
 The light's new direction may call for some materials to be tuned again; that waits till
 the light is settled (the user, 2026-11-20).
 
+## Done so far (2026-11-20)
+
+- The rooms as data (`rooms::Room`, five takes: the library, the hall in snow light, the
+  hall in winter sun, the hall in spring, the sea evening), put on by
+  `render3d::put_room` when the board stands on its table. The key's shadow darkness is
+  `Frame.room.x`.
+- First look (the user): not bad; the shadows perhaps too dark for the light; the trees'
+  shadow over the board wanted, as in the library frames; a sunny winter take beside the
+  soft one (added: the sun at about 8°, `rooms::HALL_SUN`).
+- The window's pattern, cheap (`shaders::LIGHT_FN`'s `window_light`): the key traced to
+  the window's wall, the opening, its bars, a lace curtain's folded edge, and three
+  octaves of value noise for the leaves beyond, each edge softer with distance. On with
+  `--window on` in the app (`render3d::window_pattern`), on in the tuner (W).
+- `tools/light_tune.goose`: the room take, season, board, and table; the sun's round,
+  height, strength, shadow, and color; the fill, walls, ceiling, floor, and lamp; the
+  window and the leaves; P prints the room as Goose into `build/light-tune.txt`.
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac
 - [ ] The light holds without the window's pattern, in every season
 - [ ] The window's pattern tried cheap and rich, each placed in a tier
-- [ ] A tuner for the room's light and the pattern
+- [x] A tuner for the room's light and the pattern
 - [ ] Shots of each season in this file; GPU time recorded on the Mac and the A33 at the
       end, against before
 - [ ] `docs/decisions/rendering.md` and `docs/architecture/rendering.md` brought up to date

@@ -49,8 +49,15 @@ let FRAME = """
         vec4 light_scatter;
         vec4 dark_scatter;
         vec4 piece_wear;
-        // The room's light (render3d::put_room): x how dark the key's shadow is.
+        // The room's light (render3d::put_room, rooms::Room): x how dark the key's
+        // shadow is, y how much of the key the window's shade keeps out (0 no pattern),
+        // z the penumbra's widening with distance; the window, its panes, its opening
+        // and curtain, the trees' leaves outside.
         vec4 room;
+        vec4 window;
+        vec4 panes;
+        vec4 opening;
+        vec4 leaves;
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
         // their radius; each disc x, z, its foot's and its top's height over the table.
         vec4 disc_n;
@@ -249,6 +256,61 @@ let LIGHT_FN = """
         return max(r, vec3(0.0));
     }
 
+    float window_hash(vec2 p) {
+        vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return fract((p3.x + p3.y) * p3.z);
+    }
+    float window_noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(window_hash(i), window_hash(i + vec2(1.0, 0.0)), u.x),
+                   mix(window_hash(i + vec2(0.0, 1.0)), window_hash(i + vec2(1.0, 1.0)), u.x), u.y);
+    }
+
+    // How much of the key reaches p through the window (rooms::Room's pattern): p traced
+    // along the key to the window's wall, where the opening, its bars, and the curtain
+    // say whether the sun came through, and on to the trees beyond, whose leaves dapple
+    // it; each edge softer the farther it is from p. 1 with no pattern.
+    float window_light(vec3 p) {
+        if (room.y <= 0.0) return 1.0;
+        vec3 l = light_dir.xyz;
+        vec2 h = normalize(l.xz);
+        float a = radians(window.y);
+        vec2 nw = vec2(cos(a) * h.x - sin(a) * h.y, sin(a) * h.x + cos(a) * h.y);
+        vec2 along = vec2(-nw.y, nw.x);
+        float toward = dot(l.xz, nw);
+        if (toward < 0.05) return 1.0 - room.y;
+        float t = (window.x - dot(p.xz, nw)) / toward;
+        vec3 q = p + l * t;
+        // Along the wall from where the board's middle sees the sun, up from the sill.
+        vec2 w = vec2(dot(q.xz - l.xz * (window.x / toward), along) - window.w, q.y - window.z);
+        float soft = 0.03 + room.z * t;
+        vec2 size = opening.xy * panes.xy;
+        float inside = min(size.x * 0.5 - abs(w.x), min(w.y, size.y - w.y));
+        float lit = smoothstep(-soft, soft, inside);
+        // The bars between the panes.
+        vec2 f = abs(fract(vec2(w.x / panes.x + opening.x * 0.5, w.y / panes.y) + 0.5) - 0.5) * panes.xy;
+        lit *= smoothstep(-soft, soft, min(f.x, f.y) - panes.z * 0.5);
+        // The lace curtain drawn in from the opening's far side, its edge in folds.
+        if (opening.z > 0.0) {
+            float edge = size.x * 0.5 - opening.z + 0.6 * sin(w.y * 0.35) + 0.3 * sin(w.y * 0.9 + 1.3);
+            lit *= mix(1.0, opening.w, smoothstep(edge - 2.0 * soft, edge + 2.0 * soft, w.x));
+        }
+        // The leaves outside: clumps of noise, rounder and softer the farther they are.
+        if (leaves.x > 0.0) {
+            float tl = t + leaves.z / toward;
+            vec3 ql = p + l * tl;
+            vec2 lw = vec2(dot(ql.xz, along), ql.y) * leaves.y;
+            float n = 0.55 * window_noise(lw) + 0.3 * window_noise(lw * 2.03 + 7.1)
+                    + 0.15 * window_noise(lw * 4.1 + 3.7);
+            float ls = 0.02 + room.z * tl * leaves.y * leaves.w;
+            lit *= smoothstep(leaves.x - ls, leaves.x + ls, n);
+        }
+        return mix(1.0 - room.y, 1.0, lit);
+    }
+
     vec3 to_srgb(vec3 c) {
         c = clamp(c, 0.0, 1.0);
         return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
@@ -415,7 +477,7 @@ let LIT_FRAG = """
             s = min(s, mix(1.0, discs_shadow(p, p + n * 0.01), facing));
         }
         // A broad key (winter's snowy doors) casts a fainter shadow.
-        return mix(1.0, s, room.x);
+        return mix(1.0, s, room.x) * window_light(p);
     }
 
     // One hardware-compared tap of the key's shadow at q (its bilinear edge only).
@@ -1437,6 +1499,7 @@ let TABLE_FRAG = """
             ao *= ds.y;
             vis = mix(1.0, vis, room.x);
         }
+        vis *= window_light(p);
         vec3 irr = sh_eval(n) * params.z * mix(1.0, lit, 0.5);
         vec3 wood = albedo * (diff / PI * light * vis + irr * ao);
 

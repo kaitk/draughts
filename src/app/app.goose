@@ -176,6 +176,7 @@ fn follow_screen(lp: Loop&, h: host::Host&, f: flags::Flags&, g: gui::Gui&, rd: 
     let scale = gui::scale_of(lp.size.x, lp.size.y);
     // The stone board's scattering only on a desktop (render3d::scatter_allowed).
     render3d::scatter_allowed = !mobile;
+    render3d::window_pattern = f.window;
     // The 3D board's shadow taps: 16 on a desktop and iOS; on Android 4 on a phone, 9 on a
     // tablet. A phone's screen bakes its surfaces at a quarter of the texels.
     let phone = gui::phone(float4 { 0.0, 0.0, lp.size.x, lp.size.y }, scale);

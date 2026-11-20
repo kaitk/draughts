@@ -47,6 +47,10 @@ struct Frame {
     dark_scatter:    float4,
     piece_wear:      float4,
     room:            float4,
+    window:          float4,
+    panes:           float4,
+    opening:         float4,
+    leaves:          float4,
     disc_n:          float4,
     discs:           float4[MAX_DISCS],
 }
@@ -627,6 +631,10 @@ fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
     g.shadow_dirty = true;
 }
 
+// Whether the key light takes the window's pattern (task 104): the high mode's, till the
+// tiers' table exists a development switch (the tuner's, the app's --window).
+var window_pattern = false;
+
 // The room's light where the board stands on its table (rooms::Room): its key in place
 // of the look's, its fill and walls as the ambient's harmonics, the look's exposure kept.
 // Over the photograph or the fade the look's own light stays.
@@ -640,7 +648,12 @@ fn put_room(g: Gpu&) {
     f.light_color = model3d::f4(rooms::key_light(r), 0.0);
     f.sh = rooms::harmonics(r);
     f.params = float4 { t.ambient.x * r.exposure, f.params.y, 1.0, f.params.w };
-    f.room = float4 { r.key.w, 0.0, 0.0, 0.0 };
+    let on = window_pattern && r.pattern.x > 0.0;
+    f.room = float4 { r.key.w, if on { r.pattern.x } else { 0.0 }, r.pattern.y, 0.0 };
+    f.window = r.window;
+    f.panes = r.panes;
+    f.opening = r.opening;
+    f.leaves = r.leaves;
     g.shadow_dirty = true;
 }
 
