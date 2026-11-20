@@ -660,5 +660,15 @@ blit.
 
 - A drop that leaves a piece waiting draws the frame after too (2026-11-08): a puzzle's
   next stayed dim on the Pixel 7a.
+- A high mode that draws all the time (the user, 2026-11-20; planned in the epic 107, not
+  built): the wind in the window's pattern, dust in the beam, and the clock's seconds hand
+  move continuously, so every frame draws. It is the high render tier's: on by default
+  on desktops; on laptops and tablets while on mains power, back to drawing on change on
+  battery; a setting forces it on or off. In the game the clock ticks and the window's
+  pattern sways only gently, its dapple kept off the squares; the full wind and the dust
+  stay on the home screen and menus. Drawing on change (below) stays the default
+  everywhere else and the only mode on phones. Rejected: the high mode by device alone
+  (a plugged-in tablet could afford it) and a setting alone (desktops would start
+  still).
 - A running clock has its own wake timer (2026-11-08): without it the tablet drew the
   clock 6 ms later each second and skipped a second every two and a half minutes.

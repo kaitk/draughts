@@ -68,7 +68,9 @@ would otherwise look up again:
 
 - Nothing allocates in the frame loop. Per-frame data goes into arrays that are reset
   each frame or into fixed tables sized at startup.
-- The app draws only when something changed (`docs/architecture/rendering.md`).
+- The app draws only when something changed (`docs/architecture/rendering.md`); only the
+  planned high mode, on desktops and on mains power, draws every frame
+  (`docs/decisions/rendering.md`, "Frames and battery").
 - No user-facing string literals in code; strings come from `strings/<lang>.txt`.
 - Everything is in English: code, identifiers, docs, prototypes, and the app's default
   language. The app is called Draughts. Estonian is a translation, a file in `strings/`

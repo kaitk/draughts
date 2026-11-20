@@ -807,7 +807,8 @@ frame's GPU work must end about 7.5 ms after a refresh at 120 Hz, not 8.3. On an
 ## Frames and battery
 
 The app draws only when something changed: input, a running animation, the computer's
-reply, or a new size, safe area, or scale. Otherwise goose_gfx's `frame()` neither
+reply, or a new size, safe area, or scale. (A high mode drawing every frame, on desktops
+and on mains power, is planned: [decisions](../decisions/rendering.md#frames-and-battery).) Otherwise goose_gfx's `frame()` neither
 presents nor spins; it waits for the next event, up to a second. An idle board costs about
 one wakeup a second and no GPU work.
 
