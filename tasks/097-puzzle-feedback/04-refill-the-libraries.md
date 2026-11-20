@@ -1,6 +1,6 @@
 # 04: Refill the libraries
 
-Status: in-progress (International and Russian refilled; Brazilian not yet)
+Status: done (Russian short 2 crowning 1, Brazilian 2 captures 1: their kinds find nothing new)
 
 Dropped puzzles leave their ids unused, so the libraries have holes: by 2026-11-19, 245
 International (156 shots, 49 king shots, 27 safe moves, 9 crownings, 4 captures), 96
@@ -176,6 +176,33 @@ Every theme and level is back to its count before 097 or more; 3,662 puzzles.
 | Before this refill | 178 | 135 | 874 | 744 | 1,078 | 249 | 159 | 140 |
 | Now | 178 | 140 | 878 | 749 | 1,081 | 251 | 161 | 224 |
 
+**Russian and Brazilian**: after the first 4 hours, a second round of `shot4m-12,shot4m-14`
+alone (which gave most of the passed 1,400 and up), five processes each, SECONDS 1,500
+(2.5 hours), added little: Russian 21 passed to 24, Brazilian 40 to 45. Most of the hard
+kinds' sound positions are seen before, and the kings check fails about three in four of
+the hard candidates. Russian's `crown1-7` found nothing new in 10 minutes (55,961 sound,
+every one seen), and the capture kinds found the same 9 to 12 positions on every seed.
+
+| Both rounds | Found | New | Kept by the filter | Passed (failed) | Picked |
+|---|---|---|---|---|---|
+| Russian | 7,993 | 2,310 | 115 | 24 (91) | 16 of 25 |
+| Brazilian | 6,587 | 1,934 | 161 | 45 (116) | 41 of 51 |
+
+Short: Russian 7 shots 1 (1,745 and up) and 2 crowning 1; Brazilian 6 shots 1, 2 shots 2,
+and 2 captures 1. The hard kinds give shots 3 almost only, and `pick.py` matches theme
+and level, so the hard shots 1 lost aren't made up. By theme and level, everything is back
+but Russian's crowning 1 (27 of 29) and Brazilian's captures 1 (37 of 39); Russian has
+2,339 puzzles, Brazilian 2,108.
+
+| | 200 | 400 | 600 | 800 | 1000 | 1200 | 1400 | 1600+ |
+|---|---|---|---|---|---|---|---|---|
+| Russian before 097 | 139 | 69 | 738 | 853 | 292 | 146 | 50 | 41 |
+| Russian before this refill | 171 | 69 | 742 | 856 | 290 | 149 | 28 | 18 |
+| Russian now | 171 | 72 | 742 | 856 | 290 | 149 | 32 | 27 |
+| Brazilian before 097 | 89 | 59 | 726 | 731 | 212 | 148 | 53 | 62 |
+| Brazilian before this refill | 96 | 58 | 753 | 741 | 214 | 156 | 25 | 24 |
+| Brazilian now | 105 | 60 | 753 | 741 | 214 | 156 | 35 | 44 |
+
 ## Built-in puzzles to replace
 
 The kings check refuses these, or a wrong move in them wins by force, which beats
@@ -199,7 +226,8 @@ be the engine's choice (gap 0 or more), though crowning is exempt from PREFERS:
 
 ## Acceptance criteria
 
-- [ ] Each library's count per theme and level back to what it was before 097, or more:
-      International short 21 safe moves, Russian 4, Brazilian 13 (captures)
+- [x] Each library's count per theme and level back to what it was before 097, or more:
+      all but Russian's crowning 1 (27 of 29) and Brazilian's captures 1 (37 of 39), close
+      enough (the user, 2026-11-19)
 - [x] New puzzles take new ids; the dropped ones stay unused
 - [x] The five built-in puzzles above replaced, each passing the kings check
