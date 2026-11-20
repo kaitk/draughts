@@ -593,8 +593,15 @@ fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32, lobes: i64) {
             let u = du.x * x + du.y * y;
             let w = dw.x * x + dw.y * y;
             let r = max(sqrt(u * u + w * w), 1e-4);
+            // The distance to the edge to first order (Quilez): r's change a unit on the map.
+            let gx = (u * du.x + w * dw.x) / r;
+            let gy = (u * du.y + w * dw.y) / r;
+            let step = max(sqrt(gx * gx + gy * gy), 1e-6) * texel;
+            // Outside the round outline, or (a palmate leaf) well inside its sinuses: no
+            // lobes to work out.
+            guard r - 1.0 < 0.5 * step else { continue; }
             var edge: f32 = 1.0;
-            if lobes > 0 {
+            if lobes > 0 && r - 0.28 > -0.5 * step {
                 // A palmate leaf: round, its radius waving with the lobes, pointed ones out
                 // from the stalk (+u) and to the sides, a notch where the stalk joins.
                 let turn = atan2(w, u);
@@ -604,16 +611,13 @@ fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32, lobes: i64) {
                 let notch_to:   f32 = 3.1;
                 let notch = smoothstep(notch_from, notch_to, abs(turn));
                 // A maple's: broad, shallow sinuses, three big lobes and two small ones
-                // by the stalk.
+                // by the stalk, none narrower than 0.28 of its radius.
                 let low_from: f32 = 1.6;
                 let low_to:   f32 = 2.6;
                 let low = smoothstep(low_from, low_to, abs(turn));
                 edge = (0.84 + 0.16 * pointed) * (1.0 - 0.25 * low) * (1.0 - 0.45 * notch);
             }
-            // The distance to the edge to first order (Quilez): r's change a unit on the map.
-            let gx = (u * du.x + w * dw.x) / r;
-            let gy = (u * du.y + w * dw.y) / r;
-            let dist = (r - edge) / max(sqrt(gx * gx + gy * gy), 1e-6);
+            let dist = (r - edge) * texel / step;
             let cover = clamp(0.5 - dist / texel, 0.0, 1.0);
             guard cover > 0.0 else { continue; }
             plane[j * SIDE + i] *= 1.0 - stops * cover;
