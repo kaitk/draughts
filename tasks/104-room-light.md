@@ -91,6 +91,11 @@ the light is settled (the user, 2026-11-20).
   height, strength, shadow, and color; the fill, walls, ceiling, floor, and lamp; the
   window and the leaves; P prints the room as Goose into `build/light-tune.txt`.
 
+## Follow-ups
+
+- The time of day or the light's mood may become a choice in the visuals some day (the
+  user, 2026-11-20): to think through, as the settings are getting crowded.
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac
