@@ -195,6 +195,12 @@ the light is settled (the user, 2026-11-20).
   - Short still: the table's top (the board's) now reads redder than the room; the
     floor's sun patch is dimmer than style-01's; the sheen against the light is greyer;
     no repetition or banding seen in the wide shots. `build/notes/room-oak-2/index.html`.
+  - The table toned browner (2026-11-21): `tables::flame`'s wood (0.4, 0.31, 0.26), its
+    flames 0.55, warmth -0.3, for every season (one table). A grey wood already comes out
+    at R/G 1.5, R/B 3 under these lights: the board's tonemap toe takes the least channel
+    off. The room's luminance toe crushed the table's shade, so it was tried and set
+    aside. The game camera's library shade (37,5,1) to (36,13,3); style-01's table
+    (51,29,16), library-table-01's shade (73,41,25). `build/notes/shadow-fixes/`.
 
 - The room's wallpaper (2026-11-20): the hall wall above the cap carries the library's
   paper, the baker's mask (`design/materials/`, 1024² R8 with mips) tiled in world space,

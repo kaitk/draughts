@@ -238,7 +238,8 @@ and value noise in the board shader, never a regular stripe.
   where the landscape panels leave the table in view, the kings apart from the men and
   nearer: the first two side by side, the next three in a line along the outer one, then
   stacked on those. The pieces are the board's (their material, instances in the same
-  pass), but out of the shadow map, which covers only the board: each is a disc in
+  pass), but out of the shadow map, which covers only the board and shades the table
+  too (`TABLE_FRAG`, with the board's outline past it): each is a disc in
   `Frame.discs` (up to 48), and the shaders work out their shadows from them. The table's
   takes each disc swept along the light, a capsule, and darkens the table round its foot
   (`TABLE_FRAG`'s `discs_shadow`); the lit shader, outside the field, traces the light's

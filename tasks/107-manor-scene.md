@@ -36,10 +36,15 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       table, and the pieces cast shadows but don't shade themselves; checked in shots
       first, the pieces' own shadow perhaps the high mode's only. The user's shot of the
       autumn board at a low angle shows it floating: no shadow or contact darkening on
-      the table under its edge
+      the table under its edge. Fixes 1 to 3 of `build/notes/plans/shadows.md` done
+      (2026-11-21): the table samples the key's shadow map (the tier's taps, min() with the
+      board's outline), its polish's highlight hidden in full under the board, a tight
+      crease at the foot; the pieces' own fine shadows (fixes 4, 5) later
+      (`build/notes/shadow-fixes/`)
 - [ ] The autumn board's frame, its outer sides, too rough seen at a glancing angle
       (the user, 2026-11-20): matte and streaky where waxed wood would catch a sheen; the
-      squares are fine
+      squares are fine. A wax coat on its frame (2026-11-21, `looks::Theme.frame_wax`):
+      the corner's sparkle a smooth highlight, the sides' relief halved; to judge again
 - [x] An FPS counter in the light tuner (the user, 2026-11-20): frames a second and
       the frame's time while it draws every frame (the wind on), to judge the high
       mode's cost as the room fills. F shows it, G waits for the GPU each frame; no GPU

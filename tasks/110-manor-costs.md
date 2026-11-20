@@ -78,6 +78,12 @@ results, or keep baking at run time behind a loader when the room or a look is c
   the middle window 1.5 to 1.7 ms against 1.2 to 1.6, waited for 2.9 to 3.0 against 2.6
   to 2.8. In the kept image, so nothing on a still frame.
 
+- The table's shadow from the key's map (2026-11-21, task 107): 4, 9 or 16 compared
+  taps a table pixel by tier, a table pipeline per shadow filter. The light tuner's
+  counter, headless at 1600x1000, the user's low angle waited for 5.8 to 6.2 ms before,
+  6.0 to 6.5 after, the game camera within noise: perhaps 0.2 to 0.3 ms on the Mac.
+  Not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

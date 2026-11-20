@@ -636,6 +636,10 @@ to be is in tasks 042, 059, 071, 081, and 086.
   the 4, whose steps crawl on its larger pieces, or the 16, 0.5 to 0.6 M cycles a frame
   over the 9 on a Mali. They cost an `#ifdef` and a Slang module each; one lit pipeline
   pair is ever made. Rejected: one filter for phones and tablets by screen size alone.
+- The table takes the key's shadow map where it covers it (2026-11-21, task 107), with
+  the same filter and its own pipeline per filter, min() with the board's outline swept
+  along the light; before, the outline alone, whose soft edge left the board floating.
+  The map isn't widened; the pieces on the table keep their discs.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only
