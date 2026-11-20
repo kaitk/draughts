@@ -175,6 +175,7 @@ fn prepare<B>(be: B&, d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
             d.tabled = d.on_table;
             d.gpu.table = d.tabled;
             d.themed = min(d.themed, table_steps());
+            if d.tabled { d.warmed = 0; }
         }
         if d.smoothed != d.smooth {
             d.smoothed = d.smooth;
@@ -188,6 +189,12 @@ fn prepare<B>(be: B&, d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
         let look = if d.themed == 0 { choose_look(d, kind) } else { d.gpu.look };
         render3d::theme_step(be.r3d, d.gpu, look, n, kind, d.themed);
         d.themed++;
+        // New pieces' pipelines (render3d::set_pieces) are made in the warm steps, not the
+        // first frame that draws them.
+        if d.gpu.relit {
+            d.gpu.relit = false;
+            d.warmed = 0;
+        }
     } else {
         be.r3d.warm(d.gpu, d.warmed);
         d.warmed++;

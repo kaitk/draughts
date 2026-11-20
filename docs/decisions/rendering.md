@@ -569,6 +569,15 @@ power-of-two RGBA took 16 MiB.
 The current numbers are in [the architecture](../architecture/rendering.md); how they came
 to be is in tasks 042, 059, 071, 081, and 086.
 
+- Shader variants per material (2026-11-20, task 094): the pieces' materials and the
+  winter slab and the table in one bake and one lit shader took the Pixel 7a from 1.6 s
+  to 3.0 s to get the board ready, almost all of it the driver compiling branches the
+  look never takes. Each look now compiles only its own variant (the bake in three, the
+  lit shader in four per shadow filter, the board's scattering only in the desktop's),
+  1.9 s. Rejected: fewer call sites alone (`plan`'s second call was cheap), and Vulkan
+  specialization constants, which goose_gfx doesn't offer and which ngfx's offline
+  Slang compile would need as variants anyway.
+
 - 60 Hz for a slow 3D board (task 056): the timing above asks for 60 Hz on the surface
   (`ANativeWindow_setFrameRate`) while the 3D board draws. The A33 ignores it.
 - Baking the field's shadow with the shadow map was dropped (2026-11-09): the camera's

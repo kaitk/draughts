@@ -225,6 +225,9 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - `float4` has no swizzles.
 - A shader's big function is compiled once per call site (unrolled loops too): one call
   site in a uniform-counted loop took a Mali pipeline from 2.5 s to 0.6 s.
+- A Mali compiles every branch, even one a uniform never takes: split what a look never
+  uses into variants by a define (`shaders::PIECES_WOOD`, `BAKE_TABLE`), one embedded
+  shader each, and make a variant's pipeline outside a pass.
 - embed_shader takes no `centroid`, no `##`, and no unnamed parameters; `#ifdef` lines in
   a multi-line string take the string's indentation. A define string put first makes two
   shaders from one text (`shaders::MARKS_PULSE`).

@@ -297,12 +297,13 @@ fn bake(own: Own&, g: render3d::Gpu&, albedo: gfx::Texture, normal: gfx::Texture
     // Not cleared: the bake writes every texel, and a cleared target SDL finds still
     // referenced (as a new one is) it cycles into a second copy kept for good. Only rows
     // y0 to y1 when given (theme_step's bands), the mips after the last.
+    let pipeline = bake_pipeline(g, mode);   // made before the pass: never inside one
     var pass = gfx::PassDesc { clear_color: false };
     pass.color[0] = albedo;
     pass.color[1] = normal;
     gfx::begin_pass(pass);
     if y1 >= 0 { gfx::scissor(0, y0, w, y1 - y0); }
-    gfx::bind(g.bake);
+    gfx::bind(pipeline);
     let fi = g.finish;
     // Samples a side a texel: a phone's half-size surface sampled as the full one, averaged.
     let fine = if fine > 0 { fine } else { model3d::BAKE_SIDE / w };
@@ -378,13 +379,32 @@ fn set_aa(own: Own&, g: render3d::Gpu&, aa: i32, samples: i32 = SAMPLES) {
     gfx::update_texture(g.search, embed_file("../../third_party/smaa/search.bin"));
 }
 
+// The lit shader with its shadow filtered as `look` says (SHADOW_9..; shaders::SHADOW_FEW,
+// SHADOW_MANY) and the pieces in one material (render3d::PIECES_..).
+fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
+    if look == render3d::SHADOW_4 {
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG);
+    }
+    if look == render3d::SHADOW_16 {
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG);
+    }
+    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG); }
+    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG);
+}
+
 // The lit pass's pipelines, the board's and a fading piece's, their shadow filtered as
-// `look` says (SHADOW_9..; shaders::SHADOW_FEW, SHADOW_MANY).
+// `look` says and the pieces as g.pieces has them (lit_frag).
 fn lit_pipelines(own: Own&, g: render3d::Gpu&, look: i32) {
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
-    let lit_fs = if look == render3d::SHADOW_4 { embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
-                 else if look == render3d::SHADOW_16 { embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
-                 else { embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) };
+    let lit_fs = lit_frag(look, g.pieces);
     g.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
     g.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true,
                                                                  blend: gfx::BLEND_ALPHA });
@@ -400,6 +420,37 @@ fn set_shadow(own: Own&, g: render3d::Gpu&, look: i32) {
     gfx::release(g.lit);
     gfx::release(g.fading);
     lit_pipelines(own, g, look);
+}
+
+// The pieces' material (render3d::PIECES_..) from the next draw on: the lit pipelines
+// made again if it changes, marked relit for the caller to warm.
+fn set_pieces(own: Own&, g: render3d::Gpu&, pieces: i32) {
+    guard pieces != g.pieces else { return; }
+    g.pieces = pieces;
+    guard g.lit.id != 0 else { return; }
+    gfx::flush();
+    gfx::release(g.lit);
+    gfx::release(g.fading);
+    lit_pipelines(own, g, g.shadow_look);
+    g.relit = true;
+}
+
+// The bake's pipeline for a surface (render3d::bake_kind), made the first time it is wanted.
+fn bake_pipeline(g: render3d::Gpu&, mode: f32) -> gfx::Pipeline {
+    let kind = render3d::bake_kind(g, mode);
+    if kind == render3d::BAKE_TABLE {
+        if g.bake_table.id == 0 {
+            g.bake_table = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_TABLE, shaders::BAKE_FRAG));
+        }
+        return g.bake_table;
+    }
+    if kind == render3d::BAKE_SLAB {
+        if g.bake_slab.id == 0 {
+            g.bake_slab = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_SLAB, shaders::BAKE_FRAG));
+        }
+        return g.bake_slab;
+    }
+    return g.bake;
 }
 
 struct Metrics { m: float4 }
@@ -685,7 +736,8 @@ fn warm(own: Own&, g: render3d::Gpu&, k: i64) {
     gfx::begin_pass(pass);
     let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse, g.occ,
              g.kept, g.table_lit][k];
-    gfx::bind(p);
+    // The table's only with a table: turning one on warms them again (draw3d).
+    if k != render3d::WARM_STEPS - 1 || g.table { gfx::bind(p); }
     gfx::end_pass();
     if k == render3d::WARM_STEPS - 1 {
         gfx::release(g.warm_color);
@@ -710,7 +762,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit];
+                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();

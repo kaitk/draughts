@@ -235,13 +235,31 @@ fn frame_addr(own: Own&, g: Gpu&) -> u64 {
     return ngfx::frame_data(bytes_of(one));
 }
 
-// The lit pass's pipelines, the board's and a fading piece's, their shadow filtered as
-// `look` says (render3d::SHADOW_9..): in 4 taps (r3d_lit_few, shaders::SHADOW_FEW), 16
-// (r3d_lit_many, shaders::SHADOW_MANY), or 9.
+// The lit module with its shadow filtered as `look` says (render3d::SHADOW_9..): in 4
+// taps (r3d_lit_few, shaders::SHADOW_FEW), 16 (r3d_lit_many, shaders::SHADOW_MANY), or 9;
+// and the pieces in one material (render3d::PIECES_..: _wood, _winter, _mineral).
+fn lit_blob(look: i32, pieces: i32) -> const u8[:] {
+    if look == render3d::SHADOW_4 {
+        if pieces == render3d::PIECES_WOOD { return embed_file("../../build/ngfx/blobs/r3d_lit_few_wood.blob"); }
+        if pieces == render3d::PIECES_WINTER { return embed_file("../../build/ngfx/blobs/r3d_lit_few_winter.blob"); }
+        if pieces == render3d::PIECES_MINERAL { return embed_file("../../build/ngfx/blobs/r3d_lit_few_mineral.blob"); }
+        return embed_file("../../build/ngfx/blobs/r3d_lit_few.blob");
+    }
+    if look == render3d::SHADOW_16 {
+        if pieces == render3d::PIECES_WOOD { return embed_file("../../build/ngfx/blobs/r3d_lit_many_wood.blob"); }
+        if pieces == render3d::PIECES_WINTER { return embed_file("../../build/ngfx/blobs/r3d_lit_many_winter.blob"); }
+        if pieces == render3d::PIECES_MINERAL { return embed_file("../../build/ngfx/blobs/r3d_lit_many_mineral.blob"); }
+        return embed_file("../../build/ngfx/blobs/r3d_lit_many.blob");
+    }
+    if pieces == render3d::PIECES_WOOD { return embed_file("../../build/ngfx/blobs/r3d_lit_wood.blob"); }
+    if pieces == render3d::PIECES_WINTER { return embed_file("../../build/ngfx/blobs/r3d_lit_winter.blob"); }
+    if pieces == render3d::PIECES_MINERAL { return embed_file("../../build/ngfx/blobs/r3d_lit_mineral.blob"); }
+    return embed_file("../../build/ngfx/blobs/r3d_lit.blob");
+}
+
+// The lit pass's pipelines, the board's and a fading piece's (lit_blob).
 fn lit_pipelines(own: Own&, g: Gpu&, look: i32) {
-    let lit = if look == render3d::SHADOW_4 { embed_file("../../build/ngfx/blobs/r3d_lit_few.blob") }
-              else if look == render3d::SHADOW_16 { embed_file("../../build/ngfx/blobs/r3d_lit_many.blob") }
-              else { embed_file("../../build/ngfx/blobs/r3d_lit.blob") };
+    let lit = lit_blob(look, g.pieces);
     g.lit = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
     g.fading = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
     g.shadow_look = look;
@@ -255,6 +273,32 @@ fn set_shadow(own: Own&, g: Gpu&, look: i32) {
     nx::release(g.lit);
     nx::release(g.fading);
     lit_pipelines(own, g, look);
+}
+
+// The pieces' material from the next draw on (render3d_gpu.goose's set_pieces).
+fn set_pieces(own: Own&, g: Gpu&, pieces: i32) {
+    guard pieces != g.pieces else { return; }
+    g.pieces = pieces;
+    guard g.lit.id != 0 else { return; }
+    ngfx::flush();
+    nx::release(g.lit);
+    nx::release(g.fading);
+    lit_pipelines(own, g, g.shadow_look);
+    g.relit = true;
+}
+
+// The bake's pipeline for a surface (render3d::bake_kind), made the first time it is wanted.
+fn bake_pipeline(g: Gpu&, mode: f32) -> Pipeline {
+    let kind = render3d::bake_kind(g, mode);
+    if kind == render3d::BAKE_TABLE {
+        if g.bake_table.id == 0 { g.bake_table = module(embed_file("../../build/ngfx/blobs/r3d_bake_table.blob")); }
+        return g.bake_table;
+    }
+    if kind == render3d::BAKE_SLAB {
+        if g.bake_slab.id == 0 { g.bake_slab = module(embed_file("../../build/ngfx/blobs/r3d_bake_slab.blob")); }
+        return g.bake_slab;
+    }
+    return g.bake;
 }
 
 // float4s in this frame's memory: a root's uniform blocks.
@@ -336,12 +380,13 @@ fn bake(own: Own&, g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h:
         extent: float2, t: looks::Theme&, y0: i64 = 0, y1: i64 = -1, mips: bool = true, fine: i64 = 0) {
     // Not cleared: the bake writes every texel. Only rows y0 to y1 when given
     // (theme_step's bands), the mips after the last.
+    let pipeline = bake_pipeline(g, mode);   // made before the pass: never inside one
     var pass = nx::PassDesc { clear_color: false };
     pass.color[0] = albedo;
     pass.color[1] = normal;
     nx::begin_pass(pass);
     if y1 >= 0 { ngfx::scissor(0, y0, w, y1 - y0); }
-    nx::bind(g.bake);
+    nx::bind(pipeline);
     let fi = g.finish;
     // Samples a side a texel: a phone's half-size surface sampled as the full one, averaged.
     let fine = if fine > 0 { fine } else { model3d::BAKE_SIDE / w };
@@ -729,7 +774,8 @@ fn warm(own: Own&, g: Gpu&, k: i64) {
     }
     let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse, g.occ,
              g.kept, g.table_lit][k];
-    nx::prepare(p, pass);
+    // The table's only with a table: turning one on warms them again (draw3d).
+    if k != render3d::WARM_STEPS - 1 || g.table { nx::prepare(p, pass); }
     if k == render3d::WARM_STEPS - 1 && g.aa != AA_MSAA {
         // The antialiasing's pipelines, for the RGBA8 targets they draw into, and SMAA's
         // edges for RG8 (none after a multisampled pass, and the warm targets are 4× then).
@@ -771,7 +817,7 @@ fn release(own: Own&, g: Gpu&) {
     let samplers = [g.linear, own.point, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { nx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
+                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
                      g.smaa_blend, g.table_lit];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();

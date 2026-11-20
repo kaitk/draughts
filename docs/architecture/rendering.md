@@ -636,6 +636,16 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   Pro and about 0.3 s on the Galaxy Tab A11+. On the A33 a wood prepares in about 2.3 s
   and the stones in 2.7 to 2.8, 1.1 s of it the bake pipeline's compile whatever the look
   (2026-11-13); every look bakes into the same targets, so memory is the same.
+- **Shader variants:** a Mali compiles every branch of a shader, so the bake and the lit
+  shader are built in variants and a look compiles only its own. The bake comes in three:
+  the board's, the board's with winter's black marble slab, and the table's alone
+  (`render3d::bake_kind`). The table's and the slab's pipelines are made the first time
+  a look wants them. The lit shader comes in one per pieces' material (classic, turned
+  wood, winter's stones, a mineral: `render3d::PIECES_..`) for each shadow filter, and
+  the board's scattering only in the desktop's (`SHADOW_16`). A theme whose pieces take
+  another material makes the lit pipelines again and warms them (`set_pieces`). On the
+  Pixel 7a the board gets ready in about 1.9 s (main before task 094: 1.6 s; the one
+  shader with every material: 3.0 s), and with the table in about 2.8 s (2026-11-20).
 
 ## Fonts
 

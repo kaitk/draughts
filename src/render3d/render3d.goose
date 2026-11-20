@@ -135,6 +135,28 @@ fn shadow_look_name(look: i32) -> const u8[:] {
     if look == SHADOW_16 { "16" } else if look == SHADOW_4 { "4" } else { "9" }
 }
 
+// The pieces' material the lit shader is compiled for (set_pieces), from the look's
+// mineral: classic, turned wood, winter's stones, or a mineral. Each is a pipeline of
+// its own, as a phone compiles every branch a shader has.
+let PIECES_CLASSIC = 0;
+let PIECES_WOOD = 1;
+let PIECES_WINTER = 2;
+let PIECES_MINERAL = 3;
+fn pieces_kind(mineral: f32) -> i32 {
+    if mineral < -1.5 { PIECES_WINTER } else if mineral < -0.5 { PIECES_WOOD }
+    else if mineral > 0.5 { PIECES_MINERAL } else { PIECES_CLASSIC }
+}
+
+// The bake's pipeline for a surface (mode: 0 the plan, 1 the frame map, 2 and 3 the
+// table): the table's own, the black marble slab's, or the rest of the board's.
+let BAKE_BOARD = 0;
+let BAKE_SLAB = 1;
+let BAKE_TABLE = 2;
+fn bake_kind(g: Gpu&, mode: f32) -> i32 {
+    let m = marble_of(g);
+    if mode > 1.5 { BAKE_TABLE } else if m >= 5 && m < 9 { BAKE_SLAB } else { BAKE_BOARD }
+}
+
 let PHOTO_SIZE = 512;
 
 // The pieces' occlusion of the field (shaders::OCC_FRAG), over the plan's extent: 62
@@ -235,6 +257,8 @@ struct Gpu {
     fading:         Pipeline,  // the lit pass for a fading piece, blended
     shadow:         Pipeline,
     shadow_look:    i32,            // SHADOW_9.., how lit and fading filter the shadow (set_shadow)
+    pieces:         i32,            // PIECES_.., the pieces' material lit and fading draw (set_pieces)
+    relit:          bool,           // lit and fading made again for new pieces, not yet warmed
     backdrop:       Pipeline,
     catcher:        Pipeline,
     glow:           Pipeline,
@@ -245,6 +269,8 @@ struct Gpu {
     occ:            Pipeline,  // the field's occlusion map (occlusion())
     kept:           Pipeline,  // the kept backdrop laid on the screen (backdrop())
     bake:           Pipeline,  // kept for a theme's rebake, with the photograph's
+    bake_slab:      Pipeline,  // the bake with the black marble slab, made when first wanted
+    bake_table:     Pipeline,  // the table's bake, made when first wanted
     shrink:         Pipeline,
     blur:           Pipeline,
     small:          Texture,
@@ -530,6 +556,8 @@ fn theme_step<O>(o: O&, g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
     } else if st.what == model3d::PIPELINE || st.what == model3d::PLAN {
         o.bake(g, g.plan_albedo, g.plan_normal, g.side, g.side, 0.0, model3d::plan_extent(), t, st.y0, st.y1, st.mips);
     } else if st.what == model3d::FRAME {
+        // A switch can land after a flat marble frame gave its map back (flat_frame).
+        full_frame(o, g);
         o.bake(g, g.frame_albedo, g.frame_normal, g.side, rows, 1.0, model3d::frame_extent(rows, g.side), t, st.y0,
              st.y1, st.mips);
     } else if st.what == model3d::TABLE {
@@ -554,6 +582,7 @@ fn theme_step<O>(o: O&, g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
 fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
     flat_frame(o, g);
     let t = pieces_of(g, which);
+    o.set_pieces(g, pieces_kind(t.mineral));
     // The key light, from the upper left; the photograph's ambient.
     light(g);
     let f .= g.frame;
@@ -586,11 +615,11 @@ fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
 var scatter_allowed = false;
 
 // The look's board scattering (looks::Theme.board_scatter) into the frame's block where
-// it is allowed, else off.
+// it is allowed, else off: only the desktop's lit shader (SHADOW_16) has it.
 fn board_scatter(g: Gpu&) {
     guard g.look >= 0 else { return; }
     let s = look(g, g.look).board_scatter;
-    let on = scatter_allowed && s.x > 0.0;
+    let on = scatter_allowed && g.shadow_look == SHADOW_16 && s.x > 0.0;
     g.frame.frame_map.z = s.y;
     g.frame.frame_map.w = if on { s.x } else { 0.0 };
     g.frame.params.y = s.z;

@@ -74,6 +74,12 @@ let FS_SET = "#define FRAME_SET 3\n";
 let SHADOW_FEW = "#define SHADOW_FEW 1\n";
 let SHADOW_MANY = "#define SHADOW_MANY 1\n";
 
+// LIT_FRAG's pieces in one material (render3d::PIECES_..), none of them classic: a
+// phone compiles every branch a shader has, so each material is a shader of its own.
+let PIECES_WOOD = "#define PIECES_WOOD 1\n";
+let PIECES_WINTER = "#define PIECES_WINTER 1\n";
+let PIECES_MINERAL = "#define PIECES_MINERAL 1\n";
+
 // The board (one mesh) and the pieces (one lathe mesh, per instance from a storage
 // buffer of two vec4s: the foot and scale; dark, crown, selected or stacked, seed).
 // draw.z: how opaque (a fading piece is drawn alone, blended); draw.w: the first
@@ -402,6 +408,7 @@ let LIT_FRAG = """
 
     float hash_of(float seed, float k) { return hash13(vec3(seed, k, 7.31)); }
 
+    #ifdef PIECES_WOOD
     // Turned wood (frame_map.y -1), the board's growth rings (BAKE_FRAG's rings()) in
     // the disc's own 3D space, so a ring is one surface through the face, the lip and
     // the turned side. The disc is cut from a plank, its grain along `along` at the
@@ -482,7 +489,9 @@ let LIT_FRAG = """
         rough += 0.04 * (0.5 - streak) + 0.06 * (1.0 - min(late, 1.0)) * ring_seen + 0.1 * end;
         return pow(base, vec3(1.0 + a));
     }
+    #endif
 
+    #ifdef PIECES_WINTER
     // The nearest and second nearest of jittered cells (Worley's): their distances.
     vec2 piece_cells(vec2 p) {
         vec2 i = floor(p);
@@ -572,6 +581,7 @@ let LIT_FRAG = """
         rough += 0.04 * v;
         return mix(base * (1.0 + 0.5 * figure * cloud), vec3(0.8, 0.8, 0.79), v);
     }
+    #endif
 
     // A height h (world units) as a normal's tilt, from its screen derivatives
     // (Mikkelsen's bump mapping of unparametrized surfaces): no tangents needed.
@@ -634,6 +644,7 @@ let LIT_FRAG = """
             rough = a.a;
             n = normalize(vec3(t.x, sqrt(max(1.0 - dot(t, t), 0.0)), t.y));
             ao *= texture(field_occ, uv).r * wall_occlusion(p);
+            #ifdef SHADOW_MANY
             if (frame_map.w > 0.0) {
                 // The light that leaves the body: the albedo blurred over half the
                 // radius and seen a little below the surface, at half the radius deep
@@ -667,6 +678,7 @@ let LIT_FRAG = """
                 sss_f = clamp(frame_map.w * (1.0 + 0.6 * pocket), 0.0, 1.0);
                 sss_radius = radius * (1.0 + 0.8 * pocket);
             }
+            #endif
         } else if (mat < 1.5) {
             // The frame, mapped from where the point is, so the figure runs on unbroken
             // over the top, the rounded edge and the side, round the corners too, as in
@@ -726,6 +738,7 @@ let LIT_FRAG = """
                 bool along_x = a2.y > a2.x;
                 if ((along_x && p.z < 0.0) || (!along_x && p.x > 0.0)) bit = -bit;
             }
+            #ifdef SHADOW_MANY
             if (frame_map.w > 0.0) {
                 // The frame's body as the field's (its thin cracks are painted: they
                 // keep their pigment and carry no light of their own). Light that
@@ -751,6 +764,7 @@ let LIT_FRAG = """
                             * mix(body, travelled, clamp(depth / radius, 0.0, 1.0));
                 }
             }
+            #endif
             n = normalize(n * sqrt(max(1.0 - dot(t, t), 0.0)) + tan * t.x + bit * t.y);
             if (frame_build.x < 0.5) {
                 // The glued mitre: a thin dark joint on the diagonal, through the top,
@@ -782,15 +796,22 @@ let LIT_FRAG = """
             bool dark = v_kind.x > 0.5;
             vec4 m = dark ? dark_piece : light_piece;
             rough = m.a;
-            if (frame_map.y < -0.5 && frame_map.y > -1.5) {
+            #ifdef PIECES_WOOD
+            {
                 albedo = piece_wood(lp, normalize(v_normal), mod(abs(v_kind.w), 1000.0), m.rgb,
                                     3.0 * (dark ? piece_fig.y : piece_fig.x), dark, rough, relief);
                 relief *= piece_fig.w;
                 coat = piece_fig.z;
-            } else if (frame_map.y < -0.5) {
+            }
+            #else
+            #ifdef PIECES_WINTER
+            {
                 albedo = piece_winter(lp, normalize(v_normal), normalize(eye.xyz - p), mod(abs(v_kind.w), 1000.0),
                                       m.rgb, dark ? piece_fig.y : piece_fig.x, dark, frame_map.y < -2.5, rough);
-            } else if (frame_map.y > 0.5) {
+            }
+            #else
+            #ifdef PIECES_MINERAL
+            {
                 // One continuous cut through the disc, including its side. Shift
                 // the stone for each piece so adjacent men have different cuts.
                 float seed = mod(v_kind.w < 0.0 ? -1.0 - v_kind.w : v_kind.w, 1000.0);
@@ -835,7 +856,9 @@ let LIT_FRAG = """
                     albedo = m.rgb * max(0.1, 1.0 + 2.0 * figure * body);
                     rough += 0.12 * figure * body;
                 }
-            } else if (dark) {
+            }
+            #else
+            if (dark) {
                 // Smooth satin with a faint figure, drawn out a little across the disc.
                 vec3 g = lp + mod(abs(v_kind.w), 1000.0) * 3.17;
                 float st = 1.0 + 6.0 * piece_fig.z;
@@ -849,6 +872,9 @@ let LIT_FRAG = """
                 float w = noise3(lp * 24.0 + mod(abs(v_kind.w), 1000.0) * 3.17);
                 albedo = m.rgb * (1.0 + piece_fig.x * (w - 0.5));
             }
+            #endif
+            #endif
+            #endif
             // The top, from its height function at this point's distance from the axis
             // (mesh::top_height): the normal and the cove's occlusion come from the
             // object-space position, never from interpolants a multisampled pixel can
@@ -960,6 +986,7 @@ let LIT_FRAG = """
         vec3 env = sh_eval(reflect(-v, n)) * params.z;
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * a - 1.0)) - 1.0 + ao, 0.0, 1.0);
         vec3 ambient;
+        #ifdef SHADOW_MANY
         if (sss_f > 0.0) {
             // The board's scattering: a fraction of the diffuse leaves the body in its
             // color, lit over the geometric normal (the relief softened) with the
@@ -976,7 +1003,9 @@ let LIT_FRAG = """
             direct = ((albedo * (diff * (1.0 - sss_f) / PI) + spec) * vis + sss_f * body_light / PI) * light;
             ambient = mix(albedo * irr, body * sh_eval(ng) * params.z, sss_f) * ao
                     + env * env_brdf(f0, rough, nov) * spec_ao;
-        } else {
+        } else
+        #endif
+        {
             direct = (albedo * ((diff + v_scatter) / PI) + spec) * light * vis;
             ambient = albedo * irr * ao + env * env_brdf(f0, rough, nov) * spec_ao;
         }
@@ -1473,6 +1502,11 @@ let SHADOW_CATCHER_FRAG = """
         result = vec4(0.0, 0.0, 0.0, clamp(0.5 * contact + 0.5 * soft, 0.0, 0.85));
     }
     """;
+
+// BAKE_FRAG with the black marble slab (render3d::BAKE_SLAB), or the table's alone
+// (BAKE_TABLE); without either the rest of the board's.
+let BAKE_SLAB = "#define BAKE_SLAB 1\n";
+let BAKE_TABLE = "#define BAKE_TABLE 1\n";
 
 // The board's surfaces, baked once per theme into two targets: albedo and roughness
 // (sRGB), and the normal's x and z. mode.x 0 bakes the plan of the field and its inlay,
@@ -2618,9 +2652,15 @@ let BAKE_FRAG = """
     // One call of wood() for every surface: each call site compiles in full, and a phone
     // makes the pipeline slowly.
     Wood at(vec2 p) {
-        Cut c = mode.x < 0.5 ? plan(p) : (mode.x < 1.5 ? frame_map(p) : table_cut(p));
+        #ifdef BAKE_TABLE
+        Cut c = table_cut(p);
         Wood w = wood(c.q, c.seed, c.base, c.k, c.f, c.ring);
-        return mode.x < 0.5 ? plan_over(w, c, p) : (mode.x < 1.5 ? frame_over(w, c, p) : table_over(w, c, p));
+        return table_over(w, c, p);
+        #else
+        Cut c = mode.x < 0.5 ? plan(p) : frame_map(p);
+        Wood w = wood(c.q, c.seed, c.base, c.k, c.f, c.ring);
+        return mode.x < 0.5 ? plan_over(w, c, p) : frame_over(w, c, p);
+        #endif
     }
 
     // size is the full bake's (model3d::BAKE_SIDE); a phone's half-size target takes
@@ -2632,6 +2672,7 @@ let BAKE_FRAG = """
         vec2 origin = mode.x < 0.5 || mode.x > 1.5 ? 0.5 * size.zw : vec2(0.0);
         int n = int(tone.w + 0.5);
         vec2 p = (floor(gl_FragCoord.xy) * float(n) + 0.5 * float(n)) * texel - origin;
+        #ifdef BAKE_TABLE
         if (mode.x > 2.5) {
             // The table's wear: x scratches, y crazing, z dents into the first target; the
             // scratches' normal (x, z) and the dents' into the second, apart, as TABLE_FRAG
@@ -2665,6 +2706,8 @@ let BAKE_FRAG = """
             out_normal = bump * share * 0.5 + 0.5;
             return;
         }
+        #endif
+        #ifdef BAKE_SLAB
         if (mode.x < 1.5 && mode.w >= 5.0 && mode.w < 9.0) {
             bool frame_cut = mode.x > 0.5;
             vec2 sq = floor((p + FIELD) * (mode.z / (2.0 * FIELD)));
@@ -2684,6 +2727,8 @@ let BAKE_FRAG = """
                 return;
             }
         }
+        #endif
+        #ifndef BAKE_TABLE
         if (mode.x > 0.5 && mode.x < 1.5 && mode.w > 0.5 && frame_fig.w < 0.5 && carve.w < 0.5) {
             // A marble frame, flat: once a texel, no relief to take the normal from.
             Wood m = marble_at(p.yx);
@@ -2691,6 +2736,7 @@ let BAKE_FRAG = """
             out_normal = vec4(0.5, 0.5, 1.0, 1.0);
             return;
         }
+        #endif
         // Each sample and its neighbours along x and y, for the normal, in a loop the
         // compiler can't unroll (its count comes from the block): unrolled, the whole
         // wood compiles three times over.

@@ -772,3 +772,25 @@ moodi") or the pieces as before this task ("Classic", "Tavalised"; `looks::smoot
 Winter stone's own are the Marble set, ivory and black marble with faint veins
 (`looks::marble_pieces`), chosen over the honed slate; autumn's wood board's the turned
 maple and denser walnut (`looks::turned`).
+
+### Getting ready on a phone (2026-11-20)
+
+With the pieces' materials, winter's slab and the table, the Pixel 7a took 3.0 s to get
+the 3D board ready (main: 1.6 s), nearly all of it in two compiles: the bake pipeline
+1.4 s (main 0.85) and the lit pipelines 0.45 + 0.41 s (main 0.09 + 0.08). Mali compiles
+every branch, and LIT_FRAG had gone from 3 `noise3` call sites to 36. Now each look
+compiles only its own variant (`docs/decisions/rendering.md`), and the table's bake
+bands are skipped without a table. Pixel 7a, two runs each, the steps' time in all:
+
+| | Before | Now |
+|---|---|---|
+| Autumn, wood pieces | 3.0 s | 1.9 s |
+| Autumn, classic pieces | | 1.8 s |
+| Winter stone | 2.9 s | 1.85 s |
+| Spring stone | | 1.9 s |
+| Autumn on the table | 3.5 s | 2.8 s |
+| Winter stone on the table | 3.2 s | 2.8 s |
+
+The bake's compile is back to main's 0.85 s; the lit pipelines take 0.15 to 0.19 s each
+for the wood pieces, 0.13 and 0.09 for the classic. The table adds its bake's compile
+(0.7 s) and its bands. Mac shots of every look are within 3 levels of 255 of before.
