@@ -202,8 +202,9 @@ short and straight.
   wind and one across it, a new random value every few seconds, eased between: irregular
   and never repeating. The limbs follow only the whole tree's slow sway (one noise pair,
   a new value every 4 to 6 s), a tenth as far as the leaves, as one piece. Each leaf layer
-  adds its own pair on top (a new value every 2 to 3 s), quicker the farther out (Habel and others, 2009: thick limbs
-  slow and barely moving, thin twigs faster and more), so the layers never move in step.
+  adds its own pair on top (a new value every 2 to 3 s), quicker the farther out (Habel
+  and others, 2009: thick limbs slow and barely moving, thin twigs faster and more), so
+  the layers never move in step.
   A gust is a quick noise let through only while a slow one is high: about five seconds
   every twenty or so, 17% of the time; it pushes all layers along the wind and stirs the
   leaves' own noise more. Its front still crosses the crown along the wall. The ruffle's
