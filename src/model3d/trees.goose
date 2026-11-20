@@ -22,9 +22,10 @@ let LEVELS = 5;
 
 struct Segment { a: float3, b: float3, ra: f32, rb: f32, level: i32 }
 
-// A leaf as its shadow falls: its middle, and as an ellipse on the map, its turn
-// (radians), length and width.
-struct Leaf { at: float3, angle: f32, length: f32, width: f32 }
+// A leaf as its shadow falls: its middle, its length, and on the map the half axes of
+// its outline, from the middle to the tip and to the side; a leaf turned toward the sun's
+// rays falls short along one of them, edge-on a sliver.
+struct Leaf { at: float3, length: f32, tip: float2, side: float2 }
 
 // Filled at setup only, as the room is put on: `var t = trees::Tree { .. };`.
 root struct Tree {
@@ -142,6 +143,14 @@ struct Species {
     width:    f32,
     spray:    f32 = 0.0,  // leaves spread round a twig, a ball this many of its segments wide
     lobes:    i64 = 0,    // 0 an ellipse; 5 a maple's palmate leaf, its lobes pointing out from the stalk
+    // Leaves a cluster on one foot, overlapping (0 each on its own); each leaf turned at
+    // random about its stalk and tilted, facing the sun this much (0 the old way: lying
+    // along its stalk as the sun sees it, its width shortened at random); the nearest
+    // leaves this much larger at the house; the near layer's blur against the others'.
+    cluster:  i64 = 0,
+    face:     f32 = -1.0,
+    near:     f32 = 0.0,
+    near_blur: f32 = 1.0,
 }
 
 // A broadleaf of no kind in particular, the first take.
@@ -180,6 +189,10 @@ let MAPLE = Species {
     width:    1.35,
     spray:    1.2,
     lobes:    5,
+    cluster:  3,
+    face:     0.6,
+    near:     0.6,
+    near_blur: 0.5,
 };
 
 // Small-leaved lime (garden-facade-01, the manor park's common tree): a dense crown of
@@ -347,6 +360,10 @@ fn add_leaves(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i64
     let want = sp.leaves[level] * s.leafy;
     var count = floor(want) as i64;
     if roll(d) < want - count { count++; }
+    if sp.cluster > 1 {
+        add_clusters(t, s, v, d, points, n, count);
+        return;
+    }
     for j in count {
         // Along the outer four fifths, a little more toward the tip.
         let f = 1.0 - 0.8 * roll(d) * (0.5 + 0.5 * roll(d));
@@ -366,10 +383,61 @@ fn add_leaves(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i64
         let mo = on_map(v, middle + out);
         let angle = atan2(mo.y - m.y, mo.x - m.x) + roll_between(d, -0.5, 0.5);
         let width = length * min(s.leaf_width * sp.width, 1.0) * roll_between(d, 0.45, 1.0);
-        if t.leaves.len < MAX_LEAVES {
-            t.leaves.push(Leaf { middle, angle, length, width });
-        } else {
-            t.left_out++;
+        let tip = float2 { cos(angle), sin(angle) } * (length * 0.5);
+        let side = float2 { -sin(angle), cos(angle) } * (width * 0.5);
+        keep_leaf(t, Leaf { middle, length, tip, side });
+    }
+}
+
+fn keep_leaf(t: Tree&, lf: Leaf) {
+    if t.leaves.len < MAX_LEAVES {
+        t.leaves.push(lf);
+    } else {
+        t.left_out++;
+    }
+}
+
+// A direction of the tree as it falls on the map.
+fn map_dir(v: View&, d: float3) -> float2 { float2 { d.x - v.shear.x * d.z, d.y - v.shear.y * d.z } }
+
+// The leaves `count` a twig, in clusters of Species.cluster on one foot, as a maple's come
+// at a twig's nodes and tip: their stalks fanning out from it, the blades overlapping by
+// the foot. Each blade turned at random about its stalk and tilted, leaning toward the
+// sun by Species.face, so some show their whole outline and some only a sliver; the
+// nearest the house larger by Species.near.
+fn add_clusters(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i64, count: i64) {
+    let sp = species(s.kind);
+    let sun = normalize(float3 { v.shear.x, v.shear.y, 1.0 });
+    let size = sp.cluster;
+    let clusters = (count + size - 1) / size;
+    var left = count;
+    for c in clusters {
+        let f = 1.0 - 0.8 * roll(d) * (0.5 + 0.5 * roll(d));
+        let at = f * n;
+        let i = min(floor(at) as i64, n - 1);
+        let seg = points[i + 1] - points[i];
+        let step = sqrt(dot(seg, seg));
+        let out = normalize(roll_ball(d) + float3 { 0.0, -0.3 * s.hang, 0.0 });
+        let foot = points[i] + seg * (at - i) + out * (sp.spray * step * roll(d));
+        let near = clamp(foot.z / (v.wall + WALL_GAP), 0.0, 1.0);
+        let first = roll(d) * TAU;
+        let here = min(left, size + (if roll(d) < 0.3 { 1 } else { 0 }));
+        left -= here;
+        for k in here {
+            // Fanned out about the cluster's direction, each its own way.
+            let round = first + k * TAU / here + roll_between(d, -0.4, 0.4);
+            let stalk = turned(out, roll_between(d, 0.4, 0.9), round);
+            let length = s.leaf * sp.leaf * roll_between(d, 0.75, 1.2) * (1.0 + sp.near * near);
+            let middle = foot + stalk * (length * roll_between(d, 0.4, 0.65));
+            guard clear_of_wall(v, middle) && on_square(v, on_map(v, middle), length) else { continue; }
+            // The blade's face: at random about the stalk, then leaning toward the sun.
+            var face = turned(stalk, PI * 0.5, roll(d) * TAU);
+            if dot(face, sun) < 0.0 { face = face * -1.0; }
+            face = normalize(face + sun * sp.face);
+            let along = normalize(stalk - face * dot(stalk, face));
+            let across = cross(face, along);
+            let width = length * min(s.leaf_width * sp.width, 1.0) * roll_between(d, 0.8, 1.0);
+            keep_leaf(t, Leaf { middle, length, map_dir(v, along) * (length * 0.5), map_dir(v, across) * (width * 0.5) });
         }
     }
 }
@@ -444,7 +512,8 @@ fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
             draw_leaf(plane, vw, lf, 1.0 - sp.leaf_light, species(sp.kind).lobes);
         }
         let z = if z_count[layer] > 0.0 { z_sum[layer] / z_count[layer] } else { 0.0 };
-        let across = max(vw.distance + z / vw.toward, 1.0) * vw.blur;
+        let sharper = if layer == NEAR { species(sp.kind).near_blur } else { 1.0 };
+        let across = max(vw.distance + z / vw.toward, 1.0) * vw.blur * sharper;
         blur_disc(plane, sums, vw, across * 0.5 / texel);
         for i in SIDE * SIDE {
             out[i * 4 + layer] = (clamp(plane[i], 0.0, 1.0) * 255.0 + 0.5) as u8;
@@ -493,32 +562,41 @@ fn draw_segment(plane: f32[>..]&, v: View&, sg: Segment&) {
     }
 }
 
-// A leaf, an ellipse, letting `blocks` of the sun's light stop where it covers.
+// A leaf, an ellipse or a palmate outline on its half axes, letting `blocks` of the sun's
+// light stop where it covers.
 fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32, lobes: i64) {
     let m = on_map(v, lf.at);
-    let a = lf.length * 0.5;
-    let b = max(lf.width * 0.5, 0.02);
     let texel = v.span / SIDE;
-    let x0, x1 = texel_range(v, m.x - a - texel, m.x + a + texel, v.middle.x);
-    let y0, y1 = texel_range(v, m.y - a - texel, m.y + a + texel, v.middle.y);
-    let c = cos(lf.angle);
-    let sn = sin(lf.angle);
+    let a = lf.tip;
+    var b = lf.side;
+    // A sliver thinner than half a texel drawn half a texel wide and fainter.
+    let la = max(length(a), 1e-6);
+    let thin = abs(a.x * b.y - a.y * b.x) / la;
+    var stops = blocks;
+    if thin < texel * 0.25 {
+        let normal = float2 { -a.y / la, a.x / la };
+        stops = blocks * thin / (texel * 0.25);
+        b = normal * (texel * 0.25);
+    }
+    let det = a.x * b.y - a.y * b.x;
+    let rx = abs(a.x) + abs(b.x);
+    let ry = abs(a.y) + abs(b.y);
+    let x0, x1 = texel_range(v, m.x - rx - texel, m.x + rx + texel, v.middle.x);
+    let y0, y1 = texel_range(v, m.y - ry - texel, m.y + ry + texel, v.middle.y);
+    // The leaf's own coordinates' change a unit on the map.
+    let du = float2 { b.y / det, -b.x / det };
+    let dw = float2 { -a.y / det, a.x / det };
     for j in y0..y1 {
         let y = texel_y(v, j) - m.y;
         for i in x0..x1 {
             let x = texel_x(v, i) - m.x;
-            let u = (x * c + y * sn) / a;
-            let w = (-x * sn + y * c) / b;
-            let k0 = sqrt(u * u + w * w);
-            // The distance to the edge to first order (Quilez).
-            let gu = u / a;
-            let gw = w / b;
-            let k1 = max(sqrt(gu * gu + gw * gw), 1e-6);
-            var dist = k0 * (k0 - 1.0) / k1;
+            let u = du.x * x + du.y * y;
+            let w = dw.x * x + dw.y * y;
+            let r = max(sqrt(u * u + w * w), 1e-4);
+            var edge: f32 = 1.0;
             if lobes > 0 {
                 // A palmate leaf: round, its radius waving with the lobes, pointed ones out
                 // from the stalk (+u) and to the sides, a notch where the stalk joins.
-                let r = sqrt(u * u + w * w);
                 let turn = atan2(w, u);
                 let wave = cos(lobes * turn);
                 let pointed = if wave > 0.0 { pow(wave, 0.6 as f32) } else { -pow(-wave, 1.5 as f32) };
@@ -530,12 +608,15 @@ fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32, lobes: i64) {
                 let low_from: f32 = 1.6;
                 let low_to:   f32 = 2.6;
                 let low = smoothstep(low_from, low_to, abs(turn));
-                let edge = (0.84 + 0.16 * pointed) * (1.0 - 0.25 * low) * (1.0 - 0.45 * notch);
-                dist = (r - edge) * a;
+                edge = (0.84 + 0.16 * pointed) * (1.0 - 0.25 * low) * (1.0 - 0.45 * notch);
             }
+            // The distance to the edge to first order (Quilez): r's change a unit on the map.
+            let gx = (u * du.x + w * dw.x) / r;
+            let gy = (u * du.y + w * dw.y) / r;
+            let dist = (r - edge) / max(sqrt(gx * gx + gy * gy), 1e-6);
             let cover = clamp(0.5 - dist / texel, 0.0, 1.0);
             guard cover > 0.0 else { continue; }
-            plane[j * SIDE + i] *= 1.0 - blocks * cover;
+            plane[j * SIDE + i] *= 1.0 - stops * cover;
         }
     }
 }
