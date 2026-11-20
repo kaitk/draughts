@@ -1,8 +1,9 @@
 // The program's own C (all of draughts.build's: scripts/check_roots.py checks), and this
 // build's own.
 c_sources = ["../native/about.c", "../native/background.c", "../native/display.c", "../native/gfx_fork.c",
-             "../native/launch.c", "../native/locale.c", "../native/memory.c", "../native/photo.c",
-             "../native/resize.c", "../native/sound.c", "../native/storage.c", "../native/wake.c",
+             "../native/launch.c", "../native/locale.c", "../native/materials.c", "../native/memory.c",
+             "../native/photo.c", "../native/resize.c", "../native/sound.c", "../native/storage.c",
+             "../native/wake.c",
              "../../build/draughts_version.c",
              "../native/photo_ngfx.c", "../native/renderer.c"];
 c_include = ["../../build/ngfx", "../../build/ngfx/goose-ngfx/native",

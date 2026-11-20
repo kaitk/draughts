@@ -4,6 +4,7 @@
     python3 tools/materials/wallpaper.py OUT_DIR
 
 The shader tints the mask from two colours: ground where it is 0, gold where it is 1.
+The app embeds the mask from design/materials/ (its README).
 Writes wallpaper_mask.png (L8), wallpaper_preview.png (the mask tinted here, RGB albedo),
 and wallpaper_rough.png (L8, perceptual roughness): the mask keys roughness too, so the
 shader may as well take it from the mask with the two values below and skip that file.
@@ -22,8 +23,8 @@ SIZE = 1024             # px a side; one tile is the whole repeat
 OVERLAP = 128           # source px the edges overlap for the seam cut
 TILE_M = 1.4            # metres a tile covers: flower heads about 11 cm, near style-01's
                         # (a real paper's repeat would be 0.5 to 0.65 m, its flowers smaller)
-GROUND = '#575d63'      # guess, to check under our light: sRGB albedo: dark blue-grey (style-01's ground under its warm light)
-GOLD = '#a28e6a'        # guess, as GROUND: sRGB albedo: muted gold; the room's warm light makes it read golder
+GROUND = '#3d3b32'      # sRGB albedo, dark grey: measured as style-01's ground under the room's light (surfaces::LOOK)
+GOLD = '#58503b'        # sRGB albedo, muted gold, measured as GROUND; the first guesses #575d63, #a28e6a read too light
 ROUGH_GROUND = 0.85     # guess: matte distemper-like paper
 ROUGH_GOLD = 0.60       # guess: the gold print, a little sheen
 DETAIL = 0.30           # how much of the printed paper's shading the flowers keep

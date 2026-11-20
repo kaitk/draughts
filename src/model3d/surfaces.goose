@@ -93,15 +93,26 @@ struct Look {
     planks: float4,    // x each plank's own tone, y the share patched, z its tilt, w scratches
     worn:   float4,    // x the paths' wear, y the walls' darker wax, z the path's reach
     // round the table (world units), w the path along the room
-    paper: float4,     // the wallpaper's color (sRGB) and roughness
+    paper: float4,     // the wallpaper's ground (sRGB) and roughness, where its mask is 0
+    gold:  float4,     // its gold print (sRGB) and roughness, where the mask is 1
 }
 
+// The wallpaper: a dark grey paper, matte, and a muted gold print with a little sheen,
+// #3d3b32 and #58503b, which under the room's light measure as style-01's wall does; the
+// baker's first guesses, #575d63 and #a28e6a, read twice as light and bluer (2026-11-20).
 let LOOK = Look {
     plank:  float4 { PLANK_W, PLANK_N, 0.016, 0.012 },
     planks: float4 { 0.2, 0.03, 0.01, 0.6 },
     worn:   float4 { 0.7, 0.5, 34.0, 0.5 },
-    paper:  float4 { 0.2, 0.19, 0.18, 0.85 },
+    paper:  float4 { 0.239, 0.231, 0.196, 0.85 },
+    gold:   float4 { 0.345, 0.314, 0.231, 0.6 },
 };
+
+// The wallpaper's mask (design/materials/wallpaper_mask.png): its side in texels, and the
+// square of wall one tile covers, 1.4 m, style-01's flowers (a real paper of the period
+// repeats every 0.5 to 0.65 m).
+let PAPER_SIDE = 1024;
+let PAPER_TILE: f32 = 1.4 * METRE;
 
 // The room's frame from the key's direction toward the light and the window's wall's
 // turn (shaders::LIGHT_FN's window_light): u along the wall, v into the room.
@@ -362,7 +373,7 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, f: Frame, away: f32, win
     wainscot(verts, indices, hall, 100);
     let window = Builder { f, -window_v, -1.0, clamp(sill - FLOOR_Y, 16.0, CAP_TOP) - CAP_TOP, 2.5 };
     wainscot(verts, indices, window, 500);
-    // The wallpaper, a plain color for now.
+    // The wallpaper, its uv along the wall and up it (ROOM_FRAG tiles its mask).
     let pp: float3[4] = [float3 { -HALF_LONG, CAP_TOP, 0.0 }, float3 { HALF_LONG, CAP_TOP, 0.0 },
                          float3 { HALF_LONG, WALL_TOP, 0.0 }, float3 { -HALF_LONG, WALL_TOP, 0.0 }];
     let puv: float2[4] = [float2 { -HALF_LONG, CAP_TOP }, float2 { HALF_LONG, CAP_TOP },

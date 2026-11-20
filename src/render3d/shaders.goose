@@ -1705,7 +1705,8 @@ let ROOM_VERT = """
     """;
 
 // ROOM_FRAG's inputs and textures, before LIGHT_FN, which reads the tree's map: the two
-// fields of oak (BAKE_FRAG's modes 4 and 5), albedo and roughness, and the normal.
+// fields of oak (BAKE_FRAG's modes 4 and 5), albedo and roughness, and the normal; the
+// wallpaper's mask.
 let ROOM_HEAD = """
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
@@ -1717,6 +1718,7 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 2) uniform sampler2D wall_albedo;
     layout(set = 2, binding = 3) uniform sampler2D wall_normal;
     layout(set = 2, binding = 4) uniform sampler2D tree_map;
+    layout(set = 2, binding = 5) uniform sampler2D paper_mask;
     """;
 
 // The room lit as the table is (TABLE_FRAG's light, its functions repeated here): the
@@ -1732,19 +1734,22 @@ let ROOM_FRAG = """
     // widths, z the joint's half width, w the cup (its slope at the edges); planks: x each
     // one's own tone, y the share patched, z its tilt, w the scratches; worn: x the paths'
     // wear, y the walls' darker wax, z the path's reach round the table, w the path's
-    // along the room; paper: the wallpaper's color (sRGB) and roughness; axes: u's
-    // direction in x and z, then v's; place: x the window's wall's v, y the panelled
-    // wall's, z the floor's field's size, w the wall's (world units); shade: the light
-    // thrown back into the room's shade (rooms::Room.bounce), linear, and w the room's
-    // exposure over the board's (rooms::Room.room_exposure).
+    // along the room; paper and gold: the wallpaper's ground and gold print (sRGB) and
+    // their roughness; axes: u's direction in x and z, then v's; place: x the window's
+    // wall's v, y the panelled wall's, z the floor's field's size, w the wall's (world
+    // units); shade: the light thrown back into the room's shade (rooms::Room.bounce),
+    // linear, and w the room's exposure over the board's (rooms::Room.room_exposure);
+    // tile: x the wall a tile of the wallpaper's mask covers (world units).
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
         vec4 worn;
         vec4 paper;
+        vec4 gold;
         vec4 axes;
         vec4 place;
         vec4 shade;
+        vec4 tile;
     };
     // mesh.goose's and surfaces.goose's (test/model3d/geometry checks them).
     const float TABLE_R = 16.0;
@@ -1964,9 +1969,11 @@ let ROOM_FRAG = """
             albedo *= mix(0.55, 1.0, smoothstep(0.5, 1.0, ao));
             rough += 0.15 * (1.0 - ao);
         } else {
-            // The wallpaper, a plain dark blue-grey for now.
-            albedo = srgb(paper.rgb) * (1.0 + 0.08 * (vnoise(v_uv * 0.6) - 0.5));
-            rough = paper.a;
+            // The wallpaper: its mask, tiled along the wall and up it (the image's top up),
+            // from the ground to the gold print.
+            float m = texture(paper_mask, vec2(v_uv.x, -v_uv.y) / tile.x).r;
+            albedo = mix(srgb(paper.rgb), srgb(gold.rgb), m);
+            rough = mix(paper.a, gold.a, m);
         }
 
         vec3 v = normalize(eye.xyz - p);

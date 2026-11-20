@@ -19,6 +19,7 @@
 //       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
 //       [--dust on|off] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
 //       [--room-surfaces on|off] [--wall-away UNITS] [--room-exposure K] [--eye X,Y,Z --at X,Y,Z (a camera of its own)]
+//       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--view room] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 
@@ -345,6 +346,7 @@ fn main() {
     var room_on = flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "on";
     let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
     render3d::show_room(g, room_on, away);
+    g.paper_tile = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE) * surfaces::METRE;
     put_look(r3d, g, season, material, st);
 
     let scale = max(gfx::screen_size().x as f32 / w, 1.0);

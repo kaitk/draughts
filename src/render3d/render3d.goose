@@ -317,6 +317,8 @@ struct Gpu {
     floor_normal: Texture,
     wall_albedo:  Texture,
     wall_normal:  Texture,
+    paper_mask:   Texture,          // the wallpaper's mask, R8 with its mips (surfaces::PAPER_SIDE)
+    paper_tile:   f32,              // the wall a tile of it covers (world units), 0 surfaces::PAPER_TILE
     room_frame:   surfaces::Frame,
     room_for:     float4[2],        // what the mesh was made for: the key's x and z, the window's wall, the wall's v
     room_vb:      Buffer,
@@ -512,6 +514,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
                0, -1, true, surfaces::FIELD_SIDE / side);
         g.finish = finish;
         o.gpu_flush();
+        put_paper(o, g);
         g.room_side = side;
         g.room_baked = true;
         g.room_ms = (clock() - t0) * 1000.0;
@@ -530,29 +533,71 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     g.room_for = key;
 }
 
-// The fields' memory in bytes: two RGBA8 targets each, with their mips.
-fn room_bytes(g: Gpu&) -> i64 {
-    guard g.room_side > 0 else { return 0; }
-    var level = g.room_side * g.room_side;
+// The wallpaper's mask decoded (src/native/materials.c) and put on the GPU with its mips,
+// each level the mean of four texels of the one above; plain ground where it isn't built
+// in. Once, with the room's bake.
+extern fn draughts_wallpaper_mask(out: u8[:], side: i64) -> bool;
+fn put_paper<O>(o: O&, g: Gpu&) {
+    guard g.paper_mask.id == 0 else { return; }
+    let side = surfaces::PAPER_SIDE;
+    var mips = 0;
+    while side >> mips > 0 { mips++; }
+    var px: u8[>..] = [];
+    px.resize(texels_with_mips(side), 0);
+    draughts_wallpaper_mask(px[0..side * side], side);
+    g.paper_mask = o.gpu_sampled(side, side, mips, R8);
+    var at = 0;
+    for level in mips {
+        let s = side >> level;
+        if level > 0 {
+            let up = at - 4 * s * s;
+            for y in s {
+                for x in s {
+                    let a = up + 2 * y * 2 * s + 2 * x;
+                    let sum = px[a] as i64 + px[a + 1] + px[a + 2 * s] + px[a + 2 * s + 1];
+                    px[at + y * s + x] = ((sum + 2) / 4) as u8;
+                }
+            }
+        }
+        o.gpu_upload(g.paper_mask, level, px[at..at + s * s]);
+        at += s * s;
+    }
+}
+
+// A square texture's texels, `side` a side, with all its mips.
+fn texels_with_mips(side: i64) -> i64 {
+    var level = side * side;
     var sum = 0;
     while level > 0 {
         sum += level;
         level = level / 4;
     }
-    return 4 * 4 * sum;
+    return sum;
 }
 
-// ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, and
-// the room's shade (rooms::Room.bounce, linear, times its strength) and own exposure.
+// The fields' memory in bytes: two RGBA8 targets each, with their mips; and the
+// wallpaper's mask, one byte a texel.
+fn room_bytes(g: Gpu&) -> i64 {
+    guard g.room_side > 0 else { return 0; }
+    let paper = if g.paper_mask.id != 0 { texels_with_mips(surfaces::PAPER_SIDE) } else { 0 };
+    return 4 * 4 * texels_with_mips(g.room_side) + paper;
+}
+
+// ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the
+// room's shade (rooms::Room.bounce, linear, times its strength) and own exposure, and the
+// wall a tile of the wallpaper covers.
 struct SurfacesBlock {
-    plank: float4, planks: float4, worn: float4, paper: float4, axes: float4, place: float4, shade: float4
+    plank: float4, planks: float4, worn: float4, paper: float4, gold: float4, axes: float4, place: float4, shade: float4,
+    tile:  float4,
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     let k = surfaces::LOOK;
     let f = g.room_frame;
-    SurfacesBlock { k.plank, k.planks, k.worn, k.paper, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
+    let tile = if g.paper_tile > 0.0 { g.paper_tile } else { surfaces::PAPER_TILE };
+    SurfacesBlock { k.plank, k.planks, k.worn, k.paper, k.gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
                     float4 { g.room.window.x, g.room_away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
-                    model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure) }
+                    model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
+                    float4 { tile, 0.0, 0.0, 0.0 } }
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1
@@ -855,7 +900,7 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
         trees::grow(t, s, v);
         trees::draw_map(t, s, v, map);
     }
-    if g.tree_map.id == 0 { g.tree_map = o.gpu_sampled(trees::SIDE, trees::SIDE, trees::MIPS); }
+    if g.tree_map.id == 0 { g.tree_map = o.gpu_sampled(trees::SIDE, trees::SIDE, trees::MIPS, RGBA8); }
     var at = 0;
     for level in trees::MIPS {
         let side = trees::SIDE >> level;

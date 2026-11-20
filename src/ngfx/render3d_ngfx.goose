@@ -60,9 +60,9 @@ fn gpu_mipped(own: Own&, w: i64, h: i64, format: i32, mips: i64) -> Texture {
     return nx::texture(ngfx::TextureDesc { format: format, usage: ngfx::COLOR_TARGET | ngfx::SAMPLED,
                                              width: w as i32, height: h as i32, mips: mips as i32 });
 }
-// A texture only sampled, with `mips` levels, filled by gpu_upload.
-fn gpu_sampled(own: Own&, w: i64, h: i64, mips: i64) -> Texture {
-    return nx::texture(ngfx::TextureDesc { format: ngfx::RGBA8, usage: ngfx::SAMPLED, width: w as i32, height: h as i32,
+// A texture only sampled, of `format` with `mips` levels, filled by gpu_upload.
+fn gpu_sampled(own: Own&, w: i64, h: i64, mips: i64, format: i32) -> Texture {
+    return nx::texture(ngfx::TextureDesc { format: format, usage: ngfx::SAMPLED, width: w as i32, height: h as i32,
                                              mips: mips as i32 });
 }
 fn gpu_upload(own: Own&, t: Texture, mip: i64, bytes: const u8[:]) { nx::update_texture(t, ngfx::Region { mip: mip as i32 }, bytes); }
@@ -137,6 +137,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 2, g.wall_albedo, g.aniso);
         slot(t, 3, g.wall_normal, g.aniso);
         slot(t, 4, render3d::tree_or_stand_in(g), g.linear);
+        slot(t, 5, g.paper_mask, g.aniso);
         nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
     }
 
@@ -868,7 +869,7 @@ fn release(own: Own&, g: Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map,
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
-                    g.floor_normal, g.wall_albedo, g.wall_normal];
+                    g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib];
