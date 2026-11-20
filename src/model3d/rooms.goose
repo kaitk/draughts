@@ -34,6 +34,8 @@ struct Room {
     // With both: how much of the crown's shade turns to the noise's dapple (its leaves'
     // shade times this, up to all).
     crown_fill: f32 = 3.0,
+    // The tree's kind (trees::SPECIES_NAMES): how it branches, its leaves' size and shape.
+    species: i64 = 0,
     // The window the key comes through, its shadow on the key (shaders::LIGHT_FN's
     // window_light; world units, a square is 1, about 3.3 cm): x how much of the key the
     // shade keeps out (0 no pattern), y how fast the penumbra widens with the distance
@@ -86,6 +88,7 @@ let AUTUMN = Room {
     floor:      float4 { 0.4, 0.25, 0.15, 0.1 },
     lamp:       float4_0,
     lamp_color: float4_0,
+    species:    1,
     ..
 };
 
@@ -125,6 +128,7 @@ let WINTER_SUN = Room {
     leaves:     float4 { 0.35, 0.8, 150.0, 0.12 },
     tree:       float4 { 1.0, 6.0, 70.0, 0.0 },
     crown:      float4 { 0.0, -45.0, 1.0, 0.3 },
+    species:    3,
     ..
 };
 
@@ -145,6 +149,7 @@ let SPRING = Room {
     tree:       float4 { 1.0, 4.0, 70.0, 0.9 },
     crown:      float4 { 0.0, -60.0, 0.5, 0.3 },
     foliage:    float4 { 0.3, 0.6, 0.3, 30.0 },
+    species:    2,
     ..
 };
 
@@ -163,6 +168,7 @@ let SUMMER = Room {
     lamp_color: float4_0,
     tree:       float4 { 1.0, 4.0, 70.0, 2.4 },
     foliage:    float4 { 0.4, 0.7, 0.2, 30.0 },
+    species:    2,
     ..
 };
 
@@ -246,7 +252,7 @@ fn harmonics(r: Room) -> float4[9] {
 // The tree's make (trees::Spec) from the room's tree, crown and foliage.
 fn tree_spec(r: Room) -> trees::Spec {
     return trees::Spec { r.tree.y, r.tree.z, r.tree.w, r.foliage.x, r.foliage.y, r.foliage.z,
-                         r.crown.x, r.crown.y, r.crown.z, r.crown.w };
+                         r.crown.x, r.crown.y, r.crown.z, r.crown.w, r.species };
 }
 
 // How far from the board's middle the table, the board and the pieces reach (mesh's

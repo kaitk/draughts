@@ -45,6 +45,7 @@ struct Spec {
     ground:     f32,
     crooked:    f32,    // 0 straight limbs, 1 an oak's
     hang:       f32,    // 0 twigs reaching out, 1 hanging as a birch's
+    kind:       i64 = 0, // its species (SPECIES_NAMES)
 }
 
 // How the sun sees the tree, and the map's square: the key's slant past the wall's normal
@@ -119,20 +120,110 @@ fn roll_ball(d: Dice&) -> float3 {
     return float3 { roll(d) * 2.0 - 1.0, roll(d) * 2.0 - 1.0, roll(d) * 2.0 - 1.0 };
 }
 
-// Per level (the fine twigs last): segments a branch, children it sprouts, where along it
-// they start, their angle off it (degrees), their length against it, the radius at its tip
-// against its foot, how crooked (times Spec.crooked), how much it turns up a segment, how
-// much more it hangs (times Spec.hang), and leaves (times Spec.leafy).
-let SEGMENTS_OF: i64[5] = [8, 6, 4, 3, 2];
-let CHILDREN_OF: i64[5] = [9, 7, 7, 6, 0];
-let START_OF:    f32[5] = [0.35, 0.15, 0.15, 0.2, 0.0];
-let ANGLE_OF:    f32[5] = [58.0, 42.0, 45.0, 40.0, 0.0];
-let RATIO_OF:    f32[5] = [0.55, 0.5, 0.42, 0.42, 0.0];
-let TIP_OF:      f32[5] = [0.35, 0.25, 0.3, 0.35, 0.4];
-let CROOK_OF:    f32[5] = [0.06, 0.35, 0.4, 0.35, 0.3];
-let RISE_OF:     f32[5] = [0.0, 0.07, 0.04, 0.02, 0.0];
-let HANG_OF:     f32[5] = [0.0, 0.02, 0.06, 0.2, 0.3];
-let LEAVES_OF:   f32[5] = [0.0, 0.0, 0.0, 8.0, 22.0];
+// How a kind of tree grows, per level (the fine twigs last): segments a branch (at most
+// 8), children it sprouts, where along it they start, their angle off it (degrees), their
+// length against it, the radius at its tip against its foot, how crooked (times
+// Spec.crooked), how much it turns up a segment, how much more it hangs (times Spec.hang),
+// and leaves (times Spec.leafy); whether its children come in opposite pairs, and its
+// leaves' size against Spec.leaf and their width against Spec.leaf_width.
+struct Species {
+    segments: i64[5],
+    children: i64[5],
+    start:    f32[5],
+    angle:    f32[5],
+    ratio:    f32[5],
+    tip:      f32[5],
+    crook:    f32[5],
+    rise:     f32[5],
+    hang:     f32[5],
+    leaves:   f32[5],
+    paired:   bool,
+    leaf:     f32,
+    width:    f32,
+}
+
+// A broadleaf of no kind in particular, the first take.
+let BROADLEAF = Species {
+    segments: [8, 6, 4, 3, 2],
+    children: [9, 7, 7, 6, 0],
+    start:    [0.35, 0.15, 0.15, 0.2, 0.0],
+    angle:    [58.0, 42.0, 45.0, 40.0, 0.0],
+    ratio:    [0.55, 0.5, 0.42, 0.42, 0.0],
+    tip:      [0.35, 0.25, 0.3, 0.35, 0.4],
+    crook:    [0.06, 0.35, 0.4, 0.35, 0.3],
+    rise:     [0.0, 0.07, 0.04, 0.02, 0.0],
+    hang:     [0.0, 0.02, 0.06, 0.2, 0.3],
+    leaves:   [0.0, 0.0, 0.0, 8.0, 22.0],
+    paired:   false,
+    leaf:     1.0,
+    width:    1.0,
+};
+
+// Norway maple (library-autumn-01, -02): its twigs in opposite pairs, a dense rounded
+// crown of fairly straight branches, big leaves, so larger flecks and fewer gaps.
+let MAPLE = Species {
+    segments: [8, 6, 4, 3, 2],
+    children: [8, 6, 6, 6, 0],
+    start:    [0.4, 0.15, 0.15, 0.2, 0.0],
+    angle:    [50.0, 45.0, 45.0, 45.0, 0.0],
+    ratio:    [0.55, 0.5, 0.45, 0.4, 0.0],
+    tip:      [0.35, 0.25, 0.3, 0.35, 0.4],
+    crook:    [0.05, 0.2, 0.25, 0.2, 0.2],
+    rise:     [0.0, 0.08, 0.05, 0.03, 0.0],
+    hang:     [0.0, 0.0, 0.03, 0.1, 0.15],
+    leaves:   [0.0, 0.0, 0.0, 5.0, 12.0],
+    paired:   true,
+    leaf:     1.6,
+    width:    1.35,
+};
+
+// Small-leaved lime (garden-facade-01, the manor park's common tree): a dense crown of
+// many small leaves, so many fine flecks; its lower limbs sweep down and up again, its
+// twigs hang.
+let LIME = Species {
+    segments: [8, 6, 5, 3, 2],
+    children: [10, 7, 7, 7, 0],
+    start:    [0.3, 0.15, 0.15, 0.2, 0.0],
+    angle:    [62.0, 50.0, 45.0, 42.0, 0.0],
+    ratio:    [0.55, 0.5, 0.42, 0.4, 0.0],
+    tip:      [0.35, 0.25, 0.3, 0.35, 0.4],
+    crook:    [0.05, 0.25, 0.3, 0.3, 0.25],
+    rise:     [0.0, 0.1, 0.06, 0.02, 0.0],
+    hang:     [0.0, 0.06, 0.12, 0.3, 0.35],
+    leaves:   [0.0, 0.0, 0.0, 12.0, 30.0],
+    paired:   false,
+    leaf:     0.7,
+    width:    1.15,
+};
+
+// Oak (garden-facade-01's, and winter's bare take): heavy limbs turning at random in a
+// zig-zag, wide angles, many short crooked twigs thin at the tips, which in winter make a
+// fine net, not a fishbone; its leaves clustered at the twigs' ends, sky between.
+let OAK = Species {
+    segments: [8, 7, 5, 4, 3],
+    children: [8, 7, 7, 9, 0],
+    start:    [0.3, 0.12, 0.12, 0.15, 0.0],
+    angle:    [65.0, 55.0, 55.0, 55.0, 0.0],
+    ratio:    [0.6, 0.5, 0.42, 0.38, 0.0],
+    tip:      [0.3, 0.22, 0.25, 0.3, 0.3],
+    crook:    [0.12, 0.6, 0.7, 0.65, 0.55],
+    rise:     [0.0, 0.04, 0.03, 0.02, 0.01],
+    hang:     [0.0, 0.0, 0.02, 0.05, 0.05],
+    leaves:   [0.0, 0.0, 0.0, 3.0, 16.0],
+    paired:   false,
+    leaf:     1.1,
+    width:    0.7,
+};
+
+let SPECIES_COUNT = 4;
+let SPECIES_NAMES = ["broadleaf", "maple", "lime", "oak"];
+
+fn species(which: i64) -> Species {
+    if which == 1 { return MAPLE; }
+    if which == 2 { return LIME; }
+    if which == 3 { return OAK; }
+    return BROADLEAF;
+}
 
 // How far a branch's offspring reach against its length (the ratios summed, and a bend).
 let REACH = 1.8;
@@ -164,11 +255,12 @@ fn turned(dir: float3, tilt: f32, round: f32) -> float3 {
 recursive fn grow_branch(t: Tree&, s: Spec&, v: View&, b: Branch) {
     var d = Dice { b.dice };
     let level = b.level;
-    let segments = SEGMENTS_OF[level];
+    let sp = species(s.kind);
+    let segments = sp.segments[level];
     let step = b.length / segments;
-    let tip = TIP_OF[level];
-    let sway = s.crooked * CROOK_OF[level];
-    let rise = RISE_OF[level] - s.hang * HANG_OF[level];
+    let tip = sp.tip[level];
+    let sway = s.crooked * sp.crook[level];
+    let rise = sp.rise[level] - s.hang * sp.hang[level];
     // The points along it, for its children and leaves.
     var points: float3[9] = [float3 { 0.0, 0.0, 0.0 }; 9];
     var dirs:   float3[9] = [float3 { 0.0, 1.0, 0.0 }; 9];
@@ -210,27 +302,31 @@ recursive fn grow_branch(t: Tree&, s: Spec&, v: View&, b: Branch) {
         add_leaves(t, s, v, leaf_dice, points, n, level);
     }
     guard level < LEVELS - 1 else { return; }
-    let count = CHILDREN_OF[level];
-    let start = START_OF[level];
+    let count = sp.children[level];
+    let start = sp.start[level];
     let first_round = roll(d) * TAU;
     for c in count {
-        let f = start + (1.0 - start) * (c + roll_between(d, 0.2, 0.8)) / count;
+        // Opposite pairs share a place, each pair a quarter turn from the last.
+        let slot = if sp.paired { c / 2 } else { c };
+        let slots = if sp.paired { (count + 1) / 2 } else { count };
+        let f = start + (1.0 - start) * (slot + roll_between(d, 0.2, 0.8)) / slots;
         let at = f * n;
         let i = min(floor(at) as i64, n - 1);
         let w = at - i;
         let foot = points[i] + (points[i + 1] - points[i]) * w;
         let along = normalize(dirs[i + 1]);
-        let tilt = radians(ANGLE_OF[level] + roll_between(d, -12.0, 12.0));
-        let round = first_round + c * 2.39996 + roll_between(d, -0.3, 0.3);
+        let tilt = radians(sp.angle[level] + roll_between(d, -12.0, 12.0));
+        let turn = if sp.paired { slot * (PI * 0.5) + (c % 2) * PI } else { c * 2.39996 };
+        let round = first_round + turn + roll_between(d, -0.3, 0.3);
         // The limbs longest low on the trunk, every child shorter toward its parent's tip.
         let shape: f32 = if level == 0 { 1.0 - 0.55 * (f - start) / (1.0 - start) } else { 1.0 - 0.5 * f };
-        let child_length = b.length * RATIO_OF[level] * shape * roll_between(d, 0.8, 1.15);
+        let child_length = b.length * sp.ratio[level] * shape * roll_between(d, 0.8, 1.15);
         let radius_there = b.radius * (1.0 + (tip - 1.0) * f * n / segments);
         let child_radius = max(radius_there * pow(child_length / b.length, 0.9 as f32), 0.04);
         let child = Branch { foot, turned(along, tilt, round), child_length, child_radius, level + 1,
                              mixed(b.dice ^ ((c + 1) as u64 * 0x9E3779B97F4A7C15)) };
         // Left out where nothing it grows can fall on the map.
-        guard clear_of_wall(v, foot) && on_square(v, on_map(v, foot), (child_length * REACH + s.leaf * 2.0) * k) else {
+        guard clear_of_wall(v, foot) && on_square(v, on_map(v, foot), (child_length * REACH + s.leaf * sp.leaf * 2.0) * k) else {
             continue;
         }
         grow_branch(t, s, v, child);
@@ -240,7 +336,8 @@ recursive fn grow_branch(t: Tree&, s: Spec&, v: View&, b: Branch) {
 // The leaves along a twig's outer part and clustered at its tip, each on a short stalk
 // out from it, as many as Spec.leafy says.
 fn add_leaves(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i64, level: i64) {
-    let want = LEAVES_OF[level] * s.leafy;
+    let sp = species(s.kind);
+    let want = sp.leaves[level] * s.leafy;
     var count = floor(want) as i64;
     if roll(d) < want - count { count++; }
     for j in count {
@@ -250,14 +347,14 @@ fn add_leaves(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i64
         let i = min(floor(at) as i64, n - 1);
         let foot = points[i] + (points[i + 1] - points[i]) * (at - i);
         let out = normalize(roll_ball(d) + float3 { 0.0, -0.3 * s.hang, 0.0 });
-        let length = s.leaf * roll_between(d, 0.75, 1.2);
+        let length = s.leaf * sp.leaf * roll_between(d, 0.75, 1.2);
         let middle = foot + out * (length * 0.9);
         let m = on_map(v, middle);
         guard clear_of_wall(v, middle) && on_square(v, m, length) else { continue; }
         // Turned along its stalk as the sun sees it, foreshortened by its tilt.
         let mo = on_map(v, middle + out);
         let angle = atan2(mo.y - m.y, mo.x - m.x) + roll_between(d, -0.5, 0.5);
-        let width = length * s.leaf_width * roll_between(d, 0.45, 1.0);
+        let width = length * min(s.leaf_width * sp.width, 1.0) * roll_between(d, 0.45, 1.0);
         if t.leaves.len < MAX_LEAVES {
             t.leaves.push(Leaf { middle, angle, length, width });
         } else {

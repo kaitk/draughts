@@ -212,7 +212,7 @@ fn report(r: rooms::Room, take: i64) {
     num(out, r.crown_blur);
     out.append(",\n    crown_fill: ");
     num(out, r.crown_fill);
-    out.append(",\n");
+    format(out, ",\n    species:    ", r.species, ", // ", trees::SPECIES_NAMES[r.species], "\n");
     room_line(out, "pattern:   ", r.pattern);
     room_line(out, "window:    ", r.window);
     room_line(out, "panes:     ", r.panes);
@@ -366,6 +366,7 @@ fn main() {
             room.tree.x = shade;
             slider(c, "Crown blur", room.crown_blur, 0.0, 6.0);
             slider(c, "Crown fill", room.crown_fill, 0.0, 10.0);
+            choice(c, "Kind", room.species, trees::SPECIES_NAMES);
             var seed = room.tree.y as i64;
             count(c, "Seed", seed, 0, 99);
             room.tree.y = seed;

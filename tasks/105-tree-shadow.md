@@ -128,6 +128,16 @@ short and straight.
   its branches (the user: in winter thinner bare branches in place of the leaves).
   T in the tuner cycles noise, tree, both; `--leaves both`.
 
+- Species (2026-11-20, the user: the species matters for the leaves, a maple's and an
+  oak's differ above all in size): `trees::Species` holds what was fixed per level (the
+  segments, children, angles, crookedness, rise, hang, leaves) with whether the children
+  come in opposite pairs and the leaves' size and width. A broadleaf (the first take), a
+  Norway maple (opposite pairs, a dense rounded crown, big broad leaves), a small-leaved
+  lime (many small rounded leaves, hanging twigs), and an oak (zig-zag limbs, wide
+  angles, many short crooked twigs thin at the tips, a fine net when bare, slim leaves
+  clustered at the ends). `Room.species`: the library a maple, the sunny winter hall the
+  oak, spring and summer a lime. The tuner's Kind.
+
 ## Acceptance criteria
 
 - [ ] A generated tree whose shadow reads as branches and leaves, not noise, on the board
