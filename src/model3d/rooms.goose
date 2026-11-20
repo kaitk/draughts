@@ -307,10 +307,13 @@ fn tree_view(r: Room) -> trees::View {
 // tree's slow sway, -1..1; y the gust where the map's along is 0, 0..1; z the gust's
 // change a unit along the wall, as its front crosses the crown. Each layer's shift (the
 // limbs, the near, middle and far leaves) in the tree's map, a map of side `span`: xy in
-// calm air, zw what a full gust adds.
+// calm air, zw what a full gust adds. With the branches (WIND_BRANCHES), their field:
+// x its clock, y its sway in calm air and z what a full gust adds, in the map, w its
+// noise's cells a unit.
 struct Wind {
-    now:   float4,
-    shift: float4[4],
+    now:      float4,
+    shift:    float4[4],
+    branches: float4 = float4_0,
 }
 
 // The wind's noise (Zioma, GPU Gems 3, ch. 6): value noise of time, -1..1, a new random
@@ -363,7 +366,7 @@ fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
     let reach: f32[4] = [w * 0.1, w * r.wind.z, w * r.wind.z * 1.15, w * r.wind.z * 1.3];
     let sway = wind_noise(t * along_rate[0] + along_seed[0]) as f32;
     let sway_across = 0.3 * wind_noise(t * across_rate[0] + across_seed[0]) as f32;
-    var out = Wind { float4 { sway, gust as f32, change as f32, 0.0 }, [float4_0; 4] };
+    var out = Wind { float4 { sway, gust as f32, change as f32, 0.0 }, [float4_0; 4], .. };
     let dir = float2 { 1.0, 0.15 };
     let cross_dir = float2 { -0.15, 1.0 };
     let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
@@ -384,17 +387,55 @@ fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
 }
 
 // The wind's kinds, to compare in the tuner (tools/light_tune's K): the sines it was
-// before the noises (wind_sines), the noises (wind_at), and none.
+// before the noises (wind_sines), the noises (wind_at), none, and the noises with the
+// branches swaying apart (branch_field).
 let WIND_SINES = 0;
 let WIND_NOISE = 1;
 let WIND_STILL = 2;
-let WIND_KINDS = ["sines", "noise", "still"];
+let WIND_BRANCHES = 3;
+let WIND_KINDS = ["sines", "noise", "still", "branches"];
 
-// The wind of a kind (WIND_KINDS) at `seconds` for a tree's map of side `span`.
-fn wind_of(r: Room, kind: i64, seconds: f32, span: f32) -> Wind {
+// The wind of a kind (WIND_KINDS) at `seconds` for a tree's map of side `span`; `clock`
+// the branches' (branch_clock).
+fn wind_of(r: Room, kind: i64, seconds: f32, span: f32, clock: f64 = 0.0) -> Wind {
     if kind == WIND_SINES { return wind_sines(r, seconds, span); }
-    if kind == WIND_STILL { return Wind { float4_0, [float4_0; 4] }; }
-    return wind_at(r, seconds, span);
+    if kind == WIND_STILL { return Wind { float4_0, [float4_0; 4], .. }; }
+    var out = wind_at(r, seconds, span);
+    if kind == WIND_BRANCHES {
+        out.now.w = 2.0;
+        out.branches = branch_field(r, clock, span);
+    }
+    return out;
+}
+
+// The branches' field (shaders::LIGHT_FN's branch_sway): each leaf layer's lookup moved
+// by a slow noise over the tree's plane, its cells a branch's reach across (6 units), at
+// most two thirds of a leaf's width (0.25), so neighbouring regions sway apart and the
+// field's gradient stays under 0.13: no shape smears.
+fn branch_field(r: Room, clock: f64, span: f32) -> float4 {
+    let most: f32 = 0.25;
+    let reach = r.wind.x * r.wind.z;
+    let calm = min(0.25 * reach, most);
+    let gusty = min(0.9 * reach, most);
+    let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
+    return float4 { clock as f32, calm * unit, (gusty - calm) * unit, 1.0 / 6.0 };
+}
+
+// The branches' clock from `from` (its value then `at`) to `to`, in the wind's time
+// (seconds times Room.wind.y): it runs 2.5 times as fast in a full gust, so the
+// branches sway quicker then, and never jumps as a gust comes and goes.
+fn branch_clock(from: f64, at: f64, to: f64) -> f64 {
+    guard to > from else { return at; }
+    let steps = ceil((to - from) / 0.25) as i64;
+    let dt = (to - from) / steps;
+    var c = at;
+    var a = gust_at(from);
+    for i in steps {
+        let b = gust_at(from + (i + 1) * dt);
+        c += dt * (1.0 + 0.75 * (a + b));
+        a = b;
+    }
+    return c;
 }
 
 // The wind as sines (after Crysis's vegetation and SpeedTree's wind): the whole tree's
@@ -411,7 +452,7 @@ fn wind_sines(r: Room, seconds: f32, span: f32) -> Wind {
     let share:  f32[4] = [1.0, 1.0, 0.8, 0.6];
     let push:   f32[4] = [1.5, 2.0, 2.0, 2.0];
     let across: f32[4] = [0.0, 0.4 * sin(t * 1.9 + 0.7), 0.4 * sin(t * 1.6 + 2.3), 0.4 * sin(t * 1.3 + 4.1)];
-    var out = Wind { float4 { slow, 0.0, 0.0, 1.0 }, [float4_0; 4] };
+    var out = Wind { float4 { slow, 0.0, 0.0, 1.0 }, [float4_0; 4], .. };
     let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
     for i in 4 {
         let k = reach[i] * unit;

@@ -70,10 +70,12 @@ let FRAME = """
         vec4 tree_blur;
         // The wind this frame (rooms::wind_at): x the whole tree's slow sway, y the gust
         // at 0 along the wall, z its change a unit along, w 1 for the sines' gust
-        // (rooms::wind_sines); each layer's shift in the map (the limbs, the near, middle
-        // and far leaves), xy in calm air, zw a full gust's.
+        // (rooms::wind_sines), 2 for the branches; each layer's shift in the map (the
+        // limbs, the near, middle and far leaves), xy in calm air, zw a full gust's; the
+        // branches' field (rooms::branch_field).
         vec4 wind_now;
         vec4 tree_shift[4];
+        vec4 branches;
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
         // their radius; each disc x, z, its foot's and its top's height over the table.
         vec4 disc_n;
@@ -291,7 +293,7 @@ let LIGHT_FN = """
     // the crown along the wall. With the sines (wind_now.w 1, the tuner's), the gust is
     // their product's peaks.
     vec2 wind_at(vec2 m) {
-        if (wind_now.w > 0.5) {
+        if (abs(wind_now.w - 1.0) < 0.5) {
             float front = wind.z * wind.y - m.x * 0.015;
             float sines = (0.5 + 0.5 * sin(front * 0.21)) * (0.6 + 0.4 * sin(front * 0.53 + 2.0));
             return vec2(wind_now.x, smoothstep(0.55, 1.0, sines));
@@ -306,6 +308,20 @@ let LIGHT_FN = """
         float t = wind.z * wind.y;
         float phase = window_noise(m / size) * 6.2832;
         return gust * min(wind.w, 1.0) * (0.5 + 0.5 * sin(t * 7.3 + phase));
+    }
+
+    // The branches swaying apart (rooms::WIND_BRANCHES): how far a leaf layer's lookup at
+    // m moves in the map, by a slow field a branch's reach across, at most a leaf's width,
+    // so neighbouring regions sway a little differently and no shape smears. Two value
+    // noises, along and across the wind, each scrolled along it at its own pace, so the
+    // field changes its shape as it goes; the farther layers move more and quicker.
+    vec2 branch_sway(vec2 m, float layer, float gust) {
+        vec2 p = m * branches.w + vec2(37.1, 11.7) * layer;
+        float c = branches.x * (0.3 + 0.06 * layer);
+        float along = window_noise(p - vec2(1.0, 0.15) * c);
+        float across = window_noise(p.yx + vec2(5.3, 2.9) - vec2(0.4, 0.9) * (1.3 * c));
+        float a = (branches.y + gust * branches.z) * (0.8 + 0.1 * layer);
+        return a * vec2(2.0 * along - 1.0, 0.7 * (2.0 * across - 1.0));
     }
 
     // How much of the key the tree outside lets through to p (trees.goose): p carried
@@ -332,13 +348,21 @@ let LIGHT_FN = """
         float leafy = lod + tree_blur.z;
         vec2 at_near = uv + tree_shift[1].xy + gust * tree_shift[1].zw;
         vec2 at_mid = uv + tree_shift[2].xy + gust * tree_shift[2].zw;
+        vec2 at_far = uv + tree_shift[3].xy + gust * tree_shift[3].zw;
+        // The branches: each layer moved by region, never blended with itself.
+        if (wind_now.w > 1.5) {
+            at_near += branch_sway(m, 0.0, gust);
+            at_mid += branch_sway(m, 1.0, gust);
+            at_far += branch_sway(m, 2.0, gust);
+            turn = 0.0;
+        }
         float near = textureLod(tree_map, at_near, leafy).r;
         float middle = textureLod(tree_map, at_mid, leafy).g;
         if (turn > 0.001) {
             near = mix(near, textureLod(tree_map, at_near + nudge, leafy).r, turn);
             middle = mix(middle, textureLod(tree_map, at_mid - nudge.yx, leafy).g, turn);
         }
-        float far = textureLod(tree_map, uv + tree_shift[3].xy + gust * tree_shift[3].zw, leafy).b;
+        float far = textureLod(tree_map, at_far, leafy).b;
         return vec2(wood, near * middle * far);
     }
 

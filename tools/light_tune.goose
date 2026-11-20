@@ -4,14 +4,14 @@
 // with its bars, curtain, and the trees' leaves. Drag to orbit, scroll to zoom, R resets
 // the camera, W switches the pattern (its leaves swaying in the wind), T the leaves between
 // the tree's baked shadow and the noise, K the wind's kind (rooms::WIND_KINDS: sines,
-// noise, still), D the dust in the sunbeam, P prints the room as Goose (and saves it in
+// noise, still, branches), D the dust in the sunbeam, P prints the room as Goose (and saves it in
 // build/light-tune.txt).
 //
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
 //       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
-//       [--wind-kind sines|noise|still]
+//       [--wind-kind sines|noise|still|branches]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern X,Y,Z,W]
 //       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]

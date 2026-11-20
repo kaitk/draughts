@@ -221,6 +221,32 @@ short and straight.
     gust the board shows less contrast, before as now: the ruffle blends the near and
     middle leaves with themselves nudged.
 
+- The branches, a fourth wind kind (2026-11-20, the user agreeing: each leaf layer moved
+  as one sheet, a printed pattern sliding, and in a gust the ruffle's blend with itself
+  nudged was a double exposure that filled the gaps). `branches` (K, `--wind-kind
+  branches`) keeps the noise's whole shift of each layer and adds a slow field over the
+  tree's plane (`rooms::branch_field`, LIGHT_FN's `branch_sway`): two value noises a layer,
+  along and across the wind, cells 6 units across (a branch's reach), each scrolled along
+  the wind at its own pace so the field changes shape; the farther layers move more and
+  quicker. Its sway is a quarter of the leaves' in calm air, 0.9 of it in a full gust, at
+  most 0.25 units (two thirds of a leaf), so the field's gradient stays under 0.13 (median
+  0.05): nothing smears. Its clock runs 2.5 times as fast in a full gust
+  (`rooms::branch_clock`, integrated on the CPU and carried on frame by frame), so the
+  sway quickens without jumping. No blend: the ruffle is off in this kind.
+  - Cost: six value noises a pixel, about 300 ALU operations, where the window's pattern
+    is on; the taps are always four (the noise's six in a gust are gone). The default
+    stays `noise`.
+  - Measured on the library at `--wind 0.2,1,3,0.5`, 1536x1024, the board's field against
+    the same shot with the window off, 8 px patches (2 px for the step): in a gust (17.5
+    to 18 s) the noise's mean step between patches drops to 0.028 to 0.031 and its 5-95%
+    spread to 0.58 to 0.60, where the calm has 0.031 to 0.034 and 0.60; the branches keep
+    0.031 to 0.033 and 0.60, as the noise without its ruffle does. The board's lit mean
+    falls in a gust in every kind alike (0.87 to 0.76): the gust's push moves denser
+    leaves over the board, not the ruffle.
+  - Shots, a 300% crop at a gust for `still`, `noise`, and `branches`, and eight frames
+    0.25 s apart across a gust's start side by side as a GIF: `build/notes/wind-branches/`
+    (local).
+
 - The two renderers on shadow-map frames (2026-11-20): a reported 5 ms more for ngfx on
   frames that draw the shadow map again, with the window's pattern on, didn't show in any
   measure. `--background table --window on --bench 300`, the waited frame's P50 with the

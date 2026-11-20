@@ -1,6 +1,8 @@
 // The wind in the trees (rooms::wind_at) over ten minutes of the library's mild default:
 // gusts now and then, a few seconds each; the limbs moving far less than the leaves; the
 // leaf layers out of step (their shifts' correlation well under 1); nothing past its reach.
+// The branches' clock runs at least as fast as the time, quicker in gusts, and the same
+// carried on frame by frame as taken at once.
 import std;
 import vec;
 import math;
@@ -51,4 +53,9 @@ fn main() {
           floor(most[1] * 1000.0 + 0.5) as i64);
     print("the limbs under a fifth of the leaves: ", most[0] < most[1] * 0.2);
     print("near and middle leaves out of step: ", corr < 0.9);
+    var clock: f64 = 0.0;
+    for i in 600 { clock = rooms::branch_clock(i * 0.1, clock, (i + 1) * 0.1); }
+    let once = rooms::branch_clock(0.0, 0.0, 60.0);
+    print("the branches' clock over a minute: ", floor(once + 0.5) as i64, ", carried on the same: ",
+          abs(clock - once) < 0.01);
 }
