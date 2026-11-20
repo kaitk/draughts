@@ -1,0 +1,6 @@
+at rest: 0 white c3 1 white e3 2 white g3 3 black d4 4 black h8
+c3 dragged: 0 white held 1 white e3 2 white g3 3 black d4 4 black h8
+dropped on e5: 0 white e5 1 white e3 2 white g3 3 black d4 4 black h8
+landed: 0 white e5 1 white e3 2 white g3 4 black h8
+sliding back: 0 white e5 1 white e3 2 white g3 3 black d4 4 black h8
+undone: 0 white c3 1 white e3 2 white g3 3 black d4 4 black h8

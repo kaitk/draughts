@@ -89,6 +89,7 @@ struct Piece {
     look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), 0 or CROWN or STACK, selected glow 0..1, opacity
     ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring, 1 pulsing, 2 still; y: a glow ring tight round it, 0 to 1; z: pieces it takes, as pips; w: DRAINED, or LIGHT a hint's ghost
     win:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // a win (game::cheer): x dimmed by, 0..1; y its square lit, 0..1; z the square's half side in radii; w: over the UI, 1 on the board (a win's card's piece)
+    id:   f32    = 0.0,  // which piece it is, the same from move to move (piece_ids): the 3D figure's seed
 }
 
 // Pieces over the UI: clocks, the winner or a draw's pieces, and what each side has
@@ -1049,13 +1050,56 @@ fn drain(b: Board&) {
 
 // A piece to draw; `ring` is its must-capture ring: 0 none, 1 pulsing, 2 still.
 fn add(b: Board&, at: float2, r: f32, lift: f32, black: bool, king: bool, glow: f32,
-       alpha: f32, ring: f32) {
+       alpha: f32, ring: f32, id: i64 = 0) {
     guard b.pieces.len < MAX_PIECES else { return; }
     let look = if king { b.king_look } else { 0 };
     b.pieces.push(Piece {
         at:   float4 { at.x, at.y, r, lift },
         look: float4 { if black { 1.0 } else { 0.0 }, look, glow, alpha },
-        ring: float4 { ring, 0.0, 0.0, 0.0 } });
+        ring: float4 { ring, 0.0, 0.0, 0.0 },
+        id: id });
+}
+
+// Each square's piece's id in position z, from its ids in position a just before it: a
+// side that left one square and came to one moved that piece; any other piece arriving
+// is new, numbered from `next`.
+fn follow(ids: i64[64]&, next: i64&, a: rules::Position, z: rules::Position) {
+    for side in 2 {
+        let gone = a.pieces[side] & ~z.pieces[side];
+        var came = z.pieces[side] & ~a.pieces[side];
+        if popcount(gone) == 1 && popcount(came) == 1 {
+            ids[ctz(came)] = ids[ctz(gone)];
+            continue;
+        }
+        while came != 0 {
+            ids[ctz(came)] = next;
+            next += 1;
+            came &= came - 1;
+        }
+    }
+}
+
+// Each square's piece's id in the position shown, followed from the game's start through
+// its record, so a piece keeps its figure while it moves or is dragged, and a taken one
+// comes back with its own on an undo.
+fn piece_ids(b: Board&, shown: rules::Position) -> i64[64] {
+    var ids: i64[64] = [0; 64];
+    var next = 0;
+    var a = b.rec.start;
+    for side in 2 {
+        var m = a.pieces[side];
+        while m != 0 {
+            ids[ctz(m)] = next;
+            next += 1;
+            m &= m - 1;
+        }
+    }
+    for st in b.rec.history {
+        follow(ids, next, a, st.pos);
+        a = st.pos;
+    }
+    if shown.pieces[0] != a.pieces[0] || shown.pieces[1] != a.pieces[1] { follow(ids, next, a, shown); }
+    return ids;
 }
 
 // The last piece added, the one on `sq`, shows how many it takes (ring.z).
@@ -1074,6 +1118,7 @@ fn build_frame_pieces(b: Board&, l: Layout, now: f64) {
     let r = 0.39 * l.inner.w;           // a disc fills 78% of its square
     let unit = 0.01 * l.board.z;        // 1% of the board
     let shown = if b.moving { b.before } else { b.pos };
+    let ids = piece_ids(b, shown);
     let t = move_time(b, now);
     let pulsing = now < b.pulse_end;
     let glowing = ring_at(b.glow_at, now);
@@ -1121,7 +1166,7 @@ fn build_frame_pieces(b: Board&, l: Layout, now: f64) {
             }
             let selected = sq == b.selected;
             add(b, center(l, v, sq), r, if selected { 1.1 * unit } else { 0.0 }, black,
-                shown.kings & m != 0, if selected { 1.0 } else { 0.0 }, alpha, if must & m != 0 { ring } else { 0.0 });
+                shown.kings & m != 0, if selected { 1.0 } else { 0.0 }, alpha, if must & m != 0 { ring } else { 0.0 }, ids[sq]);
             if sq == b.glow && !b.moving && b.pieces.len > 0 { glow_ring(b, glowing, b.glow_at, now); }
             if count_on && b.steps.len == 0 { show_takes(b, sq); }
             if danger & m != 0 { drain(b); }
@@ -1129,7 +1174,7 @@ fn build_frame_pieces(b: Board&, l: Layout, now: f64) {
     }
     if b.hint_to >= 0 && !b.moving && b.glow >= 0 {
         add(b, center(l, v, b.hint_to), r, 0.0, b.pos.side == rules::BLACK, b.pos.kings & rules::bit(b.glow) != 0, 0.0,
-            GHOST_HINT, 0.0);
+            GHOST_HINT, 0.0, ids[max(b.glow, 0)]);
         if b.pieces.len > 0 {
             b.pieces[b.pieces.len - 1].ring.w = LIGHT;
             glow_ring(b, ring_at(b.ghost_at, now), b.ghost_at, now);
@@ -1142,7 +1187,7 @@ fn build_frame_pieces(b: Board&, l: Layout, now: f64) {
     }
     if b.played_to >= 0 && b.played_to != b.hint_to && !b.moving {
         add(b, center(l, v, b.played_to), r, 0.0, b.pos.side == rules::BLACK, b.pos.kings & rules::bit(b.played_from) != 0, 0.0,
-            GHOST_HINT, 0.0);
+            GHOST_HINT, 0.0, ids[max(b.played_from, 0)]);
         if b.pieces.len > 0 { b.pieces[b.pieces.len - 1].ring.w = LIGHT; }
     }
     if b.ghost && b.wrong >= 0 {
@@ -1174,10 +1219,10 @@ fn build_frame_pieces(b: Board&, l: Layout, now: f64) {
             }
             if t >= n * HOP { king = true; }
         }
-        add(b, at, r, lift, b.before.side == rules::BLACK, king, 0.0, 1.0, 0.0);
+        add(b, at, r, lift, b.before.side == rules::BLACK, king, 0.0, 1.0, 0.0, ids[mv.from]);
     } else if b.dragging && b.selected >= 0 {
         add(b, b.drag_at, r * 1.06, 1.6 * unit, b.pos.side == rules::BLACK,
-            b.pos.kings & rules::bit(b.selected) != 0, 1.0, 1.0, 0.0);
+            b.pos.kings & rules::bit(b.selected) != 0, 1.0, 1.0, 0.0, ids[b.selected]);
         if count_on { show_takes(b, b.selected); }
         if danger & rules::bit(b.selected) != 0 { drain(b); }
     } else if waits >= 0 {
@@ -1194,7 +1239,7 @@ fn build_frame_pieces(b: Board&, l: Layout, now: f64) {
             at = a + (at - a) * u as f32;
             lift += 4.0 * unit * sin(PI * u) as f32;
         }
-        add(b, at, r, lift, b.pos.side == rules::BLACK, king, 1.0, 1.0, 0.0);
+        add(b, at, r, lift, b.pos.side == rules::BLACK, king, 1.0, 1.0, 0.0, ids[b.selected]);
         if b.glow == b.selected && b.pieces.len > 0 { glow_ring(b, glowing, b.glow_at, now); }
         if count_on { show_takes(b, b.selected); }
     }

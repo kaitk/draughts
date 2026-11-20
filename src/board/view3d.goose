@@ -488,7 +488,7 @@ fn build_scene(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64,
         let lift = lift_of(l, p.at.w);
         let dark = p.look.x;
         let hint = i == b.pulsed;
-        let lit_seed = i + (if b.dim > 0.0 && p.win.x <= 0.0 { SEED_LIT } else { 0.0 });
+        let lit_seed = p.id + (if b.dim > 0.0 && p.win.x <= 0.0 { SEED_LIT } else { 0.0 });
         let seed = if p.ring.w > 0.5 { -1.0 - lit_seed } else { lit_seed };
         let upper = if p.ring.w > 0.5 { seed - 0.5 } else { seed + 0.5 };
         // The pulsing hint ring stays out of the state: it is drawn over the image.
