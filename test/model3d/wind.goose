@@ -10,7 +10,7 @@ import model3d from "../../src/model3d";
 
 fn main() {
     let r = rooms::get(rooms::LIBRARY);
-    let span: f32 = 1.0;
+    let size = float2 { 1.0, 1.0 };
     let steps = 6000;
     var gusty = 0;
     var gusts = 0;
@@ -26,7 +26,7 @@ fn main() {
     var clock_most: f32    = 0.0;
     var clock_left = false;
     for i in steps {
-        let w = rooms::wind_at(r, (i as f32) * 0.1, span);
+        let w = rooms::wind_at(r, (i as f32) * 0.1, size);
         let g = w.now.y;
         if g < 0.0 || g > 1.0 { print("a gust out of 0..1"); }
         gust_step = max(gust_step, abs(g - last_gust));

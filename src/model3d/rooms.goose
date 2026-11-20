@@ -288,26 +288,26 @@ let TABLE_REACH: f32 = 21.0;
 
 // How the sun sees the tree through the window (trees::View), as shaders::LIGHT_FN's
 // window_light traces it: the key's slant in the window's frame (which turns with the
-// board, the light and the wall together), and the map's square over the opening as the
-// key carries it out to the tree, with room for the blur and the sway.
-fn tree_view(r: Room) -> trees::View {
-    let l = toward(r.key.x, r.key.y);
-    let h = normalize(float2 { l.x, l.z });
-    let a = radians(r.window.y);
-    let nw = float2 { cos(a) * h.x - sin(a) * h.y, sin(a) * h.x + cos(a) * h.y };
-    let along = float2 { -nw.y, nw.x };
-    let lw = float2 { l.x, l.z };
-    let facing = max(dot(lw, nw), 0.05);
-    let shear = float2 { dot(lw, along) / facing, l.y / facing };
-    // The opening as the key carries it out to the tree, cut to what reaches the table.
+// board, the light and the wall together), and the map over the opening as the key
+// carries it out to the tree, with room for the blur and the sway. The game's map is cut
+// to what reaches the table, SIDE² texels; with `whole` (the room shown) it covers the
+// whole opening, trees::ROOM_W × ROOM_H.
+fn tree_view(r: Room, whole: bool = false) -> trees::View {
+    let shear = tree_shear(r);
     let size = float2 { r.opening.x * r.panes.x, r.opening.y * r.panes.y };
     let y0 = r.window.z - shear.y * r.window.x;
+    var x0 = r.window.w - size.x * 0.5;
+    var x1 = r.window.w + size.x * 0.5;
+    var ya = y0;
+    var y1 = y0 + size.y;
+    if whole { return tree_view_over(r, x0, x1, ya, y1, trees::ROOM_W, trees::ROOM_H); }
+    // The opening cut to what reaches the table.
     let reach_x = TABLE_REACH * sqrt(1.0 + shear.x * shear.x);
     let reach_y = 2.0 + abs(shear.y) * TABLE_REACH;
-    var x0 = max(r.window.w - size.x * 0.5, -reach_x);
-    var x1 = min(r.window.w + size.x * 0.5, reach_x);
-    var y1 = min(y0 + size.y, reach_y);
-    var ya = max(y0, -reach_y);
+    x0 = max(x0, -reach_x);
+    x1 = min(x1, reach_x);
+    y1 = min(y1, reach_y);
+    ya = max(y0, -reach_y);
     if x1 <= x0 || y1 <= ya {
         x0 = r.window.w - size.x * 0.5;
         x1 = r.window.w + size.x * 0.5;
@@ -316,15 +316,49 @@ fn tree_view(r: Room) -> trees::View {
     }
     let middle = float2 { (x0 + x1) * 0.5, (ya + y1) * 0.5 };
     let span = max(x1 - x0, y1 - ya) + 8.0;
+    return made_view(r, shear, middle, float2 { span, span }, trees::SIDE, trees::SIDE);
+}
+
+// The key's slant past the window wall's normal: a point at depth z falls on the tree's
+// map z × shear from its own place.
+fn tree_shear(r: Room) -> float2 {
+    let l = toward(r.key.x, r.key.y);
+    let h = normalize(float2 { l.x, l.z });
+    let a = radians(r.window.y);
+    let nw = float2 { cos(a) * h.x - sin(a) * h.y, sin(a) * h.x + cos(a) * h.y };
+    let along = float2 { -nw.y, nw.x };
+    let lw = float2 { l.x, l.z };
+    let facing = max(dot(lw, nw), 0.05);
+    return float2 { dot(lw, along) / facing, l.y / facing };
+}
+
+fn tree_facing(r: Room) -> f32 {
+    let l = toward(r.key.x, r.key.y);
+    let h = normalize(float2 { l.x, l.z });
+    let a = radians(r.window.y);
+    let nw = float2 { cos(a) * h.x - sin(a) * h.y, sin(a) * h.x + cos(a) * h.y };
+    return max(dot(float2 { l.x, l.z }, nw), 0.05);
+}
+
+// The map over x0..x1, y0..y1 of the tree's frame and 8 units round it, w × h square
+// texels, the rectangle grown on its shorter way to fit them.
+fn tree_view_over(r: Room, x0: f32, x1: f32, y0: f32, y1: f32, w: i64, h: i64) -> trees::View {
+    let texel = max((x1 - x0 + 8.0) / w, (y1 - y0 + 8.0) / h);
+    let middle = float2 { (x0 + x1) * 0.5, (y0 + y1) * 0.5 };
+    return made_view(r, tree_shear(r), middle, float2 { texel * w, texel * h }, w, h);
+}
+
+fn made_view(r: Room, shear: float2, middle: float2, size: float2, w: i64, h: i64) -> trees::View {
+    let facing = tree_facing(r);
     let sun: f32 = 0.0093;
-    return trees::View { shear, middle, span, (r.window.x + r.foliage.w) / facing, facing,
-                         sun * r.tree_blur, -r.foliage.w };
+    return trees::View { shear, middle, size, w, h, (r.window.x + r.foliage.w) / facing, facing, sun * r.tree_blur,
+                         -r.foliage.w };
 }
 
 // The wind in the trees at a moment (Room.wind), for shaders::LIGHT_FN: now x the whole
 // tree's slow sway, -1..1; y the gust where the map's along is 0, 0..1; z the gust's
 // change a unit along the wall, as its front crosses the crown. Each layer's shift (the
-// limbs, the near, middle and far leaves) in the tree's map, a map of side `span`: xy in
+// limbs, the near, middle and far leaves) in the tree's map, a map of `size` (world units): xy in
 // calm air, zw what a full gust adds. With the branches (WIND_BRANCHES), their field:
 // x its clock, y its sway in calm air and z what a full gust adds, in the map, w its
 // noise's cells a unit. The gust's regions (gust_regions): x where its noise is along
@@ -422,12 +456,12 @@ fn gust_regions(g: float4, t: f64, push: f32) -> float4 {
     return float4 { along as f32, gust_clock(g, t) as f32, middle - 0.5 * soft, soft };
 }
 
-// The wind at `seconds` for a tree's map of side `span`. Two noises a layer, one along
+// The wind at `seconds` for a tree's map of `size`. Two noises a layer, one along
 // the wind and one across it (Zioma): the limbs follow the whole tree's slow sway alone,
 // barely and as one piece; each leaf layer adds its own turbulence, quicker the farther
 // out, as thin twigs move faster and more than thick limbs (Habel and others, 2009), and
 // stronger in a gust, which pushes all along the wind. Each layer only shifts, whole.
-fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
+fn wind_at(r: Room, seconds: f32, size: float2) -> Wind {
     let t = (seconds * r.wind.y) as f64;
     // Where the gust's front is a unit along the wall later: 0.015 s.
     let lag: f64 = 0.015;
@@ -446,7 +480,8 @@ fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
     var out = Wind { float4 { sway, gust as f32, change as f32, 0.0 }, [float4_0; 4], .. };
     let dir = float2 { 1.0, 0.15 };
     let cross_dir = float2 { -0.15, 1.0 };
-    let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
+    let unit_x = if size.x > 0.0 { 1.0 / size.x } else { 0.0 };
+    let unit_y = if size.y > 0.0 { 1.0 / size.y } else { 0.0 };
     let strength = r.gust.x;
     for i in 4 {
         // In calm air, and what a full gust of strength 1 adds (the turbulence up by 0.8, a
@@ -459,9 +494,9 @@ fn wind_at(r: Room, seconds: f32, span: f32) -> Wind {
             calm = calm + dir * (0.6 * along) + cross_dir * (0.3 * across);
             pushed = dir * (2.0 + 0.8 * along) + cross_dir * (0.4 * across);
         }
-        let k = reach[i] * unit;
-        let kg = k * strength;
-        out.shift[i] = float4 { calm.x * k, calm.y * k, pushed.x * kg, pushed.y * kg };
+        let kx = reach[i] * unit_x;
+        let ky = reach[i] * unit_y;
+        out.shift[i] = float4 { calm.x * kx, calm.y * ky, pushed.x * (kx * strength), pushed.y * (ky * strength) };
     }
     // The farthest leaves' push at most: along 2.8, across 0.4.
     out.regions = gust_regions(r.gust, t, 2.83 * reach[3] * strength);
@@ -477,14 +512,14 @@ let WIND_STILL = 2;
 let WIND_BRANCHES = 3;
 let WIND_KINDS = ["sines", "noise", "still", "branches"];
 
-// The wind of a kind (WIND_KINDS) at `seconds` for a tree's map of side `span`.
-fn wind_of(r: Room, kind: i64, seconds: f32, span: f32) -> Wind {
-    if kind == WIND_SINES { return wind_sines(r, seconds, span); }
+// The wind of a kind (WIND_KINDS) at `seconds` for a tree's map of `size`.
+fn wind_of(r: Room, kind: i64, seconds: f32, size: float2) -> Wind {
+    if kind == WIND_SINES { return wind_sines(r, seconds, size); }
     if kind == WIND_STILL { return Wind { float4_0, [float4_0; 4], .. }; }
-    var out = wind_at(r, seconds, span);
+    var out = wind_at(r, seconds, size);
     if kind == WIND_BRANCHES {
         out.now.w = 2.0;
-        out.branches = branch_field(r, seconds * r.wind.y, span);
+        out.branches = branch_field(r, seconds * r.wind.y);
     }
     return out;
 }
@@ -494,21 +529,20 @@ fn wind_of(r: Room, kind: i64, seconds: f32, span: f32) -> Wind {
 // at most two thirds of a leaf's width (0.25), so neighbouring regions sway apart and the
 // field's gradient stays under 0.13: no shape smears. Its clock is the wind's time `t`;
 // where a gust reaches, it runs ahead (gust_clock) and the sway grows by the gust's
-// strength.
-fn branch_field(r: Room, t: f64, span: f32) -> float4 {
+// strength. Its sway in world units (the shader divides it by the map's size).
+fn branch_field(r: Room, t: f64) -> float4 {
     let most: f32 = 0.25;
     let reach = r.wind.x * r.wind.z;
     let calm = min(0.25 * reach, most);
     let gusty = min(0.9 * reach, most);
-    let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
-    return float4 { t as f32, calm * unit, (gusty - calm) * r.gust.x * unit, 1.0 / BRANCH_CELL };
+    return float4 { t as f32, calm, (gusty - calm) * r.gust.x, 1.0 / BRANCH_CELL };
 }
 
 // The wind as sines (after Crysis's vegetation and SpeedTree's wind): the whole tree's
 // slow sway, two sines; each leaf layer a little more and on its own phase across the
 // wind. The gust, peaks of two sines' product, its front crossing the crown, is made by
 // shaders::LIGHT_FN's wind_at (now.w 1).
-fn wind_sines(r: Room, seconds: f32, span: f32) -> Wind {
+fn wind_sines(r: Room, seconds: f32, size: float2) -> Wind {
     let t = seconds * r.wind.y;
     let slow = 0.7 * sin(t * 0.55) + 0.3 * sin(t * 1.37 + 1.1);
     let w = r.wind.x;
@@ -519,11 +553,13 @@ fn wind_sines(r: Room, seconds: f32, span: f32) -> Wind {
     let push:   f32[4] = [1.5, 2.0, 2.0, 2.0];
     let across: f32[4] = [0.0, 0.4 * sin(t * 1.9 + 0.7), 0.4 * sin(t * 1.6 + 2.3), 0.4 * sin(t * 1.3 + 4.1)];
     var out = Wind { float4 { slow, 0.0, 0.0, 1.0 }, [float4_0; 4], .. };
-    let unit = if span > 0.0 { 1.0 / span } else { 0.0 };
+    let unit_x = if size.x > 0.0 { 1.0 / size.x } else { 0.0 };
+    let unit_y = if size.y > 0.0 { 1.0 / size.y } else { 0.0 };
     for i in 4 {
-        let k = reach[i] * unit;
-        out.shift[i] = float4 { share[i] * slow * k, (0.15 * share[i] * slow + across[i]) * k,
-                                push[i] * k, 0.15 * push[i] * k };
+        let kx = reach[i] * unit_x;
+        let ky = reach[i] * unit_y;
+        out.shift[i] = float4 { share[i] * slow * kx, (0.15 * share[i] * slow + across[i]) * ky,
+                                push[i] * kx, 0.15 * push[i] * ky };
     }
     return out;
 }

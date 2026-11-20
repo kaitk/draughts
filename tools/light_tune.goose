@@ -427,14 +427,14 @@ fn main() {
         var map: u8[>..] = [];
         trees::draw_map(t, sp, v, map);
         var out: u8[>..] = [];
-        format(out, "P5\n", trees::SIDE, " ", trees::SIDE, "\n255\n");
-        for i in trees::SIDE * trees::SIDE {
+        format(out, "P5\n", v.w, " ", v.h, "\n255\n");
+        for i in v.w * v.h {
             let o = i * 4;
             let k = (map[o] as i64) * (map[o + 1] as i64) / 255 * (map[o + 2] as i64) / 255 * (map[o + 3] as i64) / 255;
             out.push(k as u8);
         }
         guard write_file(argv[dump], out[..]) else { abort("could not write the map"); }
-        print("map span ", v.span, " middle ", v.middle.x, ",", v.middle.y);
+        print("map ", v.size.x, " by ", v.size.y, " middle ", v.middle.x, ",", v.middle.y);
     }
     render3d::window_pattern = pattern == 1;
     var room_on = flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "on";

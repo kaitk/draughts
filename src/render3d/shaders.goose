@@ -63,7 +63,7 @@ let FRAME = """
         vec4 twigs;
         vec4 wind;           // x how strong, y how fast, z the seconds, w the leaves' ruffle in a gust
         // The tree outside, its shadow baked into tree_map (render3d::put_tree): x the
-        // map's side in world units (0 no tree: the leaves' noise), zw its middle; x the
+        // map's width and height in world units (0 no tree: the leaves' noise), zw its middle; x the
         // blur's texels a unit of distance, y the board middle's distance from the
         // trunk's plane.
         vec4 tree;
@@ -330,7 +330,7 @@ let LIGHT_FN = """
         float along = window_noise(p - vec2(1.0, 0.15) * c);
         float across = window_noise(p.yx + vec2(5.3, 2.9) - vec2(0.4, 0.9) * (1.3 * c));
         float a = (branches.y + gusted * branches.z) * (0.8 + 0.1 * layer);
-        return a * vec2(2.0 * along - 1.0, 0.7 * (2.0 * across - 1.0));
+        return a * vec2(2.0 * along - 1.0, 0.7 * (2.0 * across - 1.0)) / tree.xy;
     }
 
     // How much of the key the tree outside lets through to p (trees.goose): p carried
@@ -342,7 +342,7 @@ let LIGHT_FN = """
     vec2 tree_light(vec3 p, vec3 l, vec2 nw, vec2 along, float toward) {
         float back = dot(p.xz, nw) / toward;
         vec2 m = vec2(dot(p.xz, along) - dot(l.xz, along) * back, p.y - l.y * back);
-        vec2 uv = (m - tree.zw) / tree.x + 0.5;
+        vec2 uv = (m - tree.zw) / tree.xy + 0.5;
         float more = max(back * back - 2.0 * tree_blur.y * back, 0.0);
         float lod = 0.5 * log2(max(more * tree_blur.x * tree_blur.x, 1.0));
         // Each layer shifts as a whole, by its own noises along and across the wind
@@ -352,7 +352,7 @@ let LIGHT_FN = """
         // The ruffle: the near and middle leaves blended with themselves nudged a leaf's
         // width, patch by patch.
         float turn = ruffle_at(m, gust, 1.5);
-        vec2 nudge = vec2(cos(t * 5.1), sin(t * 4.3)) * (0.35 / tree.x);
+        vec2 nudge = vec2(cos(t * 5.1), sin(t * 4.3)) * (0.35 / tree.xy);
         float wood = textureLod(tree_map, uv + tree_shift[0].xy + gust * tree_shift[0].zw, lod).a;
         float leafy = lod + tree_blur.z;
         vec2 at_near = uv + tree_shift[1].xy + gust * tree_shift[1].zw;

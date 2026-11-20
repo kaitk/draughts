@@ -49,16 +49,18 @@ struct Spec {
     kind:       i64 = 0, // its species (SPECIES_NAMES)
 }
 
-// How the sun sees the tree, and the map's square: the key's slant past the wall's normal
-// (a point at depth z falls on the map z × shear from its own x and y), the map's middle
-// and side in the tree's frame, the ray's length from the board's middle to the trunk's
+// How the sun sees the tree, and the map's rectangle: the key's slant past the wall's
+// normal (a point at depth z falls on the map z × shear from its own x and y), the map's
+// middle and size in the tree's frame and its texels across and up (square), the ray's length from the board's middle to the trunk's
 // plane, how squarely the key meets the wall (the cosine), and how wide the sun's disc is
 // (radians across, with the room's softness); and the house's wall, its depth in the
 // tree's frame, which nothing of the tree comes nearer than WALL_GAP.
 struct View {
     shear:    float2,
     middle:   float2,
-    span:     f32,
+    size:     float2,
+    w:        i64,
+    h:        i64,
     distance: f32,
     toward:   f32,
     blur:     f32,
@@ -70,17 +72,23 @@ let WALL_GAP: f32 = 6.0;
 // Whether a point of the tree is clear of the house.
 fn clear_of_wall(v: View&, p: float3) -> bool { p.z > v.wall + WALL_GAP }
 
-// The map's texels a side, and its levels down to one texel.
+// The game's map's texels a side (the table's cut), and the room's across and up (the
+// whole window, rooms::tree_view).
 let SIDE = 512;
-let MIPS = 10;
+let ROOM_W = 512;
+let ROOM_H = 1024;
+
+// A map's levels, down to the one whose shorter side is a texel (render3d::baked's rule).
+fn mips_of(w: i64, h: i64) -> i64 {
+    var n = 1;
+    while min(w, h) >> n > 0 { n++; }
+    return n;
+}
 
 // The map's bytes, RGBA8, every level one after another.
-fn map_bytes() -> i64 {
+fn map_bytes(w: i64, h: i64) -> i64 {
     var n = 0;
-    for level in MIPS {
-        let s = SIDE >> level;
-        n += s * s * 4;
-    }
+    for level in mips_of(w, h) { n += (w >> level) * (h >> level) * 4; }
     return n;
 }
 
@@ -91,9 +99,8 @@ fn on_map(v: View&, p: float3) -> float2 { float2 { p.x - v.shear.x * p.z, p.y -
 fn spread(v: View&) -> f32 { sqrt(1.0 + v.shear.x * v.shear.x + v.shear.y * v.shear.y) }
 
 // Whether a shape at `m` reaching `r` round it falls on the map.
-fn on_square(v: View&, m: float2, r: f32) -> bool {
-    let h = v.span * 0.5 + r;
-    return abs(m.x - v.middle.x) <= h && abs(m.y - v.middle.y) <= h;
+fn on_rect(v: View&, m: float2, r: f32) -> bool {
+    return abs(m.x - v.middle.x) <= v.size.x * 0.5 + r && abs(m.y - v.middle.y) <= v.size.y * 0.5 + r;
 }
 
 // splitmix64: a branch's dice from its parent's and its place, so leaving out one branch
@@ -303,7 +310,7 @@ recursive fn grow_branch(t: Tree&, s: Spec&, v: View&, b: Branch) {
         let middle = float2 { (ma.x + mb.x) * 0.5, (ma.y + mb.y) * 0.5 };
         // Pruned where it would reach the house: nothing it grows is kept.
         guard clear_of_wall(v, q) else { break; }
-        if on_square(v, middle, length(float2 { mb.x - ma.x, mb.y - ma.y }) * 0.5 + ra) {
+        if on_rect(v, middle, length(float2 { mb.x - ma.x, mb.y - ma.y }) * 0.5 + ra) {
             if t.segments.len < MAX_SEGMENTS {
                 t.segments.push(Segment { p, q, ra, rb, level as i32 });
             } else {
@@ -346,7 +353,7 @@ recursive fn grow_branch(t: Tree&, s: Spec&, v: View&, b: Branch) {
         let child = Branch { foot, turned(along, tilt, round), child_length, child_radius, level + 1,
                              mixed(b.dice ^ ((c + 1) as u64 * 0x9E3779B97F4A7C15)) };
         // Left out where nothing it grows can fall on the map.
-        guard clear_of_wall(v, foot) && on_square(v, on_map(v, foot), (child_length * (REACH + sp.spray) + s.leaf * sp.leaf * 2.0) * k) else {
+        guard clear_of_wall(v, foot) && on_rect(v, on_map(v, foot), (child_length * (REACH + sp.spray) + s.leaf * sp.leaf * 2.0) * k) else {
             continue;
         }
         grow_branch(t, s, v, child);
@@ -378,7 +385,7 @@ fn add_leaves(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i64
         let step = sqrt(dot(seg, seg));
         let middle = foot + out * (length * 0.9 + sp.spray * step * roll(d));
         let m = on_map(v, middle);
-        guard clear_of_wall(v, middle) && on_square(v, m, length) else { continue; }
+        guard clear_of_wall(v, middle) && on_rect(v, m, length) else { continue; }
         // Turned along its stalk as the sun sees it, foreshortened by its tilt.
         let mo = on_map(v, middle + out);
         let angle = atan2(mo.y - m.y, mo.x - m.x) + roll_between(d, -0.5, 0.5);
@@ -429,7 +436,7 @@ fn add_clusters(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i
             let stalk = turned(out, roll_between(d, 0.4, 0.9), round);
             let length = s.leaf * sp.leaf * roll_between(d, 0.75, 1.2) * (1.0 + sp.near * near);
             let middle = foot + stalk * (length * roll_between(d, 0.4, 0.65));
-            guard clear_of_wall(v, middle) && on_square(v, on_map(v, middle), length) else { continue; }
+            guard clear_of_wall(v, middle) && on_rect(v, on_map(v, middle), length) else { continue; }
             // The blade's face: at random about the stalk, then leaning toward the sun.
             var face = turned(stalk, PI * 0.5, roll(d) * TAU);
             if dot(face, sun) < 0.0 { face = face * -1.0; }
@@ -477,12 +484,12 @@ fn layer_of_segment(sg: Segment&, d: Depths&) -> i64 {
 }
 
 // The map: how much of the sun the tree lets through, as the board's middle sees it,
-// RGBA8 at SIDE texels a side and then its mips (map_bytes() in all) into `out`.
+// RGBA8 at v.w × v.h texels and then its mips (map_bytes() in all) into `out`.
 fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
     out.clear();
-    out.resize(map_bytes(), 255);
+    out.resize(map_bytes(v.w, v.h), 255);
     var plane: f32[>..] = [];
-    plane.resize(SIDE * SIDE, 1.0);
+    plane.resize(v.w * v.h, 1.0);
     var sums: f32[>..] = [];
     var sp = s;
     var vw = v;
@@ -500,7 +507,7 @@ fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
         z_sum[l] += lf.at.z;
         z_count[l] += 1.0;
     }
-    let texel = vw.span / SIDE;
+    let texel = vw.size.x / vw.w;
     for layer in 4 {
         for i in plane.len { plane[i] = 1.0; }
         for &sg in t.segments {
@@ -515,23 +522,24 @@ fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
         let sharper = if layer == NEAR { species(sp.kind).near_blur } else { 1.0 };
         let across = max(vw.distance + z / vw.toward, 1.0) * vw.blur * sharper;
         blur_disc(plane, sums, vw, across * 0.5 / texel);
-        for i in SIDE * SIDE {
+        for i in vw.w * vw.h {
             out[i * 4 + layer] = (clamp(plane[i], 0.0, 1.0) * 255.0 + 0.5) as u8;
         }
     }
-    shrink_levels(out);
+    shrink_levels(out, vw.w, vw.h);
 }
 
 // The texel's middle in the tree's frame.
-fn texel_x(v: View&, i: i64) -> f32 { v.middle.x - v.span * 0.5 + (i + 0.5) * v.span / SIDE }
-fn texel_y(v: View&, j: i64) -> f32 { v.middle.y - v.span * 0.5 + (j + 0.5) * v.span / SIDE }
+fn texel_x(v: View&, i: i64) -> f32 { v.middle.x - v.size.x * 0.5 + (i + 0.5) * v.size.x / v.w }
+fn texel_y(v: View&, j: i64) -> f32 { v.middle.y - v.size.y * 0.5 + (j + 0.5) * v.size.y / v.h }
 
-// The texels a shape over x0..x1, y0..y1 (the tree's frame) touches, clamped to the map.
-fn texel_range(v: View&, lo: f32, hi: f32, middle: f32) -> i64, i64 {
-    let k = SIDE / v.span;
-    let a = floor((lo - (middle - v.span * 0.5)) * k) as i64;
-    let b = ceil((hi - (middle - v.span * 0.5)) * k) as i64;
-    return clamp(a, 0, SIDE), clamp(b, 0, SIDE);
+// The texels a shape over lo..hi (the tree's frame, along one axis: the map's middle,
+// size, and texels on it) touches, clamped to the map.
+fn texel_range(lo: f32, hi: f32, middle: f32, size: f32, n: i64) -> i64, i64 {
+    let k = n / size;
+    let a = floor((lo - (middle - size * 0.5)) * k) as i64;
+    let b = ceil((hi - (middle - size * 0.5)) * k) as i64;
+    return clamp(a, 0, n), clamp(b, 0, n);
 }
 
 // A branch's segment, a tapered capsule as the sun sees it (its width unchanged by the
@@ -540,9 +548,9 @@ fn draw_segment(plane: f32[>..]&, v: View&, sg: Segment&) {
     let a = on_map(v, sg.a);
     let b = on_map(v, sg.b);
     let r = max(sg.ra, sg.rb);
-    let texel = v.span / SIDE;
-    let x0, x1 = texel_range(v, min(a.x, b.x) - r - texel, max(a.x, b.x) + r + texel, v.middle.x);
-    let y0, y1 = texel_range(v, min(a.y, b.y) - r - texel, max(a.y, b.y) + r + texel, v.middle.y);
+    let texel = v.size.x / v.w;
+    let x0, x1 = texel_range(min(a.x, b.x) - r - texel, max(a.x, b.x) + r + texel, v.middle.x, v.size.x, v.w);
+    let y0, y1 = texel_range(min(a.y, b.y) - r - texel, max(a.y, b.y) + r + texel, v.middle.y, v.size.y, v.h);
     let ab = float2 { b.x - a.x, b.y - a.y };
     let ll = max(dot(ab, ab), 1e-8);
     for j in y0..y1 {
@@ -557,7 +565,7 @@ fn draw_segment(plane: f32[>..]&, v: View&, sg: Segment&) {
             let dist = sqrt(dx * dx + dy * dy);
             let cover = clamp(rr + texel * 0.5 - dist, 0.0, min(2.0 * rr, texel)) / texel;
             guard cover > 0.0 else { continue; }
-            plane[j * SIDE + i] *= 1.0 - cover;
+            plane[j * v.w + i] *= 1.0 - cover;
         }
     }
 }
@@ -566,7 +574,7 @@ fn draw_segment(plane: f32[>..]&, v: View&, sg: Segment&) {
 // light stop where it covers.
 fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32, lobes: i64) {
     let m = on_map(v, lf.at);
-    let texel = v.span / SIDE;
+    let texel = v.size.x / v.w;
     let a = lf.tip;
     var b = lf.side;
     // A sliver thinner than half a texel drawn half a texel wide and fainter.
@@ -581,8 +589,8 @@ fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32, lobes: i64) {
     let det = a.x * b.y - a.y * b.x;
     let rx = abs(a.x) + abs(b.x);
     let ry = abs(a.y) + abs(b.y);
-    let x0, x1 = texel_range(v, m.x - rx - texel, m.x + rx + texel, v.middle.x);
-    let y0, y1 = texel_range(v, m.y - ry - texel, m.y + ry + texel, v.middle.y);
+    let x0, x1 = texel_range(m.x - rx - texel, m.x + rx + texel, v.middle.x, v.size.x, v.w);
+    let y0, y1 = texel_range(m.y - ry - texel, m.y + ry + texel, v.middle.y, v.size.y, v.h);
     // The leaf's own coordinates' change a unit on the map.
     let du = float2 { b.y / det, -b.x / det };
     let dw = float2 { -a.y / det, a.x / det };
@@ -620,7 +628,7 @@ fn draw_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32, lobes: i64) {
             let dist = (r - edge) * texel / step;
             let cover = clamp(0.5 - dist / texel, 0.0, 1.0);
             guard cover > 0.0 else { continue; }
-            plane[j * SIDE + i] *= 1.0 - stops * cover;
+            plane[j * v.w + i] *= 1.0 - stops * cover;
         }
     }
 }
@@ -635,15 +643,17 @@ fn blur_disc(plane: f32[>..]&, sums: f32[>..]&, v: View&, radius: f32) {
     let ux: f32 = if slant > 1e-4 { v.shear.x / slant } else { 1.0 };
     let uy: f32 = if slant > 1e-4 { v.shear.y / slant } else { 0.0 };
     let reach = ceil(long) as i64 + 2;
-    let row = SIDE + 2 * reach + 1;
+    let w = v.w;
+    let h = v.h;
+    let row = w + 2 * reach + 1;
     sums.clear();
-    sums.resize(row * SIDE, 0.0);
-    for j in SIDE {
+    sums.resize(row * h, 0.0);
+    for j in h {
         var run: f32 = 0.0;
         sums[j * row] = 0.0;
         for k in row - 1 {
-            let i = clamp(k - reach, 0, SIDE - 1);
-            run += plane[j * SIDE + i];
+            let i = clamp(k - reach, 0, w - 1);
+            run += plane[j * w + i];
             sums[j * row + k + 1] = run;
         }
     }
@@ -670,17 +680,17 @@ fn blur_disc(plane: f32[>..]&, sums: f32[>..]&, v: View&, radius: f32) {
     }
     guard area > 0.0 else { return; }
     let scale = 1.0 / area;
-    for j in SIDE {
-        for i in SIDE {
+    for j in h {
+        for i in w {
             var total: f32 = 0.0;
             for r, n in rows {
-                let jj = clamp(j + r, 0, SIDE - 1);
+                let jj = clamp(j + r, 0, h - 1);
                 let base = jj * row;
                 let lo = mids[n] - halves[n] + (i + reach) + 0.5;
                 let hi = mids[n] + halves[n] + (i + reach) + 0.5;
                 total += sum_at(sums, base, hi) - sum_at(sums, base, lo);
             }
-            plane[j * SIDE + i] = total * scale;
+            plane[j * w + i] = total * scale;
         }
     }
 }
@@ -693,37 +703,40 @@ fn sum_at(sums: f32[>..]&, base: i64, x: f32) -> f32 {
 }
 
 // Each level after the first the one before averaged two by two.
-fn shrink_levels(out: u8[>..]&) {
+fn shrink_levels(out: u8[>..]&, w0: i64, h0: i64) {
     var from = 0;
-    var size = SIDE;
-    for level in 1..MIPS {
-        let to = from + size * size * 4;
-        let half = size / 2;
-        for y in half {
-            for x in half {
+    var w = w0;
+    var h = h0;
+    for level in 1..mips_of(w0, h0) {
+        let to = from + w * h * 4;
+        let hw = w / 2;
+        let hh = h / 2;
+        for y in hh {
+            for x in hw {
                 for c in 4 {
-                    let a = out[from + ((2 * y) * size + 2 * x) * 4 + c] as i64;
-                    let b = out[from + ((2 * y) * size + 2 * x + 1) * 4 + c] as i64;
-                    let e = out[from + ((2 * y + 1) * size + 2 * x) * 4 + c] as i64;
-                    let f = out[from + ((2 * y + 1) * size + 2 * x + 1) * 4 + c] as i64;
-                    out[to + (y * half + x) * 4 + c] = ((a + b + e + f + 2) / 4) as u8;
+                    let a = out[from + ((2 * y) * w + 2 * x) * 4 + c] as i64;
+                    let b = out[from + ((2 * y) * w + 2 * x + 1) * 4 + c] as i64;
+                    let e = out[from + ((2 * y + 1) * w + 2 * x) * 4 + c] as i64;
+                    let f = out[from + ((2 * y + 1) * w + 2 * x + 1) * 4 + c] as i64;
+                    out[to + (y * hw + x) * 4 + c] = ((a + b + e + f + 2) / 4) as u8;
                 }
             }
         }
         from = to;
-        size = half;
+        w = hw;
+        h = hh;
     }
 }
 
-// How much of the sun the map lets through on average (a layer, or all four multiplied),
-// for the tests.
-fn passing(out: u8[>..]&, layer: i64) -> f32 {
+// How much of the sun the map of v.w × v.h lets through on average (a layer, or all four
+// multiplied), for the tests.
+fn passing(out: u8[>..]&, layer: i64, v: View&) -> f32 {
     var total: f32 = 0.0;
-    for i in SIDE * SIDE {
-        var v: f32 = 1.0;
-        if layer >= 0 { v = out[i * 4 + layer] / 255.0; }
-        else { for c in 4 { v *= out[i * 4 + c] / 255.0; } }
-        total += v;
+    for i in v.w * v.h {
+        var x: f32 = 1.0;
+        if layer >= 0 { x = out[i * 4 + layer] / 255.0; }
+        else { for c in 4 { x *= out[i * 4 + c] / 255.0; } }
+        total += x;
     }
-    return total / (SIDE * SIDE);
+    return total / (v.w * v.h);
 }

@@ -242,7 +242,9 @@ struct Gpu {
     room:            rooms::Room,   // the room's light on the table (rooms::of, or as tuned)
     room_tuned:      bool,          // room set by a tuner, not taken from the season
     tree_map:        Texture,       // the tree's shadow (trees::draw_map), made with the first bake
-    tree_for:        float4[10],    // what it was baked from (tree_key())
+    tree_for:        float4[11],    // what it was baked from (tree_key())
+    tree_w:          i64,           // its texels across and up
+    tree_h:          i64,
     tree_stale:      bool,          // to bake again before the next draw
     tree_ms:         f64,           // the last bake's time (measuring)
     table_edge:      float4,        // the edge its mesh is made with (tables::Table.edge)
@@ -838,8 +840,8 @@ fn put_room(g: Gpu&) {
     // The leaves' ruffle in a gust as strong as the noises' gusts are (the sines keep theirs).
     let ruffle = if wind_kind == rooms::WIND_SINES { r.wind.w } else { r.wind.w * r.gust.x };
     f.wind = float4 { r.wind.x, r.wind.y, if still { 0.0 } else { wind_time }, ruffle };
-    let span = if on && r.tree.x > 0.5 { rooms::tree_view(r).span } else { 0.0 };
-    let wa = rooms::wind_of(r, wind_kind, wind_time, span);
+    let size = if on && r.tree.x > 0.5 { tree_view_of(g).size } else { float2_0 };
+    let wa = rooms::wind_of(r, wind_kind, wind_time, size);
     f.wind_now = wa.now;
     f.tree_shift = wa.shift;
     f.branches = wa.branches;
@@ -855,23 +857,29 @@ fn put_tree(g: Gpu&, on: bool) {
     let f .= g.frame;
     f.tree = float4_0;
     guard on else { return; }
-    let v = rooms::tree_view(r);
-    let key = tree_key(r);
+    let v = tree_view_of(g);
+    let key = tree_key(g);
     var same = g.tree_map.id != 0;
-    for i in 10 { if !same4(key[i], g.tree_for[i]) { same = false; } }
+    for i in 11 { if !same4(key[i], g.tree_for[i]) { same = false; } }
     if !same { g.tree_stale = true; }
-    f.tree = float4 { v.span, 0.0, v.middle.x, v.middle.y };
+    f.tree = float4 { v.size.x, v.size.y, v.middle.x, v.middle.y };
     let crown = if r.tree.x > 1.5 { max(r.crown_blur, 0.01) } else { 0.0 };
-    f.tree_blur = float4 { v.blur * trees::SIDE / v.span, v.distance, crown, r.crown_fill };
+    f.tree_blur = float4 { v.blur * v.w / v.size.x, v.distance, crown, r.crown_fill };
 }
+
+// How the sun sees the tree: over the whole window with the room on, else cut to the table.
+fn tree_view_of(g: Gpu&) -> trees::View { rooms::tree_view(g.room, g.room_on) }
 
 // The tree's map to bind, or another texture where none is baked: the shaders sample it
 // only when the frame's block says the tree shows.
 fn tree_or_stand_in(g: Gpu&) -> Texture { if g.tree_map.id != 0 { g.tree_map } else { g.crown_map } }
 
 // What the tree's map is baked from.
-fn tree_key(r: rooms::Room) -> float4[10] {
-    return [r.tree, r.crown, r.foliage, r.leaves, r.window, r.panes, r.opening, r.key, float4 { r.tree_blur, 0.0, 0.0, 0.0 }, float4 { r.species, 0.0, 0.0, 0.0 }];
+fn tree_key(g: Gpu&) -> float4[11] {
+    let r = g.room;
+    let v = tree_view_of(g);
+    return [r.tree, r.crown, r.foliage, r.leaves, r.window, r.panes, r.opening, r.key, float4 { r.tree_blur, 0.0, 0.0, 0.0 },
+            float4 { r.species, 0.0, 0.0, 0.0 }, float4 { v.size.x, v.size.y, v.middle.x, v.middle.y }];
 }
 
 // The tree grown and its shadow drawn on the CPU, then put on the GPU with its mips:
@@ -883,22 +891,29 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     let t0 = clock();
     let r = g.room;
     let s = rooms::tree_spec(r);
-    let v = rooms::tree_view(r);
+    let v = tree_view_of(g);
     var map: u8[>..] = [];
     {
         var t = trees::Tree { .. };
         trees::grow(t, s, v);
         trees::draw_map(t, s, v, map);
     }
-    if g.tree_map.id == 0 { g.tree_map = o.gpu_sampled(trees::SIDE, trees::SIDE, trees::MIPS, RGBA8); }
+    if g.tree_map.id != 0 && (g.tree_w != v.w || g.tree_h != v.h) {
+        o.gpu_release(g.tree_map);
+        g.tree_map = Texture { 0 };
+    }
+    if g.tree_map.id == 0 {
+        g.tree_map = o.gpu_sampled(v.w, v.h, trees::mips_of(v.w, v.h), RGBA8);
+        g.tree_w = v.w;
+        g.tree_h = v.h;
+    }
     var at = 0;
-    for level in trees::MIPS {
-        let side = trees::SIDE >> level;
-        let n = side * side * 4;
+    for level in trees::mips_of(v.w, v.h) {
+        let n = (v.w >> level) * (v.h >> level) * 4;
         o.gpu_upload(g.tree_map, level, map[at..at + n]);
         at += n;
     }
-    g.tree_for = tree_key(r);
+    g.tree_for = tree_key(g);
     g.tree_ms = (clock() - t0) * 1000.0;
 }
 
