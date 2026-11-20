@@ -109,6 +109,17 @@ the light is settled (the user, 2026-11-20).
 - The time of day or the light's mood may become a choice in the visuals some day (the
   user, 2026-11-20): to think through, as the settings are getting crowded.
 
+- Dust in the sunbeam, for the home screen (the user, 2026-11-20): motes drifting in the
+  air, bright only where they cross the window's light and dim elsewhere, with the window
+  more in view, out of focus, the board beside it, and the branches swaying. A home
+  screen effect of the high mode, as it animates. A way to make it: a few hundred small
+  camera-facing quads in one instanced draw over the kept image, each mote's light the
+  key's window_light at its place (the same function, so the beam's shape matches the
+  pattern on the table), its size and softness from its distance to the focus (a bokeh
+  disc when out of focus), moved on the CPU or by a closed-form drift in the vertex
+  shader so nothing is uploaded a frame. Depends on the home screen's framing with the
+  window (task 093), which the board on its table doesn't have yet.
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac
