@@ -6,7 +6,8 @@
 // the tree's baked shadow and the noise, K the wind's kind (rooms::WIND_KINDS: sines,
 // noise, still, branches), D the dust in the sunbeam, O the room round the table (its
 // herringbone oak floor and the panelled wall facing the window, model3d::surfaces), V
-// the view of the room from the window's side, F the frame counter in the corner (frames a
+// the view of the room from the window's side, L the wallpaper's tile between style-01's
+// 1.4 m and a real paper's 0.65 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
 // frame so the loop's time is the CPU's and the GPU's, P prints the room as Goose
@@ -500,6 +501,7 @@ fn main() {
         if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
         if gfx::key_pressed("F") { meter.on = !meter.on; }
         if gfx::key_pressed("G") { meter.wait = !meter.wait; }
+        if gfx::key_pressed("L") { g.paper_tile = (if g.paper_tile > 1.0 * surfaces::METRE { 0.65 } else { 1.4 }) * surfaces::METRE; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
         if ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
@@ -542,13 +544,16 @@ fn main() {
             slider(c, "Gust length", room.gust.y, 0.3, 8.0);
             slider(c, "Gust every", room.gust.z, 3.0, 60.0);
             slider(c, "Gust reach", room.gust.w, 0.0, 1.0);
-            heading(c, "The room (O, V)");
+            heading(c, "The room (O, V, L)");
             var shown_surfaces: i64 = if room_on { 1 } else { 0 };
             choice(c, "Floor, wall", shown_surfaces, ["off", "on"]);
             room_on = shown_surfaces == 1;
             var shown_view: i64 = if room_view { 1 } else { 0 };
             choice(c, "View", shown_view, ["board", "room"]);
             room_view = shown_view == 1;
+            ui::layout_row_dynamic(c, ROW, 1);
+            ui::label(c, if g.paper_tile > 1.0 * surfaces::METRE { "Paper tile 1.4 m (L)" } else { "Paper tile 0.65 m (L)" },
+                      ui::TEXT_LEFT);
             slider(c, "Room's exposure", room.room_exposure, 0.5, 4.0);
             slider(c, "Bounce", room.bounce.w, 0.0, 2.0);
             color_sliders(c, "Bounce", room.bounce);
