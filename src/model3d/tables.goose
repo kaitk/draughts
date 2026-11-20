@@ -84,12 +84,13 @@ fn board_wood() -> Table {
     };
 }
 
-// Flame mahogany, two leaves of one log, little alike: deep red-brown, its figure swept
-// into dark flames and golden swirls, the rings and pores faint under it, glossy, worn
-// at the rim, a few dents and scratches (tuned 2026-11-19).
+// Flame mahogany, two leaves of one log, little alike: brown, as the manor concepts'
+// tables (browner since 2026-11-21: the warm light and the tonemap's toe redden it), its
+// figure swept into dark flames and golden swirls, the rings and pores faint under it,
+// glossy, worn at the rim, a few dents and scratches (tuned 2026-11-19).
 fn flame() -> Table {
     return Table {
-        wood:    float4 { 0.4, 0.17, 0.09, 0.1 },
+        wood:    float4 { 0.4, 0.31, 0.26, 0.1 },
         fig:     float4 { 0.2, 0.15, 0.25, 1.0 },
         ring:    float4 { 0.05, 0.3, 0.25, 0.4 },
         model:   2.0,
@@ -98,8 +99,8 @@ fn flame() -> Table {
         planks:  float4 { 40.0, 0.004, 0.0, 1.6 },
         patina:  float4 { 0.5, 0.05, 0.12, 0.3 },
         wear:    float4 { 0.6, 1.1, 0.0, 0.0 },
-        flame:   float4 { 0.8, 0.3, 0.61, 0.15 },
-        finish: looks::Finish { varnish: 0.5, sanding: 0.3, grain: 1.0, rings: 1.0, warmth: 0.15, pickle: 0.0,
+        flame:   float4 { 0.55, 0.3, 0.61, 0.15 },
+        finish: looks::Finish { varnish: 0.5, sanding: 0.3, grain: 1.0, rings: 1.0, warmth: -0.3, pickle: 0.0,
                                 caulk: 1.0 },
         light: float4 { 8.603, 0.192, 0.53, 1.0 },
         coat:  float4 { 0.2, 0.8, 0.25, 0.35 },
