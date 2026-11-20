@@ -91,6 +91,12 @@ pieces; the design boards still set the layout, glass, and controls.
   and 105); `--dump-map out.pgm` writes the tree's map as the sun sees it (the board falls
   on its middle third), P prints the room as Goose for `src/model3d/rooms.goose`. Script
   sweeps of its flags under bash: zsh passes an unquoted `$args` as one word.
+- The room round the table, its herringbone floor and panelling (`model3d::surfaces`):
+  the light tuner's `--room-surfaces on` (O), `--view room` (V), `--eye X,Y,Z,0 --at
+  X,Y,Z,0` for a camera of its own, `--dump-oak PREFIX` for the baked fields at 1:1. The
+  library's window is smaller than the room's plan; for the room's shots pass a 1.1 ×
+  2.5 m one, `--panes 11,12.7,1,0 --opening 3,6,4,0.45 --wall 36,20,-2,2`, and lift
+  `--exposure` to judge the wood (task 104's note, `build/notes/room-oak/`).
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

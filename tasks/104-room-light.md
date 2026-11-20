@@ -146,6 +146,38 @@ the light is settled (the user, 2026-11-20).
   `library-table-01`) with the wind is the home screen's. The settings: Light, Neutral,
   Room, or Sunlit window (epic 107).
 
+- The room's oak in the tuner (2026-11-20): `--room-surfaces on` (key O) shows the
+  library's herringbone floor and panelling round the table, `model3d::surfaces`: the
+  floor, the hall's wall 5.8 m off with its wainscot (stiles, rails, raised and fielded
+  panels with a bevel and an ovolo, skirting, cap) and plain wallpaper, the window's wall
+  panelled up to the sill and open above, and a turned foot under the table. Their oak
+  is the wood bake's (`BAKE_FRAG` with `BAKE_ROOM`, modes 4 and 5): `rings()` with oak's
+  ring-porous early wood, ray fleck as satiny flakes on quarter-sawn faces and dark
+  lenses on flat-sawn ones, calm cathedrals, uneven years, pin knots; then
+  `oak_finish`'s layers: stain deeper in the pores, dark wax in them, amber shellac,
+  the light's ambering, grime; albedo and roughness (0.4 waxed, rougher pores, smoother
+  flakes) with the normal. Two fields of boards, 2048² each (the floor's 20 strips a
+  plank wide over 1.3 m, the wall's ten 24 cm boards over 2.4 m); each plank
+  (`ROOM_FRAG` lays the herringbone, 7 × 42 cm) and each piece of panelling takes its
+  own place in a field, mirrored, with its own tone; planks a few patched, tilted and
+  cupped, joints dark and box-filtered so they fade far off, worn lighter and duller
+  round the table and along the room, waxier along the walls, scratched. Lit by the
+  window's key with its pattern and the tree, the table's shadow solid. V, or
+  `--view room`, looks from the window's side; `--eye X,Y,Z,0 --at X,Y,Z,0` for shots;
+  `--dump-oak PREFIX` writes the fields. Shots: `build/notes/room-oak/index.html`.
+  - Cost on the Mac (M-series): the bake 45 to 48 ms, both fields with their mips, once,
+    the pipelines made first (about 120 ms with a cold shader cache); 85 MiB of
+    textures (4 × 2048² RGBA8 with mips), a phone's 1024² 21 MiB. Only with the room on.
+  - The ngfx build compiles both (`r3d_bake_room`, `r3d_room`) and records them as gfx
+    does; only the tuner, gfx alone, turns the room on, so ngfx's drawing of it is
+    untried.
+  - Short of the references: the library's light leaves the room very dark and orange
+    away from the sun (the shots lift the exposure); the tree's map covers only round
+    the table, so on the far floor and the wall the dapple comes from its clamped edge;
+    the wear reads only faintly; the flakes are a little stroke-like close up; the
+    panels are cleaner than old panelling; the wallpaper is plain; the floor's fields
+    at 85 MiB want halving for anything but the high mode.
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac

@@ -195,6 +195,9 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   (`src/app/app.goose`, `fn run()`), which another directory's root imports
   (`import app from "../app";`); `fn main` stays in each root, as an imported file's
   `main` is ignored.
+- `x.f()` finds `f` in the namespace of x's type: on another package's alias
+  (`mesh::Profile`) write `mesh::line(prof, ...)`, `prof.line(...)` is unknown. A
+  struct literal is all positional or all named, never mixed.
 - A struct field can't default to `T {}` where T has a field with no default; give it a
   built value.
 - A rect from a sum can differ in the last bit from the same rect cut piece by piece, and
