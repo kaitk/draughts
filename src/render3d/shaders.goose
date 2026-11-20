@@ -49,6 +49,8 @@ let FRAME = """
         vec4 light_scatter;
         vec4 dark_scatter;
         vec4 piece_wear;
+        // The room's light (render3d::put_room): x how dark the key's shadow is.
+        vec4 room;
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
         // their radius; each disc x, z, its foot's and its top's height over the table.
         vec4 disc_n;
@@ -412,7 +414,8 @@ let LIT_FRAG = """
             float facing = smoothstep(-0.05, 0.2, dot(n, light_dir.xyz));
             s = min(s, mix(1.0, discs_shadow(p, p + n * 0.01), facing));
         }
-        return s;
+        // A broad key (winter's snowy doors) casts a fainter shadow.
+        return mix(1.0, s, room.x);
     }
 
     // One hardware-compared tap of the key's shadow at q (its bilinear edge only).
@@ -1432,6 +1435,7 @@ let TABLE_FRAG = """
             vec2 ds = discs_shadow(p.xz);
             vis *= ds.x;
             ao *= ds.y;
+            vis = mix(1.0, vis, room.x);
         }
         vec3 irr = sh_eval(n) * params.z * mix(1.0, lit, 0.5);
         vec3 wood = albedo * (diff / PI * light * vis + irr * ao);

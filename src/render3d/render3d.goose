@@ -46,6 +46,7 @@ struct Frame {
     light_scatter:   float4,
     dark_scatter:    float4,
     piece_wear:      float4,
+    room:            float4,
     disc_n:          float4,
     discs:           float4[MAX_DISCS],
 }
@@ -224,6 +225,8 @@ struct Gpu {
     table_side:      i64,           // the side its maps are made at, 0 none
     table_baked:     bool,          // its maps hold table_spec's wood
     table_spec:      tables::Table, // the table shown (tables::BOARD_WOOD.., or as tuned)
+    room:            rooms::Room,   // the room's light on the table (rooms::of, or as tuned)
+    room_tuned:      bool,          // room set by a tuner, not taken from the season
     table_edge:      float4,        // the edge its mesh is made with (tables::Table.edge)
     table_vb:        Buffer,
     table_ib:        Buffer,
@@ -619,6 +622,25 @@ fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
     f.dark_scatter = model3d::linear4(t.dark_scatter);
     f.piece_wear = t.piece_wear;
     board_scatter(g);
+    f.room = float4 { 1.0, 0.0, 0.0, 0.0 };
+    put_room(g);
+    g.shadow_dirty = true;
+}
+
+// The room's light where the board stands on its table (rooms::Room): its key in place
+// of the look's, its fill and walls as the ambient's harmonics, the look's exposure kept.
+// Over the photograph or the fade the look's own light stays.
+fn put_room(g: Gpu&) {
+    guard g.table && g.look >= 0 else { return; }
+    if !g.room_tuned { g.room = rooms::of(g.photo_kind); }
+    let r = g.room;
+    let t = look(g, g.look);
+    light(g);
+    let f .= g.frame;
+    f.light_color = model3d::f4(rooms::key_light(r), 0.0);
+    f.sh = rooms::harmonics(r);
+    f.params = float4 { t.ambient.x * r.exposure, f.params.y, 1.0, f.params.w };
+    f.room = float4 { r.key.w, 0.0, 0.0, 0.0 };
     g.shadow_dirty = true;
 }
 
@@ -643,9 +665,14 @@ fn board_scatter(g: Gpu&) {
 // map's projection.
 fn light(g: Gpu&) {
     let t = look(g, g.look);
-    let l = model3d::spin(normalize(float3 { t.key.x, t.key.y, t.key.z }), g.turn);
+    var key = float4 { t.key.x, t.key.y, t.key.z, t.key.w };
+    if g.table {
+        let d = rooms::toward(g.room.key.x, g.room.key.y);
+        key = float4 { d.x, d.y, d.z, g.room.key.z };
+    }
+    let l = model3d::spin(normalize(float3 { key.x, key.y, key.z }), g.turn);
     g.frame.light_view_proj = plan_light(l);
-    g.frame.light_dir = model3d::f4(l, t.key.w);
+    g.frame.light_dir = model3d::f4(l, key.w);
 }
 
 // The board's half width the shadow map covers: the frame's outer edge (mesh's 4.6) and
