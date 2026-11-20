@@ -37,6 +37,25 @@ or left out), only the floor where it shows.
   the crown, as in the autumn photographs (`library-menu-01`'s flare).
 - Not yet: the floor and rug (the game's), the room's far walls, other seasons.
 
+## Images to make first (a ChatGPT session of its own, in parallel, the user, 2026-11-20)
+
+The floor's and the window wall's look come from images before any modelling; saved in
+`design/manor/` with their prompts in `prompts.txt`, the ones the app uses cut to size
+and put in git once chosen (`AGENTS.md`'s rule on images):
+
+- The simplified concept of the home shot from its camera: the window niche, curtains,
+  wainscot and wallpaper, the round table with the board, the floor's edge (step 3).
+- The wallpaper: a tileable swatch of `style-01`'s muted gold-brown floral on a dark
+  blue-grey ground (task 093's surfaces), straight on, even light.
+- The wainscot: a panel of the dark panelled wood, straight on, to model or bake from.
+- The window: its frame, bars, white sills, shutters and the niche's reveals, in
+  elevation, for proportions and materials.
+- The lace curtain: a straight-on swatch of its pattern, for a cut-out texture.
+- Outside: the park seen from the window's height, in perspective, autumn, the low sun
+  in the crown, for the blurred picture behind the window.
+- For the game's views later: the herringbone (kalasaba) parquet, straight on, and the
+  rug (`style-01`'s), straight on.
+
 ## Acceptance criteria
 
 - [ ] A simplified concept of the home shot chosen, saved in `design/manor/`
