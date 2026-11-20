@@ -62,6 +62,12 @@ fn gpu_mipped(own: Own&, w: i64, h: i64, format: i32, mips: i64) -> Texture {
     return gfx::texture(gfx::TextureDesc { format: format, usage: gfx::COLOR_TARGET | gfx::SAMPLED,
                                            width: w as i32, height: h as i32, mips: mips as i32 });
 }
+// A texture only sampled, with `mips` levels, filled by gpu_upload.
+fn gpu_sampled(own: Own&, w: i64, h: i64, mips: i64) -> Texture {
+    return gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::SAMPLED, width: w as i32, height: h as i32,
+                                           mips: mips as i32 });
+}
+fn gpu_upload(own: Own&, t: Texture, mip: i64, bytes: const u8[:]) { gfx::update_texture(t, gfx::Region { mip: mip as i32 }, bytes); }
 
 // The photograph's pipelines made, in a pass that draws nothing (theme_step): goose_gfx
 // makes a pipeline when it is first bound in a pass.
@@ -111,6 +117,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
     gfx::bind_texture(gfx::FRAGMENT, 4, g.shadow_map, g.compare);
     gfx::bind_texture(gfx::FRAGMENT, 5, g.occ_map, g.linear);
     gfx::bind_texture(gfx::FRAGMENT, 6, g.crown_map, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 7, render3d::tree_or_stand_in(g), g.linear);
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     draw_meshes(own, g, 0.0);
@@ -133,6 +140,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 3, g.table_wear, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 5, render3d::tree_or_stand_in(g), g.linear);
         gfx::uniforms(gfx::VERTEX, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::table_block(g));
@@ -383,21 +391,21 @@ fn set_aa(own: Own&, g: render3d::Gpu&, aa: i32, samples: i32 = SAMPLES) {
 // SHADOW_MANY) and the pieces in one material (render3d::PIECES_..).
 fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
     if look == render3d::SHADOW_4 {
-        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG);
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG);
     }
     if look == render3d::SHADOW_16 {
-        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG);
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG);
     }
-    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::LIT_FRAG);
+    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIGHT_FN, shaders::LIT_FRAG);
 }
 
 // The lit pass's pipelines, the board's and a fading piece's, their shadow filtered as
@@ -569,7 +577,7 @@ fn setup(own: Own&, g: render3d::Gpu&, samples: i32 = SAMPLES, look: i32 = rende
     let quad_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::QUAD_VERT);
     lit_pipelines(own, g, look);
     g.table_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
-                                embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIGHT_FN, shaders::TABLE_FRAG),
+                                embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::LIGHT_FN, shaders::TABLE_FRAG),
                                 gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
                                                     blend: gfx::BLEND_PREMULTIPLIED });
     // Both faces into the shadow map: with back faces culled the light leaks through where
@@ -752,7 +760,7 @@ fn warm(own: Own&, g: render3d::Gpu&, k: i64) {
 // Everything setup() and the frames made given back (the app's board back to flat): the
 // targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
 fn release(own: Own&, g: render3d::Gpu&) {
-    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.color,
+    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.tree_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     own.warm_kept, g.edges, g.weights, g.area, g.search];
     for t in textures { if t.id != 0 { gfx::release(t); } }

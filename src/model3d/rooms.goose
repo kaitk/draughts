@@ -47,8 +47,19 @@ struct Room {
     // gaps between them (0.4 many, 0.7 few), z how soft a fleck's edge, w how much their
     // own shadows show where the sky is open.
     twigs: float4 = float4 { 4.0, 0.55, 0.06, 0.35 },
-    // The wind in the trees: x how far the leaves' shadows sway (in clumps), y how fast.
-    wind: float4 = float4 { 0.12, 1.0, 0.0, 0.0 },
+    // The wind in the trees: x how far the leaves' shadows sway (in clumps; a tree's limbs
+    // sway x world units, its leaves z times more), y how fast.
+    wind: float4 = float4 { 0.12, 1.0, 3.0, 0.0 },
+    // The tree outside, its shadow baked (task 105, trees.goose) in place of the leaves'
+    // noise above: x 1 the tree, 0 the noise; y its seed; z its trunk's height; w how many
+    // of its leaves it has (0 bare, 1 full).
+    tree: float4 = float4 { 1.0, 6.0, 120.0, 1.5 },
+    // x, y the trunk's foot along the wall and up from where the board's middle sees the
+    // sun through it; z how crooked its limbs (0 straight, 1 an oak's); w how its twigs hang.
+    crown: float4 = float4 { 12.0, -90.0, 0.5, 0.3 },
+    // A leaf: x its length, y its width against it, z how much of the sun it lets through;
+    // w how far beyond the window the trunk stands.
+    foliage: float4 = float4 { 0.6, 0.7, 0.25, 8.0 },
 }
 
 // The library on the garden side, south-west, a mid-October afternoon
@@ -86,8 +97,8 @@ let WINTER = Room {
 };
 
 // The same hall on a clear January day: the sun at its winter height, about 8° (58.5° N),
-// pale gold, long shadows; the snow outside a strong cold fill from the doors; bare
-// trees, so the branches' shadows are thin.
+// pale gold, long shadows; the snow outside a strong cold fill from the doors; a bare
+// crooked oak, so only its branches cast shadows.
 let WINTER_SUN = Room {
     key:        float4 { 25.0, 8.0, 6.0, 0.85 },
     key_color:  float4 { 1.0, 0.87, 0.72, 0.0 },
@@ -100,11 +111,14 @@ let WINTER_SUN = Room {
     lamp_color: float4_0,
     opening:    float4 { 2.0, 5.0, 3.0, 0.6 },
     leaves:     float4 { 0.35, 0.8, 150.0, 0.12 },
+    tree:       float4 { 1.0, 6.0, 120.0, 0.0 },
+    crown:      float4 { 12.0, -90.0, 1.0, 0.3 },
     ..
 };
 
 // The upper hall on a May morning (prompts.txt's 7): low clear sun slanting in from the
-// left, near white; a cool sky, a little green from the trees, pale walls.
+// left, near white; a cool sky, a little green from the trees, pale walls; the tree's
+// young leaves small and sparse, letting more of the sun through.
 let SPRING = Room {
     key:        float4 { 35.0, 25.0, 5.0, 0.85 },
     key_color:  float4 { 1.0, 0.96, 0.88, 0.0 },
@@ -116,11 +130,14 @@ let SPRING = Room {
     lamp:       float4_0,
     lamp_color: float4_0,
     leaves:     float4 { 0.4, 0.6, 100.0, 0.15 },
+    tree:       float4 { 1.0, 5.0, 120.0, 0.7 },
+    foliage:    float4 { 0.45, 0.6, 0.35, 8.0 },
     ..
 };
 
 // The season's photograph, an evening by the sea: a low rose-gold sun from the left and
-// behind, a violet-blue sky, warm walls; brighter in the shade than autumn's library.
+// behind, a violet-blue sky, warm walls; brighter in the shade than autumn's library; the
+// tree in full leaf.
 let SUMMER = Room {
     key:        float4 { 40.0, 14.0, 7.0, 0.85 },
     key_color:  float4 { 1.0, 0.82, 0.68, 0.0 },
@@ -131,6 +148,8 @@ let SUMMER = Room {
     floor:      float4 { 0.45, 0.3, 0.22, 0.12 },
     lamp:       float4_0,
     lamp_color: float4_0,
+    tree:       float4 { 1.0, 6.0, 120.0, 2.0 },
+    foliage:    float4 { 0.7, 0.7, 0.2, 8.0 },
     ..
 };
 
@@ -209,4 +228,49 @@ fn harmonics(r: Room) -> float4[9] {
     add_lobe(sh, toward(r.fill.x, r.fill.y), color_of(r.fill_color), r.fill.z, r.fill.w);
     if r.lamp.z > 0.0 { add_lobe(sh, toward(r.lamp.x, r.lamp.y), color_of(r.lamp_color), r.lamp.z, 0.3); }
     return sh;
+}
+
+// The tree's make (trees::Spec) from the room's tree, crown and foliage.
+fn tree_spec(r: Room) -> trees::Spec {
+    return trees::Spec { r.tree.y, r.tree.z, r.tree.w, r.foliage.x, r.foliage.y, r.foliage.z,
+                         r.crown.x, r.crown.y, r.crown.z, r.crown.w };
+}
+
+// How far from the board's middle the table, the board and the pieces reach (mesh's
+// table, TABLE_R about TABLE_Z): the tree's map covers only what falls on them.
+let TABLE_REACH: f32 = 21.0;
+
+// How the sun sees the tree through the window (trees::View), as shaders::LIGHT_FN's
+// window_light traces it: the key's slant in the window's frame (which turns with the
+// board, the light and the wall together), and the map's square over the opening as the
+// key carries it out to the tree, with room for the blur and the sway.
+fn tree_view(r: Room) -> trees::View {
+    let l = toward(r.key.x, r.key.y);
+    let h = normalize(float2 { l.x, l.z });
+    let a = radians(r.window.y);
+    let nw = float2 { cos(a) * h.x - sin(a) * h.y, sin(a) * h.x + cos(a) * h.y };
+    let along = float2 { -nw.y, nw.x };
+    let lw = float2 { l.x, l.z };
+    let facing = max(dot(lw, nw), 0.05);
+    let shear = float2 { dot(lw, along) / facing, l.y / facing };
+    // The opening as the key carries it out to the tree, cut to what reaches the table.
+    let size = float2 { r.opening.x * r.panes.x, r.opening.y * r.panes.y };
+    let y0 = r.window.z - shear.y * r.window.x;
+    let reach_x = TABLE_REACH * sqrt(1.0 + shear.x * shear.x);
+    let reach_y = 2.0 + abs(shear.y) * TABLE_REACH;
+    var x0 = max(r.window.w - size.x * 0.5, -reach_x);
+    var x1 = min(r.window.w + size.x * 0.5, reach_x);
+    var y1 = min(y0 + size.y, reach_y);
+    var ya = max(y0, -reach_y);
+    if x1 <= x0 || y1 <= ya {
+        x0 = r.window.w - size.x * 0.5;
+        x1 = r.window.w + size.x * 0.5;
+        ya = y0;
+        y1 = y0 + size.y;
+    }
+    let middle = float2 { (x0 + x1) * 0.5, (ya + y1) * 0.5 };
+    let span = max(x1 - x0, y1 - ya) + 8.0;
+    let sun: f32 = 0.0093;
+    return trees::View { shear, middle, span, (r.window.x + r.foliage.w) / facing, facing,
+                         sun * (1.0 + r.leaves.w), -r.foliage.w };
 }

@@ -62,6 +62,13 @@ let FRAME = """
         // threshold), z how soft each fleck's edge, w how much their shadows show in the open.
         vec4 twigs;
         vec4 wind;           // the leaves' sway: x how far, y how fast, z the seconds
+        // The tree outside, its shadow baked into tree_map (render3d::put_tree): x the
+        // map's side in world units (0 no tree: the leaves' noise), zw its middle; its
+        // layers' sway (the limbs, the near, middle and far leaves); x the blur's texels
+        // a unit of distance, y the board middle's distance from the trunk's plane.
+        vec4 tree;
+        vec4 tree_sway;
+        vec4 tree_blur;
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
         // their radius; each disc x, z, its foot's and its top's height over the table.
         vec4 disc_n;
@@ -84,6 +91,7 @@ let FRAME = """
     """;
 
 let VS_SET = "#define FRAME_SET 1\n";
+
 let FS_SET = "#define FRAME_SET 3\n";
 
 // LIT_FRAG's shadow in 4 taps or in 16, not 9 (shadow()): a phone's and a desktop's
@@ -260,6 +268,27 @@ let LIGHT_FN = """
         return max(r, vec3(0.0));
     }
 
+    // How much of the key the tree outside lets through to p (trees.goose): p carried
+    // along the key onto the map, which holds the tree as the sun sees it, blurred by the
+    // sun's disc at each layer's distance, so its gaps are round flecks. Farther from the
+    // window than the board's middle, its mips blur it more. Each layer sways on its own.
+    float tree_light(vec3 p, vec3 l, vec2 nw, vec2 along, float toward) {
+        float back = dot(p.xz, nw) / toward;
+        vec2 m = vec2(dot(p.xz, along) - dot(l.xz, along) * back, p.y - l.y * back);
+        vec2 uv = (m - tree.zw) / tree.x + 0.5;
+        float more = max(back * back - 2.0 * tree_blur.y * back, 0.0);
+        float lod = 0.5 * log2(max(more * tree_blur.x * tree_blur.x, 1.0));
+        float tw = wind.z * wind.y;
+        vec2 gust = vec2(sin(tw * 0.9 + m.y * 0.05) + 0.5 * sin(tw * 2.3 + m.x * 0.07),
+                         0.6 * cos(tw * 0.7 + m.x * 0.05) + 0.3 * sin(tw * 1.9 + m.y * 0.09)) / tree.x;
+        vec2 flutter = vec2(sin(tw * 3.1 + m.y * 0.8), cos(tw * 2.7 + m.x * 0.8)) * (0.3 / tree.x);
+        float wood = textureLod(tree_map, uv + gust * tree_sway.x, lod).a;
+        float near = textureLod(tree_map, uv + (gust + flutter) * tree_sway.y, lod).r;
+        float middle = textureLod(tree_map, uv + (gust - flutter) * tree_sway.z, lod).g;
+        float far = textureLod(tree_map, uv + (gust + flutter.yx) * tree_sway.w, lod).b;
+        return wood * near * middle * far;
+    }
+
     float window_hash(vec2 p) {
         vec3 p3 = fract(vec3(p.xyx) * 0.1031);
         p3 += dot(p3, p3.yzx + 33.33);
@@ -302,8 +331,11 @@ let LIGHT_FN = """
             float edge = size.x * 0.5 - opening.z + 0.6 * sin(w.y * 0.35) + 0.3 * sin(w.y * 0.9 + 1.3);
             lit *= mix(1.0, opening.w, smoothstep(edge - 2.0 * soft, edge + 2.0 * soft, w.x));
         }
-        // The leaves outside: clumps of noise, rounder and softer the farther they are.
-        if (leaves.x > 0.0) {
+        // The leaves outside: the tree's baked shadow, or clumps of noise, rounder and
+        // softer the farther they are.
+        if (tree.x > 0.0) {
+            lit *= tree_light(p, l, nw, along, toward);
+        } else if (leaves.x > 0.0) {
             float tl = t + leaves.z / toward;
             vec3 ql = p + l * tl;
             vec2 lw = vec2(dot(ql.xz, along), ql.y) * leaves.y;
@@ -336,7 +368,8 @@ let LIGHT_FN = """
     }
     """;
 
-let LIT_FRAG = """
+// LIT_FRAG's inputs and textures, before LIGHT_FN, which reads the tree's map.
+let LIT_HEAD = """
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
     layout(location = 2) in vec2 v_uv;
@@ -356,6 +389,11 @@ let LIT_FRAG = """
     layout(set = 2, binding = 5) uniform sampler2D field_occ;
     // The crown's distance over ±CROWN_SPAN of the piece's radius (CROWN_FRAG).
     layout(set = 2, binding = 6) uniform sampler2D crown_map;
+    // The tree outside as the sun sees it (trees::draw_map).
+    layout(set = 2, binding = 7) uniform sampler2D tree_map;
+    """;
+
+let LIT_FRAG = """
     const float CROWN_SPAN = 0.6;       // render3d::crown_map
 
     const float FRAME_SPAN = 10.4;   // the frame map's side in world units
@@ -1289,7 +1327,8 @@ let TABLE_VERT = """
 // board's shadow on it and its occlusion near the board's foot are worked out from the
 // board's outline (no catcher over it); its light falls off away from the board
 // (Table.pool), as a lamp's or a window's would.
-let TABLE_FRAG = """
+// TABLE_FRAG's inputs and textures, before LIGHT_FN, which reads the tree's map.
+let TABLE_HEAD = """
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
     layout(location = 2) in vec2 v_uv;
@@ -1303,6 +1342,10 @@ let TABLE_FRAG = """
     // normal's x and z, the dents'.
     layout(set = 2, binding = 3) uniform sampler2D wear_map;
     layout(set = 2, binding = 4) uniform sampler2D wear_normal;
+    layout(set = 2, binding = 5) uniform sampler2D tree_map;
+    """;
+
+let TABLE_FRAG = """
     // tables::Table's. pool: x the light's reach round the board (world units), y how dim
     // it is beyond, z how dark the edge's underside goes, w how strong the board's
     // reflection; coat: x the polish's roughness on the edge (the top's is baked), y how

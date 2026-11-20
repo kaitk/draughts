@@ -60,6 +60,12 @@ fn gpu_mipped(own: Own&, w: i64, h: i64, format: i32, mips: i64) -> Texture {
     return nx::texture(ngfx::TextureDesc { format: format, usage: ngfx::COLOR_TARGET | ngfx::SAMPLED,
                                              width: w as i32, height: h as i32, mips: mips as i32 });
 }
+// A texture only sampled, with `mips` levels, filled by gpu_upload.
+fn gpu_sampled(own: Own&, w: i64, h: i64, mips: i64) -> Texture {
+    return nx::texture(ngfx::TextureDesc { format: ngfx::RGBA8, usage: ngfx::SAMPLED, width: w as i32, height: h as i32,
+                                             mips: mips as i32 });
+}
+fn gpu_upload(own: Own&, t: Texture, mip: i64, bytes: const u8[:]) { nx::update_texture(t, ngfx::Region { mip: mip as i32 }, bytes); }
 
 // The photograph's pipelines made ahead for its target (theme_step).
 fn photo_pipelines(own: Own&, g: Gpu&) {
@@ -114,6 +120,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 2, g.frame_albedo, g.aniso);
         slot(t, 3, g.table_wear, g.aniso);
         slot(t, 4, g.table_wear_n, g.aniso);
+        slot(t, 5, render3d::tree_or_stand_in(g), g.linear);
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
 
@@ -628,7 +635,7 @@ fn antialias(own: Own&, g: Gpu&, target: nx::Texture, size: int2) {
 }
 
 // The lit module's root (r3d_lit.slang's header): the frame, the instances, the vertices,
-// and its seven textures.
+// and its eight textures.
 fn lit_root(own: Own&, g: Gpu&, f: u64, vb: nx::Buffer) -> Root {
     var r = no_root();
     r.frame = f;
@@ -641,6 +648,7 @@ fn lit_root(own: Own&, g: Gpu&, f: u64, vb: nx::Buffer) -> Root {
     slot(r, 4, g.shadow_map, g.compare);
     slot(r, 5, g.occ_map, g.linear);
     slot(r, 6, g.crown_map, g.linear);
+    slot(r, 7, render3d::tree_or_stand_in(g), g.linear);
     return r;
 }
 
@@ -808,7 +816,7 @@ fn warm(own: Own&, g: Gpu&, k: i64) {
 fn release(own: Own&, g: Gpu&) {
     ngfx::flush();
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map,
-                    g.crown_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
+                    g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,

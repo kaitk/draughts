@@ -53,6 +53,9 @@ struct Frame {
     leaves:          float4,
     twigs:           float4,
     wind:            float4,
+    tree:            float4,
+    tree_sway:       float4,
+    tree_blur:       float4,
     disc_n:          float4,
     discs:           float4[MAX_DISCS],
 }
@@ -233,6 +236,10 @@ struct Gpu {
     table_spec:      tables::Table, // the table shown (tables::BOARD_WOOD.., or as tuned)
     room:            rooms::Room,   // the room's light on the table (rooms::of, or as tuned)
     room_tuned:      bool,          // room set by a tuner, not taken from the season
+    tree_map:        Texture,       // the tree's shadow (trees::draw_map), made with the first bake
+    tree_for:        float4[10],    // what it was baked from (tree_key())
+    tree_stale:      bool,          // to bake again before the next draw
+    tree_ms:         f64,           // the last bake's time (measuring)
     table_edge:      float4,        // the edge its mesh is made with (tables::Table.edge)
     table_vb:        Buffer,
     table_ib:        Buffer,
@@ -662,7 +669,65 @@ fn put_room(g: Gpu&) {
     f.leaves = r.leaves;
     f.twigs = r.twigs;
     f.wind = float4 { r.wind.x, r.wind.y, wind_time, 0.0 };
+    put_tree(g, on && r.tree.x > 0.5);
     g.shadow_dirty = true;
+}
+
+// The tree's part of the frame's block (shaders::LIGHT_FN's tree_light), and whether its
+// map is to be baked again: only when what it is baked from changed.
+fn put_tree(g: Gpu&, on: bool) {
+    let r = g.room;
+    let f .= g.frame;
+    f.tree = float4_0;
+    guard on else { return; }
+    let v = rooms::tree_view(r);
+    let key = tree_key(r);
+    var same = g.tree_map.id != 0;
+    for i in 10 { if !same4(key[i], g.tree_for[i]) { same = false; } }
+    if !same { g.tree_stale = true; }
+    f.tree = float4 { v.span, 0.0, v.middle.x, v.middle.y };
+    // The limbs sway the wind's x, the twigs and leaves more, the farther the more.
+    let w = r.wind.x;
+    let more = r.wind.z;
+    f.tree_sway = float4 { w, w * more, w * more * 1.25, w * more * 1.5 };
+    f.tree_blur = float4 { v.blur * trees::SIDE / v.span, v.distance, 0.0, 0.0 };
+}
+
+// The tree's map to bind, or another texture where none is baked: the shaders sample it
+// only when the frame's block says the tree shows.
+fn tree_or_stand_in(g: Gpu&) -> Texture { if g.tree_map.id != 0 { g.tree_map } else { g.crown_map } }
+
+// What the tree's map is baked from.
+fn tree_key(r: rooms::Room) -> float4[10] {
+    return [r.tree, r.crown, r.foliage, r.leaves, r.window, r.panes, r.opening, r.key, float4_0, float4_0];
+}
+
+// The tree grown and its shadow drawn on the CPU, then put on the GPU with its mips:
+// before a draw, after put_room() found it stale. Tens of milliseconds, never in the
+// frame loop's steady state.
+fn bake_tree<O>(o: O&, g: Gpu&) {
+    guard g.tree_stale else { return; }
+    g.tree_stale = false;
+    let t0 = clock();
+    let r = g.room;
+    let s = rooms::tree_spec(r);
+    let v = rooms::tree_view(r);
+    var map: u8[>..] = [];
+    {
+        var t = default<trees::Tree>();
+        trees::grow(t, s, v);
+        trees::draw_map(t, s, v, map);
+    }
+    if g.tree_map.id == 0 { g.tree_map = o.gpu_sampled(trees::SIDE, trees::SIDE, trees::MIPS); }
+    var at = 0;
+    for level in trees::MIPS {
+        let side = trees::SIDE >> level;
+        let n = side * side * 4;
+        o.gpu_upload(g.tree_map, level, map[at..at + n]);
+        at += n;
+    }
+    g.tree_for = tree_key(r);
+    g.tree_ms = (clock() - t0) * 1000.0;
 }
 
 // Whether the board may scatter light through its stone: on a desktop only (set at
@@ -875,6 +940,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
     g.frame.eye = model3d::f4(eye, 1.0);
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
     keep_backdrop(o, g, size);
+    bake_tree(o, g);
     if g.shadow_dirty || shadow_every {
         o.shadow_pass(g);
         g.shadow_dirty = false;

@@ -2,13 +2,15 @@
 // (rooms::LIBRARY..) and its values on sliders: the sun's direction, height, color and
 // strength, how dark its shadow is, the window's sky, the walls, and the window's pattern
 // with its bars, curtain, and the trees' leaves. Drag to orbit, scroll to zoom, R resets
-// the camera, W switches the pattern (its leaves swaying in the wind), P prints the room as Goose (and saves it in
+// the camera, W switches the pattern (its leaves swaying in the wind), T the leaves between
+// the tree's baked shadow and the noise, P prints the room as Goose (and saves it in
 // build/light-tune.txt).
 //
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
-//       [--table board|flame] [--window on|off] [--azimuth DEG] [--sun-height DEG]
+//       [--table board|flame] [--window on|off] [--leaves tree|noise] [--seed N]
+//       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)] [--azimuth DEG] [--sun-height DEG]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 
 import std;
@@ -139,6 +141,23 @@ fn pick(argv: u8[:][>..]&, name: const u8[:], names: const u8[:][], otherwise: i
     return otherwise;
 }
 
+// The flag's four numbers, `x,y,z,w`, or `otherwise`.
+fn four(argv: u8[:][>..]&, name: const u8[:], otherwise: float4) -> float4 {
+    let at = flag_value(argv, name);
+    guard at > 0 else { return otherwise; }
+    var v:    f32[4]      = [otherwise.x, otherwise.y, otherwise.z, otherwise.w];
+    var rest: const u8[:] = argv[at];
+    for i in 4 {
+        let part, after, more = split_once(rest, ",");
+        let x, ok = parse_flt(part);
+        guard ok else { abort(str(name, ": four numbers, x,y,z,w")); }
+        v[i] = x as f32;
+        guard more else { break; }
+        rest = after;
+    }
+    return float4 { v[0], v[1], v[2], v[3] };
+}
+
 // The flag's number, or `otherwise`.
 fn number(argv: u8[:][>..]&, name: const u8[:], otherwise: f32) -> f32 {
     let at = flag_value(argv, name);
@@ -195,6 +214,9 @@ fn report(r: rooms::Room, take: i64) {
     room_line(out, "leaves:    ", r.leaves);
     room_line(out, "twigs:     ", r.twigs);
     room_line(out, "wind:      ", r.wind);
+    room_line(out, "tree:      ", r.tree);
+    room_line(out, "crown:     ", r.crown);
+    room_line(out, "foliage:   ", r.foliage);
     out.append("};");
     print(out);
     // Also kept in a file, as a window's tool has no terminal to read.
@@ -241,6 +263,14 @@ fn main() {
     var room = rooms::get(room_take);
     room.key.x = number(argv, "--azimuth", room.key.x);
     room.key.y = number(argv, "--sun-height", room.key.y);
+    let shade_at = flag_value(argv, "--leaves");
+    if shade_at > 0 { room.tree.x = if argv[shade_at] == "noise" { 0.0 } else { 1.0 }; }
+    room.tree.y = number(argv, "--seed", room.tree.y);
+    room.tree = four(argv, "--tree", room.tree);
+    room.crown = four(argv, "--crown", room.crown);
+    room.foliage = four(argv, "--foliage", room.foliage);
+    room.leaves = four(argv, "--trees", room.leaves);
+    room.wind = four(argv, "--wind", room.wind);
     g.room = room;
     g.room_tuned = true;
     render3d::window_pattern = pattern == 1;
@@ -263,11 +293,13 @@ fn main() {
         frames++;
         if shot > 0 && frames == 6 {
             guard gfx::screenshot(argv[shot]) else { abort(str("could not save ", argv[shot])); }
+            if g.tree_ms > 0.0 { print("the tree baked in ", g.tree_ms, " ms"); }
             break;
         }
         ui::input_from_gfx(c);
         var print_it = gfx::key_pressed("P");
         if gfx::key_pressed("W") { pattern = 1 - pattern; }
+        if gfx::key_pressed("T") { room.tree.x = 1.0 - room.tree.x; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
         if ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
@@ -313,13 +345,35 @@ fn main() {
             slider(c, "Leaves", room.leaves.x, 0.0, 1.0);
             slider(c, "Leaf size", room.leaves.y, 0.02, 1.0);
             slider(c, "Trees away", room.leaves.z, 0.0, 400.0);
-            slider(c, "Leaf blur", room.leaves.w, 0.0, 1.0);
+            slider(c, "Leaf blur", room.leaves.w, 0.0, 2.0);
             slider(c, "Single leaves", room.twigs.x, 0.0, 12.0);
             slider(c, "Leaf gaps few", room.twigs.y, 0.2, 0.9);
             slider(c, "Fleck blur", room.twigs.z, 0.005, 0.3);
             slider(c, "In the open", room.twigs.w, 0.0, 1.0);
             slider(c, "Wind", room.wind.x, 0.0, 0.6);
             slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
+            heading(c, "The tree (T: tree or noise)");
+            var shade = if room.tree.x > 0.5 { 1 } else { 0 };
+            choice(c, "Leaves by", shade, ["noise", "tree"]);
+            room.tree.x = shade;
+            var seed = room.tree.y as i64;
+            count(c, "Seed", seed, 0, 99);
+            room.tree.y = seed;
+            slider(c, "Trunk high", room.tree.z, 40.0, 600.0);
+            slider(c, "Leafy", room.tree.w, 0.0, 2.0);
+            slider(c, "Trunk along", room.crown.x, -100.0, 100.0);
+            slider(c, "Trunk foot", room.crown.y, -400.0, 0.0);
+            slider(c, "Crooked", room.crown.z, 0.0, 1.5);
+            slider(c, "Twigs hang", room.crown.w, 0.0, 1.0);
+            slider(c, "Leaf long", room.foliage.x, 0.1, 4.0);
+            slider(c, "Leaf wide", room.foliage.y, 0.2, 1.2);
+            slider(c, "Leaf lets", room.foliage.z, 0.0, 1.0);
+            slider(c, "Trunk away", room.foliage.w, 5.0, 300.0);
+            slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
+            if g.tree_ms > 0.0 {
+                ui::layout_row_dynamic(c, ROW, 1);
+                ui::label(c, str("baked in ", floor(g.tree_ms + 0.5) as i64, " ms"), ui::TEXT_LEFT);
+            }
             heading(c, "View (drag, scroll, R)");
             slider(c, "Distance", far, 0.4, 4.0);
             slider(c, "Height", pitch, 10.0, 89.0);

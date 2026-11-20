@@ -1,6 +1,6 @@
 # 105: A real tree's shadow through the window
 
-Status: todo (planned 2026-11-20, on the branch `room-light` after task 104)
+Status: in-progress (on the branch `room-light` after task 104, 2026-11-20: the tree, its bake, and the takes; tuning the look next)
 
 Task 104's leaves are value noise: clumps, and single leaves within them. They read well
 from afar, but up close the noise falls apart: real leaf shadow has branches as lines

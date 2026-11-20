@@ -58,6 +58,7 @@ fn texture2d(width: i64, height: i64, format: i32, usage: i32) -> Texture { g(ng
 fn texture2d(width: i64, height: i64) -> Texture { g(ngfx::texture2d(width, height)) }
 fn render_target(width: i64, height: i64, format: i32) -> Texture { g(ngfx::render_target(width, height, format)) }
 fn update_texture(t: Texture, data: const u8[:]) -> bool { ngfx::update_texture(n(t), data) }
+fn update_texture(t: Texture, region: ngfx::Region, data: const u8[:]) -> bool { ngfx::update_texture(n(t), region, data) }
 fn read_texture(t: Texture, px: u8[>..]&) -> bool { ngfx::read_texture(n(t), px) }
 fn read_pixels(t: Texture) -> u8[>..] { ngfx::read_pixels(n(t)) }
 fn texture_info(t: Texture) -> ngfx::TextureDesc { ngfx::texture_info(n(t)) }
