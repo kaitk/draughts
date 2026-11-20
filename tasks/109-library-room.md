@@ -107,6 +107,13 @@ be thought through with the room, not taken from one picture:
   2.6 m; looking south-west, the sun 18° up and 20° left of straight out; the windows 3 m
   apart, each framed by its straight reveals, 1.3 m wide and about 0.6 m deep, the
   shutters folded flat against them.
+- What the windows show (worked out from the plan, 2026-11-20): a player at the games
+  table, eyes 0.4 m over the sill and 2 m in from the wall's outer face, sees the lawn
+  only from about 11 m out, standing from about 6.5 m; the walk along the house is hidden
+  but from the sill. The opening spans about 11° below the horizon to 45° above it, so
+  the view is mostly crowns and sky over a thin band of lawn. Between windows 3 m apart a
+  tree 15 m out shifts about 11°, one at 50 m about 3°, one at 200 m under 1°: the
+  trees up to about 100 m need their own layers, the tree line beyond can be flat.
 - Three windows and the home screen's pans see the park from different places, so a
   single 3:2 picture, which can't be wider, shows no parallax. Rather in layers by
   depth: the near tree ours (task 105's, drawn as well as cast), mid trees as cut-outs,
