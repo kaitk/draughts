@@ -464,7 +464,7 @@ fn main() {
     let dump = flag_value(argv, "--dump-map");
     if dump > 0 {
         var t = trees::Tree { .. };
-        let sp = rooms::tree_spec(room);
+        let sp = rooms::tree_spec(render3d::tree_room(g));
         let v = render3d::tree_view_of(g);
         trees::grow(t, sp, v);
         var map: u8[>..] = [];

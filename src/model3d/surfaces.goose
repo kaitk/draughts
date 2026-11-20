@@ -23,8 +23,8 @@ let FLOOR_Y: f32 = -23.56;
 // What a fragment of the room is (mesh::Vertex.mat's whole part; its fraction is the
 // piece's own random): the floor, a piece of oak (its uv the place in the wall's field),
 // the wallpaper, the table's turned foot; the shell's (room_shell) lime plaster (its
-// fraction 0.5 on the cornice, whiter and smoother), white painted wood, glass and lace,
-// the last two drawn blended after the rest.
+// fraction 0.5 on the cornice, whiter and smoother), white painted wood (its fraction
+// over 0.5 the sills' stone), glass and lace, the last two drawn blended after the rest.
 let MAT_FLOOR:   f32 = 4.0;
 let MAT_OAK:     f32 = 5.0;
 let MAT_PAPER:   f32 = 6.0;
@@ -105,28 +105,32 @@ struct Look {
     paper: float4,     // the wallpaper's ground (sRGB) and roughness, where its mask is 0
     gold:  float4,     // its gold print (sRGB) and roughness, where the mask is 1
     // The shell's (room_shell): the limewash at its plaster tone's 0 and 1 (sRGB, and
-    // roughness), the white paint, the lace's thread.
+    // roughness), the white paint, the lace's thread, the sills' stone.
     plaster_shade: float4,
     plaster_light: float4,
     paint:         float4,
     lace_thread:   float4,
+    stone:         float4,
 }
 
-// The wallpaper: a dark grey paper, matte, and a muted gold print with a little sheen,
-// #3d3b32 and #58503b, which under the room's light measure as style-01's wall does; the
-// baker's first guesses, #575d63 and #a28e6a, read twice as light and bluer (2026-11-20).
+// The wallpaper: a dark warm brown-grey paper, matte, and a muted gold print with a little
+// sheen, #423831 and #58503b, as light as style-01's wall measures under the room's light;
+// the ground was an olive #3d3b32 until the quick pass (2026-11-21), the baker's first
+// guesses, #575d63 and #a28e6a, twice as light and bluer (2026-11-20).
 let LOOK = Look {
     plank:  float4 { PLANK_W, PLANK_N, 0.016, 0.012 },
     planks: float4 { 0.2, 0.03, 0.01, 0.6 },
     worn:   float4 { 0.7, 0.5, 34.0, 0.5 },
-    paper:  float4 { 0.239, 0.231, 0.196, 0.85 },
+    paper:  float4 { 0.259, 0.22, 0.192, 0.85 },
     gold:   float4 { 0.345, 0.314, 0.231, 0.6 },
-    // tools/materials/plaster.py's guesses, #d5cab5 and #efebe1; the windows' old white,
-    // #e6e0d3, an eggshell oil paint; lace.py's thread, #ddd3bf, cotton.
-    plaster_shade: float4 { 0.835, 0.792, 0.71, 0.92 },
-    plaster_light: float4 { 0.937, 0.922, 0.882, 0.86 },
-    paint:         float4 { 0.902, 0.878, 0.827, 0.45 },
+    // Aged lime plaster, #beb4a3 to #d0c8b8, no brighter than an old limewash (sRGB about
+    // 200 to 215, task 107's quick pass); the windows' and doors' old paint a touch greyer,
+    // #c6beae; lace.py's thread, #ddd3bf, cotton; the sills a pale limestone, #b6b2a8.
+    plaster_shade: float4 { 0.745, 0.706, 0.639, 0.92 },
+    plaster_light: float4 { 0.816, 0.784, 0.722, 0.86 },
+    paint:         float4 { 0.776, 0.745, 0.682, 0.45 },
     lace_thread:   float4 { 0.867, 0.827, 0.749, 0.9 },
+    stone:         float4 { 0.714, 0.698, 0.659, 0.55 },
 };
 
 // The plaster's tone map (design/materials/plaster_tone.png) covers 4 m of wall a tile,

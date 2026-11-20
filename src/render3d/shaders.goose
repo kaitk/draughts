@@ -1908,7 +1908,8 @@ let ROOM_HEAD = """
     // floor's y, w a metre (world units); mids: their middles along u; niche: half the
     // niche's width, the sill's height, the springing's, the arch's rise (metres); glass:
     // the glass planes' depths into the wall, the lace's distance out of it (world units), w
-    // how much of the sun the lace lets through.
+    // how much of the sun the lace lets through; stone: the sills' (sRGB, and roughness);
+    // ends: the end walls' u, x the stove's, y the far one's.
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -1927,6 +1928,8 @@ let ROOM_HEAD = """
         vec4 shell_mids;
         vec4 shell_niche;
         vec4 shell_glass;
+        vec4 stone;
+        vec4 shell_ends;
     };
     """;
 
@@ -2212,6 +2215,9 @@ let ROOM_FRAG = """
                          * (1.0 - smoothstep(TABLE_R + 0.4 * worn.z, TABLE_R + worn.z, r));
             float lane = worn.w * (1.0 - smoothstep(6.0, 22.0, abs(uv.y - 0.55 * place.y)));
             float wall = max(1.0 - smoothstep(4.0, 20.0, place.y - uv.y), 1.0 - smoothstep(4.0, 16.0, uv.y + place.x));
+            // The shell's floor: the distance to the nearest of its four walls.
+            float to_wall = min(min(place.y - uv.y, uv.y + place.x), min(shell_ends.x - uv.x, uv.x - shell_ends.y));
+            if (shell.x > 0.5) wall = 1.0 - smoothstep(4.0, 20.0, to_wall);
             float patchy = 0.6 * vnoise(uv * 0.05 + 3.3) + 0.4 * vnoise(uv * 0.19 + 7.1);
             float wear = clamp(max(around, lane) * (0.3 + 1.2 * patchy), 0.0, 1.0) * worn.x * (1.0 - wall);
             albedo *= mix(vec3(1.0), vec3(1.6, 1.45, 1.25), wear);
@@ -2226,7 +2232,15 @@ let ROOM_FRAG = """
             ao *= 1.0 - 0.5 * joint;
             // The table's foot hides the sky round it, and the walls along their feet.
             ao *= mix(0.55, 1.0, smoothstep(9.0, 22.0, r));
-            ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
+            if (shell.x > 0.5) {
+                // Along every wall the wainscot hides the sky: the floor darker in a band
+                // about 0.3 m wide, and a dark contact line at the plinth's lip (5 cm out).
+                float past_lip = to_wall - 0.05 * shell.w;
+                ao *= mix(0.45, 1.0, smoothstep(0.0, 0.3 * shell.w, past_lip));
+                ao *= mix(0.4, 1.0, smoothstep(0.0, 0.015 * shell.w, past_lip));
+            } else {
+                ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
+            }
         } else if (kind < 5.5 || (kind > 6.5 && kind < 7.5)) {
             // The panelling and the table's foot: the wall's field at the piece's place,
             // the normal by the field's frame worked out from the derivatives.
@@ -2262,16 +2276,23 @@ let ROOM_FRAG = """
             vec3 ln = abs(vec3(dot(ng.xz, axes.xy), ng.y, dot(ng.xz, axes.zw)));
             vec2 pl = ln.y > max(ln.x, ln.z) ? v_local.xz : (ln.x > ln.z ? v_local.zy : v_local.xy);
             float slow = 0.6 * vnoise(pl / 52.0 + 1.7) + 0.4 * vnoise(pl / 23.0 + 8.3);
-            float tone = clamp(texture(plaster_tone, pl / tile.y).r + 0.5 * (slow - 0.5), 0.0, 1.0);
+            float tone = clamp(texture(plaster_tone, pl / tile.y).r + 0.25 * (slow - 0.5), 0.0, 1.0);
             float cornice = step(0.25, own);
             tone = mix(tone, 1.0, 0.35 * cornice);
             albedo = mix(srgb(plaster_shade.rgb), srgb(plaster_light.rgb), tone);
             rough = mix(plaster_shade.a, plaster_light.a, tone) - 0.05 * cornice;
         } else if (kind < 9.5) {
-            // White painted wood, a little uneven.
+            // Old white painted wood, a little uneven; the sills' pale stone (own over
+            // 0.5), mottled.
             float m = vnoise(v_local.xz * 0.4 + v_local.y * 0.31);
-            albedo = srgb(paint.rgb) * (0.96 + 0.06 * m);
-            rough = paint.a + 0.1 * m;
+            if (own > 0.5) {
+                float mo = 0.6 * vnoise(v_local.xz * 1.3 + v_local.y * 0.7) + 0.4 * vnoise(v_local.xz * 4.1 + 2.7);
+                albedo = srgb(stone.rgb) * (0.93 + 0.12 * mo);
+                rough = stone.a + 0.15 * mo;
+            } else {
+                albedo = srgb(paint.rgb) * (0.96 + 0.06 * m);
+                rough = paint.a + 0.1 * m;
+            }
         } else {
             // Glass and lace, blended over what is behind them (premultiplied).
             vec3 v = normalize(eye.xyz - p);
@@ -2279,10 +2300,11 @@ let ROOM_FRAG = """
             vec3 c;
             float a;
             if (kind < 10.5) {
-                // The glass: the room's light reflected, by Fresnel.
+                // The glass: the room's light reflected, by Fresnel; two sheets, each faint,
+                // so the window stays clear close up.
                 float fres = 0.04 + 0.96 * pow(1.0 - clamp(dot(nf, v), 0.0, 1.0), 5.0);
                 c = sh_eval(reflect(-v, nf)) * params.z;
-                a = clamp(0.03 + fres, 0.0, 0.6);
+                a = clamp(0.6 * fres, 0.0, 0.5);
             } else {
                 // The lace: its coverage, lit from the room's side and through from the window's.
                 float cover = texture(lace_mask, v_uv / tile.z).r;

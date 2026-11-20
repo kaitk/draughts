@@ -35,12 +35,16 @@ let LINING_FROM = 0.35;
 let SHUTTER_FROM = 0.075;
 let SHUTTER_TO = 0.34;
 let SHUTTER_THICK = 0.035;
+// The paint's fraction that makes it the sills' stone (ROOM_FRAG): a painted piece's own
+// random stays under 0.4.
+let STONE: f32 = 0.6;
 
 // The wainscot's profiles in centimetres, (out from the wall, up from the floor, the
-// light's occlusion), from build/notes/wainscot/make_page.py's option A, bottom to top:
-// the cap (100.5 to 110 cm, 9 cm off the wall), the plinth (19 cm, 4 cm off), the sill's
-// line carried over the piers (74 to 80 cm). The frame's face is 2.5 cm off the wall
-// (surfaces::FRAME_Z).
+// light's occlusion), bottom to top: the cap from build/notes/wainscot/make_page.py's
+// option A (100.5 to 110 cm, 9 cm off the wall), raised CAP_LIFT; the plinth, a plain
+// board 17 cm high and 4 cm off the wall on a 1 cm lip at the floor, its top edge rounded
+// to catch the light, a dark recess under the panelling's bottom rail. The frame's face
+// is 2.5 cm off the wall (surfaces::FRAME_Z).
 let CAP_A: float3[20] = [
     float3 { 2.5, 100.5, 0.75 }, float3 { 3.0, 100.7, 0.8 }, float3 { 3.2, 101.2, 0.9 }, float3 { 3.0, 101.69, 0.9 },
     float3 { 2.5, 101.9, 0.75 }, float3 { 2.8, 101.9, 0.75 }, float3 { 3.0, 102.2, 0.8 }, float3 { 3.2, 103.44, 0.85 },
@@ -48,15 +52,15 @@ let CAP_A: float3[20] = [
     float3 { 7.4, 106.2, 0.95 }, float3 { 9.0, 106.2, 1.0 }, float3 { 9.0, 108.0, 1.0 }, float3 { 8.85, 108.77, 1.0 },
     float3 { 8.41, 109.41, 1.0 }, float3 { 7.76, 109.85, 1.0 }, float3 { 7.0, 110.0, 1.0 }, float3 { 0.0, 110.0, 0.85 },
 ];
-let PLINTH_A: float3[8] = [
-    float3 { 4.0, 0.0, 0.7 }, float3 { 4.0, 17.5, 1.0 }, float3 { 3.89, 17.9, 1.0 }, float3 { 3.6, 18.19, 0.95 },
-    float3 { 3.2, 18.3, 0.9 }, float3 { 2.85, 18.39, 0.85 }, float3 { 2.59, 18.65, 0.8 }, float3 { 2.5, 19.0, 0.75 },
+let PLINTH_A: float3[11] = [
+    float3 { 5.0, 0.0, 0.55 }, float3 { 5.0, 0.8, 0.8 }, float3 { 4.6, 1.2, 0.85 }, float3 { 4.0, 1.4, 0.9 },
+    float3 { 4.0, 15.5, 0.95 }, float3 { 3.85, 16.3, 1.0 }, float3 { 3.4, 16.8, 1.0 }, float3 { 2.9, 17.0, 0.95 },
+    float3 { 1.8, 17.0, 0.6 }, float3 { 1.8, 18.6, 0.45 }, float3 { 2.5, 19.0, 0.7 },
 ];
-let SILL_RAIL: float3[11] = [
-    float3 { 2.5, 74.0, 0.75 }, float3 { 2.7, 74.75, 0.85 }, float3 { 3.25, 75.3, 0.9 }, float3 { 4.0, 75.5, 0.95 },
-    float3 { 5.5, 75.5, 1.0 }, float3 { 5.5, 78.5, 1.0 }, float3 { 5.37, 79.0, 1.0 }, float3 { 5.0, 79.37, 1.0 },
-    float3 { 4.5, 79.5, 0.95 }, float3 { 4.5, 80.0, 0.9 }, float3 { 2.5, 80.0, 0.75 },
-];
+// The cap's lift over option A's 1.1 m, to WAINSCOT_TOP.
+let CAP_LIFT: f32 = 10.0;
+// The plinth's own tone, a touch darker than the panels' (the oak's own random, scaled).
+let PLINTH_TONE: f32 = 0.3;
 // The panel's ring (cm in from the frame's opening, out from the wall, occlusion): a stuck
 // ovolo on the frame's edge, a 1 cm margin, a shallow bevel rising 0.6 cm, a fillet, the
 // field 9 cm in.
@@ -83,11 +87,10 @@ let ARCHITRAVE_A: float2[7] = [
     float2 { 14.0, 5.0 }, float2 { 14.0, 0.0 },
 ];
 
-// What a run of wainscot is: along a wall (1.1 m), on a window wall's pier (1.6 m, two
-// tiers), or under a window (to the sill board's foot).
+// What a run of wainscot is: along a wall or a pier, or under a window (to the sill
+// board's foot).
 let RUN_WALL = 0;
-let RUN_PIER = 1;
-let RUN_SILL = 2;
+let RUN_SILL = 1;
 
 let SIDES: f32[2] = [-1.0, 1.0];
 
@@ -270,22 +273,23 @@ fn panelling(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
 // wrapping 6.5 cm into its reveal), 2 a door's architrave (the cap's end returned).
 fn wainscot_run(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, s0: f32, s1: f32, kind: i64,
                 start_end: i64, finish_end: i64, seed: i64&) {
+    let first = verts.len;
     sweep_oak(verts, indices, b, PLINTH_A[..], 0.0, s0, s1, 0.0, 0.0, seed);
+    for i in first..verts.len {
+        let v .= verts[i];
+        v.mat = surfaces::MAT_OAK + PLINTH_TONE * (v.mat - floor(v.mat));
+    }
     if kind == RUN_WALL {
-        let rows: float2[1] = [float2 { 28.0, 88.0 }];
-        panelling(verts, indices, b, s0, s1, 19.0, 100.5, rows[..], 0.34, seed);
-    } else if kind == RUN_PIER {
-        let rows: float2[2] = [float2 { 28.0, 64.0 }, float2 { 88.0, 140.0 }];
-        panelling(verts, indices, b, s0, s1, 19.0, 150.5, rows[..], 0.4, seed);
-        sweep_oak(verts, indices, b, SILL_RAIL[..], 0.0, s0, s1, 0.0, 0.0, seed);
+        let rows: float2[1] = [float2 { 28.0, 98.0 }];
+        panelling(verts, indices, b, s0, s1, 19.0, 100.5 + CAP_LIFT, rows[..], 0.34, seed);
     } else {
         let rows: float2[1] = [float2 { 28.0, 64.0 }];
         panelling(verts, indices, b, s0, s1, 19.0, 75.0, rows[..], 0.4, seed);
     }
     guard kind != RUN_SILL else { return; }
-    let lift: f32 = if kind == RUN_PIER { 50.0 } else { 0.0 };
-    let k0:   f32 = if start_end == 1 { -1.0 } else { 0.0 };
-    let k1:   f32 = if finish_end == 1 { 1.0 } else { 0.0 };
+    let lift = CAP_LIFT;
+    let k0: f32 = if start_end == 1 { -1.0 } else { 0.0 };
+    let k1: f32 = if finish_end == 1 { 1.0 } else { 0.0 };
     sweep_oak(verts, indices, b, CAP_A[..], lift, s0, s1, k0, k1, seed);
     let ends: i64[2] = [start_end, finish_end];
     let at:   f32[2] = [s0, s1];
@@ -381,11 +385,11 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
     for sx in SIDES {
         let a = sx * w;
         let c = sx * wo;
-        quad_m(verts, indices, b, [float3 { a, PIER_TOP, bz }, float3 { c, PIER_TOP, bz }, float3 { c, top_out, bz },
+        quad_m(verts, indices, b, [float3 { a, WAINSCOT_TOP, bz }, float3 { c, WAINSCOT_TOP, bz }, float3 { c, top_out, bz },
                                    float3 { a, spring, bz }], plaster);
-        quad_m(verts, indices, b, [float3 { c, PIER_TOP, 0.0 }, float3 { c, PIER_TOP, bz }, float3 { c, top_out, bz },
+        quad_m(verts, indices, b, [float3 { c, WAINSCOT_TOP, 0.0 }, float3 { c, WAINSCOT_TOP, bz }, float3 { c, top_out, bz },
                                    float3 { c, top_out, 0.0 }], plaster, float3 { sx, 0.0, 0.0 });
-        quad_m(verts, indices, b, [float3 { a, PIER_TOP, 0.0 }, float3 { a, PIER_TOP, bz }, float3 { a, spring, bz },
+        quad_m(verts, indices, b, [float3 { a, WAINSCOT_TOP, 0.0 }, float3 { a, WAINSCOT_TOP, bz }, float3 { a, spring, bz },
                                    float3 { a, spring, 0.0 }], plaster, float3 { -sx, 0.0, 0.0 });
     }
     for i in ARCH_SEGMENTS {
@@ -417,10 +421,11 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
     }
     quad_m(verts, indices, b, [float3 { -w, spring, -LINING_FROM }, float3 { w, spring, -LINING_FROM }, float3 { w, spring, -depth },
                                float3 { -w, spring, -depth }], paint, float3 { 0.0, -1.0, 0.0 }, 0.8);
-    // The sill board: white painted wood, its nose out in the room, over the niche's floor.
-    box_m(verts, indices, b, -w - 0.05, w + 0.05, sill - SILL_BOARD, sill, 0.0, SILL_NOSE, paint);
+    // The sill: a pale limestone slab, its nose out in the room, over the niche's floor.
+    let stone = surfaces::MAT_PAINT + STONE;
+    box_m(verts, indices, b, -w - 0.05, w + 0.05, sill - SILL_BOARD, sill, 0.0, SILL_NOSE, stone);
     quad_m(verts, indices, b, [float3 { -w, sill, -depth }, float3 { w, sill, -depth }, float3 { w, sill, 0.0 },
-                               float3 { -w, sill, 0.0 }], paint, float3 { 0.0, 1.0, 0.0 });
+                               float3 { -w, sill, 0.0 }], stone, float3 { 0.0, 1.0, 0.0 });
     // The casements, the inner glass and the outer.
     casement(verts, indices, glass, glass_indices, b, o, o.glass.x);
     casement(verts, indices, glass, glass_indices, b, o, o.glass.y);
@@ -587,7 +592,7 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     }
     // The leaves, their face in the wall's face.
     let lb = moved(b, 0.0, -leaf_z * m());
-    let rows: float2[3] = [float2 { 0.22, 0.88 }, float2 { 1.06, 2.08 }, float2 { 2.2, 2.58 }];
+    let rows: float2[3] = [float2 { 0.22, 0.98 }, float2 { 1.16, 2.08 }, float2 { 2.2, 2.58 }];
     painted(verts, indices, lb, -w * m(), 0.0, 0.0, h, 0.12, rows[..], seed);
     painted(verts, indices, lb, 0.0, w * m(), 0.0, h, 0.12, rows[..], seed);
     // The architrave up each side from its plinth block and over the head, mitred.
@@ -635,28 +640,27 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]
         let b = wall_builder(s, w);
         let length = length_of(w);
         let ops = openings_on(s, wi);
-        let windowed = wi == WINDOW_WALL;
-        wallpaper(verts, indices, s, b, length, if windowed { PIER_TOP } else { WAINSCOT_TOP }, ops);
+        wallpaper(verts, indices, s, b, length, WAINSCOT_TOP, ops);
         // The wainscot's runs between the openings.
         var at: f32 = 0.0;
         var at_end = 0;
         for o in ops {
             if o.kind == WINDOW {
                 let a = o.mid - 0.5 * o.width;
-                if a > at + 0.01 { wainscot_run(verts, indices, b, at * k, a * k, RUN_PIER, at_end, 1, seed); }
+                if a > at + 0.01 { wainscot_run(verts, indices, b, at * k, a * k, RUN_WALL, at_end, 1, seed); }
                 wainscot_run(verts, indices, b, a * k, (o.mid + 0.5 * o.width) * k, RUN_SILL, 0, 0, seed);
                 window(verts, indices, glass, glass_indices, b, o, seed);
                 at = o.mid + 0.5 * o.width;
                 at_end = 1;
             } else {
                 let a = o.mid - reach(o) - 0.01;
-                if a > at + 0.01 { wainscot_run(verts, indices, b, at * k, a * k, if windowed { RUN_PIER } else { RUN_WALL }, at_end, 2, seed); }
+                if a > at + 0.01 { wainscot_run(verts, indices, b, at * k, a * k, RUN_WALL, at_end, 2, seed); }
                 door(verts, indices, b, o, w.thick, seed);
                 at = o.mid + reach(o) + 0.01;
                 at_end = 2;
             }
         }
-        if length > at + 0.01 { wainscot_run(verts, indices, b, at * k, length * k, if windowed { RUN_PIER } else { RUN_WALL }, at_end, 0, seed); }
+        if length > at + 0.01 { wainscot_run(verts, indices, b, at * k, length * k, RUN_WALL, at_end, 0, seed); }
         // The cornice, mitred into the corners at both ends.
         var flipped: float3[31] = [float3_0; 31];
         for q, i in CORNICE_B { flipped[i] = float3 { q.x, (s.ceiling * 100.0 - q.y), q.z }; }

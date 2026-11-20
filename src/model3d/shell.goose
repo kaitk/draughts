@@ -77,16 +77,17 @@ let LIBRARY = Shell {
     table:   float2 { 4.5, 5.8 },
 };
 
-// The window wall, the hall's, the stove's end.
+// The window wall, the far end, the hall's, the stove's end.
 let WINDOW_WALL = 0;
+let FAR_WALL = 1;
 let HALL_WALL = 2;
 let STOVE_WALL = 3;
 
-// The wainscot (option A of build/notes/wainscot/): 1.1 m along the walls, rising to
-// 1.6 m on the window wall's piers, and under the windows to the sill board's foot.
-let WAINSCOT_TOP = 1.1;
-let PIER_TOP = 1.6;
-let SILL_BOARD = 0.05;     // the white sill's thickness, its top the opening's sill
+// The wainscot (option A of build/notes/wainscot/, at one height as every concept has
+// it, 2026-11-21): 1.2 m with its cap on every wall and pier, and under the windows to the
+// sill board's foot.
+let WAINSCOT_TOP = 1.2;
+let SILL_BOARD = 0.05;     // the stone sill's thickness, its top the opening's sill
 let SILL_NOSE = 0.08;      // how far it stands out of the wall
 let BAND = 0.08;           // the plaster band round the niche, on the wall's face
 let BAND_PROUD = 0.015;

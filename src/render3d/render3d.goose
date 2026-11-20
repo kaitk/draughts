@@ -689,6 +689,8 @@ struct SurfacesBlock {
     shell_mids:    float4,
     shell_niche:   float4,
     shell_glass:   float4,
+    stone:         float4,
+    shell_ends:    float4,
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
@@ -710,6 +712,10 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     b.shell_mids = float4 { mids[0], mids[1], mids[2], 0.0 };
     b.shell_niche = float4 { 0.5 * o.width, o.sill, o.height, o.rise };
     b.shell_glass = float4 { o.glass.x * metre, o.glass.y * metre, room_shell::LACE_OFF * metre, g.room.opening.w };
+    // The end walls' u, for the floor's darker band along every wall.
+    let stove_end = room_shell::room_of(s, s.walls[room_shell::STOVE_WALL].a);
+    let far_end = room_shell::room_of(s, s.walls[room_shell::FAR_WALL].a);
+    b.shell_ends = float4 { stove_end.x, far_end.x, 0.0, 0.0 };
     return b;
 }
 
@@ -725,7 +731,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
                     float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light, k.paint,
-                    k.lace_thread, float4_0, float4_0, float4_0, float4_0 }
+                    k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0 }
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1
@@ -997,6 +1003,12 @@ fn put_tree(g: Gpu&, on: bool) {
     f.tree_blur = float4 { v.blur * v.w / v.size.x, v.distance, crown, r.crown_fill };
 }
 
+// The room whose tree is shown: the shell's own (rooms::shell_tree) with the shell on.
+fn tree_room(g: Gpu&) -> rooms::Room {
+    if g.room_on && g.room_shell { return rooms::shell_tree(g.room); }
+    return g.room;
+}
+
 // How the sun sees the tree: over the shell's three windows with it on, over the whole
 // window with the panelled wall's room on, else cut to the table. The shell's windows'
 // niches at the wall's inner face, as the key carries them out to the tree.
@@ -1019,7 +1031,7 @@ fn tree_view_of(g: Gpu&) -> trees::View {
         y1 = max(y1, surfaces::FLOOR_Y + room_shell::head_at(o, 0.0) * metre);
     }
     let shear = rooms::tree_shear(g.room);
-    return rooms::tree_view_over(g.room, u0 - shear.x * inner, u1 - shear.x * inner, y0 - shear.y * inner,
+    return rooms::tree_view_over(tree_room(g), u0 - shear.x * inner, u1 - shear.x * inner, y0 - shear.y * inner,
                                  y1 - shear.y * inner, trees::SHELL_W, trees::SHELL_H);
 }
 
@@ -1034,7 +1046,7 @@ fn tree_or_stand_in(g: Gpu&) -> Texture { if g.tree_map.id != 0 { g.tree_map } e
 
 // What the tree's map is baked from.
 fn tree_key(g: Gpu&) -> float4[11] {
-    let r = g.room;
+    let r = tree_room(g);
     let v = tree_view_of(g);
     return [r.tree, r.crown, r.foliage, r.leaves, r.window, r.panes, r.opening, r.key, float4 { r.tree_blur, 0.0, 0.0, 0.0 },
             float4 { r.species, 0.0, 0.0, 0.0 }, float4 { v.size.x, v.size.y, v.middle.x, v.middle.y }];
@@ -1047,8 +1059,7 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     guard g.tree_stale else { return; }
     g.tree_stale = false;
     let t0 = clock();
-    let r = g.room;
-    let s = rooms::tree_spec(r);
+    let s = rooms::tree_spec(tree_room(g));
     let v = tree_view_of(g);
     var map: u8[>..] = [];
     {

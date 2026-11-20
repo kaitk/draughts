@@ -280,6 +280,17 @@ fn harmonics(r: Room) -> float4[9] {
     return sh;
 }
 
+// The room with its tree as the library's shell shows it (task 107's quick pass): grown and
+// moved so its crown's dapple falls through all three windows, the trunk 3 m out behind
+// a pier, not across a window; the game's window keeps the room's own tree.
+fn shell_tree(r: Room) -> Room {
+    var t = r;
+    t.tree = float4 { r.tree.x, 3.0, 330.0, r.tree.w * 3.0 };
+    t.crown = float4 { -25.0, -290.0, r.crown.z, r.crown.w };
+    t.foliage = float4 { r.foliage.x, r.foliage.y, r.foliage.z, 90.0 };
+    return t;
+}
+
 // The tree's make (trees::Spec) from the room's tree, crown and foliage.
 fn tree_spec(r: Room) -> trees::Spec {
     return trees::Spec { r.tree.y, r.tree.z, r.tree.w, r.foliage.x, r.foliage.y, r.foliage.z,
