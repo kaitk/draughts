@@ -54,6 +54,29 @@ Directions as seen in `style-01`: the windows on the left wall.
 Open: the open shelves on the right wall or on the fourth wall; the third door in the
 right wall between the shelves or in the fourth wall.
 
+## Outside: the park the windows see (the user, 2026-11-20)
+
+The first two park images (`library-outside-01`, `-02`) are a grove seen standing on
+the lawn, the second with a path that wanders to the house for no reason. The look is to
+be thought through with the room, not taken from one picture:
+
+- A manor's park, every one different. Estonian manors' parks had straighter lines and
+  better kept trees than now, but the look wanted is the concepts' tall, older, wilder
+  trees. Alatskivi (`ref-alatskivi-aerial.png`, local; far too big a house, its park a
+  little too kept) shows what fits when tuned: open lawns swept between masses of tall
+  mixed trees, solitaires, a few spruces, broad curving gravel paths along the lawns'
+  edges, water beyond.
+- Trees close to the windows: the shadow on the board needs one within a few metres (the
+  tree of task 105, the sun 18° up and 20° left of straight out).
+- From the ground floor, about a metre over the lawn: the walk along the house, the lawn,
+  the paths where a park would have them.
+- Three windows and the home screen's pans see the park from different places, so a
+  single 3:2 picture, which can't be wider, shows no parallax. Rather in layers by
+  depth: the near tree ours (task 105's, drawn as well as cast), mid trees as cut-outs,
+  the far tree line and sky as a wide band (pictures put side by side; the blur hides
+  the seams), the sun's glow ours. Each layer's images from ChatGPT once the look is
+  chosen; a view out of the whole window wall from inside first, to judge the look.
+
 ## Acceptance criteria
 
 - [ ] Several layouts tried as ChatGPT images, at least `style-01`'s view and the
@@ -63,5 +86,6 @@ right wall between the shelves or in the fourth wall.
       `style-01`
 - [ ] The room's plan written here: walls, windows, doors, stove, bookcases, desk,
       table, rug, sizes in metres, for task 106 to model from
+- [ ] The park outside thought through and its layers' images made, the user choosing
 - [ ] Task 106's prompts and images (the simplified home shot, the window) brought in
       line with the chosen room
