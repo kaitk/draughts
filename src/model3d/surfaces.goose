@@ -60,29 +60,30 @@ struct Oak {
     // trees' own tones, w the relief
 }
 
-// The parquet: oak gone warm and dark under a century of wax and light, fumed, the pores
-// near black (library-parquet-01, style-01's floor, older and warmer).
+// The parquet: oak gone a warm mid-dark brown under a century of wax and light, fumed,
+// the pores near black (style-01's floor; library-parquet-01 is redder). Shellac and the
+// light's ambering kept pale: amber over amber turned it orange (2026-11-20).
 let FLOOR_OAK = Oak {
-    base:    float4 { 0.74, 0.58, 0.40, 0.42 },
+    base:    float4 { 0.76, 0.65, 0.52, 0.42 },
     figure:  float4 { 0.25, 0.22, 0.2, 1.0 },
     ring:    float4 { 0.09, 0.0, 0.15, 0.6 },
-    stain:   float4 { 0.71, 0.67, 0.66, 1.8 },
+    stain:   float4 { 0.68, 0.66, 0.66, 1.8 },
     wax:     float4 { 0.09, 0.055, 0.035, 0.3 },
-    shellac: float4 { 0.93, 0.87, 0.78, 1.0 },
-    age:     float4 { 0.6, 0.12, 0.35, 1.0 },
+    shellac: float4 { 0.95, 0.91, 0.84, 1.0 },
+    age:     float4 { 0.4, 0.12, 0.35, 1.0 },
     boards:  float4 { 2.134, 0.45, 0.1, 1.0 },
 };
 
-// The wainscot: the same oak darker and redder, a heavier stain and older wax
-// (crop-wainscot-01, style-01's back wall).
+// The wainscot: the same oak darker, brown with a little red, a heavier stain and older
+// wax (style-01's back wall, crop-wainscot-01).
 let WALL_OAK = Oak {
-    base:    float4 { 0.72, 0.55, 0.38, 0.4 },
+    base:    float4 { 0.74, 0.57, 0.42, 0.4 },
     figure:  float4 { 0.25, 0.2, 0.2, 1.0 },
     ring:    float4 { 0.1, 0.0, 0.15, 0.55 },
-    stain:   float4 { 0.68, 0.64, 0.64, 2.2 },
+    stain:   float4 { 0.64, 0.62, 0.62, 2.25 },
     wax:     float4 { 0.07, 0.035, 0.02, 0.4 },
-    shellac: float4 { 0.92, 0.86, 0.78, 1.1 },
-    age:     float4 { 0.6, 0.1, 0.4, 1.0 },
+    shellac: float4 { 0.93, 0.88, 0.80, 1.1 },
+    age:     float4 { 0.45, 0.1, 0.4, 1.0 },
     boards:  float4 { 8.0, 0.5, 0.06, 1.0 },
 };
 
@@ -99,7 +100,7 @@ let LOOK = Look {
     plank:  float4 { PLANK_W, PLANK_N, 0.016, 0.012 },
     planks: float4 { 0.2, 0.03, 0.01, 0.6 },
     worn:   float4 { 0.7, 0.5, 34.0, 0.5 },
-    paper:  float4 { 0.16, 0.18, 0.21, 0.85 },
+    paper:  float4 { 0.2, 0.19, 0.18, 0.85 },
 };
 
 // The room's frame from the key's direction toward the light and the window's wall's

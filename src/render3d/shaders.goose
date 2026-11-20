@@ -1734,7 +1734,9 @@ let ROOM_FRAG = """
     // wear, y the walls' darker wax, z the path's reach round the table, w the path's
     // along the room; paper: the wallpaper's color (sRGB) and roughness; axes: u's
     // direction in x and z, then v's; place: x the window's wall's v, y the panelled
-    // wall's, z the floor's field's size, w the wall's (world units).
+    // wall's, z the floor's field's size, w the wall's (world units); shade: the light
+    // thrown back into the room's shade (rooms::Room.bounce), linear, and w the room's
+    // exposure over the board's (rooms::Room.room_exposure).
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -1742,6 +1744,7 @@ let ROOM_FRAG = """
         vec4 paper;
         vec4 axes;
         vec4 place;
+        vec4 shade;
     };
     // mesh.goose's and surfaces.goose's (test/model3d/geometry checks them).
     const float TABLE_R = 16.0;
@@ -1762,10 +1765,11 @@ let ROOM_FRAG = """
                    mix(h12(i + vec2(0, 1)), h12(i + vec2(1, 1)), u.x), u.y);
     }
 
+    // The board's curve, its toe taken on the luminance and scaled into every channel:
+    // taking the least channel off, as the board does, turns the room's dim oak orange.
     vec3 tonemap(vec3 c) {
-        float x = min(c.r, min(c.g, c.b));
-        float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
-        c -= offset;
+        float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
+        c *= (y < 0.04 ? 12.5 * y * y : y - 0.02) / y;
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;
@@ -1973,7 +1977,7 @@ let ROOM_FRAG = """
         // The table's top is solid: its shadow keeps all the key out, unlike the board's
         // softened ones (room.x).
         float vis = dot(ng, l) > 0.0 ? window_light(p) * table_shade(p, l) : 0.0;
-        vec3 irr = sh_eval(n) * params.z * ao;
+        vec3 irr = (sh_eval(n) * params.z + shade.rgb) * ao;
         vec3 base = albedo * (diff / PI * light * vis + irr);
 
         float nov = max(dot(n, v), 1e-4);
@@ -1994,7 +1998,7 @@ let ROOM_FRAG = """
         vec3 env = sh_eval(reflect(-v, n)) * params.z;
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
         vec3 fc = env_brdf(f0, sqrt(ar), nov);
-        vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x;
+        vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
     }
@@ -2274,7 +2278,8 @@ let BAKE_FRAG = """
     // Oak's rays, sheets of cells running out from the pith, a few centimetres high along
     // the grain. On a face near the radial plane (slant small) they lie
     // almost in the face and show as broad satiny flakes across the grain, the longer the
-    // closer the cut; on a face across them (flat-sawn) as short dark lenses along it.
+    // closer the cut, soft-edged, the finish (oak_finish) leaving them a little lighter and
+    // glossier, tone on tone; on a face across them (flat-sawn) as short dark lenses along it.
     // slant is the sine of the angle. x across, y along, in world units. x the flakes,
     // y the lenses.
     vec2 oak_rays(float x, float y, float seed, float slant) {
@@ -2282,23 +2287,24 @@ let BAKE_FRAG = """
         float quarter = 1.0 - smoothstep(0.12, 0.5, slant);
         float flake = 0.0;
         if (quarter > 0.0) {
-            const vec2 CELL = vec2(0.7, 0.8);
+            const vec2 CELL = vec2(1.1, 1.8);
             vec2 id0 = floor(vec2(x, y) / CELL);
-            for (int i = -1; i <= 1; i++) {
-                vec2 id = id0 + vec2(float(i), 0.0);
-                if (h12(id + seed * 0.61) > 0.32 * inlay_fig.w) continue;
-                vec2 c = (id + vec2(0.5, 0.3 + 0.4 * h12(id + 2.7))) * CELL;
-                float len = min((0.25 + 0.7 * h12(id + 3.9)) / (0.5 + 3.0 * slant), 1.0);
-                float high = 0.08 + 0.15 * h12(id + 5.1);
+            for (int k = 0; k < 9; k++) {
+                vec2 id = id0 + vec2(float(k % 3) - 1.0, float(k / 3) - 1.0);
+                if (h12(id + seed * 0.61) > 0.35 * inlay_fig.w) continue;
+                vec2 c = (id + vec2(0.2 + 0.6 * h12(id + 1.3), 0.1 + 0.8 * h12(id + 2.7))) * CELL;
+                float len = min((0.5 + 1.0 * h12(id + 3.9)) / (0.5 + 3.0 * slant), 1.5);
+                float high = 0.15 + 0.4 * h12(id + 5.1);
                 vec2 d = vec2(x, y) - c;
                 d.y -= (h12(id + 7.7) - 0.5) * 0.4 * d.x;
-                d.y += 0.4 * high * (vnoise(vec2(x * 9.0, seed + id.y)) - 0.5);
+                d.y += 0.3 * high * (vnoise(vec2(x * 4.0, seed + id.y)) - 0.5);
                 float u = d.x / len;
-                // Rounded, ragged, broken: a flake, never a stroke.
-                float lens = high * sqrt(max(1.0 - u * u, 0.0)) * (0.6 + 0.4 * vnoise(vec2(x * 4.0, id.y + 3.0)));
-                float inside = 1.0 - smoothstep(-2.0 * texel, 2.0 * texel, abs(d.y) - lens);
-                inside *= smoothstep(0.2, 0.5, vnoise(vec2(x * 6.0, y * 10.0) + id * 3.1));
-                flake = max(flake, inside * (0.4 + 0.6 * h12(id + 9.1)));
+                // Rounded, ragged at the ends, broken into a few flakes: a soft ribbon
+                // across the grain, never a stroke.
+                float lens = high * sqrt(max(1.0 - u * u, 0.0)) * (0.7 + 0.3 * vnoise(vec2(x * 3.0, id.y + 3.0)));
+                float inside = (1.0 - smoothstep(0.2 * lens, lens, abs(d.y))) * smoothstep(texel, 3.0 * texel, lens);
+                inside *= smoothstep(0.25, 0.6, vnoise(vec2(x * 2.5, y * 1.5) + id * 3.1));
+                flake = max(flake, inside * (0.5 + 0.5 * h12(id + 9.1)));
             }
         }
         float lines = 0.0;
@@ -2422,13 +2428,13 @@ let BAKE_FRAG = """
         pore = ring.w * (band * dash + 0.2 * smoothstep(0.82, 0.96, vnoise(pq * vec2(1.3, 2.0) + 9.0)));
         // Each year's pores as open as its own: some years' bands faint, some heavy.
         pore *= 0.45 + 0.9 * h1(year + seed * 7.0, 2.6);
-        pore = max(pore * (1.0 - rays.x), 0.45 * rays.y);
+        pore = max(pore * (1.0 - 0.6 * rays.x), 0.3 * rays.y);
         float a = ring.z * (late - 0.08) + k.z * (fibre - 0.5) * 1.2 + k.y * (broad - 0.5) * 1.5
-                + 0.3 * pore - 0.12 * rays.x + 1.6 * knot;
+                + 0.3 * pore + 1.6 * knot;
         Wood w;
         w.albedo = pow(srgb(base.rgb), vec3(1.0 + a));
         w.rough = base.a;
-        w.height = 0.15 * late + 0.5 * (fibre - 0.5) - 1.2 * pore + 0.3 * rays.x;
+        w.height = 0.15 * late + 0.5 * (fibre - 0.5) - 1.2 * pore + 0.08 * rays.x;
         w.cavity = 1.0 - 0.5 * pore;
         w.pore = pore;
         w.fleck = rays.x;
@@ -3398,7 +3404,7 @@ let BAKE_FRAG = """
     // (light_sq.a), rougher in the pores, smoother on the rays' flakes.
     Wood oak_finish(Wood w, vec2 p, float seed) {
         vec3 c = w.albedo;
-        c *= pow(srgb(dark_sq.rgb), vec3(dark_sq.a * (1.0 + 0.6 * w.pore - 0.08 * w.fleck)));
+        c *= pow(srgb(dark_sq.rgb), vec3(dark_sq.a * (1.0 + 0.6 * w.pore)));
         c = mix(c, srgb(dark_fig.rgb), dark_fig.a * w.pore);
         c *= pow(srgb(inlay.rgb), vec3(inlay.a));
         float blot = fbm(p * vec2(0.08, 0.03) + seed) - 0.5;
@@ -3406,8 +3412,12 @@ let BAKE_FRAG = """
         c *= pow(vec3(0.97, 0.88, 0.7), vec3(inlay_fig.x * (1.0 + blot)));
         c *= 1.0 + inlay_fig.y * (1.4 * blot + 0.6 * fine);
         c *= 1.0 - inlay_fig.z * clamp((1.0 - w.cavity) * 2.0, 0.0, 1.0);
+        // The rays' flakes: their cells take less stain and shine, a shade lighter and
+        // greyer than the wood round them, the rest in their gloss.
+        float y = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        c = mix(c, mix(c, vec3(y), 0.15) * 1.15, w.fleck);
         w.albedo = c;
-        w.rough = light_sq.a + 0.2 * w.pore - 0.1 * w.fleck + 0.08 * fine + 0.05 * blot;
+        w.rough = light_sq.a + 0.2 * w.pore - 0.05 * w.fleck + 0.08 * fine + 0.05 * blot;
         return w;
     }
 

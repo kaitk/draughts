@@ -73,6 +73,15 @@ struct Room {
     // A leaf: x its length, y its width against it, z how much of the sun it lets through;
     // w how far beyond the window the trunk stands.
     foliage: float4 = float4 { 0.35, 0.7, 0.3, 30.0 },
+    // The room round the table (model3d::surfaces) lit more than the board's ambient
+    // alone gives it: the sun's patch and the window's sky thrown back off the floor, the
+    // ceiling and the walls into the shade, sRGB, w its strength. The board keeps its
+    // deep shade between the sun's flecks; the room's floor and panelling need this to read.
+    bounce: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    // How much brighter the room's surfaces are exposed than the board, as a painter or
+    // a photograph's local tonemapping lifts a dark room round a bright subject: the dark
+    // oak in a low sun is otherwise all in the tonemap's toe.
+    room_exposure: f32 = 1.0,
 }
 
 // The library on the garden side, south-west, a mid-October afternoon
@@ -98,6 +107,10 @@ let AUTUMN = Room {
     crown:     float4 { -10.0, -60.0, 0.5, 0.3 },
     foliage:   float4 { 0.4, 0.7, 0.15, 30.0 },
     tree_blur: 0.2,
+    // The room round the table as style-01 has it: dim and warm, the panelling's detail
+    // in the shade, the sun's patch bright.
+    bounce:        float4 { 0.85, 0.78, 0.7, 0.2 },
+    room_exposure: 1.8,
     ..
 };
 

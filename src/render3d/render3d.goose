@@ -542,13 +542,17 @@ fn room_bytes(g: Gpu&) -> i64 {
     return 4 * 4 * sum;
 }
 
-// ROOM_FRAG's block: surfaces::Look, the room's frame, and where its walls and fields are.
-struct SurfacesBlock { plank: float4, planks: float4, worn: float4, paper: float4, axes: float4, place: float4 }
+// ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, and
+// the room's shade (rooms::Room.bounce, linear, times its strength) and own exposure.
+struct SurfacesBlock {
+    plank: float4, planks: float4, worn: float4, paper: float4, axes: float4, place: float4, shade: float4
+}
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     let k = surfaces::LOOK;
     let f = g.room_frame;
     SurfacesBlock { k.plank, k.planks, k.worn, k.paper, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
-                    float4 { g.room.window.x, g.room_away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD } }
+                    float4 { g.room.window.x, g.room_away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
+                    model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure) }
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1
