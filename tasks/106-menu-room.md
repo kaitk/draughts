@@ -40,7 +40,7 @@ or left out), only the floor where it shows.
 ## Images to make first (a ChatGPT session of its own, in parallel, the user, 2026-11-20)
 
 The floor's and the window wall's look come from images before any modelling; saved in
-`design/manor/` with their prompts in `prompts.txt`, the ones the app uses cut to size
+`design/manor/pieces/` with their prompts in `prompts.txt`, the ones the app uses cut to size
 and put in git once chosen (`AGENTS.md`'s rule on images):
 
 - The simplified concept of the home shot from its camera: the window niche, curtains,
@@ -58,7 +58,7 @@ and put in git once chosen (`AGENTS.md`'s rule on images):
 
 ## Acceptance criteria
 
-- [ ] A simplified concept of the home shot chosen, saved in `design/manor/`
+- [ ] A simplified concept of the home shot chosen, saved in `design/manor/concepts/`
 - [ ] The window wall (wallpaper, wainscot, niche, sills, shutters, curtains) and the
       view outside behind the board on the home screen, autumn, at the chosen cameras
 - [ ] The room drawn only when the camera moves or the scene changes; its cost and

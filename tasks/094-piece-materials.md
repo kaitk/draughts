@@ -11,7 +11,7 @@ spring stone board scatters the key light on desktops. Each look compiles only i
 variant of the lit shader. The dated sections below are how it got there; the tools'
 flags in them were current on their dates.
 
-The 3D pieces read as plastic next to the concept art (`design/manor/library-table-01.png`,
+The 3D pieces read as plastic next to the concept art (`design/manor/concepts/library-table-01.png`,
 `hall-winter-table-02.png`, local; task 093): there the light pieces glow warm at their
 edges where the sun strikes them, like ivory, bone, or marble, and no two pieces shine
 alike. Two things make the difference, and both go in the piece

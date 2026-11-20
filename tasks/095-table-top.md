@@ -4,7 +4,7 @@ Status: in-progress (in main, 2026-11-20: settings' Table background;
 the device numbers and the merge's settings left)
 
 The 3D board floats over a blurred photograph. Set it on a polished table top instead, as
-in the concept art (`design/manor/library-table-01.png`, `hall-winter-table-02.png`,
+in the concept art (`design/manor/concepts/library-table-01.png`, `hall-winter-table-02.png`,
 local; task 093): mahogany, deep red-brown with a fine straight grain and a ribbon
 figure, polished but soft. Procedural like the board's woods, baked at
 setup by the same bake (`src/model3d/looks.goose`, `shaders::BAKE_FRAG`), a look's table
@@ -95,7 +95,7 @@ Tune with versions side by side from `tools/board_shot.goose`, as task 094 does.
   1. The taken pieces on the table beside the board (built, 2026-11-20): task 099, the first, before any
      prop, as a small thing that makes the scene alive.
   2. Two tables: the round one, and a writing desk improved on from the concept art
-     (`design/manor/library-desk-01.png`, `library-table-01.png`, local), trying the
+     (`design/manor/concepts/library-desk-01.png`, `library-table-01.png`, local), trying the
      desk's usual green leather writing surface. Each look's take is
      `tables::for_look` (the flame mahogany for every look till then).
   3. Props, from the concept art: a book at the side, perhaps a candlestick, and an

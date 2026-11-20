@@ -1,4 +1,12 @@
-Manor concept prompts (task 093/01). Images stay local here (.gitignore).
+Manor concept prompts (task 093/01). Images stay local here (.gitignore), by kind:
+- concepts/: the rooms as wholes, the shots (style-01, library-menu-01, -table-01,
+  -desk-01, -home-01, -autumn-02, garden-facade-01, upper-hall-02, hall-winter-*)
+- pieces/: what the room is modelled and textured from (wallpaper, wainscot, window,
+  lace, parquet, rug); pieces/crops/ the cuts from the concepts attached to make them
+- outside/: the park seen from the windows, and real parks for reference (ref-*)
+- room/: the library's whole room (task 109): the plans and the layout chosen
+- set-aside/: tried and not kept, as prompts.txt says why
+The names in the prompts below are bare; attach from the folder its kind says.
 
 The concept, fixed for now (2026-11-17):
 - style-01.png: the library, on the garden side; warm afternoon sun from the left. The

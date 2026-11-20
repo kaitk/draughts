@@ -3,7 +3,7 @@
 Status: todo (postponed, 2026-11-20: not in the home screen's first shot, and more work)
 
 A second table for the 3D board beside the round one (task 095's next step 2): a
-writing desk improved on from the concept art (`design/manor/library-desk-01.png`,
+writing desk improved on from the concept art (`design/manor/concepts/library-desk-01.png`,
 `library-table-01.png`, local), against the wall by the window as `library-desk-01`
 should have had it, the board small on it with room around. Two takes to choose from or
 offer: the desk's wood alone, and with the usual green leather writing surface inlaid,

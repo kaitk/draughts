@@ -72,7 +72,7 @@ Find the manor and the room before modelling anything. ChatGPT paints the frames
 
 ## Acceptance criteria
 
-- [x] Round 1: a room direction chosen, saved as `design/manor/<shot>-NN.png`
+- [x] Round 1: a room direction chosen, saved as `design/manor/<shot>-NN.png` (since 2026-11-20 in `concepts/`)
 - [ ] Round 2: the game's camera works with the room
 - [ ] The decade fixed, and the style block in the prompts updated to match
 - [ ] Round 3: a floor plan and elevations to model from

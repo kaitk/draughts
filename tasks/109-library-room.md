@@ -80,7 +80,7 @@ be thought through with the room, not taken from one picture:
 ## Acceptance criteria
 
 - [ ] Several layouts tried as ChatGPT images, at least `style-01`'s view and the
-      reverse view of the fourth wall, saved in `design/manor/` with their prompts in
+      reverse view of the fourth wall, saved in `design/manor/room/` with their prompts in
       `prompts.txt`
 - [ ] One layout chosen by the user, its images as believable in their contents as
       `style-01`
