@@ -33,7 +33,15 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       3 times calm air's), each gust quickening only some regions of branches
 - [ ] The shadows in the light tuner (the user, 2026-11-20): the board casts none on the
       table, and the pieces cast shadows but don't shade themselves; checked in shots
-      first, the pieces' own shadow perhaps the high mode's only
+      first, the pieces' own shadow perhaps the high mode's only. The user's shot of the
+      autumn board at a low angle shows it floating: no shadow or contact darkening on
+      the table under its edge
+- [ ] The autumn board's frame, its outer sides, too rough seen at a glancing angle
+      (the user, 2026-11-20): matte and streaky where waxed wood would catch a sheen; the
+      squares are fine
+- [ ] An FPS counter in the light tuner (the user, 2026-11-20): frames a second and
+      the frame's time while it draws every frame (the wind on), to judge the high
+      mode's cost as the room fills
 - [ ] The high mode drawing every frame: on desktops, and on laptops and tablets on
       mains power, a setting forcing it (`docs/decisions/rendering.md`, "Frames and
       battery"); the game's clock ticking, the window's pattern swaying gently
