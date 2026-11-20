@@ -110,15 +110,15 @@ struct Settings {
     // The 3D board's own: on a table, Background's third tile, which the flat board
     // shows as photo or plain (`table = on`); and its pieces Smooth, as before their
     // materials (`pieces = smooth`), else the board's own material
-    table:            bool          = false,
-    smooth:           bool          = false,
-    turns:            bool          = false,   // the setup's: a friend's game turns the board to the side to move (`turn = on`)
-    hints:            i64           = board::MISTAKES,
-    lookout:          bool          = false,   // the game's lookout, its eye on whose turn's line (`lookout = on`)
-    top:              bool          = false,   // the game's 3D board in the top view (`view = top`)
-    zoom:             bool          = false,   // and zoomed (`zoom = on`)
-    kings:            i64           = AUTO,
-    language:         i64           = SYSTEM, // strings::EN.., or SYSTEM; the device's, in settings.txt
+    table:    bool = false,
+    smooth:   bool = false,
+    turns:    bool = false,                    // the setup's: a friend's game turns the board to the side to move (`turn = on`)
+    hints:    i64  = board::MISTAKES,
+    lookout:  bool = false,                    // the game's lookout, its eye on whose turn's line (`lookout = on`)
+    top:      bool = false,                    // the game's 3D board in the top view (`view = top`)
+    zoom:     bool = false,                    // and zoomed (`zoom = on`)
+    kings:    i64  = AUTO,
+    language: i64  = SYSTEM, // strings::EN.., or SYSTEM; the device's, in settings.txt
     // The volume in percent, or VOLUME_DEFAULT; and muted at it (`sound = off`), the
     // speaker's tile. The device's, in settings.txt.
     volume: i64  = VOLUME_DEFAULT,

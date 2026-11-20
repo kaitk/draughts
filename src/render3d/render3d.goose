@@ -226,6 +226,8 @@ struct Gpu {
     table_ib:       Buffer,
     table_count:    i64,
     table_lit:      Pipeline,
+    table_discs:    float4[MAX_DISCS], // what lies on it (table_discs()), for its shadows
+    table_disc_n:   float4,            // x how many, y their radius
     photo:          Texture,
     shadow_map:     Texture,
     aa:             i32,            // AA_OFF.. (set_aa), the renderer's ways
@@ -381,11 +383,22 @@ fn bake_table<O>(o: O&, g: Gpu&, y0: i64 = 0, y1: i64 = -1, mips: bool = true) {
 // Whether the board's pass draws the table: on, and its wood baked.
 fn table_shown(g: Gpu&) -> bool { g.table && g.table_baked && g.table_side == g.side && g.table_vb.id != 0 }
 
-// TABLE_FRAG's block: the table's light, its polish, and its rim's wear (tables::Table).
-struct TableBlock { pool: float4, coat: float4, polish: float4, worn: float4 }
+// TABLE_FRAG's block: the table's light, its polish, and its rim's wear (tables::Table);
+// then the pieces lying on it (table_discs).
+struct TableBlock { pool: float4, coat: float4, polish: float4, worn: float4, disc_n: float4, discs: float4[MAX_DISCS] }
 fn table_block(g: Gpu&) -> TableBlock {
     let t = g.table_spec;
-    TableBlock { t.light, t.coat, t.polish, t.wear }
+    TableBlock { t.light, t.coat, t.polish, t.wear, g.table_disc_n, g.table_discs }
+}
+
+// The pieces lying on the table (view3d::Scene.discs, taken3d::lay), each x, z, its foot's
+// and its top's height over the table, all of radius r, for the shadows TABLE_FRAG works
+// out from them: the shadow map covers only the board.
+let MAX_DISCS = 48;     // view3d::MAX_DISCS
+fn table_discs(g: Gpu&, discs: const float4[:], r: f32) {
+    let n = min(discs.len, MAX_DISCS);
+    for i in n { g.table_discs[i] = discs[i]; }
+    g.table_disc_n = float4 { n, r, 0.0, 0.0 };
 }
 
 // Shows the table under the board or not; its maps are baked with the next theme put on

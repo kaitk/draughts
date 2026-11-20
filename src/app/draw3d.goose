@@ -390,7 +390,7 @@ fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, v0: view3d::
     d.frames++;
     guard force || again || !hold || which != d.which || !view3d::same_view(d.drawn.view, v) else { return; }
     d.which = which;
-    view3d::build_scene(d.scene, b, l, v, now);
+    view3d::build_scene(d.scene, b, l, v, now, d.tabled);
     let c = view3d::changes(d.drawn, d.scene);
     // The board turned under the light (a hot-seat turn): the light turns with it, so it
     // keeps its place on screen, and the shadows are drawn again.
@@ -426,6 +426,7 @@ fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, v0: view3d::
         }
     }
     render3d::turn_light(d.gpu, v.turn);
+    render3d::table_discs(d.gpu, s.discs[..], s.disc_r);
     render3d::place(be.r3d, d.gpu, d.upload[..d.upload.len], d.alphas[..d.alphas.len], s.squares[..], s.field[..],
                     s.lit[..], s.selected, s.dim, d.shadow);
     let m = view3d::matrix(v, size.x, size.y);

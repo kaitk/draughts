@@ -228,7 +228,7 @@ fn go(r: Replay&, ply: i64, now: f64) -> bool {
     }
     board::start_move(r.b, at, now);
     // The move's marks show once its piece has arrived.
-    if r.b.moving { r.rest_at = now + board::duration(r.b.move); }
+    if r.b.moving { r.rest_at = now + board::duration(r.b.move, r.b.on_table); }
     return true;
 }
 

@@ -60,7 +60,7 @@ struct Play {
     path:      puzzles::Ply[..puzzles::MAX_PLIES],  // the moves played since the start
     at:        f64 = 0.0,     // when the move shown lands (ANSWER, BACK, SHOW, SHOWN, SOLVED)
     tried:     rules::Move,   // the wrong move, to slide back after its answer
-    answer:    i64      = -1, // the answer's next move, in the board's moves (SHOW, SHOWN); -1 at its end
+    answer:    i64 = -1,      // the answer's next move, in the board's moves (SHOW, SHOWN); -1 at its end
     line:      rules::Move[..LINE_MAX], // the answer's line on the board, taken back at its end (SHOWN)
     line_left: i64      = 0,  // its plies left of puzzles::SHOW_DEPTH (puzzles::answer_next)
     missed_at: f64      = -100.0,
@@ -198,7 +198,7 @@ fn line_on(pl: Play&, now: f64) {
     let b .= pl.b;
     pl.line.push(b.moves[pl.answer]);
     board::start_move(b, pl.answer, now);
-    pl.at = now + board::duration(b.move);
+    pl.at = now + board::duration(b.move, b.on_table);
     pl.line_left--;
     pl.answer = if pl.line.len < LINE_MAX { puzzles::answer_next(pl.s, b.pos, pl.line_left) } else { -1 };
 }
@@ -212,7 +212,7 @@ fn handle_player_move(pl: Play&, history: i64, wrong_at: f64, now: f64) -> bool 
         let m = rules::move_of(b.move);
         played(pl, m);
         let what = puzzles::judge(pl.s, b.before, puzzles::short(m), pl.left);
-        pl.at = b.since + board::duration(b.move);
+        pl.at = b.since + board::duration(b.move, b.on_table);
         if what == puzzles::SOLVED {
             // Its landing is heard as the puzzle solved, in place of the piece set down.
             b.finale = sound_event::SOLVED;

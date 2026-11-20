@@ -310,6 +310,11 @@ fn parse(argv: u8[:][>..]) -> Flags {
             if ok && a == "--autumn" { f.autumn = clamp(n, 0, looks::AUTUMNS - 1); }
             if ok && a == "--winter" { f.winter = clamp(n, 0, looks::WINTERS - 1); }
         }
+        // --taken stacks|row|heap|towers: how what each side has taken lies on the table
+        // (taken3d::HEAPS; stacks the game's own).
+        if a == "--taken" {
+            for name, i in taken3d::NAMES { if v == name { taken3d::heap = taken3d::HEAPS[i]; } }
+        }
         if a == "--table" {
             f.table = if v == "on" { tables::BOARD_WOOD } else { -1 };
             for name, i in tables::NAMES { if v == name { f.table = i; } }

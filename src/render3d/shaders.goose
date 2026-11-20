@@ -280,6 +280,8 @@ let LIT_FRAG = """
         float nl = clamp(dot(n, light_dir.xyz), 0.0, 1.0);
         vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
         vec4 s = light_view_proj * vec4(q, 1.0);
+        // Past the map, beside the board on its table: lit (TABLE_FRAG shades what lies there).
+        if (abs(s.x) > 1.0 || abs(s.y) > 1.0) return 1.0;
         vec2 size = vec2(textureSize(shadow_map, 0));
         vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5) * size;
         float z = s.z - 0.0005;
@@ -1136,8 +1138,10 @@ let TABLE_FRAG = """
     // strong it is, z how far it follows the wood's relief, w how broad the key light's
     // highlight in it (a roughness); polish: x how much its roughness varies, y its
     // strength, z the blotches' size (world units), w how much the wear shows in it;
-    // worn: the rim's wear, x how much, y how wide.
-    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; };
+    // worn: the rim's wear, x how much, y how wide. Then the pieces lying on it
+    // (render3d::table_discs): disc_n x how many, y their radius; each disc x, z, its
+    // foot's and its top's height over the table.
+    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 disc_n; vec4 discs[48]; };
     // mesh.goose's (test/model3d/geometry checks them).
     const float TABLE_R = 16.0;
     const float TABLE_TOP = -0.703;
@@ -1235,6 +1239,31 @@ let TABLE_FRAG = """
             lit = min(lit, smoothstep(-w, w, d));
         }
         return lit;
+    }
+
+    // The pieces' shadow on the table from the key light, and how much of the sky they hide
+    // round their feet: each a disc swept along the light from its foot's height to its
+    // top's, its shadow a capsule, softer the higher it was cast from.
+    vec2 discs_shadow(vec2 p) {
+        vec3 l = light_dir.xyz;
+        vec2 off = -l.xz / max(l.y, 0.05);
+        float r = disc_n.y;
+        float lit = 1.0;
+        float occ = 1.0;
+        int n = int(disc_n.x);
+        for (int i = 0; i < 48; i++) {
+            if (i >= n) break;
+            vec4 c = discs[i];
+            vec2 a = c.xy + off * c.z;
+            vec2 ba = off * (c.w - c.z);
+            vec2 pa = p - a;
+            float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
+            float d = length(pa - ba * h) - r;
+            float w = 0.015 + 0.1 * c.w;
+            lit = min(lit, smoothstep(-w, w, d));
+            if (c.z < 0.01) occ = min(occ, mix(0.45, 1.0, smoothstep(-0.02, 0.35 * r, length(p - c.xy) - r)));
+        }
+        return vec2(lit, occ);
     }
 
     // The board's side seen along the ray from p (on the table) in direction d (going up):
@@ -1348,7 +1377,13 @@ let TABLE_FRAG = """
         float d = length(p.xz) / max(pool.x, 1e-3);
         float lit = mix(pool.y, 1.0, exp(-d * d));
         vec3 light = light_color.rgb * light_dir.w * lit;
-        float vis = p.y > TABLE_TOP - 0.01 ? board_shadow(p.xz) : 1.0;
+        float vis = 1.0;
+        if (p.y > TABLE_TOP - 0.01) {
+            vis = board_shadow(p.xz);
+            vec2 ds = discs_shadow(p.xz);
+            vis *= ds.x;
+            ao *= ds.y;
+        }
         vec3 irr = sh_eval(n) * params.z * mix(1.0, lit, 0.5);
         vec3 wood = albedo * (diff / PI * light * vis + irr * ao);
 

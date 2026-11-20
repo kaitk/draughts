@@ -127,26 +127,8 @@ struct Game {
     chimes: sound_event::Chimes = sound_event::Chimes {},
 }
 
-// The pieces of each color taken so far: the start's pieces less those on the board. A
-// piece taken while a king counts as a king, found from the undo history, so kings taken
-// more than rules::MAX_HISTORY moves back count as men.
-fn taken(b: board::Board&) -> panel::Taken {
-    var t = panel::Taken {};
-    let v .= rules::VARIANTS[b.variant];
-    for c in 2 {
-        let lost = max(popcount(v.start[c]) - popcount(b.pos.pieces[c]), 0);
-        var kings: i64 = 0;
-        for st, i in b.rec.history {
-            let a = st.pos;
-            guard a.side != c else { continue; }
-            let next = if i + 1 < b.rec.history.len { b.rec.history[i + 1].pos } else { b.pos };
-            kings += popcount(a.pieces[c] & a.kings & ~next.pieces[c]);
-        }
-        t.kings[c] = min(kings, lost);
-        t.men[c] = lost - t.kings[c];
-    }
-    return t;
-}
+// The pieces of each color taken so far (board::taken).
+fn taken(b: board::Board&) -> panel::Taken { board::taken(b) }
 
 // Counts what each side has taken again when the board at rest shows another position
 // than it was counted for. Returns whether the counts may have changed.

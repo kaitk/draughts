@@ -106,8 +106,8 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         nx::bind(g.table_lit);
         var t = no_root();
         t.frame = f;
-        let tb = render3d::table_block(g);
-        t.u = blocks([tb.pool, tb.coat, tb.polish, tb.worn]);
+        let tb: render3d::TableBlock[1] = [render3d::table_block(g)];
+        t.u = ngfx::frame_data(bytes_of(tb));
         t.verts = nx::address(g.table_vb);
         slot(t, 0, g.table_albedo, g.aniso);
         slot(t, 1, g.table_normal, g.aniso);

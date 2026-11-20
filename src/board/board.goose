@@ -9,6 +9,7 @@ import rules from "../rules";
 import gui from "../gui";
 import model3d from "../model3d";
 import .view3d;
+import .taken3d;
 import .rig;
 import .panel;
 import .sound_event;
@@ -17,6 +18,7 @@ let MAX_PIECES = 48;        // 40 pieces on 10×10, the moving one, and margin
 let HOP = 0.2;              // seconds per square of a quiet move, per stop of a capture
 let FADE = 0.18;            // captured pieces fade out after the move
 let TAKEN = 0.35;           // a jumped piece's opacity until the capture ends, so a king's way back past it shows
+let CARRY = 0.5;            // seconds captured pieces take to the table after the move, in place of FADE (on_table)
 let PULSE = 2.8;            // must-capture rings pulse for two of their 1.4 s cycles
 let DRAG_START = 10.0;      // dp a press moves before it becomes a drag
 let SNAP = 0.9;             // squares from a square's center a press or drop off the dark squares still reaches
@@ -174,6 +176,9 @@ struct Board {
     positions_shown: i64,             // counts the positions shown: the lookout's marks were cleared
     pulsed:          i64,       // the piece whose glow ring pulses this frame, or -1
     king_look:       i64,       // CROWN or STACK
+    // The 3D board on its table (shell::build_frame_pieces): a capture's pieces leave the
+    // board after its last hop and are carried to the table (view3d::carried), not faded.
+    on_table: bool,
     // A picture rather than a game: a flashed ring and pulsed capture rings stay lit and
     // still (`rings_frozen`), so it needs no frames after.
     static_picture:       bool,
@@ -899,10 +904,45 @@ fn showcase(cam: rig::Rig&, g: gui::Gui&, input: gui::Input, three: bool, pitch:
 
 fn hops(m: rules::Way&) -> i64 { max(m.path.len - 1, 1) }
 
-// How long the move takes: a quiet move one hop, a capture one per stop, then the fade.
-fn duration(m: rules::Way&) -> f64 {
-    let fade = if m.captured != 0 { FADE } else { 0.0 };
+// How long the move takes: a quiet move one hop, a capture one per stop, then the fade,
+// or on the table the carry.
+fn duration(m: rules::Way&, table: bool = false) -> f64 {
+    let fade = if m.captured == 0 { 0.0 } else if table { CARRY } else { FADE };
     return hops(m) * HOP + fade;
+}
+
+// How far into the move its captured pieces are carried to the table, 0 to 1, at `now`:
+// 0 until the last hop ends; an undone move's go back, 1 to 0. -1 when nothing is carried.
+fn carried(b: Board&, now: f64) -> f32 {
+    guard b.moving && b.on_table && b.move.captured != 0 else { return -1.0; }
+    let t = move_time(b, now);
+    return clamp((t - hops(b.move) * HOP) / CARRY, 0.0, 1.0) as f32;
+}
+
+// How far into the move `now` is: a move sliding back is the move played backward.
+fn move_time(b: Board&, now: f64) -> f64 {
+    return if b.back { max(duration(b.move, b.on_table) - (now - b.since), 0.0) } else { now - b.since };
+}
+
+// The pieces of each color taken so far: the start's pieces less those on the board. A
+// piece taken while a king counts as a king, found from the undo history, so kings taken
+// more than rules::MAX_HISTORY moves back count as men.
+fn taken(b: Board&) -> panel::Taken {
+    var t = panel::Taken {};
+    let v .= rules::VARIANTS[b.variant];
+    for c in 2 {
+        let lost = max(popcount(v.start[c]) - popcount(b.pos.pieces[c]), 0);
+        var kings: i64 = 0;
+        for st, i in b.rec.history {
+            let a = st.pos;
+            guard a.side != c else { continue; }
+            let next = if i + 1 < b.rec.history.len { b.rec.history[i + 1].pos } else { b.pos };
+            kings += popcount(a.pieces[c] & a.kings & ~next.pieces[c]);
+        }
+        t.kings[c] = min(kings, lost);
+        t.men[c] = lost - t.kings[c];
+    }
+    return t;
 }
 
 // Whether anything is still changing at `now`; the app draws while it is.
@@ -927,7 +967,7 @@ fn next_shown(b: Board&) -> bool {
 fn update(b: Board&, now: f64) -> bool {
     var ended = false;
     add_sound_events(b, now);
-    if b.moving && now - b.since >= duration(b.move) {
+    if b.moving && now - b.since >= duration(b.move, b.on_table) {
         b.moving = false;
         b.back = false;
         ended = true;
@@ -1034,8 +1074,7 @@ fn build_frame_pieces(b: Board&, l: Layout, now: f64) {
     let r = 0.39 * l.inner.w;           // a disc fills 78% of its square
     let unit = 0.01 * l.board.z;        // 1% of the board
     let shown = if b.moving { b.before } else { b.pos };
-    // A move sliding back is the move played backward.
-    let t = if b.back { max(duration(b.move) - (now - b.since), 0.0) } else { now - b.since };
+    let t = move_time(b, now);
     let pulsing = now < b.pulse_end;
     let glowing = ring_at(b.glow_at, now);
     b.pulsed = -1;
@@ -1073,6 +1112,8 @@ fn build_frame_pieces(b: Board&, l: Layout, now: f64) {
             if b.dragging && sq == b.selected { continue; }
             if waits >= 0 && sq == b.selected { continue; }
             var alpha: f32 = 1.0;
+            // On the table, once carried off, the 3D board draws it on its way (view3d).
+            if b.moving && b.move.captured & m != 0 && b.on_table && t > hops(b.move) * HOP { continue; }
             if b.moving && b.move.captured & m != 0 { alpha = taken_alpha(v, b.move, m, t); }
             if taken & m != 0 {
                 let u = if hop_over & m != 0 { ease(clamp((now - b.hop_at) / HOP, 0.0, 1.0)) } else { 1.0 };

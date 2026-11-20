@@ -1180,6 +1180,7 @@ fn board_on_screen(sh: Shell&) -> board::Board& { board_of(sh, sh.screen) }
 // (game::cheer), which fades with the game screen in a transition.
 fn build_frame_pieces(sh: Shell&, now: f64) -> board::Board& {
     let b .= board_of(sh, sh.out.board_screen);
+    b.on_table = settings::raised(sh.prefs) && sh.prefs.table;
     board::build_frame_pieces(b, sh.out.layout, now);
     let k = if which(sh.out.board_screen) == GAME { abs(flat_fade(sh, now)) } else { 2.0 };
     if k < 1.0 { for &p in b.pieces { p.look.w *= k; } }

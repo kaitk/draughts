@@ -434,7 +434,13 @@ struct Scene {
     next:     f32                         = 1.0,
     cursor:   f32                         = -1.0,
     pulsing:  bool                        = false,
+    // On a table, what each side has taken lying on it (taken3d::lay): each piece a disc
+    // for the table's shadow, x and z its middle, its foot's and top's height over the
+    // table, all of radius disc_r.
+    discs:  float4[..MAX_DISCS] = [],
+    disc_r: f32                 = 0.0,
 }
+let MAX_DISCS = 48;
 
 // A board square's number (y * size + x, as board::Marks numbers it) in the world's grid
 // (row * n + column, row 0 the far side): the flat layout's turn is the world's.
@@ -455,8 +461,9 @@ fn mark_world(l: board::Layout, from: u32[4]&, to: u32[4]&) {
 }
 
 // Fills s for the frame board::build_frame_pieces left in b, on the flat layout l, seen
-// through v: each 2D piece becomes one instance, or two for a stacked king.
-fn build_scene(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
+// through v: each 2D piece becomes one instance, or two for a stacked king; on a `table`,
+// what each side has taken lying on it too (taken3d::lay).
+fn build_scene(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64, table: bool = false) {
     s.view = v;
     s.inst.clear();
     s.state.clear();
@@ -565,6 +572,7 @@ fn build_scene(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64)
     if !s.pulsing { s.pulse.x = 0.0; }
     s.cursor = if b.cursor >= 0 { world_square(l, b.cursor) } else { -1.0 };
     if s.cursor >= 0.0 { s.pulsing = true; }
+    if table { taken3d::lay(s, b, l, now); } else { s.discs.clear(); }
 }
 
 // What a new frame's scene changes against the last one drawn: DRAW the board again;

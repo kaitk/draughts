@@ -1,0 +1,20 @@
+before: white men 10, white kings 0, black men 9, black kings 0; on the way none; discs 19
+moving true, B:Wa1,g7:Bh8, 0.9 s on the table, 0.5800000000000001 s without
+0.3 s: white men 10, white kings 0, black men 9, black kings 0; on the way none; discs 19
+  5 on the board, the faintest at 0.35
+0.45 s: white men 10, white kings 0, black men 9, black kings 0; on the way (-0.33 0.09 0.52 at 0.54) (1.61 0.09 -1.35 at 0.54); discs 21
+  3 on the board, the faintest at 1.0
+0.65 s: white men 10, white kings 0, black men 9, black kings 0; on the way (2.56 0.99 0.85 at 1.0) (3.47 0.85 1.23 at 1.0); discs 21
+  3 on the board, the faintest at 1.0
+0.88 s: white men 10, white kings 0, black men 10, black kings 1; on the way none; discs 21
+  3 on the board, the faintest at 1.0
+moving false
+after: white men 10, white kings 0, black men 10, black kings 1; on the way none; discs 21
+undo, 2.25 s: white men 10, white kings 0, black men 9, black kings 0; on the way (2.56 0.99 0.85 at 1.0) (3.47 0.85 1.23 at 1.0); discs 21
+  3 on the board, the faintest at 1.0
+undo, 2.55 s: white men 10, white kings 0, black men 9, black kings 0; on the way none; discs 19
+  5 on the board, the faintest at 0.35
+undone: white men 10, white kings 0, black men 9, black kings 0; on the way none; discs 19
+new game: white men 0, white kings 0, black men 0, black kings 0; on the way none; discs 0
+no table, 0.5 s: white men 0, white kings 0, black men 0, black kings 0; on the way none; discs 0
+  5 on the board, the faintest at 0.16

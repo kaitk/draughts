@@ -233,6 +233,19 @@ and value noise in the board shader, never a regular stripe.
   gives each look. Putting it on or off bakes only the table's steps and the
   photograph's again (`draw3d::table_steps`). Behind it is always the plain fade, never
   the photograph (`settings::photo_shown`), till there is a room.
+- **What each side has taken** lies on the table beside the board (`taken3d`): white's
+  catch at the board's right as white sees it, black's at its left, both on the near half
+  where the landscape panels leave the table in view, the kings apart from the men and
+  nearer. The pieces are the board's (their material, instances in the same pass); the
+  shadow map covers only the board, so the table's shader works out each piece's shadow
+  as a disc swept along the light, a capsule, and darkens the table round its foot
+  (`TABLE_FRAG`'s `discs_shadow`, up to 48 discs in the table's block). The layout is
+  short askew stacks of up to four in two staggered columns (`taken3d::STACKS`); `--taken
+  row|heap|towers` shows the others, and `tools/taken_tune.goose` tunes each. A place
+  depends only on the piece's number, so a capture adds one and moves none. A capture's
+  pieces stay on the board, see-through, till the last hop, then are carried to their
+  places in 0.5 s (`board::CARRY`, in place of the 0.18 s fade), rising 1.2 units and
+  growing opaque on the way; an undo carries them back. The flat panels' counts stay.
 - **The pieces' finish** (settings' Pieces row on the 3D board; `pieces = natural|smooth`):
   Matching is the look's own material (task 094); Classic the pieces as before it, one
   color with a faint mottling (`looks::smooth`), which takes only the theme's last step.

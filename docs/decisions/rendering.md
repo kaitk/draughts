@@ -397,6 +397,16 @@ has taken something, with the last move's pill on glass between (2026-11-14, the
 the tiles above stand without a bar, so the row under them shouldn't have one either.
 Replaces one strip of glass across the bar's width under both catches and the pill.
 
+On the 3D board's table (2026-11-20, task 099) the catch also lies on the table, by the
+side of the board of the one who took it, mirrored across the board's middle rather than
+turned about it: turned, black's catch lay at the far left, under the landscape's way out
+and moves panels. Short askew stacks (`taken3d::STACKS`) chosen over a loose row (it ran
+past the board's length by 20 pieces and still read as ordered), a heap (good, but it
+reads as tipped out rather than set down) and tall towers (tidy, like coins). Their
+shadows are worked out in the table's shader from discs, not by widening the shadow map
+over the table, which would have cost the board's shadows a third of their resolution.
+The panels' counts stay: in portrait the table beside the board is off screen.
+
 ### The moves panel and the results screen
 
 Task 074 (2026-11-11) and 078 (2026-11-13):

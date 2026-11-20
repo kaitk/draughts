@@ -195,7 +195,7 @@ fn handle_player_move(ls: Lesson&, history: i64) -> bool {
     ls.glowed = false;
     if current(ls) == MOVE && ls.played < MOVES_IN_FIRST {
         ls.state = REPLY;
-        ls.at = b.since + board::duration(b.move);
+        ls.at = b.since + board::duration(b.move, b.on_table);
         return false;
     }
     ls.state = PLAYED;

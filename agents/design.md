@@ -83,6 +83,10 @@ pieces; the design boards still set the layout, glass, and controls.
   the look's, which the game uses on a desktop. Run the picker from
   `tools/`. With `--shot` it saves the board without the controls.
   Spring stone has Jade and Plastic as profiles 0 and 1 for `board_shot`.
+- What each side has taken, on the table: `tools/taken_tune.goose` (task 099), built
+  with `scripts/mac.py tools/taken_tune.goose` and run from `tools/`; P prints a command
+  that shows the same again and the layout's `Heap` literal for `taken3d::HEAPS`. Headless
+  with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`, as `table_tune`.
 
 ## What has been tried and set aside
 
