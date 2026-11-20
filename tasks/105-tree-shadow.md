@@ -138,6 +138,17 @@ short and straight.
   clustered at the ends). `Room.species`: the library a maple, the sunny winter hall the
   oak, spring and summer a lime. The tuner's Kind.
 
+- What stays when real trees come (the user, 2026-11-20: later the room may get real
+  trees, rendered and baked, with simplified billboards to match; this work shouldn't be
+  thrown away then). The parts are apart: the generator (`trees::grow`, the species) makes
+  segments and leaves; the bake (`trees::draw_map`) turns any segments and leaves into the
+  four-layer map, each layer blurred by the sun's disc at its depth; the shader
+  (`tree_light`, the noise's dapple in its crown) and the renderers' upload read only the
+  map. A tree made elsewhere (modelled, or grown here till it looks as the concepts do and
+  kept) feeds the same bake, or a map rendered offline (Blender) in the same layout
+  replaces it; the window's light, the sway, and the dapple stay. The generator could
+  also write its tree out as a mesh to start a modelled one, or the billboards, from.
+
 ## Acceptance criteria
 
 - [ ] A generated tree whose shadow reads as branches and leaves, not noise, on the board
