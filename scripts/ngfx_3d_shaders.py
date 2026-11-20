@@ -156,13 +156,17 @@ def frame_slang():
     for t, n, k in fields:
         lines.append(f"    {'Mat' if t == 'mat4' else t} {n}{f'[{k}]' if k > 1 else ''};")
     lines.append("};")
-    for t, n, k in fields:
-        lines.append(f"static {'Mat' if t == 'mat4' else t} {n}{f'[{k}]' if k > 1 else ''};")
-    lines.append("void load_frame() {")
+    # An array is read where it is used: copied into the stage's globals, as a field is,
+    # every pixel would hold all of it, and its indexing spills (the table's 48 discs
+    # cost a 3D frame about 30 ms at 2560x1440 on an M1 Pro).
     for t, n, k in fields:
         if k > 1:
-            lines.append(f"    for (int i = 0; i < {k}; i++) {n}[i] = root.frame->{n}[i];")
+            lines.append(f"#define {n} (root.frame->{n})")
         else:
+            lines.append(f"static {'Mat' if t == 'mat4' else t} {n};")
+    lines.append("void load_frame() {")
+    for t, n, k in fields:
+        if k == 1:
             lines.append(f"    {n} = root.frame->{n};")
     lines.append("}")
     return "\n".join(lines) + "\n"
