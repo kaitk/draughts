@@ -14,6 +14,10 @@ results, or keep baking at run time behind a loader when the room or a look is c
   2048² RGBA8 textures with mips, 85 MiB, baked in 45 to 48 ms (about 120 ms the first
   time after a shader change), only with the room on. At 1024², 21 MiB.
 - The tree's map (task 105): 512² RGBA8 with mips.
+- The wallpaper's mask (task 104): 1024² R8 with mips, 1.33 MiB; decoded from the
+  embedded PNG, mipped on the CPU and uploaded in about 12 ms, once with the room's bake;
+  the PNG adds 0.6 MB to every build (the Mac app 20.9 to 21.5 MB), though only the tuner
+  shows the room. One more texture tap a pixel on the paper.
 - The `branches` wind (task 105): six value noises and 4 texture taps a pixel where the
   window's pattern is on; not measured on a device.
 - Dust in the sunbeam (task 104's follow-ups): not measured.

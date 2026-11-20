@@ -137,6 +137,10 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   (`src/native/display.c`); the safe area is in window coordinates, points on the Mac.
 - It can call goose_gfx's C API (`gfx_api.h`) and return a `gs_gfx_texture` to an
   `extern fn ... -> gfx::Texture` (`src/native/background.c`).
+- A new C file goes in every sidecar that compiles the renderer (both roots' and
+  `tools/*.build`). A second stb_image in a file of its own is `STB_IMAGE_STATIC` with
+  its own `STBI_ONLY_*`, apart from background.c's JPEG-only one, which ASTC-only builds
+  leave out (`src/native/materials.c`, PNG).
 - A gfx function only the fork adds: an `extern fn ... = "gs_gfx_..."` of the program's
   (`src/app/keys.goose`) plus a `__attribute__((weak))` stand-in in the C
   (`src/native/gfx_fork.c`), so a plain `goose build` against the release's gfx still links;

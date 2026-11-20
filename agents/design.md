@@ -93,7 +93,8 @@ pieces; the design boards still set the layout, glass, and controls.
   sweeps of its flags under bash: zsh passes an unquoted `$args` as one word.
 - The room round the table, its herringbone floor and panelling (`model3d::surfaces`):
   the light tuner's `--room-surfaces on` (O), `--view room` (V), `--eye X,Y,Z,0 --at
-  X,Y,Z,0` for a camera of its own, `--dump-oak PREFIX` for the baked fields at 1:1. The
+  X,Y,Z,0` for a camera of its own, `--dump-oak PREFIX` for the baked fields at 1:1,
+  `--wallpaper-tile M` for the wall a tile of the wallpaper covers (1.4 m). The
   library's window is smaller than the room's plan; for the room's shots pass a 1.1 ×
   2.5 m one, `--panes 11,12.7,1,0 --opening 3,6,4,0.45 --wall 36,20,-2,2`. The room
   is judged as lit, no lift: its own light is `--bounce` and `--room-exposure`

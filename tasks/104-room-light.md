@@ -196,6 +196,19 @@ the light is settled (the user, 2026-11-20).
     floor's sun patch is dimmer than style-01's; the sheen against the light is greyer;
     no repetition or banding seen in the wide shots. `build/notes/room-oak-2/index.html`.
 
+- The room's wallpaper (2026-11-20): the hall wall above the cap carries the library's
+  paper, the baker's mask (`design/materials/`, 1024² R8 with mips) tiled in world space,
+  one tile 1.4 m (style-01's flowers, about 11 cm); albedo from ground to gold by the
+  mask, roughness 0.85 to 0.6 (`surfaces::LOOK.paper`, `.gold`). The baker's guesses read
+  twice as light as style-01's wall and bluer, so they were set once from the shot through
+  the room's tonemap: #3d3b32 and #58503b. Ground and gold in the close-up (48,37,26) and
+  (85,65,43), style-01's wall about (42,32,20) and (72,54,34); before, (84,74,67) and
+  (156,117,79). No seam or moiré; from across the room the repeat shows faintly as a
+  lattice. `build/notes/room-wallpaper/index.html`.
+  - The other scale, to compare later: a real paper of the period repeats every 0.5 to
+    0.65 m with flower heads about 5 cm. Only the tile changes: the tuner's
+    `--wallpaper-tile 0.65` (metres) shows it.
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac
