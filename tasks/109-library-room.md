@@ -1,6 +1,6 @@
 # 109: The library as a whole room
 
-Status: todo (planned 2026-11-20, under the epic 107; before task 106's modelling)
+Status: in-progress (planned 2026-11-20, under the epic 107; before task 106's modelling)
 
 The concept frames show the library in pieces, and they disagree: `library-home-01`
 made the far window smaller and squared the niches, though `style-01` and
@@ -16,7 +16,7 @@ library in a real manor, believable and beautiful.
   some form.
 - Flesh it out: all four walls, the doors (probably three), the windows (probably three
   on the garden side, a little slimmer than now; `garden-facade-01` as a guide, not to
-  match exactly), the upper floor, the writing desk in the corner at the left (as in
+  match exactly), the floor (the ground floor, below), the writing desk in the corner at the left (as in
   `style-01`'s foreground), and more bookcases, open ones, near the table on another
   wall, so it reads as a library.
 - Try different layouts with ChatGPT and keep what is most believable and artistically
@@ -28,31 +28,59 @@ library in a real manor, believable and beautiful.
   places things loosely, so the plan the model follows is written here, from the images
   chosen, not taken from a generated floor plan.
 
-## A first plan to try (2026-11-20, not chosen)
+## The room (the user choosing, 2026-11-20)
 
-Directions as seen in `style-01`: the windows on the left wall.
+Five rounds of images (`design/manor/prompts.txt` 19 to 40, the results in
+`design/manor/set-aside/` and `build/notes/chatgpt-109/`) showed that the models place
+things carelessly: to fit three windows in a frame they stretch the room into a gallery,
+they move the stove out of its corner and put doors where no house would, from words or
+from a plan alone as much as from `style-01`. So the plan is ours, drawn to scale by
+`design/manor/room/plan.py` (`python3 plan.py OUT_DIR`; its PNGs, local, in
+`design/manor/room/`), and images are made with `style-01` attached for the look and the
+labelled plan for the layout, one prompt at a time.
 
-- The sun stays where the library's light has it (`rooms::AUTUMN`): 18° up, 20° left of
-  straight out of the windows.
-- The ground floor, the garden side (the user, 2026-11-20: as Baltic manors mostly had
-  their main rooms and library), a room beside the garden salon in `garden-facade-01`,
-  the floor raised on the house's plinth about a metre over the lawn; it faces
-  south-west, the low afternoon sun of the rooms' light (task 104). The trees' trunks and
-  lower crowns fill the windows, and the park's gravel path shows.
-- The window wall: three windows evenly spaced, each in a deep niche with a rounded top,
-  folded shutters, lace curtains, a white sill on the panelling.
-- The doors: two double doors in line (an enfilade) through the back wall and the fourth
-  wall (behind `style-01`'s camera), and one to the hall.
-- The stove in the back right corner, stoked from the hall's side, as was common.
-- The glazed bookcase on the back wall; open shelves to the ceiling on the right wall,
-  near the table.
-- The writing desk in the front left corner by the first window, the light from the left.
-- The round table on the rug, a sofa on the window side, chairs, the chandelier.
-- About 7 by 9 m, the ceiling about 4 m; the windows about 1.1 m by 2.5 m, the sills about
-  0.8 m from the floor.
+Measured as the script has it: x along the window wall from the stove's end, 0 to 9 m; y
+from the hall wall, 0 to 7 m. Facing the stove's end, the windows are on the left, as in
+`style-01`.
 
-Open: the open shelves on the right wall or on the fourth wall; the third door in the
-right wall between the shelves or in the fourth wall.
+- The ground floor, the garden side, beside the garden salon, the floor about a metre
+  over the lawn; the windows face south-west, the sun 18° up and 20° left of straight out
+  (`rooms::AUTUMN`). 9 by 7 m, the ceiling about 4 m.
+- Walls: the window wall 0.8 m thick, the hall wall 0.6 m, the end walls 0.5 m. Dark
+  oak wainscot, the dark blue-grey wallpaper with muted gold flowers above, herringbone
+  oak.
+- Windows: three alike, their middles at x 1.5, 4.5 and 7.5; 1.1 by 2.5 m, the sills
+  0.8 m up. Niches 1.3 m wide with straight reveals, square to the wall (not splayed),
+  rounded tops, the casement near the outer face; the inner shutters fold flat against
+  the reveals; lace curtains; white sills on the panelling, with vases, plants and small
+  things moved as the shots want.
+- The door from the hall: a double door 1.4 m wide in the middle of the hall wall,
+  facing the middle window, a low open bookcase on each side (1.3 by 0.4 m).
+- The stove: pale green glazed tiles, in the corner of the hall wall and the stove's end
+  wall, about 1.15 m square with its front corner cut, fed through the hall wall.
+- The stove's end wall: a double door to the garden salon, 1.3 m wide, near the hall side
+  (y 1.65 to 2.95), and the glazed bookcase on its window side (y 3.6 to 5.4), as
+  `style-01`'s back wall.
+- The far end wall: plan 1, the default, a double door to the next room in line with the
+  salon's (an enfilade); plan 2, no door, open shelves to the ceiling with a ladder. Our
+  views don't tell them apart, so it is left until one does.
+- The hall wall's far part: the sofa under a large painting, a sofa table and an
+  armchair before it.
+- The games table, the first place to play: a round table about 0.8 m across, smaller
+  than `style-01`'s, its middle 1.2 m from the window wall opposite the middle window, as
+  the game's window light has it (`rooms::AUTUMN`'s `window.x`, 36 units). On a rug of
+  about 3 by 2.2 m, the players either side along the wall, the one facing the stove with
+  the window at their left and a little behind; the window side free. The game's table is
+  1.05 m across (`mesh::TABLE_R`, 16 units); about 12 units when the room is modelled,
+  checked on screen.
+- The writing desk, the second place to play (task 108): 1.5 by 0.75 m, green leather,
+  at a right angle to the window wall in front of the third window, its board in the
+  middle of the leather, 1.2 m from the window opposite its middle, as the table's, so
+  one room light serves both. Its player sits at the middle of the long side facing the
+  stove, the window at their left.
+- The chandelier in the middle of the room; a reading armchair and a side table by the
+  first window; a tall plant in that corner; paintings in gilt frames on the piers and
+  walls.
 
 ## Outside: the park the windows see (the user, 2026-11-20)
 
@@ -70,6 +98,11 @@ be thought through with the room, not taken from one picture:
   tree of task 105, the sun 18° up and 20° left of straight out).
 - From the ground floor, about a metre over the lawn: the walk along the house, the lawn,
   the paths where a park would have them.
+- Seen from the planned windows (the room above): their sills about 1.8 m over the lawn,
+  the eyes of a player at the games table about 2.2 m and of someone standing about
+  2.6 m; looking south-west, the sun 18° up and 20° left of straight out; the windows 3 m
+  apart, each framed by its straight reveals, 1.3 m wide and about 0.6 m deep, the
+  shutters folded flat against them.
 - Three windows and the home screen's pans see the park from different places, so a
   single 3:2 picture, which can't be wider, shows no parallax. Rather in layers by
   depth: the near tree ours (task 105's, drawn as well as cast), mid trees as cut-outs,
@@ -79,12 +112,11 @@ be thought through with the room, not taken from one picture:
 
 ## Acceptance criteria
 
-- [ ] Several layouts tried as ChatGPT images, at least `style-01`'s view and the
-      reverse view of the fourth wall, saved in `design/manor/room/` with their prompts in
-      `prompts.txt`
-- [ ] One layout chosen by the user, its images as believable in their contents as
-      `style-01`
-- [ ] The room's plan written here: walls, windows, doors, stove, bookcases, desk,
+- [x] Several layouts tried as ChatGPT images, at least `style-01`'s view and the
+      reverse view of the fourth wall, with their prompts in `prompts.txt` (set aside: the
+      models can't lay out a room; our plan instead)
+- [x] One layout chosen by the user: our plan, `style-01` for the look
+- [x] The room's plan written here: walls, windows, doors, stove, bookcases, desk,
       table, rug, sizes in metres, for task 106 to model from
 - [ ] The park outside thought through and its layers' images made, the user choosing
 - [ ] Task 106's prompts and images (the simplified home shot, the window) brought in
