@@ -191,6 +191,19 @@ short and straight.
   so patches flip between two places like turning leaves (two more taps in a gust only).
   The noise's single leaves lost their ruffle with it.
 
+## Follow-ups
+
+- Try the wind of the literature, in a session of its own (a subagent, the user,
+  2026-11-20): each leaf layer's whole shift and the limbs' lean from two noises, one
+  along the wind and one across it (Zioma, *GPU-Generated Procedural Wind Animations for
+  Trees*, GPU Gems 3, ch. 6), in place of the sines in LIGHT_FN's `wind_at` and
+  `tree_light`: irregular, never repeating, the shapes still rigid; turbulence so the
+  layers never move in step; the gust's front rolling across as now. Compare in the
+  tuner at a calm and a gust (`--wind-time`). Also read: Habel and others' physically
+  guided trees (Eurographics 2009, their 2D motion textures near our layer shifts), and
+  God of War's *Interactive Wind and Vegetation* (GDC) for a wind field if ever needed.
+  The Witcher 3's wind (SpeedTree's, by all accounts, tuned strong) is unpublished.
+
 ## Acceptance criteria
 
 - [ ] A generated tree whose shadow reads as branches and leaves, not noise, on the board
