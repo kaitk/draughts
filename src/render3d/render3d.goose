@@ -300,6 +300,8 @@ struct Gpu {
     turn:            f32,           // the board's turn (view3d::View.turn), the light turned with it
     bake_ms:         f64,           // the last bake's time and the photograph's (measuring)
     photo_ms:        f64,
+    motes:           Pipeline,      // the dust in the sunbeam (draw_motes), made when first wanted
+    mote_seeds:      Buffer,        // and each mote's seed (mote_seeds()), filled once
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -943,6 +945,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
     keep_backdrop(o, g, size);
     bake_tree(o, g);
+    if dust.count > 0 { o.make_motes(g); }
     if g.shadow_dirty || shadow_every {
         o.shadow_pass(g);
         g.shadow_dirty = false;
@@ -1041,3 +1044,53 @@ fn kept_current(g: Gpu&, size: int2) -> bool {
 // pass's formats (made by the first step, given back by the last), or on the target
 // itself where it is small or held anyway, with nothing drawn.
 let WARM_STEPS = 12;
+
+// Dust in the sunbeam (shaders::DUST_VERT): up to MAX_MOTES motes in a box over the
+// table, drawn after the scene in the board's pass (draw_motes) while `count` is over 0,
+// lit by the key through the window where each is, its disc growing away from the focus.
+// Where each is follows from its seed and the seconds (wind_time), so a frame uploads
+// nothing; the tuner's for now, the home screen's later (task 106).
+let MAX_MOTES = 1024;
+struct Dust {
+    count:  i64    = 0,     // motes drawn, 0 none
+    size:   f32    = 1.0,   // an in-focus mote's radius, pixels at 1000 high
+    blur:   f32    = 14.0,  // the lens: a disc's radius at twice the focus's distance, the same pixels
+    bright: f32    = 0.6,
+    focus:  f32    = 19.0,  // the focus's distance from the eye (the tuner's: its target's)
+    thin:   f32    = 1.0,   // how much a disc's light thins as it grows (2 its light kept)
+    ahead:  f32    = 0.6,   // the forward scattering's g, 0 even
+    rise:   f32    = 0.05,  // units a second
+    reach:  f32    = 0.5,   // how far each wanders, units
+    low:    float3 = float3 { -9.0, -0.7, -9.0 },  // the box's low corner
+    span:   float3 = float3 { 18.0, 11.0, 21.0 },  // and its size
+}
+var dust = Dust {};
+
+// shaders::DUST_HEAD's block.
+struct DustBlock { box: float4, span: float4, look: float4, lens: float4 }
+fn dust_block() -> DustBlock {
+    return DustBlock { model3d::f4(dust.low, wind_time), model3d::f4(dust.span, dust.rise),
+                       float4 { dust.size, dust.blur, dust.bright, dust.focus },
+                       float4 { dust.thin, dust.ahead, dust.reach, 0.0 } };
+}
+
+fn motes_shown(g: Gpu&) -> bool { dust.count > 0 && g.motes.id != 0 }
+fn motes_drawn() -> i64 { min(dust.count, MAX_MOTES) }
+
+// Each mote's seed: xyz its place in the box, w its own pace, size, and brightness, all
+// 0..1, the same every run (xorshift).
+fn mote_seeds() -> float4[MAX_MOTES] {
+    var out: float4[MAX_MOTES] = [float4_0; MAX_MOTES];
+    var x:   u32               = 2463534242;
+    for i in MAX_MOTES {
+        var v: f32[4] = [0.0, 0.0, 0.0, 0.0];
+        for k in 4 {
+            x ^= x << 13;
+            x ^= x >> 17;
+            x ^= x << 5;
+            v[k] = (x >> 8) / 16777216.0;
+        }
+        out[i] = float4 { v[0], v[1], v[2], v[3] };
+    }
+    return out;
+}

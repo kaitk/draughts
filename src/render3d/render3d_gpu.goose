@@ -171,8 +171,31 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::uniforms(gfx::FRAGMENT, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
         gfx::draw(6);
     }
+    if render3d::motes_shown(g) { draw_motes(own, g); }
     gfx::end_pass();
     if g.aa == AA_SMAA { antialias(own, g, target); }
+}
+
+// The dust's pipeline and seeds (render3d::Dust), made the first time they are wanted.
+fn make_motes(own: Own&, g: render3d::Gpu&) {
+    guard g.motes.id == 0 else { return; }
+    let seeds = render3d::mote_seeds();
+    g.mote_seeds = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(seeds));
+    g.motes = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::DUST_HEAD, shaders::LIGHT_FN,
+                                         shaders::DUST_VERT),
+                            embed_shader("frag", shaders::DUST_FRAG),
+                            gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
+}
+
+// The dust in the sunbeam over the open pass's target, added, hidden by what stands
+// in front of it.
+fn draw_motes(own: Own&, g: render3d::Gpu&) {
+    gfx::bind(g.motes);
+    gfx::bind_texture(gfx::VERTEX, 0, render3d::tree_or_stand_in(g), g.linear);
+    gfx::bind_storage_buffer(gfx::VERTEX, 0, g.mote_seeds);
+    gfx::uniforms(gfx::VERTEX, 0, g.frame);
+    gfx::uniforms(gfx::VERTEX, 1, render3d::dust_block());
+    gfx::draw_instanced(6, render3d::motes_drawn());
 }
 
 // The occlusion map's texels x0..x1, y0..y1 drawn again from the field's squares.
@@ -765,12 +788,12 @@ fn release(own: Own&, g: render3d::Gpu&) {
                     own.warm_kept, g.edges, g.weights, g.area, g.search];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows];
+                   g.glows, g.mote_seeds];
     for b in buffers { if b.id != 0 { gfx::release(b); } }
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit];
+                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.motes];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();

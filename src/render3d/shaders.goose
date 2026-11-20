@@ -3350,3 +3350,93 @@ let SHOW_FRAG = """
         result = c * screen.z;
     }
     """;
+
+// Dust in the sunbeam (render3d::Dust): motes drifting in a box over the table, one
+// camera-facing quad each, drawn as instances after the scene and added to it. Each
+// mote's light is the key's window_light where it is, worked out once in the vertex
+// shader (LIGHT_FN before DUST_VERT), so the beam has the pattern's shape: bright inside
+// it, nearly nothing outside. Where a mote is comes from its seed (`motes`, filled once)
+// and the seconds: a slow wander, a gentle rise and a current along x, wrapped inside
+// the box, so nothing is uploaded a frame. Its disc grows with its distance from the
+// focus, as a lens's would, and its light spreads over it.
+// dust_box: the box's low corner, w the seconds; dust_span: its size, w how fast the
+// motes rise; dust_look: x an in-focus mote's radius in pixels at 1000 high, y the
+// lens's blur (the disc's radius in those pixels where the distance is twice the
+// focus's), z how bright, w the focus's distance from the eye; dust_lens: x how much a
+// disc's light thins as it grows (0 none, 2 kept), y the forward scattering's g, z how
+// far each mote wanders.
+let DUST_HEAD = """
+    layout(set = 0, binding = 0) uniform sampler2D tree_map;
+    layout(std430, set = 0, binding = 1) readonly buffer Motes { vec4 motes[]; };
+    layout(set = 1, binding = 1) uniform Dust { vec4 dust_box; vec4 dust_span; vec4 dust_look; vec4 dust_lens; };
+    """;
+let DUST_VERT = """
+    layout(location = 0) out vec2 v_at;
+    layout(location = 1) flat out vec4 v_glow;
+    layout(location = 2) flat out vec2 v_shape;
+
+    // A mote's wander, about -1..1 on each axis: three sines out of step with every other
+    // mote's, slow, slower, and a little faster, so it reads as Brownian.
+    vec3 wander(vec4 s, float t) {
+        vec3 ph = fract(s.wzy * vec3(13.7, 17.3, 11.9) + s.xyz * 7.1) * 6.2832;
+        return 0.55 * sin(t * vec3(0.11, 0.07, 0.09) * (0.7 + 0.6 * s.w) + ph)
+             + 0.3 * sin(t * vec3(0.23, 0.29, 0.19) + ph.yzx * 1.7)
+             + 0.15 * sin(t * vec3(0.61, 0.53, 0.71) + ph.zxy * 2.3);
+    }
+
+    void main() {
+        const vec2 corners[6] = vec2[6](vec2(-1, -1), vec2(1, -1), vec2(1, 1),
+                                        vec2(-1, -1), vec2(1, 1), vec2(-1, 1));
+        vec2 c = corners[gl_VertexIndex];
+        vec4 s = motes[gl_InstanceIndex];
+        float t = dust_box.w;
+        // Its seed's place in the box, risen, carried along x, and wandering, wrapped.
+        vec3 drift = vec3(0.3, 0.6 + 0.8 * s.w, 0.0) * (dust_span.w * t);
+        vec3 f = fract(s.xyz + (drift + wander(s, t) * dust_lens.z) / dust_span.xyz);
+        vec3 pos = dust_box.xyz + f * dust_span.xyz;
+        // Faded near the box's faces, so a mote wrapping round doesn't pop; none inside
+        // the board.
+        vec3 e = min(f, 1.0 - f) * 12.0;
+        float fade = clamp(min(e.x, min(e.y, e.z)), 0.0, 1.0);
+        if (max(abs(pos.x), abs(pos.z)) < INNER + FRAME_W && pos.y < FRAME_TOP + 0.02) fade = 0.0;
+
+        // The key through the window where it is, 0..1; all of it with no pattern.
+        float sun = room.y > 0.0 ? clamp((window_light(pos) - 1.0 + room.y) / room.y, 0.0, 1.0) : 1.0;
+        vec3 to_eye = eye.xyz - pos;
+        float d = length(to_eye);
+        // Forward scattering (Henyey-Greenstein), 1 across the beam, more toward the sun.
+        float g = dust_lens.y;
+        float mu = dot(to_eye / d, -light_dir.xyz);
+        float phase = pow((1.0 + g * g) / (1.0 + g * g - 2.0 * g * mu), 1.5);
+        vec3 glow = light_color.rgb * light_dir.w * params.x * (sun * phase + 0.002)
+                  * dust_look.z * (0.15 + 2.5 * pow(fract(s.w * 31.7), 3.0));
+
+        // Its disc: a point in focus, the lens's circle of confusion away from it.
+        float px = screen.y / 1000.0;
+        float point = max(dust_look.x * px * (0.6 + 0.8 * fract(s.w * 7.3)), 0.5);
+        float coc = dust_look.y * px * abs(d - dust_look.w) / max(d, 0.01);
+        float r = sqrt(point * point + coc * coc);
+        float outer = r + 1.0;
+        v_at = c * outer / r;
+        v_glow = vec4(glow * fade * pow(point / r, dust_lens.x), 0.0);
+        v_shape = vec2(r, coc / r);
+        vec4 clip = view_proj * vec4(pos, 1.0);
+        clip.xy += c * outer * 2.0 / screen.xy * clip.w;
+        gl_Position = clip.w > 0.1 && fade > 0.0 ? clip : vec4(0.0, 0.0, -2.0, 1.0);
+    }
+    """;
+let DUST_FRAG = """
+    layout(location = 0) in vec2 v_at;
+    layout(location = 1) flat in vec4 v_glow;
+    layout(location = 2) flat in vec2 v_shape;
+    layout(location = 0) out vec4 result;
+    void main() {
+        float r = length(v_at);
+        // In focus a soft point; out of it a disc of even light, a little brighter at
+        // its rim, its edge a pixel soft.
+        float edge = 1.0 / max(v_shape.x, 1.0);
+        float disc = (1.0 - smoothstep(1.0 - edge, 1.0 + edge, r)) * (0.85 + 0.25 * smoothstep(0.6, 1.0, r));
+        float k = mix(exp(-2.5 * r * r), disc, v_shape.y);
+        result = vec4(pow(v_glow.rgb * k, vec3(1.0 / 2.2)), 1.0);
+    }
+    """;

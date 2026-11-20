@@ -145,10 +145,34 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         m.buf1 = nx::address(g.glows);
         ngfx::draw(ngfx::root(m), 6);
     }
+    if render3d::motes_shown(g) { draw_motes(own, g, f); }
     ngfx::end_pass();
     barrier_between_passes();
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
     antialias(own, g, target, size);
+}
+
+// The dust's pipeline and seeds (render3d::Dust), made the first time they are wanted,
+// before any pass.
+fn make_motes(own: Own&, g: Gpu&) {
+    guard g.motes.id == 0 else { return; }
+    let seeds = render3d::mote_seeds();
+    g.mote_seeds = nx::buffer(bytes_of(seeds));
+    g.motes = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_dust.blob"),
+                           ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_ADD });
+}
+
+// The dust in the sunbeam over the open pass's target, added, hidden by what stands
+// in front of it; r3d_dust.slang's header: Dust, the seeds, the tree's map.
+fn draw_motes(own: Own&, g: Gpu&, f: u64) {
+    nx::bind(g.motes);
+    var r = no_root();
+    r.frame = f;
+    let b: render3d::DustBlock[1] = [render3d::dust_block()];
+    r.u = ngfx::frame_data(bytes_of(b));
+    r.buf0 = nx::address(g.mote_seeds);
+    slot(r, 0, render3d::tree_or_stand_in(g), g.linear);
+    ngfx::draw_instanced(ngfx::root(r), 6, render3d::motes_drawn());
 }
 
 // The occlusion map's texels x0..x1, y0..y1 drawn again from the field's squares.
@@ -820,13 +844,13 @@ fn release(own: Own&, g: Gpu&) {
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows];
+                   g.glows, g.mote_seeds];
     for b in buffers { if b.id != 0 { nx::release(b); } }
     let samplers = [g.linear, own.point, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { nx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
-                     g.smaa_blend, g.table_lit];
+                     g.smaa_blend, g.table_lit, g.motes];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();

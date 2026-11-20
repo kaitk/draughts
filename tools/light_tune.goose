@@ -3,8 +3,8 @@
 // strength, how dark its shadow is, the window's sky, the walls, and the window's pattern
 // with its bars, curtain, and the trees' leaves. Drag to orbit, scroll to zoom, R resets
 // the camera, W switches the pattern (its leaves swaying in the wind), T the leaves between
-// the tree's baked shadow and the noise, P prints the room as Goose (and saves it in
-// build/light-tune.txt).
+// the tree's baked shadow and the noise, D the dust in the sunbeam, P prints the room as
+// Goose (and saves it in build/light-tune.txt).
 //
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
@@ -12,6 +12,7 @@
 //       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
+//       [--dust on|off] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 
 import std;
@@ -282,6 +283,12 @@ fn main() {
     room.opening = four(argv, "--opening", room.opening);
     room.wind = four(argv, "--wind", room.wind);
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
+    room.exposure = number(argv, "--exposure", room.exposure);
+    var motes = whole(argv, "--motes", 500);
+    var dust_on = flag_value(argv, "--dust") > 0 && argv[flag_value(argv, "--dust")] == "on";
+    render3d::dust.size = number(argv, "--mote-size", render3d::dust.size);
+    render3d::dust.blur = number(argv, "--mote-blur", render3d::dust.blur);
+    render3d::dust.bright = number(argv, "--mote-bright", render3d::dust.bright);
     render3d::wind_time = number(argv, "--wind-time", 0.0);
     g.room = room;
     g.room_tuned = true;
@@ -331,6 +338,7 @@ fn main() {
         var print_it = gfx::key_pressed("P");
         if gfx::key_pressed("W") { pattern = 1 - pattern; }
         if gfx::key_pressed("T") { room.tree.x = (room.tree.x as i64 + 1) % 3; }
+        if gfx::key_pressed("D") { dust_on = !dust_on; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
         if ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
@@ -368,6 +376,18 @@ fn main() {
             slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
             slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
             slider(c, "Ruffle", room.wind.w, 0.0, 2.0);
+            heading(c, "Dust in the sunbeam (D)");
+            var shown_dust: i64 = if dust_on { 1 } else { 0 };
+            choice(c, "Dust", shown_dust, ["off", "on"]);
+            dust_on = shown_dust == 1;
+            count(c, "Motes", motes, 0, render3d::MAX_MOTES);
+            slider(c, "Mote size", render3d::dust.size, 0.3, 4.0);
+            slider(c, "Lens blur", render3d::dust.blur, 0.0, 60.0);
+            slider(c, "Bright", render3d::dust.bright, 0.0, 4.0);
+            slider(c, "Thin out", render3d::dust.thin, 0.0, 2.0);
+            slider(c, "Toward sun", render3d::dust.ahead, 0.0, 0.9);
+            slider(c, "Rise", render3d::dust.rise, 0.0, 0.4);
+            slider(c, "Wander", render3d::dust.reach, 0.0, 2.0);
             heading(c, "Sun");
             slider(c, "Round", room.key.x, -30.0, 150.0);
             slider(c, "Height", room.key.y, 3.0, 70.0);
@@ -462,6 +482,8 @@ fn main() {
         let b = radians(yaw);
         let target = float3 { at.x, view3d::TARGET.y, at.y };
         let eye = target + float3 { sin(b) * cos(a), sin(a), cos(b) * cos(a) } * (view3d::DISTANCE * far);
+        render3d::dust.count = if dust_on { motes } else { 0 };
+        render3d::dust.focus = length(eye - target);
         let proj = gfx::perspective(view3d::FOV * PI / 180.0, size.x as f32 / size.y, 1.0, 120.0);
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
