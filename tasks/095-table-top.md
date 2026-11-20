@@ -103,6 +103,11 @@ Tune with versions side by side from `tools/board_shot.goose`, as task 094 does.
      manor is Baltic German, a modelling session of its own (task 100). The pieces' box
      (task 102) and the score sheet with its pencil (task 103) chosen as well
      (2026-11-20). The vase and its lace, books, and a lamp (task 093) after.
+  4. The board's light fitted to the room per season, and trying the window's shadow
+     across the board from the concept art (task 093's sun streak), in a session of its
+     own (2026-11-20). The costlier effects are for desktops, a high-fidelity mode, or a
+     toggle of their own, not on by default on the A33 or phones in general, where some
+     may not be offered at all.
 - The room behind hardly shows at the game's views in landscape, but past the round
   table's edge it does in portrait, on the phone in both views (the user, 2026-11-20):
   the board on its table needs the room in some form, a real floor at least. Till then

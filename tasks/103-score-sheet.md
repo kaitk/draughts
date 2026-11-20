@@ -19,9 +19,9 @@ References in `design/props/score-sheet/` (local; its README lists them).
   cartouche may take the date. At the tablet's size the writing need only read as
   writing.
 - The pencil: six-sided, sharpened with a knife, a blunt point, modelled (a six-sided
-  rod and an uneven cone), not a picture. `pencil-01.png` gives its colours, with the
-  body darker, stained and varnished, against the pale bare wood of the cut, which is
-  what reads at a few pixels wide. Sometimes laid by the last line written.
+  rod and an uneven cone), not a picture. `pencil-stained-01.png` gives its colours: the
+  body stained and varnished a worn dark reddish brown against the pale bare wood of the
+  cut, which is what reads at a few pixels wide. Sometimes laid by the last line written.
 - The images the app uses go in git once chosen, cut to the size they show at.
 
 ## Acceptance criteria
