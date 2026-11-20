@@ -24,9 +24,10 @@ fn constant(text: const u8[:], name: const u8[:]) -> f64, bool {
 
 fn main() {
     let text = embed_file("../../src/render3d/shaders.goose");
-    let names = ["FIELD", "INNER", "FRAME_W", "FRAME_TOP", "BOTTOM", "RADIUS", "HEIGHT", "EDGE_AT"];
-    let mesh_values: f32[8] = [mesh::FIELD, mesh::INNER, mesh::FRAME_W, mesh::FRAME_TOP, mesh::BOTTOM, mesh::RADIUS,
-                               mesh::HEIGHT, mesh::EDGE_AT];
+    let names = ["FIELD", "INNER", "FRAME_W", "FRAME_TOP", "BOTTOM", "RADIUS", "HEIGHT", "EDGE_AT", "TABLE_R",
+                 "TABLE_TOP", "TABLE_Z"];
+    let mesh_values: f32[11] = [mesh::FIELD, mesh::INNER, mesh::FRAME_W, mesh::FRAME_TOP, mesh::BOTTOM, mesh::RADIUS,
+                                mesh::HEIGHT, mesh::EDGE_AT, mesh::TABLE_R, mesh::TABLE_TOP, mesh::TABLE_Z];
     var bad = 0;
     for name, i in names {
         let x, ok = constant(text, name);

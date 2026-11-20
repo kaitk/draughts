@@ -42,7 +42,7 @@ fn made<B>(be: B&, kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     var r = Renderer { d: draw::new(be, kind, plain, f.bench > 0),
                       d3: draw3d::Drawer { aa: if aa >= 0 { aa } else { render3d::AA }, wood: f.wood, marble: f.marble,
                                            summer: f.summer, autumn: f.autumn, winter: f.winter, spring: f.spring,
-                                           live: !f.keep, .. },
+                                           live: !f.keep, table: f.table, .. },
                       w: widgets::new(be), t: text::Text {} };
     r.w.live = !f.keep;
     if f.bench > 0 {
@@ -137,7 +137,8 @@ fn draw_frame<B>(be: B&, r: Renderer&, f: Frame&) {
     let height: f32 = f.size.y;
     widgets::prepare(be, r.w, f.quads, f.clip, r.d.scene, r.d.colors, width, height, f.hole, f.tall);
     if f.raised {
-        draw3d::frame(be, r.d3, f.board, f.layout, f.view, f.now, f.size, r.d.kind, r.d.scene.plain, f.which, f.hold);
+        draw3d::frame(be, r.d3, f.board, f.layout, f.view, f.now, f.size, r.d.kind, r.d.scene.plain, f.which, f.hold,
+                      f.place);
     }
     draw::upload(be, r.d, f.board, f.ui_pieces, f.layout, width, height, !f.raised);
     // No depth target: nothing tests depth, and asking would make gfx keep a window-sized one.

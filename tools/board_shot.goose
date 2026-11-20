@@ -8,7 +8,7 @@
 //
 //   goose build -o build/board_shot tools/board_shot.goose
 //   build/board_shot out.png [--size 1600x1200] [--season autumn|winter|spring|summer]
-//                            [--material auto|wood|stone|carved]
+//                            [--material auto|wood|stone|carved] [--table board|flame]
 //                            [--light-scatter R,G,B,S] [--dark-scatter R,G,B,S]
 //                            [--wear UNEVEN,EDGES,TONE] [--light R,G,B,ROUGH]
 //                            [--dark R,G,B,ROUGH] [--figure X,Y,Z,W] [--before]
@@ -72,6 +72,9 @@ fn main() {
     render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
     render3d::set_aa(r3d, g, render3d::AA);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
+    let take = pick(argv, "--table", tables::NAMES, -1);
+    g.table = take >= 0;
+    if take >= 0 { g.table_spec = tables::get(take); }
     let shown = pieces3d::put_look(r3d, g, season, material);
     var pieces = pieces3d::of_look(shown);
     pieces3d::read_flags(argv, pieces, shown);

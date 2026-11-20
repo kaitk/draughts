@@ -48,6 +48,14 @@ fn gpu_release_waited(own: Own&, a: Texture, b: Texture) {
     nx::release(b);
 }
 fn gpu_update(own: Own&, b: Buffer, bytes: const u8[:]) { nx::update_buffer(b, bytes); }
+fn gpu_mesh(own: Own&, verts: const u8[:], indices: const u8[:]) -> Buffer, Buffer {
+    return nx::buffer(verts), nx::buffer(indices);
+}
+fn gpu_release_mesh(own: Own&, vb: Buffer, ib: Buffer) {
+    ngfx::flush();
+    nx::release(vb);
+    nx::release(ib);
+}
 fn gpu_mipped(own: Own&, w: i64, h: i64, format: i32, mips: i64) -> Texture {
     return nx::texture(ngfx::TextureDesc { format: format, usage: ngfx::COLOR_TARGET | ngfx::SAMPLED,
                                              width: w as i32, height: h as i32, mips: mips as i32 });
@@ -93,13 +101,31 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         }
     }
 
+    // The table under the board, after it, so what the board covers fails the depth test.
+    if render3d::table_shown(g) {
+        nx::bind(g.table_lit);
+        var t = no_root();
+        t.frame = f;
+        let tb = render3d::table_block(g);
+        t.u = blocks([tb.pool, tb.coat, tb.polish, tb.worn]);
+        t.verts = nx::address(g.table_vb);
+        slot(t, 0, g.table_albedo, g.aniso);
+        slot(t, 1, g.table_normal, g.aniso);
+        slot(t, 2, g.frame_albedo, g.aniso);
+        slot(t, 3, g.table_wear, g.aniso);
+        slot(t, 4, g.table_wear_n, g.aniso);
+        nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
+    }
+
     // The board's soft shadow round it, after the board so the depth test leaves out
-    // what the board covers.
-    nx::bind(g.catcher);
-    var c = no_root();
-    c.frame = f;
-    c.u = blocks([float4_0]);
-    ngfx::draw(ngfx::root(c), 6);
+    // what the board covers; the table casts its own.
+    if !render3d::table_shown(g) {
+        nx::bind(g.catcher);
+        var c = no_root();
+        c.frame = f;
+        c.u = blocks([float4_0]);
+        ngfx::draw(ngfx::root(c), 6);
+    }
 
     // The field's marks and the selected piece's ring, added where nothing stands over;
     // none, nothing drawn.
@@ -307,7 +333,7 @@ fn blur(own: Own&, g: Gpu&, from: nx::Texture, to: nx::Texture, dir: float4) {
 // their mips. Bake.mode: x the surface (0 the plan, 1 the frame map), y the wood's model,
 // z the squares per side, w the marble (a stone frame's only).
 fn bake(own: Own&, g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h: i64, mode: f32,
-        extent: float2, t: looks::Theme&, y0: i64 = 0, y1: i64 = -1, mips: bool = true) {
+        extent: float2, t: looks::Theme&, y0: i64 = 0, y1: i64 = -1, mips: bool = true, fine: i64 = 0) {
     // Not cleared: the bake writes every texel. Only rows y0 to y1 when given
     // (theme_step's bands), the mips after the last.
     var pass = nx::PassDesc { clear_color: false };
@@ -318,7 +344,7 @@ fn bake(own: Own&, g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h:
     nx::bind(g.bake);
     let fi = g.finish;
     // Samples a side a texel: a phone's half-size surface sampled as the full one, averaged.
-    let fine = model3d::BAKE_SIDE / w;
+    let fine = if fine > 0 { fine } else { model3d::BAKE_SIDE / w };
     let m = render3d::stone_of(g);
     let u: render3d::Bake[1] = [render3d::Bake { float4 { mode, g.wood, g.n, render3d::marble_of(g) },
                                            float4 { w * fine, h * fine, extent.x, extent.y },
@@ -453,6 +479,8 @@ fn setup(own: Own&, g: Gpu&, samples: i32 = SAMPLES, look: i32 = render3d::SHADO
     g.piece_vb = nx::buffer(bytes_of(verts));
     g.piece_ib = nx::buffer(bytes_of(indices));
     g.piece_count = indices.len;
+    g.table_spec = tables::get(tables::BOARD_WOOD);
+    g.table_vb = nx::Buffer { 0 };
 
     var empty:      float4[render3d::SQUARES]        = [float4_0; render3d::SQUARES];
     var none:       float4[render3d::SQUARES]        = [float4 { 0.0, 0.0, 0.0, -1.0 }; render3d::SQUARES];
@@ -491,6 +519,9 @@ fn setup(own: Own&, g: Gpu&, samples: i32 = SAMPLES, look: i32 = render3d::SHADO
     let depth = embed_file("../../build/ngfx/blobs/r3d_depth.blob");
     let marks = embed_file("../../build/ngfx/blobs/r3d_marks.blob");
     lit_pipelines(own, g, look);
+    g.table_lit = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table.blob"),
+                               ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true,
+                                                    blend: ngfx::BLEND_PREMULTIPLIED });
     g.shadow = nx::pipeline(depth, ngfx::PipelineDesc { depth_test: true, depth_write: true, depth_bias: 1.0,
                                                           depth_bias_slope: 1.5 });
     g.backdrop = module(embed_file("../../build/ngfx/blobs/r3d_backdrop.blob"), blend);
@@ -684,7 +715,7 @@ fn warm(own: Own&, g: Gpu&, k: i64) {
         own.warm_kept = depth_target(int2 { 4, 4 });
     }
     var pass = nx::PassDesc {};
-    if k < 4 {
+    if k < 4 || k == 11 {
         pass.color[0] = g.warm_color;
         pass.depth = g.warm_depth;
         // The backdrop is drawn in the pass too, and at 1x into the screen (below).
@@ -697,7 +728,7 @@ fn warm(own: Own&, g: Gpu&, k: i64) {
         pass.color[0] = nx::screen();
     }
     let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse, g.occ,
-             g.kept][k];
+             g.kept, g.table_lit][k];
     nx::prepare(p, pass);
     if k == render3d::WARM_STEPS - 1 && g.aa != AA_MSAA {
         // The antialiasing's pipelines, for the RGBA8 targets they draw into, and SMAA's
@@ -730,17 +761,18 @@ fn warm(own: Own&, g: Gpu&, k: i64) {
 // targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
 fn release(own: Own&, g: Gpu&) {
     ngfx::flush();
-    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map,
+    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map,
                     g.crown_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search];
     for t in textures { if t.id != 0 { nx::release(t); } }
-    let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
+    let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
+                   g.glows];
     for b in buffers { if b.id != 0 { nx::release(b); } }
     let samplers = [g.linear, own.point, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { nx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
-                     g.smaa_blend];
+                     g.smaa_blend, g.table_lit];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();

@@ -7,6 +7,7 @@ import vec;
 import math;
 import .mesh;
 import .looks;
+import .tables;
 
 // The baked surfaces' targets: the plan (the field and the frame's top seen from above),
 // `side` texels square, and the frame map, `side` wide. BAKE_SIDE, or PHONE_BAKE_SIDE on
@@ -148,12 +149,14 @@ fn spin(p: float3, degrees: f32) -> float3 {
 
 // The steps a theme is put on in (render3d::theme_step), each small enough for a frame:
 // the start; the bake's pipeline made, drawing one row (its compile can't be
-// split: the largest step); the plan in PLAN_BANDS bands and the frame map in
-// FRAME_BANDS, each surface's mips with its last; the photograph's two pipelines made;
-// the photograph in its three parts (render3d::photo_part), the end with the last.
+// split: the largest step); the plan in PLAN_BANDS bands, the frame map in FRAME_BANDS,
+// and the table in TABLE_BANDS (nothing without one), each surface's mips with its last;
+// the photograph's two pipelines made; the photograph in its three parts
+// (render3d::photo_part), the end with the last.
 let PLAN_BANDS = 16;
 let FRAME_BANDS = 6;
-let THEME_STEPS = 6 + PLAN_BANDS + FRAME_BANDS;
+let TABLE_BANDS = 16;
+let THEME_STEPS = 6 + PLAN_BANDS + FRAME_BANDS + TABLE_BANDS;
 
 let BEGIN = 0;              // the look and size taken, the frame map's targets
 let PIPELINE = 1;           // the bake's pipeline made, drawing the plan's first row
@@ -161,6 +164,7 @@ let PLAN = 2;               // a band of the plan
 let FRAME = 3;              // a band of the frame map
 let PHOTO_PIPELINES = 4;    // the photograph's shrink and blur made
 let PHOTO = 5;              // a part of the photograph
+let TABLE = 6;              // a band of the table's map
 
 // What a step does, on which rows of its surface (y1 -1 all of them), whether the
 // surface's mips follow, and which part of the photograph.
@@ -186,8 +190,15 @@ fn step(k: i64, rows: i64, side: i64 = BAKE_SIDE) -> Step {
         return Step { what: FRAME, y0: rows * b / FRAME_BANDS, y1: rows * (b + 1) / FRAME_BANDS,
                       mips: b == FRAME_BANDS - 1, .. };
     }
-    if k == 2 + PLAN_BANDS + FRAME_BANDS { return Step { what: PHOTO_PIPELINES, .. }; }
-    return Step { what: PHOTO, part: k - 3 - PLAN_BANDS - FRAME_BANDS, .. };
+    if k < 2 + PLAN_BANDS + FRAME_BANDS + TABLE_BANDS {
+        let b = k - 2 - PLAN_BANDS - FRAME_BANDS;
+        let h = table_size(side).y;
+        return Step { what: TABLE, y0: h * b / TABLE_BANDS, y1: h * (b + 1) / TABLE_BANDS,
+                      mips: b == TABLE_BANDS - 1, .. };
+    }
+    let photo = 2 + PLAN_BANDS + FRAME_BANDS + TABLE_BANDS;
+    if k == photo { return Step { what: PHOTO_PIPELINES, .. }; }
+    return Step { what: PHOTO, part: k - photo - 1, .. };
 }
 
 // The frame map's rows for a look at `side` texels wide: the mitred bands' where its
@@ -200,3 +211,12 @@ fn frame_rows(t: looks::Theme&, side: i64 = BAKE_SIDE) -> i64 {
 // frame map 10.4 across and as much down as its rows, of `side` across.
 fn plan_extent() -> float2 { float2 { 2.0 * mesh::INNER, 2.0 * mesh::INNER } }
 fn frame_extent(rows: i64, side: i64 = BAKE_SIDE) -> float2 { float2 { 10.4, 10.4 * rows / side } }
+// The table's map over its top, `side` square.
+fn table_size(side: i64 = BAKE_SIDE) -> int2 { int2 { side as i32, side as i32 } }
+fn table_extent() -> float2 { float2 { 2.0 * mesh::TABLE_R, 2.0 * mesh::TABLE_R } }
+// The table's wear (shaders::BAKE_FRAG's wear_at): a tile WEAR_TILE world units square
+// that repeats, WEAR_SIDE texels a side at BAKE_SIDE (256 a unit, the top's map 64), in
+// proportion at another side.
+let WEAR_TILE: f32 = 2.0;
+let WEAR_SIDE = 512;
+fn wear_side(side: i64 = BAKE_SIDE) -> i64 { WEAR_SIDE * side / BAKE_SIDE }

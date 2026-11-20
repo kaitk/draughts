@@ -40,6 +40,7 @@ struct Drawer {
     setup_ms:  f64                                   = 0.0,   // the renderer's setup,
     apply_ms:  f64                                   = 0.0,   // and prepare()'s steps in all, waited
     live:      bool                                  = false, // --keep off: the backdrop never kept (render3d's live)
+    table:     i64                                   = -1,    // --table: the board on that table (tables::BOARD_WOOD..)
     themed:    i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
     warmed:    i64                                   = 0,     // and its next pipeline (WARM_STEPS: done)
     prep_ms:   f64[..48]                             = [],    // each prepare() step's time
@@ -78,6 +79,8 @@ fn set_up<B>(be: B&, d: Drawer&) {
     render3d::set_bake(d.gpu, d.side);
     be.r3d.set_aa(d.gpu, d.aa, d.samples);
     render3d::choose(d.gpu, d.wood, d.marble, d.spring);
+    d.gpu.table = d.table >= 0;
+    if d.table >= 0 { d.gpu.table_spec = tables::get(d.table); }
     d.ready = true;
     d.setup_ms = (clock() - t0) * 1000.0;
 }
@@ -106,7 +109,7 @@ fn ready(d: Drawer&, kind: i64, n: i64, plain: bool) -> bool {
 
 // The theme's steps up to and with its photograph's: what switching to or from the plain
 // fade takes again.
-fn photo_steps() -> i64 { return 2 + model3d::PLAN_BANDS + model3d::FRAME_BANDS; }
+fn photo_steps() -> i64 { return 2 + model3d::PLAN_BANDS + model3d::FRAME_BANDS + model3d::TABLE_BANDS; }
 
 // Whether an image of the board shows; without one the shell shows a still mark.
 fn shows(d: Drawer&) -> bool { d.appear_at >= 0.0 }
@@ -192,7 +195,7 @@ fn drop<B>(be: B&, d: Drawer&) {
     guard d.ready else { return; }
     be.r3d.release(d.gpu);
     d = Drawer { aa: d.aa, samples: d.samples, look: d.look, side: d.side, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
-                spring: d.spring, want: d.want, .. };
+                spring: d.spring, want: d.want, table: d.table, .. };
 }
 
 // The A key: the renderer's next antialiasing.
@@ -243,11 +246,28 @@ fn release_targets_unless_shown<B>(be: B&, d: Drawer&, shown: bool) {
     render3d::release_targets(be.r3d, d.gpu);
 }
 
+// v seen from where its bounds are put at `place` (x, y, width; the height follows), as
+// show() moves the image drawn through v: its scale and its center moved with them.
+fn moved(v: view3d::View, place: float4) -> view3d::View {
+    guard v.rect.z > 0.0 && place.z > 0.0 else { return v; }
+    let k = place.z / v.rect.z;
+    var m = v;
+    m.k = v.k * k;
+    m.c = float2 { place.x + (v.c.x - v.rect.x) * k, place.y + (v.c.y - v.rect.y) * k };
+    m.rect = float4 { place.x, place.y, place.z, v.rect.w * k };
+    return m;
+}
+
 // Draws b, seen through v, into the kept image if anything it shows changed. `which` tells
 // the boards apart (the game's, a puzzle's, settings' preview). While `hold` (a
-// transition) the image is drawn again only for another view or board.
-fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2, kind: i64,
-         plain: bool, which: i64 = 0, hold: bool = false) {
+// transition) the image is drawn again only for another view or board, and show() moves
+// it to `place`; but a board on the table is drawn again each frame through v moved there,
+// as the table fills the screen round it wherever the board goes.
+fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, v0: view3d::View, now: f64, size: int2, kind: i64,
+         plain: bool, which: i64 = 0, hold0: bool = false, place: float4 = float4_0) {
+    let on_table = d.gpu.table && hold0;
+    let v = if on_table { moved(v0, place) } else { v0 };
+    let hold = hold0 && !on_table;
     d.gpu.live = d.live;
     d.redraw = false;
     d.shadow = false;

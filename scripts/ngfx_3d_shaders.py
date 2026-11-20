@@ -38,6 +38,7 @@ MODULES = [
     ("r3d_lit_few", LIT_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "LIT_FRAG"]),
     ("r3d_lit_many", LIT_VS, ["SHADOW_MANY", "FS_SET", "FRAME", "LIT_FRAG"]),
     ("r3d_depth", LIT_VS, ["EMPTY_FRAG"]),
+    ("r3d_table", ["VS_SET", "FRAME", "TABLE_VERT"], ["FS_SET", "FRAME", "TABLE_FRAG"]),
     ("r3d_crown", FULL, ["CROWN_FN", "CROWN_FRAG"]),
     ("r3d_occ", FULL, ["FS_SET", "FRAME", "OCC_FRAG"]),
     ("r3d_backdrop", FULL, ["FS_SET", "FRAME", "FADE_FN", "BACKDROP_FRAG"]),

@@ -1061,6 +1061,308 @@ let OCC_FRAG = """
     }
     """;
 
+// The table under the board (mesh::table), one mesh at its place: its world position,
+// normal, and where along its profile (uv.y).
+let TABLE_VERT = """
+    layout(location = 0) in vec3 a_pos;
+    layout(location = 1) in vec3 a_normal;
+    layout(location = 2) in vec2 a_uv;
+    layout(location = 3) in vec2 a_extra;          // occlusion, material
+    layout(location = 0) out vec3 v_world;
+    layout(location = 1) out vec3 v_normal;
+    layout(location = 2) out vec2 v_uv;
+    layout(location = 3) out float v_ao;
+    void main() {
+        vec3 pos = a_pos;
+        v_world = pos;
+        v_normal = a_normal;
+        v_uv = a_uv;
+        v_ao = a_extra.x;
+        gl_Position = view_proj * vec4(pos, 1.0);
+    }
+    """;
+
+// The table lit as the board is (LIT_FRAG's light, its functions repeated here till the
+// two share them), its wood baked (BAKE_FRAG's mode 2) over its top seen from above. The
+// board's shadow on it and its occlusion near the board's foot are worked out from the
+// board's outline (no catcher over it); its light falls off away from the board
+// (Table.pool), as a lamp's or a window's would.
+let TABLE_FRAG = """
+    layout(location = 0) in vec3 v_world;
+    layout(location = 1) in vec3 v_normal;
+    layout(location = 2) in vec2 v_uv;
+    layout(location = 3) in float v_ao;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D table_albedo;
+    layout(set = 2, binding = 1) uniform sampler2D table_normal;
+    // The board's frame map, its last mip the frame's mean color, for its reflection.
+    layout(set = 2, binding = 2) uniform sampler2D frame_albedo;
+    // The wear's tile (BAKE_FRAG's wear_at): scratches, crazing, dents; the scratches'
+    // normal's x and z, the dents'.
+    layout(set = 2, binding = 3) uniform sampler2D wear_map;
+    layout(set = 2, binding = 4) uniform sampler2D wear_normal;
+    // tables::Table's. pool: x the light's reach round the board (world units), y how dim
+    // it is beyond, z how dark the edge's underside goes, w how strong the board's
+    // reflection; coat: x the polish's roughness on the edge (the top's is baked), y how
+    // strong it is, z how far it follows the wood's relief, w how broad the key light's
+    // highlight in it (a roughness); polish: x how much its roughness varies, y its
+    // strength, z the blotches' size (world units), w how much the wear shows in it;
+    // worn: the rim's wear, x how much, y how wide.
+    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; };
+    // mesh.goose's (test/model3d/geometry checks them).
+    const float TABLE_R = 16.0;
+    const float TABLE_TOP = -0.703;
+    const float TABLE_Z = -4.5;
+    const float SIDE_STREAK = 0.008;   // how far the sides' figure is drawn out (map units)
+    const float WEAR_TILE = 2.0;       // model3d::WEAR_TILE
+    // The wear's second layer: its tile turned by 0.5 radians (cos, sin) and 1 / 0.73
+    // times as large, so the two never repeat together.
+    const vec2 TURN = vec2(0.87758, 0.47943);
+    const float GROW = 0.73;
+
+    float h12(vec2 p) {
+        vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return fract((p3.x + p3.y) * p3.z);
+    }
+    float vnoise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(h12(i), h12(i + vec2(1, 0)), u.x),
+                   mix(h12(i + vec2(0, 1)), h12(i + vec2(1, 1)), u.x), u.y);
+    }
+    // A vector in the second layer's tile turned back into the world's.
+    vec2 turn_back(vec2 v) { return vec2(TURN.x * v.x + TURN.y * v.y, TURN.x * v.y - TURN.y * v.x); }
+
+    float d_ggx(float noh, float a) {
+        float a2 = a * a;
+        float f = (noh * a2 - noh) * noh + 1.0;
+        return a2 / (PI * f * f);
+    }
+    float v_smith(float nov, float nol, float a) {
+        float a2 = a * a;
+        float l = nov * sqrt((-nol * a2 + nol) * nol + a2);
+        float v = nol * sqrt((-nov * a2 + nov) * nov + a2);
+        return 0.5 / (l + v);
+    }
+    vec3 f_schlick(vec3 f0, float voh) {
+        float f = pow(1.0 - voh, 5.0);
+        return f0 + (1.0 - f0) * f;
+    }
+    vec3 env_brdf(vec3 f0, float rough, float nov) {
+        vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
+        vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
+        vec4 r = rough * c0 + c1;
+        float a004 = min(r.x * r.x, exp2(-9.28 * nov)) * r.x + r.y;
+        vec2 ab = vec2(-1.04, 1.04) * a004 + r.zw;
+        return f0 * ab.x + ab.y;
+    }
+    vec3 sh_eval(vec3 n) {
+        vec3 r = sh[0].rgb * 0.282095
+               + sh[1].rgb * (0.488603 * n.y) + sh[2].rgb * (0.488603 * n.z)
+               + sh[3].rgb * (0.488603 * n.x)
+               + sh[4].rgb * (1.092548 * n.x * n.y) + sh[5].rgb * (1.092548 * n.y * n.z)
+               + sh[6].rgb * (0.315392 * (3.0 * n.y * n.y - 1.0))
+               + sh[7].rgb * (1.092548 * n.x * n.z)
+               + sh[8].rgb * (0.546274 * (n.x * n.x - n.z * n.z));
+        return max(r, vec3(0.0));
+    }
+    vec3 tonemap(vec3 c) {
+        float x = min(c.r, min(c.g, c.b));
+        float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
+        c -= offset;
+        float peak = max(c.r, max(c.g, c.b));
+        const float start = 0.76;
+        if (peak < start) return c;
+        const float d = 1.0 - start;
+        float np = 1.0 - d * d / (peak + d - start);
+        c *= np / peak;
+        float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
+        return mix(c, vec3(np), g);
+    }
+    vec3 to_srgb(vec3 c) {
+        c = clamp(c, 0.0, 1.0);
+        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+    }
+
+    float round_box(vec2 p, vec2 b, float r) {
+        vec2 q = abs(p) - b + r;
+        return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+    }
+
+    // The board's shadow on the table from the key light: its rounded outline swept
+    // along the light from its foot to its top's height, the edge softer the farther up
+    // it was cast from.
+    float board_shadow(vec2 p) {
+        vec3 l = light_dir.xyz;
+        vec2 off = -l.xz / max(l.y, 0.05) * (FRAME_TOP - TABLE_TOP);
+        vec2 b = vec2(INNER + FRAME_W);
+        float lit = 1.0;
+        for (int i = 0; i <= 4; i++) {
+            float t = float(i) * 0.25;
+            float d = round_box(p - off * t, b, FRAME_W);
+            float w = 0.04 + 0.35 * t;
+            lit = min(lit, smoothstep(-w, w, d));
+        }
+        return lit;
+    }
+
+    // The board's side seen along the ray from p (on the table) in direction d (going up):
+    // rgb its color lit, a how much of it (0 the ray passes it), its edge softer the
+    // farther the ray went (the polish blurs what is far). The board is its rounded outline
+    // stood up from the table to its top.
+    vec4 board_seen(vec3 p, vec3 d, vec3 l) {
+        vec2 b = vec2(INNER + FRAME_W);
+        float across = length(d.xz);
+        if (across < 1e-4) return vec4(0.0);
+        float t = 0.0;
+        float dist = 0.0;
+        for (int i = 0; i < 10; i++) {
+            dist = round_box(p.xz + d.xz * t, b, FRAME_W);
+            if (dist < 0.002) break;
+            t += dist / across;
+        }
+        float y = p.y + d.y * t;
+        float h = FRAME_TOP - TABLE_TOP;
+        float blur = 0.02 + 0.06 * t;
+        float hit = (1.0 - smoothstep(0.0, blur, dist)) * (1.0 - smoothstep(FRAME_TOP - blur, FRAME_TOP + blur, y));
+        if (hit <= 0.0) return vec4(0.0);
+        vec2 q = p.xz + d.xz * t;
+        vec2 e = vec2(0.01, 0.0);
+        vec2 g = vec2(round_box(q + e.xy, b, FRAME_W) - round_box(q - e.xy, b, FRAME_W),
+                      round_box(q + e.yx, b, FRAME_W) - round_box(q - e.yx, b, FRAME_W));
+        vec3 ns = normalize(vec3(g.x, 0.0, g.y));
+        vec3 albedo = textureLod(frame_albedo, vec2(0.5), 20.0).rgb;
+        float ao = mix(0.35, 1.0, smoothstep(0.0, h, y - TABLE_TOP));
+        float wrap = 0.2;
+        float diff = clamp((dot(ns, l) + wrap) / (1.0 + wrap), 0.0, 1.0) / (1.0 + wrap);
+        vec3 c = albedo * (diff / PI * light_color.rgb * light_dir.w + sh_eval(ns) * params.z * ao);
+        return vec4(c, hit);
+    }
+
+    void main() {
+        vec3 p = v_world;
+        vec3 n = normalize(v_normal);
+        // The top seen from above; the edge, the frieze and what is under them unrolled,
+        // their grain running round the table (a bent rim's) as the profile goes down
+        // across it, a whole number of the map's repeats round, so it meets itself.
+        bool top = v_normal.y > 0.999 && p.y > TABLE_TOP - 0.01;
+        vec2 out_dir = p.xz - vec2(0.0, TABLE_Z);
+        float from_mid = max(length(out_dir), 1e-3);
+        vec2 uv = top ? out_dir / (2.0 * TABLE_R) + 0.5
+                      : vec2(0.3 + (v_uv.y - TABLE_R) / (2.0 * TABLE_R), v_uv.x / (2.0 * PI * from_mid) * 3.0);
+        // On the sides the figure is drawn out along the grain (their v) into straight
+        // streaks, as an edge's and a frieze's wood is: the filter's footprint
+        // lengthened along it, the anisotropic filter blurring that way only.
+        vec2 gx = dFdx(uv);
+        vec2 gy = dFdy(uv);
+        if (!top) {
+            gx.y = sign(gx.y + 1e-9) * max(abs(gx.y), SIDE_STREAK);
+            gy.y = sign(gy.y + 1e-9) * max(abs(gy.y), SIDE_STREAK);
+        }
+        vec4 a = textureGrad(table_albedo, uv, gx, gy);
+        vec4 tn = textureGrad(table_normal, uv, gx, gy);
+        vec3 albedo = a.rgb;
+        float rough = a.a;
+        float ao = clamp(v_ao, 0.0, 1.0);
+
+        // The top's wear, finer than its map: the wear's tile laid twice, the second turned
+        // and larger, where the map's patches (tn.z) say. Scratches and dents where the top
+        // was used, crazing where it was left alone; the dents anywhere.
+        vec2 wa_uv = p.xz / WEAR_TILE + 0.13;
+        vec2 wq = p.xz * (GROW / WEAR_TILE);
+        vec2 wb_uv = vec2(TURN.x * wq.x - TURN.y * wq.y, TURN.y * wq.x + TURN.x * wq.y) + vec2(0.41, 0.77);
+        vec4 wa = texture(wear_map, wa_uv);
+        vec4 wb = texture(wear_map, wb_uv);
+        vec4 na = texture(wear_normal, wa_uv) * 2.0 - 1.0;
+        vec4 nb = texture(wear_normal, wb_uv) * 2.0 - 1.0;
+        nb = vec4(turn_back(nb.xy), turn_back(nb.zw)) * GROW;
+        float on_top = top ? 1.0 : 0.0;
+        float used = smoothstep(0.3, 0.6, tn.z) * on_top;
+        float left = (1.0 - smoothstep(0.3, 0.45, tn.z)) * on_top;
+        float scratch = max(wa.x, wb.x) * used;
+        float craze = max(wa.y, wb.y) * left;
+        float dent = max(wa.z, wb.z) * on_top;
+        vec2 bump = ((na.xy + nb.xy) * used + (na.zw + nb.zw)) * on_top;
+        albedo *= (1.0 + 0.5 * scratch) * (1.0 - 0.35 * craze);
+        rough += 0.25 * scratch + 0.15 * craze + 0.1 * dent;
+        ao *= 1.0 - 0.15 * (craze + dent);
+        // The board standing on it hides the sky near its foot.
+        float foot = round_box(p.xz, vec2(INNER + FRAME_W), FRAME_W);
+        ao *= 1.0 - 0.6 * (1.0 - smoothstep(0.0, 1.4, foot)) * step(TABLE_TOP - 0.01, p.y);
+        float top_var = 0.0;
+        // The top takes the baked normal; the edge and what is under keep the mesh's.
+        if (top) {
+            vec2 t = tn.xy * 2.0 - 1.0;
+            float r = length(vec3(t, tn.w));
+            top_var = max((1.0 - r) / max(r, 1e-3), 0.0);
+            n = normalize(vec3(t.x + bump.x, sqrt(max(1.0 - dot(t, t), 0.0)), t.y + bump.y));
+        } else {
+            // The edge and the apron in the shade of the top, darker the lower.
+            ao *= mix(1.0 - pool.z, 1.0, smoothstep(TABLE_TOP - 0.6, TABLE_TOP, p.y));
+        }
+
+        // Two layers: the wood under the polish, lit with its grain's relief, and the
+        // polish over it, smooth as the mesh is, which takes the key light's highlight and
+        // the room's (or the board's) reflection.
+        vec3 v = normalize(eye.xyz - p);
+        vec3 l = light_dir.xyz;
+        // The polish lies over the wood's figure as far as coat.z says (sanded), and over
+        // the dents and scratches in it as far as polish.w: they catch the light.
+        vec3 vn = normalize(v_normal);
+        vec3 nc = top ? normalize(mix(vn, n, coat.z) + polish.w * vec3(bump.x, 0.0, bump.y)) : vn;
+        float nol = dot(n, l);
+        float wrap = 0.2;
+        float diff = clamp((nol + wrap) / (1.0 + wrap), 0.0, 1.0) / (1.0 + wrap);
+        // The light's pool round the board.
+        float d = length(p.xz) / max(pool.x, 1e-3);
+        float lit = mix(pool.y, 1.0, exp(-d * d));
+        vec3 light = light_color.rgb * light_dir.w * lit;
+        float vis = p.y > TABLE_TOP - 0.01 ? board_shadow(p.xz) : 1.0;
+        vec3 irr = sh_eval(n) * params.z * mix(1.0, lit, 0.5);
+        vec3 wood = albedo * (diff / PI * light * vis + irr * ao);
+
+        float nov = max(dot(nc, v), 1e-4);
+        float nl = clamp(dot(nc, l), 0.0, 1.0);
+        vec3 hv = normalize(v + l);
+        float noh = clamp(dot(nc, hv), 0.0, 1.0);
+        float voh = clamp(dot(v, hv), 0.0, 1.0);
+        vec3 du = dFdx(nc);
+        vec3 dv = dFdy(nc);
+        float variance = 0.15 * (dot(du, du) + dot(dv, dv));
+        // Old varnish is blotchy: thinner here, rougher and duller, thicker there, by a
+        // noise polish.z across. The rim, which hands wore, duller still, down its edge.
+        vec2 bq = p.xz / max(polish.z, 0.1);
+        float blot = 0.65 * vnoise(bq) + 0.35 * vnoise(bq * 2.03 + 5.1) - 0.5;
+        float rim = worn.x * (top ? smoothstep(TABLE_R - worn.y, TABLE_R - 0.05, from_mid)
+                                  : smoothstep(TABLE_TOP - 0.5, TABLE_TOP, p.y));
+        float cr = (top ? rough + 0.3 * polish.w * scratch : coat.x + 0.25 * polish.w * rim)
+                 * (1.0 + 2.0 * polish.x * blot);
+        float strength = coat.y * clamp(1.0 - 2.0 * polish.y * blot, 0.0, 2.0) * (1.0 - 0.6 * polish.w * rim);
+        float ar = cr * cr;
+        ar = sqrt(clamp(ar * ar + min(2.0 * variance + 0.3 * top_var, 0.3), 0.0, 1.0));
+        ar = max(ar, 0.0079);
+        vec3 f0 = vec3(0.04);
+        // The key light is a window, not a point: its highlight in the polish is as broad
+        // as coat.w's roughness, not the sun's pinpoint.
+        float ak = max(ar, coat.w * coat.w);
+        vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * vis;
+        vec3 r = reflect(-v, nc);
+        vec3 env = sh_eval(r) * params.z * mix(1.0, lit, 0.5);
+        // Near the board the polish shows the board's side in place of the room.
+        if (top && r.y > 0.0) {
+            vec4 side = board_seen(p, r, l);
+            env = mix(env, side.rgb * pool.w, side.a);
+        }
+        float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
+        vec3 fc = env_brdf(f0, sqrt(ar), nov) * strength;
+        vec3 color = (wood * (1.0 - fc) + spec * strength + env * fc * spec_ao) * params.x;
+        color = tonemap(color) * vec3(1.02, 1.0, 0.97);
+        result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
+    }
+    """;
+
 // One triangle over the target.
 let FULL_VERT = """
     layout(location = 0) out vec2 v_uv;
@@ -1174,7 +1476,9 @@ let SHADOW_CATCHER_FRAG = """
 
 // The board's surfaces, baked once per theme into two targets: albedo and roughness
 // (sRGB), and the normal's x and z. mode.x 0 bakes the plan of the field and its inlay,
-// seen from above; 1 the frame map, its grain along u. mode.y: the wood's model
+// seen from above; 1 the frame map, its grain along u; 2 the table's top seen from
+// above, its wood in the light squares' slots (table_cut); 3 the table's wear (wear_at).
+// mode.y: the wood's model
 // (--wood): 0 noise drawn out along the grain, 1 growth rings, 2 growth
 // rings with pores and a fibre relief, 3 the first with thin lines and pores laid over
 // it. size: the target in texels, then in world units. The rest is the theme's
@@ -2168,12 +2472,155 @@ let BAKE_FRAG = """
         return w;
     }
 
+    // The table's top (mode.x 2), round its middle: planks seam.x wide with the grain
+    // along y, each its own piece of the wood (the light squares' slots hold the table's:
+    // tables::Table) and its own tone.
+    Cut table_cut(vec2 p) {
+        Cut c;
+        float plank = floor(p.x / seam.x + 0.5);
+        c.q = vec2(p.x - plank * seam.x, p.y);
+        c.seed = 31.0 + 7.0 * plank;
+        c.base = light_sq;
+        c.k = light_fig;
+        c.ring = light_ring;
+        c.f = inlay.xyz;
+        float edge = abs(abs(c.q.x) - 0.5 * seam.x);
+        c.seam = 1.0 - smoothstep(seam.y, seam.y + 0.004, edge);
+        c.shade = (1.0 + surface.x * (h12(vec2(c.seed, 4.2)) - 0.5)) * (1.0 - surface.z * c.seam);
+        c.dip = 0.3 * c.seam;
+        return c;
+    }
+
+    // The wear's hashes and noise over a tile that repeats every `per` cells.
+    float hw(vec2 c, float per) { return h12(mod(c, per)); }
+    float wnoise(vec2 p, float per) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hw(i, per), hw(i + vec2(1, 0), per), u.x),
+                   mix(hw(i + vec2(0, 1), per), hw(i + vec2(1, 1), per), u.x), u.y);
+    }
+    // cells() over a tile `per` cells across: the nearest two feature points' distances.
+    vec2 wcells(vec2 p, float per) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        float d1 = 8.0;
+        float d2 = 8.0;
+        for (int y = -1; y <= 1; y++) {
+            for (int x = -1; x <= 1; x++) {
+                vec2 o = vec2(float(x), float(y));
+                vec2 c = o + vec2(hw(i + o, per), hw(i + o + 19.7, per)) * 0.9 + 0.05 - f;
+                float d = dot(c, c);
+                if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) { d2 = d; }
+            }
+        }
+        return vec2(sqrt(d1), sqrt(d2));
+    }
+
+    // Scratches over the tile: in cells `size` across (`per` of them to the tile), up to
+    // two straight scratches each, `keep` of them drawn, of random lengths, angles round
+    // `dir`, widths about w and depths: how much of one there is at p.
+    float scratches(vec2 p, float size, float per, float keep, float seed, vec2 dir, float w) {
+        vec2 i = floor(p / size);
+        float best = 0.0;
+        for (int y = -1; y <= 1; y++) {
+            for (int x = -1; x <= 1; x++) {
+                vec2 c = i + vec2(float(x), float(y));
+                for (int k = 0; k < 2; k++) {
+                    vec2 kk = vec2(float(k) * 7.1 + seed);
+                    if (hw(c + kk + 0.3, per) > keep) continue;
+                    vec2 m = (c + vec2(hw(c + kk + 1.1, per), hw(c + kk + 2.3, per))) * size;
+                    float ang = (hw(c + kk + 3.7, per) - 0.5) * 2.4;
+                    vec2 d = vec2(cos(ang) * dir.x - sin(ang) * dir.y, sin(ang) * dir.x + cos(ang) * dir.y);
+                    float half_len = size * (0.15 + 0.6 * hw(c + kk + 4.9, per));
+                    vec2 q = p - m;
+                    float t = clamp(dot(q, d), -half_len, half_len);
+                    // Thinner and fainter toward its ends, as a dragged grit lifts.
+                    float along = max(1.0 - abs(t) / half_len, 0.0);
+                    float sw = w * (0.5 + hw(c + kk + 5.3, per)) * (0.5 + 0.5 * sqrt(along));
+                    float depth = 0.5 + 0.5 * hw(c + kk + 6.1, per);
+                    best = max(best, depth * (1.0 - smoothstep(0.3 * sw, sw, length(q - d * t))));
+                }
+            }
+        }
+        return best;
+    }
+
+    // The table's wear (mode.x 3) on a tile size.zw across that repeats, which TABLE_FRAG
+    // lays twice over the top, turned and scaled the second time so it never shows, and
+    // masks by the patches the top's map holds (table_over's cavity): x scratches, y the
+    // varnish's crazing, z dents and nicks, as strong as tables::Table.patina says, each
+    // half as many as the top has, as the two layers add.
+    vec4 wear_at(vec2 p) {
+        float tile = size.z;
+        float texel = size.z / size.x;
+        float sw = max(texel * 1.5, 0.01);
+        float s1 = scratches(p, 1.0, tile, 0.37, 1.0, vec2(0.0, 1.0), sw);
+        float s2 = scratches(p, 0.5, 2.0 * tile, 0.3, 5.0, vec2(1.0, 0.0), sw);
+        // Hairlines, which the top's map was too coarse for.
+        float s3 = scratches(p, 0.4, 2.5 * tile, 0.12, 9.0, vec2(0.0, 1.0), 0.5 * sw);
+        float scratch = max(max(s1, 0.6 * s2), 0.35 * s3) * dark_sq.z;
+        vec2 wq = p * 2.0;
+        vec2 warp = vec2(wnoise(wq, 2.0 * tile) + 0.5 * wnoise(wq * 2.0, 4.0 * tile),
+                         wnoise(wq + 7.0, 2.0 * tile) + 0.5 * wnoise(wq * 2.0 + 7.0, 4.0 * tile));
+        vec2 cl = wcells(p * 7.0 + warp * 0.4, 7.0 * tile);
+        float craze = (1.0 - smoothstep(0.0, max(0.05, 8.4 * texel), cl.y - cl.x)) * dark_sq.y;
+        vec2 dg = p * 2.5;
+        vec2 dc = wcells(dg, 2.5 * tile);
+        // A soft bowl, its size and depth its own.
+        float r = 0.04 + 0.07 * hw(floor(dg) + 3.3, 2.5 * tile);
+        float bowl = max(1.0 - dc.x * dc.x / (r * r), 0.0);
+        float dent = bowl * bowl * (0.4 + 0.6 * hw(floor(dg) + 8.9, 2.5 * tile))
+                   * step(0.91, hw(floor(dg), 2.5 * tile)) * dark_sq.w;
+        return vec4(scratch, craze, dent, 0.0);
+    }
+
+    // What the table lays over its wood (dark_sq: tables::Table.patina, dark_fig its wear):
+    // its age under a thick varnish. The varnish's blotches, darker and lighter by turns;
+    // the rim worn lighter where hands rest. Its finer wear, the crazing, scratches, and
+    // dents, is wear_at's, on a tile of its own: here only the patches where the top was
+    // used (scratched, dented) and where it was left alone (crazed), in the cavity's
+    // channel. The roughness baked is the polish's, which TABLE_FRAG takes on the top.
+    Wood table_over(Wood w, Cut c, vec2 p) {
+        float blot = fbm(p * 0.35 + 3.1) - 0.5;
+        float fine = fbm(p * 1.7 + 8.3) - 0.5;
+        w.albedo *= (1.0 + dark_sq.x * (1.6 * blot + 0.6 * fine)) * c.shade;
+        // Flame mahogany (dark_ring: tables::Table.flame): the figure swept into flames and
+        // swirls, the point warped twice by noise (Quilez's warp) across a flow along the
+        // grain; dark where the bands run, golden between, darkened by Beer's law as stain
+        // gathers. Book-matched (w over 0), two leaves mirrored about a seam down the
+        // middle, as alike as w: the broad flow shared, the finer warp, the bands and the
+        // streaks each leaf's own the more as w falls (two cuts of one log, not a mirror).
+        if (dark_ring.x > 0.0) {
+            bool matched = dark_ring.w > 0.0;
+            vec2 f = (matched ? vec2(abs(p.x), p.y) : p) * dark_ring.y;
+            vec2 own = (matched && p.x < 0.0 ? 1.0 - dark_ring.w : 0.0) * vec2(13.7, 5.3);
+            vec2 w1 = vec2(fbm(f * 0.35 + 1.7 + 0.3 * own), fbm(f * 0.35 + 9.2 + 0.3 * own));
+            vec2 w2 = vec2(fbm(f * 0.7 + w1 * 2.0 + 4.1 + own), fbm(f * 0.7 + w1 * 2.0 + 7.3 + own));
+            float flow = f.x + dark_ring.z * 2.0 * (w2.x - 0.5) + 0.6 * dark_ring.z * (w1.y - 0.5) * f.y * 0.2;
+            float band = fbm(vec2(flow * 1.6, f.y * 0.18 + 1.5 * w2.y) + own);
+            float streak = vnoise(vec2(flow * 22.0, f.y * 1.4) + own) - 0.5;
+            float a = 2.4 * (band - 0.5) + 0.5 * streak;
+            // The light bands lighten half as far as the dark ones darken: golden, not pale.
+            a = a > 0.0 ? a : 0.5 * a;
+            w.albedo = pow(max(w.albedo, vec3(1e-4)), vec3(1.0 + dark_ring.x * a));
+            w.height += 0.3 * streak * dark_ring.x;
+        }
+        float r = length(p);
+        float rim = smoothstep(0.5 * size.z - dark_fig.y, 0.5 * size.z - 0.05, r)
+                  * (0.5 + fbm(p * 1.3 + 31.0)) * dark_fig.x;
+        w.albedo *= 1.0 + 0.8 * rim;
+        w.rough = light_sq.a * (1.0 + 0.6 * blot) + 0.25 * rim;
+        w.cavity = fbm(p * 0.4 + 11.0);
+        return w;
+    }
+
     // One call of wood() for every surface: each call site compiles in full, and a phone
     // makes the pipeline slowly.
     Wood at(vec2 p) {
-        Cut c = mode.x < 0.5 ? plan(p) : frame_map(p);
+        Cut c = mode.x < 0.5 ? plan(p) : (mode.x < 1.5 ? frame_map(p) : table_cut(p));
         Wood w = wood(c.q, c.seed, c.base, c.k, c.f, c.ring);
-        return mode.x < 0.5 ? plan_over(w, c, p) : frame_over(w, c, p);
+        return mode.x < 0.5 ? plan_over(w, c, p) : (mode.x < 1.5 ? frame_over(w, c, p) : table_over(w, c, p));
     }
 
     // size is the full bake's (model3d::BAKE_SIDE); a phone's half-size target takes
@@ -2182,10 +2629,43 @@ let BAKE_FRAG = """
     // looks as it does on a larger screen instead of twice as coarse.
     void main() {
         vec2 texel = size.zw / size.xy;
-        vec2 origin = mode.x < 0.5 ? 0.5 * size.zw : vec2(0.0);
+        vec2 origin = mode.x < 0.5 || mode.x > 1.5 ? 0.5 * size.zw : vec2(0.0);
         int n = int(tone.w + 0.5);
         vec2 p = (floor(gl_FragCoord.xy) * float(n) + 0.5 * float(n)) * texel - origin;
-        if (mode.w >= 5.0 && mode.w < 9.0) {
+        if (mode.x > 2.5) {
+            // The table's wear: x scratches, y crazing, z dents into the first target; the
+            // scratches' normal (x, z) and the dents' into the second, apart, as TABLE_FRAG
+            // masks them apart.
+            float relief = 0.0015 * surface.w;
+            vec4 sum = vec4(0.0);
+            vec4 bump = vec4(0.0);
+            vec4 here = vec4(0.0);
+            vec4 dx = vec4(0.0);
+            for (int k = 0; k < 3 * n * n; k++) {
+                int j = k % 3;
+                int s = k / 3;
+                vec2 q = (floor(gl_FragCoord.xy) * float(n) + vec2(float(s % n), float(s / n)) + 0.5) * texel - origin;
+                vec2 o = j == 1 ? vec2(texel.x, 0.0) : (j == 2 ? vec2(0.0, texel.y) : vec2(0.0));
+                vec4 t = wear_at(q + o);
+                if (j == 0) here = t;
+                else if (j == 1) dx = t;
+                else {
+                    // Scratches 1.5 deep, dents 3, in the bake's relief units: shallower
+                    // than the top's map had them, as they are 4 times as steep here.
+                    vec2 gs = -1.5 * (vec2(dx.x, t.x) - here.x) / texel;
+                    vec2 gd = -3.0 * (vec2(dx.z, t.z) - here.z) / texel;
+                    vec3 ns = normalize(vec3(-gs.x * relief, 1.0, -gs.y * relief));
+                    vec3 nd = normalize(vec3(-gd.x * relief, 1.0, -gd.y * relief));
+                    bump += vec4(ns.xz, nd.xz);
+                    sum += vec4(here.xyz, 1.0);
+                }
+            }
+            float share = 1.0 / float(n * n);
+            out_albedo = sum * share;
+            out_normal = bump * share * 0.5 + 0.5;
+            return;
+        }
+        if (mode.x < 1.5 && mode.w >= 5.0 && mode.w < 9.0) {
             bool frame_cut = mode.x > 0.5;
             vec2 sq = floor((p + FIELD) * (mode.z / (2.0 * FIELD)));
             if (frame_cut || (max(abs(p.x), abs(p.y)) < FIELD && mod(sq.x + sq.y, 2.0) > 0.5)) {
@@ -2204,7 +2684,7 @@ let BAKE_FRAG = """
                 return;
             }
         }
-        if (mode.x > 0.5 && mode.w > 0.5 && frame_fig.w < 0.5 && carve.w < 0.5) {
+        if (mode.x > 0.5 && mode.x < 1.5 && mode.w > 0.5 && frame_fig.w < 0.5 && carve.w < 0.5) {
             // A marble frame, flat: once a texel, no relief to take the normal from.
             Wood m = marble_at(p.yx);
             out_albedo = vec4(m.albedo, m.rough);
@@ -2214,7 +2694,7 @@ let BAKE_FRAG = """
         // Each sample and its neighbours along x and y, for the normal, in a loop the
         // compiler can't unroll (its count comes from the block): unrolled, the whole
         // wood compiles three times over.
-        float relief = 0.0015 * (mode.x < 0.5 ? surface.w : frame_surface.y);
+        float relief = 0.0015 * (mode.x < 0.5 || mode.x > 1.5 ? surface.w : frame_surface.y);
         Wood w;
         vec2 hn = vec2(0.0);
         vec4 albedo = vec4(0.0);

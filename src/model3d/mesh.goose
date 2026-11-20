@@ -33,6 +33,17 @@ let HEIGHT: f32 = 0.29;
 let MAT_FIELD: f32 = 0.0;
 let MAT_FRAME: f32 = 1.0;
 let MAT_PIECE: f32 = 2.0;
+let MAT_TABLE: f32 = 3.0;
+
+// The round table the board stands on: its top's radius, a little under the board's
+// foot, its middle behind the board's, as a board stands toward the player on a table,
+// and the top's thickness. The board's thick frame makes it a small one, about 30 cm
+// with squares of about 3.3 cm, so a library table some 105 cm across is 16 squares in
+// radius.
+let TABLE_R:   f32 = 16.0;
+let TABLE_TOP: f32 = -0.703;
+let TABLE_Z:   f32 = -4.5;
+let TABLE_SEGMENTS = 128;
 
 // Laid out as the shaders read it: four locations of 32-bit floats.
 struct Vertex { pos: float3, normal: float3, uv: float2, ao: f32, mat: f32 }
@@ -129,11 +140,85 @@ fn frame_profile(p: Profile&) {
     p.line(w, t - BULLNOSE, w, BOTTOM, 1.0, 0.8);
 }
 
-// The lathe's path: `n` steps round the axis, closed by repeating the first.
-fn lathe_path(path: Path&, n: i64) {
+// The table's edge profiles (tables::Table.edge.x), the period's (1890 to 1910, late
+// Historicism) beside a plain one: a bullnose, rounded over above and under a flat band;
+// a thumbnail, an ovolo over a fillet and a cove back in under; a reverse ogee, the
+// convex curve over the concave stepping out to a fillet, a cove under; a stepped edge,
+// an ovolo, a fillet, a bead, and a cove under. Each over a frieze set back under the
+// top with a bead at its foot (none under the bullnose).
+let EDGE_BULLNOSE = 0;
+let EDGE_THUMBNAIL = 1;
+let EDGE_OGEE = 2;
+let EDGE_STEPPED = 3;
+let EDGES = 4;
+
+// The table's top from its middle out, as `edge` says (tables::Table.edge): x the
+// profile, y the top's thickness, z the moulding's size, w how far in the frieze is set.
+fn table_profile(p: Profile&, edge: float4) {
+    let r = TABLE_R;
+    let y = TABLE_TOP;
+    let t = max(edge.y, 0.3);
+    let m = clamp(edge.z, 0.08, 0.45 * t);
+    let low = y - t;
+    let kind = edge.x as i64;
+    if kind == EDGE_THUMBNAIL {
+        p.line(0.0, y, r - m, y, 1.0, 1.0);
+        p.arc(r - m, y - m, m, PI * 0.5, 0.0, 8, true, 1.0, 1.0);
+        let f = 0.25 * m;
+        p.line(r, y - m, r, y - m - f, 1.0, 0.95);
+        let c = t - m - f;
+        p.arc(r, y - m - f - c, c, PI * 0.5, PI, 8, false, 0.9, 0.7);
+        p.line(r - c, low, r - edge.w, low, 0.6, 0.45);
+    } else if kind == EDGE_OGEE {
+        let a = 0.5 * m;
+        p.line(0.0, y, r - 2.0 * a, y, 1.0, 1.0);
+        p.arc(r - 2.0 * a, y - a, a, PI * 0.5, 0.0, 6, true, 1.0, 1.0);
+        p.arc(r, y - a, a, PI, PI * 1.5, 6, false, 0.95, 0.9);
+        let f = 0.35 * m;
+        p.line(r, y - 2.0 * a, r, y - 2.0 * a - f, 1.0, 0.95);
+        let c = t - 2.0 * a - f;
+        p.arc(r, y - 2.0 * a - f - c, c, PI * 0.5, PI, 8, false, 0.9, 0.7);
+        p.line(r - c, low, r - edge.w, low, 0.6, 0.45);
+    } else if kind == EDGE_STEPPED {
+        let o = 0.6 * m;
+        p.line(0.0, y, r - o, y, 1.0, 1.0);
+        p.arc(r - o, y - o, o, PI * 0.5, 0.0, 6, true, 1.0, 1.0);
+        let f = 0.2 * m;
+        p.line(r, y - o, r, y - o - f, 1.0, 0.85);
+        // The bead, a half round under the fillet, set in a little.
+        let b = 0.22 * m;
+        p.line(r, y - o - f, r - 0.15 * m, y - o - f, 0.8, 0.8);
+        p.arc(r - 0.15 * m, y - o - f - b, b, PI * 0.5, -PI * 0.5, 8, true, 0.85, 0.75);
+        let top_c = y - o - f - 2.0 * b;
+        let c = max(top_c - low, 0.05);
+        p.arc(r - 0.15 * m, top_c - c, c, PI * 0.5, PI, 8, false, 0.85, 0.65);
+        p.line(r - 0.15 * m - c, low, r - edge.w, low, 0.6, 0.45);
+    } else {
+        let over = 0.33 * t;
+        let band = 0.2 * t;
+        let under = t - over - band;
+        p.line(0.0, y, r - over, y, 1.0, 1.0);
+        p.arc(r - over, y - over, over, PI * 0.5, 0.0, 8, true, 1.0, 1.0);
+        p.line(r, y - over, r, y - over - band, 1.0, 0.95);
+        p.arc(r - under, low + under, under, 0.0, -PI * 0.5, 8, true, 0.95, 0.7);
+        p.line(r - under, low, r - edge.w, low, 0.6, 0.4);
+        p.line(r - edge.w, low, r - edge.w, low - 2.4, 0.5, 0.6);
+        return;
+    }
+    // The frieze under the top, a bead at its foot.
+    let fr = r - edge.w;
+    let fh = 2.2;
+    let bead = 0.12;
+    p.line(fr, low, fr, low - fh, 0.45, 0.8);
+    p.arc(fr, low - fh - bead, bead, PI * 0.5, -PI * 0.5, 8, true, 0.85, 0.7);
+    p.line(fr, low - fh - 2.0 * bead, fr - 0.3, low - fh - 2.0 * bead, 0.6, 0.5);
+}
+
+// The lathe's path: `n` steps round the axis at `center`, closed by repeating the first.
+fn lathe_path(path: Path&, n: i64, center: float2 = float2_0) {
     for i in n + 1 {
         let a = TAU * i as f32 / n;
-        path.push(Sample { float2_0, float2 { cos(a), sin(a) } });
+        path.push(Sample { center, float2 { cos(a), sin(a) } });
     }
 }
 
@@ -201,6 +286,15 @@ fn board(verts: Vertex[>..]&, indices: u32[>..]&) {
     var path: Path = [];
     frame_path(path, 16);
     sweep(verts, indices, prof, path, MAT_FRAME);
+}
+
+// The table under the board with its `edge` (tables::Table.edge), one mesh.
+fn table(verts: Vertex[>..]&, indices: u32[>..]&, edge: float4) {
+    var prof: Profile = [];
+    table_profile(prof, edge);
+    var path: Path = [];
+    lathe_path(path, TABLE_SEGMENTS, float2 { 0.0, TABLE_Z });
+    sweep(verts, indices, prof, path, MAT_TABLE);
 }
 
 // A piece at scale 1, standing on y = 0 round the origin.

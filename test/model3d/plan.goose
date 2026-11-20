@@ -8,7 +8,7 @@ import std;
 import vec;
 import model3d from "../../src/model3d";
 
-let WHAT = ["begin", "pipeline", "plan", "frame", "photo pipelines", "photo"];
+let WHAT = ["begin", "pipeline", "plan", "frame", "photo pipelines", "photo", "table"];
 
 fn plan(side: i64, rows: i64) {
     if side == model3d::BAKE_SIDE { print("a frame map ", rows, " rows high:"); }
@@ -16,11 +16,12 @@ fn plan(side: i64, rows: i64) {
     var line: u8[>..] = [];
     var plan_to = 0;
     var frame_to = 0;
+    var table_to = 0;
     for k in model3d::THEME_STEPS {
         let s = model3d::step(k, rows, side);
         line.clear();
         format(line, "    ", k, " ", WHAT[s.what]);
-        if s.what == model3d::PIPELINE || s.what == model3d::PLAN || s.what == model3d::FRAME {
+        if s.what == model3d::PIPELINE || s.what == model3d::PLAN || s.what == model3d::FRAME || s.what == model3d::TABLE {
             format(line, " rows ", s.y0, "..", s.y1);
             if s.mips { format(line, ", mips"); }
         }
@@ -35,8 +36,13 @@ fn plan(side: i64, rows: i64) {
             if s.y0 != frame_to { print("    the frame map's bands don't meet"); }
             frame_to = s.y1;
         }
+        if s.what == model3d::TABLE {
+            if s.y0 != table_to { print("    the table's bands don't meet"); }
+            table_to = s.y1;
+        }
     }
-    print("    the plan to row ", plan_to, " of ", side, ", the frame map to ", frame_to, " of ", rows);
+    print("    the plan to row ", plan_to, " of ", side, ", the frame map to ", frame_to, " of ", rows,
+          ", the table to ", table_to, " of ", model3d::table_size(side).y);
 }
 
 // Nine harmonics, two decimals each.

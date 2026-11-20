@@ -6,3 +6,6 @@ BOTTOM: mesh -0.7, shaders -0.7
 RADIUS: mesh 0.44, shaders 0.44
 HEIGHT: mesh 0.29, shaders 0.29
 EDGE_AT: mesh 0.89, shaders 0.89
+TABLE_R: mesh 16.0, shaders 16.0
+TABLE_TOP: mesh -0.703, shaders -0.703
+TABLE_Z: mesh -4.5, shaders -4.5

@@ -102,6 +102,9 @@ struct Flags {
     autumn: i64 = -1,
     winter: i64 = -1,
     spring: i64 = -1,
+    // --table board|flame (on: board): the 3D board on that take of the table
+    // (tables::BOARD_WOOD..; task 095), till it is a setting; -1 none
+    table: i64 = -1,
     // --material auto|wood|stone|carved: the raised board's material for the run
     // (settings::MATERIAL_AUTO..), as settings' Board row sets it
     material: i64 = -1,
@@ -302,6 +305,10 @@ fn parse(argv: u8[:][>..]) -> Flags {
             if ok && a == "--spring" { f.spring = n; }
             if ok && a == "--autumn" { f.autumn = clamp(n, 0, looks::AUTUMNS - 1); }
             if ok && a == "--winter" { f.winter = clamp(n, 0, looks::WINTERS - 1); }
+        }
+        if a == "--table" {
+            f.table = if v == "on" { tables::BOARD_WOOD } else { -1 };
+            for name, i in tables::NAMES { if v == name { f.table = i; } }
         }
         if a == "--rest" {
             let n, ok = parse_int(v);

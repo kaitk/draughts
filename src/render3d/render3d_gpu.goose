@@ -51,6 +51,13 @@ fn gpu_release_waited(own: Own&, a: Texture, b: Texture) {
     gfx::flush();
 }
 fn gpu_update(own: Own&, b: Buffer, bytes: const u8[:]) { gfx::update_buffer(b, bytes); }
+fn gpu_mesh(own: Own&, verts: const u8[:], indices: const u8[:]) -> Buffer, Buffer {
+    return gfx::vertex_buffer(verts), gfx::index_buffer(indices);
+}
+fn gpu_release_mesh(own: Own&, vb: Buffer, ib: Buffer) {
+    gfx::release(vb);
+    gfx::release(ib);
+}
 fn gpu_mipped(own: Own&, w: i64, h: i64, format: i32, mips: i64) -> Texture {
     return gfx::texture(gfx::TextureDesc { format: format, usage: gfx::COLOR_TARGET | gfx::SAMPLED,
                                            width: w as i32, height: h as i32, mips: mips as i32 });
@@ -118,13 +125,31 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         }
     }
 
+    // The table under the board, after it, so what the board covers fails the depth test.
+    if render3d::table_shown(g) {
+        gfx::bind(g.table_lit);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.table_albedo, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 1, g.table_normal, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 3, g.table_wear, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
+        gfx::uniforms(gfx::VERTEX, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 1, render3d::table_block(g));
+        gfx::bind_vertex_buffer(g.table_vb);
+        gfx::bind_index_buffer(g.table_ib, 4);
+        gfx::draw_indexed(g.table_count);
+    }
+
     // The board's soft shadow round it, after the board so the depth test leaves out
-    // what the board covers.
-    gfx::bind(g.catcher);
-    gfx::uniforms(gfx::FRAGMENT, 0, f);
-    gfx::uniforms(gfx::VERTEX, 0, f);
-    gfx::uniforms(gfx::VERTEX, 1, Draw { float4_0 });
-    gfx::draw(6);
+    // what the board covers; the table casts its own.
+    if !render3d::table_shown(g) {
+        gfx::bind(g.catcher);
+        gfx::uniforms(gfx::FRAGMENT, 0, f);
+        gfx::uniforms(gfx::VERTEX, 0, f);
+        gfx::uniforms(gfx::VERTEX, 1, Draw { float4_0 });
+        gfx::draw(6);
+    }
 
     // The field's marks and the selected piece's ring, added where nothing stands over;
     // none, nothing drawn.
@@ -268,7 +293,7 @@ fn photo_part(own: Own&, g: render3d::Gpu&, kind: i64, grey: f32, sh: float4[9]&
 // their mips. Bake.mode: x the surface (0 the plan, 1 the frame map), y the wood's model,
 // z the squares per side, w the marble (a stone frame's only).
 fn bake(own: Own&, g: render3d::Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mode: f32,
-        extent: float2, t: looks::Theme&, y0: i64 = 0, y1: i64 = -1, mips: bool = true) {
+        extent: float2, t: looks::Theme&, y0: i64 = 0, y1: i64 = -1, mips: bool = true, fine: i64 = 0) {
     // Not cleared: the bake writes every texel, and a cleared target SDL finds still
     // referenced (as a new one is) it cycles into a second copy kept for good. Only rows
     // y0 to y1 when given (theme_step's bands), the mips after the last.
@@ -280,7 +305,7 @@ fn bake(own: Own&, g: render3d::Gpu&, albedo: gfx::Texture, normal: gfx::Texture
     gfx::bind(g.bake);
     let fi = g.finish;
     // Samples a side a texel: a phone's half-size surface sampled as the full one, averaged.
-    let fine = model3d::BAKE_SIDE / w;
+    let fine = if fine > 0 { fine } else { model3d::BAKE_SIDE / w };
     let m = render3d::stone_of(g);
     gfx::uniforms(gfx::FRAGMENT, 0, render3d::Bake { float4 { mode, g.wood, g.n, render3d::marble_of(g) },
                                            float4 { w * fine, h * fine, extent.x, extent.y },
@@ -452,6 +477,8 @@ fn setup(own: Own&, g: render3d::Gpu&, samples: i32 = SAMPLES, look: i32 = rende
     g.piece_vb = gfx::vertex_buffer(bytes_of(verts));
     g.piece_ib = gfx::index_buffer(bytes_of(indices));
     g.piece_count = indices.len;
+    g.table_spec = tables::get(tables::BOARD_WOOD);
+    g.table_vb = gfx::Buffer { 0 };
 
     var empty:      float4[render3d::SQUARES]        = [float4_0; render3d::SQUARES];
     var none:       float4[render3d::SQUARES]        = [float4 { 0.0, 0.0, 0.0, -1.0 }; render3d::SQUARES];
@@ -490,6 +517,10 @@ fn setup(own: Own&, g: render3d::Gpu&, samples: i32 = SAMPLES, look: i32 = rende
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
     let quad_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::QUAD_VERT);
     lit_pipelines(own, g, look);
+    g.table_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
+                                embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TABLE_FRAG),
+                                gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
+                                                    blend: gfx::BLEND_PREMULTIPLIED });
     // Both faces into the shadow map: with back faces culled the light leaks through where
     // a piece's top curves away from it, its front faces meeting almost end-on.
     g.shadow = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),
@@ -637,7 +668,7 @@ fn warm(own: Own&, g: render3d::Gpu&, k: i64) {
         own.warm_kept = depth_target(int2 { 4, 4 });
     }
     var pass = gfx::PassDesc {};
-    if k < 4 {
+    if k < 4 || k == 11 {
         pass.color[0] = g.warm_color;
         pass.depth = g.warm_depth;
     } else if k == 4 {
@@ -653,7 +684,7 @@ fn warm(own: Own&, g: render3d::Gpu&, k: i64) {
     }
     gfx::begin_pass(pass);
     let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse, g.occ,
-             g.kept][k];
+             g.kept, g.table_lit][k];
     gfx::bind(p);
     gfx::end_pass();
     if k == render3d::WARM_STEPS - 1 {
@@ -669,16 +700,17 @@ fn warm(own: Own&, g: render3d::Gpu&, k: i64) {
 // Everything setup() and the frames made given back (the app's board back to flat): the
 // targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
 fn release(own: Own&, g: render3d::Gpu&) {
-    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.color,
+    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     own.warm_kept, g.edges, g.weights, g.area, g.search];
     for t in textures { if t.id != 0 { gfx::release(t); } }
-    let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
+    let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
+                   g.glows];
     for b in buffers { if b.id != 0 { gfx::release(b); } }
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend];
+                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();

@@ -190,6 +190,19 @@ struct Gpu {
     frame_normal:   Texture,
     frame_rows:     i64,            // the frame map's rows: `side`, or the mitred bands'
     frame_flat:     bool,           // frame_normal is flat_frame()'s 4 × 4, not the map's
+    table:          bool,           // the table under the board (set_table), its map baked
+    table_albedo:   Texture,        // with the theme's surfaces, at model3d::table_size
+    table_normal:   Texture,
+    table_wear:     Texture,        // its wear's tile, at model3d::wear_side (wear_at)
+    table_wear_n:   Texture,
+    table_side:     i64,            // the side its maps are made at, 0 none
+    table_baked:    bool,           // its maps hold table_spec's wood
+    table_spec:     tables::Table,  // the table shown (tables::BOARD_WOOD.., or as tuned)
+    table_edge:     float4,         // the edge its mesh is made with (tables::Table.edge)
+    table_vb:       Buffer,
+    table_ib:       Buffer,
+    table_count:    i64,
+    table_lit:      Pipeline,
     photo:          Texture,
     shadow_map:     Texture,
     aa:             i32,            // AA_OFF.. (set_aa), the renderer's ways
@@ -267,6 +280,105 @@ fn bake_surfaces<O>(o: O&, g: Gpu&, plan: bool = true, frame: bool = true) {
         o.bake(g, g.frame_albedo, g.frame_normal, g.side, rows, 1.0, model3d::frame_extent(rows, g.side), t);
         flat_frame(o, g);
     }
+    if g.table { bake_table(o, g); }
+    o.gpu_flush();
+}
+
+// The table's maps made at the surfaces' side when it shows, given back when it doesn't.
+fn table_maps<O>(o: O&, g: Gpu&) {
+    let side = if g.table { g.side } else { 0 };
+    guard side != g.table_side else { return; }
+    if g.table_side != 0 {
+        o.gpu_release_waited(g.table_albedo, g.table_normal);
+        o.gpu_release_waited(g.table_wear, g.table_wear_n);
+    }
+    g.table_side = side;
+    g.table_baked = false;
+    guard side > 0 else { return; }
+    let ts = model3d::table_size(side);
+    g.table_albedo = baked(o, ts.x, ts.y, RGBA8_SRGB);
+    g.table_normal = baked(o, ts.x, ts.y, RGBA8);
+    let ws = model3d::wear_side(side);
+    g.table_wear = baked(o, ws, ws, RGBA8_SRGB);
+    g.table_wear_n = baked(o, ws, ws, RGBA8);
+}
+
+// The table's mesh made again when its edge isn't the one it was made with.
+fn table_mesh<O>(o: O&, g: Gpu&) {
+    let e = g.table_spec.edge;
+    let was = g.table_edge;
+    guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w else { return; }
+    var verts:   mesh::Vertex[>..] = [];
+    var indices: u32[>..]          = [];
+    mesh::table(verts, indices, e);
+    if g.table_vb.id != 0 { o.gpu_release_mesh(g.table_vb, g.table_ib); }
+    g.table_vb, g.table_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
+    g.table_count = indices.len;
+    g.table_edge = e;
+}
+
+// The table's wood baked into its maps (rows y0 to y1, -1 all; the mips with the last),
+// as a look's light squares: tables::Table in their slots.
+fn bake_table<O>(o: O&, g: Gpu&, y0: i64 = 0, y1: i64 = -1, mips: bool = true) {
+    table_maps(o, g);
+    guard g.table else { return; }
+    table_mesh(o, g);
+    let tb = g.table_spec;
+    var t = look(g, g.look);
+    t.light_sq = tb.wood;
+    t.light_fig = tb.fig;
+    t.light_ring = tb.ring;
+    t.inlay = tb.pores;
+    t.surface = tb.surface;
+    t.seam = tb.planks;
+    t.dark_sq = tb.patina;
+    t.dark_fig = tb.wear;
+    t.dark_ring = tb.flame;
+    t.build.w = 0.0;
+    let ts = model3d::table_size(g.side);
+    let wood = g.wood;
+    let finish = g.finish;
+    g.wood = clamp(tb.model as i64, 0, model3d::WOOD_MODELS - 1);
+    g.finish = tb.finish;
+    o.bake(g, g.table_albedo, g.table_normal, ts.x, ts.y, 2.0, model3d::table_extent(), t, y0, y1, mips);
+    g.wood = wood;
+    g.finish = finish;
+    guard y1 < 0 || y1 >= ts.y else { return; }
+    // The wear's tile with the last band, sampled as finely as at the full side.
+    let ws = model3d::wear_side(g.side);
+    o.bake(g, g.table_wear, g.table_wear_n, ws, ws, 3.0, float2 { model3d::WEAR_TILE, model3d::WEAR_TILE }, t,
+           0, -1, true, model3d::WEAR_SIDE / ws);
+    g.table_baked = true;
+}
+
+// Whether the board's pass draws the table: on, and its wood baked.
+fn table_shown(g: Gpu&) -> bool { g.table && g.table_baked && g.table_side == g.side && g.table_vb.id != 0 }
+
+// TABLE_FRAG's block: the table's light, its polish, and its rim's wear (tables::Table).
+struct TableBlock { pool: float4, coat: float4, polish: float4, worn: float4 }
+fn table_block(g: Gpu&) -> TableBlock {
+    let t = g.table_spec;
+    TableBlock { t.light, t.coat, t.polish, t.wear }
+}
+
+// Shows the table under the board or not; its maps are baked with the next theme put on
+// (the caller puts it on again) or, where the theme is on, now.
+fn set_table<O>(o: O&, g: Gpu&, on: bool) {
+    guard on != g.table else { return; }
+    g.table = on;
+    table_maps(o, g);
+    if on && g.side > 0 && g.look >= 0 {
+        bake_table(o, g);
+        o.gpu_flush();
+    }
+}
+
+// Shows table `t` (a take, or one tuned): its mesh made again for a new edge, its wood
+// baked again now where the theme is on.
+fn tune_table<O>(o: O&, g: Gpu&, t: tables::Table) {
+    g.table_spec = t;
+    guard g.table && g.side > 0 && g.look >= 0 else { return; }
+    bake_table(o, g);
     o.gpu_flush();
 }
 
@@ -419,6 +531,8 @@ fn theme_step<O>(o: O&, g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
     } else if st.what == model3d::FRAME {
         o.bake(g, g.frame_albedo, g.frame_normal, g.side, rows, 1.0, model3d::frame_extent(rows, g.side), t, st.y0,
              st.y1, st.mips);
+    } else if st.what == model3d::TABLE {
+        bake_table(o, g, st.y0, st.y1, st.mips);
     } else if st.what == model3d::PHOTO_PIPELINES {
         o.photo_pipelines(g);
     } else {
@@ -761,4 +875,4 @@ fn kept_current(g: Gpu&, size: int2) -> bool {
 // pass's target formats (docs/goose-findings.md). Bound in a pass on 4 × 4 targets of the
 // pass's formats (made by the first step, given back by the last), or on the target
 // itself where it is small or held anyway, with nothing drawn.
-let WARM_STEPS = 11;
+let WARM_STEPS = 12;

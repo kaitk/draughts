@@ -70,7 +70,7 @@ fn start(b: Bench&, f: flags::Flags&, raised: bool, draws3d: i64, now: f64) -> b
 fn waited3d(b: Bench&) -> bool { b.d3.n > 0 && b.d3.i < 2 * b.d3.n }
 
 fn draw3d_now(r: render::Renderer&, fr: render::Frame&) {
-    backend::with() { be => draw3d::frame(be, r.d3, fr.board, fr.layout, fr.view, fr.now, fr.size, r.d.kind, r.d.scene.plain, fr.which, fr.hold) }
+    backend::with() { be => draw3d::frame(be, r.d3, fr.board, fr.layout, fr.view, fr.now, fr.size, r.d.kind, r.d.scene.plain, fr.which, fr.hold, fr.place) }
 }
 
 // render::frame, the bench's phase timed around it or ahead of it.

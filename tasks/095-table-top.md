@@ -1,6 +1,6 @@
 # 095: A table under the 3D board
 
-Status: todo
+Status: in-progress (on the `table-top` branch, 2026-11-19: behind `--table board|flame`)
 
 The 3D board floats over a blurred photograph. Set it on a polished table top instead, as
 in the concept art (`design/manor/library-table-01.png`, `hall-winter-table-02.png`,
@@ -21,6 +21,87 @@ Not the generated tabletop pictures set aside for the 2D board (`agents/design.m
 is a lit 3D surface under the 3D board only.
 
 Tune with versions side by side from `tools/board_shot.goose`, as task 094 does.
+
+## Done so far (2026-11-19)
+
+- A round table (`mesh::table`): a lathe-turned top 10.5 units in radius (about 90 cm,
+  a square being about 4.4 cm), its middle 2.5 behind the board's, rounded over above and
+  under a flat band, a short apron. In landscape its far curve shows at the top corners;
+  in portrait and on home its far and near rims.
+- Mahogany as data (`src/model3d/tables.goose`), baked by BAKE_FRAG's mode 2 into a map
+  `side` × `side`/2 (grain along the world's z, where it changes slowly) in eight more
+  theme steps: quarter-sawn planks 5.3 wide, a ribbon figure from noise across the grain.
+- Its own pipeline (`shaders::TABLE_VERT`, `TABLE_FRAG`), drawn after the board: the
+  wood's diffuse with its grain's relief under a smooth polish that takes the key's
+  highlight (broadened: the key is a window) and the room's light; a pool of light round
+  the board. The board's shadow and its occlusion at its foot are worked out from its
+  outline in the shader (the catcher's quad z-fought the table in the 16-bit depth, and
+  is left out under a table).
+- The board's reflection, without a pass: the mirrored view ray traced against the
+  board's outline shows its side, the frame map's mean color lit, in place of the room's
+  light, softer the farther the ray goes. The pieces never show in it (the board hides
+  them), so no mirrored pass is needed.
+- The far rim faded into the photograph, softer the farther past the board.
+- Transitions: the kept image moved and scaled left the table as a rectangle sliding over
+  the photograph, so a board on a table is drawn again each frame of a transition through
+  its view moved where the image would go (`draw3d::moved`), as a camera ease is.
+- Second round (2026-11-19, the user): the table a backdrop of its own beside none and the
+  photograph, so its far rim stays sharp (the fade went). The board's thick frame makes
+  it a small board (about 30 cm), so the table is 16 squares in radius (about 105 cm).
+  Three takes to choose from and tune (`tables::LIBRARY`, `HALL`, `BOARD_WOOD`), the
+  library's table (library-table-01) the closest reference: old varnish's blotches,
+  crazing, scratches, dents, and the rim's wear baked (BAKE_FRAG's table_over), the
+  polish's roughness baked with them. Edge profiles of the period (1890 to 1910) over a
+  frieze with a bead: thumbnail, reverse ogee, stepped, beside the plain bullnose
+  (`mesh::table_profile`). `tools/table_tune` puts a take, the season, and every value
+  on sliders, and prints the table as Goose.
+- Third round (2026-11-19): the user's take on the board's wood kept (`tables::BOARD_WOOD`),
+  the library's and the hall's dropped; flame mahogany added (`tables::FLAME`), after a
+  book-matched flame mahogany card table the user liked: the figure swept by a twice
+  warped flow, mirrored about a seam. The key light's highlight size is a slider (the
+  table's coat.w), and the bake no longer flattens the wood's relief for every take.
+- Tried and set aside: the library's and the hall's takes; a straight quarter-sawn grain with a ribbon figure (a new
+  workshop's top, not an old manor's); the patina as first baked (grey, matte, the
+  scratches chalk lines).
+- The polish reflects only the photograph's harmonics, which can't show a window's
+  bright shape as the concepts' gloss does: the room's skybox (task 093) would.
+- Handed over (2026-11-19): the user likes the feel of both takes, the flame one as tuned
+  (`tables::FLAME`), and the sides' straight streaks.
+
+- Fourth round (2026-11-19): the wear on a tile of its own, finer than the top's map
+  (BAKE_FRAG's mode 3, wear_at): 512 square over 2 units (256 texels a unit, the top's
+  64), scratches, crazing and dents in one map, the scratches' and the dents' normals in
+  another, laid twice by TABLE_FRAG, the second turned 0.5 rad and 1.37 times as large,
+  so they never repeat together; masked by the top's map's patches (its cavity channel,
+  free now): scratches where the top was used, crazing where it was left alone, dents
+  anywhere. Chosen over working the scratches out per pixel in TABLE_FRAG: that is 36
+  segment tests and a Voronoi a pixel over most of the screen, thousands of operations
+  where the tile costs four taps. The polish blotchy (`tables::Table.polish`: its
+  roughness and strength by a noise, duller where rougher), the wear in it (the scratches
+  and dents in the polish's normal and rougher, the worn rim duller). Cost: 2.8 MB more
+  at the full side (two 512 maps with mips), 0.7 MB on a phone (256); its bake 9.3 ms on
+  the Mac (M1 Pro, gfx and ngfx alike), once with the table's last band.
+
+## Follow-ups
+
+- Where it stands (2026-11-19, the user): the surface is in a good place. What it needs
+  is a couple of props on the table (to decide which) and the setting: the table beside
+  the seasonal photograph and the floating board, laid out with the pieces' looks that
+  task 094 brings.
+- The wear's look at the takes' values: the flame's patina is faint (scratches 0.12),
+  so it shows mostly in the highlight; tune it with the polish in the tuner.
+- Props from the concept art (task 093: the vase and its lace, books, a lamp) may do more
+  for the scene than more work on the surface.
+- The room behind hardly shows at the game's views, so the backdrop past the table can
+  wait for task 093.
+- Settings: the table is a backdrop of its own beside none and the photograph. Decide
+  how the settings lay out once the pieces get their own materials too (auto, standard,
+  heavier ones like spring's jade; task 094) before adding the table's row and strings.
+- Device numbers (GPU time, memory, prepare time) on the Mac and the A33 against before,
+  as the acceptance criteria ask; the table's maps are about 45 MB at the full side
+  (2048 square, two maps with mips), 11 MB on a phone.
+- To do later: LIT_FRAG and TABLE_FRAG repeat the light's functions (GGX, the harmonics,
+  the tone map); share them once task 094's shader changes are in.
 
 ## Acceptance criteria
 
