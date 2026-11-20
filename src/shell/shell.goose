@@ -151,10 +151,11 @@ struct Shell {
     out:   Frame,                             // this frame's, for the app
     // Handed in by the app each frame (frame): whether the 3D board, when chosen, is
     // ready to draw (else it gets ready a step a frame, taps on it left alone), and
-    // whether an image of it shows meanwhile (else a still mark in its place:
-    // gui::loading_text's words).
-    ready3d: bool = true,
-    shown3d: bool = true,
+    // whether an image of it shows meanwhile (else a mark in its place, gui::loading_bar,
+    // filled as far as progress3d, 0 to 1, which the app sets).
+    ready3d:    bool = true,
+    shown3d:    bool = true,
+    progress3d: f32  = 0.0,
     // Each end's 3D view this frame, rect.z 0 for none (raise).
     from_view: view3d::View = view3d::View {},
     to_view:   view3d::View = view3d::View {},
@@ -651,8 +652,10 @@ fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> boo
     sh.out.hole = if crossing { sh.out.layout.board } else { float4 { 0.0, 0.0, 0.0, 0.0 } };
     sh.out.tall = 0.0;
     raise(sh, g, crossing, e);
-    // With no image of it yet, a still mark where the 3D board goes until it shows.
-    if sh.out.raised && waiting3d(sh) && !sh.shown3d { gui::loading_text(g, sh.out.place, strings::get(strings::BOARD_PREPARING)); }
+    // With no image of it yet, a mark where the 3D board goes until it shows.
+    if sh.out.raised && waiting3d(sh) && !sh.shown3d {
+        gui::loading_bar(g, sh.out.place, strings::get(strings::BOARD_PREPARING), sh.progress3d);
+    }
     sh.out.blur = if crossing { blurred(from) + (blurred(was) - blurred(from)) * e } else { blurred(was) };
     // A switch this frame shows what was declared, and what the app fills and draws
     // agrees with it: the start of a transition, the screen left as it stands; one turned

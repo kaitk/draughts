@@ -48,6 +48,8 @@ struct Drawer {
     themed:    i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
     warmed:    i64                                   = 0,     // and its next pipeline (WARM_STEPS: done)
     prep_ms:   f64[..48]                             = [],    // each prepare() step's time
+    bar_total: f64                                   = 0.0,   // progress(): what there was to do, in left_ms's ms,
+    bar_done:  f64                                   = 0.0,   // and how far it has come, 0 to 1
     fresh:     bool                                  = false, // just made ready: draw all again
     again:     bool                                  = false, // the image drawn again, its shadow map as it is (the bench)
     appear_at: f64                                   = -1.0,  // when its first image showed, -1 none yet
@@ -125,6 +127,71 @@ fn ready(d: Drawer&, kind: i64, n: i64, plain: bool) -> bool {
 // The theme's steps up to and with its photograph's: what switching to or from the plain
 // fade takes again.
 fn photo_steps() -> i64 { return 2 + model3d::PLAN_BANDS + model3d::FRAME_BANDS + model3d::TABLE_BANDS; }
+
+// How long each step of getting ready takes on a phone, in ms (the Pixel 7a), so the
+// shell's bar (gui::loading_bar) moves about evenly through them: the setup, the theme's
+// steps (the bake's pipeline the largest, the table's first band making its own), and the
+// warm steps (the lit and fading pipelines the largest, the table's last).
+let SETUP_MS: f64 = 100.0;
+fn theme_ms(k: i64) -> f64 {
+    if k == 0 { return 20.0; }
+    if k == 1 { return 850.0; }
+    if k == table_steps() { return 715.0; }
+    if k == photo_steps() { return 60.0; }
+    return if k > photo_steps() { 20.0 } else { 15.0 };
+}
+fn warm_ms(k: i64, table: bool) -> f64 {
+    if k < 2 { return 170.0; }
+    if k == render3d::WARM_STEPS - 1 { return if table { 150.0 } else { 5.0 }; }
+    return 10.0;
+}
+
+// What prepare() has still to do for theme `kind` on n squares, in theme_ms's and
+// warm_ms's ms: the steps it would take from here, as its own resets choose them. New
+// pieces' pipelines are taken to be warmed again whenever the theme starts over.
+fn left_ms(d: Drawer&, kind: i64, n: i64, plain: bool) -> f64 {
+    guard !ready(d, kind, n, plain) else { return 0.0; }
+    var ms: f64 = 0.0;
+    var themed = d.themed;
+    var warmed = d.warmed;
+    if !d.ready {
+        ms += SETUP_MS;
+        themed = 0;
+    }
+    if d.kind != kind || d.material != d.want || d.n != n { themed = 0; }
+    if d.plain != plain { themed = min(themed, photo_steps()); }
+    if d.tabled != d.on_table {
+        themed = min(themed, table_steps());
+        if d.on_table { warmed = 0; }
+    }
+    if d.smoothed != d.smooth { themed = min(themed, model3d::THEME_STEPS - 1); }
+    if themed == 0 || d.smoothed != d.smooth || !d.ready { warmed = 0; }
+    for k in themed..model3d::THEME_STEPS {
+        guard d.on_table || k < table_steps() || k >= photo_steps() else { continue; }
+        ms += theme_ms(k);
+    }
+    for k in warmed..render3d::WARM_STEPS { ms += warm_ms(k, d.on_table); }
+    return ms;
+}
+
+// How far getting ready has come, 0 to 1, by what is left against what there was when it
+// started; never back, should more turn up on the way.
+fn progress(d: Drawer&, kind: i64, n: i64, plain: bool) -> f32 {
+    let left = left_ms(d, kind, n, plain);
+    guard left > 0.0 else {
+        d.bar_total = 0.0;
+        d.bar_done = 0.0;
+        return 1.0;
+    }
+    if d.bar_total <= 0.0 { d.bar_total = left; }
+    var k = 1.0 - left / d.bar_total;
+    if k < d.bar_done {
+        d.bar_total = left / (1.0 - d.bar_done);
+        k = d.bar_done;
+    }
+    d.bar_done = k;
+    return k as f32;
+}
 
 // Whether an image of the board shows; without one the shell shows a still mark.
 fn shows(d: Drawer&) -> bool { d.appear_at >= 0.0 }

@@ -578,6 +578,16 @@ to be is in tasks 042, 059, 071, 081, and 086.
   specialization constants, which goose_gfx doesn't offer and which ngfx's offline
   Slang compile would need as variants anyway.
 
+- A bar while the 3D board gets ready (2026-11-20, task 101): the words alone left a
+  phone's 2 to 3 s without a sign of how long. The words stay, over a thin white bar
+  with a faint track and a tick at each end, chosen from five takes in
+  `prototypes/loading.html` (a bar alone, one across the board's foot, a rounded one
+  under the words). It fills by each step's time on the Pixel 7a, fixed in the code:
+  counted by steps, it stalled at its start on the bake's 0.85 s compile and ran through
+  the 40 quick bands after. Rejected: timing the steps on the device as they run (the
+  first run has nothing to go by). On the Mac the setup takes most of the time (1.5 s
+  headless on an M1 Pro), so the bar waits at its start there.
+
 - 60 Hz for a slow 3D board (task 056): the timing above asks for 60 Hz on the surface
   (`ANativeWindow_setFrameRate`) while the 3D board draws. The A33 ignores it.
 - Baking the field's shadow with the shadow map was dropped (2026-11-09): the camera's

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: loading</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* The game screen as built (docs/architecture/rendering.md, "Game screen", "The moves
+     panel"), on move 20 of the shared game: the child (white) has just played 33-29, a
+     blunder, and it is the computer's turn. Landscape: the board between the way out
+     (back, then settings and start over, what each side has taken) and the play (whose
+     turn with the lookout's eye, the hint and undo move, the moves panel under it). A
+     phone in landscape (under 600 dp tall): narrower panels, back and settings side by
+     side, the moves as a line under the catch. Portrait: the way out and the catch with
+     the last move over the board, the play under it. */
+  .game { display: grid; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); gap: 24px; --side: 232px; }
+  .col { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  #board { place-self: center; width: min(var(--h), 100%); }
+  .back { flex: none; }
+  .way { display: flex; flex-direction: column; gap: 20px; padding: 20px; }
+  .way .tile { justify-content: flex-start; }
+  .catch { display: grid; gap: 8px; padding: 14px 16px; flex: none; }
+  .row { display: flex; height: 32px; }
+  .row .piece { width: 32px; margin-right: -15px; }
+  .play { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 20px 16px 16px; flex: none; }
+  .turn { position: relative; display: grid; justify-items: center; gap: 14px; width: 100%; }
+  .turn .piece { width: 72px; }
+  .eye { position: absolute; right: 0; top: 8px; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+    background: rgb(0 0 0 / 0.25); color: var(--fg); opacity: 0.55; }
+  .eye .icon { width: 28px; height: 28px; }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+  .duo .tile { flex-direction: column; gap: 6px; min-height: 132px; min-width: 0; padding: 6px; white-space: normal; text-align: center; }
+  .pips { display: flex; gap: 7px; }
+  .pips i { width: 12px; height: 12px; border-radius: 50%; background: var(--glow); }
+  .moves { flex: 1; min-height: 0; overflow: hidden; padding: 10px 12px; font-size: 20px;
+    display: flex; flex-direction: column; justify-content: flex-end; }
+  .mrow { display: grid; grid-template-columns: 30px 1fr 1fr; align-items: center; height: 34px; flex: none; }
+  .mrow .n { font-size: 17px; color: var(--fg-dim); }
+  .mv { justify-self: start; display: flex; gap: 3px; padding: 2px 8px; border-radius: 9px; white-space: nowrap; }
+  .mv.lit { background: color-mix(in srgb, var(--glow) 22%, transparent); }
+  .line { display: none; position: relative; }
+  @container (max-height: 599px) or (orientation: portrait) {
+    .way > .copy, .way::after { display: none; }
+    .way .tile { background: var(--glass-tint); }
+  }
+  .pill { display: none; }
+
+  /* A phone in landscape. */
+  @container (max-height: 599px) and (orientation: landscape) {
+    .game { --side: 192px; }
+    .left { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto 1fr; gap: 12px; }
+    .left > .tile, .way .tile { flex-direction: column; gap: 4px; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; }
+    .way { display: contents; }
+    .way .tile:last-child { grid-column: span 2; }
+    .way .tile { justify-content: center; }
+    .catch { grid-column: span 2; padding: 10px 14px; }
+    .line { display: flex; grid-column: span 2; padding: 6px 8px; font-size: 18px; }
+    .line .mrow { grid-template-columns: 24px 1fr 1fr; }
+    .line .mv { padding: 2px 4px; }
+    .line .chev { position: absolute; right: 8px; top: 4px; }
+    .line .chev .icon { width: 20px; height: 20px; }
+    .line .mrow { height: 31px; }
+    .line .mrow:not(:last-child) { opacity: 0.6; }
+    .moves:not(.line) { display: none; }
+    .duo { grid-template-columns: 1fr; gap: 10px; }
+    .duo .tile { flex-direction: row; min-height: 88px; }
+    .play { padding: 12px 12px 12px; gap: 10px; }
+  }
+  /* Portrait: the bar over the board, the play under it. */
+  @container (orientation: portrait) {
+    .game { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; }
+    .col { display: contents; }
+    .left { display: grid; background: var(--glass-tint); border-radius: 28px; }
+    .bar { order: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; }
+    .way { display: contents; }
+    .bar .tile { flex-direction: column; gap: 4px; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; justify-content: center; }
+    #board { order: 1; width: min(var(--w), 100%); align-self: center; }
+    .play { order: 2; display: grid; grid-template-columns: 1fr 1fr; padding: 14px 16px 16px; }
+    .turn { grid-column: span 2; display: flex; justify-content: center; align-items: center; gap: 16px; }
+    .turn .piece { width: 52px; }
+    .eye { top: 2px; }
+    .duo { grid-column: span 2; }
+    .duo .tile { flex-direction: row; min-height: 88px; }
+    .catch, .moves, .line { display: none; }
+    .pill { display: grid; grid-template-columns: 1fr auto 1fr; grid-column: span 3; align-items: center; height: 40px; }
+    .pill > :first-child { justify-self: start; } .pill > :last-child { justify-self: end; }
+    .pill .mv, .pill .card { display: flex; align-items: center; height: 40px; border-radius: 20px; }
+    .pill .mv { padding: 0 14px; font-size: 20px; }
+    .pill .card { padding: 0 25px 0 10px; }
+    .pill .card .row { height: 26px; }
+    .pill .card .row .piece { width: 26px; margin-right: -12px; }
+    .pill .mv .icon { width: 20px; height: 20px; }
+  }
+
+  /* Loading take: the board's spot empty, a bar in it (?take=a|b|c|d|e, ?p=0.4 freezes; e, built, the default). */
+  #board { container-type: inline-size; position: relative; aspect-ratio: 1; }
+  .ld { position: absolute; display: grid; justify-items: center; color: rgb(255 255 255 / 0.9); font-size: 20px; }
+  .ld .bar1 { position: relative; width: 100%; }
+  .ld .fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--p) * 100%); background: #fff; opacity: 0.9; }
+  .ld .trk { position: absolute; inset: 0; background: #fff; opacity: 0.18; }
+  .ld .tick { position: absolute; top: 50%; width: 2px; height: 12px; margin-top: -6px; background: #fff; opacity: 0.6; }
+  .ld .tick.l { left: 0; } .ld .tick.r { right: 0; }
+  /* a: text, 16 px gap, 40% bar 3 px tall, ticks 2 x 12 px at both ends. */
+  .ld.a, .ld.e { inset: 0; align-content: center; gap: 16px; }
+  .ld.a .bar1, .ld.e .bar1 { width: 40%; height: 3px; }
+  /* e, as built (gui::loading_bar): a with c's faint track. */
+  /* b: the bar alone, 60%, 3 px, same ticks. */
+  .ld.b { inset: 0; align-content: center; }
+  .ld.b .bar1 { width: 60%; height: 3px; }
+  /* c: full width, 3 px, its bottom on the board's lower edge, text left above, 12 px gap, faint track. */
+  .ld.c { left: 0; right: 0; bottom: 0; justify-items: start; gap: 12px; font-size: 18px; }
+  .ld.c .bar1 { height: 3px; }
+  .ld.c .tick { display: none; }
+  /* d: rounded 4 px bar, 30%, faint track marks the ends, text under, 14 px gap. */
+  .ld.d { inset: 0; align-content: center; gap: 14px; }
+  .ld.d .bar1 { width: 30%; height: 4px; order: 0; }
+  .ld.d .bar1, .ld.d .fill, .ld.d .trk { border-radius: 2px; }
+  .ld.d .tick { display: none; }
+  .ld.d .t { order: 1; }
+  .ld.d { grid-auto-rows: min-content; }
+</style>
+</head>
+<body data-screen="board">
+<main class="screen game">
+  <div class="col left bar">
+    <a class="tile glass back" href="home.html" data-icon="back">Back</a>
+    <div class="glass way">
+      <a class="tile" href="settings.html" data-icon="gear">Settings</a>
+      <a class="tile" data-icon="restart">Start over</a>
+    </div>
+    <div class="glass catch" id="catch"></div>
+    <div class="glass moves line" id="line"></div>
+    <div class="pill" id="pill"></div>
+  </div>
+  <div id="board"><div class="ld" id="ld"></div></div>
+  <div class="col right">
+    <div class="glass play">
+      <div class="turn"><span class="piece solo black ring"></span>Black's turn
+        <span class="eye" data-icon="eyeOff"></span></div>
+      <div class="duo">
+        <a class="tile dim" data-icon="hint">Hint<span class="pips"><i></i><i></i><i></i></span></a>
+        <a class="tile" data-icon="undo">Undo move</a>
+      </div>
+    </div>
+    <div class="glass moves" id="moves"></div>
+  </div>
+</main>
+<script>
+  const PLY = 39, D = Draughts, P = D.PLIES;
+  const mv = (i, lit) => (i < PLY ? `<span class="mv${lit ? ' lit' : ''}">${P[i].m}${D.mark(P[i].k)}</span>` : '<span></span>');
+  const rows = (from) => {
+    let html = '';
+    for (let i = from; i < PLY; i += 2) html += `<div class="mrow"><span class="n">${i / 2 + 1}</span>${mv(i, i === PLY - 1)}${mv(i + 1, i + 1 === PLY - 1)}</div>`;
+    return html;
+  };
+  document.getElementById('moves').innerHTML = rows(0);
+  document.getElementById('line').innerHTML = rows(PLY - 1 - (PLY - 1) % 2 - 4) + `<span class="chev">${D.icon('right')}</span>`;
+  // What each side has taken: black's catch, the white men, over white's (none yet).
+  const pos = D.game(PLY);
+  const taken = (color, k) => `<div class="row">${`<span class="piece solo ${color}"></span>`.repeat(k)}</div>`;
+  document.getElementById('catch').innerHTML = taken('white', 20 - pos.white.length) + taken('black', 20 - pos.black.length);
+  // Portrait: each side's catch on a card of its own once it has taken something, the last
+  // move's pill between, no strip under them.
+  const card = (color, k) => k ? `<div class="glass card">${taken(color, k)}</div>` : '<div></div>';
+  document.getElementById('pill').innerHTML = card('white', 20 - pos.white.length) +
+    `<span class="glass mv">${Math.ceil(PLY / 2)}. ${P[PLY - 1].m}${D.mark(P[PLY - 1].k)}${D.icon('up')}</span>${card('black', 0)}`;
+  const q = new URLSearchParams(location.search), take = (q.get('take') || 'e').slice(0, 1);
+  const ld = document.getElementById('ld');
+  ld.className = 'ld ' + take;
+  ld.innerHTML = (take === 'b' ? '' : '<span class="t">Setting up the board\u2026</span>') +
+    '<div class="bar1"><i class="trk"></i><i class="fill"></i><i class="tick l"></i><i class="tick r"></i></div>';
+  if (take === 'a' || take === 'b') ld.querySelector('.trk').remove();
+  const frozen = q.get('p') !== null;
+  const setP = (p) => ld.style.setProperty('--p', p);
+  if (frozen) setP(+q.get('p'));
+  else { const t0 = performance.now(); const f = (t) => { setP(((t - t0) % 2000) / 2000); requestAnimationFrame(f); }; requestAnimationFrame(f); }
+  D.init();
+</script>
+</body>
+</html>

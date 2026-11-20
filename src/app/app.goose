@@ -342,6 +342,7 @@ fn run() {
         }
         dev::before(dv, f, sh, now);
         let ready3d, shown3d = follow_3d(lp, rd, sh, now);
+        sh.progress3d = render::progress3d(rd, shell::board_n(sh));
         let out .= shell::frame(sh, g, lp.size.x, lp.size.y, now, ready3d, shown3d, lp.day, lp.zone);
         if out.changed { lp.dirty = true; }
         report_dropped(lp, g, sh);

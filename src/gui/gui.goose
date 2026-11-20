@@ -878,13 +878,31 @@ fn floating(g: Gui&, id: i64, r: float4, disc: f32, icon: i64, on: bool, dot: bo
     return clicked;
 }
 
-// A still mark in the middle of r saying something is getting ready (the 3D board): the
-// words s alone, with no glass, as it shows only a moment. Nothing in it moves, so it
-// needs no frames of its own.
-fn loading_text(g: Gui&, r: float4, s: const u8[:]) {
+// A mark in the middle of r saying something is getting ready (the 3D board): the words s
+// alone, with no glass, as it shows only a moment, and under them a thin white bar filled
+// `done` (0 to 1) from the left, a faint track and a tick at each end showing how far it
+// has to go. The caller's frames move it.
+let BAR_W = 288.0;          // dp, or 60% of r where that is less
+let BAR_H = 3.0;
+let BAR_GAP = 16.0;         // dp from the words' foot,
+let BAR_BELOW = 11.0;       // which is this far below their middle
+let BAR_TICK = 12.0;        // dp: the ticks' height, BAR_TICK_W wide
+let BAR_TICK_W = 2.0;
+fn loading_bar(g: Gui&, r: float4, s: const u8[:], done: f32) {
     let u = g.scale;
     let m = center(r, text_width(g, BODY, s) + 48.0 * u, 52.0 * u);
     text(g, BODY, m, s, 0.9, 0.0, CENTER);
+    let w = floor(min(BAR_W * u, 0.6 * r.z));
+    let h = max(round(BAR_H * u), 2.0);
+    let x = floor(r.x + 0.5 * (r.z - w));
+    let y = floor(m.y + 0.5 * m.w + (BAR_BELOW + BAR_GAP) * u);
+    rounded_rect(g, float4 { x, y, w, h }, float4 { 1.0, 1.0, 1.0, 0.18 }, 0.0);
+    let k = clamp(done, 0.0, 1.0);
+    if k > 0.0 { rounded_rect(g, float4 { x, y, floor(w * k + 0.5), h }, float4 { 1.0, 1.0, 1.0, 0.9 }, 0.0); }
+    let tw = max(round(BAR_TICK_W * u), 1.0);
+    let th = round(BAR_TICK * u);
+    let ty = y + 0.5 * (h - th);
+    for tx in [x, x + w - tw] { rounded_rect(g, float4 { tx, ty, tw, th }, float4 { 1.0, 1.0, 1.0, 0.6 }, 0.0); }
 }
 
 // A player's face in r (their badge, players.goose's ANIMALS by index, drawn by

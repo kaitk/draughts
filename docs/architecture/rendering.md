@@ -603,9 +603,12 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   again (about 4 ms more on an M1 Pro, 13 ms on an iPhone 13 mini).
 - **Ambient light** is nine spherical harmonics from the blurred photograph, or from the
   plain fade scaled to a dim ambient (`model3d::no_photo_ambient`).
-- **Getting ready** (`draw3d::prepare`) takes a step a frame: the setup, the theme's 28
-  steps, the pass's 11 pipelines; a still mark shows meanwhile and the board fades in over
-  0.3 s. A new season, size, or material keeps the old image, eased toward grey, until the
+- **Getting ready** (`draw3d::prepare`) takes a step a frame: the setup, the theme's 44
+  steps (the table's 16 skipped without one), the pass's 12 pipelines. Meanwhile the
+  board's place shows "Setting up the board…" over a thin white bar with a faint track and
+  a tick at each end (`gui::loading_bar`), filled by the steps' weight: each step's time
+  on a Pixel 7a (`draw3d::theme_ms`, `warm_ms`), as the bake's and the lit pipelines'
+  compiles take most of it. The board fades in over 0.3 s. A new season, size, or material keeps the old image, eased toward grey, until the
   new one is ready (`shaders::SHOW_FRAG`).
 - **Pulsing marks** (a must-capture ring, a wrong move's flash, a hint's ring) stay out of
   the kept image: each frame adds them over it in one quad (`render3d::marks_over`),

@@ -111,6 +111,7 @@ fn look3d(r: Renderer&, m: i64, table: bool, smooth: bool) { draw3d::want_look(r
 // moving3d: just made ready, or easing grey or back, so the next frame draws too.
 fn ready3d(r: Renderer&, n: i64) -> bool { draw3d::ready(r.d3, r.d.kind, n, r.d.scene.plain) }
 fn shown3d(r: Renderer&) -> bool { draw3d::shows(r.d3) }
+fn progress3d(r: Renderer&, n: i64) -> f32 { draw3d::progress(r.d3, r.d.kind, n, r.d.scene.plain) }
 fn appearing3d(r: Renderer&, now: f64) -> bool { draw3d::appearing(r.d3, now) }
 fn moving3d(r: Renderer&) -> bool { r.d3.fresh || draw3d::greying(r.d3) }
 
