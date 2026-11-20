@@ -19,9 +19,9 @@ has. References in `design/props/piece-box/` (local; its README lists them).
   `lid-label-01.png`, with its text set in our own font (a word in a picture needs a
   thought: the string rule wants it in `strings/`, or the label holds only a monogram).
 - Along the box's front: a thin worn gold line, perhaps a small flourish, drawn as metal
-  from a black-and-white mask, not from a picture with gold's light painted in. The
-  mask is still to make (ChatGPT, from `gilt-frame-01.png`, and a long 5:1 strip for the
-  front).
+  from a black-and-white mask, not from a picture with gold's light painted in:
+  `gilt-strip-mask-01.png` for the front, `gilt-frame-mask-01.png` should the lid ever
+  show closed.
 - Placed so it never hides the board or the taken pieces, at any view. The images the
   app uses go in git once chosen, cut to the size they show at.
 
