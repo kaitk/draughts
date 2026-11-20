@@ -1,6 +1,6 @@
 the map: 512 texels a side, 1398100 bytes with its mips
-library: 1684 segments, 26540 leaves, 0 left out; passing 53% 81 89 86 83
-hall in winter sun: 2359 segments, 0 leaves, 0 left out; passing 70% 95 95 95 81
-hall in spring: 4018 segments, 31996 leaves, 0 left out; passing 61% 85 84 95 89
-evening: 1607 segments, 33931 leaves, 0 left out; passing 48% 77 86 84 83
-library, bare: 1684 segments, 0 leaves, 0 left out; passing 76% 96 96 97 83
+library: 710 segments, 5930 leaves, 0 left out; passing 56% 93 88 86 81
+hall in winter sun: 5104 segments, 0 leaves, 0 left out; passing 71% 94 94 94 84
+hall in spring: 4640 segments, 24070 leaves, 0 left out; passing 69% 89 88 97 89
+evening: 2138 segments, 29573 leaves, 0 left out; passing 47% 81 85 86 81
+library, bare: 710 segments, 0 leaves, 0 left out; passing 76% 98 97 98 81
