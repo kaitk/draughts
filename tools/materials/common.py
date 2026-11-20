@@ -44,8 +44,8 @@ def resize(a, w, h):
 def _spectrum_resize(a, h, w, sigma):
     F = np.fft.fft2(a)
     H, W = a.shape
-    fy = np.fft.fftfreq(H) * H
-    fx = np.fft.fftfreq(W) * W
+    fy = np.rint(np.fft.fftfreq(H) * H)
+    fx = np.rint(np.fft.fftfreq(W) * W)
     ky = np.abs(fy) < h / 2
     kx = np.abs(fx) < w / 2
     # A soft roll-off near the new Nyquist keeps sharp edges from ringing.
@@ -131,9 +131,10 @@ def _cut_path(cost, wrap):
     return path
 
 
-def seam_tile(img, ov, cost_img=None, margin=4):
-    """Cuts img (H x W [x C]) into a (H-ov) x (W-ov) tile that wraps both ways.
-    cost_img (H x W) is what the cut avoids crossing; img itself by default."""
+def seam_tile(img, ov, cost_img=None, margin=4, both=True):
+    """Cuts img (H x W [x C]) into a (H-ov) x (W-ov) tile that wraps both ways, or
+    without both into an H x (W-ov) strip that wraps along x only. cost_img (H x W) is
+    what the cut avoids crossing; img itself by default."""
     if cost_img is None:
         cost_img = img if img.ndim == 2 else img.mean(2)
 
@@ -150,6 +151,8 @@ def seam_tile(img, ov, cost_img=None, margin=4):
         return a[rows, src], c[rows, src]
 
     a, c = horizontal(img, cost_img, False)
+    if not both:
+        return a
     a = np.swapaxes(a, 0, 1)
     c = c.T
     a, c = horizontal(a, c, True)
