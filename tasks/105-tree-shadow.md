@@ -239,6 +239,46 @@ short and straight.
   map): gfx 13.84 ms a frame at Maximum, ngfx 14.21 at Medium. The tree's map is baked
   and uploaded only from `theme_end`'s `put_room`, never on a shadow frame, in both.
 
+- The maple's leaves and the library's dapple (2026-11-20, the second follow-up),
+  toward `library-table-01`:
+  - The maple's leaves come in clusters of three or four on one foot (`Species.cluster`),
+    their stalks fanned out and the blades overlapping. Each blade is turned at random
+    about its stalk, then leans toward the sun a little (`face`), so most show their
+    outline foreshortened and some only a sliver. A leaf is drawn from its two half axes
+    as the sun sees them (`Leaf.tip`, `side`), not an angle and a width. The leaves
+    nearest the house are up to 60% larger (`near`), and the near layer is blurred half
+    as much as the others (`near_blur`), so their lobes show at the flecks' edges. The
+    other species keep the old leaves (their test lines are unchanged).
+  - The library: seed 11, the trunk's foot at -10, -60, leafy 1.0, leaves 0.4 long
+    letting 15% through, `tree_blur` 0.2. The board and the table now lie under foliage
+    with many gaps, not half in open sky. The shade is deeper: `pattern.x` 0.9, the key
+    7, the window's sky 0.45, the walls 0.22.
+  - Measured on 1536x1024 shots against the same shot without the tree (`tools/
+    light_tune`), lit and shaded patch means (sRGB, 8 px patches, 95th and 5th
+    percentile) on the same surface; the reference's picked by hand:
+
+    | | Before | After | `library-table-01` |
+    | --- | --- | --- | --- |
+    | Board, light squares | 176 / 96 (0.55) | 176 / 83 (0.47) | about 200 / 115 (0.58) |
+    | Board, dark squares | 78 / 24 (0.31) | 76 / 18 (0.24) | about 105 / 30 (0.29) |
+    | Table | 19 / 7 (0.37) | 19 / 6 (0.32) | 95 / 33 (0.35) |
+    | Board in shade | 31% | 55% | about half |
+
+    The darkest shade was already near the reference's; what was missing was how much of
+    the board lies in shade and how many edges it has: the tree's light changes twice as
+    often across the board as before (the mean step between 4 px patches 0.041 against
+    0.022). The flecks are long streaks, as the low sun (18°) stretches them about three
+    times along the light; the reference's are shorter and rounder.
+  - The bake: 86 ms in the tuner (with the upload), 67 before, as the window now looks
+    into more of the crown (1916 segments and 11 442 leaves against 752 and 6807); a lobe
+    is worked out only near a leaf's edge. The map's memory is the same; the tree on the
+    data stack up to about 0.4 MB more (a leaf 32 bytes, 24 before). The shader is
+    unchanged.
+  - Shots (local): `build/notes/leaves/`.
+  - Tried and set aside: a map of 1024 texels (the flecks no sharper on the board: their
+    softness is the low sun's stretch, not the texels); a blur far below 0.2 (no
+    change); a wider spray of leaves round the twigs (gaps about the same).
+
 ## Follow-ups
 
 - The literature's wind: done (above), for the user to judge in the tuner. If a wind
@@ -249,7 +289,7 @@ short and straight.
 - The maple's leaves read better but could still improve (the user, 2026-11-20): lobes
   that survive the blur (larger leaves near the window, a sharper near layer), leaves
   turned more variedly so not every one shows its full outline, clusters of a few
-  leaves overlapping as on a real twig.
+  leaves overlapping as on a real twig. Done (above), for the user to judge.
 
 ## Acceptance criteria
 
