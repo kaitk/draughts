@@ -131,6 +131,11 @@ struct Theme {
     // stone's body, y how far it travels in world units (a square is 1), z how deeply
     // the light that travelled takes the stone's color. 0 off.
     board_scatter: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    // The frame's wax (shaders::LIT_FRAG): a clear coat over its smooth shape, so its sides
+    // catch a sheen at a glancing view. x how strong (0 none), y its roughness, z how much
+    // of the wood's relief the sides keep under it (1 all), w how far the coat keeps to the
+    // sides (0 the top waxed as much, 1 the sides alone).
+    frame_wax: float4 = float4 { 0.0, 0.0, 1.0, 0.0 },
 }
 
 // The pieces' scattering by material, which looks of one material share: ivory, bone,
@@ -337,6 +342,7 @@ fn autumn() -> Theme {
         light_scatter: PALE_WOOD_SCATTER,
         dark_scatter:  DARK_WOOD_SCATTER,
         piece_wear:    WOOD_WEAR,
+        frame_wax:     float4 { 1.0, 0.25, 0.5, 0.0 },
     };
 }
 
@@ -878,6 +884,7 @@ fn autumn_stone() -> Theme {
     t.dark_scatter = DARK_STONE_SCATTER;
     t.piece_wear = STONE_WEAR;
     t.mineral = MINERAL_VEINED;
+    t.frame_wax = float4 { 0.0, 0.0, 1.0, 0.0 };
     return t;
 }
 

@@ -43,6 +43,7 @@ let FRAME = """
                              // w: 1 carved
         vec4 frame_surface;  // w: how much smoother the frame's rounded edge is
         vec4 frame_map;      // x: map height / width, y: piece mineral
+        vec4 frame_wax;      // the frame's wax coat (looks::Theme.frame_wax)
         // The pieces' scattering, light and dark (looks::Theme): rgb its tint, linear, w
         // its strength; their wear: x the roughness's unevenness, y the worn edges'
         // dullness, z each piece's own tone.
@@ -1041,9 +1042,11 @@ let LIT_FRAG = """
         float sss_radius = 0.0;
         vec3 through = vec3(0.0);
         // A wood piece's varnish (frame_map.y -1): the figure's relief under it, and the
-        // coat's strength (piece_fig.z) over the satin wood.
+        // coat's strength (piece_fig.z) over the satin wood; or the frame's wax. The
+        // coat's roughness.
         float relief = 0.0;
         float coat = 0.0;
+        float coat_rough = 0.16;
         if (mat < 0.5) {
             // The field: the baked plan, seen from above.
             vec2 uv = (p.xz + INNER) / (2.0 * INNER);
@@ -1177,6 +1180,13 @@ let LIT_FRAG = """
                 }
             }
             #endif
+            // The wax (frame_wax): a clear coat over the smooth shape, fading in on the
+            // sides as far as w says; the sides' relief softened under it, as wax fills
+            // the grain.
+            float sides = 1.0 - smoothstep(0.55, 0.98, ng.y);
+            coat = frame_wax.x * mix(1.0, sides, frame_wax.w);
+            coat_rough = frame_wax.y;
+            t *= mix(1.0, frame_wax.z, sides * step(0.001, frame_wax.x));
             n = normalize(n * sqrt(max(1.0 - dot(t, t), 0.0)) + tan * t.x + bit * t.y);
             if (frame_build.x < 0.5) {
                 // The glued mitre: a thin dark joint on the diagonal, through the top,
@@ -1356,9 +1366,13 @@ let LIT_FRAG = """
             if (v_kind.z > 1.5) ao *= mix(1.0, 0.65, smoothstep(HEIGHT - 0.05, HEIGHT, lp.y));
         }
 
-        // The coat lies smooth over the shape; the wood under it takes the relief.
+        // The coat lies smooth over the shape; the wood under it takes the relief: a
+        // piece's shape as worked out above, the frame's mesh normal.
         // Derivatives outside the branch: a quad straddling a piece's edge stays defined.
-        vec3 n_coat = n;
+        bool on_frame = mat > 0.5 && mat < 1.5;
+        vec3 n_coat = on_frame ? ng : n;
+        vec3 cu = dFdx(n_coat);
+        vec3 cv = dFdy(n_coat);
         vec3 n_bump = bumped(n, p, relief);
         if (relief != 0.0) n = n_bump;
         vec3 v = normalize(eye.xyz - p);
@@ -1425,17 +1439,16 @@ let LIT_FRAG = """
             ambient = albedo * irr * ao + env * env_brdf(f0, rough, nov) * spec_ao;
         }
         if (coat > 0.0) {
-            // The varnish: a thin clear coat (index 1.5) over the smooth shape, its own
-            // sharper lobe; what it reflects doesn't reach the wood under it.
+            // The varnish or the frame's wax: a thin clear coat (index 1.5) over the smooth
+            // shape, its own sharper lobe; what it reflects doesn't reach the wood under it.
             float nlc = clamp(dot(n_coat, l), 0.0, 1.0);
             float novc = max(dot(n_coat, v), 1e-4);
             float nohc = clamp(dot(n_coat, hv), 0.0, 1.0);
-            vec3 cu = dFdx(n_coat);
-            vec3 cv = dFdy(n_coat);
-            float ac = 0.16 * 0.16;
-            ac = sqrt(clamp(ac * ac + min(0.3 * (dot(cu, cu) + dot(cv, cv)) + top_var, 0.3), 0.0, 1.0));
+            // A piece's step spreads the coat's normals too; the frame's relief is under it.
+            float ac = coat_rough * coat_rough;
+            ac = sqrt(clamp(ac * ac + min(0.3 * (dot(cu, cu) + dot(cv, cv)) + (on_frame ? 0.0 : top_var), 0.3), 0.0, 1.0));
             float fc = coat * f_schlick(vec3(0.04), voh).x;
-            float fe = coat * env_brdf(vec3(0.04), 0.16, novc).x;
+            float fe = coat * env_brdf(vec3(0.04), coat_rough, novc).x;
             vec3 spec_c = vec3(d_ggx(nohc, ac) * v_smith(novc, nlc, ac) * fc * nlc);
             direct = direct * (1.0 - fc) + spec_c * light * vis;
             ambient = ambient * (1.0 - fe) + sh_eval(reflect(-v, n_coat)) * params.z * fe * spec_ao;
