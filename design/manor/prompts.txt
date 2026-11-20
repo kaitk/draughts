@@ -350,3 +350,8 @@ sky out of the photographic panels ourselves keeps their look: a quick key by ea
 brightest sky works on library-far-right-01's clear sky, fails in library-far-01's haze
 by the lake, which is as bright as the sky; a matting model (the Windows desktop's
 ComfyUI) is the next thing to try there, not another prompt.
+
+--- 47. The far band again, clear air for cutting (attach library-far-01.png) ---
+The sky is ours; a centre panel whose trees all stand darker than a clear sky can be cut
+by its brightness, as library-far-right-01 could. The left panel follows from this one.
+Draw a new image from scratch: the park in the attached image, from the same place, the same level camera and 24 mm lens, the horizon at the same height: the open lawn, the gravel path along its far edge, the lake glimpsed between the trees, the same band of tall old limes, maples and birches with a few dark spruces. But the air is clear, with no mist or haze: every tree, the far ones by the lake too, stands sharp and clearly darker than the sky behind it. A clean clear sky, an even pale blue down to the treetops. The low afternoon sun out of the picture above the top left, the trees' edges lit gold against the blue. Like a still from a period film on 35 mm film. No people, no house, no text. Landscape 3:2.
