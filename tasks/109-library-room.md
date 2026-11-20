@@ -180,6 +180,13 @@ above and the choices of `build/notes/plans/shell.md`:
 - Small choices made here: the shutters sit 7.5 to 34 cm into the reveal, behind the
   cap's return (the wainscot page and the windows page disagreed); the band starts at
   the piers' cap, the panelling below it running to the niche's edge.
+- The quick pass (2026-11-21, `build/notes/quick-pass/`): the wainscot at one height,
+  1.2 m with its cap, on every wall and pier (option A's 1.6 m pier tier and the sill
+  rail over the piers dropped; the doors' lock rail raised with it), stopping at the sill
+  under the windows; its foot a plain oak plinth 17 cm high on a 1 cm lip, a touch darker
+  than the panels, its top edge rounded to catch the light, a dark recess under the
+  bottom rail. The sills pale limestone (#b6b2a8) instead of white paint: in the low sun
+  white paint read peach, the stone reads as the concepts' grey-white.
 
 Rough on purpose, for the next passes: the casements' members are boxes, the shutters
 a box with three panels, the lace a flat sheet each side (lace.py's first bake), the

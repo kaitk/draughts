@@ -132,6 +132,9 @@ pieces; the design boards still set the layout, glass, and controls.
   map the renderer bakes then (the shell's 2048 × 768). Its mesh's triangles and making
   time print with a `--shot`'s bake line. The shot pages: `build/notes/room-demo/`,
   `build/notes/room-outside/`.
+  With the shell on, the tree is `rooms::shell_tree`'s (placed for its three windows),
+  not the one `--tree`/`--crown`/`--foliage` set: change it there (task 107's quick
+  pass: `build/notes/quick-pass/`, the views and close-ups by `build/quick-pass/shots.sh`).
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

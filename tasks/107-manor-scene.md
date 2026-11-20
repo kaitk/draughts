@@ -71,6 +71,13 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       sky worked out in the shader round the key's sun, exposed on its own
       (`rooms::Room.outside`, 1.8); the room view only, the game keeps its photograph;
       no blur baked, depth of field later (tasks 109, 110, `build/notes/room-outside/`)
+- [x] The quick pass against the concepts (2026-11-21), only what no light explains: the
+      plaster, paint and cornice aged (limewash #beb4a3 to #d0c8b8, paint #c6beae), the
+      ceiling's blotches calmed, pale limestone sills, the wallpaper's ground warm brown-grey
+      (#423831), the wainscot 1.2 m on every wall with a plain plinth on a lip, the floor
+      darker along all four walls, the room's tree for three windows, the glass clearer
+      (`build/notes/quick-pass/`, tasks 104, 109). The light itself waits for ChatGPT
+      renders of our room
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

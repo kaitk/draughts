@@ -226,6 +226,14 @@ the light is settled (the user, 2026-11-20).
   moves). The maple of AUTUMN stands for the game: through the room's windows it shades
   only their lowest part (the rays that reach the table), so the far floor's patches are
   plain sky; a tree placed for the room is the outside's work.
+- The room's own tree (2026-11-21, task 107's quick pass): with the shell on,
+  `rooms::shell_tree` grows the maple to a 330-unit trunk with three times its leaves,
+  3 m out, the trunk behind a pier, so its dapple falls through all three windows; the
+  game's window keeps AUTUMN's tree (the game's shot identical). The tuner's board view
+  with the shell on now takes the shell's tree, so its board is lit without the game's
+  flecks, until the game and the room share one tree. The floor along all four walls of
+  the shell darker in a 0.3 m band, with a contact line at the plinth's lip (`ROOM_FRAG`,
+  `shell_ends`).
 
 ## Acceptance criteria
 
