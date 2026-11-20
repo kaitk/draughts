@@ -39,6 +39,10 @@ from a plan alone as much as from `style-01`. So the plan is ours, drawn to scal
 `design/manor/room/`), and images are made with `style-01` attached for the look and the
 labelled plan for the layout, one prompt at a time.
 
+Only the window wall and the games table are fixed, as the home shot and the game's light
+need them; the rest is a concept, to be moved once the room is modelled and seen (the
+user, 2026-11-20).
+
 Measured as the script has it: x along the window wall from the stove's end, 0 to 9 m; y
 from the hall wall, 0 to 7 m. Facing the stove's end, the windows are on the left, as in
 `style-01`.
