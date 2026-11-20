@@ -1682,6 +1682,324 @@ let TABLE_FRAG = """
     }
     """;
 
+// The room round the table (model3d::surfaces): the floor, the panelling, the wallpaper,
+// and the table's foot, one mesh, its world position, normal, uv (the floor's u and v in
+// the room, or a piece's place in the wall's field), occlusion and material.
+let ROOM_VERT = """
+    layout(location = 0) in vec3 a_pos;
+    layout(location = 1) in vec3 a_normal;
+    layout(location = 2) in vec2 a_uv;
+    layout(location = 3) in vec2 a_extra;          // occlusion, material
+    layout(location = 0) out vec3 v_world;
+    layout(location = 1) out vec3 v_normal;
+    layout(location = 2) out vec2 v_uv;
+    layout(location = 3) out vec2 v_extra;
+    void main() {
+        vec3 pos = a_pos;
+        v_world = pos;
+        v_normal = a_normal;
+        v_uv = a_uv;
+        v_extra = a_extra;
+        gl_Position = view_proj * vec4(pos, 1.0);
+    }
+    """;
+
+// ROOM_FRAG's inputs and textures, before LIGHT_FN, which reads the tree's map: the two
+// fields of oak (BAKE_FRAG's modes 4 and 5), albedo and roughness, and the normal.
+let ROOM_HEAD = """
+    layout(location = 0) in vec3 v_world;
+    layout(location = 1) in vec3 v_normal;
+    layout(location = 2) in vec2 v_uv;
+    layout(location = 3) in vec2 v_extra;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D floor_albedo;
+    layout(set = 2, binding = 1) uniform sampler2D floor_normal;
+    layout(set = 2, binding = 2) uniform sampler2D wall_albedo;
+    layout(set = 2, binding = 3) uniform sampler2D wall_normal;
+    layout(set = 2, binding = 4) uniform sampler2D tree_map;
+    """;
+
+// The room lit as the table is (TABLE_FRAG's light, its functions repeated here): the
+// window's key with its pattern and the trees' dapple, the table's shadow, the room's
+// harmonics, a GGX highlight in the wax. The floor is laid here: a herringbone of
+// planks, each its own place in the floor's field (a strip, a place along it, mirrored
+// either way), its own tone, a few patched, each a little tilted and cupped so the
+// window's highlight breaks plank by plank, the joints dark with wax and fading to
+// their share of the floor far off, worn lighter and duller on the paths round the
+// table and along the room, darker and waxier along the walls, finely scratched.
+let ROOM_FRAG = """
+    // surfaces::Look and the room's frame. plank: x a plank's width, y its length in
+    // widths, z the joint's half width, w the cup (its slope at the edges); planks: x each
+    // one's own tone, y the share patched, z its tilt, w the scratches; worn: x the paths'
+    // wear, y the walls' darker wax, z the path's reach round the table, w the path's
+    // along the room; paper: the wallpaper's color (sRGB) and roughness; axes: u's
+    // direction in x and z, then v's; place: x the window's wall's v, y the panelled
+    // wall's, z the floor's field's size, w the wall's (world units).
+    layout(set = 3, binding = 1) uniform Surfaces {
+        vec4 plank;
+        vec4 planks;
+        vec4 worn;
+        vec4 paper;
+        vec4 axes;
+        vec4 place;
+    };
+    // mesh.goose's and surfaces.goose's (test/model3d/geometry checks them).
+    const float TABLE_R = 16.0;
+    const float TABLE_TOP = -0.703;
+    const float TABLE_Z = -4.5;
+    const float FLOOR_STRIPS = 20.0;
+
+    float h12(vec2 p) {
+        vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return fract((p3.x + p3.y) * p3.z);
+    }
+    float vnoise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(h12(i), h12(i + vec2(1, 0)), u.x),
+                   mix(h12(i + vec2(0, 1)), h12(i + vec2(1, 1)), u.x), u.y);
+    }
+
+    vec3 tonemap(vec3 c) {
+        float x = min(c.r, min(c.g, c.b));
+        float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
+        c -= offset;
+        float peak = max(c.r, max(c.g, c.b));
+        const float start = 0.76;
+        if (peak < start) return c;
+        const float d = 1.0 - start;
+        float np = 1.0 - d * d / (peak + d - start);
+        c *= np / peak;
+        float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
+        return mix(c, vec3(np), g);
+    }
+
+    // How much of a line `half_w` either side of 0 a pixel `fp` wide at distance d covers
+    // (a box filter): far off a joint or a scratch fades to its share of the floor.
+    float line_cover(float d, float half_w, float fp) {
+        return clamp((min(d + 0.5 * fp, half_w) - max(d - 0.5 * fp, -half_w)) / max(fp, 1e-5), 0.0, 1.0);
+    }
+
+    // The table keeping the key off p: its top a disc at TABLE_TOP, its foot a column
+    // under it, each edge softer the farther it was cast from.
+    float table_shade(vec3 p, vec3 l) {
+        if (p.y > TABLE_TOP - 0.5) return 1.0;
+        vec2 mid = vec2(0.0, TABLE_Z);
+        float t = (TABLE_TOP - 0.5 - p.y) / max(l.y, 0.05);
+        vec2 q = p.xz + l.xz * t;
+        float w = 0.1 + 2.0 * room.z * t;
+        float lit = smoothstep(-w, w, length(q - mid) - TABLE_R);
+        vec2 a = p.xz - mid;
+        vec2 ba = q - p.xz;
+        float h = clamp(-dot(a, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
+        float wc = 0.2 + 2.0 * room.z * h * t;
+        return min(lit, smoothstep(-wc, wc, length(a + ba * h) - 2.6));
+    }
+
+    // The herringbone's plank at f (the floor's u and v in plank widths), its rows along
+    // u. In a frame turned 45°, planks n widths long lie across, [k, k + n] × [k, k + 1],
+    // and up, [k, k + 1] × [k + 1, k + 1 + n], repeated by (n, -n): b is the repeat. id:
+    // k and b; up 1 for the planks up; along and across in plank widths.
+    struct Plank { vec2 id; float up; float along; float across; };
+    Plank plank_at(vec2 f) {
+        float n = plank.y;
+        vec2 a = vec2(f.x - f.y, f.x + f.y) * 0.70710678;
+        float b0 = floor((a.x - a.y) / (2.0 * n));
+        Plank pk;
+        pk.id = vec2(0.0);
+        pk.up = 0.0;
+        pk.along = 0.0;
+        pk.across = 0.5;
+        for (int j = 0; j < 2; j++) {
+            float b = b0 + float(j);
+            vec2 q = a - b * vec2(n, -n);
+            float k = floor(q.y);
+            if (q.x >= k && q.x < k + n) {
+                pk.id = vec2(k, b);
+                pk.along = q.x - k;
+                pk.across = q.y - k;
+                return pk;
+            }
+            k = floor(q.x);
+            if (q.y >= k + 1.0 && q.y < k + 1.0 + n) {
+                pk.id = vec2(k, b);
+                pk.up = 1.0;
+                pk.along = q.y - k - 1.0;
+                pk.across = q.x - k;
+                return pk;
+            }
+        }
+        return pk;
+    }
+
+    // Scratches on the floor round uv: short straight lines, most along the room (the way
+    // people walk), each a hairline; how much of the pixel they cover.
+    float scratches(vec2 uv, float fp) {
+        const float CELL = 1.5;
+        vec2 id0 = floor(uv / CELL);
+        float cover = 0.0;
+        for (int i = 0; i < 9; i++) {
+            vec2 id = id0 + vec2(float(i % 3) - 1.0, float(i / 3) - 1.0);
+            vec2 c = (id + vec2(h12(id + 0.3), h12(id + 5.9))) * CELL;
+            float ang = (h12(id + 2.1) - 0.5) * (h12(id + 8.4) < 0.7 ? 0.8 : 3.1);
+            vec2 dir = vec2(cos(ang), sin(ang));
+            float half_len = 0.2 + 0.7 * h12(id + 4.6);
+            vec2 d = uv - c;
+            float t = clamp(dot(d, dir), -half_len, half_len);
+            cover = max(cover, line_cover(length(d - dir * t), 0.004 + 0.004 * h12(id + 6.2), fp));
+        }
+        return cover;
+    }
+
+    void main() {
+        vec3 p = v_world;
+        vec3 ng = normalize(v_normal);
+        float kind = floor(v_extra.y + 0.001);
+        float own = v_extra.y - kind;
+        float ao = clamp(v_extra.x, 0.0, 1.0);
+        vec3 albedo;
+        float rough;
+        vec3 n = ng;
+        vec3 u_dir = vec3(axes.x, 0.0, axes.y);
+        vec3 v_dir = vec3(axes.z, 0.0, axes.w);
+        if (kind < 4.5) {
+            // The floor.
+            vec2 uv = v_uv;
+            float w = plank.x;
+            Plank pk = plank_at(uv / w);
+            vec2 id = pk.id + vec2(0.0, 977.0 * pk.up);
+            float flip_a = h12(id * 1.7 + 1.2) < 0.5 ? 1.0 : -1.0;
+            float flip_l = h12(id * 2.3 + 7.7) < 0.5 ? 1.0 : -1.0;
+            // Its place in the floor's field: a strip, a place along it, mirrored.
+            float len = plank.y * w;
+            float strip = floor(h12(id + 3.1) * FLOOR_STRIPS);
+            float fa = flip_a > 0.0 ? pk.across : 1.0 - pk.across;
+            float fl = flip_l > 0.0 ? pk.along : plank.y - pk.along;
+            vec2 fp = vec2((strip + fa) * w, 0.1 + h12(id + 9.4) * (place.z - len - 0.2) + fl * w);
+            // The field's gradients from the floor's, turned into the plank's frame, so the
+            // filter has no seam where one plank meets the next.
+            vec2 dx = dFdx(uv);
+            vec2 dy = dFdy(uv);
+            vec2 ax = vec2(dx.x - dx.y, dx.x + dx.y) * 0.70710678;
+            vec2 ay = vec2(dy.x - dy.y, dy.x + dy.y) * 0.70710678;
+            vec2 sgn = vec2(flip_a, flip_l);
+            vec2 gx = (pk.up > 0.5 ? ax : ax.yx) * sgn / place.z;
+            vec2 gy = (pk.up > 0.5 ? ay : ay.yx) * sgn / place.z;
+            vec4 a4 = textureGrad(floor_albedo, fp / place.z, gx, gy);
+            vec4 n4 = textureGrad(floor_normal, fp / place.z, gx, gy);
+            albedo = a4.rgb;
+            rough = a4.a;
+            // Each plank from its own tree: lighter or darker, warmer or greyer; a few
+            // patched with newer oak, paler, less ambered.
+            float tone = (h12(id + 5.5) - 0.5) * 2.0 * planks.x;
+            float warm = h12(id + 8.8) - 0.5;
+            albedo *= exp(tone) * vec3(1.0 + 0.1 * warm, 1.0, 1.0 - 0.14 * warm);
+            float patched = step(h12(id + 12.3), planks.y);
+            albedo *= mix(vec3(1.0), vec3(1.3, 1.2, 1.02), patched);
+            rough += 0.06 * patched;
+            // The plank's directions in the room: along and across, in u and v.
+            vec2 dir_l = pk.up > 0.5 ? vec2(0.70710678, 0.70710678) : vec2(0.70710678, -0.70710678);
+            vec2 dir_a = pk.up > 0.5 ? vec2(0.70710678, -0.70710678) : vec2(0.70710678, 0.70710678);
+            // The normal: the field's relief (x across, z along, mirrored as the plank is),
+            // the plank's tilt, and its cup, the edges higher than the middle.
+            vec2 t = (n4.xy * 2.0 - 1.0) * sgn;
+            float cup = -plank.w * (2.0 * pk.across - 1.0);
+            vec2 tilt = planks.z * (vec2(h12(id + 14.1), h12(id + 15.7)) * 2.0 - 1.0);
+            vec2 s = vec2(t.x + cup + tilt.x, t.y + tilt.y);
+            vec2 suv = dir_a * s.x + dir_l * s.y;
+            n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
+            // The joints, open a little and dark with old wax.
+            float fpw = max(length(dx), length(dy));
+            float d_a = min(pk.across, 1.0 - pk.across) * w;
+            float d_l = min(pk.along, plank.y - pk.along) * w;
+            float joint = max(line_cover(d_a, plank.z, fpw), line_cover(d_l, plank.z, fpw));
+            // Worn: the paths round the table and along the room lighter and duller, the
+            // floor along the walls darker under more wax.
+            float r = length(p.xz - vec2(0.0, TABLE_Z));
+            float around = smoothstep(TABLE_R + 1.0, TABLE_R + 6.0, r)
+                         * (1.0 - smoothstep(TABLE_R + 0.4 * worn.z, TABLE_R + worn.z, r));
+            float lane = worn.w * (1.0 - smoothstep(6.0, 22.0, abs(uv.y - 0.55 * place.y)));
+            float wall = max(1.0 - smoothstep(4.0, 20.0, place.y - uv.y), 1.0 - smoothstep(4.0, 16.0, uv.y + place.x));
+            float patchy = 0.6 * vnoise(uv * 0.05 + 3.3) + 0.4 * vnoise(uv * 0.19 + 7.1);
+            float wear = clamp(max(around, lane) * (0.3 + 1.2 * patchy), 0.0, 1.0) * worn.x * (1.0 - wall);
+            albedo *= mix(vec3(1.0), vec3(1.6, 1.45, 1.25), wear);
+            rough += 0.25 * wear;
+            albedo *= 1.0 - 0.22 * wall * worn.y;
+            rough -= 0.08 * wall * worn.y;
+            float sc = scratches(uv, fpw) * planks.w * (0.35 + wear);
+            albedo *= 1.0 + 0.4 * sc;
+            rough += 0.3 * sc;
+            albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
+            rough = mix(rough, 0.6, joint);
+            ao *= 1.0 - 0.5 * joint;
+            // The table's foot hides the sky round it, and the walls along their feet.
+            ao *= mix(0.55, 1.0, smoothstep(9.0, 22.0, r));
+            ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
+        } else if (kind < 5.5 || kind > 6.5) {
+            // The panelling and the table's foot: the wall's field at the piece's place,
+            // the normal by the field's frame worked out from the derivatives.
+            vec2 fuv = v_uv / place.w;
+            vec4 a4 = texture(wall_albedo, fuv);
+            vec4 n4 = texture(wall_normal, fuv);
+            albedo = a4.rgb * (1.0 + 0.16 * (own - 0.5));
+            rough = a4.a;
+            vec3 dpx = dFdx(p);
+            vec3 dpy = dFdy(p);
+            vec2 dux = dFdx(v_uv);
+            vec2 duy = dFdy(v_uv);
+            vec3 c2 = cross(dpy, ng);
+            vec3 c1 = cross(ng, dpx);
+            vec3 tx = c2 * dux.x + c1 * duy.x;
+            vec3 ty = c2 * dux.y + c1 * duy.y;
+            float k = inversesqrt(max(max(dot(tx, tx), dot(ty, ty)), 1e-12));
+            vec2 t = n4.xy * 2.0 - 1.0;
+            n = normalize(ng * sqrt(max(1.0 - dot(t, t), 0.0)) + (tx * t.x + ty * t.y) * k);
+            // Grime where the pieces meet, in the corners and grooves.
+            albedo *= mix(0.55, 1.0, smoothstep(0.5, 1.0, ao));
+            rough += 0.15 * (1.0 - ao);
+        } else {
+            // The wallpaper, a plain dark blue-grey for now.
+            albedo = srgb(paper.rgb) * (1.0 + 0.08 * (vnoise(v_uv * 0.6) - 0.5));
+            rough = paper.a;
+        }
+
+        vec3 v = normalize(eye.xyz - p);
+        vec3 l = light_dir.xyz;
+        float nol = dot(n, l);
+        float diff = clamp(nol, 0.0, 1.0);
+        vec3 light = light_color.rgb * light_dir.w;
+        // The table's top is solid: its shadow keeps all the key out, unlike the board's
+        // softened ones (room.x).
+        float vis = dot(ng, l) > 0.0 ? window_light(p) * table_shade(p, l) : 0.0;
+        vec3 irr = sh_eval(n) * params.z * ao;
+        vec3 base = albedo * (diff / PI * light * vis + irr);
+
+        float nov = max(dot(n, v), 1e-4);
+        float nl = clamp(nol, 0.0, 1.0);
+        vec3 hv = normalize(v + l);
+        float noh = clamp(dot(n, hv), 0.0, 1.0);
+        float voh = clamp(dot(v, hv), 0.0, 1.0);
+        vec3 du = dFdx(n);
+        vec3 dv = dFdy(n);
+        float variance = 0.15 * (dot(du, du) + dot(dv, dv));
+        float ar = clamp(rough, 0.05, 1.0);
+        ar = ar * ar;
+        ar = sqrt(clamp(ar * ar + min(2.0 * variance, 0.3), 0.0, 1.0));
+        vec3 f0 = vec3(0.04);
+        // The key is a window, not a point: its highlight no sharper than 0.25's.
+        float ak = max(ar, 0.06);
+        vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * vis;
+        vec3 env = sh_eval(reflect(-v, n)) * params.z;
+        float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
+        vec3 fc = env_brdf(f0, sqrt(ar), nov);
+        vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x;
+        color = tonemap(color) * vec3(1.02, 1.0, 0.97);
+        result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
+    }
+    """;
+
 // One triangle over the target.
 let FULL_VERT = """
     layout(location = 0) out vec2 v_uv;
@@ -1793,16 +2111,18 @@ let SHADOW_CATCHER_FRAG = """
     }
     """;
 
-// BAKE_FRAG with the black marble slab (render3d::BAKE_SLAB), or the table's alone
-// (BAKE_TABLE); without either the rest of the board's.
+// BAKE_FRAG with the black marble slab (render3d::BAKE_SLAB), the table's alone
+// (BAKE_TABLE), or the room's oak alone (BAKE_ROOM); without any the rest of the board's.
 let BAKE_SLAB = "#define BAKE_SLAB 1\n";
 let BAKE_TABLE = "#define BAKE_TABLE 1\n";
+let BAKE_ROOM = "#define BAKE_ROOM 1\n";
 
 // The board's surfaces, baked once per theme into two targets: albedo and roughness
 // (sRGB), and the normal's x and z. mode.x 0 bakes the plan of the field and its inlay,
 // seen from above; 1 the frame map, its grain along u; 2 the table's top seen from
-// above, its wood in the light squares' slots (table_cut); 3 the table's wear (wear_at).
-// mode.y: the wood's model
+// above, its wood in the light squares' slots (table_cut); 3 the table's wear (wear_at);
+// 4 and 5 the room's oak, the floor's field and the wall's (oak_at, in the slots
+// surfaces::Oak names). mode.y: the wood's model
 // (--wood): 0 noise drawn out along the grain, 1 growth rings, 2 growth
 // rings with pores and a fibre relief, 3 the first with thin lines and pores laid over
 // it. size: the target in texels, then in world units. The rest is the theme's
@@ -1897,7 +2217,16 @@ let BAKE_FRAG = """
         return groove * smoothstep(0.25, 0.45, vnoise(vec2(x * 20.0, y * pieces)));
     }
 
-    struct Wood { vec3 albedo; float rough; float height; float cavity; };
+    struct Wood {
+        vec3 albedo;
+        float rough;
+        float height;
+        float cavity;
+        #ifdef BAKE_ROOM
+        float pore;      // the open pores' share, for the finish to fill
+        float fleck;     // the rays' flakes'
+        #endif
+    };
 
     float h1(float seed, float k) { return h12(vec2(seed, k)); }
 
@@ -1941,6 +2270,54 @@ let BAKE_FRAG = """
         return taper * (1.0 - smoothstep(0.3 * texel, 1.0 * texel, off));
     }
 
+    #ifdef BAKE_ROOM
+    // Oak's rays, sheets of cells running out from the pith, a few centimetres high along
+    // the grain. On a face near the radial plane (slant small) they lie
+    // almost in the face and show as broad satiny flakes across the grain, the longer the
+    // closer the cut; on a face across them (flat-sawn) as short dark lenses along it.
+    // slant is the sine of the angle. x across, y along, in world units. x the flakes,
+    // y the lenses.
+    vec2 oak_rays(float x, float y, float seed, float slant) {
+        float texel = size.z / size.x;
+        float quarter = 1.0 - smoothstep(0.12, 0.5, slant);
+        float flake = 0.0;
+        if (quarter > 0.0) {
+            const vec2 CELL = vec2(0.7, 0.8);
+            vec2 id0 = floor(vec2(x, y) / CELL);
+            for (int i = -1; i <= 1; i++) {
+                vec2 id = id0 + vec2(float(i), 0.0);
+                if (h12(id + seed * 0.61) > 0.32 * inlay_fig.w) continue;
+                vec2 c = (id + vec2(0.5, 0.3 + 0.4 * h12(id + 2.7))) * CELL;
+                float len = min((0.25 + 0.7 * h12(id + 3.9)) / (0.5 + 3.0 * slant), 1.0);
+                float high = 0.08 + 0.15 * h12(id + 5.1);
+                vec2 d = vec2(x, y) - c;
+                d.y -= (h12(id + 7.7) - 0.5) * 0.4 * d.x;
+                d.y += 0.4 * high * (vnoise(vec2(x * 9.0, seed + id.y)) - 0.5);
+                float u = d.x / len;
+                // Rounded, ragged, broken: a flake, never a stroke.
+                float lens = high * sqrt(max(1.0 - u * u, 0.0)) * (0.6 + 0.4 * vnoise(vec2(x * 4.0, id.y + 3.0)));
+                float inside = 1.0 - smoothstep(-2.0 * texel, 2.0 * texel, abs(d.y) - lens);
+                inside *= smoothstep(0.2, 0.5, vnoise(vec2(x * 6.0, y * 10.0) + id * 3.1));
+                flake = max(flake, inside * (0.4 + 0.6 * h12(id + 9.1)));
+            }
+        }
+        float lines = 0.0;
+        float across = smoothstep(0.3, 0.8, slant);
+        if (across > 0.0) {
+            const vec2 TC = vec2(0.1, 0.8);
+            vec2 id = floor(vec2(x, y) / TC);
+            if (h12(id + seed * 0.43 + 11.0) < 0.2 * inlay_fig.w) {
+                vec2 c = (id + vec2(0.3 + 0.4 * h12(id + 1.1), 0.5)) * TC;
+                vec2 d = vec2(x, y) - c;
+                float u = d.y / (0.08 + 0.25 * h12(id + 2.2));
+                float w = 0.012 * max(1.0 - u * u, 0.0);
+                lines = (1.0 - smoothstep(0.0, texel, abs(d.x) - w)) * step(abs(u), 1.0) * across;
+            }
+        }
+        return vec2(flake * quarter, lines);
+    }
+    #endif
+
     // Growth rings: each piece sawn from a log whose pith runs roughly along its grain,
     // the rings the distance from that axis (Liu et al.'s time volume, the classic
     // solid-texture wood). q.x across the face, q.y along the grain, in world units. The
@@ -1960,31 +2337,103 @@ let BAKE_FRAG = """
         vec2 o = vec2(h1(seed, 1.7), h1(seed, 9.3)) * 97.0;
         float flatness = clamp(ring.y + (h1(seed, 2.1) - 0.5) * 0.6, 0.0, 1.0);
         float side = h1(seed, 3.7) > 0.5 ? 1.0 : -1.0;
+        #ifdef BAKE_ROOM
+        // A board as wide as surface.x from a log of its own: a quarter-sawn one with the
+        // pith well off its side, a flat-sawn one from 1 to 3 widths over it; the axis
+        // leaning about the board's middle, so its arches change along it.
+        float d = mix(0.1, 0.8 + 0.6 * surface.x, flatness) * (0.5 + h1(seed, 5.3));
+        float c = side * mix(0.5 * surface.x + 1.5 + 4.0 * h1(seed, 6.1), 0.25 * surface.x * (h1(seed, 6.1) - 0.5), flatness);
+        float axis = fbm(vec2(q.y * 0.05, 0.5) + o) - 0.5;
+        float lean = (h1(seed, 8.8) > 0.5 ? 1.0 : -1.0) * (0.008 + 0.022 * h1(seed, 8.1)) * flatness;
+        float dd = max(d + lean * (q.y - 0.5 * size.w) + axis * 0.3 * flatness, 0.3);
+        #else
         float d = mix(0.1, 1.6, flatness) * (0.6 + 0.8 * h1(seed, 5.3));
         float c = side * mix(3.0 + 3.0 * h1(seed, 6.1), 0.8 * (h1(seed, 6.1) - 0.5), flatness);
         float axis = fbm(vec2(q.y * 0.12, 0.5) + o) - 0.5;
         float lean = (h1(seed, 8.8) - 0.5) * 0.12 * flatness;
         float dd = max(d + lean * q.y + axis * 0.5 * flatness, 0.02);
+        #endif
         float r = length(vec2(q.x - c - axis * 0.8, dd));
+        #ifdef BAKE_ROOM
+        // Oak's years wander broadly and smoothly: its arches are calm curves, not wiggles.
+        r += rw * k.x * 4.0 * (fbm(vec2(q.x * 0.7, q.y * 0.1) + o) - 0.5);
+        r += rw * k.x * 0.6 * (vnoise(vec2(q.x * 3.0, q.y * 0.35) + o) - 0.5);
+        #else
         r += rw * k.x * 3.0 * (fbm(vec2(q.x * 1.1, q.y * 0.18) + o) - 0.5);
         r += rw * k.x * 0.8 * (vnoise(vec2(q.x * 6.0, q.y * 0.9) + o) - 0.5);
         r += rw * k.x * 0.7 * (vnoise(vec2(q.x * 14.0, q.y * 4.0) + o) - 0.5);
+        #endif
+        #ifdef BAKE_ROOM
+        // A pin knot in one board of three: the rings swept round it, its heart dark.
+        float knot = 0.0;
+        if (h1(seed, 12.1) < 0.35) {
+            vec2 kc = vec2((h1(seed, 12.7) - 0.5) * 0.6 * surface.x, h1(seed, 13.3) * size.w);
+            float rk = 0.05 + 0.1 * h1(seed, 13.9);
+            float dist = length((q - kc) / vec2(1.0, 2.2));
+            r -= rw * 5.0 * exp(-dist * dist / (9.0 * rk * rk));
+            knot = 1.0 - smoothstep(0.6 * rk, rk, dist);
+        }
+        #endif
         float t = r / rw;
         t += 1.2 * (vnoise(vec2(t * 0.3, seed)) - 0.5);
+        #ifdef BAKE_ROOM
+        // Runs of narrow years and wide ones, as an oak's good and lean decades.
+        t += 2.5 * (fbm3(vec2(t * 0.12, seed + 0.5)) - 0.5);
+        #endif
         float year = floor(t);
         float ph = t - year;
+        #ifdef BAKE_ROOM
+        // The ring's edge a texel and a half soft on the face: the years' spacing there is
+        // the ring's width over the slope of the distance from the pith (wide on a
+        // flat-sawn face), so a cathedral's bands stay crisp and a quarter-sawn face's
+        // close lines don't alias.
+        float slope = length(vec2(q.x - c - axis * 0.8, abs(lean) * dd)) / max(r, 1e-3);
+        float e = clamp(1.5 * texel * slope / rw, 0.03, 0.45);
+        #else
         float e = max(0.06, 1.5 * texel / rw);
+        #endif
         float late = smoothstep(0.72, 1.0 - e, ph);
         late *= late * (1.0 - smoothstep(1.0 - e, 1.0, ph));
         late *= 0.5 + h1(year + seed * 13.0, 4.4);
         float early = 1.0 - smoothstep(0.0, 0.5, ph);
         // Fibres along the grain, a little wandering.
         float x = q.x + 0.004 * (vnoise(vec2(q.x * 20.0, q.y * 3.0) + o) - 0.5);
+        #ifdef BAKE_ROOM
+        // No fibre finer than two texels: finer ones alias into streaks.
+        float fibre = 0.6 * vnoise(vec2(x * min(55.0, 0.5 / texel), q.y * 0.7) + o)
+                    + 0.4 * vnoise(vec2(x * 20.0, q.y * 0.3) + o);
+        #else
         float fibre = 0.45 * vnoise(vec2(x * 150.0, q.y * 2.0) + o)
                     + 0.3 * vnoise(vec2(x * 55.0, q.y * 0.7) + o)
                     + 0.25 * vnoise(vec2(x * 380.0, q.y * 30.0) + o);
+        #endif
         float broad = fbm(vec2(q.x * 1.2, q.y * 0.25) + o);
         float pore = 0.0;
+        #ifdef BAKE_ROOM
+        // Ring-porous oak: each year starts with a band of large open pores, short dashes
+        // along the grain, wide where a flat-sawn face cuts the year at a slant; a few
+        // small ones in the late wood. The rays as oak_rays has them, no pores in a flake.
+        float slant = dd / length(vec2(q.x - c - axis * 0.8, dd));   // the sine of the face's angle to the rays
+        vec2 rays = oak_rays(x, q.y + o.y, seed, slant);
+        float wide = 0.22 + 0.2 * h1(year + seed * 5.0, 3.4);
+        float band = smoothstep(0.0, 0.5 * e, ph) * (1.0 - smoothstep(wide - 0.08, wide + 0.08 + e, ph));
+        vec2 pq = vec2(x / max(0.03, 1.5 * texel), q.y / 0.5) + o;
+        float dash = 0.45 + 0.55 * smoothstep(0.25, 0.7, vnoise(pq));
+        pore = ring.w * (band * dash + 0.2 * smoothstep(0.82, 0.96, vnoise(pq * vec2(1.3, 2.0) + 9.0)));
+        // Each year's pores as open as its own: some years' bands faint, some heavy.
+        pore *= 0.45 + 0.9 * h1(year + seed * 7.0, 2.6);
+        pore = max(pore * (1.0 - rays.x), 0.45 * rays.y);
+        float a = ring.z * (late - 0.08) + k.z * (fibre - 0.5) * 1.2 + k.y * (broad - 0.5) * 1.5
+                + 0.3 * pore - 0.12 * rays.x + 1.6 * knot;
+        Wood w;
+        w.albedo = pow(srgb(base.rgb), vec3(1.0 + a));
+        w.rough = base.a;
+        w.height = 0.15 * late + 0.5 * (fibre - 0.5) - 1.2 * pore + 0.3 * rays.x;
+        w.cavity = 1.0 - 0.5 * pore;
+        w.pore = pore;
+        w.fleck = rays.x;
+        return w;
+        #else
         if (detail && ring.w > 0.0) {
             // Semi-ring-porous: more and bigger vessels in the early wood.
             pore = vessels(x + o.x, q.y, seed, ring.w * mix(0.6, 1.4, early), early);
@@ -1999,6 +2448,7 @@ let BAKE_FRAG = """
         w.height = 0.15 * late + (detail ? 0.5 : 0.1) * (fibre - 0.5) - 1.2 * pore;
         w.cavity = 1.0 - 0.4 * pore;
         return w;
+        #endif
     }
 
     // A surface with its grain along y, from noise drawn out along the grain, never a
@@ -2939,9 +3389,52 @@ let BAKE_FRAG = """
         return w;
     }
 
+    #ifdef BAKE_ROOM
+    // The finish on the room's oak, laid as a joiner and a century laid it: the oak's own
+    // color (w, rings' with the pores and rays), a stain (dark_sq) that goes deepest into
+    // the open pores, dark wax (dark_fig) packed into them, an amber shellac or wax
+    // (inlay) over everything, then age (inlay_fig): the light's ambering, uneven,
+    // blotches, and grime in the pores and low fibres. The roughness is the wax's
+    // (light_sq.a), rougher in the pores, smoother on the rays' flakes.
+    Wood oak_finish(Wood w, vec2 p, float seed) {
+        vec3 c = w.albedo;
+        c *= pow(srgb(dark_sq.rgb), vec3(dark_sq.a * (1.0 + 0.6 * w.pore - 0.08 * w.fleck)));
+        c = mix(c, srgb(dark_fig.rgb), dark_fig.a * w.pore);
+        c *= pow(srgb(inlay.rgb), vec3(inlay.a));
+        float blot = fbm(p * vec2(0.08, 0.03) + seed) - 0.5;
+        float fine = fbm(p * vec2(0.9, 0.25) + seed * 1.3) - 0.5;
+        c *= pow(vec3(0.97, 0.88, 0.7), vec3(inlay_fig.x * (1.0 + blot)));
+        c *= 1.0 + inlay_fig.y * (1.4 * blot + 0.6 * fine);
+        c *= 1.0 - inlay_fig.z * clamp((1.0 - w.cavity) * 2.0, 0.0, 1.0);
+        w.albedo = c;
+        w.rough = light_sq.a + 0.2 * w.pore - 0.1 * w.fleck + 0.08 * fine + 0.05 * blot;
+        return w;
+    }
+
+    // The room's oak (model3d::surfaces): boards side by side across x, each surface.x wide
+    // and from a tree of its own, a little lighter or darker (surface.z), quarter-sawn
+    // (on the floor a share surface.y of them, on the wall every other) or flat-sawn,
+    // their grain along y. p from the field's corner.
+    Wood oak_at(vec2 p) {
+        float i = floor(p.x / surface.x);
+        float seed = 17.0 + i * 7.31 + mode.x * 31.7;
+        bool quarter = mode.x < 4.5 ? h1(seed, 0.77) < surface.y : mod(i, 2.0) < 0.5;
+        vec4 ring = light_ring;
+        ring.y = quarter ? 0.0 : 1.0;
+        vec2 q = vec2(p.x - (i + 0.5) * surface.x, p.y);
+        Wood w = rings(q, seed, light_sq, light_fig, ring, true);
+        float tone = (h1(seed, 4.2) - 0.5) * 2.0 * surface.z;
+        w.albedo *= vec3(1.0 + tone, 1.0 + 0.85 * tone, 1.0 + 0.6 * tone);
+        return oak_finish(w, p, seed);
+    }
+    #endif
+
     // One call of wood() for every surface: each call site compiles in full, and a phone
     // makes the pipeline slowly.
     Wood at(vec2 p) {
+        #ifdef BAKE_ROOM
+        return oak_at(p + 0.5 * size.zw);
+        #else
         #ifdef BAKE_TABLE
         Cut c = table_cut(p);
         Wood w = wood(c.q, c.seed, c.base, c.k, c.f, c.ring);
@@ -2950,6 +3443,7 @@ let BAKE_FRAG = """
         Cut c = mode.x < 0.5 ? plan(p) : frame_map(p);
         Wood w = wood(c.q, c.seed, c.base, c.k, c.f, c.ring);
         return mode.x < 0.5 ? plan_over(w, c, p) : frame_over(w, c, p);
+        #endif
         #endif
     }
 
@@ -3019,6 +3513,7 @@ let BAKE_FRAG = """
         }
         #endif
         #ifndef BAKE_TABLE
+        #ifndef BAKE_ROOM
         if (mode.x > 0.5 && mode.x < 1.5 && mode.w > 0.5 && frame_fig.w < 0.5 && carve.w < 0.5) {
             // A marble frame, flat: once a texel, no relief to take the normal from.
             Wood m = marble_at(p.yx);
@@ -3026,6 +3521,7 @@ let BAKE_FRAG = """
             out_normal = vec4(0.5, 0.5, 1.0, 1.0);
             return;
         }
+        #endif
         #endif
         // Each sample and its neighbours along x and y, for the normal, in a loop the
         // compiler can't unroll (its count comes from the block): unrolled, the whole

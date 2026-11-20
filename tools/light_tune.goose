@@ -4,7 +4,9 @@
 // with its bars, curtain, and the trees' leaves. Drag to orbit, scroll to zoom, R resets
 // the camera, W switches the pattern (its leaves swaying in the wind), T the leaves between
 // the tree's baked shadow and the noise, K the wind's kind (rooms::WIND_KINDS: sines,
-// noise, still, branches), D the dust in the sunbeam, P prints the room as Goose (and saves it in
+// noise, still, branches), D the dust in the sunbeam, O the room round the table (its
+// herringbone oak floor and the panelled wall facing the window, model3d::surfaces), V
+// the view of the room from the window's side, P prints the room as Goose (and saves it in
 // build/light-tune.txt).
 //
 //   scripts/mac.py tools/light_tune.goose
@@ -16,6 +18,8 @@
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern X,Y,Z,W]
 //       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
 //       [--dust on|off] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
+//       [--room-surfaces on|off] [--wall-away UNITS] [--eye X,Y,Z --at X,Y,Z (a camera of its own)]
+//       [--view room] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 
 import std;
@@ -234,6 +238,19 @@ fn report(r: rooms::Room, take: i64) {
     if write_file("../build/light-tune.txt", out[..]) { print("saved in build/light-tune.txt"); }
 }
 
+// A square texture's first level as a binary PPM, its alpha left out.
+fn dump_rgb(t: gfx::Texture, side: i64, path: const u8[:]) {
+    let px = gfx::read_pixels(t);
+    var out: u8[>..] = [];
+    format(out, "P6\n", side, " ", side, "\n255\n");
+    for i in side * side {
+        out.push(px[4 * i]);
+        out.push(px[4 * i + 1]);
+        out.push(px[4 * i + 2]);
+    }
+    guard write_file(path, out[..]) else { abort(str("could not write ", path)); }
+}
+
 fn color_sliders(c: ui::Context, name: const u8[:], v: float4&) {
     slider(c, str(name, " r"), v.x, 0.0, 1.0);
     slider(c, str(name, " g"), v.y, 0.0, 1.0);
@@ -320,6 +337,9 @@ fn main() {
         print("map span ", v.span, " middle ", v.middle.x, ",", v.middle.y);
     }
     render3d::window_pattern = pattern == 1;
+    var room_on = flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "on";
+    let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
+    render3d::show_room(g, room_on, away);
     put_look(r3d, g, season, material, st);
 
     let scale = max(gfx::screen_size().x as f32 / w, 1.0);
@@ -333,6 +353,11 @@ fn main() {
     var pitch: f32 = number(argv, "--height", view3d::PITCH);
     var far:   f32 = number(argv, "--distance", 1.3);
     var at = float2 { view3d::TARGET.x, view3d::TARGET.z };
+    // A camera of its own (--eye, --at), or the room seen from the window's side (V).
+    let own_eye = flag_value(argv, "--eye") > 0;
+    var eye_at = four(argv, "--eye", float4_0);
+    var look_at = four(argv, "--at", float4 { view3d::TARGET.x, view3d::TARGET.y, view3d::TARGET.z, 0.0 });
+    var room_view = has(argv, "--view") && argv[flag_value(argv, "--view")] == "room";
     let shot = flag_value(argv, "--shot");
     var frames = 0;
     while gfx::frame() {
@@ -340,6 +365,16 @@ fn main() {
         if shot > 0 && frames == 6 {
             guard gfx::screenshot(argv[shot]) else { abort(str("could not save ", argv[shot])); }
             if g.tree_ms > 0.0 { print("the tree baked in ", g.tree_ms, " ms"); }
+            let oak = flag_value(argv, "--dump-oak");
+            if oak > 0 && g.room_baked {
+                dump_rgb(g.floor_albedo, g.room_side, str(argv[oak], "-floor.ppm"));
+                dump_rgb(g.wall_albedo, g.room_side, str(argv[oak], "-wall.ppm"));
+                dump_rgb(g.floor_normal, g.room_side, str(argv[oak], "-floor-normal.ppm"));
+            }
+            if g.room_ms > 0.0 {
+                print("the room's oak baked in ", g.room_ms, " ms, ", g.room_side, " texels a side, ",
+                      render3d::room_bytes(g) / 1048576, " MiB");
+            }
             break;
         }
         ui::input_from_gfx(c);
@@ -347,6 +382,8 @@ fn main() {
         if gfx::key_pressed("W") { pattern = 1 - pattern; }
         if gfx::key_pressed("T") { room.tree.x = (room.tree.x as i64 + 1) % 3; }
         if gfx::key_pressed("D") { dust_on = !dust_on; }
+        if gfx::key_pressed("O") { room_on = !room_on; }
+        if gfx::key_pressed("V") { room_view = !room_view; }
         if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
@@ -386,6 +423,18 @@ fn main() {
             slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
             slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
             slider(c, "Ruffle", room.wind.w, 0.0, 2.0);
+            heading(c, "The room (O, V)");
+            var shown_surfaces: i64 = if room_on { 1 } else { 0 };
+            choice(c, "Floor, wall", shown_surfaces, ["off", "on"]);
+            room_on = shown_surfaces == 1;
+            var shown_view: i64 = if room_view { 1 } else { 0 };
+            choice(c, "View", shown_view, ["board", "room"]);
+            room_view = shown_view == 1;
+            if g.room_ms > 0.0 {
+                ui::layout_row_dynamic(c, ROW, 1);
+                ui::label(c, str("baked in ", floor(g.room_ms + 0.5) as i64, " ms, ", render3d::room_bytes(g) / 1048576, " MiB"),
+                          ui::TEXT_LEFT);
+            }
             heading(c, "Dust in the sunbeam (D)");
             var shown_dust: i64 = if dust_on { 1 } else { 0 };
             choice(c, "Dust", shown_dust, ["off", "on"]);
@@ -471,6 +520,7 @@ fn main() {
         // Cheap enough to do each frame: the harmonics on the CPU and the shadow map.
         g.room = room;
         render3d::window_pattern = pattern == 1;
+        render3d::show_room(g, room_on, away);
         // A shot is taken at --wind-time itself.
         if shot < 0 { render3d::wind_time += gfx::delta_time() as f32; }
         render3d::put_room(g);
@@ -491,11 +541,26 @@ fn main() {
         let size = gfx::screen_size();
         let a = radians(pitch);
         let b = radians(yaw);
-        let target = float3 { at.x, view3d::TARGET.y, at.y };
-        let eye = target + float3 { sin(b) * cos(a), sin(a), cos(b) * cos(a) } * (view3d::DISTANCE * far);
+        var target = float3 { at.x, view3d::TARGET.y, at.y };
+        var eye = target + float3 { sin(b) * cos(a), sin(a), cos(b) * cos(a) } * (view3d::DISTANCE * far);
+        var fov = view3d::FOV;
+        if own_eye {
+            eye = float3 { eye_at.x, eye_at.y, eye_at.z };
+            target = float3 { look_at.x, look_at.y, look_at.z };
+        } else if room_view {
+            // From beside the window, a person's eyes high, over the table to the wall.
+            let f = g.room_frame;
+            let e2 = f.along * -15.0 + f.into * -30.0;
+            let t2 = f.along * 12.0 + f.into * (0.7 * away);
+            eye = float3 { e2.x, 22.0, e2.y };
+            target = float3 { t2.x, -14.0, t2.y };
+            fov = 50.0;
+        }
         render3d::dust.count = if dust_on { motes } else { 0 };
         render3d::dust.focus = length(eye - target);
-        let proj = gfx::perspective(view3d::FOV * PI / 180.0, size.x as f32 / size.y, 1.0, 120.0);
+        // The near plane farther with the room, so 16-bit depth keeps its panels apart.
+        let near: f32 = if room_on { clamp(0.2 * length(eye - target), 1.0, 12.0) } else { 1.0 };
+        let proj = gfx::perspective(fov * PI / 180.0, size.x as f32 / size.y, near, if room_on { 900.0 } else { 120.0 });
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
         if shot < 0 { ui::render(c); }

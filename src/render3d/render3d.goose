@@ -163,13 +163,15 @@ fn pieces_kind(mineral: f32) -> i32 {
 }
 
 // The bake's pipeline for a surface (mode: 0 the plan, 1 the frame map, 2 and 3 the
-// table): the table's own, the black marble slab's, or the rest of the board's.
+// table, 4 and 5 the room's oak): the room's, the table's own, the black marble slab's,
+// or the rest of the board's.
 let BAKE_BOARD = 0;
 let BAKE_SLAB = 1;
 let BAKE_TABLE = 2;
+let BAKE_ROOM = 3;
 fn bake_kind(g: Gpu&, mode: f32) -> i32 {
     let m = marble_of(g);
-    if mode > 1.5 { BAKE_TABLE } else if looks::is_slab(m) { BAKE_SLAB } else { BAKE_BOARD }
+    if mode > 3.5 { BAKE_ROOM } else if mode > 1.5 { BAKE_TABLE } else if looks::is_slab(m) { BAKE_SLAB } else { BAKE_BOARD }
 }
 
 let PHOTO_SIZE = 512;
@@ -303,6 +305,25 @@ struct Gpu {
     photo_ms:        f64,
     motes:           Pipeline,      // the dust in the sunbeam (draw_motes), made when first wanted
     mote_seeds:      Buffer,        // and each mote's seed (mote_seeds()), filled once
+    // The room round the table (model3d::surfaces, the tuner's for now): shown or not, the
+    // panelled wall's distance, its oak's two fields baked once (the floor's and the
+    // wall's, albedo and roughness, the normal), its mesh made for the room's frame.
+    room_on:      bool,
+    room_away:    f32,
+    room_side:    i64,              // the fields' side they are made at, 0 none
+    room_baked:   bool,
+    room_ms:      f64,              // the bake's time (measuring)
+    floor_albedo: Texture,
+    floor_normal: Texture,
+    wall_albedo:  Texture,
+    wall_normal:  Texture,
+    room_frame:   surfaces::Frame,
+    room_for:     float4[2],        // what the mesh was made for: the key's x and z, the window's wall, the wall's v
+    room_vb:      Buffer,
+    room_ib:      Buffer,
+    room_count:   i64,
+    room_lit:     Pipeline,         // made when first wanted (make_room)
+    bake_room:    Pipeline,
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -440,6 +461,94 @@ fn tune_table<O>(o: O&, g: Gpu&, t: tables::Table) {
     guard g.table && g.side > 0 && g.look >= 0 else { return; }
     bake_table(o, g);
     o.gpu_flush();
+}
+
+// Shows the room round the table or not (model3d::surfaces), its wall `away` into the
+// room: its oak is baked and its mesh made before the next draw (room_surfaces).
+fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY) {
+    g.room_on = on;
+    if away != g.room_away { g.room_for[1] = float4_0; }
+    g.room_away = away;
+}
+
+// Whether the board's pass draws the room.
+fn room_shown(g: Gpu&) -> bool { g.room_on && g.room_baked && g.room_vb.id != 0 && g.room_lit.id != 0 }
+
+// An oak's bake (surfaces::Oak) in the slots of a theme BAKE_FRAG's oak reads.
+fn oak_theme(g: Gpu&, oak: surfaces::Oak) -> looks::Theme {
+    var t = look(g, max(g.look, 0));
+    t.light_sq = oak.base;
+    t.light_fig = oak.figure;
+    t.light_ring = oak.ring;
+    t.dark_sq = oak.stain;
+    t.dark_fig = oak.wax;
+    t.inlay = oak.shellac;
+    t.inlay_fig = oak.age;
+    t.surface = oak.boards;
+    return t;
+}
+
+// The room's oak baked into its two fields with their mips, once (a phone's at half the
+// side), and its mesh made again when the room's frame moved: before a draw, outside a
+// pass. Tens of milliseconds the first time.
+fn room_surfaces<O>(o: O&, g: Gpu&) {
+    guard g.room_on && g.look >= 0 else { return; }
+    o.make_room(g);
+    if !g.room_baked {
+        let t0 = clock();
+        let side = if g.side > 0 && g.side < model3d::BAKE_SIDE { surfaces::PHONE_FIELD_SIDE } else { surfaces::FIELD_SIDE };
+        g.floor_albedo = baked(o, side, side, RGBA8_SRGB);
+        g.floor_normal = baked(o, side, side, RGBA8);
+        o.gpu_flush();
+        g.wall_albedo = baked(o, side, side, RGBA8_SRGB);
+        g.wall_normal = baked(o, side, side, RGBA8);
+        let finish = g.finish;
+        g.finish = looks::Finish { varnish: 0.0, sanding: 0.0, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0, caulk: 0.0 };
+        var t = oak_theme(g, surfaces::FLOOR_OAK);
+        o.bake(g, g.floor_albedo, g.floor_normal, side, side, 4.0, float2 { surfaces::FLOOR_FIELD, surfaces::FLOOR_FIELD }, t,
+               0, -1, true, surfaces::FIELD_SIDE / side);
+        t = oak_theme(g, surfaces::WALL_OAK);
+        o.bake(g, g.wall_albedo, g.wall_normal, side, side, 5.0, float2 { surfaces::WALL_FIELD, surfaces::WALL_FIELD }, t,
+               0, -1, true, surfaces::FIELD_SIDE / side);
+        g.finish = finish;
+        o.gpu_flush();
+        g.room_side = side;
+        g.room_baked = true;
+        g.room_ms = (clock() - t0) * 1000.0;
+    }
+    let l = g.frame.light_dir;
+    let w = g.room.window;
+    let key: float4[2] = [float4 { l.x, l.z, w.y, w.x }, float4 { w.z, g.room_away, 1.0, 0.0 }];
+    guard g.room_vb.id == 0 || !same4(key[0], g.room_for[0]) || !same4(key[1], g.room_for[1]) else { return; }
+    g.room_frame = surfaces::frame_of(float3 { l.x, l.y, l.z }, g.room.window.y);
+    var verts:   mesh::Vertex[>..] = [];
+    var indices: u32[>..]          = [];
+    surfaces::build(verts, indices, g.room_frame, g.room_away, w.x, w.z);
+    if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }
+    g.room_vb, g.room_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
+    g.room_count = indices.len;
+    g.room_for = key;
+}
+
+// The fields' memory in bytes: two RGBA8 targets each, with their mips.
+fn room_bytes(g: Gpu&) -> i64 {
+    guard g.room_side > 0 else { return 0; }
+    var level = g.room_side * g.room_side;
+    var sum = 0;
+    while level > 0 {
+        sum += level;
+        level = level / 4;
+    }
+    return 4 * 4 * sum;
+}
+
+// ROOM_FRAG's block: surfaces::Look, the room's frame, and where its walls and fields are.
+struct SurfacesBlock { plank: float4, planks: float4, worn: float4, paper: float4, axes: float4, place: float4 }
+fn surfaces_block(g: Gpu&) -> SurfacesBlock {
+    let k = surfaces::LOOK;
+    let f = g.room_frame;
+    SurfacesBlock { k.plank, k.planks, k.worn, k.paper, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
+                    float4 { g.room.window.x, g.room_away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD } }
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1
@@ -966,6 +1075,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
     keep_backdrop(o, g, size);
     bake_tree(o, g);
     if dust.count > 0 { o.make_motes(g); }
+    room_surfaces(o, g);
     if g.shadow_dirty || shadow_every {
         o.shadow_pass(g);
         g.shadow_dirty = false;

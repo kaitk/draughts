@@ -149,6 +149,22 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::draw_indexed(g.table_count);
     }
 
+    // The room round the table, behind what stands in it.
+    if render3d::room_shown(g) {
+        gfx::bind(g.room_lit);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.floor_albedo, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 1, g.floor_normal, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 2, g.wall_albedo, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 3, g.wall_normal, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 4, render3d::tree_or_stand_in(g), g.linear);
+        gfx::uniforms(gfx::VERTEX, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 1, render3d::surfaces_block(g));
+        gfx::bind_vertex_buffer(g.room_vb);
+        gfx::bind_index_buffer(g.room_ib, 4);
+        gfx::draw_indexed(g.room_count);
+    }
+
     // The board's soft shadow round it, after the board so the depth test leaves out
     // what the board covers; the table casts its own.
     if !render3d::table_shown(g) {
@@ -185,6 +201,16 @@ fn make_motes(own: Own&, g: render3d::Gpu&) {
                                          shaders::DUST_VERT),
                             embed_shader("frag", shaders::DUST_FRAG),
                             gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
+}
+
+// The room's pipeline and its bake's (render3d::room_surfaces), made the first time they
+// are wanted, outside a pass.
+fn make_room(own: Own&, g: render3d::Gpu&) {
+    guard g.room_lit.id == 0 else { return; }
+    g.room_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
+                               embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::ROOM_FRAG),
+                               gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true });
+    g.bake_room = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_ROOM, shaders::BAKE_FRAG));
 }
 
 // The dust in the sunbeam over the open pass's target, added, hidden by what stands
@@ -469,6 +495,7 @@ fn set_pieces(own: Own&, g: render3d::Gpu&, pieces: i32) {
 // The bake's pipeline for a surface (render3d::bake_kind), made the first time it is wanted.
 fn bake_pipeline(g: render3d::Gpu&, mode: f32) -> gfx::Pipeline {
     let kind = render3d::bake_kind(g, mode);
+    if kind == render3d::BAKE_ROOM { return g.bake_room; }
     if kind == render3d::BAKE_TABLE {
         if g.bake_table.id == 0 {
             g.bake_table = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_TABLE, shaders::BAKE_FRAG));
@@ -785,15 +812,16 @@ fn warm(own: Own&, g: render3d::Gpu&, k: i64) {
 fn release(own: Own&, g: render3d::Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.tree_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
-                    own.warm_kept, g.edges, g.weights, g.area, g.search];
+                    own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.wall_albedo,
+                    g.wall_normal];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows, g.mote_seeds];
+                   g.glows, g.mote_seeds, g.room_vb, g.room_ib];
     for b in buffers { if b.id != 0 { gfx::release(b); } }
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.motes];
+                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();

@@ -124,6 +124,22 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
 
+    // The room round the table, behind what stands in it.
+    if render3d::room_shown(g) {
+        nx::bind(g.room_lit);
+        var t = no_root();
+        t.frame = f;
+        let rb: render3d::SurfacesBlock[1] = [render3d::surfaces_block(g)];
+        t.u = ngfx::frame_data(bytes_of(rb));
+        t.verts = nx::address(g.room_vb);
+        slot(t, 0, g.floor_albedo, g.aniso);
+        slot(t, 1, g.floor_normal, g.aniso);
+        slot(t, 2, g.wall_albedo, g.aniso);
+        slot(t, 3, g.wall_normal, g.aniso);
+        slot(t, 4, render3d::tree_or_stand_in(g), g.linear);
+        nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
+    }
+
     // The board's soft shadow round it, after the board so the depth test leaves out
     // what the board covers; the table casts its own.
     if !render3d::table_shown(g) {
@@ -160,6 +176,15 @@ fn make_motes(own: Own&, g: Gpu&) {
     g.mote_seeds = nx::buffer(bytes_of(seeds));
     g.motes = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_dust.blob"),
                            ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_ADD });
+}
+
+// The room's pipeline and its bake's (render3d::room_surfaces), made the first time they
+// are wanted, before any pass.
+fn make_room(own: Own&, g: Gpu&) {
+    guard g.room_lit.id == 0 else { return; }
+    g.room_lit = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room.blob"),
+                              ngfx::PipelineDesc { depth_test: true, depth_write: true });
+    g.bake_room = module(embed_file("../../build/ngfx/blobs/r3d_bake_room.blob"));
 }
 
 // The dust in the sunbeam over the open pass's target, added, hidden by what stands
@@ -321,6 +346,7 @@ fn set_pieces(own: Own&, g: Gpu&, pieces: i32) {
 // The bake's pipeline for a surface (render3d::bake_kind), made the first time it is wanted.
 fn bake_pipeline(g: Gpu&, mode: f32) -> Pipeline {
     let kind = render3d::bake_kind(g, mode);
+    if kind == render3d::BAKE_ROOM { return g.bake_room; }
     if kind == render3d::BAKE_TABLE {
         if g.bake_table.id == 0 { g.bake_table = module(embed_file("../../build/ngfx/blobs/r3d_bake_table.blob")); }
         return g.bake_table;
@@ -841,16 +867,17 @@ fn release(own: Own&, g: Gpu&) {
     ngfx::flush();
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map,
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
-                    g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search];
+                    g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
+                    g.floor_normal, g.wall_albedo, g.wall_normal];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows, g.mote_seeds];
+                   g.glows, g.mote_seeds, g.room_vb, g.room_ib];
     for b in buffers { if b.id != 0 { nx::release(b); } }
     let samplers = [g.linear, own.point, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { nx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
-                     g.smaa_blend, g.table_lit, g.motes];
+                     g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();

@@ -1,6 +1,7 @@
 // The shaders' GLSL repeats the 3D board's measures from src/model3d/mesh.goose as
 // `const float NAME = value;` (embed_shader takes only a literal); each must equal the
-// mesh's, or the lit shader's field, frame, and pieces stop where the meshes don't.
+// mesh's, or the lit shader's field, frame, and pieces stop where the meshes don't; the
+// room's floor its strips' count (src/model3d/surfaces.goose).
 import std;
 import vec;
 import model3d from "../../src/model3d";
@@ -25,9 +26,10 @@ fn constant(text: const u8[:], name: const u8[:]) -> f64, bool {
 fn main() {
     let text = embed_file("../../src/render3d/shaders.goose");
     let names = ["FIELD", "INNER", "FRAME_W", "FRAME_TOP", "BOTTOM", "RADIUS", "HEIGHT", "EDGE_AT", "TABLE_R",
-                 "TABLE_TOP", "TABLE_Z"];
-    let mesh_values: f32[11] = [mesh::FIELD, mesh::INNER, mesh::FRAME_W, mesh::FRAME_TOP, mesh::BOTTOM, mesh::RADIUS,
-                                mesh::HEIGHT, mesh::EDGE_AT, mesh::TABLE_R, mesh::TABLE_TOP, mesh::TABLE_Z];
+                 "TABLE_TOP", "TABLE_Z", "FLOOR_STRIPS"];
+    let mesh_values: f32[12] = [mesh::FIELD, mesh::INNER, mesh::FRAME_W, mesh::FRAME_TOP, mesh::BOTTOM, mesh::RADIUS,
+                                mesh::HEIGHT, mesh::EDGE_AT, mesh::TABLE_R, mesh::TABLE_TOP, mesh::TABLE_Z,
+                                surfaces::FLOOR_STRIPS];
     var bad = 0;
     for name, i in names {
         let x, ok = constant(text, name);

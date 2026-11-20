@@ -9,6 +9,7 @@ import .mesh;
 import .looks;
 import .tables;
 import .rooms;
+import .surfaces;
 import .trees;
 
 // The baked surfaces' targets: the plan (the field and the frame's top seen from above),

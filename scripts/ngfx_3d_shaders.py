@@ -57,12 +57,14 @@ MODULES = [
     ("r3d_bake", FULL, ["BAKE_FRAG"]),
     ("r3d_bake_slab", FULL, ["BAKE_SLAB", "BAKE_FRAG"]),
     ("r3d_bake_table", FULL, ["BAKE_TABLE", "BAKE_FRAG"]),
+    ("r3d_bake_room", FULL, ["BAKE_ROOM", "BAKE_FRAG"]),
     ("r3d_shrink", FULL, ["SHRINK_FRAG"]),
     ("r3d_blur", FULL, ["BLUR_FRAG"]),
     ("r3d_copy", FULL, ["COPY_FRAG"]),
     ("r3d_kept", FULL, ["KEPT_FRAG"]),
     ("r3d_show", ["SHOW_VS", "SHOW_BLOCK", "SHOW_VERT"], ["SHOW_FS", "SHOW_BLOCK", "SHOW_FRAG"]),
     ("r3d_dust", ["VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["DUST_FRAG"]),
+    ("r3d_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "ROOM_FRAG"]),
 ]
 
 def products(body):
