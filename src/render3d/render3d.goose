@@ -633,20 +633,47 @@ struct SurfacesBlock {
     plaster_light: float4,
     paint:         float4,
     lace_thread:   float4,
+    shell:         float4,
+    shell_mids:    float4,
+    shell_niche:   float4,
+    shell_glass:   float4,
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
+    var b = room_block(g);
+    guard g.room_shell else { return b; }
+    // The shell's windows, which light the room in its place (shaders::LIGHT_FN's
+    // shell_light), the lace letting through what the room's curtain does.
+    let s = room_shell::LIBRARY;
+    let metre = surfaces::METRE;
+    var mids: f32[3] = [0.0; 3];
+    var n = 0;
+    var o = s.openings[0];
+    for k in s.count {
+        guard s.openings[k].kind == room_shell::WINDOW && n < 3 else { continue; }
+        o = s.openings[k];
+        mids[n] = (s.table.x - o.mid) * metre;
+        n++;
+    }
+    b.shell = float4 { n, shell_face(s), surfaces::FLOOR_Y, metre };
+    b.shell_mids = float4 { mids[0], mids[1], mids[2], 0.0 };
+    b.shell_niche = float4 { 0.5 * o.width, o.sill, o.height, o.rise };
+    b.shell_glass = float4 { o.glass.x * metre, o.glass.y * metre, room_shell::LACE_OFF * metre, g.room.opening.w };
+    return b;
+}
+
+fn room_block(g: Gpu&) -> SurfacesBlock {
     let k = surfaces::LOOK;
     let f = g.room_frame;
     let tile = if g.paper_tile > 0.0 { g.paper_tile } else { surfaces::PAPER_TILE };
     // The window wall's and the far wall's v: the shell's, or the tuned window's and wall's.
     let s = room_shell::LIBRARY;
-    let window_v = if g.room_shell { (s.walls[room_shell::WINDOW_WALL].a.y - s.table.y) * surfaces::METRE } else { g.room.window.x };
+    let window_v = if g.room_shell { shell_face(s) } else { g.room.window.x };
     let away = if g.room_shell { s.table.y * surfaces::METRE } else { g.room_away };
     SurfacesBlock { k.plank, k.planks, k.worn, k.paper, k.gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
                     float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light, k.paint,
-                    k.lace_thread }
+                    k.lace_thread, float4_0, float4_0, float4_0, float4_0 }
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1
@@ -917,8 +944,36 @@ fn put_tree(g: Gpu&, on: bool) {
     f.tree_blur = float4 { v.blur * v.w / v.size.x, v.distance, crown, r.crown_fill };
 }
 
-// How the sun sees the tree: over the whole window with the room on, else cut to the table.
-fn tree_view_of(g: Gpu&) -> trees::View { rooms::tree_view(g.room, g.room_on) }
+// How the sun sees the tree: over the shell's three windows with it on, over the whole
+// window with the panelled wall's room on, else cut to the table. The shell's windows'
+// niches at the wall's inner face, as the key carries them out to the tree.
+fn tree_view_of(g: Gpu&) -> trees::View {
+    guard g.room_on && g.room_shell else { return rooms::tree_view(g.room, g.room_on); }
+    let s = room_shell::LIBRARY;
+    let metre = surfaces::METRE;
+    let inner = shell_face(s);
+    var u0: f32 = 1e9;
+    var u1: f32 = -1e9;
+    var y0: f32 = 1e9;
+    var y1: f32 = -1e9;
+    for k in s.count {
+        let o = s.openings[k];
+        guard o.kind == room_shell::WINDOW else { continue; }
+        let u = (s.table.x - o.mid) * metre;
+        u0 = min(u0, u - 0.5 * o.width * metre);
+        u1 = max(u1, u + 0.5 * o.width * metre);
+        y0 = min(y0, surfaces::FLOOR_Y + o.sill * metre);
+        y1 = max(y1, surfaces::FLOOR_Y + room_shell::head_at(o, 0.0) * metre);
+    }
+    let shear = rooms::tree_shear(g.room);
+    return rooms::tree_view_over(g.room, u0 - shear.x * inner, u1 - shear.x * inner, y0 - shear.y * inner,
+                                 y1 - shear.y * inner, trees::SHELL_W, trees::SHELL_H);
+}
+
+// The window wall's inner face's distance from the board's middle toward the sun, world units.
+fn shell_face(s: room_shell::Shell) -> f32 {
+    return (s.walls[room_shell::WINDOW_WALL].a.y - s.table.y) * surfaces::METRE;
+}
 
 // The tree's map to bind, or another texture where none is baked: the shaders sample it
 // only when the frame's block says the tree shows.

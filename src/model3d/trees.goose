@@ -72,11 +72,14 @@ let WALL_GAP: f32 = 6.0;
 // Whether a point of the tree is clear of the house.
 fn clear_of_wall(v: View&, p: float3) -> bool { p.z > v.wall + WALL_GAP }
 
-// The game's map's texels a side (the table's cut), and the room's across and up (the
-// whole window, rooms::tree_view).
+// The game's map's texels a side (the table's cut), the room's across and up (the whole
+// window, rooms::tree_view), and the shell's over its three windows (render3d's
+// tree_view_of).
 let SIDE = 512;
 let ROOM_W = 512;
 let ROOM_H = 1024;
+let SHELL_W = 2048;
+let SHELL_H = 768;
 
 // A map's levels, down to the one whose shorter side is a texel (render3d::baked's rule).
 fn mips_of(w: i64, h: i64) -> i64 {

@@ -441,12 +441,19 @@ fn main() {
     render3d::wind_kind = pick(argv, "--wind-kind", rooms::WIND_KINDS, rooms::WIND_NOISE);
     g.room = room;
     g.room_tuned = true;
-    // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied.
+    render3d::window_pattern = pattern == 1;
+    var room_on = flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "on";
+    var shell_on = !(flag_value(argv, "--shell") > 0 && argv[flag_value(argv, "--shell")] == "off");
+    let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
+    render3d::show_room(g, room_on, away, shell_on);
+    g.paper_tile = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE) * surfaces::METRE;
+    // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied, as
+    // the renderer bakes it (the room's on or off).
     let dump = flag_value(argv, "--dump-map");
     if dump > 0 {
         var t = trees::Tree { .. };
         let sp = rooms::tree_spec(room);
-        let v = rooms::tree_view(room);
+        let v = render3d::tree_view_of(g);
         trees::grow(t, sp, v);
         var map: u8[>..] = [];
         trees::draw_map(t, sp, v, map);
@@ -460,12 +467,7 @@ fn main() {
         guard write_file(argv[dump], out[..]) else { abort("could not write the map"); }
         print("map ", v.size.x, " by ", v.size.y, " middle ", v.middle.x, ",", v.middle.y);
     }
-    render3d::window_pattern = pattern == 1;
-    var room_on = flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "on";
-    var shell_on = !(flag_value(argv, "--shell") > 0 && argv[flag_value(argv, "--shell")] == "off");
-    let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
-    render3d::show_room(g, room_on, away, shell_on);
-    g.paper_tile = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE) * surfaces::METRE;
+
     put_look(r3d, g, season, material, st);
 
     let scale = max(gfx::screen_size().x as f32 / w, 1.0);

@@ -407,12 +407,118 @@ let LIGHT_FN = """
         return open_sky;
     }
 
+    #ifdef SHELL_WINDOWS
+    // The shell's box windows (room_shell, shell_mesh.goose's casement, metres): how much
+    // of the sun the casement at a glass plane lets through at w (along from the window's
+    // middle, up from the floor): the blind frame's opening, the transom, the meeting
+    // stiles, each sash's stiles and rails, and its bars, each edge `soft` wide.
+    float casement(vec2 w, float soft) {
+        const float BAR = 0.024;
+        float s = shell_niche.y;
+        float h = shell_niche.y + shell_niche.z;
+        float zt = s + (h - s) * 2.0 / 3.0;
+        float gx = 0.49;
+        float x = abs(w.x);
+        float open = min(gx - x, min(w.y - (s + 0.03), (h - 0.06) - w.y));
+        open = min(open, min(abs(w.y - zt) - 0.045, x - (0.0175 + 0.05)));
+        bool upper = w.y > zt;
+        float y0 = upper ? zt + 0.045 : s + 0.03;
+        float y1 = upper ? h - 0.06 : zt - 0.045;
+        float ax0 = 0.0175 + 0.05;
+        float ax1 = gx - 0.055;
+        float ay0 = y0 + (upper ? 0.055 : 0.08);
+        float ay1 = y1 - 0.055;
+        open = min(open, min(ax1 - x, min(w.y - ay0, ay1 - w.y)));
+        float across = upper ? 3.0 : 1.0;
+        float up = upper ? 3.0 : 2.0;
+        float pitch_x = (ax1 - ax0 + BAR) / across;
+        float pitch_y = (ay1 - ay0 + BAR) / up;
+        // The bars: each the width BAR, its far edge at a whole pitch from the leaf's edge.
+        float u = x - ax0 + 0.5 * BAR;
+        float v = w.y - ay0 + 0.5 * BAR;
+        if (across > 1.5 && u > 0.5 * pitch_x && u < (across - 0.5) * pitch_x)
+            open = min(open, abs(u - pitch_x * floor(u / pitch_x + 0.5)) - 0.5 * BAR);
+        if (v > 0.5 * pitch_y && v < (up - 0.5) * pitch_y)
+            open = min(open, abs(v - pitch_y * floor(v / pitch_y + 0.5)) - 0.5 * BAR);
+        return smoothstep(-soft, soft, open);
+    }
+
+    // The lace drawn back to each side (shell_mesh.goose's lace): whether w (metres) is
+    // behind one of its sheets, soft at the edges.
+    float behind_lace(vec2 w, float soft) {
+        float half_w = shell_niche.x;
+        float y = w.y;
+        float edge = y > 1.4 ? mix(half_w - 0.12, half_w - 0.02, (y - 1.4) / 2.28)
+                   : (y > 0.35 ? mix(half_w - 0.08, half_w - 0.12, (y - 0.35) / 1.05)
+                   : mix(half_w + 0.02, half_w - 0.08, (y - 0.05) / 0.3));
+        float outer = half_w + 0.08 + 0.22;
+        float x = abs(w.x);
+        return smoothstep(-soft, soft, min(x - edge, min(outer - x, min(y - 0.05, 3.68 - y))));
+    }
+
+    // How much of the key reaches p through the shell's windows: p traced along the key to
+    // the window wall's inner face (the niche's arched outline: or where p is, if it is in
+    // the niche), on to the two glass planes with their bars, and back to the lace in front;
+    // summed over the windows, then the tree outside.
+    float shell_light(vec3 p) {
+        vec3 l = light_dir.xyz;
+        vec2 nw = -axes.zw;
+        vec2 along = axes.xy;
+        float toward = dot(l.xz, nw);
+        if (toward < 0.05) return 1.0 - room.y;
+        float metre = shell.w;
+        float d = dot(p.xz, nw);
+        float half_w = shell_niche.x;
+        float rise = shell_niche.w;
+        float radius = (half_w * half_w + rise * rise) / (2.0 * rise);
+        float spring = shell_niche.y + shell_niche.z;
+        float arch_mid = spring + rise - radius;
+        float lit = 0.0;
+        for (int i = 0; i < 3; i++) {
+            if (float(i) >= shell.x) break;
+            float mid = shell_mids[i];
+            // The niche's outline at the inner face, or at p within the niche.
+            float t = max((shell.y - d) / toward, 0.0);
+            vec3 q = p + l * t;
+            vec2 w = vec2(dot(q.xz, along) - mid, q.y - shell.z) / metre;
+            float soft = (0.03 + room.z * t) / metre;
+            float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
+            float through = smoothstep(-soft, soft, min(half_w - abs(w.x), min(w.y - shell_niche.y, head - w.y)));
+            if (through < 0.001) continue;
+            // The two casements.
+            for (int k = 0; k < 2; k++) {
+                float tg = (shell.y + (k == 0 ? shell_glass.x : shell_glass.y) - d) / toward;
+                if (tg <= 0.0) continue;
+                vec3 g = p + l * tg;
+                through *= casement(vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre, (0.03 + room.z * tg) / metre);
+            }
+            // The lace in front of the niche, for what is behind it in the room.
+            float tl = (shell.y - shell_glass.z - d) / toward;
+            if (tl > 0.5) {
+                vec3 c = p + l * tl;
+                float behind = behind_lace(vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre, (0.03 + room.z * tl) / metre);
+                through *= mix(1.0, shell_glass.w, behind);
+            }
+            lit += through;
+        }
+        lit = min(lit, 1.0);
+        if (tree.x > 0.0 && lit > 0.001) {
+            vec2 tr = tree_light(p, l, nw, along, toward);
+            lit *= tr.x * tr.y;
+        }
+        return mix(1.0 - room.y, 1.0, lit);
+    }
+    #endif
+
     // How much of the key reaches p through the window (rooms::Room's pattern): p traced
     // along the key to the window's wall, where the opening, its bars, and the curtain
     // say whether the sun came through, and on to the trees beyond, whose leaves dapple
     // it; each edge softer the farther it is from p. 1 with no pattern.
     float window_light(vec3 p) {
         if (room.y <= 0.0) return 1.0;
+    #ifdef SHELL_WINDOWS
+        if (shell.x > 0.5) return shell_light(p);
+    #endif
         vec3 l = light_dir.xyz;
         vec2 h = normalize(l.xz);
         float a = radians(window.y);
@@ -1725,9 +1831,11 @@ let ROOM_VERT = """
     }
     """;
 
-// ROOM_FRAG's inputs and textures, before LIGHT_FN, which reads the tree's map: the two
-// fields of oak (BAKE_FRAG's modes 4 and 5), albedo and roughness, and the normal; the
-// wallpaper's mask, the plaster's tone, the lace's coverage (design/materials/).
+// ROOM_FRAG's inputs, textures and block, before LIGHT_FN, which reads the tree's map and,
+// with SHELL_WINDOWS, the shell's windows: the two fields of oak (BAKE_FRAG's modes 4 and
+// 5), albedo and roughness, and the normal; the wallpaper's mask, the plaster's tone, the
+// lace's coverage (design/materials/).
+let SHELL_WINDOWS = "#define SHELL_WINDOWS 1\n";
 let ROOM_HEAD = """
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
@@ -1743,17 +1851,6 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 5) uniform sampler2D paper_mask;
     layout(set = 2, binding = 6) uniform sampler2D plaster_tone;
     layout(set = 2, binding = 7) uniform sampler2D lace_mask;
-    """;
-
-// The room lit as the table is (TABLE_FRAG's light, its functions repeated here): the
-// window's key with its pattern and the trees' dapple, the table's shadow, the room's
-// harmonics, a GGX highlight in the wax. The floor is laid here: a herringbone of
-// planks, each its own place in the floor's field (a strip, a place along it, mirrored
-// either way), its own tone, a few patched, each a little tilted and cupped so the
-// window's highlight breaks plank by plank, the joints dark with wax and fading to
-// their share of the floor far off, worn lighter and duller on the paths round the
-// table and along the room, darker and waxier along the walls, finely scratched.
-let ROOM_FRAG = """
     // surfaces::Look and the room's frame. plank: x a plank's width, y its length in
     // widths, z the joint's half width, w the cup (its slope at the edges); planks: x each
     // one's own tone, y the share patched, z its tilt, w the scratches; worn: x the paths'
@@ -1765,7 +1862,13 @@ let ROOM_FRAG = """
     // linear, and w the room's exposure over the board's (rooms::Room.room_exposure);
     // tile: the wall a tile of the wallpaper's mask covers, x, of the plaster's tone, y, of
     // the lace, z (world units); the shell's limewash at its tone's 0 and 1, its paint and
-    // the lace's thread (sRGB, and roughness).
+    // the lace's thread (sRGB, and roughness). The shell's windows (room_shell, the room's
+    // view; shell.x 0 the game's window, Room.window): shell x how many, y the window wall's
+    // inner face's distance from the board along the wall's normal toward the sun, z the
+    // floor's y, w a metre (world units); mids: their middles along u; niche: half the
+    // niche's width, the sill's height, the springing's, the arch's rise (metres); glass:
+    // the glass planes' depths into the wall, the lace's distance out of it (world units), w
+    // how much of the sun the lace lets through.
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -1780,7 +1883,22 @@ let ROOM_FRAG = """
         vec4 plaster_light;
         vec4 paint;
         vec4 lace_thread;
+        vec4 shell;
+        vec4 shell_mids;
+        vec4 shell_niche;
+        vec4 shell_glass;
     };
+    """;
+
+// The room lit as the table is (TABLE_FRAG's light, its functions repeated here): the
+// window's key with its pattern and the trees' dapple, the table's shadow, the room's
+// harmonics, a GGX highlight in the wax. The floor is laid here: a herringbone of
+// planks, each its own place in the floor's field (a strip, a place along it, mirrored
+// either way), its own tone, a few patched, each a little tilted and cupped so the
+// window's highlight breaks plank by plank, the joints dark with wax and fading to
+// their share of the floor far off, worn lighter and duller on the paths round the
+// table and along the room, darker and waxier along the walls, finely scratched.
+let ROOM_FRAG = """
     // mesh.goose's and surfaces.goose's (test/model3d/geometry checks them).
     const float TABLE_R = 16.0;
     const float TABLE_TOP = -0.703;

@@ -219,10 +219,10 @@ fn make_motes(own: Own&, g: render3d::Gpu&) {
 fn make_room(own: Own&, g: render3d::Gpu&) {
     guard g.room_lit.id == 0 else { return; }
     g.room_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
-                               embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::ROOM_FRAG),
+                               embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::ROOM_FRAG),
                                gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true });
     g.room_glass = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
-                                 embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::ROOM_FRAG),
+                                 embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::ROOM_FRAG),
                                  gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED });
     g.bake_room = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_ROOM, shaders::BAKE_FRAG));
 }
