@@ -62,6 +62,7 @@ the room's light alone is the base of both 3D tiers.
 | The room's key, fill, and ambient per season | none a pixel: data and nine harmonics on the CPU | 3D and high |
 | The key's shadow strength (winter's faint one) | one mix a pixel | 3D and high |
 | The window's pattern, cheap | a ray to a plane and a few smoothsteps a lit pixel, no texture | high; perhaps 3D on the stronger tablets, measured at the end |
+| The leaves swaying in the wind | the 3D pass every frame while it shows (a moving board's cost, held), or at a reduced rate | high only |
 | The window's pattern, rich | one texture tap a lit pixel, a small baked map (about 0.3 MB with mips), its bake once at setup | high |
 
 Designed around a table of tiers: each effect, and its quality, on or off per tier in
@@ -90,6 +91,13 @@ the light is settled (the user, 2026-11-20).
 - `tools/light_tune.goose`: the room take, season, board, and table; the sun's round,
   height, strength, shadow, and color; the fill, walls, ceiling, floor, and lamp; the
   window and the leaves; P prints the room as Goose into `build/light-tune.txt`.
+
+- The leaves sway in the wind in the tuner (`rooms::Room.wind`, `render3d::wind_time`),
+  the noise's coordinates bent by a few slow sines. In the app they stay still: a sway
+  runs the 3D pass every frame, so if kept it is the high mode's, at a reduced rate.
+- The floating board over the photograph or the fade keeps the look's old neutral light;
+  the room's light is the table's. The user would keep the neutral light as an option on
+  the table too (2026-11-20).
 
 ## Follow-ups
 
