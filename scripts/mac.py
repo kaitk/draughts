@@ -208,8 +208,8 @@ def disk_image(app, dmg):
     finally:
         native.run("hdiutil", "detach", mount)
     dmg.unlink(missing_ok=True)
-    native.run("hdiutil", "convert", writable, "-format", "UDZO", "-imagekey", "zlib-level=9",
-               "-o", dmg)
+    # ULMO is LZMA: 1.6 MB smaller than zlib's UDZO, and opens on macOS 10.15 and later
+    native.run("hdiutil", "convert", writable, "-format", "ULMO", "-o", dmg)
     writable.unlink()
 
 
