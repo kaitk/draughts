@@ -58,6 +58,9 @@ let FRAME = """
         vec4 panes;
         vec4 opening;
         vec4 leaves;
+        // The single leaves: x their scale against the clumps, y how few gaps (a
+        // threshold), z how soft each fleck's edge, w how much their shadows show in the open.
+        vec4 twigs;
         vec4 wind;           // the leaves' sway: x how far, y how fast, z the seconds
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
         // their radius; each disc x, z, its foot's and its top's height over the table.
@@ -311,7 +314,18 @@ let LIGHT_FN = """
             float n = 0.55 * window_noise(lw) + 0.3 * window_noise(lw * 2.03 + 7.1)
                     + 0.15 * window_noise(lw * 4.1 + 3.7);
             float ls = 0.02 + room.z * tl * leaves.y * leaves.w;
-            lit *= smoothstep(leaves.x - ls, leaves.x + ls, n);
+            float open_sky = smoothstep(leaves.x - ls, leaves.x + ls, n);
+            // The single leaves within: under a clump only their gaps let the sun through,
+            // small round flecks; in the open their own small shadows, fainter. They
+            // flutter faster than the branches sway.
+            if (twigs.x > 0.0) {
+                vec2 lf = lw * twigs.x;
+                lf += wind.x * twigs.x * 0.25 * vec2(sin(tw * 3.1 + lf.y * 0.9), cos(tw * 2.7 + lf.x * 0.8));
+                float m = 0.65 * window_noise(lf) + 0.35 * window_noise(lf * 2.13 + 5.3);
+                float gaps = smoothstep(twigs.y - twigs.z, twigs.y + twigs.z, m);
+                open_sky = mix(gaps, mix(1.0, gaps, twigs.w), open_sky);
+            }
+            lit *= open_sky;
         }
         return mix(1.0 - room.y, 1.0, lit);
     }

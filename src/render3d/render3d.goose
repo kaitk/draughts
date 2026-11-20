@@ -51,6 +51,7 @@ struct Frame {
     panes:           float4,
     opening:         float4,
     leaves:          float4,
+    twigs:           float4,
     wind:            float4,
     disc_n:          float4,
     discs:           float4[MAX_DISCS],
@@ -659,6 +660,7 @@ fn put_room(g: Gpu&) {
     f.panes = r.panes;
     f.opening = r.opening;
     f.leaves = r.leaves;
+    f.twigs = r.twigs;
     f.wind = float4 { r.wind.x, r.wind.y, wind_time, 0.0 };
     g.shadow_dirty = true;
 }

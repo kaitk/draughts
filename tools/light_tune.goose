@@ -193,6 +193,7 @@ fn report(r: rooms::Room, take: i64) {
     room_line(out, "panes:     ", r.panes);
     room_line(out, "opening:   ", r.opening);
     room_line(out, "leaves:    ", r.leaves);
+    room_line(out, "twigs:     ", r.twigs);
     room_line(out, "wind:      ", r.wind);
     out.append("};");
     print(out);
@@ -313,6 +314,10 @@ fn main() {
             slider(c, "Leaf size", room.leaves.y, 0.02, 1.0);
             slider(c, "Trees away", room.leaves.z, 0.0, 400.0);
             slider(c, "Leaf blur", room.leaves.w, 0.0, 1.0);
+            slider(c, "Single leaves", room.twigs.x, 0.0, 12.0);
+            slider(c, "Leaf gaps few", room.twigs.y, 0.2, 0.9);
+            slider(c, "Fleck blur", room.twigs.z, 0.005, 0.3);
+            slider(c, "In the open", room.twigs.w, 0.0, 1.0);
             slider(c, "Wind", room.wind.x, 0.0, 0.6);
             slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
             heading(c, "View (drag, scroll, R)");

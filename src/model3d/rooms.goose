@@ -43,6 +43,10 @@ struct Room {
     // scale (clumps a unit), z how far beyond the window they stand, w how soft their
     // shadows are against the sun's disc alone.
     leaves: float4 = float4 { 0.5, 0.6, 100.0, 0.15 },
+    // The single leaves within the clumps: x their scale against the clumps', y how few
+    // gaps between them (0.4 many, 0.7 few), z how soft a fleck's edge, w how much their
+    // own shadows show where the sky is open.
+    twigs: float4 = float4 { 4.0, 0.55, 0.06, 0.35 },
     // The wind in the trees: x how far the leaves' shadows sway (in clumps), y how fast.
     wind: float4 = float4 { 0.12, 1.0, 0.0, 0.0 },
 }

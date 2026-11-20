@@ -95,6 +95,11 @@ the light is settled (the user, 2026-11-20).
 - The leaves sway in the wind in the tuner (`rooms::Room.wind`, `render3d::wind_time`),
   the noise's coordinates bent by a few slow sines. In the app they stay still: a sway
   runs the 3D pass every frame, so if kept it is the high mode's, at a reduced rate.
+- The leaves in two scales (the user: the clumps read as huge blobs, the concept's are
+  smaller, single leaves): the clumps as before, and within them single leaves
+  (`rooms::Room.twigs`), whose gaps let small flecks of sun through under a clump and whose
+  own shadows show fainter in the open; they flutter faster than the branches sway. Two
+  more noise taps a lit pixel. The sway may suit the home screen most (the user).
 - The floating board over the photograph or the fade keeps the look's old neutral light;
   the room's light is the table's. The user would keep the neutral light as an option on
   the table too (2026-11-20).
