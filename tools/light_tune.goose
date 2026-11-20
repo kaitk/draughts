@@ -11,7 +11,8 @@
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
 //       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
-//       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
+//       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern X,Y,Z,W]
+//       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
 //       [--dust on|off] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 
@@ -282,6 +283,10 @@ fn main() {
     room.panes = four(argv, "--panes", room.panes);
     room.opening = four(argv, "--opening", room.opening);
     room.wind = four(argv, "--wind", room.wind);
+    room.key = four(argv, "--key", room.key);
+    room.fill = four(argv, "--fill", room.fill);
+    room.walls = four(argv, "--walls", room.walls);
+    room.pattern = four(argv, "--pattern", room.pattern);
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
     room.exposure = number(argv, "--exposure", room.exposure);
     var motes = whole(argv, "--motes", 500);

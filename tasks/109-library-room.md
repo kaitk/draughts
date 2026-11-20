@@ -50,8 +50,9 @@ Directions as seen in `style-01`: the windows on the left wall.
   0.8 m from the floor.
 
 Open: the floor (Baltic manors' main rooms, the library among them, were mostly on the
-ground floor, the garden side; `style-01` was planned as the upper floor); the open shelves on the right wall or on the fourth wall; the third door in the
-right wall between the shelves or in the fourth wall.
+ground floor, the garden side; `style-01` was planned as the upper floor); the open
+shelves on the right wall or on the fourth wall; the third door in the right wall between
+the shelves or in the fourth wall.
 
 ## Acceptance criteria
 
