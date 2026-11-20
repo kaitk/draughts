@@ -16,7 +16,7 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
 - [ ] The rooms' profiles chosen per season, winter's snow light or sun (task 104)
 - [ ] The library's dapple close to `library-table-01`; the maple's leaves (task 105's
       follow-ups)
-- [ ] The literature's wind: two noises along and across it (task 105's follow-ups)
+- [x] The literature's wind: two noises along and across it (task 105's follow-ups)
 - [ ] The ngfx renderer's 5 ms more on shadow-map frames with the pattern on, found and
       fixed (task 105)
 - [ ] The tiers' table: each effect and its quality per tier, at build time (task 104)
@@ -26,6 +26,7 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
 
 ## The home screen's shot (autumn)
 
+- [ ] The library as a whole room, its layout chosen from ChatGPT images (task 109)
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)
