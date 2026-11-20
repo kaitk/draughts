@@ -2,14 +2,16 @@
 """Prototype: the library's lace grown as wild roses by a botanical grammar (way f).
 
     python3 tools/materials/lace_rose.py OUT_DIR [--seed N] [--sprig-only]
-    python3 tools/materials/lace_rose.py --page PAGE_DIR WAY_DIR PHOTO_DIR
+    python3 tools/materials/lace_rose.py --page PAGE_DIR WAY_DIR PHOTO_DIR [WAY_DIR ...]
 
 --seed grows the plant (SEED, 4); --sprig-only draws just the anatomy sprig. --page
 writes PAGE_DIR/index.html from a baked WAY_DIR: the sprig, the tile, and the 14 cm and
 50 cm crops beside the download and the wild rose photos in PHOTO_DIR (17.png, a leaf;
-20.png, a flower; the user's, local). The library's copy and its page:
+20.png, a flower; the user's, local), with more ways' tiles and crops beside f's (f2,
+lace_rose2.py's). The library's copy and its page:
     MANOR_DIR=.../design/manor lace_rose.py build/notes/lace-library/f --seed 4
-    lace_rose.py --page build/notes/lace-rose build/notes/lace-library/f PHOTO_DIR
+    lace_rose.py --page build/notes/lace-rose build/notes/lace-library/f PHOTO_DIR \
+        build/notes/lace-library/f2
 
 After Wong, Zongker and Salesin's floral ornament and the L-systems behind it: a few
 rules grow every part from a stem, and the layout comes out of the growth, not a
@@ -514,8 +516,9 @@ def bake(out, seed=SEED, sprig_only=False):
         fh.write(f'seed {seed}, mean field coverage {mean:.2f}\n' + '\n'.join(lines) + '\n')
 
 
-def page(out, way_dir, photos):
-    """The page: the sprig, the tile, the crops beside the download and the photos."""
+def page(out, way_dir, photos, *more):
+    """The page: the sprig, the tile, the crops beside the download and the photos; more
+    baked ways (as f2, lace_rose2.py's) beside f's."""
     import shutil
     import lace_compare as lcmp
     os.makedirs(out, exist_ok=True)
@@ -523,32 +526,59 @@ def page(out, way_dir, photos):
     for name, dst in (('17.png', 'photo_leaf.jpg'), ('20.png', 'photo_rose.jpg')):
         Image.open(os.path.join(photos, name)).convert('RGB').save(os.path.join(out, dst), quality=88)
     net = lace.net_tile()
-    way = lcmp.Way(os.path.dirname(os.path.abspath(way_dir)), os.path.basename(way_dir), 'f', net)
-    front, back = lace.shade(way.quarter)
-    lace.save_jpg(os.path.join(out, 'tile_front.jpg'), front)
-    lace.save_jpg(os.path.join(out, 'tile_backlit.jpg'), back)
     src_lin = cm.to_linear(cm.load(cm.source('library-lace-01.png')))
     valid = (lcmp.FIELD_ROWS[0], lcmp.FIELD_ROWS[1], lace.FIELD[0], lace.FIELD[2])
-    me = ('f', 'f', 'f, wild rose grammar', 'grown: trails, shoots, pinnate leaves, roses at the tips')
-    crops = []
-    for i, (vname, win, size) in enumerate(lcmp.FIELD_VIEWS[:2]):
-        img, _ = lcmp.download_view(src_lin, win, size, lace.FIELD[0], lace.FIELD[1], valid)
-        lcmp.labelled(img, lcmp.GPT, 'ChatGPT (library-lace-01)', 'the download, ' + vname,
-                      'its own light: front-lit on black').save(os.path.join(out, f'crop{i}_download.jpg'), quality=88)
-        cov = way.field(win, size)
-        f, b = lace.shade(cov)
-        lcmp.labelled(f, lcmp.OURS, 'Ours: f', 'wild rose grammar, ' + vname,
-                      'front-lit on a dark ground').save(os.path.join(out, f'crop{i}_front.jpg'), quality=88)
-        lcmp.labelled(b, lcmp.OURS, 'Ours: f', 'wild rose grammar, ' + vname,
-                      'backlit by a bright window').save(os.path.join(out, f'crop{i}_backlit.jpg'), quality=88)
-        crops.append(vname)
-    with open(os.path.join(way_dir, 'f_report.txt')) as fh:
-        rep_lines = fh.read().strip().splitlines()
+    what = {'f': 'wild rose grammar', 'f2': 'fuller leaves, twining stems'}
+
+    def pre(tag):
+        return '' if tag == 'f' else tag + '_'
+
+    tags, reports, crops = [], {}, []
+    for wd in (way_dir,) + more:
+        tag = os.path.basename(os.path.normpath(wd))
+        tags.append(tag)
+        way = lcmp.Way(os.path.dirname(os.path.abspath(wd)), tag, tag, net)
+        front, back = lace.shade(way.quarter)
+        lace.save_jpg(os.path.join(out, f'{pre(tag)}tile_front.jpg'), front)
+        lace.save_jpg(os.path.join(out, f'{pre(tag)}tile_backlit.jpg'), back)
+        crops = []
+        for i, (vname, win, size) in enumerate(lcmp.FIELD_VIEWS[:2]):
+            if len(tags) == 1:
+                img, _ = lcmp.download_view(src_lin, win, size, lace.FIELD[0], lace.FIELD[1], valid)
+                lcmp.labelled(img, lcmp.GPT, 'ChatGPT (library-lace-01)', 'the download, ' + vname,
+                              'its own light: front-lit on black').save(os.path.join(out, f'crop{i}_download.jpg'), quality=88)
+            f, b = lace.shade(way.field(win, size))
+            for kind, img, light in (('front', f, 'front-lit on a dark ground'),
+                                     ('backlit', b, 'backlit by a bright window')):
+                lcmp.labelled(img, lcmp.OURS, f'Ours: {tag}', f'{what.get(tag, tag)}, {vname}',
+                              light).save(os.path.join(out, f'{pre(tag)}crop{i}_{kind}.jpg'), quality=88)
+            crops.append(vname)
+        with open(os.path.join(wd, f'{tag}_report.txt')) as fh:
+            reports[tag] = fh.read().strip().splitlines()
 
     def fig(src, cap):
         return f'<figure><a href="{src}" target="_blank"><img src="{src}" loading="lazy"></a><figcaption>{cap}</figcaption></figure>'
 
-    report_html = ''.join(f'<li>{ln}</li>' for ln in rep_lines)
+    report_html = ''.join(f'<h3>{t}</h3><ul>' + ''.join(f'<li>{ln}</li>' for ln in reports[t]) + '</ul>'
+                          for t in tags)
+    tiles = ''.join(fig(f'{pre(t)}tile_{k}.jpg', f'{t}, one tile, ' + ('front-lit on dark' if k == 'front' else 'backlit'))
+                    for k in ('front', 'backlit') for t in tags)
+    rows = ''
+    for i, vname in enumerate(crops):
+        rows += f'<h2>{vname}</h2><div class="grid">' + fig(f'crop{i}_download.jpg', 'the download')
+        rows += ''.join(fig(f'{pre(t)}crop{i}_front.jpg', f'{t}, front-lit') for t in tags) + '</div>'
+        rows += '<div class="grid">' + ''.join(fig(f'{pre(t)}crop{i}_backlit.jpg', f'{t}, backlit') for t in tags) + '</div>'
+    f2_note = ''
+    if 'f2' in tags:
+        f2_note = '''<h2>f2: fuller and twining</h2>
+<p>Way f's botany grown fuller by tools/materials/lace_rose2.py: most leaves a terminal
+leaflet and two pairs, three low on a shoot and on most trail leaves, allowed to lie a
+little over one another (each leaflet keeps its outline thread, so the overlap reads)
+instead of being left off, but kept off the flowers; the trails sway half again as far,
+neighbours nearly together, and a thinner cane winds round each, crossing it twice a
+tile; shoots arc over past the vertical; side veins are single open lines, not corded,
+so they no longer read as hatching; half-open roses are a cup seen from the side in two
+flaring sepals; buds are larger, with longer sepals.</p>'''
     html = f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -559,40 +589,39 @@ def page(out, way_dir, photos):
 body {{ background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; margin: 0; padding: 16px 24px 64px; }}
 h1 {{ font-size: 24px; margin: 8px 0 4px; }}
 h2 {{ font-size: 20px; margin: 36px 0 6px; border-bottom: 2px solid #333; padding-bottom: 4px; }}
+h3 {{ font-size: 17px; margin: 14px 0 2px; }}
 p, li {{ color: var(--muted); max-width: 95ch; }}
-.grid {{ display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }}
+.grid {{ display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; margin-bottom: 14px; }}
 .grid.two {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
 @media (max-width: 900px) {{ .grid, .grid.two {{ grid-template-columns: 1fr; }} }}
 figure {{ margin: 0; }}
 img {{ width: 100%; display: block; background: #000; }}
 figcaption {{ color: var(--muted); font-size: 14px; margin-top: 4px; }}
 </style></head><body>
-<h1>Wild rose lace: way f, a botanical grammar</h1>
+<h1>Wild rose lace: way f, a botanical grammar{', and f2' if 'f2' in tags else ''}</h1>
 <p>Grown by tools/materials/lace_rose.py (seed in the report below): trails with nodes
 alternating sides; at each node a pinnate leaf or a shoot leaving 35 to 55 degrees up and
 out; leaves of a terminal leaflet and 1 to 3 opposite pairs, the top pair close under the
 terminal; roses only at the tips of shoots. Nothing floats: every part hangs on a stem.
 Click an image for full size.</p>
-<h2>One sprig's anatomy</h2>
+{f2_note}
+<h2>One sprig's anatomy (f)</h2>
 <p>A trail stem with a leaf of three pairs, a long shoot to an open rose carrying two
 leaves and a side shoot with a bud, a second leaf, and the stem's tip a half-open rose.
 Beside it the photos it follows: a wild rose leaf (terminal leaflet, opposite pairs,
 ovate, serrated) and a wild rose (five broad petals, a boss, pinnate leaves alternating).</p>
 <div class="grid">{fig('sprig.jpg', 'the sprig, at full detail (19 x 25 cm), front-lit')}
-{fig('photo_leaf.jpg', 'a wild rose leaf (the user\'s reference)')}
-{fig('photo_rose.jpg', 'a wild rose (the user\'s reference)')}</div>
+{fig('photo_leaf.jpg', "a wild rose leaf (the user's reference)")}
+{fig('photo_rose.jpg', "a wild rose (the user's reference)")}</div>
 <h2>Counts and angles</h2>
-<ul>{report_html}</ul>
+{report_html}
 <p>The photo's leaf: a terminal and 3 pairs, the pairs at about 55 to 65 degrees to the
-rachis; ours take the top pair at 40 (so the three read together), the next at 55, the
-lowest at 62. Its leaves leave the stem at about 45 to 60 degrees; ours 45 to 64.</p>
+rachis; ours take the top pair at about 40 (so the three read together), the next at 55,
+the lowest at 62. Its leaves leave the stem at about 45 to 60 degrees; ours 45 to 64.
+Mean field coverage counts the net.</p>
 <h2>The tile, 0.56 m</h2>
-<div class="grid two">{fig('tile_front.jpg', 'one tile, front-lit on dark')}
-{fig('tile_backlit.jpg', 'one tile, backlit')}</div>
-<h2>{crops[0]}</h2>
-<div class="grid">{fig('crop0_download.jpg', 'the download')}{fig('crop0_front.jpg', 'f, front-lit')}{fig('crop0_backlit.jpg', 'f, backlit')}</div>
-<h2>{crops[1]}</h2>
-<div class="grid">{fig('crop1_download.jpg', 'the download')}{fig('crop1_front.jpg', 'f, front-lit')}{fig('crop1_backlit.jpg', 'f, backlit')}</div>
+<div class="grid two">{tiles}</div>
+{rows}
 <p>All the ways side by side: <a style="color:inherit" href="../lace-compare/index.html">lace-compare</a>.</p>
 </body></html>
 '''
@@ -604,7 +633,7 @@ lowest at 62. Its leaves leave the stem at about 45 to 60 degrees; ours 45 to 64
 if __name__ == '__main__':
     args = sys.argv[1:]
     if args[:1] == ['--page']:
-        if len(args) != 4:
+        if len(args) < 4:
             sys.exit(__doc__)
         page(*args[1:])
         sys.exit()
