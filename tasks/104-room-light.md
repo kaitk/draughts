@@ -63,7 +63,7 @@ the room's light alone is the base of both 3D tiers.
 | The key's shadow strength (winter's faint one) | one mix a pixel | 3D and high |
 | The window's pattern, cheap | a ray to a plane and a few smoothsteps a lit pixel, no texture | high; perhaps 3D on the stronger tablets, measured at the end |
 | The leaves swaying in the wind | the 3D pass every frame while it shows (a moving board's cost, held), or at a reduced rate | high only |
-| The window's pattern, rich | one texture tap a lit pixel, a small baked map (about 0.3 MB with mips), its bake once at setup | high |
+| The window's pattern, rich: the tree's baked shadow (task 105) | four texture taps a lit pixel in place of the leaves' five noise taps, a 1.33 MB map with mips, its bake once when the room is put on (25 to 75 ms on an M1 Pro) | high |
 
 Designed around a table of tiers: each effect, and its quality, on or off per tier in
 one place (build or configuration time at first, the user, 2026-11-20), so a detailed
