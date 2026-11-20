@@ -221,6 +221,24 @@ short and straight.
     gust the board shows less contrast, before as now: the ruffle blends the near and
     middle leaves with themselves nudged.
 
+- The two renderers on shadow-map frames (2026-11-20): a reported 5 ms more for ngfx on
+  frames that draw the shadow map again, with the window's pattern on, didn't show in any
+  measure. `--background table --window on --bench 300`, the waited frame's P50 with the
+  shadow map against the pass alone, in ms:
+
+  | Run | gfx | ngfx |
+  | --- | --- | --- |
+  | headless 1280x800 | 3.38 / 3.60 | 3.24 / 3.31 |
+  | headless 2560x1600 | 5.17 / 5.13 | 5.17 / 5.12 |
+  | headless 3024x1964, `--no-vsync` | 6.17 / 6.13 | 6.11 / 6.09 |
+  | window, 2560x1600 | 6.01 / 5.88 | 5.70 / 5.65 |
+  | gfx-only build, headless 2560x1600 | 5.27 / 6.15 | |
+
+  The shadow pass itself costs under 0.1 ms in both; stone, birch, and sunset differ by
+  0.1 to 0.5 ms either way. `tools/perf/mac_gpu_time.py` (every frame draws the shadow
+  map): gfx 13.84 ms a frame at Maximum, ngfx 14.21 at Medium. The tree's map is baked
+  and uploaded only from `theme_end`'s `put_room`, never on a shadow frame, in both.
+
 ## Follow-ups
 
 - The literature's wind: done (above), for the user to judge in the tuner. If a wind
