@@ -1,6 +1,6 @@
 # 099: The taken pieces on the table
 
-Status: in-progress (on the `table-top` branch, 2026-11-20: built, to check on the tablet)
+Status: in-progress (in main, 2026-11-20: built, to check on the tablet)
 
 With the 3D board on its table (task 095), the pieces each side has taken lie on the
 table beside the board, by the side that took them, as players set them down: a loose
@@ -17,10 +17,10 @@ flat board's taken pieces go to the panel. Without the table, nothing changes.
 
 - `src/board/taken3d.goose`: four layouts as data (`taken3d::TABLE_LAYOUTS`), each placing a
   piece by its number alone (and the ones before it), so a capture adds one and moves
-  none: short askew stacks in two staggered columns (`STACKS`, the game's), a loose wavy
+  none: short askew stacks in two staggered columns (`STACKS`), a loose wavy
   row with a piece now and then dropped on the one before and a second row past six
-  (`ROW`), a heap of seven flat and the rest piled on them (`HEAP`), and coin towers of
-  five (`TOWERS`). The kings lie apart, flat, so their crowns show (a stacked king is its
+  (`ROW`), a heap of seven flat and the rest piled on them (`HEAP`), and towers of five
+  in a line (`TOWERS`, the game's since the review, 2026-11-20). The kings lie apart, flat, so their crowns show (a stacked king is its
   two discs). The values: where the men's middle lies (out from the board's side, along
   it), the group's turn, spacing, the most a stack holds, how askew, the kings' place,
   and the hash's seed.
@@ -52,10 +52,29 @@ are still to take.
 The others' commands, from `tools/`:
 
 ```sh
+../build/taken_tune --layout stacks
 ../build/taken_tune --layout row
 ../build/taken_tune --layout heap
-../build/taken_tune --layout towers
 ```
+
+## Review (2026-11-20)
+
+- Towers chosen. The kings past the first two lie along the outer line only (they clipped
+  into the towers), and past five stack on those (`taken3d::KING_SPOTS`).
+- The towers lit as if in the open: the shadow map covers only the board, so no piece
+  on the table had a shadow, and the key light and the scattering came through from
+  behind. Now the discs are in `Frame.discs` and LIT_FRAG traces the light's ray against
+  them outside the field (each piece's own shadow and its neighbours'), darkens where two
+  meet, and the shadow map leaves the table's pieces out (it cut their shadow on the
+  board's frame at its edge). A disc crossing the field's height came out dark below and
+  light above: a man's contact shading was measured from the field's height; on the
+  table it is measured from its own foot.
+- Checked in `taken_tune` on all sixteen looks at close views (`--look-at X,Z` added),
+  then in the game: in landscape both catches show beside the board (`out` 0.95, clear of
+  the camera buttons); in portrait and the friend's top view the table beside the board
+  is off screen.
+- Open: the key light could come from a window to the board's left on the table, to be
+  tried with the room (task 093).
 
 ## Acceptance criteria
 

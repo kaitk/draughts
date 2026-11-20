@@ -13,7 +13,7 @@ import rules from "../rules";
 
 // How the men lie: short askew stacks in two staggered columns; a loose row, a piece now
 // and then dropped on the one before; a loose heap, a few flat and the rest piled on
-// them; tall stacks like coins in a row.
+// them; tall stacks like coins in a row, the game's.
 let STACKS = 0;
 let ROW = 1;
 let HEAP = 2;
@@ -44,11 +44,11 @@ let TABLE_LAYOUTS: TableLayout[LAYOUTS] = [
     TableLayout { kind: STACKS, out: 1.4, along: 2.3, turn: 8.0, spread: 1.0, stack: 4, askew: 0.14, kings_along: 1.9, kings_out: 0.2, seed: 3 },
     TableLayout { kind: ROW, out: 0.9, along: 4.2, turn: -5.0, spread: 1.0, stack: 2, askew: 0.2, kings_along: -6.6, kings_out: 0.4, seed: 5 },
     TableLayout { kind: HEAP, out: 1.6, along: 1.6, turn: 0.0, spread: 1.0, stack: 3, askew: 0.3, kings_along: 2.8, kings_out: 0.0, seed: 7 },
-    TableLayout { kind: TOWERS, out: 1.2, along: 2.7, turn: 4.0, spread: 1.0, stack: 5, askew: 0.06, kings_along: 1.6, kings_out: 0.4, seed: 2 },
+    TableLayout { kind: TOWERS, out: 0.95, along: 2.5, turn: 4.0, spread: 1.0, stack: 5, askew: 0.06, kings_along: 1.6, kings_out: 0.62, seed: 2 },
 ];
 
 // The layout the game shows: the tuner changes it.
-var table_layout: TableLayout = TABLE_LAYOUTS[STACKS];
+var table_layout: TableLayout = TABLE_LAYOUTS[TOWERS];
 
 let EDGE: f32 = mesh::INNER + mesh::FRAME_W;    // the board's side, out from its middle
 let MOST = 20;                                  // the most pieces of a kind a side can take
@@ -131,17 +131,20 @@ fn men_spots(h: TableLayout, n: i64, out: Spots&) {
     }
 }
 
-// Where the kings lie: apart, flat, in a short staggered pair of rows, each alone so its
-// crown shows (a stacked king is two pieces of its own).
+// Where the kings lie: apart from the men, each alone so its crown shows (a stacked king
+// is two pieces of its own): the first two side by side, the next three in a line along
+// the outer one, clear of the men beside it; past five they stack on those, in turn.
+let KING_SPOTS = 5;
 fn king_spots(h: TableLayout, n: i64, out: Spots&) {
     out.clear();
     let s = h.spread;
     for i in min(n, MOST) {
-        let col = i % 2;
-        let row = i / 2;
+        let k = i % KING_SPOTS;
+        let col = if k < 2 { k } else { 1 };
+        let row = if k < 2 { 0 } else { k - 1 };
         let p = float2 { h.kings_out + (col - 0.5) * 1.08 * s, h.kings_along - (row + 0.5 * col) * 1.1 * s }
         + float2 { signed_hash(i, 11, h.seed), signed_hash(i, 12, h.seed) } * 0.08 * s;
-        out.push(float3 { p.x, p.y, 0.0 });
+        out.push(float3 { p.x, p.y, i / KING_SPOTS });
     }
 }
 
@@ -197,7 +200,7 @@ fn lay(s: view3d::Scene&, b: board::Board&, l: board::Layout, now: f64) {
             let king = b.before.kings & rules::bit(sq) != 0;
             let n = if king { kings_n } else { men_n };
             if king { king_spots(table_layout, n + 1, spots); } else { men_spots(table_layout, n + 1, spots); }
-            let to = world_spot(table_layout, mover, l.flip, spots[n], r, height);
+            let to = world_spot(table_layout, mover, l.flip, spots[n], r, if king { king_height(height, b.king_look) } else { height });
             let from2 = view3d::to_world(l, board::center(l, v, sq));
             let from = float3 { from2.x, 0.0, from2.y };
             var p = from + (to - from) * k;
@@ -207,6 +210,9 @@ fn lay(s: view3d::Scene&, b: board::Board&, l: board::Layout, now: f64) {
         }
     }
 }
+
+// A king's height lying on the table: a stacked one is two pieces.
+fn king_height(height: f32, look: i64) -> f32 { if look == board::STACK { 2.0 * height } else { height } }
 
 // The figure's seed of the i-th man or king the side `taker` has taken: past the board's
 // pieces' (view3d::build_scene numbers them from 0), apart for each side and kind.
@@ -256,6 +262,7 @@ fn lay_counts(s: view3d::Scene&, t: panel::Taken, n: i64, flip: bool, king_look:
         men_spots(table_layout, t.men[c], spots);
         for q, i in spots { put(s, world_spot(table_layout, taker, flip, q, r, height), u, c, false, king_look, seed_of(false, taker, i), 1.0); }
         king_spots(table_layout, t.kings[c], spots);
-        for q, i in spots { put(s, world_spot(table_layout, taker, flip, q, r, height), u, c, true, king_look, seed_of(true, taker, i), 1.0); }
+        let kh = king_height(height, king_look);
+        for q, i in spots { put(s, world_spot(table_layout, taker, flip, q, r, kh), u, c, true, king_look, seed_of(true, taker, i), 1.0); }
     }
 }

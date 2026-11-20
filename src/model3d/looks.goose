@@ -914,7 +914,7 @@ fn autumn_porphyry() -> Theme {
     t.stone = float4 { 0.04, 0.16, 0.15, 1.0 };
     t.frame_ring = float4 { 0.2, 8.0, 0.0, 0.0 };
     // One solid block with the field cut out: a stone frame shows no seam at its corners.
-    t.build = float4 { 1.0, 0.0, 0.0, 0.0 };
+    t.build = float4 { 1.0, 0.0, 1.0, 0.0 };     // one block of stone: its end faces lean
     t.light_piece = float4 { 0.9, 0.8, 0.64, 0.5 };
     t.dark_piece = float4 { 0.3, 0.14, 0.13, 0.36 };
     t.crown = float4 { 0.3, 0.14, 0.13, 0.0 };

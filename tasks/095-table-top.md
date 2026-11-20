@@ -1,6 +1,6 @@
 # 095: A table under the 3D board
 
-Status: in-progress (on the `table-top` branch, 2026-11-20: settings' Table background;
+Status: in-progress (in main, 2026-11-20: settings' Table background;
 the device numbers and the merge's settings left)
 
 The 3D board floats over a blurred photograph. Set it on a polished table top instead, as

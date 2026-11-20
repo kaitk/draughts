@@ -9,7 +9,7 @@
 //       [--white-took MEN,KINGS] [--black-took MEN,KINGS] [--squares 8|10] [--flip]
 //       [--king-look crown|stack] [--season autumn|winter|spring|summer]
 //       [--material auto|wood|stone|carved] [--table board|flame] [--size 1600x1000]
-//       [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
+//       [--distance K] [--height DEG] [--yaw DEG] [--look-at X,Z] [--shot out.png]
 
 import std;
 import vec;
@@ -92,7 +92,8 @@ fn num(out: u8[>..]&, v: f32) {
 
 // The command that shows the same again, and the layout as a Goose literal for
 // taken3d::TABLE_LAYOUTS.
-fn report(h: taken3d::TableLayout, st: Setup, season: i64, material: i64, take: i64, yaw: f32, pitch: f32, far: f32) {
+fn report(h: taken3d::TableLayout, st: Setup, season: i64, material: i64, take: i64, yaw: f32, pitch: f32, far: f32,
+          at: float2) {
     var out: u8[>..] = [];
     format(out, "../build/taken_tune --layout ", taken3d::NAMES[h.kind], " --out ");
     num(out, h.out);
@@ -119,6 +120,10 @@ fn report(h: taken3d::TableLayout, st: Setup, season: i64, material: i64, take: 
     num(out, pitch);
     out.append(" --distance ");
     num(out, far);
+    out.append(" --look-at ");
+    num(out, at.x);
+    out.append(",");
+    num(out, at.y);
     out.append("\n    TableLayout { kind: ");
     out.append(upper(taken3d::NAMES[h.kind]));
     out.append(", out: ");
@@ -251,7 +256,7 @@ fn main() {
     var season = pick(argv, "--season", SEASONS, looks::AUTUMN);
     var material = pick(argv, "--material", MATERIALS, looks::MATERIAL_AUTO);
     var take = pick(argv, "--table", tables::NAMES, tables::FLAME);
-    var layout = pick(argv, "--layout", taken3d::NAMES, taken3d::STACKS);
+    var layout = pick(argv, "--layout", taken3d::NAMES, taken3d::TOWERS);
     var hp = taken3d::TABLE_LAYOUTS[layout];
     hp.out = number(argv, "--out", hp.out);
     hp.along = number(argv, "--along", hp.along);
@@ -295,6 +300,17 @@ fn main() {
     var yaw:   f32 = number(argv, "--yaw", 0.0);
     var pitch: f32 = number(argv, "--height", view3d::PITCH);
     var far:   f32 = number(argv, "--distance", 1.3);
+    // The point the camera turns round, x and z on the field's plane: the board's middle,
+    // or a pile's for a close look.
+    var at = float2 { view3d::TARGET.x, view3d::TARGET.z };
+    let la = flag_value(argv, "--look-at");
+    if la > 0 {
+        let a, b, ok = split_once(argv[la], ",");
+        let x, okx = parse_flt(a);
+        let z, okz = parse_flt(b);
+        guard ok && okx && okz else { abort("--look-at: X,Z"); }
+        at = float2 { x as f32, z as f32 };
+    }
     let shot = flag_value(argv, "--shot");
     var frames = 0;
     while gfx::frame() {
@@ -335,6 +351,8 @@ fn main() {
             slider(c, "Distance", far, 0.4, 4.0);
             slider(c, "Height", pitch, 10.0, 89.0);
             slider(c, "Round", yaw, -180.0, 180.0);
+            slider(c, "Look at x", at.x, -9.0, 9.0);
+            slider(c, "Look at z", at.y, -6.0, 6.0);
             ui::layout_row_dynamic(c, ROW + 4.0, 2);
             if ui::button_label(c, "Print (P)") { print_it = true; }
             if ui::button_label(c, "Reset layout") { shown_layout = -1; }
@@ -364,11 +382,12 @@ fn main() {
             shown = hp;
             shown_st = st;
         }
-        if print_it { report(hp, st, season, material, take, yaw, pitch, far); }
+        if print_it { report(hp, st, season, material, take, yaw, pitch, far, at); }
         if gfx::key_pressed("R") {
             yaw = 0.0;
             pitch = view3d::PITCH;
             far = 1.3;
+            at = float2 { view3d::TARGET.x, view3d::TARGET.z };
         }
         if !ui::wants_mouse(c) {
             if gfx::mouse_down(gfx::MOUSE_LEFT) {
@@ -381,9 +400,10 @@ fn main() {
         let size = gfx::screen_size();
         let a = radians(pitch);
         let b = radians(yaw);
-        let eye = view3d::TARGET + float3 { sin(b) * cos(a), sin(a), cos(b) * cos(a) } * (view3d::DISTANCE * far);
+        let target = float3 { at.x, view3d::TARGET.y, at.y };
+        let eye = target + float3 { sin(b) * cos(a), sin(a), cos(b) * cos(a) } * (view3d::DISTANCE * far);
         let proj = gfx::perspective(view3d::FOV * PI / 180.0, size.x as f32 / size.y, 1.0, 120.0);
-        render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, view3d::TARGET, float3 { 0.0, 1.0, 0.0 })), eye,
+        render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
         if shot < 0 { ui::render(c); }
     }

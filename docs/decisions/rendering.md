@@ -403,10 +403,15 @@ On the 3D board's table (2026-11-20, task 099) the catch also lies on the table,
 side of the board of the one who took it, mirrored across the board's middle rather than
 turned about it: turned, black's catch lay at the far left, under the landscape's way out
 and moves panels. Short askew stacks (`taken3d::STACKS`) chosen over a loose row (it ran
-past the board's length by 20 pieces and still read as ordered), a heap (good, but it
-reads as tipped out rather than set down) and tall towers (tidy, like coins). Their
-shadows are worked out in the table's shader from discs, not by widening the shadow map
-over the table, which would have cost the board's shadows a third of their resolution.
+past the board's length by 20 pieces and still read as ordered) and a heap (good, but it
+reads as tipped out rather than set down), first built with short askew stacks; towers
+of five in a line chosen on review (2026-11-20), the kings past two along the outer line
+only, where they clear the towers, and stacked past five. Their shadows are worked out
+from discs, in the table's shader and traced in the lit shader for the pieces themselves
+(their own shadow and each other's), not by widening the shadow map over the table, which
+would have cost the board's shadows a third of their resolution and cut the towers at
+its edge. In portrait the table beside the board is off screen; nothing lies in front
+of or behind it, where the controls are.
 The panels' counts stay: in portrait the table beside the board is off screen.
 
 ### The moves panel and the results screen
@@ -600,10 +605,10 @@ to be is in tasks 042, 059, 071, 081, and 086.
   Slang compile would need as variants anyway.
 
 - A bar while the 3D board gets ready (2026-11-20, task 101): the words alone left a
-  phone's 2 to 3 s without a sign of how long. The words stay, over a thin white bar
-  with a faint track and a tick at each end, chosen from five takes in
-  `prototypes/loading.html` (a bar alone, one across the board's foot, a rounded one
-  under the words). It fills by each step's time on the Pixel 7a, fixed in the code:
+  phone's 2 to 3 s without a sign of how long. The words stay, under a thin white bar
+  with rounded ends over a faint track: take d of five in `prototypes/loading.html`,
+  chosen on review over take a (the bar under the words, a tick at each end), which was
+  built first; not the bar alone, nor one across the board's foot. It fills by each step's time on the Pixel 7a, fixed in the code:
   counted by steps, it stalled at its start on the bake's 0.85 s compile and ran through
   the 40 quick bands after. Rejected: timing the steps on the device as they run (the
   first run has nothing to go by). On the Mac the setup takes most of the time (1.5 s

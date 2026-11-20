@@ -49,6 +49,10 @@ let FRAME = """
         vec4 light_scatter;
         vec4 dark_scatter;
         vec4 piece_wear;
+        // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
+        // their radius; each disc x, z, its foot's and its top's height over the table.
+        vec4 disc_n;
+        vec4 discs[48];
     };
     const float PI = 3.14159265;
     // The board's sizes, mesh.goose's (test/model3d/geometry checks them).
@@ -104,11 +108,13 @@ let LIT_VERT = """
     void main() {
         vec3 world = a_pos;
         vec4 kind = vec4(0.0);
+        bool beside = false;      // lying on the table beside the board
         v_wear = vec2(1.0);
         v_scatter = vec3(0.0);
         if (draw.x > 0.5) {
             int i = gl_InstanceIndex + int(draw.w);
             vec4 a = inst[i * 2];
+            beside = max(abs(a.x), abs(a.z)) > INNER + FRAME_W;
             kind = inst[i * 2 + 1];
             world = a.xyz + a_pos * a.w;
             float seed = mod(abs(kind.w), 1000.0);
@@ -146,6 +152,9 @@ let LIT_VERT = """
         v_kind = kind;
         v_alpha = draw.z;
         gl_Position = (draw.y > 0.5 ? light_view_proj : view_proj) * vec4(world, 1.0);
+        // The pieces lying on the table stay out of the shadow map, whose edge would cut
+        // their shadows: LIT_FRAG traces them (discs_shadow).
+        if (draw.y > 0.5 && beside) gl_Position = vec4(0.0, 0.0, -2.0, 1.0);
     }
     """;
 
@@ -284,16 +293,66 @@ let LIT_FRAG = """
                    u.z);
     }
 
+    // The key light's shadow at p, on or by a piece lying on the table, from the others:
+    // the ray from q (p moved off its surface) to the light against each upright disc, the
+    // nearest it passes its side, softer the farther along it was cast. A piece's own
+    // shades it by its normal alone: traced, its top's edge cut a line across its side.
+    const float TABLE_Y = -0.703;   // mesh::TABLE_TOP
+    float discs_shadow(vec3 p, vec3 q) {
+        vec3 l = light_dir.xyz;
+        if (l.y < 0.01) return 1.0;
+        vec2 lxz = l.xz;
+        float ll = max(dot(lxz, lxz), 1e-6);
+        float r = disc_n.y;
+        float lit = 1.0;
+        int count = int(disc_n.x);
+        for (int i = 0; i < 48; i++) {
+            if (i >= count) break;
+            vec4 c = discs[i];
+            float own_x = length(p.xz - c.xy) - r;
+            float own_y = max(TABLE_Y + c.z - p.y, p.y - TABLE_Y - c.w);
+            if (own_y < 0.004 && own_x < 0.02) continue;
+            float ta = max((TABLE_Y + c.z - q.y) / l.y, 0.0);
+            float tb = (TABLE_Y + c.w - q.y) / l.y;
+            if (tb <= 0.0) continue;
+            float t = clamp(dot(c.xy - q.xz, lxz) / ll, ta, tb);
+            float d = length(q.xz + lxz * t - c.xy) - r;
+            // The penumbra inside the occluder's edge only: one flush over another
+            // shades it only where it overhangs.
+            float w = 0.008 + 0.05 * t;
+            lit = min(lit, smoothstep(-w, 0.0, d));
+        }
+        return lit;
+    }
+
+    // How much of the sky the pieces lying on the table hide from p, on one of them: the
+    // nearer another, the darker, as where two in a stack meet. Its own is left out.
+    float discs_occlusion(vec3 p) {
+        float r = disc_n.y;
+        float occ = 1.0;
+        int count = int(disc_n.x);
+        for (int i = 0; i < 48; i++) {
+            if (i >= count) break;
+            vec4 c = discs[i];
+            float dx = length(p.xz - c.xy) - r;
+            float dy = max(TABLE_Y + c.z - p.y, p.y - TABLE_Y - c.w);
+            if (dy < 0.004 && dx < 0.02) continue;
+            float d = length(max(vec2(dx, dy), 0.0)) + min(max(dx, dy), 0.0);
+            occ = min(occ, mix(0.5, 1.0, smoothstep(0.0, 0.12, d)));
+        }
+        return occ;
+    }
+
     // The key light's shadow, from a point pushed off the surface along its normal: a
     // 5 × 5 texel box with bilinear edges in 9 hardware-compared taps, their places and
     // weights from where the point falls in its texel (Castaño's filter, as The Witness
     // has it). On a phone (SHADOW_FEW first) a 3 × 3 box in 4 taps, its edges stepped where
     // larger pieces would show them. On a desktop (SHADOW_MANY) a 7 × 7 box in 16 taps, softer.
-    float shadow(vec3 p, vec3 n) {
+    float map_shadow(vec3 p, vec3 n) {
         float nl = clamp(dot(n, light_dir.xyz), 0.0, 1.0);
         vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
         vec4 s = light_view_proj * vec4(q, 1.0);
-        // Past the map, beside the board on its table: lit (TABLE_FRAG shades what lies there).
+        // Past the map, beside the board on its table: lit by the map.
         if (abs(s.x) > 1.0 || abs(s.y) > 1.0) return 1.0;
         vec2 size = vec2(textureSize(shadow_map, 0));
         vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5) * size;
@@ -341,6 +400,19 @@ let LIT_FRAG = """
         return sum * (1.0 / 144.0);
     #endif
     #endif
+    }
+
+    // The key light's shadow: the map's, and outside the field (the frame, the pieces
+    // beside the board) the pieces lying on the table's, which the map leaves out.
+    float shadow(vec3 p, vec3 n) {
+        float s = map_shadow(p, n);
+        if (disc_n.x > 0.5 && max(abs(p.x), abs(p.z)) > FIELD) {
+            // Faded out over the terminator, where the side turning away is dark by its
+            // normal: traced there, the piece above cut an edge across it.
+            float facing = smoothstep(-0.05, 0.2, dot(n, light_dir.xyz));
+            s = min(s, mix(1.0, discs_shadow(p, p + n * 0.01), facing));
+        }
+        return s;
     }
 
     // One hardware-compared tap of the key's shadow at q (its bilinear edge only).
@@ -701,8 +773,11 @@ let LIT_FRAG = """
             // its own band of the map, a thin joint on each diagonal.
             vec2 a2 = abs(p.xz);
             float down = FRAME_TOP - p.y;
-            vec2 solid_uv = vec2(p.x + down * clamp(p.x, -1.0, 1.0) * frame_build.z,
-                                 p.z - down);
+            // On the end faces down runs along u alone (the lean), on the long sides along
+            // v alone, blended round the corners: down along both sheared the figure into
+            // diagonal streaks.
+            float lean = frame_build.z * smoothstep(-0.3, 0.3, a2.x - a2.y);
+            vec2 solid_uv = vec2(p.x + down * clamp(p.x, -1.0, 1.0) * lean, p.z - down * (1.0 - lean));
             vec2 fuv = solid_uv;
             vec3 grain = vec3(1.0, 0.0, 0.0);
             vec2 gx = dFdx(solid_uv) / FRAME_SPAN;
@@ -946,9 +1021,11 @@ let LIT_FRAG = """
                 float lip = smoothstep(-w, w, d) * (1.0 - smoothstep(0.0, 0.005 + w, d));
                 albedo *= 1.0 + 0.18 * lip * step(u, 0.6);
             }
-            // Contact: the foot darkens near what it stands on; a stack's lower disc
-            // darkens under the upper.
-            float h = v_kind.y > 0.25 ? lp.y : p.y;
+            // Contact: the foot darkens near what it stands on, the field (its height 0,
+            // so a lifted piece doesn't) or, for a king and a piece on the table, its own
+            // foot; a stack's lower disc darkens under the upper.
+            float foot = p.y - lp.y * (8.0 / params.w);
+            float h = v_kind.y > 0.25 || foot < -0.5 ? lp.y : p.y;
             ao *= mix(0.6, 1.0, smoothstep(0.0, 0.035, h));
             if (v_kind.z > 1.5) ao *= mix(1.0, 0.65, smoothstep(HEIGHT - 0.05, HEIGHT, lp.y));
         }
@@ -983,6 +1060,7 @@ let LIT_FRAG = """
         float diff = clamp((nol + wrap) / (1.0 + wrap), 0.0, 1.0) / (1.0 + wrap);
         // Filament's micro-shadowing from the occlusion, on the field only: on the
         // pieces' grooves, tiny triangles near the terminator turned it into specks.
+        if (mat > 1.5 && disc_n.x > 0.5) ao *= discs_occlusion(p);
         float micro = clamp(nl * inversesqrt(1.0 - min(ao, 0.9999)), 0.0, 1.0);
         micro = nol > 0.0 && mat < 0.5 ? micro * micro : 1.0;
         // A piece's lip and groove are finer than a shadow texel: its lookups start a
@@ -1147,10 +1225,9 @@ let TABLE_FRAG = """
     // strong it is, z how far it follows the wood's relief, w how broad the key light's
     // highlight in it (a roughness); polish: x how much its roughness varies, y its
     // strength, z the blotches' size (world units), w how much the wear shows in it;
-    // worn: the rim's wear, x how much, y how wide. Then the pieces lying on it
-    // (render3d::table_discs): disc_n x how many, y their radius; each disc x, z, its
-    // foot's and its top's height over the table.
-    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 disc_n; vec4 discs[48]; };
+    // worn: the rim's wear, x how much, y how wide. The pieces lying on it are FRAME's
+    // discs.
+    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; };
     // mesh.goose's (test/model3d/geometry checks them).
     const float TABLE_R = 16.0;
     const float TABLE_TOP = -0.703;

@@ -94,7 +94,7 @@
     .pill .mv .icon { width: 20px; height: 20px; }
   }
 
-  /* Loading take: the board's spot empty, a bar in it (?take=a|b|c|d|e, ?p=0.4 freezes; e, built, the default). */
+  /* Loading take: the board's spot empty, a bar in it (?take=a|b|c|d|e, ?p=0.4 freezes; d, built, the default). */
   #board { container-type: inline-size; position: relative; aspect-ratio: 1; }
   .ld { position: absolute; display: grid; justify-items: center; color: rgb(255 255 255 / 0.9); font-size: 20px; }
   .ld .bar1 { position: relative; width: 100%; }
@@ -105,7 +105,7 @@
   /* a: text, 16 px gap, 40% bar 3 px tall, ticks 2 x 12 px at both ends. */
   .ld.a, .ld.e { inset: 0; align-content: center; gap: 16px; }
   .ld.a .bar1, .ld.e .bar1 { width: 40%; height: 3px; }
-  /* e, as built (gui::loading_bar): a with c's faint track. */
+  /* e: a with c's faint track. */
   /* b: the bar alone, 60%, 3 px, same ticks. */
   .ld.b { inset: 0; align-content: center; }
   .ld.b .bar1 { width: 60%; height: 3px; }
@@ -166,7 +166,7 @@
   const card = (color, k) => k ? `<div class="glass card">${taken(color, k)}</div>` : '<div></div>';
   document.getElementById('pill').innerHTML = card('white', 20 - pos.white.length) +
     `<span class="glass mv">${Math.ceil(PLY / 2)}. ${P[PLY - 1].m}${D.mark(P[PLY - 1].k)}${D.icon('up')}</span>${card('black', 0)}`;
-  const q = new URLSearchParams(location.search), take = (q.get('take') || 'e').slice(0, 1);
+  const q = new URLSearchParams(location.search), take = (q.get('take') || 'd').slice(0, 1);
   const ld = document.getElementById('ld');
   ld.className = 'ld ' + take;
   ld.innerHTML = (take === 'b' ? '' : '<span class="t">Setting up the board\u2026</span>') +

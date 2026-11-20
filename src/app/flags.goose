@@ -311,7 +311,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
             if ok && a == "--winter" { f.winter = clamp(n, 0, looks::WINTERS - 1); }
         }
         // --taken stacks|row|heap|towers: how what each side has taken lies on the table
-        // (taken3d::TABLE_LAYOUTS; stacks the game's own).
+        // (taken3d::TABLE_LAYOUTS; towers the game's own).
         if a == "--taken" {
             for name, i in taken3d::NAMES { if v == name { taken3d::table_layout = taken3d::TABLE_LAYOUTS[i]; } }
         }

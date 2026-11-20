@@ -236,12 +236,17 @@ and value noise in the board shader, never a regular stripe.
 - **What each side has taken** lies on the table beside the board (`taken3d`): white's
   catch at the board's right as white sees it, black's at its left, both on the near half
   where the landscape panels leave the table in view, the kings apart from the men and
-  nearer. The pieces are the board's (their material, instances in the same pass); the
-  shadow map covers only the board, so the table's shader works out each piece's shadow
-  as a disc swept along the light, a capsule, and darkens the table round its foot
-  (`TABLE_FRAG`'s `discs_shadow`, up to 48 discs in the table's block). The layout is
-  short askew stacks of up to four in two staggered columns (`taken3d::STACKS`); `--taken
-  row|heap|towers` shows the others, and `tools/taken_tune.goose` tunes each. A place
+  nearer: the first two side by side, the next three in a line along the outer one, then
+  stacked on those. The pieces are the board's (their material, instances in the same
+  pass), but out of the shadow map, which covers only the board: each is a disc in
+  `Frame.discs` (up to 48), and the shaders work out their shadows from them. The table's
+  takes each disc swept along the light, a capsule, and darkens the table round its foot
+  (`TABLE_FRAG`'s `discs_shadow`); the lit shader, outside the field, traces the light's
+  ray against each upright disc, which gives a piece its own shadow and its neighbours',
+  and darkens where two meet (`LIT_FRAG`'s `discs_shadow`, `discs_occlusion`). A piece on
+  the table takes its contact shading from its own foot. The layout is towers of five in
+  a line (`taken3d::TOWERS`); `--taken stacks|row|heap` shows the others, and
+  `tools/taken_tune.goose` tunes each. A place
   depends only on the piece's number, so a capture adds one and moves none. A capture's
   pieces stay on the board, see-through, till the last hop, then are carried to their
   places in 0.5 s (`board::CARRY`, in place of the 0.18 s fade), rising 1.2 units and
@@ -618,8 +623,8 @@ the flat board's draw lists (`board::build_frame_pieces`), so both views follow 
   plain fade scaled to a dim ambient (`model3d::no_photo_ambient`).
 - **Getting ready** (`draw3d::prepare`) takes a step a frame: the setup, the theme's 44
   steps (the table's 16 skipped without one), the pass's 12 pipelines. Meanwhile the
-  board's place shows "Setting up the board…" over a thin white bar with a faint track and
-  a tick at each end (`gui::loading_bar`), filled by the steps' weight: each step's time
+  board's place shows "Setting up the board…" under a thin white bar with rounded ends
+  over a faint track as long as all of it (`gui::loading_bar`), filled by the steps' weight: each step's time
   on a Pixel 7a (`draw3d::theme_ms`, `warm_ms`), as the bake's and the lit pipelines'
   compiles take most of it. The board fades in over 0.3 s. A new season, size, or material keeps the old image, eased toward grey, until the
   new one is ready (`shaders::SHOW_FRAG`).

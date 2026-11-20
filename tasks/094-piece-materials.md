@@ -1,6 +1,6 @@
 # 094: The pieces' materials
 
-Status: in-progress (on the `table-top` branch, 2026-11-20: built; the A33 and the
+Status: in-progress (in main, 2026-11-20: built; the A33 and the
 before-and-after shots left)
 
 Where it stands (2026-11-20): every look's pieces have their own material, scattering

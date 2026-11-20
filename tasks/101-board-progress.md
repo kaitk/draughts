@@ -1,6 +1,6 @@
 # 101: A progress bar while the 3D board is set up
 
-Status: in-progress (on the `table-top` branch, 2026-11-20: built, to check on the Pixel and the A33)
+Status: in-progress (in main, 2026-11-20: built, the Pixel 7a and the A33 to measure)
 
 While the 3D board is set up, the place where it goes shows "Setting up the board…"
 (`gui::loading_text`, `strings::BOARD_PREPARING`, drawn by `shell.goose`). On a phone that
@@ -20,9 +20,10 @@ start. Fixed weights from the Pixel's numbers are enough.
 
 - Five takes in `prototypes/loading.html` (`?take=a..e`, `?p=0.4` freezes the fill): the
   words over a 40% bar with ticks at its ends (a), the bar alone (b), a bar across the
-  board's foot (c), a rounded bar under the words (d). Built as e, a with c's faint track:
-  the words in the middle, 16 dp under them a 288 dp bar 3 dp tall, white at 90% over a
-  track at 18%, a 2 × 12 dp tick at each end at 60% (`gui::loading_bar`).
+  board's foot (c), a rounded bar with the words under it (d), and a with c's track (e).
+  e was built first; d chosen on review: the words in the middle, 14 dp over them a
+  216 dp bar 4 dp tall with rounded ends, white at 90% over a track at 18%
+  (`gui::loading_bar`).
 - Weighted by each step's time on the Pixel 7a (`draw3d::theme_ms`, `warm_ms`): the
   setup 100 ms, the bake's pipeline 850, the table's first band 715 (its bake's
   compile), the photograph's pipelines 60, the lit and fading pipelines 170 each, the
