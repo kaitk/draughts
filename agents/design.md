@@ -115,6 +115,17 @@ pieces; the design boards still set the layout, glass, and controls.
   `--fps-seconds S` prints each half second's line and quits, headless too. Uncapped on
   the Mac the GPU clocks down until it is busy, so a light scene reads about 3.4 ms
   whatever it draws; a cost shows once it passes that.
+- The library's whole room in the light tuner (`model3d::room_shell`, task 107's demo):
+  `--room-surfaces on` (O) shows the shell (walls, wainscot, three box windows, two doors,
+  cornice, ceiling), `--shell off` (S) the panelled wall alone as before. `--view
+  room|window|hall|stove` (V cycles them after the board's orbit) are a person's eyes in
+  the plan; `--plan-eye X,Y,H --plan-at X,Y,H` a camera in plan metres (x along the window
+  wall from the stove's end, y from the hall wall, H up from the floor), `--fov DEG`. With
+  the shell the room's light comes through its own windows (`shaders::LIGHT_FN`'s
+  `shell_light`), not `--wall`/`--panes`, which still light the board and table; behind
+  the windows a plain sky (the plain fade, the tuner's `SKY_*`). `--dump-map` writes the
+  map the renderer bakes then (the shell's 2048 × 768). Its mesh's triangles and making
+  time print with a `--shot`'s bake line. The shot page: `build/notes/room-demo/`.
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

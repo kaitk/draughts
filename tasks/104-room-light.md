@@ -209,6 +209,18 @@ the light is settled (the user, 2026-11-20).
     0.65 m with flower heads about 5 cm. Only the tile changes: the tuner's
     `--wallpaper-tile 0.65` (metres) shows it.
 
+- The tree's map over the whole window and the room's shell (2026-11-20): with the room
+  shown the map covers the whole opening (512 × 1024, `rooms::tree_view`'s `whole`), so
+  the dapple carries on over the far floor and up the wall instead of the cut map's
+  clamped edge; the game keeps its 512² cut to the table, its shot identical. With the
+  library's shell (task 109's note) the map covers its three windows (2048 × 768) and
+  the room's surfaces are lit through them; the wallpaper is on every wall above the
+  wainscot, wainscot A replaces the panelling here, and the room's mesh is made once and
+  turned with the key in `ROOM_VERT` (no more rebuild in the frame loop when the key
+  moves). The maple of AUTUMN stands for the game: through the room's windows it shades
+  only their lowest part (the rays that reach the table), so the far floor's patches are
+  plain sky; a tree placed for the room is the outside's work.
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac

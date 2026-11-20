@@ -144,6 +144,38 @@ be thought through with the room, not taken from one picture:
   of straight out, so the middle window keeps the lake and the sun's glow; seen through
   the windows the band at 60 m crowded them. To move once rendered.
 
+## The shell built (2026-11-20)
+
+The plan's room is modelled as data, `src/model3d/shell.goose` (`room_shell::LIBRARY`,
+tested in `test/model3d/shell.goose`), and built once into one mesh by
+`shell_mesh.goose`, shown in the light tuner (agents/design.md). It follows the plan
+above and the choices of `build/notes/plans/shell.md`:
+
+- Walls 0.8 (window), 0.6 (hall), 0.5 m (ends); ceiling 4.0 m; the table at (4.5, 5.8),
+  1.2 m from the window wall opposite the middle window.
+- Windows: option B, the Estonian box window (inner glass 0.4 m into the wall, outer
+  0.6 m), niches 1.3 m wide and 0.65 m deep with straight reveals, a segmental arch
+  rising 0.25 m to 3.55 m, a 0.08 m plaster band round it, 3 × 3 panes a leaf above the
+  transom and 2 below (replacing the plan's 3 × 4 above), white painted sills, shutters
+  folded in the reveals, the lace on its rod in front of the niche, drawn back to the
+  sides. Shown only in the room's view: the game keeps its own window.
+- Doors: door 1, 2.7 m high, painted leaves of three fielded panels, a 0.14 m
+  architrave on 0.26 m plinth blocks, an oak threshold: the hall's double door 1.4 m in
+  the middle of the hall wall, the salon's 1.3 m at y 1.65 to 2.95 on the stove's end.
+  The far end wall has no door (plan 2's shelves or plan 1's door, still open).
+- Wainscot A all round (1.1 m), rising to 1.6 m on the window wall's piers in two tiers,
+  carrying the sills under the windows, its cap wrapping 6.5 cm into the reveals; the
+  skirting dying into the doors' plinth blocks; wallpaper above it on every wall.
+- Ceiling B: the concepts' cornice (26 cm down, 46 cm out) swept along the four walls,
+  mitred, over a flat plaster field; no rose yet, no chandelier.
+- Small choices made here: the shutters sit 7.5 to 34 cm into the reveal, behind the
+  cap's return (the wainscot page and the windows page disagreed); the band starts at
+  the piers' cap, the panelling below it running to the niche's edge.
+
+Rough on purpose, for the next passes: the casements' members are boxes, the shutters
+a box with three panels, the lace a flat sheet each side (lace.py's first bake), the
+glass a reflection only, the outside a plain sky. Shots: `build/notes/room-demo/`.
+
 ## Acceptance criteria
 
 - [x] Several layouts tried as ChatGPT images, at least `style-01`'s view and the

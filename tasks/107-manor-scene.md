@@ -54,6 +54,14 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       For now the room view has the room's own three windows and the game keeps its
       window; later the game and the home screen share one room, perhaps others later
       (the user, 2026-11-20)
+- [x] A rough demo of the whole library in the light tuner, to see the room as a whole
+      (the user, 2026-11-20): the tree's map over the whole window (step 2 of
+      `build/notes/plans/shell.md`), the shell from task 109's plan as data and one mesh
+      made once (wainscot A, window B, door 1, ceiling B, wallpaper all round, lime
+      plaster), the room lit through its three windows; four views, shots and frame times
+      in `build/notes/room-demo/` (tasks 109, 110). Next: shadow fixes 1 to 3
+      (`build/notes/plans/shadows.md`), the outside's layers, then the pieces refined one
+      by one (the wainscot from the sketches, the window wall, the lace)
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)
