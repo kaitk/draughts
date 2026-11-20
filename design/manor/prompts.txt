@@ -225,7 +225,9 @@ are drawn to scale (build/notes/chatgpt-109/round-4/svg/, made by plan.py there)
 7 m: the hall door on the axis between two low open bookcases, the stove in the corner
 of the hall wall, fed from the hall, the enfilade door beside it with the glazed bookcase
 on its window side, the sofa under a large painting on the hall wall, the desk by the
-third window at a right angle, looking toward the stove. Plan 1 has three doors, plan 2
+third window at a right angle, looking toward the stove. The round table with the board
+by the middle window, its board 1.2 m from the window wall, as the game lights it
+(rooms.goose's AUTUMN) and library-menu-01 shows; the players either side along the wall. Plan 1 has three doors, plan 2
 two, its far end wall shelved to the ceiling. Attach the labelled plan, then style-01.png
 for the look; saved as library-plan<N>-<view>-01.png.
 
