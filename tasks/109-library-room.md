@@ -1,6 +1,7 @@
 # 109: The library as a whole room
 
-Status: in-progress (planned 2026-11-20, under the epic 107; before task 106's modelling)
+Status: done for now (planned 2026-11-20, under the epic 107; finished 2026-11-20, the user: good
+enough until the room renders; task 106 models from it and brings its own images in line)
 
 The concept frames show the library in pieces, and they disagree: `library-home-01`
 made the far window smaller and squared the niches, though `style-01` and
@@ -153,5 +154,5 @@ be thought through with the room, not taken from one picture:
       table, rug, sizes in metres, for task 106 to model from
 - [x] The park outside thought through and its layers' images made, the user choosing
       (round 6; the backlit oak and the spruce group's cut-out wait for the renders)
-- [ ] Task 106's prompts and images (the simplified home shot, the window) brought in
-      line with the chosen room
+- [x] Task 106's prompts and images (the simplified home shot, the window) brought in
+      line with the chosen room: moved to task 106, which makes them

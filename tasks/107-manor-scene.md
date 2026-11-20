@@ -30,7 +30,7 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
 
 ## The home screen's shot (autumn)
 
-- [ ] The library as a whole room, its layout chosen from ChatGPT images (task 109)
+- [x] The library as a whole room, its layout chosen from ChatGPT images (task 109)
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

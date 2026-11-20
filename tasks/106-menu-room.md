@@ -39,6 +39,11 @@ or left out), only the floor where it shows.
 
 ## Images to make first (a ChatGPT session of its own, in parallel, the user, 2026-11-20)
 
+The room is task 109's plan: its window wall, windows (style-01's grid, the niche's shallow
+segmental arch), the games table and the park's layers (`design/manor/outside/park.py`).
+The prompts below follow it, the plan's PNGs attached beside `style-01`; the outside
+comes from those layers rather than one picture.
+
 The floor's and the window wall's look come from images before any modelling; saved in
 `design/manor/pieces/` with their prompts in `prompts.txt`, the ones the app uses cut to size
 and put in git once chosen (`AGENTS.md`'s rule on images):
