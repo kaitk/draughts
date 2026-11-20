@@ -41,6 +41,8 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
 ## The table and the room around it, after the first shot
 
 - [ ] The floor and rug, seen in the game's views (task 106)
+      The rug's first bake (`tools/materials/rug.py`) keeps the download's wrinkles in its
+      colour; flatten them or draw it again before it is used (the user, 2026-11-20)
 - [ ] The table's props: the chess clock (100), the pieces' box (102), the score sheet and
       pencil (103)
 - [ ] The writing desk to play on, with and without its green leather (task 108;
