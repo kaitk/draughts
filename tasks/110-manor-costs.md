@@ -84,6 +84,20 @@ results, or keep baking at run time behind a loader when the room or a look is c
   6.0 to 6.5 after, the game camera within noise: perhaps 0.2 to 0.3 ms on the Mac.
   Not measured on a device.
 
+- The curtains (2026-11-21, task 107, `build/notes/curtains-build/`): six lace panels of
+  1,152 triangles (6,912, drawn blended with the glass in one draw, no depth write) and
+  their rods, brackets, finials, cords and hooks, about 530 opaque triangles a window
+  (the shell 11,338 to 14,518); made in about 1.7 ms once with the shell (0.5 before).
+  The lace a 1024 × 1408 R8 texture with 8 mips, 1.9 MB (the old mask 1.3 MB); three
+  ways of it embedded while the choice is open, 0.7 MB of PNG each (about 2.1 MB in every
+  build, 1.8 MB more than the stand-in). The lace a pixel: one textureGrad, its own
+  `window_light` (the shell's niche, two casements, the tree) and a pow; the room's other
+  pixels one more textureLod and a few smoothsteps where the key crosses a panel. The
+  light tuner's counter, headless at 1600x1000, two rounds: uncapped, the room view 1.6 to
+  1.7 ms before and 2.2 after, the window view 1.5 and 2.1 (about 0.5 ms, the lace's
+  blended overdraw); waited for the GPU, 3.0 to 3.2 against 3.2 to 3.3, and 3.0 to 3.6
+  against 3.1 to 3.4 (noise). The game's shot and the renderer check unchanged.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

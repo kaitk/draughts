@@ -78,6 +78,17 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       darker along all four walls, the room's tree for three windows, the glass clearer
       (`build/notes/quick-pass/`, tasks 104, 109). The light itself waits for ChatGPT
       renders of our room
+- [x] The curtains, option A of `build/notes/curtains/` (2026-11-21): over each window a
+      22 mm brass rod at 3.68 m on two brackets with 45 mm ball finials, a lace panel each
+      side gathered on it (rod pocket, 1.20 m of cloth on 0.55 m of rod) and tied back at
+      0.95 m with a cream cord to a brass hook; the folds carried down to a wavy hem that
+      rises toward the inner edge, the lace's scalloped border along it. The lace sheer and
+      lit through: the sun on its back with the bars' and leaves' shadows, scattered forward
+      toward an eye looking at the sun through it, the sky and park behind the niche; its
+      shadow, its pattern blurred, in the room. Way f2 for now, `--lace f|d` in the tuner
+      while the choice is open; the brass a plain procedural one (`surfaces::LOOK.brass`)
+      until the gilt and brass study lands (`model3d`'s `curtains.goose`,
+      `build/notes/curtains-build/`, costs in task 110)
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

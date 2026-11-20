@@ -235,6 +235,19 @@ the light is settled (the user, 2026-11-20).
   the shell darker in a 0.3 m band, with a contact line at the plinth's lip (`ROOM_FRAG`,
   `shell_ends`).
 
+- The curtains' lace (2026-11-21, task 107): lit through from the window, not as a sheet
+  with a fixed half of the room's light behind it. `ROOM_FRAG`'s lace takes the sun on its
+  back (`window_light` at the lace, so the bars and the tree shade it) times what the
+  thread lets through (`Room.opening.w`, 0.45), with a forward lobe (Henyey-Greenstein,
+  g 0.5) on its thin parts, plus the window's sky and park (`surfaces::LOOK.lace_light`,
+  exposed as the view out) as much as the lace sees of the niche behind it (a vertex's
+  share, 0.6 in front of the glass, none over the pier); its opacity grows on the folds'
+  flanks, seen at a slant. Its shadow in the room is the panel's outline at the rod's
+  plane with the lace's pattern blurred to the shadow's softness (`lace_shadow`), in
+  place of the flat sheet's even 0.45. The sky term is lifted with the room's exposure
+  like the room's surfaces, a choice by eye: unlifted, the lace over the glass hardly
+  differed from the lace over the wall.
+
 ## Acceptance criteria
 
 - [ ] Each season's room light, matching its concept frame and photograph, on the Mac

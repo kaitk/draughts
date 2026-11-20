@@ -132,6 +132,9 @@ pieces; the design boards still set the layout, glass, and controls.
   map the renderer bakes then (the shell's 2048 × 768). Its mesh's triangles and making
   time print with a `--shot`'s bake line. The shot pages: `build/notes/room-demo/`,
   `build/notes/room-outside/`.
+  The curtains (`model3d`'s `curtains.goose`, task 107): `--lace f2|f|d` (C cycles) picks
+  the lace's way while the user's choice is open; their shots and close-ups by
+  `build/curtains-build/shots.sh EXE TAG` (`build/notes/curtains-build/`).
   With the shell on, the tree is `rooms::shell_tree`'s (placed for its three windows),
   not the one `--tree`/`--crown`/`--foliage` set: change it there (task 107's quick
   pass: `build/notes/quick-pass/`, the views and close-ups by `build/quick-pass/shots.sh`).
