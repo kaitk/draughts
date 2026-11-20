@@ -1,0 +1,9 @@
+# The score sheet's references
+
+References for the sheet the moves are written on, and its pencil, on the 3D board's
+table (task 103). The images are generated and stay local; only this list is in git.
+
+| File | What it shows | From |
+| --- | --- | --- |
+| `sheet-01.png` | The sheet to use: flat artwork, aged paper, an engraved band of oak leaves and acorns round an empty cartouche, two ruled columns of 17 lines, no text | ChatGPT, 2026-11-20 |
+| `pencil-01.png` | A six-sided cedar pencil sharpened with a knife, a blunt graphite point; a reference for shape and colour, with light painted on its faces. The body should be darker, stained and varnished, against the bare wood of the cut | ChatGPT, 2026-11-20 |

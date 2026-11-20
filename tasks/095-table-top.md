@@ -100,8 +100,9 @@ Tune with versions side by side from `tools/board_shot.goose`, as task 094 does.
      `tables::for_look` (the flame mahogany for every look till then).
   3. Props, from the concept art: a book at the side, perhaps a candlestick, and an
      antique chess clock, which would suit it best: a German one of about 1900, as the
-     manor is Baltic German, a modelling session of its own (task 100). The vase and
-     its lace, books, and a lamp (task 093) after.
+     manor is Baltic German, a modelling session of its own (task 100). The pieces' box
+     (task 102) and the score sheet with its pencil (task 103) chosen as well
+     (2026-11-20). The vase and its lace, books, and a lamp (task 093) after.
 - The room behind hardly shows at the game's views in landscape, but past the round
   table's edge it does in portrait, on the phone in both views (the user, 2026-11-20):
   the board on its table needs the room in some form, a real floor at least. Till then
