@@ -1,8 +1,9 @@
 Manor concept prompts (task 093/01). Images stay local here (.gitignore).
 
 The concept, fixed for now (2026-11-17):
-- style-01.png: the library, the upper floor's middle room on the garden side; warm
-  afternoon sun from the left. The wood board.
+- style-01.png: the library, on the garden side; warm afternoon sun from the left. The
+  wood board. Planned on the upper floor, moved to the ground floor (task 109,
+  2026-11-20).
 - upper-hall-02.png: the hall at the top of the stairs, glazed doors onto the balcony over
   the entrance portico; morning sun. The stone board.
 - garden-facade-01.png: the house from the park, trees within metres of the windows.
