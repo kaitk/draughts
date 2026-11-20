@@ -298,3 +298,15 @@ middle window, the desk along the wall); not used for the room.
 
 --- 42. The park alone from the windows (attach the three windows cut from library-window-wall-01) ---
 Draw a new image from scratch: the park seen through the windows in the attached image, now with no window, no room and no house in the picture, as if standing at the window with the glass taken away. Seen from a ground-floor window, the eyes a little over two metres above the lawn, the camera level, the horizon across the middle, through a wide 24 mm lens. The same autumn manor park: close by on the left a maple, its yellow leaves hanging into the top left; in the middle distance a great old oak standing alone on an open lawn, a lake glimpsed behind it; on the right a mass of tall dark spruces among old limes and maples; tall old trees in masses closing the lawn beyond, a gravel path running along the lawn's far edge, parallel to the house. The low afternoon sun ahead and to the left, a quarter in from the left edge and a sixth down from the top, glowing through the maple's leaves, the trees backlit with bright rims, their long shadows reaching across the lawn toward the viewer. Like a still from a period film on 35 mm film. No people, no text. Landscape 3:2.
+
+Verdict (library-park-01.png): the park wanted, as the windows would see it. Against the
+sun now: the sun a fifth in from the left and a sixth down, glowing through the near
+maple's leaves, the trees rimmed. Its layers stand apart cleanly: the maple close on the
+left, the great oak alone at about 40 m, the spruces and limes on the right, the far tree
+line with the lake, the path along the lawn's far edge, parallel to the house. Against it:
+the lawn's light streaks run as if the sun stood on the right, and the colours are a
+little vivid beside garden-facade-01; the lawn is ours anyway, and the lower third is
+behind the sill from the table.
+
+--- 43. The far band (attach library-park-01.png) ---
+Draw a new image from scratch: the far part of the park in the attached image, with everything near taken away: no maple, no oak, no spruces in front. Seen from the same place, the eyes a little over two metres above the lawn, the camera level, the horizon across the middle, through a 24 mm lens. The open lawn running away flat to a gravel path along its far edge; beyond it a calm lake glimpsed between tall old trees; a long band of tall old limes, maples and birches with a few dark spruces closing the view about a hundred metres off, softened by haze. A clear sky above them, pale and warm. The low afternoon sun just above the top left, out of the picture, the far trees backlit with bright rims, the lawn lit in long streaks. Like a still from a period film on 35 mm film. No people, no house, no text. Landscape 3:2.
