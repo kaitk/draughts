@@ -18,6 +18,10 @@ results, or keep baking at run time behind a loader when the room or a look is c
   window's pattern is on; not measured on a device.
 - Dust in the sunbeam (task 104's follow-ups): not measured.
 - ngfx's 5 ms more on shadow-map frames with the pattern on (task 107): not reproduced.
+- No frustum culling: every object is drawn whenever a frame is, only back faces culled.
+  Cheap while the room is a few draws; as the room and the outside fill up, test each
+  object's bounds against the view, at least for the frames that redraw the kept backdrop
+  and the home screen's pans.
 
 Add each new cost here as it lands, with its numbers.
 
