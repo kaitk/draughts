@@ -339,22 +339,23 @@ struct Gpu {
     mesh_ms:      f64,              // the mesh's making (measuring)
     // The shell's corners' shade (model3d::corner_map), baked with its mesh: the atlas, R8,
     // the room's corners it was baked for, and the bake's time (measuring).
-    corner_map:   Texture,
-    corner_for:   float4,
-    corner_ms:    f64,
-    plaster_tone: Texture,          // the plaster's tone, R8 as the wallpaper's
-    lace_mask:    Texture,          // the curtains' lace, R8 with its mips (surfaces::LACE_TEXELS)
-    lace_way:     i64,              // which lace (surfaces::LACE_WAYS), and the one on the GPU
-    lace_put:     i64,
-    glass_vb:     Buffer,           // the shell's glass and lace, drawn blended after the rest
-    glass_ib:     Buffer,
-    glass_count:  i64,
-    room_glass:   Pipeline,
-    room_vb:      Buffer,
-    room_ib:      Buffer,
-    room_count:   i64,
-    room_lit:     Pipeline,         // made when first wanted (make_room)
-    bake_room:    Pipeline,
+    corner_map:      Texture,
+    corner_for:      float4,
+    corner_ms:       f64,
+    plaster_tone:    Texture,       // the plaster's tone, R8 as the wallpaper's
+    lace_mask:       Texture,       // the curtains' lace, R8 with its mips (surfaces::LACE_TEXELS)
+    lace_way:        i64,           // which lace (surfaces::LACE_WAYS), and the one on the GPU
+    lace_put:        i64,
+    glass_vb:        Buffer,        // the shell's glass and lace, drawn blended after the rest
+    glass_ib:        Buffer,
+    glass_count:     i64,
+    room_glass:      Pipeline,
+    room_vb:         Buffer,
+    room_ib:         Buffer,
+    room_count:      i64,
+    room_sharp_from: i64,           // the brass's and books' indices from here on (sharp_last)
+    room_lit:        Pipeline,      // made when first wanted (make_room)
+    bake_room:       Pipeline,
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
     // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
     // pictures, the far band and the oak, RGBA8 sRGB with no mips.
@@ -402,6 +403,7 @@ struct Gpu {
     // (show); its targets at planar_size_of's size, made again for another: the picture
     // (RGBA16F), its depth (sampled), and the map the floor reads (RGBA16F with PLANAR_MIPS).
     room_planar:    Pipeline,       // the room whose floor sees the mirror (shaders::PLANAR_FLOOR)
+    room_sharp:     Pipeline,       // its brass and books, which see the room's box (shaders::ROOM_SHARP)
     planar_room:    Pipeline,
     planar_glass:   Pipeline,
     planar_table:   Pipeline,
@@ -675,6 +677,27 @@ fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY, shell: bool = f
     g.room_shell = shell;
 }
 
+// The room's triangles of the brass and the books moved after the rest, each part in its
+// order: where the first of them now is. Only they see the room's box sharply
+// (shaders::ROOM_SHARP), drawn with a pipeline of their own.
+fn sharp_last(room: corner_map::RoomVertex[>..]&, indices: u32[>..]&) -> i64 {
+    var sharp: u32[>..] = [];
+    var kept = 0;
+    var i = 0;
+    while i < indices.len {
+        let kind = floor(room[indices[i] as i64].mat + 0.001);
+        if kind == surfaces::MAT_BRASS || kind >= surfaces::MAT_BOOK {
+            for k in 0..3 { sharp.push(indices[i + k]); }
+        } else {
+            for k in 0..3 { indices[kept + k] = indices[i + k]; }
+            kept += 3;
+        }
+        i += 3;
+    }
+    for k in 0..sharp.len { indices[kept + k] = sharp[k]; }
+    return kept;
+}
+
 // Whether the board's pass draws the room.
 fn room_shown(g: Gpu&) -> bool { g.room_on && g.room_baked && g.room_vb.id != 0 && g.room_lit.id != 0 }
 
@@ -774,6 +797,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         for v in verts { room.push(corner_map::room_vertex(v, float2_0, float2_0)); }
         for i in indices { room_indices.push(i); }
     }
+    g.room_sharp_from = sharp_last(room, room_indices);
     var glass_room: corner_map::RoomVertex[>..] = [];
     for v in glass { glass_room.push(corner_map::room_vertex(v, float2_0, float2_0)); }
     if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }

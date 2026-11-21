@@ -70,6 +70,7 @@ MODULES = [
     ("r3d_dust", ["VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["DUST_FRAG"]),
     ("r3d_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
     ("r3d_room_planar", ["VS_SET", "FRAME", "ROOM_VERT"], ["PLANAR_FLOOR", "SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
+    ("r3d_room_sharp", ["VS_SET", "FRAME", "ROOM_VERT"], ["ROOM_SHARP", "PLANAR_FLOOR", "SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
     ("r3d_room_mirror", ["VS_SET", "FRAME", "ROOM_VERT"], ["MIRROR_PASS", "SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
     ("r3d_planar_resolve", FULL, ["PLANAR_RESOLVE_FRAG"]),
     ("r3d_planar_show", FULL, ["TONE_FN", "PLANAR_SHOW_FRAG"]),

@@ -3162,7 +3162,9 @@ let ROOM_FRAG = """
         // oak's own sheen (planar_look.y of its roughness), blurred by the film's lobe, not by
         // the pixel's spread of normals: a board's tilt moves its image whole. The mirror shows
         // what stands there and hides itself, so no occlusion of its own goes on top; past the
-        // screen's edge it fades to the room's light that way. The rest sees the room's box.
+        // screen's edge it fades to the room's light that way. The rest sees the room's light
+        // that way; only the brass and the books' gilt see the box sharply, drawn apart
+        // (ROOM_SHARP), as its code made the whole room's shader slower where it never ran.
         float px = metal > 0.5 ? 0.25 * length(fwidth(rv)) : 1.0;
         vec3 env;
         float film = sqrt(ar);
@@ -3176,7 +3178,11 @@ let ROOM_FRAG = """
                 return;
             }
         } else {
+        #ifdef ROOM_SHARP
             env = room_baked.x > 0.5 ? room_reflection(p, v_local, rv, ar, nov, px) : sh_eval(rv) * params.z;
+        #else
+            env = room_baked.x > 0.5 ? room_wide(v_local, rv) : sh_eval(rv) * params.z;
+        #endif
         }
         vec3 fc = env_brdf(f0, film, nov);
     #else
@@ -3397,6 +3403,11 @@ let MIRROR_PASS = "#define MIRROR_PASS 1\n";
 // ROOM_FRAG whose floor sees the mirror (render3d::planar_shown): the standard and high
 // tiers' room; without it the floor sees the room's box.
 let PLANAR_FLOOR = "#define PLANAR_FLOOR 1\n";
+// With PLANAR_FLOOR, the room's triangles that see its box sharply (render3d::room_sharp_from:
+// the brass and the books, whose gilt is a metal): ROOM_FRAG with room_reflection. Without it
+// the rest take room_wide, which room_reflection is for them (a surface not a metal has px 1,
+// so sharp 0).
+let ROOM_SHARP = "#define ROOM_SHARP 1\n";
 
 // The mirror's picture made the room's light again, with how far each texel stands from the
 // floor along the reflection: the pass drew the room, the table and the view out as their

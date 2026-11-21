@@ -150,8 +150,11 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
     }
 
     // The room round the table, behind what stands in it.
+    // With the mirror, its brass and books after the rest with the pipeline that sees the
+    // room's box sharply.
     if render3d::room_shown(g) {
         let planar = render3d::planar_seen_on_floor(g);
+        let split = if planar && g.room_sharp.id != 0 { g.room_sharp_from } else { g.room_count };
         nx::bind(if planar { g.room_planar } else { g.room_lit });
         var t = no_root();
         t.frame = f;
@@ -173,7 +176,11 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 12, render3d::corners_or_stand_in(g), g.linear);
         if planar { slot(t, 13, g.planar_map, g.planar_sampler); }
         slot(t, if planar { 14 } else { 13 }, render3d::pre_place_or_stand_in(g), g.linear);
-        nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
+        nx::draw_indexed(ngfx::root(t), g.room_ib, 4, split);
+        if split < g.room_count {
+            nx::bind(g.room_sharp);
+            nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count - split, split);
+        }
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
             nx::bind(g.room_glass);
@@ -247,6 +254,8 @@ fn make_room(own: Own&, g: Gpu&) {
     g.ssao_blur = module(embed_file("../../build/ngfx/blobs/r3d_ssao_blur.blob"));
     g.room_planar = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_planar.blob"),
                                  ngfx::PipelineDesc { depth_test: true, depth_write: true });
+    g.room_sharp = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_sharp.blob"),
+                                ngfx::PipelineDesc { depth_test: true, depth_write: true });
     g.planar_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_mirror.blob"),
                                  ngfx::PipelineDesc { depth_test: true, depth_write: true });
     // The glass writes its depth here, so the sky behind it is as far as the window.
@@ -1215,7 +1224,7 @@ fn release(own: Own&, g: Gpu&) {
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
                      g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick,
-                     g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar,
+                     g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.room_sharp,
                      g.planar_room, g.planar_glass, g.planar_table, g.planar_resolve, g.planar_show, g.planar_mip];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();

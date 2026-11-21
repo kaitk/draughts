@@ -87,6 +87,9 @@ fn address(b: Buffer) -> u64 { ngfx::address(n(b)) }
 fn draw_indexed(root: u64, indices: Buffer, index_size: i64, count: i64) {
     ngfx::draw_indexed(root, n(indices), index_size, count);
 }
+fn draw_indexed(root: u64, indices: Buffer, index_size: i64, count: i64, first_index: i64) {
+    ngfx::draw_indexed(root, n(indices), index_size, count, 1, first_index, 0, 0);
+}
 fn draw_indexed_instanced(root: u64, indices: Buffer, index_size: i64, count: i64, instances: i64) {
     ngfx::draw_indexed_instanced(root, n(indices), index_size, count, instances);
 }
