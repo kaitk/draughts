@@ -100,6 +100,16 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       the old turned foot's (removed). The top's size, 1.05 m or 0.80 m, waits for the
       user: the light tuner's `--table-top` (`build/notes/games-table-build/`, costs in
       task 110)
+- [x] Light, round 1, against ChatGPT repaints of our room (2026-11-21,
+      `build/notes/light-round-1/`): the shell's sun sharper (penumbra about the sun's
+      disc) and 2.2 times stronger on the room's surfaces; its sky through the niches and
+      the sun's patches thrown back once baked into a probe grid when the room turns on
+      (no SSAO); the window's glow (a small bloom of what is near white, no rays); the waxed
+      floor and the brass reflecting the room's box, its doors and its windows; the oak
+      outside blurred like the band. The game's shot and the renderer check unchanged;
+      costs in task 110. Round 2: the polished table's reflection (TABLE_FRAG), the
+      reflection's cost (1.1 ms), the bake's soft band across the hall door, the floor's
+      patches still dappled and softer than the references', the lace lit by the probes
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

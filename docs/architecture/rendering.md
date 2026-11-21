@@ -554,6 +554,25 @@ With the 3D board the board is drawn once into its kept image through the larger
 view, and each frame lays that image moved and scaled between the two ends' bounds
 (`shell.place`); both ends share the camera, so the image only scales and shifts.
 
+### The library's light
+
+The library's shell (the light tuner's room) is lit as a room of its own, apart from the
+board's light:
+
+- **The sun** through its three windows, its penumbra about the sun's disc and its light on
+  the room's surfaces 2.2 times the board's (`rooms::Room.shell_sun`).
+- **Baked light** (`model3d::room_light`): a grid of 12,555 probes 0.3 m apart, made on the
+  CPU in about 57 ms when the room turns on and again when the sun, the room's light, the
+  tree or the table changes, never per frame. Each probe holds the sky seen through the
+  niches and the sun's patches thrown back once, as a constant and a direction per colour,
+  in a 465 × 81 RGBA16F atlas (0.3 MB) that `ROOM_FRAG` reads with six taps. Beside it the
+  room keeps a part of the harmonics and of the flat bounce (`rooms::Room.baked`).
+- **Reflections**: the waxed floor and the brass see the shell's box (its walls, doors,
+  ceiling and floor lit by the probes and the sun) and its windows, worked out per pixel.
+- **The window's glow**: a quarter-size bloom of what is near white, added in linear light
+  (`render3d::bloom_pass`, `rooms::Room.bloom`).
+- **The oak outside** is blurred once when uploaded (`render3d::soften`).
+
 ### Board and pieces
 
 - **The flat board**: the theme's squares in a raised lip 1.1% of the board's width,

@@ -139,6 +139,12 @@ pieces; the design boards still set the layout, glass, and controls.
   panel's Top) sets the top across while the user's choice is open; shots by
   `build/games-table-build/shots.sh EXE TAG` (`build/notes/games-table-build/`), the
   base's close-up `--plan-eye 5.75,4.75,0.62 --plan-at 4.5,5.8,0.36 --fov 42`.
+  The shell's own light (task 107's light round): `--shell-sun X,Y` (penumbra's widening,
+  the sun on the room over the board's), `--baked SKY,BOUNCE,HARMONICS,SHADE` (the probes'
+  two sources and what the room keeps of the old ambient; `0,0,1,1` the old light),
+  `--bloom STRENGTH,WHITENESS,KNEE,SIGMA` (`0,0,0,0` off); all printed by P. The bake's
+  time prints with the shot's bake line. Shots: `build/light-round-1/shots.sh EXE TAG`
+  (the four reference cameras and close-ups), `build/notes/light-round-1/`.
   With the shell on, the tree is `rooms::shell_tree`'s (placed for its three windows),
   not the one `--tree`/`--crown`/`--foliage` set: change it there (task 107's quick
   pass: `build/notes/quick-pass/`, the views and close-ups by `build/quick-pass/shots.sh`).

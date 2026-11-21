@@ -651,6 +651,49 @@ to be is in tasks 042, 059, 071, 081, and 086.
   way, and none from the shadow map. The top's size (the game's 1.05 m or task 109's
   0.80 m) is left open: the light tuner's `--table-top`. Rejected for now: Poly Haven's
   column (option B, the fallback if the urn reads heavy) and a tripod (C, which tips).
+- The library's shell is lit as a room of its own (2026-11-21, task 107's light round,
+  against ChatGPT repaints of our own room): its indirect light is baked on the CPU when
+  the room turns on and again when the sun, the room's light, the tree or the table's top
+  changes, never per frame (`model3d::room_light`, `render3d::bake_room_light`, about
+  57 ms on an M-series Mac, into fixed buffers). A grid of 12,555 probes 0.3 m apart
+  (31 × 27 × 15 over the plan, into the niches) keeps per colour a constant and a
+  direction (two bands of spherical harmonics, the clamped cosine folded in), in a
+  465 × 81 RGBA16F atlas of 0.3 MB that `ROOM_FRAG` reads with six taps. Two sources: the
+  sky seen through each niche's outline, past the lace, the table's top shading what is
+  under it (the room's large-scale occlusion); and the sun's patches thrown back once,
+  from 1,080 rays traced through the three windows' glazing into 0.25 m bins on the floor,
+  walls, sills, reveals and table, their colour taken 60% to grey (an amber sun off
+  orange oak alone turned the ceiling peach). The fine occlusion stays the mesh's own per
+  vertex and the floor's analytic bands. The probes replace most of the harmonics and the
+  flat bounce on the room's surfaces only (`rooms::Room.baked`); the board, the table and
+  the game keep their light, and the game's shot is unchanged. Rejected: SSAO (a pass a
+  frame, and it darkens only what the screen shows, not the light the room throws back);
+  per-vertex light (the floor and walls are a few large quads, so a patch's bounce has
+  nowhere to land); a lightmap per surface (an unwrap of the shell, and the curtains and
+  table left out); baking on the GPU (a pipeline and passes in both renderers for what
+  the CPU does in tens of milliseconds once).
+- The shell's sun is sharper and stronger than the game's window (2026-11-21,
+  `rooms::Room.shell_sun`): its penumbra widens 0.0055 a unit of distance, about the sun's
+  disc (0.0047), not the game's 0.012, and the sun on the room's surfaces is 2.2 times the
+  board's, so its patches read against the room's exposure as the references' do.
+- The window's glow is a small bloom (2026-11-21, `render3d::bloom_pass`): the room's image
+  shrunk to a quarter, what is near white kept (the least channel over 0.72, so the
+  glass, the sky and the backlit lace glow and the board's sunlit maple doesn't), blurred,
+  and added back in linear light. Only where the pass draws into another target than the
+  kept image (the tuner's), as the app shows no shell yet. No rays or shafts.
+- The waxed floor and the curtains' brass reflect the room analytically (2026-11-21, after
+  the gilt and brass study's proposal): the reflected ray meets the shell's box, whose
+  surface there (wainscot, paper, the doors' paint, plaster, the floor's mean) is lit by
+  the probes and the sun through the windows, and on the window wall the three windows as
+  soft rectangles with their bars and the view out's light; mixed toward the room's light
+  that way as the lobe widens. Only the floor and the brass see it sharply: the
+  panelling's grain aliased a window's edge. About 1.1 ms a frame at 1600 × 1000 on the
+  Mac, the heaviest part of the round. The polished table (TABLE_FRAG, the game's shader)
+  is left for later. Rejected: a cube map (a pass per face, and the room changes with the
+  sun), screen-space reflections (a frame's pass, and the windows are often off screen).
+- The oak outside is blurred once when put on the GPU (2026-11-21, `render3d::soften`,
+  sigma 3.5 texels, `view_out::OAK_SOFT`), as out of focus as the band's trees: the user
+  found it too crisp. Rejected for now: depth of field over the frame.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

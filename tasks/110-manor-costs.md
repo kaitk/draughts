@@ -111,6 +111,23 @@ results, or keep baking at run time behind a loader when the room or a look is c
   0.1 ms, the base's vertices behind the top). Fewer column segments or 8-point leg
   sections would save 0.4k and 1.3k triangles if a device shows it.
 
+- The library's light, round 1 (2026-11-21, task 107, `build/notes/light-round-1/`): the
+  probes baked on the CPU in about 57 ms (the first after a start 67 to 69), each time the
+  sun, the room's light, the tree or the table changes; 12,555 probes in a 465 × 81
+  RGBA16F atlas, 0.3 MB, and fixed CPU buffers of about 1.6 MB (the atlas in floats and
+  half floats, the patches, the tree's map at mip 3); six texture taps a room pixel. The
+  reflection: the shell's box met per pixel and, for the floor and the brass, the sun
+  through the windows at the hit (`window_light`) and the three windows' rectangles. The
+  glow: three quarter-size passes and a full-size add, two RGBA16F targets (at 1600 × 1000
+  1.5 MB). The light tuner's counter, headless at 1600x1000, two rounds, before and after:
+  the room view 2.2 to 3.6 ms, waited 2.9-3.0 to 4.5; the window view 2.0 to 3.3, waited
+  2.7 to 4.1; style-01's camera 2.1 to 3.6, waited 2.8-2.9 to 4.4; the board's view 3.4
+  to 3.5, waited 4.1 to 4.3. Weighed by a scratch build without the reflection: 2.5 ms
+  against 3.6 at style-01's camera, so the reflection is about 1.1 ms of the 1.5 (its
+  shader's weight even where a uniform turns it off); the glow and the bake's lookup
+  within noise. To cut first: the sun at the reflected hit (one `window_light` a floor
+  pixel), or the reflection as a variant only the high mode compiles.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
