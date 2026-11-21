@@ -1953,8 +1953,8 @@ let TABLE_FRAG = """
             sun_in = window_open(p) * own;
         #ifdef TABLE_ROOM
             // With the room's light baked, the shade's floor of the key only as far as
-            // room_mix.w keeps it.
-            pattern = mix(sun_in, pattern, room_mix.w);
+            // room_mix.w keeps it; the table's own shadow takes the sun alone, as the bars'.
+            pattern = mix(sun_in, mix(1.0 - room.y, 1.0, sun_in), room_mix.w);
         #endif
         } else if (base) {
             pattern *= under_top(p, l);
@@ -3005,8 +3005,9 @@ let ROOM_FRAG = """
             rough *= 1.0 - 0.4 * own_wax;
         #endif
             // The table hides the sky under it, its scroll toes the floor they stand on,
-            // and the walls along their feet.
-            ao *= mix(0.55, 1.0, smoothstep(0.5625 * table.x, 1.375 * table.x, r));
+            // and the walls along their feet. In the room the top's broad shade is the
+            // probes' and the screen's: only the base's contact stays here.
+            if (table_map[3].x < 0.5) ao *= mix(0.55, 1.0, smoothstep(0.5625 * table.x, 1.375 * table.x, r));
             ao *= 1.0 - base_hides(p);
             if (shell.x > 0.5) {
                 // A dark contact line at the plinth's lip (5 cm out), before a door's opening
@@ -3187,6 +3188,12 @@ let ROOM_FRAG = """
         float open = kept > 0.0 ? window_open(p) : 0.0;
         float fill = room_baked.x > 0.5 ? room_baked.y : 1.0;
         float vis = (room.y > 0.0 ? open + fill * (1.0 - room.y) * (1.0 - open) * ao : 1.0) * kept;
+        // In the room a shadow inside the sun's patch takes the sun alone, the table's as
+        // the bars': the light thrown back there is the same either side of its edge.
+        if (table_map[3].x > 0.5 && room.y > 0.0 && dot(ng, l) > 0.0) {
+            float sun_in = open * kept;
+            vis = sun_in + fill * (1.0 - room.y) * (1.0 - sun_in) * ao;
+        }
         vec3 irr = room_irradiance(v_local, n) * ao;
         vec3 base = albedo * (1.0 - metal) * (diff / PI * light * vis + irr);
 
