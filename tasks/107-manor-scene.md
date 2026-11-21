@@ -89,6 +89,17 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       while the choice is open; the brass a plain procedural one (`surfaces::LOOK.brass`)
       until the gilt and brass study lands (`model3d`'s `curtains.goose`,
       `build/notes/curtains-build/`, costs in task 110)
+- [x] The games table's base, option A of `build/notes/games-table/` (2026-11-21): a
+      turned pedestal (rings under the top, an urn, a beaded neck, a drum) and four
+      cabriole legs from the drum curling into scroll toes on the floor, the top's
+      lathe and stepped rim kept, all the top's flame mahogany with the grain along the
+      column and legs; one mesh with the top, drawn in the game too, where the top hides
+      it (the renderer check and the tuner's game shot unchanged). The legs are swept by
+      `mesh::bar`, a rounded section along a curve, for later furniture's legs and
+      rails. Its shadow on the floor and the top's on it worked out in the shaders, as
+      the old turned foot's (removed). The top's size, 1.05 m or 0.80 m, waits for the
+      user: the light tuner's `--table-top` (`build/notes/games-table-build/`, costs in
+      task 110)
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

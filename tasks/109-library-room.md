@@ -80,6 +80,11 @@ from the hall wall, 0 to 7 m. Facing the stove's end, the windows are on the lef
   the window at their left and a little behind; the window side free. The game's table is
   1.05 m across (`mesh::TABLE_R`, 16 units); about 12 units when the room is modelled,
   checked on screen.
+  Its base (2026-11-21, task 107): option A of `build/notes/games-table/`, a ringed
+  column, an urn 212 mm across over a drum 100 mm off the floor, and four cabriole legs
+  toward the board's corners, scroll toes 0.36 m out; the top stays 1.05 m in the room
+  and the game until the user chooses (the light tuner's `--table-top 0.80` shows the
+  smaller one; `build/notes/games-table-build/`).
 - The writing desk, the second place to play (task 108): 1.5 by 0.75 m, green leather,
   at a right angle to the window wall in front of the third window, its board in the
   middle of the leather, 1.2 m from the window opposite its middle, as the table's, so

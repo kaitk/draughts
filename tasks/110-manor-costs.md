@@ -98,6 +98,19 @@ results, or keep baking at run time behind a loader when the room or a look is c
   blended overdraw); waited for the GPU, 3.0 to 3.2 against 3.2 to 3.3, and 3.0 to 3.6
   against 3.1 to 3.4 (noise). The game's shot and the renderer check unchanged.
 
+- The games table's base (2026-11-21, task 107, `build/notes/games-table-build/`): 6,480
+  triangles (3,563 vertices) in the table's mesh and draw, the table 11,520 to 18,512
+  (the top's underside closed, 512); the column 2,592 (54 profile spans, 24 round), each
+  leg 972 (41 sections of 12 points, a capped end); 0.6 MB of vertices and indices for
+  the table, made once with it. Drawn wherever the table is, in the game too, where the
+  top hides it. The room's floor works out the base's shadow a pixel (the column and
+  three segments a leg, past a distance check), the base the top's. The light tuner's
+  counter, headless at 1600x1000, two rounds, before and after: style-01's camera
+  2.1 ms both, waited 2.8 to 2.9 both; the base's close-up 2.1 to 2.3 ms, waited 2.8 to
+  2.9; the room view 2.2 both; the board's view 3.3 to 3.4 ms, waited 4.0 to 4.1 (about
+  0.1 ms, the base's vertices behind the top). Fewer column segments or 8-point leg
+  sections would save 0.4k and 1.3k triangles if a device shows it.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
