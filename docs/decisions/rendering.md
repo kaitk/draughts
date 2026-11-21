@@ -1151,15 +1151,15 @@ to be is in tasks 042, 059, 071, 081, and 086.
   1600-pixel screen was the rest: the bars, a few texels wide and drawn without
   antialiasing, stepped a whole texel. The pulsing was there from the first mirror and
   became plain with its light kept before the tonemap and the view out at 6× (5a52e485).
-  The tents cost nothing measurable; the wider map 0.1-0.3 ms at 1600 × 1000 (the least of
-  eight rounds: the room view 9.8 to 10.0 ms, the mirror off 8.8). On a 3200-pixel (Retina)
+  The cost is not yet measured: every timing so far was taken with other renders sharing
+  the GPU (about 0.3 ms for the wider map at 1600 × 1000 there). On a 3200-pixel (Retina)
   screen the map stays half size, which was already steady once the mips were tents.
   Turns measured too (a near view 2.2 m from the windows and one from the bookshelves, 0.4°
   and 1° a frame, at 1600 × 1000 and 3200 × 2000): the reflection's frame-to-frame change
   is the dense reference's own, and the error against it changes 1.20 levels a frame on a
-  floor pixel at 3200 × 2000 (0.96 with the map at full size). Rejected: the whole mirror at
-  full size (a quarter less of that error, about 0.9 ms more; kept as the tuner's
-  `--planar-size 1` for the planned high mode); more taps of a finer mip in the floor (the
+  floor pixel at 3200 × 2000 (0.96 with the map at full size). Rejected for now: the whole
+  mirror at full size (a quarter less of that error, its cost not yet measured; kept as the
+  tuner's `--planar-size 1` for the planned high mode); more taps of a finer mip in the floor (the
   room's shader is at its register limit; 20 taps two mips finer halved the pulsing only);
   a temporal accumulation of the map while the eye moves (the last frame's map reprojected
   through the depth, held within the neighbours' range, 0.8 of it kept): built and
@@ -1275,7 +1275,7 @@ to be is in tasks 042, 059, 071, 081, and 086.
   0.14 rms in log₂. The indirect light is about half what it was, so the darks come back;
   the probes' bounce is 10 (baked.y, from 6; the tuner's "Probes' bounce"), now lifting
   only the floor, the oak and the paper, one bounce as before. The bake takes about
-  10 ms more. Replaces the probe row that took none of its surface's own patch
+  10 ms more on the CPU (78 to 88 ms). Replaces the probe row that took none of its surface's own patch
   (`OWN_ROW`, above) and the lace's light lifted by the patches' gain.
 - The tonemaps' toes switch only in the light tuner (2026-11-21, task 107;
   `shaders::TOE_FN`, `render3d::tone_toe`, `render3d_gpu::tuned_frags`; `--toe`,
