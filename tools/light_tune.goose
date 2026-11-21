@@ -14,7 +14,9 @@
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
 // frame so the loop's time is the CPU's and the GPU's, P prints the room as Goose and the
-// flags that show the same again (and saves them in build/light-tune.txt).
+// flags that show the same again (and saves them in build/light-tune.txt). Tab walks round
+// the room (Walk: WASD and the mouse, Esc back to the panel); the camera stays where the
+// walk left it, and P prints it as --plan-eye and --plan-at, till R or V.
 //
 // The panel is in sections that open and close (SECTIONS, kept for the session; Keys
 // lists the keys). A drag that starts on the panel holds the tree's and the probes' bakes
@@ -43,6 +45,7 @@
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
+//       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
 
 import std;
 import vec;
@@ -91,6 +94,80 @@ fn plan_point(g: render3d::Gpu&, p: float3) -> float3 {
     let f = g.room_frame;
     let xz = f.along * r.x + f.into * r.y;
     return float3 { xz.x, surfaces::FLOOR_Y + p.z * surfaces::METRE, xz.y };
+}
+
+// The walk round the room (Tab, or the button under Camera and views): WASD and the mouse,
+// captured, from a person's eyes 1.6 m up (seated 1.2 m, C); Shift faster; with X, Q and E
+// go up and down; Esc back to the panel. The eye keeps WALL_MARGIN off the plan's walls and
+// stays where it is when the walk ends, till R or another view.
+let WALK_EYE:   f32 = 1.6;
+let SEATED_EYE: f32 = 1.2;
+let WALK_SPEED: f32 = 1.4;      // metres a second
+let WALK_FAST:  f32 = 2.5;      // times as fast with Shift
+let RISE_SPEED: f32 = 1.0;      // metres a second up or down
+let LOOK_DEG:   f32 = 0.1;      // degrees a pixel of the mouse
+let PITCH_MAX:  f32 = 85.0;
+// The views' near plane, 0.39 m out (16-bit depth), reaches 0.58 m at its corners: an eye
+// nearer a wall would see through it.
+let WALL_MARGIN:  f32 = 0.6;
+let LOWEST:       f32 = 0.2;    // the eye's lowest and its highest under the ceiling
+let WALK_FOV:     f32 = 60.0;   // the room's views'
+let LOOK_AHEAD:   f32 = 2.0;    // metres to the point looked at, for --plan-at
+let LONGEST_STEP: f32 = 0.1;    // seconds: a stalled frame doesn't jump
+
+struct Walk {
+    on:     bool   = false,
+    placed: bool   = false,     // the camera is the walk's, on or off
+    eye:    float3 = float3_0,  // the plan's metres, z up from the floor
+    yaw:    f32    = 0.0,       // degrees in the plan, 0 along x
+    pitch:  f32    = 0.0,
+    seated: bool   = false,
+    rise:   bool   = false,     // Q and E move up and down (X)
+}
+
+// The point the walk looks at, in the plan.
+fn walk_at(k: Walk) -> float3 {
+    let a = radians(k.pitch);
+    let b = radians(k.yaw);
+    return k.eye + float3 { cos(a) * cos(b), cos(a) * sin(b), sin(a) } * LOOK_AHEAD;
+}
+
+// The walk put at a plan view's eye, looking where it looks, a person's eyes high.
+fn walk_from(k: Walk&, eye: float3, at: float3) {
+    let d = at - eye;
+    k.eye = float3 { eye.x, eye.y, if k.seated { SEATED_EYE } else { WALK_EYE } };
+    k.yaw = degrees(atan2(d.y, d.x));
+    k.pitch = clamp(degrees(atan2(d.z, length(float2 { d.x, d.y }))), -PITCH_MAX, PITCH_MAX);
+}
+
+// The walk's one step: the mouse's delta in pixels, the keys held, dt seconds. `hand` is
+// +1 when the plan's x and y turn the world's way (screen right is the plan's (-y, x) of
+// forward), -1 when mirrored.
+fn walk_step(k: Walk&, look: float2, dt: f32, hand: f32) {
+    k.yaw -= hand * look.x * LOOK_DEG;
+    if k.yaw > 180.0 { k.yaw -= 360.0; }
+    if k.yaw < -180.0 { k.yaw += 360.0; }
+    k.pitch = clamp(k.pitch - look.y * LOOK_DEG, -PITCH_MAX, PITCH_MAX);
+    let b = radians(k.yaw);
+    let ahead = float2 { cos(b), sin(b) };
+    let right = float2 { ahead.y, -ahead.x } * hand;
+    var move = float2_0;
+    if gfx::key_down("W") { move += ahead; }
+    if gfx::key_down("S") { move -= ahead; }
+    if gfx::key_down("D") { move += right; }
+    if gfx::key_down("A") { move -= right; }
+    let fast = gfx::key_down("Left Shift") || gfx::key_down("Right Shift");
+    let speed = WALK_SPEED * (if fast { WALK_FAST } else { 1.0 });
+    if length(move) > 0.0 { move = normalize(move) * (speed * dt); }
+    let s = room_shell::LIBRARY;
+    k.eye.x = clamp(k.eye.x + move.x, WALL_MARGIN, s.walls[0].b.x - WALL_MARGIN);
+    k.eye.y = clamp(k.eye.y + move.y, WALL_MARGIN, s.walls[0].a.y - WALL_MARGIN);
+    if k.rise {
+        var up: f32 = 0.0;
+        if gfx::key_down("E") { up += 1.0; }
+        if gfx::key_down("Q") { up -= 1.0; }
+        k.eye.z = clamp(k.eye.z + up * RISE_SPEED * (if fast { WALK_FAST } else { 1.0 }) * dt, LOWEST, s.ceiling - LOWEST);
+    }
 }
 
 // A mid-game position, dark on the far rows: (row, col, dark), row 0 the far side.
@@ -471,10 +548,12 @@ let WIND = 17;
 let WINDOW = 18;
 let NOISE = 19;
 
-let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit", "P: print the room and its flags",
+let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", "P: print the room and its flags",
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
                 "L: the wallpaper's tile, 0.65 or 1.4 m", "C: the lace's way; B: the books", "W: the window's pattern; T: leaves by",
-                "K: the wind's kind; D: the dust", "F: the frame counter; G: wait for the GPU"];
+                "K: the wind's kind; D: the dust", "F: the frame counter; G: wait for the GPU",
+                "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
+                "walking: C seated, X then Q, E down and up", "R: back to the view, P: the walk's camera"];
 
 // The sections open at the start: OPEN_AT_START, or --sections NAME,NAME.. (or all).
 fn open_sections(argv: u8[:][>..]&) -> i64[20] {
@@ -522,6 +601,48 @@ fn color_sliders(c: ui::Context, name: const u8[:], v: float4&) {
     slider(c, str(name, " r"), v.x, 0.0, 1.0);
     slider(c, str(name, " g"), v.y, 0.0, 1.0);
     slider(c, str(name, " b"), v.z, 0.0, 1.0);
+}
+
+// --walk-test N: the walk driven by injected input for N frames (WALK_TEST_END the whole
+// path), each step 1/60 s, and a --shot taken where it ends: into the walk (Tab), W for a
+// second, the mouse turned right and down, D with X and E (up), Shift and W for 2.4
+// seconds into the stove's end, C, out (Esc), and P.
+let WALK_TEST_END = 265;
+
+fn walk_test_input(frame: i64) {
+    match frame {
+        2 => { gfx::inject_mouse(400.0, 300.0, 0, false); },
+        3 => { gfx::inject_key("Tab", true); },
+        4 => { gfx::inject_key("Tab", false); },
+        6 => { gfx::inject_key("W", true); },
+        66 => { gfx::inject_key("W", false); },
+        70 => { gfx::inject_mouse(700.0, 350.0, 0, false); },
+        71 => { gfx::inject_key("X", true); },
+        72 => {
+            gfx::inject_key("X", false);
+            gfx::inject_key("D", true);
+            gfx::inject_key("E", true);
+        },
+        102 => {
+            gfx::inject_key("D", false);
+            gfx::inject_key("E", false);
+        },
+        105 => {
+            gfx::inject_key("Left Shift", true);
+            gfx::inject_key("W", true);
+        },
+        250 => {
+            gfx::inject_key("Left Shift", false);
+            gfx::inject_key("W", false);
+        },
+        253 => { gfx::inject_key("C", true); },
+        254 => { gfx::inject_key("C", false); },
+        257 => { gfx::inject_key("Escape", true); },
+        258 => { gfx::inject_key("Escape", false); },
+        261 => { gfx::inject_key("P", true); },
+        262 => { gfx::inject_key("P", false); },
+        _ => {},
+    }
 }
 
 fn main() {
@@ -669,6 +790,14 @@ fn main() {
     var reset_orbit = false;
     // --shot-panel: the panel drawn in a shot too.
     let panel_in_shot = has(argv, "--shot-panel");
+    var walk = Walk {};
+    var shown_view = view;
+    var walk_text: u8[..96] = [];
+    let walk_test = whole(argv, "--walk-test", 0);
+    let shot_frame = if walk_test > 0 { walk_test } else { 6 };
+    var bakes_walking = 0;
+    var last_tree_ms = 0.0;
+    var last_light_ms = 0.0;
     while gfx::frame() {
         frames++;
         let frame_at = gfx::time();
@@ -680,7 +809,8 @@ fn main() {
             meter_text(meter, meter_a, meter_b, still);
         }
         if meter_for > 0.0 && frame_at > meter_for { break; }
-        if shot > 0 && frames == 6 {
+        if walk_test > 0 { walk_test_input(frames); }
+        if shot > 0 && frames == shot_frame {
             guard gfx::screenshot(argv[shot]) else { abort(str("could not save ", argv[shot])); }
             if g.tree_ms > 0.0 { print("the tree baked in ", g.tree_ms, " ms"); }
             let oak = flag_value(argv, "--dump-oak");
@@ -697,26 +827,48 @@ fn main() {
             if g.light_ms > 0.0 {
                 print("the room's light baked in ", g.light_ms, " ms, ", g.light_patches, " sun patches");
             }
+            if walk_test > 0 {
+                print("walked to ", walk.eye.x, ",", walk.eye.y, ",", walk.eye.z, " yaw ", walk.yaw, " pitch ", walk.pitch,
+                      "; walking ", walk.on, ", seated ", walk.seated, ", the mouse relative ", gfx::mouse_relative(),
+                      ", the cursor shown ", gfx::cursor_visible(), "; bakes while walking ", bakes_walking);
+            }
             break;
         }
         ui::input_from_gfx(c);
         var print_it = gfx::key_pressed("P");
-        if gfx::key_pressed("W") { pattern = 1 - pattern; }
-        if gfx::key_pressed("T") { room.tree.x = (room.tree.x as i64 + 1) % 3; }
-        if gfx::key_pressed("D") { dust_on = !dust_on; }
-        if gfx::key_pressed("O") { room_on = !room_on; }
-        if gfx::key_pressed("V") { view = (view + 1) % VIEWS.len; }
-        if gfx::key_pressed("S") { shell_on = !shell_on; }
-        if gfx::key_pressed("U") { outside_on = !outside_on; }
-        if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
-        if gfx::key_pressed("F") { meter.on = !meter.on; }
-        if gfx::key_pressed("G") { meter.wait = !meter.wait; }
-        if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
-        if gfx::key_pressed("B") { books_on = !books_on; }
-        if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else { 1.4 }; }
+        // Tab begins the walk; Esc or Tab ends it, and so does losing focus, which lets the mouse go.
+        var walk_now = !walk.on && gfx::key_pressed("Tab");
+        if walk.on && (gfx::key_pressed("Escape") || gfx::key_pressed("Tab") || !gfx::mouse_relative()) {
+            walk.on = false;
+            gfx::set_mouse_relative(false);
+        }
+        if walk.on {
+            if gfx::key_pressed("C") {
+                walk.seated = !walk.seated;
+                walk.eye.z = if walk.seated { SEATED_EYE } else { WALK_EYE };
+            }
+            if gfx::key_pressed("X") {
+                walk.rise = !walk.rise;
+                if !walk.rise { walk.eye.z = if walk.seated { SEATED_EYE } else { WALK_EYE }; }
+            }
+        } else {
+            if gfx::key_pressed("W") { pattern = 1 - pattern; }
+            if gfx::key_pressed("T") { room.tree.x = (room.tree.x as i64 + 1) % 3; }
+            if gfx::key_pressed("D") { dust_on = !dust_on; }
+            if gfx::key_pressed("O") { room_on = !room_on; }
+            if gfx::key_pressed("V") { view = (view + 1) % VIEWS.len; }
+            if gfx::key_pressed("S") { shell_on = !shell_on; }
+            if gfx::key_pressed("U") { outside_on = !outside_on; }
+            if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
+            if gfx::key_pressed("F") { meter.on = !meter.on; }
+            if gfx::key_pressed("G") { meter.wait = !meter.wait; }
+            if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
+            if gfx::key_pressed("B") { books_on = !books_on; }
+            if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else { 1.4 }; }
+        }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
-        if ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
+        if !walk.on && ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
             ui::layout_row_dynamic(c, ROW + 4.0, 2);
             if ui::button_label(c, "Print (P)") { print_it = true; }
             if ui::button_label(c, "Reset room") { shown_room = -1; }
@@ -902,7 +1054,14 @@ fn main() {
                 slider(c, "Height", pitch, 10.0, 89.0);
                 slider(c, "Round", yaw, -180.0, 180.0);
                 ui::layout_row_dynamic(c, ROW + 4.0, 1);
-                if ui::button_label(c, "Reset the orbit (R)") { reset_orbit = true; }
+                if ui::button_label(c, "Reset the orbit and the view (R)") { reset_orbit = true; }
+                if ui::button_label(c, "Walk round the room (Tab)") { walk_now = true; }
+                switch(c, "Seated (C)", walk.seated, ["no", "yes"]);
+                switch(c, "Up and down (X)", walk.rise, ["off", "Q, E"]);
+                if walk.placed {
+                    note(c, str("walked to ", floor(walk.eye.x * 100.0 + 0.5) / 100.0, ", ", floor(walk.eye.y * 100.0 + 0.5) / 100.0,
+                                ", ", floor(walk.eye.z * 100.0 + 0.5) / 100.0, " m; P prints it"));
+                }
                 ui::tree_state_pop(c);
             }
             if section(c, open, DEBUG) {
@@ -919,7 +1078,7 @@ fn main() {
                 ui::tree_state_pop(c);
             }
         }
-        ui::end(c);
+        if !walk.on { ui::end(c); }
         // A drag that began on the panel holds the tree's and the probes' bakes till it is let go.
         if gfx::mouse_pressed(gfx::MOUSE_LEFT) { drag_on_panel = ui::wants_mouse(c); }
         g.bake_held = drag_on_panel && gfx::mouse_down(gfx::MOUSE_LEFT);
@@ -965,6 +1124,39 @@ fn main() {
         // A shot is taken at --wind-time itself.
         if shot < 0 { render3d::wind_time += gfx::delta_time() as f32; }
         render3d::put_room(g);
+        // The walk: begun where the view is (or the room's view from the board's orbit), with
+        // the room and its shell on; another view ends its camera.
+        if view != shown_view {
+            shown_view = view;
+            walk.placed = false;
+        }
+        let from_view = if view > 0 { view } else { 1 };
+        var start_eye = VIEW_EYES[from_view];
+        var start_at = VIEW_ATS[from_view];
+        if plan_eye && !own_eye {
+            start_eye = float3 { plan_eye_at.x, plan_eye_at.y, plan_eye_at.z };
+            start_at = float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z };
+        }
+        if walk_now && gfx::set_mouse_relative(true) {
+            room_on = true;
+            shell_on = true;
+            render3d::show_room(g, room_on, away, shell_on);
+            if !walk.placed { walk_from(walk, start_eye, start_at); }
+            if !walk.rise { walk.eye.z = if walk.seated { SEATED_EYE } else { WALK_EYE }; }
+            walk.on = true;
+            walk.placed = true;
+        }
+        if gfx::key_pressed("R") || reset_orbit {
+            if walk.on { walk_from(walk, start_eye, start_at); } else { walk.placed = false; }
+        }
+        if walk.on {
+            let o = plan_point(g, float3_0);
+            let px = plan_point(g, float3 { 1.0, 0.0, 0.0 }) - o;
+            let py = plan_point(g, float3 { 0.0, 1.0, 0.0 }) - o;
+            let hand: f32 = if py.x * px.z - py.z * px.x >= 0.0 { 1.0 } else { -1.0 };
+            let dt = if walk_test > 0 { 1.0 / 60.0 } else { min(gfx::delta_time() as f32, LONGEST_STEP) };
+            walk_step(walk, gfx::mouse_delta(), dt, hand);
+        }
         if print_it {
             var line: u8[>..] = [];
             line.append("--room ");
@@ -983,7 +1175,12 @@ fn main() {
             flag_pair(line, "--oak-tint", oak);
             flag_pair(line, "--ceiling-tint", ceiling);
             room_flags(line, room);
-            if own_eye {
+            if walk.placed {
+                let at = walk_at(walk);
+                flag_four(line, "--plan-eye", float4 { walk.eye.x, walk.eye.y, walk.eye.z, 0.0 });
+                flag_four(line, "--plan-at", float4 { at.x, at.y, at.z, 0.0 });
+                format(line, " --fov ", if fov_flag > 0.0 { fov_flag } else { WALK_FOV });
+            } else if own_eye {
                 flag_four(line, "--eye", eye_at);
                 flag_four(line, "--at", look_at);
             } else if plan_eye {
@@ -992,7 +1189,7 @@ fn main() {
             } else {
                 format(line, " --yaw ", yaw, " --height ", pitch, " --distance ", far);
             }
-            if fov_flag > 0.0 { format(line, " --fov ", fov_flag); }
+            if fov_flag > 0.0 && !walk.placed { format(line, " --fov ", fov_flag); }
             report(room, room_take, line[..]);
         }
         if gfx::key_pressed("R") || reset_orbit {
@@ -1001,7 +1198,7 @@ fn main() {
             pitch = view3d::PITCH;
             far = 1.3;
         }
-        if !ui::wants_mouse(c) {
+        if !walk.on && !ui::wants_mouse(c) {
             if gfx::mouse_down(gfx::MOUSE_LEFT) {
                 let d = gfx::mouse_delta();
                 yaw -= d.x * 0.25;
@@ -1015,7 +1212,11 @@ fn main() {
         var target = float3 { at.x, view3d::TARGET.y, at.y };
         var eye = target + float3 { sin(b) * cos(a), sin(a), cos(b) * cos(a) } * (view3d::DISTANCE * far);
         var fov = view3d::FOV;
-        if own_eye {
+        if walk.placed {
+            eye = plan_point(g, walk.eye);
+            target = plan_point(g, walk_at(walk));
+            fov = WALK_FOV;
+        } else if own_eye {
             eye = float3 { eye_at.x, eye_at.y, eye_at.z };
             target = float3 { look_at.x, look_at.y, look_at.z };
         } else if plan_eye {
@@ -1049,6 +1250,28 @@ fn main() {
         let proj = gfx::perspective(fov * PI / 180.0, size.x as f32 / size.y, near, if room_on { 600.0 } else { 120.0 });
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
+        if walk.on {
+            if g.tree_ms != last_tree_ms || g.light_ms != last_light_ms { bakes_walking += 1; }
+            if shot < 0 || panel_in_shot {
+                walk_text.clear();
+                walk_text.append("walking at ");
+                tenths(walk_text, walk.eye.x as f64);
+                walk_text.append(", ");
+                tenths(walk_text, walk.eye.y as f64);
+                walk_text.append(", ");
+                tenths(walk_text, walk.eye.z as f64);
+                walk_text.append(" m");
+                if ui::begin(c, "Walk", ui::rect(10.0, 10.0, PANEL_W, 5.0 * ROW + 16.0), ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
+                    note(c, walk_text[..]);
+                    note(c, "WASD, the mouse; Shift faster; C seated");
+                    note(c, if walk.rise { "Q, E down and up (X)" } else { "X: Q and E go down and up" });
+                    note(c, "R back to the view; Esc the panel");
+                }
+                ui::end(c);
+            }
+        }
+        last_tree_ms = g.tree_ms;
+        last_light_ms = g.light_ms;
         if meter.on && shot < 0 {
             let box_w: f32 = 420.0;
             let at_x = gfx::screen_size().x / scale - box_w - 10.0;
