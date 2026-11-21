@@ -208,6 +208,24 @@ The export's wrapper seems to start from the data stacks' base rather than their
 
 ## goose_gfx
 
+### The window opens unfocused on macOS 14+ and drops the first clicks
+
+SDL 3.4.16 on macOS 14+ doesn't activate the app at launch (`SDL_MAC_BACKGROUND_APP`
+defaults to true there, so `SDL_cocoaevents.m` skips `activateIgnoringOtherApps`). A window
+started from a terminal often opens behind it, without focus, and goose_gfx drops key,
+mouse, motion, and wheel events while `gfx.focused` is false (`gfx_device.c`, the event
+loop), so the click that focuses it is swallowed: the light tuner missed about half its
+presses (found 2026-11-21). `SDL_RaiseWindow` on Cocoa does `[NSApp
+activateIgnoringOtherApps:YES]` and `makeKeyAndOrderFront:` (`SDL_WINDOW_ACTIVATE_WHEN_RAISED`
+defaults to true).
+
+- Here: the fork's branch `focus-on-open` (one commit, on upstream `main`) calls
+  `SDL_RaiseWindow` once after the window is claimed, unless `GS_GFX_WINDOW_HIDDEN`; in the
+  fork's `main` (`8a14a5b`, which also merges upstream `main` with the fork's merged pull
+  requests). `SDL_HINT_MAC_MOUSE_FOCUS_CLICKTHROUGH` was left out: it would deliver the
+  focusing click but not fix the window opening behind.
+- Upstream: offer the branch (3 lines). Not an SDL bug: SDL's documented default.
+
 ### Headless has no GPU device on macOS since upstream #8
 
 Upstream `main` (`7ff752f`, #8) opens headless video with SDL's offscreen driver first, and
