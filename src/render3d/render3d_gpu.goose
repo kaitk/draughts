@@ -193,6 +193,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 10, render3d::table_map_or_stand_in(g), g.compare);
         gfx::bind_texture(gfx::FRAGMENT, 11, render3d::ssao_or_stand_in(g), g.linear);
         if planar { gfx::bind_texture(gfx::FRAGMENT, 12, g.planar_map, g.planar_sampler); }
+        gfx::bind_texture(gfx::FRAGMENT, if planar { 13 } else { 12 }, render3d::pre_place_or_stand_in(g), g.linear);
         gfx::uniforms(gfx::VERTEX, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::surfaces_block(g));
@@ -202,6 +203,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
             gfx::bind(g.room_glass);
+            gfx::bind_texture(gfx::FRAGMENT, 12, render3d::pre_place_or_stand_in(g), g.linear);
             gfx::bind_vertex_buffer(g.glass_vb);
             gfx::bind_index_buffer(g.glass_ib, 4);
             gfx::draw_indexed(g.glass_count);
@@ -251,18 +253,18 @@ fn make_motes(own: Own&, g: render3d::Gpu&) {
 fn make_room(own: Own&, g: render3d::Gpu&) {
     guard g.room_lit.id == 0 else { return; }
     g.room_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
-                               embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                               tuned_or(TUNED_ROOM, embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)),
                                gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true });
     g.room_glass = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
-                                 embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                                 tuned_or(TUNED_ROOM, embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)),
                                  gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED });
     g.bake_room = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_ROOM, shaders::BAKE_FRAG));
     g.table_room = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
-                                 embed_shader("frag", shaders::TABLE_ROOM, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+                                 tuned_or(TUNED_TABLE_ROOM, embed_shader("frag", shaders::TABLE_ROOM, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG)),
                                  gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
                                                      blend: gfx::BLEND_PREMULTIPLIED });
     g.outside = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::OUTSIDE_VERT),
-                              embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
+                              tuned_or(TUNED_OUTSIDE, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TONE_FN, shaders::OUTSIDE_FRAG)),
                               gfx::PipelineDesc { cull: gfx::CULL_NONE, blend: gfx::BLEND_PREMULTIPLIED });
     let full = embed_shader("vert", shaders::FULL_VERT);
     g.bloom_pick = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_PICK_FRAG));
@@ -278,16 +280,16 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
     g.ssao = gfx::pipeline(full, embed_shader("frag", shaders::SSAO_FRAG));
     g.ssao_blur = gfx::pipeline(full, embed_shader("frag", shaders::SSAO_BLUR_FRAG));
     g.room_planar = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
-                                  embed_shader("frag", shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                                  tuned_or(TUNED_PLANAR, embed_shader("frag", shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)),
                                   gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true });
-    let mirror = embed_shader("frag", shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+    let mirror = tuned_or(TUNED_MIRROR, embed_shader("frag", shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
     g.planar_room = gfx::pipeline(room_vert, mirror, gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true });
     // The glass writes its depth here, so the sky behind it is as far as the window.
     g.planar_glass = gfx::pipeline(room_vert, mirror, gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true,
                                                                           blend: gfx::BLEND_PREMULTIPLIED });
     g.planar_table = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
-                                   embed_shader("frag", shaders::TABLE_ROOM, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+                                   tuned_or(TUNED_TABLE_ROOM, embed_shader("frag", shaders::TABLE_ROOM, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG)),
                                    gfx::PipelineDesc { cull: gfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
                                                        blend: gfx::BLEND_PREMULTIPLIED });
     g.planar_resolve = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_RESOLVE_FRAG));
@@ -355,6 +357,7 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     gfx::bind_texture(gfx::FRAGMENT, 9, g.book_atlas, g.aniso);
     gfx::bind_texture(gfx::FRAGMENT, 10, render3d::table_map_or_stand_in(g), g.compare);
     gfx::bind_texture(gfx::FRAGMENT, 11, render3d::ssao_or_stand_in(g), g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 12, render3d::pre_place_or_stand_in(g), g.linear);
     gfx::uniforms(gfx::VERTEX, 0, clip);
     gfx::uniforms(gfx::FRAGMENT, 0, clip);
     gfx::uniforms(gfx::FRAGMENT, 1, render3d::mirror_surfaces_block(g));
@@ -749,6 +752,22 @@ fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
     return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
 }
 
+// The light tuner's own fragment shaders (with shaders::TOE_FN, its toe switches),
+// embedded by the tuner alone, in place of the app's: the lit one for SHADOW_16 in each
+// pieces' material (TUNED_LIT + render3d::PIECES_..), the table's for SHADOW_16, the
+// table's in the room, the room's, with the floor's mirror, the mirror's pass, the view
+// out. Empty, the app's.
+let TUNED_LIT = 0;
+let TUNED_TABLE = 4;
+let TUNED_TABLE_ROOM = 5;
+let TUNED_ROOM = 6;
+let TUNED_PLANAR = 7;
+let TUNED_MIRROR = 8;
+let TUNED_OUTSIDE = 9;
+let TUNED_FRAGS = 10;
+var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", ""];
+fn tuned_or(i: i64, frag: const u8[:]) -> const u8[:] { if tuned_frags[i].len > 0 { tuned_frags[i] } else { frag } }
+
 // The table's shader with its shadow filtered as `look` says, as the lit one's (lit_frag).
 fn table_frag(look: i32) -> const u8[:] {
     if look == render3d::SHADOW_4 {
@@ -762,7 +781,8 @@ fn table_frag(look: i32) -> const u8[:] {
 
 // The table's pipeline, its shadow filtered as `look` says (table_frag).
 fn table_pipeline(own: Own&, g: render3d::Gpu&, look: i32) {
-    g.table_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT), table_frag(look),
+    let frag = if look == render3d::SHADOW_16 { tuned_or(TUNED_TABLE, table_frag(look)) } else { table_frag(look) };
+    g.table_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT), frag,
                                 gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
                                                     blend: gfx::BLEND_PREMULTIPLIED });
 }
@@ -771,7 +791,7 @@ fn table_pipeline(own: Own&, g: render3d::Gpu&, look: i32) {
 // `look` says and the pieces as g.pieces has them (lit_frag).
 fn lit_pipelines(own: Own&, g: render3d::Gpu&, look: i32) {
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
-    let lit_fs = lit_frag(look, g.pieces);
+    let lit_fs = if look == render3d::SHADOW_16 { tuned_or(TUNED_LIT + g.pieces, lit_frag(look, g.pieces)) } else { lit_frag(look, g.pieces) };
     g.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
     g.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true,
                                                                  blend: gfx::BLEND_ALPHA });

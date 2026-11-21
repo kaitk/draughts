@@ -171,10 +171,12 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 10, render3d::table_map_or_stand_in(g), g.compare);
         slot(t, 11, render3d::ssao_or_stand_in(g), g.linear);
         if planar { slot(t, 12, g.planar_map, g.planar_sampler); }
+        slot(t, if planar { 13 } else { 12 }, render3d::pre_place_or_stand_in(g), g.linear);
         nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
             nx::bind(g.room_glass);
+            slot(t, 12, render3d::pre_place_or_stand_in(g), g.linear);
             t.verts = nx::address(g.glass_vb);
             nx::draw_indexed(ngfx::root(t), g.glass_ib, 4, g.glass_count);
         }
@@ -323,6 +325,7 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
     slot(r, 9, g.book_atlas, g.aniso);
     slot(r, 10, render3d::table_map_or_stand_in(g), g.compare);
     slot(r, 11, render3d::ssao_or_stand_in(g), g.linear);
+    slot(r, 12, render3d::pre_place_or_stand_in(g), g.linear);
     nx::draw_indexed(ngfx::root(r), g.room_ib, 4, g.room_count);
     if g.glass_count > 0 {
         nx::bind(g.planar_glass);

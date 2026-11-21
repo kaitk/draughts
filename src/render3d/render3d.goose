@@ -63,6 +63,7 @@ struct Frame {
     disc_n:          float4,
     discs:           float4[MAX_DISCS],
     room_axes:       float4,
+    toe:             float4,
 }
 
 // The bytes of the uniform block `name` in GLSL `text` of vec4s and mat4s alone, std140,
@@ -362,7 +363,7 @@ struct Gpu {
     // The shell's baked light (model3d::room_light), RGBA16F: made again when what it is
     // baked from changes (light_key), its time (measuring) and how many sun patches lit it.
     light_volume:  Texture,
-    light_for:     float4[8],
+    light_for:     float4[LIGHT_KEY],
     light_ms:      f64,
     light_patches: i64,
     // The window's glow (bloom_pass): its pipelines, made with the room's, and its two
@@ -1026,6 +1027,9 @@ struct SurfacesBlock {
     ssao:          float4,
     planar:        float4,
     planar_look:   float4,
+    contact:       float4,
+    sheen:         float4,
+    room_sun:      float4,
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
@@ -1113,7 +1117,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
-                    float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), table_map_shown(g),
+                    float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun, table_map_shown(g),
                     books::COVER, books::LABEL }
 }
 
@@ -1139,12 +1143,15 @@ fn light_or_stand_in(g: Gpu&) -> Texture { if g.light_volume.id != 0 { g.light_v
 fn light_baked(g: Gpu&) -> bool { g.room_on && g.room_shell && g.room.baked.x + g.room.baked.y > 0.0 }
 
 // What the shell's baked light is made from: the key, the room's light, the tree, the
-// table's top.
-fn light_key(g: Gpu&) -> float4[8] {
+// table's top, the bounces and the sun's saturation on the room, and the bake's own
+// settings (room_light's bounce_grey, lace_source, gather_near).
+let LIGHT_KEY = 9;
+fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     let f = g.frame;
     let r = g.room;
     return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.room_axes,
-            float4 { table_radius(g), g.tree_ms as f32, 0.0, 0.0 }];
+            float4 { table_radius(g), g.tree_ms as f32, light_bounces as f32, room_sun.x },
+            float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near, 0.0 }];
 }
 
 // The bake's buffers, sized once: the probes' atlas in floats and as half floats, the sun's
@@ -1159,6 +1166,11 @@ var light_bounce:  room_light::Bounce;
 // 0 the patches alone, the tuner's --bounces), and each step's time in the last bake:
 // the sun's rays, the first light, each bounce, the half grid's gather, the probes.
 var light_bounces = room_light::BOUNCES;
+// The tonemaps' toes as the light tuner switches them in its own shaders (shaders::TOE_FN,
+// FRAME's toe): the room's and the view out's way, the table's, the board's and the pieces'
+// (0 on the luminance, 1 on the least channel, 2 none), and what a toe takes off above its
+// knee. The app's shaders keep their own toes and never read it.
+var tone_toe = float4 { 0.0, 1.0, 1.0, 0.02 };
 var light_steps: f64[8] = [0.0; 8];
 // The probes' light on the games table's axis at TABLE_PROBE_UP + k × CELL over the floor
 // (k 0 to 3: by its feet, its urn, under its top, over it), each colour's constant and
@@ -1167,8 +1179,9 @@ var table_probes: float4[12] = [float4_0; 12];
 let TABLE_PROBE_UP: f32 = 0.15;
 // How much of the shade's floor of the key (rooms::Room.pattern's x leaves it) the room's
 // surfaces and the games table keep beside the baked light: 1 all, 0 none (the tuner's
-// --shade-fill).
-var shade_fill: f32 = 1.0;
+// --shade-fill). A fifth, with the sun twice as strong on the room (rooms::AUTUMN's
+// shell_sun): the patches gain, the shade stays near where it was.
+var shade_fill: f32 = 0.2;
 let ATLAS_BYTES = 243360;   // room_light::ATLAS_W × ATLAS_H × 8
 let TREE_LEVEL = 3;
 let TREE_SMALL = 98304;     // trees::SHELL_W × SHELL_H × 4 >> 2 × TREE_LEVEL
@@ -1183,7 +1196,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     guard light_baked(g) && !g.bake_held else { return; }
     let key = light_key(g);
     var same = g.light_volume.id != 0;
-    for i in 8 { if !same4(key[i], g.light_for[i]) { same = false; } }
+    for i in LIGHT_KEY { if !same4(key[i], g.light_for[i]) { same = false; } }
     guard !same else { return; }
     let t0 = clock();
     let s = room_shell::LIBRARY;
@@ -1198,7 +1211,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     let out = float3 { -fr.into.x * 0.94, up, -fr.into.y * 0.94 };
     let sun = room_light::Sun {
         toward: toward,
-        light:  float3 { f.light_color.x, f.light_color.y, f.light_color.z } * (f.light_dir.w * r.shell_sun.y),
+        light:  room_sun_of(float3 { f.light_color.x, f.light_color.y, f.light_color.z }) * (f.light_dir.w * r.shell_sun.y),
         sky:    sh_at(f.sh, out) * f.params.z,
         table: float4 { s.table.x, s.table.y, table_radius(g) / surfaces::METRE,
                         (mesh::TABLE_TOP - surfaces::FLOOR_Y) / surfaces::METRE },
@@ -1906,6 +1919,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
     g.frame.view_proj = view_proj;
     g.frame.eye = model3d::f4(eye, 1.0);
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
+    g.frame.toe = tone_toe;
     keep_backdrop(o, g, size);
     bake_tree(o, g);
     if dust.count > 0 { o.make_motes(g); }
@@ -2075,7 +2089,33 @@ fn mirror_surfaces_block(g: Gpu&) -> SurfacesBlock {
     b.ssao = float4_0;
     b.planar = float4_0;
     b.planar_look = float4_0;
+    b.contact = float4_0;
     return b;
+}
+
+// The sun's contact shadows (ROOM_FRAG's contact_lit): x how strong (0 none), y the ray's
+// length toward the sun (world units), z its steps, w the thickness a surface on the
+// half-size map (pre_place) is taken to have (world units); only where the SSAO's map
+// is drawn (the standard and high tiers). The tuner's --contact.
+var contact_look = float4 { 0.8, 3.0, 12.0, 1.5 };
+fn contact_block_of(g: Gpu&) -> float4 {
+    guard ssao_shown(g) && g.pre_place.id != 0 else { return float4_0; }
+    return contact_look;
+}
+fn pre_place_or_stand_in(g: Gpu&) -> Texture { if g.pre_place.id != 0 { g.pre_place } else { g.crown_map } }
+// The sun's broad sheen on the painted wood and the paper (ROOM_FRAG's sheen): x its
+// strength (0 none), y its roughness, z the paper's share, w the tuner's view (1: the sun's
+// highlights alone, ×4). The tuner's --sheen.
+var sheen_look = float4 { 2.0, 0.8, 1.0, 0.0 };
+// The sun on the room's surfaces: x its saturation about its luminance there and in its
+// bake (1 as the key is; the tuner's --room-sun); the panelling oak's own: y its share of
+// the room's sun, z its saturation, w its share of the sheen (the tuner's --oak-sun). The
+// oak keeps the sun it had before the room's sun was doubled (shell_sun.y 2.2): the user
+// wanted the stronger sun on the paper and the doors, the wainscot as it was.
+var room_sun = float4 { 0.6, 0.5, 1.0, 0.0 };
+fn room_sun_of(c: float3) -> float3 {
+    let y = 0.2126 * c.x + 0.7152 * c.y + 0.0722 * c.z;
+    return float3 { y, y, y } + (c - float3 { y, y, y }) * room_sun.x;
 }
 fn mirror_table_block(g: Gpu&) -> TableBlock {
     var b = table_block(g);

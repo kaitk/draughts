@@ -40,6 +40,14 @@
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)]
+//       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
+//       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
+//       [--contact STRENGTH,LENGTH,STEPS,THICKNESS (the sun's contact shadows, world units; 0.8,3,12,1.5; 0 off)]
+//       [--room-sun K (the sun's saturation on the room, 0.6; 1 as the key)]
+//       [--oak-sun SHARE,SAT,SHEEN (the panelling oak's share of the room's sun, its saturation and share of the sheen)]
+//       [--toe|--table-toe|--board-toe room|neutral|none (the room's and the view out's, the table's, the board's toe)]
+//       [--toe-off K (what the toes take off, 0.02)]
+//       [--sheen STRENGTH,ROUGHNESS,PAPER,VIEW (the sun's broad sheen; 2,0.8,1,0; 0 off; VIEW 1 the highlights alone)]
 //       [--sections all|NAME,NAME.. (SECTION_NAMES open at the start)] [--shot-panel (the panel in a --shot)]
 //       [--view board|room|window|hall|stove] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
@@ -81,6 +89,9 @@ let VIEWS = ["board", "room", "window", "hall", "stove"];
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
 // indirect light keeps.
 let SSAO_VIEWS = ["off", "alone", "kept"];
+// The tonemaps' toes (render3d::tone_toe): on the luminance, Khronos PBR Neutral's on the
+// least channel, none.
+let TOES = ["room", "neutral", "none"];
 // What the floor's mirror shows (render3d::planar_view): the room, the floor's reflection
 // alone, the mirror's map over the whole picture, its distances.
 let PLANAR_VIEWS = ["off", "floor", "map", "distance"];
@@ -684,6 +695,32 @@ fn main() {
 
     var g = default<render3d::Gpu>();
     var r3d = default<render3d::Own>();
+    // The toes switched (--toe, --table-toe, --board-toe, --toe-off): the tuner's own
+    // shaders with TOE_FN, the game's left as they are.
+    if has(argv, "--toe") || has(argv, "--table-toe") || has(argv, "--board-toe") || has(argv, "--toe-off") {
+        render3d::tuned_frags = [
+            embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD, shaders::SHADOW_FN,
+                         shaders::LIGHT_FN, shaders::LIT_FRAG),
+            embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
+                         shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
+            embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
+                         shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
+            embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
+                         shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
+            embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::SHADOW_FN,
+                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG),
+            embed_shader("frag", shaders::TABLE_ROOM, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::SHADOW_FN,
+                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+            embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD, shaders::LIGHT_FN,
+                         shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+            embed_shader("frag", shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
+                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+            embed_shader("frag", shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
+                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG)];
+        render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
+                                      pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
+    }
     render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
     render3d::set_aa(r3d, g, render3d::AA);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
@@ -729,6 +766,24 @@ fn main() {
     room.exposure = number(argv, "--exposure", room.exposure);
     var motes = whole(argv, "--motes", 500);
     render3d::light_bounces = whole(argv, "--bounces", room_light::BOUNCES);
+    // The panels' rings (at the start only: the mesh): their occlusion's strength, the dip's
+    // width in cm up the bevel (0 across it), the crease, the bevel's width ×; the bounce's
+    // greying, the lace as a source, the probes' spread; the sun's contact shadows, broad
+    // sheen, saturation on the room and the panelling oak's own share of it; the toes.
+    let panel_ao = four(argv, "--panel-ao", float4 { surfaces::panel_ao_scale, surfaces::panel_ao_width * 100.0 / surfaces::METRE,
+                                                     surfaces::panel_crease, surfaces::panel_bevel });
+    surfaces::panel_ao_scale = panel_ao.x;
+    surfaces::panel_ao_width = panel_ao.y * surfaces::METRE / 100.0;
+    surfaces::panel_crease = panel_ao.z;
+    surfaces::panel_bevel = if panel_ao.w > 0.0 { panel_ao.w } else { 1.0 };
+    room_light::bounce_grey = number(argv, "--bounce-grey", room_light::bounce_grey);
+    room_light::lace_source = number(argv, "--lace-source", room_light::lace_source);
+    room_light::gather_near = number(argv, "--gather-near", room_light::gather_near);
+    render3d::contact_look = four(argv, "--contact", render3d::contact_look);
+    render3d::sheen_look = four(argv, "--sheen", render3d::sheen_look);
+    render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);
+    let oak_sun = four(argv, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
+    render3d::room_sun = float4 { render3d::room_sun.x, oak_sun.x, oak_sun.y, oak_sun.z };
     render3d::shade_fill = number(argv, "--shade-fill", render3d::shade_fill);
     var dust_on = flag_value(argv, "--dust") > 0 && argv[flag_value(argv, "--dust")] == "on";
     render3d::dust.size = number(argv, "--mote-size", render3d::dust.size);
@@ -926,6 +981,21 @@ fn main() {
                 slider(c, "SSAO's bias", room.ssao.z, 0.0, 0.5);
                 slider(c, "SSAO's gain", room.ssao.w, 0.5, 6.0);
                 choice(c, "SSAO view", render3d::ssao_view, SSAO_VIEWS);
+                count(c, "Bounces", render3d::light_bounces, 0, 3);
+                slider(c, "Bounce's grey", room_light::bounce_grey, 0.0, 1.0);
+                slider(c, "Lace as a source", room_light::lace_source, 0.0, 1.0);
+                slider(c, "Probes' spread", room_light::gather_near, 0.02, 0.5);
+                slider(c, "Contact shadow", render3d::contact_look.x, 0.0, 1.0);
+                slider(c, "Contact's length", render3d::contact_look.y, 0.5, 8.0);
+                slider(c, "Contact's steps", render3d::contact_look.z, 2.0, 24.0);
+                slider(c, "Contact's thickness", render3d::contact_look.w, 0.1, 4.0);
+                slider(c, "Sun's saturation", render3d::room_sun.x, 0.0, 1.5);
+                slider(c, "Oak's share of the sun", render3d::room_sun.y, 0.0, 1.5);
+                slider(c, "Oak's sun saturation", render3d::room_sun.z, 0.0, 1.5);
+                slider(c, "Oak's sheen", render3d::room_sun.w, 0.0, 1.0);
+                slider(c, "Sun's sheen", render3d::sheen_look.x, 0.0, 4.0);
+                slider(c, "Sheen's roughness", render3d::sheen_look.y, 0.2, 1.0);
+                slider(c, "Sheen on paper", render3d::sheen_look.z, 0.0, 1.0);
                 slider(c, "Floor's mirror", room.planar.x, 0.0, 2.0);
                 slider(c, "Mirror's blur", room.planar.y, 0.0, 4.0);
                 slider(c, "Boards' wax", room.planar.z, 0.0, 1.0);
@@ -1212,6 +1282,18 @@ fn main() {
             flag_pair(line, "--oak-tint", oak);
             flag_pair(line, "--ceiling-tint", ceiling);
             room_flags(line, room);
+            format(line, " --bounces ", render3d::light_bounces, " --bounce-grey ", room_light::bounce_grey, " --lace-source ",
+                   room_light::lace_source, " --gather-near ", room_light::gather_near);
+            flag_four(line, "--contact", render3d::contact_look);
+            flag_four(line, "--sheen", render3d::sheen_look);
+            format(line, " --room-sun ", render3d::room_sun.x);
+            flag_four(line, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
+            if render3d::tuned_frags[0].len > 0 {
+                format(line, " --toe ", TOES[render3d::tone_toe.x as i64], " --table-toe ", TOES[render3d::tone_toe.y as i64],
+                       " --board-toe ", TOES[render3d::tone_toe.z as i64], " --toe-off ", render3d::tone_toe.w);
+            }
+            flag_four(line, "--panel-ao", float4 { surfaces::panel_ao_scale, surfaces::panel_ao_width * 100.0 / surfaces::METRE,
+                                                   surfaces::panel_crease, surfaces::panel_bevel });
             if walk.placed {
                 let at = walk_at(walk);
                 flag_four(line, "--plan-eye", float4 { walk.eye.x, walk.eye.y, walk.eye.z, 0.0 });

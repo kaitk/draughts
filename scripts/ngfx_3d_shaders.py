@@ -91,6 +91,7 @@ def products(body):
     body = body.replace("light_view_proj * vec4(q, 1.0)", "xf(light_view_proj, vec4(q, 1.0))")
     body = body.replace("view_proj * vec4(pos, 1.0)", "xf(view_proj, vec4(pos, 1.0))")
     body = body.replace("view_proj * vec4(under, 1.0)", "xf(view_proj, vec4(under, 1.0))")
+    body = body.replace("view_proj * vec4(q, 1.0)", "xf(view_proj, vec4(q, 1.0))")
     assert not re.search(r"_proj \*", body), "a matrix product left"
     return body
 

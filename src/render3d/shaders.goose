@@ -86,6 +86,11 @@ let FRAME = """
         // The room's frame (surfaces::Frame, render3d::put_room): u's direction in the
         // world's x and z, then v's; ROOM_VERT turns the room's mesh by it.
         vec4 room_axes;
+        // The tonemaps' toes as the light tuner switches them (TOE_FN; render3d::tone_toe):
+        // x the room's and the view out's way, y the table's, z the board's and the pieces'
+        // (0 on the luminance, 1 on the least channel, Khronos PBR Neutral's, 2 none); w what
+        // a toe takes off above its knee.
+        vec4 toe;
     };
     const float PI = 3.14159265;
     // The board's sizes, mesh.goose's (test/model3d/geometry checks them).
@@ -114,6 +119,27 @@ let SHADOW_MANY = "#define SHADOW_MANY 1\n";
 // TABLE_FRAG in the room with its light baked: the room's probes round the table in place
 // of the look's harmonics (render3d::table_in_room); the game's table never carries it.
 let TABLE_ROOM = "#define TABLE_ROOM 1\n";
+
+// The light tuner's shaders (render3d::tuned_frags), after FRAME: each tonemap's toe
+// switched by Frame's toe (its --toe, --table-toe, --board-toe, --toe-off). The app's never
+// take it: a uniform switch cost the room 0.7 ms a frame on the Mac, and any change to the
+// lit shader's text moves a few pixels of the game's picture there.
+let TOE_FN = """
+    #define TOE_SWITCH 1
+    // The toe of the way `way` taking toe.w off (Frame's toe).
+    vec3 toe_off(vec3 c, float way) {
+        float f = toe.w;
+        if (way < 0.5) {
+            float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
+            return c * ((y < 2.0 * f ? y * y / (4.0 * f) : y - f) / y);
+        }
+        if (way < 1.5) {
+            float x = min(c.r, min(c.g, c.b));
+            return c - (x < 2.0 * f ? x - x * x / (4.0 * f) : f);
+        }
+        return c;
+    }
+    """;
 
 // LIT_FRAG's pieces in one material (render3d::PIECES_..), none of them classic: a
 // phone compiles every branch a shader has, so each material is a shader of its own.
@@ -1064,10 +1090,14 @@ let LIT_FRAG = """
 
     vec3 tonemap(vec3 c) {
         // Khronos PBR Neutral: hue kept, highlights eased; its toe halved, as the
-        // references' darks keep their color.
+        // references' darks keep their color. The tuner's shaders switch it (TOE_FN).
+    #ifdef TOE_SWITCH
+        c = toe_off(c, toe.z);
+    #else
         float x = min(c.r, min(c.g, c.b));
         float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
         c -= offset;
+    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;
@@ -1728,9 +1758,13 @@ let TABLE_FRAG = """
     #endif
 
     vec3 tonemap(vec3 c) {
+    #ifdef TOE_SWITCH
+        c = toe_off(c, toe.y);
+    #else
         float x = min(c.r, min(c.g, c.b));
         float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
         c -= offset;
+    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;
@@ -2098,6 +2132,11 @@ let ROOM_HEAD = """
     // The room mirrored in the floor (render3d::planar_pass): its light in the room's units,
     // a the distance from the floor to what it shows along the reflection, with its mips.
     layout(set = 2, binding = 12) uniform sampler2D planar_map;
+    // Where each half-size pixel is from the eye (SSAO's PRE_FRAG), for the sun's contact
+    // shadows.
+    layout(set = 2, binding = 13) uniform sampler2D pre_place;
+    #else
+    layout(set = 2, binding = 12) uniform sampler2D pre_place;
     #endif
     // surfaces::Look and the room's frame. plank: x a plank's width, y its length in
     // widths, z the joint's half width, w the cup (its slope at the edges); planks: x each
@@ -2141,7 +2180,10 @@ let ROOM_HEAD = """
     // y its reach in world units); ssao: the room's ambient occlusion (SSAO_FN); planar: the
     // floor's mirror (render3d::planar_block): x how strong (0 none, the room's box seen
     // instead), y the tuner's views, z the map's texels a world unit spans at w 1, w its
-    // last mip; planar_look: x the boards' own wax, y the blur over the wax's lobe; table_map:
+    // last mip; planar_look: x the boards' own wax, y the blur over the wax's lobe; contact:
+    // the sun's contact shadows (render3d::contact_look); sheen: the sun's broad sheen
+    // (render3d::sheen_look); room_sun: the sun's saturation on the room, the panelling oak's
+    // share of it, its saturation and share of the sheen (render3d::room_sun); table_map:
     // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
     // ending in gilt, ink, the page edges plain and sprinkled.
@@ -2183,6 +2225,9 @@ let ROOM_HEAD = """
         vec4 ssao;
         vec4 planar;
         vec4 planar_look;
+        vec4 contact;
+        vec4 sheen;
+        vec4 room_sun;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -2195,8 +2240,12 @@ let ROOM_HEAD = """
 // off, as the board does, turns the room's dim oak orange.
 let TONE_FN = """
     vec3 tonemap(vec3 c) {
+    #ifdef TOE_SWITCH
+        c = toe_off(c, toe.x);
+    #else
         float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
         c *= (y < 0.04 ? 12.5 * y * y : y - 0.02) / y;
+    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;
@@ -2484,6 +2533,13 @@ let ROOM_FRAG = """
         return baked_light(lp, n) + ambient * room_baked.z + shade.rgb * room_baked.w;
     }
 
+    // The sun's colour on the room's surfaces: the key's, its saturation about its luminance
+    // scaled by `sat` (1 as it is; render3d::room_sun).
+    vec3 room_sun_color(float sat) {
+        float y = dot(light_color.rgb, vec3(0.2126, 0.7152, 0.0722));
+        return max(mix(vec3(y), light_color.rgb, sat), vec3(0.0));
+    }
+
     // The room's radiance seen along r from p (the world's; lp and lr the room's frame): the
     // shell's box met (its four walls, the ceiling, the floor), the surface there by where it
     // is (the wainscot, the paper, the two doors' paint, the plaster, the herringbone's
@@ -2519,7 +2575,7 @@ let ROOM_FRAG = """
         }
         vec3 n = vec3(axes.x * nl.x + axes.z * nl.z, nl.y, axes.y * nl.x + axes.w * nl.z);
         vec3 l = light_dir.xyz;
-        vec3 sun = light_color.rgb * light_dir.w * shell_sun.y * max(dot(n, l), 0.0) / PI;
+        vec3 sun = room_sun_color(room_sun.x) * light_dir.w * shell_sun.y * max(dot(n, l), 0.0) / PI;
         vec3 c = alb * (room_irradiance(h, n) + (dot(n, l) > 0.0 ? sun * window_light(hw) : vec3(0.0)));
         // The windows, on the window wall.
         if (t != tz || lr.z > 0.0) return c;
@@ -2658,6 +2714,36 @@ let ROOM_FRAG = """
         if (out_of < books_back) lit *= smoothstep(-0.02, 0.0, up + l.y * (books_back - out_of) / -lh.y - (top - 0.06));
         if (abs(off) > 0.011) lit *= smoothstep(-0.01, 0.0, x * sign(off) - 0.011);
         return lit;
+    }
+
+    // The sun's contact shadow at p (the world's; ng its face's normal, l toward the sun):
+    // a short ray toward the sun marched over the half-size map of where the screen's
+    // surfaces are (pre_place); a step behind what is drawn there, by more than a bias and
+    // less than contact.w, is in shade: a moulding's or a frame's thin shadow, which the
+    // window's pattern can't cast. Counted by a uniform (contact.z), so it isn't unrolled.
+    // slope: how fast the distance from the eye changes over a pixel here (fwidth), which a
+    // half-size texel doubles: a floor seen at a slant needs that much more bias.
+    float contact_lit(vec3 p, vec3 ng, vec3 l, float slope) {
+        vec2 size = vec2(textureSize(pre_place, 0));
+        int steps = int(contact.z);
+        // contact.z's fraction over 0.25: the map read bilinear, its stairs smoothed.
+        bool contact_smooth = fract(contact.z) > 0.25;
+        float dt = contact.y / contact.z;
+        float j = fract(dot(floor(gl_FragCoord.xy), vec2(0.375, 0.6875)));
+        vec3 o = p + ng * 0.03;
+        for (int i = 0; i < steps; i++) {
+            vec3 q = o + l * (dt * (float(i) + 0.5 + 0.5 * j));
+            vec4 c = view_proj * vec4(q, 1.0);
+            if (c.w <= 0.0) break;
+            vec2 uv = vec2(0.5, -0.5) * c.xy / c.w + 0.5;
+            if (uv.x < 0.0 || uv.y < 0.0 || uv.x >= 1.0 || uv.y >= 1.0) break;
+            vec4 s = contact_smooth ? textureLod(pre_place, uv, 0.0) : texelFetch(pre_place, ivec2(uv * size), 0);
+            if (s.w <= 0.0) continue;
+            float dq = length(q - eye.xyz);
+            float behind = dq - length(s.xyz);
+            if (behind > max(max(0.002 * dq, 0.03), 3.0 * slope) && behind < contact.w) return 1.0 - contact.x * s.w;
+        }
+        return 1.0;
     }
 
     // How much of the sky the table's base hides from p on the floor: its drum and each leg
@@ -2956,6 +3042,7 @@ let ROOM_FRAG = """
         float ao = clamp(v_extra.x, 0.0, 1.0);
         float fine = 1.0;
         float screen_ao = ssao_at(p);
+        float eye_slope = fwidth(length(p - eye.xyz));
     #ifdef PLANAR_FLOOR
         // The floor's mirror on this board: its own wax, none in the joints.
         float wax = 1.0;
@@ -3225,7 +3312,7 @@ let ROOM_FRAG = """
                 if (cover < 0.02) discard;
                 a = 1.0 - pow(1.0 - 0.8 * cover, 1.0 / max(abs(dot(nf, v)), 0.5));
                 vec3 l = light_dir.xyz;
-                vec3 light = light_color.rgb * light_dir.w;
+                vec3 light = room_sun_color(room_sun.x) * light_dir.w;
                 float sun = window_light(p);
                 float ahead = clamp(dot(v, -l), -1.0, 1.0);
                 float hg = 0.75 / pow(1.25 - ahead, 1.5);
@@ -3248,7 +3335,11 @@ let ROOM_FRAG = """
         vec3 l = light_dir.xyz;
         float nol = dot(n, l);
         float diff = clamp(nol, 0.0, 1.0);
-        vec3 light = light_color.rgb * light_dir.w * shell_sun.y;
+        // The panelling oak takes its own share of the sun, at its own saturation
+        // (render3d::room_sun).
+        bool oak = kind > 4.5 && kind < 5.5;
+        vec3 light = oak ? room_sun_color(room_sun.z) * (light_dir.w * shell_sun.y * room_sun.y)
+                         : room_sun_color(room_sun.x) * (light_dir.w * shell_sun.y);
         // The room's corners and edges, its indirect light only (not the books, which the
         // cases shade themselves). The screen's occlusion only where it finds more than
         // these know, so the box's planes and the cases' shelves aren't darkened twice.
@@ -3263,6 +3354,7 @@ let ROOM_FRAG = """
         float table_kept = table_map[3].x > 0.5 ? table_map_at(p + ng * 0.06) : table_shade(p, l);
         float kept = dot(ng, l) > 0.0 ? table_kept * case_shade(v_local, l) : 0.0;
         float open = kept > 0.0 ? window_open(p) : 0.0;
+        if (contact.x > 0.0 && open * kept > 0.0 && nol > 0.0) open *= contact_lit(p, ng, l, eye_slope);
         float fill = room_baked.x > 0.5 ? room_baked.y : 1.0;
         float vis = (room.y > 0.0 ? open + fill * (1.0 - room.y) * (1.0 - open) * ao : 1.0) * kept;
         // In the room a shadow inside the sun's patch takes the sun alone, the table's as
@@ -3288,7 +3380,13 @@ let ROOM_FRAG = """
         vec3 f0 = mix(vec3(0.04), albedo, metal);
         // The key is a window, not a point: its highlight no sharper than 0.25's.
         float ak = max(ar, 0.06);
-        vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * open * kept;
+        // The sun's broad sheen (sheen): a second, rougher lobe on the painted wood, the
+        // paper (sheen.z of it) and the panelling's oak (room_sun.w of it), one Fresnel and
+        // one light for both lobes.
+        float on = kind > 8.5 && kind < 9.5 && own < 0.5 ? 1.0 : (kind > 5.5 && kind < 6.5 ? sheen.z : (oak ? room_sun.w : 0.0));
+        float as = max(sheen.y * sheen.y, 0.06);
+        float lobes = d_ggx(noh, ak) * v_smith(nov, nl, ak) + on * sheen.x * d_ggx(noh, as) * v_smith(nov, nl, as);
+        vec3 spec = lobes * f_schlick(f0, voh) * nl * light * open * kept;
         // The room's reflection: the windows on the waxed floor and the brass, with the room
         // baked; the harmonics alone before.
         // Only the floor and the brass see the room sharply: the panelling's grain turns its
@@ -3333,6 +3431,7 @@ let ROOM_FRAG = """
         result = vec4(mirror_light(color), 1.0);
         return;
     #endif
+        if (sheen.w > 0.5) color = spec * 4.0 * params.x * shade.w;
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
         // The tuner's views: the screen's occlusion alone, or all the indirect light keeps.

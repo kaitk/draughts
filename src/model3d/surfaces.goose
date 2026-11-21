@@ -288,8 +288,8 @@ let CREASE: f32 = 0.8;  // cos 37°
 
 // The normal at a profile's point between segments of normals a and c (zero for a segment
 // of no length): their mean where they turn less than CREASE, else a, the segment's own.
-fn smooth_normal(a: float3, c: float3) -> float3 {
-    guard length_sq(a) > 0.0 && length_sq(c) > 0.0 && dot(a, c) > CREASE else { return a; }
+fn smooth_normal(a: float3, c: float3, crease: f32 = CREASE) -> float3 {
+    guard length_sq(a) > 0.0 && length_sq(c) > 0.0 && dot(a, c) > crease else { return a; }
     return normalize(a + c);
 }
 
@@ -351,19 +351,52 @@ fn panel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32, x1:
                PANEL_AO);
 }
 
+// The panels' rings (the tuner's --panel-ao): `panel_ao_scale` of what each ring point's
+// occlusion takes off, the groove's dip held to `panel_ao_width` (world units) up the bevel,
+// where a point of the bevel's top occlusion is put in, so the dip is a thin line, not a
+// ramp across the whole bevel (0: across it); `panel_crease`, the rings' crease (cos 32°:
+// the wainscot's bevel a flat facet, the ovolo's 30° turns still smooth; over 1 every facet
+// flat); the bevel's width times `panel_bevel`, the field growing by what it loses.
+var panel_ao_scale: f32 = 0.6;
+var panel_ao_width: f32 = 0.004 * METRE;
+var panel_crease:   f32 = 0.85;
+var panel_bevel:    f32 = 1.0;
+// A ring's step narrower than this (world units, 5 mm) shades as its neighbours do.
+let THIN_STEP: f32 = 0.005 * METRE;
+
 // The panel with a ring of its own: eight points in from the opening's edge, out from
 // the wall, and their occlusion, the first four segments the frame's moulding, the last
 // point the field's corner.
 fn panel_ring(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32, x1: f32, y0: f32, y1: f32,
-              seed: i64, rail_low: Map, rail_high: Map, stile_left: Map, stile_right: Map, ring_in: f32[8], ring_z: f32[8],
-              ring_ao: f32[8]) {
+              seed: i64, rail_low: Map, rail_high: Map, stile_left: Map, stile_right: Map, ring_in8: f32[8], ring_z8: f32[8],
+              ring_ao8: f32[8]) {
     let pm = piece_map(seed, true, x0, y0, x1 - x0, y1 - y0, hash(seed, 7) < 0.5);
     let own = MAT_OAK + 0.9 * hash(seed, 9);
+    // The ring, with a point put in up the bevel (segment 4, from the groove's foot) where
+    // the occlusion's dip is narrowed.
+    var ring_in: f32[..12] = [];
+    var ring_z:  f32[..12] = [];
+    var ring_ao: f32[..12] = [];
+    let shift = (panel_bevel - 1.0) * (ring_in8[5] - ring_in8[4]);
+    for i in 8 {
+        ring_in.push(ring_in8[i] + (if i >= 5 { shift } else { 0.0 }));
+        ring_z.push(ring_z8[i]);
+        ring_ao.push(1.0 - panel_ao_scale * (1.0 - ring_ao8[i]));
+        let wide = ring_in8[5] + shift - ring_in8[4];
+        if i == 4 && panel_ao_width > 0.0 && wide > panel_ao_width {
+            let t = panel_ao_width / wide;
+            ring_in.push(ring_in8[4] + wide * t);
+            ring_z.push(ring_z8[4] + (ring_z8[5] - ring_z8[4]) * t);
+            ring_ao.push(1.0 - panel_ao_scale * (1.0 - ring_ao8[5]));
+        }
+    }
+    let rings = ring_in.len;
+    let last = rings - 1;
     // Each ring's normal on each side, as quad() works it out, then smoothed across the
     // rings where they turn gently: the moulding's ovolo and bead shade as curves.
     let outs: float3[4] = [float3 { 0.0, -1.0, 0.0 }, float3 { 1.0, 0.0, 0.0 }, float3 { 0.0, 1.0, 0.0 }, float3 { -1.0, 0.0, 0.0 }];
-    var flat: float3[4][8] = [[float3_0; 4]; 8];
-    for k in 7 {
+    var flat: float3[4][12] = [[float3_0; 4]; 12];
+    for k in last {
         let a = ring_in[k];
         let c = ring_in[k + 1];
         let za = ring_z[k];
@@ -374,8 +407,8 @@ fn panel_ring(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32
             if length(d) > 0.000001 { flat[k][i] = normalize(float3 { o.x * d.y, o.y * d.y, d.x }); }
         }
     }
-    for i in 4 { flat[7][i] = float3 { 0.0, 0.0, 1.0 }; }
-    for k in 7 {
+    for i in 4 { flat[last][i] = float3 { 0.0, 0.0, 1.0 }; }
+    for k in last {
         let a = ring_in[k];
         let c = ring_in[k + 1];
         let za = ring_z[k];
@@ -400,8 +433,19 @@ fn panel_ring(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32
                 quad(verts, indices, b, q, uv, [oa, oa, oc, oc], own, outs[i]);
                 continue;
             }
-            let na = world_normal(b, if k > 0 { smooth_normal(n, flat[k - 1][i]) } else { n });
-            let nc = world_normal(b, smooth_normal(n, flat[k + 1][i]));
+            // The next facet with a length (past a step's zero one, the wainscot's field).
+            let next = if k + 2 <= last && length_sq(flat[k + 1][i]) == 0.0 { flat[k + 2][i] } else { flat[k + 1][i] };
+            var na = world_normal(b, if k > 0 { smooth_normal(n, flat[k - 1][i], panel_crease) } else { n });
+            var nc = world_normal(b, smooth_normal(n, next, panel_crease));
+            // A step narrower than THIN_STEP with a crease each side (the doors' fillet, the
+            // wainscot's riser into the field) shades from the facet before it to the one after:
+            // its own sharp normal, a fraction of a pixel wide, rasterized as a dashed line.
+            let wide = length(float2 { c - a, zc - za });
+            if k > 0 && wide < THIN_STEP && length_sq(next) > 0.0 && dot(n, flat[k - 1][i]) <= panel_crease
+               && dot(n, next) <= panel_crease {
+                na = world_normal(b, flat[k - 1][i]);
+                nc = world_normal(b, next);
+            }
             let base = verts.len as u32;
             let ns: float3[4] = [na, na, nc, nc];
             let ao: f32[4]    = [oa, oa, oc, oc];
@@ -409,8 +453,8 @@ fn panel_ring(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32
             indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
         }
     }
-    let f = ring_in[7];
-    let z = ring_z[7];
+    let f = ring_in[last];
+    let z = ring_z[last];
     let p: float3[4] = [float3 { x0 + f, y0 + f, z }, float3 { x1 - f, y0 + f, z }, float3 { x1 - f, y1 - f, z }, float3 { x0 + f, y1 - f, z }];
     var uv: float2[4] = [float2_0; 4];
     for j in 4 { uv[j] = place(pm, p[j].x, p[j].y); }

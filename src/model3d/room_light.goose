@@ -88,8 +88,14 @@ let CASE_ALBEDO = float3 { 0.066, 0.039, 0.022 };
 // The ceiling's and the cornice's limewash, surfaces::LOOK's two ends' mean, linear.
 let CEILING_ALBEDO = float3 { 0.446, 0.383, 0.279 };
 
-// How far the sun's patches' thrown-back light is taken to grey (0 its own colour).
-let BOUNCE_GREY: f32 = 0.6;
+// How far the sun's patches' thrown-back light is taken to grey (0 its own colour; the
+// tuner's --bounce-grey): a quarter, as the light thrown off oak, paper and wax is warm.
+var bounce_grey: f32 = 0.25;
+// How much the backlit lace throws on in the first light (1 as made; the tuner's
+// --lace-source), and the least squared distance the half grid's probes take to a cell
+// (metres², 0.09 as made; the tuner's --gather-near): larger spreads a cell's light wider.
+var lace_source: f32 = 1.0;
+var gather_near: f32 = 0.09;
 
 // What the bake takes: the sun toward it in the plan's frame, its light on a plane facing
 // it (linear, the room's sun gain in it), the sky's radiance through the windows (linear),
@@ -344,7 +350,7 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
         // room's light: the amber sun off orange oak alone turns the ceiling peach.
         let c = power[b];
         let grey = 0.2126 * c.x + 0.7152 * c.y + 0.0722 * c.z;
-        let balanced = c + (float3 { grey, grey, grey } - c) * BOUNCE_GREY;
+        let balanced = c + (float3 { grey, grey, grey } - c) * bounce_grey;
         out[count] = Patch { where[b] / lit[b], normal[b], albedo[b], balanced };
         count++;
     }
@@ -389,7 +395,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
     let inv_pi2 = sun.bounce_gain / (PI * PI);
     // The probes' near limit, so a patch's light doesn't spike at the probes beside it:
     // about a bin's size.
-    let near2: f32 = 0.09;
+    let near2: f32 = gather_near;
     for ih in NH {
         for iz in NZ {
             for ix in NX {
@@ -493,8 +499,9 @@ let NICHE_C0 = 1016;
 let TABLE_C = 1208;        // + 3 × NICHE_CELLS
 let LACE_C0 = 1209;
 let CELLS = 1233;          // + 3 windows × 2 panels × LACE_BANDS
-// How many times the room throws its light on after the first.
-let BOUNCES = 3;
+// How many times the room throws its light on after the first: one, as two and three
+// change no patch by more than a level (build/notes/panels-shade/) and cost the bake's time.
+let BOUNCES = 1;
 // Of the light the lace stops, the share it throws on into the room, diffusely: its thread
 // is near white (0.8), and about half of what it scatters goes forward.
 let LACE_SCATTER: f32 = 0.4;
@@ -697,10 +704,10 @@ fn seen_through(t: float4, wins: room_shell::Opening[3]&, a: float3, ka: i64, b:
     return lets;
 }
 
-// A colour taken part of the way to grey, as the sun's patches are (BOUNCE_GREY).
+// A colour taken part of the way to grey, as the sun's patches are (bounce_grey).
 fn balanced(c: float3) -> float3 {
     let grey = 0.2126 * c.x + 0.7152 * c.y + 0.0722 * c.z;
-    return c + (float3 { grey, grey, grey } - c) * BOUNCE_GREY;
+    return c + (float3 { grey, grey, grey } - c) * bounce_grey;
 }
 
 // The light the room first throws on, besides the sun's patches: each cell's sky (seen
@@ -752,7 +759,7 @@ fn first_light(sun: Sun, bounce: Bounce&) {
         let thrown = bounce.sun[c] * (gain / cell.area);
         if lace {
             let from_sky = balanced(e * ((1.0 - lace_lets(cell.at.z)) * LACE_SCATTER));
-            bounce.leaves[c] = from_sky + balanced(thrown);
+            bounce.leaves[c] = (from_sky + balanced(thrown)) * lace_source;
             bounce.seen[c] = bounce.leaves[c];
         } else {
             let from_sky = balanced(e * cell.albedo);
@@ -810,7 +817,7 @@ fn bounce_once(sun: Sun, bounce: Bounce&, first: bool) {
 fn gather_half(sun: Sun, bounce: Bounce&) {
     var wins = windows();
     let x0 = room_shell::LIBRARY.walls[room_shell::FAR_WALL].a.x;
-    let near2: f32 = 0.09;
+    let near2: f32 = gather_near;
     for ih in HALF_H {
         for iz in HALF_Z {
             for ix in HALF_X {
