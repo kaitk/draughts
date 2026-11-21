@@ -981,6 +981,30 @@ to be is in tasks 042, 059, 071, 081, and 086.
   is worked out only within the reach: unrolled, the nine boxes made the room's shader
   157 ms a frame at 1600 × 1000 on an M-series Mac (5.6 before), even where it returned
   at once; now 6.0.
+- The library's corner and edge shade is baked, not worked out a pixel (2026-11-21, task
+  110; `model3d::corner_map`). It depends only on the shell's planes and a surface's place
+  and normal, so when the shell's mesh is made (and again when `rooms::Room.corners`
+  changes, not while a slider is held) the CPU works the same function out once a texel
+  into one R8 atlas, 4096 × 1013 texels (4.1 MB), in about 300 ms on an M1 Pro; `ROOM_FRAG`
+  and the mirror's pass read it with one bilinear tap. The mesh is cut into charts, the
+  triangles sharing a plane and their vertices (16,623; vertices copied where charts meet,
+  47,608 to 73,044), each laid flat with 16 texels along each side, from 2.5 mm to 2 cm a
+  texel, so a narrow jamb or a sill's nose keeps its steep shade; each texel takes the
+  shade at the nearest point of its chart's triangles with the normal the GPU interpolates
+  there, a texel no triangle reaches its neighbour's. A room vertex carries its place in the
+  atlas and its chart's first and last texel (56 bytes, 40 before), and the tap is held
+  inside the chart, as a pixel's middle past a triangle's edge would read another chart.
+  Measured headless at 3024 × 1890, the room view, two rounds: the main pass 23.6 to 18.3
+  ms, the mirror's room 1.8 to 1.2, the frame 27.6 to 21.7. The look: a mean difference of
+  0.03 to 0.1 levels against 1.3 to 2.5 for the shade itself, one-pixel lines along edges
+  seen at a grazing angle, a step a term makes inside a face softened over a texel; the
+  game unchanged. Replaces the per-pixel `corner_shade` above (its model stays, in Goose).
+  Rejected: a bake on the GPU (the same shader text, a few ms, but new pipelines in both
+  renderers and holes where no texel's middle falls inside a thin triangle); per-vertex
+  values (the walls and floor are a few large quads); a texture a plane in plan
+  coordinates (a plane's faces overlap in plan at other depths, and the swept mouldings
+  aren't planes); 1 cm texels on the large charts (9.6 MB, 860 ms, for a third fewer
+  pixels over 8 levels).
 - The library's baked light bounces three times (2026-11-21, task 107;
   `room_light::first_light`, `bounce_once`, `gather_half`): the room's surfaces as 1,208
   cells, about 0.5 m a side on the floor, the ceiling and the four walls (a door's leaf, a

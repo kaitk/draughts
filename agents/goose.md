@@ -240,6 +240,9 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   at run time too, even where the code returns at once: nine unrolled boxes in the
   library's `corner_shade` made the room 157 ms a frame on the Mac; one loop counted by
   a uniform (`+ int(corners.z)`) brought it back to 6.
+- Without `centroid`, a varying is read at the pixel's middle even past the triangle's
+  edge: an atlas looked up by a varying reads the next chart there, far at a grazing angle.
+  Hold the tap inside the chart with a flat varying of its texels (`corner_map`'s `box`).
 - A Mali compiles every branch, even one a uniform never takes: split what a look never
   uses into variants by a define (`shaders::PIECES_WOOD`, `BAKE_TABLE`), one embedded
   shader each, and make a variant's pipeline outside a pass.

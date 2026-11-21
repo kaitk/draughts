@@ -235,6 +235,21 @@ results, or keep baking at run time behind a loader when the room or a look is c
   room waited for the GPU 9.2–10.0 / 9.5–9.8. About 0.2–0.3 ms: the mirror's resolve
   takes a 3 × 3 tent (18 fetches a half-size texel) and the floor a slow wax noise.
 
+- Fix 1, the corners' shade baked (2026-11-21, builder 21, `build/notes/builder-21/`;
+  `docs/decisions/rendering.md`): `corner_shade` (5.0 ms of the main pass, 0.6 of the
+  mirror's) worked out on the CPU into a 4096 × 1013 R8 atlas, 4.1 MB on the GPU, 302 to
+  314 ms (five runs) each time the shell's mesh is made or the corners change; the mesh
+  made in 12.4 to 13.2 ms (9.8 before: its charts), 73,044 vertices of 56 bytes (47,608
+  of 40), so 4.1 MB of vertices against 1.9; fixed CPU buffers of the atlas's 8 MB and a
+  chart's 2 MB, touched only by the bake. Metal System Trace, headless 3024 × 1890, the
+  room view, before / after, two rounds (the second after first): the main pass 23.57 /
+  18.27 and 23.68 / 18.40 ms, the mirror's room 1.87 / 1.30 and 1.81 / 1.20, the frame's
+  parts 27.61 / 21.70 and 27.60 / 21.79; the fps counter 27.4–27.7 / 21.1–21.4 and
+  27.9–29.0 / 20.8–21.6 ms a frame. The look within a level on average (shots and diffs on
+  the page), the game's shot unchanged. The bake's 300 ms is the next thing to pay if a
+  slower CPU shows the room: store it with the build (it depends only on the shell and the
+  corners), or bake it on the GPU.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

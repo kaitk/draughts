@@ -614,7 +614,7 @@ board's light:
 - **The toes**: each tonemap keeps its own (the room's and the view out's on the
   luminance, the board's and the table's off the least channel); the light tuner can switch
   them in shaders of its own (`shaders::TOE_FN`, `--toe`, `--table-toe`, `--board-toe`).
-- **Corners and edges** (`ROOM_FRAG`'s `corner_shade`, `rooms::Room.corners`): the
+- **Corners and edges** (`model3d::corner_map`, `rooms::Room.corners`): the
   indirect light darkened by the distance to each of the shell's planes standing square to
   a surface, a plane hiding a half of the light at the line and nothing beyond the reach
   (0.4 m): the floor along the walls, the inside corners, the walls along the floor and
@@ -623,7 +623,10 @@ board's light:
   stands out of a wall and ends (the bookcases, the architraves and plinth blocks, the
   sills' noses, the piers beside a niche) is a box whose faces' shade falls off past their
   edges, and the doors' and windows' openings are holes in their walls, so no shade runs on
-  past an outside corner. Every tier; the sun is never darkened by it.
+  past an outside corner. Every tier; the sun is never darkened by it. Baked on the CPU
+  into an R8 atlas (4096 × 1013, 4.1 MB, about 300 ms on an M1 Pro) when the shell's mesh
+  is made or the corners change: the mesh cut into planar charts, each laid flat at 2.5 mm
+  to 2 cm a texel; `ROOM_FRAG` reads it with one tap held inside the vertex's chart.
 - **Ambient occlusion from the screen** (`render3d::ssao_pass`, `rooms::Room.ssao`), in
   the standard and high tiers, not on a phone (`render3d::ssao_allowed`): before the
   board's pass the room, the table, the board and the pieces are drawn at half size into

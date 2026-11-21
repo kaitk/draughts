@@ -173,7 +173,7 @@ pieces; the design boards still set the layout, glass, and controls.
   Its limbs' width and blur in the map are `rooms::SHELL_LIMBS`. The doors' feet, the
   plinth's corners and the windows close up: `build/leftovers/shots.sh EXE TAG [NAMES]`
   (`build/notes/leftovers/`). To see the probes alone, `--baked 7,12,0,0`.
-  The corners' and edges' shade (`rooms::Room.corners`, `ROOM_FRAG`'s `corner_shade`):
+  The corners' and edges' shade (`rooms::Room.corners`, baked by `model3d::corner_map`):
   `--corners STRENGTH,REACH,0,0` (reach in metres; `0,0.4,0,0` off), the Light section's
   Corners' shade and reach, printed by P. The table's own map (`render3d::table_map`)
   draws whenever the room and the table show. Close-ups of the plinth by a bookcase, an
@@ -181,7 +181,10 @@ pieces; the design boards still set the layout, glass, and controls.
   the table's feet: `build/ao-fixes/shots.sh EXE TAG [NAMES]` (`EXTRA` in the environment
   adds flags; `build/notes/ao-fixes/`). A shader value to check by eye: write it to
   `result` and `return` in a scratch build (the table map's visibility on the base read
-  white where the sun reaches, 2026-11-21).
+  white where the sun reaches, 2026-11-21). The shade is baked (`corner_map`, 2026-11-21): the bake's
+  time and atlas print with a shot's bake lines; to judge the map against the old per-pixel
+  shade, write `corner` to `result` in both builds (brass set to 1, as it ignores it) and
+  compare (`build/b21/shots.sh EXE TAG`, `build/b21/cmp.sh A B`, `build/notes/builder-21/`).
 - The light tuner's panel is in sections that open and close, kept for the session
   (`SECTIONS`): Scene, Light (Light in detail inside), Sun and tree (the sun, the tree,
   wind, the board's window, noise leaves), Wallpaper, Wainscot and panelling, Ceiling,

@@ -294,6 +294,10 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       quiet Mac). The game's shot unchanged (max difference 0). Turns against a dense
       reference: the fix at the reference's own frame-to-frame change; the error at 3200 × 2000 near the windows 1.20 levels a frame (full size
       0.96); a temporal accumulation of the map built, no gain, dropped
+- [x] The corners' shade baked into an atlas with the shell's mesh (2026-11-21, builder 21,
+      task 110's fix 1, `build/notes/builder-21/`): the main pass 23.6 to 18.3 ms at
+      3024 × 1890, the frame 27.6 to 21.7; the look within a level on average, the game
+      unchanged; the bake about 300 ms on the CPU
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)
