@@ -753,7 +753,9 @@ fn main() {
                          shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG)];
+            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
+            embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
+                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)];
         render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
                                       pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
     }

@@ -359,6 +359,7 @@ struct Gpu {
     // phone's without them. The floor here sees the room's box; room_planar the mirror.
     room_floor:  Pipeline,
     room_walls:  Pipeline,
+    room_paint:  Pipeline,
     room_metals: Pipeline,
     room_ssao:   bool,
     room_views:  bool,              // with the tuner's views (room_views_on)
@@ -404,7 +405,7 @@ struct Gpu {
     ssao_map:   Texture,
     ssao_size:  int2,
     // The floor's mirror (planar_pass): the room drawn mirrored under the floor (its walls',
-    // metals' and glass's pipelines in shaders::MIRROR_PASS, the floor not drawn, the
+    // paint's, metals' and glass's pipelines in shaders::MIRROR_PASS, the floor not drawn, the
     // table's winding the other way), that made the room's light again with each texel's
     // distance (resolve), its mips each a tent over the level above (mip), the tuner's view
     // of it (show); its targets at planar_size_of's size, made again for another: the
@@ -412,6 +413,7 @@ struct Gpu {
     // PLANAR_MIPS). Its pipelines only with the screen's maps (room_ssao).
     room_planar:    Pipeline,       // the floor that sees the mirror (shaders::PLANAR_FLOOR)
     planar_walls:   Pipeline,
+    planar_paint:   Pipeline,
     planar_metals:  Pipeline,
     planar_glass:   Pipeline,
     planar_table:   Pipeline,
@@ -693,17 +695,20 @@ fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY, shell: bool = f
 
 // The room's materials in groups, each drawn with a pipeline of its own whose shader holds
 // only its materials' code: the floor; the walls' surfaces (the panelling oak, the paper,
-// the plaster and the ceiling, the paint and the sills, the cord); the metals (the brass,
-// and the books with their gilt), which see the room's box sharply. The glass and the lace
-// are a mesh of their own.
+// the plaster and the ceiling, the sills, the cord); the painted wood (the doors, their
+// architraves, the windows' joinery and shutters); the metals (the brass, and the books
+// with their gilt), which see the room's box sharply. The glass and the lace are a mesh of
+// their own.
 let GROUP_FLOOR = 0;
 let GROUP_WALLS = 1;
-let GROUP_METALS = 2;
-let ROOM_GROUPS = 3;
+let GROUP_PAINT = 2;
+let GROUP_METALS = 3;
+let ROOM_GROUPS = 4;
 fn room_group(mat: f32) -> i64 {
     let kind = floor(mat + 0.001);
     if kind < surfaces::MAT_FLOOR + 0.5 { return GROUP_FLOOR; }
     if kind == surfaces::MAT_BRASS || kind >= surfaces::MAT_BOOK { return GROUP_METALS; }
+    if kind == surfaces::MAT_PAINT && mat - kind < 0.5 { return GROUP_PAINT; }
     return GROUP_WALLS;
 }
 
@@ -732,7 +737,7 @@ fn group_end(g: Gpu&, k: i64) -> i64 { if k + 1 < ROOM_GROUPS { g.room_from[k + 
 // The textures a group's shader reads (GROUP_GLASS the glass and lace's), in its slots
 // (shaders::ROOM_HEAD): the tree's and the lace's maps, the light's, the group's own, the
 // screen's maps where the pipeline has them (ssao), the mirror where the floor sees it.
-let GROUP_GLASS = 3;
+let GROUP_GLASS = 4;
 let ROOM_TEXTURES = 11;
 struct RoomTextures { tex: Texture[ROOM_TEXTURES], smp: Sampler[ROOM_TEXTURES], count: i64 }
 fn add_texture(t: RoomTextures&, tex: Texture, smp: Sampler) {
