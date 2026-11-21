@@ -856,6 +856,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   ring's faces take the profile's own normal, which also turns the groove's inner wall to
   face the panel's middle, where the facing toward the side had turned it into the
   moulding. No triangles more.
+- The wainscot stops against a door's architrave with no gap, and the architrave stands
+  on a plinth block wider and deeper than itself (2026-11-21, task 107; `shell_mesh`'s
+  `BLOCK_PAST`, `BLOCK_DEEP`): the block 2 cm past the architrave's outer edge and 6.5 cm
+  out (the architrave 5), over the skirting's end; the cap ends square against the
+  architrave's side. Replaces a 1 cm gap between the wainscot and the architrave, where
+  nothing covered the wall from the block up to the wainscot's top (it showed a thin olive
+  sliver), and a block only a centimetre past the architrave and 6 cm out.
 - The sun's highlight takes only the sun that comes through a window (2026-11-21, task
   107; `LIGHT_FN`'s `window_open`): the window's pattern keeps out `room.y` of the key in
   its shade (`window_light`), so the rest, 10% in autumn, lit every surface's GGX highlight

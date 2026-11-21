@@ -181,7 +181,10 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       cord round the bundle's soft gathered waist, the knot an overhand at 0.91 m on the
       front, the loop rising to 0.94 m at the back, the cloth gathered round the loop where
       it lies. Costs in task 110. Still off: the cord's loop is seen through the lace
-      behind the bundle, as before; the near rim on tall phones, for the user
+      behind the bundle, as before; the near rim on tall phones, for the user. Then, the
+      same day: the shell's swept mouldings, the panels' rings and the books' spines with
+      smooth normals (a crease at 37°, the rule in `agents/design.md`); the wainscot
+      stopped against the doors' architraves on wider, deeper plinth blocks
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

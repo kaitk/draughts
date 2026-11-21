@@ -87,6 +87,11 @@ let ARCHITRAVE_A: float2[7] = [
     float2 { 14.0, 5.0 }, float2 { 14.0, 0.0 },
 ];
 
+// How far a door's plinth block stands past the architrave's outer edge, and out of the
+// wall (the architrave 5 cm, the skirting 5 cm).
+let BLOCK_PAST: f32 = 0.02;
+let BLOCK_DEEP: f32 = 0.065;
+
 // What a run of wainscot is: along a wall or a pier, or under a window (to the sill
 // board's foot).
 let RUN_WALL = 0;
@@ -596,10 +601,12 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     architrave(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0);
     architrave(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0);
     architrave(verts, indices, b, prof[..], float2 { -w, h }, float2 { w, h }, float2 { 0.0, 1.0 }, 1.0, 1.0);
+    // The plinth blocks the architrave stands on, a little wider and deeper than it, over
+    // the wainscot's skirting where it stops.
     for sx in SIDES {
         let a = sx * (w - 0.01);
-        let c = sx * (w + ARCHITRAVE + 0.01);
-        box_m(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, 0.06, paint);
+        let c = sx * (w + ARCHITRAVE + BLOCK_PAST);
+        box_m(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, BLOCK_DEEP, paint);
     }
 }
 
@@ -661,9 +668,10 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]
                 at = o.mid + 0.5 * o.width;
                 at_end = 1;
             } else {
-                // A door or a bookcase: the wainscot's cap returned at its side (into a case's
-                // ledge), or where too little wall is left for a panel, a bare strip.
-                let gap = if o.kind == BOOKCASE { 0.002 } else { 0.01 };
+                // A door or a bookcase: the wainscot stopped square against the architrave's
+                // side (its skirting under the plinth block) or returned into a case's
+                // ledge, or where too little wall is left for a panel, a bare strip.
+                let gap = if o.kind == BOOKCASE { 0.002 } else { 0.0 };
                 let a = o.mid - reach(o) - gap;
                 if a > at + 0.25 || (a > at + 0.01 && at_end != 2) {
                     wainscot_run(verts, indices, b, at * k, a * k, RUN_WALL, at_end, 2, seed);
