@@ -322,7 +322,7 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     let kept = g.frame;
     if render3d::outside_shown(g) {
         g.frame = plain;
-        draw_outside(own, g);
+        draw_outside(own, g, true);
     }
     g.frame = clip;
     if render3d::table_shown(g) && render3d::table_in_room(g) {
@@ -494,13 +494,13 @@ fn bloom_pass(own: Own&, g: render3d::Gpu&, image: Texture, target: Texture, siz
 
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
 // the photograph: one draw, the sky, then the band, then the oak, each over the last.
-fn draw_outside(own: Own&, g: render3d::Gpu&) {
+fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
     gfx::bind(g.outside);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.outside_band, g.linear);
     gfx::bind_texture(gfx::FRAGMENT, 1, g.outside_oak, g.linear);
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
     gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
-    gfx::uniforms(gfx::FRAGMENT, 1, render3d::outside_block(g));
+    gfx::uniforms(gfx::FRAGMENT, 1, render3d::outside_block(g, in_mirror));
     gfx::bind_vertex_buffer(g.outside_vb);
     gfx::bind_index_buffer(g.outside_ib, 4);
     gfx::draw_indexed(g.outside_count);

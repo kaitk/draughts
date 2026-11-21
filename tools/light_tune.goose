@@ -929,6 +929,7 @@ fn main() {
                 slider(c, "Floor's mirror", room.planar.x, 0.0, 2.0);
                 slider(c, "Mirror's blur", room.planar.y, 0.0, 4.0);
                 slider(c, "Boards' wax", room.planar.z, 0.0, 1.0);
+                slider(c, "Sky in mirror", room.planar.w, 1.0, 12.0);
                 choice(c, "Mirror view", render3d::planar_view, PLANAR_VIEWS);
                 if g.light_ms > 0.0 {
                     note(c, str("probes baked in ", floor(g.light_ms + 0.5) as i64, " ms, ", g.light_patches, " sun patches"));

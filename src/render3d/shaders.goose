@@ -2015,6 +2015,15 @@ let TABLE_FRAG = """
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
         vec3 fc = env_brdf(f0, sqrt(ar), nov) * strength;
         vec3 color = (wood * (1.0 - fc) + spec * strength + env * fc * spec_ao) * params.x;
+    #ifdef TABLE_ROOM
+        if (ssao.w < -0.5) {
+            // In the floor's mirror (render3d::mirror_table_block): the light itself, as the
+            // room's there, before the board's tonemap.
+            float peak = max(color.r, max(color.g, color.b));
+            result = vec4(peak > 16.0 ? color * (16.0 / peak) : color, 1.0);
+            return;
+        }
+    #endif
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
     #ifdef TABLE_ROOM
@@ -2192,6 +2201,14 @@ let TONE_FN = """
         float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
         return mix(c, vec3(np), g);
     }
+    // The floor's mirror keeps the light as it is, before the tonemap (exposed, linear), so
+    // the sky through the glass stays as far over the backlit lace as it is; only the sun's
+    // disc and its halo are held to MIRROR_PEAK, which the floor's blur spreads anyway.
+    const float MIRROR_PEAK = 16.0;
+    vec3 mirror_light(vec3 c) {
+        float peak = max(c.r, max(c.g, c.b));
+        return peak > MIRROR_PEAK ? c * (MIRROR_PEAK / peak) : c;
+    }
     """;
 
 // The view out of the library's windows (model3d::view_out), turned with the room as
@@ -2277,6 +2294,14 @@ let OUTSIDE_FRAG = """
             t = texture(band, v_uv) * smoothstep(0.0, 0.0156, min(v_uv.x, 1.0 - v_uv.x));
         } else t = texture(oak, v_uv);
         vec3 c = t.rgb / max(t.a, 1e-4) * exposure.x;
+        if (exposure.z > 0.0) {
+            // In the floor's mirror: the light itself (TONE_FN's mirror_light), z times
+            // the look's, whose exposure is set through the tonemap's shoulder, where the
+            // sky reads white whatever it is: a clear sky by a low sun is some 13 times a
+            // sunlit dark oak floor, the look's about 3.
+            result = vec4(mirror_light(c * exposure.z) * t.a, t.a);
+            return;
+        }
         c = tonemap(c) * vec3(1.02, 1.0, 0.97);
         float n = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
         result = vec4((encode(c) + n / 255.0) * t.a * (1.0 - screen.z), t.a);
@@ -2917,6 +2942,7 @@ let ROOM_FRAG = """
         // The wax's film over the boards: it follows each board's tilt and cup, and only a
         // little of the grain's relief, which it fills.
         vec3 n_film = ng;
+        float dull = 0.0;
     #endif
         vec3 albedo;
         float rough;
@@ -3015,7 +3041,14 @@ let ROOM_FRAG = """
             // Each board waxed and worn a little its own way: its mirror stronger or weaker,
             // and sharper or softer, so the reflection steps from board to board.
             float own_wax = (h12(id + 21.7) * 2.0 - 1.0) * planar_look.x;
-            wax = (1.0 + own_wax) * (1.0 - joint);
+            // The film worn thin where feet go (the paths, the scratches), in slow patches
+            // waxed less, and over the grain's open pores: there the oak's own rough sheen
+            // shows through it (planar_floor's blur), a little weaker, so the window's
+            // bright sheen shows the floor's surface.
+            float pores = clamp(length(t) * 3.0, 0.0, 1.0);
+            float patches = smoothstep(0.35, 0.75, vnoise(uv * 0.045 + 17.0));
+            dull = clamp(0.6 * wear + 0.4 * sc + 0.35 * pores + 0.4 * patches, 0.0, 1.0);
+            wax = (1.0 + own_wax) * (1.0 - joint) * (1.0 - 0.3 * dull);
             rough *= 1.0 - 0.4 * own_wax;
         #endif
             // The table hides the sky under it, its scroll toes the floor they stand on,
@@ -3175,6 +3208,10 @@ let ROOM_FRAG = """
                 vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + (sh_eval(nf) * params.z + shade.rgb) * ssao_kept(screen_ao);
                 c = srgb(lace_thread.rgb) * (front + through);
             }
+        #ifdef MIRROR_PASS
+            result = vec4(mirror_light(c * params.x * shade.w) * a, a);
+            return;
+        #endif
             c = tonemap(c * params.x * shade.w) * vec3(1.02, 1.0, 0.97);
             result = vec4(to_srgb(c) * a * (1.0 - screen.z), a);
             if (ssao.y > 0.5) result = vec4(vec3(ssao.y > 1.5 ? ssao_kept(screen_ao) : screen_ao) * a, a);
@@ -3247,7 +3284,7 @@ let ROOM_FRAG = """
         vec3 env;
         float film = sqrt(ar);
         if (kind < 4.5) {
-            film = clamp(rough * planar_look.y, 0.03, 1.0);
+            film = clamp(mix(rough * planar_look.y, rough, dull), 0.03, 1.0);
             vec4 seen = planar_seen(p, reflect(-v, n_film), film * film, nov);
             env = mix(room_wide(v_local, rv) * spec_ao, seen.rgb, seen.a) * planar.x * wax;
             spec_ao = 1.0;
@@ -3266,6 +3303,10 @@ let ROOM_FRAG = """
     #endif
     #endif
         vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
+    #ifdef MIRROR_PASS
+        result = vec4(mirror_light(color), 1.0);
+        return;
+    #endif
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
         // The tuner's views: the screen's occlusion alone, or all the indirect light keeps.
@@ -3468,10 +3509,9 @@ let MIRROR_PASS = "#define MIRROR_PASS 1\n";
 let PLANAR_FLOOR = "#define PLANAR_FLOOR 1\n";
 
 // The mirror's picture made the room's light again, with how far each texel stands from the
-// floor along the reflection: the pass drew the room as the screen shows it (tonemapped,
-// sRGB, the board's grade), so its colour is decoded and taken back through the room's
-// tonemap (TONE_FN: its shoulder, whose mix toward white the peak says, then its toe) and
-// the room's exposure (planar_tone.x, its inverse). The depth places the point: planar_back
+// floor along the reflection: the pass drew the room, the table and the view out as their
+// light before the tonemap (mirror_light), exposed, so the room's exposure's inverse
+// (planar_tone.x) takes it back. The depth places the point: planar_back
 // is the inverse of the pass's view_proj (columns), planar_eye the eye and, w, the floor's
 // y; the point's height over the floor and the eye's give its distance from where the
 // reflection leaves the floor, at most planar_tone.y. Where the pass drew nothing of the room
@@ -3483,22 +3523,6 @@ let PLANAR_RESOLVE_FRAG = """
     layout(set = 2, binding = 1) uniform sampler2D planar_depth;
     layout(set = 3, binding = 0) uniform PlanarResolve { vec4 planar_back[4]; vec4 planar_eye; vec4 planar_tone; };
     const int PLANAR_REACH = 8;
-    vec3 decode(vec3 c) {
-        return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
-    }
-    vec3 untone(vec3 c) {
-        const float start = 0.76;
-        const float d = 1.0 - start;
-        float np = max(c.r, max(c.g, c.b));
-        if (np > start) {
-            np = min(np, 0.9995);
-            float peak = d * d / (1.0 - np) - d + start;
-            float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
-            c = max(c - g * np, vec3(0.0)) / max(1.0 - g, 1e-4) * (peak / np);
-        }
-        float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
-        return c * (y < 0.02 ? sqrt(y / 12.5) : y + 0.02) / y;
-    }
     void main() {
         ivec2 px = ivec2(gl_FragCoord.xy);
         ivec2 size = textureSize(planar_color, 0);
@@ -3523,11 +3547,10 @@ let PLANAR_RESOLVE_FRAG = """
             ivec2 at = clamp(px + ivec2(k % 3 - 1, k / 3 - 1), ivec2(0), size - 1);
             if (texelFetch(planar_depth, at, 0).r >= 1.0) continue;
             float w = (k % 3 == 1 ? 2.0 : 1.0) * (k / 3 == 1 ? 2.0 : 1.0);
-            c += w * decode(texelFetch(planar_color, at, 0).rgb);
+            c += w * texelFetch(planar_color, at, 0).rgb;
             total += w;
         }
         c /= max(total, 1e-4);
-        c /= vec3(1.02, 1.0, 0.97);
         vec4 h = planar_back[0] * (2.0 * uv.x - 1.0) + planar_back[1] * (1.0 - 2.0 * uv.y)
                + planar_back[2] * depth + planar_back[3];
         vec3 q = h.xyz / h.w;
@@ -3535,7 +3558,7 @@ let PLANAR_RESOLVE_FRAG = """
         float high = max(q.y - floor_y, 0.0);
         vec3 under = vec3(q.x, 2.0 * floor_y - q.y, q.z);
         float t = length(under - planar_eye.xyz) * high / max(high + planar_eye.y - floor_y, 1e-3);
-        result = depth < 1.0 ? vec4(untone(c) * planar_tone.x, min(t, planar_tone.y)) : vec4(0.0);
+        result = depth < 1.0 ? vec4(c * planar_tone.x, min(t, planar_tone.y)) : vec4(0.0);
     }
     """;
 

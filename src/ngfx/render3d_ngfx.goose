@@ -285,7 +285,7 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
     nx::begin_pass(pass);
     if render3d::outside_shown(g) {
         let two: render3d::Frame[1] = [plain];
-        draw_outside(own, g, ngfx::frame_data(bytes_of(two)));
+        draw_outside(own, g, ngfx::frame_data(bytes_of(two)), true);
     }
     if render3d::table_shown(g) && render3d::table_in_room(g) {
         nx::bind(g.planar_table);
@@ -476,11 +476,11 @@ fn bloom_pass(own: Own&, g: Gpu&, image: Texture, target: Texture, size: int2) {
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
 // the photograph: one draw, the sky, then the band, then the oak, each over the last;
 // r3d_outside.slang's header: Outside, the band, the oak.
-fn draw_outside(own: Own&, g: Gpu&, f: u64) {
+fn draw_outside(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
     nx::bind(g.outside);
     var t = no_root();
     t.frame = f;
-    let b: render3d::OutsideBlock[1] = [render3d::outside_block(g)];
+    let b: render3d::OutsideBlock[1] = [render3d::outside_block(g, in_mirror)];
     t.u = ngfx::frame_data(bytes_of(b));
     t.verts = nx::address(g.outside_vb);
     slot(t, 0, g.outside_band, g.linear);

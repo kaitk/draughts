@@ -677,10 +677,14 @@ fn outside_shown(g: Gpu&) -> bool {
     room_shown(g) && g.room_shell && g.outside_on && g.outside_vb.id != 0 && g.outside.id != 0
 }
 
-// OUTSIDE_FRAG's block: the exposure (rooms::Room.outside), the sun disc's brightness.
+// OUTSIDE_FRAG's block: the exposure (rooms::Room.outside), the sun disc's brightness; in
+// the floor's mirror, z how much brighter the view out is than its look (rooms::Room.planar.w),
+// drawn as its light before the tonemap; else 0.
 struct OutsideBlock { exposure: float4 }
 let SUN_DISC: f32 = 30.0;
-fn outside_block(g: Gpu&) -> OutsideBlock { OutsideBlock { float4 { g.room.outside, SUN_DISC, 0.0, 0.0 } } }
+fn outside_block(g: Gpu&, in_mirror: bool = false) -> OutsideBlock {
+    OutsideBlock { float4 { g.room.outside, SUN_DISC, if in_mirror { max(g.room.planar.w, 1.0) } else { 0.0 }, 0.0 } }
+}
 
 // An oak's bake (surfaces::Oak) in the slots of a theme BAKE_FRAG's oak reads.
 fn oak_theme(g: Gpu&, oak: surfaces::Oak) -> looks::Theme {
@@ -2075,7 +2079,8 @@ fn mirror_surfaces_block(g: Gpu&) -> SurfacesBlock {
 }
 fn mirror_table_block(g: Gpu&) -> TableBlock {
     var b = table_block(g);
-    b.ssao = float4_0;
+    // ssao.w -1: the light before the tonemap, as the room's in the mirror.
+    b.ssao = float4 { 0.0, 0.0, 0.0, -1.0 };
     return b;
 }
 
