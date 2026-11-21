@@ -987,6 +987,39 @@ to be is in tasks 042, 059, 071, 081, and 086.
   without it the hall wall's wainscot in shade fell from 11 to 6% at style-01's camera
   (the repaint's 10), the paper from 18 to 13% (18), the floor from 18 to 13% (27); the
   probes don't carry that much yet.
+- The library takes screen-space ambient occlusion in the standard and high tiers
+  (2026-11-21, task 107; `render3d::ssao_pass`, `shaders::PRE_FRAG`, `SSAO_FRAG`,
+  `SSAO_BLUR_FRAG`, `SSAO_FN`, `rooms::Room.ssao`), for what the box's corners and the
+  probes can't know: between the books and under the shelves, the table's base and the
+  floor round it, the curtains' folds, the shutters, the window's frames and the sill's
+  nose, and later the props. Replaces "no SSAO" (the light's round 1 and the corners'
+  entries above), whose reasons were the planes' light, which the probes and
+  `corner_shade` keep. Before the board's pass, the room, the table, the board and the
+  pieces are drawn at half size into where each pixel is from the eye (RGBA16F, world
+  units) and its normal (RGBA8), with a 16-bit depth for the test alone; each pixel's
+  occlusion after McGuire's Alchemy obscurance, eight taps on a spiral out to the reach
+  (0.35 m), each turned its own way across a 4 × 4 block, then a 4 × 4 blur weighted by
+  the distance from the eye, which takes all sixteen turns, so a still frame has no
+  noise; the room's and the table's shaders read it back by the distance-weighted four
+  texels round the pixel and darken their indirect light only (the probes, the
+  harmonics, the shade's floor, the reflections' occlusion), never the sun. It meets the
+  analytic shade as `min(known × corners, SSAO)` times the floor's own narrow lines (its
+  joints, the plinth's lip), where known is the mesh's and the analytic terms (the
+  table's shade on the floor, the cases' shelves, the board's foot on the table): a plane
+  the box already darkens isn't darkened twice, and SSAO adds only where it finds more.
+  The lace hides 0.4 of what it covers in it, and glass nothing. Strength 1, reach
+  0.35 m, bias 0.05 (the cosine over a plane that hides nothing, over the half floats'
+  steps: 4 mm at 8 m), gain 3, in autumn only, as the corners are. It costs about
+  0.5 ms a frame at 1600 × 1000 on an M-series Mac (1 ms when the GPU is waited for) and
+  8.8 MB of targets at that size. Phones keep it off (`render3d::ssao_allowed`, the app's
+  `!phone`). Rejected: GTAO (slices in view space, a view matrix the block lacks, for the
+  same look after the blur at this tap count); the pass's own depth (multisampled, not
+  sampled, and written by the pass that needs the occlusion); a better depth (the
+  occlusion reads the half floats, not the depth buffer); normals rebuilt from the
+  positions (the rounded spines and the lace's folds lose them at half size); temporal
+  accumulation (the app draws only when something changes, so a still frame would never
+  settle); full size (four times the cost for detail the blur takes); the board itself
+  taking it (its shader is the game's, whose shot stays as it was).
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

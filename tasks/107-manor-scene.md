@@ -202,6 +202,21 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       Still off: the window wall's wainscot and the floor in shade, which want the floor's
       larger sun patches of the repaints; the ceiling a little bright against autumn-02;
       the table's top dull beside the repaints' sunlit one
+- [x] Step 4, ambient occlusion from the screen (2026-11-21, `build/notes/ssao/`): half
+      size, the room, the table, the board and the pieces drawn into where each pixel is
+      and which way it faces, eight taps on a spiral turned across a 4 × 4 block and
+      blurred over it by distance, no noise in a still frame; the room's and the table's
+      indirect light only, by the lesser of it and what the mesh and the corners know
+      (so the box's planes and the shelves aren't darkened twice); standard and high
+      tiers, off on a phone; strength, reach, bias and gain in the tuner's Light section,
+      `--ssao`, and its views `--ssao-view alone|kept`. A decision replacing "no SSAO".
+      The game's shot unchanged: the game shows no room, and the board's own shader
+      doesn't take it (the board's foot on the table and its pieces' shade are analytic
+      already). Costs in task 110. Still off: the books between volumes read only a
+      little darker, as the cases' own shade is already deep there; the hall view's books
+      are too small on the screen for the 0.35 m reach to find their gaps; the wall seen
+      through the lace keeps the corners' shade alone; ngfx draws it but no ngfx tool shows
+      the room yet, so it is built and not seen
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

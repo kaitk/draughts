@@ -206,6 +206,17 @@ results, or keep baking at run time behind a loader when the room or a look is c
   one loop the compiler can't unroll keeps it to one copy (`agents/goose.md`'s rule on a
   big function's call sites). Not measured on a device.
 
+- Ambient occlusion from the screen (2026-11-21, task 107, `build/notes/ssao/`): five
+  half-size targets, 22 bytes a pixel (place RGBA16F, facing RGBA8, depth 16, the
+  occlusion and its blur RG16F): 8.8 MB at 1600x1000, made when the room first draws it
+  and again on a resize; five pipelines more, made with the room's. A frame draws the
+  room, the table and the board once more at half size with a fragment shader of a few
+  lines, then two full passes at half size (8 taps, 16 taps). Frames (headless,
+  1600x1000, `--fps-seconds 4`, before / off / on, two rounds alike,
+  `build/ssao/fps.sh`): the room view 6.0 / 6.1 / 6.6 ms, style-01's camera 6.0 / 6.1 /
+  6.5, the books close up 3.9 / 4.0 / 4.4, the room waited for the GPU 6.9 / 7.0 / 7.9 to
+  8.3. Off on phones; not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

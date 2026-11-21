@@ -598,6 +598,20 @@ board's light:
   sills' noses, the piers beside a niche) is a box whose faces' shade falls off past their
   edges, and the doors' and windows' openings are holes in their walls, so no shade runs on
   past an outside corner. Every tier; the sun is never darkened by it.
+- **Ambient occlusion from the screen** (`render3d::ssao_pass`, `rooms::Room.ssao`), in
+  the standard and high tiers, not on a phone (`render3d::ssao_allowed`): before the
+  board's pass the room, the table, the board and the pieces are drawn at half size into
+  where each pixel is and which way it faces (`PRE_FRAG`; the lace hides less, the glass
+  nothing); each pixel's share of the sky hidden within 0.35 m, eight taps on a spiral
+  turned across a 4 × 4 block (`SSAO_FRAG`), blurred over that block by distance
+  (`SSAO_BLUR_FRAG`), so a still frame shows no noise. `ROOM_FRAG` and the table's room
+  shader read it back by the distance from the eye (`SSAO_FN`) and darken their indirect
+  light by the lesser of it and what the mesh and the corners already know, so no plane
+  is darkened twice: the books between them and under the shelves, the table's base and
+  the floor round it, the curtains' folds, the shutters, the window's frames. Five
+  half-size targets, 22 bytes a pixel (8.8 MB at 1600 × 1000). The light tuner's Light
+  section sets its strength, reach, bias and gain, and shows it alone (`--ssao-view
+  alone`) or with all the indirect light keeps (`kept`).
 - **Reflections**: the waxed floor and the brass see the shell's box (its walls, doors,
   ceiling and floor lit by the probes and the sun) and its windows, worked out per pixel.
 - **The window's glow**: a quarter-size bloom of what is near white, added in linear light
