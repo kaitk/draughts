@@ -582,8 +582,11 @@ board's light:
   a surface, a plane hiding a half of the light at the line and nothing beyond the reach
   (0.4 m): the floor along the walls, the inside corners, the walls along the floor and
   under the cornice, the ceiling past it, over and under the wainscot's cap, under the
-  sills, the windows' niches, the doors' jambs and architraves, round the bookcases. Every
-  tier; the sun is never darkened by it.
+  sills, the windows' niches, the doors' jambs and architraves, round the bookcases. What
+  stands out of a wall and ends (the bookcases, the architraves and plinth blocks, the
+  sills' noses, the piers beside a niche) is a box whose faces' shade falls off past their
+  edges, and the doors' and windows' openings are holes in their walls, so no shade runs on
+  past an outside corner. Every tier; the sun is never darkened by it.
 - **Reflections**: the waxed floor and the brass see the shell's box (its walls, doors,
   ceiling and floor lit by the probes and the sun) and its windows, worked out per pixel.
 - **The window's glow**: a quarter-size bloom of what is near white, added in linear light

@@ -2547,16 +2547,103 @@ let ROOM_FRAG = """
     // How square a plane with normal m stands to a surface with normal n: 1 square, 0 facing.
     float square_to(vec3 n, vec3 m) { return 1.0 - smoothstep(0.3, 0.7, abs(dot(n, m))); }
 
+    // The share of a face's extent along one of its axes, lo to hi, that a point at q on that
+    // axis sees from a distance a in front of it, against an endless face: across the
+    // surface (c, the surface normal's part along the axis, near 0) the angle the span takes
+    // of the half turn; along the surface's normal only the side the surface faces counts
+    // (a quarter turn), so a surface at the face's edge still sees all of it. Past the span's
+    // end it falls off with the angle, so a box's shade wraps softly round its outside
+    // corners instead of running on as an endless plane's.
+    float span_seen(float q, float lo, float hi, float a, float c) {
+        float d = max(a, 1e-3);
+        float s1 = q - lo;
+        float s2 = hi - q;
+        float across = (atan(s1, d) + atan(s2, d)) / PI;
+        float facing = c > 0.0 ? atan(s2, d) - atan(max(-s1, 0.0), d) : atan(s1, d) - atan(max(-s2, 0.0), d);
+        return mix(across, max(facing, 0.0) * 2.0 / PI, smoothstep(0.3, 0.7, abs(c)));
+    }
+
+    // What a box standing out of a wall hides from q, normal qn, both in the wall's frame
+    // (x along the wall, y up from the floor, z out of the wall; world units): x its front's
+    // share, which the caller weighs with the wall's own face (they face the same way, so the
+    // nearer counts, not both); y how much light its two ends and its top leave, each face a
+    // plane_hides at its distance by the share of it the point sees (span_seen). A point
+    // inside the box (a case's open shelves) takes none, and the shade fades out as the
+    // point's distance to the box nears reach.
+    vec2 box_hides(vec3 q, vec3 qn, vec3 lo, vec3 hi, float s, float reach) {
+        vec3 out_of = max(max(lo - q, q - hi), vec3(0.0));
+        float far = length(out_of);
+        if (far > reach) return vec2(0.0, 1.0);
+        float fade = 1.0 - smoothstep(0.6 * reach, reach, far);
+        s *= fade;
+        float lit = 1.0;
+        float a = lo.x - q.x;
+        if (a > 0.0) lit *= 1.0 - s * square_to(qn, vec3(-1.0, 0.0, 0.0)) * plane_hides(a, reach)
+                              * span_seen(q.y, lo.y, hi.y, a, qn.y) * span_seen(q.z, lo.z, hi.z, a, qn.z);
+        a = q.x - hi.x;
+        if (a > 0.0) lit *= 1.0 - s * square_to(qn, vec3(1.0, 0.0, 0.0)) * plane_hides(a, reach)
+                              * span_seen(q.y, lo.y, hi.y, a, qn.y) * span_seen(q.z, lo.z, hi.z, a, qn.z);
+        a = q.y - hi.y;
+        if (a > 0.0) lit *= 1.0 - s * square_to(qn, vec3(0.0, 1.0, 0.0)) * plane_hides(a, reach)
+                              * span_seen(q.x, lo.x, hi.x, a, qn.x) * span_seen(q.z, lo.z, hi.z, a, qn.z);
+        a = q.z - hi.z;
+        float front = a > 0.0 ? fade * plane_hides(a, reach) * span_seen(q.x, lo.x, hi.x, a, qn.x) * span_seen(q.y, lo.y, hi.y, a, qn.y) : 0.0;
+        return vec2(front, lit);
+    }
+
+    // A wall's face standing `proud` out (the skirting, the panelling) with an opening in it,
+    // half_w either side of x 0 from the floor to `high` (world units, the wall's frame as
+    // box_hides'), its back `back` behind the face (a door's leaf; below 0 open, a window):
+    // what the face hides, less the opening's share, or the back, whichever is nearer.
+    float holed_wall(vec3 q, vec3 qn, float proud, float half_w, float low, float high, float back, float reach) {
+        float a = q.z - proud;
+        float face = 0.0;
+        if (a > 0.0) {
+            float hole = half_w > 0.0 ? span_seen(q.x, -half_w, half_w, a, qn.x) * span_seen(q.y, low, high, a, qn.y) : 0.0;
+            face = plane_hides(a, reach) * (1.0 - hole);
+        }
+        float ab = q.z + back;
+        float deep = 0.0;
+        if (half_w > 0.0 && back >= 0.0 && ab > 0.0)
+            deep = plane_hides(ab, reach) * span_seen(q.x, -half_w, half_w, ab, qn.x) * span_seen(q.y, low, high, ab, qn.y);
+        return max(face, deep);
+    }
+
+    // A door's architrave in its wall's frame (x from the door's middle): the plinth blocks
+    // (2 cm past the architrave, 6.5 cm out, 0.26 m up), the two legs over them (5 cm out)
+    // and the head across, each a box. x of the result the fronts' share, y the rest's light.
+    vec2 trim_hides(vec3 q, vec3 qn, float half_w, float s, float reach) {
+        float m = shell.w;
+        float arch = room_heights.w * m;
+        float open_w = half_w - arch;
+        float top = room_heights.y * m;
+        vec2 r = vec2(0.0, 1.0);
+        for (int k = 0; k < 2; k++) {
+            float side = k == 0 ? -1.0 : 1.0;
+            vec3 qs = vec3(q.x * side, q.y, q.z);
+            vec3 ns = vec3(qn.x * side, qn.y, qn.z);
+            vec2 b = box_hides(qs, ns, vec3(open_w - 0.01 * m, 0.0, 0.0), vec3(half_w + 0.02 * m, 0.26 * m, 0.065 * m), s, reach);
+            r = vec2(max(r.x, b.x), r.y * b.y);
+            b = box_hides(qs, ns, vec3(open_w, 0.26 * m, 0.0), vec3(half_w, top, 0.05 * m), s, reach);
+            r = vec2(max(r.x, b.x), r.y * b.y);
+        }
+        vec2 b = box_hides(q, qn, vec3(-half_w, top - arch, 0.0), vec3(half_w, top, 0.05 * m), s, reach);
+        return vec2(max(r.x, b.x), r.y * b.y);
+    }
+
     // The shell's corners and edges (rooms::Room.corners), for its indirect light only: the
     // room is a box of known planes, so a point's distance to each plane square to its
     // surface says how much of the room's light that plane hides (plane_hides): the floor
     // along the walls, the walls into the inside corners, along the floor and under the
     // cornice, the ceiling along the cornice; the wall over the wainscot's cap and under it
     // and under the sills; in the windows' niches the reveals, the sill, the casements'
-    // frames and the head; at the doors the jambs, the leaf and the architrave; round the
-    // bookcases their sides, fronts and tops. lp and ln in the room's frame; what stands out
-    // of a wall by its height (the plinth 4.5 cm, the panelling 2.5 cm, the cornice 0.46 m on
-    // the ceiling, a cove, so half as dark). 1 nothing hidden.
+    // frames and the head; at the doors the jambs, the leaf and the architrave. What stands
+    // out of a wall and ends (the bookcases, the doors' architraves and plinth blocks, the
+    // sills' noses, the piers either side of a niche) is a finite box, its faces' shade
+    // falling off past their edges (box_hides), and an opening is a hole in its wall's face
+    // (holed_wall), so no shade runs on past an outside corner. lp and ln in the room's
+    // frame; what stands out of a wall by its height (the plinth 4.5 cm, the panelling 2.5 cm,
+    // the cornice 0.46 m on the ceiling, a cove, so half as dark). 1 nothing hidden.
     float corner_shade(vec3 lp, vec3 ln) {
         if (corners.x <= 0.0 || shell.x < 0.5) return 1.0;
         float m = shell.w;
@@ -2584,7 +2671,6 @@ let ROOM_FRAG = """
         bool salon_trim = room_doors.w > 0.0 && abs(sz) < room_doors.w + 0.01 * m && up < room_heights.y;
         // The bookcases either side of the hall door: p's place across the nearer.
         float cx = abs(hx) - book_cases.x;
-        float case_out = (up < room_heights.z ? 0.45 : 0.30) * m;
         bool cases = book_cases.y > 0.0 && up < book_cases.z;
         bool before_case = cases && abs(cx) < book_cases.y;
         // The window's niche p is in or before.
@@ -2598,9 +2684,41 @@ let ROOM_FRAG = """
         float spring = shell_niche.y + shell_niche.z;
         bool niche = abs(wx) < half_w && up > shell_niche.y - 0.01 && up < spring + shell_niche.w;
         bool in_niche = niche && d_window < 0.01 * m;
-        // The walls, each at what stands nearest out of it there.
-        float hall_face = hall_door ? d_hall + 0.045 * m : (before_case ? d_hall - case_out : d_hall - proud);
-        float stove_face = salon_door ? d_stove + 0.045 * m : d_stove - proud;
+        float floor_up = lp.y - shell.z;
+        // The hall wall and the stove's end in their own frames (x along from the door's
+        // middle, y up, z out): the face with the door's opening as a hole to its leaf; the
+        // architrave, its plinth blocks and the bookcases as boxes, their fronts against the
+        // face by the nearer, their ends and tops into lit.
+        vec3 hq = vec3(hx, floor_up, d_hall);
+        vec3 hn = vec3(ln.x, ln.y, -ln.z);
+        float hall_hides = holed_wall(hq, hn, proud, room_doors.y - arch, 0.0, door_top * m, 0.045 * m, reach);
+        if (room_doors.y > 0.0 && abs(hx) < room_doors.y + reach && d_hall < reach + 0.07 * m) {
+            vec2 b = trim_hides(hq, hn, room_doors.y, s, reach);
+            hall_hides = max(hall_hides, b.x);
+            lit *= b.y;
+        }
+        if (book_cases.y > 0.0 && d_hall < 0.45 * m + reach) {
+            for (int k = 0; k < 2; k++) {
+                float mid = (k == 0 ? -1.0 : 1.0) * book_cases.x;
+                vec2 b = box_hides(hq, hn, vec3(mid - book_cases.y, 0.0, 0.0), vec3(mid + book_cases.y, room_heights.z * m, 0.45 * m), s, reach);
+                hall_hides = max(hall_hides, b.x);
+                lit *= b.y;
+                b = box_hides(hq, hn, vec3(mid - book_cases.y, room_heights.z * m, 0.0), vec3(mid + book_cases.y, book_cases.z * m, 0.30 * m), s, reach);
+                hall_hides = max(hall_hides, b.x);
+                lit *= b.y;
+            }
+        }
+        vec3 sq = vec3(sz, floor_up, d_stove);
+        vec3 sn = vec3(ln.z, ln.y, -ln.x);
+        float stove_hides = holed_wall(sq, sn, proud, room_doors.w - arch, 0.0, door_top * m, 0.045 * m, reach);
+        if (room_doors.w > 0.0 && abs(sz) < room_doors.w + reach && d_stove < reach + 0.07 * m) {
+            vec2 b = trim_hides(sq, sn, room_doors.w, s, reach);
+            stove_hides = max(stove_hides, b.x);
+            lit *= b.y;
+        }
+        // The window wall: the nearest niche a hole in its face, open to the sky.
+        float window_hides = holed_wall(vec3(wx, floor_up, d_window), ln, proud, half_w, shell_niche.y * m,
+                                        (spring + shell_niche.w) * m, -1.0, reach);
         // The cornice keeps its own shade (its profile's, per vertex): its cove stands out of
         // the wall by its height, which no plane here follows. The ceiling past it takes the
         // walls' shade from nothing at the cornice's edge, so no line shows there.
@@ -2609,46 +2727,48 @@ let ROOM_FRAG = """
             cove = ln.y < -0.7 ? 0.5 * smoothstep(0.0, 0.12 * m, past) : 0.0;
         }
         if (!in_niche && cove > 0.0) {
-            lit *= 1.0 - s * cove * square_to(ln, vec3(0.0, 0.0, 1.0)) * plane_hides(d_window - proud, reach);
-            lit *= 1.0 - s * cove * square_to(ln, vec3(0.0, 0.0, -1.0)) * plane_hides(hall_face, reach) * step(-0.01 * m, hall_face);
+            lit *= 1.0 - s * cove * square_to(ln, vec3(0.0, 0.0, 1.0)) * window_hides;
+            lit *= 1.0 - s * cove * square_to(ln, vec3(0.0, 0.0, -1.0)) * hall_hides;
             lit *= 1.0 - s * cove * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(d_far - proud, reach);
-            lit *= 1.0 - s * cove * square_to(ln, vec3(-1.0, 0.0, 0.0)) * plane_hides(stove_face, reach) * step(-0.01 * m, stove_face);
+            lit *= 1.0 - s * cove * square_to(ln, vec3(-1.0, 0.0, 0.0)) * stove_hides;
         }
         // The floor, and the cornice's foot over a wall, a cove.
         float upright = square_to(ln, vec3(0.0, 1.0, 0.0));
         lit *= 1.0 - s * upright * plane_hides(up * m, reach);
         if (up < cornice) lit *= 1.0 - 0.5 * s * upright * plane_hides((cornice - up) * m, reach);
         // On a wall: over the wainscot's cap and under it (its underside at 1.105 m, 6.5 cm
-        // out of the panelling), under a window's sill (its nose 5.5 cm out of it, its
-        // underside at the sill less 5 cm), over a bookcase's top.
+        // out of the panelling), under a window's sill (its nose 8 cm out of the wall and
+        // 5 cm past the niche each side, its underside at the sill less 5 cm, a box).
         float on_wall = min(min(d_far, d_stove), min(d_window, d_hall));
         if (on_wall < 0.12 * m && !in_niche) {
             float cap = room_heights.z;
             bool under_sill = d_window < 0.12 * m && abs(wx) < half_w + 0.05 * m;
-            if (under_sill) {
-                lit *= 1.0 - s * upright * ledge_hides((shell_niche.y - 0.05 - up) * m, 0.055 * m, reach) * step(up, shell_niche.y - 0.05);
-            } else if (!(hall_trim && d_hall < 0.12 * m) && !(salon_trim && d_stove < 0.12 * m)
-                       && !(before_case && d_hall < 0.12 * m)) {
+            if (d_window < 0.12 * m && up < shell_niche.y - 0.05) {
+                float a = (shell_niche.y - 0.05 - up) * m;
+                lit *= 1.0 - s * upright * plane_hides(a, reach) * span_seen(wx, -half_w - 0.05 * m, half_w + 0.05 * m, a, ln.x)
+                             * span_seen(d_window, 0.0, 0.08 * m, a, ln.z);
+            }
+            if (!under_sill && !(hall_trim && d_hall < 0.12 * m) && !(salon_trim && d_stove < 0.12 * m)
+                && !(before_case && d_hall < 0.12 * m)) {
                 if (up > cap) lit *= 1.0 - s * upright * ledge_hides((up - cap) * m, 0.09 * m, reach);
                 else if (up < cap - 0.095) lit *= 1.0 - s * upright * ledge_hides((cap - 0.095 - up) * m, 0.065 * m, reach);
             }
-            if (cases && abs(cx) < book_cases.y && d_hall < 0.12 * m && up > book_cases.z - 0.01)
-                lit *= 1.0 - s * upright * ledge_hides((up - book_cases.z) * m, 0.35 * m, reach);
         }
-        // Beside a bookcase: its side, as far out and up as the case stands.
-        if (cases && abs(cx) > book_cases.y && d_hall < case_out)
-            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(abs(cx) - book_cases.y, reach);
-        // In a window's niche: its reveals, the sill, the inner casement's frame (6 cm), the
-        // head.
+        // In a window's niche: its reveals (the piers' sides, from the wall's face to the
+        // glass, so their shade ends at the niche's mouth), the sill, the inner casement's
+        // frame (6 cm), the head.
         if (in_niche) {
             float into = -d_window;
-            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(half_w - abs(wx), reach);
+            float rev = half_w - abs(wx);
+            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(rev, reach)
+                         * span_seen(into, 0.0, shell_glass.x, rev, -ln.z)
+                         * span_seen(up * m, shell_niche.y * m, (spring + shell_niche.w) * m, rev, ln.y);
             lit *= 1.0 - s * upright * plane_hides((up - shell_niche.y) * m, reach);
             lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * ledge_hides(shell_glass.x - into, 0.06 * m, reach);
             lit *= 1.0 - s * upright * plane_hides((spring - up) * m, reach) * step(up, spring);
         }
         // At a door: in its opening, the jambs and head round the leaf (4.5 cm deep), the
-        // leaf behind a jamb; beside it on the wall, the architrave standing 5 cm out.
+        // leaf behind a jamb.
         if (hall_door && d_hall < 0.01 * m) {
             lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * ledge_hides(room_doors.y - arch - abs(hx), 0.045 * m, reach);
             lit *= 1.0 - s * upright * ledge_hides((door_top - up) * m, 0.045 * m, reach);
@@ -2659,11 +2779,6 @@ let ROOM_FRAG = """
             lit *= 1.0 - s * upright * ledge_hides((door_top - up) * m, 0.045 * m, reach);
             lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(0.045 * m + d_stove, reach);
         }
-        float trim = max(0.05 * m - proud, 0.0);
-        if (trim > 0.0 && d_hall < 0.12 * m && room_doors.y > 0.0 && up < room_heights.y && abs(hx) > room_doors.y)
-            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * ledge_hides(abs(hx) - room_doors.y, trim, reach);
-        if (trim > 0.0 && d_stove < 0.12 * m && room_doors.w > 0.0 && up < room_heights.y && abs(sz) > room_doors.w)
-            lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * ledge_hides(abs(sz) - room_doors.w, trim, reach);
         return lit;
     }
 

@@ -915,6 +915,19 @@ to be is in tasks 042, 059, 071, 081, and 086.
   for the room's planes (a pass a frame, and only what the screen shows; it comes in the
   next step for what the box doesn't know: the furniture, the books, the curtains' folds);
   per-vertex occlusion on the shell (its walls and floor are a few large quads).
+- What stands out of the library's walls and ends is a finite box in `corner_shade`
+  (2026-11-21, task 107; `box_hides`, `holed_wall`, `span_seen`): the bookcases (base and
+  upper case), the doors' plinth blocks, architrave legs and heads, the sills' noses, and
+  the piers either side of a niche (its reveals, from the wall's face to the glass). Each
+  face hides `plane_hides` at its distance times the share of its extent the point sees
+  along each of the face's axes (the angle the span takes of the half turn across the
+  surface, of the quarter turn along its normal), so the shade falls off past an edge and
+  wraps softly round an outside corner, and fades out as the point's distance to the box
+  nears the reach. A door's opening and a niche are holes in their wall's face (the leaf
+  4.5 cm behind it, the niche open), so the floor before an opening and a sill's nose take
+  no wall that isn't there. Replaces the endless planes: a case's side and front, the
+  architraves' and the sills' edges cut at their ends, which left a 90° wedge of shade on
+  the floor off each case's outside corner and hard lines along the openings' edges.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only
