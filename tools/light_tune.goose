@@ -9,7 +9,7 @@
 // ceiling; S switches it for the panelled wall facing the window alone, model3d::surfaces,
 // as it was), V the views in turn (the board, then the room's: room, window, hall, stove,
 // VIEWS), U the view out of the shell's windows (model3d::view_out) or the plain sky behind
-// them as before, L the wallpaper's tile between style-01's
+// them as before, B the bookcases' books (model3d::books) in or out, L the wallpaper's tile between style-01's
 // 1.4 m and a real paper's 0.65 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
@@ -37,6 +37,7 @@
 //       from the stove's end, y from the hall wall, H up from the floor)] [--fov DEG]
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
+//       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)]
 //       [--sections all|NAME,NAME.. (SECTION_NAMES open at the start)] [--shot-panel (the panel in a --shot)]
 //       [--view board|room|window|hall|stove] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
@@ -443,12 +444,12 @@ fn room_flags(out: u8[>..]&, r: rooms::Room) {
 // and the parts inside Light and Sun and tree; their names for --sections, and which are
 // open at the start.
 let SECTIONS = ["Scene", "Light", "Sun and tree", "Wallpaper", "Wainscot and panelling", "Ceiling", "Curtains and lace",
-                "Table", "Outside", "Dust in the sunbeam (D)", "Camera and views", "Debug", "Keys",
+                "Bookcases and books", "Table", "Outside", "Dust in the sunbeam (D)", "Camera and views", "Debug", "Keys",
                 "Light in detail (the board's)", "The sun", "The tree", "Wind", "The board's window", "Noise leaves"];
-let SECTION_NAMES = ["scene", "light", "sun", "wallpaper", "wainscot", "ceiling", "curtains", "table", "outside", "dust",
+let SECTION_NAMES = ["scene", "light", "sun", "wallpaper", "wainscot", "ceiling", "curtains", "books", "table", "outside", "dust",
                      "camera", "debug", "keys", "detail", "sun-itself", "tree", "wind", "window", "noise"];
-let OPEN_AT_START: i64[19] = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
-let PARTS_FROM = 13;
+let OPEN_AT_START: i64[20] = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
+let PARTS_FROM = 14;
 let SCENE = 0;
 let LIGHT = 1;
 let SUN = 2;
@@ -456,31 +457,32 @@ let WALLPAPER = 3;
 let WAINSCOT = 4;
 let CEILING = 5;
 let CURTAINS = 6;
-let TABLE = 7;
-let OUTSIDE = 8;
-let DUST = 9;
-let CAMERA = 10;
-let DEBUG = 11;
-let KEYS = 12;
-let DETAIL = 13;
-let SUN_ITSELF = 14;
-let TREE = 15;
-let WIND = 16;
-let WINDOW = 17;
-let NOISE = 18;
+let BOOKS = 7;
+let TABLE = 8;
+let OUTSIDE = 9;
+let DUST = 10;
+let CAMERA = 11;
+let DEBUG = 12;
+let KEYS = 13;
+let DETAIL = 14;
+let SUN_ITSELF = 15;
+let TREE = 16;
+let WIND = 17;
+let WINDOW = 18;
+let NOISE = 19;
 
 let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit", "P: print the room and its flags",
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
-                "L: the wallpaper's tile, 0.65 or 1.4 m", "C: the lace's way", "W: the window's pattern; T: leaves by",
+                "L: the wallpaper's tile, 0.65 or 1.4 m", "C: the lace's way; B: the books", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust", "F: the frame counter; G: wait for the GPU"];
 
 // The sections open at the start: OPEN_AT_START, or --sections NAME,NAME.. (or all).
-fn open_sections(argv: u8[:][>..]&) -> i64[19] {
+fn open_sections(argv: u8[:][>..]&) -> i64[20] {
     var open = OPEN_AT_START;
     let at = flag_value(argv, "--sections");
     guard at > 0 else { return open; }
     let all = argv[at] == "all";
-    for i in 19 { open[i] = if all { ui::MAXIMIZED } else { ui::MINIMIZED }; }
+    for i in 20 { open[i] = if all { ui::MAXIMIZED } else { ui::MINIMIZED }; }
     guard !all else { return open; }
     var rest: const u8[:] = argv[at];
     while rest.len > 0 {
@@ -500,7 +502,7 @@ fn open_sections(argv: u8[:][>..]&) -> i64[19] {
 }
 
 // A section's tab (or a part's node inside one): true while open, when tree_state_pop follows.
-fn section(c: ui::Context, open: i64[19]&, i: i64) -> bool {
+fn section(c: ui::Context, open: i64[20]&, i: i64) -> bool {
     let kind = if i >= PARTS_FROM { ui::TREE_NODE } else { ui::TREE_TAB };
     return ui::tree_state_push(c, kind, SECTIONS[i], open[i]);
 }
@@ -607,6 +609,9 @@ fn main() {
     let ceiling4 = four(argv, "--ceiling-tint", float4 { 1.0, 1.0, 0.0, 0.0 });
     var ceiling = float2 { ceiling4.x, ceiling4.y };
     g.lace_way = pick(argv, "--lace", surfaces::LACE_WAYS, 0);
+    // The bookcases' books in or out, and how much of their fade shows (1 as made).
+    var books_on = !(flag_value(argv, "--books") > 0 && argv[flag_value(argv, "--books")] == "off");
+    var book_fade = number(argv, "--book-fade", 1.0);
     var top = pick(argv, "--table-top", TOPS, 0);
     g.table_r = top_radius(top);
     // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied, as
@@ -707,6 +712,7 @@ fn main() {
         if gfx::key_pressed("F") { meter.on = !meter.on; }
         if gfx::key_pressed("G") { meter.wait = !meter.wait; }
         if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
+        if gfx::key_pressed("B") { books_on = !books_on; }
         if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else { 1.4 }; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
@@ -861,6 +867,13 @@ fn main() {
                 slider(c, "Lace lets", room.opening.w, 0.0, 1.0);
                 ui::tree_state_pop(c);
             }
+            if section(c, open, BOOKS) {
+                switch(c, "Books (B)", books_on, ["off", "on"]);
+                slider(c, "Their fade", book_fade, 0.0, 3.0);
+                ui::layout_row_dynamic(c, ROW + 4.0, 1);
+                if ui::button_label(c, "As made") { book_fade = 1.0; }
+                ui::tree_state_pop(c);
+            }
             if section(c, open, TABLE) {
                 choice(c, "Table", take, tables::NAMES);
                 choice(c, "Top (m)", top, TOPS);
@@ -911,6 +924,8 @@ fn main() {
         if gfx::mouse_pressed(gfx::MOUSE_LEFT) { drag_on_panel = ui::wants_mouse(c); }
         g.bake_held = drag_on_panel && gfx::mouse_down(gfx::MOUSE_LEFT);
         g.paper_tile = paper_m * surfaces::METRE;
+        g.books_off = !books_on;
+        g.book_fade = max(book_fade, 0.001);
         g.room_tint = float4_0;
         if oak.x != 1.0 || oak.y != 1.0 {
             g.room_tint.x = oak.x;
@@ -964,6 +979,7 @@ fn main() {
                 format(line, " --motes ", motes, " --mote-size ", render3d::dust.size, " --mote-blur ", render3d::dust.blur,
                        " --mote-bright ", render3d::dust.bright);
             }
+            format(line, " --books ", on_off(books_on), " --book-fade ", book_fade);
             flag_pair(line, "--oak-tint", oak);
             flag_pair(line, "--ceiling-tint", ceiling);
             room_flags(line, room);

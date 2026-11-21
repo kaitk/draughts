@@ -143,6 +143,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 6, g.plaster_tone, g.aniso);
         slot(t, 7, g.lace_mask, g.aniso);
         slot(t, 8, render3d::light_or_stand_in(g), g.linear);
+        slot(t, 9, g.book_atlas, g.aniso);
         nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
@@ -963,7 +964,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
                     g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
-                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b];
+                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];

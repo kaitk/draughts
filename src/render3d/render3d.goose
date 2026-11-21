@@ -372,6 +372,12 @@ struct Gpu {
     // they are, not baked again, while a slider is held, so a drag bakes once on release.
     room_tint: float4,
     bake_held: bool,
+    // The bookcases' books (model3d::books): their atlas, RGBA8 with BOOK_MIPS, put with the
+    // room's masks; and a tuner's: the books left out of the mesh, their fade scaled (0 as
+    // made).
+    book_atlas: Texture,
+    books_off:  bool,
+    book_fade:  f32,
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -599,14 +605,14 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     // The mesh, in the room's frame (ROOM_VERT turns it with the key): made again only
     // for another room, or the panelled wall's room for another window or wall.
     let w = g.room.window;
-    let key = float4 { w.x, w.z, g.room_away, if g.room_shell { 1.0 } else { 0.0 } };
+    let key = float4 { w.x, w.z, g.room_away, if !g.room_shell { 0.0 } else if g.books_off { 2.0 } else { 1.0 } };
     guard g.room_vb.id == 0 || !same4(key, g.room_for) else { return; }
     let t0 = clock();
     var verts:         mesh::Vertex[>..] = [];
     var indices:       u32[>..]          = [];
     var glass:         mesh::Vertex[>..] = [];
     var glass_indices: u32[>..]          = [];
-    if g.room_shell { room_shell::build(verts, indices, glass, glass_indices, room_shell::LIBRARY); }
+    if g.room_shell { room_shell::build(verts, indices, glass, glass_indices, room_shell::LIBRARY, !g.books_off); }
     else { surfaces::build(verts, indices, g.room_away, w.x, w.z); }
     if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }
     if g.glass_vb.id != 0 { o.gpu_release_mesh(g.glass_vb, g.glass_ib); }
@@ -637,6 +643,42 @@ fn put_paper<O>(o: O&, g: Gpu&) {
     guard g.paper_mask.id == 0 else { return; }
     g.paper_mask = put_mask(o, 0);
     g.plaster_tone = put_mask(o, 1);
+    g.book_atlas = put_books(o);
+}
+
+// The books' atlas (design/materials/books_atlas.png) on the GPU, RGBA8 with BOOK_MIPS, each
+// level the mean of four of the level above; blank where it isn't built in.
+let BOOK_MIPS = 4;
+extern fn draughts_book_atlas(out: u8[:], w: i64, h: i64) -> bool;
+fn put_books<O>(o: O&) -> Texture {
+    let w0 = books::ATLAS_W;
+    let h0 = books::ATLAS_H;
+    var total = 0;
+    for level in BOOK_MIPS { total += 4 * (w0 >> level) * (h0 >> level); }
+    var px: u8[>..] = [];
+    px.resize(total, 0);
+    draughts_book_atlas(px[0..4 * w0 * h0], w0, h0);
+    let atlas = o.gpu_sampled(w0, h0, BOOK_MIPS, RGBA8);
+    var at = 0;
+    for level in BOOK_MIPS {
+        let w = w0 >> level;
+        let h = h0 >> level;
+        if level > 0 {
+            let up = at - 4 * 4 * w * h;
+            for y in h {
+                for x in w {
+                    for c in 4 {
+                        let a = up + 4 * (2 * y * 2 * w + 2 * x) + c;
+                        let sum = px[a] as i64 + px[a + 4] + px[a + 8 * w] + px[a + 8 * w + 4];
+                        px[at + 4 * (y * w + x) + c] = ((sum + 2) / 4) as u8;
+                    }
+                }
+            }
+        }
+        o.gpu_upload(atlas, level, px[at..at + 4 * w * h]);
+        at += 4 * w * h;
+    }
+    return atlas;
 }
 
 // The lace of `way` on the GPU, R8 with its mips down to where its sides stay even.
@@ -837,6 +879,10 @@ struct SurfacesBlock {
     room_box:      float4,
     room_doors:    float4,
     room_heights:  float4,
+    books:         float4,
+    book_cases:    float4,
+    book_cover:    float4[32],
+    book_label:    float4[8],
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
@@ -890,6 +936,14 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     }
     b.room_doors = doors;
     b.room_heights = float4 { surfaces::FLOOR_Y + s.ceiling * metre, top, room_shell::WAINSCOT_TOP, room_shell::ARCHITRAVE };
+    // The bookcases either side of the hall door, for the reflections: their middles' distance
+    // from the door's along u, their half width (world units), their top (metres).
+    for k in s.count {
+        let c = s.openings[k];
+        guard c.kind == room_shell::BOOKCASE else { continue; }
+        let door = room_shell::door_mid(s, c.wall);
+        b.book_cases = float4 { abs(c.mid - door) * metre, 0.5 * c.width * metre, c.height, 0.0 };
+    }
     return b;
 }
 
@@ -908,7 +962,9 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0, k.brass,
                     model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w),
                     float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
-                    float4_0, float4_0, float4_0, float4_0, float4_0, float4_0 }
+                    float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
+                    float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
+                    float4_0, books::COVER, books::LABEL }
 }
 
 // The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.

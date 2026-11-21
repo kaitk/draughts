@@ -68,6 +68,9 @@ let PAINT_ALBEDO = float3 { 0.565, 0.515, 0.423 };
 let PLASTER_ALBEDO = float3 { 0.55, 0.5, 0.43 };
 let STONE_ALBEDO = float3 { 0.468, 0.445, 0.392 };
 let TABLE_ALBEDO = float3 { 0.12, 0.06, 0.035 };
+// The bookcases' fronts, their oak and the books' spines together (books::COVER's mean,
+// darkened by the shelves' shadows).
+let CASE_ALBEDO = float3 { 0.05, 0.028, 0.014 };
 
 // How far the sun's patches' thrown-back light is taken to grey (0 its own colour).
 let BOUNCE_GREY: f32 = 0.6;
@@ -165,10 +168,24 @@ fn under_table(t: float4, a: float3, b: float3) -> bool {
     return x * x + y * y < t.z * t.z;
 }
 
-// A wall's albedo at a point of it: the doors painted, the wainscot to 1.2 m, the paper
-// over it. along: the plan's x on the hall wall, its y on the end walls.
+// How far the bookcase on the hall wall at the plan's x stands out at height h (0 none).
+fn case_depth(x: f32, h: f32) -> f32 {
+    let s = room_shell::LIBRARY;
+    for k in s.count {
+        let o = s.openings[k];
+        guard o.kind == room_shell::BOOKCASE && h < o.height else { continue; }
+        let w = s.walls[o.wall];
+        let mid = w.a.x + normalize(w.b - w.a).x * o.mid;
+        if abs(x - mid) < 0.5 * o.width { return if h < room_shell::WAINSCOT_TOP { o.glass.x } else { o.glass.y }; }
+    }
+    return 0.0;
+}
+
+// A wall's albedo at a point of it: the doors painted, the bookcases, the wainscot to
+// 1.2 m, the paper over it. along: the plan's x on the hall wall, its y on the end walls.
 fn wall_albedo(wall: i64, along: f32, h: f32) -> float3 {
     let s = room_shell::LIBRARY;
+    if wall == room_shell::HALL_WALL && case_depth(along, h) > 0.0 { return CASE_ALBEDO; }
     for k in s.count {
         let o = s.openings[k];
         guard o.kind == room_shell::DOOR && o.wall == wall else { continue; }
@@ -234,7 +251,15 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&) -> i64 {
                     if in_lace(o, c) { p = p * LACE_LETS; }
                     var t = b.z / -d.z;
                     var hit = 0;
-                    let t_hall = b.y / -d.y;
+                    var t_hall = b.y / -d.y;
+                    // A bookcase's front stands out of the hall wall: met there instead.
+                    let on_wall = b + d * t_hall;
+                    let out = case_depth(on_wall.x, on_wall.z);
+                    if out > 0.0 {
+                        let t_case = (b.y - out) / -d.y;
+                        let e = b + d * t_case;
+                        if case_depth(e.x, e.z) >= out - 1e-3 { t_hall = t_case; }
+                    }
                     if t_hall < t { t = t_hall; hit = 1; }
                     if d.x < 0.0 && b.x / -d.x < t { t = b.x / -d.x; hit = 2; }
                     if d.x > 0.0 && (room_x - b.x) / d.x < t { t = (room_x - b.x) / d.x; hit = 3; }

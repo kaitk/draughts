@@ -1,7 +1,8 @@
 // The room's material masks, built into the program and decoded for the renderer's upload
 // (render3d::room_surfaces), one channel (design/materials/): the library's wallpaper and
-// the plaster's tone, 1024² each, the curtains' lace. And the view out of its windows, RGBA:
-// the far band of trees and the oak (render3d::put_outside).
+// the plaster's tone, 1024² each, the curtains' lace. And RGBA: the view out of its
+// windows, the far band of trees and the oak (render3d::put_outside); the books' atlas
+// (render3d::put_books).
 // stb_image here decodes PNG alone and is static, apart from background.c's JPEG one.
 
 #include <stdbool.h>
@@ -74,6 +75,14 @@ static const unsigned char oak[] = {
 static const unsigned char oak[] = { 0 };
 #endif
 
+#if __has_embed("../../design/materials/books_atlas.png")
+static const unsigned char book_atlas[] = {
+#embed "../../design/materials/books_atlas.png"
+    , 0 };
+#else
+static const unsigned char book_atlas[] = { 0 };
+#endif
+
 typedef struct { uint8_t *data; int64_t len; } bytes;
 
 static bool decode_gray(const unsigned char *png, size_t len, bytes out, int64_t w, int64_t h) {
@@ -102,12 +111,7 @@ bool draughts_lace_mask(int64_t way, bytes out, int64_t w, int64_t h) {
     return decode_gray(lace_f2, sizeof lace_f2, out, w, h);
 }
 
-// Picture `which` of the view out (0 the far band, 1 the oak) into `out`, w × h RGBA8 as
-// stored (sRGB, premultiplied in linear light), or false when it isn't built in or isn't
-// that size.
-bool draughts_outside_picture(int64_t which, bytes out, int64_t w, int64_t h) {
-    const unsigned char *png = which == 1 ? oak : band;
-    size_t len = which == 1 ? sizeof oak : sizeof band;
+static bool decode_rgba(const unsigned char *png, size_t len, bytes out, int64_t w, int64_t h) {
     if (len < 2 || out.len != w * h * 4) return false;
     int pw = 0, ph = 0, n = 0;
     unsigned char *px = stbi_load_from_memory(png, (int)(len - 1), &pw, &ph, &n, 4);
@@ -116,4 +120,18 @@ bool draughts_outside_picture(int64_t which, bytes out, int64_t w, int64_t h) {
     if (ok) memcpy(out.data, px, (size_t)out.len);
     stbi_image_free(px);
     return ok;
+}
+
+// The books' atlas into `out`, w × h RGBA8 as stored (a mask: tone, gilt, label, wear), or
+// false when it isn't built in or isn't that size.
+bool draughts_book_atlas(bytes out, int64_t w, int64_t h) {
+    return decode_rgba(book_atlas, sizeof book_atlas, out, w, h);
+}
+
+// Picture `which` of the view out (0 the far band, 1 the oak) into `out`, w × h RGBA8 as
+// stored (sRGB, premultiplied in linear light), or false when it isn't built in or isn't
+// that size.
+bool draughts_outside_picture(int64_t which, bytes out, int64_t w, int64_t h) {
+    if (which == 1) return decode_rgba(oak, sizeof oak, out, w, h);
+    return decode_rgba(band, sizeof band, out, w, h);
 }

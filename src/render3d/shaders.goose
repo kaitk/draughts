@@ -1961,6 +1961,8 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 7) uniform sampler2D lace_mask;
     // The room's baked light (model3d::room_light): its probes' atlas, RGBA16F.
     layout(set = 2, binding = 8) uniform sampler2D light_volume;
+    // The books' spines (model3d::books): tone, gilt or ink, label, wear.
+    layout(set = 2, binding = 9) uniform sampler2D book_atlas;
     // surfaces::Look and the room's frame. plank: x a plank's width, y its length in
     // widths, z the joint's half width, w the cup (its slope at the edges); planks: x each
     // one's own tone, y the share patched, z its tilt, w the scratches; worn: x the paths'
@@ -1995,7 +1997,11 @@ let ROOM_HEAD = """
     // window wall's v, w the hall wall's; room_doors: the hall door's middle along u and half
     // width, the salon door's along v and half width (with their architraves); room_heights:
     // the ceiling's y, the doors' tops and the wainscot's over the floor and the
-    // architrave's width (metres).
+    // architrave's width (metres). books: x how much of the books' fade shows (a tuner's, 1 as
+    // made), y a step of fade, z the steps of a book's code (books::CODES); book_cases: the
+    // bookcases' middles' distance from the hall door's along u, their half width (world
+    // units), their top (metres); book_cover and book_label: books::COVER and books::LABEL
+    // (sRGB), the label's table ending in gilt, ink, the page edges plain and sprinkled.
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -2026,6 +2032,10 @@ let ROOM_HEAD = """
         vec4 room_box;
         vec4 room_doors;
         vec4 room_heights;
+        vec4 books;
+        vec4 book_cases;
+        vec4 book_cover[32];
+        vec4 book_label[8];
     };
     """;
 
@@ -2338,7 +2348,8 @@ let ROOM_FRAG = """
         } else {
             nl = vec3(0.0, 0.0, lr.z > 0.0 ? -1.0 : 1.0);
             bool door = lr.z > 0.0 && abs(h.x - room_doors.x) < room_doors.y && up < room_heights.y;
-            alb = door ? srgb(paint.rgb) : wall;
+            bool cases = lr.z > 0.0 && abs(abs(h.x - room_doors.x) - book_cases.x) < book_cases.y && up < book_cases.z;
+            alb = door ? srgb(paint.rgb) : (cases ? vec3(0.03, 0.017, 0.009) : wall);
         }
         vec3 n = vec3(axes.x * nl.x + axes.z * nl.z, nl.y, axes.y * nl.x + axes.w * nl.z);
         vec3 l = light_dir.xyz;
@@ -2567,6 +2578,38 @@ let ROOM_FRAG = """
                 albedo = srgb(paint.rgb) * (0.96 + 0.06 * m);
                 rough = paint.a + 0.1 * m;
             }
+        } else if (kind > 13.5) {
+            // A book (model3d::books): its code in its fraction, the cover (32), the label
+            // (4), ink rather than gilt, its fade. The spine's mask colours it as
+            // tools/materials/books.py's colour() does, in sRGB: the label over the cover,
+            // the tone, the wear rubbed lighter, the gilt or ink over all; the boards' sides
+            // the cover; the page edges plain or sprinkled. The sun fades leather and cloth
+            // toward a dull brown, the gilt less.
+            float code = floor(own * books.z);
+            vec3 cover = book_cover[int(mod(code, 32.0))].rgb;
+            float ink = mod(floor(code / 128.0), 2.0);
+            float fade = floor(code / 256.0) * books.y * books.x;
+            vec3 c;
+            float g = 0.0;
+            if (v_uv.x >= 0.0) {
+                vec4 m = texture(book_atlas, v_uv);
+                c = mix(cover, book_label[int(mod(floor(code / 32.0), 4.0))].rgb, m.b);
+                c *= 0.45 + 1.1 * m.r;
+                c = mix(c, c * 0.75 + vec3(0.105, 0.0825, 0.06), 0.6 * m.a);
+                g = m.g;
+                c = mix(c, book_label[4 + int(ink)].rgb * (0.85 + 0.3 * m.r), g);
+                rough = mix(0.62, ink > 0.5 ? 0.75 : 0.38, g) + 0.12 * m.a;
+                metal = ink > 0.5 ? 0.0 : 0.8 * g;
+            } else if (v_uv.y > -1.5) {
+                c = cover * 0.8;
+                rough = 0.65;
+            } else {
+                c = book_label[v_uv.y < -2.5 ? 7 : 6].rgb;
+                rough = 0.85;
+            }
+            float lum = dot(c, vec3(0.3, 0.59, 0.11));
+            c = mix(c, lum * vec3(1.08, 0.98, 0.82) + 0.06, fade * (1.0 - 0.6 * g));
+            albedo = srgb(clamp(c, 0.0, 1.0));
         } else if (kind > 11.5) {
             // The curtains' brass, a metal; their cotton cord.
             if (kind < 12.5) {

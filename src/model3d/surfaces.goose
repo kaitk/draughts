@@ -25,7 +25,8 @@ let FLOOR_Y: f32 = -23.56;
 // the wallpaper; the shell's (room_shell) lime plaster (its
 // fraction 0.5 on the cornice, whiter and smoother), white painted wood (its fraction
 // over 0.5 the sills' stone), glass and lace, the last two drawn blended after the rest;
-// the curtains' brass and their cord.
+// the curtains' brass and their cord; a book (books.goose: its fraction the cover, label,
+// gilt or ink and fade).
 let MAT_FLOOR:   f32 = 4.0;
 let MAT_OAK:     f32 = 5.0;
 let MAT_PAPER:   f32 = 6.0;
@@ -35,6 +36,7 @@ let MAT_GLASS:   f32 = 10.0;
 let MAT_LACE:    f32 = 11.0;
 let MAT_BRASS:   f32 = 12.0;
 let MAT_CORD:    f32 = 13.0;
+let MAT_BOOK:    f32 = 14.0;
 
 // The fields' sides in texels (a phone's half), and their sizes in world units: the
 // floor's 20 strips a plank wide, 1.3 m long, a texel 0.7 mm; the wall's ten boards

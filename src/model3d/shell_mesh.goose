@@ -329,8 +329,8 @@ fn openings_on(s: Shell, wall: i64) -> Opening[..8] {
 }
 
 // The wallpaper over wall b of `length` metres from `low` to the cornice's foot, round its
-// openings: whole between them, over a door's architrave, and over a window's band, its
-// arch in segments.
+// openings: whole between them, over a door's architrave or a bookcase, and over a
+// window's band, its arch in segments.
 fn wallpaper(verts: mesh::Vertex[>..]&, indices: u32[>..]&, s: Shell, b: surfaces::Builder, length: f32, low: f32,
              ops: Opening[..8]&) {
     let top = s.ceiling - CORNICE_DROP;
@@ -341,7 +341,7 @@ fn wallpaper(verts: mesh::Vertex[>..]&, indices: u32[>..]&, s: Shell, b: surface
         let a = o.mid - half;
         if a > at { quad_m(verts, indices, b, [float3 { at, low, 0.0 }, float3 { a, low, 0.0 }, float3 { a, top, 0.0 },
                                                float3 { at, top, 0.0 }], paper); }
-        if o.kind == DOOR {
+        if o.kind != WINDOW {
             let y = surround_top(o);
             quad_m(verts, indices, b, [float3 { a, y, 0.0 }, float3 { o.mid + half, y, 0.0 }, float3 { o.mid + half, top, 0.0 },
                                        float3 { a, top, 0.0 }], paper);
@@ -614,15 +614,27 @@ fn architrave(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builde
     }
 }
 
+// The middle of wall `wall`'s door along it, or the wall's middle without one.
+fn door_mid(s: Shell, wall: i64) -> f32 {
+    for k in s.count {
+        let o = s.openings[k];
+        if o.kind == DOOR && o.wall == wall { return o.mid; }
+    }
+    return 0.5 * length_of(s.walls[wall]);
+}
+
 // The shell's mesh into verts and indices, its glass and lace into their own: the floor,
-// each wall's wallpaper, wainscot, openings and cornice, and the ceiling.
-fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, s: Shell) {
+// each wall's wallpaper, wainscot, openings (the bookcases with their books unless
+// `books_on` is false) and cornice, and the ceiling.
+fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, s: Shell,
+         books_on: bool = true) {
     let k = m();
     let low = room_of(s, float2 { 9.0, 7.0 });
     let high = room_of(s, float2 { 0.0, 0.0 });
     surfaces::floor_quad(verts, indices, float2 { min(low.x, high.x), min(low.y, high.y) },
                          float2 { max(low.x, high.x), max(low.y, high.y) });
-    var seed: i64 = 1000;
+    var seed: i64         = 1000;
+    var uses: books::Uses = [0; books::MAX_SETS];
     for w, wi in s.walls {
         let b = wall_builder(s, w);
         let length = length_of(w);
@@ -631,6 +643,7 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]
         // The wainscot's runs between the openings.
         var at: f32 = 0.0;
         var at_end = 0;
+        var edge: f32 = 0.0;
         for o in ops {
             if o.kind == WINDOW {
                 let a = o.mid - 0.5 * o.width;
@@ -640,12 +653,19 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]
                 at = o.mid + 0.5 * o.width;
                 at_end = 1;
             } else {
-                let a = o.mid - reach(o) - 0.01;
-                if a > at + 0.01 { wainscot_run(verts, indices, b, at * k, a * k, RUN_WALL, at_end, 2, seed); }
-                door(verts, indices, b, o, w.thick, seed);
-                at = o.mid + reach(o) + 0.01;
+                // A door or a bookcase: the wainscot's cap returned at its side (into a case's
+                // ledge), or where too little wall is left for a panel, a bare strip.
+                let gap = if o.kind == BOOKCASE { 0.002 } else { 0.01 };
+                let a = o.mid - reach(o) - gap;
+                if a > at + 0.25 || (a > at + 0.01 && at_end != 2) {
+                    wainscot_run(verts, indices, b, at * k, a * k, RUN_WALL, at_end, 2, seed);
+                } else if o.mid - reach(o) > edge + 0.005 { bare_strip(verts, indices, b, edge, o.mid - reach(o), seed); }
+                if o.kind == DOOR { door(verts, indices, b, o, w.thick, seed); }
+                else { bookcase(verts, indices, b, o, door_mid(s, wi), books_on, uses, seed); }
+                at = o.mid + reach(o) + gap;
                 at_end = 2;
             }
+            edge = o.mid + reach(o);
         }
         if length > at + 0.01 { wainscot_run(verts, indices, b, at * k, length * k, RUN_WALL, at_end, 0, seed); }
         // The cornice, mitred into the corners at both ends.

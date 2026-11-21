@@ -1,5 +1,5 @@
-// The library's shell (room_shell::LIBRARY): every opening fits its wall with its band or
-// architrave, none overlaps another on its wall, each stops under the cornice, the walls
+// The library's shell (room_shell::LIBRARY): every opening fits its wall with its band,
+// architrave or bookcase's ledge, none overlaps another on its wall, each stops under the cornice, the walls
 // close the room's rectangle, and the table stands 1.2 m from the window wall opposite the
 // middle window.
 import std;
@@ -21,7 +21,7 @@ fn main() {
         let w = s.walls[o.wall];
         let half = room_shell::reach(o);
         var line: u8[>..] = [];
-        format(line, if o.kind == room_shell::WINDOW { "window" } else { "door" }, " on wall ", o.wall, " at ", o.mid,
+        format(line, if o.kind == room_shell::WINDOW { "window" } else if o.kind == room_shell::DOOR { "door" } else { "bookcase" }, " on wall ", o.wall, " at ", o.mid,
                ": ", o.width, " m wide, its top ", floor(room_shell::surround_top(o) * 100.0 + 0.5) / 100.0, " m");
         if o.mid - half < 0.0 || o.mid + half > room_shell::length_of(w) { line.append(", NOT within its wall"); }
         if room_shell::surround_top(o) > cornice { line.append(", NOT under the cornice"); }

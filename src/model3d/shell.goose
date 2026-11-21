@@ -15,15 +15,18 @@ import math;
 
 struct Wall { a: float2, b: float2, thick: f32 }
 
-// What an opening is.
+// What an opening is: a window, a door, or an open bookcase built into the wall, which
+// stops the wainscot and the wallpaper as a door does.
 let WINDOW = 0;
 let DOOR = 1;
+let BOOKCASE = 2;
 
 // An opening in a wall: its middle along the wall from a, its width (a window's niche, a
 // door's clear opening), the sill's height (0 for a door), the height from the sill to the
-// springing (a window's casement) or the head (a door), the arch's rise over it (0 flat),
-// and for a window the two glass planes' depths into the wall from its inner face, the
-// niche's depth to the outer opening and that opening's width.
+// springing (a window's casement) or the head (a door) or the top (a bookcase), the arch's
+// rise over it (0 flat), and for a window the two glass planes' depths into the wall from
+// its inner face, the niche's depth to the outer opening and that opening's width; for a
+// bookcase its base's depth out of the wall and its upper case's.
 struct Opening {
     wall:   i64,
     mid:    f32,
@@ -60,6 +63,26 @@ fn door_at(wall: i64, mid: f32, width: f32) -> Opening {
     Opening { wall, mid, width, 0.0, 2.7, 0.0, float4_0, DOOR }
 }
 
+// The window wall, the far end, the hall's, the stove's end.
+let WINDOW_WALL = 0;
+let FAR_WALL = 1;
+let HALL_WALL = 2;
+let STOVE_WALL = 3;
+
+// The bookcases by the hall door (option B of build/notes/bookcases/, 2026-11-21): two
+// tall open oak cases built into the hall wall either side of the door, 1.2 m wide with
+// 8 cm of wall to the architrave, a folio base 0.45 m deep whose ledge carries the
+// wainscot cap's line at 1.20 m, an upper case 0.30 m deep to 2.84 m, the architrave's
+// head (bookcases.goose).
+let CASE_WIDTH: f32 = 1.2;
+let CASE_TOP:   f32 = 2.84;
+let CASE_BASE:  f32 = 0.45;
+let CASE_UPPER: f32 = 0.30;
+
+fn bookcase_at(mid: f32) -> Opening {
+    Opening { HALL_WALL, mid, CASE_WIDTH, 0.0, CASE_TOP, 0.0, float4 { CASE_BASE, CASE_UPPER, 0.0, 0.0 }, BOOKCASE }
+}
+
 // The library: 9 by 7 m inside, the window wall 0.8 m thick, the hall wall 0.6 m, the end
 // walls 0.5 m; the ceiling 4 m; the table 1.2 m from the window wall opposite the middle
 // window (rooms::AUTUMN's window.x).
@@ -71,17 +94,11 @@ let LIBRARY = Shell {
         Wall { float2 { 0.0, 0.0 }, float2 { 0.0, 7.0 }, 0.5 },     // the stove's end
     ],
     openings: [window_at(1.5), window_at(4.5), window_at(7.5), door_at(2, 4.5, 1.4), door_at(3, 2.3, 1.3),
-               window_at(0.0), window_at(0.0), window_at(0.0)],
-    count:   5,
+               bookcase_at(2.98), bookcase_at(6.02), window_at(0.0)],
+    count:   7,
     ceiling: 4.0,
     table:   float2 { 4.5, 5.8 },
 };
-
-// The window wall, the far end, the hall's, the stove's end.
-let WINDOW_WALL = 0;
-let FAR_WALL = 1;
-let HALL_WALL = 2;
-let STOVE_WALL = 3;
 
 // The wainscot (option A of build/notes/wainscot/, at one height as every concept has
 // it, 2026-11-21): 1.2 m with its cap on every wall and pier, and under the windows to the
@@ -158,12 +175,16 @@ fn head_at(o: Opening, x: f32) -> f32 {
 }
 
 // How far along the wall an opening's surround reaches either side of its middle: a
-// window's band, a door's architrave.
-fn reach(o: Opening) -> f32 { 0.5 * o.width + (if o.kind == WINDOW { BAND } else { ARCHITRAVE }) }
+// window's band, a door's architrave, a bookcase's side.
+fn reach(o: Opening) -> f32 {
+    if o.kind == BOOKCASE { return 0.5 * o.width; }
+    return 0.5 * o.width + (if o.kind == WINDOW { BAND } else { ARCHITRAVE });
+}
 
 // The top of the opening's surround: a window's band over the arch's crown, a door's
 // architrave over its head.
 fn surround_top(o: Opening) -> f32 {
     if o.kind == WINDOW { return o.sill + o.height + o.rise + BAND; }
+    if o.kind == BOOKCASE { return o.height; }
     return o.height + ARCHITRAVE;
 }
