@@ -302,6 +302,10 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       sharply (2026-11-22, builder 22, task 110's fix 2, `build/notes/builder-22/`): the
       main pass 18.3 to 15.1-15.4 ms at 3024 × 1890, the frame 21.7 to 18.4-18.7; the
       look unchanged but one pixel of a tie-back's hook, the game unchanged
+- [x] The room drawn with a pipeline per material group, compiled per tier, the tonemap a
+      define (2026-11-22, builder 23, task 110's fix 3, `build/notes/builder-23/`): the
+      main pass 14.8 to 10.8-10.9 ms at 3024 × 1890 (5.0 to 3.6 at 1512 × 945), the frame
+      18.1 to 13.7; the look and the game unchanged
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

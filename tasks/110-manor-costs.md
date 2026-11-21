@@ -273,6 +273,28 @@ results, or keep baking at run time behind a loader when the room or a look is c
   game's shot identical. Without the mirror (`room_lit`, phones) the floor sees the box
   sharply, so that shader keeps it whole. Not measured on a device.
 
+- Fix 3, a pipeline per material group (2026-11-22, builder 23, `build/notes/builder-23/`;
+  `docs/decisions/rendering.md`): the room's mesh sorted into the floor's, the walls' and
+  the metals' index ranges, each drawn with a shader holding only its group's code, the
+  glass and lace with theirs; the phone's pipelines without the screen's maps (`NO_SSAO`),
+  the mirror's without the floor; the tonemap a define (`LINEAR_OUT`); the tuner's views
+  pipelines of their own. Twelve room fragment shaders where there were five (five more
+  with the views, the tuner's alone). Metal System Trace, headless 3024 × 1890, the room
+  view, GPU ms by Metal's own encoder labels (`build/b23/passes.py`): the sort alone
+  changed nothing (main pass 14.98 / 14.96); the split before the views were cut, two
+  rounds, main pass 14.99 / 11.48 and 14.97 / 11.48, mirror 1.30 / 0.75, frame's parts
+  18.34 / 14.44 and 18.33 / 14.42. Each group alone in the main pass (scratch builds, the
+  rest of the pass 1.25): floor 5.66, walls 3.42, glass 0.78, metals 0.10. The walls' shader
+  with only the plaster's code 0.10 faster, without the oak's 0.26: the walls stay one
+  group. The views' code 0.55 (11.50 / 10.94, two rounds). Final, two rounds before / after
+  (the second after first): main pass 14.78 / 10.86 and 14.78 / 10.83, mirror 1.29 / 0.78
+  and 1.29 / 0.73, frame's parts 18.09 / 13.69 and 18.10 / 13.72; the fps counter
+  17.3-17.9 / 12.9 and 17.3 / 12.9 ms a frame. At 1512 × 945, two rounds: main pass 5.02
+  / 3.57, mirror 0.88 / 0.55, frame's parts 6.84-6.85 / 5.15-5.16. The look: 17 shots
+  within a level (two runs of one build differ as much), the phone's tier against the old
+  build with the screen's maps and the mirror off within a level, the game unchanged. Not
+  measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

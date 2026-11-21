@@ -644,8 +644,9 @@ board's light:
 - **The floor's mirror** (`render3d::planar_pass`, `rooms::Room.planar`), in the standard
   and high tiers, not on a phone (`render3d::planar_allowed`): before the board's pass, the
   view out, the table and the room are drawn mirrored across the floor at half size, the
-  clip's depth made the height over the floor so nothing under it is drawn, the room with
-  `ROOM_FRAG` less its sharp reflections and screen occlusion (`MIRROR_PASS`). Each
+  clip's depth made the height over the floor so nothing under it is drawn, the room's
+  walls and metals (not its floor, under the clip plane) with their shaders less the sharp
+  reflections and the screen's maps, writing linear light (`MIRROR_PASS`). Each
   shader there writes its exposed light before the tonemap (`mirror_light`, held to 16),
   the view out at `planar.w` (6) times its look, as a clear sky is far brighter than the
   tonemap shows. The board and its pieces are left out: from under the floor the table's
@@ -675,12 +676,22 @@ board's light:
   (`--walk-frames`).
 - **Reflections**: the brass, and on a phone the waxed floor too, see the shell's box (its
   walls, doors, ceiling and floor lit by the probes and the sun) and its windows, worked
-  out per pixel. With the floor's mirror, only the brass and the books' gilt see it, so
-  the room's index buffer holds their triangles last (`render3d::sharp_last`) and the
-  board's pass draws them with a pipeline of their own (`ROOM_SHARP`); the rest of the
-  room's shader takes the room's light that way (`room_wide`) without that code. Brass inside a window's niche (the shutters' hinges) sees the window's
+  out per pixel. With the floor's mirror, only the brass and the books' gilt see it (the
+  metals' shader, `SHARP_BOX`); the rest takes the room's light that way (`room_wide`)
+  without that code. Brass inside a window's niche (the shutters' hinges) sees the window's
   light (`lace_light`) instead as it turns to face out of the room. Brass takes neither the
   corners' shade nor the screen's occlusion, only its mesh's own.
+- **The room's shaders**: one pipeline a material group (`render3d::room_group`), each
+  with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_METALS`,
+  `ROOM_GLASS`): the floor; the panelling oak, the paper, the plaster and ceiling, the
+  paint and sills, the cord; the brass and the books; the glass and lace, a mesh of their
+  own. The room's mesh is sorted into the groups' index ranges when it is made, each range
+  drawn with its pipeline. A phone's pipelines are compiled without the screen's maps
+  (`NO_SSAO`) and it makes no mirror's; the standard and high tiers' with them, made again
+  if the tier changes. Each shader declares only the textures it reads, in slots without
+  gaps (`render3d::room_textures`). The output is tonemapped sRGB, or with `LINEAR_OUT`
+  the light itself (the mirror's). The light tuner's views of the room are pipelines of
+  their own, made while one is on (`ROOM_VIEWS`).
 - **The window's glow**: a quarter-size bloom of what is near white, added in linear light
   (`render3d::bloom_pass`, `rooms::Room.bloom`).
 - **The oak outside** is blurred once when uploaded (`render3d::soften`), and the tree

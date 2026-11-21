@@ -1025,6 +1025,45 @@ to be is in tasks 042, 059, 071, 081, and 086.
   of probes saves 1.6 ms, but changes the brass's reflections; a baked table of the box's
   walls goes stale as the leaves move and takes the last texture slot), both short of
   drawing the few triangles that need the code apart.
+- The room is drawn with a pipeline per material group, each shader holding only its
+  group's code, compiled per tier (2026-11-22, task 110's fix 3; `render3d::room_group`,
+  `by_group`, `room_textures`, `make_room_tier`; `shaders::ROOM_FLOOR`, `ROOM_WALLS`,
+  `ROOM_METALS`, `ROOM_GLASS`). The groups: the floor; the walls' surfaces (the panelling
+  oak, the paper, the plaster and the ceiling, the paint and the sills, the cord); the
+  metals (the brass, the books with their gilt), which see the room's box sharply
+  (`SHARP_BOX`, as the floor does without the mirror); the glass and the lace, a mesh of
+  their own. When the mesh is made its triangles are sorted into the first three groups'
+  index ranges, and the board's pass draws each range with its pipeline. Why: the one
+  room shader was near the Mac's register limit, so every pixel paid for the code of every
+  material and path (fix 2's finding). Measured headless at 3024 × 1890, the room view, on
+  an M1 Pro, two rounds, with the views below: the main pass 14.8 to 10.8-10.9 ms, the
+  frame's GPU parts 18.1 to 13.7, the fps counter 17.3-17.9 to 12.9 ms a frame; at
+  1512 × 945 the main pass 5.0 to 3.6, the frame 6.8 to 5.2. Each group alone in the main
+  pass: the floor 5.7 ms, the walls 3.4, the glass 0.8, the metals 0.1. The look unchanged
+  (17 shots within a level, as two runs of one build are; the game's unchanged).
+  - The tiers are compiled, not switched by uniforms: the phone's pipelines leave out the
+    screen's occlusion and the contact shadows (`NO_SSAO`) and make no mirror's; the
+    standard and high tiers' have both. The pipelines are made for `ssao_allowed` and made
+    again when it changes.
+  - The floor's mirror draws the walls' and metals' ranges with their own pipelines
+    (`MIRROR_PASS`: linear light, no screen maps, nothing seen sharply) and not the floor,
+    which lies under its clip plane: the mirror's pass 1.3 to 0.73-0.78 ms.
+  - The tonemap is a define (`LINEAR_OUT`, `ROOM_FRAG`'s `room_out` and `TABLE_FRAG`'s
+    end): tonemapped sRGB for today's 8-bit targets, or the light itself, as the mirror's
+    room and table now take it (the table's in place of its uniform switch, `ssao.w`
+    -1). The HDR step can give the main pass's pipelines `LINEAR_OUT`; the view out still
+    switches by its uniform.
+  - Each group's shader declares only the textures it reads, without gaps (gfx counts a
+    shader's samplers from 0; ngfx's root takes them in that order): at most 11 of
+    ngfx's 16 (the walls with the screen's maps), so a new material's textures fit.
+  - The light tuner's views (the screen's occlusion, the indirect light, the sun's
+    highlights, the floor's reflection alone) cost 0.55 ms as uniform-off code, so they are
+    pipelines of their own made while a view is on (`ROOM_VIEWS`, `room_views_on`).
+  Replaces the one room shader with its `ROOM_SHARP` split above (the metals' group keeps
+  that split), and the table's mirror switch by uniform. Rejected: splitting the walls
+  further (their shader with only the plaster's code drew them 0.1 ms faster, without the
+  oak's 0.26: less than a draw and a pipeline more pay for); keeping every texture in
+  every shader at fixed slots (15 of 16 taken already); the views as uniforms.
 - The library's baked light bounces three times (2026-11-21, task 107;
   `room_light::first_light`, `bounce_once`, `gather_half`): the room's surfaces as 1,208
   cells, about 0.5 m a side on the floor, the ceiling and the four walls (a door's leaf, a

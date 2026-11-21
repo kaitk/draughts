@@ -253,8 +253,19 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   the game's shot by 7 levels: a tuner-only switch goes in shaders the tuner embeds itself
   (`render3d_gpu::tuned_frags`, `shaders::TOE_FN`).
   Moving code about in it (one call site in a loop, work done earlier) made it slower, not
-  faster; what paid was drawing the few triangles that need a path with a pipeline of
-  their own (`shaders::ROOM_SHARP`, the brass and books last in the index buffer).
+  faster; what paid was drawing the triangles that need a path with a pipeline of their
+  own. The room is now one pipeline a material group (`render3d::room_group`: floor, walls,
+  metals, glass), each shader with only its group's code by defines (`shaders::ROOM_FLOOR`
+  ..), its mesh sorted into the groups' index ranges. A new material goes in a group, or a
+  group of its own: its define and branch in `ROOM_FRAG`, `room_group`, its textures in
+  `ROOM_HEAD` and `room_textures` (the same order), `room_frag` and `make_room_tier` in
+  both renderers, `scripts/ngfx_3d_shaders.py`'s `ROOMS`, the tuner's `tuned_frags`.
+- gfx counts a shader's samplers from slot 0 and wants every one bound: a variant that
+  drops a texture declares the rest without a gap (`ROOM_HEAD`'s per-group slots); ngfx's
+  root takes them in declaration order, so both follow one list.
+- `scripts/ngfx_glsl.py` preprocesses only `#ifdef`, `#ifndef`, `#else` and `#endif`: a
+  condition over several defines is a define string of its own in the pipeline's parts
+  (`shaders::SHARP_BOX`), and one string may hold several `#define`s (`MIRROR_PASS`).
 - embed_shader takes no `centroid`, no `##`, and no unnamed parameters; `#ifdef` lines in
   a multi-line string take the string's indentation. A define string put first makes two
   shaders from one text (`shaders::MARKS_PULSE`).
