@@ -236,7 +236,10 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   function declared beside the block.
 - `float4` has no swizzles.
 - A shader's big function is compiled once per call site (unrolled loops too): one call
-  site in a uniform-counted loop took a Mali pipeline from 2.5 s to 0.6 s.
+  site in a uniform-counted loop took a Mali pipeline from 2.5 s to 0.6 s. The size costs
+  at run time too, even where the code returns at once: nine unrolled boxes in the
+  library's `corner_shade` made the room 157 ms a frame on the Mac; one loop counted by
+  a uniform (`+ int(corners.z)`) brought it back to 6.
 - A Mali compiles every branch, even one a uniform never takes: split what a look never
   uses into variants by a define (`shaders::PIECES_WOOD`, `BAKE_TABLE`), one embedded
   shader each, and make a variant's pipeline outside a pass.
