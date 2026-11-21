@@ -2891,10 +2891,8 @@ let ROOM_FRAG = """
             c = srgb(lace_thread.rgb) * (front + through);
         }
         result = room_out(c * params.x * shade.w, a);
-    #ifndef NO_SSAO
-    #ifndef LINEAR_OUT
+    #ifdef ROOM_VIEWS
         if (ssao.y > 0.5 && ssao.y < 2.5) result = vec4(vec3(ssao.y > 1.5 ? ssao_kept(screen_ao) : screen_ao) * a, a);
-    #endif
     #endif
     #else
         vec3 albedo;
@@ -3229,10 +3227,13 @@ let ROOM_FRAG = """
         vec4 seen = planar_seen(p, reflect(-v, n_film), film * film, nov);
         vec3 env = mix(room_wide(v_local, rv) * spec_ao, seen.rgb, seen.a) * planar.x * wax;
         spec_ao = 1.0;
+    #ifdef ROOM_VIEWS
+        // The tuner's view of the floor's reflection alone.
         if (planar.y > 0.5) {
             result = vec4(to_srgb(tonemap(env * params.x * shade.w)), 1.0);
             return;
         }
+    #endif
         vec3 fc = env_brdf(f0, film, nov);
     #else
     #ifdef SHARP_BOX
@@ -3254,18 +3255,16 @@ let ROOM_FRAG = """
             env = mix(env, lace_light.rgb / max(params.x * shade.w, 1e-3), clamp(0.6 - dot(rv.xz, axes.zw), 0.15, 1.0));
     #endif
         vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
-    #ifndef LINEAR_OUT
+    #ifdef ROOM_VIEWS
         // The tuner's view of the sun's highlights alone, ×4.
         if (sheen.w > 0.5) color = spec * 4.0 * params.x * shade.w;
     #endif
         result = room_out(color, 1.0);
-    #ifndef NO_SSAO
-    #ifndef LINEAR_OUT
+    #ifdef ROOM_VIEWS
         // The tuner's views: the screen's occlusion alone, or all the indirect light keeps.
         if (ssao.y > 0.5) result = vec4(vec3(ssao.y > 1.5 ? ao : screen_ao), 1.0);
         // The tuner's view of the indirect light alone, on a grey of 0.45.
         if (ssao.y > 2.5) result = vec4(to_srgb(tonemap(irr * 0.45 * params.x * shade.w)), 1.0);
-    #endif
     #endif
     #endif
     }
@@ -3491,6 +3490,11 @@ let LINEAR_OUT = "#define LINEAR_OUT 1\n";
 // linear, without the screen's maps (its block's ssao and contact are 0) and with nothing
 // seen sharply (no SHARP_BOX); the floor, under the clip plane, isn't drawn.
 let MIRROR_PASS = "#define LINEAR_OUT 1\n#define NO_SSAO 1\n";
+// The light tuner's views of the room (render3d::room_views_on: the screen's occlusion, the
+// indirect light, the sun's highlights, the floor's reflection alone), in pipelines of
+// their own made while one is on: their code cost the room 0.55 ms at 3024 × 1890 where
+// none was shown. With the screen's maps only, never in the mirror.
+let ROOM_VIEWS = "#define ROOM_VIEWS 1\n";
 
 // The mirror's picture made the room's light again, with how far each texel stands from the
 // floor along the reflection: the pass drew the room, the table and the view out as their

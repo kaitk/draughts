@@ -361,6 +361,7 @@ struct Gpu {
     room_walls:  Pipeline,
     room_metals: Pipeline,
     room_ssao:   bool,
+    room_views:  bool,              // with the tuner's views (room_views_on)
     bake_room:   Pipeline,
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
     // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
@@ -2252,6 +2253,10 @@ fn pre_place_or_stand_in(g: Gpu&) -> Texture { if g.pre_place.id != 0 { g.pre_pl
 // strength (0 none), y its roughness, z the paper's share, w the tuner's view (1: the sun's
 // highlights alone, ×4). The tuner's --sheen.
 var sheen_look = float4 { 2.0, 0.8, 1.0, 0.0 };
+// Whether one of the light tuner's views of the room is on (the screen's occlusion, the
+// indirect light, the sun's highlights, the floor's reflection alone): the room's pipelines
+// then carry their code (shaders::ROOM_VIEWS), else they leave it out.
+fn room_views_on() -> bool { ssao_allowed && (ssao_view > 0 || sheen_look.w > 0.5 || planar_view == 1) }
 // The sun on the room's surfaces: x its saturation about its luminance there and in its
 // bake (1 as the key is; the tuner's --room-sun); the panelling oak's own: y its share of
 // the room's sun, z its saturation, w its share of the sheen (the tuner's --oak-sun). The
