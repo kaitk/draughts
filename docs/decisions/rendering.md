@@ -772,6 +772,21 @@ to be is in tasks 042, 059, 071, 081, and 086.
   `bookcases.goose`. The shelves' mean colour now measures as the concept's
   (sRGB 0.27, 0.17, 0.10 against 0.26, 0.16, 0.10). Replaces the first palette and the
   sets kept whole; the cases' casting no shadow of their own in the sun above.
+- The library's wallpaper repeats every 0.9 m (2026-11-21, `surfaces::PAPER_TILE`),
+  replacing style-01's 1.4 m: the flowers finer and still readable. A real paper's
+  0.65 m was rejected for now: at that scale the mask's flowers filter into the ground
+  and the wall reads muddier. The light tuner keeps the tile on a slider.
+- The panelling oak is three times lighter and greyer (0.6 of its colour about its
+  luminance), and the ceiling and its cornice have a limewash of their own, at 0.75 of the
+  walls' light and 1.5 times their colour (#aa9e86 to #baaf9a) (2026-11-21): the
+  references' panelling is lighter and greyer than the stain's dark red-brown, and
+  `library-autumn-02`'s ceiling is darker and amber. Chosen on the light tuner's tints
+  (`--oak-tint 3,0.6 --ceiling-tint 0.75,1.5`), then baked: the oak's tint is the last
+  step of its bake (`surfaces::Oak.tint`, `BAKE_FRAG`'s `oak_finish`), the ceiling's
+  colours are `surfaces::LOOK`'s, and the probes' albedos for the wainscot and the
+  bookcases and the reflections' wainscot, cases and ceiling follow them. Replaces the
+  wainscot's dark red-brown (sRGB about 14, 5, 2 in style-01's shade) and the ceiling in
+  the walls' limewash. The tuner's tints are 1,1 at this look.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

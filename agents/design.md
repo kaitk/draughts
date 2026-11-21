@@ -94,9 +94,9 @@ pieces; the design boards still set the layout, glass, and controls.
 - The room round the table, its herringbone floor and panelling (`model3d::surfaces`):
   the light tuner's `--room-surfaces on` (O), `--view room` (V), `--eye X,Y,Z,0 --at
   X,Y,Z,0` for a camera of its own, `--dump-oak PREFIX` for the baked fields at 1:1,
-  `--wallpaper-tile M` for the wall a tile of the wallpaper covers (1.4 m; the slider
-  under Wallpaper, 0.65 to 1.4 m, and L flips it between style-01's 1.4 m and a real
-  paper's 0.65 m). The
+  `--wallpaper-tile M` for the wall a tile of the wallpaper covers (0.9 m; the slider
+  under Wallpaper, 0.65 to 1.4 m, and L cycles a real paper's 0.65 m, 0.9 m and
+  style-01's 1.4 m). The
   library's window is smaller than the room's plan; for the room's shots pass a 1.1 ×
   2.5 m one, `--panes 11,12.7,1,0 --opening 3,6,4,0.45 --wall 36,20,-2,2`. The room
   is judged as lit, no lift: its own light is `--bounce` and `--room-exposure`
@@ -163,9 +163,13 @@ pieces; the design boards still set the layout, glass, and controls.
   `--oak-tint L,S` and `--ceiling-tint L,S` (the panel's Oak light and colour, Ceiling
   light and colour) scale the panelling oak's and the ceiling's albedo in ROOM_FRAG,
   lightness and saturation about its luminance, 1,1 as made; the probes' bounce doesn't
-  follow them. At style-01's camera, 3,0.6 takes the stove end's wainscot in shade
-  from sRGB (14,5,2) to (41,22,12); the references' is about (66,38,22)
-  (`build/notes/reference-compare/`). P prints, after the room's literal, the flags that show
+  follow them. The look of 3,0.6 and 0.75,1.5 is baked since 2026-11-21 (the oak's
+  `surfaces::Oak.tint` at the end of its bake, the ceiling's `LOOK.ceiling_shade` and
+  `ceiling_light`, the probes' and reflections' albedos with them), so 1,1 is that look;
+  the baked default matches the old tinted shot within a level on the oak (a shaded
+  panel's mean sRGB 49.3, 29.8, 18.1 against 49.0, 29.7, 18.0), the rest moving only
+  by the bounce and reflections now following the colours (`build/notes/choices-2026-11-21/`).
+  The references' wainscot in shade is about (66,38,22) (`build/notes/reference-compare/`). P prints, after the room's literal, the flags that show
   the same again, exactly (`build/notes/tuner-sections/`).
 - The light tuner's walk round the room (`Walk`): Tab or the button under Camera and
   views captures the mouse (goose_gfx's `set_mouse_relative`) and hides the panel; WASD

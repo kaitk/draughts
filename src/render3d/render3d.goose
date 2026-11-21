@@ -559,6 +559,7 @@ fn oak_theme(g: Gpu&, oak: surfaces::Oak) -> looks::Theme {
     t.inlay = oak.shellac;
     t.inlay_fig = oak.age;
     t.surface = oak.boards;
+    t.frame = oak.tint;
     return t;
 }
 
@@ -861,6 +862,8 @@ struct SurfacesBlock {
     tile:          float4,
     plaster_shade: float4,
     plaster_light: float4,
+    ceiling_shade: float4,
+    ceiling_light: float4,
     paint:         float4,
     lace_thread:   float4,
     shell:         float4,
@@ -958,7 +961,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
     SurfacesBlock { k.plank, k.planks, k.worn, k.paper, k.gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
-                    float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light, k.paint,
+                    float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light,
+                    k.ceiling_shade, k.ceiling_light, k.paint,
                     k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0, k.brass,
                     model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w),
                     float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },

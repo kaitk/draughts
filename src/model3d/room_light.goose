@@ -63,14 +63,16 @@ let LACE_LETS: f32 = 0.72;
 // the table's mahogany (measured off the room's shots and surfaces::LOOK).
 let FLOOR_ALBEDO = float3 { 0.078, 0.045, 0.022 };
 let PAPER_ALBEDO = float3 { 0.064, 0.048, 0.034 };
-let OAK_ALBEDO = float3 { 0.034, 0.014, 0.005 };
+let OAK_ALBEDO = float3 { 0.082, 0.046, 0.030 };
 let PAINT_ALBEDO = float3 { 0.565, 0.515, 0.423 };
 let PLASTER_ALBEDO = float3 { 0.55, 0.5, 0.43 };
 let STONE_ALBEDO = float3 { 0.468, 0.445, 0.392 };
 let TABLE_ALBEDO = float3 { 0.12, 0.06, 0.035 };
 // The bookcases' fronts, their oak and the books' spines together (books::COVER's mean,
-// darkened by the shelves' shadows).
-let CASE_ALBEDO = float3 { 0.05, 0.028, 0.014 };
+// darkened by the shelves' shadows), the oak about a third of it. The wainscot's and the
+// cases' oak follow surfaces::WALL_OAK's tint: (0.034, 0.014, 0.005) and (0.05, 0.028,
+// 0.014) before it (2026-11-21).
+let CASE_ALBEDO = float3 { 0.066, 0.039, 0.022 };
 
 // How far the sun's patches' thrown-back light is taken to grey (0 its own colour).
 let BOUNCE_GREY: f32 = 0.6;

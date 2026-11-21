@@ -1973,7 +1973,8 @@ let ROOM_HEAD = """
     // units); shade: the light thrown back into the room's shade (rooms::Room.bounce),
     // linear, and w the room's exposure over the board's (rooms::Room.room_exposure);
     // tile: the wall a tile of the wallpaper's mask covers, x, of the plaster's tone, y, of
-    // the lace, z (world units); the shell's limewash at its tone's 0 and 1, its paint and
+    // the lace, z (world units); the shell's limewash at its tone's 0 and 1, the ceiling's
+    // (its cornice's too) likewise, its paint and
     // the lace's thread (sRGB, and roughness). The shell's windows (room_shell, the room's
     // view; shell.x 0 the game's window, Room.window): shell x how many, y the window wall's
     // inner face's distance from the board along the wall's normal toward the sun, z the
@@ -2014,6 +2015,8 @@ let ROOM_HEAD = """
         vec4 tile;
         vec4 plaster_shade;
         vec4 plaster_light;
+        vec4 ceiling_shade;
+        vec4 ceiling_light;
         vec4 paint;
         vec4 lace_thread;
         vec4 shell;
@@ -2337,10 +2340,10 @@ let ROOM_FRAG = """
         vec3 nl;
         vec3 alb;
         float up = (h.y - shell.z) / shell.w;
-        vec3 wall = up < room_heights.z ? vec3(0.034, 0.014, 0.005) : mix(srgb(paper.rgb), srgb(gold.rgb), 0.3);
+        vec3 wall = up < room_heights.z ? vec3(0.082, 0.046, 0.030) : mix(srgb(paper.rgb), srgb(gold.rgb), 0.3);
         if (t == ty) {
             nl = vec3(0.0, lr.y > 0.0 ? -1.0 : 1.0, 0.0);
-            alb = lr.y > 0.0 ? srgb(plaster_light.rgb) : vec3(0.078, 0.045, 0.022);
+            alb = lr.y > 0.0 ? srgb(ceiling_light.rgb) : vec3(0.078, 0.045, 0.022);
         } else if (t == tx) {
             nl = vec3(lr.x > 0.0 ? -1.0 : 1.0, 0.0, 0.0);
             bool door = lr.x > 0.0 && abs(h.z - room_doors.z) < room_doors.w && up < room_heights.y;
@@ -2349,7 +2352,7 @@ let ROOM_FRAG = """
             nl = vec3(0.0, 0.0, lr.z > 0.0 ? -1.0 : 1.0);
             bool door = lr.z > 0.0 && abs(h.x - room_doors.x) < room_doors.y && up < room_heights.y;
             bool cases = lr.z > 0.0 && abs(abs(h.x - room_doors.x) - book_cases.x) < book_cases.y && up < book_cases.z;
-            alb = door ? srgb(paint.rgb) : (cases ? vec3(0.03, 0.017, 0.009) : wall);
+            alb = door ? srgb(paint.rgb) : (cases ? vec3(0.046, 0.029, 0.019) : wall);
         }
         vec3 n = vec3(axes.x * nl.x + axes.z * nl.z, nl.y, axes.y * nl.x + axes.w * nl.z);
         vec3 l = light_dir.xyz;
@@ -2394,7 +2397,7 @@ let ROOM_FRAG = """
     vec3 room_reflection(vec3 p, vec3 lp, vec3 r, float alpha, float nov, float px) {
         // The room's mean albedo the way r looks: the floor's below, the walls' across, the
         // plaster's above.
-        float albedo = r.y > 0.0 ? mix(0.12, 0.55, r.y * r.y) : mix(0.12, 0.06, -r.y);
+        float albedo = r.y > 0.0 ? mix(0.12, 0.41, r.y * r.y) : mix(0.12, 0.06, -r.y);
         vec3 wide = room_irradiance(lp, r) * albedo;
         float sharp = (1.0 - smoothstep(0.08, 0.45, alpha)) * (1.0 - smoothstep(0.05, 0.2, px));
         if (sharp < 0.001) return wide;
@@ -2596,10 +2599,14 @@ let ROOM_FRAG = """
             float tone = clamp(texture(plaster_tone, pl / tile.y).r + 0.25 * (slow - 0.5), 0.0, 1.0);
             float cornice = step(0.25, own);
             tone = mix(tone, 1.0, 0.35 * cornice);
-            albedo = mix(srgb(plaster_shade.rgb), srgb(plaster_light.rgb), tone);
-            rough = mix(plaster_shade.a, plaster_light.a, tone) - 0.05 * cornice;
-            // The ceiling and its cornice, from the cornice's foot up (shell::CORNICE_DROP).
-            if (shell_sun.z > 0.0 && p.y > room_heights.x - 0.27 * shell.w) albedo = tinted(albedo, shell_sun.zw);
+            // The ceiling and its cornice, from the cornice's foot up (shell::CORNICE_DROP),
+            // their own limewash.
+            bool above = p.y > room_heights.x - 0.27 * shell.w;
+            vec4 lime_shade = above ? ceiling_shade : plaster_shade;
+            vec4 lime_light = above ? ceiling_light : plaster_light;
+            albedo = mix(srgb(lime_shade.rgb), srgb(lime_light.rgb), tone);
+            rough = mix(lime_shade.a, lime_light.a, tone) - 0.05 * cornice;
+            if (shell_sun.z > 0.0 && above) albedo = tinted(albedo, shell_sun.zw);
         } else if (kind < 9.5) {
             // Old white painted wood, a little uneven; the sills' pale stone (own over
             // 0.5), mottled.
@@ -4208,7 +4215,10 @@ let BAKE_FRAG = """
         // greyer than the wood round them, the rest in their gloss.
         float y = dot(c, vec3(0.2126, 0.7152, 0.0722));
         c = mix(c, mix(c, vec3(y), 0.15) * 1.15, w.fleck);
-        w.albedo = c;
+        // Its tint (surfaces::Oak.tint, in the frame's slot): lighter by x, greyer or more
+        // coloured by y about its luminance.
+        y = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        w.albedo = max(mix(vec3(y), c, frame.y), vec3(0.0)) * frame.x;
         w.rough = light_sq.a + 0.2 * w.pore - 0.05 * w.fleck + 0.08 * fine + 0.05 * blot;
         return w;
     }

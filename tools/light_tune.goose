@@ -9,8 +9,8 @@
 // ceiling; S switches it for the panelled wall facing the window alone, model3d::surfaces,
 // as it was), V the views in turn (the board, then the room's: room, window, hall, stove,
 // VIEWS), U the view out of the shell's windows (model3d::view_out) or the plain sky behind
-// them as before, B the bookcases' books (model3d::books) in or out, L the wallpaper's tile between style-01's
-// 1.4 m and a real paper's 0.65 m, F the frame counter in the corner (frames a
+// them as before, B the bookcases' books (model3d::books) in or out, L the wallpaper's tile round a real paper's
+// 0.65 m, the default 0.9 m and style-01's 1.4 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
 // frame so the loop's time is the CPU's and the GPU's, P prints the room as Goose and the
@@ -550,7 +550,7 @@ let NOISE = 19;
 
 let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", "P: print the room and its flags",
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
-                "L: the wallpaper's tile, 0.65 or 1.4 m", "C: the lace's way; B: the books", "W: the window's pattern; T: leaves by",
+                "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust", "F: the frame counter; G: wait for the GPU",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
                 "walking: C seated, X then Q, E down and up", "R: back to the view, P: the walk's camera"];
@@ -864,7 +864,7 @@ fn main() {
             if gfx::key_pressed("G") { meter.wait = !meter.wait; }
             if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
             if gfx::key_pressed("B") { books_on = !books_on; }
-            if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else { 1.4 }; }
+            if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else if paper_m > 0.7 { 1.4 } else { 0.9 }; }
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;

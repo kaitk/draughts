@@ -71,6 +71,8 @@ struct Oak {
     age:     float4,   // x the light's ambering, y blotches, z grime, w the rays' fleck
     boards:  float4,   // x a board's width (world units), y the share quarter-sawn, z the
     // trees' own tones, w the relief
+    tint: float4,      // the finished oak made lighter (x) and greyer or more coloured (y)
+    // about its luminance, as ROOM_FRAG's tinted() does
 }
 
 // The parquet: oak gone a warm mid-dark brown under a century of wax and light, fumed,
@@ -85,10 +87,13 @@ let FLOOR_OAK = Oak {
     shellac: float4 { 0.95, 0.91, 0.84, 1.0 },
     age:     float4 { 0.4, 0.12, 0.35, 1.0 },
     boards:  float4 { 2.134, 0.45, 0.1, 1.0 },
+    tint:    float4 { 1.0, 1.0, 0.0, 0.0 },
 };
 
 // The wainscot: the same oak darker, brown with a little red, a heavier stain and older
-// wax (style-01's back wall, crop-wainscot-01).
+// wax (style-01's back wall, crop-wainscot-01), then three times lighter and greyer (0.6
+// of its colour), the references' lighter, greyer panelling (2026-11-21; it was the stain's
+// dark red-brown, sRGB about 14, 5, 2 in style-01's shade).
 let WALL_OAK = Oak {
     base:    float4 { 0.74, 0.57, 0.42, 0.4 },
     figure:  float4 { 0.25, 0.2, 0.2, 1.0 },
@@ -98,6 +103,7 @@ let WALL_OAK = Oak {
     shellac: float4 { 0.93, 0.88, 0.80, 1.1 },
     age:     float4 { 0.45, 0.1, 0.4, 1.0 },
     boards:  float4 { 8.0, 0.5, 0.06, 1.0 },
+    tint:    float4 { 3.0, 0.6, 0.0, 0.0 },
 };
 
 // How ROOM_FRAG lays and wears the floor and lights the wall, in its Surfaces block.
@@ -113,6 +119,9 @@ struct Look {
     // stone.
     plaster_shade: float4,
     plaster_light: float4,
+    // The ceiling's and its cornice's limewash, the same two ends.
+    ceiling_shade: float4,
+    ceiling_light: float4,
     paint:         float4,
     lace_thread:   float4,
     stone:         float4,
@@ -142,6 +151,10 @@ let LOOK = Look {
     // #c6beae; lace.py's thread, #ddd3bf, cotton; the sills a pale limestone, #b6b2a8.
     plaster_shade: float4 { 0.745, 0.706, 0.639, 0.92 },
     plaster_light: float4 { 0.816, 0.784, 0.722, 0.86 },
+    // The ceiling's darker and warmer, #aa9e86 to #baaf9a: the walls' limewash at 0.75 of
+    // its light and 1.5 times its colour (2026-11-21), toward library-autumn-02's amber.
+    ceiling_shade: float4 { 0.6684, 0.6177, 0.5262, 0.92 },
+    ceiling_light: float4 { 0.7284, 0.6867, 0.6027, 0.86 },
     paint:         float4 { 0.776, 0.745, 0.682, 0.45 },
     lace_thread:   float4 { 0.867, 0.827, 0.749, 0.9 },
     stone:         float4 { 0.714, 0.698, 0.659, 0.55 },
@@ -165,10 +178,11 @@ let LACE_MIPS = 8;
 let LACE_WAYS = ["f2", "f", "d"];
 
 // The wallpaper's mask (design/materials/wallpaper_mask.png): its side in texels, and the
-// square of wall one tile covers, 1.4 m, style-01's flowers (a real paper of the period
-// repeats every 0.5 to 0.65 m).
+// square of wall one tile covers, 0.9 m, its flowers finer than style-01's 1.4 m and still
+// readable (a real paper of the period repeats every 0.5 to 0.65 m, where the mask's
+// flowers lose their contrast).
 let PAPER_SIDE = 1024;
-let PAPER_TILE: f32 = 1.4 * METRE;
+let PAPER_TILE: f32 = 0.9 * METRE;
 
 // The room's frame from the key's direction toward the light and the window's wall's
 // turn (shaders::LIGHT_FN's window_light): u along the wall, v into the room.
