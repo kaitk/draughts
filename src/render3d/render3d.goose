@@ -1165,6 +1165,8 @@ var light_bytes:   u8[ATLAS_BYTES];
 var light_patches: room_light::Patch[room_light::BINS];
 var light_tree:    f32[room_light::RAYS];
 var light_bounce:  room_light::Bounce;
+// The last bake's sun (the light tuner's --light-ref works from it).
+var light_sun = default<room_light::Sun>();
 // How many times the room's light is thrown on after the sun's patches (room_light::BOUNCES;
 // 0 the patches alone, the tuner's --bounces), and each step's time in the last bake:
 // the sun's rays, the first light, each bounce, the half grid's gather, the probes.
@@ -1221,6 +1223,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
         sky_gain:    r.baked.x,
         bounce_gain: r.baked.y,
     };
+    light_sun = sun;
     tree_through(g, l);
     var at = clock();
     let n = room_light::sun_patches(sun, light_tree[..], light_patches, light_bounce);

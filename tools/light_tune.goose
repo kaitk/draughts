@@ -42,6 +42,9 @@
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
 //       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
 //       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
+//       [--dump-light PATH (the probes' atlas, a float a line, with --shot)] [--light-ref PATH (the baked light worked
+//       out finely on the room's surfaces, tools/light_ref.goose; --light-ref-stride N, --light-ref-old)]
+//       [--ssao-view off|alone|kept|light (light: the indirect light alone on grey)]
 //       [--contact STRENGTH,LENGTH,STEPS,THICKNESS (the sun's contact shadows, world units; 0.8,3,12,1.5; 0 off)]
 //       [--room-sun K (the sun's saturation on the room, 0.6; 1 as the key)]
 //       [--oak-sun SHARE,SAT,SHEEN (the panelling oak's share of the room's sun, its saturation and share of the sheen)]
@@ -67,6 +70,7 @@ import strings from "../strings";
 import board from "../src/board";
 import model3d from "../src/model3d";
 import render3d from "../src/render3d";
+import .light_ref;
 
 let PANEL_W: f32 = 380.0;
 let ROW:     f32 = 20.0;
@@ -87,8 +91,8 @@ fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
 // far end. With the shell off, room is the view over the table to the panelled wall.
 let VIEWS = ["board", "room", "window", "hall", "stove"];
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
-// indirect light keeps.
-let SSAO_VIEWS = ["off", "alone", "kept"];
+// indirect light keeps, or the indirect light alone on grey.
+let SSAO_VIEWS = ["off", "alone", "kept", "light"];
 // The tonemaps' toes (render3d::tone_toe): on the luminance, Khronos PBR Neutral's on the
 // least channel, none.
 let TOES = ["room", "neutral", "none"];
@@ -902,6 +906,18 @@ fn main() {
                 print("the room's oak baked in ", g.room_ms, " ms, ", g.room_side, " texels a side, ",
                       render3d::room_bytes(g) / 1048576, " MiB; its mesh made in ", g.mesh_ms, " ms, ",
                       g.room_count / 3, " triangles and ", g.glass_count / 3, " of glass and lace");
+            }
+            let dump_light = flag_value(argv, "--dump-light");
+            if dump_light > 0 && g.light_ms > 0.0 {
+                var out: u8[>..] = [];
+                for i in room_light::ATLAS_FLOATS { format(out, render3d::light_atlas[i], "\n"); }
+                guard write_file(argv[dump_light], out[..]) else { abort("could not write the probes"); }
+            }
+            let light_ref_at = flag_value(argv, "--light-ref");
+            if light_ref_at > 0 && g.light_ms > 0.0 {
+                let t0 = clock();
+                light_ref::run(render3d::light_sun, render3d::light_tree[..], argv[light_ref_at], whole(argv, "--light-ref-stride", 1), !has(argv, "--light-ref-old"));
+                print("the reference in ", (clock() - t0) * 1000.0, " ms");
             }
             if g.light_ms > 0.0 {
                 let st = render3d::light_steps;

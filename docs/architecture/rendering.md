@@ -577,17 +577,25 @@ board's light:
   round the scroll toes (`base_hides`), and no broader: the top's shade on the floor is
   the probes' and the screen's occlusion's.
 - **Baked light** (`model3d::room_light`): a grid of 10,140 probes 0.3 m apart, half a step
-  in from every wall, the floor and the ceiling, made on the CPU in about 87 ms when the
+  in from every wall, the floor and the ceiling, made on the CPU in about 88 ms when the
   room turns on and again when the sun, the room's light, the tree or the table changes,
   never per frame and held while a slider drags. Each probe holds the sky seen through the
   niches, the sun's patches thrown back, and the light the room throws on after that, as
-  a constant and a direction per colour; the row in front of a surface takes none of that
-  surface's own light. The light thrown on is bounced once more between 1,208 cells over
+  a constant and a direction per colour. A probe within 0.35 m of a wall, the floor or the
+  ceiling also sums that plane's exact light (the clamped cosine) and turns its direction
+  so the plane reads exactly that (`room_light::settle`); two bands alone would give a
+  plane a quarter of each light along or behind it. A probe in a niche sees only its own
+  window; one inside a wall, past the glass or behind the hall wall takes the light of
+  the nearest probe toward the room (`fill_walled`). The light thrown on is bounced once
+  more between 1,209 cells over
   the room's surfaces (half a metre on the floor, ceiling and walls, 0.2 m in the niches,
   the table's top) from every source: the sun's rays where they land, the sky through the
   niches on the floor, sills and reveals, the backlit lace; the probes gather it at half
-  their density. The lace lets about three quarters through where it hangs flat and less
-  where it is gathered toward its tie, and throws on part of what it stops; its sun
+  their density, with the stove end's own row. No surface throws back more than 0.85 of
+  the light it gets (`thrown_albedo`), and a sill's or reveal's light leaves its niche
+  only through the niche's outline. The lace lets about three quarters through where it
+  hangs flat and less where it is gathered toward its tie, and throws on 0.4 of what it
+  stops (`LACE_SCATTER`); its sun
   shadow stops about 28% of the sun where it hangs flat (its net a fifth, its motifs
   what the thread keeps), darker where gathered, soft, blurred well past the bars'. They fill a 390 × 78 RGBA16F atlas
   (0.24 MB) that `ROOM_FRAG` reads with six taps. Beside it the

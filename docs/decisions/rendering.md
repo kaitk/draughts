@@ -1224,6 +1224,29 @@ to be is in tasks 042, 059, 071, 081, and 086.
   44, 24, 14). The room's exposure (1.8) and its toe stay; the tone is for after the
   materials pass. The no-toe set (the sun three times, exposure 1.55) is the tuner's.
   Replaces the sun 2.2 times the board's, the fill at 1, the bounce 12 and three bounces.
+- The library's probes give the walls, the floor and the ceiling their exact light
+  (2026-11-21, task 107; `room_light::settle`, `fill_walled`, `probe_place`,
+  `thrown_albedo`, `LACE_SCATTER`): a probe gathers, beside its constant and direction,
+  the clamped cosine sum for each room plane it stands within 0.35 m of, and its direction
+  is turned along that plane's normal so the plane reads exactly its own light. Two bands
+  alone gave a wall a quarter of each light along it or behind it and the floor a quarter
+  of every low light: the floor read 1.3-2× its light away from the walls, and a wall's
+  own sun patch rang dark round itself (the black half disc at the hall door's foot). A
+  probe inside a wall, past the inner glass or behind the hall wall takes the light of the
+  nearest probe toward the room, and one in a niche sees only its own window: the window
+  wall's corners and the floor and ceiling along it read the sky through the piers. A
+  sunlit sill's or reveal's light leaves its niche only through the niche's outline. No
+  surface throws back more than 0.85 of the light it gets (the patches' gain had made the
+  white doors, reveals and sills throw 2.8-3.4×), the lace throws on only its own share
+  of the sun it stops (0.4, without the gain), and the half grid has the stove end's own
+  row: together they were the stove end's light band by window 1 (+28% over the wall,
+  +9% now, as a 12.5 cm reference bake rises there). Against that reference
+  (`tools/light_ref.goose`, the tuner's `--light-ref`) the bake's error went from 0.79 to
+  0.14 rms in log₂. The indirect light is about half what it was, so the darks come back;
+  the probes' bounce is 10 (baked.y, from 6; the tuner's "Probes' bounce"), now lifting
+  only the floor, the oak and the paper, one bounce as before. The bake takes about
+  10 ms more. Replaces the probe row that took none of its surface's own patch
+  (`OWN_ROW`, above) and the lace's light lifted by the patches' gain.
 - The tonemaps' toes switch only in the light tuner (2026-11-21, task 107;
   `shaders::TOE_FN`, `render3d::tone_toe`, `render3d_gpu::tuned_frags`; `--toe`,
   `--table-toe`, `--board-toe`, `--toe-off`): the tuner embeds its own fragment shaders

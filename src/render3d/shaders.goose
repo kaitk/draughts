@@ -2066,7 +2066,7 @@ let TABLE_FRAG = """
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
     #ifdef TABLE_ROOM
-        if (ssao.y > 0.5) result = vec4(vec3(ssao.y > 1.5 ? ao : screen_ao), 1.0);
+        if (ssao.y > 0.5 && ssao.y < 2.5) result = vec4(vec3(ssao.y > 1.5 ? ao : screen_ao), 1.0);
     #endif
     }
     """;
@@ -3327,7 +3327,7 @@ let ROOM_FRAG = """
         #endif
             c = tonemap(c * params.x * shade.w) * vec3(1.02, 1.0, 0.97);
             result = vec4(to_srgb(c) * a * (1.0 - screen.z), a);
-            if (ssao.y > 0.5) result = vec4(vec3(ssao.y > 1.5 ? ssao_kept(screen_ao) : screen_ao) * a, a);
+            if (ssao.y > 0.5 && ssao.y < 2.5) result = vec4(vec3(ssao.y > 1.5 ? ssao_kept(screen_ao) : screen_ao) * a, a);
             return;
         }
 
@@ -3440,6 +3440,8 @@ let ROOM_FRAG = """
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
         // The tuner's views: the screen's occlusion alone, or all the indirect light keeps.
         if (ssao.y > 0.5) result = vec4(vec3(ssao.y > 1.5 ? ao : screen_ao), 1.0);
+        // The tuner's view of the indirect light alone, on a grey of 0.45.
+        if (ssao.y > 2.5) result = vec4(to_srgb(tonemap(irr * 0.45 * params.x * shade.w)), 1.0);
     }
     """;
 

@@ -150,7 +150,7 @@ let AUTUMN = Room {
     bounce:        float4 { 0.85, 0.78, 0.7, 0.2 },
     room_exposure: 1.8,
     shell_sun:     float4 { 0.0055, 4.4, 0.0, 0.0 },
-    baked:         float4 { 7.0, 6.0, 0.2, 0.3 },
+    baked:         float4 { 7.0, 10.0, 0.2, 0.3 },
     bloom:         float4 { 0.45, 0.72, 0.15, 4.0 },
     corners:       float4 { 1.0, 0.4, 0.0, 0.0 },
     ssao:          float4 { 1.0, 0.35, 0.05, 3.0 },
