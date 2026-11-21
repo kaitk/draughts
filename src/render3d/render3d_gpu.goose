@@ -550,6 +550,29 @@ fn bloom_pass(own: Own&, g: render3d::Gpu&, image: Texture, target: Texture, siz
     gfx::end_pass();
 }
 
+// The scene's target under the screen's size (render3d::scene_size_of), and its
+// pipelines up to the screen, made the first time.
+fn scene_target(own: Own&, g: render3d::Gpu&, size: int2) -> Texture {
+    if g.upscale.id == 0 {
+        let full = embed_shader("vert", shaders::FULL_VERT);
+        g.upscale = gfx::pipeline(full, embed_shader("frag", shaders::UPSCALE_FRAG));
+        g.upscale_cubic = gfx::pipeline(full, embed_shader("frag", shaders::UPSCALE_CUBIC, shaders::UPSCALE_FRAG));
+    }
+    return gfx::render_target(size.x, size.y, gfx::RGBA8);
+}
+
+// The scene scaled up over all of `target` (render3d::draw, shaders::UPSCALE_FRAG).
+fn upscale_pass(own: Own&, g: render3d::Gpu&, target: Texture, u: render3d::Upscale) {
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    gfx::begin_pass(pass);
+    gfx::bind(if render3d::scene_cubic { g.upscale_cubic } else { g.upscale });
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.scene_image, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, u);
+    gfx::draw(3);
+    gfx::end_pass();
+}
+
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
 // the photograph: one draw, the sky, then the band, then the oak, each over the last.
 fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
@@ -1203,7 +1226,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
                     own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.wall_albedo,
                     g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.corner_map,
                     g.table_map, g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color,
-                    g.planar_depth, g.planar_map];
+                    g.planar_depth, g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
@@ -1213,7 +1236,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_floor, g.room_walls, g.room_metals, g.bake_room, g.room_glass, g.outside, g.bloom_pick, g.bloom_blur, g.bloom_add,
                      g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.planar_walls, g.planar_metals, g.planar_glass, g.planar_table,
-                     g.planar_resolve, g.planar_show, g.planar_mip];
+                     g.planar_resolve, g.planar_show, g.planar_mip, g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();

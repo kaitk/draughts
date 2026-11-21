@@ -502,6 +502,31 @@ fn bloom_pass(own: Own&, g: Gpu&, image: Texture, target: Texture, size: int2) {
     barrier_between_passes();
 }
 
+// The scene's target under the screen's size (render3d::scene_size_of), and its
+// pipelines up to the screen, made the first time; r3d_upscale's header: its block, the scene.
+fn scene_target(own: Own&, g: Gpu&, size: int2) -> Texture {
+    if g.upscale.id == 0 {
+        g.upscale = module(embed_file("../../build/ngfx/blobs/r3d_upscale.blob"));
+        g.upscale_cubic = module(embed_file("../../build/ngfx/blobs/r3d_upscale_cubic.blob"));
+    }
+    return nx::render_target(size.x, size.y, ngfx::RGBA8);
+}
+
+// The scene scaled up over all of `target`, as gfx's upscale_pass.
+fn upscale_pass(own: Own&, g: Gpu&, target: Texture, u: render3d::Upscale) {
+    var pass = nx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    nx::begin_pass(pass);
+    nx::bind(if render3d::scene_cubic { g.upscale_cubic } else { g.upscale });
+    var a = no_root();
+    let b: render3d::Upscale[1] = [u];
+    a.u = ngfx::frame_data(bytes_of(b));
+    slot(a, 0, g.scene_image, g.linear);
+    ngfx::draw(ngfx::root(a), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
+}
+
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
 // the photograph: one draw, the sky, then the band, then the oak, each over the last;
 // r3d_outside.slang's header: Outside, the band, the oak.
@@ -1214,7 +1239,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
                     g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.corner_map, g.table_map,
                     g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color, g.planar_depth,
-                    g.planar_map];
+                    g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
@@ -1225,7 +1250,8 @@ fn release(own: Own&, g: Gpu&) {
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
                      g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_floor, g.room_walls, g.room_metals, g.bake_room, g.room_glass, g.outside, g.bloom_pick,
                      g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.planar_walls,
-                     g.planar_metals, g.planar_glass, g.planar_table, g.planar_resolve, g.planar_show, g.planar_mip];
+                     g.planar_metals, g.planar_glass, g.planar_table, g.planar_resolve, g.planar_show, g.planar_mip,
+                     g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();

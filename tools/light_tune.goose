@@ -13,7 +13,9 @@
 // 0.65 m, the default 0.9 m and style-01's 1.4 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
-// frame so the loop's time is the CPU's and the GPU's, P prints the room as Goose and the
+// frame so the loop's time is the CPU's and the GPU's, N the 3D scene's scale (the high
+// tier's budget of pixels, or 1, 0.85, 0.75, 0.67 of the screen's side) and M its upscale
+// (Catmull-Rom or bilinear; the panel stays at the screen's pixels), P prints the room as Goose and the
 // flags that show the same again (and saves them in build/light-tune.txt). Tab walks round
 // the room (Walk: WASD and the mouse, Esc back to the panel); the camera stays where the
 // walk left it, and P prints it as --plan-eye and --plan-at, till R or V.
@@ -58,6 +60,8 @@
 //       [--fps-seconds S (print the counter each half second, quit after S)]
 //       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
 //       [--planar-size K (the floor mirror's scale, 2 half) --planar-wide TEXELS (its least width, 1600)]
+//       [--scene-scale K (the 3D scene at K of the screen's side; 0, the default, its budget)]
+//       [--scene-pixels MP (the budget, render3d::HIGH_SCENE_PIXELS)] [--upscale cubic|bilinear]
 //       [--walk-frames DIR --walk-path strafe|turn|forward --walk-count N --walk-turn PX (a walk from --plan-eye
 //       looking at --plan-at: D or W held, or the mouse PX a frame to the right, N frames at 1/60 s, each
 //       saved as DIR/NNN.png; with --shot)]
@@ -103,6 +107,11 @@ let TOES = ["room", "neutral", "none"];
 // What the floor's mirror shows (render3d::planar_view): the room, the floor's reflection
 // alone, the mirror's map over the whole picture, its distances.
 let PLANAR_VIEWS = ["off", "floor", "map", "distance"];
+// The 3D scene's scales N cycles (render3d::scene_size_of): 0 the high tier's budget of
+// pixels (--scene-pixels, render3d::HIGH_SCENE_PIXELS), else that share of the screen's
+// side; and its upscale (M).
+let SCENE_SCALES: f32[5] = [0.0, 1.0, 0.85, 0.75, 0.67];
+let UPSCALES = ["cubic", "bilinear"];
 let VIEW_EYES: float3[5] = [float3_0, float3 { 8.4, 0.6, 1.7 }, float3 { 4.5, 1.0, 1.6 }, float3 { 4.5, 6.3, 1.6 },
                             float3 { 8.3, 3.5, 1.6 }];
 let VIEW_ATS: float3[5] = [float3_0, float3 { 2.6, 5.8, 1.3 }, float3 { 4.5, 7.0, 1.8 }, float3 { 4.5, 0.0, 1.3 },
@@ -585,6 +594,7 @@ let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", 
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
                 "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust", "F: the frame counter; G: wait for the GPU",
+                "N: the scene's scale; M: its upscale",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
                 "walking: C seated, X then Q, E down and up", "R: back to the view, P: the walk's camera"];
 
@@ -793,6 +803,9 @@ fn main() {
     render3d::planar_view = pick(argv, "--planar-view", PLANAR_VIEWS, 0);
     render3d::planar_scale = whole(argv, "--planar-size", 2) as i32;
     render3d::planar_least_wide = whole(argv, "--planar-wide", 1600) as i32;
+    var scene_k = number(argv, "--scene-scale", 0.0);
+    let scene_budget = number(argv, "--scene-pixels", render3d::HIGH_SCENE_PIXELS / 1.0e6) * 1.0e6;
+    var upscale = pick(argv, "--upscale", UPSCALES, 0);
     room.outside = number(argv, "--outside-exposure", room.outside);
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
     room.exposure = number(argv, "--exposure", room.exposure);
@@ -1009,6 +1022,12 @@ fn main() {
             if gfx::key_pressed("B") { books_on = !books_on; }
             if gfx::key_pressed("H") { shutters_on = !shutters_on; }
             if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else if paper_m > 0.7 { 1.4 } else { 0.9 }; }
+            if gfx::key_pressed("N") {
+                var next = 0;
+                for k, i in SCENE_SCALES { if k == scene_k { next = (i + 1) % SCENE_SCALES.len; } }
+                scene_k = SCENE_SCALES[next];
+            }
+            if gfx::key_pressed("M") { upscale = 1 - upscale; }
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
@@ -1239,6 +1258,9 @@ fn main() {
             if section(c, open, DEBUG) {
                 switch(c, "Frames (F)", meter.on, ["off", "on"]);
                 switch(c, "Wait GPU (G)", meter.wait, ["off", "on"]);
+                let scene = render3d::scene_size_of(gfx::screen_size());
+                note(c, str("the scene ", scene.x, " x ", scene.y, if scene_k > 0.0 { str(" at ", scene_k) } else { str(", at most ", scene_budget / 1.0e6, " MP") }, " (N)"));
+                choice(c, "Upscale (M)", upscale, UPSCALES);
                 note(c, if g.bake_held { "bakes held till the slider's let go" } else { "bakes when let go of a slider" });
                 if g.tree_ms > 0.0 { note(c, str("the tree baked in ", floor(g.tree_ms + 0.5) as i64, " ms")); }
                 if g.light_ms > 0.0 { note(c, str("the probes baked in ", floor(g.light_ms + 0.5) as i64, " ms")); }
@@ -1433,6 +1455,9 @@ fn main() {
         // The near plane farther with the room, so 16-bit depth keeps its panels apart.
         let near: f32 = if room_on { clamp(0.2 * length(eye - target), 1.0, 12.0) } else { 1.0 };
         let proj = gfx::perspective(fov * PI / 180.0, size.x as f32 / size.y, near, if room_on { 600.0 } else { 120.0 });
+        render3d::scene_pixels = if scene_k > 0.0 { 0.0 } else { scene_budget };
+        render3d::scene_scale = if scene_k > 0.0 { scene_k } else { 1.0 };
+        render3d::scene_cubic = upscale == 0;
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
         if walk.on {

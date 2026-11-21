@@ -434,6 +434,12 @@ struct Gpu {
     book_atlas: Texture,
     books_off:  bool,
     book_fade:  f32,
+    // The scene drawn under the screen's size (scene_size_of): its RGBA8 target at that
+    // size, made again for another, and its pipelines up to the screen, bilinear and
+    // Catmull-Rom (shaders::UPSCALE_FRAG), made the first time it is drawn so.
+    scene_image:   Texture,
+    upscale:       Pipeline,
+    upscale_cubic: Pipeline,
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -1528,8 +1534,9 @@ fn release_targets<O>(o: O&, g: Gpu&) {
 
 // What release_targets() releases, also before a resize's new targets.
 fn give_back<O>(o: O&, g: Gpu&) {
-    let held = [g.color, g.depth, g.edges, g.weights, g.kept_depth, g.kept_backdrop];
+    let held = [g.color, g.depth, g.edges, g.weights, g.kept_depth, g.kept_backdrop, g.scene_image];
     for t in held { if t.id != 0 { o.gpu_release(t); } }
+    g.scene_image = Texture { 0 };
     g.color = Texture { 0 };
     g.edges = Texture { 0 };
     g.weights = Texture { 0 };
@@ -1541,7 +1548,7 @@ fn give_back<O>(o: O&, g: Gpu&) {
 // Whether release_targets() has anything to give back.
 fn resting(g: Gpu&) -> bool {
     return g.color.id == 0 && g.depth.id == 0 && g.edges.id == 0 && g.weights.id == 0 && g.kept_depth.id == 0
-           && g.kept_backdrop.id == 0;
+           && g.kept_backdrop.id == 0 && g.scene_image.id == 0;
 }
 
 // Puts a theme on the board (looks::AUTUMN..), its surfaces baked for n squares a side,
@@ -2044,18 +2051,22 @@ fn place<O>(o: O&, g: Gpu&, inst: const float4[:], alphas: const f32[:], squares
     if moved { g.shadow_dirty = true; }
 }
 
-// Draws a frame seen through view_proj from `eye` into `out`, a color target of `size`
+// Draws a frame seen through view_proj from `eye` into `out`, a color target of `screen`
 // (the renderer's screen; or for Texture { 0 } g.image, kept for show()): the shadow map
 // first if the pieces moved, then the one pass, antialiased as g.aa says. Without the
 // `backdrop` the target is clear but for the board, its shadow, and the pieces
 // (premultiplied), for show() to lay over a backdrop drawn apart (backdrop(), or the
 // app's photograph). With `keep_depth` the board's depth is kept too, at 1x, for
-// marks_over. Recording only; the caller's frame submits it.
-fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2, shadow_every: bool = false,
+// marks_over. Into `out`, the scene is drawn at scene_size_of(screen) and, if that is
+// smaller, scaled up into it (upscale_pass). Recording only; the caller's frame submits it.
+fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: int2, shadow_every: bool = false,
         backdrop: bool = true, keep_depth: bool = false) {
+    let size = if out.id != 0 && !keep_depth { scene_size_of(screen) } else { screen };
+    let scaled = size.x != screen.x || size.y != screen.y;
     if size.x != g.size.x || size.y != g.size.y { targets(o, g, size); }
     o.pass_targets(g);
-    let target = if out.id == 0 { g.image } else { out };
+    if scaled && g.scene_image.id == 0 { g.scene_image = o.scene_target(g, size); }
+    let target = if scaled { g.scene_image } else if out.id == 0 { g.image } else { out };
     g.frame.view_proj = view_proj;
     g.frame.eye = model3d::f4(eye, 1.0);
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
@@ -2082,6 +2093,30 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
     if glowing { o.bloom_pass(g, g.image, target, size); }
     if planar_view > 1 && planar_shown(g) { o.planar_show_pass(g, target, planar_show_of(g, size)); }
     if keep_depth { o.draw_depth(g); }
+    if scaled { o.upscale_pass(g, out, upscale_of(size, screen)); }
+}
+
+// The 3D scene's resolution budget, the high tier's on a Retina or 4K screen, where the
+// room's passes cost about their pixels: draw() into a target draws the scene at most
+// scene_pixels pixels (0 no limit) and at most scene_scale of the screen's side, keeping
+// its shape, then scales it up to the screen with Catmull-Rom (scene_cubic) or bilinear.
+// The UI drawn over it after keeps the screen's pixels. HIGH_SCENE_PIXELS is the high
+// tier's default; the app's kept image is drawn at the screen's size.
+let HIGH_SCENE_PIXELS: f32 = 3.2e6;
+var scene_pixels: f32 = 0.0;
+var scene_scale:  f32 = 1.0;
+var scene_cubic = true;
+fn scene_size_of(screen: int2) -> int2 {
+    let pixels = (screen.x as f32) * (screen.y as f32);
+    var k = min(scene_scale, 1.0);
+    if scene_pixels > 0.0 && pixels > scene_pixels { k = min(k, sqrt(scene_pixels / pixels)); }
+    guard k < 1.0 else { return screen; }
+    return int2 { max((screen.x as f32 * k + 0.5) as i32, 1), max((screen.y as f32 * k + 0.5) as i32, 1) };
+}
+// shaders::UPSCALE_FRAG's block: a screen pixel in the scene's texels, a scene texel in uv.
+struct Upscale { upscale: float4 }
+fn upscale_of(size: int2, screen: int2) -> Upscale {
+    Upscale { float4 { size.x / (screen.x as f32), size.y / (screen.y as f32), 1.0 / (size.x as f32), 1.0 / (size.y as f32) } }
 }
 
 // The room's ambient occlusion (ssao_pass, shaders::SSAO_FRAG): drawn where the tiers allow

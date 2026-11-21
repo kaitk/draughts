@@ -98,6 +98,8 @@ MODULES = [
     ("r3d_glow_pick", FULL, ["GLOW_PICK_FRAG"]),
     ("r3d_glow_blur", FULL, ["GLOW_BLUR_FRAG"]),
     ("r3d_glow_add", FULL, ["GLOW_ADD_FRAG"]),
+    ("r3d_upscale", FULL, ["UPSCALE_FRAG"]),
+    ("r3d_upscale_cubic", FULL, ["UPSCALE_CUBIC", "UPSCALE_FRAG"]),
     ("r3d_pre_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["PRE_ROOM", "FS_SET", "FRAME", "PRE_FRAG"]),
     ("r3d_pre_table", TABLE_VS, ["FS_SET", "FRAME", "PRE_FRAG"]),
     ("r3d_pre_lit", LIT_VS, ["FS_SET", "FRAME", "PRE_FRAG"]),

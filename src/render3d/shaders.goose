@@ -3631,6 +3631,39 @@ let GLOW_ADD_FRAG = """
     }
     """;
 
+// The 3D scene drawn under the screen's size scaled up to it (render3d::upscale_pass):
+// upscale.xy a screen pixel in the scene's texels, zw a scene texel in uv. Bilinear, or with
+// UPSCALE_CUBIC Catmull-Rom from nine bilinear taps (each side's two middle weights, both
+// positive, taken by one tap between their texels).
+let UPSCALE_CUBIC = "#define UPSCALE_CUBIC 1\n";
+let UPSCALE_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    layout(set = 3, binding = 0) uniform Upscale { vec4 upscale; };
+    void main() {
+        vec2 at = gl_FragCoord.xy * upscale.xy;
+    #ifdef UPSCALE_CUBIC
+        vec2 mid = floor(at - 0.5) + 0.5;
+        vec2 f = at - mid;
+        vec2 w0 = f * (-0.5 + f * (1.0 - 0.5 * f));
+        vec2 w1 = 1.0 + f * f * (-2.5 + 1.5 * f);
+        vec2 w2 = f * (0.5 + f * (2.0 - 1.5 * f));
+        vec2 w3 = f * f * (-0.5 + 0.5 * f);
+        vec2 w12 = w1 + w2;
+        vec2 a = (mid - 1.0) * upscale.zw;
+        vec2 b = (mid + w2 / w12) * upscale.zw;
+        vec2 c = (mid + 2.0) * upscale.zw;
+        vec4 row0 = texture(src, vec2(a.x, a.y)) * w0.x + texture(src, vec2(b.x, a.y)) * w12.x + texture(src, vec2(c.x, a.y)) * w3.x;
+        vec4 row1 = texture(src, vec2(a.x, b.y)) * w0.x + texture(src, vec2(b.x, b.y)) * w12.x + texture(src, vec2(c.x, b.y)) * w3.x;
+        vec4 row2 = texture(src, vec2(a.x, c.y)) * w0.x + texture(src, vec2(b.x, c.y)) * w12.x + texture(src, vec2(c.x, c.y)) * w3.x;
+        result = clamp(row0 * w0.y + row1 * w12.y + row2 * w3.y, 0.0, 1.0);
+    #else
+        result = texture(src, at * upscale.zw);
+    #endif
+    }
+    """;
+
 // One triangle over the target.
 let FULL_VERT = """
     layout(location = 0) out vec2 v_uv;
