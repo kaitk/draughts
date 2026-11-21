@@ -137,7 +137,11 @@ pieces; the design boards still set the layout, glass, and controls.
   picks the lace's way while the user's choice is open (a way's panel mask by
   `tools/materials/lace_panel.py LIBRARY TAG OUT`, from `build/notes/lace-library/TAG/`;
   touch `src/native/materials.c` after a PNG changes); their shots and close-ups by
-  `build/curtains-build/shots.sh EXE TAG` (`build/notes/curtains-build/`).
+  `build/curtains-build/shots.sh EXE TAG` (`build/notes/curtains-build/`). The
+  tie-backs' and the hem's close-ups and the lace's ways and table tops side by side:
+  `build/choices-2026-11-21/shots.sh` (`build/notes/choices-2026-11-21/`; the right
+  tie-back `--plan-eye 5.6,6.3,1.1 --plan-at 5.3,6.9,0.95 --fov 32`, the hem from above
+  `--plan-eye 4.0,6.35,0.95 --plan-at 3.78,6.9,0.05 --fov 34`).
   The games table's base (`mesh::table_base`, task 107): `--table-top 1.05|0.80` (the
   panel's Top) sets the top across while the user's choice is open; shots by
   `build/games-table-build/shots.sh EXE TAG` (`build/notes/games-table-build/`), the

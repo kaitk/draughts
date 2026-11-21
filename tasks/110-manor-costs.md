@@ -157,6 +157,18 @@ results, or keep baking at run time behind a loader when the room or a look is c
   before and after: 3.4 ms (worst 3.5 to 5.3) both, within noise. Not measured on a
   device.
 
+- The night run's follow-ups (2026-11-21, task 107, `build/notes/choices-2026-11-21/`):
+  the tie-backs about 920 triangles each (the shell's mesh 18,778 to 24,322: the cord's
+  loop, run and tails as 8- and 6-sided tubes, two balls for the knot, a lathe a tassel);
+  the panels 1,152 to 1,512 triangles each below 0.83 m at 12 columns a fold (glass and
+  lace 6,924 to 9,084); the mesh made in about 3.2 ms once with the shell (about 2.7 before).
+  Lace f3 one more PNG, 0.88 MB, in every build (the four ways about 3 MB); still one
+  1.9 MB texture on the GPU. The oak's tint a few operations a texel in its bake; the
+  ceiling's colours two vec4s more in the room's block. The light tuner's counter,
+  headless at 1600x1000, two rounds, before and after: the room view 4.0 to 4.1 ms, the
+  window view 3.7 ms, both. Fewer sides on the cord, or the knot and hook's balls at 6 × 4,
+  would save about half the tie-backs' triangles if a device shows it.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

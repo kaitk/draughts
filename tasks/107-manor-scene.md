@@ -85,7 +85,7 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       rises toward the inner edge, the lace's scalloped border along it. The lace sheer and
       lit through: the sun on its back with the bars' and leaves' shadows, scattered forward
       toward an eye looking at the sun through it, the sky and park behind the niche; its
-      shadow, its pattern blurred, in the room. Way f2 for now, `--lace f|d` in the tuner
+      shadow, its pattern blurred, in the room. Way f2 for now, `--lace f|d|f3` in the tuner
       while the choice is open; the brass a plain procedural one (`surfaces::LOOK.brass`)
       until the gilt and brass study lands (`model3d`'s `curtains.goose`,
       `build/notes/curtains-build/`, costs in task 110)
@@ -148,6 +148,16 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       difference 0), frame times unchanged (3.4 ms, the Mac's floor). Still off: the
       shelves look emptier above the books than the concept's glazed case, no hero books
       or busts, and the books cast no shadow on each other in the sun
+- [x] The night run's follow-ups (2026-11-21, `build/notes/choices-2026-11-21/`): the
+      wallpaper's tile 0.9 m by default; the panelling oak three times lighter and greyer
+      and the ceiling's own darker, warmer limewash, the look the tuner's tints showed,
+      baked (the oak's bake, `surfaces::LOOK`'s ceiling colours, the probes' and
+      reflections' albedos following); the tie-backs a soft knotted cream cord with
+      tasselled tails, its run hanging in a catenary to a small brass hook at ±0.95 m; the
+      folds round at the hem (12 columns a fold below 0.83 m, the hem scalloping between
+      the turns); lace f3 as a fourth way. The game's shot unchanged; costs in task 110.
+      Open for the user on the page: the lace's way (f2, f, d, f3, all four kept) and the
+      table's top (1.05 or 0.80 m), shown close up in the light and from further away
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)
