@@ -612,8 +612,28 @@ board's light:
   half-size targets, 22 bytes a pixel (8.8 MB at 1600 × 1000). The light tuner's Light
   section sets its strength, reach, bias and gain, and shows it alone (`--ssao-view
   alone`) or with all the indirect light keeps (`kept`).
-- **Reflections**: the waxed floor and the brass see the shell's box (its walls, doors,
-  ceiling and floor lit by the probes and the sun) and its windows, worked out per pixel.
+- **The floor's mirror** (`render3d::planar_pass`, `rooms::Room.planar`), in the standard
+  and high tiers, not on a phone (`render3d::planar_allowed`): before the board's pass, the
+  view out, the table and the room are drawn mirrored across the floor at half size, the
+  clip's depth made the height over the floor so nothing under it is drawn, the room with
+  `ROOM_FRAG` less its sharp reflections and screen occlusion (`MIRROR_PASS`). The board
+  and its pieces are left out: from under the floor the table's top hides them. A resolve
+  (`PLANAR_RESOLVE_FRAG`) takes that picture back through the room's tonemap and exposure
+  into its light, with each texel's distance from the floor along the reflection from the
+  depth, into an RGBA16F map with six mips. The floor (`PLANAR_FLOOR`'s `planar_seen`)
+  finds the point its flat reflection shows along its own board's tilted normal, blurred
+  by the wax's film (half the oak's roughness) as wide as its lobe is at that distance, so
+  the contact is sharp and a door's head smeared, drawn out down the screen by 1 / n·v
+  through a 16× anisotropic sampler, as a grazing look stretches it into streaks; each
+  board's wax a little stronger or weaker and its film smoother or rougher; Fresnel by
+  the view's angle through the film; at 0.85 of it. Past the screen's edge it fades to the
+  room's light that way. Three targets at half size, 8.3 MB at 1600 × 1000. The light
+  tuner's Light section sets its strength, the film and the boards' wax (`--planar`), and
+  shows the floor's reflection alone, the map or its distances (`--planar-view
+  floor|map|distance`).
+- **Reflections**: the brass, and on a phone the waxed floor too, see the shell's box (its
+  walls, doors, ceiling and floor lit by the probes and the sun) and its windows, worked
+  out per pixel.
 - **The window's glow**: a quarter-size bloom of what is near white, added in linear light
   (`render3d::bloom_pass`, `rooms::Room.bloom`).
 - **The oak outside** is blurred once when uploaded (`render3d::soften`), and the tree

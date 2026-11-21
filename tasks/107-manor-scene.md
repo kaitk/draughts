@@ -217,6 +217,18 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       are too small on the screen for the 0.35 m reach to find their gaps; the wall seen
       through the lace keeps the corners' shade alone; ngfx draws it but no ngfx tool shows
       the room yet, so it is built and not seen
+- [x] Step 5, the floor's mirror (2026-11-21, `build/notes/planar/`): the view out, the
+      table and the room drawn mirrored under the floor at half size (the room's shader
+      without its sharp reflections or SSAO), taken back into the room's light with each
+      texel's distance along the reflection; the floor reads it along its board's tilted
+      normal through a wax film half the oak's roughness, blurred by the film's lobe at that
+      distance and streaked down the screen by 1 / n·v; each board's wax its own; 0.85 of
+      it. Standard and high tiers; phones and the brass keep the room's box. Tuner:
+      `--planar`, `--planar-view floor|map|distance`, `--planar-size`. A decision replacing
+      the box for the floor. Costs in task 110. Still off: the references' bright window and
+      lace streaks at the window wall's foot read fainter (the windows stand 0.9 m up, so
+      their reflection lands nearer the camera, where Fresnel is low); the table's
+      reflection inverted with the room's tonemap, not its own; ngfx draws it, unseen
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

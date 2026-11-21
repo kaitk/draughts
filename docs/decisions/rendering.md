@@ -1020,6 +1020,41 @@ to be is in tasks 042, 059, 071, 081, and 086.
   accumulation (the app draws only when something changes, so a still frame would never
   settle); full size (four times the cost for detail the blur takes); the board itself
   taking it (its shader is the game's, whose shot stays as it was).
+- The library's waxed floor reflects the room by a planar mirror in the standard and high
+  tiers (2026-11-21, task 107; `render3d::planar_pass`, `shaders::MIRROR_PASS`,
+  `PLANAR_FLOOR`, `PLANAR_RESOLVE_FRAG`, `rooms::Room.planar`). Replaces, for the floor,
+  the analytic room-box reflection above, which stays for phones
+  (`render3d::planar_allowed`, the app's `!phone`) and for the curtains' brass: the box had
+  no curtains, table, bookcases or backlit lace to reflect, and its doors' hard edges read
+  overdone. Before the board's pass, the view out, the table and the room are drawn
+  mirrored across the floor at half size: the view times the mirror, the eye under the
+  floor, the clip's z replaced by the height over a plane 1.5 mm above the floor (an
+  oblique near plane), so nothing under it draws and depth grows along each ray; the
+  table's winding turned. The room's shader there leaves out its sharp reflections and the
+  screen's occlusion and keeps its corners, which shape the contact line (0.2 ms). The
+  board and its pieces are left out: from under the floor the table's top hides them. The
+  pass draws what the screen would show; a resolve takes it back through the room's
+  tonemap (its shoulder, whose mix toward white the peak gives back, and its toe) and
+  exposure, so every shader draws there unchanged, and puts each texel's distance from the
+  floor along the reflection, from the depth, in its alpha; where nothing of the room drew
+  (past the floor's far edge) it takes the wall's foot below, or the floor's edge pulled in
+  the sky. The floor reads it at the point its own board's tilted normal reflects to,
+  through the wax's film (half the oak's 0.42 roughness): blurred as wide as the film's lobe
+  is at that distance (six mips), drawn out down the screen by 1 / n·v through a 16×
+  anisotropic sampler, as a grazing look streaks a waxed floor's reflections; each board
+  ±12% in strength and its film ±5%; Fresnel by the film; 0.85 of it, the doors a little
+  weaker than the box drew them; no occlusion of its own on top. Half size, not quarter:
+  the contact lines stay sharp, and quarter saved 0.1 ms. About 0.7 ms a frame at
+  1600 × 1000 on an M-series Mac and 8.3 MB of targets at that size; the room without it
+  is the same shader as before, the planar floor a variant of its own. Rejected:
+  screen-space reflections (they reflect only what the frame holds, and the windows and the
+  curtains' backlit sides are what the floor shows most and are often off the frame, under
+  the camera or above its top; a march a pixel, noisy at grazing angles, and with drawing
+  on change no frames to accumulate over); the oak's own roughness for the blur (it
+  smeared the doors away, and its Fresnel left the floor dull against the references);
+  mips alone (they blur across as much as down, losing the streaks); a uniform switch in
+  the room's one shader (its unused code cost 0.9 ms with the mirror off); the board and
+  pieces in the mirror (never seen).
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

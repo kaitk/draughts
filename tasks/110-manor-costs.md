@@ -217,6 +217,18 @@ results, or keep baking at run time behind a loader when the room or a look is c
   6.5, the books close up 3.9 / 4.0 / 4.4, the room waited for the GPU 6.9 / 7.0 / 7.9 to
   8.3. Off on phones; not measured on a device.
 
+- The floor's mirror (2026-11-21, task 107, `build/notes/planar/`): three half-size
+  targets, the picture RGBA16F, its 16-bit depth and the map RGBA16F with six mips: 8.3 MB
+  at 1600x1000, made when the room first draws it and again on a resize; six pipelines and
+  a sampler more, made with the room's. A frame draws the view out, the table and the room
+  once more at half size with the room's shader less its sharp reflections, a resolve and
+  the mips; the floor drops the box's reflection for one anisotropic tap and one plain.
+  Frames (headless, 1600x1000, `--fps-seconds 4`, before / off / half / quarter, two rounds
+  alike, `build/planar/fps.sh`): the room view 6.6 / 6.6 / 7.3 / 7.2 ms, style-01's camera
+  6.5 / 6.5 / 7.2 / 7.1, autumn-02's 6.8 / 6.8 / 7.4 / 7.3, the window view 6.2 / 6.2 / 6.9
+  / 6.8, the room waited for the GPU 7.8–8.2 / 7.7–8.4 / 8.7–9.5 / 8.5. The corners in the
+  mirror are 0.2 ms of it. Off on phones; not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
