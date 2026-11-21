@@ -144,8 +144,8 @@ let LOOK = Look {
     plank:  float4 { PLANK_W, PLANK_N, 0.016, 0.012 },
     planks: float4 { 0.2, 0.03, 0.01, 0.6 },
     worn:   float4 { 0.7, 0.5, 34.0, 0.5 },
-    paper:  float4 { 0.259, 0.22, 0.192, 0.85 },
-    gold:   float4 { 0.345, 0.314, 0.231, 0.6 },
+    paper:  float4 { 0.259, 0.22, 0.192, 0.66 },
+    gold:   float4 { 0.345, 0.314, 0.231, 0.52 },
     // Aged lime plaster, #beb4a3 to #d0c8b8, no brighter than an old limewash (sRGB about
     // 200 to 215, task 107's quick pass); the windows' and doors' old paint a touch greyer,
     // #c6beae; lace.py's thread, #ddd3bf, cotton; the sills a pale limestone, #b6b2a8.
@@ -155,7 +155,7 @@ let LOOK = Look {
     // its light and 1.5 times its colour (2026-11-21), toward library-autumn-02's amber.
     ceiling_shade: float4 { 0.6684, 0.6177, 0.5262, 0.92 },
     ceiling_light: float4 { 0.7284, 0.6867, 0.6027, 0.86 },
-    paint:         float4 { 0.776, 0.745, 0.682, 0.45 },
+    paint:         float4 { 0.776, 0.745, 0.682, 0.38 },
     lace_thread:   float4 { 0.867, 0.827, 0.749, 0.9 },
     stone:         float4 { 0.714, 0.698, 0.659, 0.55 },
     // A plain brass, a placeholder until the gilt and brass study's material lands: its
