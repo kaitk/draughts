@@ -659,7 +659,9 @@ board's light:
   floor|map|distance`).
 - **Reflections**: the brass, and on a phone the waxed floor too, see the shell's box (its
   walls, doors, ceiling and floor lit by the probes and the sun) and its windows, worked
-  out per pixel.
+  out per pixel. Brass inside a window's niche (the shutters' hinges) sees the window's
+  light (`lace_light`) instead as it turns to face out of the room. Brass takes neither the
+  corners' shade nor the screen's occlusion, only its mesh's own.
 - **The window's glow**: a quarter-size bloom of what is near white, added in linear light
   (`render3d::bloom_pass`, `rooms::Room.bloom`).
 - **The oak outside** is blurred once when uploaded (`render3d::soften`), and the tree
@@ -695,9 +697,10 @@ leaf on the outer jambs (`shell_mesh::door`). They are part of the shell's one m
 its paint and the curtains' brass; the hinges are lathed (`shell_mesh::lathe`), the bead
 swept upright, their normals smoothed as the mouldings' are. The baked light sees the
 stack's face in front of the lining and the niche's opening narrowed to the stacks'
-front edges (`room_light::open_half`). The light tuner's `--shutters off` (H) leaves the
-shutters out and wraps the wainscot's cap into the reveal, making the mesh and the bake
-again ([why](../decisions/rendering.md)).
+front edges (`room_light::open_half`). The wainscot's cap returns 1.5 cm into each reveal, its
+end square 5 mm before the stack's front edge (`shell_mesh::cap_return`). The light
+tuner's `--shutters off` (H) leaves the shutters out and the cap's return 6.5 cm, making
+the mesh and the bake again ([why](../decisions/rendering.md)).
 
 ### Board and pieces
 

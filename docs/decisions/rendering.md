@@ -742,14 +742,17 @@ to be is in tasks 042, 059, 071, 081, and 086.
   blind frame's 0.16 m, so the daylight stays 0.98 m. Closed, the two would span the
   0.65 m to the middle, their plain backs to the room. The middle window's right pair
   (as seen from the room, toward the stove's end; the one style-01 looks at) stands 14° ajar, as
-  result-2 and the precedent show, a choice made here. The wainscot's cap stops square at
-  the pier's corner instead of wrapping 6.5 cm into the reveal. The baked light takes
+  result-2 and the precedent show, a choice made here. The wainscot's cap returns 1.5 cm
+  into the reveal, its end square 5 mm before the leaves' front edges, its underside closed
+  round the corner (`shell_mesh::cap_return`, the user: a shorter return rather than none;
+  replaces its stopping square at the pier's corner, earlier the same day; the cap stands
+  9 cm off the reveal and the stack 58 mm, so a longer return would cut into the leaves). The baked light takes
   them: the reveals' cells and the sun's rays on the reveals meet the stack's painted face
   in front of the lining, and the sky and the bounce pass the niche only inside the
   stack's front edges (`room_light::open_half`, `past_shutters`); the ajar pair is taken
   as folded there, and the sun's shader test (`shell_open`) still sees the whole niche,
   since the stack stands outside the daylight. The light tuner's `--shutters off` (H)
-  leaves them out, the cap wrapping as before. Replaces one 0.265 m box a side from
+  leaves them out, the cap's return 6.5 cm as before. Replaces one 0.265 m box a side from
   7.5 cm in, which covered 41% of its half of the niche and could not close (the user:
   "tiny").
 - The library's doors are hung in their frames (2026-11-21, task 107; part 2 of
@@ -764,12 +767,18 @@ to be is in tasks 042, 059, 071, 081, and 086.
   brass is the curtains' (`surfaces::LOOK.brass`). Replaces the two leaves as one panelled
   face 2 cm in, with no joint, edge or ironmongery, which read as a panel in a shallow
   box.
-- Brass in a niche or a door's joint reads dark (2026-11-21): the brass sees the room's
-  box, and from a window's reveal or a door's jamb it mostly sees the dark wainscot and
-  paper, and the screen's occlusion darkens the shutters' lining hinges near black in
-  their corner. Kept: real hinges there read as small dark marks, as in result-2. Rejected
-  for now: a reflection of the glass for brass inside a niche, a change to `ROOM_FRAG`
-  for a few pixels.
+- Brass reads as brass in a window's niche (2026-11-21, builder 19b; the user found the
+  shutters' hinges too dark): brass (metal 1, not the books' gilt) takes neither the
+  screen's occlusion nor the corners' shade, only its mesh's own, and inside a niche its
+  reflection turns to the window's light (`lace_light`) by how far it faces out of the
+  room, from 15% facing the room to all of it facing the glass or across the reveal. Two
+  lines in `ROOM_FRAG`, +0.3 to 0.5 ms a frame at 1600 × 1000 on the Mac. Out of the niches
+  only the occlusion goes: the doors' hinges a touch lighter in their joints, the lever and
+  the curtain rod as they were. Replaces the dark marks kept the same day: the brass saw
+  the room's box, which behind the glass gave the dark wainscot and paper, and the screen's
+  occlusion made the lining's knuckles near black in their corner; the reflection alone
+  didn't help while the occlusion stayed. Rejected: the occlusion line alone (the cheaper
+  half, the knuckles only dark brown).
 - The books are boxes on the shelves with a rounded spine sampling a mask atlas, coloured
   per book by `ROOM_FRAG` from a small table (2026-11-21, task 107; option B of
   `build/notes/books/`, `model3d::books`): `design/materials/books_atlas.png`, 1024 × 928

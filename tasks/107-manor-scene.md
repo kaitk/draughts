@@ -278,6 +278,14 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       unchanged (no pixel over 32, gfx and ngfx). Frame times: see the page (the GPU was
       shared with other agents' runs). Still off: brass in a niche reads dark (it sees the
       room's box, and the screen's occlusion darkens the lining's knuckles near black)
+- [x] The cap's return and the niches' brass (2026-11-21, builder 19b,
+      `build/notes/builder-19b/`): the wainscot's cap wraps 1.5 cm into each reveal again,
+      ending square 5 mm before the leaves, its underside closed round the corner (the
+      plinth never meets the reveal); brass takes no screen or corner occlusion, and in a
+      niche reflects the window's light as it faces out. The shell's triangles 34,834 →
+      35,074. The game's shot unchanged (max difference 0). Frame times, 1600 × 1000, the
+      least of four rounds against 47083109: room 9.1 → 9.6 ms, style-01 9.0 → 9.5, window
+      8.4 → 8.9, the window from in front 6.0 → 6.3
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)
