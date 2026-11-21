@@ -393,14 +393,15 @@ struct Gpu {
     // The floor's mirror (planar_pass): the room drawn mirrored under the floor (its room's
     // and glass's pipelines without the sharp reflections, shaders::MIRROR_PASS, the table's
     // winding the other way), that made the room's light again with each texel's distance
-    // (resolve), the tuner's view of it (show); its targets at planar_scale's size, made again
-    // for another: the picture (RGBA16F), its depth (sampled), and the map the floor reads
-    // (RGBA16F with PLANAR_MIPS).
+    // (resolve), its mips each a tent over the level above (mip), the tuner's view of it
+    // (show); its targets at planar_size_of's size, made again for another: the picture
+    // (RGBA16F), its depth (sampled), and the map the floor reads (RGBA16F with PLANAR_MIPS).
     room_planar:    Pipeline,       // the room whose floor sees the mirror (shaders::PLANAR_FLOOR)
     planar_room:    Pipeline,
     planar_glass:   Pipeline,
     planar_table:   Pipeline,
     planar_resolve: Pipeline,
+    planar_mip:     Pipeline,
     planar_show:    Pipeline,
     planar_color:   Texture,
     planar_depth:   Texture,
@@ -1980,7 +1981,8 @@ fn ssao_block_of(g: Gpu&) -> float4 {
 fn ssao_or_stand_in(g: Gpu&) -> Texture { if g.ssao_map.id != 0 { g.ssao_map } else { g.crown_map } }
 
 // The floor's mirror (planar_pass, rooms::Room.planar): the room drawn mirrored across the
-// floor into a target planar_scale times smaller (2, half the size), where the tiers allow
+// floor into a target planar_scale times smaller (2, half the size; across at least
+// planar_least_wide), where the tiers allow
 // it (the standard and the high: not on a phone, which the app says), the shell shows and
 // its strength is over 0; else the floor sees the room's box (shaders::ROOM_FRAG's
 // room_seen). planar_view: the tuner's views (off, the floor's reflection alone, the map's
@@ -1998,9 +2000,14 @@ let PLANAR_LIFT: f32 = 0.05;
 fn planar_shown(g: Gpu&) -> bool {
     planar_allowed && room_shown(g) && g.room_shell && g.room.planar.x > 0.0 && g.planar_room.id != 0
 }
+// The mirror's least width in texels, at most the screen's: half of a 1600-pixel screen let
+// a window's bars, a few texels wide, step a whole texel as the eye moved and pulse in the
+// floor; half the height is kept, as the floor draws the reflection out down the screen.
+var planar_least_wide: i32 = 1600;
 fn planar_size_of(size: int2) -> int2 {
     let k: i32 = max(planar_scale, 1);
-    int2 { max((size.x + k - 1) / k, 1), max((size.y + k - 1) / k, 1) }
+    let wide = max((size.x + k - 1) / k, min(size.x, planar_least_wide));
+    int2 { max(wide, 1), max((size.y + k - 1) / k, 1) }
 }
 
 // The frame mirrored across the floor: view_proj times the mirror (y to 2 floor - y), the

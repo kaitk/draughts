@@ -57,6 +57,10 @@
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
 //       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
+//       [--planar-size K (the floor mirror's scale, 2 half) --planar-wide TEXELS (its least width, 1600)]
+//       [--walk-frames DIR --walk-path strafe|turn|forward --walk-count N --walk-turn PX (a walk from --plan-eye
+//       looking at --plan-at: D or W held, or the mouse PX a frame to the right, N frames at 1/60 s, each
+//       saved as DIR/NNN.png; with --shot)]
 
 import std;
 import vec;
@@ -674,6 +678,20 @@ fn walk_test_input(frame: i64) {
     }
 }
 
+// --walk-frames: the walk begun at frame 3 (Tab), the path from WALK_PATH_START, each
+// frame after it saved.
+let WALK_PATHS = ["strafe", "turn", "forward"];
+let WALK_PATH_START = 8;
+fn walk_path_input(frame: i64, path: i64, turn: i64) {
+    if frame == 2 { gfx::inject_mouse(400.0, 300.0, 0, false); }
+    if frame == 3 { gfx::inject_key("Tab", true); }
+    if frame == 4 { gfx::inject_key("Tab", false); }
+    guard frame >= WALK_PATH_START else { return; }
+    if path == 0 && frame == WALK_PATH_START { gfx::inject_key("D", true); }
+    if path == 2 && frame == WALK_PATH_START { gfx::inject_key("W", true); }
+    if path == 1 { gfx::inject_mouse((400 + turn * (frame - WALK_PATH_START + 1)) as f32, 300.0, 0, false); }
+}
+
 fn main() {
     let argv = args();
     var w = 1600;
@@ -765,6 +783,7 @@ fn main() {
     room.planar = four(argv, "--planar", room.planar);
     render3d::planar_view = pick(argv, "--planar-view", PLANAR_VIEWS, 0);
     render3d::planar_scale = whole(argv, "--planar-size", 2) as i32;
+    render3d::planar_least_wide = whole(argv, "--planar-wide", 1600) as i32;
     room.outside = number(argv, "--outside-exposure", room.outside);
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
     room.exposure = number(argv, "--exposure", room.exposure);
@@ -877,7 +896,11 @@ fn main() {
     var shown_view = view;
     var walk_text: u8[..96] = [];
     let walk_test = whole(argv, "--walk-test", 0);
-    let shot_frame = if walk_test > 0 { walk_test } else { 6 };
+    let walk_frames = flag_value(argv, "--walk-frames");
+    let walk_path = pick(argv, "--walk-path", WALK_PATHS, 0);
+    let walk_count = whole(argv, "--walk-count", 60);
+    let walk_turn = whole(argv, "--walk-turn", 1);
+    let shot_frame = if walk_test > 0 { walk_test } else if walk_frames > 0 { WALK_PATH_START + walk_count + 2 } else { 6 };
     var bakes_walking = 0;
     var last_tree_ms = 0.0;
     var last_light_ms = 0.0;
@@ -893,6 +916,15 @@ fn main() {
         }
         if meter_for > 0.0 && frame_at > meter_for { break; }
         if walk_test > 0 { walk_test_input(frames); }
+        if walk_frames > 0 {
+            walk_path_input(frames, walk_path, walk_turn);
+            // The frame drawn last time round, the path's step k.
+            let k = frames - WALK_PATH_START - 2;
+            if k >= 0 && k < walk_count {
+                let name = str(argv[walk_frames], "/", if k < 10 { "00" } else if k < 100 { "0" } else { "" }, k, ".png");
+                guard gfx::screenshot(name) else { abort(str("could not save ", name)); }
+            }
+        }
         if shot > 0 && frames == shot_frame {
             guard gfx::screenshot(argv[shot]) else { abort(str("could not save ", argv[shot])); }
             if g.tree_ms > 0.0 { print("the tree baked in ", g.tree_ms, " ms"); }
@@ -1282,7 +1314,7 @@ fn main() {
             let px = plan_point(g, float3 { 1.0, 0.0, 0.0 }) - o;
             let py = plan_point(g, float3 { 0.0, 1.0, 0.0 }) - o;
             let hand: f32 = if py.x * px.z - py.z * px.x >= 0.0 { 1.0 } else { -1.0 };
-            let dt = if walk_test > 0 { 1.0 / 60.0 } else { min(gfx::delta_time() as f32, LONGEST_STEP) };
+            let dt = if walk_test > 0 || walk_frames > 0 { 1.0 / 60.0 } else { min(gfx::delta_time() as f32, LONGEST_STEP) };
             walk_step(walk, gfx::mouse_delta(), dt, hand);
         }
         if print_it {

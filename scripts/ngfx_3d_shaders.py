@@ -73,6 +73,7 @@ MODULES = [
     ("r3d_room_mirror", ["VS_SET", "FRAME", "ROOM_VERT"], ["MIRROR_PASS", "SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
     ("r3d_planar_resolve", FULL, ["PLANAR_RESOLVE_FRAG"]),
     ("r3d_planar_show", FULL, ["TONE_FN", "PLANAR_SHOW_FRAG"]),
+    ("r3d_planar_mip", FULL, ["PLANAR_MIP_FRAG"]),
     ("r3d_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["FS_SET", "FRAME", "TONE_FN", "OUTSIDE_FRAG"]),
     ("r3d_glow_pick", FULL, ["GLOW_PICK_FRAG"]),
     ("r3d_glow_blur", FULL, ["GLOW_BLUR_FRAG"]),

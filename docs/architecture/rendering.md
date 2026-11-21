@@ -649,7 +649,9 @@ board's light:
   top hides them. A resolve (`PLANAR_RESOLVE_FRAG`) takes a 3 × 3 tent over that picture
   back by the room's exposure, each texel made safe first (NaN, infinity and negatives
   black, the luminance held to 16), with each texel's distance from the floor along the
-  reflection from the depth, into an RGBA16F map with six mips; above the floor's far
+  reflection from the depth, into an RGBA16F map with six mips, each a tent over the
+  level above (`PLANAR_MIP_FRAG`, a pass a level), so a window's bar reads the same
+  wherever it falls on their texels; above the floor's far
   edge it repeats the nearest drawn texel below, so no blur takes in black. The floor
   (`PLANAR_FLOOR`'s `planar_seen`) finds the point its flat reflection shows along the wax
   film's normal (its board's tilt and cup, a quarter of the grain), at the distance the
@@ -661,10 +663,13 @@ board's light:
   rougher; where the wax is worn (the paths, scratches, slow patches, the grain's pores)
   the film's mirror turns toward the oak's rough sheen; Fresnel by the view's angle
   through the film; at 0.85 of it. Past the screen's edge it fades to the
-  room's light that way. Three targets at half size, 8.3 MB at 1600 × 1000. The light
+  room's light that way. Three targets at half the screen's height and at least 1600
+  texels across (at most its width, `render3d::planar_least_wide`), 16.5 MB at
+  1600 × 1000. The light
   tuner's Light section sets its strength, the film and the boards' wax (`--planar`), and
   shows the floor's reflection alone, the map or its distances (`--planar-view
-  floor|map|distance`).
+  floor|map|distance`); its walk records a strafe, a turn or a walk forward frame by frame
+  (`--walk-frames`).
 - **Reflections**: the brass, and on a phone the waxed floor too, see the shell's box (its
   walls, doors, ceiling and floor lit by the probes and the sun) and its windows, worked
   out per pixel. Brass inside a window's niche (the shutters' hinges) sees the window's

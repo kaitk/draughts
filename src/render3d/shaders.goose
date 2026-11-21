@@ -2653,13 +2653,14 @@ let ROOM_FRAG = """
         // The lobe's width where it meets what it shows, in the map's texels.
         float across = 4.0 * alpha * t * planar.z / max(c.w, 1e-3);
         // At least PLANAR_LEAST_ACROSS of the map's texels across and PLANAR_LEAST_DOWN down
-        // the screen: its half size is drawn without antialiasing, so a window's bars a texel
-        // or two wide step and flicker as the eye moves under a sharper read.
+        // the screen: it is drawn without antialiasing, so a window's bars a texel or two
+        // wide step and flicker as the eye moves under a sharper read. Its texels may be
+        // narrower than tall (render3d::planar_size_of): the width down is taken in its own.
+        vec2 texel = 1.0 / vec2(textureSize(planar_map, 0));
         float wide = max(across * max(nov, 0.06), PLANAR_LEAST_ACROSS);
-        float down = max(across, PLANAR_LEAST_DOWN);
+        float down = max(across * screen.x * texel.x / (screen.y * texel.y), PLANAR_LEAST_DOWN);
         // A mip whose texel is half the width across and a quarter of the streak's step.
         float lod = clamp(log2(max(wide * 0.5, down * 0.25)), 0.0, planar.w);
-        vec2 texel = 1.0 / vec2(textureSize(planar_map, 0));
         vec3 seen = vec3(0.0);
         for (int k = 0; k < 5; k++) {
             float w = k == 2 ? 3.0 : (k == 1 || k == 3 ? 2.0 : 1.0);
@@ -3710,6 +3711,25 @@ let PLANAR_RESOLVE_FRAG = """
         float t = length(under - planar_eye.xyz) * high / max(high + planar_eye.y - floor_y, 1e-3);
         t = t >= 0.0 ? min(t, planar_tone.y) : 0.0;
         result = depth < 1.0 ? vec4(c * planar_tone.x, t) : vec4(0.0);
+    }
+    """;
+
+// The mirror's next mip from the one above (planar_mip.x), each texel a 4 × 4 tent [1 3 3 1]
+// of the level above in four bilinear reads, not a 2 × 2 box: a box's mips are tied to their
+// texels, so a window's bar over the floor slid by the eye fell into one texel or across two
+// and its reflection pulsed as it moved; a tent's change much less with where the bar falls.
+let PLANAR_MIP_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D planar_map;
+    layout(set = 3, binding = 0) uniform PlanarMip { vec4 planar_mip; };
+    void main() {
+        float lod = planar_mip.x;
+        vec2 texel = 1.0 / vec2(textureSize(planar_map, int(lod)));
+        vec2 uv = gl_FragCoord.xy * 2.0 * texel;
+        vec2 d = 0.75 * texel;
+        result = 0.25 * (textureLod(planar_map, uv + vec2(-d.x, -d.y), lod) + textureLod(planar_map, uv + vec2(d.x, -d.y), lod)
+                       + textureLod(planar_map, uv + vec2(-d.x, d.y), lod) + textureLod(planar_map, uv + vec2(d.x, d.y), lod));
     }
     """;
 

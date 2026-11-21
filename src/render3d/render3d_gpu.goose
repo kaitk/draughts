@@ -294,6 +294,7 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
                                                        blend: gfx::BLEND_PREMULTIPLIED });
     g.planar_resolve = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_RESOLVE_FRAG));
     g.planar_show = gfx::pipeline(full, embed_shader("frag", shaders::TONE_FN, shaders::PLANAR_SHOW_FRAG));
+    g.planar_mip = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_MIP_FRAG));
     g.planar_sampler = gfx::sampler(gfx::SamplerDesc { wrap_u: gfx::CLAMP, wrap_v: gfx::CLAMP, wrap_w: gfx::CLAMP });
 }
 
@@ -381,7 +382,18 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     gfx::uniforms(gfx::FRAGMENT, 0, resolve);
     gfx::draw(3);
     gfx::end_pass();
-    gfx::generate_mips(g.planar_map);
+    // Its mips, each a tent over the level above (shaders::PLANAR_MIP_FRAG), drawn into the
+    // level while the shader reads only the one above.
+    for level in 1..render3d::PLANAR_MIPS {
+        var down = gfx::PassDesc { mip: level as i32, clear_color: false };
+        down.color[0] = g.planar_map;
+        gfx::begin_pass(down);
+        gfx::bind(g.planar_mip);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.planar_map, g.planar_sampler);
+        gfx::uniforms(gfx::FRAGMENT, 0, float4 { (level - 1) as f32, 0.0, 0.0, 0.0 });
+        gfx::draw(3);
+        gfx::end_pass();
+    }
 }
 
 // The tuner's view of the floor's mirror over all of `target`.
@@ -1154,7 +1166,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick, g.bloom_blur, g.bloom_add,
                      g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.planar_room, g.planar_glass, g.planar_table,
-                     g.planar_resolve, g.planar_show];
+                     g.planar_resolve, g.planar_show, g.planar_mip];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();

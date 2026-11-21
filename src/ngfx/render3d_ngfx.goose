@@ -256,6 +256,7 @@ fn make_room(own: Own&, g: Gpu&) {
                                                        blend: ngfx::BLEND_PREMULTIPLIED });
     g.planar_resolve = module(embed_file("../../build/ngfx/blobs/r3d_planar_resolve.blob"));
     g.planar_show = module(embed_file("../../build/ngfx/blobs/r3d_planar_show.blob"));
+    g.planar_mip = module(embed_file("../../build/ngfx/blobs/r3d_planar_mip.blob"));
     g.planar_sampler = nx::sampler(ngfx::SamplerDesc { wrap_u: ngfx::CLAMP, wrap_v: ngfx::CLAMP, wrap_w: ngfx::CLAMP,
                                                        max_anisotropy: 16.0 });
 }
@@ -346,7 +347,21 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
     ngfx::draw(ngfx::root(a), 3);
     ngfx::end_pass();
     barrier_between_passes();
-    mip_chain(own, g, g.planar_map);
+    // Its mips, each a tent over the level above (shaders::PLANAR_MIP_FRAG); r3d_planar_mip's
+    // header: its block, the map.
+    for level in 1..render3d::PLANAR_MIPS {
+        var down = nx::PassDesc { mip: level as i32, clear_color: false };
+        down.color[0] = g.planar_map;
+        nx::begin_pass(down);
+        nx::bind(g.planar_mip);
+        var m = no_root();
+        let b: float4[1] = [float4 { (level - 1) as f32, 0.0, 0.0, 0.0 }];
+        m.u = ngfx::frame_data(bytes_of(b));
+        slot(m, 0, g.planar_map, g.planar_sampler);
+        ngfx::draw(ngfx::root(m), 3);
+        ngfx::end_pass();
+        barrier_between_passes();
+    }
 }
 
 // The tuner's view of the floor's mirror over all of `target`; r3d_planar_show's header: its
@@ -1199,7 +1214,7 @@ fn release(own: Own&, g: Gpu&) {
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
                      g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick,
                      g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar,
-                     g.planar_room, g.planar_glass, g.planar_table, g.planar_resolve, g.planar_show];
+                     g.planar_room, g.planar_glass, g.planar_table, g.planar_resolve, g.planar_show, g.planar_mip];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();
