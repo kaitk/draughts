@@ -1005,6 +1005,26 @@ to be is in tasks 042, 059, 071, 081, and 086.
   coordinates (a plane's faces overlap in plan at other depths, and the swept mouldings
   aren't planes); 1 cm texels on the large charts (9.6 MB, 860 ms, for a third fewer
   pixels over 8 levels).
+- With the floor's mirror, the room's box is seen sharply only by the brass and the books,
+  drawn with a pipeline of their own (2026-11-22, task 110's fix 2; `shaders::ROOM_SHARP`,
+  `render3d::sharp_last`). In that shader only a metal ever took the sharp path (any
+  other surface's `px` is 1, so its `sharp` 0), yet `room_seen`'s code alone made the
+  main pass 18.3 ms against 14.9 without it at 3024 × 1890 on an M1 Pro, the room's
+  shader being near the register limit: most of it the second probe lookup at the hit
+  (2.2 ms), then the windows' loop (1.2), the sun through the windows at the hit almost
+  nothing alone. When the mesh is made the brass's and books' triangles go last in the
+  room's index buffer, and the board's pass draws them with `ROOM_SHARP`, the rest with
+  `room_wide`, which is what `room_reflection` gave them. The main pass 18.3 to 15.1-15.4
+  ms, the frame 21.7 to 18.4-18.7; the look unchanged but for one pixel at a brass edge;
+  one pipeline more, made with the mirror's. Replaces the one shader for the whole room
+  with the mirror on (the 2026-11-21 analytic reflection above stays as it was, and
+  whole in the room's shader without the mirror, whose floor sees the box). Rejected:
+  rearranging the code (one call site of the probes' lookup in a loop for the diffuse, the
+  wide and the hit, 1.7 ms slower; the reflection worked out before the diffuse, 5.5
+  slower; the window loops counted by a uniform, within 0.5), a cheaper hit (one layer
+  of probes saves 1.6 ms, but changes the brass's reflections; a baked table of the box's
+  walls goes stale as the leaves move and takes the last texture slot), both short of
+  drawing the few triangles that need the code apart.
 - The library's baked light bounces three times (2026-11-21, task 107;
   `room_light::first_light`, `bounce_once`, `gather_half`): the room's surfaces as 1,208
   cells, about 0.5 m a side on the floor, the ceiling and the four walls (a door's leaf, a

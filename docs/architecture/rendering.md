@@ -675,7 +675,10 @@ board's light:
   (`--walk-frames`).
 - **Reflections**: the brass, and on a phone the waxed floor too, see the shell's box (its
   walls, doors, ceiling and floor lit by the probes and the sun) and its windows, worked
-  out per pixel. Brass inside a window's niche (the shutters' hinges) sees the window's
+  out per pixel. With the floor's mirror, only the brass and the books' gilt see it, so
+  the room's index buffer holds their triangles last (`render3d::sharp_last`) and the
+  board's pass draws them with a pipeline of their own (`ROOM_SHARP`); the rest of the
+  room's shader takes the room's light that way (`room_wide`) without that code. Brass inside a window's niche (the shutters' hinges) sees the window's
   light (`lace_light`) instead as it turns to face out of the room. Brass takes neither the
   corners' shade nor the screen's occlusion, only its mesh's own.
 - **The window's glow**: a quarter-size bloom of what is near white, added in linear light

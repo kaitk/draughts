@@ -298,6 +298,10 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       task 110's fix 1, `build/notes/builder-21/`): the main pass 23.6 to 18.3 ms at
       3024 × 1890, the frame 27.6 to 21.7; the look within a level on average, the game
       unchanged; the bake about 300 ms on the CPU
+- [x] The brass and the books drawn with a pipeline of their own that sees the room's box
+      sharply (2026-11-22, builder 22, task 110's fix 2, `build/notes/builder-22/`): the
+      main pass 18.3 to 15.1-15.4 ms at 3024 × 1890, the frame 21.7 to 18.4-18.7; the
+      look unchanged but one pixel of a tie-back's hook, the game unchanged
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

@@ -252,6 +252,9 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   uniform. Any change to `LIT_FRAG`'s text, even a branch never taken, moved two pixels of
   the game's shot by 7 levels: a tuner-only switch goes in shaders the tuner embeds itself
   (`render3d_gpu::tuned_frags`, `shaders::TOE_FN`).
+  Moving code about in it (one call site in a loop, work done earlier) made it slower, not
+  faster; what paid was drawing the few triangles that need a path with a pipeline of
+  their own (`shaders::ROOM_SHARP`, the brass and books last in the index buffer).
 - embed_shader takes no `centroid`, no `##`, and no unnamed parameters; `#ifdef` lines in
   a multi-line string take the string's indentation. A define string put first makes two
   shaders from one text (`shaders::MARKS_PULSE`).

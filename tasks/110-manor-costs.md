@@ -250,6 +250,29 @@ results, or keep baking at run time behind a loader when the room or a look is c
   slower CPU shows the room: store it with the build (it depends only on the shell and the
   corners), or bake it on the GPU.
 
+- Fix 2, the room's box seen sharply only by the brass and books (2026-11-22, builder 22,
+  `build/notes/builder-22/`; `docs/decisions/rendering.md`). Where `room_seen` ran: with
+  the mirror, only on a metal (the brass, the books' gilt); every other surface has
+  `px` 1, so `sharp` 0 and `room_reflection` returned `room_wide` at once. Its cost was its
+  code: cut from the planar shader the main pass fell 18.3 to 14.9-15.0 ms. Its parts cut
+  one at a time (main pass, ms, Metal System Trace, headless 3024 × 1890, the room view;
+  before 18.24-18.34 over five rounds): the hit's `room_irradiance` 16.1 (one layer of
+  probes in it, three taps, 16.7), the windows' loop 17.1, `window_light` at the hit 18.4,
+  the irradiance and `window_light` 15.9, all three (the box and its albedo left) 15.8.
+  Moving code instead: one call site of `room_irradiance` in a loop for the diffuse, the
+  wide and the hit 19.95; the reflection worked out before the diffuse 23.8; the window
+  loops counted by `shell.x` 17.8 and 18.3. Now the room's index buffer holds the brass's
+  and books' triangles last (`render3d::sharp_last`, when the mesh is made), drawn with
+  `ROOM_SHARP` (one pipeline more, made with the mirror's); the rest without its code.
+  Two rounds, before / after (the second after first): the main pass 18.24 / 15.40 and
+  18.34 / 15.06 ms, the mirror's room 1.28 / 1.23 and 1.19 / 1.20 (unchanged: it never
+  had the sharp path), the frame's parts 21.66 / 18.72 and 21.69 / 18.41; the fps counter
+  21.0-21.1 / 17.6-17.7 and 20.9-21.0 / 17.6-17.8 ms a frame. The look: 17 shots
+  identical but one pixel (a tie-back hook's tip against the wall, 67 levels: the order
+  the two are drawn in at an edge), two runs of one build differ by at most 1; the
+  game's shot identical. Without the mirror (`room_lit`, phones) the floor sees the box
+  sharply, so that shader keeps it whole. Not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
