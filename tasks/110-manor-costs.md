@@ -229,6 +229,12 @@ results, or keep baking at run time behind a loader when the room or a look is c
   / 6.8, the room waited for the GPU 7.8–8.2 / 7.7–8.4 / 8.7–9.5 / 8.5. The corners in the
   mirror are 0.2 ms of it. Off on phones; not measured on a device.
 
+- The light fixes (2026-11-21, task 107, `build/light-fixes/fps.sh`, before / after, two
+  rounds): the room 7.4 / 7.7 and 7.4 / 7.9 ms, style-01's camera 7.4 / 7.6 and 7.3 /
+  7.5, autumn-02's 7.5 / 7.8 and 7.6 / 7.8, the window view 7.0 / 7.3 and 6.9 / 7.2; the
+  room waited for the GPU 9.2–10.0 / 9.5–9.8. About 0.2–0.3 ms: the mirror's resolve
+  takes a 3 × 3 tent (18 fetches a half-size texel) and the floor a slow wax noise.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

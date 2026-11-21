@@ -229,6 +229,21 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       lace streaks at the window wall's foot read fainter (the windows stand 0.9 m up, so
       their reflection lands nearer the camera, where Fresnel is low); the table's
       reflection inverted with the room's tonemap, not its own; ngfx draws it, unseen
+- [x] Light fixes against style-01's and autumn-02's result-2 (2026-11-21,
+      `build/notes/light-fixes/`): the table's sun shadow takes only the sun as the bars'
+      do (on a grey floor 140 against a bar's 144, before 130), no broad blob under it;
+      the floor's mirror steady as the eye moves (a tent over its half-size picture, a
+      blur of at least two texels across and four down, the film's normal without the
+      grain), its light kept before the tonemap with the view out six times its look, and
+      worn wax turning its mirror into the oak's rough sheen; the thresholds a rounded oak
+      board; the table's base on the room's toe (sRGB 29, 16, 10, the reference's 36, 18,
+      10, before 52, 24, 6); the lace stopping 28% of the sun where flat (11% before);
+      paint eggshell and the paper a little glossy. Still off: the references' bright
+      window sheen near the camera is stronger than ours; the sun's sheen on paint and
+      paper is small at this camera (the references' sun is whiter); a soft lighter band on
+      the stove's end wall from the first gather of the sun's patches and the backlit lace
+      (+20% over its neighbours, not fixed: a run without the lace as a source and a wider
+      gather onto the probes next); the threshold's worn middle for the materials pass
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

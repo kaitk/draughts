@@ -563,12 +563,14 @@ board's light:
   the room's surfaces 2.2 times the board's (`rooms::Room.shell_sun`). Its highlight takes
   only what comes through a window (`window_open`); the diffuse also keeps the shade's
   floor (`rooms::Room.pattern`'s x leaves 10% of the key in autumn), which stands for light
-  thrown back and takes the occlusion.
+  thrown back and takes the occlusion. Any shadow inside a sun patch (the bars', the
+  table's, the bookcases') removes only the sun: the shade's floor stays under each.
 - **The games table's own shadow** (`render3d::table_map`): its top and base drawn into a
   1024 × 512 depth map projected along the key onto the floor round the table, drawn again
   only when the key or the table changes. The floor, the walls and the base itself take
   it; the floor under the base is darker by the drum's and legs' own occlusion, tightest
-  round the scroll toes (`base_hides`).
+  round the scroll toes (`base_hides`), and no broader: the top's shade on the floor is
+  the probes' and the screen's occlusion's.
 - **Baked light** (`model3d::room_light`): a grid of 10,140 probes 0.3 m apart, half a step
   in from every wall, the floor and the ceiling, made on the CPU in about 87 ms when the
   room turns on and again when the sun, the room's light, the tree or the table changes,
@@ -581,13 +583,14 @@ board's light:
   niches on the floor, sills and reveals, the backlit lace; the probes gather it at half
   their density. The lace lets about three quarters through where it hangs flat and less
   where it is gathered toward its tie, and throws on part of what it stops; its sun
-  shadow is faint and soft, blurred well past the bars'. They fill a 390 × 78 RGBA16F atlas
+  shadow stops about 28% of the sun where it hangs flat (its net a fifth, its motifs
+  what the thread keeps), darker where gathered, soft, blurred well past the bars'. They fill a 390 × 78 RGBA16F atlas
   (0.24 MB) that `ROOM_FRAG` reads with six taps. Beside it the
   room keeps a part of the harmonics and of the flat bounce (`rooms::Room.baked`).
 - **The games table in the room** takes the baked light too: the probes sampled at four
   heights on its axis after each bake, in its block (`render3d::probes_on_table`), its base
-  at the room's exposure, its top at the board's. In the game it keeps the look's
-  harmonics.
+  at the room's exposure, its top at the board's, through the room's tonemap toe (on the
+  luminance). In the game it keeps the look's harmonics and the board's toe.
 - **Corners and edges** (`ROOM_FRAG`'s `corner_shade`, `rooms::Room.corners`): the
   indirect light darkened by the distance to each of the shell's planes standing square to
   a surface, a plane hiding a half of the light at the line and nothing beyond the reach
@@ -616,17 +619,23 @@ board's light:
   and high tiers, not on a phone (`render3d::planar_allowed`): before the board's pass, the
   view out, the table and the room are drawn mirrored across the floor at half size, the
   clip's depth made the height over the floor so nothing under it is drawn, the room with
-  `ROOM_FRAG` less its sharp reflections and screen occlusion (`MIRROR_PASS`). The board
-  and its pieces are left out: from under the floor the table's top hides them. A resolve
-  (`PLANAR_RESOLVE_FRAG`) takes that picture back through the room's tonemap and exposure
-  into its light, with each texel's distance from the floor along the reflection from the
-  depth, into an RGBA16F map with six mips. The floor (`PLANAR_FLOOR`'s `planar_seen`)
-  finds the point its flat reflection shows along its own board's tilted normal, blurred
-  by the wax's film (half the oak's roughness) as wide as its lobe is at that distance, so
-  the contact is sharp and a door's head smeared, drawn out down the screen by 1 / n·v
-  through a 16× anisotropic sampler, as a grazing look stretches it into streaks; each
-  board's wax a little stronger or weaker and its film smoother or rougher; Fresnel by
-  the view's angle through the film; at 0.85 of it. Past the screen's edge it fades to the
+  `ROOM_FRAG` less its sharp reflections and screen occlusion (`MIRROR_PASS`). Each
+  shader there writes its exposed light before the tonemap (`mirror_light`, held to 16),
+  the view out at `planar.w` (6) times its look, as a clear sky is far brighter than the
+  tonemap shows. The board and its pieces are left out: from under the floor the table's
+  top hides them. A resolve (`PLANAR_RESOLVE_FRAG`) takes a 3 × 3 tent over that picture
+  back by the room's exposure, with each texel's distance from the floor along the
+  reflection from the depth, into an RGBA16F map with six mips. The floor
+  (`PLANAR_FLOOR`'s `planar_seen`) finds the point its flat reflection shows along the wax
+  film's normal (its board's tilt and cup, a quarter of the grain), at the distance the
+  map's first mip gives, blurred by the film (half the oak's roughness) as wide as its
+  lobe is at that distance and at least two texels across and four down, so the contact
+  is sharp but steady as the eye moves and a door's head smeared, drawn out down the
+  screen by 1 / n·v through a 16× anisotropic sampler, as a grazing look stretches it
+  into streaks; each board's wax a little stronger or weaker and its film smoother or
+  rougher; where the wax is worn (the paths, scratches, slow patches, the grain's pores)
+  the film's mirror turns toward the oak's rough sheen; Fresnel by the view's angle
+  through the film; at 0.85 of it. Past the screen's edge it fades to the
   room's light that way. Three targets at half size, 8.3 MB at 1600 × 1000. The light
   tuner's Light section sets its strength, the film and the boards' wax (`--planar`), and
   shows the floor's reflection alone, the map or its distances (`--planar-view

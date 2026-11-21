@@ -1055,6 +1055,68 @@ to be is in tasks 042, 059, 071, 081, and 086.
   mips alone (they blur across as much as down, losing the streaks); a uniform switch in
   the room's one shader (its unused code cost 0.9 ms with the mirror off); the board and
   pieces in the mirror (never seen).
+- The games table's sun shadow in the library takes only the sun (2026-11-21, task 107;
+  `ROOM_FRAG`'s and `TABLE_FRAG`'s `vis` and `pattern`): inside a sun patch any shadow
+  only removes the sun, and the light thrown back there is the same either side of its
+  edge. The table's map and the bookcases' shade now keep the shade's floor of the key
+  (`room.y`) as the window's bars do, where before they kept out all of it; and in the
+  room the floor under the table loses its broad darkening (0.55 at the column to nothing
+  1.4 radii out), leaving the probes, the screen's occlusion and `base_hides`' contact at
+  the drum and toes. On a grey floor at style-01's camera the table's shadow beside a bar's
+  in the same patch measured 130 against 144 (sRGB, 10% darker) before and 140 against 144
+  after, the rest the floor's own gradient there. Replaces "the table's top is solid: its
+  shadow keeps all the key out" for the room; the game keeps its light exactly.
+- The library floor's mirror is steadied for a moving eye (2026-11-21, task 107;
+  `PLANAR_RESOLVE_FRAG`, `planar_seen`): its half-size picture has no antialiasing, so a
+  nearly level edge (a threshold, a door's foot, a moulding) showed in steps that crawled
+  along the edge as the eye moved. The resolve takes a 3 × 3 tent over what the pass drew,
+  the floor reads at least two of the map's texels across and four down the screen (the
+  way the streaks run), the reflection's distance comes from the map's first mip, so the
+  point found doesn't jump where the distances do, and the wax film's normal takes each
+  board's tilt and cup and only a quarter of the grain's relief. Rejected: multisampling
+  the mirror pass (its depth is read back, which a multisampled target can't give
+  without a resolve of its own); drawing it at full size (four times the pass).
+- The library floor's mirror keeps the light before the tonemap (2026-11-21, task 107;
+  `TONE_FN`'s `mirror_light`, `OUTSIDE_FRAG`, `rooms::Room.planar.w`): the room, the table
+  and the view out write their exposed linear light into the mirror pass's RGBA16F
+  target, held to 16 (the sun's disc), and the resolve takes back only the exposure. It
+  replaces taking the tonemapped picture back through the inverse tonemap, whose inverse
+  grows without bound toward white (held at 0.9995) and which put the table back through
+  the room's curve instead of the board's. In the mirror the view out is `planar.w` (6) times its look: the
+  look's exposure is set through the tonemap's shoulder, where the sky reads white
+  whatever it is, and a clear sky by a low sun is some 13 times or more a sunlit dark oak
+  floor, the look's about 3; the backlit lace keeps the light the room gives it, well
+  under the sky. Where the wax is worn thin (the paths, the scratches, slow patches waxed
+  less, the grain's open pores) the film's mirror turns into the oak's own rough sheen
+  (the film's roughness toward the oak's, the mirror 30% weaker at most), so the windows'
+  bright sheen shows the floor's surface; strong wear stays for the materials pass.
+- The library's door thresholds are oak boards 2 cm proud of the floor with a rounded nose
+  3 cm into the room, the grain along them, swept as the mouldings are, paler and smoother
+  than the stained panelling (2026-11-21, task 107; `shell_mesh::THRESHOLD_OWN`). Replaces
+  a square box in the panelling's oak, which read as an unfinished dark bar. Their middle's
+  wear is the materials pass's.
+- The library's paint is eggshell and its wallpaper has a slight sheen (2026-11-21, task
+  107; `surfaces::LOOK`): the doors', windows' and shutters' paint 0.38 rough (0.45
+  before), the paper's ground 0.66 (0.85) and its print 0.52 (0.6), so the sun's GGX
+  highlight through the window shows on them as a soft sheen. At style-01's camera the
+  sun's highlight is still small: about 2% of the door's sunlit diffuse and a fifth of
+  the paper's, as the sun skims those walls away from the mirror direction; the
+  references' sun patches read whiter mostly by their whiter sun.
+- The games table in the room takes the room's tonemap toe (2026-11-21, task 107;
+  `TABLE_FRAG`'s `tonemap` under `TABLE_ROOM`): on the luminance, as the room's surfaces,
+  not the board's toe off the least channel, which turned the dim base orange beside the
+  room's wood (sRGB 52, 24, 6 at style-01's camera, the reference's 36, 18, 10; now 29,
+  16, 10). The exposures stay as they were, the room's under the top and the board's over
+  it: the top at the room's turned grey under the polish's reflection of the room. The
+  game keeps the board's toe.
+- The curtains' lace stops about 28% of the sun where its beam crosses a flat panel
+  (2026-11-21, task 107; `LIGHT_FN`'s `lace_shadow`, `LACE_NET_STOPS`,
+  `LACE_PATTERN_SHOWN`): the net ground a fifth, the motifs what the thread keeps
+  (`Room.opening.w`), the pattern at three quarters of its contrast, the folds and the
+  gathering toward the tie darker as before. Replaces about 11% at the same place (the
+  pattern half washed out and the ground letting all through), which hardly showed; a
+  real machine lace's net stops 20 to 30%, its motifs 50 to 70%. Still much lighter and
+  softer than the bars' shadows.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only
