@@ -286,6 +286,16 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       35,074. The game's shot unchanged (max difference 0). Frame times, 1600 × 1000, the
       least of four rounds against 47083109: room 9.1 → 9.6 ms, style-01 9.0 → 9.5, window
       8.4 → 8.9, the window from in front 6.0 → 6.3
+- [x] The bounce's artifacts and the mirror's boiling, applied (2026-11-21, builder 20):
+      the probes' exact light on their planes, walled probes, thrown light at most 0.85,
+      the lace's own share, the probes' bounce 10; the mirror's tent mips and a map at
+      least 1600 across. The bake 77.6-78.4 → 88.1-89.0 ms (five runs each). Frame times,
+      1600 × 1000, the least of eight rounds, before → bounce → mirror (full-size mirror,
+      mirror off): room 9.8 → 9.8 → 10.0 (10.9, 8.8), style-01 9.5 → 9.6 → 9.7 (10.6,
+      8.6), window 9.0 → 9.1 → 9.2 (9.9, 8.2). The game's shot unchanged (max difference
+      0). Turns against a dense reference: the fix at the reference's own frame-to-frame
+      change; the error at 3200 × 2000 near the windows 1.20 levels a frame (full size
+      0.96); a temporal accumulation of the map built, no gain, dropped
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

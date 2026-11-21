@@ -1151,17 +1151,24 @@ to be is in tasks 042, 059, 071, 081, and 086.
   1600-pixel screen was the rest: the bars, a few texels wide and drawn without
   antialiasing, stepped a whole texel. The pulsing was there from the first mirror and
   became plain with its light kept before the tonemap and the view out at 6× (5a52e485).
-  The tents cost nothing measurable; the wider map about 0.3 ms at 1600 × 1000 (a busy Mac;
-  measure again). On a 3200-pixel (Retina) screen the map stays half size, which was
-  already steady once the mips were tents. Rejected: the whole mirror at full size (as
-  steady, about 1.3 ms); more taps of a finer mip in the floor (the room's shader is at its
-  register limit; 20 taps two mips finer halved the pulsing only); a temporal accumulation
-  of the map (the app draws only when something changed, so a still view would need frames
-  it doesn't draw); lowering the view out's 6× (it is the user's look, and the error was
-  there at 1× too, only fainter); the wax's worn patches (no change without them). The
-  table's dark disc in the floor near it is the table hiding the windows' reflection, as
-  on a real waxed floor; lighting its underside by the floor's bounce changed the floor by
-  at most 1/255.
+  The tents cost nothing measurable; the wider map 0.1-0.3 ms at 1600 × 1000 (the least of
+  eight rounds: the room view 9.8 to 10.0 ms, the mirror off 8.8). On a 3200-pixel (Retina)
+  screen the map stays half size, which was already steady once the mips were tents.
+  Turns measured too (a near view 2.2 m from the windows and one from the bookshelves, 0.4°
+  and 1° a frame, at 1600 × 1000 and 3200 × 2000): the reflection's frame-to-frame change
+  is the dense reference's own, and the error against it changes 1.20 levels a frame on a
+  floor pixel at 3200 × 2000 (0.96 with the map at full size). Rejected: the whole mirror at
+  full size (a quarter less of that error, about 0.9 ms more; kept as the tuner's
+  `--planar-size 1` for the planned high mode); more taps of a finer mip in the floor (the
+  room's shader is at its register limit; 20 taps two mips finer halved the pulsing only);
+  a temporal accumulation of the map while the eye moves (the last frame's map reprojected
+  through the depth, held within the neighbours' range, 0.8 of it kept): built and
+  measured, it changed neither the strafe's nor the turns' error, clamped or not, for a
+  second map (8.5 MB at 1600 × 1000); lowering the view out's 6× (it is the user's look,
+  and the error was there at 1× too, only fainter); the wax's worn patches (no change
+  without them). The table's dark disc in the floor near it is the table hiding the
+  windows' reflection, as on a real waxed floor; lighting its underside by the floor's
+  bounce changed the floor by at most 1/255.
 - The library floor's mirror keeps the light before the tonemap (2026-11-21, task 107;
   `TONE_FN`'s `mirror_light`, `OUTSIDE_FRAG`, `rooms::Room.planar.w`): the room, the table
   and the view out write their exposed linear light into the mirror pass's RGBA16F
