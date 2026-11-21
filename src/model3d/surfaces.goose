@@ -175,7 +175,7 @@ let LACE_TILE:    f32 = 0.56 * METRE;
 // of it the tuner switches between while the choice is open.
 let LACE_TEXELS = int2 { 1024, 1408 };
 let LACE_MIPS = 8;
-let LACE_WAYS = ["f2", "f", "d"];
+let LACE_WAYS = ["f2", "f", "d", "f3"];
 
 // The wallpaper's mask (design/materials/wallpaper_mask.png): its side in texels, and the
 // square of wall one tile covers, 0.9 m, its flowers finer than style-01's 1.4 m and still
