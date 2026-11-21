@@ -228,11 +228,16 @@ pieces; the design boards still set the layout, glass, and controls.
 ## Normals on profiles (a rule, 2026-11-21)
 
 Swept and lathed profiles shade as curves: a profile point's normal is its two
-segments' mean, and only a turn sharper than a crease angle (37°, `shell_mesh::CREASE`)
-keeps each segment's own. The shared routines do it: `shell_mesh::sweep` (and so
-`sweep_oak`, the caps, plinths, cornices and the bookcases' mouldings) and
-`mesh::turned` (a doubled point is a crease); `mesh::sweep` takes each point's normal
-from its `Profile`. New furniture, frames and mouldings go through them, or do the same:
+segments' mean, and only a turn sharper than a crease angle (37°, `surfaces::CREASE`,
+`surfaces::smooth_normal`) keeps each segment's own. The shared routines do it:
+`shell_mesh::sweep` (and so `sweep_oak`, the caps, plinths, cornices and the bookcases'
+mouldings), `surfaces::strip` and `surfaces::panel_ring` (the wainscot's, doors' and
+shutters' panels), `mesh::turned` (a doubled point is a crease); `mesh::sweep` takes each
+point's normal from its `Profile`, the curtains' `tube` and `ball` theirs from the
+centre, and the books' spines bend theirs (`books::spine_at`). Left flat, as they are
+flat: the door architraves (a stepped profile whose turns are all creases or under a
+degree), the sills (a square slab), the casements (plain boxes). New furniture, frames
+and mouldings go through these routines, or do the same:
 a flat normal a segment shows a cove or an ovolo as bands, which the user has caught
 twice (the cornice, the cap's nose).
 

@@ -282,6 +282,17 @@ fn quad(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, p: float3[4],
     indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
 }
 
+// Profiles shade as curves (agents/design.md): a point's normal is its two segments' mean
+// where they turn by less than CREASE's angle, and a segment's own at a sharper turn.
+let CREASE: f32 = 0.8;  // cos 37°
+
+// The normal at a profile's point between segments of normals a and c (zero for a segment
+// of no length): their mean where they turn less than CREASE, else a, the segment's own.
+fn smooth_normal(a: float3, c: float3) -> float3 {
+    guard length_sq(a) > 0.0 && length_sq(c) > 0.0 && dot(a, c) > CREASE else { return a; }
+    return normalize(a + c);
+}
+
 // A profile (z, y, occlusion, top to bottom over its front) swept along the wall from s0
 // to s1, the grain along the wall: each strip a quad, its field across the profile's length.
 // The profile is raised by dy and drawn `deep` times as deep where it stands out past the
@@ -294,19 +305,25 @@ fn strip(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, prof: float3
     for k in 1..pts.len { total += length(float2 { pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y }); }
     let m = piece_map(seed, false, s0, 0.0, total, s1 - s0, true);
     let own = MAT_OAK + 0.9 * hash(seed, 9);
+    // Each segment's normal out of the wall, (-t.y, t.x) in (z, y).
+    var flat: float3[..32] = [float3_0];
+    for k in 1..pts.len {
+        let d = float2 { pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y };
+        flat.push(if length(d) > 0.000001 { normalize(float3 { 0.0, d.x, -d.y }) } else { float3_0 });
+    }
     var t: f32 = 0.0;
     for k in 1..pts.len {
         let a = pts[k - 1];
         let c = pts[k];
         let t1 = t + length(float2 { c.x - a.x, c.y - a.y });
-        let d = float2 { c.x - a.x, c.y - a.y };
-        let n = normalize(float3 { 0.0, d.x, -d.y });   // (-t.y, t.x) in (z, y): out of the wall
+        let n = flat[k];
+        let na = world_normal(b, if k > 1 { smooth_normal(n, flat[k - 1]) } else { n });
+        let nc = world_normal(b, if k + 1 < pts.len { smooth_normal(n, flat[k + 1]) } else { n });
         let base = verts.len as u32;
-        let wn = world_normal(b, float3 { 0.0, n.y, n.z });
-        verts.push(mesh::Vertex { world(b, s0, a.y, a.x), wn, place(m, s0, t), a.z, own });
-        verts.push(mesh::Vertex { world(b, s1, a.y, a.x), wn, place(m, s1, t), a.z, own });
-        verts.push(mesh::Vertex { world(b, s1, c.y, c.x), wn, place(m, s1, t1), c.z, own });
-        verts.push(mesh::Vertex { world(b, s0, c.y, c.x), wn, place(m, s0, t1), c.z, own });
+        verts.push(mesh::Vertex { world(b, s0, a.y, a.x), na, place(m, s0, t), a.z, own });
+        verts.push(mesh::Vertex { world(b, s1, a.y, a.x), na, place(m, s1, t), a.z, own });
+        verts.push(mesh::Vertex { world(b, s1, c.y, c.x), nc, place(m, s1, t1), c.z, own });
+        verts.push(mesh::Vertex { world(b, s0, c.y, c.x), nc, place(m, s0, t1), c.z, own });
         indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
         t = t1;
     }
@@ -342,6 +359,22 @@ fn panel_ring(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32
               ring_ao: f32[8]) {
     let pm = piece_map(seed, true, x0, y0, x1 - x0, y1 - y0, hash(seed, 7) < 0.5);
     let own = MAT_OAK + 0.9 * hash(seed, 9);
+    // Each ring's normal on each side, as quad() works it out, then smoothed across the
+    // rings where they turn gently: the moulding's ovolo and bead shade as curves.
+    let outs: float3[4] = [float3 { 0.0, -1.0, 0.0 }, float3 { 1.0, 0.0, 0.0 }, float3 { 0.0, 1.0, 0.0 }, float3 { -1.0, 0.0, 0.0 }];
+    var flat: float3[4][8] = [[float3_0; 4]; 8];
+    for k in 7 {
+        let a = ring_in[k];
+        let c = ring_in[k + 1];
+        let za = ring_z[k];
+        let zc = ring_z[k + 1];
+        // Each side's profile across: in by (c - a) from the side, out of the wall by (zc - za).
+        for o, i in outs {
+            let d = float2 { c - a, zc - za };
+            if length(d) > 0.000001 { flat[k][i] = normalize(float3 { o.x * d.y, o.y * d.y, d.x }); }
+        }
+    }
+    for i in 4 { flat[7][i] = float3 { 0.0, 0.0, 1.0 }; }
     for k in 7 {
         let a = ring_in[k];
         let c = ring_in[k + 1];
@@ -357,13 +390,23 @@ fn panel_ring(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32
             [float3 { x1 - a, y1 - a, za }, float3 { x0 + a, y1 - a, za }, float3 { x0 + c, y1 - c, zc }, float3 { x1 - c, y1 - c, zc }],
             [float3 { x0 + a, y1 - a, za }, float3 { x0 + a, y0 + a, za }, float3 { x0 + c, y0 + c, zc }, float3 { x0 + c, y1 - c, zc }],
         ];
-        let outs: float3[4] = [float3 { 0.0, -1.0, 0.0 }, float3 { 1.0, 0.0, 0.0 }, float3 { 0.0, 1.0, 0.0 }, float3 { -1.0, 0.0, 0.0 }];
         for q, i in sides {
             let m = if !moulding { pm } else if i == 0 { rail_low } else if i == 2 { rail_high }
                     else if i == 1 { stile_right } else { stile_left };
             var uv: float2[4] = [float2_0; 4];
             for j in 4 { uv[j] = place(m, q[j].x, q[j].y); }
-            quad(verts, indices, b, q, uv, [oa, oa, oc, oc], own, outs[i]);
+            let n = flat[k][i];
+            if length_sq(n) == 0.0 {
+                quad(verts, indices, b, q, uv, [oa, oa, oc, oc], own, outs[i]);
+                continue;
+            }
+            let na = world_normal(b, if k > 0 { smooth_normal(n, flat[k - 1][i]) } else { n });
+            let nc = world_normal(b, smooth_normal(n, flat[k + 1][i]));
+            let base = verts.len as u32;
+            let ns: float3[4] = [na, na, nc, nc];
+            let ao: f32[4]    = [oa, oa, oc, oc];
+            for j in 4 { verts.push(mesh::Vertex { world(b, q[j].x, q[j].y, q[j].z), ns[j], uv[j], ao[j], own }); }
+            indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
         }
     }
     let f = ring_in[7];

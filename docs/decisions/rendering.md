@@ -850,6 +850,12 @@ to be is in tasks 042, 059, 071, 081, and 086.
   than `bulge`'s, rounder than the curve (54° at the edges), so the roundness reads across
   the room and the edges roll into the boards. Flat boards and wrappers keep their slight
   turn. Four triangles more a book (1,536 for the 384).
+- The panelled wall's mouldings and the raised panels' rings shade as curves too
+  (2026-11-21; `surfaces::strip`, `surfaces::panel_ring`, the rule of the swept mouldings
+  above, `surfaces::CREASE`): the wainscot's, the doors' and the shutters' panels. The
+  ring's faces take the profile's own normal, which also turns the groove's inner wall to
+  face the panel's middle, where the facing toward the side had turned it into the
+  moulding. No triangles more.
 - The sun's highlight takes only the sun that comes through a window (2026-11-21, task
   107; `LIGHT_FN`'s `window_open`): the window's pattern keeps out `room.y` of the key in
   its shade (`window_light`), so the rest, 10% in autumn, lit every surface's GGX highlight

@@ -153,9 +153,8 @@ fn box_m(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x0
 // start, k1 -1 at the end), an outside one lengthens it (k0 -1, k1 1). Oak takes its place
 // in the wall's field as surfaces::strip does; plaster and paint keep s and the profile's
 // length in uv. A point's normal is its two segments' mean where they turn less than
-// CREASE, so a cove, an ovolo or a bead shades as a curve; at a sharper turn (a fillet, a
-// step) each segment keeps its own.
-let CREASE: f32 = 0.8;  // cos 37°
+// surfaces::CREASE, so a cove, an ovolo or a bead shades as a curve; at a sharper turn (a
+// fillet, a step) each segment keeps its own.
 fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, prof: float3[], lift: f32, s0: f32, s1: f32,
          k0: f32, k1: f32, mat: f32, seed: i64, out_scale: f32 = 0.0) {
     let kz = if out_scale > 0.0 { out_scale } else { cm_out() };
@@ -179,8 +178,8 @@ fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pr
         let d = float2 { c.x - a.x, c.y - a.y };
         let t1 = t + length(d);
         let n = flat[k];
-        let na = surfaces::world_normal(b, if k > 1 { smooth_normal(n, flat[k - 1]) } else { n });
-        let nc = surfaces::world_normal(b, if k + 1 < pts.len { smooth_normal(n, flat[k + 1]) } else { n });
+        let na = surfaces::world_normal(b, if k > 1 { surfaces::smooth_normal(n, flat[k - 1]) } else { n });
+        let nc = surfaces::world_normal(b, if k + 1 < pts.len { surfaces::smooth_normal(n, flat[k + 1]) } else { n });
         let sa0 = s0 + k0 * a.x;
         let sa1 = s1 + k1 * a.x;
         let sc0 = s0 + k0 * c.x;
@@ -196,13 +195,6 @@ fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pr
         indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
         t = t1;
     }
-}
-
-// The normal at a profile's point between segments of normals a and c (zero for a segment
-// of no length): their mean where they turn less than CREASE, else a, the segment's own.
-fn smooth_normal(a: float3, c: float3) -> float3 {
-    guard length_sq(a) > 0.0 && length_sq(c) > 0.0 && dot(a, c) > CREASE else { return a; }
-    return normalize(a + c);
 }
 
 // The square end of a profile (as sweep's) at s, facing +s (side 1) or -s (-1): each
