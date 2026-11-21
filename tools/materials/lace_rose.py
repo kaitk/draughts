@@ -8,10 +8,10 @@
 writes PAGE_DIR/index.html from a baked WAY_DIR: the sprig, the tile, and the 14 cm and
 50 cm crops beside the download and the wild rose photos in PHOTO_DIR (17.png, a leaf;
 20.png, a flower; the user's, local), with more ways' tiles and crops beside f's (f2,
-lace_rose2.py's). The library's copy and its page:
+lace_rose2.py's; f3, lace_rose3.py's). The library's copy and its page:
     MANOR_DIR=.../design/manor lace_rose.py build/notes/lace-library/f --seed 4
     lace_rose.py --page build/notes/lace-rose build/notes/lace-library/f PHOTO_DIR \
-        build/notes/lace-library/f2
+        build/notes/lace-library/f2 build/notes/lace-library/f3
 
 After Wong, Zongker and Salesin's floral ornament and the L-systems behind it: a few
 rules grow every part from a stem, and the layout comes out of the growth, not a
@@ -518,7 +518,7 @@ def bake(out, seed=SEED, sprig_only=False):
 
 def page(out, way_dir, photos, *more):
     """The page: the sprig, the tile, the crops beside the download and the photos; more
-    baked ways (as f2, lace_rose2.py's) beside f's."""
+    baked ways (as f2 and f3) beside f's."""
     import shutil
     import lace_compare as lcmp
     os.makedirs(out, exist_ok=True)
@@ -528,7 +528,8 @@ def page(out, way_dir, photos, *more):
     net = lace.net_tile()
     src_lin = cm.to_linear(cm.load(cm.source('library-lace-01.png')))
     valid = (lcmp.FIELD_ROWS[0], lcmp.FIELD_ROWS[1], lace.FIELD[0], lace.FIELD[2])
-    what = {'f': 'wild rose grammar', 'f2': 'fuller leaves, twining stems'}
+    what = {'f': 'wild rose grammar', 'f2': 'fuller leaves, twining stems',
+            'f3': 'frond leaves, gaps filled, larger roses'}
 
     def pre(tag):
         return '' if tag == 'f' else tag + '_'
@@ -564,10 +565,12 @@ def page(out, way_dir, photos, *more):
     tiles = ''.join(fig(f'{pre(t)}tile_{k}.jpg', f'{t}, one tile, ' + ('front-lit on dark' if k == 'front' else 'backlit'))
                     for k in ('front', 'backlit') for t in tags)
     rows = ''
+    n = len(tags) + 1                                    # the download, then each way
     for i, vname in enumerate(crops):
-        rows += f'<h2>{vname}</h2><div class="grid">' + fig(f'crop{i}_download.jpg', 'the download')
+        rows += f'<h2>{vname}</h2><div class="grid" style="--n: {n}">' + fig(f'crop{i}_download.jpg', 'the download')
         rows += ''.join(fig(f'{pre(t)}crop{i}_front.jpg', f'{t}, front-lit') for t in tags) + '</div>'
-        rows += '<div class="grid">' + ''.join(fig(f'{pre(t)}crop{i}_backlit.jpg', f'{t}, backlit') for t in tags) + '</div>'
+        rows += f'<div class="grid" style="--n: {n}"><div></div>'
+        rows += ''.join(fig(f'{pre(t)}crop{i}_backlit.jpg', f'{t}, backlit') for t in tags) + '</div>'
     f2_note = ''
     if 'f2' in tags:
         f2_note = '''<h2>f2: fuller and twining</h2>
@@ -579,6 +582,16 @@ neighbours nearly together, and a thinner cane winds round each, crossing it twi
 tile; shoots arc over past the vertical; side veins are single open lines, not corded,
 so they no longer read as hatching; half-open roses are a cup seen from the side in two
 flaring sepals; buds are larger, with longer sepals.</p>'''
+    if 'f3' in tags:
+        f2_note += '''<h2>f3: fronds, no gaps, larger roses</h2>
+<p>f2 grown by tools/materials/lace_rose3.py: leaves are fronds of small leaflets (a 17 mm
+terminal, f2's 30) with two or three pairs, so they fit where f2's were left off; every
+trail grows its flowering shoots first, then the leafy ones, then the leaves, and each
+shoot takes the least crowded of six arcs; the free space left is then measured and each
+gap wider than 17 mm gets a leaf, or a twig with leaves and now and then a small rose or
+bud, from one of its nearest stems. Big roses are two a trail, 39 to 43 mm, mostly of
+six broad petals with rounder tips, each petal rimmed by an open line inside its outline
+so it reads over the next.</p>'''
     html = f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -591,14 +604,13 @@ h1 {{ font-size: 24px; margin: 8px 0 4px; }}
 h2 {{ font-size: 20px; margin: 36px 0 6px; border-bottom: 2px solid #333; padding-bottom: 4px; }}
 h3 {{ font-size: 17px; margin: 14px 0 2px; }}
 p, li {{ color: var(--muted); max-width: 95ch; }}
-.grid {{ display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; margin-bottom: 14px; }}
-.grid.two {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
-@media (max-width: 900px) {{ .grid, .grid.two {{ grid-template-columns: 1fr; }} }}
+.grid {{ display: grid; gap: 14px; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); align-items: start; margin-bottom: 14px; }}
+@media (max-width: 900px) {{ .grid {{ grid-template-columns: 1fr; }} }}
 figure {{ margin: 0; }}
 img {{ width: 100%; display: block; background: #000; }}
 figcaption {{ color: var(--muted); font-size: 14px; margin-top: 4px; }}
 </style></head><body>
-<h1>Wild rose lace: way f, a botanical grammar{', and f2' if 'f2' in tags else ''}</h1>
+<h1>Wild rose lace: way f, a botanical grammar{''.join(', and ' + t for t in tags[1:])}</h1>
 <p>Grown by tools/materials/lace_rose.py (seed in the report below): trails with nodes
 alternating sides; at each node a pinnate leaf or a shoot leaving 35 to 55 degrees up and
 out; leaves of a terminal leaflet and 1 to 3 opposite pairs, the top pair close under the
@@ -620,7 +632,7 @@ rachis; ours take the top pair at about 40 (so the three read together), the nex
 the lowest at 62. Its leaves leave the stem at about 45 to 60 degrees; ours 45 to 64.
 Mean field coverage counts the net.</p>
 <h2>The tile, 0.56 m</h2>
-<div class="grid two">{tiles}</div>
+<div class="grid" style="--n: {len(tags)}">{tiles}</div>
 {rows}
 <p>All the ways side by side: <a style="color:inherit" href="../lace-compare/index.html">lace-compare</a>.</p>
 </body></html>
