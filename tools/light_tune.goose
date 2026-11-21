@@ -939,6 +939,10 @@ fn main() {
                       render3d::room_bytes(g) / 1048576, " MiB; its mesh made in ", g.mesh_ms, " ms, ",
                       g.room_count / 3, " triangles and ", g.glass_count / 3, " of glass and lace");
             }
+            if g.corner_ms > 0.0 {
+                print("the corners' map baked in ", g.corner_ms, " ms, ", corner_map::chart_count, " charts in ",
+                      corner_map::WIDTH, " x ", corner_map::rows, " texels");
+            }
             let dump_light = flag_value(argv, "--dump-light");
             if dump_light > 0 && g.light_ms > 0.0 {
                 var out: u8[>..] = [];

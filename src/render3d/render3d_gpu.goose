@@ -192,8 +192,9 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 9, g.book_atlas, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 10, render3d::table_map_or_stand_in(g), g.compare);
         gfx::bind_texture(gfx::FRAGMENT, 11, render3d::ssao_or_stand_in(g), g.linear);
-        if planar { gfx::bind_texture(gfx::FRAGMENT, 12, g.planar_map, g.planar_sampler); }
-        gfx::bind_texture(gfx::FRAGMENT, if planar { 13 } else { 12 }, render3d::pre_place_or_stand_in(g), g.linear);
+        gfx::bind_texture(gfx::FRAGMENT, 12, render3d::corners_or_stand_in(g), g.linear);
+        if planar { gfx::bind_texture(gfx::FRAGMENT, 13, g.planar_map, g.planar_sampler); }
+        gfx::bind_texture(gfx::FRAGMENT, if planar { 14 } else { 13 }, render3d::pre_place_or_stand_in(g), g.linear);
         gfx::uniforms(gfx::VERTEX, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::surfaces_block(g));
@@ -203,7 +204,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
             gfx::bind(g.room_glass);
-            gfx::bind_texture(gfx::FRAGMENT, 12, render3d::pre_place_or_stand_in(g), g.linear);
+            gfx::bind_texture(gfx::FRAGMENT, 13, render3d::pre_place_or_stand_in(g), g.linear);
             gfx::bind_vertex_buffer(g.glass_vb);
             gfx::bind_index_buffer(g.glass_ib, 4);
             gfx::draw_indexed(g.glass_count);
@@ -358,7 +359,8 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     gfx::bind_texture(gfx::FRAGMENT, 9, g.book_atlas, g.aniso);
     gfx::bind_texture(gfx::FRAGMENT, 10, render3d::table_map_or_stand_in(g), g.compare);
     gfx::bind_texture(gfx::FRAGMENT, 11, render3d::ssao_or_stand_in(g), g.linear);
-    gfx::bind_texture(gfx::FRAGMENT, 12, render3d::pre_place_or_stand_in(g), g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 12, render3d::corners_or_stand_in(g), g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 13, render3d::pre_place_or_stand_in(g), g.linear);
     gfx::uniforms(gfx::VERTEX, 0, clip);
     gfx::uniforms(gfx::FRAGMENT, 0, clip);
     gfx::uniforms(gfx::FRAGMENT, 1, render3d::mirror_surfaces_block(g));
@@ -1154,7 +1156,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.tree_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.wall_albedo,
-                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas,
+                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.corner_map,
                     g.table_map, g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color,
                     g.planar_depth, g.planar_map];
     for t in textures { if t.id != 0 { gfx::release(t); } }

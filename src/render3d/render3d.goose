@@ -337,6 +337,11 @@ struct Gpu {
     room_shell:   bool,             // the library's shell (room_shell::LIBRARY), not the panelled wall
     room_for:     float4,           // what the mesh was made for: the window's wall and sill, the wall's v, the shell
     mesh_ms:      f64,              // the mesh's making (measuring)
+    // The shell's corners' shade (model3d::corner_map), baked with its mesh: the atlas, R8,
+    // the room's corners it was baked for, and the bake's time (measuring).
+    corner_map:   Texture,
+    corner_for:   float4,
+    corner_ms:    f64,
     plaster_tone: Texture,          // the plaster's tone, R8 as the wallpaper's
     lace_mask:    Texture,          // the curtains' lace, R8 with its mips (surfaces::LACE_TEXELS)
     lace_way:     i64,              // which lace (surfaces::LACE_WAYS), and the one on the GPU
@@ -748,7 +753,11 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     let w = g.room.window;
     let shell_key: f32 = if !g.room_shell { 0.0 } else { (if g.books_off { 2.0 } else { 1.0 }) + (if room_shell::shutters_on { 0.0 } else { 2.0 }) };
     let key = float4 { w.x, w.z, g.room_away, shell_key };
-    guard g.room_vb.id == 0 || !same4(key, g.room_for) else { return; }
+    // The corners' shade is baked with the mesh, again when the room's corners change, but
+    // not while a slider is held.
+    let corners = if g.room_shell { g.room.corners } else { float4_0 };
+    let corners_moved = !same4(corners, g.corner_for) && !g.bake_held;
+    guard g.room_vb.id == 0 || !same4(key, g.room_for) || corners_moved else { return; }
     let t0 = clock();
     var verts:         mesh::Vertex[>..] = [];
     var indices:       u32[>..]          = [];
@@ -756,19 +765,55 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     var glass_indices: u32[>..]          = [];
     if g.room_shell { room_shell::build(verts, indices, glass, glass_indices, room_shell::LIBRARY, !g.books_off); }
     else { surfaces::build(verts, indices, g.room_away, w.x, w.z); }
+    // Each vertex with its place in the corners' map; the panelled wall's room and the glass
+    // never read it.
+    var room:         corner_map::RoomVertex[>..] = [];
+    var room_indices: u32[>..]                    = [];
+    if g.room_shell { corner_map::lay_out(verts, indices, surfaces::METRE, room, room_indices); }
+    else {
+        for v in verts { room.push(corner_map::room_vertex(v, float2_0, float2_0)); }
+        for i in indices { room_indices.push(i); }
+    }
+    var glass_room: corner_map::RoomVertex[>..] = [];
+    for v in glass { glass_room.push(corner_map::room_vertex(v, float2_0, float2_0)); }
     if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }
     if g.glass_vb.id != 0 { o.gpu_release_mesh(g.glass_vb, g.glass_ib); }
-    g.room_vb, g.room_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
-    g.room_count = indices.len;
+    g.room_vb, g.room_ib = o.gpu_mesh(bytes_of(room), bytes_of(room_indices));
+    g.room_count = room_indices.len;
     g.glass_count = glass_indices.len;
-    if g.glass_count > 0 { g.glass_vb, g.glass_ib = o.gpu_mesh(bytes_of(glass), bytes_of(glass_indices)); }
+    if g.glass_count > 0 { g.glass_vb, g.glass_ib = o.gpu_mesh(bytes_of(glass_room), bytes_of(glass_indices)); }
     else {
         g.glass_vb = Buffer { 0 };
         g.glass_ib = Buffer { 0 };
     }
     g.room_for = key;
     g.mesh_ms = (clock() - t0) * 1000.0;
+    if g.corner_map.id != 0 {
+        o.gpu_flush();
+        o.gpu_release(g.corner_map);
+        g.corner_map = Texture { 0 };
+    }
+    g.corner_for = corners;
+    guard g.room_shell else { return; }
+    let t1 = clock();
+    var planes = corner_planes(g);
+    corner_map::bake(planes, verts, indices);
+    g.corner_map = o.gpu_sampled(corner_map::WIDTH, corner_map::rows, 1, R8);
+    o.gpu_upload(g.corner_map, 0, corner_map::atlas[0..corner_map::WIDTH * corner_map::rows]);
+    g.corner_ms = (clock() - t1) * 1000.0;
 }
+
+// What the corners' shade is baked from: the shell's planes and the room's corners, as
+// ROOM_FRAG's block has them.
+fn corner_planes(g: Gpu&) -> corner_map::Planes {
+    let b = surfaces_block(g);
+    corner_map::Planes { b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.room_box, b.room_doors, b.room_heights,
+                         b.book_cases, b.corners }
+}
+
+// The corners' map to bind, or another texture where none is made: ROOM_FRAG reads it only
+// in the shell.
+fn corners_or_stand_in(g: Gpu&) -> Texture { if g.corner_map.id != 0 { g.corner_map } else { g.crown_map } }
 
 // The room's masks decoded (src/native/materials.c) and put on the GPU with their mips:
 // the wallpaper's, the plaster's tone, once with the room's bake; the curtains' lace, again

@@ -170,13 +170,14 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 9, g.book_atlas, g.aniso);
         slot(t, 10, render3d::table_map_or_stand_in(g), g.compare);
         slot(t, 11, render3d::ssao_or_stand_in(g), g.linear);
-        if planar { slot(t, 12, g.planar_map, g.planar_sampler); }
-        slot(t, if planar { 13 } else { 12 }, render3d::pre_place_or_stand_in(g), g.linear);
+        slot(t, 12, render3d::corners_or_stand_in(g), g.linear);
+        if planar { slot(t, 13, g.planar_map, g.planar_sampler); }
+        slot(t, if planar { 14 } else { 13 }, render3d::pre_place_or_stand_in(g), g.linear);
         nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
             nx::bind(g.room_glass);
-            slot(t, 12, render3d::pre_place_or_stand_in(g), g.linear);
+            slot(t, 13, render3d::pre_place_or_stand_in(g), g.linear);
             t.verts = nx::address(g.glass_vb);
             nx::draw_indexed(ngfx::root(t), g.glass_ib, 4, g.glass_count);
         }
@@ -326,7 +327,8 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
     slot(r, 9, g.book_atlas, g.aniso);
     slot(r, 10, render3d::table_map_or_stand_in(g), g.compare);
     slot(r, 11, render3d::ssao_or_stand_in(g), g.linear);
-    slot(r, 12, render3d::pre_place_or_stand_in(g), g.linear);
+    slot(r, 12, render3d::corners_or_stand_in(g), g.linear);
+    slot(r, 13, render3d::pre_place_or_stand_in(g), g.linear);
     nx::draw_indexed(ngfx::root(r), g.room_ib, 4, g.room_count);
     if g.glass_count > 0 {
         nx::bind(g.planar_glass);
@@ -1201,7 +1203,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
                     g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
-                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.table_map,
+                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.corner_map, g.table_map,
                     g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color, g.planar_depth,
                     g.planar_map];
     for t in textures { if t.id != 0 { nx::release(t); } }

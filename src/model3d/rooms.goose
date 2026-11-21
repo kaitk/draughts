@@ -104,9 +104,9 @@ struct Room {
     // how strong (0 none), y from what whiteness (the least channel, sRGB), z the knee
     // over it, w how wide (sigma in quarter pixels).
     bloom: float4 = float4_0,
-    // The shell's corners and edges darkened (shaders::ROOM_FRAG's corner_shade), its
-    // indirect light only: x how much (1 a corner's full share of the sky hidden), y how far
-    // from a corner it reaches (metres); 0 none.
+    // The shell's corners and edges darkened (model3d::corner_map, baked with the shell's
+    // mesh), its indirect light only: x how much (1 a corner's full share of the sky
+    // hidden), y how far from a corner it reaches (metres); 0 none.
     corners: float4 = float4_0,
     // The room's ambient occlusion from what the screen shows (render3d::ssao_pass), its
     // indirect light only, where it finds more than the corners know: x how strong (1 all
