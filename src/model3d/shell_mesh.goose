@@ -88,6 +88,13 @@ let ARCHITRAVE_A: float2[7] = [
 let BLOCK_PAST: f32 = 0.02;
 let BLOCK_DEEP: f32 = 0.065;
 
+// How far the wainscot's cap returns into a window's reveal (metres): 6.5 cm, or with the
+// shutters folded there to CAP_CLEAR short of their front edges, 1.5 cm (the user,
+// 2026-11-21: a shorter return rather than none). Their hinges between the leaves stand
+// 8 mm proud of those edges, but under the cap.
+let CAP_CLEAR: f32 = 0.005;
+fn cap_return() -> f32 { if shutters_on { SHUTTER_FROM - CAP_CLEAR } else { 0.065 } }
+
 // What a run of wainscot is: along a wall or a pier, or under a window (to the sill
 // board's foot).
 let RUN_WALL = 0;
@@ -279,7 +286,7 @@ fn panelling(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
 
 // A run of wainscot from s0 to s1 (world units) of `kind`; `ends` how its cap meets
 // what is past each end: 0 a wall at an inside corner (the plinth and cap mitred into
-// it), 1 a window's niche (the cap wrapping 6.5 cm into its reveal), 2 a door's
+// it), 1 a window's niche (the cap wrapping into its reveal, cap_return), 2 a door's
 // architrave (the cap's end returned, the plinth square against the plinth block). A run
 // under a sill butts on the wall's runs either side.
 fn wainscot_run(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, s0: f32, s1: f32, kind: i64,
@@ -302,28 +309,29 @@ fn wainscot_run(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Buil
     }
     guard kind != RUN_SILL else { return; }
     let lift = CAP_LIFT;
-    // With the shutters filling the reveal from 2 cm in, the cap stops square at the pier's
-    // corner; without them it wraps round it 6.5 cm into the reveal.
-    let wrap = !shutters_on;
-    let k0: f32 = if start_end == 1 && wrap { -1.0 } else if corner0 { 1.0 } else { 0.0 };
-    let k1: f32 = if finish_end == 1 && wrap { 1.0 } else if corner1 { -1.0 } else { 0.0 };
+    let k0: f32 = if start_end == 1 { -1.0 } else if corner0 { 1.0 } else { 0.0 };
+    let k1: f32 = if finish_end == 1 { 1.0 } else if corner1 { -1.0 } else { 0.0 };
     sweep_oak(verts, indices, b, CAP_A[..], lift, s0, s1, k0, k1, seed);
     let ends: i64[2] = [start_end, finish_end];
     let at:   f32[2] = [s0, s1];
     let side: f32[2] = [-1.0, 1.0];
     for e, i in ends {
         seed++;
-        if e == 2 || (e == 1 && !wrap) { profile_end(verts, indices, b, CAP_A[..], lift, at[i], side[i], seed); }
+        if e == 2 { profile_end(verts, indices, b, CAP_A[..], lift, at[i], side[i], seed); }
         guard e == 1 else { continue; }
-        // Round the pier's corner and 6.5 cm into the reveal, its end square; the frame's
-        // edge under it.
-        if wrap {
-            let r = reveal_builder(moved(b, at[i], 0.0), side[i]);
-            sweep(verts, indices, r, CAP_A[..], lift, 0.0, 0.065 * m(), -1.0, 0.0, surfaces::MAT_OAK, seed);
-            profile_end(verts, indices, r, CAP_A[..], lift, 0.065 * m(), 1.0, seed);
-        }
+        // Round the pier's corner and into the reveal, its end square; the frame's edge
+        // under it.
+        let r = reveal_builder(moved(b, at[i], 0.0), side[i]);
+        sweep(verts, indices, r, CAP_A[..], lift, 0.0, cap_return() * m(), -1.0, 0.0, surfaces::MAT_OAK, seed);
+        profile_end(verts, indices, r, CAP_A[..], lift, cap_return() * m(), 1.0, seed);
         let fz = surfaces::FRAME_Z;
         let k = cm_up();
+        // The cap's underside behind its foot round the corner, where no panelling is under it.
+        let foot = (lift + 100.5) * k;
+        let back = cap_return() * m();
+        let under:    float3[4] = [float3 { -fz, foot, 0.0 }, float3 { back, foot, 0.0 }, float3 { back, foot, fz }, float3 { -fz, foot, fz }];
+        let under_uv: float2[4] = [float2 { -fz, 0.0 }, float2 { back, 0.0 }, float2 { back, fz }, float2 { -fz, fz }];
+        surfaces::quad(verts, indices, r, under, under_uv, [0.8, 0.8, 0.8, 0.8], surfaces::MAT_OAK + 0.5, float3 { 0.0, -1.0, 0.0 });
         let p: float3[4] = [float3 { at[i], 75.0 * k, 0.0 }, float3 { at[i], 75.0 * k, fz }, float3 { at[i], (lift + 100.5) * k, fz },
                             float3 { at[i], (lift + 100.5) * k, 0.0 }];
         let uv: float2[4] = [float2 { 1.0, p[0].y }, float2 { 1.0 + fz, p[1].y }, float2 { 1.0 + fz, p[2].y }, float2 { 1.0, p[3].y }];

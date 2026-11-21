@@ -3345,7 +3345,7 @@ let ROOM_FRAG = """
         // these know, so the box's planes and the cases' shelves aren't darkened twice.
         float corner = 1.0;
         if (kind < 13.5) corner = corner_shade(v_local, vec3(dot(ng.xz, axes.xy), ng.y, dot(ng.xz, axes.zw)));
-        ao = fine * min(ao * corner, ssao_kept(screen_ao));
+        ao = metal > 0.9 ? ao : fine * min(ao * corner, ssao_kept(screen_ao));
         // The table's top is solid: its shadow keeps all the key out, unlike the board's
         // softened ones (room.x). The sun reaches p only through a window (open), and only
         // that takes the highlight; the shade's floor (window_light's, 1 - room.y where the
@@ -3426,6 +3426,10 @@ let ROOM_FRAG = """
         vec3 fc = env_brdf(f0, sqrt(ar), nov);
     #endif
     #endif
+        // Brass in a window's niche (the shutters' hinges) sees the window and the lit reveals
+        // the way it faces out, not the room's box behind the glass.
+        if (metal > 0.9 && v_local.z < room_box.z)
+            env = mix(env, lace_light.rgb / max(params.x * shade.w, 1e-3), clamp(0.6 - dot(rv.xz, axes.zw), 0.15, 1.0));
         vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
     #ifdef MIRROR_PASS
         result = vec4(mirror_light(color), 1.0);
