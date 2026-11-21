@@ -38,9 +38,12 @@ let MAT_TABLE: f32 = 3.0;
 // The round table the board stands on: its top's radius, a little under the board's
 // foot, its middle behind the board's, as a board stands toward the player on a table,
 // and the top's thickness. The board's thick frame makes it a small one, about 30 cm
-// with squares of about 3.3 cm, so a library table some 105 cm across is 16 squares in
-// radius.
-let TABLE_R:   f32 = 16.0;
+// with squares of about 3.3 cm (surfaces::METRE 30.48 units), so a games table 0.95 m
+// across, between a period one's 0.80 m and the 1.05 m it was, is 14.48 in radius. Its
+// wood's map keeps the 1.05 m top's half side, TABLE_MAP_R, so the figure keeps its scale
+// whatever the top's size.
+let TABLE_R:     f32 = 14.48;
+let TABLE_MAP_R: f32 = 16.0;
 let TABLE_TOP: f32 = -0.703;
 let TABLE_Z:   f32 = -4.5;
 let TABLE_SEGMENTS = 128;

@@ -224,7 +224,7 @@ fn plan_extent() -> float2 { float2 { 2.0 * mesh::INNER, 2.0 * mesh::INNER } }
 fn frame_extent(rows: i64, side: i64 = BAKE_SIDE) -> float2 { float2 { 10.4, 10.4 * rows / side } }
 // The table's map over its top, `side` square.
 fn table_size(side: i64 = BAKE_SIDE) -> int2 { int2 { side as i32, side as i32 } }
-fn table_extent() -> float2 { float2 { 2.0 * mesh::TABLE_R, 2.0 * mesh::TABLE_R } }
+fn table_extent() -> float2 { float2 { 2.0 * mesh::TABLE_MAP_R, 2.0 * mesh::TABLE_MAP_R } }
 // The table's wear (shaders::BAKE_FRAG's wear_at): a tile WEAR_TILE world units square
 // that repeats, WEAR_SIDE texels a side at BAKE_SIDE (256 a unit, the top's map 64), in
 // proportion at another side.

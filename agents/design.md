@@ -142,8 +142,8 @@ pieces; the design boards still set the layout, glass, and controls.
   `build/choices-2026-11-21/shots.sh` (`build/notes/choices-2026-11-21/`; the right
   tie-back `--plan-eye 5.6,6.3,1.1 --plan-at 5.3,6.9,0.95 --fov 32`, the hem from above
   `--plan-eye 4.0,6.35,0.95 --plan-at 3.78,6.9,0.05 --fov 34`).
-  The games table's base (`mesh::table_base`, task 107): `--table-top 1.05|0.80` (the
-  panel's Top) sets the top across while the user's choice is open; shots by
+  The games table's base (`mesh::table_base`, task 107): `--table-top 0.95|1.05|0.80`
+  (the panel's Top) sets the top across, 0.95 m the game's and the room's; shots by
   `build/games-table-build/shots.sh EXE TAG` (`build/notes/games-table-build/`), the
   base's close-up `--plan-eye 5.75,4.75,0.62 --plan-at 4.5,5.8,0.36 --fov 42`.
   The shell's own light (task 107's light round): `--shell-sun X,Y` (penumbra's widening,

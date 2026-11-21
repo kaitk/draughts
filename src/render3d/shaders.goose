@@ -1650,9 +1650,9 @@ let TABLE_MAP_FN = """
     """;
 
 let TABLE_FRAG = """
-    // mesh.goose's (test/model3d/geometry checks them): TABLE_R the 1.05 m top's, which
-    // its map covers whatever the top's radius.
-    const float TABLE_R = 16.0;
+    // mesh.goose's (test/model3d/geometry checks them): TABLE_MAP_R the half side its
+    // wood's map covers whatever the top's radius (the 1.05 m top's).
+    const float TABLE_MAP_R = 16.0;
     const float TABLE_TOP = -0.703;
     const float TABLE_Z = -4.5;
     const float SIDE_STREAK = 0.008;   // how far the sides' figure is drawn out (map units)
@@ -1808,9 +1808,9 @@ let TABLE_FRAG = """
         bool top = v_normal.y > 0.999 && p.y > TABLE_TOP - 0.01;
         vec2 out_dir = p.xz - vec2(0.0, TABLE_Z);
         float from_mid = max(length(out_dir), 1e-3);
-        vec2 uv = top ? out_dir / (2.0 * TABLE_R) + 0.5
-                      : vec2(0.3 + (v_uv.y - TABLE_R) / (2.0 * TABLE_R), v_uv.x / (2.0 * PI * from_mid) * 3.0);
-        if (base) uv = vec2(0.2, 0.15) + v_uv / (2.0 * TABLE_R);
+        vec2 uv = top ? out_dir / (2.0 * TABLE_MAP_R) + 0.5
+                      : vec2(0.3 + (v_uv.y - TABLE_MAP_R) / (2.0 * TABLE_MAP_R), v_uv.x / (2.0 * PI * from_mid) * 3.0);
+        if (base) uv = vec2(0.2, 0.15) + v_uv / (2.0 * TABLE_MAP_R);
         // On the sides and the base the figure is drawn out along the grain (their v)
         // into straight streaks, as an edge's and a frieze's wood is: the filter's
         // footprint lengthened along it, the anisotropic filter blurring that way only.

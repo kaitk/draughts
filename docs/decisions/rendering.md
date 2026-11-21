@@ -806,6 +806,18 @@ to be is in tasks 042, 059, 071, 081, and 086.
   the first of the four ways baked from the lace library: chosen on the curtains in the
   room. Ways f2, f and d stay built in, on the light tuner's `--lace` and C, while the
   light and later changes may favour another (about 2.1 MB of PNGs in every build).
+- The games table's top is 0.95 m across, in the game and the room (2026-11-21, task 107;
+  `mesh::TABLE_R`, 14.48 units), replacing the 1.05 m it was and closing the choice left
+  open above: between a period games table's 0.80 m and the game's 1.05 m, with room for
+  the score sheet at a near corner (task 103); a choice for now. What each side has
+  taken still fits, its furthest
+  piece 0.36 m from the middle (`build/notes/games-table/src/fit.py`). The wood's map keeps
+  the 1.05 m top's extent (`mesh::TABLE_MAP_R`), so the figure keeps its scale and the
+  game shows the same top wherever its rim is out of the frame: at 1280 × 800, 800 × 1280,
+  a tablet either way and 16:9, the game's shot is unchanged. On a 9:19.5 phone in
+  portrait the near rim now shows across the bottom under the panel, with the plain fade
+  past it, and at 9:16 a corner of it; the 1.05 m top's showed only at the far corners.
+  The light tuner's `--table-top 1.05|0.80` shows the others.
 - The sun's highlight takes only the sun that comes through a window (2026-11-21, task
   107; `LIGHT_FN`'s `window_open`): the window's pattern keeps out `room.y` of the key in
   its shade (`window_light`), so the rest, 10% in autumn, lit every surface's GGX highlight

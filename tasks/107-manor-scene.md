@@ -97,9 +97,11 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       it (the renderer check and the tuner's game shot unchanged). The legs are swept by
       `mesh::bar`, a rounded section along a curve, for later furniture's legs and
       rails. Its shadow on the floor and the top's on it worked out in the shaders, as
-      the old turned foot's (removed). The top's size, 1.05 m or 0.80 m, waits for the
-      user: the light tuner's `--table-top` (`build/notes/games-table-build/`, costs in
-      task 110)
+      the old turned foot's (removed). The top 0.95 m across since the user's choice
+      (2026-11-21, `build/notes/tieback-top/`), in the game and the room; the game's shot
+      unchanged but on tall phones in portrait, whose foot now shows the near rim; the
+      light tuner's `--table-top 1.05|0.80` for the others (`build/notes/games-table-build/`,
+      costs in task 110)
 - [x] Light, round 1, against ChatGPT repaints of our room (2026-11-21,
       `build/notes/light-round-1/`): the shell's sun sharper (penumbra about the sun's
       disc) and 2.2 times stronger on the room's surfaces; its sky through the niches and

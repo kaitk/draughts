@@ -25,7 +25,7 @@
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
-//       [--table board|flame] [--table-top 1.05|0.80 (the top across, metres)] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
+//       [--table board|flame] [--table-top 0.95|1.05|0.80 (the top across, metres)] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
 //       [--wind-kind sines|noise|still|branches]
 //       [--gust X,Y,Z,W | --gust-strength K --gust-length S --gust-every S --gust-reach K (rooms::Room's gust)]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
@@ -66,10 +66,12 @@ let ROW:     f32 = 20.0;
 let SEASONS = ["autumn", "winter", "spring", "summer"];
 let MATERIALS = ["auto", "wood", "stone", "carved"];
 let SQUARES = ["8", "10"];
-// The table's tops to compare (--table-top, the panel's Top): the game's 1.05 m
-// (mesh::TABLE_R) and task 109's 0.80 m; the base under them the same.
-let TOPS = ["1.05", "0.80"];
-fn top_radius(top: i64) -> f32 { if top == 1 { mesh::TABLE_R * 0.80 / 1.05 } else { mesh::TABLE_R } }
+// The table's tops to compare (--table-top, the panel's Top): the game's 0.95 m
+// (mesh::TABLE_R), the 1.05 m it was and task 109's period 0.80 m; the base under them
+// the same.
+let TOPS = ["0.95", "1.05", "0.80"];
+let TOP_METRES: f32[3] = [0.95, 1.05, 0.80];
+fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
 
 // The views (V cycles them): the board's orbit, then the room's from a person's eyes, in
 // the plan's metres (room_shell): the whole room from the far corner by the hall; the

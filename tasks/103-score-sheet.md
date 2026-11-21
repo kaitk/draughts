@@ -4,6 +4,11 @@ Status: todo
 
 A prop on the 3D board's table (task 095): an old sheet of paper the moves are written
 on, with a pencil lying across it, near one of the table's near corners (2026-11-20).
+The top is 0.95 m across since 2026-11-21 (`mesh::TABLE_R`, 14.48 units; it was 1.05 m):
+what each side has taken still fits on it with about 11 cm to the rim
+(`build/notes/games-table/src/fit.py`, the furthest piece's edge 0.36 m from the middle),
+so the sheet goes on the near half beside a corner of the board, within the top's
+0.475 m.
 References in `design/props/score-sheet/` (local; its README lists them).
 
 - The sheet: `sheet-01.png`, aged paper with a band of oak leaves and acorns round an
