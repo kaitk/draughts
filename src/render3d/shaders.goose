@@ -479,6 +479,11 @@ let LIGHT_FN = """
     // model3d's room_light::lace_lets); its pattern half washed out, since the lace scatters
     // on forward much of what it doesn't let straight through, blurred to the shadow's
     // softness, a little denser on the folds' flanks.
+    // A machine lace's net ground stops about a fifth of the sun, its motifs as much as the
+    // thread does (1 - shell_glass.w); the pattern shows at LACE_PATTERN_SHOWN of its
+    // contrast, the rest scattered on.
+    const float LACE_NET_STOPS = 0.2;
+    const float LACE_PATTERN_SHOWN = 0.75;
     float lace_shadow(vec2 w, float soft) {
         vec2 e = lace_edges(w.y);
         float x = abs(w.x);
@@ -487,9 +492,9 @@ let LIGHT_FN = """
         float s = clamp((x - e.x) / (e.y - e.x), 0.0, 1.0);
         vec2 uv = vec2((1.0 - s) * 1.2, w.y - 0.07) * shell.w;
         float cover = textureLod(lace_mask, lace_place(uv), log2(max(soft * 1024.0 / 0.56, 1.0))).r;
-        cover = mix(0.5, cover, 0.5);
+        cover = mix(0.5, cover, LACE_PATTERN_SHOWN);
         float folds = 0.8 + 0.4 * (0.5 + 0.5 * sin(6.2831853 * 6.0 * s));
-        float flat_lets = 1.0 - clamp(cover * folds, 0.0, 1.0) * (1.0 - shell_glass.w);
+        float flat_lets = 1.0 - clamp(mix(LACE_NET_STOPS, 1.0 - shell_glass.w, cover) * folds, 0.0, 0.9);
         return mix(1.0, pow(flat_lets, max(0.55 / max(e.y - e.x, 0.05), 1.0)), inside);
     }
 
