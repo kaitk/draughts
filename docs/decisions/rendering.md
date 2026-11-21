@@ -694,6 +694,27 @@ to be is in tasks 042, 059, 071, 081, and 086.
 - The oak outside is blurred once when put on the GPU (2026-11-21, `render3d::soften`,
   sigma 3.5 texels, `view_out::OAK_SOFT`), as out of focus as the band's trees: the user
   found it too crisp. Rejected for now: depth of field over the frame.
+- The library's probes sit half a step in from every surface (2026-11-21, task 107's
+  leftovers; replaces the grid above, 31 × 27 × 15 from the far wall, the window wall and
+  the floor): 30 × 26 × 13 probes from 0.15 m in, 10,140 in a 390 × 78 atlas, about 45 ms
+  to bake. The old grid put probes in the end walls' and the floor's planes, and a
+  surface's lookup half a step out mixed them with the next row. A probe within 0.2 m in
+  front of a sun patch's surface takes none of that patch (`room_light::OWN_ROW`): that
+  row is what the surface reads, a flat surface doesn't light itself, and two bands of
+  harmonics with a strong patch behind ring dark on the far side, which showed as a soft
+  dark band across the doors. The cost: the floor and walls within 0.2 m of a corner miss
+  a little of the other surface's bounce. Rejected: clamping the direction to the
+  constant (no negatives, but a strong patch behind still eats the rest of the light).
+- The shell's tree casts finer, softer limbs than the game's (2026-11-21,
+  `rooms::SHELL_LIMBS`, `trees::View.wood`): its trunk and limbs drawn half as wide and
+  blurred three times as much in the map, so they cross the sun's patches as soft streaks
+  like the blurred oak outside, not bold bars. The game's tree is unchanged. Rejected:
+  moving the crown so no limb crosses a window (the limbs fan from a trunk behind a pier
+  across all three).
+- The floor before a door's opening keeps no darker wax band (2026-11-21): people walk
+  through there; its contact line sits at the threshold's nose (3 cm out), not the
+  plinth's lip (5 cm), and the wainscot's dark band is fainter there. The plinth and the
+  wainscot's cap are mitred into the room's inside corners, not overlapped square.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

@@ -561,17 +561,21 @@ board's light:
 
 - **The sun** through its three windows, its penumbra about the sun's disc and its light on
   the room's surfaces 2.2 times the board's (`rooms::Room.shell_sun`).
-- **Baked light** (`model3d::room_light`): a grid of 12,555 probes 0.3 m apart, made on the
-  CPU in about 57 ms when the room turns on and again when the sun, the room's light, the
-  tree or the table changes, never per frame. Each probe holds the sky seen through the
-  niches and the sun's patches thrown back once, as a constant and a direction per colour,
-  in a 465 × 81 RGBA16F atlas (0.3 MB) that `ROOM_FRAG` reads with six taps. Beside it the
+- **Baked light** (`model3d::room_light`): a grid of 10,140 probes 0.3 m apart, half a step
+  in from every wall, the floor and the ceiling, made on the CPU in about 45 ms when the
+  room turns on and again when the sun, the room's light, the tree or the table changes,
+  never per frame. Each probe holds the sky seen through the niches and the sun's patches
+  thrown back once, as a constant and a direction per colour; the row in front of a
+  surface takes none of that surface's own patches. They fill a 390 × 78 RGBA16F atlas
+  (0.24 MB) that `ROOM_FRAG` reads with six taps. Beside it the
   room keeps a part of the harmonics and of the flat bounce (`rooms::Room.baked`).
 - **Reflections**: the waxed floor and the brass see the shell's box (its walls, doors,
   ceiling and floor lit by the probes and the sun) and its windows, worked out per pixel.
 - **The window's glow**: a quarter-size bloom of what is near white, added in linear light
   (`render3d::bloom_pass`, `rooms::Room.bloom`).
-- **The oak outside** is blurred once when uploaded (`render3d::soften`).
+- **The oak outside** is blurred once when uploaded (`render3d::soften`), and the tree
+  that shades the windows draws its limbs finer and softer than the game's
+  (`rooms::SHELL_LIMBS`).
 
 ### Board and pieces
 

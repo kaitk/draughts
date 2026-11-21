@@ -148,6 +148,9 @@ pieces; the design boards still set the layout, glass, and controls.
   With the shell on, the tree is `rooms::shell_tree`'s (placed for its three windows),
   not the one `--tree`/`--crown`/`--foliage` set: change it there (task 107's quick
   pass: `build/notes/quick-pass/`, the views and close-ups by `build/quick-pass/shots.sh`).
+  Its limbs' width and blur in the map are `rooms::SHELL_LIMBS`. The doors' feet, the
+  plinth's corners and the windows close up: `build/leftovers/shots.sh EXE TAG [NAMES]`
+  (`build/notes/leftovers/`). To see the probes alone, `--baked 7,12,0,0`.
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

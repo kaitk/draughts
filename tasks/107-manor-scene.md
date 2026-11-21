@@ -110,6 +110,18 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       costs in task 110. Round 2: the polished table's reflection (TABLE_FRAG), the
       reflection's cost (1.1 ms), the bake's soft band across the hall door, the floor's
       patches still dappled and softer than the references', the lace lit by the probes
+- [x] The quick pass's and round 1's leftovers (2026-11-21, `build/notes/leftovers/`): the
+      room's tree draws its trunk and limbs half as wide and their shadow three times as
+      soft (`rooms::SHELL_LIMBS`, the shell's map only), so no bold bar crosses a sun
+      patch; the probes sit half a step in from every wall, the floor and the ceiling
+      (30 × 26 × 13), and a probe in the row before a surface takes none of that surface's
+      own sun patches, which rang dark across the doors (the band on the hall door); the
+      floor before each door's opening keeps no darker wax band, its contact line at the
+      threshold's nose; the plinth and the cap mitred into the inside corners. Still off:
+      the wainscot in the shade, three to ten times darker than the references' (the
+      window wall's most); the ceiling is already brighter than theirs, so more bounce
+      won't do: a lighter, greyer oak for the panelling, and more light on the window
+      wall, are a choice for the user
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

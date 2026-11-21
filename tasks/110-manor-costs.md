@@ -128,6 +128,12 @@ results, or keep baking at run time behind a loader when the room or a look is c
   within noise. To cut first: the sun at the reflected hit (one `window_light` a floor
   pixel), or the reflection as a variant only the high mode compiles.
 
+- The leftovers (2026-11-21, task 107, `build/notes/leftovers/`): the probes 10,140 in a
+  390 × 78 atlas (0.24 MB), baked in about 45 ms (57 before); the shell's tree map with
+  the limbs' wider blur 187 ms (172 before); the mesh's triangles unchanged (14,518).
+  The light tuner's counter at the room view, headless 1600x1000, two rounds: 3.6 ms
+  before, 3.7 after (the floor's door terms, a few operations a floor pixel).
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
