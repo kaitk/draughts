@@ -260,7 +260,9 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   `glsl_` function in `src/ngfx/shaders/glsl.slang`; a new 2D pipeline a row in
   `MODULES`; a new uniform, texture, or buffer moves its root, whose order
   `build/ngfx/shaders/<module>.slang`'s header lists and the recorder's `*Root` follows.
-  2D roots take `vec4`-sized fields only. Build the ngfx build after any shader change.
+  2D roots take `vec4`-sized fields only. A new `mat * vec4(...)` in GLSL needs its
+  replacement in `ngfx_3d_shaders.py`'s `products()` (it asserts on one left). The 3D
+  root holds 16 texture slots. Build the ngfx build after any shader change.
 - A hidden window ignores injected mouse input until `gfx::inject_focus(true)`;
   `gfx::open_headless` draws with no window. Nuklear's slider drags only from its knob.
 
