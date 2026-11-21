@@ -155,7 +155,8 @@ pieces; the design boards still set the layout, glass, and controls.
 - The light tuner's panel is in sections that open and close, kept for the session
   (`SECTIONS`): Scene, Light (Light in detail inside), Sun and tree (the sun, the tree,
   wind, the board's window, noise leaves), Wallpaper, Wainscot and panelling, Ceiling,
-  Curtains and lace, Table, Outside, Dust, Camera and views, Debug, Keys (every key).
+  Curtains and lace, Bookcases and books, Table, Outside, Dust, Camera and views, Debug,
+  Keys (every key).
   `--sections all|scene,light,..` opens those at the start (names in `SECTION_NAMES`),
   `--shot-panel` draws the panel in a `--shot`. A drag that starts on the panel holds the
   tree's and the probes' bakes (`render3d::Gpu.bake_held`) and bakes once on release.
@@ -166,6 +167,17 @@ pieces; the design boards still set the layout, glass, and controls.
   from sRGB (14,5,2) to (41,22,12); the references' is about (66,38,22)
   (`build/notes/reference-compare/`). P prints, after the room's literal, the flags that show
   the same again, exactly (`build/notes/tuner-sections/`).
+- The bookcases by the hall door and their books (task 107): `--books off` (B) leaves the
+  books out of the mesh (the empty cases), `--book-fade K` scales the sun's fade (1 as
+  made; the panel's Their fade). The hall view (`--view hall`) shows both cases; the
+  shelves close up and the cases' sides by `build/bookcases-build/shots.sh EXE TAG
+  [NAMES]` (`build/notes/bookcases-build/`). A shelf's fill prints in
+  `test/model3d/books.goose`. The books' atlas and colours come from
+  `tools/materials/books.py` (`design/materials/README.md`); with `--preview` it writes
+  the atlas coloured as the shader colours it, to judge a palette without the app.
+  The books' fill, colours and fade are worth judging in the hall view against
+  `library-autumn-02`'s case (`build/notes/books/crops/la2-bookcase.png`): ours read a
+  little brighter and more orange in the low sun.
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

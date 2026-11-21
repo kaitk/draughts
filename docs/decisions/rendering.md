@@ -715,6 +715,46 @@ to be is in tasks 042, 059, 071, 081, and 086.
   through there; its contact line sits at the threshold's nose (3 cm out), not the
   plinth's lip (5 cm), and the wainscot's dark band is fainter there. The plinth and the
   wainscot's cap are mitred into the room's inside corners, not overlapped square.
+- The library's bookcases are two tall open oak cases built into the hall wall either
+  side of the door (2026-11-21, task 107; option B of `build/notes/bookcases/`,
+  `room_shell::bookcase_at`, `bookcases.goose`): 1.2 m wide with 8 cm of papered wall to
+  the architrave, a folio base 0.45 m deep whose 35 mm ledge carries the wainscot cap's
+  line at 1.20 m, an upper case 0.30 m deep whose 140 mm cornice is the architrave
+  head's band (2.70 to 2.84 m), two bays a case, pilaster strips with sunk panels, the
+  wainscot's oak and plinth. They are openings of the shell's own kind, so the wainscot
+  and the paper stop at their sides as at a door; the wainscot's cap runs into the ledge,
+  and the strip of wall left by the door is paper over a plain plinth. Built with the
+  shell, one mesh, one draw. Small choices made here: the shelves stand 4 mm back from
+  the case's face; the sunk panels are 6 mm deep inside a 12 mm rim; the backs, shelves
+  and sides inside carry a fixed occlusion (0.35 to 0.55); no busts or urns on the tops
+  yet. The baked light sees the cases' fronts as a dark surface on the hall wall
+  (`room_light::CASE_ALBEDO`, the sun's patches met at their fronts), and the floor's
+  reflection sees them dark. Rejected: the low case (A, reads as a sideboard) and the
+  concepts' glazed case here (C, kept for the stove wall).
+- The books are boxes on the shelves with a rounded spine sampling a mask atlas, coloured
+  per book by `ROOM_FRAG` from a small table (2026-11-21, task 107; option B of
+  `build/notes/books/`, `model3d::books`): `design/materials/books_atlas.png`, 1024 × 928
+  RGBA at 0.7 texels a millimetre (the tone, gilt or ink, the label, wear; 194 designs,
+  one a volume of 51 titles), and its cells and the 32 covers' and 8 labels', gilt's,
+  ink's and page edges' colours in `book_cells.goose`, both made by
+  `tools/materials/books.py`. A book's material carries its cover, label, gilt or ink and
+  how faded it is (12 bits in `mesh::Vertex.mat`'s fraction), so one cell serves many
+  books and a set reused elsewhere in the room comes in other colours. A shelf is filled
+  as a library's is (`books::fill`): its own formats first (folios in the base with
+  quartos and octavos, a quarto shelf, three octavo shelves, duodecimos at the top), the
+  least used sets first, sets whole and in order (a long one may run on), then odd
+  volumes, to 85 to 92%; now and then a book out and its neighbour leaning into the gap,
+  the last book leaning on the side on about a third of the shelves, a few small piles
+  lying flat; volume 1 on the reader's left. The sun's fade grows toward the door's side,
+  which faces the middle window squarely, and a little up high. 10 triangles a book,
+  about 390 books. The spine titles are baked art in period languages (German, Estonian
+  and Latvian in Fraktur, French and Latin in roman caps), not UI strings: they are a
+  picture of old books, never shown as text, so they stay out of `strings/` (an
+  assumption, to confirm). The OFL fonts that set them stay with the baker in
+  `tools/materials/fonts/` with their licences; only the PNG goes into the program. No
+  hero books yet. The light tuner's Bookcases and books section turns the books off and
+  scales their fade. Rejected: a baked colour atlas (A, every copy its own texels) and
+  spines drawn at load (C, a font rasteriser in the app).
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

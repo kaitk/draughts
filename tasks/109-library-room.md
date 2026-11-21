@@ -63,6 +63,11 @@ from the hall wall, 0 to 7 m. Facing the stove's end, the windows are on the lef
   things moved as the shots want.
 - The door from the hall: a double door 1.4 m wide in the middle of the hall wall,
   facing the middle window, a low open bookcase on each side (1.3 by 0.4 m).
+  Built (2026-11-21, task 107): option B of `build/notes/bookcases/`, a tall open oak case
+  each side instead, 1.2 m wide at x 2.38 to 3.58 and 5.42 to 6.62, a folio base 0.45 m
+  deep to the wainscot's line and an upper case 0.30 m deep to the architrave's head
+  (2.84 m), filled with about 390 books (option B of `build/notes/books/`;
+  `build/notes/bookcases-build/`).
 - The stove: pale green glazed tiles, in the corner of the hall wall and the stove's end
   wall, about 1.15 m square with its front corner cut, fed through the hall wall.
 - The stove's end wall: a double door to the garden salon, 1.3 m wide, near the hall side

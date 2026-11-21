@@ -185,7 +185,9 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - A type on a `for` binder is only for an integer count or range.
 - There is no `size_of`.
 - Globals initialize in import order: a top-level `let` that takes another file's global
-  is "used before it is assigned" unless that file is imported first. A top-level `let`
+  is "used before it is assigned" unless that file is imported first. Within a file, in
+  declaration order, even an untyped constant read through a function: `LIBRARY`'s
+  `bookcase_at` needs `HALL_WALL` declared above it (`src/model3d/shell.goose`). A top-level `let`
   built from a `var` is computed once before `main`: anything that changes at run time
   (`gui::tap_size()`) is a function.
 - One choice at run time over code compiled per type, the renderer's seam

@@ -122,6 +122,21 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       window wall's most); the ceiling is already brighter than theirs, so more bounce
       won't do: a lighter, greyer oak for the panelling, and more light on the window
       wall, are a choice for the user
+- [x] The bookcases by the hall door and their books (2026-11-21,
+      `build/notes/bookcases-build/`): option B of `build/notes/bookcases/`, two tall open
+      oak cases built into the hall wall either side of the door, the wainscot and paper
+      stopping at their sides as at a door, a folio base 0.45 m deep whose ledge carries
+      the cap's line at 1.20 m, an upper case 0.30 m deep to 2.84 m under a 140 mm cornice
+      on the architrave head's band, two bays, pilaster strips with sunk panels; option B
+      of `build/notes/books/`, about 390 books, boxes with rounded spines sampling a mask
+      atlas (`tools/materials/books.py`, 0.7 texels a mm) coloured per book from a table by
+      the vertex's material, filled by size with sets together to 85 to 92%, a few leaning
+      and lying flat, faded toward the door's side. One mesh with the shell; the light
+      tuner's Bookcases and books section (`--books`, `--book-fade`). The game's shot and
+      the renderer check unchanged; costs in task 110. Still off: the cases cast no shadow
+      of their own in the sun (their interiors take the sun unshaded where it reaches
+      them, which the default keys don't), the books read a little bright and orange
+      beside `library-autumn-02`'s, and no hero books or busts yet
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

@@ -134,6 +134,21 @@ results, or keep baking at run time behind a loader when the room or a look is c
   The light tuner's counter at the room view, headless 1600x1000, two rounds: 3.6 ms
   before, 3.7 after (the floor's door terms, a few operations a floor pixel).
 
+- The bookcases and their books (2026-11-21, task 107, `build/notes/bookcases-build/`):
+  the shell's mesh 14,518 to 18,818 triangles in the same draw, the two cases' carcasses
+  about 420 (the wainscot they replace taken off) and 388 books at 10 each (3,880); made
+  in about 2.6 ms once with the shell (1.9 before), the shelves filled on the CPU then.
+  The books' atlas 1024 × 928 RGBA8 with 4 mips, 5.1 MB on the GPU, decoded and mipped
+  on the CPU once with the room's masks; its PNG adds 0.97 MB to every build (the Mac's
+  draughts_ngfx 30.23 to 31.27 MB with the code). The colour table is 40 vec4s more in
+  the room's block (0.6 KB). A book pixel: one texture tap and a few mixes, the room's
+  other pixels nothing (the reflections test one more box). The light tuner's counter,
+  headless at 1600x1000, two rounds, before and after: the hall view, the room view,
+  style-01's camera and the cases from the room's middle all 3.4 ms (4.0 to 4.1 with the
+  GPU waited for), both: within noise, the GPU clocking down to fill the frame. The
+  probes' bake unchanged (about 47 ms). Not measured on a device. To pay later: ASTC for
+  the atlas (about 0.4 MB on the GPU at 6 × 6), the books only in the views that see them.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
