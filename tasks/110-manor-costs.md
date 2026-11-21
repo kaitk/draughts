@@ -169,6 +169,17 @@ results, or keep baking at run time behind a loader when the room or a look is c
   window view 3.7 ms, both. Fewer sides on the cord, or the knot and hook's balls at 6 × 4,
   would save about half the tie-backs' triangles if a device shows it.
 
+- Step 1's fixes and the corners (2026-11-21, task 107, `build/notes/ao-fixes/`): the
+  table's own map, a 1024 × 512 DEPTH16 texture (1 MB on the GPU), drawn with the table's
+  mesh (about 7,000 triangles) only when the room and the table show and the key or the
+  table changed, never in the game; `TABLE_FRAG` and `ROOM_FRAG` read it with 9 taps where
+  it reaches. `corner_shade`, a few dozen operations a room pixel (its niche, door and
+  bookcase terms only near them); `base_hides`, four legs' two segments a floor pixel
+  within 0.43 m of the column; the highlight's `window_open` already worked out for the
+  diffuse. The light tuner's counter, headless at 1600x1000, two rounds, before and
+  after: the room view, style-01's camera and the table's feet all 3.4 to 3.5 ms, at the
+  Mac's floor and within noise. Not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

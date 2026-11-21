@@ -158,6 +158,19 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       the turns); lace f3 as a fourth way. The game's shot unchanged; costs in task 110.
       Open for the user on the page: the lace's way (f2, f, d, f3, all four kept) and the
       table's top (1.05 or 0.80 m), shown close up in the light and from further away
+- [x] Step 1 of the morning's order (2026-11-21, `build/notes/ao-fixes/`): the sun's
+      highlight no longer shows through the walls (the pier's cap, the floor: it took the
+      shade's 10% floor of the key, now only the sun through a window); the games table
+      casts its own shadow in the room from a map of its own (top and base, on the floor,
+      the walls and the base itself), the floor under the base darker by its drum's and
+      legs' occlusion, tightest at the scroll toes; the shell's corners and edges darkened
+      analytically in every tier, its indirect light only (`rooms::Room.corners`, 1 and
+      0.4 m; the floor along the walls, the inside corners, under the cornice, the cap, the
+      sills, the niches, the doors, the bookcases). The game's shot and the renderer
+      check unchanged; costs in task 110. Still off: the room in shade a little darker
+      without the false sheen (style-01's mean 7% with the corners), the table's base dark
+      (its ambient is the game's harmonics, not the room's probes), the furniture, books
+      and folds left to SSAO (step 2)
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

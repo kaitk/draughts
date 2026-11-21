@@ -802,6 +802,58 @@ to be is in tasks 042, 059, 071, 081, and 086.
   meet on the 0.83 m row, the finer one's extra points on the coarser one's edges, so no
   crack opens. 1,512 triangles a panel (1,152 before, 2,160 more for the six). Rejected:
   the whole panel at 12 a fold (2,304 a panel, where only the hem is seen end on).
+- The sun's highlight takes only the sun that comes through a window (2026-11-21, task
+  107; `LIGHT_FN`'s `window_open`): the window's pattern keeps out `room.y` of the key in
+  its shade (`window_light`), so the rest, 10% in autumn, lit every surface's GGX highlight
+  through the walls; on the pier between two windows the wainscot's waxed cap and the floor
+  showed the sun's sheen in shade. In `ROOM_FRAG` and, with the room shown, `TABLE_FRAG`
+  the highlight now takes `window_open` (0 to 1, a wall keeps all the sun out); the
+  diffuse keeps the shade's floor as before, in the room as light thrown back, so it takes
+  the occlusion as the probes do. The game, which shows no room, keeps its light exactly.
+  The room in shade is darker where the false sheen lit it: style-01's camera's mean 3%,
+  the far wall's paper beside the windows a fifth. Rejected for now: dropping the floor
+  from the room's diffuse too (the hall view's mean a further 7% down, the look as tuned
+  lost); a choice for the light's next round, when the probes carry all of the shade.
+- The games table casts its own shadow in the room from a map of its own (2026-11-21,
+  task 107; `render3d::table_map`, `shaders::TABLE_MAP_FN`): its top and base drawn into a
+  1024 × 512 DEPTH16 map (1 MB) projected along the key onto the floor round the table,
+  fitted to the top and its shadow's reach (up to 4 m), with the key's pipeline; drawn
+  again only when the key or the table changes, never in the game. The floor, the walls
+  it reaches and the base (the top's frieze over it, the column over the legs, the legs
+  over one another) take it with the 9-tap filter, its texels about 3 mm on the floor; the
+  analytic shadows (`table_shade`, `under_top`) stay where the map isn't drawn. Before,
+  the floor took the base's shadow worked out from the column and three straight pieces
+  a leg, which met the scroll toes a few centimetres off, and the base none of its own:
+  the table floated. Rejected: the table in the key's map (fitted to the board, 2.1× the
+  field's texels; the table's shadow on the floor reaches 2.3 m at autumn's sun, and the
+  top in it would shade itself where it takes the board's); a blocker search for the
+  penumbra (the sun's disc widens it about 1 cm over the table's height, near the
+  filter's 1.5 cm).
+- Under the games table the floor is darker by its base's own occlusion (2026-11-21,
+  `ROOM_FRAG`'s `base_hides`): the drum and each leg as spheres along its curve, a sphere
+  of radius r at distance d as high over the floor as h hiding r²h/d³ of the sky
+  (Quilez's sphere occlusion), the nearest point of each leg's pieces taken, so the
+  scroll standing on the floor darkens it most, tight round the toe. It replaces a round
+  blob at each toe.
+- The library's corners and edges are darkened analytically, in every tier (2026-11-21,
+  task 107; `ROOM_FRAG`'s `corner_shade`, `rooms::Room.corners`): the shell is a box of
+  known planes, so a point's distance to each plane standing square to its surface gives
+  the share of the room's light that plane hides within a reach, the segment of the
+  hemisphere's projected disc beyond d / reach (a half at the plane), times a strength.
+  The floor along the walls (to the plinth's face), the walls into the inside corners,
+  along the floor and under the cornice, the ceiling past the cornice (half, a cove; the
+  cornice keeps its profile's per-vertex shade), the wall over and under the wainscot's
+  cap and under the sills, the windows' niches (reveals, sill, the casements' frames,
+  head), the doors (jambs, leaf, architrave), round the bookcases (sides, fronts, tops).
+  Strength 1 and reach 0.4 m in autumn, against the ChatGPT repaints of our room
+  (`02-style-01`, `03-autumn-02`): a soft shade about 0.2 m wide, half the light at the
+  line, none past 0.35 m. It darkens the indirect light only (the probes, the harmonics,
+  the shade's floor), never the sun. It replaces the floor's band along the walls (0.45 at
+  the wall over 0.3 m); the dark line at the plinth's lip stays. Where the probes, 0.3 m
+  apart, can't follow an edge, this does, for a few operations a pixel. Rejected: SSAO
+  for the room's planes (a pass a frame, and only what the screen shows; it comes in the
+  next step for what the box doesn't know: the furniture, the books, the curtains' folds);
+  per-vertex occlusion on the shell (its walls and floor are a few large quads).
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

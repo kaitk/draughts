@@ -560,7 +560,15 @@ The library's shell (the light tuner's room) is lit as a room of its own, apart 
 board's light:
 
 - **The sun** through its three windows, its penumbra about the sun's disc and its light on
-  the room's surfaces 2.2 times the board's (`rooms::Room.shell_sun`).
+  the room's surfaces 2.2 times the board's (`rooms::Room.shell_sun`). Its highlight takes
+  only what comes through a window (`window_open`); the diffuse also keeps the shade's
+  floor (`rooms::Room.pattern`'s x leaves 10% of the key in autumn), which stands for light
+  thrown back and takes the occlusion.
+- **The games table's own shadow** (`render3d::table_map`): its top and base drawn into a
+  1024 × 512 depth map projected along the key onto the floor round the table, drawn again
+  only when the key or the table changes. The floor, the walls and the base itself take
+  it; the floor under the base is darker by the drum's and legs' own occlusion, tightest
+  round the scroll toes (`base_hides`).
 - **Baked light** (`model3d::room_light`): a grid of 10,140 probes 0.3 m apart, half a step
   in from every wall, the floor and the ceiling, made on the CPU in about 45 ms when the
   room turns on and again when the sun, the room's light, the tree or the table changes,
@@ -569,6 +577,13 @@ board's light:
   surface takes none of that surface's own patches. They fill a 390 × 78 RGBA16F atlas
   (0.24 MB) that `ROOM_FRAG` reads with six taps. Beside it the
   room keeps a part of the harmonics and of the flat bounce (`rooms::Room.baked`).
+- **Corners and edges** (`ROOM_FRAG`'s `corner_shade`, `rooms::Room.corners`): the
+  indirect light darkened by the distance to each of the shell's planes standing square to
+  a surface, a plane hiding a half of the light at the line and nothing beyond the reach
+  (0.4 m): the floor along the walls, the inside corners, the walls along the floor and
+  under the cornice, the ceiling past it, over and under the wainscot's cap, under the
+  sills, the windows' niches, the doors' jambs and architraves, round the bookcases. Every
+  tier; the sun is never darkened by it.
 - **Reflections**: the waxed floor and the brass see the shell's box (its walls, doors,
   ceiling and floor lit by the probes and the sun) and its windows, worked out per pixel.
 - **The window's glow**: a quarter-size bloom of what is near white, added in linear light

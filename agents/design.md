@@ -123,7 +123,7 @@ pieces; the design boards still set the layout, glass, and controls.
   the plan; `--plan-eye X,Y,H --plan-at X,Y,H` a camera in plan metres (x along the window
   wall from the stove's end, y from the hall wall, H up from the floor), `--fov DEG`. With
   the shell the room's light comes through its own windows (`shaders::LIGHT_FN`'s
-  `shell_light`), not `--wall`/`--panes`, which still light the board and table; behind
+  `shell_open`), not `--wall`/`--panes`, which still light the board and table; behind
   the windows the park (`model3d::view_out`: the sky worked out round the key's sun, the
   band, the oak), or with `--outside off` (U) the plain sky as before (the plain fade, the
   tuner's `SKY_*`, which give the board's ambient either way); the park's exposure is
@@ -158,6 +158,15 @@ pieces; the design boards still set the layout, glass, and controls.
   Its limbs' width and blur in the map are `rooms::SHELL_LIMBS`. The doors' feet, the
   plinth's corners and the windows close up: `build/leftovers/shots.sh EXE TAG [NAMES]`
   (`build/notes/leftovers/`). To see the probes alone, `--baked 7,12,0,0`.
+  The corners' and edges' shade (`rooms::Room.corners`, `ROOM_FRAG`'s `corner_shade`):
+  `--corners STRENGTH,REACH,0,0` (reach in metres; `0,0.4,0,0` off), the Light section's
+  Corners' shade and reach, printed by P. The table's own map (`render3d::table_map`)
+  draws whenever the room and the table show. Close-ups of the plinth by a bookcase, an
+  inside corner floor to cornice (portrait), the piers' caps, the niches, the doors and
+  the table's feet: `build/ao-fixes/shots.sh EXE TAG [NAMES]` (`EXTRA` in the environment
+  adds flags; `build/notes/ao-fixes/`). A shader value to check by eye: write it to
+  `result` and `return` in a scratch build (the table map's visibility on the base read
+  white where the sun reaches, 2026-11-21).
 - The light tuner's panel is in sections that open and close, kept for the session
   (`SECTIONS`): Scene, Light (Light in detail inside), Sun and tree (the sun, the tree,
   wind, the board's window, noise leaves), Wallpaper, Wainscot and panelling, Ceiling,
