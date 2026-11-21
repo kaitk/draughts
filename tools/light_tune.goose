@@ -13,8 +13,12 @@
 // 1.4 m and a real paper's 0.65 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
-// frame so the loop's time is the CPU's and the GPU's, P prints the room as Goose
-// (and saves it in build/light-tune.txt).
+// frame so the loop's time is the CPU's and the GPU's, P prints the room as Goose and the
+// flags that show the same again (and saves them in build/light-tune.txt).
+//
+// The panel is in sections that open and close (SECTIONS, kept for the session; Keys
+// lists the keys). A drag that starts on the panel holds the tree's and the probes' bakes
+// till it is let go, so a slider bakes once, not each step.
 //
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
@@ -32,6 +36,8 @@
 //       [--plan-eye X,Y,H --plan-at X,Y,H (one in the room's plan, metres: x along the window wall
 //       from the stove's end, y from the hall wall, H up from the floor)] [--fov DEG]
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
+//       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
+//       [--sections all|NAME,NAME.. (SECTION_NAMES open at the start)] [--shot-panel (the panel in a --shot)]
 //       [--view board|room|window|hall|stove] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
@@ -50,7 +56,7 @@ import board from "../src/board";
 import model3d from "../src/model3d";
 import render3d from "../src/render3d";
 
-let PANEL_W: f32 = 340.0;
+let PANEL_W: f32 = 380.0;
 let ROW:     f32 = 20.0;
 // looks::AUTUMN.. and MATERIAL_AUTO.. in this order.
 let SEASONS = ["autumn", "winter", "spring", "summer"];
@@ -228,7 +234,7 @@ fn num(out: u8[>..]&, v: f32) {
 // The command that shows the same again, and the layout as a Goose literal for
 
 fn slider(c: ui::Context, name: const u8[:], v: f32&, lo: f32, hi: f32) {
-    let ratios: f32[2] = [0.45, 0.55];
+    let ratios: f32[2] = [0.5, 0.5];
     ui::layout_row(c, ui::DYNAMIC, ROW, ratios);
     var text: u8[>..] = [];
     text.append(name);
@@ -239,22 +245,17 @@ fn slider(c: ui::Context, name: const u8[:], v: f32&, lo: f32, hi: f32) {
 }
 
 fn count(c: ui::Context, name: const u8[:], v: i64&, lo: i64, hi: i64) {
-    let ratios: f32[2] = [0.45, 0.55];
+    let ratios: f32[2] = [0.5, 0.5];
     ui::layout_row(c, ui::DYNAMIC, ROW, ratios);
     ui::label(c, str(name, " ", v), ui::TEXT_LEFT);
     ui::slider_int(c, lo, v, hi, 1);
 }
 
 fn choice(c: ui::Context, name: const u8[:], v: i64&, names: const u8[:][]) {
-    let ratios: f32[2] = [0.45, 0.55];
+    let ratios: f32[2] = [0.5, 0.5];
     ui::layout_row(c, ui::DYNAMIC, ROW, ratios);
     ui::label(c, str(name, " ", names[v]), ui::TEXT_LEFT);
     ui::slider_int(c, 0, v, names.len - 1, 1);
-}
-
-fn heading(c: ui::Context, text: const u8[:]) {
-    ui::layout_row_dynamic(c, ROW + 4.0, 1);
-    ui::label(c, text, ui::TEXT_LEFT);
 }
 
 fn flag_value(argv: u8[:][>..]&, name: const u8[:]) -> i64 {
@@ -326,7 +327,7 @@ fn room_line(out: u8[>..]&, name: const u8[:], v: float4) {
 }
 
 // The room as a Goose literal for rooms.goose.
-fn report(r: rooms::Room, take: i64) {
+fn report(r: rooms::Room, take: i64, flags: const u8[:]) {
     var out: u8[>..] = [];
     format(out, "// ", rooms::NAMES[take], ", the wind's kind ", rooms::WIND_KINDS[render3d::wind_kind], "\nRoom {\n");
     room_line(out, "key:       ", r.key);
@@ -367,7 +368,9 @@ fn report(r: rooms::Room, take: i64) {
     room_line(out, "shell_sun: ", r.shell_sun);
     room_line(out, "baked:     ", r.baked);
     room_line(out, "bloom:     ", r.bloom);
-    out.append("};");
+    out.append("};\n// The flags that show the same again (the room's colours, twigs, species and crown in\n");
+    out.append("// the literal above):\n");
+    out.append(flags);
     print(out);
     // Also kept in a file, as a window's tool has no terminal to read.
     if write_file("../build/light-tune.txt", out[..]) { print("saved in build/light-tune.txt"); }
@@ -384,6 +387,133 @@ fn dump_rgb(t: gfx::Texture, side: i64, path: const u8[:]) {
         out.push(px[4 * i + 2]);
     }
     guard write_file(path, out[..]) else { abort(str("could not write ", path)); }
+}
+
+fn on_off(v: bool) -> const u8[:] { if v { "on" } else { "off" } }
+
+fn flag_four(out: u8[>..]&, name: const u8[:], v: float4) {
+    format(out, " ", name, " ");
+    format(out, v.x);
+    out.push(',');
+    format(out, v.y);
+    out.push(',');
+    format(out, v.z);
+    out.push(',');
+    format(out, v.w);
+}
+
+fn flag_pair(out: u8[>..]&, name: const u8[:], v: float2) {
+    format(out, " ", name, " ");
+    format(out, v.x);
+    out.push(',');
+    format(out, v.y);
+}
+
+fn flag_one(out: u8[>..]&, name: const u8[:], v: f32) {
+    format(out, " ", name, " ");
+    format(out, v);
+}
+
+// The room's values that have flags.
+fn room_flags(out: u8[>..]&, r: rooms::Room) {
+    flag_four(out, "--key", r.key);
+    flag_four(out, "--fill", r.fill);
+    flag_four(out, "--walls", r.walls);
+    flag_four(out, "--pattern", r.pattern);
+    flag_four(out, "--bounce", r.bounce);
+    flag_four(out, "--wall", r.window);
+    flag_four(out, "--panes", r.panes);
+    flag_four(out, "--opening", r.opening);
+    flag_four(out, "--tree", r.tree);
+    flag_four(out, "--crown", r.crown);
+    flag_four(out, "--foliage", r.foliage);
+    flag_four(out, "--trees", r.leaves);
+    flag_four(out, "--wind", r.wind);
+    flag_four(out, "--gust", r.gust);
+    flag_four(out, "--shell-sun", r.shell_sun);
+    flag_four(out, "--baked", r.baked);
+    flag_four(out, "--bloom", r.bloom);
+    flag_one(out, "--exposure", r.exposure);
+    flag_one(out, "--room-exposure", r.room_exposure);
+    flag_one(out, "--outside-exposure", r.outside);
+    flag_one(out, "--tree-blur", r.tree_blur);
+}
+
+// The panel's sections, each a tab that opens and closes (its state kept for the session),
+// and the parts inside Light and Sun and tree; their names for --sections, and which are
+// open at the start.
+let SECTIONS = ["Scene", "Light", "Sun and tree", "Wallpaper", "Wainscot and panelling", "Ceiling", "Curtains and lace",
+                "Table", "Outside", "Dust in the sunbeam (D)", "Camera and views", "Debug", "Keys",
+                "Light in detail (the board's)", "The sun", "The tree", "Wind", "The board's window", "Noise leaves"];
+let SECTION_NAMES = ["scene", "light", "sun", "wallpaper", "wainscot", "ceiling", "curtains", "table", "outside", "dust",
+                     "camera", "debug", "keys", "detail", "sun-itself", "tree", "wind", "window", "noise"];
+let OPEN_AT_START: i64[19] = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
+let PARTS_FROM = 13;
+let SCENE = 0;
+let LIGHT = 1;
+let SUN = 2;
+let WALLPAPER = 3;
+let WAINSCOT = 4;
+let CEILING = 5;
+let CURTAINS = 6;
+let TABLE = 7;
+let OUTSIDE = 8;
+let DUST = 9;
+let CAMERA = 10;
+let DEBUG = 11;
+let KEYS = 12;
+let DETAIL = 13;
+let SUN_ITSELF = 14;
+let TREE = 15;
+let WIND = 16;
+let WINDOW = 17;
+let NOISE = 18;
+
+let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit", "P: print the room and its flags",
+                "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
+                "L: the wallpaper's tile, 0.65 or 1.4 m", "C: the lace's way", "W: the window's pattern; T: leaves by",
+                "K: the wind's kind; D: the dust", "F: the frame counter; G: wait for the GPU"];
+
+// The sections open at the start: OPEN_AT_START, or --sections NAME,NAME.. (or all).
+fn open_sections(argv: u8[:][>..]&) -> i64[19] {
+    var open = OPEN_AT_START;
+    let at = flag_value(argv, "--sections");
+    guard at > 0 else { return open; }
+    let all = argv[at] == "all";
+    for i in 19 { open[i] = if all { ui::MAXIMIZED } else { ui::MINIMIZED }; }
+    guard !all else { return open; }
+    var rest: const u8[:] = argv[at];
+    while rest.len > 0 {
+        let part, after, more = split_once(rest, ",");
+        var found = false;
+        for n, i in SECTION_NAMES {
+            if n == part {
+                open[i] = ui::MAXIMIZED;
+                found = true;
+            }
+        }
+        guard found else { abort(str("--sections: no ", part)); }
+        guard more else { break; }
+        rest = after;
+    }
+    return open;
+}
+
+// A section's tab (or a part's node inside one): true while open, when tree_state_pop follows.
+fn section(c: ui::Context, open: i64[19]&, i: i64) -> bool {
+    let kind = if i >= PARTS_FROM { ui::TREE_NODE } else { ui::TREE_TAB };
+    return ui::tree_state_push(c, kind, SECTIONS[i], open[i]);
+}
+
+fn switch(c: ui::Context, name: const u8[:], v: bool&, names: const u8[:][2]) {
+    var k: i64 = if v { 1 } else { 0 };
+    choice(c, name, k, names);
+    v = k == 1;
+}
+
+fn note(c: ui::Context, text: const u8[:]) {
+    ui::layout_row_dynamic(c, ROW, 1);
+    ui::label(c, text, ui::TEXT_LEFT);
 }
 
 fn color_sliders(c: ui::Context, name: const u8[:], v: float4&) {
@@ -469,7 +599,13 @@ fn main() {
     var outside_on = !(flag_value(argv, "--outside") > 0 && argv[flag_value(argv, "--outside")] == "off");
     let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
     render3d::show_room(g, room_on, away, shell_on);
-    g.paper_tile = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE) * surfaces::METRE;
+    var paper_m = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE);
+    g.paper_tile = paper_m * surfaces::METRE;
+    // The panelling oak's and the ceiling's tint (lightness, saturation; 1,1 as they are).
+    let oak4 = four(argv, "--oak-tint", float4 { 1.0, 1.0, 0.0, 0.0 });
+    var oak = float2 { oak4.x, oak4.y };
+    let ceiling4 = four(argv, "--ceiling-tint", float4 { 1.0, 1.0, 0.0, 0.0 });
+    var ceiling = float2 { ceiling4.x, ceiling4.y };
     g.lace_way = pick(argv, "--lace", surfaces::LACE_WAYS, 0);
     var top = pick(argv, "--table-top", TOPS, 0);
     g.table_r = top_radius(top);
@@ -523,6 +659,11 @@ fn main() {
     var meter_a: u8[..96] = [];
     var meter_b: u8[..96] = [];
     var frames = 0;
+    var open = open_sections(argv);
+    var drag_on_panel = false;
+    var reset_orbit = false;
+    // --shot-panel: the panel drawn in a shot too.
+    let panel_in_shot = has(argv, "--shot-panel");
     while gfx::frame() {
         frames++;
         let frame_at = gfx::time();
@@ -566,138 +707,219 @@ fn main() {
         if gfx::key_pressed("F") { meter.on = !meter.on; }
         if gfx::key_pressed("G") { meter.wait = !meter.wait; }
         if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
-        if gfx::key_pressed("L") { g.paper_tile = (if g.paper_tile > 1.0 * surfaces::METRE { 0.65 } else { 1.4 }) * surfaces::METRE; }
+        if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else { 1.4 }; }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
         if ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
-            heading(c, "Scene");
-            choice(c, "Room", room_take, rooms::NAMES);
-            choice(c, "Season", season, SEASONS);
-            choice(c, "Board", material, MATERIALS);
-            choice(c, "Table", take, tables::NAMES);
-            choice(c, "Top (m)", top, TOPS);
-            choice(c, "Pattern (W)", pattern, ["off", "on"]);
-            var shade = clamp(room.tree.x as i64, 0, 2);
-            choice(c, "Leaves by (T)", shade, ["noise", "tree", "both"]);
-            room.tree.x = shade;
-            heading(c, "The tree");
-            choice(c, "Kind", room.species, trees::SPECIES_NAMES);
-            var seed = room.tree.y as i64;
-            count(c, "Seed", seed, 0, 99);
-            room.tree.y = seed;
-            slider(c, "Leafy", room.tree.w, 0.0, 2.0);
-            slider(c, "Leaf long", room.foliage.x, 0.1, 4.0);
-            slider(c, "Leaf wide", room.foliage.y, 0.2, 1.2);
-            slider(c, "Leaf lets", room.foliage.z, 0.0, 1.0);
-            slider(c, "Tree blur", room.tree_blur, 0.1, 3.0);
-            slider(c, "Trunk along", room.crown.x, -100.0, 100.0);
-            slider(c, "Trunk foot", room.crown.y, -400.0, 0.0);
-            slider(c, "Trunk high", room.tree.z, 40.0, 600.0);
-            slider(c, "Trunk away", room.foliage.w, 5.0, 300.0);
-            slider(c, "Crooked", room.crown.z, 0.0, 1.5);
-            slider(c, "Twigs hang", room.crown.w, 0.0, 1.0);
-            if g.tree_ms > 0.0 {
-                ui::layout_row_dynamic(c, ROW, 1);
-                ui::label(c, str("baked in ", floor(g.tree_ms + 0.5) as i64, " ms"), ui::TEXT_LEFT);
-            }
-            heading(c, "Wind");
-            choice(c, "Kind (K)", render3d::wind_kind, rooms::WIND_KINDS);
-            slider(c, "Wind", room.wind.x, 0.0, 0.3);
-            slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
-            slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
-            slider(c, "Ruffle", room.wind.w, 0.0, 2.0);
-            slider(c, "Gust strength", room.gust.x, 0.0, 2.0);
-            slider(c, "Gust length", room.gust.y, 0.3, 8.0);
-            slider(c, "Gust every", room.gust.z, 3.0, 60.0);
-            slider(c, "Gust reach", room.gust.w, 0.0, 1.0);
-            heading(c, "The room (O, S, V, U, L, C)");
-            var shown_surfaces: i64 = if room_on { 1 } else { 0 };
-            choice(c, "Room", shown_surfaces, ["off", "on"]);
-            room_on = shown_surfaces == 1;
-            var shown_shell: i64 = if shell_on { 1 } else { 0 };
-            choice(c, "Shell", shown_shell, ["wall", "library"]);
-            shell_on = shown_shell == 1;
-            choice(c, "View", view, VIEWS);
-            var shown_outside: i64 = if outside_on { 1 } else { 0 };
-            choice(c, "Outside", shown_outside, ["plain", "park"]);
-            outside_on = shown_outside == 1;
-            slider(c, "Outside's exposure", room.outside, 0.3, 2.5);
-            choice(c, "Lace (C)", g.lace_way, surfaces::LACE_WAYS);
-            ui::layout_row_dynamic(c, ROW, 1);
-            ui::label(c, if g.paper_tile > 1.0 * surfaces::METRE { "Paper tile 1.4 m (L)" } else { "Paper tile 0.65 m (L)" },
-                      ui::TEXT_LEFT);
-            slider(c, "Room's exposure", room.room_exposure, 0.5, 4.0);
-            slider(c, "Bounce", room.bounce.w, 0.0, 2.0);
-            color_sliders(c, "Bounce", room.bounce);
-            if g.room_ms > 0.0 {
-                ui::layout_row_dynamic(c, ROW, 1);
-                ui::label(c, str("baked in ", floor(g.room_ms + 0.5) as i64, " ms, ", render3d::room_bytes(g) / 1048576, " MiB"),
-                          ui::TEXT_LEFT);
-            }
-            heading(c, "Dust in the sunbeam (D)");
-            var shown_dust: i64 = if dust_on { 1 } else { 0 };
-            choice(c, "Dust", shown_dust, ["off", "on"]);
-            dust_on = shown_dust == 1;
-            count(c, "Motes", motes, 0, render3d::MAX_MOTES);
-            slider(c, "Mote size", render3d::dust.size, 0.3, 4.0);
-            slider(c, "Lens blur", render3d::dust.blur, 0.0, 60.0);
-            slider(c, "Bright", render3d::dust.bright, 0.0, 4.0);
-            slider(c, "Thin out", render3d::dust.thin, 0.0, 2.0);
-            slider(c, "Toward sun", render3d::dust.ahead, 0.0, 0.9);
-            slider(c, "Rise", render3d::dust.rise, 0.0, 0.4);
-            slider(c, "Wander", render3d::dust.reach, 0.0, 2.0);
-            heading(c, "Sun");
-            slider(c, "Round", room.key.x, -30.0, 150.0);
-            slider(c, "Height", room.key.y, 3.0, 70.0);
-            slider(c, "Strength", room.key.z, 0.0, 12.0);
-            slider(c, "Shadow", room.key.w, 0.0, 1.0);
-            heading(c, "Window");
-            slider(c, "Shade", room.pattern.x, 0.0, 1.0);
-            slider(c, "Softness", room.pattern.y, 0.0, 0.05);
-            slider(c, "Wall away", room.window.x, 10.0, 80.0);
-            slider(c, "Wall turn", room.window.y, -60.0, 60.0);
-            slider(c, "Sill", room.window.z, -30.0, 30.0);
-            slider(c, "Sideways", room.window.w, -30.0, 30.0);
-            slider(c, "Pane wide", room.panes.x, 2.0, 20.0);
-            slider(c, "Pane high", room.panes.y, 2.0, 20.0);
-            slider(c, "Bar", room.panes.z, 0.0, 3.0);
-            slider(c, "Panes across", room.opening.x, 1.0, 4.0);
-            slider(c, "Panes up", room.opening.y, 1.0, 6.0);
-            slider(c, "Curtain in", room.opening.z, 0.0, 20.0);
-            slider(c, "Lace lets", room.opening.w, 0.0, 1.0);
-            heading(c, "Noise leaves (noise, both)");
-            slider(c, "Leaves", room.leaves.x, 0.0, 1.0);
-            slider(c, "Leaf size", room.leaves.y, 0.02, 1.0);
-            slider(c, "Trees away", room.leaves.z, 0.0, 400.0);
-            slider(c, "Leaf blur", room.leaves.w, 0.0, 2.0);
-            slider(c, "Single leaves", room.twigs.x, 0.0, 12.0);
-            slider(c, "Leaf gaps few", room.twigs.y, 0.2, 0.9);
-            slider(c, "Fleck blur", room.twigs.z, 0.005, 0.3);
-            slider(c, "In the open", room.twigs.w, 0.0, 1.0);
-            slider(c, "Crown blur", room.crown_blur, 0.0, 6.0);
-            slider(c, "Crown fill", room.crown_fill, 0.0, 10.0);
-            heading(c, "Light in detail (the room's profile)");
-            color_sliders(c, "Sun", room.key_color);
-            slider(c, "Exposure", room.exposure, 0.5, 2.0);
-            slider(c, "Sky round", room.fill.x, -30.0, 150.0);
-            slider(c, "Sky height", room.fill.y, 0.0, 80.0);
-            slider(c, "Sky strength", room.fill.z, 0.0, 3.0);
-            slider(c, "Sky broad", room.fill.w, 0.0, 1.0);
-            color_sliders(c, "Sky", room.fill_color);
-            slider(c, "Walls", room.walls.w, 0.0, 1.0);
-            color_sliders(c, "Walls", room.walls);
-            slider(c, "Ceiling", room.ceiling.w, 0.0, 1.0);
-            slider(c, "Floor", room.floor.w, 0.0, 1.0);
-            slider(c, "Lamp", room.lamp.z, 0.0, 1.0);
-            heading(c, "View (drag, scroll, R)");
-            slider(c, "Distance", far, 0.4, 4.0);
-            slider(c, "Height", pitch, 10.0, 89.0);
-            slider(c, "Round", yaw, -180.0, 180.0);
             ui::layout_row_dynamic(c, ROW + 4.0, 2);
             if ui::button_label(c, "Print (P)") { print_it = true; }
             if ui::button_label(c, "Reset room") { shown_room = -1; }
+            if section(c, open, SCENE) {
+                choice(c, "Room", room_take, rooms::NAMES);
+                choice(c, "Season", season, SEASONS);
+                choice(c, "Board", material, MATERIALS);
+                switch(c, "Room (O)", room_on, ["off", "on"]);
+                switch(c, "Shell (S)", shell_on, ["wall", "library"]);
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, LIGHT) {
+                slider(c, "Room's exposure", room.room_exposure, 0.5, 4.0);
+                slider(c, "Bounce", room.bounce.w, 0.0, 2.0);
+                color_sliders(c, "Bounce", room.bounce);
+                slider(c, "Sun on the room", room.shell_sun.y, 0.0, 5.0);
+                slider(c, "Penumbra", room.shell_sun.x, 0.0, 0.02);
+                slider(c, "Probes' sky", room.baked.x, 0.0, 20.0);
+                slider(c, "Probes' bounce", room.baked.y, 0.0, 30.0);
+                slider(c, "Harmonics kept", room.baked.z, 0.0, 1.0);
+                slider(c, "Shade kept", room.baked.w, 0.0, 1.0);
+                slider(c, "Glow", room.bloom.x, 0.0, 2.0);
+                slider(c, "Glow white", room.bloom.y, 0.0, 1.0);
+                slider(c, "Glow knee", room.bloom.z, 0.0, 1.0);
+                slider(c, "Glow spread", room.bloom.w, 0.5, 12.0);
+                if g.light_ms > 0.0 {
+                    note(c, str("probes baked in ", floor(g.light_ms + 0.5) as i64, " ms, ", g.light_patches, " sun patches"));
+                }
+                if section(c, open, DETAIL) {
+                    color_sliders(c, "Sun", room.key_color);
+                    slider(c, "Exposure", room.exposure, 0.5, 2.0);
+                    slider(c, "Sky round", room.fill.x, -30.0, 150.0);
+                    slider(c, "Sky height", room.fill.y, 0.0, 80.0);
+                    slider(c, "Sky strength", room.fill.z, 0.0, 3.0);
+                    slider(c, "Sky broad", room.fill.w, 0.0, 1.0);
+                    color_sliders(c, "Sky", room.fill_color);
+                    slider(c, "Walls", room.walls.w, 0.0, 1.0);
+                    color_sliders(c, "Walls", room.walls);
+                    slider(c, "Ceiling", room.ceiling.w, 0.0, 1.0);
+                    slider(c, "Floor", room.floor.w, 0.0, 1.0);
+                    slider(c, "Lamp", room.lamp.z, 0.0, 1.0);
+                    ui::tree_state_pop(c);
+                }
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, SUN) {
+                choice(c, "Pattern (W)", pattern, ["off", "on"]);
+                var shade = clamp(room.tree.x as i64, 0, 2);
+                choice(c, "Leaves by (T)", shade, ["noise", "tree", "both"]);
+                room.tree.x = shade;
+                if section(c, open, SUN_ITSELF) {
+                    slider(c, "Round", room.key.x, -30.0, 150.0);
+                    slider(c, "Height", room.key.y, 3.0, 70.0);
+                    slider(c, "Strength", room.key.z, 0.0, 12.0);
+                    slider(c, "Shadow", room.key.w, 0.0, 1.0);
+                    ui::tree_state_pop(c);
+                }
+                if section(c, open, TREE) {
+                    choice(c, "Kind", room.species, trees::SPECIES_NAMES);
+                    var seed = room.tree.y as i64;
+                    count(c, "Seed", seed, 0, 99);
+                    room.tree.y = seed;
+                    slider(c, "Leafy", room.tree.w, 0.0, 2.0);
+                    slider(c, "Leaf long", room.foliage.x, 0.1, 4.0);
+                    slider(c, "Leaf wide", room.foliage.y, 0.2, 1.2);
+                    slider(c, "Leaf lets", room.foliage.z, 0.0, 1.0);
+                    slider(c, "Tree blur", room.tree_blur, 0.1, 3.0);
+                    slider(c, "Trunk along", room.crown.x, -100.0, 100.0);
+                    slider(c, "Trunk foot", room.crown.y, -400.0, 0.0);
+                    slider(c, "Trunk high", room.tree.z, 40.0, 600.0);
+                    slider(c, "Trunk away", room.foliage.w, 5.0, 300.0);
+                    slider(c, "Crooked", room.crown.z, 0.0, 1.5);
+                    slider(c, "Twigs hang", room.crown.w, 0.0, 1.0);
+                    if g.tree_ms > 0.0 { note(c, str("baked in ", floor(g.tree_ms + 0.5) as i64, " ms")); }
+                    ui::tree_state_pop(c);
+                }
+                if section(c, open, WIND) {
+                    choice(c, "Kind (K)", render3d::wind_kind, rooms::WIND_KINDS);
+                    slider(c, "Wind", room.wind.x, 0.0, 0.3);
+                    slider(c, "Wind speed", room.wind.y, 0.0, 4.0);
+                    slider(c, "Leaves sway", room.wind.z, 0.0, 8.0);
+                    slider(c, "Ruffle", room.wind.w, 0.0, 2.0);
+                    slider(c, "Gust strength", room.gust.x, 0.0, 2.0);
+                    slider(c, "Gust length", room.gust.y, 0.3, 8.0);
+                    slider(c, "Gust every", room.gust.z, 3.0, 60.0);
+                    slider(c, "Gust reach", room.gust.w, 0.0, 1.0);
+                    ui::tree_state_pop(c);
+                }
+                if section(c, open, WINDOW) {
+                    slider(c, "Shade", room.pattern.x, 0.0, 1.0);
+                    slider(c, "Softness", room.pattern.y, 0.0, 0.05);
+                    slider(c, "Wall away", room.window.x, 10.0, 80.0);
+                    slider(c, "Wall turn", room.window.y, -60.0, 60.0);
+                    slider(c, "Sill", room.window.z, -30.0, 30.0);
+                    slider(c, "Sideways", room.window.w, -30.0, 30.0);
+                    slider(c, "Pane wide", room.panes.x, 2.0, 20.0);
+                    slider(c, "Pane high", room.panes.y, 2.0, 20.0);
+                    slider(c, "Bar", room.panes.z, 0.0, 3.0);
+                    slider(c, "Panes across", room.opening.x, 1.0, 4.0);
+                    slider(c, "Panes up", room.opening.y, 1.0, 6.0);
+                    ui::tree_state_pop(c);
+                }
+                if section(c, open, NOISE) {
+                    slider(c, "Leaves", room.leaves.x, 0.0, 1.0);
+                    slider(c, "Leaf size", room.leaves.y, 0.02, 1.0);
+                    slider(c, "Trees away", room.leaves.z, 0.0, 400.0);
+                    slider(c, "Leaf blur", room.leaves.w, 0.0, 2.0);
+                    slider(c, "Single leaves", room.twigs.x, 0.0, 12.0);
+                    slider(c, "Leaf gaps few", room.twigs.y, 0.2, 0.9);
+                    slider(c, "Fleck blur", room.twigs.z, 0.005, 0.3);
+                    slider(c, "In the open", room.twigs.w, 0.0, 1.0);
+                    slider(c, "Crown blur", room.crown_blur, 0.0, 6.0);
+                    slider(c, "Crown fill", room.crown_fill, 0.0, 10.0);
+                    ui::tree_state_pop(c);
+                }
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, WALLPAPER) {
+                slider(c, "Tile (m)", paper_m, 0.65, 1.4);
+                let thirds: f32[4] = [0.25, 0.25, 0.25, 0.25];
+                ui::layout_row(c, ui::DYNAMIC, ROW, thirds);
+                ui::label(c, "L flips", ui::TEXT_LEFT);
+                if ui::button_label(c, "0.65") { paper_m = 0.65; }
+                if ui::button_label(c, "0.9") { paper_m = 0.9; }
+                if ui::button_label(c, "1.4") { paper_m = 1.4; }
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, WAINSCOT) {
+                slider(c, "Oak light", oak.x, 0.25, 8.0);
+                slider(c, "Oak colour", oak.y, 0.0, 1.5);
+                ui::layout_row_dynamic(c, ROW + 4.0, 1);
+                if ui::button_label(c, "As baked") { oak = float2 { 1.0, 1.0 }; }
+                if g.room_ms > 0.0 {
+                    note(c, str("oak baked in ", floor(g.room_ms + 0.5) as i64, " ms, ", render3d::room_bytes(g) / 1048576, " MiB"));
+                }
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, CEILING) {
+                slider(c, "Ceiling light", ceiling.x, 0.3, 1.5);
+                slider(c, "Ceiling colour", ceiling.y, 0.0, 3.0);
+                ui::layout_row_dynamic(c, ROW + 4.0, 1);
+                if ui::button_label(c, "As it is") { ceiling = float2 { 1.0, 1.0 }; }
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, CURTAINS) {
+                choice(c, "Lace (C)", g.lace_way, surfaces::LACE_WAYS);
+                slider(c, "Curtain in", room.opening.z, 0.0, 20.0);
+                slider(c, "Lace lets", room.opening.w, 0.0, 1.0);
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, TABLE) {
+                choice(c, "Table", take, tables::NAMES);
+                choice(c, "Top (m)", top, TOPS);
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, OUTSIDE) {
+                switch(c, "Outside (U)", outside_on, ["plain", "park"]);
+                slider(c, "Outside's exposure", room.outside, 0.3, 2.5);
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, DUST) {
+                switch(c, "Dust", dust_on, ["off", "on"]);
+                count(c, "Motes", motes, 0, render3d::MAX_MOTES);
+                slider(c, "Mote size", render3d::dust.size, 0.3, 4.0);
+                slider(c, "Lens blur", render3d::dust.blur, 0.0, 60.0);
+                slider(c, "Bright", render3d::dust.bright, 0.0, 4.0);
+                slider(c, "Thin out", render3d::dust.thin, 0.0, 2.0);
+                slider(c, "Toward sun", render3d::dust.ahead, 0.0, 0.9);
+                slider(c, "Rise", render3d::dust.rise, 0.0, 0.4);
+                slider(c, "Wander", render3d::dust.reach, 0.0, 2.0);
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, CAMERA) {
+                choice(c, "View (V)", view, VIEWS);
+                slider(c, "Distance", far, 0.4, 4.0);
+                slider(c, "Height", pitch, 10.0, 89.0);
+                slider(c, "Round", yaw, -180.0, 180.0);
+                ui::layout_row_dynamic(c, ROW + 4.0, 1);
+                if ui::button_label(c, "Reset the orbit (R)") { reset_orbit = true; }
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, DEBUG) {
+                switch(c, "Frames (F)", meter.on, ["off", "on"]);
+                switch(c, "Wait GPU (G)", meter.wait, ["off", "on"]);
+                note(c, if g.bake_held { "bakes held till the slider's let go" } else { "bakes when let go of a slider" });
+                if g.tree_ms > 0.0 { note(c, str("the tree baked in ", floor(g.tree_ms + 0.5) as i64, " ms")); }
+                if g.light_ms > 0.0 { note(c, str("the probes baked in ", floor(g.light_ms + 0.5) as i64, " ms")); }
+                if g.room_ms > 0.0 { note(c, str("the oak baked in ", floor(g.room_ms + 0.5) as i64, " ms")); }
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, KEYS) {
+                for k in KEY_HELP { note(c, k); }
+                ui::tree_state_pop(c);
+            }
         }
         ui::end(c);
+        // A drag that began on the panel holds the tree's and the probes' bakes till it is let go.
+        if gfx::mouse_pressed(gfx::MOUSE_LEFT) { drag_on_panel = ui::wants_mouse(c); }
+        g.bake_held = drag_on_panel && gfx::mouse_down(gfx::MOUSE_LEFT);
+        g.paper_tile = paper_m * surfaces::METRE;
+        g.room_tint = float4_0;
+        if oak.x != 1.0 || oak.y != 1.0 {
+            g.room_tint.x = oak.x;
+            g.room_tint.y = oak.y;
+        }
+        if ceiling.x != 1.0 || ceiling.y != 1.0 {
+            g.room_tint.z = ceiling.x;
+            g.room_tint.w = ceiling.y;
+        }
         if room_take != shown_room {
             shown_room = room_take;
             room = rooms::get(room_take);
@@ -728,8 +950,37 @@ fn main() {
         // A shot is taken at --wind-time itself.
         if shot < 0 { render3d::wind_time += gfx::delta_time() as f32; }
         render3d::put_room(g);
-        if print_it { report(room, room_take); }
-        if gfx::key_pressed("R") {
+        if print_it {
+            var line: u8[>..] = [];
+            line.append("--room ");
+            line.append(rooms::NAMES[room_take]);
+            format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
+                   " --table-top ", TOPS[top], " --lace ", surfaces::LACE_WAYS[g.lace_way]);
+            format(line, " --room-surfaces ", on_off(room_on), " --shell ", on_off(shell_on), " --outside ", on_off(outside_on),
+                   " --window ", on_off(pattern == 1), " --dust ", on_off(dust_on), " --wind-kind ",
+                   rooms::WIND_KINDS[render3d::wind_kind], " --view ", VIEWS[view]);
+            format(line, " --wallpaper-tile ", paper_m);
+            if dust_on {
+                format(line, " --motes ", motes, " --mote-size ", render3d::dust.size, " --mote-blur ", render3d::dust.blur,
+                       " --mote-bright ", render3d::dust.bright);
+            }
+            flag_pair(line, "--oak-tint", oak);
+            flag_pair(line, "--ceiling-tint", ceiling);
+            room_flags(line, room);
+            if own_eye {
+                flag_four(line, "--eye", eye_at);
+                flag_four(line, "--at", look_at);
+            } else if plan_eye {
+                flag_four(line, "--plan-eye", plan_eye_at);
+                flag_four(line, "--plan-at", plan_look_at);
+            } else {
+                format(line, " --yaw ", yaw, " --height ", pitch, " --distance ", far);
+            }
+            if fov_flag > 0.0 { format(line, " --fov ", fov_flag); }
+            report(room, room_take, line[..]);
+        }
+        if gfx::key_pressed("R") || reset_orbit {
+            reset_orbit = false;
             yaw = 0.0;
             pitch = view3d::PITCH;
             far = 1.3;
@@ -794,7 +1045,7 @@ fn main() {
             }
             ui::end(c);
         }
-        if shot < 0 { ui::render(c); }
+        if shot < 0 || panel_in_shot { ui::render(c); }
         if meter.wait { gfx::flush(); }
         meter.in_loop += gfx::time() - frame_at;
     }
