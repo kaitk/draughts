@@ -151,7 +151,8 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
 
     // The room round the table, behind what stands in it.
     if render3d::room_shown(g) {
-        nx::bind(g.room_lit);
+        let planar = render3d::planar_seen_on_floor(g);
+        nx::bind(if planar { g.room_planar } else { g.room_lit });
         var t = no_root();
         t.frame = f;
         let rb: render3d::SurfacesBlock[1] = [render3d::surfaces_block(g)];
@@ -169,6 +170,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 9, g.book_atlas, g.aniso);
         slot(t, 10, render3d::table_map_or_stand_in(g), g.compare);
         slot(t, 11, render3d::ssao_or_stand_in(g), g.linear);
+        if planar { slot(t, 12, g.planar_map, g.planar_sampler); }
         nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
@@ -240,6 +242,124 @@ fn make_room(own: Own&, g: Gpu&) {
     g.pre_lit = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_pre_lit.blob"), solid);
     g.ssao = module(embed_file("../../build/ngfx/blobs/r3d_ssao.blob"));
     g.ssao_blur = module(embed_file("../../build/ngfx/blobs/r3d_ssao_blur.blob"));
+    g.room_planar = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_planar.blob"),
+                                 ngfx::PipelineDesc { depth_test: true, depth_write: true });
+    g.planar_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_mirror.blob"),
+                                 ngfx::PipelineDesc { depth_test: true, depth_write: true });
+    // The glass writes its depth here, so the sky behind it is as far as the window.
+    g.planar_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_mirror.blob"),
+                                  ngfx::PipelineDesc { depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED });
+    g.planar_table = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_room.blob"),
+                                  ngfx::PipelineDesc { cull: ngfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
+                                                       blend: ngfx::BLEND_PREMULTIPLIED });
+    g.planar_resolve = module(embed_file("../../build/ngfx/blobs/r3d_planar_resolve.blob"));
+    g.planar_show = module(embed_file("../../build/ngfx/blobs/r3d_planar_show.blob"));
+    g.planar_sampler = nx::sampler(ngfx::SamplerDesc { wrap_u: ngfx::CLAMP, wrap_v: ngfx::CLAMP, wrap_w: ngfx::CLAMP,
+                                                       max_anisotropy: 16.0 });
+}
+
+// The floor's mirror (render3d::planar_shown), before the board's pass, as gfx's
+// (render3d_gpu.goose's planar_pass): the view out with plain's frame, the table and the
+// room with clip's mirrored under the floor into g.planar_color, made the room's light again
+// with each texel's distance into g.planar_map, and its mips; r3d_planar_resolve's header:
+// its block, the picture, the depth.
+fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: render3d::Frame,
+               resolve: render3d::PlanarResolve) {
+    let q = render3d::planar_size_of(size);
+    if g.planar_map.id == 0 || g.planar_size.x != q.x || g.planar_size.y != q.y {
+        if g.planar_map.id != 0 {
+            for t in [g.planar_color, g.planar_depth, g.planar_map] { nx::release(t); }
+            ngfx::flush();
+        }
+        g.planar_color = nx::render_target(q.x, q.y, ngfx::RGBA16F);
+        g.planar_depth = nx::texture2d(q.x, q.y, ngfx::DEPTH16, ngfx::DEPTH_TARGET | ngfx::SAMPLED);
+        g.planar_map = nx::texture(ngfx::TextureDesc { format: ngfx::RGBA16F, usage: ngfx::COLOR_TARGET | ngfx::SAMPLED,
+                                                       width: q.x as i32, height: q.y as i32,
+                                                       mips: render3d::PLANAR_MIPS as i32 });
+        g.planar_size = q;
+    }
+    let one: render3d::Frame[1] = [clip];
+    let f = ngfx::frame_data(bytes_of(one));
+    var pass = nx::PassDesc { depth: g.planar_depth, color_value: float4 { 0.0, 0.0, 0.0, 1.0 } };
+    pass.color[0] = g.planar_color;
+    nx::begin_pass(pass);
+    if render3d::outside_shown(g) {
+        let two: render3d::Frame[1] = [plain];
+        draw_outside(own, g, ngfx::frame_data(bytes_of(two)));
+    }
+    if render3d::table_shown(g) && render3d::table_in_room(g) {
+        nx::bind(g.planar_table);
+        var t = no_root();
+        t.frame = f;
+        let tb: render3d::TableBlock[1] = [render3d::mirror_table_block(g)];
+        t.u = ngfx::frame_data(bytes_of(tb));
+        t.verts = nx::address(g.table_vb);
+        slot(t, 0, g.table_albedo, g.aniso);
+        slot(t, 1, g.table_normal, g.aniso);
+        slot(t, 2, g.frame_albedo, g.aniso);
+        slot(t, 3, g.table_wear, g.aniso);
+        slot(t, 4, g.table_wear_n, g.aniso);
+        slot(t, 5, render3d::tree_or_stand_in(g), g.linear);
+        slot(t, 6, g.shadow_map, g.compare);
+        slot(t, 7, render3d::table_map_or_stand_in(g), g.compare);
+        slot(t, 8, render3d::ssao_or_stand_in(g), g.linear);
+        nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
+    }
+    nx::bind(g.planar_room);
+    var r = no_root();
+    r.frame = f;
+    let rb: render3d::SurfacesBlock[1] = [render3d::mirror_surfaces_block(g)];
+    r.u = ngfx::frame_data(bytes_of(rb));
+    r.verts = nx::address(g.room_vb);
+    slot(r, 0, g.floor_albedo, g.aniso);
+    slot(r, 1, g.floor_normal, g.aniso);
+    slot(r, 2, g.wall_albedo, g.aniso);
+    slot(r, 3, g.wall_normal, g.aniso);
+    slot(r, 4, render3d::tree_or_stand_in(g), g.linear);
+    slot(r, 5, g.paper_mask, g.aniso);
+    slot(r, 6, g.plaster_tone, g.aniso);
+    slot(r, 7, g.lace_mask, g.aniso);
+    slot(r, 8, render3d::light_or_stand_in(g), g.linear);
+    slot(r, 9, g.book_atlas, g.aniso);
+    slot(r, 10, render3d::table_map_or_stand_in(g), g.compare);
+    slot(r, 11, render3d::ssao_or_stand_in(g), g.linear);
+    nx::draw_indexed(ngfx::root(r), g.room_ib, 4, g.room_count);
+    if g.glass_count > 0 {
+        nx::bind(g.planar_glass);
+        r.verts = nx::address(g.glass_vb);
+        nx::draw_indexed(ngfx::root(r), g.glass_ib, 4, g.glass_count);
+    }
+    ngfx::end_pass();
+    barrier_between_passes();
+    var into = nx::PassDesc { clear_color: false };
+    into.color[0] = g.planar_map;
+    nx::begin_pass(into);
+    nx::bind(g.planar_resolve);
+    var a = no_root();
+    let rs: render3d::PlanarResolve[1] = [resolve];
+    a.u = ngfx::frame_data(bytes_of(rs));
+    slot(a, 0, g.planar_color, g.linear);
+    slot(a, 1, g.planar_depth, g.linear);
+    ngfx::draw(ngfx::root(a), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
+    mip_chain(own, g, g.planar_map);
+}
+
+// The tuner's view of the floor's mirror over all of `target`; r3d_planar_show's header: its
+// block, the map.
+fn planar_show_pass(own: Own&, g: Gpu&, target: Texture, show: render3d::PlanarShow) {
+    var pass = nx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    nx::begin_pass(pass);
+    nx::bind(g.planar_show);
+    var a = no_root();
+    let b: render3d::PlanarShow[1] = [show];
+    a.u = ngfx::frame_data(bytes_of(b));
+    slot(a, 0, g.planar_map, g.linear);
+    ngfx::draw(ngfx::root(a), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
 }
 
 // The room's ambient occlusion (render3d::ssao_shown), before the board's pass: the room,
@@ -414,9 +534,9 @@ fn mul(m: Mat, v: float4) -> float4 { m.c0 * v.x + m.c1 * v.y + m.c2 * v.z + m.c
 // Every module's root (src/ngfx/shaders/r3d.slang): the frame's block and the uniform
 // blocks' float4s in this frame's memory, the storage buffers, the vertices, and the
 // textures with their samplers in the slots each module's header lists.
-struct Root { frame: u64, u: u64, buf0: u64, buf1: u64, buf2: u64, verts: u64, tex: u32[12], smp: u32[12] }
+struct Root { frame: u64, u: u64, buf0: u64, buf1: u64, buf2: u64, verts: u64, tex: u32[16], smp: u32[16] }
 
-fn no_root() -> Root { Root { frame: 0, u: 0, buf0: 0, buf1: 0, buf2: 0, verts: 0, tex: [0; 12], smp: [0; 12] } }
+fn no_root() -> Root { Root { frame: 0, u: 0, buf0: 0, buf1: 0, buf2: 0, verts: 0, tex: [0; 16], smp: [0; 16] } }
 
 // How the 3D pass is antialiased: not at all; SMAA 1x over the pass drawn at 1x; the
 // pass drawn at twice the size and shrunk (2 x 2 supersampling); or 4× multisampled into
@@ -1064,17 +1184,19 @@ fn release(own: Own&, g: Gpu&) {
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
                     g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
                     g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.table_map,
-                    g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map];
+                    g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color, g.planar_depth,
+                    g.planar_map];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
     for b in buffers { if b.id != 0 { nx::release(b); } }
-    let samplers = [g.linear, own.point, g.aniso, g.compare];
+    let samplers = [g.linear, own.point, g.aniso, g.compare, g.planar_sampler];
     for s in samplers { if s.id != 0 { nx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
                      g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick,
-                     g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur];
+                     g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar,
+                     g.planar_room, g.planar_glass, g.planar_table, g.planar_resolve, g.planar_show];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();

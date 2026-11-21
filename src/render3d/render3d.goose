@@ -389,6 +389,23 @@ struct Gpu {
     ssao_raw:   Texture,
     ssao_map:   Texture,
     ssao_size:  int2,
+    // The floor's mirror (planar_pass): the room drawn mirrored under the floor (its room's
+    // and glass's pipelines without the sharp reflections, shaders::MIRROR_PASS, the table's
+    // winding the other way), that made the room's light again with each texel's distance
+    // (resolve), the tuner's view of it (show); its targets at planar_scale's size, made again
+    // for another: the picture (RGBA16F), its depth (sampled), and the map the floor reads
+    // (RGBA16F with PLANAR_MIPS).
+    room_planar:    Pipeline,       // the room whose floor sees the mirror (shaders::PLANAR_FLOOR)
+    planar_room:    Pipeline,
+    planar_glass:   Pipeline,
+    planar_table:   Pipeline,
+    planar_resolve: Pipeline,
+    planar_show:    Pipeline,
+    planar_color:   Texture,
+    planar_depth:   Texture,
+    planar_map:     Texture,
+    planar_size:    int2,
+    planar_sampler: Sampler,        // clamped, anisotropic: the floor's streaks
     // A tuner's: the panelling oak's and the ceiling's tint (x, z their lightness, y, w their
     // saturation, as factors, 0 untouched), and the tree's and the shell's light kept as
     // they are, not baked again, while a slider is held, so a drag bakes once on release.
@@ -1003,6 +1020,8 @@ struct SurfacesBlock {
     book_cases:    float4,
     corners:       float4,
     ssao:          float4,
+    planar:        float4,
+    planar_look:   float4,
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
@@ -1090,7 +1109,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
-                    float4_0, float4_0, ssao_block_of(g), table_map_shown(g), books::COVER, books::LABEL }
+                    float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), table_map_shown(g),
+                    books::COVER, books::LABEL }
 }
 
 // The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.
@@ -1896,8 +1916,13 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
     // target; not where the image is the target (the app's kept image, which shows no shell).
     let glowing = bloom_shown(g) && out.id != 0;
     if ssao_shown(g) { o.ssao_pass(g, size); }
+    if planar_shown(g) {
+        let clip, plain = mirrored_frames(g);
+        o.planar_pass(g, size, clip, plain, planar_resolve_of(g, clip));
+    }
     o.board_pass(g, if glowing { g.image } else { target }, size, backdrop);
     if glowing { o.bloom_pass(g, g.image, target, size); }
+    if planar_view > 1 && planar_shown(g) { o.planar_show_pass(g, target, planar_show_of(g, size)); }
     if keep_depth { o.draw_depth(g); }
 }
 
@@ -1929,6 +1954,130 @@ fn ssao_block_of(g: Gpu&) -> float4 {
     return float4 { g.room.ssao.x, ssao_view, g.ssao_size.x / max(s.x, 1.0), g.ssao_size.y / max(s.y, 1.0) };
 }
 fn ssao_or_stand_in(g: Gpu&) -> Texture { if g.ssao_map.id != 0 { g.ssao_map } else { g.crown_map } }
+
+// The floor's mirror (planar_pass, rooms::Room.planar): the room drawn mirrored across the
+// floor into a target planar_scale times smaller (2, half the size), where the tiers allow
+// it (the standard and the high: not on a phone, which the app says), the shell shows and
+// its strength is over 0; else the floor sees the room's box (shaders::ROOM_FRAG's
+// room_seen). planar_view: the tuner's views (off, the floor's reflection alone, the map's
+// light, its distances).
+var planar_allowed = true;
+var planar_view = 0;
+var planar_scale: i32 = 2;
+let PLANAR_MIPS = 6;
+// How steeply the mirror's depth climbs with the height over the floor (its z is this times
+// the height): at most the clip's w for all it frames, which is never under the height.
+let PLANAR_DEPTH: f32 = 0.25;
+// The clip's plane a little over the floor, so the floor itself is never drawn in it (world
+// units, 1.5 mm).
+let PLANAR_LIFT: f32 = 0.05;
+fn planar_shown(g: Gpu&) -> bool {
+    planar_allowed && room_shown(g) && g.room_shell && g.room.planar.x > 0.0 && g.planar_room.id != 0
+}
+fn planar_size_of(size: int2) -> int2 {
+    let k: i32 = max(planar_scale, 1);
+    int2 { max((size.x + k - 1) / k, 1), max((size.y + k - 1) / k, 1) }
+}
+
+// The frame mirrored across the floor: view_proj times the mirror (y to 2 floor - y), the
+// eye under the floor; clip's z made the height over the floor (PLANAR_DEPTH, PLANAR_LIFT),
+// so what stands under it is clipped and depth grows along each ray; plain keeps the
+// view's z, for the view out, which is drawn first with no depth and stands below the floor.
+// Nothing is dimmed.
+fn mirrored_frames(g: Gpu&) -> Frame, Frame {
+    let fy = surfaces::FLOOR_Y;
+    var plain = g.frame;
+    let m = g.frame.view_proj;
+    plain.view_proj.c1 = float4_0 - m.c1;
+    plain.view_proj.c3 = m.c3 + m.c1 * (2.0 * fy);
+    plain.eye = float4 { g.frame.eye.x, 2.0 * fy - g.frame.eye.y, g.frame.eye.z, 1.0 };
+    let q = planar_size_of(int2 { g.frame.screen.x as i32, g.frame.screen.y as i32 });
+    plain.screen = float4 { q.x, q.y, 0.0, 0.0 };
+    var clip = plain;
+    clip.view_proj.c0.z = 0.0;
+    clip.view_proj.c1.z = PLANAR_DEPTH;
+    clip.view_proj.c2.z = 0.0;
+    clip.view_proj.c3.z = -PLANAR_DEPTH * (fy + PLANAR_LIFT);
+    return clip, plain;
+}
+
+// The inverse of m (columns), by cofactors; m as a projection always has one.
+fn inverse(m: Mat) -> Mat {
+    let a: f32[16] = [m.c0.x, m.c0.y, m.c0.z, m.c0.w, m.c1.x, m.c1.y, m.c1.z, m.c1.w,
+                      m.c2.x, m.c2.y, m.c2.z, m.c2.w, m.c3.x, m.c3.y, m.c3.z, m.c3.w];
+    var r: f32[16] = [0.0; 16];
+    r[0] = a[5] * a[10] * a[15] - a[5] * a[11] * a[14] - a[9] * a[6] * a[15] + a[9] * a[7] * a[14] + a[13] * a[6] * a[11] - a[13] * a[7] * a[10];
+    r[4] = -a[4] * a[10] * a[15] + a[4] * a[11] * a[14] + a[8] * a[6] * a[15] - a[8] * a[7] * a[14] - a[12] * a[6] * a[11] + a[12] * a[7] * a[10];
+    r[8] = a[4] * a[9] * a[15] - a[4] * a[11] * a[13] - a[8] * a[5] * a[15] + a[8] * a[7] * a[13] + a[12] * a[5] * a[11] - a[12] * a[7] * a[9];
+    r[12] = -a[4] * a[9] * a[14] + a[4] * a[10] * a[13] + a[8] * a[5] * a[14] - a[8] * a[6] * a[13] - a[12] * a[5] * a[10] + a[12] * a[6] * a[9];
+    r[1] = -a[1] * a[10] * a[15] + a[1] * a[11] * a[14] + a[9] * a[2] * a[15] - a[9] * a[3] * a[14] - a[13] * a[2] * a[11] + a[13] * a[3] * a[10];
+    r[5] = a[0] * a[10] * a[15] - a[0] * a[11] * a[14] - a[8] * a[2] * a[15] + a[8] * a[3] * a[14] + a[12] * a[2] * a[11] - a[12] * a[3] * a[10];
+    r[9] = -a[0] * a[9] * a[15] + a[0] * a[11] * a[13] + a[8] * a[1] * a[15] - a[8] * a[3] * a[13] - a[12] * a[1] * a[11] + a[12] * a[3] * a[9];
+    r[13] = a[0] * a[9] * a[14] - a[0] * a[10] * a[13] - a[8] * a[1] * a[14] + a[8] * a[2] * a[13] + a[12] * a[1] * a[10] - a[12] * a[2] * a[9];
+    r[2] = a[1] * a[6] * a[15] - a[1] * a[7] * a[14] - a[5] * a[2] * a[15] + a[5] * a[3] * a[14] + a[13] * a[2] * a[7] - a[13] * a[3] * a[6];
+    r[6] = -a[0] * a[6] * a[15] + a[0] * a[7] * a[14] + a[4] * a[2] * a[15] - a[4] * a[3] * a[14] - a[12] * a[2] * a[7] + a[12] * a[3] * a[6];
+    r[10] = a[0] * a[5] * a[15] - a[0] * a[7] * a[13] - a[4] * a[1] * a[15] + a[4] * a[3] * a[13] + a[12] * a[1] * a[7] - a[12] * a[3] * a[5];
+    r[14] = -a[0] * a[5] * a[14] + a[0] * a[6] * a[13] + a[4] * a[1] * a[14] - a[4] * a[2] * a[13] - a[12] * a[1] * a[6] + a[12] * a[2] * a[5];
+    r[3] = -a[1] * a[6] * a[11] + a[1] * a[7] * a[10] + a[5] * a[2] * a[11] - a[5] * a[3] * a[10] - a[9] * a[2] * a[7] + a[9] * a[3] * a[6];
+    r[7] = a[0] * a[6] * a[11] - a[0] * a[7] * a[10] - a[4] * a[2] * a[11] + a[4] * a[3] * a[10] + a[8] * a[2] * a[7] - a[8] * a[3] * a[6];
+    r[11] = -a[0] * a[5] * a[11] + a[0] * a[7] * a[9] + a[4] * a[1] * a[11] - a[4] * a[3] * a[9] - a[8] * a[1] * a[7] + a[8] * a[3] * a[5];
+    r[15] = a[0] * a[5] * a[10] - a[0] * a[6] * a[9] - a[4] * a[1] * a[10] + a[4] * a[2] * a[9] + a[8] * a[1] * a[6] - a[8] * a[2] * a[5];
+    let det = a[0] * r[0] + a[1] * r[4] + a[2] * r[8] + a[3] * r[12];
+    let k: f32 = if abs(det) > 1e-30 { 1.0 / det } else { 0.0 };
+    var out = default<Mat>();
+    out.c0 = float4 { r[0], r[1], r[2], r[3] } * k;
+    out.c1 = float4 { r[4], r[5], r[6], r[7] } * k;
+    out.c2 = float4 { r[8], r[9], r[10], r[11] } * k;
+    out.c3 = float4 { r[12], r[13], r[14], r[15] } * k;
+    return out;
+}
+
+// shaders::PLANAR_RESOLVE_FRAG's block for the mirror drawn with clip's frame: the inverse of
+// its view_proj, the eye and the floor's y, the room's exposure's inverse and the farthest
+// distance kept (12 m).
+struct PlanarResolve { back: float4[4], eye: float4, tone: float4 }
+fn planar_resolve_of(g: Gpu&, clip: Frame) -> PlanarResolve {
+    let b = inverse(clip.view_proj);
+    let exposure = max(g.frame.params.x * g.room.room_exposure, 1e-3);
+    PlanarResolve { [b.c0, b.c1, b.c2, b.c3], float4 { g.frame.eye.x, g.frame.eye.y, g.frame.eye.z, surfaces::FLOOR_Y },
+                    float4 { 1.0 / exposure, 12.0 * surfaces::METRE, 0.0, 0.0 } }
+}
+// The tuner's view of the map over `size`.
+struct PlanarShow { show: float4, px: float4 }
+fn planar_show_of(g: Gpu&, size: int2) -> PlanarShow {
+    PlanarShow { float4 { g.frame.params.x * g.room.room_exposure, if planar_view > 2 { 2.0 } else { 1.0 }, 6.0 * surfaces::METRE, 0.0 },
+                 float4 { 1.0 / size.x, 1.0 / size.y, 0.0, 0.0 } }
+}
+// ROOM_FRAG's planar and planar_look (all 0 where the mirror isn't drawn): the strength, the
+// floor's view, the map's texels a world unit spans at w 1, its last mip; the boards' own
+// wax and the blur.
+fn planar_block_of(g: Gpu&) -> float4 {
+    guard planar_seen_on_floor(g) else { return float4_0; }
+    let m = g.frame.view_proj;
+    let across = length(float3 { m.c0.x, m.c1.x, m.c2.x });
+    let view: f32 = if planar_view == 1 { 1.0 } else { 0.0 };
+    return float4 { g.room.planar.x, view, across * 0.5 * g.planar_size.x, PLANAR_MIPS - 1 };
+}
+fn planar_look_of(g: Gpu&) -> float4 {
+    guard planar_seen_on_floor(g) else { return float4_0; }
+    return float4 { g.room.planar.z, g.room.planar.y, 0.0, 0.0 };
+}
+// Whether the room's floor sees the mirror this frame (the room drawn with g.room_planar).
+fn planar_seen_on_floor(g: Gpu&) -> bool { planar_shown(g) && g.planar_map.id != 0 && g.room_planar.id != 0 }
+// The room's and the table's blocks in the mirror: no screen occlusion (the map is the
+// screen's), no mirror of its own.
+fn mirror_surfaces_block(g: Gpu&) -> SurfacesBlock {
+    var b = surfaces_block(g);
+    b.ssao = float4_0;
+    b.planar = float4_0;
+    b.planar_look = float4_0;
+    return b;
+}
+fn mirror_table_block(g: Gpu&) -> TableBlock {
+    var b = table_block(g);
+    b.ssao = float4_0;
+    return b;
+}
 
 // Whether the window's glow is drawn: the shell's room with its bloom on.
 fn bloom_shown(g: Gpu&) -> bool { room_shown(g) && g.room_shell && g.room.bloom.x > 0.0 && g.bloom_add.id != 0 }

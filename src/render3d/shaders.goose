@@ -2080,6 +2080,11 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 10) uniform sampler2DShadow table_depth;
     // The room's ambient occlusion at half size (SSAO_FN).
     layout(set = 2, binding = 11) uniform sampler2D ssao_map;
+    #ifdef PLANAR_FLOOR
+    // The room mirrored in the floor (render3d::planar_pass): its light in the room's units,
+    // a the distance from the floor to what it shows along the reflection, with its mips.
+    layout(set = 2, binding = 12) uniform sampler2D planar_map;
+    #endif
     // surfaces::Look and the room's frame. plank: x a plank's width, y its length in
     // widths, z the joint's half width, w the cup (its slope at the edges); planks: x each
     // one's own tone, y the share patched, z its tilt, w the scratches; worn: x the paths'
@@ -2119,7 +2124,10 @@ let ROOM_HEAD = """
     // made), y a step of fade, z the steps of a book's code (books::CODES); book_cases: the
     // bookcases' middles' distance from the hall door's along u, their half width (world
     // units), their top (metres); corners: the corners' and edges' darkening (rooms::Room's,
-    // y its reach in world units); ssao: the room's ambient occlusion (SSAO_FN); table_map:
+    // y its reach in world units); ssao: the room's ambient occlusion (SSAO_FN); planar: the
+    // floor's mirror (render3d::planar_block): x how strong (0 none, the room's box seen
+    // instead), y the tuner's views, z the map's texels a world unit spans at w 1, w its
+    // last mip; planar_look: x the boards' own wax, y the blur over the wax's lobe; table_map:
     // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
     // ending in gilt, ink, the page edges plain and sprinkled.
@@ -2159,6 +2167,8 @@ let ROOM_HEAD = """
         vec4 book_cases;
         vec4 corners;
         vec4 ssao;
+        vec4 planar;
+        vec4 planar_look;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -2517,16 +2527,46 @@ let ROOM_FRAG = """
     // What a glossy surface sees along r through a GGX lobe alpha wide: the room seen
     // (room_seen) while the lobe is narrow, toward the room's light that way as the lobe
     // widens, as its mean over a hemisphere; a rough surface only that.
-    vec3 room_reflection(vec3 p, vec3 lp, vec3 r, float alpha, float nov, float px) {
-        // The room's mean albedo the way r looks: the floor's below, the walls' across, the
-        // plaster's above.
+    // The room's light the way r looks by its mean albedo there: the floor's below, the
+    // walls' across, the plaster's above.
+    vec3 room_wide(vec3 lp, vec3 r) {
         float albedo = r.y > 0.0 ? mix(0.12, 0.41, r.y * r.y) : mix(0.12, 0.06, -r.y);
-        vec3 wide = room_irradiance(lp, r) * albedo;
+        return room_irradiance(lp, r) * albedo;
+    }
+
+    vec3 room_reflection(vec3 p, vec3 lp, vec3 r, float alpha, float nov, float px) {
+        vec3 wide = room_wide(lp, r);
         float sharp = (1.0 - smoothstep(0.08, 0.45, alpha)) * (1.0 - smoothstep(0.05, 0.2, px));
         if (sharp < 0.001) return wide;
         vec3 lr = vec3(dot(r.xz, axes.xy), r.y, dot(r.xz, axes.zw));
         return mix(wide, room_seen(p, lp, r, lr, alpha, nov, px), sharp);
     }
+
+    #ifdef PLANAR_FLOOR
+    // The floor's mirror (planar_map) along r from p on the floor, a GGX lobe alpha wide, at
+    // nov: what the flat floor shows here says how far along the reflection it stands; that
+    // point seen along r (each board's own tilt) is mirrored under the floor and found in the
+    // map, blurred as wide as the lobe is there (contact sharp, a door's head smeared) and
+    // drawn out down the screen by 1 / nov, as a grazing look stretches a waxed floor's
+    // reflections into streaks; the map's sampler filters it so (16 taps along it at most).
+    // a: how much of it lies in the map (the mirror shows only what the screen frames; its
+    // edge held a little way past).
+    vec4 planar_seen(vec3 p, vec3 r, float alpha, float nov) {
+        vec2 uv0 = gl_FragCoord.xy / screen.xy;
+        float t = textureLod(planar_map, uv0, 0.0).a;
+        vec3 q = p + r * t;
+        vec3 under = vec3(q.x, 2.0 * table.y - q.y, q.z);
+        vec4 c = view_proj * vec4(under, 1.0);
+        vec2 uv = vec2(0.5, -0.5) * c.xy / max(c.w, 1e-3) + 0.5;
+        // The lobe's width where it meets what it shows, in the map's texels, then in uv.
+        float across = 4.0 * alpha * t * planar.z / max(c.w, 1e-3);
+        vec2 texel = 1.0 / vec2(textureSize(planar_map, 0));
+        vec2 wide = vec2(max(across * max(nov, 0.06), 1.0), max(across, 1.0)) * texel;
+        vec3 seen = textureGrad(planar_map, clamp(uv, 0.0, 1.0), vec2(wide.x, 0.0), vec2(0.0, wide.y)).rgb;
+        vec2 out_of = max(max(-uv, uv - 1.0), vec2(0.0));
+        return vec4(seen, 1.0 - smoothstep(0.0, 0.1, max(out_of.x, out_of.y)));
+    }
+    #endif
 
     // An albedo made lighter or darker by t.x and greyer or more coloured by t.y about its
     // luminance (a tuner's tint).
@@ -2865,6 +2905,10 @@ let ROOM_FRAG = """
         float ao = clamp(v_extra.x, 0.0, 1.0);
         float fine = 1.0;
         float screen_ao = ssao_at(p);
+    #ifdef PLANAR_FLOOR
+        // The floor's mirror on this board: its own wax, none in the joints.
+        float wax = 1.0;
+    #endif
         vec3 albedo;
         float rough;
         float metal = 0.0;
@@ -2953,6 +2997,13 @@ let ROOM_FRAG = """
             albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
             rough = mix(rough, 0.6, joint);
             fine *= 1.0 - 0.5 * joint;
+        #ifdef PLANAR_FLOOR
+            // Each board waxed and worn a little its own way: its mirror stronger or weaker,
+            // and sharper or softer, so the reflection steps from board to board.
+            float own_wax = (h12(id + 21.7) * 2.0 - 1.0) * planar_look.x;
+            wax = (1.0 + own_wax) * (1.0 - joint);
+            rough *= 1.0 - 0.4 * own_wax;
+        #endif
             // The table hides the sky under it, its scroll toes the floor they stand on,
             // and the walls along their feet.
             ao *= mix(0.55, 1.0, smoothstep(0.5625 * table.x, 1.375 * table.x, r));
@@ -3159,10 +3210,40 @@ let ROOM_FRAG = """
         // Only the floor and the brass see the room sharply: the panelling's grain turns its
         // normals too fast for a window's edge to hold.
         vec3 rv = reflect(-v, n);
+        float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
+    #ifdef MIRROR_PASS
+        // In the floor's mirror nothing sees the room sharply.
+        vec3 env = room_baked.x > 0.5 ? room_wide(v_local, rv) : sh_eval(rv) * params.z;
+        vec3 fc = env_brdf(f0, sqrt(ar), nov);
+    #else
+    #ifdef PLANAR_FLOOR
+        // The floor sees the mirror, through the wax's film over the oak, smoother than the
+        // oak's own sheen (planar_look.y of its roughness), blurred by the film's lobe, not by
+        // the pixel's spread of normals: a board's tilt moves its image whole. The mirror shows
+        // what stands there and hides itself, so no occlusion of its own goes on top; past the
+        // screen's edge it fades to the room's light that way. The rest sees the room's box.
+        float px = metal > 0.5 ? 0.25 * length(fwidth(rv)) : 1.0;
+        vec3 env;
+        float film = sqrt(ar);
+        if (kind < 4.5) {
+            film = clamp(rough * planar_look.y, 0.03, 1.0);
+            vec4 seen = planar_seen(p, rv, film * film, nov);
+            env = mix(room_wide(v_local, rv) * spec_ao, seen.rgb, seen.a) * planar.x * wax;
+            spec_ao = 1.0;
+            if (planar.y > 0.5) {
+                result = vec4(to_srgb(tonemap(env * params.x * shade.w)), 1.0);
+                return;
+            }
+        } else {
+            env = room_baked.x > 0.5 ? room_reflection(p, v_local, rv, ar, nov, px) : sh_eval(rv) * params.z;
+        }
+        vec3 fc = env_brdf(f0, film, nov);
+    #else
         float px = kind < 4.5 ? length(fwidth(rv)) : (metal > 0.5 ? 0.25 * length(fwidth(rv)) : 1.0);
         vec3 env = room_baked.x > 0.5 ? room_reflection(p, v_local, rv, ar, nov, px) : sh_eval(rv) * params.z;
-        float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
         vec3 fc = env_brdf(f0, sqrt(ar), nov);
+    #endif
+    #endif
         vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
@@ -3356,6 +3437,93 @@ let SSAO_FN = """
         return nearest > 0.05 ? 1.0 : sum / total;
     }
     float ssao_kept(float raw) { return clamp(1.0 - ssao.x * (1.0 - raw), 0.0, 1.0); }
+    """;
+
+// The floor's mirror (render3d::planar_pass): ROOM_FRAG without its sharp reflections, the
+// room seen from under the floor.
+let MIRROR_PASS = "#define MIRROR_PASS 1\n";
+// ROOM_FRAG whose floor sees the mirror (render3d::planar_shown): the standard and high
+// tiers' room; without it the floor sees the room's box.
+let PLANAR_FLOOR = "#define PLANAR_FLOOR 1\n";
+
+// The mirror's picture made the room's light again, with how far each texel stands from the
+// floor along the reflection: the pass drew the room as the screen shows it (tonemapped,
+// sRGB, the board's grade), so its colour is decoded and taken back through the room's
+// tonemap (TONE_FN: its shoulder, whose mix toward white the peak says, then its toe) and
+// the room's exposure (planar_tone.x, its inverse). The depth places the point: planar_back
+// is the inverse of the pass's view_proj (columns), planar_eye the eye and, w, the floor's
+// y; the point's height over the floor and the eye's give its distance from where the
+// reflection leaves the floor, at most planar_tone.y. Where the pass drew nothing of the room
+// (past the floor's far edge), the nearest texel below that it did, else nothing.
+let PLANAR_RESOLVE_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D planar_color;
+    layout(set = 2, binding = 1) uniform sampler2D planar_depth;
+    layout(set = 3, binding = 0) uniform PlanarResolve { vec4 planar_back[4]; vec4 planar_eye; vec4 planar_tone; };
+    const int PLANAR_REACH = 8;
+    vec3 decode(vec3 c) {
+        return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+    }
+    vec3 untone(vec3 c) {
+        const float start = 0.76;
+        const float d = 1.0 - start;
+        float np = max(c.r, max(c.g, c.b));
+        if (np > start) {
+            np = min(np, 0.9995);
+            float peak = d * d / (1.0 - np) - d + start;
+            float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
+            c = max(c - g * np, vec3(0.0)) / max(1.0 - g, 1e-4) * (peak / np);
+        }
+        float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
+        return c * (y < 0.02 ? sqrt(y / 12.5) : y + 0.02) / y;
+    }
+    void main() {
+        ivec2 px = ivec2(gl_FragCoord.xy);
+        ivec2 size = textureSize(planar_color, 0);
+        // Over the floor's far edge the mirror draws nothing of the room (the view out
+        // drawn first shows there): take the wall's foot a few texels down, so the floor's
+        // reflection at the wall never reaches past it into the sky.
+        float depth = texelFetch(planar_depth, px, 0).r;
+        for (int k = 1; k <= PLANAR_REACH && depth >= 1.0; k++) {
+            ivec2 at = ivec2(px.x, min(px.y + k, size.y - 1));
+            float d = texelFetch(planar_depth, at, 0).r;
+            if (d < 1.0) {
+                px = at;
+                depth = d;
+            }
+        }
+        vec2 uv = (vec2(px) + 0.5) / vec2(size);
+        vec3 c = decode(texelFetch(planar_color, px, 0).rgb) / vec3(1.02, 1.0, 0.97);
+        vec4 h = planar_back[0] * (2.0 * uv.x - 1.0) + planar_back[1] * (1.0 - 2.0 * uv.y)
+               + planar_back[2] * depth + planar_back[3];
+        vec3 q = h.xyz / h.w;
+        float floor_y = planar_eye.w;
+        float high = max(q.y - floor_y, 0.0);
+        vec3 under = vec3(q.x, 2.0 * floor_y - q.y, q.z);
+        float t = length(under - planar_eye.xyz) * high / max(high + planar_eye.y - floor_y, 1e-3);
+        result = depth < 1.0 ? vec4(untone(c) * planar_tone.x, min(t, planar_tone.y)) : vec4(0.0);
+    }
+    """;
+
+// The tuner's view of the floor's mirror over the whole picture: planar_show x the room's
+// exposure, y 1 its light, 2 its distances (white planar_show.z away); planar_px.xy a pixel
+// in uv.
+let PLANAR_SHOW_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D planar_map;
+    layout(set = 3, binding = 0) uniform PlanarShow { vec4 planar_show; vec4 planar_px; };
+    vec3 encode(vec3 c) {
+        c = clamp(c, 0.0, 1.0);
+        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+    }
+    void main() {
+        vec4 m = textureLod(planar_map, gl_FragCoord.xy * planar_px.xy, 0.0);
+        vec3 c = planar_show.y > 1.5 ? vec3(sqrt(clamp(m.a / planar_show.z, 0.0, 1.0)))
+                                     : encode(tonemap(m.rgb * planar_show.x) * vec3(1.02, 1.0, 0.97));
+        result = vec4(c, 1.0);
+    }
     """;
 
 // The image with its glow added in linear light, into the target: x the glow's strength, yz

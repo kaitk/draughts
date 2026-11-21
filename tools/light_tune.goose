@@ -81,6 +81,9 @@ let VIEWS = ["board", "room", "window", "hall", "stove"];
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
 // indirect light keeps.
 let SSAO_VIEWS = ["off", "alone", "kept"];
+// What the floor's mirror shows (render3d::planar_view): the room, the floor's reflection
+// alone, the mirror's map over the whole picture, its distances.
+let PLANAR_VIEWS = ["off", "floor", "map", "distance"];
 let VIEW_EYES: float3[5] = [float3_0, float3 { 8.4, 0.6, 1.7 }, float3 { 4.5, 1.0, 1.6 }, float3 { 4.5, 6.3, 1.6 },
                             float3 { 8.3, 3.5, 1.6 }];
 let VIEW_ATS: float3[5] = [float3_0, float3 { 2.6, 5.8, 1.3 }, float3 { 4.5, 7.0, 1.8 }, float3 { 4.5, 0.0, 1.3 },
@@ -453,6 +456,7 @@ fn report(r: rooms::Room, take: i64, flags: const u8[:]) {
     room_line(out, "bloom:     ", r.bloom);
     room_line(out, "corners:   ", r.corners);
     room_line(out, "ssao:      ", r.ssao);
+    room_line(out, "planar:    ", r.planar);
     out.append("};\n// The flags that show the same again (the room's colours, twigs, species and crown in\n");
     out.append("// the literal above):\n");
     out.append(flags);
@@ -520,6 +524,7 @@ fn room_flags(out: u8[>..]&, r: rooms::Room) {
     flag_four(out, "--bloom", r.bloom);
     flag_four(out, "--corners", r.corners);
     flag_four(out, "--ssao", r.ssao);
+    flag_four(out, "--planar", r.planar);
     flag_one(out, "--exposure", r.exposure);
     flag_one(out, "--room-exposure", r.room_exposure);
     flag_one(out, "--outside-exposure", r.outside);
@@ -716,6 +721,9 @@ fn main() {
     room.corners = four(argv, "--corners", room.corners);
     room.ssao = four(argv, "--ssao", room.ssao);
     render3d::ssao_view = pick(argv, "--ssao-view", SSAO_VIEWS, 0);
+    room.planar = four(argv, "--planar", room.planar);
+    render3d::planar_view = pick(argv, "--planar-view", PLANAR_VIEWS, 0);
+    render3d::planar_scale = whole(argv, "--planar-size", 2) as i32;
     room.outside = number(argv, "--outside-exposure", room.outside);
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
     room.exposure = number(argv, "--exposure", room.exposure);
@@ -918,6 +926,10 @@ fn main() {
                 slider(c, "SSAO's bias", room.ssao.z, 0.0, 0.5);
                 slider(c, "SSAO's gain", room.ssao.w, 0.5, 6.0);
                 choice(c, "SSAO view", render3d::ssao_view, SSAO_VIEWS);
+                slider(c, "Floor's mirror", room.planar.x, 0.0, 2.0);
+                slider(c, "Mirror's blur", room.planar.y, 0.0, 4.0);
+                slider(c, "Boards' wax", room.planar.z, 0.0, 1.0);
+                choice(c, "Mirror view", render3d::planar_view, PLANAR_VIEWS);
                 if g.light_ms > 0.0 {
                     note(c, str("probes baked in ", floor(g.light_ms + 0.5) as i64, " ms, ", g.light_patches, " sun patches"));
                 }

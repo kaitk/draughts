@@ -114,6 +114,11 @@ struct Room {
     // hides nothing, so a flat surface stays clear of its half floats' steps), w its gain
     // (a tap that hides all hides this many taps' share); x 0 none.
     ssao: float4 = float4_0,
+    // The waxed floor's mirror of the room (render3d::planar_pass): x how strong (1 the wax's
+    // Fresnel as it is; 0 none, the room's box reflected instead), y the wax film's roughness,
+    // which sets its blur and Fresnel, as a share of the oak's, z how much each board's wax
+    // differs from the next (a share).
+    planar: float4 = float4_0,
 }
 
 // The library on the garden side, south-west, a mid-October afternoon
@@ -148,6 +153,7 @@ let AUTUMN = Room {
     bloom:         float4 { 0.45, 0.72, 0.15, 4.0 },
     corners:       float4 { 1.0, 0.4, 0.0, 0.0 },
     ssao:          float4 { 1.0, 0.35, 0.05, 3.0 },
+    planar:        float4 { 0.85, 0.5, 0.12, 0.0 },
     ..
 };
 

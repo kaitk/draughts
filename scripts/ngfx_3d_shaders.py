@@ -69,6 +69,10 @@ MODULES = [
     ("r3d_show", ["SHOW_VS", "SHOW_BLOCK", "SHOW_VERT"], ["SHOW_FS", "SHOW_BLOCK", "SHOW_FRAG"]),
     ("r3d_dust", ["VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["DUST_FRAG"]),
     ("r3d_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
+    ("r3d_room_planar", ["VS_SET", "FRAME", "ROOM_VERT"], ["PLANAR_FLOOR", "SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
+    ("r3d_room_mirror", ["VS_SET", "FRAME", "ROOM_VERT"], ["MIRROR_PASS", "SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
+    ("r3d_planar_resolve", FULL, ["PLANAR_RESOLVE_FRAG"]),
+    ("r3d_planar_show", FULL, ["TONE_FN", "PLANAR_SHOW_FRAG"]),
     ("r3d_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["FS_SET", "FRAME", "TONE_FN", "OUTSIDE_FRAG"]),
     ("r3d_glow_pick", FULL, ["GLOW_PICK_FRAG"]),
     ("r3d_glow_blur", FULL, ["GLOW_BLUR_FRAG"]),
@@ -86,6 +90,7 @@ def products(body):
                         "xf(draw.y > 0.5 ? light_view_proj : view_proj, vec4(world, 1.0))")
     body = body.replace("light_view_proj * vec4(q, 1.0)", "xf(light_view_proj, vec4(q, 1.0))")
     body = body.replace("view_proj * vec4(pos, 1.0)", "xf(view_proj, vec4(pos, 1.0))")
+    body = body.replace("view_proj * vec4(under, 1.0)", "xf(view_proj, vec4(under, 1.0))")
     assert not re.search(r"_proj \*", body), "a matrix product left"
     return body
 
@@ -111,7 +116,7 @@ def module(name, vs_parts, fs_parts):
         offset += sum(n for _, _, n in fields)
     buffers = unique((vs, fs), "buffers")
     textures = unique((vs, fs), "textures")
-    assert len(buffers) <= 3 and len(textures) <= 12
+    assert len(buffers) <= 3 and len(textures) <= 16
 
     out = []
     w = out.append

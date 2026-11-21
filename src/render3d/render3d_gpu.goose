@@ -178,7 +178,8 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
 
     // The room round the table, behind what stands in it.
     if render3d::room_shown(g) {
-        gfx::bind(g.room_lit);
+        let planar = render3d::planar_seen_on_floor(g);
+        gfx::bind(if planar { g.room_planar } else { g.room_lit });
         gfx::bind_texture(gfx::FRAGMENT, 0, g.floor_albedo, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 1, g.floor_normal, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 2, g.wall_albedo, g.aniso);
@@ -191,6 +192,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 9, g.book_atlas, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 10, render3d::table_map_or_stand_in(g), g.compare);
         gfx::bind_texture(gfx::FRAGMENT, 11, render3d::ssao_or_stand_in(g), g.linear);
+        if planar { gfx::bind_texture(gfx::FRAGMENT, 12, g.planar_map, g.planar_sampler); }
         gfx::uniforms(gfx::VERTEX, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::surfaces_block(g));
@@ -275,6 +277,121 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
     g.pre_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT), pre, solid);
     g.ssao = gfx::pipeline(full, embed_shader("frag", shaders::SSAO_FRAG));
     g.ssao_blur = gfx::pipeline(full, embed_shader("frag", shaders::SSAO_BLUR_FRAG));
+    g.room_planar = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
+                                  embed_shader("frag", shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                                  gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true });
+    let mirror = embed_shader("frag", shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+    let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
+    g.planar_room = gfx::pipeline(room_vert, mirror, gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true });
+    // The glass writes its depth here, so the sky behind it is as far as the window.
+    g.planar_glass = gfx::pipeline(room_vert, mirror, gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true,
+                                                                          blend: gfx::BLEND_PREMULTIPLIED });
+    g.planar_table = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
+                                   embed_shader("frag", shaders::TABLE_ROOM, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+                                   gfx::PipelineDesc { cull: gfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
+                                                       blend: gfx::BLEND_PREMULTIPLIED });
+    g.planar_resolve = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_RESOLVE_FRAG));
+    g.planar_show = gfx::pipeline(full, embed_shader("frag", shaders::TONE_FN, shaders::PLANAR_SHOW_FRAG));
+    g.planar_sampler = gfx::sampler(gfx::SamplerDesc { wrap_u: gfx::CLAMP, wrap_v: gfx::CLAMP, wrap_w: gfx::CLAMP,
+                                                       max_anisotropy: 16.0 });
+}
+
+// The floor's mirror (render3d::planar_shown), before the board's pass: the view out, the
+// table and the room drawn mirrored under the floor with clip's frame (the view out with
+// plain's) into g.planar_color, then made the room's light again with each texel's distance
+// into g.planar_map (shaders::PLANAR_RESOLVE_FRAG), and its mips, which the floor reads.
+// Not the board and its pieces: from under the floor the table's top hides them.
+fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, plain: render3d::Frame,
+               resolve: render3d::PlanarResolve) {
+    let q = render3d::planar_size_of(size);
+    if g.planar_map.id == 0 || g.planar_size.x != q.x || g.planar_size.y != q.y {
+        if g.planar_map.id != 0 {
+            for t in [g.planar_color, g.planar_depth, g.planar_map] { gfx::release(t); }
+            gfx::flush();
+        }
+        g.planar_color = gfx::render_target(q.x, q.y, gfx::RGBA16F);
+        g.planar_depth = gfx::texture2d(q.x, q.y, gfx::DEPTH16, gfx::DEPTH_TARGET | gfx::SAMPLED);
+        g.planar_map = gfx::texture(gfx::TextureDesc { format: gfx::RGBA16F, usage: gfx::COLOR_TARGET | gfx::SAMPLED,
+                                                       width: q.x as i32, height: q.y as i32,
+                                                       mips: render3d::PLANAR_MIPS as i32 });
+        g.planar_size = q;
+    }
+    var pass = gfx::PassDesc { depth: g.planar_depth, color_value: float4 { 0.0, 0.0, 0.0, 1.0 } };
+    pass.color[0] = g.planar_color;
+    gfx::begin_pass(pass);
+    let kept = g.frame;
+    if render3d::outside_shown(g) {
+        g.frame = plain;
+        draw_outside(own, g);
+    }
+    g.frame = clip;
+    if render3d::table_shown(g) && render3d::table_in_room(g) {
+        gfx::bind(g.planar_table);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.table_albedo, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 1, g.table_normal, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 3, g.table_wear, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 5, render3d::tree_or_stand_in(g), g.linear);
+        gfx::bind_texture(gfx::FRAGMENT, 6, g.shadow_map, g.compare);
+        gfx::bind_texture(gfx::FRAGMENT, 7, render3d::table_map_or_stand_in(g), g.compare);
+        gfx::bind_texture(gfx::FRAGMENT, 8, render3d::ssao_or_stand_in(g), g.linear);
+        gfx::uniforms(gfx::VERTEX, 0, clip);
+        gfx::uniforms(gfx::FRAGMENT, 0, clip);
+        gfx::uniforms(gfx::FRAGMENT, 1, render3d::mirror_table_block(g));
+        gfx::bind_vertex_buffer(g.table_vb);
+        gfx::bind_index_buffer(g.table_ib, 4);
+        gfx::draw_indexed(g.table_count);
+    }
+    gfx::bind(g.planar_room);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.floor_albedo, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 1, g.floor_normal, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 2, g.wall_albedo, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 3, g.wall_normal, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 4, render3d::tree_or_stand_in(g), g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 5, g.paper_mask, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 6, g.plaster_tone, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 7, g.lace_mask, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 8, render3d::light_or_stand_in(g), g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 9, g.book_atlas, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 10, render3d::table_map_or_stand_in(g), g.compare);
+    gfx::bind_texture(gfx::FRAGMENT, 11, render3d::ssao_or_stand_in(g), g.linear);
+    gfx::uniforms(gfx::VERTEX, 0, clip);
+    gfx::uniforms(gfx::FRAGMENT, 0, clip);
+    gfx::uniforms(gfx::FRAGMENT, 1, render3d::mirror_surfaces_block(g));
+    gfx::bind_vertex_buffer(g.room_vb);
+    gfx::bind_index_buffer(g.room_ib, 4);
+    gfx::draw_indexed(g.room_count);
+    if g.glass_count > 0 {
+        gfx::bind(g.planar_glass);
+        gfx::bind_vertex_buffer(g.glass_vb);
+        gfx::bind_index_buffer(g.glass_ib, 4);
+        gfx::draw_indexed(g.glass_count);
+    }
+    gfx::end_pass();
+    g.frame = kept;
+    var into = gfx::PassDesc { clear_color: false };
+    into.color[0] = g.planar_map;
+    gfx::begin_pass(into);
+    gfx::bind(g.planar_resolve);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.planar_color, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 1, g.planar_depth, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, resolve);
+    gfx::draw(3);
+    gfx::end_pass();
+    gfx::generate_mips(g.planar_map);
+}
+
+// The tuner's view of the floor's mirror over all of `target`.
+fn planar_show_pass(own: Own&, g: render3d::Gpu&, target: Texture, show: render3d::PlanarShow) {
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    gfx::begin_pass(pass);
+    gfx::bind(g.planar_show);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.planar_map, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, show);
+    gfx::draw(3);
+    gfx::end_pass();
 }
 
 // The room's ambient occlusion (render3d::ssao_shown), before the board's pass: the room,
@@ -1007,16 +1124,18 @@ fn release(own: Own&, g: render3d::Gpu&) {
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.wall_albedo,
                     g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas,
-                    g.table_map, g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map];
+                    g.table_map, g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color,
+                    g.planar_depth, g.planar_map];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
     for b in buffers { if b.id != 0 { gfx::release(b); } }
-    let samplers = [g.linear, g.aniso, g.compare];
+    let samplers = [g.linear, g.aniso, g.compare, g.planar_sampler];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick, g.bloom_blur, g.bloom_add,
-                     g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur];
+                     g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.planar_room, g.planar_glass, g.planar_table,
+                     g.planar_resolve, g.planar_show];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();
