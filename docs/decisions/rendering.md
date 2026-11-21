@@ -1064,6 +1064,37 @@ to be is in tasks 042, 059, 071, 081, and 086.
   further (their shader with only the plaster's code drew them 0.1 ms faster, without the
   oak's 0.26: less than a draw and a pipeline more pay for); keeping every texture in
   every shader at fixed slots (15 of 16 taken already); the views as uniforms.
+- The high tier draws the 3D scene under a budget of 4.1 million pixels and scales it up to
+  the screen with Catmull-Rom; the UI over it keeps the screen's pixels (2026-11-22, task
+  110's fix 4; `render3d::scene_size_of`, `HIGH_SCENE_PIXELS`, `upscale_pass`,
+  `shaders::UPSCALE_FRAG`). The room's passes cost about their pixels (the main pass
+  10.9 ms at 3024 × 1890, 3.6 at 1512 × 945 on an M1 Pro), and a Retina or 4K screen
+  draws more than the look needs. A screen over the budget draws the scene at the scale
+  that fits it, keeping its shape (0.85 of a 3024 × 1890 screen's side, 0.70 of 4K's);
+  under it, nothing changes. Measured headless at 3024 × 1890, the room view, two rounds,
+  GPU ms by Metal's encoder labels: the main pass 10.9 at native, 8.2 at 0.85, 6.6 at 0.75,
+  5.5 at 0.67; the frame's parts 13.7, 10.9, 9.1-9.2 and 7.9 (the last with nine taps);
+  the fps counter 12.9, 10.1, 8.4 and 7.2 ms a frame. The upscale itself 0.30 ms
+  (Catmull-Rom from five bilinear taps; nine taps 0.44 for the same look within a level,
+  bilinear 0.11). The 0.85 keeps the lace's net and the board's grain close to
+  native at 100%; 0.75 and under soften them visibly. The budget is the one constant to
+  change; the light tuner's N cycles it against fixed scales and M the filter
+  (`build/notes/builder-24/` shows the crops).
+  - Everything the scene's frame draws follows its size: MSAA's or SMAA's targets (the
+    antialiasing is done before the upscale, which keeps its edges), the screen's
+    occlusion at half the scene, the glow at a quarter. The floor's mirror keeps its least
+    width of 1600 texels, so at these scales its map is the same and its cost falls only by
+    the pixels reading it (0.77 to 0.64 ms at 0.85).
+  - Only `draw()` into a given target scales (the light tuner's screen, and the high mode
+    when it draws every frame); the app's kept image is drawn at the screen's size, so the
+    standard tier and phones are as they were: the 3D board at native pixels with 4× MSAA
+    (2× on a slow Android device), and no room yet. The game's shot is unchanged.
+  - Rejected: bilinear (0.2 ms cheaper, but at a scale it kept a quarter to a third less
+    of the high-frequency detail than Catmull-Rom, the lace's net and the grain smeared);
+    FSR1's EASU and RCAS (an edge-adaptive filter of twelve taps and a second pass at the
+    screen's size, for the softness 0.85's Catmull-Rom hardly shows); a fixed scale (a
+    pixel budget caps the cost on any screen, and a smaller window stays native); folding
+    the upscale into the glow's add (0.15 ms, both shaders' code for it).
 - The library's baked light bounces three times (2026-11-21, task 107;
   `room_light::first_light`, `bounce_once`, `gather_half`): the room's surfaces as 1,208
   cells, about 0.5 m a side on the floor, the ceiling and the four walls (a door's leaf, a

@@ -232,6 +232,13 @@ pieces; the design boards still set the layout, glass, and controls.
   target. Change the covers in `books.py` and keep its `colour()` the shader's; a case's
   inside is darkened by the books' and the case's vertex occlusion and `case_shade`
   (the cases' heights repeated in `ROOM_FRAG`: change them with `bookcases.goose`).
+- The light tuner draws the 3D scene under the high tier's pixel budget
+  (`render3d::HIGH_SCENE_PIXELS`, 4.1 MP: 0.85 of a 3024 × 1890 screen), so a Retina shot
+  is upscaled: pass `--scene-scale 1` for a native shot or a timing of the scene's own cost
+  (N cycles the budget, 1, 0.85, 0.75, 0.67; M the upscale). Builder 24's crops and sweeps:
+  `build/b24/shots.sh EXE TAG`, `crops.py`, `measure.sh ROUND TAG=EXE,FLAGS..` (under the
+  quiet lock; in zsh, a list in a variable doesn't split into words: run sweeps in bash),
+  `build/notes/builder-24/`.
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

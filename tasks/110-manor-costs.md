@@ -295,6 +295,31 @@ results, or keep baking at run time behind a loader when the room or a look is c
   build with the screen's maps and the mirror off within a level, the game unchanged. Not
   measured on a device.
 
+- Fix 4, a resolution budget for the 3D scene (2026-11-22, builder 24,
+  `build/notes/builder-24/`; `docs/decisions/rendering.md`): drawn into a given target (the
+  light tuner, the planned high mode), the scene is drawn at most 4.1 MP
+  (`render3d::HIGH_SCENE_PIXELS`, the one constant, the user to choose from the page) and
+  scaled up by Catmull-Rom from five bilinear taps; the UI at the screen's pixels. One
+  RGBA8 target at the scene's size more (16.4 MB at 4.1 MP), two pipelines. Metal System
+  Trace, headless 3024 × 1890, the room view, GPU ms by encoder labels, two rounds
+  interleaved: before / after (0.85) the main pass 10.85-10.86 / 8.19-8.20, the frame's
+  parts 13.66-13.68 / 10.88-10.94, the fps counter 12.8-12.9 / 10.1 ms a frame;
+  `--scene-scale 1` the same as before (13.68-13.69, the room's shot identical). The sweep
+  (main pass / upscale / frame's parts / fps): 0.85 cubic of nine taps 8.21 / 0.43 /
+  11.11 / 10.2-10.3, 0.85 bilinear 8.22 / 0.12 / 10.77 / 9.9-10.0; 0.75 cubic nine taps
+  6.65 / 0.44 / 9.33 / 8.4-8.5, five taps 6.65-6.68 / 0.30-0.31 / 9.10-9.19, bilinear 6.65
+  / 0.11-0.12 / 8.92-8.98 / 8.1-8.2; 0.67 cubic 5.54 / 0.43 / 7.85-7.87 / 7.2, bilinear
+  5.54 / 0.11 / 7.55 / 6.8. At 1512 × 945 (under the budget) 5.13 / 5.12, 4.4 ms both.
+  The floor's 5.7 ms by scratch builds without each part, the main pass at native
+  (10.86 with all), two rounds alike: the scratches 1.00 ms (at most 4 levels in the room
+  view and a floor close-up at 1600 × 1000), the wax's and wear's three value noises 0.82
+  (64 levels, mean 0.7), the mirror's lookup 0.79 (182, mean 7.2: the floor's
+  reflection), the door and wall terms 0.36 (21, mean 0.03), the sun's contact shadow on
+  the floor 0.25 (nothing seen), the boards' tilt in the reflection 0.18 (53, mean 0.5), the
+  joints 0.04, `base_hides` nothing; the mirror, tilt, wax, joints and scratches together
+  2.92. Candidates to cut, the user's call: the scratches, the floor's contact shadow,
+  the wax's noises (one noise, or a small texture). Not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
