@@ -94,8 +94,9 @@ pieces; the design boards still set the layout, glass, and controls.
 - The room round the table, its herringbone floor and panelling (`model3d::surfaces`):
   the light tuner's `--room-surfaces on` (O), `--view room` (V), `--eye X,Y,Z,0 --at
   X,Y,Z,0` for a camera of its own, `--dump-oak PREFIX` for the baked fields at 1:1,
-  `--wallpaper-tile M` for the wall a tile of the wallpaper covers (1.4 m; L flips it
-  between style-01's 1.4 m and a real paper's 0.65 m). The
+  `--wallpaper-tile M` for the wall a tile of the wallpaper covers (1.4 m; the slider
+  under Wallpaper, 0.65 to 1.4 m, and L flips it between style-01's 1.4 m and a real
+  paper's 0.65 m). The
   library's window is smaller than the room's plan; for the room's shots pass a 1.1 ×
   2.5 m one, `--panes 11,12.7,1,0 --opening 3,6,4,0.45 --wall 36,20,-2,2`. The room
   is judged as lit, no lift: its own light is `--bounce` and `--room-exposure`
@@ -151,6 +152,20 @@ pieces; the design boards still set the layout, glass, and controls.
   Its limbs' width and blur in the map are `rooms::SHELL_LIMBS`. The doors' feet, the
   plinth's corners and the windows close up: `build/leftovers/shots.sh EXE TAG [NAMES]`
   (`build/notes/leftovers/`). To see the probes alone, `--baked 7,12,0,0`.
+- The light tuner's panel is in sections that open and close, kept for the session
+  (`SECTIONS`): Scene, Light (Light in detail inside), Sun and tree (the sun, the tree,
+  wind, the board's window, noise leaves), Wallpaper, Wainscot and panelling, Ceiling,
+  Curtains and lace, Table, Outside, Dust, Camera and views, Debug, Keys (every key).
+  `--sections all|scene,light,..` opens those at the start (names in `SECTION_NAMES`),
+  `--shot-panel` draws the panel in a `--shot`. A drag that starts on the panel holds the
+  tree's and the probes' bakes (`render3d::Gpu.bake_held`) and bakes once on release.
+  `--oak-tint L,S` and `--ceiling-tint L,S` (the panel's Oak light and colour, Ceiling
+  light and colour) scale the panelling oak's and the ceiling's albedo in ROOM_FRAG,
+  lightness and saturation about its luminance, 1,1 as made; the probes' bounce doesn't
+  follow them. At style-01's camera, 3,0.6 takes the stove end's wainscot in shade
+  from sRGB (14,5,2) to (41,22,12); the references' is about (66,38,22)
+  (`build/notes/reference-compare/`). P prints, after the room's literal, the flags that show
+  the same again, exactly (`build/notes/tuner-sections/`).
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

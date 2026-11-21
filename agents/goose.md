@@ -176,6 +176,9 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - Adjacent string literals don't join. A struct literal's fields must come in
   declaration order. `match` arms with block bodies are separated by commas.
 - A `T&` parameter takes no temporary: bind it to a `var` first.
+- An array literal passed to a `const u8[:][]` parameter can't be passed on from there to
+  another function ("is not fixed-size and is not copied implicitly"): give the
+  in-between parameter a size, `const u8[:][2]` (`tools/light_tune.goose`'s `switch`).
 - An `if` expression can't be an operand unless parenthesized, can't be returned or bound
   alongside another value (`return if a { X } else { Y }, i;`), and an assignment isn't
   an expression.
