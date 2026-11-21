@@ -2553,6 +2553,15 @@ let ROOM_FRAG = """
     // How square a plane with normal m stands to a surface with normal n: 1 square, 0 facing.
     float square_to(vec3 n, vec3 m) { return 1.0 - smoothstep(0.3, 0.7, abs(dot(n, m))); }
 
+    // atan(s / d) for d > 0, to about 0.005 radians: a soft shade needs no more, and the
+    // library's corners take several dozen a pixel.
+    float angle_of(float s, float d) {
+        float x = s / d;
+        float u = min(abs(x), 1.0) / max(abs(x), 1.0);
+        float a = u * (0.7854 + 0.273 * (1.0 - u));
+        return sign(x) * (abs(x) > 1.0 ? 1.5708 - a : a);
+    }
+
     // The share of a face's extent along one of its axes, lo to hi, that a point at q on that
     // axis sees from a distance a in front of it, against an endless face: across the
     // surface (c, the surface normal's part along the axis, near 0) the angle the span takes
@@ -2562,10 +2571,10 @@ let ROOM_FRAG = """
     // corners instead of running on as an endless plane's.
     float span_seen(float q, float lo, float hi, float a, float c) {
         float d = max(a, 1e-3);
-        float s1 = q - lo;
-        float s2 = hi - q;
-        float across = (atan(s1, d) + atan(s2, d)) / PI;
-        float facing = c > 0.0 ? atan(s2, d) - atan(max(-s1, 0.0), d) : atan(s1, d) - atan(max(-s2, 0.0), d);
+        float t1 = angle_of(q - lo, d);
+        float t2 = angle_of(hi - q, d);
+        float across = (t1 + t2) / PI;
+        float facing = c > 0.0 ? t2 - angle_of(max(lo - q, 0.0), d) : t1 - angle_of(max(q - hi, 0.0), d);
         return mix(across, max(facing, 0.0) * 2.0 / PI, smoothstep(0.3, 0.7, abs(c)));
     }
 
@@ -2602,6 +2611,7 @@ let ROOM_FRAG = """
     // box_hides'), its back `back` behind the face (a door's leaf; below 0 open, a window):
     // what the face hides, less the opening's share, or the back, whichever is nearer.
     float holed_wall(vec3 q, vec3 qn, float proud, float half_w, float low, float high, float back, float reach) {
+        if (q.z - proud >= reach && q.z + back >= reach) return 0.0;
         float a = q.z - proud;
         float face = 0.0;
         if (a > 0.0) {
@@ -2615,26 +2625,34 @@ let ROOM_FRAG = """
         return max(face, deep);
     }
 
-    // A door's architrave in its wall's frame (x from the door's middle): the plinth blocks
-    // (2 cm past the architrave, 6.5 cm out, 0.26 m up), the two legs over them (5 cm out)
-    // and the head across, each a box. x of the result the fronts' share, y the rest's light.
-    vec2 trim_hides(vec3 q, vec3 qn, float half_w, float s, float reach) {
+    // What stands out of a wall with a door, in its frame (x from the door's middle, folded
+    // so both sides are one, as the door's trims and the bookcases are symmetric): the
+    // plinth blocks (2 cm past the architrave, 6.5 cm out, 0.26 m up), the architrave's leg
+    // over each (5 cm out) and its head, and with `cases` the bookcases' bases and upper
+    // cases. x of the result the fronts' share, y the rest's light. One loop whose count the
+    // compiler can't know (corners.z is 0), so box_hides is compiled once: unrolled over
+    // the nine boxes it made the room's shader thirty times slower everywhere.
+    vec2 wall_boxes(vec3 q, vec3 qn, float half_w, bool cases, float s, float reach) {
         float m = shell.w;
         float arch = room_heights.w * m;
         float open_w = half_w - arch;
         float top = room_heights.y * m;
+        float cap = room_heights.z * m;
+        vec3 fq = vec3(abs(q.x), q.y, q.z);
+        vec3 fn = vec3(q.x < 0.0 ? -qn.x : qn.x, qn.y, qn.z);
         vec2 r = vec2(0.0, 1.0);
-        for (int k = 0; k < 2; k++) {
-            float side = k == 0 ? -1.0 : 1.0;
-            vec3 qs = vec3(q.x * side, q.y, q.z);
-            vec3 ns = vec3(qn.x * side, qn.y, qn.z);
-            vec2 b = box_hides(qs, ns, vec3(open_w - 0.01 * m, 0.0, 0.0), vec3(half_w + 0.02 * m, 0.26 * m, 0.065 * m), s, reach);
-            r = vec2(max(r.x, b.x), r.y * b.y);
-            b = box_hides(qs, ns, vec3(open_w, 0.26 * m, 0.0), vec3(half_w, top, 0.05 * m), s, reach);
+        int n = (cases ? 5 : 3) + int(corners.z);
+        for (int i = 0; i < n; i++) {
+            vec3 lo = vec3(open_w - 0.01 * m, 0.0, 0.0);
+            vec3 hi = vec3(half_w + 0.02 * m, 0.26 * m, 0.065 * m);
+            if (i == 1) { lo = vec3(open_w, 0.26 * m, 0.0); hi = vec3(half_w, top, 0.05 * m); }
+            else if (i == 2) { lo = vec3(0.0, top - arch, 0.0); hi = vec3(half_w, top, 0.05 * m); }
+            else if (i == 3) { lo = vec3(book_cases.x - book_cases.y, 0.0, 0.0); hi = vec3(book_cases.x + book_cases.y, cap, 0.45 * m); }
+            else if (i == 4) { lo = vec3(book_cases.x - book_cases.y, cap, 0.0); hi = vec3(book_cases.x + book_cases.y, book_cases.z * m, 0.30 * m); }
+            vec2 b = box_hides(fq, fn, lo, hi, s, reach);
             r = vec2(max(r.x, b.x), r.y * b.y);
         }
-        vec2 b = box_hides(q, qn, vec3(-half_w, top - arch, 0.0), vec3(half_w, top, 0.05 * m), s, reach);
-        return vec2(max(r.x, b.x), r.y * b.y);
+        return r;
     }
 
     // The shell's corners and edges (rooms::Room.corners), for its indirect light only: the
@@ -2698,27 +2716,17 @@ let ROOM_FRAG = """
         vec3 hq = vec3(hx, floor_up, d_hall);
         vec3 hn = vec3(ln.x, ln.y, -ln.z);
         float hall_hides = holed_wall(hq, hn, proud, room_doors.y - arch, 0.0, door_top * m, 0.045 * m, reach);
-        if (room_doors.y > 0.0 && abs(hx) < room_doors.y + reach && d_hall < reach + 0.07 * m) {
-            vec2 b = trim_hides(hq, hn, room_doors.y, s, reach);
+        bool cases_near = book_cases.y > 0.0 && d_hall < 0.45 * m + reach;
+        if (room_doors.y > 0.0 && (cases_near || (abs(hx) < room_doors.y + reach && d_hall < reach + 0.07 * m))) {
+            vec2 b = wall_boxes(hq, hn, room_doors.y, cases_near, s, reach);
             hall_hides = max(hall_hides, b.x);
             lit *= b.y;
-        }
-        if (book_cases.y > 0.0 && d_hall < 0.45 * m + reach) {
-            for (int k = 0; k < 2; k++) {
-                float mid = (k == 0 ? -1.0 : 1.0) * book_cases.x;
-                vec2 b = box_hides(hq, hn, vec3(mid - book_cases.y, 0.0, 0.0), vec3(mid + book_cases.y, room_heights.z * m, 0.45 * m), s, reach);
-                hall_hides = max(hall_hides, b.x);
-                lit *= b.y;
-                b = box_hides(hq, hn, vec3(mid - book_cases.y, room_heights.z * m, 0.0), vec3(mid + book_cases.y, book_cases.z * m, 0.30 * m), s, reach);
-                hall_hides = max(hall_hides, b.x);
-                lit *= b.y;
-            }
         }
         vec3 sq = vec3(sz, floor_up, d_stove);
         vec3 sn = vec3(ln.z, ln.y, -ln.x);
         float stove_hides = holed_wall(sq, sn, proud, room_doors.w - arch, 0.0, door_top * m, 0.045 * m, reach);
         if (room_doors.w > 0.0 && abs(sz) < room_doors.w + reach && d_stove < reach + 0.07 * m) {
-            vec2 b = trim_hides(sq, sn, room_doors.w, s, reach);
+            vec2 b = wall_boxes(sq, sn, room_doors.w, false, s, reach);
             stove_hides = max(stove_hides, b.x);
             lit *= b.y;
         }

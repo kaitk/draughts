@@ -928,6 +928,11 @@ to be is in tasks 042, 059, 071, 081, and 086.
   no wall that isn't there. Replaces the endless planes: a case's side and front, the
   architraves' and the sills' edges cut at their ends, which left a 90° wedge of shade on
   the floor off each case's outside corner and hard lines along the openings' edges.
+  The boxes go through one loop whose count the compiler can't know, the hall wall folded
+  about the door's middle (the trims and the cases are symmetric), and a wall's opening
+  is worked out only within the reach: unrolled, the nine boxes made the room's shader
+  157 ms a frame at 1600 × 1000 on an M-series Mac (5.6 before), even where it returned
+  at once; now 6.0.
 - The library's baked light bounces three times (2026-11-21, task 107;
   `room_light::first_light`, `bounce_once`, `gather_half`): the room's surfaces as 1,208
   cells, about 0.5 m a side on the floor, the ceiling and the four walls (a door's leaf, a
@@ -963,6 +968,25 @@ to be is in tasks 042, 059, 071, 081, and 086.
   floor it now stops 13% on average where it falls, at most half under the gathered
   folds. Replaces the flat 0.72 everywhere and a shadow as sharp as the bars', its
   densest parts stopping two thirds at the sun's own softness.
+- The games table takes the room's baked light in the room (2026-11-21, task 107;
+  `render3d::probes_on_table`, `TABLE_FRAG`'s `room_light_at`): the probes sampled on the
+  CPU after each bake at four heights on the table's axis (0.15 m, then 0.3 m apart up to
+  just over the top), each colour's constant and direction turned into the world's, ride
+  in the table's block; `TABLE_FRAG` mixes them by height, with the harmonics and the even
+  bounce the room keeps, at the room's exposure under the top and the board's over it (the
+  room's lifted the top's shade grey and drowned the sun's dapple on it). The polish
+  reflects that light by the room's mean albedo, 0.2, as `ROOM_FRAG`'s rough reflections
+  do. The base in shade no longer reads near black; the top in `library-menu-01`'s camera
+  13% luma (9 before, the repaint 34). It is a variant of the table's shader by a define
+  (`shaders::TABLE_ROOM`, its own pipeline in both renderers, made with the room's): the
+  room's branch in the one shader moved a pixel of the game's shot by one level, and a
+  Mali compiles every branch; the game's table shader is as it was, its shot unchanged. Rejected: the probes' texture in the table's pipeline
+  (a binding more in both renderers' roots for a table 0.95 m across, which four samples
+  cover). The shade's floor of the key (10% in autumn) stays on the room's surfaces and
+  the table beside the baked light (`render3d::shade_fill`, the tuner's `--shade-fill`):
+  without it the hall wall's wainscot in shade fell from 11 to 6% at style-01's camera
+  (the repaint's 10), the paper from 18 to 13% (18), the floor from 18 to 13% (27); the
+  probes don't carry that much yet.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only
