@@ -787,6 +787,15 @@ to be is in tasks 042, 059, 071, 081, and 086.
   bookcases and the reflections' wainscot, cases and ceiling follow them. Replaces the
   wainscot's dark red-brown (sRGB about 14, 5, 2 in style-01's shade) and the ceiling in
   the walls' limewash. The tuner's tints are 1,1 at this look.
+- The curtains' tie-back is a soft cord as in the concepts (2026-11-21,
+  `curtains.goose`'s `tie_back`): a 9 mm cream cord, its three strands shaded on it,
+  once round the bundle at 0.95 m, which it gathers to about three quarters of its width
+  and half its depth, knotted on the front toward the hook, two short tails with small
+  tassels, and its run hanging slack in a catenary (5.5 cm of sag) to a small brass hook
+  turned up at its end, at ±0.95 m and 1.0 m on the pier. It replaces option A's cord
+  drawn tight from a pin at ±0.80 m round the bundle and back, which read as a stiff U.
+  About 920 triangles a tie-back (5,544 for the six), swept tubes and two balls for the
+  knot.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

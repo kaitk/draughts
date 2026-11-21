@@ -26,7 +26,8 @@ let LACE_ROW_Y: f32[17] = [3.7, 3.66, 3.55, 3.4, 3.2, 2.9, 2.5, 2.1, 1.7, 1.4, 1
 // How much of the sky and park the lace sees through the niche behind it, where it hangs
 // in front of the niche (the glass 0.4 m back in a 1.3 m opening, its frames and bars).
 let LACE_SKY_VIEW: f32 = 0.6;
-let CORD_RADIUS:   f32 = 0.004;
+let CORD_RADIUS:   f32 = 0.0045;  // a 9 mm cord
+let OBLONG:        f32 = 0.6;     // the tie's loop, an ellipse squared off by this power
 // How far the rod pocket's gathers stand off the rod's middle.
 let POCKET: f32 = 0.016;
 
@@ -79,24 +80,36 @@ fn fold_at(seed: i64, s: f32, y: f32) -> f32 {
     return depth * shaped * edge;
 }
 
+// The panel's inner and outer edge at y, drawn in a quarter of the way at the tie where the
+// cord gathers the bundle.
+fn span(y: f32) -> float2 {
+    let x0 = key_at(LACE_INNER[..], y);
+    let x1 = key_at(LACE_OUTER[..], y);
+    let t = (y - TIE_Y) / 0.09;
+    let pull = 0.12 * (x1 - x0) * exp(-t * t);
+    return float2 { x0 + pull, x1 - pull };
+}
+
 // The row's fold depth at y: a zigzag of LACE_FOLDS folds across w holds the flat cloth
 // when its half depth is w / 4n × √(r² − 1), r the gather.
 fn fold_amplitude(y: f32) -> f32 {
-    let w = key_at(LACE_OUTER[..], y) - key_at(LACE_INNER[..], y);
+    let x = span(y);
+    let w = x.y - x.x;
     let r = LACE_FLAT / w;
     let a = 0.25 * w / LACE_FOLDS * sqrt(max(r * r - 1.0, 0.0));
     // The rod pocket: the cloth bunched round the rod, the folds opening below it.
     let open = clamp((LACE_ROD - 0.02 - y) / 0.28, 0.0, 1.0);
     // The cord squeezes the bundle at the tie to about half its depth.
     let t = (y - TIE_Y) / 0.07;
-    let pinch = 1.0 - 0.45 * exp(-t * t);
+    let pinch = 1.0 - 0.5 * exp(-t * t);
     return POCKET + (a * pinch - POCKET) * open * open * (3.0 - 2.0 * open);
 }
 
 // The right panel's point at s across and y up.
 fn drape_at(seed: i64, s: f32, y: f32) -> float3 {
-    let x0 = key_at(LACE_INNER[..], y);
-    let x1 = key_at(LACE_OUTER[..], y);
+    let x = span(y);
+    let x0 = x.x;
+    let x1 = x.y;
     return float3 { x0 + s * (x1 - x0), y, key_at(LACE_MIDDLE[..], y) + fold_amplitude(y) * fold_at(seed, s, y) };
 }
 
@@ -194,63 +207,140 @@ fn lace_panel(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::
     }
 }
 
-// The tie-back of side sx: a cream cord from the hook on the pier behind the bundle's inner
-// side, round its front, sagging a little, and back past its outer side to the hook; the
-// hook a brass pin with a ball on the wainscot's frame.
+// The tie-back of side sx: a soft cream cord once round the gathered bundle, tied in a knot
+// on its front toward the hook, two short tails with small tassels hanging from the knot,
+// and the cord's run from the knot to a small brass hook on the pier, slack, hanging in a
+// catenary. Mirrored for the left.
 fn tie_back(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, sx: f32, seed: i64) {
     let y = TIE_Y;
-    let x0 = key_at(LACE_INNER[..], y);
-    let x1 = key_at(LACE_OUTER[..], y);
+    let x = span(y);
+    let mid = 0.5 * (x.x + x.y);
     let zc = key_at(LACE_MIDDLE[..], y);
-    let front = zc + 1.15 * fold_amplitude(y) + CORD_RADIUS;
-    let hook = float3 { TIE_HOOK, y, 0.045 };
-    var pts: float3[..16] = [];
-    pts.push(hook);
-    pts.push(float3 { x0 - 0.004, y + 0.004, zc - 0.03 });
-    pts.push(float3 { x0 - 0.01, y, zc + 0.02 });
-    for i in 7 {
-        let t = (i as f32 + 0.5) / 7.0;
-        pts.push(float3 { x0 + (x1 - x0) * t, y - 0.012 * sin(PI * t), front + 0.004 * sin(PI * t) });
+    let half = 0.5 * (x.y - x.x) + CORD_RADIUS;
+    let deep = 1.1 * fold_amplitude(y) + CORD_RADIUS;
+    // The loop, 0 at the front, the outer side at a quarter turn, a rounded oblong pulled
+    // tight round the bundle; slack at the front.
+    var round: float3[..24] = [];
+    for i in 20 {
+        let a: f32 = TAU * i / 20.0;
+        let c = cos(a);
+        let e = sin(a);
+        let sq = pow(abs(c), OBLONG) * sign(c);
+        let se = pow(abs(e), OBLONG) * sign(e);
+        round.push(float3 { mid + half * se, y - 0.006 * max(c, 0.0) + 0.002 * sin(2.0 * a), zc + deep * sq });
     }
-    pts.push(float3 { x1 + 0.012, y, zc + 0.02 });
-    pts.push(float3 { x1 + 0.006, y + 0.004, zc - 0.03 });
-    for &p in pts { p.x *= sx; }
-    tube(verts, indices, b, pts[..], CORD_RADIUS, 6, true, surfaces::MAT_CORD);
-    let pin: float3[2] = [float3 { sx * TIE_HOOK, y, 0.02 }, float3 { sx * TIE_HOOK, y, 0.05 }];
-    tube(verts, indices, b, pin[..], 0.003, 6, false, surfaces::MAT_BRASS);
-    ball(verts, indices, b, float3 { sx * TIE_HOOK, y + 0.003, 0.05 }, 0.006, surfaces::MAT_BRASS);
-    disc(verts, indices, b, float3 { sx * TIE_HOOK, y, 0.026 }, 0.011, 8, surfaces::MAT_BRASS);
+    let ka: f32 = 0.3 * PI;
+    let knot = float3 { mid + (half + 0.003) * pow(sin(ka), OBLONG), y - 0.006 * cos(ka), zc + (deep + 0.004) * pow(cos(ka), OBLONG) };
+    // The hook's crook, where the run ends over it.
+    let crook = float3 { TIE_HOOK, TIE_HOOK_Y + 0.003 + CORD_RADIUS, 0.044 };
+    var run: float3[..16] = [];
+    let n = 12;
+    let kk:  f32 = 1.3;
+    let sag: f32 = 0.055;
+    for i in n + 1 {
+        let t: f32 = (i as f32) / n;
+        let drop = sag * (cosh(kk * (2.0 * t - 1.0)) - cosh(kk)) / (1.0 - cosh(kk));
+        run.push(knot + (crook - knot) * t - float3 { 0.0, drop, 0.0 });
+    }
+    run.push(float3 { TIE_HOOK, TIE_HOOK_Y - 0.004, 0.036 });
+    run.push(float3 { TIE_HOOK + 0.002, TIE_HOOK_Y - 0.02, 0.034 });
+    // The tails, a little apart and of two lengths, hanging from under the knot.
+    var tail_a: float3[..8] = [];
+    tail_a.push(knot + float3 { 0.003, -0.006, 0.004 });
+    tail_a.push(knot + float3 { 0.009, -0.03, 0.009 });
+    tail_a.push(knot + float3 { 0.011, -0.07, 0.01 });
+    tail_a.push(knot + float3 { 0.012, -0.11, 0.01 });
+    var tail_b: float3[..8] = [];
+    tail_b.push(knot + float3 { -0.004, -0.006, 0.004 });
+    tail_b.push(knot + float3 { -0.01, -0.028, 0.01 });
+    tail_b.push(knot + float3 { -0.014, -0.06, 0.012 });
+    tail_b.push(knot + float3 { -0.015, -0.085, 0.012 });
+    for &p in round { p.x *= sx; }
+    for &p in run { p.x *= sx; }
+    for &p in tail_a { p.x *= sx; }
+    for &p in tail_b { p.x *= sx; }
+    let cord = surfaces::MAT_CORD;
+    tube(verts, indices, b, round[..], CORD_RADIUS, 8, true, cord);
+    tube(verts, indices, b, run[..], CORD_RADIUS, 8, false, cord);
+    tube(verts, indices, b, tail_a[..], 0.85 * CORD_RADIUS, 6, false, cord);
+    tube(verts, indices, b, tail_b[..], 0.85 * CORD_RADIUS, 6, false, cord);
+    tassel(verts, indices, b, tail_a[tail_a.len - 1]);
+    tassel(verts, indices, b, tail_b[tail_b.len - 1]);
+    // The knot: two turns of the cord lumped together.
+    let kx = float3 { sx * knot.x, knot.y, knot.z };
+    ball(verts, indices, b, kx, 0.011, cord);
+    ball(verts, indices, b, kx + float3 { sx * 0.007, -0.008, 0.003 }, 0.009, cord);
+    // The hook: a rosette on the panelling, a pin out of it turned up at its end.
+    let hx = sx * TIE_HOOK;
+    let hy = TIE_HOOK_Y;
+    disc(verts, indices, b, float3 { hx, hy, 0.026 }, 0.01, 8, surfaces::MAT_BRASS);
+    let pin: float3[5] = [float3 { hx, hy, 0.02 }, float3 { hx, hy, 0.04 }, float3 { hx, hy + 0.003, 0.048 },
+                          float3 { hx, hy + 0.011, 0.051 }, float3 { hx, hy + 0.017, 0.051 }];
+    tube(verts, indices, b, pin[..], 0.0028, 6, false, surfaces::MAT_BRASS);
+    ball(verts, indices, b, float3 { hx, hy + 0.018, 0.051 }, 0.0042, surfaces::MAT_BRASS);
+}
+
+// A small tassel hanging from a tail's end at top: a round head, and a skirt of threads
+// flaring a little and ending square, 5.5 cm long.
+let TASSEL_R: f32[8] = [0.0, 0.005, 0.007, 0.0048, 0.0075, 0.0095, 0.0105, 0.005];
+let TASSEL_Y: f32[8] = [0.006, 0.004, -0.002, -0.009, -0.014, -0.035, -0.056, -0.057];
+fn tassel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, top: float3) {
+    let k = m();
+    let sides = 8;
+    let base = verts.len as u32;
+    for r, i in TASSEL_R {
+        for j in sides + 1 {
+            let ang: f32 = TAU * j / sides;
+            let d = float3 { cos(ang), 0.15, sin(ang) };
+            let q = (top + float3 { cos(ang) * r, TASSEL_Y[i], sin(ang) * r }) * k;
+            verts.push(mesh::Vertex { surfaces::world(b, q.x, q.y, q.z), surfaces::world_normal(b, normalize(d)),
+                                      float2 { (j as f32) / sides, -TASSEL_Y[i] }, 1.0, surfaces::MAT_CORD + 0.5 });
+        }
+    }
+    let ring = (sides + 1) as u32;
+    for i in TASSEL_R.len - 1 {
+        let r0 = base + (i * (sides + 1)) as u32;
+        let r1 = r0 + ring;
+        for j in sides {
+            let a = j as u32;
+            indices.append([r0 + a, r0 + a + 1, r1 + a + 1, r0 + a, r1 + a + 1, r1 + a]);
+        }
+    }
 }
 
 // A tube of radius r round the polyline pts (metres in b's frame), `sides` round,
-// closed into a loop or open.
+// closed into a loop or open; its uv round it (0 to 1, the seam doubled) and along it
+// (metres), for the cord's twist.
 fn tube(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pts: float3[], r: f32, sides: i64, closed: bool,
         mat: f32) {
     let k = m();
     let n = pts.len;
     let base = verts.len as u32;
+    var along: f32 = 0.0;
     for p, i in pts {
+        if i > 0 { along += length(p - pts[i - 1]); }
         let prev = if i > 0 { pts[i - 1] } else { if closed { pts[n - 1] } else { p } };
         let next = if i + 1 < n { pts[i + 1] } else { if closed { pts[0] } else { p } };
         let t = normalize(next - prev);
         let lift = if abs(t.y) > 0.9 { float3 { 1.0, 0.0, 0.0 } } else { float3 { 0.0, 1.0, 0.0 } };
         let a = normalize(cross(t, lift));
         let c = cross(a, t);
-        for j in sides {
+        for j in sides + 1 {
             let ang: f32 = TAU * j / sides;
             let d = a * cos(ang) + c * sin(ang);
             let q = (p + d * r) * k;
-            verts.push(mesh::Vertex { surfaces::world(b, q.x, q.y, q.z), surfaces::world_normal(b, d), float2 { j, i },
-                                      1.0, mat });
+            verts.push(mesh::Vertex { surfaces::world(b, q.x, q.y, q.z), surfaces::world_normal(b, d),
+                                      float2 { (j as f32) / sides, along }, 1.0, mat });
         }
     }
     let rings = if closed { n } else { n - 1 };
+    let ring = sides + 1;
     for i in rings {
-        let r0 = base + (i * sides) as u32;
-        let r1 = base + (((i + 1) % n) * sides) as u32;
+        let r0 = base + (i * ring) as u32;
+        let r1 = base + (((i + 1) % n) * ring) as u32;
         for j in sides {
-            let j1 = (j + 1) % sides;
-            indices.append([r0 + j as u32, r0 + j1 as u32, r1 + j1 as u32, r0 + j as u32, r1 + j1 as u32, r1 + j as u32]);
+            let j0 = j as u32;
+            indices.append([r0 + j0, r0 + j0 + 1, r1 + j0 + 1, r0 + j0, r1 + j0 + 1, r1 + j0]);
         }
     }
 }

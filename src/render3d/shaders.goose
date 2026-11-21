@@ -2658,7 +2658,14 @@ let ROOM_FRAG = """
                 rough = brass.a;
                 metal = 1.0;
             } else {
-                albedo = srgb(lace_thread.rgb) * 0.7;
+                // The cord's three strands twisted round it (v_uv: round it, metres along
+                // it), the tassels' threads straight down (own 0.5); faded out where a
+                // strand is under a pixel or two.
+                float twist = own > 0.25 ? 16.0 * v_uv.x : 3.0 * v_uv.x + v_uv.y / 0.03;
+                float f = fract(twist);
+                float strand = smoothstep(0.0, 0.3, f) * (1.0 - smoothstep(0.7, 1.0, f));
+                float seen = 1.0 - smoothstep(0.25, 0.6, fwidth(twist));
+                albedo = srgb(lace_thread.rgb) * 0.75 * mix(1.0, 0.7 + 0.3 * strand, seen);
                 rough = 0.9;
             }
         } else {

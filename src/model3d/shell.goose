@@ -119,8 +119,9 @@ let CORNICE_OUT = 0.46;
 // The curtains (option A of build/notes/curtains/, curtains.goose): over each window a
 // 22 mm brass rod at 3.68 m, 0.12 m off the wall, 1.80 m long on brackets at ±0.82 m,
 // 45 mm ball finials; a lace panel each side, 1.20 m of cloth gathered on 0.55 m of rod
-// (a rod pocket, its top at 3.70 m), tied back at 0.95 m with a cream cord to a hook at
-// ±0.80 m, its hem about 0.05 m off the floor.
+// (a rod pocket, its top at 3.70 m), tied back at 0.95 m with a cream cord, knotted, its
+// run hanging slack to a small hook at ±0.95 m, 1.0 m up (2026-11-21; at ±0.80 m beside
+// the bundle before), its hem about 0.05 m off the floor.
 let LACE_ROD = 3.68;
 let LACE_OFF = 0.12;
 let ROD_HALF = 0.90;
@@ -132,7 +133,8 @@ let LACE_HEM = 0.05;
 let LACE_FLAT = 1.20;
 let LACE_FOLDS = 6;
 let TIE_Y = 0.95;
-let TIE_HOOK = 0.80;
+let TIE_HOOK = 0.95;
+let TIE_HOOK_Y = 1.0;
 // The right panel's outline over its drop (y, metres from the window's middle), the
 // left's mirrored: its inner edge, its outer edge, and its middle's distance off the wall,
 // keys a Catmull-Rom runs through (curtains.goose). From the rod the inner edge sweeps out
