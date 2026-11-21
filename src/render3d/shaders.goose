@@ -2553,7 +2553,9 @@ let ROOM_FRAG = """
     // edge held a little way past).
     vec4 planar_seen(vec3 p, vec3 r, float alpha, float nov) {
         vec2 uv0 = gl_FragCoord.xy / screen.xy;
-        float t = textureLod(planar_map, uv0, 0.0).a;
+        // The distance from a mip over the pixel's neighbours, so the point found doesn't jump
+        // where the map's distances do (a door's foot over the wall behind it).
+        float t = textureLod(planar_map, uv0, 1.0).a;
         vec3 q = p + r * t;
         vec3 under = vec3(q.x, 2.0 * table.y - q.y, q.z);
         vec4 c = view_proj * vec4(under, 1.0);
@@ -2561,7 +2563,11 @@ let ROOM_FRAG = """
         // The lobe's width where it meets what it shows, in the map's texels, then in uv.
         float across = 4.0 * alpha * t * planar.z / max(c.w, 1e-3);
         vec2 texel = 1.0 / vec2(textureSize(planar_map, 0));
-        vec2 wide = vec2(max(across * max(nov, 0.06), 1.0), max(across, 1.0)) * texel;
+        // At least two of the map's texels across and four down the screen: its half size is
+        // drawn without antialiasing, and a sharper read shows a nearly level edge (a
+        // threshold, a door's foot) in steps that crawl as the eye moves; blurred down the
+        // screen, the way the streaks run, each step becomes a ramp.
+        vec2 wide = vec2(max(across * max(nov, 0.06), 2.0), max(across, 4.0)) * texel;
         vec3 seen = textureGrad(planar_map, clamp(uv, 0.0, 1.0), vec2(wide.x, 0.0), vec2(0.0, wide.y)).rgb;
         vec2 out_of = max(max(-uv, uv - 1.0), vec2(0.0));
         return vec4(seen, 1.0 - smoothstep(0.0, 0.1, max(out_of.x, out_of.y)));
@@ -2908,6 +2914,9 @@ let ROOM_FRAG = """
     #ifdef PLANAR_FLOOR
         // The floor's mirror on this board: its own wax, none in the joints.
         float wax = 1.0;
+        // The wax's film over the boards: it follows each board's tilt and cup, and only a
+        // little of the grain's relief, which it fills.
+        vec3 n_film = ng;
     #endif
         vec3 albedo;
         float rough;
@@ -2961,6 +2970,11 @@ let ROOM_FRAG = """
             vec2 s = vec2(t.x + cup + tilt.x, t.y + tilt.y);
             vec2 suv = dir_a * s.x + dir_l * s.y;
             n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
+        #ifdef PLANAR_FLOOR
+            vec2 sf = vec2(0.25 * t.x + cup + tilt.x, 0.25 * t.y + tilt.y);
+            vec2 sfuv = dir_a * sf.x + dir_l * sf.y;
+            n_film = normalize(vec3(0.0, 1.0, 0.0) + u_dir * sfuv.x + v_dir * sfuv.y);
+        #endif
             // The joints, open a little and dark with old wax.
             float fpw = max(length(dx), length(dy));
             float d_a = min(pk.across, 1.0 - pk.across) * w;
@@ -3234,7 +3248,7 @@ let ROOM_FRAG = """
         float film = sqrt(ar);
         if (kind < 4.5) {
             film = clamp(rough * planar_look.y, 0.03, 1.0);
-            vec4 seen = planar_seen(p, rv, film * film, nov);
+            vec4 seen = planar_seen(p, reflect(-v, n_film), film * film, nov);
             env = mix(room_wide(v_local, rv) * spec_ao, seen.rgb, seen.a) * planar.x * wax;
             spec_ao = 1.0;
             if (planar.y > 0.5) {
@@ -3501,7 +3515,19 @@ let PLANAR_RESOLVE_FRAG = """
             }
         }
         vec2 uv = (vec2(px) + 0.5) / vec2(size);
-        vec3 c = decode(texelFetch(planar_color, px, 0).rgb) / vec3(1.02, 1.0, 0.97);
+        // A 3 × 3 tent over what the pass drew: the half size has no antialiasing, and its
+        // steps along a nearly level edge (a threshold's, a moulding's) crawl as the eye moves.
+        vec3 c = vec3(0.0);
+        float total = 0.0;
+        for (int k = 0; k < 9; k++) {
+            ivec2 at = clamp(px + ivec2(k % 3 - 1, k / 3 - 1), ivec2(0), size - 1);
+            if (texelFetch(planar_depth, at, 0).r >= 1.0) continue;
+            float w = (k % 3 == 1 ? 2.0 : 1.0) * (k / 3 == 1 ? 2.0 : 1.0);
+            c += w * decode(texelFetch(planar_color, at, 0).rgb);
+            total += w;
+        }
+        c /= max(total, 1e-4);
+        c /= vec3(1.02, 1.0, 0.97);
         vec4 h = planar_back[0] * (2.0 * uv.x - 1.0) + planar_back[1] * (1.0 - 2.0 * uv.y)
                + planar_back[2] * depth + planar_back[3];
         vec3 q = h.xyz / h.w;
