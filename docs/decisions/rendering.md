@@ -1132,6 +1132,58 @@ to be is in tasks 042, 059, 071, 081, and 086.
   pattern half washed out and the ground letting all through), which hardly showed; a
   real machine lace's net stops 20 to 30%, its motifs 50 to 70%. Still much lighter and
   softer than the bars' shadows.
+- The library's panels shade as their profiles are, with a thin dip at the groove
+  (2026-11-21, task 107; `surfaces::panel_ring`, `panel_ao_scale`, `panel_ao_width`,
+  `panel_crease`, `THIN_STEP`): the rings' crease at cos 32° (0.85), so the wainscot's
+  7.8° bevel, which met its 44.5° fillet just inside the old 37°, is a flat facet and no
+  longer shades as a ramp running to black on the side away from the sun; the rings'
+  baked occlusion at 0.6 of what it was and its dip held to the groove's first 4 mm (a
+  ring point put in up the bevel), not across the whole bevel. A step narrower than 5 mm
+  with a crease each side (the doors' 2 mm fillet into the field, the wainscot's riser)
+  shades from the facet before it to the one after: its own sharp normal, a fraction of a
+  pixel wide, rasterized as the faint dashed line round the doors' fields. Replaces the
+  37° crease, the full-strength occlusion ramp and the fillet's own normal. Every facet
+  flat (crease over 1) banded the ovolo; a narrower bevel rose steeper and fell under the
+  crease again: both rejected (build/notes/panels-shade/).
+- The sun casts contact shadows in the library in the standard and high tiers (2026-11-21,
+  task 107; `ROOM_FRAG`'s `contact_lit`, `render3d::contact_look`): 12 steps along 3 world
+  units (10 cm) toward the sun over the SSAO's half-size map of positions (`pre_place`),
+  counted by a uniform, a surface there taken 1.5 units thick, 0.8 of the sun stopped: the
+  architraves' shadow on the recessed leaves, the caps' and mouldings' on the wainscot,
+  which the window's pattern can't cast. Only where the SSAO's map is drawn; off on a
+  phone. Its edge steps at the map's texels close up (a depth-aware upsample would fix
+  it). Replaces no small shadows at all.
+- The library's light retuned for a larger sun-to-shade range, with today's toe (2026-11-21,
+  task 107; `rooms::AUTUMN`'s `shell_sun` and `baked`, `render3d::shade_fill`,
+  `room_light::bounce_grey`, `room_light::BOUNCES`, `render3d::room_sun`,
+  `render3d::sheen_look`): the sun on the room twice what it was (shell_sun.y 4.4, from
+  2.2), the probes' bounce of the sun's patches and the shade's fill halved and a fifth
+  (baked.y 6 from 12, shade_fill 0.2 from 1), so the patches gain about a stop and the
+  shade stays near where it was; the sun's saturation on the room and in its bake 0.6 of
+  the key's; the bounce taken a quarter of the way to grey (0.6 before: the light thrown
+  off oak, paper and wax is warm); one bounce (three before: two and three changed no
+  patch by more than a level and cost the bake two steps); a broad second lobe of the
+  sun's highlight (roughness 0.8, ×2) on the painted wood and the paper, which gives the
+  paper's sun patch its sheen. The panelling oak keeps the sun as it was (half the
+  room's, at the key's saturation, no broad sheen; `room_sun`'s y, z, w), as the user
+  asked the stronger sun only on the paper and the doors: its sunlit patch stays at
+  217, 137, 87 sRGB in the wainscot close-up (the panels' fixes alone, 217, 137, 87;
+  before them 232, 155, 104), where the broad sheen and the doubled sun turned it pink
+  (248, 189, 154 against result-2's 190, 131, 93). At style-01's camera against result-2:
+  the paper in sun 147, 116, 89 (146, 117, 90; 101, 71, 45 before), the door in sun 222,
+  186, 153 (217, 192, 168; 238, 186, 138), the door in shade 157, 126, 99 (155, 127, 99;
+  180, 144, 111); the wainscot in shade darker, 31, 15, 8 on the end wall (40, 23, 13;
+  44, 24, 14). The room's exposure (1.8) and its toe stay; the tone is for after the
+  materials pass. The no-toe set (the sun three times, exposure 1.55) is the tuner's.
+  Replaces the sun 2.2 times the board's, the fill at 1, the bounce 12 and three bounces.
+- The tonemaps' toes switch only in the light tuner (2026-11-21, task 107;
+  `shaders::TOE_FN`, `render3d::tone_toe`, `render3d_gpu::tuned_frags`; `--toe`,
+  `--table-toe`, `--board-toe`, `--toe-off`): the tuner embeds its own fragment shaders
+  with the switch (the board's and pieces', the table's, the room's, the mirror's, the
+  view out's) and uses them only when a toe flag is given; the app's keep their own toes,
+  unchanged. A uniform switch in the app's shaders cost the room 0.7 ms a frame on the
+  Mac (0.45 without a branch), and any change to the lit shader's text moved two pixels of
+  the game's shot by 7 levels; a Mali would compile every branch of it too.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

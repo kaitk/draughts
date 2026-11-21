@@ -243,6 +243,12 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - A Mali compiles every branch, even one a uniform never takes: split what a look never
   uses into variants by a define (`shaders::PIECES_WOOD`, `BAKE_TABLE`), one embedded
   shader each, and make a variant's pipeline outside a pass.
+- The library's `ROOM_FRAG` is near the Mac's register limit: code that never runs still
+  costs (a uniform-off contact shadow 0.5 ms, a second sheen lobe 0.5, a toe switch 0.7 at
+  1600 × 1000), and not additively. Weigh a feature by a build without its code, not by its
+  uniform. Any change to `LIT_FRAG`'s text, even a branch never taken, moved two pixels of
+  the game's shot by 7 levels: a tuner-only switch goes in shaders the tuner embeds itself
+  (`render3d_gpu::tuned_frags`, `shaders::TOE_FN`).
 - embed_shader takes no `centroid`, no `##`, and no unnamed parameters; `#ifdef` lines in
   a multi-line string take the string's indentation. A define string put first makes two
   shaders from one text (`shaders::MARKS_PULSE`).

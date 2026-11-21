@@ -560,10 +560,15 @@ The library's shell (the light tuner's room) is lit as a room of its own, apart 
 board's light:
 
 - **The sun** through its three windows, its penumbra about the sun's disc and its light on
-  the room's surfaces 2.2 times the board's (`rooms::Room.shell_sun`). Its highlight takes
+  the room's surfaces 4.4 times the board's (`rooms::Room.shell_sun`), at 0.6 of the key's
+  saturation; the panelling oak takes half of it at the key's saturation
+  (`render3d::room_sun`), so the paper and the doors take the stronger sun and the
+  wainscot keeps its look. A second, broad lobe of its highlight (roughness 0.8) lies on
+  the painted wood and the paper (`render3d::sheen_look`). Its highlight takes
   only what comes through a window (`window_open`); the diffuse also keeps the shade's
-  floor (`rooms::Room.pattern`'s x leaves 10% of the key in autumn), which stands for light
-  thrown back and takes the occlusion. Any shadow inside a sun patch (the bars', the
+  floor (`rooms::Room.pattern`'s x leaves 10% of the key in autumn, of which the room keeps
+  a fifth beside its baked light, `render3d::shade_fill`), which stands for light thrown
+  back and takes the occlusion. Any shadow inside a sun patch (the bars', the
   table's, the bookcases') removes only the sun: the shade's floor stays under each.
 - **The games table's own shadow** (`render3d::table_map`): its top and base drawn into a
   1024 × 512 depth map projected along the key onto the floor round the table, drawn again
@@ -577,7 +582,7 @@ board's light:
   never per frame and held while a slider drags. Each probe holds the sky seen through the
   niches, the sun's patches thrown back, and the light the room throws on after that, as
   a constant and a direction per colour; the row in front of a surface takes none of that
-  surface's own light. The light thrown on is bounced three times between 1,208 cells over
+  surface's own light. The light thrown on is bounced once more between 1,208 cells over
   the room's surfaces (half a metre on the floor, ceiling and walls, 0.2 m in the niches,
   the table's top) from every source: the sun's rays where they land, the sky through the
   niches on the floor, sills and reveals, the backlit lace; the probes gather it at half
@@ -591,6 +596,16 @@ board's light:
   heights on its axis after each bake, in its block (`render3d::probes_on_table`), its base
   at the room's exposure, its top at the board's, through the board's tonemap toe (off the
   least channel), as in the game. In the game it keeps the look's harmonics.
+- **Contact shadows** (`ROOM_FRAG`'s `contact_lit`, `render3d::contact_look`), in the
+  standard and high tiers where the SSAO's map is drawn: a 12-step ray 10 cm toward the
+  sun over that map of positions stops 0.8 of the sun behind what stands nearer, so the
+  architraves, the caps and the mouldings cast their thin shadows.
+- **The panels** (`surfaces::panel_ring`): their rings shade as their profiles are, smooth
+  where they turn by less than 32°, a step under 5 mm wide shaded from the facet before it
+  to the one after, the groove's occlusion a thin dip in its first 4 mm.
+- **The toes**: each tonemap keeps its own (the room's and the view out's on the
+  luminance, the board's and the table's off the least channel); the light tuner can switch
+  them in shaders of its own (`shaders::TOE_FN`, `--toe`, `--table-toe`, `--board-toe`).
 - **Corners and edges** (`ROOM_FRAG`'s `corner_shade`, `rooms::Room.corners`): the
   indirect light darkened by the distance to each of the shell's planes standing square to
   a surface, a plane hiding a half of the light at the line and nothing beyond the reach
