@@ -34,6 +34,25 @@ FULL = ["FULL_VERT"]
 LIT_VS = ["VS_SET", "FRAME", "LIT_VERT"]
 QUAD_VS = ["VS_SET", "FRAME", "QUAD_VERT"]
 TABLE_VS = ["VS_SET", "FRAME", "TABLE_VERT"]
+# The room's pipelines, one a material group (render3d::room_group) and tier, as
+# render3d_gpu.goose's make_room_tier puts them together: the defines, then ROOM_FS, the
+# table's map (not the glass's), SSAO_FN, TONE_FN and ROOM_FRAG.
+ROOM_VS = ["VS_SET", "FRAME", "ROOM_VERT"]
+ROOM_FS = ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN"]
+ROOMS = [
+    ("r3d_room_floor", ["ROOM_FLOOR", "SHARP_BOX"]),
+    ("r3d_room_planar", ["ROOM_FLOOR", "PLANAR_FLOOR"]),
+    ("r3d_room_walls", ["ROOM_WALLS"]),
+    ("r3d_room_metals", ["ROOM_METALS", "SHARP_BOX"]),
+    ("r3d_room_glass", ["ROOM_GLASS"]),
+    ("r3d_room_floor_phone", ["ROOM_FLOOR", "SHARP_BOX", "NO_SSAO"]),
+    ("r3d_room_walls_phone", ["ROOM_WALLS", "NO_SSAO"]),
+    ("r3d_room_metals_phone", ["ROOM_METALS", "SHARP_BOX", "NO_SSAO"]),
+    ("r3d_room_glass_phone", ["ROOM_GLASS", "NO_SSAO"]),
+    ("r3d_mirror_walls", ["ROOM_WALLS", "MIRROR_PASS"]),
+    ("r3d_mirror_metals", ["ROOM_METALS", "MIRROR_PASS"]),
+    ("r3d_mirror_glass", ["ROOM_GLASS", "MIRROR_PASS"]),
+]
 MODULES = [
     ("r3d_lit", LIT_VS, ["FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
     ("r3d_lit_few", LIT_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
@@ -52,6 +71,8 @@ MODULES = [
     ("r3d_table_few", TABLE_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
     ("r3d_table_many", TABLE_VS, ["SHADOW_MANY", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
     ("r3d_table_room", TABLE_VS, ["TABLE_ROOM", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_table_room_phone", TABLE_VS, ["TABLE_ROOM", "NO_SSAO", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_table_mirror", TABLE_VS, ["TABLE_ROOM", "MIRROR_PASS", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
     ("r3d_crown", FULL, ["CROWN_FN", "CROWN_FRAG"]),
     ("r3d_occ", FULL, ["FS_SET", "FRAME", "OCC_FRAG"]),
     ("r3d_backdrop", FULL, ["FS_SET", "FRAME", "FADE_FN", "BACKDROP_FRAG"]),
@@ -68,10 +89,8 @@ MODULES = [
     ("r3d_kept", FULL, ["KEPT_FRAG"]),
     ("r3d_show", ["SHOW_VS", "SHOW_BLOCK", "SHOW_VERT"], ["SHOW_FS", "SHOW_BLOCK", "SHOW_FRAG"]),
     ("r3d_dust", ["VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["DUST_FRAG"]),
-    ("r3d_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
-    ("r3d_room_planar", ["VS_SET", "FRAME", "ROOM_VERT"], ["PLANAR_FLOOR", "SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
-    ("r3d_room_sharp", ["VS_SET", "FRAME", "ROOM_VERT"], ["ROOM_SHARP", "PLANAR_FLOOR", "SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
-    ("r3d_room_mirror", ["VS_SET", "FRAME", "ROOM_VERT"], ["MIRROR_PASS", "SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
+    *[(name, ROOM_VS, defines + ROOM_FS + ([] if "ROOM_GLASS" in defines else ["TABLE_MAP_FN"]) + ["SSAO_FN", "TONE_FN", "ROOM_FRAG"])
+      for name, defines in ROOMS],
     ("r3d_planar_resolve", FULL, ["PLANAR_RESOLVE_FRAG"]),
     ("r3d_planar_show", FULL, ["TONE_FN", "PLANAR_SHOW_FRAG"]),
     ("r3d_planar_mip", FULL, ["PLANAR_MIP_FRAG"]),

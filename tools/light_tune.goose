@@ -733,15 +733,17 @@ fn main() {
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG),
             embed_shader("frag", shaders::TABLE_ROOM, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::SHADOW_FN,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
-            embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD, shaders::LIGHT_FN,
-                         shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
+            embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
+                         shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+            embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
+                         shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+            embed_shader("frag", shaders::ROOM_WALLS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
-            embed_shader("frag", shaders::ROOM_SHARP, shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)];
+            embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
+                         shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+            embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
+                         shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG)];
         render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
                                       pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
     }
@@ -782,6 +784,11 @@ fn main() {
     room.corners = four(argv, "--corners", room.corners);
     room.ssao = four(argv, "--ssao", room.ssao);
     render3d::ssao_view = pick(argv, "--ssao-view", SSAO_VIEWS, 0);
+    // A phone's tier (the app's): the room's pipelines without the screen's maps, no mirror.
+    if has(argv, "--phone-tier") {
+        render3d::ssao_allowed = false;
+        render3d::planar_allowed = false;
+    }
     room.planar = four(argv, "--planar", room.planar);
     render3d::planar_view = pick(argv, "--planar-view", PLANAR_VIEWS, 0);
     render3d::planar_scale = whole(argv, "--planar-size", 2) as i32;

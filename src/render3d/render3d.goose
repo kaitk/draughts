@@ -354,8 +354,14 @@ struct Gpu {
     room_ib:      Buffer,
     room_count:   i64,
     room_from:    i64[ROOM_GROUPS], // where each material group's indices start (by_group)
-    room_lit:     Pipeline,         // made when first wanted (make_room)
-    bake_room:    Pipeline,
+    // The room's pipelines, one a material group (room_group), made when first wanted
+    // (make_room) for the tier: room_ssao, with the screen's maps (ssao_allowed), or a
+    // phone's without them. The floor here sees the room's box; room_planar the mirror.
+    room_floor:  Pipeline,
+    room_walls:  Pipeline,
+    room_metals: Pipeline,
+    room_ssao:   bool,
+    bake_room:   Pipeline,
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
     // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
     // pictures, the far band and the oak, RGBA8 sRGB with no mips.
@@ -396,15 +402,16 @@ struct Gpu {
     ssao_raw:   Texture,
     ssao_map:   Texture,
     ssao_size:  int2,
-    // The floor's mirror (planar_pass): the room drawn mirrored under the floor (its room's
-    // and glass's pipelines without the sharp reflections, shaders::MIRROR_PASS, the table's
-    // winding the other way), that made the room's light again with each texel's distance
-    // (resolve), its mips each a tent over the level above (mip), the tuner's view of it
-    // (show); its targets at planar_size_of's size, made again for another: the picture
-    // (RGBA16F), its depth (sampled), and the map the floor reads (RGBA16F with PLANAR_MIPS).
-    room_planar:    Pipeline,       // the room whose floor sees the mirror (shaders::PLANAR_FLOOR)
-    room_sharp:     Pipeline,       // its brass and books, which see the room's box (shaders::ROOM_SHARP)
-    planar_room:    Pipeline,
+    // The floor's mirror (planar_pass): the room drawn mirrored under the floor (its walls',
+    // metals' and glass's pipelines in shaders::MIRROR_PASS, the floor not drawn, the
+    // table's winding the other way), that made the room's light again with each texel's
+    // distance (resolve), its mips each a tent over the level above (mip), the tuner's view
+    // of it (show); its targets at planar_size_of's size, made again for another: the
+    // picture (RGBA16F), its depth (sampled), and the map the floor reads (RGBA16F with
+    // PLANAR_MIPS). Its pipelines only with the screen's maps (room_ssao).
+    room_planar:    Pipeline,       // the floor that sees the mirror (shaders::PLANAR_FLOOR)
+    planar_walls:   Pipeline,
+    planar_metals:  Pipeline,
     planar_glass:   Pipeline,
     planar_table:   Pipeline,
     planar_resolve: Pipeline,
@@ -715,8 +722,47 @@ fn by_group(room: corner_map::RoomVertex[>..]&, indices: u32[>..]&) -> i64[ROOM_
 // Where group k's indices end.
 fn group_end(g: Gpu&, k: i64) -> i64 { if k + 1 < ROOM_GROUPS { g.room_from[k + 1] } else { g.room_count } }
 
+// The textures a group's shader reads (GROUP_GLASS the glass and lace's), in its slots
+// (shaders::ROOM_HEAD): the tree's and the lace's maps, the light's, the group's own, the
+// screen's maps where the pipeline has them (ssao), the mirror where the floor sees it.
+let GROUP_GLASS = 3;
+let ROOM_TEXTURES = 11;
+struct RoomTextures { tex: Texture[ROOM_TEXTURES], smp: Sampler[ROOM_TEXTURES], count: i64 }
+fn add_texture(t: RoomTextures&, tex: Texture, smp: Sampler) {
+    t.tex[t.count] = tex;
+    t.smp[t.count] = smp;
+    t.count += 1;
+}
+fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures {
+    var t = default<RoomTextures>();
+    add_texture(t, tree_or_stand_in(g), g.linear);
+    add_texture(t, g.lace_mask, g.aniso);
+    if group != GROUP_GLASS {
+        add_texture(t, light_or_stand_in(g), g.linear);
+        add_texture(t, table_map_or_stand_in(g), g.compare);
+        add_texture(t, corners_or_stand_in(g), g.linear);
+    }
+    if group == GROUP_FLOOR {
+        add_texture(t, g.floor_albedo, g.aniso);
+        add_texture(t, g.floor_normal, g.aniso);
+    } else if group == GROUP_WALLS {
+        add_texture(t, g.wall_albedo, g.aniso);
+        add_texture(t, g.wall_normal, g.aniso);
+        add_texture(t, g.paper_mask, g.aniso);
+        add_texture(t, g.plaster_tone, g.aniso);
+    } else if group == GROUP_METALS {
+        add_texture(t, g.book_atlas, g.aniso);
+    }
+    if ssao {
+        add_texture(t, ssao_or_stand_in(g), g.linear);
+        if group != GROUP_GLASS { add_texture(t, pre_place_or_stand_in(g), g.linear); }
+    }
+    if planar { add_texture(t, g.planar_map, g.planar_sampler); }
+    return t;
+}
+
 // Whether the board's pass draws the room.
-fn room_shown(g: Gpu&) -> bool { g.room_on && g.room_baked && g.room_vb.id != 0 && g.room_lit.id != 0 }
+fn room_shown(g: Gpu&) -> bool { g.room_on && g.room_baked && g.room_vb.id != 0 && g.room_walls.id != 0 }
 
 // Whether the board's pass draws the view out of the shell's windows in place of the
 // photograph.
@@ -2084,7 +2130,7 @@ let PLANAR_DEPTH: f32 = 0.25;
 // units, 1.5 mm).
 let PLANAR_LIFT: f32 = 0.05;
 fn planar_shown(g: Gpu&) -> bool {
-    planar_allowed && room_shown(g) && g.room_shell && g.room.planar.x > 0.0 && g.planar_room.id != 0
+    planar_allowed && room_shown(g) && g.room_shell && g.room.planar.x > 0.0 && g.planar_walls.id != 0
 }
 // The mirror's least width in texels, at most the screen's: half of a 1600-pixel screen let
 // a window's bars, a few texels wide, step a whole texel as the eye moved and pulse in the
@@ -2179,7 +2225,7 @@ fn planar_look_of(g: Gpu&) -> float4 {
     guard planar_seen_on_floor(g) else { return float4_0; }
     return float4 { g.room.planar.z, g.room.planar.y, 0.0, 0.0 };
 }
-// Whether the room's floor sees the mirror this frame (the room drawn with g.room_planar).
+// Whether the room's floor sees the mirror this frame (drawn with g.room_planar).
 fn planar_seen_on_floor(g: Gpu&) -> bool { planar_shown(g) && g.planar_map.id != 0 && g.room_planar.id != 0 }
 // The room's and the table's blocks in the mirror: no screen occlusion (the map is the
 // screen's), no mirror of its own.
@@ -2218,8 +2264,7 @@ fn room_sun_of(c: float3) -> float3 {
 }
 fn mirror_table_block(g: Gpu&) -> TableBlock {
     var b = table_block(g);
-    // ssao.w -1: the light before the tonemap, as the room's in the mirror.
-    b.ssao = float4 { 0.0, 0.0, 0.0, -1.0 };
+    b.ssao = float4_0;
     return b;
 }
 
