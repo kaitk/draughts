@@ -131,7 +131,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
 
     // The table under the board, after it, so what the board covers fails the depth test.
     if render3d::table_shown(g) {
-        nx::bind(g.table_lit);
+        nx::bind(if render3d::table_in_room(g) { g.table_room } else { g.table_lit });
         var t = no_root();
         t.frame = f;
         let tb: render3d::TableBlock[1] = [render3d::table_block(g)];
@@ -223,6 +223,9 @@ fn make_room(own: Own&, g: Gpu&) {
     g.room_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room.blob"),
                                 ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
     g.bake_room = module(embed_file("../../build/ngfx/blobs/r3d_bake_room.blob"));
+    g.table_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_room.blob"),
+                                ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true,
+                                                     blend: ngfx::BLEND_PREMULTIPLIED });
     g.outside = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_outside.blob"),
                              ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
     g.bloom_pick = module(embed_file("../../build/ngfx/blobs/r3d_glow_pick.blob"));
@@ -996,7 +999,7 @@ fn release(own: Own&, g: Gpu&) {
     for s in samplers { if s.id != 0 { nx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
-                     g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick,
+                     g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick,
                      g.bloom_blur, g.bloom_add];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();

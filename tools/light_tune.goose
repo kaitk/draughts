@@ -714,6 +714,7 @@ fn main() {
     room.exposure = number(argv, "--exposure", room.exposure);
     var motes = whole(argv, "--motes", 500);
     render3d::light_bounces = whole(argv, "--bounces", room_light::BOUNCES);
+    render3d::shade_fill = number(argv, "--shade-fill", render3d::shade_fill);
     var dust_on = flag_value(argv, "--dust") > 0 && argv[flag_value(argv, "--dust")] == "on";
     render3d::dust.size = number(argv, "--mote-size", render3d::dust.size);
     render3d::dust.blur = number(argv, "--mote-blur", render3d::dust.blur);

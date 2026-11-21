@@ -256,6 +256,7 @@ struct Gpu {
     table_ib:       Buffer,
     table_count:    i64,
     table_lit:      Pipeline,
+    table_room:     Pipeline,
     // The table's own shadow in the room (table_map): its map, what it was drawn for
     // (table_map_key()), and the rows that place a point in it (table_map_rows()).
     table_map:       Texture,
@@ -494,11 +495,26 @@ fn table_shown(g: Gpu&) -> bool { g.table && g.table_baked && g.table_side == g.
 // TABLE_FRAG's block: the table's light, its polish, and its rim's wear (tables::Table),
 // and its shape: x the top's radius, y the floor's height; the table's own map
 // (table_map_place, all 0 where none is drawn).
-struct TableBlock { pool: float4, coat: float4, polish: float4, worn: float4, shape: float4, map: float4[4] }
+// In the room with its light baked, the room's light round the table: the probes on its
+// axis (table_probes), mix: x 1 (0 the game's harmonics as before), y the harmonics the room
+// keeps, z the room's exposure over the board's, w how much of the shade's floor of the key
+// stays (shade_fill); shade: the room's even bounce it keeps, w a metre in world units.
+struct TableBlock {
+    pool:       float4, coat: float4, polish: float4, worn: float4, shape: float4, map: float4[4],
+    room_light: float4[12], room_mix: float4, room_shade: float4,
+}
+// Whether the table stands in the room with its light baked: drawn with TABLE_ROOM's
+// pipeline (g.table_room) and the probes round it.
+fn table_in_room(g: Gpu&) -> bool { table_map_shown(g)[3].x > 0.5 && light_baked(g) && g.light_volume.id != 0 && g.table_room.id != 0 }
 fn table_block(g: Gpu&) -> TableBlock {
     let t = g.table_spec;
-    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 },
-                 table_map_shown(g) }
+    let map = table_map_shown(g);
+    let r = g.room;
+    let on = table_in_room(g);
+    let shade = rooms::color_of(r.bounce) * (r.bounce.w * r.baked.w);
+    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 }, map,
+                 table_probes, float4 { if on { 1.0 } else { 0.0 }, r.baked.z, r.room_exposure, shade_fill },
+                 float4 { shade.x, shade.y, shade.z, surfaces::METRE } }
 }
 
 // The table's own shadow in the room (shaders::TABLE_MAP_FN): its top and base drawn into a
@@ -1002,7 +1018,7 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     let r = g.room;
     b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, g.room_tint.z, g.room_tint.w };
     if light_baked(g) && g.light_volume.id != 0 {
-        b.room_baked = float4 { 1.0, 0.0, r.baked.z, r.baked.w };
+        b.room_baked = float4 { 1.0, shade_fill, r.baked.z, r.baked.w };
         let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
         b.light_box = float4 { corner.x, surfaces::FLOOR_Y + room_light::INSET * metre, corner.y, room_light::CELL * metre };
         b.light_grid = float4 { room_light::NX, room_light::NZ, room_light::NH, 0.0 };
@@ -1103,6 +1119,15 @@ var light_bounce:  room_light::Bounce;
 // the sun's rays, the first light, each bounce, the half grid's gather, the probes.
 var light_bounces = room_light::BOUNCES;
 var light_steps: f64[8] = [0.0; 8];
+// The probes' light on the games table's axis at TABLE_PROBE_UP + k × CELL over the floor
+// (k 0 to 3: by its feet, its urn, under its top, over it), each colour's constant and
+// direction, the direction turned into the world's; TABLE_FRAG reads it in the room.
+var table_probes: float4[12] = [float4_0; 12];
+let TABLE_PROBE_UP: f32 = 0.15;
+// How much of the shade's floor of the key (rooms::Room.pattern's x leaves it) the room's
+// surfaces and the games table keep beside the baked light: 1 all, 0 none (the tuner's
+// --shade-fill).
+var shade_fill: f32 = 1.0;
 let ATLAS_BYTES = 243360;   // room_light::ATLAS_W × ATLAS_H × 8
 let TREE_LEVEL = 3;
 let TREE_SMALL = 98304;     // trees::SHELL_W × SHELL_H × 4 >> 2 × TREE_LEVEL
@@ -1157,6 +1182,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     at = clock();
     room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..]);
     light_steps[6] = (clock() - at) * 1000.0;
+    probes_on_table(g);
     for i in room_light::ATLAS_FLOATS {
         let h = half_bits(light_atlas[i]);
         light_bytes[2 * i] = (h & 0xFF) as u8;
@@ -1167,6 +1193,52 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     g.light_for = key;
     g.light_patches = n;
     g.light_ms = (clock() - t0) * 1000.0;
+}
+
+// The probes' light at four heights on the games table's axis into table_probes, as
+// shaders' baked_light reads it (trilinear between probes), its directions turned from the
+// room's frame into the world's.
+fn probes_on_table(g: Gpu&) {
+    let s = room_shell::LIBRARY;
+    let fr = g.room_frame;
+    let metre = surfaces::METRE;
+    let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
+    let box = float3 { corner.x, surfaces::FLOOR_Y + room_light::INSET * metre, corner.y };
+    let cell = room_light::CELL * metre;
+    // The table's middle in the room's frame (the world's turned back by its axes).
+    let lx = fr.along.x * 0.0 + fr.along.y * mesh::TABLE_Z;
+    let lz = fr.into.x * 0.0 + fr.into.y * mesh::TABLE_Z;
+    for k in 4 {
+        let y = surfaces::FLOOR_Y + (TABLE_PROBE_UP + k * room_light::CELL) * metre;
+        let gx = clamp((lx - box.x) / cell, 0.0, room_light::NX - 1.0);
+        let gh = clamp((y - box.y) / cell, 0.0, room_light::NH - 1.0);
+        let gz = clamp((lz - box.z) / cell, 0.0, room_light::NZ - 1.0);
+        let x0 = floor(gx) as i64;
+        let h0 = floor(gh) as i64;
+        let z0 = floor(gz) as i64;
+        let x1 = min(x0 + 1, room_light::NX - 1);
+        let h1 = min(h0 + 1, room_light::NH - 1);
+        let z1 = min(z0 + 1, room_light::NZ - 1);
+        let fx = gx - x0;
+        let fh = gh - h0;
+        let fz = gz - z0;
+        for c in 3 {
+            var v = float4_0;
+            for q in 8 {
+                let x = if (q & 1) != 0 { x1 } else { x0 };
+                let h = if (q & 2) != 0 { h1 } else { h0 };
+                let z = if (q & 4) != 0 { z1 } else { z0 };
+                let w = (if (q & 1) != 0 { fx } else { 1.0 - fx }) * (if (q & 2) != 0 { fh } else { 1.0 - fh })
+                        * (if (q & 4) != 0 { fz } else { 1.0 - fz });
+                let a = 4 * ((c * room_light::NZ + z) * room_light::ATLAS_W + h * room_light::NX + x);
+                v = v + float4 { light_atlas[a], light_atlas[a + 1], light_atlas[a + 2], light_atlas[a + 3] } * w;
+            }
+            // The direction in the room's frame (x along u, z along v) into the world's.
+            let wx = fr.along.x * v.y + fr.into.x * v.w;
+            let wz = fr.along.y * v.y + fr.into.y * v.w;
+            table_probes[k * 3 + c] = float4 { v.x, wx, v.z, wz };
+        }
+    }
 }
 
 // The nine harmonics' light toward d.

@@ -158,7 +158,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
 
     // The table under the board, after it, so what the board covers fails the depth test.
     if render3d::table_shown(g) {
-        gfx::bind(g.table_lit);
+        gfx::bind(if render3d::table_in_room(g) { g.table_room } else { g.table_lit });
         gfx::bind_texture(gfx::FRAGMENT, 0, g.table_albedo, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 1, g.table_normal, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
@@ -253,6 +253,10 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
                                  embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                                  gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED });
     g.bake_room = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_ROOM, shaders::BAKE_FRAG));
+    g.table_room = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
+                                 embed_shader("frag", shaders::TABLE_ROOM, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG),
+                                 gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
+                                                     blend: gfx::BLEND_PREMULTIPLIED });
     g.outside = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::OUTSIDE_VERT),
                               embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
                               gfx::PipelineDesc { cull: gfx::CULL_NONE, blend: gfx::BLEND_PREMULTIPLIED });
@@ -939,7 +943,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick, g.bloom_blur, g.bloom_add];
+                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick, g.bloom_blur, g.bloom_add];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();

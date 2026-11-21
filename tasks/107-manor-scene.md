@@ -185,6 +185,23 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       same day: the shell's swept mouldings, the panels' rings and the books' spines with
       smooth normals (a crease at 37°, the rule in `agents/design.md`); the wainscot
       stopped against the doors' architraves on wider, deeper plinth blocks
+- [x] Step 3 of the morning's order, the light's bounces (2026-11-21, `build/notes/bounce/`):
+      the shell's corners round the bookcases, the doors' plinth blocks and architraves,
+      the sills' noses and the niches' piers as finite boxes and the openings as holes, so
+      no wedge of shade runs off an outside corner; the baked light bounced three times
+      between 1,208 cells over the room's surfaces from every source (the sun's rays, the
+      sky through the niches on the floor, sills and reveals, the backlit lace); the lace
+      letting less through where it is gathered, in the bake and its sun shadow, that
+      shadow faint and soft beside the bars'; the games table on the room's probes in the
+      room (a variant of its shader, the game's as it was). Against the repaints (sRGB
+      luma, style-01 and autumn-02's cameras): the hall wall's wainscot in shade 8 to 11%
+      and 7 to 10% (theirs 10 and 8), the paper 11 to 18% and 15 to 22% (18, 18), the
+      ceiling 49 to 54% (49, 40), the window wall's wainscot 6 to 8% and 4 to 5% (15, 13),
+      the floor in shade 15 to 18% and 10 to 13% (27, 22); the table's top at menu-01 9 to
+      13% (34). The exposure and the shade's 10% floor of the key kept. Costs in task 110.
+      Still off: the window wall's wainscot and the floor in shade, which want the floor's
+      larger sun patches of the repaints; the ceiling a little bright against autumn-02;
+      the table's top dull beside the repaints' sunlit one
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

@@ -193,6 +193,19 @@ results, or keep baking at run time behind a loader when the room or a look is c
   more for the 384 books (the shell 30,274 to 31,810); the mesh's making time within its
   noise. The swept mouldings' smooth normals cost nothing.
 
+- The light's bounces (2026-11-21, task 107, `build/notes/bounce/`): the bake 47 to about
+  90 ms on the CPU (the sun's rays 0.1 ms, the first light 3.4, each of the three bounces
+  6.2 to 6.6, the half grid's gather 21, the probes 46), only when the sun, the room's
+  light, the tree or the table changes and held while a slider drags; about 0.2 MB of
+  fixed buffers more (`room_light::Bounce`). The table's room shader a pipeline more (made
+  with the room's). Frames (headless, 1600x1000, `--fps-seconds 4`, two rounds alike):
+  the room view 5.6 to 6.0 ms, style-01's camera 5.5 to 6.0, the table's base 5.2 to 5.5,
+  the room waited for the GPU 6.5 to 6.9; most of it the corners' boxes (the old
+  `corner_shade` 1.2 ms of the 5.6, the new about 1.6). Unrolled over nine boxes the
+  corners' code made the room's shader 157 ms a frame even where it returned at once:
+  one loop the compiler can't unroll keeps it to one copy (`agents/goose.md`'s rule on a
+  big function's call sites). Not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

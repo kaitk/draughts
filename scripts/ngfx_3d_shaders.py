@@ -51,6 +51,7 @@ MODULES = [
     ("r3d_table", TABLE_VS, ["FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
     ("r3d_table_few", TABLE_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
     ("r3d_table_many", TABLE_VS, ["SHADOW_MANY", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
+    ("r3d_table_room", TABLE_VS, ["TABLE_ROOM", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
     ("r3d_crown", FULL, ["CROWN_FN", "CROWN_FRAG"]),
     ("r3d_occ", FULL, ["FS_SET", "FRAME", "OCC_FRAG"]),
     ("r3d_backdrop", FULL, ["FS_SET", "FRAME", "FADE_FN", "BACKDROP_FRAG"]),

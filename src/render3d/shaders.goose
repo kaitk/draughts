@@ -111,6 +111,9 @@ let FS_SET = "#define FRAME_SET 3\n";
 // and a desktop's (render3d::set_shadow).
 let SHADOW_FEW = "#define SHADOW_FEW 1\n";
 let SHADOW_MANY = "#define SHADOW_MANY 1\n";
+// TABLE_FRAG in the room with its light baked: the room's probes round the table in place
+// of the look's harmonics (render3d::table_in_room); the game's table never carries it.
+let TABLE_ROOM = "#define TABLE_ROOM 1\n";
 
 // LIT_FRAG's pieces in one material (render3d::PIECES_..), none of them classic: a
 // phone compiles every branch a shader has, so each material is a shader of its own.
@@ -1621,8 +1624,13 @@ let TABLE_HEAD = """
     // strength, z the blotches' size (world units), w how much the wear shows in it;
     // worn: the rim's wear, x how much, y how wide. The pieces lying on it are FRAME's
     // discs. shape: x the top's radius (world units), y the floor's height. table_map: the
-    // table's own map's rows (TABLE_MAP_FN).
-    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 shape; vec4 table_map[4]; };
+    // table's own map's rows (TABLE_MAP_FN). In the room with its light baked (TABLE_ROOM,
+    // render3d::TableBlock): room_light the probes on the table's axis, four heights of
+    // three colours' constant and direction; room_mix x 1 there, y the harmonics the room
+    // keeps, z the room's exposure over the board's, w the shade's floor of the key kept;
+    // room_shade the room's even bounce kept, w a metre.
+    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 shape; vec4 table_map[4];
+                                                 vec4 room_light[12]; vec4 room_mix; vec4 room_shade; };
     """;
 
 // The table's own shadow from its map (render3d::table_map), which TABLE_FRAG and ROOM_FRAG
@@ -1687,6 +1695,27 @@ let TABLE_FRAG = """
     }
     // A vector in the second layer's tile turned back into the world's.
     vec2 turn_back(vec2 v) { return vec2(TURN.x * v.x + TURN.y * v.y, TURN.x * v.y - TURN.y * v.x); }
+
+    #ifdef TABLE_ROOM
+    // The room's baked light round the table at height y for the normal n (world), over pi:
+    // its four samples on the table's axis 0.15 m and then 0.3 m apart up from the floor,
+    // straight between them, each colour a constant and a direction; with the harmonics and
+    // the even bounce the room keeps, at the room's exposure under the top (the base, the
+    // frieze, which stand in the room) and the board's over it (the top and its board, as
+    // tuned in the game: the room's lifts their shade grey and drowns the sun's dapple).
+    vec3 room_light_at(float y, vec3 n, vec3 harmonics) {
+        float k = clamp(((y - shape.y) / room_shade.w - 0.15) / 0.3, 0.0, 3.0);
+        int i = int(min(floor(k), 2.0));
+        float f = k - float(i);
+        vec3 a = vec3(room_light[3 * i].x + dot(room_light[3 * i].yzw, n), room_light[3 * i + 1].x + dot(room_light[3 * i + 1].yzw, n),
+                      room_light[3 * i + 2].x + dot(room_light[3 * i + 2].yzw, n));
+        int j = i + 1;
+        vec3 b = vec3(room_light[3 * j].x + dot(room_light[3 * j].yzw, n), room_light[3 * j + 1].x + dot(room_light[3 * j + 1].yzw, n),
+                      room_light[3 * j + 2].x + dot(room_light[3 * j + 2].yzw, n));
+        float over = smoothstep(TABLE_TOP - 0.5, TABLE_TOP, y);
+        return (max(mix(a, b, f), vec3(0.0)) + harmonics * room_mix.y + room_shade.rgb) * mix(room_mix.z, 1.0, over);
+    }
+    #endif
 
     vec3 tonemap(vec3 c) {
         float x = min(c.r, min(c.g, c.b));
@@ -1917,6 +1946,11 @@ let TABLE_FRAG = """
             float own = top ? 1.0 : table_map_at(p + vn * (0.03 + 0.1 * (1.0 - clamp(dot(vn, l), 0.0, 1.0))));
             pattern *= own;
             sun_in = window_open(p) * own;
+        #ifdef TABLE_ROOM
+            // With the room's light baked, the shade's floor of the key only as far as
+            // room_mix.w keeps it.
+            pattern = mix(sun_in, pattern, room_mix.w);
+        #endif
         } else if (base) {
             pattern *= under_top(p, l);
             sun_in = pattern;
@@ -1927,6 +1961,9 @@ let TABLE_FRAG = """
         // through, its sheen showed under the board, which then floated.
         float spec_vis = hidden * sun_in;
         vec3 irr = sh_eval(n) * params.z * mix(1.0, lit, 0.5);
+    #ifdef TABLE_ROOM
+        irr = room_light_at(p.y, n, sh_eval(n) * params.z);
+    #endif
         vec3 wood = albedo * (diff / PI * light * vis + irr * ao);
 
         float nov = max(dot(nc, v), 1e-4);
@@ -1956,6 +1993,11 @@ let TABLE_FRAG = """
         vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * spec_vis;
         vec3 r = reflect(-v, nc);
         vec3 env = sh_eval(r) * params.z * mix(1.0, lit, 0.5);
+    #ifdef TABLE_ROOM
+        // In the room the polish sees the room's surfaces: the light on them toward r by
+        // their mean albedo (0.2), as ROOM_FRAG's rough reflections take it.
+        env = 0.2 * room_light_at(p.y, r, sh_eval(r) * params.z);
+    #endif
         // Near the board the polish shows the board's side in place of the room.
         if (top && r.y > 0.0) {
             vec4 side = board_seen(p, r, l);
@@ -3067,7 +3109,8 @@ let ROOM_FRAG = """
         float table_kept = table_map[3].x > 0.5 ? table_map_at(p + ng * 0.06) : table_shade(p, l);
         float kept = dot(ng, l) > 0.0 ? table_kept * case_shade(v_local, l) : 0.0;
         float open = kept > 0.0 ? window_open(p) : 0.0;
-        float vis = (room.y > 0.0 ? open + (1.0 - room.y) * (1.0 - open) * ao : 1.0) * kept;
+        float fill = room_baked.x > 0.5 ? room_baked.y : 1.0;
+        float vis = (room.y > 0.0 ? open + fill * (1.0 - room.y) * (1.0 - open) * ao : 1.0) * kept;
         vec3 irr = room_irradiance(v_local, n) * ao;
         vec3 base = albedo * (1.0 - metal) * (diff / PI * light * vis + irr);
 
