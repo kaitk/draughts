@@ -155,8 +155,8 @@ pieces; the design boards still set the layout, glass, and controls.
 - The light tuner's panel is in sections that open and close, kept for the session
   (`SECTIONS`): Scene, Light (Light in detail inside), Sun and tree (the sun, the tree,
   wind, the board's window, noise leaves), Wallpaper, Wainscot and panelling, Ceiling,
-  Curtains and lace, Bookcases and books, Table, Outside, Dust, Camera and views, Debug,
-  Keys (every key).
+  Curtains and lace, Bookcases and books, Table, Outside, Dust, Camera and views (and the
+  walk), Debug, Keys (every key).
   `--sections all|scene,light,..` opens those at the start (names in `SECTION_NAMES`),
   `--shot-panel` draws the panel in a `--shot`. A drag that starts on the panel holds the
   tree's and the probes' bakes (`render3d::Gpu.bake_held`) and bakes once on release.
@@ -167,6 +167,18 @@ pieces; the design boards still set the layout, glass, and controls.
   from sRGB (14,5,2) to (41,22,12); the references' is about (66,38,22)
   (`build/notes/reference-compare/`). P prints, after the room's literal, the flags that show
   the same again, exactly (`build/notes/tuner-sections/`).
+- The light tuner's walk round the room (`Walk`): Tab or the button under Camera and
+  views captures the mouse (goose_gfx's `set_mouse_relative`) and hides the panel; WASD
+  walk at 1.4 m/s (Shift 2.5×), the mouse looks (0.1° a pixel, pitch within ±85°), C
+  sits (eye 1.2 m, else 1.6 m), X lets Q and E go down and up, R goes back to the view's
+  eye, Esc or Tab (or losing focus) back to the panel. While walking the tuner's letter
+  keys (W, S, D, C..) are the walk's. It turns the room and its shell on; the eye keeps
+  0.6 m off the plan's walls (the views' near plane, 0.39 m, reaches 0.58 m at its
+  corners), no furniture collision. The camera stays where the walk left it till R, V or
+  another view; P prints it as `--plan-eye`, `--plan-at` (2 m ahead) and `--fov 60`, a
+  shot from which matches exactly. The camera isn't light: walking bakes nothing. Tested
+  headless by `--walk-test N` (injected keys and mouse, 1/60 s steps; the path's stops and
+  P's check by `build/walk-mode/walk.sh EXE OUT`, `build/notes/walk-mode/`).
 - The bookcases by the hall door and their books (task 107): `--books off` (B) leaves the
   books out of the mesh (the empty cases), `--book-fade K` scales the sun's fade (1 as
   made; the panel's Their fade). The hall view (`--view hall`) shows both cases; the
