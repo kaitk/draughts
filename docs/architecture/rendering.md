@@ -579,7 +579,9 @@ board's light:
   the room's surfaces (half a metre on the floor, ceiling and walls, 0.2 m in the niches,
   the table's top) from every source: the sun's rays where they land, the sky through the
   niches on the floor, sills and reveals, the backlit lace; the probes gather it at half
-  their density. They fill a 390 × 78 RGBA16F atlas
+  their density. The lace lets about three quarters through where it hangs flat and less
+  where it is gathered toward its tie, and throws on part of what it stops; its sun
+  shadow is faint and soft, blurred well past the bars'. They fill a 390 × 78 RGBA16F atlas
   (0.24 MB) that `ROOM_FRAG` reads with six taps. Beside it the
   room keeps a part of the harmonics and of the flat bounce (`rooms::Room.baked`).
 - **Corners and edges** (`ROOM_FRAG`'s `corner_shade`, `rooms::Room.corners`): the

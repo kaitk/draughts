@@ -951,6 +951,18 @@ to be is in tasks 042, 059, 071, 081, and 086.
   the window wall's wainscot 6 to 7% (15), 4 to 5% (13). The exposure stays: lifting it
   for the window wall would take the ceiling and the paper past the references; that wall
   is dark because the floor's sun patches it would see are a tenth of theirs.
+- The curtains' lace in the baked light and its sun shadow (2026-11-21, task 107;
+  `room_light::lace_lets`, `LIGHT_FN`'s `lace_shadow`): the lace lets 0.72 through where
+  a panel hangs at its 2× fullness (0.55 m wide, at the rod) and that to the power of how
+  many times narrower it is gathered, about a third at the tie and 0.6 at the hem, for the
+  sun's rays, the sky and the bounces alike; of what it stops, 0.4 it throws on into the
+  room as a soft source (its thread near white, half of it scattered forward). Its sun
+  shadow follows the same rule, its pattern half washed out (the lace scatters forward
+  much of what it doesn't let straight through) and blurred by 3 cm a metre past the
+  sun's disc, so it reads faint, soft and dappled beside the bars' crisp ones: on the
+  floor it now stops 13% on average where it falls, at most half under the gathered
+  folds. Replaces the flat 0.72 everywhere and a shadow as sharp as the bars', its
+  densest parts stopping two thirds at the sun's own softness.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

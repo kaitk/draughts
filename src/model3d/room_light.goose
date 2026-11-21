@@ -60,6 +60,15 @@ let GLAZING:     f32 = 0.78;
 // What the lace lets through where it hangs before the niche (its thread lets 0.45 of the
 // sun through where it covers, and it covers about half).
 let LACE_LETS: f32 = 0.72;
+// Where the panel hangs at 2× fullness (1.2 m of cloth on 0.55 m, its width at the rod)
+// the lace lets LACE_LETS through; gathered narrower toward the tie, more layers of it lie
+// in a ray's way, so less: LACE_LETS to the power of how many times narrower it is (about
+// a third at the tie, 0.72 at the rod, 0.6 at the hem).
+let LACE_FLAT_WIDTH: f32 = 0.55;
+fn lace_lets(h: f32) -> f32 {
+    let w = along_keys(room_shell::LACE_OUTER, h) - along_keys(room_shell::LACE_INNER, h);
+    return pow(LACE_LETS, max(LACE_FLAT_WIDTH / max(w, 0.05), 1.0));
+}
 
 // The surfaces' mean albedo, linear: the herringbone's oak, the wallpaper, the wainscot,
 // the white paint of the doors and joinery, the limewash of the reveals, the sills' stone,
@@ -263,8 +272,9 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                     let c = q + d * ((gy - lace_y) / -d.y);
                     if in_lace(o, c) {
                         let lc = lace_cell(k, o, c);
-                        bounce.sun[lc] = bounce.sun[lc] + p * ((1.0 - LACE_LETS) * LACE_SCATTER);
-                        p = p * LACE_LETS;
+                        let lets = lace_lets(c.z);
+                        bounce.sun[lc] = bounce.sun[lc] + p * ((1.0 - lets) * LACE_SCATTER);
+                        p = p * lets;
                     }
                     var t = b.z / -d.z;
                     var hit = 0;
@@ -399,7 +409,8 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                     if p.y <= face + 1e-4 {
                         let f = max(face - p.y, 0.0) / v.y;
                         guard in_niche(o, p + v * f) else { continue; }
-                        if p.y < lace_y && in_lace(o, p + v * ((lace_y - p.y) / v.y)) { lets = LACE_LETS; }
+                        let c = p + v * ((lace_y - p.y) / v.y);
+                        if p.y < lace_y && in_lace(o, c) { lets = lace_lets(c.z); }
                     }
                     guard !under_table(sun.table, p, s) else { continue; }
                     let r2 = max(dot(v, v), near2);
@@ -679,7 +690,8 @@ fn seen_through(t: float4, wins: room_shell::Opening[3]&, a: float3, ka: i64, b:
         let face = wall_face();
         guard in_niche(o, room + v * ((face - room.y) / v.y)) else { return 0.0; }
         let lace_y = face - room_shell::LACE_OFF;
-        if room.y < lace_y && in_lace(o, room + v * ((lace_y - room.y) / v.y)) { lets = LACE_LETS; }
+        let c = room + v * ((lace_y - room.y) / v.y);
+        if room.y < lace_y && in_lace(o, c) { lets = lace_lets(c.z); }
     }
     guard !under_table(t, a, b) else { return 0.0; }
     return lets;
@@ -739,7 +751,7 @@ fn first_light(sun: Sun, bounce: Bounce&) {
         }
         let thrown = bounce.sun[c] * (gain / cell.area);
         if lace {
-            let from_sky = balanced(e * ((1.0 - LACE_LETS) * LACE_SCATTER));
+            let from_sky = balanced(e * ((1.0 - lace_lets(cell.at.z)) * LACE_SCATTER));
             bounce.leaves[c] = from_sky + balanced(thrown);
             bounce.seen[c] = bounce.leaves[c];
         } else {

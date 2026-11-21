@@ -471,8 +471,11 @@ let LIGHT_FN = """
 
     // How much of the sun the lace in front of a niche lets on at w (metres from the
     // window's middle, up from the floor, at its plane): its thread keeps out all but
-    // shell_glass.w, its pattern blurred to the shadow's softness, a little denser on the
-    // folds' flanks.
+    // shell_glass.w where it covers, about a quarter of the sun where the panel hangs at its
+    // 2× fullness (0.55 m wide), more where it is gathered narrower toward the tie (as
+    // model3d's room_light::lace_lets); its pattern half washed out, since the lace scatters
+    // on forward much of what it doesn't let straight through, blurred to the shadow's
+    // softness, a little denser on the folds' flanks.
     float lace_shadow(vec2 w, float soft) {
         vec2 e = lace_edges(w.y);
         float x = abs(w.x);
@@ -481,8 +484,10 @@ let LIGHT_FN = """
         float s = clamp((x - e.x) / (e.y - e.x), 0.0, 1.0);
         vec2 uv = vec2((1.0 - s) * 1.2, w.y - 0.07) * shell.w;
         float cover = textureLod(lace_mask, lace_place(uv), log2(max(soft * 1024.0 / 0.56, 1.0))).r;
+        cover = mix(0.5, cover, 0.5);
         float folds = 0.8 + 0.4 * (0.5 + 0.5 * sin(6.2831853 * 6.0 * s));
-        return mix(1.0, 1.0 - clamp(cover * folds, 0.0, 1.0) * (1.0 - shell_glass.w), inside);
+        float flat_lets = 1.0 - clamp(cover * folds, 0.0, 1.0) * (1.0 - shell_glass.w);
+        return mix(1.0, pow(flat_lets, max(0.55 / max(e.y - e.x, 0.05), 1.0)), inside);
     }
 
     // How much of the key reaches p through the shell's windows, 0 to 1: p traced along the
@@ -524,11 +529,12 @@ let LIGHT_FN = """
                 vec3 g = p + l * tg;
                 through *= casement(vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre, (0.03 + widen * tg) / metre);
             }
-            // The lace in front of the niche, for what is behind it in the room.
+            // The lace in front of the niche, for what is behind it in the room: its shadow
+            // softer than the bars' by the cone it scatters the sun into, 3 cm a metre.
             float tl = (shell.y - shell_glass.z - d) / toward;
             if (tl > 0.5) {
                 vec3 c = p + l * tl;
-                through *= lace_shadow(vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre, (0.03 + widen * tl) / metre);
+                through *= lace_shadow(vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre, (0.03 + widen * tl) / metre + 0.03 * tl / metre);
             }
             lit += through;
         }
