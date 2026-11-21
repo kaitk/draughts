@@ -307,6 +307,11 @@ fn shell_tree(r: Room) -> Room {
     return t;
 }
 
+// The shell's tree's trunk and limbs as its map draws them (trees::View.wood): their widths
+// and their blur times these, so through the windows they are fine and soft as the oak
+// outside is, not bold dark bars across the sun's patches (task 107's leftovers).
+let SHELL_LIMBS = float2 { 0.5, 3.0 };
+
 // The tree's make (trees::Spec) from the room's tree, crown and foliage.
 fn tree_spec(r: Room) -> trees::Spec {
     return trees::Spec { r.tree.y, r.tree.z, r.tree.w, r.foliage.x, r.foliage.y, r.foliage.z,
@@ -383,7 +388,7 @@ fn made_view(r: Room, shear: float2, middle: float2, size: float2, w: i64, h: i6
     let facing = tree_facing(r);
     let sun: f32 = 0.0093;
     return trees::View { shear, middle, size, w, h, (r.window.x + r.foliage.w) / facing, facing, sun * r.tree_blur,
-                         -r.foliage.w };
+                         -r.foliage.w, .. };
 }
 
 // The wind in the trees at a moment (Room.wind), for shaders::LIGHT_FN: now x the whole

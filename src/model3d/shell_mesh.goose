@@ -269,12 +269,17 @@ fn panelling(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
 }
 
 // A run of wainscot from s0 to s1 (world units) of `kind`; `ends` how its cap meets
-// what is past each end: 0 a wall at an inside corner, 1 a window's niche (the cap
-// wrapping 6.5 cm into its reveal), 2 a door's architrave (the cap's end returned).
+// what is past each end: 0 a wall at an inside corner (the plinth and cap mitred into
+// it), 1 a window's niche (the cap wrapping 6.5 cm into its reveal), 2 a door's
+// architrave (the cap's end returned, the plinth square against the plinth block). A run
+// under a sill butts on the wall's runs either side.
 fn wainscot_run(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, s0: f32, s1: f32, kind: i64,
                 start_end: i64, finish_end: i64, seed: i64&) {
     let first = verts.len;
-    sweep_oak(verts, indices, b, PLINTH_A[..], 0.0, s0, s1, 0.0, 0.0, seed);
+    let corner0 = kind == RUN_WALL && start_end == 0;
+    let corner1 = kind == RUN_WALL && finish_end == 0;
+    sweep_oak(verts, indices, b, PLINTH_A[..], 0.0, s0, s1, if corner0 { 1.0 } else { 0.0 }, if corner1 { -1.0 } else { 0.0 },
+              seed);
     for i in first..verts.len {
         let v .= verts[i];
         v.mat = surfaces::MAT_OAK + PLINTH_TONE * (v.mat - floor(v.mat));
@@ -288,8 +293,8 @@ fn wainscot_run(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Buil
     }
     guard kind != RUN_SILL else { return; }
     let lift = CAP_LIFT;
-    let k0: f32 = if start_end == 1 { -1.0 } else { 0.0 };
-    let k1: f32 = if finish_end == 1 { 1.0 } else { 0.0 };
+    let k0: f32 = if start_end == 1 { -1.0 } else if corner0 { 1.0 } else { 0.0 };
+    let k1: f32 = if finish_end == 1 { 1.0 } else if corner1 { -1.0 } else { 0.0 };
     sweep_oak(verts, indices, b, CAP_A[..], lift, s0, s1, k0, k1, seed);
     let ends: i64[2] = [start_end, finish_end];
     let at:   f32[2] = [s0, s1];

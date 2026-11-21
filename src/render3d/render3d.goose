@@ -862,28 +862,29 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, 0.0, 0.0 };
     if light_baked(g) && g.light_volume.id != 0 {
         b.room_baked = float4 { 1.0, 0.0, r.baked.z, r.baked.w };
-        let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x, room_light::PLAN_Y0 });
-        b.light_box = float4 { corner.x, surfaces::FLOOR_Y, corner.y, room_light::CELL * metre };
+        let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
+        b.light_box = float4 { corner.x, surfaces::FLOOR_Y + room_light::INSET * metre, corner.y, room_light::CELL * metre };
         b.light_grid = float4 { room_light::NX, room_light::NZ, room_light::NH, 0.0 };
         // The box the reflections meet, and its doors.
         let near = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x, s.walls[room_shell::WINDOW_WALL].a.y });
         let far = room_shell::room_of(s, float2 { s.walls[room_shell::STOVE_WALL].a.x, s.walls[room_shell::HALL_WALL].a.y });
         b.room_box = float4 { near.x, far.x, near.y, far.y };
-        var doors = float4_0;
-        var top: f32 = 0.0;
-        for k in s.count {
-            let d = s.openings[k];
-            guard d.kind == room_shell::DOOR else { continue; }
-            let wl = s.walls[d.wall];
-            let at = wl.a + normalize(wl.b - wl.a) * d.mid;
-            let mid = room_shell::room_of(s, at);
-            let half = (0.5 * d.width + room_shell::ARCHITRAVE) * metre;
-            if d.wall == room_shell::HALL_WALL { doors.x = mid.x; doors.y = half; } else { doors.z = mid.y; doors.w = half; }
-            top = d.height + room_shell::ARCHITRAVE;
-        }
-        b.room_doors = doors;
-        b.room_heights = float4 { surfaces::FLOOR_Y + s.ceiling * metre, top, room_shell::WAINSCOT_TOP, 0.0 };
     }
+    // The doors, for the reflections' box and the floor before them.
+    var doors = float4_0;
+    var top: f32 = 0.0;
+    for k in s.count {
+        let d = s.openings[k];
+        guard d.kind == room_shell::DOOR else { continue; }
+        let wl = s.walls[d.wall];
+        let at = wl.a + normalize(wl.b - wl.a) * d.mid;
+        let mid = room_shell::room_of(s, at);
+        let half = (0.5 * d.width + room_shell::ARCHITRAVE) * metre;
+        if d.wall == room_shell::HALL_WALL { doors.x = mid.x; doors.y = half; } else { doors.z = mid.y; doors.w = half; }
+        top = d.height + room_shell::ARCHITRAVE;
+    }
+    b.room_doors = doors;
+    b.room_heights = float4 { surfaces::FLOOR_Y + s.ceiling * metre, top, room_shell::WAINSCOT_TOP, room_shell::ARCHITRAVE };
     return b;
 }
 
@@ -942,7 +943,7 @@ var light_atlas:   f32[room_light::ATLAS_FLOATS];
 var light_bytes:   u8[ATLAS_BYTES];
 var light_patches: room_light::Patch[room_light::BINS];
 var light_tree:    f32[room_light::RAYS];
-let ATLAS_BYTES = 301320;   // room_light::ATLAS_W × ATLAS_H × 8
+let ATLAS_BYTES = 243360;   // room_light::ATLAS_W × ATLAS_H × 8
 let TREE_LEVEL = 3;
 let TREE_SMALL = 98304;     // trees::SHELL_W × SHELL_H × 4 >> 2 × TREE_LEVEL
 var tree_small:   u8[TREE_SMALL];
@@ -1350,8 +1351,10 @@ fn tree_view_of(g: Gpu&) -> trees::View {
         y1 = max(y1, surfaces::FLOOR_Y + room_shell::head_at(o, 0.0) * metre);
     }
     let shear = rooms::tree_shear(g.room);
-    return rooms::tree_view_over(tree_room(g), u0 - shear.x * inner, u1 - shear.x * inner, y0 - shear.y * inner,
-                                 y1 - shear.y * inner, trees::SHELL_W, trees::SHELL_H);
+    var v = rooms::tree_view_over(tree_room(g), u0 - shear.x * inner, u1 - shear.x * inner, y0 - shear.y * inner,
+                                  y1 - shear.y * inner, trees::SHELL_W, trees::SHELL_H);
+    v.wood = rooms::SHELL_LIMBS;
+    return v;
 }
 
 // The window wall's inner face's distance from the board's middle toward the sun, world units.

@@ -65,6 +65,9 @@ struct View {
     toward:   f32,
     blur:     f32,
     wall:     f32,
+    // The trunk's and limbs' widths and their blur times these: the shell's tree has them
+    // finer and softer (rooms::SHELL_LIMBS), the game's as grown.
+    wood: float2 = float2 { 1.0, 1.0 },
 }
 
 let WALL_GAP: f32 = 6.0;
@@ -523,7 +526,8 @@ fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
         }
         let z = if z_count[layer] > 0.0 { z_sum[layer] / z_count[layer] } else { 0.0 };
         let sharper = if layer == NEAR { species(sp.kind).near_blur } else { 1.0 };
-        let across = max(vw.distance + z / vw.toward, 1.0) * vw.blur * sharper;
+        let wood = if layer == WOOD { vw.wood.y } else { 1.0 };
+        let across = max(vw.distance + z / vw.toward, 1.0) * vw.blur * sharper * wood;
         blur_disc(plane, sums, vw, across * 0.5 / texel);
         for i in vw.w * vw.h {
             out[i * 4 + layer] = (clamp(plane[i], 0.0, 1.0) * 255.0 + 0.5) as u8;
@@ -550,7 +554,10 @@ fn texel_range(lo: f32, hi: f32, middle: f32, size: f32, n: i64) -> i64, i64 {
 fn draw_segment(plane: f32[>..]&, v: View&, sg: Segment&) {
     let a = on_map(v, sg.a);
     let b = on_map(v, sg.b);
-    let r = max(sg.ra, sg.rb);
+    let wide = if sg.level <= 1 { v.wood.x } else { 1.0 };
+    let ra = sg.ra * wide;
+    let rb = sg.rb * wide;
+    let r = max(ra, rb);
     let texel = v.size.x / v.w;
     let x0, x1 = texel_range(min(a.x, b.x) - r - texel, max(a.x, b.x) + r + texel, v.middle.x, v.size.x, v.w);
     let y0, y1 = texel_range(min(a.y, b.y) - r - texel, max(a.y, b.y) + r + texel, v.middle.y, v.size.y, v.h);
@@ -564,7 +571,7 @@ fn draw_segment(plane: f32[>..]&, v: View&, sg: Segment&) {
             let h = clamp(dot(ap, ab) / ll, 0.0, 1.0);
             let dx = ap.x - ab.x * h;
             let dy = ap.y - ab.y * h;
-            let rr = sg.ra + (sg.rb - sg.ra) * h;
+            let rr = ra + (rb - ra) * h;
             let dist = sqrt(dx * dx + dy * dy);
             let cover = clamp(rr + texel * 0.5 - dist, 0.0, min(2.0 * rr, texel)) / texel;
             guard cover > 0.0 else { continue; }

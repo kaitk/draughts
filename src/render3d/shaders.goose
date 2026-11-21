@@ -1992,7 +1992,8 @@ let ROOM_HEAD = """
     // the shell's walls in the room's frame, x the far end's u, y the stove's end's, z the
     // window wall's v, w the hall wall's; room_doors: the hall door's middle along u and half
     // width, the salon door's along v and half width (with their architraves); room_heights:
-    // the ceiling's y, the doors' tops and the wainscot's over the floor (metres).
+    // the ceiling's y, the doors' tops and the wainscot's over the floor and the
+    // architrave's width (metres).
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -2458,9 +2459,18 @@ let ROOM_FRAG = """
                          * (1.0 - smoothstep(table.x + 0.4 * worn.z, table.x + worn.z, r));
             float lane = worn.w * (1.0 - smoothstep(6.0, 22.0, abs(uv.y - 0.55 * place.y)));
             float wall = max(1.0 - smoothstep(4.0, 20.0, place.y - uv.y), 1.0 - smoothstep(4.0, 16.0, uv.y + place.x));
-            // The shell's floor: the distance to the nearest of its four walls.
-            float to_wall = min(min(place.y - uv.y, uv.y + place.x), min(shell_ends.x - uv.x, uv.x - shell_ends.y));
-            if (shell.x > 0.5) wall = 1.0 - smoothstep(4.0, 20.0, to_wall);
+            // The shell's floor: darker along the nearest of its four walls, but not before
+            // a door's opening (door_open x the hall's, y the salon's), where people walk
+            // through; there the oak threshold stands 3 cm out.
+            vec2 door_open = vec2(0.0);
+            if (shell.x > 0.5) {
+                vec2 clear = room_doors.yw - room_heights.w * shell.w;
+                vec2 off_mid = abs(vec2(uv.x - room_doors.x, uv.y - room_doors.z)) - clear;
+                door_open = (1.0 - smoothstep(-0.1 * shell.w, 0.1 * shell.w, off_mid)) * step(0.001, room_doors.yw);
+                float hall = uv.y + place.x + door_open.x * 0.4 * shell.w;
+                float stove = shell_ends.x - uv.x + door_open.y * 0.4 * shell.w;
+                wall = 1.0 - smoothstep(4.0, 20.0, min(min(place.y - uv.y, uv.x - shell_ends.y), min(hall, stove)));
+            }
             float patchy = 0.6 * vnoise(uv * 0.05 + 3.3) + 0.4 * vnoise(uv * 0.19 + 7.1);
             float wear = clamp(max(around, lane) * (0.3 + 1.2 * patchy), 0.0, 1.0) * worn.x * (1.0 - wall);
             albedo *= mix(vec3(1.0), vec3(1.6, 1.45, 1.25), wear);
@@ -2480,9 +2490,15 @@ let ROOM_FRAG = """
             ao *= mix(0.45, 1.0, smoothstep(0.2, 1.4, length(ta)));
             if (shell.x > 0.5) {
                 // Along every wall the wainscot hides the sky: the floor darker in a band
-                // about 0.3 m wide, and a dark contact line at the plinth's lip (5 cm out).
-                float past_lip = to_wall - 0.05 * shell.w;
-                ao *= mix(0.45, 1.0, smoothstep(0.0, 0.3 * shell.w, past_lip));
+                // about 0.3 m wide, and a dark contact line at the plinth's lip (5 cm out),
+                // before a door's opening at the threshold's nose (3 cm), its band fainter.
+                float others = min(place.y - uv.y, uv.x - shell_ends.y);
+                vec2 lip = mix(vec2(0.05), vec2(0.03), door_open) * shell.w;
+                vec2 near_door = vec2(uv.y + place.x, shell_ends.x - uv.x) - lip;
+                float past_lip = min(others - 0.05 * shell.w, min(near_door.x, near_door.y));
+                vec2 band_from = near_door + door_open * 0.12 * shell.w;
+                float past_band = min(others - 0.05 * shell.w, min(band_from.x, band_from.y));
+                ao *= mix(0.45, 1.0, smoothstep(0.0, 0.3 * shell.w, past_band));
                 ao *= mix(0.4, 1.0, smoothstep(0.0, 0.015 * shell.w, past_lip));
             } else {
                 ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));

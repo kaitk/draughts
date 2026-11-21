@@ -17,21 +17,26 @@ import std;
 import vec;
 import math;
 
-// The probes' grid: x from the far end (plan x 9) to the stove's end in NX steps, z from
-// the window wall's niches (plan y 7.3) to the hall wall in NZ, up from the floor in NH.
-let NX = 31;
-let NZ = 27;
-let NH = 15;
+// The probes' grid, half a step in from every wall, the floor and the ceiling, so none
+// lies in a surface and a surface's lookup half a step out along its normal lands on the
+// row in front of it: x from the far end (plan x 9) to the stove's end in NX steps, z
+// from the window wall's niches (plan y 7.45) to the hall wall in NZ, up from the floor
+// in NH.
+let NX = 30;
+let NZ = 26;
+let NH = 13;
 let CELL:    f32 = 0.3;       // metres between probes
-let PLAN_Y0: f32 = 7.3;       // the probes' first row, in the niches (the wall's face at 7)
-let PROBES = 12555;           // NX × NZ × NH
+let INSET:   f32 = 0.15;      // the first probe's distance in from the far end and the floor
+let PLAN_Y0: f32 = 7.45;      // the probes' first row, in the niches (the wall's face at 7)
+let OWN_ROW: f32 = 0.2;       // how far out from a surface the row that reads it reaches
+let PROBES = 10140;           // NX × NZ × NH
 
 // The atlas the probes go into: the height's slices side by side (NX × NH across), the
 // three colours' blocks one over the other (3 × NZ up), four floats a texel: the constant
 // and the direction's x, y, z in the room's frame.
-let ATLAS_W = 465;            // NX × NH
-let ATLAS_H = 81;             // 3 × NZ
-let ATLAS_FLOATS = 150660;    // ATLAS_W × ATLAS_H × 4
+let ATLAS_W = 390;            // NX × NH
+let ATLAS_H = 78;             // 3 × NZ
+let ATLAS_FLOATS = 121680;    // ATLAS_W × ATLAS_H × 4
 
 // The sun's rays traced through each window's glazing: RAYS_X across, RAYS_Y up.
 let RAYS_X = 12;
@@ -329,7 +334,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, atlas: f32[:]) {
     for ih in NH {
         for iz in NZ {
             for ix in NX {
-                let p = float3 { x0 - ix * CELL, PLAN_Y0 - iz * CELL, ih * CELL };
+                let p = float3 { x0 - INSET - ix * CELL, PLAN_Y0 - iz * CELL, INSET + ih * CELL };
                 var c = float3_0;
                 var dr = float3_0;
                 var dg = float3_0;
@@ -363,8 +368,13 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, atlas: f32[:]) {
                     let v = pt.at - p;
                     let r2 = max(dot(v, v), near2);
                     let r = sqrt(r2);
-                    let facing = -dot(pt.normal, v) / r;
-                    guard facing > 0.0 else { continue; }
+                    // A probe in the row before the patch's own surface (half a step out)
+                    // takes none of it: that surface reads this row, and a flat surface
+                    // doesn't light itself; with the patch behind it, the constant and the
+                    // direction would ring dark across the wall (the hall door's band).
+                    let off = -dot(pt.normal, v);
+                    guard off > OWN_ROW else { continue; }
+                    let facing = off / r;
                     guard !under_table(sun.table, p, pt.at) else { continue; }
                     let w = pt.power * (facing * inv_pi2 / r2);
                     let dir = to_room(v / r);
