@@ -405,7 +405,7 @@ struct Gpu {
     planar_depth:   Texture,
     planar_map:     Texture,
     planar_size:    int2,
-    planar_sampler: Sampler,        // clamped, anisotropic: the floor's streaks
+    planar_sampler: Sampler,        // clamped, trilinear: the floor's blur picks its mip
     // A tuner's: the panelling oak's and the ceiling's tint (x, z their lightness, y, w their
     // saturation, as factors, 0 untouched), and the tree's and the shell's light kept as
     // they are, not baked again, while a slider is held, so a drag bakes once on release.

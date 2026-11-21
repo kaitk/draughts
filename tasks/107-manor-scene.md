@@ -244,6 +244,16 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       the stove's end wall from the first gather of the sun's patches and the backlit lace
       (+20% over its neighbours, not fixed: a run without the lace as a source and a wider
       gather onto the probes next); the threshold's worn middle for the materials pass
+- [x] The table's own look back and the floor's mirror steadied (2026-11-21,
+      `build/notes/mirror-steady/`): the games table in the room keeps the board's
+      tonemap toe again (table-01's top in shade sRGB 65, 31, 9, as at efc452ef; the base's
+      orange cast left for its own light); the mirror's resolve makes NaN, infinity and
+      negatives black before the mips (a few bad texels had made large black blotches),
+      the empty texels repeat the nearest drawn one, and the floor blurs it in five taps
+      of one mip chosen from the lobe's widths (at least 3 texels across, 6 down) in place
+      of the anisotropic read. Frame times unchanged (room ~7.7 ms on the Mac). The ×6 sky
+      greys the floor by the window (style-01 76, 48, 31 at 1×, 93, 70, 60 at 6×), kept.
+      Still to check: the flips in the real window (Tab), not reproduced headless.
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

@@ -292,8 +292,7 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
                                                        blend: gfx::BLEND_PREMULTIPLIED });
     g.planar_resolve = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_RESOLVE_FRAG));
     g.planar_show = gfx::pipeline(full, embed_shader("frag", shaders::TONE_FN, shaders::PLANAR_SHOW_FRAG));
-    g.planar_sampler = gfx::sampler(gfx::SamplerDesc { wrap_u: gfx::CLAMP, wrap_v: gfx::CLAMP, wrap_w: gfx::CLAMP,
-                                                       max_anisotropy: 16.0 });
+    g.planar_sampler = gfx::sampler(gfx::SamplerDesc { wrap_u: gfx::CLAMP, wrap_v: gfx::CLAMP, wrap_w: gfx::CLAMP });
 }
 
 // The floor's mirror (render3d::planar_shown), before the board's pass: the view out, the

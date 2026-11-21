@@ -624,15 +624,17 @@ board's light:
   the view out at `planar.w` (6) times its look, as a clear sky is far brighter than the
   tonemap shows. The board and its pieces are left out: from under the floor the table's
   top hides them. A resolve (`PLANAR_RESOLVE_FRAG`) takes a 3 × 3 tent over that picture
-  back by the room's exposure, with each texel's distance from the floor along the
-  reflection from the depth, into an RGBA16F map with six mips. The floor
+  back by the room's exposure, each texel made safe first (NaN, infinity and negatives
+  black, the luminance held to 16), with each texel's distance from the floor along the
+  reflection from the depth, into an RGBA16F map with six mips; above the floor's far
+  edge it repeats the nearest drawn texel below, so no blur takes in black. The floor
   (`PLANAR_FLOOR`'s `planar_seen`) finds the point its flat reflection shows along the wax
   film's normal (its board's tilt and cup, a quarter of the grain), at the distance the
-  map's first mip gives, blurred by the film (half the oak's roughness) as wide as its
-  lobe is at that distance and at least two texels across and four down, so the contact
+  map's second mip gives, blurred by the film (half the oak's roughness) as wide as its
+  lobe is at that distance and at least three texels across and six down, so the contact
   is sharp but steady as the eye moves and a door's head smeared, drawn out down the
-  screen by 1 / n·v through a 16× anisotropic sampler, as a grazing look stretches it
-  into streaks; each board's wax a little stronger or weaker and its film smoother or
+  screen by 1 / n·v in five taps of one mip chosen from those widths, as a grazing look
+  stretches it into streaks; each board's wax a little stronger or weaker and its film smoother or
   rougher; where the wax is worn (the paths, scratches, slow patches, the grain's pores)
   the film's mirror turns toward the oak's rough sheen; Fresnel by the view's angle
   through the film; at 0.85 of it. Past the screen's edge it fades to the

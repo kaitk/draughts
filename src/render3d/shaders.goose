@@ -2578,29 +2578,44 @@ let ROOM_FRAG = """
     // point seen along r (each board's own tilt) is mirrored under the floor and found in the
     // map, blurred as wide as the lobe is there (contact sharp, a door's head smeared) and
     // drawn out down the screen by 1 / nov, as a grazing look stretches a waxed floor's
-    // reflections into streaks; the map's sampler filters it so (16 taps along it at most).
+    // reflections into streaks. The blur is five taps down the screen of one mip, the mip
+    // chosen from the widths alone, so it grows smoothly with the distance and never jumps
+    // as the eye moves (no screen derivatives, no anisotropic filter picking its own taps).
     // a: how much of it lies in the map (the mirror shows only what the screen frames; its
     // edge held a little way past).
+    const float PLANAR_LEAST_ACROSS = 3.0;
+    const float PLANAR_LEAST_DOWN = 6.0;
     vec4 planar_seen(vec3 p, vec3 r, float alpha, float nov) {
         vec2 uv0 = gl_FragCoord.xy / screen.xy;
         // The distance from a mip over the pixel's neighbours, so the point found doesn't jump
         // where the map's distances do (a door's foot over the wall behind it).
-        float t = textureLod(planar_map, uv0, 1.0).a;
+        float t = textureLod(planar_map, uv0, 2.0).a;
         vec3 q = p + r * t;
         vec3 under = vec3(q.x, 2.0 * table.y - q.y, q.z);
         vec4 c = view_proj * vec4(under, 1.0);
         vec2 uv = vec2(0.5, -0.5) * c.xy / max(c.w, 1e-3) + 0.5;
-        // The lobe's width where it meets what it shows, in the map's texels, then in uv.
+        // The lobe's width where it meets what it shows, in the map's texels.
         float across = 4.0 * alpha * t * planar.z / max(c.w, 1e-3);
+        // At least PLANAR_LEAST_ACROSS of the map's texels across and PLANAR_LEAST_DOWN down
+        // the screen: its half size is drawn without antialiasing, so a window's bars a texel
+        // or two wide step and flicker as the eye moves under a sharper read.
+        float wide = max(across * max(nov, 0.06), PLANAR_LEAST_ACROSS);
+        float down = max(across, PLANAR_LEAST_DOWN);
+        // A mip whose texel is half the width across and a quarter of the streak's step.
+        float lod = clamp(log2(max(wide * 0.5, down * 0.25)), 0.0, planar.w);
         vec2 texel = 1.0 / vec2(textureSize(planar_map, 0));
-        // At least two of the map's texels across and four down the screen: its half size is
-        // drawn without antialiasing, and a sharper read shows a nearly level edge (a
-        // threshold, a door's foot) in steps that crawl as the eye moves; blurred down the
-        // screen, the way the streaks run, each step becomes a ramp.
-        vec2 wide = vec2(max(across * max(nov, 0.06), 2.0), max(across, 4.0)) * texel;
-        vec3 seen = textureGrad(planar_map, clamp(uv, 0.0, 1.0), vec2(wide.x, 0.0), vec2(0.0, wide.y)).rgb;
+        vec3 seen = vec3(0.0);
+        for (int k = 0; k < 5; k++) {
+            float w = k == 2 ? 3.0 : (k == 1 || k == 3 ? 2.0 : 1.0);
+            vec2 at = uv + vec2(0.0, (float(k) - 2.0) * 0.25 * down * texel.y);
+            seen += w * textureLod(planar_map, clamp(at, 0.0, 1.0), lod).rgb;
+        }
+        seen /= 9.0;
         vec2 out_of = max(max(-uv, uv - 1.0), vec2(0.0));
-        return vec4(seen, 1.0 - smoothstep(0.0, 0.1, max(out_of.x, out_of.y)));
+        float a = 1.0 - smoothstep(0.0, 0.1, max(out_of.x, out_of.y));
+        // A map read gone wrong never shows as black: the room's box takes its place.
+        float y = dot(seen, vec3(0.2126, 0.7152, 0.0722));
+        return y >= 0.0 && y <= 1e4 ? vec4(seen, a) : vec4(0.0);
     }
     #endif
 
@@ -3526,7 +3541,8 @@ let PLANAR_FLOOR = "#define PLANAR_FLOOR 1\n";
 // is the inverse of the pass's view_proj (columns), planar_eye the eye and, w, the floor's
 // y; the point's height over the floor and the eye's give its distance from where the
 // reflection leaves the floor, at most planar_tone.y. Where the pass drew nothing of the room
-// (past the floor's far edge), the nearest texel below that it did, else nothing.
+// (past the floor's far edge), the nearest texel below that it did, so the mips and the
+// floor's wide blurs never take in black.
 let PLANAR_RESOLVE_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
@@ -3534,14 +3550,32 @@ let PLANAR_RESOLVE_FRAG = """
     layout(set = 2, binding = 1) uniform sampler2D planar_depth;
     layout(set = 3, binding = 0) uniform PlanarResolve { vec4 planar_back[4]; vec4 planar_eye; vec4 planar_tone; };
     const int PLANAR_REACH = 8;
+    // A texel's light made safe for the mips: a NaN, an infinity or a negative channel from
+    // anything drawn into the mirror would spread through them into black blotches on the
+    // floor; the brightest (the sun's disc) held to MIRROR_PEAK's luminance, its hue kept.
+    vec3 kept_light(vec3 c) {
+        float y = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        if (!(y >= 0.0 && y <= 1e4)) return vec3(0.0);
+        c = clamp(c, vec3(0.0), vec3(1e4));
+        return y > 16.0 ? c * (16.0 / y) : c;
+    }
     void main() {
         ivec2 px = ivec2(gl_FragCoord.xy);
         ivec2 size = textureSize(planar_color, 0);
         // Over the floor's far edge the mirror draws nothing of the room (the view out
         // drawn first shows there): take the wall's foot a few texels down, so the floor's
-        // reflection at the wall never reaches past it into the sky.
+        // reflection at the wall never reaches past it into the sky; farther up, the
+        // nearest texel below that was drawn, found in doubling steps.
         float depth = texelFetch(planar_depth, px, 0).r;
         for (int k = 1; k <= PLANAR_REACH && depth >= 1.0; k++) {
+            ivec2 at = ivec2(px.x, min(px.y + k, size.y - 1));
+            float d = texelFetch(planar_depth, at, 0).r;
+            if (d < 1.0) {
+                px = at;
+                depth = d;
+            }
+        }
+        for (int k = 2 * PLANAR_REACH; k <= 1024 && depth >= 1.0; k *= 2) {
             ivec2 at = ivec2(px.x, min(px.y + k, size.y - 1));
             float d = texelFetch(planar_depth, at, 0).r;
             if (d < 1.0) {
@@ -3558,7 +3592,7 @@ let PLANAR_RESOLVE_FRAG = """
             ivec2 at = clamp(px + ivec2(k % 3 - 1, k / 3 - 1), ivec2(0), size - 1);
             if (texelFetch(planar_depth, at, 0).r >= 1.0) continue;
             float w = (k % 3 == 1 ? 2.0 : 1.0) * (k / 3 == 1 ? 2.0 : 1.0);
-            c += w * texelFetch(planar_color, at, 0).rgb;
+            c += w * kept_light(texelFetch(planar_color, at, 0).rgb);
             total += w;
         }
         c /= max(total, 1e-4);
@@ -3569,7 +3603,8 @@ let PLANAR_RESOLVE_FRAG = """
         float high = max(q.y - floor_y, 0.0);
         vec3 under = vec3(q.x, 2.0 * floor_y - q.y, q.z);
         float t = length(under - planar_eye.xyz) * high / max(high + planar_eye.y - floor_y, 1e-3);
-        result = depth < 1.0 ? vec4(c * planar_tone.x, min(t, planar_tone.y)) : vec4(0.0);
+        t = t >= 0.0 ? min(t, planar_tone.y) : 0.0;
+        result = depth < 1.0 ? vec4(c * planar_tone.x, t) : vec4(0.0);
     }
     """;
 

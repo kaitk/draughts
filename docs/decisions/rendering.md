@@ -1076,6 +1076,21 @@ to be is in tasks 042, 059, 071, 081, and 086.
   board's tilt and cup and only a quarter of the grain's relief. Rejected: multisampling
   the mirror pass (its depth is read back, which a multisampled target can't give
   without a resolve of its own); drawing it at full size (four times the pass).
+- The library floor's mirror reads its blur from the widths alone and keeps its map clean
+  (2026-11-21, task 107; `PLANAR_RESOLVE_FRAG`'s `kept_light`, `planar_seen`): five taps
+  down the screen of one mip, the mip chosen from the lobe's width across (at least three
+  of the map's texels) and down (at least six), so the blur grows smoothly with the
+  distance; the reflection's distance from the second mip. The resolve makes a NaN, an
+  infinity or a negative channel black before the mips and holds a texel's luminance to
+  16, keeping its hue; above the floor's far edge it takes the nearest drawn texel below
+  (in doubling steps past the first eight), and the floor falls back to the room's box
+  where a read still goes wrong. A few bad texels had made the mips' wide blurs into large
+  black blotches on the floor. Replaces the same day's anisotropic read (`textureGrad`
+  through a 16× sampler, at least two texels across and four down), whose taps and mip
+  the filter picked from the gradient, and the empty texels left black. The view out
+  stays 6 times its look in the mirror ("Sky in mirror"): it is what greys the floor by
+  the windows (at style-01's camera sRGB 76, 48, 31 at 1×, 83, 58, 45 at 3×, 93, 70, 60 at
+  6×, 68, 40, 22 with the mirror off), the user's choice.
 - The library floor's mirror keeps the light before the tonemap (2026-11-21, task 107;
   `TONE_FN`'s `mirror_light`, `OUTSIDE_FRAG`, `rooms::Room.planar.w`): the room, the table
   and the view out write their exposed linear light into the mirror pass's RGBA16F
