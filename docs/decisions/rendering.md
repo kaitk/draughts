@@ -837,6 +837,12 @@ to be is in tasks 042, 059, 071, 081, and 086.
   portrait the near rim now shows across the bottom under the panel, with the plain fade
   past it, and at 9:16 a corner of it; the 1.05 m top's showed only at the far corners.
   The light tuner's `--table-top 1.05|0.80` shows the others.
+- The shell's swept mouldings shade as curves (2026-11-21, task 107; `shell_mesh`'s
+  `sweep`): a profile point's normal is the mean of its two segments' where they turn by
+  less than 37°, so the cornice's cove, the caps' ovolos and beads and the plinth's
+  rounded edge shade smoothly, and each segment keeps its own at a sharper turn, so the
+  fillets and steps stay crisp. It replaces a flat normal a segment, which showed the
+  cornice's long cove as bands. No triangles more: each segment had its own vertices.
 - The sun's highlight takes only the sun that comes through a window (2026-11-21, task
   107; `LIGHT_FN`'s `window_open`): the window's pattern keeps out `room.y` of the key in
   its shade (`window_light`), so the rest, 10% in autumn, lit every surface's GGX highlight

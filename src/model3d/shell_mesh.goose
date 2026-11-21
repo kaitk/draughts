@@ -152,7 +152,10 @@ fn box_m(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x0
 // round a corner: an inside corner shortens a point by its distance out (k0 1 at the
 // start, k1 -1 at the end), an outside one lengthens it (k0 -1, k1 1). Oak takes its place
 // in the wall's field as surfaces::strip does; plaster and paint keep s and the profile's
-// length in uv.
+// length in uv. A point's normal is its two segments' mean where they turn less than
+// CREASE, so a cove, an ovolo or a bead shades as a curve; at a sharper turn (a fillet, a
+// step) each segment keeps its own.
+let CREASE: f32 = 0.8;  // cos 37°
 fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, prof: float3[], lift: f32, s0: f32, s1: f32,
          k0: f32, k1: f32, mat: f32, seed: i64, out_scale: f32 = 0.0) {
     let kz = if out_scale > 0.0 { out_scale } else { cm_out() };
@@ -161,6 +164,11 @@ fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pr
     for q in prof { pts.push(float3 { q.x * kz, (q.y + lift) * ky, q.z }); }
     var total: f32 = 0.0;
     for k in 1..pts.len { total += length(float2 { pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y }); }
+    var flat: float3[..32] = [float3_0];
+    for k in 1..pts.len {
+        let d = float2 { pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y };
+        flat.push(if length(d) > 0.000001 { normalize(float3 { 0.0, -d.x, d.y }) } else { float3_0 });
+    }
     let oak = mat < surfaces::MAT_OAK + 0.5;
     let pm = surfaces::piece_map(seed, false, s0, 0.0, total, s1 - s0, true);
     let own = if oak { surfaces::MAT_OAK + 0.9 * surfaces::hash(seed, 9) } else { mat };
@@ -170,8 +178,9 @@ fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pr
         let c = pts[k];
         let d = float2 { c.x - a.x, c.y - a.y };
         let t1 = t + length(d);
-        let n = normalize(float3 { 0.0, -d.x, d.y });
-        let wn = surfaces::world_normal(b, n);
+        let n = flat[k];
+        let na = surfaces::world_normal(b, if k > 1 { smooth_normal(n, flat[k - 1]) } else { n });
+        let nc = surfaces::world_normal(b, if k + 1 < pts.len { smooth_normal(n, flat[k + 1]) } else { n });
         let sa0 = s0 + k0 * a.x;
         let sa1 = s1 + k1 * a.x;
         let sc0 = s0 + k0 * c.x;
@@ -180,13 +189,20 @@ fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pr
         let uv: float2[4] = if oak { [surfaces::place(pm, sa0, t), surfaces::place(pm, sa1, t), surfaces::place(pm, sc1, t1),
                                      surfaces::place(pm, sc0, t1)] }
                             else { [float2 { sa0, t }, float2 { sa1, t }, float2 { sc1, t1 }, float2 { sc0, t1 }] };
-        verts.push(mesh::Vertex { surfaces::world(b, sa0, a.y, a.x), wn, uv[0], a.z, own });
-        verts.push(mesh::Vertex { surfaces::world(b, sa1, a.y, a.x), wn, uv[1], a.z, own });
-        verts.push(mesh::Vertex { surfaces::world(b, sc1, c.y, c.x), wn, uv[2], c.z, own });
-        verts.push(mesh::Vertex { surfaces::world(b, sc0, c.y, c.x), wn, uv[3], c.z, own });
+        verts.push(mesh::Vertex { surfaces::world(b, sa0, a.y, a.x), na, uv[0], a.z, own });
+        verts.push(mesh::Vertex { surfaces::world(b, sa1, a.y, a.x), na, uv[1], a.z, own });
+        verts.push(mesh::Vertex { surfaces::world(b, sc1, c.y, c.x), nc, uv[2], c.z, own });
+        verts.push(mesh::Vertex { surfaces::world(b, sc0, c.y, c.x), nc, uv[3], c.z, own });
         indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
         t = t1;
     }
+}
+
+// The normal at a profile's point between segments of normals a and c (zero for a segment
+// of no length): their mean where they turn less than CREASE, else a, the segment's own.
+fn smooth_normal(a: float3, c: float3) -> float3 {
+    guard length_sq(a) > 0.0 && length_sq(c) > 0.0 && dot(a, c) > CREASE else { return a; }
+    return normalize(a + c);
 }
 
 // The square end of a profile (as sweep's) at s, facing +s (side 1) or -s (-1): each

@@ -225,6 +225,17 @@ pieces; the design boards still set the layout, glass, and controls.
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 
+## Normals on profiles (a rule, 2026-11-21)
+
+Swept and lathed profiles shade as curves: a profile point's normal is its two
+segments' mean, and only a turn sharper than a crease angle (37°, `shell_mesh::CREASE`)
+keeps each segment's own. The shared routines do it: `shell_mesh::sweep` (and so
+`sweep_oak`, the caps, plinths, cornices and the bookcases' mouldings) and
+`mesh::turned` (a doubled point is a crease); `mesh::sweep` takes each point's normal
+from its `Profile`. New furniture, frames and mouldings go through them, or do the same:
+a flat normal a segment shows a cove or an ovolo as bands, which the user has caught
+twice (the cornice, the cap's nose).
+
 ## What has been tried and set aside
 
 - Generated tabletop pictures and a plain painted tabletop behind the 2D board: they
