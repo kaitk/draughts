@@ -142,6 +142,14 @@ pieces; the design boards still set the layout, glass, and controls.
   `build/choices-2026-11-21/shots.sh` (`build/notes/choices-2026-11-21/`; the right
   tie-back `--plan-eye 5.6,6.3,1.1 --plan-at 5.3,6.9,0.95 --fov 32`, the hem from above
   `--plan-eye 4.0,6.35,0.95 --plan-at 3.78,6.9,0.05 --fov 34`).
+  The tie-back's settling (`curtains.goose`'s `settle_tie`): print its result headless
+  with a scratch program importing `model3d` and calling `room_shell::settle_tie`
+  (`goose run`, half a second), as `build/tieback-top/probe/` did; sweep its constants
+  under bash. Close-ups from the front, the side, above and both sides:
+  `build/tieback-top/tie.sh EXE TAG`. In PBD a ring's links pull a uniform stretch back
+  only weakly (by sin(π/N)), so a soft collider stretches the loop: hence the girth's
+  projection, applied to the last positions too so it adds no speed; steps longer than
+  1/240 s go unstable with the push's cap and the grip per iteration.
   The games table's base (`mesh::table_base`, task 107): `--table-top 0.95|1.05|0.80`
   (the panel's Top) sets the top across, 0.95 m the game's and the room's; shots by
   `build/games-table-build/shots.sh EXE TAG` (`build/notes/games-table-build/`), the

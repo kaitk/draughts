@@ -20,21 +20,22 @@ import math;
 
 // The panel down to 0.83 m, 6 columns a fold, and from there to the hem 12 a fold, so the
 // folds hang round at the hem, where they are seen end on; the two meet on the 0.83 m
-// row, whose extra columns below lie on the straight edges of the row above.
+// row, whose extra columns below lie on the straight edges of the row above. The rows
+// close together round the tie, where the cord's tilted loop gathers the cloth.
 let LACE_COLS = 37;
-let LACE_ROWS = 14;
-let LACE_VERTS = 518;  // LACE_COLS × LACE_ROWS
+let LACE_ROWS = 20;
+let LACE_VERTS = 740;  // LACE_COLS × LACE_ROWS
 let HEM_COLS = 73;
-let HEM_ROWS = 5;
-let HEM_VERTS = 365;   // HEM_COLS × HEM_ROWS
+let HEM_ROWS = 6;
+let HEM_VERTS = 438;   // HEM_COLS × HEM_ROWS
 // The rows' heights, the hem's last (hem_y).
-let LACE_ROW_Y: f32[14] = [3.7, 3.66, 3.55, 3.4, 3.2, 2.9, 2.5, 2.1, 1.7, 1.4, 1.2, 1.06, 0.95, 0.83];
-let HEM_ROW_Y:  f32[5]  = [0.83, 0.6, 0.32, 0.15, 0.05];
+let LACE_ROW_Y: f32[20] = [3.7, 3.66, 3.55, 3.4, 3.2, 2.9, 2.5, 2.1, 1.7, 1.4, 1.2, 1.1, 1.04, 1.0, 0.97, 0.94, 0.91,
+                           0.88, 0.855, 0.83];
+let HEM_ROW_Y: f32[6] = [0.83, 0.75, 0.6, 0.32, 0.15, 0.05];
 // How much of the sky and park the lace sees through the niche behind it, where it hangs
 // in front of the niche (the glass 0.4 m back in a 1.3 m opening, its frames and bars).
 let LACE_SKY_VIEW: f32 = 0.6;
 let CORD_RADIUS:   f32 = 0.0045;  // a 9 mm cord
-let OBLONG:        f32 = 0.6;     // the tie's loop, an ellipse squared off by this power
 // How far the rod pocket's gathers stand off the rod's middle.
 let POCKET: f32 = 0.016;
 
@@ -87,37 +88,42 @@ fn fold_at(seed: i64, s: f32, y: f32) -> f32 {
     return depth * shaped * edge;
 }
 
-// The panel's inner and outer edge at y, drawn in a quarter of the way at the tie where the
-// cord gathers the bundle.
-fn span(y: f32) -> float2 {
-    let x0 = key_at(LACE_INNER[..], y);
-    let x1 = key_at(LACE_OUTER[..], y);
-    let t = (y - TIE_Y) / 0.09;
-    let pull = 0.12 * (x1 - x0) * exp(-t * t);
-    return float2 { x0 + pull, x1 - pull };
-}
+// The panel's inner and outer edge at y as it hangs before the cord gathers it.
+fn span(y: f32) -> float2 { float2 { key_at(LACE_INNER[..], y), key_at(LACE_OUTER[..], y) } }
 
-// The row's fold depth at y: a zigzag of LACE_FOLDS folds across w holds the flat cloth
-// when its half depth is w / 4n × √(r² − 1), r the gather.
-fn fold_amplitude(y: f32) -> f32 {
-    let x = span(y);
+// The row's fold depth at y, ungathered: a zigzag of LACE_FOLDS folds across w holds the
+// flat cloth when its half depth is w / 4n × √(r² − 1), r the gather.
+fn fold_amplitude(y: f32) -> f32 { fold_amplitude_in(span(y), y) }
+fn fold_amplitude_in(x: float2, y: f32) -> f32 {
     let w = x.y - x.x;
     let r = LACE_FLAT / w;
     let a = 0.25 * w / LACE_FOLDS * sqrt(max(r * r - 1.0, 0.0));
     // The rod pocket: the cloth bunched round the rod, the folds opening below it.
     let open = clamp((LACE_ROD - 0.02 - y) / 0.28, 0.0, 1.0);
-    // The cord squeezes the bundle at the tie to about half its depth.
-    let t = (y - TIE_Y) / 0.07;
-    let pinch = 1.0 - 0.5 * exp(-t * t);
-    return POCKET + (a * pinch - POCKET) * open * open * (3.0 - 2.0 * open);
+    return POCKET + (a - POCKET) * open * open * (3.0 - 2.0 * open);
 }
 
-// The right panel's point at s across and y up.
-fn drape_at(seed: i64, s: f32, y: f32) -> float3 {
+// The bundle's section at y, ungathered: its middle across (x) and off the wall (y), and
+// its half width (z) and half depth (w), an ellipse round the folds' crests.
+fn bundle(y: f32) -> float4 { bundle_in(span(y), y) }
+fn bundle_in(x: float2, y: f32) -> float4 {
+    return float4 { 0.5 * (x.x + x.y), key_at(LACE_MIDDLE[..], y), 0.5 * (x.y - x.x), 1.1 * fold_amplitude_in(x, y) };
+}
+
+// The right panel's point at s across and y up: the cloth as it hangs, drawn in toward
+// the bundle's middle round the cord's settled loop (Tie), as much as the loop squeezes
+// it where it passes that side of the bundle, and standing out a little above and below.
+fn drape_at(tie: Tie&, seed: i64, s: f32, y: f32) -> float3 {
     let x = span(y);
-    let x0 = x.x;
-    let x1 = x.y;
-    return float3 { x0 + s * (x1 - x0), y, key_at(LACE_MIDDLE[..], y) + fold_amplitude(y) * fold_at(seed, s, y) };
+    let c = bundle_in(x, y);
+    let px = x.x + s * (x.y - x.x);
+    let pz = c.y + c.w / 1.1 * fold_at(seed, s, y);
+    let h, q = tie_at(tie, atan2((px - c.x) / c.z, (pz - c.y) / c.w));
+    let t = (y - h) / TIE_SPREAD;
+    let above = t - 1.7;
+    let below = t + 1.7;
+    let k = 1.0 - (1.0 - q) * (exp(-t * t) - 0.12 * (exp(-above * above) + exp(-below * below)));
+    return float3 { c.x + (px - c.x) * k, y, c.y + (pz - c.y) * k };
 }
 
 // The hem's height at s: about LACE_HEM, rising 3.5 cm toward the inner edge where the
@@ -145,12 +151,17 @@ fn sky_behind(o: Opening, x: f32, y: f32) -> f32 {
 fn curtains(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&,
             b: surfaces::Builder, o: Opening, seed: i64&) {
     let brass = surfaces::MAT_BRASS;
+    if !tie_settled {
+        settle_tie(settled_tie);
+        tie_settled = true;
+    }
+    let tie .= settled_tie;
     let rod: float3[2] = [float3 { -ROD_HALF, LACE_ROD, LACE_OFF }, float3 { ROD_HALF, LACE_ROD, LACE_OFF }];
     tube(verts, indices, b, rod[..], ROD_RADIUS, 10, false, brass);
     for sx in SIDES {
         seed++;
-        lace_panel(glass, glass_indices, b, o, sx, seed);
-        tie_back(verts, indices, b, sx, seed);
+        lace_panel(glass, glass_indices, b, o, sx, seed, tie);
+        tie_back(verts, indices, b, sx, tie);
         // The finial, a ball on a short neck; the bracket, a rosette on the wall, an arm
         // out to a cup under the rod.
         let end = sx * ROD_HALF;
@@ -170,14 +181,15 @@ fn curtains(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>
 
 // One panel, side sx (1 the right, -1 the left), into the glass list: the hem's rows, then
 // the rows above, v up the cloth from the hem along its surface.
-fn lace_panel(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Builder, o: Opening, sx: f32, seed: i64) {
+fn lace_panel(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Builder, o: Opening, sx: f32, seed: i64,
+              tie: Tie&) {
     var low:    float3[HEM_VERTS] = [float3_0; HEM_VERTS];
     var low_up: f32[HEM_VERTS]    = [0.0; HEM_VERTS];
     for j in HEM_ROWS {
         for i in HEM_COLS {
             let s = (i as f32) / ((HEM_COLS - 1) as f32);
             let y = if j == HEM_ROWS - 1 { hem_y(seed, s) } else { HEM_ROW_Y[j] };
-            low[j * HEM_COLS + i] = drape_at(seed, s, y);
+            low[j * HEM_COLS + i] = drape_at(tie, seed, s, y);
         }
     }
     for h in LACE_COLS - 1 { low[2 * h + 1] = (low[2 * h] + low[2 * h + 2]) * 0.5; }
@@ -187,14 +199,14 @@ fn lace_panel(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::
     for j in LACE_ROWS {
         for i in LACE_COLS {
             let s = (i as f32) / ((LACE_COLS - 1) as f32);
-            high[j * LACE_COLS + i] = drape_at(seed, s, LACE_ROW_Y[j]);
+            high[j * LACE_COLS + i] = drape_at(tie, seed, s, LACE_ROW_Y[j]);
         }
     }
     let last = (LACE_ROWS - 1) * LACE_COLS;
     for i in LACE_COLS { high_up[last + i] = low_up[2 * i]; }
     climb(high[..], high_up[..], LACE_COLS, LACE_ROWS);
-    put_lace(glass, glass_indices, b, o, sx, seed, low[..], low_up[..], HEM_COLS, HEM_ROWS);
-    put_lace(glass, glass_indices, b, o, sx, seed, high[..], high_up[..], LACE_COLS, LACE_ROWS);
+    put_lace(glass, glass_indices, b, o, sx, seed, tie, low[..], low_up[..], HEM_COLS, HEM_ROWS);
+    put_lace(glass, glass_indices, b, o, sx, seed, tie, high[..], high_up[..], LACE_COLS, LACE_ROWS);
 }
 
 // v up a grid's columns from its last row's (which `up` holds), along the cloth.
@@ -211,7 +223,7 @@ fn climb(pos: float3[:], up: f32[:], cols: i64, rows: i64) {
 
 // A grid of the panel's points into the glass list, its normals by the drape's own slopes.
 fn put_lace(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Builder, o: Opening, sx: f32, seed: i64,
-            pos: float3[:], up: f32[:], cols: i64, rows: i64) {
+            tie: Tie&, pos: float3[:], up: f32[:], cols: i64, rows: i64) {
     let k = m();
     let base = glass.len as u32;
     for j in rows {
@@ -219,8 +231,8 @@ fn put_lace(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Bu
             let s = (i as f32) / ((cols - 1) as f32);
             let p = pos[j * cols + i];
             let e: f32 = 0.002;
-            let ds = drape_at(seed, min(s + e, 1.0), p.y) - drape_at(seed, max(s - e, 0.0), p.y);
-            let dy = drape_at(seed, s, p.y + 0.01) - drape_at(seed, s, p.y - 0.01);
+            let ds = drape_at(tie, seed, min(s + e, 1.0), p.y) - drape_at(tie, seed, max(s - e, 0.0), p.y);
+            let dy = drape_at(tie, seed, s, p.y + 0.01) - drape_at(tie, seed, s, p.y - 0.01);
             let n = normalize(cross(ds, dy));
             let q = float3 { sx * p.x, p.y, p.z } * k;
             glass.push(mesh::Vertex { surfaces::world(b, q.x, q.y, q.z), surfaces::world_normal(b, float3 { sx * n.x, n.y, n.z }),
@@ -237,69 +249,292 @@ fn put_lace(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Bu
     }
 }
 
-// The tie-back of side sx: a soft cream cord once round the gathered bundle, tied in a knot
-// on its front toward the hook, two short tails with small tassels hanging from the knot,
-// and the cord's run from the knot to a small brass hook on the pier, slack, hanging in a
-// catenary. Mirrored for the left.
-fn tie_back(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, sx: f32, seed: i64) {
-    let y = TIE_Y;
-    let x = span(y);
-    let mid = 0.5 * (x.x + x.y);
-    let zc = key_at(LACE_MIDDLE[..], y);
-    let half = 0.5 * (x.y - x.x) + CORD_RADIUS;
-    let deep = 1.1 * fold_amplitude(y) + CORD_RADIUS;
-    // The loop, 0 at the front, the outer side at a quarter turn, a rounded oblong pulled
-    // tight round the bundle; slack at the front.
-    var round: float3[..24] = [];
-    for i in 20 {
-        let a: f32 = TAU * i / 20.0;
-        let c = cos(a);
-        let e = sin(a);
-        let sq = pow(abs(c), OBLONG) * sign(c);
-        let se = pow(abs(e), OBLONG) * sign(e);
-        round.push(float3 { mid + half * se, y - 0.006 * max(c, 0.0) + 0.002 * sin(2.0 * a), zc + deep * sq });
+// The tie-back, settled once when the room is built (settle_tie): the cord as a chain of
+// points under gravity, Verlet steps with fixed iterations over fixed buffers, a few
+// milliseconds. Its loop once round the bundle, as long as the bundle's girth gathered at
+// TIE_Y and never longer; the bundle a soft ellipse a section, its waist gathered round
+// TIE_Y where the cord was tied, giving like the cloth, and the lace gripping the cord
+// (the friction: a move along the bundle held back by how hard the cord presses on it).
+// The knot stays where it was tied round the bundle, on its front toward the hook; two
+// tails with their tassels hang from it, and the run from it to the hook's crook hangs
+// slack. The knot's and the tails' weight drag their side of the loop down the waist's
+// lower flank, so the loop tilts down toward the knot. The cloth then gathers round the
+// loop where it settled (drape_at, from the angle table).
+let TIE_LOOP = 40;        // the loop's points, the knot first, round toward the outer side
+let TIE_RUN = 14;         // the run's segments, from the knot to the crook
+let TIE_TAIL = 8;         // a tail's points, the knot's first
+let TIE_POINTS = 68;      // TIE_LOOP + TIE_RUN + 2 × (TIE_TAIL − 1)
+let TIE_LINKS = 108;      // the loop's, its bends', the run's and the tails' constraints
+let TIE_ANGLES = 64;      // the settled loop's height and squeeze, round the bundle
+let TIE_STEPS = 150;      // 0.62 s at TIE_RATE a second: it rests from about 0.5 s
+let TIE_RATE: f32 = 240.0;
+let TIE_ITERATIONS = 10;
+let KNOT_ANGLE:    f32 = 0.22 * PI;  // the knot round the bundle from its front toward the hook
+let GATHER_ACROSS: f32 = 0.74;   // the loop's length: the bundle's girth at the tie, its
+let GATHER_DEEP:   f32 = 0.5;    // width and depth gathered to these
+let WAIST:         f32 = 0.13;   // how far up and down the tie's gathering of the bundle reaches
+let RUN_SLACK:     f32 = 1.3;    // the run's length over the way from the knot to the crook
+let KNOT_MASS:     f32 = 7.0;    // a segment of cord's
+let TASSEL_MASS:   f32 = 12.0;
+let BUNDLE_GIVE:   f32 = 0.1;    // how much of the cord's way into the bundle it gives back an
+let TIE_PUSH:      f32 = 0.01;   // iteration, and at most how far (metres)
+let LACE_GRIP:     f32 = 0.2;    // a point's move up or down a step held back by this much of
+// how far the bundle pushed it back in that step
+let TIE_SPREAD: f32 = 0.075;     // how far up and down the cloth the cord's gathering reaches
+let KNOT_SIZE:  f32 = 0.0042;    // the overhand's scale, about 25 mm across
+
+struct Tie {
+    ring:    float3[TIE_LOOP],     // the loop round the bundle, the knot first
+    run:     float3[15],          // TIE_RUN + 1, the knot first
+    tail_a:  float3[TIE_TAIL],
+    tail_b:  float3[TIE_TAIL],
+    height:  f32[TIE_ANGLES],     // the loop's height at each angle round the bundle
+    squeeze: f32[TIE_ANGLES],     // and how far it draws the cloth in there (1 not at all)
+}
+
+// The tie-back as it settled, the same for every curtain, settled with the first.
+var settled_tie = default<Tie>();
+var tie_settled = false;
+
+// The tied bundle's sections every SECTION_STEP from SECTION_LOW up, for the settling.
+let SECTIONS = 161;
+let SECTION_LOW:  f32 = 0.6;
+let SECTION_STEP: f32 = 0.005;
+fn section_at(sections: float4[SECTIONS]&, y: f32) -> float4 {
+    let at = clamp((y - SECTION_LOW) / SECTION_STEP, 0.0, (SECTIONS - 1) as f32 - 0.001);
+    let i = floor(at) as i64;
+    let f = at - i;
+    return sections[i] + (sections[i + 1] - sections[i]) * f;
+}
+
+// The hook's crook, where the run ends over it.
+fn crook() -> float3 { float3 { TIE_HOOK, TIE_HOOK_Y + 0.003 + CORD_RADIUS, 0.044 } }
+
+// The bundle as the cord found it: gathered round TIE_Y, where it was tied.
+fn tied_bundle(y: f32) -> float4 {
+    let c = bundle(y);
+    let t = (y - TIE_Y) / WAIST;
+    let g = exp(-t * t);
+    return float4 { c.x, c.y, c.z * (1.0 - (1.0 - GATHER_ACROSS) * g), c.w * (1.0 - (1.0 - GATHER_DEEP) * g) };
+}
+
+// The angle round the bundle's section c of a point (0 the front, a quarter turn the outer
+// side), and its distance out in c's ellipse grown by `out` (1 on it).
+fn round_bundle(p: float3, c: float4, out: f32) -> float2 {
+    let u = (p.x - c.x) / (c.z + out);
+    let v = (p.z - c.y) / (c.w + out);
+    return float2 { atan2(u, v), sqrt(u * u + v * v) };
+}
+
+// p pushed back out of the bundle by `give` of how far in it is, along the way its
+// ellipse grows (its slope up the drop too, so the loop rests on the bundle's waist).
+fn out_of_bundle(p: float3, give: f32, tied: float4[SECTIONS]&) -> float3 {
+    let c = section_at(tied, p.y);
+    let r = round_bundle(p, c, CORD_RADIUS).y;
+    guard r < 1.0 && r > 0.0001 else { return p; }
+    let a = c.z + CORD_RADIUS;
+    let d = c.w + CORD_RADIUS;
+    let e: f32 = 0.005;
+    let up = (round_bundle(p, section_at(tied, p.y + e), CORD_RADIUS).y - round_bundle(p, section_at(tied, p.y - e), CORD_RADIUS).y) /
+             (2.0 * e);
+    // Out across the section, and up or down it no steeper than about 30°: the bundle's
+    // middle bends toward the wall at the tie, which would push a cord at its back along it.
+    let across = float2 { (p.x - c.x) / (r * a * a), (p.z - c.y) / (r * d * d) };
+    let steep = 0.6 * length(across);
+    let g = float3 { across.x, clamp(up, -steep, steep), across.y };
+    let push = g * (give * (1.0 - r) / dot(g, g));
+    return p + push * min(1.0, TIE_PUSH / max(length(push), 0.000001));
+}
+
+fn link(links: int2[..TIE_LINKS]&, lengths: f32[..TIE_LINKS]&, i: i64, j: i64, length: f32) {
+    links.push(int2 { i as i32, j as i32 });
+    lengths.push(length);
+}
+
+fn settle_tie(tie: Tie&) {
+    var pos:     float3[TIE_POINTS] = [float3_0; TIE_POINTS];
+    var last:    float3[TIE_POINTS] = [float3_0; TIE_POINTS];
+    var free:    f32[TIE_POINTS]    = [1.0; TIE_POINTS];
+    var links:   int2[..TIE_LINKS]  = [];
+    var lengths: f32[..TIE_LINKS]   = [];
+    var tied:    float4[SECTIONS]   = [float4_0; SECTIONS];
+    for i in SECTIONS { tied[i] = tied_bundle(SECTION_LOW + SECTION_STEP * i); }
+    // The loop on the gathered ellipse, level at the tie, its girth its length.
+    let c = bundle(TIE_Y);
+    let a = GATHER_ACROSS * c.z + CORD_RADIUS;
+    let d = GATHER_DEEP * c.w + CORD_RADIUS;
+    for i in TIE_LOOP {
+        let t = KNOT_ANGLE + TAU * i / TIE_LOOP;
+        pos[i] = float3 { c.x + a * sin(t), TIE_Y, c.y + d * cos(t) };
     }
-    let ka: f32 = 0.3 * PI;
-    let knot = float3 { mid + (half + 0.003) * pow(sin(ka), OBLONG), y - 0.006 * cos(ka), zc + (deep + 0.004) * pow(cos(ka), OBLONG) };
-    // The hook's crook, where the run ends over it.
-    let crook = float3 { TIE_HOOK, TIE_HOOK_Y + 0.003 + CORD_RADIUS, 0.044 };
-    var run: float3[..16] = [];
-    let n = 12;
-    let kk:  f32 = 1.3;
-    let sag: f32 = 0.055;
-    for i in n + 1 {
-        let t: f32 = (i as f32) / n;
-        let drop = sag * (cosh(kk * (2.0 * t - 1.0)) - cosh(kk)) / (1.0 - cosh(kk));
-        run.push(knot + (crook - knot) * t - float3 { 0.0, drop, 0.0 });
+    for i in TIE_LOOP {
+        let j = (i + 1) % TIE_LOOP;
+        link(links, lengths, i, j, length(pos[j] - pos[i]));
     }
-    run.push(float3 { TIE_HOOK, TIE_HOOK_Y - 0.004, 0.036 });
-    run.push(float3 { TIE_HOOK + 0.002, TIE_HOOK_Y - 0.02, 0.034 });
-    // The tails, a little apart and of two lengths, hanging from under the knot.
-    var tail_a: float3[..8] = [];
-    tail_a.push(knot + float3 { 0.003, -0.006, 0.004 });
-    tail_a.push(knot + float3 { 0.009, -0.03, 0.009 });
-    tail_a.push(knot + float3 { 0.011, -0.07, 0.01 });
-    tail_a.push(knot + float3 { 0.012, -0.11, 0.01 });
-    var tail_b: float3[..8] = [];
-    tail_b.push(knot + float3 { -0.004, -0.006, 0.004 });
-    tail_b.push(knot + float3 { -0.01, -0.028, 0.01 });
-    tail_b.push(knot + float3 { -0.014, -0.06, 0.012 });
-    tail_b.push(knot + float3 { -0.015, -0.085, 0.012 });
-    for &p in round { p.x *= sx; }
-    for &p in run { p.x *= sx; }
-    for &p in tail_a { p.x *= sx; }
-    for &p in tail_b { p.x *= sx; }
+    for i in TIE_LOOP {
+        let j = (i + 2) % TIE_LOOP;
+        link(links, lengths, i, j, length(pos[j] - pos[i]));
+    }
+    var girth: f32 = 0.0;
+    for k in TIE_LOOP { girth += lengths[k]; }
+    free[0] = 1.0 / KNOT_MASS;
+    // The run, straight to the crook to start, held there.
+    let knot = pos[0];
+    let way = crook() - knot;
+    let run_link = RUN_SLACK * length(way) / TIE_RUN;
+    for i in 1..TIE_RUN + 1 {
+        let k = TIE_LOOP + i - 1;
+        pos[k] = knot + way * (i as f32 / TIE_RUN);
+        link(links, lengths, if i == 1 { 0 } else { k - 1 }, k, run_link);
+    }
+    free[TIE_LOOP + TIE_RUN - 1] = 0.0;
+    // The tails, 11 and 8.5 cm, straight down a little apart, on the bundle's face.
+    let tails = TIE_LOOP + TIE_RUN;
+    let tail_links: f32[2] = [0.11 / (TIE_TAIL - 1), 0.085 / (TIE_TAIL - 1)];
+    let tail_apart: f32[2] = [0.004, -0.004];
+    for side in 2 {
+        let first = tails + side * (TIE_TAIL - 1);
+        for i in 1..TIE_TAIL {
+            let k = first + i - 1;
+            let y = knot.y - tail_links[side] * i;
+            let b = tied_bundle(y);
+            let u = (knot.x - b.x) / (b.z + CORD_RADIUS);
+            let face = b.y + (b.w + CORD_RADIUS) * sqrt(max(1.0 - u * u, 0.0)) + 0.002;
+            pos[k] = float3 { knot.x + tail_apart[side], y, max(face, knot.z) };
+            link(links, lengths, if i == 1 { 0 } else { k - 1 }, k, tail_links[side]);
+        }
+        free[first + TIE_TAIL - 2] = 1.0 / TASSEL_MASS;
+    }
+    assert(links.len == TIE_LINKS);
+    for i in TIE_POINTS { last[i] = pos[i]; }
+    let dt: f32 = 1.0 / TIE_RATE;
+    let fall = float3 { 0.0, -9.8 * dt * dt, 0.0 };
+    let wall = 0.02 + CORD_RADIUS;
+    var pressed: f32[TIE_POINTS] = [0.0; TIE_POINTS];
+    for step in TIE_STEPS {
+        for i in TIE_POINTS { pressed[i] = 0.0; }
+        for i in TIE_POINTS {
+            guard free[i] > 0.0 else { continue; }
+            let p = pos[i];
+            pos[i] = p + (p - last[i]) * 0.97 + fall;
+            last[i] = p;
+        }
+        for it in TIE_ITERATIONS {
+            for i in TIE_POINTS {
+                guard free[i] > 0.0 else { continue; }
+                var p = out_of_bundle(pos[i], BUNDLE_GIVE, tied);
+                pressed[i] += length(p - pos[i]);
+                p.z = max(p.z, wall);
+                pos[i] = p;
+            }
+            for l, k in links {
+                let i = l.x as i64;
+                let j = l.y as i64;
+                let w = free[i] + free[j];
+                guard w > 0.0 else { continue; }
+                let e = pos[j] - pos[i];
+                let n = length(e);
+                guard n > 0.000001 else { continue; }
+                let stiff: f32 = if k >= TIE_LOOP && k < 2 * TIE_LOOP { 0.1 } else { 1.0 };
+                let move = e * (stiff * (n - lengths[k]) / (n * w));
+                pos[i] = pos[i] + move * free[i];
+                pos[j] = pos[j] - move * free[j];
+            }
+            // The cord doesn't stretch: a loop longer than its girth is drawn in toward the
+            // bundle's middle, its last places with it so the drawing in isn't a speed.
+            var round: f32 = 0.0;
+            for i in TIE_LOOP { round += length(pos[(i + 1) % TIE_LOOP] - pos[i]); }
+            if round > girth {
+                let k = girth / round;
+                for i in TIE_LOOP {
+                    let c = section_at(tied, pos[i].y);
+                    let to = float3 { c.x + (pos[i].x - c.x) * k, pos[i].y, c.y + (pos[i].z - c.y) * k };
+                    last[i] = last[i] + (to - pos[i]);
+                    pos[i] = to;
+                }
+            }
+            // The knot stays where it was tied round the bundle.
+            let b = section_at(tied, pos[0].y);
+            let r = round_bundle(pos[0], b, CORD_RADIUS).y;
+            pos[0] = float3 { b.x + r * (b.z + CORD_RADIUS) * sin(KNOT_ANGLE), pos[0].y, b.y + r * (b.w + CORD_RADIUS) * cos(KNOT_ANGLE) };
+        }
+        for i in TIE_POINTS {
+            let hold = LACE_GRIP * pressed[i];
+            let fall_by = pos[i].y - last[i].y;
+            pos[i].y -= clamp(fall_by, -hold, hold);
+        }
+    }
+    for i in TIE_LOOP { tie.ring[i] = pos[i]; }
+    tie.run[0] = pos[0];
+    for i in 1..TIE_RUN + 1 { tie.run[i] = pos[TIE_LOOP + i - 1]; }
+    tie.tail_a[0] = pos[0];
+    tie.tail_b[0] = pos[0];
+    for i in 1..TIE_TAIL {
+        tie.tail_a[i] = pos[tails + i - 1];
+        tie.tail_b[i] = pos[tails + TIE_TAIL - 1 + i - 1];
+    }
+    // Round the bundle, where the loop passes and how far in it draws the cloth: its
+    // distance out in the cloth's own ellipse, less the cord's thickness.
+    var angle: f32[TIE_LOOP] = [0.0; TIE_LOOP];
+    var draw:  f32[TIE_LOOP] = [0.0; TIE_LOOP];
+    for p, i in tie.ring {
+        let b = bundle(p.y);
+        let r = round_bundle(p, b, 0.0);
+        let off = length(float2 { p.x - b.x, p.z - b.y });
+        angle[i] = r.x;
+        draw[i] = clamp(r.y * (off - CORD_RADIUS) / max(off, 0.001), 0.2, 1.0);
+    }
+    for j in TIE_ANGLES {
+        let phi = TAU * j / TIE_ANGLES - PI;
+        for i in TIE_LOOP {
+            let n = (i + 1) % TIE_LOOP;
+            let from = phi - angle[i];
+            let span = angle[n] - angle[i];
+            let at = from - TAU * floor(from / TAU);
+            let wide = span - TAU * floor(span / TAU);
+            guard at <= wide && wide > 0.0 else { continue; }
+            let f = at / wide;
+            tie.height[j] = tie.ring[i].y + (tie.ring[n].y - tie.ring[i].y) * f;
+            tie.squeeze[j] = draw[i] + (draw[n] - draw[i]) * f;
+            break;
+        }
+    }
+}
+
+// The settled loop's height and squeeze at angle `a` round the bundle (atan2's range).
+fn tie_at(tie: Tie&, a: f32) -> f32, f32 {
+    let at = (a + PI) / TAU * TIE_ANGLES;
+    let i = floor(at) as i64;
+    let f = at - i;
+    let j0 = ((i % TIE_ANGLES) + TIE_ANGLES) % TIE_ANGLES;
+    let j1 = (j0 + 1) % TIE_ANGLES;
+    return tie.height[j0] + (tie.height[j1] - tie.height[j0]) * f, tie.squeeze[j0] + (tie.squeeze[j1] - tie.squeeze[j0]) * f;
+}
+
+// The tie-back of side sx, as it settled (settle_tie): the cord round the bundle, its two
+// ends into the knot, an overhand knot on the bundle's front toward the hook, the two
+// tails with their tassels hanging from it and the run to a small brass hook on the pier.
+// Mirrored for the left.
+fn tie_back(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, sx: f32, tie: Tie&) {
+    let mirror = float3 { sx, 1.0, 1.0 };
     let cord = surfaces::MAT_CORD;
-    tube(verts, indices, b, round[..], CORD_RADIUS, 8, true, cord);
+    var round: float3[..TIE_LOOP] = [];
+    for i in 1..TIE_LOOP { round.push(tie.ring[i] * mirror); }
+    tube(verts, indices, b, round[..], CORD_RADIUS, 8, false, cord);
+    var run: float3[..20] = [];
+    for p in tie.run { run.push(p * mirror); }
+    run.push(float3 { TIE_HOOK, TIE_HOOK_Y - 0.004, 0.036 } * mirror);
+    run.push(float3 { TIE_HOOK + 0.002, TIE_HOOK_Y - 0.02, 0.034 } * mirror);
     tube(verts, indices, b, run[..], CORD_RADIUS, 8, false, cord);
+    var tail_a: float3[..TIE_TAIL] = [];
+    var tail_b: float3[..TIE_TAIL] = [];
+    for p in tie.tail_a { tail_a.push(p * mirror); }
+    for p in tie.tail_b { tail_b.push(p * mirror); }
     tube(verts, indices, b, tail_a[..], 0.85 * CORD_RADIUS, 6, false, cord);
     tube(verts, indices, b, tail_b[..], 0.85 * CORD_RADIUS, 6, false, cord);
-    tassel(verts, indices, b, tail_a[tail_a.len - 1]);
-    tassel(verts, indices, b, tail_b[tail_b.len - 1]);
-    // The knot: two turns of the cord lumped together.
-    let kx = float3 { sx * knot.x, knot.y, knot.z };
-    ball(verts, indices, b, kx, 0.011, cord);
-    ball(verts, indices, b, kx + float3 { sx * 0.007, -0.008, 0.003 }, 0.009, cord);
+    tassel(verts, indices, b, tail_a[TIE_TAIL - 1]);
+    tassel(verts, indices, b, tail_b[TIE_TAIL - 1]);
+    overhand(verts, indices, b, tie.ring[0], mirror);
     // The hook: a rosette on the panelling, a pin out of it turned up at its end.
     let hx = sx * TIE_HOOK;
     let hy = TIE_HOOK_Y;
@@ -308,6 +543,30 @@ fn tie_back(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
                           float3 { hx, hy + 0.011, 0.051 }, float3 { hx, hy + 0.017, 0.051 }];
     tube(verts, indices, b, pin[..], 0.0028, 6, false, surfaces::MAT_BRASS);
     ball(verts, indices, b, float3 { hx, hy + 0.018, 0.051 }, 0.0042, surfaces::MAT_BRASS);
+}
+
+// The knot at k (the right side's): an overhand, a trefoil of the cord swept tight, lying
+// on the bundle's face there, its middle out by its own depth and the cord's.
+fn overhand(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, k: float3, mirror: float3) {
+    let c = bundle(k.y);
+    let out = normalize(float3 { (k.x - c.x) / (c.z * c.z), 0.0, (k.z - c.y) / (c.w * c.w) });
+    let up = float3 { 0.0, 1.0, 0.0 };
+    let side = normalize(cross(up, out));
+    let n = 48;
+    var pts: float3[..48] = [];
+    var mid = float3_0;
+    for i in n {
+        let t: f32 = TAU * i / n;
+        let q = float3 { sin(t) + 2.0 * sin(2.0 * t), cos(t) - 2.0 * cos(2.0 * t), -1.15 * sin(3.0 * t) };
+        pts.push(q);
+        mid = mid + q * (1.0 / n);
+    }
+    let lift = 1.15 * KNOT_SIZE + CORD_RADIUS;
+    for &p in pts {
+        let q = (p - mid) * KNOT_SIZE;
+        p = (k + side * q.x + up * (0.8 * q.y) + out * (q.z + lift)) * mirror;
+    }
+    tube(verts, indices, b, pts[..], CORD_RADIUS, 8, true, surfaces::MAT_CORD);
 }
 
 // A small tassel hanging from a tail's end at top: a round head, and a skirt of threads

@@ -173,6 +173,15 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       without the false sheen (style-01's mean 7% with the corners), the table's base dark
       (its ambient is the game's harmonics, not the room's probes), the furniture, books
       and folds left to SSAO (step 2)
+- [x] Step 2 of the morning's order (2026-11-21, `build/notes/tieback-top/`): lace f3 the
+      default (f2, f, d kept); the games table's top 0.95 m in the game and the room (its
+      map at the 1.05 m top's scale, so the game's shot is unchanged but on a 9:19.5 phone
+      in portrait, where the near rim and the fade past it now show at the foot, and a
+      corner of it at 9:16); the tie-back settled once at build by a simulation of the
+      cord round the bundle's soft gathered waist, the knot an overhand at 0.91 m on the
+      front, the loop rising to 0.94 m at the back, the cloth gathered round the loop where
+      it lies. Costs in task 110. Still off: the cord's loop is seen through the lace
+      behind the bundle, as before; the near rim on tall phones, for the user
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

@@ -180,6 +180,15 @@ results, or keep baking at run time behind a loader when the room or a look is c
   after: the room view, style-01's camera and the table's feet all 3.4 to 3.5 ms, at the
   Mac's floor and within noise. Not measured on a device.
 
+- Step 2 of the morning's order (2026-11-21, task 107, `build/notes/tieback-top/`): the
+  tie-back's settling, about 4.5 ms once when the shell is made (20 settles in 0.09 s
+  built at -O2), shared by the six; the shell's mesh 24,322 to 30,274 triangles (the knot
+  a swept trefoil, 768 a tie-back, the ring, run and tails longer), the lace 9,084 to
+  12,540 (20 rows over the hem's 6 a panel, from 14 and 5); the mesh made in about 9.8 ms
+  (3.2 before). Lace f3 the default: no cost of its own (the four ways' PNGs were in
+  already). The 0.95 m top: no cost. Fewer sides on the knot, or 120 steps (3.5 ms, the
+  same shape), if a device shows it.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

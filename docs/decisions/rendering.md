@@ -796,6 +796,25 @@ to be is in tasks 042, 059, 071, 081, and 086.
   drawn tight from a pin at ±0.80 m round the bundle and back, which read as a stiff U.
   About 920 triangles a tie-back (5,544 for the six), swept tubes and two balls for the
   knot.
+- The tie-back is settled once by a simulation when the room is built (2026-11-21, task
+  107; `curtains.goose`'s `settle_tie`), replacing the loop drawn level at 0.95 m and the
+  knot as two balls: the cord's loop was perfectly horizontal. The cord is a chain of 68
+  points (the loop, the run to the hook, two tails) in Verlet steps at 240 a second, 150
+  steps of 10 iterations over fixed buffers, about 4.5 ms on an M-series Mac, once for all
+  six tie-backs. The bundle is a soft ellipse a section, its waist gathered round 0.95 m
+  where the cord was tied (to 0.74 of its width and half its depth over ±0.13 m), giving
+  back a tenth of the cord's way in an iteration; the loop never longer than that waist's
+  girth (drawn in without adding speed); the knot held where it was tied round the bundle
+  (its front, toward the hook) and the lace gripping the cord along it (a move up or down
+  held back by 0.2 of how hard the bundle pushed). The knot's and tails' weight drag their
+  side down the waist's lower flank: the knot settles at 0.91 m, the loop's back at
+  0.94 m, the run hanging slack to the hook. The cloth then gathers round the loop where it
+  settled, per angle round the bundle (its height and how far it draws in), standing out
+  a little above and below; the panel's rows close up round the tie (20 rows over the
+  hem's 6, from 14 and 5). The knot is an overhand, a trefoil swept as the cord, about
+  25 mm across. Rejected: placing the tilt by hand (it misses what gravity does to the cloth), the
+  frictionless bundle (the run's pull turned the knot round to the wall's side and the
+  loop slid 7 cm down), and longer steps (unstable at 80 a second).
 - The curtains' folds hang round at the hem (2026-11-21): from 0.83 m down a panel has
   12 columns a fold, not 6 (whose hexagon read as a zigzag of points seen from above),
   and the hem's line lifts at each fold's turn, scalloping between them. The two grids
