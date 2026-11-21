@@ -802,6 +802,10 @@ to be is in tasks 042, 059, 071, 081, and 086.
   meet on the 0.83 m row, the finer one's extra points on the coarser one's edges, so no
   crack opens. 1,512 triangles a panel (1,152 before, 2,160 more for the six). Rejected:
   the whole panel at 12 a fold (2,304 a panel, where only the hem is seen end on).
+- The curtains' lace is way f3 (2026-11-21, `surfaces::LACE_WAYS`' first), replacing f2,
+  the first of the four ways baked from the lace library: chosen on the curtains in the
+  room. Ways f2, f and d stay built in, on the light tuner's `--lace` and C, while the
+  light and later changes may favour another (about 2.1 MB of PNGs in every build).
 - The sun's highlight takes only the sun that comes through a window (2026-11-21, task
   107; `LIGHT_FN`'s `window_open`): the window's pattern keeps out `room.y` of the key in
   its shade (`window_light`), so the rest, 10% in autumn, lit every surface's GGX highlight

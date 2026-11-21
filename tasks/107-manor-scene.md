@@ -85,9 +85,9 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       rises toward the inner edge, the lace's scalloped border along it. The lace sheer and
       lit through: the sun on its back with the bars' and leaves' shadows, scattered forward
       toward an eye looking at the sun through it, the sky and park behind the niche; its
-      shadow, its pattern blurred, in the room. Way f2 for now, `--lace f|d|f3` in the tuner
-      while the choice is open; the brass a plain procedural one (`surfaces::LOOK.brass`)
-      until the gilt and brass study lands (`model3d`'s `curtains.goose`,
+      shadow, its pattern blurred, in the room. Way f3 since the user's choice
+      (2026-11-21), `--lace f2|f|d` in the tuner in reserve; the brass a plain procedural
+      one (`surfaces::LOOK.brass`) until the gilt and brass study lands (`model3d`'s `curtains.goose`,
       `build/notes/curtains-build/`, costs in task 110)
 - [x] The games table's base, option A of `build/notes/games-table/` (2026-11-21): a
       turned pedestal (rings under the top, an urn, a beaded neck, a drum) and four

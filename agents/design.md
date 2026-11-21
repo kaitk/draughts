@@ -133,8 +133,8 @@ pieces; the design boards still set the layout, glass, and controls.
   map the renderer bakes then (the shell's 2048 × 768). Its mesh's triangles and making
   time print with a `--shot`'s bake line. The shot pages: `build/notes/room-demo/`,
   `build/notes/room-outside/`.
-  The curtains (`model3d`'s `curtains.goose`, task 107): `--lace f2|f|d|f3` (C cycles)
-  picks the lace's way while the user's choice is open (a way's panel mask by
+  The curtains (`model3d`'s `curtains.goose`, task 107): `--lace f3|f2|f|d` (C cycles)
+  picks the lace's way, f3 the default, the others kept in reserve (a way's panel mask by
   `tools/materials/lace_panel.py LIBRARY TAG OUT`, from `build/notes/lace-library/TAG/`;
   touch `src/native/materials.c` after a PNG changes); their shots and close-ups by
   `build/curtains-build/shots.sh EXE TAG` (`build/notes/curtains-build/`). The
