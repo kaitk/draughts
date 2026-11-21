@@ -176,8 +176,13 @@ pieces; the design boards still set the layout, glass, and controls.
   `tools/materials/books.py` (`design/materials/README.md`); with `--preview` it writes
   the atlas coloured as the shader colours it, to judge a palette without the app.
   The books' fill, colours and fade are worth judging in the hall view against
-  `library-autumn-02`'s case (`build/notes/books/crops/la2-bookcase.png`): ours read a
-  little brighter and more orange in the low sun.
+  `library-autumn-02`'s case (`build/notes/books/crops/la2-bookcase.png`). The tone round
+  (`build/notes/books-tone/`, shots by `build/books-tone/shots.sh EXE TAG [NAMES]`) put
+  them beside it at the same scale and measured a shelf's mean colour (a 110 × 40 patch
+  of books, gaps and all) against the concept's rows: sRGB 0.26, 0.16, 0.10 is the
+  target. Change the covers in `books.py` and keep its `colour()` the shader's; a case's
+  inside is darkened by the books' and the case's vertex occlusion and `case_shade`
+  (the cases' heights repeated in `ROOM_FRAG`: change them with `bookcases.goose`).
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

@@ -755,6 +755,23 @@ to be is in tasks 042, 059, 071, 081, and 086.
   hero books yet. The light tuner's Bookcases and books section turns the books off and
   scales their fade. Rejected: a baked colour atlas (A, every copy its own texels) and
   spines drawn at load (C, a font rasteriser in the app).
+- The books are retuned toward `library-autumn-02`'s case (2026-11-21, task 107,
+  `build/notes/books-tone/`), which the first fill missed: it read as a decorator's set,
+  long runs of like volumes in saturated blue, green, red and tan, lit evenly deep into
+  the case. The covers are now mostly calf and half calf browns, aged dark (sRGB #3e2616
+  to #765236), the cloth's and half leather's green, blue and red muted and rarer, the
+  labels dark; the spines' tone a little lower (0.4 + tone, was 0.45 + 1.1 tone), each
+  volume a shade of its own, darker at the head and tail, rubbed more at the head. A long
+  set stands as a run of two to eight volumes (whole now and then), and a shelf's sets
+  mix their heights. Inside the case: the spines' occlusion falls toward the head under
+  the shelf over them (0.25 to 0.55 by the room left over them, 0.75 at the foot) and
+  near the case's sides; the back 0.22, the shelves' undersides 0.3; and `ROOM_FRAG`'s
+  `case_shade` keeps the sun off what the case and its books hide (the ray out through
+  the open front, between the ends and the upright, under the shelf over it, over a
+  block standing for the books), the cases' heights repeated there from
+  `bookcases.goose`. The shelves' mean colour now measures as the concept's
+  (sRGB 0.27, 0.17, 0.10 against 0.26, 0.16, 0.10). Replaces the first palette and the
+  sets kept whole; the cases' casting no shadow of their own in the sun above.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

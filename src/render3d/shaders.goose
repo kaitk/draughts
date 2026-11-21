@@ -2409,6 +2409,40 @@ let ROOM_FRAG = """
         return max(mix(vec3(l), a, t.y), vec3(0.0)) * t.x;
     }
 
+    // The bookcases' own shade on the sun (model3d's bookcases.goose): a point inside a
+    // case (lp, the room's frame) sees the sun only where the ray to it leaves by the open
+    // front, between the case's ends and either side of its middle upright, under the
+    // shelf over it, and over the books: a block from the shelf's front back over 55% of
+    // its depth, up to 6 cm under the shelf over it (the books' own tops and spines are in
+    // it and see the sun as before). The compartments' tops (metres over the
+    // floor) and the base's and upper case's depths are bookcases.goose's; a centimetre's
+    // penumbra, two over the books' ragged tops.
+    const float CASE_TOPS[7] = float[7](0.669, 1.165, 1.562, 1.859, 2.151, 2.438, 2.668);
+    float case_shade(vec3 lp, vec3 l) {
+        float m = shell.w;
+        float up = (lp.y - shell.z) / m;
+        float out_of = (room_box.w - lp.z) / m;
+        float depth = up < 1.165 ? 0.45 : 0.30;
+        if (book_cases.y <= 0.0 || up > book_cases.z || out_of > depth) return 1.0;
+        float d = lp.x - room_doors.x;
+        float off = (d - sign(d) * book_cases.x) / m;
+        float half_w = book_cases.y / m;
+        if (abs(off) > half_w) return 1.0;
+        vec2 lh = vec2(dot(l.xz, axes.xy), dot(l.xz, axes.zw));
+        if (lh.y > -1e-3) return 0.0;
+        float s = (depth - out_of) / -lh.y;
+        float x = off + lh.x * s;
+        float y = up + l.y * s;
+        int k = 6;
+        for (int i = 5; i >= 0; i--) if (up < CASE_TOPS[i]) k = i;
+        float top = CASE_TOPS[k];
+        float lit = smoothstep(0.0, 0.01, top - y) * smoothstep(0.0, 0.01, half_w - 0.06 - abs(x));
+        float books_back = 0.45 * depth;
+        if (out_of < books_back) lit *= smoothstep(-0.02, 0.0, up + l.y * (books_back - out_of) / -lh.y - (top - 0.06));
+        if (abs(off) > 0.011) lit *= smoothstep(-0.01, 0.0, x * sign(off) - 0.011);
+        return lit;
+    }
+
     void main() {
         vec3 p = v_world;
         vec3 ng = normalize(v_normal);
@@ -2594,7 +2628,7 @@ let ROOM_FRAG = """
             if (v_uv.x >= 0.0) {
                 vec4 m = texture(book_atlas, v_uv);
                 c = mix(cover, book_label[int(mod(floor(code / 32.0), 4.0))].rgb, m.b);
-                c *= 0.45 + 1.1 * m.r;
+                c *= 0.4 + 1.0 * m.r;
                 c = mix(c, c * 0.75 + vec3(0.105, 0.0825, 0.06), 0.6 * m.a);
                 g = m.g;
                 c = mix(c, book_label[4 + int(ink)].rgb * (0.85 + 0.3 * m.r), g);
@@ -2665,7 +2699,7 @@ let ROOM_FRAG = """
         vec3 light = light_color.rgb * light_dir.w * shell_sun.y;
         // The table's top is solid: its shadow keeps all the key out, unlike the board's
         // softened ones (room.x).
-        float vis = dot(ng, l) > 0.0 ? window_light(p) * table_shade(p, l) : 0.0;
+        float vis = dot(ng, l) > 0.0 ? window_light(p) * table_shade(p, l) * case_shade(v_local, l) : 0.0;
         vec3 irr = room_irradiance(v_local, n) * ao;
         vec3 base = albedo * (1.0 - metal) * (diff / PI * light * vis + irr);
 

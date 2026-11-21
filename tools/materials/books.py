@@ -40,19 +40,22 @@ FORMATS = {
     "S": ((130, 152), (12, 20)),
 }
 
-# Colours as sRGB, aged (not as bound). Each binding picks a cover, a label, a gilt.
+# Colours as sRGB, aged (not as bound), toward library-autumn-02's case (k-means
+# #341f13 to #8e6a4d): mostly calf and half calf browns, a tan now and then; the cloth's
+# and half leather's green, blue and red muted and few. Each binding picks a cover, a
+# label, a gilt.
 COVERS = {
-    "calf": ["#7a4a2a", "#8a5a34", "#6a3e22", "#9a6a40", "#5a3420", "#a87a4c"],
-    "half": ["#5a3420", "#6e2a1e", "#3a4a2e", "#2e2a26", "#7a4a2a", "#2c3346", "#8a3a24"],
-    "house": ["#4e2e1c"],
-    "cloth": ["#3e4a32", "#5a2228", "#2e3a52", "#5a4030", "#4a3a48", "#6a5a3a", "#2a3a34"],
-    "vellum": ["#d9c9a0", "#cdb98c", "#e2d4ae"],
-    "boards": ["#7a6a58", "#5e5a62", "#8a7a5e", "#6a5040", "#4e5a5a"],
-    "wraps": ["#b8ae96", "#8e98a2", "#a89a7a"],
+    "calf": ["#5e3a22", "#6c4328", "#4c2c1a", "#6a4529", "#3e2616", "#765236"],
+    "half": ["#4a2c1a", "#5a321e", "#3a2618", "#2e2420", "#5a3a26", "#523022", "#363226"],
+    "house": ["#4a2c1a"],
+    "cloth": ["#38382a", "#4a2824", "#2e3038", "#4a3626", "#3a2e2c", "#54442e", "#2c322c"],
+    "vellum": ["#b09a74", "#a48e6a", "#b8a47e"],
+    "boards": ["#5e5040", "#4e4a48", "#6a5a44", "#563e2e", "#464640"],
+    "wraps": ["#867a64", "#6e6c64", "#7c6e58"],
 }
-LABELS = {"calf": ["#7a2418", "#2a3424", "#1e1a16"], "half": ["#1e1a16", "#7a2418", "#2a3a2a"],
-          "house": ["#1e1a16"], "cloth": [None], "vellum": [None, "#7a2418"],
-          "boards": ["#e6dcc4", "#ddd2b4"], "wraps": [None]}
+LABELS = {"calf": ["#5a1e14", "#262e20", "#1e1a16"], "half": ["#1e1a16", "#5a1e14", "#262e20"],
+          "house": ["#1e1a16"], "cloth": [None], "vellum": [None, "#5a1e14"],
+          "boards": ["#cdbf9e", "#c4b694"], "wraps": [None]}
 GILT = "#c09a4e"
 INK = "#2a2018"
 
@@ -153,7 +156,10 @@ def paint_spine(b, ppm):
     else:
         tone = 0.55 + 0.30 * (grain - 0.5)
     y = np.linspace(0, 1, H)[:, None]
-    tone = tone - 0.10 * np.exp(-y / 0.04)        # the head's dust and handling
+    # each volume aged its own way: a set's spines a little darker or lighter one to the next
+    tone = tone + 0.14 * (rng.random() - 0.5)
+    # the head's dust and handling, the tail's shelf dirt, darker on the long way down
+    tone = tone - 0.16 * np.exp(-y / 0.05) - 0.06 * np.exp(-(1 - y) / 0.03) - 0.05 * y
     # compartments: raised bands (calf, vellum) or gilt false bands (half, house, cloth)
     nb = 5 if b.fmt in ("F", "Q", "O") else 4
     top, bot = 0.06 * H, 0.94 * H
@@ -228,10 +234,11 @@ def paint_spine(b, ppm):
     g = g * np.clip((flake - 0.18) * 4, 0, 1)
     # wear: head, tail, band crowns, and a few scuffs
     w = noise(rng, W, H, max(2, int(4 * mm)), 3)
-    edge = np.exp(-y / 0.025) + np.exp(-(1 - y) / 0.03)
+    # the head cap pulled by fingers, chipped and rubbed deeper than the tail's
+    edge = 1.1 * np.exp(-y / 0.035) + 0.8 * np.exp(-(1 - y) / 0.03)
     xx = np.linspace(-1, 1, W)[None, :]
-    side = np.clip(np.abs(xx) - 0.75, 0, 1) * 2.5          # the joints rub first
-    wear = np.clip((w - 0.62) * 3 + edge * 0.9 + side * 0.5, 0, 1)
+    side = np.clip(np.abs(xx) - 0.7, 0, 1) * 2.5           # the joints rub first
+    wear = np.clip((w - 0.58) * 3 + edge * (0.5 + 0.8 * w) + side * 0.6, 0, 1)
     if b.binding == "vellum":
         wear *= 0.4
     m = np.stack([np.clip(tone, 0, 1), g, np.asarray(B, float) / 255.0, wear], -1)
@@ -245,7 +252,7 @@ def colour(mask, b):
     base = np.broadcast_to(hexrgb(b.cover), m.shape[:2] + (3,)).copy()
     if b.label:
         base = base * (1 - lab) + hexrgb(b.label) * lab
-    base = base * (0.45 + 1.1 * tone)
+    base = base * (0.4 + 1.0 * tone)
     rubbed = base * 0.75 + np.array([0.42, 0.33, 0.24]) * 0.25
     base = base * (1 - wear * 0.6) + rubbed * wear * 0.6
     gilt = hexrgb(b.gilt) * (0.85 + 0.3 * tone)
@@ -283,10 +290,10 @@ def pack(cells, width):
 # The tables the room's builder takes, in the order book_cells.goose writes them.
 BINDINGS = ["calf", "half", "house", "cloth", "vellum", "boards", "wraps"]
 FORMAT_ORDER = ["F", "Q", "O", "D", "S"]
-LABEL_COLOURS = ["#7a2418", "#1e1a16", "#2a3424", "#e6dcc4"]
+LABEL_COLOURS = ["#5a1e14", "#1e1a16", "#262e20", "#cdbf9e"]
 # What else the shader's table holds after the labels: gilt, ink, the page edges plain
 # (old paper) and sprinkled red.
-EDGES = [GILT, INK, "#cbbd98", "#8e4a34"]
+EDGES = [GILT, INK, "#8a7a5c", "#5e3628"]
 
 def goose_rgb(h):
     c = hexrgb(h)

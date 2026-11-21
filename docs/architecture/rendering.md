@@ -584,11 +584,14 @@ Two open oak bookcases stand built into the hall wall either side of the door
 the wainscot's line at 1.20 m, an upper case 0.30 m deep to the architrave's head at
 2.84 m. They are part of the shell's mesh, made once when the room turns on. Their books
 (`model3d::books`) are boxes with rounded spines, about 390 of them at 10 triangles each,
-filled onto the shelves by size, sets together. Each spine samples a cell of a mask atlas
+filled onto the shelves by size, sets together in runs of a few volumes, mostly in old
+calf and half calf browns. Each spine samples a cell of a mask atlas
 (`design/materials/books_atlas.png`, 1024 × 928 RGBA8 with four mips, 5 MB on the GPU;
 its cells in `book_cells.goose`, both made by `tools/materials/books.py`), and `ROOM_FRAG`
 colours it from a table of covers and labels in the room's block, picked by the code in
-the vertex's material, with gilt, wear and the sun's fade. The titles are baked into the
+the vertex's material, with gilt, wear and the sun's fade. Inside a case the books and
+the oak are darker under each shelf and toward the back, and `case_shade` keeps the sun
+off what the case's ends, upright, shelves and books hide. The titles are baked into the
 atlas; the fonts that set them stay with the baker.
 
 ### Board and pieces

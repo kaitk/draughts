@@ -3,9 +3,9 @@
 // books_atlas.png, book_cells.goose), coloured per book by the room's shader from a small
 // table (COVER, LABEL) the vertex's material picks: the cover by its binding, the label,
 // gilt or ink, how faded. A shelf is filled as a library's is: by size, the shelf's own
-// formats first, sets together and in order, 85 to 92% full, now and then a book leaning
-// into a gap or against the side, and a small pile lying flat. Built once with the room's
-// shell (bookcases.goose), in the room's frame.
+// formats first, sets together and in order (a long one in runs of a few volumes), 85 to
+// 92% full, now and then a book leaning into a gap or against the side, and a small pile
+// lying flat. Built once with the room's shell (bookcases.goose), in the room's frame.
 namespace books;
 import std;
 import vec;
@@ -137,9 +137,10 @@ fn fade_at(sh: Shelf, s: f32, k: i64) -> f32 {
 }
 
 // The shelf filled from the atlas's sets, `uses` counting each set's copies in the room:
-// on some shelves a small pile lying flat first set aside; whole sets, the shelf's own
-// formats first, the least used first, loosely by height (a long set runs on as far as it
-// goes, the rest of it elsewhere); then odd volumes to the shelf's fill; now and then a book
+// on some shelves a small pile lying flat first set aside; sets, the shelf's own formats
+// first, the least used first, their heights mixed, a long one as a run of two to eight
+// of its volumes (now and then whole, running on as far as it goes); then odd volumes to
+// the shelf's fill; now and then a book
 // out and its neighbour leaning into the gap. What is left at the end: the last book
 // leaning on the side, or the row pushed to the other side, or a plain gap.
 fn fill(sh: Shelf, uses: Uses&) -> Row {
@@ -175,7 +176,7 @@ fn fill(sh: Shelf, uses: Uses&) -> Row {
         let own = sh.first & bit != 0;
         guard own || sh.also & bit != 0 else { continue; }
         guard c.height / 1000.0 <= sh.clear - 0.015 else { continue; }
-        let key = (if own { 0.0 } else { 2500.0 }) + 1000.0 * uses[set] - c.height + 60.0 * hash(sh.seed + set, 2);
+        let key = (if own { 0.0 } else { 2500.0 }) + 1000.0 * uses[set] - 0.3 * c.height + 120.0 * hash(sh.seed + set, 2);
         order.push(float2 { key, set });
     }
     sort(order) { a, b => a.x < b.x };
@@ -185,17 +186,23 @@ fn fill(sh: Shelf, uses: Uses&) -> Row {
         for e in order {
             let set = e.y as i64;
             let first, vols = set_range(set);
-            var run: f32 = 0.0;
-            for v in vols { run += CELL[first + v].thick / 1000.0 + 0.0008; }
-            // The second pass: one odd volume a set, where it fits.
+            // A long set comes as a run of two to eight of its volumes, now and then whole.
             var v0 = 0;
             var v1 = vols;
+            let most = 2 + ((hash(sh.seed + set, 11) * 7.0) as i64) % 7;
+            if vols > most && hash(sh.seed + set, 12) > 0.15 {
+                v0 = ((hash(sh.seed + set, 13) * (vols - most + 1)) as i64) % (vols - most + 1);
+                v1 = v0 + most;
+            }
+            var run: f32 = 0.0;
+            for v in v0..v1 { run += CELL[first + v].thick / 1000.0 + 0.0008; }
+            // The second pass: one odd volume a set, where it fits.
             if pass == 1 {
                 v0 = ((hash(sh.seed + set, 8) * vols) as i64) % vols;
                 v1 = v0 + 1;
                 guard x + CELL[first + v0].thick / 1000.0 <= target else { continue; }
             } else {
-                guard x + run <= target || (vols > 3 && target - x > 0.15) else { continue; }
+                guard x + run <= target || (v1 - v0 > 3 && target - x > 0.15) else { continue; }
             }
             let copy = uses[set];
             uses[set] = copy + 1;
@@ -337,9 +344,13 @@ fn upright(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
     let s0 = p.s;
     let s1 = p.s + t;
     let sm = p.s + 0.5 * t;
-    // The shelf above hides the sky from the spine's top, the more the less room is left.
+    // Inside the case the spine sees the room through the shelves' gap: the shelf above
+    // shades its head, the more the less room is left over it, and the case's side the
+    // books near it.
     let room_over = sh.clear - h * ca;
-    let top_ao = 0.7 + 0.25 * clamp(room_over / 0.08, 0.0, 1.0);
+    let by_side = 0.7 + 0.3 * smoothstep(0.0 as f32, 0.15 as f32, min(sm - sh.s0, sh.s1 - sm));
+    let foot_ao = 0.75 * by_side;
+    let top_ao = (0.25 + 0.3 * clamp(room_over / 0.15, 0.0, 1.0)) * by_side;
     let edge = normalize(float3 { -sin(bg.y), 0.0, cos(bg.y) });
     let edge_r = float3 { -edge.x, 0.0, edge.z };
     let cols: float3[3] = [float3 { s0, 0.0, ze }, float3 { sm, 0.0, zf }, float3 { s1, 0.0, ze }];
@@ -352,7 +363,7 @@ fn upright(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
         let nn:     float3[4] = [ns[k], ns[k + 1], ns[k + 1], ns[k]];
         let across: f32[4]    = [0.5 * k, 0.5 * (k + 1), 0.5 * (k + 1), 0.5 * k];
         let along:  f32[4]    = [1.0, 1.0, 0.0, 0.0];
-        let ao:     f32[4]    = [0.85, 0.85, top_ao, top_ao];
+        let ao:     f32[4]    = [foot_ao, foot_ao, top_ao, top_ao];
         for i in 4 {
             verts.push(mesh::Vertex { at(b, turned(r, pts[i])), surfaces::world_normal(b, turned_normal(r, nn[i])), atlas_uv(c, across[i], along[i], mirrored),
                                       ao[i], mat });
@@ -364,7 +375,7 @@ fn upright(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
     let pu = pages_uv(c, p);
     let top: float3[4] = [turned(r, float3 { s0, yt, ze }), turned(r, float3 { s1, yt, ze }), turned(r, float3 { s1, yt, zf - d }),
                           turned(r, float3 { s0, yt, zf - d })];
-    push4(verts, indices, b, top, turned_normal(r, float3 { 0.0, 1.0, 0.0 }), [pu, pu, pu, pu], [0.6, 0.6, 0.45, 0.45], mat);
+    push4(verts, indices, b, top, turned_normal(r, float3 { 0.0, 1.0, 0.0 }), [pu, pu, pu, pu], [0.6 * top_ao, 0.6 * top_ao, 0.3 * top_ao, 0.3 * top_ao], mat);
     // The sides, the boards' faces: hidden but where a gap or a lean shows them.
     let sides: f32[2] = [s0, s1];
     let outs:  f32[2] = [-1.0, 1.0];
@@ -372,7 +383,7 @@ fn upright(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
         let q: float3[4] = [turned(r, float3 { sx, y0, zf - d }), turned(r, float3 { sx, y0, ze }), turned(r, float3 { sx, yt, ze }),
                             turned(r, float3 { sx, yt, zf - d })];
         push4(verts, indices, b, q, turned_normal(r, float3 { outs[i], 0.0, 0.0 }), [SIDE_UV, SIDE_UV, SIDE_UV, SIDE_UV],
-              [0.35, 0.55, 0.6, 0.4], mat);
+              [0.25 * by_side, foot_ao * 0.6, top_ao * 0.7, 0.2 * by_side], mat);
     }
 }
 
@@ -407,13 +418,13 @@ fn flat_book(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
         let across: f32[4]    = [0.5 * k, 0.5 * k, 0.5 * (k + 1), 0.5 * (k + 1)];
         let along:  f32[4]    = if head_right { [1.0, 0.0, 0.0, 1.0] } else { [0.0, 1.0, 1.0, 0.0] };
         for i in 4 {
-            verts.push(mesh::Vertex { at(b, pts[i]), surfaces::world_normal(b, nn[i]), atlas_uv(c, across[i], along[i], flip), 0.85, mat });
+            verts.push(mesh::Vertex { at(b, pts[i]), surfaces::world_normal(b, nn[i]), atlas_uv(c, across[i], along[i], flip), 0.65, mat });
         }
         indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
     }
     let yt = y0 + t;
     let cover: float3[4] = [float3 { s0, yt, ze }, float3 { s1, yt, ze }, float3 { s1, yt, zf - d }, float3 { s0, yt, zf - d }];
-    push4(verts, indices, b, cover, float3 { 0.0, 1.0, 0.0 }, [SIDE_UV, SIDE_UV, SIDE_UV, SIDE_UV], [0.75, 0.75, 0.55, 0.55], mat);
+    push4(verts, indices, b, cover, float3 { 0.0, 1.0, 0.0 }, [SIDE_UV, SIDE_UV, SIDE_UV, SIDE_UV], [0.6, 0.6, 0.35, 0.35], mat);
     let pu = pages_uv(c, p);
     let ends: f32[2] = [s0, s1];
     let outs: f32[2] = [-1.0, 1.0];

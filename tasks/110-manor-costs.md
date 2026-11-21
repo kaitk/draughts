@@ -149,6 +149,14 @@ results, or keep baking at run time behind a loader when the room or a look is c
   probes' bake unchanged (about 47 ms). Not measured on a device. To pay later: ASTC for
   the atlas (about 0.4 MB on the GPU at 6 × 6), the books only in the views that see them.
 
+- The books' tone (2026-11-21, task 107, `build/notes/books-tone/`): the atlas the same
+  size on the GPU, its PNG 0.97 to 1.03 MB (each volume's own tone and more wear); 384
+  books (18,778 triangles, 40 fewer). `ROOM_FRAG`'s `case_shade`, for a lit pixel: a few
+  comparisons that leave at once outside the cases, a short loop over seven heights
+  inside. The light tuner's counter on the cases from the room's middle, two rounds,
+  before and after: 3.4 ms (worst 3.5 to 5.3) both, within noise. Not measured on a
+  device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

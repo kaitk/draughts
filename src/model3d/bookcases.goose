@@ -64,9 +64,9 @@ let FACE_BOTTOM = 16;
 
 // The light's occlusion inside the case: the back, the shelves' tops and undersides, the
 // ends' and the upright's sides.
-let AO_BACK:  f32 = 0.35;
-let AO_SHELF: f32 = 0.55;
-let AO_UNDER: f32 = 0.45;
+let AO_BACK:  f32 = 0.22;
+let AO_SHELF: f32 = 0.5;
+let AO_UNDER: f32 = 0.3;
 let AO_SIDE:  f32 = 0.5;
 
 // A vector's x, y or z by number.

@@ -137,6 +137,17 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       of their own in the sun (their interiors take the sun unshaded where it reaches
       them, which the default keys don't), the books read a little bright and orange
       beside `library-autumn-02`'s, and no hero books or busts yet
+- [x] The books' tone toward `library-autumn-02`'s case (2026-11-21,
+      `build/notes/books-tone/`): covers mostly aged calf and half calf browns, cloth and
+      coloured half leather muted and rarer, dark labels; each volume a shade of its own,
+      heads and tails darker and rubbed; long sets in runs of two to eight volumes, heights
+      mixed on a shelf; the spines darker toward the shelf over them and near the case's
+      sides, the backs and undersides darker, and the sun kept off what the case and its
+      books hide (`case_shade`). The shelves' mean colour sRGB 0.27, 0.17, 0.10 against the
+      concept's 0.26, 0.16, 0.10 (0.40, 0.25, 0.15 before). The game's shot unchanged (max
+      difference 0), frame times unchanged (3.4 ms, the Mac's floor). Still off: the
+      shelves look emptier above the books than the concept's glazed case, no hero books
+      or busts, and the books cast no shadow on each other in the sun
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)
