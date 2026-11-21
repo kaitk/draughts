@@ -796,6 +796,12 @@ to be is in tasks 042, 059, 071, 081, and 086.
   drawn tight from a pin at ±0.80 m round the bundle and back, which read as a stiff U.
   About 920 triangles a tie-back (5,544 for the six), swept tubes and two balls for the
   knot.
+- The curtains' folds hang round at the hem (2026-11-21): from 0.83 m down a panel has
+  12 columns a fold, not 6 (whose hexagon read as a zigzag of points seen from above),
+  and the hem's line lifts at each fold's turn, scalloping between them. The two grids
+  meet on the 0.83 m row, the finer one's extra points on the coarser one's edges, so no
+  crack opens. 1,512 triangles a panel (1,152 before, 2,160 more for the six). Rejected:
+  the whole panel at 12 a fold (2,304 a panel, where only the hem is seen end on).
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

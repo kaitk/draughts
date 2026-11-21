@@ -4,13 +4,13 @@
 // shell, in metres from the window's middle (x along the wall, y up from the floor, z out
 // of the wall), the right panel's numbers mirrored for the left.
 //
-// A panel is a strip of LACE_COLS × LACE_ROWS: its column s (0 at the inner edge, 1 at
-// the outer) a place across the flat cloth, its row a height. Each row runs from the inner
+// A panel is a strip of LACE_COLS × LACE_ROWS over HEM_COLS × HEM_ROWS: its column s (0
+// at the inner edge, 1 at the outer) a place across the flat cloth, its row a height. Each row runs from the inner
 // edge to the outer (LACE_INNER, LACE_OUTER), LACE_MIDDLE off the wall, and folds in and
 // out about that line, so deep that the row still holds the cloth's 1.20 m (fold_depth);
 // each fold its own depth, its phase wandering over the drop, its crests a little sharp.
 // The folds run down into the hem, whose line rises toward the inner edge, as a tied
-// curtain's does, and goes up and down a little with them. The lace's uv is the flat
+// curtain's does, and scallops between the folds' turns. The lace's uv is the flat
 // cloth's: u across it from the outer edge, v up it from the hem along the surface, so the
 // pattern bunches on the folds as real lace does and the hem's border follows the hem.
 namespace room_shell;
@@ -18,11 +18,18 @@ import std;
 import vec;
 import math;
 
-let LACE_COLS = 37;    // 6 a fold
-let LACE_ROWS = 17;
-let LACE_VERTS = 629;  // LACE_COLS × LACE_ROWS
-// The rows' heights, the last the hem's (hem_y).
-let LACE_ROW_Y: f32[17] = [3.7, 3.66, 3.55, 3.4, 3.2, 2.9, 2.5, 2.1, 1.7, 1.4, 1.2, 1.06, 0.95, 0.83, 0.6, 0.32, 0.05];
+// The panel down to 0.83 m, 6 columns a fold, and from there to the hem 12 a fold, so the
+// folds hang round at the hem, where they are seen end on; the two meet on the 0.83 m
+// row, whose extra columns below lie on the straight edges of the row above.
+let LACE_COLS = 37;
+let LACE_ROWS = 14;
+let LACE_VERTS = 518;  // LACE_COLS × LACE_ROWS
+let HEM_COLS = 73;
+let HEM_ROWS = 5;
+let HEM_VERTS = 365;   // HEM_COLS × HEM_ROWS
+// The rows' heights, the hem's last (hem_y).
+let LACE_ROW_Y: f32[14] = [3.7, 3.66, 3.55, 3.4, 3.2, 2.9, 2.5, 2.1, 1.7, 1.4, 1.2, 1.06, 0.95, 0.83];
+let HEM_ROW_Y:  f32[5]  = [0.83, 0.6, 0.32, 0.15, 0.05];
 // How much of the sky and park the lace sees through the niche behind it, where it hangs
 // in front of the niche (the glass 0.4 m back in a 1.3 m opening, its frames and bars).
 let LACE_SKY_VIEW: f32 = 0.6;
@@ -114,12 +121,13 @@ fn drape_at(seed: i64, s: f32, y: f32) -> float3 {
 }
 
 // The hem's height at s: about LACE_HEM, rising 3.5 cm toward the inner edge where the
-// tie pulls the cloth up, the folds' crests curling a little higher than their backs,
-// and a slow wave along it.
+// tie pulls the cloth up, lifting at each fold's turn, front and back, so the line
+// scallops between them, the front's turns a little higher, and a slow wave along it.
 fn hem_y(seed: i64, s: f32) -> f32 {
     let rise = 0.035 * (1.0 - s) * (1.0 - s);
     let wave = 0.01 * sin(TAU * (1.3 * s + surfaces::hash(seed, 7)));
-    return LACE_HEM + 0.01 + rise + 0.004 * fold_at(seed, s, LACE_HEM) + wave;
+    let f = fold_at(seed, s, LACE_HEM);
+    return LACE_HEM + 0.005 + rise + 0.007 * f * f + 0.003 * f + wave;
 }
 
 // How much of the window behind the niche the lace sees at x, y (its distance from the
@@ -160,48 +168,70 @@ fn curtains(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>
     }
 }
 
-// One panel, side sx (1 the right, -1 the left), into the glass list.
+// One panel, side sx (1 the right, -1 the left), into the glass list: the hem's rows, then
+// the rows above, v up the cloth from the hem along its surface.
 fn lace_panel(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Builder, o: Opening, sx: f32, seed: i64) {
-    let k = m();
-    var pos:    float3[LACE_VERTS] = [float3_0; LACE_VERTS];
-    var across: f32[LACE_COLS]     = [0.0; LACE_COLS];
-    for i in LACE_COLS { across[i] = (i as f32) / (LACE_COLS - 1); }
-    for j in LACE_ROWS {
-        for i in LACE_COLS {
-            let s = across[i];
-            let y = if j == LACE_ROWS - 1 { hem_y(seed, s) } else { LACE_ROW_Y[j] };
-            pos[j * LACE_COLS + i] = drape_at(seed, s, y);
+    var low:    float3[HEM_VERTS] = [float3_0; HEM_VERTS];
+    var low_up: f32[HEM_VERTS]    = [0.0; HEM_VERTS];
+    for j in HEM_ROWS {
+        for i in HEM_COLS {
+            let s = (i as f32) / ((HEM_COLS - 1) as f32);
+            let y = if j == HEM_ROWS - 1 { hem_y(seed, s) } else { HEM_ROW_Y[j] };
+            low[j * HEM_COLS + i] = drape_at(seed, s, y);
         }
     }
-    // v: up the cloth from the hem, along the surface.
-    var up: f32[LACE_VERTS] = [0.0; LACE_VERTS];
-    for i in LACE_COLS {
-        var j = LACE_ROWS - 2;
+    for h in LACE_COLS - 1 { low[2 * h + 1] = (low[2 * h] + low[2 * h + 2]) * 0.5; }
+    climb(low[..], low_up[..], HEM_COLS, HEM_ROWS);
+    var high:    float3[LACE_VERTS] = [float3_0; LACE_VERTS];
+    var high_up: f32[LACE_VERTS]    = [0.0; LACE_VERTS];
+    for j in LACE_ROWS {
+        for i in LACE_COLS {
+            let s = (i as f32) / ((LACE_COLS - 1) as f32);
+            high[j * LACE_COLS + i] = drape_at(seed, s, LACE_ROW_Y[j]);
+        }
+    }
+    let last = (LACE_ROWS - 1) * LACE_COLS;
+    for i in LACE_COLS { high_up[last + i] = low_up[2 * i]; }
+    climb(high[..], high_up[..], LACE_COLS, LACE_ROWS);
+    put_lace(glass, glass_indices, b, o, sx, seed, low[..], low_up[..], HEM_COLS, HEM_ROWS);
+    put_lace(glass, glass_indices, b, o, sx, seed, high[..], high_up[..], LACE_COLS, LACE_ROWS);
+}
+
+// v up a grid's columns from its last row's (which `up` holds), along the cloth.
+fn climb(pos: float3[:], up: f32[:], cols: i64, rows: i64) {
+    for i in cols {
+        var j = rows - 2;
         while j >= 0 {
-            let a = j * LACE_COLS + i;
-            up[a] = up[a + LACE_COLS] + length(pos[a] - pos[a + LACE_COLS]);
+            let a = j * cols + i;
+            up[a] = up[a + cols] + length(pos[a] - pos[a + cols]);
             j--;
         }
     }
+}
+
+// A grid of the panel's points into the glass list, its normals by the drape's own slopes.
+fn put_lace(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Builder, o: Opening, sx: f32, seed: i64,
+            pos: float3[:], up: f32[:], cols: i64, rows: i64) {
+    let k = m();
     let base = glass.len as u32;
-    for j in LACE_ROWS {
-        for i in LACE_COLS {
-            let s = across[i];
-            let p = pos[j * LACE_COLS + i];
+    for j in rows {
+        for i in cols {
+            let s = (i as f32) / ((cols - 1) as f32);
+            let p = pos[j * cols + i];
             let e: f32 = 0.002;
             let ds = drape_at(seed, min(s + e, 1.0), p.y) - drape_at(seed, max(s - e, 0.0), p.y);
             let dy = drape_at(seed, s, p.y + 0.01) - drape_at(seed, s, p.y - 0.01);
             let n = normalize(cross(ds, dy));
             let q = float3 { sx * p.x, p.y, p.z } * k;
             glass.push(mesh::Vertex { surfaces::world(b, q.x, q.y, q.z), surfaces::world_normal(b, float3 { sx * n.x, n.y, n.z }),
-                                      float2 { (1.0 - s) * LACE_FLAT * k, up[j * LACE_COLS + i] * k }, sky_behind(o, p.x, p.y),
+                                      float2 { (1.0 - s) * LACE_FLAT * k, up[j * cols + i] * k }, sky_behind(o, p.x, p.y),
                                       surfaces::MAT_LACE });
         }
     }
-    for j in LACE_ROWS - 1 {
-        for i in LACE_COLS - 1 {
-            let a = base + (j * LACE_COLS + i) as u32;
-            let c = a + LACE_COLS;
+    for j in rows - 1 {
+        for i in cols - 1 {
+            let a = base + (j * cols + i) as u32;
+            let c = a + cols as u32;
             glass_indices.append([a, a + 1, c + 1, a, c + 1, c]);
         }
     }
