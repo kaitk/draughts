@@ -263,7 +263,7 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       fillet shaded from the bevel to the field); the toes switch in the tuner's own
       shaders. Style-01 against result-2: paper in sun 147 (146), door in sun 222 (217),
       door in shade 157 (155), the wainscot in shade 31 (40, before 44). Frame time at
-      style-01, 1600 × 1000 on the Mac: 7.4 → 9.0 ms (the contact shadow's code 0.5, the
+      style-01, 1600 × 1000 on the Mac: 7.5 → 8.9 ms (room 7.5 → 9.1) (the contact shadow's code 0.5, the
       sheen 0.5, the rest the shader's size; none of it switched off by its uniform); the
       game's shot unchanged (max difference 0)
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
