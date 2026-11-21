@@ -29,12 +29,8 @@ let UPPER_ACROSS = 3;
 let UPPER_UP = 3;
 let LOWER_ACROSS = 1;
 let LOWER_UP = 2;
-// The box window's painted lining from 0.35 m into the niche, the shutters folded in front
-// of the reveal (behind the wainscot cap's 6.5 cm return), the shutter's thickness.
+// The box window's painted lining from 0.35 m into the niche.
 let LINING_FROM = 0.35;
-let SHUTTER_FROM = 0.075;
-let SHUTTER_TO = 0.34;
-let SHUTTER_THICK = 0.035;
 // The paint's fraction that makes it the sills' stone (ROOM_FRAG): a painted piece's own
 // random stays under 0.4.
 let STONE: f32 = 0.6;
@@ -306,21 +302,26 @@ fn wainscot_run(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Buil
     }
     guard kind != RUN_SILL else { return; }
     let lift = CAP_LIFT;
-    let k0: f32 = if start_end == 1 { -1.0 } else if corner0 { 1.0 } else { 0.0 };
-    let k1: f32 = if finish_end == 1 { 1.0 } else if corner1 { -1.0 } else { 0.0 };
+    // With the shutters filling the reveal from 2 cm in, the cap stops square at the pier's
+    // corner; without them it wraps round it 6.5 cm into the reveal.
+    let wrap = !shutters_on;
+    let k0: f32 = if start_end == 1 && wrap { -1.0 } else if corner0 { 1.0 } else { 0.0 };
+    let k1: f32 = if finish_end == 1 && wrap { 1.0 } else if corner1 { -1.0 } else { 0.0 };
     sweep_oak(verts, indices, b, CAP_A[..], lift, s0, s1, k0, k1, seed);
     let ends: i64[2] = [start_end, finish_end];
     let at:   f32[2] = [s0, s1];
     let side: f32[2] = [-1.0, 1.0];
     for e, i in ends {
         seed++;
-        if e == 2 { profile_end(verts, indices, b, CAP_A[..], lift, at[i], side[i], seed); }
+        if e == 2 || (e == 1 && !wrap) { profile_end(verts, indices, b, CAP_A[..], lift, at[i], side[i], seed); }
         guard e == 1 else { continue; }
         // Round the pier's corner and 6.5 cm into the reveal, its end square; the frame's
         // edge under it.
-        let r = reveal_builder(moved(b, at[i], 0.0), side[i]);
-        sweep(verts, indices, r, CAP_A[..], lift, 0.0, 0.065 * m(), -1.0, 0.0, surfaces::MAT_OAK, seed);
-        profile_end(verts, indices, r, CAP_A[..], lift, 0.065 * m(), 1.0, seed);
+        if wrap {
+            let r = reveal_builder(moved(b, at[i], 0.0), side[i]);
+            sweep(verts, indices, r, CAP_A[..], lift, 0.0, 0.065 * m(), -1.0, 0.0, surfaces::MAT_OAK, seed);
+            profile_end(verts, indices, r, CAP_A[..], lift, 0.065 * m(), 1.0, seed);
+        }
         let fz = surfaces::FRAME_Z;
         let k = cm_up();
         let p: float3[4] = [float3 { at[i], 75.0 * k, 0.0 }, float3 { at[i], 75.0 * k, fz }, float3 { at[i], (lift + 100.5) * k, fz },
@@ -447,26 +448,161 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
     // The casements, the inner glass and the outer.
     casement(verts, indices, glass, glass_indices, b, o, o.glass.x);
     casement(verts, indices, glass, glass_indices, b, o, o.glass.y);
-    // The shutters, two leaves a side folded flat against the reveal, three panels on the
-    // face toward the window's middle.
-    for sx in SIDES {
-        let x = sx * w;
-        let inner = x - sx * (SHUTTER_THICK + surfaces::FRAME_Z / m());
-        let y0 = sill + 0.02;
-        let y1 = spring - CASE_HEAD;
-        let lo = if sx > 0.0 { inner } else { x };
-        let hi = if sx > 0.0 { x } else { inner };
-        quad_m(verts, indices, b, [float3 { lo, y0, -SHUTTER_FROM }, float3 { hi, y0, -SHUTTER_FROM }, float3 { hi, y1, -SHUTTER_FROM },
-                                   float3 { lo, y1, -SHUTTER_FROM }], paint);
-        quad_m(verts, indices, b, [float3 { lo, y1, -SHUTTER_TO }, float3 { hi, y1, -SHUTTER_TO }, float3 { hi, y1, -SHUTTER_FROM },
-                                   float3 { lo, y1, -SHUTTER_FROM }], paint, float3 { 0.0, 1.0, 0.0 });
-        // The face: a builder on it, s from the reveal's back toward the room.
-        let face_x = x - sx * SHUTTER_THICK;
-        let f = surfaces::Builder { b.o + b.d * (face_x * m()) + b.n * (-SHUTTER_TO * m()), b.n, b.d * -sx, 0.0, 1.0 };
-        let rows: float2[3] = [float2 { 0.9, 1.62 }, float2 { 1.72, 2.62 }, float2 { 2.72, 3.16 }];
-        painted(verts, indices, f, 0.0, (SHUTTER_TO - SHUTTER_FROM) * m(), y0, y1, 0.05, rows[..], seed);
+    // The shutters, two leaves a side folded against the reveal; one stands ajar.
+    if shutters_on {
+        for sx in SIDES {
+            let ajar = if sx < 0.0 && abs(o.mid - AJAR_WINDOW) < 0.01 { SHUTTER_AJAR } else { 0.0 };
+            shutters(verts, indices, b, o, sx, ajar, seed);
+        }
     }
     curtains(verts, indices, glass, glass_indices, b, o, seed);
+}
+
+// The window whose right shutters (seen from the room, b's -s, toward the stove's end)
+// stand ajar, the plan's x of its middle: the middle one, near in style-01's view.
+let AJAR_WINDOW: f32 = 4.5;
+// The shutters' brass knuckle hinges (metres): the barrel's radius and half length; three a
+// side on the lining at the front leaf's back edge, two between the leaves at their front
+// edges, each SHUTTER_HINGE_IN from the leaf's foot and head, and at its middle.
+let SHUTTER_KNUCKLE:      f32 = 0.005;
+let SHUTTER_KNUCKLE_HALF: f32 = 0.035;
+let SHUTTER_HINGE_IN:     f32 = 0.22;
+// The joint between the folded leaves, seen at their front edges.
+let SHUTTER_JOINT: f32 = 0.003;
+
+// Window o's shutters on side sx (b's s at the window's middle, metres): the front leaf with
+// its three raised panels toward the middle, the back leaf behind it against the reveal,
+// their front edges with the joint between them, and their hinges, the pair turned `ajar`
+// degrees about the lining's hinges toward the middle. Built on a builder of the leaves'
+// own: s from the back edge toward the room, z from the reveal toward the middle.
+fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, o: Opening, sx: f32, ajar: f32,
+            seed: i64&) {
+    let k = m();
+    let w = 0.5 * o.width;
+    let paint = surfaces::MAT_PAINT;
+    let stack = SHUTTER_FRONT + SHUTTER_BACK;
+    let y0 = o.sill + 0.005;
+    let y1 = o.sill + o.height - CASE_HEAD;
+    // The leaves' frame folded flat, and the lining's hinges' axis in it.
+    let along = b.n;
+    let out = b.d * -sx;
+    let flat_o = b.o + b.d * (sx * w * k) + b.n * (-SHUTTER_TO * k);
+    let hinge = float2 { -0.002, stack + 0.004 };
+    let pivot = flat_o + along * (hinge.x * k) + out * (hinge.y * k);
+    let a = ajar * PI / 180.0;
+    let d = along * cos(a) + out * sin(a);
+    let n = out * cos(a) - along * sin(a);
+    let l = surfaces::Builder { pivot - d * (hinge.x * k) - n * (hinge.y * k), d, n, 0.0, 1.0 };
+    let leaf = SHUTTER_LEAF;
+    let j = 0.5 * SHUTTER_JOINT;
+    // The front edges, the front leaf's, the joint, the back leaf's; the back leaf's back,
+    // seen when the pair stands ajar.
+    quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK + j }, float3 { leaf, y0, stack }, float3 { leaf, y1, stack },
+                               float3 { leaf, y1, SHUTTER_BACK + j }], paint, float3 { 1.0, 0.0, 0.0 });
+    quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK - j }, float3 { leaf, y0, SHUTTER_BACK + j },
+                               float3 { leaf, y1, SHUTTER_BACK + j }, float3 { leaf, y1, SHUTTER_BACK - j }], paint,
+           float3 { 1.0, 0.0, 0.0 }, 0.3);
+    quad_m(verts, indices, l, [float3 { leaf, y0, 0.0 }, float3 { leaf, y0, SHUTTER_BACK - j }, float3 { leaf, y1, SHUTTER_BACK - j },
+                               float3 { leaf, y1, 0.0 }], paint, float3 { 1.0, 0.0, 0.0 });
+    if ajar > 0.0 {
+        let back = surfaces::Builder { l.o, l.d, l.n * -1.0, 0.0, 1.0 };
+        quad_m(verts, indices, back, [float3 { 0.0, y0, 0.0 }, float3 { leaf, y0, 0.0 }, float3 { leaf, y1, 0.0 },
+                                      float3 { 0.0, y1, 0.0 }], paint, float3 { 0.0, 0.0, 1.0 }, 0.8);
+        quad_m(verts, indices, l, [float3 { 0.0, y1, 0.0 }, float3 { leaf, y1, 0.0 }, float3 { leaf, y1, stack }, float3 { 0.0, y1, stack }],
+               paint, float3 { 0.0, 1.0, 0.0 });
+    }
+    // The front leaf's face: its stiles' and rails' face at the stack's, the panels sunk in it.
+    let face = moved(l, 0.0, (stack * k) - surfaces::FRAME_Z);
+    let rows: float2[3] = [float2 { 0.9, 1.62 }, float2 { 1.72, 2.62 }, float2 { 2.72, 3.16 }];
+    painted(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], seed);
+    // The hinges: on the lining at the front leaf's back edge, and between the leaves.
+    let mid = 0.5 * (y0 + y1);
+    let heights: f32[3] = [y0 + SHUTTER_HINGE_IN, mid, y1 - SHUTTER_HINGE_IN];
+    for y in heights {
+        knuckle(verts, indices, l, float3 { hinge.x, y, hinge.y }, SHUTTER_KNUCKLE, SHUTTER_KNUCKLE_HALF, 6, false);
+    }
+    for y in [heights[0], heights[2]] {
+        knuckle(verts, indices, l, float3 { leaf + 0.003, y, SHUTTER_BACK }, SHUTTER_KNUCKLE, SHUTTER_KNUCKLE_HALF, 6, false);
+    }
+}
+
+// A profile of (across, out) points (metres, from x0 along b's s and from z0 out of the
+// wall) swept up from y0 to y1, its normals smoothed as lathe's.
+fn upright_sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, prof: float2[], x0: f32, z0: f32, y0: f32,
+                 y1: f32, mat: f32) {
+    let k = m();
+    var flat: float3[..16] = [float3_0];
+    for i in 1..prof.len {
+        let t = prof[i] - prof[i - 1];
+        flat.push(if length(t) > 0.000001 { normalize(float3 { -t.y, 0.0, t.x }) } else { float3_0 });
+    }
+    for i in 1..prof.len {
+        let n = flat[i];
+        guard length_sq(n) > 0.0 else { continue; }
+        let na = surfaces::world_normal(b, if i > 1 { surfaces::smooth_normal(n, flat[i - 1]) } else { n });
+        let nc = surfaces::world_normal(b, if i + 1 < prof.len { surfaces::smooth_normal(n, flat[i + 1]) } else { n });
+        let a = prof[i - 1];
+        let c = prof[i];
+        let base = verts.len as u32;
+        verts.push(mesh::Vertex { surfaces::world(b, (x0 + a.x) * k, y0 * k, (z0 + a.y) * k), na, float2 { (x0 + a.x) * k, y0 * k }, 1.0, mat });
+        verts.push(mesh::Vertex { surfaces::world(b, (x0 + a.x) * k, y1 * k, (z0 + a.y) * k), na, float2 { (x0 + a.x) * k, y1 * k }, 1.0, mat });
+        verts.push(mesh::Vertex { surfaces::world(b, (x0 + c.x) * k, y1 * k, (z0 + c.y) * k), nc, float2 { (x0 + c.x) * k, y1 * k }, 1.0, mat });
+        verts.push(mesh::Vertex { surfaces::world(b, (x0 + c.x) * k, y0 * k, (z0 + c.y) * k), nc, float2 { (x0 + c.x) * k, y0 * k }, 1.0, mat });
+        indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
+    }
+}
+
+// A brass knuckle hinge's barrel standing upright at c (metres in b's frame), its radius r
+// and half length `half`, `sides` round: with `finials` a small ball at each end (the
+// doors'), else a short point (the shutters', a pixel or two in every view).
+fn knuckle(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c: float3, r: f32, half: f32, sides: i64,
+           finials: bool) {
+    if finials {
+        let f = 0.8 * r;
+        let prof: float2[6] = [float2 { 0.0, -half - 1.75 * f }, float2 { 0.8 * f, -half - 0.85 * f }, float2 { r, -half },
+                               float2 { r, half }, float2 { 0.8 * f, half + 0.85 * f }, float2 { 0.0, half + 1.75 * f }];
+        lathe(verts, indices, b, c, prof[..], sides, surfaces::MAT_BRASS);
+    } else {
+        let prof: float2[4] = [float2 { 0.0, -half - 0.8 * r }, float2 { r, -half }, float2 { r, half }, float2 { 0.0, half + 0.8 * r }];
+        lathe(verts, indices, b, c, prof[..], sides, surfaces::MAT_BRASS);
+    }
+}
+
+// A profile of (radius, height) points (metres, bottom to top) turned about the upright
+// axis through c (metres in b's frame), `sides` round. A point's normal is its two
+// segments' mean where they turn less than surfaces::CREASE, so a ball or a bead shades
+// round, and a segment's own at a sharper turn (a barrel's square end).
+fn lathe(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c: float3, prof: float2[], sides: i64, mat: f32) {
+    let k = m();
+    var flat: float3[..16] = [float3_0];
+    for i in 1..prof.len {
+        let t = prof[i] - prof[i - 1];
+        flat.push(if length(t) > 0.000001 { normalize(float3 { t.y, -t.x, 0.0 }) } else { float3_0 });
+    }
+    for i in 1..prof.len {
+        let n = flat[i];
+        guard length_sq(n) > 0.0 else { continue; }
+        let na = if i > 1 { surfaces::smooth_normal(n, flat[i - 1]) } else { n };
+        let nc = if i + 1 < prof.len { surfaces::smooth_normal(n, flat[i + 1]) } else { n };
+        let ends: float2[2] = [prof[i - 1], prof[i]];
+        let ns:   float3[2] = [na, nc];
+        let base = verts.len as u32;
+        for e in 2 {
+            for s in sides + 1 {
+                let ang: f32 = TAU * s / sides;
+                let ca = cos(ang);
+                let sa = sin(ang);
+                let p = (c + float3 { ca * ends[e].x, ends[e].y, sa * ends[e].x }) * k;
+                let q = float3 { ca * ns[e].x, ns[e].y, sa * ns[e].x };
+                verts.push(mesh::Vertex { surfaces::world(b, p.x, p.y, p.z), surfaces::world_normal(b, q), float2_0, 1.0, mat });
+            }
+        }
+        let ring = (sides + 1) as u32;
+        for s in sides {
+            let s0 = base + s as u32;
+            indices.append([s0, s0 + 1, s0 + ring + 1, s0, s0 + ring + 1, s0 + ring]);
+        }
+    }
 }
 
 // The two halves of a casement at the glass plane `g` metres into the wall from b's face:
@@ -569,21 +705,40 @@ fn painted(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
 // ROOM_FRAG shades paler and smoother.
 let THRESHOLD_OWN: f32 = 0.95;
 
+// The doors' leaves (part 2 of build/notes/shutters/, 2026-11-21): their face DOOR_FACE
+// behind the wall's, in the frame's rebate on the room's side they open to, DOOR_LEAF
+// thick, a DOOR_JOINT round each and between the pair; the right leaf's meeting bead
+// (DOOR_BEAD, across and proud); three brass knuckle hinges a leaf on the outer jambs at
+// DOOR_HINGES, their barrels DOOR_KNUCKLE round and twice DOOR_KNUCKLE_HALF long, the axis
+// 7 mm before the face; the right leaf's lever on a long escutcheon, DOOR_LEVER from the
+// meeting at the lock rail's height.
+let DOOR_FACE:  f32 = 0.015;
+let DOOR_LEAF:  f32 = 0.04;
+let DOOR_JOINT: f32 = 0.003;
+let DOOR_BEAD = float2 { 0.028, 0.008 };
+let DOOR_HINGES:       f32[3] = [0.30, 1.35, 2.40];
+let DOOR_KNUCKLE:      f32    = 0.007;
+let DOOR_KNUCKLE_HALF: f32    = 0.06;
+let DOOR_LEVER = float2 { 0.06, 1.05 };
+
 // A door in wall b of `thick` metres (b's s at its middle): its lining through the wall's
-// face, the oak threshold, the two closed leaves with three panels each (door 1), the
-// architrave round it on its plinth blocks.
+// face to the leaves' back, the rebate's stop behind the joints, the oak threshold, the two
+// closed leaves with three panels each (door 1) and their edges, the meeting bead, the
+// hinges and the lever, the architrave round it on its plinth blocks.
 fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o: Opening, thick: f32, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
     let paint = surfaces::MAT_PAINT;
     let w = 0.5 * o.width;
     let h = o.height;
-    let leaf_z = 0.045;
+    let back = DOOR_FACE + DOOR_LEAF;
     for sx in SIDES {
-        quad_m(verts, indices, b, [float3 { sx * w, 0.0, 0.0 }, float3 { sx * w, 0.0, -leaf_z }, float3 { sx * w, h, -leaf_z },
+        quad_m(verts, indices, b, [float3 { sx * w, 0.0, 0.0 }, float3 { sx * w, 0.0, -back }, float3 { sx * w, h, -back },
                                    float3 { sx * w, h, 0.0 }], paint, float3 { -sx, 0.0, 0.0 }, 0.85);
     }
-    quad_m(verts, indices, b, [float3 { -w, h, 0.0 }, float3 { w, h, 0.0 }, float3 { w, h, -leaf_z }, float3 { -w, h, -leaf_z }],
+    quad_m(verts, indices, b, [float3 { -w, h, 0.0 }, float3 { w, h, 0.0 }, float3 { w, h, -back }, float3 { -w, h, -back }],
            paint, float3 { 0.0, -1.0, 0.0 }, 0.85);
+    quad_m(verts, indices, b, [float3 { -w, 0.0, -back }, float3 { w, 0.0, -back }, float3 { w, h, -back }, float3 { -w, h, -back }],
+           paint, float3 { 0.0, 0.0, 1.0 }, 0.3);
     // The threshold, an oak board 2 cm proud of the floor through the wall, its grain along
     // it, its room side a rounded nose 3 cm out; its ends run under the plinth blocks.
     seed++;
@@ -593,11 +748,50 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     let first = verts.len;
     sweep(verts, indices, b, sill[..], 0.0, -w * m(), w * m(), 0.0, 0.0, surfaces::MAT_OAK, seed, cm_up());
     for i in first..verts.len { verts[i].mat = surfaces::MAT_OAK + THRESHOLD_OWN; }
-    // The leaves, their face in the wall's face.
-    let lb = moved(b, 0.0, -leaf_z * m());
+    // The leaves, their stiles' face DOOR_FACE behind the wall's, a joint round each over
+    // the threshold's 2 cm; their edges back to the rebate.
+    let k = m();
+    let j = DOOR_JOINT;
+    let lb = moved(b, 0.0, -DOOR_FACE * k - surfaces::FRAME_Z);
     let rows: float2[3] = [float2 { 0.22, 0.98 }, float2 { 1.16, 2.08 }, float2 { 2.2, 2.58 }];
-    painted(verts, indices, lb, -w * m(), 0.0, 0.0, h, 0.12, rows[..], seed);
-    painted(verts, indices, lb, 0.0, w * m(), 0.0, h, 0.12, rows[..], seed);
+    let y0 = 0.02 + j;
+    let y1 = h - j;
+    let spans: float2[2] = [float2 { -w + j, -0.5 * j }, float2 { 0.5 * j, w - j }];
+    for x in spans {
+        painted(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], seed);
+        for e in 2 {
+            let at = if e == 0 { x.x } else { x.y };
+            quad_m(verts, indices, b, [float3 { at, y0, -DOOR_FACE }, float3 { at, y0, -back }, float3 { at, y1, -back },
+                                       float3 { at, y1, -DOOR_FACE }], paint, float3 { if e == 0 { -1.0 } else { 1.0 }, 0.0, 0.0 }, 0.6);
+        }
+        quad_m(verts, indices, b, [float3 { x.x, y1, -DOOR_FACE }, float3 { x.y, y1, -DOOR_FACE }, float3 { x.y, y1, -back },
+                                   float3 { x.x, y1, -back }], paint, float3 { 0.0, 1.0, 0.0 }, 0.6);
+    }
+    // The meeting bead on the right leaf, a flattened half round over the joint.
+    var bead: float2[7] = [float2_0; 7];
+    for i in 7 {
+        let t: f32 = PI * i / 6.0;
+        bead[i] = float2 { -0.5 * DOOR_BEAD.x * cos(t), DOOR_BEAD.y * sin(t) };
+    }
+    upright_sweep(verts, indices, b, bead[..], 0.0, -DOOR_FACE, y0, y1, paint);
+    // The hinges on the outer jambs, the lever and its escutcheon on the right leaf.
+    for sx in SIDES {
+        for y in DOOR_HINGES {
+            knuckle(verts, indices, b, float3 { sx * (w - 0.5 * j), y, -DOOR_FACE + 0.007 }, DOOR_KNUCKLE, DOOR_KNUCKLE_HALF, 8, true);
+        }
+    }
+    // The right leaf seen from the room is b's -s (a wall's s runs leftward from inside).
+    let brass = surfaces::MAT_BRASS;
+    let lx = -DOOR_LEVER.x;
+    let ly = DOOR_LEVER.y;
+    let z0 = -DOOR_FACE;
+    box_m(verts, indices, b, lx - 0.0175, lx + 0.0175, ly - 0.15, ly + 0.07, z0, z0 + 0.003, brass);
+    let collar: float3[2] = [float3 { lx, ly, z0 + 0.003 }, float3 { lx, ly, z0 + 0.012 }];
+    tube(verts, indices, b, collar[..], 0.011, 8, false, brass);
+    disc(verts, indices, b, float3 { lx, ly, z0 + 0.012 }, 0.011, 8, brass);
+    let lever: float3[3] = [float3 { lx, ly, z0 + 0.012 }, float3 { lx, ly, z0 + 0.05 }, float3 { lx - 0.11, ly - 0.004, z0 + 0.056 }];
+    tube(verts, indices, b, lever[..], 0.0065, 8, false, brass);
+    ball(verts, indices, b, float3 { lx - 0.11, ly - 0.004, z0 + 0.056 }, 0.0085, brass);
     // The architrave up each side from its plinth block and over the head, mitred.
     var prof: float2[7] = [float2_0; 7];
     for q, i in ARCHITRAVE_A { prof[i] = float2 { q.x / 100.0, q.y / 100.0 }; }

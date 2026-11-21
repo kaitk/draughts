@@ -745,7 +745,8 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     // The mesh, in the room's frame (ROOM_VERT turns it with the key): made again only
     // for another room, or the panelled wall's room for another window or wall.
     let w = g.room.window;
-    let key = float4 { w.x, w.z, g.room_away, if !g.room_shell { 0.0 } else if g.books_off { 2.0 } else { 1.0 } };
+    let shell_key: f32 = if !g.room_shell { 0.0 } else { (if g.books_off { 2.0 } else { 1.0 }) + (if room_shell::shutters_on { 0.0 } else { 2.0 }) };
+    let key = float4 { w.x, w.z, g.room_away, shell_key };
     guard g.room_vb.id == 0 || !same4(key, g.room_for) else { return; }
     let t0 = clock();
     var verts:         mesh::Vertex[>..] = [];
@@ -1144,14 +1145,16 @@ fn light_baked(g: Gpu&) -> bool { g.room_on && g.room_shell && g.room.baked.x + 
 
 // What the shell's baked light is made from: the key, the room's light, the tree, the
 // table's top, the bounces and the sun's saturation on the room, and the bake's own
-// settings (room_light's bounce_grey, lace_source, gather_near).
+// settings (room_light's bounce_grey, lace_source, gather_near), and whether the windows
+// have their shutters (room_shell::shutters_on).
 let LIGHT_KEY = 9;
 fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     let f = g.frame;
     let r = g.room;
     return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.room_axes,
             float4 { table_radius(g), g.tree_ms as f32, light_bounces as f32, room_sun.x },
-            float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near, 0.0 }];
+            float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
+                     if room_shell::shutters_on { 1.0 } else { 0.0 } }];
 }
 
 // The bake's buffers, sized once: the probes' atlas in floats and as half floats, the sun's

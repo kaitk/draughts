@@ -63,6 +63,23 @@ fn door_at(wall: i64, mid: f32, width: f32) -> Opening {
     Opening { wall, mid, width, 0.0, 2.7, 0.0, float4_0, DOOR }
 }
 
+// The windows' shutters (option A of build/notes/shutters/, 2026-11-21): two leaves a side,
+// each SHUTTER_LEAF wide and as tall as the casement, folded flat against the reveal from
+// SHUTTER_FROM to SHUTTER_TO (metres into the wall from its face, the lining's front): the
+// front leaf, panelled toward the window's middle, hinged on the lining at its back edge,
+// the back leaf hinged to its front edge and folded behind it, the stack
+// SHUTTER_FRONT + SHUTTER_BACK thick off the reveal, inside the blind frame's 0.16 m, so the
+// daylight stays 0.98 m. The middle window's right pair (seen from the room) stands
+// SHUTTER_AJAR degrees open. shutters_on false leaves them out (the light tuner's --shutters off), the
+// bake with them.
+let SHUTTER_FROM:  f32 = 0.02;
+let SHUTTER_TO:    f32 = 0.345;
+let SHUTTER_LEAF:  f32 = 0.325;
+let SHUTTER_FRONT: f32 = 0.030;
+let SHUTTER_BACK:  f32 = 0.028;
+let SHUTTER_AJAR:  f32 = 14.0;
+var shutters_on = true;
+
 // The window wall, the far end, the hall's, the stove's end.
 let WINDOW_WALL = 0;
 let FAR_WALL = 1;

@@ -2950,7 +2950,7 @@ let ROOM_FRAG = """
         // face by the nearer, their ends and tops into lit.
         vec3 hq = vec3(hx, floor_up, d_hall);
         vec3 hn = vec3(ln.x, ln.y, -ln.z);
-        float hall_hides = holed_wall(hq, hn, proud, room_doors.y - arch, 0.0, door_top * m, 0.045 * m, reach);
+        float hall_hides = holed_wall(hq, hn, proud, room_doors.y - arch, 0.0, door_top * m, 0.015 * m, reach);
         bool cases_near = book_cases.y > 0.0 && d_hall < 0.45 * m + reach;
         if (room_doors.y > 0.0 && (cases_near || (abs(hx) < room_doors.y + reach && d_hall < reach + 0.07 * m))) {
             vec2 b = wall_boxes(hq, hn, room_doors.y, cases_near, s, reach);
@@ -2959,7 +2959,7 @@ let ROOM_FRAG = """
         }
         vec3 sq = vec3(sz, floor_up, d_stove);
         vec3 sn = vec3(ln.z, ln.y, -ln.x);
-        float stove_hides = holed_wall(sq, sn, proud, room_doors.w - arch, 0.0, door_top * m, 0.045 * m, reach);
+        float stove_hides = holed_wall(sq, sn, proud, room_doors.w - arch, 0.0, door_top * m, 0.015 * m, reach);
         if (room_doors.w > 0.0 && abs(sz) < room_doors.w + reach && d_stove < reach + 0.07 * m) {
             vec2 b = wall_boxes(sq, sn, room_doors.w, false, s, reach);
             stove_hides = max(stove_hides, b.x);
@@ -3016,17 +3016,17 @@ let ROOM_FRAG = """
             lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * ledge_hides(shell_glass.x - into, 0.06 * m, reach);
             lit *= 1.0 - s * upright * plane_hides((spring - up) * m, reach) * step(up, spring);
         }
-        // At a door: in its opening, the jambs and head round the leaf (4.5 cm deep), the
-        // leaf behind a jamb.
+        // At a door: in its opening, the jambs and head round the leaf (its face 1.5 cm
+        // deep), the leaf behind a jamb.
         if (hall_door && d_hall < 0.01 * m) {
-            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * ledge_hides(room_doors.y - arch - abs(hx), 0.045 * m, reach);
-            lit *= 1.0 - s * upright * ledge_hides((door_top - up) * m, 0.045 * m, reach);
-            lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * plane_hides(0.045 * m + d_hall, reach);
+            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * ledge_hides(room_doors.y - arch - abs(hx), 0.015 * m, reach);
+            lit *= 1.0 - s * upright * ledge_hides((door_top - up) * m, 0.015 * m, reach);
+            lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * plane_hides(0.015 * m + d_hall, reach);
         }
         if (salon_door && d_stove < 0.01 * m) {
-            lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * ledge_hides(room_doors.w - arch - abs(sz), 0.045 * m, reach);
-            lit *= 1.0 - s * upright * ledge_hides((door_top - up) * m, 0.045 * m, reach);
-            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(0.045 * m + d_stove, reach);
+            lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * ledge_hides(room_doors.w - arch - abs(sz), 0.015 * m, reach);
+            lit *= 1.0 - s * upright * ledge_hides((door_top - up) * m, 0.015 * m, reach);
+            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(0.015 * m + d_stove, reach);
         }
         return lit;
     }

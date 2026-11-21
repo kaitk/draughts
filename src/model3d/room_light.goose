@@ -159,6 +159,24 @@ fn in_niche(o: room_shell::Opening, q: float3) -> bool {
     abs(x) < 0.5 * o.width && q.z > o.sill && q.z < room_shell::head_at(o, x)
 }
 
+// The half width of niche o's opening past its shutters, folded against the reveals from
+// SHUTTER_FROM to SHUTTER_TO into the wall (room_shell's; the one leaf ajar taken as
+// folded), or the niche's own without them.
+fn open_half(o: room_shell::Opening) -> f32 {
+    let w = 0.5 * o.width;
+    return if room_shell::shutters_on { w - room_shell::SHUTTER_FRONT - room_shell::SHUTTER_BACK } else { w };
+}
+
+// Whether the segment from a (in the room, before the wall's face) toward b (into the
+// niche) passes the shutters' front edges at SHUTTER_FROM within niche o's opening.
+fn past_shutters(o: room_shell::Opening, a: float3, v: float3) -> bool {
+    guard room_shell::shutters_on && v.y > 1e-4 else { return true; }
+    let y = wall_face() + room_shell::SHUTTER_FROM;
+    guard a.y < y else { return true; }
+    let q = a + v * ((y - a.y) / v.y);
+    return abs(q.x - o.mid) < open_half(o);
+}
+
 // Whether the lace hangs at q (the plan's metres at the lace's plane) before niche o.
 fn in_lace(o: room_shell::Opening, q: float3) -> bool {
     let x = abs(q.x - o.mid);
@@ -252,8 +270,17 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                 // Through the niche to the wall's face: the sill, a reveal, or on.
                 let t_face = (gy - face) / -d.y;
                 let t_sill = (q.z - o.sill) / -d.z;
+                // The reveal: the lining behind the shutters, or the shutters' face in front of
+                // the lining, or their back edges between.
                 let side = if d.x > 0.0 { 0.5 * o.width } else { -0.5 * o.width };
-                let t_reveal = if abs(d.x) > 1e-4 { (o.mid + side - q.x) / d.x } else { 1e9 };
+                var t_reveal = if abs(d.x) > 1e-4 { (o.mid + side - q.x) / d.x } else { 1e9 };
+                var reveal_albedo = PLASTER_ALBEDO;
+                if room_shell::shutters_on && abs(d.x) > 1e-4 && q.y + d.y * t_reveal - face < room_shell::SHUTTER_TO {
+                    let inner = if d.x > 0.0 { open_half(o) } else { -open_half(o) };
+                    let t_back = (face + room_shell::SHUTTER_TO - q.y) / d.y;
+                    t_reveal = max((o.mid + inner - q.x) / d.x, t_back);
+                    reveal_albedo = PAINT_ALBEDO;
+                }
                 var bin = -1;
                 var cell = -1;
                 var at = float3_0;
@@ -269,7 +296,7 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                     bin = 1008 + 576 + 896 + 3 * k + (if d.x > 0.0 { 1 } else { 2 });
                     at = q + d * t_reveal;
                     n = float3 { if d.x > 0.0 { -1.0 } else { 1.0 }, 0.0, 0.0 };
-                    a = PLASTER_ALBEDO;
+                    a = reveal_albedo;
                     cell = reveal_cell(k, o, at, if d.x > 0.0 { 1 } else { 0 });
                 } else {
                     // Into the room, past the lace, to the floor, a wall, or the table.
@@ -414,7 +441,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                     var lets: f32 = 1.0;
                     if p.y <= face + 1e-4 {
                         let f = max(face - p.y, 0.0) / v.y;
-                        guard in_niche(o, p + v * f) else { continue; }
+                        guard in_niche(o, p + v * f) && past_shutters(o, p, v) else { continue; }
                         let c = p + v * ((lace_y - p.y) / v.y);
                         if p.y < lace_y && in_lace(o, c) { lets = lace_lets(c.z); }
                     }
@@ -516,20 +543,22 @@ let HALF_FLOATS = 16380;   // HALF_X × HALF_Z × HALF_H × 12
 // windows' openings), and the niche it lies in (-1 the room).
 struct Cell { at: float3, normal: float3, albedo: float3, area: f32, niche: i64 }
 
-// The bounces' buffers, fixed: the cells (made once), the sun's light thrown back off each
+// The bounces' buffers, fixed: the cells (made once, and again when the shutters are
+// switched), the sun's light thrown back off each
 // (from sun_patches: what each cell's rays bring, its albedo in), the light leaving each in
 // this bounce and what it gathers for the next (over pi), the share of the room each cell
 // sees (its form factors' sum, capped at 1), what the probes gather (the light leaving
 // each cell but the sun's first, which the patches carry), and the half grid's probes.
 struct Bounce {
-    cells:  Cell[CELLS],
-    made:   bool,
-    sun:    float3[CELLS],
-    leaves: float3[CELLS],
-    gather: float3[CELLS],
-    seen:   float3[CELLS],
-    norm:   f32[CELLS],
-    half:   f32[HALF_FLOATS],
+    cells:         Cell[CELLS],
+    made:          bool,
+    made_shutters: bool,
+    sun:           float3[CELLS],
+    leaves:        float3[CELLS],
+    gather:        float3[CELLS],
+    seen:          float3[CELLS],
+    norm:          f32[CELLS],
+    half:          f32[HALF_FLOATS],
 }
 
 // Cell k of n along a plane `size` long that point x lies in.
@@ -643,13 +672,18 @@ fn make_cells(bounce: Bounce&) {
                     Cell { float3 { x, y, room_shell::head_at(o, x - o.mid) }, down, PLASTER_ALBEDO, across * deep, k };
             }
         }
+        // The reveals, or the shutters' faces folded before them.
         for side in 2 {
-            let x = if side == 0 { x0 } else { x0 + o.width };
             let n = float3 { if side == 0 { 1.0 } else { -1.0 }, 0.0, 0.0 };
             for u in REVEAL_UP {
                 for j in NICHE_DEEP {
-                    let at = float3 { x, face + (j + 0.5) * deep, o.sill + (u + 0.5) * rise };
-                    bounce.cells[base + 12 + side * 20 + u * NICHE_DEEP + j] = Cell { at, n, PLASTER_ALBEDO, rise * deep, k };
+                    let y = face + (j + 0.5) * deep;
+                    let shut = room_shell::shutters_on && y - face < room_shell::SHUTTER_TO;
+                    let half = if shut { open_half(o) } else { 0.5 * o.width };
+                    let x = if side == 0 { o.mid - half } else { o.mid + half };
+                    let at = float3 { x, y, o.sill + (u + 0.5) * rise };
+                    bounce.cells[base + 12 + side * 20 + u * NICHE_DEEP + j] =
+                        Cell { at, n, if shut { PAINT_ALBEDO } else { PLASTER_ALBEDO }, rise * deep, k };
                 }
             }
         }
@@ -669,6 +703,7 @@ fn make_cells(bounce: Bounce&) {
     }
     bounce.cells[TABLE_C] = Cell { float3_0, up, TABLE_ALBEDO, 0.0, -1 };
     bounce.made = true;
+    bounce.made_shutters = room_shell::shutters_on;
 }
 
 // The niche a point behind the window wall's face lies in: -1 before the face, -2 inside the
@@ -695,7 +730,7 @@ fn seen_through(t: float4, wins: room_shell::Opening[3]&, a: float3, ka: i64, b:
         let v = deep - room;
         guard v.y > 1e-4 else { return 0.0; }
         let face = wall_face();
-        guard in_niche(o, room + v * ((face - room.y) / v.y)) else { return 0.0; }
+        guard in_niche(o, room + v * ((face - room.y) / v.y)) && past_shutters(o, room, v) else { return 0.0; }
         let lace_y = face - room_shell::LACE_OFF;
         let c = room + v * ((lace_y - room.y) / v.y);
         if room.y < lace_y && in_lace(o, c) { lets = lace_lets(c.z); }
@@ -717,7 +752,7 @@ fn balanced(c: float3) -> float3 {
 // the sun (sun_patches) and the sky through their window, throw on what they stop. Into
 // bounce.leaves; bounce.seen starts with all of it but the sun's, which the patches carry.
 fn first_light(sun: Sun, bounce: Bounce&) {
-    if !bounce.made { make_cells(bounce); }
+    if !bounce.made || bounce.made_shutters != room_shell::shutters_on { make_cells(bounce); }
     bounce.cells[TABLE_C] = Cell { float3 { sun.table.x, sun.table.y, sun.table.w }, float3 { 0.0, 0.0, 1.0 }, TABLE_ALBEDO,
                                    PI * sun.table.z * sun.table.z, -1 };
     var wins = windows();

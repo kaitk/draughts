@@ -9,7 +9,7 @@
 // ceiling; S switches it for the panelled wall facing the window alone, model3d::surfaces,
 // as it was), V the views in turn (the board, then the room's: room, window, hall, stove,
 // VIEWS), U the view out of the shell's windows (model3d::view_out) or the plain sky behind
-// them as before, B the bookcases' books (model3d::books) in or out, L the wallpaper's tile round a real paper's
+// them as before, B the bookcases' books (model3d::books) in or out, H the windows' shutters, L the wallpaper's tile round a real paper's
 // 0.65 m, the default 0.9 m and style-01's 1.4 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
@@ -39,7 +39,7 @@
 //       from the stove's end, y from the hall wall, H up from the floor)] [--fov DEG]
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
-//       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)]
+//       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
 //       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
 //       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
 //       [--contact STRENGTH,LENGTH,STEPS,THICKNESS (the sun's contact shadows, world units; 0.8,3,12,1.5; 0 off)]
@@ -575,7 +575,7 @@ let NOISE = 19;
 
 let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", "P: print the room and its flags",
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
-                "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books", "W: the window's pattern; T: leaves by",
+                "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust", "F: the frame counter; G: wait for the GPU",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
                 "walking: C seated, X then Q, E down and up", "R: back to the view, P: the walk's camera"];
@@ -809,6 +809,8 @@ fn main() {
     g.lace_way = pick(argv, "--lace", surfaces::LACE_WAYS, 0);
     // The bookcases' books in or out, and how much of their fade shows (1 as made).
     var books_on = !(flag_value(argv, "--books") > 0 && argv[flag_value(argv, "--books")] == "off");
+    var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
+    room_shell::shutters_on = shutters_on;
     var book_fade = number(argv, "--book-fade", 1.0);
     var top = pick(argv, "--table-top", TOPS, 0);
     g.table_r = top_radius(top);
@@ -944,6 +946,7 @@ fn main() {
             if gfx::key_pressed("G") { meter.wait = !meter.wait; }
             if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
             if gfx::key_pressed("B") { books_on = !books_on; }
+            if gfx::key_pressed("H") { shutters_on = !shutters_on; }
             if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else if paper_m > 0.7 { 1.4 } else { 0.9 }; }
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
@@ -1122,6 +1125,7 @@ fn main() {
             }
             if section(c, open, CURTAINS) {
                 choice(c, "Lace (C)", g.lace_way, surfaces::LACE_WAYS);
+                switch(c, "Shutters (H)", shutters_on, ["off", "on"]);
                 slider(c, "Curtain in", room.opening.z, 0.0, 20.0);
                 slider(c, "Lace lets", room.opening.w, 0.0, 1.0);
                 ui::tree_state_pop(c);
@@ -1191,6 +1195,7 @@ fn main() {
         g.bake_held = drag_on_panel && gfx::mouse_down(gfx::MOUSE_LEFT);
         g.paper_tile = paper_m * surfaces::METRE;
         g.books_off = !books_on;
+        room_shell::shutters_on = shutters_on;
         g.book_fade = max(book_fade, 0.001);
         g.room_tint = float4_0;
         if oak.x != 1.0 || oak.y != 1.0 {
@@ -1278,7 +1283,7 @@ fn main() {
                 format(line, " --motes ", motes, " --mote-size ", render3d::dust.size, " --mote-blur ", render3d::dust.blur,
                        " --mote-bright ", render3d::dust.bright);
             }
-            format(line, " --books ", on_off(books_on), " --book-fade ", book_fade);
+            format(line, " --books ", on_off(books_on), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on));
             flag_pair(line, "--oak-tint", oak);
             flag_pair(line, "--ceiling-tint", ceiling);
             room_flags(line, room);
