@@ -1102,13 +1102,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   sun's highlight is still small: about 2% of the door's sunlit diffuse and a fifth of
   the paper's, as the sun skims those walls away from the mirror direction; the
   references' sun patches read whiter mostly by their whiter sun.
-- The games table in the room takes the room's tonemap toe (2026-11-21, task 107;
-  `TABLE_FRAG`'s `tonemap` under `TABLE_ROOM`): on the luminance, as the room's surfaces,
-  not the board's toe off the least channel, which turned the dim base orange beside the
-  room's wood (sRGB 52, 24, 6 at style-01's camera, the reference's 36, 18, 10; now 29,
-  16, 10). The exposures stay as they were, the room's under the top and the board's over
-  it: the top at the room's turned grey under the polish's reflection of the room. The
-  game keeps the board's toe.
+- The games table in the room keeps the board's tonemap toe, off the least channel, as in
+  the game (2026-11-21, task 107; `TABLE_FRAG`'s `tonemap`): the game's own table look is
+  the anchor (the top in shade sRGB 67, 33, 9 at table-01's camera, the base 40, 16, 2).
+  Replaces the room's toe on the luminance for the table in the room, the same day, which
+  took the base from 52, 24, 6 to 29, 16, 10 at style-01's camera but also a third of the
+  top's light and most of its colour. The base's orange cast in the shade is for its own
+  light to fix, not the tonemap.
 - The curtains' lace stops about 28% of the sun where its beam crosses a flat panel
   (2026-11-21, task 107; `LIGHT_FN`'s `lace_shadow`, `LACE_NET_STOPS`,
   `LACE_PATTERN_SHOWN`): the net ground a fifth, the motifs what the thread keeps

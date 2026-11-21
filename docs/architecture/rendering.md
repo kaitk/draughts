@@ -589,8 +589,8 @@ board's light:
   room keeps a part of the harmonics and of the flat bounce (`rooms::Room.baked`).
 - **The games table in the room** takes the baked light too: the probes sampled at four
   heights on its axis after each bake, in its block (`render3d::probes_on_table`), its base
-  at the room's exposure, its top at the board's, through the room's tonemap toe (on the
-  luminance). In the game it keeps the look's harmonics and the board's toe.
+  at the room's exposure, its top at the board's, through the board's tonemap toe (off the
+  least channel), as in the game. In the game it keeps the look's harmonics.
 - **Corners and edges** (`ROOM_FRAG`'s `corner_shade`, `rooms::Room.corners`): the
   indirect light darkened by the distance to each of the shell's planes standing square to
   a surface, a plane hiding a half of the light at the line and nothing beyond the reach
