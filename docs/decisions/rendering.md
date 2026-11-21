@@ -731,6 +731,45 @@ to be is in tasks 042, 059, 071, 081, and 086.
   (`room_light::CASE_ALBEDO`, the sun's patches met at their fronts), and the floor's
   reflection sees them dark. Rejected: the low case (A, reads as a sideboard) and the
   concepts' glazed case here (C, kept for the stove wall).
+- The library's windows have working shutters (2026-11-21, task 107; option A of
+  `build/notes/shutters/`, the user's agreement; `room_shell::SHUTTER_*`,
+  `shell_mesh::shutters`): two leaves a side of 0.325 m, as the shell's plan had them and
+  as a real manor hall shows (the precedent photo, Eesti Sõjamuuseum), folded flat against
+  the reveal from 2 cm in to the lining at 0.345 m, as tall as the casement (0.805 to
+  3.24 m). The front leaf (30 mm, three raised panels toward the window's middle) hangs
+  on the lining by three brass knuckles at its back edge; the back leaf (28 mm, plain)
+  hangs on its front edge by two and lies behind it. The 58 mm stack stands inside the
+  blind frame's 0.16 m, so the daylight stays 0.98 m. Closed, the two would span the
+  0.65 m to the middle, their plain backs to the room. The middle window's right pair
+  (as seen from the room, toward the stove's end; the one style-01 looks at) stands 14° ajar, as
+  result-2 and the precedent show, a choice made here. The wainscot's cap stops square at
+  the pier's corner instead of wrapping 6.5 cm into the reveal. The baked light takes
+  them: the reveals' cells and the sun's rays on the reveals meet the stack's painted face
+  in front of the lining, and the sky and the bounce pass the niche only inside the
+  stack's front edges (`room_light::open_half`, `past_shutters`); the ajar pair is taken
+  as folded there, and the sun's shader test (`shell_open`) still sees the whole niche,
+  since the stack stands outside the daylight. The light tuner's `--shutters off` (H)
+  leaves them out, the cap wrapping as before. Replaces one 0.265 m box a side from
+  7.5 cm in, which covered 41% of its half of the niche and could not close (the user:
+  "tiny").
+- The library's doors are hung in their frames (2026-11-21, task 107; part 2 of
+  `build/notes/shutters/`; `shell_mesh::door`, `DOOR_*`): the leaves' face 1.5 cm behind
+  the wall's (2 cm before: their plane 4.5 cm in, the stiles 2.5 cm off it), 4 cm thick, a
+  3 mm joint round each leaf and between them with a dark stop behind, a 28 mm meeting
+  bead 8 mm proud on the right leaf, three brass knuckle hinges with ball finials a leaf
+  on the outer jambs at 0.30, 1.35 and 2.40 m (14 mm across, 120 mm long, the axis 7 mm
+  before the face), and a lever on a 35 × 220 mm escutcheon on the right leaf, 6 cm from
+  the meeting at 1.05 m. The doors open into the library as planned; the hall side stays
+  unbuilt. `corner_shade` takes the leaf's face at 1.5 cm (it took the plane's 4.5). The
+  brass is the curtains' (`surfaces::LOOK.brass`). Replaces the two leaves as one panelled
+  face 2 cm in, with no joint, edge or ironmongery, which read as a panel in a shallow
+  box.
+- Brass in a niche or a door's joint reads dark (2026-11-21): the brass sees the room's
+  box, and from a window's reveal or a door's jamb it mostly sees the dark wainscot and
+  paper, and the screen's occlusion darkens the shutters' lining hinges near black in
+  their corner. Kept: real hinges there read as small dark marks, as in result-2. Rejected
+  for now: a reflection of the glass for brass inside a niche, a change to `ROOM_FRAG`
+  for a few pixels.
 - The books are boxes on the shelves with a rounded spine sampling a mask atlas, coloured
   per book by `ROOM_FRAG` from a small table (2026-11-21, task 107; option B of
   `build/notes/books/`, `model3d::books`): `design/materials/books_atlas.png`, 1024 × 928
@@ -924,7 +963,7 @@ to be is in tasks 042, 059, 071, 081, and 086.
   surface, of the quarter turn along its normal), so the shade falls off past an edge and
   wraps softly round an outside corner, and fades out as the point's distance to the box
   nears the reach. A door's opening and a niche are holes in their wall's face (the leaf
-  4.5 cm behind it, the niche open), so the floor before an opening and a sill's nose take
+  1.5 cm behind it since the doors were hung, 4.5 before; the niche open), so the floor before an opening and a sill's nose take
   no wall that isn't there. Replaces the endless planes: a case's side and front, the
   architraves' and the sills' edges cut at their ends, which left a 90° wedge of shade on
   the floor off each case's outside corner and hard lines along the openings' edges.

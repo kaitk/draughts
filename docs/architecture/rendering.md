@@ -683,6 +683,22 @@ the oak are darker under each shelf and toward the back, and `case_shade` keeps 
 off what the case's ends, upright, shelves and books hide. The titles are baked into the
 atlas; the fonts that set them stay with the baker.
 
+### The library's shutters and doors
+
+Each window's reveals hold a pair of working shutters folded flat
+(`shell_mesh::shutters`, `room_shell::SHUTTER_*`): a panelled front leaf 0.325 m wide on
+three brass knuckles at the lining, a plain back leaf behind it on two more, the 58 mm
+stack outside the daylight, the middle window's right pair standing 14° ajar. Each door's
+two leaves hang 1.5 cm behind the wall's face in a rebate, 4 cm thick with 3 mm joints,
+the right leaf with a meeting bead and a lever on a long escutcheon, three knuckles a
+leaf on the outer jambs (`shell_mesh::door`). They are part of the shell's one mesh, in
+its paint and the curtains' brass; the hinges are lathed (`shell_mesh::lathe`), the bead
+swept upright, their normals smoothed as the mouldings' are. The baked light sees the
+stack's face in front of the lining and the niche's opening narrowed to the stacks'
+front edges (`room_light::open_half`). The light tuner's `--shutters off` (H) leaves the
+shutters out and wraps the wainscot's cap into the reveal, making the mesh and the bake
+again ([why](../decisions/rendering.md)).
+
 ### Board and pieces
 
 - **The flat board**: the theme's squares in a raised lip 1.1% of the board's width,

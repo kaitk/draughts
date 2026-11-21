@@ -133,6 +133,10 @@ pieces; the design boards still set the layout, glass, and controls.
   map the renderer bakes then (the shell's 2048 × 768). Its mesh's triangles and making
   time print with a `--shot`'s bake line. The shot pages: `build/notes/room-demo/`,
   `build/notes/room-outside/`.
+  The shutters: `--shutters off` (H) leaves them out (the mesh and the bake made again).
+  In `shell_mesh`'s wall builders s runs to the left as seen from the room (the plan is
+  mirrored into the world), so a door's right leaf is at -s; check a side with a shot.
+  Builder 19's close-ups (shutters' hinges, a door's lever): `build/notes/builder-19/shots.sh`.
   The curtains (`model3d`'s `curtains.goose`, task 107): `--lace f3|f2|f|d` (C cycles)
   picks the lace's way, f3 the default, the others kept in reserve (a way's panel mask by
   `tools/materials/lace_panel.py LIBRARY TAG OUT`, from `build/notes/lace-library/TAG/`;

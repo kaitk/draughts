@@ -266,6 +266,18 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       style-01, 1600 × 1000 on the Mac: 7.5 → 8.9 ms (room 7.5 → 9.1) (the contact shadow's code 0.5, the
       sheen 0.5, the rest the shader's size; none of it switched off by its uniform); the
       game's shot unchanged (max difference 0)
+- [x] The shutters made real and the doors hung (2026-11-21, builder 19,
+      `build/notes/builder-19/`; option A and part 2 of `build/notes/shutters/`): two
+      0.325 m leaves a side folded against the reveal from 2 cm to the lining, three brass
+      knuckles at the lining and two between the leaves, the middle window's right pair
+      14° ajar, the cap stopped at the pier's corner, the bake taking the stack's face and
+      the narrowed opening; `--shutters off` (H) in the tuner. The doors' faces 1.5 cm in
+      (2 before), 4 cm leaves with 3 mm joints, a meeting bead, three knuckles a leaf, a
+      lever on the right leaf. The shell's triangles 32,630 → 34,834 (+2,204: the knuckles
+      2,040 of it). The game's shot unchanged (max difference 0), the renderer check
+      unchanged (no pixel over 32, gfx and ngfx). Frame times: see the page (the GPU was
+      shared with other agents' runs). Still off: brass in a niche reads dark (it sees the
+      room's box, and the screen's occlusion darkens the lining's knuckles near black)
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)
