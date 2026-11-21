@@ -367,6 +367,11 @@ struct Gpu {
     bloom_a:    Texture,
     bloom_b:    Texture,
     bloom_size: int2,
+    // A tuner's: the panelling oak's and the ceiling's tint (x, z their lightness, y, w their
+    // saturation, as factors, 0 untouched), and the tree's and the shell's light kept as
+    // they are, not baked again, while a slider is held, so a drag bakes once on release.
+    room_tint: float4,
+    bake_held: bool,
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -859,7 +864,7 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     b.shell_ends = float4 { stove_end.x, far_end.x, 0.0, 0.0 };
     // Its own sun, and its baked light where it is made.
     let r = g.room;
-    b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, 0.0, 0.0 };
+    b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, g.room_tint.z, g.room_tint.w };
     if light_baked(g) && g.light_volume.id != 0 {
         b.room_baked = float4 { 1.0, 0.0, r.baked.z, r.baked.w };
         let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
@@ -902,8 +907,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light, k.paint,
                     k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0, k.brass,
                     model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w),
-                    float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 }, float4 { 0.0, 1.0, 0.0, 0.0 }, float4_0, float4_0,
-                    float4_0, float4_0, float4_0, float4_0 }
+                    float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
+                    float4_0, float4_0, float4_0, float4_0, float4_0, float4_0 }
 }
 
 // The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.
@@ -954,7 +959,7 @@ var tree_small_h: i64 = 0;
 // before a draw, outside a pass, after the tree's map. Tens of milliseconds on the CPU;
 // nothing allocated, the buffers above fixed.
 fn bake_room_light<O>(o: O&, g: Gpu&) {
-    guard light_baked(g) else { return; }
+    guard light_baked(g) && !g.bake_held else { return; }
     let key = light_key(g);
     var same = g.light_volume.id != 0;
     for i in 8 { if !same4(key[i], g.light_for[i]) { same = false; } }
@@ -1378,7 +1383,7 @@ fn tree_key(g: Gpu&) -> float4[11] {
 // before a draw, after put_room() found it stale. Tens of milliseconds, never in the
 // frame loop's steady state.
 fn bake_tree<O>(o: O&, g: Gpu&) {
-    guard g.tree_stale else { return; }
+    guard g.tree_stale && !g.bake_held else { return; }
     g.tree_stale = false;
     let t0 = clock();
     let s = rooms::tree_spec(tree_room(g));

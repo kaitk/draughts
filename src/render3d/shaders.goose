@@ -1982,11 +1982,13 @@ let ROOM_HEAD = """
     // ends: the end walls' u, x the stove's, y the far one's; brass: the curtains' (sRGB at
     // normal incidence, and roughness); lace_light: the window's light behind the lace
     // (linear, exposed as the view out, lifted with the room), w how strongly its thin parts scatter the sun
-    // forward; table: x the table's top's radius, y the floor's height (world units);
+    // forward; table: x the table's top's radius, y the floor's height (world units), z and
+    // w the panelling oak's lightness and saturation (factors, 0 untouched; a tuner's);
     // shell_sun: x how fast the sun's penumbra widens through the shell's windows (0 the
     // pattern's, room.z), y the sun on the room's surfaces over the board's
-    // (rooms::Room.shell_sun); room_baked: x 1 the baked light on, z how much of the
-    // harmonics and w of the shade the room keeps beside it (rooms::Room.baked); light_box:
+    // (rooms::Room.shell_sun), z and w the ceiling's lightness and saturation as the oak's;
+    // room_baked: x 1 the baked light on, z how much of the harmonics and w of the shade the
+    // room keeps beside it (rooms::Room.baked); light_box:
     // the probes' first corner in the room's frame and, w, the step between them (world
     // units); light_grid: how many across, along v, and up (model3d::room_light); room_box:
     // the shell's walls in the room's frame, x the far end's u, y the stove's end's, z the
@@ -2389,6 +2391,13 @@ let ROOM_FRAG = """
         return mix(wide, room_seen(p, lp, r, lr, alpha, nov, px), sharp);
     }
 
+    // An albedo made lighter or darker by t.x and greyer or more coloured by t.y about its
+    // luminance (a tuner's tint).
+    vec3 tinted(vec3 a, vec2 t) {
+        float l = dot(a, vec3(0.2126, 0.7152, 0.0722));
+        return max(mix(vec3(l), a, t.y), vec3(0.0)) * t.x;
+    }
+
     void main() {
         vec3 p = v_world;
         vec3 ng = normalize(v_normal);
@@ -2510,6 +2519,7 @@ let ROOM_FRAG = """
             vec4 a4 = texture(wall_albedo, fuv);
             vec4 n4 = texture(wall_normal, fuv);
             albedo = a4.rgb * (1.0 + 0.16 * (own - 0.5));
+            if (table.z > 0.0) albedo = tinted(albedo, table.zw);
             rough = a4.a;
             vec3 dpx = dFdx(p);
             vec3 dpy = dFdy(p);
@@ -2543,6 +2553,8 @@ let ROOM_FRAG = """
             tone = mix(tone, 1.0, 0.35 * cornice);
             albedo = mix(srgb(plaster_shade.rgb), srgb(plaster_light.rgb), tone);
             rough = mix(plaster_shade.a, plaster_light.a, tone) - 0.05 * cornice;
+            // The ceiling and its cornice, from the cornice's foot up (shell::CORNICE_DROP).
+            if (shell_sun.z > 0.0 && p.y > room_heights.x - 0.27 * shell.w) albedo = tinted(albedo, shell_sun.zw);
         } else if (kind < 9.5) {
             // Old white painted wood, a little uneven; the sills' pale stone (own over
             // 0.5), mottled.
