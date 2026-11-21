@@ -135,6 +135,10 @@ pieces; the design boards still set the layout, glass, and controls.
   The curtains (`model3d`'s `curtains.goose`, task 107): `--lace f2|f|d` (C cycles) picks
   the lace's way while the user's choice is open; their shots and close-ups by
   `build/curtains-build/shots.sh EXE TAG` (`build/notes/curtains-build/`).
+  The games table's base (`mesh::table_base`, task 107): `--table-top 1.05|0.80` (the
+  panel's Top) sets the top across while the user's choice is open; shots by
+  `build/games-table-build/shots.sh EXE TAG` (`build/notes/games-table-build/`), the
+  base's close-up `--plan-eye 5.75,4.75,0.62 --plan-at 4.5,5.8,0.36 --fov 42`.
   With the shell on, the tree is `rooms::shell_tree`'s (placed for its three windows),
   not the one `--tree`/`--crown`/`--foliage` set: change it there (task 107's quick
   pass: `build/notes/quick-pass/`, the views and close-ups by `build/quick-pass/shots.sh`).

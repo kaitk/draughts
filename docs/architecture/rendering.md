@@ -230,8 +230,12 @@ and value noise in the board shader, never a regular stripe.
   its table.
 - **The table** (settings' Background row's third tile on the 3D board; the player's
   `table = on`): the 3D board on a round table, the take `tables::for_look`
-  gives each look. Putting it on or off bakes only the table's steps and the
-  photograph's again (`draw3d::table_steps`). Behind it is always the plain fade, never
+  gives each look. It stands on a turned pedestal: a ringed column and an urn over a
+  drum, and four cabriole legs ending in scroll toes on the floor (`mesh::table_base`),
+  made with the top as one mesh and drawn with it, its wood the top's map with the grain
+  along the column and the legs. A leg is a bar, a rounded section swept along a curve
+  (`mesh::bar`), which other furniture's legs and rails can share. Putting it on or off
+  bakes only the table's steps and the photograph's again (`draw3d::table_steps`). Behind it is always the plain fade, never
   the photograph (`settings::photo_shown`).
 - **What each side has taken** lies on the table beside the board (`taken3d`): white's
   catch at the board's right as white sees it, black's at its left, both on the near half

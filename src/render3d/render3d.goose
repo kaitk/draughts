@@ -250,6 +250,8 @@ struct Gpu {
     tree_stale:      bool,          // to bake again before the next draw
     tree_ms:         f64,           // the last bake's time (measuring)
     table_edge:      float4,        // the edge its mesh is made with (tables::Table.edge)
+    table_r:         f32,           // the top's radius (world units), 0 mesh::TABLE_R (a tuner's)
+    table_made_r:    f32,           // and the one its mesh is made with
     table_vb:        Buffer,
     table_ib:        Buffer,
     table_count:     i64,
@@ -401,18 +403,25 @@ fn table_maps<O>(o: O&, g: Gpu&) {
     g.table_wear_n = baked(o, ws, ws, RGBA8);
 }
 
-// The table's mesh made again when its edge isn't the one it was made with.
+// The table's top's radius (world units).
+fn table_radius(g: Gpu&) -> f32 { if g.table_r > 0.0 { g.table_r } else { mesh::TABLE_R } }
+
+// The table's mesh, its top and its base, made again when its edge or its top's radius
+// isn't the one it was made with.
 fn table_mesh<O>(o: O&, g: Gpu&) {
     let e = g.table_spec.edge;
     let was = g.table_edge;
-    guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w else { return; }
+    let r = table_radius(g);
+    guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w || r != g.table_made_r
+    else { return; }
     var verts:   mesh::Vertex[>..] = [];
     var indices: u32[>..]          = [];
-    mesh::table(verts, indices, e);
+    mesh::table(verts, indices, e, r, surfaces::FLOOR_Y);
     if g.table_vb.id != 0 { o.gpu_release_mesh(g.table_vb, g.table_ib); }
     g.table_vb, g.table_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
     g.table_count = indices.len;
     g.table_edge = e;
+    g.table_made_r = r;
 }
 
 // The table's wood baked into its maps (rows y0 to y1, -1 all; the mips with the last),
@@ -452,11 +461,12 @@ fn bake_table<O>(o: O&, g: Gpu&, y0: i64 = 0, y1: i64 = -1, mips: bool = true) {
 // Whether the board's pass draws the table: on, and its wood baked.
 fn table_shown(g: Gpu&) -> bool { g.table && g.table_baked && g.table_side == g.side && g.table_vb.id != 0 }
 
-// TABLE_FRAG's block: the table's light, its polish, and its rim's wear (tables::Table).
-struct TableBlock { pool: float4, coat: float4, polish: float4, worn: float4 }
+// TABLE_FRAG's block: the table's light, its polish, and its rim's wear (tables::Table),
+// and its shape: x the top's radius, y the floor's height.
+struct TableBlock { pool: float4, coat: float4, polish: float4, worn: float4, shape: float4 }
 fn table_block(g: Gpu&) -> TableBlock {
     let t = g.table_spec;
-    TableBlock { t.light, t.coat, t.polish, t.wear }
+    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 } }
 }
 
 // The pieces lying on the table (view3d::Scene.discs, taken3d::lay), each x, z, its foot's
@@ -740,6 +750,7 @@ struct SurfacesBlock {
     shell_ends:    float4,
     brass:         float4,
     lace_light:    float4,
+    table:         float4,
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
@@ -781,7 +792,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
                     float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light, k.paint,
                     k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0, k.brass,
-                    model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w) }
+                    model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w),
+                    float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 } }
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1

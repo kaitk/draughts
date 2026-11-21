@@ -640,6 +640,17 @@ to be is in tasks 042, 059, 071, 081, and 086.
   the same filter and its own pipeline per filter, min() with the board's outline swept
   along the light; before, the outline alone, whose soft edge left the board floating.
   The map isn't widened; the pieces on the table keep their discs.
+- The games table stands on a pedestal with four scroll legs (2026-11-21, task 107;
+  option A of `build/notes/games-table/`, the closest to style-01's): built with the top
+  as one mesh and drawn in the game too, where the top hides it, for 6,480 more
+  triangles (the column at 24 segments, its silhouette's chord under a millimetre; a leg
+  41 sections of 12 points). The legs are swept sections (`mesh::bar`), not extruded
+  outlines with flat faces, so a curl like the scroll needs no triangulation. The room's
+  floor takes the base's shadow analytically (the column and three segments a leg), as
+  it did the turned foot, which it replaces; the base takes the top's shadow the same
+  way, and none from the shadow map. The top's size (the game's 1.05 m or task 109's
+  0.80 m) is left open: the light tuner's `--table-top`. Rejected for now: Poly Haven's
+  column (option B, the fallback if the urn reads heavy) and a tripod (C, which tips).
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

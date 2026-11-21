@@ -8,8 +8,8 @@
 // The room's frame: u along the window's wall, v into the room away from it, both from
 // the board's middle, as window_light places the window (rooms::Room.window). The room is
 // built in it once, (u, height, v) in world units, and shaders::ROOM_VERT turns it into
-// the world by the frame (frame_of) as the key's direction moves; the table's foot alone
-// (MAT_TURNED) is built in the world, as the table stands still.
+// the world by the frame (frame_of) as the key's direction moves. The table and its base
+// stand in the world (mesh::table).
 namespace surfaces;
 import std;
 import vec;
@@ -22,14 +22,13 @@ let FLOOR_Y: f32 = -23.56;
 
 // What a fragment of the room is (mesh::Vertex.mat's whole part; its fraction is the
 // piece's own random): the floor, a piece of oak (its uv the place in the wall's field),
-// the wallpaper, the table's turned foot; the shell's (room_shell) lime plaster (its
+// the wallpaper; the shell's (room_shell) lime plaster (its
 // fraction 0.5 on the cornice, whiter and smoother), white painted wood (its fraction
 // over 0.5 the sills' stone), glass and lace, the last two drawn blended after the rest;
 // the curtains' brass and their cord.
 let MAT_FLOOR:   f32 = 4.0;
 let MAT_OAK:     f32 = 5.0;
 let MAT_PAPER:   f32 = 6.0;
-let MAT_TURNED:  f32 = 7.0;
 let MAT_PLASTER: f32 = 8.0;
 let MAT_PAINT:   f32 = 9.0;
 let MAT_GLASS:   f32 = 10.0;
@@ -421,8 +420,7 @@ fn wainscot(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, first: i6
 
 // The floor, the panelled wall facing the window `away` into the room with the wallpaper
 // over it to WALL_TOP, the window's wall at v = -window_v panelled up to the sill
-// (`sill`, over the board's top, rooms::Room.window.z) and open above, as if all window,
-// and the table's turned foot.
+// (`sill`, over the board's top, rooms::Room.window.z) and open above, as if all window.
 fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, away: f32, window_v: f32, sill: f32) {
     // The floor: one quad, its uv the room's u and v (ROOM_FRAG lays the planks).
     floor_quad(verts, indices, float2 { -HALF_LONG, -window_v }, float2 { HALF_LONG, away });
@@ -437,8 +435,6 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, away: f32, window_v: f32
     let puv: float2[4] = [float2 { -HALF_LONG, CAP_TOP }, float2 { HALF_LONG, CAP_TOP },
                           float2 { HALF_LONG, WALL_TOP }, float2 { -HALF_LONG, WALL_TOP }];
     quad(verts, indices, hall, pp, puv, [0.8, 0.8, 1.0, 1.0], MAT_PAPER);
-
-    table_foot(verts, indices);
 }
 
 // The floor over the room's u and v from `low` to `high`, one quad, its uv the room's u
@@ -448,32 +444,4 @@ fn floor_quad(verts: mesh::Vertex[>..]&, indices: u32[>..]&, low: float2, high: 
     let corners: float2[4] = [low, float2 { high.x, low.y }, high, float2 { low.x, high.y }];
     for c in corners { verts.push(mesh::Vertex { float3 { c.x, FLOOR_Y, c.y }, float3 { 0.0, 1.0, 0.0 }, c, 1.0, MAT_FLOOR }); }
     indices.append([fb, fb + 1, fb + 2, fb, fb + 2, fb + 3]);
-}
-
-// The table's turned foot: a column on a round foot, from under its top to the floor, in
-// the world (MAT_TURNED: not turned with the room).
-fn table_foot(verts: mesh::Vertex[>..]&, indices: u32[>..]&) {
-    var prof: mesh::Profile = [];
-    let top = mesh::TABLE_TOP - 1.6;
-    let y = FLOOR_Y;
-    mesh::line(prof, 0.0, top, 4.2, top, 0.5, 0.6);
-    mesh::line(prof, 4.2, top, 4.2, top - 1.2, 0.6, 0.8);
-    mesh::line(prof, 4.2, top - 1.2, 2.3, top - 2.4, 0.8, 0.9);
-    mesh::arc(prof, 2.3, top - 4.0, 1.6, PI * 0.5, -PI * 0.5, 6, true, 0.9, 0.9);
-    mesh::line(prof, 2.3, top - 5.6, 1.9, top - 6.4, 0.9, 0.95);
-    mesh::arc(prof, 1.9, y + 9.5, 1.3, PI * 0.5, 0.0, 4, false, 0.95, 1.0);
-    mesh::arc(prof, 3.2 + 0.2, y + 6.0, 3.3, PI * 0.95, PI * 1.5, 6, false, 1.0, 1.0);
-    mesh::line(prof, 3.4, y + 2.7, 9.0, y + 2.0, 1.0, 1.0);
-    mesh::arc(prof, 9.0, y + 1.0, 1.0, PI * 0.5, 0.0, 4, true, 1.0, 0.95);
-    mesh::line(prof, 10.0, y + 1.0, 10.0, y, 0.95, 0.7);
-    var path: mesh::Path = [];
-    mesh::lathe_path(path, 64, float2 { 0.0, mesh::TABLE_Z });
-    let first = verts.len;
-    mesh::sweep(verts, indices, prof, path, MAT_TURNED);
-    // Its uv into the wall's field, the grain up the column: across round it, along down
-    // the profile, at a place of its own.
-    for i in first..verts.len {
-        let v .= verts[i];
-        v.uv = float2 { 3.0 + v.uv.x, 4.0 + v.uv.y };
-    }
 }

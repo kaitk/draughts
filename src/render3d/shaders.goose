@@ -1545,8 +1545,8 @@ let OCC_FRAG = """
     }
     """;
 
-// The table under the board (mesh::table), one mesh at its place: its world position,
-// normal, and where along its profile (uv.y).
+// The table under the board (mesh::table), one mesh at its place, its top and its base:
+// its world position, normal, where along its profile (uv.y), and its material.
 let TABLE_VERT = """
     layout(location = 0) in vec3 a_pos;
     layout(location = 1) in vec3 a_normal;
@@ -1556,12 +1556,14 @@ let TABLE_VERT = """
     layout(location = 1) out vec3 v_normal;
     layout(location = 2) out vec2 v_uv;
     layout(location = 3) out float v_ao;
+    layout(location = 4) out float v_mat;
     void main() {
         vec3 pos = a_pos;
         v_world = pos;
         v_normal = a_normal;
         v_uv = a_uv;
         v_ao = a_extra.x;
+        v_mat = a_extra.y;
         gl_Position = view_proj * vec4(pos, 1.0);
     }
     """;
@@ -1578,6 +1580,7 @@ let TABLE_HEAD = """
     layout(location = 1) in vec3 v_normal;
     layout(location = 2) in vec2 v_uv;
     layout(location = 3) in float v_ao;
+    layout(location = 4) in float v_mat;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D table_albedo;
     layout(set = 2, binding = 1) uniform sampler2D table_normal;
@@ -1600,13 +1603,19 @@ let TABLE_FRAG = """
     // highlight in it (a roughness); polish: x how much its roughness varies, y its
     // strength, z the blotches' size (world units), w how much the wear shows in it;
     // worn: the rim's wear, x how much, y how wide. The pieces lying on it are FRAME's
-    // discs.
-    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; };
-    // mesh.goose's (test/model3d/geometry checks them).
+    // discs. shape: x the top's radius (world units), y the floor's height.
+    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 shape; };
+    // mesh.goose's (test/model3d/geometry checks them): TABLE_R the 1.05 m top's, which
+    // its map covers whatever the top's radius.
     const float TABLE_R = 16.0;
     const float TABLE_TOP = -0.703;
     const float TABLE_Z = -4.5;
     const float SIDE_STREAK = 0.008;   // how far the sides' figure is drawn out (map units)
+    // The top's underside under the frieze, and how far in the frieze is set
+    // (mesh::table_profile's, with tables::FLAME's edge); the column's mean radius.
+    const float FRIEZE_FOOT = -4.043;
+    const float FRIEZE_IN = 1.4;
+    const float COLUMN_R = 2.3;
     const float WEAR_TILE = 2.0;       // model3d::WEAR_TILE
     // The wear's second layer: its tile turned by 0.5 radians (cos, sin) and 1 / 0.73
     // times as large, so the two never repeat together.
@@ -1722,20 +1731,44 @@ let TABLE_FRAG = """
         return vec4(c, hit);
     }
 
+    // The key kept off the base by the top over it, solid (the slab, and the frieze at
+    // its foot), and off a leg by the column, each edge softer the farther it was cast
+    // from.
+    float under_top(vec3 p, vec3 l) {
+        vec2 mid = vec2(0.0, TABLE_Z);
+        float ly = max(l.y, 0.05);
+        float t0 = (TABLE_TOP - 0.9 - p.y) / ly;
+        float t1 = (FRIEZE_FOOT - p.y) / ly;
+        float w0 = 0.1 + 2.0 * room.z * t0;
+        float w1 = 0.1 + 2.0 * room.z * t1;
+        float lit = min(smoothstep(-w0, w0, length(p.xz + l.xz * t0 - mid) - shape.x),
+                        smoothstep(-w1, w1, length(p.xz + l.xz * t1 - mid) - (shape.x - FRIEZE_IN)));
+        vec2 a = p.xz - mid;
+        if (length(a) < COLUMN_R + 1.0) return lit;
+        vec2 ba = l.xz * t1;
+        float h = clamp(-dot(a, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
+        float wc = 0.1 + 2.0 * room.z * h * t1;
+        return min(lit, smoothstep(-wc, wc, length(a + ba * h) - COLUMN_R));
+    }
+
     void main() {
         vec3 p = v_world;
         vec3 n = normalize(v_normal);
         // The top seen from above; the edge, the frieze and what is under them unrolled,
         // their grain running round the table (a bent rim's) as the profile goes down
-        // across it, a whole number of the map's repeats round, so it meets itself.
+        // across it, a whole number of the map's repeats round, so it meets itself. The
+        // base (mesh::MAT_TABLE_BASE) cut from the same wood, its grain along the column
+        // and the legs (its v).
+        bool base = v_mat > 3.5;
         bool top = v_normal.y > 0.999 && p.y > TABLE_TOP - 0.01;
         vec2 out_dir = p.xz - vec2(0.0, TABLE_Z);
         float from_mid = max(length(out_dir), 1e-3);
         vec2 uv = top ? out_dir / (2.0 * TABLE_R) + 0.5
                       : vec2(0.3 + (v_uv.y - TABLE_R) / (2.0 * TABLE_R), v_uv.x / (2.0 * PI * from_mid) * 3.0);
-        // On the sides the figure is drawn out along the grain (their v) into straight
-        // streaks, as an edge's and a frieze's wood is: the filter's footprint
-        // lengthened along it, the anisotropic filter blurring that way only.
+        if (base) uv = vec2(0.2, 0.15) + v_uv / (2.0 * TABLE_R);
+        // On the sides and the base the figure is drawn out along the grain (their v)
+        // into straight streaks, as an edge's and a frieze's wood is: the filter's
+        // footprint lengthened along it, the anisotropic filter blurring that way only.
         vec2 gx = dFdx(uv);
         vec2 gy = dFdy(uv);
         if (!top) {
@@ -1783,9 +1816,15 @@ let TABLE_FRAG = """
             float r = length(vec3(t, tn.w));
             top_var = max((1.0 - r) / max(r, 1e-3), 0.0);
             n = normalize(vec3(t.x + bump.x, sqrt(max(1.0 - dot(t, t), 0.0)), t.y + bump.y));
-        } else {
+        } else if (!base) {
             // The edge and the apron in the shade of the top, darker the lower.
             ao *= mix(1.0 - pool.z, 1.0, smoothstep(TABLE_TOP - 0.6, TABLE_TOP, p.y));
+        } else {
+            // The base sees the sky round the top: the share of it the top hides, the
+            // cone up to its rim, more for what faces up.
+            float e = (TABLE_TOP - p.y) / max(shape.x - from_mid, 0.5);
+            float hidden_sky = 1.0 / (1.0 + e * e);
+            ao *= 1.0 - (1.0 - pool.z) * hidden_sky * (0.6 + 0.4 * max(n.y, 0.0));
         }
 
         // Two layers: the wood under the polish, lit with its grain's relief, and the
@@ -1819,6 +1858,7 @@ let TABLE_FRAG = """
             vis = mix(1.0, vis, room.x);
         }
         float pattern = window_light(p);
+        if (base) pattern *= under_top(p, l);
         vis *= pattern;
         // A broad key's shadow is fainter (room.x) for the wood's light, but the key's own
         // image in the polish is hidden wherever the board or a piece hides the key: let
@@ -1839,7 +1879,7 @@ let TABLE_FRAG = """
         // noise polish.z across. The rim, which hands wore, duller still, down its edge.
         vec2 bq = p.xz / max(polish.z, 0.1);
         float blot = 0.65 * vnoise(bq) + 0.35 * vnoise(bq * 2.03 + 5.1) - 0.5;
-        float rim = worn.x * (top ? smoothstep(TABLE_R - worn.y, TABLE_R - 0.05, from_mid)
+        float rim = worn.x * (top ? smoothstep(shape.x - worn.y, shape.x - 0.05, from_mid)
                                   : smoothstep(TABLE_TOP - 0.5, TABLE_TOP, p.y));
         float cr = (top ? rough + 0.3 * polish.w * scratch : coat.x + 0.25 * polish.w * rim)
                  * (1.0 + 2.0 * polish.x * blot);
@@ -1868,10 +1908,9 @@ let TABLE_FRAG = """
     """;
 
 // The room round the table (model3d::surfaces): the floor, the panelling, the wallpaper,
-// and the table's foot, one mesh, its world position, normal, uv (the floor's u and v in
-// the room, or a piece's place in the wall's field), occlusion and material.
-// The room's mesh is built in its own frame (u, height, v; surfaces.goose) and turned
-// into the world here, but for the table's foot (surfaces::MAT_TURNED), built in it.
+// one mesh, its world position, normal, uv (the floor's u and v in the room, or a piece's
+// place in the wall's field), occlusion and material. The room's mesh is built in its own
+// frame (u, height, v; surfaces.goose) and turned into the world here.
 let ROOM_VERT = """
     layout(location = 0) in vec3 a_pos;
     layout(location = 1) in vec3 a_normal;
@@ -1887,10 +1926,9 @@ let ROOM_VERT = """
         return vec3(xz.x, a.y, xz.y);
     }
     void main() {
-        bool still = abs(a_extra.y - 7.0) < 0.5;
-        vec3 pos = still ? a_pos : turned(a_pos);
+        vec3 pos = turned(a_pos);
         v_world = pos;
-        v_normal = still ? a_normal : turned(a_normal);
+        v_normal = turned(a_normal);
         v_uv = a_uv;
         v_extra = a_extra;
         v_local = a_pos;
@@ -1939,7 +1977,7 @@ let ROOM_HEAD = """
     // ends: the end walls' u, x the stove's, y the far one's; brass: the curtains' (sRGB at
     // normal incidence, and roughness); lace_light: the window's light behind the lace
     // (linear, exposed as the view out, lifted with the room), w how strongly its thin parts scatter the sun
-    // forward.
+    // forward; table: x the table's top's radius, y the floor's height (world units).
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -1962,6 +2000,7 @@ let ROOM_HEAD = """
         vec4 shell_ends;
         vec4 brass;
         vec4 lace_light;
+        vec4 table;
     };
     """;
 
@@ -2083,10 +2122,18 @@ let OUTSIDE_FRAG = """
 // table and along the room, darker and waxier along the walls, finely scratched.
 let ROOM_FRAG = """
     // mesh.goose's and surfaces.goose's (test/model3d/geometry checks them).
-    const float TABLE_R = 16.0;
     const float TABLE_TOP = -0.703;
     const float TABLE_Z = -4.5;
     const float FLOOR_STRIPS = 20.0;
+    // The table's base (mesh::table_base): its column's mean radius, and a leg's curve
+    // from its root over the knee to the scroll's foot, out from the axis and up from the
+    // floor (world units, mesh::LEG's and SCROLL_MID's), its half thickness.
+    const float COLUMN_R = 2.6;
+    const vec2 LEG0 = vec2(2.44, 5.36);
+    const vec2 LEG1 = vec2(5.18, 4.45);
+    const vec2 LEG2 = vec2(7.86, 2.13);
+    const vec2 LEG3 = vec2(10.0, 0.7);
+    const float LEG_HALF = 0.8;
 
     float h12(vec2 p) {
         vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -2107,20 +2154,45 @@ let ROOM_FRAG = """
         return clamp((min(d + 0.5 * fp, half_w) - max(d - 0.5 * fp, -half_w)) / max(fp, 1e-5), 0.0, 1.0);
     }
 
-    // The table keeping the key off p: its top a disc at TABLE_TOP, its foot a column
-    // under it, each edge softer the farther it was cast from.
+    // How far p is from the segment a to b (2D).
+    float to_segment(vec2 p, vec2 a, vec2 b) {
+        vec2 ab = b - a;
+        float h = clamp(dot(p - a, ab) / max(dot(ab, ab), 1e-6), 0.0, 1.0);
+        return length(p - a - ab * h);
+    }
+
+    // The table keeping the key off p: its top a disc at TABLE_TOP (table.x across), its
+    // column under it, and its four legs each three pieces cast along the light, each
+    // edge softer the farther it was cast from.
     float table_shade(vec3 p, vec3 l) {
         if (p.y > TABLE_TOP - 0.5) return 1.0;
         vec2 mid = vec2(0.0, TABLE_Z);
-        float t = (TABLE_TOP - 0.5 - p.y) / max(l.y, 0.05);
+        float ly = max(l.y, 0.05);
+        float t = (TABLE_TOP - 0.5 - p.y) / ly;
         vec2 q = p.xz + l.xz * t;
         float w = 0.1 + 2.0 * room.z * t;
-        float lit = smoothstep(-w, w, length(q - mid) - TABLE_R);
+        float lit = smoothstep(-w, w, length(q - mid) - table.x);
         vec2 a = p.xz - mid;
         vec2 ba = q - p.xz;
         float h = clamp(-dot(a, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
         float wc = 0.2 + 2.0 * room.z * h * t;
-        return min(lit, smoothstep(-wc, wc, length(a + ba * h) - 2.6));
+        lit = min(lit, smoothstep(-wc, wc, length(a + ba * h) - COLUMN_R));
+        // The legs, low: only on what is lower than their knees, near enough.
+        float above = p.y - table.y;
+        if (above > LEG0.y || length(a) > 12.0 + (LEG0.y - above) / ly) return lit;
+        vec2 run = l.xz / ly;
+        for (int k = 0; k < 4; k++) {
+            float ang = 3.14159265 * (0.25 + 0.5 * float(k));
+            vec2 dir = vec2(cos(ang), sin(ang));
+            vec2 p0 = dir * LEG0.x - run * max(LEG0.y - above, 0.0);
+            vec2 p1 = dir * LEG1.x - run * max(LEG1.y - above, 0.0);
+            vec2 p2 = dir * LEG2.x - run * max(LEG2.y - above, 0.0);
+            vec2 p3 = dir * LEG3.x - run * max(LEG3.y - above, 0.0);
+            float d = min(min(to_segment(a, p0, p1), to_segment(a, p1, p2)), to_segment(a, p2, p3));
+            float wl = 0.08 + room.z * (LEG0.y - above) / ly;
+            lit = min(lit, smoothstep(-wl, wl, d - LEG_HALF));
+        }
+        return lit;
     }
 
     // The herringbone's plank at f (the floor's u and v in plank widths), its rows along
@@ -2244,8 +2316,8 @@ let ROOM_FRAG = """
             // Worn: the paths round the table and along the room lighter and duller, the
             // floor along the walls darker under more wax.
             float r = length(p.xz - vec2(0.0, TABLE_Z));
-            float around = smoothstep(TABLE_R + 1.0, TABLE_R + 6.0, r)
-                         * (1.0 - smoothstep(TABLE_R + 0.4 * worn.z, TABLE_R + worn.z, r));
+            float around = smoothstep(table.x + 1.0, table.x + 6.0, r)
+                         * (1.0 - smoothstep(table.x + 0.4 * worn.z, table.x + worn.z, r));
             float lane = worn.w * (1.0 - smoothstep(6.0, 22.0, abs(uv.y - 0.55 * place.y)));
             float wall = max(1.0 - smoothstep(4.0, 20.0, place.y - uv.y), 1.0 - smoothstep(4.0, 16.0, uv.y + place.x));
             // The shell's floor: the distance to the nearest of its four walls.
@@ -2263,8 +2335,11 @@ let ROOM_FRAG = """
             albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
             rough = mix(rough, 0.6, joint);
             ao *= 1.0 - 0.5 * joint;
-            // The table's foot hides the sky round it, and the walls along their feet.
-            ao *= mix(0.55, 1.0, smoothstep(9.0, 22.0, r));
+            // The table hides the sky under it, its scroll toes the floor they stand on,
+            // and the walls along their feet.
+            ao *= mix(0.55, 1.0, smoothstep(0.5625 * table.x, 1.375 * table.x, r));
+            vec2 ta = abs(p.xz - vec2(0.0, TABLE_Z)) - vec2(LEG3.x * 0.70710678);
+            ao *= mix(0.45, 1.0, smoothstep(0.2, 1.4, length(ta)));
             if (shell.x > 0.5) {
                 // Along every wall the wainscot hides the sky: the floor darker in a band
                 // about 0.3 m wide, and a dark contact line at the plinth's lip (5 cm out).
@@ -2274,8 +2349,8 @@ let ROOM_FRAG = """
             } else {
                 ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
             }
-        } else if (kind < 5.5 || (kind > 6.5 && kind < 7.5)) {
-            // The panelling and the table's foot: the wall's field at the piece's place,
+        } else if (kind < 5.5) {
+            // The panelling: the wall's field at the piece's place,
             // the normal by the field's frame worked out from the derivatives.
             vec2 fuv = v_uv / place.w;
             vec4 a4 = texture(wall_albedo, fuv);

@@ -153,9 +153,9 @@ let EDGE_STEPPED = 3;
 let EDGES = 4;
 
 // The table's top from its middle out, as `edge` says (tables::Table.edge): x the
-// profile, y the top's thickness, z the moulding's size, w how far in the frieze is set.
-fn table_profile(p: Profile&, edge: float4) {
-    let r = TABLE_R;
+// profile, y the top's thickness, z the moulding's size, w how far in the frieze is set;
+// `r` its radius. Its underside closed under the frieze.
+fn table_profile(p: Profile&, edge: float4, r: f32 = TABLE_R) {
     let y = TABLE_TOP;
     let t = max(edge.y, 0.3);
     let m = clamp(edge.z, 0.08, 0.45 * t);
@@ -203,6 +203,7 @@ fn table_profile(p: Profile&, edge: float4) {
         p.arc(r - under, low + under, under, 0.0, -PI * 0.5, 8, true, 0.95, 0.7);
         p.line(r - under, low, r - edge.w, low, 0.6, 0.4);
         p.line(r - edge.w, low, r - edge.w, low - 2.4, 0.5, 0.6);
+        p.line(r - edge.w, low - 2.4, 0.0, low - 2.4, 0.4, 0.3);
         return;
     }
     // The frieze under the top, a bead at its foot.
@@ -212,6 +213,7 @@ fn table_profile(p: Profile&, edge: float4) {
     p.line(fr, low, fr, low - fh, 0.45, 0.8);
     p.arc(fr, low - fh - bead, bead, PI * 0.5, -PI * 0.5, 8, true, 0.85, 0.7);
     p.line(fr, low - fh - 2.0 * bead, fr - 0.3, low - fh - 2.0 * bead, 0.6, 0.5);
+    p.line(fr - 0.3, low - fh - 2.0 * bead, 0.0, low - fh - 2.0 * bead, 0.5, 0.3);
 }
 
 // The lathe's path: `n` steps round the axis at `center`, closed by repeating the first.
@@ -288,13 +290,214 @@ fn board(verts: Vertex[>..]&, indices: u32[>..]&) {
     sweep(verts, indices, prof, path, MAT_FRAME);
 }
 
-// The table under the board with its `edge` (tables::Table.edge), one mesh.
-fn table(verts: Vertex[>..]&, indices: u32[>..]&, edge: float4) {
+// The table under the board with its `edge` (tables::Table.edge) and its top's radius,
+// standing on its base (table_base) on the floor at `floor_y`, one mesh.
+fn table(verts: Vertex[>..]&, indices: u32[>..]&, edge: float4, radius: f32, floor_y: f32) {
     var prof: Profile = [];
-    table_profile(prof, edge);
+    table_profile(prof, edge, radius);
     var path: Path = [];
     lathe_path(path, TABLE_SEGMENTS, float2 { 0.0, TABLE_Z });
     sweep(verts, indices, prof, path, MAT_TABLE);
+    table_base(verts, indices, floor_y);
+}
+
+// A point on a Catmull-Rom curve through b and c, t from 0 at b to 1 at c.
+fn catmull(a: float4, b: float4, c: float4, d: float4, t: f32) -> float4 {
+    let t2 = t * t;
+    let t3 = t2 * t;
+    return (b * 2.0 + (c - a) * t + (a * 2.0 - b * 5.0 + c * 4.0 - d) * t2 + (b * 3.0 - a - c * 3.0 + d) * t3) * 0.5;
+}
+
+// A turned outline, `pts` (radius, height) in millimetres from its top down, at `mm`
+// world units a millimetre over `y0`: its normals smooth along it, a point given twice a
+// crease where each copy takes its own side's; a groove (a point inside its neighbours)
+// darker, by how deep it sits.
+fn turned(p: Profile&, pts: const float2[:], mm: f32, y0: f32) {
+    for q, i in pts {
+        let crease_before = i > 0 && pts[i - 1].x == q.x && pts[i - 1].y == q.y;
+        let crease_after = i + 1 < pts.len && pts[i + 1].x == q.x && pts[i + 1].y == q.y;
+        let a = if i > 0 && !crease_before { pts[i - 1] } else { q };
+        let b = if i + 1 < pts.len && !crease_after { pts[i + 1] } else { q };
+        // A crease's copy takes the one segment on its side.
+        var t = b - a;
+        if crease_before && i + 1 < pts.len { t = pts[i + 1] - q; }
+        if crease_after && i > 0 { t = q - pts[i - 1]; }
+        let d = normalize(t);
+        let groove = max(0.5 * (a.x + b.x) - q.x, 0.0);
+        p.point(q.x * mm, y0 + q.y * mm, -d.y, d.x, 1.0 - min(0.04 * groove, 0.35));
+    }
+}
+
+// A bar's rib: a point on its spine, the section's axes there (up, in the bend's plane,
+// and across it, with the spine's direction a right-handed frame), its half sizes along
+// them, how round its corners are (0 square, 1 a full round of the smaller half), and its
+// occlusion. A bar sweeps a rounded rectangle along its spine, as a band-sawn piece is
+// shaped and its edges moulded: a cabriole leg, a rail, a bracket foot.
+struct Rib { at: float3, up: float3, across: float3, half: float2, round: f32, ao: f32 }
+type Spine = Rib[..96];
+
+// Each corner of a bar's section in this many pieces: a ring of 4 × 3 points.
+let CORNER_STEPS = 2;
+
+// A spine's ribs through `pts` (x, y in the bend's plane, z and w the section's half
+// sizes, in millimetres), the plane through `origin` along `dir` (x) and up (y), at `mm`
+// world units a millimetre; each rib's section turned square to the spine.
+fn bent_spine(spine: Spine&, pts: const float4[:], origin: float3, dir: float3, mm: f32, round: f32, ao: f32) {
+    let side = normalize(cross(dir, float3 { 0.0, 1.0, 0.0 }));
+    for q, i in pts {
+        let a = pts[max(i - 1, 0)];
+        let b = pts[min(i + 1, pts.len - 1)];
+        let t = normalize(dir * (b.x - a.x) + float3 { 0.0, b.y - a.y, 0.0 });
+        let at = origin + dir * (q.x * mm) + float3 { 0.0, q.y * mm, 0.0 };
+        spine.push(Rib { at, normalize(cross(side, t)), side, float2 { q.z * mm, q.w * mm }, round, ao });
+    }
+}
+
+// Sweeps a bar's section along its spine into verts and indices, its end closed with
+// `cap`. uv is (round the section, mirrored so it meets itself; along the spine).
+fn bar(verts: Vertex[>..]&, indices: u32[>..]&, spine: Spine&, mat: f32, cap: bool = true) {
+    let ring = 4 * (CORNER_STEPS + 1);
+    let base = verts.len as u32;
+    var along: f32 = 0.0;
+    for rb, k in spine {
+        if k > 0 { along += length(rb.at - spine[k - 1].at); }
+        let r = rb.round * min(rb.half.x, rb.half.y);
+        let c = rb.half - float2 { r, r };
+        let perimeter = 4.0 * (c.x + c.y) + TAU * r;
+        var s: f32 = 0.0;
+        var prev = float2_0;
+        for j in ring + 1 {
+            let corner = (j / (CORNER_STEPS + 1)) % 4;
+            let step = j % (CORNER_STEPS + 1);
+            let a = PI * 0.5 * (corner + step as f32 / CORNER_STEPS);
+            let n = float2 { cos(a), sin(a) };
+            let sx: f32 = if corner == 0 || corner == 3 { 1.0 } else { -1.0 };
+            let sy: f32 = if corner < 2 { 1.0 } else { -1.0 };
+            let q = float2 { sx * c.x, sy * c.y } + n * r;
+            if j > 0 { s += length(q - prev); }
+            prev = q;
+            let at = rb.at + rb.up * q.x + rb.across * q.y;
+            let normal = rb.up * n.x + rb.across * n.y;
+            verts.push(Vertex { at, normal, float2 { abs(s - 0.5 * perimeter), along }, rb.ao, mat });
+        }
+    }
+    let n = (ring + 1) as u32;
+    for k in spine.len - 1 {
+        for j in ring {
+            let a = base + k as u32 * n + j as u32;
+            let b = a + n;
+            indices.append([a, a + 1, b + 1, a, b + 1, b]);
+        }
+    }
+    guard cap && spine.len > 1 else { return; }
+    // The end, flat across the last rib, facing on along the spine.
+    let last = spine[spine.len - 1];
+    let t = normalize(last.at - spine[spine.len - 2].at);
+    let mid = verts.len as u32;
+    verts.push(Vertex { last.at, t, float2 { 0.0, along }, last.ao, mat });
+    let first = base + (spine.len - 1) as u32 * n;
+    for j in ring + 1 {
+        let v = verts[(first + j as u32) as i64];
+        verts.push(Vertex { v.pos, t, v.uv, v.ao, mat });
+    }
+    for j in ring { indices.append([mid, mid + 1 + j as u32, mid + 2 + j as u32]); }
+}
+
+// The table's base, as style-01's games table (build/notes/games-table, option A):
+// a turned column from under the top to a drum 100 mm off the floor, ringed under the
+// top, a large urn over a beaded neck, and four cabriole legs from the drum, their knees
+// high by it, sweeping down to scroll toes on the floor 0.36 m out. Its measures in
+// millimetres up from the floor (a top 750 mm high); MAT_TABLE_BASE, its grain along
+// the column and the legs (shaders::TABLE_FRAG).
+let MAT_TABLE_BASE: f32 = 4.0;
+let BASE_SEGMENTS = 24;          // round the column: its silhouette's chord under 1 mm
+let LEG_SAMPLES = 4;             // the leg's curve, each span between its points
+let SCROLL_SAMPLES = 12;
+let TABLE_MM: f32 = 0.03048;     // world units a millimetre (surfaces::METRE / 1000)
+let COLUMN: float2[55] = [
+    // Under the top, inside the frieze, and its collar.
+    float2 { 80.0, 660.0 }, float2 { 80.0, 640.0 }, float2 { 76.0, 632.0 }, float2 { 66.0, 625.0 },
+    float2 { 56.0, 619.0 }, float2 { 55.0, 613.0 },
+    // Four rings.
+    float2 { 58.0, 606.0 }, float2 { 60.0, 600.0 }, float2 { 57.0, 593.0 }, float2 { 49.0, 587.0 },
+    float2 { 55.0, 579.0 }, float2 { 58.0, 572.0 }, float2 { 55.0, 565.0 }, float2 { 48.0, 559.0 },
+    float2 { 54.0, 551.0 }, float2 { 57.0, 544.0 }, float2 { 54.0, 537.0 }, float2 { 47.0, 531.0 },
+    float2 { 53.0, 523.0 }, float2 { 56.0, 516.0 }, float2 { 53.0, 509.0 }, float2 { 46.0, 503.0 },
+    // The neck over the urn, a bead.
+    float2 { 45.0, 494.0 }, float2 { 48.0, 486.0 }, float2 { 55.0, 482.0 }, float2 { 57.0, 477.0 },
+    float2 { 52.0, 472.0 }, float2 { 47.0, 468.0 },
+    // The urn.
+    float2 { 50.0, 458.0 }, float2 { 60.0, 445.0 }, float2 { 74.0, 428.0 }, float2 { 88.0, 410.0 },
+    float2 { 99.0, 392.0 }, float2 { 105.0, 372.0 }, float2 { 106.0, 354.0 }, float2 { 103.0, 336.0 },
+    float2 { 95.0, 320.0 }, float2 { 82.0, 306.0 }, float2 { 68.0, 296.0 },
+    // The neck under it, a bead, and the collar over the drum.
+    float2 { 60.0, 290.0 }, float2 { 64.0, 282.0 }, float2 { 66.0, 275.0 }, float2 { 62.0, 268.0 },
+    float2 { 54.0, 262.0 }, float2 { 52.0, 252.0 }, float2 { 58.0, 244.0 }, float2 { 70.0, 238.0 },
+    float2 { 80.0, 232.0 }, float2 { 82.0, 226.0 }, float2 { 80.0, 220.0 },
+    // The drum the legs come out of, its foot rounded, its underside flat.
+    float2 { 72.0, 212.0 }, float2 { 72.0, 108.0 }, float2 { 66.0, 100.0 }, float2 { 66.0, 100.0 }, float2 { 0.0, 100.0 },
+];
+// A leg's curve in its plane (out from the column's axis, up from the floor) and its
+// section's half height and half width, from its root inside the drum over the knee
+// down to where the scroll begins.
+let LEG: float4[7] = [
+    float4 { 30.0, 176.0, 50.0, 26.0 }, float4 { 80.0, 188.0, 50.0, 26.0 }, float4 { 125.0, 184.0, 48.0, 25.0 },
+    float4 { 170.0, 156.0, 42.0, 23.0 }, float4 { 215.0, 112.0, 34.0, 21.0 }, float4 { 258.0, 72.0, 27.0, 20.0 },
+    float4 { 292.0, 47.0, 22.0, 19.0 },
+];
+// The scroll: round its middle (out, up) from an angle (degrees, 0 out, 90 up) on
+// through a turn, under the toe, out and up and back over, its radius and the section's
+// half height shrinking from the first to the second, the half width from 20 to 22.
+let SCROLL_MID = float2 { 328.0, 38.0 };
+let SCROLL_TURN = float2 { -150.0, 310.0 };
+let SCROLL_RADIUS = float2 { 22.0, 9.0 };
+let SCROLL_HALF = float2 { 17.0, 7.0 };
+
+fn table_base(verts: Vertex[>..]&, indices: u32[>..]&, floor_y: f32) {
+    let mm = TABLE_MM;
+    var prof: Profile = [];
+    turned(prof, COLUMN[..], mm, floor_y);
+    var path: Path = [];
+    lathe_path(path, BASE_SEGMENTS, float2 { 0.0, TABLE_Z });
+    let first = verts.len;
+    sweep(verts, indices, prof, path, MAT_TABLE_BASE);
+    // Round the column mirrored about its back, so the grain meets itself there.
+    for i in first..verts.len {
+        let v .= verts[i];
+        v.uv.x = abs(v.uv.x - PI * length(float2 { v.pos.x, v.pos.z - TABLE_Z }));
+    }
+    // The legs, toward the board's corners, each a curve through LEG and on round the
+    // scroll.
+    var curve: float4[..64] = [];
+    let n = LEG.len;
+    for i in n {
+        let a = LEG[max(i - 1, 0)];
+        let b = LEG[i];
+        guard i + 1 < n else { break; }
+        let c = LEG[i + 1];
+        let d = if i + 2 < n { LEG[i + 2] } else { scroll_at(0.0) };
+        for s in LEG_SAMPLES { curve.push(catmull(a, b, c, d, s as f32 / LEG_SAMPLES)); }
+    }
+    // The last span from the leg's last point into the scroll's first.
+    for s in LEG_SAMPLES {
+        curve.push(catmull(LEG[n - 2], LEG[n - 1], scroll_at(0.0), scroll_at(1.0 / SCROLL_SAMPLES), s as f32 / LEG_SAMPLES));
+    }
+    for s in SCROLL_SAMPLES + 1 { curve.push(scroll_at(s as f32 / SCROLL_SAMPLES)); }
+    for k in 4 {
+        let a = PI * (0.25 + 0.5 * k as f32);
+        let dir = float3 { cos(a), 0.0, sin(a) };
+        var spine: Spine = [];
+        bent_spine(spine, curve[..], float3 { 0.0, floor_y, TABLE_Z }, dir, mm, 0.55, 0.9);
+        bar(verts, indices, spine, MAT_TABLE_BASE);
+    }
+}
+
+// The scroll's point a share t along it (as LEG's: out, up, half height, half width).
+fn scroll_at(t: f32) -> float4 {
+    let a = radians(SCROLL_TURN.x + SCROLL_TURN.y * t);
+    let r = lerp(SCROLL_RADIUS.x, SCROLL_RADIUS.y, t);
+    return float4 { SCROLL_MID.x + r * cos(a), SCROLL_MID.y + r * sin(a), lerp(SCROLL_HALF.x, SCROLL_HALF.y, t),
+                    20.0 + 2.0 * t };
 }
 
 // A piece at scale 1, standing on y = 0 round the origin.

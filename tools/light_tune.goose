@@ -19,7 +19,7 @@
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
 //       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
-//       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
+//       [--table board|flame] [--table-top 1.05|0.80 (the top across, metres)] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
 //       [--wind-kind sines|noise|still|branches]
 //       [--gust X,Y,Z,W | --gust-strength K --gust-length S --gust-every S --gust-reach K (rooms::Room's gust)]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
@@ -56,6 +56,10 @@ let ROW:     f32 = 20.0;
 let SEASONS = ["autumn", "winter", "spring", "summer"];
 let MATERIALS = ["auto", "wood", "stone", "carved"];
 let SQUARES = ["8", "10"];
+// The table's tops to compare (--table-top, the panel's Top): the game's 1.05 m
+// (mesh::TABLE_R) and task 109's 0.80 m; the base under them the same.
+let TOPS = ["1.05", "0.80"];
+fn top_radius(top: i64) -> f32 { if top == 1 { mesh::TABLE_R * 0.80 / 1.05 } else { mesh::TABLE_R } }
 
 // The views (V cycles them): the board's orbit, then the room's from a person's eyes, in
 // the plan's metres (room_shell): the whole room from the far corner by the hall; the
@@ -460,6 +464,8 @@ fn main() {
     render3d::show_room(g, room_on, away, shell_on);
     g.paper_tile = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE) * surfaces::METRE;
     g.lace_way = pick(argv, "--lace", surfaces::LACE_WAYS, 0);
+    var top = pick(argv, "--table-top", TOPS, 0);
+    g.table_r = top_radius(top);
     // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied, as
     // the renderer bakes it (the room's on or off).
     let dump = flag_value(argv, "--dump-map");
@@ -490,6 +496,7 @@ fn main() {
     var shown_material = material;
     var shown_take = take;
     var shown_room = room_take;
+    var shown_top = top;
     var yaw:   f32 = number(argv, "--yaw", 0.0);
     var pitch: f32 = number(argv, "--height", view3d::PITCH);
     var far:   f32 = number(argv, "--distance", 1.3);
@@ -558,6 +565,7 @@ fn main() {
             choice(c, "Season", season, SEASONS);
             choice(c, "Board", material, MATERIALS);
             choice(c, "Table", take, tables::NAMES);
+            choice(c, "Top (m)", top, TOPS);
             choice(c, "Pattern (W)", pattern, ["off", "on"]);
             var shade = clamp(room.tree.x as i64, 0, 2);
             choice(c, "Leaves by (T)", shade, ["noise", "tree", "both"]);
@@ -683,6 +691,11 @@ fn main() {
         if room_take != shown_room {
             shown_room = room_take;
             room = rooms::get(room_take);
+        }
+        if top != shown_top {
+            shown_top = top;
+            g.table_r = top_radius(top);
+            render3d::tune_table(r3d, g, g.table_spec);
         }
         if season != shown_season || material != shown_material || take != shown_take {
             if season != shown_season {
