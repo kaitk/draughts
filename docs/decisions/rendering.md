@@ -928,6 +928,29 @@ to be is in tasks 042, 059, 071, 081, and 086.
   no wall that isn't there. Replaces the endless planes: a case's side and front, the
   architraves' and the sills' edges cut at their ends, which left a 90° wedge of shade on
   the floor off each case's outside corner and hard lines along the openings' edges.
+- The library's baked light bounces three times (2026-11-21, task 107;
+  `room_light::first_light`, `bounce_once`, `gather_half`): the room's surfaces as 1,208
+  cells, about 0.5 m a side on the floor, the ceiling and the four walls (a door's leaf, a
+  bookcase's front, the paper, the wainscot and the cornice each by its share of the cell,
+  the windows' openings left out), 0.2 m in the niches (sills, reveals, heads), the
+  table's top one more, and the lace before each niche in four bands a panel as a source
+  only. Every source goes in: the sun's rays deposit into the cells they land on, the sky
+  through the niches lights every cell it reaches (the floor, the sills, the reveals), the
+  lace throws on what it stops. Each bounce gathers cell to cell (each a small lambertian
+  light, the distance kept to about the cells' size, no cell taking more than the whole
+  room's light), the thrown light taken toward grey as the sun's patches are. The probes
+  keep the sun's patches exactly as before and gather the rest on a grid of half their
+  density (15 × 13 × 7), spread trilinearly over all 10,140. Cells finer than half a
+  metre were rejected: the probes read the light at 0.3 m and half a step out, so finer
+  cells change nothing they show and cost the square. Replaces the single bounce of the
+  sun's patches with the sky's light ending where it landed. The bake takes about 87 ms
+  on an M-series Mac (47 before), into fixed buffers (about 0.2 MB), still never per
+  frame. Against the ChatGPT repaints of our room (`02-style-01`, `03-autumn-02`, sRGB
+  luma): the hall wall's wainscot in shade 8 to 10% (theirs 10), 7 to 9% (8); the paper
+  in shade 11 to 17% (18), 15 to 21% (18); the ceiling 49 to 53% (49), 49 to 53% (40);
+  the window wall's wainscot 6 to 7% (15), 4 to 5% (13). The exposure stays: lifting it
+  for the window wall would take the ceiling and the paper past the references; that wall
+  is dark because the floor's sun patches it would see are a tenth of theirs.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

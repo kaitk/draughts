@@ -570,11 +570,16 @@ board's light:
   it; the floor under the base is darker by the drum's and legs' own occlusion, tightest
   round the scroll toes (`base_hides`).
 - **Baked light** (`model3d::room_light`): a grid of 10,140 probes 0.3 m apart, half a step
-  in from every wall, the floor and the ceiling, made on the CPU in about 45 ms when the
+  in from every wall, the floor and the ceiling, made on the CPU in about 87 ms when the
   room turns on and again when the sun, the room's light, the tree or the table changes,
-  never per frame. Each probe holds the sky seen through the niches and the sun's patches
-  thrown back once, as a constant and a direction per colour; the row in front of a
-  surface takes none of that surface's own patches. They fill a 390 × 78 RGBA16F atlas
+  never per frame and held while a slider drags. Each probe holds the sky seen through the
+  niches, the sun's patches thrown back, and the light the room throws on after that, as
+  a constant and a direction per colour; the row in front of a surface takes none of that
+  surface's own light. The light thrown on is bounced three times between 1,208 cells over
+  the room's surfaces (half a metre on the floor, ceiling and walls, 0.2 m in the niches,
+  the table's top) from every source: the sun's rays where they land, the sky through the
+  niches on the floor, sills and reveals, the backlit lace; the probes gather it at half
+  their density. They fill a 390 × 78 RGBA16F atlas
   (0.24 MB) that `ROOM_FRAG` reads with six taps. Beside it the
   room keeps a part of the harmonics and of the flat bounce (`rooms::Room.baked`).
 - **Corners and edges** (`ROOM_FRAG`'s `corner_shade`, `rooms::Room.corners`): the

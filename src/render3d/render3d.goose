@@ -1097,6 +1097,12 @@ var light_atlas:   f32[room_light::ATLAS_FLOATS];
 var light_bytes:   u8[ATLAS_BYTES];
 var light_patches: room_light::Patch[room_light::BINS];
 var light_tree:    f32[room_light::RAYS];
+var light_bounce:  room_light::Bounce;
+// How many times the room's light is thrown on after the sun's patches (room_light::BOUNCES;
+// 0 the patches alone, the tuner's --bounces), and each step's time in the last bake:
+// the sun's rays, the first light, each bounce, the half grid's gather, the probes.
+var light_bounces = room_light::BOUNCES;
+var light_steps: f64[8] = [0.0; 8];
 let ATLAS_BYTES = 243360;   // room_light::ATLAS_W × ATLAS_H × 8
 let TREE_LEVEL = 3;
 let TREE_SMALL = 98304;     // trees::SHELL_W × SHELL_H × 4 >> 2 × TREE_LEVEL
@@ -1134,8 +1140,23 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
         bounce_gain: r.baked.y,
     };
     tree_through(g, l);
-    let n = room_light::sun_patches(sun, light_tree[..], light_patches);
-    room_light::bake(sun, light_patches, n, light_atlas[..]);
+    var at = clock();
+    let n = room_light::sun_patches(sun, light_tree[..], light_patches, light_bounce);
+    light_steps[0] = (clock() - at) * 1000.0;
+    at = clock();
+    room_light::first_light(sun, light_bounce);
+    light_steps[1] = (clock() - at) * 1000.0;
+    for b in 3 {
+        at = clock();
+        if b < light_bounces { room_light::bounce_once(sun, light_bounce, b == 0); }
+        light_steps[2 + b] = (clock() - at) * 1000.0;
+    }
+    at = clock();
+    room_light::gather_half(sun, light_bounce);
+    light_steps[5] = (clock() - at) * 1000.0;
+    at = clock();
+    room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..]);
+    light_steps[6] = (clock() - at) * 1000.0;
     for i in room_light::ATLAS_FLOATS {
         let h = half_bits(light_atlas[i]);
         light_bytes[2 * i] = (h & 0xFF) as u8;

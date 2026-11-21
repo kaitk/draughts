@@ -713,6 +713,7 @@ fn main() {
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
     room.exposure = number(argv, "--exposure", room.exposure);
     var motes = whole(argv, "--motes", 500);
+    render3d::light_bounces = whole(argv, "--bounces", room_light::BOUNCES);
     var dust_on = flag_value(argv, "--dust") > 0 && argv[flag_value(argv, "--dust")] == "on";
     render3d::dust.size = number(argv, "--mote-size", render3d::dust.size);
     render3d::dust.blur = number(argv, "--mote-blur", render3d::dust.blur);
@@ -830,7 +831,10 @@ fn main() {
                       g.room_count / 3, " triangles and ", g.glass_count / 3, " of glass and lace");
             }
             if g.light_ms > 0.0 {
-                print("the room's light baked in ", g.light_ms, " ms, ", g.light_patches, " sun patches");
+                let st = render3d::light_steps;
+                print("the room's light baked in ", g.light_ms, " ms, ", g.light_patches, " sun patches; the sun's rays ", st[0],
+                      " ms, the first light ", st[1], ", the bounces ", st[2], ", ", st[3], ", ", st[4], ", the half grid ", st[5],
+                      ", the probes ", st[6]);
             }
             if walk_test > 0 {
                 print("walked to ", walk.eye.x, ",", walk.eye.y, ",", walk.eye.z, " yaw ", walk.yaw, " pitch ", walk.pitch,
