@@ -496,6 +496,9 @@ let LIGHT_FN = """
         float toward = dot(l.xz, nw);
         if (toward < 0.05) return 1.0 - room.y;
         float metre = shell.w;
+        // The penumbra's widening with distance: the shell's own, sharper than the game's
+        // window takes it.
+        float widen = shell_sun.x > 0.0 ? shell_sun.x : room.z;
         float d = dot(p.xz, nw);
         float half_w = shell_niche.x;
         float rise = shell_niche.w;
@@ -510,7 +513,7 @@ let LIGHT_FN = """
             float t = max((shell.y - d) / toward, 0.0);
             vec3 q = p + l * t;
             vec2 w = vec2(dot(q.xz, along) - mid, q.y - shell.z) / metre;
-            float soft = (0.03 + room.z * t) / metre;
+            float soft = (0.03 + widen * t) / metre;
             float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
             float through = smoothstep(-soft, soft, min(half_w - abs(w.x), min(w.y - shell_niche.y, head - w.y)));
             if (through < 0.001) continue;
@@ -519,13 +522,13 @@ let LIGHT_FN = """
                 float tg = (shell.y + (k == 0 ? shell_glass.x : shell_glass.y) - d) / toward;
                 if (tg <= 0.0) continue;
                 vec3 g = p + l * tg;
-                through *= casement(vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre, (0.03 + room.z * tg) / metre);
+                through *= casement(vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre, (0.03 + widen * tg) / metre);
             }
             // The lace in front of the niche, for what is behind it in the room.
             float tl = (shell.y - shell_glass.z - d) / toward;
             if (tl > 0.5) {
                 vec3 c = p + l * tl;
-                through *= lace_shadow(vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre, (0.03 + room.z * tl) / metre);
+                through *= lace_shadow(vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre, (0.03 + widen * tl) / metre);
             }
             lit += through;
         }
@@ -1956,6 +1959,8 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 5) uniform sampler2D paper_mask;
     layout(set = 2, binding = 6) uniform sampler2D plaster_tone;
     layout(set = 2, binding = 7) uniform sampler2D lace_mask;
+    // The room's baked light (model3d::room_light): its probes' atlas, RGBA16F.
+    layout(set = 2, binding = 8) uniform sampler2D light_volume;
     // surfaces::Look and the room's frame. plank: x a plank's width, y its length in
     // widths, z the joint's half width, w the cup (its slope at the edges); planks: x each
     // one's own tone, y the share patched, z its tilt, w the scratches; worn: x the paths'
@@ -1977,7 +1982,17 @@ let ROOM_HEAD = """
     // ends: the end walls' u, x the stove's, y the far one's; brass: the curtains' (sRGB at
     // normal incidence, and roughness); lace_light: the window's light behind the lace
     // (linear, exposed as the view out, lifted with the room), w how strongly its thin parts scatter the sun
-    // forward; table: x the table's top's radius, y the floor's height (world units).
+    // forward; table: x the table's top's radius, y the floor's height (world units);
+    // shell_sun: x how fast the sun's penumbra widens through the shell's windows (0 the
+    // pattern's, room.z), y the sun on the room's surfaces over the board's
+    // (rooms::Room.shell_sun); room_baked: x 1 the baked light on, z how much of the
+    // harmonics and w of the shade the room keeps beside it (rooms::Room.baked); light_box:
+    // the probes' first corner in the room's frame and, w, the step between them (world
+    // units); light_grid: how many across, along v, and up (model3d::room_light); room_box:
+    // the shell's walls in the room's frame, x the far end's u, y the stove's end's, z the
+    // window wall's v, w the hall wall's; room_doors: the hall door's middle along u and half
+    // width, the salon door's along v and half width (with their architraves); room_heights:
+    // the ceiling's y, the doors' tops and the wainscot's over the floor (metres).
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -2001,6 +2016,13 @@ let ROOM_HEAD = """
         vec4 brass;
         vec4 lace_light;
         vec4 table;
+        vec4 shell_sun;
+        vec4 room_baked;
+        vec4 light_box;
+        vec4 light_grid;
+        vec4 room_box;
+        vec4 room_doors;
+        vec4 room_heights;
     };
     """;
 
@@ -2250,6 +2272,122 @@ let ROOM_FRAG = """
         return cover;
     }
 
+    // One probe's texel of the baked light: colour c's block, the height's slice k, at g
+    // (the grid's x and along v).
+    vec4 probe_at(float c, float k, vec2 g) {
+        vec2 size = vec2(light_grid.x * light_grid.z, 3.0 * light_grid.y);
+        return textureLod(light_volume, vec2(k * light_grid.x + g.x + 0.5, c * light_grid.y + g.y + 0.5) / size, 0.0);
+    }
+
+    // The room's baked light (model3d::room_light) at lp, in the room's frame, for the
+    // normal n (the world's), over pi: the probes round lp, half a step out along n so a
+    // wall reads the room's side of itself, the layers above and below mixed by hand, each
+    // colour a constant and a direction.
+    vec3 baked_light(vec3 lp, vec3 n) {
+        vec3 ln = vec3(dot(n.xz, axes.xy), n.y, dot(n.xz, axes.zw));
+        vec3 hi = vec3(light_grid.x, light_grid.z, light_grid.y) - 1.0;
+        vec3 g = clamp((lp + ln * (0.5 * light_box.w) - light_box.xyz) / light_box.w, vec3(0.0), hi);
+        float k0 = floor(g.y);
+        float k1 = min(k0 + 1.0, hi.y);
+        float kf = g.y - k0;
+        vec4 r = mix(probe_at(0.0, k0, g.xz), probe_at(0.0, k1, g.xz), kf);
+        vec4 gr = mix(probe_at(1.0, k0, g.xz), probe_at(1.0, k1, g.xz), kf);
+        vec4 b = mix(probe_at(2.0, k0, g.xz), probe_at(2.0, k1, g.xz), kf);
+        return max(vec3(r.x + dot(r.yzw, ln), gr.x + dot(gr.yzw, ln), b.x + dot(b.yzw, ln)), vec3(0.0));
+    }
+
+    // The light in the room's shade for the normal n at lp (the room's frame), over pi:
+    // the harmonics and the shade's even light, or with the light baked, that beside what
+    // the harmonics and the shade keep.
+    vec3 room_irradiance(vec3 lp, vec3 n) {
+        vec3 ambient = sh_eval(n) * params.z;
+        if (room_baked.x < 0.5) return ambient + shade.rgb;
+        return baked_light(lp, n) + ambient * room_baked.z + shade.rgb * room_baked.w;
+    }
+
+    // The room's radiance seen along r from p (the world's; lp and lr the room's frame): the
+    // shell's box met (its four walls, the ceiling, the floor), the surface there by where it
+    // is (the wainscot, the paper, the two doors' paint, the plaster, the herringbone's
+    // mean), lit by the baked light and the sun through the windows; on the window wall, its
+    // three windows as soft rectangles under their arches, their bars at the inner glass, the
+    // view out's light (lace_light, back in the room's units) between them, softer the
+    // farther and longer up the wall than across it at a grazing look, as a waxed floor's
+    // streaks are. After the gilt and brass study's proposal: no cube map, nothing baked.
+    vec3 room_seen(vec3 p, vec3 lp, vec3 r, vec3 lr, float alpha, float nov, float px) {
+        float big = 1e6;
+        float tx = abs(lr.x) < 1e-4 ? big : ((lr.x > 0.0 ? room_box.y : room_box.x) - lp.x) / lr.x;
+        float tz = abs(lr.z) < 1e-4 ? big : ((lr.z > 0.0 ? room_box.w : room_box.z) - lp.z) / lr.z;
+        float ty = abs(lr.y) < 1e-4 ? big : ((lr.y > 0.0 ? room_heights.x : shell.z) - lp.y) / lr.y;
+        float t = max(min(tx, min(ty, tz)), 0.0);
+        vec3 h = lp + lr * t;
+        vec3 hw = p + r * t;
+        vec3 nl;
+        vec3 alb;
+        float up = (h.y - shell.z) / shell.w;
+        vec3 wall = up < room_heights.z ? vec3(0.034, 0.014, 0.005) : mix(srgb(paper.rgb), srgb(gold.rgb), 0.3);
+        if (t == ty) {
+            nl = vec3(0.0, lr.y > 0.0 ? -1.0 : 1.0, 0.0);
+            alb = lr.y > 0.0 ? srgb(plaster_light.rgb) : vec3(0.078, 0.045, 0.022);
+        } else if (t == tx) {
+            nl = vec3(lr.x > 0.0 ? -1.0 : 1.0, 0.0, 0.0);
+            bool door = lr.x > 0.0 && abs(h.z - room_doors.z) < room_doors.w && up < room_heights.y;
+            alb = door ? srgb(paint.rgb) : wall;
+        } else {
+            nl = vec3(0.0, 0.0, lr.z > 0.0 ? -1.0 : 1.0);
+            bool door = lr.z > 0.0 && abs(h.x - room_doors.x) < room_doors.y && up < room_heights.y;
+            alb = door ? srgb(paint.rgb) : wall;
+        }
+        vec3 n = vec3(axes.x * nl.x + axes.z * nl.z, nl.y, axes.y * nl.x + axes.w * nl.z);
+        vec3 l = light_dir.xyz;
+        vec3 sun = light_color.rgb * light_dir.w * shell_sun.y * max(dot(n, l), 0.0) / PI;
+        vec3 c = alb * (room_irradiance(h, n) + (dot(n, l) > 0.0 ? sun * window_light(hw) : vec3(0.0)));
+        // The windows, on the window wall.
+        if (t != tz || lr.z > 0.0) return c;
+        float metre = shell.w;
+        // The lobe's widening with distance, and the pixel's own spread of directions (a
+        // grooved panel's normals turn fast), so the windows' edges never alias.
+        float spread = 0.01 + 1.2 * alpha + 2.0 * px;
+        vec2 soft = vec2(1.0, 1.0 + 3.0 * (1.0 - nov)) * (0.01 * metre + t * spread) / metre;
+        float half_w = shell_niche.x;
+        float rise = shell_niche.w;
+        float radius = (half_w * half_w + rise * rise) / (2.0 * rise);
+        float arch_mid = shell_niche.y + shell_niche.z + rise - radius;
+        vec2 nw = -axes.zw;
+        float toward = max(dot(r.xz, nw), 1e-3);
+        vec3 qg = p + r * ((shell.y + shell_glass.x - dot(p.xz, nw)) / toward);
+        vec3 view = lace_light.rgb / max(params.x * shade.w, 1e-3);
+        vec3 bars = srgb(paint.rgb) * 0.12;
+        float cover = 0.0;
+        vec3 win = vec3(0.0);
+        for (int i = 0; i < 3; i++) {
+            if (float(i) >= shell.x) break;
+            float mid = shell_mids[i];
+            vec2 w = vec2(dot(hw.xz, axes.xy) - mid, hw.y - shell.z) / metre;
+            float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
+            float rect = smoothstep(-soft.x, soft.x, half_w - abs(w.x))
+                       * smoothstep(-soft.y, soft.y, min(w.y - shell_niche.y, head - w.y));
+            if (rect < 0.001) continue;
+            vec2 wg = vec2(dot(qg.xz, axes.xy) - mid, qg.y - shell.z) / metre;
+            win += rect * mix(bars, view, casement(wg, max(soft.x, soft.y)));
+            cover += rect;
+        }
+        return mix(c, win / max(cover, 1e-4), min(cover, 1.0));
+    }
+
+    // What a glossy surface sees along r through a GGX lobe alpha wide: the room seen
+    // (room_seen) while the lobe is narrow, toward the room's light that way as the lobe
+    // widens, as its mean over a hemisphere; a rough surface only that.
+    vec3 room_reflection(vec3 p, vec3 lp, vec3 r, float alpha, float nov, float px) {
+        // The room's mean albedo the way r looks: the floor's below, the walls' across, the
+        // plaster's above.
+        float albedo = r.y > 0.0 ? mix(0.12, 0.55, r.y * r.y) : mix(0.12, 0.06, -r.y);
+        vec3 wide = room_irradiance(lp, r) * albedo;
+        float sharp = (1.0 - smoothstep(0.08, 0.45, alpha)) * (1.0 - smoothstep(0.05, 0.2, px));
+        if (sharp < 0.001) return wide;
+        vec3 lr = vec3(dot(r.xz, axes.xy), r.y, dot(r.xz, axes.zw));
+        return mix(wide, room_seen(p, lp, r, lr, alpha, nov, px), sharp);
+    }
+
     void main() {
         vec3 p = v_world;
         vec3 ng = normalize(v_normal);
@@ -2453,11 +2591,11 @@ let ROOM_FRAG = """
         vec3 l = light_dir.xyz;
         float nol = dot(n, l);
         float diff = clamp(nol, 0.0, 1.0);
-        vec3 light = light_color.rgb * light_dir.w;
+        vec3 light = light_color.rgb * light_dir.w * shell_sun.y;
         // The table's top is solid: its shadow keeps all the key out, unlike the board's
         // softened ones (room.x).
         float vis = dot(ng, l) > 0.0 ? window_light(p) * table_shade(p, l) : 0.0;
-        vec3 irr = (sh_eval(n) * params.z + shade.rgb) * ao;
+        vec3 irr = room_irradiance(v_local, n) * ao;
         vec3 base = albedo * (1.0 - metal) * (diff / PI * light * vis + irr);
 
         float nov = max(dot(n, v), 1e-4);
@@ -2475,12 +2613,81 @@ let ROOM_FRAG = """
         // The key is a window, not a point: its highlight no sharper than 0.25's.
         float ak = max(ar, 0.06);
         vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * vis;
-        vec3 env = sh_eval(reflect(-v, n)) * params.z;
+        // The room's reflection: the windows on the waxed floor and the brass, with the room
+        // baked; the harmonics alone before.
+        // Only the floor and the brass see the room sharply: the panelling's grain turns its
+        // normals too fast for a window's edge to hold.
+        vec3 rv = reflect(-v, n);
+        float px = kind < 4.5 ? length(fwidth(rv)) : (metal > 0.5 ? 0.25 * length(fwidth(rv)) : 1.0);
+        vec3 env = room_baked.x > 0.5 ? room_reflection(p, v_local, rv, ar, nov, px) : sh_eval(rv) * params.z;
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
         vec3 fc = env_brdf(f0, sqrt(ar), nov);
         vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
+    }
+    """;
+
+// The window's glow (render3d::bloom_pass), no rays: the room's image shrunk to a quarter,
+// a 4 × 4 block a pixel from four bilinear taps, only what is brighter than a threshold
+// kept, in linear light; blurred across and down (GLOW_BLUR_FRAG); added back over the
+// image in linear light (GLOW_ADD_FRAG). Glow: x the threshold (the least channel, sRGB,
+// so only near-white glows: the glass, the sky, the backlit lace, not the board's sunlit
+// maple), y the knee over it, zw a source texel in uv.
+let GLOW_PICK_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    layout(set = 3, binding = 0) uniform Glow { vec4 glow_pick; };
+    void main() {
+        vec2 at = floor(gl_FragCoord.xy) * 4.0;
+        vec3 c = texture(src, (at + vec2(1.0, 1.0)) * glow_pick.zw).rgb + texture(src, (at + vec2(3.0, 1.0)) * glow_pick.zw).rgb
+               + texture(src, (at + vec2(1.0, 3.0)) * glow_pick.zw).rgb + texture(src, (at + vec2(3.0, 3.0)) * glow_pick.zw).rgb;
+        c *= 0.25;
+        float bright = min(c.r, min(c.g, c.b));
+        result = vec4(pow(c, vec3(2.2)) * smoothstep(glow_pick.x, glow_pick.x + glow_pick.y, bright), 1.0);
+    }
+    """;
+
+// The glow blurred one way: x and y a texel's step in uv, z sigma in texels; w unused; then
+// one target pixel in uv.
+let GLOW_BLUR_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    layout(set = 3, binding = 0) uniform GlowBlur { vec4 glow_dir; vec4 glow_px; };
+    void main() {
+        vec2 uv = gl_FragCoord.xy * glow_px.xy;
+        vec3 sum = vec3(0.0);
+        float total = 0.0;
+        for (int i = -12; i <= 12; i++) {
+            float w = exp(-0.5 * float(i * i) / (glow_dir.z * glow_dir.z));
+            sum += w * texture(src, uv + float(i) * glow_dir.xy).rgb;
+            total += w;
+        }
+        result = vec4(sum / total, 1.0);
+    }
+    """;
+
+// The image with its glow added in linear light, into the target: x the glow's strength, yz
+// a target pixel in the glow's uv.
+let GLOW_ADD_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    layout(set = 2, binding = 1) uniform sampler2D glow;
+    layout(set = 3, binding = 0) uniform GlowAdd { vec4 glow_add; };
+    vec3 decode(vec3 c) {
+        return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+    }
+    vec3 encode(vec3 c) {
+        c = clamp(c, 0.0, 1.0);
+        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+    }
+    void main() {
+        vec4 c = texelFetch(src, ivec2(gl_FragCoord.xy), 0);
+        vec3 g = texture(glow, gl_FragCoord.xy * glow_add.yz).rgb;
+        result = vec4(encode(decode(c.rgb) + g * glow_add.x), c.a);
     }
     """;
 

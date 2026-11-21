@@ -363,7 +363,11 @@ fn report(r: rooms::Room, take: i64) {
     num(out, r.room_exposure);
     out.append(",\n    outside:       ");
     num(out, r.outside);
-    out.append(",\n};");
+    out.append(",\n");
+    room_line(out, "shell_sun: ", r.shell_sun);
+    room_line(out, "baked:     ", r.baked);
+    room_line(out, "bloom:     ", r.bloom);
+    out.append("};");
     print(out);
     // Also kept in a file, as a window's tool has no terminal to read.
     if write_file("../build/light-tune.txt", out[..]) { print("saved in build/light-tune.txt"); }
@@ -444,6 +448,9 @@ fn main() {
     room.pattern = four(argv, "--pattern", room.pattern);
     room.bounce = four(argv, "--bounce", room.bounce);
     room.room_exposure = number(argv, "--room-exposure", room.room_exposure);
+    room.shell_sun = four(argv, "--shell-sun", room.shell_sun);
+    room.baked = four(argv, "--baked", room.baked);
+    room.bloom = four(argv, "--bloom", room.bloom);
     room.outside = number(argv, "--outside-exposure", room.outside);
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
     room.exposure = number(argv, "--exposure", room.exposure);
@@ -540,6 +547,9 @@ fn main() {
                 print("the room's oak baked in ", g.room_ms, " ms, ", g.room_side, " texels a side, ",
                       render3d::room_bytes(g) / 1048576, " MiB; its mesh made in ", g.mesh_ms, " ms, ",
                       g.room_count / 3, " triangles and ", g.glass_count / 3, " of glass and lace");
+            }
+            if g.light_ms > 0.0 {
+                print("the room's light baked in ", g.light_ms, " ms, ", g.light_patches, " sun patches");
             }
             break;
         }

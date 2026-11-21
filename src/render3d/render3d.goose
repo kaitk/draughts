@@ -353,6 +353,20 @@ struct Gpu {
     outside_count: i64,
     outside_band:  Texture,
     outside_oak:   Texture,
+    // The shell's baked light (model3d::room_light), RGBA16F: made again when what it is
+    // baked from changes (light_key), its time (measuring) and how many sun patches lit it.
+    light_volume:  Texture,
+    light_for:     float4[8],
+    light_ms:      f64,
+    light_patches: i64,
+    // The window's glow (bloom_pass): its pipelines, made with the room's, and its two
+    // quarter-size RGBA16F targets, made again for another size.
+    bloom_pick: Pipeline,
+    bloom_blur: Pipeline,
+    bloom_add:  Pipeline,
+    bloom_a:    Texture,
+    bloom_b:    Texture,
+    bloom_size: int2,
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -568,6 +582,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.room_ms = (clock() - t0) * 1000.0;
     }
     put_paper(o, g);
+    bake_room_light(o, g);
     // The view out of the shell's windows, round its middle window: made once.
     if g.room_shell && g.outside_vb.id == 0 {
         var verts:   mesh::Vertex[>..] = [];
@@ -667,9 +682,68 @@ fn put_picture<O>(o: O&, which: i64, size: int2) -> Texture {
     var px: u8[>..] = [];
     px.resize(4 * size.x * size.y, 0);
     guard draughts_outside_picture(which, px[..], size.x, size.y) else { return Texture { 0 }; }
+    if which == 1 { soften(px, size, view_out::OAK_SOFT); }
     let t = o.gpu_sampled(size.x, size.y, 1, RGBA8_SRGB);
     o.gpu_upload(t, 0, px[..]);
     return t;
+}
+
+// A picture (sRGB, premultiplied in linear light) blurred by a Gaussian of `sigma` texels in
+// linear light, colour and coverage alike, so its edges go soft as out of focus: the oak
+// outside, once when it is put on the GPU.
+fn soften(px: u8[>..]&, size: int2, sigma: f32) {
+    guard sigma > 0.0 else { return; }
+    var to_linear: f32[256] = [0.0; 256];
+    for i in 256 { to_linear[i] = rooms::srgb_linear(i / 255.0); }
+    let n = size.x * size.y;
+    var a: float4[>..] = [];
+    a.resize(n, float4_0);
+    var b: float4[>..] = [];
+    b.resize(n, float4_0);
+    for i in n {
+        a[i] = float4 { to_linear[px[4 * i]], to_linear[px[4 * i + 1]], to_linear[px[4 * i + 2]], px[4 * i + 3] / 255.0 };
+    }
+    let reach = min((3.0 * sigma) as i64 + 1, 24);
+    var w:     f32[49] = [0.0; 49];
+    var total: f32     = 0.0;
+    for k in 2 * reach + 1 {
+        let d = (k - reach) as f32;
+        w[k] = exp(-0.5 * d * d / (sigma * sigma));
+        total += w[k];
+    }
+    for k in 2 * reach + 1 { w[k] = w[k] / total; }
+    blur_line(a, b, size, w, reach, true);
+    blur_line(b, a, size, w, reach, false);
+    for i in n {
+        let c = a[i];
+        px[4 * i] = srgb_byte(c.x);
+        px[4 * i + 1] = srgb_byte(c.y);
+        px[4 * i + 2] = srgb_byte(c.z);
+        px[4 * i + 3] = (clamp(c.w, 0.0, 1.0) * 255.0 + 0.5) as u8;
+    }
+}
+
+// soften()'s blur one way, from `from` into `to`, by the weights w over ±reach.
+fn blur_line(from: float4[>..]&, to: float4[>..]&, size: int2, w: f32[49]&, reach: i64, across: bool) {
+    for y in size.y {
+        for x in size.x {
+            var c = float4_0;
+            for k in 2 * reach + 1 {
+                let sx = if across { clamp(x + k - reach, 0, size.x - 1) } else { x };
+                let sy = if across { y } else { clamp(y + k - reach, 0, size.y - 1) };
+                c = c + from[sy * size.x + sx] * w[k];
+            }
+            to[y * size.x + x] = c;
+        }
+    }
+}
+
+// A linear value as an sRGB byte.
+fn srgb_byte(v: f32) -> u8 {
+    let c = clamp(v, 0.0, 1.0);
+    let e: f32 = 1.0 / 2.4;
+    let s = if c <= 0.0031308 { c * 12.92 } else { 1.055 * pow(c, e) - 0.055 };
+    return (s * 255.0 + 0.5) as u8;
 }
 
 // Mask `which` (draughts_material_mask's) on the GPU, R8 with its mips, each level the
@@ -751,6 +825,13 @@ struct SurfacesBlock {
     brass:         float4,
     lace_light:    float4,
     table:         float4,
+    shell_sun:     float4,
+    room_baked:    float4,
+    light_box:     float4,
+    light_grid:    float4,
+    room_box:      float4,
+    room_doors:    float4,
+    room_heights:  float4,
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
@@ -776,6 +857,33 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     let stove_end = room_shell::room_of(s, s.walls[room_shell::STOVE_WALL].a);
     let far_end = room_shell::room_of(s, s.walls[room_shell::FAR_WALL].a);
     b.shell_ends = float4 { stove_end.x, far_end.x, 0.0, 0.0 };
+    // Its own sun, and its baked light where it is made.
+    let r = g.room;
+    b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, 0.0, 0.0 };
+    if light_baked(g) && g.light_volume.id != 0 {
+        b.room_baked = float4 { 1.0, 0.0, r.baked.z, r.baked.w };
+        let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x, room_light::PLAN_Y0 });
+        b.light_box = float4 { corner.x, surfaces::FLOOR_Y, corner.y, room_light::CELL * metre };
+        b.light_grid = float4 { room_light::NX, room_light::NZ, room_light::NH, 0.0 };
+        // The box the reflections meet, and its doors.
+        let near = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x, s.walls[room_shell::WINDOW_WALL].a.y });
+        let far = room_shell::room_of(s, float2 { s.walls[room_shell::STOVE_WALL].a.x, s.walls[room_shell::HALL_WALL].a.y });
+        b.room_box = float4 { near.x, far.x, near.y, far.y };
+        var doors = float4_0;
+        var top: f32 = 0.0;
+        for k in s.count {
+            let d = s.openings[k];
+            guard d.kind == room_shell::DOOR else { continue; }
+            let wl = s.walls[d.wall];
+            let at = wl.a + normalize(wl.b - wl.a) * d.mid;
+            let mid = room_shell::room_of(s, at);
+            let half = (0.5 * d.width + room_shell::ARCHITRAVE) * metre;
+            if d.wall == room_shell::HALL_WALL { doors.x = mid.x; doors.y = half; } else { doors.z = mid.y; doors.w = half; }
+            top = d.height + room_shell::ARCHITRAVE;
+        }
+        b.room_doors = doors;
+        b.room_heights = float4 { surfaces::FLOOR_Y + s.ceiling * metre, top, room_shell::WAINSCOT_TOP, 0.0 };
+    }
     return b;
 }
 
@@ -793,7 +901,156 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light, k.paint,
                     k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0, k.brass,
                     model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w),
-                    float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 } }
+                    float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 }, float4 { 0.0, 1.0, 0.0, 0.0 }, float4_0, float4_0,
+                    float4_0, float4_0, float4_0, float4_0 }
+}
+
+// The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.
+fn keep_tree_small(map: const u8[:], w: i64, h: i64) {
+    var at = 0;
+    for level in TREE_LEVEL { at += 4 * (w >> level) * (h >> level); }
+    let sw = w >> TREE_LEVEL;
+    let sh = h >> TREE_LEVEL;
+    tree_small_w = 0;
+    tree_small_h = 0;
+    guard 4 * sw * sh <= TREE_SMALL && at + 4 * sw * sh <= map.len else { return; }
+    for i in 4 * sw * sh { tree_small[i] = map[at + i]; }
+    tree_small_w = sw;
+    tree_small_h = sh;
+}
+
+// The baked light's atlas to bind, or another texture where none is made: ROOM_FRAG reads
+// it only when its block says it is on.
+fn light_or_stand_in(g: Gpu&) -> Texture { if g.light_volume.id != 0 { g.light_volume } else { g.crown_map } }
+
+// Whether the shell's light is baked: the shell shown and its room asking for it.
+fn light_baked(g: Gpu&) -> bool { g.room_on && g.room_shell && g.room.baked.x + g.room.baked.y > 0.0 }
+
+// What the shell's baked light is made from: the key, the room's light, the tree, the
+// table's top.
+fn light_key(g: Gpu&) -> float4[8] {
+    let f = g.frame;
+    let r = g.room;
+    return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.room_axes,
+            float4 { table_radius(g), g.tree_ms as f32, 0.0, 0.0 }];
+}
+
+// The bake's buffers, sized once: the probes' atlas in floats and as half floats, the sun's
+// patches, how much of the sun the tree lets through each sun ray's glass point, and the
+// tree's map at a low mip, kept on the CPU when it is baked (bake_tree).
+var light_atlas:   f32[room_light::ATLAS_FLOATS];
+var light_bytes:   u8[ATLAS_BYTES];
+var light_patches: room_light::Patch[room_light::BINS];
+var light_tree:    f32[room_light::RAYS];
+let ATLAS_BYTES = 301320;   // room_light::ATLAS_W × ATLAS_H × 8
+let TREE_LEVEL = 3;
+let TREE_SMALL = 98304;     // trees::SHELL_W × SHELL_H × 4 >> 2 × TREE_LEVEL
+var tree_small:   u8[TREE_SMALL];
+var tree_small_w: i64 = 0;
+var tree_small_h: i64 = 0;
+
+// The shell's light baked again (model3d::room_light) when what it is made from changed:
+// before a draw, outside a pass, after the tree's map. Tens of milliseconds on the CPU;
+// nothing allocated, the buffers above fixed.
+fn bake_room_light<O>(o: O&, g: Gpu&) {
+    guard light_baked(g) else { return; }
+    let key = light_key(g);
+    var same = g.light_volume.id != 0;
+    for i in 8 { if !same4(key[i], g.light_for[i]) { same = false; } }
+    guard !same else { return; }
+    let t0 = clock();
+    let s = room_shell::LIBRARY;
+    let f = g.frame;
+    let r = g.room;
+    let fr = g.room_frame;
+    let l = float3 { f.light_dir.x, f.light_dir.y, f.light_dir.z };
+    // The sun in the plan's frame: the room's u and v are the plan's -x and -y.
+    let toward = float3 { -(l.x * fr.along.x + l.z * fr.along.y), -(l.x * fr.into.x + l.z * fr.into.y), l.y };
+    // The sky through the windows: the harmonics toward the window, 20° up.
+    let up: f32 = 0.342;
+    let out = float3 { -fr.into.x * 0.94, up, -fr.into.y * 0.94 };
+    let sun = room_light::Sun {
+        toward: toward,
+        light:  float3 { f.light_color.x, f.light_color.y, f.light_color.z } * (f.light_dir.w * r.shell_sun.y),
+        sky:    sh_at(f.sh, out) * f.params.z,
+        table: float4 { s.table.x, s.table.y, table_radius(g) / surfaces::METRE,
+                        (mesh::TABLE_TOP - surfaces::FLOOR_Y) / surfaces::METRE },
+        sky_gain:    r.baked.x,
+        bounce_gain: r.baked.y,
+    };
+    tree_through(g, l);
+    let n = room_light::sun_patches(sun, light_tree[..], light_patches);
+    room_light::bake(sun, light_patches, n, light_atlas[..]);
+    for i in room_light::ATLAS_FLOATS {
+        let h = half_bits(light_atlas[i]);
+        light_bytes[2 * i] = (h & 0xFF) as u8;
+        light_bytes[2 * i + 1] = (h >> 8) as u8;
+    }
+    if g.light_volume.id == 0 { g.light_volume = o.gpu_sampled(room_light::ATLAS_W, room_light::ATLAS_H, 1, RGBA16F); }
+    o.gpu_upload(g.light_volume, 0, light_bytes[..]);
+    g.light_for = key;
+    g.light_patches = n;
+    g.light_ms = (clock() - t0) * 1000.0;
+}
+
+// The nine harmonics' light toward d.
+fn sh_at(sh: float4[9], d: float3) -> float3 {
+    let b: f32[9] = [0.282095, 0.488603 * d.y, 0.488603 * d.z, 0.488603 * d.x, 1.092548 * d.x * d.y, 1.092548 * d.y * d.z,
+                     0.315392 * (3.0 * d.y * d.y - 1.0), 1.092548 * d.x * d.z, 0.546274 * (d.x * d.x - d.z * d.z)];
+    var c = float3_0;
+    for i in 9 { c = c + float3 { sh[i].x, sh[i].y, sh[i].z } * b[i]; }
+    return float3 { max(c.x, 0.0), max(c.y, 0.0), max(c.z, 0.0) };
+}
+
+// How much of the sun the tree outside lets through each sun ray's glass point
+// (room_light::ray_point) into light_tree, as LIGHT_FN's tree_light takes it, from the
+// tree's map at a low mip, its blur standing for the leaves' flecks; 1 with no tree.
+fn tree_through(g: Gpu&, l: float3) {
+    let f = g.frame;
+    let s = room_shell::LIBRARY;
+    let fr = g.room_frame;
+    let nw = float2 { -fr.into.x, -fr.into.y };
+    let along = fr.along;
+    let toward = l.x * nw.x + l.z * nw.y;
+    let on = f.tree.x > 0.0 && tree_small_w > 0 && toward > 0.05;
+    for k in 3 {
+        for j in room_light::RAYS_Y {
+            for i in room_light::RAYS_X {
+                let at = (k * room_light::RAYS_Y + j) * room_light::RAYS_X + i;
+                light_tree[at] = 1.0;
+                guard on else { continue; }
+                let q = room_light::ray_point(k, i, j);
+                let lo = room_shell::room_of(s, float2 { q.x, q.y });
+                let px = along.x * lo.x + fr.into.x * lo.y;
+                let pz = along.y * lo.x + fr.into.y * lo.y;
+                let py = surfaces::FLOOR_Y + q.z * surfaces::METRE;
+                let back = (px * nw.x + pz * nw.y) / toward;
+                let mx = px * along.x + pz * along.y - (l.x * along.x + l.z * along.y) * back;
+                let my = py - l.y * back;
+                let u = (mx - f.tree.z) / f.tree.x + 0.5;
+                let v = (my - f.tree.w) / f.tree.y + 0.5;
+                let tx = clamp((u * tree_small_w) as i64, 0, tree_small_w - 1);
+                let ty = clamp((v * tree_small_h) as i64, 0, tree_small_h - 1);
+                let o = 4 * (ty * tree_small_w + tx);
+                light_tree[at] = (tree_small[o] as f32) * tree_small[o + 1] * tree_small[o + 2] * tree_small[o + 3] / 4228250625.0;
+            }
+        }
+    }
+}
+
+// x as a half float's bits: tiny values flushed to zero, large ones held at the largest.
+fn half_bits(x: f32) -> u16 {
+    let a = abs(x);
+    let sign: u16 = if x < 0.0 { 0x8000 } else { 0 };
+    guard a >= 6.104e-5 else { return sign; }
+    guard a < 65504.0 else { return sign | 0x7bff; }
+    var e = floor(log2(a));
+    var bits = round((a / exp2(e) - 1.0) * 1024.0);
+    if bits >= 1024.0 {
+        bits = 0.0;
+        e += 1.0;
+    }
+    return sign | (((e + 15.0) as u16) << 10) | (bits as u16);
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1
@@ -1129,6 +1386,7 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
         trees::grow(t, s, v);
         trees::draw_map(t, s, v, map);
     }
+    keep_tree_small(map[..], v.w, v.h);
     if g.tree_map.id != 0 && (g.tree_w != v.w || g.tree_h != v.h) {
         o.gpu_release(g.tree_map);
         g.tree_map = Texture { 0 };
@@ -1366,8 +1624,35 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
         g.shadow_dirty = false;
     }
     occlusion(o, g);
-    o.board_pass(g, target, size, backdrop);
+    // With the window's glow the pass draws into the image, and the glow adds it into the
+    // target; not where the image is the target (the app's kept image, which shows no shell).
+    let glowing = bloom_shown(g) && out.id != 0;
+    o.board_pass(g, if glowing { g.image } else { target }, size, backdrop);
+    if glowing { o.bloom_pass(g, g.image, target, size); }
     if keep_depth { o.draw_depth(g); }
+}
+
+// Whether the window's glow is drawn: the shell's room with its bloom on.
+fn bloom_shown(g: Gpu&) -> bool { room_shown(g) && g.room_shell && g.room.bloom.x > 0.0 && g.bloom_add.id != 0 }
+
+// GLOW_PICK_FRAG's, GLOW_BLUR_FRAG's, and GLOW_ADD_FRAG's blocks.
+struct GlowPick { pick: float4 }
+struct GlowBlur { dir: float4, px: float4 }
+struct GlowAdd { add: float4 }
+
+// The quarter size the glow is worked out at.
+fn bloom_size_of(size: int2) -> int2 { int2 { max(size.x / 4, 1), max(size.y / 4, 1) } }
+fn bloom_pick_of(g: Gpu&, size: int2) -> GlowPick {
+    let b = g.room.bloom;
+    GlowPick { float4 { b.y, b.z, 1.0 / size.x, 1.0 / size.y } }
+}
+fn bloom_blur_of(g: Gpu&, q: int2, across: bool) -> GlowBlur {
+    let step = if across { float2 { 1.0 / q.x, 0.0 } } else { float2 { 0.0, 1.0 / q.y } };
+    GlowBlur { float4 { step.x, step.y, max(g.room.bloom.w, 0.5), 0.0 }, float4 { 1.0 / q.x, 1.0 / q.y, 0.0, 0.0 } }
+}
+fn bloom_add_of(g: Gpu&, size: int2) -> GlowAdd {
+    let q = bloom_size_of(size);
+    GlowAdd { float4 { g.room.bloom.x, 1.0 / (4.0 * q.x), 1.0 / (4.0 * q.y), 0.0 } }
 }
 
 // The pieces' occlusion of the field drawn into g.occ_map where the squares changed since

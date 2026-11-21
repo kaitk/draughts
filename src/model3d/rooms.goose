@@ -91,6 +91,19 @@ struct Room {
     // and through the room's tonemap: 1.8 takes the sky into the shoulder, as the
     // concepts' bright windows do.
     outside: f32 = 1.8,
+    // The library's shell (room_shell) lit as a room of its own (task 107's light round):
+    // x how fast the sun's penumbra widens through its windows (world units a unit of
+    // distance; 0 the pattern's, pattern.y; the sun's disc alone gives 0.0047), y the sun
+    // on the room's surfaces over the board's.
+    shell_sun: float4 = float4 { 0.0, 1.0, 0.0, 0.0 },
+    // Its baked light (model3d::room_light): x the sky through the windows, y the sun's
+    // patches thrown back once, z how much of the harmonics the room keeps beside them, w
+    // how much of bounce; x and y 0, nothing baked and the harmonics and bounce as before.
+    baked: float4 = float4 { 0.0, 0.0, 1.0, 1.0 },
+    // The window's glow round its bright glass and lace (render3d::bloom_pass), no rays: x
+    // how strong (0 none), y from what whiteness (the least channel, sRGB), z the knee
+    // over it, w how wide (sigma in quarter pixels).
+    bloom: float4 = float4_0,
 }
 
 // The library on the garden side, south-west, a mid-October afternoon
@@ -120,6 +133,9 @@ let AUTUMN = Room {
     // in the shade, the sun's patch bright.
     bounce:        float4 { 0.85, 0.78, 0.7, 0.2 },
     room_exposure: 1.8,
+    shell_sun:     float4 { 0.0055, 2.2, 0.0, 0.0 },
+    baked:         float4 { 7.0, 12.0, 0.2, 0.3 },
+    bloom:         float4 { 0.45, 0.72, 0.15, 4.0 },
     ..
 };
 

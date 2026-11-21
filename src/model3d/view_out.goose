@@ -38,6 +38,9 @@ let OAK_H:  f32 = 20.0;
 // The pictures' sizes in texels (design/materials/outside_band.png, outside_oak.png).
 let BAND_TEXELS = int2 { 2048, 336 };
 let OAK_TEXELS = int2 { 584, 392 };
+// How soft the oak is put on the GPU (render3d::soften): a Gaussian's sigma in its texels,
+// as out of focus as the band's trees look from the room (task 107's light round).
+let OAK_SOFT: f32 = 3.5;
 
 // The direction θ degrees right of straight out, in the room's u and v.
 fn toward(theta: f32) -> float2 {

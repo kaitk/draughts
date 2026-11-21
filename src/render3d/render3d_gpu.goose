@@ -17,6 +17,7 @@ type Pipeline = gfx::Pipeline;
 let RGBA8 = gfx::RGBA8;
 let RGBA8_SRGB = gfx::RGBA8_SRGB;
 let R8 = gfx::R8;
+let RGBA16F = gfx::RGBA16F;
 fn mul(a: Mat, b: Mat) -> Mat { gfx::mul(a, b) }
 fn ortho(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Mat {
     gfx::ortho(left, right, bottom, top, near, far)
@@ -163,6 +164,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 5, g.paper_mask, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 6, g.plaster_tone, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 7, g.lace_mask, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 8, render3d::light_or_stand_in(g), g.linear);
         gfx::uniforms(gfx::VERTEX, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::surfaces_block(g));
@@ -230,6 +232,47 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
     g.outside = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::OUTSIDE_VERT),
                               embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
                               gfx::PipelineDesc { cull: gfx::CULL_NONE, blend: gfx::BLEND_PREMULTIPLIED });
+    let full = embed_shader("vert", shaders::FULL_VERT);
+    g.bloom_pick = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_PICK_FRAG));
+    g.bloom_blur = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_BLUR_FRAG));
+    g.bloom_add = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_ADD_FRAG));
+}
+
+// The window's glow (render3d::bloom_shown): what is bright in `image` picked into a quarter
+// of its size, blurred across and down, and added back over it into `target`.
+fn bloom_pass(own: Own&, g: render3d::Gpu&, image: Texture, target: Texture, size: int2) {
+    let q = render3d::bloom_size_of(size);
+    if g.bloom_a.id == 0 || g.bloom_size.x != q.x || g.bloom_size.y != q.y {
+        if g.bloom_a.id != 0 { gpu_release_waited(own, g.bloom_a, g.bloom_b); }
+        g.bloom_a = gfx::render_target(q.x, q.y, gfx::RGBA16F);
+        g.bloom_b = gfx::render_target(q.x, q.y, gfx::RGBA16F);
+        g.bloom_size = q;
+    }
+    gfx::begin_pass(g.bloom_a, gfx::Texture { 0 }, float4_0);
+    gfx::bind(g.bloom_pick);
+    gfx::bind_texture(gfx::FRAGMENT, 0, image, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, render3d::bloom_pick_of(g, size));
+    gfx::draw(3);
+    gfx::end_pass();
+    for k in 2 {
+        let from = if k == 0 { g.bloom_a } else { g.bloom_b };
+        let to = if k == 0 { g.bloom_b } else { g.bloom_a };
+        gfx::begin_pass(to, gfx::Texture { 0 }, float4_0);
+        gfx::bind(g.bloom_blur);
+        gfx::bind_texture(gfx::FRAGMENT, 0, from, g.linear);
+        gfx::uniforms(gfx::FRAGMENT, 0, render3d::bloom_blur_of(g, q, k == 0));
+        gfx::draw(3);
+        gfx::end_pass();
+    }
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    gfx::begin_pass(pass);
+    gfx::bind(g.bloom_add);
+    gfx::bind_texture(gfx::FRAGMENT, 0, image, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 1, g.bloom_a, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, render3d::bloom_add_of(g, size));
+    gfx::draw(3);
+    gfx::end_pass();
 }
 
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
@@ -863,7 +906,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.tree_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.wall_albedo,
-                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak];
+                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
@@ -871,7 +914,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside];
+                     g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick, g.bloom_blur, g.bloom_add];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();

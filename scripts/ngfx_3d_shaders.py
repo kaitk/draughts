@@ -69,6 +69,9 @@ MODULES = [
     ("r3d_dust", ["VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["DUST_FRAG"]),
     ("r3d_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TONE_FN", "ROOM_FRAG"]),
     ("r3d_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["FS_SET", "FRAME", "TONE_FN", "OUTSIDE_FRAG"]),
+    ("r3d_glow_pick", FULL, ["GLOW_PICK_FRAG"]),
+    ("r3d_glow_blur", FULL, ["GLOW_BLUR_FRAG"]),
+    ("r3d_glow_add", FULL, ["GLOW_ADD_FRAG"]),
 ]
 
 def products(body):
@@ -102,7 +105,7 @@ def module(name, vs_parts, fs_parts):
         offset += sum(n for _, _, n in fields)
     buffers = unique((vs, fs), "buffers")
     textures = unique((vs, fs), "textures")
-    assert len(buffers) <= 3 and len(textures) <= 8
+    assert len(buffers) <= 3 and len(textures) <= 12
 
     out = []
     w = out.append

@@ -142,6 +142,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 5, g.paper_mask, g.aniso);
         slot(t, 6, g.plaster_tone, g.aniso);
         slot(t, 7, g.lace_mask, g.aniso);
+        slot(t, 8, render3d::light_or_stand_in(g), g.linear);
         nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
@@ -200,6 +201,56 @@ fn make_room(own: Own&, g: Gpu&) {
     g.bake_room = module(embed_file("../../build/ngfx/blobs/r3d_bake_room.blob"));
     g.outside = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_outside.blob"),
                              ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
+    g.bloom_pick = module(embed_file("../../build/ngfx/blobs/r3d_glow_pick.blob"));
+    g.bloom_blur = module(embed_file("../../build/ngfx/blobs/r3d_glow_blur.blob"));
+    g.bloom_add = module(embed_file("../../build/ngfx/blobs/r3d_glow_add.blob"));
+}
+
+// The window's glow (render3d::bloom_shown): what is bright in `image` picked into a quarter
+// of its size, blurred across and down, and added back over it into `target`; the modules'
+// headers: the source (and the glow), their one block.
+fn bloom_pass(own: Own&, g: Gpu&, image: Texture, target: Texture, size: int2) {
+    let q = render3d::bloom_size_of(size);
+    if g.bloom_a.id == 0 || g.bloom_size.x != q.x || g.bloom_size.y != q.y {
+        if g.bloom_a.id != 0 { gpu_release_waited(own, g.bloom_a, g.bloom_b); }
+        g.bloom_a = nx::render_target(q.x, q.y, ngfx::RGBA16F);
+        g.bloom_b = nx::render_target(q.x, q.y, ngfx::RGBA16F);
+        g.bloom_size = q;
+    }
+    nx::begin_pass(g.bloom_a, nx::Texture { 0 }, float4_0);
+    nx::bind(g.bloom_pick);
+    var r = no_root();
+    slot(r, 0, image, g.linear);
+    let pick: render3d::GlowPick[1] = [render3d::bloom_pick_of(g, size)];
+    r.u = ngfx::frame_data(bytes_of(pick));
+    ngfx::draw(ngfx::root(r), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
+    for k in 2 {
+        let from = if k == 0 { g.bloom_a } else { g.bloom_b };
+        let to = if k == 0 { g.bloom_b } else { g.bloom_a };
+        nx::begin_pass(to, nx::Texture { 0 }, float4_0);
+        nx::bind(g.bloom_blur);
+        var b = no_root();
+        slot(b, 0, from, g.linear);
+        let blur: render3d::GlowBlur[1] = [render3d::bloom_blur_of(g, q, k == 0)];
+        b.u = ngfx::frame_data(bytes_of(blur));
+        ngfx::draw(ngfx::root(b), 3);
+        ngfx::end_pass();
+        barrier_between_passes();
+    }
+    var pass = nx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    nx::begin_pass(pass);
+    nx::bind(g.bloom_add);
+    var a = no_root();
+    slot(a, 0, image, g.linear);
+    slot(a, 1, g.bloom_a, g.linear);
+    let add: render3d::GlowAdd[1] = [render3d::bloom_add_of(g, size)];
+    a.u = ngfx::frame_data(bytes_of(add));
+    ngfx::draw(ngfx::root(a), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
 }
 
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
@@ -263,9 +314,9 @@ fn mul(m: Mat, v: float4) -> float4 { m.c0 * v.x + m.c1 * v.y + m.c2 * v.z + m.c
 // Every module's root (src/ngfx/shaders/r3d.slang): the frame's block and the uniform
 // blocks' float4s in this frame's memory, the storage buffers, the vertices, and the
 // textures with their samplers in the slots each module's header lists.
-struct Root { frame: u64, u: u64, buf0: u64, buf1: u64, buf2: u64, verts: u64, tex: u32[8], smp: u32[8] }
+struct Root { frame: u64, u: u64, buf0: u64, buf1: u64, buf2: u64, verts: u64, tex: u32[12], smp: u32[12] }
 
-fn no_root() -> Root { Root { frame: 0, u: 0, buf0: 0, buf1: 0, buf2: 0, verts: 0, tex: [0; 8], smp: [0; 8] } }
+fn no_root() -> Root { Root { frame: 0, u: 0, buf0: 0, buf1: 0, buf2: 0, verts: 0, tex: [0; 12], smp: [0; 12] } }
 
 // How the 3D pass is antialiased: not at all; SMAA 1x over the pass drawn at 1x; the
 // pass drawn at twice the size and shrunk (2 x 2 supersampling); or 4× multisampled into
@@ -912,7 +963,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
                     g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
-                    g.outside_band, g.outside_oak];
+                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
@@ -921,7 +972,8 @@ fn release(own: Own&, g: Gpu&) {
     for s in samplers { if s.id != 0 { nx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
-                     g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside];
+                     g.smaa_blend, g.table_lit, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick,
+                     g.bloom_blur, g.bloom_add];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();

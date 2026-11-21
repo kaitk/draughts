@@ -12,7 +12,7 @@ vec4 xf(Mat m, vec4 v) { return m.c0 * v.x + m.c1 * v.y + m.c2 * v.z + m.c3 * v.
 
 // Every 3D module's root (render3d.goose's Root): the frame's block, the uniform
 // blocks' float4s in the order each module's header lists, up to three storage buffers,
-// the vertices (mesh::Vertex, ten floats), and eight texture and sampler slots.
+// the vertices (mesh::Vertex, ten floats), and twelve texture and sampler slots.
 struct Root {
     Frame* frame;
     vec4* u;
@@ -20,7 +20,7 @@ struct Root {
     vec4* buf1;
     vec4* buf2;
     float* verts;
-    uint4 tex0; uint4 tex1;
-    uint4 smp0; uint4 smp1;
+    uint4 tex0; uint4 tex1; uint4 tex2;
+    uint4 smp0; uint4 smp1; uint4 smp2;
 };
 GPU_ROOT(Root, root);
