@@ -154,7 +154,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
     // room's box sharply.
     if render3d::room_shown(g) {
         let planar = render3d::planar_seen_on_floor(g);
-        let split = if planar && g.room_sharp.id != 0 { g.room_sharp_from } else { g.room_count };
+        let split = if planar && g.room_sharp.id != 0 { g.room_from[render3d::GROUP_METALS] } else { g.room_count };
         nx::bind(if planar { g.room_planar } else { g.room_lit });
         var t = no_root();
         t.frame = f;

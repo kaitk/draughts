@@ -180,7 +180,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
     // books after the rest with the pipeline that sees the room's box sharply.
     if render3d::room_shown(g) {
         let planar = render3d::planar_seen_on_floor(g);
-        let split = if planar && g.room_sharp.id != 0 { g.room_sharp_from } else { g.room_count };
+        let split = if planar && g.room_sharp.id != 0 { g.room_from[render3d::GROUP_METALS] } else { g.room_count };
         bind_room(g, f, if planar { g.room_planar } else { g.room_lit }, planar);
         gfx::draw_indexed(split);
         if split < g.room_count {

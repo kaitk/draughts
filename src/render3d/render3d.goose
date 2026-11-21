@@ -339,23 +339,23 @@ struct Gpu {
     mesh_ms:      f64,              // the mesh's making (measuring)
     // The shell's corners' shade (model3d::corner_map), baked with its mesh: the atlas, R8,
     // the room's corners it was baked for, and the bake's time (measuring).
-    corner_map:      Texture,
-    corner_for:      float4,
-    corner_ms:       f64,
-    plaster_tone:    Texture,       // the plaster's tone, R8 as the wallpaper's
-    lace_mask:       Texture,       // the curtains' lace, R8 with its mips (surfaces::LACE_TEXELS)
-    lace_way:        i64,           // which lace (surfaces::LACE_WAYS), and the one on the GPU
-    lace_put:        i64,
-    glass_vb:        Buffer,        // the shell's glass and lace, drawn blended after the rest
-    glass_ib:        Buffer,
-    glass_count:     i64,
-    room_glass:      Pipeline,
-    room_vb:         Buffer,
-    room_ib:         Buffer,
-    room_count:      i64,
-    room_sharp_from: i64,           // the brass's and books' indices from here on (sharp_last)
-    room_lit:        Pipeline,      // made when first wanted (make_room)
-    bake_room:       Pipeline,
+    corner_map:   Texture,
+    corner_for:   float4,
+    corner_ms:    f64,
+    plaster_tone: Texture,          // the plaster's tone, R8 as the wallpaper's
+    lace_mask:    Texture,          // the curtains' lace, R8 with its mips (surfaces::LACE_TEXELS)
+    lace_way:     i64,              // which lace (surfaces::LACE_WAYS), and the one on the GPU
+    lace_put:     i64,
+    glass_vb:     Buffer,           // the shell's glass and lace, drawn blended after the rest
+    glass_ib:     Buffer,
+    glass_count:  i64,
+    room_glass:   Pipeline,
+    room_vb:      Buffer,
+    room_ib:      Buffer,
+    room_count:   i64,
+    room_from:    i64[ROOM_GROUPS], // where each material group's indices start (by_group)
+    room_lit:     Pipeline,         // made when first wanted (make_room)
+    bake_room:    Pipeline,
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
     // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
     // pictures, the far band and the oak, RGBA8 sRGB with no mips.
@@ -677,26 +677,43 @@ fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY, shell: bool = f
     g.room_shell = shell;
 }
 
-// The room's triangles of the brass and the books moved after the rest, each part in its
-// order: where the first of them now is. Only they see the room's box sharply
-// (shaders::ROOM_SHARP), drawn with a pipeline of their own.
-fn sharp_last(room: corner_map::RoomVertex[>..]&, indices: u32[>..]&) -> i64 {
-    var sharp: u32[>..] = [];
-    var kept = 0;
-    var i = 0;
-    while i < indices.len {
-        let kind = floor(room[indices[i] as i64].mat + 0.001);
-        if kind == surfaces::MAT_BRASS || kind >= surfaces::MAT_BOOK {
-            for k in 0..3 { sharp.push(indices[i + k]); }
-        } else {
-            for k in 0..3 { indices[kept + k] = indices[i + k]; }
-            kept += 3;
-        }
-        i += 3;
-    }
-    for k in 0..sharp.len { indices[kept + k] = sharp[k]; }
-    return kept;
+// The room's materials in groups, each drawn with a pipeline of its own whose shader holds
+// only its materials' code: the floor; the walls' surfaces (the panelling oak, the paper,
+// the plaster and the ceiling, the paint and the sills, the cord); the metals (the brass,
+// and the books with their gilt), which see the room's box sharply. The glass and the lace
+// are a mesh of their own.
+let GROUP_FLOOR = 0;
+let GROUP_WALLS = 1;
+let GROUP_METALS = 2;
+let ROOM_GROUPS = 3;
+fn room_group(mat: f32) -> i64 {
+    let kind = floor(mat + 0.001);
+    if kind < surfaces::MAT_FLOOR + 0.5 { return GROUP_FLOOR; }
+    if kind == surfaces::MAT_BRASS || kind >= surfaces::MAT_BOOK { return GROUP_METALS; }
+    return GROUP_WALLS;
 }
+
+// The room's triangles sorted by group (room_group), each group's in its order: where each
+// group's indices start.
+fn by_group(room: corner_map::RoomVertex[>..]&, indices: u32[>..]&) -> i64[ROOM_GROUPS] {
+    var sorted: u32[>..]         = [];
+    var from:   i64[ROOM_GROUPS] = [0; ROOM_GROUPS];
+    for k in ROOM_GROUPS {
+        from[k] = sorted.len;
+        var i = 0;
+        while i < indices.len {
+            if room_group(room[indices[i] as i64].mat) == k {
+                for j in 0..3 { sorted.push(indices[i + j]); }
+            }
+            i += 3;
+        }
+    }
+    for i in 0..indices.len { indices[i] = sorted[i]; }
+    return from;
+}
+
+// Where group k's indices end.
+fn group_end(g: Gpu&, k: i64) -> i64 { if k + 1 < ROOM_GROUPS { g.room_from[k + 1] } else { g.room_count } }
 
 // Whether the board's pass draws the room.
 fn room_shown(g: Gpu&) -> bool { g.room_on && g.room_baked && g.room_vb.id != 0 && g.room_lit.id != 0 }
@@ -797,7 +814,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         for v in verts { room.push(corner_map::room_vertex(v, float2_0, float2_0)); }
         for i in indices { room_indices.push(i); }
     }
-    g.room_sharp_from = sharp_last(room, room_indices);
+    g.room_from = by_group(room, room_indices);
     var glass_room: corner_map::RoomVertex[>..] = [];
     for v in glass { glass_room.push(corner_map::room_vertex(v, float2_0, float2_0)); }
     if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }
