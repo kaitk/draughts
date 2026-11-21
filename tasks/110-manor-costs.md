@@ -189,6 +189,10 @@ results, or keep baking at run time behind a loader when the room or a look is c
   already). The 0.95 m top: no cost. Fewer sides on the knot, or 120 steps (3.5 ms, the
   same shape), if a device shows it.
 
+- The books' rounded spines (2026-11-21): four strips a spine for two, 1,536 triangles
+  more for the 384 books (the shell 30,274 to 31,810); the mesh's making time within its
+  noise. The swept mouldings' smooth normals cost nothing.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

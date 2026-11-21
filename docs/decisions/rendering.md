@@ -843,6 +843,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   rounded edge shade smoothly, and each segment keeps its own at a sharper turn, so the
   fillets and steps stay crisp. It replaces a flat normal a segment, which showed the
   cornice's long cove as bands. No triangles more: each segment had its own vertices.
+- A bound book's spine is a curve of five columns, four strips (2026-11-21, task 107;
+  `books::spine_at`), replacing two strips meeting at a crest: from below a shelf each
+  spine read as two flat facets with a dark line down its middle. Its columns stand back
+  on a parabola (the edges 0.12 of the thickness), and their normals turn a quarter further
+  than `bulge`'s, rounder than the curve (54° at the edges), so the roundness reads across
+  the room and the edges roll into the boards. Flat boards and wrappers keep their slight
+  turn. Four triangles more a book (1,536 for the 384).
 - The sun's highlight takes only the sun that comes through a window (2026-11-21, task
   107; `LIGHT_FN`'s `window_open`): the window's pattern keeps out `room.y` of the key in
   its shade (`window_light`), so the rest, 10% in autumn, lit every surface's GGX highlight

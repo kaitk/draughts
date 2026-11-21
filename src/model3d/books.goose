@@ -316,6 +316,18 @@ fn bulge(c: Cell) -> float2 {
     if c.binding >= BOARDS { float2 { 0.0, 0.2 } } else { float2 { 0.12, 0.75 } }
 }
 
+// A spine is SPINE_COLS columns across, u from -1 to 1: how far column u stands back (of
+// the book's thickness, a parabola) and its normal's turn toward that side, bent a quarter
+// further than bulge's and rounder than the curve, so the roundness reads from across the
+// room and the edges roll into the boards.
+let SPINE_COLS = 5;
+let SPINE_BEND: f32 = 1.25;
+fn spine_at(bg: float2, j: i64) -> float3 {
+    let u: f32 = 2.0 * j / (SPINE_COLS - 1) - 1.0;
+    let e: f32 = 0.7;
+    return float3 { 0.5 * (u + 1.0), bg.x * u * u, sign(u) * SPINE_BEND * bg.y * pow(abs(u), e) };
+}
+
 // A point of a book standing (s along, y up) turned by its lean `r` (the pivot's s and y,
 // the lean's cosine and sine) into place; and a normal.
 fn turned(r: float4, q: float3) -> float3 {
@@ -351,17 +363,22 @@ fn upright(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
     let by_side = 0.7 + 0.3 * smoothstep(0.0 as f32, 0.15 as f32, min(sm - sh.s0, sh.s1 - sm));
     let foot_ao = 0.75 * by_side;
     let top_ao = (0.25 + 0.3 * clamp(room_over / 0.15, 0.0, 1.0)) * by_side;
-    let edge = normalize(float3 { -sin(bg.y), 0.0, cos(bg.y) });
-    let edge_r = float3 { -edge.x, 0.0, edge.z };
-    let cols: float3[3] = [float3 { s0, 0.0, ze }, float3 { sm, 0.0, zf }, float3 { s1, 0.0, ze }];
-    let ns:   float3[3] = [edge, float3 { 0.0, 0.0, 1.0 }, edge_r];
-    for k in 2 {
+    var cols:      float3[SPINE_COLS] = [float3_0; SPINE_COLS];
+    var ns:        float3[SPINE_COLS] = [float3_0; SPINE_COLS];
+    var across_at: f32[SPINE_COLS]    = [0.0; SPINE_COLS];
+    for j in SPINE_COLS {
+        let q = spine_at(bg, j);
+        cols[j] = float3 { s0 + q.x * t, 0.0, zf - q.y * t };
+        ns[j] = float3 { sin(q.z), 0.0, cos(q.z) };
+        across_at[j] = q.x;
+    }
+    for k in SPINE_COLS - 1 {
         let a = cols[k];
         let e = cols[k + 1];
         let base = verts.len as u32;
         let pts:    float3[4] = [float3 { a.x, y0, a.z }, float3 { e.x, y0, e.z }, float3 { e.x, y0 + h, e.z }, float3 { a.x, y0 + h, a.z }];
         let nn:     float3[4] = [ns[k], ns[k + 1], ns[k + 1], ns[k]];
-        let across: f32[4]    = [0.5 * k, 0.5 * (k + 1), 0.5 * (k + 1), 0.5 * k];
+        let across: f32[4]    = [across_at[k], across_at[k + 1], across_at[k + 1], across_at[k]];
         let along:  f32[4]    = [1.0, 1.0, 0.0, 0.0];
         let ao:     f32[4]    = [foot_ao, foot_ao, top_ao, top_ao];
         for i in 4 {
@@ -405,17 +422,22 @@ fn flat_book(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
     let head_right = hash(p.cell, 600 + p.code) < 0.5;
     // The cell's across up the pile or down it, so the spine reads unmirrored either way.
     let flip = head_right != mirrored;
-    let low = normalize(float3 { 0.0, -sin(bg.y), cos(bg.y) });
-    let high = float3 { 0.0, -low.y, low.z };
-    let rows: float3[3] = [float3 { 0.0, y0, ze }, float3 { 0.0, y0 + 0.5 * t, zf }, float3 { 0.0, y0 + t, ze }];
-    let ns:   float3[3] = [low, float3 { 0.0, 0.0, 1.0 }, high];
-    for k in 2 {
+    var rows:      float3[SPINE_COLS] = [float3_0; SPINE_COLS];
+    var ns:        float3[SPINE_COLS] = [float3_0; SPINE_COLS];
+    var across_at: f32[SPINE_COLS]    = [0.0; SPINE_COLS];
+    for j in SPINE_COLS {
+        let q = spine_at(bg, j);
+        rows[j] = float3 { 0.0, y0 + q.x * t, zf - q.y * t };
+        ns[j] = float3 { 0.0, sin(q.z), cos(q.z) };
+        across_at[j] = q.x;
+    }
+    for k in SPINE_COLS - 1 {
         let a = rows[k];
         let e = rows[k + 1];
         let base = verts.len as u32;
         let pts:    float3[4] = [float3 { s0, a.y, a.z }, float3 { s1, a.y, a.z }, float3 { s1, e.y, e.z }, float3 { s0, e.y, e.z }];
         let nn:     float3[4] = [ns[k], ns[k], ns[k + 1], ns[k + 1]];
-        let across: f32[4]    = [0.5 * k, 0.5 * k, 0.5 * (k + 1), 0.5 * (k + 1)];
+        let across: f32[4]    = [across_at[k], across_at[k], across_at[k + 1], across_at[k + 1]];
         let along:  f32[4]    = if head_right { [1.0, 0.0, 0.0, 1.0] } else { [0.0, 1.0, 1.0, 0.0] };
         for i in 4 {
             verts.push(mesh::Vertex { at(b, pts[i]), surfaces::world_normal(b, nn[i]), atlas_uv(c, across[i], along[i], flip), 0.65, mat });
