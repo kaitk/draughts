@@ -3076,6 +3076,12 @@ let ROOM_FRAG = """
             albedo = a4.rgb * (1.0 + 0.16 * (own - 0.5));
             if (table.z > 0.0) albedo = tinted(albedo, table.zw);
             rough = a4.a;
+            // A door's threshold (shell_mesh's THRESHOLD_OWN): oak worn paler than the
+            // stained panelling, and polished smoother by feet.
+            if (own > 0.925) {
+                albedo *= vec3(1.45, 1.38, 1.25);
+                rough *= 0.8;
+            }
             vec3 dpx = dFdx(p);
             vec3 dpy = dFdy(p);
             vec2 dux = dFdx(v_uv);

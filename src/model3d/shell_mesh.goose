@@ -565,6 +565,10 @@ fn painted(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
     }
 }
 
+// The threshold's oak: past every other piece's own tone (surfaces' 0.9 * hash), which
+// ROOM_FRAG shades paler and smoother.
+let THRESHOLD_OWN: f32 = 0.95;
+
 // A door in wall b of `thick` metres (b's s at its middle): its lining through the wall's
 // face, the oak threshold, the two closed leaves with three panels each (door 1), the
 // architrave round it on its plinth blocks.
@@ -580,16 +584,15 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     }
     quad_m(verts, indices, b, [float3 { -w, h, 0.0 }, float3 { w, h, 0.0 }, float3 { w, h, -leaf_z }, float3 { -w, h, -leaf_z }],
            paint, float3 { 0.0, -1.0, 0.0 }, 0.85);
-    // The threshold, oak, over the floor through the wall.
+    // The threshold, an oak board 2 cm proud of the floor through the wall, its grain along
+    // it, its room side a rounded nose 3 cm out; its ends run under the plinth blocks.
     seed++;
+    let sill: float3[7] = [float3 { 3.0, 0.0, 0.6 }, float3 { 3.0, 0.7, 0.8 }, float3 { 2.87, 1.3, 0.9 },
+                           float3 { 2.5, 1.77, 1.0 }, float3 { 2.0, 2.0, 1.0 }, float3 { 1.0, 2.0, 1.0 },
+                           float3 { -100.0 * thick, 2.0, 1.0 }];
     let first = verts.len;
-    box_m(verts, indices, b, -w, w, 0.0, 0.02, -thick, 0.03, surfaces::MAT_OAK);
-    let pm = surfaces::piece_map(seed, false, 0.0, 0.0, 8.0, o.width * m(), true);
-    for i in first..verts.len {
-        let v .= verts[i];
-        v.uv = surfaces::place(pm, v.uv.x + w * m(), v.uv.y + 4.0);
-        v.mat = surfaces::MAT_OAK + 0.9 * surfaces::hash(seed, 9);
-    }
+    sweep(verts, indices, b, sill[..], 0.0, -w * m(), w * m(), 0.0, 0.0, surfaces::MAT_OAK, seed, cm_up());
+    for i in first..verts.len { verts[i].mat = surfaces::MAT_OAK + THRESHOLD_OWN; }
     // The leaves, their face in the wall's face.
     let lb = moved(b, 0.0, -leaf_z * m());
     let rows: float2[3] = [float2 { 0.22, 0.98 }, float2 { 1.16, 2.08 }, float2 { 2.2, 2.58 }];
