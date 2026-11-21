@@ -1723,9 +1723,16 @@ let TABLE_FRAG = """
     #endif
 
     vec3 tonemap(vec3 c) {
+    #ifdef TABLE_ROOM
+        // In the room, the room's toe (TONE_FN's), on the luminance: the board's, taking the
+        // least channel off, turns the dim base orange beside the room's wood.
+        float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
+        c *= (y < 0.04 ? 12.5 * y * y : y - 0.02) / y;
+    #else
         float x = min(c.r, min(c.g, c.b));
         float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
         c -= offset;
+    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;
