@@ -104,6 +104,10 @@ struct Room {
     // how strong (0 none), y from what whiteness (the least channel, sRGB), z the knee
     // over it, w how wide (sigma in quarter pixels).
     bloom: float4 = float4_0,
+    // The shell's corners and edges darkened (shaders::ROOM_FRAG's corner_shade), its
+    // indirect light only: x how much (1 a corner's full share of the sky hidden), y how far
+    // from a corner it reaches (metres); 0 none.
+    corners: float4 = float4_0,
 }
 
 // The library on the garden side, south-west, a mid-October afternoon
@@ -136,6 +140,7 @@ let AUTUMN = Room {
     shell_sun:     float4 { 0.0055, 2.2, 0.0, 0.0 },
     baked:         float4 { 7.0, 12.0, 0.2, 0.3 },
     bloom:         float4 { 0.45, 0.72, 0.15, 4.0 },
+    corners:       float4 { 1.0, 0.4, 0.0, 0.0 },
     ..
 };
 

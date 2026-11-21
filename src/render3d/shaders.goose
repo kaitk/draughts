@@ -485,16 +485,16 @@ let LIGHT_FN = """
         return mix(1.0, 1.0 - clamp(cover * folds, 0.0, 1.0) * (1.0 - shell_glass.w), inside);
     }
 
-    // How much of the key reaches p through the shell's windows: p traced along the key to
-    // the window wall's inner face (the niche's arched outline: or where p is, if it is in
-    // the niche), on to the two glass planes with their bars, and back to the lace in front;
-    // summed over the windows, then the tree outside.
-    float shell_light(vec3 p) {
+    // How much of the key reaches p through the shell's windows, 0 to 1: p traced along the
+    // key to the window wall's inner face (the niche's arched outline: or where p is, if it
+    // is in the niche), on to the two glass planes with their bars, and back to the lace in
+    // front; summed over the windows, then the tree outside.
+    float shell_open(vec3 p) {
         vec3 l = light_dir.xyz;
         vec2 nw = -axes.zw;
         vec2 along = axes.xy;
         float toward = dot(l.xz, nw);
-        if (toward < 0.05) return 1.0 - room.y;
+        if (toward < 0.05) return 0.0;
         float metre = shell.w;
         // The penumbra's widening with distance: the shell's own, sharper than the game's
         // window takes it.
@@ -537,18 +537,19 @@ let LIGHT_FN = """
             vec2 tr = tree_light(p, l, nw, along, toward);
             lit *= tr.x * tr.y;
         }
-        return mix(1.0 - room.y, 1.0, lit);
+        return lit;
     }
     #endif
 
-    // How much of the key reaches p through the window (rooms::Room's pattern): p traced
-    // along the key to the window's wall, where the opening, its bars, and the curtain
-    // say whether the sun came through, and on to the trees beyond, whose leaves dapple
-    // it; each edge softer the farther it is from p. 1 with no pattern.
-    float window_light(vec3 p) {
+    // How much of the key reaches p through the window (rooms::Room's pattern), 0 to 1: p
+    // traced along the key to the window's wall, where the opening, its bars, and the
+    // curtain say whether the sun came through, and on to the trees beyond, whose leaves
+    // dapple it; each edge softer the farther it is from p. 1 with no pattern. A wall keeps
+    // all of the sun out: a highlight takes this.
+    float window_open(vec3 p) {
         if (room.y <= 0.0) return 1.0;
     #ifdef SHELL_WINDOWS
-        if (shell.x > 0.5) return shell_light(p);
+        if (shell.x > 0.5) return shell_open(p);
     #endif
         vec3 l = light_dir.xyz;
         vec2 h = normalize(l.xz);
@@ -556,7 +557,7 @@ let LIGHT_FN = """
         vec2 nw = vec2(cos(a) * h.x - sin(a) * h.y, sin(a) * h.x + cos(a) * h.y);
         vec2 along = vec2(-nw.y, nw.x);
         float toward = dot(l.xz, nw);
-        if (toward < 0.05) return 1.0 - room.y;
+        if (toward < 0.05) return 0.0;
         float t = (window.x - dot(p.xz, nw)) / toward;
         vec3 q = p + l * t;
         // Along the wall from where the board's middle sees the sun, up from the sill.
@@ -585,7 +586,15 @@ let LIGHT_FN = """
         } else if (leaves.x > 0.0) {
             lit *= noise_leaves(p, l, along, toward, t);
         }
-        return mix(1.0 - room.y, 1.0, lit);
+        return lit;
+    }
+
+    // The key's light through the window as the diffuse takes it: the shade keeps out
+    // room.y of it, the rest standing for the light the room throws back (the game's room
+    // has no other).
+    float window_light(vec3 p) {
+        if (room.y <= 0.0) return 1.0;
+        return mix(1.0 - room.y, 1.0, window_open(p));
     }
 
     vec3 to_srgb(vec3 c) {
@@ -1596,9 +1605,8 @@ let TABLE_HEAD = """
     layout(set = 2, binding = 5) uniform sampler2D tree_map;
     // The key light's shadow map (SHADOW_FN): the board and the pieces on it.
     layout(set = 2, binding = 6) uniform sampler2DShadow shadow_map;
-    """;
-
-let TABLE_FRAG = """
+    // The table's own map in the room (TABLE_MAP_FN).
+    layout(set = 2, binding = 7) uniform sampler2DShadow table_depth;
     // tables::Table's. pool: x the light's reach round the board (world units), y how dim
     // it is beyond, z how dark the edge's underside goes, w how strong the board's
     // reflection; coat: x the polish's roughness on the edge (the top's is baked), y how
@@ -1606,8 +1614,42 @@ let TABLE_FRAG = """
     // highlight in it (a roughness); polish: x how much its roughness varies, y its
     // strength, z the blotches' size (world units), w how much the wear shows in it;
     // worn: the rim's wear, x how much, y how wide. The pieces lying on it are FRAME's
-    // discs. shape: x the top's radius (world units), y the floor's height.
-    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 shape; };
+    // discs. shape: x the top's radius (world units), y the floor's height. table_map: the
+    // table's own map's rows (TABLE_MAP_FN).
+    layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 shape; vec4 table_map[4]; };
+    """;
+
+// The table's own shadow from its map (render3d::table_map), which TABLE_FRAG and ROOM_FRAG
+// share, after their heads (table_depth, the block's table_map): q's place in the map by
+// the rows 0 to 2, row 3's x 1 where the map is drawn; a 5 × 5 texel box in 9 taps, as
+// SHADOW_FN's. 1 where the map isn't drawn or doesn't reach.
+let TABLE_MAP_FN = """
+    float table_map_at(vec3 q) {
+        if (table_map[3].x < 0.5) return 1.0;
+        vec4 h = vec4(q, 1.0);
+        vec3 s = vec3(dot(table_map[0], h), dot(table_map[1], h), dot(table_map[2], h));
+        if (abs(s.x) > 0.995 || abs(s.y) > 0.995) return 1.0;
+        vec2 size = vec2(textureSize(table_depth, 0));
+        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5) * size;
+        float z = min(s.z, 0.9999);
+        vec2 base = floor(uv + 0.5);
+        vec2 f = uv + 0.5 - base;
+        base = (base - 0.5) / size;
+        vec3 w0 = vec3(4.0 - 3.0 * f.x, 7.0, 1.0 + 3.0 * f.x);
+        vec3 u = vec3((3.0 - 2.0 * f.x) / w0.x - 2.0, (3.0 + f.x) / 7.0, f.x / w0.z + 2.0) / size.x;
+        vec3 w1 = vec3(4.0 - 3.0 * f.y, 7.0, 1.0 + 3.0 * f.y);
+        vec3 v = vec3((3.0 - 2.0 * f.y) / w1.x - 2.0, (3.0 + f.y) / 7.0, f.y / w1.z + 2.0) / size.y;
+        float sum = 0.0;
+        for (int j = 0; j < 3; j++) {
+            for (int i = 0; i < 3; i++) {
+                sum += w0[i] * w1[j] * texture(table_depth, vec3(base + vec2(u[i], v[j]), z));
+            }
+        }
+        return sum * (1.0 / 144.0);
+    }
+    """;
+
+let TABLE_FRAG = """
     // mesh.goose's (test/model3d/geometry checks them): TABLE_R the 1.05 m top's, which
     // its map covers whatever the top's radius.
     const float TABLE_R = 16.0;
@@ -1861,12 +1903,23 @@ let TABLE_FRAG = """
             vis = mix(1.0, vis, room.x);
         }
         float pattern = window_light(p);
-        if (base) pattern *= under_top(p, l);
+        float sun_in = pattern;
+        if (table_map[3].x > 0.5) {
+            // In the room the table's own map shades all but the top: the base and the
+            // frieze under the top, the legs one another; the highlight takes the sun only
+            // where it comes through the window (window_open), as the room's does.
+            float own = top ? 1.0 : table_map_at(p + vn * (0.03 + 0.1 * (1.0 - clamp(dot(vn, l), 0.0, 1.0))));
+            pattern *= own;
+            sun_in = window_open(p) * own;
+        } else if (base) {
+            pattern *= under_top(p, l);
+            sun_in = pattern;
+        }
         vis *= pattern;
         // A broad key's shadow is fainter (room.x) for the wood's light, but the key's own
         // image in the polish is hidden wherever the board or a piece hides the key: let
         // through, its sheen showed under the board, which then floated.
-        float spec_vis = hidden * pattern;
+        float spec_vis = hidden * sun_in;
         vec3 irr = sh_eval(n) * params.z * mix(1.0, lit, 0.5);
         vec3 wood = albedo * (diff / PI * light * vis + irr * ao);
 
@@ -1963,6 +2016,8 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 8) uniform sampler2D light_volume;
     // The books' spines (model3d::books): tone, gilt or ink, label, wear.
     layout(set = 2, binding = 9) uniform sampler2D book_atlas;
+    // The table's own map (TABLE_MAP_FN).
+    layout(set = 2, binding = 10) uniform sampler2DShadow table_depth;
     // surfaces::Look and the room's frame. plank: x a plank's width, y its length in
     // widths, z the joint's half width, w the cup (its slope at the edges); planks: x each
     // one's own tone, y the share patched, z its tilt, w the scratches; worn: x the paths'
@@ -2001,8 +2056,10 @@ let ROOM_HEAD = """
     // architrave's width (metres). books: x how much of the books' fade shows (a tuner's, 1 as
     // made), y a step of fade, z the steps of a book's code (books::CODES); book_cases: the
     // bookcases' middles' distance from the hall door's along u, their half width (world
-    // units), their top (metres); book_cover and book_label: books::COVER and books::LABEL
-    // (sRGB), the label's table ending in gilt, ink, the page edges plain and sprinkled.
+    // units), their top (metres); corners: the corners' and edges' darkening (rooms::Room's,
+    // y its reach in world units); table_map: the table's own map's rows (TABLE_MAP_FN);
+    // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
+    // ending in gilt, ink, the page edges plain and sprinkled.
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -2037,6 +2094,8 @@ let ROOM_HEAD = """
         vec4 room_heights;
         vec4 books;
         vec4 book_cases;
+        vec4 corners;
+        vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
     };
@@ -2446,6 +2505,168 @@ let ROOM_FRAG = """
         return lit;
     }
 
+    // How much of the sky the table's base hides from p on the floor: its drum and each leg
+    // as spheres along it (Quilez's sphere occlusion: a sphere of radius r at distance d,
+    // as high over p as h, hides r² h / d³ of it), the nearest point of each leg's three
+    // pieces taken, so the scroll standing on the floor darkens it most, tight round its toe.
+    float base_hides(vec3 p) {
+        vec3 a = vec3(p.x, p.y - table.y, p.z - TABLE_Z);
+        if (dot(a.xz, a.xz) > 196.0 || a.y > 6.0) return 0.0;
+        vec3 drum = vec3(0.0, 4.9, 0.0) - a;
+        float hidden = 4.8 * max(drum.y, 0.0) / pow(max(dot(drum, drum), 0.25), 1.5);
+        for (int k = 0; k < 4; k++) {
+            float ang = 3.14159265 * (0.25 + 0.5 * float(k));
+            vec2 dir = vec2(cos(ang), sin(ang));
+            vec3 p0 = vec3(dir.x * LEG1.x, LEG1.y, dir.y * LEG1.x);
+            vec3 p1 = vec3(dir.x * LEG2.x, LEG2.y, dir.y * LEG2.x);
+            vec3 p2 = vec3(dir.x * LEG3.x, LEG3.y, dir.y * LEG3.x);
+            float t0 = clamp(dot(a - p0, p1 - p0) / dot(p1 - p0, p1 - p0), 0.0, 1.0);
+            float t1 = clamp(dot(a - p1, p2 - p1) / dot(p2 - p1, p2 - p1), 0.0, 1.0);
+            vec3 c0 = p0 + (p1 - p0) * t0 - a;
+            vec3 c1 = p1 + (p2 - p1) * t1 - a;
+            vec3 c = dot(c0, c0) < dot(c1, c1) ? c0 : c1;
+            hidden += LEG_HALF * LEG_HALF * max(c.y, 0.0) / pow(max(dot(c, c), 0.36), 1.5);
+        }
+        return clamp(hidden, 0.0, 0.8);
+    }
+
+    // The share of the sky (cosine-weighted) a plane square to a surface hides from a point
+    // d from it (world units), counting what it meets within `reach`: through the
+    // hemisphere's projected disc, the segment beyond d / reach; a half on the plane itself.
+    float plane_hides(float d, float reach) {
+        float k = clamp(d / reach, 0.0, 1.0);
+        return (acos(k) - k * sqrt(1.0 - k * k)) / PI;
+    }
+
+    // A ledge `depth` deep (a cap, a sill, a moulding standing out) hides less the farther
+    // the point is from it.
+    float ledge_hides(float d, float depth, float reach) {
+        return plane_hides(d, reach) * depth / (depth + max(d, 0.0));
+    }
+
+    // How square a plane with normal m stands to a surface with normal n: 1 square, 0 facing.
+    float square_to(vec3 n, vec3 m) { return 1.0 - smoothstep(0.3, 0.7, abs(dot(n, m))); }
+
+    // The shell's corners and edges (rooms::Room.corners), for its indirect light only: the
+    // room is a box of known planes, so a point's distance to each plane square to its
+    // surface says how much of the room's light that plane hides (plane_hides): the floor
+    // along the walls, the walls into the inside corners, along the floor and under the
+    // cornice, the ceiling along the cornice; the wall over the wainscot's cap and under it
+    // and under the sills; in the windows' niches the reveals, the sill, the casements'
+    // frames and the head; at the doors the jambs, the leaf and the architrave; round the
+    // bookcases their sides, fronts and tops. lp and ln in the room's frame; what stands out
+    // of a wall by its height (the plinth 4.5 cm, the panelling 2.5 cm, the cornice 0.46 m on
+    // the ceiling, a cove, so half as dark). 1 nothing hidden.
+    float corner_shade(vec3 lp, vec3 ln) {
+        if (corners.x <= 0.0 || shell.x < 0.5) return 1.0;
+        float m = shell.w;
+        float reach = corners.y;
+        float s = corners.x;
+        float up = (lp.y - shell.z) / m;
+        float cornice = (room_heights.x - shell.z) / m - 0.26;
+        float proud = (up < 0.19 ? 0.045 : (up < room_heights.z ? 0.025 : (up < cornice ? 0.0 : 0.46))) * m;
+        float cove = up < cornice ? 1.0 : 0.5;
+        // The four walls' faces from p, into the room.
+        float d_far = lp.x - room_box.x;
+        float d_stove = room_box.y - lp.x;
+        float d_window = lp.z - room_box.z;
+        float d_hall = room_box.w - lp.z;
+        float lit = 1.0;
+        // The hall door, the salon's, their openings' half widths and height (metres).
+        float arch = room_heights.w * m;
+        float door_top = room_heights.y - room_heights.w;
+        float hx = lp.x - room_doors.x;
+        float sz = lp.z - room_doors.z;
+        bool hall_door = room_doors.y > 0.0 && abs(hx) < room_doors.y - arch && up < door_top;
+        bool salon_door = room_doors.w > 0.0 && abs(sz) < room_doors.w - arch && up < door_top;
+        // A door with its architrave, which stops the wainscot.
+        bool hall_trim = room_doors.y > 0.0 && abs(hx) < room_doors.y + 0.01 * m && up < room_heights.y;
+        bool salon_trim = room_doors.w > 0.0 && abs(sz) < room_doors.w + 0.01 * m && up < room_heights.y;
+        // The bookcases either side of the hall door: p's place across the nearer.
+        float cx = abs(hx) - book_cases.x;
+        float case_out = (up < room_heights.z ? 0.45 : 0.30) * m;
+        bool cases = book_cases.y > 0.0 && up < book_cases.z;
+        bool before_case = cases && abs(cx) < book_cases.y;
+        // The window's niche p is in or before.
+        float wx = 1e6;
+        for (int i = 0; i < 3; i++) {
+            if (float(i) >= shell.x) break;
+            float x = lp.x - shell_mids[i];
+            if (abs(x) < abs(wx)) wx = x;
+        }
+        float half_w = shell_niche.x * m;
+        float spring = shell_niche.y + shell_niche.z;
+        bool niche = abs(wx) < half_w && up > shell_niche.y - 0.01 && up < spring + shell_niche.w;
+        bool in_niche = niche && d_window < 0.01 * m;
+        // The walls, each at what stands nearest out of it there.
+        float hall_face = hall_door ? d_hall + 0.045 * m : (before_case ? d_hall - case_out : d_hall - proud);
+        float stove_face = salon_door ? d_stove + 0.045 * m : d_stove - proud;
+        // The cornice keeps its own shade (its profile's, per vertex): its cove stands out of
+        // the wall by its height, which no plane here follows. The ceiling past it takes the
+        // walls' shade from nothing at the cornice's edge, so no line shows there.
+        if (up > cornice) {
+            float past = min(min(d_far, d_stove), min(d_window, d_hall)) - 0.46 * m;
+            cove = ln.y < -0.7 ? 0.5 * smoothstep(0.0, 0.12 * m, past) : 0.0;
+        }
+        if (!in_niche && cove > 0.0) {
+            lit *= 1.0 - s * cove * square_to(ln, vec3(0.0, 0.0, 1.0)) * plane_hides(d_window - proud, reach);
+            lit *= 1.0 - s * cove * square_to(ln, vec3(0.0, 0.0, -1.0)) * plane_hides(hall_face, reach) * step(-0.01 * m, hall_face);
+            lit *= 1.0 - s * cove * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(d_far - proud, reach);
+            lit *= 1.0 - s * cove * square_to(ln, vec3(-1.0, 0.0, 0.0)) * plane_hides(stove_face, reach) * step(-0.01 * m, stove_face);
+        }
+        // The floor, and the cornice's foot over a wall, a cove.
+        float upright = square_to(ln, vec3(0.0, 1.0, 0.0));
+        lit *= 1.0 - s * upright * plane_hides(up * m, reach);
+        if (up < cornice) lit *= 1.0 - 0.5 * s * upright * plane_hides((cornice - up) * m, reach);
+        // On a wall: over the wainscot's cap and under it (its underside at 1.105 m, 6.5 cm
+        // out of the panelling), under a window's sill (its nose 5.5 cm out of it, its
+        // underside at the sill less 5 cm), over a bookcase's top.
+        float on_wall = min(min(d_far, d_stove), min(d_window, d_hall));
+        if (on_wall < 0.12 * m && !in_niche) {
+            float cap = room_heights.z;
+            bool under_sill = d_window < 0.12 * m && abs(wx) < half_w + 0.05 * m;
+            if (under_sill) {
+                lit *= 1.0 - s * upright * ledge_hides((shell_niche.y - 0.05 - up) * m, 0.055 * m, reach) * step(up, shell_niche.y - 0.05);
+            } else if (!(hall_trim && d_hall < 0.12 * m) && !(salon_trim && d_stove < 0.12 * m)
+                       && !(before_case && d_hall < 0.12 * m)) {
+                if (up > cap) lit *= 1.0 - s * upright * ledge_hides((up - cap) * m, 0.09 * m, reach);
+                else if (up < cap - 0.095) lit *= 1.0 - s * upright * ledge_hides((cap - 0.095 - up) * m, 0.065 * m, reach);
+            }
+            if (cases && abs(cx) < book_cases.y && d_hall < 0.12 * m && up > book_cases.z - 0.01)
+                lit *= 1.0 - s * upright * ledge_hides((up - book_cases.z) * m, 0.35 * m, reach);
+        }
+        // Beside a bookcase: its side, as far out and up as the case stands.
+        if (cases && abs(cx) > book_cases.y && d_hall < case_out)
+            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(abs(cx) - book_cases.y, reach);
+        // In a window's niche: its reveals, the sill, the inner casement's frame (6 cm), the
+        // head.
+        if (in_niche) {
+            float into = -d_window;
+            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(half_w - abs(wx), reach);
+            lit *= 1.0 - s * upright * plane_hides((up - shell_niche.y) * m, reach);
+            lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * ledge_hides(shell_glass.x - into, 0.06 * m, reach);
+            lit *= 1.0 - s * upright * plane_hides((spring - up) * m, reach) * step(up, spring);
+        }
+        // At a door: in its opening, the jambs and head round the leaf (4.5 cm deep), the
+        // leaf behind a jamb; beside it on the wall, the architrave standing 5 cm out.
+        if (hall_door && d_hall < 0.01 * m) {
+            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * ledge_hides(room_doors.y - arch - abs(hx), 0.045 * m, reach);
+            lit *= 1.0 - s * upright * ledge_hides((door_top - up) * m, 0.045 * m, reach);
+            lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * plane_hides(0.045 * m + d_hall, reach);
+        }
+        if (salon_door && d_stove < 0.01 * m) {
+            lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * ledge_hides(room_doors.w - arch - abs(sz), 0.045 * m, reach);
+            lit *= 1.0 - s * upright * ledge_hides((door_top - up) * m, 0.045 * m, reach);
+            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * plane_hides(0.045 * m + d_stove, reach);
+        }
+        float trim = max(0.05 * m - proud, 0.0);
+        if (trim > 0.0 && d_hall < 0.12 * m && room_doors.y > 0.0 && up < room_heights.y && abs(hx) > room_doors.y)
+            lit *= 1.0 - s * square_to(ln, vec3(1.0, 0.0, 0.0)) * ledge_hides(abs(hx) - room_doors.y, trim, reach);
+        if (trim > 0.0 && d_stove < 0.12 * m && room_doors.w > 0.0 && up < room_heights.y && abs(sz) > room_doors.w)
+            lit *= 1.0 - s * square_to(ln, vec3(0.0, 0.0, 1.0)) * ledge_hides(abs(sz) - room_doors.w, trim, reach);
+        return lit;
+    }
+
     void main() {
         vec3 p = v_world;
         vec3 ng = normalize(v_normal);
@@ -2543,19 +2764,14 @@ let ROOM_FRAG = """
             // The table hides the sky under it, its scroll toes the floor they stand on,
             // and the walls along their feet.
             ao *= mix(0.55, 1.0, smoothstep(0.5625 * table.x, 1.375 * table.x, r));
-            vec2 ta = abs(p.xz - vec2(0.0, TABLE_Z)) - vec2(LEG3.x * 0.70710678);
-            ao *= mix(0.45, 1.0, smoothstep(0.2, 1.4, length(ta)));
+            ao *= 1.0 - base_hides(p);
             if (shell.x > 0.5) {
-                // Along every wall the wainscot hides the sky: the floor darker in a band
-                // about 0.3 m wide, and a dark contact line at the plinth's lip (5 cm out),
-                // before a door's opening at the threshold's nose (3 cm), its band fainter.
+                // A dark contact line at the plinth's lip (5 cm out), before a door's opening
+                // at the threshold's nose (3 cm); the walls' broader shade is corner_shade's.
                 float others = min(place.y - uv.y, uv.x - shell_ends.y);
                 vec2 lip = mix(vec2(0.05), vec2(0.03), door_open) * shell.w;
                 vec2 near_door = vec2(uv.y + place.x, shell_ends.x - uv.x) - lip;
                 float past_lip = min(others - 0.05 * shell.w, min(near_door.x, near_door.y));
-                vec2 band_from = near_door + door_open * 0.12 * shell.w;
-                float past_band = min(others - 0.05 * shell.w, min(band_from.x, band_from.y));
-                ao *= mix(0.45, 1.0, smoothstep(0.0, 0.3 * shell.w, past_band));
                 ao *= mix(0.4, 1.0, smoothstep(0.0, 0.015 * shell.w, past_lip));
             } else {
                 ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
@@ -2711,9 +2927,18 @@ let ROOM_FRAG = """
         float nol = dot(n, l);
         float diff = clamp(nol, 0.0, 1.0);
         vec3 light = light_color.rgb * light_dir.w * shell_sun.y;
+        // The room's corners and edges, its indirect light only (not the books, which the
+        // cases shade themselves).
+        if (kind < 13.5) ao *= corner_shade(v_local, vec3(dot(ng.xz, axes.xy), ng.y, dot(ng.xz, axes.zw)));
         // The table's top is solid: its shadow keeps all the key out, unlike the board's
-        // softened ones (room.x).
-        float vis = dot(ng, l) > 0.0 ? window_light(p) * table_shade(p, l) * case_shade(v_local, l) : 0.0;
+        // softened ones (room.x). The sun reaches p only through a window (open), and only
+        // that takes the highlight; the shade's floor (window_light's, 1 - room.y where the
+        // sun doesn't reach) stands for light the room throws back, so it takes the
+        // occlusion as the room's other indirect light does.
+        float table_kept = table_map[3].x > 0.5 ? table_map_at(p + ng * 0.06) : table_shade(p, l);
+        float kept = dot(ng, l) > 0.0 ? table_kept * case_shade(v_local, l) : 0.0;
+        float open = kept > 0.0 ? window_open(p) : 0.0;
+        float vis = (room.y > 0.0 ? open + (1.0 - room.y) * (1.0 - open) * ao : 1.0) * kept;
         vec3 irr = room_irradiance(v_local, n) * ao;
         vec3 base = albedo * (1.0 - metal) * (diff / PI * light * vis + irr);
 
@@ -2731,7 +2956,7 @@ let ROOM_FRAG = """
         vec3 f0 = mix(vec3(0.04), albedo, metal);
         // The key is a window, not a point: its highlight no sharper than 0.25's.
         float ak = max(ar, 0.06);
-        vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * vis;
+        vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * open * kept;
         // The room's reflection: the windows on the waxed floor and the brass, with the room
         // baked; the harmonics alone before.
         // Only the floor and the brass see the room sharply: the panelling's grain turns its

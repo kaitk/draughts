@@ -81,6 +81,27 @@ fn shadow_pass(own: Own&, g: Gpu&) {
     barrier_between_passes();
 }
 
+// The table's top and base into its own map (render3d::table_map), seen along the key
+// through `place`: the key's pipeline, the board's frame with its light's projection
+// replaced, made the first time.
+fn table_map_pass(own: Own&, g: Gpu&, place: Mat) {
+    if g.table_map.id == 0 {
+        g.table_map = nx::texture2d(render3d::TABLE_MAP_W, render3d::TABLE_MAP_H, ngfx::DEPTH16,
+                                    ngfx::DEPTH_TARGET | ngfx::SAMPLED);
+    }
+    let kept = g.frame.light_view_proj;
+    g.frame.light_view_proj = place;
+    let f = frame_addr(own, g);
+    g.frame.light_view_proj = kept;
+    nx::begin_pass(nx::PassDesc { depth: g.table_map });
+    nx::bind(g.shadow);
+    var r = lit_root(own, g, f, g.table_vb);
+    r.u = blocks([float4 { 0.0, 1.0, 1.0, 0.0 }]);
+    nx::draw_indexed(ngfx::root(r), g.table_ib, 4, g.table_count);
+    ngfx::end_pass();
+    barrier_between_passes();
+}
+
 // draw()'s one pass, at the scale antialiasing draws it at, then antialiased into
 // `target` of `size`.
 fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
@@ -123,6 +144,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 4, g.table_wear_n, g.aniso);
         slot(t, 5, render3d::tree_or_stand_in(g), g.linear);
         slot(t, 6, g.shadow_map, g.compare);
+        slot(t, 7, render3d::table_map_or_stand_in(g), g.compare);
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
 
@@ -144,6 +166,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 7, g.lace_mask, g.aniso);
         slot(t, 8, render3d::light_or_stand_in(g), g.linear);
         slot(t, 9, g.book_atlas, g.aniso);
+        slot(t, 10, render3d::table_map_or_stand_in(g), g.compare);
         nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
@@ -964,7 +987,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
                     g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
-                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas];
+                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.table_map];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];

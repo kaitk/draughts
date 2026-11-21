@@ -446,6 +446,7 @@ fn report(r: rooms::Room, take: i64, flags: const u8[:]) {
     room_line(out, "shell_sun: ", r.shell_sun);
     room_line(out, "baked:     ", r.baked);
     room_line(out, "bloom:     ", r.bloom);
+    room_line(out, "corners:   ", r.corners);
     out.append("};\n// The flags that show the same again (the room's colours, twigs, species and crown in\n");
     out.append("// the literal above):\n");
     out.append(flags);
@@ -511,6 +512,7 @@ fn room_flags(out: u8[>..]&, r: rooms::Room) {
     flag_four(out, "--shell-sun", r.shell_sun);
     flag_four(out, "--baked", r.baked);
     flag_four(out, "--bloom", r.bloom);
+    flag_four(out, "--corners", r.corners);
     flag_one(out, "--exposure", r.exposure);
     flag_one(out, "--room-exposure", r.room_exposure);
     flag_one(out, "--outside-exposure", r.outside);
@@ -704,6 +706,7 @@ fn main() {
     room.shell_sun = four(argv, "--shell-sun", room.shell_sun);
     room.baked = four(argv, "--baked", room.baked);
     room.bloom = four(argv, "--bloom", room.bloom);
+    room.corners = four(argv, "--corners", room.corners);
     room.outside = number(argv, "--outside-exposure", room.outside);
     room.tree_blur = number(argv, "--tree-blur", room.tree_blur);
     room.exposure = number(argv, "--exposure", room.exposure);
@@ -894,6 +897,8 @@ fn main() {
                 slider(c, "Glow white", room.bloom.y, 0.0, 1.0);
                 slider(c, "Glow knee", room.bloom.z, 0.0, 1.0);
                 slider(c, "Glow spread", room.bloom.w, 0.5, 12.0);
+                slider(c, "Corners' shade", room.corners.x, 0.0, 2.0);
+                slider(c, "Corners' reach", room.corners.y, 0.05, 1.0);
                 if g.light_ms > 0.0 {
                     note(c, str("probes baked in ", floor(g.light_ms + 0.5) as i64, " ms, ", g.light_patches, " sun patches"));
                 }

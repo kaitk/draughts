@@ -195,67 +195,72 @@ let SQUARE_ENTRIES = 2 * SQUARES;   // the occlusion's two float4s a square (pla
 
 // Everything on the GPU, made by setup() (the targets again on a resize).
 struct Gpu {
-    wood:            i64,            // the wood's model the surfaces are baked with
-    finish:          looks::Finish,  // and its finish
-    marble:          i64,            // the stone frame's marble (looks::MARBLE..), 0 slate
-    stone:           looks::Marble,  // and its look
-    spring:          i64,            // spring's look (looks::SPRING_LOOK..), 1 the carved
-    carving:         looks::Carving, // and the carving of a carved look shown,
-    carved:          i64,            // the look it is the carving of (looks::shown), -1 none yet
-    n:               i64,            // squares per side the plan is baked for
-    look:            i64,            // looks::AUTUMN.., and the photograph's kind
-    photo_kind:      i64,
-    board_vb:        Buffer,
-    board_ib:        Buffer,
-    board_count:     i64,
-    piece_vb:        Buffer,
-    piece_ib:        Buffer,
-    piece_count:     i64,
-    instances:       Buffer,
-    instance_count:  i64,
-    solid:           i64,                   // the instances drawn opaque, first; the rest fade
-    alphas:          f32[MAX_INSTANCES],    // how opaque each fading one is
-    squares:         Buffer,
-    crown_map:       Texture,          // the crown's distance (shaders::CROWN_FRAG), drawn at setup
-    occ_map:         Texture,          // the pieces' occlusion of the field (occlusion())
-    occ_n:           i64,                    // the squares a side it was drawn for, 0 none yet
-    occ_squares:     float4[SQUARE_ENTRIES], // the squares it was drawn from
-    squares_now:     float4[SQUARE_ENTRIES], // and the ones place() last gave
-    marks:           Buffer,
-    glows:           Buffer,     // the field's glow rings and lit squares
-    marked:          bool,            // whether the board's pass has marks to draw
-    plan_albedo:     Texture,
-    plan_normal:     Texture,
-    side:            i64,           // the surfaces' side they are made at (model3d::BAKE_SIDE..), 0 none yet
-    want_side:       i64,           // and the one set_bake() asks for, 0 BAKE_SIDE
-    frame_albedo:    Texture,
-    frame_normal:    Texture,
-    frame_rows:      i64,           // the frame map's rows: `side`, or the mitred bands'
-    frame_flat:      bool,          // frame_normal is flat_frame()'s 4 × 4, not the map's
-    table:           bool,          // the table under the board (set_table), its map baked
-    classic:         bool,           // settings' Classic pieces (looks::classic), put on by theme_end
-    table_albedo:    Texture,       // with the theme's surfaces, at model3d::table_size
-    table_normal:    Texture,
-    table_wear:      Texture,       // its wear's tile, at model3d::wear_side (wear_at)
-    table_wear_n:    Texture,
-    table_side:      i64,           // the side its maps are made at, 0 none
-    table_baked:     bool,          // its maps hold table_spec's wood
-    table_spec:      tables::Table, // the table shown (tables::BOARD_WOOD.., or as tuned)
-    room:            rooms::Room,   // the room's light on the table (rooms::of, or as tuned)
-    room_tuned:      bool,          // room set by a tuner, not taken from the season
-    tree_map:        Texture,       // the tree's shadow (trees::draw_map), made with the first bake
-    tree_for:        float4[11],    // what it was baked from (tree_key())
-    tree_w:          i64,           // its texels across and up
-    tree_h:          i64,
-    tree_stale:      bool,          // to bake again before the next draw
-    tree_ms:         f64,           // the last bake's time (measuring)
-    table_edge:      float4,        // the edge its mesh is made with (tables::Table.edge)
-    table_r:         f32,           // the top's radius (world units), 0 mesh::TABLE_R (a tuner's)
-    table_made_r:    f32,           // and the one its mesh is made with
-    table_vb:        Buffer,
-    table_ib:        Buffer,
-    table_count:     i64,
-    table_lit:       Pipeline,
+    wood:           i64,             // the wood's model the surfaces are baked with
+    finish:         looks::Finish,   // and its finish
+    marble:         i64,             // the stone frame's marble (looks::MARBLE..), 0 slate
+    stone:          looks::Marble,   // and its look
+    spring:         i64,             // spring's look (looks::SPRING_LOOK..), 1 the carved
+    carving:        looks::Carving,  // and the carving of a carved look shown,
+    carved:         i64,             // the look it is the carving of (looks::shown), -1 none yet
+    n:              i64,             // squares per side the plan is baked for
+    look:           i64,             // looks::AUTUMN.., and the photograph's kind
+    photo_kind:     i64,
+    board_vb:       Buffer,
+    board_ib:       Buffer,
+    board_count:    i64,
+    piece_vb:       Buffer,
+    piece_ib:       Buffer,
+    piece_count:    i64,
+    instances:      Buffer,
+    instance_count: i64,
+    solid:          i64,                    // the instances drawn opaque, first; the rest fade
+    alphas:         f32[MAX_INSTANCES],     // how opaque each fading one is
+    squares:        Buffer,
+    crown_map:      Texture,           // the crown's distance (shaders::CROWN_FRAG), drawn at setup
+    occ_map:        Texture,           // the pieces' occlusion of the field (occlusion())
+    occ_n:          i64,                     // the squares a side it was drawn for, 0 none yet
+    occ_squares:    float4[SQUARE_ENTRIES],  // the squares it was drawn from
+    squares_now:    float4[SQUARE_ENTRIES],  // and the ones place() last gave
+    marks:          Buffer,
+    glows:          Buffer,      // the field's glow rings and lit squares
+    marked:         bool,             // whether the board's pass has marks to draw
+    plan_albedo:    Texture,
+    plan_normal:    Texture,
+    side:           i64,            // the surfaces' side they are made at (model3d::BAKE_SIDE..), 0 none yet
+    want_side:      i64,            // and the one set_bake() asks for, 0 BAKE_SIDE
+    frame_albedo:   Texture,
+    frame_normal:   Texture,
+    frame_rows:     i64,            // the frame map's rows: `side`, or the mitred bands'
+    frame_flat:     bool,           // frame_normal is flat_frame()'s 4 × 4, not the map's
+    table:          bool,           // the table under the board (set_table), its map baked
+    classic:        bool,            // settings' Classic pieces (looks::classic), put on by theme_end
+    table_albedo:   Texture,        // with the theme's surfaces, at model3d::table_size
+    table_normal:   Texture,
+    table_wear:     Texture,        // its wear's tile, at model3d::wear_side (wear_at)
+    table_wear_n:   Texture,
+    table_side:     i64,            // the side its maps are made at, 0 none
+    table_baked:    bool,           // its maps hold table_spec's wood
+    table_spec:     tables::Table,  // the table shown (tables::BOARD_WOOD.., or as tuned)
+    room:           rooms::Room,    // the room's light on the table (rooms::of, or as tuned)
+    room_tuned:     bool,           // room set by a tuner, not taken from the season
+    tree_map:       Texture,        // the tree's shadow (trees::draw_map), made with the first bake
+    tree_for:       float4[11],     // what it was baked from (tree_key())
+    tree_w:         i64,            // its texels across and up
+    tree_h:         i64,
+    tree_stale:     bool,           // to bake again before the next draw
+    tree_ms:        f64,            // the last bake's time (measuring)
+    table_edge:     float4,         // the edge its mesh is made with (tables::Table.edge)
+    table_r:        f32,            // the top's radius (world units), 0 mesh::TABLE_R (a tuner's)
+    table_made_r:   f32,            // and the one its mesh is made with
+    table_vb:       Buffer,
+    table_ib:       Buffer,
+    table_count:    i64,
+    table_lit:      Pipeline,
+    // The table's own shadow in the room (table_map): its map, what it was drawn for
+    // (table_map_key()), and the rows that place a point in it (table_map_rows()).
+    table_map:       Texture,
+    table_map_for:   float4[2],
+    table_map_place: float4[4],
     photo:           Texture,
     shadow_map:      Texture,
     aa:              i32,           // AA_OFF.. (set_aa), the renderer's ways
@@ -487,12 +492,92 @@ fn bake_table<O>(o: O&, g: Gpu&, y0: i64 = 0, y1: i64 = -1, mips: bool = true) {
 fn table_shown(g: Gpu&) -> bool { g.table && g.table_baked && g.table_side == g.side && g.table_vb.id != 0 }
 
 // TABLE_FRAG's block: the table's light, its polish, and its rim's wear (tables::Table),
-// and its shape: x the top's radius, y the floor's height.
-struct TableBlock { pool: float4, coat: float4, polish: float4, worn: float4, shape: float4 }
+// and its shape: x the top's radius, y the floor's height; the table's own map
+// (table_map_place, all 0 where none is drawn).
+struct TableBlock { pool: float4, coat: float4, polish: float4, worn: float4, shape: float4, map: float4[4] }
 fn table_block(g: Gpu&) -> TableBlock {
     let t = g.table_spec;
-    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 } }
+    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 },
+                 table_map_shown(g) }
 }
+
+// The table's own shadow in the room (shaders::TABLE_MAP_FN): its top and base drawn into a
+// map of their own, projected along the key onto the floor round the table, so the floor,
+// the walls it reaches and the base itself take the table's true shadow. Drawn when the room
+// and the table show, again only when the key or the table changes; the game, which shows
+// no room, never draws it. Its texels about 3 mm on the floor along the shadow, 2 mm across.
+let TABLE_MAP_W = 1024;
+let TABLE_MAP_H = 512;
+let TABLE_MAP_MARGIN: f32 = 1.5;     // round the top (world units)
+let TABLE_MAP_REACH:  f32 = 122.0;   // the farthest the shadow is followed (4 m)
+let TABLE_MAP_DEPTH:  f32 = 150.0;   // half the depth range along the key (world units)
+
+// Whether the table's map is wanted this frame.
+fn table_map_wanted(g: Gpu&) -> bool { room_shown(g) && table_shown(g) }
+
+// The map's rows where it is drawn and wanted, else all 0 (the shaders then take none).
+fn table_map_shown(g: Gpu&) -> float4[4] {
+    if g.table_map.id != 0 && table_map_wanted(g) { return g.table_map_place; }
+    return [float4_0; 4];
+}
+
+// The rows that place a world point in the table's map: x along the shadow and y across it
+// (-1..1, where the point's ray along the key meets the floor), z its depth (nearer the key
+// lower), each a row's dot with (p, 1); the fourth row x 1 (drawn).
+fn table_map_rows(g: Gpu&) -> float4[4] {
+    let l = float3 { g.frame.light_dir.x, g.frame.light_dir.y, g.frame.light_dir.z };
+    let ly = max(l.y, 0.05);
+    let h = length(float2 { l.x, l.z });
+    let d = if h > 1e-4 { float2 { l.x / h, l.z / h } } else { float2 { 1.0, 0.0 } };
+    let e = float2 { -d.y, d.x };
+    let fy = surfaces::FLOOR_Y;
+    let c = float3 { 0.0, fy, mesh::TABLE_Z };
+    let r = table_radius(g) + TABLE_MAP_MARGIN;
+    let slope = h / ly;
+    let reach = min((mesh::TABLE_TOP - fy) * slope, TABLE_MAP_REACH);
+    let mid = 0.5 * reach;
+    let half = r + 0.5 * reach;
+    let cd = c.x * d.x + c.z * d.y;
+    let ce = c.x * e.x + c.z * e.y;
+    let kz = 0.5 / TABLE_MAP_DEPTH;
+    return [
+        float4 { -d.x / half, slope / half, -d.y / half, (cd - slope * fy - mid) / half },
+        float4 { e.x / r, 0.0, e.y / r, -ce / r },
+        float4 { -l.x * kz, -l.y * kz, -l.z * kz, 0.5 + dot(c, l) * kz },
+        float4 { 1.0, 0.0, 0.0, 0.0 },
+    ];
+}
+
+// The rows as a matrix for the map's pass (light_view_proj in its frame's copy).
+fn table_map_matrix(rows: float4[4]) -> Mat {
+    var m = default<Mat>();
+    m.c0 = float4 { rows[0].x, rows[1].x, rows[2].x, 0.0 };
+    m.c1 = float4 { rows[0].y, rows[1].y, rows[2].y, 0.0 };
+    m.c2 = float4 { rows[0].z, rows[1].z, rows[2].z, 0.0 };
+    m.c3 = float4 { rows[0].w, rows[1].w, rows[2].w, 1.0 };
+    return m;
+}
+
+// What the table's map is drawn for: the key, the top's radius, the table's mesh.
+fn table_map_key(g: Gpu&) -> float4[2] {
+    let l = g.frame.light_dir;
+    return [float4 { l.x, l.y, l.z, table_radius(g) }, float4 { g.table_vb.id, g.table_count, 0.0, 0.0 }];
+}
+
+// The table's map drawn where it is wanted and what it was drawn for changed. Recording
+// only, before the board's pass.
+fn table_map<O>(o: O&, g: Gpu&) {
+    guard table_map_wanted(g) else { return; }
+    let key = table_map_key(g);
+    guard g.table_map.id == 0 || !same4(key[0], g.table_map_for[0]) || !same4(key[1], g.table_map_for[1]) else { return; }
+    g.table_map_for = key;
+    g.table_map_place = table_map_rows(g);
+    o.table_map_pass(g, table_map_matrix(g.table_map_place));
+}
+
+// The table's map to bind, or the key's where none is drawn (a depth texture either way,
+// for the compare sampler): the shaders read it only when their block says it is drawn.
+fn table_map_or_stand_in(g: Gpu&) -> Texture { if g.table_map.id != 0 { g.table_map } else { g.shadow_map } }
 
 // The pieces lying on the table (view3d::Scene.discs, taken3d::lay), each x, z, its foot's
 // and its top's height over the table, all of radius r, for the shadows TABLE_FRAG and
@@ -884,6 +969,8 @@ struct SurfacesBlock {
     room_heights:  float4,
     books:         float4,
     book_cases:    float4,
+    corners:       float4,
+    table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
 }
@@ -891,7 +978,7 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
     guard g.room_shell else { return b; }
     // The shell's windows, which light the room in its place (shaders::LIGHT_FN's
-    // shell_light), the lace letting through what the room's curtain does.
+    // shell_open), the lace letting through what the room's curtain does.
     let s = room_shell::LIBRARY;
     let metre = surfaces::METRE;
     var mids: f32[3] = [0.0; 3];
@@ -920,10 +1007,12 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
         b.light_box = float4 { corner.x, surfaces::FLOOR_Y + room_light::INSET * metre, corner.y, room_light::CELL * metre };
         b.light_grid = float4 { room_light::NX, room_light::NZ, room_light::NH, 0.0 };
         // The box the reflections meet, and its doors.
-        let near = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x, s.walls[room_shell::WINDOW_WALL].a.y });
-        let far = room_shell::room_of(s, float2 { s.walls[room_shell::STOVE_WALL].a.x, s.walls[room_shell::HALL_WALL].a.y });
-        b.room_box = float4 { near.x, far.x, near.y, far.y };
     }
+    // The box the reflections meet and the corners darken in.
+    let near = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x, s.walls[room_shell::WINDOW_WALL].a.y });
+    let far = room_shell::room_of(s, float2 { s.walls[room_shell::STOVE_WALL].a.x, s.walls[room_shell::HALL_WALL].a.y });
+    b.room_box = float4 { near.x, far.x, near.y, far.y };
+    b.corners = float4 { r.corners.x, r.corners.y * metre, 0.0, 0.0 };
     // The doors, for the reflections' box and the floor before them.
     var doors = float4_0;
     var top: f32 = 0.0;
@@ -968,7 +1057,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
-                    float4_0, books::COVER, books::LABEL }
+                    float4_0, float4_0, table_map_shown(g), books::COVER, books::LABEL }
 }
 
 // The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.
@@ -1687,6 +1776,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
     bake_tree(o, g);
     if dust.count > 0 { o.make_motes(g); }
     room_surfaces(o, g);
+    table_map(o, g);
     if g.shadow_dirty || shadow_every {
         o.shadow_pass(g);
         g.shadow_dirty = false;

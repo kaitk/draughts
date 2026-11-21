@@ -93,6 +93,27 @@ fn shadow_pass(own: Own&, g: render3d::Gpu&) {
     gfx::end_pass();
 }
 
+// The table's top and base into its own map (render3d::table_map), seen along the key
+// through `place`: the key's pipeline, the board's frame with its light's projection
+// replaced, made the first time.
+fn table_map_pass(own: Own&, g: render3d::Gpu&, place: render3d::Mat) {
+    if g.table_map.id == 0 {
+        g.table_map = gfx::texture2d(render3d::TABLE_MAP_W, render3d::TABLE_MAP_H, gfx::DEPTH16,
+                                     gfx::DEPTH_TARGET | gfx::SAMPLED);
+    }
+    var f = g.frame;
+    f.light_view_proj = place;
+    gfx::begin_pass(gfx::PassDesc { depth: g.table_map });
+    gfx::bind(g.shadow);
+    gfx::bind_storage_buffer(gfx::VERTEX, 0, g.instances);
+    gfx::uniforms(gfx::VERTEX, 0, f);
+    gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 0.0, 1.0, 1.0, 0.0 } });
+    gfx::bind_vertex_buffer(g.table_vb);
+    gfx::bind_index_buffer(g.table_ib, 4);
+    gfx::draw_indexed(g.table_count);
+    gfx::end_pass();
+}
+
 // draw()'s one pass into `target` of `size`, with the `backdrop` or clear, multisampled
 // and resolved into it, or SMAA after it.
 fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdrop: bool) {
@@ -145,6 +166,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 5, render3d::tree_or_stand_in(g), g.linear);
         gfx::bind_texture(gfx::FRAGMENT, 6, g.shadow_map, g.compare);
+        gfx::bind_texture(gfx::FRAGMENT, 7, render3d::table_map_or_stand_in(g), g.compare);
         gfx::uniforms(gfx::VERTEX, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::table_block(g));
@@ -166,6 +188,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 7, g.lace_mask, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 8, render3d::light_or_stand_in(g), g.linear);
         gfx::bind_texture(gfx::FRAGMENT, 9, g.book_atlas, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 10, render3d::table_map_or_stand_in(g), g.compare);
         gfx::uniforms(gfx::VERTEX, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::surfaces_block(g));
@@ -224,10 +247,10 @@ fn make_motes(own: Own&, g: render3d::Gpu&) {
 fn make_room(own: Own&, g: render3d::Gpu&) {
     guard g.room_lit.id == 0 else { return; }
     g.room_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
-                               embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                               embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                                gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true });
     g.room_glass = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
-                                 embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                                 embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                                  gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED });
     g.bake_room = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_ROOM, shaders::BAKE_FRAG));
     g.outside = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::OUTSIDE_VERT),
@@ -537,12 +560,12 @@ fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
 // The table's shader with its shadow filtered as `look` says, as the lit one's (lit_frag).
 fn table_frag(look: i32) -> const u8[:] {
     if look == render3d::SHADOW_4 {
-        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_FRAG);
+        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG);
     }
     if look == render3d::SHADOW_16 {
-        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_FRAG);
+        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG);
     }
-    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_FRAG);
+    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG);
 }
 
 // The table's pipeline, its shadow filtered as `look` says (table_frag).
@@ -907,7 +930,8 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.tree_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.wall_albedo,
-                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas];
+                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas,
+                    g.table_map];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
