@@ -108,6 +108,12 @@ struct Room {
     // indirect light only: x how much (1 a corner's full share of the sky hidden), y how far
     // from a corner it reaches (metres); 0 none.
     corners: float4 = float4_0,
+    // The room's ambient occlusion from what the screen shows (render3d::ssao_pass), its
+    // indirect light only, where it finds more than the corners know: x how strong (1 all
+    // it finds), y its reach (metres), z its bias (the cosine over a pixel's plane that
+    // hides nothing, so a flat surface stays clear of its half floats' steps), w its gain
+    // (a tap that hides all hides this many taps' share); x 0 none.
+    ssao: float4 = float4_0,
 }
 
 // The library on the garden side, south-west, a mid-October afternoon
@@ -141,6 +147,7 @@ let AUTUMN = Room {
     baked:         float4 { 7.0, 12.0, 0.2, 0.3 },
     bloom:         float4 { 0.45, 0.72, 0.15, 4.0 },
     corners:       float4 { 1.0, 0.4, 0.0, 0.0 },
+    ssao:          float4 { 1.0, 0.35, 0.05, 3.0 },
     ..
 };
 

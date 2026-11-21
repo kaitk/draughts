@@ -1616,6 +1616,10 @@ let TABLE_HEAD = """
     layout(set = 2, binding = 6) uniform sampler2DShadow shadow_map;
     // The table's own map in the room (TABLE_MAP_FN).
     layout(set = 2, binding = 7) uniform sampler2DShadow table_depth;
+    #ifdef TABLE_ROOM
+    // The room's ambient occlusion at half size (SSAO_FN).
+    layout(set = 2, binding = 8) uniform sampler2D ssao_map;
+    #endif
     // tables::Table's. pool: x the light's reach round the board (world units), y how dim
     // it is beyond, z how dark the edge's underside goes, w how strong the board's
     // reflection; coat: x the polish's roughness on the edge (the top's is baked), y how
@@ -1628,9 +1632,10 @@ let TABLE_HEAD = """
     // render3d::TableBlock): room_light the probes on the table's axis, four heights of
     // three colours' constant and direction; room_mix x 1 there, y the harmonics the room
     // keeps, z the room's exposure over the board's, w the shade's floor of the key kept;
-    // room_shade the room's even bounce kept, w a metre.
+    // room_shade the room's even bounce kept, w a metre; ssao the room's ambient occlusion
+    // (SSAO_FN).
     layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 shape; vec4 table_map[4];
-                                                 vec4 room_light[12]; vec4 room_mix; vec4 room_shade; };
+                                                 vec4 room_light[12]; vec4 room_mix; vec4 room_shade; vec4 ssao; };
     """;
 
 // The table's own shadow from its map (render3d::table_map), which TABLE_FRAG and ROOM_FRAG
@@ -1963,6 +1968,10 @@ let TABLE_FRAG = """
         vec3 irr = sh_eval(n) * params.z * mix(1.0, lit, 0.5);
     #ifdef TABLE_ROOM
         irr = room_light_at(p.y, n, sh_eval(n) * params.z);
+        // The room's screen occlusion where it finds more than the table's own terms (the
+        // board's foot, the top over the base) know.
+        float screen_ao = ssao_at(p);
+        ao = min(ao, ssao_kept(screen_ao));
     #endif
         vec3 wood = albedo * (diff / PI * light * vis + irr * ao);
 
@@ -2008,6 +2017,9 @@ let TABLE_FRAG = """
         vec3 color = (wood * (1.0 - fc) + spec * strength + env * fc * spec_ao) * params.x;
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
+    #ifdef TABLE_ROOM
+        if (ssao.y > 0.5) result = vec4(vec3(ssao.y > 1.5 ? ao : screen_ao), 1.0);
+    #endif
     }
     """;
 
@@ -2066,6 +2078,8 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 9) uniform sampler2D book_atlas;
     // The table's own map (TABLE_MAP_FN).
     layout(set = 2, binding = 10) uniform sampler2DShadow table_depth;
+    // The room's ambient occlusion at half size (SSAO_FN).
+    layout(set = 2, binding = 11) uniform sampler2D ssao_map;
     // surfaces::Look and the room's frame. plank: x a plank's width, y its length in
     // widths, z the joint's half width, w the cup (its slope at the edges); planks: x each
     // one's own tone, y the share patched, z its tilt, w the scratches; worn: x the paths'
@@ -2105,7 +2119,8 @@ let ROOM_HEAD = """
     // made), y a step of fade, z the steps of a book's code (books::CODES); book_cases: the
     // bookcases' middles' distance from the hall door's along u, their half width (world
     // units), their top (metres); corners: the corners' and edges' darkening (rooms::Room's,
-    // y its reach in world units); table_map: the table's own map's rows (TABLE_MAP_FN);
+    // y its reach in world units); ssao: the room's ambient occlusion (SSAO_FN); table_map:
+    // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
     // ending in gilt, ink, the page edges plain and sprinkled.
     layout(set = 3, binding = 1) uniform Surfaces {
@@ -2143,6 +2158,7 @@ let ROOM_HEAD = """
         vec4 books;
         vec4 book_cases;
         vec4 corners;
+        vec4 ssao;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -2843,7 +2859,12 @@ let ROOM_FRAG = """
         vec3 ng = normalize(v_normal);
         float kind = floor(v_extra.y + 0.001);
         float own = v_extra.y - kind;
+        // ao: what the mesh and the analytic terms know of the indirect light hidden; fine:
+        // the surface's own narrow lines (the floor's joints, the plinth's lip), which the
+        // half-size occlusion can't see; screen_ao: the screen's occlusion (SSAO_FN).
         float ao = clamp(v_extra.x, 0.0, 1.0);
+        float fine = 1.0;
+        float screen_ao = ssao_at(p);
         vec3 albedo;
         float rough;
         float metal = 0.0;
@@ -2931,7 +2952,7 @@ let ROOM_FRAG = """
             rough += 0.3 * sc;
             albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
             rough = mix(rough, 0.6, joint);
-            ao *= 1.0 - 0.5 * joint;
+            fine *= 1.0 - 0.5 * joint;
             // The table hides the sky under it, its scroll toes the floor they stand on,
             // and the walls along their feet.
             ao *= mix(0.55, 1.0, smoothstep(0.5625 * table.x, 1.375 * table.x, r));
@@ -2943,7 +2964,7 @@ let ROOM_FRAG = """
                 vec2 lip = mix(vec2(0.05), vec2(0.03), door_open) * shell.w;
                 vec2 near_door = vec2(uv.y + place.x, shell_ends.x - uv.x) - lip;
                 float past_lip = min(others - 0.05 * shell.w, min(near_door.x, near_door.y));
-                ao *= mix(0.4, 1.0, smoothstep(0.0, 0.015 * shell.w, past_lip));
+                fine *= mix(0.4, 1.0, smoothstep(0.0, 0.015 * shell.w, past_lip));
             } else {
                 ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
             }
@@ -3085,11 +3106,12 @@ let ROOM_FRAG = """
                 float hg = 0.75 / pow(1.25 - ahead, 1.5);
                 vec3 through = shell_glass.w * (max(-dot(nf, l), 0.0) * sun * light / PI * (1.0 + lace_light.w * (1.0 - cover) * hg)
                                                 + lace_light.rgb * ao);
-                vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + sh_eval(nf) * params.z + shade.rgb;
+                vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + (sh_eval(nf) * params.z + shade.rgb) * ssao_kept(screen_ao);
                 c = srgb(lace_thread.rgb) * (front + through);
             }
             c = tonemap(c * params.x * shade.w) * vec3(1.02, 1.0, 0.97);
             result = vec4(to_srgb(c) * a * (1.0 - screen.z), a);
+            if (ssao.y > 0.5) result = vec4(vec3(ssao.y > 1.5 ? ssao_kept(screen_ao) : screen_ao) * a, a);
             return;
         }
 
@@ -3099,8 +3121,11 @@ let ROOM_FRAG = """
         float diff = clamp(nol, 0.0, 1.0);
         vec3 light = light_color.rgb * light_dir.w * shell_sun.y;
         // The room's corners and edges, its indirect light only (not the books, which the
-        // cases shade themselves).
-        if (kind < 13.5) ao *= corner_shade(v_local, vec3(dot(ng.xz, axes.xy), ng.y, dot(ng.xz, axes.zw)));
+        // cases shade themselves). The screen's occlusion only where it finds more than
+        // these know, so the box's planes and the cases' shelves aren't darkened twice.
+        float corner = 1.0;
+        if (kind < 13.5) corner = corner_shade(v_local, vec3(dot(ng.xz, axes.xy), ng.y, dot(ng.xz, axes.zw)));
+        ao = fine * min(ao * corner, ssao_kept(screen_ao));
         // The table's top is solid: its shadow keeps all the key out, unlike the board's
         // softened ones (room.x). The sun reaches p only through a window (open), and only
         // that takes the highlight; the shade's floor (window_light's, 1 - room.y where the
@@ -3141,6 +3166,8 @@ let ROOM_FRAG = """
         vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
+        // The tuner's views: the screen's occlusion alone, or all the indirect light keeps.
+        if (ssao.y > 0.5) result = vec4(vec3(ssao.y > 1.5 ? ao : screen_ao), 1.0);
     }
     """;
 
@@ -3183,6 +3210,152 @@ let GLOW_BLUR_FRAG = """
         }
         result = vec4(sum / total, 1.0);
     }
+    """;
+
+// The room's ambient occlusion (render3d::ssao_pass): what the screen shows of the room, the
+// table and the board drawn at half size into where each pixel is and which way it faces
+// (PRE_FRAG); each pixel's share of the sky hidden by what it shows within a reach
+// (SSAO_FRAG), blurred over 4 × 4 by distance (SSAO_BLUR_FRAG); read back in ROOM_FRAG and
+// TABLE_FRAG's room variant (SSAO_FN) for their indirect light only.
+
+// Where each pixel is from the eye (world units) and how much it hides (w: 1, the lace
+// LACE_HIDES, 0 nothing drawn), and its normal toward the eye. With PRE_ROOM the room's
+// mesh, whose glass hides nothing.
+let PRE_ROOM = "#define PRE_ROOM 1\n";
+let PRE_FRAG = """
+    layout(location = 0) in vec3 v_world;
+    layout(location = 1) in vec3 v_normal;
+    #ifdef PRE_ROOM
+    layout(location = 3) in vec2 v_extra;
+    #endif
+    layout(location = 0) out vec4 pre_place;
+    layout(location = 1) out vec4 pre_facing;
+    // The lace lets about three quarters through where it hangs flat.
+    const float LACE_HIDES = 0.4;
+    void main() {
+        float hides = 1.0;
+    #ifdef PRE_ROOM
+        float kind = floor(v_extra.y + 0.001);
+        if (kind > 9.5 && kind < 10.5) discard;
+        if (kind > 10.5 && kind < 11.5) hides = LACE_HIDES;
+    #endif
+        vec3 rel = v_world - eye.xyz;
+        vec3 n = normalize(v_normal);
+        if (dot(n, rel) > 0.0) n = -n;
+        pre_place = vec4(rel, hides);
+        pre_facing = vec4(n * 0.5 + 0.5, 1.0);
+    }
+    """;
+
+// Each half-size pixel's occlusion, after McGuire's Alchemy obscurance: SSAO_TAPS points of
+// a spiral round it on the screen, out to the reach's size there; each hides as much as it
+// stands over the pixel's plane (the cosine of its angle above it, less a bias that keeps a
+// flat surface clear), fading to nothing at the reach. Each pixel of a 4 × 4 block turns
+// the spiral its own way, so the blur's 4 × 4 takes all sixteen turns and no noise is left.
+// ssao_fwd: xyz the clip's w along the view (row 3 of view_proj), w half-size pixels a
+// world unit spans at w 1; ssao_look: x the reach (world units), y the bias, z the
+// largest spiral (pixels), w the gain. result: r the light kept (1 all), g the distance from
+// the eye (0 nothing drawn).
+let SSAO_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D pre_place;
+    layout(set = 2, binding = 1) uniform sampler2D pre_facing;
+    layout(set = 3, binding = 0) uniform Ssao { vec4 ssao_fwd; vec4 ssao_look; };
+    const int SSAO_TAPS = 8;
+    void main() {
+        ivec2 px = ivec2(gl_FragCoord.xy);
+        ivec2 size = textureSize(pre_place, 0);
+        vec4 c = texelFetch(pre_place, px, 0);
+        if (c.w <= 0.0) {
+            result = vec4(1.0, 0.0, 0.0, 1.0);
+            return;
+        }
+        float dist = length(c.xyz);
+        vec3 n = normalize(texelFetch(pre_facing, px, 0).xyz * 2.0 - 1.0);
+        float reach = ssao_look.x;
+        float spiral = min(reach * ssao_fwd.w / max(dot(ssao_fwd.xyz, c.xyz), 1e-3), ssao_look.z);
+        if (spiral < 1.0) {
+            result = vec4(1.0, dist, 0.0, 1.0);
+            return;
+        }
+        int cell = (px.x % 4) + 4 * (px.y % 4);
+        float turn = 6.2832 * float(cell) / 16.0;
+        float jitter = fract(float(cell) * 0.618034);
+        float hidden = 0.0;
+        for (int i = 0; i < SSAO_TAPS; i++) {
+            float t = (float(i) + jitter) / float(SSAO_TAPS);
+            float a = turn + 2.39996 * float(i);
+            ivec2 q = px + ivec2(floor(vec2(cos(a), sin(a)) * (t * spiral) + 0.5));
+            if (q.x < 0 || q.y < 0 || q.x >= size.x || q.y >= size.y) continue;
+            vec4 s = texelFetch(pre_place, q, 0);
+            vec3 v = s.xyz - c.xyz;
+            float vv = dot(v, v);
+            float up = dot(v, n) * inversesqrt(vv + 1e-4);
+            hidden += s.w * max(up - ssao_look.y, 0.0) * max(1.0 - vv / (reach * reach), 0.0);
+        }
+        float kept = clamp(1.0 - ssao_look.w * hidden / float(SSAO_TAPS), 0.0, 1.0);
+        result = vec4(kept, dist, 0.0, 1.0);
+    }
+    """;
+
+// The occlusion blurred over the 4 × 4 block round each pixel (the spiral's sixteen turns),
+// each texel by how near its distance from the eye is to the middle's, so an edge keeps
+// its sides apart. The block runs from -2 to 1, so texel i holds the occlusion at i, not
+// i + 0.5 (SSAO_FN reads it so).
+let SSAO_BLUR_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D ssao_raw;
+    void main() {
+        ivec2 px = ivec2(gl_FragCoord.xy);
+        ivec2 last = textureSize(ssao_raw, 0) - 1;
+        vec2 c = texelFetch(ssao_raw, px, 0).rg;
+        if (c.y <= 0.0) {
+            result = vec4(1.0, 0.0, 0.0, 1.0);
+            return;
+        }
+        float sum = 0.0;
+        float total = 0.0;
+        for (int k = 0; k < 16; k++) {
+            ivec2 at = clamp(px + ivec2(k % 4 - 2, k / 4 - 2), ivec2(0), last);
+            vec2 s = texelFetch(ssao_raw, at, 0).rg;
+            float w = max(1.0 - abs(s.y - c.y) / (0.03 * c.y), 0.0);
+            sum += w * s.x;
+            total += w;
+        }
+        result = vec4(sum / max(total, 1e-4), c.y, 0.0, 1.0);
+    }
+    """;
+
+// The room's occlusion at this pixel, from the half-size map (ssao_map, the block's ssao: x
+// how strong, 0 none; y the tuner's views, 1 the occlusion alone, 2 all the indirect light
+// keeps; zw the map's texels a pixel): its four texels round the pixel, each by its bilinear
+// weight over how far its distance from the eye is from p's, so an edge takes its own side;
+// 1 where none is within 5%, as behind the lace. ssao_kept: the light kept at the strength.
+let SSAO_FN = """
+    float ssao_at(vec3 p) {
+        if (ssao.x <= 0.0) return 1.0;
+        vec2 at = gl_FragCoord.xy * ssao.zw;
+        vec2 f = at - floor(at);
+        ivec2 i0 = ivec2(floor(at));
+        ivec2 last = textureSize(ssao_map, 0) - 1;
+        float d = length(p - eye.xyz);
+        float sum = 0.0;
+        float total = 0.0;
+        float nearest = 1.0;
+        for (int k = 0; k < 4; k++) {
+            ivec2 o = ivec2(k % 2, k / 2);
+            vec2 s = texelFetch(ssao_map, clamp(i0 + o, ivec2(0), last), 0).rg;
+            float gap = abs(s.y - d) / d;
+            nearest = min(nearest, gap);
+            float w = ((o.x == 1 ? f.x : 1.0 - f.x) * (o.y == 1 ? f.y : 1.0 - f.y) + 1e-3) / (0.002 + gap);
+            sum += w * s.x;
+            total += w;
+        }
+        return nearest > 0.05 ? 1.0 : sum / total;
+    }
+    float ssao_kept(float raw) { return clamp(1.0 - ssao.x * (1.0 - raw), 0.0, 1.0); }
     """;
 
 // The image with its glow added in linear light, into the target: x the glow's strength, yz

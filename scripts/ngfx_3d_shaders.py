@@ -51,7 +51,7 @@ MODULES = [
     ("r3d_table", TABLE_VS, ["FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
     ("r3d_table_few", TABLE_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
     ("r3d_table_many", TABLE_VS, ["SHADOW_MANY", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
-    ("r3d_table_room", TABLE_VS, ["TABLE_ROOM", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
+    ("r3d_table_room", TABLE_VS, ["TABLE_ROOM", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
     ("r3d_crown", FULL, ["CROWN_FN", "CROWN_FRAG"]),
     ("r3d_occ", FULL, ["FS_SET", "FRAME", "OCC_FRAG"]),
     ("r3d_backdrop", FULL, ["FS_SET", "FRAME", "FADE_FN", "BACKDROP_FRAG"]),
@@ -68,11 +68,16 @@ MODULES = [
     ("r3d_kept", FULL, ["KEPT_FRAG"]),
     ("r3d_show", ["SHOW_VS", "SHOW_BLOCK", "SHOW_VERT"], ["SHOW_FS", "SHOW_BLOCK", "SHOW_FRAG"]),
     ("r3d_dust", ["VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["DUST_FRAG"]),
-    ("r3d_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "TONE_FN", "ROOM_FRAG"]),
+    ("r3d_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
     ("r3d_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["FS_SET", "FRAME", "TONE_FN", "OUTSIDE_FRAG"]),
     ("r3d_glow_pick", FULL, ["GLOW_PICK_FRAG"]),
     ("r3d_glow_blur", FULL, ["GLOW_BLUR_FRAG"]),
     ("r3d_glow_add", FULL, ["GLOW_ADD_FRAG"]),
+    ("r3d_pre_room", ["VS_SET", "FRAME", "ROOM_VERT"], ["PRE_ROOM", "FS_SET", "FRAME", "PRE_FRAG"]),
+    ("r3d_pre_table", TABLE_VS, ["FS_SET", "FRAME", "PRE_FRAG"]),
+    ("r3d_pre_lit", LIT_VS, ["FS_SET", "FRAME", "PRE_FRAG"]),
+    ("r3d_ssao", FULL, ["SSAO_FRAG"]),
+    ("r3d_ssao_blur", FULL, ["SSAO_BLUR_FRAG"]),
 ]
 
 def products(body):

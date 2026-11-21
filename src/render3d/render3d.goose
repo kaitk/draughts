@@ -373,6 +373,22 @@ struct Gpu {
     bloom_a:    Texture,
     bloom_b:    Texture,
     bloom_size: int2,
+    // The room's ambient occlusion (ssao_pass): the prepass's pipelines for the room, the
+    // table and the board (shaders::PRE_FRAG), the occlusion's and its blur's, made with
+    // the room's; its half-size targets, made again for another size: where each pixel is
+    // (RGBA16F), which way it faces (RGBA8), their depth, the occlusion (RG16F) and the
+    // blurred map the room reads.
+    pre_room:   Pipeline,
+    pre_table:  Pipeline,
+    pre_lit:    Pipeline,
+    ssao:       Pipeline,
+    ssao_blur:  Pipeline,
+    pre_place:  Texture,
+    pre_facing: Texture,
+    pre_depth:  Texture,
+    ssao_raw:   Texture,
+    ssao_map:   Texture,
+    ssao_size:  int2,
     // A tuner's: the panelling oak's and the ceiling's tint (x, z their lightness, y, w their
     // saturation, as factors, 0 untouched), and the tree's and the shell's light kept as
     // they are, not baked again, while a slider is held, so a drag bakes once on release.
@@ -501,7 +517,7 @@ fn table_shown(g: Gpu&) -> bool { g.table && g.table_baked && g.table_side == g.
 // stays (shade_fill); shade: the room's even bounce it keeps, w a metre in world units.
 struct TableBlock {
     pool:       float4, coat: float4, polish: float4, worn: float4, shape: float4, map: float4[4],
-    room_light: float4[12], room_mix: float4, room_shade: float4,
+    room_light: float4[12], room_mix: float4, room_shade: float4, ssao: float4,
 }
 // Whether the table stands in the room with its light baked: drawn with TABLE_ROOM's
 // pipeline (g.table_room) and the probes round it.
@@ -514,7 +530,7 @@ fn table_block(g: Gpu&) -> TableBlock {
     let shade = rooms::color_of(r.bounce) * (r.bounce.w * r.baked.w);
     TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 }, map,
                  table_probes, float4 { if on { 1.0 } else { 0.0 }, r.baked.z, r.room_exposure, shade_fill },
-                 float4 { shade.x, shade.y, shade.z, surfaces::METRE } }
+                 float4 { shade.x, shade.y, shade.z, surfaces::METRE }, if on { ssao_block_of(g) } else { float4_0 } }
 }
 
 // The table's own shadow in the room (shaders::TABLE_MAP_FN): its top and base drawn into a
@@ -986,6 +1002,7 @@ struct SurfacesBlock {
     books:         float4,
     book_cases:    float4,
     corners:       float4,
+    ssao:          float4,
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
@@ -1073,7 +1090,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
-                    float4_0, float4_0, table_map_shown(g), books::COVER, books::LABEL }
+                    float4_0, float4_0, ssao_block_of(g), table_map_shown(g), books::COVER, books::LABEL }
 }
 
 // The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.
@@ -1878,10 +1895,40 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2
     // With the window's glow the pass draws into the image, and the glow adds it into the
     // target; not where the image is the target (the app's kept image, which shows no shell).
     let glowing = bloom_shown(g) && out.id != 0;
+    if ssao_shown(g) { o.ssao_pass(g, size); }
     o.board_pass(g, if glowing { g.image } else { target }, size, backdrop);
     if glowing { o.bloom_pass(g, g.image, target, size); }
     if keep_depth { o.draw_depth(g); }
 }
+
+// The room's ambient occlusion (ssao_pass, shaders::SSAO_FRAG): drawn where the tiers allow
+// it (the standard and the high: not on a phone, which the app says), the room shows and
+// its strength is over 0. ssao_view: the tuner's views of it (shaders::SSAO_FN's).
+var ssao_allowed = true;
+var ssao_view = 0;
+// Its largest spiral, a share of the map's width.
+let SSAO_SPIRAL: f32 = 0.06;
+fn ssao_shown(g: Gpu&) -> bool { ssao_allowed && room_shown(g) && g.room.ssao.x > 0.0 && g.ssao_blur.id != 0 }
+fn ssao_size_of(size: int2) -> int2 { int2 { max((size.x + 1) / 2, 1), max((size.y + 1) / 2, 1) } }
+// SSAO_FRAG's block for the map of q texels: the view's row of view_proj that gives the clip's
+// w, the half-size pixels a unit spans at w 1, the reach, bias (rooms::Room.ssao), largest
+// spiral and gain.
+struct SsaoBlock { fwd: float4, look: float4 }
+fn ssao_pass_of(g: Gpu&, q: int2) -> SsaoBlock {
+    let m = g.frame.view_proj;
+    let across = length(float3 { m.c0.x, m.c1.x, m.c2.x });
+    SsaoBlock { float4 { m.c0.w, m.c1.w, m.c2.w, across * 0.5 * q.x },
+                float4 { g.room.ssao.y * surfaces::METRE, g.room.ssao.z, SSAO_SPIRAL * q.x, g.room.ssao.w } }
+}
+// ROOM_FRAG's and TABLE_FRAG's ssao (shaders::SSAO_FN): the strength, the view, the map's
+// texels a pixel of the pass (its screen, twice the target's when ngfx supersamples); all 0
+// when it isn't drawn.
+fn ssao_block_of(g: Gpu&) -> float4 {
+    guard ssao_shown(g) && g.ssao_map.id != 0 else { return float4_0; }
+    let s = g.frame.screen;
+    return float4 { g.room.ssao.x, ssao_view, g.ssao_size.x / max(s.x, 1.0), g.ssao_size.y / max(s.y, 1.0) };
+}
+fn ssao_or_stand_in(g: Gpu&) -> Texture { if g.ssao_map.id != 0 { g.ssao_map } else { g.crown_map } }
 
 // Whether the window's glow is drawn: the shell's room with its bloom on.
 fn bloom_shown(g: Gpu&) -> bool { room_shown(g) && g.room_shell && g.room.bloom.x > 0.0 && g.bloom_add.id != 0 }

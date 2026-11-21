@@ -145,6 +145,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 5, render3d::tree_or_stand_in(g), g.linear);
         slot(t, 6, g.shadow_map, g.compare);
         slot(t, 7, render3d::table_map_or_stand_in(g), g.compare);
+        if render3d::table_in_room(g) { slot(t, 8, render3d::ssao_or_stand_in(g), g.linear); }
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
 
@@ -167,6 +168,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 8, render3d::light_or_stand_in(g), g.linear);
         slot(t, 9, g.book_atlas, g.aniso);
         slot(t, 10, render3d::table_map_or_stand_in(g), g.compare);
+        slot(t, 11, render3d::ssao_or_stand_in(g), g.linear);
         nx::draw_indexed(ngfx::root(t), g.room_ib, 4, g.room_count);
         // The shell's glass and lace over what stands behind them.
         if g.glass_count > 0 {
@@ -231,6 +233,77 @@ fn make_room(own: Own&, g: Gpu&) {
     g.bloom_pick = module(embed_file("../../build/ngfx/blobs/r3d_glow_pick.blob"));
     g.bloom_blur = module(embed_file("../../build/ngfx/blobs/r3d_glow_blur.blob"));
     g.bloom_add = module(embed_file("../../build/ngfx/blobs/r3d_glow_add.blob"));
+    let solid = ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true };
+    g.pre_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_pre_room.blob"),
+                              ngfx::PipelineDesc { depth_test: true, depth_write: true });
+    g.pre_table = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_pre_table.blob"), solid);
+    g.pre_lit = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_pre_lit.blob"), solid);
+    g.ssao = module(embed_file("../../build/ngfx/blobs/r3d_ssao.blob"));
+    g.ssao_blur = module(embed_file("../../build/ngfx/blobs/r3d_ssao_blur.blob"));
+}
+
+// The room's ambient occlusion (render3d::ssao_shown), before the board's pass: the room,
+// the table and the board at half size into where each pixel is and which way it faces,
+// then its occlusion, then that blurred into g.ssao_map, which the room and the table read;
+// the modules' headers: the prepass's the frame and the vertices (the board's lit_root's),
+// r3d_ssao's the two targets and its block, r3d_ssao_blur's the occlusion.
+fn ssao_pass(own: Own&, g: Gpu&, size: int2) {
+    let q = render3d::ssao_size_of(size);
+    if g.ssao_map.id == 0 || g.ssao_size.x != q.x || g.ssao_size.y != q.y {
+        if g.ssao_map.id != 0 {
+            for t in [g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map] { nx::release(t); }
+            ngfx::flush();
+        }
+        g.pre_place = nx::render_target(q.x, q.y, ngfx::RGBA16F);
+        g.pre_facing = nx::render_target(q.x, q.y, ngfx::RGBA8);
+        g.pre_depth = nx::texture(ngfx::TextureDesc { format: ngfx::DEPTH16, usage: ngfx::DEPTH_TARGET,
+                                                      width: q.x as i32, height: q.y as i32 });
+        g.ssao_raw = nx::render_target(q.x, q.y, ngfx::RG16F);
+        g.ssao_map = nx::render_target(q.x, q.y, ngfx::RG16F);
+        g.ssao_size = q;
+    }
+    let f = frame_addr(own, g);
+    var pass = nx::PassDesc { depth: g.pre_depth, color_value: float4_0 };
+    pass.color[0] = g.pre_place;
+    pass.color[1] = g.pre_facing;
+    nx::begin_pass(pass);
+    nx::bind(g.pre_lit);
+    draw_meshes(own, g, f, 0.0);
+    if render3d::table_shown(g) {
+        nx::bind(g.pre_table);
+        var t = no_root();
+        t.frame = f;
+        t.verts = nx::address(g.table_vb);
+        nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
+    }
+    nx::bind(g.pre_room);
+    var r = no_root();
+    r.frame = f;
+    r.verts = nx::address(g.room_vb);
+    nx::draw_indexed(ngfx::root(r), g.room_ib, 4, g.room_count);
+    if g.glass_count > 0 {
+        r.verts = nx::address(g.glass_vb);
+        nx::draw_indexed(ngfx::root(r), g.glass_ib, 4, g.glass_count);
+    }
+    ngfx::end_pass();
+    barrier_between_passes();
+    nx::begin_pass(g.ssao_raw, nx::Texture { 0 }, float4_0);
+    nx::bind(g.ssao);
+    var a = no_root();
+    slot(a, 0, g.pre_place, g.linear);
+    slot(a, 1, g.pre_facing, g.linear);
+    let look: render3d::SsaoBlock[1] = [render3d::ssao_pass_of(g, q)];
+    a.u = ngfx::frame_data(bytes_of(look));
+    ngfx::draw(ngfx::root(a), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
+    nx::begin_pass(g.ssao_map, nx::Texture { 0 }, float4_0);
+    nx::bind(g.ssao_blur);
+    var b = no_root();
+    slot(b, 0, g.ssao_raw, g.linear);
+    ngfx::draw(ngfx::root(b), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
 }
 
 // The window's glow (render3d::bloom_shown): what is bright in `image` picked into a quarter
@@ -990,7 +1063,8 @@ fn release(own: Own&, g: Gpu&) {
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
                     g.floor_normal, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
-                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.table_map];
+                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.table_map,
+                    g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
@@ -1000,7 +1074,7 @@ fn release(own: Own&, g: Gpu&) {
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
                      g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_lit, g.bake_room, g.room_glass, g.outside, g.bloom_pick,
-                     g.bloom_blur, g.bloom_add];
+                     g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();
