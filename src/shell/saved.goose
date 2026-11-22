@@ -11,9 +11,36 @@ import os;
 // flat value (docs/architecture/README.md, "Game state is a value"). VERSION changes when
 // its layout does; an image of another layout doesn't verify, and the app starts afresh.
 // `unset` is a game nobody set up, for which home's Continue stays hidden.
-let VERSION = 4;
+let VERSION = 5;
 
 struct Saved {
+    version:             i64,
+    unset:               bool,
+    screen:              i64,
+    variant:             u8,
+    start:               rules::Position,
+    pos:                 rules::Position,
+    last_from:           u8,
+    last_to:             u8,
+    has_last:            bool,
+    history:             rules::Step[..rules::MAX_HISTORY],
+    clock:               clock::Clock,
+    computer:            i64,
+    level:               i64,
+    skill:               i64,
+    number:              i64,
+    end_sent_for_rating: bool,
+    // How it ended (game::BY_*), the computer's last refusal of a draw, whether it has
+    // offered one or will, and its last search's score.
+    ended_by:   i64,
+    refused_at: i64,
+    offered:    bool,
+    offer_due:  bool,
+    score:      i64,
+}
+
+// The layout before version 5, which had no draws offered nor giving up.
+struct Saved4 {
     version:             i64,
     unset:               bool,
     screen:              i64,
@@ -46,9 +73,11 @@ fn checksum(data: const u8[:]) -> u64 {
 fn kept_of(sh: Shell&) -> Saved {
     let b .= sh.game.b;
     return Saved { version: VERSION, unset: sh.unset, screen: KINDS[sh.screen].kept, variant: b.variant, start: b.rec.start,
-                   pos:   b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.rec.history,
-                   clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
-                   number: sh.game.number, end_sent_for_rating: sh.game.end_sent_for_rating };
+                   pos:        b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.rec.history,
+                   clock:      sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
+                   number:     sh.game.number, end_sent_for_rating: sh.game.end_sent_for_rating, ended_by: sh.game.ended_by,
+                   refused_at: sh.game.refused_at, offered: sh.game.offered, offer_due: sh.game.offer_due,
+                   score: sh.game.score };
 }
 
 // The image of what is kept, then its checksum (8 bytes, little-endian), for the app to
@@ -107,6 +136,11 @@ fn bring_back(sh: Shell&, s: Saved&) {
     b.last = rules::Way { from: s.last_from, to: s.last_to, .. };
     gm.clock = s.clock;
     gm.end_sent_for_rating = s.end_sent_for_rating;
+    gm.ended_by = if s.ended_by >= game::BY_BOARD && s.ended_by <= game::BY_GIVING_UP { s.ended_by } else { game::BY_BOARD };
+    gm.refused_at = s.refused_at;
+    gm.offered = s.offered;
+    gm.offer_due = s.offer_due;
+    gm.score = s.score;
     gm.turn = b.pos.side;
     sh.unset = s.unset;
     // A game kept after its end was put in the player's history then
@@ -166,14 +200,26 @@ struct Saved3 {
 }
 
 fn old(image: const u8[:], out: Saved[>..]&) -> bool {
+    let four, ok4 = from_bytes<Saved4[>..]>(image);
+    if ok4 && four.len == 1 && four[0].version == 4 {
+        let t .= four[0];
+        out = [];
+        out.push(Saved { version: VERSION, unset: t.unset, screen: t.screen, variant: t.variant, start: t.start, pos: t.pos,
+                         last_from:           t.last_from, last_to: t.last_to, has_last: t.has_last, history: t.history,
+                         clock:               t.clock, computer: t.computer, level: t.level, skill: t.skill, number: t.number,
+                         end_sent_for_rating: t.end_sent_for_rating, ended_by: 0, refused_at: -1, offered: false,
+                         offer_due: false, score: 0 });
+        return true;
+    }
     let three, ok = from_bytes<Saved3[>..]>(image);
     guard ok && three.len == 1 && three[0].version == 3 else { return false; }
     let t .= three[0];
     out = [];
     out.push(Saved { version: VERSION, unset: false, screen: t.screen, variant: t.variant, start: t.start, pos: t.pos,
-                     last_from: t.last_from, last_to: t.last_to, has_last: t.has_last, history: t.history,
-                     clock:     t.clock, computer: t.computer, level: t.level, skill: t.skill, number: t.number,
-                     end_sent_for_rating: t.end_sent_for_rating });
+                     last_from:           t.last_from, last_to: t.last_to, has_last: t.has_last, history: t.history,
+                     clock:               t.clock, computer: t.computer, level: t.level, skill: t.skill, number: t.number,
+                     end_sent_for_rating: t.end_sent_for_rating, ended_by: 0, refused_at: -1, offered: false,
+                     offer_due: false, score: 0 });
     return true;
 }
 

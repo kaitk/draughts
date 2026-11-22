@@ -1,0 +1,42 @@
+three kings against one: W:WKh2:BKb8,Kd8,Kf8, card no card, tile on, ended by the board, winner -1, drawn 0
+  rating 800, rated 0, medium's skill 40, played 0, history's last winner -1
+offered: W:WKh2:BKb8,Kd8,Kf8, card refused, tile dim, ended by the board, winner -1, drawn 0
+  rating 800, rated 0, medium's skill 40, played 0, history's last winner -1
+continued: W:WKh2:BKb8,Kd8,Kf8, card no card, tile dim, ended by the board, winner -1, drawn 0
+  rating 800, rated 0, medium's skill 40, played 0, history's last winner -1
+the dim tile tapped: W:WKh2:BKb8,Kd8,Kf8, card no card, tile dim, ended by the board, winner -1, drawn 0
+  rating 800, rated 0, medium's skill 40, played 0, history's last winner -1
+two kings against one, offered: W:WKe1,Kb2:BKb8, card no card, tile hidden, ended agreed, winner -1, drawn 5
+  rating 820, rated 1, medium's skill 40, played 1, history's last winner -1
+  the draw's reason: Agreed, controls 7
+undone: W:WKc1,Ke1:BKa7, card no card, tile on, ended by the board, winner -1, drawn 0
+  rating 820, rated 1, medium's skill 40, played 1, history's last winner -1
+agreed again: nothing counted again: W:WKc1,Ke1:BKa7, card no card, tile hidden, ended agreed, winner -1, drawn 5
+  rating 820, rated 1, medium's skill 40, played 1, history's last winner -1
+its move made: W:WKc1,Ke1:BKc5,Kh8, card offer, tile on, ended by the board, winner -1, drawn 0
+  rating 820, rated 1, medium's skill 40, played 1, history's last winner -1
+played on: W:WKc1,Ke1:BKc5,Kh8, card no card, tile on, ended by the board, winner -1, drawn 0
+  rating 820, rated 1, medium's skill 40, played 1, history's last winner -1
+another move each: no second offer: W:WKe1:BKa1,Kc5, card no card, tile on, ended by the board, winner -1, drawn 0
+  rating 820, rated 1, medium's skill 40, played 1, history's last winner -1
+  child's moves 0, start over asks false
+  child's moves 1, start over asks false
+  child's moves 2, start over asks false
+  child's moves 3, start over asks false
+  child's moves 4, start over asks true
+start over: W:Wa1,c1,g1,b2,d2,f2,h2,a3,c3,g3,b4:Be3,e5,d6,f6,h6,a7,c7,g7,b8,d8,f8,h8, card give up, tile hidden, ended by the board, winner -1, drawn 0
+  rating 820, rated 1, medium's skill 40, played 1, history's last winner -1
+kept playing: W:Wa1,c1,g1,b2,d2,f2,h2,a3,c3,g3,b4:Be3,e5,d6,f6,h6,a7,c7,g7,b8,d8,f8,h8, card no card, tile hidden, ended by the board, winner -1, drawn 0
+  rating 820, rated 1, medium's skill 40, played 1, history's last winner -1
+given up: W:Wa1,c1,g1,b2,d2,f2,h2,a3,c3,g3,b4:Be3,e5,d6,f6,h6,a7,c7,g7,b8,d8,f8,h8, card no card, tile hidden, ended given up, winner 1, drawn 0
+  rating 820, rated 2, medium's skill 32, played 2, history's last winner 1
+undone: W:Wa1,c1,g1,b2,d2,f2,h2,a3,c3,e3,g3,b4:Bc5,e5,d6,f6,h6,a7,c7,g7,b8,d8,f8,h8, card no card, tile hidden, ended by the board, winner -1, drawn 0
+  rating 820, rated 2, medium's skill 32, played 2, history's last winner 1
+given up again: nothing counted again: W:Wa1,c1,g1,b2,d2,f2,h2,a3,c3,g3,b4:Be3,e5,d6,f6,h6,a7,c7,g7,b8,d8,f8,h8, card no card, tile hidden, ended given up, winner 1, drawn 0
+  rating 820, rated 2, medium's skill 32, played 2, history's last winner 1
+a friend's game: B:WKe1,Kb2:BKa7, card no card, tile on, ended by the board, winner -1, drawn 0
+  rating 820, rated 2, medium's skill 32, played 2, history's last winner 1
+drawn: B:WKe1,Kb2:BKa7, card no card, tile hidden, ended agreed, winner -1, drawn 5
+  rating 820, rated 2, medium's skill 32, played 2, history's last winner -1
+undone: W:WKc1,Ke1:BKa7, card no card, tile on, ended by the board, winner -1, drawn 0
+  rating 820, rated 2, medium's skill 32, played 2, history's last winner -1

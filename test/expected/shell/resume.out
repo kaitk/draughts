@@ -1,5 +1,5 @@
 saved: screen 1, W:We3,g3,d4:Be5,b6,d6, began W:Wc3,e3,g3:Bb6,d6,f6, history 2, last true 25-20
-image 15006 bytes
+image 15032 bytes
 restored: true
   as it was: screen 1, W:We3,g3,d4:Be5,b6,d6, began W:Wc3,e3,g3:Bb6,d6,f6, history 2, last true 25-20
   undo: screen 1, B:We3,g3,d4:Bb6,d6,f6, began W:Wc3,e3,g3:Bb6,d6,f6, history 1, last true 10-15

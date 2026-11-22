@@ -144,7 +144,7 @@ fn tap_of(g: gui::Gui&, r: float4) -> float4 {
 // What the last frame declared on screen `what`: its tiles, the smallest tap across and
 // down, the board, and anything out of place. `board_shows` when the screen has a board,
 // `card` when the win's card sits on it.
-fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool, card: bool) {
+fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool, card: bool, answers: i64 = 2) {
     let w = drive::size.x;
     let h = drive::size.y;
     let u = gui::scale_of(w, h);
@@ -174,7 +174,7 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
                 format(wrong, " tiles ", j, " and ", i, " overlap;");
             }
         }
-        if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - 2) { format(wrong, " tile ", i, " on the board;"); }
+        if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - answers) { format(wrong, " tile ", i, " on the board;"); }
         if tap && (t.z < gui::TAP * u - 0.5 || t.w < gui::TAP * u - 0.5) { small++; }
     }
     if small > 0 { format(wrong, " ", small, " taps under 88 dp;"); }
@@ -185,8 +185,8 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
         if b.z > 0.0 && !inside(b, safe) { wrong.append(" the board off the safe area;"); }
     }
     if card {
-        // The card's two buttons, on the board.
-        let back = drive::rect(g, n - 2);
+        // The card's buttons (two, or `answers`), on the board.
+        let back = drive::rect(g, n - answers);
         if drive::verbose { format(line, ", card buttons ", whole(back.z / u), " x ", whole(back.w / u), " dp"); }
         if !inside(back, b) { wrong.append(" the card off the board;"); }
     }
@@ -381,6 +381,36 @@ fn screens(g: gui::Gui&) {
     drive::idle(won, g, 0.0);
     drive::idle(won, g, 3.0);
     report("the win", g, won, true, true);
+    // A kings' ending against the computer: the draw tile with start over; the computer's
+    // refusal, its own offer, and start over's give-up card in the middle; then the win's
+    // card after giving up.
+    var kings = showing(shell::GAME, home::NO_SETUP);
+    kings.game = game::new(rules::RUSSIAN);
+    kings.game.computer = rules::BLACK;
+    let q, fine = rules::parse_fen("W:WKc1,Ke1:BKh8,Ka7", rules::RUSSIAN);
+    assert(fine);
+    board::set(kings.game.b, q);
+    kings.game.turn = kings.game.b.pos.side;
+    at_rest(kings, g);
+    report("the draw tile", g, kings, true, false);
+    for c in [game::REFUSED_CARD, game::OFFER_CARD, game::GIVE_UP_CARD] {
+        game::show_card(kings.game, c);
+        at_rest(kings, g);
+        report(if c == game::REFUSED_CARD { "the refusal's card" } else if c == game::OFFER_CARD { "the computer's offer" }
+               else { "the give-up card" }, g, kings, true, true, if c == game::REFUSED_CARD { 1 } else { 2 });
+    }
+    kings.game.card = game::NO_CARD;
+    kings.game.ended_by = game::BY_GIVING_UP;
+    drive::idle(kings, g, 0.0);
+    drive::idle(kings, g, 3.0);
+    report("given up", g, kings, true, true);
+    // A friend's game's draw tile, "Draw", in portrait with the bar's fourth tile.
+    var friend = showing(shell::GAME, home::NO_SETUP);
+    friend.game = game::new(rules::RUSSIAN);
+    board::set(friend.game.b, q);
+    friend.game.turn = friend.game.b.pos.side;
+    at_rest(friend, g);
+    report("a friend's draw tile", g, friend, true, false);
 }
 
 // Whether the tile in r has its icon over its word (stacked) rather than beside it.

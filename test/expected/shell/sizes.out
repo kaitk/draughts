@@ -23,6 +23,12 @@ a foldable, landscape, 2208 x 1768:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a foldable, portrait, 1768 x 2208:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -47,6 +53,12 @@ a foldable, portrait, 1768 x 2208:
   the results: 4 tiles, all in place
   the results' rows: 6, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 4:3, landscape, 2048 x 1536:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -71,6 +83,12 @@ a foldable, portrait, 1768 x 2208:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 4:3, portrait, 1536 x 2048:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -95,6 +113,12 @@ a foldable, portrait, 1768 x 2208:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -119,6 +143,12 @@ a 20:9 phone, landscape, 2400 x 1080:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -143,6 +173,12 @@ a 20:9 phone, portrait, 1080 x 2400:
   the results: 4 tiles, all in place
   the results' rows: 12, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -167,6 +203,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -191,6 +233,12 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -215,6 +263,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -239,6 +293,12 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   the results: 4 tiles, all in place
   the results' rows: 6, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -263,6 +323,12 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -287,6 +353,12 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 et:
 a foldable, landscape, 2208 x 1768:
   home: 7 tiles, a board, all in place
@@ -312,6 +384,12 @@ a foldable, landscape, 2208 x 1768:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a foldable, portrait, 1768 x 2208:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -336,6 +414,12 @@ a foldable, portrait, 1768 x 2208:
   the results: 4 tiles, all in place
   the results' rows: 6, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 4:3, landscape, 2048 x 1536:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -360,6 +444,12 @@ a foldable, portrait, 1768 x 2208:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 4:3, portrait, 1536 x 2048:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -384,6 +474,12 @@ a foldable, portrait, 1768 x 2208:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -408,6 +504,12 @@ a 20:9 phone, landscape, 2400 x 1080:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -432,6 +534,12 @@ a 20:9 phone, portrait, 1080 x 2400:
   the results: 4 tiles, all in place
   the results' rows: 12, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -456,6 +564,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -480,6 +594,12 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -504,6 +624,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -528,6 +654,12 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   the results: 4 tiles, all in place
   the results' rows: 6, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -552,6 +684,12 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -576,6 +714,12 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 en, with insets:
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
@@ -601,6 +745,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -625,6 +775,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -649,6 +805,12 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 6, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -673,6 +835,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -697,6 +865,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -721,6 +895,12 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 5, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -745,6 +925,12 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -769,6 +955,12 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -793,6 +985,12 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 2, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 et, with insets:
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
@@ -818,6 +1016,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -842,6 +1046,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 4, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -866,6 +1076,12 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 6, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -890,6 +1106,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -914,6 +1136,12 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -938,6 +1166,12 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 5, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -962,6 +1196,12 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -986,6 +1226,12 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 3, in place
   the win: 8 tiles, a board, all in place
+  the draw tile: 7 tiles, a board, all in place
+  the refusal's card: 8 tiles, a board, all in place
+  the computer's offer: 9 tiles, a board, all in place
+  the give-up card: 9 tiles, a board, all in place
+  given up: 8 tiles, a board, all in place
+  a friend's draw tile: 7 tiles, a board, all in place
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, a board, all in place
   home's chip: mirroring the X on the board's side, off the column and the board
@@ -1010,6 +1256,12 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   the results: 4 tiles, all in place
   the results' rows: 2, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
 en, the tablet with its navigation bar:
 1920 x 1200, insets 0, 0, 0, 72 px:
   home: 7 tiles, a board, all in place
@@ -1035,6 +1287,12 @@ en, the tablet with its navigation bar:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
   settings: 28 tiles, 28 with no inset: the whole list
 1200 x 1920, insets 0, 0, 0, 72 px:
   home: 7 tiles, a board, all in place
@@ -1060,6 +1318,12 @@ en, the tablet with its navigation bar:
   the results: 4 tiles, all in place
   the results' rows: 8, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
   settings: 28 tiles, 28 with no inset: the whole list
 et, the tablet with its navigation bar:
 1920 x 1200, insets 0, 0, 0, 72 px:
@@ -1086,6 +1350,12 @@ et, the tablet with its navigation bar:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
   settings: 28 tiles, 28 with no inset: the whole list
 1200 x 1920, insets 0, 0, 0, 72 px:
   home: 7 tiles, a board, all in place
@@ -1111,6 +1381,12 @@ et, the tablet with its navigation bar:
   the results: 4 tiles, all in place
   the results' rows: 8, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
   settings: 28 tiles, 28 with no inset: the whole list
 en, the iPads in landscape with their bars:
 2752 x 2064, insets 0, 48, 0, 40 px:
@@ -1137,6 +1413,12 @@ en, the iPads in landscape with their bars:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
   settings: 28 tiles, 28 with no inset: the whole list
 2420 x 1668, insets 0, 48, 0, 40 px:
   home: 7 tiles, a board, all in place
@@ -1162,6 +1444,12 @@ en, the iPads in landscape with their bars:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
   settings: 28 tiles, 28 with no inset: the whole list
 et, the iPads in landscape with their bars:
 2752 x 2064, insets 0, 48, 0, 40 px:
@@ -1188,6 +1476,12 @@ et, the iPads in landscape with their bars:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
   settings: 28 tiles, 28 with no inset: the whole list
 2420 x 1668, insets 0, 48, 0, 40 px:
   home: 7 tiles, a board, all in place
@@ -1213,6 +1507,12 @@ et, the iPads in landscape with their bars:
   the results: 4 tiles, all in place
   the results' rows: 7, in place
   the win: 7 tiles, a board, all in place
+  the draw tile: 6 tiles, a board, all in place
+  the refusal's card: 7 tiles, a board, all in place
+  the computer's offer: 8 tiles, a board, all in place
+  the give-up card: 8 tiles, a board, all in place
+  given up: 7 tiles, a board, all in place
+  a friend's draw tile: 6 tiles, a board, all in place
   settings: 28 tiles, 28 with no inset: the whole list
 settings' language list: open true, tiles 28 then 30, changed false
   settings, the language list open: 30 tiles, a board, all in place

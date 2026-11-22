@@ -43,7 +43,7 @@ fn start_win_glow(gm: Game&, won: i64) {
     gm.won_on = -1;
     gm.win_still_from = STILL;
     gm.win_still_drawn = false;
-    guard b.has_last && !b.moving && b.pos.pieces[won] & rules::bit(b.last.to) != 0 else { return; }
+    guard gm.ended_by != BY_GIVING_UP && b.has_last && !b.moving && b.pos.pieces[won] & rules::bit(b.last.to) != 0 else { return; }
     gm.won_on = b.last.to;
     var left = b.pos.pieces[won];
     while left != 0 {
@@ -70,6 +70,13 @@ fn bump(x: f64) -> f64 { if x <= 0.0 || x >= 1.0 { 0.0 } else { sin(PI * x) } }
 // piece lifts and is drawn last, and the glow lifts the winner's other pieces a little.
 // `share` scales it all as the game screen fades through a transition.
 fn cheer(gm: Game&, l: board::Layout, now: f64, share: f32 = 1.0) {
+    // Start over's give-up card dims the board at once.
+    if gm.card == GIVE_UP_CARD && gm.won_at < 0.0 && gm.drawn_at < 0.0 {
+        let b .= gm.b;
+        b.dim = DIM * share;
+        for &p in b.pieces { p.win.x = b.dim; }
+        return;
+    }
     if gm.drawn_at >= 0.0 {
         let b .= gm.b;
         b.dim = (DIM * board::ease(span(now - gm.drawn_at, 0.0, DRAW_DIM))) as f32 * share;
@@ -182,7 +189,11 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ui_
     let u = pl.board.scale;
     let fit, button, width = card_size(pl.board);
     let head .= g.faces[gui::LABEL];
-    let say = head.ascent - head.descent;
+    let small .= g.faces[gui::BODY];
+    let line = small.ascent - small.descent;
+    // Given up, who gave up under who won.
+    let gave_up = gm.ended_by == BY_GIVING_UP;
+    let say = head.ascent - head.descent + (if gave_up { 6.0 * u + line } else { 0.0 });
     let first = g.quads.len;
     let card = card_at(gm, pl, width, ((40.0 + 40.0 + 104.0 + 28.0 - 10.0 + 28.0) * fit + gui::tap_size()) * u + say,
                        gm.won_on);
@@ -191,7 +202,13 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ui_
     var spot = gui::cut_top(c, 104.0 * fit * u);
     gui::cut_top(c, (28.0 - 10.0) * fit * u);
     let words = strings::get(if won == 0 { strings::WON_WHITE } else { strings::WON_BLACK });
-    gui::text(g, gui::face_that_fits(g, gui::LABEL, words, c.z), gui::cut_top(c, say), words, 1.0, 0.0, gui::CENTER);
+    gui::text(g, gui::face_that_fits(g, gui::LABEL, words, c.z), gui::cut_top(c, head.ascent - head.descent), words, 1.0, 0.0,
+              gui::CENTER);
+    if gave_up {
+        gui::cut_top(c, 6.0 * u);
+        let who = strings::get(if won == 0 { strings::GAVE_UP_BLACK } else { strings::GAVE_UP_WHITE });
+        gui::text(g, gui::face_that_fits(g, gui::BODY, who, c.z), gui::cut_top(c, line), who, 0.66, 0.0, gui::CENTER);
+    }
     gui::cut_top(c, 28.0 * fit * u);
     let ask, drop = card_end(g, gui::cut_top(c, gui::tap_size() * u), fit, button, u, first, ease_out(span(t, CARD_AT, CARD_AT + 0.7)));
     spot.y += drop;
@@ -204,6 +221,10 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ui_
 
 // Why the game was drawn, in words, into out.
 fn reason(gm: Game&, draw: i64, out: u8[..64]&) {
+    if draw == rules::DRAW_AGREED {
+        strings::fill_in(out, strings::DRAW_AGREED, []);
+        return;
+    }
     let key = match draw {
         rules::DRAW_REPEAT => strings::DRAW_REPEAT,
         rules::DRAW_KINGS => strings::DRAW_KINGS,
@@ -261,4 +282,88 @@ fn draw_card(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, ui
     panel::pair(ui_pieces, spot, 44.0 * fit * u, 4.0 * fit * u, k as f32);
     for i in n..ui_pieces.len { ui_pieces[i].win.w = 1.0; }   // on the board, as the card is
     return ask;
+}
+
+// A card in the middle other than the end's (game.goose's *_CARD), over the board as they
+// are: icons over the title, a line, and its answers. MIDDLE_W dp wide, less on a small
+// board, its answers a tap tall with icon and word.
+let MIDDLE_W = 440.0;
+let MIDDLE_ICON = 72.0;
+struct Middle {
+    icons:   i64[2] = [gui::NO_ICON, gui::NO_ICON],
+    title:   i64    = 0,        // strings::*
+    note:    i64    = -1,       // strings::*, or -1 for none; its inline icon the computer
+    answers: i64[2] = [-1, -1], // strings::*, the second -1 for one answer
+    marks:   i64[2] = [gui::NO_ICON, gui::NO_ICON],
+    primary: i64    = 0,        // which answer is lit
+}
+
+// The middle card for `card`.
+fn middle_of(card: i64) -> Middle {
+    return match card {
+        REFUSED_CARD => Middle { icons: [gui::HANDSHAKE_OFF, gui::NO_ICON], title: strings::REFUSED_TITLE,
+                                 note: strings::REFUSED_NOTE, answers: [strings::HOME_CONTINUE, -1], .. },
+        OFFER_CARD => Middle { icons: [gui::COMPUTER, gui::HANDSHAKE], title: strings::OFFER_TITLE,
+                               answers: [strings::DRAW, strings::OFFER_PLAY_ON], marks: [gui::HANDSHAKE, gui::NEXT], .. },
+        _ => Middle { icons: [gui::FLAG, gui::NO_ICON], title: strings::GIVE_UP_TITLE, note: strings::GIVE_UP_NOTE,
+                      answers: [strings::GIVE_UP_YES, strings::GIVE_UP_NO], marks: [gui::FLAG, gui::NEXT], primary: 1 },
+    };
+}
+
+// The middle card for `card` on the board, kept off the last move's piece. Returns the
+// answer tapped, 0 or 1, or -1 for none.
+fn middle_card(gm: Game&, g: gui::Gui&, pl: panel::Layout, card: i64) -> i64 {
+    let m = middle_of(card);
+    let l = pl.board;
+    let u = l.scale;
+    let fit, button, ends = card_size(l);
+    let area = card_area(pl);
+    let width = min(max(ends, MIDDLE_W * fit * u), area.z);
+    let margin = 40.0 * fit * u;
+    let head .= g.faces[gui::LABEL];
+    let small .= g.faces[gui::BODY];
+    let line = small.ascent - small.descent;
+    let title = strings::get(m.title);
+    let note = if m.note >= 0 { strings::get(m.note) } else { "" };
+    let cut = if m.note >= 0 { panel::note_break(g, gui::BODY, note, width - 2.0 * margin) } else { -1 };
+    let lines: f32 = if m.note < 0 { 0.0 } else if cut >= 0 { 2.0 } else { 1.0 };
+    let say = head.ascent - head.descent + (if m.note >= 0 { 6.0 * u + lines * line } else { 0.0 });
+    let h = 2.0 * margin + (MIDDLE_ICON + 18.0 + 28.0) * fit * u + say + gui::tap_size() * u;
+    let first = g.quads.len;
+    let r = card_at(gm, pl, width, h, if gm.b.has_last { gm.b.last.to } else { -1 });
+    gui::panel(g, r);
+    var c = gui::inset(r, margin);
+    let spot = gui::cut_top(c, MIDDLE_ICON * fit * u);
+    let side = MIDDLE_ICON * fit * u;
+    let n: i64 = if m.icons[1] != gui::NO_ICON { 2 } else { 1 };
+    for i in n {
+        gui::glyph_icon(g, gui::cell(spot, n, 1, side, side, 12.0 * u, i), m.icons[i], gui::PLAIN, 0.0, 1.0, 1.6);
+    }
+    gui::cut_top(c, 18.0 * fit * u);
+    gui::text(g, gui::face_that_fits(g, gui::LABEL, title, c.z), gui::cut_top(c, head.ascent - head.descent), title, 1.0, 0.0,
+              gui::CENTER);
+    if m.note >= 0 {
+        gui::cut_top(c, 6.0 * u);
+        if cut >= 0 {
+            gui::icon_text(g, gui::BODY, gui::cut_top(c, line), note[..cut], gui::COMPUTER, 0.66, gui::CENTER);
+            gui::icon_text(g, gui::BODY, gui::cut_top(c, line), note[cut + 1..], gui::COMPUTER, 0.66, gui::CENTER);
+        } else {
+            gui::icon_text(g, gui::BODY, gui::cut_top(c, line), note, gui::COMPUTER, 0.66, gui::CENTER);
+        }
+    }
+    gui::cut_top(c, 28.0 * fit * u);
+    let row = gui::cut_top(c, gui::tap_size() * u);
+    let two = m.answers[1] >= 0;
+    let gap = 20.0 * fit * u;
+    let w = if two { 0.5 * (row.z - gap) } else { row.z };
+    var chosen = -1;
+    for i in (if two { 2 } else { 1 }) {
+        let t = gui::cell(row, if two { 2 } else { 1 }, 1, w, row.w, gap, i);
+        let style = if m.primary == i { gui::PRIMARY } else { gui::PLAIN };
+        if gui::labelled(g, gui::CARD_IDS + 2 + i, t, m.marks[i], 28.0, strings::get(m.answers[i]), gui::HEADING, gui::MIDDLE, style) {
+            chosen = i;
+        }
+    }
+    gui::on_board(g, first, g.quads.len);
+    return chosen;
 }
