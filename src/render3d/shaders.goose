@@ -6488,43 +6488,34 @@ let SHOW_FRAG = """
     }
     """;
 
-// Dust in the sunbeam (render3d::Dust): motes drifting in a box over the table, one
-// camera-facing quad each, drawn as instances after the scene and added to it. Each
-// mote's light is the key's window_light where it is, worked out once in the vertex
-// shader (LIGHT_FN before DUST_VERT), so the beam has the pattern's shape: bright inside
-// it, nearly nothing outside. Where a mote is comes from its seed (`motes`, filled once)
-// and the seconds, so nothing is uploaded a frame. Its disc grows with its distance from
-// the focus, as a lens's would, and its light spreads over it.
-// dust_box: the box's low corner, w the seconds; dust_span: its size, w how fast the
-// motes rise; dust_look: x an in-focus mote's radius in pixels at 1000 high, y the
-// lens's blur (the disc's radius in those pixels where the distance is twice the
-// focus's), z how bright, w the focus's distance from the eye; dust_lens: x how much a
-// disc's light thins as it grows (0 none, 2 kept), y the forward scattering's g, z how
-// far each mote wanders, w the largest disc's radius in those pixels (0 none; the lens's
-// near cap, render3d::Lens).
-// The shell's windows after them, as ROOM_HEAD's block has them (render3d::dust_block; all
-// 0 lights the motes through the game's window), with the lace's mask, for LIGHT_FN's
-// shell_open, which the dust is compiled with (SHELL_WINDOWS).
-// In the beam (dust_w.w 1, render3d::Dust.beam) the motes' space is the sunbeam's own
-// over the table: dust_box the corner, dust_u along the window wall, dust_v up, dust_w
-// into the room along the beam (each a world vector, its length in dust_span), so nearly
-// every mote is in the sun and none is drawn where none is lit; lit by the sun alone,
-// shell_open's direct light, with no floor of the shade's light. dust_shape: x the
-// motes' shape (0 round soft points; 1 flakes and lint a few pixels across, tumbling
-// slowly, each glinting as a face turns to the sun, then dim; 2 points, as a camera sees
-// real dust: see below), y how sharp a glint (an exponent), z the share of fibres.
-// The points (shape 2, build/notes/window-view/refs/research-haze-motes.md): every flake is
-// far under a pixel, so it is a point of a fixed footprint, a Gaussian dust_point.x pixels
-// wide (sigma) at any resolution and distance, carrying the light it really scatters: the
-// sun's irradiance × its cross-section × its phase × the pixels a metre squared there,
-// summed over the footprint. Sizes log-normal (a median 25 µm flake), fibres 10 µm thick
-// and 0.5-3 mm long as lines of that length on the screen. Flakes glint as they tumble
+// Dust in the sunbeam (render3d::Dust), the main menu's scene only: points drifting in the
+// sunbeam's own volume over the table, one camera-facing quad each, drawn as instances after
+// the scene and added to it. Each point's light is the sun through the shell's windows where
+// it is (shell_open's direct light, LIGHT_FN before DUST_VERT), worked out once in the vertex
+// shader, so the beam has the pattern's shape and none is drawn where none is lit. Where a
+// point is comes from its seed (`motes`, filled once) and the seconds, so nothing is
+// uploaded a frame. dust_box: the volume's low corner, w the seconds; dust_span: its size
+// along dust_u (the window wall), dust_v (up) and dust_w (into the room along the beam),
+// each a world vector; dust_look: y the lens's blur (the disc's radius in pixels at 1000
+// high where the distance is twice the focus's), z how bright, w the focus's distance from
+// the eye; dust_lens: y the forward scattering's g, w the largest disc's radius in those
+// pixels (0 none; the lens's near cap, render3d::Lens). The shell's windows after them, as
+// ROOM_HEAD's block has them (render3d::dust_block), with the lace's mask, for LIGHT_FN's
+// shell_open, which the dust is compiled with (SHELL_WINDOWS). dust_shape: z the share of
+// fibres, w their width across as a share of a point's.
+// The points (build/notes/window-view/refs/research-haze-motes.md): every flake is far under
+// a pixel, so it is a point of a fixed footprint, a Gaussian dust_point.x pixels wide (sigma)
+// at any resolution and distance, carrying the light it really scatters: the sun's
+// irradiance × its cross-section × its phase × the pixels a metre squared there, summed over
+// the footprint. Sizes log-normal (a median 25 µm flake), fibres 10 µm thick and 0.5-3 mm
+// long as lines of that length on the screen, dust_shape.w of a point's width across with
+// the same light (sub-pixel, so they don't read as stripes). Flakes glint as they tumble
 // (0.1-1 turn a second): a lobe 2-6° round the mirror direction, 5-15 times as bright,
 // dust_point.y of it (0 none). They move in world centimetres a second (dust_move: x the
 // air's drift along the wall, y the rise over the sun's patch, slower higher up, z the
 // swirls' speed, w their size in cm), settling by their size; no step is random a frame.
 // dust_point.z: the sun on the room's surfaces over the board's (Room.shell_sun.y ×
-// room_exposure), so a mote is lit as the wall behind it; w a metre in world units.
+// room_exposure), so a point is lit as the wall behind it; w a metre in world units.
 // dust_near: x the board's share along dust_w, y how much denser the points are round it
 // (0 even). With the lens on, a point becomes the lens's disc with its light spread over it.
 let DUST_HEAD = """
@@ -6557,15 +6548,6 @@ let DUST_VERT = """
     layout(location = 0) out vec2 v_at;
     layout(location = 1) flat out vec4 v_glow;
     layout(location = 2) flat out vec4 v_shape;
-
-    // A mote's wander, about -1..1 on each axis: three sines out of step with every other
-    // mote's, slow, slower, and a little faster, so it reads as Brownian.
-    vec3 wander(vec4 s, float t) {
-        vec3 ph = fract(s.wzy * vec3(13.7, 17.3, 11.9) + s.xyz * 7.1) * 6.2832;
-        return 0.55 * sin(t * vec3(0.11, 0.07, 0.09) * (0.7 + 0.6 * s.w) + ph)
-             + 0.3 * sin(t * vec3(0.23, 0.29, 0.19) + ph.yzx * 1.7)
-             + 0.15 * sin(t * vec3(0.61, 0.53, 0.71) + ph.zxy * 2.3);
-    }
 
     // A unit vector from two numbers 0..1.
     vec3 sphere_dir(vec2 r) {
@@ -6612,162 +6594,97 @@ let DUST_VERT = """
         const vec2 corners[6] = vec2[6](vec2(-1, -1), vec2(1, -1), vec2(1, 1),
                                         vec2(-1, -1), vec2(1, 1), vec2(-1, 1));
         vec2 c = corners[gl_VertexIndex];
-        float kind = dust_shape.x;
         vec4 s = motes[gl_InstanceIndex % 1024];
         vec4 s2 = motes[(gl_InstanceIndex + 517) % 1024];
         vec4 s3 = motes[(gl_InstanceIndex + 263) % 1024];
         float t = dust_box.w;
-        bool beam = dust_w.w > 0.5;
         bool fibre = fract(s.w * 53.1 + s.x * 3.7) < dust_shape.z;
         float cm = 0.01 * dust_point.w;
         // A point's size against the median (log-normal, a sigma of 0.55: a third of them
         // past 1.7 times as large or small).
         float grain = exp(0.55 * clamp(sqrt(-2.0 * log(max(s2.x, 1e-4))) * cos(6.2832 * s2.y), -2.5, 2.5));
-        vec3 f;
-        vec3 pos;
-        if (kind > 1.5) {
-            // Carried by the air along the wall at 0.5-1.5 times its drift, a little across,
-            // risen over the sun's patch and settling by size (a fibre's drag slows it),
-            // the height eased so the rise is quicker low down than high.
-            float settle = (fibre ? 0.6 : 1.0) * clamp(0.45 * grain * grain, 0.2, 1.5) * cm;
-            vec2 dir = normalize(vec2(1.0, 0.8 * (s3.y - 0.5)));
-            float drift = dust_move.x * (0.5 + s3.x) * cm;
-            vec3 rate = vec3(drift * dir.x, dust_move.y * cm - settle, drift * dir.y) / dust_span.xyz;
-            f = fract(s.xyz + rate * t);
-            float h = f.y + 0.35 * f.y * (1.0 - f.y);
-            pos = dust_box.xyz + f.x * dust_u.xyz + h * dust_v.xyz + f.z * dust_w.xyz;
-            pos += swirl(pos, t, cm);
-        } else {
-            // Its seed's place in the box, risen, carried along x, and wandering, wrapped.
-            vec3 drift = vec3(0.3, 0.6 + 0.8 * s.w, 0.0) * (dust_span.w * t);
-            f = fract(s.xyz + (drift + wander(s, t) * dust_lens.z) / dust_span.xyz);
-            pos = beam ? dust_box.xyz + f.x * dust_u.xyz + f.y * dust_v.xyz + f.z * dust_w.xyz
-                       : dust_box.xyz + f * dust_span.xyz;
-        }
-        // Faded near the box's faces, so a mote wrapping round doesn't pop; none inside
+        // Carried by the air along the wall at 0.5-1.5 times its drift, a little across,
+        // risen over the sun's patch and settling by size (a fibre's drag slows it), the
+        // height eased so the rise is quicker low down than high.
+        float settle = (fibre ? 0.6 : 1.0) * clamp(0.45 * grain * grain, 0.2, 1.5) * cm;
+        vec2 dir = normalize(vec2(1.0, 0.8 * (s3.y - 0.5)));
+        float drift = dust_move.x * (0.5 + s3.x) * cm;
+        vec3 rate = vec3(drift * dir.x, dust_move.y * cm - settle, drift * dir.y) / dust_span.xyz;
+        vec3 f = fract(s.xyz + rate * t);
+        float h = f.y + 0.35 * f.y * (1.0 - f.y);
+        vec3 pos = dust_box.xyz + f.x * dust_u.xyz + h * dust_v.xyz + f.z * dust_w.xyz;
+        pos += swirl(pos, t, cm);
+        // Faded near the box's faces, so a point wrapping round doesn't pop; none inside
         // the board.
         vec3 e = min(f, 1.0 - f) * 12.0;
         float fade = clamp(min(e.x, min(e.y, e.z)), 0.0, 1.0);
         if (max(abs(pos.x), abs(pos.z)) < INNER + FRAME_W && pos.y < FRAME_TOP + 0.02) fade = 0.0;
-        // The points denser round the board: each kept where its own number is under the
-        // density there, fading in and out as it drifts.
-        if (kind > 1.5 && dust_near.y > 0.0) {
+        // Denser round the board: each kept where its own number is under the density
+        // there, fading in and out as it drifts.
+        if (dust_near.y > 0.0) {
             vec2 off = vec2((f.x - 0.5) / 0.32, (f.z - dust_near.x) / 0.38);
             float dense = 0.35 + 0.65 * exp(-dot(off, off)) * (1.0 - 0.45 * f.y);
             fade *= smoothstep(0.0, 0.2, mix(1.0, dense, dust_near.y) - 0.8 * fract(s.w * 91.7));
         }
 
-        // The key through the window where it is, 0..1; all of it with no pattern.
+        // The sun through the window where it is, 0..1; all of it with no pattern.
         float sun = room.y > 0.0 ? clamp((window_light(pos) - 1.0 + room.y) / room.y, 0.0, 1.0) : 1.0;
         vec3 to_eye = eye.xyz - pos;
         float d = length(to_eye);
         vec3 v = to_eye / d;
-        // Forward scattering (Henyey-Greenstein), 1 across the beam, more toward the sun.
         float g = dust_lens.y;
         float mu = dot(v, -light_dir.xyz);
-        float phase = pow((1.0 + g * g) / (1.0 + g * g - 2.0 * g * mu), 1.5);
-        float floor_light = beam ? 0.0 : 0.002;
-        // Each mote its own brightness.
-        float own = 0.15 + 2.5 * pow(fract(s.w * 31.7), 3.0);
-        vec3 glow = light_color.rgb * light_dir.w * params.x * (sun * phase + floor_light) * dust_look.z * own;
         vec4 clip = view_proj * vec4(pos, 1.0);
         float px = screen.y / 1000.0;
         float coc = dust_look.y * px * abs(d - dust_look.w) / max(d, 0.01);
         if (dust_lens.w > 0.0) coc = min(coc, dust_lens.w * px);
         // Unlit, it is not drawn at all.
-        if (beam && sun * fade < 0.003) fade = 0.0;
+        if (sun * fade < 0.003) fade = 0.0;
 
         vec2 ax = vec2(1.0, 0.0);
-        vec2 half_px;
-        if (kind < 0.5) {
-            // Its disc: a point in focus, the lens's circle of confusion away from it.
-            float point = max(dust_look.x * px * (0.6 + 0.8 * fract(s.w * 7.3)), 0.5);
-            float r = sqrt(point * point + coc * coc);
-            glow *= pow(point / r, dust_lens.x);
-            half_px = vec2(r);
-            v_shape = vec4(r, coc / r, 0.0, 0.0);
-        } else if (kind < 1.5) {
-            // A flake or a short fibre, tumbling about an axis of its own, a turn in some
-            // 4 to 20 seconds; its face (a flake's normal, a fibre's length) turned by it.
-            vec3 spin = sphere_dir(s2.xy);
-            vec3 face = sphere_dir(s2.zw);
-            face = normalize(turned_about(face, spin, t * (0.3 + 1.2 * fract(s.y * 17.9)) + 6.2832 * s.z));
-            vec3 h = normalize(light_dir.xyz + v);
-            float size = dust_look.x * px * (0.5 + 1.5 * pow(fract(s.w * 7.3), 2.0));
-            float glint;
-            vec2 long_px;
-            if (fibre) {
-                // Lint: a thread a few times as long as a flake is wide, glinting where
-                // its length lies square to the half vector.
-                float a = dot(face, h);
-                glint = pow(max(1.0 - a * a, 0.0), 0.5 * dust_shape.y);
-                vec3 across_view = face - v * dot(face, v);
-                long_px = on_screen(pos, across_view * (30.48 * 0.0015 * (0.6 + 0.8 * fract(s.z * 29.3))), clip);
-                float len = max(length(long_px), 0.0001);
-                ax = long_px / len;
-                half_px = vec2(max(len, size * 1.2), max(0.3 * size, 0.35));
-            } else {
-                // A flake: a little flat scrap, the face toward the sun and the eye
-                // flashing it; seen edge-on, a sliver.
-                glint = pow(abs(dot(face, h)), dust_shape.y);
-                vec3 tilt = face - v * dot(face, v);
-                long_px = on_screen(pos, tilt * 0.01, clip);
-                float len = length(long_px);
-                ax = len > 1e-6 ? vec2(-long_px.y, long_px.x) / len : vec2(1.0, 0.0);
-                float edge_on = max(abs(dot(face, v)), 0.35);
-                half_px = vec2(size, max(size * edge_on, 0.35));
-            }
-            // Dim between glints, never out: the light it scatters off its rough sides.
-            glow *= 0.12 + 2.2 * glint;
-            // A thin line or a speck under a pixel keeps its light, spread over one.
-            float cover = min(half_px.x * half_px.y / 0.36, 1.0);
-            half_px = max(half_px, vec2(0.6));
-            half_px = sqrt(half_px * half_px + coc * coc);
-            glow *= cover * pow(size / max(sqrt(size * size + coc * coc), 1e-4), dust_lens.x);
-            v_shape = vec4(half_px, fract(s.x * 91.3) * 6.2832, coc / max(half_px.x, 1e-4));
-        } else {
-            // A point: the light it scatters, the sun's irradiance where it is (as the room's
-            // surfaces take it) x its cross-section in m^2 x its phase (1/sr: Henyey-Greenstein
-            // at g with a fifth even, and a narrow peak a few degrees round the sun's line,
-            // the diffraction of a particle many wavelengths across) x the pixels a metre
-            // there squared: the sum of its pixels, which the fragment's footprint keeps.
-            float hg = (1.0 - g * g) / (12.566 * pow(1.0 + g * g - 2.0 * g * mu, 1.5));
-            float angle = acos(clamp(mu, -1.0, 1.0));
-            float p = 0.8 * hg + 0.2 / 12.566 + 30.0 * exp(-angle * angle / 0.0027);
-            float fibre_long = 0.0005 * pow(6.0, fract(s3.z * 3.1 + s.y));
-            float area = fibre ? fibre_long * 1.0e-5 : 3.1416 * pow(12.5e-6 * grain, 2.0);
-            vec3 side = normalize(cross(v, vec3(0.0, 1.0, 0.0)) + vec3(1e-4, 0.0, 0.0));
-            float per_metre = length(on_screen(pos, side * cm, clip)) * 100.0;
-            glow = light_color.rgb * (light_dir.w * params.x * dust_point.z * sun * dust_look.z * area * p * per_metre * per_metre);
-            // A faint tint of its own, a few percent.
-            glow *= 1.0 + 0.06 * (s3.xyz - 0.5);
-            float sigma = dust_point.x;
-            float r_lens = coc;
-            float along = 0.0;
-            if (fibre) {
-                // Lint: its length across the view at the screen, tumbling slowly.
-                vec3 spin = sphere_dir(vec2(fract(s.w * 7.31 + s.y * 3.1), fract(s.w * 17.9 + s.z * 5.3)));
-                vec3 axis = normalize(turned_about(sphere_dir(s2.zw), spin, t * 0.4 * (0.3 + fract(s3.w * 5.7)) + 6.2832 * s.z));
-                vec2 long_px = on_screen(pos, (axis - v * dot(axis, v)) * (fibre_long * 100.0 * cm), clip);
-                along = length(long_px);
-                ax = along > 1e-4 ? long_px / along : vec2(1.0, 0.0);
-            } else if (dust_point.y > 0.0) {
-                // A flake's glint: its face tumbling at 0.1-1 turn a second, flashing as it
-                // passes the mirror direction between the sun and the eye; the lobe wider for
-                // the quick ones, so each flash lasts a few frames.
-                vec3 spin = sphere_dir(vec2(fract(s.w * 7.31 + s.y * 3.1), fract(s.w * 17.9 + s.z * 5.3)));
-                float turn = 6.2832 * 0.1 * pow(10.0, fract(s3.z * 7.7 + s.x));
-                vec3 face = normalize(turned_about(sphere_dir(s2.zw), spin, t * turn + 6.2832 * s.z));
-                vec3 h = normalize(light_dir.xyz + v);
-                float off_mirror = acos(min(abs(dot(face, h)), 1.0));
-                float lobe = clamp(turn * 0.03, 0.035, 0.105);
-                glow *= 1.0 + dust_point.y * (5.0 + 10.0 * s3.w) * exp(-off_mirror * off_mirror / (lobe * lobe));
-            }
-            float reach = 3.0 * sigma + r_lens;
-            half_px = vec2(0.5 * along + reach, reach);
-            v_shape = vec4(sigma, r_lens, along, 0.0);
+        // The light it scatters, the sun's irradiance where it is (as the room's surfaces
+        // take it) x its cross-section in m^2 x its phase (1/sr: Henyey-Greenstein at g with
+        // a fifth even, and a narrow peak a few degrees round the sun's line, the diffraction
+        // of a particle many wavelengths across) x the pixels a metre there squared: the sum
+        // of its pixels, which the fragment's footprint keeps.
+        float hg = (1.0 - g * g) / (12.566 * pow(1.0 + g * g - 2.0 * g * mu, 1.5));
+        float angle = acos(clamp(mu, -1.0, 1.0));
+        float p = 0.8 * hg + 0.2 / 12.566 + 30.0 * exp(-angle * angle / 0.0027);
+        float fibre_long = 0.0005 * pow(6.0, fract(s3.z * 3.1 + s.y));
+        float area = fibre ? fibre_long * 1.0e-5 : 3.1416 * pow(12.5e-6 * grain, 2.0);
+        vec3 side = normalize(cross(v, vec3(0.0, 1.0, 0.0)) + vec3(1e-4, 0.0, 0.0));
+        float per_metre = length(on_screen(pos, side * cm, clip)) * 100.0;
+        vec3 glow = light_color.rgb * (light_dir.w * params.x * dust_point.z * sun * dust_look.z * area * p * per_metre * per_metre);
+        // A faint tint of its own, a few percent.
+        glow *= 1.0 + 0.06 * (s3.xyz - 0.5);
+        float sigma = dust_point.x;
+        float across = sigma;
+        float along = 0.0;
+        if (fibre) {
+            // Lint: its length across the view at the screen, tumbling slowly, thinner than
+            // a point across.
+            vec3 spin = sphere_dir(vec2(fract(s.w * 7.31 + s.y * 3.1), fract(s.w * 17.9 + s.z * 5.3)));
+            vec3 axis = normalize(turned_about(sphere_dir(s2.zw), spin, t * 0.4 * (0.3 + fract(s3.w * 5.7)) + 6.2832 * s.z));
+            vec2 long_px = on_screen(pos, (axis - v * dot(axis, v)) * (fibre_long * 100.0 * cm), clip);
+            along = length(long_px);
+            ax = along > 1e-4 ? long_px / along : vec2(1.0, 0.0);
+            across = sigma * dust_shape.w;
+        } else if (dust_point.y > 0.0) {
+            // A flake's glint: its face tumbling at 0.1-1 turn a second, flashing as it
+            // passes the mirror direction between the sun and the eye; the lobe wider for the
+            // quick ones, so each flash lasts a few frames.
+            vec3 spin = sphere_dir(vec2(fract(s.w * 7.31 + s.y * 3.1), fract(s.w * 17.9 + s.z * 5.3)));
+            float turn = 6.2832 * 0.1 * pow(10.0, fract(s3.z * 7.7 + s.x));
+            vec3 face = normalize(turned_about(sphere_dir(s2.zw), spin, t * turn + 6.2832 * s.z));
+            vec3 hv = normalize(light_dir.xyz + v);
+            float off_mirror = acos(min(abs(dot(face, hv)), 1.0));
+            float lobe = clamp(turn * 0.03, 0.035, 0.105);
+            glow *= 1.0 + dust_point.y * (5.0 + 10.0 * s3.w) * exp(-off_mirror * off_mirror / (lobe * lobe));
         }
-        v_glow = vec4(glow * fade, kind);
+        float reach = 3.0 * sigma + coc;
+        vec2 half_px = vec2(0.5 * along + reach, reach);
+        v_shape = vec4(sigma, coc, along, across);
+        v_glow = vec4(glow * fade, 0.0);
         vec2 outer = half_px + 1.0;
         vec2 side_ax = vec2(-ax.y, ax.x);
         v_at = c * outer;
@@ -6782,35 +6699,20 @@ let DUST_FRAG = """
     layout(location = 2) flat in vec4 v_shape;
     layout(location = 0) out vec4 result;
     void main() {
-        float k;
-        if (v_glow.w < 0.5) {
-            // In focus a soft point; out of it a disc of even light, a little brighter at
-            // its rim, its edge a pixel soft.
-            float r = length(v_at) / v_shape.x;
-            float edge = 1.0 / max(v_shape.x, 1.0);
-            float disc = (1.0 - smoothstep(1.0 - edge, 1.0 + edge, r)) * (0.85 + 0.25 * smoothstep(0.6, 1.0, r));
-            k = mix(exp(-2.5 * r * r), disc, v_shape.y);
-        } else if (v_glow.w < 1.5) {
-            // A flake's or a fibre's outline, a little lumpy, a pixel soft.
-            vec2 q = v_at / v_shape.xy;
-            float r = length(q);
-            float a = atan(q.y, q.x + 1e-5);
-            float rim = 1.0 + 0.18 * sin(3.0 * a + v_shape.z) + 0.1 * sin(5.0 * a + 2.0 * v_shape.z);
-            float soft = 1.0 / max(min(v_shape.x, v_shape.y), 0.6);
-            k = 1.0 - smoothstep(rim - soft, rim + soft, r);
-        } else {
-            // A point's footprint, its sum over the pixels 1: a Gaussian sigma v_shape.x
-            // pixels round a line v_shape.z long (0 a flake); with the lens's disc v_shape.y
-            // round, that disc's even light, its edge as soft as the point.
-            float sigma = v_shape.x;
-            float r_lens = v_shape.y;
-            float line = v_shape.z;
-            float r = length(vec2(max(abs(v_at.x) - 0.5 * line, 0.0), v_at.y));
-            float wide = sigma * sigma + 0.25 * r_lens * r_lens;
-            float spot = exp(-0.5 * r * r / wide) / (6.2832 * wide + 2.5066 * sqrt(wide) * line);
-            float disc = (1.0 - smoothstep(r_lens - sigma, r_lens + sigma, r)) / (3.1416 * r_lens * r_lens + 2.0 * r_lens * line + 1e-4);
-            k = mix(spot, disc, smoothstep(1.5 * sigma, 4.0 * sigma, r_lens));
-        }
+        // A point's footprint, its sum over the pixels 1: a Gaussian sigma v_shape.x pixels
+        // round a line v_shape.z long (0 a flake), v_shape.w across it; with the lens's disc
+        // v_shape.y round, that disc's even light, its edge as soft as the point.
+        float sigma = v_shape.x;
+        float r_lens = v_shape.y;
+        float line = v_shape.z;
+        float lens2 = 0.25 * r_lens * r_lens;
+        float wide = sigma * sigma + lens2;
+        float thin = v_shape.w * v_shape.w + lens2;
+        float dx = max(abs(v_at.x) - 0.5 * line, 0.0);
+        float spot = exp(-0.5 * (dx * dx / wide + v_at.y * v_at.y / thin)) / (6.2832 * sqrt(wide * thin) + 2.5066 * sqrt(thin) * line);
+        float r = length(vec2(dx, v_at.y));
+        float disc = (1.0 - smoothstep(r_lens - sigma, r_lens + sigma, r)) / (3.1416 * r_lens * r_lens + 2.0 * r_lens * line + 1e-4);
+        float k = mix(spot, disc, smoothstep(1.5 * sigma, 4.0 * sigma, r_lens));
     #ifdef HDR_OUT
         result = vec4(v_glow.rgb * k, 1.0);
     #else

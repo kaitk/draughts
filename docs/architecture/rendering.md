@@ -881,19 +881,20 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   can turn under the board (`Gpu.table_turn`): its mesh turned about its axis and its top's
   figure read turned back in the room's table pipelines (`TABLE_ROOM`, `TableBlock`'s
   `shape.zw`); the game's table never turns.
-- **Dust in the sunbeam** (`DUST_VERT`, compiled with `SHELL_WINDOWS`): in the light
-  tuner's table-window view only, real dust's points in the sunbeam's own volume over the
+- **Dust in the sunbeam** (`DUST_VERT`, compiled with `SHELL_WINDOWS`): the main menu's
+  scene's only, never the game's; in the light tuner's table-window view, real dust's points in the sunbeam's own volume over the
   games table (a box sheared along the beam, 1.0 m along the wall, 0.6 m up from the top,
   0.95 m along the beam round the board), denser round the board, each lit by
   `shell_open`'s direct sun at its place and not drawn where none reaches. A point is a
   Gaussian footprint of fixed size on screen carrying the light the mote scatters: the sun
   as the room's surfaces take it × its cross-section × its phase × pixels a metre squared.
-  Fibres are projected lines a pixel wide, and flakes glint for a few frames as they tumble.
+  Fibres are projected lines half a point's footprint across (sub-pixel, their light kept),
+  and flakes glint for a few frames as they tumble.
   The air moves them in world units: a drift, a rise, settling by size and divergence-free
-  swirls. `--dust points|points-few|points-many` (500, 250, 1000) pick the density,
-  `motes|motes-few|motes-many` the tumbling flakes drawn as small shapes, and `sparse|dense|
-  coarse` the round points in a box (D cycles them). With the lens on, each point is the
-  lens's disc with its light spread over it.
+  swirls. `--dust off|points|points-few|points-many` (500, 250, 1000) pick the density (D
+  cycles them), `--mote-fibres` the fibres' share (0 none) and `--fibre-width` their width
+  across (0.5 of a point's). With the lens on, each point is the lens's disc with its light
+  spread over it.
 - **Haze in the sunbeam** (`haze_pass`, `HAZE_CROSS_FRAG`, `HAZE_FRAG`; the tuner's `--haze`,
   off by default, with the room's pre-pass): the sun scattered toward the eye by the room's
   air along each view's part inside the beam, added into the HDR target before the glow.
@@ -907,7 +908,8 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   part in each window's slot, from red to green as the sun's disc widens the bars' shadows
   with the depth from the glass. That lit length × sigma × a Henyey-Greenstein phase × the
   room's sun is the pixel's haze. `--haze off|clean|lived|dusted|study` set sigma (0, 5e-5,
-  1.5e-4, 4e-4, 3e-3 a metre), `--haze-look G,EVEN,TAPS,SOFT` the phase, the taps and the
+  1.5e-4, 4e-4, 3e-3 a metre), `menu` and `game` the user's levels for the main menu's
+  scene (the study's) and the game's (dusted), `--haze-look G,EVEN,TAPS,SOFT` the phase, the taps and the
   stripes' softness, `--haze-toward K` softer stripes looking toward the sun, and
   `--haze-res half|full` the size.
 - The light tuner's Z switches all of these off and back, Y the hang (0.15 or 0), D the

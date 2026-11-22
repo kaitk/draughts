@@ -1323,6 +1323,20 @@ to be is in tasks 042, 059, 071, 081, and 086.
   - The old soft stripes, the panes grown and shrunk, added light where a shrunk pane
     vanished: about 40% more than the sharp beam. The blurred atlas keeps the sharp beam's
     light, so the study's sigma went from 2e-3 to 3e-3 for the same look.
+- The dust and the haze are the main menu's scene's only, never the game's (the user,
+  2026-11-22; task 107, builder 34, `build/notes/builder-34/`). The light tuner keeps only
+  the points (`--dust off|points|points-few|points-many`, D cycles them): builder 27's
+  round points in a box and builder 29's flakes and lint were taken out of the tuner, the
+  shader and `render3d::Dust`, which replaces the two entries above for the dust's ways.
+  - The fibres among the points read as stripes: they are now half a point's footprint
+    across (sigma 0.375 px at 3024 × 1890), sub-pixel, with their light kept, so each is a
+    fainter, thinner line (`--fibre-width`, 1 the old width; `--mote-fibres 0` none). The
+    points themselves are unchanged.
+  - The haze's levels, the user's (2026-11-22): the main menu's scene at the study's (sigma
+    3e-3 a metre, its stripes four times as soft and softer toward the sun, 4) with the
+    motes; the game's own scene, should it get haze, at just dusted (4e-4; the user's slider
+    sat at about 4.5e-4, "certainly not more"). The tuner's `--haze menu` and `--haze game`
+    give them; the haze stays off by default and nothing of it is in the app yet.
 - The depth of field's groundwork for the scenic views (2026-11-22, task 111; the plan
   `build/notes/bokeh/`'s B0 to B2, built by builder 28, `build/notes/builder-28/`): one lens
   for every pass that will blur, the scenic views drawn in HDR, and a sampled depth of the

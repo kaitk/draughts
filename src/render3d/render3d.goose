@@ -2816,38 +2816,34 @@ fn kept_current(g: Gpu&, size: int2) -> bool {
 // itself where it is small or held anyway, with nothing drawn.
 let WARM_STEPS = 12;
 
-// Dust in the sunbeam (shaders::DUST_VERT): up to MAX_MOTES motes in a box over the
-// table, drawn after the scene in the board's pass (draw_motes) while `count` is over 0,
-// lit by the key through the window where each is, its disc growing away from the focus.
-// Where each is follows from its seed and the seconds (wind_time), so a frame uploads
-// nothing; the tuner's for now, the home screen's later (task 106).
+// Dust in the sunbeam (shaders::DUST_VERT): up to MAX_MOTES points in the beam's own volume
+// over the table, drawn after the scene in the board's pass (draw_motes) while `count` is
+// over 0, lit by the sun through the shell's windows where each is. Where each is follows
+// from its seed and the seconds (wind_time), so a frame uploads nothing. The main menu's
+// scene only, never the game's; the light tuner's for now.
 let MAX_MOTES = 1024;
 struct Dust {
-    count:  i64    = 0,     // motes drawn, 0 none
-    size:   f32    = 1.0,   // an in-focus mote's radius, pixels at 1000 high
-    blur:   f32    = 14.0,  // the lens: a disc's radius at twice the focus's distance, the same pixels
-    bright: f32    = 0.6,
-    focus:  f32    = 19.0,  // the focus's distance from the eye (the tuner's: its target's)
-    thin:   f32    = 1.0,   // how much a disc's light thins as it grows (2 its light kept)
-    ahead:  f32    = 0.6,   // the forward scattering's g, 0 even
-    rise:   f32    = 0.05,  // units a second
-    reach:  f32    = 0.5,   // how far each wanders, units
-    low:    float3 = float3 { -9.0, -0.7, -9.0 },  // the box's low corner
-    span:   float3 = float3 { 18.0, 11.0, 21.0 },  // and its size
-    shell:  bool   = false, // lit through the shell's windows (shell_open), not the game's
-    // In the sunbeam (shaders::DUST_VERT's beam): the box's axes in the world, along the
-    // window wall, up and into the room along the beam, from `low`; span their lengths.
-    beam:   bool   = false,
+    count:  i64 = 0,        // points drawn, 0 none
+    blur:   f32 = 0.0,      // the lens: a disc's radius at twice the focus's distance, pixels at 1000 high (render3d::Lens)
+    bright: f32 = 0.6,
+    focus:  f32 = 19.0,     // the focus's distance from the eye (the tuner's: its target's)
+    ahead:  f32 = 0.6,      // the forward scattering's g, 0 even
+    // The beam's volume: its low corner and the axes in the world, along the window wall,
+    // up, and into the room along the beam; span their lengths.
+    low:    float3 = float3 { -9.0, -0.7, -9.0 },
+    span:   float3 = float3 { 18.0, 11.0, 21.0 },
+    shell:  bool   = false, // lit through the shell's windows (shell_open)
     u:      float3 = float3_0,
     v:      float3 = float3_0,
     w:      float3 = float3_0,
-    shape:  f32    = 0.0,   // 0 round points, 1 flakes and lint, 2 points (shaders::DUST_HEAD)
-    glint:  f32    = 12.0,  // how sharp a face's glint (an exponent)
     fibres: f32    = 0.3,   // the share of fibres
-    // The points' (shape 2): their footprint's sigma in pixels, how much of the flakes'
-    // glints shows (0 none, 1 as real), the room's sun over the board's (dust_block's), the
-    // air (cm a second: its drift along the wall, the rise over the sun's patch, the swirls'
-    // speed; the swirls' size in cm), the board's share along w, how much denser round it.
+    // The fibres' width across, a share of a point's footprint (their light kept: a thinner
+    // line is brighter); the tuner's --fibre-width.
+    fibre_width: f32 = 0.5,
+    // Their footprint's sigma in pixels, how much of the flakes' glints shows (0 none, 1 as
+    // real), the air (cm a second: its drift along the wall, the rise over the sun's patch,
+    // the swirls' speed; the swirls' size in cm), the board's share along w, how much denser
+    // round it.
     point_px: f32    = 0.75,
     glints:   f32    = 1.0,
     air:      float4 = float4 { 1.2, 1.0, 1.5, 12.0 },
@@ -2880,11 +2876,11 @@ struct DustBlock {
     near:        float4,
 }
 fn dust_block(g: Gpu&) -> DustBlock {
-    var b = DustBlock { model3d::f4(dust.low, wind_time), model3d::f4(dust.span, dust.rise),
-                        float4 { dust.size, dust.blur, dust.bright, dust.focus }, float4 { dust.thin, dust.ahead, dust.reach, 0.0 },
+    var b = DustBlock { model3d::f4(dust.low, wind_time), model3d::f4(dust.span, 0.0),
+                        float4 { 0.0, dust.blur, dust.bright, dust.focus }, float4 { 0.0, dust.ahead, 0.0, 0.0 },
                         float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
-                        model3d::f4(dust.u, 0.0), model3d::f4(dust.v, 0.0), model3d::f4(dust.w, if dust.beam { 1.0 } else { 0.0 }),
-                        float4 { dust.shape, dust.glint, dust.fibres, 0.0 }, dust.air,
+                        model3d::f4(dust.u, 0.0), model3d::f4(dust.v, 0.0), model3d::f4(dust.w, 0.0),
+                        float4 { 0.0, 0.0, dust.fibres, dust.fibre_width }, dust.air,
                         float4 { dust.point_px, dust.glints, g.room.shell_sun.y * g.room.room_exposure, surfaces::METRE },
                         float4 { dust.board_at, dust.near, 0.0, 0.0 } };
     if lens.on {
@@ -2905,9 +2901,9 @@ fn dust_block(g: Gpu&) -> DustBlock {
     b.shell_glass = s.shell_glass;
     b.shell_sun = s.shell_sun;
     b.window_view = s.window_view;
-    // In the beam only the sun straight through the glass lights a mote, not the light the
-    // lace scatters on.
-    if dust.beam { b.window_view.y = 0.0; }
+    // Only the sun straight through the glass lights a mote, not the light the lace
+    // scatters on.
+    b.window_view.y = 0.0;
     return b;
 }
 
