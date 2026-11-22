@@ -324,6 +324,12 @@ an idle figure; one while charging has no battery estimate, so CPU time is the m
   app's `metal-gpu-intervals` in a window of presents, whatever their `event-depth`;
   compare builds only at the same GPU performance state. `tools/perf/mac_gpu_time.py EXE
   --aa off` records and reads one 3D bench.
+- A trace's `metal-gpu-intervals` are filtered by process name: a prefix such as
+  `light_tune` also takes in the user's own tuner if one is open (`light_tune-b33`), whose
+  command buffers then look like a second frame kind. Tell them apart by their encoder
+  count, or filter by the exact executable name.
+- The light tuner's `--tone-probe K` shows the HDR light itself times K as grey levels (no
+  tonemap): undo sRGB and divide by K to read linear values; `-K` shows the sun's open share.
 - **The iPhone:** `tools/perf/ios_perf.py` (Animation Hitches; `--renderer` passes flags).
   For GPU time, launch with `ios_perf.launch(..., console=True)`, attach Metal System
   Trace with its `record`, and take the union of `metal-gpu-intervals` over the loop
