@@ -2309,8 +2309,7 @@ let ROOM_HEAD = """
     // niche's width, the sill's height, the springing's, the arch's rise (metres); glass:
     // the glass planes' depths into the wall, the lace's distance out of it (world units), w
     // how much of the sun the lace lets through; stone: the sills' (sRGB, and roughness);
-    // ends: the end walls' u, x the stove's, y the far one's, z and w the lace's forward lobe
-    // toward the sun (render3d::lace_glow: its strength, its width in degrees); brass: the curtains' (sRGB at
+    // ends: the end walls' u, x the stove's, y the far one's; brass: the curtains' (sRGB at
     // normal incidence, and roughness); lace_light: the window's light behind the lace
     // (linear, exposed as the view out, lifted with the room), w how strongly its thin parts scatter the sun
     // forward; table: x the table's top's radius, y the floor's height (world units), z and
@@ -3464,13 +3463,6 @@ let ROOM_FRAG = """
             float glow = 1.0 + window_view.x * LACE_GLOW * open;
             float ahead = clamp(dot(v, -l), -1.0, 1.0);
             float hg = 0.75 / pow(1.25 - ahead, 1.5);
-            // Looking at the sun through it (shell_ends.z, render3d::lace_glow): the net's
-            // narrow forward lobe, within some shell_ends.w degrees of the sun, so only
-            // there the lit cloth crosses the glow's threshold.
-            if (shell_ends.z > 0.0) {
-                float off_sun = degrees(acos(ahead)) / max(shell_ends.w, 1e-3);
-                hg += shell_ends.z * exp(-off_sun * off_sun);
-            }
             vec3 through = shell_glass.w * (max(-dot(nf, l), 0.0) * sun * glow * light / PI * (1.0 + lace_light.w * (1.0 - cover) * hg)
                                             + lace_light.rgb * ao);
             vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + (sh_eval(nf) * params.z + shade.rgb) * ssao_kept(screen_ao);
@@ -4293,11 +4285,10 @@ let DEPTH_SHOW_FRAG = """
 
 // The HDR target made the picture (render3d::tone_pass): the tonemaps' shoulder and grade,
 // sRGB, and a dither of under half a level against the 8-bit target's bands. Before the
-// shoulder, the glow and the sun's glare in the eye (render3d::SunLook's veil and rays): a
-// veil round the sun falling as 1 / (1 + (θ / θ0)²), white to amber, and faint hairline
-// needles at random angles that the leaves and bars stop, both scaled by the share of the
-// sun open: the glow's smallest level at the sun (glow_wide), which holds the sun's light
-// blurred over some 5°, so it counts every leaf and bar in front of it.
+// shoulder, the glow and the sun's glare in the eye (render3d::SunLook's veil, off as made):
+// a veil round the sun falling as 1 / (1 + (θ / θ0)²), white to amber, scaled by the share
+// of the sun open: the glow's smallest level at the sun (glow_wide), which holds the sun's
+// light blurred over some 5°, so it counts every leaf and bar in front of it.
 let HDR_TONE_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
@@ -4308,49 +4299,18 @@ let HDR_TONE_FRAG = """
     // glow's uv, w the light tuner's probe (over 0 the light itself times it, under 0 the
     // sun's open share times minus it, both as grey levels); tone_sun: the sun on the picture
     // (pixels), the pixels a degree, w what turns glow_wide's light there into the share
-    // open (0 all open); tone_veil, tone_rays: render3d::SunLook's veil and rays.
-    layout(set = 3, binding = 0) uniform HdrTone { vec4 tone_glow; vec4 tone_sun; vec4 tone_veil; vec4 tone_rays; };
-    // A needle shows only while the light along it from the sun is the sky's (linear, the
-    // view out's exposure): a leaf or a bar darker than SKY_OPEN.x stops it.
-    const vec2 SKY_OPEN = vec2(0.08, 0.2);
+    // open (0 all open); tone_veil: render3d::SunLook's veil.
+    layout(set = 3, binding = 0) uniform HdrTone { vec4 tone_glow; vec4 tone_sun; vec4 tone_veil; };
     float sun_open() {
         if (tone_sun.w <= 0.0) return 1.0;
         vec3 w = texture(glow_wide, tone_sun.xy * tone_glow.yz).rgb;
         return clamp(max(w.r, max(w.g, w.b)) * tone_sun.w, 0.0, 1.0);
-    }
-    float h1(float n) { return fract(sin(n * 12.9898 + 4.1414) * 43758.5453); }
-    // The needles at p: n of them at random angles, each its own length and strength, a
-    // pixel wide, fading out along their length; 0 where a leaf lies between p and the sun.
-    float sun_rays(vec2 d, float ang) {
-        if (ang >= tone_rays.w || ang < 0.3 * tone_rays.z) return 0.0;
-        float n = tone_rays.y;
-        float rho = length(d);
-        float k = (atan(d.y, d.x) / 6.2831853 + 0.5) * n;
-        float ray = 0.0;
-        for (int j = -1; j <= 1; j++) {
-            float b = floor(k) + float(j);
-            float id = mod(b + n, n);
-            float at = b + 0.5 + 0.8 * (h1(id) - 0.5);
-            float across = rho * 6.2831853 * (k - at) / n;
-            float len = mix(tone_rays.z, tone_rays.w, h1(id + 17.0));
-            float along = 1.0 - clamp(ang / len, 0.0, 1.0);
-            ray += exp(-across * across * 2.0) * along * along * mix(0.3, 1.0, h1(id + 41.0));
-        }
-        if (ray < 0.004) return 0.0;
-        float seen = 1.0;
-        for (int i = 1; i <= 5; i++) {
-            vec2 q = tone_sun.xy + d * (float(i) / 6.0);
-            vec3 l = texelFetch(scene_light, ivec2(q), 0).rgb;
-            seen *= smoothstep(SKY_OPEN.x, SKY_OPEN.y, dot(l, vec3(0.2126, 0.7152, 0.0722)));
-        }
-        return ray * seen;
     }
     vec3 sun_glare(vec2 px, float open) {
         vec2 d = px - tone_sun.xy;
         float ang = length(d) / max(tone_sun.z, 1e-3);
         float t = ang / max(tone_veil.y, 1e-3);
         float veil = tone_veil.x * open / (1.0 + t * t) * (1.0 - smoothstep(0.5 * tone_veil.z, tone_veil.z, ang));
-        if (tone_rays.x > 0.0) veil *= 1.0 + tone_rays.x * sun_rays(d, ang);
         return veil * pow(vec3(1.0, 0.82, 0.6), vec3(tone_veil.w * min(ang / 10.0, 2.0)));
     }
     vec3 shoulder(vec3 c) {

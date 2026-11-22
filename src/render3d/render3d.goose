@@ -908,15 +908,13 @@ struct OutsideBlock { exposure: float4, sun_disc: float4, sun_glare: float4, sun
 // The tonemap's part of the sun (HDR_TONE_FRAG, HDR only): veil the eye's veiling glare round
 // it, x its strength (linear light at the sun, 0 none), y the angle it halves at and z where
 // it has faded out (degrees), w how far it turns amber away from the sun (1 white to (1,
-// 0.82, 0.6) by 10°); rays faint hairline needles out of it, x their strength (a share of
-// the veil where they are), y how many, z and w their shortest and longest (degrees). Both
-// scaled by how much of the sun is open, read from the glow's smallest level.
+// 0.82, 0.6) by 10°), scaled by how much of the sun is open, read from the glow's smallest
+// level. Off as made (the light tuner's --sun-look veil and --sun-eye).
 struct SunLook {
     disc:  float4 = float4 { 0.27, 0.0, 0.0, 30.0 },
     glare: float4 = float4 { 1.5, 1.2, 0.4, 4.0 },
     tree:  float4 = float4_0,
     veil:  float4 = float4_0,
-    rays:  float4 = float4_0,
 }
 var sun_look = SunLook {};
 fn outside_block(g: Gpu&, in_mirror: bool = false) -> OutsideBlock {
@@ -1400,7 +1398,7 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     // The end walls' u, for the floor's darker band along every wall.
     let stove_end = room_shell::room_of(s, s.walls[room_shell::STOVE_WALL].a);
     let far_end = room_shell::room_of(s, s.walls[room_shell::FAR_WALL].a);
-    b.shell_ends = float4 { stove_end.x, far_end.x, lace_glow.x, lace_glow.y };
+    b.shell_ends = float4 { stove_end.x, far_end.x, 0.0, 0.0 };
     // Its own sun, and its baked light where it is made.
     let r = g.room;
     b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, g.room_tint.z, g.room_tint.w };
@@ -2593,11 +2591,6 @@ var window_view = float4 { 1.0, 1.0, 1.0, 1.0 };
 // The sun's broad veil in the sky round it (OUTSIDE_FRAG, the tuner's --sun-veil), 1 as
 // made, 0 off.
 var sun_veil: f32 = 1.0;
-// The lace's narrow forward lobe looking at the sun through it (ROOM_FRAG's lace, shell_ends):
-// x its strength over the Henyey-Greenstein lobe's (0 none), y its width (degrees), so only
-// the lace within that of the sun crosses the HDR glow's threshold. The light tuner's
-// --lace-glow.
-var lace_glow = float4_0;
 // The light tuner's park on the ground (--park, model3d::view_out's lawn and cards, its own
 // shaders in TUNED_OUTSIDE and TUNED_OUTSIDE_HDR): the view out's mesh carries them.
 var park_ground = false;
@@ -2646,7 +2639,7 @@ fn glow_shown(g: Gpu&) -> bool { g.hdr && hdr_glow.look.x > 0.0 && hdr_glow.leve
 fn glow_smallest() -> i64 { clamp(hdr_glow.levels, 1, GLOW_LEVELS) - 1 }
 // GLOW_DOWN_FRAG's and GLOW_UP_FRAG's block; HDR_TONE_FRAG's.
 struct GlowStep { step: float4, look: float4 }
-struct HdrTone { glow: float4, sun: float4, veil: float4, rays: float4 }
+struct HdrTone { glow: float4, sun: float4, veil: float4 }
 fn glow_level_size(size: int2, k: i64) -> int2 {
     var q = int2 { max(size.x / 4, 1), max(size.y / 4, 1) };
     for i in k { q = int2 { max(q.x / 2, 1), max(q.y / 2, 1) }; }
@@ -2662,13 +2655,13 @@ fn glow_step_of(from: int2, to: int2, first: bool) -> GlowStep {
 // The tonemap's block: glow x the glow's strength (0 none), yz a pixel in uv, w the light
 // tuner's probe (tone_probe); sun the sun's place on the picture (pixels), the pixels a
 // degree spans there, and w what turns the glow's smallest level there into the share of
-// the sun open (0: taken as all open); veil and rays SunLook's, veil.x 0 where the sun is
-// behind the eye.
+// the sun open (0: taken as all open); veil SunLook's, its x 0 where the sun is behind the
+// eye.
 var tone_probe: f32 = 0.0;
 fn hdr_tone_of(g: Gpu&) -> HdrTone {
     let glow = glow_shown(g);
     var t = HdrTone { float4 { if glow { hdr_glow.look.x } else { 0.0 }, 1.0 / g.size.x, 1.0 / g.size.y, tone_probe },
-                      float4_0, sun_look.veil, sun_look.rays };
+                      float4_0, sun_look.veil };
     guard sun_look.veil.x > 0.0 else { return t; }
     let m = g.frame.view_proj;
     let s = normalize(float3 { g.frame.light_dir.x, g.frame.light_dir.y, g.frame.light_dir.z });

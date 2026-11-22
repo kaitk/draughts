@@ -73,11 +73,10 @@
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
 //       0.15 by default, 0 as made; Y switches 0.15 and 0)]
 //       [--dump-glass-tile PREFIX (the glass's wiping tile and its previews; then quits)]
-//       [--sun-look made|real|tight|concept|soft|a|b|c|d (the sun's looks, SUN_LOOK_NAMES; then each part over it:)
+//       [--sun-look made|veil (the sun's looks, SUN_LOOK_NAMES; then each part over it:)
 //       --sun-disc R,LIMB,EDGE,BRIGHT --sun-glare CORE,WIDTH,GLOW,WIDTH --sun-tree DENSITY,REACH,BACKLIGHT,SHARP
-//       --sun-eye STRENGTH,HALF_DEG,END_DEG,AMBER (the eye's veil round the sun, HDR) --sun-rays SHARE,COUNT,MIN_DEG,MAX_DEG
-//       (its needles) --glow STRENGTH,THRESHOLD,KNEE,REACH --glow-levels N]
-//       [--lace-glow STRENGTH,WIDTH_DEG (the lace's forward lobe looking at the sun through it; 0 off)]
+//       --sun-eye STRENGTH,HALF_DEG,END_DEG,AMBER (the eye's veil round the sun, HDR; 0 off)
+//       --glow STRENGTH,THRESHOLD,KNEE,REACH --glow-levels N]
 //       [--view-nudge DX,DY,DZ (the table-window view's eye and target moved, metres in the plan)]
 //       [--tone-probe K (HDR: the picture's linear light times K as grey levels, no tonemap; -K the sun's open share)]
 //       [--lace-sun K] [--lace-scatter K] [--glass-film K] [--scratches K] [--sun-veil K] (the window view's
@@ -210,15 +209,13 @@ fn view_point(p: float3, view: i64) -> float3 {
 // (PLACE_SUN.w), and the table-window view's eye and target (the sun in the middle window's
 // left leaf, as library-home-01 has it). 0 is "free": the flags' own. Without --place the
 // tuner starts at PLACE_DEFAULT, less-turned (2026-11-22).
-// The sun's looks to compare in the view out (--sun-look; render3d::SunLook's disc, glare,
-// tree, veil and rays): "made" as it was before 2026-11-22's looks; real, tight, concept and
-// soft builder 32's (build/notes/builder-32/); a to d the sun research's
-// (build/notes/window-view/refs/research-sun.html, build/notes/builder-34/): a the true disc
-// with its edge hidden in its glow and the leaves' gaps sharper, 8000 over the sky (30 000
-// made the open sun's glow milky over the whole pane); b a plus the eye's veil round the
-// sun; c b wider and twice as strong; d b plus faint needles (a few percent of the veil
-// don't show over the glow: six times it).
-let SUN_LOOK_NAMES = ["made", "real", "tight", "concept", "soft", "a", "b", "c", "d"];
+// The sun's looks in the view out (--sun-look; render3d::SunLook's disc, glare, tree and
+// veil): "made" the default, its HDR glow alone showing where the sun is (2026-11-22); "veil"
+// the sun research's look b (build/notes/window-view/refs/research-sun.html,
+// build/notes/builder-34/), kept to retry behind the new maple's thicker leaves: the true
+// disc with its edge hidden in its glow and the leaves' gaps sharper, 8000 over the sky,
+// and the eye's veil round the sun, which looked overdone against open sky.
+let SUN_LOOK_NAMES = ["made", "veil"];
 // The haze in the sunbeam's strengths (render3d::Haze.sigma, a metre): off; a clean room's air,
 // a lived-in one's, a room just dusted (build/notes/window-view/refs/research-haze-motes.md),
 // and the ChatGPT library study's soft wide beam across the dark bookcase.
@@ -232,24 +229,12 @@ let HAZE_SIGMAS: f32[7] = [0.0, 5.0e-5, 1.5e-4, 4.0e-4, HAZE_STUDY, HAZE_STUDY, 
 let HAZE_SOFTS: f32[7] = [1.0, 1.0, 1.0, 1.0, 4.0, 4.0, 1.0];
 // Each its stripes softened more looking toward the sun (Haze.toward), where they converge on it.
 let HAZE_TOWARDS: f32[7] = [0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 0.0];
-let SUN_A_DISC = float4 { 0.27, 0.0, 0.27, 8000.0 };
-let SUN_A_GLARE = float4 { 0.4, 0.8, 0.25, 4.0 };
-let SUN_A_TREE = float4 { 2.0, 180.0, 0.45, 6.0 };
-let SUN_B_VEIL = float4 { 3.0, 1.5, 20.0, 1.0 };
-let SUN_LOOKS: render3d::SunLook[9] = [
+let SUN_LOOKS: render3d::SunLook[2] = [
     render3d::SunLook {},
-    render3d::SunLook { float4 { 0.27, 0.6, 0.0, 30000.0 }, float4 { 0.4, 0.8, 0.25, 4.0 }, float4 { 2.0, 180.0, 0.3, 3.0 } },
-    render3d::SunLook { float4 { 0.5, 0.7, 0.03, 12000.0 }, float4 { 0.3, 0.8, 0.2, 3.0 }, float4 { 2.0, 180.0, 0.3, 3.0 } },
-    render3d::SunLook { float4 { 0.8, 0.5, 0.1, 5000.0 }, float4 { 0.4, 1.2, 0.35, 5.0 }, float4 { 2.0, 180.0, 0.4, 3.0 } },
-    render3d::SunLook { float4 { 1.2, 0.3, 0.35, 2500.0 }, float4 { 0.6, 1.8, 0.6, 8.0 }, float4 { 2.0, 180.0, 0.5, 3.0 } },
-    render3d::SunLook { SUN_A_DISC, SUN_A_GLARE, SUN_A_TREE },
-    render3d::SunLook { SUN_A_DISC, SUN_A_GLARE, SUN_A_TREE, SUN_B_VEIL },
-    render3d::SunLook { SUN_A_DISC, SUN_A_GLARE, SUN_A_TREE, float4 { 6.0, 2.5, 30.0, 1.0 } },
-    render3d::SunLook { SUN_A_DISC, SUN_A_GLARE, SUN_A_TREE, SUN_B_VEIL, float4 { 6.0, 90.0, 2.0, 5.0 } }];
-// Each look's glow (render3d::HdrGlow.look: strength, threshold, knee, reach); "made" the default's.
-let SUN_GLOWS: float4[9] = [float4 { 0.06, 1.0, 0.5, 0.65 }, float4 { 0.05, 1.0, 0.5, 0.6 }, float4 { 0.04, 1.0, 0.5, 0.5 },
-                            float4 { 0.08, 1.0, 0.5, 0.7 }, float4 { 0.12, 1.0, 0.5, 0.8 }, float4 { 0.06, 1.0, 0.5, 0.65 },
-                            float4 { 0.06, 1.0, 0.5, 0.65 }, float4 { 0.06, 1.0, 0.5, 0.65 }, float4 { 0.06, 1.0, 0.5, 0.65 }];
+    render3d::SunLook { float4 { 0.27, 0.0, 0.27, 8000.0 }, float4 { 0.4, 0.8, 0.25, 4.0 }, float4 { 2.0, 180.0, 0.45, 6.0 },
+                        float4 { 3.0, 1.5, 20.0, 1.0 } }];
+// Each look's glow (render3d::HdrGlow.look: strength, threshold, knee, reach).
+let SUN_GLOWS: float4[2] = [float4 { 0.06, 1.0, 0.5, 0.65 }, float4 { 0.06, 1.0, 0.5, 0.65 }];
 
 let PLACE_NAMES = ["free", "concept", "concept-high", "along-wall", "less-turned", "concept-pier", "more-turned"];
 let PLACE_DEFAULT = 4;
@@ -1376,9 +1361,6 @@ fn main() {
     render3d::sun_look.glare = four(argv, "--sun-glare", render3d::sun_look.glare);
     render3d::sun_look.tree = four(argv, "--sun-tree", render3d::sun_look.tree);
     render3d::sun_look.veil = four(argv, "--sun-eye", render3d::sun_look.veil);
-    render3d::sun_look.rays = four(argv, "--sun-rays", render3d::sun_look.rays);
-    let lace_glow = four(argv, "--lace-glow", float4_0);
-    render3d::lace_glow = float4 { lace_glow.x, if lace_glow.y > 0.0 { lace_glow.y } else { 12.0 }, 0.0, 0.0 };
     render3d::tone_probe = number(argv, "--tone-probe", 0.0);
     let nudge = four(argv, "--view-nudge", float4_0);
     table_window_nudge = float3 { nudge.x, nudge.y, nudge.z };
@@ -1912,12 +1894,6 @@ fn main() {
                 slider(c, "Its half width (deg)", render3d::sun_look.veil.y, 0.3, 6.0);
                 slider(c, "Its end (deg)", render3d::sun_look.veil.z, 2.0, 45.0);
                 slider(c, "Its amber", render3d::sun_look.veil.w, 0.0, 2.0);
-                slider(c, "Needles (share)", render3d::sun_look.rays.x, 0.0, 1.0);
-                slider(c, "How many", render3d::sun_look.rays.y, 10.0, 200.0);
-                slider(c, "Shortest (deg)", render3d::sun_look.rays.z, 0.5, 8.0);
-                slider(c, "Longest (deg)", render3d::sun_look.rays.w, 0.5, 12.0);
-                slider(c, "Lace's glow at the sun", render3d::lace_glow.x, 0.0, 40.0);
-                slider(c, "Its width (deg)", render3d::lace_glow.y, 2.0, 30.0);
                 note(c, if render3d::hdr_shown(g) { "  HDR glow:" } else { "  HDR glow (shown with HDR only):" });
                 slider(c, "Glow", render3d::hdr_glow.look.x, 0.0, 0.5);
                 slider(c, "Its threshold", render3d::hdr_glow.look.y, 0.0, 8.0);
@@ -2146,8 +2122,6 @@ fn main() {
             flag_four(line, "--sun-glare", render3d::sun_look.glare);
             flag_four(line, "--sun-tree", render3d::sun_look.tree);
             flag_four(line, "--sun-eye", render3d::sun_look.veil);
-            flag_four(line, "--sun-rays", render3d::sun_look.rays);
-            flag_pair(line, "--lace-glow", float2 { render3d::lace_glow.x, render3d::lace_glow.y });
             flag_four(line, "--glow", render3d::hdr_glow.look);
             format(line, " --glow-levels ", render3d::hdr_glow.levels);
             format(line, " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
