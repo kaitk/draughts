@@ -427,6 +427,23 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       brought it down. The game's shot unchanged in both renderers. Open: the user's pick
       of the dust's density and of the haze's strength (off, dusted or study); on mobile the
       haze is off (a cheaper version would be a quarter size without the lace and the tree)
+- [x] The sun's looks a to d and the lace in the glow (2026-11-22, builder 34,
+      `build/notes/builder-34/`, from `build/notes/window-view/refs/research-sun.html`):
+      `--sun-look a|b|c|d` (a the true disc's edge hidden in builder 32's glow, 8000 over the
+      sky; b the eye's veil in the tonemap, 3 / (1 + (θ/1.5°)²) white to amber out to 20°;
+      c wider and twice as strong; d b with faint needles stopped by leaves and bars), the
+      veil and needles scaled by the sun's open share from the glow's smallest level; the
+      lace's narrow forward lobe toward the sun on `--lace-glow` (the lit fold within ~12° is
+      already 0.9-2.5 × white without it, 1.1-3.1 with 20,12). Found: at less-turned the sun
+      is behind a glazing bar (1-3% open); `--view-nudge 0.04,0,0` frees it. At 3024 × 1890
+      native, two rounds (the user's tuner open at the time): menu view main pass 11.08 /
+      10.17 ms before, 10.58 / 10.61 after (made), 10.57-10.73 with a-d; the tonemap 0.38-0.39
+      to 0.43 (made) and 0.55-0.57 with the veil; room view main pass 11.95 / 12.01 to 11.94 /
+      12.67, 12.25 / 12.32 with b; the frame's GPU sum menu 14.19 / 13.10 to 13.63 / 13.69,
+      13.65-13.81 with a-d. Dust: only the points remain; fibres half as wide, light kept;
+      haze levels `--haze menu` (study) and `game` (dusted). The game's shot unchanged in
+      both renderers. Open: the user's pick of the look; the placement's eye nudge; a tonemap
+      variant without the glare's code (0.04-0.05 ms with the veil off)
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)
