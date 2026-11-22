@@ -172,9 +172,9 @@ let LOOK = Look {
     lace_thread: float4 { 0.867, 0.827, 0.749, 0.9 },
     stone:       float4 { 0.714, 0.698, 0.659, 0.55 },
     // A Vasalemma-type limestone (build/notes/paint-research/), honed: the arris eased to
-    // 4 mm, the band polished by hands 25 to 70 mm back, the nose 6 % darker at its foot,
-    // dust before the inner casement fading over 2 cm.
-    sill: float4 { 0.004, 0.07, 0.06, 0.02 },
+    // 4 mm, the band polished by hands 25 to 70 mm back, the nose 6 % darker at its foot (in
+    // sRGB; 13 % of its linear albedo), dust before the inner casement fading over 2 cm.
+    sill: float4 { 0.004, 0.07, 0.13, 0.02 },
     // A plain brass, a placeholder until the gilt and brass study's material lands: its
     // reflectance at normal incidence linear (0.91, 0.778, 0.423), #f5e4ae, 0.28 rough (a
     // polished one reads as brown felt while the room reflects only its harmonics), no wear.
