@@ -14,7 +14,16 @@
      turn with the lookout's eye, the hint and undo move, the moves panel under it). A
      phone in landscape (under 600 dp tall): narrower panels, back and settings side by
      side, the moves as a line under the catch. Portrait: the way out and the catch with
-     the last move over the board, the play under it. */
+     the last move over the board, the play under it.
+     ?view= a kings' ending of International, the child white against the computer:
+       kings    the draw tile with start over, while both sides have a king (&friend=1
+                a friend's game: "Draw", which ends the game at once)
+       no       the computer refused: a card in the middle over an undimmed board, the
+                tile dim for the child's next five moves
+       asked    the computer offers a draw, once a game
+       giveup   start over from the child's fifth move: give up this game?
+       lost     the end's card after giving up
+       drawn    the end's card after a draw agreed */
   .game { display: grid; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); gap: 24px; --side: 232px; }
   .col { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
   #board { place-self: center; width: min(var(--h), 100%); }
@@ -46,6 +55,19 @@
     .way .tile { background: var(--glass-tint); }
   }
   .pill { display: none; }
+  /* A card over the board: the computer's refusal and offer, give up, the end's. */
+  .veil { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; }
+  .veil.dim { background: rgb(0 0 0 / 0.42); }
+  .card { display: grid; justify-items: center; gap: 14px; width: min(440px, 100%); padding: 24px; text-align: center; pointer-events: auto; }
+  .card h1 { font-size: 32px; }
+  .card .pieces { display: flex; gap: 12px; }
+  .card .pieces .piece { width: 72px; }
+  .card .big { width: 72px; height: 72px; stroke-width: 1.6; }
+  .card small.inline .icon { width: 1.7em; height: 1.7em; vertical-align: -0.5em; margin-right: 0.15em; color: var(--fg); }
+  .card .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+  .card .two .tile { min-width: 0; padding: 0 10px; }
+  .card > .tile { width: 100%; }  /* a lone answer spans the card, as the app's Continue */
+  #board.dimmed { filter: brightness(0.55); } /* the app dims in the shaders */
 
   /* A phone in landscape. */
   @container (max-height: 599px) and (orientation: landscape) {
@@ -53,7 +75,7 @@
     .left { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto 1fr; gap: 12px; }
     .left > .tile, .way .tile { flex-direction: column; gap: 4px; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; }
     .way { display: contents; }
-    .way .tile:last-child { grid-column: span 2; }
+    .way .tile:last-child:nth-child(odd) { grid-column: span 2; }
     .way .tile { justify-content: center; }
     .catch { grid-column: span 2; padding: 10px 14px; }
     .line { display: flex; grid-column: span 2; padding: 6px 8px; font-size: 18px; }
@@ -73,7 +95,7 @@
     .game { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; }
     .col { display: contents; }
     .left { display: grid; background: var(--glass-tint); border-radius: 28px; }
-    .bar { order: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; }
+    .bar { order: 0; display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); gap: 12px; padding: 16px; }
     .way { display: contents; }
     .bar .tile { flex-direction: column; gap: 4px; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; justify-content: center; }
     #board { order: 1; width: min(var(--w), 100%); align-self: center; }
@@ -99,7 +121,7 @@
 <main class="screen game">
   <div class="col left bar">
     <a class="tile glass back" href="home.html" data-icon="back">Back</a>
-    <div class="glass way">
+    <div class="glass way" id="way">
       <a class="tile" href="settings.html" data-icon="gear">Settings</a>
       <a class="tile" data-icon="restart">Start over</a>
     </div>
@@ -109,7 +131,7 @@
   </div>
   <div id="board"></div>
   <div class="col right">
-    <div class="glass play">
+    <div class="glass play" id="play">
       <div class="turn"><span class="piece solo black ring"></span>Black's turn
         <span class="eye" data-icon="eyeOff"></span></div>
       <div class="duo">
@@ -119,6 +141,7 @@
     </div>
     <div class="glass moves" id="moves"></div>
   </div>
+  <div class="veil" id="veil" hidden></div>
 </main>
 <script>
   const PLY = 39, D = Draughts, P = D.PLIES;
@@ -139,8 +162,44 @@
   const card = (color, k) => k ? `<div class="glass card">${taken(color, k)}</div>` : '<div></div>';
   document.getElementById('pill').innerHTML = card('white', 20 - pos.white.length) +
     `<span class="glass mv">${Math.ceil(PLY / 2)}. ${P[PLY - 1].m}${D.mark(P[PLY - 1].k)}${D.icon('up')}</span>${card('black', 0)}`;
-  D.board(document.getElementById('board'), pos);
+  const view = new URLSearchParams(location.search).get('view');
+  if (view) kings(view); else D.board(document.getElementById('board'), pos);
   D.init();
+
+  // Task 112's states in a kings' ending: white two kings and a man, black two kings.
+  function kings(view) {
+    const $ = (id) => document.getElementById(id), friend = new URLSearchParams(location.search).has('friend');
+    const ended = view === 'lost' || view === 'drawn';
+    D.board($('board'), { n: 10, white: ['c3', 'g7', 'b2'], black: ['h8', 'd8'], kings: ['c3', 'g7', 'h8', 'd8'], last: ['f10', 'd8'] });
+    if (ended) $('board').classList.add('dimmed');
+    const turn = friend ? 'White\'s turn' : 'Your turn';
+    $('play').querySelector('.turn').innerHTML = `<span class="piece solo white ring"></span>${turn}<span class="eye" data-icon="eyeOff"></span>`;
+    // The draw tile with start over, the bar's fourth in portrait; dim after a refusal.
+    if (!ended && view !== 'asked') {
+      $('way').insertAdjacentHTML('beforeend', `<a class="tile${view === 'no' ? ' dim' : ''}" href="?view=${friend ? 'drawn&friend=1' : 'no'}" data-icon="handshake">${friend ? 'Draw' : 'Offer draw'}</a>`);
+      document.querySelector('.bar').style.setProperty('--n', 4);
+    }
+    $('way').querySelector('[data-icon=restart]').href = friend ? '?view=kings&friend=1' : '?view=giveup';
+    const M = ['41-37', '4-27', '37-46', '27-4', '46-37', '15-4', '37-28', '4-15', '28-46', '15-4', '46-28', '9-4'];
+    let rows = '';
+    for (let i = 0; i < M.length; i += 2) rows += `<div class="mrow"><span class="n">${48 + i / 2}</span><span class="mv">${M[i]}</span><span class="mv${i + 1 === M.length - 1 ? ' lit' : ''}">${M[i + 1]}</span></div>`;
+    $('moves').innerHTML = rows;
+    $('line').innerHTML = rows;
+    $('pill').innerHTML = `<div></div><span class="glass mv">53. 9-4${D.icon('up')}</span><div></div>`;
+    const taken = (color, k) => `<div class="row">${`<span class="piece solo ${color}"></span>`.repeat(k)}</div>`;
+    $('catch').innerHTML = taken('white', 10) + taken('black', 11);
+    const big = (name) => D.icon(name).replace('class="icon"', 'class="icon big"');
+    const card = (html, dim) => { $('veil').hidden = false; $('veil').classList.toggle('dim', dim); $('veil').innerHTML = `<div class="glass card">${html}</div>`; };
+    const again = `<div class="two"><a class="tile" href="home.html" data-icon="back">Back</a><a class="tile primary" href="?view=kings" data-icon="restart">Play again</a></div>`;
+    if (view === 'no') card(`<div class="pieces">${big('handshakeOff')}</div><h1>No draw</h1>
+      <small class="inline">${D.icon('computer')} wants to play on.</small><a class="tile primary" href="?view=kings">Continue</a>`, false);
+    if (view === 'asked') card(`<div class="pieces">${big('computer')}${big('handshake')}</div><h1>Draw?</h1>
+      <div class="two"><a class="tile primary" href="?view=drawn" data-icon="handshake">Draw</a><a class="tile" href="?view=kings" data-icon="next">Play on</a></div>`, false);
+    if (view === 'giveup') card(`${big('flag')}<h1>Give up this game?</h1><small>It counts as a loss.</small>
+      <div class="two"><a class="tile" href="?view=lost" data-icon="flag">Give up</a><a class="tile primary" href="?view=kings" data-icon="next">Keep playing</a></div>`, true);
+    if (view === 'lost') card(`<div class="pieces"><span class="piece solo black king"></span></div><h1>Black wins</h1><small>White gave up</small>${again}`, false);
+    if (view === 'drawn') card(`<div class="pieces"><span class="piece solo white"></span><span class="piece solo black"></span></div><h1>Draw</h1><small>Agreed</small>${again}`, false);
+  }
 </script>
 </body>
 </html>

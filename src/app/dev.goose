@@ -162,6 +162,10 @@ fn before(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, now: f64) {
         else { shell::go_to(sh, dv.go, now); }
         dv.go = -1;
     }
+    if f.card >= 0 && host::frame_count() == 2 {
+        if f.card >= 10 { sh.game.ended_by = f.card - 10; } else { game::show_card(sh.game, f.card); }
+        sh.changed = true;
+    }
     if f.hold >= 0.0 && sh.from >= 0 { sh.since = now - f.hold * shell::DURATION; }
     if f.win >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - f.win; }
     if f.win >= 0.0 && sh.game.drawn_at >= 0.0 { sh.game.drawn_at = now - f.win; }

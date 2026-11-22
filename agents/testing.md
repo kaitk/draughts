@@ -83,7 +83,9 @@ before committing a change to `rules/`.
 - A shell's frame output is `sh.out`; a test that sets `sh.prefs` calls
   `shell::apply_prefs(sh)` after.
 - The game's controls (`drive::control`) are back, settings, start over, undo, the hint
-  (4), then a card's back and play again (5, 6). The lookout's eye is a floating disc:
+  (4), then a card's back and play again (5, 6). The draw tile, while both sides have a
+  king, is declared after the hint (5), and a card in the middle's answers after it
+  (`test/shell/draw_offer.goose` finds tiles by their icon instead). The lookout's eye is a floating disc:
   `drive::eye`; `drive::camera_disc` tells the 3D camera's buttons from it. Tiles are
   found by the order of `gui::BUTTON` quads; the clocks are `BUTTON` quads too, so the
   helpers skip styles from `gui::CLOCK_RUN` on.
@@ -147,6 +149,10 @@ before committing a change to `rules/`.
   flag (the kings, say) are written into the player's file for the run.
 - `--keys ...,enter` on settings presses whatever the focus reached and writes the
   change.
+- `--card refused|offer|give-up|gave-up|agreed` shows the game's middle cards and its
+  given-up or agreed ends. An ending against the computer moves the player's rating and
+  calls `apply_prefs`, which puts the settings' language back over `--lang`: set the
+  language in the copied settings, or shoot a friend's game.
 - `--size` is in points on a Retina screen and the PNG is twice it; a window taller than
   about 1098 points is shrunk to fit. Shoot tall portraits at the same proportions:
   9:19.5 `450x975`, 9:20 `450x1000`, 9:16 `540x960`, the tablet `600x960`. Check with
