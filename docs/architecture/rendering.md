@@ -625,7 +625,7 @@ board's light:
 - **Contact shadows** (`ROOM_FRAG`'s `contact_lit`, `render3d::contact_look`), in the
   standard and high tiers where the SSAO's map is drawn: a 12-step ray 10 cm toward the
   sun over that map of positions stops 0.8 of the sun behind what stands nearer, so the
-  architraves, the caps and the mouldings cast their thin shadows.
+  architraves, the caps and the mouldings cast their thin shadows. The floor has none.
 - **The panels** (`surfaces::panel_ring`): their rings shade as their profiles are, smooth
   where they turn by less than 32°, a step under 5 mm wide shaded from the facet before it
   to the one after, the groove's occlusion a thin dip in its first 4 mm.

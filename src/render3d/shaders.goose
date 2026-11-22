@@ -3884,7 +3884,10 @@ let ROOM_FRAG = """
         float kept = dot(ng, l) > 0.0 ? table_kept * case_shade(v_local, l) : 0.0;
         float open = kept > 0.0 ? window_open(p) : 0.0;
     #ifndef NO_SSAO
+    #ifndef ROOM_FLOOR
+        // Not on the floor, where it showed nothing and cost the most.
         if (contact.x > 0.0 && open * kept > 0.0 && nol > 0.0) open *= contact_lit(p, ng, l, eye_slope);
+    #endif
     #endif
         float fill = room_baked.x > 0.5 ? room_baked.y : 1.0;
         float vis = (room.y > 0.0 ? open + fill * (1.0 - room.y) * (1.0 - open) * ao : 1.0) * kept;

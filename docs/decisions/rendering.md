@@ -1711,6 +1711,11 @@ to be is in tasks 042, 059, 071, 081, and 086.
   which the window's pattern can't cast. Only where the SSAO's map is drawn; off on a
   phone. Its edge steps at the map's texels close up (a depth-aware upsample would fix
   it). Replaces no small shadows at all.
+- The floor takes no contact shadow (2026-11-22, task 107, `build/notes/floor-perf/`): the
+  shots of the room's, the table-window's and a straight-down view were byte-identical
+  without it, and it cost 1.8 ms of a 17.4 ms frame looking straight down at the parquet
+  (3024 × 1890). Replaces the contact shadows on the floor; the walls, the joinery and the
+  metals keep theirs.
 - The library's light retuned for a larger sun-to-shade range, with today's toe (2026-11-21,
   task 107; `rooms::AUTUMN`'s `shell_sun` and `baked`, `render3d::shade_fill`,
   `room_light::bounce_grey`, `room_light::BOUNCES`, `render3d::room_sun`,
