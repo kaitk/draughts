@@ -114,3 +114,36 @@ skill, and gave a blunder up to skill 40.
   0.075, 0.15 of a game, replacing a unit of a man with chess.com's 0.05, 0.10, 0.20,
   which marked about 1.8 times as harshly. Letting a forced win go for under six men is a
   blunder, as lidraughts' lost-win rule marks it.
+
+## Draws offered and giving up (2026-11-22)
+
+Task 112. Testers asked for a draw offer and a way to give up: a kings' ending ran its
+rules' count to the end (up to 60 moves each), and start over cancelled a lost game for
+nothing, so a loss could be dodged and never reached the rating.
+
+- **Giving up** goes through start over: in a game against the computer, from the child's
+  fifth move, start over asks "Give up this game?" over the dimmed board. Giving up is a
+  loss: the history, the rating, and the skill count it as the computer's win. Before the
+  fifth move, in a friend's game, in a game played on from a replay, and once the game
+  has ended, start over stays free. This replaces "a game started over or replaced
+  before it ends doesn't count" (2026-11-09, `ai.md`'s "Skill"), which let a loss be
+  dodged. Rejected: a give-up tile of its own, one more tile for a rare act.
+- **The computer's answer** to "Offer draw" is at once, from the score of its last search
+  (`ai::accepts_draw`): it accepts unless it is winning by half a man or more. The score
+  misjudges kings' endings that are dead draws, two kings against one looking won, so a
+  check on the material comes first (`ai::dead_draw`): only kings on the board, and the
+  stronger side with at most two, or three against a lone king on the long diagonal.
+  Rejected: a search of its own for the answer, a wait for an answer that the last
+  search already gives.
+- **A refusal** keeps the tile dim for the child's next five moves, so tapping until yes
+  doesn't work.
+- **The computer offers** a draw once a game (`ai::offers_draw`), after its own move, when
+  both sides have a king and the material is a dead draw, or only kings stand and its
+  score is within a fifth of a man of even. Play on says the child wants to win, so it
+  never asks again; the child can still offer.
+- **An agreed draw** counts as a draw: ½ for the rating, the skill left as it is, a line
+  in the history. In a friend's game the draw tile ends the game at once with no second
+  player's say, and undo takes it back as it takes back any ending; asking the other
+  player first was a lot of code for a corner case.
+- Each counts once: an ending taken back by undo and ended again counts no more, as a
+  win taken back does.
