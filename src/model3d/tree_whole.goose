@@ -69,7 +69,7 @@ struct Habit {
 // fork up; the limbs' and branches' lengths reach to the crown's outside.
 let OLD_MAPLE = Habit {
     segments: [8, 10, 7, 4, 3],
-    children: [7, 14, 12, 14, 0],
+    children: [7, 20, 14, 10, 0],
     start:    [0.0, 0.12, 0.1, 0.1, 0.0],
     angle:    [48.0, 50.0, 52.0, 50.0, 0.0],
     ratio:    [1.0, 0.75, 0.5, 0.42, 0.0],
@@ -143,7 +143,7 @@ struct Part { at: float3, dir: float3, length: f32, radius: f32, level: i64, dic
 let WHOLE_REACH: f32 = 1.4;
 
 // The leaf pairs on a twig.
-let TWIG_NODES = 6;
+let TWIG_NODES = 4;
 
 // The tree grown whole from w, all of it, or with `cull` only the parts seen through
 // `sight` or casting on v's map. Each branch has dice of its own, so culling leaves the
@@ -283,7 +283,7 @@ fn add_cards(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&,
     let height_share = clamp((points[n].y - w.foot.y) / w.height, 0.0, 1.0);
     // The twig's own tint: the crown's outside and top turn first.
     let outer = clamp(crown_radius(w, points[n]), 0.0, 1.1);
-    let twig_tint = clamp(tint + 0.7 * (outer - 0.85) + 0.35 * (height_share - 0.5) + roll_between(d, -0.12, 0.12), 0.0, 2.0);
+    let twig_tint = clamp(tint + 1.6 * (outer - 0.85) + 0.6 * (height_share - 0.5) + roll_between(d, -0.12, 0.12), 0.0, 2.0);
     // The nodes evenly along the twig's outer four fifths, the last at its tip: each a
     // short shoot's pair of leaves, as on an old tree most leaves are.
     let nodes = TWIG_NODES;
