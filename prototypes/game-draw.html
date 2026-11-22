@@ -14,8 +14,8 @@
                end's (the default), a the tile answers, b the line under whose turn;
                the card's icon &icon=off (a crossed handshake, the default), thumb, hand;
                &say=words for "The computer" written out, else its icon in the line
-       asked   the computer offers a draw; &ask=panel in the play panel (the default),
-               card over the board
+       asked   the computer offers a draw; &ask=card over the board (the default),
+               panel in the play panel
        giveup  start over tapped a few moves in: give up this game?
        lost    the end's card after giving up
        drawn   the end's card after a draw agreed (or a friend's game's draw tile)
@@ -161,7 +161,7 @@
   const turn = friend ? 'White\'s turn' : 'Your turn';
   let play = `<div class="turn"><span class="piece solo white ring"></span>${turn}<span class="eye" data-icon="eyeOff"></span></div>`;
   if (view === 'no' && no === 'b') play += `<div class="say">${D.icon('computer')}Plays on</div>`;
-  const ask = q.get('ask') || 'panel';
+  const ask = q.get('ask') || 'card';
   if (view === 'asked' && ask === 'panel') {
     play += `<div class="offer"><div class="who">${D.icon('computer')}${D.icon('handshake')}Draw?</div>
       <div class="two"><a class="tile primary" href="?view=drawn" data-icon="handshake">Draw</a>

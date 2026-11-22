@@ -13,7 +13,8 @@ for where the computer's offer shows).
 
 ## Plan
 
-- **The draw tile** shows while both sides have a king, otherwise not at all.
+- **The draw tile** shows while both sides have a king, otherwise not at all, with start
+  over (in portrait the bar's fourth tile).
   - Against the computer, "Offer draw": the computer answers at once from its last search
     score. It accepts when it isn't winning, backed by a check on the material for the
     kings' endings the score misjudges (two kings against one looks won and is a draw).
@@ -24,27 +25,31 @@ for where the computer's offer shows).
     its grammar wants; a small `gui` helper lays the text and `glyph_icon` out on one
     line, and the draw card's `note_break` counts the icon as a word), and Continue
     alone. The tile
-    then stays dim until it can be asked again a few moves later, so tapping until yes
+    then stays dim for 5 moves before it can be asked again, so tapping until yes
     doesn't work. (The tile answering itself and a line under whose turn were the other
     takes.)
   - In a friend's game, "Draw" ends the game at once with no second player's say. Undo
     takes it back like any other ending. Asking the other player first would be a lot of
     code for a corner case.
 - **The computer offers a draw** when its search sees a dead draw with kings on both
-  sides: an offer of Draw or Play on, in the play panel or as a card over an undimmed
-  board. Play on keeps it from offering again for a while.
+  sides: a card in the middle over an undimmed board, as the refusal's, with Draw or Play
+  on. It offers once a game: Play on says the player wants to win, so it never asks again
+  (the player can still offer).
 - **An agreed draw** ends like a rules draw: the draw's card with "Agreed", ½ for the
   rating, the skill unchanged, a line in the history.
-- **Giving up** goes through start over, so there's no new tile: once a game against the
-  computer is a few moves in, start over asks "Give up this game?". Give up counts as a
+- **Giving up** goes through start over, so there's no new tile: from the child's 5th move in
+  a game against the computer, start over asks "Give up this game?". Give up counts as a
   loss (history, rating, the skill adapts down) and shows the win's card for the
-  computer, "White gave up", with back and play again. In the first few moves, and in a
-  friend's game, start over stays free as now. This replaces "a game started over before
+  computer, "White gave up", with back and play again. Before that, and in a friend's
+  game, start over stays free as now. This replaces "a game started over before
   it ends doesn't count" (`docs/architecture/ai.md`, "Skill").
 
 ## Acceptance criteria
 
-- [ ] The takes chosen in the prototype; the page folded into `game.html` once built
+- [x] The takes chosen in the prototype (2026-11-22): the tile with start over, the
+      refusal and the computer's offer as cards in the middle, the crossed handshake,
+      the computer's icon in the refusal's line
+- [ ] The page folded into `game.html` once built
 - [ ] The decisions recorded in `docs/decisions/ai.md` (giving up, the computer's
       answer) and `docs/decisions/rules.md` (a draw agreed, with no arbiter's count),
       and `docs/architecture/` updated to match
