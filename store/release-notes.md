@@ -4,10 +4,10 @@ Each version's notes for the GitHub release (the desktop builds) and the stores'
 new": Play's in en-GB and et (500 characters each), the App Store's in en-GB alone (no
 App Store localization yet, `app-store.md`). Newest first.
 
-## 0.9.3 (2026-11-22, Android)
+## 0.9.4 (2026-11-22, Android)
 
-Offering a draw and giving up, and a fix for 0.9.2's flat board, which showed only a few
-of the pieces.
+Offering a draw and giving up. Play users may come from 0.9.2, so the notes keep
+0.9.3's fix.
 
 ### Play, en-GB
 
@@ -22,6 +22,22 @@ of the pieces.
 ```text
 • Paku viiki, kui mõlemal poolel on tamm: arvuti nõustub või mängib edasi ning võib ise viiki pakkuda
 • Arvutiga mängus saab nupuga Alusta uuesti alla anda; see läheb kirja kaotusena
+• Parandatud: lamedal laual olid näha ainult mõned nupud
+```
+
+## 0.9.3 (2026-11-22, Android)
+
+Fixes 0.9.2's flat board, which showed only a few of the pieces.
+
+### Play, en-GB
+
+```text
+• Fixed: the flat board showed only a few of the pieces
+```
+
+### Play, et
+
+```text
 • Parandatud: lamedal laual olid näha ainult mõned nupud
 ```
 
