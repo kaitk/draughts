@@ -1197,6 +1197,23 @@ to be is in tasks 042, 059, 071, 081, and 086.
     table-window view (option 2's sun, the dust off) 8.18-8.28 to 8.84-8.90 ms, `shell_open`
     on the board's and the table's pixels; the room view unchanged within the rounds'
     spread (11.73-11.90 to 11.87-11.90).
+- Light through the shell's windows lands only where the glass lets it (2026-11-22, task
+  107, builder 30, `build/notes/builder-30/`). The lace's light below came from the niche's
+  arched outline, not the glass: a faint arch of light, with the tree's dapple in it, stood
+  round every sun patch on the wainscot, the doors, the floor and the games table, where the
+  frame, the sashes' surround and the plaster round the niche should have kept it out; and
+  the lace glowed in the same arch from the sky it took to see through the whole niche. Now
+  the cone's light is cut to the casements' glazed opening at both glass planes, blurred as
+  wide as the cone (`LIGHT_FN`'s `glazing`), and the lace sees the sky only through that
+  opening (`sky_behind`). The lace's own shadow had been blurred 3 cm a metre over the
+  sun's penumbra, 0.3 m at the far wall, so the panels' inner edges over the glass left no
+  trace in the patch; at 0.6 cm a metre (`LACE_SOFT`) their pattern shows on the patch's
+  sides where the lace hangs in the sun's path. Which rays the lace meets is geometry: at a
+  sun square to the wall only the patch's far part comes through the glass the hung lace
+  covers (the upper sash's outer panes), an oblique sun covers more on one side.
+  - The game's shot is unchanged in both renderers (all of it is `SHELL_WINDOWS` code).
+    Main pass at 3024 × 1890 native, two rounds: the room view 11.84-11.85 to 11.98 ms,
+    the table-window view 9.02 to 8.95-8.97.
 - The table-window view's dust is flakes and lint in the sunbeam (2026-11-22, task 107,
   builder 29), replacing builder 27's round points in a box as the default: irregular
   flakes and short fibres a pixel or a few across at 3024 × 1890, each tumbling slowly on an

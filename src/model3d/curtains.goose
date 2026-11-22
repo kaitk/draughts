@@ -137,12 +137,15 @@ fn hem_y(seed: i64, s: f32) -> f32 {
 }
 
 // How much of the window behind the niche the lace sees at x, y (its distance from the
-// window's middle, its height): all of LACE_SKY_VIEW in front of the niche, none in front
-// of the pier, soft over 5 cm.
+// window's middle, its height): all of LACE_SKY_VIEW in front of the casements' glazed
+// opening (the blind frame's, 0.98 m across, from 3 cm over the sill to 6 cm under the
+// springing, as shaders::LIGHT_FN's glazing), none in front of the frame, the niche's
+// plaster round it or the pier, soft over GLAZED_SOFT for the glass's depth behind it.
+let GLAZED_SOFT: f32 = 0.1;
 fn sky_behind(o: Opening, x: f32, y: f32) -> f32 {
-    let soft: f32 = 0.05;
-    let across = clamp((0.5 * o.width - abs(x)) / soft + 0.5, 0.0, 1.0);
-    let up = clamp((y - o.sill) / soft + 0.5, 0.0, 1.0) * clamp((head_at(o, x) - y) / soft + 0.5, 0.0, 1.0);
+    let across = clamp((0.49 - abs(x)) / GLAZED_SOFT + 0.5, 0.0, 1.0);
+    let up = clamp((y - o.sill - 0.03) / GLAZED_SOFT + 0.5, 0.0, 1.0)
+           * clamp((o.sill + o.height - 0.06 - y) / GLAZED_SOFT + 0.5, 0.0, 1.0);
     return LACE_SKY_VIEW * across * up;
 }
 

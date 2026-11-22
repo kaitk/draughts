@@ -364,6 +364,12 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       Main pass 8.84-8.90 with the dust off, 8.90-8.98 motes, 8.86-8.89 few, 8.90-8.91 many,
       8.88-9.09 the old points; the beam's haze (`--beam-haze 0.0004`, off) 9.72-9.74.
       Open: density and brightness from the user's eye; whether the haze stays
+- [x] The windows' light only through the glass (2026-11-22, builder 30,
+      `build/notes/builder-30/`): the lace's light below no longer leaks round the glass in
+      the niche's arch (with the tree's dapple in it), the lace no longer glows in that arch,
+      and its shadow shows on the patch's sides (0.6 cm a metre over the sun's penumbra,
+      was 3). Main pass at 3024 × 1890 native, two rounds: room view 11.84-11.85 to 11.98
+      ms, table-window view 9.02 to 8.95-8.97; the game's shot unchanged in both renderers
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

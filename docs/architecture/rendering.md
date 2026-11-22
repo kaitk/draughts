@@ -822,12 +822,20 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
 - **The lace in the sun** (the glass and lace's pipeline, `ROOM_GLASS`): the sun on its
   back carries the bars' and leaves' shadows at their full depth, not lifted by the room's
   shade floor, and the lit cloth lets 60% more of the sun through where it falls
-  (`LACE_GLOW`).
+  (`LACE_GLOW`). The sky and park it sees behind it (`curtains.goose`'s `sky_behind`, a
+  vertex's share) are the casements' glazed opening's, softened 0.1 m for the glass's
+  depth behind it, not the niche's arched outline.
 - **The lace's light below** (`LIGHT_FN`'s `shell_open`, every group): of the sun the lace
   stops, 0.35 scatters on forward into a cone about 25° across (`LACE_FORWARD`,
   `LACE_CONE`; the panel's outline blurred that wide times its pattern's mean stop, from
   the same `lace_shadow` call), through the casement's mean glazing (0.7), so a soft pale light lies round
   the lace's shadow on the sill, the reveals, the wainscot and the floor, moving with it.
+  It comes only from lace the sun reaches through the glass: the cone's light is cut to the
+  casements' glazed opening (`glazing`, the blind frame's, blurred as wide as the cone), so
+  no light passes the frame, the sashes' surround or the niche's plaster.
+- **The lace's shadow**: a little softer than the bars' (`LACE_SOFT`, 0.6 cm a metre over
+  the sun's own penumbra), so its pattern shows on the patch's sides where the lace hangs
+  in the sun's path through the glass.
 - **The sun's veil** (`OUTSIDE_FRAG`): a third, broad term round the sun's disc, a
   gaussian 10° wide at 0.5 of the sky's core colour (`SUN_VEIL`), over the halo's 1.2° and
   4°. No rays.

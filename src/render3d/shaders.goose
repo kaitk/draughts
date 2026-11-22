@@ -473,6 +473,16 @@ let LIGHT_FN = """
         return smoothstep(-soft, soft, open);
     }
 
+    // How much of the casement's glazed opening (the blind frame's, its sashes and bars
+    // taken as LACE_GLAZED on average) is at w, its edge `soft` wide: where the sun through
+    // the glass can light the lace, so what the lace scatters on starts there, never at the
+    // frame or the plaster round it.
+    float glazing(vec2 w, float soft) {
+        float s = shell_niche.y;
+        float h = shell_niche.y + shell_niche.z;
+        return smoothstep(-soft, soft, min(0.49 - abs(w.x), min(w.y - (s + 0.03), (h - 0.06) - w.y)));
+    }
+
     // The curtains' lace panels (model3d's curtains.goose): a panel's height, inner edge and
     // outer edge (metres from the window's middle) at its outline's keys, shell.goose's
     // LACE_HUNG_AS_MADE and LACE_OUTER, taken straight between them here; the inner edge
@@ -539,6 +549,7 @@ let LIGHT_FN = """
     // cone's light, blurred past the bars, takes.
     const float LACE_FORWARD = 0.35;
     const float LACE_CONE = 0.22;
+    const float LACE_SOFT = 0.006;
     const float LACE_GLAZED = 0.7;
 
     // How much of the key reaches p through the shell's windows, 0 to 1: p traced along the
@@ -574,23 +585,28 @@ let LIGHT_FN = """
             float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
             float through = smoothstep(-soft, soft, min(half_w - abs(w.x), min(w.y - shell_niche.y, head - w.y)));
             if (through < 0.001) continue;
-            float niche = through;
-            // The two casements.
+            // The lace in front of the niche, for what is behind it in the room: its shadow a
+            // little softer than the bars' (LACE_SOFT a metre, its threads' own scatter), and
+            // what it scatters on from a cone LACE_CONE wide, lit only where the glass is.
+            float tl = (shell.y - shell_glass.z - d) / toward;
+            float cone = window_view.y > 0.0 && tl > 0.5 ? LACE_CONE * tl / metre : 0.0;
+            // The two casements, and their glazed opening as the lace's cone sees it.
+            float glazed = 1.0;
             for (int k = 0; k < 2; k++) {
                 float tg = (shell.y + (k == 0 ? shell_glass.x : shell_glass.y) - d) / toward;
                 if (tg <= 0.0) continue;
                 vec3 g = p + l * tg;
-                through *= casement(vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre, (0.03 + widen * tg) / metre);
+                vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
+                float soft_g = (0.03 + widen * tg) / metre;
+                through *= casement(wg, soft_g);
+                if (cone > 0.0) glazed *= glazing(wg, soft_g + cone);
             }
-            // The lace in front of the niche, for what is behind it in the room: its shadow
-            // softer than the bars' by the cone it scatters the sun into, 3 cm a metre.
-            float tl = (shell.y - shell_glass.z - d) / toward;
             if (tl > 0.5) {
                 vec3 c = p + l * tl;
                 vec2 wl = vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre;
-                float soft_l = (0.03 + widen * tl) / metre + 0.03 * tl / metre;
-                vec2 lace = lace_shadow(wl, soft_l, window_view.y > 0.0 ? soft_l + LACE_CONE * tl / metre : 0.0);
-                through = through * lace.x + window_view.y * LACE_FORWARD * LACE_GLAZED * niche * lace.y;
+                float soft_l = (0.03 + widen * tl) / metre + LACE_SOFT * tl / metre;
+                vec2 lace = lace_shadow(wl, soft_l, cone > 0.0 ? soft_l + cone : 0.0);
+                through = through * lace.x + window_view.y * LACE_FORWARD * LACE_GLAZED * glazed * lace.y;
             }
             lit += through;
         }

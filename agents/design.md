@@ -279,6 +279,15 @@ pieces; the design boards still set the layout, glass, and controls.
   places (the board turns with the room: its corners at 105 − turn degrees in the plan);
   `options.sh EXE TAG` shoots the six verified options. The tree's dapple falls on the board
   in most of them; `--leaves noise` takes the tree out of the sun's path to judge the beam.
+- Light where no glass is (builder 30, `build/notes/builder-30/`): `shell_open`'s terms must
+  each be cut to the casements (`casement`, or `glazing` for a blurred share), never the
+  niche's outline alone; the lace's scattered light had been, and drew an arch round every
+  patch. To see one term alone, write it as `through` in a scratch build
+  (`through = niche * lace.x`, the lace's shadow alone, showed it was there but faint); the
+  user's two cameras: the far window's patch on the hall wall `--plan-eye 7.6,4.6,1.7
+  --plan-at 7.6,0.0,0.3 --fov 62`, the middle window and its lace `--plan-eye 4.5,4.0,1.9
+  --plan-at 4.5,7.0,2.05 --fov 58`, at `--wall 36,0,-2,2 --sun-height 18`
+  (`build/b30/halo.sh EXE TAG`).
 - The dust in the beam (builder 29): `--dust motes|motes-few|motes-many` (the default
   motes) draws flakes and lint tumbling in the sunbeam's own volume over the table
   (`light_tune`'s `beam_box`, BEAM_*), lit only by the direct sun; `sparse|dense|coarse` are
