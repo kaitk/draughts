@@ -525,10 +525,19 @@ let LIGHT_FN = """
         return mix(1.0, pow(flat_lets, max(0.55 / max(e.y - e.x, 0.05), 1.0)), inside);
     }
 
+    // The share of the sun the lace stops that it scatters on forward into a broad cone
+    // (thin cloth, as a lit lace glows), and that cone's widening a metre: about 25° across.
+    // The casement's glazing lets through about LACE_GLAZED of the sun on average, which the
+    // cone's light, blurred past the bars, takes.
+    const float LACE_FORWARD = 0.35;
+    const float LACE_CONE = 0.22;
+    const float LACE_GLAZED = 0.7;
+
     // How much of the key reaches p through the shell's windows, 0 to 1: p traced along the
     // key to the window wall's inner face (the niche's arched outline: or where p is, if it
     // is in the niche), on to the two glass planes with their bars, and back to the lace in
-    // front; summed over the windows, then the tree outside.
+    // front, which lets on the scattered share of what it stops softly round its shadow
+    // (window_view.y, 0 none); summed over the windows, then the tree outside.
     float shell_open(vec3 p) {
         vec3 l = light_dir.xyz;
         vec2 nw = -axes.zw;
@@ -557,6 +566,7 @@ let LIGHT_FN = """
             float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
             float through = smoothstep(-soft, soft, min(half_w - abs(w.x), min(w.y - shell_niche.y, head - w.y)));
             if (through < 0.001) continue;
+            float niche = through;
             // The two casements.
             for (int k = 0; k < 2; k++) {
                 float tg = (shell.y + (k == 0 ? shell_glass.x : shell_glass.y) - d) / toward;
@@ -569,7 +579,11 @@ let LIGHT_FN = """
             float tl = (shell.y - shell_glass.z - d) / toward;
             if (tl > 0.5) {
                 vec3 c = p + l * tl;
-                through *= lace_shadow(vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre, (0.03 + widen * tl) / metre + 0.03 * tl / metre);
+                vec2 wl = vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre;
+                float soft_l = (0.03 + widen * tl) / metre + 0.03 * tl / metre;
+                through *= lace_shadow(wl, soft_l);
+                if (window_view.y > 0.0)
+                    through += window_view.y * LACE_FORWARD * LACE_GLAZED * niche * (1.0 - lace_shadow(wl, soft_l + LACE_CONE * tl / metre));
             }
             lit += through;
         }
@@ -2192,8 +2206,11 @@ let ROOM_HEAD = """
     #endif
     #endif
     #ifdef ROOM_GLASS
+    // The glass's wiping tile (model3d's glass_tile): the scratches' direction (their doubled
+    // angle times their depth), their depth, the film's thickness.
+    layout(set = 2, binding = 2) uniform sampler2D glass_tile;
     #ifndef NO_SSAO
-    layout(set = 2, binding = 2) uniform sampler2D ssao_map;
+    layout(set = 2, binding = 3) uniform sampler2D ssao_map;
     #endif
     #endif
     // ssao_map: the room's ambient occlusion at half size (SSAO_FN); pre_place: where each
@@ -2247,7 +2264,9 @@ let ROOM_HEAD = """
     // the quiet paint (surfaces::Look's); paint_steps: the tuner's switches of it
     // (render3d::paint_steps, read only with PAINT_STEPS); sill: the sills' limestone
     // (surfaces::Look's); sill_steps: the tuner's switches of it (render3d::sill_steps, read
-    // only with SILL_STEPS); table_map:
+    // only with SILL_STEPS); window_view: the window view's steps' strengths, 1 as made
+    // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
+    // its scratches); table_map:
     // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
     // ending in gilt, ink, the page edges plain and sprinkled.
@@ -2296,6 +2315,7 @@ let ROOM_HEAD = """
         vec4 paint_steps;
         vec4 sill;
         vec4 sill_steps[2];
+        vec4 window_view;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -2376,8 +2396,12 @@ let OUTSIDE_FRAG = """
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D band;
     layout(set = 2, binding = 1) uniform sampler2D oak;
-    // x: the exposure; y: the sun disc's brightness over the sky's, linear.
+    // x: the exposure; y: the sun disc's brightness over the sky's, linear; z: in the floor's
+    // mirror, its exposure; w: the sun's veil's strength (render3d::sun_veil, 1 as made).
     layout(set = 3, binding = 1) uniform Outside { vec4 exposure; };
+    // The haze's broad veil round the sun, some 10° (the forward scattering a low autumn
+    // sun shows through the air), over the halo's two narrower terms.
+    const float SUN_VEIL = 0.5;
     const vec3 ZENITH = vec3(0.6235, 0.7020, 0.8118);
     const vec3 HOR_COOL = vec3(0.8392, 0.8667, 0.9020);
     const vec3 HOR_WARM = vec3(0.9529, 0.8392, 0.6667);
@@ -2405,7 +2429,8 @@ let OUTSIDE_FRAG = """
         // bright halo round it.
         float px = max(fwidth(ang), 1e-3);
         float disc = 1.0 - smoothstep(0.27 - 0.5 * px, 0.27 + 0.5 * px, ang);
-        float halo = 1.5 * exp(-(ang / 1.2) * (ang / 1.2)) + 0.4 * exp(-(ang / 4.0) * (ang / 4.0));
+        float halo = 1.5 * exp(-(ang / 1.2) * (ang / 1.2)) + 0.4 * exp(-(ang / 4.0) * (ang / 4.0))
+                   + exposure.w * SUN_VEIL * exp(-(ang / 10.0) * (ang / 10.0));
         return c + (disc * exposure.y + halo) * decode(CORE) * step(0.0, el);
     }
     void main() {
@@ -2862,6 +2887,57 @@ let ROOM_FRAG = """
         return clamp(hidden, 0.0, 0.8);
     }
 
+    #ifdef ROOM_GLASS
+    // How much more of the sun the lit lace lets through where it falls on it (window_view.x).
+    const float LACE_GLOW = 0.6;
+    // A kept house's glass, wiped with a cloth: its film, a faint haze of what the cloth left
+    // (GLASS_FILM of the sun through it a steradian toward the sun at its mean thickness,
+    // more where the tile's wipes left more), scattered forward (Henyey-Greenstein, g 0.75),
+    // so it shows only toward the sun; and the fine scratches grit in the cloth drew, each
+    // glinting where the sun's light through the glass leaves along the cone round its groove,
+    // s = t · (l + v) near 0 (Raymond et al., transmitted), within GLASS_GLINT_REACH radians
+    // of the sun. Strengths window_view.z and .w; the tile a millimetre a texel, offset per
+    // window and sheet.
+    const float GLASS_FILM = 0.002;
+    const float GLASS_GLINT = 0.6;
+    const float GLASS_GLINT_WIDTH = 0.02;
+    const float GLASS_GLINT_REACH = 0.25;
+    const float GLASS_TILE_M = 0.512;
+    vec3 glass_sun(vec3 p, vec3 v) {
+        vec3 l = light_dir.xyz;
+        float sun = window_open(p);
+        if (sun < 0.001) return vec3(0.0);
+        float metre = shell.w;
+        float along = dot(p.xz, axes.xy);
+        float into = dot(p.xz, axes.zw);
+        float k = 0.0;
+        for (int i = 1; i < 3; i++) if (abs(along - shell_mids[i]) < abs(along - shell_mids[int(k)])) k = float(i);
+        vec2 at = vec2(along, p.y - shell.z) / (metre * GLASS_TILE_M)
+                + vec2(window_hash(vec2(k, floor(into * 8.0 / metre))), window_hash(vec2(floor(into * 8.0 / metre), k + 3.0)));
+        vec4 tl = texture(glass_tile, at);
+        float ahead = clamp(dot(v, -l), -1.0, 1.0);
+        float hg = 0.4375 / pow(1.5625 - 1.5 * ahead, 1.5);
+        float film = window_view.z * GLASS_FILM * 2.0 * tl.a * hg / (4.0 * PI);
+        // The groove's direction in the glass's plane (along the wall, up), from its doubled angle.
+        float half_a = 0.5 * atan(tl.g * 2.0 - 1.0, tl.r * 2.0 - 1.0);
+        vec3 t = cos(half_a) * vec3(axes.x, 0.0, axes.y) + sin(half_a) * vec3(0.0, 1.0, 0.0);
+        float s = dot(t, l + v);
+        float w = GLASS_GLINT_WIDTH + fwidth(s);
+        float glint = window_view.w * GLASS_GLINT * tl.b * exp(-(s / w) * (s / w)) * (GLASS_GLINT_WIDTH / w)
+                    * exp(-acos(ahead) / GLASS_GLINT_REACH);
+        return room_sun_color(room_sun.x) * light_dir.w * sun * (film + glint / PI);
+    }
+    // Light added over what the glass shows, in the picture's units: linear in the mirror,
+    // else the sRGB curve's slope over a bright sky, about a half.
+    vec3 added_light(vec3 c) {
+    #ifdef LINEAR_OUT
+        return c;
+    #else
+        return 0.5 * c * (1.0 - screen.z);
+    #endif
+    }
+    #endif
+
     void main() {
         vec3 p = v_world;
         vec3 ng = normalize(v_normal);
@@ -2890,12 +2966,15 @@ let ROOM_FRAG = """
         vec3 nf = dot(ng, v) >= 0.0 ? ng : -ng;
         vec3 c;
         float a;
+        // Light the glass adds over what is behind it, its coverage unchanged.
+        vec3 added = vec3(0.0);
         if (kind < 10.5) {
             // The glass: the room's light reflected, by Fresnel; two sheets, each faint,
             // so the window stays clear close up.
             float fres = 0.04 + 0.96 * pow(1.0 - clamp(dot(nf, v), 0.0, 1.0), 5.0);
             c = sh_eval(reflect(-v, nf)) * params.z;
             a = clamp(0.6 * fres, 0.0, 0.5);
+            if (window_view.z + window_view.w > 0.0) added = glass_sun(p, v);
         } else {
             // The lace: its coverage, denser where the eye looks through it at a slant (the
             // folds' flanks); lit from the room's side, and through from the window's: the
@@ -2909,15 +2988,21 @@ let ROOM_FRAG = """
             a = 1.0 - pow(1.0 - 0.8 * cover, 1.0 / max(abs(dot(nf, v)), 0.5));
             vec3 l = light_dir.xyz;
             vec3 light = room_sun_color(room_sun.x) * light_dir.w;
-            float sun = window_light(p);
+            // The sun on its back, the bars' and leaves' shadows on it: as the room's shade
+            // lifts them, or with window_view.x their own, full, and the lit cloth glowing
+            // (LACE_GLOW more of the sun through where it falls).
+            float open = room.y > 0.0 ? window_open(p) : 1.0;
+            float sun = mix(mix(1.0 - room.y, 1.0, open), open, window_view.x);
+            float glow = 1.0 + window_view.x * LACE_GLOW * open;
             float ahead = clamp(dot(v, -l), -1.0, 1.0);
             float hg = 0.75 / pow(1.25 - ahead, 1.5);
-            vec3 through = shell_glass.w * (max(-dot(nf, l), 0.0) * sun * light / PI * (1.0 + lace_light.w * (1.0 - cover) * hg)
+            vec3 through = shell_glass.w * (max(-dot(nf, l), 0.0) * sun * glow * light / PI * (1.0 + lace_light.w * (1.0 - cover) * hg)
                                             + lace_light.rgb * ao);
             vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + (sh_eval(nf) * params.z + shade.rgb) * ssao_kept(screen_ao);
             c = srgb(lace_thread.rgb) * (front + through);
         }
         result = room_out(c * params.x * shade.w, a);
+        result.rgb += added_light(added * params.x * shade.w);
     #ifdef ROOM_VIEWS
         if (ssao.y > 0.5 && ssao.y < 2.5) result = vec4(vec3(ssao.y > 1.5 ? ssao_kept(screen_ao) : screen_ao) * a, a);
     #endif
@@ -5734,10 +5819,27 @@ let SHOW_FRAG = """
 // focus's), z how bright, w the focus's distance from the eye; dust_lens: x how much a
 // disc's light thins as it grows (0 none, 2 kept), y the forward scattering's g, z how
 // far each mote wanders.
+// The shell's windows after them, as ROOM_HEAD's block has them (render3d::dust_block; all
+// 0 lights the motes through the game's window), with the lace's mask, for LIGHT_FN's
+// shell_open, which the dust is compiled with (SHELL_WINDOWS).
 let DUST_HEAD = """
     layout(set = 0, binding = 0) uniform sampler2D tree_map;
-    layout(std430, set = 0, binding = 1) readonly buffer Motes { vec4 motes[]; };
-    layout(set = 1, binding = 1) uniform Dust { vec4 dust_box; vec4 dust_span; vec4 dust_look; vec4 dust_lens; };
+    layout(set = 0, binding = 1) uniform sampler2D lace_mask;
+    layout(std430, set = 0, binding = 2) readonly buffer Motes { vec4 motes[]; };
+    layout(set = 1, binding = 1) uniform Dust {
+        vec4 dust_box;
+        vec4 dust_span;
+        vec4 dust_look;
+        vec4 dust_lens;
+        vec4 axes;
+        vec4 tile;
+        vec4 shell;
+        vec4 shell_mids;
+        vec4 shell_niche;
+        vec4 shell_glass;
+        vec4 shell_sun;
+        vec4 window_view;
+    };
     """;
 let DUST_VERT = """
     layout(location = 0) out vec2 v_at;

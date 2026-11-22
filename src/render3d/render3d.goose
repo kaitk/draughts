@@ -446,6 +446,10 @@ struct Gpu {
     // shell first shows, and the time it took.
     stone_tile:    Texture,
     stone_tile_ms: f64,
+    // The glass's wiping tile (model3d's glass_tile), RGBA8 with its mips, made when the
+    // shell first shows, and the time it took.
+    glass_tile:    Texture,
+    glass_tile_ms: f64,
     books_off:     bool,
     book_fade:     f32,
     // The scene drawn under the screen's size (scene_size_of): its RGBA8 target at that
@@ -783,6 +787,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures 
     } else if group == GROUP_METALS {
         add_texture(t, g.book_atlas, g.aniso);
     }
+    if group == GROUP_GLASS { add_texture(t, if g.glass_tile.id != 0 { g.glass_tile } else { g.crown_map }, g.aniso); }
     if ssao {
         add_texture(t, ssao_or_stand_in(g), g.linear);
         if group != GROUP_GLASS { add_texture(t, pre_place_or_stand_in(g), g.linear); }
@@ -806,7 +811,7 @@ fn outside_shown(g: Gpu&) -> bool {
 struct OutsideBlock { exposure: float4 }
 let SUN_DISC: f32 = 30.0;
 fn outside_block(g: Gpu&, in_mirror: bool = false) -> OutsideBlock {
-    OutsideBlock { float4 { g.room.outside, SUN_DISC, if in_mirror { max(g.room.planar.w, 1.0) } else { 0.0 }, 0.0 } }
+    OutsideBlock { float4 { g.room.outside, SUN_DISC, if in_mirror { max(g.room.planar.w, 1.0) } else { 0.0 }, sun_veil } }
 }
 
 // An oak's bake (surfaces::Oak) in the slots of a theme BAKE_FRAG's oak reads.
@@ -856,6 +861,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     }
     put_paper(o, g);
     if g.room_shell && g.stone_tile.id == 0 { put_stone(o, g); }
+    if g.room_shell && g.glass_tile.id == 0 { put_glass_tile(o, g); }
     bake_room_light(o, g);
     // The view out of the shell's windows, round its middle window: made once.
     if g.room_shell && g.outside_vb.id == 0 {
@@ -979,6 +985,22 @@ fn put_stone<O>(o: O&, g: Gpu&) {
     }
     g.stone_tile_ms = (clock() - t0) * 1000.0;
 }
+
+// The glass's wiping tile made and put on the GPU with its mips.
+fn put_glass_tile<O>(o: O&, g: Gpu&) {
+    let t0 = clock();
+    var px: u8[>..] = [];
+    glass_tile::make(GLASS_SEED, glass_tile::Strokes {}, px);
+    g.glass_tile = o.gpu_sampled(glass_tile::SIDE, glass_tile::SIDE, glass_tile::MIPS, RGBA8);
+    var at = 0;
+    for level in glass_tile::MIPS {
+        let w = glass_tile::SIDE >> level;
+        o.gpu_upload(g.glass_tile, level, px[at..at + 4 * w * w]);
+        at += 4 * w * w;
+    }
+    g.glass_tile_ms = (clock() - t0) * 1000.0;
+}
+let GLASS_SEED: u64 = 7;
 
 // The books' atlas (design/materials/books_atlas.png) on the GPU, RGBA8 with BOOK_MIPS, each
 // level the mean of four of the level above; blank where it isn't built in.
@@ -1178,7 +1200,8 @@ fn room_bytes(g: Gpu&) -> i64 {
     let outside = if g.outside_band.id != 0 { 4 * (b.x * b.y + k.x * k.y) } else { 0 };
     let relief = if g.paint_tile.id != 0 { room_shell::relief_bytes() } else { 0 };
     let stone = if g.stone_tile.id != 0 { room_shell::stone_bytes() } else { 0 };
-    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone;
+    let glass = if g.glass_tile.id != 0 { glass_tile::bytes() } else { 0 };
+    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the
@@ -1230,6 +1253,7 @@ struct SurfacesBlock {
     paint_steps:   float4,
     sill:          float4,
     sill_steps:    float4[2],
+    window_view:   float4,
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
@@ -1319,7 +1343,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
                     float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paint_steps, k.sill,
-                    sill_steps,
+                    sill_steps, window_view,
                     table_map_shown(g),
                     books::COVER, books::LABEL }
 }
@@ -1876,6 +1900,7 @@ fn shell_face(s: room_shell::Shell) -> f32 {
 // The tree's map to bind, or another texture where none is baked: the shaders sample it
 // only when the frame's block says the tree shows.
 fn tree_or_stand_in(g: Gpu&) -> Texture { if g.tree_map.id != 0 { g.tree_map } else { g.crown_map } }
+fn lace_or_stand_in(g: Gpu&) -> Texture { if g.lace_mask.id != 0 { g.lace_mask } else { g.crown_map } }
 
 // What the tree's map is baked from.
 fn tree_key(g: Gpu&) -> float4[11] {
@@ -2366,6 +2391,14 @@ fn paint_steps_on() -> bool { paint_steps.x < 0.5 || paint_steps.y < 0.5 || pain
 // first x the speckle, y the polished band, z the arris, w the nose's foot, the second x
 // the dust line, each 1 on, y 1 the old stone. While all are as made, the app's shader draws.
 var sill_steps: float4[2] = [float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { 1.0, 0.0, 0.0, 0.0 }];
+// The window view's steps (build/notes/builder-27/), each a strength over its look's, 1 as
+// made, 0 off: x the lace's sun (its shadows on it full and its glow where lit), y the sun
+// the lace scatters on below it, z the glass's film, w its cleaning scratches. The light
+// tuner's --lace-sun, --lace-scatter, --glass-film, --scratches.
+var window_view = float4 { 1.0, 1.0, 1.0, 1.0 };
+// The sun's broad veil in the sky round it (OUTSIDE_FRAG, the tuner's --sun-veil), 1 as
+// made, 0 off.
+var sun_veil: f32 = 1.0;
 fn sill_steps_on() -> bool {
     let a = sill_steps[0];
     return a.x < 0.5 || a.y < 0.5 || a.z < 0.5 || a.w < 0.5 || sill_steps[1].x < 0.5 || sill_steps[1].y > 0.5;
@@ -2519,15 +2552,41 @@ struct Dust {
     reach:  f32    = 0.5,   // how far each wanders, units
     low:    float3 = float3 { -9.0, -0.7, -9.0 },  // the box's low corner
     span:   float3 = float3 { 18.0, 11.0, 21.0 },  // and its size
+    shell:  bool   = false, // lit through the shell's windows (shell_open), not the game's
 }
 var dust = Dust {};
 
-// shaders::DUST_HEAD's block.
-struct DustBlock { box: float4, span: float4, look: float4, lens: float4 }
-fn dust_block() -> DustBlock {
-    return DustBlock { model3d::f4(dust.low, wind_time), model3d::f4(dust.span, dust.rise),
-                       float4 { dust.size, dust.blur, dust.bright, dust.focus },
-                       float4 { dust.thin, dust.ahead, dust.reach, 0.0 } };
+// shaders::DUST_HEAD's block: the motes' own, then the shell's windows as the room's block
+// has them (surfaces_block), all 0 unless the motes are lit through them (Dust.shell).
+struct DustBlock {
+    box:         float4,
+    span:        float4,
+    look:        float4,
+    lens:        float4,
+    axes:        float4,
+    tile:        float4,
+    shell:       float4,
+    shell_mids:  float4,
+    shell_niche: float4,
+    shell_glass: float4,
+    shell_sun:   float4,
+    window_view: float4,
+}
+fn dust_block(g: Gpu&) -> DustBlock {
+    var b = DustBlock { model3d::f4(dust.low, wind_time), model3d::f4(dust.span, dust.rise),
+                        float4 { dust.size, dust.blur, dust.bright, dust.focus }, float4 { dust.thin, dust.ahead, dust.reach, 0.0 },
+                        float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0 };
+    guard dust.shell && g.room_shell && g.room_on else { return b; }
+    let s = surfaces_block(g);
+    b.axes = s.axes;
+    b.tile = s.tile;
+    b.shell = s.shell;
+    b.shell_mids = s.shell_mids;
+    b.shell_niche = s.shell_niche;
+    b.shell_glass = s.shell_glass;
+    b.shell_sun = s.shell_sun;
+    b.window_view = s.window_view;
+    return b;
 }
 
 fn motes_shown(g: Gpu&) -> bool { dust.count > 0 && g.motes.id != 0 }

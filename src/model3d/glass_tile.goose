@@ -5,18 +5,25 @@
 // straight wipes. Each pane takes the tile offset and turned by its own seed. It wraps, so
 // a stroke over one edge goes on at the opposite one.
 //
-// A texel, RGBA8: R and G the scratch's direction as its doubled angle (cos 2θ, sin 2θ,
-// 0.5 + 0.5 × each), so a groove's two ways are one and filtering doesn't cancel them; B
-// the scratch's depth (0 none) over the texel; A the film's thickness, 0.5 its mean.
-// GLASS_FN would read it: the film's haze times A under its HG lobe (W8), and a glint
-// exp(-(s/w)²) × B where s = t · (l + v) is near 0 (W9: Raymond et al.'s cone, through
-// the glass), w widened by the pixel's footprint. Plain data, tested headless.
+// A texel, RGBA8 with its mips (MIPS, bytes()): R and G the scratch's direction as its
+// doubled angle times its depth (0.5 + 0.5 × depth × (cos 2θ, sin 2θ)), so a groove's two
+// ways are one and a mip's mean keeps the deeper scratches' direction; B the scratch's
+// depth (0 none) over the texel; A the film's thickness, 0.5 its mean. The glass's shader
+// (shaders::ROOM_FRAG's ROOM_GLASS) reads it: the film's haze times A under its forward
+// lobe, and a glint exp(-(s/w)²) × B where s = t · (l + v) is near 0 (Raymond et al.'s
+// cone, through the glass), w widened by the pixel's footprint. Plain data.
 namespace glass_tile;
 import std;
 import vec;
 import math;
 
 let SIDE = 512;
+let MIPS = 10;
+fn bytes() -> i64 {
+    var sum = 0;
+    for level in MIPS { sum += 4 * (SIDE >> level) * (SIDE >> level); }
+    return sum;
+}
 // The metres the tile spans: a millimetre a texel.
 let METRES: f32 = 0.512;
 
@@ -28,7 +35,7 @@ struct Strokes {
     swirls: i64 = 50,
 }
 
-// The tile from seed into out (SIDE × SIDE × 4 bytes).
+// The tile from seed and its mips, level by level from the top, into out (bytes()).
 fn make(seed: u64, st: Strokes, out: u8[>..]&) {
     var dir:     float2[>..] = [];
     var depth:   f32[>..]    = [];
@@ -88,16 +95,36 @@ fn make(seed: u64, st: Strokes, out: u8[>..]&) {
             scratch_at(dir, depth, p, t, deep, float2 { 0.0, 0.0 }, 0.0);
         }
     }
-    out.clear();
-    out.resize(SIDE * SIDE * 4, 0);
+    var texel: float4[>..] = [];
+    texel.resize(SIDE * SIDE, float4_0);
     for i in SIDE * SIDE {
         let t = dir[i];
-        let c2 = t.x * t.x - t.y * t.y;
-        let s2 = 2.0 * t.x * t.y;
-        out[i * 4] = byte(0.5 + 0.5 * c2);
-        out[i * 4 + 1] = byte(0.5 + 0.5 * s2);
-        out[i * 4 + 2] = byte(depth[i]);
-        out[i * 4 + 3] = byte(residue[i] - mean + 0.5);
+        let deep = depth[i];
+        texel[i] = float4 { deep * (t.x * t.x - t.y * t.y), deep * 2.0 * t.x * t.y, deep, residue[i] - mean + 0.5 };
+    }
+    out.clear();
+    out.resize(bytes(), 0);
+    var at = 0;
+    for level in MIPS {
+        let w = SIDE >> level;
+        if level > 0 {
+            // Each texel the mean of four of the level above, in place.
+            let up = w * 2;
+            for y in w {
+                for x in w {
+                    texel[y * w + x] = (texel[2 * y * up + 2 * x] + texel[2 * y * up + 2 * x + 1] + texel[(2 * y + 1) * up + 2 * x]
+                                        + texel[(2 * y + 1) * up + 2 * x + 1]) * 0.25;
+                }
+            }
+        }
+        for i in w * w {
+            let v = texel[i];
+            out[at + 4 * i] = byte(0.5 + 0.5 * v.x);
+            out[at + 4 * i + 1] = byte(0.5 + 0.5 * v.y);
+            out[at + 4 * i + 2] = byte(v.z);
+            out[at + 4 * i + 3] = byte(v.w);
+        }
+        at += 4 * w * w;
     }
 }
 

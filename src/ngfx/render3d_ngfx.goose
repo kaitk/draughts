@@ -557,15 +557,16 @@ fn draw_outside(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
 }
 
 // The dust in the sunbeam over the open pass's target, added, hidden by what stands
-// in front of it; r3d_dust.slang's header: Dust, the seeds, the tree's map.
+// in front of it; r3d_dust.slang's header: Dust, the seeds, the tree's map, the lace's.
 fn draw_motes(own: Own&, g: Gpu&, f: u64) {
     nx::bind(g.motes);
     var r = no_root();
     r.frame = f;
-    let b: render3d::DustBlock[1] = [render3d::dust_block()];
+    let b: render3d::DustBlock[1] = [render3d::dust_block(g)];
     r.u = ngfx::frame_data(bytes_of(b));
     r.buf0 = nx::address(g.mote_seeds);
     slot(r, 0, render3d::tree_or_stand_in(g), g.linear);
+    slot(r, 1, render3d::lace_or_stand_in(g), g.linear);
     ngfx::draw_instanced(ngfx::root(r), 6, render3d::motes_drawn());
 }
 

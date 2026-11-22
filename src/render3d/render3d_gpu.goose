@@ -243,7 +243,7 @@ fn make_motes(own: Own&, g: render3d::Gpu&) {
     guard g.motes.id == 0 else { return; }
     let seeds = render3d::mote_seeds();
     g.mote_seeds = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(seeds));
-    g.motes = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::DUST_HEAD, shaders::LIGHT_FN,
+    g.motes = gfx::pipeline(embed_shader("vert", shaders::SHELL_WINDOWS, shaders::VS_SET, shaders::FRAME, shaders::DUST_HEAD, shaders::LIGHT_FN,
                                          shaders::DUST_VERT),
                             embed_shader("frag", shaders::DUST_FRAG),
                             gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
@@ -632,9 +632,10 @@ fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
 fn draw_motes(own: Own&, g: render3d::Gpu&) {
     gfx::bind(g.motes);
     gfx::bind_texture(gfx::VERTEX, 0, render3d::tree_or_stand_in(g), g.linear);
+    gfx::bind_texture(gfx::VERTEX, 1, render3d::lace_or_stand_in(g), g.linear);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, g.mote_seeds);
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
-    gfx::uniforms(gfx::VERTEX, 1, render3d::dust_block());
+    gfx::uniforms(gfx::VERTEX, 1, render3d::dust_block(g));
     gfx::draw_instanced(6, render3d::motes_drawn());
 }
 
