@@ -68,6 +68,7 @@
 //       [--hdr on|off (the scenic views drawn into the HDR target and tonemapped after, render3d::hdr_shown; on; X
 //       switches it)] [--hdr-format rg11b10f|rgba16f (its target's; rg11b10f)] [--dof on|off (the lens, render3d::Lens; off)] [--focus M (0 the view's target)]
 //       [--aperture PCT (a disc's radius at infinity, % of the width)] [--dof-caps NEAR,FAR (%)]
+//       [--lens-view off|depth|coc (the depth of field's depth over the picture, or the lens's disc; Q)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
@@ -121,6 +122,9 @@ let SSAO_VIEWS = ["off", "alone", "kept", "light"];
 // The tonemaps' toes (render3d::tone_toe): on the luminance, Khronos PBR Neutral's on the
 // least channel, none.
 let TOES = ["room", "neutral", "none"];
+// The depth of field's depth shown over the picture (render3d::depth_view): none, the
+// distance, the lens's disc.
+let LENS_VIEWS = ["off", "depth", "coc"];
 // What the floor's mirror shows (render3d::planar_view): the room, the floor's reflection
 // alone, the mirror's map over the whole picture, its distances.
 let PLANAR_VIEWS = ["off", "floor", "map", "distance"];
@@ -654,7 +658,7 @@ let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", 
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
                 "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old; I: the sills", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust's way", "Y: the lace's hang, 0.15 or 0 m", "Z: the window view's steps off or on", "F: the frame counter; G: wait for the GPU",
-                "N: the scene's scale; M: its upscale", "X: HDR or 8 bits",
+                "N: the scene's scale; M: its upscale", "X: HDR or 8 bits; Q: the lens's views",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
                 "walking: C seated, X then Q, E down and up", "R: back to the view, P: the walk's camera"];
 
@@ -972,6 +976,7 @@ fn main() {
     // The scenic views' HDR target (render3d::hdr_shown), on unless --hdr off; X switches it.
     render3d::hdr_allowed = !(flag_value(argv, "--hdr") > 0 && argv[flag_value(argv, "--hdr")] == "off");
     render3d::hdr_wide = flag_value(argv, "--hdr-format") > 0 && argv[flag_value(argv, "--hdr-format")] == "rgba16f";
+    render3d::depth_view = pick(argv, "--lens-view", LENS_VIEWS, 0);
     let focus_m = number(argv, "--focus", 0.0);
     var focus_on_target = focus_m <= 0.0;
     var focus_log = log2(if focus_on_target { render3d::lens.focus } else { focus_m });
@@ -1231,6 +1236,7 @@ fn main() {
             }
             if gfx::key_pressed("M") { upscale = 1 - upscale; }
             if gfx::key_pressed("X") { render3d::hdr_allowed = !render3d::hdr_allowed; }
+            if gfx::key_pressed("Q") { render3d::depth_view = (render3d::depth_view + 1) % LENS_VIEWS.len; }
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
@@ -1495,6 +1501,8 @@ fn main() {
                 slider(c, "Aperture (% wide)", aperture, 0.0, 8.0);
                 slider(c, "Near cap (%)", near_cap, 0.0, 12.0);
                 slider(c, "Far cap (%)", far_cap, 0.0, 12.0);
+                choice(c, "Lens view (Q)", render3d::depth_view, LENS_VIEWS);
+                if render3d::depth_view > 0 && !render3d::hdr_shown(g) { note(c, "  the view needs HDR"); }
                 ui::tree_state_pop(c);
             }
         }
@@ -1606,7 +1614,7 @@ fn main() {
             let wv = render3d::window_view;
             format(line, " --lace-sun ", wv.x, " --lace-scatter ", wv.y, " --glass-film ", wv.z, " --scratches ", wv.w, " --sun-veil ",
                    render3d::sun_veil);
-            format(line, " --hdr ", on_off(render3d::hdr_allowed), " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
+            format(line, " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
                    " --aperture ", aperture);
             flag_pair(line, "--dof-caps", float2 { near_cap, far_cap });
             format(line, " --paint ", if paint_quiet { "quiet" } else { "old" });

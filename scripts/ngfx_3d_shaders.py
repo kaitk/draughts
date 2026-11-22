@@ -129,6 +129,11 @@ MODULES = [
     ("r3d_hdr_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["HDR_OUT", "FS_SET", "FRAME", "TONE_FN", "OUTSIDE_FRAG"]),
     ("r3d_hdr_dust", ["SHELL_WINDOWS", "VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["HDR_OUT", "DUST_FRAG"]),
     ("r3d_hdr_tone", FULL, ["HDR_TONE_FRAG"]),
+    # The depth of field's depth (render3d::depth_pass) and the tuner's view of it.
+    ("r3d_depth_room", ROOM_VS, ["EMPTY_FRAG"]),
+    ("r3d_depth_table", TABLE_VS, ["EMPTY_FRAG"]),
+    ("r3d_depth_lace", ROOM_VS, ["FS_SET", "FRAME", "LACE_DEPTH_FRAG"]),
+    ("r3d_depth_show", FULL, ["DEPTH_SHOW_FRAG"]),
 ]
 
 def products(body):

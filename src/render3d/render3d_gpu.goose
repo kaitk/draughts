@@ -700,6 +700,69 @@ fn tone_pass(own: Own&, g: render3d::Gpu&, target: Texture) {
     gfx::end_pass();
 }
 
+// The depth of field's depth (render3d::depth_shown) at the pass's size, 1x and sampled: the
+// board and the opaque pieces, the table, the room, and the lace by its coverage
+// (shaders::LACE_DEPTH_FRAG); the view out is drawn into none, so it stays at the far plane.
+// Its target and pipelines made the first time.
+fn depth_pass(own: Own&, g: render3d::Gpu&) {
+    if g.depth_room.id == 0 {
+        let solid = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true };
+        let both = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
+        let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
+        g.depth_room = gfx::pipeline(room_vert, embed_shader("frag", shaders::EMPTY_FRAG), both);
+        g.depth_table = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
+                                      embed_shader("frag", shaders::EMPTY_FRAG), solid);
+        g.depth_lace = gfx::pipeline(room_vert, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LACE_DEPTH_FRAG), both);
+        g.depth_show = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::DEPTH_SHOW_FRAG));
+    }
+    if g.scene_depth.id == 0 {
+        let deep = gfx_format_supported(gfx::DEPTH32F, gfx::DEPTH_TARGET | gfx::SAMPLED);
+        g.scene_depth = gfx::texture2d(g.size.x, g.size.y, if deep { gfx::DEPTH32F } else { gfx::DEPTH16 },
+                                       gfx::DEPTH_TARGET | gfx::SAMPLED);
+    }
+    let f = g.frame;
+    gfx::begin_pass(gfx::PassDesc { depth: g.scene_depth });
+    gfx::bind(g.depth_only);
+    gfx::bind_storage_buffer(gfx::VERTEX, 0, g.instances);
+    gfx::uniforms(gfx::VERTEX, 0, f);
+    draw_meshes(own, g, 0.0);
+    if render3d::table_shown(g) {
+        gfx::bind(g.depth_table);
+        gfx::uniforms(gfx::VERTEX, 0, f);
+        gfx::bind_vertex_buffer(g.table_vb);
+        gfx::bind_index_buffer(g.table_ib, 4);
+        gfx::draw_indexed(g.table_count);
+    }
+    gfx::bind(g.depth_room);
+    gfx::uniforms(gfx::VERTEX, 0, f);
+    gfx::bind_vertex_buffer(g.room_vb);
+    gfx::bind_index_buffer(g.room_ib, 4);
+    gfx::draw_indexed(g.room_count);
+    if g.glass_count > 0 {
+        gfx::bind(g.depth_lace);
+        gfx::bind_texture(gfx::FRAGMENT, 0, render3d::lace_or_stand_in(g), g.linear);
+        gfx::uniforms(gfx::VERTEX, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 1, render3d::LaceDepth { render3d::surfaces_block(g).tile });
+        gfx::bind_vertex_buffer(g.glass_vb);
+        gfx::bind_index_buffer(g.glass_ib, 4);
+        gfx::draw_indexed(g.glass_count);
+    }
+    gfx::end_pass();
+}
+
+// The light tuner's view of the depth over all of `target` (shaders::DEPTH_SHOW_FRAG).
+fn depth_show_pass(own: Own&, g: render3d::Gpu&, target: Texture, show: render3d::DepthShow) {
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    gfx::begin_pass(pass);
+    gfx::bind(g.depth_show);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.scene_depth, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, show);
+    gfx::draw(3);
+    gfx::end_pass();
+}
+
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
 // the photograph: one draw, the sky, then the band, then the oak, each over the last.
 fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
@@ -1380,7 +1443,8 @@ fn release(own: Own&, g: render3d::Gpu&) {
                      g.planar_resolve, g.planar_show, g.planar_mip, g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     release_hdr(own, g);
-    if g.hdr_image.id != 0 { gfx::release(g.hdr_image); }
+    for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show] { if p.id != 0 { gfx::release(p); } }
+    for t in [g.hdr_image, g.scene_depth] { if t.id != 0 { gfx::release(t); } }
     gfx::flush();
     g = default<render3d::Gpu>();
 }

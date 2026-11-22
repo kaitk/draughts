@@ -464,6 +464,14 @@ struct Gpu {
     hdr:       bool,
     hdr_image: Texture,
     hdr_pipes: HdrPipelines,
+    // The depth of field's depth (depth_pass): 1x and sampled, DEPTH32F where it can be, at the
+    // pass's size; the room's, the table's and the lace's pipelines into it (the board's is
+    // depth_only), and the tuner's view of it (depth_show_pass), made the first time.
+    scene_depth: Texture,
+    depth_room:  Pipeline,
+    depth_table: Pipeline,
+    depth_lace:  Pipeline,
+    depth_show:  Pipeline,
 }
 
 // The pipelines of the scenic views' HDR target (shaders::HDR_OUT): the board's and a fading
@@ -1652,10 +1660,11 @@ fn release_targets<O>(o: O&, g: Gpu&) {
 
 // What release_targets() releases, also before a resize's new targets.
 fn give_back<O>(o: O&, g: Gpu&) {
-    let held = [g.color, g.depth, g.edges, g.weights, g.kept_depth, g.kept_backdrop, g.scene_image, g.hdr_image];
+    let held = [g.color, g.depth, g.edges, g.weights, g.kept_depth, g.kept_backdrop, g.scene_image, g.hdr_image, g.scene_depth];
     for t in held { if t.id != 0 { o.gpu_release(t); } }
     g.scene_image = Texture { 0 };
     g.hdr_image = Texture { 0 };
+    g.scene_depth = Texture { 0 };
     g.color = Texture { 0 };
     g.edges = Texture { 0 };
     g.weights = Texture { 0 };
@@ -1667,7 +1676,7 @@ fn give_back<O>(o: O&, g: Gpu&) {
 // Whether release_targets() has anything to give back.
 fn resting(g: Gpu&) -> bool {
     return g.color.id == 0 && g.depth.id == 0 && g.edges.id == 0 && g.weights.id == 0 && g.kept_depth.id == 0
-           && g.kept_backdrop.id == 0 && g.scene_image.id == 0 && g.hdr_image.id == 0;
+           && g.kept_backdrop.id == 0 && g.scene_image.id == 0 && g.hdr_image.id == 0 && g.scene_depth.id == 0;
 }
 
 // Puts a theme on the board (looks::AUTUMN..), its surfaces baked for n squares a side,
@@ -2221,6 +2230,10 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     o.board_pass(g, if hdr { g.hdr_image } else { shown }, size, backdrop);
     if hdr { o.tone_pass(g, shown); }
     if glowing { o.bloom_pass(g, g.image, target, size); }
+    if depth_shown(g) {
+        o.depth_pass(g);
+        if depth_view > 0 { o.depth_show_pass(g, target, depth_show_of(g)); }
+    }
     if planar_view > 1 && planar_shown(g) { o.planar_show_pass(g, target, planar_show_of(g, size)); }
     if keep_depth { o.draw_depth(g); }
     if scaled { o.upscale_pass(g, out, upscale_of(size, screen)); }
@@ -2238,6 +2251,35 @@ var hdr_wide = false;
 fn hdr_shown(g: Gpu&) -> bool {
     hdr_allowed && outside_shown(g) && g.aa == AA_MSAA && ssao_allowed && !room_views_on()
     && (!table_shown(g) || table_in_room(g))
+}
+
+// The depth of field's depth (depth_pass): with HDR, while the lens is on or the tuner's view
+// of it is shown (depth_view: 0 none, 1 the distance, 2 the lens's disc; DEPTH_SHOW_FRAG).
+var depth_view = 0;
+fn depth_shown(g: Gpu&) -> bool { g.hdr && (lens.on || depth_view > 0) }
+// LACE_DEPTH_FRAG's block: the room's tile (surfaces_block's).
+struct LaceDepth { tile: float4 }
+// DEPTH_SHOW_FRAG's block: how its depth d turns into the distance along the view, b / (d -
+// a), worked out from two points ahead of the eye through the frame's view_proj, and the
+// metres a world unit; the lens; the view and the picture's width.
+struct DepthShow { to_w: float4, lens: float4, view: float4 }
+fn depth_show_of(g: Gpu&) -> DepthShow {
+    let m = g.frame.view_proj;
+    let ahead = normalize(float3 { m.c0.w, m.c1.w, m.c2.w });
+    let e = float3 { g.frame.eye.x, g.frame.eye.y, g.frame.eye.z };
+    var zw: float2[2] = [float2_0; 2];
+    for k in 2 {
+        let t: f32 = if k == 0 { 10.0 } else { 100.0 };
+        let p = e + ahead * t;
+        let z = m.c0.z * p.x + m.c1.z * p.y + m.c2.z * p.z + m.c3.z;
+        let w = m.c0.w * p.x + m.c1.w * p.y + m.c2.w * p.z + m.c3.w;
+        zw[k] = float2 { z, w };
+    }
+    let a = (zw[1].x - zw[0].x) / (zw[1].y - zw[0].y);
+    let b = zw[0].x - a * zw[0].y;
+    return DepthShow { float4 { a, b, 1.0 / surfaces::METRE, 0.0 },
+                       float4 { lens.focus * surfaces::METRE, lens.aperture, lens.near_cap, lens.far_cap },
+                       float4 { depth_view, g.frame.screen.x, 0.0, 0.0 } };
 }
 
 // The 3D scene's resolution budget, the high tier's on a Retina or 4K screen, where the

@@ -615,6 +615,63 @@ fn tone_pass(own: Own&, g: Gpu&, target: Texture) {
     barrier_between_passes();
 }
 
+// The depth of field's depth, as gfx's depth_pass; the modules' headers: r3d_depth_lace's
+// LaceDepth and the lace's mask.
+fn depth_pass(own: Own&, g: Gpu&) {
+    if g.depth_room.id == 0 {
+        let solid = ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true };
+        let both = ngfx::PipelineDesc { depth_test: true, depth_write: true };
+        g.depth_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_depth_room.blob"), both);
+        g.depth_table = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_depth_table.blob"), solid);
+        g.depth_lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_depth_lace.blob"), both);
+        g.depth_show = module(embed_file("../../build/ngfx/blobs/r3d_depth_show.blob"));
+    }
+    if g.scene_depth.id == 0 { g.scene_depth = nx::texture2d(g.size.x, g.size.y, ngfx::DEPTH32F, ngfx::DEPTH_TARGET | ngfx::SAMPLED); }
+    let f = frame_addr(own, g);
+    nx::begin_pass(nx::PassDesc { depth: g.scene_depth });
+    nx::bind(g.depth_only);
+    draw_meshes(own, g, f, 0.0);
+    if render3d::table_shown(g) {
+        nx::bind(g.depth_table);
+        var t = no_root();
+        t.frame = f;
+        t.verts = nx::address(g.table_vb);
+        nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
+    }
+    nx::bind(g.depth_room);
+    var r = no_root();
+    r.frame = f;
+    r.verts = nx::address(g.room_vb);
+    nx::draw_indexed(ngfx::root(r), g.room_ib, 4, g.room_count);
+    if g.glass_count > 0 {
+        nx::bind(g.depth_lace);
+        var l = no_root();
+        l.frame = f;
+        l.u = blocks([render3d::surfaces_block(g).tile]);
+        l.verts = nx::address(g.glass_vb);
+        slot(l, 0, render3d::lace_or_stand_in(g), g.linear);
+        nx::draw_indexed(ngfx::root(l), g.glass_ib, 4, g.glass_count);
+    }
+    ngfx::end_pass();
+    barrier_between_passes();
+}
+
+// The light tuner's view of the depth over all of `target`, as gfx's; r3d_depth_show's
+// header: DepthShow, the depth.
+fn depth_show_pass(own: Own&, g: Gpu&, target: Texture, show: render3d::DepthShow) {
+    var pass = nx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    nx::begin_pass(pass);
+    nx::bind(g.depth_show);
+    var r = no_root();
+    let b: render3d::DepthShow[1] = [show];
+    r.u = ngfx::frame_data(bytes_of(b));
+    slot(r, 0, g.scene_depth, g.linear);
+    ngfx::draw(ngfx::root(r), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
+}
+
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
 // the photograph: one draw, the sky, then the band, then the oak, each over the last;
 // r3d_outside.slang's header: Outside, the band, the oak.
@@ -1344,7 +1401,8 @@ fn release(own: Own&, g: Gpu&) {
                      g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     release_hdr(own, g);
-    if g.hdr_image.id != 0 { nx::release(g.hdr_image); }
+    for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show] { if p.id != 0 { nx::release(p); } }
+    for t in [g.hdr_image, g.scene_depth] { if t.id != 0 { nx::release(t); } }
     own = default<Own>();
     g = default<Gpu>();
 }

@@ -3804,6 +3804,63 @@ let ROOM_VIEWS = "#define ROOM_VIEWS 1\n";
 // pass resolves.
 let HDR_OUT = "#define HDR_OUT 1\n";
 
+// The depth of field's depth (render3d::depth_pass) through the glass and lace's mesh: the
+// glass leaves the view out behind it as far as it is (nothing written), the lace writes its
+// depth where its thread covers half the pixel or more, its coverage as ROOM_FRAG's lace
+// takes it (lace_place is LIGHT_FN's); tile the room block's (render3d::LaceDepth).
+let LACE_DEPTH_FRAG = """
+    layout(location = 0) in vec3 v_world;
+    layout(location = 1) in vec3 v_normal;
+    layout(location = 2) in vec2 v_uv;
+    layout(location = 3) in vec2 v_extra;
+    layout(set = 2, binding = 0) uniform sampler2D lace_mask;
+    layout(set = 3, binding = 1) uniform LaceDepth { vec4 tile; };
+    vec2 lace_place(vec2 uv) {
+        float k = (0.375 * tile.z - uv.y) / tile.z;
+        float row = k > 0.0 ? 1.0 + min(k, 0.3745) : fract(k);
+        return vec2(uv.x / tile.z, row * (1024.0 / 1408.0));
+    }
+    void main() {
+        vec2 lg = vec2(1.0, -1024.0 / 1408.0) / tile.z;
+        vec2 ux = dFdx(v_uv) * lg;
+        vec2 uy = dFdy(v_uv) * lg;
+        if (floor(v_extra.y + 0.001) < 10.5) discard;
+        float cover = textureGrad(lace_mask, lace_place(v_uv), ux, uy).r;
+        vec3 v = normalize(eye.xyz - v_world);
+        float a = 1.0 - pow(1.0 - 0.8 * cover, 1.0 / max(abs(dot(normalize(v_normal), v)), 0.5));
+        if (a < 0.5) discard;
+    }
+    """;
+
+// The light tuner's view of the depth of field's depth (render3d::depth_show_pass) over the
+// picture: view.x 1 the distance along the view, from 0.5 m white to 16 m black on a log
+// scale, the view out deep blue; 2 the lens's signed disc (render3d::Lens), blue in focus
+// to yellow at the far cap behind it and magenta at the near cap before it, green where
+// it is under a pixel across. to_w: the depth's d to the distance along the view, b / (d -
+// a), and the metres a world unit; lens: the focus (world units), the aperture and the near
+// and far caps (shares of the width); view: y the picture's width in pixels.
+let DEPTH_SHOW_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D scene_depth;
+    layout(set = 3, binding = 0) uniform DepthShow { vec4 to_w; vec4 lens; vec4 view; };
+    void main() {
+        float d = texelFetch(scene_depth, ivec2(gl_FragCoord.xy), 0).r;
+        bool out_there = d >= 1.0;
+        float w = out_there ? 1e9 : to_w.y / (d - to_w.x);
+        if (view.x < 1.5) {
+            float k = clamp(log2(w * to_w.z / 0.5) / 5.0, 0.0, 1.0);
+            result = vec4(out_there ? vec3(0.05, 0.08, 0.3) : vec3(1.0 - k), 1.0);
+            return;
+        }
+        float coc = lens.y * (1.0 - lens.x / w);
+        float t = coc >= 0.0 ? clamp(coc / max(lens.w, 1e-4), 0.0, 1.0) : clamp(-coc / max(lens.z, 1e-4), 0.0, 1.0);
+        vec3 c = mix(vec3(0.1, 0.2, 0.6), coc >= 0.0 ? vec3(1.0, 0.85, 0.1) : vec3(0.9, 0.1, 0.8), t);
+        if (abs(coc) * view.y < 0.5) c = vec3(0.2, 0.8, 0.3);
+        result = vec4(c, 1.0);
+    }
+    """;
+
 // The HDR target made the picture (render3d::tone_pass): the tonemaps' shoulder and grade,
 // sRGB, and a dither of under half a level against the 8-bit target's bands.
 let HDR_TONE_FRAG = """
