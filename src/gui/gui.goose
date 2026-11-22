@@ -11,6 +11,7 @@ import std;
 import vec;
 import .focus;
 import .words;
+import .inline;
 
 // The UI's quads a frame, 64 bytes each, past which gui::add drops them. A long game's
 // move list on a desktop with its win's card needs about 600. What a frame drops is
@@ -138,6 +139,9 @@ let MOON = 50;              // and once all are solved, a crescent moon
 let SPEAKER_OFF = 51;       // the sound: a speaker struck through,
 let SPEAKER = 52;           // and with one to three arcs, 52 to 54, as loud as it is
 let REPLAY = 55;            // home's Replay: restart's arrow round a clock's hands
+let HANDSHAKE = 56;         // a draw: two hands shaking,
+let HANDSHAKE_OFF = 57;     // and refused, crossed out
+let FLAG = 58;              // giving up: a flag
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -1136,6 +1140,11 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
             return clicked;
         }
         text(g, shown, c, label, a, 0.0, CENTER);
+        return clicked;
+    }
+    // With no icon, the word alone in the middle.
+    guard icon != NO_ICON else {
+        text(g, face_that_fits(g, face, label, r.z - 2.0 * LABEL_PAD * u), r, label, a, 0.0, CENTER);
         return clicked;
     }
     let gap = PAD * u;

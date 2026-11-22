@@ -123,6 +123,18 @@ let KEYS = [
     "draw.kings",
     "draw.balance",
     "draw.lone",
+    "draw.agreed",
+    "game.offer_draw",
+    "refused.title",
+    "refused.note",
+    "offer.title",
+    "offer.play_on",
+    "give_up.title",
+    "give_up.note",
+    "give_up.yes",
+    "give_up.no",
+    "gave_up.white",
+    "gave_up.black",
     "count.draw",
     "count.draw_one",
     "count.white",
@@ -423,208 +435,230 @@ let DRAW_REPEAT = 115;
 let DRAW_KINGS = 116;
 let DRAW_BALANCE = 117;
 let DRAW_LONE = 118;
+// A draw the players agreed, on the draw's card under "Draw".
+let DRAW_AGREED = 119;
+// The draw tile beside start over while both sides have a king: against the computer,
+// an offer (a friend's game shows "draw" and ends the game at once).
+let GAME_OFFER_DRAW = 120;
+// The computer's refusal, a card in the middle: its title, and its line, "@" where the
+// computer's icon stands for "The computer" (put it where the language's grammar wants
+// the computer named).
+let REFUSED_TITLE = 121;
+let REFUSED_NOTE = 122;
+// The computer's own offer, a card in the middle, answered by "draw" or this.
+let OFFER_TITLE = 123;
+let OFFER_PLAY_ON = 124;
+// Start over in a game against the computer from the child's fifth move: its card's
+// title, line, and two answers.
+let GIVE_UP_TITLE = 125;
+let GIVE_UP_NOTE = 126;
+let GIVE_UP_YES = 127;
+let GIVE_UP_NO = 128;
+// The win's card for the computer after the child gave up, under who won.
+let GAVE_UP_WHITE = 129;
+let GAVE_UP_BLACK = 130;
 // The countdown under whose turn: "{}" moves, more than one; the strong side must take
 // the lone king within "{}" of its moves; the position come twice, and under it a third
 // time draws; the short form between the clocks, over or before the moves left, and
 // before "2/3" for the position come twice.
-let COUNT_DRAW = 119;
-let COUNT_DRAW_ONE = 120;
-let COUNT_WHITE = 121;
-let COUNT_WHITE_ONE = 122;
-let COUNT_BLACK = 123;
-let COUNT_BLACK_ONE = 124;
-let COUNT_TWICE = 125;
-let COUNT_THIRD = 126;
-let COUNT_SHORT = 127;
-let COUNT_REPEATED = 128;
+let COUNT_DRAW = 131;
+let COUNT_DRAW_ONE = 132;
+let COUNT_WHITE = 133;
+let COUNT_WHITE_ONE = 134;
+let COUNT_BLACK = 135;
+let COUNT_BLACK_ONE = 136;
+let COUNT_TWICE = 137;
+let COUNT_THIRD = 138;
+let COUNT_SHORT = 139;
+let COUNT_REPEATED = 140;
 // The lookout's toggle (the threats past the player's sight), the hint's tile, and its
 // word once it has lit the piece to move.
-let GAME_LOOKOUT = 129;
-let GAME_HINT = 130;
-let GAME_WHERE_TO = 131;
+let GAME_LOOKOUT = 141;
+let GAME_HINT = 142;
+let GAME_WHERE_TO = 143;
 // The moves panel's row: hidden, the list, or the list with marks.
-let SETTINGS_MOVES = 132;
-let MOVES_HIDDEN = 133;
-let MOVES_LIST = 134;
-let MOVES_MARKS = 135;
+let SETTINGS_MOVES = 144;
+let MOVES_HIDDEN = 145;
+let MOVES_LIST = 146;
+let MOVES_MARKS = 147;
 // The results screen: its title, the rating's heading, the levels' results'
 // heading, a game against a friend in the list, and the list with no game yet.
-let RESULTS_TITLE = 136;
-let RESULTS_RATING = 137;
-let RESULTS_COMPUTER = 138;
-let RESULTS_FRIEND = 139;
-let RESULTS_NONE = 140;
+let RESULTS_TITLE = 148;
+let RESULTS_RATING = 149;
+let RESULTS_COMPUTER = 150;
+let RESULTS_FRIEND = 151;
+let RESULTS_NONE = 152;
 // A date as the language writes it: {d} the day, {dd} the day in two figures, {mm} the
 // month in two figures, {mon} its short name (month.*), {y} the year.
-let DATE_FORMAT = 141;
+let DATE_FORMAT = 153;
 // The months' short names from January: MONTH_JAN + month - 1.
-let MONTH_JAN = 142;
-let MONTH_FEB = 143;
-let MONTH_MAR = 144;
-let MONTH_APR = 145;
-let MONTH_MAY = 146;
-let MONTH_JUN = 147;
-let MONTH_JUL = 148;
-let MONTH_AUG = 149;
-let MONTH_SEP = 150;
-let MONTH_OCT = 151;
-let MONTH_NOV = 152;
-let MONTH_DEC = 153;
+let MONTH_JAN = 154;
+let MONTH_FEB = 155;
+let MONTH_MAR = 156;
+let MONTH_APR = 157;
+let MONTH_MAY = 158;
+let MONTH_JUN = 159;
+let MONTH_JUL = 160;
+let MONTH_AUG = 161;
+let MONTH_SEP = 162;
+let MONTH_OCT = 163;
+let MONTH_NOV = 164;
+let MONTH_DEC = 165;
 // The moves panel before the first move.
-let MOVES_NONE = 154;
+let MOVES_NONE = 166;
 // A friend's setup: the board turns to who plays, or stays, the same for both, each with
 // its note; and the row's name.
-let BOARD_TURNS = 155;
-let BOARD_TURNS_NOTE = 156;
-let BOARD_STAYS = 157;
-let BOARD_STAYS_NOTE = 158;
-let SETUP_BOARD = 159;
+let BOARD_TURNS = 167;
+let BOARD_TURNS_NOTE = 168;
+let BOARD_STAYS = 169;
+let BOARD_STAYS_NOTE = 170;
+let SETUP_BOARD = 171;
 // Settings' move list: what the chosen tile shows, under the row.
-let MOVES_HIDDEN_NOTE = 160;
-let MOVES_LIST_NOTE = 161;
-let MOVES_MARKS_NOTE = 162;
+let MOVES_HIDDEN_NOTE = 172;
+let MOVES_LIST_NOTE = 173;
+let MOVES_MARKS_NOTE = 174;
 // A mark's word (the list's legend), then its _tip line (the popover); in ai::judge's
 // order from ONLY.
-let MARK_ONLY = 163;
-let MARK_ONLY_TIP = 164;
-let MARK_BEST = 165;
-let MARK_BEST_TIP = 166;
-let MARK_GOOD = 167;
-let MARK_GOOD_TIP = 168;
-let MARK_INACCURACY = 169;
-let MARK_INACCURACY_TIP = 170;
-let MARK_MISTAKE = 171;
-let MARK_MISTAKE_TIP = 172;
-let MARK_BLUNDER = 173;
-let MARK_BLUNDER_TIP = 174;
+let MARK_ONLY = 175;
+let MARK_ONLY_TIP = 176;
+let MARK_BEST = 177;
+let MARK_BEST_TIP = 178;
+let MARK_GOOD = 179;
+let MARK_GOOD_TIP = 180;
+let MARK_INACCURACY = 181;
+let MARK_INACCURACY_TIP = 182;
+let MARK_MISTAKE = 183;
+let MARK_MISTAKE_TIP = 184;
+let MARK_BLUNDER = 185;
+let MARK_BLUNDER_TIP = 186;
 // A past game's replay: its title, the label on a game played from a replay's
 // move, which counts for nothing, the line over its list at the start, before the first
 // move, its button that plays on from the move shown, and why a game from it doesn't
 // count, in full.
-let REPLAY_TITLE = 175;
-let REPLAY_NO_COUNT = 176;
-let REPLAY_START = 177;
-let REPLAY_PLAY = 178;
-let REPLAY_NO_COUNT_WHY = 179;
+let REPLAY_TITLE = 187;
+let REPLAY_NO_COUNT = 188;
+let REPLAY_START = 189;
+let REPLAY_PLAY = 190;
+let REPLAY_NO_COUNT_WHY = 191;
 // A replay's line about the best move in place of the move shown: what was best,
 // followed by the move; that the move shown was the best; that it was forced, a capture or
 // an only move (white's then black's); and the end of the game.
-let REPLAY_BEST_WAS = 180;
-let REPLAY_WAS_BEST = 181;
-let REPLAY_TAKE_WHITE = 182;
-let REPLAY_TAKE_BLACK = 183;
-let REPLAY_ONE_WHITE = 184;
-let REPLAY_ONE_BLACK = 185;
-let REPLAY_ENDED = 186;
+let REPLAY_BEST_WAS = 192;
+let REPLAY_WAS_BEST = 193;
+let REPLAY_TAKE_WHITE = 194;
+let REPLAY_TAKE_BLACK = 195;
+let REPLAY_ONE_WHITE = 196;
+let REPLAY_ONE_BLACK = 197;
+let REPLAY_ENDED = 198;
 // A desktop's quit asks first (home::ask_quit): the question, and the button that keeps
 // the app open.
-let QUIT_ASK = 187;
-let QUIT_CANCEL = 188;
+let QUIT_ASK = 199;
+let QUIT_CANCEL = 200;
 // How to play: home's row, the library's, the tutorial's; a new player's
 // question, and its answers; "{} short steps", under show me; the end's card; the last
 // step's next; "{} / {} steps", the library's row; the end's way home; back a step, beside
 // next; the first step's
 // lines while the other side moves, and after.
-let HOW_TITLE = 189;
-let HOW_ASK = 190;
-let HOW_SHOW = 191;
-let HOW_KNOWN = 192;
-let HOW_STEPS = 193;
-let HOW_DONE = 194;
-let HOW_FINISH = 195;
-let HOW_STEP_COUNT = 196;
-let HOW_HOME = 197;
-let HOW_BACK = 198;
-let HOW_MOVE_REPLY = 199;
-let HOW_MOVE_AGAIN = 200;
+let HOW_TITLE = 201;
+let HOW_ASK = 202;
+let HOW_SHOW = 203;
+let HOW_KNOWN = 204;
+let HOW_STEPS = 205;
+let HOW_DONE = 206;
+let HOW_FINISH = 207;
+let HOW_STEP_COUNT = 208;
+let HOW_HOME = 209;
+let HOW_BACK = 210;
+let HOW_MOVE_REPLY = 211;
+let HOW_MOVE_AGAIN = 212;
 // The steps, three keys each from how.move (strings::HOW_STEP): the rule's name, its
 // line, and what is said once it is played; in the order tutorial::STEPS names them.
-let HOW_MOVE = 201;
-let HOW_MOVE_LINE = 202;
-let HOW_MOVE_WELL = 203;
-let HOW_JUMP = 204;
-let HOW_JUMP_LINE = 205;
-let HOW_JUMP_WELL = 206;
-let HOW_MUST = 207;
-let HOW_MUST_LINE = 208;
-let HOW_MUST_WELL = 209;
-let HOW_CHAIN = 210;
-let HOW_CHAIN_LINE = 211;
-let HOW_CHAIN_WELL = 212;
-let HOW_MOST = 213;
-let HOW_MOST_LINE = 214;
-let HOW_MOST_WELL = 215;
-let HOW_ANY = 216;
-let HOW_ANY_LINE = 217;
-let HOW_ANY_WELL = 218;
-let HOW_KING = 219;
-let HOW_KING_LINE = 220;
-let HOW_KING_WELL = 221;
-let HOW_FLY = 222;
-let HOW_FLY_LINE = 223;
-let HOW_FLY_WELL = 224;
-let HOW_AFAR = 225;
-let HOW_AFAR_LINE = 226;
-let HOW_AFAR_WELL = 227;
-let HOW_KING_CHAIN = 228;
-let HOW_KING_CHAIN_LINE = 229;
-let HOW_KING_CHAIN_WELL = 230;
-let HOW_WAY = 231;
-let HOW_WAY_LINE = 232;
-let HOW_WAY_WELL = 233;
-let HOW_WIN = 234;
-let HOW_WIN_LINE = 235;
-let HOW_WIN_WELL = 236;
+let HOW_MOVE = 213;
+let HOW_MOVE_LINE = 214;
+let HOW_MOVE_WELL = 215;
+let HOW_JUMP = 216;
+let HOW_JUMP_LINE = 217;
+let HOW_JUMP_WELL = 218;
+let HOW_MUST = 219;
+let HOW_MUST_LINE = 220;
+let HOW_MUST_WELL = 221;
+let HOW_CHAIN = 222;
+let HOW_CHAIN_LINE = 223;
+let HOW_CHAIN_WELL = 224;
+let HOW_MOST = 225;
+let HOW_MOST_LINE = 226;
+let HOW_MOST_WELL = 227;
+let HOW_ANY = 228;
+let HOW_ANY_LINE = 229;
+let HOW_ANY_WELL = 230;
+let HOW_KING = 231;
+let HOW_KING_LINE = 232;
+let HOW_KING_WELL = 233;
+let HOW_FLY = 234;
+let HOW_FLY_LINE = 235;
+let HOW_FLY_WELL = 236;
+let HOW_AFAR = 237;
+let HOW_AFAR_LINE = 238;
+let HOW_AFAR_WELL = 239;
+let HOW_KING_CHAIN = 240;
+let HOW_KING_CHAIN_LINE = 241;
+let HOW_KING_CHAIN_WELL = 242;
+let HOW_WAY = 243;
+let HOW_WAY_LINE = 244;
+let HOW_WAY_WELL = 245;
+let HOW_WIN = 246;
+let HOW_WIN_LINE = 247;
+let HOW_WIN_WELL = 248;
 // The daily puzzles: the library's Today row, its note, and settings' row.
-let DAILY_TODAY = 237;
-let DAILY_LEFT = 238;
-let DAILY_TOMORROW = 239;
-let SETTINGS_DAILY = 240;
+let DAILY_TODAY = 249;
+let DAILY_LEFT = 250;
+let DAILY_TOMORROW = 251;
+let SETTINGS_DAILY = 252;
 // Under a daily puzzle's goal: the day's first, and its last.
-let DAILY_WARMUP = 241;
-let DAILY_STRETCH = 242;
+let DAILY_WARMUP = 253;
+let DAILY_STRETCH = 254;
 // Home's Puzzles row once all of today's are solved, before its check where it fits.
-let DAILY_HOME_TOMORROW = 243;
+let DAILY_HOME_TOMORROW = 255;
 // Settings' Sound section, between Look and Game.
-let SETTINGS_SOUND = 244;
+let SETTINGS_SOUND = 256;
 // Its one row: the speaker's tile, which mutes and unmutes, and the slider.
-let SETTINGS_VOLUME = 245;
+let SETTINGS_VOLUME = 257;
 // The speaker's tile's name, for a screen reader: it turns the sound off and on.
-let SETTINGS_MUTE = 246;
+let SETTINGS_MUTE = 258;
 // Settings' About: its row at the foot, beside the privacy note, and the dialog it opens
 // over settings, of the build and what the app draws with. The values (versions, names,
 // "4× MSAA") stay as they are in every language.
-let ABOUT_ROW = 247;
-let ABOUT_COPY = 248;
-let ABOUT_COPIED = 249;
+let ABOUT_ROW = 259;
+let ABOUT_COPY = 260;
+let ABOUT_COPIED = 261;
 // The dialog's three groups.
-let ABOUT_BUILD = 250;
-let ABOUT_GRAPHICS = 251;
-let ABOUT_BOARD_3D = 252;
+let ABOUT_BUILD = 262;
+let ABOUT_GRAPHICS = 263;
+let ABOUT_BOARD_3D = 264;
 // The build's lines.
-let ABOUT_VERSION = 253;
-let ABOUT_COMMIT = 254;
-let ABOUT_SYSTEM = 255;
+let ABOUT_VERSION = 265;
+let ABOUT_COMMIT = 266;
+let ABOUT_SYSTEM = 267;
 // The graphics' lines: the renderer (gfx or ngfx), its graphics API, the GPU's name, and
 // the display's refresh rate.
-let ABOUT_RENDERER = 256;
-let ABOUT_DRIVER = 257;
-let ABOUT_GPU = 258;
-let ABOUT_DISPLAY = 259;
+let ABOUT_RENDERER = 268;
+let ABOUT_DRIVER = 269;
+let ABOUT_GPU = 270;
+let ABOUT_DISPLAY = 271;
 // The 3D board's lines: its antialiasing, its shadow's filter as "{} taps", and the side
 // of its baked surfaces in pixels.
-let ABOUT_ANTIALIASING = 260;
-let ABOUT_SHADOWS = 261;
-let ABOUT_TAPS = 262;
-let ABOUT_SURFACES = 263;
+let ABOUT_ANTIALIASING = 272;
+let ABOUT_SHADOWS = 273;
+let ABOUT_TAPS = 274;
+let ABOUT_SURFACES = 275;
 // The system's battery saver, on or off; and under it, on Android, that it keeps the
 // display at 60 Hz.
-let ABOUT_SAVER = 264;
-let ABOUT_ON = 265;
-let ABOUT_OFF = 266;
-let ABOUT_CAPPED = 267;
+let ABOUT_SAVER = 276;
+let ABOUT_ON = 277;
+let ABOUT_OFF = 278;
+let ABOUT_CAPPED = 279;
 // Under the antialiasing when the app lowered it from 4× MSAA for a slow device.
-let ABOUT_LOWERED = 268;
+let ABOUT_LOWERED = 280;
 // Under the 3D board's group while the board is flat.
-let ABOUT_NOT_IN_USE = 269;
-let COUNT = 270;
+let ABOUT_NOT_IN_USE = 281;
+let COUNT = 282;
