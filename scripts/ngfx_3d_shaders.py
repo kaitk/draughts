@@ -58,6 +58,13 @@ ROOMS = [
     ("r3d_mirror_sill", ["ROOM_SILL", "MIRROR_PASS"]),
     ("r3d_mirror_metals", ["ROOM_METALS", "MIRROR_PASS"]),
     ("r3d_mirror_glass", ["ROOM_GLASS", "MIRROR_PASS"]),
+    ("r3d_hdr_floor", ["ROOM_FLOOR", "SHARP_BOX", "HDR_OUT"]),
+    ("r3d_hdr_planar", ["ROOM_FLOOR", "PLANAR_FLOOR", "HDR_OUT"]),
+    ("r3d_hdr_walls", ["ROOM_WALLS", "HDR_OUT"]),
+    ("r3d_hdr_paint", ["ROOM_PAINT", "HDR_OUT"]),
+    ("r3d_hdr_sill", ["ROOM_SILL", "HDR_OUT"]),
+    ("r3d_hdr_metals", ["ROOM_METALS", "SHARP_BOX", "HDR_OUT"]),
+    ("r3d_hdr_glass", ["ROOM_GLASS", "HDR_OUT"]),
 ]
 MODULES = [
     ("r3d_lit", LIT_VS, ["FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
@@ -111,6 +118,17 @@ MODULES = [
     ("r3d_pre_lit", LIT_VS, ["FS_SET", "FRAME", "PRE_FRAG"]),
     ("r3d_ssao", FULL, ["SSAO_FRAG"]),
     ("r3d_ssao_blur", FULL, ["SSAO_BLUR_FRAG"]),
+    # The scenic views' HDR target (render3d::hdr_shown): the board's in each pieces'
+    # material with the 16-tap shadow, the table's in the room, the view out's, the motes',
+    # and the tonemap after.
+    ("r3d_hdr_lit", LIT_VS, ["HDR_OUT", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_hdr_lit_wood", LIT_VS, ["HDR_OUT", "PIECES_WOOD", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_hdr_lit_winter", LIT_VS, ["HDR_OUT", "PIECES_WINTER", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_hdr_lit_mineral", LIT_VS, ["HDR_OUT", "PIECES_MINERAL", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_hdr_table", TABLE_VS, ["TABLE_ROOM", "HDR_OUT", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_hdr_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["HDR_OUT", "FS_SET", "FRAME", "TONE_FN", "OUTSIDE_FRAG"]),
+    ("r3d_hdr_dust", ["SHELL_WINDOWS", "VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["HDR_OUT", "DUST_FRAG"]),
+    ("r3d_hdr_tone", FULL, ["HDR_TONE_FRAG"]),
 ]
 
 def products(body):

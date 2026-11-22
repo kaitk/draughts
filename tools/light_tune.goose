@@ -65,6 +65,9 @@
 //       [--sheen STRENGTH,ROUGHNESS,PAPER,VIEW (the sun's broad sheen; 2,0.8,1,0; 0 off; VIEW 1 the highlights alone)]
 //       [--sections all|NAME,NAME.. (SECTION_NAMES open at the start)] [--shot-panel (the panel in a --shot)]
 //       [--view board|room|window|hall|stove|table-window] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
+//       [--hdr on|off (the scenic views drawn into the HDR target and tonemapped after, render3d::hdr_shown; on; X
+//       switches it)] [--hdr-format rg11b10f|rgba16f (its target's; rg11b10f)] [--dof on|off (the lens, render3d::Lens; off)] [--focus M (0 the view's target)]
+//       [--aperture PCT (a disc's radius at infinity, % of the width)] [--dof-caps NEAR,FAR (%)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
@@ -651,7 +654,7 @@ let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", 
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
                 "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old; I: the sills", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust's way", "Y: the lace's hang, 0.15 or 0 m", "Z: the window view's steps off or on", "F: the frame counter; G: wait for the GPU",
-                "N: the scene's scale; M: its upscale",
+                "N: the scene's scale; M: its upscale", "X: HDR or 8 bits",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
                 "walking: C seated, X then Q, E down and up", "R: back to the view, P: the walk's camera"];
 
@@ -859,7 +862,7 @@ fn main() {
             "",
             embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            "", ""];
+            "", "", "", ""];
         render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
                                       pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
     }
@@ -875,6 +878,15 @@ fn main() {
                                                                       shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
                                                                       shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
                                                                       shaders::ROOM_FRAG);
+    // The same two into the scenic views' HDR target (render3d::make_hdr).
+    render3d::tuned_frags[render3d::TUNED_PAINT_HDR] = embed_shader("frag", shaders::ROOM_PAINT, shaders::PAINT_STEPS, shaders::HDR_OUT,
+                                                                    shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
+                                                                    shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
+                                                                    shaders::ROOM_FRAG);
+    render3d::tuned_frags[render3d::TUNED_SILL_HDR] = embed_shader("frag", shaders::ROOM_SILL, shaders::SILL_STEPS, shaders::HDR_OUT,
+                                                                   shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
+                                                                   shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
+                                                                   shaders::ROOM_FRAG);
     render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
     render3d::set_aa(r3d, g, render3d::AA);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
@@ -957,6 +969,9 @@ fn main() {
     // The lens (render3d::Lens): on or off, its focus in metres (0 the view's target, kept
     // on it as the camera moves), its aperture and caps in percent of the width.
     render3d::lens.on = flag_value(argv, "--dof") > 0 && argv[flag_value(argv, "--dof")] == "on";
+    // The scenic views' HDR target (render3d::hdr_shown), on unless --hdr off; X switches it.
+    render3d::hdr_allowed = !(flag_value(argv, "--hdr") > 0 && argv[flag_value(argv, "--hdr")] == "off");
+    render3d::hdr_wide = flag_value(argv, "--hdr-format") > 0 && argv[flag_value(argv, "--hdr-format")] == "rgba16f";
     let focus_m = number(argv, "--focus", 0.0);
     var focus_on_target = focus_m <= 0.0;
     var focus_log = log2(if focus_on_target { render3d::lens.focus } else { focus_m });
@@ -1215,6 +1230,7 @@ fn main() {
                 scene_k = SCENE_SCALES[next];
             }
             if gfx::key_pressed("M") { upscale = 1 - upscale; }
+            if gfx::key_pressed("X") { render3d::hdr_allowed = !render3d::hdr_allowed; }
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
@@ -1470,6 +1486,8 @@ fn main() {
                 ui::tree_state_pop(c);
             }
             if section(c, open, LENS) {
+                switch(c, "HDR (X)", render3d::hdr_allowed, ["off", "on"]);
+                note(c, if render3d::hdr_shown(g) { "  drawn in HDR" } else { "  drawn in 8 bits (the view or a tuner's view)" });
                 switch(c, "Depth of field", render3d::lens.on, ["off", "on"]);
                 switch(c, "Focus on the target", focus_on_target, ["no", "yes"]);
                 slider(c, "Focus (log2 m)", focus_log, -1.5, 6.0);
@@ -1588,7 +1606,7 @@ fn main() {
             let wv = render3d::window_view;
             format(line, " --lace-sun ", wv.x, " --lace-scatter ", wv.y, " --glass-film ", wv.z, " --scratches ", wv.w, " --sun-veil ",
                    render3d::sun_veil);
-            format(line, " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
+            format(line, " --hdr ", on_off(render3d::hdr_allowed), " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
                    " --aperture ", aperture);
             flag_pair(line, "--dof-caps", float2 { near_cap, far_cap });
             format(line, " --paint ", if paint_quiet { "quiet" } else { "old" });

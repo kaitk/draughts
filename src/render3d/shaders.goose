@@ -1565,6 +1565,11 @@ let LIT_FRAG = """
             ambient += albedo * bounce.rgb * (light * l.y / PI) * bounce.a * down * ao;
         }
         vec3 color = (direct + ambient) * params.x;
+    #ifdef HDR_OUT
+        // Into the scenic views' HDR target: the light with tonemap's toe alone taken off.
+        float least = min(color.r, min(color.g, color.b));
+        result = vec4(color - (least < 0.04 ? least - 12.5 * least * least : 0.02), v_alpha);
+    #else
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         // A win dims the board and the pieces but the winning one, as the flat board's
         // black fill over them does.
@@ -1576,6 +1581,7 @@ let LIT_FRAG = """
             float grey = dot(result.rgb, vec3(0.2126, 0.7152, 0.0722)) * 0.66;
             result.rgb = min(vec3((grey - 0.5) * 0.85 + 0.5) * vec3(1.45, 0.68, 0.62), 1.0);
         }
+    #endif
     }
     """;
 
@@ -2084,11 +2090,17 @@ let TABLE_FRAG = """
         float peak = max(color.r, max(color.g, color.b));
         result = vec4(peak > 16.0 ? color * (16.0 / peak) : color, 1.0);
     #else
+    #ifdef HDR_OUT
+        // Into the scenic views' HDR target: the light with tonemap's toe alone taken off.
+        float least = min(color.r, min(color.g, color.b));
+        result = vec4(color - (least < 0.04 ? least - 12.5 * least * least : 0.02), 1.0);
+    #else
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
     #ifdef TABLE_ROOM
     #ifndef NO_SSAO
         if (ssao.y > 0.5 && ssao.y < 2.5) result = vec4(vec3(ssao.y > 1.5 ? ao : screen_ao), 1.0);
+    #endif
     #endif
     #endif
     #endif
@@ -2358,6 +2370,14 @@ let TONE_FN = """
         float peak = max(c.r, max(c.g, c.b));
         return peak > MIRROR_PEAK ? c * (MIRROR_PEAK / peak) : c;
     }
+    #ifdef HDR_OUT
+    // The scenic views' HDR target takes the light with tonemap's toe alone taken off; the
+    // shoulder and the grade are HDR_TONE_FRAG's.
+    vec3 room_toe(vec3 c) {
+        float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
+        return c * ((y < 0.04 ? 12.5 * y * y : y - 0.02) / y);
+    }
+    #endif
     """;
 
 // The view out of the library's windows (model3d::view_out), turned with the room as
@@ -2456,9 +2476,13 @@ let OUTSIDE_FRAG = """
             result = vec4(mirror_light(c * exposure.z) * t.a, t.a);
             return;
         }
+    #ifdef HDR_OUT
+        result = vec4(room_toe(c) * t.a, t.a);
+    #else
         c = tonemap(c) * vec3(1.02, 1.0, 0.97);
         float n = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
         result = vec4((encode(c) + n / 255.0) * t.a * (1.0 - screen.z), t.a);
+    #endif
     }
     """;
 
@@ -2473,12 +2497,17 @@ let OUTSIDE_FRAG = """
 let ROOM_FRAG = """
     // The light out (exposed, linear), a its coverage: tonemapped and graded into sRGB and
     // dimmed with the board, for today's 8-bit targets; with LINEAR_OUT the light itself, its
-    // peak held to MIRROR_PEAK (TONE_FN's mirror_light), as the floor's mirror keeps it.
+    // peak held to MIRROR_PEAK (TONE_FN's mirror_light), as the floor's mirror keeps it; with
+    // HDR_OUT the light with the toe alone taken off (room_toe).
     vec4 room_out(vec3 c, float a) {
     #ifdef LINEAR_OUT
         return vec4(mirror_light(c) * a, a);
     #else
+    #ifdef HDR_OUT
+        return vec4(room_toe(c) * a, a);
+    #else
         return vec4(to_srgb(tonemap(c) * vec3(1.02, 1.0, 0.97)) * a * (1.0 - screen.z), a);
+    #endif
     #endif
     }
 
@@ -2935,7 +2964,9 @@ let ROOM_FRAG = """
         float hg = 0.4375 / pow(1.5625 - 1.5 * ahead, 1.5);
         float film = window_view.z * GLASS_FILM * 2.0 * tl.a * hg / (4.0 * PI);
         // The groove's direction in the glass's plane (along the wall, up), from its doubled angle.
-        float half_a = 0.5 * atan(tl.g * 2.0 - 1.0, tl.r * 2.0 - 1.0);
+        // atan(0, 0) is NaN on the Mac where no groove is: there any angle does (tl.b is 0).
+        vec2 doubled = tl.rg * 2.0 - 1.0;
+        float half_a = 0.5 * atan(doubled.y, abs(doubled.x) + abs(doubled.y) > 1e-4 ? doubled.x : 1.0);
         vec3 t = cos(half_a) * vec3(axes.x, 0.0, axes.y) + sin(half_a) * vec3(0.0, 1.0, 0.0);
         float s = dot(t, l + v);
         float w = GLASS_GLINT_WIDTH + turn;
@@ -2943,13 +2974,17 @@ let ROOM_FRAG = """
                     * exp(-acos(ahead) / GLASS_GLINT_REACH);
         return room_sun_color(room_sun.x) * light_dir.w * sun * (film + glint / PI);
     }
-    // Light added over what the glass shows, in the picture's units: linear in the mirror,
-    // else the sRGB curve's slope over a bright sky, about a half.
+    // Light added over what the glass shows, in the picture's units: linear in the mirror and
+    // the HDR target, else the sRGB curve's slope over a bright sky, about a half.
     vec3 added_light(vec3 c) {
     #ifdef LINEAR_OUT
         return c;
     #else
+    #ifdef HDR_OUT
+        return c;
+    #else
         return 0.5 * c * (1.0 - screen.z);
+    #endif
     #endif
     }
     #endif
@@ -3762,6 +3797,40 @@ let MIRROR_PASS = "#define LINEAR_OUT 1\n#define NO_SSAO 1\n";
 // their own made while one is on: their code cost the room 0.55 ms at 3024 × 1890 where
 // none was shown. With the screen's maps only, never in the mirror.
 let ROOM_VIEWS = "#define ROOM_VIEWS 1\n";
+// The scenic views' HDR target (render3d::hdr_shown, the high tier's): the board, the
+// pieces, the table, the room, the view out and the motes write their exposed light with
+// only their tonemap's toe taken off (the room's on the luminance, the board's and the
+// table's on the least channel), and HDR_TONE_FRAG takes it the rest of the way after the
+// pass resolves.
+let HDR_OUT = "#define HDR_OUT 1\n";
+
+// The HDR target made the picture (render3d::tone_pass): the tonemaps' shoulder and grade,
+// sRGB, and a dither of under half a level against the 8-bit target's bands.
+let HDR_TONE_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D scene_light;
+    vec3 shoulder(vec3 c) {
+        float peak = max(c.r, max(c.g, c.b));
+        const float start = 0.76;
+        if (peak < start) return c;
+        const float d = 1.0 - start;
+        float np = 1.0 - d * d / (peak + d - start);
+        c *= np / peak;
+        float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
+        return mix(c, vec3(np), g);
+    }
+    vec3 encode(vec3 c) {
+        c = clamp(c, 0.0, 1.0);
+        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+    }
+    void main() {
+        vec3 c = max(texelFetch(scene_light, ivec2(gl_FragCoord.xy), 0).rgb, vec3(0.0));
+        c = shoulder(c) * vec3(1.02, 1.0, 0.97);
+        float n = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+        result = vec4(encode(c) + n / 255.0, 1.0);
+    }
+    """;
 
 // The mirror's picture made the room's light again, with how far each texel stands from the
 // floor along the reflection: the pass drew the room, the table and the view out as their
@@ -5926,6 +5995,10 @@ let DUST_FRAG = """
         float edge = 1.0 / max(v_shape.x, 1.0);
         float disc = (1.0 - smoothstep(1.0 - edge, 1.0 + edge, r)) * (0.85 + 0.25 * smoothstep(0.6, 1.0, r));
         float k = mix(exp(-2.5 * r * r), disc, v_shape.y);
+    #ifdef HDR_OUT
+        result = vec4(v_glow.rgb * k, 1.0);
+    #else
         result = vec4(pow(v_glow.rgb * k, vec3(1.0 / 2.2)), 1.0);
+    #endif
     }
     """;

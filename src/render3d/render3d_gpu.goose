@@ -132,7 +132,8 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
     if render3d::outside_shown(g) { draw_outside(own, g); }
     else if backdrop { draw_backdrop(own, g, 1.0); }
 
-    gfx::bind(g.lit);
+    let h .= g.hdr_pipes;
+    gfx::bind(if g.hdr { h.lit } else { g.lit });
     gfx::bind_storage_buffer(gfx::VERTEX, 0, g.instances);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.plan_albedo, g.aniso);
     gfx::bind_texture(gfx::FRAGMENT, 1, g.plan_normal, g.aniso);
@@ -147,7 +148,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
     draw_meshes(own, g, 0.0);
     // The fading pieces, each alone at its opacity, over what stands behind them.
     if g.solid < g.instance_count {
-        gfx::bind(g.fading);
+        gfx::bind(if g.hdr { h.fading } else { g.fading });
         gfx::bind_vertex_buffer(g.piece_vb);
         gfx::bind_index_buffer(g.piece_ib, 4);
         for i in g.solid..g.instance_count {
@@ -158,7 +159,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
 
     // The table under the board, after it, so what the board covers fails the depth test.
     if render3d::table_shown(g) {
-        gfx::bind(if render3d::table_in_room(g) { g.table_room } else { g.table_lit });
+        gfx::bind(if g.hdr { h.table } else if render3d::table_in_room(g) { g.table_room } else { g.table_lit });
         gfx::bind_texture(gfx::FRAGMENT, 0, g.table_albedo, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 1, g.table_normal, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
@@ -182,13 +183,22 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         let planar = render3d::planar_seen_on_floor(g);
         let ssao = g.room_ssao;
         let surfaces = render3d::surfaces_block(g);
-        draw_room_group(g, f, surfaces, if planar { g.room_planar } else { g.room_floor }, render3d::GROUP_FLOOR, ssao, planar);
-        draw_room_group(g, f, surfaces, g.room_walls, render3d::GROUP_WALLS, ssao, false);
-        draw_room_group(g, f, surfaces, g.room_sill, render3d::GROUP_SILL, ssao, false);
-        draw_room_group(g, f, surfaces, g.room_paint, render3d::GROUP_PAINT, ssao, false);
-        draw_room_group(g, f, surfaces, g.room_metals, render3d::GROUP_METALS, ssao, false);
-        // The shell's glass and lace over what stands behind them.
-        if g.glass_count > 0 { draw_room_group(g, f, surfaces, g.room_glass, render3d::GROUP_GLASS, ssao, false); }
+        if g.hdr {
+            draw_room_group(g, f, surfaces, if planar { h.planar } else { h.floor }, render3d::GROUP_FLOOR, ssao, planar);
+            draw_room_group(g, f, surfaces, h.walls, render3d::GROUP_WALLS, ssao, false);
+            draw_room_group(g, f, surfaces, h.sill, render3d::GROUP_SILL, ssao, false);
+            draw_room_group(g, f, surfaces, h.paint, render3d::GROUP_PAINT, ssao, false);
+            draw_room_group(g, f, surfaces, h.metals, render3d::GROUP_METALS, ssao, false);
+            if g.glass_count > 0 { draw_room_group(g, f, surfaces, h.glass, render3d::GROUP_GLASS, ssao, false); }
+        } else {
+            draw_room_group(g, f, surfaces, if planar { g.room_planar } else { g.room_floor }, render3d::GROUP_FLOOR, ssao, planar);
+            draw_room_group(g, f, surfaces, g.room_walls, render3d::GROUP_WALLS, ssao, false);
+            draw_room_group(g, f, surfaces, g.room_sill, render3d::GROUP_SILL, ssao, false);
+            draw_room_group(g, f, surfaces, g.room_paint, render3d::GROUP_PAINT, ssao, false);
+            draw_room_group(g, f, surfaces, g.room_metals, render3d::GROUP_METALS, ssao, false);
+            // The shell's glass and lace over what stands behind them.
+            if g.glass_count > 0 { draw_room_group(g, f, surfaces, g.room_glass, render3d::GROUP_GLASS, ssao, false); }
+        }
     }
 
     // The board's soft shadow round it, after the board so the depth test leaves out
@@ -613,10 +623,87 @@ fn upscale_pass(own: Own&, g: render3d::Gpu&, target: Texture, u: render3d::Upsc
     gfx::end_pass();
 }
 
+// The scenic views' HDR targets' format (render3d::hdr_shown): RG11B10F, as many bytes as
+// the 8-bit picture's, or RGBA16F where it can't be drawn into and sampled.
+// The fork's gfx asks the device (src/native/gfx_fork.c's stand-in says no, so a plain
+// build against the release's gfx draws RGBA16F).
+extern fn gfx_format_supported(format: i32, usage: i32) -> bool = "gs_gfx_format_supported";
+fn hdr_format(own: Own&) -> i32 {
+    if !render3d::hdr_wide && gfx_format_supported(gfx::RG11B10F, gfx::COLOR_TARGET | gfx::SAMPLED) { gfx::RG11B10F } else { gfx::RGBA16F }
+}
+
+// The board's lit shader into the HDR target for the pieces' material (render3d::PIECES_..),
+// its shadow in 16 taps, the high tier's.
+fn lit_hdr_frag(pieces: i32) -> const u8[:] {
+    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::HDR_OUT, shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::HDR_OUT, shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::HDR_OUT, shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    return embed_shader("frag", shaders::HDR_OUT, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
+}
+
+// The HDR target's pipelines (render3d::HdrPipelines), made outside a pass when first wanted
+// and again when what they were made for changes.
+fn make_hdr(own: Own&, g: render3d::Gpu&) {
+    let h .= g.hdr_pipes;
+    let paint = render3d::paint_steps_on() && tuned_frags[TUNED_PAINT_HDR].len > 0;
+    let sill = render3d::sill_steps_on() && tuned_frags[TUNED_SILL_HDR].len > 0;
+    guard h.tone.id == 0 || h.pieces != g.pieces || h.paint_steps != paint || h.sill_steps != sill else { return; }
+    if h.tone.id != 0 { release_hdr(own, g); }
+    h.pieces = g.pieces;
+    h.paint_steps = paint;
+    h.sill_steps = sill;
+    let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
+    let lit_fs = lit_hdr_frag(g.pieces);
+    h.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
+    h.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, blend: gfx::BLEND_ALPHA });
+    h.table = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
+                            embed_shader("frag", shaders::TABLE_ROOM, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+                            gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
+    let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
+    let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
+    h.floor = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.planar = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_WALLS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.paint = gfx::pipeline(room_vert, if paint { tuned_frags[TUNED_PAINT_HDR] } else { embed_shader("frag", shaders::ROOM_PAINT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
+    h.sill = gfx::pipeline(room_vert, if sill { tuned_frags[TUNED_SILL_HDR] } else { embed_shader("frag", shaders::ROOM_SILL, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
+    h.metals = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.glass = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_GLASS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                            gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED });
+    h.outside = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::OUTSIDE_VERT),
+                              embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
+                              gfx::PipelineDesc { cull: gfx::CULL_NONE, blend: gfx::BLEND_PREMULTIPLIED });
+    h.motes = gfx::pipeline(embed_shader("vert", shaders::SHELL_WINDOWS, shaders::VS_SET, shaders::FRAME, shaders::DUST_HEAD, shaders::LIGHT_FN,
+                                         shaders::DUST_VERT),
+                            embed_shader("frag", shaders::HDR_OUT, shaders::DUST_FRAG),
+                            gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
+    h.tone = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::HDR_TONE_FRAG));
+}
+
+// The HDR target's pipelines given back (make_hdr, release).
+fn release_hdr(own: Own&, g: render3d::Gpu&) {
+    let h = g.hdr_pipes;
+    for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone] {
+        if p.id != 0 { gfx::release(p); }
+    }
+    g.hdr_pipes = default<render3d::HdrPipelines>();
+}
+
+// The HDR target the pass resolved (g.hdr_image) tonemapped over all of `target`
+// (shaders::HDR_TONE_FRAG).
+fn tone_pass(own: Own&, g: render3d::Gpu&, target: Texture) {
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    gfx::begin_pass(pass);
+    gfx::bind(g.hdr_pipes.tone);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.hdr_image, g.linear);
+    gfx::draw(3);
+    gfx::end_pass();
+}
+
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
 // the photograph: one draw, the sky, then the band, then the oak, each over the last.
 fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
-    gfx::bind(g.outside);
+    gfx::bind(if g.hdr && !in_mirror { g.hdr_pipes.outside } else { g.outside });
     gfx::bind_texture(gfx::FRAGMENT, 0, g.outside_band, g.linear);
     gfx::bind_texture(gfx::FRAGMENT, 1, g.outside_oak, g.linear);
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
@@ -630,7 +717,7 @@ fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
 // The dust in the sunbeam over the open pass's target, added, hidden by what stands
 // in front of it.
 fn draw_motes(own: Own&, g: render3d::Gpu&) {
-    gfx::bind(g.motes);
+    gfx::bind(if g.hdr { g.hdr_pipes.motes } else { g.motes });
     gfx::bind_texture(gfx::VERTEX, 0, render3d::tree_or_stand_in(g), g.linear);
     gfx::bind_texture(gfx::VERTEX, 1, render3d::lace_or_stand_in(g), g.linear);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, g.mote_seeds);
@@ -806,9 +893,10 @@ fn bake(own: Own&, g: render3d::Gpu&, albedo: gfx::Texture, normal: gfx::Texture
 fn pass_targets(own: Own&, g: render3d::Gpu&) {
     guard g.depth.id == 0 else { return; }
     if g.aa == AA_MSAA {
-        g.color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET,
+        g.color = gfx::texture(gfx::TextureDesc { format: if g.hdr { hdr_format(own) } else { gfx::RGBA8 }, usage: gfx::COLOR_TARGET,
                                                   width: g.size.x, height: g.size.y,
                                                   samples: own.samples });
+        if g.hdr { g.hdr_image = gfx::render_target(g.size.x, g.size.y, hdr_format(own)); }
     } else if g.aa == AA_SMAA {
         g.color = gfx::render_target(g.size.x, g.size.y, gfx::RGBA8);
         g.edges = gfx::render_target(g.size.x, g.size.y, gfx::RG8);
@@ -881,7 +969,8 @@ fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
 // shaders::PAINT_STEPS) whether the toes are switched or not; the sills, and the sills with
 // the tuner's switches (render3d::sill_steps_on, shaders::SILL_STEPS) in the room and in
 // the mirror. Empty, the app's. The mirror's pass takes none but the sills' switched one:
-// its light is linear, before any toe.
+// its light is linear, before any toe. The HDR target's painted wood and sills with the
+// tuner's switches (render3d::make_hdr) last.
 let TUNED_LIT = 0;
 let TUNED_TABLE = 4;
 let TUNED_TABLE_ROOM = 5;
@@ -896,8 +985,10 @@ let TUNED_PAINT_STEPS = 13;
 let TUNED_SILL = 14;
 let TUNED_SILL_STEPS = 15;
 let TUNED_SILL_MIRROR = 16;
-let TUNED_FRAGS = 17;
-var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+let TUNED_PAINT_HDR = 17;
+let TUNED_SILL_HDR = 18;
+let TUNED_FRAGS = 19;
+var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
 fn tuned_or(i: i64, frag: const u8[:]) -> const u8[:] { if tuned_frags[i].len > 0 { tuned_frags[i] } else { frag } }
 
 // The table's shader with its shadow filtered as `look` says, as the lit one's (lit_frag).
@@ -1288,6 +1379,8 @@ fn release(own: Own&, g: render3d::Gpu&) {
                      g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.planar_walls, g.planar_metals, g.planar_glass, g.planar_table,
                      g.planar_resolve, g.planar_show, g.planar_mip, g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
+    release_hdr(own, g);
+    if g.hdr_image.id != 0 { gfx::release(g.hdr_image); }
     gfx::flush();
     g = default<render3d::Gpu>();
 }

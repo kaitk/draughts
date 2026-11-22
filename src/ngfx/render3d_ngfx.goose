@@ -117,11 +117,12 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
     if render3d::outside_shown(g) { draw_outside(own, g, f); }
     else if backdrop { draw_backdrop(own, g, f, 1.0); }
 
-    nx::bind(g.lit);
+    let h .= g.hdr_pipes;
+    nx::bind(if g.hdr { h.lit } else { g.lit });
     draw_meshes(own, g, f, 0.0);
     // The fading pieces, each alone at its opacity, over what stands behind them.
     if g.solid < g.instance_count {
-        nx::bind(g.fading);
+        nx::bind(if g.hdr { h.fading } else { g.fading });
         for i in g.solid..g.instance_count {
             var r = lit_root(own, g, f, g.piece_vb);
             r.u = blocks([float4 { 1.0, 0.0, g.alphas[i - g.solid], i }]);
@@ -131,7 +132,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
 
     // The table under the board, after it, so what the board covers fails the depth test.
     if render3d::table_shown(g) {
-        nx::bind(if render3d::table_in_room(g) { g.table_room } else { g.table_lit });
+        nx::bind(if g.hdr { h.table } else if render3d::table_in_room(g) { g.table_room } else { g.table_lit });
         var t = no_root();
         t.frame = f;
         let tb: render3d::TableBlock[1] = [render3d::table_block(g)];
@@ -156,13 +157,22 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         let ssao = g.room_ssao;
         let rb: render3d::SurfacesBlock[1] = [render3d::surfaces_block(g)];
         let u = ngfx::frame_data(bytes_of(rb));
-        draw_room_group(g, f, u, if planar { g.room_planar } else { g.room_floor }, render3d::GROUP_FLOOR, ssao, planar);
-        draw_room_group(g, f, u, g.room_walls, render3d::GROUP_WALLS, ssao, false);
-        draw_room_group(g, f, u, g.room_sill, render3d::GROUP_SILL, ssao, false);
-        draw_room_group(g, f, u, g.room_paint, render3d::GROUP_PAINT, ssao, false);
-        draw_room_group(g, f, u, g.room_metals, render3d::GROUP_METALS, ssao, false);
-        // The shell's glass and lace over what stands behind them.
-        if g.glass_count > 0 { draw_room_group(g, f, u, g.room_glass, render3d::GROUP_GLASS, ssao, false); }
+        if g.hdr {
+            draw_room_group(g, f, u, if planar { h.planar } else { h.floor }, render3d::GROUP_FLOOR, ssao, planar);
+            draw_room_group(g, f, u, h.walls, render3d::GROUP_WALLS, ssao, false);
+            draw_room_group(g, f, u, h.sill, render3d::GROUP_SILL, ssao, false);
+            draw_room_group(g, f, u, h.paint, render3d::GROUP_PAINT, ssao, false);
+            draw_room_group(g, f, u, h.metals, render3d::GROUP_METALS, ssao, false);
+            if g.glass_count > 0 { draw_room_group(g, f, u, h.glass, render3d::GROUP_GLASS, ssao, false); }
+        } else {
+            draw_room_group(g, f, u, if planar { g.room_planar } else { g.room_floor }, render3d::GROUP_FLOOR, ssao, planar);
+            draw_room_group(g, f, u, g.room_walls, render3d::GROUP_WALLS, ssao, false);
+            draw_room_group(g, f, u, g.room_sill, render3d::GROUP_SILL, ssao, false);
+            draw_room_group(g, f, u, g.room_paint, render3d::GROUP_PAINT, ssao, false);
+            draw_room_group(g, f, u, g.room_metals, render3d::GROUP_METALS, ssao, false);
+            // The shell's glass and lace over what stands behind them.
+            if g.glass_count > 0 { draw_room_group(g, f, u, g.room_glass, render3d::GROUP_GLASS, ssao, false); }
+        }
     }
 
     // The board's soft shadow round it, after the board so the depth test leaves out
@@ -541,11 +551,75 @@ fn upscale_pass(own: Own&, g: Gpu&, target: Texture, u: render3d::Upscale) {
     barrier_between_passes();
 }
 
+// The scenic views' HDR targets' format, as gfx's (render3d_gpu.goose's hdr_format).
+fn hdr_format(own: Own&) -> i32 {
+    if !render3d::hdr_wide && ngfx::format_supported(ngfx::RG11B10F, ngfx::COLOR_TARGET | ngfx::SAMPLED) { ngfx::RG11B10F } else { ngfx::RGBA16F }
+}
+
+// The board's module into the HDR target for the pieces' material, as gfx's lit_hdr_frag.
+fn lit_hdr_blob(pieces: i32) -> const u8[:] {
+    if pieces == render3d::PIECES_WOOD { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_wood.blob"); }
+    if pieces == render3d::PIECES_WINTER { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_winter.blob"); }
+    if pieces == render3d::PIECES_MINERAL { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_mineral.blob"); }
+    return embed_file("../../build/ngfx/blobs/r3d_hdr_lit.blob");
+}
+
+// The HDR target's pipelines (render3d::HdrPipelines), as gfx's make_hdr, before any pass;
+// the light tuner's switches are gfx's alone.
+fn make_hdr(own: Own&, g: Gpu&) {
+    let h .= g.hdr_pipes;
+    guard h.tone.id == 0 || h.pieces != g.pieces else { return; }
+    if h.tone.id != 0 { release_hdr(own, g); }
+    h.pieces = g.pieces;
+    let lit = lit_hdr_blob(g.pieces);
+    h.lit = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
+    h.fading = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
+    h.table = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_table.blob"),
+                           ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED });
+    let opaque = ngfx::PipelineDesc { depth_test: true, depth_write: true };
+    h.floor = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor.blob"), opaque);
+    h.planar = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar.blob"), opaque);
+    h.walls = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_walls.blob"), opaque);
+    h.paint = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint.blob"), opaque);
+    h.sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_sill.blob"), opaque);
+    h.metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_metals.blob"), opaque);
+    h.glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_glass.blob"),
+                           ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
+    h.outside = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_outside.blob"),
+                             ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
+    h.motes = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_dust.blob"),
+                           ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_ADD });
+    h.tone = module(embed_file("../../build/ngfx/blobs/r3d_hdr_tone.blob"));
+}
+
+// The HDR target's pipelines given back (make_hdr, release).
+fn release_hdr(own: Own&, g: Gpu&) {
+    let h = g.hdr_pipes;
+    for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone] {
+        if p.id != 0 { nx::release(p); }
+    }
+    g.hdr_pipes = default<render3d::HdrPipelines>();
+}
+
+// The HDR target tonemapped over all of `target`, as gfx's tone_pass; r3d_hdr_tone's header:
+// the picture.
+fn tone_pass(own: Own&, g: Gpu&, target: Texture) {
+    var pass = nx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    nx::begin_pass(pass);
+    nx::bind(g.hdr_pipes.tone);
+    var r = no_root();
+    slot(r, 0, g.hdr_image, g.linear);
+    ngfx::draw(ngfx::root(r), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
+}
+
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
 // the photograph: one draw, the sky, then the band, then the oak, each over the last;
 // r3d_outside.slang's header: Outside, the band, the oak.
 fn draw_outside(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
-    nx::bind(g.outside);
+    nx::bind(if g.hdr && !in_mirror { g.hdr_pipes.outside } else { g.outside });
     var t = no_root();
     t.frame = f;
     let b: render3d::OutsideBlock[1] = [render3d::outside_block(g, in_mirror)];
@@ -559,7 +633,7 @@ fn draw_outside(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
 // The dust in the sunbeam over the open pass's target, added, hidden by what stands
 // in front of it; r3d_dust.slang's header: Dust, the seeds, the tree's map, the lace's.
 fn draw_motes(own: Own&, g: Gpu&, f: u64) {
-    nx::bind(g.motes);
+    nx::bind(if g.hdr { g.hdr_pipes.motes } else { g.motes });
     var r = no_root();
     r.frame = f;
     let b: render3d::DustBlock[1] = [render3d::dust_block(g)];
@@ -881,7 +955,8 @@ fn pass_targets(own: Own&, g: Gpu&) {
     let size = g.size;
     let k = scale(own, g);
     if g.aa == AA_MSAA {
-        g.color = pass_target(own, g, size.x, size.y, ngfx::RGBA8, ngfx::COLOR_TARGET);
+        g.color = pass_target(own, g, size.x, size.y, if g.hdr { hdr_format(own) } else { ngfx::RGBA8 }, ngfx::COLOR_TARGET);
+        if g.hdr { g.hdr_image = nx::render_target(size.x, size.y, hdr_format(own)); }
     } else if g.aa != AA_OFF {
         g.color = nx::render_target(size.x * k, size.y * k, ngfx::RGBA8);
     }
@@ -1268,6 +1343,8 @@ fn release(own: Own&, g: Gpu&) {
                      g.planar_metals, g.planar_glass, g.planar_table, g.planar_resolve, g.planar_show, g.planar_mip,
                      g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
+    release_hdr(own, g);
+    if g.hdr_image.id != 0 { nx::release(g.hdr_image); }
     own = default<Own>();
     g = default<Gpu>();
 }

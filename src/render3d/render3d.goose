@@ -458,6 +458,37 @@ struct Gpu {
     scene_image:   Texture,
     upscale:       Pipeline,
     upscale_cubic: Pipeline,
+    // The scenic views' HDR (hdr_shown): whether the pass's targets are the HDR ones (g.color
+    // multisampled in hdr_format, resolved into hdr_image), its pipelines, and the pass that
+    // tonemaps it (tone_pass).
+    hdr:       bool,
+    hdr_image: Texture,
+    hdr_pipes: HdrPipelines,
+}
+
+// The pipelines of the scenic views' HDR target (shaders::HDR_OUT): the board's and a fading
+// piece's in g.pieces' material with the high tier's 16-tap shadow, the table's in the room,
+// the room's groups' (the floor's seeing the room's box or the mirror), the view out's, the
+// motes', and the tonemap's (shaders::HDR_TONE_FRAG); made outside a pass when HDR is first
+// drawn (make_hdr), and again for other pieces or the light tuner's switches of the paint and
+// the sills, which they were made for.
+struct HdrPipelines {
+    lit:         Pipeline,
+    fading:      Pipeline,
+    table:       Pipeline,
+    floor:       Pipeline,
+    planar:      Pipeline,
+    walls:       Pipeline,
+    paint:       Pipeline,
+    sill:        Pipeline,
+    metals:      Pipeline,
+    glass:       Pipeline,
+    outside:     Pipeline,
+    motes:       Pipeline,
+    tone:        Pipeline,
+    pieces:      i32,
+    paint_steps: bool,
+    sill_steps:  bool,
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -1621,9 +1652,10 @@ fn release_targets<O>(o: O&, g: Gpu&) {
 
 // What release_targets() releases, also before a resize's new targets.
 fn give_back<O>(o: O&, g: Gpu&) {
-    let held = [g.color, g.depth, g.edges, g.weights, g.kept_depth, g.kept_backdrop, g.scene_image];
+    let held = [g.color, g.depth, g.edges, g.weights, g.kept_depth, g.kept_backdrop, g.scene_image, g.hdr_image];
     for t in held { if t.id != 0 { o.gpu_release(t); } }
     g.scene_image = Texture { 0 };
+    g.hdr_image = Texture { 0 };
     g.color = Texture { 0 };
     g.edges = Texture { 0 };
     g.weights = Texture { 0 };
@@ -1635,7 +1667,7 @@ fn give_back<O>(o: O&, g: Gpu&) {
 // Whether release_targets() has anything to give back.
 fn resting(g: Gpu&) -> bool {
     return g.color.id == 0 && g.depth.id == 0 && g.edges.id == 0 && g.weights.id == 0 && g.kept_depth.id == 0
-           && g.kept_backdrop.id == 0 && g.scene_image.id == 0;
+           && g.kept_backdrop.id == 0 && g.scene_image.id == 0 && g.hdr_image.id == 0;
 }
 
 // Puts a theme on the board (looks::AUTUMN..), its surfaces baked for n squares a side,
@@ -2152,6 +2184,14 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     let size = if out.id != 0 && !keep_depth { scene_size_of(screen) } else { screen };
     let scaled = size.x != screen.x || size.y != screen.y;
     if size.x != g.size.x || size.y != g.size.y { targets(o, g, size); }
+    // The scenic views into the HDR target, tonemapped after (tone_pass); its targets in
+    // place of the 8-bit ones, so each switch makes them again.
+    let hdr = hdr_shown(g) && out.id != 0;
+    if hdr { o.make_hdr(g); }
+    if hdr != g.hdr {
+        give_back(o, g);
+        g.hdr = hdr;
+    }
     o.pass_targets(g);
     if scaled && g.scene_image.id == 0 { g.scene_image = o.scene_target(g, size); }
     let target = if scaled { g.scene_image } else if out.id == 0 { g.image } else { out };
@@ -2177,11 +2217,27 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
         let clip, plain = mirrored_frames(g);
         o.planar_pass(g, size, clip, plain, planar_resolve_of(g, clip));
     }
-    o.board_pass(g, if glowing { g.image } else { target }, size, backdrop);
+    let shown = if glowing { g.image } else { target };
+    o.board_pass(g, if hdr { g.hdr_image } else { shown }, size, backdrop);
+    if hdr { o.tone_pass(g, shown); }
     if glowing { o.bloom_pass(g, g.image, target, size); }
     if planar_view > 1 && planar_shown(g) { o.planar_show_pass(g, target, planar_show_of(g, size)); }
     if keep_depth { o.draw_depth(g); }
     if scaled { o.upscale_pass(g, out, upscale_of(size, screen)); }
+}
+
+// The scenic views' HDR (build/notes/bokeh/, task 111), the high tier's for the depth of
+// field: the room's shell with its view out, multisampled, with the screen's maps, drawn into
+// a target of linear light (hdr_format: RG11B10F, or RGBA16F where that can't be drawn
+// into), then tonemapped, graded and dithered into the 8-bit picture. Not with the tuner's
+// views of the room (their own pipelines tonemap), nor the table before the room's light
+// is baked. hdr_allowed: the light tuner's (--hdr, X); the app draws no scenic view yet.
+var hdr_allowed = false;
+// RGBA16F in place of RG11B10F (the light tuner's --hdr-format, to weigh the fallback).
+var hdr_wide = false;
+fn hdr_shown(g: Gpu&) -> bool {
+    hdr_allowed && outside_shown(g) && g.aa == AA_MSAA && ssao_allowed && !room_views_on()
+    && (!table_shown(g) || table_in_room(g))
 }
 
 // The 3D scene's resolution budget, the high tier's on a Retina or 4K screen, where the
