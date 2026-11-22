@@ -454,6 +454,27 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       12.99 / 13.10; room view main pass 11.73 / 11.80 to 11.73 / 11.73, the tonemap 0.43 /
       0.42 to 0.37 / 0.37; with the veil the menu's main pass 10.32 / 10.30, the tonemap
       0.49 / 0.48
+- [x] The floor's cost (2026-11-23, `build/notes/floor-perf/`): looking straight down at
+      the parquet (`--plan-eye 6.0,3.0,1.7 --plan-at 6.0,3.05,0`), headless 3024 × 1890, the
+      frame 17.4 ms against 2.7 with the floor a flat colour: the floor about 14.7 ms. Each
+      part by a build without it (frame ms saved, two rounds): the sun through the windows
+      4.8 (the lace's shadow 2.0, the tree 1.3, the casements 0.8), the scratches 3.4, the
+      table's shadow map 1.4, the mirror's lookup 1.9, the contact shadow 1.8, the three
+      value noises 1.5, the door gaps in the walls' wax 0.5-1.0; MSAA, the oak's two taps, the
+      screen's occlusion, the corners and `base_hides` near nothing. The parts sum past the
+      whole (the shader's size: a branch round a texture read or a hoisted term made it
+      slower). Kept: the scratch cells too far to reach skipped (byte-identical, 1.0 ms), no
+      contact shadow on the floor (byte-identical in the straight-down, room and
+      table-window views, 1.8 ms), the slow noises from a 1024² RG8 texture made once (at
+      most 3 levels, 0.6 ms). Metal System Trace, main pass, two rounds: straight down 17.69 /
+      17.49 to 12.55 / 12.51 ms, room view 11.75 / 11.63 to 10.42 / 10.54, menu view 9.88 /
+      9.89 to 9.58 / 9.69; the frame's GPU sum straight down 20.92 / 20.65 to 15.67 / 15.61.
+      At 5120 × 2880 the frame straight down 41.7 to 31.4 ms (the ceiling 11.4). Tried and
+      dropped: hiding the table's taps or the box's light behind branches, a box test before
+      the scratch cells' hashes, the plinth's lip hoisted (all slower). Open, the user's
+      call: the scratches (2.4 ms left, at most 11 levels), the door gaps (about 1 ms, up to
+      31 levels at the doorways), the mirror's blur in three taps (0.3-0.5 ms, up to 23
+      levels in the window's streaks), the sun on the floor at a lower rate (the 4.8 ms)
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)
