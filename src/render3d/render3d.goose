@@ -909,12 +909,12 @@ struct OutsideBlock { exposure: float4, sun_disc: float4, sun_glare: float4, sun
 // it, x its strength (linear light at the sun, 0 none), y the angle it halves at and z where
 // it has faded out (degrees), w how far it turns amber away from the sun (1 white to (1,
 // 0.82, 0.6) by 10°), scaled by how much of the sun is open, read from the glow's smallest
-// level. Off as made (the light tuner's --sun-look veil and --sun-eye).
+// level. As made a faint one, a third of look b's (the light tuner's --sun-look veil and --sun-eye).
 struct SunLook {
     disc:  float4 = float4 { 0.27, 0.0, 0.0, 30.0 },
     glare: float4 = float4 { 1.5, 1.2, 0.4, 4.0 },
     tree:  float4 = float4_0,
-    veil:  float4 = float4_0,
+    veil:  float4 = float4 { 1.0, 1.5, 20.0, 1.0 },
 }
 var sun_look = SunLook {};
 fn outside_block(g: Gpu&, in_mirror: bool = false) -> OutsideBlock {

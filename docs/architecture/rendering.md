@@ -952,7 +952,7 @@ game), in steps that each show alone in the light tuner
   its shadow's map looked up along the view (`tree_seen`: its density, its reach from the
   sun, its leaves' back light, its sharpness), off by default. In HDR the tonemap can add
   the eye's veil round the sun, scaled by how much of the sun the leaves and bars leave
-  open (read from the glow's smallest level), off by default. The light tuner's
+  open (read from the glow's smallest level), faint by default (strength 1, a third of look b's). The light tuner's
   `--sun-look made|veil` and `--sun-disc`, `--sun-glare`, `--sun-tree`, `--sun-eye`.
 - **The depth** (`depth_pass`): with HDR, while the lens is on or its view is shown, a 1×
   depth-only pass at the scene's size into a sampled DEPTH32F target (DEPTH16 where that

@@ -1418,6 +1418,9 @@ to be is in tasks 042, 059, 071, 081, and 086.
   again with the new maple. Rejected: hairline needles out of the sun (look d), and a
   narrow forward lobe in the lace toward the sun (the lace near the sun already glows in
   the HDR glow without it).
+- The eye's veil is on by default at a third of look b's strength (2026-11-22, task 107;
+  replaces "off by default" above): `--sun-eye 1,1.5,20,1`, the user's pick in the app.
+  Look b's full veil (3) stays the `--sun-look veil` switch, overdone but for corner cases.
 - The windows' sills are a Vasalemma-type limestone, drawn with a pipeline of their own
   (2026-11-22, task 107; `build/notes/paint-research/`'s sill section,
   `room_shell`'s `limestone.goose` and `shell_mesh::sill_slab`, `shaders::ROOM_SILL`,
