@@ -328,6 +328,12 @@ an idle figure; one while charging has no battery estimate, so CPU time is the m
   `light_tune` also takes in the user's own tuner if one is open (`light_tune-b33`), whose
   command buffers then look like a second frame kind. Tell them apart by their encoder
   count, or filter by the exact executable name.
+- The light tuner's `--fps-seconds S` prints `N ms a frame` each half second, waiting for the GPU: a quick total for
+  A/B builds. Parse it under `LC_ALL=C` (this Mac's locale reads `17.4` as 17 in awk), run a fresh binary once
+  before timing it (its first run can stall), and in zsh split a flags variable with `${=FLAGS}`. A per-part split:
+  scratch builds each without one part, against one whose shader returns a flat colour. `build/perf/passes.py`
+  now finds too few frames in a tuner's trace; group `metal-gpu-intervals` rows by command buffer and the
+  `Render Command N` index in their event label instead (the main pass was N = 11, 2026-11-23).
 - The light tuner's `--tone-probe K` shows the HDR light itself times K as grey levels (no
   tonemap): undo sRGB and divide by K to read linear values; `-K` shows the sun's open share.
 - **The iPhone:** `tools/perf/ios_perf.py` (Animation Hitches; `--renderer` passes flags).
