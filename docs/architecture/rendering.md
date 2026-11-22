@@ -692,8 +692,8 @@ board's light:
   gaps (`render3d::room_textures`). The output is tonemapped sRGB, or with `LINEAR_OUT`
   the light itself (the mirror's). The light tuner's views of the room are pipelines of
   their own, made while one is on (`ROOM_VIEWS`).
-- **The window's glow**: a quarter-size bloom of what is near white, added in linear light
-  (`render3d::bloom_pass`, `rooms::Room.bloom`).
+- **The window's glow**: in 8 bits, a quarter-size bloom of what is near white, added in
+  linear light (`render3d::bloom_pass`, `rooms::Room.bloom`); with HDR, the HDR glow below.
 - **The scene's resolution budget** (`render3d::scene_size_of`, `HIGH_SCENE_PIXELS`): off by
   default, so the scene draws at the screen's native size. Switched on, the 3D scene drawn
   into a given target (the light tuner's screen; the planned high mode) is drawn at most
@@ -894,11 +894,24 @@ game), in steps that each show alone in the light tuner
   multisampled RG11B10F target, resolved into one of the scene's size; each writes its
   exposed light with only its tonemap's toe taken off (the room's and the view out's on
   the luminance, the board's and the table's on the least channel). A full-screen pass
-  after (`tone_pass`, `HDR_TONE_FRAG`) applies the shoulder, the grade and sRGB, with a
-  dither of under half a level, into the picture the glow and the upscale take as
+  after (`tone_pass`, `HDR_TONE_FRAG`) adds the glow, applies the shoulder, the grade and
+  sRGB, with a dither of under half a level, into the picture the upscale takes as
   before. Where RG11B10F can't be drawn into and sampled, RGBA16F. The 8-bit path stays
   for everything else: the game, the standard and phone tiers, the tuner's views of the
   room, the table before the room's light is baked.
+- **The glow** (`glow_pass`, `render3d::HdrGlow`): from the resolved HDR light, what is over
+  a threshold (1, a soft knee of 0.5) picked into a quarter of the picture, halved five
+  times (a dual filter: 5 taps down, 8 up) and widened back, each level blended over the one
+  above by the reach (0.65); the tonemap's pass adds it times the strength (0.06). So the
+  sun and the sky bleed over the leaves, the bars and the frame in front of them. Six
+  RGBA16F levels, 3.8 MB at 3024 × 1890. The light tuner's `--glow
+  STRENGTH,THRESHOLD,KNEE,REACH` and `--glow-levels N`.
+- **The sun in the view out** (`OUTSIDE_FRAG`, `render3d::SunLook`): its disc's radius,
+  limb darkening, edge and brightness over the sky, the haze's halo as a tight core and a
+  wider glow round it, and the broad veil; and the tree outside seen against the sky from
+  its shadow's map looked up along the view (`tree_seen`: its density, its reach from the
+  sun, its leaves' back light, its sharpness), off by default. The light tuner's
+  `--sun-look` presets and `--sun-disc`, `--sun-glare`, `--sun-tree`.
 - **The depth** (`depth_pass`): with HDR, while the lens is on or its view is shown, a 1×
   depth-only pass at the scene's size into a sampled DEPTH32F target (DEPTH16 where that
   can't be sampled): the board and opaque pieces, the table, the room in one draw, and

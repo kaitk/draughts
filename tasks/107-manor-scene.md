@@ -392,7 +392,25 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       11.61 after; table-window view 9.74 / 9.77 before, 9.76 / 9.74 after. The game's
       shot unchanged in both renderers. Open: the user's pick of the halo (strengths 0.6,
       0.35, 0.6 with reach 0.6, or the micro-shadowing without the pieces,
-      `build/b31/halo-micro.patch`), then made the game's
+      `build/b31/halo-micro.patch`), then made the game's. The user picked D
+      (2026-11-22, 13f1b7ca): the game's shot changed, the field lighter round the pieces'
+      lit side (`build/notes/builder-32/`, section 7)
+- [x] The sun in the view out and an HDR glow (2026-11-22, builder 32,
+      `build/notes/builder-32/`): a glow from the HDR target's linear light before the
+      tonemap (threshold with a soft knee, a quarter-size dual-filter chain of six levels,
+      a reach and a strength), on by default in HDR in place of the old window glow, which
+      stays the 8-bit fallback; the sun's look on flags (disc, limb, edge, brightness, a
+      core halo and a wider glow) with five presets (`--sun-look made|real|tight|concept|
+      soft`); today's tree seen against the sky from its shadow's map along the view, so the
+      leaves pass the disc as their shadows pass the board. At 3024 × 1890 native, less-turned, two
+      rounds: main pass room view 11.75 / 11.60 ms before, 11.60 / 11.68 after; menu view
+      9.80 / 9.79 before, 9.82 / 9.94 after (10.19-10.29 with the tree seen everywhere);
+      the HDR glow's passes 0.38-0.44 ms against the old glow's 0.55-0.57, the tonemap 0.37
+      against 0.45-0.48; the frame's GPU sum room 15.07 / 15.01 to 14.79 / 14.85, menu 12.93
+      / 12.95 to 12.77 / 12.85. The game's shot
+      unchanged in both renderers. Open: the user's pick of the look (made the default
+      then), and whether the tree seen stays near the sun or shows everywhere (until the
+      new tree, W4)
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

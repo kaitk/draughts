@@ -539,6 +539,13 @@ play; a stack's rings go round its foot (2026-11-08).
   outer line gave it a halo. The ivory and slate pieces use zero scattering. Its
   pieces are now black marble (2026-11-20, "The 3D pieces follow the board", under
   "Controls").
+- The sun's micro-shadowing on the field leaves out the pieces' occlusion of it (2026-11-22,
+  task 107, builder 31's candidate D, `build/notes/builder-31/`): Filament's term scaled the
+  sun by `nl / sqrt(1 - ao)` with the pieces' share of `ao` in it, which darkened a halo on
+  each piece's lit side, where nothing blocks the sun (the shadow map draws the real
+  shadow), most at the menu's low sun. The pieces' occlusion still darkens the field's
+  ambient light. This changes the game's look. Rejected: the halo's strength or reach
+  turned down (`--halo`, `--halo-reach`, 0.6 and 0.35), which kept a lighter ring.
 
 ## Fonts
 
@@ -1312,6 +1319,32 @@ to be is in tasks 042, 059, 071, 081, and 086.
   - A NaN in the glass's scratches (`atan(0, 0)` where no groove is) dropped those pixels'
     added light in 8 bits and blacked them in HDR; fixed, 34 pixels of the table-window
     view gain their glint (up to 7 levels).
+- The scenic views' glow is drawn from the HDR target's linear light, before the tonemap
+  (2026-11-22, task 107, builder 32, `build/notes/builder-32/`; `render3d::glow_pass`,
+  `HdrGlow`, `shaders::GLOW_DOWN_FRAG`, `GLOW_UP_FRAG`). This replaces, in HDR, the window's
+  glow of 2026-11-21, which read the tonemapped picture's near-white and so could not tell
+  the sun from a white sky; the 8-bit path keeps that one as its fallback. Light over a
+  threshold (1, a soft knee of 0.5) is picked into a quarter of the picture (a 4 × 4 block a
+  texel), halved five times with Bjorge's dual filter (5 taps down, 8 up) and widened back,
+  each level blended over the one above by the reach (0.65), so the levels' shares sum to
+  one; the tonemap's pass adds it times the strength (0.06), which round the windows looks
+  like the old glow. One step, not a one-off for the sun: the bokeh's composite (B4) takes
+  it. Rejected: a Gaussian at a quarter (the old glow's, too short a reach for a sun's
+  bleed without many taps) and an energy-based glow with no threshold (it softens the
+  whole room). Cost at 3024 × 1890 on an M1 Pro, two rounds: the glow's passes 0.38-0.44 ms
+  (the first pick, reading the whole target, 0.23-0.24), the tonemap's pass 0.08-0.10 ms
+  cheaper as it now writes the target itself, so the frame is 0.08-0.28 ms cheaper than with
+  the old glow; six RGBA16F levels, 3.8 MB. ngfx has the same passes,
+  built but not yet run in a scene, as the rest of HDR.
+- The sun in the view out has a look of its own, picked by the user from builder 32's
+  presets (2026-11-22: open; `render3d::SunLook`, the light tuner's `--sun-look`): the
+  disc's radius, limb darkening, edge and brightness, the haze's halo as a tight core and a
+  wider glow. Until the pick, the made look: the disc 0.27° at 30 times the sky. With a
+  brighter disc the glow above is what bleeds it over the leaves, the bars and the frame.
+  Today's tree is seen against the sky round the sun from its shadow's own map, looked up
+  along the view (`OUTSIDE_FRAG`'s `tree_seen`, off in the made look), so the leaves over
+  the sun are the ones whose shadows dapple the board, moved by the same wind; seen in the
+  whole window it costs the menu view's main pass 0.35-0.45 ms.
 - The windows' sills are a Vasalemma-type limestone, drawn with a pipeline of their own
   (2026-11-22, task 107; `build/notes/paint-research/`'s sill section,
   `room_shell`'s `limestone.goose` and `shell_mesh::sill_slab`, `shaders::ROOM_SILL`,
