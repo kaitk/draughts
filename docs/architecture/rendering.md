@@ -839,10 +839,11 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
 - **The sun's veil** (`OUTSIDE_FRAG`): a third, broad term round the sun's disc, a
   gaussian 10° wide at 0.5 of the sky's core colour (`SUN_VEIL`), over the halo's 1.2° and
   4°. No rays.
-- **The glass's film and scratches** (`ROOM_GLASS`): a 512-texel tile, a millimetre a
-  texel, made in code when the shell first shows (`model3d`'s `glass_tile`, 1.4 MB with
-  its mips): 50 cloth wipes laying the film, thinner inside each and gathered at its
-  edges, and 70 rubbing arcs and 25 straight wipes as hairline scratches. Each window and
+- **The glass's film and scratches** (`ROOM_GLASS`): a 1024-texel tile 0.512 m across,
+  half a millimetre a texel, made in code when the shell first shows (`model3d`'s
+  `glass_tile`, 5.6 MB with its mips, about 210 ms on the Mac): 50 cloth wipes laying the
+  film, thinner inside each and gathered at its edges, and 35 rubbing arcs and 12
+  straight wipes as hairline scratches about 0.35 mm wide. Each window and
   sheet takes it at an offset of its own. The film scatters 0.002 of the sun through it
   forward (Henyey-Greenstein, g 0.75), so it shows only toward the sun; a scratch glints
   where the sun's light leaves along the cone round its groove (`s = t · (l + v)` near 0,

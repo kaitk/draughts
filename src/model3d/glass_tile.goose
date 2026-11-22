@@ -5,6 +5,10 @@
 // straight wipes. Each pane takes the tile offset and turned by its own seed. It wraps, so
 // a stroke over one edge goes on at the opposite one.
 //
+// Half a millimetre a texel (MM), so a hairline, a texel and a half across at most, is
+// about 0.35 mm wide where the glass is seen up close (2026-11-22: a millimetre a texel
+// read too thick from the table).
+//
 // A texel, RGBA8 with its mips (MIPS, bytes()): R and G the scratch's direction as its
 // doubled angle times its depth (0.5 + 0.5 × depth × (cos 2θ, sin 2θ)), so a groove's two
 // ways are one and a mip's mean keeps the deeper scratches' direction; B the scratch's
@@ -17,21 +21,22 @@ import std;
 import vec;
 import math;
 
-let SIDE = 512;
-let MIPS = 10;
+let SIDE = 1024;
+let MIPS = 11;
 fn bytes() -> i64 {
     var sum = 0;
     for level in MIPS { sum += 4 * (SIDE >> level) * (SIDE >> level); }
     return sum;
 }
-// The metres the tile spans: a millimetre a texel.
+// The metres the tile spans, and its texels a millimetre.
 let METRES: f32 = 0.512;
+let MM:     f32 = 2.0;
 
 // What the strokes are: how many rubbing arcs and straight wipes scratch it, how many
 // wipes of the cloth lay the film.
 struct Strokes {
-    arcs:   i64 = 70,
-    wipes:  i64 = 25,
+    arcs:   i64 = 35,
+    wipes:  i64 = 12,
     swirls: i64 = 50,
 }
 
@@ -48,11 +53,11 @@ fn make(seed: u64, st: Strokes, out: u8[>..]&) {
     // streaks along the stroke by the cloth's weave, the residue pushed to its edges in soft
     // ridges, most to the outer one.
     for k in st.swirls {
-        let r = trees::roll_between(d, 50.0, 200.0);
+        let r = trees::roll_between(d, 50.0, 200.0) * MM;
         let c = float2 { trees::roll(d) * SIDE, trees::roll(d) * SIDE };
         let a0 = trees::roll(d) * TAU;
         let span = trees::roll_between(d, 0.5, 1.6);
-        let band = trees::roll_between(d, 30.0, 60.0);
+        let band = trees::roll_between(d, 30.0, 60.0) * MM;
         swirl(residue, c, r, a0, span, band, trees::roll(d) * TAU);
     }
     // A slow unevenness over it, a few centimetres across.
@@ -72,10 +77,10 @@ fn make(seed: u64, st: Strokes, out: u8[>..]&) {
     // The scratches: rubbing arcs 3 to 12 cm long on radii of 6 to 25 cm, and straight
     // wipes 4 to 16 cm, slightly tilted, shallower.
     for k in st.arcs {
-        let r = trees::roll_between(d, 60.0, 250.0);
+        let r = trees::roll_between(d, 60.0, 250.0) * MM;
         let c = float2 { trees::roll(d) * SIDE, trees::roll(d) * SIDE };
         let a0 = trees::roll(d) * TAU;
-        let length = trees::roll_between(d, 30.0, 120.0);
+        let length = trees::roll_between(d, 30.0, 120.0) * MM;
         let deep = trees::roll_between(d, 0.3, 1.0);
         let steps = (length * 2.0) as i64 + 2;
         for n in steps {
@@ -86,7 +91,7 @@ fn make(seed: u64, st: Strokes, out: u8[>..]&) {
     }
     for k in st.wipes {
         let p0 = float2 { trees::roll(d) * SIDE, trees::roll(d) * SIDE };
-        let length = trees::roll_between(d, 40.0, 160.0);
+        let length = trees::roll_between(d, 40.0, 160.0) * MM;
         let t = normalize(float2 { 1.0, trees::roll_between(d, -0.05, 0.05) });
         let deep = trees::roll_between(d, 0.2, 0.6);
         let steps = (length * 2.0) as i64 + 2;
@@ -133,8 +138,8 @@ fn byte(x: f32) -> u8 { (clamp(x, 0.0, 1.0) * 255.0 + 0.5) as u8 }
 // The texel (i, j) wrapped onto the tile.
 fn wrapped(i: i64, j: i64) -> i64 { (j % SIDE) * SIDE + i % SIDE }
 
-// A scratch's point p with its direction t: the texels round it covered as a hairline a
-// texel wide, the deepest kept with its direction. With r > 0 the distance is to the arc's
+// A scratch's point p with its direction t (texels): the texels round it covered as a
+// hairline a texel wide, the deepest kept with its direction. With r > 0 the distance is to the arc's
 // circle round c (exact across the hairline), else to the line through p along t.
 fn scratch_at(dir: float2[>..]&, depth: f32[>..]&, p: float2, t: float2, deep: f32, c: float2, r: f32) {
     let i0 = floor(p.x) as i64;
@@ -156,10 +161,10 @@ fn scratch_at(dir: float2[>..]&, depth: f32[>..]&, p: float2, t: float2, deep: f
 }
 
 // One wipe of the cloth: an arc band round c, radius r, from a0 over span radians, band
-// texels wide; inside it the film thinner, in streaks along the stroke (their phase), along
+// texels wide (MM a millimetre); inside it the film thinner, in streaks along the stroke (their phase), along
 // its edges soft ridges of residue, the outer twice the inner.
 fn swirl(residue: f32[>..]&, c: float2, r: f32, a0: f32, span: f32, band: f32, phase: f32) {
-    let reach = r + 0.5 * band + 12.0;
+    let reach = r + 0.5 * band + 12.0 * MM;
     let i0 = floor(c.x - reach) as i64;
     let j0 = floor(c.y - reach) as i64;
     let n = (2.0 * reach) as i64 + 2;
@@ -173,9 +178,10 @@ fn swirl(residue: f32[>..]&, c: float2, r: f32, a0: f32, span: f32, band: f32, p
             guard ends > 0.0 else { continue; }
             let out = length(q) - r;
             let off = abs(out) - 0.5 * band;
-            let ridge = exp(-(off * off) / 100.0) * (if out > 0.0 { 0.1 } else { 0.05 });
-            let inside = clamp(-off / 8.0, 0.0, 1.0);
-            let streaks = 0.5 + 0.5 * sin(1.3 * out + phase + 2.0 * sin(0.21 * out + phase));
+            let mm = off / MM;
+            let ridge = exp(-(mm * mm) / 100.0) * (if out > 0.0 { 0.1 } else { 0.05 });
+            let inside = clamp(-mm / 8.0, 0.0, 1.0);
+            let streaks = 0.5 + 0.5 * sin(1.3 * out / MM + phase + 2.0 * sin(0.21 * out / MM + phase));
             let k = wrapped(i0 + di, j0 + dj);
             residue[k] = residue[k] * (1.0 - (0.15 + 0.1 * streaks) * inside * ends) + ridge * ends;
         }
@@ -192,7 +198,7 @@ fn lit_at(tile: u8[>..]&, i: i64, j: i64, w: i64, h: i64, sun: float2, film: f32
     let s2:    f32 = tile[k + 1] / 127.5 - 1.0;
     let deep:  f32 = tile[k + 2] / 255.0;
     let thick: f32 = tile[k + 3] / 255.0;
-    let eye:   f32 = 1500.0;
+    let eye:   f32 = 1500.0 * MM;
     let v = normalize(float3 { i - 0.5 * w, j - 0.5 * h, -eye });
     let l = normalize(float3 { sun.x / eye, sun.y / eye, 1.0 });
     // The groove's direction from its doubled angle.

@@ -1477,6 +1477,7 @@ fn main() {
                       g.room_count / 3, " triangles and ", g.glass_count / 3, " of glass and lace");
                 print("the paint's relief tile made in ", g.paint_tile_ms, " ms, ", room_shell::relief_bytes(), " bytes");
                 print("the sills' limestone tile made in ", g.stone_tile_ms, " ms, ", room_shell::stone_bytes(), " bytes");
+                print("the glass's tile made in ", g.glass_tile_ms, " ms, ", glass_tile::bytes(), " bytes");
             }
             if g.corner_ms > 0.0 {
                 print("the corners' map baked in ", g.corner_ms, " ms, ", corner_map::chart_count, " charts in ",
