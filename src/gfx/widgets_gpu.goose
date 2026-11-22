@@ -391,6 +391,35 @@ let FRAG = """
             d = min(d, min(seg(p, vec2(3.0, 3.0), vec2(3.0, 8.0)), seg(p, vec2(3.0, 8.0), vec2(8.0, 8.0))));
             return min(d, min(seg(p, vec2(12.0, 7.0), vec2(12.0, 12.0)), seg(p, vec2(12.0, 12.0), vec2(16.0, 14.0))));
         }
+        if (k == 56 || k == 57) {   // a draw: Lucide's handshake; refused, crossed out and cut clear round the slash
+            float d = min(seg(p, vec2(11.0, 17.0), vec2(13.0, 19.0)), arc(p, vec2(14.5, 17.5), 2.121, -0.7854, 3.1416));
+            d = min(d, min(seg(p, vec2(14.0, 14.0), vec2(16.5, 16.5)), arc(p, vec2(18.0, 15.0), 2.121, -0.7854, 3.1416)));
+            d = min(d, min(seg(p, vec2(19.5, 13.5), vec2(15.62, 9.62)), arc(p, vec2(13.5, 11.743), 3.0, -2.3556, 1.5696)));
+            d = min(d, min(seg(p, vec2(11.38, 9.62), vec2(10.5, 10.5)), arc(p, vec2(9.0, 9.0), 2.121, 0.7854, 3.1416)));
+            d = min(d, min(seg(p, vec2(7.5, 7.5), vec2(10.31, 4.69)), arc(p, vec2(14.399, 8.79), 5.79, -2.3549, 1.323)));
+            d = min(d, min(seg(p, vec2(17.37, 3.82), vec2(17.84, 4.1)), arc(p, vec2(18.873, 2.388), 2.0, 1.3763, 0.7375)));
+            d = min(d, min(seg(p, vec2(19.26, 4.35), vec2(21.0, 4.0)), seg(p, vec2(21.0, 3.0), vec2(22.0, 14.0))));
+            d = min(d, min(seg(p, vec2(22.0, 14.0), vec2(20.0, 14.0)), seg(p, vec2(3.0, 3.0), vec2(2.0, 14.0))));
+            d = min(d, min(seg(p, vec2(2.0, 14.0), vec2(8.47, 20.47)), arc(p, vec2(9.97, 18.97), 2.121, -0.7854, 3.1416)));
+            d = min(d, seg(p, vec2(3.0, 4.0), vec2(11.0, 4.0)));
+            if (k == 56) return d;
+            float slash = seg(p, vec2(2.5, 21.5), vec2(21.5, 2.5));
+            return min(max(d, 3.0 - slash), slash);
+        }
+        if (k == 58) {          // giving up: a flag, its cloth filled, on a pole
+            const vec2 v[5] = vec2[](vec2(5.0, 3.5), vec2(18.0, 3.5), vec2(15.2, 8.0), vec2(18.0, 12.5), vec2(5.0, 12.5));
+            float d = 1e9;
+            float s = 1.0;
+            for (int i = 0, j = 4; i < 5; j = i, i++) {
+                vec2 e = v[j] - v[i];
+                vec2 w = p - v[i];
+                vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
+                d = min(d, dot(b, b));
+                bvec3 c = bvec3(p.y >= v[i].y, p.y < v[j].y, e.x * w.y > e.y * w.x);
+                if (all(c) || all(not(c))) s = -s;
+            }
+            return min(seg(p, vec2(5.0, 22.0), vec2(5.0, 3.0)), s * sqrt(d) + 1.2);
+        }
         return 1e9;
     }
     // A player's badge's animal (badges/badges.goose): its signed distance at f, in a

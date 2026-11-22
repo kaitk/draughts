@@ -167,6 +167,28 @@ draw.repeat = Same position three times
 draw.kings = {} moves by kings only
 draw.balance = {} moves without a capture or a new king
 draw.lone = The lone king held out
+# A draw the players agreed, on the draw's card under "Draw".
+draw.agreed = Agreed
+# The draw tile beside start over while both sides have a king: against the computer,
+# an offer (a friend's game shows "draw" and ends the game at once).
+game.offer_draw = Offer draw
+# The computer's refusal, a card in the middle: its title, and its line, "@" where the
+# computer's icon stands for "The computer" (put it where the language's grammar wants
+# the computer named).
+refused.title = No draw
+refused.note = @ wants to play on.
+# The computer's own offer, a card in the middle, answered by "draw" or this.
+offer.title = Draw?
+offer.play_on = Play on
+# Start over in a game against the computer from the child's fifth move: its card's
+# title, line, and two answers.
+give_up.title = Give up this game?
+give_up.note = It counts as a loss.
+give_up.yes = Give up
+give_up.no = Keep playing
+# The win's card for the computer after the child gave up, under who won.
+gave_up.white = White gave up
+gave_up.black = Black gave up
 # The countdown under whose turn: "{}" moves, more than one; the strong side must take
 # the lone king within "{}" of its moves; the position come twice, and under it a third
 # time draws; the short form between the clocks, over or before the moves left, and
