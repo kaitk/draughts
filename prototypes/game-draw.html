@@ -190,7 +190,7 @@
   if (view === 'drawn') card(`<div class="pieces"><span class="piece solo white"></span><span class="piece solo black"></span></div><h1>Draw</h1><small>${friend || q.get('by') === 'friend' ? 'Agreed' : 'Agreed'}</small>${again}`, false);
   const big = (name) => D.icon(name).replace('class="icon"', 'class="icon big"');
   if (view === 'no' && no === 'card') card(`<div class="pieces">${big('computer')}${{ face: '', thumb: big('thumbDown'), hand: big('hand'), off: big('handshakeOff') }[q.get('icon') || 'thumb']}</div><h1>No draw</h1>
-    <small>The computer plays on.</small>
+    <small>The computer wants to play on.</small>
     <a class="tile primary" href="?view=offer">Continue</a>`, false);
   if (view === 'asked' && ask === 'card') card(`<div class="pieces">${D.icon('computer').replace('class="icon"', 'class="icon big"')}${D.icon('handshake').replace('class="icon"', 'class="icon big"')}</div><h1>Draw?</h1>
     <div class="two"><a class="tile primary" href="?view=drawn" data-icon="handshake">Draw</a><a class="tile" href="?view=offer" data-icon="next">Play on</a></div>`, false);
