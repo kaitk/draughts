@@ -37,8 +37,10 @@
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--sun-check (prints where the sun's ray from the board and the table leaves the room: a window's
 //       glass, a bar, its frame, or the wall; then quits unless --shot)]
-//       [--dust off|on|sparse|drift|near (on the box round the board as before; the others only in the
-//       table-window view, in the sunbeam between the middle window and the table: DUST_WAYS)] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
+//       [--dust off|on|sparse|dense|coarse|motes|motes-few|motes-many (on the box round the board as before;
+//       the others only in the table-window view: sparse.. round points in a box over the table, motes.. flakes
+//       and lint in the sunbeam's own volume, lit by the sun alone: DUST_WAYS; motes the default)]
+//       [--beam-haze K (a faint haze in the motes' beam, an experiment; 0 off)] [--mote-glint EXP] [--mote-fibres SHARE] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
 //       [--room-surfaces on|off] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
 //       [--outside on|off] [--outside-exposure K (rooms::Room's outside)]
 //       [--eye X,Y,Z --at X,Y,Z (a camera of its own, world units)]
@@ -156,18 +158,28 @@ fn view_point(p: float3, view: i64) -> float3 {
 // only those in the beam show, shadowed where the bars, the lace and the leaves shadow it:
 // sparse, a few tiny specks (the default); dense, more and finer; coarse, fewer and a
 // little larger. Each a pixel or two across, in focus.
-let DUST_WAYS = ["off", "on", "sparse", "dense", "coarse"];
+// motes, motes-few, motes-many: dust as it is in a sunbeam, in the table-window view only:
+// flakes and short fibres of lint, a pixel or a few across, tumbling so each glints as a
+// face turns to the sun, then dims, in the beam's own volume over the table near the board
+// (beam_box), lit only by the sun straight through the glass (the default); the round
+// points before them stay a press of D away.
+let DUST_WAYS = ["off", "on", "sparse", "dense", "coarse", "motes", "motes-few", "motes-many"];
 let DUST_OFF = 0;
 let DUST_ON = 1;
 let DUST_SPARSE = 2;
+let DUST_MOTES = 5;
 // Each its motes, size, lens blur, brightness, how its disc thins, forward scattering
 // (render3d::Dust's ahead), rise and wander.
 struct DustPreset { count: i64, size: f32, blur: f32, bright: f32, thin: f32, ahead: f32, rise: f32, reach: f32 }
-let DUST_PRESETS: DustPreset[3] = [DustPreset { 120, 0.4, 0.5, 0.06, 1.0, 0.4, 0.02, 0.2 },
+let DUST_PRESETS: DustPreset[6] = [DustPreset { 120, 0.4, 0.5, 0.06, 1.0, 0.4, 0.02, 0.2 },
                                    DustPreset { 300, 0.3, 0.5, 0.035, 1.0, 0.4, 0.012, 0.15 },
-                                   DustPreset { 60, 0.7, 1.0, 0.06, 1.0, 0.4, 0.02, 0.2 }];
+                                   DustPreset { 60, 0.7, 1.0, 0.06, 1.0, 0.4, 0.02, 0.2 },
+                                   DustPreset { 90, 0.55, 0.5, 0.13, 1.0, 0.5, 0.012, 0.12 },
+                                   DustPreset { 40, 0.6, 0.5, 0.13, 1.0, 0.5, 0.012, 0.12 },
+                                   DustPreset { 220, 0.5, 0.5, 0.1, 1.0, 0.5, 0.012, 0.12 }];
 // The box over the games table the motes drift in (metres in the plan: across the table's
 // middle, and up from the board's level).
+let BEAM_HAZE_SPRITES = 900;
 let DUST_HALF: f32 = 0.7;
 let DUST_HIGH: f32 = 0.5;
 
@@ -314,6 +326,45 @@ fn sun_check(g: render3d::Gpu&, turn: f32, height: f32) {
     print("  the table's top, ", total, " points: through glass ", counts[0], " (windows ", through[0], ", ", through[1], ", ",
           through[2], "), a bar ", counts[1], ", the sash or frame ", counts[2], ", the wall ", counts[3], ", behind ", counts[4]);
     print("sun-check: the board ", board_lit, " of 5 points lit through the middle window (its glass or a bar's shadow)");
+}
+
+// The sunbeam's volume over the table (the new motes' box): from the middle window's
+// light toward the board, BEAM_WIDE along the wall, BEAM_HIGH up from the table's top, and
+// along the beam BEAM_NEAR short of the board's middle to BEAM_FAR past it (metres),
+// sheared as the sun comes in, so a mote at any height is where the sun through the window
+// falls. Its low corner and the three axes in the world, and their lengths.
+let BEAM_WIDE: f32 = 1.0;
+let BEAM_HIGH: f32 = 0.6;
+let BEAM_NEAR: f32 = 0.6;
+let BEAM_FAR:  f32 = 0.35;
+fn beam_box(g: render3d::Gpu&) -> float3, float3, float3, float3 {
+    let s = room_shell::LIBRARY;
+    let m = surfaces::METRE;
+    let f = g.room_frame;
+    let l = g.frame.light_dir;
+    let d = float2 { -(l.x * f.along.x + l.z * f.along.y), -(l.x * f.into.x + l.z * f.into.y) };
+    let e = normalize(float2 { -d.x, -d.y });
+    let face = s.walls[room_shell::WINDOW_WALL].a.y;
+    let board = (s.table.y - face) / min(e.y, -0.05);
+    let r0 = board - BEAM_NEAR;
+    var mid:  f32 = s.table.x;
+    var best: f32 = 1e9;
+    for k in s.count {
+        let o = s.openings[k];
+        guard o.kind == room_shell::WINDOW else { continue; }
+        let x = o.mid + e.x * board;
+        if abs(x - s.table.x) < best {
+            best = abs(x - s.table.x);
+            mid = o.mid;
+        }
+    }
+    let top = (mesh::TABLE_TOP - surfaces::FLOOR_Y) / m + 0.02;
+    let o = float3 { mid - 0.5 * BEAM_WIDE + e.x * r0, face + e.y * r0, top };
+    let at = plan_point(g, o);
+    let u = plan_point(g, o + float3 { BEAM_WIDE, 0.0, 0.0 }) - at;
+    let v = plan_point(g, o + float3 { 0.0, 0.0, BEAM_HIGH }) - at;
+    let w = plan_point(g, o + float3 { e.x, e.y, 0.0 } * (BEAM_NEAR + BEAM_FAR)) - at;
+    return at, u, v, w;
 }
 
 // The sky behind the shell's windows, linear: a mid-October afternoon's blue overhead,
@@ -1111,7 +1162,12 @@ fn main() {
     render3d::room_sun = float4 { render3d::room_sun.x, oak_sun.x, oak_sun.y, oak_sun.z };
     render3d::shade_fill = number(argv, "--shade-fill", render3d::shade_fill);
     var lace_hang = number(argv, "--lace-hang", room_shell::LACE_HANG);
-    var dust_way = pick(argv, "--dust", DUST_WAYS, DUST_SPARSE);
+    var dust_way = pick(argv, "--dust", DUST_WAYS, DUST_MOTES);
+    // The beam's haze among the motes (an experiment, 0 off): a faint in-scatter of the sun
+    // in the same volume, large soft sprites lit as the motes are.
+    var beam_haze = number(argv, "--beam-haze", 0.0);
+    render3d::dust.glint = number(argv, "--mote-glint", render3d::dust.glint);
+    render3d::dust.fibres = number(argv, "--mote-fibres", render3d::dust.fibres);
     var shown_dust = -1;
     render3d::window_view = float4 { number(argv, "--lace-sun", 1.0), number(argv, "--lace-scatter", 1.0), number(argv, "--glass-film", 1.0),
                                      number(argv, "--scratches", 1.0) };
@@ -1376,7 +1432,7 @@ fn main() {
                 render3d::window_view = float4 { k, k, k, k };
                 render3d::sun_veil = k;
                 lace_hang = k * room_shell::LACE_HANG;
-                dust_way = if on { DUST_OFF } else { DUST_SPARSE };
+                dust_way = if on { DUST_OFF } else { DUST_MOTES };
             }
             if gfx::key_pressed("Y") { lace_hang = if lace_hang > 0.0 { 0.0 } else { room_shell::LACE_HANG }; }
             if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else if paper_m > 0.7 { 1.4 } else { 0.9 }; }
@@ -1608,6 +1664,9 @@ fn main() {
                 slider(c, "Toward sun", render3d::dust.ahead, 0.0, 0.9);
                 slider(c, "Rise", render3d::dust.rise, 0.0, 0.4);
                 slider(c, "Wander", render3d::dust.reach, 0.0, 2.0);
+                slider(c, "Glint (motes)", render3d::dust.glint, 1.0, 40.0);
+                slider(c, "Fibres (motes)", render3d::dust.fibres, 0.0, 1.0);
+                slider(c, "Beam's haze (motes)", beam_haze, 0.0, 0.003);
                 ui::tree_state_pop(c);
             }
             if section(c, open, CAMERA) {
@@ -1765,7 +1824,8 @@ fn main() {
             if tm.x != TABLE_AS_MADE.x || tm.y != TABLE_AS_MADE.y { format(line, " --table-at ", tm.x, ",", tm.y); }
             if dust_way != DUST_OFF {
                 format(line, " --motes ", motes, " --mote-size ", render3d::dust.size, " --mote-blur ", render3d::dust.blur,
-                       " --mote-bright ", render3d::dust.bright);
+                       " --mote-bright ", render3d::dust.bright, " --mote-glint ", render3d::dust.glint, " --mote-fibres ",
+                       render3d::dust.fibres, " --beam-haze ", beam_haze);
             }
             format(line, " --books ", on_off(books_on), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on), " --lace-hang ", lace_hang);
             let wv = render3d::window_view;
@@ -1889,7 +1949,20 @@ fn main() {
             }
         }
         render3d::dust.shell = dust_way >= DUST_SPARSE;
-        if dust_way >= DUST_SPARSE { render3d::dust.low, render3d::dust.span = table_box(g); }
+        render3d::dust.beam = dust_way >= DUST_MOTES;
+        render3d::dust.shape = if dust_way >= DUST_MOTES { 1.0 } else { 0.0 };
+        render3d::dust.haze = if dust_way >= DUST_MOTES { beam_haze } else { 0.0 };
+        render3d::dust.haze_count = BEAM_HAZE_SPRITES;
+        if dust_way >= DUST_MOTES {
+            let at, u, v, w = beam_box(g);
+            render3d::dust.low = at;
+            render3d::dust.u = u;
+            render3d::dust.v = v;
+            render3d::dust.w = w;
+            render3d::dust.span = float3 { length(u), length(v), length(w) };
+        } else if dust_way >= DUST_SPARSE {
+            render3d::dust.low, render3d::dust.span = table_box(g);
+        }
         let dust_here = dust_way == DUST_ON || (dust_way >= DUST_SPARSE && view == TABLE_WINDOW);
         render3d::dust.count = if dust_here { motes } else { 0 };
         render3d::dust.focus = length(eye - target);

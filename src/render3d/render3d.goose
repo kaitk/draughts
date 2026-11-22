@@ -2659,6 +2659,19 @@ struct Dust {
     low:    float3 = float3 { -9.0, -0.7, -9.0 },  // the box's low corner
     span:   float3 = float3 { 18.0, 11.0, 21.0 },  // and its size
     shell:  bool   = false, // lit through the shell's windows (shell_open), not the game's
+    // In the sunbeam (shaders::DUST_VERT's beam): the box's axes in the world, along the
+    // window wall, up and into the room along the beam, from `low`; span their lengths.
+    beam:   bool   = false,
+    u:      float3 = float3_0,
+    v:      float3 = float3_0,
+    w:      float3 = float3_0,
+    shape:  f32    = 0.0,   // 0 round points, 1 flakes and lint
+    glint:  f32    = 12.0,  // how sharp a face's glint (an exponent)
+    fibres: f32    = 0.3,   // the share of fibres
+    // The beam's haze (an experiment, off): its strength, sprites and their radius (units).
+    haze:       f32 = 0.0,
+    haze_count: i64 = 0,
+    haze_size:  f32 = 2.4,
 }
 var dust = Dust {};
 
@@ -2677,11 +2690,17 @@ struct DustBlock {
     shell_glass: float4,
     shell_sun:   float4,
     window_view: float4,
+    u:           float4,
+    v:           float4,
+    w:           float4,
+    shape:       float4,
 }
 fn dust_block(g: Gpu&) -> DustBlock {
     var b = DustBlock { model3d::f4(dust.low, wind_time), model3d::f4(dust.span, dust.rise),
                         float4 { dust.size, dust.blur, dust.bright, dust.focus }, float4 { dust.thin, dust.ahead, dust.reach, 0.0 },
-                        float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0 };
+                        float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
+                        model3d::f4(dust.u, 0.0), model3d::f4(dust.v, 0.0), model3d::f4(dust.w, if dust.beam { 1.0 } else { 0.0 }),
+                        float4 { dust.shape, dust.glint, dust.fibres, dust.haze_size } };
     if lens.on {
         // The lens's disc in the motes' pixels (a thousand to the scene's height): the
         // aperture's share of its width.
@@ -2700,8 +2719,21 @@ fn dust_block(g: Gpu&) -> DustBlock {
     b.shell_glass = s.shell_glass;
     b.shell_sun = s.shell_sun;
     b.window_view = s.window_view;
+    // In the beam only the sun straight through the glass lights a mote, not the light the
+    // lace scatters on.
+    if dust.beam { b.window_view.y = 0.0; }
     return b;
 }
+
+// The beam's haze's block (Dust.haze): the motes' with large faint sprites in their place.
+fn haze_block(g: Gpu&) -> DustBlock {
+    var b = dust_block(g);
+    b.shape.x = 2.0;
+    b.look.z = dust.haze;
+    b.lens.z = 0.0;
+    return b;
+}
+fn haze_shown() -> bool { dust.count > 0 && dust.haze > 0.0 && dust.haze_count > 0 }
 
 // shaders::LIT_SHELL's and TABLE_SHELL's block: the shell's windows as the room's block has
 // them (surfaces_block), for the board and the table lit through them; all 0 without the
