@@ -13,6 +13,7 @@ import .surfaces;
 import .trees;
 import .shell;
 import .shell_mesh;
+import .joinery;
 import .bookcases;
 import .books;
 import .book_cells;

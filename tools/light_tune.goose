@@ -590,9 +590,14 @@ let WIND = 17;
 let WINDOW = 18;
 let NOISE = 19;
 
+// The quiet paint's steps, each switched off alone by --paint-off NAME,NAME..: the
+// arrises' fillets and the pieces' tilt and the panels' cup (its mesh), the recesses' dirt,
+// the joints' hairlines, the relief tile (its shader).
+let PAINT_STEP_NAMES = ["fillets", "tilt", "dirt", "joints", "tile"];
+
 let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", "P: print the room and its flags",
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
-                "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "W: the window's pattern; T: leaves by",
+                "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust", "F: the frame counter; G: wait for the GPU",
                 "N: the scene's scale; M: its upscale",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
@@ -755,10 +760,15 @@ fn main() {
                          shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
             embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)];
+                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+            ""];
         render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
                                       pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
     }
+    // The painted wood's shader with its steps switched (J, --paint, --paint-off).
+    render3d::tuned_frags[render3d::TUNED_PAINT_STEPS] = embed_shader("frag", shaders::ROOM_PAINT, shaders::PAINT_STEPS, shaders::SHELL_WINDOWS,
+                                                                      shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN,
+                                                                      shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
     render3d::set_aa(r3d, g, render3d::AA);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
@@ -858,6 +868,25 @@ fn main() {
     var books_on = !(flag_value(argv, "--books") > 0 && argv[flag_value(argv, "--books")] == "off");
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
+    // The painted wood (J): quiet or old, and the quiet one's steps each off alone.
+    var paint_quiet = !(flag_value(argv, "--paint") > 0 && argv[flag_value(argv, "--paint")] == "old");
+    var paint_on: bool[5] = [true; 5];
+    if flag_value(argv, "--paint-off") > 0 {
+        var rest: const u8[:] = argv[flag_value(argv, "--paint-off")];
+        while rest.len > 0 {
+            let part, after, more = split_once(rest, ",");
+            var found = false;
+            for n, i in PAINT_STEP_NAMES {
+                if n == part {
+                    paint_on[i] = false;
+                    found = true;
+                }
+            }
+            guard found else { abort(str("--paint-off: no ", part)); }
+            guard more else { break; }
+            rest = after;
+        }
+    }
     var book_fade = number(argv, "--book-fade", 1.0);
     var top = pick(argv, "--table-top", TOPS, 0);
     g.table_r = top_radius(top);
@@ -1023,6 +1052,7 @@ fn main() {
             if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
             if gfx::key_pressed("B") { books_on = !books_on; }
             if gfx::key_pressed("H") { shutters_on = !shutters_on; }
+            if gfx::key_pressed("J") { paint_quiet = !paint_quiet; }
             if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else if paper_m > 0.7 { 1.4 } else { 0.9 }; }
             if gfx::key_pressed("N") {
                 var next = 0;
@@ -1193,6 +1223,8 @@ fn main() {
                 slider(c, "Oak colour", oak.y, 0.0, 1.5);
                 ui::layout_row_dynamic(c, ROW + 4.0, 1);
                 if ui::button_label(c, "As baked") { oak = float2 { 1.0, 1.0 }; }
+                switch(c, "Paint (J)", paint_quiet, ["old", "quiet"]);
+                for n, i in PAINT_STEP_NAMES { switch(c, str("  its ", n), paint_on[i], ["off", "on"]); }
                 if g.room_ms > 0.0 {
                     note(c, str("oak baked in ", floor(g.room_ms + 0.5) as i64, " ms, ", render3d::room_bytes(g) / 1048576, " MiB"));
                 }
@@ -1281,6 +1313,11 @@ fn main() {
         g.paper_tile = paper_m * surfaces::METRE;
         g.books_off = !books_on;
         room_shell::shutters_on = shutters_on;
+        room_shell::paint_quiet = paint_quiet;
+        room_shell::paint_fillets = paint_on[0];
+        room_shell::paint_tilt = paint_on[1];
+        render3d::paint_steps = float4 { if paint_on[2] { 1.0 } else { 0.0 }, if paint_on[3] { 1.0 } else { 0.0 },
+                                         if paint_on[4] { 1.0 } else { 0.0 }, if paint_quiet { 0.0 } else { 1.0 } };
         g.book_fade = max(book_fade, 0.001);
         g.room_tint = float4_0;
         if oak.x != 1.0 || oak.y != 1.0 {
@@ -1369,6 +1406,12 @@ fn main() {
                        " --mote-bright ", render3d::dust.bright);
             }
             format(line, " --books ", on_off(books_on), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on));
+            format(line, " --paint ", if paint_quiet { "quiet" } else { "old" });
+            var off: u8[>..] = [];
+            for n, i in PAINT_STEP_NAMES {
+                if !paint_on[i] { format(off, if off.len > 0 { "," } else { "" }, n); }
+            }
+            if off.len > 0 { format(line, " --paint-off ", off); }
             flag_pair(line, "--oak-tint", oak);
             flag_pair(line, "--ceiling-tint", ceiling);
             room_flags(line, room);

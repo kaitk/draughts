@@ -2230,7 +2230,9 @@ let ROOM_HEAD = """
     // last mip; planar_look: x the boards' own wax, y the blur over the wax's lobe; contact:
     // the sun's contact shadows (render3d::contact_look); sheen: the sun's broad sheen
     // (render3d::sheen_look); room_sun: the sun's saturation on the room, the panelling oak's
-    // share of it, its saturation and share of the sheen (render3d::room_sun); table_map:
+    // share of it, its saturation and share of the sheen (render3d::room_sun); paint_quiet:
+    // the quiet paint (surfaces::Look's); paint_steps: the tuner's switches of it
+    // (render3d::paint_steps, read only with PAINT_STEPS); table_map:
     // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
     // ending in gilt, ink, the page edges plain and sprinkled.
@@ -2275,6 +2277,8 @@ let ROOM_HEAD = """
         vec4 contact;
         vec4 sheen;
         vec4 room_sun;
+        vec4 paint_quiet;
+        vec4 paint_steps;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -3100,12 +3104,41 @@ let ROOM_FRAG = """
         }
     #endif
     #ifdef ROOM_PAINT
-        {
-            // Old white painted wood, a little uneven.
+        // Old white oil paint on pine (room_shell's joinery, quiet): flat in colour, each
+        // piece's own tone a percent either way (its fraction: a tenth the tone, a tenth
+        // more with the grain along the wall, a fifth more on a window), eggshell on the
+        // doors and a little duller on the windows; grey-brown dirt in a band along the
+        // recesses (v_uv.y, the distance to the nearest, metres) and a hairline where two
+        // pieces meet (v_uv.x), both filtered over the pixel.
+        // A fillet's normal turns through 90° over a millimetre, so read at a pixel's middle
+        // past the strip's edge it runs on far beyond: held within 46° of the strip's own
+        // plane, or the arrises shade in dashes.
+        vec3 flat_n = normalize(cross(dFdx(p), dFdy(p)));
+        flat_n = dot(flat_n, ng) < 0.0 ? -flat_n : flat_n;
+        float held = dot(ng, flat_n);
+        if (held < 0.7) n = normalize(flat_n * 0.7 + normalize(ng - flat_n * held) * 0.714);
+        float on_window = step(0.195, own);
+        float piece = own - 0.2 * on_window;
+        float along = step(0.095, piece);
+        float tone = (piece - 0.1 * along) / 0.099;
+        float dirt = 1.0 - smoothstep(0.3 * paint_quiet.z - 0.5 * fwidth(v_uv.y), paint_quiet.z + 0.5 * fwidth(v_uv.y), v_uv.y);
+        float joint = line_cover(v_uv.x, 0.00015, fwidth(v_uv.x));
+    #ifdef PAINT_STEPS
+        dirt *= paint_steps.x;
+        joint *= paint_steps.y;
+    #endif
+        albedo = srgb(paint.rgb) * (1.0 + 0.02 * (tone - 0.5));
+        albedo *= 1.0 - 0.45 * dirt * (vec3(1.0) - vec3(0.80, 0.76, 0.68));
+        albedo *= 1.0 - 0.5 * joint;
+        rough = mix(paint_quiet.x, paint_quiet.y, on_window) + 0.1 * dirt + 0.1 * joint;
+    #ifdef PAINT_STEPS
+        if (paint_steps.w > 0.5) {
+            // The old paint, as before the quiet one: a little uneven.
             float m = vnoise(v_local.xz * 0.4 + v_local.y * 0.31);
             albedo = srgb(paint.rgb) * (0.96 + 0.06 * m);
             rough = paint.a + 0.1 * m;
         }
+    #endif
     #endif
     #ifdef ROOM_METALS
         if (kind > 13.5) {
@@ -3483,6 +3516,8 @@ let SSAO_FN = """
 let ROOM_FLOOR = "#define ROOM_FLOOR 1\n";
 let ROOM_WALLS = "#define ROOM_WALLS 1\n";
 let ROOM_PAINT = "#define ROOM_PAINT 1\n";
+// The painted wood's shader with the light tuner's switches (render3d::paint_steps).
+let PAINT_STEPS = "#define PAINT_STEPS 1\n";
 let ROOM_METALS = "#define ROOM_METALS 1\n";
 let ROOM_GLASS = "#define ROOM_GLASS 1\n";
 // The floor that sees the mirror (render3d::planar_shown), the standard and high tiers';

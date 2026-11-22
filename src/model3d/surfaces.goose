@@ -123,8 +123,11 @@ struct Look {
     ceiling_shade: float4,
     ceiling_light: float4,
     paint:         float4,
-    lace_thread:   float4,
-    stone:         float4,
+    // The quiet paint (room_shell's joinery): x the doors' roughness, y the windows', z the
+    // recesses' dirt band (metres), w the relief tile's strength (1 as made).
+    paint_quiet: float4,
+    lace_thread: float4,
+    stone:       float4,
     // The curtains' brass (rod, finials, brackets, hooks): its colour at normal incidence
     // (sRGB) and roughness, all in this one place so another brass swaps in here.
     brass: float4,
@@ -156,8 +159,11 @@ let LOOK = Look {
     ceiling_shade: float4 { 0.6684, 0.6177, 0.5262, 0.92 },
     ceiling_light: float4 { 0.7284, 0.6867, 0.6027, 0.86 },
     paint:         float4 { 0.776, 0.745, 0.682, 0.38 },
-    lace_thread:   float4 { 0.867, 0.827, 0.749, 0.9 },
-    stone:         float4 { 0.714, 0.698, 0.659, 0.55 },
+    // Eggshell to satin, doors 0.36 and the window joinery a little duller (build/notes/
+    // paint-research/), the dirt in a 3 mm band.
+    paint_quiet: float4 { 0.36, 0.42, 0.003, 1.0 },
+    lace_thread: float4 { 0.867, 0.827, 0.749, 0.9 },
+    stone:       float4 { 0.714, 0.698, 0.659, 0.55 },
     // A plain brass, a placeholder until the gilt and brass study's material lands: its
     // reflectance at normal incidence linear (0.91, 0.778, 0.423), #f5e4ae, 0.28 rough (a
     // polished one reads as brown felt while the room reflects only its harmonics), no wear.

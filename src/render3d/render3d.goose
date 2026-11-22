@@ -363,6 +363,7 @@ struct Gpu {
     room_metals: Pipeline,
     room_ssao:   bool,
     room_views:  bool,              // with the tuner's views (room_views_on)
+    room_steps:  bool,              // the painted wood's with the tuner's switches (paint_steps_on)
     bake_room:   Pipeline,
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
     // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
@@ -849,7 +850,9 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     // The mesh, in the room's frame (ROOM_VERT turns it with the key): made again only
     // for another room, or the panelled wall's room for another window or wall.
     let w = g.room.window;
-    let shell_key: f32 = if !g.room_shell { 0.0 } else { (if g.books_off { 2.0 } else { 1.0 }) + (if room_shell::shutters_on { 0.0 } else { 2.0 }) };
+    let shell_key: f32 = if !g.room_shell { 0.0 } else {
+        (if g.books_off { 2.0 } else { 1.0 }) + (if room_shell::shutters_on { 0.0 } else { 2.0 }) + (if room_shell::paint_quiet { 0.0 } else { 4.0 })
+        + (if room_shell::paint_fillets { 0.0 } else { 8.0 }) + (if room_shell::paint_tilt { 0.0 } else { 16.0 }) };
     let key = float4 { w.x, w.z, g.room_away, shell_key };
     // The corners' shade is baked with the mesh, again when the room's corners change, but
     // not while a slider is held.
@@ -1176,6 +1179,8 @@ struct SurfacesBlock {
     contact:       float4,
     sheen:         float4,
     room_sun:      float4,
+    paint_quiet:   float4,
+    paint_steps:   float4,
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
@@ -1263,7 +1268,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
-                    float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun, table_map_shown(g),
+                    float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun, k.paint_quiet, paint_steps, table_map_shown(g),
                     books::COVER, books::LABEL }
 }
 
@@ -2297,6 +2302,12 @@ var sheen_look = float4 { 2.0, 0.8, 1.0, 0.0 };
 // Whether one of the light tuner's views of the room is on (the screen's occlusion, the
 // indirect light, the sun's highlights, the floor's reflection alone): the room's pipelines
 // then carry their code (shaders::ROOM_VIEWS), else they leave it out.
+// The light tuner's switches of the painted wood's shader (its own, shaders::PAINT_STEPS):
+// x the recesses' dirt, y the joints' hairlines, z the relief tile, each 1 on, w 1 the old
+// paint. While all are as made, the app's shader draws.
+var paint_steps = float4 { 1.0, 1.0, 1.0, 0.0 };
+fn paint_steps_on() -> bool { paint_steps.x < 0.5 || paint_steps.y < 0.5 || paint_steps.z < 0.5 || paint_steps.w > 0.5 }
+
 fn room_views_on() -> bool { ssao_allowed && (ssao_view > 0 || sheen_look.w > 0.5 || planar_view == 1) }
 // The sun on the room's surfaces: x its saturation about its luminance there and in its
 // bake (1 as the key is; the tuner's --room-sun); the panelling oak's own: y its share of

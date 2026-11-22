@@ -275,6 +275,7 @@ fn room_frag(group: i64, ssao: bool, views: bool) -> const u8[:] {
             return tuned_or(TUNED_WALLS, embed_shader("frag", shaders::ROOM_WALLS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
         if group == render3d::GROUP_PAINT {
+            if render3d::paint_steps_on() && tuned_frags[TUNED_PAINT_STEPS].len > 0 { return tuned_frags[TUNED_PAINT_STEPS]; }
             return tuned_or(TUNED_PAINT, embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
         if group == render3d::GROUP_METALS {
@@ -304,7 +305,8 @@ fn room_frag(group: i64, ssao: bool, views: bool) -> const u8[:] {
 fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     let ssao = render3d::ssao_allowed;
     let views = render3d::room_views_on();
-    guard g.room_walls.id == 0 || g.room_ssao != ssao || g.room_views != views else { return; }
+    let steps = render3d::paint_steps_on() && tuned_frags[TUNED_PAINT_STEPS].len > 0;
+    guard g.room_walls.id == 0 || g.room_ssao != ssao || g.room_views != views || g.room_steps != steps else { return; }
     if g.room_walls.id != 0 {
         for p in [g.room_floor, g.room_walls, g.room_paint, g.room_metals, g.room_glass, g.table_room] { gfx::release(p); }
         if g.room_planar.id != 0 {
@@ -319,6 +321,7 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     }
     g.room_ssao = ssao;
     g.room_views = views;
+    g.room_steps = steps;
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
     let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
     let blended = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED };
@@ -850,7 +853,8 @@ fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
 // pieces' material (TUNED_LIT + render3d::PIECES_..), the table's for SHADOW_16, the
 // table's in the room, the room's groups with the screen's maps (the floor seeing the
 // room's box, then the mirror, the walls, the metals, the glass), the view out, the painted
-// wood. Empty, the app's. The mirror's pass takes none: its light is linear, before any toe.
+// wood, and the painted wood with the tuner's switches (render3d::paint_steps_on,
+// shaders::PAINT_STEPS) whether the toes are switched or not. Empty, the app's. The mirror's pass takes none: its light is linear, before any toe.
 let TUNED_LIT = 0;
 let TUNED_TABLE = 4;
 let TUNED_TABLE_ROOM = 5;
@@ -861,8 +865,9 @@ let TUNED_METALS = 9;
 let TUNED_GLASS = 10;
 let TUNED_OUTSIDE = 11;
 let TUNED_PAINT = 12;
-let TUNED_FRAGS = 13;
-var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", "", "", "", ""];
+let TUNED_PAINT_STEPS = 13;
+let TUNED_FRAGS = 14;
+var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", "", "", "", "", ""];
 fn tuned_or(i: i64, frag: const u8[:]) -> const u8[:] { if tuned_frags[i].len > 0 { tuned_frags[i] } else { frag } }
 
 // The table's shader with its shadow filtered as `look` says, as the lit one's (lit_frag).

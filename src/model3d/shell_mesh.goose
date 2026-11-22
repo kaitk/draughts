@@ -133,9 +133,10 @@ fn quad_m(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, p
     let k = m();
     var q:  float3[4] = [float3_0; 4];
     var uv: float2[4] = [float2_0; 4];
+    let lines = quiet_paint(mat);
     for i in 4 {
         q[i] = p[i] * k;
-        uv[i] = float2 { q[i].x, q[i].y };
+        uv[i] = if lines { float2 { NO_LINE, NO_LINE } } else { float2 { q[i].x, q[i].y } };
     }
     surfaces::quad(verts, indices, b, q, uv, [ao, ao, ao, ao], mat, side);
 }
@@ -400,7 +401,7 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
           wb: surfaces::Builder, o: Opening, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
     let plaster = surfaces::MAT_PLASTER;
-    let paint = surfaces::MAT_PAINT;
+    let paint = if paint_quiet { paint_mat(0.5, false, true) } else { surfaces::MAT_PAINT };
     let w = 0.5 * o.width;
     let wo = w + BAND;
     let sill = o.sill;
@@ -454,8 +455,13 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
     quad_m(verts, indices, b, [float3 { -w, sill, -depth }, float3 { w, sill, -depth }, float3 { w, sill, 0.0 },
                                float3 { -w, sill, 0.0 }], stone, float3 { 0.0, 1.0, 0.0 });
     // The casements, the inner glass and the outer.
-    casement(verts, indices, glass, glass_indices, b, o, o.glass.x);
-    casement(verts, indices, glass, glass_indices, b, o, o.glass.y);
+    if paint_quiet {
+        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.x, seed);
+        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.y, seed);
+    } else {
+        casement(verts, indices, glass, glass_indices, b, o, o.glass.x);
+        casement(verts, indices, glass, glass_indices, b, o, o.glass.y);
+    }
     // The shutters, two leaves a side folded against the reveal; one stands ajar.
     if shutters_on {
         for sx in SIDES {
@@ -487,7 +493,7 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
             seed: i64&) {
     let k = m();
     let w = 0.5 * o.width;
-    let paint = surfaces::MAT_PAINT;
+    let paint = if paint_quiet { paint_mat(0.5, false, true) } else { surfaces::MAT_PAINT };
     let stack = SHUTTER_FRONT + SHUTTER_BACK;
     let y0 = o.sill + 0.005;
     let y1 = o.sill + o.height - CASE_HEAD;
@@ -505,8 +511,10 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     let j = 0.5 * SHUTTER_JOINT;
     // The front edges, the front leaf's, the joint, the back leaf's; the back leaf's back,
     // seen when the pair stands ajar.
-    quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK + j }, float3 { leaf, y0, stack }, float3 { leaf, y1, stack },
-                               float3 { leaf, y1, SHUTTER_BACK + j }], paint, float3 { 1.0, 0.0, 0.0 });
+    if !paint_quiet {
+        quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK + j }, float3 { leaf, y0, stack }, float3 { leaf, y1, stack },
+                                   float3 { leaf, y1, SHUTTER_BACK + j }], paint, float3 { 1.0, 0.0, 0.0 });
+    }
     quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK - j }, float3 { leaf, y0, SHUTTER_BACK + j },
                                float3 { leaf, y1, SHUTTER_BACK + j }, float3 { leaf, y1, SHUTTER_BACK - j }], paint,
            float3 { 1.0, 0.0, 0.0 }, 0.3);
@@ -522,7 +530,10 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     // The front leaf's face: its stiles' and rails' face at the stack's, the panels sunk in it.
     let face = moved(l, 0.0, (stack * k) - surfaces::FRAME_Z);
     let rows: float2[3] = [float2 { 0.9, 1.62 }, float2 { 1.72, 2.62 }, float2 { 2.72, 3.16 }];
-    painted(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], seed);
+    if paint_quiet {
+        painted_quiet(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], SHUTTER_FRONT - j, RIGHT | TOP | BOTTOM, RIGHT, true,
+                      1.0, seed);
+    } else { painted(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], seed); }
     // The hinges: on the lining at the front leaf's back edge, and between the leaves.
     let mid = 0.5 * (y0 + y1);
     let heights: f32[3] = [y0 + SHUTTER_HINGE_IN, mid, y1 - SHUTTER_HINGE_IN];
@@ -539,6 +550,7 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
 fn upright_sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, prof: float2[], x0: f32, z0: f32, y0: f32,
                  y1: f32, mat: f32) {
     let k = m();
+    let lines = quiet_paint(mat);
     var flat: float3[..16] = [float3_0];
     for i in 1..prof.len {
         let t = prof[i] - prof[i - 1];
@@ -552,10 +564,15 @@ fn upright_sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Bui
         let a = prof[i - 1];
         let c = prof[i];
         let base = verts.len as u32;
-        verts.push(mesh::Vertex { surfaces::world(b, (x0 + a.x) * k, y0 * k, (z0 + a.y) * k), na, float2 { (x0 + a.x) * k, y0 * k }, 1.0, mat });
-        verts.push(mesh::Vertex { surfaces::world(b, (x0 + a.x) * k, y1 * k, (z0 + a.y) * k), na, float2 { (x0 + a.x) * k, y1 * k }, 1.0, mat });
-        verts.push(mesh::Vertex { surfaces::world(b, (x0 + c.x) * k, y1 * k, (z0 + c.y) * k), nc, float2 { (x0 + c.x) * k, y1 * k }, 1.0, mat });
-        verts.push(mesh::Vertex { surfaces::world(b, (x0 + c.x) * k, y0 * k, (z0 + c.y) * k), nc, float2 { (x0 + c.x) * k, y0 * k }, 1.0, mat });
+        let line = float2 { NO_LINE, NO_LINE };
+        verts.push(mesh::Vertex { surfaces::world(b, (x0 + a.x) * k, y0 * k, (z0 + a.y) * k), na,
+                                  if lines { line } else { float2 { (x0 + a.x) * k, y0 * k } }, 1.0, mat });
+        verts.push(mesh::Vertex { surfaces::world(b, (x0 + a.x) * k, y1 * k, (z0 + a.y) * k), na,
+                                  if lines { line } else { float2 { (x0 + a.x) * k, y1 * k } }, 1.0, mat });
+        verts.push(mesh::Vertex { surfaces::world(b, (x0 + c.x) * k, y1 * k, (z0 + c.y) * k), nc,
+                                  if lines { line } else { float2 { (x0 + c.x) * k, y1 * k } }, 1.0, mat });
+        verts.push(mesh::Vertex { surfaces::world(b, (x0 + c.x) * k, y0 * k, (z0 + c.y) * k), nc,
+                                  if lines { line } else { float2 { (x0 + c.x) * k, y0 * k } }, 1.0, mat });
         indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
     }
 }
@@ -735,7 +752,7 @@ let DOOR_LEVER = float2 { 0.06, 1.05 };
 // hinges and the lever, the architrave round it on its plinth blocks.
 fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o: Opening, thick: f32, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
-    let paint = surfaces::MAT_PAINT;
+    let paint = if paint_quiet { paint_mat(0.5, false, false) } else { surfaces::MAT_PAINT };
     let w = 0.5 * o.width;
     let h = o.height;
     let back = DOOR_FACE + DOOR_LEAF;
@@ -766,6 +783,11 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     let y1 = h - j;
     let spans: float2[2] = [float2 { -w + j, -0.5 * j }, float2 { 0.5 * j, w - j }];
     for x in spans {
+        if paint_quiet {
+            painted_quiet(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], DOOR_LEAF, EDGES, LEFT | RIGHT | TOP, false,
+                          0.6, seed);
+            continue;
+        }
         painted(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], seed);
         for e in 2 {
             let at = if e == 0 { x.x } else { x.y };
@@ -803,15 +825,28 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     // The architrave up each side from its plinth block and over the head, mitred.
     var prof: float2[7] = [float2_0; 7];
     for q, i in ARCHITRAVE_A { prof[i] = float2 { q.x / 100.0, q.y / 100.0 }; }
-    architrave(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0);
-    architrave(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0);
-    architrave(verts, indices, b, prof[..], float2 { -w, h }, float2 { w, h }, float2 { 0.0, 1.0 }, 1.0, 1.0);
+    if paint_quiet {
+        seed++;
+        architrave_quiet(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0, seed);
+        seed++;
+        architrave_quiet(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0, seed);
+        seed++;
+        architrave_quiet(verts, indices, b, prof[..], float2 { -w, h }, float2 { w, h }, float2 { 0.0, 1.0 }, 1.0, 1.0, seed);
+    } else {
+        architrave(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0);
+        architrave(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0);
+        architrave(verts, indices, b, prof[..], float2 { -w, h }, float2 { w, h }, float2 { 0.0, 1.0 }, 1.0, 1.0);
+    }
     // The plinth blocks the architrave stands on, a little wider and deeper than it, over
     // the wainscot's skirting where it stops.
     for sx in SIDES {
         let a = sx * (w - 0.01);
         let c = sx * (w + ARCHITRAVE + BLOCK_PAST);
-        box_m(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, BLOCK_DEEP, paint);
+        if paint_quiet {
+            seed++;
+            paint_box(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, BLOCK_DEEP,
+                      Piece { round: LEFT | RIGHT | TOP, sides: LEFT | RIGHT | TOP, recess: LEFT | RIGHT, seed: seed, .. });
+        } else { box_m(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, BLOCK_DEEP, paint); }
     }
 }
 
