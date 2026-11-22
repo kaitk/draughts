@@ -102,8 +102,10 @@ On a worker the frame loop draws as it would without the computer
   (`played_easy`, ...), and a game plays at its level's skill as it began, kept with the
   saved game. A game that ends moves its level's skill with `ai::adapt`: up when the
   child won, down when the computer did, by the clock too. It counts once, when it first
-  ends; taken back and ended again, it doesn't count again. A game started over or
-  replaced before it ends doesn't count. A draw counts as 0 and leaves the skill. Play again on the end's card and start
+  ends; taken back and ended again, it doesn't count again. A game given up counts as
+  the computer's win; one started over before the child's fifth move, or replaced before
+  it ends, doesn't count ([giving up](#draws-and-giving-up)). A draw, agreed or by the
+  rules, counts as 0 and leaves the skill. Play again on the end's card and start
   over during a game begin a new game at the level's skill as it is then, adapted by the
   game just ended, and count it for the seeds as home's play does. A game played on from
   a replay's move (rendering's "A game played from a replay") plays at the past game's
@@ -111,6 +113,23 @@ On a worker the frame loop draws as it would without the computer
   count of games, its start over too.
 - **The default level** for a new player, and for settings read fresh, is easy; a
   player's saved level stays.
+
+## Draws and giving up
+
+- **Offer draw**, a tile beside start over while both sides have a king, is answered at
+  once from the score of the computer's last search, kept from its last move
+  (`ai::accepts_draw`): it accepts unless it is half a man or more ahead. A check on the
+  material comes first, for the kings' endings the score misjudges (`ai::dead_draw`):
+  with only kings on the board, the stronger side's two or fewer, or three against a lone
+  king on the long diagonal (a1–h8, a1–j10), are a draw whatever the score says. A
+  refusal shows a card, "No draw", and keeps the tile dim for the child's next five
+  moves.
+- **The computer offers** a draw once a game, after its move (`ai::offers_draw`): both
+  sides have a king, and the material is a dead draw, or only kings stand and its score
+  is within a fifth of a man of even. Play on keeps it from asking again that game.
+- **Giving up**: from the child's fifth move, start over asks first, and giving up ends
+  the game as the computer's win, which the history, the rating, and the skill count.
+- An agreed draw counts as any draw. Each ending counts once, as any ending does.
 
 ## Search
 
@@ -439,5 +458,5 @@ A player's rating is Elo, per draughts, from 800 (`ai::rate`): after a game agai
 computer `R + K · (S − E)`, E the expected score against the computer's rating at the
 game's skill, S 1, ½, or 0, K 40 over the player's first 20 rated games of that
 draughts and 20 after, never under 100. A friend's game on one tablet has no second
-rated player, and moves no rating. Nor does a game played on from a replay's move, which
+rated player, and moves no rating. An agreed draw is ½, a game given up 0. Nor does a game played on from a replay's move, which
 isn't written to the history either.

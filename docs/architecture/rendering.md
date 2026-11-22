@@ -334,6 +334,21 @@ otherwise, and with the 3D board, portrait: a bar above the board and the play b
   tile. 232 dp wide, 192 on a phone. A puzzle takes the same panels (`panel::puzzle_in`).
 - In portrait the bar holds back, settings, and start over in a row, icon over word on a
   phone; below the board whose turn and undo move.
+- **The draw tile** (a handshake) stands with start over while both sides have a king and
+  the board is at rest: "Offer draw" against the computer, "Draw" in a friend's game,
+  which ends the game at once. In landscape the way out is then two tiles over two (back
+  and settings over start over and the draw), in portrait the bar's fourth tile, in a
+  small window an icon after back. After a refusal it is dim for the child's next five
+  moves.
+- **Cards in the middle** over an undimmed board, as the end's cards stand: the
+  computer's refusal (the handshake crossed out, "No draw", its icon in the line "@ wants
+  to play on.", and Continue) and its own offer (its icon and the handshake, "Draw?",
+  Draw and Play on). The board takes no tap while one shows. Start over's give-up card,
+  from the child's fifth move against the computer, dims the board: a flag, "Give up this
+  game?", "It counts as a loss.", Give up and Keep playing.
+- **An inline icon** in a line of text: a marker `@` in the string, which each language
+  puts where its grammar wants, lays out as `gui::glyph_icon` on the line
+  (`gui::text_with_icon`); a line break counts it as a word.
 - Undo move takes back one move (against the computer, the child's and the reply); start
   over goes to the game's start; back goes home. There is no move-hints toggle on the
   panel. Against the computer the child's pieces are at the bottom; while it thinks its
@@ -353,7 +368,10 @@ otherwise, and with the 3D board, portrait: a bar above the board and the play b
   screen is still from about 1.7 s and draws nothing after. The dim is in the board and
   piece shaders, so the winning piece stays out of it.
 - **A draw** ([rules](rules.md#draws)): the clock stops, the board dims, and a card like
-  the win's shows both pieces, "Draw" and why, over back and play again.
+  the win's shows both pieces, "Draw" and why ("Agreed" for a draw agreed), over back and
+  play again.
+- **Given up**: the win's card for the computer at once, with no piece lifting, and under
+  who won "White gave up" (the child's side).
 - **The countdown** before a draw: in a count's last five moves a line under whose turn
   ("Draw in 3 moves", "White must win in 3 moves", "Same position twice"), with dots in
   landscape; with clocks a short form between them.

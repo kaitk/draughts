@@ -93,6 +93,10 @@ is a win.
 - Repetition compares only the positions since the last man's move or capture: none
   before can recur.
 - English has repetition only.
+- Beside the counts, a draw can be agreed (`rules::DRAW_AGREED`): against the computer
+  when it accepts the child's offer or the child its own ([computer player](ai.md#draws-and-giving-up)),
+  in a friend's game at once from the draw tile. The game keeps it (`game::Game.ended_by`),
+  as the record can't, and undo takes it back.
 
 The sources ([how they were chosen](../decisions/rules.md#draws)): Russian is the 2022 sport rules
 (<https://pravo.ppt.ru/pravila/264594>), International FMJD's Annex 1 (fmjd.org's own copy is gone; read from

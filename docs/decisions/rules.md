@@ -58,3 +58,12 @@ a value of the rules', `rules::Record`, held by the board (2026-11-14), not the 
 widget's own fields; undo, the draws, judging, and saving work on it. Rejected: putting it
 in `game/`, which the board can't import, and keeping the draw counts as they're played,
 which undo and a saved game would have to rebuild anyway.
+
+## A draw agreed (2026-11-22)
+
+Beside the rules' counts a game can be drawn by agreement (`rules::DRAW_AGREED`): the
+players' choice, not the position's, so no count measures it and no arbiter is needed.
+Against the computer the computer agrees or declines ([ai](ai.md#draws-offered-and-giving-up-2026-11-22));
+in a friend's game the draw tile ends the game at once. The game keeps how it ended
+(`game::Game.ended_by`) beside its record, saved with it, since the record alone can't
+tell an agreed draw from a game going on.
