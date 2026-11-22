@@ -2628,7 +2628,7 @@ fn glow_shown(g: Gpu&) -> bool { g.hdr && hdr_glow.look.x > 0.0 && hdr_glow.leve
 fn glow_smallest() -> i64 { clamp(hdr_glow.levels, 1, GLOW_LEVELS) - 1 }
 // GLOW_DOWN_FRAG's and GLOW_UP_FRAG's block; HDR_TONE_FRAG's.
 struct GlowStep { step: float4, look: float4 }
-struct HdrTone { glow: float4, sun: float4, veil: float4 }
+struct HdrTone { glow: float4, sun: float4, veil: float4, disc: float4 }
 fn glow_level_size(size: int2, k: i64) -> int2 {
     var q = int2 { max(size.x / 4, 1), max(size.y / 4, 1) };
     for i in k { q = int2 { max(q.x / 2, 1), max(q.y / 2, 1) }; }
@@ -2645,12 +2645,13 @@ fn glow_step_of(from: int2, to: int2, first: bool) -> GlowStep {
 // tuner's probe (tone_probe); sun the sun's place on the picture (pixels), the pixels a
 // degree spans there, and w what turns the glow's smallest level there into the share of
 // the sun open (0: taken as all open); veil SunLook's, its x 0 where the sun is behind the
-// eye.
+// eye; disc the disc's radius (pixels) and what turns the picture's light on it into its
+// share open (half the bare disc's light counts as open).
 var tone_probe: f32 = 0.0;
 fn hdr_tone_of(g: Gpu&) -> HdrTone {
     let glow = glow_shown(g);
     var t = HdrTone { float4 { if glow { hdr_glow.look.x } else { 0.0 }, 1.0 / g.size.x, 1.0 / g.size.y, tone_probe },
-                      float4_0, sun_look.veil };
+                      float4_0, sun_look.veil, float4_0 };
     guard sun_look.veil.x > 0.0 else { return t; }
     let m = g.frame.view_proj;
     let s = normalize(float3 { g.frame.light_dir.x, g.frame.light_dir.y, g.frame.light_dir.z });
@@ -2674,6 +2675,7 @@ fn hdr_tone_of(g: Gpu&) -> HdrTone {
         open_ref = 1.0 / max(bare, 1e-6);
     }
     t.sun = float4 { at.x, at.y, ppd, open_ref };
+    t.disc = float4 { sun_look.disc.x * ppd, 2.0 / max(sun_look.disc.w * g.room.outside, 1e-6), 0.0, 0.0 };
     return t;
 }
 let SUN_OPEN_FILTER: f32 = 1.0;

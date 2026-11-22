@@ -4299,12 +4299,26 @@ let HDR_TONE_FRAG = """
     // glow's uv, w the light tuner's probe (over 0 the light itself times it, under 0 the
     // sun's open share times minus it, both as grey levels); tone_sun: the sun on the picture
     // (pixels), the pixels a degree, w what turns glow_wide's light there into the share
-    // open (0 all open); tone_veil: render3d::SunLook's veil.
-    layout(set = 3, binding = 0) uniform HdrTone { vec4 tone_glow; vec4 tone_sun; vec4 tone_veil; };
+    // open (0 all open); tone_veil: render3d::SunLook's veil; tone_disc: x the disc's radius
+    // (pixels), y what turns the picture's light on the disc into its share open (0 none).
+    layout(set = 3, binding = 0) uniform HdrTone { vec4 tone_glow; vec4 tone_sun; vec4 tone_veil; vec4 tone_disc; };
+    // The disc's own pixels, five of them, so a bar thinner than the glow's level still hides it.
+    float disc_open() {
+        if (tone_disc.y <= 0.0) return 1.0;
+        ivec2 top = ivec2(1.0 / tone_glow.yz) - 1;
+        float h = 0.5 * tone_disc.x, s = 0.0;
+        vec2 o[5] = vec2[5](vec2(0.0), vec2(h, 0.0), vec2(-h, 0.0), vec2(0.0, h), vec2(0.0, -h));
+        for (int i = 0; i < 5; i++) {
+            vec3 c = texelFetch(scene_light, clamp(ivec2(tone_sun.xy + o[i]), ivec2(0), top), 0).rgb;
+            s += clamp(max(c.r, max(c.g, c.b)) * tone_disc.y, 0.0, 1.0);
+        }
+        return s * 0.2;
+    }
     float sun_open() {
-        if (tone_sun.w <= 0.0) return 1.0;
+        float d = disc_open();
+        if (tone_sun.w <= 0.0) return d;
         vec3 w = texture(glow_wide, tone_sun.xy * tone_glow.yz).rgb;
-        return clamp(max(w.r, max(w.g, w.b)) * tone_sun.w, 0.0, 1.0);
+        return min(d, clamp(max(w.r, max(w.g, w.b)) * tone_sun.w, 0.0, 1.0));
     }
     vec3 sun_glare(vec2 px, float open) {
         vec2 d = px - tone_sun.xy;
