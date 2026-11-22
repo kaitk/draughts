@@ -411,6 +411,22 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       unchanged in both renderers. Open: the user's pick of the look (made the default
       then), and whether the tree seen stays near the sun or shows everywhere (until the
       new tree, W4)
+- [x] Real dust's points and an analytic haze in the sunbeam (2026-11-22, builder 33,
+      `build/notes/builder-33/`): the table-window view's dust is points by default
+      (energy-conserving footprints, fibres, glints, drift in world units; 250, 500, 1000;
+      builder 29's motes as `--dust motes`, within a level of their old picture), the
+      sprite haze replaced by an analytic one, off by default (`--haze clean|lived|dusted|
+      study`, softer stripes toward the sun). At 3024 × 1890 native, less-turned, two
+      rounds: menu view main pass 9.87 / 9.92 ms with the points against 10.08 / 9.82 with
+      builder 29's motes and 9.81 / 10.06 with the dust off, the dust's pass 0.24-0.34; room
+      view 11.68 / 11.61 against 11.64 / 11.62. The haze's passes 0.7 ms (the cross-section 0.15, the haze at half
+      size 0.34-0.37, its add 0.18-0.22), the frame's GPU sum 12.99 / 12.78 to 13.48-13.80
+      in the menu view at any strength, room view 14.76 / 14.80 to 15.42 / 15.55; at full
+      size 14.44 / 14.62. The first exact haze
+      cost 3.9-4.0 ms at half size and 14.9 at full; the atlas of the beam's cross-section
+      brought it down. The game's shot unchanged in both renderers. Open: the user's pick
+      of the dust's density and of the haze's strength (off, dusted or study); on mobile the
+      haze is off (a cheaper version would be a quarter size without the lace and the tree)
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

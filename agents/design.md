@@ -325,13 +325,26 @@ pieces; the design boards still set the layout, glass, and controls.
   OUT` (SVG, a true top view, x growing to the left), shots `build/b30/options.sh EXE TAG`.
   In zsh a `$extra` of several flags passes as one word and the tuner ignores it: sweep in
   bash.
-- The dust in the beam (builder 29): `--dust motes|motes-few|motes-many` (the default
-  motes) draws flakes and lint tumbling in the sunbeam's own volume over the table
-  (`light_tune`'s `beam_box`, BEAM_*), lit only by the direct sun; `sparse|dense|coarse` are
-  the old round points in the box. `--mote-glint EXP`, `--mote-fibres SHARE`, `--beam-haze K`
-  (an experiment: 900 faint sprites in the same volume, 0.0004 a subtle haze, off by
-  default). The motes show at native size only: shoot `build/b29/dust.sh EXE TAG` at 3024 ×
-  1890 and diff against `--dust off` (`-alpha off -compose difference`) to find them.
+- The dust in the beam (builders 29 and 33): `--dust points|points-few|points-many` (the
+  default points, builder 33) draws real dust's points, fibres and glinting flakes in the
+  sunbeam's own volume over the table (`light_tune`'s `beam_box`, BEAM_*), lit only by the
+  direct sun; `motes|motes-few|motes-many` are builder 29's tumbling flakes, `sparse|dense|
+  coarse` the old round points in the box. `--point-px SIGMA`, `--glints K` (0 off),
+  `--air DRIFT,RISE,SWIRL,SIZE`, `--near K`, `--mote-bright K` (40: exact points are too
+  faint to see against the wainscot), `--mote-glint EXP`, `--mote-fibres SHARE`. The dust
+  shows at native size only: shoot at 3024 × 1890 and diff against `--dust off` (`-alpha off
+  -compose difference`) to find it; for the glints and the drift, step `--wind-time` by
+  1/60 s or 0.25 s (`build/b33/shots.sh`).
+- The haze in the beam (builder 33, `build/notes/builder-33/`): `--haze clean|lived|dusted|
+  study`, HDR on, needs the room's pre-pass (on with `--room-surfaces on`). The realistic
+  strengths (5e-5 to 4e-4) only lift the dark wainscot toward the sun; `dusted` reads as a
+  soft beam, `study` (3e-3, stripes soft 4, `--haze-toward 4`) is close to the ChatGPT
+  study's. Looking toward the sun the bars' stripes converge on it and read as god rays:
+  keep `--haze-toward` up wherever the stripes are strong. `--haze-look G,EVEN,TAPS,SOFT`
+  (0.7,0.2,12,1); sigma and softness are also sliders under Dust. Compare against
+  `build/notes/window-view/refs/` (Gabinio, Sigüenza, the ChatGPT study). The haze's cost
+  is its own passes after the main one (the cross-section, the haze, its add); find them
+  in a Metal trace by the encoders that appear with `--haze` on (`build/b33/measure.sh`).
 - HDR and the lens (task 111, builder 28, `build/notes/builder-28/`): the tuner draws the
   scenic views in HDR by default; X or `--hdr off` gives the 8-bit picture to compare
   against, and only the shell with its view out, 4× MSAA and no room view draws HDR (the

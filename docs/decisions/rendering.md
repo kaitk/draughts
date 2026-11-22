@@ -1273,7 +1273,56 @@ to be is in tasks 042, 059, 071, 081, and 086.
     motes' volume, lit as they are, so a slight in-scatter shows the beam with the bars'
     stripes. It costs 0.8 ms of the main pass (9.72-9.74 against 8.90-8.98), the sprites'
     overdraw; a strength of 0.0004 is subtle, 0.001 reads as smoke. A ray-marched in-scatter
-    over the beam's volume would be the alternative if it is kept.
+    over the beam's volume would be the alternative if it is kept. Replaced on 2026-11-22 by
+    the analytic haze below.
+- The table-window view's dust is real dust's points (2026-11-22, task 107, builder 33,
+  `build/notes/builder-33/`), replacing builder 29's motes as the default (they stay as
+  `--dust motes`, matching their old picture within a level). Each mote is a fixed Gaussian
+  footprint (sigma 0.75 px) at any size and distance, carrying the light it really scatters:
+  the sun's irradiance as the room's surfaces take it × its cross-section × its phase
+  (Henyey-Greenstein g 0.7 with a fifth isotropic, plus a narrow lobe toward the sun) ×
+  pixels a metre squared, so its brightness is energy-conserving over the footprint. Sizes
+  are log-normal; 15% are fibres, 10 µm thick and 0.5-3 mm long, drawn as projected lines a
+  pixel wide; flakes glint for a few frames as they tumble. They drift, rise where the air is
+  warm, settle by size and swirl in four divergence-free waves, all in world cm a second and
+  none random a frame. Three densities, 250, 500 and 1000 points in the beam's volume, denser
+  round the board. With the lens on each point is the lens's disc, its light spread over it.
+  - Exact points are about 40× too faint to see against the shaded wainscot; a factor of 40
+    (`--mote-bright`) stands for the camera exposed for the window, where the larger motes
+    show. They then read about as visibly as the old motes.
+  - Measured as above (the menu view, two rounds): the main pass 9.87-9.92 ms against
+    9.81-10.06 with the dust off and 9.83-9.90 with the old motes; the dust's own pass
+    0.24-0.34 ms whatever the dust. The points cost nothing measurable.
+  - The lens's discs are drawn in the scene's pass for now; they move after the depth of
+    field's blur when it comes.
+- The beam's haze is analytic (2026-11-22, task 107, builder 33), replacing the sprite haze;
+  an experiment off by default, in the light tuner only (`--haze`), needing the room's
+  pre-pass. The sun is one direction and the glass flat, so how much sun reaches any point
+  is what passes the beam's cross-section where the point maps along the sun onto the outer
+  glass's plane. A small pass draws that cross-section each frame into an atlas, a slot a
+  window: the panes' coverage, exact (each sash of the outer glass cut by one of the inner
+  glass's and the niche's opening is a product set of columns and rows), times the lace and
+  the tree, sharp and blurred. The haze, at the pre-pass's half size, carries each pixel's
+  view onto that plane, where it is a segment, and averages the atlas over 12 jittered taps
+  along it; the stripes blur with the depth from the glass as the sun's disc widens the
+  bars' shadows. That lit length × sigma × the phase (g 0.7, a fifth isotropic) × the room's
+  sun is added into the HDR target before the glow. Strengths: the air's sigma 5e-5, 1.5e-4,
+  4e-4 a metre (clean, lived-in, just dusted, the research's estimates) and 3e-3 with its
+  stripes four times as soft (the ChatGPT study's beam).
+  - Looking toward the sun the stripes converge on it and read as light shafts; a softness
+    that grows toward the sun (`--haze-toward`, 4 in the study's preset) melts them into
+    the beam, which keeps to the "no god rays" rule above.
+  - Rejected: walking the panes exactly for every pixel. Its first version, a few hundred
+    rectangles a pixel, cost 3.7-4.0 ms at half size (14.9 at full); walking the product
+    sets instead made the clip cheap but the pass stayed at 3.4 ms, the lace's and tree's
+    code costing registers even where it never ran (2.1 ms without it). With the atlas the
+    haze's three passes take about 0.7 ms at 3024 × 1890 (the cross-section 0.15, the haze
+    at half size 0.34-0.37, its add 0.18-0.22; two rounds, the menu and the room views
+    alike, every strength), the frame's GPU sum 0.5-1.0 ms over the same view without; at
+    full size 1.5-1.8.
+  - The old soft stripes, the panes grown and shrunk, added light where a shrunk pane
+    vanished: about 40% more than the sharp beam. The blurred atlas keeps the sharp beam's
+    light, so the study's sigma went from 2e-3 to 3e-3 for the same look.
 - The depth of field's groundwork for the scenic views (2026-11-22, task 111; the plan
   `build/notes/bokeh/`'s B0 to B2, built by builder 28, `build/notes/builder-28/`): one lens
   for every pass that will blur, the scenic views drawn in HDR, and a sampled depth of the
