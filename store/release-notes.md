@@ -6,17 +6,22 @@ App Store localization yet, `app-store.md`). Newest first.
 
 ## 0.9.3 (2026-11-22, Android)
 
-Fixes 0.9.2's flat board, which showed only a few of the pieces.
+Offering a draw and giving up, and a fix for 0.9.2's flat board, which showed only a few
+of the pieces.
 
 ### Play, en-GB
 
 ```text
+• Offer draw once both sides have a king: the computer accepts or plays on, and may offer a draw itself
+• Give up a game against the computer through Start over; it counts as a loss
 • Fixed: the flat board showed only a few of the pieces
 ```
 
 ### Play, et
 
 ```text
+• Paku viiki, kui mõlemal poolel on tamm: arvuti nõustub või mängib edasi ning võib ise viiki pakkuda
+• Arvutiga mängus saab nupuga Alusta uuesti alla anda; see läheb kirja kaotusena
 • Parandatud: lamedal laual olid näha ainult mõned nupud
 ```
 
