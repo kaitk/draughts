@@ -31,6 +31,7 @@ fn look_at(eye: float3, target: float3, up: float3) -> Mat { gfx::look_at(eye, t
 struct Own {
     samples:   i32,
     warm_kept: gfx::Texture,
+    sun_map:   gfx::Pipeline,  // the light tuner's sun on the floor's plan (render3d::floor_steps)
 }
 
 // Theme `kind`'s photograph, or 0 when it isn't built in: the ASTC image as stored, or
@@ -501,6 +502,41 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     }
 }
 
+// The light tuner's sun on the floor from a map (render3d::floor_steps): the floor drawn from
+// above over its plan (render3d::floor_map_of) into g.sun_map, each texel the sun through
+// the windows there (shaders::SUN_MAP), every frame, as the tree moves.
+fn floor_steps_pass(own: Own&, g: render3d::Gpu&) {
+    guard render3d::floor_steps.z > 0.5 else { return; }
+    let surfaces = render3d::surfaces_block(g);
+    let map = surfaces.floor_map;
+    let q = render3d::sun_map_size_of(map);
+    if g.sun_map.id == 0 || g.sun_map_size.x != q.x || g.sun_map_size.y != q.y {
+        if g.sun_map.id != 0 {
+            gfx::release(g.sun_map);
+            gfx::flush();
+        }
+        g.sun_map = gfx::render_target(q.x, q.y, gfx::R16F);
+        g.sun_map_size = q;
+    }
+    if own.sun_map.id == 0 {
+        own.sun_map = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT),
+                                    embed_shader("frag", shaders::ROOM_FLOOR, shaders::SUN_MAP, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                                    gfx::PipelineDesc { cull: gfx::CULL_NONE });
+    }
+    // From above: x along u, y along v, the room's frame turned back from the world's.
+    var f = g.frame;
+    let a = f.room_axes;
+    f.view_proj.c0 = float4 { a.x * map.z, a.z * map.w, 0.0, 0.0 };
+    f.view_proj.c1 = float4_0;
+    f.view_proj.c2 = float4 { a.y * map.z, a.w * map.w, 0.0, 0.0 };
+    f.view_proj.c3 = float4 { -map.x * map.z, -map.y * map.w, 0.5, 1.0 };
+    var pass = gfx::PassDesc { color_value: float4_0 };
+    pass.color[0] = g.sun_map;
+    gfx::begin_pass(pass);
+    draw_room_group(g, f, surfaces, own.sun_map, render3d::GROUP_FLOOR, g.room_ssao, false);
+    gfx::end_pass();
+}
+
 // The tuner's view of the floor's mirror over all of `target`.
 fn planar_show_pass(own: Own&, g: render3d::Gpu&, target: Texture, show: render3d::PlanarShow) {
     var pass = gfx::PassDesc { clear_color: false };
@@ -686,11 +722,13 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     let h .= g.hdr_pipes;
     let paint = render3d::paint_steps_on() && tuned_frags[TUNED_PAINT_HDR].len > 0;
     let sill = render3d::sill_steps_on() && tuned_frags[TUNED_SILL_HDR].len > 0;
-    guard h.tone.id == 0 || h.pieces != g.pieces || h.paint_steps != paint || h.sill_steps != sill else { return; }
+    let floor = render3d::floor_steps_on() && tuned_frags[TUNED_FLOOR_HDR].len > 0;
+    guard h.tone.id == 0 || h.pieces != g.pieces || h.paint_steps != paint || h.sill_steps != sill || h.floor_steps != floor else { return; }
     if h.tone.id != 0 { release_hdr(own, g); }
     h.pieces = g.pieces;
     h.paint_steps = paint;
     h.sill_steps = sill;
+    h.floor_steps = floor;
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
     let lit_fs = lit_hdr_frag(g.pieces);
     h.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
@@ -701,7 +739,7 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
     let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
     h.floor = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
-    h.planar = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.planar = gfx::pipeline(room_vert, if floor { tuned_frags[TUNED_FLOOR_HDR] } else { embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
     h.walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_WALLS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
     h.paint = gfx::pipeline(room_vert, if paint { tuned_frags[TUNED_PAINT_HDR] } else { embed_shader("frag", shaders::ROOM_PAINT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
     h.sill = gfx::pipeline(room_vert, if sill { tuned_frags[TUNED_SILL_HDR] } else { embed_shader("frag", shaders::ROOM_SILL, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
@@ -1202,8 +1240,9 @@ let TUNED_SILL_MIRROR = 16;
 let TUNED_PAINT_HDR = 17;
 let TUNED_SILL_HDR = 18;
 let TUNED_OUTSIDE_HDR = 19;
-let TUNED_FRAGS = 20;
-var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+let TUNED_FLOOR_HDR = 20;
+let TUNED_FRAGS = 21;
+var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
 fn tuned_or(i: i64, frag: const u8[:]) -> const u8[:] { if tuned_frags[i].len > 0 { tuned_frags[i] } else { frag } }
 
 // The table's shader with its shadow filtered as `look` says, as the lit one's (lit_frag).
@@ -1577,9 +1616,13 @@ fn warm(own: Own&, g: render3d::Gpu&, k: i64) {
 // Everything setup() and the frames made given back (the app's board back to flat): the
 // targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
 fn release(own: Own&, g: render3d::Gpu&) {
+    if own.sun_map.id != 0 {
+        gfx::release(own.sun_map);
+        own.sun_map = gfx::Pipeline { 0 };
+    }
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.tree_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
-                    own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.floor_noise, g.wall_albedo,
+                    own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.floor_noise, g.sun_map, g.scratch_tile, g.wall_albedo,
                     g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.corner_map,
                     g.table_map, g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color,
                     g.planar_depth, g.planar_map, g.scene_image];

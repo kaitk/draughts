@@ -2242,6 +2242,13 @@ let ROOM_HEAD = """
     // The room mirrored in the floor (render3d::planar_pass): its light in the room's units,
     // a the distance from the floor to what it shows along the reflection, with its mips.
     layout(set = 2, binding = 10) uniform sampler2D planar_map;
+    #ifdef FLOOR_STEPS
+    // The light tuner's switches (render3d::floor_steps): the sun through the windows on
+    // the floor, drawn each frame over the floor's plan (render3d::floor_map_of), and the
+    // scratches as a repeating tile (surfaces::scratch_tile).
+    layout(set = 2, binding = 11) uniform sampler2D sun_map;
+    layout(set = 2, binding = 12) uniform sampler2D scratch_tile;
+    #endif
     #endif
     #endif
     #ifdef ROOM_WALLS
@@ -2393,6 +2400,8 @@ let ROOM_HEAD = """
         vec4 sill;
         vec4 sill_steps[2];
         vec4 window_view;
+        vec4 floor_steps;
+        vec4 floor_map;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -3410,8 +3419,31 @@ let ROOM_FRAG = """
     }
     #endif
 
+    #ifdef FLOOR_STEPS
+    // The repeating tile of the scratches, world units (surfaces::SCRATCH_TILE).
+    const float SCRATCH_TILE = 48.0;
+    // The table's shadow from its map in four taps, each two texels apart: about a 4 × 4
+    // texel box where table_map_at takes 5 × 5 in nine.
+    float table_map_at4(vec3 q) {
+        if (table_map[3].x < 0.5) return 1.0;
+        vec4 h = vec4(q, 1.0);
+        vec3 s = vec3(dot(table_map[0], h), dot(table_map[1], h), dot(table_map[2], h));
+        if (abs(s.x) > 0.995 || abs(s.y) > 0.995) return 1.0;
+        vec2 texel = 1.0 / vec2(textureSize(table_depth, 0));
+        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5);
+        float z = min(s.z, 0.9999);
+        return 0.25 * (texture(table_depth, vec3(uv + vec2(-1.0, -1.0) * texel, z)) + texture(table_depth, vec3(uv + vec2(1.0, -1.0) * texel, z))
+                     + texture(table_depth, vec3(uv + vec2(-1.0, 1.0) * texel, z)) + texture(table_depth, vec3(uv + vec2(1.0, 1.0) * texel, z)));
+    }
+    #endif
+
     void main() {
         vec3 p = v_world;
+    #ifdef SUN_MAP
+        // The floor's plan: the sun through the windows at each texel (render3d::floor_steps).
+        result = vec4(window_open(p), 0.0, 0.0, 1.0);
+        return;
+    #endif
         vec3 ng = normalize(v_normal);
         float kind = floor(v_extra.y + 0.001);
         float own = v_extra.y - kind;
@@ -3557,6 +3589,9 @@ let ROOM_FRAG = """
                 vec2 clear = room_doors.yw - room_heights.w * shell.w;
                 vec2 off_mid = abs(vec2(uv.x - room_doors.x, uv.y - room_doors.z)) - clear;
                 door_open = (1.0 - smoothstep(-0.1 * shell.w, 0.1 * shell.w, off_mid)) * step(0.001, room_doors.yw);
+            #ifdef FLOOR_STEPS
+                door_open *= floor_steps.y;
+            #endif
                 float hall = uv.y + place.x + door_open.x * 0.4 * shell.w;
                 float stove = shell_ends.x - uv.x + door_open.y * 0.4 * shell.w;
                 wall = 1.0 - smoothstep(4.0, 20.0, min(min(place.y - uv.y, uv.x - shell_ends.y), min(hall, stove)));
@@ -3569,7 +3604,13 @@ let ROOM_FRAG = """
             rough += 0.25 * wear;
             albedo *= 1.0 - 0.22 * wall * worn.y;
             rough -= 0.08 * wall * worn.y;
+        #ifdef FLOOR_STEPS
+            float sc = floor_steps.x > 1.5 ? 0.0 : (floor_steps.x > 0.5 ? textureGrad(scratch_tile, uv / SCRATCH_TILE, dx / SCRATCH_TILE, dy / SCRATCH_TILE).r
+                                                                         : scratches(uv, fpw));
+            sc *= planks.w * (0.35 + wear);
+        #else
             float sc = scratches(uv, fpw) * planks.w * (0.35 + wear);
+        #endif
             albedo *= 1.0 + 0.4 * sc;
             rough += 0.3 * sc;
             albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
@@ -3885,9 +3926,16 @@ let ROOM_FRAG = """
         // that takes the highlight; the shade's floor (window_light's, 1 - room.y where the
         // sun doesn't reach) stands for light the room throws back, so it takes the
         // occlusion as the room's other indirect light does.
+    #ifdef FLOOR_STEPS
+        float table_kept = table_map[3].x > 0.5 ? (floor_steps.w > 0.5 ? table_map_at4(p + ng * 0.06) : table_map_at(p + ng * 0.06)) : table_shade(p, l);
+        float kept = dot(ng, l) > 0.0 ? table_kept * case_shade(v_local, l) : 0.0;
+        vec2 map_at = vec2(0.5, -0.5) * ((v_local.xz - floor_map.xy) * floor_map.zw) + 0.5;
+        float open = kept > 0.0 ? (floor_steps.z > 0.5 ? textureLod(sun_map, map_at, 0.0).r : window_open(p)) : 0.0;
+    #else
         float table_kept = table_map[3].x > 0.5 ? table_map_at(p + ng * 0.06) : table_shade(p, l);
         float kept = dot(ng, l) > 0.0 ? table_kept * case_shade(v_local, l) : 0.0;
         float open = kept > 0.0 ? window_open(p) : 0.0;
+    #endif
     #ifndef NO_SSAO
     #ifndef ROOM_FLOOR
         // Not on the floor, where it showed nothing and cost the most.
@@ -4223,6 +4271,9 @@ let MIRROR_PASS = "#define LINEAR_OUT 1\n#define NO_SSAO 1\n";
 // their own made while one is on: their code cost the room 0.55 ms at 3024 × 1890 where
 // none was shown. With the screen's maps only, never in the mirror.
 let ROOM_VIEWS = "#define ROOM_VIEWS 1\n";
+// The light tuner's switches of the floor (render3d::floor_steps), and its sun map's pass.
+let FLOOR_STEPS = "#define FLOOR_STEPS 1\n";
+let SUN_MAP = "#define SUN_MAP 1\n";
 // The scenic views' HDR target (render3d::hdr_shown, the high tier's): the board, the
 // pieces, the table, the room, the view out and the motes write their exposed light with
 // only their tonemap's toe taken off (the room's on the luminance, the board's and the

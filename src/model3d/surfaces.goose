@@ -631,3 +631,72 @@ fn floor_noise(out: u8[>..]&) {
         }
     }
 }
+
+// The floor's scratches as a repeating tile, for the light tuner (render3d::floor_steps):
+// SCRATCH_TILE world units square (1.57 m), the shader's scratches (shaders::ROOM_FRAG's
+// scratches, 1.5 units a cell, its hashes of the cell taken round the tile) drawn as how much
+// of each texel they cover, then the mips, each texel the mean of four, R8.
+let SCRATCH_SIDE = 2048;
+let SCRATCH_MIPS = 12;
+let SCRATCH_TILE: f32 = 48.0;
+let SCRATCH_CELL: f32 = 1.5;
+
+// How much of a texel `t` wide at distance d a line `half_w` either side of 0 covers.
+fn line_cover(d: f32, half_w: f32, t: f32) -> f32 {
+    return clamp((min(d + 0.5 * t, half_w) - max(d - 0.5 * t, -half_w)) / t, 0.0, 1.0);
+}
+
+fn scratch_tile(out: u8[>..]&) {
+    let n = SCRATCH_SIDE;
+    let t = SCRATCH_TILE / n;
+    let cells = (SCRATCH_TILE / SCRATCH_CELL) as i64;
+    var cover: f32[>..] = [];
+    cover.resize(n * n, 0.0);
+    for cy in cells {
+        for cx in cells {
+            let ix: f32 = cx;
+            let iy: f32 = cy;
+            let c = float2 { (ix + floor_hash(ix + 0.3, iy + 0.3)) * SCRATCH_CELL, (iy + floor_hash(ix + 5.9, iy + 5.9)) * SCRATCH_CELL };
+            let ang = (floor_hash(ix + 2.1, iy + 2.1) - 0.5) * (if floor_hash(ix + 8.4, iy + 8.4) < 0.7 { 0.8 } else { 3.1 });
+            let dir = float2 { cos(ang), sin(ang) };
+            let half_len = 0.2 + 0.7 * floor_hash(ix + 4.6, iy + 4.6);
+            let half_w = 0.004 + 0.004 * floor_hash(ix + 6.2, iy + 6.2);
+            let reach = half_len + half_w + t;
+            let x0 = floor((c.x - reach) / t) as i64;
+            let x1 = floor((c.x + reach) / t) as i64;
+            let y0 = floor((c.y - reach) / t) as i64;
+            let y1 = floor((c.y + reach) / t) as i64;
+            for y in y0..y1 + 1 {
+                for x in x0..x1 + 1 {
+                    let px: f32 = x;
+                    let py: f32 = y;
+                    let d = float2 { (px + 0.5) * t - c.x, (py + 0.5) * t - c.y };
+                    let along = clamp(d.x * dir.x + d.y * dir.y, -half_len, half_len);
+                    let off = float2 { d.x - dir.x * along, d.y - dir.y * along };
+                    let k = ((y % n + n) % n) * n + (x % n + n) % n;
+                    cover[k] = max(cover[k], line_cover(sqrt(off.x * off.x + off.y * off.y), half_w, t));
+                }
+            }
+        }
+    }
+    var size = 0;
+    for level in SCRATCH_MIPS { size += (n >> level) * (n >> level); }
+    out.resize(size, 0);
+    var at = 0;
+    var w = n;
+    for level in SCRATCH_MIPS {
+        if level > 0 {
+            // Each texel the mean of four of the level above, in place.
+            let up = w;
+            w = w / 2;
+            for y in w {
+                for x in w {
+                    cover[y * w + x] = 0.25 * (cover[2 * y * up + 2 * x] + cover[2 * y * up + 2 * x + 1]
+                                               + cover[(2 * y + 1) * up + 2 * x] + cover[(2 * y + 1) * up + 2 * x + 1]);
+                }
+            }
+        }
+        for i in w * w { out[at + i] = (cover[i] * 255.0 + 0.5) as u8; }
+        at += w * w;
+    }
+}
