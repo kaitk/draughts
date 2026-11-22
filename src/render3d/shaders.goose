@@ -3046,6 +3046,8 @@ let ROOM_FRAG = """
         for (int i = 0; i < 9; i++) {
             vec2 id = id0 + vec2(float(i % 3) - 1.0, float(i / 3) - 1.0);
             vec2 c = (id + vec2(h12(id + 0.3), h12(id + 5.9))) * CELL;
+            // A cell's scratch is at most 0.9 long either side of its middle: none here.
+            if (length(uv - c) > 0.91 + fp) continue;
             float ang = (h12(id + 2.1) - 0.5) * (h12(id + 8.4) < 0.7 ? 0.8 : 3.1);
             vec2 dir = vec2(cos(ang), sin(ang));
             float half_len = 0.2 + 0.7 * h12(id + 4.6);
