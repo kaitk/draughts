@@ -17,6 +17,7 @@ type Pipeline = gfx::Pipeline;
 let RGBA8 = gfx::RGBA8;
 let RGBA8_SRGB = gfx::RGBA8_SRGB;
 let R8 = gfx::R8;
+let RG8 = gfx::RG8;
 let RGBA16F = gfx::RGBA16F;
 fn mul(a: Mat, b: Mat) -> Mat { gfx::mul(a, b) }
 fn ortho(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Mat {
@@ -1578,7 +1579,7 @@ fn warm(own: Own&, g: render3d::Gpu&, k: i64) {
 fn release(own: Own&, g: render3d::Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.tree_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
-                    own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.wall_albedo,
+                    own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.floor_noise, g.wall_albedo,
                     g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.corner_map,
                     g.table_map, g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color,
                     g.planar_depth, g.planar_map, g.scene_image];

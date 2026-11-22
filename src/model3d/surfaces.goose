@@ -565,3 +565,69 @@ fn floor_quad(verts: mesh::Vertex[>..]&, indices: u32[>..]&, low: float2, high: 
     for c in corners { verts.push(mesh::Vertex { float3 { c.x, FLOOR_Y, c.y }, float3 { 0.0, 1.0, 0.0 }, c, 1.0, MAT_FLOOR }); }
     indices.append([fb, fb + 1, fb + 2, fb, fb + 2, fb + 3]);
 }
+
+// The floor's slow noises (shaders::ROOM_FRAG's floor_noise), a world unit a texel over
+// FLOOR_NOISE_SIDE units round the board's middle, RG8: r the wear's patchiness, two value
+// noises, g the wax's patches, one; made once so the floor reads them rather than working
+// out three noises a pixel. The noises are the shader's (h12, vnoise), at each texel's middle.
+let FLOOR_NOISE_SIDE = 1024;
+
+// The shader's h12 at the lattice point (x, y).
+fn floor_hash(x: f32, y: f32) -> f32 {
+    let a = fract(x * 0.1031);
+    let b = fract(y * 0.1031);
+    let d = a * (b + 33.33) + b * (a + 33.33) + a * (a + 33.33);
+    return fract((a + d + b + d) * (a + d));
+}
+
+// The shader's vnoise at (x, y), the lattice's hashes from `lat` (its corner at (x0, y0),
+// `w` across).
+fn floor_vnoise(lat: f32[:], x0: f32, y0: f32, w: i64, x: f32, y: f32) -> f32 {
+    let ix = floor(x);
+    let iy = floor(y);
+    let fx = x - ix;
+    let fy = y - iy;
+    let ux = fx * fx * (3.0 - 2.0 * fx);
+    let uy = fy * fy * (3.0 - 2.0 * fy);
+    let k = ((iy - y0) as i64) * w + (ix - x0) as i64;
+    let a = lat[k];
+    let b = lat[k + 1];
+    let c = lat[k + w];
+    let d = lat[k + w + 1];
+    let low = a + (b - a) * ux;
+    return low + (c + (d - c) * ux - low) * uy;
+}
+
+// One noise's lattice over the texels' span: scale and offset as the shader takes uv.
+fn floor_lattice(lat: f32[>..]&, scale: f32, offset: f32) -> f32, i64 {
+    let half: f32 = FLOOR_NOISE_SIDE / 2;
+    let x0 = floor(-half * scale + offset) - 1.0;
+    let w = (FLOOR_NOISE_SIDE * scale) as i64 + 4;
+    lat.resize(w * w, 0.0);
+    for j in w {
+        for i in w { lat[j * w + i] = floor_hash(x0 + i, x0 + j); }
+    }
+    return x0, w;
+}
+
+fn floor_noise(out: u8[>..]&) {
+    let n = FLOOR_NOISE_SIDE;
+    out.resize(2 * n * n, 0);
+    var a: f32[>..] = [];
+    var b: f32[>..] = [];
+    var c: f32[>..] = [];
+    let a0, aw = floor_lattice(a, 0.05, 3.3);
+    let b0, bw = floor_lattice(b, 0.19, 7.1);
+    let c0, cw = floor_lattice(c, 0.045, 17.0);
+    for y in n {
+        let v: f32 = y + 0.5 - n / 2;
+        for x in n {
+            let u: f32 = x + 0.5 - n / 2;
+            let patchy = 0.6 * floor_vnoise(a, a0, a0, aw, u * 0.05 + 3.3, v * 0.05 + 3.3)
+                       + 0.4 * floor_vnoise(b, b0, b0, bw, u * 0.19 + 7.1, v * 0.19 + 7.1);
+            let patches = floor_vnoise(c, c0, c0, cw, u * 0.045 + 17.0, v * 0.045 + 17.0);
+            out[2 * (y * n + x)] = (clamp(patchy, 0.0, 1.0) * 255.0 + 0.5) as u8;
+            out[2 * (y * n + x) + 1] = (clamp(patches, 0.0, 1.0) * 255.0 + 0.5) as u8;
+        }
+    }
+}

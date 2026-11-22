@@ -339,6 +339,7 @@ struct Gpu {
     room_ms:      f64,              // the bake's time (measuring)
     floor_albedo: Texture,
     floor_normal: Texture,
+    floor_noise:  Texture,          // the floor's slow noises (surfaces::floor_noise)
     wall_albedo:  Texture,
     wall_normal:  Texture,
     paper_mask:   Texture,          // the wallpaper's mask, R8 with its mips (surfaces::PAPER_SIDE)
@@ -862,6 +863,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures 
     if group == GROUP_FLOOR {
         add_texture(t, g.floor_albedo, g.aniso);
         add_texture(t, g.floor_normal, g.aniso);
+        add_texture(t, g.floor_noise, g.linear);
     } else if group == GROUP_WALLS {
         add_texture(t, g.wall_albedo, g.aniso);
         add_texture(t, g.wall_normal, g.aniso);
@@ -950,6 +952,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.floor_albedo = baked(o, side, side, RGBA8_SRGB);
         g.floor_normal = baked(o, side, side, RGBA8);
         o.gpu_flush();
+        put_floor_noise(o, g);
         g.wall_albedo = baked(o, side, side, RGBA8_SRGB);
         g.wall_normal = baked(o, side, side, RGBA8);
         let finish = g.finish;
@@ -1058,6 +1061,14 @@ fn corner_planes(g: Gpu&) -> corner_map::Planes {
 // The corners' map to bind, or another texture where none is made: ROOM_FRAG reads it only
 // in the shell.
 fn corners_or_stand_in(g: Gpu&) -> Texture { if g.corner_map.id != 0 { g.corner_map } else { g.crown_map } }
+
+// The floor's slow noises put on the GPU, once with the room's bake.
+fn put_floor_noise<O>(o: O&, g: Gpu&) {
+    var px: u8[>..] = [];
+    surfaces::floor_noise(px);
+    g.floor_noise = o.gpu_sampled(surfaces::FLOOR_NOISE_SIDE, surfaces::FLOOR_NOISE_SIDE, 1, RG8);
+    o.gpu_upload(g.floor_noise, 0, px[..]);
+}
 
 // The room's masks decoded (src/native/materials.c) and put on the GPU with their mips:
 // the wallpaper's, the plaster's tone, once with the room's bake; the curtains' lace, again

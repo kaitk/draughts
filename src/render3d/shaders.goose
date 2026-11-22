@@ -2232,14 +2232,16 @@ let ROOM_HEAD = """
     // The floor's oak (BAKE_FRAG's mode 4), albedo and roughness, and the normal.
     layout(set = 2, binding = 5) uniform sampler2D floor_albedo;
     layout(set = 2, binding = 6) uniform sampler2D floor_normal;
+    // Its slow noises (surfaces::floor_noise): the wear's patchiness, the wax's patches.
+    layout(set = 2, binding = 7) uniform sampler2D floor_noise;
     #ifndef NO_SSAO
-    layout(set = 2, binding = 7) uniform sampler2D ssao_map;
-    layout(set = 2, binding = 8) uniform sampler2D pre_place;
+    layout(set = 2, binding = 8) uniform sampler2D ssao_map;
+    layout(set = 2, binding = 9) uniform sampler2D pre_place;
     #endif
     #ifdef PLANAR_FLOOR
     // The room mirrored in the floor (render3d::planar_pass): its light in the room's units,
     // a the distance from the floor to what it shows along the reflection, with its mips.
-    layout(set = 2, binding = 9) uniform sampler2D planar_map;
+    layout(set = 2, binding = 10) uniform sampler2D planar_map;
     #endif
     #endif
     #ifdef ROOM_WALLS
@@ -2931,6 +2933,7 @@ let ROOM_FRAG = """
     const float TABLE_TOP = -0.703;
     const float TABLE_Z = -4.5;
     const float FLOOR_STRIPS = 20.0;
+    const float FLOOR_NOISE_SIDE = 1024.0;
     // The table's base (mesh::table_base): its column's mean radius, and a leg's curve
     // from its root over the knee to the scroll's foot, out from the axis and up from the
     // floor (world units, mesh::LEG's and SCROLL_MID's), its half thickness.
@@ -3558,7 +3561,9 @@ let ROOM_FRAG = """
                 float stove = shell_ends.x - uv.x + door_open.y * 0.4 * shell.w;
                 wall = 1.0 - smoothstep(4.0, 20.0, min(min(place.y - uv.y, uv.x - shell_ends.y), min(hall, stove)));
             }
-            float patchy = 0.6 * vnoise(uv * 0.05 + 3.3) + 0.4 * vnoise(uv * 0.19 + 7.1);
+            // The slow noises, a world unit a texel round the board's middle.
+            vec2 slow = textureLod(floor_noise, uv / FLOOR_NOISE_SIDE + 0.5, 0.0).rg;
+            float patchy = slow.r;
             float wear = clamp(max(around, lane) * (0.3 + 1.2 * patchy), 0.0, 1.0) * worn.x * (1.0 - wall);
             albedo *= mix(vec3(1.0), vec3(1.6, 1.45, 1.25), wear);
             rough += 0.25 * wear;
@@ -3579,7 +3584,7 @@ let ROOM_FRAG = """
             // shows through it (planar_floor's blur), a little weaker, so the window's
             // bright sheen shows the floor's surface.
             float pores = clamp(length(t) * 3.0, 0.0, 1.0);
-            float patches = smoothstep(0.35, 0.75, vnoise(uv * 0.045 + 17.0));
+            float patches = smoothstep(0.35, 0.75, slow.g);
             dull = clamp(0.6 * wear + 0.4 * sc + 0.35 * pores + 0.4 * patches, 0.0, 1.0);
             wax = (1.0 + own_wax) * (1.0 - joint) * (1.0 - 0.3 * dull);
             rough *= 1.0 - 0.4 * own_wax;
