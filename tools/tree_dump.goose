@@ -6,7 +6,7 @@
 //
 //   goose build -o build/tree_dump tools/tree_dump.goose && build/tree_dump OUT_DIR
 //
-// One tree-NAME-whole.bin and -culled.bin a variant (rooms::WHOLE_VARIANTS), its shadow
+// One tree-NAME-whole.bin and -culled.bin for each low limb (rooms::WHOLE_HANGS), its shadow
 // shadow-NAME.grey and times in times.txt; the frame's eyes and windows for the default.
 // tree.bin: "segments" n, then n × (a.xyz b.xyz ra rb level); "limbs" n × (first count
 // level parent); "cards" n × (foot.xyz base.xyz along.xyz face.xyz size width kind tint);
@@ -65,8 +65,9 @@ fn main() {
     let spec = rooms::tree_spec(rooms::shell_tree(r));
     let w = rooms::whole_tree(r, s);
     var times: u8[>..] = [];
-    for name, k in rooms::WHOLE_VARIANTS {
-        let wk = rooms::whole_tree(r, s, k);
+    // old-leader, the user's pick, with each of its low limbs (rooms::WHOLE_HANGS).
+    for name, k in rooms::WHOLE_HANGS {
+        let wk = rooms::whole_tree(r, s, rooms::WHOLE_OLD_LEADER, k);
         var t = trees::Tree { .. };
         var t0 = clock();
         trees::grow_whole(t, wk, v, sight, false);
@@ -90,7 +91,7 @@ fn main() {
         print(name, " shadow: passing ", trees::passing(map, -1, v), " in ", map_ms, " ms");
         format(times, name, " ", whole_ms, " ", culled_ms, " ", map_ms, " ", trees::passing(map, -1, v), "\n");
         write_grey(str(dir, "/shadow-", name, ".grey")[..], map, v);
-        if k == rooms::WHOLE_OLD_LEADER {
+        if k == rooms::HANG_HIGH {
             // The same leaves cast as the species' palmate outline, for the comparison.
             for &lf in c.leaves { lf.kind = -1; }
             var plain: u8[>..] = [];

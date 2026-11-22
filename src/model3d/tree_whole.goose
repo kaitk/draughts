@@ -83,10 +83,12 @@ struct Whole {
     // A low limb sweeping down and out toward the house, across the windows' view (as
     // library-home-01's): its foot over the trunk's, its way out (the tree's frame) and
     // length; 0 long, none.
-    hang_at:  f32,
-    hang_dir: float3,
-    hang:     f32,
-    habit:    Habit,
+    hang_at:    f32,
+    hang_dir:   float3,
+    hang:       f32,
+    hang_thick: f32,    // its radius against the trunk's
+    hang_sag:   f32,    // how much it sags (a main limb's 0.16)
+    habit:      Habit,
 }
 
 // Where the tree may be seen from: eyes in the room and the openings they look through,
@@ -181,7 +183,7 @@ fn grow_whole(t: Tree&, w: Whole, v: View, sight: Sight, cull: bool) {
     var hd = Dice { mixed(w.seed as u64 + 977) };
     let dir = normalize(w.hang_dir);
     let at = w.foot + float3 { 0.0, w.hang_at, 0.0 } + float3 { dir.x, 0.0, dir.z } * (w.girth * 0.8);
-    let limb = Part { at, dir, w.hang, w.girth * 0.42, 1, hd.state, w.autumn + 0.15, 0, true };
+    let limb = Part { at, dir, w.hang, w.girth * w.hang_thick, 1, hd.state, w.autumn + 0.15, 0, true };
     guard !cull || casts(vw, at, w.hang * WHOLE_REACH) || seen(sg, at, w.hang * WHOLE_REACH) else { return; }
     grow_part(t, wh, vw, sg, cull, limb);
 }
@@ -215,7 +217,7 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
     // far, then turns up late. A slow wave across it, its phase its own.
     let hanging = b.free && level == 1;
     let slender = clamp(b.length / (b.radius * 70.0), 0.4, 2.0);
-    let sag = if hanging { 0.16 } else { h.sag[level] * slender };
+    let sag = if hanging { w.hang_sag } else { h.sag[level] * slender };
     let rise = if hanging { 0.32 } else { h.rise[level] };
     let rise_from: f32 = if hanging { 0.6 } else { 0.4 };
     let phase = roll(d) * TAU;

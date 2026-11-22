@@ -400,7 +400,16 @@ let WHOLE_DOME = 1;
 let WHOLE_OLD = 2;
 let WHOLE_OLD_LEADER = 3;
 
-fn whole_tree(r: Room, s: room_shell::Shell, variant: i64 = WHOLE_OLD_LEADER) -> trees::Whole {
+// The low limb over the windows (task 107's prep 3): none; a lighter one high up, 5.2 m
+// over the ground, sagging a little and turning up; one between, at 4 m; and prep 2's
+// heavy one sweeping down from 2.7 m.
+let WHOLE_HANGS = ["none", "high", "middle", "low"];
+let HANG_NONE = 0;
+let HANG_HIGH = 1;
+let HANG_MIDDLE = 2;
+let HANG_LOW = 3;
+
+fn whole_tree(r: Room, s: room_shell::Shell, variant: i64 = WHOLE_OLD_LEADER, hang: i64 = HANG_HIGH) -> trees::Whole {
     let metre = surfaces::METRE;
     let outer = s.walls[room_shell::WINDOW_WALL].a.y + s.walls[room_shell::WINDOW_WALL].thick;
     let foot = plan_to_tree(r, s, float3 { WHOLE_ALONG, outer + WHOLE_OUT, -WHOLE_PLINTH });
@@ -408,24 +417,26 @@ fn whole_tree(r: Room, s: room_shell::Shell, variant: i64 = WHOLE_OLD_LEADER) ->
     let toward_sun: f32 = if tree_shear(r).x < 0.0 { -1.0 } else { 1.0 };
     let near = (WHOLE_OUT - 0.4) * metre;
     var w = trees::Whole {
-        seed:     r.tree.y,
-        foot:     foot,
-        height:   22.0 * metre,
-        girth:    0.5 * metre,
-        fork:     3.0 * metre,
-        leader:   0.65,
-        limbs:    float2 { 62.0, 28.0 },
-        crown:    float4 { 10.0 * metre, 9.5 * metre, 9.0 * metre, near },
-        middle:   float3 { toward_sun * 1.0 * metre, 12.5 * metre, 0.5 * metre },
-        house:    house,
-        leaf:     0.11 * metre,
-        leafy:    0.55,
-        autumn:   1.2,
-        shell:    2.6 * metre,
-        hang_at:  2.7 * metre,
-        hang_dir: float3 { toward_sun * 0.62, 0.22, -0.75 },
-        hang:     6.4 * metre,
-        habit:    trees::MAPLE_HABIT,
+        seed:       r.tree.y,
+        foot:       foot,
+        height:     22.0 * metre,
+        girth:      0.5 * metre,
+        fork:       3.0 * metre,
+        leader:     0.65,
+        limbs:      float2 { 62.0, 28.0 },
+        crown:      float4 { 10.0 * metre, 9.5 * metre, 9.0 * metre, near },
+        middle:     float3 { toward_sun * 1.0 * metre, 12.5 * metre, 0.5 * metre },
+        house:      house,
+        leaf:       0.11 * metre,
+        leafy:      0.55,
+        autumn:     1.2,
+        shell:      2.6 * metre,
+        hang_at:    2.7 * metre,
+        hang_dir:   float3 { toward_sun * 0.62, 0.22, -0.75 },
+        hang:       6.4 * metre,
+        hang_thick: 0.42,
+        hang_sag:   0.16,
+        habit:      trees::MAPLE_HABIT,
     };
     if variant == WHOLE_OVAL {
         w.height = 20.0 * metre;
@@ -462,6 +473,21 @@ fn whole_tree(r: Room, s: room_shell::Shell, variant: i64 = WHOLE_OLD_LEADER) ->
         w.habit.children[0] = 7;
         w.habit.children[1] = 16;
         w.middle = float3 { toward_sun * 1.5 * metre, 12.5 * metre, 0.5 * metre };
+    }
+    if hang == HANG_NONE { w.hang = 0.0; }
+    if hang == HANG_HIGH {
+        w.hang_at = 5.2 * metre;
+        w.hang_dir = float3 { toward_sun * 0.6, 0.38, -0.7 };
+        w.hang = 4.2 * metre;
+        w.hang_thick = 0.26;
+        w.hang_sag = 0.09;
+    }
+    if hang == HANG_MIDDLE {
+        w.hang_at = 4.0 * metre;
+        w.hang_dir = float3 { toward_sun * 0.6, 0.3, -0.72 };
+        w.hang = 5.0 * metre;
+        w.hang_thick = 0.32;
+        w.hang_sag = 0.12;
     }
     return w;
 }
