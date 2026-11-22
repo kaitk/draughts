@@ -1095,6 +1095,15 @@ to be is in tasks 042, 059, 071, 081, and 086.
     screen's size, for the softness 0.85's Catmull-Rom hardly shows); a fixed scale (a
     pixel budget caps the cost on any screen, and a smaller window stays native); folding
     the upscale into the glow's add (0.15 ms, both shaders' code for it).
+- The scene's resolution budget is off by default: the 3D scene draws at the screen's native
+  size on every screen (2026-11-22). It replaces the budget's default above; the code stays
+  (`render3d::scene_size_of`, `scene_pixels`, `scene_scale`, `HIGH_SCENE_PIXELS`,
+  `upscale_pass`), and the light tuner switches it on with `--scene-pixels`, `--scene-scale`
+  and N. It is meant to become a "render scale" setting: native by default; an auto mode
+  that lowers the scale only while frames miss the display's refresh; and a fixed 4.1 MP
+  cap as a manual choice. A cap chosen for one Mac's Retina screen doesn't fit a 4K monitor,
+  an ultrawide or a desktop GPU, which may draw native at full rate; only a measured miss
+  should cost the picture its sharpness.
 - The doors' and windows' painted wood takes the paint research's quiet variant, drawn
   with a pipeline of its own (2026-11-22, task 107; `build/notes/paint-research/`,
   `room_shell`'s `joinery.goose` and `relief.goose`, `shaders::ROOM_PAINT`,

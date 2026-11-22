@@ -2286,9 +2286,10 @@ fn depth_show_of(g: Gpu&) -> DepthShow {
 // room's passes cost about their pixels: draw() into a target draws the scene at most
 // scene_pixels pixels (0 no limit) and at most scene_scale of the screen's side, keeping
 // its shape, then scales it up to the screen with Catmull-Rom (scene_cubic) or bilinear.
-// The UI drawn over it after keeps the screen's pixels. HIGH_SCENE_PIXELS is the high
-// tier's default (4.1 MP: 0.85 of a 3024 × 1890 screen's side, 0.70 of 4K's); the app's
-// kept image is drawn at the screen's size.
+// The UI drawn over it after keeps the screen's pixels. Off by default: the scene draws at
+// the screen's size. HIGH_SCENE_PIXELS is the cap a manual render scale offers (4.1 MP: 0.85
+// of a 3024 × 1890 screen's side, 0.70 of 4K's); the app's kept image is drawn at the
+// screen's size.
 let HIGH_SCENE_PIXELS: f32 = 4.1e6;
 var scene_pixels: f32 = 0.0;
 var scene_scale:  f32 = 1.0;

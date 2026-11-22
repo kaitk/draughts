@@ -694,17 +694,18 @@ board's light:
   their own, made while one is on (`ROOM_VIEWS`).
 - **The window's glow**: a quarter-size bloom of what is near white, added in linear light
   (`render3d::bloom_pass`, `rooms::Room.bloom`).
-- **The scene's resolution budget** (`render3d::scene_size_of`, `HIGH_SCENE_PIXELS`): drawn
-  into a given target (the light tuner's screen; the planned high mode), the 3D scene is
-  drawn at most 4.1 million pixels, keeping its shape, into an RGBA8 target of that size,
-  antialiased there, and scaled up to the screen by Catmull-Rom from five bilinear taps
-  (`render3d::upscale_pass`, `UPSCALE_FRAG`; 0.30 ms at 3024 × 1890 on an M1 Pro). The
-  UI is drawn over it at the screen's pixels. The screen's occlusion and the glow follow
-  the scene's size; the mirror keeps its least width. A screen under the budget draws as
-  before, and so does the app's kept image (the standard tier and phones). At 3024 × 1890
-  the scene is drawn at 0.85 of its side: the frame's GPU work 13.7 to 10.9 ms. The light
-  tuner's N cycles the budget against 1, 0.85, 0.75 and 0.67 of the screen's side
-  (`--scene-scale`, `--scene-pixels`), M the filter (`--upscale cubic|bilinear`).
+- **The scene's resolution budget** (`render3d::scene_size_of`, `HIGH_SCENE_PIXELS`): off by
+  default, so the scene draws at the screen's native size. Switched on, the 3D scene drawn
+  into a given target (the light tuner's screen; the planned high mode) is drawn at most
+  `scene_pixels` pixels (4.1 million, `HIGH_SCENE_PIXELS`) or `scene_scale` of the screen's
+  side, keeping its shape, into an RGBA8 target of that size, antialiased there, and scaled
+  up to the screen by Catmull-Rom from five bilinear taps (`render3d::upscale_pass`,
+  `UPSCALE_FRAG`; 0.30 ms at 3024 × 1890 on an M1 Pro). The UI is drawn over it at the
+  screen's pixels. The screen's occlusion and the glow follow the scene's size; the mirror
+  keeps its least width. At 3024 × 1890 the 4.1 MP cap draws the scene at 0.85 of its
+  side: the frame's GPU work 13.7 to 10.9 ms. The light tuner's N cycles native, 0.85,
+  0.75, 0.67 and the cap (`--scene-scale`, `--scene-pixels`), M the filter (`--upscale
+  cubic|bilinear`).
 - **The oak outside** is blurred once when uploaded (`render3d::soften`), and the tree
   that shades the windows draws its limbs finer and softer than the game's
   (`rooms::SHELL_LIMBS`).

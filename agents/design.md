@@ -274,10 +274,9 @@ pieces; the design boards still set the layout, glass, and controls.
   0 the view's target; `--aperture PCT`, `--dof-caps N,F`): judge a focus there before
   any blur. Builder 28's scripts: `build/b28/look.sh EXE TAG SIZE NAME "flags"..`,
   `cmp.sh A B`, `game.sh`, `rounds-b1.sh`, `rounds-b2.sh`, `page.py`.
-- The light tuner draws the 3D scene under the high tier's pixel budget
-  (`render3d::HIGH_SCENE_PIXELS`, 4.1 MP: 0.85 of a 3024 × 1890 screen), so a Retina shot
-  is upscaled: pass `--scene-scale 1` for a native shot or a timing of the scene's own cost
-  (N cycles the budget, 1, 0.85, 0.75, 0.67; M the upscale). Builder 24's crops and sweeps:
+- The light tuner draws the 3D scene at the screen's native size by default (2026-11-22);
+  `--scene-pixels 4.1` (`render3d::HIGH_SCENE_PIXELS`) or `--scene-scale K` draw it smaller
+  and upscale it (N cycles native, 0.85, 0.75, 0.67 and the 4.1 MP cap; M the upscale). Builder 24's crops and sweeps:
   `build/b24/shots.sh EXE TAG`, `crops.py`, `measure.sh ROUND TAG=EXE,FLAGS..` (under the
   quiet lock; in zsh, a list in a variable doesn't split into words: run sweeps in bash),
   `build/notes/builder-24/`.

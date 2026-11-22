@@ -74,7 +74,7 @@
 //       [--fps-seconds S (print the counter each half second, quit after S)]
 //       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
 //       [--planar-size K (the floor mirror's scale, 2 half) --planar-wide TEXELS (its least width, 1600)]
-//       [--scene-scale K (the 3D scene at K of the screen's side; 0, the default, its budget)]
+//       [--scene-scale K (the 3D scene at K of the screen's side; 1, native, the default; 0 its budget)]
 //       [--scene-pixels MP (the budget, render3d::HIGH_SCENE_PIXELS)] [--upscale cubic|bilinear]
 //       [--walk-frames DIR --walk-path strafe|turn|forward --walk-count N --walk-turn PX (a walk from --plan-eye
 //       looking at --plan-at: D or W held, or the mouse PX a frame to the right, N frames at 1/60 s, each
@@ -937,7 +937,8 @@ fn main() {
     render3d::planar_view = pick(argv, "--planar-view", PLANAR_VIEWS, 0);
     render3d::planar_scale = whole(argv, "--planar-size", 2) as i32;
     render3d::planar_least_wide = whole(argv, "--planar-wide", 1600) as i32;
-    var scene_k = number(argv, "--scene-scale", 0.0);
+    // Native unless --scene-scale or --scene-pixels asks for less (N cycles them).
+    var scene_k = number(argv, "--scene-scale", if has(argv, "--scene-pixels") { 0.0 } else { 1.0 });
     let scene_budget = number(argv, "--scene-pixels", render3d::HIGH_SCENE_PIXELS / 1.0e6) * 1.0e6;
     var upscale = pick(argv, "--upscale", UPSCALES, 0);
     room.outside = number(argv, "--outside-exposure", room.outside);
