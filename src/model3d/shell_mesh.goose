@@ -456,8 +456,10 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
                                float3 { -w, sill, 0.0 }], stone, float3 { 0.0, 1.0, 0.0 });
     // The casements, the inner glass and the outer.
     if paint_quiet {
-        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.x, seed);
-        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.y, seed);
+        // Their pieces' seeds apart from the shell's, which the curtains and books go on with.
+        var own = 7919 * seed + 17;
+        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.x, own);
+        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.y, own);
     } else {
         casement(verts, indices, glass, glass_indices, b, o, o.glass.x);
         casement(verts, indices, glass, glass_indices, b, o, o.glass.y);
@@ -826,12 +828,12 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     var prof: float2[7] = [float2_0; 7];
     for q, i in ARCHITRAVE_A { prof[i] = float2 { q.x / 100.0, q.y / 100.0 }; }
     if paint_quiet {
-        seed++;
-        architrave_quiet(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0, seed);
-        seed++;
-        architrave_quiet(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0, seed);
-        seed++;
-        architrave_quiet(verts, indices, b, prof[..], float2 { -w, h }, float2 { w, h }, float2 { 0.0, 1.0 }, 1.0, 1.0, seed);
+        // Their seeds apart from the shell's, which the books go on with.
+        architrave_quiet(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0,
+                         7919 * seed + 1);
+        architrave_quiet(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0,
+                         7919 * seed + 2);
+        architrave_quiet(verts, indices, b, prof[..], float2 { -w, h }, float2 { w, h }, float2 { 0.0, 1.0 }, 1.0, 1.0, 7919 * seed + 3);
     } else {
         architrave(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0);
         architrave(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0);
@@ -843,9 +845,8 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
         let a = sx * (w - 0.01);
         let c = sx * (w + ARCHITRAVE + BLOCK_PAST);
         if paint_quiet {
-            seed++;
             paint_box(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, BLOCK_DEEP,
-                      Piece { round: LEFT | RIGHT | TOP, sides: LEFT | RIGHT | TOP, recess: LEFT | RIGHT, seed: seed, .. });
+                      Piece { round: LEFT | RIGHT | TOP, sides: LEFT | RIGHT | TOP, recess: LEFT | RIGHT, seed: 7919 * seed + 5 + (if sx > 0.0 { 1 } else { 0 }), .. });
         } else { box_m(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, BLOCK_DEEP, paint); }
     }
 }
