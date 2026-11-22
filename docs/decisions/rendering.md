@@ -1242,6 +1242,10 @@ to be is in tasks 042, 059, 071, 081, and 086.
   - Six placements, each verified by `--sun-check`, are on the light tuner's A key and its
     `--place` flag; none is the app's yet, the user picks. Costs: as before within the
     rounds' spread (task 107).
+  - The menu scene's placement is `less-turned` for now (2026-11-22): the sun 12° across
+    the wall and 15° up, the table at 4.4, 5.8 (0.1 m off the plan's place), the board
+    turned -12°, the top 25° under it. The tuner starts there without `--place`; `--place
+    free` gives the other flags' own. The other five stay on A.
 - The table-window view's dust is flakes and lint in the sunbeam (2026-11-22, task 107,
   builder 29), replacing builder 27's round points in a box as the default: irregular
   flakes and short fibres a pixel or a few across at 3024 × 1890, each tumbling slowly on an

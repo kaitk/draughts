@@ -291,7 +291,8 @@ pieces; the design boards still set the layout, glass, and controls.
   --plan-at 4.5,7.0,2.05 --fov 58`, at `--wall 36,0,-2,2 --sun-height 18`
   (`build/b30/halo.sh EXE TAG`).
 - The menu scene's placement (builder 30, `build/notes/builder-30/`): the light tuner's A
-  cycles `PLACE_NAMES` (`--place NAME`), each a verified sun turn and height, table place,
+  cycles `PLACE_NAMES` (`--place NAME`; `less-turned`, `PLACE_DEFAULT`, without it since
+  2026-11-22, so `--azimuth` is overridden unless `--place free`), each a verified sun turn and height, table place,
   board turn (`--board-turn`, the board's own z from the window wall's line; it sets the
   key's azimuth, `azimuth_for`, so `--azimuth` and the Round slider are overridden once it
   is given) and table turn (`--table-turn`), with the table-window view's eye for it

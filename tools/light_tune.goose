@@ -41,7 +41,8 @@
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
 //       [--board-turn DEG (the board's own z, the players' axis, from the window wall's line in the plan; sets the key's azimuth)]
 //       [--place free|concept|concept-high|along-wall|less-turned|concept-pier|more-turned (PLACE_NAMES: a verified sun, table and
-//       board together, the table-window view's eye with them; A cycles them, the Table section shows the sun-check)]
+//       board together, the table-window view's eye with them; less-turned without the flag, free the other flags' own;
+//       A cycles them, the Table section shows the sun-check)]
 //       [--place-then NAME (that placement taken on the third frame, as A takes it: a check of the room built again)]
 //       [--sun-check (prints where the sun's ray from the board and the table leaves the room: a window's
 //       glass, a bar, its frame, or the wall; then quits unless --shot)]
@@ -166,8 +167,10 @@ fn view_point(p: float3, view: i64) -> float3 {
 // to the wall (the players' axis, the board's own z, PLACE_SUN.z degrees from the window
 // wall's line, its far-end seat swung toward the window), the table's turn under the board
 // (PLACE_SUN.w), and the table-window view's eye and target (the sun in the middle window's
-// left leaf, as library-home-01 has it). 0 is "free": the flags' own.
+// left leaf, as library-home-01 has it). 0 is "free": the flags' own. Without --place the
+// tuner starts at PLACE_DEFAULT, less-turned (2026-11-22).
 let PLACE_NAMES = ["free", "concept", "concept-high", "along-wall", "less-turned", "concept-pier", "more-turned"];
+let PLACE_DEFAULT = 4;
 let PLACE_SUN: float4[7] = [float4_0, float4 { 20.0, 12.0, -20.0, 25.0 }, float4 { 20.0, 29.0, -20.0, 25.0 },
                             float4 { 20.0, 12.0, 0.0, 25.0 }, float4 { 12.0, 15.0, -12.0, 25.0 },
                             float4 { 20.0, 12.0, -20.0, 25.0 }, float4 { 25.0, 12.0, -25.0, 25.0 }];
@@ -1303,7 +1306,7 @@ fn main() {
     var table_place = float2 { table_at.x, table_at.y };
     var board_set = has(argv, "--board-turn");
     var board_turn = number(argv, "--board-turn", 0.0);
-    var place = pick(argv, "--place", PLACE_NAMES, 0);
+    var place = pick(argv, "--place", PLACE_NAMES, PLACE_DEFAULT);
     put_place(place, room, table_place, board_turn, board_set, g);
     var shown_place = place;
     // --place-then NAME: that placement taken on the third frame, as A would, so a shot
@@ -1964,7 +1967,7 @@ fn main() {
                    rooms::WIND_KINDS[render3d::wind_kind], " --view ", VIEWS[view]);
             format(line, " --wallpaper-tile ", paper_m);
             let tm = room_shell::LIBRARY.table;
-            if place > 0 { format(line, " --place ", PLACE_NAMES[place]); }
+            format(line, " --place ", PLACE_NAMES[place]);
             if tm.x != TABLE_AS_MADE.x || tm.y != TABLE_AS_MADE.y { format(line, " --table-at ", tm.x, ",", tm.y); }
             if board_set { format(line, " --board-turn ", board_turn); }
             if g.table_turn != 0.0 { format(line, " --table-turn ", g.table_turn); }
