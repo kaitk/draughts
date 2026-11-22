@@ -1729,7 +1729,9 @@ let TABLE_HEAD = """
     // highlight in it (a roughness); polish: x how much its roughness varies, y its
     // strength, z the blotches' size (world units), w how much the wear shows in it;
     // worn: the rim's wear, x how much, y how wide. The pieces lying on it are FRAME's
-    // discs. shape: x the top's radius (world units), y the floor's height. table_map: the
+    // discs. shape: x the top's radius (world units), y the floor's height, zw in the room
+    // (TABLE_ROOM) the sine and cosine of the table's turn under the board (its mesh turned
+    // with it, render3d::Gpu.table_turn), its top's figure read turned back. table_map: the
     // table's own map's rows (TABLE_MAP_FN). In the room with its light baked (TABLE_ROOM,
     // render3d::TableBlock): room_light the probes on the table's axis, four heights of
     // three colours' constant and direction; room_mix x 1 there, y the harmonics the room
@@ -1956,6 +1958,9 @@ let TABLE_FRAG = """
         float from_mid = max(length(out_dir), 1e-3);
         vec2 uv = top ? out_dir / (2.0 * TABLE_MAP_R) + 0.5
                       : vec2(0.3 + (v_uv.y - TABLE_MAP_R) / (2.0 * TABLE_MAP_R), v_uv.x / (2.0 * PI * from_mid) * 3.0);
+    #ifdef TABLE_ROOM
+        if (top) uv = vec2(shape.w * out_dir.x + shape.z * out_dir.y, shape.w * out_dir.y - shape.z * out_dir.x) / (2.0 * TABLE_MAP_R) + 0.5;
+    #endif
         if (base) uv = vec2(0.2, 0.15) + v_uv / (2.0 * TABLE_MAP_R);
         // On the sides and the base the figure is drawn out along the grain (their v)
         // into straight streaks, as an edge's and a frieze's wood is: the filter's
@@ -2006,6 +2011,9 @@ let TABLE_FRAG = """
             vec2 t = tn.xy * 2.0 - 1.0;
             float r = length(vec3(t, tn.w));
             top_var = max((1.0 - r) / max(r, 1e-3), 0.0);
+    #ifdef TABLE_ROOM
+            t = vec2(shape.w * t.x - shape.z * t.y, shape.z * t.x + shape.w * t.y);
+    #endif
             n = normalize(vec3(t.x + bump.x, sqrt(max(1.0 - dot(t, t), 0.0)), t.y + bump.y));
         } else if (!base) {
             // The edge and the apron in the shade of the top, darker the lower.

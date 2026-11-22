@@ -253,11 +253,16 @@ struct Gpu {
     table_edge:     float4,         // the edge its mesh is made with (tables::Table.edge)
     table_r:        f32,            // the top's radius (world units), 0 mesh::TABLE_R (a tuner's)
     table_made_r:   f32,            // and the one its mesh is made with
-    table_vb:       Buffer,
-    table_ib:       Buffer,
-    table_count:    i64,
-    table_lit:      Pipeline,
-    table_room:     Pipeline,
+    // The table turned about its axis under the board (degrees; a tuner's, the room's
+    // table only): its mesh, and its top's figure in TABLE_ROOM's shader (TableBlock's
+    // shape.zw). 0 the game's.
+    table_turn:      f32,
+    table_made_turn: f32,
+    table_vb:        Buffer,
+    table_ib:        Buffer,
+    table_count:     i64,
+    table_lit:       Pipeline,
+    table_room:      Pipeline,
     // The table's own shadow in the room (table_map): its map, what it was drawn for
     // (table_map_key()), and the rows that place a point in it (table_map_rows()).
     table_map:       Texture,
@@ -341,6 +346,7 @@ struct Gpu {
     room_frame:   surfaces::Frame,  // the room's frame this frame (put_room)
     room_shell:   bool,             // the library's shell (room_shell::LIBRARY), not the panelled wall
     room_for:     float4,           // what the mesh was made for: the window's wall and sill, the wall's v, the shell
+    shell_table:  float2,           // the games table's place in the plan the shell's mesh and view out were made round
     mesh_ms:      f64,              // the mesh's making (measuring)
     // The shell's corners' shade (model3d::corner_map), baked with its mesh: the atlas, R8,
     // the room's corners it was baked for, and the bake's time (measuring).
@@ -562,15 +568,31 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
     let was = g.table_edge;
     let r = table_radius(g);
     guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w || r != g.table_made_r
+          || g.table_turn != g.table_made_turn
     else { return; }
     var verts:   mesh::Vertex[>..] = [];
     var indices: u32[>..]          = [];
     mesh::table(verts, indices, e, r, surfaces::FLOOR_Y);
+    if g.table_turn != 0.0 {
+        let a = radians(g.table_turn);
+        let c = cos(a);
+        let sn = sin(a);
+        for &v in verts {
+            let x = v.pos.x;
+            let z = v.pos.z - mesh::TABLE_Z;
+            v.pos.x = c * x - sn * z;
+            v.pos.z = sn * x + c * z + mesh::TABLE_Z;
+            let nx = v.normal.x;
+            v.normal.x = c * nx - sn * v.normal.z;
+            v.normal.z = sn * nx + c * v.normal.z;
+        }
+    }
     if g.table_vb.id != 0 { o.gpu_release_mesh(g.table_vb, g.table_ib); }
     g.table_vb, g.table_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
     g.table_count = indices.len;
     g.table_edge = e;
     g.table_made_r = r;
+    g.table_made_turn = g.table_turn;
 }
 
 // The table's wood baked into its maps (rows y0 to y1, -1 all; the mips with the last),
@@ -630,7 +652,8 @@ fn table_block(g: Gpu&) -> TableBlock {
     let r = g.room;
     let on = table_in_room(g);
     let shade = rooms::color_of(r.bounce) * (r.bounce.w * r.baked.w);
-    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, 0.0, 0.0 }, map,
+    let turn = radians(g.table_turn);
+    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, sin(turn), cos(turn) }, map,
                  table_probes, float4 { if on { 1.0 } else { 0.0 }, r.baked.z, r.room_exposure, shade_fill },
                  float4 { shade.x, shade.y, shade.z, surfaces::METRE }, if on { ssao_block_of(g) } else { float4_0 } }
 }
@@ -695,7 +718,7 @@ fn table_map_matrix(rows: float4[4]) -> Mat {
 // What the table's map is drawn for: the key, the top's radius, the table's mesh.
 fn table_map_key(g: Gpu&) -> float4[2] {
     let l = g.frame.light_dir;
-    return [float4 { l.x, l.y, l.z, table_radius(g) }, float4 { g.table_vb.id, g.table_count, 0.0, 0.0 }];
+    return [float4 { l.x, l.y, l.z, table_radius(g) }, float4 { g.table_vb.id, g.table_count, g.table_turn, 0.0 }];
 }
 
 // The table's map drawn where it is wanted and what it was drawn for changed. Recording
@@ -907,7 +930,14 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     if g.room_shell && g.stone_tile.id == 0 { put_stone(o, g); }
     if g.room_shell && g.glass_tile.id == 0 { put_glass_tile(o, g); }
     bake_room_light(o, g);
-    // The view out of the shell's windows, round its middle window: made once.
+    // The view out of the shell's windows, round its middle window: made once, and again
+    // with the shell's mesh where the games table moved in the plan (the room's frame is the
+    // table's).
+    let table_moved = g.room_shell && !same2(room_shell::LIBRARY.table, g.shell_table);
+    if table_moved && g.outside_vb.id != 0 {
+        o.gpu_release_mesh(g.outside_vb, g.outside_ib);
+        g.outside_vb = Buffer { 0 };
+    }
     if g.room_shell && g.outside_vb.id == 0 {
         var verts:   mesh::Vertex[>..] = [];
         var indices: u32[>..]          = [];
@@ -927,7 +957,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     // not while a slider is held.
     let corners = if g.room_shell { g.room.corners } else { float4_0 };
     let corners_moved = !same4(corners, g.corner_for) && !g.bake_held;
-    guard g.room_vb.id == 0 || !same4(key, g.room_for) || corners_moved else { return; }
+    guard g.room_vb.id == 0 || !same4(key, g.room_for) || corners_moved || table_moved else { return; }
     let t0 = clock();
     var verts:         mesh::Vertex[>..] = [];
     var indices:       u32[>..]          = [];
@@ -958,6 +988,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.glass_ib = Buffer { 0 };
     }
     g.room_for = key;
+    g.shell_table = room_shell::LIBRARY.table;
     g.mesh_ms = (clock() - t0) * 1000.0;
     if g.corner_map.id != 0 {
         o.gpu_flush();
@@ -1416,16 +1447,17 @@ fn light_baked(g: Gpu&) -> bool { g.room_on && g.room_shell && g.room.baked.x + 
 // What the shell's baked light is made from: the key, the room's light, the tree, the
 // table's top, the bounces and the sun's saturation on the room, and the bake's own
 // settings (room_light's bounce_grey, lace_source, gather_near), and whether the windows
-// have their shutters (room_shell::shutters_on), and how far the lace hangs over the
-// opening (room_shell::lace_hang).
-let LIGHT_KEY = 9;
+// have their shutters (room_shell::shutters_on), how far the lace hangs over the opening
+// (room_shell::lace_hang), and where the games table stands in the plan.
+let LIGHT_KEY = 10;
 fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     let f = g.frame;
     let r = g.room;
     return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.room_axes,
             float4 { table_radius(g), g.tree_ms as f32, light_bounces as f32, room_sun.x },
             float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
-                     (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang }];
+                     (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang },
+            float4 { room_shell::LIBRARY.table.x, room_shell::LIBRARY.table.y, 0.0, 0.0 }];
 }
 
 // The bake's buffers, sized once: the probes' atlas in floats and as half floats, the sun's
@@ -2557,6 +2589,7 @@ fn bloom_add_of(g: Gpu&, size: int2) -> GlowAdd {
 // scissored. Recording only, before the board's pass.
 let OCC_REACH = 2;
 fn same4(a: float4, b: float4) -> bool { a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w }
+fn same2(a: float2, b: float2) -> bool { a.x == b.x && a.y == b.y }
 fn occlusion<O>(o: O&, g: Gpu&) {
     let n = g.n;
     var c0 = n;

@@ -270,7 +270,8 @@ pieces; the design boards still set the layout, glass, and controls.
   (`shaders::LIT_SHELL`, `TABLE_SHELL`), so a turn of `--wall` that puts the board behind a
   pier shades it. `--sun-check` prints, from the board's middle and corners and a ring on the
   table, where the ray toward the sun leaves the room (a window's glass, a bar, the sash or
-  frame, or the wall) and what the game's window said; `--table-at X,Y` moves the games
+  frame, or the wall) and what the game's window said (and, since builder 30, the field's 81
+  points); `--table-at X,Y` moves the games
   table in the plan (the table-window view's chair with it). The box window's two casements,
   0.2 m apart, and the 0.8 m wall cut an oblique beam narrow: past about 12° across the wall
   the board is lit only with the table moved along the wall, and past about 25° hardly at
@@ -288,6 +289,22 @@ pieces; the design boards still set the layout, glass, and controls.
   --plan-at 7.6,0.0,0.3 --fov 62`, the middle window and its lace `--plan-eye 4.5,4.0,1.9
   --plan-at 4.5,7.0,2.05 --fov 58`, at `--wall 36,0,-2,2 --sun-height 18`
   (`build/b30/halo.sh EXE TAG`).
+- The menu scene's placement (builder 30, `build/notes/builder-30/`): the light tuner's A
+  cycles `PLACE_NAMES` (`--place NAME`), each a verified sun turn and height, table place,
+  board turn (`--board-turn`, the board's own z from the window wall's line; it sets the
+  key's azimuth, `azimuth_for`, so `--azimuth` and the Round slider are overridden once it
+  is given) and table turn (`--table-turn`), with the table-window view's eye for it
+  (`build/b30/eyes.py`). The Table section has the sliders and the sun-check's counts
+  (the field's 81 points, the table's 72), live; the table moves into the plan when the
+  slider is let go (the shell, the view out and the probes made again: `--place-then NAME`
+  takes a placement on the third frame, and its shot matched a direct one exactly). The
+  sun's turn across the wall is also under Sun and tree, The sun ("Across the wall").
+  Height hardly matters for which glass lights the board (the lower sash from 12° to 29°);
+  the turn and the table's x do. The board's field fits one leaf's light only turned
+  against the sun's turn (`build/b30/sweep.py`'s `board_glass`). Plans: `build/b30/plan.py
+  OUT` (SVG, a true top view, x growing to the left), shots `build/b30/options.sh EXE TAG`.
+  In zsh a `$extra` of several flags passes as one word and the tuner ignores it: sweep in
+  bash.
 - The dust in the beam (builder 29): `--dust motes|motes-few|motes-many` (the default
   motes) draws flakes and lint tumbling in the sunbeam's own volume over the table
   (`light_tune`'s `beam_box`, BEAM_*), lit only by the direct sun; `sparse|dense|coarse` are

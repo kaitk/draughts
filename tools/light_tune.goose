@@ -20,6 +20,9 @@
 // flags that show the same again (and saves them in build/light-tune.txt). Tab walks round
 // the room (Walk: WASD and the mouse, Esc back to the panel); the camera stays where the
 // walk left it, and P prints it as --plan-eye and --plan-at, till R or V.
+// A cycles the sun's and the table's verified placements (PLACE_NAMES; the Table section's
+// sliders move the table, turn it under the board and turn the board, the room built again
+// when the slider is let go).
 //
 // The panel is in sections that open and close (SECTIONS, kept for the session; Keys
 // lists the keys). A drag that starts on the panel holds the tree's and the probes' bakes
@@ -35,6 +38,11 @@
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern|--bounce X,Y,Z,W]
 //       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
+//       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
+//       [--board-turn DEG (the board's own z, the players' axis, from the window wall's line in the plan; sets the key's azimuth)]
+//       [--place free|concept|concept-high|along-wall|less-turned|concept-pier|more-turned (PLACE_NAMES: a verified sun, table and
+//       board together, the table-window view's eye with them; A cycles them, the Table section shows the sun-check)]
+//       [--place-then NAME (that placement taken on the third frame, as A takes it: a check of the room built again)]
 //       [--sun-check (prints where the sun's ray from the board and the table leaves the room: a window's
 //       glass, a bar, its frame, or the wall; then quits unless --shot)]
 //       [--dust off|on|sparse|dense|coarse|motes|motes-few|motes-many (on the box round the board as before;
@@ -150,6 +158,79 @@ fn view_point(p: float3, view: i64) -> float3 {
     guard view == TABLE_WINDOW else { return p; }
     let t = room_shell::LIBRARY.table;
     return float3 { p.x + t.x - TABLE_AS_MADE.x, p.y + t.y - TABLE_AS_MADE.y, p.z };
+}
+
+// The sun's and the table's placements to compare (build/notes/builder-30/), each verified
+// by --sun-check: A cycles them, --place NAME picks one. Each sets the sun's turn across
+// the window wall and its height, the games table's middle in the plan, the board's turn
+// to the wall (the players' axis, the board's own z, PLACE_SUN.z degrees from the window
+// wall's line, its far-end seat swung toward the window), the table's turn under the board
+// (PLACE_SUN.w), and the table-window view's eye and target (the sun in the middle window's
+// left leaf, as library-home-01 has it). 0 is "free": the flags' own.
+let PLACE_NAMES = ["free", "concept", "concept-high", "along-wall", "less-turned", "concept-pier", "more-turned"];
+let PLACE_SUN: float4[7] = [float4_0, float4 { 20.0, 12.0, -20.0, 25.0 }, float4 { 20.0, 29.0, -20.0, 25.0 },
+                            float4 { 20.0, 12.0, 0.0, 25.0 }, float4 { 12.0, 15.0, -12.0, 25.0 },
+                            float4 { 20.0, 12.0, -20.0, 25.0 }, float4 { 25.0, 12.0, -25.0, 25.0 }];
+let PLACE_TABLE: float2[7] = [float2_0, float2 { 4.125, 5.8 }, float2 { 4.125, 5.8 }, float2 { 4.125, 5.8 },
+                              float2 { 4.4, 5.8 }, float2 { 3.625, 5.8 }, float2 { 3.975, 5.8 }];
+// build/b30/eyes.py: the eye on the line back from the sun's point in the left leaf (2.6 m
+// up, the upper sash's lowest panes; 2.86 m for the high sun), standing (1.6 m) unless
+// that is nearer the window than 4.5 m from the hall wall; the target 8 degrees right of
+// the sun, pitched half-way between the sun and the board.
+let PLACE_EYE: float3[7] = [float3_0, float3 { 3.203, 2.979, 1.6 }, float3 { 3.757, 4.5, 1.15 }, float3 { 3.203, 2.979, 1.6 },
+                            float3 { 4.037, 3.75, 1.6 }, float3 { 3.203, 2.979, 1.6 }, float3 { 2.824, 3.136, 1.6 }];
+let PLACE_AT: float3[7] = [float3_0, float3 { 3.827, 5.912, 1.507 }, float3 { 4.376, 7.414, 1.5 }, float3 { 3.827, 5.912, 1.507 },
+                           float3 { 4.245, 6.737, 1.426 }, float3 { 3.827, 5.912, 1.491 }, float3 { 3.701, 6.003, 1.498 }];
+
+// The table-window view's eye and target with placement `place` (0 free: the view's own,
+// moved with the table), each moved with the table from where the placement put it.
+fn view_eye(view: i64, place: i64) -> float3 {
+    guard view == TABLE_WINDOW && place > 0 else { return view_point(VIEW_EYES[view], view); }
+    return PLACE_EYE[place] + table_moved_from(place);
+}
+fn view_at(view: i64, place: i64) -> float3 {
+    guard view == TABLE_WINDOW && place > 0 else { return view_point(VIEW_ATS[view], view); }
+    return PLACE_AT[place] + table_moved_from(place);
+}
+fn table_moved_from(place: i64) -> float3 {
+    let t = room_shell::LIBRARY.table;
+    return float3 { t.x - PLACE_TABLE[place].x, t.y - PLACE_TABLE[place].y, 0.0 };
+}
+
+// A placement's sun, table and board into the tuner's values.
+fn put_place(place: i64, room: rooms::Room&, table: float2&, board: f32&, board_set: bool&, g: render3d::Gpu&) {
+    guard place > 0 else { return; }
+    let p = PLACE_SUN[place];
+    room.window.y = p.x;
+    room.key.y = p.y;
+    table = PLACE_TABLE[place];
+    board = p.z;
+    board_set = true;
+    g.table_turn = p.w;
+}
+
+// The flags that show a placement's sun, table and board again.
+fn place_flags(r: rooms::Room, table: float2, board: f32, top: f32) -> u8[>..] {
+    return str("--wall ", r.window.x, ",", r.window.y, ",", r.window.z, ",", r.window.w, " --sun-height ", r.key.y, " --table-at ",
+               table.x, ",", table.y, " --board-turn ", board, " --table-turn ", top);
+}
+
+// The key's azimuth (rooms::Room.key.x) that puts the board's own z, the players' axis,
+// `board` degrees from the window wall's line in the plan with the sun `turn` degrees
+// across the wall: the room's frame turns with the key (surfaces::frame_of), so the board
+// turns in the plan by the key's azimuth, -azimuth - turn degrees from the plan's x.
+fn azimuth_for(board: f32, turn: f32) -> f32 {
+    var a = -board - turn;
+    while a > 180.0 { a -= 360.0; }
+    while a <= -180.0 { a += 360.0; }
+    return a;
+}
+
+// The board's own z in the plan as the room is turned now, degrees from the plan's x
+// toward its y (the window).
+fn board_in_plan(g: render3d::Gpu&) -> f32 {
+    let f = g.room_frame;
+    return degrees(atan2(-f.into.y, -f.along.y));
 }
 
 // The dust in the sunbeam (D, --dust): none; on, the box round the board as before, lit
@@ -282,7 +363,7 @@ fn game_window_lets(f: render3d::Frame, p: float3) -> bool {
 
 let EXITS = ["glass", "a bar", "the sash or frame", "the wall", "nothing: the sun is behind the wall"];
 
-fn sun_check(g: render3d::Gpu&, turn: f32, height: f32) {
+fn sun_check(g: render3d::Gpu&, turn: f32, height: f32, loud: bool = true) -> i64, i64 {
     let s = room_shell::LIBRARY;
     let m = surfaces::METRE;
     let f = g.room_frame;
@@ -290,8 +371,11 @@ fn sun_check(g: render3d::Gpu&, turn: f32, height: f32) {
     // The key in the plan: the world's u along the wall and v into the room, both falling
     // as the plan's x and y grow (room_shell::room_of).
     let d = normalize(float3 { -(l.x * f.along.x + l.z * f.along.y), -(l.x * f.into.x + l.z * f.into.y), l.y });
-    print("sun-check: the sun ", turn, " degrees across the window wall, ", height, " up; the table's middle at ", s.table.x, ",",
-          s.table.y, "; toward the sun in the plan ", d.x, ",", d.y, ",", d.z);
+    if loud {
+        print("sun-check: the sun ", turn, " degrees across the window wall, ", height, " up; the table's middle at ", s.table.x, ",",
+              s.table.y, "; toward the sun in the plan ", d.x, ",", d.y, ",", d.z, "; the board's own z ", board_in_plan(g),
+              " degrees from the window wall, the table turned ", g.table_turn, " under it");
+    }
     let names = ["the board's middle", "the field's corner -,-", "the field's corner +,-", "the field's corner -,+",
                  "the field's corner +,+"];
     let k = mesh::FIELD;
@@ -302,9 +386,21 @@ fn sun_check(g: render3d::Gpu&, turn: f32, height: f32) {
                          (w.y - surfaces::FLOOR_Y) / m };
         let n, way, x = exit_of(p, d);
         if way <= 1 && n == 1 { board_lit++; }
+        guard loud else { continue; }
         let window: u8[>..] = if n >= 0 { str("window ", n, "'s ") } else { "" };
         print("  ", names[i], " (", p.x, ",", p.y, "): ", window, EXITS[way], " at x ", x, " on the wall's face; the game's window: ",
               if game_window_lets(g.frame, w) { "lets the sun on" } else { "shades it" });
+    }
+    // The field in 9 × 9 points, lit through the middle window's glass (or a bar's shadow).
+    var field = 0;
+    for j in 9 {
+        for i in 9 {
+            let w = float3 { k * (i / 4.0 - 1.0), 0.0, k * (j / 4.0 - 1.0) };
+            let p = float3 { s.table.x - (w.x * f.along.x + w.z * f.along.y) / m, s.table.y - (w.x * f.into.x + w.z * f.into.y) / m,
+                             (w.y - surfaces::FLOOR_Y) / m };
+            let n, way, x = exit_of(p, d);
+            if way <= 1 && n == 1 { field++; }
+        }
     }
     // A ring on the table's top, each 15 degrees, at three radii.
     var counts:  i64[6] = [0; 6];
@@ -323,9 +419,12 @@ fn sun_check(g: render3d::Gpu&, turn: f32, height: f32) {
             total++;
         }
     }
+    guard loud else { return field, counts[0] + counts[1]; }
     print("  the table's top, ", total, " points: through glass ", counts[0], " (windows ", through[0], ", ", through[1], ", ",
           through[2], "), a bar ", counts[1], ", the sash or frame ", counts[2], ", the wall ", counts[3], ", behind ", counts[4]);
-    print("sun-check: the board ", board_lit, " of 5 points lit through the middle window (its glass or a bar's shadow)");
+    print("sun-check: the board ", board_lit, " of 5 points lit through the middle window (its glass or a bar's shadow); its field ",
+          field, " of 81");
+    return field, counts[0] + counts[1];
 }
 
 // The sunbeam's volume over the table (the new motes' box): from the middle window's
@@ -855,6 +954,7 @@ let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", 
                 "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old; I: the sills", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust's way", "Y: the lace's hang, 0.15 or 0 m", "Z: the window view's steps off or on", "F: the frame counter; G: wait for the GPU",
                 "N: the scene's scale; M: its upscale", "X: HDR or 8 bits; Q: the lens's views",
+                "A: the sun's and table's placements in turn (Table)",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
                 "walking: C seated, X then Q, E down and up", "R: back to the view, P: the walk's camera"];
 
@@ -1201,7 +1301,25 @@ fn main() {
     // The games table moved in the plan (metres), the room built round it there; the
     // table-window view's chair moves with it.
     let table_at = four(argv, "--table-at", float4 { TABLE_AS_MADE.x, TABLE_AS_MADE.y, 0.0, 0.0 });
-    room_shell::LIBRARY.table = float2 { table_at.x, table_at.y };
+    // The table's place on the panel's sliders, taken into the plan (and the room built
+    // round it again) once no slider is held; its turn under the board; the board's turn to
+    // the window wall, which sets the key's azimuth once given (--board-turn or a
+    // placement); and the placement (A, --place), which sets them all, the flags after it.
+    var table_place = float2 { table_at.x, table_at.y };
+    var board_set = has(argv, "--board-turn");
+    var board_turn = number(argv, "--board-turn", 0.0);
+    var place = pick(argv, "--place", PLACE_NAMES, 0);
+    put_place(place, room, table_place, board_turn, board_set, g);
+    var shown_place = place;
+    // --place-then NAME: that placement taken on the third frame, as A would, so a shot
+    // shows the room built again round the moved table (a check of the live path).
+    let place_then = pick(argv, "--place-then", PLACE_NAMES, -1);
+    if has(argv, "--table-at") { table_place = float2 { table_at.x, table_at.y }; }
+    if has(argv, "--wall") { room.window = four(argv, "--wall", room.window); }
+    if has(argv, "--sun-height") { room.key.y = number(argv, "--sun-height", room.key.y); }
+    if has(argv, "--board-turn") { board_turn = number(argv, "--board-turn", 0.0); }
+    g.table_turn = number(argv, "--table-turn", g.table_turn);
+    room_shell::LIBRARY.table = table_place;
     render3d::show_room(g, room_on, away, shell_on);
     var paper_m = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE);
     g.paper_tile = paper_m * surfaces::METRE;
@@ -1424,6 +1542,7 @@ fn main() {
             if gfx::key_pressed("H") { shutters_on = !shutters_on; }
             if gfx::key_pressed("J") { paint_quiet = !paint_quiet; }
             if gfx::key_pressed("I") { sill_new = !sill_new; }
+            if gfx::key_pressed("A") { place = place % (PLACE_NAMES.len - 1) + 1; }
             if gfx::key_pressed("Z") {
                 // The window view's steps all off, or all as made.
                 let on = lace_hang > 0.0 || dust_way >= DUST_SPARSE || render3d::sun_veil > 0.0
@@ -1526,8 +1645,9 @@ fn main() {
                 choice(c, "Leaves by (T)", shade, ["noise", "tree", "both"]);
                 room.tree.x = shade;
                 if section(c, open, SUN_ITSELF) {
-                    slider(c, "Round", room.key.x, -30.0, 150.0);
+                    slider(c, "Across the wall", room.window.y, -60.0, 60.0);
                     slider(c, "Height", room.key.y, 3.0, 70.0);
+                    slider(c, "Round (turns the room)", room.key.x, -180.0, 180.0);
                     slider(c, "Strength", room.key.z, 0.0, 12.0);
                     slider(c, "Shadow", room.key.w, 0.0, 1.0);
                     ui::tree_state_pop(c);
@@ -1567,7 +1687,7 @@ fn main() {
                     slider(c, "Shade", room.pattern.x, 0.0, 1.0);
                     slider(c, "Softness", room.pattern.y, 0.0, 0.05);
                     slider(c, "Wall away", room.window.x, 10.0, 80.0);
-                    slider(c, "Wall turn", room.window.y, -60.0, 60.0);
+                    slider(c, "Sun's turn across the wall", room.window.y, -60.0, 60.0);
                     slider(c, "Sill", room.window.z, -30.0, 30.0);
                     slider(c, "Sideways", room.window.w, -30.0, 30.0);
                     slider(c, "Pane wide", room.panes.x, 2.0, 20.0);
@@ -1646,6 +1766,18 @@ fn main() {
             if section(c, open, TABLE) {
                 choice(c, "Table", take, tables::NAMES);
                 choice(c, "Top (m)", top, TOPS);
+                choice(c, "Placement (A)", place, PLACE_NAMES);
+                slider(c, "Along the wall (m)", table_place.x, 2.5, 6.5);
+                slider(c, "From the hall wall (m)", table_place.y, 4.5, 6.2);
+                slider(c, "Its turn under the board", g.table_turn, -60.0, 60.0);
+                let board_was = board_turn;
+                slider(c, "Board's turn to the wall", board_turn, -90.0, 90.0);
+                if board_turn != board_was { board_set = true; }
+                note(c, str("  the board's own z ", floor(board_in_plan(g) * 10.0 + 0.5) / 10.0, " degrees in the plan"));
+                let lit, table_lit = sun_check(g, room.window.y, room.key.y, false);
+                note(c, str("  sun-check: the field ", lit, " of 81, the table ", table_lit, " of 72 lit"));
+                ui::layout_row_dynamic(c, ROW + 4.0, 1);
+                if ui::button_label(c, "Print the sun-check") { sun_check(g, room.window.y, room.key.y); }
                 ui::tree_state_pop(c);
             }
             if section(c, open, OUTSIDE) {
@@ -1766,6 +1898,27 @@ fn main() {
             g.room = room;
             put_look(r3d, g, season, material, st);
         }
+        if place_then >= 0 && frames == 3 { place = place_then; }
+        // A placement picked (A, the panel): its sun, table and board, and its name printed.
+        if place != shown_place {
+            shown_place = place;
+            put_place(place, room, table_place, board_turn, board_set, g);
+            if place > 0 { print("placement ", PLACE_NAMES[place], ": ", place_flags(room, table_place, board_turn, g.table_turn)); }
+        }
+        // The table's place into the plan once no slider is held: the room is built round it
+        // again then, and its light baked again.
+        if !g.bake_held && (table_place.x != room_shell::LIBRARY.table.x || table_place.y != room_shell::LIBRARY.table.y) {
+            room_shell::LIBRARY.table = table_place;
+        }
+        // The board's turn to the window wall: the key's azimuth for it, the sky's and the
+        // lamp's turned with it.
+        if board_set {
+            let a = azimuth_for(board_turn, room.window.y);
+            let turned = a - room.key.x;
+            room.key.x = a;
+            room.fill.x += turned;
+            room.lamp.x += turned;
+        }
         // Cheap enough to do each frame: the harmonics on the CPU and the shadow map.
         g.room = room;
         render3d::window_pattern = pattern == 1;
@@ -1784,8 +1937,8 @@ fn main() {
             walk.placed = false;
         }
         let from_view = if view > 0 { view } else { 1 };
-        var start_eye = view_point(VIEW_EYES[from_view], from_view);
-        var start_at = view_point(VIEW_ATS[from_view], from_view);
+        var start_eye = view_eye(from_view, place);
+        var start_at = view_at(from_view, place);
         if plan_eye && !own_eye {
             start_eye = float3 { plan_eye_at.x, plan_eye_at.y, plan_eye_at.z };
             start_at = float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z };
@@ -1821,7 +1974,10 @@ fn main() {
                    rooms::WIND_KINDS[render3d::wind_kind], " --view ", VIEWS[view]);
             format(line, " --wallpaper-tile ", paper_m);
             let tm = room_shell::LIBRARY.table;
+            if place > 0 { format(line, " --place ", PLACE_NAMES[place]); }
             if tm.x != TABLE_AS_MADE.x || tm.y != TABLE_AS_MADE.y { format(line, " --table-at ", tm.x, ",", tm.y); }
+            if board_set { format(line, " --board-turn ", board_turn); }
+            if g.table_turn != 0.0 { format(line, " --table-turn ", g.table_turn); }
             if dust_way != DUST_OFF {
                 format(line, " --motes ", motes, " --mote-size ", render3d::dust.size, " --mote-blur ", render3d::dust.blur,
                        " --mote-bright ", render3d::dust.bright, " --mote-glint ", render3d::dust.glint, " --mote-fibres ",
@@ -1911,8 +2067,8 @@ fn main() {
             target = plan_point(g, float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z });
             fov = 55.0;
         } else if view > 0 && shell_on && room_on {
-            eye = plan_point(g, view_point(VIEW_EYES[view], view));
-            target = plan_point(g, view_point(VIEW_ATS[view], view));
+            eye = plan_point(g, view_eye(view, place));
+            target = plan_point(g, view_at(view, place));
             fov = 60.0;
         } else if view > 0 {
             // From beside the window, a person's eyes high, over the table to the wall.

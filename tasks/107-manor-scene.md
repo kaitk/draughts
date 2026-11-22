@@ -370,6 +370,17 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       and its shadow shows on the patch's sides (0.6 cm a metre over the sun's penumbra,
       was 3). Main pass at 3024 × 1890 native, two rounds: room view 11.84-11.85 to 11.98
       ms, table-window view 9.02 to 8.95-8.97; the game's shot unchanged in both renderers
+- [x] The menu scene's placement from the concept's sun (2026-11-22, builder 30,
+      `build/notes/builder-30/`): library-home-01's sun is about 20° across the wall, 12° up
+      (29° to show in the same pane from the table-window chair); with the table as made it
+      lights none of the board's field (`--sun-check`, 0 of 81), with the table 0.375 m
+      toward the stove's end (4.125, 5.8) and the board turned -20° all of it (81 of 81).
+      The players sit across the beam (the board turned by minus the sun's turn), each chair
+      0.9 m clear behind the table; the table's top turned 25° under the board. Six
+      placements on the light tuner's A key (`--place`), sliders for the table's place and
+      turn and the board's turn. Main pass at 3024 × 1890, two rounds: room view 11.86-11.87
+      ms before and after, table-window view 8.87 both. Open: the user's pick, then made the
+      menu scene's default; the sun's disc reads only as the sky's glare in the pane
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

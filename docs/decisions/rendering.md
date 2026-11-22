@@ -1214,6 +1214,34 @@ to be is in tasks 042, 059, 071, 081, and 086.
   - The game's shot is unchanged in both renderers (all of it is `SHELL_WINDOWS` code).
     Main pass at 3024 × 1890 native, two rounds: the room view 11.84-11.85 to 11.98 ms,
     the table-window view 9.02 to 8.95-8.97.
+- The menu scene's sun, table and board start from library-home-01's sun and sit two
+  players across the beam (2026-11-22, task 107, builder 30, `build/notes/builder-30/`).
+  - The concept's sun is about 20° across the window wall, from the left as seen from the
+    room, and about 12° up: its level camera puts the disc 20° left of its axis and 12°
+    above it at a 60° lens (9-15° up for 75-50°). Seen from the table-window view's chair
+    the same pane needs it 29° up. With the table as made, `--sun-check` lights none of the
+    board's field at either height (0 of 81 points): the oblique beam ends on the sash and
+    the frame of the 0.8 m deep box window. Moving the table 0.375 m toward the stove's end
+    (4.125, 5.8: still 1.2 m from the wall, its middle in front of the middle window) lights
+    all of it (81 of 81) at both heights; between 12° and 29° up the height changes nothing,
+    all of it the lower sash. So the concept's sun stays, the table moves; past about 25°
+    across the wall no place lights the whole field (72 of 81 at 25°).
+  - The players sit across the beam: the board's own axis between them square to the
+    sun's way across the floor, the board turned by minus the sun's turn (-20° for the
+    concept's). Both get side light; neither faces the glare or shades the board; and the
+    field, seen along the beam, is 0.28 m wide, inside one leaf's 0.37 m of glass (square
+    to the wall it is 0.36 m, a stile's shadow across two corners: 73 of 81). Each chair
+    has 0.9 m behind the table's edge (its 0.5 m and room to pull it out) clear of the
+    walls, the sills, the lace, the doors' swing and the bookcases; no chairs are modelled
+    yet. Rejected: across the wall (the window-side chair has 0.725 m to the
+    wall, too little, that player's back shades the board and the other faces the glare);
+    the concept's table in front of the pier (`concept-pier`, 3.625: lit, but its middle
+    0.225 m past the niche, against the plan) kept only as an option.
+  - The table's top turns 25° under the board, so its figure no longer runs square to the
+    board's; its base turns with it. The room's table only, a tuner's value for now.
+  - Six placements, each verified by `--sun-check`, are on the light tuner's A key and its
+    `--place` flag; none is the app's yet, the user picks. Costs: as before within the
+    rounds' spread (task 107).
 - The table-window view's dust is flakes and lint in the sunbeam (2026-11-22, task 107,
   builder 29), replacing builder 27's round points in a box as the default: irregular
   flakes and short fibres a pixel or a few across at 3024 × 1890, each tumbling slowly on an

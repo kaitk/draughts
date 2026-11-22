@@ -854,6 +854,14 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   and read the shell's fields and the lace's mask from a block of their own
   (`shaders::LIT_SHELL`, `TABLE_SHELL`, `render3d::ShellBlock`). Without the shell they take
   the game's window, as the game does.
+- **Where the table and the board stand**: the shell is built round the games table, its
+  middle the room's frame's origin (`room_shell::LIBRARY.table`), and the room's frame turns
+  with the key, so the board's turn in the room is the key's azimuth less the sun's turn
+  across the wall. Where the table moves, the shell's mesh, its corners' map, the view out
+  and the probes are made again (`render3d::Gpu.shell_table`, `light_key`). The room's table
+  can turn under the board (`Gpu.table_turn`): its mesh turned about its axis and its top's
+  figure read turned back in the room's table pipelines (`TABLE_ROOM`, `TableBlock`'s
+  `shape.zw`); the game's table never turns.
 - **Dust in the sunbeam** (`DUST_VERT`, compiled with `SHELL_WINDOWS`): in the light
   tuner's table-window view only, flakes and short fibres of lint, a pixel or a few across,
   in the sunbeam's own volume over the games table (a box sheared along the beam, 1.0 m
