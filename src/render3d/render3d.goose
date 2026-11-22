@@ -435,8 +435,12 @@ struct Gpu {
     // room's masks; and a tuner's: the books left out of the mesh, their fade scaled (0 as
     // made).
     book_atlas: Texture,
-    books_off:  bool,
-    book_fade:  f32,
+    // The quiet paint's relief tile (room_shell::relief_tile), RGBA8 with its mips, made
+    // with the room's bake, and the time it took (measuring).
+    paint_tile:    Texture,
+    paint_tile_ms: f64,
+    books_off:     bool,
+    book_fade:     f32,
     // The scene drawn under the screen's size (scene_size_of): its RGBA8 target at that
     // size, made again for another, and its pipelines up to the screen, bilinear and
     // Catmull-Rom (shaders::UPSCALE_FRAG), made the first time it is drawn so.
@@ -763,6 +767,8 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures 
         add_texture(t, g.wall_normal, g.aniso);
         add_texture(t, g.paper_mask, g.aniso);
         add_texture(t, g.plaster_tone, g.aniso);
+    } else if group == GROUP_PAINT {
+        add_texture(t, g.paint_tile, g.aniso);
     } else if group == GROUP_METALS {
         add_texture(t, g.book_atlas, g.aniso);
     }
@@ -933,6 +939,17 @@ fn put_paper<O>(o: O&, g: Gpu&) {
     g.paper_mask = put_mask(o, 0);
     g.plaster_tone = put_mask(o, 1);
     g.book_atlas = put_books(o);
+    let t0 = clock();
+    var px: u8[>..] = [];
+    room_shell::relief_tile(px);
+    g.paint_tile = o.gpu_sampled(room_shell::RELIEF_SIDE, room_shell::RELIEF_SIDE, room_shell::RELIEF_MIPS, RGBA8);
+    var at = 0;
+    for level in room_shell::RELIEF_MIPS {
+        let w = room_shell::RELIEF_SIDE >> level;
+        o.gpu_upload(g.paint_tile, level, px[at..at + 4 * w * w]);
+        at += 4 * w * w;
+    }
+    g.paint_tile_ms = (clock() - t0) * 1000.0;
 }
 
 // The books' atlas (design/materials/books_atlas.png) on the GPU, RGBA8 with BOOK_MIPS, each
@@ -1131,7 +1148,8 @@ fn room_bytes(g: Gpu&) -> i64 {
     let b = view_out::BAND_TEXELS;
     let k = view_out::OAK_TEXELS;
     let outside = if g.outside_band.id != 0 { 4 * (b.x * b.y + k.x * k.y) } else { 0 };
-    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside;
+    let relief = if g.paint_tile.id != 0 { room_shell::relief_bytes() } else { 0 };
+    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the
@@ -1268,7 +1286,9 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
-                    float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun, k.paint_quiet, paint_steps, table_map_shown(g),
+                    float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
+                    float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paint_steps,
+                    table_map_shown(g),
                     books::COVER, books::LABEL }
 }
 
@@ -2306,6 +2326,8 @@ var sheen_look = float4 { 2.0, 0.8, 1.0, 0.0 };
 // x the recesses' dirt, y the joints' hairlines, z the relief tile, each 1 on, w 1 the old
 // paint. While all are as made, the app's shader draws.
 var paint_steps = float4 { 1.0, 1.0, 1.0, 0.0 };
+// The relief tile's strength over its look's (the tuner's --paint-relief, 1 as made).
+var paint_relief: f32 = 1.0;
 fn paint_steps_on() -> bool { paint_steps.x < 0.5 || paint_steps.y < 0.5 || paint_steps.z < 0.5 || paint_steps.w > 0.5 }
 
 fn room_views_on() -> bool { ssao_allowed && (ssao_view > 0 || sheen_look.w > 0.5 || planar_view == 1) }

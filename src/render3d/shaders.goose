@@ -2165,9 +2165,12 @@ let ROOM_HEAD = """
     #endif
     #endif
     #ifdef ROOM_PAINT
+    // The quiet paint's relief (room_shell::relief_tile): its slopes, the sheen's
+    // unevenness, the slopes' spread under a texel.
+    layout(set = 2, binding = 5) uniform sampler2D paint_tile;
     #ifndef NO_SSAO
-    layout(set = 2, binding = 5) uniform sampler2D ssao_map;
-    layout(set = 2, binding = 6) uniform sampler2D pre_place;
+    layout(set = 2, binding = 6) uniform sampler2D ssao_map;
+    layout(set = 2, binding = 7) uniform sampler2D pre_place;
     #endif
     #endif
     #ifdef ROOM_METALS
@@ -3127,10 +3130,36 @@ let ROOM_FRAG = """
         dirt *= paint_steps.x;
         joint *= paint_steps.y;
     #endif
+        // The relief tile, laid on the face's plane in the room's frame with its grain the
+        // piece's (up, or along the wall), a place of its own a piece: its slopes tilt the
+        // normal (half as much on a window), its spread widens the sheen, its B makes the
+        // sheen uneven over tens of centimetres.
+        vec3 ln = abs(vec3(dot(ng.xz, axes.xy), ng.y, dot(ng.xz, axes.zw)));
+        bool level_face = ln.y > max(ln.x, ln.z);
+        bool on_x = ln.x > ln.z;
+        vec2 pl = level_face ? v_local.xz : (on_x ? v_local.zy : v_local.xy);
+        vec3 t_h = level_face ? u_dir : (on_x ? v_dir : u_dir);
+        vec3 t_v = level_face ? v_dir : vec3(0.0, 1.0, 0.0);
+        // room_shell::RELIEF_TILE and RELIEF_SLOPE.
+        const float RELIEF_TILE = 0.256;
+        const float RELIEF_SLOPE = 0.02;
+        vec2 tile_uv = (along > 0.5 ? pl.yx : pl) / (RELIEF_TILE * shell.w) + tone * vec2(0.37, 0.61);
+        vec3 t_across = along > 0.5 ? t_v : t_h;
+        vec3 t_along = along > 0.5 ? t_h : t_v;
+        vec4 relief = texture(paint_tile, tile_uv);
+        float strength = abs(paint_quiet.w) * (1.0 - 0.5 * on_window);
+    #ifdef PAINT_STEPS
+        strength *= paint_steps.z * (1.0 - paint_steps.w);
+    #endif
+        vec2 slope = (relief.xy * 255.0 - 128.0) / 127.0 * RELIEF_SLOPE * strength;
+        n = normalize(n - t_across * slope.x - t_along * slope.y);
+        float spread = relief.w * RELIEF_SLOPE * strength;
         albedo = srgb(paint.rgb) * (1.0 + 0.02 * (tone - 0.5));
         albedo *= 1.0 - 0.45 * dirt * (vec3(1.0) - vec3(0.80, 0.76, 0.68));
         albedo *= 1.0 - 0.5 * joint;
         rough = mix(paint_quiet.x, paint_quiet.y, on_window) + 0.1 * dirt + 0.1 * joint;
+        rough += 0.04 * strength * (relief.z * 2.0 - 1.0);
+        rough = sqrt(rough * rough + 2.0 * spread * spread);
     #ifdef PAINT_STEPS
         if (paint_steps.w > 0.5) {
             // The old paint, as before the quiet one: a little uneven.

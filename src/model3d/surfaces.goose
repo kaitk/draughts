@@ -124,7 +124,7 @@ struct Look {
     ceiling_light: float4,
     paint:         float4,
     // The quiet paint (room_shell's joinery): x the doors' roughness, y the windows', z the
-    // recesses' dirt band (metres), w the relief tile's strength (1 as made).
+    // recesses' dirt band (metres), w the relief tile's strength (1 the research's heights).
     paint_quiet: float4,
     lace_thread: float4,
     stone:       float4,
@@ -160,8 +160,10 @@ let LOOK = Look {
     ceiling_light: float4 { 0.7284, 0.6867, 0.6027, 0.86 },
     paint:         float4 { 0.776, 0.745, 0.682, 0.38 },
     // Eggshell to satin, doors 0.36 and the window joinery a little duller (build/notes/
-    // paint-research/), the dirt in a 3 mm band.
-    paint_quiet: float4 { 0.36, 0.42, 0.003, 1.0 },
+    // paint-research/), the dirt in a 3 mm band, the relief twice the research's quiet
+    // heights (its brush 5 µm, its lived variant's): at those alone it reads as nothing even
+    // close up in the room's light.
+    paint_quiet: float4 { 0.36, 0.42, 0.003, 2.0 },
     lace_thread: float4 { 0.867, 0.827, 0.749, 0.9 },
     stone:       float4 { 0.714, 0.698, 0.659, 0.55 },
     // A plain brass, a placeholder until the gilt and brass study's material lands: its

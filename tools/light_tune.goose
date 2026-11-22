@@ -887,6 +887,7 @@ fn main() {
             rest = after;
         }
     }
+    render3d::paint_relief = number(argv, "--paint-relief", 1.0);
     var book_fade = number(argv, "--book-fade", 1.0);
     var top = pick(argv, "--table-top", TOPS, 0);
     g.table_r = top_radius(top);
@@ -991,6 +992,7 @@ fn main() {
                 print("the room's oak baked in ", g.room_ms, " ms, ", g.room_side, " texels a side, ",
                       render3d::room_bytes(g) / 1048576, " MiB; its mesh made in ", g.mesh_ms, " ms, ",
                       g.room_count / 3, " triangles and ", g.glass_count / 3, " of glass and lace");
+                print("the paint's relief tile made in ", g.paint_tile_ms, " ms, ", room_shell::relief_bytes(), " bytes");
             }
             if g.corner_ms > 0.0 {
                 print("the corners' map baked in ", g.corner_ms, " ms, ", corner_map::chart_count, " charts in ",
@@ -1225,6 +1227,7 @@ fn main() {
                 if ui::button_label(c, "As baked") { oak = float2 { 1.0, 1.0 }; }
                 switch(c, "Paint (J)", paint_quiet, ["old", "quiet"]);
                 for n, i in PAINT_STEP_NAMES { switch(c, str("  its ", n), paint_on[i], ["off", "on"]); }
+                slider(c, "  its relief", render3d::paint_relief, 0.0, 6.0);
                 if g.room_ms > 0.0 {
                     note(c, str("oak baked in ", floor(g.room_ms + 0.5) as i64, " ms, ", render3d::room_bytes(g) / 1048576, " MiB"));
                 }
@@ -1412,6 +1415,7 @@ fn main() {
                 if !paint_on[i] { format(off, if off.len > 0 { "," } else { "" }, n); }
             }
             if off.len > 0 { format(line, " --paint-off ", off); }
+            if render3d::paint_relief != 1.0 { format(line, " --paint-relief ", render3d::paint_relief); }
             flag_pair(line, "--oak-tint", oak);
             flag_pair(line, "--ceiling-tint", ceiling);
             room_flags(line, room);
