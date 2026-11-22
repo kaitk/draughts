@@ -11,7 +11,9 @@
      against the computer. ?view=
        offer   the draw tile (the default)
        no      the computer turned the offer down; &no=card a card in the middle, as the
-               end's (the default), a the tile answers, b the line under whose turn
+               end's (the default), a the tile answers, b the line under whose turn;
+               the card's icon beside the computer's face &icon=thumb (the default), off (a crossed
+               handshake), hand, face (the face alone)
        asked   the computer offers a draw; &ask=panel in the play panel (the default),
                card over the board
        giveup  start over tapped a few moves in: give up this game?
@@ -187,7 +189,7 @@
   if (view === 'lost') card(`<div class="pieces"><span class="piece solo black king"></span></div><h1>Black wins</h1><small>White gave up</small>${again}`, false);
   if (view === 'drawn') card(`<div class="pieces"><span class="piece solo white"></span><span class="piece solo black"></span></div><h1>Draw</h1><small>${friend || q.get('by') === 'friend' ? 'Agreed' : 'Agreed'}</small>${again}`, false);
   const big = (name) => D.icon(name).replace('class="icon"', 'class="icon big"');
-  if (view === 'no' && no === 'card') card(`<div class="pieces">${big('computer')}</div><h1>No draw</h1>
+  if (view === 'no' && no === 'card') card(`<div class="pieces">${big('computer')}${{ face: '', thumb: big('thumbDown'), hand: big('hand'), off: big('handshakeOff') }[q.get('icon') || 'thumb']}</div><h1>No draw</h1>
     <small>The computer plays on.</small>
     <a class="tile primary" href="?view=offer">Continue</a>`, false);
   if (view === 'asked' && ask === 'card') card(`<div class="pieces">${D.icon('computer').replace('class="icon"', 'class="icon big"')}${D.icon('handshake').replace('class="icon"', 'class="icon big"')}</div><h1>Draw?</h1>

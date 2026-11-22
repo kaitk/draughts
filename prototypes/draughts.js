@@ -148,6 +148,9 @@ const Draughts = (() => {
     newGame: '<mask id="ng-new" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="white"/><path d="M9 9a6 2.5 0 0 1 12 0v3a6 2.5 0 0 1 -12 0z" fill="black" stroke="black" stroke-width="5.2"/></mask><path class="solid" mask="url(#ng-new)" d="M4.5 15a6 2.5 0 0 1 12 0v3a6 2.5 0 0 1 -12 0z"/><ellipse cx="15" cy="9" rx="6" ry="2.5"/><path d="M9 9v3a6 2.5 0 0 0 12 0v-3"/><path d="M1.5 12C2.3 11.3 3.8 9.3 6.8 9.3"/>',
     // Lucide's handshake (ISC), and a flag for giving up.
     handshake: '<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.47 6.47a1 1 0 1 0 3-3"/><path d="M3 4h8"/>',
+    thumbDown: '<path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>',
+    hand: '<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+    handshakeOff: '<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.47 6.47a1 1 0 1 0 3-3"/><path d="M3 4h8"/><path d="M2.5 21.5 21.5 2.5"/>',
     flag: '<path d="M5 22V3"/><path class="solid" d="M5 3.5h13l-2.8 4.5 2.8 4.5H5z"/>',
     up: '<path d="M6 15l6-6 6 6"/>',
     left: '<path d="M15 6l-6 6 6 6"/>',
