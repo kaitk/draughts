@@ -1172,6 +1172,7 @@ let LIT_FRAG = """
         vec3 p = v_world;
         vec3 n = normalize(v_normal);
         float ao = clamp(v_extra.x, 0.0, 1.0);
+        float pieces_occ = 1.0;     // the pieces' share of the field's occlusion
         vec3 albedo;
         float rough;
         float top_var = 0.0;     // the spread of a shader-made normal over the pixel
@@ -1197,7 +1198,8 @@ let LIT_FRAG = """
             albedo = a.rgb;
             rough = a.a;
             n = normalize(vec3(t.x, sqrt(max(1.0 - dot(t, t), 0.0)), t.y));
-            ao *= texture(field_occ, uv).r * wall_occlusion(p);
+            pieces_occ = texture(field_occ, uv).r;
+            ao *= pieces_occ * wall_occlusion(p);
             #ifdef SHADOW_MANY
             if (frame_map.w > 0.0) {
                 // The light that leaves the body: the albedo blurred over half the
@@ -1541,9 +1543,11 @@ let LIT_FRAG = """
         float wrap = 0.2;
         float diff = clamp((nol + wrap) / (1.0 + wrap), 0.0, 1.0) / (1.0 + wrap);
         // Filament's micro-shadowing from the occlusion, on the field only: on the
-        // pieces' grooves, tiny triangles near the terminator turned it into specks.
+        // pieces' grooves, tiny triangles near the terminator turned it into specks. Not
+        // from the pieces' occlusion of the field: the shadow map shades where they block
+        // the sun, and a low sun darkened a halo on their lit side.
         if (mat > 1.5 && disc_n.x > 0.5) ao *= discs_occlusion(p);
-        float micro = clamp(nl * inversesqrt(1.0 - min(ao, 0.9999)), 0.0, 1.0);
+        float micro = clamp(nl * inversesqrt(1.0 - min(ao / max(pieces_occ, 0.01), 0.9999)), 0.0, 1.0);
         micro = nol > 0.0 && mat < 0.5 ? micro * micro : 1.0;
         // A piece's lip and groove are finer than a shadow texel: its lookups start a
         // little toward the light, so they leave them to the baked occlusion.
