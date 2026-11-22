@@ -977,7 +977,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     if g.room_shell && g.outside_vb.id == 0 {
         var verts:   mesh::Vertex[>..] = [];
         var indices: u32[>..]          = [];
-        view_out::build(verts, indices, view_out::centre_of(room_shell::LIBRARY));
+        view_out::build(verts, indices, view_out::centre_of(room_shell::LIBRARY), park_ground);
         g.outside_vb, g.outside_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
         g.outside_count = indices.len;
     }
@@ -2585,6 +2585,9 @@ var window_view = float4 { 1.0, 1.0, 1.0, 1.0 };
 // The sun's broad veil in the sky round it (OUTSIDE_FRAG, the tuner's --sun-veil), 1 as
 // made, 0 off.
 var sun_veil: f32 = 1.0;
+// The light tuner's park on the ground (--park, model3d::view_out's lawn and cards, its own
+// shaders in TUNED_OUTSIDE and TUNED_OUTSIDE_HDR): the view out's mesh carries them.
+var park_ground = false;
 fn sill_steps_on() -> bool {
     let a = sill_steps[0];
     return a.x < 0.5 || a.y < 0.5 || a.z < 0.5 || a.w < 0.5 || sill_steps[1].x < 0.5 || sill_steps[1].y > 0.5;

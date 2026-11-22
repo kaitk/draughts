@@ -12,6 +12,10 @@ import math;
 let MAT_SKY:  f32 = 12.0;
 let MAT_BAND: f32 = 13.0;
 let MAT_OAK:  f32 = 14.0;
+// The light tuner's park on the ground (--park): the lawn, and the trees' cards from
+// MAT_CARD up, one material each so the shader finds its tint and place.
+let MAT_LAWN: f32 = 15.0;
+let MAT_CARD: f32 = 16.0;
 
 // The lawn a metre under the floor (task 109).
 let LAWN_Y: f32 = surfaces::FLOOR_Y - surfaces::METRE;
@@ -70,9 +74,39 @@ fn grid(indices: u32[>..]&, first: i64, across: i64, up: i64) {
     }
 }
 
+// The park on the ground, a look test of the light tuner's (--park, task 109): a lawn
+// that holds perspective, from LAWN_NEAR metres out of the middle window's inner face to
+// LAWN_FAR, LAWN_AZ degrees either side of straight out; its uv the place in metres from
+// the middle window (x to the right looking out, y into the room), which
+// shaders::PARK_FN shades. It runs on under the band to near the horizon, for any gap
+// between its trunks; the band's blurred foot is replaced by its trunks drawn on down.
+let LAWN_NEAR: f32 = 1.5;
+let LAWN_FAR:  f32 = 1200.0;
+let LAWN_AZ:   f32 = 85.0;
+let LAWN_COLUMNS = 48;
+let LAWN_ROWS = 40;
+
+// The trees on the lawn: the oak's picture as cards fixed in the world, each facing the
+// middle window: x degrees right of straight out, y metres out, z tall in metres, w its
+// tint (PARK_FN's CARD_TINT). Drawn farthest first. The same table is PARK_FN's CARDS:
+// keep the two equal.
+let PARK_CARDS = 7;
+let PARK_TREES: float4[PARK_CARDS] = [
+    float4 { 6.0, 100.0, 16.0, 2.0 },
+    float4 { -18.0, 88.0, 18.0, 1.0 },
+    float4 { 22.0, 70.0, 20.0, 0.0 },
+    float4 { 40.0, 48.0, 16.0, 3.0 },
+    float4 { -6.0, 50.0, 12.0, 4.0 },
+    float4 { 30.0, 30.0, 10.0, 5.0 },
+    float4 { -40.0, 18.0, 13.0, 6.0 },
+];
+// The oak's picture: its trunk's foot this share of its height over the picture's foot.
+let CARD_SINK: f32 = 0.03;
+
 // The three layers round `centre`, the middle window's middle on the wall's inner face
-// (u, v).
-fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2) {
+// (u, v); with `park` the lawn between the sky and the band, and the cards in place of
+// the oak.
+fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2, park: bool = false) {
     let metre = surfaces::METRE;
     // The sky: each vertex its direction, which the vertex shader puts round the eye.
     var first = verts.len;
@@ -84,6 +118,7 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2) {
         }
     }
     grid(indices, first, SKY_COLUMNS + 1, SKY_ROWS + 1);
+    if park { lawn(verts, indices, centre); }
     // The tree line, its picture's top row first.
     first = verts.len;
     let r = BAND_M * metre;
@@ -96,6 +131,12 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2) {
         }
     }
     grid(indices, first, BAND_SEGMENTS + 1, 2);
+    if park {
+        for t, k in PARK_TREES {
+            card(verts, indices, centre, t.x, t.y, t.z, MAT_CARD + k);
+        }
+        return;
+    }
     // The oak, facing the window: its left as seen from the room at u 0.
     first = verts.len;
     let foot = centre + toward(OAK_AZ) * (OAK_M * metre);
@@ -118,4 +159,38 @@ fn centre_of(s: room_shell::Shell) -> float2 {
         if n == 2 { mid = s.openings[k].mid; }
     }
     return room_shell::room_of(s, float2 { mid, s.walls[room_shell::WINDOW_WALL].a.y });
+}
+
+// The lawn's grid: columns across LAWN_AZ either side, rows out from the wall's line to
+// LAWN_FAR, spaced geometrically so the far rows are no thinner on screen than the near.
+fn lawn(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2) {
+    let metre = surfaces::METRE;
+    let first = verts.len;
+    for j in LAWN_ROWS + 1 {
+        let k = j as f32 / LAWN_ROWS;
+        for i in LAWN_COLUMNS + 1 {
+            let theta = -LAWN_AZ + 2.0 * LAWN_AZ * i / LAWN_COLUMNS;
+            let d = toward(theta);
+            let near = LAWN_NEAR / -d.y;
+            let r = near * pow(LAWN_FAR / near, k);
+            let at = d * r;
+            put(verts, float3 { centre.x + at.x * metre, LAWN_Y, centre.y + at.y * metre }, at, MAT_LAWN);
+        }
+    }
+    grid(indices, first, LAWN_COLUMNS + 1, LAWN_ROWS + 1);
+}
+
+// One tree's card `theta` degrees right of straight out, `out` metres, `tall` metres high,
+// facing the middle window, its trunk's foot on the lawn.
+fn card(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2, theta: f32, out: f32, tall: f32, mat: f32) {
+    let metre = surfaces::METRE;
+    let first = verts.len;
+    let foot = centre + toward(theta) * (out * metre);
+    let side = toward(theta + 90.0) * (0.5 * tall * OAK_W / OAK_H * metre);
+    for j in 2 {
+        let y = LAWN_Y + ((if j == 0 { tall } else { 0.0 }) - CARD_SINK * tall) * metre;
+        put(verts, float3 { foot.x - side.x, y, foot.y - side.y }, float2 { 0.0, j }, mat);
+        put(verts, float3 { foot.x + side.x, y, foot.y + side.y }, float2 { 1.0, j }, mat);
+    }
+    grid(indices, first, 2, 2);
 }

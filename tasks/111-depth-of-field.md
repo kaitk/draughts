@@ -32,6 +32,10 @@ RG11B10F with a dither at the tonemap, RGBA16F MSAA the fallback.
 - [ ] The tablets' fallback (the view out's discs and a mip blend for the room)
 - [ ] Costs measured at each step on a quiet Mac (below), then on the devices that get it
 
+The view out's baked blur (the oak's upload blur, the pictures' `OAK_BLUR` and
+`BAND_BLUR`) goes when the park's impostor trees come, leaving this lens the only blur of
+distant objects: task 109, Outside, the user's verdicts of 2026-11-22.
+
 ## B0 to B2 (builder 28, 2026-11-22, `build/notes/builder-28/`)
 
 Headless 3024 × 1890 on the M1 Pro, Metal System Trace, GPU ms, two rounds alike

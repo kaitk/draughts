@@ -162,6 +162,67 @@ be thought through with the room, not taken from one picture:
   crowns; from the table only the middle window shows the park, the oak at its right
   edge, the horizon at the eye's height. Soft from magnification until the depth of
   field. Shots: `build/notes/room-outside/`.
+- The park on the ground, a look test (2026-11-22, branch `outside-look`): the light
+  tuner's `--park ground` (off today's look exactly; `no-shading`, `no-leaves`,
+  `no-grounding`, `no-shadows` each take one part out; the game draws no view out).
+  Built: a real lawn in the outside's pass (`view_out::lawn`, 1.5 to 112 m, ±85°), drawn
+  before the band, whose painted lawn is faded out below its trees' foot; grass with no
+  blades (`shaders::PARK_FN`: noise octaves faded by the pixel's footprint, so no tiling
+  and no hex-tiling needed; dry and green patches, damp and thin spots, wrap, a glow
+  toward the sun, paler tips at grazing angles), lit by the sun and sky in the band's units
+  through the outside's exposure; autumn leaves on the same plane (a density field, more
+  under crowns, near the house and the band's foot, 7 cm cells, averaged with distance);
+  seven world-fixed cards of the oak's picture 18 to 100 m out (`view_out::PARK_TREES`,
+  repeated as PARK_FN's `CARD`), each with a ring at its foot and the sky kept off under
+  its crown; shadows by a ray to the sun per lawn pixel against each card's picture and
+  the band's cylinder (the band's broken into shafts), so no shadow map and nothing to
+  remake when the sun moves. Chosen: the lawn as geometry, as it must hold perspective;
+  analytic ray tests over a shadow map, since seven cards and one cylinder are cheap and
+  exact; a tree 6° left at 50 m, so its shadow crosses the middle window's lawn toward
+  the house as in `library-home-01`, its crown under the sun from the table. Holds up: the
+  perspective, the long shadows and the band's shafts, the glow toward the sun. Left: the
+  cards are one front-lit picture seven times (the room view shows it; the concept's trees
+  are backlit), the grounding hardly shows from the windows (the shadows ground the trees
+  instead), the leaves read as confetti up close and lack the concept's drifts by the
+  house, the grass is too even between shadows, a soft line still marks the band's foot,
+  the card shadows are as thin as a flat picture's. Cost not measured. Shots and the
+  comparison: `build/notes/builder-32/park/`, scripts in `build/b32-park/`.
+- The lawn plain (2026-11-22, the user: its dark blotches looked odd, the old plain lit
+  lawn best): the grass's patches, damp and thin spots and soil are gone. They were
+  albedo, not shadows, and at 4-11° they flattened into dark lenses that read as shadows.
+  The lawn is now the band's lit lawn tone, drifting at most a quarter of the way to a
+  greener hue of about the same brightness over some 60 m, never darker. The long
+  shadows, the leaves and the glow toward the sun stay; the glow is smooth and makes no
+  blotches. Shots: the "Plain lawn" section of `build/notes/builder-32/park/`.
+- The trees between the lawn and the tree line (2026-11-22, planned): the oak's cards are
+  placeholders. The trees from about 15 to 100 m become depth-card impostors baked from
+  task 105's grower (`trees.goose`, step T1) by an extended T5 bake: colour, normal and
+  depth from a few views over only the angles the room sees (about 4 × 3 views, ±25°
+  sideways, 0-30° up), blended as an octahedral impostor is, and lit live. The tree line
+  past 100 m stays a picture band. The comparison behind it:
+  `build/notes/outside-impostors/index.html`.
+- The user's verdicts on the park (2026-11-22): the plain lawn is liked overall. The look
+  without the grass's shading (`--park no-shading`, leaves and shadows kept) is liked too
+  and stays as an option. The blur baked into the outside reads strange now and goes when
+  the baked impostor trees replace the oak's cards: the oak's upload blur
+  (`render3d::soften`, `view_out::OAK_SOFT`, sigma 3.5 texels) and the pictures' own from
+  `tools/materials/outside.py` (`OAK_BLUR`, 0.06° in `outside_oak.png`; `BAND_BLUR`, 0.25°
+  in `outside_band.png`). The band's panels also carry their painted haze and are soft
+  from magnification; those stay while the band stays a picture. From then on the
+  distant objects' blur comes only from the lens's depth of field (task 111), so it
+  follows the focus. This replaces the decision of 2026-11-21 in
+  `docs/decisions/rendering.md` (the oak blurred once on upload), to be recorded there
+  and in `docs/architecture/rendering.md` when it is done.
+- Yellower and leafier (2026-11-22, the user): the plain lawn sRGB 0.45, 0.43, 0.16, part
+  way to the first round's green; the leaves hide most of the grass out to 8 m from the
+  house, thinning to the open's 0.12 by 45 m (three layers, a full field about 80%), more of
+  them yellow. Shots: `build/notes/builder-32/park/leaves/`.
+- The lawn's far edge and the leaves (2026-11-22): the soft strip where the lawn met the
+  band was the band's own blurred foot; below its trunks' row 1.6 m up the band now draws
+  that row on down, ending sharp on the lawn, which runs on behind it to 1200 m. The leaf
+  carpet thins out to 70 m by a warped falloff with drifts, its change to the mean broken
+  by noise; the leaves are tilted to the low sun, rimmed in the glow, with a faint shade
+  beside them. Shots: `build/notes/builder-32/park/r4/`.
 
 ## The shell built (2026-11-20)
 

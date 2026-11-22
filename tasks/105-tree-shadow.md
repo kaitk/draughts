@@ -336,6 +336,9 @@ short and straight.
   turned more variedly so not every one shows its full outline, clusters of a few
   leaves overlapping as on a real twig. Done (above), for the user to judge.
 
+- The park's trees from 15 to 100 m (2026-11-22): the research's T5 card grows into a bake
+  of depth-card impostors from the grower (T1), planned in task 109's Outside section.
+
 ## Acceptance criteria
 
 - [ ] A generated tree whose shadow reads as branches and leaves, not noise, on the board

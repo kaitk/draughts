@@ -369,6 +369,16 @@ pieces; the design boards still set the layout, glass, and controls.
   `build/b24/shots.sh EXE TAG`, `crops.py`, `measure.sh ROUND TAG=EXE,FLAGS..` (under the
   quiet lock; in zsh, a list in a variable doesn't split into words: run sweeps in bash),
   `build/notes/builder-24/`.
+- The park on the ground (task 109's look test, `build/notes/builder-32/park/`): the light
+  tuner's `--park ground|no-shading|no-leaves|no-grounding|no-shadows` (start only; off by
+  default) puts a lawn, autumn leaves and the oak's picture as seven grounded cards into the
+  view out (`view_out::lawn`, `PARK_TREES`; `shaders::PARK_FN` between `OUTSIDE_FRAG` and
+  `OUTSIDE_MAIN`, the tuner's own `TUNED_OUTSIDE` and `TUNED_OUTSIDE_HDR`). A card's place
+  is in both `PARK_TREES` and PARK_FN's `CARD`, in the same order. The lawn stays one plain
+  colour: albedo patches seen at a few degrees read as shadows, and the user disliked them
+  (2026-11-22). Shots `build/b32-park/batch.sh TAG` (each view with every part off), `crops.sh`;
+  a tuner built elsewhere than `build/<name>` (`scripts/mac.py ... -o`) keeps other
+  agents' binaries.
 - The tuners are built with `scripts/mac.py tools/NAME.goose`, run from `tools/`,
   and shoot headless with `GOOSE_GFX_HEADLESS=1` and `--shot out.png`.
 

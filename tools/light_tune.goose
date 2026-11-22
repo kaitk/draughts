@@ -61,6 +61,7 @@
 //       as a share; 0 or none the shader's own, shaders::OCC_FRAG's HALO and HALO_REACH, 1 and 1 today)]
 //       [--room-surfaces on|off] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
 //       [--outside on|off] [--outside-exposure K (rooms::Room's outside)]
+//       [--park off|ground|no-shading|no-leaves|no-grounding|no-shadows (the lawn and trees on the ground outside, PARK_NAMES)]
 //       [--eye X,Y,Z --at X,Y,Z (a camera of its own, world units)]
 //       [--plan-eye X,Y,H --plan-at X,Y,H (one in the room's plan, metres: x along the window wall
 //       from the stove's end, y from the hall wall, H up from the floor)] [--fov DEG]
@@ -126,6 +127,30 @@ let SQUARES = ["8", "10"];
 // The table's tops to compare (--table-top, the panel's Top): the game's 0.95 m
 // (mesh::TABLE_R), the 1.05 m it was and task 109's period 0.80 m; the base under them
 // the same.
+// The park on the ground outside (--park, task 109's look test; render3d::park_ground):
+// off as today, the whole of it, or one part off: the grass's shading, autumn's leaves
+// (off too in the other seasons), the trees' grounding (the darker lawn under the crowns
+// and round the trunks), their shadows. Chosen at the start only.
+let PARK_NAMES = ["off", "ground", "no-shading", "no-leaves", "no-grounding", "no-shadows"];
+let PARK_NO_LEAVES = 3;
+fn park_frag(part: i64, hdr: bool) -> const u8[:] {
+    if hdr {
+        return match part {
+            2 => embed_shader("frag", shaders::PARK_NO_SHADING, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+            3 => embed_shader("frag", shaders::PARK_NO_LEAVES, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+            4 => embed_shader("frag", shaders::PARK_NO_GROUNDING, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+            5 => embed_shader("frag", shaders::PARK_NO_SHADOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+            _ => embed_shader("frag", shaders::PARK, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        };
+    }
+    return match part {
+        2 => embed_shader("frag", shaders::PARK_NO_SHADING, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        3 => embed_shader("frag", shaders::PARK_NO_LEAVES, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        4 => embed_shader("frag", shaders::PARK_NO_GROUNDING, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        5 => embed_shader("frag", shaders::PARK_NO_SHADOWS, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        _ => embed_shader("frag", shaders::PARK, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+    };
+}
 let TOPS = ["0.95", "1.05", "0.80"];
 let TOP_METRES: f32[3] = [0.95, 1.05, 0.80];
 fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
@@ -1225,15 +1250,24 @@ fn main() {
                          shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
+            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::OUTSIDE_MAIN),
             embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             "",
             embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            "", "", "", ""];
+            "", "", "", "", ""];
         render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
                                       pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
+    }
+    // The park on the ground outside (--park): the view out's mesh with the lawn and the
+    // trees' cards, its shaders the park's; autumn's leaves only in autumn.
+    let park = pick(argv, "--park", PARK_NAMES, 0);
+    if park > 0 {
+        let part = if season != looks::AUTUMN && park == 1 { PARK_NO_LEAVES } else { park };
+        render3d::park_ground = true;
+        render3d::tuned_frags[render3d::TUNED_OUTSIDE] = park_frag(part, false);
+        render3d::tuned_frags[render3d::TUNED_OUTSIDE_HDR] = park_frag(part, true);
     }
     // The painted wood's shader with its steps switched (J, --paint, --paint-off).
     render3d::tuned_frags[render3d::TUNED_PAINT_STEPS] = embed_shader("frag", shaders::ROOM_PAINT, shaders::PAINT_STEPS, shaders::SHELL_WINDOWS,
