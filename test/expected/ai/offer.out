@@ -1,0 +1,34 @@
+russian W:WKc1,Ke1:BKa7  two kings against one: accepts
+  score 320, dead draw true, accepts true, offers true
+russian W:WKc1,Ke1,Kg1:BKa1  three against one on a1-h8: accepts
+  score 590, dead draw true, accepts true, offers true
+russian W:WKc1,Ke1,Kh2:BKa7  three against one off it: declines
+  score 620, dead draw false, accepts false, offers false
+russian W:WKb2,c3,e3:BKa7  a king and two men against a king: declines
+  score 224, dead draw false, accepts false, offers false
+russian B:WKc1,Ke1,Kh2:BKa7  behind: accepts
+  score -590, dead draw false, accepts true, offers false
+russian W:WKc1,Ke1:BKh8,Ka7  two kings each: accepts and offers
+  score -20, dead draw true, accepts true, offers true
+russian W:WKc1,Ke1,Kg1:BKb8,Kd8,Kf8  three kings each: no dead draw, offers on the score
+  score 20, dead draw false, accepts true, offers true
+russian W:WKe1,c3:BKh8,f6  a king and a man each: accepts, no offer
+  score 10, dead draw false, accepts true, offers false
+international W:WK48,K49:BK11  two kings against one: accepts
+  score 320, dead draw true, accepts true, offers true
+international W:WK48,K49,K50:BK23  three against one on 46-5: accepts
+  score 590, dead draw true, accepts true, offers true
+international W:WK48,K49,K50:BK24  three against one off it: declines
+  score 630, dead draw false, accepts false, offers false
+international W:WK47,31,32:BK11  a king and two men against a king: declines
+  score 216, dead draw false, accepts false, offers false
+international W:WK48,K49:BK11,K15  two kings each: accepts and offers
+  score 20, dead draw true, accepts true, offers true
+brazilian W:WKc1,Ke1:BKa7  two kings against one: accepts
+  score 320, dead draw true, accepts true, offers true
+brazilian W:WKc1,Ke1,Kg1:BKe5  three against one on a1-h8: accepts
+  score 590, dead draw true, accepts true, offers true
+brazilian W:WKc1,Ke1,Kh2:BKa7  three against one off it: declines
+  score 620, dead draw false, accepts false, offers false
+brazilian W:WKb2,c3,e3:BKa7  a king and two men against a king: declines
+  score 224, dead draw false, accepts false, offers false

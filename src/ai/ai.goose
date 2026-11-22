@@ -18,6 +18,7 @@ import .search;
 import .lookout;
 import .judge;
 import .rating;
+import .offer;
 
 let EASY = 0;
 let MEDIUM = 1;
@@ -271,6 +272,10 @@ fn step(e: Engine&, nodes: i64) -> bool {
 // The reply found: one of the position's legal moves. Only after step returned true,
 // and only when the position has a move.
 fn reply(e: Engine&) -> rules::Move { e.moves[e.chosen] }
+
+// The search's score for the side to move, in hundredths of a man, and whether there was
+// a search: none where the position had one move or none. Only after step returned true.
+fn search_score(e: Engine&) -> i64, bool { return e.best, e.moves.len > 1; }
 
 // Whether there is a reply: false when the position has no legal move.
 fn has_reply(e: Engine&) -> bool { e.phase == READY && e.chosen >= 0 }
