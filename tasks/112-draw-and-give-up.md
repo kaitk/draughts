@@ -1,15 +1,14 @@
 # 112: Offer a draw and give up
 
-Status: todo
+Status: in progress
 
 Testers asked for an "offer draw" option and a way to give up. A kings-only ending runs
 its rules' count to the end, 25 moves each in International and up to 60 in Russian
 and Brazilian, which drags. Start over already cancels a lost game, but it counts for
 nothing, so a loss can be dodged and never reaches the rating.
 
-The takes are in `prototypes/game-draw.html` (`?view=offer|no|asked|giveup|lost|drawn|friend`,
-`&at=left|right` for where the draw tile goes, `&no=card|a|b` for how a refusal shows, `&ask=panel|card`
-for where the computer's offer shows).
+The chosen takes are folded into `prototypes/game.html` (`?view=kings|no|asked|giveup|lost|drawn`,
+`&friend=1`); the page of takes, `game-draw.html`, is in git history (`git log -- prototypes/game-draw.html`).
 
 ## Plan
 
@@ -49,14 +48,35 @@ for where the computer's offer shows).
 - [x] The takes chosen in the prototype (2026-11-22): the tile with start over, the
       refusal and the computer's offer as cards in the middle, the crossed handshake,
       the computer's icon in the refusal's line
-- [ ] The page folded into `game.html` once built
-- [ ] The decisions recorded in `docs/decisions/ai.md` (giving up, the computer's
+- [x] The page folded into `game.html` once built
+- [x] The decisions recorded in `docs/decisions/ai.md` (giving up, the computer's
       answer) and `docs/decisions/rules.md` (a draw agreed, with no arbiter's count),
       and `docs/architecture/` updated to match
-- [ ] The computer's answer and its own offer as pure functions over the position and
+- [x] The computer's answer and its own offer as pure functions over the position and
       score, tested headless on kings' endings it must accept or decline
-- [ ] The tile, the offer, the give-up card, and the end's cards built, their strings
+- [x] The tile, the offer, the give-up card, and the end's cards built, their strings
       in `strings/en.txt` and `strings/et.txt`
-- [ ] A game given up and a draw agreed counted once in the results and the rating,
+- [x] A game given up and a draw agreed counted once in the results and the rating,
       and not again after undo and a second ending
 - [ ] Checked on the Mac and the tablet in both orientations
+
+## Built (2026-11-22)
+
+- `src/ai/offer.goose`: `offer::dead_draw`, `accepts_draw` (declines from half a man
+  ahead), `offers_draw` (a dead draw, or only kings within a fifth of a man);
+  `test/ai/offer.goose` in each draughts. The game keeps `Game.ended_by`, the refusal's
+  ply, the offer, and the last score, saved with it (`shell::Saved` version 5, 4 and 3
+  read). `test/shell/draw_offer.goose` drives it through the shell: the rating, skill,
+  and history count an agreed draw and a give-up once, not again after undo.
+- The way out with the draw tile: two over two in landscape (touch and desktop alike, in
+  the column's room, so nothing under it moves), the bar's fourth in portrait, an icon
+  after back in the compact bar. `test/shell/sizes` lays out the tile, the three middle
+  cards, and the given-up card at every size in both languages: all in place.
+- `--card refused|offer|give-up|gave-up|agreed` shoots the cards.
+- Checked on the Mac (2026-11-22), flat and 3D: the tile at 2560×1600 desktop, 1920×1200
+  tablet landscape, 1200×1920 portrait, and narrow windows; every card in English
+  landscape and Estonian portrait. Words shrink a face to fit in a few half-width tiles:
+  "Alusta uuesti" beside "Paku viiki" in landscape, "Offer draw" in a 1100×700 window,
+  "Mängin edasi" on the give-up card in portrait. The compact bar's icon wasn't reached
+  on the Mac (the window doesn't go that small).
+
