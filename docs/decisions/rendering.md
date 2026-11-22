@@ -1178,6 +1178,12 @@ to be is in tasks 042, 059, 071, 081, and 086.
     view 10.95 before, 11.08 with every step at 0, 11.94-11.95 with all; the table-window
     view 4.58, 4.75, 5.04-5.05; at the 4.1 MP budget the room 8.28-8.32 and 9.04-9.05,
     the table-window view 3.59 and 3.94 (each step's share in task 110).
+  - The scratches thinner and half as many, the film a quarter fainter (2026-11-22, task
+    107, builder 31): from the table a millimetre texel drew 3-4 px hairlines at 3024 ×
+    1890, so the tile is half a millimetre a texel (1024 texels, 5.6 MB with its mips,
+    about 210 ms to make once), 35 arcs and 12 straight wipes; the film scatters 0.0015
+    of the sun, was 0.002. Rejected: a finer tile repeating every 0.256 m (it would
+    repeat inside a pane). The main pass unchanged.
 - The board and the table in the room take the sun through the shell's own windows
   (2026-11-22, task 107, builder 29, `build/notes/builder-29/`), as the room's surfaces do
   (`LIGHT_FN`'s `shell_open`; `shaders::LIT_SHELL`, `TABLE_SHELL`). Before, they took the

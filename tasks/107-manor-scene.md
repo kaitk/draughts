@@ -381,6 +381,18 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       turn and the board's turn. Main pass at 3024 × 1890, two rounds: room view 11.86-11.87
       ms before and after, table-window view 8.87 both. Open: the user's pick, then made the
       menu scene's default; the sun's disc reads only as the sky's glare in the pane
+- [x] The small fixes (2026-11-22, builder 31, `build/notes/builder-31/`): the light
+      tuner's walk flies (Q down, E up; the lens view moved to 1); less-turned the default
+      placement; the glass's scratches thinner (its tile half a millimetre a texel) and
+      half as many; its film a quarter fainter; the pieces' halo given a strength and
+      reach (`--halo`, `--halo-reach`, the game's look unchanged). The halo is mostly the
+      sun's micro-shadowing from the pieces' occlusion, strongest at the menu's low sun,
+      not HDR (the board's HDR and 8-bit pictures within a level). Main pass at 3024 ×
+      1890 native, less-turned, two rounds: room view 11.64 / 11.56 ms before, 11.65 /
+      11.61 after; table-window view 9.74 / 9.77 before, 9.76 / 9.74 after. The game's
+      shot unchanged in both renderers. Open: the user's pick of the halo (strengths 0.6,
+      0.35, 0.6 with reach 0.6, or the micro-shadowing without the pieces,
+      `build/b31/halo-micro.patch`), then made the game's
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

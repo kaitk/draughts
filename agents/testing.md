@@ -174,6 +174,10 @@ before committing a change to `rules/`.
 - `GOOSE_GFX_HEADLESS=1` makes both renderers headless: `--frames N` saves the PNG in the
   working folder and exits, with no window in the user's way. Headless loops run fast, so
   shoot the 3D board settled at `--frames 20000`. Sizes are real pixels.
+- A headless run can differ from a rerun of the same build too: builder 31's first game
+  shot differed from its reruns in 845 pixels (gfx) and 2302 (ngfx), by 2 levels at
+  most, and the reruns matched each other exactly. Before calling a change pixel-moving,
+  shoot the before build again.
 - Windowed runs of one build differ, so `cmp` says nothing about them. For
   byte-identical checks, build a headless copy with a fixed clock (`host::time()` adding
   1/60 s a call) and `dirty = true;` heading the loop, so `--frames N` is N loops at the

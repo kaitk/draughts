@@ -265,7 +265,25 @@ pieces; the design boards still set the layout, glass, and controls.
   `build/b27/shots.sh EXE TAG [NAMES]` (`twv` the view, `sun` toward the sun, `lace`),
   `parts.sh EXE TAG [NAMES]`, `w0.sh EXE`, `cmp.sh A B`, `rounds.sh`, `page.py`.
   The film and the scratches show only within about 35° of the sun: judge them at
-  `--plan-eye 4.5,6.6,1.6 --plan-at 4.84,7.54,1.93 --fov 30`, native (`--scene-scale 1`).
+  `--plan-eye 4.5,6.6,1.6 --plan-at 4.84,7.54,1.93 --fov 30`, native (`--scene-scale 1`);
+  at the less-turned placement over the trees in the left window's leaves `--plan-eye
+  4.6,6.2,1.25 --plan-at 4.4,7.5,1.35 --fov 35` (`build/b31/glass.sh EXE TAG`, also
+  toward the sun). Their tile is half a millimetre a texel since builder 31 (a millimetre
+  read as 3-4 px wide hairlines from 1.3 m at 3024 × 1890); `--glass-film 0` against
+  the default, diffed, isolates the film.
+- The pieces' halo on the field (builder 31, `build/notes/builder-31/`): two terms, both
+  from `OCC_FRAG`'s map (`field_occ`): the ambient times it, and Filament's
+  micro-shadowing in `LIT_FRAG`, which scales the sun by `nl / sqrt(1 - ao)` (squared on
+  the field), so at the menu's 15° sun a field point at ao 0.8 keeps a third of the sun
+  on the pieces' lit side. HDR is not why it reads darker in the menu (the board's HDR and
+  8-bit outputs within a level). `--halo K` and `--halo-reach K` (the Table section's
+  sliders; 0 the shader's `HALO` and `HALO_REACH`, 1 and 1) scale the map through the
+  squares buffer's spare `zw`, so a value the user picks is a one-line change of the
+  constant. Removing the pieces' share from the micro-shadowing alone is a `LIT_FRAG`
+  change (`build/b31/halo-micro.patch`); judge on the game's shot
+  (`build/b31/gamec.sh EXE TAG`, a gfx-only build, `scripts/mac.py --gfx-only`, 35 s)
+  and the menu's close-up `--view room --plan-eye 4.4,4.9,1.45 --plan-at 4.4,5.8,0.78
+  --fov 28`.
 - The sun through the shell's windows (task 107, builder 29, `build/notes/builder-29/`): the
   board and the table in the room take the sun through the shell's own windows
   (`shaders::LIT_SHELL`, `TABLE_SHELL`), so a turn of `--wall` that puts the board behind a
@@ -319,9 +337,9 @@ pieces; the design boards still set the layout, glass, and controls.
   against, and only the shell with its view out, 4× MSAA and no room view draws HDR (the
   panel's Lens section says which). Compare a look in both: in HDR the lace and the
   glass's film blend in linear light and read stronger, the surfaces within 2-3 levels.
-  `--lens-view depth|coc` (1, the key apart from the walk's Q) shows the depth and the lens's disc (`--dof on`, `--focus M`,
-  0 the view's target; `--aperture PCT`, `--dof-caps N,F`): judge a focus there before
-  any blur. Builder 28's scripts: `build/b28/look.sh EXE TAG SIZE NAME "flags"..`,
+  `--lens-view depth|coc` (1, apart from the walk's Q) shows the depth and the lens's
+  disc (`--dof on`, `--focus M`, 0 the view's target; `--aperture PCT`, `--dof-caps
+  N,F`): judge a focus there before any blur. Builder 28's scripts: `build/b28/look.sh EXE TAG SIZE NAME "flags"..`,
   `cmp.sh A B`, `game.sh`, `rounds-b1.sh`, `rounds-b2.sh`, `page.py`.
 - The light tuner draws the 3D scene at the screen's native size by default (2026-11-22);
   `--scene-pixels 4.1` (`render3d::HIGH_SCENE_PIXELS`) or `--scene-scale K` draw it smaller
