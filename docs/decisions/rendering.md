@@ -1137,6 +1137,46 @@ to be is in tasks 042, 059, 071, 081, and 086.
     screen-space curvature, which crawls and reads as dirt or rust. Also left out for now:
     the research's lived extras (chips to an older coat, hand grime and burnish, kick
     scuffs, a per-leaf door map), the user's to choose.
+- The windows' sills are a Vasalemma-type limestone, drawn with a pipeline of their own
+  (2026-11-22, task 107; `build/notes/paint-research/`'s sill section,
+  `room_shell`'s `limestone.goose` and `shell_mesh::sill_slab`, `shaders::ROOM_SILL`,
+  `render3d::GROUP_SILL`). Of the research's three stones (the materials pass's clouds and
+  round specks, a Saaremaa-type dolomite, a Vasalemma-type crinoidal limestone) the
+  Vasalemma one, for its speckle, which the concept's sill shows; with the wear a sill
+  gets: a patchy band polished by hands, an eased arris with a few chips, a darker nose
+  toward its foot, a dust line before the glass. Nothing else of the research's
+  (laminae, stylolites, fossils, rust) is in it.
+  - Its own material (`surfaces::MAT_STONE`) and pipeline, the walls' shader without the
+    stone's code: the shaders where they belong, no one shader for everything. This ends
+    the stone's place in the walls' group, which the painted wood's split above kept.
+    Drawn before the paint, as in the walls' draw, so faces that tie in depth resolve as
+    before.
+  - The speckle is a tile made in code when the shell first shows (1024 texels over
+    256 mm, 67 ms, 5.6 MB with its mips), its albedo over the stone's mean: the
+    stone's colour stays the old one's (`Look.stone`, `#b6b2a8`), so the baked light's
+    albedo for the sills (`room_light::STONE_ALBEDO`) still holds and the room's bounce
+    doesn't change. The research's Vasalemma base was a little paler, `#bdb9b0`.
+  - The arris is eased in the shader, not the mesh (4 mm, the normal turned toward the
+    arris by the distance the mesh carries in its uv, spread over the pixel when it is
+    under one): the mesh keeps its triangles, and it filters where the paint's
+    millimetre fillets in the mesh dash. Chips, about one in 30 cm, 0.8 to 2.5 mm.
+  - The nose 6% darker at its foot in sRGB (13% of its linear albedo; at 6% linear it
+    moved 4 levels, nothing to see); the band from 25 to 70 mm back, its roughness 0.55
+    to about 0.33; the dust's line fading over 2 cm (12 mm showed only as a hairline
+    beside the frame's contact shade).
+  - Measured headless at 3024 × 1890 on an M1 Pro, GPU ms by Metal's encoder labels, two
+    rounds alike: the room view's main pass at native scale 11.11 before, 10.92-10.93
+    with the split alone, 10.94-10.95 with the limestone; a sill close up 5.93-5.94,
+    5.76 and 5.78-5.79; at the 4.1 MP budget the room 8.41 and 8.28, the sill 4.58 and
+    4.47; the fps counter 13.1 and 12.9-13.0 ms a frame (room, native). The split saved
+    0.18 (the walls' shader without the stone's code), the limestone costs 0.02-0.03 over
+    it. The mesh the same 37,906 triangles.
+  - The light tuner keeps the old stone one key away (I, `--sill old`) and switches each
+    part alone (`--sill-off speckle,band,arris,nose,dust`), in a shader of its own
+    (`SILL_STEPS`) in the room and the floor's mirror, used only while a switch is off.
+    The old stone matches before within a level but for a few dots along the nose's sharp
+    arris (up to 21 levels at 7 pixels of 1.6 million, derivatives at the edge compiled in
+    another shader); the game's shot unchanged (both renderers).
 - The library's baked light bounces three times (2026-11-21, task 107;
   `room_light::first_light`, `bounce_once`, `gather_half`): the room's surfaces as 1,208
   cells, about 0.5 m a side on the floor, the ceiling and the four walls (a door's leaf, a

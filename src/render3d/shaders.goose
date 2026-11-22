@@ -3212,16 +3212,16 @@ let ROOM_FRAG = """
             float polish = (1.0 - smoothstep(0.36 * sill.y, sill.y, back)) * smoothstep(-1.5 * r, -0.5 * r, t) * (0.7 + 0.3 * tile4.b);
             rough -= 0.22 * polish * on.y;
             // The arris: the normal turned toward it by up to 45° within r of it; under a
-            // pixel, spread over the pixel and turned less. A chip in some 5 cm along it: a
-            // flake broken off across it, paler and rougher, its face at an angle of its own;
-            // faded as it falls under a pixel.
+            // pixel, spread over the pixel and turned less. A chip in about one 5 cm of it in
+            // seven: a flake broken off across it, paler and rougher, its face at an angle of
+            // its own; faded as it falls under a pixel.
             float wide = max(r, ft);
             float ease = clamp(1.0 - abs(t) / wide, 0.0, 1.0) * r / wide * on.z * on_slab;
             float cell = floor(v_uv.x / 0.05);
             float fp = max(ft, fwidth(v_uv.x));
             float rad = mix(0.0008, 0.0025, h12(vec2(cell, 7.3)));
             vec2 off = vec2((v_uv.x - (cell + 0.15 + 0.7 * h12(vec2(cell, 5.1))) * 0.05) / 0.6, (t + (0.6 - h12(vec2(cell, 9.9))) * r) * 0.6);
-            float chip = (1.0 - smoothstep(rad - 0.5 * fp, rad + 0.5 * fp, length(off))) * step(h12(vec2(cell, 3.7)), 0.45)
+            float chip = (1.0 - smoothstep(rad - 0.5 * fp, rad + 0.5 * fp, length(off))) * step(h12(vec2(cell, 3.7)), 0.15)
                        * min(1.0, rad * rad / (fp * fp)) * on.z * on_slab;
             albedo *= 1.0 + 0.18 * chip;
             rough += 0.2 * chip;

@@ -340,6 +340,22 @@ results, or keep baking at run time behind a loader when the room or a look is c
   of the room unchanged but the painted pieces and their reflection in the floor; the
   game's shot unchanged (max difference 0, both renderers). Not measured on a device.
 
+- The sills' own pipeline and the limestone (2026-11-22, builder 26,
+  `build/notes/builder-26/`; `docs/decisions/rendering.md`). Metal System Trace, headless
+  3024 × 1890, GPU ms by encoder labels, two rounds alike; before / the split alone (the
+  old stone in its own pipeline) / the limestone. The room view at `--scene-scale 1`: the
+  main pass 11.11 / 10.92-10.93 / 10.94-10.95, the frame's parts 13.97-14.07 /
+  13.82-13.84 / 13.83-13.88, the fps counter 13.1 / 12.9 / 12.9-13.0 ms a frame. The
+  middle sill close up (`--plan-eye 4.3,6.55,1.15 --plan-at 4.55,7.2,0.8 --fov 30`),
+  native: the main pass 5.93-5.94 / 5.76 / 5.78-5.79, the fps counter 7.7 / 7.5 /
+  7.5-7.6. At the 4.1 MP budget, before / the limestone: the room's main pass 8.41 /
+  8.28, the fps counter 10.3 / 10.1-10.2; the sill's 4.58 / 4.47, 6.3 / 6.1-6.2. The split
+  saved 0.18 ms (the walls' shader lost the stone's code), the limestone costs 0.02-0.03
+  over it. The mesh unchanged (37,906 triangles, only the sills' uv); the tile 67 ms on
+  the CPU when the shell first shows, 5.6 MB on the GPU, not made for the game's room. The
+  old stone (I) the split's exactly and before's within a level but dots along its sharp
+  arris; the game's shot unchanged (both renderers). Not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

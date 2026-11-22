@@ -241,6 +241,18 @@ pieces; the design boards still set the layout, glass, and controls.
   `build/b25/shots.sh EXE TAG [NAMES]`, `cmp.sh A B`, `measure.sh ROUND TAG=EXE,FLAGS..`
   (`build/notes/builder-25/`). The relief at its physical heights hardly shows in the
   room's light; at 15 it shows its direction (brush along the grain).
+- The sills' limestone (`room_shell`'s `limestone.goose`, `shell_mesh::sill_slab`,
+  `ROOM_SILL`): I or `--sill vasalemma|old`, `--sill-off speckle,band,arris,nose,dust` (each
+  part alone, the panel's Wainscot section). The look's values are `surfaces::Look.sill`
+  (arris radius, band's reach, nose's darkening in linear albedo, dust's width); its colour
+  is the old stone's (`Look.stone`), so the probes' `STONE_ALBEDO` still holds. Close-ups of
+  the middle sill: from above `--plan-eye 4.3,6.55,1.15 --plan-at 4.55,7.2,0.8 --fov 30`,
+  the nose `--plan-eye 4.2,6.25,0.95 --plan-at 4.5,7.05,0.78 --fov 28`, along the arris in
+  the sun `--plan-eye 4.15,6.8,0.92 --plan-at 4.7,7.08,0.79 --fov 24`, the dust at the
+  frame `--plan-eye 4.5,6.75,1.2 --plan-at 4.5,7.35,0.8 --fov 30`. Builder 26's shots, the
+  parts alone, the costs: `build/b26/shots.sh EXE TAG [NAMES]`, `parts.sh EXE`, `cmp.sh A
+  B`, `rounds.sh` (`build/notes/builder-26/`). A value worth checking by eye: write it to
+  `albedo` in a scratch build (the dust's `t` bands showed it lay right but too thin).
 - The light tuner draws the 3D scene under the high tier's pixel budget
   (`render3d::HIGH_SCENE_PIXELS`, 4.1 MP: 0.85 of a 3024 × 1890 screen), so a Retina shot
   is upscaled: pass `--scene-scale 1` for a native shot or a timing of the scene's own cost
@@ -262,10 +274,10 @@ shutters' panels), `mesh::turned` (a doubled point is a crease); `mesh::sweep` t
 point's normal from its `Profile`, the curtains' `tube` and `ball` theirs from the
 centre, and the books' spines bend theirs (`books::spine_at`). Left flat, as they are
 flat: the door architraves (a stepped profile whose turns are all creases or under a
-degree), the sills (a square slab), the casements (plain boxes). New furniture, frames
-and mouldings go through these routines, or do the same:
-a flat normal a segment shows a cove or an ovolo as bands, which the user has caught
-twice (the cornice, the cap's nose).
+degree), the sills (a square slab, the nose's arris eased in the shader), the casements
+(plain boxes). New furniture, frames and mouldings go through these routines, or do the
+same: a flat normal a segment shows a cove or an ovolo as bands, which the user has
+caught twice (the cornice, the cap's nose).
 
 ## What has been tried and set aside
 

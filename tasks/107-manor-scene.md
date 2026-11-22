@@ -322,6 +322,15 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       saved 0.20); the rest of the room and the game's shot unchanged. Open: the lived
       extras (chips, hand grime, kick scuffs), the relief's strength, and some dashing of
       the windows' sub-pixel fillets
+- [x] The windows' sills a Vasalemma-type limestone, with a pipeline of its own
+      (2026-11-22, builder 26, `build/notes/builder-26/`; `docs/decisions/rendering.md`):
+      the crinoid speckle from a tile made when the shell first shows (67 ms, 5.6 MB), a
+      patchy polished band, the nose's arris eased 4 mm in the shader with a few chips, the
+      nose 6% darker at its foot, a dust line before the inner casement; the old stone one
+      key away in the light tuner (I), each part switchable (`--sill-off`). The room's main
+      pass 0.16 ms cheaper than before at 3024 × 1890 (the split saved 0.18, the limestone
+      costs 0.02); the game's shot unchanged. Open: the colour (the old stone's mean kept,
+      the research's a little paler), the chips' count and the speckle's contrast
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

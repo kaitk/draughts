@@ -683,9 +683,9 @@ board's light:
   corners' shade nor the screen's occlusion, only its mesh's own.
 - **The room's shaders**: one pipeline a material group (`render3d::room_group`), each
   with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_PAINT`,
-  `ROOM_METALS`, `ROOM_GLASS`): the floor; the panelling oak, the paper, the plaster and
-  ceiling, the sills, the cord; the painted wood; the brass and the books; the glass and
-  lace, a mesh of their own. The room's mesh is sorted into the groups' index ranges when it is made, each range
+  `ROOM_SILL`, `ROOM_METALS`, `ROOM_GLASS`): the floor; the panelling oak, the paper, the
+  plaster and ceiling, the cord; the painted wood; the sills' stone; the brass and the
+  books; the glass and lace, a mesh of their own. The room's mesh is sorted into the groups' index ranges when it is made, each range
   drawn with its pipeline. A phone's pipelines are compiled without the screen's maps
   (`NO_SSAO`) and it makes no mirror's; the standard and high tiers' with them, made again
   if the tier changes. Each shader declares only the textures it reads, in slots without
@@ -774,6 +774,37 @@ grazing sun ([why](../decisions/rendering.md)).
   (`room_shell::paint_mat`). The light tuner's `--paint old` (J) draws the paint as it was
   before, and `--paint-off fillets,tilt,dirt,joints,tile` switches its steps off one by one
   in the tuner's own shader (`shaders::PAINT_STEPS`); `--paint-relief K` scales the tile.
+
+### The sills
+
+The windows' sills are a Vasalemma-type limestone, a whitish-grey crinoidal stone, honed,
+and worn as a sill wears: the detail shows close up, and at standing distance the sills
+read as pale stone with a soft nose ([why](../decisions/rendering.md)).
+
+- **Shape** (`room_shell::sill_slab`): a slab 5 cm thick, its nose 8 cm out of the wall
+  and 5 cm past the niche each side, over the niche's floor to its back. Its uv carries
+  the metres along the wall and the distance from the nose's top arris, back over the top
+  and down the nose and under it, which the shader reads for everything below.
+- **Speckle** (`room_shell::stone_tile`): one 1024-texel tile, 256 mm of stone at a
+  quarter of a millimetre a texel, made the first time the shell shows (5.6 MB with its
+  mips). It holds faint clouds, pale and darker crinoid grains of 0.3 to 1.4 mm and a few
+  dirt-filled pores, as a factor on the stone's colour (`surfaces::Look.stone`) whose mean
+  is 1, so the baked light's albedo for the sills still holds. The tile lies unfolded over
+  the top and the nose, so the grains run on round the arris.
+- **The polished band**: the top is polished from 25 to 70 mm behind the arris, its edge
+  and strength in patches; the roughness falls there from the honed 0.55 to about 0.33.
+- **The arris** is eased in the shader, not the mesh: within 4 mm of the arris the normal
+  turns toward it, up to 45° at the arris. Where 4 mm is under a pixel, the turn spreads
+  over the pixel and weakens, so the edge doesn't dash. About one chip in each 30 cm,
+  0.8 to 2.5 mm across the arris, is paler and rougher, its face at an angle of its own;
+  it fades as it falls under a pixel.
+- **The nose's foot**: the nose darkens toward its foot, by 6% in sRGB at the foot and
+  under it.
+- **The dust**: a grey, matte line before the inner casement's frame, fading over 2 cm,
+  in the tile's patches.
+- The light tuner's `--sill old` (I) draws the old mottled stone, and `--sill-off
+  speckle,band,arris,nose,dust` switches its parts off one by one, in the tuner's own
+  shader (`shaders::SILL_STEPS`) in the room and in the floor's mirror.
 
 ### Board and pieces
 

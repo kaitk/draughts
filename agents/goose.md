@@ -255,15 +255,19 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   Moving code about in it (one call site in a loop, work done earlier) made it slower, not
   faster; what paid was drawing the triangles that need a path with a pipeline of their
   own. The room is now one pipeline a material group (`render3d::room_group`: floor, walls,
-  paint, metals, glass), each shader with only its group's code by defines (`shaders::ROOM_FLOOR`
+  paint, sills, metals, glass), each shader with only its group's code by defines (`shaders::ROOM_FLOOR`
   ..), its mesh sorted into the groups' index ranges. A new material goes in a group, or a
   group of its own: its define and branch in `ROOM_FRAG`, `room_group`, its textures in
   `ROOM_HEAD` and `room_textures` (the same order), `room_frag` and `make_room_tier` in
   both renderers, `scripts/ngfx_3d_shaders.py`'s `ROOMS`, the tuner's `tuned_frags`; and the mirror's
-  pipeline (`planar_*`) in both renderers. A group split out by its material's fraction
-  (the paint, under 0.5, from the sills' stone) tests it in `room_group`. A tuner-only
-  variant of a group's shader (`PAINT_STEPS`) is chosen in `room_frag` and its pipeline made
-  again when it comes or goes (`make_room_tier`'s `room_steps`).
+  pipeline (`planar_*`) in both renderers. A material gets a kind of its own
+  (`surfaces::MAT_STONE`, 7) rather than a fraction of another's. A tuner-only variant of a
+  group's shader (`PAINT_STEPS`, `SILL_STEPS`) is chosen in `room_frag` and its pipeline made
+  again when it comes or goes (`make_room_tier`'s `room_steps`, `sill_steps`); for the
+  mirror too, give it a `MIRROR_PASS` variant of its own (`TUNED_SILL_MIRROR`), or the
+  floor reflects the app's look in the tuner's old mode. A split group drawn in another
+  order than before moves pixels where two groups' faces tie in depth: draw it where its
+  triangles were drawn before (the sills before the paint, as in the walls' draw).
 - gfx counts a shader's samplers from slot 0 and wants every one bound: a variant that
   drops a texture declares the rest without a gap (`ROOM_HEAD`'s per-group slots); ngfx's
   root takes them in declaration order, so both follow one list.
@@ -283,6 +287,16 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   near the strip's own plane from `cross(dFdx(p), dFdy(p))` (`ROOM_PAINT`).
 - Mesh builders that take the shell's `seed` by reference feed the curtains and books after
   them: a new builder keeps the count of `seed++` as before or seeds from its own copy.
+- A bevel in the shader instead of the mesh (the sills' eased arris): carry the distance to
+  the edge in the uv, turn the normal toward it from the surface gradient of that distance
+  (`cross(dFdy(p), n) * dFdx(t) + cross(n, dFdx(p)) * dFdy(t)`, times the sign of
+  `dot(n, cross(dFdx(p), dFdy(p)))`), and take which way is "toward" from the face, not
+  from the distance's sign: at a pixel's middle past the edge the distance reads past 0
+  and the normal turns away, a dashed dark line. Under a pixel, spread the turn over the
+  pixel and turn it less (`ROOM_SILL`). Derivatives before any branch.
+- A tile made in Goose: `room_shell::tile_noise` takes the tile's side (`relief.goose`);
+  grains stamped by hash into a wrapped float mask, the mips averaged as floats before
+  packing to RGBA8 (`limestone.goose`, 1024² in about 70 ms).
 - `smoothstep(a, b, x)` with `a > b` is undefined: write `1.0 - smoothstep(b, a, x)`.
 - Metal keywords (`thread`, `device`, `constant`, `kernel`) as GLSL names fail only on
   the Mac's pipeline build.
