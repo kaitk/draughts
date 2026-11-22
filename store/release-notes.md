@@ -4,6 +4,34 @@ Each version's notes for the GitHub release (the desktop builds) and the stores'
 new": Play's in en-GB and et (500 characters each), the App Store's in en-GB alone (no
 App Store localization yet, `app-store.md`). Newest first.
 
+## 0.9.2 (2026-11-22, Android)
+
+The 3D board's table and taken pieces, settings' Look, and refilled puzzles, on Google Play.
+
+### Play, en-GB (497 of 500)
+
+```text
+• The 3D board can stand on a round wooden table, with the pieces each side has taken laid beside it
+• Settings › Look: Theme, Board, and Matching or Classic pieces
+• The 3D board is ready sooner, with a bar while it sets up
+• Settings › About: the app's version and graphics, with Copy for a bug report
+• Puzzle libraries refilled with checked puzzles; a wrong move shows its whole line
+• The tutorial can go back a step and teaches a king's multi-capture
+• Open source: github.com/kaitk/draughts
+```
+
+### Play, et (496 of 500)
+
+```text
+• Ruumiline kabelaud võib seista ümmargusel puulaual, kummagi poole võetud nupud selle kõrval
+• Seaded › Välimus: Teema, Kabelaud ja nupud Laua moodi või Tavalised
+• Ruumiline laud on kiiremini valmis ja näitab laadimise ajal riba
+• Seaded › Teave: rakenduse versioon ja graafika, nupuga Kopeeri veateate jaoks
+• Ülesanded uuendatud ja kontrollitud; vale käik näitab kogu oma jätku
+• Õpetuses saab minna sammu tagasi ja see õpetab tammi mitmikvõtmist
+• Avatud lähtekood: github.com/kaitk/draughts
+```
+
 ## 0.9.1 (2026-11-18)
 
 A second renderer on the Mac, iPhone, iPad, and Windows, and Settings › About.
