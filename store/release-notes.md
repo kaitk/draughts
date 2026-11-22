@@ -4,6 +4,22 @@ Each version's notes for the GitHub release (the desktop builds) and the stores'
 new": Play's in en-GB and et (500 characters each), the App Store's in en-GB alone (no
 App Store localization yet, `app-store.md`). Newest first.
 
+## 0.9.3 (2026-11-22, Android)
+
+Fixes 0.9.2's flat board, which showed only a few of the pieces.
+
+### Play, en-GB
+
+```text
+• Fixed: the flat board showed only a few of the pieces
+```
+
+### Play, et
+
+```text
+• Parandatud: lamedal laual olid näha ainult mõned nupud
+```
+
 ## 0.9.2 (2026-11-22, Android)
 
 The 3D board's table and taken pieces, settings' Look, and refilled puzzles, on Google Play.
