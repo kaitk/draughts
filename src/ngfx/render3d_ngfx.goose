@@ -615,19 +615,23 @@ fn make_hdr(own: Own&, g: Gpu&) {
     h.motes = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_dust.blob"),
                            ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_ADD });
     h.tone = module(embed_file("../../build/ngfx/blobs/r3d_hdr_tone.blob"));
+    h.glow_first = module(embed_file("../../build/ngfx/blobs/r3d_glow_first.blob"));
+    h.glow_down = module(embed_file("../../build/ngfx/blobs/r3d_glow_down.blob"));
+    h.glow_up = module(embed_file("../../build/ngfx/blobs/r3d_glow_up.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_ALPHA });
 }
 
 // The HDR target's pipelines given back (make_hdr, release).
 fn release_hdr(own: Own&, g: Gpu&) {
     let h = g.hdr_pipes;
-    for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone] {
+    for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone,
+              h.glow_first, h.glow_down, h.glow_up] {
         if p.id != 0 { nx::release(p); }
     }
     g.hdr_pipes = default<render3d::HdrPipelines>();
 }
 
 // The HDR target tonemapped over all of `target`, as gfx's tone_pass; r3d_hdr_tone's header:
-// the picture.
+// the picture, the glow, HdrTone.
 fn tone_pass(own: Own&, g: Gpu&, target: Texture) {
     var pass = nx::PassDesc { clear_color: false };
     pass.color[0] = target;
@@ -635,9 +639,53 @@ fn tone_pass(own: Own&, g: Gpu&, target: Texture) {
     nx::bind(g.hdr_pipes.tone);
     var r = no_root();
     slot(r, 0, g.hdr_image, g.linear);
+    slot(r, 1, if render3d::glow_shown(g) { g.glow_levels[0] } else { g.hdr_image }, g.linear);
+    let b: render3d::HdrTone[1] = [render3d::hdr_tone_of(g)];
+    r.u = ngfx::frame_data(bytes_of(b));
     ngfx::draw(ngfx::root(r), 3);
     ngfx::end_pass();
     barrier_between_passes();
+}
+
+// The scenic views' glow, as gfx's glow_pass; the modules' headers: the source, GlowStep.
+fn glow_pass(own: Own&, g: Gpu&, size: int2) {
+    if g.glow_size.x != size.x || g.glow_size.y != size.y {
+        ngfx::flush();
+        for k in render3d::GLOW_LEVELS {
+            if g.glow_levels[k].id != 0 { nx::release(g.glow_levels[k]); }
+            let q = render3d::glow_level_size(size, k);
+            g.glow_levels[k] = nx::render_target(q.x, q.y, ngfx::RGBA16F);
+        }
+        g.glow_size = size;
+    }
+    let h .= g.hdr_pipes;
+    let n = clamp(render3d::hdr_glow.levels, 1, render3d::GLOW_LEVELS);
+    for k in n {
+        nx::begin_pass(g.glow_levels[k], nx::Texture { 0 }, float4_0);
+        nx::bind(if k == 0 { h.glow_first } else { h.glow_down });
+        var r = no_root();
+        slot(r, 0, if k == 0 { g.hdr_image } else { g.glow_levels[k - 1] }, g.linear);
+        let from = if k == 0 { size } else { render3d::glow_level_size(size, k - 1) };
+        let b: render3d::GlowStep[1] = [render3d::glow_step_of(from, render3d::glow_level_size(size, k), k == 0)];
+        r.u = ngfx::frame_data(bytes_of(b));
+        ngfx::draw(ngfx::root(r), 3);
+        ngfx::end_pass();
+        barrier_between_passes();
+    }
+    for i in n - 1 {
+        let k = n - 2 - i;
+        var pass = nx::PassDesc { clear_color: false };
+        pass.color[0] = g.glow_levels[k];
+        nx::begin_pass(pass);
+        nx::bind(h.glow_up);
+        var r = no_root();
+        slot(r, 0, g.glow_levels[k + 1], g.linear);
+        let b: render3d::GlowStep[1] = [render3d::glow_step_of(render3d::glow_level_size(size, k + 1), render3d::glow_level_size(size, k), false)];
+        r.u = ngfx::frame_data(bytes_of(b));
+        ngfx::draw(ngfx::root(r), 3);
+        ngfx::end_pass();
+        barrier_between_passes();
+    }
 }
 
 // The depth of field's depth, as gfx's depth_pass; the modules' headers: r3d_depth_lace's
@@ -699,7 +747,7 @@ fn depth_show_pass(own: Own&, g: Gpu&, target: Texture, show: render3d::DepthSho
 
 // The view out of the shell's windows (model3d::view_out), first in the pass in place of
 // the photograph: one draw, the sky, then the band, then the oak, each over the last;
-// r3d_outside.slang's header: Outside, the band, the oak.
+// r3d_outside.slang's header: Outside, the band, the oak, the tree's map.
 fn draw_outside(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
     nx::bind(if g.hdr && !in_mirror { g.hdr_pipes.outside } else { g.outside });
     var t = no_root();
@@ -709,6 +757,7 @@ fn draw_outside(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
     t.verts = nx::address(g.outside_vb);
     slot(t, 0, g.outside_band, g.linear);
     slot(t, 1, g.outside_oak, g.linear);
+    slot(t, 2, render3d::tree_or_stand_in(g), g.linear);
     nx::draw_indexed(ngfx::root(t), g.outside_ib, 4, g.outside_count);
 }
 
@@ -1453,6 +1502,7 @@ fn release(own: Own&, g: Gpu&) {
     release_hdr(own, g);
     for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { nx::release(p); } }
     for t in [g.hdr_image, g.scene_depth] { if t.id != 0 { nx::release(t); } }
+    for t in g.glow_levels { if t.id != 0 { nx::release(t); } }
     own = default<Own>();
     g = default<Gpu>();
 }

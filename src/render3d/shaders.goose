@@ -2464,6 +2464,14 @@ let OUTSIDE_VERT = """
     }
     """;
 
+// The view out's textures, before LIGHT_FN, which reads the tree's map (OUTSIDE_FRAG's
+// tree_seen): the band, the oak, the tree as the sun sees it.
+let OUTSIDE_HEAD = """
+    layout(set = 2, binding = 0) uniform sampler2D band;
+    layout(set = 2, binding = 1) uniform sampler2D oak;
+    layout(set = 2, binding = 2) uniform sampler2D tree_map;
+    """;
+
 // The view out, unlit, its own exposure (Outside.exposure.x, rooms::Room.outside) through
 // the room's tonemap and grade, dimmed with the board (screen.z). The sky is
 // design/manor/outside/park.py's, worked out here round the sun (light_dir): a zenith blue
@@ -2477,11 +2485,16 @@ let OUTSIDE_FRAG = """
     layout(location = 1) in vec2 v_uv;
     layout(location = 2) in float v_mat;
     layout(location = 0) out vec4 result;
-    layout(set = 2, binding = 0) uniform sampler2D band;
-    layout(set = 2, binding = 1) uniform sampler2D oak;
-    // x: the exposure; y: the sun disc's brightness over the sky's, linear; z: in the floor's
-    // mirror, its exposure; w: the sun's veil's strength (render3d::sun_veil, 1 as made).
-    layout(set = 3, binding = 1) uniform Outside { vec4 exposure; };
+    // exposure: x the exposure; y the sun disc's brightness over the sky's, linear; z in the
+    // floor's mirror, its exposure; w the sun's veil's strength (render3d::sun_veil, 1 as
+    // made). The sun's look (render3d::SunLook): sun_disc x the disc's radius (degrees), y
+    // its limb's darkening (the linear law's u), z its edge's softness (degrees, over a
+    // pixel); sun_glare the haze's halo, x and y its tight core's strength and width
+    // (degrees), z and w its wider glow's; sun_tree x the tree outside against the sky, the
+    // power its light through is taken to (0 none, 1 as the map, more denser), y how far
+    // from the sun (degrees), z its leaves' back light, w
+    // how sharp: the distance along the view it is looked up from (world units).
+    layout(set = 3, binding = 1) uniform Outside { vec4 exposure; vec4 sun_disc; vec4 sun_glare; vec4 sun_tree; };
     // The haze's broad veil round the sun, some 10° (the forward scattering a low autumn
     // sun shows through the air), over the halo's two narrower terms.
     const float SUN_VEIL = 0.5;
@@ -2508,13 +2521,39 @@ let OUTSIDE_FRAG = """
         vec3 ground = LAWN * (1.0 - 0.35 * clamp(-el / 30.0, 0.0, 1.0));
         c = mix(c, ground, clamp(-el, 0.0, 1.0));
         c = decode(c);
-        // The sun's disc, half a degree across, its edge over a pixel, and the haze's
-        // bright halo round it.
+        // The sun's disc, darker toward its limb, its edge over a pixel or softer, and the
+        // haze's halo round it: a tight core, a wider glow, the broad veil.
         float px = max(fwidth(ang), 1e-3);
-        float disc = 1.0 - smoothstep(0.27 - 0.5 * px, 0.27 + 0.5 * px, ang);
-        float halo = 1.5 * exp(-(ang / 1.2) * (ang / 1.2)) + 0.4 * exp(-(ang / 4.0) * (ang / 4.0))
-                   + exposure.w * SUN_VEIL * exp(-(ang / 10.0) * (ang / 10.0));
+        float edge = max(px, sun_disc.z);
+        float r = sun_disc.x;
+        float disc = 1.0 - smoothstep(r - 0.5 * edge, r + 0.5 * edge, ang);
+        float mu = sqrt(max(1.0 - (ang / r) * (ang / r), 0.0));
+        disc *= 1.0 - sun_disc.y * (1.0 - mu);
+        float core = sun_glare.x * exp(-(ang / sun_glare.y) * (ang / sun_glare.y));
+        float glow = sun_glare.z * exp(-(ang / sun_glare.w) * (ang / sun_glare.w));
+        float halo = core + glow + exposure.w * SUN_VEIL * exp(-(ang / 10.0) * (ang / 10.0));
         return c + (disc * exposure.y + halo) * decode(CORE) * step(0.0, el);
+    }
+    // The tree outside (trees.goose's, its map as the sun sees it) seen against the sky from
+    // the eye along d, near the sun only (sun_tree.y degrees, fading over the last third), where
+    // the map's view is the sun's: how much of the sky shows through (1 all), and the leaves'
+    // light where they cover it, backlit toward the sun.
+    vec4 tree_seen(vec3 d) {
+        vec3 s = normalize(light_dir.xyz);
+        float ang = degrees(acos(clamp(dot(d, s), -1.0, 1.0)));
+        float near = 1.0 - smoothstep(0.67 * sun_tree.y, sun_tree.y, ang);
+        vec2 nw = -room_axes.zw;
+        float toward = dot(d.xz, nw);
+        if (sun_tree.x <= 0.0 || near <= 0.0 || tree.x <= 0.0 || toward < 0.05) return vec4(0.0, 0.0, 0.0, 1.0);
+        // Taken from sun_tree.w along the view (world units), which leaves where it lands in
+        // the map as it is and blurs it less, as the map blurs with the distance from the tree.
+        vec2 tr = tree_light(eye.xyz + d * sun_tree.w, d, nw, room_axes.xy, toward);
+        float open = mix(1.0, pow(max(tr.x * tr.y, 1e-4), sun_tree.x), near);
+        // Lit through from behind: the leaves' share of the sun forward, warm; the limbs dark.
+        float leafy = (1.0 - tr.y) / max(2.0 - tr.x - tr.y, 1e-3);
+        vec3 back = decode(vec3(0.62, 0.42, 0.12)) * (0.12 + sun_tree.z * exp(-(ang / 5.0) * (ang / 5.0)));
+        vec3 wood = decode(vec3(0.16, 0.12, 0.09)) * 0.4;
+        return vec4(mix(wood, back, leafy) * (1.0 - open), open);
     }
     void main() {
         vec4 t;
@@ -2524,6 +2563,10 @@ let OUTSIDE_FRAG = """
             t = texture(band, v_uv) * smoothstep(0.0, 0.0156, min(v_uv.x, 1.0 - v_uv.x));
         } else t = texture(oak, v_uv);
         vec3 c = t.rgb / max(t.a, 1e-4) * exposure.x;
+        if (sun_tree.x > 0.0 && exposure.z <= 0.0) {
+            vec4 leaves_seen = tree_seen(normalize(v_dir));
+            c = c * leaves_seen.a + leaves_seen.rgb * exposure.x;
+        }
         if (exposure.z > 0.0) {
             // In the floor's mirror: the light itself (TONE_FN's mirror_light), z times
             // the look's, whose exposure is set through the tonemap's shoulder, where the
@@ -3923,6 +3966,9 @@ let HDR_TONE_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D scene_light;
+    layout(set = 2, binding = 1) uniform sampler2D glow_light;
+    // x the glow's strength (render3d::glow_pass; 0 none), yz a pixel in the glow's uv.
+    layout(set = 3, binding = 0) uniform HdrTone { vec4 tone_glow; };
     vec3 shoulder(vec3 c) {
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
@@ -3939,9 +3985,59 @@ let HDR_TONE_FRAG = """
     }
     void main() {
         vec3 c = max(texelFetch(scene_light, ivec2(gl_FragCoord.xy), 0).rgb, vec3(0.0));
+        if (tone_glow.x > 0.0) c += tone_glow.x * max(texture(glow_light, gl_FragCoord.xy * tone_glow.yz).rgb, vec3(0.0));
         c = shoulder(c) * vec3(1.02, 1.0, 0.97);
         float n = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
         result = vec4(encode(c) + n / 255.0, 1.0);
+    }
+    """;
+
+// The scenic views' glow (render3d::glow_pass), in the HDR target's linear light before the
+// tonemap, so the sun's disc and the sky bleed over the leaves, the bars and the frame in
+// front of them: the light over a threshold (a soft knee) picked into a quarter of the
+// picture, a 4 × 4 block a texel from four bilinear taps, then halved level by level
+// (GLOW_DOWN_FRAG, Bjorge's dual filter: five taps) and widened back up (GLOW_UP_FRAG, eight
+// taps), each level blended over the one above it by the reach, so the levels' shares sum to
+// one; HDR_TONE_FRAG adds the top level times the strength. glow_step: xy a source texel in
+// uv, zw a target pixel in uv; glow_look: x the threshold, y the knee, z the brightest a
+// channel is taken at (against a single pixel's spark), w the reach (each coarser level's
+// share).
+let GLOW_FIRST = "#define GLOW_FIRST 1\n";
+let GLOW_DOWN_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    layout(set = 3, binding = 0) uniform GlowStep { vec4 glow_step; vec4 glow_look; };
+    vec3 tap(vec2 uv) { return min(max(texture(src, uv).rgb, vec3(0.0)), vec3(glow_look.z)); }
+    void main() {
+        vec2 uv = gl_FragCoord.xy * glow_step.zw;
+        vec2 h = glow_step.xy;
+    #ifdef GLOW_FIRST
+        vec3 c = 0.25 * (tap(uv + vec2(-h.x, -h.y)) + tap(uv + vec2(h.x, -h.y)) + tap(uv + vec2(-h.x, h.y)) + tap(uv + h));
+        float bright = max(c.r, max(c.g, c.b));
+        float knee = max(glow_look.y, 1e-4);
+        float soft = clamp(bright - glow_look.x + knee, 0.0, 2.0 * knee);
+        soft = soft * soft / (4.0 * knee);
+        c *= max(soft, bright - glow_look.x) / max(bright, 1e-4);
+    #else
+        vec3 c = (4.0 * tap(uv) + tap(uv - h) + tap(uv + h) + tap(uv + vec2(h.x, -h.y)) + tap(uv - vec2(h.x, -h.y))) * 0.125;
+    #endif
+        result = vec4(c, 1.0);
+    }
+    """;
+let GLOW_UP_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    layout(set = 3, binding = 0) uniform GlowStep { vec4 glow_step; vec4 glow_look; };
+    void main() {
+        vec2 uv = gl_FragCoord.xy * glow_step.zw;
+        vec2 h = glow_step.xy;
+        vec3 c = texture(src, uv + vec2(-2.0 * h.x, 0.0)).rgb + texture(src, uv + vec2(2.0 * h.x, 0.0)).rgb
+               + texture(src, uv + vec2(0.0, -2.0 * h.y)).rgb + texture(src, uv + vec2(0.0, 2.0 * h.y)).rgb
+               + 2.0 * (texture(src, uv + vec2(-h.x, h.y)).rgb + texture(src, uv + h).rgb
+                        + texture(src, uv + vec2(h.x, -h.y)).rgb + texture(src, uv - h).rgb);
+        result = vec4(c / 12.0, glow_look.w);
     }
     """;
 

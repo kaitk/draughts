@@ -171,6 +171,19 @@ fn view_point(p: float3, view: i64) -> float3 {
 // (PLACE_SUN.w), and the table-window view's eye and target (the sun in the middle window's
 // left leaf, as library-home-01 has it). 0 is "free": the flags' own. Without --place the
 // tuner starts at PLACE_DEFAULT, less-turned (2026-11-22).
+// The sun's looks to compare in the view out (--sun-look; render3d::SunLook's disc, glare
+// and tree): "made" as it was before 2026-11-22's looks.
+let SUN_LOOK_NAMES = ["made", "real", "tight", "concept", "soft"];
+let SUN_LOOKS: render3d::SunLook[5] = [
+    render3d::SunLook {},
+    render3d::SunLook { float4 { 0.27, 0.6, 0.0, 30000.0 }, float4 { 0.4, 0.8, 0.25, 4.0 }, float4 { 2.0, 180.0, 0.3, 3.0 } },
+    render3d::SunLook { float4 { 0.5, 0.7, 0.03, 12000.0 }, float4 { 0.3, 0.8, 0.2, 3.0 }, float4 { 2.0, 180.0, 0.3, 3.0 } },
+    render3d::SunLook { float4 { 0.8, 0.5, 0.1, 5000.0 }, float4 { 0.4, 1.2, 0.35, 5.0 }, float4 { 2.0, 180.0, 0.4, 3.0 } },
+    render3d::SunLook { float4 { 1.2, 0.3, 0.35, 2500.0 }, float4 { 0.6, 1.8, 0.6, 8.0 }, float4 { 2.0, 180.0, 0.5, 3.0 } }];
+// Each look's glow (render3d::HdrGlow.look: strength, threshold, knee, reach); "made" the default's.
+let SUN_GLOWS: float4[5] = [float4 { 0.06, 1.0, 0.5, 0.65 }, float4 { 0.05, 1.0, 0.5, 0.6 }, float4 { 0.04, 1.0, 0.5, 0.5 },
+                            float4 { 0.08, 1.0, 0.5, 0.7 }, float4 { 0.12, 1.0, 0.5, 0.8 }];
+
 let PLACE_NAMES = ["free", "concept", "concept-high", "along-wall", "less-turned", "concept-pier", "more-turned"];
 let PLACE_DEFAULT = 4;
 let PLACE_SUN: float4[7] = [float4_0, float4 { 20.0, 12.0, -20.0, 25.0 }, float4 { 20.0, 29.0, -20.0, 25.0 },
@@ -1164,7 +1177,7 @@ fn main() {
                          shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
+            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
             embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             "",
@@ -1280,6 +1293,16 @@ fn main() {
     render3d::window_view = float4 { number(argv, "--lace-sun", 1.0), number(argv, "--lace-scatter", 1.0), number(argv, "--glass-film", 1.0),
                                      number(argv, "--scratches", 1.0) };
     render3d::sun_veil = number(argv, "--sun-veil", 1.0);
+    // The sun's look in the view out (render3d::SunLook): a preset, then each part's flag over it.
+    let sun_look = pick(argv, "--sun-look", SUN_LOOK_NAMES, 0);
+    render3d::sun_look = SUN_LOOKS[sun_look];
+    render3d::sun_look.disc = four(argv, "--sun-disc", render3d::sun_look.disc);
+    render3d::sun_look.glare = four(argv, "--sun-glare", render3d::sun_look.glare);
+    render3d::sun_look.tree = four(argv, "--sun-tree", render3d::sun_look.tree);
+    // The HDR target's glow (render3d::HdrGlow): strength, threshold, knee, reach; its levels.
+    render3d::hdr_glow.look = four(argv, "--glow", SUN_GLOWS[sun_look]);
+    render3d::hdr_glow.levels = number(argv, "--glow-levels", render3d::hdr_glow.levels as f32) as i64;
+    var sun_bright_log = log10(max(render3d::sun_look.disc.w, 1.0));
     // The lens (render3d::Lens): on or off, its focus in metres (0 the view's target, kept
     // on it as the camera moves), its aperture and caps in percent of the width.
     render3d::lens.on = flag_value(argv, "--dof") > 0 && argv[flag_value(argv, "--dof")] == "on";
@@ -1791,6 +1814,24 @@ fn main() {
                 switch(c, "Outside (U)", outside_on, ["plain", "park"]);
                 slider(c, "Outside's exposure", room.outside, 0.3, 2.5);
                 slider(c, "Sun's veil", render3d::sun_veil, 0.0, 4.0);
+                slider(c, "Sun's radius (deg)", render3d::sun_look.disc.x, 0.1, 3.0);
+                slider(c, "Its limb's darkening", render3d::sun_look.disc.y, 0.0, 1.0);
+                slider(c, "Its edge (deg)", render3d::sun_look.disc.z, 0.0, 1.0);
+                slider(c, "Its brightness (log10)", sun_bright_log, 0.0, 5.0);
+                render3d::sun_look.disc.w = exp2(sun_bright_log * 3.3219281);
+                slider(c, "Core halo", render3d::sun_look.glare.x, 0.0, 3.0);
+                slider(c, "Core's width (deg)", render3d::sun_look.glare.y, 0.2, 5.0);
+                slider(c, "Wide glow", render3d::sun_look.glare.z, 0.0, 2.0);
+                slider(c, "Its width (deg)", render3d::sun_look.glare.w, 1.0, 20.0);
+                slider(c, "Tree round the sun", render3d::sun_look.tree.x, 0.0, 1.0);
+                slider(c, "Its reach (deg)", render3d::sun_look.tree.y, 5.0, 180.0);
+                slider(c, "Leaves' back light", render3d::sun_look.tree.z, 0.0, 4.0);
+                note(c, if render3d::hdr_shown(g) { "  HDR glow:" } else { "  HDR glow (shown with HDR only):" });
+                slider(c, "Glow", render3d::hdr_glow.look.x, 0.0, 0.5);
+                slider(c, "Its threshold", render3d::hdr_glow.look.y, 0.0, 8.0);
+                slider(c, "Its knee", render3d::hdr_glow.look.z, 0.0, 4.0);
+                slider(c, "Its reach", render3d::hdr_glow.look.w, 0.0, 1.0);
+                count(c, "Its levels", render3d::hdr_glow.levels, 1, render3d::GLOW_LEVELS);
                 ui::tree_state_pop(c);
             }
             if section(c, open, DUST) {
@@ -1998,6 +2039,11 @@ fn main() {
             let wv = render3d::window_view;
             format(line, " --lace-sun ", wv.x, " --lace-scatter ", wv.y, " --glass-film ", wv.z, " --scratches ", wv.w, " --sun-veil ",
                    render3d::sun_veil);
+            flag_four(line, "--sun-disc", render3d::sun_look.disc);
+            flag_four(line, "--sun-glare", render3d::sun_look.glare);
+            flag_four(line, "--sun-tree", render3d::sun_look.tree);
+            flag_four(line, "--glow", render3d::hdr_glow.look);
+            format(line, " --glow-levels ", render3d::hdr_glow.levels);
             format(line, " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
                    " --aperture ", aperture);
             flag_pair(line, "--dof-caps", float2 { near_cap, far_cap });

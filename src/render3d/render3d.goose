@@ -475,6 +475,10 @@ struct Gpu {
     hdr:       bool,
     hdr_image: Texture,
     hdr_pipes: HdrPipelines,
+    // The glow's levels (glow_pass), a quarter of the pass's size and each half the last,
+    // made with the HDR target's size.
+    glow_levels: Texture[GLOW_LEVELS],
+    glow_size:   int2,
     // The depth of field's depth (depth_pass): 1x and sampled, DEPTH32F where it can be, at the
     // pass's size; the room's, the table's and the lace's pipelines into it (the board's is
     // depth_only), and the tuner's view of it (depth_show_pass), made the first time.
@@ -492,19 +496,23 @@ struct Gpu {
 // drawn (make_hdr), and again for other pieces or the light tuner's switches of the paint and
 // the sills, which they were made for.
 struct HdrPipelines {
-    lit:         Pipeline,
-    fading:      Pipeline,
-    table:       Pipeline,
-    floor:       Pipeline,
-    planar:      Pipeline,
-    walls:       Pipeline,
-    paint:       Pipeline,
-    sill:        Pipeline,
-    metals:      Pipeline,
-    glass:       Pipeline,
-    outside:     Pipeline,
-    motes:       Pipeline,
-    tone:        Pipeline,
+    lit:     Pipeline,
+    fading:  Pipeline,
+    table:   Pipeline,
+    floor:   Pipeline,
+    planar:  Pipeline,
+    walls:   Pipeline,
+    paint:   Pipeline,
+    sill:    Pipeline,
+    metals:  Pipeline,
+    glass:   Pipeline,
+    outside: Pipeline,
+    motes:   Pipeline,
+    tone:    Pipeline,
+    // The glow's (glow_pass): its first pick, a level halved, a level widened back up.
+    glow_first:  Pipeline,
+    glow_down:   Pipeline,
+    glow_up:     Pipeline,
     pieces:      i32,
     paint_steps: bool,
     sill_steps:  bool,
@@ -875,10 +883,26 @@ fn outside_shown(g: Gpu&) -> bool {
 // OUTSIDE_FRAG's block: the exposure (rooms::Room.outside), the sun disc's brightness; in
 // the floor's mirror, z how much brighter the view out is than its look (rooms::Room.planar.w),
 // drawn as its light before the tonemap; else 0.
-struct OutsideBlock { exposure: float4 }
-let SUN_DISC: f32 = 30.0;
+// Then the sun's look (SunLook) and, out of the mirror, the tree seen round it.
+struct OutsideBlock { exposure: float4, sun_disc: float4, sun_glare: float4, sun_tree: float4 }
+// The sun in the view out (OUTSIDE_FRAG's sky and tree_seen): disc x its radius (degrees,
+// the real sun's 0.27), y its limb's darkening, z its edge's softness (degrees), w its
+// brightness over the sky's, linear; glare the haze's halo round it, x and y a tight core's
+// strength and width (degrees), z and w a wider glow's; tree the tree outside against the
+// sky near the sun: x the power its light through is taken to (0 none, 1 as its map, more
+// denser), y how far from the sun (degrees), z its leaves' back light, w how sharp (the
+// metres along the view it is looked up from; 0 the eye's blur). As made: the disc 0.27°,
+// its edge a pixel, 30 over the sky; no tree.
+struct SunLook {
+    disc:  float4 = float4 { 0.27, 0.0, 0.0, 30.0 },
+    glare: float4 = float4 { 1.5, 1.2, 0.4, 4.0 },
+    tree:  float4 = float4_0,
+}
+var sun_look = SunLook {};
 fn outside_block(g: Gpu&, in_mirror: bool = false) -> OutsideBlock {
-    OutsideBlock { float4 { g.room.outside, SUN_DISC, if in_mirror { max(g.room.planar.w, 1.0) } else { 0.0 }, sun_veil } }
+    OutsideBlock { float4 { g.room.outside, sun_look.disc.w, if in_mirror { max(g.room.planar.w, 1.0) } else { 0.0 }, sun_veil },
+                   sun_look.disc, sun_look.glare,
+                   if in_mirror { float4_0 } else { float4 { sun_look.tree.x, sun_look.tree.y, sun_look.tree.z, sun_look.tree.w * surfaces::METRE } } }
 }
 
 // An oak's bake (surfaces::Oak) in the slots of a theme BAKE_FRAG's oak reads.
@@ -1702,6 +1726,11 @@ fn give_back<O>(o: O&, g: Gpu&) {
     g.scene_image = Texture { 0 };
     g.hdr_image = Texture { 0 };
     g.scene_depth = Texture { 0 };
+    for k in GLOW_LEVELS {
+        if g.glow_levels[k].id != 0 { o.gpu_release(g.glow_levels[k]); }
+        g.glow_levels[k] = Texture { 0 };
+    }
+    g.glow_size = int2_0;
     g.color = Texture { 0 };
     g.edges = Texture { 0 };
     g.weights = Texture { 0 };
@@ -2267,6 +2296,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     // The room baked by now (room_surfaces): the board's pipelines in its shell.
     if !hdr && board_in_shell(g) { o.make_lit_shell(g); }
     o.board_pass(g, if hdr { g.hdr_image } else { shown }, size, backdrop);
+    if hdr && glow_shown(g) { o.glow_pass(g, size); }
     if hdr { o.tone_pass(g, shown); }
     if glowing { o.bloom_pass(g, g.image, target, size); }
     if depth_shown(g) {
@@ -2559,8 +2589,43 @@ fn mirror_table_block(g: Gpu&) -> TableBlock {
     return b;
 }
 
-// Whether the window's glow is drawn: the shell's room with its bloom on.
-fn bloom_shown(g: Gpu&) -> bool { room_shown(g) && g.room_shell && g.room.bloom.x > 0.0 && g.bloom_add.id != 0 }
+// Whether the window's glow is drawn: the shell's room with its bloom on, in 8 bits (the
+// HDR target has its own, glow_pass).
+fn bloom_shown(g: Gpu&) -> bool { room_shown(g) && g.room_shell && g.room.bloom.x > 0.0 && g.bloom_add.id != 0 && !g.hdr }
+
+// The scenic views' glow in the HDR target's linear light, before the tonemap
+// (shaders::GLOW_DOWN_FRAG, GLOW_UP_FRAG, HDR_TONE_FRAG): x its strength (0 none), y the
+// threshold it starts from and z the knee's half width (linear light, the tonemap's white
+// about 1), w its reach (each coarser level's share, 0 to 1); levels how many it goes down,
+// the first a quarter of the picture, each half the last (at most GLOW_LEVELS); cap the
+// brightest a channel is taken at.
+let GLOW_LEVELS = 6;
+struct HdrGlow {
+    look:   float4 = float4 { 0.06, 1.0, 0.5, 0.65 },
+    levels: i64    = GLOW_LEVELS,
+    cap:    f32    = 60000.0,
+}
+var hdr_glow = HdrGlow {};
+fn glow_shown(g: Gpu&) -> bool { g.hdr && hdr_glow.look.x > 0.0 && hdr_glow.levels > 0 }
+// GLOW_DOWN_FRAG's and GLOW_UP_FRAG's block; HDR_TONE_FRAG's.
+struct GlowStep { step: float4, look: float4 }
+struct HdrTone { glow: float4 }
+fn glow_level_size(size: int2, k: i64) -> int2 {
+    var q = int2 { max(size.x / 4, 1), max(size.y / 4, 1) };
+    for i in k { q = int2 { max(q.x / 2, 1), max(q.y / 2, 1) }; }
+    return q;
+}
+// Level k's step: read from `from` (a texel's half, or the full picture's 4 × 4 block's
+// quarter for the first) into `to`.
+fn glow_step_of(from: int2, to: int2, first: bool) -> GlowStep {
+    let h = if first { float2 { 1.0 / from.x, 1.0 / from.y } } else { float2 { 0.5 / from.x, 0.5 / from.y } };
+    let l = hdr_glow.look;
+    GlowStep { float4 { h.x, h.y, 1.0 / to.x, 1.0 / to.y }, float4 { l.y, l.z, hdr_glow.cap, clamp(l.w, 0.0, 1.0) } }
+}
+fn hdr_tone_of(g: Gpu&) -> HdrTone {
+    guard glow_shown(g) else { return HdrTone { float4_0 }; }
+    HdrTone { float4 { hdr_glow.look.x, 1.0 / g.size.x, 1.0 / g.size.y, 0.0 } }
+}
 
 // GLOW_PICK_FRAG's, GLOW_BLUR_FRAG's, and GLOW_ADD_FRAG's blocks.
 struct GlowPick { pick: float4 }

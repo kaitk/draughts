@@ -399,7 +399,7 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
     guard g.bake_room.id == 0 else { return; }
     g.bake_room = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_ROOM, shaders::BAKE_FRAG));
     g.outside = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::OUTSIDE_VERT),
-                              tuned_or(TUNED_OUTSIDE, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TONE_FN, shaders::OUTSIDE_FRAG)),
+                              tuned_or(TUNED_OUTSIDE, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG)),
                               gfx::PipelineDesc { cull: gfx::CULL_NONE, blend: gfx::BLEND_PREMULTIPLIED });
     let full = embed_shader("vert", shaders::FULL_VERT);
     g.bloom_pick = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_PICK_FRAG));
@@ -705,19 +705,24 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     h.glass = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_GLASS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                             gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED });
     h.outside = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::OUTSIDE_VERT),
-                              embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
+                              embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG),
                               gfx::PipelineDesc { cull: gfx::CULL_NONE, blend: gfx::BLEND_PREMULTIPLIED });
     h.motes = gfx::pipeline(embed_shader("vert", shaders::SHELL_WINDOWS, shaders::VS_SET, shaders::FRAME, shaders::DUST_HEAD, shaders::LIGHT_FN,
                                          shaders::DUST_VERT),
                             embed_shader("frag", shaders::HDR_OUT, shaders::DUST_FRAG),
                             gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
     h.tone = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::HDR_TONE_FRAG));
+    let full = embed_shader("vert", shaders::FULL_VERT);
+    h.glow_first = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_FIRST, shaders::GLOW_DOWN_FRAG));
+    h.glow_down = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_DOWN_FRAG));
+    h.glow_up = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_UP_FRAG), gfx::PipelineDesc { blend: gfx::BLEND_ALPHA });
 }
 
 // The HDR target's pipelines given back (make_hdr, release).
 fn release_hdr(own: Own&, g: render3d::Gpu&) {
     let h = g.hdr_pipes;
-    for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone] {
+    for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone,
+              h.glow_first, h.glow_down, h.glow_up] {
         if p.id != 0 { gfx::release(p); }
     }
     g.hdr_pipes = default<render3d::HdrPipelines>();
@@ -731,8 +736,47 @@ fn tone_pass(own: Own&, g: render3d::Gpu&, target: Texture) {
     gfx::begin_pass(pass);
     gfx::bind(g.hdr_pipes.tone);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.hdr_image, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 1, if render3d::glow_shown(g) { g.glow_levels[0] } else { g.hdr_image }, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, render3d::hdr_tone_of(g));
     gfx::draw(3);
     gfx::end_pass();
+}
+
+// The scenic views' glow (render3d::glow_shown) from the HDR target the pass resolved: what
+// is over the threshold picked into a quarter of its size, halved level by level, and
+// widened back up, each level blended over the one above; tone_pass adds the first.
+fn glow_pass(own: Own&, g: render3d::Gpu&, size: int2) {
+    if g.glow_size.x != size.x || g.glow_size.y != size.y {
+        gfx::flush();
+        for k in render3d::GLOW_LEVELS {
+            if g.glow_levels[k].id != 0 { gfx::release(g.glow_levels[k]); }
+            let q = render3d::glow_level_size(size, k);
+            g.glow_levels[k] = gfx::render_target(q.x, q.y, gfx::RGBA16F);
+        }
+        g.glow_size = size;
+    }
+    let h .= g.hdr_pipes;
+    let n = clamp(render3d::hdr_glow.levels, 1, render3d::GLOW_LEVELS);
+    for k in n {
+        gfx::begin_pass(g.glow_levels[k], gfx::Texture { 0 }, float4_0);
+        gfx::bind(if k == 0 { h.glow_first } else { h.glow_down });
+        gfx::bind_texture(gfx::FRAGMENT, 0, if k == 0 { g.hdr_image } else { g.glow_levels[k - 1] }, g.linear);
+        let from = if k == 0 { size } else { render3d::glow_level_size(size, k - 1) };
+        gfx::uniforms(gfx::FRAGMENT, 0, render3d::glow_step_of(from, render3d::glow_level_size(size, k), k == 0));
+        gfx::draw(3);
+        gfx::end_pass();
+    }
+    for i in n - 1 {
+        let k = n - 2 - i;
+        var pass = gfx::PassDesc { clear_color: false };
+        pass.color[0] = g.glow_levels[k];
+        gfx::begin_pass(pass);
+        gfx::bind(h.glow_up);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.glow_levels[k + 1], g.linear);
+        gfx::uniforms(gfx::FRAGMENT, 0, render3d::glow_step_of(render3d::glow_level_size(size, k + 1), render3d::glow_level_size(size, k), false));
+        gfx::draw(3);
+        gfx::end_pass();
+    }
 }
 
 // The depth of field's depth (render3d::depth_shown) at the pass's size, 1x and sampled: the
@@ -804,6 +848,7 @@ fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
     gfx::bind(if g.hdr && !in_mirror { g.hdr_pipes.outside } else { g.outside });
     gfx::bind_texture(gfx::FRAGMENT, 0, g.outside_band, g.linear);
     gfx::bind_texture(gfx::FRAGMENT, 1, g.outside_oak, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 2, render3d::tree_or_stand_in(g), g.linear);
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
     gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
     gfx::uniforms(gfx::FRAGMENT, 1, render3d::outside_block(g, in_mirror));
@@ -1484,6 +1529,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     release_hdr(own, g);
     for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { gfx::release(p); } }
     for t in [g.hdr_image, g.scene_depth] { if t.id != 0 { gfx::release(t); } }
+    for t in g.glow_levels { if t.id != 0 { gfx::release(t); } }
     gfx::flush();
     g = default<render3d::Gpu>();
 }
