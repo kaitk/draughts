@@ -18,7 +18,7 @@ for where the computer's offer shows).
     score. It accepts when it isn't winning, backed by a check on the material for the
     kings' endings the score misjudges (two kings against one looks won and is a draw).
     A refusal is a card in the middle, as the end's are, over an undimmed board: the
-    computer's face and a thumbs down, "No draw", "The computer wants to play on."
+    handshake crossed out, "No draw", "The computer wants to play on."
     (Estonian "Arvuti tahab edasi mängida."), and Continue alone. The tile
     then stays dim until it can be asked again a few moves later, so tapping until yes
     doesn't work. (The tile answering itself and a line under whose turn were the other

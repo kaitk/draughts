@@ -12,8 +12,7 @@
        offer   the draw tile (the default)
        no      the computer turned the offer down; &no=card a card in the middle, as the
                end's (the default), a the tile answers, b the line under whose turn;
-               the card's icon beside the computer's face &icon=thumb (the default), off (a crossed
-               handshake), hand, face (the face alone)
+               the card's icon &icon=off (a crossed handshake, the default), thumb, hand
        asked   the computer offers a draw; &ask=panel in the play panel (the default),
                card over the board
        giveup  start over tapped a few moves in: give up this game?
@@ -68,7 +67,7 @@
   .card h1 { font-size: 32px; }
   .card .pieces { display: flex; gap: 12px; }
   .card .pieces .piece { width: 72px; }
-  .card .big { width: 56px; height: 56px; stroke-width: 1.8; }
+  .card .big { width: 72px; height: 72px; stroke-width: 1.6; }
   .card .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
   .card .two .tile { min-width: 0; padding: 0 10px; }
   #board.dimmed { filter: brightness(0.55); } /* the app dims in the shaders */
@@ -189,7 +188,7 @@
   if (view === 'lost') card(`<div class="pieces"><span class="piece solo black king"></span></div><h1>Black wins</h1><small>White gave up</small>${again}`, false);
   if (view === 'drawn') card(`<div class="pieces"><span class="piece solo white"></span><span class="piece solo black"></span></div><h1>Draw</h1><small>${friend || q.get('by') === 'friend' ? 'Agreed' : 'Agreed'}</small>${again}`, false);
   const big = (name) => D.icon(name).replace('class="icon"', 'class="icon big"');
-  if (view === 'no' && no === 'card') card(`<div class="pieces">${big('computer')}${{ face: '', thumb: big('thumbDown'), hand: big('hand'), off: big('handshakeOff') }[q.get('icon') || 'thumb']}</div><h1>No draw</h1>
+  if (view === 'no' && no === 'card') card(`<div class="pieces">${{ thumb: big('thumbDown'), hand: big('hand'), off: big('handshakeOff') }[q.get('icon') || 'off']}</div><h1>No draw</h1>
     <small>The computer wants to play on.</small>
     <a class="tile primary" href="?view=offer">Continue</a>`, false);
   if (view === 'asked' && ask === 'card') card(`<div class="pieces">${D.icon('computer').replace('class="icon"', 'class="icon big"')}${D.icon('handshake').replace('class="icon"', 'class="icon big"')}</div><h1>Draw?</h1>
