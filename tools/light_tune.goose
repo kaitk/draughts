@@ -36,7 +36,8 @@
 //       [--gust X,Y,Z,W | --gust-strength K --gust-length S --gust-every S --gust-reach K (rooms::Room's gust)]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern|--bounce X,Y,Z,W]
-//       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
+//       [--dump-map out.pgm] [--tree-grow shadow|whole (the shell's tree's shadow from the old maple grown whole)]
+//       [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
 //       [--board-turn DEG (the board's own z, the players' axis, from the window wall's line in the plan; sets the key's azimuth)]
@@ -158,6 +159,7 @@ fn park_frag(part: i64, hdr: bool) -> const u8[:] {
     };
 }
 let TOPS = ["0.95", "1.05", "0.80"];
+let TREE_GROWS = ["shadow", "whole"];
 let TOP_METRES: f32[3] = [0.95, 1.05, 0.80];
 fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
 
@@ -1466,6 +1468,9 @@ fn main() {
         }
     }
     var book_fade = number(argv, "--book-fade", 1.0);
+    // --tree-grow shadow|whole: the shell's tree's shadow from the first tree or the old
+    // maple grown whole (render3d::tree_grown_whole).
+    render3d::tree_grown_whole = pick(argv, "--tree-grow", TREE_GROWS, 0) == 1;
     var top = pick(argv, "--table-top", TOPS, 0);
     g.table_r = top_radius(top);
     // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied, as
@@ -1475,7 +1480,12 @@ fn main() {
         var t = trees::Tree { .. };
         let sp = rooms::tree_spec(render3d::tree_room(g));
         let v = render3d::tree_view_of(g);
-        trees::grow(t, sp, v);
+        if render3d::tree_grown_whole && g.room_on && g.room_shell {
+            let s = room_shell::LIBRARY;
+            trees::grow_whole(t, rooms::whole_tree(g.room, s), v, rooms::whole_sight(g.room, s), true);
+        } else {
+            trees::grow(t, sp, v);
+        }
         var map: u8[>..] = [];
         trees::draw_map(t, sp, v, map);
         var out: u8[>..] = [];
