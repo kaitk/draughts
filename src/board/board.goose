@@ -83,13 +83,18 @@ fn center(l: Layout, v: rules::Variant&, b: i64) -> float2 {
     return float2 { l.inner.x + (x + 0.5) * l.inner.w, l.inner.y + (row + 0.5) * l.inner.w };
 }
 
-// One piece to draw, as the piece shader reads it.
+// One piece to draw, as the piece shader reads it: PIECE_VEC4S float4s each
+// (src/gfx/draw_gpu.goose), so a field added here goes into the padding or adds a whole
+// float4 and raises the shader's count (test/board/piece_layout).
 struct Piece {
     at:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y center in pixels, radius, lift in pixels
     look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), 0 or CROWN or STACK, selected glow 0..1, opacity
     ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring, 1 pulsing, 2 still; y: a glow ring tight round it, 0 to 1; z: pieces it takes, as pips; w: DRAINED, or LIGHT a hint's ghost
     win:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // a win (game::cheer): x dimmed by, 0..1; y its square lit, 0..1; z the square's half side in radii; w: over the UI, 1 on the board (a win's card's piece)
     id:   f32    = 0.0,  // which piece it is, the same from move to move (piece_ids): the 3D figure's seed
+    pad0: f32    = 0.0,
+    pad1: f32    = 0.0,
+    pad2: f32    = 0.0,
 }
 
 // Pieces over the UI: clocks, the winner or a draw's pieces, and what each side has

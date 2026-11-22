@@ -234,8 +234,10 @@ let PIECE_VERT = """
     layout(location = 2) flat out vec4 v_extra;
     layout(location = 3) flat out vec4 v_ring;
     layout(location = 4) flat out vec4 v_win;
+    // board::Piece's float4s: at, look, ring, win, then the id and padding it doesn't read.
+    const int PIECE_VEC4S = 5;
     void main() {
-        int i = gl_InstanceIndex * 4;
+        int i = gl_InstanceIndex * PIECE_VEC4S;
         vec4 at = p[i];
         float r = at.z;
         float lift = at.w / r;
