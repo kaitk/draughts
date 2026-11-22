@@ -50,6 +50,8 @@
 //       the others only in the table-window view: sparse.. round points in a box over the table, motes.. flakes
 //       and lint in the sunbeam's own volume, lit by the sun alone: DUST_WAYS; motes the default)]
 //       [--beam-haze K (a faint haze in the motes' beam, an experiment; 0 off)] [--mote-glint EXP] [--mote-fibres SHARE] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
+//       [--halo K --halo-reach K (the pieces' darkening of the field round them: its strength, and its reach
+//       as a share; 0 or none the shader's own, shaders::OCC_FRAG's HALO and HALO_REACH, 1 and 1 today)]
 //       [--room-surfaces on|off] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
 //       [--outside on|off] [--outside-exposure K (rooms::Room's outside)]
 //       [--eye X,Y,Z --at X,Y,Z (a camera of its own, world units)]
@@ -567,6 +569,9 @@ struct Setup {
     n:     i64          = 0,    // SQUARES's
     flip:  bool         = false,
     look:  i64          = 0,    // KING_LOOKS's
+    // The pieces' halo on the field (shaders::OCC_FRAG): its strength and reach, 0 the
+    // shader's HALO and HALO_REACH (--halo, --halo-reach, the Table section).
+    halo: float2 = float2_0,
 }
 
 // The frame counter (F): frames a second, the frame's time from one frame to the next,
@@ -668,12 +673,15 @@ fn place(r3d: render3d::Own&, g: render3d::Gpu&, st: Setup) {
         s.inst.push(float4 { x, 0.0, z, u });
         s.inst.push(float4 { dark, 0.0, 0.0, i });
         squares[2 * (p[0] * n + p[1])] = float4 { view3d::HEIGHT * u, 0.0, view3d::RADIUS * u, 1.0 };
-        squares[2 * (p[0] * n + p[1]) + 1] = float4 { x, z, 0.0, 0.0 };
+        squares[2 * (p[0] * n + p[1]) + 1] = float4 { x, z, st.halo.x, st.halo.y };
     }
     taken3d::lay_counts(s, st.taken, n, st.flip, if st.look == 1 { board::STACK } else { board::CROWN });
     render3d::place(r3d, g, s.inst[..s.inst.len], fades[..0], squares[..], marks[..], lit[..], float4_0, 0.0, true);
     render3d::table_discs(g, s.discs[..], s.disc_r);
 }
+
+// place(), for main, where `place` is the placement's number.
+fn place_pieces(r3d: render3d::Own&, g: render3d::Gpu&, st: Setup) { place(r3d, g, st); }
 
 // The season's look in the material, its wood and finish as the app picks them
 // (draw3d::choose_look), baked with the table.
@@ -1122,6 +1130,8 @@ fn main() {
     var room_take = pick(argv, "--room", rooms::NAMES, rooms::for_season(season));
     var pattern: i64 = if flag_value(argv, "--window") > 0 && argv[flag_value(argv, "--window")] == "off" { 0 } else { 1 };
     var st = Setup {};
+    st.halo = float2 { number(argv, "--halo", 0.0), number(argv, "--halo-reach", 0.0) };
+    var shown_halo = st.halo;
     taken3d::table_layout = taken3d::TABLE_LAYOUTS[taken3d::TOWERS];
     guard gfx::open("Draughts: the room's light", w, h, gfx::WINDOW_RESIZABLE) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
@@ -1773,6 +1783,8 @@ fn main() {
                 note(c, str("  sun-check: the field ", lit, " of 81, the table ", table_lit, " of 72 lit"));
                 ui::layout_row_dynamic(c, ROW + 4.0, 1);
                 if ui::button_label(c, "Print the sun-check") { sun_check(g, room.window.y, room.key.y); }
+                slider(c, "Pieces' halo (0 as made)", st.halo.x, 0.0, 1.5);
+                slider(c, "Its reach (0 as made)", st.halo.y, 0.0, 1.5);
                 ui::tree_state_pop(c);
             }
             if section(c, open, OUTSIDE) {
@@ -1893,6 +1905,10 @@ fn main() {
             g.room = room;
             put_look(r3d, g, season, material, st);
         }
+        if st.halo.x != shown_halo.x || st.halo.y != shown_halo.y {
+            shown_halo = st.halo;
+            place_pieces(r3d, g, st);
+        }
         if place_then >= 0 && frames == 3 { place = place_then; }
         // A placement picked (A, the panel): its sun, table and board, and its name printed.
         if place != shown_place {
@@ -1978,6 +1994,7 @@ fn main() {
                        render3d::dust.fibres, " --beam-haze ", beam_haze);
             }
             format(line, " --books ", on_off(books_on), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on), " --lace-hang ", lace_hang);
+            if st.halo.x > 0.0 || st.halo.y > 0.0 { format(line, " --halo ", st.halo.x, " --halo-reach ", st.halo.y); }
             let wv = render3d::window_view;
             format(line, " --lace-sun ", wv.x, " --lace-scatter ", wv.y, " --glass-film ", wv.z, " --scratches ", wv.w, " --sun-veil ",
                    render3d::sun_veil);

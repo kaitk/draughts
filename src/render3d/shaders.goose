@@ -1625,14 +1625,18 @@ let LIT_FRAG = """
 // The pieces' occlusion of the field into its map (render3d::occlusion), over the plan's
 // extent as the plan is laid (BAKE_FRAG's mode 0), OCC_SIZE texels a side: each piece
 // over the 5 × 5 squares round, where it is, as a cylinder, the share of the cosine-weighted sky its
-// angle across and its height take. Only the texels whose squares changed are drawn
+// angle across and its height take, times HALO (its strength), the gap to it over
+// HALO_REACH (under 1 a tighter halo). Only the texels whose squares changed are drawn
 // again (a scissor), so a moving piece redraws a few squares' worth, not the field.
 let OCC_FRAG = """
     layout(location = 0) out vec4 result;
     // Two a square: the top of what stands over it, its foot, its radius, 1 if a piece;
-    // then its middle's x and z, wherever over the square it is (a moving piece).
+    // then its middle's x and z, wherever over the square it is (a moving piece), and the
+    // light tuner's halo and reach for it (0: HALO's, HALO_REACH's).
     layout(std430, set = 2, binding = 0) readonly buffer Squares { vec4 squares[]; };
     const float OCC_SIZE = 512.0;   // render3d::OCC_SIZE
+    const float HALO = 1.0;
+    const float HALO_REACH = 1.0;
     void main() {
         vec2 xz = gl_FragCoord.xy / OCC_SIZE * (2.0 * INNER) - INNER;
         float vis = 1.0;
@@ -1647,11 +1651,14 @@ let OCC_FRAG = """
                 if (q.x < 0 || q.y < 0 || q.x >= n || q.y >= n) continue;
                 vec4 s = squares[2 * (q.y * n + q.x)];
                 if (s.w < 0.5) continue;
-                float rho = length(xz - squares[2 * (q.y * n + q.x) + 1].xy);
+                vec4 o = squares[2 * (q.y * n + q.x) + 1];
+                float rho = length(xz - o.xy);
                 float r = s.z;
+                float halo = o.z > 0.0 ? o.z : HALO;
+                float reach = o.w > 0.0 ? o.w : HALO_REACH;
                 float occ;
                 if (rho > r) {
-                    float gap = rho - r + 0.01;
+                    float gap = (rho - r) / reach + 0.01;
                     float top = s.x * s.x / (s.x * s.x + gap * gap);
                     float foot = s.y * s.y / (s.y * s.y + gap * gap);
                     occ = asin(r / rho) / PI * (top - foot);
@@ -1659,7 +1666,7 @@ let OCC_FRAG = """
                     float foot = s.y * s.y / (s.y * s.y + r * r);
                     occ = (0.5 + 0.45 * (1.0 - rho / r)) * (1.0 - foot);
                 }
-                vis *= 1.0 - occ;
+                vis *= 1.0 - halo * occ;
             }
         }
         result = vec4(vis, 0.0, 0.0, 1.0);
