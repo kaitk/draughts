@@ -156,9 +156,27 @@ let TIE_HOOK_Y = 1.0;
 // left's mirrored: its inner edge, its outer edge, and its middle's distance off the wall,
 // keys a Catmull-Rom runs through (curtains.goose). From the rod the inner edge sweeps out
 // to the tie, then flares to the hem; the middle stands off the wainscot's cap (9 cm) over
-// it. shaders::LIGHT_FN's behind_lace has the edges too.
-let LACE_INNER: float2[6] = [float2 { 0.05, 0.585 }, float2 { 0.5, 0.615 }, float2 { 0.95, 0.645 }, float2 { 1.6, 0.58 },
-                             float2 { 2.6, 0.45 }, float2 { 3.7, 0.35 }];
+// it. shaders::LIGHT_FN's lace_edges has the edges too, LACE_HUNG_AS_MADE's, its inner
+// ones less lace_hang (render3d's shell_mids.w).
+let LACE_HUNG_AS_MADE: float2[6] = [float2 { 0.05, 0.585 }, float2 { 0.5, 0.615 }, float2 { 0.95, 0.645 },
+                                    float2 { 1.6, 0.58 }, float2 { 2.6, 0.45 }, float2 { 3.7, 0.35 }];
+// How much further over the opening the panels' inner edges hang than as made, metres,
+// all along the drop and on all three windows, so the low sun reaches their inner folds
+// (LACE_HANG; the light tuner's --lace-hang, 0 as made). The outer edges stay, so a panel
+// hangs wider and less gathered.
+let LACE_HANG: f32 = 0.15;
+var lace_hang:  f32       = LACE_HANG;
+var LACE_INNER: float2[6] = hung_lace(LACE_HANG);
+fn hung_lace(m: f32) -> float2[6] {
+    var keys = LACE_HUNG_AS_MADE;
+    for i in 6 { keys[i].y -= m; }
+    return keys;
+}
+fn hang_lace(m: f32) {
+    lace_hang = m;
+    LACE_INNER = hung_lace(m);
+    tie_settled = false;
+}
 let LACE_OUTER: float2[6] = [float2 { 0.05, 0.955 }, float2 { 0.5, 0.89 }, float2 { 0.95, 0.8 }, float2 { 1.6, 0.85 },
                              float2 { 2.6, 0.89 }, float2 { 3.7, 0.9 }];
 let LACE_MIDDLE: float2[8] = [float2 { 0.05, 0.135 }, float2 { 0.8, 0.135 }, float2 { 0.95, 0.11 }, float2 { 1.12, 0.15 },

@@ -670,6 +670,7 @@ struct Bounce {
     cells:         Cell[CELLS],
     made:          bool,
     made_shutters: bool,
+    made_hang:     f32,
     sun:           float3[CELLS],
     leaves:        float3[CELLS],
     gather:        float3[CELLS],
@@ -821,6 +822,7 @@ fn make_cells(bounce: Bounce&) {
     bounce.cells[TABLE_C] = Cell { float3_0, up, TABLE_ALBEDO, 0.0, -1 };
     bounce.made = true;
     bounce.made_shutters = room_shell::shutters_on;
+    bounce.made_hang = room_shell::lace_hang;
 }
 
 // The niche a point behind the window wall's face lies in: -1 before the face, -2 inside the
@@ -869,7 +871,9 @@ fn balanced(c: float3) -> float3 {
 // the sun (sun_patches) and the sky through their window, throw on what they stop. Into
 // bounce.leaves; bounce.seen starts with all of it but the sun's, which the patches carry.
 fn first_light(sun: Sun, bounce: Bounce&) {
-    if !bounce.made || bounce.made_shutters != room_shell::shutters_on { make_cells(bounce); }
+    if !bounce.made || bounce.made_shutters != room_shell::shutters_on || bounce.made_hang != room_shell::lace_hang {
+        make_cells(bounce);
+    }
     bounce.cells[TABLE_C] = Cell { float3 { sun.table.x, sun.table.y, sun.table.w }, float3 { 0.0, 0.0, 1.0 }, TABLE_ALBEDO,
                                    PI * sun.table.z * sun.table.z, -1 };
     var wins = windows();

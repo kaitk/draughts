@@ -475,7 +475,8 @@ let LIGHT_FN = """
 
     // The curtains' lace panels (model3d's curtains.goose): a panel's height, inner edge and
     // outer edge (metres from the window's middle) at its outline's keys, shell.goose's
-    // LACE_INNER and LACE_OUTER, taken straight between them here.
+    // LACE_HUNG_AS_MADE and LACE_OUTER, taken straight between them here; the inner edge
+    // hung shell_mids.w further over the opening (room_shell::lace_hang).
     const vec3 LACE_EDGES[6] = vec3[6](vec3(0.05, 0.585, 0.955), vec3(0.5, 0.615, 0.89), vec3(0.95, 0.645, 0.8),
                                        vec3(1.6, 0.58, 0.85), vec3(2.6, 0.45, 0.89), vec3(3.7, 0.35, 0.9));
     vec2 lace_edges(float y) {
@@ -486,7 +487,7 @@ let LIGHT_FN = """
                 e = mix(LACE_EDGES[i].yz, LACE_EDGES[i + 1].yz, t);
             }
         }
-        return e;
+        return e - vec2(shell_mids.w, 0.0);
     }
 
     // Where uv (world units: across the cloth from its outer edge, up it from the hem) falls

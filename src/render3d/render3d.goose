@@ -870,7 +870,8 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     let w = g.room.window;
     let shell_key: f32 = if !g.room_shell { 0.0 } else {
         (if g.books_off { 2.0 } else { 1.0 }) + (if room_shell::shutters_on { 0.0 } else { 2.0 }) + (if room_shell::paint_quiet { 0.0 } else { 4.0 })
-        + (if room_shell::paint_fillets { 0.0 } else { 8.0 }) + (if room_shell::paint_tilt { 0.0 } else { 16.0 }) };
+        + (if room_shell::paint_fillets { 0.0 } else { 8.0 }) + (if room_shell::paint_tilt { 0.0 } else { 16.0 })
+        + 32.0 * room_shell::lace_hang };
     let key = float4 { w.x, w.z, g.room_away, shell_key };
     // The corners' shade is baked with the mesh, again when the room's corners change, but
     // not while a slider is held.
@@ -1250,7 +1251,7 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
         n++;
     }
     b.shell = float4 { n, shell_face(s), surfaces::FLOOR_Y, metre };
-    b.shell_mids = float4 { mids[0], mids[1], mids[2], 0.0 };
+    b.shell_mids = float4 { mids[0], mids[1], mids[2], room_shell::lace_hang };
     b.shell_niche = float4 { 0.5 * o.width, o.sill, o.height, o.rise };
     b.shell_glass = float4 { o.glass.x * metre, o.glass.y * metre, room_shell::LACE_OFF * metre, g.room.opening.w };
     // The end walls' u, for the floor's darker band along every wall.
@@ -1347,7 +1348,8 @@ fn light_baked(g: Gpu&) -> bool { g.room_on && g.room_shell && g.room.baked.x + 
 // What the shell's baked light is made from: the key, the room's light, the tree, the
 // table's top, the bounces and the sun's saturation on the room, and the bake's own
 // settings (room_light's bounce_grey, lace_source, gather_near), and whether the windows
-// have their shutters (room_shell::shutters_on).
+// have their shutters (room_shell::shutters_on), and how far the lace hangs over the
+// opening (room_shell::lace_hang).
 let LIGHT_KEY = 9;
 fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     let f = g.frame;
@@ -1355,7 +1357,7 @@ fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.room_axes,
             float4 { table_radius(g), g.tree_ms as f32, light_bounces as f32, room_sun.x },
             float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
-                     if room_shell::shutters_on { 1.0 } else { 0.0 } }];
+                     (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang }];
 }
 
 // The bake's buffers, sized once: the probes' atlas in floats and as half floats, the sun's
