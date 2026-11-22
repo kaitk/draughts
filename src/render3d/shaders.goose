@@ -2120,8 +2120,8 @@ let ROOM_HEAD = """
     layout(location = 5) in vec2 v_corner;
     layout(location = 6) flat in vec2 v_box;
     layout(location = 0) out vec4 result;
-    // Each group's shader (ROOM_FRAG's ROOM_FLOOR, ROOM_WALLS, ROOM_PAINT, ROOM_METALS,
-    // ROOM_GLASS) declares only the textures it reads, in slots without gaps, as render3d::room_textures
+    // Each group's shader (ROOM_FRAG's ROOM_FLOOR, ROOM_WALLS, ROOM_PAINT, ROOM_SILL,
+    // ROOM_METALS, ROOM_GLASS) declares only the textures it reads, in slots without gaps, as render3d::room_textures
     // binds them: the tree's map and the lace's (LIGHT_FN's window light), then the light's
     // (not the glass's), the group's own, and last the screen's two maps, which NO_SSAO
     // leaves out. The floor's mirror after them (PLANAR_FLOOR).
@@ -2171,6 +2171,12 @@ let ROOM_HEAD = """
     #ifndef NO_SSAO
     layout(set = 2, binding = 6) uniform sampler2D ssao_map;
     layout(set = 2, binding = 7) uniform sampler2D pre_place;
+    #endif
+    #endif
+    #ifdef ROOM_SILL
+    #ifndef NO_SSAO
+    layout(set = 2, binding = 5) uniform sampler2D ssao_map;
+    layout(set = 2, binding = 6) uniform sampler2D pre_place;
     #endif
     #endif
     #ifdef ROOM_METALS
@@ -3088,11 +3094,6 @@ let ROOM_FRAG = """
             albedo = mix(srgb(lime_shade.rgb), srgb(lime_light.rgb), tone);
             rough = mix(lime_shade.a, lime_light.a, tone) - 0.05 * cornice;
             if (shell_sun.z > 0.0 && above) albedo = tinted(albedo, shell_sun.zw);
-        } else if (kind < 9.5) {
-            // The sills' pale stone (the paint's kind, own over 0.5), mottled.
-            float mo = 0.6 * vnoise(v_local.xz * 1.3 + v_local.y * 0.7) + 0.4 * vnoise(v_local.xz * 4.1 + 2.7);
-            albedo = srgb(stone.rgb) * (0.93 + 0.12 * mo);
-            rough = stone.a + 0.15 * mo;
         } else {
             // The curtains' cotton cord.
             // Its three strands twisted round it (v_uv: round it, metres along
@@ -3169,6 +3170,14 @@ let ROOM_FRAG = """
             rough = paint.a + 0.1 * m;
         }
     #endif
+    #endif
+    #ifdef ROOM_SILL
+        {
+            // The sills' pale stone, mottled.
+            float mo = 0.6 * vnoise(v_local.xz * 1.3 + v_local.y * 0.7) + 0.4 * vnoise(v_local.xz * 4.1 + 2.7);
+            albedo = srgb(stone.rgb) * (0.93 + 0.12 * mo);
+            rough = stone.a + 0.15 * mo;
+        }
     #endif
     #ifdef ROOM_METALS
         if (kind > 13.5) {
@@ -3540,12 +3549,13 @@ let SSAO_FN = """
 
 // ROOM_FRAG's groups, one pipeline each (render3d::room_group), each holding only its
 // materials' code: the floor; the walls' surfaces (the panelling oak, the paper, the plaster
-// and the ceiling, the sills, the cord); the painted wood (the doors and the windows'
-// joinery); the metals (the brass, the books with their gilt); the glass and the lace, a
+// and the ceiling, the cord); the painted wood (the doors and the windows' joinery); the
+// sills' stone; the metals (the brass, the books with their gilt); the glass and the lace, a
 // mesh of their own, blended.
 let ROOM_FLOOR = "#define ROOM_FLOOR 1\n";
 let ROOM_WALLS = "#define ROOM_WALLS 1\n";
 let ROOM_PAINT = "#define ROOM_PAINT 1\n";
+let ROOM_SILL = "#define ROOM_SILL 1\n";
 // The painted wood's shader with the light tuner's switches (render3d::paint_steps).
 let PAINT_STEPS = "#define PAINT_STEPS 1\n";
 let ROOM_METALS = "#define ROOM_METALS 1\n";

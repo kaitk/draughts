@@ -31,9 +31,6 @@ let LOWER_ACROSS = 1;
 let LOWER_UP = 2;
 // The box window's painted lining from 0.35 m into the niche.
 let LINING_FROM = 0.35;
-// The paint's fraction that makes it the sills' stone (ROOM_FRAG): a painted piece's own
-// random stays under 0.4.
-let STONE: f32 = 0.6;
 
 // The wainscot's profiles in centimetres, (out from the wall, up from the floor, the
 // light's occlusion), bottom to top: the cap from build/notes/wainscot/make_page.py's
@@ -450,7 +447,7 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
     quad_m(verts, indices, b, [float3 { -w, spring, -LINING_FROM }, float3 { w, spring, -LINING_FROM }, float3 { w, spring, -depth },
                                float3 { -w, spring, -depth }], paint, float3 { 0.0, -1.0, 0.0 }, 0.8);
     // The sill: a pale limestone slab, its nose out in the room, over the niche's floor.
-    let stone = surfaces::MAT_PAINT + STONE;
+    let stone = surfaces::MAT_STONE;
     box_m(verts, indices, b, -w - 0.05, w + 0.05, sill - SILL_BOARD, sill, 0.0, SILL_NOSE, stone);
     quad_m(verts, indices, b, [float3 { -w, sill, -depth }, float3 { w, sill, -depth }, float3 { w, sill, 0.0 },
                                float3 { -w, sill, 0.0 }], stone, float3 { 0.0, 1.0, 0.0 });

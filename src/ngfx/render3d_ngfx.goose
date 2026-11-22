@@ -158,6 +158,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         let u = ngfx::frame_data(bytes_of(rb));
         draw_room_group(g, f, u, if planar { g.room_planar } else { g.room_floor }, render3d::GROUP_FLOOR, ssao, planar);
         draw_room_group(g, f, u, g.room_walls, render3d::GROUP_WALLS, ssao, false);
+        draw_room_group(g, f, u, g.room_sill, render3d::GROUP_SILL, ssao, false);
         draw_room_group(g, f, u, g.room_paint, render3d::GROUP_PAINT, ssao, false);
         draw_room_group(g, f, u, g.room_metals, render3d::GROUP_METALS, ssao, false);
         // The shell's glass and lace over what stands behind them.
@@ -228,12 +229,15 @@ fn make_room_tier(own: Own&, g: Gpu&) {
     let ssao = render3d::ssao_allowed;
     guard g.room_walls.id == 0 || g.room_ssao != ssao else { return; }
     if g.room_walls.id != 0 {
-        for p in [g.room_floor, g.room_walls, g.room_paint, g.room_metals, g.room_glass, g.table_room] { nx::release(p); }
+        for p in [g.room_floor, g.room_walls, g.room_paint, g.room_sill, g.room_metals, g.room_glass, g.table_room] { nx::release(p); }
         if g.room_planar.id != 0 {
-            for p in [g.room_planar, g.planar_walls, g.planar_paint, g.planar_metals, g.planar_glass, g.planar_table] { nx::release(p); }
+            for p in [g.room_planar, g.planar_walls, g.planar_paint, g.planar_sill, g.planar_metals, g.planar_glass, g.planar_table] {
+                nx::release(p);
+            }
             g.room_planar = nx::Pipeline { 0 };
             g.planar_walls = nx::Pipeline { 0 };
             g.planar_paint = nx::Pipeline { 0 };
+            g.planar_sill = nx::Pipeline { 0 };
             g.planar_metals = nx::Pipeline { 0 };
             g.planar_glass = nx::Pipeline { 0 };
             g.planar_table = nx::Pipeline { 0 };
@@ -247,6 +251,7 @@ fn make_room_tier(own: Own&, g: Gpu&) {
         g.room_floor = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_floor.blob"), opaque);
         g.room_walls = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_walls.blob"), opaque);
         g.room_paint = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_paint.blob"), opaque);
+        g.room_sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_sill.blob"), opaque);
         g.room_metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_metals.blob"), opaque);
         g.room_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_glass.blob"), blended);
         g.table_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_room.blob"), table_desc);
@@ -254,6 +259,7 @@ fn make_room_tier(own: Own&, g: Gpu&) {
         g.room_floor = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_floor_phone.blob"), opaque);
         g.room_walls = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_walls_phone.blob"), opaque);
         g.room_paint = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_paint_phone.blob"), opaque);
+        g.room_sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_sill_phone.blob"), opaque);
         g.room_metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_metals_phone.blob"), opaque);
         g.room_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_glass_phone.blob"), blended);
         g.table_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_room_phone.blob"), table_desc);
@@ -262,6 +268,7 @@ fn make_room_tier(own: Own&, g: Gpu&) {
     g.room_planar = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_planar.blob"), opaque);
     g.planar_walls = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_walls.blob"), opaque);
     g.planar_paint = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_paint.blob"), opaque);
+    g.planar_sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_sill.blob"), opaque);
     g.planar_metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_metals.blob"), opaque);
     // The glass writes its depth here, so the sky behind it is as far as the window.
     g.planar_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_glass.blob"),
@@ -347,6 +354,7 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
     let rb: render3d::SurfacesBlock[1] = [render3d::mirror_surfaces_block(g)];
     let u = ngfx::frame_data(bytes_of(rb));
     draw_room_group(g, f, u, g.planar_walls, render3d::GROUP_WALLS, false, false);
+    draw_room_group(g, f, u, g.planar_sill, render3d::GROUP_SILL, false, false);
     draw_room_group(g, f, u, g.planar_paint, render3d::GROUP_PAINT, false, false);
     draw_room_group(g, f, u, g.planar_metals, render3d::GROUP_METALS, false, false);
     if g.glass_count > 0 { draw_room_group(g, f, u, g.planar_glass, render3d::GROUP_GLASS, false, false); }

@@ -360,10 +360,12 @@ struct Gpu {
     room_floor:  Pipeline,
     room_walls:  Pipeline,
     room_paint:  Pipeline,
+    room_sill:   Pipeline,
     room_metals: Pipeline,
     room_ssao:   bool,
     room_views:  bool,              // with the tuner's views (room_views_on)
     room_steps:  bool,              // the painted wood's with the tuner's switches (paint_steps_on)
+    sill_steps:  bool,              // the sills' with the tuner's switches (sill_steps_on)
     bake_room:   Pipeline,
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
     // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
@@ -406,7 +408,7 @@ struct Gpu {
     ssao_map:   Texture,
     ssao_size:  int2,
     // The floor's mirror (planar_pass): the room drawn mirrored under the floor (its walls',
-    // paint's, metals' and glass's pipelines in shaders::MIRROR_PASS, the floor not drawn, the
+    // paint's, sills', metals' and glass's pipelines in shaders::MIRROR_PASS, the floor not drawn, the
     // table's winding the other way), that made the room's light again with each texel's
     // distance (resolve), its mips each a tent over the level above (mip), the tuner's view
     // of it (show); its targets at planar_size_of's size, made again for another: the
@@ -415,6 +417,7 @@ struct Gpu {
     room_planar:    Pipeline,       // the floor that sees the mirror (shaders::PLANAR_FLOOR)
     planar_walls:   Pipeline,
     planar_paint:   Pipeline,
+    planar_sill:    Pipeline,
     planar_metals:  Pipeline,
     planar_glass:   Pipeline,
     planar_table:   Pipeline,
@@ -700,20 +703,22 @@ fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY, shell: bool = f
 
 // The room's materials in groups, each drawn with a pipeline of its own whose shader holds
 // only its materials' code: the floor; the walls' surfaces (the panelling oak, the paper,
-// the plaster and the ceiling, the sills, the cord); the painted wood (the doors, their
-// architraves, the windows' joinery and shutters); the metals (the brass, and the books
-// with their gilt), which see the room's box sharply. The glass and the lace are a mesh of
-// their own.
+// the plaster and the ceiling, the cord); the painted wood (the doors, their architraves,
+// the windows' joinery and shutters); the sills' stone; the metals (the brass, and the
+// books with their gilt), which see the room's box sharply. The glass and the lace are a
+// mesh of their own.
 let GROUP_FLOOR = 0;
 let GROUP_WALLS = 1;
 let GROUP_PAINT = 2;
-let GROUP_METALS = 3;
-let ROOM_GROUPS = 4;
+let GROUP_SILL = 3;
+let GROUP_METALS = 4;
+let ROOM_GROUPS = 5;
 fn room_group(mat: f32) -> i64 {
     let kind = floor(mat + 0.001);
     if kind < surfaces::MAT_FLOOR + 0.5 { return GROUP_FLOOR; }
     if kind == surfaces::MAT_BRASS || kind >= surfaces::MAT_BOOK { return GROUP_METALS; }
-    if kind == surfaces::MAT_PAINT && mat - kind < 0.5 { return GROUP_PAINT; }
+    if kind == surfaces::MAT_PAINT { return GROUP_PAINT; }
+    if kind == surfaces::MAT_STONE { return GROUP_SILL; }
     return GROUP_WALLS;
 }
 
@@ -742,7 +747,7 @@ fn group_end(g: Gpu&, k: i64) -> i64 { if k + 1 < ROOM_GROUPS { g.room_from[k + 
 // The textures a group's shader reads (GROUP_GLASS the glass and lace's), in its slots
 // (shaders::ROOM_HEAD): the tree's and the lace's maps, the light's, the group's own, the
 // screen's maps where the pipeline has them (ssao), the mirror where the floor sees it.
-let GROUP_GLASS = 4;
+let GROUP_GLASS = 5;
 let ROOM_TEXTURES = 11;
 struct RoomTextures { tex: Texture[ROOM_TEXTURES], smp: Sampler[ROOM_TEXTURES], count: i64 }
 fn add_texture(t: RoomTextures&, tex: Texture, smp: Sampler) {
@@ -2329,6 +2334,14 @@ var paint_steps = float4 { 1.0, 1.0, 1.0, 0.0 };
 // The relief tile's strength over its look's (the tuner's --paint-relief, 1 as made).
 var paint_relief: f32 = 1.0;
 fn paint_steps_on() -> bool { paint_steps.x < 0.5 || paint_steps.y < 0.5 || paint_steps.z < 0.5 || paint_steps.w > 0.5 }
+// The light tuner's switches of the sills' shader (its own, shaders::SILL_STEPS): the
+// first x the speckle, y the polished band, z the arris, w the nose's foot, the second x
+// the dust line, each 1 on, y 1 the old stone. While all are as made, the app's shader draws.
+var sill_steps: float4[2] = [float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { 1.0, 0.0, 0.0, 0.0 }];
+fn sill_steps_on() -> bool {
+    let a = sill_steps[0];
+    return a.x < 0.5 || a.y < 0.5 || a.z < 0.5 || a.w < 0.5 || sill_steps[1].x < 0.5 || sill_steps[1].y > 0.5;
+}
 
 fn room_views_on() -> bool { ssao_allowed && (ssao_view > 0 || sheen_look.w > 0.5 || planar_view == 1) }
 // The sun on the room's surfaces: x its saturation about its luminance there and in its

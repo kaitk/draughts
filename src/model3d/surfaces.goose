@@ -23,13 +23,14 @@ let FLOOR_Y: f32 = -23.56;
 // What a fragment of the room is (mesh::Vertex.mat's whole part; its fraction is the
 // piece's own random): the floor, a piece of oak (its uv the place in the wall's field),
 // the wallpaper; the shell's (room_shell) lime plaster (its
-// fraction 0.5 on the cornice, whiter and smoother), white painted wood (its fraction
-// over 0.5 the sills' stone), glass and lace, the last two drawn blended after the rest;
+// fraction 0.5 on the cornice, whiter and smoother), the sills' stone, white painted wood,
+// glass and lace, the last two drawn blended after the rest;
 // the curtains' brass and their cord; a book (books.goose: its fraction the cover, label,
 // gilt or ink and fade).
 let MAT_FLOOR:   f32 = 4.0;
 let MAT_OAK:     f32 = 5.0;
 let MAT_PAPER:   f32 = 6.0;
+let MAT_STONE:   f32 = 7.0;
 let MAT_PLASTER: f32 = 8.0;
 let MAT_PAINT:   f32 = 9.0;
 let MAT_GLASS:   f32 = 10.0;

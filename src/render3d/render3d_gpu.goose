@@ -184,6 +184,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         let surfaces = render3d::surfaces_block(g);
         draw_room_group(g, f, surfaces, if planar { g.room_planar } else { g.room_floor }, render3d::GROUP_FLOOR, ssao, planar);
         draw_room_group(g, f, surfaces, g.room_walls, render3d::GROUP_WALLS, ssao, false);
+        draw_room_group(g, f, surfaces, g.room_sill, render3d::GROUP_SILL, ssao, false);
         draw_room_group(g, f, surfaces, g.room_paint, render3d::GROUP_PAINT, ssao, false);
         draw_room_group(g, f, surfaces, g.room_metals, render3d::GROUP_METALS, ssao, false);
         // The shell's glass and lace over what stands behind them.
@@ -262,6 +263,9 @@ fn room_frag(group: i64, ssao: bool, views: bool) -> const u8[:] {
         if group == render3d::GROUP_PAINT {
             return embed_shader("frag", shaders::ROOM_PAINT, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
         }
+        if group == render3d::GROUP_SILL {
+            return embed_shader("frag", shaders::ROOM_SILL, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        }
         if group == render3d::GROUP_METALS {
             return embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
         }
@@ -278,6 +282,10 @@ fn room_frag(group: i64, ssao: bool, views: bool) -> const u8[:] {
             if render3d::paint_steps_on() && tuned_frags[TUNED_PAINT_STEPS].len > 0 { return tuned_frags[TUNED_PAINT_STEPS]; }
             return tuned_or(TUNED_PAINT, embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
+        if group == render3d::GROUP_SILL {
+            if render3d::sill_steps_on() && tuned_frags[TUNED_SILL_STEPS].len > 0 { return tuned_frags[TUNED_SILL_STEPS]; }
+            return tuned_or(TUNED_SILL, embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
+        }
         if group == render3d::GROUP_METALS {
             return tuned_or(TUNED_METALS, embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
@@ -292,6 +300,9 @@ fn room_frag(group: i64, ssao: bool, views: bool) -> const u8[:] {
     if group == render3d::GROUP_PAINT {
         return embed_shader("frag", shaders::ROOM_PAINT, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
+    if group == render3d::GROUP_SILL {
+        return embed_shader("frag", shaders::ROOM_SILL, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+    }
     if group == render3d::GROUP_METALS {
         return embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
@@ -301,19 +312,25 @@ fn room_frag(group: i64, ssao: bool, views: bool) -> const u8[:] {
 // The room's pipelines for the tier (render3d::ssao_allowed): its groups', its glass's and
 // the table's in it, with the screen's maps and then the floor's mirror's too, or a phone's
 // without either; made again if the tier changes, or as the tuner's views come and go
-// (render3d::room_views_on; their code alone cost 0.55 ms). The toe's shaders have none.
+// (render3d::room_views_on; their code alone cost 0.55 ms), or the tuner's switches of the
+// painted wood or the sills. The toe's shaders have none.
 fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     let ssao = render3d::ssao_allowed;
     let views = render3d::room_views_on();
     let steps = render3d::paint_steps_on() && tuned_frags[TUNED_PAINT_STEPS].len > 0;
-    guard g.room_walls.id == 0 || g.room_ssao != ssao || g.room_views != views || g.room_steps != steps else { return; }
+    let sill_steps = render3d::sill_steps_on() && tuned_frags[TUNED_SILL_STEPS].len > 0;
+    guard g.room_walls.id == 0 || g.room_ssao != ssao || g.room_views != views || g.room_steps != steps || g.sill_steps != sill_steps
+    else { return; }
     if g.room_walls.id != 0 {
-        for p in [g.room_floor, g.room_walls, g.room_paint, g.room_metals, g.room_glass, g.table_room] { gfx::release(p); }
+        for p in [g.room_floor, g.room_walls, g.room_paint, g.room_sill, g.room_metals, g.room_glass, g.table_room] { gfx::release(p); }
         if g.room_planar.id != 0 {
-            for p in [g.room_planar, g.planar_walls, g.planar_paint, g.planar_metals, g.planar_glass, g.planar_table] { gfx::release(p); }
+            for p in [g.room_planar, g.planar_walls, g.planar_paint, g.planar_sill, g.planar_metals, g.planar_glass, g.planar_table] {
+                gfx::release(p);
+            }
             g.room_planar = gfx::Pipeline { 0 };
             g.planar_walls = gfx::Pipeline { 0 };
             g.planar_paint = gfx::Pipeline { 0 };
+            g.planar_sill = gfx::Pipeline { 0 };
             g.planar_metals = gfx::Pipeline { 0 };
             g.planar_glass = gfx::Pipeline { 0 };
             g.planar_table = gfx::Pipeline { 0 };
@@ -322,12 +339,14 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     g.room_ssao = ssao;
     g.room_views = views;
     g.room_steps = steps;
+    g.sill_steps = sill_steps;
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
     let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
     let blended = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED };
     g.room_floor = gfx::pipeline(room_vert, room_frag(render3d::GROUP_FLOOR, ssao, views), opaque);
     g.room_walls = gfx::pipeline(room_vert, room_frag(render3d::GROUP_WALLS, ssao, views), opaque);
     g.room_paint = gfx::pipeline(room_vert, room_frag(render3d::GROUP_PAINT, ssao, views), opaque);
+    g.room_sill = gfx::pipeline(room_vert, room_frag(render3d::GROUP_SILL, ssao, views), opaque);
     g.room_metals = gfx::pipeline(room_vert, room_frag(render3d::GROUP_METALS, ssao, views), opaque);
     g.room_glass = gfx::pipeline(room_vert, room_frag(render3d::GROUP_GLASS, ssao, views), blended);
     let table_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT);
@@ -342,6 +361,9 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     g.room_planar = gfx::pipeline(room_vert, planar_frag, opaque);
     g.planar_walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_WALLS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
     g.planar_paint = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_PAINT, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    // The sills in the mirror as in the room, the tuner's switches too.
+    let sill_mirror = if sill_steps { tuned_frags[TUNED_SILL_MIRROR] } else { embed_shader("frag", shaders::ROOM_SILL, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) };
+    g.planar_sill = gfx::pipeline(room_vert, sill_mirror, opaque);
     g.planar_metals = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_METALS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
     // The glass writes its depth here, so the sky behind it is as far as the window.
     g.planar_glass = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_GLASS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
@@ -429,6 +451,7 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     // The room less its floor, which lies under the clip plane.
     let surfaces = render3d::mirror_surfaces_block(g);
     draw_room_group(g, clip, surfaces, g.planar_walls, render3d::GROUP_WALLS, false, false);
+    draw_room_group(g, clip, surfaces, g.planar_sill, render3d::GROUP_SILL, false, false);
     draw_room_group(g, clip, surfaces, g.planar_paint, render3d::GROUP_PAINT, false, false);
     draw_room_group(g, clip, surfaces, g.planar_metals, render3d::GROUP_METALS, false, false);
     if g.glass_count > 0 { draw_room_group(g, clip, surfaces, g.planar_glass, render3d::GROUP_GLASS, false, false); }
@@ -854,7 +877,10 @@ fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
 // table's in the room, the room's groups with the screen's maps (the floor seeing the
 // room's box, then the mirror, the walls, the metals, the glass), the view out, the painted
 // wood, and the painted wood with the tuner's switches (render3d::paint_steps_on,
-// shaders::PAINT_STEPS) whether the toes are switched or not. Empty, the app's. The mirror's pass takes none: its light is linear, before any toe.
+// shaders::PAINT_STEPS) whether the toes are switched or not; the sills, and the sills with
+// the tuner's switches (render3d::sill_steps_on, shaders::SILL_STEPS) in the room and in
+// the mirror. Empty, the app's. The mirror's pass takes none but the sills' switched one:
+// its light is linear, before any toe.
 let TUNED_LIT = 0;
 let TUNED_TABLE = 4;
 let TUNED_TABLE_ROOM = 5;
@@ -866,8 +892,11 @@ let TUNED_GLASS = 10;
 let TUNED_OUTSIDE = 11;
 let TUNED_PAINT = 12;
 let TUNED_PAINT_STEPS = 13;
-let TUNED_FRAGS = 14;
-var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+let TUNED_SILL = 14;
+let TUNED_SILL_STEPS = 15;
+let TUNED_SILL_MIRROR = 16;
+let TUNED_FRAGS = 17;
+var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
 fn tuned_or(i: i64, frag: const u8[:]) -> const u8[:] { if tuned_frags[i].len > 0 { tuned_frags[i] } else { frag } }
 
 // The table's shader with its shadow filtered as `look` says, as the lit one's (lit_frag).
