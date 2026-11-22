@@ -511,18 +511,26 @@ let LIGHT_FN = """
     // contrast, the rest scattered on.
     const float LACE_NET_STOPS = 0.2;
     const float LACE_PATTERN_SHOWN = 0.75;
-    float lace_shadow(vec2 w, float soft) {
+    // y: with wide over 0, the share of the sun the lace stops on average round w (its
+    // outline blurred wide, the pattern's mean), for its light below; else 0.
+    vec2 lace_shadow(vec2 w, float soft, float wide) {
         vec2 e = lace_edges(w.y);
         float x = abs(w.x);
-        float inside = smoothstep(-soft, soft, min(min(x - e.x, e.y - x), min(w.y - 0.07, 3.7 - w.y)));
-        if (inside < 0.001) return 1.0;
+        float edge = min(min(x - e.x, e.y - x), min(w.y - 0.07, 3.7 - w.y));
+        float scattered = 0.0;
+        if (wide > 0.0) {
+            float mean_lets = 1.0 - mix(LACE_NET_STOPS, 1.0 - shell_glass.w, 0.5);
+            scattered = smoothstep(-wide, wide, edge) * (1.0 - pow(mean_lets, max(0.55 / max(e.y - e.x, 0.05), 1.0)));
+        }
+        float inside = smoothstep(-soft, soft, edge);
+        if (inside < 0.001) return vec2(1.0, scattered);
         float s = clamp((x - e.x) / (e.y - e.x), 0.0, 1.0);
         vec2 uv = vec2((1.0 - s) * 1.2, w.y - 0.07) * shell.w;
         float cover = textureLod(lace_mask, lace_place(uv), log2(max(soft * 1024.0 / 0.56, 1.0))).r;
         cover = mix(0.5, cover, LACE_PATTERN_SHOWN);
         float folds = 0.8 + 0.4 * (0.5 + 0.5 * sin(6.2831853 * 6.0 * s));
         float flat_lets = 1.0 - clamp(mix(LACE_NET_STOPS, 1.0 - shell_glass.w, cover) * folds, 0.0, 0.9);
-        return mix(1.0, pow(flat_lets, max(0.55 / max(e.y - e.x, 0.05), 1.0)), inside);
+        return vec2(mix(1.0, pow(flat_lets, max(0.55 / max(e.y - e.x, 0.05), 1.0)), inside), scattered);
     }
 
     // The share of the sun the lace stops that it scatters on forward into a broad cone
@@ -581,9 +589,8 @@ let LIGHT_FN = """
                 vec3 c = p + l * tl;
                 vec2 wl = vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre;
                 float soft_l = (0.03 + widen * tl) / metre + 0.03 * tl / metre;
-                through *= lace_shadow(wl, soft_l);
-                if (window_view.y > 0.0)
-                    through += window_view.y * LACE_FORWARD * LACE_GLAZED * niche * (1.0 - lace_shadow(wl, soft_l + LACE_CONE * tl / metre));
+                vec2 lace = lace_shadow(wl, soft_l, window_view.y > 0.0 ? soft_l + LACE_CONE * tl / metre : 0.0);
+                through = through * lace.x + window_view.y * LACE_FORWARD * LACE_GLAZED * niche * lace.y;
             }
             lit += through;
         }
@@ -2896,17 +2903,16 @@ let ROOM_FRAG = """
     // so it shows only toward the sun; and the fine scratches grit in the cloth drew, each
     // glinting where the sun's light through the glass leaves along the cone round its groove,
     // s = t · (l + v) near 0 (Raymond et al., transmitted), within GLASS_GLINT_REACH radians
-    // of the sun. Strengths window_view.z and .w; the tile a millimetre a texel, offset per
+    // of the sun, none past about 35° (GLASS_GLINT_FAR, its cosine). Strengths window_view.z and .w; the tile a millimetre a texel, offset per
     // window and sheet.
     const float GLASS_FILM = 0.002;
     const float GLASS_GLINT = 0.6;
     const float GLASS_GLINT_WIDTH = 0.02;
     const float GLASS_GLINT_REACH = 0.25;
+    const float GLASS_GLINT_FAR = 0.82;
     const float GLASS_TILE_M = 0.512;
     vec3 glass_sun(vec3 p, vec3 v) {
         vec3 l = light_dir.xyz;
-        float sun = window_open(p);
-        if (sun < 0.001) return vec3(0.0);
         float metre = shell.w;
         float along = dot(p.xz, axes.xy);
         float into = dot(p.xz, axes.zw);
@@ -2914,15 +2920,25 @@ let ROOM_FRAG = """
         for (int i = 1; i < 3; i++) if (abs(along - shell_mids[i]) < abs(along - shell_mids[int(k)])) k = float(i);
         vec2 at = vec2(along, p.y - shell.z) / (metre * GLASS_TILE_M)
                 + vec2(window_hash(vec2(k, floor(into * 8.0 / metre))), window_hash(vec2(floor(into * 8.0 / metre), k + 3.0)));
-        vec4 tl = texture(glass_tile, at);
+        // Derivatives before the returns below: the tile's, and the view's turn over the pixel,
+        // which widens a glint.
+        vec2 at_x = dFdx(at);
+        vec2 at_y = dFdy(at);
+        float turn = length(fwidth(v));
+        // Nothing of either shows past GLASS_GLINT_FAR from the sun: skipped there.
         float ahead = clamp(dot(v, -l), -1.0, 1.0);
+        float near_sun = smoothstep(GLASS_GLINT_FAR, GLASS_GLINT_FAR + 0.08, ahead);
+        if (near_sun <= 0.0) return vec3(0.0);
+        float sun = window_open(p) * near_sun;
+        if (sun < 0.001) return vec3(0.0);
+        vec4 tl = textureGrad(glass_tile, at, at_x, at_y);
         float hg = 0.4375 / pow(1.5625 - 1.5 * ahead, 1.5);
         float film = window_view.z * GLASS_FILM * 2.0 * tl.a * hg / (4.0 * PI);
         // The groove's direction in the glass's plane (along the wall, up), from its doubled angle.
         float half_a = 0.5 * atan(tl.g * 2.0 - 1.0, tl.r * 2.0 - 1.0);
         vec3 t = cos(half_a) * vec3(axes.x, 0.0, axes.y) + sin(half_a) * vec3(0.0, 1.0, 0.0);
         float s = dot(t, l + v);
-        float w = GLASS_GLINT_WIDTH + fwidth(s);
+        float w = GLASS_GLINT_WIDTH + turn;
         float glint = window_view.w * GLASS_GLINT * tl.b * exp(-(s / w) * (s / w)) * (GLASS_GLINT_WIDTH / w)
                     * exp(-acos(ahead) / GLASS_GLINT_REACH);
         return room_sun_color(room_sun.x) * light_dir.w * sun * (film + glint / PI);
