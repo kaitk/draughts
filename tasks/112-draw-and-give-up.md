@@ -19,7 +19,11 @@ for where the computer's offer shows).
     kings' endings the score misjudges (two kings against one looks won and is a draw).
     A refusal is a card in the middle, as the end's are, over an undimmed board: the
     handshake crossed out, "No draw", "The computer wants to play on."
-    (Estonian "Arvuti tahab edasi mängida."), and Continue alone. The tile
+    (Estonian "Arvuti tahab edasi mängida.") with the computer's icon in place of "The
+    computer" (`refused.note = @ wants to play on.`, a marker each language puts where
+    its grammar wants; a small `gui` helper lays the text and `glyph_icon` out on one
+    line, and the draw card's `note_break` counts the icon as a word), and Continue
+    alone. The tile
     then stays dim until it can be asked again a few moves later, so tapping until yes
     doesn't work. (The tile answering itself and a line under whose turn were the other
     takes.)
