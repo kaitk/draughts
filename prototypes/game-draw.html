@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: draw and give up</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* Task 112's takes on game.html: an ending where both sides have kings, the child white
+     against the computer. ?view=
+       offer   the draw tile (the default)
+       no      the computer turned the offer down; &no=a the tile answers, b the line
+               under whose turn answers
+       asked   the computer offers a draw; &ask=panel in the play panel (the default),
+               card over the board
+       giveup  start over tapped a few moves in: give up this game?
+       lost    the end's card after giving up
+       drawn   the end's card after a draw agreed (or a friend's game's draw tile)
+       friend  a friend's game: the draw tile ends the game at once
+     &at=left puts the draw tile with start over (the default), right in the play panel. */
+  .game { display: grid; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); gap: 24px; --side: 232px; }
+  .col { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  #board { place-self: center; width: min(var(--h), 100%); }
+  .back { flex: none; }
+  .way { display: flex; flex-direction: column; gap: 20px; padding: 20px; }
+  .way .tile { justify-content: flex-start; }
+  .catch { display: grid; gap: 8px; padding: 14px 16px; flex: none; }
+  .row { display: flex; height: 32px; }
+  .row .piece { width: 32px; margin-right: -15px; }
+  .play { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 20px 16px 16px; flex: none; }
+  .turn { position: relative; display: grid; justify-items: center; gap: 14px; width: 100%; }
+  .turn .piece { width: 72px; }
+  .eye { position: absolute; right: 0; top: 8px; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+    background: rgb(0 0 0 / 0.25); color: var(--fg); opacity: 0.55; }
+  .eye .icon { width: 28px; height: 28px; }
+  .say { display: flex; align-items: center; gap: 8px; font-size: 18px; color: var(--fg-dim); }
+  .say .icon { width: 24px; height: 24px; }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+  .duo .tile { flex-direction: column; gap: 6px; min-height: 132px; min-width: 0; padding: 6px; white-space: normal; text-align: center; }
+  .duo .tile.wide { grid-column: span 2; flex-direction: row; min-height: 88px; gap: 12px; }
+  .pips { display: flex; gap: 7px; }
+  .pips i { width: 12px; height: 12px; border-radius: 50%; background: var(--glow); }
+  .pips i.off { background: rgb(255 255 255 / 0.25); }
+  .moves { flex: 1; min-height: 0; overflow: hidden; padding: 10px 12px; font-size: 20px;
+    display: flex; flex-direction: column; justify-content: flex-end; }
+  .mrow { display: grid; grid-template-columns: 30px 1fr 1fr; align-items: center; height: 34px; flex: none; }
+  .mrow .n { font-size: 17px; color: var(--fg-dim); }
+  .mv { justify-self: start; display: flex; gap: 3px; padding: 2px 8px; border-radius: 9px; white-space: nowrap; }
+  .mv.lit { background: color-mix(in srgb, var(--glow) 22%, transparent); }
+  /* The tile's own answer (no=a): the computer's face and "Play on" where the handshake
+     was, then dim with pips that fill one per move until it can be asked again. */
+  .tile.answer { flex-direction: column; gap: 4px; }
+  .tile.answer small { font-size: 15px; }
+  /* The computer's offer in the play panel: lit like a chosen tile, two answers. */
+  .offer { display: grid; gap: 12px; width: 100%; padding: 14px; border-radius: 22px; text-align: center;
+    background: color-mix(in srgb, var(--glow) 16%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
+  .offer .who { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 24px; }
+  .offer .who .icon { width: 34px; height: 34px; }
+  .offer .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .offer .two .tile { min-width: 0; min-height: 72px; padding: 0 8px; flex-direction: column; gap: 2px; }
+  /* A card over the board: the end's, the computer's offer (ask=card), give up. */
+  .veil { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; }
+  .veil.dim { background: rgb(0 0 0 / 0.42); }
+  .card { --r: 28px; display: grid; justify-items: center; gap: 14px; width: min(440px, 100%); padding: 24px; text-align: center; pointer-events: auto; }
+  .card h1 { font-size: 32px; }
+  .card .pieces { display: flex; gap: 12px; }
+  .card .pieces .piece { width: 72px; }
+  .card .big { width: 56px; height: 56px; stroke-width: 1.8; }
+  .card .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+  .card .two .tile { min-width: 0; padding: 0 10px; }
+  #board.dimmed { filter: brightness(0.55); } /* the app dims in the shaders */
+  @container (max-height: 599px) or (orientation: portrait) {
+    .way .tile { background: var(--glass-tint); }
+  }
+  .pill { display: none; }
+
+  /* A phone in landscape. */
+  @container (max-height: 599px) and (orientation: landscape) {
+    .game { --side: 192px; }
+    .left { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto 1fr; gap: 12px; }
+    .left > .tile, .way .tile { flex-direction: column; gap: 4px; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; }
+    .way { display: contents; }
+    .way .tile:last-child:nth-child(odd) { grid-column: span 2; }
+    .way .tile { justify-content: center; }
+    .catch { grid-column: span 2; padding: 10px 14px; }
+    .moves { display: none; }
+    .duo { grid-template-columns: 1fr; gap: 10px; }
+    .duo .tile, .duo .tile.wide { flex-direction: row; min-height: 80px; grid-column: auto; }
+    .duo .tile.answer { flex-direction: column; }
+    .play { padding: 12px 12px 12px; gap: 10px; }
+    .turn .piece { width: 56px; }
+    .offer .two { grid-template-columns: 1fr; }
+  }
+  /* Portrait: the bar over the board, the play under it. */
+  @container (orientation: portrait) {
+    .game { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; }
+    .col { display: contents; }
+    .left { display: grid; background: var(--glass-tint); border-radius: 28px; }
+    .bar { order: 0; display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); gap: 12px; padding: 16px; }
+    .way { display: contents; }
+    .bar .tile { flex-direction: column; gap: 4px; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; justify-content: center; }
+    #board { order: 1; width: min(var(--w), 100%); align-self: center; }
+    .play { order: 2; display: grid; grid-template-columns: 1fr 1fr; padding: 14px 16px 16px; }
+    .turn { grid-column: span 2; display: flex; justify-content: center; align-items: center; gap: 16px; }
+    .turn .piece { width: 52px; }
+    .eye { top: 2px; }
+    .duo, .offer, .say { grid-column: span 2; justify-self: center; }
+    .duo { justify-self: stretch; }
+    .duo .tile { flex-direction: row; min-height: 88px; }
+    .duo .tile.answer { flex-direction: column; }
+    .catch, .moves { display: none; }
+  }
+</style>
+</head>
+<body data-screen="board">
+<main class="screen game">
+  <div class="col left bar">
+    <a class="tile glass back" href="home.html" data-icon="back">Back</a>
+    <div class="glass way" id="way">
+      <a class="tile" href="settings.html" data-icon="gear">Settings</a>
+      <a class="tile" href="?view=giveup" data-icon="restart">Start over</a>
+    </div>
+    <div class="glass catch" id="catch"></div>
+  </div>
+  <div id="board"></div>
+  <div class="col right">
+    <div class="glass play" id="play"></div>
+    <div class="glass moves" id="moves"></div>
+  </div>
+  <div class="veil" id="veil" hidden></div>
+</main>
+<script>
+  const D = Draughts, q = new URLSearchParams(location.search);
+  const view = q.get('view') || 'offer', at = q.get('at') || 'left', no = q.get('no') || 'a';
+  const friend = view === 'friend', ended = view === 'lost' || view === 'drawn';
+  const $ = (id) => document.getElementById(id);
+
+  // An International ending: white two kings and a man, black two kings; the last move
+  // was black's king 4-27. Nothing taken for a while, so the kings' count runs.
+  const pos = { n: 10, white: ['c3', 'g7', 'b2'], black: ['h8', 'd8'], kings: ['c3', 'g7', 'h8', 'd8'], last: ['f10', 'd8'] };
+  D.board($('board'), pos);
+  if (ended) $('board').classList.add('dimmed');
+
+  // The draw tile: shown while both sides have a king. Against the computer "Offer draw";
+  // in a friend's game "Draw", which ends the game at once (undo takes it back).
+  const pips = (on) => `<span class="pips">${[0, 1, 2].map((i) => `<i class="${i < on ? '' : 'off'}"></i>`).join('')}</span>`;
+  let drawTile = `<a class="tile${at === 'right' ? ' wide' : ''}" href="?view=${friend ? 'drawn' : 'no'}&at=${at}&no=${no}" data-icon="handshake">${friend ? 'Draw' : 'Offer draw'}</a>`;
+  if (view === 'no' && no === 'a') drawTile = `<a class="tile answer dim${at === 'right' ? ' wide' : ''}" data-icon="computer">Play on${pips(1)}</a>`;
+  if (view === 'no' && no === 'b') drawTile = drawTile.replace('class="tile', 'class="tile dim');
+  const showTile = !ended && view !== 'asked';
+  if (showTile && at === 'left') {
+    $('way').insertAdjacentHTML('beforeend', drawTile);
+    document.querySelector('.bar').style.setProperty('--n', 4);
+  }
+
+  // The play: whose turn, the answer's line (no=b), and hint and undo, or the offer.
+  const turn = friend ? 'White\'s turn' : 'Your turn';
+  let play = `<div class="turn"><span class="piece solo white ring"></span>${turn}<span class="eye" data-icon="eyeOff"></span></div>`;
+  if (view === 'no' && no === 'b') play += `<div class="say">${D.icon('computer')}Plays on</div>`;
+  const ask = q.get('ask') || 'panel';
+  if (view === 'asked' && ask === 'panel') {
+    play += `<div class="offer"><div class="who">${D.icon('computer')}${D.icon('handshake')}Draw?</div>
+      <div class="two"><a class="tile primary" href="?view=drawn" data-icon="handshake">Draw</a>
+      <a class="tile" href="?view=offer" data-icon="next">Play on</a></div></div>`;
+  } else {
+    play += `<div class="duo"><a class="tile dim" data-icon="hint">Hint${pips(3)}</a><a class="tile" data-icon="undo">Undo move</a>
+      ${showTile && at === 'right' ? drawTile : ''}</div>`;
+  }
+  $('play').innerHTML = play;
+
+  // The moves: kings shuffling, no capture since move 41.
+  const M = ['41-37', '4-27', '37-46', '27-4', '46-37', '15-4', '37-28', '4-15', '28-46', '15-4', '46-28', '9-4'];
+  let rows = '';
+  for (let i = 0; i < M.length; i += 2) rows += `<div class="mrow"><span class="n">${48 + i / 2}</span><span class="mv">${M[i]}</span><span class="mv${i + 1 === M.length - 1 ? ' lit' : ''}">${M[i + 1]}</span></div>`;
+  $('moves').innerHTML = rows;
+  const taken = (color, k) => `<div class="row">${`<span class="piece solo ${color}"></span>`.repeat(k)}</div>`;
+  $('catch').innerHTML = taken('white', 10) + taken('black', 11);
+
+  // The cards over the board.
+  const veil = $('veil');
+  const card = (html, dim) => { veil.hidden = false; veil.classList.toggle('dim', dim); veil.innerHTML = `<div class="glass card">${html}</div>`; };
+  const again = `<div class="two"><a class="tile" href="home.html" data-icon="back">Back</a><a class="tile primary" href="?view=offer" data-icon="restart">Play again</a></div>`;
+  if (view === 'giveup') card(`${D.icon('flag').replace('class="icon"', 'class="icon big"')}<h1>Give up this game?</h1>
+    <small>It counts as a loss.</small>
+    <div class="two"><a class="tile" href="?view=lost" data-icon="flag">Give up</a><a class="tile primary" href="?view=offer" data-icon="next">Keep playing</a></div>`, true);
+  if (view === 'lost') card(`<div class="pieces"><span class="piece solo black king"></span></div><h1>Black wins</h1><small>White gave up</small>${again}`, false);
+  if (view === 'drawn') card(`<div class="pieces"><span class="piece solo white"></span><span class="piece solo black"></span></div><h1>Draw</h1><small>${friend || q.get('by') === 'friend' ? 'Agreed' : 'Agreed'}</small>${again}`, false);
+  if (view === 'asked' && ask === 'card') card(`<div class="pieces">${D.icon('computer').replace('class="icon"', 'class="icon big"')}${D.icon('handshake').replace('class="icon"', 'class="icon big"')}</div><h1>Draw?</h1>
+    <div class="two"><a class="tile primary" href="?view=drawn" data-icon="handshake">Draw</a><a class="tile" href="?view=offer" data-icon="next">Play on</a></div>`, false);
+  D.init();
+</script>
+</body>
+</html>
