@@ -10,8 +10,8 @@
   /* Task 112's takes on game.html: an ending where both sides have kings, the child white
      against the computer. ?view=
        offer   the draw tile (the default)
-       no      the computer turned the offer down; &no=a the tile answers, b the line
-               under whose turn answers
+       no      the computer turned the offer down; &no=card a card in the middle, as the
+               end's (the default), a the tile answers, b the line under whose turn
        asked   the computer offers a draw; &ask=panel in the play panel (the default),
                card over the board
        giveup  start over tapped a few moves in: give up this game?
@@ -132,7 +132,7 @@
 </main>
 <script>
   const D = Draughts, q = new URLSearchParams(location.search);
-  const view = q.get('view') || 'offer', at = q.get('at') || 'left', no = q.get('no') || 'a';
+  const view = q.get('view') || 'offer', at = q.get('at') || 'left', no = q.get('no') || 'card';
   const friend = view === 'friend', ended = view === 'lost' || view === 'drawn';
   const $ = (id) => document.getElementById(id);
 
@@ -147,7 +147,7 @@
   const pips = (on) => `<span class="pips">${[0, 1, 2].map((i) => `<i class="${i < on ? '' : 'off'}"></i>`).join('')}</span>`;
   let drawTile = `<a class="tile${at === 'right' ? ' wide' : ''}" href="?view=${friend ? 'drawn' : 'no'}&at=${at}&no=${no}" data-icon="handshake">${friend ? 'Draw' : 'Offer draw'}</a>`;
   if (view === 'no' && no === 'a') drawTile = `<a class="tile answer dim${at === 'right' ? ' wide' : ''}" data-icon="computer">Play on${pips(1)}</a>`;
-  if (view === 'no' && no === 'b') drawTile = drawTile.replace('class="tile', 'class="tile dim');
+  if (view === 'no' && no !== 'a') drawTile = drawTile.replace('class="tile', 'class="tile dim');
   const showTile = !ended && view !== 'asked';
   if (showTile && at === 'left') {
     $('way').insertAdjacentHTML('beforeend', drawTile);
@@ -186,6 +186,10 @@
     <div class="two"><a class="tile" href="?view=lost" data-icon="flag">Give up</a><a class="tile primary" href="?view=offer" data-icon="next">Keep playing</a></div>`, true);
   if (view === 'lost') card(`<div class="pieces"><span class="piece solo black king"></span></div><h1>Black wins</h1><small>White gave up</small>${again}`, false);
   if (view === 'drawn') card(`<div class="pieces"><span class="piece solo white"></span><span class="piece solo black"></span></div><h1>Draw</h1><small>${friend || q.get('by') === 'friend' ? 'Agreed' : 'Agreed'}</small>${again}`, false);
+  const big = (name) => D.icon(name).replace('class="icon"', 'class="icon big"');
+  if (view === 'no' && no === 'card') card(`<div class="pieces">${big('computer')}</div><h1>No draw</h1>
+    <small>The computer plays on.</small>
+    <a class="tile primary" href="?view=offer">Continue</a>`, false);
   if (view === 'asked' && ask === 'card') card(`<div class="pieces">${D.icon('computer').replace('class="icon"', 'class="icon big"')}${D.icon('handshake').replace('class="icon"', 'class="icon big"')}</div><h1>Draw?</h1>
     <div class="two"><a class="tile primary" href="?view=drawn" data-icon="handshake">Draw</a><a class="tile" href="?view=offer" data-icon="next">Play on</a></div>`, false);
   D.init();

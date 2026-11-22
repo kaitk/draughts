@@ -8,7 +8,7 @@ and Brazilian, which drags. Start over already cancels a lost game, but it count
 nothing, so a loss can be dodged and never reaches the rating.
 
 The takes are in `prototypes/game-draw.html` (`?view=offer|no|asked|giveup|lost|drawn|friend`,
-`&at=left|right` for where the draw tile goes, `&no=a|b` for how a refusal shows, `&ask=panel|card`
+`&at=left|right` for where the draw tile goes, `&no=card|a|b` for how a refusal shows, `&ask=panel|card`
 for where the computer's offer shows).
 
 ## Plan
@@ -17,10 +17,11 @@ for where the computer's offer shows).
   - Against the computer, "Offer draw": the computer answers at once from its last search
     score. It accepts when it isn't winning, backed by a check on the material for the
     kings' endings the score misjudges (two kings against one looks won and is a draw).
-    A refusal shows quietly, with no shaking. One take: the tile answers with the
-    computer's face and "Play on", then stays dim with pips that fill one per move until
-    it can be asked again. The other: a line under whose turn says so. The tile can be
-    asked again after a few moves, so tapping until yes doesn't work.
+    A refusal is a card in the middle, as the end's are, over an undimmed board: the
+    computer's face, "No draw", "The computer plays on.", and Continue alone. The tile
+    then stays dim until it can be asked again a few moves later, so tapping until yes
+    doesn't work. (The tile answering itself and a line under whose turn were the other
+    takes.)
   - In a friend's game, "Draw" ends the game at once with no second player's say. Undo
     takes it back like any other ending. Asking the other player first would be a lot of
     code for a corner case.
