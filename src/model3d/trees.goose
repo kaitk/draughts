@@ -32,6 +32,9 @@ root struct Tree {
     segments: Segment[>..] = [],    // at most MAX_SEGMENTS
     leaves:   Leaf[>..]    = [],    // at most MAX_LEAVES
     left_out: i64          = 0,     // parts past those counts
+    // The whole tree's (grow_whole) branches and leaves as the picture draws them.
+    limbs: Limb[>..] = [],          // at most MAX_LIMBS
+    cards: Card[>..] = [],          // at most MAX_CARDS
 }
 
 // What the tree is (rooms::Room's tree, crown and foliage).
@@ -107,6 +110,15 @@ fn spread(v: View&) -> f32 { sqrt(1.0 + v.shear.x * v.shear.x + v.shear.y * v.sh
 // Whether a shape at `m` reaching `r` round it falls on the map.
 fn on_rect(v: View&, m: float2, r: f32) -> bool {
     return abs(m.x - v.middle.x) <= v.size.x * 0.5 + r && abs(m.y - v.middle.y) <= v.size.y * 0.5 + r;
+}
+
+// Whether a segment falls on the map, as grow keeps it: the whole tree's segments
+// (grow_whole) reach past it, and only those on it are drawn or count for the layers.
+fn segment_on_map(v: View&, sg: Segment&) -> bool {
+    let ma = on_map(v, sg.a);
+    let mb = on_map(v, sg.b);
+    let middle = float2 { (ma.x + mb.x) * 0.5, (ma.y + mb.y) * 0.5 };
+    return on_rect(v, middle, length(float2 { mb.x - ma.x, mb.y - ma.y }) * 0.5 + sg.ra);
 }
 
 // splitmix64: a branch's dice from its parent's and its place, so leaving out one branch
@@ -267,6 +279,8 @@ struct Branch { at: float3, dir: float3, length: f32, radius: f32, level: i64, d
 fn grow(t: Tree&, s: Spec, v: View) {
     t.segments.clear();
     t.leaves.clear();
+    t.limbs.clear();
+    t.cards.clear();
     t.left_out = 0;
     var d = Dice { mixed(s.seed as u64 + 1) };
     let lean = float3 { roll_between(d, -0.08, 0.08), 1.0, roll_between(d, -0.08, 0.08) };
@@ -465,11 +479,11 @@ let WOOD = 3;
 // The layers' bounds: the depths of the twigs and leaves kept, cut in thirds.
 struct Depths { near: f32, far: f32 }
 
-fn depths(t: Tree&) -> Depths {
+fn depths(t: Tree&, v: View&) -> Depths {
     var lo: f32 = 1e9;
     var hi: f32 = -1e9;
     for &sg in t.segments {
-        guard sg.level > 1 else { continue; }
+        guard sg.level > 1 && segment_on_map(v, sg) else { continue; }
         let z = (sg.a.z + sg.b.z) * 0.5;
         lo = min(lo, z);
         hi = max(hi, z);
@@ -499,11 +513,12 @@ fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
     var sums: f32[>..] = [];
     var sp = s;
     var vw = v;
-    let depth = depths(t);
+    let depth = depths(t, vw);
     // Each layer's mean depth, for its blur.
     var z_sum:   f32[4] = [0.0; 4];
     var z_count: f32[4] = [0.0; 4];
     for &sg in t.segments {
+        guard segment_on_map(vw, sg) else { continue; }
         let l = layer_of_segment(sg, depth);
         z_sum[l] += (sg.a.z + sg.b.z) * 0.5;
         z_count[l] += 1.0;
@@ -517,7 +532,7 @@ fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
     for layer in 4 {
         for i in plane.len { plane[i] = 1.0; }
         for &sg in t.segments {
-            guard layer_of_segment(sg, depth) == layer else { continue; }
+            guard layer_of_segment(sg, depth) == layer && segment_on_map(vw, sg) else { continue; }
             draw_segment(plane, vw, sg);
         }
         for &lf in t.leaves {

@@ -1999,27 +1999,7 @@ fn tree_room(g: Gpu&) -> rooms::Room {
 // niches at the wall's inner face, as the key carries them out to the tree.
 fn tree_view_of(g: Gpu&) -> trees::View {
     guard g.room_on && g.room_shell else { return rooms::tree_view(g.room, g.room_on); }
-    let s = room_shell::LIBRARY;
-    let metre = surfaces::METRE;
-    let inner = shell_face(s);
-    var u0: f32 = 1e9;
-    var u1: f32 = -1e9;
-    var y0: f32 = 1e9;
-    var y1: f32 = -1e9;
-    for k in s.count {
-        let o = s.openings[k];
-        guard o.kind == room_shell::WINDOW else { continue; }
-        let u = (s.table.x - o.mid) * metre;
-        u0 = min(u0, u - 0.5 * o.width * metre);
-        u1 = max(u1, u + 0.5 * o.width * metre);
-        y0 = min(y0, surfaces::FLOOR_Y + o.sill * metre);
-        y1 = max(y1, surfaces::FLOOR_Y + room_shell::head_at(o, 0.0) * metre);
-    }
-    let shear = rooms::tree_shear(g.room);
-    var v = rooms::tree_view_over(tree_room(g), u0 - shear.x * inner, u1 - shear.x * inner, y0 - shear.y * inner,
-                                  y1 - shear.y * inner, trees::SHELL_W, trees::SHELL_H);
-    v.wood = rooms::SHELL_LIMBS;
-    return v;
+    return rooms::shell_tree_view(g.room, room_shell::LIBRARY);
 }
 
 // The window wall's inner face's distance from the board's middle toward the sun, world units.
@@ -2037,7 +2017,7 @@ fn tree_key(g: Gpu&) -> float4[11] {
     let r = tree_room(g);
     let v = tree_view_of(g);
     return [r.tree, r.crown, r.foliage, r.leaves, r.window, r.panes, r.opening, r.key, float4 { r.tree_blur, 0.0, 0.0, 0.0 },
-            float4 { r.species, 0.0, 0.0, 0.0 }, float4 { v.size.x, v.size.y, v.middle.x, v.middle.y }];
+            float4 { r.species, if tree_grown_whole { 1.0 } else { 0.0 }, 0.0, 0.0 }, float4 { v.size.x, v.size.y, v.middle.x, v.middle.y }];
 }
 
 // The tree grown and its shadow drawn on the CPU, then put on the GPU with its mips:
@@ -2052,7 +2032,11 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     var map: u8[>..] = [];
     {
         var t = trees::Tree { .. };
-        trees::grow(t, s, v);
+        if tree_grown_whole && g.room_on && g.room_shell {
+            trees::grow_whole(t, rooms::whole_tree(g.room, room_shell::LIBRARY), v, rooms::whole_sight(g.room, room_shell::LIBRARY), true);
+        } else {
+            trees::grow(t, s, v);
+        }
         trees::draw_map(t, s, v, map);
     }
     keep_tree_small(map[..], v.w, v.h);
@@ -2079,6 +2063,11 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
 // startup by the app). It adds 16 shadow taps a board pixel, about 0.35 ms at
 // 1280 × 800 on an M1 Pro (task 094), not yet timed on a phone or tablet.
 var scatter_allowed = false;
+
+// The shell's shadow baked from the old maple grown whole (trees::grow_whole, task 107's
+// T1) in place of the first tree (trees::grow): the light tuner's --tree-grow whole only,
+// until its shadow is retuned and the user has seen it.
+var tree_grown_whole = false;
 
 // The look's board scattering (looks::Theme.board_scatter) into the frame's block where
 // it is allowed, else off: only the desktop's lit shader (SHADOW_16) has it.

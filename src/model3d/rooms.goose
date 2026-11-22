@@ -331,6 +331,97 @@ fn shell_tree(r: Room) -> Room {
 // outside is, not bold dark bars across the sun's patches (task 107's leftovers).
 let SHELL_LIMBS = float2 { 0.5, 3.0 };
 
+// How the sun sees the shell's tree (trees::View): over the shell's three windows' niches
+// at the wall's inner face, as the key carries them out to the tree; `r` the room as lit,
+// its tree the shell's (shell_tree). render3d::tree_view_of with the shell on.
+fn shell_tree_view(r: Room, s: room_shell::Shell) -> trees::View {
+    let metre = surfaces::METRE;
+    let inner = (s.walls[room_shell::WINDOW_WALL].a.y - s.table.y) * metre;
+    var u0: f32 = 1e9;
+    var u1: f32 = -1e9;
+    var y0: f32 = 1e9;
+    var y1: f32 = -1e9;
+    for k in s.count {
+        let o = s.openings[k];
+        guard o.kind == room_shell::WINDOW else { continue; }
+        let u = (s.table.x - o.mid) * metre;
+        u0 = min(u0, u - 0.5 * o.width * metre);
+        u1 = max(u1, u + 0.5 * o.width * metre);
+        y0 = min(y0, surfaces::FLOOR_Y + o.sill * metre);
+        y1 = max(y1, surfaces::FLOOR_Y + room_shell::head_at(o, 0.0) * metre);
+    }
+    let shear = tree_shear(r);
+    var v = tree_view_over(shell_tree(r), u0 - shear.x * inner, u1 - shear.x * inner, y0 - shear.y * inner,
+                           y1 - shear.y * inner, trees::SHELL_W, trees::SHELL_H);
+    v.wood = SHELL_LIMBS;
+    return v;
+}
+
+// A point of the library's plan (metres: x along the window wall, y toward it, z up from
+// the floor) in the shell's tree's frame (trees.goose): the board's middle falls on the
+// map's origin, the frame's z 0 the plane shell_tree's trunk stood in.
+fn plan_to_tree(r: Room, s: room_shell::Shell, p: float3) -> float3 {
+    let metre = surfaces::METRE;
+    let shear = tree_shear(r);
+    let board = -(r.window.x + shell_tree(r).foliage.w);
+    let u = (s.table.x - p.x) * metre;
+    let y = surfaces::FLOOR_Y + p.z * metre;
+    return float3 { u + shear.x * board, y + shear.y * board, board + (p.y - s.table.y) * metre };
+}
+
+// The old maple outside the library (task 107's T1, library-home-01 and the Tartu
+// photographs): about 22 m tall, its trunk a metre thick, standing WHOLE_OUT beyond the
+// window wall's outer face at WHOLE_ALONG on the plan's x, its crown about 20 m across,
+// reaching a little toward the sun, its near side kept off the house. The garden lies
+// WHOLE_PLINTH under the library's floor.
+let WHOLE_ALONG:  f32 = 4.1;
+let WHOLE_OUT:    f32 = 6.0;
+let WHOLE_PLINTH: f32 = 0.9;
+
+fn whole_tree(r: Room, s: room_shell::Shell) -> trees::Whole {
+    let metre = surfaces::METRE;
+    let outer = s.walls[room_shell::WINDOW_WALL].a.y + s.walls[room_shell::WINDOW_WALL].thick;
+    let foot = plan_to_tree(r, s, float3 { WHOLE_ALONG, outer + WHOLE_OUT, -WHOLE_PLINTH });
+    let house = plan_to_tree(r, s, float3 { WHOLE_ALONG, outer, 0.0 }).z;
+    let toward_sun: f32 = if tree_shear(r).x < 0.0 { -1.0 } else { 1.0 };
+    return trees::Whole {
+        seed:   r.tree.y,
+        foot:   foot,
+        height: 22.0 * metre,
+        girth:  0.5 * metre,
+        fork:   3.4 * metre,
+        crown:  float4 { 10.0 * metre, 9.5 * metre, 9.0 * metre, (WHOLE_OUT - 0.4) * metre },
+        middle: float3 { toward_sun * 1.5 * metre, 12.5 * metre, 0.5 * metre },
+        house:  house,
+        leaf:   0.11 * metre,
+        leafy:  1.0,
+        autumn: 1.2,
+        shell:  2.6 * metre,
+    };
+}
+
+// Where the old maple is seen from: eyes over the library's floor, seated and standing,
+// and the windows' outer openings.
+fn whole_sight(r: Room, s: room_shell::Shell) -> trees::Sight {
+    var sight = trees::Sight { .. };
+    let wall = s.walls[room_shell::WINDOW_WALL];
+    let outer = wall.a.y + wall.thick;
+    sight.plane = plan_to_tree(r, s, float3 { 0.0, outer, 0.0 }).z;
+    let xs: f32[5] = [0.6, 2.5, 4.5, 6.5, 8.4];
+    let ys: f32[4] = [0.6, 2.5, 4.5, 6.4];
+    let hs: f32[2] = [1.1, 1.75];
+    for x in xs { for y in ys { for z in hs { sight.eyes.push(plan_to_tree(r, s, float3 { x, y, z })); } } }
+    for k in s.count {
+        let o = s.openings[k];
+        guard o.kind == room_shell::WINDOW && o.wall == room_shell::WINDOW_WALL else { continue; }
+        let half = 0.5 * o.glass.w;
+        let a = plan_to_tree(r, s, float3 { o.mid - half, outer, o.sill });
+        let b = plan_to_tree(r, s, float3 { o.mid + half, outer, room_shell::head_at(o, 0.0) });
+        sight.windows.push(float4 { min(a.x, b.x), max(a.x, b.x), min(a.y, b.y), max(a.y, b.y) });
+    }
+    return sight;
+}
+
 // The tree's make (trees::Spec) from the room's tree, crown and foliage.
 fn tree_spec(r: Room) -> trees::Spec {
     return trees::Spec { r.tree.y, r.tree.z, r.tree.w, r.foliage.x, r.foliage.y, r.foliage.z,

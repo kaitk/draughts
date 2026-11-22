@@ -50,6 +50,7 @@ SLOW = {
     "ai/blunders",      # 11, 2
     "ai/levels",        # 9, 2
     "puzzles/library",  # 9, 2
+    "model3d/tree_whole",  # 5, 1
 }
 # What `goose --multi-test` ends each file's part of stdout and stderr with.
 MULTIMARK = "==== goose --multi-test: exit"
