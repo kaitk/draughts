@@ -1178,6 +1178,40 @@ to be is in tasks 042, 059, 071, 081, and 086.
     view 10.95 before, 11.08 with every step at 0, 11.94-11.95 with all; the table-window
     view 4.58, 4.75, 5.04-5.05; at the 4.1 MP budget the room 8.28-8.32 and 9.04-9.05,
     the table-window view 3.59 and 3.94 (each step's share in task 110).
+- The board and the table in the room take the sun through the shell's own windows
+  (2026-11-22, task 107, builder 29, `build/notes/builder-29/`), as the room's surfaces do
+  (`LIGHT_FN`'s `shell_open`; `shaders::LIT_SHELL`, `TABLE_SHELL`). Before, they took the
+  game's window, whose opening stands on the line from the board's middle to the sun: a
+  sun turned 30° across the window wall lit the board through the pier beside the
+  window, and at today's 20° the board, behind the casements' frame, was still lit. The
+  game keeps its window; only the room's pipelines changed (the HDR lit and table ones, the
+  room's table and its mirror, and an 8-bit `lit_shell` made when the shell shows), so the
+  game's shot is unchanged in both renderers.
+  - The box window bounds the sun's angle: its two casements 0.2 m apart in a 0.8 m wall
+    narrow an oblique beam, so the board at the table as made is lit within about ±10°
+    across the wall, to about 25° with the table moved along the wall, hardly past that.
+    The sun's turn and height and the table's place are the user's choice from six options
+    the light tuner's `--sun-check` verified (`--table-at` moves the table); none is the
+    default yet.
+  - Costs, headless 3024 × 1890 native on an M1 Pro, the main pass, two rounds: the
+    table-window view (option 2's sun, the dust off) 8.18-8.28 to 8.84-8.90 ms, `shell_open`
+    on the board's and the table's pixels; the room view unchanged within the rounds'
+    spread (11.73-11.90 to 11.87-11.90).
+- The table-window view's dust is flakes and lint in the sunbeam (2026-11-22, task 107,
+  builder 29), replacing builder 27's round points in a box as the default: irregular
+  flakes and short fibres a pixel or a few across at 3024 × 1890, each tumbling slowly on an
+  axis of its own and glinting as a face (a fibre's length) turns square to the sun and the
+  eye, dim between; placed in the beam's own volume over the table round the board (sheared
+  as the sun comes in), lit only by the sun straight through the glass, never by the shade's
+  floor or the lace's scattered light, and not drawn where unlit. Three densities (40, 90,
+  220 motes); the old round points stay a switch away. Measured as above: 0.0-0.1 ms over
+  the dust off whatever the density, the old points 0.04-0.19.
+  - The beam's haze, an experiment off by default (2026-11-22; it relaxes the "no god
+    rays" rule above for this one switch only): 900 faint, even sprites 8 cm across in the
+    motes' volume, lit as they are, so a slight in-scatter shows the beam with the bars'
+    stripes. It costs 0.8 ms of the main pass (9.72-9.74 against 8.90-8.98), the sprites'
+    overdraw; a strength of 0.0004 is subtle, 0.001 reads as smoke. A ray-marched in-scatter
+    over the beam's volume would be the alternative if it is kept.
 - The depth of field's groundwork for the scenic views (2026-11-22, task 111; the plan
   `build/notes/bokeh/`'s B0 to B2, built by builder 28, `build/notes/builder-28/`): one lens
   for every pass that will blur, the scenic views drawn in HDR, and a sampled depth of the

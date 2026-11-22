@@ -265,6 +265,27 @@ pieces; the design boards still set the layout, glass, and controls.
   `parts.sh EXE TAG [NAMES]`, `w0.sh EXE`, `cmp.sh A B`, `rounds.sh`, `page.py`.
   The film and the scratches show only within about 35° of the sun: judge them at
   `--plan-eye 4.5,6.6,1.6 --plan-at 4.84,7.54,1.93 --fov 30`, native (`--scene-scale 1`).
+- The sun through the shell's windows (task 107, builder 29, `build/notes/builder-29/`): the
+  board and the table in the room take the sun through the shell's own windows
+  (`shaders::LIT_SHELL`, `TABLE_SHELL`), so a turn of `--wall` that puts the board behind a
+  pier shades it. `--sun-check` prints, from the board's middle and corners and a ring on the
+  table, where the ray toward the sun leaves the room (a window's glass, a bar, the sash or
+  frame, or the wall) and what the game's window said; `--table-at X,Y` moves the games
+  table in the plan (the table-window view's chair with it). The box window's two casements,
+  0.2 m apart, and the 0.8 m wall cut an oblique beam narrow: past about 12° across the wall
+  the board is lit only with the table moved along the wall, and past about 25° hardly at
+  all; the board's 0.37 m diagonal equals one sash's light, so a stile's shadow often
+  crosses it. `build/b29/sweep.py` runs the same check in Python over turns, heights and
+  places (the board turns with the room: its corners at 105 − turn degrees in the plan);
+  `options.sh EXE TAG` shoots the six verified options. The tree's dapple falls on the board
+  in most of them; `--leaves noise` takes the tree out of the sun's path to judge the beam.
+- The dust in the beam (builder 29): `--dust motes|motes-few|motes-many` (the default
+  motes) draws flakes and lint tumbling in the sunbeam's own volume over the table
+  (`light_tune`'s `beam_box`, BEAM_*), lit only by the direct sun; `sparse|dense|coarse` are
+  the old round points in the box. `--mote-glint EXP`, `--mote-fibres SHARE`, `--beam-haze K`
+  (an experiment: 900 faint sprites in the same volume, 0.0004 a subtle haze, off by
+  default). The motes show at native size only: shoot `build/b29/dust.sh EXE TAG` at 3024 ×
+  1890 and diff against `--dust off` (`-alpha off -compose difference`) to find them.
 - HDR and the lens (task 111, builder 28, `build/notes/builder-28/`): the tuner draws the
   scenic views in HDR by default; X or `--hdr off` gives the 8-bit picture to compare
   against, and only the shell with its view out, 4× MSAA and no room view draws HDR (the

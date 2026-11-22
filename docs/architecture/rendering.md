@@ -841,11 +841,20 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   its width widened by the pixel's footprint), within about 14° of the sun. Both take the
   sun through the outer bars and the leaves at the glass, add light over what the glass
   shows, and are skipped past 35° from the sun.
+- **The board and the table in the room** take the sun through the shell's windows as the
+  room's surfaces do (`shell_open`): their room pipelines are compiled with `SHELL_WINDOWS`
+  and read the shell's fields and the lace's mask from a block of their own
+  (`shaders::LIT_SHELL`, `TABLE_SHELL`, `render3d::ShellBlock`). Without the shell they take
+  the game's window, as the game does.
 - **Dust in the sunbeam** (`DUST_VERT`, compiled with `SHELL_WINDOWS`): in the light
-  tuner's table-window view only, motes in a box 1.4 m square over the games table, from
-  the board's level 0.5 m up, each lit by `shell_open` at its place, so only those in the
-  beam show and the bars, the lace and the leaves shadow them; a pixel or two across, in
-  focus. The tuner's `--dust sparse|dense|coarse` (D) picks how many and how large.
+  tuner's table-window view only, flakes and short fibres of lint, a pixel or a few across,
+  in the sunbeam's own volume over the games table (a box sheared along the beam, 1.0 m
+  along the wall, 0.6 m up from the top, 0.95 m along the beam round the board), each lit
+  by `shell_open`'s direct sun at its place and not drawn where none reaches. Each tumbles
+  about an axis of its own, so it glints as a face turns to the sun and the eye, then
+  dims. `--dust motes|motes-few|motes-many` (90, 40, 220) pick the density, `sparse|dense|
+  coarse` the round points in a box as before (D cycles them); `--beam-haze K` adds faint
+  even sprites in the same volume, an experiment, off.
 - The light tuner's Z switches all of these off and back, Y the hang (0.15 or 0), D the
   dust; `--lace-hang`, `--lace-sun`, `--lace-scatter`, `--sun-veil`, `--glass-film`,
   `--scratches` set each, 0 off, and `--view table-window` is the view from a chair behind

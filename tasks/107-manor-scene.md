@@ -351,6 +351,19 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       nothing in all (the main pass 11.93 to 11.63 ms at 3024 × 1890, the tonemap 0.45 after
       it), the depth 0.19; the game unchanged. Open: the lace and the glass's film read
       stronger in HDR, to retune
+- [x] The sun through a real window (2026-11-22, builder 29, `build/notes/builder-29/`):
+      the board and the table lit through the shell's windows, not the game's window
+      that followed the sun (the 30° sun had lit the board through the pier). Six sun and
+      table options verified by `--sun-check` (`--table-at`); the box window allows about
+      ±10° across the wall with the table as made, 25° with it moved. Main pass at 3024 ×
+      1890 native, two rounds: table-window view 8.18-8.28 to 8.84-8.90 ms, room view
+      11.73-11.90 to 11.87-11.90. Open: the user's pick (sun, height, table), then made the
+      default; the tree's dapple over the board in most options
+- [x] Dust as real dust (builder 29): tumbling flakes and lint in the beam's volume, lit by
+      the direct sun only (`--dust motes`, `motes-few`, `motes-many`; the round points kept).
+      Main pass 8.84-8.90 with the dust off, 8.90-8.98 motes, 8.86-8.89 few, 8.90-8.91 many,
+      8.88-9.09 the old points; the beam's haze (`--beam-haze 0.0004`, off) 9.72-9.74.
+      Open: density and brightness from the user's eye; whether the haze stays
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

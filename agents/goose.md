@@ -321,7 +321,9 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   (`render3d_gpu::depth_pass`), and an HDR resolve is the hardware's box in linear light.
 - The release's gfx module lacks `format_supported` (the fork has it): call it as an
   `extern fn ... = "gs_gfx_format_supported"` with `gfx_fork.c`'s weak stand-in, which says
-  no (`render3d_gpu::hdr_format`). gfx has no query for a format's sample counts.
+  no (`render3d_gpu::hdr_format`). gfx has no query for a format's sample counts; a fork
+  branch `samples-supported` (`gs_gfx_samples_supported`) exists only locally in
+  `build/goose_gfx-focus` (2026-11-22), not pushed or in the submodule: don't use it yet.
 - The dust's vertex stage reads `shell_open` (`SHELL_WINDOWS`): its own block carries the
   fields of `ROOM_HEAD`'s Surfaces that `LIGHT_FN` reads (`axes`, `tile`, `shell*`,
   `window_view`) by the same names, and its storage buffer's binding follows the samplers
