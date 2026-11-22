@@ -43,7 +43,7 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 - Release: 096 ngfx shipped on Mac, iOS and Windows as 0.9.1, 029 Google Play (closed test running), 046 the App Store (in review), 036 the
   announcement after the Play release, 075 the Linux build, 064 Steam (low priority,
   scoped only; the board under the mouse first).
-- Content and play: 038 the badges' final silhouettes; 097 testers' puzzle feedback (kings in
+- Content and play: 112 offering a draw and giving up; 038 the badges' final silhouettes; 097 testers' puzzle feedback (kings in
   the solver, take puzzles, refilling the libraries).
 - Menus and layout: 072 keyboard and controller focus; 098 How to play within reach while learning.
 - Small fixes: 091, built; the mouse drag on Windows left to check.
