@@ -105,8 +105,6 @@
 //       [--fps-seconds S (print the counter each half second, quit after S)]
 //       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
 //       [--planar-size K (the floor mirror's scale, 2 half) --planar-wide TEXELS (its least width, 1600)]
-//       [--floor-scratches cells|tile|off --floor-door-gaps on|off --floor-sun pixel|map --sun-map-cm CM (1)
-//       --floor-table nine|four (the floor's switches, HDR and gfx only, build/notes/floor-perf/options.html)]
 //       [--scene-scale K (the 3D scene at K of the screen's side; 1, native, the default; 0 its budget)]
 //       [--scene-pixels MP (the budget, render3d::HIGH_SCENE_PIXELS)] [--upscale cubic|bilinear]
 //       [--walk-frames DIR --walk-path strafe|turn|forward --walk-count N --walk-turn PX (a walk from --plan-eye
@@ -186,11 +184,6 @@ let LENS_VIEWS = ["off", "depth", "coc"];
 // What the floor's mirror shows (render3d::planar_view): the room, the floor's reflection
 // alone, the mirror's map over the whole picture, its distances.
 let PLANAR_VIEWS = ["off", "floor", "map", "distance"];
-// The floor's switches (render3d::floor_steps, build/notes/floor-perf/options.html).
-let FLOOR_SCRATCHES = ["cells", "tile", "off"];
-let FLOOR_GAPS = ["on", "off"];
-let FLOOR_SUN = ["pixel", "map"];
-let FLOOR_TABLE = ["nine", "four"];
 // The 3D scene's scales N cycles (render3d::scene_size_of): 0 the high tier's budget of
 // pixels (--scene-pixels, render3d::HIGH_SCENE_PIXELS), else that share of the screen's
 // side; and its upscale (M).
@@ -1238,7 +1231,7 @@ fn main() {
             "",
             embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            "", "", "", "", "", ""];
+            "", "", "", "", ""];
         render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
                                       pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
     }
@@ -1272,11 +1265,6 @@ fn main() {
                                                                    shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
                                                                    shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
                                                                    shaders::ROOM_FRAG);
-    // The floor with the tuner's switches (render3d::floor_steps), into the HDR target only.
-    render3d::tuned_frags[render3d::TUNED_FLOOR_HDR] = embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::FLOOR_STEPS,
-                                                                    shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME,
-                                                                    shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN,
-                                                                    shaders::TONE_FN, shaders::ROOM_FRAG);
     render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
     render3d::set_aa(r3d, g, render3d::AA);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
@@ -1354,11 +1342,6 @@ fn main() {
     var lace_hang = number(argv, "--lace-hang", room_shell::LACE_HANG);
     var dust_way = pick(argv, "--dust", DUST_WAYS, DUST_POINTS);
     var shown_dust = -1;
-    var floor_scratches = pick(argv, "--floor-scratches", FLOOR_SCRATCHES, 0);
-    var floor_gaps = pick(argv, "--floor-door-gaps", FLOOR_GAPS, 0);
-    var floor_sun = pick(argv, "--floor-sun", FLOOR_SUN, 0);
-    var floor_table = pick(argv, "--floor-table", FLOOR_TABLE, 0);
-    render3d::sun_map_cm = number(argv, "--sun-map-cm", 1.0);
     render3d::window_view = float4 { number(argv, "--lace-sun", 1.0), number(argv, "--lace-scatter", 1.0), number(argv, "--glass-film", 1.0),
                                      number(argv, "--scratches", 1.0) };
     render3d::sun_veil = number(argv, "--sun-veil", 1.0);
@@ -1736,11 +1719,6 @@ fn main() {
                 slider(c, "Boards' wax", room.planar.z, 0.0, 1.0);
                 slider(c, "Sky in mirror", room.planar.w, 1.0, 12.0);
                 choice(c, "Mirror view", render3d::planar_view, PLANAR_VIEWS);
-                choice(c, "Floor's scratches", floor_scratches, FLOOR_SCRATCHES);
-                choice(c, "Door gaps in the wax", floor_gaps, FLOOR_GAPS);
-                choice(c, "Sun on the floor", floor_sun, FLOOR_SUN);
-                if floor_sun == 1 && g.sun_map.id != 0 { note(c, str("  its map ", g.sun_map_size.x, " × ", g.sun_map_size.y, " texels")); }
-                choice(c, "Table's shadow taps", floor_table, FLOOR_TABLE);
                 if g.light_ms > 0.0 {
                     note(c, str("probes baked in ", floor(g.light_ms + 0.5) as i64, " ms, ", g.light_patches, " sun patches"));
                 }
@@ -2252,7 +2230,6 @@ fn main() {
         // ours (render3d's plain fade), not the season's photograph; the fade gives the
         // board's ambient either way.
         g.plain = room_on && shell_on;
-        render3d::floor_steps = float4 { floor_scratches, 1 - floor_gaps, floor_sun, floor_table };
         g.outside_on = outside_on;
         g.fade = [SKY_TOP, SKY_LOW, SKY_LIGHT];
         // A preset's settings once when it is picked, the sliders free after; its box in the

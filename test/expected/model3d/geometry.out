@@ -11,3 +11,4 @@ TABLE_TOP: mesh -0.703, shaders -0.703
 TABLE_Z: mesh -4.5, shaders -4.5
 FLOOR_STRIPS: mesh 20.0, shaders 20.0
 FLOOR_NOISE_SIDE: mesh 1024.0, shaders 1024.0
+SCRATCH_TILE: mesh 48.0, shaders 48.0

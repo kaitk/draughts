@@ -626,6 +626,11 @@ board's light:
   standard and high tiers where the SSAO's map is drawn: a 12-step ray 10 cm toward the
   sun over that map of positions stops 0.8 of the sun behind what stands nearer, so the
   architraves, the caps and the mouldings cast their thin shadows. The floor has none.
+- **The floor's wear** (`ROOM_FRAG`'s floor): its slow noises, the paths' patchiness and
+  the wax's thinner patches, from a 1024² RG8 texture a world unit a texel
+  (`surfaces::floor_noise`), and its scratches from a 1.57 m repeating tile, 2048² R8 with its
+  mips (`surfaces::scratch_tile`), both made with the room's bake; the darker wax runs along
+  all four walls, doorways too.
 - **The panels** (`surfaces::panel_ring`): their rings shade as their profiles are, smooth
   where they turn by less than 32°, a step under 5 mm wide shaded from the facet before it
   to the one after, the groove's occlusion a thin dip in its first 4 mm.

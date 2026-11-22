@@ -340,9 +340,7 @@ struct Gpu {
     floor_albedo: Texture,
     floor_normal: Texture,
     floor_noise:  Texture,          // the floor's slow noises (surfaces::floor_noise)
-    sun_map:      Texture,          // the light tuner's: the sun on the floor's plan, R16F (floor_steps)
-    sun_map_size: int2,
-    scratch_tile: Texture,          // the light tuner's: the scratches' tile, R8 with its mips
+    scratch_tile: Texture,          // the floor's scratches' tile, R8 with its mips (surfaces::scratch_tile)
     wall_albedo:  Texture,
     wall_normal:  Texture,
     paper_mask:   Texture,          // the wallpaper's mask, R8 with its mips (surfaces::PAPER_SIDE)
@@ -532,7 +530,6 @@ struct HdrPipelines {
     pieces:      i32,
     paint_steps: bool,
     sill_steps:  bool,
-    floor_steps: bool,
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -848,7 +845,7 @@ fn group_end(g: Gpu&, k: i64) -> i64 { if k + 1 < ROOM_GROUPS { g.room_from[k + 
 // (shaders::ROOM_HEAD): the tree's and the lace's maps, the light's, the group's own, the
 // screen's maps where the pipeline has them (ssao), the mirror where the floor sees it.
 let GROUP_GLASS = 5;
-let ROOM_TEXTURES = 13;
+let ROOM_TEXTURES = 12;
 struct RoomTextures { tex: Texture[ROOM_TEXTURES], smp: Sampler[ROOM_TEXTURES], count: i64 }
 fn add_texture(t: RoomTextures&, tex: Texture, smp: Sampler) {
     t.tex[t.count] = tex;
@@ -868,6 +865,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures 
         add_texture(t, g.floor_albedo, g.aniso);
         add_texture(t, g.floor_normal, g.aniso);
         add_texture(t, g.floor_noise, g.linear);
+        add_texture(t, g.scratch_tile, g.aniso);
     } else if group == GROUP_WALLS {
         add_texture(t, g.wall_albedo, g.aniso);
         add_texture(t, g.wall_normal, g.aniso);
@@ -886,10 +884,6 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures 
         if group != GROUP_GLASS { add_texture(t, pre_place_or_stand_in(g), g.linear); }
     }
     if planar { add_texture(t, g.planar_map, g.planar_sampler); }
-    if group == GROUP_FLOOR && planar && g.hdr && floor_steps_on() {
-        add_texture(t, if g.sun_map.id != 0 { g.sun_map } else { g.crown_map }, g.linear);
-        add_texture(t, if g.scratch_tile.id != 0 { g.scratch_tile } else { g.crown_map }, g.aniso);
-    }
     return t;
 }
 
@@ -961,6 +955,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.floor_normal = baked(o, side, side, RGBA8);
         o.gpu_flush();
         put_floor_noise(o, g);
+        put_scratch_tile(o, g);
         g.wall_albedo = baked(o, side, side, RGBA8_SRGB);
         g.wall_normal = baked(o, side, side, RGBA8);
         let finish = g.finish;
@@ -1070,7 +1065,7 @@ fn corner_planes(g: Gpu&) -> corner_map::Planes {
 // in the shell.
 fn corners_or_stand_in(g: Gpu&) -> Texture { if g.corner_map.id != 0 { g.corner_map } else { g.crown_map } }
 
-// The light tuner's tile of the floor's scratches (floor_steps) put on the GPU with its mips.
+// The floor's scratches' tile put on the GPU with its mips, once with the room's bake.
 fn put_scratch_tile<O>(o: O&, g: Gpu&) {
     var px: u8[>..] = [];
     surfaces::scratch_tile(px);
@@ -1350,7 +1345,9 @@ fn room_bytes(g: Gpu&) -> i64 {
     let relief = if g.paint_tile.id != 0 { room_shell::relief_bytes() } else { 0 };
     let stone = if g.stone_tile.id != 0 { room_shell::stone_bytes() } else { 0 };
     let glass = if g.glass_tile.id != 0 { glass_tile::bytes() } else { 0 };
-    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass;
+    let floor = if g.floor_noise.id != 0 { 2 * surfaces::FLOOR_NOISE_SIDE * surfaces::FLOOR_NOISE_SIDE } else { 0 };
+    let scratches = if g.scratch_tile.id != 0 { texels_with_mips(surfaces::SCRATCH_SIDE) } else { 0 };
+    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass + floor + scratches;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the
@@ -1403,8 +1400,6 @@ struct SurfacesBlock {
     sill:          float4,
     sill_steps:    float4[2],
     window_view:   float4,
-    floor_steps:   float4,
-    floor_map:     float4,
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
@@ -1447,7 +1442,6 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     let near = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x, s.walls[room_shell::WINDOW_WALL].a.y });
     let far = room_shell::room_of(s, float2 { s.walls[room_shell::STOVE_WALL].a.x, s.walls[room_shell::HALL_WALL].a.y });
     b.room_box = float4 { near.x, far.x, near.y, far.y };
-    b.floor_map = floor_map_of(b.room_box);
     b.corners = float4 { r.corners.x, r.corners.y * metre, 0.0, 0.0 };
     // The doors, for the reflections' box and the floor before them.
     var doors = float4_0;
@@ -1495,7 +1489,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
                     float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paint_steps, k.sill,
-                    sill_steps, window_view, floor_steps, float4_0,
+                    sill_steps, window_view,
                     table_map_shown(g),
                     books::COVER, books::LABEL }
 }
@@ -2339,10 +2333,6 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
         let clip, plain = mirrored_frames(g);
         o.planar_pass(g, size, clip, plain, planar_resolve_of(g, clip));
     }
-    if hdr && floor_steps_on() && room_shown(g) && g.room_shell {
-        if floor_steps.x > 0.5 && floor_steps.x < 1.5 && g.scratch_tile.id == 0 { put_scratch_tile(o, g); }
-        o.floor_steps_pass(g);
-    }
     let shown = if glowing { g.image } else { target };
     // The room baked by now (room_surfaces): the board's pipelines in its shell.
     if !hdr && board_in_shell(g) { o.make_lit_shell(g); }
@@ -2622,31 +2612,6 @@ var sun_veil: f32 = 1.0;
 // The light tuner's park on the ground (--park, model3d::view_out's lawn and cards, its own
 // shaders in TUNED_OUTSIDE and TUNED_OUTSIDE_HDR): the view out's mesh carries them.
 var park_ground = false;
-// The light tuner's switches of the floor (its own HDR shader, shaders::FLOOR_STEPS;
-// build/notes/floor-perf/options.html): x the scratches (0 worked out a pixel, 1 a repeating
-// tile, 2 none), y the door gaps in the walls' darker wax (1 on), z the sun through the
-// windows (0 a pixel, 1 from a map of the floor's plan drawn each frame, sun_map_cm
-// centimetres a texel), w the table's shadow (0 nine taps, 1 four). While all are as made,
-// the app's shader draws. The gfx renderer's only.
-var floor_steps = float4 { 0.0, 1.0, 0.0, 0.0 };
-var sun_map_cm: f32 = 1.0;
-fn floor_steps_on() -> bool { floor_steps.x > 0.5 || floor_steps.y < 0.5 || floor_steps.z > 0.5 || floor_steps.w > 0.5 }
-// The sun map's box in the room's frame, the shell's walls and half a metre past them: its
-// middle in x and y (u, v), one over its half sides in z and w.
-fn floor_map_of(walls: float4) -> float4 {
-    let m = 0.5 * surfaces::METRE;
-    let u0 = min(walls.x, walls.y) - m;
-    let u1 = max(walls.x, walls.y) + m;
-    let v0 = min(walls.z, walls.w) - m;
-    let v1 = max(walls.z, walls.w) + m;
-    return float4 { 0.5 * (u0 + u1), 0.5 * (v0 + v1), 2.0 / (u1 - u0), 2.0 / (v1 - v0) };
-}
-// Its size in texels at sun_map_cm.
-fn sun_map_size_of(map: float4) -> int2 {
-    let texel = max(sun_map_cm, 0.1) * 0.01 * surfaces::METRE;
-    return int2 { (2.0 / map.z / texel) as i32 + 1, (2.0 / map.w / texel) as i32 + 1 };
-}
-
 fn sill_steps_on() -> bool {
     let a = sill_steps[0];
     return a.x < 0.5 || a.y < 0.5 || a.z < 0.5 || a.w < 0.5 || sill_steps[1].x < 0.5 || sill_steps[1].y > 0.5;

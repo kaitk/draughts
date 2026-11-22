@@ -2234,21 +2234,16 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 6) uniform sampler2D floor_normal;
     // Its slow noises (surfaces::floor_noise): the wear's patchiness, the wax's patches.
     layout(set = 2, binding = 7) uniform sampler2D floor_noise;
+    // Its scratches' repeating tile (surfaces::scratch_tile), R8 with its mips.
+    layout(set = 2, binding = 8) uniform sampler2D scratch_tile;
     #ifndef NO_SSAO
-    layout(set = 2, binding = 8) uniform sampler2D ssao_map;
-    layout(set = 2, binding = 9) uniform sampler2D pre_place;
+    layout(set = 2, binding = 9) uniform sampler2D ssao_map;
+    layout(set = 2, binding = 10) uniform sampler2D pre_place;
     #endif
     #ifdef PLANAR_FLOOR
     // The room mirrored in the floor (render3d::planar_pass): its light in the room's units,
     // a the distance from the floor to what it shows along the reflection, with its mips.
-    layout(set = 2, binding = 10) uniform sampler2D planar_map;
-    #ifdef FLOOR_STEPS
-    // The light tuner's switches (render3d::floor_steps): the sun through the windows on
-    // the floor, drawn each frame over the floor's plan (render3d::floor_map_of), and the
-    // scratches as a repeating tile (surfaces::scratch_tile).
-    layout(set = 2, binding = 11) uniform sampler2D sun_map;
-    layout(set = 2, binding = 12) uniform sampler2D scratch_tile;
-    #endif
+    layout(set = 2, binding = 11) uniform sampler2D planar_map;
     #endif
     #endif
     #ifdef ROOM_WALLS
@@ -2400,8 +2395,6 @@ let ROOM_HEAD = """
         vec4 sill;
         vec4 sill_steps[2];
         vec4 window_view;
-        vec4 floor_steps;
-        vec4 floor_map;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -2943,6 +2936,7 @@ let ROOM_FRAG = """
     const float TABLE_Z = -4.5;
     const float FLOOR_STRIPS = 20.0;
     const float FLOOR_NOISE_SIDE = 1024.0;
+    const float SCRATCH_TILE = 48.0;
     // The table's base (mesh::table_base): its column's mean radius, and a leg's curve
     // from its root over the knee to the scroll's foot, out from the axis and up from the
     // floor (world units, mesh::LEG's and SCROLL_MID's), its half thickness.
@@ -3047,27 +3041,6 @@ let ROOM_FRAG = """
             }
         }
         return pk;
-    }
-
-    // Scratches on the floor round uv: short straight lines, most along the room (the way
-    // people walk), each a hairline; how much of the pixel they cover.
-    float scratches(vec2 uv, float fp) {
-        const float CELL = 1.5;
-        vec2 id0 = floor(uv / CELL);
-        float cover = 0.0;
-        for (int i = 0; i < 9; i++) {
-            vec2 id = id0 + vec2(float(i % 3) - 1.0, float(i / 3) - 1.0);
-            vec2 c = (id + vec2(h12(id + 0.3), h12(id + 5.9))) * CELL;
-            // A cell's scratch is at most 0.9 long either side of its middle: none here.
-            if (length(uv - c) > 0.91 + fp) continue;
-            float ang = (h12(id + 2.1) - 0.5) * (h12(id + 8.4) < 0.7 ? 0.8 : 3.1);
-            vec2 dir = vec2(cos(ang), sin(ang));
-            float half_len = 0.2 + 0.7 * h12(id + 4.6);
-            vec2 d = uv - c;
-            float t = clamp(dot(d, dir), -half_len, half_len);
-            cover = max(cover, line_cover(length(d - dir * t), 0.004 + 0.004 * h12(id + 6.2), fp));
-        }
-        return cover;
     }
 
     #ifndef ROOM_GLASS
@@ -3419,31 +3392,8 @@ let ROOM_FRAG = """
     }
     #endif
 
-    #ifdef FLOOR_STEPS
-    // The repeating tile of the scratches, world units (surfaces::SCRATCH_TILE).
-    const float SCRATCH_TILE = 48.0;
-    // The table's shadow from its map in four taps, each two texels apart: about a 4 × 4
-    // texel box where table_map_at takes 5 × 5 in nine.
-    float table_map_at4(vec3 q) {
-        if (table_map[3].x < 0.5) return 1.0;
-        vec4 h = vec4(q, 1.0);
-        vec3 s = vec3(dot(table_map[0], h), dot(table_map[1], h), dot(table_map[2], h));
-        if (abs(s.x) > 0.995 || abs(s.y) > 0.995) return 1.0;
-        vec2 texel = 1.0 / vec2(textureSize(table_depth, 0));
-        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5);
-        float z = min(s.z, 0.9999);
-        return 0.25 * (texture(table_depth, vec3(uv + vec2(-1.0, -1.0) * texel, z)) + texture(table_depth, vec3(uv + vec2(1.0, -1.0) * texel, z))
-                     + texture(table_depth, vec3(uv + vec2(-1.0, 1.0) * texel, z)) + texture(table_depth, vec3(uv + vec2(1.0, 1.0) * texel, z)));
-    }
-    #endif
-
     void main() {
         vec3 p = v_world;
-    #ifdef SUN_MAP
-        // The floor's plan: the sun through the windows at each texel (render3d::floor_steps).
-        result = vec4(window_open(p), 0.0, 0.0, 1.0);
-        return;
-    #endif
         vec3 ng = normalize(v_normal);
         float kind = floor(v_extra.y + 0.001);
         float own = v_extra.y - kind;
@@ -3581,21 +3531,9 @@ let ROOM_FRAG = """
                          * (1.0 - smoothstep(table.x + 0.4 * worn.z, table.x + worn.z, r));
             float lane = worn.w * (1.0 - smoothstep(6.0, 22.0, abs(uv.y - 0.55 * place.y)));
             float wall = max(1.0 - smoothstep(4.0, 20.0, place.y - uv.y), 1.0 - smoothstep(4.0, 16.0, uv.y + place.x));
-            // The shell's floor: darker along the nearest of its four walls, but not before
-            // a door's opening (door_open x the hall's, y the salon's), where people walk
-            // through; there the oak threshold stands 3 cm out.
-            vec2 door_open = vec2(0.0);
-            if (shell.x > 0.5) {
-                vec2 clear = room_doors.yw - room_heights.w * shell.w;
-                vec2 off_mid = abs(vec2(uv.x - room_doors.x, uv.y - room_doors.z)) - clear;
-                door_open = (1.0 - smoothstep(-0.1 * shell.w, 0.1 * shell.w, off_mid)) * step(0.001, room_doors.yw);
-            #ifdef FLOOR_STEPS
-                door_open *= floor_steps.y;
-            #endif
-                float hall = uv.y + place.x + door_open.x * 0.4 * shell.w;
-                float stove = shell_ends.x - uv.x + door_open.y * 0.4 * shell.w;
-                wall = 1.0 - smoothstep(4.0, 20.0, min(min(place.y - uv.y, uv.x - shell_ends.y), min(hall, stove)));
-            }
+            // The shell's floor: darker along the nearest of its four walls, doorways too.
+            float to_wall = min(min(place.y - uv.y, uv.x - shell_ends.y), min(uv.y + place.x, shell_ends.x - uv.x));
+            if (shell.x > 0.5) wall = 1.0 - smoothstep(4.0, 20.0, to_wall);
             // The slow noises, a world unit a texel round the board's middle.
             vec2 slow = textureLod(floor_noise, uv / FLOOR_NOISE_SIDE + 0.5, 0.0).rg;
             float patchy = slow.r;
@@ -3604,13 +3542,9 @@ let ROOM_FRAG = """
             rough += 0.25 * wear;
             albedo *= 1.0 - 0.22 * wall * worn.y;
             rough -= 0.08 * wall * worn.y;
-        #ifdef FLOOR_STEPS
-            float sc = floor_steps.x > 1.5 ? 0.0 : (floor_steps.x > 0.5 ? textureGrad(scratch_tile, uv / SCRATCH_TILE, dx / SCRATCH_TILE, dy / SCRATCH_TILE).r
-                                                                         : scratches(uv, fpw));
-            sc *= planks.w * (0.35 + wear);
-        #else
-            float sc = scratches(uv, fpw) * planks.w * (0.35 + wear);
-        #endif
+            // The scratches: short straight hairlines, most along the room (the way people
+            // walk), from their repeating tile (surfaces::scratch_tile).
+            float sc = textureGrad(scratch_tile, uv / SCRATCH_TILE, dx / SCRATCH_TILE, dy / SCRATCH_TILE).r * planks.w * (0.35 + wear);
             albedo *= 1.0 + 0.4 * sc;
             rough += 0.3 * sc;
             albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
@@ -3636,13 +3570,9 @@ let ROOM_FRAG = """
             if (table_map[3].x < 0.5) ao *= mix(0.55, 1.0, smoothstep(0.5625 * table.x, 1.375 * table.x, r));
             ao *= 1.0 - base_hides(p);
             if (shell.x > 0.5) {
-                // A dark contact line at the plinth's lip (5 cm out), before a door's opening
-                // at the threshold's nose (3 cm); the walls' broader shade is the corners' map's.
-                float others = min(place.y - uv.y, uv.x - shell_ends.y);
-                vec2 lip = mix(vec2(0.05), vec2(0.03), door_open) * shell.w;
-                vec2 near_door = vec2(uv.y + place.x, shell_ends.x - uv.x) - lip;
-                float past_lip = min(others - 0.05 * shell.w, min(near_door.x, near_door.y));
-                fine *= mix(0.4, 1.0, smoothstep(0.0, 0.015 * shell.w, past_lip));
+                // A dark contact line at the plinth's lip (5 cm out); the walls' broader shade
+                // is the corners' map's.
+                fine *= mix(0.4, 1.0, smoothstep(0.0, 0.015 * shell.w, to_wall - 0.05 * shell.w));
             } else {
                 ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
             }
@@ -3926,16 +3856,9 @@ let ROOM_FRAG = """
         // that takes the highlight; the shade's floor (window_light's, 1 - room.y where the
         // sun doesn't reach) stands for light the room throws back, so it takes the
         // occlusion as the room's other indirect light does.
-    #ifdef FLOOR_STEPS
-        float table_kept = table_map[3].x > 0.5 ? (floor_steps.w > 0.5 ? table_map_at4(p + ng * 0.06) : table_map_at(p + ng * 0.06)) : table_shade(p, l);
-        float kept = dot(ng, l) > 0.0 ? table_kept * case_shade(v_local, l) : 0.0;
-        vec2 map_at = vec2(0.5, -0.5) * ((v_local.xz - floor_map.xy) * floor_map.zw) + 0.5;
-        float open = kept > 0.0 ? (floor_steps.z > 0.5 ? textureLod(sun_map, map_at, 0.0).r : window_open(p)) : 0.0;
-    #else
         float table_kept = table_map[3].x > 0.5 ? table_map_at(p + ng * 0.06) : table_shade(p, l);
         float kept = dot(ng, l) > 0.0 ? table_kept * case_shade(v_local, l) : 0.0;
         float open = kept > 0.0 ? window_open(p) : 0.0;
-    #endif
     #ifndef NO_SSAO
     #ifndef ROOM_FLOOR
         // Not on the floor, where it showed nothing and cost the most.
@@ -4271,9 +4194,6 @@ let MIRROR_PASS = "#define LINEAR_OUT 1\n#define NO_SSAO 1\n";
 // their own made while one is on: their code cost the room 0.55 ms at 3024 × 1890 where
 // none was shown. With the screen's maps only, never in the mirror.
 let ROOM_VIEWS = "#define ROOM_VIEWS 1\n";
-// The light tuner's switches of the floor (render3d::floor_steps), and its sun map's pass.
-let FLOOR_STEPS = "#define FLOOR_STEPS 1\n";
-let SUN_MAP = "#define SUN_MAP 1\n";
 // The scenic views' HDR target (render3d::hdr_shown, the high tier's): the board, the
 // pieces, the table, the room, the view out and the motes write their exposed light with
 // only their tonemap's toe taken off (the room's on the luminance, the board's and the

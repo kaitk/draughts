@@ -360,6 +360,11 @@ What `src/app/think.goose` needed (`reference.md` section 22, spec 11.2):
 
 ## Speed
 
+- Rendering: what depends only on the sun belongs in the bake's one sun-derived block (planned,
+  `docs/decisions/rendering.md`, 2026-11-23), not worked out a pixel; add a field there and let
+  the shader skip what it proves empty. A shader branch round code that stays compiled saves
+  little on the Mac: the floor ran slower with several (task 107's floor notes).
+
 - Measure with `goose build` (-O2 C). `--stats` shows how many bounds checks were removed
   and `--bce-lines` which remain.
 - An `assert(xs.len == N)` before a loop drops its bounds checks; `%` by an array's

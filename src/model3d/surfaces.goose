@@ -632,7 +632,7 @@ fn floor_noise(out: u8[>..]&) {
     }
 }
 
-// The floor's scratches as a repeating tile, for the light tuner (render3d::floor_steps):
+// The floor's scratches as a repeating tile (shaders::ROOM_FRAG reads it):
 // SCRATCH_TILE world units square (1.57 m), the shader's scratches (shaders::ROOM_FRAG's
 // scratches, 1.5 units a cell, its hashes of the cell taken round the tile) drawn as how much
 // of each texel they cover, then the mips, each texel the mean of four, R8.

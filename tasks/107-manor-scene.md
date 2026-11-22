@@ -475,11 +475,12 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       call: the scratches (2.4 ms left, at most 11 levels), the door gaps (about 1 ms, up to
       31 levels at the doorways), the mirror's blur in three taps (0.3-0.5 ms, up to 23
       levels in the window's streaks), the sun on the floor at a lower rate (the 4.8 ms)
-      Those as the tuner's switches (HDR, gfx only; `build/notes/floor-perf/options.html`), the
-      frame straight down 13.15 ms today: the scratches as a 1.57 m tile 11.91, none 11.74, the
-      sun from a 1 cm map of the floor's plan (1001 × 801, its pass 0.12 ms) 11.23, all four 9.47;
-      the switched shader alone costs about 0.7 ms, so the door gaps off (13.77) and the table in
-      four taps (13.83) show slower. Open: the user's picks
+      The user's picks (2026-11-23, `build/notes/floor-perf/options.html`, tried as tuner
+      switches): the scratches from a 1.57 m repeating tile and no door gaps in the walls' wax,
+      both renderers; the sun from a floor map and the table in four taps not wanted. The frame
+      straight down 13.3-13.7 to 9.9 ms, room view 11.7 to 10.35, menu view 10.8 to 10.35
+      (3024 × 1890); against before, at most 11 levels straight down (the scratches), 31 at
+      the salon door. Next: the sun-derived bounds at the bake (planned, docs/decisions)
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

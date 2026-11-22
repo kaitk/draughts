@@ -1716,6 +1716,23 @@ to be is in tasks 042, 059, 071, 081, and 086.
   without it, and it cost 1.8 ms of a 17.4 ms frame looking straight down at the parquet
   (3024 × 1890). Replaces the contact shadows on the floor; the walls, the joinery and the
   metals keep theirs.
+- The floor's scratches come from a repeating tile, and its darker wax along the walls runs
+  across the doorways (2026-11-23, task 107, `build/notes/floor-perf/options.html`, the
+  user's picks): the tile is 1.57 m square (`surfaces::scratch_tile`, 2048² R8 with its mips,
+  made with the room's bake) with the same scratches, a little softer and repeating, which
+  the herringbone and the wear hide; the band and the plinth's contact line no longer stop
+  at a door. Looking straight down the frame went from 13.3-13.7 to 9.9 ms (3024 × 1890).
+  Replaces the scratches worked out in 3 × 3 cells a pixel and the gaps before the doors.
+- Planned, not built yet (2026-11-23, task 107, the user): what depends only on the sun is
+  worked out at the room's bake, in one place, and the shaders skip what the bake proves
+  empty. The sun moves only with a rebake (and the season's transitions will rebake), so
+  where each shadow can fall is known then: each window's opening projected along the sun
+  onto the floor and widened by the penumbra's largest spread (the only area `shell_open`
+  needs), the table's outline projected likewise and clipped to those (the table map's
+  square fitted to it). One function in `render3d` fills one sun-derived block from the sun
+  and the room; both renderers' passes only read it, and each new sun-only saving adds a
+  field and a line there. Measured first: looking straight down, the sun through the
+  windows cost about 4.5 ms and the table's nine taps 1.4 ms though no shadow of it showed.
 - The library's light retuned for a larger sun-to-shade range, with today's toe (2026-11-21,
   task 107; `rooms::AUTUMN`'s `shell_sun` and `baked`, `render3d::shade_fill`,
   `room_light::bounce_grey`, `room_light::BOUNCES`, `render3d::room_sun`,
