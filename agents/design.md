@@ -357,12 +357,19 @@ pieces; the design boards still set the layout, glass, and controls.
 - The sun in the view out and the HDR glow (builder 32, `build/notes/builder-32/`): in the
   less-turned menu view the sun sits at about (1255, 400) of a 3024 × 1890 shot, at the foot
   of the upper sash's left leaf; at wind time 0 a leaf covers it, so compare looks at
-  `--wind-time 6`. `--sun-look made|real|tight|concept|soft` (presets, each with its glow),
-  `--sun-disc R,LIMB,EDGE,BRIGHT`, `--sun-glare CORE,WIDTH,GLOW,WIDTH`, `--sun-tree
-  DENSITY,REACH,BACKLIGHT,SHARP` (today's tree seen from its shadow's map along the view),
-  `--glow STRENGTH,THRESHOLD,KNEE,REACH`, `--glow-levels N`; sliders in the Outside section.
-  The glow shows only with HDR; 8 bits keep the old window glow. Shots: `build/b32/looks.sh
-  EXE TAG`, costs `build/b32/rounds.sh A B`, `page.py`.
+  `--wind-time 6`; there the sun is mostly behind the upper sash's glazing bar (1-3%
+  open), which `--view-nudge 0.04,0,0` clears, but the user keeps the eye (2026-11-22: the
+  menu's cameras are a design step of their own). `--sun-look made|veil` (made the
+  default; veil builder 34's look b, the eye's veil, kept off to retry behind the new
+  maple; builder 32's other presets, looks a, c and d, the needles and the lace's lobe
+  toward the sun were removed 2026-11-22, in git before 8e504edf), `--sun-eye
+  STRENGTH,HALF_DEG,END_DEG,AMBER`, `--sun-disc R,LIMB,EDGE,BRIGHT`, `--sun-glare
+  CORE,WIDTH,GLOW,WIDTH`, `--sun-tree DENSITY,REACH,BACKLIGHT,SHARP` (today's tree seen from
+  its shadow's map along the view), `--glow STRENGTH,THRESHOLD,KNEE,REACH`, `--glow-levels
+  N`; sliders in the Outside section. The glow shows only with HDR; 8 bits keep the old
+  window glow. Shots: `build/b35/look.sh EXE TAG SIZE NAME "flags"..`, `cmp.sh A B`,
+  `game.sh`; costs `build/b35/rounds.sh` (`measure.sh` filters the trace by the exact
+  executable name, so the user's open tuner is left out).
 - The light tuner draws the 3D scene at the screen's native size by default (2026-11-22);
   `--scene-pixels 4.1` (`render3d::HIGH_SCENE_PIXELS`) or `--scene-scale K` draw it smaller
   and upscale it (N cycles native, 0.85, 0.75, 0.67 and the 4.1 MP cap; M the upscale). Builder 24's crops and sweeps:

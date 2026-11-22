@@ -444,6 +444,16 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       haze levels `--haze menu` (study) and `game` (dusted). The game's shot unchanged in
       both renderers. Open: the user's pick of the look; the placement's eye nudge; a tonemap
       variant without the glare's code (0.04-0.05 ms with the veil off)
+- [x] The sun's clean-up (2026-11-22, builder 35, `build/notes/builder-35/`): the user kept
+      the made sun with the HDR glow. The lace's lobe toward the sun, the needles, looks a, c
+      and d and builder 32's presets removed; look b kept as `--sun-look veil`, off by
+      default, to retry with the new maple. The eye stays (no nudge, the user). The default
+      shots byte-identical, the game's unchanged in both renderers. At 3024 × 1890 native, two
+      rounds: menu view main pass 10.00 / 9.97 ms to 9.98 / 10.11, the tonemap 0.43 / 0.43 to
+      0.39 / 0.38 (the needles' code was its extra cost), the frame's GPU sum 13.03 / 13.00 to
+      12.99 / 13.10; room view main pass 11.73 / 11.80 to 11.73 / 11.73, the tonemap 0.43 /
+      0.42 to 0.37 / 0.37; with the veil the menu's main pass 10.32 / 10.30, the tonemap
+      0.49 / 0.48
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

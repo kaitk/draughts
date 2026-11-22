@@ -1408,6 +1408,16 @@ to be is in tasks 042, 059, 071, 081, and 086.
   along the view (`OUTSIDE_FRAG`'s `tree_seen`, off in the made look), so the leaves over
   the sun are the ones whose shadows dapple the board, moved by the same wind; seen in the
   whole window it costs the menu view's main pass 0.35-0.45 ms.
+- The sun keeps the made look with builder 32's HDR glow (2026-11-22, task 107; replaces
+  the open pick above): the glow alone shows where the sun is. Builder 32's presets (real,
+  tight, concept, soft) are dropped, as are the sun research's looks
+  (`build/notes/window-view/refs/research-sun.html`, `build/notes/builder-34/`) a, c and d.
+  Look b, the eye's veil round the sun in the tonemap (`HDR_TONE_FRAG`, scaled by the sun's
+  open share), stays as a switch, off by default (the light tuner's `--sun-look veil`): it
+  looked overdone against open sky but may suit a sun behind thick leaves, to be tried
+  again with the new maple. Rejected: hairline needles out of the sun (look d), and a
+  narrow forward lobe in the lace toward the sun (the lace near the sun already glows in
+  the HDR glow without it).
 - The windows' sills are a Vasalemma-type limestone, drawn with a pipeline of their own
   (2026-11-22, task 107; `build/notes/paint-research/`'s sill section,
   `room_shell`'s `limestone.goose` and `shell_mesh::sill_slab`, `shaders::ROOM_SILL`,
