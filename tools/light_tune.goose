@@ -9,7 +9,8 @@
 // ceiling; S switches it for the panelled wall facing the window alone, model3d::surfaces,
 // as it was), V the views in turn (the board, then the room's: room, window, hall, stove,
 // VIEWS), U the view out of the shell's windows (model3d::view_out) or the plain sky behind
-// them as before, B the bookcases' books (model3d::books) in or out, H the windows' shutters, L the wallpaper's tile round a real paper's
+// them as before, B the bookcases' books (model3d::books) in or out, H the windows' shutters, J the
+// painted wood (quiet or old), I the sills (the limestone or the old stone), L the wallpaper's tile round a real paper's
 // 0.65 m, the default 0.9 m and style-01's 1.4 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
@@ -42,6 +43,8 @@
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
+//       [--paint quiet|old] [--paint-off fillets,tilt,dirt,joints,tile] [--paint-relief K]
+//       [--sill vasalemma|old] [--sill-off speckle,band,arris,nose,dust (the limestone's parts, each off)]
 //       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
 //       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
 //       [--dump-light PATH (the probes' atlas, a float a line, with --shot)] [--light-ref PATH (the baked light worked
@@ -594,10 +597,14 @@ let NOISE = 19;
 // arrises' fillets and the pieces' tilt and the panels' cup (its mesh), the recesses' dirt,
 // the joints' hairlines, the relief tile (its shader).
 let PAINT_STEP_NAMES = ["fillets", "tilt", "dirt", "joints", "tile"];
+// The sills' limestone's parts, each switched off alone by --sill-off NAME,NAME..: the
+// speckle, the polished band, the eased arris and its chips, the nose's darker foot, the
+// dust line (its shader, render3d::sill_steps).
+let SILL_STEP_NAMES = ["speckle", "band", "arris", "nose", "dust"];
 
 let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", "P: print the room and its flags",
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
-                "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old", "W: the window's pattern; T: leaves by",
+                "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old; I: the sills", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust", "F: the frame counter; G: wait for the GPU",
                 "N: the scene's scale; M: its upscale",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
@@ -772,6 +779,14 @@ fn main() {
     render3d::tuned_frags[render3d::TUNED_PAINT_STEPS] = embed_shader("frag", shaders::ROOM_PAINT, shaders::PAINT_STEPS, shaders::SHELL_WINDOWS,
                                                                       shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN,
                                                                       shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+    // The sills' shader with its parts switched (I, --sill, --sill-off), in the room and the mirror.
+    render3d::tuned_frags[render3d::TUNED_SILL_STEPS] = embed_shader("frag", shaders::ROOM_SILL, shaders::SILL_STEPS, shaders::SHELL_WINDOWS,
+                                                                     shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN,
+                                                                     shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+    render3d::tuned_frags[render3d::TUNED_SILL_MIRROR] = embed_shader("frag", shaders::ROOM_SILL, shaders::SILL_STEPS, shaders::MIRROR_PASS,
+                                                                      shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
+                                                                      shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
+                                                                      shaders::ROOM_FRAG);
     render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
     render3d::set_aa(r3d, g, render3d::AA);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
@@ -891,6 +906,25 @@ fn main() {
         }
     }
     render3d::paint_relief = number(argv, "--paint-relief", 1.0);
+    // The sills (I): the limestone or the old stone, and the limestone's parts each off alone.
+    var sill_new = !(flag_value(argv, "--sill") > 0 && argv[flag_value(argv, "--sill")] == "old");
+    var sill_on: bool[5] = [true; 5];
+    if flag_value(argv, "--sill-off") > 0 {
+        var rest: const u8[:] = argv[flag_value(argv, "--sill-off")];
+        while rest.len > 0 {
+            let part, after, more = split_once(rest, ",");
+            var found = false;
+            for n, i in SILL_STEP_NAMES {
+                if n == part {
+                    sill_on[i] = false;
+                    found = true;
+                }
+            }
+            guard found else { abort(str("--sill-off: no ", part)); }
+            guard more else { break; }
+            rest = after;
+        }
+    }
     var book_fade = number(argv, "--book-fade", 1.0);
     var top = pick(argv, "--table-top", TOPS, 0);
     g.table_r = top_radius(top);
@@ -996,6 +1030,7 @@ fn main() {
                       render3d::room_bytes(g) / 1048576, " MiB; its mesh made in ", g.mesh_ms, " ms, ",
                       g.room_count / 3, " triangles and ", g.glass_count / 3, " of glass and lace");
                 print("the paint's relief tile made in ", g.paint_tile_ms, " ms, ", room_shell::relief_bytes(), " bytes");
+                print("the sills' limestone tile made in ", g.stone_tile_ms, " ms, ", room_shell::stone_bytes(), " bytes");
             }
             if g.corner_ms > 0.0 {
                 print("the corners' map baked in ", g.corner_ms, " ms, ", corner_map::chart_count, " charts in ",
@@ -1058,6 +1093,7 @@ fn main() {
             if gfx::key_pressed("B") { books_on = !books_on; }
             if gfx::key_pressed("H") { shutters_on = !shutters_on; }
             if gfx::key_pressed("J") { paint_quiet = !paint_quiet; }
+            if gfx::key_pressed("I") { sill_new = !sill_new; }
             if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else if paper_m > 0.7 { 1.4 } else { 0.9 }; }
             if gfx::key_pressed("N") {
                 var next = 0;
@@ -1231,6 +1267,8 @@ fn main() {
                 switch(c, "Paint (J)", paint_quiet, ["old", "quiet"]);
                 for n, i in PAINT_STEP_NAMES { switch(c, str("  its ", n), paint_on[i], ["off", "on"]); }
                 slider(c, "  its relief", render3d::paint_relief, 0.0, 6.0);
+                switch(c, "Sills (I)", sill_new, ["old", "limestone"]);
+                for n, i in SILL_STEP_NAMES { switch(c, str("  its ", n), sill_on[i], ["off", "on"]); }
                 if g.room_ms > 0.0 {
                     note(c, str("oak baked in ", floor(g.room_ms + 0.5) as i64, " ms, ", render3d::room_bytes(g) / 1048576, " MiB"));
                 }
@@ -1324,6 +1362,10 @@ fn main() {
         room_shell::paint_tilt = paint_on[1];
         render3d::paint_steps = float4 { if paint_on[2] { 1.0 } else { 0.0 }, if paint_on[3] { 1.0 } else { 0.0 },
                                          if paint_on[4] { 1.0 } else { 0.0 }, if paint_quiet { 0.0 } else { 1.0 } };
+        var sill_steps: f32[5] = [0.0; 5];
+        for i in 5 { sill_steps[i] = if sill_on[i] { 1.0 } else { 0.0 }; }
+        render3d::sill_steps = [float4 { sill_steps[0], sill_steps[1], sill_steps[2], sill_steps[3] },
+                                float4 { sill_steps[4], if sill_new { 0.0 } else { 1.0 }, 0.0, 0.0 }];
         g.book_fade = max(book_fade, 0.001);
         g.room_tint = float4_0;
         if oak.x != 1.0 || oak.y != 1.0 {
@@ -1419,6 +1461,12 @@ fn main() {
             }
             if off.len > 0 { format(line, " --paint-off ", off); }
             if render3d::paint_relief != 1.0 { format(line, " --paint-relief ", render3d::paint_relief); }
+            format(line, " --sill ", if sill_new { "vasalemma" } else { "old" });
+            var sill_off: u8[>..] = [];
+            for n, i in SILL_STEP_NAMES {
+                if !sill_on[i] { format(sill_off, if sill_off.len > 0 { "," } else { "" }, n); }
+            }
+            if sill_off.len > 0 { format(line, " --sill-off ", sill_off); }
             flag_pair(line, "--oak-tint", oak);
             flag_pair(line, "--ceiling-tint", ceiling);
             room_flags(line, room);

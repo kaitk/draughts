@@ -391,6 +391,43 @@ fn band_outer(o: Opening, x: f32) -> f32 {
 // outer edge with it.
 let ARCH_SEGMENTS = 12;
 
+// The sill (window's): a pale limestone slab SILL_BOARD thick, its nose SILL_NOSE out in the
+// room and 5 cm past the niche each side, over the niche's floor to its back, depth into
+// the wall. Its uv carries the profile ROOM_FRAG's stone reads: x metres along the wall, y
+// the distance from the nose's top arris (metres), back over the top and down the nose and
+// under it below 0; its ends SILL_END.
+let SILL_END: f32 = 9.0;
+fn sill_slab(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, o: Opening, w: f32, depth: f32) {
+    let k = m();
+    let x0 = -w - 0.05;
+    let x1 = w + 0.05;
+    let y0 = o.sill - SILL_BOARD;
+    let y1 = o.sill;
+    let z1 = SILL_NOSE;
+    let under = -SILL_BOARD - SILL_NOSE;
+    let faces: float3[4][6] = [
+        [float3 { x0, y0, z1 }, float3 { x1, y0, z1 }, float3 { x1, y1, z1 }, float3 { x0, y1, z1 }],
+        [float3 { x0, y0, 0.0 }, float3 { x0, y0, z1 }, float3 { x0, y1, z1 }, float3 { x0, y1, 0.0 }],
+        [float3 { x1, y0, 0.0 }, float3 { x1, y0, z1 }, float3 { x1, y1, z1 }, float3 { x1, y1, 0.0 }],
+        [float3 { x0, y1, 0.0 }, float3 { x1, y1, 0.0 }, float3 { x1, y1, z1 }, float3 { x0, y1, z1 }],
+        [float3 { x0, y0, 0.0 }, float3 { x1, y0, 0.0 }, float3 { x1, y0, z1 }, float3 { x0, y0, z1 }],
+        [float3 { -w, y1, -depth }, float3 { w, y1, -depth }, float3 { w, y1, 0.0 }, float3 { -w, y1, 0.0 }],
+    ];
+    let sides: float3[6] = [float3 { 0.0, 0.0, 1.0 }, float3 { -1.0, 0.0, 0.0 }, float3 { 1.0, 0.0, 0.0 }, float3 { 0.0, 1.0, 0.0 },
+                            float3 { 0.0, -1.0, 0.0 }, float3 { 0.0, 1.0, 0.0 }];
+    for f, i in faces {
+        var q:  float3[4] = [float3_0; 4];
+        var uv: float2[4] = [float2_0; 4];
+        for j in 4 {
+            let p = f[j];
+            q[j] = p * k;
+            let t = if i == 0 { p.y - y1 } else if i == 1 || i == 2 { SILL_END } else if i == 4 { under + p.z } else { z1 - p.z };
+            uv[j] = float2 { o.mid + p.x, t };
+        }
+        surfaces::quad(verts, indices, b, q, uv, [1.0, 1.0, 1.0, 1.0], surfaces::MAT_STONE, sides[i]);
+    }
+}
+
 // A window in wall b (metres, b's s at its middle): the band round the niche, the
 // reveals, the arch's soffit and the lunette over the casement, the sill board, the two
 // casements with their glass, the folded shutters, and the curtains (curtains.goose).
@@ -446,11 +483,7 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
     }
     quad_m(verts, indices, b, [float3 { -w, spring, -LINING_FROM }, float3 { w, spring, -LINING_FROM }, float3 { w, spring, -depth },
                                float3 { -w, spring, -depth }], paint, float3 { 0.0, -1.0, 0.0 }, 0.8);
-    // The sill: a pale limestone slab, its nose out in the room, over the niche's floor.
-    let stone = surfaces::MAT_STONE;
-    box_m(verts, indices, b, -w - 0.05, w + 0.05, sill - SILL_BOARD, sill, 0.0, SILL_NOSE, stone);
-    quad_m(verts, indices, b, [float3 { -w, sill, -depth }, float3 { w, sill, -depth }, float3 { w, sill, 0.0 },
-                               float3 { -w, sill, 0.0 }], stone, float3 { 0.0, 1.0, 0.0 });
+    sill_slab(verts, indices, b, o, w, depth);
     // The casements, the inner glass and the outer.
     if paint_quiet {
         // Their pieces' seeds apart from the shell's, which the curtains and books go on with.

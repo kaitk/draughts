@@ -442,6 +442,10 @@ struct Gpu {
     // with the room's bake, and the time it took (measuring).
     paint_tile:    Texture,
     paint_tile_ms: f64,
+    // The sills' limestone tile (room_shell::stone_tile), RGBA8 with its mips, made when the
+    // shell first shows, and the time it took.
+    stone_tile:    Texture,
+    stone_tile_ms: f64,
     books_off:     bool,
     book_fade:     f32,
     // The scene drawn under the screen's size (scene_size_of): its RGBA8 target at that
@@ -774,6 +778,8 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures 
         add_texture(t, g.plaster_tone, g.aniso);
     } else if group == GROUP_PAINT {
         add_texture(t, g.paint_tile, g.aniso);
+    } else if group == GROUP_SILL {
+        add_texture(t, g.stone_tile, g.aniso);
     } else if group == GROUP_METALS {
         add_texture(t, g.book_atlas, g.aniso);
     }
@@ -849,6 +855,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.room_ms = (clock() - t0) * 1000.0;
     }
     put_paper(o, g);
+    if g.room_shell && g.stone_tile.id == 0 { put_stone(o, g); }
     bake_room_light(o, g);
     // The view out of the shell's windows, round its middle window: made once.
     if g.room_shell && g.outside_vb.id == 0 {
@@ -955,6 +962,21 @@ fn put_paper<O>(o: O&, g: Gpu&) {
         at += 4 * w * w;
     }
     g.paint_tile_ms = (clock() - t0) * 1000.0;
+}
+
+// The sills' limestone tile made and put on the GPU with its mips.
+fn put_stone<O>(o: O&, g: Gpu&) {
+    let t0 = clock();
+    var px: u8[>..] = [];
+    room_shell::stone_tile(px);
+    g.stone_tile = o.gpu_sampled(room_shell::STONE_SIDE, room_shell::STONE_SIDE, room_shell::STONE_MIPS, RGBA8);
+    var at = 0;
+    for level in room_shell::STONE_MIPS {
+        let w = room_shell::STONE_SIDE >> level;
+        o.gpu_upload(g.stone_tile, level, px[at..at + 4 * w * w]);
+        at += 4 * w * w;
+    }
+    g.stone_tile_ms = (clock() - t0) * 1000.0;
 }
 
 // The books' atlas (design/materials/books_atlas.png) on the GPU, RGBA8 with BOOK_MIPS, each
@@ -1154,7 +1176,8 @@ fn room_bytes(g: Gpu&) -> i64 {
     let k = view_out::OAK_TEXELS;
     let outside = if g.outside_band.id != 0 { 4 * (b.x * b.y + k.x * k.y) } else { 0 };
     let relief = if g.paint_tile.id != 0 { room_shell::relief_bytes() } else { 0 };
-    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief;
+    let stone = if g.stone_tile.id != 0 { room_shell::stone_bytes() } else { 0 };
+    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the
@@ -1204,6 +1227,8 @@ struct SurfacesBlock {
     room_sun:      float4,
     paint_quiet:   float4,
     paint_steps:   float4,
+    sill:          float4,
+    sill_steps:    float4[2],
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
@@ -1292,7 +1317,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
-                    float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paint_steps,
+                    float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paint_steps, k.sill,
+                    sill_steps,
                     table_map_shown(g),
                     books::COVER, books::LABEL }
 }

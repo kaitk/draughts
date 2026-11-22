@@ -129,6 +129,10 @@ struct Look {
     paint_quiet: float4,
     lace_thread: float4,
     stone:       float4,
+    // The sills' limestone (ROOM_FRAG's ROOM_SILL, its colour the stone's): x the nose's
+    // arris's radius, y how far back the polished band reaches, z how much darker the nose
+    // is at its foot, w the dust line's width (metres but z).
+    sill: float4,
     // The curtains' brass (rod, finials, brackets, hooks): its colour at normal incidence
     // (sRGB) and roughness, all in this one place so another brass swaps in here.
     brass: float4,
@@ -167,6 +171,10 @@ let LOOK = Look {
     paint_quiet: float4 { 0.36, 0.42, 0.003, 2.0 },
     lace_thread: float4 { 0.867, 0.827, 0.749, 0.9 },
     stone:       float4 { 0.714, 0.698, 0.659, 0.55 },
+    // A Vasalemma-type limestone (build/notes/paint-research/), honed: the arris eased to
+    // 4 mm, the band polished by hands 25 to 70 mm back, the nose 6 % darker at its foot,
+    // dust before the inner casement fading over 2 cm.
+    sill: float4 { 0.004, 0.07, 0.06, 0.02 },
     // A plain brass, a placeholder until the gilt and brass study's material lands: its
     // reflectance at normal incidence linear (0.91, 0.778, 0.423), #f5e4ae, 0.28 rough (a
     // polished one reads as brown felt while the room reflects only its harmonics), no wear.

@@ -23,11 +23,11 @@ fn lattice(x: i64, y: i64, px: i64, py: i64, seed: i64) -> f32 {
     return surfaces::hash(((x % px) + px) % px + 4096 * (((y % py) + py) % py), seed);
 }
 
-// Value noise (0 to 1) at texel (x, y) of cells cx texels across and cy along, tiling the
-// tile (RELIEF_SIDE a multiple of each cell).
-fn tile_noise(x: f32, y: f32, cx: i64, cy: i64, seed: i64) -> f32 {
-    let px = RELIEF_SIDE / cx;
-    let py = RELIEF_SIDE / cy;
+// Value noise (0 to 1) at texel (x, y) of cells cx texels across and cy along, tiling a
+// tile `side` texels square (a multiple of each cell).
+fn tile_noise(x: f32, y: f32, cx: i64, cy: i64, seed: i64, side: i64 = RELIEF_SIDE) -> f32 {
+    let px = side / cx;
+    let py = side / cy;
     let fx = x / cx;
     let fy = y / cy;
     let ix = floor(fx) as i64;

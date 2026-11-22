@@ -15,6 +15,7 @@ import .shell;
 import .shell_mesh;
 import .joinery;
 import .relief;
+import .limestone;
 import .bookcases;
 import .books;
 import .book_cells;
