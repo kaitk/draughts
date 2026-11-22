@@ -9,8 +9,8 @@ import std;
 import vec;
 import math;
 
-let MAX_WHOLE_SEGMENTS = 60000;
-let MAX_LIMBS = 20000;
+let MAX_WHOLE_SEGMENTS = 80000;
+let MAX_LIMBS = 30000;
 let MAX_CARDS = 160000;
 // The leaf atlas's leaves (leaf_atlas::LEAVES).
 let LEAF_KINDS = 8;
@@ -25,30 +25,11 @@ struct Limb { first: i32, count: i32, level: i32, parent: i32 }
 // (0 green, 1 gold, 2 orange-red).
 struct Card { foot: float3, base: float3, along: float3, face: float3, size: f32, width: f32, kind: i32, tint: f32 }
 
-// The tree whole (grow_whole), in the tree's frame and world units.
-struct Whole {
-    seed:   f32,
-    foot:   float3,     // the trunk's foot
-    height: f32,        // the crown's top over the foot
-    girth:  f32,        // the trunk's radius a metre and a half up
-    fork:   f32,        // where the lowest limbs leave the trunk, over the foot
-    // The crown's envelope, two half ellipsoids about `middle` (from the foot): x its
-    // half width along the wall, y its half height, z its half depth away from the house,
-    // w toward it.
-    crown:  float4,
-    middle: float3,
-    house:  f32,        // the house's outer face, a depth; nothing grows nearer than WALL_GAP
-    leaf:   f32,        // a blade's length, the middle lobe's
-    leafy:  f32,        // 1 as grown, less fewer leaves, 0 bare
-    autumn: f32,        // the crown's tint, 0 green .. 2 orange-red
-    shell:  f32,        // how deep under the crown's outside the leaves grow
-}
-
-// How an old tree grows, per level (the trunk, limbs, branches, branchlets, twigs): the
+// How a tree grows, per level (the trunk, limbs, branches, branchlets, twigs): the
 // segments a branch, its children, where along it they start, their angle off it
-// (degrees), their length against its, their cross-section's share of its, how crooked,
-// how much its young end turns up and its old part sags, and whether its children come in
-// opposite pairs.
+// (degrees), their length against its, their cross-section's share of its, how crooked
+// at random and how wavy, how much its end turns up to the light and how much a slender
+// branch sags under its load, and whether its children come in opposite pairs.
 struct Habit {
     segments: i64[5],
     children: i64[5],
@@ -57,28 +38,56 @@ struct Habit {
     ratio:    f32[5],
     share:    f32[5],
     crook:    f32[5],
+    wave:     f32[5],
     rise:     f32[5],
     sag:      f32[5],
     paired:   bool[5],
 }
 
-// An old Norway maple grown in the open (library-home-01, the Tartu photographs): a short
-// massive trunk forking at 3-4 m into a few heavy limbs that spread and sag, then turn up,
-// each forking again to fill the crown; slender wavy branches; opposite twigs; the leaves
-// in a shell under the crown's outside. The trunk's children are its limbs, all from the
-// fork up; the limbs' and branches' lengths reach to the crown's outside.
-let OLD_MAPLE = Habit {
-    segments: [8, 10, 7, 4, 3],
-    children: [7, 20, 14, 10, 0],
+// A Norway maple grown in the open: the limbs leave the trunk in a spiral, its branches
+// arc (sag, then turn up), wavy and slender toward their ends; opposite twigs; the leaves
+// in a shell under the crown's outside.
+let MAPLE_HABIT = Habit {
+    segments: [10, 12, 9, 6, 3],
+    children: [12, 12, 10, 8, 0],
     start:    [0.0, 0.12, 0.1, 0.1, 0.0],
-    angle:    [48.0, 50.0, 52.0, 50.0, 0.0],
-    ratio:    [1.0, 0.75, 0.5, 0.42, 0.0],
-    share:    [0.32, 0.2, 0.16, 0.2, 0.0],
-    crook:    [0.03, 0.16, 0.38, 0.4, 0.3],
-    rise:     [0.0, 0.14, 0.06, 0.06, 0.08],
-    sag:      [0.0, 0.14, 0.12, 0.08, 0.04],
+    angle:    [45.0, 48.0, 52.0, 50.0, 0.0],
+    ratio:    [1.0, 0.7, 0.5, 0.42, 0.0],
+    share:    [0.22, 0.2, 0.16, 0.2, 0.0],
+    crook:    [0.02, 0.06, 0.12, 0.16, 0.14],
+    wave:     [0.0, 0.08, 0.14, 0.16, 0.08],
+    rise:     [0.0, 0.22, 0.2, 0.14, 0.08],
+    sag:      [0.0, 0.16, 0.2, 0.14, 0.04],
     paired:   [false, false, true, true, true],
 };
+
+// The tree whole (grow_whole), in the tree's frame and world units.
+struct Whole {
+    seed:   f32,
+    foot:   float3,     // the trunk's foot
+    height: f32,        // the crown's top over the foot
+    girth:  f32,        // the trunk's radius a metre and a half up
+    fork:   f32,        // where the lowest limbs leave the trunk, over the foot
+    leader: f32,        // how far up the trunk goes on, a share of the height
+    limbs:  float2,     // the limbs' angles off the trunk, low to high (degrees)
+    // The crown's envelope, two half ellipsoids about `middle` (from the foot): x its
+    // half width along the wall, y its half height, z its half depth away from the house,
+    // w toward it.
+    crown:  float4,
+    middle: float3,
+    house:  f32,        // the house's outer face, a depth; nothing grows nearer than WALL_GAP
+    leaf:   f32,        // a blade's length, the middle lobe's
+    leafy:  f32,        // 1 as grown, less fewer leaves (autumn's fall), 0 bare
+    autumn: f32,        // the crown's tint, 0 green .. 2 orange-red
+    shell:  f32,        // how deep under the crown's outside the leaves grow
+    // A low limb sweeping down and out toward the house, across the windows' view (as
+    // library-home-01's): its foot over the trunk's, its way out (the tree's frame) and
+    // length; 0 long, none.
+    hang_at:  f32,
+    hang_dir: float3,
+    hang:     f32,
+    habit:    Habit,
+}
 
 // Where the tree may be seen from: eyes in the room and the openings they look through,
 // rectangles x0, x1, y0, y1 at depth `plane`, all in the tree's frame.
@@ -104,7 +113,7 @@ fn seen(s: Sight&, c: float3, r: f32) -> bool {
 }
 
 // Whether a ball at c of radius r casts on the map.
-fn casts(v: View&, c: float3, r: f32) -> bool { on_rect(v, on_map(v, c), r * spread(v)) }
+fn casts(v: View&, c: float3, r: f32) -> bool { on_holes(v, on_map(v, c), r * spread(v)) }
 
 // How far out inside the envelope a point is: 0 at its middle, 1 on its outside.
 fn crown_radius(w: Whole&, p: float3) -> f32 {
@@ -137,7 +146,12 @@ fn crown_depth(w: Whole&, p: float3) -> f32 {
     return max(1.0 - crown_radius(w, p), 0.0) * min(w.crown.x, w.crown.y);
 }
 
-struct Part { at: float3, dir: float3, length: f32, radius: f32, level: i64, dice: u64, tint: f32, parent: i32 }
+// A branch to grow; `free` a hanging limb's and its offspring's, which may leave the
+// crown's envelope below.
+struct Part { at: float3, dir: float3, length: f32, radius: f32, level: i64, dice: u64, tint: f32, parent: i32, free: bool }
+
+// How far out of the envelope a hanging limb's parts may grow.
+let HANG_SLACK: f32 = 1.8;
 
 // How much farther than its own length a branch's offspring may reach.
 let WHOLE_REACH: f32 = 1.4;
@@ -157,11 +171,19 @@ fn grow_whole(t: Tree&, w: Whole, v: View, sight: Sight, cull: bool) {
     t.left_out = 0;
     var d = Dice { mixed(w.seed as u64 + 11) };
     let lean = float3 { roll_between(d, -0.04, 0.04), 1.0, roll_between(d, -0.04, 0.04) };
-    let trunk = Part { w.foot, normalize(lean), w.fork * 1.45, w.girth, 0, d.state, w.autumn, -1 };
+    let trunk = Part { w.foot, normalize(lean), max(w.leader * w.height, w.fork * 1.3), w.girth, 0, d.state, w.autumn, -1, false };
     var wh = w;
     var vw = v;
     var sg = sight;
     grow_part(t, wh, vw, sg, cull, trunk);
+    // The hanging limb, on dice of its own, from the trunk's side.
+    guard w.hang > 0.0 else { return; }
+    var hd = Dice { mixed(w.seed as u64 + 977) };
+    let dir = normalize(w.hang_dir);
+    let at = w.foot + float3 { 0.0, w.hang_at, 0.0 } + float3 { dir.x, 0.0, dir.z } * (w.girth * 0.8);
+    let limb = Part { at, dir, w.hang, w.girth * 0.42, 1, hd.state, w.autumn + 0.15, 0, true };
+    guard !cull || casts(vw, at, w.hang * WHOLE_REACH) || seen(sg, at, w.hang * WHOLE_REACH) else { return; }
+    grow_part(t, wh, vw, sg, cull, limb);
 }
 
 // The trunk's flare at its foot: wider over its lowest metre or so.
@@ -172,7 +194,7 @@ fn flare(w: Whole&, p: float3) -> f32 {
 
 recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, b: Part) {
     var d = Dice { b.dice };
-    let h = OLD_MAPLE;
+    let h = w.habit;
     let level = b.level;
     let segments = h.segments[level];
     let step = b.length / segments;
@@ -184,17 +206,33 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
     var dir = b.dir;
     points[0] = p;
     dirs[0] = dir;
-    // The radius along it: tapering by the share its children take, a trunk flaring.
-    let tip: f32 = if level == 0 { 0.7 } else if level == 4 { 0.5 } else { 0.3 };
+    // The radius along it: tapering by the share its children take, a trunk flaring;
+    // the branches slender toward their ends.
+    let tip: f32 = if level == 0 { 0.6 } else if level == 4 { 0.5 } else { 0.22 };
     radii[0] = b.radius * (if level == 0 { flare(w, p) } else { 1.0 });
+    // How it bends: a slender branch (long against its thickness) sags more under its
+    // load, more toward its end, and its end turns up to the light; a hanging limb sags
+    // far, then turns up late. A slow wave across it, its phase its own.
+    let hanging = b.free && level == 1;
+    let slender = clamp(b.length / (b.radius * 70.0), 0.4, 2.0);
+    let sag = if hanging { 0.16 } else { h.sag[level] * slender };
+    let rise = if hanging { 0.32 } else { h.rise[level] };
+    let rise_from: f32 = if hanging { 0.6 } else { 0.4 };
+    let phase = roll(d) * TAU;
+    let wave_turn = roll(d) * TAU;
+    let slack = if b.free { HANG_SLACK } else { 1.06 };
     let first = t.segments.len;
     var n = 0;
     for i in segments {
         let f = (i + 0.5) / segments;
-        dir = normalize(dir + roll_ball(d) * h.crook[level] + up * (h.rise[level] * f - h.sag[level] * (1.0 - f)));
+        let level_out = 1.0 - abs(dir.y);
+        let side = turned(dir, PI * 0.5, wave_turn);
+        let bend = up * (rise * clamp((f - rise_from) / (1.0 - rise_from), 0.0, 1.0) - sag * f * (0.3 + level_out))
+                   + side * (h.wave[level] * sin(phase + i * 1.9)) + roll_ball(d) * h.crook[level];
+        dir = normalize(dir + bend);
         let q = p + dir * step;
         // Stopped at the crown's outside and at the house.
-        guard level == 0 || inside_crown(w, q, 1.06) else { break; }
+        guard level == 0 || inside_crown(w, q, slack) else { break; }
         guard q.z > w.house + WALL_GAP else { break; }
         var rb = b.radius * (1.0 + (tip - 1.0) * (i + 1) / segments);
         if level == 0 { rb *= flare(w, q); }
@@ -216,7 +254,7 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
     }
     if level == 4 {
         var leaf_dice = Dice { mixed(b.dice ^ 0x5DEECE66D) };
-        add_cards(t, w, v, sight, cull, leaf_dice, points, dirs, n, b.tint);
+        add_cards(t, w, v, sight, cull, leaf_dice, points, dirs, n, b.tint, b.free);
         return;
     }
     let count = h.children[level];
@@ -224,11 +262,14 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
     let paired = h.paired[level];
     let first_round = roll(d) * TAU;
     let slots = if paired { (count + 1) / 2 } else { count };
+    // The trunk's limbs from the fork to its top, in a spiral; if it stops short of the
+    // crown's top (a fork), its last limb leads on.
+    let fork_share = clamp(w.fork / b.length, 0.0, 0.95);
+    let forks = level == 0 && w.leader * w.height < w.fork * 1.3 + 30.0;
     for c in count {
         let slot = if paired { c / 2 } else { c };
         var f = start + (1.0 - start) * (slot + roll_between(d, 0.15, 0.85)) / slots;
-        // The trunk's limbs from the fork up to its top.
-        if level == 0 { f = w.fork / b.length + (1.0 - w.fork / b.length) * (slot + roll_between(d, 0.3, 1.0)) / slots; }
+        if level == 0 { f = fork_share + (1.0 - fork_share) * (slot + roll_between(d, 0.3, 1.0)) / slots; }
         let at = f * n;
         let i = min(floor(at) as i64, n - 1);
         let k = at - i;
@@ -236,10 +277,11 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
         let along = dirs[i + 1];
         let radius_there = radii[i] + (radii[i + 1] - radii[i]) * k;
         let leader = level == 0 && c == count - 1;
-        // The limbs each their own way, some steep to fill the crown's top, some wide.
-        let spread_deg = if leader { roll_between(d, 8.0, 16.0) } else if level == 0 { roll_between(d, 22.0, 62.0) }
+        // The limbs wide low on the trunk, steeper up it, each its own way.
+        let high = (f - fork_share) / max(1.0 - fork_share, 0.05);
+        let spread_deg = if leader { roll_between(d, 6.0, 14.0) }
+                         else if level == 0 { w.limbs.x + (w.limbs.y - w.limbs.x) * high + roll_between(d, -10.0, 10.0) }
                          else { h.angle[level] + roll_between(d, -14.0, 14.0) };
-        // Low limbs spread wider.
         let tilt = radians(spread_deg);
         let turn = if paired { slot * (PI * 0.5) + (c % 2) * PI } else { c * 2.39996 };
         let round = first_round + turn + roll_between(d, -0.35, 0.35);
@@ -252,19 +294,22 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
         let shape: f32 = if level == 0 { 1.0 } else { 1.0 - 0.45 * f };
         var want = b.length * h.ratio[level] * shape * roll_between(d, 0.8, 1.15);
         if level == 0 { want = w.height * 1.2; }
-        let room = crown_ahead(w, foot, cdir, want);
-        let length = if level <= 1 { room * roll_between(d, 0.85, 0.97) } else if level == 2 { min(want, room * roll_between(d, 0.8, 0.97)) } else { min(want, room * roll_between(d, 0.8, 1.0) + want * 0.15) };
-        let radius = max(radius_there * sqrt(h.share[level] * roll_between(d, 0.75, 1.25)) * (if leader { 1.2 } else { 1.0 }),
-                         if level >= 3 { 0.08 } else { 0.15 });
+        let room = if b.free { want } else { crown_ahead(w, foot, cdir, want) };
+        let length = if level <= 1 && !b.free { room * roll_between(d, 0.88, 0.98) }
+                     else if level == 2 { min(want, room * roll_between(d, 0.8, 0.97)) }
+                     else { min(want, room * roll_between(d, 0.8, 1.0) + want * 0.15) };
+        let thick = if leader && forks { 1.6 } else { 1.0 };
+        let radius = max(radius_there * sqrt(h.share[level] * roll_between(d, 0.75, 1.25)) * thick, if level >= 3 { 0.06 } else { 0.12 });
         let dice = mixed(b.dice ^ ((c + 1) as u64 * 0x9E3779B97F4A7C15));
         // Branches turn colour together: each its own shift from its parent's.
         var tint = b.tint;
         if level == 1 { tint += roll_between(d, -0.4, 0.4); }
         if level == 2 { tint += roll_between(d, -0.25, 0.25); }
-        guard length > 1.0 && inside_crown(w, foot, 1.06) || level == 0 else { continue; }
+        let held = inside_crown(w, foot, if b.free { HANG_SLACK } else { 1.06 }) || level == 0;
+        guard length > 1.0 && held else { continue; }
         // The core's twigs die back: the leaves stay in the shell.
-        if level == 3 && crown_depth(w, foot) > w.shell * 1.4 && roll(d) < 0.8 { continue; }
-        let child = Part { foot, cdir, length, radius, level + 1, dice, tint, me };
+        if level == 3 && !b.free && crown_depth(w, foot) > w.shell * 1.4 && roll(d) < 0.8 { continue; }
+        let child = Part { foot, cdir, length, radius, level + 1, dice, tint, me, b.free };
         guard !cull || casts(v, foot, length * WHOLE_REACH + w.leaf * 3.0)
                     || seen(sight, foot, length * WHOLE_REACH + w.leaf * 3.0) else { continue; }
         grow_part(t, w, v, sight, cull, child);
@@ -275,7 +320,7 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
 // tip's pair, sometimes three; on stalks about as long as the blade, the blades turned
 // out of the crown and up, as a maple's mosaic. None deep in the crown.
 fn add_cards(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&, points: float3[13]&, dirs: float3[13]&,
-             n: i64, tint: f32) {
+             n: i64, tint: f32, free: bool) {
     let up = float3 { 0.0, 1.0, 0.0 };
     let sun = normalize(float3 { v.shear.x, v.shear.y, 1.0 });
     let middle = w.foot + w.middle;
@@ -291,12 +336,12 @@ fn add_cards(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&,
         let at = (0.2 + 0.8 * node / nodes) * n;
         let i = min(floor(at) as i64, n - 1);
         let p = points[i] + (points[i + 1] - points[i]) * (at - i);
-        guard crown_depth(w, p) < w.shell else { continue; }
+        guard free || crown_depth(w, p) < w.shell else { continue; }
         guard w.leafy >= 1.0 || roll(d) < w.leafy else { continue; }
         let twig = normalize(dirs[i + 1]);
         let pair = if node == nodes && roll(d) < 0.3 { 3 } else { 2 };
         let round0 = first + node * (PI * 0.5);
-        let deep = clamp(crown_depth(w, p) / max(w.shell, 1.0), 0.0, 1.0);
+        let deep = if free { 0.3 } else { clamp(crown_depth(w, p) / max(w.shell, 1.0), 0.0, 1.0) };
         let out = normalize(p - middle);
         for k in pair {
             let round = round0 + k * TAU / pair + roll_between(d, -0.25, 0.25);
@@ -322,6 +367,7 @@ fn add_cards(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&,
             let kind = min((roll(d) * LEAF_KINDS) as i64, LEAF_KINDS - 1);
             let leaf_tint = clamp(twig_tint + roll_between(d, -0.08, 0.08), 0.0, 2.0);
             let mid = base + along * (size * 0.5);
+            guard base.z > w.house + WALL_GAP && mid.z - size > w.house + WALL_GAP else { continue; }
             let cast = casts(v, mid, size);
             guard !cull || cast || seen(sight, mid, size) else { continue; }
             if t.cards.len < MAX_CARDS {
@@ -329,9 +375,9 @@ fn add_cards(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&,
             } else {
                 t.left_out++;
             }
-            if cast && on_rect(v, on_map(v, mid), size) {
+            if cast && on_holes(v, on_map(v, mid), size) {
                 let across = cross(face, along);
-                keep_leaf(t, Leaf { mid, size, map_dir(v, along) * (size * 0.5), map_dir(v, across) * (width * 0.5) });
+                keep_leaf(t, Leaf { mid, size, map_dir(v, along) * (size * 0.5), map_dir(v, across) * (width * 0.5), kind as i32 });
             }
         }
     }

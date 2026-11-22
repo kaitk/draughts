@@ -1,8 +1,10 @@
-// The old maple grown whole (tree_whole.goose, task 107's T1): the same tree from the same
-// seed; its sizes real (the trunk about a metre thick, the crown about 22 m and 20 m
-// across, the blades about 11 cm); every leaf on a twig, none in the crown's core; culled
-// to the parts seen through the windows or casting through them, the shadow's part the
-// same as the whole tree's; and the shell's shadow baked from it within 0..1.
+// The maple grown whole (tree_whole.goose, task 107's T1), each variant
+// (rooms::WHOLE_VARIANTS): the same tree from the same seed; its sizes real (the trunk up
+// to about a metre thick, the crown about 20 m, the blades about 11 cm); every leaf on a
+// twig, none in the crown's core; its low limb hanging down across the windows' height;
+// culled to the parts seen through the windows or casting through them, the shadow's part
+// the same as the whole tree's; and the shell's shadow baked from the default one, within
+// 0..1.
 import std;
 import vec;
 import math;
@@ -13,10 +15,15 @@ fn metres(x: f32) -> f32 { floor(x / surfaces::METRE * 10.0 + 0.5) / 10.0 }
 fn main() {
     let r = rooms::get(rooms::LIBRARY);
     let s = room_shell::LIBRARY;
-    let w = rooms::whole_tree(r, s);
     let sight = rooms::whole_sight(r, s);
     let v = rooms::shell_tree_view(r, s);
-    print("sight: ", sight.eyes.len, " eyes, ", sight.windows.len, " windows");
+    print("sight: ", sight.eyes.len, " eyes, ", sight.windows.len, " windows; the map's holes ", v.holes.len);
+    for name, k in rooms::WHOLE_VARIANTS { check(name, rooms::whole_tree(r, s, k), sight, v, k == rooms::WHOLE_OLD_LEADER); }
+}
+
+fn check(name: const u8[:], w: trees::Whole, sight: trees::Sight, v: trees::View, shadow: bool) {
+    print(name, ":");
+    let r = rooms::get(rooms::LIBRARY);
 
     var whole = trees::Tree { .. };
     trees::grow_whole(whole, w, v, sight, false);
@@ -55,6 +62,10 @@ fn main() {
         nearest = min(nearest, c.base.z - w.house);
     }
     for &sg in whole.segments { nearest = min(nearest, sg.b.z - w.house); }
+    // The low limbs' lowest point over the ground (the hanging one's).
+    var lowest: f32 = 1e9;
+    for &sg in whole.segments { if sg.level == 1 { lowest = min(lowest, sg.b.y); } }
+    print("the limbs reach down to ", metres(lowest - w.foot.y), " m over the ground");
     let n = max(whole.cards.len, 1) as f32;
     print("a blade ", floor(size / n / surfaces::METRE * 100.0 + 0.5) as i64, " cm, its stalk ",
           floor(stalk / n / surfaces::METRE * 100.0 + 0.5) as i64, " cm; ", deep, " leaves in the core; nothing nearer the house than ",
@@ -90,12 +101,13 @@ fn main() {
     }
     var on_whole = 0;
     var on_culled = 0;
-    for &sg in whole.segments { if trees::segment_on_map(v, sg) { on_whole++; } }
-    for &sg in culled.segments { if trees::segment_on_map(v, sg) { on_culled++; } }
+    for &sg in whole.segments { if trees::segment_in_holes(v, sg) { on_whole++; } }
+    for &sg in culled.segments { if trees::segment_in_holes(v, sg) { on_culled++; } }
     print("the shadow's leaves ", if same_shadow { "the same" } else { "differ: WRONG" }, ", its segments ",
           if on_whole == on_culled { "the same" } else { "differ: WRONG" }, " (", on_culled, ")");
 
     // Its shadow through the shell's windows.
+    guard shadow else { return; }
     let spec = rooms::tree_spec(rooms::shell_tree(r));
     var map: u8[>..] = [];
     trees::draw_map(culled, spec, v, map);

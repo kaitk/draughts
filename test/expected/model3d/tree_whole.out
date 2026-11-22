@@ -1,8 +1,34 @@
-sight: 40 eyes, 3 windows
-whole: 55276 segments, 17636 limbs (1 7 139 1801 15688), 114692 leaves, 40000 casting, 17743 left out
-tall 19.1 m, across 17.9 m, deep 15.0 m; the trunk 1.0 m thick a little up, 1.3 m at its foot
+sight: 40 eyes, 3 windows; the map's holes 3
+oval:
+whole: 56087 segments, 16227 limbs (1 17 204 2014 13991), 48658 leaves, 3022 casting, 0 left out
+tall 20.0 m, across 14.1 m, deep 13.2 m; the trunk 0.7 m thick a little up, 1.0 m at its foot
+the limbs reach down to 1.9 m over the ground
 a blade 12 cm, its stalk 11 cm; 0 leaves in the core; nothing nearer the house than the gap
-tints by half: 972 32047 62949 18453 271
-culled: 48141 segments, 15319 limbs, 98838 leaves, 40000 casting
-the shadow's leaves the same, its segments the same (24636)
-its shadow: passing 4% 16 42 81 84
+tints by half: 1520 14933 23729 8413 63
+culled: 37361 segments, 10564 limbs, 27902 leaves, 3022 casting
+the shadow's leaves the same, its segments the same (3001)
+dome:
+whole: 49409 segments, 14315 limbs (1 15 180 1776 12343), 50987 leaves, 6427 casting, 0 left out
+tall 19.0 m, across 17.8 m, deep 14.7 m; the trunk 0.8 m thick a little up, 1.1 m at its foot
+the limbs reach down to 1.9 m over the ground
+a blade 12 cm, its stalk 11 cm; 0 leaves in the core; nothing nearer the house than the gap
+tints by half: 54 4523 22012 22006 2392
+culled: 39666 segments, 11335 limbs, 36685 leaves, 6427 casting
+the shadow's leaves the same, its segments the same (5402)
+old:
+whole: 33938 segments, 9848 limbs (1 8 128 1243 8468), 33416 leaves, 3936 casting, 0 left out
+tall 21.2 m, across 19.3 m, deep 15.3 m; the trunk 1.1 m thick a little up, 1.3 m at its foot
+the limbs reach down to 2.1 m over the ground
+a blade 12 cm, its stalk 11 cm; 0 leaves in the core; nothing nearer the house than the gap
+tints by half: 217 6405 17241 9189 364
+culled: 27851 segments, 8008 limbs, 25034 leaves, 3936 casting
+the shadow's leaves the same, its segments the same (3677)
+old-leader:
+whole: 41491 segments, 11987 limbs (1 13 155 1525 10293), 38421 leaves, 3585 casting, 0 left out
+tall 22.0 m, across 20.0 m, deep 15.6 m; the trunk 1.0 m thick a little up, 1.3 m at its foot
+the limbs reach down to 2.1 m over the ground
+a blade 12 cm, its stalk 11 cm; 0 leaves in the core; nothing nearer the house than the gap
+tints by half: 233 6745 18609 12316 518
+culled: 29536 segments, 8407 limbs, 25881 leaves, 3585 casting
+the shadow's leaves the same, its segments the same (3153)
+its shadow: passing 42% 70 75 79 91

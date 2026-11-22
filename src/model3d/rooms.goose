@@ -354,6 +354,17 @@ fn shell_tree_view(r: Room, s: room_shell::Shell) -> trees::View {
     var v = tree_view_over(shell_tree(r), u0 - shear.x * inner, u1 - shear.x * inner, y0 - shear.y * inner,
                            y1 - shear.y * inner, trees::SHELL_W, trees::SHELL_H);
     v.wood = SHELL_LIMBS;
+    // Each window's own rectangle, with the map's room for the blur and the sway.
+    for k in s.count {
+        let o = s.openings[k];
+        guard o.kind == room_shell::WINDOW else { continue; }
+        let u = (s.table.x - o.mid) * metre;
+        let ux0 = u - 0.5 * o.width * metre - shear.x * inner;
+        let ux1 = u + 0.5 * o.width * metre - shear.x * inner;
+        let wy0 = surfaces::FLOOR_Y + o.sill * metre - shear.y * inner;
+        let wy1 = surfaces::FLOOR_Y + room_shell::head_at(o, 0.0) * metre - shear.y * inner;
+        if v.holes.len < 4 { v.holes.push(float4 { ux0 - 4.0, ux1 + 4.0, wy0 - 4.0, wy1 + 4.0 }); }
+    }
     return v;
 }
 
@@ -378,26 +389,81 @@ let WHOLE_ALONG:  f32 = 4.1;
 let WHOLE_OUT:    f32 = 6.0;
 let WHOLE_PLINTH: f32 = 0.9;
 
-fn whole_tree(r: Room, s: room_shell::Shell) -> trees::Whole {
+// The maple's variants (task 107's prep 2): an upright oval crown on a trunk going on
+// to near its top, its inner limbs showing through the leaves (the user's gold photograph);
+// a full rounded dome (the orange one); the concept's old massive tree forking low into a
+// few heavy limbs; and that old tree with its trunk going on, limbs all up it. Each with
+// a low limb sweeping down and out across the windows' view.
+let WHOLE_VARIANTS = ["oval", "dome", "old", "old-leader"];
+let WHOLE_OVAL = 0;
+let WHOLE_DOME = 1;
+let WHOLE_OLD = 2;
+let WHOLE_OLD_LEADER = 3;
+
+fn whole_tree(r: Room, s: room_shell::Shell, variant: i64 = WHOLE_OLD_LEADER) -> trees::Whole {
     let metre = surfaces::METRE;
     let outer = s.walls[room_shell::WINDOW_WALL].a.y + s.walls[room_shell::WINDOW_WALL].thick;
     let foot = plan_to_tree(r, s, float3 { WHOLE_ALONG, outer + WHOLE_OUT, -WHOLE_PLINTH });
     let house = plan_to_tree(r, s, float3 { WHOLE_ALONG, outer, 0.0 }).z;
     let toward_sun: f32 = if tree_shear(r).x < 0.0 { -1.0 } else { 1.0 };
-    return trees::Whole {
-        seed:   r.tree.y,
-        foot:   foot,
-        height: 22.0 * metre,
-        girth:  0.5 * metre,
-        fork:   3.4 * metre,
-        crown:  float4 { 10.0 * metre, 9.5 * metre, 9.0 * metre, (WHOLE_OUT - 0.4) * metre },
-        middle: float3 { toward_sun * 1.5 * metre, 12.5 * metre, 0.5 * metre },
-        house:  house,
-        leaf:   0.11 * metre,
-        leafy:  1.0,
-        autumn: 1.2,
-        shell:  2.6 * metre,
+    let near = (WHOLE_OUT - 0.4) * metre;
+    var w = trees::Whole {
+        seed:     r.tree.y,
+        foot:     foot,
+        height:   22.0 * metre,
+        girth:    0.5 * metre,
+        fork:     3.0 * metre,
+        leader:   0.65,
+        limbs:    float2 { 62.0, 28.0 },
+        crown:    float4 { 10.0 * metre, 9.5 * metre, 9.0 * metre, near },
+        middle:   float3 { toward_sun * 1.0 * metre, 12.5 * metre, 0.5 * metre },
+        house:    house,
+        leaf:     0.11 * metre,
+        leafy:    0.55,
+        autumn:   1.2,
+        shell:    2.6 * metre,
+        hang_at:  2.7 * metre,
+        hang_dir: float3 { toward_sun * 0.62, 0.22, -0.75 },
+        hang:     6.4 * metre,
+        habit:    trees::MAPLE_HABIT,
     };
+    if variant == WHOLE_OVAL {
+        w.height = 20.0 * metre;
+        w.girth = 0.38 * metre;
+        w.fork = 2.4 * metre;
+        w.leader = 0.8;
+        w.limbs = float2 { 55.0, 30.0 };
+        w.crown = float4 { 7.0 * metre, 9.2 * metre, 7.0 * metre, near };
+        w.middle = float3 { toward_sun * 0.5 * metre, 10.8 * metre, 0.3 * metre };
+        w.habit.children[0] = 16;
+        w.leafy = 0.5;
+        w.autumn = 1.0;
+        w.shell = 2.0 * metre;
+        w.hang_at = 2.4 * metre;
+        w.hang = 5.6 * metre;
+    }
+    if variant == WHOLE_DOME {
+        w.height = 19.0 * metre;
+        w.girth = 0.42 * metre;
+        w.fork = 2.4 * metre;
+        w.leader = 0.6;
+        w.limbs = float2 { 68.0, 35.0 };
+        w.crown = float4 { 9.0 * metre, 8.6 * metre, 8.5 * metre, near };
+        w.middle = float3 { toward_sun * 0.5 * metre, 10.4 * metre, 0.5 * metre };
+        w.habit.children[0] = 14;
+        w.leafy = 0.6;
+        w.autumn = 1.4;
+        w.hang_at = 2.5 * metre;
+    }
+    if variant == WHOLE_OLD {
+        w.fork = 3.4 * metre;
+        w.leader = 0.2;
+        w.limbs = float2 { 55.0, 22.0 };
+        w.habit.children[0] = 7;
+        w.habit.children[1] = 16;
+        w.middle = float3 { toward_sun * 1.5 * metre, 12.5 * metre, 0.5 * metre };
+    }
+    return w;
 }
 
 // Where the old maple is seen from: eyes over the library's floor, seated and standing,

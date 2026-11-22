@@ -24,8 +24,9 @@ struct Segment { a: float3, b: float3, ra: f32, rb: f32, level: i32 }
 
 // A leaf as its shadow falls: its middle, its length, and on the map the half axes of
 // its outline, from the middle to the tip and to the side; a leaf turned toward the sun's
-// rays falls short along one of them, edge-on a sliver.
-struct Leaf { at: float3, length: f32, tip: float2, side: float2 }
+// rays falls short along one of them, edge-on a sliver. `kind` the leaf atlas's leaf
+// whose outline it casts (leaf_atlas::silhouettes), -1 the species' own outline.
+struct Leaf { at: float3, length: f32, tip: float2, side: float2, kind: i32 = -1 }
 
 // Filled at setup only, as the room is put on: `var t = trees::Tree { .. };`.
 root struct Tree {
@@ -71,6 +72,10 @@ struct View {
     // The trunk's and limbs' widths and their blur times these: the shell's tree has them
     // finer and softer (rooms::SHELL_LIMBS), the game's as grown.
     wood: float2 = float2 { 1.0, 1.0 },
+    // The windows' own rectangles on the map (x0, x1, y0, y1, with room for the blur and
+    // the sway), where the sun gets in: what casts between them, on the piers, is left
+    // out of the whole tree (grow_whole). None, all the map's rectangle.
+    holes: float4[..4] = [],
 }
 
 let WALL_GAP: f32 = 6.0;
@@ -119,6 +124,26 @@ fn segment_on_map(v: View&, sg: Segment&) -> bool {
     let mb = on_map(v, sg.b);
     let middle = float2 { (ma.x + mb.x) * 0.5, (ma.y + mb.y) * 0.5 };
     return on_rect(v, middle, length(float2 { mb.x - ma.x, mb.y - ma.y }) * 0.5 + sg.ra);
+}
+
+// Whether a segment falls in one of the map's holes, as grow_whole keeps the parts
+// that cast.
+fn segment_in_holes(v: View&, sg: Segment&) -> bool {
+    let ma = on_map(v, sg.a);
+    let mb = on_map(v, sg.b);
+    let middle = float2 { (ma.x + mb.x) * 0.5, (ma.y + mb.y) * 0.5 };
+    return on_holes(v, middle, length(float2 { mb.x - ma.x, mb.y - ma.y }) * 0.5 + sg.ra);
+}
+
+// Whether a shape at `m` reaching `r` round it falls on the map, in one of its holes when
+// it has them.
+fn on_holes(v: View&, m: float2, r: f32) -> bool {
+    guard on_rect(v, m, r) else { return false; }
+    guard v.holes.len > 0 else { return true; }
+    for &o in v.holes {
+        if m.x > o.x - r && m.x < o.y + r && m.y > o.z - r && m.y < o.w + r { return true; }
+    }
+    return false;
 }
 
 // splitmix64: a branch's dice from its parent's and its place, so leaving out one branch
@@ -412,7 +437,7 @@ fn add_leaves(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i64
         let width = length * min(s.leaf_width * sp.width, 1.0) * roll_between(d, 0.45, 1.0);
         let tip = float2 { cos(angle), sin(angle) } * (length * 0.5);
         let side = float2 { -sin(angle), cos(angle) } * (width * 0.5);
-        keep_leaf(t, Leaf { middle, length, tip, side });
+        keep_leaf(t, Leaf { middle, length, tip, side, .. });
     }
 }
 
@@ -464,7 +489,7 @@ fn add_clusters(t: Tree&, s: Spec&, v: View&, d: Dice&, points: float3[9]&, n: i
             let along = normalize(stalk - face * dot(stalk, face));
             let across = cross(face, along);
             let width = length * min(s.leaf_width * sp.width, 1.0) * roll_between(d, 0.8, 1.0);
-            keep_leaf(t, Leaf { middle, length, map_dir(v, along) * (length * 0.5), map_dir(v, across) * (width * 0.5) });
+            keep_leaf(t, Leaf { middle, length, map_dir(v, along) * (length * 0.5), map_dir(v, across) * (width * 0.5), .. });
         }
     }
 }
@@ -514,6 +539,9 @@ fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
     var sp = s;
     var vw = v;
     let depth = depths(t, vw);
+    // The atlas's leaves' outlines, for the leaves that cast one.
+    var outlines: f32[>..] = [];
+    leaf_atlas::silhouettes(outlines);
     // Each layer's mean depth, for its blur.
     var z_sum:   f32[4] = [0.0; 4];
     var z_count: f32[4] = [0.0; 4];
@@ -537,7 +565,11 @@ fn draw_map(t: Tree&, s: Spec, v: View, out: u8[>..]&) {
         }
         for &lf in t.leaves {
             guard layer_of_depth(lf.at.z, depth) == layer else { continue; }
-            draw_leaf(plane, vw, lf, 1.0 - sp.leaf_light, species(sp.kind).lobes);
+            if lf.kind >= 0 {
+                draw_atlas_leaf(plane, vw, lf, 1.0 - sp.leaf_light, outlines);
+            } else {
+                draw_leaf(plane, vw, lf, 1.0 - sp.leaf_light, species(sp.kind).lobes);
+            }
         }
         let z = if z_count[layer] > 0.0 { z_sum[layer] / z_count[layer] } else { 0.0 };
         let sharper = if layer == NEAR { species(sp.kind).near_blur } else { 1.0 };
@@ -591,6 +623,42 @@ fn draw_segment(plane: f32[>..]&, v: View&, sg: Segment&) {
             let cover = clamp(rr + texel * 0.5 - dist, 0.0, min(2.0 * rr, texel)) / texel;
             guard cover > 0.0 else { continue; }
             plane[j * v.w + i] *= 1.0 - cover;
+        }
+    }
+}
+
+// A leaf cast by the leaf atlas's outline of it (leaf_atlas::silhouettes), on its half
+// axes: the blade's middle at lf.at, its foot half a length back along lf.tip. Edge-on, a
+// sliver as draw_leaf draws it.
+fn draw_atlas_leaf(plane: f32[>..]&, v: View&, lf: Leaf&, blocks: f32, outlines: f32[>..]&) {
+    let texel = v.size.x / v.w;
+    let a = lf.tip;
+    let b = lf.side;
+    let la = max(length(a), 1e-6);
+    let thin = abs(a.x * b.y - a.y * b.x) / la;
+    guard thin >= texel * 0.5 else {
+        draw_leaf(plane, v, lf, blocks, 0);
+        return;
+    }
+    let m = on_map(v, lf.at);
+    let det = a.x * b.y - a.y * b.x;
+    // The outline's box in half lengths along and half widths across.
+    let rx = abs(a.x) * 2.2 + abs(b.x) * 1.5;
+    let ry = abs(a.y) * 2.2 + abs(b.y) * 1.5;
+    let x0, x1 = texel_range(m.x - rx - texel, m.x + rx + texel, v.middle.x, v.size.x, v.w);
+    let y0, y1 = texel_range(m.y - ry - texel, m.y + ry + texel, v.middle.y, v.size.y, v.h);
+    let du = float2 { b.y / det, -b.x / det };
+    let dw = float2 { -a.y / det, a.x / det };
+    let base = lf.kind * leaf_atlas::MASK * leaf_atlas::MASK;
+    for j in y0..y1 {
+        let y = texel_y(v, j) - m.y;
+        for i in x0..x1 {
+            let x = texel_x(v, i) - m.x;
+            let u = du.x * x + du.y * y;
+            let w = dw.x * x + dw.y * y;
+            let cover = leaf_atlas::outline_at(outlines, base, w * leaf_atlas::ACROSS_HALF, 0.5 + u * 0.5);
+            guard cover > 0.0 else { continue; }
+            plane[j * v.w + i] *= 1.0 - blocks * cover;
         }
     }
 }

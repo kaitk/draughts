@@ -6,6 +6,8 @@
 //
 //   goose build -o build/tree_dump tools/tree_dump.goose && build/tree_dump OUT_DIR
 //
+// One tree-NAME-whole.bin and -culled.bin a variant (rooms::WHOLE_VARIANTS), its shadow
+// shadow-NAME.grey and times in times.txt; the frame's eyes and windows for the default.
 // tree.bin: "segments" n, then n × (a.xyz b.xyz ra rb level); "limbs" n × (first count
 // level parent); "cards" n × (foot.xyz base.xyz along.xyz face.xyz size width kind tint);
 // each count an f32 too.
@@ -40,6 +42,16 @@ fn write_tree(path: const u8[:], t: trees::Tree&) {
     guard write_file(path, out[..]) else { abort("could not write the tree"); }
 }
 
+// A map's four layers multiplied, one byte a texel.
+fn write_grey(path: const u8[:], map: u8[>..]&, v: trees::View) {
+    var grey: u8[>..] = [];
+    for i in v.w * v.h {
+        let o = i * 4;
+        grey.push(((map[o] as i64) * (map[o + 1] as i64) / 255 * (map[o + 2] as i64) / 255 * (map[o + 3] as i64) / 255) as u8);
+    }
+    guard write_file(path, grey[..]) else { abort("could not write the shadow"); }
+}
+
 fn line3(out: u8[>..]&, name: const u8[:], v: float3) { format(out, name, " ", v.x, " ", v.y, " ", v.z, "\n"); }
 
 fn main() {
@@ -48,53 +60,58 @@ fn main() {
     let dir = args[1];
     let r = rooms::get(rooms::LIBRARY);
     let s = room_shell::LIBRARY;
-    let w = rooms::whole_tree(r, s);
     let sight = rooms::whole_sight(r, s);
     let v = rooms::shell_tree_view(r, s);
-
-    var t = trees::Tree { .. };
-    var t0 = clock();
-    trees::grow_whole(t, w, v, sight, false);
-    let whole_ms = (clock() - t0) * 1000.0;
-    print("whole: ", t.segments.len, " segments, ", t.limbs.len, " limbs (", trees::limbs_at(t, 0), " ", trees::limbs_at(t, 1), " ",
-          trees::limbs_at(t, 2), " ", trees::limbs_at(t, 3), " ", trees::limbs_at(t, 4), "), ", t.cards.len, " leaves, ",
-          t.leaves.len, " casting, ", t.left_out, " left out, ", whole_ms, " ms");
-    write_tree(str(dir, "/tree-whole.bin")[..], t);
-
-    var c = trees::Tree { .. };
-    t0 = clock();
-    trees::grow_whole(c, w, v, sight, true);
-    let culled_ms = (clock() - t0) * 1000.0;
-    print("culled: ", c.segments.len, " segments, ", c.limbs.len, " limbs (", trees::limbs_at(c, 0), " ", trees::limbs_at(c, 1), " ",
-          trees::limbs_at(c, 2), " ", trees::limbs_at(c, 3), " ", trees::limbs_at(c, 4), "), ", c.cards.len, " leaves, ",
-          c.leaves.len, " casting, ", culled_ms, " ms");
-    write_tree(str(dir, "/tree-culled.bin")[..], c);
-
-    // The shell's shadow from it, and from today's tree for comparison.
     let spec = rooms::tree_spec(rooms::shell_tree(r));
-    var map: u8[>..] = [];
-    t0 = clock();
-    trees::draw_map(c, spec, v, map);
-    let map_ms = (clock() - t0) * 1000.0;
+    let w = rooms::whole_tree(r, s);
+    var times: u8[>..] = [];
+    for name, k in rooms::WHOLE_VARIANTS {
+        let wk = rooms::whole_tree(r, s, k);
+        var t = trees::Tree { .. };
+        var t0 = clock();
+        trees::grow_whole(t, wk, v, sight, false);
+        let whole_ms = (clock() - t0) * 1000.0;
+        print(name, " whole: ", t.segments.len, " segments, ", t.limbs.len, " limbs (", trees::limbs_at(t, 0), " ",
+              trees::limbs_at(t, 1), " ", trees::limbs_at(t, 2), " ", trees::limbs_at(t, 3), " ", trees::limbs_at(t, 4), "), ",
+              t.cards.len, " leaves, ", whole_ms, " ms");
+        write_tree(str(dir, "/tree-", name, "-whole.bin")[..], t);
+        var c = trees::Tree { .. };
+        t0 = clock();
+        trees::grow_whole(c, wk, v, sight, true);
+        let culled_ms = (clock() - t0) * 1000.0;
+        print(name, " culled: ", c.segments.len, " segments, ", c.limbs.len, " limbs, ", c.cards.len, " leaves, ", c.leaves.len,
+              " casting, ", c.left_out, " left out, ", culled_ms, " ms");
+        write_tree(str(dir, "/tree-", name, "-culled.bin")[..], c);
+        // Its shadow through the shell's windows, the leaves cast by the atlas's outlines.
+        var map: u8[>..] = [];
+        t0 = clock();
+        trees::draw_map(c, spec, v, map);
+        let map_ms = (clock() - t0) * 1000.0;
+        print(name, " shadow: passing ", trees::passing(map, -1, v), " in ", map_ms, " ms");
+        format(times, name, " ", whole_ms, " ", culled_ms, " ", map_ms, " ", trees::passing(map, -1, v), "\n");
+        write_grey(str(dir, "/shadow-", name, ".grey")[..], map, v);
+        if k == rooms::WHOLE_OLD_LEADER {
+            // The same leaves cast as the species' palmate outline, for the comparison.
+            for &lf in c.leaves { lf.kind = -1; }
+            var plain: u8[>..] = [];
+            t0 = clock();
+            trees::draw_map(c, spec, v, plain);
+            print(name, " shadow, plain outlines: passing ", trees::passing(plain, -1, v), " in ", (clock() - t0) * 1000.0, " ms");
+            write_grey(str(dir, "/shadow-", name, "-plain.grey")[..], plain, v);
+        }
+    }
+    guard write_file(str(dir, "/times.txt")[..], times[..]) else { abort("could not write the times"); }
+
+    // Today's tree's shadow for comparison.
     var today = trees::Tree { .. };
     var today_map: u8[>..] = [];
-    t0 = clock();
+    var t0 = clock();
     trees::grow(today, spec, v);
     trees::draw_map(today, spec, v, today_map);
     let today_ms = (clock() - t0) * 1000.0;
-    print("shadow: ", v.w, " x ", v.h, ", passing ", trees::passing(map, -1, v), " in ", map_ms, " ms; today's tree ",
-          today.segments.len, " segments, ", today.leaves.len, " leaves, passing ", trees::passing(today_map, -1, v), " in ",
-          today_ms, " ms");
-    var grey:       u8[>..] = [];
-    var grey_today: u8[>..] = [];
-    for i in v.w * v.h {
-        let o = i * 4;
-        grey.push(((map[o] as i64) * (map[o + 1] as i64) / 255 * (map[o + 2] as i64) / 255 * (map[o + 3] as i64) / 255) as u8);
-        let k = (today_map[o] as i64) * (today_map[o + 1] as i64) / 255 * (today_map[o + 2] as i64) / 255 * (today_map[o + 3] as i64) / 255;
-        grey_today.push(k as u8);
-    }
-    guard write_file(str(dir, "/shadow-whole.grey")[..], grey[..]) && write_file(str(dir, "/shadow-today.grey")[..], grey_today[..])
-        else { abort("could not write the shadow"); }
+    print("today's tree: ", today.segments.len, " segments, ", today.leaves.len, " leaves, passing ", trees::passing(today_map, -1, v),
+          " in ", today_ms, " ms");
+    write_grey(str(dir, "/shadow-today.grey")[..], today_map, v);
 
     // The frame: where the eyes, windows, sun and tree are.
     var info: u8[>..] = [];
@@ -110,7 +127,7 @@ fn main() {
     line3(info, "eye", rooms::plan_to_tree(r, s, float3 { 4.037, 3.75, 1.6 }));
     line3(info, "at", rooms::plan_to_tree(r, s, float3 { 4.245, 6.737, 1.426 }));
     line3(info, "floor", rooms::plan_to_tree(r, s, float3 { 4.5, 7.0, 0.0 }));
-    format(info, "times_ms ", whole_ms, " ", culled_ms, " ", map_ms, " ", today_ms, "\n");
+    format(info, "today_ms ", today_ms, "\n");
     guard write_file(str(dir, "/frame.txt")[..], info[..]) else { abort("could not write the frame"); }
 
     // The atlas.

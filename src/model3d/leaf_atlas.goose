@@ -263,6 +263,49 @@ fn draw_leaf(k: i64, shape: u8[>..]&, marks: u8[>..]&, veins: f32[>..]&) {
     }
 }
 
+// The blades' outlines alone, MASK texels a side over the card's quad, each leaf's after
+// the last: what the tree's shadow map casts (trees::draw_atlas_leaf). A card's half width
+// in the leaf's frame is ACROSS_HALF of its blade's length.
+let MASK = 64;
+let ACROSS_HALF: f32 = 0.575;
+
+fn silhouettes(out: f32[>..]&) {
+    out.clear();
+    out.resize(LEAVES * MASK * MASK, 0.0);
+    let per = MASK / (QUAD.x * 2.0);
+    for k in LEAVES {
+        let lf = leaf_of(k);
+        for j in MASK {
+            for i in MASK {
+                let p = float2 { -QUAD.x + (i + 0.5) / per, QUAD.z - (j + 0.5) / per };
+                out[(k * MASK + j) * MASK + i] = clamp(0.5 + inside(lf, p) * per, 0.0, 1.0);
+            }
+        }
+    }
+}
+
+// A leaf's outline at p (its frame) from silhouettes(), bilinear; 0 outside its square.
+fn outline_at(masks: f32[>..]&, base: i64, x: f32, y: f32) -> f32 {
+    let per = MASK / (QUAD.x * 2.0);
+    let fx = (x + QUAD.x) * per - 0.5;
+    let fy = (QUAD.z - y) * per - 0.5;
+    guard fx > -1.0 && fy > -1.0 && fx < MASK && fy < MASK else { return 0.0; }
+    let ix = floor(fx) as i64;
+    let iy = floor(fy) as i64;
+    let tx = fx - ix;
+    let ty = fy - iy;
+    let a = mask_at(masks, base, ix, iy);
+    let b = mask_at(masks, base, ix + 1, iy);
+    let c = mask_at(masks, base, ix, iy + 1);
+    let e = mask_at(masks, base, ix + 1, iy + 1);
+    return (a + (b - a) * tx) + ((c + (e - c) * tx) - (a + (b - a) * tx)) * ty;
+}
+
+fn mask_at(masks: f32[>..]&, base: i64, i: i64, j: i64) -> f32 {
+    guard i >= 0 && j >= 0 && i < MASK && j < MASK else { return 0.0; }
+    return masks[base + j * MASK + i];
+}
+
 fn byte(x: f32) -> u8 { (clamp(x, 0.0, 1.0) * 255.0 + 0.5) as u8 }
 
 fn mips_of(w: i64, h: i64) -> i64 {
