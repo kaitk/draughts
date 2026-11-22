@@ -53,6 +53,10 @@
 //       [--mote-glint EXP] [--mote-fibres SHARE] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
 //       [--point-px SIGMA (the points' footprint, 0.75)] [--glints K (the flakes' glints, 1 as real, 0 off)]
 //       [--air DRIFT,RISE,SWIRL,SIZE (cm a second, the swirls' size in cm; 1.2,1,1.5,12)] [--near K (denser round the board, 0 even)]
+//       [--haze off|clean|lived|dusted|study (the sunbeam's haze with HDR, render3d::Haze: the air's sigma 0, 5e-5, 1.5e-4,
+//       4e-4 a metre, and the ChatGPT study's strength, 3e-3 with its stripes softer; off)] [--haze-sigma S (a metre, over the preset)]
+//       [--haze-look G,EVEN,TAPS,SOFT (0.7,0.2,12,1; SOFT the stripes' softness, 0 sharp, 1 the sun's disc; the study 4)] [--haze-res half|full (half)]
+//       [--haze-toward K (the stripes K times softer again looking toward the sun)]
 //       [--halo K --halo-reach K (the pieces' darkening of the field round them: its strength, and its reach
 //       as a share; 0 or none the shader's own, shaders::OCC_FRAG's HALO and HALO_REACH, 1 and 1 today)]
 //       [--room-surfaces on|off] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
@@ -177,6 +181,16 @@ fn view_point(p: float3, view: i64) -> float3 {
 // The sun's looks to compare in the view out (--sun-look; render3d::SunLook's disc, glare
 // and tree): "made" as it was before 2026-11-22's looks.
 let SUN_LOOK_NAMES = ["made", "real", "tight", "concept", "soft"];
+// The haze in the sunbeam's strengths (render3d::Haze.sigma, a metre): off; a clean room's air,
+// a lived-in one's, a room just dusted (build/notes/window-view/refs/research-haze-motes.md),
+// and the ChatGPT library study's soft wide beam across the dark bookcase.
+let HAZE_NAMES = ["off", "clean", "lived", "dusted", "study"];
+let HAZE_STUDY:  f32    = 3.0e-3;
+let HAZE_SIGMAS: f32[5] = [0.0, 5.0e-5, 1.5e-4, 4.0e-4, HAZE_STUDY];
+// Each its stripes' softness (Haze.soft): the sun's disc's, the study's a wide diffuse beam.
+let HAZE_SOFTS: f32[5] = [1.0, 1.0, 1.0, 1.0, 4.0];
+// Each its stripes softened more looking toward the sun (Haze.toward), where they converge on it.
+let HAZE_TOWARDS: f32[5] = [0.0, 0.0, 0.0, 0.0, 4.0];
 let SUN_LOOKS: render3d::SunLook[5] = [
     render3d::SunLook {},
     render3d::SunLook { float4 { 0.27, 0.6, 0.0, 30000.0 }, float4 { 0.4, 0.8, 0.25, 4.0 }, float4 { 2.0, 180.0, 0.3, 3.0 } },
@@ -1323,6 +1337,17 @@ fn main() {
                                      number(argv, "--scratches", 1.0) };
     render3d::sun_veil = number(argv, "--sun-veil", 1.0);
     // The sun's look in the view out (render3d::SunLook): a preset, then each part's flag over it.
+    // The haze in the sunbeam (render3d::Haze): a strength, sigma over it; its look; half size or full.
+    let haze_way = pick(argv, "--haze", HAZE_NAMES, 0);
+    render3d::haze.sigma = number(argv, "--haze-sigma", HAZE_SIGMAS[haze_way]);
+    let haze_look = four(argv, "--haze-look", float4 { render3d::haze.g, render3d::haze.even, render3d::haze.taps, HAZE_SOFTS[haze_way] });
+    render3d::haze.g = haze_look.x;
+    render3d::haze.even = haze_look.y;
+    render3d::haze.taps = haze_look.z as i64;
+    render3d::haze.soft = haze_look.w;
+    render3d::haze.toward = number(argv, "--haze-toward", HAZE_TOWARDS[haze_way]);
+    render3d::haze.half = !(flag_value(argv, "--haze-res") > 0 && argv[flag_value(argv, "--haze-res")] == "full");
+    var haze_e4 = render3d::haze.sigma * 1.0e4;
     let sun_look = pick(argv, "--sun-look", SUN_LOOK_NAMES, 0);
     render3d::sun_look = SUN_LOOKS[sun_look];
     render3d::sun_look.disc = four(argv, "--sun-disc", render3d::sun_look.disc);
@@ -1879,6 +1904,12 @@ fn main() {
                 slider(c, "Swirls cm/s (points)", render3d::dust.air.z, 0.0, 6.0);
                 slider(c, "Swirls' size cm (points)", render3d::dust.air.w, 3.0, 40.0);
                 slider(c, "Round the board (points)", render3d::dust.near, 0.0, 1.0);
+                slider(c, "Haze, sigma 1e-4/m (HDR)", haze_e4, 0.0, 40.0);
+                slider(c, "Haze's g", render3d::haze.g, 0.0, 0.95);
+                slider(c, "Haze's even share", render3d::haze.even, 0.0, 1.0);
+                slider(c, "Haze's soft stripes", render3d::haze.soft, 0.0, 8.0);
+                slider(c, "Haze's softer toward the sun", render3d::haze.toward, 0.0, 8.0);
+                switch(c, "Haze's size", render3d::haze.half, ["full", "half"]);
                 ui::tree_state_pop(c);
             }
             if section(c, open, CAMERA) {
@@ -2070,6 +2101,9 @@ fn main() {
                     flag_four(line, "--air", render3d::dust.air);
                 }
             }
+            format(line, " --haze-sigma ", haze_e4 * 1.0e-4, " --haze-toward ", render3d::haze.toward, " --haze-res ",
+                   if render3d::haze.half { "half" } else { "full" });
+            flag_four(line, "--haze-look", float4 { render3d::haze.g, render3d::haze.even, render3d::haze.taps, render3d::haze.soft });
             format(line, " --books ", on_off(books_on), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on), " --lace-hang ", lace_hang);
             if st.halo.x > 0.0 || st.halo.y > 0.0 { format(line, " --halo ", st.halo.x, " --halo-reach ", st.halo.y); }
             let wv = render3d::window_view;
@@ -2205,6 +2239,7 @@ fn main() {
         render3d::dust.beam = dust_way >= DUST_MOTES;
         render3d::dust.shape = if dust_way >= DUST_POINTS { 2.0 } else if dust_way >= DUST_MOTES { 1.0 } else { 0.0 };
         render3d::dust.board_at = BEAM_NEAR / (BEAM_NEAR + BEAM_FAR);
+        render3d::haze.sigma = haze_e4 * 1.0e-4;
         if dust_way >= DUST_MOTES {
             let at, u, v, w = beam_box(g);
             render3d::dust.low = at;

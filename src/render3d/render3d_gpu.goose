@@ -716,13 +716,19 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     h.glow_first = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_FIRST, shaders::GLOW_DOWN_FRAG));
     h.glow_down = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_DOWN_FRAG));
     h.glow_up = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_UP_FRAG), gfx::PipelineDesc { blend: gfx::BLEND_ALPHA });
+    h.haze_cross = gfx::pipeline(full, embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::HAZE_BLOCK,
+                                                    shaders::HAZE_CROSS_HEAD, shaders::LIGHT_FN, shaders::HAZE_CROSS_FRAG));
+    let haze = embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::HAZE_BLOCK, shaders::HAZE_FRAG);
+    h.haze = gfx::pipeline(full, haze);
+    h.haze_full = gfx::pipeline(full, haze, gfx::PipelineDesc { blend: gfx::BLEND_ADD });
+    h.haze_add = gfx::pipeline(full, embed_shader("frag", shaders::HAZE_ADD_FRAG), gfx::PipelineDesc { blend: gfx::BLEND_ADD });
 }
 
 // The HDR target's pipelines given back (make_hdr, release).
 fn release_hdr(own: Own&, g: render3d::Gpu&) {
     let h = g.hdr_pipes;
     for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone,
-              h.glow_first, h.glow_down, h.glow_up] {
+              h.glow_first, h.glow_down, h.glow_up, h.haze_cross, h.haze, h.haze_full, h.haze_add] {
         if p.id != 0 { gfx::release(p); }
     }
     g.hdr_pipes = default<render3d::HdrPipelines>();
@@ -777,6 +783,64 @@ fn glow_pass(own: Own&, g: render3d::Gpu&, size: int2) {
         gfx::draw(3);
         gfx::end_pass();
     }
+}
+
+// The haze in the sunbeam (render3d::haze_shown) added into the HDR target the pass resolved,
+// before the glow: the beam's cross-section drawn into its atlas, then the haze worked out at
+// the pre-pass's half size from its pre_place and added bilinear (Haze.half), or straight into
+// the target. Its panes sent when they change; its targets made the first time and at the
+// pre-pass's size.
+fn haze_pass(own: Own&, g: render3d::Gpu&, size: int2) {
+    let q = render3d::ssao_size_of(size);
+    let half = render3d::haze.half;
+    let b = render3d::haze_block(g, if half { q } else { size });
+    if g.haze_panes.id == 0 {
+        g.haze_panes = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(render3d::haze_panes));
+        render3d::haze_sent = render3d::haze_panes;
+    } else if render3d::haze_changed() {
+        gfx::update_buffer(g.haze_panes, bytes_of(render3d::haze_panes));
+    }
+    if g.haze_cross.id == 0 { g.haze_cross = gfx::render_target(render3d::HAZE_CROSS_SIZE.x, render3d::HAZE_CROSS_SIZE.y, gfx::RGBA16F); }
+    if half && (g.haze_image.id == 0 || g.haze_size.x != q.x || g.haze_size.y != q.y) {
+        if g.haze_image.id != 0 {
+            gfx::release(g.haze_image);
+            gfx::flush();
+        }
+        g.haze_image = gfx::render_target(q.x, q.y, gfx::RGBA16F);
+        g.haze_size = q;
+    }
+    let h .= g.hdr_pipes;
+    var cross = gfx::PassDesc { clear_color: false };
+    cross.color[0] = g.haze_cross;
+    gfx::begin_pass(cross);
+    gfx::bind(h.haze_cross);
+    gfx::bind_texture(gfx::FRAGMENT, 0, render3d::tree_or_stand_in(g), g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 1, render3d::lace_or_stand_in(g), g.linear);
+    gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.haze_panes);
+    gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+    gfx::uniforms(gfx::FRAGMENT, 1, b);
+    gfx::draw(3);
+    gfx::end_pass();
+    let h .= g.hdr_pipes;
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = if half { g.haze_image } else { g.hdr_image };
+    gfx::begin_pass(pass);
+    gfx::bind(if half { h.haze } else { h.haze_full });
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.haze_cross, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 1, g.pre_place, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+    gfx::uniforms(gfx::FRAGMENT, 1, b);
+    gfx::draw(3);
+    gfx::end_pass();
+    guard half else { return; }
+    var add = gfx::PassDesc { clear_color: false };
+    add.color[0] = g.hdr_image;
+    gfx::begin_pass(add);
+    gfx::bind(h.haze_add);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.haze_image, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, render3d::HazeAdd { float4 { 1.0 / size.x, 1.0 / size.y, 0.0, 0.0 } });
+    gfx::draw(3);
+    gfx::end_pass();
 }
 
 // The depth of field's depth (render3d::depth_shown) at the pass's size, 1x and sampled: the
@@ -1513,7 +1577,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
                     g.planar_depth, g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
+                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib, g.haze_panes];
     for b in buffers { if b.id != 0 { gfx::release(b); } }
     let samplers = [g.linear, g.aniso, g.compare, g.planar_sampler];
     for s in samplers { if s.id != 0 { gfx::release(s); } }

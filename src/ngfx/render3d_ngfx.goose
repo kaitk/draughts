@@ -618,13 +618,17 @@ fn make_hdr(own: Own&, g: Gpu&) {
     h.glow_first = module(embed_file("../../build/ngfx/blobs/r3d_glow_first.blob"));
     h.glow_down = module(embed_file("../../build/ngfx/blobs/r3d_glow_down.blob"));
     h.glow_up = module(embed_file("../../build/ngfx/blobs/r3d_glow_up.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_ALPHA });
+    h.haze_cross = module(embed_file("../../build/ngfx/blobs/r3d_haze_cross.blob"));
+    h.haze = module(embed_file("../../build/ngfx/blobs/r3d_haze.blob"));
+    h.haze_full = module(embed_file("../../build/ngfx/blobs/r3d_haze.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_ADD });
+    h.haze_add = module(embed_file("../../build/ngfx/blobs/r3d_haze_add.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_ADD });
 }
 
 // The HDR target's pipelines given back (make_hdr, release).
 fn release_hdr(own: Own&, g: Gpu&) {
     let h = g.hdr_pipes;
     for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone,
-              h.glow_first, h.glow_down, h.glow_up] {
+              h.glow_first, h.glow_down, h.glow_up, h.haze_cross, h.haze, h.haze_full, h.haze_add] {
         if p.id != 0 { nx::release(p); }
     }
     g.hdr_pipes = default<render3d::HdrPipelines>();
@@ -686,6 +690,68 @@ fn glow_pass(own: Own&, g: Gpu&, size: int2) {
         ngfx::end_pass();
         barrier_between_passes();
     }
+}
+
+// The haze in the sunbeam, as gfx's haze_pass; r3d_haze_cross's header: Haze, the tree's map,
+// the lace's, the panes; r3d_haze's: Haze, the cross-section, pre_place; r3d_haze_add's: its
+// light, HazeAdd.
+fn haze_pass(own: Own&, g: Gpu&, size: int2) {
+    let q = render3d::ssao_size_of(size);
+    let half = render3d::haze.half;
+    let b: render3d::HazeBlock[1] = [render3d::haze_block(g, if half { q } else { size })];
+    if g.haze_panes.id == 0 {
+        g.haze_panes = nx::buffer(bytes_of(render3d::haze_panes));
+        render3d::haze_sent = render3d::haze_panes;
+    } else if render3d::haze_changed() {
+        nx::update_buffer(g.haze_panes, bytes_of(render3d::haze_panes));
+    }
+    if half && (g.haze_image.id == 0 || g.haze_size.x != q.x || g.haze_size.y != q.y) {
+        if g.haze_image.id != 0 {
+            ngfx::flush();
+            nx::release(g.haze_image);
+        }
+        g.haze_image = nx::render_target(q.x, q.y, ngfx::RGBA16F);
+        g.haze_size = q;
+    }
+    if g.haze_cross.id == 0 { g.haze_cross = nx::render_target(render3d::HAZE_CROSS_SIZE.x, render3d::HAZE_CROSS_SIZE.y, ngfx::RGBA16F); }
+    let h .= g.hdr_pipes;
+    var cross = nx::PassDesc { clear_color: false };
+    cross.color[0] = g.haze_cross;
+    nx::begin_pass(cross);
+    nx::bind(h.haze_cross);
+    var c = no_root();
+    c.frame = frame_addr(own, g);
+    c.u = ngfx::frame_data(bytes_of(b));
+    c.buf0 = nx::address(g.haze_panes);
+    slot(c, 0, render3d::tree_or_stand_in(g), g.linear);
+    slot(c, 1, render3d::lace_or_stand_in(g), g.linear);
+    ngfx::draw(ngfx::root(c), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
+    var pass = nx::PassDesc { clear_color: false };
+    pass.color[0] = if half { g.haze_image } else { g.hdr_image };
+    nx::begin_pass(pass);
+    nx::bind(if half { h.haze } else { h.haze_full });
+    var r = no_root();
+    r.frame = frame_addr(own, g);
+    r.u = ngfx::frame_data(bytes_of(b));
+    slot(r, 0, g.haze_cross, g.linear);
+    slot(r, 1, g.pre_place, g.linear);
+    ngfx::draw(ngfx::root(r), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
+    guard half else { return; }
+    var add = nx::PassDesc { clear_color: false };
+    add.color[0] = g.hdr_image;
+    nx::begin_pass(add);
+    nx::bind(h.haze_add);
+    var a = no_root();
+    slot(a, 0, g.haze_image, g.linear);
+    let ab: render3d::HazeAdd[1] = [render3d::HazeAdd { float4 { 1.0 / size.x, 1.0 / size.y, 0.0, 0.0 } }];
+    a.u = ngfx::frame_data(bytes_of(ab));
+    ngfx::draw(ngfx::root(a), 3);
+    ngfx::end_pass();
+    barrier_between_passes();
 }
 
 // The depth of field's depth, as gfx's depth_pass; the modules' headers: r3d_depth_lace's
@@ -1483,7 +1549,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib];
+                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib, g.haze_panes];
     for b in buffers { if b.id != 0 { nx::release(b); } }
     let samplers = [g.linear, own.point, g.aniso, g.compare, g.planar_sampler];
     for s in samplers { if s.id != 0 { nx::release(s); } }

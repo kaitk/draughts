@@ -6429,3 +6429,206 @@ let DUST_FRAG = """
     #endif
     }
     """;
+// The haze in the sunbeam (render3d::haze_pass, Haze). The sun is one direction and the
+// window's glass flat, so every point of the room maps along the sun onto the outer glass's
+// plane, and how much sun reaches it is what passes there: the panes (render3d::haze_panes),
+// the lace and the tree outside all as seen in that plane. HAZE_CROSS_FRAG draws that
+// cross-section of the beam each frame into a small atlas, a slot each window: x the panes'
+// coverage of the texel exactly (each a product set, so its share of a box is the columns'
+// share times the rows'), times the lace and the tree; y the same blurred by haze_blur_most.
+// HAZE_FRAG then takes each pixel's view from the eye to what the pre-pass drew there
+// (pre_place) onto that plane, where it is a straight segment, and averages the atlas over
+// haze_look.z jittered taps along its part in each window's slot: the beam's lit length on
+// the view. Each tap's blur is the sun's disc's widening of the bars' shadows at its depth
+// from the glass, times haze_look.w (1 as the disc does it, more a softer beam), and times
+// 1 + haze_pixel.z more looking toward the sun, where the stripes converge on it; a mix of
+// x and y by it. Then sigma × the phase (Henyey-Greenstein at g, haze_look.y of it even)
+// × the sun as the room's surfaces take it (haze_light), the room's linear light a pixel.
+// haze_plane: x the outer glass's depth along the wall's normal, y and z how far along u
+// and up the sun moves a unit of that depth, w the windows; haze_pixel: xy a pixel of the
+// target in uv; haze_box0..2 the windows' panes' boxes in the plane.
+let HAZE_BLOCK = """
+    layout(set = 3, binding = 1) uniform Haze {
+        vec4 axes;
+        vec4 tile;
+        vec4 shell;
+        vec4 shell_mids;
+        vec4 shell_niche;
+        vec4 shell_glass;
+        vec4 shell_sun;
+        vec4 window_view;
+        vec4 haze_light;
+        vec4 haze_look;
+        vec4 haze_plane;
+        vec4 haze_ranges;
+        vec4 haze_pixel;
+        vec4 haze_box0;
+        vec4 haze_box1;
+        vec4 haze_box2;
+    };
+    // The atlas's slot's size in texels; the depth from the glass (metres) whose blur its y
+    // holds, the deepest the beam reaches across the room.
+    const vec2 HAZE_SLOT = vec2(192.0, 384.0);
+    const float HAZE_DEEPEST = 5.0;
+    float haze_widen() { return shell_sun.x > 0.0 ? shell_sun.x : room.z; }
+    // The stripes' blur (world units, a half width) at depth from the glass, times soft.
+    float haze_blur(float depth, float soft) { return 0.5 * soft * (0.03 + haze_widen() * max(depth, 0.0)); }
+    float haze_blur_most() { return haze_blur(HAZE_DEEPEST * shell.w, haze_look.w * (1.0 + haze_pixel.z)); }
+    // Window w's slot: its panes' box grown by the blur and a few texels.
+    vec4 haze_slot(int w) {
+        vec4 b = w == 0 ? haze_box0 : (w == 1 ? haze_box1 : haze_box2);
+        float m = haze_blur_most() + 0.02 * shell.w;
+        return b + vec4(-m, -m, m, m);
+    }
+    """;
+// HAZE_CROSS_FRAG's inputs, before LIGHT_FN (its lace_shadow and tree_light).
+let HAZE_CROSS_HEAD = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D tree_map;
+    layout(set = 2, binding = 1) uniform sampler2D lace_mask;
+    layout(std430, set = 2, binding = 2) readonly buffer BeamPanes { vec4 beam_panes[]; };
+    """;
+let HAZE_CROSS_FRAG = """
+    // The share of x0..x1 (r) that the intervals lo..hi cover.
+    float covered(vec2 r, float lo, float hi) { return max(min(r.y, hi) - max(r.x, lo), 0.0); }
+
+    // The share of the box q ± h the panes of the windows' range first..last cover: each product
+    // set's columns' share of its width times its rows' of its height.
+    float panes_cover(vec2 q, vec2 h, int first, int last) {
+        float sum = 0.0;
+        int i = first;
+        for (int k = 0; k < 8 && i < last; k++) {
+            vec4 b = beam_panes[i];
+            int nx = int(beam_panes[i + 1].x);
+            int ny = int(beam_panes[i + 1].y);
+            if (q.x + h.x > b.x && q.x - h.x < b.z && q.y + h.y > b.y && q.y - h.y < b.w) {
+                float cx = 0.0;
+                for (int j = 0; j < nx; j++) cx += covered(beam_panes[i + 2 + j].xy, q.x - h.x, q.x + h.x);
+                float cy = 0.0;
+                for (int j = 0; j < ny; j++) cy += covered(beam_panes[i + 2 + nx + j].xy, q.y - h.y, q.y + h.y);
+                sum += cx * cy;
+            }
+            i += 2 + nx + ny;
+        }
+        return sum / (4.0 * h.x * h.y);
+    }
+
+    // What the lace in front of window w lets through at the outer glass's point p, its pattern
+    // blurred as at `far` (world units) past it, and the tree outside.
+    float lace_tree(vec3 p, int w, float far) {
+        vec3 l = light_dir.xyz;
+        vec2 nw = -axes.zw;
+        vec2 along = axes.xy;
+        float toward = dot(l.xz, nw);
+        float m = 1.0;
+        float tl = (shell.y - shell_glass.z - dot(p.xz, nw)) / toward;
+        vec3 c = p + l * tl;
+        float mid = w == 0 ? shell_mids.x : (w == 1 ? shell_mids.y : shell_mids.z);
+        vec2 wl = vec2(dot(c.xz, along) - mid, c.y - shell.z) / shell.w;
+        float soft_l = (0.03 + haze_widen() * far) / shell.w + LACE_SOFT * far / shell.w;
+        m *= lace_shadow(wl, soft_l, 0.0).x;
+        if (tree.x > 0.0) {
+            vec2 tr = tree_light(p, l, nw, along, toward);
+            m *= tr.x * tr.y;
+        }
+        return m;
+    }
+
+    void main() {
+        vec2 f = gl_FragCoord.xy / (HAZE_SLOT * vec2(3.0, 1.0));
+        int w = int(f.x * 3.0);
+        result = vec4(0.0, 0.0, 0.0, 1.0);
+        if (float(w) >= haze_plane.w) return;
+        vec4 s = haze_slot(w);
+        vec2 at = vec2(fract(f.x * 3.0), f.y);
+        vec2 q = mix(s.xy, s.zw, at);
+        vec2 texel = (s.zw - s.xy) / HAZE_SLOT;
+        int first = w == 0 ? 3 : int(haze_ranges[w - 1]);
+        int last = int(haze_ranges[w]);
+        float sharp = panes_cover(q, 0.5 * texel, first, last);
+        float blurred = panes_cover(q, 0.5 * texel + haze_blur_most(), first, last);
+        if (sharp + blurred <= 0.0) return;
+        vec3 p = vec3(0.0, q.y, 0.0);
+        p.xz = axes.xy * q.x - axes.zw * haze_plane.x;
+        float far = HAZE_DEEPEST * shell.w;
+        result = vec4(sharp * lace_tree(p, w, 0.2 * far), blurred * lace_tree(p, w, far), 0.0, 1.0);
+    }
+    """;
+let HAZE_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D cross_map;
+    layout(set = 2, binding = 1) uniform sampler2D pre_place;
+
+    // The part (0..1) of the segment a + s d inside the box r (x0, y0, x1, y1), inv 1 / d: its
+    // first and last s.
+    vec2 box_span(vec4 r, vec2 a, vec2 inv) {
+        vec4 t = (r - a.xyxy) * inv.xyxy;
+        vec2 lo = min(t.xy, t.zw);
+        vec2 hi = max(t.xy, t.zw);
+        return vec2(max(max(lo.x, lo.y), 0.0), min(min(hi.x, hi.y), 1.0));
+    }
+
+    // Where p is carried along the sun onto the outer glass's plane.
+    vec2 on_glass(vec3 p, vec2 nw, vec2 along) {
+        float back = haze_plane.x - dot(p.xz, nw);
+        return vec2(dot(p.xz, along) + haze_plane.y * back, p.y + haze_plane.z * back);
+    }
+
+    void main() {
+        vec4 at = textureLod(pre_place, gl_FragCoord.xy * haze_pixel.xy, 0.0);
+        vec3 l = light_dir.xyz;
+        vec2 nw = -axes.zw;
+        vec2 along = axes.xy;
+        float toward = dot(l.xz, nw);
+        result = vec4(0.0, 0.0, 0.0, 1.0);
+        if (at.w <= 0.0 || toward < 0.05) return;
+        vec3 p0 = eye.xyz;
+        vec3 p1 = eye.xyz + at.xyz;
+        vec2 a = on_glass(p0, nw, along);
+        vec2 d = on_glass(p1, nw, along) - a;
+        vec2 inv = 1.0 / vec2(d.x >= 0.0 ? max(d.x, 1e-6) : min(d.x, -1e-6), d.y >= 0.0 ? max(d.y, 1e-6) : min(d.y, -1e-6));
+        float depth0 = (haze_plane.x - dot(p0.xz, nw)) / toward;
+        float depth1 = (haze_plane.x - dot(p1.xz, nw)) / toward;
+        float mu = dot(normalize(at.xyz), l);
+        float soft = haze_look.w * (1.0 + haze_pixel.z * smoothstep(0.5, 1.0, mu));
+        float most = haze_blur_most();
+        // A tap's place along the span, jittered pixel by pixel (interleaved gradient noise).
+        float jitter = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+        int taps = max(int(haze_look.z), 1);
+        float lit = 0.0;
+        for (int w = 0; w < 3; w++) {
+            if (float(w) >= haze_plane.w) break;
+            vec4 s = haze_slot(w);
+            vec2 sb = box_span(s, a, inv);
+            if (sb.y <= sb.x) continue;
+            float step = (sb.y - sb.x) / float(taps);
+            // A tap stands for its step: blurred at least as far as half of it reaches.
+            float reach = 0.5 * step * length(d);
+            float sum = 0.0;
+            for (int k = 0; k < taps; k++) {
+                float t = sb.x + (float(k) + jitter) * step;
+                vec2 uv = (a + d * t - s.xy) / (s.zw - s.xy);
+                vec2 c = textureLod(cross_map, vec2((float(w) + uv.x) / 3.0, uv.y), 0.0).xy;
+                float blur = max(haze_blur(mix(depth0, depth1, t), soft), reach);
+                sum += mix(c.x, c.y, clamp(blur / most, 0.0, 1.0));
+            }
+            lit += sum * step;
+        }
+        if (lit <= 0.0) return;
+        float g = haze_look.x;
+        float hg = (1.0 - g * g) / (12.566 * pow(max(1.0 + g * g - 2.0 * g * mu, 1e-4), 1.5));
+        float phase = (1.0 - haze_look.y) * hg + haze_look.y / 12.566;
+        float metres = lit * length(at.xyz) / shell.w;
+        result = vec4(haze_light.rgb * (haze_light.w * phase * metres), 1.0);
+    }
+    """;
+// The haze's light at half size (HAZE_FRAG) added bilinear over the picture.
+let HAZE_ADD_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D haze_image;
+    layout(set = 3, binding = 0) uniform HazeAdd { vec4 haze_add; };
+    void main() { result = vec4(texture(haze_image, gl_FragCoord.xy * haze_add.xy).rgb, 1.0); }
+    """;

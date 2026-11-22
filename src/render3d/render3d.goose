@@ -479,6 +479,12 @@ struct Gpu {
     // made with the HDR target's size.
     glow_levels: Texture[GLOW_LEVELS],
     glow_size:   int2,
+    // The haze's (haze_pass): its light at the pre-pass's half size, that size, its panes
+    // (haze_panes) as sent, and the beam's cross-section (HAZE_CROSS_SIZE).
+    haze_image: Texture,
+    haze_size:  int2,
+    haze_panes: Buffer,
+    haze_cross: Texture,
     // The depth of field's depth (depth_pass): 1x and sampled, DEPTH32F where it can be, at the
     // pass's size; the room's, the table's and the lace's pipelines into it (the board's is
     // depth_only), and the tuner's view of it (depth_show_pass), made the first time.
@@ -510,9 +516,15 @@ struct HdrPipelines {
     motes:   Pipeline,
     tone:    Pipeline,
     // The glow's (glow_pass): its first pick, a level halved, a level widened back up.
-    glow_first:  Pipeline,
-    glow_down:   Pipeline,
-    glow_up:     Pipeline,
+    glow_first: Pipeline,
+    glow_down:  Pipeline,
+    glow_up:    Pipeline,
+    // The haze's (haze_pass): the beam's cross-section, the haze into its half-size target,
+    // added straight into the picture, and that target added bilinear.
+    haze_cross:  Pipeline,
+    haze:        Pipeline,
+    haze_full:   Pipeline,
+    haze_add:    Pipeline,
     pieces:      i32,
     paint_steps: bool,
     sill_steps:  bool,
@@ -1731,6 +1743,11 @@ fn give_back<O>(o: O&, g: Gpu&) {
         g.glow_levels[k] = Texture { 0 };
     }
     g.glow_size = int2_0;
+    if g.haze_image.id != 0 { o.gpu_release(g.haze_image); }
+    if g.haze_cross.id != 0 { o.gpu_release(g.haze_cross); }
+    g.haze_image = Texture { 0 };
+    g.haze_cross = Texture { 0 };
+    g.haze_size = int2_0;
     g.color = Texture { 0 };
     g.edges = Texture { 0 };
     g.weights = Texture { 0 };
@@ -2296,6 +2313,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     // The room baked by now (room_surfaces): the board's pipelines in its shell.
     if !hdr && board_in_shell(g) { o.make_lit_shell(g); }
     o.board_pass(g, if hdr { g.hdr_image } else { shown }, size, backdrop);
+    if hdr && haze_shown(g) { o.haze_pass(g, size); }
     if hdr && glow_shown(g) { o.glow_pass(g, size); }
     if hdr { o.tone_pass(g, shown); }
     if glowing { o.bloom_pass(g, g.image, target, size); }
@@ -2831,6 +2849,220 @@ fn dust_block(g: Gpu&) -> DustBlock {
     // lace scatters on.
     if dust.beam { b.window_view.y = 0.0; }
     return b;
+}
+
+// The haze in the sunbeam (haze_pass, shaders::HAZE_CROSS_FRAG and HAZE_FRAG;
+// build/notes/builder-33/): the sun scattered toward the eye by the room's air where the beam
+// through the shell's windows crosses each pixel's view, added into the HDR target before the
+// glow and the tonemap. The sun is one direction and the glass flat, so the beam is its
+// cross-section in the outer glass's plane carried along the sun: the panes (each sash of the
+// outer glass cut by each of the inner glass's and by the niche's opening, a product set of
+// columns times rows there, haze_panes), the lace and the tree, drawn each frame into a small
+// atlas; each view, carried onto that plane, is a segment there, and the beam's lit length
+// on it the atlas averaged over `taps` along it. Times sigma (the air's scattering a metre),
+// the phase (Henyey-Greenstein at g, `even` of it isotropic) and the sun as the room's
+// surfaces take it. Off with sigma 0; the light tuner's for now. half: worked out at the
+// pre-pass's half size (its pre_place) and added bilinear, or straight into the target.
+// soft: the stripes blurred with the distance from the glass as the sun's disc widens the
+// bars' shadows, times this (0 sharp, 1 as the disc does, more a softer beam), and toward
+// times more again looking toward the sun, where the stripes converge on it.
+struct Haze {
+    sigma:  f32  = 0.0,
+    g:      f32  = 0.7,
+    even:   f32  = 0.2,
+    taps:   i64  = 12,
+    half:   bool = true,
+    soft:   f32  = 1.0,
+    toward: f32  = 0.0,
+}
+var haze = Haze {};
+fn haze_shown(g: Gpu&) -> bool { g.hdr && haze.sigma > 0.0 && g.room_shell && ssao_shown(g) && g.pre_place.id != 0 }
+
+// The panes as the outer glass's plane sees them along the sun (world units: along the
+// window wall's u, and up): haze_panes[0..3] each window's bounding box, then window k's
+// product sets (haze_set, one a pair of sashes) up to HazeBlock.ranges[k], for the
+// cross-section's pass. Worked out each frame and sent when they change.
+let MAX_HAZE_PANES = 512;
+// The beam's cross-section's atlas (shaders::HAZE_CROSS_FRAG): a slot of 192 × 384 a window.
+let HAZE_CROSS_SIZE = int2 { 576, 384 };
+var haze_panes: float4[MAX_HAZE_PANES] = [float4_0; MAX_HAZE_PANES];
+var haze_sent:  float4[MAX_HAZE_PANES] = [float4_0; MAX_HAZE_PANES];
+var haze_count = 0;
+
+// shaders::HAZE_BLOCK, both haze passes': the shell's windows as the room's block has them
+// (for LIGHT_FN's lace_shadow and tree_light), then the sun's light as the room's surfaces
+// take it (rgb, exposed) and sigma; g, the isotropic share, the taps, soft; the outer glass's
+// depth along the wall's normal, the sun's slope along u and up a unit of that depth, and how
+// many windows; the panes' ends; a pixel of the target in uv, and toward; each window's
+// panes' box.
+struct HazeBlock {
+    axes:        float4,
+    tile:        float4,
+    shell:       float4,
+    shell_mids:  float4,
+    shell_niche: float4,
+    shell_glass: float4,
+    shell_sun:   float4,
+    window_view: float4,
+    light:       float4,
+    look:        float4,
+    plane:       float4,
+    ranges:      float4,
+    pixel:       float4,
+    box0:        float4,
+    box1:        float4,
+    box2:        float4,
+}
+// HAZE_ADD_FRAG's: a pixel of the picture in uv.
+struct HazeAdd { pixel: float4 }
+
+// The casement's glazing at a glass plane (shaders::LIGHT_FN's casement, in its metres: along
+// from the window's middle, up from the floor), one sash's: its panes' columns over both leaves,
+// left to right, into xs, and its rows, upward, into ys; how many of each. The lower sash is
+// one pane across a leaf and two up, the upper three by three, between the bars.
+fn casement_sash(niche: float4, upper: bool, xs: float2[12]&, ys: float2[12]&) -> int2 {
+    let bar: f32 = 0.024;
+    let s = niche.y;
+    let h = niche.y + niche.z;
+    let zt = s + (h - s) * 2.0 / 3.0;
+    let ax0: f32 = 0.0175 + 0.05;
+    let ax1: f32 = 0.49 - 0.055;
+    let y0 = if upper { zt + 0.045 } else { s + 0.03 };
+    let y1 = if upper { h - 0.06 } else { zt - 0.045 };
+    let ay0 = y0 + (if upper { 0.055 } else { 0.08 });
+    let ay1 = y1 - 0.055;
+    let across = if upper { 3 } else { 1 };
+    let up = if upper { 3 } else { 2 };
+    let px = (ax1 - ax0 + bar) / across;
+    let py = (ay1 - ay0 + bar) / up;
+    for i in across {
+        let x0 = ax0 + i * px;
+        let x1 = ax0 + (i + 1) * px - bar;
+        xs[across - 1 - i] = float2 { -x1, -x0 };
+        xs[across + i] = float2 { x0, x1 };
+    }
+    for j in up { ys[j] = float2 { ay0 + j * py, ay0 + (j + 1) * py - bar }; }
+    return int2 { (across * 2) as i32, up as i32 };
+}
+
+// Into out, the intervals two sorted lists of disjoint intervals share, the second's moved by
+// `by`, all cut to lo..hi, in order; how many.
+fn shared(a: float2[12]&, na: i64, b: float2[12]&, nb: i64, by: f32, lo: f32, hi: f32, out: float2[12]&) -> i64 {
+    var i = 0;
+    var j = 0;
+    var n = 0;
+    while i < na && j < nb {
+        let x0 = max(max(a[i].x, b[j].x + by), lo);
+        let x1 = min(min(a[i].y, b[j].y + by), hi);
+        if x1 > x0 && n < 12 {
+            out[n] = float2 { x0, x1 };
+            n++;
+        }
+        if a[i].y < b[j].y + by { i++; } else { j++; }
+    }
+    return n;
+}
+
+// One sash of the outer glass (xo, yo, world units) seen through one of the inner glass's (the
+// same lists moved by inner) and the niche's opening: a product set in the outer glass's
+// plane, its columns times its rows, written at haze_panes[count] as its box, its counts, its
+// columns, its rows, one a float4 (x0, x1); the next free place.
+fn haze_set(xo: float2[12]&, nxo: i64, yo: float2[12]&, nyo: i64, xi: float2[12]&, nxi: i64, yi: float2[12]&, nyi: i64,
+            inner: float2, niche: float4, count: i64, bound: float4&) -> i64 {
+    var xs: float2[12] = [float2_0; 12];
+    var ys: float2[12] = [float2_0; 12];
+    let nx = shared(xo, nxo, xi, nxi, -inner.x, niche.x, niche.z, xs);
+    let ny = shared(yo, nyo, yi, nyi, -inner.y, niche.y, niche.w, ys);
+    guard nx > 0 && ny > 0 && count + 2 + nx + ny <= MAX_HAZE_PANES else { return count; }
+    let box = float4 { xs[0].x, ys[0].x, xs[nx - 1].y, ys[ny - 1].y };
+    haze_panes[count] = box;
+    haze_panes[count + 1] = float4 { nx, ny, 0.0, 0.0 };
+    for k in nx { haze_panes[count + 2 + k] = float4 { xs[k].x, xs[k].y, 0.0, 0.0 }; }
+    for k in ny { haze_panes[count + 2 + nx + k] = float4 { ys[k].x, ys[k].y, 0.0, 0.0 }; }
+    bound = float4 { min(bound.x, box.x), min(bound.y, box.y), max(bound.z, box.z), max(bound.w, box.w) };
+    return count + 2 + nx + ny;
+}
+
+// The haze's block, its panes worked out into haze_panes (haze_count of them).
+fn haze_block(g: Gpu&, size: int2) -> HazeBlock {
+    let s = surfaces_block(g);
+    let f = g.frame;
+    let l = float3 { f.light_dir.x, f.light_dir.y, f.light_dir.z };
+    let along = float2 { s.axes.x, s.axes.y };
+    let nw = float2 { -s.axes.z, -s.axes.w };
+    let toward = l.x * nw.x + l.z * nw.y;
+    var b = HazeBlock { s.axes, s.tile, s.shell, s.shell_mids, s.shell_niche, s.shell_glass, s.shell_sun, s.window_view,
+                        float4_0, float4_0, float4_0, float4_0, float4 { 1.0 / size.x, 1.0 / size.y, haze.toward, 0.0 },
+                        float4_0, float4_0, float4_0 };
+    haze_count = 0;
+    guard toward > 0.05 else { return b; }
+    let ka = (l.x * along.x + l.z * along.y) / toward;
+    let ky = l.y / toward;
+    let metre = s.shell.w;
+    let d0 = s.shell.y + s.shell_glass.x;
+    // Each plane's rectangles move by the sun's slope times its depth from the outer glass's.
+    let inner = float2 { ka, ky } * (s.shell_glass.y - s.shell_glass.x);
+    let face = float2 { ka, ky } * (-s.shell_glass.x);
+    // Each sash's columns and rows, in the casement's metres.
+    var lx: float2[12] = [float2_0; 12];
+    var ly: float2[12] = [float2_0; 12];
+    var ux: float2[12] = [float2_0; 12];
+    var uy: float2[12] = [float2_0; 12];
+    let ln = casement_sash(s.shell_niche, false, lx, ly);
+    let un = casement_sash(s.shell_niche, true, ux, uy);
+    let windows = min(s.shell.x as i64, 3);
+    var count = 3;
+    var ranges = float4_0;
+    for w in windows {
+        let mid = if w == 0 { s.shell_mids.x } else if w == 1 { s.shell_mids.y } else { s.shell_mids.z };
+        let z = s.shell.z;
+        let ni = s.shell_niche;
+        let niche = float4 { mid - metre * ni.x - face.x, z + metre * ni.y - face.y, mid + metre * ni.x - face.x,
+                             z + metre * (ni.y + ni.z) - face.y };
+        // This window's, in world units.
+        var wlx = lx;
+        var wly = ly;
+        var wux = ux;
+        var wuy = uy;
+        for k in 12 {
+            wlx[k] = float2 { mid + metre * lx[k].x, mid + metre * lx[k].y };
+            wux[k] = float2 { mid + metre * ux[k].x, mid + metre * ux[k].y };
+            wly[k] = float2 { z + metre * ly[k].x, z + metre * ly[k].y };
+            wuy[k] = float2 { z + metre * uy[k].x, z + metre * uy[k].y };
+        }
+        var bound = float4 { 1e9, 1e9, -1e9, -1e9 };
+        count = haze_set(wlx, ln.x, wly, ln.y, wlx, ln.x, wly, ln.y, inner, niche, count, bound);
+        count = haze_set(wlx, ln.x, wly, ln.y, wux, un.x, wuy, un.y, inner, niche, count, bound);
+        count = haze_set(wux, un.x, wuy, un.y, wlx, ln.x, wly, ln.y, inner, niche, count, bound);
+        count = haze_set(wux, un.x, wuy, un.y, wux, un.x, wuy, un.y, inner, niche, count, bound);
+        if bound.z <= bound.x { bound = float4_0; }
+        haze_panes[w] = bound;
+        if w == 0 { ranges.x = count; } else if w == 1 { ranges.y = count; } else { ranges.z = count; }
+    }
+    haze_count = count;
+    let sun = room_sun_of(float3 { f.light_color.x, f.light_color.y, f.light_color.z })
+              * (f.light_dir.w * g.room.shell_sun.y * f.params.x * g.room.room_exposure);
+    b.light = float4 { sun.x, sun.y, sun.z, haze.sigma };
+    b.look = float4 { haze.g, haze.even, haze.taps, haze.soft };
+    b.plane = float4 { d0, ka, ky, windows };
+    b.ranges = ranges;
+    b.box0 = haze_panes[0];
+    b.box1 = haze_panes[1];
+    b.box2 = haze_panes[2];
+    return b;
+}
+// Whether haze_panes changed since they were last sent (and keeps them as sent).
+fn haze_changed() -> bool {
+    var changed = false;
+    for i in haze_count {
+        let a = haze_panes[i];
+        let b = haze_sent[i];
+        if a.x != b.x || a.y != b.y || a.z != b.z || a.w != b.w {
+            changed = true;
+            haze_sent[i] = a;
+        }
+    }
+    return changed;
 }
 
 // shaders::LIT_SHELL's and TABLE_SHELL's block: the shell's windows as the room's block has

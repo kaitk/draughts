@@ -138,6 +138,11 @@ MODULES = [
     ("r3d_glow_first", FULL, ["GLOW_FIRST", "GLOW_DOWN_FRAG"]),
     ("r3d_glow_down", FULL, ["GLOW_DOWN_FRAG"]),
     ("r3d_glow_up", FULL, ["GLOW_UP_FRAG"]),
+    # The haze in the sunbeam (render3d::haze_pass): the beam's cross-section, the haze, and its
+    # half size added.
+    ("r3d_haze_cross", FULL, ["SHELL_WINDOWS", "FS_SET", "FRAME", "HAZE_BLOCK", "HAZE_CROSS_HEAD", "LIGHT_FN", "HAZE_CROSS_FRAG"]),
+    ("r3d_haze", FULL, ["FS_SET", "FRAME", "HAZE_BLOCK", "HAZE_FRAG"]),
+    ("r3d_haze_add", FULL, ["HAZE_ADD_FRAG"]),
     # The depth of field's depth (render3d::depth_pass) and the tuner's view of it.
     ("r3d_depth_room", ROOM_VS, ["EMPTY_FRAG"]),
     ("r3d_depth_table", TABLE_VS, ["EMPTY_FRAG"]),
