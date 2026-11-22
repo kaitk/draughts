@@ -400,7 +400,7 @@ let WHOLE_DOME = 1;
 let WHOLE_OLD = 2;
 let WHOLE_OLD_LEADER = 3;
 
-// The low limb over the windows (task 107's prep 3): none; a lighter one high up, 5.2 m
+// The low limb over the windows (task 107's prep 3): none (the default); a lighter one high up, 5.2 m
 // over the ground, sagging a little and turning up; one between, at 4 m; and prep 2's
 // heavy one sweeping down from 2.7 m.
 let WHOLE_HANGS = ["none", "high", "middle", "low"];
@@ -409,7 +409,7 @@ let HANG_HIGH = 1;
 let HANG_MIDDLE = 2;
 let HANG_LOW = 3;
 
-fn whole_tree(r: Room, s: room_shell::Shell, variant: i64 = WHOLE_OLD_LEADER, hang: i64 = HANG_HIGH) -> trees::Whole {
+fn whole_tree(r: Room, s: room_shell::Shell, variant: i64 = WHOLE_OLD_LEADER, hang: i64 = HANG_NONE) -> trees::Whole {
     let metre = surfaces::METRE;
     let outer = s.walls[room_shell::WINDOW_WALL].a.y + s.walls[room_shell::WINDOW_WALL].thick;
     let foot = plan_to_tree(r, s, float3 { WHOLE_ALONG, outer + WHOLE_OUT, -WHOLE_PLINTH });
