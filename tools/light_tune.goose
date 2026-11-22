@@ -611,11 +611,11 @@ fn room_flags(out: u8[>..]&, r: rooms::Room) {
 // open at the start.
 let SECTIONS = ["Scene", "Light", "Sun and tree", "Wallpaper", "Wainscot and panelling", "Ceiling", "Curtains and lace",
                 "Bookcases and books", "Table", "Outside", "Dust in the sunbeam (D)", "Camera and views", "Debug", "Keys",
-                "Light in detail (the board's)", "The sun", "The tree", "Wind", "The board's window", "Noise leaves"];
+                "Lens and depth of field", "Light in detail (the board's)", "The sun", "The tree", "Wind", "The board's window", "Noise leaves"];
 let SECTION_NAMES = ["scene", "light", "sun", "wallpaper", "wainscot", "ceiling", "curtains", "books", "table", "outside", "dust",
-                     "camera", "debug", "keys", "detail", "sun-itself", "tree", "wind", "window", "noise"];
-let OPEN_AT_START: i64[20] = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
-let PARTS_FROM = 14;
+                     "camera", "debug", "keys", "lens", "detail", "sun-itself", "tree", "wind", "window", "noise"];
+let OPEN_AT_START: i64[21] = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
+let PARTS_FROM = 15;
 let SCENE = 0;
 let LIGHT = 1;
 let SUN = 2;
@@ -630,12 +630,13 @@ let DUST = 10;
 let CAMERA = 11;
 let DEBUG = 12;
 let KEYS = 13;
-let DETAIL = 14;
-let SUN_ITSELF = 15;
-let TREE = 16;
-let WIND = 17;
-let WINDOW = 18;
-let NOISE = 19;
+let LENS = 14;
+let DETAIL = 15;
+let SUN_ITSELF = 16;
+let TREE = 17;
+let WIND = 18;
+let WINDOW = 19;
+let NOISE = 20;
 
 // The quiet paint's steps, each switched off alone by --paint-off NAME,NAME..: the
 // arrises' fillets and the pieces' tilt and the panels' cup (its mesh), the recesses' dirt,
@@ -655,12 +656,12 @@ let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", 
                 "walking: C seated, X then Q, E down and up", "R: back to the view, P: the walk's camera"];
 
 // The sections open at the start: OPEN_AT_START, or --sections NAME,NAME.. (or all).
-fn open_sections(argv: u8[:][>..]&) -> i64[20] {
+fn open_sections(argv: u8[:][>..]&) -> i64[21] {
     var open = OPEN_AT_START;
     let at = flag_value(argv, "--sections");
     guard at > 0 else { return open; }
     let all = argv[at] == "all";
-    for i in 20 { open[i] = if all { ui::MAXIMIZED } else { ui::MINIMIZED }; }
+    for i in 21 { open[i] = if all { ui::MAXIMIZED } else { ui::MINIMIZED }; }
     guard !all else { return open; }
     var rest: const u8[:] = argv[at];
     while rest.len > 0 {
@@ -680,7 +681,7 @@ fn open_sections(argv: u8[:][>..]&) -> i64[20] {
 }
 
 // A section's tab (or a part's node inside one): true while open, when tree_state_pop follows.
-fn section(c: ui::Context, open: i64[20]&, i: i64) -> bool {
+fn section(c: ui::Context, open: i64[21]&, i: i64) -> bool {
     let kind = if i >= PARTS_FROM { ui::TREE_NODE } else { ui::TREE_TAB };
     return ui::tree_state_push(c, kind, SECTIONS[i], open[i]);
 }
@@ -953,6 +954,16 @@ fn main() {
     render3d::window_view = float4 { number(argv, "--lace-sun", 1.0), number(argv, "--lace-scatter", 1.0), number(argv, "--glass-film", 1.0),
                                      number(argv, "--scratches", 1.0) };
     render3d::sun_veil = number(argv, "--sun-veil", 1.0);
+    // The lens (render3d::Lens): on or off, its focus in metres (0 the view's target, kept
+    // on it as the camera moves), its aperture and caps in percent of the width.
+    render3d::lens.on = flag_value(argv, "--dof") > 0 && argv[flag_value(argv, "--dof")] == "on";
+    let focus_m = number(argv, "--focus", 0.0);
+    var focus_on_target = focus_m <= 0.0;
+    var focus_log = log2(if focus_on_target { render3d::lens.focus } else { focus_m });
+    var aperture = number(argv, "--aperture", render3d::lens.aperture * 100.0);
+    let caps = four(argv, "--dof-caps", float4 { render3d::lens.near_cap * 100.0, render3d::lens.far_cap * 100.0, 0.0, 0.0 });
+    var near_cap = caps.x;
+    var far_cap = caps.y;
     render3d::dust.size = number(argv, "--mote-size", render3d::dust.size);
     render3d::dust.blur = number(argv, "--mote-blur", render3d::dust.blur);
     render3d::dust.bright = number(argv, "--mote-bright", render3d::dust.bright);
@@ -1458,6 +1469,16 @@ fn main() {
                 for k in KEY_HELP { note(c, k); }
                 ui::tree_state_pop(c);
             }
+            if section(c, open, LENS) {
+                switch(c, "Depth of field", render3d::lens.on, ["off", "on"]);
+                switch(c, "Focus on the target", focus_on_target, ["no", "yes"]);
+                slider(c, "Focus (log2 m)", focus_log, -1.5, 6.0);
+                note(c, str("  the focus at ", floor(exp2(focus_log) * 100.0 + 0.5) / 100.0, " m"));
+                slider(c, "Aperture (% wide)", aperture, 0.0, 8.0);
+                slider(c, "Near cap (%)", near_cap, 0.0, 12.0);
+                slider(c, "Far cap (%)", far_cap, 0.0, 12.0);
+                ui::tree_state_pop(c);
+            }
         }
         if !walk.on { ui::end(c); }
         // A drag that began on the panel holds the tree's and the probes' bakes till it is let go.
@@ -1567,6 +1588,9 @@ fn main() {
             let wv = render3d::window_view;
             format(line, " --lace-sun ", wv.x, " --lace-scatter ", wv.y, " --glass-film ", wv.z, " --scratches ", wv.w, " --sun-veil ",
                    render3d::sun_veil);
+            format(line, " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
+                   " --aperture ", aperture);
+            flag_pair(line, "--dof-caps", float2 { near_cap, far_cap });
             format(line, " --paint ", if paint_quiet { "quiet" } else { "old" });
             var off: u8[>..] = [];
             for n, i in PAINT_STEP_NAMES {
@@ -1686,6 +1710,11 @@ fn main() {
         let dust_here = dust_way == DUST_ON || (dust_way >= DUST_SPARSE && view == TABLE_WINDOW);
         render3d::dust.count = if dust_here { motes } else { 0 };
         render3d::dust.focus = length(eye - target);
+        if focus_on_target { focus_log = log2(length(eye - target) / surfaces::METRE); }
+        render3d::lens.focus = exp2(focus_log);
+        render3d::lens.aperture = aperture / 100.0;
+        render3d::lens.near_cap = near_cap / 100.0;
+        render3d::lens.far_cap = far_cap / 100.0;
         if fov_flag > 0.0 { fov = fov_flag; }
         // The near plane farther with the room, so 16-bit depth keeps its panels apart.
         let near: f32 = if room_on { clamp(0.2 * length(eye - target), 1.0, 12.0) } else { 1.0 };

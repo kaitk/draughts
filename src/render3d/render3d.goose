@@ -2576,6 +2576,14 @@ fn dust_block(g: Gpu&) -> DustBlock {
     var b = DustBlock { model3d::f4(dust.low, wind_time), model3d::f4(dust.span, dust.rise),
                         float4 { dust.size, dust.blur, dust.bright, dust.focus }, float4 { dust.thin, dust.ahead, dust.reach, 0.0 },
                         float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0 };
+    if lens.on {
+        // The lens's disc in the motes' pixels (a thousand to the scene's height): the
+        // aperture's share of its width.
+        let k = 1000.0 * g.frame.screen.x / max(g.frame.screen.y, 1.0);
+        b.look.y = lens.aperture * k;
+        b.look.w = lens.focus * surfaces::METRE;
+        b.lens.w = lens.near_cap * k;
+    }
     guard dust.shell && g.room_shell && g.room_on else { return b; }
     let s = surfaces_block(g);
     b.axes = s.axes;
@@ -2588,6 +2596,19 @@ fn dust_block(g: Gpu&) -> DustBlock {
     b.window_view = s.window_view;
     return b;
 }
+
+// The lens of the scenic views' depth of field (build/notes/bokeh/, task 111), one for every
+// pass that blurs: a disc's radius at a distance d is aperture × |1 - focus / d| of the
+// scene's width, at most near_cap nearer than the focus and far_cap farther. Off, nothing
+// reads it; on, the motes take their discs from it (dust_block). The light tuner's for now.
+struct Lens {
+    on:       bool = false,
+    focus:    f32  = 1.55,    // the focus's distance from the eye, metres
+    aperture: f32  = 0.024,   // a disc's radius at infinity, a share of the width
+    near_cap: f32  = 0.045,
+    far_cap:  f32  = 0.045,
+}
+var lens = Lens {};
 
 fn motes_shown(g: Gpu&) -> bool { dust.count > 0 && g.motes.id != 0 }
 fn motes_drawn() -> i64 { min(dust.count, MAX_MOTES) }

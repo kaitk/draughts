@@ -5834,7 +5834,8 @@ let SHOW_FRAG = """
 // lens's blur (the disc's radius in those pixels where the distance is twice the
 // focus's), z how bright, w the focus's distance from the eye; dust_lens: x how much a
 // disc's light thins as it grows (0 none, 2 kept), y the forward scattering's g, z how
-// far each mote wanders.
+// far each mote wanders, w the largest disc's radius in those pixels (0 none; the lens's
+// near cap, render3d::Lens).
 // The shell's windows after them, as ROOM_HEAD's block has them (render3d::dust_block; all
 // 0 lights the motes through the game's window), with the lace's mask, for LIGHT_FN's
 // shell_open, which the dust is compiled with (SHELL_WINDOWS).
@@ -5902,6 +5903,7 @@ let DUST_VERT = """
         float px = screen.y / 1000.0;
         float point = max(dust_look.x * px * (0.6 + 0.8 * fract(s.w * 7.3)), 0.5);
         float coc = dust_look.y * px * abs(d - dust_look.w) / max(d, 0.01);
+        if (dust_lens.w > 0.0) coc = min(coc, dust_lens.w * px);
         float r = sqrt(point * point + coc * coc);
         float outer = r + 1.0;
         v_at = c * outer / r;
