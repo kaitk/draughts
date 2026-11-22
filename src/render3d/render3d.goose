@@ -905,10 +905,18 @@ struct OutsideBlock { exposure: float4, sun_disc: float4, sun_glare: float4, sun
 // denser), y how far from the sun (degrees), z its leaves' back light, w how sharp (the
 // metres along the view it is looked up from; 0 the eye's blur). As made: the disc 0.27°,
 // its edge a pixel, 30 over the sky; no tree.
+// The tonemap's part of the sun (HDR_TONE_FRAG, HDR only): veil the eye's veiling glare round
+// it, x its strength (linear light at the sun, 0 none), y the angle it halves at and z where
+// it has faded out (degrees), w how far it turns amber away from the sun (1 white to (1,
+// 0.82, 0.6) by 10°); rays faint hairline needles out of it, x their strength (a share of
+// the veil where they are), y how many, z and w their shortest and longest (degrees). Both
+// scaled by how much of the sun is open, read from the glow's smallest level.
 struct SunLook {
     disc:  float4 = float4 { 0.27, 0.0, 0.0, 30.0 },
     glare: float4 = float4 { 1.5, 1.2, 0.4, 4.0 },
     tree:  float4 = float4_0,
+    veil:  float4 = float4_0,
+    rays:  float4 = float4_0,
 }
 var sun_look = SunLook {};
 fn outside_block(g: Gpu&, in_mirror: bool = false) -> OutsideBlock {
@@ -1392,7 +1400,7 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     // The end walls' u, for the floor's darker band along every wall.
     let stove_end = room_shell::room_of(s, s.walls[room_shell::STOVE_WALL].a);
     let far_end = room_shell::room_of(s, s.walls[room_shell::FAR_WALL].a);
-    b.shell_ends = float4 { stove_end.x, far_end.x, 0.0, 0.0 };
+    b.shell_ends = float4 { stove_end.x, far_end.x, lace_glow.x, lace_glow.y };
     // Its own sun, and its baked light where it is made.
     let r = g.room;
     b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, g.room_tint.z, g.room_tint.w };
@@ -2585,6 +2593,11 @@ var window_view = float4 { 1.0, 1.0, 1.0, 1.0 };
 // The sun's broad veil in the sky round it (OUTSIDE_FRAG, the tuner's --sun-veil), 1 as
 // made, 0 off.
 var sun_veil: f32 = 1.0;
+// The lace's narrow forward lobe looking at the sun through it (ROOM_FRAG's lace, shell_ends):
+// x its strength over the Henyey-Greenstein lobe's (0 none), y its width (degrees), so only
+// the lace within that of the sun crosses the HDR glow's threshold. The light tuner's
+// --lace-glow.
+var lace_glow = float4_0;
 // The light tuner's park on the ground (--park, model3d::view_out's lawn and cards, its own
 // shaders in TUNED_OUTSIDE and TUNED_OUTSIDE_HDR): the view out's mesh carries them.
 var park_ground = false;
@@ -2628,9 +2641,12 @@ struct HdrGlow {
 }
 var hdr_glow = HdrGlow {};
 fn glow_shown(g: Gpu&) -> bool { g.hdr && hdr_glow.look.x > 0.0 && hdr_glow.levels > 0 }
+// The glow's smallest level, which holds the sun's light blurred wide (HDR_TONE_FRAG's
+// share of it open).
+fn glow_smallest() -> i64 { clamp(hdr_glow.levels, 1, GLOW_LEVELS) - 1 }
 // GLOW_DOWN_FRAG's and GLOW_UP_FRAG's block; HDR_TONE_FRAG's.
 struct GlowStep { step: float4, look: float4 }
-struct HdrTone { glow: float4 }
+struct HdrTone { glow: float4, sun: float4, veil: float4, rays: float4 }
 fn glow_level_size(size: int2, k: i64) -> int2 {
     var q = int2 { max(size.x / 4, 1), max(size.y / 4, 1) };
     for i in k { q = int2 { max(q.x / 2, 1), max(q.y / 2, 1) }; }
@@ -2643,9 +2659,50 @@ fn glow_step_of(from: int2, to: int2, first: bool) -> GlowStep {
     let l = hdr_glow.look;
     GlowStep { float4 { h.x, h.y, 1.0 / to.x, 1.0 / to.y }, float4 { l.y, l.z, hdr_glow.cap, clamp(l.w, 0.0, 1.0) } }
 }
+// The tonemap's block: glow x the glow's strength (0 none), yz a pixel in uv, w the light
+// tuner's probe (tone_probe); sun the sun's place on the picture (pixels), the pixels a
+// degree spans there, and w what turns the glow's smallest level there into the share of
+// the sun open (0: taken as all open); veil and rays SunLook's, veil.x 0 where the sun is
+// behind the eye.
+var tone_probe: f32 = 0.0;
 fn hdr_tone_of(g: Gpu&) -> HdrTone {
-    guard glow_shown(g) else { return HdrTone { float4_0 }; }
-    HdrTone { float4 { hdr_glow.look.x, 1.0 / g.size.x, 1.0 / g.size.y, 0.0 } }
+    let glow = glow_shown(g);
+    var t = HdrTone { float4 { if glow { hdr_glow.look.x } else { 0.0 }, 1.0 / g.size.x, 1.0 / g.size.y, tone_probe },
+                      float4_0, sun_look.veil, sun_look.rays };
+    guard sun_look.veil.x > 0.0 else { return t; }
+    let m = g.frame.view_proj;
+    let s = normalize(float3 { g.frame.light_dir.x, g.frame.light_dir.y, g.frame.light_dir.z });
+    let at, ok = sun_on_picture(m, s, g.size);
+    // A degree away from the sun, across it, for the pixels a degree spans there.
+    let side = normalize(cross(s, if abs(s.y) < 0.9 { float3 { 0.0, 1.0, 0.0 } } else { float3 { 1.0, 0.0, 0.0 } }));
+    let off, ok2 = sun_on_picture(m, normalize(s + side * 0.017455065), g.size);
+    guard ok && ok2 else {
+        t.veil.x = 0.0;
+        return t;
+    }
+    let ppd = length(off - at);
+    // The bare sun's light in the glow's smallest level: its disc's light over a texel's
+    // pixels (SUN_OPEN_FILTER the levels' spread at the texel's middle, measured).
+    var open_ref: f32 = 0.0;
+    if glow {
+        let q = glow_level_size(g.size, glow_smallest());
+        let r = sun_look.disc.x * ppd;
+        let texel = (g.size.x as f32 / q.x) * (g.size.y as f32 / q.y);
+        let bare = sun_look.disc.w * g.room.outside * PI * r * r / texel * SUN_OPEN_FILTER;
+        open_ref = 1.0 / max(bare, 1e-6);
+    }
+    t.sun = float4 { at.x, at.y, ppd, open_ref };
+    return t;
+}
+let SUN_OPEN_FILTER: f32 = 1.0;
+// Where direction s lands on a picture of `size` through m (pixels, y down), and whether it
+// is ahead of the eye.
+fn sun_on_picture(m: Mat, s: float3, size: int2) -> float2, bool {
+    let x = m.c0.x * s.x + m.c1.x * s.y + m.c2.x * s.z;
+    let y = m.c0.y * s.x + m.c1.y * s.y + m.c2.y * s.z;
+    let w = m.c0.w * s.x + m.c1.w * s.y + m.c2.w * s.z;
+    guard w > 1e-4 else { return float2_0, false; }
+    return float2 { (0.5 * x / w + 0.5) * size.x, (0.5 - 0.5 * y / w) * size.y }, true;
 }
 
 // GLOW_PICK_FRAG's, GLOW_BLUR_FRAG's, and GLOW_ADD_FRAG's blocks.

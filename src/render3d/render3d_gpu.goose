@@ -742,7 +742,9 @@ fn tone_pass(own: Own&, g: render3d::Gpu&, target: Texture) {
     gfx::begin_pass(pass);
     gfx::bind(g.hdr_pipes.tone);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.hdr_image, g.linear);
-    gfx::bind_texture(gfx::FRAGMENT, 1, if render3d::glow_shown(g) { g.glow_levels[0] } else { g.hdr_image }, g.linear);
+    let glow = render3d::glow_shown(g);
+    gfx::bind_texture(gfx::FRAGMENT, 1, if glow { g.glow_levels[0] } else { g.hdr_image }, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 2, if glow { g.glow_levels[render3d::glow_smallest()] } else { g.hdr_image }, g.linear);
     gfx::uniforms(gfx::FRAGMENT, 0, render3d::hdr_tone_of(g));
     gfx::draw(3);
     gfx::end_pass();

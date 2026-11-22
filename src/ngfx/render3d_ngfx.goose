@@ -635,7 +635,7 @@ fn release_hdr(own: Own&, g: Gpu&) {
 }
 
 // The HDR target tonemapped over all of `target`, as gfx's tone_pass; r3d_hdr_tone's header:
-// the picture, the glow, HdrTone.
+// the picture, the glow, its smallest level, HdrTone.
 fn tone_pass(own: Own&, g: Gpu&, target: Texture) {
     var pass = nx::PassDesc { clear_color: false };
     pass.color[0] = target;
@@ -643,7 +643,9 @@ fn tone_pass(own: Own&, g: Gpu&, target: Texture) {
     nx::bind(g.hdr_pipes.tone);
     var r = no_root();
     slot(r, 0, g.hdr_image, g.linear);
-    slot(r, 1, if render3d::glow_shown(g) { g.glow_levels[0] } else { g.hdr_image }, g.linear);
+    let glow = render3d::glow_shown(g);
+    slot(r, 1, if glow { g.glow_levels[0] } else { g.hdr_image }, g.linear);
+    slot(r, 2, if glow { g.glow_levels[render3d::glow_smallest()] } else { g.hdr_image }, g.linear);
     let b: render3d::HdrTone[1] = [render3d::hdr_tone_of(g)];
     r.u = ngfx::frame_data(bytes_of(b));
     ngfx::draw(ngfx::root(r), 3);
