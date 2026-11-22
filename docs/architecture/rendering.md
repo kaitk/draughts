@@ -907,7 +907,7 @@ game), in steps that each show alone in the light tuner
 - The light tuner's Lens section holds them: `--hdr on|off` (X; on), `--hdr-format
   rgba16f` to weigh the fallback, `--dof on|off`, `--focus M` (0 keeps the focus on the
   view's target), `--aperture PCT`, `--dof-caps NEAR,FAR`, and `--lens-view
-  depth|coc` (Q), the distance on a log scale or the lens's signed disc over the picture
+  depth|coc` (1), the distance on a log scale or the lens's signed disc over the picture
   (`DEPTH_SHOW_FRAG`).
 
 At 3024 × 1890 the HDR target's resolve adds 23 MB (RG11B10F; 16 MB at the 4.1 MP budget),

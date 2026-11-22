@@ -207,8 +207,9 @@ pieces; the design boards still set the layout, glass, and controls.
 - The light tuner's walk round the room (`Walk`): Tab or the button under Camera and
   views captures the mouse (goose_gfx's `set_mouse_relative`) and hides the panel; WASD
   walk at 1.4 m/s (Shift 2.5×), the mouse looks (0.1° a pixel, pitch within ±85°), C
-  sits (eye 1.2 m, else 1.6 m), X lets Q and E go down and up, R goes back to the view's
-  eye, Esc or Tab (or losing focus) back to the panel. While walking the tuner's letter
+  sits (eye 1.2 m, else 1.6 m), Q goes down and E up (1 m/s, free to 0.2 m off the floor
+  and the ceiling), R goes back to the view's eye, Esc or Tab (or losing focus) back to
+  the panel. While walking the tuner's letter
   keys (W, S, D, C..) are the walk's. It turns the room and its shell on; the eye keeps
   0.6 m off the plan's walls (the views' near plane, 0.39 m, reaches 0.58 m at its
   corners), no furniture collision. The camera stays where the walk left it till R, V or
@@ -317,7 +318,7 @@ pieces; the design boards still set the layout, glass, and controls.
   against, and only the shell with its view out, 4× MSAA and no room view draws HDR (the
   panel's Lens section says which). Compare a look in both: in HDR the lace and the
   glass's film blend in linear light and read stronger, the surfaces within 2-3 levels.
-  `--lens-view depth|coc` (Q) shows the depth and the lens's disc (`--dof on`, `--focus M`,
+  `--lens-view depth|coc` (1, the key apart from the walk's Q) shows the depth and the lens's disc (`--dof on`, `--focus M`,
   0 the view's target; `--aperture PCT`, `--dof-caps N,F`): judge a focus there before
   any blur. Builder 28's scripts: `build/b28/look.sh EXE TAG SIZE NAME "flags"..`,
   `cmp.sh A B`, `game.sh`, `rounds-b1.sh`, `rounds-b2.sh`, `page.py`.

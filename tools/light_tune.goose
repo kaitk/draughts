@@ -81,7 +81,7 @@
 //       [--hdr on|off (the scenic views drawn into the HDR target and tonemapped after, render3d::hdr_shown; on; X
 //       switches it)] [--hdr-format rg11b10f|rgba16f (its target's; rg11b10f)] [--dof on|off (the lens, render3d::Lens; off)] [--focus M (0 the view's target)]
 //       [--aperture PCT (a disc's radius at infinity, % of the width)] [--dof-caps NEAR,FAR (%)]
-//       [--lens-view off|depth|coc (the depth of field's depth over the picture, or the lens's disc; Q)]
+//       [--lens-view off|depth|coc (the depth of field's depth over the picture, or the lens's disc; 1)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
@@ -482,8 +482,8 @@ fn plan_point(g: render3d::Gpu&, p: float3) -> float3 {
 }
 
 // The walk round the room (Tab, or the button under Camera and views): WASD and the mouse,
-// captured, from a person's eyes 1.6 m up (seated 1.2 m, C); Shift faster; with X, Q and E
-// go up and down; Esc back to the panel. The eye keeps WALL_MARGIN off the plan's walls and
+// captured, from a person's eyes 1.6 m up (seated 1.2 m, C); Shift faster; Q goes down and E
+// up, flying free; Esc back to the panel. The eye keeps WALL_MARGIN off the plan's walls and
 // stays where it is when the walk ends, till R or another view.
 let WALK_EYE:   f32 = 1.6;
 let SEATED_EYE: f32 = 1.2;
@@ -507,7 +507,6 @@ struct Walk {
     yaw:    f32    = 0.0,       // degrees in the plan, 0 along x
     pitch:  f32    = 0.0,
     seated: bool   = false,
-    rise:   bool   = false,     // Q and E move up and down (X)
 }
 
 // The point the walk looks at, in the plan.
@@ -547,12 +546,10 @@ fn walk_step(k: Walk&, look: float2, dt: f32, hand: f32) {
     let s = room_shell::LIBRARY;
     k.eye.x = clamp(k.eye.x + move.x, WALL_MARGIN, s.walls[0].b.x - WALL_MARGIN);
     k.eye.y = clamp(k.eye.y + move.y, WALL_MARGIN, s.walls[0].a.y - WALL_MARGIN);
-    if k.rise {
-        var up: f32 = 0.0;
-        if gfx::key_down("E") { up += 1.0; }
-        if gfx::key_down("Q") { up -= 1.0; }
-        k.eye.z = clamp(k.eye.z + up * RISE_SPEED * (if fast { WALK_FAST } else { 1.0 }) * dt, LOWEST, s.ceiling - LOWEST);
-    }
+    var up: f32 = 0.0;
+    if gfx::key_down("E") { up += 1.0; }
+    if gfx::key_down("Q") { up -= 1.0; }
+    k.eye.z = clamp(k.eye.z + up * RISE_SPEED * (if fast { WALK_FAST } else { 1.0 }) * dt, LOWEST, s.ceiling - LOWEST);
 }
 
 // A mid-game position, dark on the far rows: (row, col, dark), row 0 the far side.
@@ -953,10 +950,10 @@ let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", 
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
                 "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old; I: the sills", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust's way", "Y: the lace's hang, 0.15 or 0 m", "Z: the window view's steps off or on", "F: the frame counter; G: wait for the GPU",
-                "N: the scene's scale; M: its upscale", "X: HDR or 8 bits; Q: the lens's views",
+                "N: the scene's scale; M: its upscale", "X: HDR or 8 bits; 1: the lens's views",
                 "A: the sun's and table's placements in turn (Table)",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
-                "walking: C seated, X then Q, E down and up", "R: back to the view, P: the walk's camera"];
+                "walking: C seated, Q down, E up", "R: back to the view, P: the walk's camera"];
 
 // The sections open at the start: OPEN_AT_START, or --sections NAME,NAME.. (or all).
 fn open_sections(argv: u8[:][>..]&) -> i64[21] {
@@ -1008,7 +1005,7 @@ fn color_sliders(c: ui::Context, name: const u8[:], v: float4&) {
 
 // --walk-test N: the walk driven by injected input for N frames (WALK_TEST_END the whole
 // path), each step 1/60 s, and a --shot taken where it ends: into the walk (Tab), W for a
-// second, the mouse turned right and down, D with X and E (up), Shift and W for 2.4
+// second, the mouse turned right and down, D with E (up), Shift and W for 2.4
 // seconds into the stove's end, C, out (Esc), and P.
 let WALK_TEST_END = 265;
 
@@ -1020,9 +1017,7 @@ fn walk_test_input(frame: i64) {
         6 => { gfx::inject_key("W", true); },
         66 => { gfx::inject_key("W", false); },
         70 => { gfx::inject_mouse(700.0, 350.0, 0, false); },
-        71 => { gfx::inject_key("X", true); },
         72 => {
-            gfx::inject_key("X", false);
             gfx::inject_key("D", true);
             gfx::inject_key("E", true);
         },
@@ -1522,10 +1517,6 @@ fn main() {
                 walk.seated = !walk.seated;
                 walk.eye.z = if walk.seated { SEATED_EYE } else { WALK_EYE };
             }
-            if gfx::key_pressed("X") {
-                walk.rise = !walk.rise;
-                if !walk.rise { walk.eye.z = if walk.seated { SEATED_EYE } else { WALK_EYE }; }
-            }
         } else {
             if gfx::key_pressed("W") { pattern = 1 - pattern; }
             if gfx::key_pressed("T") { room.tree.x = (room.tree.x as i64 + 1) % 3; }
@@ -1562,7 +1553,7 @@ fn main() {
             }
             if gfx::key_pressed("M") { upscale = 1 - upscale; }
             if gfx::key_pressed("X") { render3d::hdr_allowed = !render3d::hdr_allowed; }
-            if gfx::key_pressed("Q") { render3d::depth_view = (render3d::depth_view + 1) % LENS_VIEWS.len; }
+            if gfx::key_pressed("1") { render3d::depth_view = (render3d::depth_view + 1) % LENS_VIEWS.len; }
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
@@ -1810,7 +1801,7 @@ fn main() {
                 if ui::button_label(c, "Reset the orbit and the view (R)") { reset_orbit = true; }
                 if ui::button_label(c, "Walk round the room (Tab)") { walk_now = true; }
                 switch(c, "Seated (C)", walk.seated, ["no", "yes"]);
-                switch(c, "Up and down (X)", walk.rise, ["off", "Q, E"]);
+                note(c, "  walking: Q down, E up");
                 if walk.placed {
                     note(c, str("walked to ", floor(walk.eye.x * 100.0 + 0.5) / 100.0, ", ", floor(walk.eye.y * 100.0 + 0.5) / 100.0,
                                 ", ", floor(walk.eye.z * 100.0 + 0.5) / 100.0, " m; P prints it"));
@@ -1843,7 +1834,7 @@ fn main() {
                 slider(c, "Aperture (% wide)", aperture, 0.0, 8.0);
                 slider(c, "Near cap (%)", near_cap, 0.0, 12.0);
                 slider(c, "Far cap (%)", far_cap, 0.0, 12.0);
-                choice(c, "Lens view (Q)", render3d::depth_view, LENS_VIEWS);
+                choice(c, "Lens view (1)", render3d::depth_view, LENS_VIEWS);
                 if render3d::depth_view > 0 && !render3d::hdr_shown(g) { note(c, "  the view needs HDR"); }
                 ui::tree_state_pop(c);
             }
@@ -1948,7 +1939,6 @@ fn main() {
             shell_on = true;
             render3d::show_room(g, room_on, away, shell_on);
             if !walk.placed { walk_from(walk, start_eye, start_at); }
-            if !walk.rise { walk.eye.z = if walk.seated { SEATED_EYE } else { WALK_EYE }; }
             walk.on = true;
             walk.placed = true;
         }
@@ -2150,7 +2140,7 @@ fn main() {
                 if ui::begin(c, "Walk", ui::rect(10.0, 10.0, PANEL_W, 5.0 * ROW + 16.0), ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
                     note(c, walk_text[..]);
                     note(c, "WASD, the mouse; Shift faster; C seated");
-                    note(c, if walk.rise { "Q, E down and up (X)" } else { "X: Q and E go down and up" });
+                    note(c, "Q down, E up");
                     note(c, "R back to the view; Esc the panel");
                 }
                 ui::end(c);
