@@ -11,18 +11,20 @@ let NODES = 10000;
 
 // The move for the ask `id`, and what finding it took.
 struct Thought {
-    id:      i64,
-    move:    rules::Move,
-    found:   bool,          // false when the position had no move
-    close:   i64,           // moves about as good as the best, for the time it takes (ai::close)
-    nodes:   i64,
-    seconds: f64,
-    kind:    i64,           // game::THINK, HINT, TRAPS, or JUDGE, as asked
-    pieces:  u64,           // the lookout's traps: the pieces they would win
-    mark:    i64 = 0,       // JUDGE: the move's mark (ai::ONLY..BLUNDER) and its loss
-    loss:    i64 = 0,
-    best:    rules::Move = rules::Move { .. },  // JUDGE: the best move from the position, if has_best
-    has_best: bool = false,
+    id:       i64,
+    move:     rules::Move,
+    found:    bool,         // false when the position had no move
+    close:    i64,          // moves about as good as the best, for the time it takes (ai::close)
+    nodes:    i64,
+    seconds:  f64,
+    kind:     i64,             // game::THINK, HINT, TRAPS, or JUDGE, as asked
+    pieces:   u64,             // the lookout's traps: the pieces they would win
+    mark:     i64         = 0, // JUDGE: the move's mark (ai::ONLY..BLUNDER) and its loss
+    loss:     i64         = 0,
+    best:     rules::Move = rules::Move { .. }, // JUDGE: the best move from the position, if has_best
+    has_best: bool        = false,
+    score:    i64         = 0, // THINK: its search's score for itself, if `searched` (ai::search_score)
+    searched: bool        = false,
 }
 
 // The engine is the worker's own, since a root can't cross to a thread, made at the first
@@ -91,8 +93,9 @@ thread_fn worker() {
         let found = ai::has_reply(e);
         var m = rules::Move { .. };
         if found { m = ai::reply(e); }
+        let score, searched = ai::search_score(e);
         qput(Thought { id: ask.id, move: m, found: found, close: ai::close(e, pace::CLOSE), nodes: e.total_nodes,
-                       seconds: clock() - began, kind: ask.kind, pieces: 0 });
+                       seconds: clock() - began, kind: ask.kind, pieces: 0, score: score, searched: searched });
         ask = qget<game::Ask>();
     }
 }
@@ -121,6 +124,6 @@ fn frame(t: Thinker&, gm: game::Game&) -> bool {
         game::hinted(gm, th.id, th.move);
         return true;
     }
-    game::answer(gm, th.id, th.move, th.close);
+    game::answer(gm, th.id, th.move, th.close, th.score, th.searched);
     return false;
 }

@@ -23,6 +23,8 @@ let SETTINGS = gui::ASK_SETTINGS;
 let UNDO = 1;
 let LOOKOUT = 5;            // the lookout's eye, turned on or off
 let HINT = 6;               // the hint's tile
+let DRAW = 7;               // the draw tile
+let DRAW_ID = gui::PANEL_IDS + 11;
 
 // The lookout's eye, a round toggle at the end of whose turn's line, and the hint's
 // tile beside undo move with a pip a hint left; in dp.
@@ -58,6 +60,10 @@ struct Help {
     left:  i64  = 0,
     stage: i64  = 0,
     can:   bool = false,
+    // The draw tile with start over: hidden (0), on (1), or dim (2), game::DRAW_*; its word
+    // "Offer draw" against the computer (`offer`), else "Draw".
+    draw:  i64  = 0,
+    offer: bool = false,
 }
 
 // A panel's room inside its glass, in dp: IN_ACROSS across its narrow way and IN_ALONG
@@ -856,6 +862,24 @@ fn icons(r: float4, s: f32) -> float4[3] {
     return [back, gear, restart];
 }
 
+// The draw tile's icon in the small window's bar: after back, a pad between.
+fn compact_draw(l: Layout, u: f32) -> float4 {
+    let t = icons(l.tiles, u);
+    return float4 { t[0].x + t[0].z + gui::PAD * u, t[0].y, ICON_W * u, t[0].w };
+}
+
+// What each side has taken in the small window's bar with the draw tile after back: the
+// room right of it.
+fn taken_beside_draw(l: Layout, u: f32) -> Layout {
+    guard l.mode == COMPACT else { return l; }
+    var k = l;
+    let d = compact_draw(l, u);
+    let x0 = d.x + d.z + gui::PAD * u;
+    k.taken.z = max(l.taken.x + l.taken.z - x0, 0.0);
+    k.taken.x = x0;
+    return k;
+}
+
 // The countdown before a draw under whose turn: a line of words, and in landscape a row
 // of `of` dots, `lit` of them lit; `more` adds "A third time is a draw" under the line.
 // Between clocks with no room for the line, the short form instead: `word` and `fig`,
@@ -878,15 +902,15 @@ fn pair(ui_pieces: board::Overlay&, spot: float4, r: f32, overlap: f32, a: f32) 
     piece(ui_pieces, float4 { x + 2.0 * r - overlap, spot.y, 2.0 * r, spot.w }, r, 1, 0, a, 0.0);
 }
 
-// Words in w pixels of face `face`: where they break in two, the lines as even as they
-// can be, or -1 for one line.
+// Words in w pixels of face `face`, an inline icon (gui::ICON_MARK) counted as a word:
+// where they break in two, the lines as even as they can be, or -1 for one line.
 fn note_break(g: gui::Gui&, face: i64, s: const u8[:], w: f32) -> i64 {
-    guard gui::text_width(g, face, s) > w else { return -1; }
+    guard gui::icon_text_width(g, face, s) > w else { return -1; }
     var best = -1;
     var widest = w;
     for c, i in s {
         guard c == 32 else { continue; }
-        let longer = max(gui::text_width(g, face, s[..i]), gui::text_width(g, face, s[i + 1..]));
+        let longer = max(gui::icon_text_width(g, face, s[..i]), gui::icon_text_width(g, face, s[i + 1..]));
         if longer <= widest {
             widest = longer;
             best = i;
@@ -1018,26 +1042,39 @@ fn clock_of(g: gui::Gui&, r: float4, c: Clocks&, side: i64, ring: f32, ui_pieces
 // SETTINGS, RESTART, or NOTHING.
 let OUT_WORDS = [strings::NAV_BACK, strings::HOME_SETTINGS, strings::GAME_START_OVER];
 fn leave(g: gui::Gui&, l: Layout) -> i64 {
+    let chosen, o = leave_with(g, l, Help {});
+    return chosen;
+}
+
+// The same, with the draw tile's place beside start over where Help.draw shows it, and
+// where the way out's tiles went, for game() to declare the draw tile last, after the
+// play's tiles, which keep their order.
+fn leave_with(g: gui::Gui&, l: Layout, help: Help) -> i64, Out {
+    let four = help.draw != 0;
+    let draw_word = strings::get(if help.offer { strings::GAME_OFFER_DRAW } else { strings::DRAW });
     // The words' widths, measured first, where they are shown: not the compact bar's icons,
     // nor back's in landscape, which measures its word itself.
-    var words: f32[3] = [0.0, 0.0, 0.0];
+    var words: f32[4] = [0.0, 0.0, 0.0, 0.0];
     if l.mode != COMPACT {
         let first = if columns(l) { 1 } else { 0 };
         for i in first..3 { words[i] = gui::text_width(g, gui::HEADING, strings::get(OUT_WORDS[i])); }
+        if four { words[3] = gui::text_width(g, gui::HEADING, draw_word); }
     }
-    let o = way_out(l, words, g.scale);
+    let o = way_out(l, words, g.scale, four);
     let icons = [gui::BACK, gui::GEAR, gui::RESTART];
     let asks = [BACK, SETTINGS, RESTART];
     var chosen = NOTHING;
     gui::group(g, GROUP_OUT);
     if columns(l) {
-        if gui::back(g, gui::PANEL_IDS, o.tiles[0], strings::get(OUT_WORDS[0]), l.out_row) { chosen = BACK; }
+        if gui::back(g, gui::PANEL_IDS, o.tiles[0], strings::get(OUT_WORDS[0]), o.arrange == gui::STACKED && (l.out_row || four)) {
+            chosen = BACK;
+        }
         gui::under_tile(g, o.tiles[1], 22.0);
         gui::under_tile(g, o.tiles[2], 22.0);
     } else if l.mode == COMPACT {
         gui::panel(g, l.left);
     } else {
-        for t in o.tiles { gui::under_tile(g, t, 22.0); }
+        for i in 3 { gui::under_tile(g, o.tiles[i], 22.0); }
     }
     for i in 3 {
         guard i > 0 || !columns(l) else { continue; }
@@ -1046,28 +1083,53 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
                                           gui::HEADING, o.arrange) };
         if tapped { chosen = asks[i]; }
     }
-    return chosen;
+    return chosen, o;
 }
 
-// Where the way out's tiles go: back, settings, start over; and how each tile lays out
-// its icon and word (gui::MIDDLE, STACKED, or ICON alone).
+// The draw tile in the way out's fourth place, its handshake and word as the others are,
+// dim and taking no tap while not `on`. True when tapped.
+fn draw_tile(g: gui::Gui&, l: Layout, o: Out, help: Help) -> bool {
+    let r = o.tiles[3];
+    let on = help.draw == 1;
+    let word = strings::get(if help.offer { strings::GAME_OFFER_DRAW } else { strings::DRAW });
+    gui::group(g, GROUP_OUT);
+    guard o.arrange == ICON else {
+        if l.mode != COMPACT { gui::under_tile(g, r, 22.0); }
+        return gui::labelled(g, DRAW_ID, r, gui::HANDSHAKE, 34.0, word, gui::HEADING, o.arrange, gui::PLAIN, on);
+    }
+    let u = g.scale;
+    let clicked, p = gui::press_widget_if_on(g, DRAW_ID, r, on);
+    let a: f32 = if on { 1.0 } else { 0.35 };
+    gui::add(g, gui::Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
+                            extra: float4 { u, gui::PLAIN, gui::hover(g, DRAW_ID), 0.0 } });
+    let side = 0.5 * min(r.z, r.w);
+    gui::glyph_icon(g, gui::center(r, side, side), gui::HANDSHAKE, gui::PLAIN, p, a);
+    return clicked;
+}
+
+// Where the way out's tiles go: back, settings, start over, and the draw tile when it
+// shows; and how each tile lays out its icon and word (gui::MIDDLE, STACKED, or ICON
+// alone).
 struct Out {
-    tiles:   float4[3] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3],
+    tiles:   float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4],
     arrange: i64       = gui::MIDDLE,
 }
 
-// The way out's tiles in l at u pixels a dp, `words` the three words' widths in the
-// heading face.
-fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
+// The way out's tiles in l at u pixels a dp, `words` the four words' widths in the
+// heading face, with the draw tile where `four`. In landscape with it, or on a touch
+// screen, two over two (or over start over) in the column's room, so nothing under it
+// moves; in portrait it is the bar's fourth; in a small window's bar an icon after back.
+fn way_out(l: Layout, words: f32[4], u: f32, four: bool = false) -> Out {
     var o = Out {};
-    if columns(l) && l.out_row {
-        // Back and settings side by side over start over.
+    if columns(l) && (l.out_row || four) {
+        // Back and settings side by side over start over, and the draw tile beside it.
         let c = l.left;
         let st = 0.5 * (c.w - BACK_GAP * u);
         let half = 0.5 * (c.z - BACK_GAP * u);
         o.tiles[0] = float4 { c.x, c.y, half, st };
         o.tiles[1] = float4 { c.x + c.z - half, c.y, half, st };
-        o.tiles[2] = float4 { c.x, c.y + c.w - st, c.z, st };
+        o.tiles[2] = float4 { c.x, c.y + c.w - st, if four { half } else { c.z }, st };
+        o.tiles[3] = float4 { c.x + c.z - half, c.y + c.w - st, half, st };
         o.arrange = gui::STACKED;
         return o;
     }
@@ -1086,7 +1148,9 @@ fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
         return o;
     }
     if l.mode == COMPACT {
-        o.tiles = icons(l.tiles, u);
+        let t = icons(l.tiles, u);
+        for i in 3 { o.tiles[i] = t[i]; }
+        o.tiles[3] = compact_draw(l, u);
         o.arrange = ICON;
         return o;
     }
@@ -1096,19 +1160,22 @@ fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
     o.arrange = if l.stacked { gui::STACKED } else { gui::MIDDLE };
     let bar = l.tiles;
     let gap = (if l.stacked { 12.0 } else { 16.0 }) * u;
-    let free = bar.z - 2.0 * gap;
-    var wants: f32[3] = [0.0, 0.0, 0.0];
+    let n: i64 = if four { 4 } else { 3 };
+    let free = bar.z - (n - 1) * gap;
+    var wants: f32[4] = [0.0, 0.0, 0.0, 0.0];
     var fits = true;
-    for i in 3 {
+    var wanted: f32 = 0.0;
+    for i in n {
         let want = if l.stacked { words[i] + 2.0 * gui::LABEL_PAD * u } else { labelled_width(u, 34.0, words[i]) };
         wants[i] = max(want, gui::tap_size() * u);
-        if wants[i] > free / 3.0 { fits = false; }
+        wanted += wants[i];
+        if wants[i] > free / n { fits = false; }
     }
-    let share = (free - wants[0] - wants[1] - wants[2]) / 3.0;
+    let share = (free - wanted) / n;
     let even = fits || share < 0.0;
     var x = bar.x;
-    for i in 3 {
-        let w = if even { free / 3.0 } else { wants[i] + share };
+    for i in n {
+        let w = if even { free / n } else { wants[i] + share };
         o.tiles[i] = if even { float4 { bar.x + i * (w + gap), bar.y, w, bar.w } } else { float4 { x, bar.y, w, bar.w } };
         x += w + gap;
     }
@@ -1379,7 +1446,13 @@ fn game(g: gui::Gui&, l: Layout, c: Clocks, side: i64, won: bool, drawn: bool, n
     }
     let p = match l.mode { COMPACT => compact_play(l, w, on, u), PORTRAIT => portrait_play(l, w, on, u),
                            _ => column_play(l, w, on, u) };
-    var chosen = if out { leave(g, l) } else { NOTHING };
+    var chosen = NOTHING;
+    var o = Out {};
+    if out {
+        let c, way = leave_with(g, l, help);
+        chosen = c;
+        o = way;
+    }
     gui::group(g, GROUP_PLAY);
     gui::panel(g, l.right);
     if on.clocks {
@@ -1412,6 +1485,7 @@ fn game(g: gui::Gui&, l: Layout, c: Clocks, side: i64, won: bool, drawn: bool, n
     }
     if hint_tile(g, p.hint, p.hint_as, help, p.hint_icon) { chosen = HINT; }
     if eye(g, p.eye, help.look) { chosen = LOOKOUT; }
+    if out && help.draw != 0 && draw_tile(g, l, o, help) { chosen = DRAW; }
     return chosen;
 }
 

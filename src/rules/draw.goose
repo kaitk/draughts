@@ -40,6 +40,7 @@ let DRAW_REPEAT = 1;        // the same position a third time
 let DRAW_KINGS = 2;         // only kings moved and nothing was taken, for the count
 let DRAW_LONE = 3;          // the lone king held out: the strong side didn't take it in time
 let DRAW_BALANCE = 4;       // nothing taken or crowned, both sides with kings, for the count
+let DRAW_AGREED = 5;        // the players agreed (game::BY_AGREEMENT): no count of the position's
 
 // The lone-king counts, by the material: International's three pieces and two or
 // fewer, and the strong side's 15th and 5th move.

@@ -40,6 +40,26 @@ struct Event {
     winner:            i64  = -1, // its winner's side, or -1 for a draw
 }
 
+// How a game ended, or ends: by the board (a win or the rules' draw, or still going on),
+// by a draw the players agreed, or by the child giving up (docs/architecture/ai.md,
+// "Draws and giving up").
+let BY_BOARD = 0;
+let BY_AGREEMENT = 1;
+let BY_GIVING_UP = 2;
+// The child's moves after which start over asks to give up, and that the draw tile
+// stays dim for after a refusal.
+let GIVE_UP_AFTER = 4;
+let REFUSED_FOR = 5;
+// The card in the middle over the board, other than the end's.
+let NO_CARD = 0;
+let REFUSED_CARD = 1;       // the computer turned the child's offer down
+let OFFER_CARD = 2;         // the computer offers a draw
+let GIVE_UP_CARD = 3;       // start over asks to give up
+// The draw tile, as panel::Help.draw has it.
+let DRAW_TILE_HIDDEN = 0;
+let DRAW_TILE_ON = 1;
+let DRAW_TILE_DIM = 2;
+
 // The computer's levels.
 let EASY = 0;
 let MEDIUM = 1;
@@ -125,6 +145,17 @@ struct Game {
     no_count: bool = false,
     // The clocks' warnings heard so far (sound_event::chime), once a side a game.
     chimes: sound_event::Chimes = sound_event::Chimes {},
+    // How the game ended (BY_*), saved with it; the card in the middle and the position it
+    // shows for (board::Board.positions_shown), dropped when another shows; the plies
+    // when the computer last refused a draw, or -1; whether it has offered one this game,
+    // or will once its move has shown; and its last search's score for itself.
+    ended_by:       i64  = BY_BOARD,
+    card:           i64  = NO_CARD,
+    card_shown_for: i64  = -1,
+    refused_at:     i64  = -1,
+    offered:        bool = false,
+    offer_due:      bool = false,
+    score:          i64  = 0,
 }
 
 // Counts what each side has taken again when the board at rest shows another position
@@ -180,6 +211,8 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.lookout_cache = Watch {};
     gm.ply0 = 0;
     gm.no_count = false;
+    new_offers(gm);
+    gm.score = 0;
     new_hints(gm);
     rig::reset(gm.cam);
     rig::across_table(gm.cam, computer < 0 && !gm.turns);
@@ -214,8 +247,19 @@ fn restart(gm: Game&, now: f64 = 0.0) {
     gm.end_sent_for_history = false;
     gm.ai_request_id = 0;
     gm.judge_request_id = 0;
+    new_offers(gm);
     new_hints(gm);
     rig::ease_to_rest(gm.cam, now);
+}
+
+// A new game's draws and giving up: none agreed or given up, no card, no refusal, and
+// the computer's offer still to make.
+fn new_offers(gm: Game&) {
+    gm.ended_by = BY_BOARD;
+    gm.card = NO_CARD;
+    gm.refused_at = -1;
+    gm.offered = false;
+    gm.offer_due = false;
 }
 
 // What the panels show of clock c: each side's time, gold under a minute and red at 20
@@ -234,6 +278,7 @@ fn clocks(c: clock::Clock&) -> panel::Clocks {
 // (once the move has shown), or its time ran out.
 fn winner(gm: Game&) -> i64 {
     if gm.clock.flag >= 0 { return 1 - gm.clock.flag; }
+    if gm.ended_by == BY_GIVING_UP { return gm.computer; }
     return board::winner(gm.b);
 }
 
@@ -244,6 +289,7 @@ fn past(gm: Game&) -> rules::Past& { board::past(gm.b) }
 // drawing move has shown, unless it won.
 fn drawn(gm: Game&) -> i64 {
     guard winner(gm) < 0 && !gm.b.moving else { return rules::NO_DRAW; }
+    if gm.ended_by == BY_AGREEMENT { return rules::DRAW_AGREED; }
     return rules::draw_reason(past(gm).draw, gm.b.pos);
 }
 
@@ -362,10 +408,14 @@ fn press_hint(gm: Game&, now: f64) {
 // The computer's move for the ask `id`, `close` of the moves about as good as it. It is
 // played after the level's pause, or while its clock runs after pace::seconds. An ask no
 // longer open is ignored.
-fn answer(gm: Game&, id: i64, m: rules::Move, close: i64) {
+fn answer(gm: Game&, id: i64, m: rules::Move, close: i64, score: i64 = 0, searched: bool = false) {
     guard id != 0 && id == gm.ai_request_id else { return; }
     gm.reply = m;
     gm.ai_answered = true;
+    // Its score answers the child's offer; and it offers once a game, once its move shows.
+    if searched { gm.score = score; }
+    let after = rules::play(gm.b.pos, m);
+    if !gm.offered && offer::offers_draw(after, gm.computer, gm.score) { gm.offer_due = true; }
     let level = clamp(gm.level, EASY, HARD);
     gm.wait = PAUSE[level];
     guard gm.clock.running == gm.computer else { return; }
@@ -385,8 +435,55 @@ fn take_back(gm: Game&) -> bool {
         board::undo(b);
         done = board::undo(b);
     }
-    if done { gm.ai_request_id = 0; }
+    if done {
+        gm.ai_request_id = 0;
+        gm.ended_by = BY_BOARD;
+        gm.offer_due = false;
+    }
     return done;
+}
+
+// The child's moves played so far against the computer.
+fn child_moves(gm: Game&) -> i64 {
+    var n = 0;
+    for &st in gm.b.rec.history { if st.pos.side != gm.computer { n += 1; } }
+    return n;
+}
+
+// The draw tile (DRAW_*): shown while both sides have a king and the game goes on, the
+// board at rest with no capture under way and the child to move; dim for REFUSED_FOR of
+// the child's moves after a refusal.
+fn draw_tile(gm: Game&) -> i64 {
+    let b .= gm.b;
+    guard offer::kings_each(b.pos) && !ended(gm) && !b.moving && b.steps.len == 0 && b.pos.side != gm.computer
+    else { return DRAW_TILE_HIDDEN; }
+    guard gm.computer >= 0 && gm.refused_at >= 0 && b.rec.history.len < gm.refused_at + 2 * REFUSED_FOR else { return DRAW_TILE_ON; }
+    return DRAW_TILE_DIM;
+}
+
+// Whether start over asks to give up first: against the computer, in a game that counts,
+// going on, from the child's fifth move.
+fn asks_to_give_up(gm: Game&) -> bool {
+    return gm.computer >= 0 && !gm.no_count && !ended(gm) && child_moves(gm) >= GIVE_UP_AFTER;
+}
+
+// The card in the middle shown for the position now, which the board then ignores taps
+// under.
+fn show_card(gm: Game&, card: i64) {
+    gm.card = card;
+    gm.card_shown_for = gm.b.positions_shown;
+}
+
+// The draw tile tapped: in a friend's game the game ends drawn at once; against the
+// computer it answers from its last score, agreeing or showing its refusal.
+fn press_draw(gm: Game&) {
+    guard draw_tile(gm) == DRAW_TILE_ON else { return; }
+    if gm.computer < 0 || offer::accepts_draw(gm.b.pos, gm.computer, gm.score) {
+        gm.ended_by = BY_AGREEMENT;
+        return;
+    }
+    gm.refused_at = gm.b.rec.history.len;
+    show_card(gm, REFUSED_CARD);
 }
 
 // The computer's turn: ask for its move when the turn begins, and play the answer once
@@ -461,7 +558,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
         // A press on the sheet is the UI's, never the board's.
         gui::claim_press(g, gui::extend_to_screen_edge(g, l.sheet, l.area));
     } else {
-        panel::taken(g, l, gm.taken, ui_pieces);
+        panel::taken(g, if draw_tile(gm) != DRAW_TILE_HIDDEN { panel::taken_beside_draw(l, g.scale) } else { l }, gm.taken, ui_pieces);
         if moves_line(gm, g, l, ui_pieces) {
             gm.sheet = true;
             changed = true;
@@ -476,9 +573,14 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
         // Partway through a capture, take back only takes the capture back to its start.
         panel::UNDO => { if !board::unwind(b) && gm.clock.flag < 0 { undone = take_back(gm); } },
         panel::RESTART => {
-            restart(gm, now);
-            ev.restarted = true;
+            if asks_to_give_up(gm) {
+                show_card(gm, GIVE_UP_CARD);
+            } else {
+                restart(gm, now);
+                ev.restarted = true;
+            }
         },
+        panel::DRAW => { press_draw(gm); },
         panel::BACK => { ev.go = HOME; },
         panel::SETTINGS => { ev.go = SETTINGS; },
         panel::LOOKOUT => {
@@ -495,6 +597,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
     }
 
     if !frozen && think(gm, now) { changed = true; }
+    if cards(gm) { changed = true; }
     won = winner(gm);
     let draw = drawn(gm);
     if draw == rules::NO_DRAW {
@@ -558,6 +661,9 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
             changed = true;
         }
         if ask == panel::BACK { ev.go = HOME; }
+    } else if gm.card != NO_CARD {
+        // A card in the middle: the board takes no tap under it.
+        if answer_card(gm, middle_card(gm, g, l, gm.card)) { changed = true; }
     } else if !cover {
         let held, moved = board::showcase(gm.cam, g, input, l.is_3d, l.pitch, now);
         if moved { changed = true; }
@@ -591,7 +697,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
     }
     // The computer's pieces show no count of what they must take: the child can't move them.
     b.hide_counts = gm.computer >= 0 && b.pos.side == gm.computer;
-    if b.moves.len == 0 || drawn(gm) != rules::NO_DRAW { clock::stop(gm.clock); }
+    if b.moves.len == 0 || ended(gm) { clock::stop(gm.clock); }
     // A person's clock heard as it turns gold and as it turns red, once each a game.
     for side in 2 {
         sound_event::add(b.sound_events, sound_event::chime(gm.chimes, side, clock::warn(gm.clock, side), clock::low(gm.clock, side),
@@ -666,7 +772,8 @@ fn watch(gm: Game&) -> bool {
 // What the play panel shows of the lookout and the hint.
 fn help(gm: Game&) -> panel::Help {
     let side = clamp(gm.b.pos.side as i64, 0, 1);
-    return panel::Help { look: gm.lookout_on, left: gm.hints[side], stage: gm.hint_stage, can: can_hint(gm) };
+    return panel::Help { look: gm.lookout_on, left: gm.hints[side], stage: gm.hint_stage, can: can_hint(gm),
+                         draw: draw_tile(gm), offer: gm.computer >= 0 };
 }
 
 // Declares the screen as it stands, doing nothing, for a transition away from the game.
@@ -688,6 +795,37 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, ui_pieces: board::
     panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, ui_pieces); }
     if gm.drawn_at >= 0.0 { draw_card(gm, g, l, draw, now, ui_pieces); }
+    if gm.card != NO_CARD && gm.won_at < 0.0 && gm.drawn_at < 0.0 { middle_card(gm, g, l, gm.card); }
+}
+
+// The cards in the middle as the game stands: one goes once another position shows or
+// the game has ended; the computer's offer shows once its move has, the child to move.
+// True when one came or went.
+fn cards(gm: Game&) -> bool {
+    let b .= gm.b;
+    let was = gm.card;
+    if gm.card != NO_CARD && (b.positions_shown != gm.card_shown_for || (gm.card != GIVE_UP_CARD && ended(gm))) {
+        gm.card = NO_CARD;
+    }
+    if gm.card == NO_CARD && gm.offer_due && !b.moving && b.pos.side != gm.computer && !ended(gm) {
+        gm.offer_due = false;
+        gm.offered = true;
+        // Only while the tile would show: both sides still have a king.
+        if offer::kings_each(b.pos) { show_card(gm, OFFER_CARD); }
+    }
+    return gm.card != was;
+}
+
+// The card in the middle answered (`answer` 0 or 1, -1 for none): the refusal closes; the
+// computer's offer agreed or played on; give up ends the game as the computer's win, keep
+// playing closes it. True when answered.
+fn answer_card(gm: Game&, answer: i64) -> bool {
+    guard answer >= 0 else { return false; }
+    let card = gm.card;
+    gm.card = NO_CARD;
+    if card == OFFER_CARD && answer == 0 { gm.ended_by = BY_AGREEMENT; }
+    if card == GIVE_UP_CARD && answer == 0 { gm.ended_by = BY_GIVING_UP; }
+    return true;
 }
 
 // Whether anything is still moving at `now`; the app draws while it is.
