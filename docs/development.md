@@ -106,6 +106,7 @@ common ones:
 | `--puzzle ID` | open a puzzle; its taps go to its board |
 | `--go NAME`, `--hold 0.4` | switch screens through the transition on the second frame; hold it part of the way |
 | `--win 1.2` | hold a win's celebration at that time |
+| `--card refused\|offer\|give-up\|gave-up\|agreed` | the game's card in the middle from the second frame, or its end given up or agreed (a game against the computer that ends moves the player's rating) |
 | `--frames N` | stop after N frames and save `draughts.png` |
 | `--bench N`, `--rest S`, `--no-vsync` | time frames, count CPU at rest, present uncapped |
 

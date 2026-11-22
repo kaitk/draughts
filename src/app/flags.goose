@@ -94,6 +94,9 @@ struct Flags {
     go:   i64 = -1,
     hold: f64 = -1.0,       // --hold T: keeps a transition at T of the way, 0..1
     win:  f64 = -1.0,       // --win T: keeps a win at T seconds into its celebration
+    // --card refused|offer|give-up|gave-up|agreed: the game's card in the middle (game::*_CARD),
+    // or its end given up or agreed (game::BY_*, as 10 + it), from the second frame
+    card: i64 = -1,
     // --wood N, --marble N, --summer N, --spring N, --autumn N, --winter N: a season's 3D
     // look by its index (looks::SUMMERS, AUTUMNS, WINTERS; wood 0..3, marble 0..8,
     // spring 0..3) over the player's material, for tuning; -1 not given
@@ -295,6 +298,11 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--hold" {
             let n, ok = parse_flt(v);
             if ok { f.hold = clamp(n, 0.0, 1.0); }
+        }
+        if a == "--card" {
+            f.card = if v == "refused" { game::REFUSED_CARD } else if v == "offer" { game::OFFER_CARD }
+                     else if v == "give-up" { game::GIVE_UP_CARD } else if v == "gave-up" { 10 + game::BY_GIVING_UP }
+                     else if v == "agreed" { 10 + game::BY_AGREEMENT } else { -1 };
         }
         if a == "--win" {
             let n, ok = parse_flt(v);

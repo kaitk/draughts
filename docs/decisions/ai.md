@@ -129,15 +129,15 @@ nothing, so a loss could be dodged and never reached the rating.
   before it ends doesn't count" (2026-11-09, `ai.md`'s "Skill"), which let a loss be
   dodged. Rejected: a give-up tile of its own, one more tile for a rare act.
 - **The computer's answer** to "Offer draw" is at once, from the score of its last search
-  (`ai::accepts_draw`): it accepts unless it is winning by half a man or more. The score
+  (`offer::accepts_draw`): it accepts unless it is winning by half a man or more. The score
   misjudges kings' endings that are dead draws, two kings against one looking won, so a
-  check on the material comes first (`ai::dead_draw`): only kings on the board, and the
+  check on the material comes first (`offer::dead_draw`): only kings on the board, and the
   stronger side with at most two, or three against a lone king on the long diagonal.
   Rejected: a search of its own for the answer, a wait for an answer that the last
   search already gives.
 - **A refusal** keeps the tile dim for the child's next five moves, so tapping until yes
   doesn't work.
-- **The computer offers** a draw once a game (`ai::offers_draw`), after its own move, when
+- **The computer offers** a draw once a game (`offer::offers_draw`), after its own move, when
   both sides have a king and the material is a dead draw, or only kings stand and its
   score is within a fifth of a man of even. Play on says the child wants to win, so it
   never asks again; the child can still offer.
