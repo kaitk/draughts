@@ -2763,13 +2763,18 @@ struct Dust {
     u:      float3 = float3_0,
     v:      float3 = float3_0,
     w:      float3 = float3_0,
-    shape:  f32    = 0.0,   // 0 round points, 1 flakes and lint
+    shape:  f32    = 0.0,   // 0 round points, 1 flakes and lint, 2 points (shaders::DUST_HEAD)
     glint:  f32    = 12.0,  // how sharp a face's glint (an exponent)
     fibres: f32    = 0.3,   // the share of fibres
-    // The beam's haze (an experiment, off): its strength, sprites and their radius (units).
-    haze:       f32 = 0.0,
-    haze_count: i64 = 0,
-    haze_size:  f32 = 2.4,
+    // The points' (shape 2): their footprint's sigma in pixels, how much of the flakes'
+    // glints shows (0 none, 1 as real), the room's sun over the board's (dust_block's), the
+    // air (cm a second: its drift along the wall, the rise over the sun's patch, the swirls'
+    // speed; the swirls' size in cm), the board's share along w, how much denser round it.
+    point_px: f32    = 0.75,
+    glints:   f32    = 1.0,
+    air:      float4 = float4 { 1.2, 1.0, 1.5, 12.0 },
+    board_at: f32    = 0.63,
+    near:     f32    = 1.0,
 }
 var dust = Dust {};
 
@@ -2792,13 +2797,18 @@ struct DustBlock {
     v:           float4,
     w:           float4,
     shape:       float4,
+    air:         float4,
+    point:       float4,
+    near:        float4,
 }
 fn dust_block(g: Gpu&) -> DustBlock {
     var b = DustBlock { model3d::f4(dust.low, wind_time), model3d::f4(dust.span, dust.rise),
                         float4 { dust.size, dust.blur, dust.bright, dust.focus }, float4 { dust.thin, dust.ahead, dust.reach, 0.0 },
                         float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                         model3d::f4(dust.u, 0.0), model3d::f4(dust.v, 0.0), model3d::f4(dust.w, if dust.beam { 1.0 } else { 0.0 }),
-                        float4 { dust.shape, dust.glint, dust.fibres, dust.haze_size } };
+                        float4 { dust.shape, dust.glint, dust.fibres, 0.0 }, dust.air,
+                        float4 { dust.point_px, dust.glints, g.room.shell_sun.y * g.room.room_exposure, surfaces::METRE },
+                        float4 { dust.board_at, dust.near, 0.0, 0.0 } };
     if lens.on {
         // The lens's disc in the motes' pixels (a thousand to the scene's height): the
         // aperture's share of its width.
@@ -2822,16 +2832,6 @@ fn dust_block(g: Gpu&) -> DustBlock {
     if dust.beam { b.window_view.y = 0.0; }
     return b;
 }
-
-// The beam's haze's block (Dust.haze): the motes' with large faint sprites in their place.
-fn haze_block(g: Gpu&) -> DustBlock {
-    var b = dust_block(g);
-    b.shape.x = 2.0;
-    b.look.z = dust.haze;
-    b.lens.z = 0.0;
-    return b;
-}
-fn haze_shown() -> bool { dust.count > 0 && dust.haze > 0.0 && dust.haze_count > 0 }
 
 // shaders::LIT_SHELL's and TABLE_SHELL's block: the shell's windows as the room's block has
 // them (surfaces_block), for the board and the table lit through them; all 0 without the

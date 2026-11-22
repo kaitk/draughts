@@ -773,11 +773,6 @@ fn draw_motes(own: Own&, g: Gpu&, f: u64) {
     slot(r, 0, render3d::tree_or_stand_in(g), g.linear);
     slot(r, 1, render3d::lace_or_stand_in(g), g.linear);
     ngfx::draw_instanced(ngfx::root(r), 6, render3d::motes_drawn());
-    if render3d::haze_shown() {
-        let hb: render3d::DustBlock[1] = [render3d::haze_block(g)];
-        r.u = ngfx::frame_data(bytes_of(hb));
-        ngfx::draw_instanced(ngfx::root(r), 6, min(render3d::dust.haze_count, render3d::MAX_MOTES));
-    }
 }
 
 // The occlusion map's texels x0..x1, y0..y1 drawn again from the field's squares.

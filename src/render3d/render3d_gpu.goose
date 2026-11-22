@@ -867,10 +867,6 @@ fn draw_motes(own: Own&, g: render3d::Gpu&) {
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
     gfx::uniforms(gfx::VERTEX, 1, render3d::dust_block(g));
     gfx::draw_instanced(6, render3d::motes_drawn());
-    if render3d::haze_shown() {
-        gfx::uniforms(gfx::VERTEX, 1, render3d::haze_block(g));
-        gfx::draw_instanced(6, min(render3d::dust.haze_count, render3d::MAX_MOTES));
-    }
 }
 
 // The occlusion map's texels x0..x1, y0..y1 drawn again from the field's squares.

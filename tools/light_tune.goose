@@ -46,10 +46,13 @@
 //       [--place-then NAME (that placement taken on the third frame, as A takes it: a check of the room built again)]
 //       [--sun-check (prints where the sun's ray from the board and the table leaves the room: a window's
 //       glass, a bar, its frame, or the wall; then quits unless --shot)]
-//       [--dust off|on|sparse|dense|coarse|motes|motes-few|motes-many (on the box round the board as before;
-//       the others only in the table-window view: sparse.. round points in a box over the table, motes.. flakes
-//       and lint in the sunbeam's own volume, lit by the sun alone: DUST_WAYS; motes the default)]
-//       [--beam-haze K (a faint haze in the motes' beam, an experiment; 0 off)] [--mote-glint EXP] [--mote-fibres SHARE] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
+//       [--dust off|on|sparse|dense|coarse|motes|motes-few|motes-many|points|points-few|points-many (on the box
+//       round the board as before; the others only in the table-window view: sparse.. round points in a box over
+//       the table, motes.. builder 29's flakes and lint in the sunbeam's own volume, lit by the sun alone, points..
+//       real dust's points, energy-conserving: DUST_WAYS; points the default)]
+//       [--mote-glint EXP] [--mote-fibres SHARE] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
+//       [--point-px SIGMA (the points' footprint, 0.75)] [--glints K (the flakes' glints, 1 as real, 0 off)]
+//       [--air DRIFT,RISE,SWIRL,SIZE (cm a second, the swirls' size in cm; 1.2,1,1.5,12)] [--near K (denser round the board, 0 even)]
 //       [--halo K --halo-reach K (the pieces' darkening of the field round them: its strength, and its reach
 //       as a share; 0 or none the shader's own, shaders::OCC_FRAG's HALO and HALO_REACH, 1 and 1 today)]
 //       [--room-surfaces on|off] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
@@ -262,23 +265,39 @@ fn board_in_plan(g: render3d::Gpu&) -> f32 {
 // face turns to the sun, then dims, in the beam's own volume over the table near the board
 // (beam_box), lit only by the sun straight through the glass (the default); the round
 // points before them stay a press of D away.
-let DUST_WAYS = ["off", "on", "sparse", "dense", "coarse", "motes", "motes-few", "motes-many"];
+// points, points-few, points-many: real dust as a camera sees it (the default, builder 33,
+// build/notes/window-view/refs/research-haze-motes.md): points of a fixed small footprint at
+// any resolution carrying the light each really scatters, a few fibres as short lines, the
+// flakes' brief glints, drifting, rising and swirling in centimetres a second
+// (render3d::Dust's shape 2).
+let DUST_WAYS = ["off", "on", "sparse", "dense", "coarse", "motes", "motes-few", "motes-many", "points", "points-few", "points-many"];
 let DUST_OFF = 0;
 let DUST_ON = 1;
 let DUST_SPARSE = 2;
 let DUST_MOTES = 5;
+let DUST_POINTS = 8;
 // Each its motes, size, lens blur, brightness, how its disc thins, forward scattering
 // (render3d::Dust's ahead), rise and wander.
 struct DustPreset { count: i64, size: f32, blur: f32, bright: f32, thin: f32, ahead: f32, rise: f32, reach: f32 }
-let DUST_PRESETS: DustPreset[6] = [DustPreset { 120, 0.4, 0.5, 0.06, 1.0, 0.4, 0.02, 0.2 },
+// The points' size, rise and wander are their own (Dust's point_px, air): theirs here unused.
+let POINTS_FEW = 250;
+let POINTS_MID = 500;
+let POINTS_MANY = 1000;
+// The points' light over what a 25 µm flake really scatters (the camera's exposure set for
+// the window, the motes that show the larger ones), and their fibres' share.
+let POINTS_BRIGHT: f32 = 40.0;
+let POINTS_FIBRES: f32 = 0.15;
+let DUST_PRESETS: DustPreset[9] = [DustPreset { 120, 0.4, 0.5, 0.06, 1.0, 0.4, 0.02, 0.2 },
                                    DustPreset { 300, 0.3, 0.5, 0.035, 1.0, 0.4, 0.012, 0.15 },
                                    DustPreset { 60, 0.7, 1.0, 0.06, 1.0, 0.4, 0.02, 0.2 },
                                    DustPreset { 90, 0.55, 0.5, 0.13, 1.0, 0.5, 0.012, 0.12 },
                                    DustPreset { 40, 0.6, 0.5, 0.13, 1.0, 0.5, 0.012, 0.12 },
-                                   DustPreset { 220, 0.5, 0.5, 0.1, 1.0, 0.5, 0.012, 0.12 }];
+                                   DustPreset { 220, 0.5, 0.5, 0.1, 1.0, 0.5, 0.012, 0.12 },
+                                   DustPreset { POINTS_MID, 0.0, 0.0, POINTS_BRIGHT, 1.0, 0.7, 0.0, 0.0 },
+                                   DustPreset { POINTS_FEW, 0.0, 0.0, POINTS_BRIGHT, 1.0, 0.7, 0.0, 0.0 },
+                                   DustPreset { POINTS_MANY, 0.0, 0.0, POINTS_BRIGHT, 1.0, 0.7, 0.0, 0.0 }];
 // The box over the games table the motes drift in (metres in the plan: across the table's
 // middle, and up from the board's level).
-let BEAM_HAZE_SPRITES = 900;
 let DUST_HALF: f32 = 0.7;
 let DUST_HIGH: f32 = 0.5;
 
@@ -443,6 +462,21 @@ fn sun_check(g: render3d::Gpu&, turn: f32, height: f32, loud: bool = true) -> i6
     print("sun-check: the board ", board_lit, " of 5 points lit through the middle window (its glass or a bar's shadow); its field ",
           field, " of 81");
     return field, counts[0] + counts[1];
+}
+
+// The dust's flags over its preset's settings (the first time a way is shown): its motes
+// (returned), and each look.
+fn dust_flags(argv: u8[:][>..]&, motes: i64) -> i64 {
+    render3d::dust.glint = number(argv, "--mote-glint", render3d::dust.glint);
+    render3d::dust.fibres = number(argv, "--mote-fibres", render3d::dust.fibres);
+    render3d::dust.size = number(argv, "--mote-size", render3d::dust.size);
+    render3d::dust.blur = number(argv, "--mote-blur", render3d::dust.blur);
+    render3d::dust.bright = number(argv, "--mote-bright", render3d::dust.bright);
+    render3d::dust.point_px = number(argv, "--point-px", render3d::dust.point_px);
+    render3d::dust.glints = number(argv, "--glints", render3d::dust.glints);
+    render3d::dust.air = four(argv, "--air", render3d::dust.air);
+    render3d::dust.near = number(argv, "--near", render3d::dust.near);
+    return whole(argv, "--motes", motes);
 }
 
 // The sunbeam's volume over the table (the new motes' box): from the middle window's
@@ -1283,12 +1317,7 @@ fn main() {
     render3d::room_sun = float4 { render3d::room_sun.x, oak_sun.x, oak_sun.y, oak_sun.z };
     render3d::shade_fill = number(argv, "--shade-fill", render3d::shade_fill);
     var lace_hang = number(argv, "--lace-hang", room_shell::LACE_HANG);
-    var dust_way = pick(argv, "--dust", DUST_WAYS, DUST_MOTES);
-    // The beam's haze among the motes (an experiment, 0 off): a faint in-scatter of the sun
-    // in the same volume, large soft sprites lit as the motes are.
-    var beam_haze = number(argv, "--beam-haze", 0.0);
-    render3d::dust.glint = number(argv, "--mote-glint", render3d::dust.glint);
-    render3d::dust.fibres = number(argv, "--mote-fibres", render3d::dust.fibres);
+    var dust_way = pick(argv, "--dust", DUST_WAYS, DUST_POINTS);
     var shown_dust = -1;
     render3d::window_view = float4 { number(argv, "--lace-sun", 1.0), number(argv, "--lace-scatter", 1.0), number(argv, "--glass-film", 1.0),
                                      number(argv, "--scratches", 1.0) };
@@ -1317,9 +1346,6 @@ fn main() {
     let caps = four(argv, "--dof-caps", float4 { render3d::lens.near_cap * 100.0, render3d::lens.far_cap * 100.0, 0.0, 0.0 });
     var near_cap = caps.x;
     var far_cap = caps.y;
-    render3d::dust.size = number(argv, "--mote-size", render3d::dust.size);
-    render3d::dust.blur = number(argv, "--mote-blur", render3d::dust.blur);
-    render3d::dust.bright = number(argv, "--mote-bright", render3d::dust.bright);
     render3d::wind_time = number(argv, "--wind-time", 0.0);
     render3d::wind_kind = pick(argv, "--wind-kind", rooms::WIND_KINDS, rooms::WIND_NOISE);
     g.room = room;
@@ -1579,7 +1605,7 @@ fn main() {
                 render3d::window_view = float4 { k, k, k, k };
                 render3d::sun_veil = k;
                 lace_hang = k * room_shell::LACE_HANG;
-                dust_way = if on { DUST_OFF } else { DUST_MOTES };
+                dust_way = if on { DUST_OFF } else { DUST_POINTS };
             }
             if gfx::key_pressed("Y") { lace_hang = if lace_hang > 0.0 { 0.0 } else { room_shell::LACE_HANG }; }
             if gfx::key_pressed("L") { paper_m = if paper_m > 1.0 { 0.65 } else if paper_m > 0.7 { 1.4 } else { 0.9 }; }
@@ -1846,7 +1872,13 @@ fn main() {
                 slider(c, "Wander", render3d::dust.reach, 0.0, 2.0);
                 slider(c, "Glint (motes)", render3d::dust.glint, 1.0, 40.0);
                 slider(c, "Fibres (motes)", render3d::dust.fibres, 0.0, 1.0);
-                slider(c, "Beam's haze (motes)", beam_haze, 0.0, 0.003);
+                slider(c, "Point's footprint px (points)", render3d::dust.point_px, 0.4, 2.0);
+                slider(c, "Glints (points)", render3d::dust.glints, 0.0, 3.0);
+                slider(c, "Drift cm/s (points)", render3d::dust.air.x, 0.0, 6.0);
+                slider(c, "Rise cm/s (points)", render3d::dust.air.y, 0.0, 4.0);
+                slider(c, "Swirls cm/s (points)", render3d::dust.air.z, 0.0, 6.0);
+                slider(c, "Swirls' size cm (points)", render3d::dust.air.w, 3.0, 40.0);
+                slider(c, "Round the board (points)", render3d::dust.near, 0.0, 1.0);
                 ui::tree_state_pop(c);
             }
             if section(c, open, CAMERA) {
@@ -2032,7 +2064,11 @@ fn main() {
             if dust_way != DUST_OFF {
                 format(line, " --motes ", motes, " --mote-size ", render3d::dust.size, " --mote-blur ", render3d::dust.blur,
                        " --mote-bright ", render3d::dust.bright, " --mote-glint ", render3d::dust.glint, " --mote-fibres ",
-                       render3d::dust.fibres, " --beam-haze ", beam_haze);
+                       render3d::dust.fibres);
+                if dust_way >= DUST_POINTS {
+                    format(line, " --point-px ", render3d::dust.point_px, " --glints ", render3d::dust.glints, " --near ", render3d::dust.near);
+                    flag_four(line, "--air", render3d::dust.air);
+                }
             }
             format(line, " --books ", on_off(books_on), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on), " --lace-hang ", lace_hang);
             if st.halo.x > 0.0 || st.halo.y > 0.0 { format(line, " --halo ", st.halo.x, " --halo-reach ", st.halo.y); }
@@ -2145,6 +2181,7 @@ fn main() {
         // A preset's settings once when it is picked, the sliders free after; its box in the
         // sunbeam each frame (the key may move).
         if dust_way != shown_dust {
+            let first = shown_dust < 0;
             shown_dust = dust_way;
             if dust_way >= DUST_SPARSE {
                 let p = DUST_PRESETS[dust_way - DUST_SPARSE];
@@ -2156,16 +2193,18 @@ fn main() {
                 render3d::dust.ahead = p.ahead;
                 render3d::dust.rise = p.rise;
                 render3d::dust.reach = p.reach;
+                render3d::dust.fibres = if dust_way >= DUST_POINTS { POINTS_FIBRES } else { render3d::Dust {}.fibres };
             } else {
                 motes = whole(argv, "--motes", 500);
                 render3d::dust = render3d::Dust {};
             }
+            // The flags over the first preset.
+            if first { motes = dust_flags(argv, motes); }
         }
         render3d::dust.shell = dust_way >= DUST_SPARSE;
         render3d::dust.beam = dust_way >= DUST_MOTES;
-        render3d::dust.shape = if dust_way >= DUST_MOTES { 1.0 } else { 0.0 };
-        render3d::dust.haze = if dust_way >= DUST_MOTES { beam_haze } else { 0.0 };
-        render3d::dust.haze_count = BEAM_HAZE_SPRITES;
+        render3d::dust.shape = if dust_way >= DUST_POINTS { 2.0 } else if dust_way >= DUST_MOTES { 1.0 } else { 0.0 };
+        render3d::dust.board_at = BEAM_NEAR / (BEAM_NEAR + BEAM_FAR);
         if dust_way >= DUST_MOTES {
             let at, u, v, w = beam_box(g);
             render3d::dust.low = at;
