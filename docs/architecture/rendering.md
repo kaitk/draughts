@@ -682,10 +682,10 @@ board's light:
   light (`lace_light`) instead as it turns to face out of the room. Brass takes neither the
   corners' shade nor the screen's occlusion, only its mesh's own.
 - **The room's shaders**: one pipeline a material group (`render3d::room_group`), each
-  with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_METALS`,
-  `ROOM_GLASS`): the floor; the panelling oak, the paper, the plaster and ceiling, the
-  paint and sills, the cord; the brass and the books; the glass and lace, a mesh of their
-  own. The room's mesh is sorted into the groups' index ranges when it is made, each range
+  with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_PAINT`,
+  `ROOM_METALS`, `ROOM_GLASS`): the floor; the panelling oak, the paper, the plaster and
+  ceiling, the sills, the cord; the painted wood; the brass and the books; the glass and
+  lace, a mesh of their own. The room's mesh is sorted into the groups' index ranges when it is made, each range
   drawn with its pipeline. A phone's pipelines are compiled without the screen's maps
   (`NO_SSAO`) and it makes no mirror's; the standard and high tiers' with them, made again
   if the tier changes. Each shader declares only the textures it reads, in slots without
@@ -742,6 +742,38 @@ front edges (`room_light::open_half`). The wainscot's cap returns 1.5 cm into ea
 end square 5 mm before the stack's front edge (`shell_mesh::cap_return`). The light
 tuner's `--shutters off` (H) leaves the shutters out and the cap's return 6.5 cm, making
 the mesh and the bake again ([why](../decisions/rendering.md)).
+
+### The painted wood
+
+The doors, their linings, architraves and plinth blocks, and the windows' casements,
+linings and shutters are old white oil paint on pine, kept quiet: what shows at standing
+distance is the joinery's shape, and the paint's own detail shows only close up and in
+grazing sun ([why](../decisions/rendering.md)).
+
+- **Shape** (`room_shell`'s `joinery.goose`): every arris that shows is rounded by the
+  coats, a fillet strip 1.2 mm on the doors and 0.9 mm on the windows whose normals turn
+  from one face's to the other's; the panels' quirks are 40% shallower. Each stile, rail,
+  bar, panel and architrave is tilted by its own small angle (0.2°) and each panel's field
+  cups 0.8 mm across its width, so the pieces catch the light a little differently.
+- **Lines**: each painted vertex carries the distance to the nearest joint and to the
+  nearest recess (its uv, metres). The shader draws a 0.3 mm hairline, half as light,
+  where a rail meets a stile, a bar a rail, and at the architrave's mitres and its foot,
+  and a 3 mm band of grey-brown dirt in the quirks, at the bevels' feet, along the glass,
+  where the sashes meet the frame and where the architrave and plinth blocks meet the
+  wall; both filtered over the pixel. A fillet's normal, read past its strip's edge, is
+  held within 46° of the strip's plane.
+- **Relief** (`room_shell::relief_tile`): one 512-texel tile, 256 mm of paint, made at
+  startup in about 25 ms (1.4 MB with its mips): brush ridges laid off along the grain in
+  64 mm bands, pine latewood every 4 mm and an orange peel, a few micrometres high. Laid on
+  each face's plane along the piece's grain (up, or along the wall), it tilts the normal
+  (half as much on a window), widens the sheen where its slopes spread under a texel, and
+  makes the sheen uneven over tens of centimetres. It never changes the colour.
+- **Colour and sheen**: `#c6beae`, each piece's tone a percent either way; roughness 0.36
+  on the doors and 0.42 on the windows (`surfaces::Look.paint_quiet`).
+- The material's fraction says a piece's tone, its grain and whether it is a window's
+  (`room_shell::paint_mat`). The light tuner's `--paint old` (J) draws the paint as it was
+  before, and `--paint-off fillets,tilt,dirt,joints,tile` switches its steps off one by one
+  in the tuner's own shader (`shaders::PAINT_STEPS`); `--paint-relief K` scales the tile.
 
 ### Board and pieces
 

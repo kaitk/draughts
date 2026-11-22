@@ -1095,6 +1095,48 @@ to be is in tasks 042, 059, 071, 081, and 086.
     screen's size, for the softness 0.85's Catmull-Rom hardly shows); a fixed scale (a
     pixel budget caps the cost on any screen, and a smaller window stays native); folding
     the upscale into the glow's add (0.15 ms, both shaders' code for it).
+- The doors' and windows' painted wood takes the paint research's quiet variant, drawn
+  with a pipeline of its own (2026-11-22, task 107; `build/notes/paint-research/`,
+  `room_shell`'s `joinery.goose` and `relief.goose`, `shaders::ROOM_PAINT`,
+  `render3d::GROUP_PAINT`). Old oil paint on pine reads quiet: soft rounded arrises, dirt
+  in the quirks, a hairline at each joint, each piece catching the light a little
+  differently, and brush and grain only in the sheen under grazing light. So, in the order
+  the research gives, each step judged in shots: (1) the shape in the mesh: fillets 1.2 mm
+  on the doors and 0.9 mm on the windows, the quirks 40% shallower, each piece tilted
+  about 0.2° and each panel cupped 0.8 mm; (2) the lines from distances the mesh carries in
+  its uv: a 3 mm dirt band in the recesses (−9 to −14%, toward a warm grey, rougher) and a
+  0.3 mm hairline at the joints, both filtered over the pixel; (3) one relief tile made in
+  code at startup, driving the normal and the sheen, never the colour. Sheen 0.36 on the
+  doors and 0.42 on the windows; the colour `#c6beae`, a percent's tone a piece. The
+  tile's heights are twice the research's quiet ones (a 5 µm brush): at its own they made
+  at most 7 levels' difference in a close-up at 0.2 mm a pixel in the sun, nothing to see.
+  - Its own pipeline: the walls' shader lost the paint's code and the paint's has only
+    its own (the sills' stone stays with the walls), so the quiet paint's cost falls on
+    its pixels. Measured headless at 3024 × 1890 on an M1 Pro, the room view, GPU ms by
+    Metal's encoder labels, two rounds alike: the main pass at native scale 10.86 before,
+    10.66 with the split alone, 11.10-11.11 with the quiet paint; at the 4.1 MP budget
+    8.19 and 8.41-8.43; the salon door's view at native 5.43 and 5.68; the frame's parts
+    13.68 and 13.99-14.00; the fps counter 12.8-12.9 and 13.1 ms a frame. Of the quiet
+    paint's 0.44 over the split, its mesh 0.18 (the fillets 0.12) and its shader 0.25
+    (the tile's fetch 0.05). The mesh 35,074 to 37,906 triangles (made in the same 12-14
+    ms), the corners' map 16,623 to 18,159 charts in the same 0.29 s, the tile 25 ms and
+    1.4 MB.
+  - A fillet's normal turns through 90° over a millimetre; a pixel's middle past the
+    strip's edge reads it far beyond, and the arrises shaded in dashes. The shader holds
+    it within 46° of the strip's own plane. Some dashing stays where a 0.9 mm fillet is a
+    fraction of a pixel (a casement's cover strip at 2 mm a pixel).
+  - The light tuner keeps the old paint one key away (J, `--paint old`) and switches each
+    step alone (`--paint-off fillets,tilt,dirt,joints,tile`, `--paint-relief K`), in a
+    shader of its own (`PAINT_STEPS`) used only while a switch is off, so the app's has no
+    switches.
+  - Rejected: the materials pass's paint (`build/exp/materials`, 2026-11-21, judged far
+    worse): the wainscot oak's coarse figure as relief under the paint (joinery here was
+    pine, its pores filled by many coats), 0.2 m value-noise "brush" cells that read as
+    soft streaks a few centimetres wide at every distance, relief in the diffuse at full
+    strength rather than in the sheen, and edges and the hand's zone worn to dark oak by
+    screen-space curvature, which crawls and reads as dirt or rust. Also left out for now:
+    the research's lived extras (chips to an older coat, hand grime and burnish, kick
+    scuffs, a per-leaf door map), the user's to choose.
 - The library's baked light bounces three times (2026-11-21, task 107;
   `room_light::first_light`, `bounce_once`, `gather_half`): the room's surfaces as 1,208
   cells, about 0.5 m a side on the floor, the ceiling and the four walls (a door's leaf, a

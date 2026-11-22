@@ -310,6 +310,18 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       Retina screen, the UI at its pixels (2026-11-22, builder 24, task 110's fix 4,
       `build/notes/builder-24/`): the frame 13.7 to 10.9 ms at 3024 × 1890; the budget the
       user's choice from the page's crops; the floor's parts measured for a later cut
+- [x] The doors' and windows' painted wood, the paint research's quiet variant, with a
+      pipeline of its own (2026-11-22, builder 25, `build/notes/builder-25/`;
+      `docs/decisions/rendering.md`): fillets on every arris (1.2 mm doors, 0.9 mm
+      windows), the quirks shallower, each piece tilted and each panel cupped; a 3 mm dirt
+      band in the recesses and a hairline at the joints; a relief tile made at startup
+      (25 ms, 1.4 MB) for the sheen and the normal; sheen 0.36 doors, 0.42 windows. The old
+      paint one key away in the light tuner (J), each step switchable
+      (`--paint-off`, `--paint-relief`). The mesh 35,074 to 37,906 triangles; the main
+      pass +0.24 ms at 3024 × 1890 against before (+0.44 against the split alone, which
+      saved 0.20); the rest of the room and the game's shot unchanged. Open: the lived
+      extras (chips, hand grime, kick scuffs), the relief's strength, and some dashing of
+      the windows' sub-pixel fillets
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
 - [ ] Dust in the sunbeam (task 104's follow-ups)

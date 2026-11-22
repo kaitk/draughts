@@ -320,6 +320,26 @@ results, or keep baking at run time behind a loader when the room or a look is c
   2.92. Candidates to cut, the user's call: the scratches, the floor's contact shadow,
   the wax's noises (one noise, or a small texture). Not measured on a device.
 
+- The painted wood's own pipeline and the quiet paint (2026-11-22, builder 25,
+  `build/notes/builder-25/`; `docs/decisions/rendering.md`). Metal System Trace, headless
+  3024 × 1890, GPU ms by encoder labels, two rounds alike. The room view at
+  `--scene-scale 1`: the main pass 10.86 before, 10.66-10.67 with the split alone (the
+  walls' shader without the paint's code), 11.10-11.11 with the quiet paint; the frame's
+  parts 13.68, 13.50-13.52, 13.99-14.00; the fps counter 12.8-12.9, 12.6-12.7, 13.1 ms a
+  frame. At the 4.1 MP budget: the main pass 8.19 / 8.41-8.43, the frame's parts 10.94-10.95
+  / 11.17-11.22, the fps counter 10.1-10.2 / 10.3. The salon door's view at native: the
+  main pass 5.43 / 5.68, the fps counter 7.1 / 7.4 ms. The quiet paint's parts, by
+  scratch builds and flags against 11.10: without its fillets 10.98 (0.12), the old mesh
+  with the quiet shader 10.92 (the mesh 0.18 in all), without the tile's fetch 11.06
+  (0.05), without the fillets' normal hold 11.10 (nothing); the shader 0.25 over the old
+  paint's. The mesh 35,074 to 37,906 triangles, made in 12-14 ms either way; the corners'
+  map 16,623 to 18,159 charts in 0.29 s either way (its atlas 1,013 to 985 rows); the
+  relief tile 25 ms on the CPU at the room's bake and 1.4 MB on the GPU. The look: the
+  old paint (J) within a level of before but two pixels at a coplanar seam (the
+  architrave's side against the wainscot's end, now drawn by another pipeline); the rest
+  of the room unchanged but the painted pieces and their reflection in the floor; the
+  game's shot unchanged (max difference 0, both renderers). Not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

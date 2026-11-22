@@ -255,11 +255,15 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   Moving code about in it (one call site in a loop, work done earlier) made it slower, not
   faster; what paid was drawing the triangles that need a path with a pipeline of their
   own. The room is now one pipeline a material group (`render3d::room_group`: floor, walls,
-  metals, glass), each shader with only its group's code by defines (`shaders::ROOM_FLOOR`
+  paint, metals, glass), each shader with only its group's code by defines (`shaders::ROOM_FLOOR`
   ..), its mesh sorted into the groups' index ranges. A new material goes in a group, or a
   group of its own: its define and branch in `ROOM_FRAG`, `room_group`, its textures in
   `ROOM_HEAD` and `room_textures` (the same order), `room_frag` and `make_room_tier` in
-  both renderers, `scripts/ngfx_3d_shaders.py`'s `ROOMS`, the tuner's `tuned_frags`.
+  both renderers, `scripts/ngfx_3d_shaders.py`'s `ROOMS`, the tuner's `tuned_frags`; and the mirror's
+  pipeline (`planar_*`) in both renderers. A group split out by its material's fraction
+  (the paint, under 0.5, from the sills' stone) tests it in `room_group`. A tuner-only
+  variant of a group's shader (`PAINT_STEPS`) is chosen in `room_frag` and its pipeline made
+  again when it comes or goes (`make_room_tier`'s `room_steps`).
 - gfx counts a shader's samplers from slot 0 and wants every one bound: a variant that
   drops a texture declares the rest without a gap (`ROOM_HEAD`'s per-group slots); ngfx's
   root takes them in declaration order, so both follow one list.
@@ -274,6 +278,11 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   grid coordinate), never one that jumps there.
 - A `sampler2D` as a function parameter crashes the Pixel 7a's Mali pipeline build: read
   textures as globals.
+- A mesh's millimetre fillet (a normal turning 90° across a strip) is read at a pixel's
+  middle past the strip's edge, its normal extrapolated far beyond the side's: hold it
+  near the strip's own plane from `cross(dFdx(p), dFdy(p))` (`ROOM_PAINT`).
+- Mesh builders that take the shell's `seed` by reference feed the curtains and books after
+  them: a new builder keeps the count of `seed++` as before or seeds from its own copy.
 - `smoothstep(a, b, x)` with `a > b` is undefined: write `1.0 - smoothstep(b, a, x)`.
 - Metal keywords (`thread`, `device`, `constant`, `kernel`) as GLSL names fail only on
   the Mac's pipeline build.
