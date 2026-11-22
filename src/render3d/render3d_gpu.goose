@@ -634,12 +634,15 @@ fn upscale_pass(own: Own&, g: render3d::Gpu&, target: Texture, u: render3d::Upsc
 }
 
 // The scenic views' HDR targets' format (render3d::hdr_shown): RG11B10F, as many bytes as
-// the 8-bit picture's, or RGBA16F where it can't be drawn into and sampled.
-// The fork's gfx asks the device (src/native/gfx_fork.c's stand-in says no, so a plain
-// build against the release's gfx draws RGBA16F).
+// the 8-bit picture's, or RGBA16F where it can't be drawn into and sampled, or not
+// multisampled at own.samples. The fork's gfx asks the device (src/native/gfx_fork.c's
+// stand-ins say no, so a plain build against the release's gfx draws RGBA16F).
 extern fn gfx_format_supported(format: i32, usage: i32) -> bool = "gs_gfx_format_supported";
+extern fn gfx_samples_supported(format: i32, samples: i32) -> bool = "gs_gfx_samples_supported";
 fn hdr_format(own: Own&) -> i32 {
-    if !render3d::hdr_wide && gfx_format_supported(gfx::RG11B10F, gfx::COLOR_TARGET | gfx::SAMPLED) { gfx::RG11B10F } else { gfx::RGBA16F }
+    let rg = gfx_format_supported(gfx::RG11B10F, gfx::COLOR_TARGET | gfx::SAMPLED)
+        && (own.samples <= 1 || gfx_samples_supported(gfx::RG11B10F, own.samples));
+    if !render3d::hdr_wide && rg { gfx::RG11B10F } else { gfx::RGBA16F }
 }
 
 // The board's lit shader into the HDR target for the pieces' material (render3d::PIECES_..),

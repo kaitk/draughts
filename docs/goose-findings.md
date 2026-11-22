@@ -323,6 +323,19 @@ photograph is 16 MiB as RGBA8 against 1.8 MiB as ASTC 6 × 6.
 - Upstream: the formats and `format_supported` in `gfx.goose`, block-aware byte counts and
   `texel_size`; perhaps loading `.astc` or `.ktx2` from bytes.
 
+### No asking whether a format multisamples
+
+A format that can be drawn into and sampled may still not take 2, 4 or 8 samples, so the
+HDR target's RG11B10F at 4× MSAA can't be checked before it is made.
+
+- Here: `kaitk/goose_gfx`'s `samples-supported`: `samples_supported(format, samples)`;
+  `render3d_gpu.goose`'s `hdr_format` takes RG11B10F only where the pass's sample count is
+  supported, with a weak stand-in answering no. NoGraphicsAPI has no such query, so
+  neither has goose-ngfx, and the ngfx build's `hdr_format` asks only `format_supported`.
+- Upstream: `samples_supported` in `gfx.goose`. For ngfx, a branch in the NoGraphicsAPI
+  fork first, as `msaa` was (Metal's `supportsTextureSampleCount`, Vulkan's `sampleCounts`
+  from the image format properties), then goose-ngfx passing it on.
+
 ### `ui`'s font atlas is RGBA32 only, its height a power of two
 
 A program uploading the atlas itself gets four bytes a texel where one would do, and up to
