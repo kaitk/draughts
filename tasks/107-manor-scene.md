@@ -344,6 +344,13 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
 - [x] Dust in the sunbeam (task 104's follow-ups): from the table-window view only,
       motes over the games table lit through the shell's windows, a pixel or two across
       (`--dust sparse|dense|coarse`; builder 27). Open: which density
+- [x] The depth of field's groundwork (2026-11-22, builder 28, task 111,
+      `build/notes/builder-28/`): the lens and its tuner controls, the scenic views in a 4×
+      RG11B10F HDR target tonemapped after (the 8-bit picture one key away, X), a 1× depth
+      of the scene with the lace by its coverage and its views (Q). HDR costs the room view
+      nothing in all (the main pass 11.93 to 11.63 ms at 3024 × 1890, the tonemap 0.45 after
+      it), the depth 0.19; the game unchanged. Open: the lace and the glass's film read
+      stronger in HDR, to retune
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

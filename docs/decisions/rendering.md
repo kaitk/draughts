@@ -1169,6 +1169,51 @@ to be is in tasks 042, 059, 071, 081, and 086.
     view 10.95 before, 11.08 with every step at 0, 11.94-11.95 with all; the table-window
     view 4.58, 4.75, 5.04-5.05; at the 4.1 MP budget the room 8.28-8.32 and 9.04-9.05,
     the table-window view 3.59 and 3.94 (each step's share in task 110).
+- The depth of field's groundwork for the scenic views (2026-11-22, task 111; the plan
+  `build/notes/bokeh/`'s B0 to B2, built by builder 28, `build/notes/builder-28/`): one lens
+  for every pass that will blur, the scenic views drawn in HDR, and a sampled depth of the
+  scene. Nothing blurs yet. The user's choices: depth of field only for artistic scenes
+  (the menu's and a few more, never the game), on the high tier; tablets the cheap
+  fallback later, phones none; the concept's flat disc the default lens; a fixed aperture
+  per scene, the focus pulled in dioptres over about 2.2 s.
+  - The lens is a thin lens written as a tuner wants it: a disc's radius aperture ×
+    |1 − focus / d| of the width, the aperture the radius at infinity (independent of the
+    field of view), capped before and behind the focus. The motes already followed that
+    shape, so they take it when it is on.
+  - HDR: 4× MSAA in RG11B10F (as many bytes as the 8-bit target, MSAA kept for the bars,
+    twigs and the leaves' coverage), RGBA16F MSAA where RG11B10F can't be drawn into;
+    rejected 1× RGBA16F with SMAA. Measured headless at 3024 × 1890 on an M1 Pro, two
+    rounds alike: the room view's main pass 11.93-11.96 ms in 8 bits, 11.63-11.64 in HDR,
+    the tonemap's pass 0.45-0.46 after it, the frame's GPU parts 14.90-14.93 to
+    14.82-14.84; the table-window view 5.02-5.04 to 4.65-4.66 and 0.43-0.44 (7.46-7.58 to
+    7.39-7.48); at the 4.1 MP budget the room 9.02-9.03 to 8.81-8.82 and 0.35, the frame
+    11.87 to 11.85-11.86. The pipelines gain what they no longer tonemap; the pass costs
+    about that again. RGBA16F's main pass 0.1 ms dearer and its targets 114 MB more at that size.
+  - Each pipeline keeps its own tonemap's toe (the room's on the luminance, the board's and
+    the table's on the least channel) and the shoulder, grade and dither move to the pass
+    after: the toe only lowers the darkest 4%, which no disc will show, and one tonemap for
+    all stays an open choice (the toes' switch above). The surfaces then match the
+    8-bit picture within 2-3 levels (the dither and RG11B10F's steps). What differs is
+    what blends: the lace and the glass over the sky now mix in linear light, so the lace
+    reads lighter and more opaque, and the glass's film and scratches, added at the sRGB
+    curve's slope over a bright sky (0.5) in 8 bits, add their light linearly, by the
+    curve's slope about three times stronger over the darker tree than over the sky; the thin bars against the sky
+    resolve in linear light, a little thinner. These are left for the user to retune in
+    HDR (the shots page), not hidden by a compensating factor.
+  - The glow keeps reading the tonemapped picture for now: from the HDR light it needs its
+    threshold retuned, and it belongs after the depth of field (B4).
+  - The depth is its own 1× pass (the main pass's is multisampled, which SDL can't
+    sample), DEPTH32F, the lace written where its thread covers half the pixel; the view out
+    writes none (its own layer gets the tree's depths in B3). The tuner's views (the
+    distance, the lens's signed disc) are drawn from it. It costs 0.19 ms at 3024 × 1890 in
+    either view (0.16 at the budget), its view 0.13; 23 MB at native, as the HDR resolve.
+  - Kept in the tuner only: the app draws no scenic view yet (`hdr_allowed` is off), so the
+    game, the standard and phone tiers and the app's kept image are unchanged; the game's
+    shot is identical in both renderers. ngfx has the same pipelines, passes and
+    targets (its multisampled one transient), not yet run in a scene.
+  - A NaN in the glass's scratches (`atan(0, 0)` where no groove is) dropped those pixels'
+    added light in 8 bits and blacked them in HDR; fixed, 34 pixels of the table-window
+    view gain their glint (up to 7 levels).
 - The windows' sills are a Vasalemma-type limestone, drawn with a pipeline of their own
   (2026-11-22, task 107; `build/notes/paint-research/`'s sill section,
   `room_shell`'s `limestone.goose` and `shell_mesh::sill_slab`, `shaders::ROOM_SILL`,

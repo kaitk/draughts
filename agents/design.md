@@ -265,6 +265,15 @@ pieces; the design boards still set the layout, glass, and controls.
   `parts.sh EXE TAG [NAMES]`, `w0.sh EXE`, `cmp.sh A B`, `rounds.sh`, `page.py`.
   The film and the scratches show only within about 35° of the sun: judge them at
   `--plan-eye 4.5,6.6,1.6 --plan-at 4.84,7.54,1.93 --fov 30`, native (`--scene-scale 1`).
+- HDR and the lens (task 111, builder 28, `build/notes/builder-28/`): the tuner draws the
+  scenic views in HDR by default; X or `--hdr off` gives the 8-bit picture to compare
+  against, and only the shell with its view out, 4× MSAA and no room view draws HDR (the
+  panel's Lens section says which). Compare a look in both: in HDR the lace and the
+  glass's film blend in linear light and read stronger, the surfaces within 2-3 levels.
+  `--lens-view depth|coc` (Q) shows the depth and the lens's disc (`--dof on`, `--focus M`,
+  0 the view's target; `--aperture PCT`, `--dof-caps N,F`): judge a focus there before
+  any blur. Builder 28's scripts: `build/b28/look.sh EXE TAG SIZE NAME "flags"..`,
+  `cmp.sh A B`, `game.sh`, `rounds-b1.sh`, `rounds-b2.sh`, `page.py`.
 - The light tuner draws the 3D scene under the high tier's pixel budget
   (`render3d::HIGH_SCENE_PIXELS`, 4.1 MP: 0.85 of a 3024 × 1890 screen), so a Retina shot
   is upscaled: pass `--scene-scale 1` for a native shot or a timing of the scene's own cost

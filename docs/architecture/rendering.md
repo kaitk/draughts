@@ -850,6 +850,44 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   `--scratches` set each, 0 off, and `--view table-window` is the view from a chair behind
   the games table into the middle window.
 
+### HDR and the depth of field's groundwork
+
+The scenic views are drawn for a depth of field to come (the menu's scenes, never the
+game), in steps that each show alone in the light tuner
+([why](../decisions/rendering.md)):
+
+- **The lens** (`render3d::Lens`): a disc's radius at a distance d along the view is
+  aperture × |1 − focus / d| of the scene's width, at most the near cap before the focus
+  and the far cap behind it (2.4%, 4.5% and 4.5% by default, the focus in metres). Off,
+  nothing reads it; on, the dust's motes take their discs from it, the near cap holding
+  the nearest.
+- **HDR** (`render3d::hdr_shown`): with the shell's view out, 4× MSAA and the screen's
+  maps (the high tier's), the board, the pieces, the table, the room, the view out and
+  the motes draw with pipelines of their own (`shaders::HDR_OUT`, `HdrPipelines`) into a
+  multisampled RG11B10F target, resolved into one of the scene's size; each writes its
+  exposed light with only its tonemap's toe taken off (the room's and the view out's on
+  the luminance, the board's and the table's on the least channel). A full-screen pass
+  after (`tone_pass`, `HDR_TONE_FRAG`) applies the shoulder, the grade and sRGB, with a
+  dither of under half a level, into the picture the glow and the upscale take as
+  before. Where RG11B10F can't be drawn into and sampled, RGBA16F. The 8-bit path stays
+  for everything else: the game, the standard and phone tiers, the tuner's views of the
+  room, the table before the room's light is baked.
+- **The depth** (`depth_pass`): with HDR, while the lens is on or its view is shown, a 1×
+  depth-only pass at the scene's size into a sampled DEPTH32F target (DEPTH16 where that
+  can't be sampled): the board and opaque pieces, the table, the room in one draw, and
+  the glass and lace's mesh, where the glass writes nothing and the lace writes where its
+  thread covers half the pixel or more (`LACE_DEPTH_FRAG`). The view out writes none, so
+  it stays at the far plane.
+- The light tuner's Lens section holds them: `--hdr on|off` (X; on), `--hdr-format
+  rgba16f` to weigh the fallback, `--dof on|off`, `--focus M` (0 keeps the focus on the
+  view's target), `--aperture PCT`, `--dof-caps NEAR,FAR`, and `--lens-view
+  depth|coc` (Q), the distance on a log scale or the lens's signed disc over the picture
+  (`DEPTH_SHOW_FRAG`).
+
+At 3024 × 1890 the HDR target's resolve adds 23 MB (RG11B10F; 16 MB at the 4.1 MP budget),
+the multisampled target is the 8-bit one's size, and the depth adds as much as the
+resolve; ngfx's multisampled targets are transient, so it adds only the 1× ones.
+
 ### Board and pieces
 
 - **The flat board**: the theme's squares in a raised lip 1.1% of the board's width,

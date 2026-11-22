@@ -309,6 +309,19 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - A shader that adds light only near the sun (`ROOM_GLASS`'s `glass_sun`) returns early by
   the view's angle to the sun before `window_open`; take its derivatives (`dFdx` of the
   tile's uv, `fwidth(v)`) before that return and read the tile by `textureGrad`.
+- The Mac's shaders run with fast math: `atan(0.0, 0.0)` is NaN (the glass's scratches
+  where no groove is), and a NaN test like `!(x >= 0.0)` is compiled away. An 8-bit target
+  drops a NaN without a trace, a float one (RG11B10F, RGBA16F) keeps it and the tonemap
+  makes it black: guard `atan`'s two zeros, and look for black pixels after moving a
+  pass to HDR.
+- gfx makes a pipeline's variant per set of target formats, so one pipeline draws into
+  RGBA8 or RG11B10F; but what a shader writes differs (tonemapped sRGB or linear light),
+  so the HDR target has pipelines of its own (`shaders::HDR_OUT`, `render3d::HdrPipelines`).
+  SDL can't sample a multisampled texture: a depth to read is a 1× pass of its own
+  (`render3d_gpu::depth_pass`), and an HDR resolve is the hardware's box in linear light.
+- The release's gfx module lacks `format_supported` (the fork has it): call it as an
+  `extern fn ... = "gs_gfx_format_supported"` with `gfx_fork.c`'s weak stand-in, which says
+  no (`render3d_gpu::hdr_format`). gfx has no query for a format's sample counts.
 - The dust's vertex stage reads `shell_open` (`SHELL_WINDOWS`): its own block carries the
   fields of `ROOM_HEAD`'s Surfaces that `LIGHT_FN` reads (`axes`, `tile`, `shell*`,
   `window_view`) by the same names, and its storage buffer's binding follows the samplers
