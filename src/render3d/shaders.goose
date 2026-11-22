@@ -690,6 +690,27 @@ let LIT_HEAD = """
     layout(set = 2, binding = 7) uniform sampler2D tree_map;
     """;
 
+// The shell's windows for the board and the table in the room (SHELL_WINDOWS before them):
+// LIGHT_FN's window_open then traces the sun through the shell's own windows (shell_open),
+// as the room's surfaces take it, not through the game's window, whose opening stands on
+// the line from the board's middle to the sun wherever the shell's walls are. The fields
+// of ROOM_HEAD's Surfaces that shell_open reads, by the same names (render3d::ShellBlock),
+// and the lace's mask, after LIT_HEAD's or TABLE_HEAD's own.
+let LIT_SHELL = """
+    layout(set = 2, binding = 8) uniform sampler2D lace_mask;
+    layout(set = 3, binding = 1) uniform Shell { vec4 axes; vec4 tile; vec4 shell; vec4 shell_mids; vec4 shell_niche;
+                                                 vec4 shell_glass; vec4 shell_sun; vec4 window_view; };
+    """;
+let TABLE_SHELL = """
+    #ifdef NO_SSAO
+    layout(set = 2, binding = 8) uniform sampler2D lace_mask;
+    #else
+    layout(set = 2, binding = 9) uniform sampler2D lace_mask;
+    #endif
+    layout(set = 3, binding = 2) uniform Shell { vec4 axes; vec4 tile; vec4 shell; vec4 shell_mids; vec4 shell_niche;
+                                                 vec4 shell_glass; vec4 shell_sun; vec4 window_view; };
+    """;
+
 // The key light's shadow map filtered (map_shadow_at), which LIT_FRAG and TABLE_FRAG
 // share: after their heads, which bind shadow_map. SHADOW_FEW or SHADOW_MANY first picks
 // the taps.

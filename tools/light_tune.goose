@@ -34,6 +34,9 @@
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern|--bounce X,Y,Z,W]
 //       [--dump-map out.pgm] [--azimuth DEG] [--sun-height DEG]
+//       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
+//       [--sun-check (prints where the sun's ray from the board and the table leaves the room: a window's
+//       glass, a bar, its frame, or the wall; then quits unless --shot)]
 //       [--dust off|on|sparse|drift|near (on the box round the board as before; the others only in the
 //       table-window view, in the sunbeam between the middle window and the table: DUST_WAYS)] [--motes N] [--mote-size PX] [--mote-blur PX] [--mote-bright K] [--exposure K]
 //       [--room-surfaces on|off] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
@@ -138,6 +141,15 @@ let VIEW_EYES: float3[6] = [float3_0, float3 { 8.4, 0.6, 1.7 }, float3 { 4.5, 1.
 let VIEW_ATS: float3[6] = [float3_0, float3 { 2.6, 5.8, 1.3 }, float3 { 4.5, 7.0, 1.8 }, float3 { 4.5, 0.0, 1.3 },
                            float3 { 0.0, 3.0, 1.4 }, float3 { 4.0, 7.4, 1.42 }];
 
+// The games table's middle in the plan as made (room_shell::LIBRARY's), and a view's point
+// moved with the table where --table-at moves it: the table-window view keeps its chair.
+let TABLE_AS_MADE = float2 { 4.5, 5.8 };
+fn view_point(p: float3, view: i64) -> float3 {
+    guard view == TABLE_WINDOW else { return p; }
+    let t = room_shell::LIBRARY.table;
+    return float3 { p.x + t.x - TABLE_AS_MADE.x, p.y + t.y - TABLE_AS_MADE.y, p.z };
+}
+
 // The dust in the sunbeam (D, --dust): none; on, the box round the board as before, lit
 // through the game's window; or, in the table-window view only, motes in a box over the
 // games table (table_box), lit by the sun through the shell's windows at each mote, so
@@ -169,6 +181,139 @@ fn table_box(g: render3d::Gpu&) -> float3, float3 {
     let mid = plan_point(g, float3 { s.table.x, s.table.y, board });
     let half = DUST_HALF * m;
     return float3 { mid.x - half, mid.y + 0.02 * m, mid.z - half }, float3 { 2.0 * half, DUST_HIGH * m, 2.0 * half };
+}
+
+// --sun-check: from the board's middle, its field's corners and a ring on the table's top,
+// along the key toward the sun, what the ray leaves the room through: a window's niche at
+// the wall's inner face, then both casements' glass planes (glass, a bar, or the sash and
+// frame), or the wall; as shaders::LIGHT_FN's shell_open traces it. And what the game's
+// window (its window_open without the shell) says there: its opening is placed on the line
+// from the board's middle to the sun, so it lets the sun on wherever the shell's walls are.
+fn casement_at(o: room_shell::Opening, x: f32, y: f32) -> f32, f32 {
+    let bar: f32 = 0.024;
+    let s = o.sill;
+    let h = o.sill + o.height;
+    let zt = s + (h - s) * 2.0 / 3.0;
+    let gx: f32 = 0.49;
+    let ax = abs(x);
+    var open = min(gx - ax, min(y - (s + 0.03), (h - 0.06) - y));
+    open = min(open, min(abs(y - zt) - 0.045, ax - (0.0175 + 0.05)));
+    let upper = y > zt;
+    let y0 = if upper { zt + 0.045 } else { s + 0.03 };
+    let y1 = if upper { h - 0.06 } else { zt - 0.045 };
+    let ax0: f32 = 0.0175 + 0.05;
+    let ax1 = gx - 0.055;
+    let ay0 = y0 + (if upper { 0.055 } else { 0.08 });
+    let ay1 = y1 - 0.055;
+    open = min(open, min(ax1 - ax, min(y - ay0, ay1 - y)));
+    let frame = open;
+    let across: f32 = if upper { 3.0 } else { 1.0 };
+    let up:     f32 = if upper { 3.0 } else { 2.0 };
+    let pitch_x = (ax1 - ax0 + bar) / across;
+    let pitch_y = (ay1 - ay0 + bar) / up;
+    let u = ax - ax0 + 0.5 * bar;
+    let v = y - ay0 + 0.5 * bar;
+    if across > 1.5 && u > 0.5 * pitch_x && u < (across - 0.5) * pitch_x {
+        open = min(open, abs(u - pitch_x * floor(u / pitch_x + 0.5)) - 0.5 * bar);
+    }
+    if v > 0.5 * pitch_y && v < (up - 0.5) * pitch_y { open = min(open, abs(v - pitch_y * floor(v / pitch_y + 0.5)) - 0.5 * bar); }
+    return frame, open;
+}
+
+// Where the ray from p (the plan's metres, z up from the floor) along d leaves the room:
+// the window's number among the shell's (0 the stove's end, 1 the middle, 2 the far end) and
+// 0 glass, 1 a bar, 2 the sash or the frame in the niche, 3 the wall, 4 the sun behind the
+// wall; and the ray's x along the wall at its inner face.
+fn exit_of(p: float3, d: float3) -> i64, i64, f32 {
+    let s = room_shell::LIBRARY;
+    let face = s.walls[room_shell::WINDOW_WALL].a.y;
+    guard d.y > 0.02 else { return -1, 4, 0.0; }
+    let t = (face - p.y) / d.y;
+    let q = p + d * t;
+    var n = 0;
+    for k in s.count {
+        let o = s.openings[k];
+        guard o.kind == room_shell::WINDOW else { continue; }
+        let x = q.x - o.mid;
+        if abs(x) < 0.5 * o.width && q.z > o.sill && q.z < room_shell::head_at(o, x) {
+            var worst = 0;
+            for depth in [o.glass.x, o.glass.y] {
+                let g = p + d * ((face + depth - p.y) / d.y);
+                let frame, open = casement_at(o, g.x - o.mid, g.z);
+                if frame < 0.0 { worst = 2; } else if open < 0.0 && worst < 1 { worst = 1; }
+            }
+            return n, worst, q.x;
+        }
+        n++;
+    }
+    return -1, 3, q.x;
+}
+
+// The game's window at p (world units): whether its opening (no bars, no curtain) lets the
+// sun on, as window_open without the shell has it.
+fn game_window_lets(f: render3d::Frame, p: float3) -> bool {
+    let l = float3 { f.light_dir.x, f.light_dir.y, f.light_dir.z };
+    let h = normalize(float2 { l.x, l.z });
+    let a = radians(f.window.y);
+    let nw = float2 { cos(a) * h.x - sin(a) * h.y, sin(a) * h.x + cos(a) * h.y };
+    let along = float2 { -nw.y, nw.x };
+    let toward = l.x * nw.x + l.z * nw.y;
+    guard toward >= 0.05 else { return false; }
+    let t = (f.window.x - (p.x * nw.x + p.z * nw.y)) / toward;
+    let q = p + l * t;
+    let back = f.window.x / toward;
+    let wx = (q.x - l.x * back) * along.x + (q.z - l.z * back) * along.y - f.window.w;
+    let wy = q.y - f.window.z;
+    let size = float2 { f.opening.x * f.panes.x, f.opening.y * f.panes.y };
+    return min(size.x * 0.5 - abs(wx), min(wy, size.y - wy)) > 0.0;
+}
+
+let EXITS = ["glass", "a bar", "the sash or frame", "the wall", "nothing: the sun is behind the wall"];
+
+fn sun_check(g: render3d::Gpu&, turn: f32, height: f32) {
+    let s = room_shell::LIBRARY;
+    let m = surfaces::METRE;
+    let f = g.room_frame;
+    let l = g.frame.light_dir;
+    // The key in the plan: the world's u along the wall and v into the room, both falling
+    // as the plan's x and y grow (room_shell::room_of).
+    let d = normalize(float3 { -(l.x * f.along.x + l.z * f.along.y), -(l.x * f.into.x + l.z * f.into.y), l.y });
+    print("sun-check: the sun ", turn, " degrees across the window wall, ", height, " up; the table's middle at ", s.table.x, ",",
+          s.table.y, "; toward the sun in the plan ", d.x, ",", d.y, ",", d.z);
+    let names = ["the board's middle", "the field's corner -,-", "the field's corner +,-", "the field's corner -,+",
+                 "the field's corner +,+"];
+    let k = mesh::FIELD;
+    let points: float3[5] = [float3_0, float3 { -k, 0.0, -k }, float3 { k, 0.0, -k }, float3 { -k, 0.0, k }, float3 { k, 0.0, k }];
+    var board_lit = 0;
+    for w, i in points {
+        let p = float3 { s.table.x - (w.x * f.along.x + w.z * f.along.y) / m, s.table.y - (w.x * f.into.x + w.z * f.into.y) / m,
+                         (w.y - surfaces::FLOOR_Y) / m };
+        let n, way, x = exit_of(p, d);
+        if way <= 1 && n == 1 { board_lit++; }
+        let window: u8[>..] = if n >= 0 { str("window ", n, "'s ") } else { "" };
+        print("  ", names[i], " (", p.x, ",", p.y, "): ", window, EXITS[way], " at x ", x, " on the wall's face; the game's window: ",
+              if game_window_lets(g.frame, w) { "lets the sun on" } else { "shades it" });
+    }
+    // A ring on the table's top, each 15 degrees, at three radii.
+    var counts:  i64[6] = [0; 6];
+    var through: i64[3] = [0; 3];
+    var total = 0;
+    for ring in 3 {
+        let r = g.table_r * (0.45 + 0.25 * ring);
+        for step in 24 {
+            let a: f32 = radians((step as f32) * 15.0);
+            let w = float3 { r * cos(a), mesh::TABLE_TOP, r * sin(a) };
+            let p = float3 { s.table.x - (w.x * f.along.x + w.z * f.along.y) / m, s.table.y - (w.x * f.into.x + w.z * f.into.y) / m,
+                             (w.y - surfaces::FLOOR_Y) / m };
+            let n, way, x = exit_of(p, d);
+            counts[way]++;
+            if way == 0 && n >= 0 { through[n]++; }
+            total++;
+        }
+    }
+    print("  the table's top, ", total, " points: through glass ", counts[0], " (windows ", through[0], ", ", through[1], ", ",
+          through[2], "), a bar ", counts[1], ", the sash or frame ", counts[2], ", the wall ", counts[3], ", behind ", counts[4]);
+    print("sun-check: the board ", board_lit, " of 5 points lit through the middle window (its glass or a bar's shadow)");
 }
 
 // The sky behind the shell's windows, linear: a mid-October afternoon's blue overhead,
@@ -848,7 +993,7 @@ fn main() {
                          shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
             embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::SHADOW_FN,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG),
-            embed_shader("frag", shaders::TABLE_ROOM, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::SHADOW_FN,
+            embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
             embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
                          shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
@@ -997,6 +1142,10 @@ fn main() {
     var shell_on = !(flag_value(argv, "--shell") > 0 && argv[flag_value(argv, "--shell")] == "off");
     var outside_on = !(flag_value(argv, "--outside") > 0 && argv[flag_value(argv, "--outside")] == "off");
     let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
+    // The games table moved in the plan (metres), the room built round it there; the
+    // table-window view's chair moves with it.
+    let table_at = four(argv, "--table-at", float4 { TABLE_AS_MADE.x, TABLE_AS_MADE.y, 0.0, 0.0 });
+    room_shell::LIBRARY.table = float2 { table_at.x, table_at.y };
     render3d::show_room(g, room_on, away, shell_on);
     var paper_m = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE);
     g.paper_tile = paper_m * surfaces::METRE;
@@ -1097,6 +1246,7 @@ fn main() {
     let plan_look_at = four(argv, "--plan-at", float4 { 4.5, 5.8, 0.8, 0.0 });
     let fov_flag = number(argv, "--fov", 0.0);
     let shot = flag_value(argv, "--shot");
+    let sun_checked = has(argv, "--sun-check");
     var meter = Meter { on: !(has(argv, "--fps") && argv[flag_value(argv, "--fps")] == "off"), wait: has(argv, "--fps-wait"), .. };
     let meter_for = number(argv, "--fps-seconds", 0.0) as f64;
     var meter_a: u8[..96] = [];
@@ -1564,6 +1714,10 @@ fn main() {
         // A shot is taken at --wind-time itself.
         if shot < 0 { render3d::wind_time += gfx::delta_time() as f32; }
         render3d::put_room(g);
+        if sun_checked && frames == 2 {
+            sun_check(g, room.window.y, room.key.y);
+            if shot < 0 { break; }
+        }
         // The walk: begun where the view is (or the room's view from the board's orbit), with
         // the room and its shell on; another view ends its camera.
         if view != shown_view {
@@ -1571,8 +1725,8 @@ fn main() {
             walk.placed = false;
         }
         let from_view = if view > 0 { view } else { 1 };
-        var start_eye = VIEW_EYES[from_view];
-        var start_at = VIEW_ATS[from_view];
+        var start_eye = view_point(VIEW_EYES[from_view], from_view);
+        var start_at = view_point(VIEW_ATS[from_view], from_view);
         if plan_eye && !own_eye {
             start_eye = float3 { plan_eye_at.x, plan_eye_at.y, plan_eye_at.z };
             start_at = float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z };
@@ -1607,6 +1761,8 @@ fn main() {
                    " --window ", on_off(pattern == 1), " --dust ", DUST_WAYS[dust_way], " --wind-kind ",
                    rooms::WIND_KINDS[render3d::wind_kind], " --view ", VIEWS[view]);
             format(line, " --wallpaper-tile ", paper_m);
+            let tm = room_shell::LIBRARY.table;
+            if tm.x != TABLE_AS_MADE.x || tm.y != TABLE_AS_MADE.y { format(line, " --table-at ", tm.x, ",", tm.y); }
             if dust_way != DUST_OFF {
                 format(line, " --motes ", motes, " --mote-size ", render3d::dust.size, " --mote-blur ", render3d::dust.blur,
                        " --mote-bright ", render3d::dust.bright);
@@ -1695,8 +1851,8 @@ fn main() {
             target = plan_point(g, float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z });
             fov = 55.0;
         } else if view > 0 && shell_on && room_on {
-            eye = plan_point(g, VIEW_EYES[view]);
-            target = plan_point(g, VIEW_ATS[view]);
+            eye = plan_point(g, view_point(VIEW_EYES[view], view));
+            target = plan_point(g, view_point(VIEW_ATS[view], view));
             fov = 60.0;
         } else if view > 0 {
             // From beside the window, a person's eyes high, over the table to the wall.

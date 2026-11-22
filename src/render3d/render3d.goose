@@ -292,6 +292,11 @@ struct Gpu {
     compare:         Sampler,
     lit:             Pipeline,
     fading:          Pipeline, // the lit pass for a fading piece, blended
+    // The two in the room's shell (shaders::LIT_SHELL; make_lit_shell): the sun through its
+    // own windows, made when the shell first shows, for the pieces they were made for.
+    lit_shell:       Pipeline,
+    fading_shell:    Pipeline,
+    shell_pieces:    i32,
     shadow:          Pipeline,
     shadow_look:     i32,           // SHADOW_9.., how lit and fading filter the shadow (set_shadow)
     pieces:          i32,           // PIECES_.., the pieces' material lit and fading draw (set_pieces)
@@ -2227,6 +2232,8 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
         o.planar_pass(g, size, clip, plain, planar_resolve_of(g, clip));
     }
     let shown = if glowing { g.image } else { target };
+    // The room baked by now (room_surfaces): the board's pipelines in its shell.
+    if !hdr && board_in_shell(g) { o.make_lit_shell(g); }
     o.board_pass(g, if hdr { g.hdr_image } else { shown }, size, backdrop);
     if hdr { o.tone_pass(g, shown); }
     if glowing { o.bloom_pass(g, g.image, target, size); }
@@ -2695,6 +2702,37 @@ fn dust_block(g: Gpu&) -> DustBlock {
     b.window_view = s.window_view;
     return b;
 }
+
+// shaders::LIT_SHELL's and TABLE_SHELL's block: the shell's windows as the room's block has
+// them (surfaces_block), for the board and the table lit through them; all 0 without the
+// shell, where LIGHT_FN's window_open takes the game's window.
+struct ShellBlock {
+    axes:        float4,
+    tile:        float4,
+    shell:       float4,
+    shell_mids:  float4,
+    shell_niche: float4,
+    shell_glass: float4,
+    shell_sun:   float4,
+    window_view: float4,
+}
+fn shell_block(g: Gpu&) -> ShellBlock {
+    var b = default<ShellBlock>();
+    guard g.room_shell && g.room_on else { return b; }
+    let s = surfaces_block(g);
+    b.axes = s.axes;
+    b.tile = s.tile;
+    b.shell = s.shell;
+    b.shell_mids = s.shell_mids;
+    b.shell_niche = s.shell_niche;
+    b.shell_glass = s.shell_glass;
+    b.shell_sun = s.shell_sun;
+    b.window_view = s.window_view;
+    return b;
+}
+// Whether the board's pass lights the board and the table through the shell's windows: its
+// lit pipelines then the shell's (lit_shell, the HDR target's, the room's table).
+fn board_in_shell(g: Gpu&) -> bool { room_shown(g) && g.room_shell }
 
 // The lens of the scenic views' depth of field (build/notes/bokeh/, task 111), one for every
 // pass that blurs: a disc's radius at a distance d is aperture × |1 - focus / d| of the

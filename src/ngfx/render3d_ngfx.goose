@@ -118,14 +118,16 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
     else if backdrop { draw_backdrop(own, g, f, 1.0); }
 
     let h .= g.hdr_pipes;
-    nx::bind(if g.hdr { h.lit } else { g.lit });
-    draw_meshes(own, g, f, 0.0);
+    let in_shell = g.hdr || render3d::board_in_shell(g);
+    nx::bind(if g.hdr { h.lit } else if in_shell { g.lit_shell } else { g.lit });
+    draw_meshes(own, g, f, 0.0, in_shell);
     // The fading pieces, each alone at its opacity, over what stands behind them.
     if g.solid < g.instance_count {
-        nx::bind(if g.hdr { h.fading } else { g.fading });
+        nx::bind(if g.hdr { h.fading } else if in_shell { g.fading_shell } else { g.fading });
         for i in g.solid..g.instance_count {
             var r = lit_root(own, g, f, g.piece_vb);
-            r.u = blocks([float4 { 1.0, 0.0, g.alphas[i - g.solid], i }]);
+            r.u = lit_block(g, float4 { 1.0, 0.0, g.alphas[i - g.solid], i }, in_shell);
+            if in_shell { slot(r, 8, render3d::lace_or_stand_in(g), g.linear); }
             nx::draw_indexed(ngfx::root(r), g.piece_ib, 4, g.piece_count);
         }
     }
@@ -135,8 +137,8 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         nx::bind(if g.hdr { h.table } else if render3d::table_in_room(g) { g.table_room } else { g.table_lit });
         var t = no_root();
         t.frame = f;
-        let tb: render3d::TableBlock[1] = [render3d::table_block(g)];
-        t.u = ngfx::frame_data(bytes_of(tb));
+        let room_table = g.hdr || render3d::table_in_room(g);
+        t.u = table_u(g, render3d::table_block(g), room_table);
         t.verts = nx::address(g.table_vb);
         slot(t, 0, g.table_albedo, g.aniso);
         slot(t, 1, g.table_normal, g.aniso);
@@ -146,7 +148,8 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         slot(t, 5, render3d::tree_or_stand_in(g), g.linear);
         slot(t, 6, g.shadow_map, g.compare);
         slot(t, 7, render3d::table_map_or_stand_in(g), g.compare);
-        if render3d::table_in_room(g) && g.room_ssao { slot(t, 8, render3d::ssao_or_stand_in(g), g.linear); }
+        if room_table && (g.hdr || g.room_ssao) { slot(t, 8, render3d::ssao_or_stand_in(g), g.linear); }
+        if room_table { slot(t, if g.hdr || g.room_ssao { 9 } else { 8 }, render3d::lace_or_stand_in(g), g.linear); }
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
 
@@ -347,8 +350,7 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
         nx::bind(g.planar_table);
         var t = no_root();
         t.frame = f;
-        let tb: render3d::TableBlock[1] = [render3d::mirror_table_block(g)];
-        t.u = ngfx::frame_data(bytes_of(tb));
+        t.u = table_u(g, render3d::mirror_table_block(g), true);
         t.verts = nx::address(g.table_vb);
         slot(t, 0, g.table_albedo, g.aniso);
         slot(t, 1, g.table_normal, g.aniso);
@@ -358,6 +360,7 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
         slot(t, 5, render3d::tree_or_stand_in(g), g.linear);
         slot(t, 6, g.shadow_map, g.compare);
         slot(t, 7, render3d::table_map_or_stand_in(g), g.compare);
+        slot(t, 8, render3d::lace_or_stand_in(g), g.linear);
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
     // The room less its floor, which lies under the clip plane.
@@ -562,6 +565,28 @@ fn lit_hdr_blob(pieces: i32) -> const u8[:] {
     if pieces == render3d::PIECES_WINTER { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_winter.blob"); }
     if pieces == render3d::PIECES_MINERAL { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_mineral.blob"); }
     return embed_file("../../build/ngfx/blobs/r3d_hdr_lit.blob");
+}
+
+// The board's module in the room's shell (8-bit), as gfx's lit_shell_frag.
+fn lit_shell_blob(pieces: i32) -> const u8[:] {
+    if pieces == render3d::PIECES_WOOD { return embed_file("../../build/ngfx/blobs/r3d_lit_shell_wood.blob"); }
+    if pieces == render3d::PIECES_WINTER { return embed_file("../../build/ngfx/blobs/r3d_lit_shell_winter.blob"); }
+    if pieces == render3d::PIECES_MINERAL { return embed_file("../../build/ngfx/blobs/r3d_lit_shell_mineral.blob"); }
+    return embed_file("../../build/ngfx/blobs/r3d_lit_shell.blob");
+}
+
+// The lit pass's pipelines in the shell, as gfx's make_lit_shell.
+fn make_lit_shell(own: Own&, g: Gpu&) {
+    guard g.lit_shell.id == 0 || g.shell_pieces != g.pieces else { return; }
+    if g.lit_shell.id != 0 {
+        ngfx::flush();
+        nx::release(g.lit_shell);
+        nx::release(g.fading_shell);
+    }
+    g.shell_pieces = g.pieces;
+    let lit = lit_shell_blob(g.pieces);
+    g.lit_shell = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
+    g.fading_shell = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
 }
 
 // The HDR target's pipelines (render3d::HdrPipelines), as gfx's make_hdr, before any pass;
@@ -1201,6 +1226,24 @@ fn antialias(own: Own&, g: Gpu&, target: nx::Texture, size: int2) {
 
 // The lit module's root (r3d_lit.slang's header): the frame, the instances, the vertices,
 // and its eight textures.
+// The lit modules' u: the draw's float4, then in the shell its windows (LIT_SHELL's Shell).
+fn lit_block(g: Gpu&, draw: float4, in_shell: bool) -> u64 {
+    guard in_shell else { return blocks([draw]); }
+    let b = render3d::shell_block(g);
+    return blocks([draw, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view]);
+}
+
+// The table's u: its block, then in the room its shell's windows (TABLE_SHELL's Shell).
+struct TableShellBlock { table: render3d::TableBlock, shell: render3d::ShellBlock }
+fn table_u(g: Gpu&, table: render3d::TableBlock, in_room: bool) -> u64 {
+    if in_room {
+        let tb: TableShellBlock[1] = [TableShellBlock { table, render3d::shell_block(g) }];
+        return ngfx::frame_data(bytes_of(tb));
+    }
+    let tb: render3d::TableBlock[1] = [table];
+    return ngfx::frame_data(bytes_of(tb));
+}
+
 fn lit_root(own: Own&, g: Gpu&, f: u64, vb: nx::Buffer) -> Root {
     var r = no_root();
     r.frame = f;
@@ -1263,14 +1306,16 @@ fn marks_over(own: Own&, g: Gpu&, pulse: float4, next: f32, cursor: f32, to: flo
 
 // The opaque pieces as instances, then the board, front to back: the field under the
 // pieces fails the depth test before it is shaded. From the light when `light` is 1.
-fn draw_meshes(own: Own&, g: Gpu&, f: u64, light: f32) {
+fn draw_meshes(own: Own&, g: Gpu&, f: u64, light: f32, in_shell: bool = false) {
     if g.solid > 0 {
         var r = lit_root(own, g, f, g.piece_vb);
-        r.u = blocks([float4 { 1.0, light, 1.0, 0.0 }]);
+        r.u = lit_block(g, float4 { 1.0, light, 1.0, 0.0 }, in_shell);
+        if in_shell { slot(r, 8, render3d::lace_or_stand_in(g), g.linear); }
         nx::draw_indexed_instanced(ngfx::root(r), g.piece_ib, 4, g.piece_count, g.solid);
     }
     var r = lit_root(own, g, f, g.board_vb);
-    r.u = blocks([float4 { 0.0, light, 1.0, 0.0 }]);
+    r.u = lit_block(g, float4 { 0.0, light, 1.0, 0.0 }, in_shell);
+    if in_shell { slot(r, 8, render3d::lace_or_stand_in(g), g.linear); }
     nx::draw_indexed(ngfx::root(r), g.board_ib, 4, g.board_count);
 }
 
@@ -1401,7 +1446,7 @@ fn release(own: Own&, g: Gpu&) {
                      g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     release_hdr(own, g);
-    for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show] { if p.id != 0 { nx::release(p); } }
+    for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { nx::release(p); } }
     for t in [g.hdr_image, g.scene_depth] { if t.id != 0 { nx::release(t); } }
     own = default<Own>();
     g = default<Gpu>();

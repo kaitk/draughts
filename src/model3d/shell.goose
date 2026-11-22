@@ -102,8 +102,9 @@ fn bookcase_at(mid: f32) -> Opening {
 
 // The library: 9 by 7 m inside, the window wall 0.8 m thick, the hall wall 0.6 m, the end
 // walls 0.5 m; the ceiling 4 m; the table 1.2 m from the window wall opposite the middle
-// window (rooms::AUTUMN's window.x).
-let LIBRARY = Shell {
+// window (rooms::AUTUMN's window.x). A var so the light tuner can move the table
+// (--table-at) before the room is built; nothing else changes it.
+var LIBRARY = Shell {
     walls: [
         Wall { float2 { 0.0, 7.0 }, float2 { 9.0, 7.0 }, 0.8 },     // the window wall
         Wall { float2 { 9.0, 7.0 }, float2 { 9.0, 0.0 }, 0.5 },     // the far end
