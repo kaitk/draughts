@@ -341,6 +341,15 @@ pieces; the design boards still set the layout, glass, and controls.
   disc (`--dof on`, `--focus M`, 0 the view's target; `--aperture PCT`, `--dof-caps
   N,F`): judge a focus there before any blur. Builder 28's scripts: `build/b28/look.sh EXE TAG SIZE NAME "flags"..`,
   `cmp.sh A B`, `game.sh`, `rounds-b1.sh`, `rounds-b2.sh`, `page.py`.
+- The sun in the view out and the HDR glow (builder 32, `build/notes/builder-32/`): in the
+  less-turned menu view the sun sits at about (1255, 400) of a 3024 × 1890 shot, at the foot
+  of the upper sash's left leaf; at wind time 0 a leaf covers it, so compare looks at
+  `--wind-time 6`. `--sun-look made|real|tight|concept|soft` (presets, each with its glow),
+  `--sun-disc R,LIMB,EDGE,BRIGHT`, `--sun-glare CORE,WIDTH,GLOW,WIDTH`, `--sun-tree
+  DENSITY,REACH,BACKLIGHT,SHARP` (today's tree seen from its shadow's map along the view),
+  `--glow STRENGTH,THRESHOLD,KNEE,REACH`, `--glow-levels N`; sliders in the Outside section.
+  The glow shows only with HDR; 8 bits keep the old window glow. Shots: `build/b32/looks.sh
+  EXE TAG`, costs `build/b32/rounds.sh A B`, `page.py`.
 - The light tuner draws the 3D scene at the screen's native size by default (2026-11-22);
   `--scene-pixels 4.1` (`render3d::HIGH_SCENE_PIXELS`) or `--scene-scale K` draw it smaller
   and upscale it (N cycles native, 0.85, 0.75, 0.67 and the 4.1 MP cap; M the upscale). Builder 24's crops and sweeps:
