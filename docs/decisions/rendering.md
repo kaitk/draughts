@@ -1137,6 +1137,38 @@ to be is in tasks 042, 059, 071, 081, and 086.
     screen-space curvature, which crawls and reads as dirt or rust. Also left out for now:
     the research's lived extras (chips to an older coat, hand grime and burnish, kick
     scuffs, a per-leaf door map), the user's to choose.
+- The window view's first steps, each in the pipeline it belongs to (2026-11-22, task 107;
+  the plan `build/notes/window-view/`, built by builder 27, `build/notes/builder-27/`): the
+  lace hung 0.15 m further over the openings on all three windows, so the low sun reaches
+  its inner folds; the sun's shadows on the lace at their full depth, a little stronger
+  than the room's lifted shade gave them, and the lit cloth glowing 60% more; a soft share
+  (0.35) of the sun the lace stops scattered on below it in a cone about 25° across; a
+  broad veil of about 10° round the sun in the sky; dust motes over the games table, lit
+  by the sun at each mote through the bars, the lace and the leaves, a pixel or two
+  across, only in the view from the table; and the glass's wiped film and cleaning
+  scratches from a tile made in code, faint, showing only toward the sun.
+  - No god rays: the dust is particles lit where they are, never light scattered in the
+    air, which is what draws shafts; and no starburst round the sun.
+  - No tree is drawn through the glass and no new wind (the plan's W4 and W6): the tree
+    is a research of its own (`build/notes/tree/`). The veil is only the sky's.
+  - Each step is a strength over its look's (`render3d::window_view`, `sun_veil`; 1 as
+    made, 0 off), not a tuner-only shader variant: at 0 the room matches the build before
+    exactly (one pixel of the room view by a level), the old paint and stone too, and the
+    game's shot is unchanged in both renderers. The light tuner's Z switches them all.
+  - The lace's light below lives in `LIGHT_FN`'s `shell_open`, which every room group
+    shares, from the same `lace_shadow` call as the shadow (the outline blurred wide times
+    the pattern's mean stop): a second call cost 1.05 ms on and 0.39 off. It still costs
+    0.70 ms of the room view's main pass at 3024 × 1890, the most of the steps, because
+    every pixel it reaches shades the sun; kept on as asked, its cost an open choice.
+  - The scratches follow Raymond et al.'s cone (a groove glints where `t · (l + v)` is
+    near 0), the film a Henyey-Greenstein lobe (g 0.75); both are skipped past 35° from the
+    sun. Rejected: the plan's per-pane turn of the tile (each window and sheet takes an
+    offset of its own), the near, out-of-focus dust discs (the dust is to be a few pixels
+    at most).
+  - Costs, headless 3024 × 1890 on an M1 Pro, the main pass, two rounds alike: the room
+    view 10.95 before, 11.08 with every step at 0, 11.94-11.95 with all; the table-window
+    view 4.58, 4.75, 5.04-5.05; at the 4.1 MP budget the room 8.28-8.32 and 9.04-9.05,
+    the table-window view 3.59 and 3.94 (each step's share in task 110).
 - The windows' sills are a Vasalemma-type limestone, drawn with a pipeline of their own
   (2026-11-22, task 107; `build/notes/paint-research/`'s sill section,
   `room_shell`'s `limestone.goose` and `shell_mesh::sill_slab`, `shaders::ROOM_SILL`,

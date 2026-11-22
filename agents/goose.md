@@ -297,6 +297,22 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - A tile made in Goose: `room_shell::tile_noise` takes the tile's side (`relief.goose`);
   grains stamped by hash into a wrapped float mask, the mips averaged as floats before
   packing to RGBA8 (`limestone.goose`, 1024² in about 70 ms).
+- A second call site of `LIGHT_FN`'s `lace_shadow` in `shell_open` (the lace's light below,
+  its outline blurred wider) cost 0.39 ms of the room's main pass at 3024 × 1890 with its
+  uniform at 0, 1.05 ms more on: `shell_open` runs for every room pixel. One call
+  returning both (a `vec2`), the wide part analytic (the outline's smoothstep times the
+  pattern's mean), brought them to 0.13 and 0.70; what is left is the wider lit area
+  (every pixel it reaches shades the sun). Keeping that light apart from the tree's look
+  (a second sum, `min` at the end) made the all-off shader 0.37 ms slower again: measure a
+  restructure of `shell_open`, don't assume. No GLSL here takes an `out` parameter;
+  return a vector instead.
+- A shader that adds light only near the sun (`ROOM_GLASS`'s `glass_sun`) returns early by
+  the view's angle to the sun before `window_open`; take its derivatives (`dFdx` of the
+  tile's uv, `fwidth(v)`) before that return and read the tile by `textureGrad`.
+- The dust's vertex stage reads `shell_open` (`SHELL_WINDOWS`): its own block carries the
+  fields of `ROOM_HEAD`'s Surfaces that `LIGHT_FN` reads (`axes`, `tile`, `shell*`,
+  `window_view`) by the same names, and its storage buffer's binding follows the samplers
+  (the lace's mask made it binding 2). ngfx's dust root takes the lace in slot 1.
 - `smoothstep(a, b, x)` with `a > b` is undefined: write `1.0 - smoothstep(b, a, x)`.
 - Metal keywords (`thread`, `device`, `constant`, `kernel`) as GLSL names fail only on
   the Mac's pipeline build.

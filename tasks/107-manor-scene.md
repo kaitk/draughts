@@ -333,7 +333,17 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       the research's a little paler), the chips' count and the speckle's contrast
 - [ ] The images from ChatGPT: the simplified concept, the wallpaper, wainscot, window,
       lace, the park outside (task 106's list)
-- [ ] Dust in the sunbeam (task 104's follow-ups)
+- [x] The window view's steps on the split pipelines (2026-11-22, builder 27,
+      `build/notes/builder-27/`; `docs/decisions/rendering.md`): the table-window view, the
+      lace hung 0.15 m further over the openings, the sun's shadows on the lace at full
+      depth and its glow, its light scattered below, the sun's veil, the glass's wiped film
+      and cleaning scratches, each a strength in the light tuner (Z all off). The room
+      view's main pass 0.99 ms dearer at 3024 × 1890 (the light below 0.70), the
+      table-window view's 0.46; the game's shot unchanged. Open: the sun's place and the
+      framing (the shots' options), the light below's cost, the strengths
+- [x] Dust in the sunbeam (task 104's follow-ups): from the table-window view only,
+      motes over the games table lit through the shell's windows, a pixel or two across
+      (`--dust sparse|dense|coarse`; builder 27). Open: which density
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

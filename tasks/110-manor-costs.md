@@ -356,6 +356,22 @@ results, or keep baking at run time behind a loader when the room or a look is c
   old stone (I) the split's exactly and before's within a level but dots along its sharp
   arris; the game's shot unchanged (both renderers). Not measured on a device.
 
+- The window view (2026-11-22, builder 27, `build/notes/builder-27/`;
+  `docs/decisions/rendering.md`). Metal System Trace, headless 3024 × 1890, GPU ms of the
+  main pass by encoder labels, two rounds alike; `--scene-scale 1` unless said. The room
+  view: before 10.94-10.95, every step at 0 11.08, all on 11.94-11.95; each alone over
+  the all-off 11.08: the hang 11.17-11.18, the lace's sun 11.08-11.09, the lace's light
+  below 11.77-11.78, the veil 11.08, the film 11.16-11.17, the scratches 11.16-11.17, the
+  dust 11.08-11.09 (it shows only in the table-window view). The table-window view
+  (`--plan-eye 3.75,4.5,1.15 --plan-at 4.0,7.4,1.42 --fov 60`): before 4.58, off 4.75, all
+  5.04-5.05; the hang 4.83-4.84, the lace's sun 4.74-4.76, the light below 4.79, the veil
+  4.75, the film and the scratches 4.87 each, the dust 4.76. At the 4.1 MP budget, before
+  and all: the room 8.28-8.32 and 9.04-9.05, the table-window view 3.59 and 3.94. The
+  first build's light below (a second `lace_shadow` call) was 12.39 on and 11.34 off;
+  keeping it out of the tree's lookup made the all-off 11.45. The glass's tile 80 ms on
+  the CPU once with the shell, 1.4 MB on the GPU. All off matches before; the game's shot
+  unchanged (both renderers). Not measured on a device.
+
 Add each new cost here as it lands, with its numbers.
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)

@@ -806,6 +806,50 @@ read as pale stone with a soft nose ([why](../decisions/rendering.md)).
   speckle,band,arris,nose,dust` switches its parts off one by one, in the tuner's own
   shader (`shaders::SILL_STEPS`) in the room and in the floor's mirror.
 
+### The window view
+
+What the eye sees of the low sun at the windows, each part in the pipeline it belongs to
+and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as made
+([why](../decisions/rendering.md)):
+
+- **The lace's hang**: the panels' inner edges hang 0.15 m further over the openings than
+  as made, on all three windows, all along the drop (`room_shell::LACE_HANG`,
+  `hang_lace`); the outer edges stay, so a panel hangs wider and less gathered. The mesh,
+  the tie's settling, the bounce's lace cells and the probes are made again when it
+  changes, and the sun's lace shadow (`LIGHT_FN`'s `lace_edges`) takes the same hang from
+  the block (`shell_mids.w`).
+- **The lace in the sun** (the glass and lace's pipeline, `ROOM_GLASS`): the sun on its
+  back carries the bars' and leaves' shadows at their full depth, not lifted by the room's
+  shade floor, and the lit cloth lets 60% more of the sun through where it falls
+  (`LACE_GLOW`).
+- **The lace's light below** (`LIGHT_FN`'s `shell_open`, every group): of the sun the lace
+  stops, 0.35 scatters on forward into a cone about 25° across (`LACE_FORWARD`,
+  `LACE_CONE`; the panel's outline blurred that wide times its pattern's mean stop, from
+  the same `lace_shadow` call), through the casement's mean glazing (0.7), so a soft pale light lies round
+  the lace's shadow on the sill, the reveals, the wainscot and the floor, moving with it.
+- **The sun's veil** (`OUTSIDE_FRAG`): a third, broad term round the sun's disc, a
+  gaussian 10° wide at 0.5 of the sky's core colour (`SUN_VEIL`), over the halo's 1.2° and
+  4°. No rays.
+- **The glass's film and scratches** (`ROOM_GLASS`): a 512-texel tile, a millimetre a
+  texel, made in code when the shell first shows (`model3d`'s `glass_tile`, 1.4 MB with
+  its mips): 50 cloth wipes laying the film, thinner inside each and gathered at its
+  edges, and 70 rubbing arcs and 25 straight wipes as hairline scratches. Each window and
+  sheet takes it at an offset of its own. The film scatters 0.002 of the sun through it
+  forward (Henyey-Greenstein, g 0.75), so it shows only toward the sun; a scratch glints
+  where the sun's light leaves along the cone round its groove (`s = t · (l + v)` near 0,
+  its width widened by the pixel's footprint), within about 14° of the sun. Both take the
+  sun through the outer bars and the leaves at the glass, add light over what the glass
+  shows, and are skipped past 35° from the sun.
+- **Dust in the sunbeam** (`DUST_VERT`, compiled with `SHELL_WINDOWS`): in the light
+  tuner's table-window view only, motes in a box 1.4 m square over the games table, from
+  the board's level 0.5 m up, each lit by `shell_open` at its place, so only those in the
+  beam show and the bars, the lace and the leaves shadow them; a pixel or two across, in
+  focus. The tuner's `--dust sparse|dense|coarse` (D) picks how many and how large.
+- The light tuner's Z switches all of these off and back, Y the hang (0.15 or 0), D the
+  dust; `--lace-hang`, `--lace-sun`, `--lace-scatter`, `--sun-veil`, `--glass-film`,
+  `--scratches` set each, 0 off, and `--view table-window` is the view from a chair behind
+  the games table into the middle window.
+
 ### Board and pieces
 
 - **The flat board**: the theme's squares in a raised lip 1.1% of the board's width,

@@ -253,6 +253,18 @@ pieces; the design boards still set the layout, glass, and controls.
   parts alone, the costs: `build/b26/shots.sh EXE TAG [NAMES]`, `parts.sh EXE`, `cmp.sh A
   B`, `rounds.sh` (`build/notes/builder-26/`). A value worth checking by eye: write it to
   `albedo` in a scratch build (the dust's `t` bands showed it lay right but too thin).
+- The window view (task 107, builder 27, `build/notes/builder-27/`): `--view table-window`
+  (V) from a chair behind the games table; Y the lace's hang (0.15 or 0), D the dust
+  (`off|on|sparse|dense|coarse`, the presets only in that view), `--lace-sun`,
+  `--lace-scatter`, `--sun-veil`, `--glass-film`, `--scratches` each a strength (1 as
+  made, 0 off), Z all of them off and back. The sun across the window wall is `--wall`'s
+  turn (`--wall 36,T,-2,2`, 20 today), not `--azimuth`, which turns the room with it.
+  A flag given twice takes its first value (`flag_value`): in sweeps put the step's flag
+  before the all-off list. Shots, each step alone, W0's framings and the costs:
+  `build/b27/shots.sh EXE TAG [NAMES]` (`twv` the view, `sun` toward the sun, `lace`),
+  `parts.sh EXE TAG [NAMES]`, `w0.sh EXE`, `cmp.sh A B`, `rounds.sh`, `page.py`.
+  The film and the scratches show only within about 35° of the sun: judge them at
+  `--plan-eye 4.5,6.6,1.6 --plan-at 4.84,7.54,1.93 --fov 30`, native (`--scene-scale 1`).
 - The light tuner draws the 3D scene under the high tier's pixel budget
   (`render3d::HIGH_SCENE_PIXELS`, 4.1 MP: 0.85 of a 3024 × 1890 screen), so a Retina shot
   is upscaled: pass `--scene-scale 1` for a native shot or a timing of the scene's own cost
