@@ -3162,7 +3162,8 @@ let ROOM_FRAG = """
         rough = sqrt(rough * rough + 2.0 * spread * spread);
     #ifdef PAINT_STEPS
         if (paint_steps.w > 0.5) {
-            // The old paint, as before the quiet one: a little uneven.
+            // The old paint, as before the quiet one: a little uneven, its normals the mesh's.
+            n = ng;
             float m = vnoise(v_local.xz * 0.4 + v_local.y * 0.31);
             albedo = srgb(paint.rgb) * (0.96 + 0.06 * m);
             rough = paint.a + 0.1 * m;
