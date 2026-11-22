@@ -844,7 +844,7 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   `glass_tile`, 5.6 MB with its mips, about 210 ms on the Mac): 50 cloth wipes laying the
   film, thinner inside each and gathered at its edges, and 35 rubbing arcs and 12
   straight wipes as hairline scratches about 0.35 mm wide. Each window and
-  sheet takes it at an offset of its own. The film scatters 0.002 of the sun through it
+  sheet takes it at an offset of its own. The film scatters 0.0015 of the sun through it
   forward (Henyey-Greenstein, g 0.75), so it shows only toward the sun; a scratch glints
   where the sun's light leaves along the cone round its groove (`s = t · (l + v)` near 0,
   its width widened by the pixel's footprint), within about 14° of the sun. Both take the

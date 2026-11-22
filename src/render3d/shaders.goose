@@ -2977,9 +2977,9 @@ let ROOM_FRAG = """
     // so it shows only toward the sun; and the fine scratches grit in the cloth drew, each
     // glinting where the sun's light through the glass leaves along the cone round its groove,
     // s = t · (l + v) near 0 (Raymond et al., transmitted), within GLASS_GLINT_REACH radians
-    // of the sun, none past about 35° (GLASS_GLINT_FAR, its cosine). Strengths window_view.z and .w; the tile a millimetre a texel, offset per
+    // of the sun, none past about 35° (GLASS_GLINT_FAR, its cosine). Strengths window_view.z and .w; the tile half a millimetre a texel, offset per
     // window and sheet.
-    const float GLASS_FILM = 0.002;
+    const float GLASS_FILM = 0.0015;
     const float GLASS_GLINT = 0.6;
     const float GLASS_GLINT_WIDTH = 0.02;
     const float GLASS_GLINT_REACH = 0.25;
