@@ -666,8 +666,9 @@ board's light:
   alone`) or with all the indirect light keeps (`kept`).
 - **The floor's mirror** (`render3d::planar_pass`, `rooms::Room.planar`), in the standard
   and high tiers, not on a phone (`render3d::planar_allowed`): before the board's pass, the
-  view out, the table and the room are drawn mirrored across the floor at half size, the
-  clip's depth made the height over the floor so nothing under it is drawn, the room's
+  view out, the table and the room are drawn mirrored across the floor at a third of the
+  screen's size, the clip's depth made the height over the floor so nothing under it is
+  drawn, the room's
   walls and metals (not its floor, under the clip plane) with their shaders less the sharp
   reflections and the screen's maps, writing linear light (`MIRROR_PASS`). Each
   shader there writes its exposed light before the tonemap (`mirror_light`, held to 16),
@@ -690,8 +691,8 @@ board's light:
   rougher; where the wax is worn (the paths, scratches, slow patches, the grain's pores)
   the film's mirror turns toward the oak's rough sheen; Fresnel by the view's angle
   through the film; at 0.85 of it. Past the screen's edge it fades to the
-  room's light that way. Three targets at half the screen's height and at least 1600
-  texels across (at most its width, `render3d::planar_least_wide`), 16.5 MB at
+  room's light that way. Three targets at a third of the screen's height and at least 1600
+  texels across (at most its width, `render3d::planar_least_wide`), about 11 MB at
   1600 × 1000. The light
   tuner's Light section sets its strength, the film and the boards' wax (`--planar`), and
   shows the floor's reflection alone, the map or its distances (`--planar-view

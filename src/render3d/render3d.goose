@@ -2708,7 +2708,7 @@ fn ssao_block_of(g: Gpu&) -> float4 {
 fn ssao_or_stand_in(g: Gpu&) -> Texture { if g.ssao_map.id != 0 { g.ssao_map } else { g.crown_map } }
 
 // The floor's mirror (planar_pass, rooms::Room.planar): the room drawn mirrored across the
-// floor into a target planar_scale times smaller (2, half the size; across at least
+// floor into a target planar_scale times smaller (3, a third of the size; across at least
 // planar_least_wide), where the tiers allow
 // it (the standard and the high: not on a phone, which the app says), the shell shows and
 // its strength is over 0; else the floor sees the room's box (shaders::ROOM_FRAG's
@@ -2716,7 +2716,7 @@ fn ssao_or_stand_in(g: Gpu&) -> Texture { if g.ssao_map.id != 0 { g.ssao_map } e
 // light, its distances).
 var planar_allowed = true;
 var planar_view = 0;
-var planar_scale: i32 = 2;
+var planar_scale: i32 = 3;
 let PLANAR_MIPS = 6;
 // How steeply the mirror's depth climbs with the height over the floor (its z is this times
 // the height): at most the clip's w for all it frames, which is never under the height.
@@ -2729,7 +2729,8 @@ fn planar_shown(g: Gpu&) -> bool {
 }
 // The mirror's least width in texels, at most the screen's: half of a 1600-pixel screen let
 // a window's bars, a few texels wide, step a whole texel as the eye moved and pulse in the
-// floor; half the height is kept, as the floor draws the reflection out down the screen.
+// floor; the height stays planar_scale times smaller, as the floor draws the reflection out
+// down the screen.
 var planar_least_wide: i32 = 1600;
 fn planar_size_of(size: int2) -> int2 {
     let k: i32 = max(planar_scale, 1);

@@ -1571,7 +1571,8 @@ to be is in tasks 042, 059, 071, 081, and 086.
   is at that distance (six mips), drawn out down the screen by 1 / n·v through a 16×
   anisotropic sampler, as a grazing look streaks a waxed floor's reflections; each board
   ±12% in strength and its film ±5%; Fresnel by the film; 0.85 of it, the doors a little
-  weaker than the box drew them; no occlusion of its own on top. Half size, not quarter:
+  weaker than the box drew them; no occlusion of its own on top. Half size (a third since
+  2026-11-23, below), not quarter:
   the contact lines stay sharp, and quarter saved 0.1 ms. About 0.7 ms a frame at
   1600 × 1000 on an M-series Mac and 8.3 MB of targets at that size; the room without it
   is the same shader as before, the planar floor a variant of its own. Rejected:
@@ -1649,6 +1650,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   without them). The table's dark disc in the floor near it is the table hiding the
   windows' reflection, as on a real waxed floor; lighting its underside by the floor's
   bounce changed the floor by at most 1/255.
+- The library floor's mirror is drawn at a third of the screen, not half (2026-11-23,
+  task 107; `render3d::planar_scale`, the tuner's `--planar-size`): it replaces the half
+  size of the entries above, and the least width of 1600 texels stays. It saves 0.4-0.6 ms
+  a frame at 3840 × 2160 and 1.4 at 5120 × 2880 on an M-series Mac. The windows' streaks
+  in the floor are a little blurrier (the room view's largest change 35 levels) and shimmer
+  a little more as the eye moves; the user accepts that for the time. The half size stays
+  as `--planar-size 2`, full as `1`.
 - The library floor's mirror keeps the light before the tonemap (2026-11-21, task 107;
   `TONE_FN`'s `mirror_light`, `OUTSIDE_FRAG`, `rooms::Room.planar.w`): the room, the table
   and the view out write their exposed linear light into the mirror pass's RGBA16F

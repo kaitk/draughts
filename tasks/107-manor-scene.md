@@ -495,6 +495,11 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       the 2.5 mm, and there a faint shade along the gap instead (`shaders::FLOOR_JOINTS`, a define
       in the tuner's own floor shaders, so the apps' flat floor has none of its code); the user's
       call. Times below (the joints' page)
+- [x] The floor's mirror at a third of the screen, not half (the user's pick from
+      `build/notes/floor-perf/night.html`'s proposal B; `render3d::planar_scale` 3): saves
+      0.4-0.6 ms at 3840 × 2160 (straight down 0.62, room 0.57, menu 0.40, corner 0.61) and 1.4
+      at 5120 × 2880; the windows' streaks a little blurrier (room max 35 levels), a little
+      more shimmer in motion, accepted
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)
