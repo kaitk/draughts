@@ -22,16 +22,19 @@ fine one-channel occlusion at about 5 mm where it shows: about 5-20 MB a sun pos
 compressed, 50-150 MB uncompressed. One bake for each sun the game ships (the seasons).
 
 Formats: aim at every Android tablet and phone, not our test devices.
-- Mobile (Android, iOS, iPadOS) and the Mac: ASTC's LDR profile with a scale (one per map,
-  or RGBM), not the HDR profile, which many Adreno GPUs lack.
-- Windows and Linux: BC6H or BC7, which their GPUs decode and ASTC they don't.
+The same scaled LDR data everywhere, one code path (the user, 2026-11-23): the light mapped
+into 0-1 with a scale (one per map, or RGBM), stored as
+- ASTC's LDR profile on mobile (Android, iOS, iPadOS) and the Mac, not the HDR profile,
+  which many Adreno GPUs lack;
+- BC7 on Windows and Linux, whose GPUs decode BC and not ASTC (BC6H's real HDR set aside
+  for the one code path; BC4 is the one-channel choice there if occlusion is stored alone).
 
 ## Acceptance criteria
 
 - [ ] An offline baker (ray-traced, its samples enough that no grain shows) for the
       library's shell and props, with a unique layout for each procedural surface (or per
       vertex where a small prop's mesh is fine enough)
-- [ ] The bakes shipped as ASTC (mobile and Mac) and BC6H or BC7 (Windows and Linux), read
+- [ ] The bakes shipped as ASTC (mobile and Mac) and BC7 (Windows and Linux), the same scaled data, read
       by both renderers, the app's download size against today's measured
 - [ ] SSAO removed; the probes and corners' map replaced where the bake covers them
 - [ ] The look against today's judged by the user, frame times and memory measured on the
