@@ -38,7 +38,7 @@ TABLE_VS = ["VS_SET", "FRAME", "TABLE_VERT"]
 # render3d_gpu.goose's make_room_tier puts them together: the defines, then ROOM_FS, the
 # table's map for opaque groups, SSAO_FN, TONE_FN and ROOM_FRAG.
 ROOM_VS = ["VS_SET", "FRAME", "ROOM_VERT"]
-ROOM_FS = ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "LIGHT_FN"]
+ROOM_FS = ["SHELL_WINDOWS", "FS_SET", "FRAME", "ROOM_HEAD", "WIND_FN", "LIGHT_FN"]
 ROOMS = [
     ("r3d_room_floor", ["ROOM_FLOOR", "SHARP_BOX"]),
     ("r3d_room_planar", ["ROOM_FLOOR", "PLANAR_FLOOR"]),
@@ -75,25 +75,25 @@ ROOMS = [
     ("r3d_hdr_lace", ["ROOM_LACE", "HDR_OUT"]),
 ]
 MODULES = [
-    ("r3d_lit", LIT_VS, ["FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_few", LIT_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_many", LIT_VS, ["SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_wood", LIT_VS, ["PIECES_WOOD", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_few_wood", LIT_VS, ["PIECES_WOOD", "SHADOW_FEW", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_many_wood", LIT_VS, ["PIECES_WOOD", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_winter", LIT_VS, ["PIECES_WINTER", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_few_winter", LIT_VS, ["PIECES_WINTER", "SHADOW_FEW", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_many_winter", LIT_VS, ["PIECES_WINTER", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_mineral", LIT_VS, ["PIECES_MINERAL", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_few_mineral", LIT_VS, ["PIECES_MINERAL", "SHADOW_FEW", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_many_mineral", LIT_VS, ["PIECES_MINERAL", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit", LIT_VS, ["FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_few", LIT_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_many", LIT_VS, ["SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_wood", LIT_VS, ["PIECES_WOOD", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_few_wood", LIT_VS, ["PIECES_WOOD", "SHADOW_FEW", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_many_wood", LIT_VS, ["PIECES_WOOD", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_winter", LIT_VS, ["PIECES_WINTER", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_few_winter", LIT_VS, ["PIECES_WINTER", "SHADOW_FEW", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_many_winter", LIT_VS, ["PIECES_WINTER", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_mineral", LIT_VS, ["PIECES_MINERAL", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_few_mineral", LIT_VS, ["PIECES_MINERAL", "SHADOW_FEW", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_many_mineral", LIT_VS, ["PIECES_MINERAL", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
     ("r3d_depth", LIT_VS, ["EMPTY_FRAG"]),
-    ("r3d_table", TABLE_VS, ["FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
-    ("r3d_table_few", TABLE_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
-    ("r3d_table_many", TABLE_VS, ["SHADOW_MANY", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
-    ("r3d_table_room", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
-    ("r3d_table_room_phone", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "NO_SSAO", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
-    ("r3d_table_mirror", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "MIRROR_PASS", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_table", TABLE_VS, ["FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
+    ("r3d_table_few", TABLE_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
+    ("r3d_table_many", TABLE_VS, ["SHADOW_MANY", "FS_SET", "FRAME", "TABLE_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "TABLE_FRAG"]),
+    ("r3d_table_room", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_table_room_phone", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "NO_SSAO", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_table_mirror", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "MIRROR_PASS", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
     ("r3d_crown", FULL, ["CROWN_FN", "CROWN_FRAG"]),
     ("r3d_occ", FULL, ["FS_SET", "FRAME", "OCC_FRAG"]),
     ("r3d_backdrop", FULL, ["FS_SET", "FRAME", "FADE_FN", "BACKDROP_FRAG"]),
@@ -109,13 +109,13 @@ MODULES = [
     ("r3d_copy", FULL, ["COPY_FRAG"]),
     ("r3d_kept", FULL, ["KEPT_FRAG"]),
     ("r3d_show", ["SHOW_VS", "SHOW_BLOCK", "SHOW_VERT"], ["SHOW_FS", "SHOW_BLOCK", "SHOW_FRAG"]),
-    ("r3d_dust", ["SHELL_WINDOWS", "VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["DUST_FRAG"]),
+    ("r3d_dust", ["SHELL_WINDOWS", "VS_SET", "FRAME", "DUST_HEAD", "WIND_FN", "LIGHT_FN", "DUST_VERT"], ["DUST_FRAG"]),
     *[(name, ROOM_VS, defines + ROOM_FS + ([] if {"ROOM_GLASS", "ROOM_LACE"}.intersection(defines) else ["TABLE_MAP_FN"]) + ["SSAO_FN", "TONE_FN", "ROOM_FRAG"])
       for name, defines in ROOMS],
     ("r3d_planar_resolve", FULL, ["PLANAR_RESOLVE_FRAG"]),
     ("r3d_planar_show", FULL, ["TONE_FN", "PLANAR_SHOW_FRAG"]),
     ("r3d_planar_mip", FULL, ["PLANAR_MIP_FRAG"]),
-    ("r3d_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["FS_SET", "FRAME", "OUTSIDE_HEAD", "LIGHT_FN", "TONE_FN", "OUTSIDE_FRAG", "OUTSIDE_MAIN"]),
+    ("r3d_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["FS_SET", "FRAME", "OUTSIDE_HEAD", "WIND_FN", "LIGHT_FN", "TONE_FN", "OUTSIDE_FRAG", "OUTSIDE_MAIN"]),
     ("r3d_glow_pick", FULL, ["GLOW_PICK_FRAG"]),
     ("r3d_glow_blur", FULL, ["GLOW_BLUR_FRAG"]),
     ("r3d_glow_add", FULL, ["GLOW_ADD_FRAG"]),
@@ -130,37 +130,40 @@ MODULES = [
     # The scenic views' HDR target (render3d::hdr_shown): the board's in each pieces'
     # material with the 16-tap shadow, the table's in the room, the view out's, the motes',
     # and the tonemap after.
-    ("r3d_hdr_lit", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_hdr_lit_wood", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_WOOD", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_hdr_lit_winter", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_WINTER", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_hdr_lit_mineral", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_MINERAL", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_hdr_table", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "HDR_OUT", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_hdr_lit", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_hdr_lit_wood", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_WOOD", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_hdr_lit_winter", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_WINTER", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_hdr_lit_mineral", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_MINERAL", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_hdr_table", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "HDR_OUT", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
     # The board in the room's shell, 8-bit (render3d::make_lit_shell): the sun through its own
     # windows (LIT_SHELL), the 16-tap shadow.
-    ("r3d_lit_shell", LIT_VS, ["SHELL_WINDOWS", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_shell_wood", LIT_VS, ["SHELL_WINDOWS", "PIECES_WOOD", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_shell_winter", LIT_VS, ["SHELL_WINDOWS", "PIECES_WINTER", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_lit_shell_mineral", LIT_VS, ["SHELL_WINDOWS", "PIECES_MINERAL", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "LIGHT_FN", "LIT_FRAG"]),
-    ("r3d_hdr_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["HDR_OUT", "FS_SET", "FRAME", "OUTSIDE_HEAD", "LIGHT_FN", "TONE_FN", "OUTSIDE_FRAG", "OUTSIDE_MAIN"]),
-    ("r3d_hdr_dust", ["SHELL_WINDOWS", "VS_SET", "FRAME", "DUST_HEAD", "LIGHT_FN", "DUST_VERT"], ["HDR_OUT", "DUST_FRAG"]),
+    ("r3d_lit_shell", LIT_VS, ["SHELL_WINDOWS", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_shell_wood", LIT_VS, ["SHELL_WINDOWS", "PIECES_WOOD", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_shell_winter", LIT_VS, ["SHELL_WINDOWS", "PIECES_WINTER", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_lit_shell_mineral", LIT_VS, ["SHELL_WINDOWS", "PIECES_MINERAL", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    ("r3d_hdr_outside", ["VS_SET", "FRAME", "OUTSIDE_VERT"], ["HDR_OUT", "FS_SET", "FRAME", "OUTSIDE_HEAD", "WIND_FN", "LIGHT_FN", "TONE_FN", "OUTSIDE_FRAG", "OUTSIDE_MAIN"]),
+    ("r3d_hdr_dust", ["SHELL_WINDOWS", "VS_SET", "FRAME", "DUST_HEAD", "WIND_FN", "LIGHT_FN", "DUST_VERT"], ["HDR_OUT", "DUST_FRAG"]),
     ("r3d_hdr_tone", FULL, ["HDR_TONE_FRAG"]),
     ("r3d_glow_first", FULL, ["GLOW_FIRST", "GLOW_DOWN_FRAG"]),
     ("r3d_glow_down", FULL, ["GLOW_DOWN_FRAG"]),
     ("r3d_glow_up", FULL, ["GLOW_UP_FRAG"]),
     # The haze in the sunbeam (render3d::haze_pass): the beam's cross-section, the haze, and its
     # half size added.
-    ("r3d_haze_cross", FULL, ["SHELL_WINDOWS", "FS_SET", "FRAME", "HAZE_BLOCK", "HAZE_CROSS_HEAD", "LIGHT_FN", "HAZE_CROSS_FRAG"]),
+    ("r3d_haze_cross", FULL, ["SHELL_WINDOWS", "FS_SET", "FRAME", "HAZE_BLOCK", "HAZE_CROSS_HEAD", "WIND_FN", "LIGHT_FN", "HAZE_CROSS_FRAG"]),
     ("r3d_haze", FULL, ["FS_SET", "FRAME", "HAZE_BLOCK", "HAZE_FRAG"]),
     ("r3d_haze_add", FULL, ["HAZE_ADD_FRAG"]),
-    # The tree outside as geometry (render3d::TreeGpu): its tubes and ribbons, 8-bit and HDR.
-    *[(name, [*ribbon, "VS_SET", "FRAME", "TREE_HEAD", "TREE_FN", "TREE_WOOD_VERT"],
+    # The tree outside as geometry (render3d::TreeGpu): its tubes and ribbons, 8-bit and HDR,
+    # still or in the wind (render3d::tree_wind, shaders::TREE_WIND).
+    *[(name + wind_name, [*ribbon, *wind, "VS_SET", "FRAME", "TREE_HEAD", *(["WIND_FN"] if wind else []), "TREE_FN", "TREE_WOOD_VERT"],
        [*ribbon, *hdr, "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_WOOD_FRAG"])
       for name, ribbon, hdr in [("r3d_tree_tube", [], []), ("r3d_tree_ribbon", ["TREE_RIBBON"], []),
-                                ("r3d_hdr_tree_tube", [], ["HDR_OUT"]), ("r3d_hdr_tree_ribbon", ["TREE_RIBBON"], ["HDR_OUT"])]],
-    # Its leaves' cards.
-    *[(name, ["VS_SET", "FRAME", "TREE_HEAD", "TREE_FN", "TREE_LEAF_VERT"],
+                                ("r3d_hdr_tree_tube", [], ["HDR_OUT"]), ("r3d_hdr_tree_ribbon", ["TREE_RIBBON"], ["HDR_OUT"])]
+      for wind_name, wind in [("", []), ("_wind", ["TREE_WIND"])]],
+    # Its leaves' cards, still or in the wind; the HDR's (the high tier's) fluttering too.
+    *[(name, [*wind, "VS_SET", "FRAME", "TREE_HEAD", *(["WIND_FN"] if wind else []), "TREE_FN", "TREE_LEAF_VERT"],
        [*hdr, "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_LEAF_FRAG"])
-      for name, hdr in [("r3d_tree_leaf", []), ("r3d_hdr_tree_leaf", ["HDR_OUT"])]],
+      for name, wind, hdr in [("r3d_tree_leaf", [], []), ("r3d_hdr_tree_leaf", [], ["HDR_OUT"]),
+                              ("r3d_tree_leaf_wind", ["TREE_WIND"], []), ("r3d_hdr_tree_leaf_wind", ["TREE_FLUTTER"], ["HDR_OUT"])]],
     # The depth of field's depth (render3d::depth_pass) and the tuner's view of it.
     ("r3d_depth_room", ROOM_VS, ["EMPTY_FRAG"]),
     ("r3d_depth_table", TABLE_VS, ["EMPTY_FRAG"]),

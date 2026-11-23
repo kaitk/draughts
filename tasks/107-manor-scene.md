@@ -693,8 +693,9 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       net), only if the user wants more after the defaults of 2026-11-23
 - [ ] The library's maple as GPU geometry (step 3; the plan in `build/notes/tree/index.html`).
       T2 and T3 done on the branch `tree-gpu` (2026-11-23, `build/notes/tree/gpu.html`),
-      behind the tuner's `--tree-draw off|wood|all`, default off; T4 (wind) and T5 (the
-      phone's card) next. Open: alpha-to-coverage (the leaves are cut by a dithered alpha
+      behind the tuner's `--tree-draw off|wood|all`, default off. T4 (wind) done on the
+      branch `tree-wind-card` (2026-11-24, `build/notes/tree/wind-card.html`), behind
+      `--tree-wind off|on`, default off; T5 (the phone's card) next. Open: alpha-to-coverage (the leaves are cut by a dithered alpha
       test; goose_gfx's branch `alpha-to-coverage` ready, not pushed), the colour (tint
       +0.2, the light through 0.35 of the sun), the density, and whether the near maple's
       picture still draws behind
@@ -709,6 +710,13 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
     - Off against the build before (`21892e88`), the four views at 3840 x 2160:
       byte-identical. Tests pass with NGFX, both apps build; ngfx checked by compiling only
       (no ngfx tool draws the tuner's views)
+    - T4, the wind: frames on the M1 Pro, two rounds A B A B, all / all with wind:
+      3840 x 2160 down 10.93 / 11.02, corner 15.13 / 15.20, room 14.30 / 14.40, menu 13.45 /
+      13.57; 5120 x 2880 down 19.27 / 19.18, corner 24.75 / 24.80, room 23.03 / 23.12, menu
+      22.37 / 22.43. Off against `3415b066`, the four views at 3840 x 2160 and 5120 x 2880:
+      byte-identical. Between wind times 0 and 0.7 s the crown in the menu view moves 0.3 px
+      (the room's wind) and 2.0 px (4× the wind); the geometry still, it moves 0.00 px while
+      the flecks change. Tests pass with NGFX, both apps build; ngfx by compiling only
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

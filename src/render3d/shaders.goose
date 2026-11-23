@@ -270,49 +270,11 @@ let CROWN_FRAG = """
     void main() { result = vec4(crown((gl_FragCoord.xy / CROWN_SIZE - 0.5) * (2.0 * CROWN_SPAN)), 0.0, 0.0, 1.0); }
     """;
 
-// The light's functions LIT_FRAG and TABLE_FRAG share: GGX, its visibility and Fresnel,
-// the split sum's fit, the room's harmonics, and the sRGB curve.
-let LIGHT_FN = """
-    // Filament's GGX, its height-correlated Smith visibility, Schlick's Fresnel.
-    float d_ggx(float noh, float a) {
-        float a2 = a * a;
-        float f = (noh * a2 - noh) * noh + 1.0;
-        return a2 / (PI * f * f);
-    }
-
-    float v_smith(float nov, float nol, float a) {
-        float a2 = a * a;
-        float l = nov * sqrt((-nol * a2 + nol) * nol + a2);
-        float v = nol * sqrt((-nov * a2 + nov) * nov + a2);
-        return 0.5 / (l + v);
-    }
-
-    vec3 f_schlick(vec3 f0, float voh) {
-        float f = pow(1.0 - voh, 5.0);
-        return f0 + (1.0 - f0) * f;
-    }
-
-    // Karis's fit of the split-sum's DFG for mobile.
-    vec3 env_brdf(vec3 f0, float rough, float nov) {
-        vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
-        vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
-        vec4 r = rough * c0 + c1;
-        float a004 = min(r.x * r.x, exp2(-9.28 * nov)) * r.x + r.y;
-        vec2 ab = vec2(-1.04, 1.04) * a004 + r.zw;
-        return f0 * ab.x + ab.y;
-    }
-
-    vec3 sh_eval(vec3 n) {
-        vec3 r = sh[0].rgb * 0.282095
-               + sh[1].rgb * (0.488603 * n.y) + sh[2].rgb * (0.488603 * n.z)
-               + sh[3].rgb * (0.488603 * n.x)
-               + sh[4].rgb * (1.092548 * n.x * n.y) + sh[5].rgb * (1.092548 * n.y * n.z)
-               + sh[6].rgb * (0.315392 * (3.0 * n.y * n.y - 1.0))
-               + sh[7].rgb * (1.092548 * n.x * n.z)
-               + sh[8].rgb * (0.546274 * (n.x * n.x - n.z * n.z));
-        return max(r, vec3(0.0));
-    }
-
+// The wind in the trees outside (rooms::wind_at), before LIGHT_FN, which reads it for the
+// tree's shadow, and in the tree's vertex stages (TREE_FN's tree_moved), so a leaf and its
+// fleck in the room move by one vector: the noise, the gust where it reaches, the ruffle
+// and the branches' sway. Every shader that takes LIGHT_FN takes this just before it.
+let WIND_FN = """
     float window_hash(vec2 p) {
         vec3 p3 = fract(vec3(p.xyx) * 0.1031);
         p3 += dot(p3, p3.yzx + 33.33);
@@ -367,6 +329,50 @@ let LIGHT_FN = """
         float across = window_noise(p.yx + vec2(5.3, 2.9) - vec2(0.4, 0.9) * (1.3 * c));
         float a = (branches.y + gusted * branches.z) * (0.8 + 0.1 * layer);
         return a * vec2(2.0 * along - 1.0, 0.7 * (2.0 * across - 1.0)) / tree.xy;
+    }
+    """;
+
+// The light's functions LIT_FRAG and TABLE_FRAG share: GGX, its visibility and Fresnel,
+// the split sum's fit, the room's harmonics, and the sRGB curve.
+let LIGHT_FN = """
+    // Filament's GGX, its height-correlated Smith visibility, Schlick's Fresnel.
+    float d_ggx(float noh, float a) {
+        float a2 = a * a;
+        float f = (noh * a2 - noh) * noh + 1.0;
+        return a2 / (PI * f * f);
+    }
+
+    float v_smith(float nov, float nol, float a) {
+        float a2 = a * a;
+        float l = nov * sqrt((-nol * a2 + nol) * nol + a2);
+        float v = nol * sqrt((-nov * a2 + nov) * nov + a2);
+        return 0.5 / (l + v);
+    }
+
+    vec3 f_schlick(vec3 f0, float voh) {
+        float f = pow(1.0 - voh, 5.0);
+        return f0 + (1.0 - f0) * f;
+    }
+
+    // Karis's fit of the split-sum's DFG for mobile.
+    vec3 env_brdf(vec3 f0, float rough, float nov) {
+        vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
+        vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
+        vec4 r = rough * c0 + c1;
+        float a004 = min(r.x * r.x, exp2(-9.28 * nov)) * r.x + r.y;
+        vec2 ab = vec2(-1.04, 1.04) * a004 + r.zw;
+        return f0 * ab.x + ab.y;
+    }
+
+    vec3 sh_eval(vec3 n) {
+        vec3 r = sh[0].rgb * 0.282095
+               + sh[1].rgb * (0.488603 * n.y) + sh[2].rgb * (0.488603 * n.z)
+               + sh[3].rgb * (0.488603 * n.x)
+               + sh[4].rgb * (1.092548 * n.x * n.y) + sh[5].rgb * (1.092548 * n.y * n.z)
+               + sh[6].rgb * (0.315392 * (3.0 * n.y * n.y - 1.0))
+               + sh[7].rgb * (1.092548 * n.x * n.z)
+               + sh[8].rgb * (0.546274 * (n.x * n.x - n.z * n.z));
+        return max(r, vec3(0.0));
     }
 
     // How much of the key the tree outside lets through to p (trees.goose): p carried
@@ -7351,6 +7357,11 @@ let HAZE_ADD_FRAG = """
 // TREE_RIBBON the branchlets' and twigs' ribbons in place of the tubes, HDR_OUT the HDR
 // target's.
 let TREE_RIBBON = "#define TREE_RIBBON 1\n";
+// The wind on the tree (TREE_FN's tree_moved, WIND_FN): the shadow's field on the
+// geometry, in the standard tier and the high; TREE_FLUTTER each leaf turning about its
+// stalk too, the high tier's alone (render3d::tree_wind).
+let TREE_WIND = "#define TREE_WIND 1\n";
+let TREE_FLUTTER = "#define TREE_WIND 1\n#define TREE_FLUTTER 1\n";
 
 // The tree's block (render3d::TreeBlock), in both stages after FRAME: tree_origin xyz the
 // tree's frame's origin in the room's (rooms::tree_origin), w the pass's samples; tree_light
@@ -7359,8 +7370,11 @@ let TREE_RIBBON = "#define TREE_RIBBON 1\n";
 // tree_look x the view out's exposure, y the power the crown's shade is taken to (1 as
 // baked), z each leaf's own tint's spread, w the twigs' least width in pixels; tree_depth
 // x the depth (0..1) past which the far crown is squeezed in, y how much (the far plane
-// stays past it); tree_tint x the leaves' tint added, y their colour's strength, z the
-// bark's, w how much deeper the sun turns behind other leaves.
+// stays past it), z how far a leaf turns about its stalk in the room's mild wind (radians,
+// TREE_FLUTTER), w how fast (radians a second of the wind); tree_tint x the leaves' tint
+// added, y their colour's strength, z the bark's, w how much deeper the sun turns behind
+// other leaves; tree_layers xy the key's slant onto the shadow's map (trees::View.shear),
+// zw the depths between its near and middle and its middle and far layers (trees::depths).
 let TREE_HEAD = """
     layout(set = FRAME_SET, binding = 1) uniform Tree {
         vec4 tree_origin;
@@ -7368,6 +7382,7 @@ let TREE_HEAD = """
         vec4 tree_look;
         vec4 tree_depth;
         vec4 tree_tint;
+        vec4 tree_layers;
     };
     """;
 
@@ -7382,9 +7397,59 @@ let TREE_FN = """
     }
     vec3 tree_world(vec3 p) { return tree_turned(vec3(p.x - tree_origin.x, p.y - tree_origin.y, tree_origin.z - p.z)); }
     vec3 tree_way(vec3 d) { return tree_turned(vec3(d.x, d.y, -d.z)); }
+    #ifdef TREE_WIND
+    // How far the shadow's lookup at m (a point of the map, LIGHT_FN's tree_light) moves
+    // `layer` of the map (0 the limbs, 1 the near leaves, 2 the middle, 3 the far), in the
+    // map's units: its whole shift and, with the branches, its region's sway.
+    vec2 tree_lookup_shift(vec2 m, int layer) {
+        if (tree.x <= 0.0) return vec2(0.0);
+        float gust = wind_at(m).y;
+        vec2 s = tree_shift[layer].xy + gust * tree_shift[layer].zw;
+        if (wind_now.w > 1.5 && layer > 0) s += branch_sway(m, float(layer - 1), gust);
+        return s * tree.xy;
+    }
+    // How far the wind moves a part of `layer` whose map point is m, in the map's plane: the
+    // shadow at a point m' shows the map from m' plus the lookup's shift there, so the part
+    // moves to where m' plus that shift is m. One step from m's own shift finds it to well
+    // under a millimetre, as the field changes by less than 0.13 a unit.
+    vec2 tree_layer_move(vec2 m, int layer) {
+        vec2 d = -tree_lookup_shift(m, layer);
+        return -tree_lookup_shift(m + d, layer);
+    }
+    // A point of the tree's frame on the map (trees::on_map).
+    vec2 tree_on_map(vec3 p) { return p.xy - tree_layers.xy * p.z; }
+    // The map's leaf layer of a point at depth z (trees::layer_of_depth).
+    int tree_layer_of(float z) { return z < tree_layers.z ? 1 : (z > tree_layers.w ? 3 : 2); }
+    #endif
     // Where the wind moves a point of the tree's frame that bends `flex` (0 the trunk's foot,
-    // 1 a leaf): the wind's step (T4) goes here; still for now.
-    vec3 tree_moved(vec3 p, float flex) { return p; }
+    // 1 a twig's tip), as its shadow moves (TREE_WIND; else it stands still): the limbs' shift
+    // toward the leaf layers' at its depth by its flex, the layers blended over a band round
+    // their bounds so no limb tears where the map's layers part.
+    vec3 tree_moved(vec3 p, float flex) {
+    #ifdef TREE_WIND
+        vec2 m = tree_on_map(p);
+        vec2 wood = tree_layer_move(m, 0);
+        float band = max(tree_layers.w - tree_layers.z, 1.0) * 0.15;
+        vec2 near = tree_layer_move(m, 1);
+        vec2 middle = tree_layer_move(m, 2);
+        vec2 far = tree_layer_move(m, 3);
+        vec2 leafy = mix(mix(near, middle, smoothstep(tree_layers.z - band, tree_layers.z + band, p.z)), far,
+                         smoothstep(tree_layers.w - band, tree_layers.w + band, p.z));
+        vec2 d = mix(wood, leafy, smoothstep(0.2, 0.8, flex));
+        return vec3(p.xy + d, p.z);
+    #else
+        return p;
+    #endif
+    }
+    // Where the wind moves a leaf whose blade's middle is at `mid`: the whole card by its
+    // layer's move at its middle's map point, exactly as its shadow on the map moves.
+    vec3 tree_leaf_move(vec3 mid) {
+    #ifdef TREE_WIND
+        return vec3(tree_layer_move(tree_on_map(mid), tree_layer_of(mid.z)), 0.0);
+    #else
+        return vec3(0.0);
+    #endif
+    }
     vec4 tree_clip(vec3 pos) {
         vec4 c = view_proj * vec4(pos, 1.0);
         float z = c.z / c.w;
@@ -7503,7 +7568,10 @@ let TREE_WOOD_FRAG = """
 // The leaves: each a card (trees::leaf_cards, LEAF_VEC4S vec4s an instance), two triangles
 // over leaf_atlas::QUAD in the leaf's frame, its blade's base at the foot, y along its axis
 // a blade length a unit, x across it the card's half width a unit; the atlas's texel from
-// the cell's foot and SCALE (leaf_atlas). The wind's step goes in tree_moved, a leaf's flex 1.
+// the cell's foot and SCALE (leaf_atlas). The wind moves the whole card as its shadow moves
+// (tree_leaf_move); with TREE_FLUTTER it also turns about its stalk's axis, a few degrees,
+// fast, each leaf on its own phase and rate, which the shadow doesn't follow (its middle
+// stays where it was). Still air (the wind's seconds held at 0) turns nothing.
 let TREE_LEAF_VERT = """
     layout(std430, set = 0, binding = 0) readonly buffer TreeCards { vec4 tree_cards[]; };
     layout(location = 0) out vec3 v_world;
@@ -7520,15 +7588,30 @@ let TREE_LEAF_VERT = """
         vec2 k = LEAF_CORNERS[gl_VertexIndex];
         float lx = k.x * 0.853;
         float ly = mix(-0.573, 1.133, k.y);
-        vec3 across = cross(face.xyz, along.xyz);
-        vec3 p = base.xyz + across * (lx * along.w) + along.xyz * (ly * base.w);
-        vec3 pos = tree_world(tree_moved(p, 1.0));
+        vec3 n = face.xyz;
+        vec3 across = cross(n, along.xyz);
+        vec4 light = tree_cards[at + 3];
+    #ifdef TREE_FLUTTER
+        float seed = light.w;
+        float rate = tree_depth.w * (0.8 + 0.4 * fract(seed * 7.13));
+        float phase = seed * 6.2832;
+        float t = wind.z * wind.y;
+        float turn = tree_depth.z * clamp(wind.x / 0.06, 0.0, 2.0) * (sin(t * rate + phase) - sin(phase));
+        float c = cos(turn);
+        float s = sin(turn);
+        vec3 turned_across = across * c + n * s;
+        n = n * c - across * s;
+        across = turned_across;
+    #endif
+        vec3 mid = base.xyz + along.xyz * (0.5 * base.w);
+        vec3 p = base.xyz + across * (lx * along.w) + along.xyz * (ly * base.w) + tree_leaf_move(mid);
+        vec3 pos = tree_world(p);
         int kind = int(face.w + 0.5);
         vec2 cell = vec2(float(kind % 4), float(kind / 4)) * 256.0;
         v_uv = (cell + vec2(128.0 + lx * 150.0, 170.0 - ly * 150.0)) / vec2(1024.0, 512.0);
         v_world = pos;
-        v_normal = tree_way(face.xyz);
-        v_leaf = tree_cards[at + 3];
+        v_normal = tree_way(n);
+        v_leaf = light;
         gl_Position = tree_clip(pos);
     }
     """;

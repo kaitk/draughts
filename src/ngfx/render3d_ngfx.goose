@@ -873,19 +873,34 @@ fn draw_outside(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
 }
 
 // The tree's pipelines (render3d::TreeGpu), as gfx's make_tree: its tubes' and ribbons',
-// 8-bit and HDR, made before any pass the first time the tree is grown.
+// 8-bit and HDR, made before any pass the first time the tree is grown, and again when the
+// wind on it comes or goes (render3d::tree_wind; the _wind modules).
 fn make_tree(own: Own&, g: Gpu&) {
     let t .= g.tree;
-    guard t.tube.id == 0 else { return; }
+    guard t.tube.id == 0 || t.wind_made != render3d::tree_wind else { return; }
+    if t.tube.id != 0 {
+        ngfx::flush();
+        for p in [t.tube, t.ribbon, t.hdr_tube, t.hdr_ribbon, t.leaf, t.hdr_leaf] { nx::release(p); }
+    }
+    t.wind_made = render3d::tree_wind;
     let solid = ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true };
     let flat = ngfx::PipelineDesc { cull: ngfx::CULL_NONE, depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED };
-    t.tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_tube.blob"), solid);
-    t.ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_ribbon.blob"), flat);
-    t.hdr_tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_tube.blob"), solid);
-    t.hdr_ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_ribbon.blob"), flat);
     let card = ngfx::PipelineDesc { cull: ngfx::CULL_NONE, depth_test: true, depth_write: true };
-    t.leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_leaf.blob"), card);
-    t.hdr_leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_leaf.blob"), card);
+    if render3d::tree_wind {
+        t.tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_tube_wind.blob"), solid);
+        t.ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_ribbon_wind.blob"), flat);
+        t.hdr_tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_tube_wind.blob"), solid);
+        t.hdr_ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_ribbon_wind.blob"), flat);
+        t.leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_leaf_wind.blob"), card);
+        t.hdr_leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_leaf_wind.blob"), card);
+    } else {
+        t.tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_tube.blob"), solid);
+        t.ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_ribbon.blob"), flat);
+        t.hdr_tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_tube.blob"), solid);
+        t.hdr_ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_ribbon.blob"), flat);
+        t.leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_leaf.blob"), card);
+        t.hdr_leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_leaf.blob"), card);
+    }
 }
 
 // The tree outside in the board's pass, after the room's opaque groups, as gfx's draw_tree:

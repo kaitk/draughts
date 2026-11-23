@@ -994,7 +994,17 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   from a grid of the whole tree's leaves baked when the tree is grown (about 70 ms on the
   CPU, the atlas and bark 60 ms more once). The crown past the far plane is squeezed in
   front of it in the vertex shader. `--tree-light`, `--tree-look` and `--tree-tint` tune
-  its light; the vertex shaders' `tree_moved` is where the wind will move it.
+  its light.
+- **The maple in the wind** (the light tuner's `--tree-wind off|on`, off by default and in
+  the app; `shaders::WIND_FN`, `TREE_WIND`, `TREE_FLUTTER`): the wind that moves the
+  room's shadow of the tree (`WIND_FN`, which `LIGHT_FN` and the tree's vertex shaders
+  share; `rooms::wind_at` on the CPU) moves the geometry too. Each vertex and each leaf
+  takes the shift the shadow lookup uses at its own point on the shadow's map: the layer's
+  drift and gust, and the branches' sway for the branch wind, so a leaf and its fleck on
+  the floor move by one vector. The trunk stays; a vertex moves toward the leaves' shift
+  by its flex. On the high tier (HDR) each leaf also turns a few degrees about its stalk
+  (`--tree-flutter DEG,RATE`, 6 and 9); the standard tier's leaves hold still at the
+  shadow's moment. Off, the pipelines are made without the wind and draw as before.
 
 ### HDR and the depth of field's groundwork
 

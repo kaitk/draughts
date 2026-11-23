@@ -537,8 +537,12 @@ struct TreeGpu {
     leaf_marks:   Texture,
     leaf:         Pipeline,
     hdr_leaf:     Pipeline,
-    made_for:     float4[TREE_GEOMETRY_KEY],
-    ms:           f64,
+    // Whether the pipelines move the tree in the wind (tree_wind), as they were made.
+    wind_made: bool,
+    // The key's slant onto the shadow's map and its layers' depths (TreeBlock's layers).
+    layers:   float4,
+    made_for: float4[TREE_GEOMETRY_KEY],
+    ms:       f64,
 }
 
 // The pipelines of the scenic views' HDR target (shaders::HDR_OUT): the board's and a fading
@@ -2466,8 +2470,17 @@ var tree_twig_px: f32 = 1.0;
 var tree_spread:  f32 = 0.15;
 var tree_tint = float4 { 0.2, 1.0, 1.0, 0.6 };
 
+// The wind on the tree's geometry (task 107's T4; shaders::TREE_WIND, TREE_FLUTTER): off
+// (still, the app's), or the shadow's field moving it, each leaf also turning about its stalk
+// in the high tier (HDR), the standard tier's held at its shadow's moment; the light tuner's
+// --tree-wind. The flutter: how far a leaf turns in the room's mild wind (degrees) and how
+// fast (radians a second of the wind), the tuner's --tree-flutter.
+let TREE_WINDS = ["off", "on"];
+var tree_wind = false;
+var tree_flutter = float2 { 6.0, 9.0 };
+
 // The tree's block (shaders::TREE_HEAD), for a pass of `samples` samples a pixel.
-struct TreeBlock { origin: float4, light: float4, look: float4, depth: float4, tint: float4 }
+struct TreeBlock { origin: float4, light: float4, look: float4, depth: float4, tint: float4, layers: float4 }
 fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
     let o = rooms::tree_origin(g.room);
     // The projection's depth as A - B / d (d the distance along the view), from the view's
@@ -2482,7 +2495,7 @@ fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
     let keep: f32 = 1e-4;
     let squeeze = (1.0 - keep - from) / max(a - from, 1e-6);
     return TreeBlock { model3d::f4(o, samples), tree_light, float4 { g.room.outside, tree_shade, tree_spread, tree_twig_px },
-                       float4 { from, squeeze, 0.0, 0.0 }, tree_tint };
+                       float4 { from, squeeze, radians(tree_flutter.x), tree_flutter.y }, tree_tint, g.tree.layers };
 }
 
 // Whether the tree's geometry is drawn: with the view out, once grown.
@@ -2503,12 +2516,12 @@ fn tree_geometry_key(g: Gpu&) -> float4[TREE_GEOMETRY_KEY] {
 // cards from the parts seen through the windows or casting through them.
 fn tree_geometry<O>(o: O&, g: Gpu&) {
     guard tree_draw != TREE_OFF && outside_shown(g) && !g.bake_held else { return; }
+    o.make_tree(g);
     let key = tree_geometry_key(g);
     var same = g.tree.wood_vb.id != 0;
     for i in TREE_GEOMETRY_KEY { if !same4(key[i], g.tree.made_for[i]) { same = false; } }
     guard !same else { return; }
     let t0 = clock();
-    o.make_tree(g);
     if g.tree.bark.id == 0 {
         var px: u8[>..] = [];
         trees::bark_tile(px);
@@ -2537,6 +2550,8 @@ fn tree_geometry<O>(o: O&, g: Gpu&) {
         var t = trees::Tree { .. };
         trees::grow_whole(t, w, v, sight, true);
         made = trees::wood_mesh(t, density, grid, trees::toward_sun(v), verts, indices);
+        let d = trees::depths(t, v);
+        g.tree.layers = float4 { v.shear.x, v.shear.y, d.near, d.far };
         if tree_draw == TREE_ALL { leaf_count = trees::leaf_cards(t, density, grid, trees::toward_sun(v), cards); }
     }
     if leaf_count > 0 && g.tree.leaf_shape.id == 0 {

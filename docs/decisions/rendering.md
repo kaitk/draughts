@@ -2088,6 +2088,22 @@ to be is in tasks 042, 059, 071, 081, and 086.
   `PipelineDesc` field in goose_gfx or goose-ngfx, no `gl_SampleMask` in embed_shader's
   GLSL; `docs/goose-findings.md`), and coverage written by the shader as a sample mask
   for the ribbons (the same gap).
+- The maple's geometry moves in the shadow's own wind, behind the light tuner's
+  `--tree-wind off|on`, default off (2026-11-24, task 107's T4; `shaders::WIND_FN`,
+  `TREE_FN`'s `tree_moved` and `tree_leaf_move`, `build/notes/tree/wind-card.html`). One
+  wind: `WIND_FN` is split out of `LIGHT_FN` and shared by the room's shaders and the
+  tree's vertex shaders, so a leaf moves by the shift the shadow lookup uses at the leaf's
+  point on the shadow's map (its layer's drift and gust, plus the branches' sway for the
+  branch wind), found by a fixed point of two steps since the lookup is at the moved
+  point; `rooms::wind_at` is unchanged. A wood vertex moves toward the leaves' shift by
+  its flex (none at the trunk). The high tier (HDR) adds a flutter, each leaf turning
+  about its stalk (6 degrees in the room's mild wind, 9 radians a second of the wind,
+  `--tree-flutter`); the standard tier holds the leaves at the shadow's moment. Per tier
+  by defines (`TREE_WIND`, `TREE_FLUTTER`), the pipelines made again when the switch
+  changes; off, the shaders are the ones before and the four views are byte-identical.
+  +0.05 to 0.1 ms over the still geometry. Rejected: following the noise wind's ruffle
+  (it reshapes the flecks rather than moving them, so no geometry can follow it; the
+  flutter stands in for it).
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

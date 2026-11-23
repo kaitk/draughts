@@ -294,7 +294,7 @@ fn make_motes(own: Own&, g: render3d::Gpu&) {
     guard g.motes.id == 0 else { return; }
     let seeds = render3d::mote_seeds();
     g.mote_seeds = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(seeds));
-    g.motes = gfx::pipeline(embed_shader("vert", shaders::SHELL_WINDOWS, shaders::VS_SET, shaders::FRAME, shaders::DUST_HEAD, shaders::LIGHT_FN,
+    g.motes = gfx::pipeline(embed_shader("vert", shaders::SHELL_WINDOWS, shaders::VS_SET, shaders::FRAME, shaders::DUST_HEAD, shaders::WIND_FN, shaders::LIGHT_FN,
                                          shaders::DUST_VERT),
                             embed_shader("frag", shaders::DUST_FRAG),
                             gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
@@ -306,47 +306,47 @@ fn make_motes(own: Own&, g: render3d::Gpu&) {
 fn room_frag(group: i64, ssao: bool, views: bool) -> const u8[:] {
     if views {
         if group == render3d::GROUP_FLOOR {
-            return embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+            return embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
         }
         if group == render3d::GROUP_WALLS {
-            return embed_shader("frag", shaders::ROOM_WALLS, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+            return embed_shader("frag", shaders::ROOM_WALLS, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
         }
         if group == render3d::GROUP_PAINT {
-            return embed_shader("frag", shaders::ROOM_PAINT, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+            return embed_shader("frag", shaders::ROOM_PAINT, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
         }
         if group == render3d::GROUP_SILL {
-            return embed_shader("frag", shaders::ROOM_SILL, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+            return embed_shader("frag", shaders::ROOM_SILL, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
         }
         if group == render3d::GROUP_METALS {
-            return embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+            return embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
         }
         if group == render3d::GROUP_LACE {
-            return embed_shader("frag", shaders::ROOM_LACE, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+            return embed_shader("frag", shaders::ROOM_LACE, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
         }
-        return embed_shader("frag", shaders::ROOM_GLASS, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        return embed_shader("frag", shaders::ROOM_GLASS, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     if ssao {
         if group == render3d::GROUP_FLOOR {
-            return tuned_or(TUNED_FLOOR, embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
+            return tuned_or(TUNED_FLOOR, embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
         if group == render3d::GROUP_WALLS {
-            return tuned_or(TUNED_WALLS, embed_shader("frag", shaders::ROOM_WALLS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
+            return tuned_or(TUNED_WALLS, embed_shader("frag", shaders::ROOM_WALLS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
         if group == render3d::GROUP_PAINT {
             if render3d::paint_steps_on() && tuned_frags[TUNED_PAINT_STEPS].len > 0 { return tuned_frags[TUNED_PAINT_STEPS]; }
-            return tuned_or(TUNED_PAINT, embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
+            return tuned_or(TUNED_PAINT, embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
         if group == render3d::GROUP_SILL {
             if render3d::sill_steps_on() && tuned_frags[TUNED_SILL_STEPS].len > 0 { return tuned_frags[TUNED_SILL_STEPS]; }
-            return tuned_or(TUNED_SILL, embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
+            return tuned_or(TUNED_SILL, embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
         if group == render3d::GROUP_METALS {
-            return tuned_or(TUNED_METALS, embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
+            return tuned_or(TUNED_METALS, embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
         if group == render3d::GROUP_LACE {
-            return tuned_or(TUNED_LACE, embed_shader("frag", shaders::ROOM_LACE, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
+            return tuned_or(TUNED_LACE, embed_shader("frag", shaders::ROOM_LACE, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
         }
-        return tuned_or(TUNED_GLASS, embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
+        return tuned_or(TUNED_GLASS, embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
     }
     // The phone's tier without the floor's and the metals' sharp box (render3d::sharp_box_allowed,
     // the light tuner's --box off): their reflection the room's broad light, as the walls'.
@@ -357,24 +357,24 @@ fn room_frag(group: i64, ssao: bool, views: bool) -> const u8[:] {
         return embed_shader("frag", shaders::ROOM_METALS, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     if group == render3d::GROUP_FLOOR {
-        return embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        return embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     if group == render3d::GROUP_WALLS {
-        return embed_shader("frag", shaders::ROOM_WALLS, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        return embed_shader("frag", shaders::ROOM_WALLS, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     if group == render3d::GROUP_PAINT {
-        return embed_shader("frag", shaders::ROOM_PAINT, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        return embed_shader("frag", shaders::ROOM_PAINT, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     if group == render3d::GROUP_SILL {
-        return embed_shader("frag", shaders::ROOM_SILL, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        return embed_shader("frag", shaders::ROOM_SILL, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     if group == render3d::GROUP_METALS {
-        return embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        return embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     if group == render3d::GROUP_LACE {
-        return embed_shader("frag", shaders::ROOM_LACE, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        return embed_shader("frag", shaders::ROOM_LACE, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
-    return embed_shader("frag", shaders::ROOM_GLASS, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+    return embed_shader("frag", shaders::ROOM_GLASS, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
 }
 
 // The room's pipelines for the tier (render3d::ssao_allowed): its groups', its glass's and
@@ -428,30 +428,30 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     let table_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT);
     let table_desc = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED };
     g.table_room = gfx::pipeline(table_vert,
-                                 if ssao { tuned_or(TUNED_TABLE_ROOM, embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG)) }
-                                 else { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::NO_SSAO, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) },
+                                 if ssao { tuned_or(TUNED_TABLE_ROOM, embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG)) }
+                                 else { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::NO_SSAO, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) },
                                  table_desc);
     guard ssao else { return; }
-    let planar_frag = if views { embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }
-                      else { tuned_or(TUNED_PLANAR, embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)) };
+    let planar_frag = if views { embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }
+                      else { tuned_or(TUNED_PLANAR, embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)) };
     g.room_planar = gfx::pipeline(room_vert, planar_frag, opaque);
-    g.planar_walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_WALLS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
-    g.planar_paint = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_PAINT, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.planar_walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_WALLS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.planar_paint = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_PAINT, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
     // The sills in the mirror as in the room, the tuner's switches too.
-    let sill_mirror = if sill_steps { tuned_frags[TUNED_SILL_MIRROR] } else { embed_shader("frag", shaders::ROOM_SILL, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) };
+    let sill_mirror = if sill_steps { tuned_frags[TUNED_SILL_MIRROR] } else { embed_shader("frag", shaders::ROOM_SILL, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) };
     g.planar_sill = gfx::pipeline(room_vert, sill_mirror, opaque);
-    g.planar_metals = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_METALS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.planar_metals = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_METALS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
     // The glass and lace write depth here, so the reflection resolves at the window.
-    g.planar_glass = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_GLASS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+    g.planar_glass = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_GLASS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                                    gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
-    g.planar_lace = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_LACE, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+    g.planar_lace = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_LACE, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                                    gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
-    g.planar_table = gfx::pipeline(table_vert, embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+    g.planar_table = gfx::pipeline(table_vert, embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
                                    gfx::PipelineDesc { cull: gfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
                                                        blend: gfx::BLEND_PREMULTIPLIED });
     guard render3d::mirror_cheap else { return; }
-    g.cheap_room = gfx::pipeline(room_vert, embed_shader("frag", shaders::MIRROR_CHEAP_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
-    g.cheap_table = gfx::pipeline(table_vert, embed_shader("frag", shaders::MIRROR_CHEAP_PASS, shaders::CHEAP_TABLE, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+    g.cheap_room = gfx::pipeline(room_vert, embed_shader("frag", shaders::MIRROR_CHEAP_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.cheap_table = gfx::pipeline(table_vert, embed_shader("frag", shaders::MIRROR_CHEAP_PASS, shaders::CHEAP_TABLE, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                                   gfx::PipelineDesc { cull: gfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true });
 }
 
@@ -463,7 +463,7 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
     guard g.bake_room.id == 0 else { return; }
     g.bake_room = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::BAKE_ROOM, shaders::BAKE_FRAG));
     g.outside = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::OUTSIDE_VERT),
-                              tuned_or(TUNED_OUTSIDE, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::OUTSIDE_MAIN)),
+                              tuned_or(TUNED_OUTSIDE, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::OUTSIDE_MAIN)),
                               gfx::PipelineDesc { cull: gfx::CULL_NONE, blend: gfx::BLEND_PREMULTIPLIED });
     let full = embed_shader("vert", shaders::FULL_VERT);
     g.bloom_pick = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_PICK_FRAG));
@@ -749,19 +749,19 @@ fn hdr_format(own: Own&) -> i32 {
 // The board's lit shader into the HDR target for the pieces' material (render3d::PIECES_..),
 // its shadow in 16 taps, the high tier's.
 fn lit_hdr_frag(pieces: i32) -> const u8[:] {
-    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
+    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
 }
 
 // The board's lit shader in the room's shell (8-bit), as lit_hdr_frag's but tonemapped as
 // the app's: the sun through the shell's own windows.
 fn lit_shell_frag(pieces: i32) -> const u8[:] {
-    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::SHELL_WINDOWS, shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::SHELL_WINDOWS, shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::SHELL_WINDOWS, shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    return embed_shader("frag", shaders::SHELL_WINDOWS, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
+    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::SHELL_WINDOWS, shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::SHELL_WINDOWS, shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::SHELL_WINDOWS, shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    return embed_shader("frag", shaders::SHELL_WINDOWS, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
 }
 
 // The lit pass's pipelines in the shell (render3d::Gpu.lit_shell), made outside a pass when
@@ -796,28 +796,28 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     h.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
     h.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, blend: gfx::BLEND_ALPHA });
     h.table = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
-                            embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+                            embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
                             gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
     let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
-    h.floor = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
-    h.planar = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
-    h.floor_kinds = [gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque),
-                     gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque)];
-    h.planar_kinds = [gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque),
-                      gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque)];
-    h.walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_WALLS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
-    h.paint = gfx::pipeline(room_vert, if paint { tuned_frags[TUNED_PAINT_HDR] } else { embed_shader("frag", shaders::ROOM_PAINT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
-    h.sill = gfx::pipeline(room_vert, if sill { tuned_frags[TUNED_SILL_HDR] } else { embed_shader("frag", shaders::ROOM_SILL, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
-    h.metals = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
-    h.glass = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_GLASS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+    h.floor = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.planar = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.floor_kinds = [gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque),
+                     gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque)];
+    h.planar_kinds = [gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque),
+                      gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque)];
+    h.walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_WALLS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.paint = gfx::pipeline(room_vert, if paint { tuned_frags[TUNED_PAINT_HDR] } else { embed_shader("frag", shaders::ROOM_PAINT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
+    h.sill = gfx::pipeline(room_vert, if sill { tuned_frags[TUNED_SILL_HDR] } else { embed_shader("frag", shaders::ROOM_SILL, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
+    h.metals = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.glass = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_GLASS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                             gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED });
-    h.lace = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_LACE, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+    h.lace = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_LACE, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                             gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED });
     h.outside = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::OUTSIDE_VERT),
-                              tuned_or(TUNED_OUTSIDE_HDR, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::OUTSIDE_MAIN)),
+                              tuned_or(TUNED_OUTSIDE_HDR, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::OUTSIDE_MAIN)),
                               gfx::PipelineDesc { cull: gfx::CULL_NONE, blend: gfx::BLEND_PREMULTIPLIED });
-    h.motes = gfx::pipeline(embed_shader("vert", shaders::SHELL_WINDOWS, shaders::VS_SET, shaders::FRAME, shaders::DUST_HEAD, shaders::LIGHT_FN,
+    h.motes = gfx::pipeline(embed_shader("vert", shaders::SHELL_WINDOWS, shaders::VS_SET, shaders::FRAME, shaders::DUST_HEAD, shaders::WIND_FN, shaders::LIGHT_FN,
                                          shaders::DUST_VERT),
                             embed_shader("frag", shaders::HDR_OUT, shaders::DUST_FRAG),
                             gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
@@ -827,7 +827,7 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     h.glow_down = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_DOWN_FRAG));
     h.glow_up = gfx::pipeline(full, embed_shader("frag", shaders::GLOW_UP_FRAG), gfx::PipelineDesc { blend: gfx::BLEND_ALPHA });
     h.haze_cross = gfx::pipeline(full, embed_shader("frag", shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::HAZE_BLOCK,
-                                                    shaders::HAZE_CROSS_HEAD, shaders::LIGHT_FN, shaders::HAZE_CROSS_FRAG));
+                                                    shaders::HAZE_CROSS_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::HAZE_CROSS_FRAG));
     let haze = embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::HAZE_BLOCK, shaders::HAZE_FRAG);
     h.haze = gfx::pipeline(full, haze);
     h.haze_full = gfx::pipeline(full, haze, gfx::PipelineDesc { blend: gfx::BLEND_ADD });
@@ -1035,14 +1035,32 @@ fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
 }
 
 // The tree's pipelines (render3d::TreeGpu): its tubes' and ribbons', 8-bit and HDR, made
-// outside a pass the first time the tree is grown. The ribbons blend by their coverage
-// (premultiplied), writing no depth.
+// outside a pass the first time the tree is grown, and again when the wind on it comes or
+// goes (render3d::tree_wind: the standard tier's vertex stages with the shadow's field, the
+// high tier's leaves fluttering too). The ribbons blend by their coverage (premultiplied),
+// writing no depth.
 fn make_tree(own: Own&, g: render3d::Gpu&) {
     let t .= g.tree;
-    guard t.tube.id == 0 else { return; }
-    let tube_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_WOOD_VERT);
-    let ribbon_vs = embed_shader("vert", shaders::TREE_RIBBON, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN,
-                                 shaders::TREE_WOOD_VERT);
+    guard t.tube.id == 0 || t.wind_made != render3d::tree_wind else { return; }
+    if t.tube.id != 0 {
+        gfx::flush();
+        for p in [t.tube, t.ribbon, t.hdr_tube, t.hdr_ribbon, t.leaf, t.hdr_leaf] { gfx::release(p); }
+    }
+    t.wind_made = render3d::tree_wind;
+    let wind = render3d::tree_wind;
+    let tube_vs = if wind {
+        embed_shader("vert", shaders::TREE_WIND, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::WIND_FN, shaders::TREE_FN,
+                     shaders::TREE_WOOD_VERT)
+    } else {
+        embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_WOOD_VERT)
+    };
+    let ribbon_vs = if wind {
+        embed_shader("vert", shaders::TREE_RIBBON, shaders::TREE_WIND, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::WIND_FN,
+                     shaders::TREE_FN, shaders::TREE_WOOD_VERT)
+    } else {
+        embed_shader("vert", shaders::TREE_RIBBON, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN,
+                     shaders::TREE_WOOD_VERT)
+    };
     let solid = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true };
     let flat = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED };
     t.tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TONE_FN,
@@ -1054,11 +1072,22 @@ fn make_tree(own: Own&, g: render3d::Gpu&) {
     t.hdr_ribbon = gfx::pipeline(ribbon_vs, embed_shader("frag", shaders::TREE_RIBBON, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME,
                                                          shaders::TREE_HEAD, shaders::TONE_FN, shaders::TREE_LIGHT_FN,
                                                          shaders::TREE_WOOD_FRAG), flat);
-    let leaf_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_LEAF_VERT);
+    let leaf_vs = if wind {
+        embed_shader("vert", shaders::TREE_WIND, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::WIND_FN, shaders::TREE_FN,
+                     shaders::TREE_LEAF_VERT)
+    } else {
+        embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_LEAF_VERT)
+    };
+    let hdr_leaf_vs = if wind {
+        embed_shader("vert", shaders::TREE_FLUTTER, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::WIND_FN, shaders::TREE_FN,
+                     shaders::TREE_LEAF_VERT)
+    } else {
+        leaf_vs
+    };
     let card = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
     t.leaf = gfx::pipeline(leaf_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TONE_FN,
                                                  shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG), card);
-    t.hdr_leaf = gfx::pipeline(leaf_vs, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
+    t.hdr_leaf = gfx::pipeline(hdr_leaf_vs, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
                                                      shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG), card);
 }
 
@@ -1326,21 +1355,21 @@ fn set_aa(own: Own&, g: render3d::Gpu&, aa: i32, samples: i32 = SAMPLES) {
 // SHADOW_MANY) and the pieces in one material (render3d::PIECES_..).
 fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
     if look == render3d::SHADOW_4 {
-        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
     }
     if look == render3d::SHADOW_16 {
-        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
     }
-    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
-    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
+    if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PIECES_WOOD, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PIECES_WINTER, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PIECES_MINERAL, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
+    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG);
 }
 
 // The light tuner's own fragment shaders (with shaders::TOE_FN, its toe switches),
@@ -1380,12 +1409,12 @@ fn tuned_or(i: i64, frag: const u8[:]) -> const u8[:] { if tuned_frags[i].len > 
 // The table's shader with its shadow filtered as `look` says, as the lit one's (lit_frag).
 fn table_frag(look: i32) -> const u8[:] {
     if look == render3d::SHADOW_4 {
-        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG);
+        return embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG);
     }
     if look == render3d::SHADOW_16 {
-        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG);
+        return embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG);
     }
-    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG);
+    return embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG);
 }
 
 // The table's pipeline, its shadow filtered as `look` says (table_frag).
