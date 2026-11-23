@@ -219,6 +219,19 @@ The export's wrapper seems to start from the data stacks' base rather than their
 
 ## goose_gfx
 
+### A later floor draw cannot read an earlier draw's tile-local colour
+
+The gfx pass descriptor in goose_gfx `7859a96` exposes colour, depth and resolve
+attachments. Each pass begins and ends an SDL GPU render pass. Its shaders can sample
+stored textures, and its pipelines can use fixed-function blending. The API exposes
+neither Metal imageblocks or programmable blending nor Vulkan input attachments.
+
+- Here: splitting the floor's lighting into these passes would write intermediate
+  targets and sample them from textures in the final pass.
+- Upstream: to support the split without those stores, expose a way to read a previous
+  draw's attachment in the same render pass. SDL would need to expose it before gfx
+  could wrap it.
+
 ### The window opens unfocused on macOS 14+ and drops the first clicks
 
 SDL 3.4.16 on macOS 14+ doesn't activate the app at launch (`SDL_MAC_BACKGROUND_APP`
@@ -421,6 +434,20 @@ tablet 207.5 MB, 138.9 without).
 - Upstream: possibly an Android path in gfx's CMake.
 
 ## NoGraphicsAPI and goose-ngfx
+
+### Transient attachments stay local to one render pass
+
+In goose-ngfx `965152e` and NoGraphicsAPI `e543e9e`, a transient target is cleared
+and discarded or resolved. The Metal backend makes it memoryless. The Vulkan backend
+uses dynamic rendering, with no input-attachment or dynamic-rendering local-read
+interface. The Metal backend has no imageblock or programmable blending interface.
+A transient MSAA target can save the store of its multisampled data, but the resolved
+texture is still stored before a later pass can sample it.
+
+- Here: a floor split would have the same intermediate texture traffic as gfx.
+- Upstream: if a floor split warrants an API addition, prototype Metal tile-local
+  attachment reads and Vulkan subpass input attachments or dynamic-rendering local
+  reads. Check image and sample semantics on both backends.
 
 ### Metal's root alignment hint shades every sample of an MSAA pass
 
