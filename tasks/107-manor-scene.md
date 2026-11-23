@@ -633,11 +633,13 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
     either backend. ADB found no connected tablet.
 - [ ] Artifacts the user saw (2026-11-23; crops in `build/notes/artifacts-2026-11-23/`, local):
   - [ ] Single bright pixels sparkling on the dark oak of the wainscot and the bookshelves
-        at some angles (`oak-sparkle-*.png`). Likely specular fireflies (the normal map's
-        detail turning the gloss's highlight into one pixel), not an overflow; check with
-        the tuner first (a NaN or Inf would more likely show black or spread by the glow).
-        Fix by specular anti-aliasing (roughness widened by the normal's spread in a pixel:
-        Toksvig, or Kaplanyan-Hoffman from screen derivatives)
+        at some angles (`oak-sparkle-*.png`), and on the window wall's side, which is in
+        shade (the user doubts the normal map's highlight, rightly: no sun to reflect there).
+        Find the cause before fixing, in order: a broken value in one pixel (a division by
+        nearly zero, a normalize of a zero vector, Inf or NaN; clamp and mark them in a
+        debug view); the MSAA resolve in HDR (one bright sub-sample averaged with dark ones,
+        as the bars' dashes); a bad SSAO or GTAO texel at a depth edge (switch each off);
+        specular aliasing only where a highlight exists (then Toksvig or Kaplanyan-Hoffman)
   - [ ] A thin light line along the wall's base behind the lace (`light-line-wall-base.png`):
         the floor's reflection, the plinth's contact line, the wax band or a leak at the
         wainscot's foot; find which with the tuner's debug views
