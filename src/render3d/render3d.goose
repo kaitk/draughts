@@ -2596,7 +2596,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     // target; not where the image is the target (the app's kept image, which shows no shell).
     let glowing = bloom_shown(g) && out.id != 0;
     if ssao_shown(g) { o.ssao_pass(g, size); }
-    g.planar_current = planar_shown(g) && (planar_view > 1 || floor_in_frustum(view_proj));
+    g.planar_current = planar_shown(g) && (planar_view > 1 || floor_in_frustum(view_proj, g.room_frame));
     if g.planar_current {
         let clip, plain = mirrored_frames(g);
         o.planar_pass(g, size, clip, plain, planar_resolve_of(g, clip));
@@ -2736,15 +2736,16 @@ fn planar_shown(g: Gpu&) -> bool {
     planar_allowed && room_shown(g) && g.room_shell && g.room.planar.x > 0.0 && g.planar_walls.id != 0
 }
 // A convex floor can be outside a clip plane only if all four corners are
-// outside that same plane. Keep the test homogeneous for corners behind the eye.
-fn floor_in_frustum(m: Mat) -> bool {
+// outside that same plane. Keep the test homogeneous for corners behind the eye. The
+// corners are turned by the room's frame, as ROOM_VERT turns the floor.
+fn floor_in_frustum(m: Mat, turn: surfaces::Frame) -> bool {
     let a, b = room_shell::floor_diagonal(room_shell::LIBRARY);
     let base = m.c1 * surfaces::FLOOR_Y + m.c3;
     var outside: u32 = 63;
     for x in [a.x, b.x] {
-        let edge = base + m.c0 * x;
         for z in [a.y, b.y] {
-            let p = edge + m.c2 * z;
+            let w = turn.along * x + turn.into * z;
+            let p = base + m.c0 * w.x + m.c2 * w.y;
             // Leave room for rounding between the CPU and the vertex shader.
             let margin: f32 = 0.01;
             var planes: u32 = 0;

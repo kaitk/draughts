@@ -1701,6 +1701,9 @@ to be is in tasks 042, 059, 071, 081, and 086.
   per-frame mirror pass to views that can show the floor. Both renderers reject the
   floor only when all four corners lie outside the same clip plane, with a margin
   for rounding. This keeps grazing views and views with corners behind the eye safe.
+  The corners are turned by the room's frame, as `ROOM_VERT` turns the floor (2026-11-23):
+  unturned, the test missed the floor in about one view in eight, walking toward the
+  stove-end door among them, and the floor popped to its sharp box reflection.
   A returning floor gets a fresh mirror before the room draws. The tuner's
   full-screen mirror preview still renders the map because it displays it directly.
 - Keep the full mirror target when the floor can show (2026-11-23, task 107).

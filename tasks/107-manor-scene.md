@@ -527,6 +527,13 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       The corner's 182 changed pixels each differ by one level. The wall shot uses
       `--plan-eye 4.0,3.0,1.6 --plan-at 4.0,8.0,3.0` to frame above the floor.
       The ceiling uses `--plan-eye 6.0,3.0,1.6 --plan-at 6.0,3.05,4.0`.
+- [x] Turn the floor's corners by the room's frame in the mirror's frustum test
+      (2026-11-23, `build/notes/mirror-skip/pop.html`). Unturned, it missed a visible floor in
+      about one view in eight (1,993 of 15,912 modelled walk views), and the floor popped to
+      its sharp box reflection, as walking toward the stove-end door past
+      `--plan-eye 4.85,3.5,1.6 --plan-at 0,3.5,1.2` (108 levels, 415,462 pixels over 8). Fixed,
+      the steps and the four views at 3840 × 2160 match the mirror never skipped within one
+      level; the wall and ceiling views still skip it.
 - [x] Evaluate scissoring the floor mirror (2026-11-23). Rejected after both padding
       trials changed reflections. At 3840 × 2160, the 64-texel trial kept the thin-strip
       capture identical, but changed 234,989 corner pixels by more than eight levels.

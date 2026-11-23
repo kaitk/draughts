@@ -668,8 +668,8 @@ board's light:
   alone`) or with all the indirect light keeps (`kept`).
 - **The floor's mirror** (`render3d::planar_pass`, `rooms::Room.planar`), in the standard
   and high tiers, not on a phone (`render3d::planar_allowed`). Both renderers skip the
-  mirror draw, resolve and mip generation when all four floor corners lie outside
-  the same camera clip plane. A frame that can show the floor refreshes the full
+  mirror draw, resolve and mip generation when all four floor corners, turned with the
+  room, lie outside the same camera clip plane. A frame that can show the floor refreshes the full
   mirror target before the floor samples it. Before the board's pass, the view out,
   the table and the room are drawn mirrored across the floor at a third of the
   screen's size. The clip depth is the height over the floor and clips the geometry
