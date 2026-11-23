@@ -3506,8 +3506,19 @@ let ROOM_FRAG = """
         // over even scattering), and the sky and park behind the niche, as much of
         // them as it sees (v_extra.x).
         vec2 lg = vec2(1.0, -1024.0 / 1408.0) / tile.z;
-        float cover = textureGrad(lace_mask, lace_place(v_uv), dFdx(v_uv) * lg, dFdy(v_uv) * lg).r;
-        if (cover < 0.02) discard;
+        vec2 lp = lace_place(v_uv);
+        vec2 gx = dFdx(v_uv) * lg;
+        vec2 gy = dFdy(v_uv) * lg;
+        // The hem's tips reach the mask's bottom edge, which the repeating sampler joins to
+        // the pattern's dense top row: a footprint (mip or anisotropic taps) over that edge
+        // drew a thin light line under the hem, and the cloth past the last row, held to it,
+        // drew the tips on down. So the footprint is held inside the edge, and nothing past
+        // the last row is drawn (2026-11-23).
+        float edge = (1.0 - lp.y) * 1408.0;
+        float reach = max(length(gx * vec2(1024.0, 1408.0)), length(gy * vec2(1024.0, 1408.0)));
+        float hold = lp.y > 1024.0 / 1408.0 ? clamp(edge / max(reach, 1e-6), 0.0, 1.0) : 1.0;
+        float cover = textureGrad(lace_mask, lp, gx * hold, gy * hold).r;
+        if (cover < 0.02 || (0.375 * tile.z - v_uv.y) / tile.z > 0.3745) discard;
         a = 1.0 - pow(1.0 - 0.8 * cover, 1.0 / max(abs(dot(nf, v)), 0.5));
         vec3 l = light_dir.xyz;
         vec3 light = room_sun_color(room_sun.x) * light_dir.w;
@@ -4106,7 +4117,17 @@ let ROOM_FRAG = """
         // The tuner's views: the screen's occlusion alone, or all the indirect light keeps.
         if (ssao.y > 0.5) result = vec4(vec3(ssao.y > 1.5 ? ao : screen_ao), 1.0);
         // The tuner's view of the indirect light alone, on a grey of 0.45.
-        if (ssao.y > 2.5) result = vec4(to_srgb(tonemap(irr * 0.45 * params.x * shade.w)), 1.0);
+        if (ssao.y > 2.5 && ssao.y < 3.5) result = vec4(to_srgb(tonemap(irr * 0.45 * params.x * shade.w)), 1.0);
+        // The tuner's view of broken values: red where a term isn't finite (by its bits, which
+        // fast math keeps), yellow where the light is absurd (over 64 exposed), the picture a
+        // quarter as bright elsewhere.
+        if (ssao.y > 3.5 && ssao.y < 4.5) {
+            uvec4 e = (floatBitsToUint(vec4(color, length(n))) >> 23) & 255u;
+            uvec4 f = (floatBitsToUint(vec4(env, spec.r + irr.r + base.r)) >> 23) & 255u;
+            bool broken = any(equal(e, uvec4(255u))) || any(equal(f, uvec4(255u)));
+            bool absurd = max(max(color.r, color.g), color.b) > 64.0;
+            result = broken ? vec4(1.0, 0.0, 0.0, 1.0) : (absurd ? vec4(1.0, 1.0, 0.0, 1.0) : vec4(result.rgb * 0.25, 1.0));
+        }
     #endif
     #endif
     }
