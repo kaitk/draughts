@@ -897,6 +897,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   still gathers round the chain's loop as it settled: the lace's pattern climbs from the
   hem, so gathering it round the loop drawn tight would move the pattern all the way up the
   drop. Triangles unchanged.
+- The tie-back's cord takes its colour from the lace's thread, a shade deeper (2026-11-23,
+  task 107, `build/notes/lace-cord-ivory/`; `ROOM_FRAG`'s cord under `ROOM_WALLS`): half
+  the thread's linear albedo (`surfaces::LOOK.lace_thread`, #ddd3bf), so about #a19a8b,
+  and where its strands are under a pixel or two it fades to their mean (0.91), not to
+  their brightest. It replaces three quarters of the thread's (about #c2b9a8), fading to
+  1.0: opaque, it read white beside the lace, which shows only as much of its thread as
+  it covers. Both renderers share the shader and the table.
 - The curtains' folds hang round at the hem (2026-11-21): from 0.83 m down a panel has
   12 columns a fold, not 6 (whose hexagon read as a zigzag of points seen from above),
   and the hem's line lifts at each fold's turn, scalloping between them. The two grids

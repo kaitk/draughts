@@ -580,6 +580,9 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       lace pattern may move); the cord hidden where it passes behind the gathered lace (the
       bundle's opacity raised near the tie, or the cord not drawn behind it); the cord ivory
       like the lace, not white. Shots beside the reference before anything else
+  - [x] The cord ivory (2026-11-23, `build/notes/lace-cord-ivory/`): the lace's thread at
+        half its linear albedo, from three quarters; only the tie-backs and their floor
+        reflections change, the board's view and straight down byte-identical
 - [ ] The lace in shade, open questions (`build/notes/lace-shade/trials.html`): a cooler
       tint in shade; trial 1 (more opacity at grazing angles) and trial 4 (motif against
       net), only if the user wants more after the defaults of 2026-11-23
