@@ -799,7 +799,8 @@ grazing sun ([why](../decisions/rendering.md)).
   and a 3 mm band of grey-brown dirt in the quirks, at the bevels' feet, along the glass,
   where the sashes meet the frame and where the architrave and plinth blocks meet the
   wall; both filtered over the pixel. A fillet's normal, read past its strip's edge, is
-  held within 46° of the strip's plane.
+  held within 46° of the strip's plane. The pieces' faces meet vertex to vertex, with no
+  cracks for the glass to show through.
 - **Relief** (`room_shell::relief_tile`): one 512-texel tile, 256 mm of paint, made at
   startup in about 25 ms (1.4 MB with its mips): brush ridges laid off along the grain in
   64 mm bands, pine latewood every 4 mm and an orange peel, a few micrometres high. Laid on

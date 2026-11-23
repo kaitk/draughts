@@ -209,32 +209,66 @@ fn paint_box(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
             g1 = float3 { x1, y1, z1 - r };
             ns = nt;
         }
-        for h in 2 {
-            let ta: f32       = 0.5 * h;
-            let tb: f32       = 0.5 * (h + 1);
+        // In two halves along the grain, as the front's edge beside it; across it whole.
+        let along_y = bit == LEFT || bit == RIGHT;
+        let along_grain = along_y != p.along;
+        let step: f32 = if along_grain { 0.5 } else { 1.0 };
+        for h in (if along_grain { 2 } else { 1 }) {
+            let ta: f32       = step * h;
+            let tb: f32       = step * (h + 1);
             let q:  float3[4] = [lerp(f0, f1, ta), lerp(f0, f1, tb), lerp(g0, g1, tb), lerp(g0, g1, ta)];
             var uv: float2[4] = [float2_0; 4];
             for i in 4 { uv[i] = float2 { joint_at(if p.along { q[i].x } else { q[i].y }, a0, a1, lo, hi), NO_LINE }; }
             paint_quad(verts, indices, b, q, [nf, nf, ns, ns], uv, 1.0, mat);
         }
+        // Its ends where no rounded edge meets it: the fillet's cut closed out to the box's
+        // corner, facing along the edge into the cut. Open, the piece beside it (its end not
+        // drawn) shows the glass through, a dot under a pixel.
+        let ends: bool[2]   = [(p.round & (if along_y { BOTTOM } else { LEFT })) == 0, (p.round & (if along_y { TOP } else { RIGHT })) == 0];
+        let into: float3[2] = [if along_y { nt } else { nr }, if along_y { nb } else { nl }];
+        for k in 2 {
+            guard ends[k] else { continue; }
+            let f = if k == 0 { f0 } else { f1 };
+            let g = if k == 0 { g0 } else { g1 };
+            let q: float3[4] = [f, g, float3 { g.x, g.y, f.z }, f];
+            var uv: float2[4] = [float2_0; 4];
+            for i in 4 { uv[i] = float2 { joint_at(if p.along { q[i].x } else { q[i].y }, a0, a1, lo, hi), NO_LINE }; }
+            paint_quad(verts, indices, b, q, [into[k]; 4], uv, 1.0, mat);
+        }
     }
-    // The side faces, from the fillet's back line (or the front's edge) to the back.
+    // The side faces, from the fillet's back line (or the front's edge) to the back; along
+    // the grain in two halves, as the front's edge and the fillet beside them.
     if (p.sides & LEFT) != 0 {
-        side_face(verts, indices, b, [float3 { x0, y0, z1 - rl }, float3 { x0, y1, z1 - rl }, float3 { x0, y1, z0 }, float3 { x0, y0, z0 }],
-                  nl, (p.recess & LEFT) != 0, p.foot, p.ao, mat);
+        side_halves(verts, indices, b, [float3 { x0, y0, z1 - rl }, float3 { x0, y1, z1 - rl }, float3 { x0, y1, z0 }, float3 { x0, y0, z0 }],
+                    nl, (p.recess & LEFT) != 0, p.foot, p.ao, mat, !p.along);
     }
     if (p.sides & RIGHT) != 0 {
-        side_face(verts, indices, b, [float3 { x1, y0, z1 - rr }, float3 { x1, y1, z1 - rr }, float3 { x1, y1, z0 }, float3 { x1, y0, z0 }],
-                  nr, (p.recess & RIGHT) != 0, p.foot, p.ao, mat);
+        side_halves(verts, indices, b, [float3 { x1, y0, z1 - rr }, float3 { x1, y1, z1 - rr }, float3 { x1, y1, z0 }, float3 { x1, y0, z0 }],
+                    nr, (p.recess & RIGHT) != 0, p.foot, p.ao, mat, !p.along);
     }
     if (p.sides & BOTTOM) != 0 {
-        side_face(verts, indices, b, [float3 { x0, y0, z1 - rb }, float3 { x1, y0, z1 - rb }, float3 { x1, y0, z0 }, float3 { x0, y0, z0 }],
-                  nb, (p.recess & BOTTOM) != 0, p.foot, p.ao, mat);
+        side_halves(verts, indices, b, [float3 { x0, y0, z1 - rb }, float3 { x1, y0, z1 - rb }, float3 { x1, y0, z0 }, float3 { x0, y0, z0 }],
+                    nb, (p.recess & BOTTOM) != 0, p.foot, p.ao, mat, p.along);
     }
     if (p.sides & TOP) != 0 {
-        side_face(verts, indices, b, [float3 { x0, y1, z1 - rt }, float3 { x1, y1, z1 - rt }, float3 { x1, y1, z0 }, float3 { x0, y1, z0 }],
-                  nt, (p.recess & TOP) != 0, p.foot, p.ao, mat);
+        side_halves(verts, indices, b, [float3 { x0, y1, z1 - rt }, float3 { x1, y1, z1 - rt }, float3 { x1, y1, z0 }, float3 { x0, y1, z0 }],
+                    nt, (p.recess & TOP) != 0, p.foot, p.ao, mat, p.along);
     }
+}
+
+// A side face (as side_face) whole, or in two halves along its front edge: a vertex of the
+// front's or the fillet's on its edge and none of its own there is a T-junction, whose crack
+// shows the glass through as a dot.
+fn side_halves(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, q: float3[4], n: float3, recess: bool,
+               foot: f32, ao: f32, mat: f32, halves: bool) {
+    if !halves {
+        side_face(verts, indices, b, q, n, recess, foot, ao, mat);
+        return;
+    }
+    let mf = lerp(q[0], q[1], 0.5);
+    let mb = lerp(q[3], q[2], 0.5);
+    side_face(verts, indices, b, [q[0], mf, mb, q[3]], n, recess, foot, ao, mat);
+    side_face(verts, indices, b, [mf, q[1], q[2], mb], n, recess, foot, ao, mat);
 }
 
 // The quiet panel's ring (world units, as surfaces::PANEL_IN and PANEL_Z): the stuck
