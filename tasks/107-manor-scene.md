@@ -631,8 +631,8 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
     the larger differences in the debug view. The test suite passed with NGFX set,
     and both Mac apps built. The 3D home screen differed by at most one level on
     either backend. ADB found no connected tablet.
-- [ ] Artifacts the user saw (2026-11-23; crops in `build/notes/artifacts-2026-11-23/`, local):
-  - [ ] Single bright pixels sparkling on the dark oak of the wainscot and the bookshelves
+- [x] Artifacts the user saw (2026-11-23; crops in `build/notes/artifacts-2026-11-23/`, local):
+  - [x] Single bright pixels sparkling on the dark oak of the wainscot and the bookshelves
         at some angles (`oak-sparkle-*.png`), and on the window wall's side, which is in
         shade (the user doubts the normal map's highlight, rightly: no sun to reflect there).
         Find the cause before fixing, in order: a broken value in one pixel (a division by
@@ -640,9 +640,29 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
         debug view); the MSAA resolve in HDR (one bright sub-sample averaged with dark ones,
         as the bars' dashes); a bad SSAO or GTAO texel at a depth edge (switch each off);
         specular aliasing only where a highlight exists (then Toksvig or Kaplanyan-Hoffman)
-  - [ ] A thin light line along the wall's base behind the lace (`light-line-wall-base.png`):
+    - Fixed (2026-11-23, Windows, Vulkan): pinholes, not shading. `--ssao-view broken`
+      marked no non-finite value; the dots stayed with HDR off (35 levels over the oak
+      instead of 52), GTAO off and SSAO off; the sun's highlight view showed them, but a
+      view of each pixel's material showed the oak there turned from the sun and the light
+      added after it, and with the view out off they took the plain sky's colour. Cracks at
+      T-junctions of the stiles, rails, plinth and cap; each piece now cut where another's
+      corner lies on it. Cracks (pixels showing the view out, 3840 x 2160): by the hall's
+      bookcases 29 to 0, beside the hall door 38 to 10 (left on the door's architrave and
+      paper), close to the window wall 147 to 122 (the windows' own edges), the corner 935
+      to 885, the room 490 to 466. The four views against the build before: straight down
+      byte-identical at both sizes; corner, room and menu at most a level in 5,000-20,000
+      pixels at 4K (the wainscot and its reflection), and the dots (18-60 pixels over 8).
+      The shell 38,262 to 46,026 triangles. Left: the doors' painted panels have the same
+      junctions
+  - [x] A thin light line along the wall's base behind the lace (`light-line-wall-base.png`):
         the floor's reflection, the plinth's contact line, the wax band or a leak at the
         wainscot's foot; find which with the tuner's debug views
+    - Fixed (2026-11-23): the lace's own cloth below its hem, its mask read past the mask's
+      bottom edge into the pattern's top through the repeating sampler (mips, anisotropy).
+      It stayed with the mirror, the corners' map, the contact shadows, SSAO, GTAO and HDR
+      each off. The lace's read held inside the edge, nothing drawn past the last row: the
+      line's 500-1,100 pixels a view over 8 at 4K, the hem unchanged, the floor's reflection
+      of the line a level
   - [x] The HDR glow pulsing on thin sun strips (the sill, the window's reveals) when the
         eye moves up or down, steady when it moves sideways (`glow-shimmer-*.png`): the
         first downsample averaged 4 x 4 blocks and thresholded after, so a strip a few
