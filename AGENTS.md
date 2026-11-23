@@ -40,6 +40,8 @@ would otherwise look up again:
 - `agents/writing.md`: docs, tasks, and prose; what goes in `docs/` and what only in
   `agents/`
 - `agents/testing.md`: the tests, what each kind is for, and how to run them
+- `agents/perf.md`: measuring the 3D scene's speed: the builds, the views, the quiet lock,
+  what counts as identical, and the results page
 - `agents/design.md`: the look's reference images (local, not in git), how the user makes
   images, how to check a look against them, and what was tried and set aside
 
