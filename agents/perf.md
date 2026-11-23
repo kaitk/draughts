@@ -41,7 +41,8 @@ nothing in headless shots: frame with `--plan-eye`/`--plan-at` (plan metres) ins
 
 - Only one measuring job on the GPU at a time, across Claude, Codex and the user. Create
   `build/perf/quiet.lock` (in the main checkout) while measuring and remove it after; if it
-  already exists, wait. Never kill a `light_tune` process you didn't start (the user's tuner);
+  already exists, wait, and run nothing on the GPU meanwhile (no shots or tuner runs either:
+  any render disturbs the timing). Never kill a `light_tune` process you didn't start (the user's tuner);
   if one runs, note it, its frames disturb yours.
 - Before and after builds of the same views, two alternating rounds (A B A B), means of each.
   Measure at the start and after each finished step, not after every edit.
