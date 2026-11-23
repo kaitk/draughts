@@ -458,10 +458,27 @@ The waited app benchmark changed from main → room-light → optimized as follo
 averaging two medians from each build. The main-pass increase was 0.98 ms at 4K
 and 1.55 ms at 5K. Room-light added filtered board-shadow-map reads to the
 tabletop shader and expanded its lighting. The shell's library passes are absent
-from this benchmark. In the 4K trace, the command buffer with board and shadow
-grew from 6.36 to 7.31 ms. The board encoder grew from 6.32 to 7.28 ms and its
-shadow map from 0.053 to 0.058 ms. Both runs spent over 98% of those command
-buffers in Maximum GPU state.
+from this benchmark. The historical Metal traces group the kept-image composite
+and the active board commands in separate buffers. These are medians in milliseconds
+from main → room-light. Deltas are room-light minus main.
+
+| Resolution | GPU work | Main | Room-light | Delta |
+| --- | --- | ---: | ---: | ---: |
+| 4K | Kept-image composite encoder | 0.5257 | 0.8544 | +0.3287 |
+| 4K | Active board buffer | 6.3593 | 7.3131 | +0.9538 |
+| 4K | Board shadow encoder | 0.0531 | 0.0582 | +0.0051 |
+| 4K | Main board encoder | 6.3175 | 7.2785 | +0.9610 |
+| 5K | Kept-image composite encoder | 0.9940 | 1.2571 | +0.2631 |
+| 5K | Active board buffer | 10.3813 | 11.9224 | +1.5411 |
+| 5K | Board shadow encoder | 0.0617 | 0.0656 | +0.0039 |
+| 5K | Main board encoder | 10.3232 | 11.8609 | +1.5377 |
+
+The composite buffers spent 99.5% → 99.3% at Maximum GPU state at 4K and
+99.8% → 99.7% at 5K. The active board buffers spent 98.3% → 98.4% at Maximum at
+4K. At 5K those buffers spent 77.9% → 86.2% at Minimum and 22.1% → 13.8% at
+Medium. Use the 5K encoder deltas as observations from the captures. The
+different state mix limits causal comparisons. The waited app results below
+come from separate runs.
 
 | App game screen | Main | Room-light | Optimized |
 | --- | ---: | ---: | ---: |
@@ -502,19 +519,45 @@ as were board shots with one degree of yaw and a different wind time. The corner
 changed three pixels at 4K and one at 5K, each by one level. A 4K baseline repeat
 changed 43 corner pixels by one level. Zero pixels exceeded eight levels.
 
-The mirror map's stacked strips come from `PLANAR_RESOLVE_FRAG` fetching valid
-texels from lower in each column to fill the border above the far floor edge.
-Marking only the filled texels in a diagnostic changed 686,878 normal corner pixels
-by over eight levels at 4K. The floor samples the fill as part of its blurred
-reflection. A replacement preview is being evaluated in the light tuner.
-The baseline mirror fill remains the default.
-
 The shipped game shots at 4K were byte-identical after the entrance fade. At
 5K the maximum difference was one level in 939,270 pixels against 3,976,078
 pixels at the same maximum in a baseline repeat. Zero pixels exceeded eight levels.
 The Metal GPU Counters instrument exposed a shader timeline, but its fragment
 functions had generated names, and the export did not yield attributable per-draw
-invocation counts. The flat-colour measurements above report visible pixel coverage.
+invocation or hardware overdraw counts. The flat-colour measurements above report
+visible pixel coverage and timing deltas from replacing shader work.
+
+### Floor mirror edge-fill preview
+
+The standard resolve searches down each column at offsets 1–8, then 16, 32 and
+larger. That fills the area above the far floor edge with stacked repeats of the room.
+A diagnostic that coloured only those filled texels magenta changed 686,878 pixels
+by more than eight RGB levels in the 4K normal corner. The floor's blur samples
+the fill across the far edge.
+
+The gfx light tuner's `--mirror-edge-fill on` extends the first covered depth row
+of each column into the empty area above it. The 4K and 5K map captures show the
+repeats gone. The floor's visible changes are concentrated in the reflection.
+The 4K nudge moves the eye 1 cm along the plan X axis.
+
+| Capture | Max RGB levels | Pixels changed | Pixels over eight |
+| --- | ---: | ---: | ---: |
+| 4K normal corner | 5 | 115,306 | 0 |
+| 4K normal corner, 1 cm nudge | 5 | 113,646 | 0 |
+| 4K full mirror map | 254 | 4,722,347 | 3,732,711 |
+| 5K normal corner | 8 | 131,521 | 0 |
+| 5K full mirror map | 254 | 8,445,585 | 6,574,542 |
+| 4K implicit default vs explicit off, byte-identical | 0 | 0 | 0 |
+
+| Corner frame time (ms) | Round 1 off / on | Round 2 off / on | Mean off / on | Spread off / on |
+| --- | ---: | ---: | ---: | ---: |
+| 4K | 15.950 / 15.225 | 14.825 / 14.850 | 15.3875 / 15.0375 | 1.125 / 0.375 |
+| 5K | 25.300 / 24.275 | 24.250 / 24.325 | 24.775 / 24.300 | 1.050 / 0.050 |
+
+The preview was faster in the first round and slightly slower in the second at both
+sizes. The off-run spread exceeds the mean difference at each size. Keep the preview
+opt-in to preserve the existing appearance. The Mac tuner and both app entry points
+built, and the suite passed with NGFX configured. ADB listed no USB tablet on recheck.
 
 Results and shots are in `build/notes/board-view/index.html`.
 

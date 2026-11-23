@@ -4686,6 +4686,23 @@ let GLOW_UP_FRAG = """
     }
     """;
 
+// One texel per mirror column records the first covered row, or the height for an
+// empty column. The resolve can extend this row past the floor's far edge.
+let PLANAR_EDGE_FRAG = """
+    layout(location = 0) out float first;
+    layout(set = 2, binding = 0) uniform sampler2D planar_depth;
+    void main() {
+        int x = int(gl_FragCoord.x);
+        int height = textureSize(planar_depth, 0).y;
+        int y = 0;
+        for (; y < height; y++) {
+            if (texelFetch(planar_depth, ivec2(x, y), 0).r < 1.0) break;
+        }
+        first = float(y);
+    }
+    """;
+let PLANAR_EDGE_FILL = "#define PLANAR_EDGE_FILL 1\n";
+
 // The mirror's picture made the room's light again, with how far each texel stands from the
 // floor along the reflection: the pass drew the room, the table and the view out as their
 // light before the tonemap (mirror_light), exposed, so the room's exposure's inverse
@@ -4700,6 +4717,9 @@ let PLANAR_RESOLVE_FRAG = """
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D planar_color;
     layout(set = 2, binding = 1) uniform sampler2D planar_depth;
+    #ifdef PLANAR_EDGE_FILL
+    layout(set = 2, binding = 2) uniform sampler2D planar_edge_rows;
+    #endif
     layout(set = 3, binding = 0) uniform PlanarResolve { vec4 planar_back[4]; vec4 planar_eye; vec4 planar_tone; };
     const int PLANAR_REACH = 8;
     // A texel's light made safe for the mips: a NaN, an infinity or a negative channel from
@@ -4719,6 +4739,15 @@ let PLANAR_RESOLVE_FRAG = """
         // reflection at the wall never reaches past it into the sky; farther up, the
         // nearest texel below that was drawn, found in doubling steps.
         float depth = texelFetch(planar_depth, px, 0).r;
+    #ifdef PLANAR_EDGE_FILL
+        if (depth >= 1.0) {
+            int first = int(texelFetch(planar_edge_rows, ivec2(px.x, 0), 0).r);
+            if (px.y < first && first < size.y) {
+                px.y = first;
+                depth = texelFetch(planar_depth, px, 0).r;
+            }
+        }
+    #endif
         for (int k = 1; k <= PLANAR_REACH && depth >= 1.0; k++) {
             ivec2 at = ivec2(px.x, min(px.y + k, size.y - 1));
             float d = texelFetch(planar_depth, at, 0).r;

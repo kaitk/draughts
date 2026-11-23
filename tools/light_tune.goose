@@ -109,6 +109,7 @@
 //       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
 //       [--planar-size K (the floor mirror's scale, 3 a third, 2 half) --planar-wide TEXELS (its least width, 1600)]
 //       [--mirror-cheap on|off (the floor mirror's cheap world, a trial: large shapes at their mean colours, off)]
+//       [--mirror-edge-fill on|off (extend the floor mirror's first covered row per column, off)]
 //       [--scene-scale K (the 3D scene at K of the screen's side; 1, native, the default; 0 its budget)]
 //       [--scene-pixels MP (the budget, render3d::HIGH_SCENE_PIXELS)] [--upscale cubic|bilinear]
 //       [--walk-frames DIR --walk-path strafe|turn|forward --walk-count N --walk-turn PX (a walk from --plan-eye
@@ -1319,6 +1320,8 @@ fn main() {
     render3d::planar_scale = whole(argv, "--planar-size", 3) as i32;
     render3d::planar_least_wide = whole(argv, "--planar-wide", 1600) as i32;
     render3d::mirror_cheap = flag_value(argv, "--mirror-cheap") > 0 && argv[flag_value(argv, "--mirror-cheap")] == "on";
+    let edge_fill = flag_value(argv, "--mirror-edge-fill");
+    render3d::mirror_edge_fill = edge_fill > 0 && argv[edge_fill] == "on";
     // Native unless --scene-scale or --scene-pixels asks for less (N cycles them).
     var scene_k = number(argv, "--scene-scale", if has(argv, "--scene-pixels") { 0.0 } else { 1.0 });
     let scene_budget = number(argv, "--scene-pixels", render3d::HIGH_SCENE_PIXELS / 1.0e6) * 1.0e6;

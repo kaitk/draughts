@@ -463,7 +463,12 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
     g.pre_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT), pre, solid);
     g.ssao = gfx::pipeline(full, embed_shader("frag", shaders::SSAO_FRAG));
     g.ssao_blur = gfx::pipeline(full, embed_shader("frag", shaders::SSAO_BLUR_FRAG));
-    g.planar_resolve = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_RESOLVE_FRAG));
+    if render3d::mirror_edge_fill {
+        g.planar_edge = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_EDGE_FRAG));
+        g.planar_resolve = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_EDGE_FILL, shaders::PLANAR_RESOLVE_FRAG));
+    } else {
+        g.planar_resolve = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_RESOLVE_FRAG));
+    }
     g.planar_show = gfx::pipeline(full, embed_shader("frag", shaders::TONE_FN, shaders::PLANAR_SHOW_FRAG));
     g.planar_mip = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_MIP_FRAG));
     g.planar_sampler = gfx::sampler(gfx::SamplerDesc { wrap_u: gfx::CLAMP, wrap_v: gfx::CLAMP, wrap_w: gfx::CLAMP });
@@ -480,6 +485,7 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     if g.planar_map.id == 0 || g.planar_size.x != q.x || g.planar_size.y != q.y {
         if g.planar_map.id != 0 {
             for t in [g.planar_color, g.planar_depth, g.planar_map] { gfx::release(t); }
+            if g.planar_edge_rows.id != 0 { gfx::release(g.planar_edge_rows); }
             gfx::flush();
         }
         g.planar_color = gfx::render_target(q.x, q.y, gfx::RGBA16F);
@@ -487,6 +493,7 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
         g.planar_map = gfx::texture(gfx::TextureDesc { format: gfx::RGBA16F, usage: gfx::COLOR_TARGET | gfx::SAMPLED,
                                                        width: q.x as i32, height: q.y as i32,
                                                        mips: render3d::PLANAR_MIPS as i32 });
+        if g.planar_edge.id != 0 { g.planar_edge_rows = gfx::render_target(q.x, 1, gfx::R32F); }
         g.planar_size = q;
     }
     var pass = gfx::PassDesc { depth: g.planar_depth, color_value: float4 { 0.0, 0.0, 0.0, 1.0 } };
@@ -531,12 +538,20 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     draw_room_group(g, clip, surfaces, g.planar_lace, render3d::GROUP_LACE, false, false);
     gfx::end_pass();
     g.frame = kept;
+    if g.planar_edge.id != 0 {
+        gfx::begin_pass(g.planar_edge_rows, gfx::Texture { 0 }, float4_0);
+        gfx::bind(g.planar_edge);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.planar_depth, g.linear);
+        gfx::draw(3);
+        gfx::end_pass();
+    }
     var into = gfx::PassDesc { clear_color: false };
     into.color[0] = g.planar_map;
     gfx::begin_pass(into);
     gfx::bind(g.planar_resolve);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.planar_color, g.linear);
     gfx::bind_texture(gfx::FRAGMENT, 1, g.planar_depth, g.linear);
+    if g.planar_edge.id != 0 { gfx::bind_texture(gfx::FRAGMENT, 2, g.planar_edge_rows, g.linear); }
     gfx::uniforms(gfx::FRAGMENT, 0, resolve);
     gfx::draw(3);
     gfx::end_pass();
@@ -1674,7 +1689,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
                     own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.floor_noise, g.scratch_tile, g.wall_albedo,
                     g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.corner_map,
                     g.table_map, g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color,
-                    g.planar_depth, g.planar_map, g.scene_image];
+                    g.planar_depth, g.planar_map, g.planar_edge_rows, g.scene_image];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
                    g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.window_vb, g.window_ib, g.outside_vb, g.outside_ib, g.haze_panes];
@@ -1684,7 +1699,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_floor, g.room_walls, g.room_metals, g.bake_room, g.room_glass, g.room_lace, g.outside, g.bloom_pick, g.bloom_blur, g.bloom_add,
                      g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.planar_walls, g.planar_metals, g.planar_glass, g.planar_lace, g.planar_table,
-                     g.planar_resolve, g.planar_show, g.planar_mip, g.upscale, g.upscale_cubic];
+                     g.planar_resolve, g.planar_edge, g.planar_show, g.planar_mip, g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     release_hdr(own, g);
     for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { gfx::release(p); } }

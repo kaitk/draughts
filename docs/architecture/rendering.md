@@ -696,7 +696,10 @@ board's light:
   level above (`PLANAR_MIP_FRAG`, a pass a level), so a window's bar reads the same
   wherever it falls on their texels. Above the floor's far edge, the resolve fills
   undrawn texels from farther down the same column. The floor samples that fill when
-  the reflection blur crosses the edge. The floor
+  the reflection blur crosses the edge. The light tuner's `--mirror-edge-fill on`
+  preview (off by default, gfx only) records the first covered depth row per column
+  in a one-row R32F target. The resolve extends that row into the empty texels above it
+  and uses the standard search for holes below it. The floor
   (`PLANAR_FLOOR`'s `planar_seen`) finds the point its flat reflection shows along the wax
   film's normal (its board's tilt and cup, a quarter of the grain), at the distance the
   map's second mip gives, blurred by the film (half the oak's roughness) as wide as its
