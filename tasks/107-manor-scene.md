@@ -574,15 +574,34 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       within the rounds' spread, measured on a loaded machine (corner 85.4-89.3 →
       89.2-90.1 ms, menu 88.9-91.7 → 91.9-94.1 at 3840 × 2160, all others' builds running).
 
-- [ ] The tie-back made real (the user, 2026-11-23; `build/notes/lace-cord/`, the reference
-      `user-ref-tieback.png`): the loop sags so the knot hangs several cm lower at the front
-      than at the back and the hook (a tilted ring, analytic, the cloth gathered round it; the
-      lace pattern may move); the cord hidden where it passes behind the gathered lace (the
-      bundle's opacity raised near the tie, or the cord not drawn behind it); the cord ivory
-      like the lace, not white. Shots beside the reference before anything else
-  - [x] The cord ivory (2026-11-23, `build/notes/lace-cord-ivory/`): the lace's thread at
-        half its linear albedo, from three quarters; only the tie-backs and their floor
-        reflections change, the board's view and straight down byte-identical
+- [x] The tie-back made real (2026-11-23, `build/notes/tieback-real/`).
+  - [x] The ivory cord (`build/notes/lace-cord-ivory/`): the lace's thread at half its
+        linear albedo, from three quarters.
+  - [x] The tilted ring sets the cord and the cloth's pinch in one plane, with the knot
+        about 8 cm below the opposite point of the ring. The lace pattern follows the
+        gathered cloth along the drop. The ring step keeps the triangle counts.
+  - [x] The return arc is omitted behind the gathered lace, with its ends tucked into
+        the folds. Opaque triangles drop from 40,182 to 38,262 and glass and lace stay
+        at 12,540. Both middle-window panels have before, ring and hidden-return shots
+        at 3840 × 2160 beside the reference.
+  - The board and straight-down tuner shots are byte-identical at both sizes. The actual
+    Mac game differs by at most two RGB levels, against four for a repeat of the same
+    baseline. In the corner, room and menu views, the ties, lace patterns and their faint
+    reflections account for the differences. The largest levels / pixels over eight
+    are 222 / 101,895, 226 / 102,876 and 210 / 336,459 at 3840 × 2160, and
+    233 / 196,805, 231 / 201,723 and 209 / 688,576 at 5120 × 2880.
+  - Mac light tuner, two alternating rounds under the quiet lock, last three
+    half-second samples of each run. The 5120 × 2880 results varied by up to 7.33 ms
+    between runs of one build, so the lower corner and room averages are inconclusive.
+
+    | View | 3840 × 2160 before → after (ms) | 5120 × 2880 before → after (ms) |
+    | --- | ---: | ---: |
+    | Straight down | 10.82 → 10.75 | 28.97 → 28.93 |
+    | Corner | 15.57 → 15.77 | 31.62 → 28.62 |
+    | Room | 15.08 → 15.33 | 26.77 → 23.97 |
+    | Menu | 14.63 → 15.08 | 23.70 → 24.00 |
+
+  - Both Mac apps build and the tests pass with NGFX set. ADB found no USB device.
 - [ ] The lace in shade, open questions (`build/notes/lace-shade/trials.html`): a cooler
       tint in shade; trial 1 (more opacity at grazing angles) and trial 4 (motif against
       net), only if the user wants more after the defaults of 2026-11-23

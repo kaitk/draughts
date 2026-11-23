@@ -510,8 +510,20 @@ fn tie_back(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     hug_ring(tie, seed, ring);
     let knot = ring[0];
     var round: float3[..TIE_LOOP] = [];
-    for i in 1..TIE_LOOP { round.push(ring[i] * mirror); }
-    tube(verts, indices, b, round[..], CORD_RADIUS, 8, false, cord);
+    var outer = 1;
+    var inner = 1;
+    for i in 1..TIE_LOOP {
+        round.push(ring[i] * mirror);
+        if ring[i].x > ring[outer].x { outer = i; }
+        if ring[i].x < ring[inner].x { inner = i; }
+    }
+    // Omit the window-side arc between the bundle's outer and inner edges.
+    // Tuck each cut end back into the fold so it disappears at the edge.
+    let tuck = float3 { 2.5 * CORD_RADIUS, 2.5 * CORD_RADIUS * tie.slope.x, 0.0 };
+    round[outer - 1] = (ring[outer] - tuck) * mirror;
+    round[inner - 1] = (ring[inner] + tuck) * mirror;
+    let hidden = int2 { (outer - 1) as i32, (inner - 1) as i32 };
+    tube(verts, indices, b, round[..], CORD_RADIUS, 8, false, cord, hidden);
     // The run from the knot where it lies on this panel, the move less toward the crook.
     var run: float3[..20] = [];
     for p, i in tie.run { run.push((p + (knot - tie.run[0]) * (1.0 - i as f32 / TIE_RUN)) * mirror); }
@@ -714,9 +726,10 @@ fn tassel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, t
 
 // A tube of radius r round the polyline pts (metres in b's frame), `sides` round,
 // closed into a loop or open; its uv round it (0 to 1, the seam doubled) and along it
-// (metres), for the cord's twist.
+// (metres), for the cord's twist. If a span is hidden, end the two visible runs at
+// points under the cloth and keep the twist continuous across the gap.
 fn tube(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pts: float3[], r: f32, sides: i64, closed: bool,
-        mat: f32) {
+        mat: f32, hidden: int2 = int2_0) {
     let k = m();
     let n = pts.len;
     let base = verts.len as u32;
@@ -729,10 +742,11 @@ fn tube(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pts
         let lift = if abs(t.y) > 0.9 { float3 { 1.0, 0.0, 0.0 } } else { float3 { 0.0, 1.0, 0.0 } };
         let a = normalize(cross(t, lift));
         let c = cross(a, t);
+        let radius = if hidden.x < hidden.y && (i == hidden.x || i == hidden.y) { 0.0 } else { r };
         for j in sides + 1 {
             let ang: f32 = TAU * j / sides;
             let d = a * cos(ang) + c * sin(ang);
-            let q = (p + d * r) * k;
+            let q = (p + d * radius) * k;
             verts.push(mesh::Vertex { surfaces::world(b, q.x, q.y, q.z), surfaces::world_normal(b, d),
                                       float2 { (j as f32) / sides, along }, 1.0, mat });
         }
@@ -740,6 +754,7 @@ fn tube(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pts
     let rings = if closed { n } else { n - 1 };
     let ring = sides + 1;
     for i in rings {
+        guard i < hidden.x || i >= hidden.y else { continue; }
         let r0 = base + (i * ring) as u32;
         let r1 = base + (((i + 1) % n) * ring) as u32;
         for j in sides {

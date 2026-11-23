@@ -913,6 +913,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   shifts along the drop because its vertical texture coordinate follows the cloth from
   the hem. The existing chain solve supplies the slack run to the hook and the tails
   are laid against the panel below the lowered knot.
+- The return arc disappears behind the gathered lace (2026-11-23, task 107,
+  `build/notes/tieback-real/`). This replaces drawing the full loop around the fold hull
+  in the 2026-11-23 entry on drawing the loop tight. The cord mesh leaves out the
+  window-side arc between the bundle's two sides and tucks the ends into the folds.
+  This matches the reference's disappearing strand and preserves the lace's mesh and
+  motif. Increasing the lace's opacity would also darken the view through the gathered
+  folds.
 - The curtains' folds hang round at the hem (2026-11-21): from 0.83 m down a panel has
   12 columns a fold, not 6 (whose hexagon read as a zigzag of points seen from above),
   and the hem's line lifts at each fold's turn, scalloping between them. The two grids
