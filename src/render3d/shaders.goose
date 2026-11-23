@@ -7473,12 +7473,65 @@ let TREE_LIGHT_FN = """
     }
     vec4 tree_out(vec3 c) {
         c *= tree_look.x;
+    #ifdef TREE_CARD
+        return vec4(c, 1.0);
+    #else
     #ifdef HDR_OUT
         return vec4(room_toe(c), 1.0);
     #else
         c = tonemap(c) * vec3(1.02, 1.0, 0.97);
         float n = tree_hash(floor(gl_FragCoord.xy)) - 0.5;
         return vec4((tree_encode(c) + n / 255.0) * (1.0 - screen.z), 1.0);
+    #endif
+    #endif
+    }
+    """;
+
+// The tree's card (task 107's T5, render3d::tree_card): the geometry drawn once, still, into
+// an RGBA16F picture from one eye (render3d::TREE_CARD_EYE), its light exposed with no toe
+// and premultiplied by its coverage (TREE_CARD in tree_out), multisampled and resolved; then
+// one quad at the crown's middle depth drawn in the view out's place in the pass, for the
+// floor's mirror and a phone's view. CARD_VERT puts the quad's corners (render3d's
+// TreeCardBlock, the room's frame turned as now) an eighth of the way from the eye, as the
+// view out's band and oak, so it lands where it is and the room hides it. CARD_FRAG gives
+// its light out as OUTSIDE_MAIN gives the view out's: in the mirror the light itself, in HDR
+// with the toe taken off, else tonemapped and dithered.
+let TREE_CARD = "#define TREE_CARD 1\n";
+let CARD_VERT = """
+    layout(set = 1, binding = 1) uniform TreeCard { vec4 card_corners[4]; };
+    layout(location = 0) out vec2 v_uv;
+    const int CARD_CORNER[6] = int[6](0, 1, 2, 0, 2, 3);
+    const vec2 CARD_UV[4] = vec2[4](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0), vec2(0.0, 1.0));
+    void main() {
+        int k = CARD_CORNER[gl_VertexIndex];
+        vec3 w = card_corners[k].xyz;
+        v_uv = CARD_UV[k];
+        vec3 pos = eye.xyz + (w - eye.xyz) * 0.125;
+        gl_Position = view_proj * vec4(pos, 1.0);
+    }
+    """;
+let CARD_FRAG = """
+    layout(set = 2, binding = 0) uniform sampler2D tree_card;
+    layout(set = 3, binding = 1) uniform Outside { vec4 exposure; vec4 sun_disc; vec4 sun_glare; vec4 sun_tree; };
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    vec3 card_encode(vec3 c) {
+        c = clamp(c, 0.0, 1.0);
+        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+    }
+    void main() {
+        vec4 t = texture(tree_card, v_uv);
+        vec3 c = t.rgb / max(t.a, 1e-4);
+        if (exposure.z > 0.0) {
+            result = vec4(mirror_light(c * exposure.z) * t.a, t.a);
+            return;
+        }
+    #ifdef HDR_OUT
+        result = vec4(room_toe(c) * t.a, t.a);
+    #else
+        c = tonemap(c) * vec3(1.02, 1.0, 0.97);
+        float n = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+        result = vec4((card_encode(c) + n / 255.0) * t.a * (1.0 - screen.z), t.a);
     #endif
     }
     """;

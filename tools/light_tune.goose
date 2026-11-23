@@ -40,7 +40,8 @@
 //       [--tree-draw off|wood|all (the tree outside drawn as geometry, render3d::TREE_DRAWS; off; on, its shadow grown whole too)
 //       --tree-light SUN,SKY,THROUGH,FORWARD (2.5,1,0.35,0.6) --tree-look SHADE,TWIG_PX,SPREAD (1,1,0.15)
 //       --tree-tint TINT,LEAVES,BARK,DEEPER (0.2,1,1,0.6)
-//       --tree-wind off|on (the shadow's wind on the geometry, the leaves fluttering in HDR; off) --tree-flutter DEG,RATE (6,9)]
+//       --tree-wind off|on (the shadow's wind on the geometry, the leaves fluttering in HDR; off) --tree-flutter DEG,RATE (6,9)
+//       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)]
 //       [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
@@ -1600,6 +1601,11 @@ fn main() {
     render3d::tree_wind = pick(argv, "--tree-wind", render3d::TREE_WINDS, 0) == 1;
     let flutter = four(argv, "--tree-flutter", float4 { render3d::tree_flutter.x, render3d::tree_flutter.y, 0.0, 0.0 });
     render3d::tree_flutter = float2 { flutter.x, flutter.y };
+    // --tree-card off|on|main: the tree's card (render3d::tree_card, T5), drawn once from the
+    // geometry: on in the floor's mirror (and a phone's view), main in the main view too in
+    // place of the geometry, to compare. It is drawn from the tree, so it grows it all.
+    render3d::tree_card = pick(argv, "--tree-card", render3d::TREE_CARDS, render3d::CARD_OFF);
+    if render3d::tree_card != render3d::CARD_OFF && render3d::tree_draw == render3d::TREE_OFF { render3d::tree_draw = render3d::TREE_ALL; }
     let grown = if render3d::tree_draw != render3d::TREE_OFF { 1 } else { 0 };
     render3d::tree_grown_whole = pick(argv, "--tree-grow", TREE_GROWS, grown) == 1;
     var top = pick(argv, "--table-top", TOPS, 0);
@@ -1709,6 +1715,7 @@ fn main() {
             guard gfx::screenshot(argv[shot]) else { abort(str("could not save ", argv[shot])); }
             if g.tree_ms > 0.0 { print("the tree baked in ", g.tree_ms, " ms"); }
             if g.tree.ms > 0.0 { print("the tree's geometry made in ", g.tree.ms, " ms"); }
+            if g.tree.card_ms > 0.0 { print("the tree's card drawn in ", g.tree.card_ms, " ms (the GPU waited for)"); }
             let oak = flag_value(argv, "--dump-oak");
             if oak > 0 && g.room_baked {
                 dump_rgb(g.floor_albedo, g.room_side, str(argv[oak], "-floor.ppm"));

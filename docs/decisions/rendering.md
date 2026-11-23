@@ -2104,6 +2104,22 @@ to be is in tasks 042, 059, 071, 081, and 086.
   +0.05 to 0.1 ms over the still geometry. Rejected: following the noise wind's ruffle
   (it reshapes the flecks rather than moving them, so no geometry can follow it; the
   flutter stands in for it).
+- The maple's card: the geometry drawn once into a picture for the floor's mirror and for
+  phones, behind the light tuner's `--tree-card off|on|main`, default off (2026-11-24,
+  task 107's T5; `render3d::make_tree_card`, `shaders::TREE_CARD`, `CARD_VERT`,
+  `CARD_FRAG`, `build/notes/tree/wind-card.html`). 1024 × 768 RGBA16F with mips (8.4 MB),
+  premultiplied coverage, light exposed with no toe; drawn 4× multisampled from the main
+  menu's eye (`TREE_CARD_EYE`) onto a plane at the leaves' mean depth, cut to what the
+  windows show from that eye and from the mirror's, in about 9-12 ms with the GPU waited
+  for, only when the tree is grown again or its light or the sun's direction changes.
+  Drawn as one quad an eighth of the way from the eye, as the view out's pictures are, and
+  given out as the view out is (the mirror's light, the HDR's toe, or tonemapped and
+  dithered). It takes the place of W4's planned CPU-baked layers, which were never built.
+  Still (no wind) and from one eye, so far from the menu's eye its parallax is wrong, and
+  at 3840 wide a card texel covers 4 to 6 pixels, too soft for a desktop's main view; in
+  the mirror +0.2 ms, in the main view +0.55 ms (3840 × 2160) to +0.95 ms (5120 × 2880) on
+  the M1 Pro, more than the geometry (+0.05). The card in a phone's main view is the
+  intent; a phone has not measured it yet.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

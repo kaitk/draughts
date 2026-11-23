@@ -1005,6 +1005,16 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   by its flex. On the high tier (HDR) each leaf also turns a few degrees about its stalk
   (`--tree-flutter DEG,RATE`, 6 and 9); the standard tier's leaves hold still at the
   shadow's moment. Off, the pipelines are made without the wind and draw as before.
+- **The maple's card** (the light tuner's `--tree-card off|on|main`, off by default and in
+  the app; `render3d::make_tree_card`, `shaders::TREE_CARD`, `CARD_VERT`, `CARD_FRAG`):
+  the geometry drawn once, still, into a 1024 × 768 RGBA16F picture with premultiplied
+  coverage, 4× multisampled and resolved, with mips, from the main menu's eye onto a plane
+  at the leaves' mean depth. It is drawn again only when the tree is grown again or its
+  light or the sun's direction changes, never in the steady frame loop. It is drawn as one
+  quad in the view out's place: in the floor's mirror (`on`), and in the main view instead
+  of the geometry on a phone, which has no mirror, or with `main` to compare the two. Its
+  light leaves as the view out's does: the mirror's light, the HDR's toe, or tonemapped
+  and dithered.
 
 ### HDR and the depth of field's groundwork
 

@@ -137,8 +137,12 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
     gfx::begin_pass(pass);
     // The opaque tabletop covers the backdrop at every sample in this view.
     if !table_covers {
-        if outside { draw_outside(own, g); }
-        else if backdrop { draw_backdrop(own, g, 1.0); }
+        if outside {
+            draw_outside(own, g);
+            if render3d::tree_card_in_view(g) { draw_tree_card(own, g); }
+        } else if backdrop {
+            draw_backdrop(own, g, 1.0);
+        }
     }
 
     let h .= g.hdr_pipes;
@@ -512,6 +516,7 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     if render3d::outside_shown(g) {
         g.frame = plain;
         draw_outside(own, g, true);
+        if render3d::tree_card_in_mirror(g) { draw_tree_card(own, g, true); }
     }
     g.frame = clip;
     let surfaces = render3d::mirror_surfaces_block(g);
@@ -1124,6 +1129,94 @@ fn draw_tree(own: Own&, g: render3d::Gpu&) {
     gfx::bind_vertex_buffer(t.wood_vb);
     gfx::bind_index_buffer(t.wood_ib, 4);
     gfx::draw_indexed(t.ribbon_count, 1, t.ribbon_first, 0, 0);
+}
+
+// The tree's card (render3d::tree_card): the pipelines the first time, then the geometry,
+// still, its light exposed with no toe (shaders::TREE_CARD), into a 4× multisampled RGBA16F
+// target cleared to nothing, resolved into the card, whose mips follow; the multisampled
+// targets given back after. Outside a pass, the frame's block `f` the card's.
+fn tree_card_pass(own: Own&, g: render3d::Gpu&, f: render3d::Frame, b: render3d::TreeBlock) {
+    let t .= g.tree;
+    if t.card_tube.id == 0 {
+        let tube_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_WOOD_VERT);
+        let ribbon_vs = embed_shader("vert", shaders::TREE_RIBBON, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN,
+                                     shaders::TREE_WOOD_VERT);
+        let leaf_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_LEAF_VERT);
+        t.card_tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::TREE_CARD, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                                          shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG),
+                                    gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
+        t.card_ribbon = gfx::pipeline(ribbon_vs, embed_shader("frag", shaders::TREE_RIBBON, shaders::TREE_CARD, shaders::FS_SET, shaders::FRAME,
+                                                              shaders::TREE_HEAD, shaders::TONE_FN, shaders::TREE_LIGHT_FN,
+                                                              shaders::TREE_WOOD_FRAG),
+                                      gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED });
+        t.card_leaf = gfx::pipeline(leaf_vs, embed_shader("frag", shaders::TREE_CARD, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                                          shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG),
+                                    gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true });
+        let card_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::CARD_VERT);
+        let over = gfx::PipelineDesc { cull: gfx::CULL_NONE, blend: gfx::BLEND_PREMULTIPLIED };
+        t.card_draw = gfx::pipeline(card_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TONE_FN, shaders::CARD_FRAG), over);
+        t.hdr_card_draw = gfx::pipeline(card_vs, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TONE_FN,
+                                                              shaders::CARD_FRAG), over);
+    }
+    let w = render3d::TREE_CARD_W;
+    let h = render3d::TREE_CARD_H;
+    if t.card.id == 0 {
+        t.card = gfx::texture(gfx::TextureDesc { format: gfx::RGBA16F, usage: gfx::COLOR_TARGET | gfx::SAMPLED, width: w as i32,
+                                                 height: h as i32, mips: trees::mips_of(w, h) as i32 });
+    }
+    let color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA16F, usage: gfx::COLOR_TARGET, width: w as i32, height: h as i32,
+                                                samples: SAMPLES });
+    let depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH16, usage: gfx::DEPTH_TARGET, width: w as i32, height: h as i32,
+                                                samples: SAMPLES });
+    var pass = gfx::PassDesc { depth: depth, color_value: float4_0 };
+    pass.color[0] = color;
+    pass.resolve[0] = t.card;
+    gfx::begin_pass(pass);
+    gfx::bind(t.card_tube);
+    gfx::bind_texture(gfx::FRAGMENT, 0, t.bark, g.aniso);
+    gfx::uniforms(gfx::VERTEX, 0, f);
+    gfx::uniforms(gfx::FRAGMENT, 0, f);
+    gfx::uniforms(gfx::VERTEX, 1, b);
+    gfx::uniforms(gfx::FRAGMENT, 1, b);
+    gfx::bind_vertex_buffer(t.wood_vb);
+    gfx::bind_index_buffer(t.wood_ib, 4);
+    gfx::draw_indexed(t.tube_count);
+    if t.leaf_count > 0 {
+        gfx::bind(t.card_leaf);
+        gfx::bind_storage_buffer(gfx::VERTEX, 0, t.leaves);
+        gfx::bind_texture(gfx::FRAGMENT, 0, t.leaf_shape, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 1, t.leaf_marks, g.aniso);
+        gfx::uniforms(gfx::VERTEX, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 0, f);
+        gfx::uniforms(gfx::VERTEX, 1, b);
+        gfx::uniforms(gfx::FRAGMENT, 1, b);
+        gfx::draw_instanced(6, t.leaf_count);
+    }
+    gfx::bind(t.card_ribbon);
+    gfx::uniforms(gfx::VERTEX, 0, f);
+    gfx::uniforms(gfx::FRAGMENT, 0, f);
+    gfx::uniforms(gfx::VERTEX, 1, b);
+    gfx::uniforms(gfx::FRAGMENT, 1, b);
+    gfx::bind_vertex_buffer(t.wood_vb);
+    gfx::bind_index_buffer(t.wood_ib, 4);
+    gfx::draw_indexed(t.ribbon_count, 1, t.ribbon_first, 0, 0);
+    gfx::end_pass();
+    gfx::generate_mips(t.card);
+    gfx::release(color);
+    gfx::release(depth);
+}
+
+// The tree's card in the view out's place, over it (render3d::tree_card_in_view,
+// tree_card_in_mirror); the mirror's in its own light, as the view out there.
+fn draw_tree_card(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
+    let t = g.tree;
+    gfx::bind(if g.hdr && !in_mirror { t.hdr_card_draw } else { t.card_draw });
+    gfx::bind_texture(gfx::FRAGMENT, 0, t.card, g.linear);
+    gfx::uniforms(gfx::VERTEX, 0, g.frame);
+    gfx::uniforms(gfx::VERTEX, 1, render3d::tree_card_block(g));
+    gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+    gfx::uniforms(gfx::FRAGMENT, 1, render3d::outside_block(g, in_mirror));
+    gfx::draw(6);
 }
 
 // The dust in the sunbeam over the open pass's target, added, hidden by what stands
@@ -1796,10 +1889,13 @@ fn release(own: Own&, g: render3d::Gpu&) {
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     release_hdr(own, g);
     for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { gfx::release(p); } }
-    for t in [g.hdr_image, g.scene_depth, g.tree.bark, g.tree.leaf_shape, g.tree.leaf_marks] { if t.id != 0 { gfx::release(t); } }
+    for t in [g.hdr_image, g.scene_depth, g.tree.bark, g.tree.leaf_shape, g.tree.leaf_marks, g.tree.card] { if t.id != 0 { gfx::release(t); } }
     for t in g.glow_levels { if t.id != 0 { gfx::release(t); } }
     for b in [g.tree.wood_vb, g.tree.wood_ib, g.tree.leaves] { if b.id != 0 { gfx::release(b); } }
-    for p in [g.tree.tube, g.tree.ribbon, g.tree.hdr_tube, g.tree.hdr_ribbon, g.tree.leaf, g.tree.hdr_leaf] { if p.id != 0 { gfx::release(p); } }
+    for p in [g.tree.tube, g.tree.ribbon, g.tree.hdr_tube, g.tree.hdr_ribbon, g.tree.leaf, g.tree.hdr_leaf, g.tree.card_tube,
+              g.tree.card_ribbon, g.tree.card_leaf, g.tree.card_draw, g.tree.hdr_card_draw] {
+        if p.id != 0 { gfx::release(p); }
+    }
     gfx::flush();
     g = default<render3d::Gpu>();
 }

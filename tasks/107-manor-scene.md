@@ -695,7 +695,10 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       T2 and T3 done on the branch `tree-gpu` (2026-11-23, `build/notes/tree/gpu.html`),
       behind the tuner's `--tree-draw off|wood|all`, default off. T4 (wind) done on the
       branch `tree-wind-card` (2026-11-24, `build/notes/tree/wind-card.html`), behind
-      `--tree-wind off|on`, default off; T5 (the phone's card) next. Open: alpha-to-coverage (the leaves are cut by a dithered alpha
+      `--tree-wind off|on`, default off; T5 (the phone's card) done there too, behind
+      `--tree-card off|on|main`, default off. Open: whether the card is wanted in the
+      main view on a desktop (soft, and slower than the geometry there), its cost on a
+      phone, and its eye for the mirror. Open: alpha-to-coverage (the leaves are cut by a dithered alpha
       test; goose_gfx's branch `alpha-to-coverage` ready, not pushed), the colour (tint
       +0.2, the light through 0.35 of the sun), the density, and whether the near maple's
       picture still draws behind
@@ -717,6 +720,13 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       byte-identical. Between wind times 0 and 0.7 s the crown in the menu view moves 0.3 px
       (the room's wind) and 2.0 px (4× the wind); the geometry still, it moves 0.00 px while
       the flecks change. Tests pass with NGFX, both apps build; ngfx by compiling only
+    - T5, the card: 1024 x 768 RGBA16F with mips, 8.4 MB (the 4× targets of its drawing,
+      31 MB, given back after); drawn in 9-12 ms with the GPU waited for, when the tree or
+      its light changes. Frames, off / card in the mirror (on) / card in the main view too
+      (main): 3840 x 2160 down 10.90 / 10.90 / 10.92, corner 15.10 / 15.18 / 15.22, room
+      14.27 / 14.32 / 14.50, menu 13.40 / 13.58 / 13.95; 5120 x 2880 down 19.45 / 19.10 /
+      19.43, corner 24.67 / 24.77 / 24.97, room 22.95 / 23.07 / 23.43, menu 22.28 / 22.48 /
+      23.23. Off, byte-identical as above
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

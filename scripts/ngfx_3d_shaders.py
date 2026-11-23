@@ -164,6 +164,16 @@ MODULES = [
        [*hdr, "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_LEAF_FRAG"])
       for name, wind, hdr in [("r3d_tree_leaf", [], []), ("r3d_hdr_tree_leaf", [], ["HDR_OUT"]),
                               ("r3d_tree_leaf_wind", ["TREE_WIND"], []), ("r3d_hdr_tree_leaf_wind", ["TREE_FLUTTER"], ["HDR_OUT"])]],
+    # Its card (render3d::tree_card): the geometry, still, drawn into it (shaders::TREE_CARD),
+    # and the card drawn in the view out's place, 8-bit (the mirror's too) and HDR.
+    ("r3d_tree_card_tube", ["VS_SET", "FRAME", "TREE_HEAD", "TREE_FN", "TREE_WOOD_VERT"],
+     ["TREE_CARD", "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_WOOD_FRAG"]),
+    ("r3d_tree_card_ribbon", ["TREE_RIBBON", "VS_SET", "FRAME", "TREE_HEAD", "TREE_FN", "TREE_WOOD_VERT"],
+     ["TREE_RIBBON", "TREE_CARD", "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_WOOD_FRAG"]),
+    ("r3d_tree_card_leaf", ["VS_SET", "FRAME", "TREE_HEAD", "TREE_FN", "TREE_LEAF_VERT"],
+     ["TREE_CARD", "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_LEAF_FRAG"]),
+    ("r3d_tree_card_draw", ["VS_SET", "FRAME", "CARD_VERT"], ["FS_SET", "FRAME", "TONE_FN", "CARD_FRAG"]),
+    ("r3d_hdr_tree_card_draw", ["VS_SET", "FRAME", "CARD_VERT"], ["HDR_OUT", "FS_SET", "FRAME", "TONE_FN", "CARD_FRAG"]),
     # The depth of field's depth (render3d::depth_pass) and the tuner's view of it.
     ("r3d_depth_room", ROOM_VS, ["EMPTY_FRAG"]),
     ("r3d_depth_table", TABLE_VS, ["EMPTY_FRAG"]),
