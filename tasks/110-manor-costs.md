@@ -390,6 +390,30 @@ of need; the biggest cost first, when it shows.
   is short of, and makes MSAA harder. With many small lights (candles, a chandelier) a
   tiled or clustered forward pass would be the step instead.
 
+## Next, by tool (2026-11-23; `build/notes/plans/next-2026-11-24.md`)
+
+Measure under `agents/perf.md` (the atomic quiet lock; re-baseline the four views first,
+the last numbers were disturbed by parallel jobs). Codex takes the measurable ones whose
+look must stay identical; the look-changing ones go behind a tuner flag for the user.
+
+- [ ] The mirror's scissor retried with the floor's corners turned with the room
+      (`b75892aa` rejected it with the unturned corners fixed in `6aa05f8d`; the thin-strip
+      view saved 1.06 ms at 4K with 64 texels). Prompt: `build/notes/plans/codex-02-mirror-rect.txt`
+- [ ] The glass and the lace split into two shaders and two draws, after the tie-back work.
+      Prompt: `build/notes/plans/codex-04-glass-lace-split.txt`
+- [ ] SSAO faster and steadier: a half-size depth-only prepass (positions and normals from
+      depth, or last frame's depth reprojected), a steadier upsample, a cheaper read-back; GTAO
+      only if it pays. Fixes its grain on bright surfaces (the door behind its handle, the
+      sills) and its shimmer in motion. 2.7 ms in the corner view at 4K, passes 1.2-1.4.
+      Prompt: `build/notes/plans/codex-05-ssao.txt`
+- [ ] What runs with nothing on screen using it: the view out, shadow maps, glow, haze; the
+      game's view and near-table menu shots. Then the mirror world simplified (crude shapes,
+      each material's dominant colour, baked light; no small props ever), as a flagged trial
+- [ ] The floor's remaining shading: the sun through the windows (5.9 ms straight down at
+      4K before the pieces), the mirror lookup (2.5), the probes (2.3), the corners' map
+      (2.4 straight down only, to check). The oak's textures are not the cost
+      (`build/notes/oak-textures/`: RG8 and compression save memory, not time)
+
 ## Acceptance criteria
 
 - [ ] Each cost above measured on the Mac and the A33 (task 071's way for memory)

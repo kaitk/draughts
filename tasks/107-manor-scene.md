@@ -488,7 +488,7 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       16.6 to 15.6, menu 15.7 to 15.1, corner 17.7 to 16.5 (5K 29.4 to 27.4); the floor's
       box reflection (six probe taps) left out where the mirror covers it, at most 1 level:
       straight down 12.4 to 11.3 (5K 21.4 to 19.5), room 15.4 to 15.1, corner 16.3 to 15.9
-- [ ] The floor's joints eased (shell.md's "Floor joints"; the tuner's `--floor-joints
+- [x] The floor's joints eased: tried and parked 2026-11-23, both removed (decision, `6cf9cccf`) (shell.md's "Floor joints"; the tuner's `--floor-joints
       flat|eased`, flat the default, `build/notes/floor-perf/joints.html`): deep (each board's
       edge rounded over 2.5 mm, the normal's full slope, the gap darker) was very aliased and far
       too strong. Eased: the edge's normal tilted 0.08 at the gap, faded out as a pixel grows past
@@ -574,6 +574,15 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       within the rounds' spread, measured on a loaded machine (corner 85.4-89.3 →
       89.2-90.1 ms, menu 88.9-91.7 → 91.9-94.1 at 3840 × 2160, all others' builds running).
 
+- [ ] The tie-back made real (the user, 2026-11-23; `build/notes/lace-cord/`, the reference
+      `user-ref-tieback.png`): the loop sags so the knot hangs several cm lower at the front
+      than at the back and the hook (a tilted ring, analytic, the cloth gathered round it; the
+      lace pattern may move); the cord hidden where it passes behind the gathered lace (the
+      bundle's opacity raised near the tie, or the cord not drawn behind it); the cord ivory
+      like the lace, not white. Shots beside the reference before anything else
+- [ ] The lace in shade, open questions (`build/notes/lace-shade/trials.html`): a cooler
+      tint in shade; trial 1 (more opacity at grazing angles) and trial 4 (motif against
+      net), only if the user wants more after the defaults of 2026-11-23
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)
