@@ -467,14 +467,11 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
         in that sweep. See the frame captures below. The reflection is two costs: drawing
         the mirror (about 1 ms, the passes) and the floor reading it (2.5 ms), so about
         3.5 ms in all.
-      - [ ] Next: an Xcode GPU frame capture of the straight-down view at 3840 × 2160 (not
-        Metal System Trace, which gives only time per pass): the floor pipelines' register
-        count and occupancy, the cost of each line, and their stall reasons (memory or
-        arithmetic). Then the fix by what it shows: the floor's work split further by area
-        (as the sun's pieces did), or the per-pixel reads (the probes, the corners' map, the
-        mirror's taps) made cheaper. Profiling on the RTX 4090 (Nsight) set aside for this:
-        a different GPU kind (immediate-mode, not tile-based) and far faster, so it would
-        hide the cost. Brief: `build/notes/plans/claude-floor-capture.txt`
+      - [x] Captured straight down and from the corner at 3840 × 2160, decoded the
+        floor's compiler statistics, and measured the single and paired removals below.
+      - [ ] Replay the frames in Xcode for the floor draws' time, occupancy, line costs
+        and stall reasons. The Metal System Trace and RTX 4090 runs do not measure these
+        on the Mac. Brief: `build/notes/plans/claude-floor-capture.txt`
 
 ## Floor frame captures (2026-11-23)
 
@@ -492,9 +489,19 @@ pieces. They draw 75, 27 and 6 indices respectively in either capture.
 The numbers are Metal compiler statistics from the capture archives. The archive's
 pipeline descriptors link the draw states to their fragment MSL and the statistics.
 The instruction counts describe compiled code. The GPU may skip code on a given pixel.
-The three box-reflection `ROOM_FLOOR` variants were outside these two frames. The full
-non-HDR planar shader is in the bundle but does not draw. It has 128 temporary registers
-and zero spill bytes.
+A straight-down capture with `--planar 0,0,0,0` shows the three `ROOM_FLOOR`
+box-reflection HDR variants. They draw the same index counts in the fifth render
+encoder, also draws 5–7.
+
+| HDR fragment pipeline | Temporary registers | Uniform registers | Spill bytes | Instructions | ALU | Texture reads | Waits |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `SHARP_BOX` + `FLOOR_SHADE` + `FLOOR_NO_TABLE` | 100 | 256 | 0 | 5312 | 4594 | 40 | 44 |
+| `SHARP_BOX` + `FLOOR_NO_TABLE` | 128 | 256 | 32 | 8750 | 7643 | 53 | 64 |
+| `SHARP_BOX` with the table's map | 128 | 256 | 32 | 9175 | 7995 | 62 | 72 |
+
+The full non-HDR planar and box shaders also have 128 temporary registers.
+Their spill counts are 0 and 48 bytes respectively. The HDR floor uses the three
+pieces in each of the captures.
 
 For the dynamic numbers, open each trace in Xcode with **Profile GPU Trace** enabled.
 In **Performance**, select the three indexed draws in the main HDR encoder. Read the
@@ -530,18 +537,32 @@ for the floor's call to `window_open`, leaving the pieces and the table's shadow
 | Sun in lit pieces | 10.63 | 7.09 | 3.54 | 14.65 | 13.06 | 1.59 |
 | Mirror + probes | 10.66 | 8.30 | 2.36 | 14.88 | 13.78 | 1.09 |
 | Mirror + corners | 10.72 | 9.79 | 0.94 | 14.66 | 14.07 | 0.59 |
+| Mirror + sun | 10.96 | 6.90 | 4.06 | 15.06 | 13.28 | 1.78 |
+| Probes + corners | 10.76 | 8.40 | 2.37 | 15.00 | 13.89 | 1.11 |
+| Probes + sun | 10.77 | 6.58 | 4.19 | 14.95 | 12.92 | 2.03 |
+| Corners + sun | 10.84 | 7.08 | 3.76 | 14.93 | 13.16 | 1.78 |
 
 The single removals sum to 6.49 ms straight down on this baseline. The earlier
-5.9 ms sun measurement preceded the split into pieces. These measurements establish
-how much work the current sun and diffuse path can remove. They also show that the
-mirror's five RGB reads and the corners' sample together account for about a
-millisecond of that view. Relative to the sum of their singles, mirror + probes
-saves 0.19 ms less and mirror + corners saves 0.08 ms more.
+5.9 ms sun measurement preceded the split into pieces. All pairs except probes +
+sun are within 0.19 ms of additive down and 0.13 ms in the corner. Probes + sun save
+1.44 ms less than additive down and 0.48 ms less in the corner. With the sun code
+removed, removing the diffuse probes saves a further 0.65 ms down instead of 2.09
+and 0.44 ms in the corner instead of 0.92, comparing the paired savings. The
+register increase and the interaction implicate pressure in the lit variants.
 
-The remaining four pairs and the three optimization comparisons await a quiet
-GPU. An independently running tuner raised the down baseline to 22–25 ms during
-the first attempt. Those samples were discarded. The shader trials are scratch
-builds. Both Mac apps build and the NGFX-enabled tests pass.
+The diagnostic captures show which removals lower the registers. Changing the
+diffuse probes removes six static texture instructions and 134–147 ALU instructions
+from each lit shader. Temporary registers drop by 36–40. With the sun already
+removed, the probe removal drops the same draws by only zero to four registers.
+Replay's occupancy and limiter data can distinguish the effect of residency from
+the changed instruction and texture work.
+
+| 4K down, planar floor | Shade | Lit | Lit with table shadow |
+| --- | ---: | ---: | ---: |
+| Baseline | 72 | 116 | 128 |
+| Sun removed | 72 | 72 | 76 |
+| Diffuse probes removed | 68 | 80 | 88 |
+| Sun and probes removed | 68 | 68 | 76 |
 
 ### Bake-time floor lightmap proposal
 
@@ -558,11 +579,11 @@ the two single removals gives about 0.25 ms of shading for the bake before charg
 the render pass and mips. The existing bake in the 4K down shot took about 86 ms
 for the probes and radiosity and 309 ms for the corner chart.
 
-The two singles save 2.49 ms down and 1.23 ms in the corner in total. Assuming
-the effects add, estimate a net 1–2 ms down and 0.5–1 ms in the corner after the
-new lookup and any normal-dependent terms that stay. The combined trial will
-test that assumption. A second 2048² R8 texture for a static sun patch would
-use another 4.00 MiB at the base level, or 5.33 MiB with mips. Keep the tree's motion
+The combined probe and corner removal saves 2.37 ms down and 1.11 ms in the
+corner. Budget a net 1–2 ms down and 0.5–1 ms in the corner after the new lookup
+and any normal-dependent terms that stay. A second 2048² R8 texture for a static
+sun patch would use another 4.00 MiB at the base level, or 5.33 MiB with mips.
+Keep the tree's motion
 and the sun's view-dependent sheen analytic. Diffuse normal response and the
 resolution of cutouts need approval against the live look. See task 114 for the
 broader lighting bake.
