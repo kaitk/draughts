@@ -159,8 +159,8 @@ settings are in `%APPDATA%\kaitk\draughts\`. `test/run_tests.py` takes the Windo
 release there.
 
 The light tuner builds the same way, `python scripts/windows.py tools/light_tune.goose`
-→ `build/windows/light_tune.exe`, and runs from `tools/` with `--room-surfaces on
---outside on`; `--no-vsync` uncaps its frames, and Alt+F4 closes it. It asks for Vulkan as
+→ `build/windows/light_tune.exe`, and runs from `tools/` (the room's surfaces, the view
+out and GTAO on by default); `--no-vsync` uncaps its frames, and Alt+F4 closes it. It asks for Vulkan as
 the app does (`draughts_choose_gpu`, `src/native/display.c`).
 
 ## Run on Linux

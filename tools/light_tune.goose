@@ -60,7 +60,7 @@
 //       [--haze-toward K (the stripes K times softer again looking toward the sun)]
 //       [--halo K --halo-reach K (the pieces' darkening of the field round them: its strength, and its reach
 //       as a share; 0 or none the shader's own, shaders::OCC_FRAG's HALO and HALO_REACH, 1 and 1 today)]
-//       [--room-surfaces on|off] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
+//       [--room-surfaces on|off (on)] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
 //       [--outside on|off] [--outside-exposure K (rooms::Room's outside)]
 //       [--park off|ground|no-shading|no-leaves|no-grounding|no-shadows (the lawn and trees on the ground outside, PARK_NAMES)]
 //       [--eye X,Y,Z --at X,Y,Z (a camera of its own, world units)]
@@ -111,7 +111,7 @@
 //       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
 //       [--planar-size K (the floor mirror's scale, 3 a third, 2 half) --planar-wide TEXELS (its least width, 1600)]
 //       [--mirror-cheap on|off (the floor mirror's cheap world, a trial: large shapes at their mean colours, off)]
-//       [--gtao on|off (the screen's occlusion by GTAO in place of SSAO, a trial, off) --gtao-power K (its visibility
+//       [--gtao on|off (the screen's occlusion by GTAO in place of SSAO, on; off for SSAO) --gtao-power K (its visibility
 //       raised to K, 1.5)]
 //       [--scene-scale K (the 3D scene at K of the screen's side; 1, native, the default; 0 its budget)]
 //       [--scene-pixels MP (the budget, render3d::HIGH_SCENE_PIXELS)] [--upscale cubic|bilinear]
@@ -1343,7 +1343,7 @@ fn main() {
     render3d::planar_scale = whole(argv, "--planar-size", 3) as i32;
     render3d::planar_least_wide = whole(argv, "--planar-wide", 1600) as i32;
     render3d::mirror_cheap = flag_value(argv, "--mirror-cheap") > 0 && argv[flag_value(argv, "--mirror-cheap")] == "on";
-    render3d::ssao_gtao = flag_value(argv, "--gtao") > 0 && argv[flag_value(argv, "--gtao")] == "on";
+    render3d::ssao_gtao = !(flag_value(argv, "--gtao") > 0 && argv[flag_value(argv, "--gtao")] == "off");
     render3d::gtao_power = number(argv, "--gtao-power", 1.5);
     // Native unless --scene-scale or --scene-pixels asks for less (N cycles them).
     var scene_k = number(argv, "--scene-scale", if has(argv, "--scene-pixels") { 0.0 } else { 1.0 });
@@ -1424,7 +1424,7 @@ fn main() {
     g.room = room;
     g.room_tuned = true;
     render3d::window_pattern = pattern == 1;
-    var room_on = flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "on";
+    var room_on = !(flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "off");
     var shell_on = !(flag_value(argv, "--shell") > 0 && argv[flag_value(argv, "--shell")] == "off");
     var outside_on = !(flag_value(argv, "--outside") > 0 && argv[flag_value(argv, "--outside")] == "off");
     let away = number(argv, "--wall-away", surfaces::WALL_AWAY);

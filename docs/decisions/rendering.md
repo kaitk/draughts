@@ -1786,6 +1786,10 @@ to be is in tasks 042, 059, 071, 081, and 086.
   0.2-0.4 ms at 4K but changed the sills by up to 146 levels; neither was steadier. At the
   4K corner the SSAO costs about 2.3 ms: prepass 0.2, occlusion 0.8, blur 0.24, the room's
   read-back 1.0. GTAO was not tried then (see the next entry).
+- The light tuner opens with the room's surfaces and GTAO on (2026-11-23, the user): every
+  measurement and the user's runs passed `--room-surfaces on`, a switch left from when the
+  oak bake was new, and GTAO is wanted on high-end machines, as the tuner's are; `off` keeps
+  either out (`--gtao off` for the standard tier's SSAO). Replaces both flags' off default.
 - The SSAO's targets and passes stay as they are, and GTAO is a light-tuner trial, `--gtao
   on`, off by default, for the user to judge (2026-11-23, task 110; branch ssao-gtao; page
   `build/notes/ssao-gtao/`, local). The occlusion pass is bound by how many texels it fetches

@@ -9,8 +9,8 @@ profiling") holds the tools' details; `agents/goose.md` ("Speed") the code's rul
 - Run from the repository root (or a worktree's). The ngfx build needs:
   `export NGFX=$HOME/projects/goose/goose-ngfx NGFX_SLANGC=$HOME/projects/goose/slang/bin/slangc`
 - The light tuner, where all scene measuring happens: `python3 scripts/mac.py tools/light_tune.goose`
-  writes `build/light_tune`. Run it from `tools/` with `--room-surfaces on --outside on`
-  (as `build/stable/run-tuner.sh` does).
+  writes `build/light_tune`. Run it from `tools/`; the room's surfaces, the view out and GTAO
+  are on by default (2026-11-23; `--gtao off` gives the standard tier's SSAO).
 - The apps: `python3 scripts/mac.py src/main/draughts.goose` (gfx) and
   `python3 scripts/mac.py src/main/draughts_ngfx.goose` (both renderers). Both must build.
 - Tests: `scripts/test.sh` with NGFX set (it also runs `goose check` on both apps). Must pass.
@@ -23,7 +23,7 @@ profiling") holds the tools' details; `agents/goose.md` ("Speed") the code's rul
 
 ## Views
 
-Headless (`GOOSE_GFX_HEADLESS=1`), from `tools/`, `--room-surfaces on --outside on`, at
+Headless (`GOOSE_GFX_HEADLESS=1`), from `tools/`, with the tuner's defaults (GTAO on), at
 3840 × 2160 and 5120 × 2880 (the user's screens) unless a task says otherwise:
 
 | View | Flags | Why |
