@@ -447,6 +447,15 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
         (largest difference; pixels over 8 and over 32 levels): corner 50, 151k, 8.4k;
         grazing (`--plan-eye 6.0,1.0,0.6 --plan-at 6.0,8.0,0.0`) 38, 216k, 90; room 48,
         124k, 3.7k; menu 1, none; down 2, none. The default is the user's call.
+- [ ] Frame pacing notes (2026-11-23): both renderers already keep frames in flight (SDL's
+      GPU layer two; the tuner waits only with G, ngfx only on resizes and releases). The
+      tuner's board view swinging 25-50 fps on the built-in display is vsync's steps (its
+      worst 50.2 ms is three 60 Hz ticks); 104 fps on the user's 144 Hz 1440p display,
+      54-55 on the built-in with --gtao on, after the board's speedups. Open: the GPU at its
+      lowest clock for 78-86% of the board's frames in Codex's headless 5K trace (heat or a
+      power setting, unchecked), and adaptive refresh (ProMotion) through SDL's GPU layer.
+- [ ] GTAO on by default in the high tier (the user, 2026-11-23: it looks better; about 180
+      lines in both renderers behind one switch), SSAO in the standard tier
 - [ ] The floor's remaining shading: the sun through the windows (5.9 ms straight down at
       4K before the pieces), the mirror lookup (2.5), the probes (2.3), the corners' map
       (2.4 straight down only, to check). The oak's textures are not the cost
