@@ -383,8 +383,9 @@ let LIGHT_FN = """
         float gust = wind_at(m).y;
         float t = wind.z * wind.y;
         // The ruffle: the near and middle leaves blended with themselves nudged a leaf's
-        // width, patch by patch.
-        float turn = ruffle_at(m, gust, 1.5);
+        // width, patch by patch; its noise worked out only where it may turn a patch 5% or more
+        // (less moved a still shot by at most a level).
+        float turn = gust * min(wind.w, 1.0) > 0.05 && wind_now.w < 1.5 ? ruffle_at(m, gust, 1.5) : 0.0;
         vec2 nudge = vec2(cos(t * 5.1), sin(t * 4.3)) * (0.35 / tree.xy);
         float wood = textureLod(tree_map, uv + tree_shift[0].xy + gust * tree_shift[0].zw, lod).a;
         float leafy = lod + tree_blur.z;

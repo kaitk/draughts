@@ -500,6 +500,11 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       0.4-0.6 ms at 3840 × 2160 (straight down 0.62, room 0.57, menu 0.40, corner 0.61) and 1.4
       at 5120 × 2880; the windows' streaks a little blurrier (room max 35 levels), a little
       more shimmer in motion, accepted
+- [x] The tree shadow's ruffle worked out only where it may turn a patch 5% or more (`LIGHT_FN`'s
+      tree_light; night.html's proposal A, 0.35-0.5 ms at 3840 × 2160 with the ruffle compiled
+      out): stills and two `--wind-time` shots within 1 level of before (a run's own noise).
+      Saves 0.3 ms in the corner view, none straight down; skipping it only where the gust is
+      0 saved nothing (the gust is somewhere on the crown every frame)
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)
