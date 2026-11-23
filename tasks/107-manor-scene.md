@@ -575,6 +575,8 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       89.2-90.1 ms, menu 88.9-91.7 → 91.9-94.1 at 3840 × 2160, all others' builds running).
 
 - [x] The tie-back made real (2026-11-23, `build/notes/tieback-real/`).
+  - [ ] Still open (the user, 2026-11-23, after Codex's ring): the loop tightened, its pinch
+        deeper; the cord still seen through the lace where it passes behind it.
   - [x] The ivory cord (`build/notes/lace-cord-ivory/`): the lace's thread at half its
         linear albedo, from three quarters.
   - [x] The tilted ring sets the cord and the cloth's pinch in one plane, with the knot
