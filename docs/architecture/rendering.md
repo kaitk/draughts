@@ -675,7 +675,10 @@ board's light:
   the table and the room are drawn mirrored across the floor at a third of the
   screen's size. The clip depth is the height over the floor and clips the geometry
   beneath it. The wall and metal shaders write linear light and omit sharp reflections
-  and screen-space maps (`MIRROR_PASS`). Each
+  and screen-space maps (`MIRROR_PASS`). A trial behind the light tuner's
+  `--mirror-cheap on` (off; gfx only) draws a cheaper world there instead: the room's
+  large shapes and the table, each surface at its mean colour, lit by the baked light and
+  the sun through the windows' outlines (`MIRROR_CHEAP`), with nothing small drawn. Each
   shader there writes its exposed light before the tonemap (`mirror_light`, held to 16),
   the view out at `planar.w` (6) times its look, as a clear sky is far brighter than the
   tonemap shows. The board and its pieces are left out: from under the floor the table's

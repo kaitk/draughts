@@ -1777,6 +1777,28 @@ to be is in tasks 042, 059, 071, 081, and 086.
   rounds), 49.6 to 47.7 by the trace at 5K. The four views draw the mirror as before (the
   floor shows in each) and their shots match within a level, as two runs of one build do;
   the board view's is byte-identical. Both renderers (`draw` is theirs).
+- A cheap mirror world as a trial behind the light tuner's `--mirror-cheap on`, off by
+  default (2026-11-23, task 110; `MIRROR_CHEAP`, `CHEAP_TABLE`, `render3d::mirror_cheap`).
+  It replaces nothing yet: the user decides on the default. In the floor's mirror the room's
+  shell from the walls on (the trims, the shelves, the books, the doors and the window
+  frames; not the cord) is one indexed draw (`cheap_from`, `cheap_count`), and the table
+  one, through one cheap shader each. Each surface takes its mean colour (its map's last
+  mip, or its look's colours mixed by their mask's mean; the brass one tint), lit by the
+  baked light and the corners' shade, and by the sun through each window's outline at its
+  casements' and lace's mean share and one blurred tap of the tree (`cheap_open`): no
+  highlights, no reflections, no small shapes. The casement means (0.84 the lower sash,
+  0.6 the upper, after the transom and the meeting stiles cut geometrically) were set by
+  matching the full shader's lit patches; a single mean for both sashes lit them about 1.3
+  times too bright. Measured headless (Metal System Trace, the mirror's seven passes): the
+  mirror 0.99 to 0.57 ms straight down, 1.22 to 0.79 in the corner, 1.15 to 0.78 in the
+  room and 0.74 to 0.66 at the menu at 3840 × 2160, and 1.34 to 0.74, 1.50 to 1.05, 1.41
+  to 1.04, 1.02 to 0.86 at 5120 × 2880; the frame 0.2-0.6 ms less (two rounds). The look
+  changes only in the reflection: the menu and straight-down shots within 2 levels, the
+  corner, the grazing view and the room's up to about 50 levels on 1.5-2.6% of the pixels,
+  where reflected window light and highlights on the frames and books go flat. gfx only:
+  ngfx keeps the full mirror until the default is chosen. Tried and set aside: the window
+  glass and the lace drawn cheaply too (no saving: the glass is a few large quads), and a
+  sheen share on the paint and the paper (the grazing view nearer, the corner further).
 - The library floor's mirror keeps the light before the tonemap (2026-11-21, task 107;
   `TONE_FN`'s `mirror_light`, `OUTSIDE_FRAG`, `rooms::Room.planar.w`): the room, the table
   and the view out write their exposed linear light into the mirror pass's RGBA16F

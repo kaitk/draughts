@@ -368,6 +368,8 @@ struct Gpu {
     room_ib:      Buffer,
     room_count:   i64,
     room_from:    i64[ROOM_GROUPS], // where each material group's indices start (by_group)
+    cheap_from:   i64,              // the cheap mirror world's indices, after the groups' (mirror_cheap)
+    cheap_count:  i64,
     // The floor's four corners as the room's mesh has them (by_group), which its pieces
     // (sun_derived) take their attributes from; and the sun-derived block.
     floor_corners: corner_map::RoomVertex[4],
@@ -439,6 +441,8 @@ struct Gpu {
     planar_metals:  Pipeline,
     planar_glass:   Pipeline,
     planar_table:   Pipeline,
+    cheap_room:     Pipeline,       // the cheap mirror world's (mirror_cheap), made while it is on
+    cheap_table:    Pipeline,
     planar_resolve: Pipeline,
     planar_mip:     Pipeline,
     planar_show:    Pipeline,
@@ -1285,6 +1289,17 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         for i in indices { room_indices.push(i); }
     }
     g.room_from = by_group(room, room_indices);
+    // The cheap mirror world's triangles after the groups': the walls' to the metals' less
+    // what is small (mirror_cheap).
+    g.cheap_from = room_indices.len;
+    if mirror_cheap && g.room_shell {
+        for i in g.room_from[GROUP_WALLS]..g.cheap_from {
+            if i % 3 == 0 && floor(room[room_indices[i] as i64].mat + 0.001) != surfaces::MAT_CORD {
+                for j in 0..3 { room_indices.push(room_indices[i + j]); }
+            }
+        }
+    }
+    g.cheap_count = room_indices.len - g.cheap_from;
     if g.room_shell { g.floor_corners = floor_corners_of(room); }
     var glass_room: corner_map::RoomVertex[>..] = [];
     for v in glass {
@@ -1295,7 +1310,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }
     if g.glass_vb.id != 0 { o.gpu_release_mesh(g.glass_vb, g.glass_ib); }
     g.room_vb, g.room_ib = o.gpu_mesh(bytes_of(room), bytes_of(room_indices));
-    g.room_count = room_indices.len;
+    g.room_count = g.cheap_from;
     g.glass_count = glass_indices.len;
     if g.glass_count > 0 { g.glass_vb, g.glass_ib = o.gpu_mesh(bytes_of(glass_room), bytes_of(glass_indices)); }
     else {
@@ -2725,6 +2740,12 @@ fn ssao_or_stand_in(g: Gpu&) -> Texture { if g.ssao_map.id != 0 { g.ssao_map } e
 // room_seen). planar_view: the tuner's views (off, the floor's reflection alone, the map's
 // light, its distances).
 var planar_allowed = true;
+// The floor's cheap mirror world (the light tuner's --mirror-cheap, a trial, off): the
+// room's large shapes and the table, each surface at its mean colour, lit by the baked
+// light and the sun through the windows' outlines, in one cheap shader
+// (shaders::MIRROR_CHEAP_PASS); the cord left out. Set before the room's mesh is made.
+var mirror_cheap = false;
+fn mirror_cheap_on(g: Gpu&) -> bool { mirror_cheap && g.cheap_room.id != 0 && g.cheap_count > 0 }
 var planar_view = 0;
 var planar_scale: i32 = 3;
 let PLANAR_MIPS = 6;

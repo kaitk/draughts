@@ -178,6 +178,17 @@ cute_spirv refuses `float(bool)` and `bvec2(vec2)` and has no `textureLodOffset`
 - Upstream: the two conversions and two functions in cute_spirv; an inout swizzle copied
   through a temporary in the MSL.
 
+### `embed_shader` takes no array in a named uniform block
+
+`uniform Table { vec4 a; vec4 rows[4]; } tb;` fails to build: "sized array members are not
+supported in named block instances yet". Without the instance name the members are global
+names, which clash when a shader declares two blocks sharing one (the room's and the
+table's both have `ssao` and `table_map`).
+
+- Here: the floor's cheap mirror shader declares the table's block unnamed with its members
+  renamed (`t_pool`, `t_light`, ...), the layout the same (2026-11-23).
+- Upstream: sized array members in named block instances.
+
 ### An `export fn` called back from C inside an `extern` call overwrites the caller's data stack
 
 ```goose

@@ -419,6 +419,15 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
       - Skipped where the table's top fills the screen (`table_hides_screen`): the board view
         1.55 ms to none at 4K (frame 28.7 to 27.5 ms, two rounds), 1.95 to none at 5K (trace
         49.6 to 47.7); the four views unchanged, shots within a level.
+      - The cheap mirror world, light tuner `--mirror-cheap on` (off; gfx only), the
+        mirror's passes by the trace, then the frame (ft, two rounds A B A B): at 4K down
+        0.99 to 0.57 ms (frame 10.60 to 10.21), corner 1.22 to 0.79 (14.97 to 14.70), room
+        1.15 to 0.78 (14.54 to 14.10), menu 0.74 to 0.66 (14.02 to 13.82); at 5K down 1.34
+        to 0.74 (18.19 to 17.57), corner 1.50 to 1.05 (24.61 to 24.56), room 1.41 to 1.04
+        (23.18 to 22.94), menu 1.02 to 0.86 (23.18 to 22.84). Shots against today's at 4K
+        (largest difference; pixels over 8 and over 32 levels): corner 50, 151k, 8.4k;
+        grazing (`--plan-eye 6.0,1.0,0.6 --plan-at 6.0,8.0,0.0`) 38, 216k, 90; room 48,
+        124k, 3.7k; menu 1, none; down 2, none. The default is the user's call.
 - [ ] The floor's remaining shading: the sun through the windows (5.9 ms straight down at
       4K before the pieces), the mirror lookup (2.5), the probes (2.3), the corners' map
       (2.4 straight down only, to check). The oak's textures are not the cost

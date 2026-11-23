@@ -2203,6 +2203,43 @@ let ROOM_VERT = """
 // with SHELL_WINDOWS, the shell's windows and the lace's shadow.
 let SHELL_WINDOWS = "#define SHELL_WINDOWS 1\n";
 let ROOM_HEAD = """
+    #ifdef MIRROR_CHEAP
+    // The floor's cheap mirror world (MIRROR_CHEAP_MAIN): the room's mesh, or with
+    // CHEAP_TABLE the table's (TABLE_VERT), and the few textures it reads: the tree's and
+    // the lace's maps, the baked light, the corners' shade, and the surfaces' own maps
+    // whose last mip gives their mean colour (the panelling's oak, or the table's wood;
+    // the paper's mask, the plaster's tone, the sills' stone).
+    #ifdef CHEAP_TABLE
+    layout(location = 0) in vec3 v_world;
+    layout(location = 1) in vec3 v_normal;
+    layout(location = 2) in vec2 v_uv;
+    layout(location = 3) in float v_ao;
+    layout(location = 4) in float v_mat;
+    #else
+    layout(location = 0) in vec3 v_world;
+    layout(location = 1) in vec3 v_normal;
+    layout(location = 2) in vec2 v_uv;
+    layout(location = 3) in vec2 v_extra;
+    layout(location = 4) in vec3 v_local;
+    layout(location = 5) in vec2 v_corner;
+    layout(location = 6) flat in vec2 v_box;
+    #endif
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D tree_map;
+    layout(set = 2, binding = 1) uniform sampler2D lace_mask;
+    layout(set = 2, binding = 2) uniform sampler2D light_volume;
+    layout(set = 2, binding = 3) uniform sampler2D corner_map;
+    layout(set = 2, binding = 4) uniform sampler2D own_albedo;
+    layout(set = 2, binding = 5) uniform sampler2D paper_mask;
+    layout(set = 2, binding = 6) uniform sampler2D plaster_tone;
+    layout(set = 2, binding = 7) uniform sampler2D stone_tile;
+    #ifdef CHEAP_TABLE
+    // TABLE_HEAD's block (render3d::TableBlock) after the room's, its names with t_, as
+    // the room's block has some of them (embed_shader takes no array in a named block).
+    layout(set = 3, binding = 2) uniform Table { vec4 t_pool; vec4 t_coat; vec4 t_polish; vec4 t_worn; vec4 t_shape; vec4 t_map[4];
+                                                 vec4 t_light[12]; vec4 t_mix; vec4 t_shade; vec4 t_ssao; };
+    #endif
+    #else
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
     layout(location = 2) in vec2 v_uv;
@@ -2291,6 +2328,7 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 2) uniform sampler2D glass_tile;
     #ifndef NO_SSAO
     layout(set = 2, binding = 3) uniform sampler2D ssao_map;
+    #endif
     #endif
     #endif
     // ssao_map: the room's ambient occlusion at half size (SSAO_FN); pre_place: where each
@@ -3398,6 +3436,7 @@ let ROOM_FRAG = """
     }
     #endif
 
+    #ifndef MIRROR_CHEAP
     void main() {
         vec3 p = v_world;
         vec3 ng = normalize(v_normal);
@@ -4015,6 +4054,178 @@ let ROOM_FRAG = """
     #endif
     #endif
     }
+    #else
+    // The floor's cheap mirror world (render3d::mirror_cheap, the light tuner's
+    // --mirror-cheap): what the wax blurs and fades needs no detail of its own. Each surface
+    // at its mean colour (its map's last mip, or its look's colours mixed by their mask's
+    // mean), the brass one tint, lit by the baked light and the corners' shade and by the sun
+    // through the windows' outlines at the casements' and the lace's mean share
+    // (cheap_open); no highlights, no reflections, nothing small (the cord) drawn.
+    // How much of a sash its stiles, rails and bars let through (casement's mean over it,
+    // two planes' share each): the lower sash's, the upper's, which has more bars.
+    const float CHEAP_LOWER_SASH = 0.84;
+    const float CHEAP_UPPER_SASH = 0.6;
+    // A casement as its blind frame's opening less the transom and the meeting stiles (as
+    // casement has them), each sash at its mean.
+    float cheap_casement(vec2 w, float soft, float transom) {
+        float x = abs(w.x);
+        float open = min(0.49 - x, min(w.y - (shell_niche.y + 0.03), (shell_niche.y + shell_niche.z - 0.06) - w.y));
+        open = min(open, min(abs(w.y - transom) - 0.045, x - 0.0675));
+        return smoothstep(-soft, soft, open) * mix(CHEAP_LOWER_SASH, CHEAP_UPPER_SASH, step(transom, w.y));
+    }
+    float cheap_open(vec3 p) {
+        if (room.y <= 0.0) return 1.0;
+        vec3 l = light_dir.xyz;
+        vec2 nw = -axes.zw;
+        vec2 along = axes.xy;
+        float toward = dot(l.xz, nw);
+        if (toward < 0.05) return 0.0;
+        float metre = shell.w;
+        float widen = shell_sun.x > 0.0 ? shell_sun.x : room.z;
+        float d = dot(p.xz, nw);
+        float half_w = shell_niche.x;
+        float rise = shell_niche.w;
+        float radius = (half_w * half_w + rise * rise) / (2.0 * rise);
+        float arch_mid = shell_niche.y + shell_niche.z + rise - radius;
+        float t = max((shell.y - d) / toward, 0.0);
+        float tl = (shell.y - shell_glass.z - d) / toward;
+        // The transom between the sashes (casement's zt).
+        float transom = shell_niche.y + shell_niche.z * 2.0 / 3.0;
+        // The lace's mean cover (its mask's last mip), as lace_shadow takes it.
+        float cover = mix(0.5, textureLod(lace_mask, vec2(0.5), 20.0).r, LACE_PATTERN_SHOWN);
+        float flat_lets = 1.0 - clamp(mix(LACE_NET_STOPS, 1.0 - shell_glass.w, cover), 0.0, 0.9);
+        float lit = 0.0;
+        for (int i = 0; i < 3; i++) {
+            if (float(i) >= shell.x) break;
+            float mid = shell_mids[i];
+            vec3 q = p + l * t;
+            vec2 w = vec2(dot(q.xz, along) - mid, q.y - shell.z) / metre;
+            float soft = (0.03 + widen * t) / metre;
+            float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
+            float through = smoothstep(-soft, soft, min(half_w - abs(w.x), min(w.y - shell_niche.y, head - w.y)));
+            if (through < 0.001) continue;
+            // The two casements, each its glazed opening at its sash's mean.
+            float glazed = 1.0;
+            for (int k = 0; k < 2; k++) {
+                float tk = (shell.y + (k == 0 ? shell_glass.x : shell_glass.y) - d) / toward;
+                if (tk <= 0.0) continue;
+                vec3 g = p + l * tk;
+                vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
+                float soft_g = (0.03 + widen * tk) / metre;
+                glazed *= glazing(wg, soft_g);
+                through *= cheap_casement(wg, soft_g, transom);
+            }
+            if (tl > 0.5) {
+                vec3 c = p + l * tl;
+                vec2 wl = vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre;
+                vec2 e = lace_edges(wl.y);
+                float x = abs(wl.x);
+                float soft_l = (0.03 + widen * tl) / metre + LACE_SOFT * tl / metre;
+                float edge = min(min(x - e.x, e.y - x), min(wl.y - 0.07, 3.7 - wl.y));
+                float lets = pow(flat_lets, max(0.55 / max(e.y - e.x, 0.05), 1.0));
+                float inside = smoothstep(-soft_l, soft_l, edge);
+                through = through * mix(1.0, lets, inside)
+                        + window_view.y * LACE_FORWARD * LACE_GLAZED * glazed * inside * (1.0 - lets);
+            }
+            lit += through;
+        }
+        lit = min(lit, 1.0);
+        if (tree.x > 0.0 && lit > 0.001) {
+            // The tree's limbs and leaves as one blurred tap of its map.
+            float back = d / toward;
+            vec2 m = vec2(dot(p.xz, along) - dot(l.xz, along) * back, p.y - l.y * back);
+            vec4 tm = textureLod(tree_map, (m - tree.zw) / tree.xy + 0.5, 3.0 + tree_blur.z);
+            lit *= tm.a * tm.r * tm.g * tm.b;
+        }
+        return lit;
+    }
+
+    void main() {
+        vec3 p = v_world;
+        vec3 ng = normalize(v_normal);
+    #ifdef CHEAP_TABLE
+        // The table: its wood's mean, lit by its own probes on its axis (TABLE_FRAG's
+        // room_light_at), the top's shade on the edge and the base, the top's and the
+        // column's and legs' on the sun (table_shade).
+        vec3 l = light_dir.xyz;
+        float ao = clamp(v_ao, 0.0, 1.0);
+        vec3 albedo = textureLod(own_albedo, vec2(0.5), 20.0).rgb;
+        if (v_mat > 3.5) {
+            float from_mid = length(p.xz - vec2(0.0, TABLE_Z));
+            float e = (TABLE_TOP - p.y) / max(t_shape.x - from_mid, 0.5);
+            ao *= 1.0 - (1.0 - t_pool.z) / (1.0 + e * e) * (0.6 + 0.4 * max(ng.y, 0.0));
+        } else {
+            ao *= mix(1.0 - t_pool.z, 1.0, smoothstep(TABLE_TOP - 0.6, TABLE_TOP, p.y));
+        }
+        float k = clamp(((p.y - t_shape.y) / t_shade.w - 0.15) / 0.3, 0.0, 3.0);
+        int i = int(min(floor(k), 2.0));
+        float f = k - float(i);
+        vec3 a = vec3(t_light[3 * i].x + dot(t_light[3 * i].yzw, ng), t_light[3 * i + 1].x + dot(t_light[3 * i + 1].yzw, ng),
+                      t_light[3 * i + 2].x + dot(t_light[3 * i + 2].yzw, ng));
+        int j = i + 1;
+        vec3 b = vec3(t_light[3 * j].x + dot(t_light[3 * j].yzw, ng), t_light[3 * j + 1].x + dot(t_light[3 * j + 1].yzw, ng),
+                      t_light[3 * j + 2].x + dot(t_light[3 * j + 2].yzw, ng));
+        float over = smoothstep(TABLE_TOP - 0.5, TABLE_TOP, p.y);
+        vec3 irr = (max(mix(a, b, f), vec3(0.0)) + sh_eval(ng) * params.z * t_mix.y + t_shade.rgb) * mix(t_mix.z, 1.0, over);
+        float nol = dot(ng, l);
+        float sun_in = nol > 0.0 ? cheap_open(p) * table_shade(p, l) : 0.0;
+        float pattern = mix(sun_in, mix(1.0 - room.y, 1.0, sun_in), t_mix.w);
+        vec3 c = albedo * (clamp(nol, 0.0, 1.0) / PI * light_color.rgb * light_dir.w * pattern + irr * ao);
+        result = room_out(c * params.x, 1.0);
+    #else
+        vec3 lp = v_local;
+        float kind = floor(v_extra.y + 0.001);
+        float own = v_extra.y - kind;
+        float ao = clamp(v_extra.x, 0.0, 1.0);
+        vec3 albedo;
+        bool oak = kind < 5.5;
+        if (oak) {
+            // The panelling's oak, each piece its own tone, the thresholds paler; its grime.
+            albedo = textureLod(own_albedo, vec2(0.5), 20.0).rgb * (1.0 + 0.16 * (own - 0.5));
+            if (table.z > 0.0) albedo = tinted(albedo, table.zw);
+            if (own > 0.925) albedo *= vec3(1.45, 1.38, 1.25);
+            albedo *= mix(0.55, 1.0, smoothstep(0.5, 1.0, ao));
+        } else if (kind < 6.5) {
+            albedo = mix(srgb(paper.rgb), srgb(gold.rgb), textureLod(paper_mask, vec2(0.5), 20.0).r);
+        } else if (kind < 7.5) {
+            albedo = srgb(stone.rgb) * (0.4 + textureLod(stone_tile, vec2(0.5), 20.0).r);
+        } else if (kind < 8.5) {
+            float tone = textureLod(plaster_tone, vec2(0.5), 20.0).r;
+            tone = mix(tone, 1.0, 0.35 * step(0.25, own));
+            bool above = p.y > room_heights.x - 0.27 * shell.w;
+            albedo = above ? mix(srgb(ceiling_shade.rgb), srgb(ceiling_light.rgb), tone)
+                           : mix(srgb(plaster_shade.rgb), srgb(plaster_light.rgb), tone);
+            if (shell_sun.z > 0.0 && above) albedo = tinted(albedo, shell_sun.zw);
+        } else if (kind < 9.5) {
+            albedo = srgb(paint.rgb);
+        } else if (kind < 13.5) {
+            albedo = srgb(brass.rgb);
+        } else {
+            // A book: its cover, faded as the room's shader fades it.
+            float code = floor(own * books.z);
+            vec3 c = book_cover[int(mod(code, 32.0))].rgb * 0.8;
+            float fade = floor(code / 256.0) * books.y * books.x;
+            float lum = dot(c, vec3(0.3, 0.59, 0.11));
+            albedo = srgb(clamp(mix(c, lum * vec3(1.08, 0.98, 0.82) + 0.06, fade), 0.0, 1.0));
+        }
+        if (kind < 13.5 && shell.x > 0.5) {
+            vec2 size = vec2(textureSize(corner_map, 0));
+            vec2 lo = vec2(mod(v_box.x, 4096.0), floor(v_box.x / 4096.0)) + 0.5;
+            vec2 hi = vec2(mod(v_box.y, 4096.0), floor(v_box.y / 4096.0)) + 0.5;
+            ao *= texture(corner_map, clamp(v_corner * size, lo, hi) / size).r;
+        }
+        vec3 l = light_dir.xyz;
+        vec3 light = oak ? room_sun_color(room_sun.z) * (light_dir.w * shell_sun.y * room_sun.y)
+                         : room_sun_color(room_sun.x) * (light_dir.w * shell_sun.y);
+        float nol = dot(ng, l);
+        float open = nol > 0.0 ? cheap_open(p) : 0.0;
+        float fill = room_baked.x > 0.5 ? room_baked.y : 1.0;
+        float vis = room.y > 0.0 ? open + fill * (1.0 - room.y) * (1.0 - open) * ao : 1.0;
+        vec3 c = albedo * (max(nol, 0.0) / PI * light * vis + room_irradiance(lp, ng) * ao);
+        result = room_out(c * params.x * shade.w, 1.0);
+    #endif
+    }
+    #endif
     """;
 
 // The window's glow (render3d::bloom_pass), no rays: the room's image shrunk to a quarter,
@@ -4250,6 +4461,10 @@ let LINEAR_OUT = "#define LINEAR_OUT 1\n";
 // linear, without the screen's maps (its block's ssao and contact are 0) and with nothing
 // seen sharply (no SHARP_BOX); the floor, under the clip plane, isn't drawn.
 let MIRROR_PASS = "#define LINEAR_OUT 1\n#define NO_SSAO 1\n";
+// The floor's cheap mirror world (ROOM_FRAG's MIRROR_CHEAP main, render3d::mirror_cheap):
+// the room's large shapes, and with CHEAP_TABLE the table, in one cheap shader.
+let MIRROR_CHEAP_PASS = "#define MIRROR_CHEAP 1\n#define LINEAR_OUT 1\n#define NO_SSAO 1\n";
+let CHEAP_TABLE = "#define CHEAP_TABLE 1\n";
 // The light tuner's views of the room (render3d::room_views_on: the screen's occlusion, the
 // indirect light, the sun's highlights, the floor's reflection alone), in pipelines of
 // their own made while one is on: their code cost the room 0.55 ms at 3024 × 1890 where

@@ -375,6 +375,12 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
             g.planar_glass = gfx::Pipeline { 0 };
             g.planar_table = gfx::Pipeline { 0 };
         }
+        if g.cheap_room.id != 0 {
+            gfx::release(g.cheap_room);
+            gfx::release(g.cheap_table);
+            g.cheap_room = gfx::Pipeline { 0 };
+            g.cheap_table = gfx::Pipeline { 0 };
+        }
     }
     g.room_ssao = ssao;
     g.room_views = views;
@@ -411,6 +417,10 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     g.planar_table = gfx::pipeline(table_vert, embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
                                    gfx::PipelineDesc { cull: gfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
                                                        blend: gfx::BLEND_PREMULTIPLIED });
+    guard render3d::mirror_cheap else { return; }
+    g.cheap_room = gfx::pipeline(room_vert, embed_shader("frag", shaders::MIRROR_CHEAP_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.cheap_table = gfx::pipeline(table_vert, embed_shader("frag", shaders::MIRROR_CHEAP_PASS, shaders::CHEAP_TABLE, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                                  gfx::PipelineDesc { cull: gfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true });
 }
 
 // The room's pipelines (make_room_tier) and its bake's, its view out's, glow's, occlusion's
@@ -471,6 +481,10 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
         draw_outside(own, g, true);
     }
     g.frame = clip;
+    let surfaces = render3d::mirror_surfaces_block(g);
+    if render3d::mirror_cheap_on(g) {
+        cheap_mirror(g, clip, surfaces);
+    } else {
     if render3d::table_shown(g) && render3d::table_in_room(g) {
         gfx::bind(g.planar_table);
         gfx::bind_texture(gfx::FRAGMENT, 0, g.table_albedo, g.aniso);
@@ -491,11 +505,11 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
         gfx::draw_indexed(g.table_count);
     }
     // The room less its floor, which lies under the clip plane.
-    let surfaces = render3d::mirror_surfaces_block(g);
     draw_room_group(g, clip, surfaces, g.planar_walls, render3d::GROUP_WALLS, false, false);
     draw_room_group(g, clip, surfaces, g.planar_sill, render3d::GROUP_SILL, false, false);
     draw_room_group(g, clip, surfaces, g.planar_paint, render3d::GROUP_PAINT, false, false);
     draw_room_group(g, clip, surfaces, g.planar_metals, render3d::GROUP_METALS, false, false);
+    }
     if g.glass_count > 0 { draw_room_group(g, clip, surfaces, g.planar_glass, render3d::GROUP_GLASS, false, false); }
     gfx::end_pass();
     g.frame = kept;
@@ -520,6 +534,37 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
         gfx::draw(3);
         gfx::end_pass();
     }
+}
+
+// The cheap mirror world (render3d::mirror_cheap_on): the table and the room's large
+// shapes, each with the one cheap shader, into the mirror's pass begun.
+fn cheap_textures(g: render3d::Gpu&) -> Texture[8] {
+    var tex: Texture[8] = [render3d::tree_or_stand_in(g), g.lace_mask, render3d::light_or_stand_in(g), render3d::corners_or_stand_in(g),
+                           g.wall_albedo, g.paper_mask, g.plaster_tone, g.stone_tile];
+    for i in 8 { if tex[i].id == 0 { tex[i] = g.crown_map; } }
+    return tex;
+}
+fn cheap_mirror(g: render3d::Gpu&, clip: render3d::Frame, surfaces: render3d::SurfacesBlock) {
+    let tex = cheap_textures(g);
+    if render3d::table_shown(g) && render3d::table_in_room(g) {
+        gfx::bind(g.cheap_table);
+        for i in 8 { gfx::bind_texture(gfx::FRAGMENT, i, if i == 4 { g.table_albedo } else { tex[i] }, g.linear); }
+        gfx::uniforms(gfx::VERTEX, 0, clip);
+        gfx::uniforms(gfx::FRAGMENT, 0, clip);
+        gfx::uniforms(gfx::FRAGMENT, 1, surfaces);
+        gfx::uniforms(gfx::FRAGMENT, 2, render3d::mirror_table_block(g));
+        gfx::bind_vertex_buffer(g.table_vb);
+        gfx::bind_index_buffer(g.table_ib, 4);
+        gfx::draw_indexed(g.table_count);
+    }
+    gfx::bind(g.cheap_room);
+    for i in 8 { gfx::bind_texture(gfx::FRAGMENT, i, tex[i], g.linear); }
+    gfx::uniforms(gfx::VERTEX, 0, clip);
+    gfx::uniforms(gfx::FRAGMENT, 0, clip);
+    gfx::uniforms(gfx::FRAGMENT, 1, surfaces);
+    gfx::bind_vertex_buffer(g.room_vb);
+    gfx::bind_index_buffer(g.room_ib, 4);
+    gfx::draw_indexed(g.cheap_count, 1, g.cheap_from, 0, 0);
 }
 
 // The tuner's view of the floor's mirror over all of `target`.
