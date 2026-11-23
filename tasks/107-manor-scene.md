@@ -587,6 +587,39 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)
 
+## Oak texture sampling
+
+Mac light tuner at 3840 × 2160, headless, with room surfaces and the outside on.
+Each run averages the last six half-second samples. A and B alternated twice under the
+shared GPU quiet lock. Pixel differences are the maximum absolute RGB channel difference
+and the count of pixels whose difference exceeds eight levels. Full shots and crops are
+in the worktree's `build/notes/oak-textures/index.html`.
+
+### RG8 normal fields
+
+Both renderers support RG8. The floor and walls use only the normal's two tangent
+components. RG8 halves the normal mip payload and takes the four oak fields from 85.33 MiB
+to 64.00 MiB at 2048². The corner repeat had 68 pixels change
+one level. RG8 moved five by one level. The first timing sweep had a 23.4 ms menu
+outlier. In the warmed rerun, straight down was 0.034 ms slower and the
+corner and room gains varied between rounds. The app keeps RGBA8.
+
+| View | A₁ / A₂ (ms) | B₁ / B₂ (ms) | Mean A → B (ms) |
+|---|---:|---:|---:|
+| Straight down | 10.783 / 10.800 | 10.767 / 10.883 | 10.791 → 10.825 |
+| Corner | 15.400 / 15.233 | 15.233 / 15.283 | 15.317 → 15.258 |
+| Room | 14.583 / 14.333 | 14.283 / 14.383 | 14.458 → 14.333 |
+| Menu | 14.283 / 14.233 | 14.300 / 14.217 | 14.258 → 14.259 |
+
+| View | Repeat max / pixels >8 | Trial max / pixels >8 | Trial pixels changed |
+|---|---:|---:|---:|
+| Straight down | 0 / 0 | 0 / 0 | 0 |
+| Corner | 1 / 0 | 1 / 0 | 5 |
+| Room | 0 / 0 | 0 / 0 | 0 |
+| Menu | 0 / 0 | 0 / 0 | 0 |
+| Grazing | 0 / 0 | 0 / 0 | 0 |
+| Grazing, eye shifted 1 cm | 0 / 0 | 0 / 0 | 0 |
+
 ## The table and the room around it, after the first shot
 
 - [ ] The floor and rug, seen in the game's views (task 106)

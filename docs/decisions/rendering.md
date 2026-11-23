@@ -1910,6 +1910,14 @@ to be is in tasks 042, 059, 071, 081, and 086.
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
 
+### Oak texture sampling
+
+- Keep the room's floor and panelling normals in RGBA8 (2026-11-23, task 107).
+  Both renderers can bake and sample RG8, and the oak shaders read just the two
+  tangent components. RG8 saved 21.33 MiB across the full-resolution fields and
+  matched the original image within repeat-run noise. The warmed Mac runs showed
+  no repeatable frame-time gain, so the bake retains its existing format.
+
 ## When a frame reaches the screen
 
 goose_gfx records a frame and its blit into the window's image in one command buffer.

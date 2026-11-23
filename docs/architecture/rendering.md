@@ -720,6 +720,12 @@ board's light:
   target each kind is drawn with a floor shader without what can't show there:
   `FLOOR_SHADE` without the sun's trace and the table's taps, `FLOOR_NO_TABLE` without the
   taps. Elsewhere the floor is one quad with the full shader.
+- **Oak fields**: the floor and panelling each bake an sRGB albedo map with roughness in
+  alpha and a linear RGBA8 normal map, with mip chains for both. The shaders read the two tangent components
+  from the normal map. The floor samples both maps with gradients
+  rotated into the plank's frame and divided by the field size. The gradients exclude
+  the jumps between strips in the field. The walls use the gradients of their scaled UVs.
+  Both use 8× anisotropy.
 - **The room's shaders**: one pipeline a material group (`render3d::room_group`), each
   with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_PAINT`,
   `ROOM_SILL`, `ROOM_METALS`, `ROOM_GLASS`): the floor; the panelling oak, the paper, the
