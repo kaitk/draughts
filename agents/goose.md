@@ -367,6 +367,10 @@ What `src/app/think.goose` needed (`reference.md` section 22, spec 11.2):
   early return always taken saved two thirds of removing it; several branches made the floor
   slower, task 107's floor notes).
 
+- A uniform block pushed with `gfx::uniforms` must be declared whole in every shader it is
+  pushed to: gfx checks the std140 size and stops ("the fragment shader's uniform block 0
+  is 32 bytes by std140, and 96 were pushed"), so a field added for one shader is declared
+  in the others that share the block (`SsaoBlock`, 2026-11-23).
 - Measure with `goose build` (-O2 C). `--stats` shows how many bounds checks were removed
   and `--bce-lines` which remain.
 - An `assert(xs.len == N)` before a loop drops its bounds checks; `%` by an array's
