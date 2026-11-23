@@ -479,6 +479,9 @@ Two 3840 × 2160 Metal captures on the M1 Pro record one frame each, straight do
 the corner. Both use the default HDR floor with its mirror. In the 12th render encoder
 (one-based), the fifth through seventh draws are its shaded, sunlit, and table-shadow
 pieces. They draw 75, 27 and 6 indices respectively in either capture.
+`build/floor-capture/` in the worktree holds `down.gputrace`, `corner.gputrace` and
+`box.gputrace`. The results page is `build/notes/floor-capture/index.html` in the
+main checkout.
 
 | HDR fragment pipeline | Temporary registers | Uniform registers | Spill bytes | Instructions | ALU | Texture reads | Waits |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -563,6 +566,44 @@ the changed instruction and texture work.
 | Sun removed | 72 | 72 | 76 |
 | Diffuse probes removed | 68 | 80 | 88 |
 | Sun and probes removed | 68 | 68 | 76 |
+
+### Floor shader optimization trials
+
+The scheduling trial traces the sun before calculating the floor's view direction,
+light colour, corner shade and screen occlusion. The planar draws still allocate
+72, 116 and 128 temporary registers. The compiler's ALU and texture counts are
+unchanged, so the speedup is consistent with a change in scheduling.
+
+The first comparison had identical 4K pixels for all four views and both cameras
+moved 1 cm. At 5K there was one corner pixel one level off. The first room comparison
+found 1,392 pixels up to two levels off. The second baseline differed from the
+first by the same pixels and matched both trial shots exactly. Zero pixels exceeded
+eight levels.
+
+The scheduling change passed a fresh A B A B run rebased onto `11816e17`, with
+the default SSAO and the GTAO trial off. The 4K room difference is within the
+two rounds' variation. Each straight-down round was faster at both sizes.
+
+| Size | View | Before, ms | After, ms |
+| --- | --- | ---: | ---: |
+| 3840 × 2160 | Straight down | 10.87 | 10.53 |
+| 3840 × 2160 | Corner | 14.86 | 14.82 |
+| 3840 × 2160 | Room | 13.92 | 13.95 |
+| 3840 × 2160 | Menu | 13.02 | 12.87 |
+| 5120 × 2880 | Straight down | 18.39 | 17.82 |
+| 5120 × 2880 | Corner | 23.91 | 23.68 |
+| 5120 × 2880 | Room | 22.23 | 22.01 |
+| 5120 × 2880 | Menu | 21.17 | 21.11 |
+
+The rebased snapshots match in all eight size-and-view combinations and the
+two 1 cm motion checks. The largest RGB difference and the pixel count over
+eight levels are both zero in all ten comparisons. Both Mac apps and the tuner
+build, and the NGFX-enabled tests pass. The USB tablet check is pending a device.
+
+Packing the mirror's wax and wear into half precision changed up to 31,092 pixels
+by at most two levels in a 5K view. Combining the two outer taps on each side of the
+mirror's centre into one changed the 5K room by up to 25 levels and put 14,973 pixels
+over eight levels in the 5K corner. Both trials stopped at the pixel check.
 
 ### Bake-time floor lightmap proposal
 

@@ -1968,6 +1968,12 @@ to be is in tasks 042, 059, 071, 081, and 086.
   passes would add full-resolution intermediate stores and reads. The renderers
   lack tile-local attachment reads ([Goose findings](../goose-findings.md)).
   A bake-time floor map remains a proposal for the lighting work in task 114.
+- Trace the floor's sun before evaluating the view direction, light colour and
+  occlusion (2026-11-23, task 110). The M1 Pro's straight-down view went from
+  10.87 to 10.53 ms at 4K and from 18.39 to 17.82 ms at 5K. All four views at
+  both sizes and both 1 cm motion checks matched their baseline pixels. The
+  planar variants' register counts stayed at 72, 116 and 128. Half precision
+  for wax and wear and a three-tap mirror were set aside at the pixel check.
 - The floor's joints stay flat lines (2026-11-23, task 107; `build/notes/floor-perf/night.html`,
   `joints.html`). Tried and removed, kept for a later look: a deep version (each board's edge
   rounded over 2.5 mm in the shading and the wax's normal, the gap darker at its bottom with

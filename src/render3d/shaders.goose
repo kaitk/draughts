@@ -3469,7 +3469,9 @@ let ROOM_FRAG = """
         // half-size occlusion can't see; screen_ao: the screen's occlusion (SSAO_FN).
         float ao = clamp(v_extra.x, 0.0, 1.0);
         float fine = 1.0;
+    #ifndef ROOM_FLOOR
         float screen_ao = ssao_at(p);
+    #endif
     #ifndef NO_SSAO
         float eye_slope = fwidth(length(p - eye.xyz));
     #endif
@@ -3923,8 +3925,9 @@ let ROOM_FRAG = """
         }
     #endif
 
-        vec3 v = normalize(eye.xyz - p);
         vec3 l = light_dir.xyz;
+    #ifndef ROOM_FLOOR
+        vec3 v = normalize(eye.xyz - p);
         float nol = dot(n, l);
         float diff = clamp(nol, 0.0, 1.0);
         // The panelling oak takes its own share of the sun, at its own saturation
@@ -3948,6 +3951,7 @@ let ROOM_FRAG = """
             corner = texture(corner_map, clamp(v_corner * size, lo, hi) / size).r;
         }
         ao = metal > 0.9 ? ao : fine * min(ao * corner, ssao_kept(screen_ao));
+    #endif
         // The table's top is solid: its shadow keeps all the key out, unlike the board's
         // softened ones (room.x). The sun reaches p only through a window (open), and only
         // that takes the highlight; the shade's floor (window_light's, 1 - room.y where the
@@ -3969,6 +3973,34 @@ let ROOM_FRAG = """
         // Not on the floor, where it showed nothing and cost the most.
         if (contact.x > 0.0 && open * kept > 0.0 && nol > 0.0) open *= contact_lit(p, ng, l, eye_slope);
     #endif
+    #endif
+    #ifdef ROOM_FLOOR
+        // Trace the sun above before computing the view, light colour and occlusion.
+        vec3 v = normalize(eye.xyz - p);
+        float nol = dot(n, l);
+        float diff = clamp(nol, 0.0, 1.0);
+        // The panelling oak takes its own share of the sun, at its own saturation
+        // (render3d::room_sun).
+    #ifdef ROOM_WALLS
+        bool oak = kind < 5.5;
+    #else
+        bool oak = false;
+    #endif
+        vec3 light = oak ? room_sun_color(room_sun.z) * (light_dir.w * shell_sun.y * room_sun.y)
+                         : room_sun_color(room_sun.x) * (light_dir.w * shell_sun.y);
+        // The room's corners and edges, its indirect light only (not the books, which the
+        // cases shade themselves), baked into its map (model3d::corner_map). The screen's
+        // occlusion only where it finds more than these know, so the box's planes and the
+        // cases' shelves aren't darkened twice.
+        float screen_ao = ssao_at(p);
+        float corner = 1.0;
+        if (kind < 13.5 && shell.x > 0.5) {
+            vec2 size = vec2(textureSize(corner_map, 0));
+            vec2 lo = vec2(mod(v_box.x, 4096.0), floor(v_box.x / 4096.0)) + 0.5;
+            vec2 hi = vec2(mod(v_box.y, 4096.0), floor(v_box.y / 4096.0)) + 0.5;
+            corner = texture(corner_map, clamp(v_corner * size, lo, hi) / size).r;
+        }
+        ao = metal > 0.9 ? ao : fine * min(ao * corner, ssao_kept(screen_ao));
     #endif
         float fill = room_baked.x > 0.5 ? room_baked.y : 1.0;
         float vis = (room.y > 0.0 ? open + fill * (1.0 - room.y) * (1.0 - open) * ao : 1.0) * kept;

@@ -732,7 +732,8 @@ board's light:
   openings' heights reach, each widened by the penumbra's largest spread), and in the HDR
   target each kind is drawn with a floor shader without what can't show there:
   `FLOOR_SHADE` without the sun's trace and the table's taps, `FLOOR_NO_TABLE` without the
-  taps. Elsewhere the floor is one quad with the full shader.
+  taps. Elsewhere the floor is one quad with the full shader. The floor shaders trace
+  the sun before they work out the view direction, light colour and occlusion.
 - **Metal frame captures**: on the Mac, start the light tuner with
   `MTL_CAPTURE_ENABLED=1` and `--gpu-capture /absolute/path.gputrace`. The tuner warms
   up for four frames, records the next frame, and exits. The capture uses a fixed wind
