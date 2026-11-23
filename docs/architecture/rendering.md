@@ -724,7 +724,8 @@ board's light:
   alpha and a linear RGBA8 normal map, with mip chains for both. The shaders read the two tangent components
   from the normal map. The floor samples both maps with gradients
   rotated into the plank's frame and divided by the field size. The gradients exclude
-  the jumps between strips in the field. The walls use the gradients of their scaled UVs.
+  the jumps between strips in the field. There is no mip bias. The walls use the gradients
+  of their scaled UVs.
   Both use 8× anisotropy. The light tuner's `--oak-aniso-4` previews 4×.
 - **The room's shaders**: one pipeline a material group (`render3d::room_group`), each
   with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_PAINT`,

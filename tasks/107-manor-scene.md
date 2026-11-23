@@ -643,6 +643,33 @@ The motion shot shifts the eye one centimetre along x.
 | Grazing | 0 / 0 | 23 / 295 | 665137 |
 | Grazing, eye shifted 1 cm | 0 / 0 | 19 / 296 | 664379 |
 
+### Mip selection and compression proposal
+
+The floor's gradients follow the room-to-plank rotation, axis swap and sign, and
+divide by the same field size as the sampled coordinate. The plank width cancels.
+At the center of the 4K straight-down view, a pixel spans about 1.20 base texels
+(LOD 0.26). There is no mip bias or scale error to correct.
+
+Export the fixed desktop and phone oak bakes with every mip. Keep albedo's sRGB
+color and linear roughness alpha and the normals' linear XY. The current PPM dump
+only exports RGB at level zero. Upload the encoded blocks into sampled textures and
+use the procedural bake on devices without the format. Albedo needs sRGB compressed
+formats in both wrappers, which currently expose linear formats. GPU encoding would
+bake all mips, encode them into a compute buffer and copy the blocks to compressed
+textures. It adds room-open time, temporary surfaces and a compressed copy path.
+
+| Four 2048² textures including mips | Payload (MiB) |
+|---|---:|
+| RGBA8 | 85.33 |
+| RGBA8 albedo with RG8 normals | 64.00 |
+| ASTC 4×4 or BC7 | 21.33 |
+| ASTC 6×6 | 9.53 |
+
+Scaling the corner and room RG8 time changes in proportion to the bytes removed
+estimates 0.17–0.44 ms of savings from full compression. The straight-down model
+starts from a 0.034 ms regression, and the RG8 timing varied by round. The estimated
+gain needs direct compressed-sample measurements.
+
 ## The table and the room around it, after the first shot
 
 - [ ] The floor and rug, seen in the game's views (task 106)

@@ -1922,6 +1922,15 @@ to be is in tasks 042, 059, 071, 081, and 086.
   grazing views lose some grain detail and differ beyond repeat-run noise.
   `--oak-aniso-4` lets the light tuner preview both fields at 4×.
 
+- Use the projected pixel footprint for the floor's oak mips (2026-11-23, task
+  107). The shader rotates the room gradients into each plank's frame and scales
+  them by the sampled field size. The sampler uses those gradients without a bias.
+  A coarser mip bias would blur detail within that footprint.
+- Compare offline block compression as a separate trial (2026-11-23, task 107).
+  The oak bake uses fixed fields and can export all mip levels. The color map needs
+  sRGB filtering and the roughness in alpha. The sampled normal components need
+  linear encoding. A GPU encoder would also add work when the room opens.
+
 ## When a frame reaches the screen
 
 goose_gfx records a frame and its blit into the window's image in one command buffer.
