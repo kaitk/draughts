@@ -39,10 +39,13 @@ nothing in headless shots: frame with `--plan-eye`/`--plan-at` (plan metres) ins
 
 ## Measuring
 
-- Only one measuring job on the GPU at a time, across Claude, Codex and the user. Create
-  `build/perf/quiet.lock` (in the main checkout) while measuring and remove it after; if it
-  already exists, wait, and run nothing on the GPU meanwhile (no shots or tuner runs either:
-  any render disturbs the timing). Never kill a `light_tune` process you didn't start (the user's tuner);
+- Only one job on the GPU at a time, across Claude, Codex and the user: hold
+  `build/perf/quiet.lock` (in the main checkout) for every batch of renders, timing or shots.
+  Take it atomically, never by plain creation: `L=/Users/kaitkasak/projects/personal/draughts/build/perf/quiet.lock;
+  until (set -o noclobber; echo "$$ $(date +%s) <who>" > "$L") 2>/dev/null; do sleep 60; done`.
+  Recheck nothing else: holding it is the check. Remove it only if it is yours (its first word
+  your `$$`), right after the batch. Never overwrite or delete another's lock; one older than
+  an hour with no live process of its pid may be stale: report it, don't take it. Never kill a `light_tune` process you didn't start (the user's tuner);
   if one runs, note it, its frames disturb yours.
 - Before and after builds of the same views, two alternating rounds (A B A B), means of each.
   Measure at the start and after each finished step, not after every edit.
