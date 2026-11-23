@@ -2345,8 +2345,7 @@ let ROOM_HEAD = """
     // (surfaces::Look's); sill_steps: the tuner's switches of it (render3d::sill_steps, read
     // only with SILL_STEPS); window_view: the window view's steps' strengths, 1 as made
     // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
-    // its scratches); floor_look: x the joints read deep (1) or flat (0), y the boards' edges'
-    // round-over (world units; render3d::floor_look_of); table_map:
+    // its scratches); table_map:
     // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
     // ending in gilt, ink, the page edges plain and sprinkled.
@@ -2396,7 +2395,6 @@ let ROOM_HEAD = """
         vec4 sill;
         vec4 sill_steps[2];
         vec4 window_view;
-        vec4 floor_look;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -2968,18 +2966,6 @@ let ROOM_FRAG = """
         return clamp((min(d + 0.5 * fp, half_w) - max(d - 0.5 * fp, -half_w)) / max(fp, 1e-5), 0.0, 1.0);
     }
 
-    // A board's edge rounded over r: how far it has fallen at x in from the edge (r at the
-    // edge and in the gap, 0 past r), and its mean slope over a pixel fp wide there, the fall
-    // across the pixel, held under 1.5.
-    float round_fall(float x, float r) {
-        float y = clamp(r - x, 0.0, r);
-        return r - sqrt(r * r - y * y);
-    }
-    float round_slope(float x, float r, float fp) {
-        float f = max(fp, 1e-4);
-        return min((round_fall(x - 0.5 * f, r) - round_fall(x + 0.5 * f, r)) / f, 1.5);
-    }
-
     // How far p is from the segment a to b (2D).
     float to_segment(vec2 p, vec2 a, vec2 b) {
         vec2 ab = b - a;
@@ -3529,13 +3515,14 @@ let ROOM_FRAG = """
             float fpw = max(length(dx), length(dy));
             float d_a = min(pk.across, 1.0 - pk.across) * w;
             float d_l = min(pk.along, plank.y - pk.along) * w;
-            // Read deep (floor_look.x): each edge rounded over floor_look.y, falling toward
-            // the gap, so the edge toward the light catches it, the far one darkens, and the
-            // wax's reflection bends there.
-            if (floor_look.x > 0.5) {
-                tilt += vec2(round_slope(d_a - plank.z, floor_look.y, fpw) * (pk.across < 0.5 ? -1.0 : 1.0),
-                             round_slope(d_l - plank.z, floor_look.y, fpw) * (pk.along < 0.5 * plank.y ? -1.0 : 1.0));
-            }
+        #ifdef FLOOR_JOINTS
+            // Each edge eased over JOINT_ROUND, falling toward the gap: tilted a little where a
+            // pixel is narrower than the ease, faded out as it grows past it (joint_band below
+            // stands for it there), so the edge never flickers.
+            float joint_seen = 1.0 - smoothstep(0.5 * JOINT_ROUND, 2.0 * JOINT_ROUND, fpw);
+            vec2 ease = clamp((plank.z + JOINT_ROUND - vec2(d_a, d_l)) / (JOINT_ROUND + fpw), 0.0, 1.0);
+            tilt += JOINT_TILT * joint_seen * ease * vec2(pk.across < 0.5 ? -1.0 : 1.0, pk.along < 0.5 * plank.y ? -1.0 : 1.0);
+        #endif
             vec2 s = vec2(t.x + cup + tilt.x, t.y + tilt.y);
             vec2 suv = dir_a * s.x + dir_l * s.y;
             n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
@@ -3572,15 +3559,12 @@ let ROOM_FRAG = """
             albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
             rough = mix(rough, 0.6, joint);
             fine *= 1.0 - 0.5 * joint;
-            if (floor_look.x > 0.5) {
-                // Deep: the gap darker at its bottom, and a soft fringe of its shade on the
-                // rounded edges either side.
-                float r2 = floor_look.y;
-                float fringe = 0.5 * (max(line_cover(d_a, plank.z + 0.5 * r2, fpw), line_cover(d_l, plank.z + 0.5 * r2, fpw))
-                                    + max(line_cover(d_a, plank.z + r2, fpw), line_cover(d_l, plank.z + r2, fpw)));
-                albedo *= 1.0 - 0.5 * joint;
-                fine *= 1.0 - 0.4 * fringe;
-            }
+        #ifdef FLOOR_JOINTS
+            // The eased edges, where a pixel is too wide to tilt them: a faint shade along the
+            // gap, the pixel's share of the ease.
+            float joint_band = max(line_cover(d_a, plank.z + JOINT_ROUND, fpw), line_cover(d_l, plank.z + JOINT_ROUND, fpw)) - joint;
+            fine *= 1.0 - JOINT_SHADE * (1.0 - joint_seen) * joint_band;
+        #endif
         #ifdef PLANAR_FLOOR
             // Each board waxed and worn a little its own way: its mirror stronger or weaker,
             // and sharper or softer, so the reflection steps from board to board.
@@ -4221,6 +4205,10 @@ let PLANAR_FLOOR = "#define PLANAR_FLOOR 1\n";
 // there.
 let FLOOR_SHADE = "#define FLOOR_SHADE 1\n";
 let FLOOR_NO_TABLE = "#define FLOOR_NO_TABLE 1\n";
+// The floor's joints eased (the light tuner's --floor-joints eased): each board's edge
+// rounded over JOINT_ROUND (world units: 2.5 mm), its normal tilted JOINT_TILT at the gap,
+// and where pixels are too wide for that, a shade JOINT_SHADE along it. Without it, flat.
+let FLOOR_JOINTS = "#define FLOOR_JOINTS 1\n#define JOINT_ROUND 0.08\n#define JOINT_TILT 0.08\n#define JOINT_SHADE 0.15\n";
 // The room's box seen sharply (room_reflection): the metals outside the mirror, and the
 // floor without the mirror. The rest takes room_wide, which room_reflection is for them (a
 // surface not a metal has px 1, so sharp 0).

@@ -508,22 +508,22 @@ struct Gpu {
 // drawn (make_hdr), and again for other pieces or the light tuner's switches of the paint and
 // the sills, which they were made for.
 struct HdrPipelines {
-    lit:     Pipeline,
-    fading:  Pipeline,
-    table:   Pipeline,
-    floor:   Pipeline,
-    planar:  Pipeline,
+    lit:    Pipeline,
+    fading: Pipeline,
+    table:  Pipeline,
+    floor:  Pipeline,
+    planar: Pipeline,
     // The floor's pieces (SunDerived), by kind: without the sun, without the table's map.
     floor_kinds:  Pipeline[2],
     planar_kinds: Pipeline[2],
-    walls:   Pipeline,
-    paint:   Pipeline,
-    sill:    Pipeline,
-    metals:  Pipeline,
-    glass:   Pipeline,
-    outside: Pipeline,
-    motes:   Pipeline,
-    tone:    Pipeline,
+    walls:        Pipeline,
+    paint:        Pipeline,
+    sill:         Pipeline,
+    metals:       Pipeline,
+    glass:        Pipeline,
+    outside:      Pipeline,
+    motes:        Pipeline,
+    tone:         Pipeline,
     // The glow's (glow_pass): its first pick, a level halved, a level widened back up.
     glow_first: Pipeline,
     glow_down:  Pipeline,
@@ -864,8 +864,8 @@ fn floor_pieces(g: Gpu&, b: SurfacesBlock) -> i64, i64 {
     // The band of v the sun can reach, and the cuts across it, in u + j (v + S) (world
     // units); none lit where shell_open gives none (toward under 0.05).
     var band = float2 { 1e9, 1e9 };
-    var cuts: f32[SUN_CUTS] = [0.0; SUN_CUTS];
-    var spans: float2[4] = [float2_0; 4];
+    var cuts:  f32[SUN_CUTS] = [0.0; SUN_CUTS];
+    var spans: float2[4]     = [float2_0; 4];
     var n_spans = 0;
     var n_cuts = 0;
     let lit = toward >= 0.05 && l.y > 0.02;
@@ -911,10 +911,10 @@ fn floor_pieces(g: Gpu&, b: SurfacesBlock) -> i64, i64 {
     let hi = float2 { g.floor_corners[2].pos.x, g.floor_corners[2].pos.z };
     let rows: f32[4] = [lo.y, clamp(band.x, lo.y, hi.y), clamp(band.y, lo.y, hi.y), hi.y];
     var nv = 0;
-    var counts: i64[FLOOR_KINDS] = [0; FLOOR_KINDS];
-    var kinds: i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
+    var counts: i64[FLOOR_KINDS]  = [0; FLOOR_KINDS];
+    var kinds:  i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
     var starts: i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
-    var sizes: i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
+    var sizes:  i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
     var pieces = 0;
     for row in 3 {
         guard rows[row + 1] > rows[row] else { continue; }
@@ -1659,7 +1659,6 @@ struct SurfacesBlock {
     sill:          float4,
     sill_steps:    float4[2],
     window_view:   float4,
-    floor_look:    float4,
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
@@ -1749,7 +1748,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
                     float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paint_steps, k.sill,
-                    sill_steps, window_view, floor_look_of(),
+                    sill_steps, window_view,
                     table_map_shown(g),
                     books::COVER, books::LABEL }
 }
@@ -2817,13 +2816,6 @@ fn planar_block_of(g: Gpu&) -> float4 {
     let view: f32 = if planar_view == 1 { 1.0 } else { 0.0 };
     return float4 { g.room.planar.x, view, across * 0.5 * g.planar_size.x, PLANAR_MIPS - 1 };
 }
-// The floor's joints (ROOM_FRAG's floor, Surfaces' floor_look): flat, the gap a dark line;
-// or deep, each board's edge rounded over JOINT_ROUND in its shading, the gap darkest at its
-// bottom with a soft fringe onto the boards (the light tuner's --floor-joints).
-var floor_joints_deep = false;
-let JOINT_ROUND: f32 = 0.08;   // world units: 2.5 mm
-fn floor_look_of() -> float4 { float4 { if floor_joints_deep { 1.0 } else { 0.0 }, JOINT_ROUND, 0.0, 0.0 } }
-
 fn planar_look_of(g: Gpu&) -> float4 {
     guard planar_seen_on_floor(g) else { return float4_0; }
     return float4 { g.room.planar.z, g.room.planar.y, 0.0, 0.0 };

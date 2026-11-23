@@ -79,7 +79,7 @@
 //       --sun-eye STRENGTH,HALF_DEG,END_DEG,AMBER (the eye's veil round the sun, HDR; 0 off)
 //       --glow STRENGTH,THRESHOLD,KNEE,REACH --glow-levels N]
 //       [--view-nudge DX,DY,DZ (the table-window view's eye and target moved, metres in the plan)]
-//       [--floor-joints flat|deep (the floor's joints, JOINT_NAMES; flat)]
+//       [--floor-joints flat|eased (the floor's joints, JOINT_NAMES; flat)]
 //       [--tone-probe K (HDR: the picture's linear light times K as grey levels, no tonemap; -K the sun's open share)]
 //       [--lace-sun K] [--lace-scatter K] [--glass-film K] [--scratches K] [--sun-veil K] (the window view's
 //       steps, render3d::window_view and sun_veil: each a strength, 1 as made, 0 off; Z switches them, the
@@ -219,9 +219,9 @@ fn view_point(p: float3, view: i64) -> float3 {
 // disc with its edge hidden in its glow and the leaves' gaps sharper, 8000 over the sky,
 // and the eye's veil round the sun, which looked overdone against open sky.
 let SUN_LOOK_NAMES = ["made", "veil"];
-// The floor's joints (render3d::floor_joints_deep): flat, a dark line; deep, each board's edge
-// rounded over in its shading with the gap darkest at its bottom.
-let JOINT_NAMES = ["flat", "deep"];
+// The floor's joints: flat, a dark line; eased, each board's edge rounded over a little in its
+// shading (shaders::FLOOR_JOINTS, the tuner's own floor shaders).
+let JOINT_NAMES = ["flat", "eased"];
 // The haze in the sunbeam's strengths (render3d::Haze.sigma, a metre): off; a clean room's air,
 // a lived-in one's, a room just dusted (build/notes/window-view/refs/research-haze-motes.md),
 // and the ChatGPT library study's soft wide beam across the dark bookcase.
@@ -1235,7 +1235,7 @@ fn main() {
             "",
             embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            "", "", "", "", ""];
+            "", "", "", "", "", "", "", "", "", "", ""];
         render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
                                       pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
     }
@@ -1247,6 +1247,18 @@ fn main() {
         render3d::park_ground = true;
         render3d::tuned_frags[render3d::TUNED_OUTSIDE] = park_frag(part, false);
         render3d::tuned_frags[render3d::TUNED_OUTSIDE_HDR] = park_frag(part, true);
+    }
+    // The floor with its joints eased (--floor-joints eased), in the room and the HDR target.
+    if pick(argv, "--floor-joints", JOINT_NAMES, 0) == 1 {
+        render3d::tuned_frags[render3d::TUNED_FLOOR] = embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_JOINTS, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        render3d::tuned_frags[render3d::TUNED_PLANAR] = embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_JOINTS, shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        let f = render3d::TUNED_FLOOR_HDR;
+        render3d::tuned_frags[f] = embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_JOINTS, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        render3d::tuned_frags[f + 1] = embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_JOINTS, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        render3d::tuned_frags[f + 2] = embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_JOINTS, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        render3d::tuned_frags[f + 3] = embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_JOINTS, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        render3d::tuned_frags[f + 4] = embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_JOINTS, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+        render3d::tuned_frags[f + 5] = embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_JOINTS, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     // The painted wood's shader with its steps switched (J, --paint, --paint-off).
     render3d::tuned_frags[render3d::TUNED_PAINT_STEPS] = embed_shader("frag", shaders::ROOM_PAINT, shaders::PAINT_STEPS, shaders::SHELL_WINDOWS,
@@ -1349,7 +1361,6 @@ fn main() {
     render3d::window_view = float4 { number(argv, "--lace-sun", 1.0), number(argv, "--lace-scatter", 1.0), number(argv, "--glass-film", 1.0),
                                      number(argv, "--scratches", 1.0) };
     render3d::sun_veil = number(argv, "--sun-veil", 1.0);
-    render3d::floor_joints_deep = pick(argv, "--floor-joints", JOINT_NAMES, 0) == 1;
     // The sun's look in the view out (render3d::SunLook): a preset, then each part's flag over it.
     // The haze in the sunbeam (render3d::Haze): a strength, sigma over it; its look; half size or full.
     let haze_way = pick(argv, "--haze", HAZE_NAMES, 0);
