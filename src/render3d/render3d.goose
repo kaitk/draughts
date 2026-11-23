@@ -61,6 +61,7 @@ struct Frame {
     branches:        float4,
     gust_reach:      float4,
     disc_n:          float4,
+    disc_bounds:     float4,
     discs:           float4[MAX_DISCS],
     room_axes:       float4,
     toe:             float4,
@@ -1032,8 +1033,22 @@ fn floor_vertex(g: Gpu&, p: float2) -> corner_map::RoomVertex {
 let MAX_DISCS = 48;     // view3d::MAX_DISCS, FRAME's discs[48]
 fn table_discs(g: Gpu&, discs: const float4[:], r: f32) {
     let n = min(discs.len, MAX_DISCS);
-    for i in n { g.frame.discs[i] = discs[i]; }
-    g.frame.disc_n = float4 { n, r, 0.0, 0.0 };
+    var low = float2 { 1e6, 1e6 };
+    var high = float2 { -1e6, -1e6 };
+    var lo_y: f32 = 0.0;
+    var hi_y: f32 = 0.0;
+    for i in n {
+        let d = discs[i];
+        g.frame.discs[i] = d;
+        let at = float2 { d.x, d.y };
+        low = float2 { min(low.x, at.x), min(low.y, at.y) };
+        high = float2 { max(high.x, at.x), max(high.y, at.y) };
+        lo_y = min(lo_y, min(d.z, d.w));
+        hi_y = max(hi_y, max(d.z, d.w));
+    }
+    let reach = r + max(0.35 * r, 0.015 + 0.1 * hi_y) + 0.01;
+    g.frame.disc_n = float4 { n, r, lo_y, hi_y };
+    g.frame.disc_bounds = float4 { low.x - reach, low.y - reach, high.x + reach, high.y + reach };
 }
 
 // Shows the table under the board or not; its maps are baked with the next theme put on

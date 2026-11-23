@@ -1795,6 +1795,12 @@ to be is in tasks 042, 059, 071, 081, and 086.
   twice. Both terms now read one result and keep their existing lighting formulas.
   With the exterior already skipped, board view frame time fell from 27.16 to 22.19 ms at
   3840 × 2160 and from 45.80 to 37.15 ms at 5120 × 2880. Both shots were byte-identical.
+- Bound the captured pieces' tabletop shadows (2026-11-23, task 110, `TABLE_FRAG`).
+  Compute the captured pieces' bounds with their height range when placing them. Sweeping
+  the bounds along the light and padding for both shadow and sky occlusion lets the
+  tabletop return full light outside them. The existing per-piece calculation runs inside
+  the bounds. Board frame time fell from 22.19 to 19.64 ms at 3840 × 2160 and from 37.15 to
+  32.69 ms at 5120 × 2880. Both shots were byte-identical.
 - A cheap mirror world as a trial behind the light tuner's `--mirror-cheap on`, off by
   default (2026-11-23, task 110; `MIRROR_CHEAP`, `CHEAP_TABLE`, `render3d::mirror_cheap`).
   It replaces nothing yet: the user decides on the default. In the floor's mirror the room's

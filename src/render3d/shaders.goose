@@ -80,8 +80,11 @@ let FRAME = """
         vec4 branches;
         vec4 gust_reach;
         // The pieces lying on the table (render3d::table_discs): disc_n x how many, y
-        // their radius; each disc x, z, its foot's and its top's height over the table.
+        // their radius, zw their height range including the table. disc_bounds
+        // covers their xz positions and the edges of their shadow and sky occlusion
+        // before the light's sweep. Each disc stores xz, then foot and top heights.
         vec4 disc_n;
+        vec4 disc_bounds;
         vec4 discs[48];
         // The room's frame (surfaces::Frame, render3d::put_room): u's direction in the
         // world's x and z, then v's; ROOM_VERT turns the room's mesh by it.
@@ -1888,6 +1891,11 @@ let TABLE_FRAG = """
         float lit = 1.0;
         float occ = 1.0;
         int n = int(disc_n.x);
+        vec2 a_bound = off * disc_n.z;
+        vec2 b_bound = off * disc_n.w;
+        vec2 lo = disc_bounds.xy + min(a_bound, b_bound);
+        vec2 hi = disc_bounds.zw + max(a_bound, b_bound);
+        if (p.x < lo.x || p.y < lo.y || p.x > hi.x || p.y > hi.y) return vec2(1.0);
         for (int i = 0; i < 48; i++) {
             if (i >= n) break;
             vec4 c = discs[i];
