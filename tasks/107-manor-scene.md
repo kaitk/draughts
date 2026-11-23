@@ -604,6 +604,33 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
     | Menu | 14.63 → 15.08 | 23.70 → 24.00 |
 
   - Both Mac apps build and the tests pass with NGFX set. ADB found no USB device.
+- [x] Give glass and lace separate color shaders and index ranges (2026-11-23,
+      `build/notes/glass-lace-split/`, baseline `9cf039d5`). Both renderers draw glass
+      first in the room and floor mirror.
+  - M1 Pro light tuner, two alternating six-second runs per build under the quiet lock.
+    Each run contributes its last six half-second samples.
+
+    | View | 3840 × 2160 before → after (ms) | 5120 × 2880 before → after (ms) |
+    | --- | ---: | ---: |
+    | Straight down | 11.04 → 11.28 | 18.77 → 18.48 |
+    | Corner | 15.58 → 15.97 | 25.23 → 24.70 |
+    | Room | 14.77 → 14.25 | 24.62 → 23.06 |
+    | Menu | 14.94 → 13.69 | 24.79 → 22.67 |
+
+  - Menu was faster in both rounds at each size. The largest same-build spreads across
+    all views were 2.08 ms at 3840 × 2160 and 3.18 ms at 5120 × 2880.
+  - Both straight-down shots were byte-identical. Maximum RGB levels / changed pixels
+    were 2 / 1,300 (corner), 2 / 1,158 (room), and 2 / 100 (menu) at 3840 × 2160.
+    At 5120 × 2880 they were 2 / 3,665, 2 / 2,392, and 1 / 217. All eight baseline
+    repeats were byte-identical. The grazing shots from both ends of the wall, including
+    the 1 cm camera shift, were within two levels. All of these shots had zero pixels
+    over eight.
+  - The corner became byte-identical with the mirror off. The corner's mirror-map
+    debug view reached 10 levels at most, with six pixels over eight. A control that
+    sorted the indices while keeping the original shader and single draw reproduced
+    the larger differences in the debug view. The test suite passed with NGFX set,
+    and both Mac apps built. The 3D home screen differed by at most one level on
+    either backend. ADB found no connected tablet.
 - [ ] The lace in shade, open questions (`build/notes/lace-shade/trials.html`): a cooler
       tint in shade; trial 1 (more opacity at grazing angles) and trial 4 (motif against
       net), only if the user wants more after the defaults of 2026-11-23

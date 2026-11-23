@@ -360,10 +360,12 @@ struct Gpu {
     lace_mask:    Texture,          // the curtains' lace, R8 with its mips (surfaces::LACE_TEXELS)
     lace_way:     i64,              // which lace (surfaces::LACE_WAYS), and the one on the GPU
     lace_put:     i64,
-    glass_vb:     Buffer,           // the shell's glass and lace, drawn blended after the rest
-    glass_ib:     Buffer,
-    glass_count:  i64,
+    window_vb:    Buffer,            // the shell's glass and lace, drawn blended after the rest
+    window_ib:    Buffer,
+    window_count: i64,
+    lace_first:   i64,
     room_glass:   Pipeline,
+    room_lace:    Pipeline,
     room_vb:      Buffer,
     room_ib:      Buffer,
     room_count:   i64,
@@ -440,6 +442,7 @@ struct Gpu {
     planar_sill:    Pipeline,
     planar_metals:  Pipeline,
     planar_glass:   Pipeline,
+    planar_lace:    Pipeline,
     planar_table:   Pipeline,
     cheap_room:     Pipeline,       // the cheap mirror world's (mirror_cheap), made while it is on
     cheap_table:    Pipeline,
@@ -527,6 +530,7 @@ struct HdrPipelines {
     sill:         Pipeline,
     metals:       Pipeline,
     glass:        Pipeline,
+    lace:         Pipeline,
     outside:      Pipeline,
     motes:        Pipeline,
     tone:         Pipeline,
@@ -1067,13 +1071,16 @@ fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY, shell: bool = f
 // the plaster and the ceiling, the cord); the painted wood (the doors, their architraves,
 // the windows' joinery and shutters); the sills' stone; the metals (the brass, and the
 // books with their gilt), which see the room's box sharply. The glass and the lace are a
-// mesh of their own.
+// shared mesh with an index range for each.
 let GROUP_FLOOR = 0;
 let GROUP_WALLS = 1;
 let GROUP_PAINT = 2;
 let GROUP_SILL = 3;
 let GROUP_METALS = 4;
 let ROOM_GROUPS = 5;
+let GROUP_GLASS = ROOM_GROUPS;
+let GROUP_LACE = ROOM_GROUPS + 1;
+fn window_group(group: i64) -> bool { group == GROUP_GLASS || group == GROUP_LACE }
 fn room_group(mat: f32) -> i64 {
     let kind = floor(mat + 0.001);
     if kind < surfaces::MAT_FLOOR + 0.5 { return GROUP_FLOOR; }
@@ -1105,10 +1112,34 @@ fn by_group(room: corner_map::RoomVertex[>..]&, indices: u32[>..]&) -> i64[ROOM_
 // Where group k's indices end.
 fn group_end(g: Gpu&, k: i64) -> i64 { if k + 1 < ROOM_GROUPS { g.room_from[k + 1] } else { g.room_count } }
 
-// The textures a group's shader reads (GROUP_GLASS the glass and lace's), in its slots
-// (shaders::ROOM_HEAD): the tree's and the lace's maps, the light's, the group's own, the
-// screen's maps where the pipeline has them (ssao), the mirror where the floor sees it.
-let GROUP_GLASS = 5;
+// Separate the window mesh's glass and lace, keeping the original triangle order within
+// each range. The material is integral here, after the fold shade moved into the corner.
+fn window_indices_by_group(verts: corner_map::RoomVertex[>..]&, indices: u32[>..]&) -> i64 {
+    var sorted: u32[>..] = [];
+    var lace_first = 0;
+    for material in [surfaces::MAT_GLASS, surfaces::MAT_LACE] {
+        lace_first = sorted.len;
+        var i = 0;
+        while i < indices.len {
+            if verts[indices[i] as i64].mat == material {
+                for j in 0..3 { sorted.push(indices[i + j]); }
+            }
+            i += 3;
+        }
+    }
+    indices[..].move_from(sorted[..]);
+    return lace_first;
+}
+
+fn room_index_range(g: Gpu&, group: i64) -> i64, i64 {
+    if group == GROUP_GLASS { return 0, g.lace_first; }
+    if group == GROUP_LACE { return g.lace_first, g.window_count - g.lace_first; }
+    let first = g.room_from[group];
+    return first, group_end(g, group) - first;
+}
+
+// The textures a group's shader reads, in its slots (shaders::ROOM_HEAD): the tree's
+// and lace's maps, the light's, the group's own, the screen's maps (ssao), and the mirror.
 let ROOM_TEXTURES = 12;
 struct RoomTextures { tex: Texture[ROOM_TEXTURES], smp: Sampler[ROOM_TEXTURES], count: i64 }
 fn add_texture(t: RoomTextures&, tex: Texture, smp: Sampler) {
@@ -1120,7 +1151,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures 
     var t = default<RoomTextures>();
     add_texture(t, tree_or_stand_in(g), g.linear);
     add_texture(t, g.lace_mask, g.aniso);
-    if group != GROUP_GLASS {
+    if !window_group(group) {
         add_texture(t, light_or_stand_in(g), g.linear);
         add_texture(t, table_map_or_stand_in(g), g.compare);
         add_texture(t, corners_or_stand_in(g), g.linear);
@@ -1146,7 +1177,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures 
     if group == GROUP_GLASS { add_texture(t, if g.glass_tile.id != 0 { g.glass_tile } else { g.crown_map }, g.aniso); }
     if ssao {
         add_texture(t, ssao_or_stand_in(g), g.linear);
-        if group != GROUP_GLASS { add_texture(t, pre_place_or_stand_in(g), g.linear); }
+        if !window_group(group) { add_texture(t, pre_place_or_stand_in(g), g.linear); }
     }
     if planar { add_texture(t, g.planar_map, g.planar_sampler); }
     return t;
@@ -1308,14 +1339,15 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         glass_room.push(corner_map::room_vertex(whole, float2 { v.mat - kind, 0.0 }, float2_0));
     }
     if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }
-    if g.glass_vb.id != 0 { o.gpu_release_mesh(g.glass_vb, g.glass_ib); }
+    if g.window_vb.id != 0 { o.gpu_release_mesh(g.window_vb, g.window_ib); }
     g.room_vb, g.room_ib = o.gpu_mesh(bytes_of(room), bytes_of(room_indices));
     g.room_count = g.cheap_from;
-    g.glass_count = glass_indices.len;
-    if g.glass_count > 0 { g.glass_vb, g.glass_ib = o.gpu_mesh(bytes_of(glass_room), bytes_of(glass_indices)); }
+    g.window_count = glass_indices.len;
+    g.lace_first = window_indices_by_group(glass_room, glass_indices);
+    if g.window_count > 0 { g.window_vb, g.window_ib = o.gpu_mesh(bytes_of(glass_room), bytes_of(glass_indices)); }
     else {
-        g.glass_vb = Buffer { 0 };
-        g.glass_ib = Buffer { 0 };
+        g.window_vb = Buffer { 0 };
+        g.window_ib = Buffer { 0 };
     }
     g.room_for = key;
     g.shell_table = room_shell::LIBRARY.table;

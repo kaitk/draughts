@@ -1121,6 +1121,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   further (their shader with only the plaster's code drew them 0.1 ms faster, without the
   oak's 0.26: less than a draw and a pipeline more pay for); keeping every texture in
   every shader at fixed slots (15 of 16 taken already); the views as uniforms.
+- Glass and lace use separate pipelines and index ranges (2026-11-23, task 107).
+  This replaces the shared `ROOM_GLASS` shader and draw from the material grouping
+  above. `ROOM_GLASS` and `ROOM_LACE` compile each material's shading separately so
+  a fragment never selects between the glass and cloth code. Both renderers blend the
+  glass before the lace in the room and its floor reflection. The order of triangles
+  within each material follows the window mesh. See task 107 for the Mac timings and
+  image comparisons.
 - The high tier draws the 3D scene under a budget of 4.1 million pixels and scales it up to
   the screen with Catmull-Rom; the UI over it keeps the screen's pixels (2026-11-22, task
   110's fix 4; `render3d::scene_size_of`, `HIGH_SCENE_PIXELS`, `upscale_pass`,

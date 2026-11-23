@@ -1235,7 +1235,9 @@ fn main() {
             "",
             embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
                          shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            "", "", "", "", ""];
+            "", "", "", "", "",
+            embed_shader("frag", shaders::ROOM_LACE, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
+                         shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)];
         render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
                                       pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
     }
@@ -1586,7 +1588,7 @@ fn main() {
             if g.room_ms > 0.0 {
                 print("the room's oak baked in ", g.room_ms, " ms, ", g.room_side, " texels a side, ",
                       render3d::room_bytes(g) / 1048576, " MiB; its mesh made in ", g.mesh_ms, " ms, ",
-                      g.room_count / 3, " triangles and ", g.glass_count / 3, " of glass and lace");
+                      g.room_count / 3, " triangles and ", g.window_count / 3, " of glass and lace");
                 print("the paint's relief tile made in ", g.paint_tile_ms, " ms, ", room_shell::relief_bytes(), " bytes");
                 print("the sills' limestone tile made in ", g.stone_tile_ms, " ms, ", room_shell::stone_bytes(), " bytes");
                 print("the glass's tile made in ", g.glass_tile_ms, " ms, ", glass_tile::bytes(), " bytes");

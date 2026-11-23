@@ -167,7 +167,8 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
             draw_room_group(g, f, u, h.sill, render3d::GROUP_SILL, ssao, false);
             draw_room_group(g, f, u, h.paint, render3d::GROUP_PAINT, ssao, false);
             draw_room_group(g, f, u, h.metals, render3d::GROUP_METALS, ssao, false);
-            if g.glass_count > 0 { draw_room_group(g, f, u, h.glass, render3d::GROUP_GLASS, ssao, false); }
+            draw_room_group(g, f, u, h.glass, render3d::GROUP_GLASS, ssao, false);
+            draw_room_group(g, f, u, h.lace, render3d::GROUP_LACE, ssao, false);
         } else {
             draw_room_group(g, f, u, if planar { g.room_planar } else { g.room_floor }, render3d::GROUP_FLOOR, ssao, planar);
             draw_room_group(g, f, u, g.room_walls, render3d::GROUP_WALLS, ssao, false);
@@ -175,7 +176,8 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
             draw_room_group(g, f, u, g.room_paint, render3d::GROUP_PAINT, ssao, false);
             draw_room_group(g, f, u, g.room_metals, render3d::GROUP_METALS, ssao, false);
             // The shell's glass and lace over what stands behind them.
-            if g.glass_count > 0 { draw_room_group(g, f, u, g.room_glass, render3d::GROUP_GLASS, ssao, false); }
+            draw_room_group(g, f, u, g.room_glass, render3d::GROUP_GLASS, ssao, false);
+            draw_room_group(g, f, u, g.room_lace, render3d::GROUP_LACE, ssao, false);
         }
     }
 
@@ -217,23 +219,21 @@ fn make_motes(own: Own&, g: Gpu&) {
                            ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_ADD });
 }
 
-// A material group of the room (render3d::room_group; GROUP_GLASS the glass and lace's
-// mesh) drawn with pipeline p, compiled with the screen's maps (ssao) or not, the floor's
-// seeing the mirror (planar): its textures in the module's slots (render3d::room_textures),
-// frame f and blocks u, as gfx's (render3d_gpu.goose's draw_room_group).
+// Draw a material group from the room or window mesh with pipeline p. The screen's maps
+// (ssao) and the floor's mirror (planar) determine its texture bindings
+// (render3d::room_textures), as in the gfx renderer.
 fn draw_room_group(g: Gpu&, f: u64, u: u64, p: nx::Pipeline, group: i64, ssao: bool, planar: bool) {
-    let glass = group == render3d::GROUP_GLASS;
-    let first = if glass { 0 } else { g.room_from[group] };
-    let count = if glass { g.glass_count } else { render3d::group_end(g, group) - first };
+    let window = render3d::window_group(group);
+    let first, count = render3d::room_index_range(g, group);
     guard count > 0 else { return; }
     nx::bind(p);
     var r = no_root();
     r.frame = f;
     r.u = u;
-    r.verts = nx::address(if glass { g.glass_vb } else { g.room_vb });
+    r.verts = nx::address(if window { g.window_vb } else { g.room_vb });
     let t = render3d::room_textures(g, group, ssao, planar);
     for i in t.count { slot(r, i, t.tex[i], t.smp[i]); }
-    nx::draw_indexed(ngfx::root(r), if glass { g.glass_ib } else { g.room_ib }, 4, count, first);
+    nx::draw_indexed(ngfx::root(r), if window { g.window_ib } else { g.room_ib }, 4, count, first);
 }
 
 // The floor in its pieces (render3d::SunDerived), each kind with its own pipeline: without
@@ -261,9 +261,9 @@ fn make_room_tier(own: Own&, g: Gpu&) {
     let ssao = render3d::ssao_allowed;
     guard g.room_walls.id == 0 || g.room_ssao != ssao else { return; }
     if g.room_walls.id != 0 {
-        for p in [g.room_floor, g.room_walls, g.room_paint, g.room_sill, g.room_metals, g.room_glass, g.table_room] { nx::release(p); }
+        for p in [g.room_floor, g.room_walls, g.room_paint, g.room_sill, g.room_metals, g.room_glass, g.room_lace, g.table_room] { nx::release(p); }
         if g.room_planar.id != 0 {
-            for p in [g.room_planar, g.planar_walls, g.planar_paint, g.planar_sill, g.planar_metals, g.planar_glass, g.planar_table] {
+            for p in [g.room_planar, g.planar_walls, g.planar_paint, g.planar_sill, g.planar_metals, g.planar_glass, g.planar_lace, g.planar_table] {
                 nx::release(p);
             }
             g.room_planar = nx::Pipeline { 0 };
@@ -272,6 +272,7 @@ fn make_room_tier(own: Own&, g: Gpu&) {
             g.planar_sill = nx::Pipeline { 0 };
             g.planar_metals = nx::Pipeline { 0 };
             g.planar_glass = nx::Pipeline { 0 };
+            g.planar_lace = nx::Pipeline { 0 };
             g.planar_table = nx::Pipeline { 0 };
         }
     }
@@ -286,6 +287,7 @@ fn make_room_tier(own: Own&, g: Gpu&) {
         g.room_sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_sill.blob"), opaque);
         g.room_metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_metals.blob"), opaque);
         g.room_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_glass.blob"), blended);
+        g.room_lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_lace.blob"), blended);
         g.table_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_room.blob"), table_desc);
     } else {
         g.room_floor = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_floor_phone.blob"), opaque);
@@ -294,6 +296,7 @@ fn make_room_tier(own: Own&, g: Gpu&) {
         g.room_sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_sill_phone.blob"), opaque);
         g.room_metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_metals_phone.blob"), opaque);
         g.room_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_glass_phone.blob"), blended);
+        g.room_lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_lace_phone.blob"), blended);
         g.table_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_room_phone.blob"), table_desc);
         return;
     }
@@ -302,8 +305,10 @@ fn make_room_tier(own: Own&, g: Gpu&) {
     g.planar_paint = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_paint.blob"), opaque);
     g.planar_sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_sill.blob"), opaque);
     g.planar_metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_metals.blob"), opaque);
-    // The glass writes its depth here, so the sky behind it is as far as the window.
+    // The glass and lace write depth here, so the reflection resolves at the window.
     g.planar_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_glass.blob"),
+                                  ngfx::PipelineDesc { depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED });
+    g.planar_lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_lace.blob"),
                                   ngfx::PipelineDesc { depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED });
     g.planar_table = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_mirror.blob"),
                                   ngfx::PipelineDesc { cull: ngfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
@@ -389,7 +394,8 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
     draw_room_group(g, f, u, g.planar_sill, render3d::GROUP_SILL, false, false);
     draw_room_group(g, f, u, g.planar_paint, render3d::GROUP_PAINT, false, false);
     draw_room_group(g, f, u, g.planar_metals, render3d::GROUP_METALS, false, false);
-    if g.glass_count > 0 { draw_room_group(g, f, u, g.planar_glass, render3d::GROUP_GLASS, false, false); }
+    draw_room_group(g, f, u, g.planar_glass, render3d::GROUP_GLASS, false, false);
+    draw_room_group(g, f, u, g.planar_lace, render3d::GROUP_LACE, false, false);
     ngfx::end_pass();
     barrier_between_passes();
     var into = nx::PassDesc { clear_color: false };
@@ -476,9 +482,9 @@ fn ssao_pass(own: Own&, g: Gpu&, size: int2) {
     r.frame = f;
     r.verts = nx::address(g.room_vb);
     nx::draw_indexed(ngfx::root(r), g.room_ib, 4, g.room_count);
-    if g.glass_count > 0 {
-        r.verts = nx::address(g.glass_vb);
-        nx::draw_indexed(ngfx::root(r), g.glass_ib, 4, g.glass_count);
+    if g.window_count > 0 {
+        r.verts = nx::address(g.window_vb);
+        nx::draw_indexed(ngfx::root(r), g.window_ib, 4, g.window_count);
     }
     ngfx::end_pass();
     barrier_between_passes();
@@ -633,6 +639,8 @@ fn make_hdr(own: Own&, g: Gpu&) {
     h.metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_metals.blob"), opaque);
     h.glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_glass.blob"),
                            ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
+    h.lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_lace.blob"),
+                           ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
     h.outside = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_outside.blob"),
                              ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
     h.motes = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_dust.blob"),
@@ -650,7 +658,7 @@ fn make_hdr(own: Own&, g: Gpu&) {
 // The HDR target's pipelines given back (make_hdr, release).
 fn release_hdr(own: Own&, g: Gpu&) {
     let h = g.hdr_pipes;
-    for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone,
+    for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.lace, h.outside, h.motes, h.tone,
               h.glow_first, h.glow_down, h.glow_up, h.haze_cross, h.haze, h.haze_full, h.haze_add, h.floor_kinds[0], h.floor_kinds[1],
               h.planar_kinds[0], h.planar_kinds[1]] {
         if p.id != 0 { nx::release(p); }
@@ -808,14 +816,14 @@ fn depth_pass(own: Own&, g: Gpu&) {
     r.frame = f;
     r.verts = nx::address(g.room_vb);
     nx::draw_indexed(ngfx::root(r), g.room_ib, 4, g.room_count);
-    if g.glass_count > 0 {
+    if g.window_count > 0 {
         nx::bind(g.depth_lace);
         var l = no_root();
         l.frame = f;
         l.u = blocks([render3d::surfaces_block(g).tile]);
-        l.verts = nx::address(g.glass_vb);
+        l.verts = nx::address(g.window_vb);
         slot(l, 0, render3d::lace_or_stand_in(g), g.linear);
-        nx::draw_indexed(ngfx::root(l), g.glass_ib, 4, g.glass_count);
+        nx::draw_indexed(ngfx::root(l), g.window_ib, 4, g.window_count);
     }
     ngfx::end_pass();
     barrier_between_passes();
@@ -1575,15 +1583,15 @@ fn release(own: Own&, g: Gpu&) {
                     g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.glass_vb, g.glass_ib, g.outside_vb, g.outside_ib, g.haze_panes];
+                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.window_vb, g.window_ib, g.outside_vb, g.outside_ib, g.haze_panes];
     for b in buffers { if b.id != 0 { nx::release(b); } }
     let samplers = [g.linear, own.point, g.aniso, g.compare, g.planar_sampler];
     for s in samplers { if s.id != 0 { nx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
-                     g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_floor, g.room_walls, g.room_metals, g.bake_room, g.room_glass, g.outside, g.bloom_pick,
+                     g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_floor, g.room_walls, g.room_metals, g.bake_room, g.room_glass, g.room_lace, g.outside, g.bloom_pick,
                      g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.planar_walls,
-                     g.planar_metals, g.planar_glass, g.planar_table, g.planar_resolve, g.planar_show, g.planar_mip,
+                     g.planar_metals, g.planar_glass, g.planar_lace, g.planar_table, g.planar_resolve, g.planar_show, g.planar_mip,
                      g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     release_hdr(own, g);

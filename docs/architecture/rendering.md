@@ -733,10 +733,11 @@ board's light:
   Both use 8× anisotropy. The light tuner's `--oak-aniso-4` previews 4×.
 - **The room's shaders**: one pipeline a material group (`render3d::room_group`), each
   with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_PAINT`,
-  `ROOM_SILL`, `ROOM_METALS`, `ROOM_GLASS`): the floor; the panelling oak, the paper, the
-  plaster and ceiling, the cord; the painted wood; the sills' stone; the brass and the
-  books; the glass and lace, a mesh of their own. The room's mesh is sorted into the groups' index ranges when it is made, each range
-  drawn with its pipeline. A phone's pipelines are compiled without the screen's maps
+  `ROOM_SILL`, `ROOM_METALS`, `ROOM_GLASS`, `ROOM_LACE`). The floor, walls, painted wood,
+  stone, and metals have index ranges in the opaque room mesh. Glass and lace have separate
+  index ranges in the window mesh. Both renderers blend glass first and lace second after
+  the opaque surfaces in the room and floor mirror. A phone's pipelines are compiled
+  without the screen's maps
   (`NO_SSAO`) and it makes no mirror's; the standard and high tiers' with them, made again
   if the tier changes. Each shader declares only the textures it reads, in slots without
   gaps (`render3d::room_textures`). The output is tonemapped sRGB, or with `LINEAR_OUT`
@@ -878,13 +879,13 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   A chain settled by Verlet steps gives the slack run to the hook (`settle_tie`).
   The two tails and their tassels hang plumb or rest on the cloth below the tie
   (`hang_tail`).
-- **The lace in the sun** (the glass and lace's pipeline, `ROOM_GLASS`): the sun on its
+- **The lace in the sun** (`ROOM_LACE`): the sun on its
   back carries the bars' and leaves' shadows at their full depth, not lifted by the room's
   shade floor, and the lit cloth lets 60% more of the sun through where it falls
   (`LACE_GLOW`). The sky and park it sees behind it (`curtains.goose`'s `sky_behind`, a
   vertex's share) are the casements' glazed opening's, softened 0.1 m for the glass's
   depth behind it, not the niche's arched outline.
-- **The lace in the shade** (`ROOM_GLASS`): the room's fill on the lace is half where
+- **The lace in the shade** (`ROOM_LACE`): the room's fill on the lace is half where
   neither the sun nor the sky behind the niche reaches it, and less in its folds' valleys,
   by 1.5 times what the folds beside a point hide of the room (`curtains.goose`'s
   `fold_hidden`, baked into the vertex, up to 0.4), so the deepest keep 0.4 of it

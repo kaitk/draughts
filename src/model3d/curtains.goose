@@ -233,7 +233,7 @@ fn climb(pos: float3[:], up: f32[:], cols: i64, rows: i64) {
 // row: the share of the half circle out of the wall (cosine weighted) under the highest
 // neighbour within FOLD_REACH each side, FOLD_DEEP in the deepest valleys and 0 on the
 // crests. It goes into the lace's material's fraction (render3d moves it into a channel of
-// its own), and the shader darkens its room-side fill by it (shaders::ROOM_GLASS,
+// its own), and the shader darkens its room-side fill by it (shaders::ROOM_LACE,
 // render3d::lace_shade).
 let FOLD_REACH:  f32 = 0.1;
 let FOLD_DEEP:   f32 = 0.4;

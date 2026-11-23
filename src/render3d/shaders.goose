@@ -2249,14 +2249,14 @@ let ROOM_HEAD = """
     layout(location = 6) flat in vec2 v_box;
     layout(location = 0) out vec4 result;
     // Each group's shader (ROOM_FRAG's ROOM_FLOOR, ROOM_WALLS, ROOM_PAINT, ROOM_SILL,
-    // ROOM_METALS, ROOM_GLASS) declares only the textures it reads, in slots without gaps, as render3d::room_textures
-    // binds them: the tree's map and the lace's (LIGHT_FN's window light), then the light's
-    // (not the glass's), the group's own, and last the screen's two maps, which NO_SSAO
-    // leaves out. The floor's mirror after them (PLANAR_FLOOR).
+    // ROOM_METALS, ROOM_GLASS, ROOM_LACE) declares the textures in the order
+    // render3d::room_textures binds them: the tree and lace maps for window light, the
+    // light maps for opaque surfaces, and any material textures. The screen maps follow
+    // unless NO_SSAO leaves them out. The floor's mirror comes last (PLANAR_FLOOR).
     layout(set = 2, binding = 0) uniform sampler2D tree_map;
     // The lace's coverage (design/materials/), R8 with its mips.
     layout(set = 2, binding = 1) uniform sampler2D lace_mask;
-    #ifndef ROOM_GLASS
+    #ifndef ROOM_WINDOW
     // The room's baked light (model3d::room_light): its probes' atlas, RGBA16F.
     layout(set = 2, binding = 2) uniform sampler2D light_volume;
     // The table's own map (TABLE_MAP_FN).
@@ -2328,6 +2328,11 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 2) uniform sampler2D glass_tile;
     #ifndef NO_SSAO
     layout(set = 2, binding = 3) uniform sampler2D ssao_map;
+    #endif
+    #endif
+    #ifdef ROOM_LACE
+    #ifndef NO_SSAO
+    layout(set = 2, binding = 2) uniform sampler2D ssao_map;
     #endif
     #endif
     #endif
@@ -3085,7 +3090,7 @@ let ROOM_FRAG = """
         return pk;
     }
 
-    #ifndef ROOM_GLASS
+    #ifndef ROOM_WINDOW
     // One probe's texel of the baked light: colour c's block, the height's slice k, at g
     // (the grid's x and along v).
     vec4 probe_at(float c, float k, vec2 g) {
@@ -3127,7 +3132,7 @@ let ROOM_FRAG = """
         return max(mix(vec3(y), light_color.rgb, sat), vec3(0.0));
     }
 
-    #ifndef ROOM_GLASS
+    #ifndef ROOM_WINDOW
     // The room's light the way r looks by its mean albedo there: the floor's below, the
     // walls' across, the plaster's above: what a rough surface sees through its GGX lobe.
     vec3 room_wide(vec3 lp, vec3 r) {
@@ -3310,7 +3315,7 @@ let ROOM_FRAG = """
     }
 
     #ifndef NO_SSAO
-    #ifndef ROOM_GLASS
+    #ifndef ROOM_WINDOW
     // The sun's contact shadow at p (the world's; ng its face's normal, l toward the sun):
     // a short ray toward the sun marched over the half-size map of where the screen's
     // surfaces are (pre_place); a step behind what is drawn there, by more than a bias and
@@ -3368,11 +3373,13 @@ let ROOM_FRAG = """
         return clamp(hidden, 0.0, 0.8);
     }
 
-    #ifdef ROOM_GLASS
+    #ifdef ROOM_LACE
     // How much more of the sun the lit lace lets through where it falls on it (window_view.x).
     const float LACE_GLOW = 0.6;
     // The most of the sky the lace sees behind it (room_shell::LACE_SKY_VIEW, its ao).
     const float LACE_SKY_VIEW = 0.6;
+    #endif
+    #ifdef ROOM_GLASS
     // A kept house's glass, wiped with a cloth: its film, a faint haze of what the cloth left
     // (GLASS_FILM of the sun through it a steradian toward the sun at its mean thickness,
     // more where the tile's wipes left more), scattered forward (Henyey-Greenstein, g 0.75),
@@ -3459,54 +3466,56 @@ let ROOM_FRAG = """
         vec3 n_film = ng;
         float dull = 0.0;
     #endif
-    #ifdef ROOM_GLASS
-        // Glass and lace, blended over what is behind them (premultiplied).
+    #ifdef ROOM_WINDOW
+        // Blend over the scene using premultiplied colour.
         vec3 v = normalize(eye.xyz - p);
         vec3 nf = dot(ng, v) >= 0.0 ? ng : -ng;
         vec3 c;
         float a;
+    #ifdef ROOM_GLASS
         // Light the glass adds over what is behind it, its coverage unchanged.
         vec3 added = vec3(0.0);
-        if (kind < 10.5) {
-            // The glass: the room's light reflected, by Fresnel; two sheets, each faint,
-            // so the window stays clear close up.
-            float fres = 0.04 + 0.96 * pow(1.0 - clamp(dot(nf, v), 0.0, 1.0), 5.0);
-            c = sh_eval(reflect(-v, nf)) * params.z;
-            a = clamp(0.6 * fres, 0.0, 0.5);
-            if (window_view.z + window_view.w > 0.0) added = glass_sun(p, v);
-        } else {
-            // The lace: its coverage, denser where the eye looks through it at a slant (the
-            // folds' flanks); lit from the room's side, and through from the window's: the
-            // sun on its back with the bars' and leaves' shadows, scattered forward where
-            // its thin parts stand between the eye and the sun (Henyey-Greenstein, g 0.5,
-            // over even scattering), and the sky and park behind the niche, as much of
-            // them as it sees (v_extra.x).
-            vec2 lg = vec2(1.0, -1024.0 / 1408.0) / tile.z;
-            float cover = textureGrad(lace_mask, lace_place(v_uv), dFdx(v_uv) * lg, dFdy(v_uv) * lg).r;
-            if (cover < 0.02) discard;
-            a = 1.0 - pow(1.0 - 0.8 * cover, 1.0 / max(abs(dot(nf, v)), 0.5));
-            vec3 l = light_dir.xyz;
-            vec3 light = room_sun_color(room_sun.x) * light_dir.w;
-            // The sun on its back, the bars' and leaves' shadows on it: as the room's shade
-            // lifts them, or with window_view.x their own, full, and the lit cloth glowing
-            // (LACE_GLOW more of the sun through where it falls).
-            float open = room.y > 0.0 ? window_open(p) : 1.0;
-            float sun = mix(mix(1.0 - room.y, 1.0, open), open, window_view.x);
-            float glow = 1.0 + window_view.x * LACE_GLOW * open;
-            float ahead = clamp(dot(v, -l), -1.0, 1.0);
-            float hg = 0.75 / pow(1.25 - ahead, 1.5);
-            vec3 through = shell_glass.w * (max(-dot(nf, l), 0.0) * sun * glow * light / PI * (1.0 + lace_light.w * (1.0 - cover) * hg)
-                                            + lace_light.rgb * ao);
-            // The room's fill, less in the shade, where neither the sun nor the sky behind
-            // the niche (ao over its most, LACE_SKY_VIEW) reaches it, and less in the folds'
-            // valleys (v_corner.x: what the folds beside it hide, room_shell::fold_hidden).
-            float reached = max(open, clamp(ao / LACE_SKY_VIEW, 0.0, 1.0));
-            float fill = mix(lace_shade.x, 1.0, reached) * (1.0 - lace_shade.y * clamp(v_corner.x, 0.0, 1.0));
-            vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + (sh_eval(nf) * params.z + shade.rgb) * fill * ssao_kept(screen_ao);
-            c = srgb(lace_thread.rgb) * (front + through);
-        }
+        // The glass: the room's light reflected, by Fresnel; two sheets, each faint,
+        // so the window stays clear close up.
+        float fres = 0.04 + 0.96 * pow(1.0 - clamp(dot(nf, v), 0.0, 1.0), 5.0);
+        c = sh_eval(reflect(-v, nf)) * params.z;
+        a = clamp(0.6 * fres, 0.0, 0.5);
+        if (window_view.z + window_view.w > 0.0) added = glass_sun(p, v);
+    #else
+        // The lace: its coverage, denser where the eye looks through it at a slant (the
+        // folds' flanks); lit from the room's side, and through from the window's: the
+        // sun on its back with the bars' and leaves' shadows, scattered forward where
+        // its thin parts stand between the eye and the sun (Henyey-Greenstein, g 0.5,
+        // over even scattering), and the sky and park behind the niche, as much of
+        // them as it sees (v_extra.x).
+        vec2 lg = vec2(1.0, -1024.0 / 1408.0) / tile.z;
+        float cover = textureGrad(lace_mask, lace_place(v_uv), dFdx(v_uv) * lg, dFdy(v_uv) * lg).r;
+        if (cover < 0.02) discard;
+        a = 1.0 - pow(1.0 - 0.8 * cover, 1.0 / max(abs(dot(nf, v)), 0.5));
+        vec3 l = light_dir.xyz;
+        vec3 light = room_sun_color(room_sun.x) * light_dir.w;
+        // The sun on its back, the bars' and leaves' shadows on it: as the room's shade
+        // lifts them, or with window_view.x their own, full, and the lit cloth glowing
+        // (LACE_GLOW more of the sun through where it falls).
+        float open = room.y > 0.0 ? window_open(p) : 1.0;
+        float sun = mix(mix(1.0 - room.y, 1.0, open), open, window_view.x);
+        float glow = 1.0 + window_view.x * LACE_GLOW * open;
+        float ahead = clamp(dot(v, -l), -1.0, 1.0);
+        float hg = 0.75 / pow(1.25 - ahead, 1.5);
+        vec3 through = shell_glass.w * (max(-dot(nf, l), 0.0) * sun * glow * light / PI * (1.0 + lace_light.w * (1.0 - cover) * hg)
+                                        + lace_light.rgb * ao);
+        // The room's fill, less in the shade, where neither the sun nor the sky behind
+        // the niche (ao over its most, LACE_SKY_VIEW) reaches it, and less in the folds'
+        // valleys (v_corner.x: what the folds beside it hide, room_shell::fold_hidden).
+        float reached = max(open, clamp(ao / LACE_SKY_VIEW, 0.0, 1.0));
+        float fill = mix(lace_shade.x, 1.0, reached) * (1.0 - lace_shade.y * clamp(v_corner.x, 0.0, 1.0));
+        vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + (sh_eval(nf) * params.z + shade.rgb) * fill * ssao_kept(screen_ao);
+        c = srgb(lace_thread.rgb) * (front + through);
+    #endif
         result = room_out(c * params.x * shade.w, a);
+    #ifdef ROOM_GLASS
         result.rgb += added_light(added * params.x * shade.w);
+    #endif
     #ifdef ROOM_VIEWS
         if (ssao.y > 0.5 && ssao.y < 2.5) result = vec4(vec3(ssao.y > 1.5 ? ssao_kept(screen_ao) : screen_ao) * a, a);
     #endif
@@ -4436,7 +4445,8 @@ let SILL_STEPS = "#define SILL_STEPS 1\n";
 // The painted wood's shader with the light tuner's switches (render3d::paint_steps).
 let PAINT_STEPS = "#define PAINT_STEPS 1\n";
 let ROOM_METALS = "#define ROOM_METALS 1\n";
-let ROOM_GLASS = "#define ROOM_GLASS 1\n";
+let ROOM_GLASS = "#define ROOM_WINDOW 1\n#define ROOM_GLASS 1\n";
+let ROOM_LACE = "#define ROOM_WINDOW 1\n#define ROOM_LACE 1\n";
 // The floor that sees the mirror (render3d::planar_shown), the standard and high tiers';
 // without it the floor sees the room's box.
 let PLANAR_FLOOR = "#define PLANAR_FLOOR 1\n";
