@@ -294,6 +294,7 @@ struct Gpu {
     size:            int2,
     linear:          Sampler,
     aniso:           Sampler,
+    oak_sampler:     Sampler,      // optional light tuner override for the oak fields
     compare:         Sampler,
     lit:             Pipeline,
     fading:          Pipeline, // the lit pass for a fading piece, blended
@@ -1120,14 +1121,15 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures 
         add_texture(t, table_map_or_stand_in(g), g.compare);
         add_texture(t, corners_or_stand_in(g), g.linear);
     }
+    let oak = if g.oak_sampler.id != 0 { g.oak_sampler } else { g.aniso };
     if group == GROUP_FLOOR {
-        add_texture(t, g.floor_albedo, g.aniso);
-        add_texture(t, g.floor_normal, g.aniso);
+        add_texture(t, g.floor_albedo, oak);
+        add_texture(t, g.floor_normal, oak);
         add_texture(t, g.floor_noise, g.linear);
         add_texture(t, g.scratch_tile, g.aniso);
     } else if group == GROUP_WALLS {
-        add_texture(t, g.wall_albedo, g.aniso);
-        add_texture(t, g.wall_normal, g.aniso);
+        add_texture(t, g.wall_albedo, oak);
+        add_texture(t, g.wall_normal, oak);
         add_texture(t, g.paper_mask, g.aniso);
         add_texture(t, g.plaster_tone, g.aniso);
     } else if group == GROUP_PAINT {

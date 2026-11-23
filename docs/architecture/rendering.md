@@ -725,7 +725,7 @@ board's light:
   from the normal map. The floor samples both maps with gradients
   rotated into the plank's frame and divided by the field size. The gradients exclude
   the jumps between strips in the field. The walls use the gradients of their scaled UVs.
-  Both use 8× anisotropy.
+  Both use 8× anisotropy. The light tuner's `--oak-aniso-4` previews 4×.
 - **The room's shaders**: one pipeline a material group (`render3d::room_group`), each
   with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_PAINT`,
   `ROOM_SILL`, `ROOM_METALS`, `ROOM_GLASS`): the floor; the panelling oak, the paper, the

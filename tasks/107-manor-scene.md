@@ -620,6 +620,29 @@ corner and room gains varied between rounds. The app keeps RGBA8.
 | Grazing | 0 / 0 | 0 / 0 | 0 |
 | Grazing, eye shifted 1 cm | 0 / 0 | 0 / 0 | 0 |
 
+### 4× anisotropy
+
+`--oak-aniso-4` tests 4× anisotropy on both the albedo and normal maps of the floor
+and walls. Both settings use RGBA8 normals and the same tuner built on `6aa05f8d`. The app uses
+8×. The grazing camera is at `6.0,1.0,0.6` facing `6.0,8.0,0.0` in plan metres.
+The motion shot shifts the eye one centimetre along x.
+
+| View | A₁ / A₂ (ms) | B₁ / B₂ (ms) | Mean A → B (ms) |
+|---|---:|---:|---:|
+| Straight down | 10.633 / 10.650 | 10.633 / 10.650 | 10.642 → 10.642 |
+| Corner | 14.950 / 15.667 | 14.967 / 14.917 | 15.308 → 14.942 |
+| Room | 14.183 / 14.233 | 14.150 / 14.067 | 14.208 → 14.108 |
+| Menu | 13.967 / 14.217 | 14.150 / 13.950 | 14.092 → 14.050 |
+
+| View | Repeat max / pixels >8 | Trial max / pixels >8 | Trial pixels changed |
+|---|---:|---:|---:|
+| Straight down | 0 / 0 | 0 / 0 | 0 |
+| Corner | 0 / 0 | 31 / 617 | 264653 |
+| Room | 0 / 0 | 26 / 393 | 214831 |
+| Menu | 0 / 0 | 6 / 0 | 4448 |
+| Grazing | 0 / 0 | 23 / 295 | 665137 |
+| Grazing, eye shifted 1 cm | 0 / 0 | 19 / 296 | 664379 |
+
 ## The table and the room around it, after the first shot
 
 - [ ] The floor and rug, seen in the game's views (task 106)

@@ -1918,6 +1918,10 @@ to be is in tasks 042, 059, 071, 081, and 086.
   matched the original image within repeat-run noise. The warmed Mac runs showed
   no repeatable frame-time gain, so the bake retains its existing format.
 
+- Use 8× anisotropy for the floor and wall oak (2026-11-23, task 107). At 4×,
+  grazing views lose some grain detail and differ beyond repeat-run noise.
+  `--oak-aniso-4` lets the light tuner preview both fields at 4×.
+
 ## When a frame reaches the screen
 
 goose_gfx records a frame and its blit into the window's image in one command buffer.

@@ -105,6 +105,7 @@
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
+//       [--oak-aniso-4 (sample the floor and wall oak with 4× anisotropy)]
 //       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
 //       [--planar-size K (the floor mirror's scale, 3 a third, 2 half) --planar-wide TEXELS (its least width, 1600)]
 //       [--scene-scale K (the 3D scene at K of the screen's side; 1, native, the default; 0 its budget)]
@@ -1268,6 +1269,7 @@ fn main() {
                                                                    shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
                                                                    shaders::ROOM_FRAG);
     render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
+    if has(argv, "--oak-aniso-4") { g.oak_sampler = gfx::sampler(gfx::SamplerDesc { max_anisotropy: 4.0 }); }
     render3d::set_aa(r3d, g, render3d::AA);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
     render3d::scatter_allowed = true;
