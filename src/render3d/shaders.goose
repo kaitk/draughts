@@ -2068,7 +2068,9 @@ let TABLE_FRAG = """
             hidden = vis;
             vis = mix(1.0, vis, room.x);
         }
-        float pattern = window_light(p);
+        // Diffuse and the polish share the same ray through the windows and tree.
+        float open = window_open(p);
+        float pattern = room.y <= 0.0 ? 1.0 : mix(1.0 - room.y, 1.0, open);
         float sun_in = pattern;
         if (table_map[3].x > 0.5) {
             // In the room the table's own map shades all but the top: the base and the
@@ -2076,7 +2078,7 @@ let TABLE_FRAG = """
             // where it comes through the window (window_open), as the room's does.
             float own = top ? 1.0 : table_map_at(p + vn * (0.03 + 0.1 * (1.0 - clamp(dot(vn, l), 0.0, 1.0))));
             pattern *= own;
-            sun_in = window_open(p) * own;
+            sun_in = open * own;
         #ifdef TABLE_ROOM
             // With the room's light baked, the shade's floor of the key only as far as
             // room_mix.w keeps it; the table's own shadow takes the sun alone, as the bars'.

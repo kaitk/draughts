@@ -1790,6 +1790,11 @@ to be is in tasks 042, 059, 071, 081, and 086.
   edges. Every sample has opaque geometry over the exterior. The exterior's pipeline has
   no depth test and runs before the table. The board shot is byte-identical at both sizes.
   Two alternating rounds saved about 0.19 ms at 3840 × 2160 and 5120 × 2880.
+- Share the tabletop's window transmission between diffuse light and the polish
+  (2026-11-23, task 110, `TABLE_FRAG`). The room's table used to evaluate the same ray
+  twice. Both terms now read one result and keep their existing lighting formulas.
+  With the exterior already skipped, board view frame time fell from 27.16 to 22.19 ms at
+  3840 × 2160 and from 45.80 to 37.15 ms at 5120 × 2880. Both shots were byte-identical.
 - A cheap mirror world as a trial behind the light tuner's `--mirror-cheap on`, off by
   default (2026-11-23, task 110; `MIRROR_CHEAP`, `CHEAP_TABLE`, `render3d::mirror_cheap`).
   It replaces nothing yet: the user decides on the default. In the floor's mirror the room's

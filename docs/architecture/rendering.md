@@ -588,6 +588,8 @@ board's light:
   a fifth beside its baked light, `render3d::shade_fill`), which stands for light thrown
   back and takes the occlusion. Any shadow inside a sun patch (the bars', the
   table's, the bookcases') removes only the sun: the shade's floor stays under each.
+- **Tabletop lighting** (`TABLE_FRAG`) shares one window and tree transmission sample
+  between the wood's diffuse light and the polish's highlight.
 - **The games table's own shadow** (`render3d::table_map`): its top and base drawn into a
   1024 × 512 depth map projected along the key onto the floor round the table, drawn again
   only when the key or the table changes. The floor, the walls and the base itself take
