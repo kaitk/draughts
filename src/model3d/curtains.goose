@@ -224,6 +224,31 @@ fn climb(pos: float3[:], up: f32[:], cols: i64, rows: i64) {
     }
 }
 
+// How much of the room's light the folds beside a point of the drape hide from it, across its
+// row: the share of the half circle out of the wall (cosine weighted) under the highest
+// neighbour within FOLD_REACH each side, FOLD_DEEP in the deepest valleys and 0 on the
+// crests. It goes into the lace's material's fraction (render3d moves it into a channel of
+// its own), and the shader darkens its room-side fill by it (shaders::ROOM_GLASS,
+// render3d::lace_shade).
+let FOLD_REACH:  f32 = 0.1;
+let FOLD_DEEP:   f32 = 0.4;
+let FOLD_HIDDEN: f32 = 0.8;   // the hidden share that counts as the deepest (the 99th percentile)
+fn fold_hidden(pos: float3[:], cols: i64, j: i64, i: i64) -> f32 {
+    let p = pos[j * cols + i];
+    var left:  f32 = 0.0;     // the highest neighbour's sine each side
+    var right: f32 = 0.0;
+    for k in cols {
+        let q = pos[j * cols + k];
+        let dx = q.x - p.x;
+        let dz = q.z - p.z;
+        guard k != i && abs(dx) < FOLD_REACH && dz > 0.0 else { continue; }
+        let sine = dz / sqrt(dx * dx + dz * dz);
+        if dx < 0.0 { left = max(left, sine); } else { right = max(right, sine); }
+    }
+    let hidden = 1.0 - 0.5 * (sqrt(1.0 - left * left) + sqrt(1.0 - right * right));
+    return FOLD_DEEP * min(hidden / FOLD_HIDDEN, 1.0);
+}
+
 // A grid of the panel's points into the glass list, its normals by the drape's own slopes.
 fn put_lace(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Builder, o: Opening, sx: f32, seed: i64,
             tie: Tie&, pos: float3[:], up: f32[:], cols: i64, rows: i64) {
@@ -240,7 +265,7 @@ fn put_lace(glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, b: surfaces::Bu
             let q = float3 { sx * p.x, p.y, p.z } * k;
             glass.push(mesh::Vertex { surfaces::world(b, q.x, q.y, q.z), surfaces::world_normal(b, float3 { sx * n.x, n.y, n.z }),
                                       float2 { (1.0 - s) * LACE_FLAT * k, up[j * cols + i] * k }, sky_behind(o, p.x, p.y),
-                                      surfaces::MAT_LACE });
+                                      surfaces::MAT_LACE + fold_hidden(pos, cols, j, i) });
         }
     }
     for j in rows - 1 {

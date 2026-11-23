@@ -2346,7 +2346,9 @@ let ROOM_HEAD = """
     // (surfaces::Look's); sill_steps: the tuner's switches of it (render3d::sill_steps, read
     // only with SILL_STEPS); window_view: the window view's steps' strengths, 1 as made
     // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
-    // its scratches); table_map:
+    // its scratches); lace_shade: the lace's room-side fill, x what is left of it where
+    // neither the sun nor the sky behind the niche reaches the cloth (1 as made), y how much
+    // the folds beside it hide (render3d::lace_shade); table_map:
     // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
     // ending in gilt, ink, the page edges plain and sprinkled.
@@ -2396,6 +2398,7 @@ let ROOM_HEAD = """
         vec4 sill;
         vec4 sill_steps[2];
         vec4 window_view;
+        vec4 lace_shade;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -3330,6 +3333,8 @@ let ROOM_FRAG = """
     #ifdef ROOM_GLASS
     // How much more of the sun the lit lace lets through where it falls on it (window_view.x).
     const float LACE_GLOW = 0.6;
+    // The most of the sky the lace sees behind it (room_shell::LACE_SKY_VIEW, its ao).
+    const float LACE_SKY_VIEW = 0.6;
     // A kept house's glass, wiped with a cloth: its film, a faint haze of what the cloth left
     // (GLASS_FILM of the sun through it a steradian toward the sun at its mean thickness,
     // more where the tile's wipes left more), scattered forward (Henyey-Greenstein, g 0.75),
@@ -3453,7 +3458,12 @@ let ROOM_FRAG = """
             float hg = 0.75 / pow(1.25 - ahead, 1.5);
             vec3 through = shell_glass.w * (max(-dot(nf, l), 0.0) * sun * glow * light / PI * (1.0 + lace_light.w * (1.0 - cover) * hg)
                                             + lace_light.rgb * ao);
-            vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + (sh_eval(nf) * params.z + shade.rgb) * ssao_kept(screen_ao);
+            // The room's fill, less in the shade, where neither the sun nor the sky behind
+            // the niche (ao over its most, LACE_SKY_VIEW) reaches it, and less in the folds'
+            // valleys (v_corner.x: what the folds beside it hide, room_shell::fold_hidden).
+            float reached = max(open, clamp(ao / LACE_SKY_VIEW, 0.0, 1.0));
+            float fill = mix(lace_shade.x, 1.0, reached) * (1.0 - lace_shade.y * clamp(v_corner.x, 0.0, 1.0));
+            vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + (sh_eval(nf) * params.z + shade.rgb) * fill * ssao_kept(screen_ao);
             c = srgb(lace_thread.rgb) * (front + through);
         }
         result = room_out(c * params.x * shade.w, a);
