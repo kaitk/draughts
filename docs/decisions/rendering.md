@@ -904,6 +904,15 @@ to be is in tasks 042, 059, 071, 081, and 086.
   their brightest. It replaces three quarters of the thread's (about #c2b9a8), fading to
   1.0: opaque, it read white beside the lace, which shows only as much of its thread as
   it covers. Both renderers share the shader and the table.
+- The tie-back's knot dips below the back of the loop and the hook (2026-11-23,
+  task 107, `build/notes/tieback-real/`). This replaces the chain-derived loop tilt and
+  the cloth's kinked gathering in the 2026-11-23 entry on drawing the loop tight, and
+  supersedes the simulation's loop placement in the 2026-11-21 entry. One tilted plane
+  sets the heights of both the gathering and the tight cord on each panel's fold hull.
+  The nominal ellipse drops 3.8 cm from its centre toward the knot. The lace pattern
+  shifts along the drop because its vertical texture coordinate follows the cloth from
+  the hem. The existing chain solve supplies the slack run to the hook and the tails
+  are laid against the panel below the lowered knot.
 - The curtains' folds hang round at the hem (2026-11-21): from 0.83 m down a panel has
   12 columns a fold, not 6 (whose hexagon read as a zigzag of points seen from above),
   and the hem's line lifts at each fold's turn, scalloping between them. The two grids

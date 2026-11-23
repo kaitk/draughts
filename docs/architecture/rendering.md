@@ -867,11 +867,11 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   the tie's settling, the bounce's lace cells and the probes are made again when it
   changes, and the sun's lace shadow (`LIGHT_FN`'s `lace_edges`) takes the same hang from
   the block (`shell_mids.w`).
-- **The tie-back** (`curtains.goose`): a chain settled once by Verlet steps
-  (`settle_tie`) places the knot and the loop's tilt, and the cloth gathers round that
-  loop; the cord drawn on each panel is the loop drawn tight, on the convex hull of that
-  panel's cloth at its height (`hug_ring`), and two tails with their tassels relaxed from
-  straight down to hang plumb or lie on the cloth below the tie (`hang_tail`).
+- **The tie-back** (`curtains.goose`): a tilted plane sets the lace's gathering
+  height, with its low point toward the knot on the room side. The cord follows the hull
+  of the panel's folds in that plane (`hug_ring`). A chain settled by Verlet steps
+  gives the slack run to the hook (`settle_tie`). The two tails and their tassels hang
+  plumb or rest on the cloth below the tie (`hang_tail`).
 - **The lace in the sun** (the glass and lace's pipeline, `ROOM_GLASS`): the sun on its
   back carries the bars' and leaves' shadows at their full depth, not lifted by the room's
   shade floor, and the lit cloth lets 60% more of the sun through where it falls
