@@ -103,6 +103,7 @@
 //       [--aperture PCT (a disc's radius at infinity, % of the width)] [--dof-caps NEAR,FAR (%)]
 //       [--lens-view off|depth|coc (the depth of field's depth over the picture, or the lens's disc; 1)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
+//       [--gpu-capture ABSOLUTE.gputrace (one Metal frame; set MTL_CAPTURE_ENABLED=1)]
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
 //       [--no-vsync (present without waiting for the display, to measure frames uncapped)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
@@ -134,6 +135,8 @@ import .light_ref;
 
 // Asks SDL for the app's GPU driver before the window opens (src/native/display.c).
 extern fn draughts_choose_gpu();
+extern fn tuner_capture_start(path: const u8[:]) -> bool;
+extern fn tuner_capture_stop();
 
 let PANEL_W: f32 = 380.0;
 let ROW:     f32 = 20.0;
@@ -1179,6 +1182,16 @@ fn dump_glass_tile(prefix: const u8[:]) {
 
 fn main() {
     let argv = args();
+    let capture = flag_value(argv, "--gpu-capture");
+    let capturing = capture > 0;
+    if has(argv, "--gpu-capture") {
+        guard capturing && starts_with(argv[capture], "/") && ends_with(argv[capture], ".gputrace") else {
+            abort("--gpu-capture needs an absolute .gputrace path");
+        }
+        guard !has(argv, "--shot") && !has(argv, "--fps-seconds") else {
+            abort("--gpu-capture runs on its own, without --shot or --fps-seconds");
+        }
+    }
     let tile_at = flag_value(argv, "--dump-glass-tile");
     if tile_at > 0 {
         dump_glass_tile(argv[tile_at]);
@@ -1208,6 +1221,9 @@ fn main() {
     let vsync = if has(argv, "--no-vsync") { gfx::NO_VSYNC } else { 0 };
     guard gfx::open("Draughts: the room's light", w, h, gfx::WINDOW_RESIZABLE | vsync) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
+    if capturing {
+        guard gfx::driver() == "metal" else { abort("--gpu-capture requires the Metal backend"); }
+    }
 
     var g = default<render3d::Gpu>();
     var r3d = default<render3d::Own>();
@@ -1576,6 +1592,11 @@ fn main() {
             meter_text(meter, meter_a, meter_b, still);
         }
         if meter_for > 0.0 && frame_at > meter_for { break; }
+        let capture_frame = capturing && frames == 5;
+        if capture_frame {
+            gfx::flush();
+            guard tuner_capture_start(argv[capture]) else { abort("could not start Metal capture"); }
+        }
         if walk_test > 0 { walk_test_input(frames); }
         if walk_frames > 0 {
             walk_path_input(frames, walk_path, walk_turn);
@@ -2082,7 +2103,7 @@ fn main() {
         render3d::window_pattern = pattern == 1;
         render3d::show_room(g, room_on, away, shell_on);
         // A shot is taken at --wind-time itself.
-        if shot < 0 { render3d::wind_time += gfx::delta_time() as f32; }
+        if shot < 0 && !capturing { render3d::wind_time += gfx::delta_time() as f32; }
         render3d::put_room(g);
         if sun_checked && frames == 2 {
             sun_check(g, room.window.y, room.key.y);
@@ -2315,7 +2336,7 @@ fn main() {
         }
         last_tree_ms = g.tree_ms;
         last_light_ms = g.light_ms;
-        if meter.on && shot < 0 {
+        if meter.on && shot < 0 && !capturing {
             let box_w: f32 = 420.0;
             let at_x = gfx::screen_size().x / scale - box_w - 10.0;
             if ui::begin(c, "Frames (F)", ui::rect(at_x, 10.0, box_w, 2.0 * ROW + 16.0),
@@ -2327,7 +2348,13 @@ fn main() {
             }
             ui::end(c);
         }
-        if shot < 0 || panel_in_shot { ui::render(c); }
+        if !capturing && (shot < 0 || panel_in_shot) { ui::render(c); }
+        if capture_frame {
+            // Metal records command buffers created and submitted within the capture.
+            gfx::flush();
+            tuner_capture_stop();
+            break;
+        }
         if meter.wait { gfx::flush(); }
         meter.in_loop += gfx::time() - frame_at;
     }

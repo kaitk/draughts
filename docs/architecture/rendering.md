@@ -733,6 +733,11 @@ board's light:
   target each kind is drawn with a floor shader without what can't show there:
   `FLOOR_SHADE` without the sun's trace and the table's taps, `FLOOR_NO_TABLE` without the
   taps. Elsewhere the floor is one quad with the full shader.
+- **Metal frame captures**: on the Mac, start the light tuner with
+  `MTL_CAPTURE_ENABLED=1` and `--gpu-capture /absolute/path.gputrace`. The tuner warms
+  up for four frames, records the next frame, and exits. The capture uses a fixed wind
+  time and omits the tuner overlay. Open the document in Xcode and enable profiling
+  during replay to inspect the draw calls.
 - **Oak fields**: the floor and panelling each bake an sRGB albedo map with roughness in
   alpha and a linear RGBA8 normal map, with mip chains for both. The shaders read the two tangent components
   from the normal map. The floor samples both maps with gradients
