@@ -1741,6 +1741,8 @@ to be is in tasks 042, 059, 071, 081, and 086.
   texels still changed 90,659 menu pixels by more than eight levels and saved
   0.24 ms in the thin-strip view, below the 0.3 ms threshold. Both trials were
   reverted. The timing and captures are in task 107's results page.
+  Retried the same day with the floor's corners turned with the room (6aa05f8d), which the
+  first trial lacked: it failed again, so the scissor is dropped (task 110).
 - The library floor's mirror keeps the light before the tonemap (2026-11-21, task 107;
   `TONE_FN`'s `mirror_light`, `OUTSIDE_FRAG`, `rooms::Room.planar.w`): the room, the table
   and the view out write their exposed linear light into the mirror pass's RGBA16F

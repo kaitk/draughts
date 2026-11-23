@@ -396,7 +396,8 @@ Measure under `agents/perf.md` (the atomic quiet lock; re-baseline the four view
 the last numbers were disturbed by parallel jobs). Codex takes the measurable ones whose
 look must stay identical; the look-changing ones go behind a tuner flag for the user.
 
-- [ ] The mirror's scissor retried with the floor's corners turned with the room
+- [x] Dropped (2026-11-23): retried by Codex with the turned corners and failed again; the
+      full mirror target stays. Was: The mirror's scissor retried with the floor's corners turned with the room
       (`b75892aa` rejected it with the unturned corners fixed in `6aa05f8d`; the thin-strip
       view saved 1.06 ms at 4K with 64 texels). Prompt: `build/notes/plans/codex-02-mirror-rect.txt`
 - [ ] The glass and the lace split into two shaders and two draws, after the tie-back work.
