@@ -694,8 +694,9 @@ board's light:
   black, the luminance held to 16), with each texel's distance from the floor along the
   reflection from the depth, into an RGBA16F map with six mips, each a tent over the
   level above (`PLANAR_MIP_FRAG`, a pass a level), so a window's bar reads the same
-  wherever it falls on their texels; above the floor's far
-  edge it repeats the nearest drawn texel below, so no blur takes in black. The floor
+  wherever it falls on their texels. Above the floor's far edge, the resolve fills
+  undrawn texels from farther down the same column. The floor samples that fill when
+  the reflection blur crosses the edge. The floor
   (`PLANAR_FLOOR`'s `planar_seen`) finds the point its flat reflection shows along the wax
   film's normal (its board's tilt and cup, a quarter of the grain), at the distance the
   map's second mip gives, blurred by the film (half the oak's roughness) as wide as its

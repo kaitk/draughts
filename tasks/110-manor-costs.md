@@ -447,6 +447,77 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
         a different GPU kind (immediate-mode, not tile-based) and far faster, so it would
         hide the cost. Brief: `build/notes/plans/claude-floor-capture.txt`
 
+## Board-view cost (2026-11-23)
+
+Native headless Mac M1 Pro, under the quiet lock. Room-light baseline `f90d47f3`.
+The light tuner used `--room-surfaces on --outside on --view board`. The app's game
+screen used the Russian wood set with the Table background. Main `a0ee9c49` has no
+light tuner. The app keeps its board image separately from the library.
+
+The waited app benchmark changed from main → room-light → optimized as follows,
+averaging two medians from each build. The main-pass increase was 0.98 ms at 4K
+and 1.55 ms at 5K. Room-light added filtered board-shadow-map reads to the
+tabletop shader and expanded its lighting. The shell's library passes are absent
+from this benchmark. In the 4K trace, the command buffer with board and shadow
+grew from 6.36 to 7.31 ms. The board encoder grew from 6.32 to 7.28 ms and its
+shadow map from 0.053 to 0.058 ms. Both runs spent over 98% of those command
+buffers in Maximum GPU state.
+
+| App game screen | Main | Room-light | Optimized |
+| --- | ---: | ---: | ---: |
+| 4K board and shadow, waited | 6.84 ms | 7.80 ms | 7.60 ms |
+| 4K board pass alone, waited | 6.75 ms | 7.73 ms | 7.56 ms |
+| 5K board and shadow, waited | 10.84 ms | 12.41 ms | 12.08 ms |
+| 5K board pass alone, waited | 10.77 ms | 12.32 ms | 12.01 ms |
+
+| Tuner board view, cumulative steps | 3840 × 2160 | 5120 × 2880 |
+| --- | ---: | ---: |
+| Room-light baseline | 27.35 ms | 45.99 ms |
+| Omit the exterior behind an opaque tabletop | 27.16 ms | 45.80 ms |
+| Share the tabletop's window and tree transmission | 22.19 ms | 37.15 ms |
+| Bound captured-piece shadows and occlusion | 19.64 ms | 32.69 ms |
+| Reject board reflection rays outside the blur's reach | 19.20 ms | 31.89 ms |
+
+The final builds measured 27.31 → 19.18 ms at 4K and 45.95 → 31.86 ms at 5K in a
+separate pair of alternating rounds. Control views at 4K, before → after, were down
+10.73 → 10.75, corner 14.91 → 14.80, room 14.01 → 13.88 and menu 13.50 → 13.14 ms.
+At 5K they were down 18.94 → 18.39, corner 24.23 → 24.10, room 22.46 → 22.39 and
+menu 22.10 → 21.48 ms. The 5K down baseline runs spanned 1.43 ms.
+
+The room-light tuner trace measured 25.23 ms of the 28.40 ms frame in the main pass
+at 4K and 34.55 of 39.56 ms at 5K. The three SSAO passes took 1.36 and 2.39 ms.
+The board shadow map took 0.08 and 0.06 ms. The table's own map is cached and the
+floor mirror is already culled. Haze and depth of field are off in this setup.
+
+Flat-colour draws kept the original geometry and depth tests. The tabletop covered
+5,267,619 pixels at 4K and 9,366,601 at 5K. The board and pieces covered 3,018,219 and
+5,367,575. The remaining pixels combined the colours at MSAA edges. In a scratch
+build with shared window lighting, flattening the table saved 11.8 and 19.9 ms,
+flattening the board and pieces saved 9.2 and 13.7 ms, and flattening both saved
+20.1 and 33.5 ms. Omitting the shell or the exterior entirely moved steady timings
+by at most 0.1 ms in that scratch build.
+
+The board, straight down, room and menu shots were byte-identical at both sizes,
+as were board shots with one degree of yaw and a different wind time. The corner
+changed three pixels at 4K and one at 5K, each by one level. A 4K baseline repeat
+changed 43 corner pixels by one level. Zero pixels exceeded eight levels.
+
+The mirror map's stacked strips come from `PLANAR_RESOLVE_FRAG` fetching valid
+texels from lower in each column to fill the border above the far floor edge.
+Marking only the filled texels in a diagnostic changed 686,878 normal corner pixels
+by over eight levels at 4K. The floor samples the fill as part of its blurred
+reflection. A replacement preview is being evaluated in the light tuner.
+The baseline mirror fill remains the default.
+
+The shipped game shots at 4K were byte-identical after the entrance fade. At
+5K the maximum difference was one level in 939,270 pixels against 3,976,078
+pixels at the same maximum in a baseline repeat. Zero pixels exceeded eight levels.
+The Metal GPU Counters instrument exposed a shader timeline, but its fragment
+functions had generated names, and the export did not yield attributable per-draw
+invocation counts. The flat-colour measurements above report visible pixel coverage.
+
+Results and shots are in `build/notes/board-view/index.html`.
+
 ## Acceptance criteria
 
 - [ ] Each cost above measured on the Mac and the A33 (task 071's way for memory)

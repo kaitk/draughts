@@ -34,7 +34,9 @@ Headless (`GOOSE_GFX_HEADLESS=1`), from `tools/`, `--room-surfaces on --outside 
 | Menu | `--view table-window` | the main menu's view from the table |
 
 `--shot FILE.png` saves a picture. `--fps-seconds S` prints `N ms a frame` each half second
-(parse under `LC_ALL=C`; run a fresh binary once before timing it). `--view-nudge` does
+(parse under `LC_ALL=C`; run a fresh binary once before timing it). The first printed
+interval can still include startup, before the GPU fills. Use the steady intervals for
+the mean. `--view-nudge` does
 nothing in headless shots: frame with `--plan-eye`/`--plan-at` (plan metres) instead.
 
 ## Measuring
