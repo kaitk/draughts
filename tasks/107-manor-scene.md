@@ -527,6 +527,37 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       The corner's 182 changed pixels each differ by one level. The wall shot uses
       `--plan-eye 4.0,3.0,1.6 --plan-at 4.0,8.0,3.0` to frame above the floor.
       The ceiling uses `--plan-eye 6.0,3.0,1.6 --plan-at 6.0,3.05,4.0`.
+- [x] Evaluate scissoring the floor mirror (2026-11-23). Rejected after both padding
+      trials changed reflections. At 3840 × 2160, the 64-texel trial kept the thin-strip
+      capture identical, but changed 234,989 corner pixels by more than eight levels.
+      The 192-texel trial still changed 90,659 menu pixels by more than eight levels.
+      The renderer keeps the full mirror target when the floor can show.
+
+      Before and trial are means of two alternating runs in the headless Mac tuner,
+      with the first window excluded. A separate tuner was detected at the start of
+      the 64-texel comparison. The 5K Corner result with 192 texels includes one
+      174.8 ms reporting window. See `build/notes/mirror-skip/index.html#mirror-rectangle`
+      for all pixel differences and 300% crops.
+
+      | Size | View | 64 texels (ms) | 192 texels (ms) |
+      |---|---|---:|---:|
+      | 3840x2160 | Straight down | 11.11 → 11.69 | 11.09 → 11.94 |
+      | 3840x2160 | Corner | 15.43 → 15.32 | 15.80 → 16.20 |
+      | 3840x2160 | Room | 14.58 → 14.44 | 14.98 → 15.39 |
+      | 3840x2160 | Menu | 14.52 → 14.14 | 14.87 → 14.81 |
+      | 3840x2160 | Wall | 12.31 → 12.24 | 12.69 → 12.68 |
+      | 3840x2160 | Ceiling | 6.71 → 6.73 | 6.90 → 6.94 |
+      | 3840x2160 | Thin strip | 14.43 → 13.37 | 13.91 → 13.67 |
+      | 3840x2160 | Grazing | 14.83 → 14.82 | 14.83 → 15.40 |
+      | 5120x2880 | Straight down | 18.82 → 21.13 | 20.93 → 22.00 |
+      | 5120x2880 | Corner | 25.69 → 25.68 | 25.92 → 38.17 |
+      | 5120x2880 | Room | 23.75 → 23.74 | 24.22 → 24.42 |
+      | 5120x2880 | Menu | 24.01 → 24.28 | 24.66 → 24.57 |
+      | 5120x2880 | Wall | 20.25 → 20.33 | 20.84 → 20.71 |
+      | 5120x2880 | Ceiling | 12.12 → 12.03 | 12.32 → 12.34 |
+      | 5120x2880 | Thin strip | 21.91 → 21.80 | 22.33 → 22.90 |
+      | 5120x2880 | Grazing | 23.71 → 24.03 | 24.22 → 25.33 |
+
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

@@ -669,13 +669,12 @@ board's light:
 - **The floor's mirror** (`render3d::planar_pass`, `rooms::Room.planar`), in the standard
   and high tiers, not on a phone (`render3d::planar_allowed`). Both renderers skip the
   mirror draw, resolve and mip generation when all four floor corners lie outside
-  the same camera clip plane. A frame that can show the floor refreshes the mirror
-  before the floor samples it. When the mirror runs, before the board's pass, the
-  view out, the table and the room are drawn mirrored across the floor at a third of the
-  screen's size, the clip's depth made the height over the floor so nothing under it is
-  drawn, the room's
-  walls and metals (not its floor, under the clip plane) with their shaders less the sharp
-  reflections and the screen's maps, writing linear light (`MIRROR_PASS`). Each
+  the same camera clip plane. A frame that can show the floor refreshes the full
+  mirror target before the floor samples it. Before the board's pass, the view out,
+  the table and the room are drawn mirrored across the floor at a third of the
+  screen's size. The clip depth is the height over the floor and clips the geometry
+  beneath it. The wall and metal shaders write linear light and omit sharp reflections
+  and screen-space maps (`MIRROR_PASS`). Each
   shader there writes its exposed light before the tonemap (`mirror_light`, held to 16),
   the view out at `planar.w` (6) times its look, as a clear sky is far brighter than the
   tonemap shows. The board and its pieces are left out: from under the floor the table's

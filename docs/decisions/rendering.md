@@ -1695,6 +1695,17 @@ to be is in tasks 042, 059, 071, 081, and 086.
   for rounding. This keeps grazing views and views with corners behind the eye safe.
   A returning floor gets a fresh mirror before the room draws. The tuner's
   full-screen mirror preview still renders the map because it displays it directly.
+- Keep the full mirror target when the floor can show (2026-11-23, task 107).
+  Rejected scissoring the mirror draw, resolve and mips to the projected floor bounds
+  plus 64 or 192 texels. The experiment fell back to the full target at 70% coverage
+  and clamped samples to drawn texels. The tilted plank normal and sampled reflection
+  distance move the lookup through reprojection, and the blur widens at shallow
+  projected depth. Edge clamping changes reflections when those taps reach past the
+  scissor. The 64-texel trial saved 1.06 ms in the 3840 × 2160 thin-strip view with an
+  identical capture, but changed the corner by up to 218 levels. Padding by 192
+  texels still changed 90,659 menu pixels by more than eight levels and saved
+  0.24 ms in the thin-strip view, below the 0.3 ms threshold. Both trials were
+  reverted. The timing and captures are in task 107's results page.
 - The library floor's mirror keeps the light before the tonemap (2026-11-21, task 107;
   `TONE_FN`'s `mirror_light`, `OUTSIDE_FRAG`, `rooms::Room.planar.w`): the room, the table
   and the view out write their exposed linear light into the mirror pass's RGBA16F
