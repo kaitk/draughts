@@ -485,7 +485,9 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       3840 × 2160 and 5120 × 2880 in four views (straight down, room, menu, and the room's
       corner, `--plan-eye 8.4,0.6,1.6 --plan-at 2.0,5.0,0.5`); the floor in pieces cut along the
       sun (`render3d::SunDerived`): frame straight down 15.8 to 12.5 ms (5K 27.5 to 21.6), room
-      16.6 to 15.6, menu 15.7 to 15.1, corner 17.7 to 16.5 (5K 29.4 to 27.4)
+      16.6 to 15.6, menu 15.7 to 15.1, corner 17.7 to 16.5 (5K 29.4 to 27.4); the floor's
+      box reflection (six probe taps) left out where the mirror covers it, at most 1 level:
+      straight down 12.4 to 11.3 (5K 21.4 to 19.5), room 15.4 to 15.1, corner 16.3 to 15.9
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

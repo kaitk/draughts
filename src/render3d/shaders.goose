@@ -3925,7 +3925,9 @@ let ROOM_FRAG = """
         // screen's edge it fades to the room's light that way.
         float film = clamp(mix(rough * planar_look.y, rough, dull), 0.03, 1.0);
         vec4 seen = planar_seen(p, reflect(-v, n_film), film * film, nov);
-        vec3 env = mix(room_wide(v_local, rv) * spec_ao, seen.rgb, seen.a) * planar.x * wax;
+        // The room's box only where the mirror doesn't hold all of it (near the screen's edge),
+        // so its probes' taps are left out where the mirror covers.
+        vec3 env = (seen.a < 1.0 ? mix(room_wide(v_local, rv) * spec_ao, seen.rgb, seen.a) : seen.rgb) * planar.x * wax;
         spec_ao = 1.0;
     #ifdef ROOM_VIEWS
         // The tuner's view of the floor's reflection alone.
