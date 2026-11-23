@@ -43,8 +43,9 @@ nothing in headless shots: frame with `--plan-eye`/`--plan-at` (plan metres) ins
   `build/perf/quiet.lock` (in the main checkout) for every batch of renders, timing or shots.
   Take it atomically, never by plain creation: `L=/Users/kaitkasak/projects/personal/draughts/build/perf/quiet.lock;
   until (set -o noclobber; echo "$$ $(date +%s) <who>" > "$L") 2>/dev/null; do sleep 60; done`.
-  Recheck nothing else: holding it is the check. Remove it only if it is yours (its first word
-  your `$$`), right after the batch. Never overwrite or delete another's lock; one older than
+  `<who>` is a fixed tag of yours (a task name), since each shell call has its own `$$`.
+  Holding it is the check. Remove it only if it is yours (`grep -q " <who>$" "$L" && rm "$L"`),
+  right after the batch. Never overwrite or delete another's lock; one older than
   an hour with no live process of its pid may be stale: report it, don't take it. Never kill a `light_tune` process you didn't start (the user's tuner);
   if one runs, note it, its frames disturb yours.
 - Before and after builds of the same views, two alternating rounds (A B A B), means of each.
