@@ -4771,7 +4771,9 @@ let HDR_TONE_FRAG = """
 // The scenic views' glow (render3d::glow_pass), in the HDR target's linear light before the
 // tonemap, so the sun's disc and the sky bleed over the leaves, the bars and the frame in
 // front of them: the light over a threshold (a soft knee) picked into a quarter of the
-// picture, a 4 × 4 block a texel from four bilinear taps, then halved level by level
+// picture, a 4 × 4 block a texel from four bilinear taps, each tap's light over the
+// threshold before they are averaged (a thin strip's share then doesn't jump as it crosses
+// the blocks' rows, 2026-11-23), then halved level by level
 // (GLOW_DOWN_FRAG, Bjorge's dual filter: five taps) and widened back up (GLOW_UP_FRAG, eight
 // taps), each level blended over the one above it by the reach, so the levels' shares sum to
 // one; HDR_TONE_FRAG adds the top level times the strength. glow_step: xy a source texel in
@@ -4785,16 +4787,21 @@ let GLOW_DOWN_FRAG = """
     layout(set = 2, binding = 0) uniform sampler2D src;
     layout(set = 3, binding = 0) uniform GlowStep { vec4 glow_step; vec4 glow_look; };
     vec3 tap(vec2 uv) { return min(max(texture(src, uv).rgb, vec3(0.0)), vec3(glow_look.z)); }
-    void main() {
-        vec2 uv = gl_FragCoord.xy * glow_step.zw;
-        vec2 h = glow_step.xy;
     #ifdef GLOW_FIRST
-        vec3 c = 0.25 * (tap(uv + vec2(-h.x, -h.y)) + tap(uv + vec2(h.x, -h.y)) + tap(uv + vec2(-h.x, h.y)) + tap(uv + h));
+    vec3 pick(vec2 uv) {
+        vec3 c = tap(uv);
         float bright = max(c.r, max(c.g, c.b));
         float knee = max(glow_look.y, 1e-4);
         float soft = clamp(bright - glow_look.x + knee, 0.0, 2.0 * knee);
         soft = soft * soft / (4.0 * knee);
-        c *= max(soft, bright - glow_look.x) / max(bright, 1e-4);
+        return c * (max(soft, bright - glow_look.x) / max(bright, 1e-4));
+    }
+    #endif
+    void main() {
+        vec2 uv = gl_FragCoord.xy * glow_step.zw;
+        vec2 h = glow_step.xy;
+    #ifdef GLOW_FIRST
+        vec3 c = 0.25 * (pick(uv + vec2(-h.x, -h.y)) + pick(uv + vec2(h.x, -h.y)) + pick(uv + vec2(-h.x, h.y)) + pick(uv + h));
     #else
         vec3 c = (4.0 * tap(uv) + tap(uv - h) + tap(uv + h) + tap(uv + vec2(h.x, -h.y)) + tap(uv - vec2(h.x, -h.y))) * 0.125;
     #endif
