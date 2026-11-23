@@ -866,6 +866,11 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   (`LACE_GLOW`). The sky and park it sees behind it (`curtains.goose`'s `sky_behind`, a
   vertex's share) are the casements' glazed opening's, softened 0.1 m for the glass's
   depth behind it, not the niche's arched outline.
+- **The lace in the shade** (`ROOM_GLASS`): the room's fill on the lace is half where
+  neither the sun nor the sky behind the niche reaches it, and less in its folds' valleys,
+  by 1.5 times what the folds beside a point hide of the room (`curtains.goose`'s
+  `fold_hidden`, baked into the vertex, up to 0.4), so the deepest keep 0.4 of it
+  (`render3d::lace_shade`).
 - **The lace's light below** (`LIGHT_FN`'s `shell_open`, every group): of the sun the lace
   stops, 0.35 scatters on forward into a cone about 25° across (`LACE_FORWARD`,
   `LACE_CONE`; the panel's outline blurred that wide times its pattern's mean stop, from

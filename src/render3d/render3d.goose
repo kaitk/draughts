@@ -2901,10 +2901,10 @@ var sill_steps: float4[2] = [float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { 1.0, 0.0, 0
 // tuner's --lace-sun, --lace-scatter, --glass-film, --scratches.
 var window_view = float4 { 1.0, 1.0, 1.0, 1.0 };
 // The lace's room-side fill (build/notes/lace-shade/): x what is left of it where neither
-// the sun nor the sky behind the niche reaches the cloth, 1 as made; y how much the folds
-// beside it darken it (room_shell::fold_hidden), 0 as made. The light tuner's
-// --lace-shade-fill and --lace-fold-ao.
-var lace_shade = float4 { 1.0, 0.0, 0.0, 0.0 };
+// the sun nor the sky behind the niche reaches the cloth, 0.5; y how much the folds beside
+// it darken it (room_shell::fold_hidden), 1.5. The light tuner's --lace-shade-fill and
+// --lace-fold-ao.
+var lace_shade = float4 { 0.5, 1.5, 0.0, 0.0 };
 // The sun's broad veil in the sky round it (OUTSIDE_FRAG, the tuner's --sun-veil), 1 as
 // made, 0 off.
 var sun_veil: f32 = 1.0;

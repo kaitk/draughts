@@ -83,8 +83,8 @@
 //       [--lace-sun K] [--lace-scatter K] [--glass-film K] [--scratches K] [--sun-veil K] (the window view's
 //       steps, render3d::window_view and sun_veil: each a strength, 1 as made, 0 off; Z switches them, the
 //       lace's hang and the dust all off and back)
-//       [--lace-shade-fill K (the lace's room-side fill where neither sun nor sky reaches it, 1 as made)]
-//       [--lace-fold-ao K (how much the folds' valleys darken that fill, 0 as made, 1 the deepest to 0.6)]
+//       [--lace-shade-fill K (the lace's room-side fill where neither sun nor sky reaches it, 0.5)]
+//       [--lace-fold-ao K (how much the folds' valleys darken that fill, 1.5, the deepest to 0.4)]
 //       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
 //       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
 //       [--dump-light PATH (the probes' atlas, a float a line, with --shot)] [--light-ref PATH (the baked light worked
@@ -1346,7 +1346,7 @@ fn main() {
     var shown_dust = -1;
     render3d::window_view = float4 { number(argv, "--lace-sun", 1.0), number(argv, "--lace-scatter", 1.0), number(argv, "--glass-film", 1.0),
                                      number(argv, "--scratches", 1.0) };
-    render3d::lace_shade = float4 { number(argv, "--lace-shade-fill", 1.0), number(argv, "--lace-fold-ao", 0.0), 0.0, 0.0 };
+    render3d::lace_shade = float4 { number(argv, "--lace-shade-fill", 0.5), number(argv, "--lace-fold-ao", 1.5), 0.0, 0.0 };
     render3d::sun_veil = number(argv, "--sun-veil", 1.0);
     // The sun's look in the view out (render3d::SunLook): a preset, then each part's flag over it.
     // The haze in the sunbeam (render3d::Haze): a strength, sigma over it; its look; half size or full.

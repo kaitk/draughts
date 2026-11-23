@@ -1214,6 +1214,14 @@ to be is in tasks 042, 059, 071, 081, and 086.
     about 210 ms to make once), 35 arcs and 12 straight wipes; the film scatters 0.0015
     of the sun, was 0.002. Rejected: a finer tile repeating every 0.256 m (it would
     repeat inside a pane). The main pass unchanged.
+- The lace's room-side fill is lowered in the shade and in its folds' valleys (2026-11-23,
+  task 107, `build/notes/lace-shade/`; `render3d::lace_shade`, the light tuner's
+  `--lace-shade-fill` and `--lace-fold-ao`): where neither the sun nor the sky behind the
+  niche reaches the cloth its fill is half (0.5), and the folds beside a point take 1.5 times
+  their baked depth off it (`curtains.goose`'s `fold_hidden`, up to 0.4, so the deepest
+  valleys keep 0.4 of it). The user's pick, by eye against the references there: the lace
+  read far more realistic, its folds deep where the room's light can't reach. Replaces the
+  fill at full strength everywhere (1 and 0, the tuner's first defaults).
 - The board and the table in the room take the sun through the shell's own windows
   (2026-11-22, task 107, builder 29, `build/notes/builder-29/`), as the room's surfaces do
   (`LIGHT_FN`'s `shell_open`; `shaders::LIT_SHELL`, `TABLE_SHELL`). Before, they took the
