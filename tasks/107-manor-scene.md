@@ -565,6 +565,15 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       | 5120x2880 | Thin strip | 21.91 → 21.80 | 22.33 → 22.90 |
       | 5120x2880 | Grazing | 23.71 → 24.03 | 24.22 → 25.33 |
 
+- [x] The lace's shade the default (fill in shade 0.5, folds' shade 1.5) and the tie-back's
+      cord hung by gravity (2026-11-23, `build/notes/lace-cord/`): the loop drawn tight on
+      each panel's cloth's convex hull, the tails and tassels relaxed from straight down to
+      hang plumb or lie on the cloth below the tie. Triangles unchanged; the four views
+      differ only at the tie-backs (straight down byte-identical; at 3840 × 2160 the
+      corner 5,783 pixels over 8, the room 4,577, the menu 17,141). Frame times unchanged
+      within the rounds' spread, measured on a loaded machine (corner 85.4-89.3 →
+      89.2-90.1 ms, menu 88.9-91.7 → 91.9-94.1 at 3840 × 2160, all others' builds running).
+
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

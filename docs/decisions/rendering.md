@@ -880,6 +880,23 @@ to be is in tasks 042, 059, 071, 081, and 086.
   25 mm across. Rejected: placing the tilt by hand (it misses what gravity does to the cloth), the
   frictionless bundle (the run's pull turned the knot round to the wall's side and the
   loop slid 7 cm down), and longer steps (unstable at 80 a second).
+- The tie-back's loop is drawn tight and its tails hang on each panel's cloth (2026-11-23,
+  task 107, `build/notes/lace-cord/`; `curtains.goose`'s `hug_ring`, `hang_tail`): the
+  settled chain's loop kinked up and down by ±2.5 cm where it had slack and floated off
+  the folds, and the tails lay on the simulation's ellipse, not on the cloth drawn, so on
+  the panels hung wider (the 0.15 m hang) they stood off it or sank into it. The
+  simulation stays for where gravity puts the knot and the loop's tilt; the loop drawn is
+  its heights' mean and first harmonic round the bundle (a plane's tilt, down toward the
+  knot), each point on the convex hull of the panel's own cloth at that height, grown by
+  the cord's radius, so it lies on the folds' crests and bridges their valleys as a cord
+  under tension does. Each tail, with its tassel as two more links as wide as its head and
+  skirt, is relaxed from straight down (24 steps of 4 passes: fall, keep the links' length
+  from the knot, stay in front of the cloth's front along the tail's line), so it hangs
+  plumb where free and lies along the cloth bulging below the tie; the tassel turns with
+  its last links. The run to the hook keeps its catenary, moved with the knot. The cloth
+  still gathers round the chain's loop as it settled: the lace's pattern climbs from the
+  hem, so gathering it round the loop drawn tight would move the pattern all the way up the
+  drop. Triangles unchanged.
 - The curtains' folds hang round at the hem (2026-11-21): from 0.83 m down a panel has
   12 columns a fold, not 6 (whose hexagon read as a zigzag of points seen from above),
   and the hem's line lifts at each fold's turn, scalloping between them. The two grids
