@@ -1758,6 +1758,14 @@ to be is in tasks 042, 059, 071, 081, and 086.
   what removing it did, and a test of each window's reach hoisted before the loop saved
   nothing more over the pieces; a floor-space mask texture, a tap a pixel for what the cuts
   give for free.
+- The floor's joints stay flat lines (2026-11-23, task 107; `build/notes/floor-perf/night.html`,
+  `joints.html`). Tried and removed, kept for a later look: a deep version (each board's edge
+  rounded over 2.5 mm in the shading and the wax's normal, the gap darker at its bottom with
+  a fringe; commit 2f427b12), which aliased and was far too strong, and an eased one (a
+  0.08 tilt faded by the pixel's footprint, a faint shade along the gap where the pixel is
+  wider; fd982f90), alias-free but hardly seen, 0.15 ms straight down at 4K. To revisit,
+  start from fd982f90: the concept's deep gaps may need the low sun and close views it
+  shows.
 - The library's light retuned for a larger sun-to-shade range, with today's toe (2026-11-21,
   task 107; `rooms::AUTUMN`'s `shell_sun` and `baked`, `render3d::shade_fill`,
   `room_light::bounce_grey`, `room_light::BOUNCES`, `render3d::room_sun`,
@@ -1848,11 +1856,3 @@ blit.
   still).
 - A running clock has its own wake timer (2026-11-08): without it the tablet drew the
   clock 6 ms later each second and skipped a second every two and a half minutes.
-- The floor's joints stay flat lines (2026-11-23, task 107; `build/notes/floor-perf/night.html`,
-  `joints.html`). Tried and removed, kept for a later look: a deep version (each board's edge
-  rounded over 2.5 mm in the shading and the wax's normal, the gap darker at its bottom with
-  a fringe; commit 2f427b12), which aliased and was far too strong, and an eased one (a
-  0.08 tilt faded by the pixel's footprint, a faint shade along the gap where the pixel is
-  wider; fd982f90), alias-free but hardly seen, 0.15 ms straight down at 4K. To revisit,
-  start from fd982f90: the concept's deep gaps may need the low sun and close views it
-  shows.
