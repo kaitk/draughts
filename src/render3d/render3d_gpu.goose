@@ -117,7 +117,7 @@ fn table_map_pass(own: Own&, g: render3d::Gpu&, place: render3d::Mat) {
 
 // draw()'s one pass into `target` of `size`, with the `backdrop` or clear, multisampled
 // and resolved into it, or SMAA after it.
-fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdrop: bool) {
+fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdrop: bool, outside: bool, table_covers: bool) {
     let f = g.frame;
     let clear = if backdrop { float4 { 0.11, 0.078, 0.063, 1.0 } } else { float4_0 };
     var pass = gfx::PassDesc { depth: g.depth, color_value: clear };
@@ -130,8 +130,11 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         pass.color[0] = target;
     }
     gfx::begin_pass(pass);
-    if render3d::outside_shown(g) { draw_outside(own, g); }
-    else if backdrop { draw_backdrop(own, g, 1.0); }
+    // The opaque tabletop covers the backdrop at every sample in this view.
+    if !table_covers {
+        if outside { draw_outside(own, g); }
+        else if backdrop { draw_backdrop(own, g, 1.0); }
+    }
 
     let h .= g.hdr_pipes;
     let in_shell = render3d::board_in_shell(g);

@@ -2645,7 +2645,10 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     // target; not where the image is the target (the app's kept image, which shows no shell).
     let glowing = bloom_shown(g) && out.id != 0;
     if ssao_shown(g) { o.ssao_pass(g, size); }
-    g.planar_current = planar_shown(g) && (planar_view > 1 || (floor_in_frustum(view_proj, g.room_frame) && !table_hides_screen(g, view_proj)));
+    let outside = outside_shown(g);
+    let mirror = planar_shown(g);
+    let table_covers = (outside || mirror) && table_hides_screen(g, view_proj);
+    g.planar_current = mirror && (planar_view > 1 || (!table_covers && floor_in_frustum(view_proj, g.room_frame)));
     if g.planar_current {
         let clip, plain = mirrored_frames(g);
         o.planar_pass(g, size, clip, plain, planar_resolve_of(g, clip));
@@ -2653,7 +2656,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     let shown = if glowing { g.image } else { target };
     // The room baked by now (room_surfaces): the board's pipelines in its shell.
     if !hdr && board_in_shell(g) { o.make_lit_shell(g); }
-    o.board_pass(g, if hdr { g.hdr_image } else { shown }, size, backdrop);
+    o.board_pass(g, if hdr { g.hdr_image } else { shown }, size, backdrop, outside, table_covers);
     if hdr && haze_shown(g) { o.haze_pass(g, size); }
     if hdr && glow_shown(g) { o.glow_pass(g, size); }
     if hdr { o.tone_pass(g, shown); }
@@ -2823,7 +2826,11 @@ fn floor_in_frustum(m: Mat, turn: surfaces::Frame) -> bool {
 let TOP_SIDES = 24;
 fn table_hides_screen(g: Gpu&, m: Mat) -> bool {
     guard table_shown(g) && g.frame.eye.y > mesh::TABLE_TOP else { return false; }
-    let r = table_radius(g) * 0.97;
+    // Stay on the flat part of the bevelled top, including the tuner's thick edges.
+    let inset = max(0.08, 0.45 * max(g.table_edge.y, 0.3));
+    let radius = table_radius(g);
+    let r = min(radius * 0.97, radius - inset - 0.01);
+    guard r > 0.0 else { return false; }
     var at: float2[TOP_SIDES] = [float2_0; TOP_SIDES];
     for k in TOP_SIDES {
         let a = 2.0 * PI * (k as f32) / (TOP_SIDES as f32);

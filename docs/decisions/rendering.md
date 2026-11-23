@@ -1784,6 +1784,12 @@ to be is in tasks 042, 059, 071, 081, and 086.
   rounds), 49.6 to 47.7 by the trace at 5K. The four views draw the mirror as before (the
   floor shows in each) and their shots match within a level, as two runs of one build do;
   the board view's is byte-identical. Both renderers (`draw` is theirs).
+- Skip the exterior backdrop when the tabletop fills the screen (2026-11-23, task 110).
+  Both renderers share the mirror's coverage test. This tightens the test above to keep its
+  polygon inside the top's flat surface for every rim profile, including thick tuner
+  edges. Every sample has opaque geometry over the exterior. The exterior's pipeline has
+  no depth test and runs before the table. The board shot is byte-identical at both sizes.
+  Two alternating rounds saved about 0.19 ms at 3840 × 2160 and 5120 × 2880.
 - A cheap mirror world as a trial behind the light tuner's `--mirror-cheap on`, off by
   default (2026-11-23, task 110; `MIRROR_CHEAP`, `CHEAP_TABLE`, `render3d::mirror_cheap`).
   It replaces nothing yet: the user decides on the default. In the floor's mirror the room's

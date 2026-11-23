@@ -670,8 +670,10 @@ board's light:
   and high tiers, not on a phone (`render3d::planar_allowed`). Both renderers skip the
   mirror draw, resolve and mip generation when all four floor corners, turned with the
   room, lie outside the same camera clip plane, or when the games table's top covers the
-  whole screen (`render3d::table_hides_screen`, the board's views). A frame that can show the floor refreshes the full
-  mirror target before the floor samples it. Before the board's pass, the view out,
+  whole screen (`render3d::table_hides_screen`, the board's views). The coverage test
+  uses a polygon inside the tabletop's flat surface. Both renderers also omit the exterior
+  backdrop when that polygon covers the screen. A frame that can show the floor refreshes
+  the full mirror target before the floor samples it. Before the board's pass, the view out,
   the table and the room are drawn mirrored across the floor at a third of the
   screen's size. The clip depth is the height over the floor and clips the geometry
   beneath it. The wall and metal shaders write linear light and omit sharp reflections

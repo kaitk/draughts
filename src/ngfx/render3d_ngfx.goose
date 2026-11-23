@@ -104,7 +104,7 @@ fn table_map_pass(own: Own&, g: Gpu&, place: Mat) {
 
 // draw()'s one pass, at the scale antialiasing draws it at, then antialiased into
 // `target` of `size`.
-fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
+fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, outside: bool, table_covers: bool) {
     // The pass at the scale it is drawn at: its block's screen is the target's.
     let k = scale(own, g);
     g.frame.screen = float4 { size.x * k, size.y * k, g.frame.screen.z, 0.0 };
@@ -114,8 +114,11 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
     pass.color[0] = if g.aa != AA_OFF { g.color } else { target };
     if g.aa == AA_MSAA { pass.resolve[0] = target; }
     nx::begin_pass(pass);
-    if render3d::outside_shown(g) { draw_outside(own, g, f); }
-    else if backdrop { draw_backdrop(own, g, f, 1.0); }
+    // The opaque tabletop covers the backdrop at every sample in this view.
+    if !table_covers {
+        if outside { draw_outside(own, g, f); }
+        else if backdrop { draw_backdrop(own, g, f, 1.0); }
+    }
 
     let h .= g.hdr_pipes;
     let in_shell = g.hdr || render3d::board_in_shell(g);
