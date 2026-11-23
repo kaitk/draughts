@@ -333,6 +333,15 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   `window_view`) by the same names, and its storage buffer's binding follows the samplers
   (the lace's mask made it binding 2). ngfx's dust root takes the lace in slot 1.
 - `smoothstep(a, b, x)` with `a > b` is undefined: write `1.0 - smoothstep(b, a, x)`.
+- A mesh piece's corner lying on another's edge (a T-junction) leaves one-pixel cracks, and
+  the view out behind the room shines through them as white dots: cut the edge there, cells
+  sharing vertices so the corners' map keeps one chart (`surfaces::board_cut`,
+  `room_shell::sweep_cut`; a profile's every row, or the next row's edge lacks the cuts).
+  To tell a crack from a bad value, switch the view out off (`--outside off`): a crack
+  takes the sky's colour (2026-11-23).
+- A texture region whose content reaches its image's edge (the lace's hem in its mask's last
+  row) takes the far edge in through a repeating sampler's mips and anisotropic taps: scale
+  the gradients to the distance to the edge, and draw nothing past it (`ROOM_LACE`).
 - Metal keywords (`thread`, `device`, `constant`, `kernel`) as GLSL names fail only on
   the Mac's pipeline build.
 - A GLSL change in `src/gfx/*_gpu.goose` or `src/render3d/shaders.goose` reaches the

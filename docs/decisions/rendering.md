@@ -2080,6 +2080,40 @@ to be is in tasks 042, 059, 071, 081, and 086.
   median over eight alternating runs). Phones and tablets keep it off until timed.
   Rejected: scattering along the frame's cracks (they are thin painted lines), and
   tying it to the 16-tap shadow filter (it would turn on for iOS).
+- The library's wainscot is cut where its pieces' corners meet each other's edges, so it
+  has no pinholes (2026-11-23, task 107; `surfaces::board_cut`, `room_shell::sweep_cut`).
+  The single white dots on the dark oak of the wainscot, by the bookcases, and on the
+  window wall in shade were the view out seen through one-pixel cracks: a stile ran from
+  the plinth to the cap with no vertex where the rails' and panels' corners lay on its
+  edges, and the plinth's top and the cap's foot none where the stiles' and rails' corners
+  did, nor the rails where the plinth's and cap's 2 m lengths joined. The two rasterized
+  such an edge apart, and one MSAA sample of the sunlit park, averaged in HDR, made a dot.
+  Found by elimination in the light tuner (Vulkan, Windows): no broken value (the new
+  `--ssao-view broken` marks non-finite terms red and light over 64 yellow, and marked
+  nothing there), the dots stayed with HDR, SSAO and GTAO off, and were added after the
+  room's shaders, taking the view out's colour. Each piece is now cut at those places,
+  its cells sharing vertices: one chart in the corners' map as before, its attributes
+  affine, so it interpolates as before. The plinth and the cap cut every row of their
+  profile but the one against the floor or the paper, whose segment is a fan. At 3840 ×
+  2160 the cracks went from 29 to 0 by the hall's bookcases and from 147 to 122 close to
+  the window wall (the rest on the windows' bright edges); the four views move by a level
+  in 5,000-20,000 pixels (the wainscot and its reflection) besides the dots, and straight
+  down not at all. 7,764 triangles more in the shell, no work more a pixel. Left: the
+  doors' and shutters' painted panels (`painted`) have the same junctions, on white paint.
+  Rejected: a backing behind the wainscot (hides cracks but keeps them, and its charts
+  would move the atlas), and cutting only the profile's rows at the frame (the next row's
+  edge then lacked the cuts).
+- The lace draws nothing past its hem's last row, and its mask's read stays inside the
+  mask's bottom edge (2026-11-23, task 107; `ROOM_FRAG`'s `ROOM_LACE`). The thin light line
+  along the window wall's base behind the hem was the lace's own cloth: the hem's tips reach
+  the mask's last row, where `lace_place` holds everything below, and the repeating
+  sampler's mips and anisotropic taps there took in the pattern's dense top row. It stayed
+  with the mirror, the corners' map, the contact shadows, SSAO, GTAO and HDR each off. Near
+  the edge the gradients are scaled to the distance to it; the hem is unchanged, only the
+  line (500-1,100 pixels over 8 a view) and the floor's reflection of it (a level) move. A
+  few operations a pixel more in the lace's shader. Rejected: a clamping sampler (a texture
+  slot more, and the pattern's seam would change), and empty rows in the mask (the hem's tips
+  are in its last row).
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
 

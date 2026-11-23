@@ -670,7 +670,8 @@ board's light:
   resolve: their rings' own occlusion and the paint's dirt shade them. Five
   half-size targets, 22 bytes a pixel (8.8 MB at 1600 × 1000). The light tuner's Light
   section sets its strength, reach, bias and gain, and shows it alone (`--ssao-view
-  alone`) or with all the indirect light keeps (`kept`). The high tier, on a desktop, works
+  alone`) or with all the indirect light keeps (`kept`), and `broken` marks the room's
+  non-finite terms red and light over 64 yellow. The high tier, on a desktop, works
   the occlusion out by GTAO instead (`GTAO_FRAG`, `render3d::ssao_gtao`), over the same
   prepass and blur; the standard tier, on a tablet, keeps the SSAO. The tuner opens with
   GTAO; `--gtao off` gives the SSAO.
