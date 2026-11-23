@@ -89,7 +89,8 @@
 //       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
 //       [--dump-light PATH (the probes' atlas, a float a line, with --shot)] [--light-ref PATH (the baked light worked
 //       out finely on the room's surfaces, tools/light_ref.goose; --light-ref-stride N, --light-ref-old)]
-//       [--ssao-view off|alone|kept|light (light: the indirect light alone on grey)]
+//       [--ssao-view off|alone|kept|light|broken (light: the indirect light alone on grey; broken: red where a
+//       term isn't finite, yellow where the light is over 64)]
 //       [--contact STRENGTH,LENGTH,STEPS,THICKNESS (the sun's contact shadows, world units; 0.8,3,12,1.5; 0 off)]
 //       [--room-sun K (the sun's saturation on the room, 0.6; 1 as the key)]
 //       [--oak-sun SHARE,SAT,SHEEN (the panelling oak's share of the room's sun, its saturation and share of the sheen)]
@@ -186,8 +187,8 @@ fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
 let VIEWS = ["board", "room", "window", "hall", "stove", "table-window"];
 let TABLE_WINDOW = 5;
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
-// indirect light keeps, or the indirect light alone on grey.
-let SSAO_VIEWS = ["off", "alone", "kept", "light"];
+// indirect light keeps, or the indirect light alone on grey, or its broken values marked.
+let SSAO_VIEWS = ["off", "alone", "kept", "light", "broken"];
 // The tonemaps' toes (render3d::tone_toe): on the luminance, Khronos PBR Neutral's on the
 // least channel, none.
 let TOES = ["room", "neutral", "none"];
