@@ -231,7 +231,12 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - `gfx::BLEND_ADD` weights the source by its alpha: an additive glow writes alpha 1.
 - `gl_InstanceIndex` doesn't count `first_instance`: a second group of instances gets its
   own storage buffer.
-- A storage buffer block holds one runtime-sized array (`vec4 squares[];`).
+- A storage buffer block holds one runtime-sized array (`vec4 squares[];`), its name
+  unique across all embedded shaders' globals (`leaves` clashed: "redefinition").
+- embed_shader's GLSL has no `gl_SampleMask`, and no pipeline takes alpha-to-coverage:
+  cut-outs take a dithered alpha test, sub-pixel lines blend (`docs/goose-findings.md`).
+  The tree's two-sided leaf cards tell their face by `dot(n, eye - p)`, which works the
+  same in the ngfx build's translation.
 - A GLSL local named like a uniform block's member hides it; read the member through a
   function declared beside the block.
 - `float4` has no swizzles.

@@ -157,6 +157,10 @@ MODULES = [
        [*ribbon, *hdr, "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_WOOD_FRAG"])
       for name, ribbon, hdr in [("r3d_tree_tube", [], []), ("r3d_tree_ribbon", ["TREE_RIBBON"], []),
                                 ("r3d_hdr_tree_tube", [], ["HDR_OUT"]), ("r3d_hdr_tree_ribbon", ["TREE_RIBBON"], ["HDR_OUT"])]],
+    # Its leaves' cards.
+    *[(name, ["VS_SET", "FRAME", "TREE_HEAD", "TREE_FN", "TREE_LEAF_VERT"],
+       [*hdr, "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_LEAF_FRAG"])
+      for name, hdr in [("r3d_tree_leaf", []), ("r3d_hdr_tree_leaf", ["HDR_OUT"])]],
     # The depth of field's depth (render3d::depth_pass) and the tuner's view of it.
     ("r3d_depth_room", ROOM_VS, ["EMPTY_FRAG"]),
     ("r3d_depth_table", TABLE_VS, ["EMPTY_FRAG"]),

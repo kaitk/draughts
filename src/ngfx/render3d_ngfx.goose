@@ -51,6 +51,11 @@ fn gpu_update(own: Own&, b: Buffer, bytes: const u8[:]) { nx::update_buffer(b, b
 fn gpu_mesh(own: Own&, verts: const u8[:], indices: const u8[:]) -> Buffer, Buffer {
     return nx::buffer(verts), nx::buffer(indices);
 }
+fn gpu_storage(own: Own&, bytes: const u8[:]) -> Buffer { nx::buffer(bytes) }
+fn gpu_release_storage(own: Own&, b: Buffer) {
+    ngfx::flush();
+    nx::release(b);
+}
 fn gpu_release_mesh(own: Own&, vb: Buffer, ib: Buffer) {
     ngfx::flush();
     nx::release(vb);
@@ -878,10 +883,13 @@ fn make_tree(own: Own&, g: Gpu&) {
     t.ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_ribbon.blob"), flat);
     t.hdr_tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_tube.blob"), solid);
     t.hdr_ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_ribbon.blob"), flat);
+    let card = ngfx::PipelineDesc { cull: ngfx::CULL_NONE, depth_test: true, depth_write: true };
+    t.leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_leaf.blob"), card);
+    t.hdr_leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_leaf.blob"), card);
 }
 
 // The tree outside in the board's pass, after the room's opaque groups, as gfx's draw_tree:
-// its tubes, then its ribbons. r3d_tree_tube.slang's header: Frame, Tree, the wood's
+// its tubes, its leaves, then its ribbons. r3d_tree_tube.slang's header: Frame, Tree, the wood's
 // vertices, the bark.
 fn draw_tree(own: Own&, g: Gpu&, f: u64) {
     let t = g.tree;
@@ -893,6 +901,16 @@ fn draw_tree(own: Own&, g: Gpu&, f: u64) {
     slot(r, 0, t.bark, g.aniso);
     nx::bind(if g.hdr { t.hdr_tube } else { t.tube });
     nx::draw_indexed(ngfx::root(r), t.wood_ib, 4, t.tube_count);
+    if t.leaf_count > 0 {
+        var lr = no_root();
+        lr.frame = f;
+        lr.u = r.u;
+        lr.buf0 = nx::address(t.leaves);
+        slot(lr, 0, t.leaf_shape, g.aniso);
+        slot(lr, 1, t.leaf_marks, g.aniso);
+        nx::bind(if g.hdr { t.hdr_leaf } else { t.leaf });
+        ngfx::draw_instanced(ngfx::root(lr), 6, t.leaf_count);
+    }
     nx::bind(if g.hdr { t.hdr_ribbon } else { t.ribbon });
     nx::draw_indexed(ngfx::root(r), t.wood_ib, 4, t.ribbon_count, t.ribbon_first);
 }
@@ -1632,10 +1650,10 @@ fn release(own: Own&, g: Gpu&) {
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     release_hdr(own, g);
     for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { nx::release(p); } }
-    for t in [g.hdr_image, g.scene_depth, g.tree.bark] { if t.id != 0 { nx::release(t); } }
+    for t in [g.hdr_image, g.scene_depth, g.tree.bark, g.tree.leaf_shape, g.tree.leaf_marks] { if t.id != 0 { nx::release(t); } }
     for t in g.glow_levels { if t.id != 0 { nx::release(t); } }
-    for b in [g.tree.wood_vb, g.tree.wood_ib] { if b.id != 0 { nx::release(b); } }
-    for p in [g.tree.tube, g.tree.ribbon, g.tree.hdr_tube, g.tree.hdr_ribbon] { if p.id != 0 { nx::release(p); } }
+    for b in [g.tree.wood_vb, g.tree.wood_ib, g.tree.leaves] { if b.id != 0 { nx::release(b); } }
+    for p in [g.tree.tube, g.tree.ribbon, g.tree.hdr_tube, g.tree.hdr_ribbon, g.tree.leaf, g.tree.hdr_leaf] { if p.id != 0 { nx::release(p); } }
     own = default<Own>();
     g = default<Gpu>();
 }

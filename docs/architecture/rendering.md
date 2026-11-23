@@ -981,6 +981,20 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   dust; `--lace-hang`, `--lace-sun`, `--lace-scatter`, `--sun-veil`, `--glass-film`,
   `--scratches` set each, 0 off, and `--view table-window` is the view from a chair behind
   the games table into the middle window.
+- **The maple as geometry** (the light tuner's `--tree-draw off|wood|all`, off by default
+  and in the app; `src/model3d/tree_mesh.goose`, `render3d::tree_geometry`,
+  `shaders::TREE_*`): the old-leader maple grown whole, culled to what the windows show or
+  cast through them, drawn in the board's pass after the room's opaque groups. Its trunk,
+  limbs and branches are tubes with a bark tile made at startup; its branchlets and twigs
+  ribbons turned to the eye, at least a pixel wide and faded by their true width, drawn
+  last and blended. Its leaves are the leaf atlas's cards, one instance each from a
+  storage buffer, cut by a dithered alpha test; lit from the front by the sky and the sun,
+  from behind by the sun through the atlas's back colour, stronger toward the sun's own
+  way. Every vertex and leaf carries its share of the sun and the sky through the crown,
+  from a grid of the whole tree's leaves baked when the tree is grown (about 70 ms on the
+  CPU, the atlas and bark 60 ms more once). The crown past the far plane is squeezed in
+  front of it in the vertex shader. `--tree-light`, `--tree-look` and `--tree-tint` tune
+  its light; the vertex shaders' `tree_moved` is where the wind will move it.
 
 ### HDR and the depth of field's groundwork
 

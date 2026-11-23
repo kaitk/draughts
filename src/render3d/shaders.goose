@@ -7499,3 +7499,99 @@ let TREE_WOOD_FRAG = """
     #endif
     }
     """;
+
+// The leaves: each a card (trees::leaf_cards, LEAF_VEC4S vec4s an instance), two triangles
+// over leaf_atlas::QUAD in the leaf's frame, its blade's base at the foot, y along its axis
+// a blade length a unit, x across it the card's half width a unit; the atlas's texel from
+// the cell's foot and SCALE (leaf_atlas). The wind's step goes in tree_moved, a leaf's flex 1.
+let TREE_LEAF_VERT = """
+    layout(std430, set = 0, binding = 0) readonly buffer TreeCards { vec4 tree_cards[]; };
+    layout(location = 0) out vec3 v_world;
+    layout(location = 1) out vec3 v_normal;
+    layout(location = 2) out vec2 v_uv;
+    layout(location = 3) out vec4 v_leaf;
+    const vec2 LEAF_CORNERS[6] = vec2[6](vec2(-1.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0),
+                                         vec2(-1.0, 0.0), vec2(1.0, 1.0), vec2(-1.0, 1.0));
+    void main() {
+        int at = gl_InstanceIndex * 4;
+        vec4 base = tree_cards[at];
+        vec4 along = tree_cards[at + 1];
+        vec4 face = tree_cards[at + 2];
+        vec2 k = LEAF_CORNERS[gl_VertexIndex];
+        float lx = k.x * 0.853;
+        float ly = mix(-0.573, 1.133, k.y);
+        vec3 across = cross(face.xyz, along.xyz);
+        vec3 p = base.xyz + across * (lx * along.w) + along.xyz * (ly * base.w);
+        vec3 pos = tree_world(tree_moved(p, 1.0));
+        int kind = int(face.w + 0.5);
+        vec2 cell = vec2(float(kind % 4), float(kind / 4)) * 256.0;
+        v_uv = (cell + vec2(128.0 + lx * 150.0, 170.0 - ly * 150.0)) / vec2(1024.0, 512.0);
+        v_world = pos;
+        v_normal = tree_way(face.xyz);
+        v_leaf = tree_cards[at + 3];
+        gl_Position = tree_clip(pos);
+    }
+    """;
+
+// A leaf's texel (leaf_atlas's two layers): its outline cut where it crosses a half, the
+// edge sharpened to a pixel and the cut dithered across it (the stand-in for
+// alpha-to-coverage, which goose_gfx doesn't offer: docs/goose-findings.md); its colour as
+// leaf_atlas::texel_color makes it, from the front and through it. Lit from the front by
+// the sky and the sun, or seen against the sun by the light through it: the back colour
+// times the sun on its face, more toward the sun's own way (a Henyey-Greenstein lobe, g
+// 0.3, its share tree_light.w), and the sun deeper and redder in the crown's shade.
+let TREE_LEAF_FRAG = """
+    layout(set = 2, binding = 0) uniform sampler2D leaf_shape;
+    layout(set = 2, binding = 1) uniform sampler2D leaf_marks;
+    layout(location = 0) in vec3 v_world;
+    layout(location = 1) in vec3 v_normal;
+    layout(location = 2) in vec2 v_uv;
+    layout(location = 3) in vec4 v_leaf;
+    layout(location = 0) out vec4 result;
+    const vec3 STALK = vec3(0.2, 0.035, 0.015);
+    const vec3 TAR = vec3(0.012, 0.01, 0.008);
+    vec3 leaf_tint_color(float t) {
+        vec3 green = vec3(0.045, 0.11, 0.012);
+        vec3 lime = vec3(0.3, 0.33, 0.02);
+        vec3 gold = vec3(0.62, 0.34, 0.01);
+        vec3 orange = vec3(0.6, 0.14, 0.008);
+        vec3 red = vec3(0.42, 0.045, 0.006);
+        if (t < 0.7) { return mix(green, lime, t / 0.7); }
+        if (t < 1.0) { return mix(lime, gold, (t - 0.7) / 0.3); }
+        if (t < 1.5) { return mix(gold, orange, (t - 1.0) / 0.5); }
+        return mix(orange, red, clamp((t - 1.5) / 0.5, 0.0, 1.0));
+    }
+    void main() {
+        vec4 s = texture(leaf_shape, v_uv);
+        float a = (s.a - 0.5) / max(fwidth(s.a), 1e-4) + 0.5;
+        if (a < tree_hash(floor(gl_FragCoord.xy)) * 0.98 + 0.01) { discard; }
+        vec4 m = texture(leaf_marks, v_uv);
+        float tint = clamp(v_leaf.x + tree_tint.x + (v_leaf.w - 0.5) * tree_look.z, 0.0, 2.0);
+        float t = clamp(tint + (s.g - 0.5) * 0.7 - m.a * 0.6, 0.0, 2.0);
+        vec3 c0 = leaf_tint_color(t) * s.r;
+        float grey = dot(c0, vec3(0.2126, 0.7152, 0.0722));
+        c0 = mix(vec3(grey), c0, tree_tint.y);
+        vec3 front = mix(c0, c0 * 1.25 + vec3(0.03, 0.03, 0.01), s.b * 0.6);
+        front = mix(mix(front, STALK, m.b), TAR, m.g);
+        vec3 back = pow(c0, vec3(1.35)) * 2.4 * (1.0 - 0.55 * m.r);
+        back = mix(mix(back, STALK * 0.25, m.b), TAR, m.g);
+        vec3 l = normalize(light_dir.xyz);
+        vec3 v = normalize(eye.xyz - v_world);
+        vec3 n = normalize(v_normal);
+        float nv = dot(n, v);
+        vec3 nf = nv < 0.0 ? -n : n;
+        float nl = dot(nf, l);
+        float sun = pow(max(v_leaf.y, 1e-4), tree_look.y);
+        float sky = pow(max(v_leaf.z, 1e-4), tree_look.y);
+        vec3 sun_color = mix(vec3(1.0), vec3(1.0, 0.72, 0.42), (1.0 - sun) * tree_tint.w) * tree_light.x;
+        vec3 c = front * tree_sky(nf) * (sky * tree_light.y);
+        if (nl >= 0.0) {
+            c += front * sun_color * (nl * sun);
+        } else {
+            float g = 0.3;
+            float hg = (1.0 - g * g) / pow(1.0 + g * g - 2.0 * g * dot(-l, v), 1.5);
+            c += back * sun_color * (-nl * sun * tree_light.z * mix(1.0, hg, tree_light.w));
+        }
+        result = tree_out(c);
+    }
+    """;

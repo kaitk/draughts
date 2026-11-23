@@ -691,6 +691,24 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
 - [ ] The lace in shade, open questions (`build/notes/lace-shade/trials.html`): a cooler
       tint in shade; trial 1 (more opacity at grazing angles) and trial 4 (motif against
       net), only if the user wants more after the defaults of 2026-11-23
+- [ ] The library's maple as GPU geometry (step 3; the plan in `build/notes/tree/index.html`).
+      T2 and T3 done on the branch `tree-gpu` (2026-11-23, `build/notes/tree/gpu.html`),
+      behind the tuner's `--tree-draw off|wood|all`, default off; T4 (wind) and T5 (the
+      phone's card) next. Open: alpha-to-coverage (the leaves are cut by a dithered alpha
+      test; goose_gfx's branch `alpha-to-coverage` ready, not pushed), the colour (tint
+      +0.2, the light through 0.35 of the sun), the density, and whether the near maple's
+      picture still draws behind
+    - The culled old-leader maple: 16,752 tube and 49,278 ribbon triangles (74,376
+      vertices), 22,217 leaf cards; the crown's grid 64³, the leaves' mean sun share 75%.
+      Made on the CPU (-O2) in 67 ms a grow (the leaves' crown rays 37), plus the leaf
+      atlas 53 and the bark 8 once; on the GPU 13 MiB
+    - Frames on the M1 Pro, two rounds A B A B, off / wood / all: 3840 x 2160 down 10.95 /
+      11.03 / 11.03, corner 15.21 / 15.21 / 15.23, room 14.35 / 14.35 / 14.38, menu 13.43 /
+      13.45 / 13.46; 5120 x 2880 down 19.20 / 19.06 / 19.09, corner 25.24 / 24.81 / 24.79,
+      room 23.15 / 23.15 / 23.14, menu 22.30 / 22.38 / 22.33. Under 0.1 ms in every view
+    - Off against the build before (`21892e88`), the four views at 3840 x 2160:
+      byte-identical. Tests pass with NGFX, both apps build; ngfx checked by compiling only
+      (no ngfx tool draws the tuner's views)
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

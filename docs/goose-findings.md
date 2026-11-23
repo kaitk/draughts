@@ -156,6 +156,18 @@ SELinux: libtcc's `mprotect` is refused.
   first.
 - Upstream: `goose --emit-header goose.h`, beside `--emit-runtime`.
 
+### `embed_shader`'s GLSL has no `gl_SampleMask`
+
+cute_spirv declares `gl_FragCoord` and `gl_FragDepth` but not `gl_SampleMask` ("undeclared
+identifier 'gl_SampleMask'"), so a fragment shader can't write its own coverage: a twig's
+ribbon can't turn its width into samples of an MSAA pass, nor a leaf its alpha when the
+pipeline can't (alpha-to-coverage, below).
+
+- Here: the tree's ribbons blend premultiplied by their coverage, drawn last without
+  depth writes; its leaves take a dithered alpha test (2026-11-23, task 107).
+- Upstream: `gl_SampleMask` (and `gl_SampleMaskIn`, `gl_SampleID`) in cute_spirv, as
+  SPIR-V's `SampleMask` builtin, which SPIRV-Cross carries to MSL and HLSL.
+
 ### `pad` and `block` are keywords everywhere
 
 Both are reserved throughout (by the spec), though each means something in one place, and
@@ -218,6 +230,20 @@ The export's wrapper seems to start from the data stacks' base rather than their
 - Upstream: possibly an `os` function naming the platform.
 
 ## goose_gfx
+
+### No alpha-to-coverage
+
+`PipelineDesc` has no alpha-to-coverage, though SDL's `SDL_GPUMultisampleState` has
+`enable_alpha_to_coverage` (Metal's `alphaToCoverageEnabled`, Vulkan's and D3D12's too):
+`gfx_pipeline.c` sets only the sample count. Foliage under 4× MSAA can't spread a leaf's
+cut over its samples.
+
+- Here: the tree's leaves take a hashed alpha test on alpha sharpened to a pixel
+  (`shaders::TREE_LEAF_FRAG`, 2026-11-23, task 107). `kaitk/goose_gfx`'s branch
+  `alpha-to-coverage` on upstream `main` (`PipelineDesc.alpha_to_coverage`, off with one
+  sample; `api_check.py` passes) is ready locally, not yet pushed or merged into the fork's
+  `main`.
+- Upstream: that branch.
 
 ### A later floor draw cannot read an earlier draw's tile-local colour
 
@@ -434,6 +460,15 @@ tablet 207.5 MB, 138.9 without).
 - Upstream: possibly an Android path in gfx's CMake.
 
 ## NoGraphicsAPI and goose-ngfx
+
+### No alpha-to-coverage
+
+goose-ngfx's `PipelineDesc` has no alpha-to-coverage, nor NoGraphicsAPI's, so the ngfx
+build's leaves take the same dithered alpha test as gfx's (2026-11-23, task 107).
+
+- Upstream: a field in NoGraphicsAPI's pipeline description (Metal's
+  `alphaToCoverageEnabled`, Vulkan's `alphaToCoverageEnable`) on a branch of the fork,
+  then goose-ngfx passing it on.
 
 ### Transient attachments stay local to one render pass
 

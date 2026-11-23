@@ -243,6 +243,37 @@ fn ribbon(t: Tree&, density: f32[>..]&, g: Grid, sun: float3, ways: float3[SKY_W
     }
 }
 
+// The leaves of t as the cards' instances (shaders::TREE_LEAF_VERT), LEAF_VEC4S float4 each:
+// the blade's base and length; its axis and the card's half width against the atlas's
+// (trees::Card.width over 1.15, as the atlas's leaf is that much wider than long); its face
+// and which of the atlas's leaves; its tint, the sun's and the sky's share through the crown
+// at its middle, and a seed of its own (0..1). Nearest the house first (z up), so a view out
+// draws the near leaves before the far ones it hides.
+let LEAF_VEC4S = 4;
+fn leaf_cards(t: Tree&, density: f32[>..]&, g: Grid, sun: float3, out: float4[>..]&) -> i64 {
+    out.clear();
+    let ways = sky_ways();
+    // A counting sort by the grid's z cell.
+    var counts: i64[GRID + 1] = [0; GRID + 1];
+    for &c in t.cards { counts[z_cell(g, c.base) + 1]++; }
+    for k in 1..GRID + 1 { counts[k] += counts[k - 1]; }
+    out.resize(t.cards.len * LEAF_VEC4S, float4 { 0.0, 0.0, 0.0, 0.0 });
+    for &c, i in t.cards {
+        let mid = c.base + c.along * (c.size * 0.5);
+        let open = crown_light(density, g, mid, sun, ways);
+        let seed = (((i as u64) * 2654435761) & 0xFFFF) as f32 / 65535.0;
+        let at = counts[z_cell(g, c.base)] * LEAF_VEC4S;
+        counts[z_cell(g, c.base)]++;
+        out[at] = float4 { c.base.x, c.base.y, c.base.z, c.size };
+        out[at + 1] = float4 { c.along.x, c.along.y, c.along.z, c.width / 1.15 };
+        out[at + 2] = float4 { c.face.x, c.face.y, c.face.z, c.kind as f32 };
+        out[at + 3] = float4 { c.tint, open.x, open.y, seed };
+    }
+    return t.cards.len;
+}
+
+fn z_cell(g: Grid, p: float3) -> i64 { clamp(floor((p.z - g.low.z) / g.cell) as i64, 0, GRID - 1) }
+
 // The sun's way in the tree's frame from the map's view: a point and its shadow on the map
 // lie along (shear.x, shear.y, 1) (on_map).
 fn toward_sun(v: View&) -> float3 { normalize(float3 { v.shear.x, v.shear.y, 1.0 }) }

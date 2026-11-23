@@ -531,6 +531,12 @@ struct TreeGpu {
     ribbon:       Pipeline,
     hdr_tube:     Pipeline,
     hdr_ribbon:   Pipeline,
+    leaves:       Buffer,       // the leaves' cards (trees::leaf_cards), when all is drawn
+    leaf_count:   i64,
+    leaf_shape:   Texture,      // the leaf atlas's two layers (leaf_atlas::make)
+    leaf_marks:   Texture,
+    leaf:         Pipeline,
+    hdr_leaf:     Pipeline,
     made_for:     float4[TREE_GEOMETRY_KEY],
     ms:           f64,
 }
@@ -2446,17 +2452,19 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
 // alone, the app's), its wood, or all of it (TREE_DRAWS): the light tuner's --tree-draw,
 // until the user has seen it. With it on the shell's shadow comes from the same tree
 // (tree_grown_whole).
-let TREE_DRAWS = ["off", "wood"];
+let TREE_DRAWS = ["off", "wood", "all"];
 let TREE_OFF = 0;
 let TREE_WOOD = 1;
+let TREE_ALL = 2;
 var tree_draw = TREE_OFF;
 
-// How the tree is lit (TreeBlock's light, look's y and w, tint): the light tuner's --tree-light,
+// How the tree is lit (TreeBlock's light, look's y, z and w, tint): the light tuner's --tree-light,
 // --tree-look and --tree-tint.
-var tree_light = float4 { 2.5, 1.0, 0.3, 0.6 };
+var tree_light = float4 { 2.5, 1.0, 0.35, 0.6 };
 var tree_shade:   f32 = 1.0;
 var tree_twig_px: f32 = 1.0;
-var tree_tint = float4 { 0.0, 1.0, 1.0, 0.6 };
+var tree_spread:  f32 = 0.15;
+var tree_tint = float4 { 0.2, 1.0, 1.0, 0.6 };
 
 // The tree's block (shaders::TREE_HEAD), for a pass of `samples` samples a pixel.
 struct TreeBlock { origin: float4, light: float4, look: float4, depth: float4, tint: float4 }
@@ -2473,7 +2481,7 @@ fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
     let from = a - b / (0.85 * far);
     let keep: f32 = 1e-4;
     let squeeze = (1.0 - keep - from) / max(a - from, 1e-6);
-    return TreeBlock { model3d::f4(o, samples), tree_light, float4 { g.room.outside, tree_shade, 0.0, tree_twig_px },
+    return TreeBlock { model3d::f4(o, samples), tree_light, float4 { g.room.outside, tree_shade, tree_spread, tree_twig_px },
                        float4 { from, squeeze, 0.0, 0.0 }, tree_tint };
 }
 
@@ -2488,10 +2496,11 @@ fn tree_geometry_key(g: Gpu&) -> float4[TREE_GEOMETRY_KEY] {
     return [r.key, r.window, r.tree, r.foliage, float4 { t.x, t.y, tree_draw, 0.0 }];
 }
 
-// The tree grown whole and made into its meshes, lit by its crown's grid, and put on the GPU:
-// before a draw, outside a pass, when what it is grown from changed. Tens of milliseconds,
-// never in the frame loop's steady state. The grid from the whole tree, the meshes from the
-// parts seen through the windows or casting through them.
+// The tree grown whole and made into its meshes and leaf cards (all drawn), lit by its
+// crown's grid, and put on the GPU: before a draw, outside a pass, when what it is grown
+// from changed. About 70 ms on the CPU, the bark and the leaf atlas 60 more the first time;
+// never in the frame loop's steady state. The grid from the whole tree, the meshes and
+// cards from the parts seen through the windows or casting through them.
 fn tree_geometry<O>(o: O&, g: Gpu&) {
     guard tree_draw != TREE_OFF && outside_shown(g) && !g.bake_held else { return; }
     let key = tree_geometry_key(g);
@@ -2518,7 +2527,9 @@ fn tree_geometry<O>(o: O&, g: Gpu&) {
     var verts:   trees::WoodVertex[>..] = [];
     var indices: u32[>..]               = [];
     var density: f32[>..]               = [];
+    var cards:   float4[>..]            = [];
     var made = trees::WoodMesh { 0, 0, 0, 0 };
+    var leaf_count = 0;
     {
         var all = trees::Tree { .. };
         trees::grow_whole(all, w, v, sight, false);
@@ -2526,7 +2537,26 @@ fn tree_geometry<O>(o: O&, g: Gpu&) {
         var t = trees::Tree { .. };
         trees::grow_whole(t, w, v, sight, true);
         made = trees::wood_mesh(t, density, grid, trees::toward_sun(v), verts, indices);
+        if tree_draw == TREE_ALL { leaf_count = trees::leaf_cards(t, density, grid, trees::toward_sun(v), cards); }
     }
+    if leaf_count > 0 && g.tree.leaf_shape.id == 0 {
+        var shape: u8[>..] = [];
+        var marks: u8[>..] = [];
+        leaf_atlas::make(shape, marks);
+        let mips = leaf_atlas::mips_of(leaf_atlas::ATLAS_W, leaf_atlas::ATLAS_H);
+        g.tree.leaf_shape = o.gpu_sampled(leaf_atlas::ATLAS_W, leaf_atlas::ATLAS_H, mips, RGBA8);
+        g.tree.leaf_marks = o.gpu_sampled(leaf_atlas::ATLAS_W, leaf_atlas::ATLAS_H, mips, RGBA8);
+        var at = 0;
+        for level in mips {
+            let n = (leaf_atlas::ATLAS_W >> level) * (leaf_atlas::ATLAS_H >> level) * 4;
+            o.gpu_upload(g.tree.leaf_shape, level, shape[at..at + n]);
+            o.gpu_upload(g.tree.leaf_marks, level, marks[at..at + n]);
+            at += n;
+        }
+    }
+    if g.tree.leaves.id != 0 { o.gpu_release_storage(g.tree.leaves); g.tree.leaves = Buffer { 0 }; }
+    if leaf_count > 0 { g.tree.leaves = o.gpu_storage(bytes_of(cards)); }
+    g.tree.leaf_count = leaf_count;
     if g.tree.wood_vb.id != 0 { o.gpu_release_mesh(g.tree.wood_vb, g.tree.wood_ib); }
     g.tree.wood_vb, g.tree.wood_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
     g.tree.tube_count = made.tube_indices;

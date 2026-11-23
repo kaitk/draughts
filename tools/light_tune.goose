@@ -37,9 +37,9 @@
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern|--bounce X,Y,Z,W]
 //       [--dump-map out.pgm] [--tree-grow shadow|whole (the shell's tree's shadow from the old maple grown whole)]
-//       [--tree-draw off|wood (the tree outside drawn as geometry, render3d::TREE_DRAWS; off; on, its shadow grown whole too)
-//       --tree-light SUN,SKY,THROUGH,FORWARD (2.5,1,0.3,0.6) --tree-look SHADE,TWIG_PX (1,1)
-//       --tree-tint TINT,LEAVES,BARK,DEEPER (0,1,1,0.6)]
+//       [--tree-draw off|wood|all (the tree outside drawn as geometry, render3d::TREE_DRAWS; off; on, its shadow grown whole too)
+//       --tree-light SUN,SKY,THROUGH,FORWARD (2.5,1,0.35,0.6) --tree-look SHADE,TWIG_PX,SPREAD (1,1,0.15)
+//       --tree-tint TINT,LEAVES,BARK,DEEPER (0.2,1,1,0.6)]
 //       [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
@@ -1582,15 +1582,16 @@ fn main() {
     var book_fade = number(argv, "--book-fade", 1.0);
     // --tree-grow shadow|whole: the shell's tree's shadow from the first tree or the old
     // maple grown whole (render3d::tree_grown_whole).
-    // --tree-draw off|wood: the tree outside drawn as geometry (render3d::tree_draw, task 107's
+    // --tree-draw off|wood|all: the tree outside drawn as geometry (render3d::tree_draw, task 107's
     // T2 and T3), off by default; on, the shadow comes from the same tree unless --tree-grow
-    // says otherwise. --tree-light SUN,SKY,THROUGH,FORWARD, --tree-look SHADE,TWIG_PX and
+    // says otherwise. --tree-light SUN,SKY,THROUGH,FORWARD, --tree-look SHADE,TWIG_PX,SPREAD and
     // --tree-tint TINT,LEAVES,BARK,DEEPER (render3d::tree_light..).
     render3d::tree_draw = pick(argv, "--tree-draw", render3d::TREE_DRAWS, render3d::TREE_OFF);
     render3d::tree_light = four(argv, "--tree-light", render3d::tree_light);
-    let tree_look = four(argv, "--tree-look", float4 { render3d::tree_shade, render3d::tree_twig_px, 0.0, 0.0 });
+    let tree_look = four(argv, "--tree-look", float4 { render3d::tree_shade, render3d::tree_twig_px, render3d::tree_spread, 0.0 });
     render3d::tree_shade = tree_look.x;
     render3d::tree_twig_px = tree_look.y;
+    render3d::tree_spread = tree_look.z;
     render3d::tree_tint = four(argv, "--tree-tint", render3d::tree_tint);
     let grown = if render3d::tree_draw != render3d::TREE_OFF { 1 } else { 0 };
     render3d::tree_grown_whole = pick(argv, "--tree-grow", TREE_GROWS, grown) == 1;

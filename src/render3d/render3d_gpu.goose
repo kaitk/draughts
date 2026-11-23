@@ -57,6 +57,11 @@ fn gpu_update(own: Own&, b: Buffer, bytes: const u8[:]) { gfx::update_buffer(b, 
 fn gpu_mesh(own: Own&, verts: const u8[:], indices: const u8[:]) -> Buffer, Buffer {
     return gfx::vertex_buffer(verts), gfx::index_buffer(indices);
 }
+fn gpu_storage(own: Own&, bytes: const u8[:]) -> Buffer { gfx::buffer(gfx::BUFFER_STORAGE, bytes) }
+fn gpu_release_storage(own: Own&, b: Buffer) {
+    gfx::flush();
+    gfx::release(b);
+}
 fn gpu_release_mesh(own: Own&, vb: Buffer, ib: Buffer) {
     gfx::release(vb);
     gfx::release(ib);
@@ -1049,10 +1054,16 @@ fn make_tree(own: Own&, g: render3d::Gpu&) {
     t.hdr_ribbon = gfx::pipeline(ribbon_vs, embed_shader("frag", shaders::TREE_RIBBON, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME,
                                                          shaders::TREE_HEAD, shaders::TONE_FN, shaders::TREE_LIGHT_FN,
                                                          shaders::TREE_WOOD_FRAG), flat);
+    let leaf_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_LEAF_VERT);
+    let card = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
+    t.leaf = gfx::pipeline(leaf_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TONE_FN,
+                                                 shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG), card);
+    t.hdr_leaf = gfx::pipeline(leaf_vs, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                                     shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG), card);
 }
 
 // The tree outside in the board's pass, after the room's opaque groups (render3d::tree_drawn):
-// its tubes, then its ribbons.
+// its tubes, its leaves, then its ribbons (blended, so last).
 fn draw_tree(own: Own&, g: render3d::Gpu&) {
     let t = g.tree;
     let tb = render3d::tree_block(g, own.samples);
@@ -1065,6 +1076,17 @@ fn draw_tree(own: Own&, g: render3d::Gpu&) {
     gfx::bind_vertex_buffer(t.wood_vb);
     gfx::bind_index_buffer(t.wood_ib, 4);
     gfx::draw_indexed(t.tube_count);
+    if t.leaf_count > 0 {
+        gfx::bind(if g.hdr { t.hdr_leaf } else { t.leaf });
+        gfx::bind_storage_buffer(gfx::VERTEX, 0, t.leaves);
+        gfx::bind_texture(gfx::FRAGMENT, 0, t.leaf_shape, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 1, t.leaf_marks, g.aniso);
+        gfx::uniforms(gfx::VERTEX, 0, g.frame);
+        gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+        gfx::uniforms(gfx::VERTEX, 1, tb);
+        gfx::uniforms(gfx::FRAGMENT, 1, tb);
+        gfx::draw_instanced(6, t.leaf_count);
+    }
     gfx::bind(if g.hdr { t.hdr_ribbon } else { t.ribbon });
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
     gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
@@ -1745,10 +1767,10 @@ fn release(own: Own&, g: render3d::Gpu&) {
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     release_hdr(own, g);
     for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { gfx::release(p); } }
-    for t in [g.hdr_image, g.scene_depth, g.tree.bark] { if t.id != 0 { gfx::release(t); } }
+    for t in [g.hdr_image, g.scene_depth, g.tree.bark, g.tree.leaf_shape, g.tree.leaf_marks] { if t.id != 0 { gfx::release(t); } }
     for t in g.glow_levels { if t.id != 0 { gfx::release(t); } }
-    for b in [g.tree.wood_vb, g.tree.wood_ib] { if b.id != 0 { gfx::release(b); } }
-    for p in [g.tree.tube, g.tree.ribbon, g.tree.hdr_tube, g.tree.hdr_ribbon] { if p.id != 0 { gfx::release(p); } }
+    for b in [g.tree.wood_vb, g.tree.wood_ib, g.tree.leaves] { if b.id != 0 { gfx::release(b); } }
+    for p in [g.tree.tube, g.tree.ribbon, g.tree.hdr_tube, g.tree.hdr_ribbon, g.tree.leaf, g.tree.hdr_leaf] { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();
 }

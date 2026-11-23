@@ -2070,6 +2070,24 @@ to be is in tasks 042, 059, 071, 081, and 086.
   unchanged. A uniform switch in the app's shaders cost the room 0.7 ms a frame on the
   Mac (0.45 without a branch), and any change to the lit shader's text moved two pixels of
   the game's shot by 7 levels; a Mali would compile every branch of it too.
+- The library's maple drawn as GPU geometry, behind the light tuner's `--tree-draw
+  off|wood|all`, default off (2026-11-23, task 107's step 3, T2 and T3;
+  `src/model3d/tree_mesh.goose`, `render3d::tree_geometry`, `shaders::TREE_*`,
+  `build/notes/tree/gpu.html`). The culled old-leader tree (`trees::grow_whole`) as one
+  mesh: tubes of 12, 9 and 6 sides for the trunk, limbs and branches, eye-facing ribbons
+  for branchlets and twigs kept a pixel wide and faded by their true width (Persson's
+  phone-wire antialiasing), blended last without depth writes; a bark tile made at
+  startup. The leaves are the atlas's instanced cards, cut by a dithered alpha test on
+  alpha sharpened to a pixel, lit from the front by the sky and the sun and from behind
+  through the atlas's back colour with a Henyey-Greenstein lobe (g 0.3). Each vertex and
+  leaf takes its sun and sky share from a 64³ grid of the whole crown's leaves, baked once
+  (Beer-Lambert). The far crown past 0.85 of the far plane is squeezed in front of it in
+  the vertex shader, leaving the room's depths alone. Under 0.1 ms a frame in the four
+  views at 3840 × 2160 and 5120 × 2880; off, the shots are byte-identical. Not the
+  default until the user has seen it. Rejected for now: alpha-to-coverage (no
+  `PipelineDesc` field in goose_gfx or goose-ngfx, no `gl_SampleMask` in embed_shader's
+  GLSL; `docs/goose-findings.md`), and coverage written by the shader as a sample mask
+  for the ribbons (the same gap).
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only
