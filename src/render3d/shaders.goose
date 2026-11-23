@@ -3660,6 +3660,21 @@ let ROOM_FRAG = """
         flat_n = dot(flat_n, ng) < 0.0 ? -flat_n : flat_n;
         float held = dot(ng, flat_n);
         if (held < 0.7) n = normalize(flat_n * 0.7 + normalize(ng - flat_n * held) * 0.714);
+        // Under a pixel or two (the mesh's normal turning most of a fillet's 90°, 1.41, within
+        // a pixel) the strip is a few of the pixel's samples, each shaded at the pixel's middle:
+        // lit, it dashes and crawls along the edge as the eye moves. There it takes the normal
+        // of the face of the two that faces the eye more, the same all along the edge, so the
+        // edge resolves as a sharp one does; over three pixels or more it is shaded as it is.
+        vec3 nx = dFdx(v_normal);
+        vec3 ny = dFdy(v_normal);
+        float under = smoothstep(0.8, 2.2, length(nx) + length(ny));
+        if (under > 0.0) {
+            vec3 dn = dot(nx, nx) > dot(ny, ny) ? nx : ny;
+            vec3 across = normalize(dn - flat_n * dot(dn, flat_n));
+            vec3 eye_dir = normalize(eye.xyz - p);
+            vec3 face_n = normalize(flat_n + (dot(across, eye_dir) > 0.0 ? across : -across));
+            n = normalize(mix(n, face_n, under));
+        }
         float on_window = step(0.195, own);
         float piece = own - 0.2 * on_window;
         float along = step(0.095, piece);

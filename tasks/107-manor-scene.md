@@ -505,6 +505,11 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       out): stills and two `--wind-time` shots within 1 level of before (a run's own noise).
       Saves 0.3 ms in the corner view, none straight down; skipping it only where the gust is
       0 saved nothing (the gust is somewhere on the crown every frame)
+- [x] The painted wood's edges (2026-11-23, `build/notes/paint-edges/`): a fillet under a
+      pixel shaded as the face toward the eye, and the joinery's T-junctions and open fillet
+      ends closed in the mesh (37,906 to 40,182 triangles); the casements' crawling dots
+      gone. Frame at 3840 × 2160, four rounds A B A B: menu 15.1 before and 15.7 after (14.9
+      without one stray round), room 16.2 and 16.4, within a round's noise of ±1 ms
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

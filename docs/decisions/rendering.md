@@ -1151,6 +1151,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
     strip's edge reads it far beyond, and the arrises shaded in dashes. The shader holds
     it within 46° of the strip's own plane. Some dashing stays where a 0.9 mm fillet is a
     fraction of a pixel (a casement's cover strip at 2 mm a pixel).
+  - Under a pixel the fillet takes the normal of the face that faces the eye more
+    (2026-11-23, `build/notes/paint-edges/`): the sunlit casements' edges and bars showed
+    bright dots that crawled as the eye moved, the strip being a few of a pixel's samples
+    shaded at its middle. Faded in as the mesh's normal turns 0.8 to 2.2 of its 1.41 within
+    a pixel, so at a metre's distance (two pixels at 4K) the eased edge still catches the
+    light. Rejected: the strip's own plane (a lit 45° line the samples still dashed) and the
+    face on the pixel's middle's side (it flips along a slanted edge: the dashes again).
   - The mesh is closed where it cracked (2026-11-23): side faces along the grain and the
     fillets beside them are split where the front's edge is, and fillets across the grain
     are whole, so no vertex lies on another face's edge; a fillet's end that meets no
