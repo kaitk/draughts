@@ -161,7 +161,8 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
         let rb: render3d::SurfacesBlock[1] = [render3d::surfaces_block(g)];
         let u = ngfx::frame_data(bytes_of(rb));
         if g.hdr {
-            draw_room_group(g, f, u, if planar { h.planar } else { h.floor }, render3d::GROUP_FLOOR, ssao, planar);
+            if render3d::floor_pieces_on(g) { draw_floor_pieces(g, f, u, h, ssao, planar); }
+            else { draw_room_group(g, f, u, if planar { h.planar } else { h.floor }, render3d::GROUP_FLOOR, ssao, planar); }
             draw_room_group(g, f, u, h.walls, render3d::GROUP_WALLS, ssao, false);
             draw_room_group(g, f, u, h.sill, render3d::GROUP_SILL, ssao, false);
             draw_room_group(g, f, u, h.paint, render3d::GROUP_PAINT, ssao, false);
@@ -233,6 +234,24 @@ fn draw_room_group(g: Gpu&, f: u64, u: u64, p: nx::Pipeline, group: i64, ssao: b
     let t = render3d::room_textures(g, group, ssao, planar);
     for i in t.count { slot(r, i, t.tex[i], t.smp[i]); }
     nx::draw_indexed(ngfx::root(r), if glass { g.glass_ib } else { g.room_ib }, 4, count, first);
+}
+
+// The floor in its pieces (render3d::SunDerived), each kind with its own pipeline: without
+// the sun, without the table's map, then the full one.
+fn draw_floor_pieces(g: Gpu&, f: u64, u: u64, h: render3d::HdrPipelines&, ssao: bool, planar: bool) {
+    var r = no_root();
+    r.frame = f;
+    r.u = u;
+    r.verts = nx::address(g.sun.pieces_vb);
+    let t = render3d::room_textures(g, render3d::GROUP_FLOOR, ssao, planar);
+    for i in t.count { slot(r, i, t.tex[i], t.smp[i]); }
+    for kind in render3d::FLOOR_KINDS {
+        let count = g.sun.count[kind];
+        guard count > 0 else { continue; }
+        let full = if planar { h.planar } else { h.floor };
+        nx::bind(if kind == render3d::FLOOR_TABLE { full } else if planar { h.planar_kinds[kind] } else { h.floor_kinds[kind] });
+        nx::draw_indexed(ngfx::root(r), g.sun.pieces_ib, 4, count, g.sun.first[kind]);
+    }
 }
 
 // The room's pipelines for the tier (render3d::ssao_allowed), as gfx's make_room_tier: its
@@ -604,6 +623,10 @@ fn make_hdr(own: Own&, g: Gpu&) {
     let opaque = ngfx::PipelineDesc { depth_test: true, depth_write: true };
     h.floor = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor.blob"), opaque);
     h.planar = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar.blob"), opaque);
+    h.floor_kinds = [nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_shade.blob"), opaque),
+                     nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_no_table.blob"), opaque)];
+    h.planar_kinds = [nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_shade.blob"), opaque),
+                      nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_no_table.blob"), opaque)];
     h.walls = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_walls.blob"), opaque);
     h.paint = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint.blob"), opaque);
     h.sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_sill.blob"), opaque);
@@ -628,7 +651,8 @@ fn make_hdr(own: Own&, g: Gpu&) {
 fn release_hdr(own: Own&, g: Gpu&) {
     let h = g.hdr_pipes;
     for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone,
-              h.glow_first, h.glow_down, h.glow_up, h.haze_cross, h.haze, h.haze_full, h.haze_add] {
+              h.glow_first, h.glow_down, h.glow_up, h.haze_cross, h.haze, h.haze_full, h.haze_add, h.floor_kinds[0], h.floor_kinds[1],
+              h.planar_kinds[0], h.planar_kinds[1]] {
         if p.id != 0 { nx::release(p); }
     }
     g.hdr_pipes = default<render3d::HdrPipelines>();

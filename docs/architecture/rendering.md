@@ -704,6 +704,15 @@ board's light:
   without that code. Brass inside a window's niche (the shutters' hinges) sees the window's
   light (`lace_light`) instead as it turns to face out of the room. Brass takes neither the
   corners' shade nor the screen's occlusion, only its mesh's own.
+- **What only the sun decides** (`render3d::SunDerived`, worked out by `sun_derived` when
+  the sun, the room's turn or the table's map changes, and only read by both renderers):
+  the floor's pieces. The shell's floor is cut along the sun into where no sun reaches it
+  through the windows, where it may, and where the table's map may darken that too (lines
+  along the sun at each window's sides and the map's, a band across the room where the
+  openings' heights reach, each widened by the penumbra's largest spread), and in the HDR
+  target each kind is drawn with a floor shader without what can't show there:
+  `FLOOR_SHADE` without the sun's trace and the table's taps, `FLOOR_NO_TABLE` without the
+  taps. Elsewhere the floor is one quad with the full shader.
 - **The room's shaders**: one pipeline a material group (`render3d::room_group`), each
   with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_PAINT`,
   `ROOM_SILL`, `ROOM_METALS`, `ROOM_GLASS`): the floor; the panelling oak, the paper, the

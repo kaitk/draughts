@@ -193,7 +193,8 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         let ssao = g.room_ssao;
         let surfaces = render3d::surfaces_block(g);
         if g.hdr {
-            draw_room_group(g, f, surfaces, if planar { h.planar } else { h.floor }, render3d::GROUP_FLOOR, ssao, planar);
+            if render3d::floor_pieces_on(g) { draw_floor_pieces(g, f, surfaces, h, ssao, planar); }
+            else { draw_room_group(g, f, surfaces, if planar { h.planar } else { h.floor }, render3d::GROUP_FLOOR, ssao, planar); }
             draw_room_group(g, f, surfaces, h.walls, render3d::GROUP_WALLS, ssao, false);
             draw_room_group(g, f, surfaces, h.sill, render3d::GROUP_SILL, ssao, false);
             draw_room_group(g, f, surfaces, h.paint, render3d::GROUP_PAINT, ssao, false);
@@ -255,6 +256,26 @@ fn draw_room_group(g: render3d::Gpu&, f: render3d::Frame, surfaces: render3d::Su
     gfx::bind_vertex_buffer(if glass { g.glass_vb } else { g.room_vb });
     gfx::bind_index_buffer(if glass { g.glass_ib } else { g.room_ib }, 4);
     gfx::draw_indexed(count, 1, first, 0, 0);
+}
+
+// The floor in its pieces (render3d::SunDerived), each kind with its own pipeline: without
+// the sun, without the table's map, then the full one.
+fn draw_floor_pieces(g: render3d::Gpu&, f: render3d::Frame, surfaces: render3d::SurfacesBlock, h: render3d::HdrPipelines&,
+                     ssao: bool, planar: bool) {
+    let t = render3d::room_textures(g, render3d::GROUP_FLOOR, ssao, planar);
+    for kind in render3d::FLOOR_KINDS {
+        let count = g.sun.count[kind];
+        guard count > 0 else { continue; }
+        let full = if planar { h.planar } else { h.floor };
+        gfx::bind(if kind == render3d::FLOOR_TABLE { full } else if planar { h.planar_kinds[kind] } else { h.floor_kinds[kind] });
+        for i in t.count { gfx::bind_texture(gfx::FRAGMENT, i, t.tex[i], t.smp[i]); }
+        gfx::uniforms(gfx::VERTEX, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 1, surfaces);
+        gfx::bind_vertex_buffer(g.sun.pieces_vb);
+        gfx::bind_index_buffer(g.sun.pieces_ib, 4);
+        gfx::draw_indexed(count, 1, g.sun.first[kind], 0, 0);
+    }
 }
 
 // The dust's pipeline and seeds (render3d::Dust), made the first time they are wanted.
@@ -702,6 +723,10 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
     h.floor = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
     h.planar = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.floor_kinds = [gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque),
+                     gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque)];
+    h.planar_kinds = [gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque),
+                      gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque)];
     h.walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_WALLS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
     h.paint = gfx::pipeline(room_vert, if paint { tuned_frags[TUNED_PAINT_HDR] } else { embed_shader("frag", shaders::ROOM_PAINT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
     h.sill = gfx::pipeline(room_vert, if sill { tuned_frags[TUNED_SILL_HDR] } else { embed_shader("frag", shaders::ROOM_SILL, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
@@ -732,7 +757,8 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
 fn release_hdr(own: Own&, g: render3d::Gpu&) {
     let h = g.hdr_pipes;
     for p in [h.lit, h.fading, h.table, h.floor, h.planar, h.walls, h.paint, h.sill, h.metals, h.glass, h.outside, h.motes, h.tone,
-              h.glow_first, h.glow_down, h.glow_up, h.haze_cross, h.haze, h.haze_full, h.haze_add] {
+              h.glow_first, h.glow_down, h.glow_up, h.haze_cross, h.haze, h.haze_full, h.haze_add, h.floor_kinds[0], h.floor_kinds[1],
+              h.planar_kinds[0], h.planar_kinds[1]] {
         if p.id != 0 { gfx::release(p); }
     }
     g.hdr_pipes = default<render3d::HdrPipelines>();

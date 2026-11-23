@@ -1723,7 +1723,7 @@ to be is in tasks 042, 059, 071, 081, and 086.
   the herringbone and the wear hide; the band and the plinth's contact line no longer stop
   at a door. Looking straight down the frame went from 13.3-13.7 to 9.9 ms (3024 × 1890).
   Replaces the scratches worked out in 3 × 3 cells a pixel and the gaps before the doors.
-- Planned, not built yet (2026-11-23, task 107, the user): what depends only on the sun is
+- Planned (2026-11-23, task 107; built the same day for the floor, the next entry): what depends only on the sun is
   worked out at the room's bake, in one place, and the shaders skip what the bake proves
   empty. The sun moves only with a rebake (and the season's transitions will rebake), so
   where each shadow can fall is known then: each window's opening projected along the sun
@@ -1733,6 +1733,23 @@ to be is in tasks 042, 059, 071, 081, and 086.
   and the room; both renderers' passes only read it, and each new sun-only saving adds a
   field and a line there. Measured first: looking straight down, the sun through the
   windows cost about 4.5 ms and the table's nine taps 1.4 ms though no shadow of it showed.
+- The floor is drawn in pieces cut along the sun (2026-11-23, task 107,
+  `build/notes/floor-perf/night.html`; `render3d::SunDerived`, `sun_derived`,
+  `floor_pieces`): when the sun, the room's turn or the table's map changes, the shell's floor
+  is cut into where no sun reaches it through the windows, where it may, and where the table's
+  map may darken that too, each drawn with a floor shader holding only what it needs
+  (`shaders::FLOOR_SHADE`, `FLOOR_NO_TABLE`), in the HDR target. The cuts are lines along the
+  sun at each window's sides and the table map's, and the band of the floor the openings'
+  heights reach, each widened by the penumbra's largest spread and a centimetre, so each
+  piece's shader gives what the full one would; the pieces share their corners exactly, so the
+  floor stays whole. Looking straight down the frame went from 15.8 to 12.5 ms at 3840 × 2160
+  (27.5 to 21.6 at 5120 × 2880), the room's corner view 17.7 to 16.5; shots differ only in a
+  few dozen single pixels on the boards' joints, where an attribute interpolated over another
+  triangle rounds across a joint. Rejected: skipping `shell_open` behind a test in the
+  shader, which leaves its code compiled: an early return always taken saved two thirds of
+  what removing it did, and a test of each window's reach hoisted before the loop saved
+  nothing more over the pieces; a floor-space mask texture, a tap a pixel for what the cuts
+  give for free.
 - The library's light retuned for a larger sun-to-shade range, with today's toe (2026-11-21,
   task 107; `rooms::AUTUMN`'s `shell_sun` and `baked`, `render3d::shade_fill`,
   `room_light::bounce_grey`, `room_light::BOUNCES`, `render3d::room_sun`,

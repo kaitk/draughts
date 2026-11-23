@@ -481,6 +481,11 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       straight down 13.3-13.7 to 9.9 ms, room view 11.7 to 10.35, menu view 10.8 to 10.35
       (3024 × 1890); against before, at most 11 levels straight down (the scratches), 31 at
       the salon door. Next: the sun-derived bounds at the bake (planned, docs/decisions)
+- [x] The floor's night (2026-11-23, `build/notes/floor-perf/night.html`): a breakdown at
+      3840 × 2160 and 5120 × 2880 in four views (straight down, room, menu, and the room's
+      corner, `--plan-eye 8.4,0.6,1.6 --plan-at 2.0,5.0,0.5`); the floor in pieces cut along the
+      sun (`render3d::SunDerived`): frame straight down 15.8 to 12.5 ms (5K 27.5 to 21.6), room
+      16.6 to 15.6, menu 15.7 to 15.1, corner 17.7 to 16.5 (5K 29.4 to 27.4)
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

@@ -367,6 +367,10 @@ struct Gpu {
     room_ib:      Buffer,
     room_count:   i64,
     room_from:    i64[ROOM_GROUPS], // where each material group's indices start (by_group)
+    // The floor's four corners as the room's mesh has them (by_group), which its pieces
+    // (sun_derived) take their attributes from; and the sun-derived block.
+    floor_corners: corner_map::RoomVertex[4],
+    sun:           SunDerived,
     // The room's pipelines, one a material group (room_group), made when first wanted
     // (make_room) for the tier: room_ssao, with the screen's maps (ssao_allowed), or a
     // phone's without them. The floor here sees the room's box; room_planar the mirror.
@@ -509,6 +513,9 @@ struct HdrPipelines {
     table:   Pipeline,
     floor:   Pipeline,
     planar:  Pipeline,
+    // The floor's pieces (SunDerived), by kind: without the sun, without the table's map.
+    floor_kinds:  Pipeline[2],
+    planar_kinds: Pipeline[2],
     walls:   Pipeline,
     paint:   Pipeline,
     sill:    Pipeline,
@@ -757,6 +764,257 @@ fn table_map<O>(o: O&, g: Gpu&) {
 // The table's map to bind, or the key's where none is drawn (a depth texture either way,
 // for the compare sampler): the shaders read it only when their block says it is drawn.
 fn table_map_or_stand_in(g: Gpu&) -> Texture { if g.table_map.id != 0 { g.table_map } else { g.shadow_map } }
+
+// The sun-derived block (docs/decisions/rendering.md, "Sun-derived at the bake"): what
+// depends only on the sun and the room, worked out when either changes (sun_derived) and
+// only read by both renderers' passes; a new saving of the kind adds a field here and its
+// line in sun_derived. Now the floor's pieces: the shell's floor cut along the sun into
+// where no sun reaches it through the windows (FLOOR_SHADE), where it may (FLOOR_LIT), and
+// where the table's map may darken that too (FLOOR_TABLE), each drawn with a floor shader
+// holding only what it needs (shaders::FLOOR_SHADE, FLOOR_NO_TABLE; the full one for
+// FLOOR_TABLE). The cuts are those shell_open's and table_map_at's own tests make, widened
+// by the largest penumbra, so each piece's shader gives what the full one would.
+let FLOOR_SHADE = 0;
+let FLOOR_LIT = 1;
+let FLOOR_TABLE = 2;
+let FLOOR_KINDS = 3;
+// The lines along the sun the floor is cut at (each window's sides, the table map's), the
+// pieces (three rows: before the sun's band, the band, after it), a piece's corners at most.
+let SUN_CUTS = 8;
+let FLOOR_PIECES = 3 * (SUN_CUTS + 1);
+let PIECE_CORNERS = 8;
+// What a cut is widened by past the penumbra's reach (metres): rounding's room.
+let SUN_CUT_SPARE: f32 = 0.01;
+struct SunDerived {
+    made_for: float4[SUN_KEY],
+    // The floor's pieces: their mesh, where each kind's indices start and how many.
+    pieces_vb: Buffer,
+    pieces_ib: Buffer,
+    first:     i64[FLOOR_KINDS],
+    count:     i64[FLOOR_KINDS],
+}
+
+// The pieces' mesh as it is made: fixed, touched only when the sun or the room changes.
+var piece_verts:   corner_map::RoomVertex[FLOOR_PIECES * PIECE_CORNERS];
+var piece_indices: u32[FLOOR_PIECES * (PIECE_CORNERS - 2) * 3];
+
+// The floor's corners in the room's mesh: its vertices at the least and most u and v.
+fn floor_corners_of(room: corner_map::RoomVertex[>..]&) -> corner_map::RoomVertex[4] {
+    var c: corner_map::RoomVertex[4] = [default<corner_map::RoomVertex>(); 4];
+    var lo = float2 { 1e9, 1e9 };
+    var hi = float2 { -1e9, -1e9 };
+    for v in room {
+        guard room_group(v.mat) == GROUP_FLOOR else { continue; }
+        lo = float2 { min(lo.x, v.pos.x), min(lo.y, v.pos.z) };
+        hi = float2 { max(hi.x, v.pos.x), max(hi.y, v.pos.z) };
+    }
+    let at: float2[4] = [lo, float2 { hi.x, lo.y }, hi, float2 { lo.x, hi.y }];
+    for v in room {
+        guard room_group(v.mat) == GROUP_FLOOR else { continue; }
+        for k in 4 { if v.pos.x == at[k].x && v.pos.z == at[k].y { c[k] = v; } }
+    }
+    return c;
+}
+
+// Whether the floor is drawn in its pieces: made, and the room's sun the shell's, with the
+// table's map drawn (FLOOR_SHADE's light then needs neither), in the HDR target, whose
+// pipelines have the pieces' kinds.
+fn floor_pieces_on(g: Gpu&) -> bool {
+    g.sun.pieces_vb.id != 0 && g.hdr && g.room_shell && g.frame.room.y > 0.0 && table_map_shown(g)[3].x > 0.5
+}
+
+// What the sun-derived block is worked out from: the key, the room's turn, the table's map,
+// the penumbra and the room's mesh.
+let SUN_KEY = 4;
+fn sun_key(g: Gpu&) -> float4[SUN_KEY] {
+    let f = g.room_frame;
+    let m = table_map_shown(g);
+    return [g.frame.light_dir, float4 { f.along.x, f.along.y, f.into.x, f.into.y }, float4 { m[1].x, m[1].z, m[1].w, m[3].x },
+            float4 { g.room.shell_sun.x, g.frame.room.z, g.room_vb.id, 0.0 }];
+}
+
+// The sun-derived block worked out again where what it is made from changed. Recording only,
+// before the board's pass.
+fn sun_derived<O>(o: O&, g: Gpu&) {
+    guard room_shown(g) && g.room_shell else { return; }
+    let key = sun_key(g);
+    var same = g.sun.pieces_vb.id != 0;
+    for k in SUN_KEY { same = same && same4(key[k], g.sun.made_for[k]); }
+    guard !same else { return; }
+    g.sun.made_for = key;
+    let nv, ni = floor_pieces(g, surfaces_block(g));
+    if g.sun.pieces_vb.id != 0 { o.gpu_release_mesh(g.sun.pieces_vb, g.sun.pieces_ib); }
+    g.sun.pieces_vb, g.sun.pieces_ib = o.gpu_mesh(bytes_of(piece_verts[0..nv]), bytes_of(piece_indices[0..ni]));
+}
+
+// The floor's pieces into piece_verts and piece_indices, by kind (g.sun.first, count), from
+// the block the shaders read; how many vertices and indices. In the room's frame (u along
+// the window wall, v away from it, the mesh's own), a floor point (u, v) sees the sun
+// through the window wall's plane at k (u + j (v + S)) along it, S the wall's face, and
+// h (v + S) up from the floor (shaders::shell_open's t); the lines along the sun are those
+// of one place along the wall, the band those of one height. The table's map reaches only
+// within 0.995 of its half width across the sun (table_map_at).
+fn floor_pieces(g: Gpu&, b: SurfacesBlock) -> i64, i64 {
+    let f = g.room_frame;
+    let l = g.frame.light_dir;
+    let lu = l.x * f.along.x + l.z * f.along.y;
+    let toward = -(l.x * f.into.x + l.z * f.into.y);
+    let metre = b.shell.w;
+    let face = b.shell.y;
+    // The band of v the sun can reach, and the cuts across it, in u + j (v + S) (world
+    // units); none lit where shell_open gives none (toward under 0.05).
+    var band = float2 { 1e9, 1e9 };
+    var cuts: f32[SUN_CUTS] = [0.0; SUN_CUTS];
+    var spans: float2[4] = [float2_0; 4];
+    var n_spans = 0;
+    var n_cuts = 0;
+    let lit = toward >= 0.05 && l.y > 0.02;
+    let j = if lit { lu / toward } else { 0.0 };
+    if lit {
+        // The penumbra's widest, at the opening's top (shell_open's soft), solved for the
+        // height it reaches to.
+        let widen = if b.shell_sun.x > 0.0 { b.shell_sun.x } else { g.frame.room.z };
+        let top = b.shell_niche.y + b.shell_niche.z + b.shell_niche.w;
+        let grow = widen / l.y;
+        let soft = if grow < 0.5 { (0.03 / metre + grow * top) / (1.0 - grow) + SUN_CUT_SPARE } else { 1e6 };
+        let up = l.y / toward / metre;
+        band = float2 { (b.shell_niche.y - soft) / up - face, (top + soft) / up - face };
+        let half = (b.shell_niche.x + soft) * metre;
+        let mids: f32[3] = [b.shell_mids.x, b.shell_mids.y, b.shell_mids.z];
+        for i in min(b.shell.x as i64, 3) {
+            spans[n_spans] = float2 { mids[i] - half, mids[i] + half };
+            n_spans++;
+        }
+    }
+    // The table's map across the sun, as a span of the same measure.
+    let d = normalize(float2 { l.x, l.z });
+    let e = float2 { -d.y, d.x };
+    let m = b.table_map;
+    let r = 1.0 / length(float2 { m[1].x, m[1].z });
+    let ce = -m[1].w * r;
+    var table = float2_0;
+    for side in 2 {
+        let at = e * (ce + (if side == 0 { -0.995 } else { 0.995 }) * r);
+        let u = at.x * f.along.x + at.y * f.along.y;
+        let v = at.x * f.into.x + at.y * f.into.y;
+        let c = u + j * (v + face);
+        if side == 0 { table.x = c; } else { table.y = c; }
+    }
+    let spare = SUN_CUT_SPARE * metre;
+    table = float2 { min(table.x, table.y) - spare, max(table.x, table.y) + spare };
+    for s in n_spans { cuts[n_cuts] = spans[s].x; cuts[n_cuts + 1] = spans[s].y; n_cuts += 2; }
+    if n_spans > 0 { cuts[n_cuts] = table.x; cuts[n_cuts + 1] = table.y; n_cuts += 2; }
+    sort_cuts(cuts, n_cuts);
+    // Each piece: a row by a column, cut from the floor's rectangle; its kind by the
+    // column's middle.
+    let lo = float2 { g.floor_corners[0].pos.x, g.floor_corners[0].pos.z };
+    let hi = float2 { g.floor_corners[2].pos.x, g.floor_corners[2].pos.z };
+    let rows: f32[4] = [lo.y, clamp(band.x, lo.y, hi.y), clamp(band.y, lo.y, hi.y), hi.y];
+    var nv = 0;
+    var counts: i64[FLOOR_KINDS] = [0; FLOOR_KINDS];
+    var kinds: i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
+    var starts: i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
+    var sizes: i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
+    var pieces = 0;
+    for row in 3 {
+        guard rows[row + 1] > rows[row] else { continue; }
+        for col in n_cuts + 1 {
+            let left = if col > 0 { cuts[col - 1] } else { -1e9 };
+            let right = if col < n_cuts { cuts[col] } else { 1e9 };
+            guard right > left else { continue; }
+            var kind = FLOOR_SHADE;
+            if row == 1 {
+                let mid = if col == 0 { right - 1.0 } else if col == n_cuts { left + 1.0 } else { 0.5 * (left + right) };
+                for s in n_spans { if mid > spans[s].x && mid < spans[s].y { kind = FLOOR_LIT; } }
+                if kind == FLOOR_LIT && mid > table.x && mid < table.y { kind = FLOOR_TABLE; }
+            }
+            let corners = piece(g, lo, hi, rows[row], rows[row + 1], left, right, j, face, nv);
+            guard corners >= 3 else { continue; }
+            kinds[pieces] = kind;
+            starts[pieces] = nv;
+            sizes[pieces] = corners;
+            counts[kind] += 3 * (corners - 2);
+            nv += corners;
+            pieces++;
+        }
+    }
+    // The indices, a fan a piece, kind by kind.
+    var ni = 0;
+    for kind in FLOOR_KINDS {
+        g.sun.first[kind] = ni;
+        g.sun.count[kind] = counts[kind];
+        for p in pieces {
+            guard kinds[p] == kind else { continue; }
+            for t in 1..(sizes[p] - 1) {
+                piece_indices[ni] = starts[p] as u32;
+                piece_indices[ni + 1] = (starts[p] + t) as u32;
+                piece_indices[ni + 2] = (starts[p] + t + 1) as u32;
+                ni += 3;
+            }
+        }
+    }
+    return nv, ni;
+}
+
+// The cuts in increasing order (insertion: at most SUN_CUTS).
+fn sort_cuts(c: f32[SUN_CUTS]&, n: i64) {
+    for i in 1..n {
+        let x = c[i];
+        var k = i;
+        while k > 0 && c[k - 1] > x {
+            c[k] = c[k - 1];
+            k--;
+        }
+        c[k] = x;
+    }
+}
+
+// One piece of the floor into piece_verts from `at`: the rectangle lo..hi between rows v0
+// and v1, clipped to the lines along the sun u + j (v + S) = left and right. Each corner is
+// worked out from the line or edge it lies on alone, so the pieces either side of a cut
+// share their corners exactly and the floor stays whole. How many corners.
+fn piece(g: Gpu&, lo: float2, hi: float2, v0: f32, v1: f32, left: f32, right: f32, j: f32, face: f32, at: i64) -> i64 {
+    var a: float2[PIECE_CORNERS] = [float2_0; PIECE_CORNERS];
+    var b: float2[PIECE_CORNERS] = [float2_0; PIECE_CORNERS];
+    a[0] = float2 { lo.x, v0 };
+    a[1] = float2 { hi.x, v0 };
+    a[2] = float2 { hi.x, v1 };
+    a[3] = float2 { lo.x, v1 };
+    var n = 4;
+    for side in 2 {
+        let c = if side == 0 { left } else { right };
+        let keep = if side == 0 { 1.0 } else { -1.0 };
+        var m = 0;
+        for i in n {
+            let p = a[i];
+            let q = a[(i + 1) % n];
+            let sp = keep * (p.x + j * (p.y + face) - c);
+            let sq = keep * (q.x + j * (q.y + face) - c);
+            if sp >= 0.0 && m < PIECE_CORNERS { b[m] = p; m++; }
+            if (sp < 0.0) != (sq < 0.0) && m < PIECE_CORNERS {
+                // A crossing on a row's edge (v fixed) or the floor's side (u fixed).
+                b[m] = if p.y == q.y { float2 { c - j * (p.y + face), p.y } } else { float2 { p.x, (c - p.x) / j - face } };
+                m++;
+            }
+        }
+        for i in m { a[i] = b[i]; }
+        n = m;
+    }
+    for i in n { piece_verts[at + i] = floor_vertex(g, a[i]); }
+    return n;
+}
+
+// A floor vertex at (u, v): its attributes the floor's own there, from its corners.
+fn floor_vertex(g: Gpu&, p: float2) -> corner_map::RoomVertex {
+    let c = g.floor_corners;
+    let s = (p.x - c[0].pos.x) / (c[2].pos.x - c[0].pos.x);
+    let t = (p.y - c[0].pos.z) / (c[2].pos.z - c[0].pos.z);
+    var v = c[0];
+    v.pos = float3 { p.x, c[0].pos.y, p.y };
+    v.uv = c[0].uv + (c[1].uv - c[0].uv) * s + (c[3].uv - c[0].uv) * t;
+    v.corner = c[0].corner + (c[1].corner - c[0].corner) * s + (c[3].corner - c[0].corner) * t;
+    return v;
+}
 
 // The pieces lying on the table (view3d::Scene.discs, taken3d::lay), each x, z, its foot's
 // and its top's height over the table, all of radius r, for the shadows TABLE_FRAG and
@@ -1023,6 +1281,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         for i in indices { room_indices.push(i); }
     }
     g.room_from = by_group(room, room_indices);
+    if g.room_shell { g.floor_corners = floor_corners_of(room); }
     var glass_room: corner_map::RoomVertex[>..] = [];
     for v in glass { glass_room.push(corner_map::room_vertex(v, float2_0, float2_0)); }
     if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }
@@ -2320,6 +2579,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     if dust.count > 0 { o.make_motes(g); }
     room_surfaces(o, g);
     table_map(o, g);
+    sun_derived(o, g);
     if g.shadow_dirty || shadow_every {
         o.shadow_pass(g);
         g.shadow_dirty = false;

@@ -3856,9 +3856,17 @@ let ROOM_FRAG = """
         // that takes the highlight; the shade's floor (window_light's, 1 - room.y where the
         // sun doesn't reach) stands for light the room throws back, so it takes the
         // occlusion as the room's other indirect light does.
+    #ifdef FLOOR_NO_TABLE
+        float table_kept = 1.0;
+    #else
         float table_kept = table_map[3].x > 0.5 ? table_map_at(p + ng * 0.06) : table_shade(p, l);
+    #endif
         float kept = dot(ng, l) > 0.0 ? table_kept * case_shade(v_local, l) : 0.0;
+    #ifdef FLOOR_SHADE
+        float open = 0.0;
+    #else
         float open = kept > 0.0 ? window_open(p) : 0.0;
+    #endif
     #ifndef NO_SSAO
     #ifndef ROOM_FLOOR
         // Not on the floor, where it showed nothing and cost the most.
@@ -4174,6 +4182,12 @@ let ROOM_GLASS = "#define ROOM_GLASS 1\n";
 // The floor that sees the mirror (render3d::planar_shown), the standard and high tiers';
 // without it the floor sees the room's box.
 let PLANAR_FLOOR = "#define PLANAR_FLOOR 1\n";
+// The floor's pieces where the table's map doesn't reach, and of those the ones the sun
+// can't reach through the shell's windows (render3d::SunDerived, the latter with both
+// defines): without the table's taps and the sun's trace, which the bake proved give nothing
+// there.
+let FLOOR_SHADE = "#define FLOOR_SHADE 1\n";
+let FLOOR_NO_TABLE = "#define FLOOR_NO_TABLE 1\n";
 // The room's box seen sharply (room_reflection): the metals outside the mirror, and the
 // floor without the mirror. The rest takes room_wide, which room_reflection is for them (a
 // surface not a metal has px 1, so sharp 0).
