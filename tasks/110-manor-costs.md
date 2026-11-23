@@ -402,7 +402,8 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
       view saved 1.06 ms at 4K with 64 texels). Prompt: `build/notes/plans/codex-02-mirror-rect.txt`
 - [ ] The glass and the lace split into two shaders and two draws, after the tie-back work.
       Prompt: `build/notes/plans/codex-04-glass-lace-split.txt`
-- [ ] SSAO faster and steadier: a half-size depth-only prepass (positions and normals from
+- [x] Tried and rejected (2026-11-23, codex-ssao 423b66a1, `docs/decisions/rendering.md`;
+      GTAO not tried). Was: SSAO faster and steadier: a half-size depth-only prepass (positions and normals from
       depth, or last frame's depth reprojected), a steadier upsample, a cheaper read-back; GTAO
       only if it pays. Fixes its grain on bright surfaces (the door behind its handle, the
       sills) and its shimmer in motion. 2.7 ms in the corner view at 4K, passes 1.2-1.4.

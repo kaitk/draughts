@@ -1730,6 +1730,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   stove-end door among them, and the floor popped to its sharp box reflection.
   A returning floor gets a fresh mirror before the room draws. The tuner's
   full-screen mirror preview still renders the map because it displays it directly.
+- The SSAO stays as it is: the half-size position and normal targets and the four-texel
+  read-back (2026-11-23, task 110; branch codex-ssao, 423b66a1, dropped; page
+  `build/notes/ssao-rework/`, local). Depth alone with an R8 mask for the lace was 0.3-1.3 ms
+  slower and changed the door, the handle and the sills; one bilinear read-back saved
+  0.2-0.4 ms at 4K but changed the sills by up to 146 levels; neither was steadier. At the
+  4K corner the SSAO costs about 2.3 ms: prepass 0.2, occlusion 0.8, blur 0.24, the room's
+  read-back 1.0. GTAO was not tried.
 - Keep the full mirror target when the floor can show (2026-11-23, task 107).
   Rejected scissoring the mirror draw, resolve and mips to the projected floor bounds
   plus 64 or 192 texels. The experiment fell back to the full target at 70% coverage
