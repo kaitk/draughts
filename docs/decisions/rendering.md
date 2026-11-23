@@ -1766,6 +1766,17 @@ to be is in tasks 042, 059, 071, 081, and 086.
   reverted. The timing and captures are in task 107's results page.
   Retried the same day with the floor's corners turned with the room (6aa05f8d), which the
   first trial lacked: it failed again, so the scissor is dropped (task 110).
+- Skip the floor's mirror too when the games table's top fills the screen (2026-11-23, task
+  110, `render3d::table_hides_screen`): the board's views from over the table show no
+  floor, yet the frustum test passed them, as the floor lies under the top. The test is
+  conservative: a 24-sided polygon inscribed in the top at 0.97 of its radius, every
+  vertex in front of the eye within the depth range, the eye over the top, and the screen's
+  four corners inside the polygon; anything less draws the mirror as before. Measured
+  headless (Metal System Trace, the mirror's seven passes): the board view 1.55 ms to none
+  at 3840 × 2160, 1.95 to none at 5120 × 2880; its frame 28.7 to 27.5 ms at 4K (two
+  rounds), 49.6 to 47.7 by the trace at 5K. The four views draw the mirror as before (the
+  floor shows in each) and their shots match within a level, as two runs of one build do;
+  the board view's is byte-identical. Both renderers (`draw` is theirs).
 - The library floor's mirror keeps the light before the tonemap (2026-11-21, task 107;
   `TONE_FN`'s `mirror_light`, `OUTSIDE_FRAG`, `rooms::Room.planar.w`): the room, the table
   and the view out write their exposed linear light into the mirror pass's RGBA16F

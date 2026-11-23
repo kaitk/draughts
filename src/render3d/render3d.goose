@@ -2598,7 +2598,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     // target; not where the image is the target (the app's kept image, which shows no shell).
     let glowing = bloom_shown(g) && out.id != 0;
     if ssao_shown(g) { o.ssao_pass(g, size); }
-    g.planar_current = planar_shown(g) && (planar_view > 1 || floor_in_frustum(view_proj, g.room_frame));
+    g.planar_current = planar_shown(g) && (planar_view > 1 || (floor_in_frustum(view_proj, g.room_frame) && !table_hides_screen(g, view_proj)));
     if g.planar_current {
         let clip, plain = mirrored_frames(g);
         o.planar_pass(g, size, clip, plain, planar_resolve_of(g, clip));
@@ -2761,6 +2761,35 @@ fn floor_in_frustum(m: Mat, turn: surfaces::Frame) -> bool {
         }
     }
     return outside == 0;
+}
+
+// Whether the games table's top fills the whole screen (the board's views from over it), so
+// no floor shows: the screen's corners inside its outline, an inscribed polygon a little
+// inside the top's rim, every point of which lies within the depth range in front of the
+// eye, which is over the top.
+let TOP_SIDES = 24;
+fn table_hides_screen(g: Gpu&, m: Mat) -> bool {
+    guard table_shown(g) && g.frame.eye.y > mesh::TABLE_TOP else { return false; }
+    let r = table_radius(g) * 0.97;
+    var at: float2[TOP_SIDES] = [float2_0; TOP_SIDES];
+    for k in TOP_SIDES {
+        let a = 2.0 * PI * (k as f32) / (TOP_SIDES as f32);
+        let p = m.c0 * (r * cos(a)) + m.c1 * mesh::TABLE_TOP + m.c2 * (mesh::TABLE_Z + r * sin(a)) + m.c3;
+        guard p.w > 1e-4 && p.z >= 0.0 && p.z <= p.w else { return false; }
+        at[k] = float2 { p.x / p.w, p.y / p.w };
+    }
+    for c in [float2 { -1.0, -1.0 }, float2 { 1.0, -1.0 }, float2 { 1.0, 1.0 }, float2 { -1.0, 1.0 }] {
+        var left = 0;
+        var right = 0;
+        for k in TOP_SIDES {
+            let a = at[k];
+            let b = at[(k + 1) % TOP_SIDES];
+            let side = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+            if side > 0.0 { left++; } else { right++; }
+        }
+        guard left == TOP_SIDES || right == TOP_SIDES else { return false; }
+    }
+    return true;
 }
 
 // The mirror's least width in texels, at most the screen's: half of a 1600-pixel screen let

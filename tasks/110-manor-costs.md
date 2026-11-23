@@ -411,6 +411,14 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
 - [ ] What runs with nothing on screen using it: the view out, shadow maps, glow, haze; the
       game's view and near-table menu shots. Then the mirror world simplified (crude shapes,
       each material's dominant colour, baked light; no small props ever), as a flagged trial
+      - The mirror's share (2026-11-23, branch mirror-cheap; Metal System Trace headless, the
+        mirror's draw, resolve and five mips; page `build/notes/mirror-cheap/`): at 3840 ×
+        2160 down 0.99 of 11.5 ms, corner 1.22 of 16.2, room 1.15 of 15.1, menu 0.74 of
+        15.1; at 5120 × 2880 down 1.34 of 19.1, corner 1.50 of 25.9, room 1.41 of 23.9, menu
+        1.02 of 23.9. The draw itself 0.4-1.0, the resolve 0.2-0.5, the mips 0.1.
+      - Skipped where the table's top fills the screen (`table_hides_screen`): the board view
+        1.55 ms to none at 4K (frame 28.7 to 27.5 ms, two rounds), 1.95 to none at 5K (trace
+        49.6 to 47.7); the four views unchanged, shots within a level.
 - [ ] The floor's remaining shading: the sun through the windows (5.9 ms straight down at
       4K before the pieces), the mirror lookup (2.5), the probes (2.3), the corners' map
       (2.4 straight down only, to check). The oak's textures are not the cost
