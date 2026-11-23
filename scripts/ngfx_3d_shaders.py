@@ -152,6 +152,11 @@ MODULES = [
     ("r3d_haze_cross", FULL, ["SHELL_WINDOWS", "FS_SET", "FRAME", "HAZE_BLOCK", "HAZE_CROSS_HEAD", "LIGHT_FN", "HAZE_CROSS_FRAG"]),
     ("r3d_haze", FULL, ["FS_SET", "FRAME", "HAZE_BLOCK", "HAZE_FRAG"]),
     ("r3d_haze_add", FULL, ["HAZE_ADD_FRAG"]),
+    # The tree outside as geometry (render3d::TreeGpu): its tubes and ribbons, 8-bit and HDR.
+    *[(name, [*ribbon, "VS_SET", "FRAME", "TREE_HEAD", "TREE_FN", "TREE_WOOD_VERT"],
+       [*ribbon, *hdr, "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_WOOD_FRAG"])
+      for name, ribbon, hdr in [("r3d_tree_tube", [], []), ("r3d_tree_ribbon", ["TREE_RIBBON"], []),
+                                ("r3d_hdr_tree_tube", [], ["HDR_OUT"]), ("r3d_hdr_tree_ribbon", ["TREE_RIBBON"], ["HDR_OUT"])]],
     # The depth of field's depth (render3d::depth_pass) and the tuner's view of it.
     ("r3d_depth_room", ROOM_VS, ["EMPTY_FRAG"]),
     ("r3d_depth_table", TABLE_VS, ["EMPTY_FRAG"]),

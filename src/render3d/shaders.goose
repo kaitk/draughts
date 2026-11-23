@@ -7344,3 +7344,158 @@ let HAZE_ADD_FRAG = """
     layout(set = 3, binding = 0) uniform HazeAdd { vec4 haze_add; };
     void main() { result = vec4(texture(haze_image, gl_FragCoord.xy * haze_add.xy).rgb, 1.0); }
     """;
+
+// The tree outside drawn as geometry (task 107's T2, model3d's tree_mesh.goose), after the
+// room's opaque groups and before its glass, with the depth test, so only what shows through
+// the windows pays. Its own pipelines by these defines, nothing in the room's shaders:
+// TREE_RIBBON the branchlets' and twigs' ribbons in place of the tubes, HDR_OUT the HDR
+// target's.
+let TREE_RIBBON = "#define TREE_RIBBON 1\n";
+
+// The tree's block (render3d::TreeBlock), in both stages after FRAME: tree_origin xyz the
+// tree's frame's origin in the room's (rooms::tree_origin), w the pass's samples; tree_light
+// x the sun's light on a white surface facing it against the sky's, y the sky's, z how much
+// of the sun a leaf lets through against its back colour, w the forward lobe's share;
+// tree_look x the view out's exposure, y the power the crown's shade is taken to (1 as
+// baked), z each leaf's own tint's spread, w the twigs' least width in pixels; tree_depth
+// x the depth (0..1) past which the far crown is squeezed in, y how much (the far plane
+// stays past it); tree_tint x the leaves' tint added, y their colour's strength, z the
+// bark's, w how much deeper the sun turns behind other leaves.
+let TREE_HEAD = """
+    layout(set = FRAME_SET, binding = 1) uniform Tree {
+        vec4 tree_origin;
+        vec4 tree_light;
+        vec4 tree_look;
+        vec4 tree_depth;
+        vec4 tree_tint;
+    };
+    """;
+
+// The tree's vertex stages' helpers: its frame into the world (the room's frame mirrored in
+// depth, then turned as ROOM_VERT turns the room), and its clip position with the crown past
+// the far plane squeezed in front of it, which leaves its order and the room's depths as
+// they are.
+let TREE_FN = """
+    vec3 tree_turned(vec3 a) {
+        vec2 xz = room_axes.xy * a.x + room_axes.zw * a.z;
+        return vec3(xz.x, a.y, xz.y);
+    }
+    vec3 tree_world(vec3 p) { return tree_turned(vec3(p.x - tree_origin.x, p.y - tree_origin.y, tree_origin.z - p.z)); }
+    vec3 tree_way(vec3 d) { return tree_turned(vec3(d.x, d.y, -d.z)); }
+    // Where the wind moves a point of the tree's frame that bends `flex` (0 the trunk's foot,
+    // 1 a leaf): the wind's step (T4) goes here; still for now.
+    vec3 tree_moved(vec3 p, float flex) { return p; }
+    vec4 tree_clip(vec3 pos) {
+        vec4 c = view_proj * vec4(pos, 1.0);
+        float z = c.z / c.w;
+        c.z = min(z, tree_depth.x + (z - tree_depth.x) * tree_depth.y) * c.w;
+        return c;
+    }
+    """;
+
+// The tree's fragment stages' helpers, after TONE_FN: the sky's light on a surface facing n
+// (its mean over the upper half of OUTSIDE_FRAG's sky, the lawn's below, linear), and the
+// light out as the view out's (exposed, the toe taken off into the HDR target, or
+// tonemapped and dithered).
+let TREE_LIGHT_FN = """
+    const vec3 TREE_SKY = vec3(0.526, 0.601, 0.716);
+    const vec3 TREE_GROUND = vec3(0.17, 0.12, 0.02);
+    vec3 tree_sky(vec3 n) { return mix(TREE_GROUND, TREE_SKY, 0.5 + 0.5 * n.y); }
+    float tree_hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    vec3 tree_encode(vec3 c) {
+        c = clamp(c, 0.0, 1.0);
+        return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+    }
+    vec4 tree_out(vec3 c) {
+        c *= tree_look.x;
+    #ifdef HDR_OUT
+        return vec4(room_toe(c), 1.0);
+    #else
+        c = tonemap(c) * vec3(1.02, 1.0, 0.97);
+        float n = tree_hash(floor(gl_FragCoord.xy)) - 0.5;
+        return vec4((tree_encode(c) + n / 255.0) * (1.0 - screen.z), 1.0);
+    #endif
+    }
+    """;
+
+// The wood: a tube's vertex as made, a ribbon's turned to face the eye and kept at least
+// tree_look.w pixels wide, its coverage the share of that its true width is (Persson's
+// phone-wire antialiasing), so a twig thinner than a pixel fades rather than breaks up. The
+// ribbons blend by that coverage, drawn last with the depth test and writing none.
+let TREE_WOOD_VERT = """
+    layout(location = 0) in vec3 a_pos;
+    layout(location = 1) in vec3 a_normal;
+    layout(location = 2) in vec3 a_along;
+    layout(location = 3) in vec2 a_uv;
+    layout(location = 4) in vec4 a_light;
+    layout(location = 0) out vec3 v_world;
+    layout(location = 1) out vec3 v_normal;
+    layout(location = 2) out vec3 v_along;
+    layout(location = 3) out vec2 v_uv;
+    layout(location = 4) out vec3 v_light;
+    void main() {
+        vec3 pos = tree_world(tree_moved(a_pos, a_light.w));
+        vec3 along = tree_way(a_along);
+        float cover = 1.0;
+    #ifdef TREE_RIBBON
+        vec3 side = normalize(cross(along, eye.xyz - pos));
+        vec4 clip = view_proj * vec4(pos, 1.0);
+        vec3 d = side * a_light.z;
+        vec4 c2 = view_proj * vec4(pos + d, 1.0);
+        float half_px = length((c2.xy / c2.w - clip.xy / clip.w) * 0.5 * screen.xy);
+        float wide = max(half_px, 0.5 * tree_look.w);
+        cover = half_px / wide;
+        pos += side * (a_uv.x * a_light.z * wide / max(half_px, 1e-4));
+        v_normal = side;
+    #else
+        v_normal = tree_way(a_normal);
+    #endif
+        v_world = pos;
+        v_along = along;
+        v_uv = a_uv;
+        v_light = vec3(a_light.x, a_light.y, cover);
+        gl_Position = tree_clip(pos);
+    }
+    """;
+
+// The wood lit by the sky and the sun, each through the crown's shade at the vertex (the
+// grid's, model3d's crown_light): dark against the light with a rim where the sun grazes it.
+// A tube's bark from its tile (model3d's bark_tile: the normal across and along, light and
+// dark, lichen); a ribbon round across its width, plain.
+let TREE_WOOD_FRAG = """
+    #ifndef TREE_RIBBON
+    layout(set = 2, binding = 0) uniform sampler2D bark;
+    #endif
+    layout(location = 0) in vec3 v_world;
+    layout(location = 1) in vec3 v_normal;
+    layout(location = 2) in vec3 v_along;
+    layout(location = 3) in vec2 v_uv;
+    layout(location = 4) in vec3 v_light;
+    layout(location = 0) out vec4 result;
+    const vec3 BARK = vec3(0.16, 0.14, 0.12);
+    const vec3 LICHEN = vec3(0.2, 0.23, 0.15);
+    void main() {
+        vec3 l = normalize(light_dir.xyz);
+        vec3 v = normalize(eye.xyz - v_world);
+        float sun = pow(max(v_light.x, 1e-4), tree_look.y);
+        float sky = pow(max(v_light.y, 1e-4), tree_look.y);
+    #ifdef TREE_RIBBON
+        float u = clamp(v_uv.x, -1.0, 1.0);
+        vec3 n = normalize(normalize(v_normal) * u + v * sqrt(max(1.0 - u * u, 0.0)));
+        vec3 albedo = BARK * 0.8 * tree_tint.z;
+    #else
+        vec4 b = texture(bark, v_uv);
+        vec3 n0 = normalize(v_normal);
+        vec3 t = normalize(v_along);
+        vec3 round_way = cross(n0, t);
+        vec3 n = normalize(n0 + round_way * (b.r * 2.0 - 1.0) + t * (b.g * 2.0 - 1.0));
+        vec3 albedo = mix(BARK * b.b, LICHEN * (0.6 + 0.4 * b.b), b.a * 0.7) * tree_tint.z;
+    #endif
+        float ndl = dot(n, l);
+        vec3 c = albedo * (tree_sky(n) * (sky * tree_light.y) + vec3(max(ndl, 0.0) * sun * tree_light.x));
+        result = tree_out(c);
+    #ifdef TREE_RIBBON
+        result *= v_light.z;
+    #endif
+    }
+    """;

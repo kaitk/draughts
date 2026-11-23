@@ -380,6 +380,15 @@ fn plan_to_tree(r: Room, s: room_shell::Shell, p: float3) -> float3 {
     return float3 { u + shear.x * board, y + shear.y * board, board + (p.y - s.table.y) * metre };
 }
 
+// The room's frame from the shell's tree's (plan_to_tree turned back): a point p of the
+// tree's frame is (p.x - o.x, p.y - o.y, o.z - p.z) in the room's (u along the window wall,
+// y up, v into the room; shaders::TREE_FN), o this.
+fn tree_origin(r: Room) -> float3 {
+    let shear = tree_shear(r);
+    let board = -(r.window.x + shell_tree(r).foliage.w);
+    return float3 { shear.x * board, shear.y * board, board };
+}
+
 // The old maple outside the library (task 107's T1, library-home-01 and the Tartu
 // photographs): about 22 m tall, its trunk a metre thick, standing WHOLE_OUT beyond the
 // window wall's outer face at WHOLE_ALONG on the plan's x, its crown about 20 m across,

@@ -419,11 +419,11 @@ struct Gpu {
     // the room's; its half-size targets, made again for another size: where each pixel is
     // (RGBA16F), which way it faces (RGBA8), their depth, the occlusion (RG16F) and the
     // blurred map the room reads.
-    pre_room:   Pipeline,
-    pre_table:  Pipeline,
-    pre_lit:    Pipeline,
-    ssao:       Pipeline,
-    ssao_blur:  Pipeline,
+    pre_room:  Pipeline,
+    pre_table: Pipeline,
+    pre_lit:   Pipeline,
+    ssao:      Pipeline,
+    ssao_blur: Pipeline,
     // The light tuner's GTAO trial in place of ssao (ssao_gtao, shaders::GTAO_FRAG).
     gtao:       Pipeline,
     pre_place:  Texture,
@@ -511,6 +511,28 @@ struct Gpu {
     depth_table: Pipeline,
     depth_lace:  Pipeline,
     depth_show:  Pipeline,
+    // The tree outside drawn as geometry (tree_geometry; the light tuner's --tree-draw).
+    tree: TreeGpu,
+}
+
+// The tree outside as geometry (task 107's T2 and T3; model3d's tree_mesh.goose), after the
+// room's opaque groups (draw_tree): its wood's mesh, the tubes' indices first, then the
+// ribbons'; the bark's tile, made once; the pipelines (the tubes', the ribbons', 8-bit and
+// HDR), made when first wanted; what it was grown for (tree_geometry_key) and how long
+// growing, lighting and putting it on the GPU took (measuring).
+struct TreeGpu {
+    wood_vb:      Buffer,
+    wood_ib:      Buffer,
+    tube_count:   i64,
+    ribbon_first: i64,
+    ribbon_count: i64,
+    bark:         Texture,
+    tube:         Pipeline,
+    ribbon:       Pipeline,
+    hdr_tube:     Pipeline,
+    hdr_ribbon:   Pipeline,
+    made_for:     float4[TREE_GEOMETRY_KEY],
+    ms:           f64,
 }
 
 // The pipelines of the scenic views' HDR target (shaders::HDR_OUT): the board's and a fading
@@ -2420,6 +2442,100 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     g.tree_ms = (clock() - t0) * 1000.0;
 }
 
+// The tree outside drawn as geometry (task 107's T2 and T3): off (the view out's pictures
+// alone, the app's), its wood, or all of it (TREE_DRAWS): the light tuner's --tree-draw,
+// until the user has seen it. With it on the shell's shadow comes from the same tree
+// (tree_grown_whole).
+let TREE_DRAWS = ["off", "wood"];
+let TREE_OFF = 0;
+let TREE_WOOD = 1;
+var tree_draw = TREE_OFF;
+
+// How the tree is lit (TreeBlock's light, look's y and w, tint): the light tuner's --tree-light,
+// --tree-look and --tree-tint.
+var tree_light = float4 { 2.5, 1.0, 0.3, 0.6 };
+var tree_shade:   f32 = 1.0;
+var tree_twig_px: f32 = 1.0;
+var tree_tint = float4 { 0.0, 1.0, 1.0, 0.6 };
+
+// The tree's block (shaders::TREE_HEAD), for a pass of `samples` samples a pixel.
+struct TreeBlock { origin: float4, light: float4, look: float4, depth: float4, tint: float4 }
+fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
+    let o = rooms::tree_origin(g.room);
+    // The projection's depth as A - B / d (d the distance along the view), from the view's
+    // matrix: its z row is A times its w row less B. Past 0.85 of the far plane's distance
+    // the crown is squeezed into what is left in front of it.
+    let m = g.frame.view_proj;
+    let ww = m.c0.w * m.c0.w + m.c1.w * m.c1.w + m.c2.w * m.c2.w;
+    let a = (m.c0.z * m.c0.w + m.c1.z * m.c1.w + m.c2.z * m.c2.w) / max(ww, 1e-12);
+    let b = a * m.c3.w - m.c3.z;
+    let far = b / max(a - 1.0, 1e-6);
+    let from = a - b / (0.85 * far);
+    let keep: f32 = 1e-4;
+    let squeeze = (1.0 - keep - from) / max(a - from, 1e-6);
+    return TreeBlock { model3d::f4(o, samples), tree_light, float4 { g.room.outside, tree_shade, 0.0, tree_twig_px },
+                       float4 { from, squeeze, 0.0, 0.0 }, tree_tint };
+}
+
+// Whether the tree's geometry is drawn: with the view out, once grown.
+fn tree_drawn(g: Gpu&) -> bool { tree_draw != TREE_OFF && outside_shown(g) && g.tree.wood_vb.id != 0 }
+
+// What the tree's geometry is grown and lit from: the room's key and tree, the shell's table.
+let TREE_GEOMETRY_KEY = 5;
+fn tree_geometry_key(g: Gpu&) -> float4[TREE_GEOMETRY_KEY] {
+    let r = g.room;
+    let t = room_shell::LIBRARY.table;
+    return [r.key, r.window, r.tree, r.foliage, float4 { t.x, t.y, tree_draw, 0.0 }];
+}
+
+// The tree grown whole and made into its meshes, lit by its crown's grid, and put on the GPU:
+// before a draw, outside a pass, when what it is grown from changed. Tens of milliseconds,
+// never in the frame loop's steady state. The grid from the whole tree, the meshes from the
+// parts seen through the windows or casting through them.
+fn tree_geometry<O>(o: O&, g: Gpu&) {
+    guard tree_draw != TREE_OFF && outside_shown(g) && !g.bake_held else { return; }
+    let key = tree_geometry_key(g);
+    var same = g.tree.wood_vb.id != 0;
+    for i in TREE_GEOMETRY_KEY { if !same4(key[i], g.tree.made_for[i]) { same = false; } }
+    guard !same else { return; }
+    let t0 = clock();
+    o.make_tree(g);
+    if g.tree.bark.id == 0 {
+        var px: u8[>..] = [];
+        trees::bark_tile(px);
+        let mips = trees::mips_of(trees::BARK_W, trees::BARK_H);
+        g.tree.bark = o.gpu_sampled(trees::BARK_W, trees::BARK_H, mips, RGBA8);
+        var at = 0;
+        for level in mips {
+            let n = (trees::BARK_W >> level) * (trees::BARK_H >> level) * 4;
+            o.gpu_upload(g.tree.bark, level, px[at..at + n]);
+            at += n;
+        }
+    }
+    let v = tree_view_of(g);
+    let w = rooms::whole_tree(g.room, room_shell::LIBRARY);
+    let sight = rooms::whole_sight(g.room, room_shell::LIBRARY);
+    var verts:   trees::WoodVertex[>..] = [];
+    var indices: u32[>..]               = [];
+    var density: f32[>..]               = [];
+    var made = trees::WoodMesh { 0, 0, 0, 0 };
+    {
+        var all = trees::Tree { .. };
+        trees::grow_whole(all, w, v, sight, false);
+        let grid = trees::crown_grid(all, density);
+        var t = trees::Tree { .. };
+        trees::grow_whole(t, w, v, sight, true);
+        made = trees::wood_mesh(t, density, grid, trees::toward_sun(v), verts, indices);
+    }
+    if g.tree.wood_vb.id != 0 { o.gpu_release_mesh(g.tree.wood_vb, g.tree.wood_ib); }
+    g.tree.wood_vb, g.tree.wood_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
+    g.tree.tube_count = made.tube_indices;
+    g.tree.ribbon_first = made.ribbon_first;
+    g.tree.ribbon_count = made.ribbon_indices;
+    g.tree.made_for = key;
+    g.tree.ms = (clock() - t0) * 1000.0;
+}
+
 // Whether the board may scatter light through its stone: on a desktop only (set at
 // startup by the app). It adds 16 shadow taps a board pixel, about 0.35 ms at
 // 1280 × 800 on an M1 Pro (task 094), not yet timed on a phone or tablet.
@@ -2651,6 +2767,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     bake_tree(o, g);
     if dust.count > 0 { o.make_motes(g); }
     room_surfaces(o, g);
+    tree_geometry(o, g);
     table_map(o, g);
     sun_derived(o, g);
     if g.shadow_dirty || shadow_every {

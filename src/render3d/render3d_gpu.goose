@@ -202,6 +202,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
             draw_room_group(g, f, surfaces, h.sill, render3d::GROUP_SILL, ssao, false);
             draw_room_group(g, f, surfaces, h.paint, render3d::GROUP_PAINT, ssao, false);
             draw_room_group(g, f, surfaces, h.metals, render3d::GROUP_METALS, ssao, false);
+            if render3d::tree_drawn(g) { draw_tree(own, g); }
             draw_room_group(g, f, surfaces, h.glass, render3d::GROUP_GLASS, ssao, false);
             draw_room_group(g, f, surfaces, h.lace, render3d::GROUP_LACE, ssao, false);
         } else {
@@ -210,6 +211,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
             draw_room_group(g, f, surfaces, g.room_sill, render3d::GROUP_SILL, ssao, false);
             draw_room_group(g, f, surfaces, g.room_paint, render3d::GROUP_PAINT, ssao, false);
             draw_room_group(g, f, surfaces, g.room_metals, render3d::GROUP_METALS, ssao, false);
+            if render3d::tree_drawn(g) { draw_tree(own, g); }
             // The shell's glass and lace over what stands behind them.
             draw_room_group(g, f, surfaces, g.room_glass, render3d::GROUP_GLASS, ssao, false);
             draw_room_group(g, f, surfaces, g.room_lace, render3d::GROUP_LACE, ssao, false);
@@ -511,30 +513,30 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     if render3d::mirror_cheap_on(g) {
         cheap_mirror(g, clip, surfaces);
     } else {
-    if render3d::table_shown(g) && render3d::table_in_room(g) {
-        gfx::bind(g.planar_table);
-        gfx::bind_texture(gfx::FRAGMENT, 0, g.table_albedo, g.aniso);
-        gfx::bind_texture(gfx::FRAGMENT, 1, g.table_normal, g.aniso);
-        gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
-        gfx::bind_texture(gfx::FRAGMENT, 3, g.table_wear, g.aniso);
-        gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
-        gfx::bind_texture(gfx::FRAGMENT, 5, render3d::tree_or_stand_in(g), g.linear);
-        gfx::bind_texture(gfx::FRAGMENT, 6, g.shadow_map, g.compare);
-        gfx::bind_texture(gfx::FRAGMENT, 7, render3d::table_map_or_stand_in(g), g.compare);
-        gfx::uniforms(gfx::VERTEX, 0, clip);
-        gfx::uniforms(gfx::FRAGMENT, 0, clip);
-        gfx::bind_texture(gfx::FRAGMENT, 8, render3d::lace_or_stand_in(g), g.linear);
-        gfx::uniforms(gfx::FRAGMENT, 1, render3d::mirror_table_block(g));
-        gfx::uniforms(gfx::FRAGMENT, 2, render3d::shell_block(g));
-        gfx::bind_vertex_buffer(g.table_vb);
-        gfx::bind_index_buffer(g.table_ib, 4);
-        gfx::draw_indexed(g.table_count);
-    }
-    // The room less its floor, which lies under the clip plane.
-    draw_room_group(g, clip, surfaces, g.planar_walls, render3d::GROUP_WALLS, false, false);
-    draw_room_group(g, clip, surfaces, g.planar_sill, render3d::GROUP_SILL, false, false);
-    draw_room_group(g, clip, surfaces, g.planar_paint, render3d::GROUP_PAINT, false, false);
-    draw_room_group(g, clip, surfaces, g.planar_metals, render3d::GROUP_METALS, false, false);
+        if render3d::table_shown(g) && render3d::table_in_room(g) {
+            gfx::bind(g.planar_table);
+            gfx::bind_texture(gfx::FRAGMENT, 0, g.table_albedo, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 1, g.table_normal, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 3, g.table_wear, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 5, render3d::tree_or_stand_in(g), g.linear);
+            gfx::bind_texture(gfx::FRAGMENT, 6, g.shadow_map, g.compare);
+            gfx::bind_texture(gfx::FRAGMENT, 7, render3d::table_map_or_stand_in(g), g.compare);
+            gfx::uniforms(gfx::VERTEX, 0, clip);
+            gfx::uniforms(gfx::FRAGMENT, 0, clip);
+            gfx::bind_texture(gfx::FRAGMENT, 8, render3d::lace_or_stand_in(g), g.linear);
+            gfx::uniforms(gfx::FRAGMENT, 1, render3d::mirror_table_block(g));
+            gfx::uniforms(gfx::FRAGMENT, 2, render3d::shell_block(g));
+            gfx::bind_vertex_buffer(g.table_vb);
+            gfx::bind_index_buffer(g.table_ib, 4);
+            gfx::draw_indexed(g.table_count);
+        }
+        // The room less its floor, which lies under the clip plane.
+        draw_room_group(g, clip, surfaces, g.planar_walls, render3d::GROUP_WALLS, false, false);
+        draw_room_group(g, clip, surfaces, g.planar_sill, render3d::GROUP_SILL, false, false);
+        draw_room_group(g, clip, surfaces, g.planar_paint, render3d::GROUP_PAINT, false, false);
+        draw_room_group(g, clip, surfaces, g.planar_metals, render3d::GROUP_METALS, false, false);
     }
     draw_room_group(g, clip, surfaces, g.planar_glass, render3d::GROUP_GLASS, false, false);
     draw_room_group(g, clip, surfaces, g.planar_lace, render3d::GROUP_LACE, false, false);
@@ -1025,6 +1027,52 @@ fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
     gfx::bind_vertex_buffer(g.outside_vb);
     gfx::bind_index_buffer(g.outside_ib, 4);
     gfx::draw_indexed(g.outside_count);
+}
+
+// The tree's pipelines (render3d::TreeGpu): its tubes' and ribbons', 8-bit and HDR, made
+// outside a pass the first time the tree is grown. The ribbons blend by their coverage
+// (premultiplied), writing no depth.
+fn make_tree(own: Own&, g: render3d::Gpu&) {
+    let t .= g.tree;
+    guard t.tube.id == 0 else { return; }
+    let tube_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_WOOD_VERT);
+    let ribbon_vs = embed_shader("vert", shaders::TREE_RIBBON, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN,
+                                 shaders::TREE_WOOD_VERT);
+    let solid = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true };
+    let flat = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED };
+    t.tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TONE_FN,
+                                                 shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG), solid);
+    t.ribbon = gfx::pipeline(ribbon_vs, embed_shader("frag", shaders::TREE_RIBBON, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                                     shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG), flat);
+    t.hdr_tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                                     shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG), solid);
+    t.hdr_ribbon = gfx::pipeline(ribbon_vs, embed_shader("frag", shaders::TREE_RIBBON, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME,
+                                                         shaders::TREE_HEAD, shaders::TONE_FN, shaders::TREE_LIGHT_FN,
+                                                         shaders::TREE_WOOD_FRAG), flat);
+}
+
+// The tree outside in the board's pass, after the room's opaque groups (render3d::tree_drawn):
+// its tubes, then its ribbons.
+fn draw_tree(own: Own&, g: render3d::Gpu&) {
+    let t = g.tree;
+    let tb = render3d::tree_block(g, own.samples);
+    gfx::bind(if g.hdr { t.hdr_tube } else { t.tube });
+    gfx::bind_texture(gfx::FRAGMENT, 0, t.bark, g.aniso);
+    gfx::uniforms(gfx::VERTEX, 0, g.frame);
+    gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+    gfx::uniforms(gfx::VERTEX, 1, tb);
+    gfx::uniforms(gfx::FRAGMENT, 1, tb);
+    gfx::bind_vertex_buffer(t.wood_vb);
+    gfx::bind_index_buffer(t.wood_ib, 4);
+    gfx::draw_indexed(t.tube_count);
+    gfx::bind(if g.hdr { t.hdr_ribbon } else { t.ribbon });
+    gfx::uniforms(gfx::VERTEX, 0, g.frame);
+    gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+    gfx::uniforms(gfx::VERTEX, 1, tb);
+    gfx::uniforms(gfx::FRAGMENT, 1, tb);
+    gfx::bind_vertex_buffer(t.wood_vb);
+    gfx::bind_index_buffer(t.wood_ib, 4);
+    gfx::draw_indexed(t.ribbon_count, 1, t.ribbon_first, 0, 0);
 }
 
 // The dust in the sunbeam over the open pass's target, added, hidden by what stands
@@ -1697,8 +1745,10 @@ fn release(own: Own&, g: render3d::Gpu&) {
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     release_hdr(own, g);
     for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { gfx::release(p); } }
-    for t in [g.hdr_image, g.scene_depth] { if t.id != 0 { gfx::release(t); } }
+    for t in [g.hdr_image, g.scene_depth, g.tree.bark] { if t.id != 0 { gfx::release(t); } }
     for t in g.glow_levels { if t.id != 0 { gfx::release(t); } }
+    for b in [g.tree.wood_vb, g.tree.wood_ib] { if b.id != 0 { gfx::release(b); } }
+    for p in [g.tree.tube, g.tree.ribbon, g.tree.hdr_tube, g.tree.hdr_ribbon] { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();
 }
