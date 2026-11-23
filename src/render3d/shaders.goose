@@ -3666,6 +3666,11 @@ let ROOM_FRAG = """
         float tone = (piece - 0.1 * along) / 0.099;
         float dirt = 1.0 - smoothstep(0.3 * paint_quiet.z - 0.5 * fwidth(v_uv.y), paint_quiet.z + 0.5 * fwidth(v_uv.y), v_uv.y);
         float joint = line_cover(v_uv.x, 0.00015, fwidth(v_uv.x));
+        // The doors' panels and architraves step by a few mm, under the screen's occlusion's
+        // half-size texel, so its lines crawl along them as the eye moves: off within 2 cm of
+        // a recess (all of a panel's ring), back by 4.5; the ring's own occlusion and the dirt
+        // shade them. Kept on the windows, whose casements' inner corners it shades.
+        screen_ao = mix(1.0, screen_ao, max(on_window, smoothstep(0.02, 0.045, v_uv.y)));
     #ifdef PAINT_STEPS
         dirt *= paint_steps.x;
         joint *= paint_steps.y;

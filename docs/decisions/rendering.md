@@ -1548,6 +1548,14 @@ to be is in tasks 042, 059, 071, 081, and 086.
   accumulation (the app draws only when something changes, so a still frame would never
   settle); full size (four times the cost for detail the blur takes); the board itself
   taking it (its shader is the game's, whose shot stays as it was).
+- The screen's occlusion stays off the doors' panels' and architraves' profiles (2026-11-23):
+  the painted wood (`ROOM_PAINT`) fades it out within 2 cm of a recess (the paint's dirt
+  distance, so all of a panel's ring and the leaf's edge at its frame) and back by 4.5 cm.
+  The profiles step by a few mm, under the half-size map's texel, so its lines crept along
+  the insets in dashes as the eye moved; the rings' own occlusion and the dirt shade them.
+  The windows' paint keeps it (their casements' inner corners), and so do the wainscot's
+  oak panels (their bands came out smooth, no dashes), the sills, the niches and the cap's
+  corner. Rejected: a full-size map for those profiles (four times the pass for a few cm).
 - The library's waxed floor reflects the room by a planar mirror in the standard and high
   tiers (2026-11-21, task 107; `render3d::planar_pass`, `shaders::MIRROR_PASS`,
   `PLANAR_FLOOR`, `PLANAR_RESOLVE_FRAG`, `rooms::Room.planar`). Replaces, for the floor,
