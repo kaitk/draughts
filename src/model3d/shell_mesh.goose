@@ -219,10 +219,10 @@ fn sweep_cut(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
         if cut_a || cut_c {
             // Each row's places along: its start, the cuts if it is cut, its end.
             let rows: float3[2] = [a, c];
-            let ns: float3[2] = [na, nc];
+            let ns:   float3[2] = [na, nc];
             let ends: float2[2] = [float2 { sa0, sa1 }, float2 { sc0, sc1 }];
-            let ts: f32[2] = [t, t1];
-            let cut: bool[2] = [cut_a, cut_c];
+            let ts:   f32[2]    = [t, t1];
+            let cut:  bool[2]   = [cut_a, cut_c];
             for r in 2 {
                 let q = rows[r];
                 let n_in = if cut[r] { inner.len } else { 0 };
