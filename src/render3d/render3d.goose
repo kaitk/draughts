@@ -1659,6 +1659,7 @@ struct SurfacesBlock {
     sill:          float4,
     sill_steps:    float4[2],
     window_view:   float4,
+    floor_look:    float4,
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
@@ -1748,7 +1749,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
                     float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paint_steps, k.sill,
-                    sill_steps, window_view,
+                    sill_steps, window_view, floor_look_of(),
                     table_map_shown(g),
                     books::COVER, books::LABEL }
 }
@@ -2816,6 +2817,13 @@ fn planar_block_of(g: Gpu&) -> float4 {
     let view: f32 = if planar_view == 1 { 1.0 } else { 0.0 };
     return float4 { g.room.planar.x, view, across * 0.5 * g.planar_size.x, PLANAR_MIPS - 1 };
 }
+// The floor's joints (ROOM_FRAG's floor, Surfaces' floor_look): flat, the gap a dark line;
+// or deep, each board's edge rounded over JOINT_ROUND in its shading, the gap darkest at its
+// bottom with a soft fringe onto the boards (the light tuner's --floor-joints).
+var floor_joints_deep = false;
+let JOINT_ROUND: f32 = 0.08;   // world units: 2.5 mm
+fn floor_look_of() -> float4 { float4 { if floor_joints_deep { 1.0 } else { 0.0 }, JOINT_ROUND, 0.0, 0.0 } }
+
 fn planar_look_of(g: Gpu&) -> float4 {
     guard planar_seen_on_floor(g) else { return float4_0; }
     return float4 { g.room.planar.z, g.room.planar.y, 0.0, 0.0 };

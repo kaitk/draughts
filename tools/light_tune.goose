@@ -79,6 +79,7 @@
 //       --sun-eye STRENGTH,HALF_DEG,END_DEG,AMBER (the eye's veil round the sun, HDR; 0 off)
 //       --glow STRENGTH,THRESHOLD,KNEE,REACH --glow-levels N]
 //       [--view-nudge DX,DY,DZ (the table-window view's eye and target moved, metres in the plan)]
+//       [--floor-joints flat|deep (the floor's joints, JOINT_NAMES; flat)]
 //       [--tone-probe K (HDR: the picture's linear light times K as grey levels, no tonemap; -K the sun's open share)]
 //       [--lace-sun K] [--lace-scatter K] [--glass-film K] [--scratches K] [--sun-veil K] (the window view's
 //       steps, render3d::window_view and sun_veil: each a strength, 1 as made, 0 off; Z switches them, the
@@ -218,6 +219,9 @@ fn view_point(p: float3, view: i64) -> float3 {
 // disc with its edge hidden in its glow and the leaves' gaps sharper, 8000 over the sky,
 // and the eye's veil round the sun, which looked overdone against open sky.
 let SUN_LOOK_NAMES = ["made", "veil"];
+// The floor's joints (render3d::floor_joints_deep): flat, a dark line; deep, each board's edge
+// rounded over in its shading with the gap darkest at its bottom.
+let JOINT_NAMES = ["flat", "deep"];
 // The haze in the sunbeam's strengths (render3d::Haze.sigma, a metre): off; a clean room's air,
 // a lived-in one's, a room just dusted (build/notes/window-view/refs/research-haze-motes.md),
 // and the ChatGPT library study's soft wide beam across the dark bookcase.
@@ -1345,6 +1349,7 @@ fn main() {
     render3d::window_view = float4 { number(argv, "--lace-sun", 1.0), number(argv, "--lace-scatter", 1.0), number(argv, "--glass-film", 1.0),
                                      number(argv, "--scratches", 1.0) };
     render3d::sun_veil = number(argv, "--sun-veil", 1.0);
+    render3d::floor_joints_deep = pick(argv, "--floor-joints", JOINT_NAMES, 0) == 1;
     // The sun's look in the view out (render3d::SunLook): a preset, then each part's flag over it.
     // The haze in the sunbeam (render3d::Haze): a strength, sigma over it; its look; half size or full.
     let haze_way = pick(argv, "--haze", HAZE_NAMES, 0);

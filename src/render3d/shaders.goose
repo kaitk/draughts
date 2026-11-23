@@ -2345,7 +2345,8 @@ let ROOM_HEAD = """
     // (surfaces::Look's); sill_steps: the tuner's switches of it (render3d::sill_steps, read
     // only with SILL_STEPS); window_view: the window view's steps' strengths, 1 as made
     // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
-    // its scratches); table_map:
+    // its scratches); floor_look: x the joints read deep (1) or flat (0), y the boards' edges'
+    // round-over (world units; render3d::floor_look_of); table_map:
     // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
     // ending in gilt, ink, the page edges plain and sprinkled.
@@ -2395,6 +2396,7 @@ let ROOM_HEAD = """
         vec4 sill;
         vec4 sill_steps[2];
         vec4 window_view;
+        vec4 floor_look;
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
@@ -2966,6 +2968,18 @@ let ROOM_FRAG = """
         return clamp((min(d + 0.5 * fp, half_w) - max(d - 0.5 * fp, -half_w)) / max(fp, 1e-5), 0.0, 1.0);
     }
 
+    // A board's edge rounded over r: how far it has fallen at x in from the edge (r at the
+    // edge and in the gap, 0 past r), and its mean slope over a pixel fp wide there, the fall
+    // across the pixel, held under 1.5.
+    float round_fall(float x, float r) {
+        float y = clamp(r - x, 0.0, r);
+        return r - sqrt(r * r - y * y);
+    }
+    float round_slope(float x, float r, float fp) {
+        float f = max(fp, 1e-4);
+        return min((round_fall(x - 0.5 * f, r) - round_fall(x + 0.5 * f, r)) / f, 1.5);
+    }
+
     // How far p is from the segment a to b (2D).
     float to_segment(vec2 p, vec2 a, vec2 b) {
         vec2 ab = b - a;
@@ -3511,6 +3525,17 @@ let ROOM_FRAG = """
             vec2 t = (n4.xy * 2.0 - 1.0) * sgn;
             float cup = -plank.w * (2.0 * pk.across - 1.0);
             vec2 tilt = planks.z * (vec2(h12(id + 14.1), h12(id + 15.7)) * 2.0 - 1.0);
+            // The joints: how far the board's sides and ends are (from the gap's middle).
+            float fpw = max(length(dx), length(dy));
+            float d_a = min(pk.across, 1.0 - pk.across) * w;
+            float d_l = min(pk.along, plank.y - pk.along) * w;
+            // Read deep (floor_look.x): each edge rounded over floor_look.y, falling toward
+            // the gap, so the edge toward the light catches it, the far one darkens, and the
+            // wax's reflection bends there.
+            if (floor_look.x > 0.5) {
+                tilt += vec2(round_slope(d_a - plank.z, floor_look.y, fpw) * (pk.across < 0.5 ? -1.0 : 1.0),
+                             round_slope(d_l - plank.z, floor_look.y, fpw) * (pk.along < 0.5 * plank.y ? -1.0 : 1.0));
+            }
             vec2 s = vec2(t.x + cup + tilt.x, t.y + tilt.y);
             vec2 suv = dir_a * s.x + dir_l * s.y;
             n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
@@ -3520,9 +3545,6 @@ let ROOM_FRAG = """
             n_film = normalize(vec3(0.0, 1.0, 0.0) + u_dir * sfuv.x + v_dir * sfuv.y);
         #endif
             // The joints, open a little and dark with old wax.
-            float fpw = max(length(dx), length(dy));
-            float d_a = min(pk.across, 1.0 - pk.across) * w;
-            float d_l = min(pk.along, plank.y - pk.along) * w;
             float joint = max(line_cover(d_a, plank.z, fpw), line_cover(d_l, plank.z, fpw));
             // Worn: the paths round the table and along the room lighter and duller, the
             // floor along the walls darker under more wax.
@@ -3550,6 +3572,15 @@ let ROOM_FRAG = """
             albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
             rough = mix(rough, 0.6, joint);
             fine *= 1.0 - 0.5 * joint;
+            if (floor_look.x > 0.5) {
+                // Deep: the gap darker at its bottom, and a soft fringe of its shade on the
+                // rounded edges either side.
+                float r2 = floor_look.y;
+                float fringe = 0.5 * (max(line_cover(d_a, plank.z + 0.5 * r2, fpw), line_cover(d_l, plank.z + 0.5 * r2, fpw))
+                                    + max(line_cover(d_a, plank.z + r2, fpw), line_cover(d_l, plank.z + r2, fpw)));
+                albedo *= 1.0 - 0.5 * joint;
+                fine *= 1.0 - 0.4 * fringe;
+            }
         #ifdef PLANAR_FLOOR
             // Each board waxed and worn a little its own way: its mirror stronger or weaker,
             // and sharper or softer, so the reflection steps from board to board.
