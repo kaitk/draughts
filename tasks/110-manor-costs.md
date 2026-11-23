@@ -504,6 +504,69 @@ texture and arithmetic portions for the highest lines. Xcode 26.4 on this Mac ex
 those replay measurements in the Metal debugger. The compiler's wait instruction count
 does not give the duration or reason for a stall.
 
+### Frame timings and feature removals
+
+Default scene, headless, room surfaces and exterior on. The two steady baseline
+rounds averaged the following frame times.
+
+| Size | Straight down | Corner | Room | Menu |
+| --- | ---: | ---: | ---: | ---: |
+| 3840 × 2160 | 10.81 ms | 14.83 ms | 13.92 ms | 13.07 ms |
+| 5120 × 2880 | 19.12 ms | 24.28 ms | 22.52 ms | 21.59 ms |
+
+The removals are compile-time changes in scratch tuner builds. Each row compares the
+same view under the quiet lock in A B A B order, using the two means. Trial timings
+taken while a second tuner was rendering were discarded. The mirror RGB trial holds
+the reprojection depth tap and edge fallback in place, replacing the five RGB taps.
+The probes trial replaces diffuse irradiance and leaves the reflection fallback
+alone. The corner trial leaves screen occlusion in use. The sun trial substitutes zero
+for the floor's call to `window_open`, leaving the pieces and the table's shadow.
+
+| Removed | Down base | Down trial | Down saved | Corner base | Corner trial | Corner saved |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Mirror RGB taps | 10.84 | 10.38 | 0.46 | 14.82 | 14.61 | 0.21 |
+| Diffuse probes | 10.80 | 8.71 | 2.09 | 14.62 | 13.70 | 0.92 |
+| Corners' map | 10.66 | 10.27 | 0.40 | 14.97 | 14.66 | 0.32 |
+| Sun in lit pieces | 10.63 | 7.09 | 3.54 | 14.65 | 13.06 | 1.59 |
+| Mirror + probes | 10.66 | 8.30 | 2.36 | 14.88 | 13.78 | 1.09 |
+| Mirror + corners | 10.72 | 9.79 | 0.94 | 14.66 | 14.07 | 0.59 |
+
+The single removals sum to 6.49 ms straight down on this baseline. The earlier
+5.9 ms sun measurement preceded the split into pieces. These measurements establish
+how much work the current sun and diffuse path can remove. They also show that the
+mirror's five RGB reads and the corners' sample together account for about a
+millisecond of that view. Relative to the sum of their singles, mirror + probes
+saves 0.19 ms less and mirror + corners saves 0.08 ms more.
+
+The remaining four pairs and the three optimization comparisons await a quiet
+GPU. An independently running tuner raised the down baseline to 22–25 ms during
+the first attempt. Those samples were discarded. The shader trials are scratch
+builds. Both Mac apps build and the NGFX-enabled tests pass.
+
+### Bake-time floor lightmap proposal
+
+Cover the library's 9 × 7 m floor with a 1024 × 800 texture, about 8.8 mm per texel
+along both axes. Store scaled linear diffuse irradiance in RGB and the corner factor
+in alpha. RGBA8 uses 3.13 MiB at the base level or about 4.17 MiB with mips. An
+RGBA16F reference uses 6.25 MiB at the base level. The current maps stay for other
+surfaces. The final floor shader can use its own normal, view angle and SSAO for the
+parts that still vary at runtime.
+
+Budget 0.5–2 ms for a GPU draw and mip generation after the room uploads the probes
+and corner chart. The map has about a tenth of the pixels of the 4K frame. Scaling
+the two single removals gives about 0.25 ms of shading for the bake before charging
+the render pass and mips. The existing bake in the 4K down shot took about 86 ms
+for the probes and radiosity and 309 ms for the corner chart.
+
+The two singles save 2.49 ms down and 1.23 ms in the corner in total. Assuming
+the effects add, estimate a net 1–2 ms down and 0.5–1 ms in the corner after the
+new lookup and any normal-dependent terms that stay. The combined trial will
+test that assumption. A second 2048² R8 texture for a static sun patch would
+use another 4.00 MiB at the base level, or 5.33 MiB with mips. Keep the tree's motion
+and the sun's view-dependent sheen analytic. Diffuse normal response and the
+resolution of cutouts need approval against the live look. See task 114 for the
+broader lighting bake.
+
 ## Board-view cost (2026-11-23)
 
 Native headless Mac M1 Pro, under the quiet lock. Room-light baseline `f90d47f3`.

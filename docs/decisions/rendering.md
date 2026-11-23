@@ -1963,6 +1963,11 @@ to be is in tasks 042, 059, 071, 081, and 086.
   what removing it did, and a test of each window's reach hoisted before the loop saved
   nothing more over the pieces; a floor-space mask texture, a tap a pixel for what the cuts
   give for free.
+- Keep the floor's lighting and reflection composite in the main render pass
+  (2026-11-23, task 110). Splitting the mirror lookup, probes and corner shade into
+  passes would add full-resolution intermediate stores and reads. The renderers
+  lack tile-local attachment reads ([Goose findings](../goose-findings.md)).
+  A bake-time floor map remains a proposal for the lighting work in task 114.
 - The floor's joints stay flat lines (2026-11-23, task 107; `build/notes/floor-perf/night.html`,
   `joints.html`). Tried and removed, kept for a later look: a deep version (each board's edge
   rounded over 2.5 mm in the shading and the wax's normal, the gap darker at its bottom with
