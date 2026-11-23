@@ -3900,7 +3900,15 @@ let ROOM_FRAG = """
         float variance = 0.15 * (dot(du, du) + dot(dv, dv));
         float ar = clamp(rough, 0.05, 1.0);
         ar = ar * ar;
+    #ifdef ROOM_METALS
+        // The brass's hinges and levers turn their normals within a few pixels: the lobe
+        // widened by the normals' spread over the pixel (Tokuyoshi and Kaplanyan's kernel,
+        // its variance half a pixel, at most 0.5), or the highlights break into dashes as the
+        // eye moves; the books' gilt as the rest.
+        ar = sqrt(clamp(ar * ar + (metal > 0.9 ? min(dot(du, du) + dot(dv, dv), 0.5) : min(2.0 * variance, 0.3)), 0.0, 1.0));
+    #else
         ar = sqrt(clamp(ar * ar + min(2.0 * variance, 0.3), 0.0, 1.0));
+    #endif
         vec3 f0 = mix(vec3(0.04), albedo, metal);
         // The key is a window, not a point: its highlight no sharper than 0.25's.
         float ak = max(ar, 0.06);
@@ -3948,7 +3956,10 @@ let ROOM_FRAG = """
     #ifdef ROOM_FLOOR
         float px = length(fwidth(rv));
     #else
-        float px = metal > 0.5 ? 0.25 * length(fwidth(rv)) : 1.0;
+        // The brass sees the room sharp over half its pixel's spread of directions (a
+        // quarter sparkled on the hinges: the sun's leaves on the walls it shows), the gilt
+        // over a quarter.
+        float px = metal > 0.5 ? (metal > 0.9 ? 0.5 : 0.25) * length(fwidth(rv)) : 1.0;
     #endif
         vec3 env = room_baked.x > 0.5 ? room_reflection(p, v_local, rv, ar, nov, px) : sh_eval(rv) * params.z;
     #else

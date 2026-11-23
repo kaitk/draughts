@@ -706,7 +706,9 @@ board's light:
   metals' shader, `SHARP_BOX`); the rest takes the room's light that way (`room_wide`)
   without that code. Brass inside a window's niche (the shutters' hinges) sees the window's
   light (`lace_light`) instead as it turns to face out of the room. Brass takes neither the
-  corners' shade nor the screen's occlusion, only its mesh's own.
+  corners' shade nor the screen's occlusion, only its mesh's own. Its lobe widens by its
+  normals' spread over the pixel and it sees the box sharp over half the pixel's spread
+  of directions, so the hinges and the levers don't sparkle as the eye moves.
 - **What only the sun decides** (`render3d::SunDerived`, worked out by `sun_derived` when
   the sun, the room's turn or the table's map changes, and only read by both renderers):
   the floor's pieces. The shell's floor is cut along the sun into where no sun reaches it

@@ -698,6 +698,16 @@ to be is in tasks 042, 059, 071, 081, and 086.
   Mac, the heaviest part of the round. The polished table (TABLE_FRAG, the game's shader)
   is left for later. Rejected: a cube map (a pass per face, and the room changes with the
   sun), screen-space reflections (a frame's pass, and the windows are often off screen).
+- The brass is antialiased by its normals' spread (2026-11-23): its lobe's alpha² grows by
+  the normal's screen derivatives, `|dFdx n|² + |dFdy n|²` (Tokuyoshi and Kaplanyan's
+  kernel, its variance half a pixel), at most 0.5, where the room's other surfaces keep
+  0.3 of it to at most 0.3; and it sees the room's box sharp over half its pixel's spread
+  of reflected directions, not a quarter. The door's lever broke its highlights into
+  dashes and the hinges sparkled (the sun's leaves on the walls they reflect) as the eye
+  moved; now they hold, the brass a little softer close up. The books' gilt keeps the old
+  values. Rejected: the kernel alone at the paper's half-pixel variance (the lever's dashes
+  and the hinges' sparkles stayed), the full pixel's spread (the brass went dull, its
+  windows gone).
 - The oak outside is blurred once when put on the GPU (2026-11-21, `render3d::soften`,
   sigma 3.5 texels, `view_out::OAK_SOFT`), as out of focus as the band's trees: the user
   found it too crisp. Rejected for now: depth of field over the frame.
