@@ -631,6 +631,22 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
     the larger differences in the debug view. The test suite passed with NGFX set,
     and both Mac apps built. The 3D home screen differed by at most one level on
     either backend. ADB found no connected tablet.
+- [ ] Artifacts the user saw (2026-11-23; crops in `build/notes/artifacts-2026-11-23/`, local):
+  - [ ] Single bright pixels sparkling on the dark oak of the wainscot and the bookshelves
+        at some angles (`oak-sparkle-*.png`). Likely specular fireflies (the normal map's
+        detail turning the gloss's highlight into one pixel), not an overflow; check with
+        the tuner first (a NaN or Inf would more likely show black or spread by the glow).
+        Fix by specular anti-aliasing (roughness widened by the normal's spread in a pixel:
+        Toksvig, or Kaplanyan-Hoffman from screen derivatives)
+  - [ ] A thin light line along the wall's base behind the lace (`light-line-wall-base.png`):
+        the floor's reflection, the plinth's contact line, the wax band or a leak at the
+        wainscot's foot; find which with the tuner's debug views
+  - [ ] The HDR glow pulsing on thin sun strips (the sill, the window's reveals) when the
+        eye moves up or down, steady when it moves sideways (`glow-shimmer-*.png`): the
+        first downsample averages 4 x 4 blocks and thresholds after, so a strip a few
+        pixels tall jumps as it crosses block rows. Fix: threshold each pixel before the
+        average, a wider overlapping first downsample (Jimenez 2014's 13 taps), Karis's
+        weighting if single pixels still flicker
 - [ ] The lace in shade, open questions (`build/notes/lace-shade/trials.html`): a cooler
       tint in shade; trial 1 (more opacity at grazing angles) and trial 4 (motif against
       net), only if the user wants more after the defaults of 2026-11-23
