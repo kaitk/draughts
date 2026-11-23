@@ -158,6 +158,11 @@ leaves the app running after its line, so close it; a `--bench` run quits by its
 settings are in `%APPDATA%\kaitk\draughts\`. `test/run_tests.py` takes the Windows
 release there.
 
+The light tuner builds the same way, `python scripts/windows.py tools/light_tune.goose`
+→ `build/windows/light_tune.exe`, and runs from `tools/` with `--room-surfaces on
+--outside on`; `--no-vsync` uncaps its frames, and Alt+F4 closes it. It asks for Vulkan as
+the app does (`draughts_choose_gpu`, `src/native/display.c`).
+
 ## Run on Linux
 
 Needs a C compiler with `#embed` (GCC 15 or Clang 19 and later), Python 3, Vulkan's
