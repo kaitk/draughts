@@ -464,8 +464,9 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
         they sum to more than the whole frame (about 10.6 ms straight down at 4K), so they
         overlap. The likely cause is one large floor shader limited by its registers: each
         feature adds registers, fewer pixels run at once, and every part slows. Not measured
-        yet. The reflection is two costs: drawing the mirror (about 1 ms, the passes) and the
-        floor reading it (2.5 ms), so about 3.5 ms in all.
+        in that sweep. See the frame captures below. The reflection is two costs: drawing
+        the mirror (about 1 ms, the passes) and the floor reading it (2.5 ms), so about
+        3.5 ms in all.
       - [ ] Next: an Xcode GPU frame capture of the straight-down view at 3840 × 2160 (not
         Metal System Trace, which gives only time per pass): the floor pipelines' register
         count and occupancy, the cost of each line, and their stall reasons (memory or
@@ -474,6 +475,34 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
         mirror's taps) made cheaper. Profiling on the RTX 4090 (Nsight) set aside for this:
         a different GPU kind (immediate-mode, not tile-based) and far faster, so it would
         hide the cost. Brief: `build/notes/plans/claude-floor-capture.txt`
+
+## Floor frame captures (2026-11-23)
+
+Two 3840 × 2160 Metal captures on the M1 Pro record one frame each, straight down and from
+the corner. Both use the default HDR floor with its mirror. In the 12th render encoder
+(one-based), the fifth through seventh draws are its shaded, sunlit, and table-shadow
+pieces. They draw 75, 27 and 6 indices respectively in either capture.
+
+| HDR fragment pipeline | Temporary registers | Uniform registers | Spill bytes | Instructions | ALU | Texture reads | Waits |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `PLANAR_FLOOR` + `FLOOR_SHADE` + `FLOOR_NO_TABLE` | 72 | 212 | 0 | 1548 | 1368 | 27 | 13 |
+| `PLANAR_FLOOR` + `FLOOR_NO_TABLE` | 116 | 256 | 0 | 5030 | 4368 | 40 | 37 |
+| `PLANAR_FLOOR` with the table's map | 128 | 256 | 0 | 5425 | 4738 | 49 | 42 |
+
+The numbers are Metal compiler statistics from the capture archives. The archive's
+pipeline descriptors link the draw states to their fragment MSL and the statistics.
+The instruction counts describe compiled code. The GPU may skip code on a given pixel.
+The three box-reflection `ROOM_FLOOR` variants were outside these two frames. The full
+non-HDR planar shader is in the bundle but does not draw. It has 128 temporary registers
+and zero spill bytes.
+
+For the dynamic numbers, open each trace in Xcode with **Profile GPU Trace** enabled.
+In **Performance**, select the three indexed draws in the main HDR encoder. Read the
+fragment draw durations and occupancy, including the register limiter if exposed. Open
+each draw's fragment shader, sort the profiling annotations by cost, and inspect the
+texture and arithmetic portions for the highest lines. Xcode 26.4 on this Mac exposes
+those replay measurements in the Metal debugger. The compiler's wait instruction count
+does not give the duration or reason for a stall.
 
 ## Board-view cost (2026-11-23)
 
