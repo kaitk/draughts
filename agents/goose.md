@@ -274,6 +274,10 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - `scripts/ngfx_glsl.py` preprocesses only `#ifdef`, `#ifndef`, `#else` and `#endif`: a
   condition over several defines is a define string of its own in the pipeline's parts
   (`shaders::SHARP_BOX`), and one string may hold several `#define`s (`MIRROR_PASS`).
+- A program that opens gfx itself (the tuners) calls `draughts_choose_gpu()` (display.c,
+  in its `.build`) first, or SDL takes Direct3D 12 on Windows. There, and on the
+  `direct3d12` branch, a GLSL name that is an HLSL keyword (`line`, `point`, `triangle`,
+  `sample`, `linear`) fails as FXC's "unexpected token" (2026-11-23).
 - embed_shader takes no `centroid`, no `##`, and no unnamed parameters; `#ifdef` lines in
   a multi-line string take the string's indentation. A define string put first makes two
   shaders from one text (`shaders::MARKS_PULSE`).

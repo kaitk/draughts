@@ -104,6 +104,7 @@
 //       [--lens-view off|depth|coc (the depth of field's depth over the picture, or the lens's disc; 1)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
+//       [--no-vsync (present without waiting for the display, to measure frames uncapped)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
 //       [--oak-aniso-4 (sample the floor and wall oak with 4× anisotropy)]
 //       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
@@ -130,6 +131,9 @@ import board from "../src/board";
 import model3d from "../src/model3d";
 import render3d from "../src/render3d";
 import .light_ref;
+
+// Asks SDL for the app's GPU driver before the window opens (src/native/display.c).
+extern fn draughts_choose_gpu();
 
 let PANEL_W: f32 = 380.0;
 let ROW:     f32 = 20.0;
@@ -1200,7 +1204,9 @@ fn main() {
     st.halo = float2 { number(argv, "--halo", 0.0), number(argv, "--halo-reach", 0.0) };
     var shown_halo = st.halo;
     taken3d::table_layout = taken3d::TABLE_LAYOUTS[taken3d::TOWERS];
-    guard gfx::open("Draughts: the room's light", w, h, gfx::WINDOW_RESIZABLE) else { abort(str("gfx: ", gfx::error())); }
+    draughts_choose_gpu();   // Vulkan on Windows, as the app draws
+    let vsync = if has(argv, "--no-vsync") { gfx::NO_VSYNC } else { 0 };
+    guard gfx::open("Draughts: the room's light", w, h, gfx::WINDOW_RESIZABLE | vsync) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
     var g = default<render3d::Gpu>();
