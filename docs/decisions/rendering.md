@@ -1477,6 +1477,32 @@ to be is in tasks 042, 059, 071, 081, and 086.
   cheaper as it now writes the target itself, so the frame is 0.08-0.28 ms cheaper than with
   the old glow; six RGBA16F levels, 3.8 MB. ngfx has the same passes,
   built but not yet run in a scene, as the rest of HDR.
+- The glow's first pick is a tent over 8 × 8 pixels a texel, each tap thresholded before
+  the average (2026-11-23, task 107, `build/notes/glow-steady/`; `shaders::GLOW_DOWN_FRAG`'s
+  `GLOW_FIRST`). This replaces the entry above's first pick, a 4 × 4 block a texel averaged
+  from four bilinear taps with the threshold and knee applied to the average: a strip of sun a
+  few pixels tall (the sill, the window's reveals) changed its blocks' averages as it crossed
+  their rows, and the threshold amplified it, so the glow pulsed when the eye moved up or
+  down or toward the window and stayed steady moving sideways. Now each of sixteen bilinear
+  taps (two pixels' weights 1 3 5 7 7 5 3 1 a row) takes its own light over the threshold,
+  and the texels overlap, so a strip fades from one row to the next. At 3840 × 2160, about
+  3.5 m from the middle window, ten 2 mm steps up: the glow's halo round the strips varied
+  about its trend by 6.9, 7.7, 2.4 and 5.0% (the left and right leaves' reveals, the two sill
+  patches), now 3.5, 3.4, 2.0 and 1.8%; ten 5 mm steps toward, 2.6-4.6% now 2.1-2.5%;
+  sideways under 0.5% both. The strips' own light over the threshold varies 1.8-2.9% over the
+  same steps, so what is left is the strips' edges, not the glow. The levels below (Bjorge's
+  dual filter) are unchanged: they didn't show the pulse. The look at rest is the same: the
+  sun's disc and its glow within 3 levels, the views' mean within 0.04 of a level; only the
+  thin strips' edges take a little more of the tight glow (up to 45 levels in a few pixels,
+  2,895 over 8 of the room view's 8.3 million), unseen at 100%; the threshold and strength
+  stay. Rejected: thresholding the taps alone (half the gain: 6.5, 6.1, 2.0, 1.7%), a tent of
+  Jimenez 2014's reach (12 × 12 pixels, 36 taps; no steadier: 3.1, 2.6, 2.5, 2.6%), Jimenez's
+  13 taps themselves (made for a halving; at a quarter they leave gaps between their 2 × 2
+  taps, or need a half-size level first), and Karis's luma weighting (no single pixel
+  flickers here). Cost on an M1 Pro at 5120 × 2880, menu view, Metal System Trace, two
+  rounds: the first pick's encoder 0.17 ms of fragment time, now 0.25-0.26 (about +0.08 ms);
+  the four views' frames at 3840 × 2160 and 5120 × 2880 the same to the counter's whole
+  millisecond (10, 14, 13, 12 and 18, 23, 21-22, 21 ms).
 - The sun in the view out has a look of its own, picked by the user from builder 32's
   presets (2026-11-22: open; `render3d::SunLook`, the light tuner's `--sun-look`): the
   disc's radius, limb darkening, edge and brightness, the haze's halo as a tight core and a

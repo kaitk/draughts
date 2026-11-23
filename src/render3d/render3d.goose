@@ -3094,8 +3094,8 @@ fn glow_level_size(size: int2, k: i64) -> int2 {
     for i in k { q = int2 { max(q.x / 2, 1), max(q.y / 2, 1) }; }
     return q;
 }
-// Level k's step: read from `from` (a texel's half, or the full picture's 4 × 4 block's
-// quarter for the first) into `to`.
+// Level k's step: read from `from` (a texel's half, or a pixel of the full picture for the
+// first, whose tent's taps are placed in pixels) into `to`.
 fn glow_step_of(from: int2, to: int2, first: bool) -> GlowStep {
     let h = if first { float2 { 1.0 / from.x, 1.0 / from.y } } else { float2 { 0.5 / from.x, 0.5 / from.y } };
     let l = hdr_glow.look;

@@ -4771,9 +4771,10 @@ let HDR_TONE_FRAG = """
 // The scenic views' glow (render3d::glow_pass), in the HDR target's linear light before the
 // tonemap, so the sun's disc and the sky bleed over the leaves, the bars and the frame in
 // front of them: the light over a threshold (a soft knee) picked into a quarter of the
-// picture, a 4 × 4 block a texel from four bilinear taps, each tap's light over the
-// threshold before they are averaged (a thin strip's share then doesn't jump as it crosses
-// the blocks' rows, 2026-11-23), then halved level by level
+// picture by a tent over 8 × 8 pixels round each texel's 4 × 4 block (sixteen bilinear taps,
+// each two pixels' weights 1 3 5 7 7 5 3 1 a row), each tap's light over the threshold
+// before they are averaged: the texels overlap, so a thin strip of sun moving across their
+// rows fades from one to the next instead of pulsing (2026-11-23); then halved level by level
 // (GLOW_DOWN_FRAG, Bjorge's dual filter: five taps) and widened back up (GLOW_UP_FRAG, eight
 // taps), each level blended over the one above it by the reach, so the levels' shares sum to
 // one; HDR_TONE_FRAG adds the top level times the strength. glow_step: xy a source texel in
@@ -4801,7 +4802,12 @@ let GLOW_DOWN_FRAG = """
         vec2 uv = gl_FragCoord.xy * glow_step.zw;
         vec2 h = glow_step.xy;
     #ifdef GLOW_FIRST
-        vec3 c = 0.25 * (pick(uv + vec2(-h.x, -h.y)) + pick(uv + vec2(h.x, -h.y)) + pick(uv + vec2(-h.x, h.y)) + pick(uv + h));
+        float at[4] = float[4](-2.75, -0.9166667, 0.9166667, 2.75);
+        float w[4] = float[4](0.125, 0.375, 0.375, 0.125);
+        vec3 c = vec3(0.0);
+        for (int j = 0; j < 4; j++) {
+            for (int i = 0; i < 4; i++) c += (w[i] * w[j]) * pick(uv + vec2(at[i], at[j]) * h);
+        }
     #else
         vec3 c = (4.0 * tap(uv) + tap(uv - h) + tap(uv + h) + tap(uv + vec2(h.x, -h.y)) + tap(uv - vec2(h.x, -h.y))) * 0.125;
     #endif

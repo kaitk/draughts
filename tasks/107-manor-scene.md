@@ -643,12 +643,31 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
   - [ ] A thin light line along the wall's base behind the lace (`light-line-wall-base.png`):
         the floor's reflection, the plinth's contact line, the wax band or a leak at the
         wainscot's foot; find which with the tuner's debug views
-  - [ ] The HDR glow pulsing on thin sun strips (the sill, the window's reveals) when the
+  - [x] The HDR glow pulsing on thin sun strips (the sill, the window's reveals) when the
         eye moves up or down, steady when it moves sideways (`glow-shimmer-*.png`): the
-        first downsample averages 4 x 4 blocks and thresholds after, so a strip a few
-        pixels tall jumps as it crosses block rows. Fix: threshold each pixel before the
-        average, a wider overlapping first downsample (Jimenez 2014's 13 taps), Karis's
-        weighting if single pixels still flicker
+        first downsample averaged 4 x 4 blocks and thresholded after, so a strip a few
+        pixels tall jumped as it crossed block rows. Fixed (2026-11-23,
+        `build/notes/glow-steady/`): each tap thresholded, and the first pick a tent over
+        8 x 8 pixels from sixteen taps; Karis's weighting not needed
+    - The glow's halo round the middle window's strips, 3840 x 2160 from about 3.5 m, its
+      variation about the trend over ten steps (the left and right leaves' reveals, the two
+      sill patches); the strips' own light over the threshold varies 1.8-2.9%:
+
+      | Steps | Before | Taps thresholded | Tent (kept) | Wider tent, 36 taps |
+      | --- | --- | --- | --- | --- |
+      | 2 mm up | 6.9, 7.7, 2.4, 5.0% | 6.5, 6.1, 2.0, 1.7% | 3.5, 3.4, 2.0, 1.8% | 3.1, 2.6, 2.5, 2.6% |
+      | 5 mm toward | 3.4, 3.8, 2.6, 4.6% | 3.1, 3.0, 2.3, 2.3% | 2.5, 2.4, 2.1, 2.1% | 2.9, 2.7, 2.2, 2.3% |
+      | 2 mm sideways | 0.07, 0.42, 0.07, 0.16% | 0.06, 0.18, 0.05, 0.10% | 0.05, 0.11, 0.06, 0.13% | 0.03, 0.08, 0.06, 0.14% |
+
+    - At rest, 3840 x 2160 against the build before: straight down at most 1 level; the
+      corner 19 levels, 266 pixels over 8; the room 45, 2,895; the menu 24, 791 (thin
+      strips' edges only, the mean within 0.04 of a level); the sun's disc within 3.
+      Two runs of the build before were byte-identical.
+    - Frames on the M1 Pro, two rounds A B A B, the same to the counter's whole ms at
+      3840 x 2160 (down 10, corner 14, room 13, menu 12) and 5120 x 2880 (18, 23, 21-22,
+      21); the first pick's encoder 0.17 ms of fragment time, now 0.25-0.26, at 5120 x 2880
+      (Metal System Trace, menu view). Tests pass with NGFX, both apps build; the app
+      draws no HDR yet, so nothing changes on the tablet
 - [ ] The lace in shade, open questions (`build/notes/lace-shade/trials.html`): a cooler
       tint in shade; trial 1 (more opacity at grazing angles) and trial 4 (motif against
       net), only if the user wants more after the defaults of 2026-11-23

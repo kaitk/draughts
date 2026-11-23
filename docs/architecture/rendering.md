@@ -1002,7 +1002,9 @@ game), in steps that each show alone in the light tuner
   for everything else: the game, the standard and phone tiers, the tuner's views of the
   room, the table before the room's light is baked.
 - **The glow** (`glow_pass`, `render3d::HdrGlow`): from the resolved HDR light, what is over
-  a threshold (1, a soft knee of 0.5) picked into a quarter of the picture, halved five
+  a threshold (1, a soft knee of 0.5) picked into a quarter of the picture (each texel a
+  tent over 8 × 8 pixels from sixteen taps, each tap thresholded, so a thin strip of sun
+  moving across the texels' rows doesn't pulse), halved five
   times (a dual filter: 5 taps down, 8 up) and widened back, each level blended over the one
   above by the reach (0.65); the tonemap's pass adds it times the strength (0.06). So the
   sun and the sky bleed over the leaves, the bars and the frame in front of them. Six
