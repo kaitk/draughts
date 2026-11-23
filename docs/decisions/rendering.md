@@ -1807,16 +1807,16 @@ to be is in tasks 042, 059, 071, 081, and 086.
   even those limits cannot meet, the old trace would return zero. Board frame time fell
   from 19.64 to 19.20 ms at 3840 × 2160 and from 32.69 to 31.89 ms at 5120 × 2880.
   Both shots were byte-identical.
-- Keep the floor mirror's edge fill as a default-off light-tuner preview
-  (2026-11-23, task 110, `--mirror-edge-fill on`, gfx). The standard resolve's
+- Keep the floor mirror's standard edge fill; the first-row preview was removed
+  (2026-11-23, task 110; tried in 3c98fc6d, the user: its extra pass, target and pipeline
+  bought no visible change). The standard resolve's
   downward search can land on several parts of the room and repeat them in stacked
   strips above the far floor edge. The preview records the first covered depth row
   of each column in a one-row R32F target and extends that row into the empty area
   above it. The standard search still fills holes below the first covered row.
   The map loses the stacked repeats. The floor's blurred reflection changes by up
   to five RGB levels at 4K and eight at 5K in the corner view. Alternating timing
-  rounds changed direction at both sizes. Keep the standard resolve as the default
-  because changing the fill alters the floor's appearance. The timing and capture
+  rounds changed direction at both sizes. The timing and capture
   counts are in [task 110](../../tasks/110-manor-costs.md#floor-mirror-edge-fill-preview).
 - A cheap mirror world as a trial behind the light tuner's `--mirror-cheap on`, off by
   default (2026-11-23, task 110; `MIRROR_CHEAP`, `CHEAP_TABLE`, `render3d::mirror_cheap`).

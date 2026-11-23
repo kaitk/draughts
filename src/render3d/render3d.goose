@@ -448,13 +448,11 @@ struct Gpu {
     cheap_room:     Pipeline,       // the cheap mirror world's (mirror_cheap), made while it is on
     cheap_table:    Pipeline,
     planar_resolve: Pipeline,
-    planar_edge:    Pipeline,
     planar_mip:     Pipeline,
     planar_show:    Pipeline,
     planar_color:   Texture,
     planar_depth:   Texture,
     planar_map:     Texture,
-    planar_edge_rows: Texture,
     planar_current: bool,
     planar_size:    int2,
     planar_sampler: Sampler,        // clamped, trilinear: the floor's blur picks its mip
@@ -2798,8 +2796,6 @@ var planar_allowed = true;
 // (shaders::MIRROR_CHEAP_PASS); the cord left out. Set before the room's mesh is made.
 var mirror_cheap = false;
 fn mirror_cheap_on(g: Gpu&) -> bool { mirror_cheap && g.cheap_room.id != 0 && g.cheap_count > 0 }
-// The light tuner's trial: extend the first covered row of each mirror column.
-var mirror_edge_fill = false;
 var planar_view = 0;
 var planar_scale: i32 = 3;
 let PLANAR_MIPS = 6;

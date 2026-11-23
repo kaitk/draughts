@@ -529,6 +529,9 @@ visible pixel coverage and timing deltas from replacing shader work.
 
 ### Floor mirror edge-fill preview
 
+Removed after these measurements (2026-11-23, the user): no visible change for an extra
+pass, target and pipeline; the code is in 3c98fc6d.
+
 The standard resolve searches down each column at offsets 1–8, then 16, 32 and
 larger. That fills the area above the far floor edge with stacked repeats of the room.
 A diagnostic that coloured only those filled texels magenta changed 686,878 pixels
