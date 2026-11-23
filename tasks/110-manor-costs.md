@@ -432,6 +432,20 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
       4K before the pieces), the mirror lookup (2.5), the probes (2.3), the corners' map
       (2.4 straight down only, to check). The oak's textures are not the cost
       (`build/notes/oak-textures/`: RG8 and compression save memory, not time)
+      - Why it is slow (2026-11-23, the user's question): these are costs by removal, and
+        they sum to more than the whole frame (about 10.6 ms straight down at 4K), so they
+        overlap. The likely cause is one large floor shader limited by its registers: each
+        feature adds registers, fewer pixels run at once, and every part slows. Not measured
+        yet. The reflection is two costs: drawing the mirror (about 1 ms, the passes) and the
+        floor reading it (2.5 ms), so about 3.5 ms in all.
+      - [ ] Next: an Xcode GPU frame capture of the straight-down view at 3840 × 2160 (not
+        Metal System Trace, which gives only time per pass): the floor pipelines' register
+        count and occupancy, the cost of each line, and their stall reasons (memory or
+        arithmetic). Then the fix by what it shows: the floor's work split further by area
+        (as the sun's pieces did), or the per-pixel reads (the probes, the corners' map, the
+        mirror's taps) made cheaper. Profiling on the RTX 4090 (Nsight) set aside for this:
+        a different GPU kind (immediate-mode, not tile-based) and far faster, so it would
+        hide the cost. Brief: `build/notes/plans/claude-floor-capture.txt`
 
 ## Acceptance criteria
 
