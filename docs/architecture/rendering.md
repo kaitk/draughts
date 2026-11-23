@@ -667,7 +667,10 @@ board's light:
   section sets its strength, reach, bias and gain, and shows it alone (`--ssao-view
   alone`) or with all the indirect light keeps (`kept`).
 - **The floor's mirror** (`render3d::planar_pass`, `rooms::Room.planar`), in the standard
-  and high tiers, not on a phone (`render3d::planar_allowed`): before the board's pass, the
+  and high tiers, not on a phone (`render3d::planar_allowed`). Both renderers skip the
+  mirror draw, resolve and mip generation when all four floor corners lie outside
+  the same camera clip plane. A frame that can show the floor refreshes the mirror
+  before the floor samples it. When the mirror runs, before the board's pass, the
   view out, the table and the room are drawn mirrored across the floor at a third of the
   screen's size, the clip's depth made the height over the floor so nothing under it is
   drawn, the room's

@@ -909,14 +909,17 @@ fn door_mid(s: Shell, wall: i64) -> f32 {
     return 0.5 * length_of(s.walls[wall]);
 }
 
+fn floor_diagonal(s: Shell) -> float2, float2 {
+    return room_of(s, float2 { 9.0, 7.0 }), room_of(s, float2 { 0.0, 0.0 });
+}
+
 // The shell's mesh into verts and indices, its glass and lace into their own: the floor,
 // each wall's wallpaper, wainscot, openings (the bookcases with their books unless
 // `books_on` is false) and cornice, and the ceiling.
 fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&, s: Shell,
          books_on: bool = true) {
     let k = m();
-    let low = room_of(s, float2 { 9.0, 7.0 });
-    let high = room_of(s, float2 { 0.0, 0.0 });
+    let low, high = floor_diagonal(s);
     surfaces::floor_quad(verts, indices, float2 { min(low.x, high.x), min(low.y, high.y) },
                          float2 { max(low.x, high.x), max(low.y, high.y) });
     var seed: i64         = 1000;

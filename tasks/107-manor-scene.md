@@ -510,6 +510,23 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       ends closed in the mesh (37,906 to 40,182 triangles); the casements' crawling dots
       gone. Frame at 3840 × 2160, four rounds A B A B: menu 15.1 before and 15.7 after (14.9
       without one stray round), room 16.2 and 16.4, within a round's noise of ±1 ms
+- [x] Skip the floor's mirror when the camera frustum excludes the floor (2026-11-23,
+      `build/notes/mirror-skip/index.html`). Headless Mac light tuner at 3840 × 2160,
+      with room surfaces and the view outside on. Two alternating before and after runs,
+      six seconds each, with the first reported half-second window excluded for startup.
+
+      | View | Before (ms) | After (ms) | Change (ms) | Byte-identical | Max RGB difference | Pixels over 8 |
+      |---|---:|---:|---:|---|---:|---:|
+      | Straight down | 10.87 | 11.03 | +0.16 | Yes | 0 | 0 |
+      | Corner | 15.54 | 15.69 | +0.15 | No | 1 | 0 |
+      | Room | 14.81 | 14.82 | +0.01 | Yes | 0 | 0 |
+      | Menu | 14.79 | 14.74 | -0.06 | Yes | 0 | 0 |
+      | Wall | 12.90 | 12.40 | -0.50 | Yes | 0 | 0 |
+      | Ceiling | 7.29 | 6.76 | -0.53 | Yes | 0 | 0 |
+
+      The corner's 182 changed pixels each differ by one level. The wall shot uses
+      `--plan-eye 4.0,3.0,1.6 --plan-at 4.0,8.0,3.0` to frame above the floor.
+      The ceiling uses `--plan-eye 6.0,3.0,1.6 --plan-at 6.0,3.05,4.0`.
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

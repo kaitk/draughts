@@ -1688,6 +1688,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   in the floor are a little blurrier (the room view's largest change 35 levels) and shimmer
   a little more as the eye moves; the user accepts that for the time. The half size stays
   as `--planar-size 2`, full as `1`.
+- Skip the library floor's mirror when the floor is outside the camera frustum
+  (2026-11-23, task 107, `render3d::floor_in_frustum`). This limits the earlier
+  per-frame mirror pass to views that can show the floor. Both renderers reject the
+  floor only when all four corners lie outside the same clip plane, with a margin
+  for rounding. This keeps grazing views and views with corners behind the eye safe.
+  A returning floor gets a fresh mirror before the room draws. The tuner's
+  full-screen mirror preview still renders the map because it displays it directly.
 - The library floor's mirror keeps the light before the tonemap (2026-11-21, task 107;
   `TONE_FN`'s `mirror_light`, `OUTSIDE_FRAG`, `rooms::Room.planar.w`): the room, the table
   and the view out write their exposed linear light into the mirror pass's RGBA16F

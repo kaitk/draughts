@@ -444,6 +444,7 @@ struct Gpu {
     planar_color:   Texture,
     planar_depth:   Texture,
     planar_map:     Texture,
+    planar_current: bool,
     planar_size:    int2,
     planar_sampler: Sampler,        // clamped, trilinear: the floor's blur picks its mip
     // A tuner's: the panelling oak's and the ceiling's tint (x, z their lightness, y, w their
@@ -2589,7 +2590,8 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     // target; not where the image is the target (the app's kept image, which shows no shell).
     let glowing = bloom_shown(g) && out.id != 0;
     if ssao_shown(g) { o.ssao_pass(g, size); }
-    if planar_shown(g) {
+    g.planar_current = planar_shown(g) && (planar_view > 1 || floor_in_frustum(view_proj));
+    if g.planar_current {
         let clip, plain = mirrored_frames(g);
         o.planar_pass(g, size, clip, plain, planar_resolve_of(g, clip));
     }
@@ -2605,7 +2607,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
         o.depth_pass(g);
         if depth_view > 0 { o.depth_show_pass(g, target, depth_show_of(g)); }
     }
-    if planar_view > 1 && planar_shown(g) { o.planar_show_pass(g, target, planar_show_of(g, size)); }
+    if planar_view > 1 && g.planar_current { o.planar_show_pass(g, target, planar_show_of(g, size)); }
     if keep_depth { o.draw_depth(g); }
     if scaled { o.upscale_pass(g, out, upscale_of(size, screen)); }
 }
@@ -2727,6 +2729,31 @@ let PLANAR_LIFT: f32 = 0.05;
 fn planar_shown(g: Gpu&) -> bool {
     planar_allowed && room_shown(g) && g.room_shell && g.room.planar.x > 0.0 && g.planar_walls.id != 0
 }
+// A convex floor can be outside a clip plane only if all four corners are
+// outside that same plane. Keep the test homogeneous for corners behind the eye.
+fn floor_in_frustum(m: Mat) -> bool {
+    let a, b = room_shell::floor_diagonal(room_shell::LIBRARY);
+    let base = m.c1 * surfaces::FLOOR_Y + m.c3;
+    var outside: u32 = 63;
+    for x in [a.x, b.x] {
+        let edge = base + m.c0 * x;
+        for z in [a.y, b.y] {
+            let p = edge + m.c2 * z;
+            // Leave room for rounding between the CPU and the vertex shader.
+            let margin: f32 = 0.01;
+            var planes: u32 = 0;
+            if p.w + p.x < -margin { planes |= 1; }
+            if p.w - p.x < -margin { planes |= 2; }
+            if p.w + p.y < -margin { planes |= 4; }
+            if p.w - p.y < -margin { planes |= 8; }
+            if p.z < -margin { planes |= 16; }
+            if p.w - p.z < -margin { planes |= 32; }
+            outside &= planes;
+        }
+    }
+    return outside == 0;
+}
+
 // The mirror's least width in texels, at most the screen's: half of a 1600-pixel screen let
 // a window's bars, a few texels wide, step a whole texel as the eye moved and pulse in the
 // floor; the height stays planar_scale times smaller, as the floor draws the reflection out
@@ -2822,7 +2849,7 @@ fn planar_look_of(g: Gpu&) -> float4 {
     return float4 { g.room.planar.z, g.room.planar.y, 0.0, 0.0 };
 }
 // Whether the room's floor sees the mirror this frame (drawn with g.room_planar).
-fn planar_seen_on_floor(g: Gpu&) -> bool { planar_shown(g) && g.planar_map.id != 0 && g.room_planar.id != 0 }
+fn planar_seen_on_floor(g: Gpu&) -> bool { g.planar_current && g.planar_map.id != 0 && g.room_planar.id != 0 }
 // The room's and the table's blocks in the mirror: no screen occlusion (the map is the
 // screen's), no mirror of its own.
 fn mirror_surfaces_block(g: Gpu&) -> SurfacesBlock {
