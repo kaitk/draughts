@@ -126,6 +126,7 @@ MODULES = [
     ("r3d_pre_lit", LIT_VS, ["FS_SET", "FRAME", "PRE_FRAG"]),
     ("r3d_ssao", FULL, ["SSAO_FRAG"]),
     ("r3d_ssao_blur", FULL, ["SSAO_BLUR_FRAG"]),
+    ("r3d_gtao", FULL, ["GTAO_FRAG"]),
     # The scenic views' HDR target (render3d::hdr_shown): the board's in each pieces'
     # material with the 16-tap shadow, the table's in the room, the view out's, the motes',
     # and the tonemap after.

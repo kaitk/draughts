@@ -4342,7 +4342,8 @@ let SSAO_FRAG = """
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D pre_place;
     layout(set = 2, binding = 1) uniform sampler2D pre_facing;
-    layout(set = 3, binding = 0) uniform Ssao { vec4 ssao_fwd; vec4 ssao_look; };
+    // The block GTAO_FRAG shares (render3d::SsaoBlock); this reads its first two.
+    layout(set = 3, binding = 0) uniform Ssao { vec4 ssao_fwd; vec4 ssao_look; vec4 ssao_ray_x; vec4 ssao_ray_y; vec4 ssao_gtao; };
     const int SSAO_TAPS = 8;
     void main() {
         ivec2 px = ivec2(gl_FragCoord.xy);
@@ -4377,6 +4378,104 @@ let SSAO_FRAG = """
         }
         float kept = clamp(1.0 - ssao_look.w * hidden / float(SSAO_TAPS), 0.0, 1.0);
         result = vec4(kept, dist, 0.0, 1.0);
+    }
+    """;
+
+// The light tuner's trial (render3d::ssao_gtao, --gtao on): each half-size pixel's occlusion
+// by ground-truth ambient occlusion (Jimenez et al. 2016, after Intel's XeGTAO, MIT) in
+// place of SSAO_FRAG's: GTAO_SLICES slices through the view at the pixel, turned its own way
+// across the 4 × 4 block (SSAO_BLUR_FRAG's sixteen turns, a Bayer order); in each, the
+// highest point seen each side within the reach (GTAO_STEPS taps a side, nearer ones
+// denser), faded out over the reach's last 61.5% and by how much each hides (PRE_FRAG's w,
+// the lace's 0.4); the arc of the cosine-weighted sky between them, by the normal's share in the
+// slice. Worked out in world units from the eye (PRE_FRAG's places), the slices' directions
+// in the screen's plane (ssao_ray_x, ssao_ray_y, render3d::screen_steps), so no view matrix.
+// SSAO_BLUR_FRAG's 4 × 4 blur by distance is its edge-aware denoise, over all sixteen turns,
+// with nothing kept from frame to frame. ssao_gtao: x the power the visibility is raised to.
+let GTAO_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D pre_place;
+    layout(set = 2, binding = 1) uniform sampler2D pre_facing;
+    layout(set = 3, binding = 0) uniform Ssao { vec4 ssao_fwd; vec4 ssao_look; vec4 ssao_ray_x; vec4 ssao_ray_y; vec4 ssao_gtao; };
+    const int GTAO_SLICES = 3;
+    const int GTAO_STEPS = 3;
+    const float HALF_PI = 1.5707963;
+    const float PI = 3.1415927;
+    // acos to about 1e-4 (Lagarde's).
+    float fast_acos(float x) {
+        float a = abs(x);
+        float r = (-0.156583 * a + HALF_PI) * sqrt(1.0 - a);
+        return x >= 0.0 ? r : PI - r;
+    }
+    const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
+    void main() {
+        ivec2 px = ivec2(gl_FragCoord.xy);
+        ivec2 size = textureSize(pre_place, 0);
+        vec4 cp = texelFetch(pre_place, px, 0);
+        if (cp.w <= 0.0) {
+            result = vec4(1.0, 0.0, 0.0, 1.0);
+            return;
+        }
+        vec3 c = cp.xyz;
+        float dist = length(c);
+        vec3 v = -c / dist;
+        vec3 n = normalize(texelFetch(pre_facing, px, 0).xyz * 2.0 - 1.0);
+        float reach = ssao_look.x;
+        float radius = min(reach * ssao_fwd.w / max(dot(ssao_fwd.xyz, c), 1e-3), ssao_look.z);
+        if (radius < 1.0) {
+            result = vec4(1.0, dist, 0.0, 1.0);
+            return;
+        }
+        int cell = (px.x % 4) + 4 * (px.y % 4);
+        float slice_turn = (BAYER[cell] + 0.5) / 16.0;
+        float step_jitter = fract(float(cell) * 0.618034);
+        float fade_mul = -1.0 / (0.615 * reach);
+        float fade_add = (1.0 - 0.615) / 0.615 + 1.0;
+        float least = 1.3 / radius;
+        float seen = 0.0;
+        for (int sl = 0; sl < GTAO_SLICES; sl++) {
+            float phi = (float(sl) + slice_turn) * PI / float(GTAO_SLICES);
+            vec2 omega = vec2(cos(phi), sin(phi));
+            vec3 dir = normalize(omega.x * ssao_ray_x.xyz + omega.y * ssao_ray_y.xyz);
+            vec3 ortho = dir - dot(dir, v) * v;
+            vec3 axis = normalize(cross(ortho, v));
+            vec3 pn = n - axis * dot(n, axis);
+            float pn_len = length(pn);
+            float cos_n = clamp(dot(pn, v) / max(pn_len, 1e-4), -1.0, 1.0);
+            float nang = (dot(ortho, pn) < 0.0 ? -1.0 : 1.0) * fast_acos(cos_n);
+            float low0 = cos(nang + HALF_PI);
+            float low1 = cos(nang - HALF_PI);
+            float hc0 = low0;
+            float hc1 = low1;
+            for (int st = 0; st < GTAO_STEPS; st++) {
+                float t = (float(st) + step_jitter) / float(GTAO_STEPS);
+                t = t * t + least;
+                vec2 off = floor(omega * (t * radius) + 0.5);
+                for (int side = 0; side < 2; side++) {
+                    ivec2 q = px + ivec2(side == 0 ? off : -off);
+                    if (q.x < 0 || q.y < 0 || q.x >= size.x || q.y >= size.y) continue;
+                    vec4 s = texelFetch(pre_place, q, 0);
+                    if (s.w <= 0.0) continue;
+                    vec3 d = s.xyz - c;
+                    float len = length(d);
+                    float hcos = dot(d, v) / max(len, 1e-4);
+                    float w = clamp(len * fade_mul + fade_add, 0.0, 1.0) * s.w;
+                    if (side == 0) hc0 = max(hc0, mix(low0, hcos, w));
+                    else hc1 = max(hc1, mix(low1, hcos, w));
+                }
+            }
+            float h0 = -fast_acos(clamp(hc1, -1.0, 1.0));
+            float h1 = fast_acos(clamp(hc0, -1.0, 1.0));
+            h0 = nang + clamp(h0 - nang, -HALF_PI, HALF_PI);
+            h1 = nang + clamp(h1 - nang, -HALF_PI, HALF_PI);
+            float sin_n = sin(nang);
+            float arc0 = (cos_n + 2.0 * h0 * sin_n - cos(2.0 * h0 - nang)) * 0.25;
+            float arc1 = (cos_n + 2.0 * h1 * sin_n - cos(2.0 * h1 - nang)) * 0.25;
+            seen += pn_len * (arc0 + arc1);
+        }
+        seen = clamp(seen / float(GTAO_SLICES), 0.0, 1.0);
+        result = vec4(pow(seen, ssao_gtao.x), dist, 0.0, 1.0);
     }
     """;
 

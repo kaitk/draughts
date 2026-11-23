@@ -337,6 +337,7 @@ fn make_room(own: Own&, g: Gpu&) {
     g.pre_lit = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_pre_lit.blob"), solid);
     g.ssao = module(embed_file("../../build/ngfx/blobs/r3d_ssao.blob"));
     g.ssao_blur = module(embed_file("../../build/ngfx/blobs/r3d_ssao_blur.blob"));
+    g.gtao = module(embed_file("../../build/ngfx/blobs/r3d_gtao.blob"));
     g.planar_resolve = module(embed_file("../../build/ngfx/blobs/r3d_planar_resolve.blob"));
     g.planar_show = module(embed_file("../../build/ngfx/blobs/r3d_planar_show.blob"));
     g.planar_mip = module(embed_file("../../build/ngfx/blobs/r3d_planar_mip.blob"));
@@ -492,7 +493,7 @@ fn ssao_pass(own: Own&, g: Gpu&, size: int2) {
     ngfx::end_pass();
     barrier_between_passes();
     nx::begin_pass(g.ssao_raw, nx::Texture { 0 }, float4_0);
-    nx::bind(g.ssao);
+    nx::bind(if render3d::ssao_gtao { g.gtao } else { g.ssao });
     var a = no_root();
     slot(a, 0, g.pre_place, g.linear);
     slot(a, 1, g.pre_facing, g.linear);
@@ -1593,7 +1594,7 @@ fn release(own: Own&, g: Gpu&) {
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
                      g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_floor, g.room_walls, g.room_metals, g.bake_room, g.room_glass, g.room_lace, g.outside, g.bloom_pick,
-                     g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.planar_walls,
+                     g.bloom_blur, g.bloom_add, g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.gtao, g.room_planar, g.planar_walls,
                      g.planar_metals, g.planar_glass, g.planar_lace, g.planar_table, g.planar_resolve, g.planar_show, g.planar_mip,
                      g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { nx::release(p); } }

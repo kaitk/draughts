@@ -1759,7 +1759,29 @@ to be is in tasks 042, 059, 071, 081, and 086.
   slower and changed the door, the handle and the sills; one bilinear read-back saved
   0.2-0.4 ms at 4K but changed the sills by up to 146 levels; neither was steadier. At the
   4K corner the SSAO costs about 2.3 ms: prepass 0.2, occlusion 0.8, blur 0.24, the room's
-  read-back 1.0. GTAO was not tried.
+  read-back 1.0. GTAO was not tried then (see the next entry).
+- The SSAO's targets and passes stay as they are, and GTAO is a light-tuner trial, `--gtao
+  on`, off by default, for the user to judge (2026-11-23, task 110; branch ssao-gtao; page
+  `build/notes/ssao-gtao/`, local). The occlusion pass is bound by how many texels it fetches
+  and the maths on them, not by their bytes, so two trials for the same look were slower:
+  the places kept as one distance a pixel (R16F, then R32F holding the places' half-float
+  rounding) and rebuilt along each pixel's ray was 0.23-0.32 ms slower at 4K and 0.46-0.67
+  at 5K (the 4K corner's trace: prepass 0.22 to 0.26 ms, occlusion 0.81 to 0.95), and moved
+  the sun's contact shadows along the doors' panels (up to 88 levels, 23,524 pixels over 8
+  in the door's view); octahedral RG8 normals were left untried, as they only save bytes.
+  The places split into sixteen blocks, so each block's spiral reads neighbouring texels
+  (deinterleaved), was byte-identical, but its own pass (0.26 ms) and a slower blur (0.25 to
+  0.38) cost more than the occlusion saved (0.81 to 0.68). GTAO (`shaders::GTAO_FRAG`,
+  Jimenez et al. 2016 after XeGTAO): three slices of three taps a side over the same prepass,
+  turned across the 4 × 4 block, the same distance-weighted blur as its denoise, the
+  visibility to the power 1.5 (`--gtao-power`); the slices' directions from the screen's
+  steps in the world (`render3d::screen_steps`), so no view matrix (the 2026-11-21 entry's
+  reason). It costs 0.81 to 1.37 ms in the 4K corner's occlusion pass, 0.1-0.56 ms a frame
+  at 4K and 1.0-1.4 at 5K. Behind the door's handle its grain (what a 9-pixel box blur
+  takes out of the occlusion alone) falls from 0.23 to 0.16 levels and the pixels that
+  change by more than 8 over a 1 cm eye move from 646 to 70; on the sill from 0.56 to 0.39
+  and 2,174 to 1,370, but the sill is lighter (its occlusion's mean 190 to 205 of 255: its
+  back corner shades less). The four views change by up to 101 levels at 4K.
 - Keep the full mirror target when the floor can show (2026-11-23, task 107).
   Rejected scissoring the mirror draw, resolve and mips to the projected floor bounds
   plus 64 or 192 texels. The experiment fell back to the full target at 70% coverage

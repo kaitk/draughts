@@ -463,6 +463,7 @@ fn make_room(own: Own&, g: render3d::Gpu&) {
     g.pre_lit = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT), pre, solid);
     g.ssao = gfx::pipeline(full, embed_shader("frag", shaders::SSAO_FRAG));
     g.ssao_blur = gfx::pipeline(full, embed_shader("frag", shaders::SSAO_BLUR_FRAG));
+    g.gtao = gfx::pipeline(full, embed_shader("frag", shaders::GTAO_FRAG));
     g.planar_resolve = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_RESOLVE_FRAG));
     g.planar_show = gfx::pipeline(full, embed_shader("frag", shaders::TONE_FN, shaders::PLANAR_SHOW_FRAG));
     g.planar_mip = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_MIP_FRAG));
@@ -645,7 +646,7 @@ fn ssao_pass(own: Own&, g: render3d::Gpu&, size: int2) {
     }
     gfx::end_pass();
     gfx::begin_pass(g.ssao_raw, gfx::Texture { 0 }, float4_0);
-    gfx::bind(g.ssao);
+    gfx::bind(if render3d::ssao_gtao { g.gtao } else { g.ssao });
     gfx::bind_texture(gfx::FRAGMENT, 0, g.pre_place, g.linear);
     gfx::bind_texture(gfx::FRAGMENT, 1, g.pre_facing, g.linear);
     gfx::uniforms(gfx::FRAGMENT, 0, render3d::ssao_pass_of(g, q));
@@ -1683,7 +1684,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
                      g.occ, g.kept, g.bake, g.bake_slab, g.bake_table, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend, g.table_lit, g.table_room, g.motes, g.room_floor, g.room_walls, g.room_metals, g.bake_room, g.room_glass, g.room_lace, g.outside, g.bloom_pick, g.bloom_blur, g.bloom_add,
-                     g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.room_planar, g.planar_walls, g.planar_metals, g.planar_glass, g.planar_lace, g.planar_table,
+                     g.pre_room, g.pre_table, g.pre_lit, g.ssao, g.ssao_blur, g.gtao, g.room_planar, g.planar_walls, g.planar_metals, g.planar_glass, g.planar_lace, g.planar_table,
                      g.planar_resolve, g.planar_show, g.planar_mip, g.upscale, g.upscale_cubic];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     release_hdr(own, g);

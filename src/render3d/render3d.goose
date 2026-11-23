@@ -424,6 +424,8 @@ struct Gpu {
     pre_lit:    Pipeline,
     ssao:       Pipeline,
     ssao_blur:  Pipeline,
+    // The light tuner's GTAO trial in place of ssao (ssao_gtao, shaders::GTAO_FRAG).
+    gtao:       Pipeline,
     pre_place:  Texture,
     pre_facing: Texture,
     pre_depth:  Texture,
@@ -2758,6 +2760,10 @@ fn upscale_of(size: int2, screen: int2) -> Upscale {
 // its strength is over 0. ssao_view: the tuner's views of it (shaders::SSAO_FN's).
 var ssao_allowed = true;
 var ssao_view = 0;
+// The light tuner's trial (--gtao on, off by default): the occlusion by GTAO
+// (shaders::GTAO_FRAG) in place of SSAO_FRAG's, its visibility raised to gtao_power.
+var ssao_gtao = false;
+var gtao_power: f32 = 1.5;
 // Its largest spiral, a share of the map's width.
 let SSAO_SPIRAL: f32 = 0.06;
 fn ssao_shown(g: Gpu&) -> bool { ssao_allowed && room_shown(g) && g.room.ssao.x > 0.0 && g.ssao_blur.id != 0 }
@@ -2765,12 +2771,31 @@ fn ssao_size_of(size: int2) -> int2 { int2 { max((size.x + 1) / 2, 1), max((size
 // SSAO_FRAG's block for the map of q texels: the view's row of view_proj that gives the clip's
 // w, the half-size pixels a unit spans at w 1, the reach, bias (rooms::Room.ssao), largest
 // spiral and gain.
-struct SsaoBlock { fwd: float4, look: float4 }
+// GTAO_FRAG's too: ray_x, ray_y a pixel's step across and down the screen's plane in the world
+// (screen_steps); gtao: x its power.
+struct SsaoBlock { fwd: float4, look: float4, ray_x: float4, ray_y: float4, gtao: float4 }
 fn ssao_pass_of(g: Gpu&, q: int2) -> SsaoBlock {
     let m = g.frame.view_proj;
     let across = length(float3 { m.c0.x, m.c1.x, m.c2.x });
+    let r = screen_steps(g.frame, q);
     SsaoBlock { float4 { m.c0.w, m.c1.w, m.c2.w, across * 0.5 * q.x },
-                float4 { g.room.ssao.y * surfaces::METRE, g.room.ssao.z, SSAO_SPIRAL * q.x, g.room.ssao.w } }
+                float4 { g.room.ssao.y * surfaces::METRE, g.room.ssao.z, SSAO_SPIRAL * q.x, g.room.ssao.w },
+                r[0], r[1], float4 { gtao_power, 0.0, 0.0, 0.0 } }
+}
+// How far a pixel across and a pixel down a target of `size` pixels moves the ray from the
+// eye in f's view (in the world, on the plane of the clip's middle depth, which is flat
+// across the view): the screen's plane's directions, a pixel long there.
+fn screen_steps(f: Frame, size: int2) -> float4[2] {
+    let b = inverse(f.view_proj);
+    let p0 = unproject(b, -1.0, 1.0);
+    let dx = (unproject(b, 1.0, 1.0) - p0) * (1.0 / size.x);
+    let dy = (unproject(b, -1.0, -1.0) - p0) * (1.0 / size.y);
+    return [float4 { dx.x, dx.y, dx.z, 0.0 }, float4 { dy.x, dy.y, dy.z, 0.0 }];
+}
+// Where the clip's (x, y) at its middle depth is, by b the inverse of view_proj.
+fn unproject(b: Mat, x: f32, y: f32) -> float3 {
+    let v = b.c0 * x + b.c1 * y + b.c2 * 0.5 + b.c3;
+    return float3 { v.x / v.w, v.y / v.w, v.z / v.w };
 }
 // ROOM_FRAG's and TABLE_FRAG's ssao (shaders::SSAO_FN): the strength, the view, the map's
 // texels a pixel of the pass (its screen, twice the target's when ngfx supersamples); all 0

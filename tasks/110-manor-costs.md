@@ -408,6 +408,25 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
       only if it pays. Fixes its grain on bright surfaces (the door behind its handle, the
       sills) and its shimmer in motion. 2.7 ms in the corner view at 4K, passes 1.2-1.4.
       Prompt: `build/notes/plans/codex-05-ssao.txt`
+- [x] SSAO faster with the same look, and GTAO (2026-11-23, branch ssao-gtao, page
+      `build/notes/ssao-gtao/`; `build/notes/plans/claude-ssao-gtao.txt`). The four views
+      re-baselined first: room-light f90d47f3 matched the glass/lace split's shots (the 4K
+      corner 40 pixels at 1 level, as two runs of one build). Two rounds A B A B, ms a frame,
+      today then the trial, 4K / 5K:
+      - The places as one distance a pixel rebuilt along the pixel's ray (R32F holding the
+        half floats' rounding): down 10.70 to 10.93 / 18.24 to 18.70, corner 14.91 to
+        15.24 / 24.12 to 24.80, room 13.93 to 14.22 / 22.48 to 22.99, menu 13.47 to 13.72
+        / 22.04 to 22.56; not identical (contact shadows on the doors' panels, up to 88
+        levels). Dropped.
+      - The places split into sixteen blocks (deinterleaved), byte-identical: down 11.05 to
+        11.32 / 18.56 to 18.54, corner 15.32 to 15.65 / 24.19 to 25.59, room 14.10 to 14.34
+        / 22.33 to 23.27, menu 13.80 to 13.60 / 21.85 to 22.11 (its trace: split 0.26, the
+        occlusion 0.81 to 0.68, the blur 0.25 to 0.38 ms). Dropped.
+      - GTAO behind the light tuner's `--gtao on`, off: down 10.88 to 11.41 / 18.29 to
+        19.26, corner 14.84 to 15.38 / 23.81 to 24.88, room 14.28 to 14.38 / 22.46 to
+        23.90, menu 13.35 to 13.91 / 22.04 to 23.04; the occlusion pass 0.81 to 1.37 ms.
+        Steadier behind the door's handle and on the sill, lighter on the sill (decision).
+        The user decides. With it off the four views are byte-identical at 4K and 5K.
 - [ ] What runs with nothing on screen using it: the view out, shadow maps, glow, haze; the
       game's view and near-table menu shots. Then the mirror world simplified (crude shapes,
       each material's dominant colour, baked light; no small props ever), as a flagged trial

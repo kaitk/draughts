@@ -670,7 +670,8 @@ board's light:
   resolve: their rings' own occlusion and the paint's dirt shade them. Five
   half-size targets, 22 bytes a pixel (8.8 MB at 1600 × 1000). The light tuner's Light
   section sets its strength, reach, bias and gain, and shows it alone (`--ssao-view
-  alone`) or with all the indirect light keeps (`kept`).
+  alone`) or with all the indirect light keeps (`kept`); `--gtao on` works the occlusion
+  out by GTAO instead (`GTAO_FRAG`, a trial, off by default).
 - **The floor's mirror** (`render3d::planar_pass`, `rooms::Room.planar`), in the standard
   and high tiers, not on a phone (`render3d::planar_allowed`). Both renderers skip the
   mirror draw, resolve and mip generation when all four floor corners, turned with the
