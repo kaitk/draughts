@@ -591,7 +591,8 @@ board's light:
 - **Tabletop lighting** (`TABLE_FRAG`) shares one window and tree transmission sample
   between the wood's diffuse light and the polish's highlight. The captured-pieces
   shadow and occlusion loops run inside bounds that include the light's sweep and the
-  soft edges.
+  soft edges. The polish traces the board's silhouette only where the ray can reach it
+  within the reflection blur.
 - **The games table's own shadow** (`render3d::table_map`): its top and base drawn into a
   1024 × 512 depth map projected along the key onto the floor round the table, drawn again
   only when the key or the table changes. The floor, the walls and the base itself take

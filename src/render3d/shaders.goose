@@ -1915,10 +1915,15 @@ let TABLE_FRAG = """
     // rgb its color lit, a how much of it (0 the ray passes it), its edge softer the
     // farther the ray went (the polish blurs what is far). The board is its rounded outline
     // stood up from the table to its top.
-    vec4 board_seen(vec3 p, vec3 d, vec3 l) {
+    vec4 board_seen(vec3 p, vec3 d, vec3 l, float foot) {
         vec2 b = vec2(INNER + FRAME_W);
         float across = length(d.xz);
         if (across < 1e-4) return vec4(0.0);
+        // The ray gains d.y * t in height and can close at most across * t
+        // of the distance to the board. The blur grows by 0.06 * t.
+        // Leave another 0.01 world units around both limits for rounding.
+        if (d.y > 0.06 && (foot - 0.03) * (d.y - 0.06) >
+            (FRAME_TOP + 0.03 - p.y) * (across + 0.06)) return vec4(0.0);
         float t = 0.0;
         float dist = 0.0;
         for (int i = 0; i < 10; i++) {
@@ -2145,7 +2150,7 @@ let TABLE_FRAG = """
     #endif
         // Near the board the polish shows the board's side in place of the room.
         if (top && r.y > 0.0) {
-            vec4 side = board_seen(p, r, l);
+            vec4 side = board_seen(p, r, l, foot);
             env = mix(env, side.rgb * pool.w, side.a);
         }
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);

@@ -1801,6 +1801,12 @@ to be is in tasks 042, 059, 071, 081, and 086.
   tabletop return full light outside them. The existing per-piece calculation runs inside
   the bounds. Board frame time fell from 22.19 to 19.64 ms at 3840 × 2160 and from 37.15 to
   32.69 ms at 5120 × 2880. Both shots were byte-identical.
+- Reject tabletop reflection rays that cannot reach the board (2026-11-23, task 110,
+  `board_seen`). A ray can close at most its horizontal travel toward the board's outline.
+  Its upward travel limits how far the board's top can still fall within the blur. If
+  even those limits cannot meet, the old trace would return zero. Board frame time fell
+  from 19.64 to 19.20 ms at 3840 × 2160 and from 32.69 to 31.89 ms at 5120 × 2880.
+  Both shots were byte-identical.
 - A cheap mirror world as a trial behind the light tuner's `--mirror-cheap on`, off by
   default (2026-11-23, task 110; `MIRROR_CHEAP`, `CHEAP_TABLE`, `render3d::mirror_cheap`).
   It replaces nothing yet: the user decides on the default. In the floor's mirror the room's
