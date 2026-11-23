@@ -457,8 +457,11 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
       54-55 on the built-in with --gtao on, after the board's speedups. Open: the GPU at its
       lowest clock for 78-86% of the board's frames in Codex's headless 5K trace (heat or a
       power setting, unchecked), and adaptive refresh (ProMotion) through SDL's GPU layer.
-- [ ] GTAO on by default in the high tier (the user, 2026-11-23: it looks better; about 180
-      lines in both renderers behind one switch), SSAO in the standard tier
+- [x] GTAO on by default in the high tier (the user, 2026-11-23: it looks better; about 180
+      lines in both renderers behind one switch), SSAO in the standard tier (2026-11-23:
+      `render3d::ssao_gtao = !mobile` in `app::follow_screen`; both apps build and run
+      headless, gfx and ngfx within 8 levels; the game screen shows no room yet, so nothing
+      changes there; the tablet's SSAO is checked in its round)
 - [ ] Fewer edge pixels under the expensive shaders, so 4× MSAA's extra shading at edges
       costs less (on the Galaxy Tab MSAA costs up to 10 ms in the views with the room's
       edges, where SMAA's flat passes cost 1 to 3; task 115): the books, and other small,

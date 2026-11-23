@@ -2763,8 +2763,9 @@ var ssao_allowed = true;
 // gives them the walls' broad one (the light tuner's --box off, to weigh it on a tablet).
 var sharp_box_allowed = true;
 var ssao_view = 0;
-// The light tuner's trial (--gtao on, off by default): the occlusion by GTAO
-// (shaders::GTAO_FRAG) in place of SSAO_FRAG's, its visibility raised to gtao_power.
+// The occlusion by GTAO (shaders::GTAO_FRAG) in place of SSAO_FRAG's, its visibility raised
+// to gtao_power: the high tier's (app::follow_screen, on a desktop) and the light tuner's
+// default (--gtao off for SSAO).
 var ssao_gtao = false;
 var gtao_power: f32 = 1.5;
 // Its largest spiral, a share of the map's width.

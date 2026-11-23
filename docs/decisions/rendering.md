@@ -1812,6 +1812,10 @@ to be is in tasks 042, 059, 071, 081, and 086.
   change by more than 8 over a 1 cm eye move from 646 to 70; on the sill from 0.56 to 0.39
   and 2,174 to 1,370, but the sill is lighter (its occlusion's mean 190 to 205 of 255: its
   back corner shades less). The four views change by up to 101 levels at 4K.
+- The high tier's occlusion is GTAO, the standard tier's SSAO (2026-11-23, task 110, the
+  user: GTAO looks better): `render3d::ssao_gtao` follows the desktop (`!mobile`) beside
+  `ssao_allowed` in `app::follow_screen`, in both renderers; a tablet keeps SSAO for its
+  cost, a phone has neither. Replaces GTAO as a tuner trial only (the entry above).
 - Keep the full mirror target when the floor can show (2026-11-23, task 107).
   Rejected scissoring the mirror draw, resolve and mips to the projected floor bounds
   plus 64 or 192 texels. The experiment fell back to the full target at 70% coverage
