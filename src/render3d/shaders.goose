@@ -3512,18 +3512,6 @@ let ROOM_FRAG = """
             vec2 t = (n4.xy * 2.0 - 1.0) * sgn;
             float cup = -plank.w * (2.0 * pk.across - 1.0);
             vec2 tilt = planks.z * (vec2(h12(id + 14.1), h12(id + 15.7)) * 2.0 - 1.0);
-            // The joints: how far the board's sides and ends are (from the gap's middle).
-            float fpw = max(length(dx), length(dy));
-            float d_a = min(pk.across, 1.0 - pk.across) * w;
-            float d_l = min(pk.along, plank.y - pk.along) * w;
-        #ifdef FLOOR_JOINTS
-            // Each edge eased over JOINT_ROUND, falling toward the gap: tilted a little where a
-            // pixel is narrower than the ease, faded out as it grows past it (joint_band below
-            // stands for it there), so the edge never flickers.
-            float joint_seen = 1.0 - smoothstep(0.5 * JOINT_ROUND, 2.0 * JOINT_ROUND, fpw);
-            vec2 ease = clamp((plank.z + JOINT_ROUND - vec2(d_a, d_l)) / (JOINT_ROUND + fpw), 0.0, 1.0);
-            tilt += JOINT_TILT * joint_seen * ease * vec2(pk.across < 0.5 ? -1.0 : 1.0, pk.along < 0.5 * plank.y ? -1.0 : 1.0);
-        #endif
             vec2 s = vec2(t.x + cup + tilt.x, t.y + tilt.y);
             vec2 suv = dir_a * s.x + dir_l * s.y;
             n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
@@ -3533,6 +3521,9 @@ let ROOM_FRAG = """
             n_film = normalize(vec3(0.0, 1.0, 0.0) + u_dir * sfuv.x + v_dir * sfuv.y);
         #endif
             // The joints, open a little and dark with old wax.
+            float fpw = max(length(dx), length(dy));
+            float d_a = min(pk.across, 1.0 - pk.across) * w;
+            float d_l = min(pk.along, plank.y - pk.along) * w;
             float joint = max(line_cover(d_a, plank.z, fpw), line_cover(d_l, plank.z, fpw));
             // Worn: the paths round the table and along the room lighter and duller, the
             // floor along the walls darker under more wax.
@@ -3560,12 +3551,6 @@ let ROOM_FRAG = """
             albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
             rough = mix(rough, 0.6, joint);
             fine *= 1.0 - 0.5 * joint;
-        #ifdef FLOOR_JOINTS
-            // The eased edges, where a pixel is too wide to tilt them: a faint shade along the
-            // gap, the pixel's share of the ease.
-            float joint_band = max(line_cover(d_a, plank.z + JOINT_ROUND, fpw), line_cover(d_l, plank.z + JOINT_ROUND, fpw)) - joint;
-            fine *= 1.0 - JOINT_SHADE * (1.0 - joint_seen) * joint_band;
-        #endif
         #ifdef PLANAR_FLOOR
             // Each board waxed and worn a little its own way: its mirror stronger or weaker,
             // and sharper or softer, so the reflection steps from board to board.
@@ -4206,10 +4191,6 @@ let PLANAR_FLOOR = "#define PLANAR_FLOOR 1\n";
 // there.
 let FLOOR_SHADE = "#define FLOOR_SHADE 1\n";
 let FLOOR_NO_TABLE = "#define FLOOR_NO_TABLE 1\n";
-// The floor's joints eased (the light tuner's --floor-joints eased): each board's edge
-// rounded over JOINT_ROUND (world units: 2.5 mm), its normal tilted JOINT_TILT at the gap,
-// and where pixels are too wide for that, a shade JOINT_SHADE along it. Without it, flat.
-let FLOOR_JOINTS = "#define FLOOR_JOINTS 1\n#define JOINT_ROUND 0.08\n#define JOINT_TILT 0.08\n#define JOINT_SHADE 0.15\n";
 // The room's box seen sharply (room_reflection): the metals outside the mirror, and the
 // floor without the mirror. The rest takes room_wide, which room_reflection is for them (a
 // surface not a metal has px 1, so sharp 0).

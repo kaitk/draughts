@@ -721,12 +721,12 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
                             gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
     let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
-    h.floor = gfx::pipeline(room_vert, tuned_or(TUNED_FLOOR_HDR, embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)), opaque);
-    h.planar = gfx::pipeline(room_vert, tuned_or(TUNED_FLOOR_HDR + 3, embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)), opaque);
-    h.floor_kinds = [gfx::pipeline(room_vert, tuned_or(TUNED_FLOOR_HDR + 1, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)), opaque),
-                     gfx::pipeline(room_vert, tuned_or(TUNED_FLOOR_HDR + 2, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)), opaque)];
-    h.planar_kinds = [gfx::pipeline(room_vert, tuned_or(TUNED_FLOOR_HDR + 4, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)), opaque),
-                      gfx::pipeline(room_vert, tuned_or(TUNED_FLOOR_HDR + 5, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)), opaque)];
+    h.floor = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.planar = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    h.floor_kinds = [gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque),
+                     gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::SHARP_BOX, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque)];
+    h.planar_kinds = [gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_SHADE, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque),
+                      gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_FLOOR, shaders::FLOOR_NO_TABLE, shaders::PLANAR_FLOOR, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque)];
     h.walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_WALLS, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
     h.paint = gfx::pipeline(room_vert, if paint { tuned_frags[TUNED_PAINT_HDR] } else { embed_shader("frag", shaders::ROOM_PAINT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
     h.sill = gfx::pipeline(room_vert, if sill { tuned_frags[TUNED_SILL_HDR] } else { embed_shader("frag", shaders::ROOM_SILL, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }, opaque);
@@ -1210,8 +1210,7 @@ fn lit_frag(look: i32, pieces: i32) -> const u8[:] {
 // the mirror. Empty, the app's. The mirror's pass takes none but the sills' switched one:
 // its light is linear, before any toe. The HDR target's painted wood and sills with the
 // tuner's switches (render3d::make_hdr), then the HDR target's view out (the park on the
-// ground, render3d::park_ground); the HDR target's floor with its joints eased
-// (shaders::FLOOR_JOINTS, the tuner's --floor-joints).
+// ground, render3d::park_ground).
 let TUNED_LIT = 0;
 let TUNED_TABLE = 4;
 let TUNED_TABLE_ROOM = 5;
@@ -1229,9 +1228,8 @@ let TUNED_SILL_MIRROR = 16;
 let TUNED_PAINT_HDR = 17;
 let TUNED_SILL_HDR = 18;
 let TUNED_OUTSIDE_HDR = 19;
-let TUNED_FLOOR_HDR = 20;   // the HDR floor, its pieces' two kinds, then the same three with the mirror
-let TUNED_FRAGS = 26;
-var tuned_frags: const u8[:][TUNED_FRAGS] = [""; TUNED_FRAGS];
+let TUNED_FRAGS = 20;
+var tuned_frags: const u8[:][TUNED_FRAGS] = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
 fn tuned_or(i: i64, frag: const u8[:]) -> const u8[:] { if tuned_frags[i].len > 0 { tuned_frags[i] } else { frag } }
 
 // The table's shader with its shadow filtered as `look` says, as the lit one's (lit_frag).

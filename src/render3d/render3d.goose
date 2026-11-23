@@ -508,22 +508,22 @@ struct Gpu {
 // drawn (make_hdr), and again for other pieces or the light tuner's switches of the paint and
 // the sills, which they were made for.
 struct HdrPipelines {
-    lit:    Pipeline,
-    fading: Pipeline,
-    table:  Pipeline,
-    floor:  Pipeline,
-    planar: Pipeline,
+    lit:     Pipeline,
+    fading:  Pipeline,
+    table:   Pipeline,
+    floor:   Pipeline,
+    planar:  Pipeline,
     // The floor's pieces (SunDerived), by kind: without the sun, without the table's map.
     floor_kinds:  Pipeline[2],
     planar_kinds: Pipeline[2],
-    walls:        Pipeline,
-    paint:        Pipeline,
-    sill:         Pipeline,
-    metals:       Pipeline,
-    glass:        Pipeline,
-    outside:      Pipeline,
-    motes:        Pipeline,
-    tone:         Pipeline,
+    walls:   Pipeline,
+    paint:   Pipeline,
+    sill:    Pipeline,
+    metals:  Pipeline,
+    glass:   Pipeline,
+    outside: Pipeline,
+    motes:   Pipeline,
+    tone:    Pipeline,
     // The glow's (glow_pass): its first pick, a level halved, a level widened back up.
     glow_first: Pipeline,
     glow_down:  Pipeline,
@@ -864,8 +864,8 @@ fn floor_pieces(g: Gpu&, b: SurfacesBlock) -> i64, i64 {
     // The band of v the sun can reach, and the cuts across it, in u + j (v + S) (world
     // units); none lit where shell_open gives none (toward under 0.05).
     var band = float2 { 1e9, 1e9 };
-    var cuts:  f32[SUN_CUTS] = [0.0; SUN_CUTS];
-    var spans: float2[4]     = [float2_0; 4];
+    var cuts: f32[SUN_CUTS] = [0.0; SUN_CUTS];
+    var spans: float2[4] = [float2_0; 4];
     var n_spans = 0;
     var n_cuts = 0;
     let lit = toward >= 0.05 && l.y > 0.02;
@@ -911,10 +911,10 @@ fn floor_pieces(g: Gpu&, b: SurfacesBlock) -> i64, i64 {
     let hi = float2 { g.floor_corners[2].pos.x, g.floor_corners[2].pos.z };
     let rows: f32[4] = [lo.y, clamp(band.x, lo.y, hi.y), clamp(band.y, lo.y, hi.y), hi.y];
     var nv = 0;
-    var counts: i64[FLOOR_KINDS]  = [0; FLOOR_KINDS];
-    var kinds:  i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
+    var counts: i64[FLOOR_KINDS] = [0; FLOOR_KINDS];
+    var kinds: i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
     var starts: i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
-    var sizes:  i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
+    var sizes: i64[FLOOR_PIECES] = [0; FLOOR_PIECES];
     var pieces = 0;
     for row in 3 {
         guard rows[row + 1] > rows[row] else { continue; }
