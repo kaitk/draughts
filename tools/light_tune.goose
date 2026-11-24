@@ -92,7 +92,8 @@
 //       [--lace-fold-ao K (how much the folds' valleys darken that fill, 1.5, the deepest to 0.4)]
 //       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
 //       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
-//       [--dump-light PATH (the probes' atlas, a float a line, with --shot)] [--light-ref PATH (the baked light worked
+//       [--dump-light PATH (the probes' atlas, a float a line, with --shot)]
+//       [--dump-room-block PATH (the room's Surfaces block as its raw bytes, with --shot; scripts/room_fixed.py)] [--light-ref PATH (the baked light worked
 //       out finely on the room's surfaces, tools/light_ref.goose; --light-ref-stride N, --light-ref-old)]
 //       [--ssao-view off|alone|kept|light|broken (light: the indirect light alone on grey; broken: red where a
 //       term isn't finite, yellow where the light is over 64)]
@@ -129,6 +130,8 @@
 //       with the phone's tier: no screen-space occlusion, no floor mirror, no HDR, 4 shadow taps, unless
 //       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the scene's antialiasing; smaa by default, msaa 4×; the 2 key switches MSAA and SMAA live)]
 //       [--box on|off (the phone tier's floor and metals reflecting the room's box sharply; on)]
+//       [--room-fixed on|off (the phone tier's room shaders with the room's block as constants,
+//       src/render3d/room_fixed.goose; off)]
 //       [--window-map on|off (the shell's windows' pattern from the window's light map, render3d::window_map_on;
 //       off traces it a pixel as before; on)] [--phone-leaves static|off (the phone's tier's leaves baked into the
 //       map at one phase of the wind, or none; static)] [--leaves-moving on (the desktop's leaves lit a pixel, not
@@ -1422,6 +1425,8 @@ fn main() {
     // The window's light map (render3d::window_map_on), or the windows traced a pixel as before;
     // the phone's tier's leaves baked into it still, or none.
     render3d::window_map_on = !(has(argv, "--window-map") && argv[flag_value(argv, "--window-map")] == "off");
+    // The phone's tier's room shaders with the room's block as constants (render3d::room_fixed_on).
+    render3d::room_fixed_on = has(argv, "--room-fixed") && argv[flag_value(argv, "--room-fixed")] == "on";
     render3d::phone_leaves = if has(argv, "--phone-leaves") && argv[flag_value(argv, "--phone-leaves")] == "off" { render3d::LEAVES_OFF }
                              else { render3d::LEAVES_STATIC };
     let leaves_moving_flag = has(argv, "--leaves-moving") && argv[flag_value(argv, "--leaves-moving")] == "on";
@@ -1751,6 +1756,11 @@ fn main() {
                 var out: u8[>..] = [];
                 for i in room_light::ATLAS_FLOATS { format(out, render3d::light_atlas[i], "\n"); }
                 guard write_file(argv[dump_light], out[..]) else { abort("could not write the probes"); }
+            }
+            let dump_block = flag_value(argv, "--dump-room-block");
+            if dump_block > 0 {
+                let one: render3d::SurfacesBlock[1] = [render3d::surfaces_block(g)];
+                guard write_file(argv[dump_block], bytes_of(one)) else { abort("could not write the room's block"); }
             }
             let light_ref_at = flag_value(argv, "--light-ref");
             if light_ref_at > 0 && g.light_ms > 0.0 {

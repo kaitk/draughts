@@ -379,11 +379,13 @@ struct Gpu {
     floor_corners: corner_map::RoomVertex[4],
     sun:           SunDerived,
     // The window's light map (window_map), RGBA8 with its mips, what it was baked from, its
-    // bake's pipeline, and whether the room's pipelines read it (room_mapped).
+    // bake's pipeline, and whether the room's pipelines read it (room_mapped), and whether
+    // they take the room's block as constants (room_fixed, room_fixed_on).
     window_map:      Texture,
     window_map_for:  float4[WINDOW_MAP_KEY],
     window_map_bake: Pipeline,
     room_mapped:     bool,
+    room_fixed:      bool,
     // The room's pipelines, one a material group (room_group), made when first wanted
     // (make_room) for the tier: room_ssao, with the screen's maps (ssao_allowed), or a
     // phone's without them. The floor here sees the room's box; room_planar the mirror.
@@ -931,6 +933,9 @@ fn sun_derived<O>(o: O&, g: Gpu&) {
 // the table or the dust, which trace the windows as before. window_map_on false: shell_open
 // a pixel everywhere (the light tuner's --window-map off).
 var window_map_on = true;
+// The phone's tier's room shaders with the Surfaces block as constants (render3d_gpu's
+// room_frag_fixed, room_fixed.goose), the light tuner's --room-fixed on (task 115).
+var room_fixed_on = false;
 let WINDOW_MAP_W = 2048;   // shaders::WINDOW_MAP_SIZE: 7.7 m by 3.15 m, a texel about 3.8 mm
 let WINDOW_MAP_H = 832;
 // The phone's tier's leaves (its shaders light none of their own): baked into the map at the
