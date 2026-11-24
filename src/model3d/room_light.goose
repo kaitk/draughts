@@ -87,6 +87,10 @@ let TABLE_ALBEDO = float3 { 0.12, 0.06, 0.035 };
 // cases' oak follow surfaces::WALL_OAK's tint: (0.034, 0.014, 0.005) and (0.05, 0.028,
 // 0.014) before it (2026-11-21).
 let CASE_ALBEDO = float3 { 0.066, 0.039, 0.022 };
+// The stove's glaze in its corner (room_shell's stove): ROOM_FRAG's STOVE_GLAZE, linear,
+// less its coat's reflection and its joints' and mouldings' shade; taken on the two walls'
+// planes behind it, as the bookcases' fronts aren't (2026-11-24).
+let STOVE_ALBEDO = float3 { 0.53, 0.58, 0.45 };
 // The ceiling's and the cornice's limewash, surfaces::LOOK's two ends' mean, linear.
 let CEILING_ALBEDO = float3 { 0.446, 0.383, 0.279 };
 
@@ -228,6 +232,7 @@ fn case_depth(x: f32, h: f32) -> f32 {
 fn wall_albedo(wall: i64, along: f32, h: f32) -> float3 {
     let s = room_shell::LIBRARY;
     if wall == room_shell::HALL_WALL && case_depth(along, h) > 0.0 { return CASE_ALBEDO; }
+    if room_shell::stove_on && room_shell::stove_reach(wall) > along && h < room_shell::STOVE_TOP { return STOVE_ALBEDO; }
     for k in s.count {
         let o = s.openings[k];
         guard o.kind == room_shell::DOOR && o.wall == wall else { continue; }

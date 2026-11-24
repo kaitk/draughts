@@ -116,6 +116,10 @@ pieces; the design boards still set the layout, glass, and controls.
   `--fps-seconds S` prints each half second's line and quits, headless too. Uncapped on
   the Mac the GPU clocks down until it is busy, so a light scene reads about 3.4 ms
   whatever it draws; a cost shows once it passes that.
+- The stove (2026-11-24, `build/notes/stove-build/`): `build/stove-build/shots.sh EXE TAG
+  [SIZE] [NAMES]` takes the four views, the board, the stove view and three close-ups
+  (`close` the corner at eye height, `top` the frieze, cornice and crest, `foot` the
+  plinth and the door); `EXTRA="--stove-crown flat"` before it shoots B's crown.
 - The library's whole room in the light tuner (`model3d::room_shell`, task 107's demo):
   `--room-surfaces on` (O) shows the shell (walls, wainscot, three box windows, two doors,
   cornice, ceiling), `--shell off` (S) the panelled wall alone as before. `--view

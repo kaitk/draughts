@@ -827,6 +827,30 @@ Its picture (`design/materials/rug.png`, 1280 × 880 RGBA8 at 2.5 mm a texel wit
 mips, 6 MB on the GPU) is drawn by `tools/materials/rug.py`, a knot a texel, with no
 light in it. The light tuner's `--rug off` leaves it out.
 
+### The library's stove
+
+A pale celadon tiled stove stands in the corner of the hall wall and the stove's end wall,
+6 cm off both, its front corner cut (`room_shell::stove`, `stove.goose`): a tiled plinth
+with a torus, a lower body 3 cm proud with the warming niche's brass door, a band of
+rosette tiles under a cyma at the waist, an upper body of six rows of 22 × 24 cm tiles, a
+frieze of palmette tiles, a cornice, and a crown of three palmette plates, 3.42 m in all.
+It is part of the shell's mesh, about 1,200 triangles: the bodies are prisms round the
+outline, its two corners at the cut rounded 15 mm, and the mouldings are their profiles
+swept round the same outline. The wainscot stops 2 cm short of it on both walls, and the
+wallpaper runs behind it to the floor.
+
+The tiles are not geometry. Each face carries uv in metres along it and up, its tiles
+whole and centred, and the glaze (`ROOM_FRAG`'s `MAT_TILE`, in the metals' group, which
+sees the room's box sharply) draws them: lime-grout joints that fade to their share under
+a pixel, each tile tilted up to 1.2° and rolled over toward its joints within 10 mm, its
+glaze pooled darker in a band inside the roll, its value and hue a little its own. So the
+windows' reflection breaks tile by tile. The rosettes, the palmettes and the crest's faces
+take their slopes from a small relief atlas made at startup (`room_shell::stove_relief`,
+256 × 256 RGBA8 with five mips), the glaze darker in their hollows. The room's baked light
+sees the stove as its pale albedo on the two walls behind it (`room_light::STOVE_ALBEDO`).
+The crown is a part of its own: the light tuner's `--stove-crown flat` gives a flat top
+with two ball finials instead, and `--stove off` leaves the stove out.
+
 ### The library's shutters and doors
 
 Each window's reveals hold a pair of working shutters folded flat

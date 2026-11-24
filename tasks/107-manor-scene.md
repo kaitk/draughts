@@ -877,6 +877,19 @@ gain needs direct compressed-sample measurements.
       110. Still off: the design reads cleaner and more graphic than a real old rug (no
       motifs drawn by hand, the border's vine stops short at the corners), the pile has no
       sheen or velvet at grazing angles, and the rug isn't in the room's probes' bake
+- [x] The library's tiled stove (2026-11-24, `build/notes/stove-build/`): option A of
+      `build/notes/stove/`, a pale celadon corner stove with a cut front corner, 3.42 m,
+      6 cm off the hall wall and the stove's end wall: a tiled plinth with a torus, a lower
+      body 3 cm proud with the brass warming-niche door on face A, a rosette band under a
+      cyma at the waist, six rows of 22 × 24 cm tiles, a palmette frieze, the cornice, and
+      A's crest of three palmette plates; about 1,200 triangles in the shell's mesh. The
+      tiles are the glaze's (`MAT_TILE` in the metals' group): grout joints, each tile
+      tilted and rolled at its edges so the windows break tile by tile, the relief from an
+      atlas made at startup. The crown swaps (`--stove-crown flat`, B's top with finials),
+      `--stove off` leaves it out; the wainscot stops 2 cm past its plinth. The game's shot
+      unchanged; the room a little brighter, as the bake takes the pale stove; costs in
+      task 110. Still off: the crest not pierced, no crazing, no sun shadow or corner
+      shade from it, the colour reads cream under the warm light; the tablet not checked
 - [ ] The floor and rug, seen in the game's views (task 106)
 - [ ] The table's props: the chess clock (100), the pieces' box (102), the score sheet and
       pencil (103)

@@ -278,6 +278,15 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   floor reflects the app's look in the tuner's old mode. A split group drawn in another
   order than before moves pixels where two groups' faces tie in depth: draw it where its
   triangles were drawn before (the sills before the paint, as in the walls' draw).
+- A furniture piece of the shell with a material of its own can share a group's shader
+  rather than add a group (the stove's glaze, `MAT_TILE` 15, in the metals', 2026-11-24):
+  its branch first in that group's chain, its texture after the group's own in
+  `ROOM_HEAD` (the screen maps move up) and `room_textures`, `room_group` placing its kind.
+  The kinds past `MAT_BOOK` are tested in order in `ROOM_FRAG` (`kind > 14.5` before the
+  books' `> 13.5`), in the cheap mirror's chain, and by `corner_map::shaded` (`< 13.5`);
+  check each when adding one. Its geometry from plan points (`stove.goose`'s
+  `stove_world`, a plan normal as `(-x, up, -y)`) needs no wall builder; `plan_builder`
+  gives one on any face for `box_m`, `knuckle` and `lathe`.
 - Something flat that lies on the floor (the rug, 2026-11-24) goes into the floor's own
   shader, not a mesh: `ROOM_FRAG`'s floor block mixes its albedo, roughness and normal in
   by cover before the floor's contact terms, so it takes the floor's light for one tap. A

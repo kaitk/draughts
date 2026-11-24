@@ -2568,9 +2568,11 @@ let ROOM_HEAD = """
     #ifdef ROOM_METALS
     // The books' spines (model3d::books): tone, gilt or ink, label, wear.
     layout(set = 2, binding = 5) uniform sampler2D book_atlas;
+    // The stove's relief (room_shell::stove_relief): its slopes across and up, its height.
+    layout(set = 2, binding = 6) uniform sampler2D stove_relief;
     #ifndef NO_SSAO
-    layout(set = 2, binding = 6) uniform sampler2D ssao_map;
-    layout(set = 2, binding = 7) uniform sampler2D pre_place;
+    layout(set = 2, binding = 7) uniform sampler2D ssao_map;
+    layout(set = 2, binding = 8) uniform sampler2D pre_place;
     #endif
     #endif
     #ifdef ROOM_GLASS
@@ -3242,6 +3244,18 @@ let ROOM_FRAG = """
     const vec2 RUG_TEX = vec2(3.2, 2.2);
     const float RUG_IN = 0.1;
     const float RUG_THICK = 0.008;
+    // The stove's glaze (room_shell's stove.goose and stove_relief.goose): the body's colour
+    // under its clear coat and the lime grout's (sRGB), a tile (metres), a tile's tilt at most
+    // (its tangent, 1.2°), how far in from a joint it rolls over, the coat's roughness, the
+    // relief atlas's full-scale slope and its rows of the palmette.
+    const vec3 STOVE_GLAZE = vec3(0.804, 0.835, 0.745);
+    const vec3 STOVE_GROUT = vec3(0.659, 0.651, 0.596);
+    const vec2 STOVE_TILE = vec2(0.22, 0.24);
+    const float STOVE_TILT = 0.021;
+    const float STOVE_ROLL = 0.010;
+    const float STOVE_ROUGH = 0.08;
+    const float STOVE_SLOPE = 1.5;
+    const float STOVE_PALMETTE_ROWS = 176.0;
     // The table's base (mesh::table_base): its column's mean radius, and a leg's curve
     // from its root over the knee to the scroll's foot, out from the axis and up from the
     // floor (world units, mesh::LEG's and SCROLL_MID's), its half thickness.
@@ -4173,7 +4187,64 @@ let ROOM_FRAG = """
         }
     #endif
     #ifdef ROOM_METALS
-        if (kind > 13.5) {
+        if (kind > 14.5) {
+            // The stove's glaze (room_shell::stove): its part in its fraction (stove.goose's
+            // GLAZE_*), its uv metres along the face and up. Each tile is its own cell: tilted
+            // a little, rolled over toward its joints within STOVE_ROLL, its glaze pooled
+            // darker and greener in a band inside the roll and paler on its crest, its value
+            // and hue a little its own, under a slow cloud; the joints lime grout, recessed,
+            // faded to their share where they are under a pixel. The relief tiles (the waist's
+            // rosettes, the frieze's palmettes) and the crest's plates take the atlas's slopes,
+            // the glaze darker in the hollows. A clear coat over the body: it sees the room
+            // sharp (SHARP_BOX's px), so the windows break tile by tile.
+            vec2 gx = dFdx(v_uv);
+            vec2 gy = dFdy(v_uv);
+            float code = floor(own * 8.0);
+            float pw = max(max(abs(gx.x), abs(gy.x)), max(abs(gx.y), abs(gy.y))) + 1e-6;
+            vec2 size = vec2(STOVE_TILE.x, code < 2.5 ? STOVE_TILE.y : (code < 3.5 ? 0.08 : 0.16));
+            vec2 q = v_uv / size;
+            vec2 cell = floor(q);
+            vec2 f = q - cell;
+            vec2 e = min(f, 1.0 - f) * size;
+            if (code < 0.5) e.y = 1.0;
+            if (code > 4.5) e = vec2(1.0);
+            float edge = min(e.x, e.y);
+            vec3 tg = vec3(-ng.z, 0.0, ng.x);
+            float tl = length(tg);
+            tg = tl > 0.2 ? tg / tl : vec3(0.0);
+            vec3 bt = tl > 0.2 ? normalize(vec3(0.0, 1.0, 0.0) - ng * ng.y) : vec3(0.0);
+            vec2 id = cell + vec2(0.0, 61.0 * code);
+            vec4 rnd = vec4(h12(id), h12(id + 17.31), h12(id + 41.7), h12(id + 73.1));
+            float sharp = 1.0 - smoothstep(0.003, 0.012, pw);
+            vec2 lean = vec2(0.0);
+            vec3 body = srgb(STOVE_GLAZE) * (0.96 + 0.08 * rnd.z) * (0.97 + 0.06 * vnoise(v_uv * vec2(3.0, 2.5)));
+            body *= mix(vec3(1.0), rnd.w > 0.5 ? vec3(0.98, 1.0, 1.035) : vec3(1.025, 1.0, 0.955), abs(rnd.w - 0.5) * 2.0);
+            if (code < 4.5) {
+                lean = (rnd.xy - 0.5) * (2.0 * STOVE_TILT);
+                float roll = 1.0 - smoothstep(0.0, STOVE_ROLL, edge);
+                vec2 toward = vec2(f.x > 0.5 ? 1.0 : -1.0, f.y > 0.5 ? 1.0 : -1.0);
+                lean += (e.x < e.y ? vec2(toward.x, 0.0) : vec2(0.0, toward.y)) * (0.9 * roll * roll * sharp);
+                float pooled = smoothstep(0.004, 0.009, edge) * (1.0 - smoothstep(0.014, 0.026, edge));
+                float crest = smoothstep(0.0015, 0.003, edge) * (1.0 - smoothstep(0.003, 0.007, edge));
+                body = mix(body, body * vec3(0.8, 0.87, 0.78), 0.5 * pooled) * (1.0 + 0.07 * crest * sharp);
+            }
+            if (code > 2.5 && code < 5.5) {
+                vec2 at = code > 4.5 ? v_uv : f;
+                vec2 sz = code > 4.5 ? vec2(1.0) : size;
+                float rows = code < 3.5 ? 256.0 - STOVE_PALMETTE_ROWS : STOVE_PALMETTE_ROWS;
+                float first = code < 3.5 ? STOVE_PALMETTE_ROWS : 0.0;
+                vec2 k = vec2(1.0 / sz.x, -rows / 256.0 / sz.y);
+                vec4 r = textureGrad(stove_relief, vec2(at.x, (first + (1.0 - at.y) * rows) / 256.0), gx * k, gy * k);
+                vec2 slope = (r.rg * 2.0 - 1.0) * STOVE_SLOPE;
+                lean -= slope;
+                body *= (1.0 - 0.14 * clamp(length(slope), 0.0, 1.0) * (1.0 - r.b)) * (1.0 + 0.04 * r.b);
+            }
+            float gw = 0.0015;
+            float grout = clamp((gw - edge) / pw + 0.5, 0.0, 1.0) * min(1.0, 2.0 * gw / pw);
+            n = normalize(ng + (tg * lean.x + bt * lean.y) * (1.0 - grout));
+            albedo = mix(body, srgb(STOVE_GROUT) * 0.7, grout);
+            rough = mix(STOVE_ROUGH, 0.9, grout);
+        } else if (kind > 13.5) {
             // A book (model3d::books): its code in its fraction, the cover (32), the label
             // (4), ink rather than gilt, its fade. The spine's mask colours it as
             // tools/materials/books.py's colour() does, in sRGB: the label over the cover,
@@ -4370,7 +4441,7 @@ let ROOM_FRAG = """
         // The brass sees the room sharp over half its pixel's spread of directions (a
         // quarter sparkled on the hinges: the sun's leaves on the walls it shows), the gilt
         // over a quarter.
-        float px = metal > 0.5 ? (metal > 0.9 ? 0.5 : 0.25) * length(fwidth(rv)) : 1.0;
+        float px = metal > 0.5 ? (metal > 0.9 ? 0.5 : 0.25) * length(fwidth(rv)) : (kind > 14.5 ? 0.5 * length(fwidth(rv)) : 1.0);
     #endif
         vec3 env = room_baked.x > 0.5 ? room_reflection(p, v_local, rv, ar, nov, px) : sh_eval(rv) * params.z;
     #else
@@ -4554,6 +4625,9 @@ let ROOM_FRAG = """
             albedo = srgb(paint.rgb);
         } else if (kind < 13.5) {
             albedo = srgb(brass.rgb);
+        } else if (kind > 14.5) {
+            // The stove's glaze, its body's colour.
+            albedo = srgb(vec3(0.804, 0.835, 0.745)) * 0.95;
         } else {
             // A book: its cover, faded as the room's shader fades it.
             float code = floor(own * books.z);

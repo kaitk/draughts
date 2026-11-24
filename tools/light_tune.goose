@@ -74,7 +74,7 @@
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
-//       [--rug on|off (the rug under the games table)]
+//       [--rug on|off (the rug under the games table)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
 //       [--paint quiet|old] [--paint-off fillets,tilt,dirt,joints,tile] [--paint-relief K]
 //       [--sill vasalemma|old] [--sill-off speckle,band,arris,nose,dust (the limestone's parts, each off)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
@@ -1581,6 +1581,9 @@ fn main() {
     var rug_on = !(flag_value(argv, "--rug") > 0 && argv[flag_value(argv, "--rug")] == "off");
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
+    // The stove in its corner, and its crown: A's crest as made, or B's flat top with finials.
+    room_shell::stove_on = !(flag_value(argv, "--stove") > 0 && argv[flag_value(argv, "--stove")] == "off");
+    if flag_value(argv, "--stove-crown") > 0 && argv[flag_value(argv, "--stove-crown")] == "flat" { room_shell::stove_crown = room_shell::CROWN_FLAT; }
     // The painted wood (J): quiet or old, and the quiet one's steps each off alone.
     var paint_quiet = !(flag_value(argv, "--paint") > 0 && argv[flag_value(argv, "--paint")] == "old");
     var paint_on: bool[5] = [true; 5];

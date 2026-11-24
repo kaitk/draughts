@@ -1050,10 +1050,19 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]
         let length = length_of(w);
         let ops = openings_on(s, wi);
         wallpaper(verts, indices, s, b, length, WAINSCOT_TOP, ops);
-        // The wainscot's runs between the openings.
-        var at: f32 = 0.0;
-        var at_end = 0;
-        var edge: f32 = 0.0;
+        // The wainscot's runs between the openings, stopped short of the stove in its corner
+        // (stove.goose), the paper behind it to the floor.
+        let stove_at = stove_reach(wi);
+        let stove_end = if wi == HALL_WALL { length - stove_at } else { 0.0 };
+        if stove_at > 0.0 {
+            quad_m(verts, indices, b, [float3 { stove_end, 0.0, 0.0 }, float3 { stove_end + stove_at, 0.0, 0.0 },
+                                       float3 { stove_end + stove_at, WAINSCOT_TOP, 0.0 }, float3 { stove_end, WAINSCOT_TOP, 0.0 }],
+                   surfaces::MAT_PAPER);
+        }
+        let run_end = if wi == HALL_WALL { stove_end } else { length };
+        var at: f32 = if wi == STOVE_WALL { stove_at } else { 0.0 };
+        var at_end = if wi == STOVE_WALL && stove_at > 0.0 { 2 } else { 0 };
+        var edge: f32 = at;
         for o in ops {
             if o.kind == WINDOW {
                 let a = o.mid - 0.5 * o.width;
@@ -1078,12 +1087,16 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]
             }
             edge = o.mid + reach(o);
         }
-        if length > at + 0.01 { wainscot_run(verts, indices, b, at * k, length * k, RUN_WALL, at_end, 0, seed); }
+        if run_end > at + 0.01 {
+            wainscot_run(verts, indices, b, at * k, run_end * k, RUN_WALL, at_end, if run_end < length { 2 } else { 0 }, seed);
+        }
         // The cornice, mitred into the corners at both ends.
         var flipped: float3[31] = [float3_0; 31];
         for q, i in CORNICE_B { flipped[i] = float3 { q.x, (s.ceiling * 100.0 - q.y), q.z }; }
         sweep(verts, indices, b, flipped[..], 0.0, 0.0, length * k, 1.0, -1.0, surfaces::MAT_PLASTER + 0.5, seed, cm_up());
     }
+    // The stove in the corner of the hall wall and the stove's end (stove.goose).
+    stove(verts, indices, s);
     // The ceiling, one plaster field over the room, facing down.
     let y = s.ceiling;
     let c0 = float2 { min(low.x, high.x), min(low.y, high.y) };

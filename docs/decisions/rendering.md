@@ -771,6 +771,24 @@ to be is in tasks 042, 059, 071, 081, and 086.
   0.1 m is a choice made here. Rejected: a mesh of its own with the floor's lighting in a
   new group (a second floor shader and pipeline for a few millimetres of side), and the
   rug in the room's probes' bake (the floor's mean albedo stands for it).
+- The library's stove is option A of `build/notes/stove/` (2026-11-24, task 107,
+  `build/notes/stove-build/`; `room_shell::stove`): a pale celadon corner stove with a cut
+  front corner, 3.42 m to its crest's top, in the corner of the hall wall and the stove's
+  end wall, 6 cm off both, the brass warming-niche door on face A (toward the room's
+  length, which the views see) rather than the windows' face where style-01 has it. Part
+  of the shell's mesh (about 1,200 triangles), its tiles, joints, tilts and relief drawn by
+  the glaze in the metals' material group, which already sees the room's box sharply, so
+  no group, pipeline or draw is added; the relief comes from a 256 × 256 atlas made in
+  Goose at startup, as the paint's relief tile is, not from a baked PNG. The crown is a
+  part that can be swapped (`stove_crown`: A's crest, or B's flat top with ball finials,
+  the light tuner's `--stove-crown`). The baked light takes the stove as its albedo on the
+  walls' planes behind it; it casts no sun shadow and the corners' map doesn't shade it.
+  Small choices made here: the wainscot stops 1.13 m from the corner on both walls (2 cm
+  past the plinth's torus), its cap returned; the colour is the research's #cdd5be, the
+  grout #a8a698; the crest's plates aren't pierced yet and the glaze has no crazing.
+  Rejected: the tiles as geometry (four times the triangles, and a tile's tilt and roll
+  are what the shader does better), and a material group of its own for the glaze (more
+  pipelines per tier and in the mirror for a few percent of one view's pixels).
 - The library's windows have working shutters (2026-11-21, task 107; option A of
   `build/notes/shutters/`, the user's agreement; `room_shell::SHUTTER_*`,
   `shell_mesh::shutters`): two leaves a side of 0.325 m, as the shell's plan had them and

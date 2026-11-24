@@ -479,6 +479,9 @@ struct Gpu {
     // rug left off the floor.
     rug_map: Texture,
     rug_off: bool,
+    // The stove's relief atlas (room_shell::stove_relief), RGBA8 with its mips, put with the
+    // room's masks.
+    stove_relief: Texture,
     // The quiet paint's relief tile (room_shell::relief_tile), RGBA8 with its mips, made
     // with the room's bake, and the time it took (measuring).
     paint_tile:    Texture,
@@ -1208,8 +1211,8 @@ fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY, shell: bool = f
 // The room's materials in groups, each drawn with a pipeline of its own whose shader holds
 // only its materials' code: the floor; the walls' surfaces (the panelling oak, the paper,
 // the plaster and the ceiling, the cord); the painted wood (the doors, their architraves,
-// the windows' joinery and shutters); the sills' stone; the metals (the brass, and the
-// books with their gilt), which see the room's box sharply. The glass and the lace are a
+// the windows' joinery and shutters); the sills' stone; the metals (the brass, the books
+// with their gilt, and the stove's glaze), which see the room's box sharply. The glass and the lace are a
 // shared mesh with an index range for each.
 let GROUP_FLOOR = 0;
 let GROUP_WALLS = 1;
@@ -1314,6 +1317,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool, mirror: bool = f
         add_texture(t, g.stone_tile, g.aniso);
     } else if group == GROUP_METALS {
         add_texture(t, g.book_atlas, g.aniso);
+        add_texture(t, g.stove_relief, g.aniso);
     }
     if group == GROUP_GLASS { add_texture(t, if g.glass_tile.id != 0 { g.glass_tile } else { g.crown_map }, g.aniso); }
     if ssao {
@@ -1570,6 +1574,9 @@ fn put_paper<O>(o: O&, g: Gpu&) {
     g.plaster_tone = put_mask(o, 1);
     g.book_atlas = put_books(o);
     g.rug_map = put_rug(o);
+    var relief: u8[>..] = [];
+    room_shell::stove_relief(relief);
+    g.stove_relief = put_rgba(o, relief, room_shell::STOVE_RELIEF_SIDE, room_shell::STOVE_RELIEF_SIDE, room_shell::STOVE_RELIEF_MIPS);
     let t0 = clock();
     var px: u8[>..] = [];
     room_shell::relief_tile(px);
@@ -1839,7 +1846,8 @@ fn room_bytes(g: Gpu&) -> i64 {
     let floor = if g.floor_noise.id != 0 { 2 * surfaces::FLOOR_NOISE_SIDE * surfaces::FLOOR_NOISE_SIDE } else { 0 };
     let scratches = if g.scratch_tile.id != 0 { texels_with_mips(surfaces::SCRATCH_SIDE) } else { 0 };
     let rug = if g.rug_map.id != 0 { rgba_bytes(RUG_W, RUG_H, RUG_MIPS) } else { 0 };
-    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass + floor + scratches + rug;
+    let stove = if g.stove_relief.id != 0 { room_shell::stove_relief_bytes() } else { 0 };
+    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass + floor + scratches + rug + stove;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the

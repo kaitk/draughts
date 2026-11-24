@@ -28,6 +28,8 @@ import .room_light;
 import .corner_map;
 import .glass_tile;
 import .mesh_close;
+import .stove;
+import .stove_relief;
 
 // The baked surfaces' targets: the plan (the field and the frame's top seen from above),
 // `side` texels square, and the frame map, `side` wide. BAKE_SIDE, or PHONE_BAKE_SIDE on

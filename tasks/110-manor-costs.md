@@ -389,6 +389,17 @@ Add each new cost here as it lands, with its numbers.
   12.66 and 12.60, the menu 12.05 and 12.11, a view filled by the rug 10.75 and 10.95
   (about 0.2 ms); at 5120 × 2880 every view 40 to 50 ms with runs differing by up to 10,
   the rug's change inside that. Not measured on the tablet (task 115).
+- The library's tiled stove (2026-11-24, task 107, `build/notes/stove-build/`): about
+  1,200 triangles in the shell's one mesh (the shortened wainscot gave back 1,265), no new
+  draw or pipeline; its glaze is a branch of the metals' shader with one more texture, a
+  256 × 256 RGBA8 relief atlas with five mips (0.35 MB) made at startup. The light tuner's
+  counter, headless, two rounds A B A B, means before and after (ms) at 3840 × 2160:
+  straight down 10.64 and 10.55, the corner 13.18 and 13.59, the room 12.50 and 12.99, the
+  menu 12.06 and 12.08, the stove view 12.20 and 12.50. Of the corner's and room's 0.4 to
+  0.5 ms, the glaze's code alone is about 0.25 (a build without it: 13.52 against 13.28,
+  12.87 against 12.62), paid by the books' and brass's pixels too; a define variant or a
+  group of its own would pay it back if the tablet needs it. At 5120 × 2880 runs scatter
+  by 2 to 3 ms, no direction. Not measured on the tablet (task 115).
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
 
