@@ -667,7 +667,10 @@ board's light:
   is darkened twice: the books between them and under the shelves, the table's base and
   the floor round it, the curtains' folds, the shutters, the window's frames. Not on the
   doors' panels and architraves within a few cm of a recess, whose mm steps it can't
-  resolve: their rings' own occlusion and the paint's dirt shade them. Five
+  resolve: their rings' own occlusion and the paint's dirt shade them. Not on the shutters'
+  faces toward the room either (the panelled face and the front edges, flagged in the
+  paint's material), where it crawled against the window as the eye moved; behind them it
+  stays. Five
   half-size targets, 22 bytes a pixel (8.8 MB at 1600 × 1000). The light tuner's Light
   section sets its strength, reach, bias and gain, and shows it alone (`--ssao-view
   alone`) or with all the indirect light keeps (`kept`), and `broken` marks the room's

@@ -27,17 +27,18 @@ let PANEL_SAG:  f32 = 0.0008;
 let NO_LINE: f32 = 1.0;
 
 // A painted piece's material: the paint's kind, its fraction a tenth of its own tone (0 to
-// 1), a tenth more with its grain along the wall (else up), a fifth more on a window.
-fn paint_mat(tone: f32, along_wall: bool, window: bool) -> f32 {
+// 1), a tenth more with its grain along the wall (else up), a fifth more on a window, a
+// half more where the screen's occlusion stays off (the shutters' fronts).
+fn paint_mat(tone: f32, along_wall: bool, window: bool, screen_ao: bool) -> f32 {
     return surfaces::MAT_PAINT + 0.099 * clamp(tone, 0.0, 1.0) + (if along_wall { 0.1 } else { 0.0 })
-           + (if window { 0.2 } else { 0.0 });
+           + (if window { 0.2 } else { 0.0 }) + (if screen_ao { 0.0 } else { 0.5 });
 }
 
 // Whether a vertex's material is the quiet paint's (which reads its uv as lines' distances).
 fn quiet_paint(mat: f32) -> bool {
     guard paint_quiet else { return false; }
     let kind = floor(mat + 0.001);
-    return kind == surfaces::MAT_PAINT && mat - kind < 0.5;
+    return kind == surfaces::MAT_PAINT;
 }
 
 fn fillet(window: bool) -> f32 {
@@ -78,7 +79,8 @@ let EDGES = 15;
 // A painted box's parts: its front edges rounded, its side faces drawn, the front's ends a
 // joint's hairline runs along (where another piece meets it), the side faces with a recess
 // `foot` metres out from their back (where dirt gathers), the grain along s or up, a
-// window's or a door's, the side faces' occlusion, its seed (tone and tilt).
+// window's or a door's, the side faces' occlusion, its seed (tone and tilt), and whether the
+// screen's occlusion falls on it.
 struct Piece {
     round:  i64  = 0,
     sides:  i64  = 0,
@@ -89,6 +91,7 @@ struct Piece {
     window: bool = false,
     ao:     f32  = 1.0,
     seed:   i64  = 0,
+    screen_ao: bool = true,
 }
 
 // The distance along a piece from a0 to a1 at a to the nearer of its ends that is a joint
@@ -139,7 +142,7 @@ fn paint_box(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
     let rb = if (p.round & BOTTOM) != 0 { r } else { 0.0 };
     let rt = if (p.round & TOP) != 0 { r } else { 0.0 };
     let t = tilt_of(p.seed);
-    let mat = paint_mat(surfaces::hash(p.seed, 25), p.along, p.window);
+    let mat = paint_mat(surfaces::hash(p.seed, 25), p.along, p.window, p.screen_ao);
     let nf = tilted(float3 { 0.0, 0.0, 1.0 }, t);
     let nl = tilted(float3 { -1.0, 0.0, 0.0 }, t);
     let nr = tilted(float3 { 1.0, 0.0, 0.0 }, t);
@@ -345,13 +348,13 @@ fn dirt_distances(g: Ring&) -> f32[..16] {
 // plane at surfaces::FRAME_Z), with the quiet ring, its occlusion scaled as the wainscot's
 // (surfaces::panel_ao_scale), tilted, its field cupped across its width.
 fn paint_panel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x0: f32, x1: f32, y0: f32, y1: f32,
-               window: bool, seed: i64) {
+               window: bool, screen_ao: bool, seed: i64) {
     var g = quiet_ring(window);
     let dirt = dirt_distances(g);
     let t = tilt_of(seed);
     let tone = surfaces::hash(seed, 25);
-    let up = paint_mat(tone, false, window);
-    let across = paint_mat(tone, true, window);
+    let up = paint_mat(tone, false, window, screen_ao);
+    let across = paint_mat(tone, true, window, screen_ao);
     let rings = g.at.len;
     let last = rings - 1;
     let outs: float3[4] = [float3 { 0.0, -1.0, 0.0 }, float3 { 1.0, 0.0, 0.0 }, float3 { 0.0, 1.0, 0.0 }, float3 { -1.0, 0.0, 0.0 }];
@@ -418,9 +421,10 @@ fn paint_panel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Build
 // on b's plane from x0 to x1 (world units) and y0 to y1 (metres), stiles `stile` metres
 // wide, rails between the panels in `rows`; the leaf `depth` metres thick behind its face,
 // the edges in `round` rounded and those in `sides` drawn (the leaf's own edges); the
-// rails' ends meeting the stiles at a joint.
+// rails' ends meeting the stiles at a joint; the screen's occlusion on it with `screen_ao`.
 fn painted_quiet(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x0: f32, x1: f32, y0: f32, y1: f32,
-                 stile: f32, rows: float2[], depth: f32, round: i64, sides: i64, window: bool, ao: f32, seed: i64&) {
+                 stile: f32, rows: float2[], depth: f32, round: i64, sides: i64, window: bool, ao: f32, screen_ao: bool,
+                 seed: i64&) {
     let k = m();
     let a0 = x0 / k;
     let a1 = x1 / k;
@@ -429,25 +433,25 @@ fn painted_quiet(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Bui
     let ends = BOTTOM | TOP;
     seed++;
     paint_box(verts, indices, b, a0, a0 + stile, y0, y1, z0, z1,
-              Piece { round: round & (LEFT | ends), sides: sides & (LEFT | ends), window: window, ao: ao, seed: seed, .. });
+              Piece { round: round & (LEFT | ends), sides: sides & (LEFT | ends), window: window, ao: ao, seed: seed, screen_ao: screen_ao, .. });
     seed++;
     paint_box(verts, indices, b, a1 - stile, a1, y0, y1, z0, z1,
-              Piece { round: round & (RIGHT | ends), sides: sides & (RIGHT | ends), window: window, ao: ao, seed: seed, .. });
+              Piece { round: round & (RIGHT | ends), sides: sides & (RIGHT | ends), window: window, ao: ao, seed: seed, screen_ao: screen_ao, .. });
     var below = y0;
     for r, i in rows {
         seed++;
         let edge = if i == 0 { BOTTOM } else { 0 };
         paint_box(verts, indices, b, a0 + stile, a1 - stile, below, r.x, z0, z1,
                   Piece { round: round & edge, sides: sides & edge, joints: LEFT | RIGHT, along: true, window: window, ao: ao,
-                          seed: seed, .. });
+                          seed: seed, screen_ao: screen_ao, .. });
         below = r.y;
     }
     seed++;
     paint_box(verts, indices, b, a0 + stile, a1 - stile, below, y1, z0, z1,
-              Piece { round: round & TOP, sides: sides & TOP, joints: LEFT | RIGHT, along: true, window: window, ao: ao, seed: seed, .. });
+              Piece { round: round & TOP, sides: sides & TOP, joints: LEFT | RIGHT, along: true, window: window, ao: ao, seed: seed, screen_ao: screen_ao, .. });
     for r in rows {
         seed++;
-        paint_panel(verts, indices, b, x0 + stile * k, x1 - stile * k, r.x * k, r.y * k, window, seed);
+        paint_panel(verts, indices, b, x0 + stile * k, x1 - stile * k, r.x * k, r.y * k, window, screen_ao, seed);
     }
 }
 
@@ -509,7 +513,7 @@ fn architrave_quiet(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::
     }
     let t = tilt_of(seed);
     let along_wall = abs(side.y) > 0.5;
-    let mat = paint_mat(surfaces::hash(seed, 25), along_wall, false);
+    let mat = paint_mat(surfaces::hash(seed, 25), along_wall, false, true);
     let dir = normalize(p1 - p0);
     for k in 1..n_pts {
         let n = flat[k - 1];

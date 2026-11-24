@@ -1660,6 +1660,17 @@ to be is in tasks 042, 059, 071, 081, and 086.
   The windows' paint keeps it (their casements' inner corners), and so do the wainscot's
   oak panels (their bands came out smooth, no dashes), the sills, the niches and the cap's
   corner. Rejected: a full-size map for those profiles (four times the pass for a few cm).
+- The screen's occlusion stays off the shutters' faces toward the room (2026-11-24, the
+  user; extends the doors' entry above, which kept it on all of the windows' paint). The
+  front leaf's panelled face and the front edges take a half more in the paint's fraction
+  (`joinery::paint_mat`'s `screen_ao`, `Piece.screen_ao`), and `ROOM_PAINT`'s fade line
+  multiplies by one less that flag, so there is no new branch. Seen against the bright
+  window, the occlusion crawled over those faces as the eye moved. The rings' own occlusion
+  and the dirt shade the panels. The back leaf's back and head (toward the reveal), the
+  lining and the reveal keep it, so the gap behind stays shaded. Rejected: marking the
+  shutters as a door's paint (its look, and only 2 to 4.5 cm off by the recesses); a flag in
+  the vertex's occlusion (every room shader clamps it); temporal accumulation for now
+  (task 107: a still frame drawn only on change would never settle).
 - The library's waxed floor reflects the room by a planar mirror in the standard and high
   tiers (2026-11-21, task 107; `render3d::planar_pass`, `shaders::MIRROR_PASS`,
   `PLANAR_FLOOR`, `PLANAR_RESOLVE_FRAG`, `rooms::Room.planar`). Replaces, for the floor,

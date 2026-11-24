@@ -663,10 +663,23 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       each off. The lace's read held inside the edge, nothing drawn past the last row: the
       line's 500-1,100 pixels a view over 8 at 4K, the hem unchanged, the floor's reflection
       of the line a level
-  - [ ] The screen's occlusion (GTAO, the tuner's default) flickers on the window shutters and
+  - [x] The screen's occlusion (GTAO, the tuner's default) flickers on the window shutters and
         behind them while the eye moves (the user, 2026-11-24, comparing SMAA and MSAA in the
         tuner; unclear whether SMAA makes it worse). The user: take it off the shutters' front side,
-        against the window, as the doors' panels skip it; keep it behind them, where it shades the gap
+        against the window, as the doors' panels skip it; keep it behind them, where it shades the gap.
+        Done for the front faces (2026-11-24, `build/notes/shutter-ao/`): the panelled face and the
+        front edges take a half more in the paint's fraction (`joinery::paint_mat`), and
+        `ROOM_PAINT`'s fade turns the occlusion off there. On those faces, two shots 1 cm apart
+        in the occlusion-alone view at 3840 × 2160 changed by a mean of 3.6 levels and 10,357
+        pixels over 8 (the edges moving), against 8.3 levels and 69,762 pixels before. Before to
+        after, the shutters changed by up to 56-61 levels in the room and corner views; outside
+        them the change was at most 12 levels, with 50-81 pixels over 8 on shutters seen through
+        the lace. The room view took about 32 ms a frame before and about 29 ms after, within
+        noise with the user's tuner open
+    - Later, not now: the real fix for the flicker elsewhere (behind the shutters, the
+      casements' corners) is temporal: blend each frame's occlusion with last frame's,
+      reprojected. It has to be weighed against the app drawing only when something changes
+      (a still frame would never settle)
   - [x] The HDR glow pulsing on thin sun strips (the sill, the window's reveals) when the
         eye moves up or down, steady when it moves sideways (`glow-shimmer-*.png`): the
         first downsample averaged 4 x 4 blocks and thresholded after, so a strip a few

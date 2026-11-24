@@ -553,7 +553,7 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
           wb: surfaces::Builder, o: Opening, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
     let plaster = surfaces::MAT_PLASTER;
-    let paint = if paint_quiet { paint_mat(0.5, false, true) } else { surfaces::MAT_PAINT };
+    let paint = if paint_quiet { paint_mat(0.5, false, true, true) } else { surfaces::MAT_PAINT };
     let w = 0.5 * o.width;
     let wo = w + BAND;
     let sill = o.sill;
@@ -643,7 +643,10 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
             seed: i64&) {
     let k = m();
     let w = 0.5 * o.width;
-    let paint = if paint_quiet { paint_mat(0.5, false, true) } else { surfaces::MAT_PAINT };
+    let paint = if paint_quiet { paint_mat(0.5, false, true, true) } else { surfaces::MAT_PAINT };
+    // The faces toward the room (the panelled face and the front edges) without the screen's
+    // occlusion, which crawls on them as the eye moves; the back and the head keep it.
+    let front = if paint_quiet { paint_mat(0.5, false, true, false) } else { surfaces::MAT_PAINT };
     let stack = SHUTTER_FRONT + SHUTTER_BACK;
     let y0 = o.sill + 0.005;
     let y1 = o.sill + o.height - CASE_HEAD;
@@ -663,13 +666,13 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     // seen when the pair stands ajar.
     if !paint_quiet {
         quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK + j }, float3 { leaf, y0, stack }, float3 { leaf, y1, stack },
-                                   float3 { leaf, y1, SHUTTER_BACK + j }], paint, float3 { 1.0, 0.0, 0.0 });
+                                   float3 { leaf, y1, SHUTTER_BACK + j }], front, float3 { 1.0, 0.0, 0.0 });
     }
     quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK - j }, float3 { leaf, y0, SHUTTER_BACK + j },
-                               float3 { leaf, y1, SHUTTER_BACK + j }, float3 { leaf, y1, SHUTTER_BACK - j }], paint,
+                               float3 { leaf, y1, SHUTTER_BACK + j }, float3 { leaf, y1, SHUTTER_BACK - j }], front,
            float3 { 1.0, 0.0, 0.0 }, 0.3);
     quad_m(verts, indices, l, [float3 { leaf, y0, 0.0 }, float3 { leaf, y0, SHUTTER_BACK - j }, float3 { leaf, y1, SHUTTER_BACK - j },
-                               float3 { leaf, y1, 0.0 }], paint, float3 { 1.0, 0.0, 0.0 });
+                               float3 { leaf, y1, 0.0 }], front, float3 { 1.0, 0.0, 0.0 });
     if ajar > 0.0 {
         let back = surfaces::Builder { l.o, l.d, l.n * -1.0, 0.0, 1.0 };
         quad_m(verts, indices, back, [float3 { 0.0, y0, 0.0 }, float3 { leaf, y0, 0.0 }, float3 { leaf, y1, 0.0 },
@@ -682,7 +685,7 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     let rows: float2[3] = [float2 { 0.9, 1.62 }, float2 { 1.72, 2.62 }, float2 { 2.72, 3.16 }];
     if paint_quiet {
         painted_quiet(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], SHUTTER_FRONT - j, RIGHT | TOP | BOTTOM, RIGHT, true,
-                      1.0, seed);
+                      1.0, false, seed);
     } else { painted(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], seed); }
     // The hinges: on the lining at the front leaf's back edge, and between the leaves.
     let mid = 0.5 * (y0 + y1);
@@ -902,7 +905,7 @@ let DOOR_LEVER = float2 { 0.06, 1.05 };
 // hinges and the lever, the architrave round it on its plinth blocks.
 fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o: Opening, thick: f32, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
-    let paint = if paint_quiet { paint_mat(0.5, false, false) } else { surfaces::MAT_PAINT };
+    let paint = if paint_quiet { paint_mat(0.5, false, false, true) } else { surfaces::MAT_PAINT };
     let w = 0.5 * o.width;
     let h = o.height;
     let back = DOOR_FACE + DOOR_LEAF;
@@ -935,7 +938,7 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     for x in spans {
         if paint_quiet {
             painted_quiet(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], DOOR_LEAF, EDGES, LEFT | RIGHT | TOP, false,
-                          0.6, seed);
+                          0.6, true, seed);
             continue;
         }
         painted(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], seed);
