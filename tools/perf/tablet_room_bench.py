@@ -53,6 +53,8 @@ VARIANTS = {
     "wind-still":  "--wind-kind still",
     "cheap":       "--window off --box off --aa off",
     "full-tier":   "--tier full",
+    "map-off":     "--window-map off",
+    "leaves-off":  "--phone-leaves off",
 }
 LINE = re.compile(r"light_tune: ([\d.]+) fps, ([\d.]+) ms a frame, worst ([\d.]+); in the loop ([\d.]+) ms")
 

@@ -121,7 +121,7 @@
 //       [--touch on|off (the touch walk, on by default on Android: the walk from the start, no panel, the
 //       screen's left half a stick to walk, its right half a drag to look, Up and Down at the right edge;
 //       with the phone's tier: no screen-space occlusion, no floor mirror, no HDR, 4 shadow taps, unless
-//       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the board's antialiasing; msaa, 4×)]
+//       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the scene's antialiasing; smaa by default, msaa 4×)]
 //       [--box on|off (the phone tier's floor and metals reflecting the room's box sharply; on)]
 //       [--window-map on|off (the shell's windows' pattern from the window's light map, render3d::window_map_on;
 //       off traces it a pixel as before; on)] [--phone-leaves static|off (the phone's tier's leaves baked into the
@@ -1371,8 +1371,10 @@ fn main() {
                                                                    shaders::ROOM_FRAG);
     render3d::setup(r3d, g, render3d::SAMPLES, if phone_tier { render3d::SHADOW_4 } else { render3d::SHADOW_16 });
     if has(argv, "--oak-aniso-4") { g.oak_sampler = gfx::sampler(gfx::SamplerDesc { max_anisotropy: 4.0 }); }
-    // --aa off|smaa|msaa: the board's antialiasing, 4× MSAA by default (render3d::AA).
-    let aa_way = pick(argv, "--aa", AA_NAMES, 2);
+    // --aa off|smaa|msaa: the scene's antialiasing, SMAA by default in the room (task 115:
+    // cheaper on the tablet, the Pixel and the 4090; the app's board alone keeps 4× MSAA,
+    // render3d::AA).
+    let aa_way = pick(argv, "--aa", AA_NAMES, 1);
     render3d::set_aa(r3d, g, AA_WAYS[aa_way]);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
     render3d::scatter_allowed = true;
