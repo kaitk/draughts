@@ -1008,7 +1008,7 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   by its flex. On the high tier (HDR) each leaf also turns a few degrees about its stalk
   (`--tree-flutter DEG,RATE`, 6 and 9); the standard tier's leaves hold still at the
   shadow's moment. Off, the pipelines are made without the wind and draw as before.
-- **The maple's card** (the light tuner's `--tree-card off|on|main`, off by default and in
+- **The maple's card** (shelved until needed, 2026-11-24; the light tuner's `--tree-card off|on|main`, off by default and in
   the app; `render3d::make_tree_card`, `shaders::TREE_CARD`, `CARD_VERT`, `CARD_FRAG`):
   the geometry drawn once, still, into a 1024 × 768 RGBA16F picture with premultiplied
   coverage, 4× multisampled and resolved, with mips, from the main menu's eye onto a plane

@@ -710,10 +710,8 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       `--tree-wind off|on`, default off; T5 (the phone's card) done there too, behind
       `--tree-card off|on|main`, default off. Open: whether the card is wanted in the
       main view on a desktop (soft, and slower than the geometry there), its cost on a
-      phone, and its eye for the mirror. Open: alpha-to-coverage (the leaves are cut by a dithered alpha
-      test; goose_gfx's branch `alpha-to-coverage` ready, not pushed), the colour (tint
-      +0.2, the light through 0.35 of the sun), the density, and whether the near maple's
-      picture still draws behind
+      phone, and its eye for the mirror (the card is shelved, 2026-11-24). Open: the colour (tint
+      +0.2, the light through 0.35 of the sun), and the density
     - The culled old-leader maple: 16,752 tube and 49,278 ribbon triangles (74,376
       vertices), 22,217 leaf cards; the crown's grid 64³, the leaves' mean sun share 75%.
       Made on the CPU (-O2) in 67 ms a grow (the leaves' crown rays 37), plus the leaf
@@ -739,6 +737,24 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       14.27 / 14.32 / 14.50, menu 13.40 / 13.58 / 13.95; 5120 x 2880 down 19.45 / 19.10 /
       19.43, corner 24.67 / 24.77 / 24.97, room 22.95 / 23.07 / 23.43, menu 22.28 / 22.48 /
       23.23. Off, byte-identical as above
+    - The look (2026-11-24, branch `tree-look`, `build/notes/tree/look.html`): the leaves
+      cut by alpha-to-coverage in gfx (the dithered test kept in ngfx and with one sample);
+      the view out's near trees (the oak's picture, the park's cards, `tree_seen`) left out
+      of the main view while the maple draws, the band kept; each limb's bark tile shifted
+      by dice of its own. The card shelved until needed (the user, 2026-11-24): it was for
+      phones and low-end tablets, unlikely to run this room mode; its code stays behind
+      `--tree-card off`. The builds now take the fork's `gfx.goose` with its C: the
+      release's passed `PipelineDesc` short, and the lace took alpha-to-coverage at random.
+      At 3840 x 2160, `--tree-draw all`, A B A B: menu 13.64 / 13.64 ms before, 13.60 / 13.76
+      after; the look up into the crown 10.60 / 10.60 before, 10.50 / 10.60 after. Off, the
+      four views byte-identical to the fixed build before. Tests pass with NGFX, both apps
+      build
+    - Later, the user's (2026-11-24): the leaves follow the season (autumn's gold-orange
+      toward the photos; winter none, the shadow's too; summer green, backlit yellow-green;
+      spring like summer, then smaller and lighter leaves); more leaves, a density flag and
+      slider (the cards' `Whole.leafy`, 0.55 now, 1 about 40,000 cards); the bark without a
+      visible repeat (stochastic or two-scale sampling) and darker, toward the bare maples'
+      photos. Leaves' placement and branches' growth are task 115's
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

@@ -2143,6 +2143,9 @@ to be is in tasks 042, 059, 071, 081, and 086.
   107; `trees::tube`), so neighbouring limbs' tiles don't line up. A stand-in until a
   real fix of the tile's repeat (stochastic or two-scale sampling, and the bare maple's
   darker colour), noted in task 107.
+- The maple's card (`--tree-card`, 2026-11-24 above) is shelved until needed (2026-11-24,
+  the user): it was for phones and low-end tablets, which are unlikely to run this room
+  mode. Its code stays behind `--tree-card off`; no more work on it.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only
