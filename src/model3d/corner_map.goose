@@ -91,6 +91,13 @@ fn ledge_hides(d: f32, depth: f32, reach: f32) -> f32 { plane_hides(d, reach) * 
 
 fn step_up(a: f32, b: f32, x: f32) -> f32 { smoothstep(a, b, x) }
 
+// A point on a boundary (a chart's edge texel in a corner, against a box's face, on the
+// cap's top or under its foot) takes that face's shade: the comparisons give it TOUCH_M
+// (metres; TOUCH of the reach, world units) for rounding. Strict, the edge row came out 1
+// and the GPU's bilinear tap spread it a texel in, a light line into the corner (2026-11-24).
+let TOUCH_M: f32 = 0.0001;
+let TOUCH:   f32 = 0.0003;
+
 // How square a plane with normal m stands to a surface with normal n: 1 square, 0 facing.
 fn square_to(n: float3, m: float3) -> f32 { 1.0 - step_up(0.3, 0.7, abs(dot(n, m))) }
 
@@ -137,21 +144,26 @@ fn box_hides(q: float3, qn: float3, lo: float3, hi: float3, s0: f32, reach: f32)
     var lit: f32 = 1.0;
     var a = lo.x - q.x;
     var square = square_to(qn, float3 { -1.0, 0.0, 0.0 });
-    if a > 0.0 && a < reach && square > 0.0 {
+    if a > -TOUCH * reach && a < reach && square > 0.0 {
+        a = max(a, 0.0);
         lit *= 1.0 - s * square * plane_hides(a, reach) * span_seen(q.y, lo.y, hi.y, a, qn.y) * span_seen(q.z, lo.z, hi.z, a, qn.z);
     }
     a = q.x - hi.x;
     square = square_to(qn, float3 { 1.0, 0.0, 0.0 });
-    if a > 0.0 && a < reach && square > 0.0 {
+    if a > -TOUCH * reach && a < reach && square > 0.0 {
+        a = max(a, 0.0);
         lit *= 1.0 - s * square * plane_hides(a, reach) * span_seen(q.y, lo.y, hi.y, a, qn.y) * span_seen(q.z, lo.z, hi.z, a, qn.z);
     }
     a = q.y - hi.y;
     square = square_to(qn, float3 { 0.0, 1.0, 0.0 });
-    if a > 0.0 && a < reach && square > 0.0 {
+    if a > -TOUCH * reach && a < reach && square > 0.0 {
+        a = max(a, 0.0);
         lit *= 1.0 - s * square * plane_hides(a, reach) * span_seen(q.x, lo.x, hi.x, a, qn.x) * span_seen(q.z, lo.z, hi.z, a, qn.z);
     }
     a = q.z - hi.z;
-    let front = if a > 0.0 && a < reach { fade * plane_hides(a, reach) * span_seen(q.x, lo.x, hi.x, a, qn.x) * span_seen(q.y, lo.y, hi.y, a, qn.y) } else { 0.0 };
+    let touching = a > -TOUCH * reach && a < reach;
+    a = max(a, 0.0);
+    let front = if touching { fade * plane_hides(a, reach) * span_seen(q.x, lo.x, hi.x, a, qn.x) * span_seen(q.y, lo.y, hi.y, a, qn.y) } else { 0.0 };
     return float2 { front, lit };
 }
 
@@ -161,15 +173,15 @@ fn box_hides(q: float3, qn: float3, lo: float3, hi: float3, s0: f32, reach: f32)
 // what the face hides, less the opening's share, or the back, whichever is nearer.
 fn holed_wall(q: float3, qn: float3, proud: f32, half_w: f32, low: f32, high: f32, back: f32, reach: f32) -> f32 {
     if q.z - proud >= reach && q.z + back >= reach { return 0.0; }
-    let a = q.z - proud;
+    let a = max(q.z - proud, 0.0);
     var face: f32 = 0.0;
-    if a > 0.0 && a < reach {
+    if q.z - proud > -TOUCH * reach && a < reach {
         let hole = if half_w > 0.0 { span_seen(q.x, -half_w, half_w, a, qn.x) * span_seen(q.y, low, high, a, qn.y) } else { 0.0 };
         face = plane_hides(a, reach) * (1.0 - hole);
     }
-    let ab = q.z + back;
+    let ab = max(q.z + back, 0.0);
     var deep: f32 = 0.0;
-    if half_w > 0.0 && back >= 0.0 && ab > 0.0 && ab < reach {
+    if half_w > 0.0 && back >= 0.0 && q.z + back > -TOUCH * reach && ab < reach {
         deep = plane_hides(ab, reach) * span_seen(q.x, -half_w, half_w, ab, qn.x) * span_seen(q.y, low, high, ab, qn.y);
     }
     return max(face, deep);
@@ -328,8 +340,8 @@ fn shade(c: Planes&, lp: float3, ln: float3) -> f32 {
         }
         if !under_sill && !(hall_trim && d_hall < 0.12 * m) && !(salon_trim && d_stove < 0.12 * m)
            && !(before_case && d_hall < 0.12 * m) {
-            if up > cap { lit *= 1.0 - s * upright * ledge_hides((up - cap) * m, 0.09 * m, reach); }
-            else if up < cap - 0.095 { lit *= 1.0 - s * upright * ledge_hides((cap - 0.095 - up) * m, 0.065 * m, reach); }
+            if up > cap - TOUCH_M { lit *= 1.0 - s * upright * ledge_hides((up - cap) * m, 0.09 * m, reach); }
+            else if up < cap - 0.095 + TOUCH_M { lit *= 1.0 - s * upright * ledge_hides((cap - 0.095 - up) * m, 0.065 * m, reach); }
         }
     }
     // In a window's niche: its reveals (the piers' sides, from the wall's face to the
