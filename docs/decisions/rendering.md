@@ -590,6 +590,15 @@ power-of-two RGBA took 16 MiB.
   12.5; 2026-11-16, an AMD Radeon iGPU on Windows, Vulkan, 2880×1800 uncapped, median
   of 5: 4.12 against 4.40 ms, memory at rest the same, so x86 desktops keep MSAA too).
   SMAA, none, and 2 × 2 supersampling stay for comparing (`--aa`, the A key).
+- The manor room antialiased by SMAA, the board alone still by 4× MSAA (2026-11-24, task
+  115; this narrows the entry above to the board). MSAA shades an edge pixel once a triangle
+  touching it, so its cost is the edge pixels times the shader there; the room's books,
+  mouldings and bars are many edges under its dearest shaders. SMAA's three flat passes
+  cost less: the Galaxy Tab 1 to 10 ms less, the Pixel 7a 1.5 to 3 (even straight down), the
+  4090 at 5120 × 2880 0.2 with HDR on in both. Its look is close to MSAA's. With HDR, SMAA
+  runs after the tonemap, on the 8-bit picture (before, HDR came only with MSAA, so the
+  desktop's first SMAA runs also skipped HDR). The light tuner's default; the app shows no
+  room yet, so its default stays MSAA until it does.
   ngfx's FXAA is gone: it blurred surfaces.
 - 2× MSAA for a slow device (task 081, 2026-11-13): on Android, once 60 frames of the
   ready 3D board average over 1.25 refreshes, the pass drops to 2×
