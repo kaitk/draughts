@@ -676,10 +676,11 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
         them the change was at most 12 levels, with 50-81 pixels over 8 on shutters seen through
         the lace. The room view took about 32 ms a frame before and about 29 ms after, within
         noise with the user's tuner open
-    - Later, not now: the real fix for the flicker elsewhere (behind the shutters, the
-      casements' corners) is temporal: blend each frame's occlusion with last frame's,
-      reprojected. It has to be weighed against the app drawing only when something changes
-      (a still frame would never settle)
+    - Later, postponed by the user (2026-11-24): the flicker elsewhere (behind the shutters,
+      the casements' corners) by a bilateral upsample in the high tier, the half-size texels
+      weighted by depth and normal, behind a tuner flag, judged by two shots 1 cm apart. Not
+      temporal blending (the user dislikes its artifacts; a map accumulated over frames was
+      tried before and dropped, line ~296), nor full size (about +5-6 ms at 4K, estimated)
   - [x] The HDR glow pulsing on thin sun strips (the sill, the window's reveals) when the
         eye moves up or down, steady when it moves sideways (`glow-shimmer-*.png`): the
         first downsample averaged 4 x 4 blocks and thresholded after, so a strip a few
