@@ -170,10 +170,32 @@ Every room shader uses all 64 work registers (half occupancy), all 128 uniform r
   same loads, the window's geometry read again per traced ray, and registers it holds.
 - **FP16 waits on that.** Arithmetic isn't the G615's or G710's limit yet; it is the G68's (the
   A33), where it and the loads are about even.
-- The ways to cut the loads, for the user to choose: the shell's fixed numbers (its windows,
-  room box, the tuned looks) as constants in the app's shaders, made from the tuned values at
-  build time, the tuner keeping uniforms; or a small packed block per material group with only
-  what it reads, computed on the CPU (fewer folds, no build step).
+- The ways to cut the loads: the shell's fixed numbers as constants in the app's shaders, made
+  from the tuned values at build time, the tuner keeping uniforms; or a small packed block per
+  material group with only what it reads (fewer folds, no build step). The user chose the
+  constants (2026-11-24).
+
+### The block as constants on the tablet (2026-11-24, room-light 05758174)
+
+`--room-fixed on` gives the phone tier's room shaders the whole `Surfaces` block as constants
+(`src/render3d/room_fixed.goose`, made by `scripts/room_fixed.py` from the tuner's
+`--dump-room-block` in the phone tier). `Frame` and the table's blocks stay uniforms. The
+picture is the same: on the PC, one pixel of the room view 9 levels off, the rest within 2.
+Cool (thermal status 0 throughout), ms a frame:
+
+| View | base | fixed | saved |
+|---|---|---|---|
+| Down | 35.5 / 36.9 / 35.7 / 35.9; quick 37.4 | 27.4 / 27.4; quick 27.4 | 8.6 |
+| Corner | 41.1 / 41.0 / 39.2 / 41.6; quick 39.7 | 32.9 / 33.0; quick 33.0 | 7.4 |
+| Room | 37.6 / 38.7 / 38.4 / 37.4; quick 37.7 | 32.0 / 31.9; quick 31.8 | 6.1 |
+
+A steady 30 now in every view, from the uniforms alone. Not yet the default: some members
+depend on the tuner's switches and the room's state (the baked light, the light map, the
+tint), so the real version keeps those uniform, or makes the constants for each state the app
+shows. `Frame` (31 vec4s the room reads) is next by the same means, then ngfx's parity.
+
+The bench's `--quick` (5 s of frames a run, no base at the end) took 1 min 37 s for these
+six runs, the full runs about 7 min, with the same figures within 2 ms.
 
 ## The iPhone 13 mini (2026-11-24)
 
