@@ -7,7 +7,43 @@ App Store localization yet, `app-store.md`). Newest first.
 ## 0.9.4 (2026-11-22, Android)
 
 Offering a draw and giving up. Play users may come from 0.9.2, so the notes keep
-0.9.3's fix.
+0.9.3's fix. The desktop builds (2026-11-24) come from 0.9.1, so their notes take in
+0.9.2's too.
+
+### GitHub release
+
+```markdown
+Offering a draw and giving up, the 3D board on a table with the pieces each side has taken beside it, and refilled puzzles.
+
+Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, at [github.com/kaitk/draughts](https://github.com/kaitk/draughts). No ads, no tracking, no accounts; it works offline.
+
+**New**
+
+- **Offer a draw** once both sides have a king: the computer accepts or plays on, and may offer a draw itself.
+- **Give up** a game against the computer through Start over, from the 5th move; it counts as a loss.
+- **The table.** The 3D board can stand on a round wooden table, with the pieces each side has taken laid beside it in towers, carried there on a capture.
+- **Settings › Look:** Theme, Board, and Matching or Classic pieces.
+
+**Better**
+
+- The 3D pieces take their material from the board, with a little wear and light through them; winter's stone board is a new slab.
+- The puzzle libraries are refilled with checked puzzles, and a wrong move shows its whole line.
+- The tutorial can go back a step, and teaches a king's multi-capture; How to play stays on home until a player is past the basics.
+- Fixed: lifting a piece on the 3D board could change how the others looked.
+
+**Windows** (64-bit, Windows 10 or 11): download `Draughts-0.9.4-windows-x64-setup.exe` and run it (no administrator needed; it adds Draughts to the Start menu, and Settings › Apps removes it), or download `Draughts-0.9.4-windows-x64.zip`, extract it, and run `Draughts.exe`. Your graphics driver must support Vulkan, which current NVIDIA, AMD, and Intel drivers do. The app is not signed, so Windows shows "Windows protected your PC" once: choose **More info**, then **Run anyway**.
+
+**macOS** (Apple silicon, macOS 13.3 or later): download `Draughts-0.9.4-macos-arm64.dmg`, open it, and drag Draughts to Applications. It is signed and notarized.
+
+**Linux** (64-bit, glibc 2.35 or later: Ubuntu 22.04, Debian 12, Fedora 36, SteamOS, and their successors): download `Draughts-0.9.4-linux-x64.tar.gz`, extract it, and run `Draughts/draughts`. To add it to your applications menu, run `Draughts/install.sh` (`install.sh --remove` takes it away). Your graphics driver must support Vulkan, which Mesa and NVIDIA's driver do.
+
+**Android and iPhone/iPad:** from Google Play and the App Store.
+
+SHA-256:
+- `Draughts-0.9.4-windows-x64-setup.exe`: `d5f75cbe13375628280465ed73f7ecce14f86f8592f61295b1e77fa0f4a57c2d`
+- `Draughts-0.9.4-windows-x64.zip`: `813df74942b979ad0528c304a244e59c31defd62febc82d5cd2c0742ddaea7c0`
+- `Draughts-0.9.4-linux-x64.tar.gz`: `1cdb138435a312db8e2c7f265d71c3c87043930070631024923a62336efd6941`
+```
 
 ### Play, en-GB
 
