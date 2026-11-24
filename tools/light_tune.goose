@@ -123,6 +123,10 @@
 //       with the phone's tier: no screen-space occlusion, no floor mirror, no HDR, 4 shadow taps, unless
 //       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the board's antialiasing; msaa, 4×)]
 //       [--box on|off (the phone tier's floor and metals reflecting the room's box sharply; on)]
+//       [--window-map on|off (the shell's windows' pattern from the window's light map, render3d::window_map_on;
+//       off traces it a pixel as before; on)] [--phone-leaves static|off (the phone's tier's leaves baked into the
+//       map at one phase of the wind, or none; static)] [--leaves-moving on (the desktop's leaves lit a pixel, not
+//       baked, in a shot too)]
 //   On a tablet: scripts/android.py tools/light_tune.goose --run (its own app id, beside the app's);
 //   flags by adb shell am start -n io.github.kaitk.draughts.light_tune/.DraughtsActivity --es args '"--scene-scale 0.75"'
 
@@ -655,7 +659,7 @@ fn walk_step(k: Walk&, look: float2, dt: f32, hand: f32, stick: float3 = float3_
 let TOUCH_NONE = 0;
 let TOUCH_MOVE = 1;
 let TOUCH_LOOK = 2;
-let TOUCH_UP   = 3;
+let TOUCH_UP = 3;
 let TOUCH_DOWN = 4;
 let STICK_REACH: f32 = 0.15;    // of the screen's height, the stick's full speed
 let BUTTON_SIDE: f32 = 0.14;    // of the screen's height, Up's and Down's
@@ -1407,6 +1411,12 @@ fn main() {
     render3d::ssao_view = pick(argv, "--ssao-view", SSAO_VIEWS, 0);
     // A phone's tier (the app's): the room's pipelines without the screen's maps, no mirror.
     render3d::sharp_box_allowed = !(has(argv, "--box") && argv[flag_value(argv, "--box")] == "off");
+    // The window's light map (render3d::window_map_on), or the windows traced a pixel as before;
+    // the phone's tier's leaves baked into it still, or none.
+    render3d::window_map_on = !(has(argv, "--window-map") && argv[flag_value(argv, "--window-map")] == "off");
+    render3d::phone_leaves = if has(argv, "--phone-leaves") && argv[flag_value(argv, "--phone-leaves")] == "off" { render3d::LEAVES_OFF }
+                             else { render3d::LEAVES_STATIC };
+    let leaves_moving_flag = has(argv, "--leaves-moving") && argv[flag_value(argv, "--leaves-moving")] == "on";
     if phone_tier {
         render3d::ssao_allowed = false;
         render3d::planar_allowed = false;
@@ -2187,6 +2197,10 @@ fn main() {
         render3d::show_room(g, room_on, away, shell_on);
         // A shot is taken at --wind-time itself.
         if shot < 0 && !capturing { render3d::wind_time += gfx::delta_time() as f32; }
+        // The desktop's map leaves the tree out while its leaves move (a shot's keep still,
+        // unless --leaves-moving on).
+        render3d::leaves_moving = leaves_moving_flag
+            || (shot < 0 && !capturing && !(pattern == 0 || render3d::wind_kind == rooms::WIND_STILL || room.wind.y == 0.0));
         render3d::put_room(g);
         if sun_checked && frames == 2 {
             sun_check(g, room.window.y, room.key.y);
