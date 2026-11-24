@@ -2139,6 +2139,10 @@ to be is in tasks 042, 059, 071, 081, and 086.
   the sky and the far band are. The mirror keeps them, as no geometry is drawn there. Off,
   the four views are byte-identical. Open: the park's cards still cast their shadows on
   the lawn.
+- Each limb's bark tile is shifted round and along by dice of its own (2026-11-24, task
+  107; `trees::tube`), so neighbouring limbs' tiles don't line up. A stand-in until a
+  real fix of the tile's repeat (stochastic or two-scale sampling, and the bare maple's
+  darker colour), noted in task 107.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

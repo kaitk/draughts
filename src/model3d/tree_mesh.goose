@@ -180,7 +180,11 @@ fn tube(t: Tree&, density: f32[>..]&, g: Grid, sun: float3, ways: float3[SKY_WAY
     let way0 = joint_way(t, l, 0);
     let other = if abs(way0.y) < 0.9 { float3 { 0.0, 1.0, 0.0 } } else { float3 { 1.0, 0.0, 0.0 } };
     var side = normalize(cross(way0, other));
-    var run: f32 = 0.0;
+    // Each limb's tile shifted round and along by dice of its own, so the limbs' tiles don't
+    // line up (a shift round keeps the tile whole round the tube).
+    var shift = Dice { mixed(l.first as u64 * 0x9E3779B97F4A7C15 + 7) };
+    let shift_round = roll(shift);
+    var run: f32 = roll(shift) * BARK_ALONG;
     let first = verts.len as u32;
     for i in joints {
         let p = joint_at(t, l, i);
@@ -194,7 +198,7 @@ fn tube(t: Tree&, density: f32[>..]&, g: Grid, sun: float3, ways: float3[SKY_WAY
         for k in sides + 1 {
             let a = (k as f32) * TAU / sides;
             let n = side * cos(a) + up * sin(a);
-            verts.push(WoodVertex { p + n * r, n, way, float2 { k * rounds / sides, run / BARK_ALONG },
+            verts.push(WoodVertex { p + n * r, n, way, float2 { k * rounds / sides + shift_round, run / BARK_ALONG },
                                     float4 { lit.x, lit.y, r, flex } });
         }
     }
