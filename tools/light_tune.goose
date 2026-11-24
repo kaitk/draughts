@@ -660,6 +660,30 @@ fn walk_step(k: Walk&, look: float2, dt: f32, hand: f32, stick: float3 = float3_
     k.eye.z = clamp(k.eye.z + up * RISE_SPEED * (if fast { WALK_FAST } else { 1.0 }) * dt, LOWEST, s.ceiling - LOWEST);
 }
 
+// The startup's mark while the first bakes run, a frame each (the tree, then the room's
+// surfaces, mesh and light; the first frame's pipelines after, under the last mark), so the
+// screen isn't black meanwhile: as the app's gui::loading_bar, a thin white bar filled
+// `done` from the left over a faint track, without the words, in the middle of a dark screen.
+let LOAD_STEPS = 3;
+let LOAD_BAR_W: f32 = 216.0;    // ui units, or 60% of the screen where that is less
+let LOAD_BAR_H: f32 = 4.0;
+
+fn loading_frame(c: ui::Context, scale: f32, done: f32) {
+    let s = gfx::screen_size();
+    let r = ui::rect(0.0, 0.0, s.x / scale, s.y / scale);
+    // The window past the screen's edges, so its own padding and border don't show.
+    if ui::begin(c, "loading", ui::rect(-16.0, -16.0, r.w + 32.0, r.h + 32.0), ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
+        ui::fill_rect(c, r, 0.0, ui::Color { 12, 12, 12, 255 });
+        let w = floor(min(LOAD_BAR_W, 0.6 * r.w));
+        let x = floor(0.5 * (r.w - w));
+        let y = floor(0.5 * (r.h - LOAD_BAR_H));
+        ui::fill_rect(c, ui::rect(x, y, w, LOAD_BAR_H), 0.5 * LOAD_BAR_H, ui::Color { 255, 255, 255, 46 });
+        if done > 0.0 { ui::fill_rect(c, ui::rect(x, y, max(floor(w * done + 0.5), LOAD_BAR_H), LOAD_BAR_H), 0.5 * LOAD_BAR_H, ui::Color { 255, 255, 255, 230 }); }
+    }
+    ui::end(c);
+    ui::render(c);
+}
+
 // The touch walk (--touch): one finger at a time, as gfx gives touches as the mouse. A
 // finger put down on the left half is a stick from where it went down; on the right half a
 // drag that looks; on Up or Down, at the right edge, it rises or sinks while held.
@@ -1698,6 +1722,11 @@ fn main() {
     var bakes_walking = 0;
     var last_tree_ms = 0.0;
     var last_light_ms = 0.0;
+    // The first frames bake a step each under loading_frame's bar, with the frame's state as
+    // the loop sets it, so draw finds them done; not in a shot, a walk's frames, a capture, or
+    // a timed run, which keep their frames as they were.
+    let loading = !(shot > 0 || walk_frames > 0 || walk_test > 0 || capturing || meter_for > 0.0);
+    var load_step = if loading { 0 } else { LOAD_STEPS };
     while gfx::frame() {
         frames++;
         let frame_at = gfx::time();
@@ -1834,7 +1863,8 @@ fn main() {
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
         let panel_h = gfx::screen_size().y / scale - 20.0;
-        if !walk.on && ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
+        let panel_on = !walk.on && load_step >= LOAD_STEPS;
+        if panel_on && ui::begin(c, "Room light", ui::rect(10.0, 10.0, PANEL_W, panel_h), flags) {
             ui::layout_row_dynamic(c, ROW + 4.0, 2);
             if ui::button_label(c, "Print (P)") { print_it = true; }
             if ui::button_label(c, "Reset room") { shown_room = -1; }
@@ -2152,7 +2182,7 @@ fn main() {
                 ui::tree_state_pop(c);
             }
         }
-        if !walk.on { ui::end(c); }
+        if panel_on { ui::end(c); }
         // A drag that began on the panel holds the tree's and the probes' bakes till it is let go.
         if gfx::mouse_pressed(gfx::MOUSE_LEFT) { drag_on_panel = ui::wants_mouse(c); }
         g.bake_held = drag_on_panel && gfx::mouse_down(gfx::MOUSE_LEFT);
@@ -2453,6 +2483,14 @@ fn main() {
         render3d::scene_pixels = if scene_k > 0.0 { 0.0 } else { scene_budget };
         render3d::scene_scale = if scene_k > 0.0 { scene_k } else { 1.0 };
         render3d::scene_cubic = upscale == 0;
+        if load_step < LOAD_STEPS {
+            if load_step == 1 { render3d::bake_tree(r3d, g); }
+            if load_step == 2 { render3d::room_surfaces(r3d, g); }
+            loading_frame(c, scale, load_step as f32 / LOAD_STEPS);
+            load_step++;
+            if frames == 1 { draughts_first_frame(); }
+            continue;
+        }
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
         if walk.on {
