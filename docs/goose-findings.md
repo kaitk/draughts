@@ -238,11 +238,16 @@ The export's wrapper seems to start from the data stacks' base rather than their
 `gfx_pipeline.c` sets only the sample count. Foliage under 4× MSAA can't spread a leaf's
 cut over its samples.
 
-- Here: the tree's leaves take a hashed alpha test on alpha sharpened to a pixel
+- Here: the tree's leaves took a hashed alpha test on alpha sharpened to a pixel
   (`shaders::TREE_LEAF_FRAG`, 2026-11-23, task 107). `kaitk/goose_gfx`'s branch
-  `alpha-to-coverage` on upstream `main` (`PipelineDesc.alpha_to_coverage`, off with one
-  sample; `api_check.py` passes) is ready locally, not yet pushed or merged into the fork's
-  `main`.
+  `alpha-to-coverage` (`PipelineDesc.alpha_to_coverage`, off with one sample) is merged
+  into the fork's `main` (`d02b2b4`), which the submodule follows; gfx's leaves use it
+  since 2026-11-24 (`shaders::TREE_COVERAGE`), the hashed test kept for a pass of one
+  sample and for ngfx.
+- The field widens the C's `gs_gfx_pipeline_desc`: a program built with the release's
+  `gfx.goose` passes the shorter struct and the C reads a byte past it, turning
+  alpha-to-coverage on at random (the lace in the room view, 2026-11-24). The build
+  copies the fork's `gfx.goose` beside its C (`scripts/native.py`'s `patched_goose`).
 - Upstream: that branch.
 
 ### A later floor draw cannot read an earlier draw's tile-local colour

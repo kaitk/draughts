@@ -7357,6 +7357,8 @@ let HAZE_ADD_FRAG = """
 // TREE_RIBBON the branchlets' and twigs' ribbons in place of the tubes, HDR_OUT the HDR
 // target's.
 let TREE_RIBBON = "#define TREE_RIBBON 1\n";
+// The leaves cut by alpha-to-coverage where the pass has samples (TREE_LEAF_FRAG), gfx's alone.
+let TREE_COVERAGE = "#define TREE_COVERAGE 1\n";
 // The wind on the tree (TREE_FN's tree_moved, WIND_FN): the shadow's field on the
 // geometry, in the standard tier and the high; TREE_FLUTTER each leaf turning about its
 // stalk too, the high tier's alone (render3d::tree_wind).
@@ -7670,8 +7672,10 @@ let TREE_LEAF_VERT = """
     """;
 
 // A leaf's texel (leaf_atlas's two layers): its outline cut where it crosses a half, the
-// edge sharpened to a pixel and the cut dithered across it (the stand-in for
-// alpha-to-coverage, which goose_gfx doesn't offer: docs/goose-findings.md); its colour as
+// edge sharpened to a pixel; with TREE_COVERAGE in a multisampled pass (gfx's, whose
+// pipeline turns alpha-to-coverage on) that edge is the alpha the hardware turns into the
+// samples covered, else the cut is dithered across it (ngfx, which has no
+// alpha-to-coverage: docs/goose-findings.md, and a pass of one sample); its colour as
 // leaf_atlas::texel_color makes it, from the front and through it. Lit from the front by
 // the sky and the sun, or seen against the sun by the light through it: the back colour
 // times the sun on its face, more toward the sun's own way (a Henyey-Greenstein lobe, g
@@ -7700,7 +7704,12 @@ let TREE_LEAF_FRAG = """
     void main() {
         vec4 s = texture(leaf_shape, v_uv);
         float a = (s.a - 0.5) / max(fwidth(s.a), 1e-4) + 0.5;
+    #ifdef TREE_COVERAGE
+        bool cover = tree_origin.w > 1.5;
+        if (cover ? a <= 0.0 : a < tree_hash(floor(gl_FragCoord.xy)) * 0.98 + 0.01) { discard; }
+    #else
         if (a < tree_hash(floor(gl_FragCoord.xy)) * 0.98 + 0.01) { discard; }
+    #endif
         vec4 m = texture(leaf_marks, v_uv);
         float tint = clamp(v_leaf.x + tree_tint.x + (v_leaf.w - 0.5) * tree_look.z, 0.0, 2.0);
         float t = clamp(tint + (s.g - 0.5) * 0.7 - m.a * 0.6, 0.0, 2.0);
@@ -7729,5 +7738,8 @@ let TREE_LEAF_FRAG = """
             c += back * sun_color * (-nl * sun * tree_light.z * mix(1.0, hg, tree_light.w));
         }
         result = tree_out(c);
+    #ifdef TREE_COVERAGE
+        if (cover) { result.a = clamp(a, 0.0, 1.0); }
+    #endif
     }
     """;

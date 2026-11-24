@@ -233,8 +233,13 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   own storage buffer.
 - A storage buffer block holds one runtime-sized array (`vec4 squares[];`), its name
   unique across all embedded shaders' globals (`leaves` clashed: "redefinition").
-- embed_shader's GLSL has no `gl_SampleMask`, and no pipeline takes alpha-to-coverage:
-  cut-outs take a dithered alpha test, sub-pixel lines blend (`docs/goose-findings.md`).
+- embed_shader's GLSL has no `gl_SampleMask`; gfx's pipelines take alpha-to-coverage
+  (`PipelineDesc.alpha_to_coverage`, the fork's), ngfx's don't: the leaves use it in gfx
+  (`shaders::TREE_COVERAGE`), a dithered alpha test in ngfx and with one sample; sub-pixel
+  lines blend (`docs/goose-findings.md`). A field the fork adds to a gfx struct needs the
+  fork's `gfx.goose`: the desktop builds copy it beside the fork's C (`scripts/native.py`),
+  and `scripts/test.sh` checks with that copy (`build/mac/goose/goose`) once a build made
+  it; the release's own `goose` rejects the field.
   The tree's two-sided leaf cards tell their face by `dot(n, eye - p)`, which works the
   same in the ngfx build's translation.
 - A GLSL local named like a uniform block's member hides it; read the member through a

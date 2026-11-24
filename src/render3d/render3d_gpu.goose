@@ -1089,11 +1089,13 @@ fn make_tree(own: Own&, g: render3d::Gpu&) {
     } else {
         leaf_vs
     };
-    let card = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
-    t.leaf = gfx::pipeline(leaf_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TONE_FN,
-                                                 shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG), card);
-    t.hdr_leaf = gfx::pipeline(hdr_leaf_vs, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
-                                                     shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG), card);
+    // The leaves cut by alpha-to-coverage in a multisampled pass (shaders::TREE_COVERAGE).
+    let card = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true, alpha_to_coverage: true };
+    t.leaf = gfx::pipeline(leaf_vs, embed_shader("frag", shaders::TREE_COVERAGE, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                                 shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG), card);
+    t.hdr_leaf = gfx::pipeline(hdr_leaf_vs, embed_shader("frag", shaders::TREE_COVERAGE, shaders::HDR_OUT, shaders::FS_SET,
+                                                         shaders::FRAME, shaders::TREE_HEAD, shaders::TONE_FN,
+                                                         shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG), card);
 }
 
 // The tree outside in the board's pass, after the room's opaque groups (render3d::tree_drawn):

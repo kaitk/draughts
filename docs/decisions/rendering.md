@@ -2120,6 +2120,18 @@ to be is in tasks 042, 059, 071, 081, and 086.
   the mirror +0.2 ms, in the main view +0.55 ms (3840 × 2160) to +0.95 ms (5120 × 2880) on
   the M1 Pro, more than the geometry (+0.05). The card in a phone's main view is the
   intent; a phone has not measured it yet.
+- The maple's leaves are cut by alpha-to-coverage in gfx (2026-11-24, task 107;
+  `shaders::TREE_COVERAGE`, `build/notes/tree/look.html`), replacing the dithered alpha
+  test of 2026-11-23 there: the fork's `PipelineDesc.alpha_to_coverage` (goose_gfx
+  `d02b2b4`) takes the leaf's alpha, sharpened to a pixel, as the share of its 4 samples
+  covered. The dithered test stays in a pass of one sample (the tree block's samples, a
+  uniform branch) and in ngfx, which has no alpha-to-coverage (`docs/goose-findings.md`).
+  The leaves' edges are smooth instead of a dither; the menu view at 3840 × 2160 with the
+  tree 13.64 to 13.68 ms, the look up into the crown 10.60 to 10.55 (A B A B means). The
+  desktop builds take the fork's `gfx.goose` with its C, whose wider `PipelineDesc` the
+  release's `gfx.goose` passed short: the C read a byte past it, and the lace in the room
+  view took alpha-to-coverage at random (553,109 pixels over 8 at 3840 × 2160 against the
+  fixed build). `scripts/test.sh` checks with that copy.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only
