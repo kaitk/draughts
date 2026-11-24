@@ -459,6 +459,11 @@ look must stay identical; the look-changing ones go behind a tuner flag for the 
       power setting, unchecked), and adaptive refresh (ProMotion) through SDL's GPU layer.
 - [ ] GTAO on by default in the high tier (the user, 2026-11-23: it looks better; about 180
       lines in both renderers behind one switch), SSAO in the standard tier
+- [ ] Fewer edge pixels under the expensive shaders, so 4× MSAA's extra shading at edges
+      costs less (on the Galaxy Tab MSAA costs up to 10 ms in the views with the room's
+      edges, where SMAA's flat passes cost 1 to 3; task 115): the books, and other small,
+      busy geometry (mouldings, panel grooves, frames), drawn with a cheaper shader, e.g.
+      without the window's pattern or the sharp box reflection (the user, 2026-11-24)
 - [ ] The floor's remaining shading: the sun through the windows (5.9 ms straight down at
       4K before the pieces), the mirror lookup (2.5), the probes (2.3), the corners' map
       (2.4 straight down only, to check). The oak's textures are not the cost
