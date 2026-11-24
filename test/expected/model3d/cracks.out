@@ -1,51 +1,17 @@
-the shell: 65566 vertices, 46056 triangles; 29216 places, 28810 after welding within 0.1 mm
-  vertex pairs 0 to 0.1 mm apart: 408, the widest 0.097 mm
-  edges shared only once welded (gaps where faces meet): 405, the first paper and paper at (9.0, 0.0, 1.2)
-      brass and brass from (4.552, -0.003, 1.042) to (4.549, -0.003, 1.05)
-      brass and brass from (4.56, -0.003, 1.039) to (4.552, -0.003, 1.042)
-      brass and brass from (4.568, -0.003, 1.042) to (4.56, -0.003, 1.039)
-      brass and brass from (4.571, -0.003, 1.05) to (4.568, -0.003, 1.042)
-      oak and oak from (0.018, 0.018, 0.17) to (0.018, 0.018, 0.186)
-      oak and oak from (0.018, 6.982, 0.17) to (0.018, 6.982, 0.186)
-      oak and oak from (0.025, 0.025, 0.19) to (0.018, 0.018, 0.186)
-      oak and oak from (0.025, 6.975, 0.19) to (0.018, 6.982, 0.186)
+the shell: 68658 vertices, 49148 triangles; 28810 places, 28810 after welding within 0.1 mm
+  vertex pairs 0 to 0.1 mm apart: 0
+  edges shared only once welded (gaps where faces meet): 0
   triangles of no area: 1698, the first plaster at (0.85, 7.65, 3.3)
-  edges of more than two triangles: 57
-  T-junctions: 2180, 1614 where edges run on along the same line (seams), 566 a vertex only touching
-    seams oak with oak: 186
-    seams oak with paper: 16
-    seams oak with plaster: 24
-    seams oak with paint: 32
-    seams paper with paper: 6
-    seams paper with plaster: 65
-    seams paper with paint: 12
-    seams stone with stone: 6
-    seams stone with paint: 6
-    seams plaster with plaster: 6
-    seams plaster with paint: 47
-    seams paint with paint: 1055
-    seams book with book: 153
-    seams open in front with nothing behind: 248
-      of oak with the same or a later kind: 24
-      of paper with the same or a later kind: 77
-      of stone with the same or a later kind: 6
-      of plaster with the same or a later kind: 47
-      of paint with the same or a later kind: 94
-      oak edge, oak vertex, at a crease at (2.392, 0.3, 1.25): nothing behind within 2 m
-      oak edge, oak vertex, at a crease at (3.532, 0.3, 1.25): nothing behind within 2 m
-      oak edge, oak vertex, at a crease at (5.432, 0.3, 1.25): nothing behind within 2 m
-      oak edge, oak vertex, at a crease at (6.572, 0.3, 1.25): nothing behind within 2 m
-      oak edge, oak vertex, flat at (2.44, 0.3, 2.7): nothing behind within 2 m
-      oak edge, oak vertex, flat at (3.52, 0.3, 2.7): nothing behind within 2 m
-      oak edge, oak vertex, flat at (5.48, 0.3, 2.7): nothing behind within 2 m
-      oak edge, oak vertex, flat at (6.56, 0.3, 2.7): nothing behind within 2 m
-  open edges (not seams): 9900, 4959 on another face, 4941 free
-    free and open in front with nothing behind, floor: 4
-    free and open in front with nothing behind, oak: 180
-    free and open in front with nothing behind, paper: 48
-    free and open in front with nothing behind, stone: 9
-    free and open in front with nothing behind, plaster: 4
-    free and open in front with nothing behind, paint: 113
+  edges of more than two triangles: 638
+  T-junctions: 0, 0 where edges run on along the same line (seams), 0 a vertex only touching
+    seams open in front with nothing behind: 0
+  open edges (not seams): 9736, 4614 on another face, 5122 free
+    free and open in front with nothing behind, floor: 20
+    free and open in front with nothing behind, oak: 186
+    free and open in front with nothing behind, paper: 59
+    free and open in front with nothing behind, stone: 21
+    free and open in front with nothing behind, plaster: 6
+    free and open in front with nothing behind, paint: 143
     free and open in front with nothing behind, cord: 22
     free and open in front with nothing behind, book: 6
       book 6.874 mm from (2.876, 0.288, 1.218) to (2.87, 0.287, 1.22)
@@ -65,4 +31,4 @@ the glass and lace: 7092 vertices, 12540 triangles; 6870 places, 6870 after weld
     seams lace with lace: 216
     seams open in front with nothing behind: 0
   open edges (not seams): 1176, 240 on another face, 936 free
-248
+0

@@ -1238,4 +1238,6 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]
                                   surfaces::MAT_PLASTER });
     }
     indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
+    // Where the builders' pieces still meet edge to vertex or a hair apart: closed.
+    mesh_close::close(verts, indices);
 }
