@@ -734,6 +734,20 @@ board's light:
   `FLOOR_SHADE` without the sun's trace and the table's taps, `FLOOR_NO_TABLE` without the
   taps. Elsewhere the floor is one quad with the full shader. The floor shaders trace
   the sun before they work out the view direction, light colour and occlusion.
+- **The window's light map** (`render3d::window_map`, baked by `window_map_pass`): the sun
+  through the shell's windows, baked in the window wall's inner face and projected along the
+  sun. RGBA8, 2048 × 832 with its mips, over the strip that holds the three windows and
+  0.2 m round their niches (a texel about 3.8 mm): r the casements' light through the lace's
+  shadow, g the casements' alone, b the tree's light, a the lace's outline for what it
+  scatters on. Baked on the GPU when the sun, the shell, the tree's map or whether the tree
+  is in changes, never for the wind. The floor, walls, paint, sills and metals take it in
+  `shell_open` (`WINDOW_MAP`, in the lace mask's slot): the nearest niche's outline, worked
+  out, times the map where the point's ray crosses the face, at the mip that blurs its edges
+  as the penumbra has widened by then; the lace's glow with the glazing worked out apart, the
+  tree at its own mip. While the leaves move, desktops light them a pixel
+  (`WINDOW_MAP_LEAVES`); phones bake them still at one phase of the wind, or leave them out
+  (`render3d::phone_leaves`). The glass, the lace, the floor's mirror, the board, the table,
+  the dust and the haze trace the windows a pixel, and so does the ngfx renderer.
 - **Metal frame captures**: on the Mac, start the light tuner with
   `MTL_CAPTURE_ENABLED=1` and `--gpu-capture /absolute/path.gputrace`. The tuner warms
   up for four frames, records the next frame, and exits. The capture uses a fixed wind

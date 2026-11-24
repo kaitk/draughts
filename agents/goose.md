@@ -332,6 +332,12 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   fields of `ROOM_HEAD`'s Surfaces that `LIGHT_FN` reads (`axes`, `tile`, `shell*`,
   `window_view`) by the same names, and its storage buffer's binding follows the samplers
   (the lace's mask made it binding 2). ngfx's dust root takes the lace in slot 1.
+- A map baked once and blurred by its mips (`render3d::window_map`) blurs a channel as one:
+  what softens at its own rate (the tree's dapple, the lace's glow) gets a channel and a mip
+  of its own, and a product of two outlines is never baked as one (its blur isn't the product
+  of theirs); trace one factor instead. A variant that never reads a texture can give its
+  slot to another (the map takes the lace mask's in the groups that read the lace only
+  through `shell_open`), so no slot moves.
 - `smoothstep(a, b, x)` with `a > b` is undefined: write `1.0 - smoothstep(b, a, x)`.
 - Metal keywords (`thread`, `device`, `constant`, `kernel`) as GLSL names fail only on
   the Mac's pipeline build.
