@@ -125,7 +125,9 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         pass.color[0] = g.color;
         pass.resolve[0] = target;
     } else if g.aa == AA_SMAA {
-        pass.color[0] = g.color;
+        // With HDR the pass draws into the HDR image at 1x, and SMAA runs after the
+        // tonemap, on the 8-bit picture it is made for (tone_pass).
+        pass.color[0] = if g.hdr { target } else { g.color };
     } else {
         pass.color[0] = target;
     }
@@ -240,7 +242,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
     }
     if render3d::motes_shown(g) { draw_motes(own, g); }
     gfx::end_pass();
-    if g.aa == AA_SMAA { antialias(own, g, target); }
+    if g.aa == AA_SMAA && !g.hdr { antialias(own, g, target); }
 }
 
 // Draw a material group from the room or window mesh with pipeline p. The screen's maps
@@ -840,9 +842,11 @@ fn release_hdr(own: Own&, g: render3d::Gpu&) {
 
 // The HDR target the pass resolved (g.hdr_image) tonemapped over all of `target`
 // (shaders::HDR_TONE_FRAG).
+// With SMAA into its input (g.color), then antialiased into `target`.
 fn tone_pass(own: Own&, g: render3d::Gpu&, target: Texture) {
+    let smaa = g.aa == AA_SMAA;
     var pass = gfx::PassDesc { clear_color: false };
-    pass.color[0] = target;
+    pass.color[0] = if smaa { g.color } else { target };
     gfx::begin_pass(pass);
     gfx::bind(g.hdr_pipes.tone);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.hdr_image, g.linear);
@@ -852,6 +856,7 @@ fn tone_pass(own: Own&, g: render3d::Gpu&, target: Texture) {
     gfx::uniforms(gfx::FRAGMENT, 0, render3d::hdr_tone_of(g));
     gfx::draw(3);
     gfx::end_pass();
+    if smaa { antialias(own, g, target); }
 }
 
 // The scenic views' glow (render3d::glow_shown) from the HDR target the pass resolved: what
@@ -1212,6 +1217,7 @@ fn pass_targets(own: Own&, g: render3d::Gpu&) {
         if g.hdr { g.hdr_image = gfx::render_target(g.size.x, g.size.y, hdr_format(own)); }
     } else if g.aa == AA_SMAA {
         g.color = gfx::render_target(g.size.x, g.size.y, gfx::RGBA8);
+        if g.hdr { g.hdr_image = gfx::render_target(g.size.x, g.size.y, hdr_format(own)); }
         g.edges = gfx::render_target(g.size.x, g.size.y, gfx::RG8);
         g.weights = gfx::render_target(g.size.x, g.size.y, gfx::RGBA8);
     }

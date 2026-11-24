@@ -111,7 +111,10 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
     let f = frame_addr(own, g);
     let clear = if backdrop { float4 { 0.11, 0.078, 0.063, 1.0 } } else { float4_0 };
     var pass = nx::PassDesc { depth: g.depth, color_value: clear };
-    pass.color[0] = if g.aa != AA_OFF { g.color } else { target };
+    // With HDR and SMAA the pass draws into the HDR image, and SMAA runs after the
+    // tonemap (tone_pass).
+    let smaa_later = g.hdr && g.aa == AA_SMAA;
+    pass.color[0] = if g.aa != AA_OFF && !smaa_later { g.color } else { target };
     if g.aa == AA_MSAA { pass.resolve[0] = target; }
     nx::begin_pass(pass);
     // The opaque tabletop covers the backdrop at every sample in this view.
@@ -209,7 +212,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
     ngfx::end_pass();
     barrier_between_passes();
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
-    antialias(own, g, target, size);
+    if !smaa_later { antialias(own, g, target, size); }
 }
 
 // The dust's pipeline and seeds (render3d::Dust), made the first time they are wanted,
@@ -672,9 +675,11 @@ fn release_hdr(own: Own&, g: Gpu&) {
 
 // The HDR target tonemapped over all of `target`, as gfx's tone_pass; r3d_hdr_tone's header:
 // the picture, the glow, its smallest level, HdrTone.
+// With SMAA into its input (g.color), then antialiased into `target`.
 fn tone_pass(own: Own&, g: Gpu&, target: Texture) {
+    let smaa = g.aa == AA_SMAA;
     var pass = nx::PassDesc { clear_color: false };
-    pass.color[0] = target;
+    pass.color[0] = if smaa { g.color } else { target };
     nx::begin_pass(pass);
     nx::bind(g.hdr_pipes.tone);
     var r = no_root();
@@ -687,6 +692,7 @@ fn tone_pass(own: Own&, g: Gpu&, target: Texture) {
     ngfx::draw(ngfx::root(r), 3);
     ngfx::end_pass();
     barrier_between_passes();
+    if smaa { antialias(own, g, target, g.size); }
 }
 
 // The scenic views' glow, as gfx's glow_pass; the modules' headers: the source, GlowStep.
@@ -1196,6 +1202,7 @@ fn pass_targets(own: Own&, g: Gpu&) {
         g.color = nx::render_target(size.x * k, size.y * k, ngfx::RGBA8);
     }
     if g.aa == AA_SMAA {
+        if g.hdr { g.hdr_image = nx::render_target(size.x, size.y, hdr_format(own)); }
         g.edges = nx::render_target(size.x, size.y, ngfx::RG8);
         g.weights = nx::render_target(size.x, size.y, ngfx::RGBA8);
     }

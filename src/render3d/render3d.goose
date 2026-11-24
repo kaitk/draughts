@@ -2697,7 +2697,7 @@ var hdr_allowed = false;
 // RGBA16F in place of RG11B10F (the light tuner's --hdr-format, to weigh the fallback).
 var hdr_wide = false;
 fn hdr_shown(g: Gpu&) -> bool {
-    hdr_allowed && outside_shown(g) && g.aa == AA_MSAA && ssao_allowed && !room_views_on()
+    hdr_allowed && outside_shown(g) && (g.aa == AA_MSAA || g.aa == AA_SMAA) && ssao_allowed && !room_views_on()
     && (!table_shown(g) || table_in_room(g))
 }
 
