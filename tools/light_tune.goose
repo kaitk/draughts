@@ -118,6 +118,12 @@
 //       [--walk-frames DIR --walk-path strafe|turn|forward --walk-count N --walk-turn PX (a walk from --plan-eye
 //       looking at --plan-at: D or W held, or the mouse PX a frame to the right, N frames at 1/60 s, each
 //       saved as DIR/NNN.png; with --shot)]
+//       [--touch on|off (the touch walk, on by default on Android: the walk from the start, no panel, the
+//       screen's left half a stick to walk, its right half a drag to look, Up and Down at the right edge;
+//       with the phone's tier: no screen-space occlusion, no floor mirror, no HDR, 4 shadow taps, unless
+//       --tier full)] [--tier phone|full]
+//   On a tablet: scripts/android.py tools/light_tune.goose --run (its own app id, beside the app's);
+//   flags by adb shell am start -n io.github.kaitk.draughts.light_tune/.DraughtsActivity --es args '"--scene-scale 0.75"'
 
 import std;
 import vec;
@@ -137,6 +143,9 @@ import .light_ref;
 extern fn draughts_choose_gpu();
 extern fn tuner_capture_start(path: const u8[:]) -> bool;
 extern fn tuner_capture_stop();
+// src/native/launch.c's: 1 on Android; the first frame shown, so the activity lifts its cover.
+extern fn draughts_platform() -> i64;
+extern fn draughts_first_frame();
 
 let PANEL_W: f32 = 380.0;
 let ROW:     f32 = 20.0;
@@ -606,7 +615,7 @@ fn walk_from(k: Walk&, eye: float3, at: float3) {
 // The walk's one step: the mouse's delta in pixels, the keys held, dt seconds. `hand` is
 // +1 when the plan's x and y turn the world's way (screen right is the plan's (-y, x) of
 // forward), -1 when mirrored.
-fn walk_step(k: Walk&, look: float2, dt: f32, hand: f32) {
+fn walk_step(k: Walk&, look: float2, dt: f32, hand: f32, stick: float3 = float3_0) {
     k.yaw -= hand * look.x * LOOK_DEG;
     if k.yaw > 180.0 { k.yaw -= 360.0; }
     if k.yaw < -180.0 { k.yaw += 360.0; }
@@ -619,16 +628,68 @@ fn walk_step(k: Walk&, look: float2, dt: f32, hand: f32) {
     if gfx::key_down("S") { move -= ahead; }
     if gfx::key_down("D") { move += right; }
     if gfx::key_down("A") { move -= right; }
+    move += ahead * stick.y + right * stick.x;
     let fast = gfx::key_down("Left Shift") || gfx::key_down("Right Shift");
     let speed = WALK_SPEED * (if fast { WALK_FAST } else { 1.0 });
-    if length(move) > 0.0 { move = normalize(move) * (speed * dt); }
+    // Two keys at once go no faster than one; a stick part way goes part speed.
+    if length(move) > 1.0 { move = normalize(move); }
+    move *= speed * dt;
     let s = room_shell::LIBRARY;
     k.eye.x = clamp(k.eye.x + move.x, WALL_MARGIN, s.walls[0].b.x - WALL_MARGIN);
     k.eye.y = clamp(k.eye.y + move.y, WALL_MARGIN, s.walls[0].a.y - WALL_MARGIN);
     var up: f32 = 0.0;
     if gfx::key_down("E") { up += 1.0; }
     if gfx::key_down("Q") { up -= 1.0; }
+    up += stick.z;
     k.eye.z = clamp(k.eye.z + up * RISE_SPEED * (if fast { WALK_FAST } else { 1.0 }) * dt, LOWEST, s.ceiling - LOWEST);
+}
+
+// The touch walk (--touch): one finger at a time, as gfx gives touches as the mouse. A
+// finger put down on the left half is a stick from where it went down; on the right half a
+// drag that looks; on Up or Down, at the right edge, it rises or sinks while held.
+let TOUCH_NONE = 0;
+let TOUCH_MOVE = 1;
+let TOUCH_LOOK = 2;
+let TOUCH_UP   = 3;
+let TOUCH_DOWN = 4;
+let STICK_REACH: f32 = 0.15;    // of the screen's height, the stick's full speed
+let BUTTON_SIDE: f32 = 0.14;    // of the screen's height, Up's and Down's
+
+struct Touch {
+    zone:  i64    = 0,          // TOUCH_NONE..
+    start: float2 = float2_0,   // where the finger went down, pixels
+}
+
+// Up's and Down's boxes in pixels: x, y, side.
+fn touch_buttons(size: int2) -> float3, float3 {
+    let side = size.y * BUTTON_SIDE;
+    let x = size.x - side * 1.2;
+    let mid = size.y * 0.5;
+    return float3 { x, mid - side * 1.1, side }, float3 { x, mid + side * 0.1, side };
+}
+
+fn inside(p: float2, b: float3) -> bool { p.x >= b.x && p.x < b.x + b.z && p.y >= b.y && p.y < b.y + b.z }
+
+// This frame's look (pixels, as the mouse's delta) and stick.
+fn touch_step(t: Touch&, size: int2) -> float2, float3 {
+    let p = gfx::mouse_pos();
+    let up, down = touch_buttons(size);
+    if gfx::mouse_pressed(gfx::MOUSE_LEFT) {
+        t.zone = if inside(p, up) { TOUCH_UP } else if inside(p, down) { TOUCH_DOWN }
+                 else if p.x < size.x * 0.5 { TOUCH_MOVE } else { TOUCH_LOOK };
+        t.start = p;
+        return float2_0, float3_0;   // the finger's jump from the last place isn't a look
+    }
+    if !gfx::mouse_down(gfx::MOUSE_LEFT) { t.zone = TOUCH_NONE; }
+    if t.zone == TOUCH_LOOK { return gfx::mouse_delta(), float3_0; }
+    if t.zone == TOUCH_UP { return float2_0, float3 { 0.0, 0.0, 1.0 }; }
+    if t.zone == TOUCH_DOWN { return float2_0, float3 { 0.0, 0.0, -1.0 }; }
+    if t.zone == TOUCH_MOVE {
+        var d = (p - t.start) / (size.y * STICK_REACH);
+        if length(d) > 1.0 { d = normalize(d); }
+        return float2_0, float3 { d.x, -d.y, 0.0 };
+    }
+    return float2_0, float3_0;
 }
 
 // A mid-game position, dark on the far rows: (row, col, dark), row 0 the far side.
@@ -1197,6 +1258,9 @@ fn main() {
         dump_glass_tile(argv[tile_at]);
         return;
     }
+    let on_android = draughts_platform() == 1;
+    let touch = if has(argv, "--touch") { argv[flag_value(argv, "--touch")] == "on" } else { on_android };
+    let phone_tier = has(argv, "--phone-tier") || (touch && !(has(argv, "--tier") && argv[flag_value(argv, "--tier")] == "full"));
     var w = 1600;
     var h = 1000;
     let si = flag_value(argv, "--size");
@@ -1295,7 +1359,7 @@ fn main() {
                                                                    shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
                                                                    shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
                                                                    shaders::ROOM_FRAG);
-    render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
+    render3d::setup(r3d, g, render3d::SAMPLES, if phone_tier { render3d::SHADOW_4 } else { render3d::SHADOW_16 });
     if has(argv, "--oak-aniso-4") { g.oak_sampler = gfx::sampler(gfx::SamplerDesc { max_anisotropy: 4.0 }); }
     render3d::set_aa(r3d, g, render3d::AA);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
@@ -1334,7 +1398,7 @@ fn main() {
     room.ssao = four(argv, "--ssao", room.ssao);
     render3d::ssao_view = pick(argv, "--ssao-view", SSAO_VIEWS, 0);
     // A phone's tier (the app's): the room's pipelines without the screen's maps, no mirror.
-    if has(argv, "--phone-tier") {
+    if phone_tier {
         render3d::ssao_allowed = false;
         render3d::planar_allowed = false;
     }
@@ -1409,7 +1473,7 @@ fn main() {
     // on it as the camera moves), its aperture and caps in percent of the width.
     render3d::lens.on = flag_value(argv, "--dof") > 0 && argv[flag_value(argv, "--dof")] == "on";
     // The scenic views' HDR target (render3d::hdr_shown), on unless --hdr off; X switches it.
-    render3d::hdr_allowed = !(flag_value(argv, "--hdr") > 0 && argv[flag_value(argv, "--hdr")] == "off");
+    render3d::hdr_allowed = if has(argv, "--hdr") { argv[flag_value(argv, "--hdr")] == "on" } else { !phone_tier };
     render3d::hdr_wide = flag_value(argv, "--hdr-format") > 0 && argv[flag_value(argv, "--hdr-format")] == "rgba16f";
     render3d::depth_view = pick(argv, "--lens-view", LENS_VIEWS, 0);
     let focus_m = number(argv, "--focus", 0.0);
@@ -1536,7 +1600,8 @@ fn main() {
 
     put_look(r3d, g, season, material, st);
 
-    let scale = max(gfx::screen_size().x as f32 / w, 1.0);
+    // A touch screen's panel text sized by its height, as its window is the whole screen.
+    let scale = if touch { max(gfx::screen_size().y as f32 / 700.0, 1.0) } else { max(gfx::screen_size().x as f32 / w, 1.0) };
     let c = ui::create(13.0, scale);
     guard c.id != 0 else { abort(str("ui: ", ui::error())); }
     var shown_season = season;
@@ -1570,6 +1635,7 @@ fn main() {
     // --shot-panel: the panel drawn in a shot too.
     let panel_in_shot = has(argv, "--shot-panel");
     var walk = Walk {};
+    var finger = Touch {};
     var shown_view = view;
     var walk_text: u8[..96] = [];
     let walk_test = whole(argv, "--walk-test", 0);
@@ -1587,7 +1653,7 @@ fn main() {
         let still = pattern == 0 || render3d::wind_kind == rooms::WIND_STILL || room.wind.y == 0.0;
         if meter_frame(meter, frame_at) {
             meter_text(meter, meter_a, meter_b, still);
-            if meter_for > 0.0 { print(meter_a[..], "; ", meter_b[..]); }
+            if meter_for > 0.0 || touch { print("light_tune: ", meter_a[..], "; ", meter_b[..]); }
         } else if !meter.measured {
             meter_text(meter, meter_a, meter_b, still);
         }
@@ -1656,8 +1722,8 @@ fn main() {
         ui::input_from_gfx(c);
         var print_it = gfx::key_pressed("P");
         // Tab begins the walk; Esc or Tab ends it, and so does losing focus, which lets the mouse go.
-        var walk_now = !walk.on && gfx::key_pressed("Tab");
-        if walk.on && (gfx::key_pressed("Escape") || gfx::key_pressed("Tab") || !gfx::mouse_relative()) {
+        var walk_now = !walk.on && (gfx::key_pressed("Tab") || touch);
+        if walk.on && !touch && (gfx::key_pressed("Escape") || gfx::key_pressed("Tab") || !gfx::mouse_relative()) {
             walk.on = false;
             gfx::set_mouse_relative(false);
         }
@@ -2122,7 +2188,7 @@ fn main() {
             start_eye = float3 { plan_eye_at.x, plan_eye_at.y, plan_eye_at.z };
             start_at = float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z };
         }
-        if walk_now && gfx::set_mouse_relative(true) {
+        if walk_now && (touch || gfx::set_mouse_relative(true)) {
             room_on = true;
             shell_on = true;
             render3d::show_room(g, room_on, away, shell_on);
@@ -2139,7 +2205,12 @@ fn main() {
             let py = plan_point(g, float3 { 0.0, 1.0, 0.0 }) - o;
             let hand: f32 = if py.x * px.z - py.z * px.x >= 0.0 { 1.0 } else { -1.0 };
             let dt = if walk_test > 0 || walk_frames > 0 { 1.0 / 60.0 } else { min(gfx::delta_time() as f32, LONGEST_STEP) };
-            walk_step(walk, gfx::mouse_delta(), dt, hand);
+            if touch {
+                let look, stick = touch_step(finger, gfx::screen_size());
+                walk_step(walk, look, dt, hand, stick);
+            } else {
+                walk_step(walk, gfx::mouse_delta(), dt, hand);
+            }
         }
         if print_it {
             var line: u8[>..] = [];
@@ -2327,11 +2398,25 @@ fn main() {
                 walk_text.append(" m");
                 if ui::begin(c, "Walk", ui::rect(10.0, 10.0, PANEL_W, 5.0 * ROW + 16.0), ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
                     note(c, walk_text[..]);
-                    note(c, "WASD, the mouse; Shift faster; C seated");
-                    note(c, "Q down, E up");
-                    note(c, "R back to the view; Esc the panel");
+                    if touch {
+                        note(c, "left half: walk, from where the finger goes down");
+                        note(c, "right half: look");
+                        note(c, "Up and Down at the right edge");
+                    } else {
+                        note(c, "WASD, the mouse; Shift faster; C seated");
+                        note(c, "Q down, E up");
+                        note(c, "R back to the view; Esc the panel");
+                    }
                 }
                 ui::end(c);
+                if touch {
+                    let up, down = touch_buttons(gfx::screen_size());
+                    let boxed = ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR | ui::WINDOW_TITLE | ui::WINDOW_BORDER;
+                    if ui::begin(c, "Up", ui::rect(up.x / scale, up.y / scale, up.z / scale, up.z / scale), boxed) {}
+                    ui::end(c);
+                    if ui::begin(c, "Down", ui::rect(down.x / scale, down.y / scale, down.z / scale, down.z / scale), boxed) {}
+                    ui::end(c);
+                }
             }
         }
         last_tree_ms = g.tree_ms;
@@ -2356,6 +2441,7 @@ fn main() {
             break;
         }
         if meter.wait { gfx::flush(); }
+        if frames == 1 { draughts_first_frame(); }
         meter.in_loop += gfx::time() - frame_at;
     }
 }
