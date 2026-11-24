@@ -75,6 +75,22 @@ The views are agents/perf.md's; the walk's field of view is 60°. `no-room` sits
   room's surfaces one shader at a time (the paper, the wainscot, the paint), and the
   shadow taps.
 
+## SMAA as the room's default (the user, 2026-11-24)
+
+The user leans to SMAA as the default: the look is close to 4× MSAA's, and MSAA's cost grows
+with the shader under every edge pixel, a trap as the room's shaders grow. To validate on the
+Pixel 7a, the Galaxy Tab again, and the Mac by eye. The 4090 at 5120 × 2880 (unsynced, two
+rounds, ms a frame):
+
+| View | 4× MSAA | SMAA | none |
+|---|---|---|---|
+| Down | 2.50 | 2.48 | 2.28 |
+| Corner | 2.96 | 2.79 | 2.58 |
+| Room | 2.78 | 2.57 | 2.40 |
+| Menu | 2.77 | 2.58 | 2.40 |
+
+SMAA costs about 0.2 ms there and MSAA 0.2 to 0.4: SMAA no dearer even on a desktop GPU.
+
 ## Next (task 110)
 
 - [ ] Choose for each costly part: drop it on phones, make it cheaper, or bake it
