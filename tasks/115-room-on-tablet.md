@@ -138,7 +138,10 @@ Cool (thermal status 0 before and after), ms a frame, one run each, the base twi
 ## Next (task 110)
 
 Aim: about 45 fps (22 ms) on this tablet, every second refresh of its 90 Hz; a steady 30 the
-least (the user, 2026-11-24). Lower resolution stays the last resort: the screen shows it.
+least (the user, 2026-11-24). Lower resolution stays the last resort on a tablet: its screen shows it. On a phone's small
+screen 0.75 to 0.8 of the side may be fine, and anywhere the room can't hold 30 (the Galaxy
+A33 likely: its Mali-G68 MP4 is older and no faster, at 2400 × 1080's 13% more pixels) it
+steps down, measured as task 081's 2× MSAA fallback is (the user, 2026-11-24).
 The approaches agreed, in order:
 
 - [ ] Rank the room's shaders with the Mali Offline Compiler (cycles, registers and the bound
