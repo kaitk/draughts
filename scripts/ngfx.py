@@ -120,7 +120,9 @@ def shaders(sdk=None):
                      .replace("@NGFX@", rel(tools, NGFX)))
     env = {"NGFX_METAL_SDK": sdk} if sdk else None
     if sys.platform.startswith("linux"):    # TinyCC can't run under SELinux (Fedora's, Bazzite's)
-        native.run(native.GOOSE, "build", "-o", tools / "ngfx_shaders", tool.name, cwd=tools)
+        # CC as linux.py takes it: the system's cc may have no C++ (Ubuntu 22.04's gcc alone).
+        cc = {"GOOSE_CC": shutil.which(os.environ["CC"])} if os.environ.get("CC") else None
+        native.run(native.GOOSE, "build", "-o", tools / "ngfx_shaders", tool.name, cwd=tools, env=cc)
         native.run(tools / "ngfx_shaders", out, *stale, env=env)
     else:
         native.run(native.GOOSE, "run", tool.name, "--", out, *stale, cwd=tools, env=env)

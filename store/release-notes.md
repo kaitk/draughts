@@ -35,14 +35,14 @@ Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, 
 
 **macOS** (Apple silicon, macOS 13.3 or later): download `Draughts-0.9.4-macos-arm64.dmg`, open it, and drag Draughts to Applications. It is signed and notarized.
 
-**Linux** (64-bit, glibc 2.35 or later: Ubuntu 22.04, Debian 12, Fedora 36, SteamOS, and their successors): download `Draughts-0.9.4-linux-x64.tar.gz`, extract it, and run `Draughts/draughts`. To add it to your applications menu, run `Draughts/install.sh` (`install.sh --remove` takes it away). Your graphics driver must support Vulkan, which Mesa and NVIDIA's driver do.
+**Linux** (64-bit, glibc 2.35 or later: Ubuntu 22.04, Debian 12, Fedora 36, SteamOS, and their successors): download `Draughts-0.9.4-linux-x64.tar.gz`, extract it, and run `Draughts/draughts`. To add it to your applications menu, run `Draughts/install.sh` (`install.sh --remove` takes it away). Your graphics driver must support Vulkan, which Mesa and NVIDIA's driver do. Draughts draws through SDL_GPU (Vulkan) here; `Draughts/draughts --renderer ngfx` tries [NoGraphicsAPI](https://github.com/sebbbi/NoGraphicsAPI) instead, which needs `VK_EXT_descriptor_heap` (Mesa RADV 26.2 or later, or NVIDIA's driver).
 
 **Android and iPhone/iPad:** from Google Play and the App Store.
 
 SHA-256:
 - `Draughts-0.9.4-windows-x64-setup.exe`: `d5f75cbe13375628280465ed73f7ecce14f86f8592f61295b1e77fa0f4a57c2d`
 - `Draughts-0.9.4-windows-x64.zip`: `813df74942b979ad0528c304a244e59c31defd62febc82d5cd2c0742ddaea7c0`
-- `Draughts-0.9.4-linux-x64.tar.gz`: `1cdb138435a312db8e2c7f265d71c3c87043930070631024923a62336efd6941`
+- `Draughts-0.9.4-linux-x64.tar.gz`: `d7de112a5b4bf197663279dabbd6dd5f10c11d02351092dfd535ae530770263c`
 ```
 
 ### Play, en-GB

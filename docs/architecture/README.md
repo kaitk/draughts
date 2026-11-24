@@ -57,9 +57,9 @@ measuring a device, `tools/assets/` for making assets), `docs/`, and the rest. B
 `app/` means `src/app/`, and so on.
 
 **The programs are `main/`'s two roots**, and nothing else is there:
-`main/draughts.goose`, gfx alone, which Android and Linux ship, and
+`main/draughts.goose`, gfx alone, which Android ships, and
 `main/draughts_ngfx.goose`, the same program holding goose-ngfx too, which macOS, iOS,
-and Windows ship. Each declares the packages and picks its renderer's
+Windows, and Linux ship. Each declares the packages and picks its renderer's
 `backend`; both call `run` in `app/app.goose`. Their `.build` sidecars list the
 program's C, all of it in `native/`.
 

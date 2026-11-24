@@ -16,8 +16,8 @@ The app builds from a Mac (Apple silicon), from Windows (x64), and from Linux (x
 | Rules tests | Mac, Windows, Linux | `scripts/test.sh` | [Test the rules](#test-the-rules) |
 
 With no program, each script builds the app as it ships on its platform: both renderers
-(`src/main/draughts_ngfx.goose`) on macOS, iOS, and Windows, gfx alone
-(`src/main/draughts.goose`) on Android, Linux, and the iOS Simulator. `--gfx-only` builds
+(`src/main/draughts_ngfx.goose`) on macOS, iOS, Windows, and Linux, gfx alone
+(`src/main/draughts.goose`) on Android and the iOS Simulator. `--gfx-only` builds
 gfx alone, and a program path builds that program (`scripts/mac.py tools/pace.goose`).
 
 ## Toolchain
@@ -176,7 +176,12 @@ The script builds goose_gfx into `build/linux/goose/` and SDL from the submodule
 `patches/SDL` applied, statically, with Wayland and X11 (the release's `libSDL3.a` has no
 Wayland, [findings](goose-findings.md)). SDL opens Wayland where there is one
 (`SDL_VIDEO_DRIVER=x11` forces XWayland). `CC` picks the compiler. The settings are in
-`~/.local/share/kaitk/draughts/`.
+`~/.local/share/kaitk/draughts/`. The app as it ships holds goose-ngfx too, so it needs
+goose-ngfx and slangc as on the Mac, LunarG's Vulkan SDK 1.4.357 or later (`VULKAN_SDK`,
+its `bin` on `PATH`, and `CMAKE_LIBRARY_PATH=$VULKAN_SDK/lib/VulkanLoader/lib`, where
+its loader is), and CMake 3.25 or later (Kitware's, as Ubuntu 22.04 has 3.22);
+`--gfx-only` needs none of them. `auto` takes gfx on Linux; `--renderer ngfx` tries
+NoGraphicsAPI.
 
 On an immutable host without the headers (Fedora Atomic, Bazzite), build SDL once in the
 `draughts-jammy` box ([Desktop releases](#desktop-releases)); the host's builds then link

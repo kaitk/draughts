@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Build Draughts for Linux (x64) with the patched goose_gfx, and optionally run it.
 
-    scripts/linux.py                         build build/linux/draughts, the app as it ships:
-                                             gfx alone
-    scripts/linux.py src/main/draughts_ngfx.goose
-                                             build build/linux/draughts_ngfx, holding
-                                             goose-ngfx too (scripts/ngfx.py), to compare
+    scripts/linux.py                         build build/linux/draughts_ngfx, the app as it
+                                             ships: both renderers, gfx chosen unless
+                                             --renderer ngfx (goose-ngfx, scripts/ngfx.py)
+    scripts/linux.py --gfx-only              build build/linux/draughts, gfx alone
     scripts/linux.py --run -- --board 3d     build, and run it with those flags
     scripts/linux.py --release               build/linux/release/
                                              Draughts-VERSION-linux-x64.tar.gz
@@ -162,7 +161,7 @@ def main():
     ap.add_argument("--run", action="store_true", help="run it after building")
     ap.add_argument("--release", action="store_true", help="Draughts/, tarred for a GitHub release")
     a = native.parse_args(ap)
-    program = native.program_to_build(a, ngfx_ships=False)
+    program = native.program_to_build(a, ngfx_ships=True)
     ngfx.prepare(program)
     exe = OUT / program.stem
     # Goose takes a compiler by path, or by the names clang, gcc, and cc only.

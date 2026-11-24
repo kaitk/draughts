@@ -30,8 +30,8 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
 
 ### Two renderers
 
-The build holding goose-ngfx too (`src/main/draughts_ngfx.goose`) ships on macOS, iOS, and
-Windows, gfx alone on Android and Linux; it draws the same frames through either, chosen at start (`--renderer auto|gfx|ngfx`). The drawers (`draw`,
+The build holding goose-ngfx too (`src/main/draughts_ngfx.goose`) ships on macOS, iOS,
+Windows, and Linux (where `auto` takes gfx), gfx alone on Android; it draws the same frames through either, chosen at start (`--renderer auto|gfx|ngfx`). The drawers (`draw`,
 `scene`, `widgets`, `draw3d`, `render3d`) are shared: each records through a backend
 handed to it, `be`, calling the few calls every drawer makes on it (`be.flush()`,
 `be.begin_pass(...)`) and its own recorder on a field (`be.draw.board(...)`,

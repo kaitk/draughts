@@ -98,9 +98,9 @@ Draughts is two Goose programs over one app, both in `src/main/`:
 
 - `src/main/draughts_ngfx.goose` holds goose-ngfx (NoGraphicsAPI) too and picks a
   renderer when it starts (`--renderer auto|gfx|ngfx`). This is the build that ships on
-  macOS, iOS, and Windows.
+  macOS, iOS, Windows, and Linux (where it takes gfx unless told `--renderer ngfx`).
 - `src/main/draughts.goose` draws through goose_gfx alone. This is the build that ships
-  on Android and Linux, and the iOS Simulator runs it.
+  on Android, and the iOS Simulator runs it.
 
 Each root holds only `main`, which calls `run`, the main loop in `src/app/app.goose`.
 Its `.build` sidecar lists the program's C, which is in `src/native/`.
@@ -124,7 +124,7 @@ build/draughts_ngfx --board 3d
 | Linux | Linux | `scripts/linux.py --run` | [Run on Linux](docs/development.md#run-on-linux) |
 | Android | Mac, Windows | `scripts/android.py --run`: build, install over USB, start | [Run on Android](docs/development.md#run-on-android) |
 | iOS | Mac with Xcode | `scripts/ios.py --run` in the Simulator, `--device --run` on an iPhone | [Run on iOS](docs/development.md#run-on-ios) |
-| goose-ngfx's part | Mac, Windows, Linux | a goose-ngfx checkout (`NGFX`) and slangc (`NGFX_SLANGC`) for the builds holding both renderers; `scripts/linux.py src/main/draughts_ngfx.goose` builds it on Linux | [Two renderers](docs/architecture/rendering.md#two-renderers) |
+| goose-ngfx's part | Mac, Windows, Linux | a goose-ngfx checkout (`NGFX`) and slangc (`NGFX_SLANGC`) for the builds holding both renderers; on Linux also the Vulkan SDK (1.4.357 or later) and CMake 3.25 | [Two renderers](docs/architecture/rendering.md#two-renderers) |
 
 `--release` makes the store and download builds; [development](docs/development.md) has
 them, the development flags, and how to measure a device.

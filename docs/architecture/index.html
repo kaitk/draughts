@@ -178,7 +178,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 <div class="tablewrap"><table>
 <thead><tr><th>Folder</th><th>Holds</th></tr></thead>
 <tbody>
-<tr><td><code>src/main/</code></td><td>The two programs, a few lines each: <code>main()</code> calls <code>run()</code>. <code>draughts.goose</code> draws through goose_gfx alone and ships on Android and Linux. <code>draughts_ngfx.goose</code> holds goose-ngfx too, picks one when it starts, and ships on macOS, iOS, and Windows. Each has a <code>.build</code> file beside it naming the C it needs.</td></tr>
+<tr><td><code>src/main/</code></td><td>The two programs, a few lines each: <code>main()</code> calls <code>run()</code>. <code>draughts.goose</code> draws through goose_gfx alone and ships on Android. <code>draughts_ngfx.goose</code> holds goose-ngfx too, picks one when it starts, and ships on macOS, iOS, Windows, and Linux. Each has a <code>.build</code> file beside it naming the C it needs.</td></tr>
 <tr><td><code>src/app/</code></td><td>The loop, the host, the renderer and its drawers, the font, the colours, the computer's thread, and the developer flags.</td></tr>
 <tr><td><code>src/gfx/</code>, <code>src/ngfx/</code></td><td>The two recorders, the only code that calls a graphics library. Each turns what the drawers ask for into GPU work for its renderer (section 4).</td></tr>
 <tr><td><code>src/native/</code></td><td>The few jobs done in C: the storage folder, the languages, the display and safe area, the alarm, the sound device, and the photograph.</td></tr>

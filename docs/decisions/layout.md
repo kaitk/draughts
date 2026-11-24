@@ -118,7 +118,7 @@ split is in [the code's layout](README.md#the-codes-layout).
 - macOS, iOS, and Windows ship `src/main/draughts_ngfx.goose`, both renderers, chosen at
   start with gfx to fall back on ([rendering](../architecture/rendering.md#two-renderers));
   Android and Linux ship `src/main/draughts.goose`: goose-ngfx has no Android build, and
-  on Linux gfx measured faster (task 065). This replaces gfx shipping everywhere, with the
+  on Linux gfx measured faster (task 065; Linux ships both since 2026-11-24, below). This replaces gfx shipping everywhere, with the
   ngfx root a development build that every `--release` refused (above).
 - With no program, each platform script builds the app as it ships there, and
   `--release` builds the same; `--gfx-only` builds the gfx root in its place, to compare
@@ -126,6 +126,15 @@ split is in [the code's layout](README.md#the-codes-layout).
   program, for tools and benches. A release takes no program, so it is always the app.
   This replaces passing `src/main/draughts_ngfx.goose` to get both renderers (above).
   Rejected: `--gfx`, which reads as if the default lacked gfx.
+
+## Linux ships both renderers (2026-11-24, 0.9.4)
+
+- Linux ships `src/main/draughts_ngfx.goose` as macOS, iOS, and Windows do, so
+  `--renderer ngfx` can try NoGraphicsAPI on a Linux driver nobody here has measured
+  (NVIDIA's). `auto` still takes gfx there (RADV ran ngfx 13% slower, task 065). This
+  replaces Linux shipping gfx alone (above). The executable now links the Vulkan loader
+  (`libvulkan.so.1`) and libstdc++, which every Linux with a Vulkan driver has. Rejected:
+  a second Linux download with ngfx, which gives one platform two builds to keep apart.
 - The iOS Simulator builds gfx alone, as its SDK lacks Metal 4's types
   (`MTL4CommandBuffer`); `scripts/ios.py` builds both renderers for `--device` and
   `--release`, and refuses the ngfx root for the Simulator.
