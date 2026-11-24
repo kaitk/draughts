@@ -241,6 +241,20 @@ CPU disagreed by one texel. Cool, the quick bench, ms a frame (two rounds):
 Malioc (G615): the floor 22.02 to 21.34 cycles, the metals 18.41 to 17.25 (and their spill
 gone); the bake 7.47 a texel, once.
 
+### Where the floor's cycles go (2026-11-24, malioc ablations)
+
+The floor's phone shader (`room_floor_boxmap_fixed`, longest path 21.34 cycles on the G615)
+with one term at a time replaced by a constant: the sharp reflection 7.1, the table's shade
+3.0 (`table_shade`, the branch the table's map skips at run time), `window_open` 1.5,
+`case_shade` 0.7, the baked light 1.0, the sun's highlight 0.5, the normals' variance 0.25,
+the scratches 0.07, the corners' map 0. The materials' detail costs next to nothing, so
+phone-tier materials would buy under a cycle; the reflection is the cost.
+
+The reflection's windows: only the window nearest where the ray meets the wall is worked out
+(the loop did all three). The picture is identical on both tiers; malioc's floor 21.34 to
+19.53, the metals 17.25 to 15.35; the tablet within its noise (26.7 / 32.5 / 31.7 ms), since
+the loop's early-out already skipped the windows a ray misses.
+
 ## The iPhone 13 mini (2026-11-24)
 
 The iPhone 13 mini (A15, 2340 × 1080 landscape, 60 Hz), native, the phone's tier with 4× MSAA,
@@ -266,7 +280,8 @@ The approaches agreed, in order:
       light map or a small baked texture, not traced per floor pixel (its baked light is a
       map now, above; the windows still traced)
 - [ ] Phone-tier versions of the materials: what doesn't read at tablet size dropped (the
-      second sheen lobe, the paint's relief, the floor's scratches and slow noise, grime)
+      second sheen lobe, the paint's relief, the floor's scratches and slow noise, grime);
+      measured on the floor at under a cycle (above)
 - [ ] Detail faded by screen size in the shader (`fwidth`): small surfaces skip normal and
       relief detail
 - [ ] Smooth terms (the baked light's taps) shared over a 2 × 2 quad, if the devices'

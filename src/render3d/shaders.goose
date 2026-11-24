@@ -3523,21 +3523,22 @@ let ROOM_FRAG = """
         vec3 qg = p + r * ((shell.y + shell_glass.x - dot(p.xz, nw)) / toward);
         vec3 view = lace_light.rgb / max(params.x * shade.w, 1e-3);
         vec3 bars = srgb(paint.rgb) * 0.12;
-        float cover = 0.0;
-        vec3 win = vec3(0.0);
-        for (int i = 0; i < 3; i++) {
-            if (float(i) >= shell.x) break;
-            float mid = shell_mids[i];
-            vec2 w = vec2(dot(hw.xz, axes.xy) - mid, hw.y - shell.z) / metre;
-            float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
-            float rect = smoothstep(-soft.x, soft.x, half_w - abs(w.x))
-                       * smoothstep(-soft.y, soft.y, min(w.y - shell_niche.y, head - w.y));
-            if (rect < 0.001) continue;
-            vec2 wg = vec2(dot(qg.xz, axes.xy) - mid, qg.y - shell.z) / metre;
-            win += rect * mix(bars, view, casement(wg, max(soft.x, soft.y)));
-            cover += rect;
+        // The window nearest where the ray meets the wall: a ray sharp enough to show one
+        // (room_reflection) blurs its edges by less than the wall between two, so the others
+        // add nothing.
+        if (shell.x < 0.5) return c;
+        float along = dot(hw.xz, axes.xy);
+        float mid = shell_mids[0];
+        for (int i = 1; i < 3; i++) {
+            if (float(i) < shell.x && abs(along - shell_mids[i]) < abs(along - mid)) mid = shell_mids[i];
         }
-        return mix(c, win / max(cover, 1e-4), min(cover, 1.0));
+        vec2 w = vec2(along - mid, hw.y - shell.z) / metre;
+        float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
+        float rect = smoothstep(-soft.x, soft.x, half_w - abs(w.x))
+                   * smoothstep(-soft.y, soft.y, min(w.y - shell_niche.y, head - w.y));
+        if (rect < 0.001) return c;
+        vec2 wg = vec2(dot(qg.xz, axes.xy) - mid, qg.y - shell.z) / metre;
+        return mix(c, mix(bars, view, casement(wg, max(soft.x, soft.y))), rect);
     }
 
     // What a glossy surface sees along r through a GGX lobe alpha wide: the room seen
