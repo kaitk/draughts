@@ -40,3 +40,18 @@ branch), and `build/notes/tree/photos/tartu-maple-1.jpg` (leaf plates from below
 - [ ] Growth stays under 100 ms on the Mac (now 6.5 ms) and the segment and leaf counts
       within `MAX_WHOLE_SEGMENTS` and `MAX_CARDS`; the times recorded here.
 - [ ] The decision recorded in `docs/decisions/` and `docs/architecture/` updated.
+
+## The user's verdict on the first research (2026-11-24)
+
+The research is better than before, but the prototype's maple looks wrong and needs much
+more work, in a later session. Only one method was prototyped: Gao and Newberry's forks
+(`grove.js`), with Palubicki's bending by thickness. The other methods were weighed in a
+table but not tried. Next time:
+
+- [ ] Prototype several methods side by side on the CPU, each drawn beside the same photo
+      crops: space colonisation (Runions et al. 2007) for the whole crown; Palubicki et al.
+      2009 with its shadow grid (grown at low detail if it is too slow whole); our
+      Weber-Penn generator with broken leaders added; Gao and Newberry's forks. Pick by
+      the pictures, not by the table.
+- [ ] Read the open code first (ez-tree, Blender's Sapling, friggog/tree-gen, grove.js)
+      and start from published methods and their parameters, not from invented rules.
