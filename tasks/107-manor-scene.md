@@ -663,6 +663,10 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       each off. The lace's read held inside the edge, nothing drawn past the last row: the
       line's 500-1,100 pixels a view over 8 at 4K, the hem unchanged, the floor's reflection
       of the line a level
+  - [ ] The screen's occlusion (GTAO, the tuner's default) flickers on the window shutters and
+        behind them while the eye moves (the user, 2026-11-24, comparing SMAA and MSAA in the
+        tuner; unclear whether SMAA makes it worse). The user: take it off the shutters' front side,
+        against the window, as the doors' panels skip it; keep it behind them, where it shades the gap
   - [x] The HDR glow pulsing on thin sun strips (the sill, the window's reveals) when the
         eye moves up or down, steady when it moves sideways (`glow-shimmer-*.png`): the
         first downsample averaged 4 x 4 blocks and thresholded after, so a strip a few
