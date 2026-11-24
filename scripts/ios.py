@@ -70,6 +70,9 @@ STACK_RESERVE = "128M"
 # The simulator this script makes and uses: the size of the iPhone the app is tried on.
 SIM_NAME = "Draughts iPhone 13 mini"
 SIM_TYPE = "com.apple.CoreSimulator.SimDeviceType.iPhone-13-mini"
+# The programs held in landscape alone, never portrait: the light tuner, as its benches frame
+# their views (src/native/tuner_landscape.c, task 115). The app turns with the device.
+LANDSCAPE = {"light_tune"}
 # The asset catalog's names: the icon, and the launch screen's colour.
 APP_ICON = "AppIcon"
 LAUNCH_COLOR = "LaunchBackground"
@@ -156,6 +159,7 @@ def write_bundle(app, exe, app_id, title, device):
     # Connect reads them to hold uploads to its minimum Xcode and SDK.
     xcode = run("xcodebuild", "-version", capture=True).split()
     major, minor = (xcode[1].split(".") + ["0", "0"])[:2]
+    landscape = ["UIInterfaceOrientationLandscapeLeft", "UIInterfaceOrientationLandscapeRight"]
     info = {
         "CFBundleDevelopmentRegion": "en",
         "CFBundleExecutable": title,
@@ -190,12 +194,11 @@ def write_bundle(app, exe, app_id, title, device):
         # SDL asks for it to take a pointer (an iPad's trackpad, the simulator's mouse).
         "UIApplicationSupportsIndirectInputEvents": True,
         "UIViewControllerBasedStatusBarAppearance": True,
-        "UISupportedInterfaceOrientations": [
-            "UIInterfaceOrientationPortrait", "UIInterfaceOrientationLandscapeLeft",
-            "UIInterfaceOrientationLandscapeRight"],
-        "UISupportedInterfaceOrientations~ipad": [
+        "UISupportedInterfaceOrientations": landscape if title in LANDSCAPE else [
+            "UIInterfaceOrientationPortrait", *landscape],
+        "UISupportedInterfaceOrientations~ipad": landscape if title in LANDSCAPE else [
             "UIInterfaceOrientationPortrait", "UIInterfaceOrientationPortraitUpsideDown",
-            "UIInterfaceOrientationLandscapeLeft", "UIInterfaceOrientationLandscapeRight"],
+            *landscape],
         "ITSAppUsesNonExemptEncryption": False,
         **assets,
     }

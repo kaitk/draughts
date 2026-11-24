@@ -382,6 +382,10 @@ scripts/ios.py --console --args "--screen game --lang et"
 scripts/ios.py --device --run            # on an attached iPhone or iPad
 ```
 
+The light tuner runs on a device too, in its touch walk with the phone's tier, held in
+landscape: `DRAUGHTS_IOS_TEAM=<team> scripts/ios.py --device tools/light_tune.goose --console
+--args "--fps-seconds 30"` (its own app id, beside the app's).
+
 The simulator's build is gfx alone, as the Simulator's SDK lacks Metal 4's types; a device
 build holds both renderers and takes goose-ngfx's `goose.h` from its Mac build, so run
 `scripts/mac.py` once first.

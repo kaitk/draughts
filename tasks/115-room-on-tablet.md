@@ -175,6 +175,14 @@ Every room shader uses all 64 work registers (half occupancy), all 128 uniform r
   build time, the tuner keeping uniforms; or a small packed block per material group with only
   what it reads, computed on the CPU (fewer folds, no build step).
 
+## The iPhone 13 mini (2026-11-24)
+
+The iPhone 13 mini (A15, 2340 × 1080 landscape, 60 Hz), native, the phone's tier with 4× MSAA,
+2026-11-24 (`scripts/ios.py --device tools/light_tune.goose`): every view (down, corner, room,
+menu) held its 60 Hz cap, 16.7 ms a frame, the worst half second 17 to 19 ms, the loop's own
+work 1.0 to 1.4 ms. iOS presents at the display's rate even with `--no-vsync`, and there is no
+GPU timer there, so its headroom isn't known.
+
 ## Next (task 110)
 
 Aim: about 45 fps (22 ms) on this tablet, every second refresh of its 90 Hz; a steady 30 the
