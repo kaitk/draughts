@@ -7,6 +7,10 @@ the Galaxy Tab A11+ (SM-X230, MediaTek MT6878, 1920 × 1200) to see what it cost
 which effects cost the most, so task 110 can choose what to drop, rework, or tier. Lower
 render resolution is the last resort, not the first fix (the user, 2026-11-24).
 
+The target on a weak tablet like this one (the user, 2026-11-24): 60 fps (16.7 ms) would be
+fine, a steady 30 (33.3 ms) acceptable, with room left for the device warming. The board
+alone, without the room, asks for more.
+
 ## How it runs
 
 - `scripts/android.py tools/light_tune.goose --run` builds the tuner as its own app
