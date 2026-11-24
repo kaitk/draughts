@@ -2132,6 +2132,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   release's `gfx.goose` passed short: the C read a byte past it, and the lace in the room
   view took alpha-to-coverage at random (553,109 pixels over 8 at 3840 × 2160 against the
   fixed build). `scripts/test.sh` checks with that copy.
+- The view out's near trees are left out of the main view while the maple is geometry
+  (2026-11-24, task 107; `render3d::near_trees_left_out`, `view_out::build`'s far count):
+  with `--tree-draw wood` or `all`, the oak's picture (the park's cards with `--park`) and
+  the maple seen from its shadow's map (`tree_seen`, the `veil` sun look) are not drawn;
+  the sky and the far band are. The mirror keeps them, as no geometry is drawn there. Off,
+  the four views are byte-identical. Open: the park's cards still cast their shadows on
+  the lawn.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only

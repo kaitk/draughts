@@ -393,13 +393,14 @@ struct Gpu {
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
     // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
     // pictures, the far band and the oak, RGBA8 sRGB with no mips.
-    outside_on:    bool,
-    outside:       Pipeline,
-    outside_vb:    Buffer,
-    outside_ib:    Buffer,
-    outside_count: i64,
-    outside_band:  Texture,
-    outside_oak:   Texture,
+    outside_on:        bool,
+    outside:           Pipeline,
+    outside_vb:        Buffer,
+    outside_ib:        Buffer,
+    outside_count:     i64,
+    outside_far_count: i64,         // the sky, the lawn and the band alone (view_out::build)
+    outside_band:      Texture,
+    outside_oak:       Texture,
     // The shell's baked light (model3d::room_light), RGBA16F: made again when what it is
     // baked from changes (light_key), its time (measuring) and how many sun patches lit it.
     light_volume:  Texture,
@@ -1285,7 +1286,19 @@ var sun_look = SunLook {};
 fn outside_block(g: Gpu&, in_mirror: bool = false) -> OutsideBlock {
     OutsideBlock { float4 { g.room.outside, sun_look.disc.w, if in_mirror { max(g.room.planar.w, 1.0) } else { 0.0 }, sun_veil },
                    sun_look.disc, sun_look.glare,
-                   if in_mirror { float4_0 } else { float4 { sun_look.tree.x, sun_look.tree.y, sun_look.tree.z, sun_look.tree.w * surfaces::METRE } } }
+                   if in_mirror || near_trees_left_out(g) { float4_0 }
+                   else { float4 { sun_look.tree.x, sun_look.tree.y, sun_look.tree.z, sun_look.tree.w * surfaces::METRE } } }
+}
+
+// Whether the view out's near trees are left out of the main view: their pictures (the oak,
+// the park's cards) and the maple seen from its shadow's map (tree_seen), where the maple
+// is drawn as geometry (tree_draw wood or all). The mirror keeps them, as no geometry is
+// drawn there. The far band stays.
+fn near_trees_left_out(g: Gpu&) -> bool { tree_draw != TREE_OFF }
+
+// How many of the view out's indices to draw (view_out::build's order).
+fn outside_drawn(g: Gpu&, in_mirror: bool) -> i64 {
+    if !in_mirror && near_trees_left_out(g) { g.outside_far_count } else { g.outside_count }
 }
 
 // An oak's bake (surfaces::Oak) in the slots of a theme BAKE_FRAG's oak reads.
@@ -1350,7 +1363,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     if g.room_shell && g.outside_vb.id == 0 {
         var verts:   mesh::Vertex[>..] = [];
         var indices: u32[>..]          = [];
-        view_out::build(verts, indices, view_out::centre_of(room_shell::LIBRARY), park_ground);
+        g.outside_far_count = view_out::build(verts, indices, view_out::centre_of(room_shell::LIBRARY), park_ground);
         g.outside_vb, g.outside_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
         g.outside_count = indices.len;
     }

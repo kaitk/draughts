@@ -1036,7 +1036,7 @@ fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
     gfx::uniforms(gfx::FRAGMENT, 1, render3d::outside_block(g, in_mirror));
     gfx::bind_vertex_buffer(g.outside_vb);
     gfx::bind_index_buffer(g.outside_ib, 4);
-    gfx::draw_indexed(g.outside_count);
+    gfx::draw_indexed(render3d::outside_drawn(g, in_mirror));
 }
 
 // The tree's pipelines (render3d::TreeGpu): its tubes' and ribbons', 8-bit and HDR, made

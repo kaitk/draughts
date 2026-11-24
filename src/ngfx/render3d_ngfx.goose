@@ -875,7 +875,7 @@ fn draw_outside(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
     slot(t, 0, g.outside_band, g.linear);
     slot(t, 1, g.outside_oak, g.linear);
     slot(t, 2, render3d::tree_or_stand_in(g), g.linear);
-    nx::draw_indexed(ngfx::root(t), g.outside_ib, 4, g.outside_count);
+    nx::draw_indexed(ngfx::root(t), g.outside_ib, 4, render3d::outside_drawn(g, in_mirror));
 }
 
 // The tree's pipelines (render3d::TreeGpu), as gfx's make_tree: its tubes' and ribbons',

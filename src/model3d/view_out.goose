@@ -105,8 +105,9 @@ let CARD_SINK: f32 = 0.03;
 
 // The three layers round `centre`, the middle window's middle on the wall's inner face
 // (u, v); with `park` the lawn between the sky and the band, and the cards in place of
-// the oak.
-fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2, park: bool = false) {
+// the oak. Returns how many indices the far layers take (the sky, the lawn and the band),
+// which the near trees' pictures follow: drawn alone where the maple is geometry.
+fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2, park: bool = false) -> i64 {
     let metre = surfaces::METRE;
     // The sky: each vertex its direction, which the vertex shader puts round the eye.
     var first = verts.len;
@@ -131,11 +132,12 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2, park: bo
         }
     }
     grid(indices, first, BAND_SEGMENTS + 1, 2);
+    let far = indices.len;
     if park {
         for t, k in PARK_TREES {
             card(verts, indices, centre, t.x, t.y, t.z, MAT_CARD + k);
         }
-        return;
+        return far;
     }
     // The oak, facing the window: its left as seen from the room at u 0.
     first = verts.len;
@@ -147,6 +149,7 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, centre: float2, park: bo
         put(verts, float3 { foot.x + side.x, y, foot.y + side.y }, float2 { 1.0, j }, MAT_OAK);
     }
     grid(indices, first, 2, 2);
+    return far;
 }
 
 // The middle window's middle on the window wall's inner face in the room's frame.
