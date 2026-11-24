@@ -127,7 +127,7 @@
 //       [--touch on|off (the touch walk, on by default on Android: the walk from the start, no panel, the
 //       screen's left half a stick to walk, its right half a drag to look, Up and Down at the right edge;
 //       with the phone's tier: no screen-space occlusion, no floor mirror, no HDR, 4 shadow taps, unless
-//       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the board's antialiasing; msaa, 4×)]
+//       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the board's antialiasing; msaa, 4×; the 2 key switches MSAA and SMAA live)]
 //       [--box on|off (the phone tier's floor and metals reflecting the room's box sharply; on)]
 //   On a tablet: scripts/android.py tools/light_tune.goose --run (its own app id, beside the app's);
 //   flags by adb shell am start -n io.github.kaitk.draughts.light_tune/.DraughtsActivity --es args '"--scene-scale 0.75"'
@@ -1107,7 +1107,7 @@ let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", 
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
                 "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old; I: the sills", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust's way", "Y: the lace's hang, 0.15 or 0 m", "Z: the window view's steps off or on", "F: the frame counter; G: wait for the GPU",
-                "N: the scene's scale; M: its upscale", "X: HDR or 8 bits; 1: the lens's views",
+                "N: the scene's scale; M: its upscale", "X: HDR or 8 bits; 1: the lens's views; 2: MSAA or SMAA",
                 "A: the sun's and table's placements in turn (Table)",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
                 "walking: C seated, Q down, E up", "R: back to the view, P: the walk's camera"];
@@ -1816,6 +1816,7 @@ fn main() {
             }
             if gfx::key_pressed("M") { upscale = 1 - upscale; }
             if gfx::key_pressed("X") { render3d::hdr_allowed = !render3d::hdr_allowed; }
+            if gfx::key_pressed("2") { render3d::set_aa(r3d, g, render3d::aa_next(r3d, g.aa)); }
             if gfx::key_pressed("1") { render3d::depth_view = (render3d::depth_view + 1) % LENS_VIEWS.len; }
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
@@ -2124,6 +2125,7 @@ fn main() {
             }
             if section(c, open, LENS) {
                 switch(c, "HDR (X)", render3d::hdr_allowed, ["off", "on"]);
+                note(c, str("Antialiasing (2): ", render3d::aa_name(r3d, g.aa)));
                 note(c, if render3d::hdr_shown(g) { "  drawn in HDR" } else { "  drawn in 8 bits (the view or a tuner's view)" });
                 switch(c, "Depth of field", render3d::lens.on, ["off", "on"]);
                 switch(c, "Focus on the target", focus_on_target, ["no", "yes"]);
@@ -2299,7 +2301,7 @@ fn main() {
             flag_four(line, "--sun-eye", render3d::sun_look.veil);
             flag_four(line, "--glow", render3d::hdr_glow.look);
             format(line, " --glow-levels ", render3d::hdr_glow.levels);
-            format(line, " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
+            format(line, " --aa ", render3d::aa_name(r3d, g.aa), " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
                    " --aperture ", aperture);
             flag_pair(line, "--dof-caps", float2 { near_cap, far_cap });
             format(line, " --paint ", if paint_quiet { "quiet" } else { "old" });
