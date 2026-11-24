@@ -2164,6 +2164,16 @@ to be is in tasks 042, 059, 071, 081, and 086.
   few operations a pixel more in the lace's shader. Rejected: a clamping sampler (a texture
   slot more, and the pattern's seam would change), and empty rows in the mask (the hem's tips
   are in its last row).
+- The corners' map shades a texel lying on a boundary as touching it (2026-11-24, task 107;
+  `corner_map::TOUCH`). With SSAO off the user saw light along the cap's top against the
+  paper and into a corner: each chart's edge texel lies on the boundary it meets, where the
+  shade's comparisons were strict (over the cap, under its foot, a holed wall's face, a
+  box's), so it came out 1, and ROOM_FRAG's bilinear tap spread it a texel in: half discs
+  on the paper over the cap, the stiles' top 2 cm (their texels are 2 cm), the paper's edge
+  at the reveals, the architraves and the bookcases. Now a point within TOUCH of the face
+  takes its shade at distance 0. Only those lines change, all darker; no work more a pixel
+  (the map is baked once). Rejected: insetting each chart's texels from its edge (the
+  atlas would move, and the shade would stop short of the corner).
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
 
