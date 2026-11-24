@@ -12,6 +12,7 @@ import .rooms;
 import .surfaces;
 import .trees;
 import .tree_whole;
+import .tree_mesh;
 import .leaf_atlas;
 import .shell;
 import .shell_mesh;

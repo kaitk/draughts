@@ -356,6 +356,40 @@ fn board(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, s0: f32, s1:
     quad(verts, indices, b, p, uv, [ao_low, ao_low, 1.0, 1.0], MAT_OAK + 0.9 * hash(seed, 9));
 }
 
+// board's piece cut along at `xs` and up at `ys` (the places inside its edges, in order),
+// where another piece's corner lies on its edges: the library's stiles where the rails and
+// panels meet them, its rails and stiles where the plinth's and cap's lengths join over
+// them. An edge without a vertex where another piece's corner lies on it rasterizes apart
+// from that piece's and leaves pinholes, the view out shining through them on the dark
+// oak (2026-11-23). The cells share their vertices, so the corners' map takes the piece as
+// one chart as before, and its places, occlusion and normal are affine across it, so they
+// interpolate as board's do.
+fn board_cut(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, s0: f32, s1: f32, y0: f32, y1: f32,
+             vertical: bool, seed: i64, xs: f32[], ys: f32[], ao_low: f32 = 1.0) {
+    let m = if vertical { piece_map(seed, true, s0, y0, s1 - s0, y1 - y0, true) }
+            else { piece_map(seed, false, s0, y0, y1 - y0, s1 - s0, true) };
+    let n = normalize(cross(float3 { s1 - s0, 0.0, 0.0 }, float3 { 0.0, y1 - y0, 0.0 }));
+    let wn = world_normal(b, n);
+    let own = MAT_OAK + 0.9 * hash(seed, 9);
+    let base = verts.len as u32;
+    let across = xs.len + 2;
+    for j in ys.len + 2 {
+        let y = if j == 0 { y0 } else if j == ys.len + 1 { y1 } else { ys[j - 1] };
+        let ao = if j == 0 { ao_low } else if j == ys.len + 1 { 1.0 } else { ao_low + (1.0 - ao_low) * (y - y0) / (y1 - y0) };
+        for i in across {
+            let s = if i == 0 { s0 } else if i == xs.len + 1 { s1 } else { xs[i - 1] };
+            verts.push(mesh::Vertex { world(b, s, y, FRAME_Z), wn, place(m, s, y), ao, own });
+        }
+    }
+    let row = across as u32;
+    for j in ys.len + 1 {
+        for i in across - 1 {
+            let a = base + ((j * across + i) as u32);
+            indices.append([a, a + 1, a + row + 1, a, a + row + 1, a + row]);
+        }
+    }
+}
+
 // The raised and fielded panel in an opening x0..x1, y0..y1 of the frame: the frame's
 // stuck ovolo moulding round it, the panel's bevel rising from its thin edge, a fillet,
 // and the flat field. Each ring of the profile is four mitred strips.

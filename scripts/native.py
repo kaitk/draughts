@@ -125,11 +125,25 @@ def app_id_of(program, base=APP_ID):
 
 
 def goose_to_c(program, gen, *flags):
-    """The program's C (gen/program.c) and the runtime's (gen/goose_runtime.c)."""
+    """The program's C (gen/program.c) and the runtime's (gen/goose_runtime.c), by a copy of
+    the Goose release with the fork's gfx.goose (forked_goose), as the C it calls is the
+    fork's (copy_gfx)."""
     write_version()
     gen.mkdir(parents=True, exist_ok=True)
-    run(GOOSE, "-o", gen / "program.c", *flags, program, cwd=program.parent)
-    run(GOOSE, "--emit-runtime", gen / "goose_runtime.c")
+    goose = forked_goose(gen.parent)
+    run(goose, "-o", gen / "program.c", *flags, program, cwd=program.parent)
+    run(goose, "--emit-runtime", gen / "goose_runtime.c")
+
+
+def forked_goose(out):
+    """out/goose_c/: the Goose release with the fork's gfx.goose in its gfx package, so a
+    struct the fork widened (PipelineDesc's alpha_to_coverage) has the layout the fork's C
+    reads; the release's own is older. Copied once, gfx.goose each time."""
+    goose = out / "goose_c"
+    if not goose.exists():
+        shutil.copytree(GOOSE.parent, goose, symlinks=not WINDOWS)
+    shutil.copy(ROOT / "third_party/goose_gfx/gfx.goose", goose / "pkg/gfx/gfx.goose")
+    return goose / GOOSE.name
 
 
 def sdl_stamp():
@@ -179,6 +193,9 @@ def patched_goose(out, release, exe, lib, compile, archive, obj=".o", section="T
         shutil.copytree(release, goose, symlinks=not WINDOWS)
     src = copy_gfx(out)
     shutil.copytree(src / "gfx", goose / "pkg/gfx/src/gfx", dirs_exist_ok=True)
+    # The fork's Goose side with its C, so a struct the fork widened (PipelineDesc's
+    # alpha_to_coverage) has the layout the C reads.
+    shutil.copy(ROOT / "third_party/goose_gfx/gfx.goose", goose / "pkg/gfx/gfx.goose")
     objs, target = out / "obj", goose / "pkg/gfx/lib" / lib
     stamp = hashlib.sha256(repr([compile(Path("c"), Path("o")), archive(Path("lib"), [])]).encode())
     for f in sorted(p for p in src.rglob("*") if p.is_file()):

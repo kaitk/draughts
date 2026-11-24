@@ -400,13 +400,14 @@ struct Gpu {
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
     // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
     // pictures, the far band and the oak, RGBA8 sRGB with no mips.
-    outside_on:    bool,
-    outside:       Pipeline,
-    outside_vb:    Buffer,
-    outside_ib:    Buffer,
-    outside_count: i64,
-    outside_band:  Texture,
-    outside_oak:   Texture,
+    outside_on:        bool,
+    outside:           Pipeline,
+    outside_vb:        Buffer,
+    outside_ib:        Buffer,
+    outside_count:     i64,
+    outside_far_count: i64,         // the sky, the lawn and the band alone (view_out::build)
+    outside_band:      Texture,
+    outside_oak:       Texture,
     // The shell's baked light (model3d::room_light), RGBA16F: made again when what it is
     // baked from changes (light_key), its time (measuring) and how many sun patches lit it.
     light_volume:  Texture,
@@ -518,6 +519,54 @@ struct Gpu {
     depth_table: Pipeline,
     depth_lace:  Pipeline,
     depth_show:  Pipeline,
+    // The tree outside drawn as geometry (tree_geometry; the light tuner's --tree-draw).
+    tree: TreeGpu,
+}
+
+// The tree outside as geometry (task 107's T2 and T3; model3d's tree_mesh.goose), after the
+// room's opaque groups (draw_tree): its wood's mesh, the tubes' indices first, then the
+// ribbons'; the bark's tile, made once; the pipelines (the tubes', the ribbons', 8-bit and
+// HDR), made when first wanted; what it was grown for (tree_geometry_key) and how long
+// growing, lighting and putting it on the GPU took (measuring).
+struct TreeGpu {
+    wood_vb:      Buffer,
+    wood_ib:      Buffer,
+    tube_count:   i64,
+    ribbon_first: i64,
+    ribbon_count: i64,
+    bark:         Texture,
+    tube:         Pipeline,
+    ribbon:       Pipeline,
+    hdr_tube:     Pipeline,
+    hdr_ribbon:   Pipeline,
+    leaves:       Buffer,       // the leaves' cards (trees::leaf_cards), when all is drawn
+    leaf_count:   i64,
+    leaf_shape:   Texture,      // the leaf atlas's two layers (leaf_atlas::make)
+    leaf_marks:   Texture,
+    leaf:         Pipeline,
+    hdr_leaf:     Pipeline,
+    // Whether the pipelines move the tree in the wind (tree_wind), as they were made.
+    wind_made: bool,
+    // The key's slant onto the shadow's map and its layers' depths (TreeBlock's layers).
+    layers:   float4,
+    made_for: float4[TREE_GEOMETRY_KEY],
+    ms:       f64,
+    // The card (tree_card): its picture, RGBA16F with its mips; the pipelines drawing the
+    // geometry into it and drawing it in the view out's place, 8-bit (the mirror's too) and
+    // HDR; where it is in the tree's frame (tree_card_place: the eye and the plane's depth,
+    // the rectangle on that plane, the depths it is drawn between); what it was drawn from
+    // (tree_card_key) and how long drawing it took, the GPU waited for.
+    card:          Texture,
+    card_tube:     Pipeline,
+    card_ribbon:   Pipeline,
+    card_leaf:     Pipeline,
+    card_draw:     Pipeline,
+    hdr_card_draw: Pipeline,
+    card_eye:      float4,
+    card_rect:     float4,
+    card_range:    float2,
+    card_for:      float4[TREE_CARD_KEY],
+    card_ms:       f64,
 }
 
 // The pipelines of the scenic views' HDR target (shaders::HDR_OUT): the board's and a fading
@@ -1307,7 +1356,19 @@ var sun_look = SunLook {};
 fn outside_block(g: Gpu&, in_mirror: bool = false) -> OutsideBlock {
     OutsideBlock { float4 { g.room.outside, sun_look.disc.w, if in_mirror { max(g.room.planar.w, 1.0) } else { 0.0 }, sun_veil },
                    sun_look.disc, sun_look.glare,
-                   if in_mirror { float4_0 } else { float4 { sun_look.tree.x, sun_look.tree.y, sun_look.tree.z, sun_look.tree.w * surfaces::METRE } } }
+                   if in_mirror || near_trees_left_out(g) { float4_0 }
+                   else { float4 { sun_look.tree.x, sun_look.tree.y, sun_look.tree.z, sun_look.tree.w * surfaces::METRE } } }
+}
+
+// Whether the view out's near trees are left out of the main view: their pictures (the oak,
+// the park's cards) and the maple seen from its shadow's map (tree_seen), where the maple
+// is drawn as geometry (tree_draw wood or all). The mirror keeps them, as no geometry is
+// drawn there. The far band stays.
+fn near_trees_left_out(g: Gpu&) -> bool { tree_draw != TREE_OFF }
+
+// How many of the view out's indices to draw (view_out::build's order).
+fn outside_drawn(g: Gpu&, in_mirror: bool) -> i64 {
+    if !in_mirror && near_trees_left_out(g) { g.outside_far_count } else { g.outside_count }
 }
 
 // An oak's bake (surfaces::Oak) in the slots of a theme BAKE_FRAG's oak reads.
@@ -1372,7 +1433,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     if g.room_shell && g.outside_vb.id == 0 {
         var verts:   mesh::Vertex[>..] = [];
         var indices: u32[>..]          = [];
-        view_out::build(verts, indices, view_out::centre_of(room_shell::LIBRARY), park_ground);
+        g.outside_far_count = view_out::build(verts, indices, view_out::centre_of(room_shell::LIBRARY), park_ground);
         g.outside_vb, g.outside_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
         g.outside_count = indices.len;
     }
@@ -2492,6 +2553,325 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     g.tree_ms = (clock() - t0) * 1000.0;
 }
 
+// The tree outside drawn as geometry (task 107's T2 and T3): off (the view out's pictures
+// alone, the app's), its wood, or all of it (TREE_DRAWS): the light tuner's --tree-draw,
+// until the user has seen it. With it on the shell's shadow comes from the same tree
+// (tree_grown_whole).
+let TREE_DRAWS = ["off", "wood", "all"];
+let TREE_OFF = 0;
+let TREE_WOOD = 1;
+let TREE_ALL = 2;
+var tree_draw = TREE_OFF;
+
+// How the tree is lit (TreeBlock's light, look's y, z and w, tint): the light tuner's --tree-light,
+// --tree-look and --tree-tint.
+var tree_light = float4 { 2.5, 1.0, 0.35, 0.6 };
+var tree_shade:   f32 = 1.0;
+var tree_twig_px: f32 = 1.0;
+var tree_spread:  f32 = 0.15;
+var tree_tint = float4 { 0.2, 1.0, 1.0, 0.6 };
+
+// The wind on the tree's geometry (task 107's T4; shaders::TREE_WIND, TREE_FLUTTER): off
+// (still, the app's), or the shadow's field moving it, each leaf also turning about its stalk
+// in the high tier (HDR), the standard tier's held at its shadow's moment; the light tuner's
+// --tree-wind. The flutter: how far a leaf turns in the room's mild wind (degrees) and how
+// fast (radians a second of the wind), the tuner's --tree-flutter.
+let TREE_WINDS = ["off", "on"];
+var tree_wind = false;
+var tree_flutter = float2 { 6.0, 9.0 };
+
+// The tree's block (shaders::TREE_HEAD), for a pass of `samples` samples a pixel.
+struct TreeBlock { origin: float4, light: float4, look: float4, depth: float4, tint: float4, layers: float4 }
+fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
+    let o = rooms::tree_origin(g.room);
+    // The projection's depth as A - B / d (d the distance along the view), from the view's
+    // matrix: its z row is A times its w row less B. Past 0.85 of the far plane's distance
+    // the crown is squeezed into what is left in front of it.
+    let m = g.frame.view_proj;
+    let ww = m.c0.w * m.c0.w + m.c1.w * m.c1.w + m.c2.w * m.c2.w;
+    let a = (m.c0.z * m.c0.w + m.c1.z * m.c1.w + m.c2.z * m.c2.w) / max(ww, 1e-12);
+    let b = a * m.c3.w - m.c3.z;
+    let far = b / max(a - 1.0, 1e-6);
+    let from = a - b / (0.85 * far);
+    let keep: f32 = 1e-4;
+    let squeeze = (1.0 - keep - from) / max(a - from, 1e-6);
+    return TreeBlock { model3d::f4(o, samples), tree_light, float4 { g.room.outside, tree_shade, tree_spread, tree_twig_px },
+                       float4 { from, squeeze, radians(tree_flutter.x), tree_flutter.y }, tree_tint, g.tree.layers };
+}
+
+// Whether the tree's geometry is drawn: with the view out, once grown, where its card isn't
+// drawn in its place.
+fn tree_drawn(g: Gpu&) -> bool { tree_draw != TREE_OFF && outside_shown(g) && g.tree.wood_vb.id != 0 && !tree_card_in_view(g) }
+
+// What the tree's geometry is grown and lit from: the room's key and tree, the shell's table.
+let TREE_GEOMETRY_KEY = 5;
+fn tree_geometry_key(g: Gpu&) -> float4[TREE_GEOMETRY_KEY] {
+    let r = g.room;
+    let t = room_shell::LIBRARY.table;
+    return [r.key, r.window, r.tree, r.foliage, float4 { t.x, t.y, tree_draw, 0.0 }];
+}
+
+// The tree grown whole and made into its meshes and leaf cards (all drawn), lit by its
+// crown's grid, and put on the GPU: before a draw, outside a pass, when what it is grown
+// from changed. About 70 ms on the CPU, the bark and the leaf atlas 60 more the first time;
+// never in the frame loop's steady state. The grid from the whole tree, the meshes and
+// cards from the parts seen through the windows or casting through them.
+fn tree_geometry<O>(o: O&, g: Gpu&) {
+    guard tree_draw != TREE_OFF && outside_shown(g) && !g.bake_held else { return; }
+    o.make_tree(g);
+    let key = tree_geometry_key(g);
+    var same = g.tree.wood_vb.id != 0;
+    for i in TREE_GEOMETRY_KEY { if !same4(key[i], g.tree.made_for[i]) { same = false; } }
+    guard !same else { return; }
+    let t0 = clock();
+    if g.tree.bark.id == 0 {
+        var px: u8[>..] = [];
+        trees::bark_tile(px);
+        let mips = trees::mips_of(trees::BARK_W, trees::BARK_H);
+        g.tree.bark = o.gpu_sampled(trees::BARK_W, trees::BARK_H, mips, RGBA8);
+        var at = 0;
+        for level in mips {
+            let n = (trees::BARK_W >> level) * (trees::BARK_H >> level) * 4;
+            o.gpu_upload(g.tree.bark, level, px[at..at + n]);
+            at += n;
+        }
+    }
+    let v = tree_view_of(g);
+    let w = rooms::whole_tree(g.room, room_shell::LIBRARY);
+    let sight = rooms::whole_sight(g.room, room_shell::LIBRARY);
+    var verts:   trees::WoodVertex[>..] = [];
+    var indices: u32[>..]               = [];
+    var density: f32[>..]               = [];
+    var cards:   float4[>..]            = [];
+    var made = trees::WoodMesh { 0, 0, 0, 0 };
+    var leaf_count = 0;
+    {
+        var all = trees::Tree { .. };
+        trees::grow_whole(all, w, v, sight, false);
+        let grid = trees::crown_grid(all, density);
+        var t = trees::Tree { .. };
+        trees::grow_whole(t, w, v, sight, true);
+        made = trees::wood_mesh(t, density, grid, trees::toward_sun(v), verts, indices);
+        let d = trees::depths(t, v);
+        g.tree.layers = float4 { v.shear.x, v.shear.y, d.near, d.far };
+        if tree_draw == TREE_ALL { leaf_count = trees::leaf_cards(t, density, grid, trees::toward_sun(v), cards); }
+        g.tree.card_eye, g.tree.card_rect, g.tree.card_range = tree_card_place(g, verts, cards, sight);
+    }
+    if leaf_count > 0 && g.tree.leaf_shape.id == 0 {
+        var shape: u8[>..] = [];
+        var marks: u8[>..] = [];
+        leaf_atlas::make(shape, marks);
+        let mips = leaf_atlas::mips_of(leaf_atlas::ATLAS_W, leaf_atlas::ATLAS_H);
+        g.tree.leaf_shape = o.gpu_sampled(leaf_atlas::ATLAS_W, leaf_atlas::ATLAS_H, mips, RGBA8);
+        g.tree.leaf_marks = o.gpu_sampled(leaf_atlas::ATLAS_W, leaf_atlas::ATLAS_H, mips, RGBA8);
+        var at = 0;
+        for level in mips {
+            let n = (leaf_atlas::ATLAS_W >> level) * (leaf_atlas::ATLAS_H >> level) * 4;
+            o.gpu_upload(g.tree.leaf_shape, level, shape[at..at + n]);
+            o.gpu_upload(g.tree.leaf_marks, level, marks[at..at + n]);
+            at += n;
+        }
+    }
+    if g.tree.leaves.id != 0 { o.gpu_release_storage(g.tree.leaves); g.tree.leaves = Buffer { 0 }; }
+    if leaf_count > 0 { g.tree.leaves = o.gpu_storage(bytes_of(cards)); }
+    g.tree.leaf_count = leaf_count;
+    if g.tree.wood_vb.id != 0 { o.gpu_release_mesh(g.tree.wood_vb, g.tree.wood_ib); }
+    g.tree.wood_vb, g.tree.wood_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
+    g.tree.tube_count = made.tube_indices;
+    g.tree.ribbon_first = made.ribbon_first;
+    g.tree.ribbon_count = made.ribbon_indices;
+    g.tree.made_for = key;
+    g.tree.ms = (clock() - t0) * 1000.0;
+}
+
+// The tree's card (task 107's T5; shaders::TREE_CARD, CARD_VERT, CARD_FRAG): the geometry,
+// still, drawn once into a TREE_CARD_W × TREE_CARD_H picture from one eye when the tree is
+// grown or its light changes, and drawn in the view out's place as one quad at the crown's
+// middle depth: in the floor's mirror (on), and in the main view in place of the geometry on
+// a phone (no mirror there) or with main (to compare the two). Off, the app's. The light
+// tuner's --tree-card off|on|main.
+let TREE_CARDS = ["off", "on", "main"];
+let CARD_OFF = 0;
+let CARD_ON = 1;
+let CARD_MAIN = 2;
+var tree_card = CARD_OFF;
+let TREE_CARD_W = 1024;
+let TREE_CARD_H = 768;
+// The eye it is drawn from, in the plan's metres from the games table's middle and up from
+// the floor: the main menu's (the light tuner's table-window view, less-turned).
+let TREE_CARD_EYE = float3 { -0.36, -2.05, 1.6 };
+
+// CARD_VERT's block: the quad's corners in the world as the room is turned now, from the
+// top left round to the bottom left.
+struct TreeCardBlock { corners: float4[4] }
+
+fn tree_card_wanted(g: Gpu&) -> bool { tree_card != CARD_OFF && outside_shown(g) && g.tree.wood_vb.id != 0 }
+fn tree_card_in_mirror(g: Gpu&) -> bool { tree_card_wanted(g) && g.tree.card.id != 0 }
+fn tree_card_in_view(g: Gpu&) -> bool { tree_card_in_mirror(g) && (tree_card == CARD_MAIN || !planar_allowed) }
+
+// A point of the tree's frame in the world (shaders::TREE_FN's tree_world).
+fn tree_point_world(g: Gpu&, p: float3) -> float3 {
+    let o = rooms::tree_origin(g.room);
+    let axes = g.frame.room_axes;
+    let a = float3 { p.x - o.x, p.y - o.y, o.z - p.z };
+    return float3 { axes.x * a.x + axes.z * a.z, a.y, axes.y * a.x + axes.w * a.z };
+}
+
+// Where the card lies: the eye (TREE_CARD_EYE) and the plane's depth, the mean of the leaves'
+// blades' middles (the wood's without leaves); the rectangle on that plane (x0, y0, x1, y1)
+// the tree covers as the eye sees it, cut to what the windows show from the eye and from
+// under the floor (the mirror's eye) with a tenth's margin round it; and the nearest and
+// farthest depths along the view, with room round them. All in the tree's frame.
+fn tree_card_place(g: Gpu&, verts: trees::WoodVertex[>..]&, cards: float4[>..]&, sight: trees::Sight&) -> float4, float4, float2 {
+    let s = room_shell::LIBRARY;
+    let at = float3 { s.table.x + TREE_CARD_EYE.x, s.table.y + TREE_CARD_EYE.y, TREE_CARD_EYE.z };
+    let e = rooms::plan_to_tree(g.room, s, at);
+    let below = rooms::plan_to_tree(g.room, s, float3 { at.x, at.y, -at.z });
+    var sum:  f64 = 0.0;
+    var near: f32 = 1e9;
+    var far:  f32 = -1e9;
+    let leaves = cards.len / trees::LEAF_VEC4S;
+    for i in leaves {
+        let b = cards[i * trees::LEAF_VEC4S];
+        let a = cards[i * trees::LEAF_VEC4S + 1];
+        sum += (b.z + a.z * b.w * 0.5) as f64;
+    }
+    for &v in verts {
+        near = min(near, v.pos.z);
+        far = max(far, v.pos.z);
+        if leaves == 0 { sum += v.pos.z as f64; }
+    }
+    let n = if leaves > 0 { leaves } else { max(verts.len, 1) };
+    let depth = (sum / n) as f32;
+    let k = depth - e.z;
+    var x0: f32 = 1e9;
+    var y0: f32 = 1e9;
+    var x1: f32 = -1e9;
+    var y1: f32 = -1e9;
+    for &v in verts {
+        let q = float2 { e.x, e.y } + (float2 { v.pos.x, v.pos.y } - float2 { e.x, e.y }) * (k / max(v.pos.z - e.z, 1.0));
+        x0 = min(x0, q.x);
+        y0 = min(y0, q.y);
+        x1 = max(x1, q.x);
+        y1 = max(y1, q.y);
+    }
+    for i in leaves {
+        let b = cards[i * trees::LEAF_VEC4S];
+        let r = b.w * 1.2;
+        near = min(near, b.z - r);
+        far = max(far, b.z + r);
+        let q = float2 { e.x, e.y } + (float2 { b.x, b.y } - float2 { e.x, e.y }) * (k / max(b.z - e.z, 1.0));
+        x0 = min(x0, q.x - r);
+        y0 = min(y0, q.y - r);
+        x1 = max(x1, q.x + r);
+        y1 = max(y1, q.y + r);
+    }
+    // What the windows show, from the eye and from the mirror's.
+    var wx0: f32 = 1e9;
+    var wy0: f32 = 1e9;
+    var wx1: f32 = -1e9;
+    var wy1: f32 = -1e9;
+    for &o in sight.windows {
+        for from in [e, below] {
+            let m = (depth - from.z) / max(sight.plane - from.z, 1.0);
+            let a = float2 { from.x, from.y } + (float2 { o.x, o.z } - float2 { from.x, from.y }) * m;
+            let b = float2 { from.x, from.y } + (float2 { o.y, o.w } - float2 { from.x, from.y }) * m;
+            wx0 = min(wx0, min(a.x, b.x));
+            wy0 = min(wy0, min(a.y, b.y));
+            wx1 = max(wx1, max(a.x, b.x));
+            wy1 = max(wy1, max(a.y, b.y));
+        }
+    }
+    if wx1 > wx0 && wy1 > wy0 {
+        let mx = (wx1 - wx0) * 0.1;
+        let my = (wy1 - wy0) * 0.1;
+        x0 = max(x0, wx0 - mx);
+        y0 = max(y0, wy0 - my);
+        x1 = min(x1, wx1 + mx);
+        y1 = min(y1, wy1 + my);
+    }
+    if x1 <= x0 || y1 <= y0 {
+        x0 = e.x - 1.0;
+        y0 = e.y - 1.0;
+        x1 = e.x + 1.0;
+        y1 = e.y + 1.0;
+    }
+    return float4 { e.x, e.y, e.z, depth }, float4 { x0, y0, x1, y1 }, float2 { max((near - e.z) * 0.9, 1.0), (far - e.z) * 1.1 + 1.0 };
+}
+
+// The card's projection: a world point to the clip space of the card's picture, as the eye
+// sees it on the card's plane (the tree's frame from the world, shaders::TREE_FN's tree_world
+// turned back; the picture's x and y the plane's, its depth from card_range's near to far).
+fn tree_card_view(g: Gpu&) -> Mat {
+    let t .= g.tree;
+    let o = rooms::tree_origin(g.room);
+    let axes = g.frame.room_axes;
+    let e = t.card_eye;
+    let r = t.card_rect;
+    let k = e.w - e.z;
+    let hw = (r.z - r.x) * 0.5;
+    let hh = (r.w - r.y) * 0.5;
+    let cx = (r.x + r.z) * 0.5;
+    let cy = (r.y + r.w) * 0.5;
+    // Each of the tree's frame's coordinates as a row over the world's x, y, z and 1.
+    let px = float4 { axes.x, 0.0, axes.y, o.x };
+    let py = float4 { 0.0, 1.0, 0.0, o.y };
+    let wr = float4 { -axes.z, 0.0, -axes.w, o.z - e.z };
+    let xr = (px - float4 { 0.0, 0.0, 0.0, e.x }) * (k / hw) + wr * ((e.x - cx) / hw);
+    let yr = (py - float4 { 0.0, 0.0, 0.0, e.y }) * (k / hh) + wr * ((e.y - cy) / hh);
+    let near = t.card_range.x;
+    let far = t.card_range.y;
+    let a = far / (far - near);
+    let zr = wr * a - float4 { 0.0, 0.0, 0.0, far * near / (far - near) };
+    var m = default<Mat>();
+    m.c0 = float4 { xr.x, yr.x, zr.x, wr.x };
+    m.c1 = float4 { xr.y, yr.y, zr.y, wr.y };
+    m.c2 = float4 { xr.z, yr.z, zr.z, wr.z };
+    m.c3 = float4 { xr.w, yr.w, zr.w, wr.w };
+    return m;
+}
+
+// The quad's corners in the world, top left, top right, bottom right, bottom left.
+fn tree_card_block(g: Gpu&) -> TreeCardBlock {
+    let r = g.tree.card_rect;
+    let z = g.tree.card_eye.w;
+    return TreeCardBlock { [model3d::f4(tree_point_world(g, float3 { r.x, r.w, z }), 1.0),
+                            model3d::f4(tree_point_world(g, float3 { r.z, r.w, z }), 1.0),
+                            model3d::f4(tree_point_world(g, float3 { r.z, r.y, z }), 1.0),
+                            model3d::f4(tree_point_world(g, float3 { r.x, r.y, z }), 1.0)] };
+}
+
+// What the card is drawn from: the tree as grown, its light and look, the sun's way.
+let TREE_CARD_KEY = 9;
+fn tree_card_key(g: Gpu&) -> float4[TREE_CARD_KEY] {
+    let m = g.tree.made_for;
+    let b = tree_block(g, 1);
+    return [m[0], m[1], m[2], m[3], m[4], b.light, b.look, b.tint, g.frame.light_dir];
+}
+
+// The card drawn again when what it is drawn from changed: before a draw, outside a pass,
+// never in the frame loop's steady state. Its frame's block is the room's with the card's
+// projection, eye and size; its tree's block keeps the far crown where it is.
+fn make_tree_card<O>(o: O&, g: Gpu&) {
+    guard tree_card_wanted(g) && !g.bake_held else { return; }
+    let key = tree_card_key(g);
+    var same = g.tree.card.id != 0;
+    for i in TREE_CARD_KEY { if !same4(key[i], g.tree.card_for[i]) { same = false; } }
+    guard !same else { return; }
+    let t0 = clock();
+    var f = g.frame;
+    f.view_proj = tree_card_view(g);
+    let e = g.tree.card_eye;
+    f.eye = model3d::f4(tree_point_world(g, float3 { e.x, e.y, e.z }), 1.0);
+    f.screen = float4 { TREE_CARD_W as f32, TREE_CARD_H as f32, 0.0, 0.0 };
+    var b = tree_block(g, 4);
+    b.depth = float4 { 1.0, 1.0, 0.0, 0.0 };
+    o.tree_card_pass(g, f, b);
+    o.gpu_flush();
+    g.tree.card_for = key;
+    g.tree.card_ms = (clock() - t0) * 1000.0;
+}
+
 // Whether the board may scatter light through its stone: on a desktop only (set at
 // startup by the app). It adds 16 shadow taps a board pixel, about 0.35 ms at
 // 1280 × 800 on an M1 Pro (task 094), not yet timed on a phone or tablet.
@@ -2723,6 +3103,8 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     bake_tree(o, g);
     if dust.count > 0 { o.make_motes(g); }
     room_surfaces(o, g);
+    tree_geometry(o, g);
+    make_tree_card(o, g);
     table_map(o, g);
     sun_derived(o, g);
     window_map(o, g);
@@ -2836,8 +3218,9 @@ var ssao_allowed = true;
 // gives them the walls' broad one (the light tuner's --box off, to weigh it on a tablet).
 var sharp_box_allowed = true;
 var ssao_view = 0;
-// The light tuner's trial (--gtao on, off by default): the occlusion by GTAO
-// (shaders::GTAO_FRAG) in place of SSAO_FRAG's, its visibility raised to gtao_power.
+// The occlusion by GTAO (shaders::GTAO_FRAG) in place of SSAO_FRAG's, its visibility raised
+// to gtao_power: the high tier's (app::follow_screen, on a desktop) and the light tuner's
+// default (--gtao off for SSAO).
 var ssao_gtao = false;
 var gtao_power: f32 = 1.5;
 // Its largest spiral, a share of the map's width.

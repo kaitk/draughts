@@ -93,6 +93,13 @@ fn close(verts: mesh::Vertex[>..]&, indices: u32[>..]&) {
     var t = 0;
     while t < indices.len / 3 {
         var split = false;
+        // A triangle of no area (its corner on its own edge) is left as it is: split at that
+        // corner, it makes two more of no area, for ever.
+        {
+            let p0 = verts[indices[3 * t] as i64].pos;
+            let n = cross(verts[indices[3 * t + 1] as i64].pos - p0, verts[indices[3 * t + 2] as i64].pos - p0);
+            if dot(n, n) <= on * on * on * on { t++; continue; }
+        }
         for e in 3 {
             let ia = indices[3 * t + e] as i64;
             let ib = indices[3 * t + (e + 1) % 3] as i64;
@@ -137,6 +144,7 @@ fn close(verts: mesh::Vertex[>..]&, indices: u32[>..]&) {
                         let r = porder[m] as i64;
                         guard stamp[r] != mark else { continue; }
                         stamp[r] = mark;
+                        guard !same(places[r], verts[ic].pos) else { continue; }
                         let w = places[r] - a;
                         let u = dot(w, d) / l2;
                         guard u * l > on && (1.0 - u) * l > on else { continue; }

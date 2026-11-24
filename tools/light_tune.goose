@@ -37,6 +37,11 @@
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
 //       [--wall|--panes|--opening X,Y,Z,W (the window's)] [--key|--fill|--walls|--pattern|--bounce X,Y,Z,W]
 //       [--dump-map out.pgm] [--tree-grow shadow|whole (the shell's tree's shadow from the old maple grown whole)]
+//       [--tree-draw off|wood|all (the tree outside drawn as geometry, render3d::TREE_DRAWS; off; on, its shadow grown whole too)
+//       --tree-light SUN,SKY,THROUGH,FORWARD (2.5,1,0.35,0.6) --tree-look SHADE,TWIG_PX,SPREAD (1,1,0.15)
+//       --tree-tint TINT,LEAVES,BARK,DEEPER (0.2,1,1,0.6)
+//       --tree-wind off|on (the shadow's wind on the geometry, the leaves fluttering in HDR; off) --tree-flutter DEG,RATE (6,9)
+//       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)]
 //       [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
@@ -89,7 +94,8 @@
 //       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
 //       [--dump-light PATH (the probes' atlas, a float a line, with --shot)] [--light-ref PATH (the baked light worked
 //       out finely on the room's surfaces, tools/light_ref.goose; --light-ref-stride N, --light-ref-old)]
-//       [--ssao-view off|alone|kept|light (light: the indirect light alone on grey)]
+//       [--ssao-view off|alone|kept|light|broken (light: the indirect light alone on grey; broken: red where a
+//       term isn't finite, yellow where the light is over 64)]
 //       [--contact STRENGTH,LENGTH,STEPS,THICKNESS (the sun's contact shadows, world units; 0.8,3,12,1.5; 0 off)]
 //       [--room-sun K (the sun's saturation on the room, 0.6; 1 as the key)]
 //       [--oak-sun SHARE,SAT,SHEEN (the panelling oak's share of the room's sun, its saturation and share of the sheen)]
@@ -121,7 +127,7 @@
 //       [--touch on|off (the touch walk, on by default on Android: the walk from the start, no panel, the
 //       screen's left half a stick to walk, its right half a drag to look, Up and Down at the right edge;
 //       with the phone's tier: no screen-space occlusion, no floor mirror, no HDR, 4 shadow taps, unless
-//       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the scene's antialiasing; smaa by default, msaa 4×)]
+//       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the scene's antialiasing; smaa by default, msaa 4×; the 2 key switches MSAA and SMAA live)]
 //       [--box on|off (the phone tier's floor and metals reflecting the room's box sharply; on)]
 //       [--window-map on|off (the shell's windows' pattern from the window's light map, render3d::window_map_on;
 //       off traces it a pixel as before; on)] [--phone-leaves static|off (the phone's tier's leaves baked into the
@@ -172,19 +178,19 @@ let PARK_NO_LEAVES = 3;
 fn park_frag(part: i64, hdr: bool) -> const u8[:] {
     if hdr {
         return match part {
-            2 => embed_shader("frag", shaders::PARK_NO_SHADING, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
-            3 => embed_shader("frag", shaders::PARK_NO_LEAVES, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
-            4 => embed_shader("frag", shaders::PARK_NO_GROUNDING, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
-            5 => embed_shader("frag", shaders::PARK_NO_SHADOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
-            _ => embed_shader("frag", shaders::PARK, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+            2 => embed_shader("frag", shaders::PARK_NO_SHADING, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+            3 => embed_shader("frag", shaders::PARK_NO_LEAVES, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+            4 => embed_shader("frag", shaders::PARK_NO_GROUNDING, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+            5 => embed_shader("frag", shaders::PARK_NO_SHADOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+            _ => embed_shader("frag", shaders::PARK, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
         };
     }
     return match part {
-        2 => embed_shader("frag", shaders::PARK_NO_SHADING, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
-        3 => embed_shader("frag", shaders::PARK_NO_LEAVES, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
-        4 => embed_shader("frag", shaders::PARK_NO_GROUNDING, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
-        5 => embed_shader("frag", shaders::PARK_NO_SHADOWS, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
-        _ => embed_shader("frag", shaders::PARK, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        2 => embed_shader("frag", shaders::PARK_NO_SHADING, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        3 => embed_shader("frag", shaders::PARK_NO_LEAVES, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        4 => embed_shader("frag", shaders::PARK_NO_GROUNDING, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        5 => embed_shader("frag", shaders::PARK_NO_SHADOWS, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
+        _ => embed_shader("frag", shaders::PARK, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
     };
 }
 let TOPS = ["0.95", "1.05", "0.80"];
@@ -202,8 +208,8 @@ fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
 let VIEWS = ["board", "room", "window", "hall", "stove", "table-window"];
 let TABLE_WINDOW = 5;
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
-// indirect light keeps, or the indirect light alone on grey.
-let SSAO_VIEWS = ["off", "alone", "kept", "light"];
+// indirect light keeps, or the indirect light alone on grey, or its broken values marked.
+let SSAO_VIEWS = ["off", "alone", "kept", "light", "broken"];
 // The tonemaps' toes (render3d::tone_toe): on the luminance, Khronos PBR Neutral's on the
 // least channel, none.
 let TOES = ["room", "neutral", "none"];
@@ -1105,7 +1111,7 @@ let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", 
                 "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
                 "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old; I: the sills", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust's way", "Y: the lace's hang, 0.15 or 0 m", "Z: the window view's steps off or on", "F: the frame counter; G: wait for the GPU",
-                "N: the scene's scale; M: its upscale", "X: HDR or 8 bits; 1: the lens's views",
+                "N: the scene's scale; M: its upscale", "X: HDR or 8 bits; 1: the lens's views; 2: MSAA or SMAA",
                 "A: the sun's and table's placements in turn (Table)",
                 "Tab: walk; Esc: back to the panel", "walking: WASD, the mouse, Shift faster",
                 "walking: C seated, Q down, E up", "R: back to the view, P: the walk's camera"];
@@ -1306,36 +1312,36 @@ fn main() {
     if has(argv, "--toe") || has(argv, "--table-toe") || has(argv, "--board-toe") || has(argv, "--toe-off") {
         render3d::tuned_frags = [
             embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD, shaders::SHADOW_FN,
-                         shaders::LIGHT_FN, shaders::LIT_FRAG),
+                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
             embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
-                         shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
+                         shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
             embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
-                         shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
+                         shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
             embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
-                         shaders::SHADOW_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
+                         shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
             embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::SHADOW_FN,
-                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG),
+                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG),
             embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN,
-                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
             embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                         shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                         shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             embed_shader("frag", shaders::ROOM_WALLS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                         shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::LIGHT_FN, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::OUTSIDE_MAIN),
+                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::OUTSIDE_MAIN),
             embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             "",
             embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
             "", "", "", "", "",
             embed_shader("frag", shaders::ROOM_LACE, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)];
+                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)];
         render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
                                       pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
     }
@@ -1350,24 +1356,24 @@ fn main() {
     }
     // The painted wood's shader with its steps switched (J, --paint, --paint-off).
     render3d::tuned_frags[render3d::TUNED_PAINT_STEPS] = embed_shader("frag", shaders::ROOM_PAINT, shaders::PAINT_STEPS, shaders::SHELL_WINDOWS,
-                                                                      shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN,
+                                                                      shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN,
                                                                       shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     // The sills' shader with its parts switched (I, --sill, --sill-off), in the room and the mirror.
     render3d::tuned_frags[render3d::TUNED_SILL_STEPS] = embed_shader("frag", shaders::ROOM_SILL, shaders::SILL_STEPS, shaders::SHELL_WINDOWS,
-                                                                     shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN,
+                                                                     shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN,
                                                                      shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     render3d::tuned_frags[render3d::TUNED_SILL_MIRROR] = embed_shader("frag", shaders::ROOM_SILL, shaders::SILL_STEPS, shaders::MIRROR_PASS,
                                                                       shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
-                                                                      shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
+                                                                      shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
                                                                       shaders::ROOM_FRAG);
     // The same two into the scenic views' HDR target (render3d::make_hdr).
     render3d::tuned_frags[render3d::TUNED_PAINT_HDR] = embed_shader("frag", shaders::ROOM_PAINT, shaders::PAINT_STEPS, shaders::HDR_OUT,
                                                                     shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
-                                                                    shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
+                                                                    shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
                                                                     shaders::ROOM_FRAG);
     render3d::tuned_frags[render3d::TUNED_SILL_HDR] = embed_shader("frag", shaders::ROOM_SILL, shaders::SILL_STEPS, shaders::HDR_OUT,
                                                                    shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
-                                                                   shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
+                                                                   shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
                                                                    shaders::ROOM_FRAG);
     render3d::setup(r3d, g, render3d::SAMPLES, if phone_tier { render3d::SHADOW_4 } else { render3d::SHADOW_16 });
     if has(argv, "--oak-aniso-4") { g.oak_sampler = gfx::sampler(gfx::SamplerDesc { max_anisotropy: 4.0 }); }
@@ -1590,7 +1596,30 @@ fn main() {
     var book_fade = number(argv, "--book-fade", 1.0);
     // --tree-grow shadow|whole: the shell's tree's shadow from the first tree or the old
     // maple grown whole (render3d::tree_grown_whole).
-    render3d::tree_grown_whole = pick(argv, "--tree-grow", TREE_GROWS, 0) == 1;
+    // --tree-draw off|wood|all: the tree outside drawn as geometry (render3d::tree_draw, task 107's
+    // T2 and T3), off by default; on, the shadow comes from the same tree unless --tree-grow
+    // says otherwise. --tree-light SUN,SKY,THROUGH,FORWARD, --tree-look SHADE,TWIG_PX,SPREAD and
+    // --tree-tint TINT,LEAVES,BARK,DEEPER (render3d::tree_light..).
+    render3d::tree_draw = pick(argv, "--tree-draw", render3d::TREE_DRAWS, render3d::TREE_OFF);
+    render3d::tree_light = four(argv, "--tree-light", render3d::tree_light);
+    let tree_look = four(argv, "--tree-look", float4 { render3d::tree_shade, render3d::tree_twig_px, render3d::tree_spread, 0.0 });
+    render3d::tree_shade = tree_look.x;
+    render3d::tree_twig_px = tree_look.y;
+    render3d::tree_spread = tree_look.z;
+    render3d::tree_tint = four(argv, "--tree-tint", render3d::tree_tint);
+    // --tree-wind off|on: the shadow's wind on the tree's geometry, each leaf turning about
+    // its stalk too in HDR (render3d::tree_wind, task 107's T4); --tree-flutter DEG,RATE how
+    // far a leaf turns in the room's mild wind and how fast (radians a second of the wind).
+    render3d::tree_wind = pick(argv, "--tree-wind", render3d::TREE_WINDS, 0) == 1;
+    let flutter = four(argv, "--tree-flutter", float4 { render3d::tree_flutter.x, render3d::tree_flutter.y, 0.0, 0.0 });
+    render3d::tree_flutter = float2 { flutter.x, flutter.y };
+    // --tree-card off|on|main: the tree's card (render3d::tree_card, T5), drawn once from the
+    // geometry: on in the floor's mirror (and a phone's view), main in the main view too in
+    // place of the geometry, to compare. It is drawn from the tree, so it grows it all.
+    render3d::tree_card = pick(argv, "--tree-card", render3d::TREE_CARDS, render3d::CARD_OFF);
+    if render3d::tree_card != render3d::CARD_OFF && render3d::tree_draw == render3d::TREE_OFF { render3d::tree_draw = render3d::TREE_ALL; }
+    let grown = if render3d::tree_draw != render3d::TREE_OFF { 1 } else { 0 };
+    render3d::tree_grown_whole = pick(argv, "--tree-grow", TREE_GROWS, grown) == 1;
     var top = pick(argv, "--table-top", TOPS, 0);
     g.table_r = top_radius(top);
     // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied, as
@@ -1697,6 +1726,8 @@ fn main() {
         if shot > 0 && frames == shot_frame {
             guard gfx::screenshot(argv[shot]) else { abort(str("could not save ", argv[shot])); }
             if g.tree_ms > 0.0 { print("the tree baked in ", g.tree_ms, " ms"); }
+            if g.tree.ms > 0.0 { print("the tree's geometry made in ", g.tree.ms, " ms"); }
+            if g.tree.card_ms > 0.0 { print("the tree's card drawn in ", g.tree.card_ms, " ms (the GPU waited for)"); }
             let oak = flag_value(argv, "--dump-oak");
             if oak > 0 && g.room_baked {
                 dump_rgb(g.floor_albedo, g.room_side, str(argv[oak], "-floor.ppm"));
@@ -1797,6 +1828,7 @@ fn main() {
             }
             if gfx::key_pressed("M") { upscale = 1 - upscale; }
             if gfx::key_pressed("X") { render3d::hdr_allowed = !render3d::hdr_allowed; }
+            if gfx::key_pressed("2") { render3d::set_aa(r3d, g, render3d::aa_next(r3d, g.aa)); }
             if gfx::key_pressed("1") { render3d::depth_view = (render3d::depth_view + 1) % LENS_VIEWS.len; }
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
@@ -2105,6 +2137,7 @@ fn main() {
             }
             if section(c, open, LENS) {
                 switch(c, "HDR (X)", render3d::hdr_allowed, ["off", "on"]);
+                note(c, str("Antialiasing (2): ", render3d::aa_name(r3d, g.aa)));
                 note(c, if render3d::hdr_shown(g) { "  drawn in HDR" } else { "  drawn in 8 bits (the view or a tuner's view)" });
                 switch(c, "Depth of field", render3d::lens.on, ["off", "on"]);
                 switch(c, "Focus on the target", focus_on_target, ["no", "yes"]);
@@ -2284,7 +2317,7 @@ fn main() {
             flag_four(line, "--sun-eye", render3d::sun_look.veil);
             flag_four(line, "--glow", render3d::hdr_glow.look);
             format(line, " --glow-levels ", render3d::hdr_glow.levels);
-            format(line, " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
+            format(line, " --aa ", render3d::aa_name(r3d, g.aa), " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
                    " --aperture ", aperture);
             flag_pair(line, "--dof-caps", float2 { near_cap, far_cap });
             format(line, " --paint ", if paint_quiet { "quiet" } else { "old" });

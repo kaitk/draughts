@@ -50,6 +50,7 @@ VARIANTS = {
     "no-box":      "--box off",
     "aa-off":      "--aa off",
     "smaa":        "--aa smaa",
+    "msaa":        "--aa msaa",
     "wind-still":  "--wind-kind still",
     "cheap":       "--window off --box off --aa off",
     "full-tier":   "--tier full",

@@ -99,9 +99,6 @@ let RUN_SILL = 1;
 
 let SIDES: f32[2] = [-1.0, 1.0];
 
-// How far inside a swept row a cut must be to make a vertex of its own (world units).
-let CUT_CLEAR: f32 = 0.001;
-
 // The metre in world units, and a centimetre out from the wall (the frame's face, 2.5 cm,
 // at surfaces::FRAME_Z) and up.
 fn m() -> f32 { surfaces::METRE }
@@ -163,13 +160,22 @@ fn box_m(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x0
 // in the wall's field as surfaces::strip does; plaster and paint keep s and the profile's
 // length in uv. A point's normal is its two segments' mean where they turn less than
 // surfaces::CREASE, so a cove, an ovolo or a bead shades as a curve; at a sharper turn (a
-// fillet, a step) each segment keeps its own. The rows of the points before `cut_to` take
-// a vertex at each of `cuts` (s, ascending) inside them, where another piece's corners meet
-// the strip's edge: one there and none of the strip's own is a T-junction, whose crack
-// shows what is behind the wainscot (nothing) as a bright dot.
+// fillet, a step) each segment keeps its own.
 fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, prof: float3[], lift: f32, s0: f32, s1: f32,
-         k0: f32, k1: f32, mat: f32, seed: i64, out_scale: f32 = 0.0, cuts: f32[..128] = [], cut_to: i64 = 1000,
-         top_cuts: f32[..128] = []) {
+         k0: f32, k1: f32, mat: f32, seed: i64, out_scale: f32 = 0.0) {
+    let none: f32[1] = [0.0];
+    sweep_cut(verts, indices, b, prof[..], lift, s0, s1, k0, k1, mat, seed, out_scale, none[..0], 0, -1);
+}
+
+// sweep's, its profile's points `first` to `last` cut at `cuts` (world units along the wall,
+// those inside every point's ends), the pieces sharing their vertices: where the stiles' and
+// rails' corners lie on the profile's edge (the plinth's top, the cap's foot), an edge
+// without them leaves pinholes (surfaces::board_cut). The points between are cut too, or
+// the next segment's edge would lack them; the segment past the last cut point (the cap's
+// top against the paper, the plinth's foot on the floor) is a fan, its far edge whole. Each
+// segment stays one chart, its attributes affine along the wall.
+fn sweep_cut(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, prof: float3[], lift: f32, s0: f32,
+             s1: f32, k0: f32, k1: f32, mat: f32, seed: i64, out_scale: f32, cuts: f32[], first: i64, last: i64) {
     let kz = if out_scale > 0.0 { out_scale } else { cm_out() };
     let ky = cm_up();
     var pts: float3[..32] = [];
@@ -184,6 +190,16 @@ fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pr
     let oak = mat < surfaces::MAT_OAK + 0.5;
     let pm = surfaces::piece_map(seed, false, s0, 0.0, total, s1 - s0, true);
     let own = if oak { surfaces::MAT_OAK + 0.9 * surfaces::hash(seed, 9) } else { mat };
+    var lo: f32 = s0;
+    var hi: f32 = s1;
+    for q in pts {
+        lo = max(lo, s0 + k0 * q.x);
+        hi = min(hi, s1 + k1 * q.x);
+    }
+    var inner: f32[..160] = [];
+    for x in cuts {
+        if x > lo && x < hi && inner.len < 160 { inner.push(x); }
+    }
     var t: f32 = 0.0;
     for k in 1..pts.len {
         let a = pts[k - 1];
@@ -198,266 +214,179 @@ fn sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, pr
         let sc0 = s0 + k0 * c.x;
         let sc1 = s1 + k1 * c.x;
         let base = verts.len as u32;
-        // Rows cut where the frame's edges meet them (`cuts`, the points before `cut_to`):
-        // the strip zipped between its two rows, so every vertex on its edges is a corner.
-        let ra = row(sa0, sa1, if k - 1 < cut_to { cuts } else { top_cuts });
-        let rc = row(sc0, sc1, if k < cut_to { cuts } else { top_cuts });
-        if ra.len == 2 && rc.len == 2 {
-            let uv: float2[4] = if oak { [surfaces::place(pm, sa0, t), surfaces::place(pm, sa1, t), surfaces::place(pm, sc1, t1),
-                                         surfaces::place(pm, sc0, t1)] }
-                                else { [float2 { sa0, t }, float2 { sa1, t }, float2 { sc1, t1 }, float2 { sc0, t1 }] };
-            verts.push(mesh::Vertex { surfaces::world(b, sa0, a.y, a.x), na, uv[0], a.z, own });
-            verts.push(mesh::Vertex { surfaces::world(b, sa1, a.y, a.x), na, uv[1], a.z, own });
-            verts.push(mesh::Vertex { surfaces::world(b, sc1, c.y, c.x), nc, uv[2], c.z, own });
-            verts.push(mesh::Vertex { surfaces::world(b, sc0, c.y, c.x), nc, uv[3], c.z, own });
-            indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
+        let cut_a = inner.len > 0 && k - 1 >= first && k - 1 <= last;
+        let cut_c = inner.len > 0 && k >= first && k <= last;
+        if cut_a || cut_c {
+            // Each row's places along: its start, the cuts if it is cut, its end.
+            let rows: float3[2] = [a, c];
+            let ns:   float3[2] = [na, nc];
+            let ends: float2[2] = [float2 { sa0, sa1 }, float2 { sc0, sc1 }];
+            let ts:   f32[2]    = [t, t1];
+            let cut:  bool[2]   = [cut_a, cut_c];
+            for r in 2 {
+                let q = rows[r];
+                let n_in = if cut[r] { inner.len } else { 0 };
+                for i in n_in + 2 {
+                    let x = if i == 0 { ends[r].x } else if i == n_in + 1 { ends[r].y } else { inner[i - 1] };
+                    let uv = if oak { surfaces::place(pm, x, ts[r]) } else { float2 { x, ts[r] } };
+                    verts.push(mesh::Vertex { surfaces::world(b, x, q.y, q.x), ns[r], uv, q.z, own });
+                }
+            }
+            let cols = (inner.len + 2) as u32;
+            if cut_a && cut_c {
+                for i in inner.len + 1 {
+                    let v = base + (i as u32);
+                    indices.append([v, v + 1, v + cols + 1, v, v + cols + 1, v + cols]);
+                }
+            } else if cut_a {
+                // Row a cut, c whole (c0 at base + cols, c1 after it): a fan from c0.
+                let c0 = base + cols;
+                for i in inner.len + 1 {
+                    let v = base + (i as u32);
+                    indices.append([v, v + 1, c0]);
+                }
+                indices.append([base + cols - 1, c0 + 1, c0]);
+            } else {
+                // Row a whole (a0, a1), c cut after them: a fan from a0.
+                let c0 = base + 2;
+                indices.append([base, base + 1, c0 + cols - 1]);
+                for i in inner.len + 1 {
+                    let v = c0 + (i as u32);
+                    indices.append([base, v + 1, v]);
+                }
+            }
             t = t1;
             continue;
         }
-        for s in ra {
-            let uv = if oak { surfaces::place(pm, s, t) } else { float2 { s, t } };
-            verts.push(mesh::Vertex { surfaces::world(b, s, a.y, a.x), na, uv, a.z, own });
-        }
-        let cb = base + ra.len as u32;
-        for s in rc {
-            let uv = if oak { surfaces::place(pm, s, t1) } else { float2 { s, t1 } };
-            verts.push(mesh::Vertex { surfaces::world(b, s, c.y, c.x), nc, uv, c.z, own });
-        }
-        var i = 0;
-        var j = 0;
-        while i + 1 < ra.len || j + 1 < rc.len {
-            if j + 1 == rc.len || (i + 1 < ra.len && ra[i + 1] <= rc[j + 1]) {
-                indices.append([base + i as u32, base + (i + 1) as u32, cb + j as u32]);
-                i++;
-            } else {
-                indices.append([base + i as u32, cb + (j + 1) as u32, cb + j as u32]);
-                j++;
-            }
-        }
+        let uv: float2[4] = if oak { [surfaces::place(pm, sa0, t), surfaces::place(pm, sa1, t), surfaces::place(pm, sc1, t1),
+                                     surfaces::place(pm, sc0, t1)] }
+                            else { [float2 { sa0, t }, float2 { sa1, t }, float2 { sc1, t1 }, float2 { sc0, t1 }] };
+        verts.push(mesh::Vertex { surfaces::world(b, sa0, a.y, a.x), na, uv[0], a.z, own });
+        verts.push(mesh::Vertex { surfaces::world(b, sa1, a.y, a.x), na, uv[1], a.z, own });
+        verts.push(mesh::Vertex { surfaces::world(b, sc1, c.y, c.x), nc, uv[2], c.z, own });
+        verts.push(mesh::Vertex { surfaces::world(b, sc0, c.y, c.x), nc, uv[3], c.z, own });
+        indices.append([base, base + 1, base + 2, base, base + 2, base + 3]);
         t = t1;
     }
 }
 
-// A swept row from s0 to s1 along the wall, with the cuts (ascending) strictly inside it.
-fn row(s0: f32, s1: f32, cuts: f32[..128]) -> f32[..130] {
-    var out: f32[..130] = [s0];
-    let lo = min(s0, s1) + CUT_CLEAR;
-    let hi = max(s0, s1) - CUT_CLEAR;
-    for c in cuts {
-        if c > lo && c < hi { out.push(c); }
-    }
-    out.push(s1);
-    return out;
-}
-
 // The square end of a profile (as sweep's) at s, facing +s (side 1) or -s (-1): each
-// segment down to the wall behind it. Where the profile runs level (the cap's fillets and
-// soffit), the next strip's edge along that level takes the level's points as its own, so
-// none lies inside it (a T-junction); the level itself has no area and no strip.
+// segment down to the wall behind it.
 fn profile_end(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, prof: float3[], lift: f32, s: f32,
                side: f32, seed: i64) {
     let kz = cm_out();
     let ky = cm_up();
     let own = surfaces::MAT_OAK + 0.9 * surfaces::hash(seed, 9);
-    let n = surfaces::world_normal(b, float3 { side, 0.0, 0.0 });
     for k in 1..prof.len {
         let a = prof[k - 1];
         let c = prof[k];
-        guard a.y != c.y else { continue; }
-        // Each edge's points out from the wall: the wall's, a level's before a (or after c)
-        // inside it, its own.
-        var za: f32[..34] = [0.0];
-        var j = k - 2;
-        var before: f32[..32] = [];
-        while j >= 0 && prof[j].y == a.y {
-            if prof[j].x > 0.0 && prof[j].x < a.x { before.push(prof[j].x * kz); }
-            j--;
-        }
-        sort(before);
-        for z in before { za.push(z); }
-        za.push(a.x * kz);
-        var zc:    f32[..34] = [0.0];
-        var after: f32[..32] = [];
-        j = k + 1;
-        while j < prof.len && prof[j].y == c.y {
-            if prof[j].x > 0.0 && prof[j].x < c.x { after.push(prof[j].x * kz); }
-            j++;
-        }
-        sort(after);
-        for z in after { zc.push(z); }
-        zc.push(c.x * kz);
-        let ya = (a.y + lift) * ky;
-        let yc = (c.y + lift) * ky;
-        let base = verts.len as u32;
-        for z in za { verts.push(mesh::Vertex { surfaces::world(b, s, ya, z), n, float2 { 3.0 + z, ya }, 0.8 + 0.2 * z / max(za[za.len - 1], 0.000001), own }); }
-        let cb = base + za.len as u32;
-        for z in zc { verts.push(mesh::Vertex { surfaces::world(b, s, yc, z), n, float2 { 3.0 + z, yc }, 0.8 + 0.2 * z / max(zc[zc.len - 1], 0.000001), own }); }
-        var i = 0;
-        var m = 0;
-        while i + 1 < za.len || m + 1 < zc.len {
-            if m + 1 == zc.len || (i + 1 < za.len && za[i + 1] <= zc[m + 1]) {
-                indices.append([base + i as u32, base + (i + 1) as u32, cb + m as u32]);
-                i++;
-            } else {
-                indices.append([base + i as u32, cb + (m + 1) as u32, cb + m as u32]);
-                m++;
-            }
-        }
+        let p: float3[4] = [float3 { s, (a.y + lift) * ky, 0.0 }, float3 { s, (a.y + lift) * ky, a.x * kz },
+                            float3 { s, (c.y + lift) * ky, c.x * kz }, float3 { s, (c.y + lift) * ky, 0.0 }];
+        let uv: float2[4] = [float2 { 3.0, p[0].y }, float2 { 3.0 + p[1].z, p[1].y }, float2 { 3.0 + p[2].z, p[2].y },
+                             float2 { 3.0, p[3].y }];
+        surfaces::quad(verts, indices, b, p, uv, [0.8, 1.0, 1.0, 0.8], own, float3 { side, 0.0, 0.0 });
     }
 }
 
 // The oak sweep cut into lengths of at most about two metres, each its own piece of the
-// field, the ends k0 and k1. With `cuts` (the frame's edges along the run) each length ends
-// at the nearest of them (oak_joints), and its rows before `cut_to` take a vertex at each,
-// the rest at each of `top_cuts` (sweep).
+// field, the ends k0 and k1.
+// Its points first to last cut at `cuts` (sweep_cut).
 fn sweep_oak(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, prof: float3[], lift: f32, s0: f32,
-             s1: f32, k0: f32, k1: f32, seed: i64&, cuts: f32[..128] = [], cut_to: i64 = 1000, top_cuts: f32[..128] = []) {
-    let ends = oak_joints(s0, s1, cuts);
-    for i in 1..ends.len {
-        seed++;
-        sweep(verts, indices, b, prof[..], lift, ends[i - 1], ends[i], if i == 1 { k0 } else { 0.0 },
-              if i == ends.len - 1 { k1 } else { 0.0 }, surfaces::MAT_OAK, seed, 0.0, cuts, cut_to, top_cuts);
-    }
-}
-
-// The ends of sweep_oak's lengths from s0 to s1, ascending: at most about two metres each,
-// ending at the nearest of `cuts` where there are any.
-fn oak_joints(s0: f32, s1: f32, cuts: f32[..128]) -> f32[..16] {
+             s1: f32, k0: f32, k1: f32, seed: i64&, cuts: f32[], first: i64, last: i64) {
     let pieces = max(1, ceil((s1 - s0) / (2.0 * m())) as i64);
     let step = (s1 - s0) / pieces;
-    var out: f32[..16] = [s0];
-    for i in 1..pieces {
-        var e = s0 + step * i;
-        if cuts.len > 0 {
-            var near = cuts[0];
-            for c in cuts {
-                if abs(c - e) < abs(near - e) { near = c; }
-            }
-            e = near;
-        }
-        out.push(e);
+    for i in pieces {
+        seed++;
+        let a = s0 + step * i;
+        let e = if i == pieces - 1 { s1 } else { a + step };
+        sweep_cut(verts, indices, b, prof[..], lift, a, e, if i == 0 { k0 } else { 0.0 }, if i == pieces - 1 { k1 } else { 0.0 },
+                  surfaces::MAT_OAK, seed, 0.0, cuts[..], first, last);
     }
-    out.push(s1);
-    return out;
 }
 
-// The frame's edges along a run of panelling from s0 to s1 (world units), ascending: each
-// stile's two, the last ending at s1. The rails and panels between them take these too.
-fn frame_edges(s0: f32, s1: f32, bay: f32) -> f32[..128] {
-    let stile = 9.0 * cm_up();
+// The stiles' edges of panelling's run from s0 to s1, about `bay` metres a bay, worked out
+// as panelling does, so they are the same floats.
+fn stile_edges(s0: f32, s1: f32, bay: f32) -> f32[..128] {
+    let k = cm_up();
+    let stile = 9.0 * k;
     let bays = max(1, floor((s1 - s0 - stile) / (bay * m()) + 0.5) as i64);
     let w = (s1 - s0 - stile) / bays;
     var out: f32[..128] = [];
-    for j in bays + 1 {
+    for j in min(bays + 1, 64) {
         let x = s0 + w * j;
         out.push(x);
-        out.push(if j == bays { s1 } else { x + stile });
+        out.push(x + stile);
     }
     return out;
 }
 
-// A stile (surfaces::board's, its grain up) over xs[0] to its last, in columns at each of
-// xs, each line along it cut at its own heights `ys` (world units, ascending, the same
-// first and last), the columns zipped between them: the rails', panels' and plinth's
-// corners on its edges are its own.
-fn stile_board(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, xs: f32[..4], ys: f32[..16][4],
-               seed: i64) {
-    let x0 = xs[0];
-    let x1 = xs[xs.len - 1];
-    let y0 = ys[0][0];
-    let y1 = ys[0][ys[0].len - 1];
-    let pm = surfaces::piece_map(seed, true, x0, y0, x1 - x0, y1 - y0, true);
-    let own = surfaces::MAT_OAK + 0.9 * surfaces::hash(seed, 9);
-    let n = surfaces::world_normal(b, float3 { 0.0, 0.0, 1.0 });
-    let z = surfaces::FRAME_Z;
-    for c in 1..xs.len {
-        let la .= ys[c - 1];
-        let lc .= ys[c];
-        let base = verts.len as u32;
-        for y in la { verts.push(mesh::Vertex { surfaces::world(b, xs[c - 1], y, z), n, surfaces::place(pm, xs[c - 1], y), 1.0, own }); }
-        let cb = base + la.len as u32;
-        for y in lc { verts.push(mesh::Vertex { surfaces::world(b, xs[c], y, z), n, surfaces::place(pm, xs[c], y), 1.0, own }); }
-        var i = 0;
-        var j = 0;
-        while i + 1 < la.len || j + 1 < lc.len {
-            if j + 1 == lc.len || (i + 1 < la.len && la[i + 1] <= lc[j + 1]) {
-                indices.append([base + i as u32, cb + j as u32, base + (i + 1) as u32]);
-                i++;
-            } else {
-                indices.append([base + i as u32, cb + j as u32, cb + (j + 1) as u32]);
-                j++;
-            }
-        }
-    }
+// Where sweep_oak's lengths over s0..s1 join, as it works them out.
+fn sweep_joints(s0: f32, s1: f32) -> f32[..16] {
+    let pieces = max(1, ceil((s1 - s0) / (2.0 * m())) as i64);
+    let step = (s1 - s0) / pieces;
+    var out: f32[..16] = [];
+    for i in 1..min(pieces, 17) { out.push(s0 + step * i); }
+    return out;
 }
 
-// The heights (cm) a stile is cut at: the frame's foot and head, each register's, and
-// `extra`, ascending.
-fn stile_heights(low: f32, top: f32, rows: float2[..4], extra: f32[..4]) -> f32[..16] {
-    var cm: f32[..16] = [low];
-    for r in rows {
-        cm.push(r.x);
-        cm.push(r.y);
-    }
-    for e in extra { cm.push(e); }
-    cm.push(top);
-    sort(cm);
+// The places of `xs` strictly between lo and hi, in order.
+fn inside(xs: f32[], lo: f32, hi: f32) -> f32[..16] {
     var out: f32[..16] = [];
-    for c in cm { out.push(c * cm_up()); }
+    for x in xs {
+        if x > lo && x < hi && out.len < 16 { out.push(x); }
+    }
     return out;
 }
 
 // The panelling of a run from s0 to s1 (world units): its stiles, rails and raised
 // panels between `low` and `top` cm, the panels in the registers `rows` (cm, bottom and
-// top), about `bay` metres a panel and a stile (frame_edges). The stiles are cut where the
-// rails and panels meet them, so no corner of theirs lies inside a stile's edge; the first
-// and last stiles also at `extra` heights (cm: a sill run's beside them) and along at
-// `split` (s, 0 for none: where a mitred plinth and cap start at an inside corner).
+// top), about `bay` metres a panel and a stile.
 fn panelling(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, s0: f32, s1: f32, low: f32, top: f32,
-             rows: float2[], bay: f32, seed: i64&, extra: f32[..4][2], split: f32[2]) {
+             rows: float2[], bay: f32, seed: i64&) {
     let k = cm_up();
     let stile = 9.0 * k;
-    let edges = frame_edges(s0, s1, bay);
-    let bays = edges.len / 2 - 1;
+    let bays = max(1, floor((s1 - s0 - stile) / (bay * m()) + 0.5) as i64);
+    let w = (s1 - s0 - stile) / bays;
     var ring_in: f32[8] = [0.0; 8];
     var ring_z:  f32[8] = [0.0; 8];
     for i in 8 {
         ring_in[i] = RING_IN[i] * k;
         ring_z[i] = RING_Z[i] * cm_out();
     }
-    var regs: float2[..4] = [];
-    for r in rows { regs.push(r); }
-    let ys = stile_heights(low, top, regs, []);
+    // Each piece cut where another's corner lies on its edge (surfaces::board_cut): the
+    // stiles up at the registers' heights, and the stiles and the first and last rails
+    // along where the plinth's and the cap's lengths join (sweep_joints).
+    var ys: f32[..16] = [];
+    for r in rows {
+        ys.push(r.x * k);
+        ys.push(r.y * k);
+    }
+    let joints = sweep_joints(s0, s1);
+    let none: f32[1] = [0.0];
     var left = surfaces::Map { float2_0, float4_0 };
     for j in bays + 1 {
-        let x = edges[2 * j];
+        let x = s0 + w * j;
         seed++;
         let st = surfaces::piece_map(seed, true, x, low * k, stile, (top - low) * k, true);
-        // Its lines along: the run's end (with a sill run's heights beside a niche), a split
-        // at an inside corner, the other edge.
-        let end = if j == 0 { 0 } else if j == bays { 1 } else { -1 };
-        var xs:    f32[..4]     = [x];
-        var lines: f32[..16][4] = [ys, ys, ys, ys];
-        if end == 0 { lines[0] = stile_heights(low, top, regs, extra[0]); }
-        if end >= 0 && split[end] > x && split[end] < edges[2 * j + 1] { xs.push(split[end]); }
-        xs.push(edges[2 * j + 1]);
-        if end == 1 { lines[xs.len - 1] = stile_heights(low, top, regs, extra[1]); }
-        stile_board(verts, indices, b, xs, lines, seed);
+        let across = inside(joints[..], x, x + stile);
+        surfaces::board_cut(verts, indices, b, x, x + stile, low * k, top * k, true, seed, across[..], ys[..]);
         if j > 0 {
-            let x0 = edges[2 * j - 1];
+            let x0 = s0 + w * (j - 1) + stile;
             let x1 = x;
+            let along = inside(joints[..], x0, x1);
             // The rails: under the first register, between them, over the last.
             var below = low;
             var maps: surfaces::Map[..8] = [];
-            for r in rows {
+            for r, i in rows {
                 seed++;
                 maps.push(surfaces::piece_map(seed, false, x0, below * k, (r.x - below) * k, x1 - x0, true));
-                surfaces::board(verts, indices, b, x0, x1, below * k, r.x * k, false, seed, 0.85);
+                let cuts = if i == 0 { along[..] } else { none[..0] };
+                surfaces::board_cut(verts, indices, b, x0, x1, below * k, r.x * k, false, seed, cuts, none[..0], 0.85);
                 below = r.y;
             }
             seed++;
             maps.push(surfaces::piece_map(seed, false, x0, below * k, (top - below) * k, x1 - x0, true));
-            surfaces::board(verts, indices, b, x0, x1, below * k, top * k, false, seed, 0.9);
+            surfaces::board_cut(verts, indices, b, x0, x1, below * k, top * k, false, seed, along[..], none[..0], 0.9);
             for r, i in rows {
                 seed++;
                 surfaces::panel_ring(verts, indices, b, x0, x1, r.x * k, r.y * k, seed, maps[i], maps[i + 1], left, st, ring_in,
@@ -474,40 +403,31 @@ fn panelling(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
 // architrave (the cap's end returned, the plinth square against the plinth block). A run
 // under a sill butts on the wall's runs either side.
 fn wainscot_run(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, s0: f32, s1: f32, kind: i64,
-                start_end: i64, finish_end: i64, seed: i64&, paper_corners: f32[..128]) {
+                start_end: i64, finish_end: i64, seed: i64&) {
     let first = verts.len;
     let corner0 = kind == RUN_WALL && start_end == 0;
     let corner1 = kind == RUN_WALL && finish_end == 0;
-    // The plinth and the cap meet the frame's foot and head at each stile's edges: they take
-    // a vertex there, the cap up to its top (CAP_A's last point, on the wall), which takes the
-    // wallpaper's corners instead.
-    let cuts = frame_edges(s0, s1, if kind == RUN_WALL { 0.34 } else { 0.4 });
+    // The plinth's top and the cap's foot cut where the stiles' edges meet them.
+    let bay: f32 = if kind == RUN_WALL { 0.34 } else { 0.4 };
+    let edges = stile_edges(s0, s1, bay);
     sweep_oak(verts, indices, b, PLINTH_A[..], 0.0, s0, s1, if corner0 { 1.0 } else { 0.0 }, if corner1 { -1.0 } else { 0.0 },
-              seed, cuts);
+              seed, edges[..], 1, PLINTH_A.len - 1);
     for i in first..verts.len {
         let v .= verts[i];
         v.mat = surfaces::MAT_OAK + PLINTH_TONE * (v.mat - floor(v.mat));
     }
     if kind == RUN_WALL {
         let rows: float2[1] = [float2 { 28.0, 98.0 }];
-        // Beside a niche the sill run's stile meets the end stile up to its own head; at an
-        // inside corner the plinth and cap start a frame's depth along.
-        let sill:  f32[..4]    = [64.0, 75.0];
-        let none:  f32[..4]    = [];
-        let extra: f32[..4][2] = [if start_end == 1 { sill } else { none }, if finish_end == 1 { sill } else { none }];
-        let fz = surfaces::FRAME_Z;
-        let split: f32[2] = [if corner0 { s0 + 1.0 * fz } else { 0.0 }, if corner1 { s1 + -1.0 * fz } else { 0.0 }];
-        panelling(verts, indices, b, s0, s1, 19.0, 100.5 + CAP_LIFT, rows[..], 0.34, seed, extra, split);
+        panelling(verts, indices, b, s0, s1, 19.0, 100.5 + CAP_LIFT, rows[..], bay, seed);
     } else {
         let rows: float2[1] = [float2 { 28.0, 64.0 }];
-        let none: f32[..4]  = [];
-        panelling(verts, indices, b, s0, s1, 19.0, 75.0, rows[..], 0.4, seed, [none, none], [0.0, 0.0]);
+        panelling(verts, indices, b, s0, s1, 19.0, 75.0, rows[..], bay, seed);
     }
     guard kind != RUN_SILL else { return; }
     let lift = CAP_LIFT;
     let k0: f32 = if start_end == 1 { -1.0 } else if corner0 { 1.0 } else { 0.0 };
     let k1: f32 = if finish_end == 1 { 1.0 } else if corner1 { -1.0 } else { 0.0 };
-    sweep_oak(verts, indices, b, CAP_A[..], lift, s0, s1, k0, k1, seed, cuts, CAP_A.len - 1, paper_corners);
+    sweep_oak(verts, indices, b, CAP_A[..], lift, s0, s1, k0, k1, seed, edges[..], 0, CAP_A.len - 2);
     let ends: i64[2] = [start_end, finish_end];
     let at:   f32[2] = [s0, s1];
     let side: f32[2] = [-1.0, 1.0];
@@ -528,14 +448,10 @@ fn wainscot_run(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Buil
         let under:    float3[4] = [float3 { -fz, foot, 0.0 }, float3 { back, foot, 0.0 }, float3 { back, foot, fz }, float3 { -fz, foot, fz }];
         let under_uv: float2[4] = [float2 { -fz, 0.0 }, float2 { back, 0.0 }, float2 { back, fz }, float2 { -fz, fz }];
         surfaces::quad(verts, indices, r, under, under_uv, [0.8, 0.8, 0.8, 0.8], surfaces::MAT_OAK + 0.5, float3 { 0.0, -1.0, 0.0 });
-        // In two, at the end stile's cut where its panel's head meets it.
-        let hs: f32[3] = [75.0 * k, 98.0 * k, (lift + 100.5) * k];
-        for h in 2 {
-            let p: float3[4] = [float3 { at[i], hs[h], 0.0 }, float3 { at[i], hs[h], fz }, float3 { at[i], hs[h + 1], fz },
-                                float3 { at[i], hs[h + 1], 0.0 }];
-            let uv: float2[4] = [float2 { 1.0, p[0].y }, float2 { 1.0 + fz, p[1].y }, float2 { 1.0 + fz, p[2].y }, float2 { 1.0, p[3].y }];
-            surfaces::quad(verts, indices, b, p, uv, [0.8, 1.0, 1.0, 0.8], surfaces::MAT_OAK + 0.5, float3 { side[i], 0.0, 0.0 });
-        }
+        let p: float3[4] = [float3 { at[i], 75.0 * k, 0.0 }, float3 { at[i], 75.0 * k, fz }, float3 { at[i], (lift + 100.5) * k, fz },
+                            float3 { at[i], (lift + 100.5) * k, 0.0 }];
+        let uv: float2[4] = [float2 { 1.0, p[0].y }, float2 { 1.0 + fz, p[1].y }, float2 { 1.0 + fz, p[2].y }, float2 { 1.0, p[3].y }];
+        surfaces::quad(verts, indices, b, p, uv, [0.8, 1.0, 1.0, 0.8], surfaces::MAT_OAK + 0.5, float3 { side[i], 0.0, 0.0 });
     }
 }
 
@@ -554,14 +470,15 @@ fn openings_on(s: Shell, wall: i64) -> Opening[..8] {
 // openings: whole between them, over a door's architrave or a bookcase, and over a
 // window's band, its arch in segments.
 fn wallpaper(verts: mesh::Vertex[>..]&, indices: u32[>..]&, s: Shell, b: surfaces::Builder, length: f32, low: f32,
-             ops: Opening[..8]&, joints: f32[..128]) {
+             ops: Opening[..8]&) {
     let top = s.ceiling - CORNICE_DROP;
     let paper = surfaces::MAT_PAPER;
     var at: f32 = 0.0;
     for o in ops {
         let half = reach(o);
         let a = o.mid - half;
-        if a > at { paper_field(verts, indices, b, at, a, low, top, joints); }
+        if a > at { quad_m(verts, indices, b, [float3 { at, low, 0.0 }, float3 { a, low, 0.0 }, float3 { a, top, 0.0 },
+                                               float3 { at, top, 0.0 }], paper); }
         if o.kind != WINDOW {
             let y = surround_top(o);
             quad_m(verts, indices, b, [float3 { a, y, 0.0 }, float3 { o.mid + half, y, 0.0 }, float3 { o.mid + half, top, 0.0 },
@@ -577,31 +494,8 @@ fn wallpaper(verts: mesh::Vertex[>..]&, indices: u32[>..]&, s: Shell, b: surface
         }
         at = o.mid + half;
     }
-    if length > at { paper_field(verts, indices, b, at, length, low, top, joints); }
-}
-
-// The wallpaper from x0 to x1 and low to top (metres, as quad_m's), its foot taking a vertex
-// at each of `joints` (world units, ascending) inside it, fanned to its head.
-fn paper_field(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x0: f32, x1: f32, low: f32, top: f32,
-               joints: f32[..128]) {
-    let k = m();
-    let foot = row(x0 * k, x1 * k, joints);
-    if foot.len == 2 {
-        quad_m(verts, indices, b, [float3 { x0, low, 0.0 }, float3 { x1, low, 0.0 }, float3 { x1, top, 0.0 }, float3 { x0, top, 0.0 }],
-               surfaces::MAT_PAPER);
-        return;
-    }
-    let n = surfaces::world_normal(b, float3 { 0.0, 0.0, 1.0 });
-    let yl = low * k;
-    let yt = top * k;
-    let base = verts.len as u32;
-    for x in foot { verts.push(mesh::Vertex { surfaces::world(b, x, yl, 0.0), n, float2 { x, yl }, 1.0, surfaces::MAT_PAPER }); }
-    let head = base + foot.len as u32;
-    verts.push(mesh::Vertex { surfaces::world(b, x0 * k, yt, 0.0), n, float2 { x0 * k, yt }, 1.0, surfaces::MAT_PAPER });
-    verts.push(mesh::Vertex { surfaces::world(b, x1 * k, yt, 0.0), n, float2 { x1 * k, yt }, 1.0, surfaces::MAT_PAPER });
-    // The foot's segments fanned to the head's left corner, the last to its right one too.
-    for i in 1..foot.len { indices.append([base + (i - 1) as u32, base + i as u32, head]); }
-    indices.append([base + (foot.len - 1) as u32, head + 1, head]);
+    if length > at { quad_m(verts, indices, b, [float3 { at, low, 0.0 }, float3 { length, low, 0.0 }, float3 { length, top, 0.0 },
+                                                float3 { at, top, 0.0 }], paper); }
 }
 
 // The band's outer edge over a window's arch at x from its middle (metres): concentric
@@ -659,7 +553,7 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
           wb: surfaces::Builder, o: Opening, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
     let plaster = surfaces::MAT_PLASTER;
-    let paint = if paint_quiet { paint_mat(0.5, false, true) } else { surfaces::MAT_PAINT };
+    let paint = if paint_quiet { paint_mat(0.5, false, true, true) } else { surfaces::MAT_PAINT };
     let w = 0.5 * o.width;
     let wo = w + BAND;
     let sill = o.sill;
@@ -749,7 +643,10 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
             seed: i64&) {
     let k = m();
     let w = 0.5 * o.width;
-    let paint = if paint_quiet { paint_mat(0.5, false, true) } else { surfaces::MAT_PAINT };
+    let paint = if paint_quiet { paint_mat(0.5, false, true, true) } else { surfaces::MAT_PAINT };
+    // The faces toward the room (the panelled face and the front edges) without the screen's
+    // occlusion, which crawls on them as the eye moves; the back and the head keep it.
+    let front = if paint_quiet { paint_mat(0.5, false, true, false) } else { surfaces::MAT_PAINT };
     let stack = SHUTTER_FRONT + SHUTTER_BACK;
     let y0 = o.sill + 0.005;
     let y1 = o.sill + o.height - CASE_HEAD;
@@ -769,13 +666,13 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     // seen when the pair stands ajar.
     if !paint_quiet {
         quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK + j }, float3 { leaf, y0, stack }, float3 { leaf, y1, stack },
-                                   float3 { leaf, y1, SHUTTER_BACK + j }], paint, float3 { 1.0, 0.0, 0.0 });
+                                   float3 { leaf, y1, SHUTTER_BACK + j }], front, float3 { 1.0, 0.0, 0.0 });
     }
     quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK - j }, float3 { leaf, y0, SHUTTER_BACK + j },
-                               float3 { leaf, y1, SHUTTER_BACK + j }, float3 { leaf, y1, SHUTTER_BACK - j }], paint,
+                               float3 { leaf, y1, SHUTTER_BACK + j }, float3 { leaf, y1, SHUTTER_BACK - j }], front,
            float3 { 1.0, 0.0, 0.0 }, 0.3);
     quad_m(verts, indices, l, [float3 { leaf, y0, 0.0 }, float3 { leaf, y0, SHUTTER_BACK - j }, float3 { leaf, y1, SHUTTER_BACK - j },
-                               float3 { leaf, y1, 0.0 }], paint, float3 { 1.0, 0.0, 0.0 });
+                               float3 { leaf, y1, 0.0 }], front, float3 { 1.0, 0.0, 0.0 });
     if ajar > 0.0 {
         let back = surfaces::Builder { l.o, l.d, l.n * -1.0, 0.0, 1.0 };
         quad_m(verts, indices, back, [float3 { 0.0, y0, 0.0 }, float3 { leaf, y0, 0.0 }, float3 { leaf, y1, 0.0 },
@@ -788,7 +685,7 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     let rows: float2[3] = [float2 { 0.9, 1.62 }, float2 { 1.72, 2.62 }, float2 { 2.72, 3.16 }];
     if paint_quiet {
         painted_quiet(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], SHUTTER_FRONT - j, RIGHT | TOP | BOTTOM, RIGHT, true,
-                      1.0, seed);
+                      1.0, false, seed);
     } else { painted(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], seed); }
     // The hinges: on the lining at the front leaf's back edge, and between the leaves.
     let mid = 0.5 * (y0 + y1);
@@ -1008,7 +905,7 @@ let DOOR_LEVER = float2 { 0.06, 1.05 };
 // hinges and the lever, the architrave round it on its plinth blocks.
 fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o: Opening, thick: f32, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
-    let paint = if paint_quiet { paint_mat(0.5, false, false) } else { surfaces::MAT_PAINT };
+    let paint = if paint_quiet { paint_mat(0.5, false, false, true) } else { surfaces::MAT_PAINT };
     let w = 0.5 * o.width;
     let h = o.height;
     let back = DOOR_FACE + DOOR_LEAF;
@@ -1041,7 +938,7 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     for x in spans {
         if paint_quiet {
             painted_quiet(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], DOOR_LEAF, EDGES, LEFT | RIGHT | TOP, false,
-                          0.6, seed);
+                          0.6, true, seed);
             continue;
         }
         painted(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], seed);
@@ -1124,41 +1021,6 @@ fn architrave(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builde
     }
 }
 
-// A run of wainscot along a wall (metres), of RUN_WALL, RUN_SILL or RUN_BARE (a bare strip,
-// where too little wall is left for a panel), its ends as wainscot_run takes them, and the
-// opening it is built before (-1 after the last).
-let RUN_BARE = 2;
-struct Run { s0: f32, s1: f32, kind: i64, start_end: i64, finish_end: i64, before: i64 }
-
-// The runs of a wall of `length` metres with its openings `ops`, in the order they are
-// built: under and between the windows, and stopped square against a door's architrave's
-// side (its skirting under the plinth block) or returned into a case's ledge.
-fn wall_runs(ops: Opening[..8]&, length: f32) -> Run[..24] {
-    var out: Run[..24] = [];
-    var at:  f32       = 0.0;
-    var at_end = 0;
-    var edge: f32 = 0.0;
-    for o, oi in ops {
-        if o.kind == WINDOW {
-            let a = o.mid - 0.5 * o.width;
-            if a > at + 0.01 { out.push(Run { at, a, RUN_WALL, at_end, 1, oi }); }
-            out.push(Run { a, o.mid + 0.5 * o.width, RUN_SILL, 0, 0, oi });
-            at = o.mid + 0.5 * o.width;
-            at_end = 1;
-        } else {
-            let gap = if o.kind == BOOKCASE { 0.002 } else { 0.0 };
-            let a = o.mid - reach(o) - gap;
-            if a > at + 0.25 || (a > at + 0.01 && at_end != 2) { out.push(Run { at, a, RUN_WALL, at_end, 2, oi }); }
-            else if o.mid - reach(o) > edge + 0.005 { out.push(Run { edge, o.mid - reach(o), RUN_BARE, 0, 0, oi }); }
-            at = o.mid + reach(o) + gap;
-            at_end = 2;
-        }
-        edge = o.mid + reach(o);
-    }
-    if length > at + 0.01 { out.push(Run { at, length, RUN_WALL, at_end, 0, -1 }); }
-    return out;
-}
-
 // The middle of wall `wall`'s door along it, or the wall's middle without one.
 fn door_mid(s: Shell, wall: i64) -> f32 {
     for k in s.count {
@@ -1187,41 +1049,36 @@ fn build(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]
         let b = wall_builder(s, w);
         let length = length_of(w);
         let ops = openings_on(s, wi);
-        let runs = wall_runs(ops, length);
-        // Where the wallpaper's foot meets the cap's top and the bare strips' heads: its
-        // corners are the cap's, and the cap's and strips' ends along it are the paper's.
-        var corners: f32[..128] = [0.0];
+        wallpaper(verts, indices, s, b, length, WAINSCOT_TOP, ops);
+        // The wainscot's runs between the openings.
+        var at: f32 = 0.0;
+        var at_end = 0;
+        var edge: f32 = 0.0;
         for o in ops {
-            corners.push((o.mid - reach(o)) * k);
-            corners.push((o.mid + reach(o)) * k);
-        }
-        corners.push(length * k);
-        var joints: f32[..128] = [];
-        for r in runs {
-            if r.kind == RUN_BARE {
-                joints.push(r.s0 * k);
-                joints.push(r.s1 * k);
-            } else if r.kind == RUN_WALL {
-                let ends = oak_joints(r.s0 * k, r.s1 * k, frame_edges(r.s0 * k, r.s1 * k, 0.34));
-                for e in ends { joints.push(e); }
+            if o.kind == WINDOW {
+                let a = o.mid - 0.5 * o.width;
+                if a > at + 0.01 { wainscot_run(verts, indices, b, at * k, a * k, RUN_WALL, at_end, 1, seed); }
+                wainscot_run(verts, indices, b, a * k, (o.mid + 0.5 * o.width) * k, RUN_SILL, 0, 0, seed);
+                window(verts, indices, glass, glass_indices, b, o, seed);
+                at = o.mid + 0.5 * o.width;
+                at_end = 1;
+            } else {
+                // A door or a bookcase: the wainscot stopped square against the architrave's
+                // side (its skirting under the plinth block) or returned into a case's
+                // ledge, or where too little wall is left for a panel, a bare strip.
+                let gap = if o.kind == BOOKCASE { 0.002 } else { 0.0 };
+                let a = o.mid - reach(o) - gap;
+                if a > at + 0.25 || (a > at + 0.01 && at_end != 2) {
+                    wainscot_run(verts, indices, b, at * k, a * k, RUN_WALL, at_end, 2, seed);
+                } else if o.mid - reach(o) > edge + 0.005 { bare_strip(verts, indices, b, edge, o.mid - reach(o), seed); }
+                if o.kind == DOOR { door(verts, indices, b, o, w.thick, seed); }
+                else { bookcase(verts, indices, b, o, door_mid(s, wi), books_on, uses, seed); }
+                at = o.mid + reach(o) + gap;
+                at_end = 2;
             }
+            edge = o.mid + reach(o);
         }
-        sort(joints);
-        wallpaper(verts, indices, s, b, length, WAINSCOT_TOP, ops, joints);
-        // The wainscot's runs between the openings, and the openings.
-        for o, oi in ops {
-            for r in runs {
-                guard r.before == oi else { continue; }
-                if r.kind == RUN_BARE { bare_strip(verts, indices, b, r.s0, r.s1, seed); }
-                else { wainscot_run(verts, indices, b, r.s0 * k, r.s1 * k, r.kind, r.start_end, r.finish_end, seed, corners); }
-            }
-            if o.kind == WINDOW { window(verts, indices, glass, glass_indices, b, o, seed); }
-            else if o.kind == DOOR { door(verts, indices, b, o, w.thick, seed); }
-            else { bookcase(verts, indices, b, o, door_mid(s, wi), books_on, uses, seed); }
-        }
-        for r in runs {
-            if r.before < 0 { wainscot_run(verts, indices, b, r.s0 * k, r.s1 * k, r.kind, r.start_end, r.finish_end, seed, corners); }
-        }
+        if length > at + 0.01 { wainscot_run(verts, indices, b, at * k, length * k, RUN_WALL, at_end, 0, seed); }
         // The cornice, mitred into the corners at both ends.
         var flipped: float3[31] = [float3_0; 31];
         for q, i in CORNICE_B { flipped[i] = float3 { q.x, (s.ceiling * 100.0 - q.y), q.z }; }

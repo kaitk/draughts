@@ -15,15 +15,18 @@
 # 5. test/perft.py puzzles: every puzzle's lines played by it, each position's moves
 #    checked against build/perft, for each variant's set.
 #
-# GOOSE names the compiler (default: the pinned release under build/).
+# GOOSE names the compiler (default: the desktop build's copy of the pinned release with the
+# goose_gfx fork's gfx, build/<platform>/goose/, which the build scripts make and the app is
+# built with, as the fork's gfx.goose has what the release's lacks; else the release itself).
 set -e
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
 case $(uname -s) in
-    Darwin) release=goose-v2026.4-macos-arm64/goose ;;
-    Linux) release=goose-v2026.4-linux-x64/goose ;;
-    *) release=goose-v2026.4-windows-x64/goose.exe ;;
+    Darwin) release=goose-v2026.4-macos-arm64/goose; patched=mac/goose/goose ;;
+    Linux) release=goose-v2026.4-linux-x64/goose; patched=linux/goose/goose ;;
+    *) release=goose-v2026.4-windows-x64/goose.exe; patched=windows/goose/goose.exe ;;
 esac
+if [ -z "$GOOSE" ] && [ -x "$root/build/$patched" ]; then GOOSE=$root/build/$patched; fi
 GOOSE=${GOOSE:-$root/build/$release}
 export GOOSE
 

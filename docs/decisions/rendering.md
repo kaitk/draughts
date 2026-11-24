@@ -1680,6 +1680,17 @@ to be is in tasks 042, 059, 071, 081, and 086.
   The windows' paint keeps it (their casements' inner corners), and so do the wainscot's
   oak panels (their bands came out smooth, no dashes), the sills, the niches and the cap's
   corner. Rejected: a full-size map for those profiles (four times the pass for a few cm).
+- The screen's occlusion stays off the shutters' faces toward the room (2026-11-24, the
+  user; extends the doors' entry above, which kept it on all of the windows' paint). The
+  front leaf's panelled face and the front edges take a half more in the paint's fraction
+  (`joinery::paint_mat`'s `screen_ao`, `Piece.screen_ao`), and `ROOM_PAINT`'s fade line
+  multiplies by one less that flag, so there is no new branch. Seen against the bright
+  window, the occlusion crawled over those faces as the eye moved. The rings' own occlusion
+  and the dirt shade the panels. The back leaf's back and head (toward the reveal), the
+  lining and the reveal keep it, so the gap behind stays shaded. Rejected: marking the
+  shutters as a door's paint (its look, and only 2 to 4.5 cm off by the recesses); a flag in
+  the vertex's occlusion (every room shader clamps it); temporal accumulation for now
+  (task 107: a still frame drawn only on change would never settle).
 - The library's waxed floor reflects the room by a planar mirror in the standard and high
   tiers (2026-11-21, task 107; `render3d::planar_pass`, `shaders::MIRROR_PASS`,
   `PLANAR_FLOOR`, `PLANAR_RESOLVE_FRAG`, `rooms::Room.planar`). Replaces, for the floor,
@@ -1832,6 +1843,10 @@ to be is in tasks 042, 059, 071, 081, and 086.
   change by more than 8 over a 1 cm eye move from 646 to 70; on the sill from 0.56 to 0.39
   and 2,174 to 1,370, but the sill is lighter (its occlusion's mean 190 to 205 of 255: its
   back corner shades less). The four views change by up to 101 levels at 4K.
+- The high tier's occlusion is GTAO, the standard tier's SSAO (2026-11-23, task 110, the
+  user: GTAO looks better): `render3d::ssao_gtao` follows the desktop (`!mobile`) beside
+  `ssao_allowed` in `app::follow_screen`, in both renderers; a tablet keeps SSAO for its
+  cost, a phone has neither. Replaces GTAO as a tuner trial only (the entry above).
 - Keep the full mirror target when the floor can show (2026-11-23, task 107).
   Rejected scissoring the mirror draw, resolve and mips to the projected floor bounds
   plus 64 or 192 texels. The experiment fell back to the full target at 70% coverage
@@ -2098,6 +2113,82 @@ to be is in tasks 042, 059, 071, 081, and 086.
   unchanged. A uniform switch in the app's shaders cost the room 0.7 ms a frame on the
   Mac (0.45 without a branch), and any change to the lit shader's text moved two pixels of
   the game's shot by 7 levels; a Mali would compile every branch of it too.
+- The library's maple drawn as GPU geometry, behind the light tuner's `--tree-draw
+  off|wood|all`, default off (2026-11-23, task 107's step 3, T2 and T3;
+  `src/model3d/tree_mesh.goose`, `render3d::tree_geometry`, `shaders::TREE_*`,
+  `build/notes/tree/gpu.html`). The culled old-leader tree (`trees::grow_whole`) as one
+  mesh: tubes of 12, 9 and 6 sides for the trunk, limbs and branches, eye-facing ribbons
+  for branchlets and twigs kept a pixel wide and faded by their true width (Persson's
+  phone-wire antialiasing), blended last without depth writes; a bark tile made at
+  startup. The leaves are the atlas's instanced cards, cut by a dithered alpha test on
+  alpha sharpened to a pixel, lit from the front by the sky and the sun and from behind
+  through the atlas's back colour with a Henyey-Greenstein lobe (g 0.3). Each vertex and
+  leaf takes its sun and sky share from a 64³ grid of the whole crown's leaves, baked once
+  (Beer-Lambert). The far crown past 0.85 of the far plane is squeezed in front of it in
+  the vertex shader, leaving the room's depths alone. Under 0.1 ms a frame in the four
+  views at 3840 × 2160 and 5120 × 2880; off, the shots are byte-identical. Not the
+  default until the user has seen it. Rejected for now: alpha-to-coverage (no
+  `PipelineDesc` field in goose_gfx or goose-ngfx, no `gl_SampleMask` in embed_shader's
+  GLSL; `docs/goose-findings.md`), and coverage written by the shader as a sample mask
+  for the ribbons (the same gap).
+- The maple's geometry moves in the shadow's own wind, behind the light tuner's
+  `--tree-wind off|on`, default off (2026-11-24, task 107's T4; `shaders::WIND_FN`,
+  `TREE_FN`'s `tree_moved` and `tree_leaf_move`, `build/notes/tree/wind-card.html`). One
+  wind: `WIND_FN` is split out of `LIGHT_FN` and shared by the room's shaders and the
+  tree's vertex shaders, so a leaf moves by the shift the shadow lookup uses at the leaf's
+  point on the shadow's map (its layer's drift and gust, plus the branches' sway for the
+  branch wind), found by a fixed point of two steps since the lookup is at the moved
+  point; `rooms::wind_at` is unchanged. A wood vertex moves toward the leaves' shift by
+  its flex (none at the trunk). The high tier (HDR) adds a flutter, each leaf turning
+  about its stalk (6 degrees in the room's mild wind, 9 radians a second of the wind,
+  `--tree-flutter`); the standard tier holds the leaves at the shadow's moment. Per tier
+  by defines (`TREE_WIND`, `TREE_FLUTTER`), the pipelines made again when the switch
+  changes; off, the shaders are the ones before and the four views are byte-identical.
+  +0.05 to 0.1 ms over the still geometry. Rejected: following the noise wind's ruffle
+  (it reshapes the flecks rather than moving them, so no geometry can follow it; the
+  flutter stands in for it).
+- The maple's card: the geometry drawn once into a picture for the floor's mirror and for
+  phones, behind the light tuner's `--tree-card off|on|main`, default off (2026-11-24,
+  task 107's T5; `render3d::make_tree_card`, `shaders::TREE_CARD`, `CARD_VERT`,
+  `CARD_FRAG`, `build/notes/tree/wind-card.html`). 1024 × 768 RGBA16F with mips (8.4 MB),
+  premultiplied coverage, light exposed with no toe; drawn 4× multisampled from the main
+  menu's eye (`TREE_CARD_EYE`) onto a plane at the leaves' mean depth, cut to what the
+  windows show from that eye and from the mirror's, in about 9-12 ms with the GPU waited
+  for, only when the tree is grown again or its light or the sun's direction changes.
+  Drawn as one quad an eighth of the way from the eye, as the view out's pictures are, and
+  given out as the view out is (the mirror's light, the HDR's toe, or tonemapped and
+  dithered). It takes the place of W4's planned CPU-baked layers, which were never built.
+  Still (no wind) and from one eye, so far from the menu's eye its parallax is wrong, and
+  at 3840 wide a card texel covers 4 to 6 pixels, too soft for a desktop's main view; in
+  the mirror +0.2 ms, in the main view +0.55 ms (3840 × 2160) to +0.95 ms (5120 × 2880) on
+  the M1 Pro, more than the geometry (+0.05). The card in a phone's main view is the
+  intent; a phone has not measured it yet.
+- The maple's leaves are cut by alpha-to-coverage in gfx (2026-11-24, task 107;
+  `shaders::TREE_COVERAGE`, `build/notes/tree/look.html`), replacing the dithered alpha
+  test of 2026-11-23 there: the fork's `PipelineDesc.alpha_to_coverage` (goose_gfx
+  `d02b2b4`) takes the leaf's alpha, sharpened to a pixel, as the share of its 4 samples
+  covered. The dithered test stays in a pass of one sample (the tree block's samples, a
+  uniform branch) and in ngfx, which has no alpha-to-coverage (`docs/goose-findings.md`).
+  The leaves' edges are smooth instead of a dither; the menu view at 3840 × 2160 with the
+  tree 13.64 to 13.68 ms, the look up into the crown 10.60 to 10.55 (A B A B means). The
+  desktop builds take the fork's `gfx.goose` with its C, whose wider `PipelineDesc` the
+  release's `gfx.goose` passed short: the C read a byte past it, and the lace in the room
+  view took alpha-to-coverage at random (553,109 pixels over 8 at 3840 × 2160 against the
+  fixed build). `scripts/test.sh` checks with that copy.
+- The view out's near trees are left out of the main view while the maple is geometry
+  (2026-11-24, task 107; `render3d::near_trees_left_out`, `view_out::build`'s far count):
+  with `--tree-draw wood` or `all`, the oak's picture (the park's cards with `--park`) and
+  the maple seen from its shadow's map (`tree_seen`, the `veil` sun look) are not drawn;
+  the sky and the far band are. The mirror keeps them, as no geometry is drawn there. Off,
+  the four views are byte-identical. Open: the park's cards still cast their shadows on
+  the lawn.
+- Each limb's bark tile is shifted round and along by dice of its own (2026-11-24, task
+  107; `trees::tube`), so neighbouring limbs' tiles don't line up. A stand-in until a
+  real fix of the tile's repeat (stochastic or two-scale sampling, and the bare maple's
+  darker colour), noted in task 107.
+- The maple's card (`--tree-card`, 2026-11-24 above) is shelved until needed (2026-11-24,
+  the user): it was for phones and low-end tablets, which are unlikely to run this room
+  mode. Its code stays behind `--tree-card off`; no more work on it.
 - A new player starts on the 3D board on a desktop and flat on a phone or tablet
   (2026-11-14, `settings::default_board`); a player's file keeps the board they had.
 - The spring stone board scatters light through its stone on a desktop only
@@ -2108,6 +2199,50 @@ to be is in tasks 042, 059, 071, 081, and 086.
   median over eight alternating runs). Phones and tablets keep it off until timed.
   Rejected: scattering along the frame's cracks (they are thin painted lines), and
   tying it to the 16-tap shadow filter (it would turn on for iOS).
+- The library's wainscot is cut where its pieces' corners meet each other's edges, so it
+  has no pinholes (2026-11-23, task 107; `surfaces::board_cut`, `room_shell::sweep_cut`).
+  The single white dots on the dark oak of the wainscot, by the bookcases, and on the
+  window wall in shade were the view out seen through one-pixel cracks: a stile ran from
+  the plinth to the cap with no vertex where the rails' and panels' corners lay on its
+  edges, and the plinth's top and the cap's foot none where the stiles' and rails' corners
+  did, nor the rails where the plinth's and cap's 2 m lengths joined. The two rasterized
+  such an edge apart, and one MSAA sample of the sunlit park, averaged in HDR, made a dot.
+  Found by elimination in the light tuner (Vulkan, Windows): no broken value (the new
+  `--ssao-view broken` marks non-finite terms red and light over 64 yellow, and marked
+  nothing there), the dots stayed with HDR, SSAO and GTAO off, and were added after the
+  room's shaders, taking the view out's colour. Each piece is now cut at those places,
+  its cells sharing vertices: one chart in the corners' map as before, its attributes
+  affine, so it interpolates as before. The plinth and the cap cut every row of their
+  profile but the one against the floor or the paper, whose segment is a fan. At 3840 ×
+  2160 the cracks went from 29 to 0 by the hall's bookcases and from 147 to 122 close to
+  the window wall (the rest on the windows' bright edges); the four views move by a level
+  in 5,000-20,000 pixels (the wainscot and its reflection) besides the dots, and straight
+  down not at all. 7,764 triangles more in the shell, no work more a pixel. Left: the
+  doors' and shutters' painted panels (`painted`) have the same junctions, on white paint.
+  Rejected: a backing behind the wainscot (hides cracks but keeps them, and its charts
+  would move the atlas), and cutting only the profile's rows at the frame (the next row's
+  edge then lacked the cuts).
+- The lace draws nothing past its hem's last row, and its mask's read stays inside the
+  mask's bottom edge (2026-11-23, task 107; `ROOM_FRAG`'s `ROOM_LACE`). The thin light line
+  along the window wall's base behind the hem was the lace's own cloth: the hem's tips reach
+  the mask's last row, where `lace_place` holds everything below, and the repeating
+  sampler's mips and anisotropic taps there took in the pattern's dense top row. It stayed
+  with the mirror, the corners' map, the contact shadows, SSAO, GTAO and HDR each off. Near
+  the edge the gradients are scaled to the distance to it; the hem is unchanged, only the
+  line (500-1,100 pixels over 8 a view) and the floor's reflection of it (a level) move. A
+  few operations a pixel more in the lace's shader. Rejected: a clamping sampler (a texture
+  slot more, and the pattern's seam would change), and empty rows in the mask (the hem's tips
+  are in its last row).
+- The corners' map shades a texel lying on a boundary as touching it (2026-11-24, task 107;
+  `corner_map::TOUCH`). With SSAO off the user saw light along the cap's top against the
+  paper and into a corner: each chart's edge texel lies on the boundary it meets, where the
+  shade's comparisons were strict (over the cap, under its foot, a holed wall's face, a
+  box's), so it came out 1, and ROOM_FRAG's bilinear tap spread it a texel in: half discs
+  on the paper over the cap, the stiles' top 2 cm (their texels are 2 cm), the paper's edge
+  at the reveals, the architraves and the bookcases. Now a point within TOUCH of the face
+  takes its shade at distance 0. Only those lines change, all darker; no work more a pixel
+  (the map is baked once). Rejected: insetting each chart's texels from its edge (the
+  atlas would move, and the shade would stop short of the corner).
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
 

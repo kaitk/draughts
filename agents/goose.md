@@ -231,7 +231,17 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - `gfx::BLEND_ADD` weights the source by its alpha: an additive glow writes alpha 1.
 - `gl_InstanceIndex` doesn't count `first_instance`: a second group of instances gets its
   own storage buffer.
-- A storage buffer block holds one runtime-sized array (`vec4 squares[];`).
+- A storage buffer block holds one runtime-sized array (`vec4 squares[];`), its name
+  unique across all embedded shaders' globals (`leaves` clashed: "redefinition").
+- embed_shader's GLSL has no `gl_SampleMask`; gfx's pipelines take alpha-to-coverage
+  (`PipelineDesc.alpha_to_coverage`, the fork's), ngfx's don't: the leaves use it in gfx
+  (`shaders::TREE_COVERAGE`), a dithered alpha test in ngfx and with one sample; sub-pixel
+  lines blend (`docs/goose-findings.md`). A field the fork adds to a gfx struct needs the
+  fork's `gfx.goose`: the desktop builds copy it beside the fork's C (`scripts/native.py`),
+  and `scripts/test.sh` checks with that copy (`build/mac/goose/goose`) once a build made
+  it; the release's own `goose` rejects the field.
+  The tree's two-sided leaf cards tell their face by `dot(n, eye - p)`, which works the
+  same in the ngfx build's translation.
 - A GLSL local named like a uniform block's member hides it; read the member through a
   function declared beside the block.
 - `float4` has no swizzles.
@@ -339,6 +349,15 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   slot to another (the map takes the lace mask's in the groups that read the lace only
   through `shell_open`), so no slot moves.
 - `smoothstep(a, b, x)` with `a > b` is undefined: write `1.0 - smoothstep(b, a, x)`.
+- A mesh piece's corner lying on another's edge (a T-junction) leaves one-pixel cracks, and
+  the view out behind the room shines through them as white dots: cut the edge there, cells
+  sharing vertices so the corners' map keeps one chart (`surfaces::board_cut`,
+  `room_shell::sweep_cut`; a profile's every row, or the next row's edge lacks the cuts).
+  To tell a crack from a bad value, switch the view out off (`--outside off`): a crack
+  takes the sky's colour (2026-11-23).
+- A texture region whose content reaches its image's edge (the lace's hem in its mask's last
+  row) takes the far edge in through a repeating sampler's mips and anisotropic taps: scale
+  the gradients to the distance to the edge, and draw nothing past it (`ROOM_LACE`).
 - Metal keywords (`thread`, `device`, `constant`, `kernel`) as GLSL names fail only on
   the Mac's pipeline build.
 - A GLSL change in `src/gfx/*_gpu.goose` or `src/render3d/shaders.goose` reaches the

@@ -116,5 +116,20 @@ alternating rounds, ms a frame (`tools/perf/tablet_room_bench.py --variants base
 
 The map saves about 4 to 8 ms straight down, 9 in the corner and 1 to 5 in the room's view,
 a quarter of the frame at most. Leaving the leaves out saves nothing more: static leaves cost
-nothing once baked. Still to run on the Galaxy Tab.
+nothing once baked.
+
+## On the Galaxy Tab A11+ (2026-11-24)
+
+The phone's tier, native 1920 × 1200, cool (thermal status 0 before and after), two
+alternating rounds, ms a frame; the first row task 115's base before both changes:
+
+| Variant | Down | Corner | Room |
+|---|---|---|---|
+| before: 4× MSAA, traced (task 115) | 43.2 to 52.9 | 54.6 to 56.5 | 48.7 to 49.9 |
+| 4× MSAA, the map | 33.9 / 34.1 | 45.3 / 47.4 | 42.7 / 43.5 |
+| SMAA, the map (the tuner's default now) | 36.0 / 35.8 / 40.5 / 35.7 | 40.3 / 40.0 / 39.6 / 40.3 | 39.5 / 38.0 / 39.8 / 39.2 |
+| SMAA, `--window-map off` | 49.5 / 50.2 | 48.8 / 51.7 | 48.0 / 47.3 |
+
+The map saves 10 to 14 ms; SMAA 5 to 7 more in the corner and the room's view, about 2 dearer
+straight down. Together the corner from 55 to 40 ms, the room's view 49 to 39.
 

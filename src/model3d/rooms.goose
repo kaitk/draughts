@@ -380,6 +380,15 @@ fn plan_to_tree(r: Room, s: room_shell::Shell, p: float3) -> float3 {
     return float3 { u + shear.x * board, y + shear.y * board, board + (p.y - s.table.y) * metre };
 }
 
+// The room's frame from the shell's tree's (plan_to_tree turned back): a point p of the
+// tree's frame is (p.x - o.x, p.y - o.y, o.z - p.z) in the room's (u along the window wall,
+// y up, v into the room; shaders::TREE_FN), o this.
+fn tree_origin(r: Room) -> float3 {
+    let shear = tree_shear(r);
+    let board = -(r.window.x + shell_tree(r).foliage.w);
+    return float3 { shear.x * board, shear.y * board, board };
+}
+
 // The old maple outside the library (task 107's T1, library-home-01 and the Tartu
 // photographs): about 22 m tall, its trunk a metre thick, standing WHOLE_OUT beyond the
 // window wall's outer face at WHOLE_ALONG on the plan's x, its crown about 20 m across,
@@ -593,7 +602,7 @@ fn made_view(r: Room, shear: float2, middle: float2, size: float2, w: i64, h: i6
                          -r.foliage.w, .. };
 }
 
-// The wind in the trees at a moment (Room.wind), for shaders::LIGHT_FN: now x the whole
+// The wind in the trees at a moment (Room.wind), for shaders::WIND_FN and LIGHT_FN: now x the whole
 // tree's slow sway, -1..1; y the gust where the map's along is 0, 0..1; z the gust's
 // change a unit along the wall, as its front crosses the crown. Each layer's shift (the
 // limbs, the near, middle and far leaves) in the tree's map, a map of `size` (world units): xy in
@@ -680,7 +689,7 @@ fn gust_clock(g: float4, front: f64) -> f64 {
 // gust's regions.
 let BRANCH_CELL: f32 = 6.0;
 
-// Where the gust at the wind's seconds `t` reaches (Wind.regions; shaders::LIGHT_FN's
+// Where the gust at the wind's seconds `t` reaches (Wind.regions; shaders::WIND_FN's
 // wind_at): a slow noise over the tree's plane, BRANCH_CELL cells, drifting along the wind
 // and a new part of it each gust. Its edge is soft enough that, with the strongest
 // layer's push `push` (world units) over it, the shift changes by about a tenth of a unit
@@ -762,7 +771,7 @@ fn wind_of(r: Room, kind: i64, seconds: f32, size: float2) -> Wind {
     return out;
 }
 
-// The branches' field (shaders::LIGHT_FN's branch_sway): each leaf layer's lookup moved
+// The branches' field (shaders::WIND_FN's branch_sway): each leaf layer's lookup moved
 // by a slow noise over the tree's plane, its cells a branch's reach across (BRANCH_CELL),
 // at most two thirds of a leaf's width (0.25), so neighbouring regions sway apart and the
 // field's gradient stays under 0.13: no shape smears. Its clock is the wind's time `t`;
@@ -779,7 +788,7 @@ fn branch_field(r: Room, t: f64) -> float4 {
 // The wind as sines (after Crysis's vegetation and SpeedTree's wind): the whole tree's
 // slow sway, two sines; each leaf layer a little more and on its own phase across the
 // wind. The gust, peaks of two sines' product, its front crossing the crown, is made by
-// shaders::LIGHT_FN's wind_at (now.w 1).
+// shaders::WIND_FN's wind_at (now.w 1).
 fn wind_sines(r: Room, seconds: f32, size: float2) -> Wind {
     let t = seconds * r.wind.y;
     let slow = 0.7 * sin(t * 0.55) + 0.3 * sin(t * 1.37 + 1.1);

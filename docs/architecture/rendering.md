@@ -667,11 +667,17 @@ board's light:
   is darkened twice: the books between them and under the shelves, the table's base and
   the floor round it, the curtains' folds, the shutters, the window's frames. Not on the
   doors' panels and architraves within a few cm of a recess, whose mm steps it can't
-  resolve: their rings' own occlusion and the paint's dirt shade them. Five
+  resolve: their rings' own occlusion and the paint's dirt shade them. Not on the shutters'
+  faces toward the room either (the panelled face and the front edges, flagged in the
+  paint's material), where it crawled against the window as the eye moved; behind them it
+  stays. Five
   half-size targets, 22 bytes a pixel (8.8 MB at 1600 × 1000). The light tuner's Light
   section sets its strength, reach, bias and gain, and shows it alone (`--ssao-view
-  alone`) or with all the indirect light keeps (`kept`); `--gtao on` works the occlusion
-  out by GTAO instead (`GTAO_FRAG`, a trial, off by default).
+  alone`) or with all the indirect light keeps (`kept`), and `broken` marks the room's
+  non-finite terms red and light over 64 yellow. The high tier, on a desktop, works
+  the occlusion out by GTAO instead (`GTAO_FRAG`, `render3d::ssao_gtao`), over the same
+  prepass and blur; the standard tier, on a tablet, keeps the SSAO. The tuner opens with
+  GTAO; `--gtao off` gives the SSAO.
 - **The floor's mirror** (`render3d::planar_pass`, `rooms::Room.planar`), in the standard
   and high tiers, not on a phone (`render3d::planar_allowed`). Both renderers skip the
   mirror draw, resolve and mip generation when all four floor corners, turned with the
@@ -992,6 +998,43 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   dust; `--lace-hang`, `--lace-sun`, `--lace-scatter`, `--sun-veil`, `--glass-film`,
   `--scratches` set each, 0 off, and `--view table-window` is the view from a chair behind
   the games table into the middle window.
+- **The maple as geometry** (the light tuner's `--tree-draw off|wood|all`, off by default
+  and in the app; `src/model3d/tree_mesh.goose`, `render3d::tree_geometry`,
+  `shaders::TREE_*`): the old-leader maple grown whole, culled to what the windows show or
+  cast through them, drawn in the board's pass after the room's opaque groups. Its trunk,
+  limbs and branches are tubes with a bark tile made at startup; its branchlets and twigs
+  ribbons turned to the eye, at least a pixel wide and faded by their true width, drawn
+  last and blended. Its leaves are the leaf atlas's cards, one instance each from a
+  storage buffer, cut by alpha-to-coverage in gfx's multisampled passes, by a dithered alpha
+  test in ngfx and with one sample; lit from the front by the sky and the sun,
+  from behind by the sun through the atlas's back colour, stronger toward the sun's own
+  way. Every vertex and leaf carries its share of the sun and the sky through the crown,
+  from a grid of the whole tree's leaves baked when the tree is grown (about 70 ms on the
+  CPU, the atlas and bark 60 ms more once). The crown past the far plane is squeezed in
+  front of it in the vertex shader. `--tree-light`, `--tree-look` and `--tree-tint` tune
+  its light. Each limb's bark tile starts at a shift of its own. While it draws, the view
+  out's near trees (the oak's picture, the park's cards, `tree_seen`) are left out of the
+  main view; the far band and the sky stay, and the mirror keeps them all.
+- **The maple in the wind** (the light tuner's `--tree-wind off|on`, off by default and in
+  the app; `shaders::WIND_FN`, `TREE_WIND`, `TREE_FLUTTER`): the wind that moves the
+  room's shadow of the tree (`WIND_FN`, which `LIGHT_FN` and the tree's vertex shaders
+  share; `rooms::wind_at` on the CPU) moves the geometry too. Each vertex and each leaf
+  takes the shift the shadow lookup uses at its own point on the shadow's map: the layer's
+  drift and gust, and the branches' sway for the branch wind, so a leaf and its fleck on
+  the floor move by one vector. The trunk stays; a vertex moves toward the leaves' shift
+  by its flex. On the high tier (HDR) each leaf also turns a few degrees about its stalk
+  (`--tree-flutter DEG,RATE`, 6 and 9); the standard tier's leaves hold still at the
+  shadow's moment. Off, the pipelines are made without the wind and draw as before.
+- **The maple's card** (shelved until needed, 2026-11-24; the light tuner's `--tree-card off|on|main`, off by default and in
+  the app; `render3d::make_tree_card`, `shaders::TREE_CARD`, `CARD_VERT`, `CARD_FRAG`):
+  the geometry drawn once, still, into a 1024 × 768 RGBA16F picture with premultiplied
+  coverage, 4× multisampled and resolved, with mips, from the main menu's eye onto a plane
+  at the leaves' mean depth. It is drawn again only when the tree is grown again or its
+  light or the sun's direction changes, never in the steady frame loop. It is drawn as one
+  quad in the view out's place: in the floor's mirror (`on`), and in the main view instead
+  of the geometry on a phone, which has no mirror, or with `main` to compare the two. Its
+  light leaves as the view out's does: the mirror's light, the HDR's toe, or tonemapped
+  and dithered.
 
 ### HDR and the depth of field's groundwork
 

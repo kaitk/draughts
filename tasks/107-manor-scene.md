@@ -631,8 +631,8 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
     the larger differences in the debug view. The test suite passed with NGFX set,
     and both Mac apps built. The 3D home screen differed by at most one level on
     either backend. ADB found no connected tablet.
-- [ ] Artifacts the user saw (2026-11-23; crops in `build/notes/artifacts-2026-11-23/`, local):
-  - [ ] Single bright pixels sparkling on the dark oak of the wainscot and the bookshelves
+- [x] Artifacts the user saw (2026-11-23; crops in `build/notes/artifacts-2026-11-23/`, local):
+  - [x] Single bright pixels sparkling on the dark oak of the wainscot and the bookshelves
         at some angles (`oak-sparkle-*.png`), and on the window wall's side, which is in
         shade (the user doubts the normal map's highlight, rightly: no sun to reflect there).
         Find the cause before fixing, in order: a broken value in one pixel (a division by
@@ -640,9 +640,47 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
         debug view); the MSAA resolve in HDR (one bright sub-sample averaged with dark ones,
         as the bars' dashes); a bad SSAO or GTAO texel at a depth edge (switch each off);
         specular aliasing only where a highlight exists (then Toksvig or Kaplanyan-Hoffman)
-  - [ ] A thin light line along the wall's base behind the lace (`light-line-wall-base.png`):
+    - Fixed (2026-11-23, Windows, Vulkan): pinholes, not shading. `--ssao-view broken`
+      marked no non-finite value; the dots stayed with HDR off (35 levels over the oak
+      instead of 52), GTAO off and SSAO off; the sun's highlight view showed them, but a
+      view of each pixel's material showed the oak there turned from the sun and the light
+      added after it, and with the view out off they took the plain sky's colour. Cracks at
+      T-junctions of the stiles, rails, plinth and cap; each piece now cut where another's
+      corner lies on it. Cracks (pixels showing the view out, 3840 x 2160): by the hall's
+      bookcases 29 to 0, beside the hall door 38 to 10 (left on the door's architrave and
+      paper), close to the window wall 147 to 122 (the windows' own edges), the corner 935
+      to 885, the room 490 to 466. The four views against the build before: straight down
+      byte-identical at both sizes; corner, room and menu at most a level in 5,000-20,000
+      pixels at 4K (the wainscot and its reflection), and the dots (18-60 pixels over 8).
+      The shell 38,262 to 46,026 triangles. Left: the doors' painted panels have the same
+      junctions
+  - [x] A thin light line along the wall's base behind the lace (`light-line-wall-base.png`):
         the floor's reflection, the plinth's contact line, the wax band or a leak at the
         wainscot's foot; find which with the tuner's debug views
+    - Fixed (2026-11-23): the lace's own cloth below its hem, its mask read past the mask's
+      bottom edge into the pattern's top through the repeating sampler (mips, anisotropy).
+      It stayed with the mirror, the corners' map, the contact shadows, SSAO, GTAO and HDR
+      each off. The lace's read held inside the edge, nothing drawn past the last row: the
+      line's 500-1,100 pixels a view over 8 at 4K, the hem unchanged, the floor's reflection
+      of the line a level
+  - [x] The screen's occlusion (GTAO, the tuner's default) flickers on the window shutters and
+        behind them while the eye moves (the user, 2026-11-24, comparing SMAA and MSAA in the
+        tuner; unclear whether SMAA makes it worse). The user: take it off the shutters' front side,
+        against the window, as the doors' panels skip it; keep it behind them, where it shades the gap.
+        Done for the front faces (2026-11-24, `build/notes/shutter-ao/`): the panelled face and the
+        front edges take a half more in the paint's fraction (`joinery::paint_mat`), and
+        `ROOM_PAINT`'s fade turns the occlusion off there. On those faces, two shots 1 cm apart
+        in the occlusion-alone view at 3840 × 2160 changed by a mean of 3.6 levels and 10,357
+        pixels over 8 (the edges moving), against 8.3 levels and 69,762 pixels before. Before to
+        after, the shutters changed by up to 56-61 levels in the room and corner views; outside
+        them the change was at most 12 levels, with 50-81 pixels over 8 on shutters seen through
+        the lace. The room view took about 32 ms a frame before and about 29 ms after, within
+        noise with the user's tuner open
+    - Later, postponed by the user (2026-11-24): the flicker elsewhere (behind the shutters,
+      the casements' corners) by a bilateral upsample in the high tier, the half-size texels
+      weighted by depth and normal, behind a tuner flag, judged by two shots 1 cm apart. Not
+      temporal blending (the user dislikes its artifacts; a map accumulated over frames was
+      tried before and dropped, line ~296), nor full size (about +5-6 ms at 4K, estimated)
   - [x] The HDR glow pulsing on thin sun strips (the sill, the window's reveals) when the
         eye moves up or down, steady when it moves sideways (`glow-shimmer-*.png`): the
         first downsample averaged 4 x 4 blocks and thresholded after, so a strip a few
@@ -668,9 +706,73 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       21); the first pick's encoder 0.17 ms of fragment time, now 0.25-0.26, at 5120 x 2880
       (Metal System Trace, menu view). Tests pass with NGFX, both apps build; the app
       draws no HDR yet, so nothing changes on the tablet
+- [ ] Artifacts the user saw (2026-11-24, the tuner on Windows):
+  - [x] With SSAO off, light along the wainscot's cap against the paper and into a corner:
+        the corners' map left a texel lying exactly on a boundary unshaded (`up > cap`,
+        `up < cap - 0.095`, `holed_wall`'s and `box_hides`' `a > 0`), and the bilinear tap
+        spread it a texel in: half discs on the paper over the cap, the stiles' top 2 cm
+        under it, the paper's edge at the reveals, the architraves and the bookcases.
+        Fixed: on the boundary counts. The four views against the build before, 3840 x
+        2160: straight down 20 pixels by a level; the corner, the room and the menu
+        16,000-47,000 pixels, 3,300-4,500 over 8, all darker and all on those lines
+  - [ ] A light line at the window wall's base between the curtains, close, at some angles
+        only: not reproduced yet (low views straight on and from either side, the mirror on
+        and off); needs the tuner's P line for the view
 - [ ] The lace in shade, open questions (`build/notes/lace-shade/trials.html`): a cooler
       tint in shade; trial 1 (more opacity at grazing angles) and trial 4 (motif against
       net), only if the user wants more after the defaults of 2026-11-23
+- [ ] The library's maple as GPU geometry (step 3; the plan in `build/notes/tree/index.html`).
+      T2 and T3 done on the branch `tree-gpu` (2026-11-23, `build/notes/tree/gpu.html`),
+      behind the tuner's `--tree-draw off|wood|all`, default off. T4 (wind) done on the
+      branch `tree-wind-card` (2026-11-24, `build/notes/tree/wind-card.html`), behind
+      `--tree-wind off|on`, default off; T5 (the phone's card) done there too, behind
+      `--tree-card off|on|main`, default off. Open: whether the card is wanted in the
+      main view on a desktop (soft, and slower than the geometry there), its cost on a
+      phone, and its eye for the mirror (the card is shelved, 2026-11-24). Open: the colour (tint
+      +0.2, the light through 0.35 of the sun), and the density
+    - The culled old-leader maple: 16,752 tube and 49,278 ribbon triangles (74,376
+      vertices), 22,217 leaf cards; the crown's grid 64³, the leaves' mean sun share 75%.
+      Made on the CPU (-O2) in 67 ms a grow (the leaves' crown rays 37), plus the leaf
+      atlas 53 and the bark 8 once; on the GPU 13 MiB
+    - Frames on the M1 Pro, two rounds A B A B, off / wood / all: 3840 x 2160 down 10.95 /
+      11.03 / 11.03, corner 15.21 / 15.21 / 15.23, room 14.35 / 14.35 / 14.38, menu 13.43 /
+      13.45 / 13.46; 5120 x 2880 down 19.20 / 19.06 / 19.09, corner 25.24 / 24.81 / 24.79,
+      room 23.15 / 23.15 / 23.14, menu 22.30 / 22.38 / 22.33. Under 0.1 ms in every view
+    - Off against the build before (`21892e88`), the four views at 3840 x 2160:
+      byte-identical. Tests pass with NGFX, both apps build; ngfx checked by compiling only
+      (no ngfx tool draws the tuner's views)
+    - T4, the wind: frames on the M1 Pro, two rounds A B A B, all / all with wind:
+      3840 x 2160 down 10.93 / 11.02, corner 15.13 / 15.20, room 14.30 / 14.40, menu 13.45 /
+      13.57; 5120 x 2880 down 19.27 / 19.18, corner 24.75 / 24.80, room 23.03 / 23.12, menu
+      22.37 / 22.43. Off against `3415b066`, the four views at 3840 x 2160 and 5120 x 2880:
+      byte-identical. Between wind times 0 and 0.7 s the crown in the menu view moves 0.3 px
+      (the room's wind) and 2.0 px (4× the wind); the geometry still, it moves 0.00 px while
+      the flecks change. Tests pass with NGFX, both apps build; ngfx by compiling only
+    - T5, the card: 1024 x 768 RGBA16F with mips, 8.4 MB (the 4× targets of its drawing,
+      31 MB, given back after); drawn in 9-12 ms with the GPU waited for, when the tree or
+      its light changes. Frames, off / card in the mirror (on) / card in the main view too
+      (main): 3840 x 2160 down 10.90 / 10.90 / 10.92, corner 15.10 / 15.18 / 15.22, room
+      14.27 / 14.32 / 14.50, menu 13.40 / 13.58 / 13.95; 5120 x 2880 down 19.45 / 19.10 /
+      19.43, corner 24.67 / 24.77 / 24.97, room 22.95 / 23.07 / 23.43, menu 22.28 / 22.48 /
+      23.23. Off, byte-identical as above
+    - The look (2026-11-24, branch `tree-look`, `build/notes/tree/look.html`): the leaves
+      cut by alpha-to-coverage in gfx (the dithered test kept in ngfx and with one sample);
+      the view out's near trees (the oak's picture, the park's cards, `tree_seen`) left out
+      of the main view while the maple draws, the band kept; each limb's bark tile shifted
+      by dice of its own. The card shelved until needed (the user, 2026-11-24): it was for
+      phones and low-end tablets, unlikely to run this room mode; its code stays behind
+      `--tree-card off`. The builds now take the fork's `gfx.goose` with its C: the
+      release's passed `PipelineDesc` short, and the lace took alpha-to-coverage at random.
+      At 3840 x 2160, `--tree-draw all`, A B A B: menu 13.64 / 13.64 ms before, 13.60 / 13.76
+      after; the look up into the crown 10.60 / 10.60 before, 10.50 / 10.60 after. Off, the
+      four views byte-identical to the fixed build before. Tests pass with NGFX, both apps
+      build
+    - Later, the user's (2026-11-24): the leaves follow the season (autumn's gold-orange
+      toward the photos; winter none, the shadow's too; summer green, backlit yellow-green;
+      spring like summer, then smaller and lighter leaves); more leaves, a density flag and
+      slider (the cards' `Whole.leafy`, 0.55 now, 1 about 40,000 cards); the bark without a
+      visible repeat (stochastic or two-scale sampling) and darker, toward the bare maples'
+      photos. Leaves' placement and branches' growth are task 115's
 - [ ] The window wall and the view outside, drawn once into the kept backdrop, with depth
       of field (task 106)
 - [ ] The camera's angles and pans for the home screen (task 106)

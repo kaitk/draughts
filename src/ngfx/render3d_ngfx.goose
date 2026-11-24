@@ -51,6 +51,11 @@ fn gpu_update(own: Own&, b: Buffer, bytes: const u8[:]) { nx::update_buffer(b, b
 fn gpu_mesh(own: Own&, verts: const u8[:], indices: const u8[:]) -> Buffer, Buffer {
     return nx::buffer(verts), nx::buffer(indices);
 }
+fn gpu_storage(own: Own&, bytes: const u8[:]) -> Buffer { nx::buffer(bytes) }
+fn gpu_release_storage(own: Own&, b: Buffer) {
+    ngfx::flush();
+    nx::release(b);
+}
 fn gpu_release_mesh(own: Own&, vb: Buffer, ib: Buffer) {
     ngfx::flush();
     nx::release(vb);
@@ -119,8 +124,12 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
     nx::begin_pass(pass);
     // The opaque tabletop covers the backdrop at every sample in this view.
     if !table_covers {
-        if outside { draw_outside(own, g, f); }
-        else if backdrop { draw_backdrop(own, g, f, 1.0); }
+        if outside {
+            draw_outside(own, g, f);
+            if render3d::tree_card_in_view(g) { draw_tree_card(own, g, f); }
+        } else if backdrop {
+            draw_backdrop(own, g, f, 1.0);
+        }
     }
 
     let h .= g.hdr_pipes;
@@ -173,6 +182,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
             draw_room_group(g, f, u, h.sill, render3d::GROUP_SILL, ssao, false);
             draw_room_group(g, f, u, h.paint, render3d::GROUP_PAINT, ssao, false);
             draw_room_group(g, f, u, h.metals, render3d::GROUP_METALS, ssao, false);
+            if render3d::tree_drawn(g) { draw_tree(own, g, f); }
             draw_room_group(g, f, u, h.glass, render3d::GROUP_GLASS, ssao, false);
             draw_room_group(g, f, u, h.lace, render3d::GROUP_LACE, ssao, false);
         } else {
@@ -181,6 +191,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
             draw_room_group(g, f, u, g.room_sill, render3d::GROUP_SILL, ssao, false);
             draw_room_group(g, f, u, g.room_paint, render3d::GROUP_PAINT, ssao, false);
             draw_room_group(g, f, u, g.room_metals, render3d::GROUP_METALS, ssao, false);
+            if render3d::tree_drawn(g) { draw_tree(own, g, f); }
             // The shell's glass and lace over what stands behind them.
             draw_room_group(g, f, u, g.room_glass, render3d::GROUP_GLASS, ssao, false);
             draw_room_group(g, f, u, g.room_lace, render3d::GROUP_LACE, ssao, false);
@@ -379,7 +390,9 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
     nx::begin_pass(pass);
     if render3d::outside_shown(g) {
         let two: render3d::Frame[1] = [plain];
-        draw_outside(own, g, ngfx::frame_data(bytes_of(two)), true);
+        let fp = ngfx::frame_data(bytes_of(two));
+        draw_outside(own, g, fp, true);
+        if render3d::tree_card_in_mirror(g) { draw_tree_card(own, g, fp, true); }
     }
     if render3d::table_shown(g) && render3d::table_in_room(g) {
         nx::bind(g.planar_table);
@@ -872,7 +885,140 @@ fn draw_outside(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
     slot(t, 0, g.outside_band, g.linear);
     slot(t, 1, g.outside_oak, g.linear);
     slot(t, 2, render3d::tree_or_stand_in(g), g.linear);
-    nx::draw_indexed(ngfx::root(t), g.outside_ib, 4, g.outside_count);
+    nx::draw_indexed(ngfx::root(t), g.outside_ib, 4, render3d::outside_drawn(g, in_mirror));
+}
+
+// The tree's pipelines (render3d::TreeGpu), as gfx's make_tree: its tubes' and ribbons',
+// 8-bit and HDR, made before any pass the first time the tree is grown, and again when the
+// wind on it comes or goes (render3d::tree_wind; the _wind modules).
+fn make_tree(own: Own&, g: Gpu&) {
+    let t .= g.tree;
+    guard t.tube.id == 0 || t.wind_made != render3d::tree_wind else { return; }
+    if t.tube.id != 0 {
+        ngfx::flush();
+        for p in [t.tube, t.ribbon, t.hdr_tube, t.hdr_ribbon, t.leaf, t.hdr_leaf] { nx::release(p); }
+    }
+    t.wind_made = render3d::tree_wind;
+    let solid = ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true };
+    let flat = ngfx::PipelineDesc { cull: ngfx::CULL_NONE, depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED };
+    let card = ngfx::PipelineDesc { cull: ngfx::CULL_NONE, depth_test: true, depth_write: true };
+    if render3d::tree_wind {
+        t.tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_tube_wind.blob"), solid);
+        t.ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_ribbon_wind.blob"), flat);
+        t.hdr_tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_tube_wind.blob"), solid);
+        t.hdr_ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_ribbon_wind.blob"), flat);
+        t.leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_leaf_wind.blob"), card);
+        t.hdr_leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_leaf_wind.blob"), card);
+    } else {
+        t.tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_tube.blob"), solid);
+        t.ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_ribbon.blob"), flat);
+        t.hdr_tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_tube.blob"), solid);
+        t.hdr_ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_ribbon.blob"), flat);
+        t.leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_leaf.blob"), card);
+        t.hdr_leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_leaf.blob"), card);
+    }
+}
+
+// The tree outside in the board's pass, after the room's opaque groups, as gfx's draw_tree:
+// its tubes, its leaves, then its ribbons. r3d_tree_tube.slang's header: Frame, Tree, the wood's
+// vertices, the bark.
+fn draw_tree(own: Own&, g: Gpu&, f: u64) {
+    let t = g.tree;
+    let b: render3d::TreeBlock[1] = [render3d::tree_block(g, if g.aa == AA_MSAA { SAMPLES } else { 1 })];
+    var r = no_root();
+    r.frame = f;
+    r.u = ngfx::frame_data(bytes_of(b));
+    r.verts = nx::address(t.wood_vb);
+    slot(r, 0, t.bark, g.aniso);
+    nx::bind(if g.hdr { t.hdr_tube } else { t.tube });
+    nx::draw_indexed(ngfx::root(r), t.wood_ib, 4, t.tube_count);
+    if t.leaf_count > 0 {
+        var lr = no_root();
+        lr.frame = f;
+        lr.u = r.u;
+        lr.buf0 = nx::address(t.leaves);
+        slot(lr, 0, t.leaf_shape, g.aniso);
+        slot(lr, 1, t.leaf_marks, g.aniso);
+        nx::bind(if g.hdr { t.hdr_leaf } else { t.leaf });
+        ngfx::draw_instanced(ngfx::root(lr), 6, t.leaf_count);
+    }
+    nx::bind(if g.hdr { t.hdr_ribbon } else { t.ribbon });
+    nx::draw_indexed(ngfx::root(r), t.wood_ib, 4, t.ribbon_count, t.ribbon_first);
+}
+
+// The tree's card (render3d::tree_card), as gfx's tree_card_pass: the pipelines the first
+// time, then the geometry, still, into 4× multisampled transient targets resolved into the
+// card, and its mips (mip_chain). r3d_tree_card_tube.slang's header: Frame, Tree, the wood's
+// vertices, the bark.
+fn tree_card_pass(own: Own&, g: Gpu&, f: render3d::Frame, b: render3d::TreeBlock) {
+    let t .= g.tree;
+    if t.card_tube.id == 0 {
+        t.card_tube = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_card_tube.blob"),
+                                   ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
+        t.card_ribbon = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_card_ribbon.blob"),
+                                     ngfx::PipelineDesc { cull: ngfx::CULL_NONE, depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
+        t.card_leaf = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_card_leaf.blob"),
+                                   ngfx::PipelineDesc { cull: ngfx::CULL_NONE, depth_test: true, depth_write: true });
+        let over = ngfx::PipelineDesc { cull: ngfx::CULL_NONE, blend: ngfx::BLEND_PREMULTIPLIED };
+        t.card_draw = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_tree_card_draw.blob"), over);
+        t.hdr_card_draw = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_tree_card_draw.blob"), over);
+    }
+    let w = render3d::TREE_CARD_W;
+    let h = render3d::TREE_CARD_H;
+    if t.card.id == 0 {
+        t.card = nx::texture(ngfx::TextureDesc { format: ngfx::RGBA16F, usage: ngfx::COLOR_TARGET | ngfx::SAMPLED, width: w as i32,
+                                                 height: h as i32, mips: trees::mips_of(w, h) as i32 });
+    }
+    let color = nx::texture(ngfx::TextureDesc { format: ngfx::RGBA16F, usage: ngfx::COLOR_TARGET | ngfx::TRANSIENT, width: w as i32,
+                                                height: h as i32, samples: SAMPLES });
+    let depth = nx::texture(ngfx::TextureDesc { format: ngfx::DEPTH16, usage: ngfx::DEPTH_TARGET | ngfx::TRANSIENT, width: w as i32,
+                                                height: h as i32, samples: SAMPLES });
+    let one: render3d::Frame[1]     = [f];
+    let bb:  render3d::TreeBlock[1] = [b];
+    var r = no_root();
+    r.frame = ngfx::frame_data(bytes_of(one));
+    r.u = ngfx::frame_data(bytes_of(bb));
+    r.verts = nx::address(t.wood_vb);
+    slot(r, 0, t.bark, g.aniso);
+    var pass = nx::PassDesc { depth: depth, color_value: float4_0 };
+    pass.color[0] = color;
+    pass.resolve[0] = t.card;
+    nx::begin_pass(pass);
+    nx::bind(t.card_tube);
+    nx::draw_indexed(ngfx::root(r), t.wood_ib, 4, t.tube_count);
+    if t.leaf_count > 0 {
+        var lr = no_root();
+        lr.frame = r.frame;
+        lr.u = r.u;
+        lr.buf0 = nx::address(t.leaves);
+        slot(lr, 0, t.leaf_shape, g.aniso);
+        slot(lr, 1, t.leaf_marks, g.aniso);
+        nx::bind(t.card_leaf);
+        ngfx::draw_instanced(ngfx::root(lr), 6, t.leaf_count);
+    }
+    nx::bind(t.card_ribbon);
+    nx::draw_indexed(ngfx::root(r), t.wood_ib, 4, t.ribbon_count, t.ribbon_first);
+    ngfx::end_pass();
+    barrier_between_passes();
+    mip_chain(own, g, t.card);
+    ngfx::flush();
+    nx::release(color);
+    nx::release(depth);
+}
+
+// The card's block and the view out's, one after the other (r3d_tree_card_draw's u).
+struct TreeCardOutside { card: render3d::TreeCardBlock, outside: render3d::OutsideBlock }
+
+// The tree's card in the view out's place, as gfx's draw_tree_card; r3d_tree_card_draw.slang's
+// header: TreeCard, Outside, the card.
+fn draw_tree_card(own: Own&, g: Gpu&, f: u64, in_mirror: bool = false) {
+    nx::bind(if g.hdr && !in_mirror { g.tree.hdr_card_draw } else { g.tree.card_draw });
+    var r = no_root();
+    r.frame = f;
+    let b: TreeCardOutside[1] = [TreeCardOutside { render3d::tree_card_block(g), render3d::outside_block(g, in_mirror) }];
+    r.u = ngfx::frame_data(bytes_of(b));
+    slot(r, 0, g.tree.card, g.linear);
+    ngfx::draw(ngfx::root(r), 6);
 }
 
 // The dust in the sunbeam over the open pass's target, added, hidden by what stands
@@ -1611,8 +1757,13 @@ fn release(own: Own&, g: Gpu&) {
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     release_hdr(own, g);
     for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { nx::release(p); } }
-    for t in [g.hdr_image, g.scene_depth] { if t.id != 0 { nx::release(t); } }
+    for t in [g.hdr_image, g.scene_depth, g.tree.bark, g.tree.leaf_shape, g.tree.leaf_marks, g.tree.card] { if t.id != 0 { nx::release(t); } }
     for t in g.glow_levels { if t.id != 0 { nx::release(t); } }
+    for b in [g.tree.wood_vb, g.tree.wood_ib, g.tree.leaves] { if b.id != 0 { nx::release(b); } }
+    for p in [g.tree.tube, g.tree.ribbon, g.tree.hdr_tube, g.tree.hdr_ribbon, g.tree.leaf, g.tree.hdr_leaf, g.tree.card_tube,
+              g.tree.card_ribbon, g.tree.card_leaf, g.tree.card_draw, g.tree.hdr_card_draw] {
+        if p.id != 0 { nx::release(p); }
+    }
     own = default<Own>();
     g = default<Gpu>();
 }

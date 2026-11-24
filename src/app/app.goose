@@ -183,8 +183,10 @@ fn follow_screen(lp: Loop&, h: host::Host&, f: flags::Flags&, g: gui::Gui&, rd: 
     render::screen_shadow(rd, if !on_android { render3d::SHADOW_16 } else if phone { render3d::SHADOW_4 }
                               else { render3d::SHADOW_9 });
     render::screen_bake(rd, phone);
-    // The room's ambient occlusion in the standard and high tiers, not on a phone.
+    // The room's ambient occlusion in the standard and high tiers, not on a phone: by GTAO
+    // in the high tier (a desktop), by SSAO in the standard tier (a tablet).
     render3d::ssao_allowed = !phone;
+    render3d::ssao_gtao = !mobile;
     // The floor's mirror likewise; a phone's floor sees the room's box.
     render3d::planar_allowed = !phone;
     let e = if f.inset.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
