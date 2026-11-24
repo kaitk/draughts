@@ -179,6 +179,9 @@ def patched_goose(out, release, exe, lib, compile, archive, obj=".o", section="T
         shutil.copytree(release, goose, symlinks=not WINDOWS)
     src = copy_gfx(out)
     shutil.copytree(src / "gfx", goose / "pkg/gfx/src/gfx", dirs_exist_ok=True)
+    # The fork's Goose side with its C, so a struct the fork widened (PipelineDesc's
+    # alpha_to_coverage) has the layout the C reads.
+    shutil.copy(ROOT / "third_party/goose_gfx/gfx.goose", goose / "pkg/gfx/gfx.goose")
     objs, target = out / "obj", goose / "pkg/gfx/lib" / lib
     stamp = hashlib.sha256(repr([compile(Path("c"), Path("o")), archive(Path("lib"), [])]).encode())
     for f in sorted(p for p in src.rglob("*") if p.is_file()):
