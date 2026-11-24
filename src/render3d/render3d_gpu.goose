@@ -341,6 +341,14 @@ fn room_frag(group: i64, ssao: bool, views: bool) -> const u8[:] {
         }
         return tuned_or(TUNED_GLASS, embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
     }
+    // The phone's tier without the floor's and the metals' sharp box (render3d::sharp_box_allowed,
+    // the light tuner's --box off): their reflection the room's broad light, as the walls'.
+    if !render3d::sharp_box_allowed && group == render3d::GROUP_FLOOR {
+        return embed_shader("frag", shaders::ROOM_FLOOR, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+    }
+    if !render3d::sharp_box_allowed && group == render3d::GROUP_METALS {
+        return embed_shader("frag", shaders::ROOM_METALS, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
+    }
     if group == render3d::GROUP_FLOOR {
         return embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }

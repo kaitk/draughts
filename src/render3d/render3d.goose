@@ -2759,6 +2759,9 @@ fn upscale_of(size: int2, screen: int2) -> Upscale {
 // it (the standard and the high: not on a phone, which the app says), the room shows and
 // its strength is over 0. ssao_view: the tuner's views of it (shaders::SSAO_FN's).
 var ssao_allowed = true;
+// The phone's tier's floor and metals with their sharp box reflection (shaders::SHARP_BOX); off
+// gives them the walls' broad one (the light tuner's --box off, to weigh it on a tablet).
+var sharp_box_allowed = true;
 var ssao_view = 0;
 // The light tuner's trial (--gtao on, off by default): the occlusion by GTAO
 // (shaders::GTAO_FRAG) in place of SSAO_FRAG's, its visibility raised to gtao_power.

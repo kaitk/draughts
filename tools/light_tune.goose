@@ -121,7 +121,8 @@
 //       [--touch on|off (the touch walk, on by default on Android: the walk from the start, no panel, the
 //       screen's left half a stick to walk, its right half a drag to look, Up and Down at the right edge;
 //       with the phone's tier: no screen-space occlusion, no floor mirror, no HDR, 4 shadow taps, unless
-//       --tier full)] [--tier phone|full]
+//       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the board's antialiasing; msaa, 4×)]
+//       [--box on|off (the phone tier's floor and metals reflecting the room's box sharply; on)]
 //   On a tablet: scripts/android.py tools/light_tune.goose --run (its own app id, beside the app's);
 //   flags by adb shell am start -n io.github.kaitk.draughts.light_tune/.DraughtsActivity --es args '"--scene-scale 0.75"'
 
@@ -211,6 +212,8 @@ let PLANAR_VIEWS = ["off", "floor", "map", "distance"];
 // side; and its upscale (M).
 let SCENE_SCALES: f32[5] = [0.0, 1.0, 0.85, 0.75, 0.67];
 let UPSCALES = ["cubic", "bilinear"];
+let AA_NAMES = ["off", "smaa", "msaa"];
+let AA_WAYS: i32[3] = [render3d::AA_OFF, render3d::AA_SMAA, render3d::AA_MSAA];
 let VIEW_EYES: float3[6] = [float3_0, float3 { 8.4, 0.6, 1.7 }, float3 { 4.5, 1.0, 1.6 }, float3 { 4.5, 6.3, 1.6 },
                             float3 { 8.3, 3.5, 1.6 }, float3 { 3.75, 4.5, 1.15 }];
 let VIEW_ATS: float3[6] = [float3_0, float3 { 2.6, 5.8, 1.3 }, float3 { 4.5, 7.0, 1.8 }, float3 { 4.5, 0.0, 1.3 },
@@ -1361,7 +1364,9 @@ fn main() {
                                                                    shaders::ROOM_FRAG);
     render3d::setup(r3d, g, render3d::SAMPLES, if phone_tier { render3d::SHADOW_4 } else { render3d::SHADOW_16 });
     if has(argv, "--oak-aniso-4") { g.oak_sampler = gfx::sampler(gfx::SamplerDesc { max_anisotropy: 4.0 }); }
-    render3d::set_aa(r3d, g, render3d::AA);
+    // --aa off|smaa|msaa: the board's antialiasing, 4× MSAA by default (render3d::AA).
+    let aa_way = pick(argv, "--aa", AA_NAMES, 2);
+    render3d::set_aa(r3d, g, AA_WAYS[aa_way]);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
     render3d::scatter_allowed = true;
     g.table = true;
@@ -1398,6 +1403,7 @@ fn main() {
     room.ssao = four(argv, "--ssao", room.ssao);
     render3d::ssao_view = pick(argv, "--ssao-view", SSAO_VIEWS, 0);
     // A phone's tier (the app's): the room's pipelines without the screen's maps, no mirror.
+    render3d::sharp_box_allowed = !(has(argv, "--box") && argv[flag_value(argv, "--box")] == "off");
     if phone_tier {
         render3d::ssao_allowed = false;
         render3d::planar_allowed = false;
@@ -1719,7 +1725,15 @@ fn main() {
             }
             break;
         }
-        ui::input_from_gfx(c);
+        // ui's input from gfx turns gfx's text input on, and on Android that opens the keyboard
+        // over half the screen: the touch walk, which has no panel, gives ui an empty frame.
+        if touch {
+            ui::input_begin(c);
+            ui::input_end(c);
+            ui::set_delta_time(c, gfx::delta_time() as f32);
+        } else {
+            ui::input_from_gfx(c);
+        }
         var print_it = gfx::key_pressed("P");
         // Tab begins the walk; Esc or Tab ends it, and so does losing focus, which lets the mouse go.
         var walk_now = !walk.on && (gfx::key_pressed("Tab") || touch);
