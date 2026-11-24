@@ -256,6 +256,12 @@ language (a Finnish or Estonian programmer), who should never need the body to k
 - A Mali compiles every branch, even one a uniform never takes: split what a look never
   uses into variants by a define (`shaders::PIECES_WOOD`, `BAKE_TABLE`), one embedded
   shader each, and make a variant's pipeline outside a pass.
+- A Valhall Mali (G615, G710) holds 128 32-bit uniform components in registers a shader;
+  past that each vec4 read costs about one load/store cycle a pixel (one too for a
+  dynamically indexed element). The room's shaders read 56 to 100 vec4s of `Frame` and
+  `Surfaces` and are bound by those loads, not by math: as constants, the sill's 44 LS
+  cycles fell to 1 and the floor's 168 to 3, its 150-byte spill gone (task 115). Count
+  components, not vec4s: `.x` of 96 vec4s fits. `tools/perf/shader_report.py --table` shows it.
 - The library's `ROOM_FRAG` is near the Mac's register limit: code that never runs still
   costs (a uniform-off contact shadow 0.5 ms, a second sheen lobe 0.5, a toe switch 0.7 at
   1600 × 1000), and not additively. Weigh a feature by a build without its code, not by its

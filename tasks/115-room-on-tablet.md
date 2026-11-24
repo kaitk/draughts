@@ -135,6 +135,46 @@ Cool (thermal status 0 before and after), ms a frame, one run each, the base twi
 - The target (a steady 30, about 28 ms with room to warm) is within the box's saving and a
   few ms of the shaders'.
 
+## The room's shaders by the Mali Offline Compiler (2026-11-24, room-light 1a0b1a9d)
+
+`tools/perf/shader_report.py --core Mali-G615 --table --only room_` (malioc 2026.5, driver
+r56p1), the phone's tier as `make_room_tier` makes it: no screen maps, the window's light map,
+the sharp box on the floor and metals. Cycles a pixel on the longest path, arithmetic / load-store;
+spill the stack's spill region and the bytes it moves:
+
+| Shader | G615 A / LS | G710 A / LS | G68 A / LS | Spill (G615) | Bound |
+|---|---|---|---|---|---|
+| floor, with the box | 43.9 / 168 | 82.3 / 168 | 116 / 166 | 150 B / 848 | LS |
+| floor, no box | 26.2 / 53 | 49.4 / 53 | 69.5 / 65 | 8 B / 16 | LS (G68 A) |
+| walls (paper, books' cases) | 23.0 / 50 | 43.3 / 50 | 61 / 53 | 12 B / 60 | LS (G68 A) |
+| paint | 23.0 / 43 | 43.1 / 43 | 61 / 40 | 12 B / 60 | LS (G710, G68 A) |
+| sill | 22.9 / 44 | 43.1 / 44 | 61 / 61 | none | LS |
+| metals, with the box | 39.5 / 190 | 74.1 / 190 | 105 / 170 | 182 B / 860 | LS |
+| metals, no box | 21.6 / 46 | 40.7 / 46 | 58 / 47 | 12 B / 24 | LS (G68 A) |
+| table | total 42 / 73 (a loop) | | | 174 B / 744 | LS |
+| glass, lace | total 31 / 16 and 30 / 11 | | | glass 66 B | A |
+| view out | 9.4 / 0 | 17.5 / 0 | 25.8 / 0 | none | A |
+
+Every room shader uses all 64 work registers (half occupancy), all 128 uniform registers, and no
+16-bit arithmetic. Texture and varying cycles are 1 to 7, never the limit.
+
+- **Uniform loads are the bound.** A Valhall Mali keeps 128 32-bit uniform components in
+  registers; each vec4 read past them is about one load/store cycle a pixel (scratch tests: 96
+  vec4s whole cost 64 LS cycles, their `.x` alone none). The room's shaders read 56 to 63 vec4s
+  of `Frame` (31: the sun, the window's panes, the wind and tree, `sh[9]`) and `Surfaces` (25 to
+  32), the metals 102, the table 116. With `Surfaces` as constants in a scratch copy, the sill's
+  LS fell 44 → 1 and the floor's 168 → 3, its spill 150 B → 2 and its arithmetic 43.9 → 19.3
+  (the constants fold into the math). The room's shell would be bound by arithmetic at about
+  half its cycles now.
+- **The sharp box** adds 115 to 145 LS cycles and the spills on the floor and metals: mostly the
+  same loads, the window's geometry read again per traced ray, and registers it holds.
+- **FP16 waits on that.** Arithmetic isn't the G615's or G710's limit yet; it is the G68's (the
+  A33), where it and the loads are about even.
+- The ways to cut the loads, for the user to choose: the shell's fixed numbers (its windows,
+  room box, the tuned looks) as constants in the app's shaders, made from the tuned values at
+  build time, the tuner keeping uniforms; or a small packed block per material group with only
+  what it reads, computed on the CPU (fewer folds, no build step).
+
 ## Next (task 110)
 
 Aim: about 45 fps (22 ms) on this tablet, every second refresh of its 90 Hz; a steady 30 the
@@ -144,7 +184,7 @@ A33 likely: its Mali-G68 MP4 is older and no faster, at 2400 × 1080's 13% more 
 steps down, measured as task 081's 2× MSAA fallback is (the user, 2026-11-24).
 The approaches agreed, in order:
 
-- [ ] Rank the room's shaders with the Mali Offline Compiler (cycles, registers and the bound
+- [x] Rank the room's shaders with the Mali Offline Compiler (cycles, registers and the bound
       unit per shader, for the G615 and G710), no device needed
 - [ ] Half precision (FP16) for colour, light and BRDF math in the dearest shaders; positions
       and depth stay full
