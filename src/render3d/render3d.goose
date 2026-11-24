@@ -934,8 +934,12 @@ fn sun_derived<O>(o: O&, g: Gpu&) {
 // a pixel everywhere (the light tuner's --window-map off).
 var window_map_on = true;
 // The phone's tier's room shaders with the Surfaces block as constants (render3d_gpu's
-// room_frag_fixed, room_fixed.goose), the light tuner's --room-fixed on (task 115).
-var room_fixed_on = false;
+// room_frag_fixed, room_fixed.goose; the light tuner's --room-fixed off for the uniforms).
+var room_fixed_on = true;
+// The first member whose constant isn't the block's any more (render3d_gpu's fixed_current):
+// the looks tuned since scripts/room_fixed.py ran, or a state it doesn't keep. Where one is,
+// the uniform shaders draw the room; the light tuner says which.
+var room_fixed_stale: const u8[:] = "";
 let WINDOW_MAP_W = 2048;   // shaders::WINDOW_MAP_SIZE: 7.7 m by 3.15 m, a texel about 3.8 mm
 let WINDOW_MAP_H = 832;
 // The phone's tier's leaves (its shaders light none of their own): baked into the map at the

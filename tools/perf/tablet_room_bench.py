@@ -60,7 +60,7 @@ VARIANTS = {
     "full-tier":   "--tier full",
     "map-off":     "--window-map off",
     "leaves-off":  "--phone-leaves off",
-    "fixed":       "--room-fixed on",
+    "uniforms":    "--room-fixed off",
 }
 LINE = re.compile(r"light_tune: ([\d.]+) fps, ([\d.]+) ms a frame, worst ([\d.]+); in the loop ([\d.]+) ms")
 

@@ -25,7 +25,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 # A part names a constant of src/render3d/shaders.goose, or of another file as file.NAME.
 SOURCES = {"": os.path.join(ROOT, "src", "render3d", "shaders.goose"),
            "draw.": os.path.join(ROOT, "src", "gfx", "draw_gpu.goose"),
-           "widgets.": os.path.join(ROOT, "src", "gfx", "widgets_gpu.goose")}
+           "widgets.": os.path.join(ROOT, "src", "gfx", "widgets_gpu.goose"),
+           "room_fixed.": os.path.join(ROOT, "src", "render3d", "room_fixed.goose")}
 OUT = os.path.join(ROOT, "build", "shaders")
 
 # The room's shared parts after its defines (make_room_tier's room_frag).
@@ -55,6 +56,11 @@ SHADERS = [
                              ("walls", ["ROOM_WALLS"], True), ("paint", ["ROOM_PAINT"], True), ("sill", ["ROOM_SILL"], True),
                              ("metals", ["ROOM_METALS", "SHARP_BOX"], True), ("metals_nobox", ["ROOM_METALS"], True),
                              ("glass", ["ROOM_GLASS"], False), ("lace", ["ROOM_LACE"], False)]] + [
+    # The same with the room's block as constants after ROOM_HEAD (room_frag_fixed).
+    (f"room_{g}_fixed", "frag", defs + ["NO_SSAO", "WINDOW_MAP"] + ROOM_FS[:4] + ["room_fixed.ROOM_FIXED"] + ROOM_FS[4:]
+                                  + ["TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"])
+     for g, defs in [("floor", ["ROOM_FLOOR", "SHARP_BOX"]), ("walls", ["ROOM_WALLS"]), ("paint", ["ROOM_PAINT"]),
+                     ("sill", ["ROOM_SILL"]), ("metals", ["ROOM_METALS", "SHARP_BOX"])]] + [
     ("table_room", "vert", ["VS_SET", "FRAME", "TABLE_VERT"]),
     ("table_room", "frag", ["TABLE_ROOM", "SHELL_WINDOWS", "NO_SSAO", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN",
                             "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),

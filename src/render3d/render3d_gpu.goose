@@ -399,6 +399,27 @@ fn room_frag(group: i64, ssao: bool, views: bool, mapped: bool, fixed: bool) -> 
     return embed_shader("frag", shaders::ROOM_GLASS, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
 }
 
+// Whether room_fixed's constants are still the room's block: each fixed member's bytes as
+// scripts/room_fixed.py's dump had them, else the first that differs in room_fixed_stale.
+fn fixed_current(g: render3d::Gpu&) -> bool {
+    let one: render3d::SurfacesBlock[1] = [render3d::surfaces_block(g)];
+    let b = bytes_of(one);
+    var at = 0;
+    for k in room_fixed::COUNT {
+        let start = room_fixed::SPANS[2 * k];
+        let n = room_fixed::SPANS[2 * k + 1];
+        for i in n {
+            guard b[start + i] == room_fixed::BYTES[at + i] else {
+                render3d::room_fixed_stale = room_fixed::NAMES[k];
+                return false;
+            }
+        }
+        at += n;
+    }
+    render3d::room_fixed_stale = "";
+    return true;
+}
+
 // The phone tier's room shaders with the room's Surfaces block as constants (room_fixed,
 // made by scripts/room_fixed.py from the tuner's dump): a Valhall Mali holds only 128 uniform
 // components in registers, and past them each vec4 the shaders read is a load a pixel (task 115).
@@ -450,7 +471,7 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     let steps = render3d::paint_steps_on() && tuned_frags[TUNED_PAINT_STEPS].len > 0;
     let sill_steps = render3d::sill_steps_on() && tuned_frags[TUNED_SILL_STEPS].len > 0;
     let mapped = render3d::window_map_on;
-    let fixed = render3d::room_fixed_on;
+    let fixed = render3d::room_fixed_on && !ssao && !views && fixed_current(g);
     guard g.room_walls.id == 0 || g.room_ssao != ssao || g.room_views != views || g.room_steps != steps || g.sill_steps != sill_steps
           || g.room_mapped != mapped || g.room_fixed != fixed
     else { return; }
