@@ -163,6 +163,9 @@ extern fn draughts_platform() -> i64;
 extern fn draughts_first_frame();
 // src/native/tuner_landscape.c's: landscape alone on Android and iOS, as the benches frame their views.
 extern fn tuner_landscape();
+// The goose_gfx fork's fullscreen (src/app/host.goose's set_fullscreen): on a phone, SDL's
+// immersive mode, the system's bars hidden until a swipe brings them back a moment.
+extern fn set_fullscreen(on: bool) -> bool = "gs_gfx_set_fullscreen";
 
 let PANEL_W: f32 = 380.0;
 let ROW:     f32 = 20.0;
@@ -1329,6 +1332,9 @@ fn main() {
     let vsync = if has(argv, "--no-vsync") { gfx::NO_VSYNC } else { 0 };
     guard gfx::open("Draughts: the room's light", w, h, gfx::WINDOW_RESIZABLE | vsync) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
+    // On a phone the whole screen, the status and navigation bars hidden, as the benches
+    // frame it; the app itself keeps the bars (platform/android/res's theme).
+    if on_phone { set_fullscreen(true); }
     if capturing {
         guard gfx::driver() == "metal" else { abort("--gpu-capture requires the Metal backend"); }
     }
