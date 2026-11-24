@@ -89,7 +89,23 @@ rounds, ms a frame):
 | Room | 2.78 | 2.57 | 2.40 |
 | Menu | 2.77 | 2.58 | 2.40 |
 
-SMAA costs about 0.2 ms there and MSAA 0.2 to 0.4: SMAA no dearer even on a desktop GPU.
+Those desktop runs are skewed: HDR (glow, haze, dust) was drawn only with MSAA, so the SMAA
+and no-AA runs also skipped HDR's passes. Fixed after (SMAA runs after the tonemap with HDR);
+to measure again. The phones' runs are fair: the phone's tier has no HDR either way.
+
+The Pixel 7a (Mali-G710 MP7, 2400 × 1080 landscape, cool: thermal status 0 to 1), native,
+alternating runs (ms a frame; the first round's first runs lost):
+
+| View | 4× MSAA | SMAA | none |
+|---|---|---|---|
+| Down | 22.9 / 23.3 / 22.9 | 24.3 | 22.9 |
+| Corner | 25.9 / 25.8 / 31.0 | 23.4 | 24.2 |
+| Room | 26.2 / 31.2 / 26.3 | 23.4 | 22.1 / 26.1 |
+| Menu | 25.4 / 25.2 / 25.3 / 26.5 | 22.4 / 24.3 | 21.0 / 21.1 |
+
+SMAA 1.5 to 3 ms cheaper but straight down, where the two are even. Warm (thermal status 3,
+skin 45 °C) the Pixel ran 32 to 49 ms, as slow as the tablet: a split on a phone wants it cool
+and runs alternated. At 0.5 scale everything sat at its 60 Hz cap.
 
 ## Next (task 110)
 
