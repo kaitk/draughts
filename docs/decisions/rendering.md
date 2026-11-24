@@ -1998,6 +1998,18 @@ to be is in tasks 042, 059, 071, 081, and 086.
   passes would add full-resolution intermediate stores and reads. The renderers
   lack tile-local attachment reads ([Goose findings](../goose-findings.md)).
   A bake-time floor map remains a proposal for the lighting work in task 114.
+- The shell's sun through the windows comes from the window's light map (2026-11-24, task
+  116; `render3d::window_map`, `shaders::WINDOW_MAP`): the pattern the casements, the lace
+  and the still tree let through is baked on the GPU in the window wall's inner face, where
+  the sun's ray from a point crosses it, whenever the sun, the shell or the tree's map
+  changes, and the room's groups take the niche's outline and a tap of it, its mip by how
+  far past the face the point is, in place of tracing the ray a pixel. It cost 9 to 16 ms of
+  the tablet's frame (task 115), and the phone tier's floor traced it twice. Moving leaves
+  are lit a pixel on desktops; the phone tier bakes them at one phase of the wind or leaves
+  them out. Replaces the trace for the floor, walls, paint, sills and metals; the glass, the
+  lace, the mirror, the board, the table and the dust still trace. Rejected: baking the
+  tree into the casements' channels (their mip blurred its dapple away), and baking the map
+  each frame while the wind moves (kept to the still parts, for simplicity).
 - Trace the floor's sun before evaluating the view direction, light colour and
   occlusion (2026-11-23, task 110). The M1 Pro's straight-down view went from
   10.87 to 10.53 ms at 4K and from 18.39 to 17.82 ms at 5K. All four views at

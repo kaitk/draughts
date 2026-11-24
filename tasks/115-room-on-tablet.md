@@ -58,7 +58,7 @@ The views are agents/perf.md's; the walk's field of view is 60°. `no-room` sits
   leaves' light on every lit pixel. Still wind saves nothing, so it is the pattern's shading,
   not its animation. Off, the sun's patches go entirely (the look changes), so it wants
   reworking, not dropping. On phones and tablets it is to be baked in the end (task 114; the
-  user, 2026-11-24).
+  user, 2026-11-24). Task 116 bakes it into the window's light map.
 - **The floor's and metals' box reflection, 3 to 15 ms**, most where the floor fills the
   screen (straight down 15, corner 11, room 9, menu 3). On a phone the walls' broad
   reflection may do; it was still on in the first tries on the tablet.

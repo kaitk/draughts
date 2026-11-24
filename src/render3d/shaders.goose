@@ -525,6 +525,7 @@ let LIGHT_FN = """
     // contrast, the rest scattered on.
     const float LACE_NET_STOPS = 0.2;
     const float LACE_PATTERN_SHOWN = 0.75;
+    #ifndef WINDOW_MAP
     // y: with wide over 0, the share of the sun the lace stops on average round w (its
     // outline blurred wide, the pattern's mean), for its light below; else 0.
     vec2 lace_shadow(vec2 w, float soft, float wide) {
@@ -546,6 +547,7 @@ let LIGHT_FN = """
         float flat_lets = 1.0 - clamp(mix(LACE_NET_STOPS, 1.0 - shell_glass.w, cover) * folds, 0.0, 0.9);
         return vec2(mix(1.0, pow(flat_lets, max(0.55 / max(e.y - e.x, 0.05), 1.0)), inside), scattered);
     }
+    #endif
 
     // The share of the sun the lace stops that it scatters on forward into a broad cone
     // (thin cloth, as a lit lace glows), and that cone's widening a metre: about 25° across.
@@ -556,6 +558,139 @@ let LIGHT_FN = """
     const float LACE_SOFT = 0.006;
     const float LACE_GLAZED = 0.7;
 
+    #ifdef WINDOW_MAP_PLACE
+    // The window's light map (render3d::window_map_pass): the shell's pattern baked in the
+    // window wall's inner face, where the key's ray from a point crosses it, over the strip
+    // that holds the windows and WINDOW_MAP_MARGIN (metres) round their niches. x and y its
+    // lower corner (along the wall, up; world units), z and w its size.
+    const float WINDOW_MAP_MARGIN = 0.2;
+    const vec2 WINDOW_MAP_SIZE = vec2(2048.0, 832.0);   // render3d::WINDOW_MAP_W, WINDOW_MAP_H
+    vec4 window_map_place() {
+        float lo = shell_mids.x;
+        float hi = shell_mids.x;
+        for (int i = 1; i < 3; i++) {
+            if (float(i) >= shell.x) break;
+            lo = min(lo, shell_mids[i]);
+            hi = max(hi, shell_mids[i]);
+        }
+        float side = (shell_niche.x + WINDOW_MAP_MARGIN) * shell.w;
+        float y0 = shell.z + (shell_niche.y - WINDOW_MAP_MARGIN) * shell.w;
+        float y1 = shell.z + (shell_niche.y + shell_niche.z + shell_niche.w + WINDOW_MAP_MARGIN) * shell.w;
+        return vec4(lo - side, y0, hi - lo + 2.0 * side, y1 - y0);
+    }
+    // How far past the face (world units) the map's lace channels are baked for: a little
+    // past where shell_open first takes the lace (its distance from the lace over 0.5).
+    float window_map_lace_t(float toward) { return 0.6 + shell_glass.z / toward; }
+    #endif
+
+    #ifdef WINDOW_MAP
+    // The mip that blurs an edge baked soft_ref soft (smoothstep's half width, metres) on to
+    // soft: a level's box with its bilinear tap spreads (2^L texel)²/4, a smoothstep s²/5.
+    float window_map_lod(float soft, float soft_ref, float texel) {
+        return log2(max(0.894 * sqrt(max(soft * soft - soft_ref * soft_ref, 0.0)) / texel, 1.0));
+    }
+
+    // shell_open from the window's light map: the nearest niche's outline as shell_open has
+    // it, times the map where the key's ray from p crosses the inner face (behind p within
+    // the niche; on the inner glass and past it the outer casement's, traced): its
+    // casements' light (g), or past the lace that with the lace's shadow (r) and what the
+    // lace scatters on (a, its outline's part; the glazing's traced), each blurred on by a
+    // mip to its softness at p; then
+    // the tree's light (b, 1 where the map holds none), blurred on as tree_light blurs it,
+    // or with WINDOW_MAP_LEAVES while the leaves move (shell_ends.z 0) tree_light itself.
+    float shell_open(vec3 p) {
+        vec3 l = light_dir.xyz;
+        vec2 nw = -axes.zw;
+        vec2 along = axes.xy;
+        float toward = dot(l.xz, nw);
+        if (toward < 0.05) return 0.0;
+        float metre = shell.w;
+        float widen = shell_sun.x > 0.0 ? shell_sun.x : room.z;
+        float d = dot(p.xz, nw);
+        float t0 = (shell.y - d) / toward;
+        float t = max(t0, 0.0);
+        vec3 q = p + l * t;
+        float u = dot(q.xz, along);
+        float mid = shell_mids.x;
+        for (int i = 1; i < 3; i++) {
+            if (float(i) >= shell.x) break;
+            if (abs(u - shell_mids[i]) < abs(u - mid)) mid = shell_mids[i];
+        }
+        float half_w = shell_niche.x;
+        float rise = shell_niche.w;
+        float radius = (half_w * half_w + rise * rise) / (2.0 * rise);
+        float arch_mid = shell_niche.y + shell_niche.z + rise - radius;
+        vec2 w = vec2(u - mid, q.y - shell.z) / metre;
+        float soft = (0.03 + widen * t) / metre;
+        float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
+        float through = smoothstep(-soft, soft, min(half_w - abs(w.x), min(w.y - shell_niche.y, head - w.y)));
+        if (through < 0.001) return 0.0;
+        vec3 q0 = p + l * t0;
+        vec4 place = window_map_place();
+        vec2 uv = vec2((dot(q0.xz, along) - place.x) / place.z, (q0.y - place.y) / place.w);
+        vec2 texels = place.zw / (metre * WINDOW_MAP_SIZE);
+        float texel = max(texels.x, texels.y);
+        // The bars' softness at the inner glass, at p and as baked.
+        float glass = shell_glass.x / toward;
+        float bars = (0.03 + widen * (t + glass)) / metre;
+        float tl = t0 - shell_glass.z / toward;
+        float lit;
+        if (t0 + glass <= 0.0) {
+            // On the inner glass or past it (the sashes' faces): the outer casement's alone,
+            // which the map doesn't hold, traced here.
+            float tg = t0 + shell_glass.y / toward;
+            vec3 g = p + l * tg;
+            vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
+            lit = tg > 0.0 ? through * casement(wg, (0.03 + widen * tg) / metre) : through;
+        } else if (tl > 0.5) {
+            float tr = window_map_lace_t(toward);
+            vec4 m = textureLod(window_map, uv, window_map_lod(bars, (0.03 + widen * (tr + glass)) / metre, texel));
+            lit = through * m.r;
+            if (window_view.y > 0.0) {
+                float tlr = tr - shell_glass.z / toward;
+                float wide = (0.03 + widen * tl + (LACE_SOFT + LACE_CONE) * tl) / metre;
+                float wide_r = (0.03 + widen * tlr + (LACE_SOFT + LACE_CONE) * tlr) / metre;
+                // The glazing the cone sees, traced: blurred apart from the lace's outline,
+                // as the map can't blur their product.
+                float cone = LACE_CONE * tl / metre;
+                float glazed = 1.0;
+                for (int k = 0; k < 2; k++) {
+                    float tg = t0 + (k == 0 ? shell_glass.x : shell_glass.y) / toward;
+                    vec3 g = p + l * tg;
+                    vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
+                    glazed *= glazing(wg, (0.03 + widen * tg) / metre + cone);
+                }
+                float lace_wide = textureLod(window_map, uv, window_map_lod(wide, wide_r, texel)).a;
+                lit += window_view.y * LACE_FORWARD * LACE_GLAZED * glazed * lace_wide;
+            }
+        } else {
+            lit = through * textureLod(window_map, uv, window_map_lod(bars, (0.03 + widen * glass) / metre, texel)).g;
+        }
+        lit = min(lit, 1.0);
+    #ifdef WINDOW_MAP_LEAVES
+        if (shell_ends.z < 0.5) {
+            if (tree.x > 0.0 && lit > 0.001) {
+                vec2 leaves_lit = tree_light(p, l, nw, along, toward);
+                lit *= leaves_lit.x * leaves_lit.y;
+            }
+            return lit;
+        }
+    #endif
+        // The tree's blur at p past its blur at the face (tree_light's lod: a radius of
+        // 2^lod of its map's texels), as the map's.
+        float tree_lod = 0.0;
+        if (tree.x > 0.0 && t0 > 0.0) {
+            float back = d / toward;
+            float face = shell.y / toward;
+            float tb2 = tree_blur.x * tree_blur.x;
+            float r2 = max((back * back - 2.0 * tree_blur.y * back) * tb2, 1.0);
+            float r2_face = max((face * face - 2.0 * tree_blur.y * face) * tb2, 1.0);
+            float tree_texel = tree.x / (metre * float(textureSize(tree_map, 0).x));
+            tree_lod = log2(max(sqrt(max(r2 - r2_face, 0.0)) * tree_texel / texel, 1.0));
+        }
+        return lit * textureLod(window_map, uv, tree_lod).b;
+    }
+    #else
     // How much of the key reaches p through the shell's windows, 0 to 1: p traced along the
     // key to the window wall's inner face (the niche's arched outline: or where p is, if it
     // is in the niche), on to the two glass planes with their bars, and back to the lace in
@@ -621,6 +756,7 @@ let LIGHT_FN = """
         }
         return lit;
     }
+    #endif
     #endif
 
     // How much of the key reaches p through the window (rooms::Room's pattern), 0 to 1: p
@@ -2217,6 +2353,92 @@ let ROOM_VERT = """
 // ROOM_FRAG's inputs, textures and block, before LIGHT_FN, which reads the tree's map and,
 // with SHELL_WINDOWS, the shell's windows and the lace's shadow.
 let SHELL_WINDOWS = "#define SHELL_WINDOWS 1\n";
+// The window's light map in place of shell_open's work a pixel (render3d::window_map_on,
+// LIGHT_FN's shell_open with WINDOW_MAP): the phone's tier's shaders, which light no leaves
+// of their own (the map holds them, or none); WINDOW_MAP_LEAVES the others', which light the
+// tree's leaves a pixel while they move. Not the lace's group, which reads the lace's mask.
+let WINDOW_MAP = "#define WINDOW_MAP 1\n#define WINDOW_MAP_PLACE 1\n";
+let WINDOW_MAP_LEAVES = "#define WINDOW_MAP 1\n#define WINDOW_MAP_PLACE 1\n#define WINDOW_MAP_LEAVES 1\n";
+// The map's bake (render3d_gpu::window_map_pass): WINDOW_MAP_HEAD, LIGHT_FN with
+// SHELL_WINDOWS (the pixel's shell_open's parts), WINDOW_MAP_FRAG.
+let WINDOW_MAP_BAKE = "#define WINDOW_MAP_PLACE 1\n";
+let WINDOW_MAP_HEAD = """
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D tree_map;
+    layout(set = 2, binding = 1) uniform sampler2D lace_mask;
+    layout(set = 3, binding = 1) uniform Shell { vec4 axes; vec4 tile; vec4 shell; vec4 shell_mids; vec4 shell_niche;
+                                                 vec4 shell_glass; vec4 shell_sun; vec4 window_view; };
+    // x: 1 the tree's light baked in (render3d::window_map_tree).
+    layout(set = 3, binding = 2) uniform WindowMapBake { vec4 map_tree; };
+    """;
+let WINDOW_MAP_FRAG = """
+    // The shell's windows' light at q0, a point of the inner face, for a point t0 past it
+    // along the key (world units), as shell_open has it but for the niche's outline: x the
+    // casements', y that through the lace, z the share the lace stops round its outline, for
+    // what it scatters on (lace_shadow's y); summed over the windows.
+    vec3 window_map_parts(vec3 q0, float t0, vec3 l, vec2 along, float toward, float metre, float widen) {
+        vec3 sum = vec3(0.0);
+        float tl = t0 - shell_glass.z / toward;
+        float cone = window_view.y > 0.0 && tl > 0.5 ? LACE_CONE * tl / metre : 0.0;
+        for (int i = 0; i < 3; i++) {
+            if (float(i) >= shell.x) break;
+            float mid = shell_mids[i];
+            float through = 1.0;
+            for (int k = 0; k < 2; k++) {
+                float depth = (k == 0 ? shell_glass.x : shell_glass.y) / toward;
+                float tg = t0 + depth;
+                if (tg <= 0.0) continue;
+                vec3 g = q0 + l * depth;
+                vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
+                float soft_g = (0.03 + widen * tg) / metre;
+                through *= casement(wg, soft_g);
+            }
+            sum.x += through;
+            if (tl > 0.5) {
+                vec3 c = q0 - l * (shell_glass.z / toward);
+                vec2 wl = vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre;
+                float soft_l = (0.03 + widen * tl) / metre + LACE_SOFT * tl / metre;
+                vec2 lace = lace_shadow(wl, soft_l, cone > 0.0 ? soft_l + cone : 0.0);
+                sum.y += through * lace.x;
+                sum.z += lace.y;
+            }
+        }
+        return sum;
+    }
+
+    // A texel of the map (shell_open with WINDOW_MAP reads it): r the light past the lace
+    // as baked window_map_lace_t past the face, g the casements' at the face, b the tree's
+    // at the face (1 none), a the share of the sun the lace stops round its outline (what it
+    // scatters on, without the glazing's share), at r's distance.
+    void main() {
+        vec4 place = window_map_place();
+        vec2 uv = gl_FragCoord.xy / WINDOW_MAP_SIZE;
+        vec3 l = light_dir.xyz;
+        vec2 nw = -axes.zw;
+        vec2 along = axes.xy;
+        float toward = dot(l.xz, nw);
+        if (toward < 0.05) {
+            result = vec4(0.0);
+            return;
+        }
+        float metre = shell.w;
+        float widen = shell_sun.x > 0.0 ? shell_sun.x : room.z;
+        float u = place.x + uv.x * place.z;
+        vec3 q0 = vec3(along.x * u + nw.x * shell.y, place.y + uv.y * place.w, along.y * u + nw.y * shell.y);
+        float tr = window_map_lace_t(toward);
+        float near = min(window_map_parts(q0, 0.0, l, along, toward, metre, widen).x, 1.0);
+        vec3 far = window_map_parts(q0, tr, l, along, toward, metre, widen);
+        float lit = min(far.y, 1.0);
+        float scatter = min(far.z, 1.0);
+        float leaves_lit = 1.0;
+        if (map_tree.x > 0.5 && tree.x > 0.0) {
+            vec2 at_face = tree_light(q0, l, nw, along, toward);
+            leaves_lit = at_face.x * at_face.y;
+        }
+        result = vec4(lit, near, leaves_lit, scatter);
+    }
+    """;
+
 let ROOM_HEAD = """
     #ifdef MIRROR_CHEAP
     // The floor's cheap mirror world (MIRROR_CHEAP_MAIN): the room's mesh, or with
@@ -2269,8 +2491,14 @@ let ROOM_HEAD = """
     // light maps for opaque surfaces, and any material textures. The screen maps follow
     // unless NO_SSAO leaves them out. The floor's mirror comes last (PLANAR_FLOOR).
     layout(set = 2, binding = 0) uniform sampler2D tree_map;
+    #ifdef WINDOW_MAP
+    // The window's light map (render3d::window_map_pass) in the lace's place: these groups
+    // read the lace only through shell_open, which the map holds.
+    layout(set = 2, binding = 1) uniform sampler2D window_map;
+    #else
     // The lace's coverage (design/materials/), R8 with its mips.
     layout(set = 2, binding = 1) uniform sampler2D lace_mask;
+    #endif
     #ifndef ROOM_WINDOW
     // The room's baked light (model3d::room_light): its probes' atlas, RGBA16F.
     layout(set = 2, binding = 2) uniform sampler2D light_volume;
@@ -2372,7 +2600,7 @@ let ROOM_HEAD = """
     // niche's width, the sill's height, the springing's, the arch's rise (metres); glass:
     // the glass planes' depths into the wall, the lace's distance out of it (world units), w
     // how much of the sun the lace lets through; stone: the sills' (sRGB, and roughness);
-    // ends: the end walls' u, x the stove's, y the far one's; brass: the curtains' (sRGB at
+    // ends: the end walls' u, x the stove's, y the far one's, z 1 where the window's light map holds the tree's light; brass: the curtains' (sRGB at
     // normal incidence, and roughness); lace_light: the window's light behind the lace
     // (linear, exposed as the view out, lifted with the room), w how strongly its thin parts scatter the sun
     // forward; table: x the table's top's radius, y the floor's height (world units), z and

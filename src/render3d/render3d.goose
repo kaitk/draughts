@@ -251,6 +251,7 @@ struct Gpu {
     tree_h:         i64,
     tree_stale:     bool,           // to bake again before the next draw
     tree_ms:        f64,            // the last bake's time (measuring)
+    tree_bakes:     i64,            // how many times the tree's map was baked (window_map_key)
     table_edge:     float4,         // the edge its mesh is made with (tables::Table.edge)
     table_r:        f32,            // the top's radius (world units), 0 mesh::TABLE_R (a tuner's)
     table_made_r:   f32,            // and the one its mesh is made with
@@ -377,6 +378,12 @@ struct Gpu {
     // (sun_derived) take their attributes from; and the sun-derived block.
     floor_corners: corner_map::RoomVertex[4],
     sun:           SunDerived,
+    // The window's light map (window_map), RGBA8 with its mips, what it was baked from, its
+    // bake's pipeline, and whether the room's pipelines read it (room_mapped).
+    window_map:      Texture,
+    window_map_for:  float4[WINDOW_MAP_KEY],
+    window_map_bake: Pipeline,
+    room_mapped:     bool,
     // The room's pipelines, one a material group (room_group), made when first wanted
     // (make_room) for the tier: room_ssao, with the screen's maps (ssao_allowed), or a
     // phone's without them. The floor here sees the room's box; room_planar the mirror.
@@ -419,11 +426,11 @@ struct Gpu {
     // the room's; its half-size targets, made again for another size: where each pixel is
     // (RGBA16F), which way it faces (RGBA8), their depth, the occlusion (RG16F) and the
     // blurred map the room reads.
-    pre_room:   Pipeline,
-    pre_table:  Pipeline,
-    pre_lit:    Pipeline,
-    ssao:       Pipeline,
-    ssao_blur:  Pipeline,
+    pre_room:  Pipeline,
+    pre_table: Pipeline,
+    pre_lit:   Pipeline,
+    ssao:      Pipeline,
+    ssao_blur: Pipeline,
     // The light tuner's GTAO trial in place of ssao (ssao_gtao, shaders::GTAO_FRAG).
     gtao:       Pipeline,
     pre_place:  Texture,
@@ -550,6 +557,7 @@ struct HdrPipelines {
     pieces:      i32,
     paint_steps: bool,
     sill_steps:  bool,
+    mapped:      bool,      // with the window's light map (window_map_on)
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -860,6 +868,67 @@ fn sun_derived<O>(o: O&, g: Gpu&) {
     g.sun.pieces_vb, g.sun.pieces_ib = o.gpu_mesh(bytes_of(piece_verts[0..nv]), bytes_of(piece_indices[0..ni]));
 }
 
+// The window's light map: the shell's windows' pattern (the light their casements, bars
+// and lace let through) baked in the window wall's inner face over the strip that holds the
+// windows (shaders::window_map_place), where the key's ray from a point crosses it, and
+// projected along the sun: LIGHT_FN's shell_open then takes the nearest niche's outline and
+// a tap of the map, its mip by how far the point is past the face (the penumbra widens with
+// it), in place of tracing the ray through the casements and the lace a pixel
+// (shaders::WINDOW_MAP). The tree's light is in it, in a channel of its own with its own
+// mip, where the leaves keep still (window_map_tree); while they move, the desktop's shaders
+// light them a pixel (WINDOW_MAP_LEAVES). Baked on the GPU (render3d_gpu::window_map_pass)
+// when what it is made from changes: the sun, the shell, the tree's map. Not the glass's or
+// the lace's groups, the floor's mirror, the tuner's views and switched shaders, the board,
+// the table or the dust, which trace the windows as before. window_map_on false: shell_open
+// a pixel everywhere (the light tuner's --window-map off).
+var window_map_on = true;
+let WINDOW_MAP_W = 2048;   // shaders::WINDOW_MAP_SIZE: 7.7 m by 3.15 m, a texel about 3.8 mm
+let WINDOW_MAP_H = 832;
+// The phone's tier's leaves (its shaders light none of their own): baked into the map at the
+// wind's phase when it was baked, or none (the light tuner's --phone-leaves).
+let LEAVES_STATIC = 0;
+let LEAVES_OFF = 1;
+var phone_leaves = LEAVES_STATIC;
+// Whether the leaves move (the tuner's wind running): the desktop's map then leaves them out
+// and its shaders light them a pixel. The app keeps them still.
+var leaves_moving = false;
+
+fn window_map_shown(g: Gpu&) -> bool { window_map_on && room_shown(g) && g.room_shell }
+// Whether the room's pipelines for group read the map in the lace's slot (make_room_tier,
+// make_hdr): not the glass's or the lace's, the mirror's, the tuner's views or its switched
+// shaders.
+fn window_map_read(g: Gpu&, group: i64, mirror: bool) -> bool {
+    g.window_map.id != 0 && window_map_on && !mirror && !window_group(group) && !room_views_on()
+        && !(ssao_allowed && group == GROUP_PAINT && paint_steps_on()) && !(ssao_allowed && group == GROUP_SILL && sill_steps_on())
+}
+// Whether the tree's light is baked into the map: on the phone's tier as phone_leaves says,
+// elsewhere while the leaves keep still.
+fn window_map_tree(g: Gpu&) -> bool {
+    if !ssao_allowed { return phone_leaves == LEAVES_STATIC; }
+    return !leaves_moving;
+}
+// What the map is baked from: the key, the shell's windows, the penumbra, the tree's place
+// and map, and whether the tree is in (never the wind: on the phone's tier the leaves stay
+// as they were when it was baked).
+let WINDOW_MAP_KEY = 13;
+fn window_map_key(g: Gpu&) -> float4[WINDOW_MAP_KEY] {
+    let b = shell_block(g);
+    let f = g.frame;
+    return [f.light_dir, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view,
+            f.room, f.tree, f.tree_blur, float4 { if window_map_tree(g) { 1.0 } else { 0.0 }, g.tree_bakes, g.lace_mask.id, g.tree_map.id }];
+}
+// The map baked again where what it is made from changed. Recording only, before the
+// board's pass.
+fn window_map<O>(o: O&, g: Gpu&) {
+    guard window_map_shown(g) else { return; }
+    let key = window_map_key(g);
+    var same = g.window_map.id != 0;
+    for k in WINDOW_MAP_KEY { same = same && same4(key[k], g.window_map_for[k]); }
+    guard !same else { return; }
+    g.window_map_for = key;
+    o.window_map_pass(g);
+}
+
 // The floor's pieces into piece_verts and piece_indices, by kind (g.sun.first, count), from
 // the block the shaders read; how many vertices and indices. In the room's frame (u along
 // the window wall, v away from it, the mesh's own), a floor point (u, v) sees the sun
@@ -1164,10 +1233,11 @@ fn add_texture(t: RoomTextures&, tex: Texture, smp: Sampler) {
     t.smp[t.count] = smp;
     t.count += 1;
 }
-fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool) -> RoomTextures {
+fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool, mirror: bool = false) -> RoomTextures {
     var t = default<RoomTextures>();
     add_texture(t, tree_or_stand_in(g), g.linear);
-    add_texture(t, g.lace_mask, g.aniso);
+    if window_map_read(g, group, mirror) { add_texture(t, g.window_map, g.linear); }
+    else { add_texture(t, g.lace_mask, g.aniso); }
     if !window_group(group) {
         add_texture(t, light_or_stand_in(g), g.linear);
         add_texture(t, table_map_or_stand_in(g), g.compare);
@@ -1759,7 +1829,8 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     // The end walls' u, for the floor's darker band along every wall.
     let stove_end = room_shell::room_of(s, s.walls[room_shell::STOVE_WALL].a);
     let far_end = room_shell::room_of(s, s.walls[room_shell::FAR_WALL].a);
-    b.shell_ends = float4 { stove_end.x, far_end.x, 0.0, 0.0 };
+    // z: 1 where the window's light map holds the tree's light (window_map_tree).
+    b.shell_ends = float4 { stove_end.x, far_end.x, if window_map_shown(g) && window_map_tree(g) { 1.0 } else { 0.0 }, 0.0 };
     // Its own sun, and its baked light where it is made.
     let r = g.room;
     b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, g.room_tint.z, g.room_tint.w };
@@ -2417,6 +2488,7 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
         at += n;
     }
     g.tree_for = tree_key(g);
+    g.tree_bakes++;
     g.tree_ms = (clock() - t0) * 1000.0;
 }
 
@@ -2653,6 +2725,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     room_surfaces(o, g);
     table_map(o, g);
     sun_derived(o, g);
+    window_map(o, g);
     if g.shadow_dirty || shadow_every {
         o.shadow_pass(g);
         g.shadow_dirty = false;
