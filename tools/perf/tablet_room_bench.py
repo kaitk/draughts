@@ -2,13 +2,15 @@
 """Times the light tuner's room on an Android device, view by view and part by part.
 
     python tools/perf/tablet_room_bench.py [--serial S] [--seconds 24] [--views corner,room]
-        [--variants base,scale75] [--out build/perf/tablet-room/results.json]
+        [--variants base,scale75] [--extra "--scene-scale 0.5"] [--out build/perf/tablet-room/results.json]
 
 The tuner (scripts/android.py tools/light_tune.goose --run) runs in its touch walk with the
 phone's tier, so each run starts it with the view's camera and the variant's flags and
 --fps-seconds, which prints the frame counter each half second and quits. The first
 intervals hold the bakes and the GPU filling, so a run's figure is the median of its last
-half. The base runs again at the end, so a device that warmed up shows it.
+half. The base runs again at the end, so a device that warmed up shows it. --extra goes on
+every run (a phone's bigger screen split at half the scale). The tuner holds itself in
+landscape on Android (src/native/tuner_landscape.c), so a phone frames the views as a tablet.
 
 The views are agents/perf.md's. The variants each leave one part out (or change the scale),
 so the split says what each costs; parts overlap, so they don't add up.
@@ -98,17 +100,18 @@ def main():
     ap.add_argument("--seconds", type=int, default=24)
     ap.add_argument("--views", default=",".join(VIEWS))
     ap.add_argument("--variants", default=",".join(VARIANTS))
+    ap.add_argument("--extra", default="", help="flags added to every run")
     ap.add_argument("--out", type=Path, default=ROOT / "build/perf/tablet-room/results.json")
     a = ap.parse_args()
     serial = a.serial or adb_default()
     model = adb(serial, "shell", "getprop", "ro.product.model").strip()
-    results = {"device": model, "seconds": a.seconds, "runs": []}
+    results = {"device": model, "seconds": a.seconds, "extra": a.extra, "runs": []}
     variants = a.variants.split(",")
     plan = [(v, var) for v in a.views.split(",") for var in variants]
     if "base" in variants:
         plan += [(v, "base") for v in a.views.split(",")]
     for view, variant in plan:
-        flags = f"{VIEWS[view]} {VARIANTS[variant]}".strip()
+        flags = " ".join(f for f in (VIEWS[view], VARIANTS[variant], a.extra) if f)
         r = run_one(serial, flags, a.seconds)
         row = {"view": view, "variant": variant, "flags": flags, **(r or {"error": "no frame lines"})}
         results["runs"].append(row)

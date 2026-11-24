@@ -147,6 +147,8 @@ extern fn tuner_capture_stop();
 // src/native/launch.c's: 1 on Android; the first frame shown, so the activity lifts its cover.
 extern fn draughts_platform() -> i64;
 extern fn draughts_first_frame();
+// src/native/tuner_landscape.c's: landscape alone on Android, as the benches frame their views.
+extern fn tuner_landscape();
 
 let PANEL_W: f32 = 380.0;
 let ROW:     f32 = 20.0;
@@ -1285,6 +1287,7 @@ fn main() {
     var shown_halo = st.halo;
     taken3d::table_layout = taken3d::TABLE_LAYOUTS[taken3d::TOWERS];
     draughts_choose_gpu();   // Vulkan on Windows, as the app draws
+    tuner_landscape();
     let vsync = if has(argv, "--no-vsync") { gfx::NO_VSYNC } else { 0 };
     guard gfx::open("Draughts: the room's light", w, h, gfx::WINDOW_RESIZABLE | vsync) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
