@@ -111,6 +111,30 @@ SMAA 1.5 to 3 ms cheaper but straight down, where the two are even. Warm (therma
 skin 45 °C) the Pixel ran 32 to 49 ms, as slow as the tablet: a split on a phone wants it cool
 and runs alternated. At 0.5 scale everything sat at its 60 Hz cap.
 
+## The split again, with the light map and SMAA (2026-11-24, room-light 523362fa)
+
+Cool (thermal status 0 before and after), ms a frame, one run each, the base twice:
+
+| Variant | Down | Corner | Room |
+|---|---|---|---|
+| base: SMAA, the light map, leaves static | 39.5 / 36.5 | 41.5 / 40.2 | 37.8 / 39.0 |
+| `--box off` | 27.2 | 33.4 | 32.3 |
+| `--books off` | 35.7 | 39.4 | 39.0 |
+| `--outside off` | 37.0 | 39.3 | 36.8 |
+| `--wind-kind still` | 38.8 | 40.0 | 37.2 |
+| `--scene-scale 0.75` (the last resort) | 24.8 | 27.9 | 24.9 |
+| `--shell off`: the old panelled wall | 25.0 | 15.5 | 13.4 |
+| `--room-surfaces off` | 11.0 | 11.0 | 11.0 |
+
+- The floor's and metals' sharp box reflection is now the largest part: 6 to 11 ms. Its
+  window rectangles, bars and the view out (`room_seen`) trace per floor pixel still.
+- The shell's surfaces cost 13 to 25 ms over the old wall's: the shaders themselves, to be
+  ranked with the Mali Offline Compiler (cycles and registers per shader) and tried at half
+  precision.
+- The books, the view out and the wind 1 to 3 ms each.
+- The target (a steady 30, about 28 ms with room to warm) is within the box's saving and a
+  few ms of the shaders'.
+
 ## Next (task 110)
 
 - [ ] Choose for each costly part: drop it on phones, make it cheaper, or bake it
