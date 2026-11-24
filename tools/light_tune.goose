@@ -124,7 +124,7 @@
 //       [--walk-frames DIR --walk-path strafe|turn|forward --walk-count N --walk-turn PX (a walk from --plan-eye
 //       looking at --plan-at: D or W held, or the mouse PX a frame to the right, N frames at 1/60 s, each
 //       saved as DIR/NNN.png; with --shot)]
-//       [--touch on|off (the touch walk, on by default on Android: the walk from the start, no panel, the
+//       [--touch on|off (the touch walk, on by default on Android and iOS: the walk from the start, no panel, the
 //       screen's left half a stick to walk, its right half a drag to look, Up and Down at the right edge;
 //       with the phone's tier: no screen-space occlusion, no floor mirror, no HDR, 4 shadow taps, unless
 //       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the scene's antialiasing; smaa by default, msaa 4×; the 2 key switches MSAA and SMAA live)]
@@ -135,6 +135,7 @@
 //       baked, in a shot too)]
 //   On a tablet: scripts/android.py tools/light_tune.goose --run (its own app id, beside the app's);
 //   flags by adb shell am start -n io.github.kaitk.draughts.light_tune/.DraughtsActivity --es args '"--scene-scale 0.75"'
+//   On an iPhone: scripts/ios.py --device tools/light_tune.goose --console --args "--fps-seconds 30"
 
 import std;
 import vec;
@@ -154,10 +155,10 @@ import .light_ref;
 extern fn draughts_choose_gpu();
 extern fn tuner_capture_start(path: const u8[:]) -> bool;
 extern fn tuner_capture_stop();
-// src/native/launch.c's: 1 on Android; the first frame shown, so the activity lifts its cover.
+// src/native/launch.c's: 1 on Android, 2 on iOS; the first frame shown, so the activity lifts its cover.
 extern fn draughts_platform() -> i64;
 extern fn draughts_first_frame();
-// src/native/tuner_landscape.c's: landscape alone on Android, as the benches frame their views.
+// src/native/tuner_landscape.c's: landscape alone on Android and iOS, as the benches frame their views.
 extern fn tuner_landscape();
 
 let PANEL_W: f32 = 380.0;
@@ -1273,8 +1274,8 @@ fn main() {
         dump_glass_tile(argv[tile_at]);
         return;
     }
-    let on_android = draughts_platform() == 1;
-    let touch = if has(argv, "--touch") { argv[flag_value(argv, "--touch")] == "on" } else { on_android };
+    let on_phone = draughts_platform() != 0;   // Android or iOS
+    let touch = if has(argv, "--touch") { argv[flag_value(argv, "--touch")] == "on" } else { on_phone };
     let phone_tier = has(argv, "--phone-tier") || (touch && !(has(argv, "--tier") && argv[flag_value(argv, "--tier")] == "full"));
     var w = 1600;
     var h = 1000;
@@ -1771,7 +1772,7 @@ fn main() {
             }
             break;
         }
-        // ui's input from gfx turns gfx's text input on, and on Android that opens the keyboard
+        // ui's input from gfx turns gfx's text input on, and on Android and iOS that opens the keyboard
         // over half the screen: the touch walk, which has no panel, gives ui an empty frame.
         if touch {
             ui::input_begin(c);
