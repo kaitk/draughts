@@ -688,6 +688,18 @@ done. The tiers decide what each device draws (`AGENTS.md`'s render tiers: 2D, 3
       21); the first pick's encoder 0.17 ms of fragment time, now 0.25-0.26, at 5120 x 2880
       (Metal System Trace, menu view). Tests pass with NGFX, both apps build; the app
       draws no HDR yet, so nothing changes on the tablet
+- [ ] Artifacts the user saw (2026-11-24, the tuner on Windows):
+  - [x] With SSAO off, light along the wainscot's cap against the paper and into a corner:
+        the corners' map left a texel lying exactly on a boundary unshaded (`up > cap`,
+        `up < cap - 0.095`, `holed_wall`'s and `box_hides`' `a > 0`), and the bilinear tap
+        spread it a texel in: half discs on the paper over the cap, the stiles' top 2 cm
+        under it, the paper's edge at the reveals, the architraves and the bookcases.
+        Fixed: on the boundary counts. The four views against the build before, 3840 x
+        2160: straight down 20 pixels by a level; the corner, the room and the menu
+        16,000-47,000 pixels, 3,300-4,500 over 8, all darker and all on those lines
+  - [ ] A light line at the window wall's base between the curtains, close, at some angles
+        only: not reproduced yet (low views straight on and from either side, the mirror on
+        and off); needs the tuner's P line for the view
 - [ ] The lace in shade, open questions (`build/notes/lace-shade/trials.html`): a cooler
       tint in shade; trial 1 (more opacity at grazing angles) and trial 4 (motif against
       net), only if the user wants more after the defaults of 2026-11-23
