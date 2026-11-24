@@ -197,6 +197,50 @@ shows. `Frame` (31 vec4s the room reads) is next by the same means, then ngfx's 
 The bench's `--quick` (5 s of frames a run, no base at the end) took 1 min 37 s for these
 six runs, the full runs about 7 min, with the same figures within 2 ms.
 
+### The split with the constants by default (2026-11-24, room-light 733a308c)
+
+The state's members uniform (`KEEP`), the rest constants, the default. The quick bench, cool,
+ms a frame:
+
+| View | base | no books | no outside | AA off | wind still | no shell | 0.75 scale | leaves off |
+|---|---|---|---|---|---|---|---|---|
+| Down | 28.2 | 28.2 | 28.7 | 25.7 | 28.2 | 25.0 | 18.6 | 28.2 |
+| Corner | 33.4 | 32.3 | 32.3 | 30.5 | 33.3 | 15.4 | 22.8 | 33.3 |
+| Room | 32.2 | 32.1 | 31.1 | 29.5 | 32.2 | 13.6 | 21.9 | 32.1 |
+
+The shell is still most of the frame (18 to 19 ms of the corner's and room's).
+
+### Half precision (2026-11-24)
+
+`mediump` throughout the room's fragment shaders (74% of the math in FP16 by malioc) left the
+cycles where they were: the conversions (CVT) rose as the multiply-adds fell. Set aside; the
+item below is ticked as tried.
+
+### The box's map (2026-11-24)
+
+The sharp box reflection's baked light (the probes' irradiance on the box's six faces, where
+the floor and the metals' reflected rays end) is a texture now: `render3d::box_map`, a texel
+each 4 cm in RGBA16F, baked when the probes, the sun, the window's light map or the box's
+surfaces change, read in one tap. What has sharp edges is still worked out per pixel: the
+surface there (`box_albedo`: the doors, the bookcases, the wainscot) and the sun's patches
+through the windows (`box_sun`); a first version that baked those too blurred the sun's edges
+under a tilted floor and the doors' outlines (60 levels in 1500 pixels). The windows on the
+window wall are traced as before.
+
+On the PC the four views match (`--box-map off` against on): at most 4 levels, but for 6
+pixels of the room view. The faces' cells are sized with half a texel to spare, since a face
+a whole number of texels long put `ceil` on its edge and the constant-folded shader and the
+CPU disagreed by one texel. Cool, the quick bench, ms a frame (two rounds):
+
+| View | traced (`--box-map off`) | map | saved |
+|---|---|---|---|
+| Down | 28.3 / 28.3 | 26.5 / 26.5 | 1.8 |
+| Corner | 33.4 / 33.4 | 32.7 / 32.9 | 0.6 |
+| Room | 32.2 / 32.3 | 31.8 / 31.9 | 0.4 |
+
+Malioc (G615): the floor 22.02 to 21.34 cycles, the metals 18.41 to 17.25 (and their spill
+gone); the bake 7.47 a texel, once.
+
 ## The iPhone 13 mini (2026-11-24)
 
 The iPhone 13 mini (A15, 2340 × 1080 landscape, 60 Hz), native, the phone's tier with 4× MSAA,
@@ -216,10 +260,11 @@ The approaches agreed, in order:
 
 - [x] Rank the room's shaders with the Mali Offline Compiler (cycles, registers and the bound
       unit per shader, for the G615 and G710), no device needed
-- [ ] Half precision (FP16) for colour, light and BRDF math in the dearest shaders; positions
-      and depth stay full
+- [x] Half precision (FP16) for colour, light and BRDF math in the dearest shaders; positions
+      and depth stay full (tried: no gain, above)
 - [ ] The sharp box reflection cheaper on phones: its windows, bars and view out from the
-      light map or a small baked texture, not traced per floor pixel
+      light map or a small baked texture, not traced per floor pixel (its baked light is a
+      map now, above; the windows still traced)
 - [ ] Phone-tier versions of the materials: what doesn't read at tablet size dropped (the
       second sheen lobe, the paint's relief, the floor's scratches and slow noise, grime)
 - [ ] Detail faded by screen size in the shader (`fwidth`): small surfaces skip normal and

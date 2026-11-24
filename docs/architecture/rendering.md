@@ -777,7 +777,9 @@ board's light:
   if the tier changes. A phone's take the room's fixed numbers as constants
   (`room_fixed.goose`, written by `scripts/room_fixed.py` from the light tuner's
   `--dump-room-block`), what the app's state changes still uniforms; where the constants
-  aren't the block's any more, the uniform shaders draw (`render3d::room_fixed_stale`). Each shader declares only the textures it reads, in slots without
+  aren't the block's any more, the uniform shaders draw (`render3d::room_fixed_stale`). With
+  them the floor's and metals' sharp box reflection reads the box's baked light from a map
+  (`render3d::box_map`, baked when the light or the box changes). Each shader declares only the textures it reads, in slots without
   gaps (`render3d::room_textures`). The output is tonemapped sRGB, or with `LINEAR_OUT`
   the light itself (the mirror's). The light tuner's views of the room are pipelines of
   their own, made while one is on (`ROOM_VIEWS`).

@@ -312,8 +312,8 @@ fn make_motes(own: Own&, g: render3d::Gpu&) {
 // (shaders::ROOM_VIEWS, only with the screen's maps), reading the window's light map
 // (mapped, render3d::window_map_read: not the lace's or the views'), and on the phone's tier
 // with the room's block as constants (fixed, render3d::room_fixed_on).
-fn room_frag(group: i64, ssao: bool, views: bool, mapped: bool, fixed: bool) -> const u8[:] {
-    if fixed && !ssao && !views { return room_frag_fixed(group, mapped); }
+fn room_frag(group: i64, ssao: bool, views: bool, mapped: bool, fixed: bool, boxed: bool) -> const u8[:] {
+    if fixed && !ssao && !views { return room_frag_fixed(group, mapped, boxed); }
     if views {
         if group == render3d::GROUP_FLOOR {
             return embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
@@ -423,7 +423,7 @@ fn fixed_current(g: render3d::Gpu&) -> bool {
 // The phone tier's room shaders with the room's Surfaces block as constants (room_fixed,
 // made by scripts/room_fixed.py from the tuner's dump): a Valhall Mali holds only 128 uniform
 // components in registers, and past them each vec4 the shaders read is a load a pixel (task 115).
-fn room_frag_fixed(group: i64, mapped: bool) -> const u8[:] {
+fn room_frag_fixed(group: i64, mapped: bool, boxed: bool) -> const u8[:] {
     // Without the floor's and the metals' sharp box (render3d::sharp_box_allowed,
     // the light tuner's --box off): their reflection the room's broad light, as the walls'.
     if !render3d::sharp_box_allowed && group == render3d::GROUP_FLOOR {
@@ -435,6 +435,7 @@ fn room_frag_fixed(group: i64, mapped: bool) -> const u8[:] {
         return embed_shader("frag", shaders::ROOM_METALS, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, room_fixed::ROOM_FIXED, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     if group == render3d::GROUP_FLOOR {
+        if mapped && boxed { return embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::BOX_MAP, shaders::NO_SSAO, shaders::WINDOW_MAP, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, room_fixed::ROOM_FIXED, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG); }
         if mapped { return embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::WINDOW_MAP, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, room_fixed::ROOM_FIXED, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG); }
         return embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, room_fixed::ROOM_FIXED, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
@@ -451,6 +452,7 @@ fn room_frag_fixed(group: i64, mapped: bool) -> const u8[:] {
         return embed_shader("frag", shaders::ROOM_SILL, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, room_fixed::ROOM_FIXED, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
     if group == render3d::GROUP_METALS {
+        if mapped && boxed { return embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::BOX_MAP, shaders::NO_SSAO, shaders::WINDOW_MAP, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, room_fixed::ROOM_FIXED, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG); }
         if mapped { return embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::WINDOW_MAP, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, room_fixed::ROOM_FIXED, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG); }
         return embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, room_fixed::ROOM_FIXED, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
     }
@@ -472,8 +474,10 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     let sill_steps = render3d::sill_steps_on() && tuned_frags[TUNED_SILL_STEPS].len > 0;
     let mapped = render3d::window_map_on;
     let fixed = render3d::room_fixed_on && !ssao && !views && fixed_current(g);
+    // The sharp box from the box's map, with the constants (room_frag_fixed) and the light map.
+    let boxed = fixed && mapped && render3d::box_map_shown(g);
     guard g.room_walls.id == 0 || g.room_ssao != ssao || g.room_views != views || g.room_steps != steps || g.sill_steps != sill_steps
-          || g.room_mapped != mapped || g.room_fixed != fixed
+          || g.room_mapped != mapped || g.room_fixed != fixed || g.room_boxed != boxed
     else { return; }
     if g.room_walls.id != 0 {
         for p in [g.room_floor, g.room_walls, g.room_paint, g.room_sill, g.room_metals, g.room_glass, g.room_lace, g.table_room] { gfx::release(p); }
@@ -503,16 +507,17 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     g.sill_steps = sill_steps;
     g.room_mapped = mapped;
     g.room_fixed = fixed;
+    g.room_boxed = boxed;
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
     let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
     let blended = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED };
-    g.room_floor = gfx::pipeline(room_vert, room_frag(render3d::GROUP_FLOOR, ssao, views, mapped, fixed), opaque);
-    g.room_walls = gfx::pipeline(room_vert, room_frag(render3d::GROUP_WALLS, ssao, views, mapped, fixed), opaque);
-    g.room_paint = gfx::pipeline(room_vert, room_frag(render3d::GROUP_PAINT, ssao, views, mapped, fixed), opaque);
-    g.room_sill = gfx::pipeline(room_vert, room_frag(render3d::GROUP_SILL, ssao, views, mapped, fixed), opaque);
-    g.room_metals = gfx::pipeline(room_vert, room_frag(render3d::GROUP_METALS, ssao, views, mapped, fixed), opaque);
-    g.room_glass = gfx::pipeline(room_vert, room_frag(render3d::GROUP_GLASS, ssao, views, mapped, fixed), blended);
-    g.room_lace = gfx::pipeline(room_vert, room_frag(render3d::GROUP_LACE, ssao, views, mapped, fixed), blended);
+    g.room_floor = gfx::pipeline(room_vert, room_frag(render3d::GROUP_FLOOR, ssao, views, mapped, fixed, boxed), opaque);
+    g.room_walls = gfx::pipeline(room_vert, room_frag(render3d::GROUP_WALLS, ssao, views, mapped, fixed, boxed), opaque);
+    g.room_paint = gfx::pipeline(room_vert, room_frag(render3d::GROUP_PAINT, ssao, views, mapped, fixed, boxed), opaque);
+    g.room_sill = gfx::pipeline(room_vert, room_frag(render3d::GROUP_SILL, ssao, views, mapped, fixed, boxed), opaque);
+    g.room_metals = gfx::pipeline(room_vert, room_frag(render3d::GROUP_METALS, ssao, views, mapped, fixed, boxed), opaque);
+    g.room_glass = gfx::pipeline(room_vert, room_frag(render3d::GROUP_GLASS, ssao, views, mapped, fixed, boxed), blended);
+    g.room_lace = gfx::pipeline(room_vert, room_frag(render3d::GROUP_LACE, ssao, views, mapped, fixed, boxed), blended);
     let table_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT);
     let table_desc = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED };
     g.table_room = gfx::pipeline(table_vert,
@@ -597,6 +602,39 @@ fn window_map_pass(own: Own&, g: render3d::Gpu&) {
     gfx::draw(3);
     gfx::end_pass();
     gfx::generate_mips(g.window_map);
+}
+
+// The box's map (render3d::box_map): shaders::box_irradiance a texel, by box_cell's layout,
+// drawn by ROOM_FRAG's bake over a target sized from the shell's box (BOX_MAP_TEXEL, a
+// texel more each way than the shader's cells need), with the opaque groups' shared
+// textures (render3d::room_textures's first five) and the room's block.
+let BOX_MAP_TEXEL: f32 = 1.2192;    // shaders::BOX_MAP_TEXEL, 4 cm
+fn box_map_pass(own: Own&, g: render3d::Gpu&) {
+    let b = render3d::surfaces_block(g);
+    if g.box_map.id == 0 {
+        let cx = ceil((b.room_box.y - b.room_box.x) / BOX_MAP_TEXEL + 0.5) as i64 + 1;
+        let cy = ceil((b.room_heights.x - b.shell.z) / BOX_MAP_TEXEL + 0.5) as i64 + 1;
+        let cz = ceil((b.room_box.w - b.room_box.z) / BOX_MAP_TEXEL + 0.5) as i64 + 1;
+        g.box_map = gfx::render_target(2 * (cx + cz), cz + cy, gfx::RGBA16F);
+        g.box_map_bake = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::BOX_MAP_VERT),
+                                       embed_shader("frag", shaders::BOX_MAP_BAKE, shaders::NO_SSAO, shaders::WINDOW_MAP, shaders::SHELL_WINDOWS,
+                                                    shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN,
+                                                    shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG));
+    }
+    var pass = gfx::PassDesc { color_value: float4_0 };
+    pass.color[0] = g.box_map;
+    gfx::begin_pass(pass);
+    gfx::bind(g.box_map_bake);
+    gfx::bind_texture(gfx::FRAGMENT, 0, render3d::tree_or_stand_in(g), g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 1, g.window_map, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 2, render3d::light_or_stand_in(g), g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 3, render3d::table_map_or_stand_in(g), g.compare);
+    gfx::bind_texture(gfx::FRAGMENT, 4, render3d::corners_or_stand_in(g), g.linear);
+    gfx::uniforms(gfx::VERTEX, 0, g.frame);
+    gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+    gfx::uniforms(gfx::FRAGMENT, 1, b);
+    gfx::draw(3);
+    gfx::end_pass();
 }
 
 // The floor's mirror (render3d::planar_shown), before the board's pass: the view out, the

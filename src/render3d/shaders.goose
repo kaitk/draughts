@@ -2325,6 +2325,24 @@ let TABLE_FRAG = """
 // one mesh, its world position, normal, uv (the floor's u and v in the room, or a piece's
 // place in the wall's field), occlusion and material. The room's mesh is built in its own
 // frame (u, height, v; surfaces.goose) and turned into the world here.
+// The box's map's bake (BOX_MAP_BAKE): a triangle over the map, the room's varyings
+// written so ROOM_HEAD's inputs are met (ROOM_FRAG's bake reads gl_FragCoord alone).
+let BOX_MAP_VERT = """
+    layout(location = 0) out vec3 v_world;
+    layout(location = 1) out vec3 v_normal;
+    layout(location = 2) out vec2 v_uv;
+    layout(location = 3) out vec2 v_extra;
+    layout(location = 4) out vec3 v_local;
+    layout(location = 5) out vec2 v_corner;
+    layout(location = 6) flat out vec2 v_box;
+    void main() {
+        vec2 p = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);
+        v_world = vec3(0.0); v_normal = vec3(0.0, 1.0, 0.0); v_uv = p; v_extra = vec2(0.0);
+        v_local = vec3(0.0); v_corner = vec2(0.0); v_box = vec2(0.0);
+        gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+    }
+    """;
+
 let ROOM_VERT = """
     layout(location = 0) in vec3 a_pos;
     layout(location = 1) in vec3 a_normal;
@@ -2523,6 +2541,10 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 7) uniform sampler2D floor_noise;
     // Its scratches' repeating tile (surfaces::scratch_tile), R8 with its mips.
     layout(set = 2, binding = 8) uniform sampler2D scratch_tile;
+    #if defined(BOX_MAP) && defined(NO_SSAO)
+    // The box's map (render3d::box_map), what the sharp reflection meets (room_seen).
+    layout(set = 2, binding = 9) uniform sampler2D box_map;
+    #endif
     #ifndef NO_SSAO
     layout(set = 2, binding = 9) uniform sampler2D ssao_map;
     layout(set = 2, binding = 10) uniform sampler2D pre_place;
@@ -2566,6 +2588,9 @@ let ROOM_HEAD = """
     #ifdef ROOM_METALS
     // The books' spines (model3d::books): tone, gilt or ink, label, wear.
     layout(set = 2, binding = 5) uniform sampler2D book_atlas;
+    #if defined(BOX_MAP) && defined(NO_SSAO)
+    layout(set = 2, binding = 6) uniform sampler2D box_map;
+    #endif
     #ifndef NO_SSAO
     layout(set = 2, binding = 6) uniform sampler2D ssao_map;
     layout(set = 2, binding = 7) uniform sampler2D pre_place;
@@ -3390,15 +3415,83 @@ let ROOM_FRAG = """
     }
     #endif
 
+    #if defined(SHARP_BOX) || defined(BOX_MAP_BAKE)
+    // The shell's box at h (the room's frame), a face whose inward normal in the room's frame
+    // is nl: the surface there by where it is (the wainscot, the paper, the two doors' paint,
+    // the bookcases, the plaster, the herringbone's mean). What room_seen meets, lit by
+    // box_irradiance and box_sun.
+    vec3 box_albedo(vec3 h, vec3 nl) {
+        float up = (h.y - shell.z) / shell.w;
+        vec3 wall = up < room_heights.z ? vec3(0.082, 0.046, 0.030) : mix(srgb(paper.rgb), srgb(gold.rgb), 0.3);
+        if (nl.y != 0.0) return nl.y < 0.0 ? srgb(ceiling_light.rgb) : vec3(0.078, 0.045, 0.022);
+        if (nl.x != 0.0) {
+            bool door = nl.x < 0.0 && abs(h.z - room_doors.z) < room_doors.w && up < room_heights.y;
+            return door ? srgb(paint.rgb) : wall;
+        }
+        bool door = nl.z < 0.0 && abs(h.x - room_doors.x) < room_doors.y && up < room_heights.y;
+        bool cases = nl.z < 0.0 && abs(abs(h.x - room_doors.x) - book_cases.x) < book_cases.y && up < book_cases.z;
+        return door ? srgb(paint.rgb) : (cases ? vec3(0.046, 0.029, 0.019) : wall);
+    }
+    // The world's normal of the box's face nl (the room's frame).
+    vec3 box_normal(vec3 nl) { return vec3(axes.x * nl.x + axes.z * nl.z, nl.y, axes.y * nl.x + axes.w * nl.z); }
+    // The room's baked light on the box at h for its face nl: smooth over the probes' spacing,
+    // so the box's map holds it (BOX_MAP_BAKE).
+    vec3 box_irradiance(vec3 h, vec3 nl) { return room_irradiance(h, box_normal(nl)); }
+    // The sun through the windows on the box at hw (the world's) for its face nl: its patches'
+    // edges as sharp as the window's light map's, so worked out where it is seen.
+    vec3 box_sun(vec3 hw, vec3 nl) {
+        vec3 n = box_normal(nl);
+        vec3 l = light_dir.xyz;
+        float nol = dot(n, l);
+        if (nol <= 0.0) return vec3(0.0);
+        return room_sun_color(room_sun.x) * light_dir.w * shell_sun.y * nol / PI * window_light(hw);
+    }
+
+    // The box's map (render3d::box_map, task 115): box_irradiance a texel each BOX_MAP_TEXEL
+    // world units square, the floor and the ceiling in its first row of cells, the walls
+    // across x (near, far), then across z (near, far) in the second, each cell on whole
+    // texels. box_cell gives a face's cell: its first texel, its size in texels, and the
+    // face's extent in world units; the bake and the reads share it.
+    const float BOX_MAP_TEXEL = 1.2192;    // 4 cm
+    void box_cell(vec3 nl, out vec2 at, out vec2 size, out vec2 extent) {
+        vec3 e = vec3(room_box.y - room_box.x, room_heights.x - shell.z, room_box.w - room_box.z);
+        // Half a texel more, so a face a whole number of texels long (the room is 9 by 7 by 4 m)
+        // gives the same cells where its extent is folded as a constant and where it is not.
+        vec3 c = ceil(e / BOX_MAP_TEXEL + 0.5);
+        if (nl.y != 0.0) {
+            at = vec2(nl.y < 0.0 ? c.x : 0.0, 0.0); size = c.xz; extent = e.xz;
+        } else if (nl.x != 0.0) {
+            at = vec2(nl.x < 0.0 ? c.z : 0.0, c.z); size = c.zy; extent = e.zy;
+        } else {
+            at = vec2(2.0 * c.z + (nl.z < 0.0 ? c.x : 0.0), c.z); size = c.xy; extent = e.xy;
+        }
+    }
+    // h's place on its face, world units from the cell's corner.
+    vec2 box_face_place(vec3 h, vec3 nl) {
+        vec3 d = vec3(h.x - room_box.x, h.y - shell.z, h.z - room_box.z);
+        return nl.y != 0.0 ? d.xz : (nl.x != 0.0 ? d.zy : d.xy);
+    }
+    #endif
+
     #ifdef SHARP_BOX
+    #ifdef BOX_MAP
+    // box_irradiance at h from the box's map: one tap, held half a texel inside the face's cell.
+    vec3 box_map_at(vec3 h, vec3 nl) {
+        vec2 at, size, extent;
+        box_cell(nl, at, size, extent);
+        vec2 q = at + clamp(box_face_place(h, nl) / BOX_MAP_TEXEL, vec2(0.5), size - 0.5);
+        return textureLod(box_map, q / vec2(textureSize(box_map, 0)), 0.0).rgb;
+    }
+    #endif
+
     // The room's radiance seen along r from p (the world's; lp and lr the room's frame): the
-    // shell's box met (its four walls, the ceiling, the floor), the surface there by where it
-    // is (the wainscot, the paper, the two doors' paint, the plaster, the herringbone's
-    // mean), lit by the baked light and the sun through the windows; on the window wall, its
-    // three windows as soft rectangles under their arches, their bars at the inner glass, the
-    // view out's light (lace_light, back in the room's units) between them, softer the
-    // farther and longer up the wall than across it at a grazing look, as a waxed floor's
-    // streaks are. After the gilt and brass study's proposal: no cube map, nothing baked.
+    // shell's box met (its four walls, the ceiling, the floor), its surface (box_albedo) lit
+    // by the baked light (box_irradiance, with BOX_MAP from its map) and the sun through the
+    // windows (box_sun); on the window wall, its three windows as soft rectangles
+    // under their arches, their bars at the inner glass, the view out's light (lace_light,
+    // back in the room's units) between them, softer the farther and longer up the wall than
+    // across it at a grazing look, as a waxed floor's streaks are. After the gilt and brass
+    // study's proposal: no cube map.
     vec3 room_seen(vec3 p, vec3 lp, vec3 r, vec3 lr, float alpha, float nov, float px) {
         float big = 1e6;
         float tx = abs(lr.x) < 1e-4 ? big : ((lr.x > 0.0 ? room_box.y : room_box.x) - lp.x) / lr.x;
@@ -3407,27 +3500,13 @@ let ROOM_FRAG = """
         float t = max(min(tx, min(ty, tz)), 0.0);
         vec3 h = lp + lr * t;
         vec3 hw = p + r * t;
-        vec3 nl;
-        vec3 alb;
-        float up = (h.y - shell.z) / shell.w;
-        vec3 wall = up < room_heights.z ? vec3(0.082, 0.046, 0.030) : mix(srgb(paper.rgb), srgb(gold.rgb), 0.3);
-        if (t == ty) {
-            nl = vec3(0.0, lr.y > 0.0 ? -1.0 : 1.0, 0.0);
-            alb = lr.y > 0.0 ? srgb(ceiling_light.rgb) : vec3(0.078, 0.045, 0.022);
-        } else if (t == tx) {
-            nl = vec3(lr.x > 0.0 ? -1.0 : 1.0, 0.0, 0.0);
-            bool door = lr.x > 0.0 && abs(h.z - room_doors.z) < room_doors.w && up < room_heights.y;
-            alb = door ? srgb(paint.rgb) : wall;
-        } else {
-            nl = vec3(0.0, 0.0, lr.z > 0.0 ? -1.0 : 1.0);
-            bool door = lr.z > 0.0 && abs(h.x - room_doors.x) < room_doors.y && up < room_heights.y;
-            bool cases = lr.z > 0.0 && abs(abs(h.x - room_doors.x) - book_cases.x) < book_cases.y && up < book_cases.z;
-            alb = door ? srgb(paint.rgb) : (cases ? vec3(0.046, 0.029, 0.019) : wall);
-        }
-        vec3 n = vec3(axes.x * nl.x + axes.z * nl.z, nl.y, axes.y * nl.x + axes.w * nl.z);
-        vec3 l = light_dir.xyz;
-        vec3 sun = room_sun_color(room_sun.x) * light_dir.w * shell_sun.y * max(dot(n, l), 0.0) / PI;
-        vec3 c = alb * (room_irradiance(h, n) + (dot(n, l) > 0.0 ? sun * window_light(hw) : vec3(0.0)));
+        vec3 nl = t == ty ? vec3(0.0, lr.y > 0.0 ? -1.0 : 1.0, 0.0)
+                : (t == tx ? vec3(lr.x > 0.0 ? -1.0 : 1.0, 0.0, 0.0) : vec3(0.0, 0.0, lr.z > 0.0 ? -1.0 : 1.0));
+        #ifdef BOX_MAP
+        vec3 c = box_albedo(h, nl) * (box_map_at(h, nl) + box_sun(hw, nl));
+        #else
+        vec3 c = box_albedo(h, nl) * (box_irradiance(h, nl) + box_sun(hw, nl));
+        #endif
         // The windows, on the window wall.
         if (t != tz || lr.z > 0.0) return c;
         float metre = shell.w;
@@ -3692,7 +3771,7 @@ let ROOM_FRAG = """
     }
     #endif
 
-    #ifndef MIRROR_CHEAP
+    #if !defined(MIRROR_CHEAP) && !defined(BOX_MAP_BAKE)
     void main() {
         vec3 p = v_world;
         vec3 ng = normalize(v_normal);
@@ -4368,7 +4447,7 @@ let ROOM_FRAG = """
     #endif
     #endif
     }
-    #else
+    #elif defined(MIRROR_CHEAP)
     // The floor's cheap mirror world (render3d::mirror_cheap, the light tuner's
     // --mirror-cheap): what the wax blurs and fades needs no detail of its own. Each surface
     // at its mean colour (its map's last mip, or its look's colours mixed by their mask's
@@ -4538,6 +4617,28 @@ let ROOM_FRAG = """
         vec3 c = albedo * (max(nol, 0.0) / PI * light * vis + room_irradiance(lp, ng) * ao);
         result = room_out(c * params.x * shade.w, 1.0);
     #endif
+    }
+    #else
+    // The box's map (render3d::box_map_pass, BOX_MAP_BAKE): box_irradiance at each texel's
+    // middle, by box_cell's layout; nothing past the cells. A triangle over the map
+    // (BOX_MAP_VERT), gl_FragCoord its texel.
+    void main() {
+        vec2 q = gl_FragCoord.xy;
+        vec3 faces[6] = vec3[6](vec3(0.0, 1.0, 0.0), vec3(0.0, -1.0, 0.0), vec3(1.0, 0.0, 0.0), vec3(-1.0, 0.0, 0.0),
+                                vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, -1.0));
+        result = vec4(0.0);
+        for (int k = 0; k < 6; k++) {
+            vec2 at, size, extent;
+            box_cell(faces[k], at, size, extent);
+            vec2 f = q - at;
+            if (any(lessThan(f, vec2(0.0))) || any(greaterThanEqual(f, size))) continue;
+            vec2 w = min(f * BOX_MAP_TEXEL, extent);
+            vec3 nl = faces[k];
+            vec3 h = nl.y != 0.0 ? vec3(room_box.x + w.x, nl.y > 0.0 ? shell.z : room_heights.x, room_box.z + w.y)
+                   : (nl.x != 0.0 ? vec3(nl.x > 0.0 ? room_box.x : room_box.y, shell.z + w.y, room_box.z + w.x)
+                                  : vec3(room_box.x + w.x, shell.z + w.y, nl.z > 0.0 ? room_box.z : room_box.w));
+            result = vec4(box_irradiance(h, nl), 1.0);
+        }
     }
     #endif
     """;
@@ -4867,6 +4968,11 @@ let SHARP_BOX = "#define SHARP_BOX 1\n";
 // Without the screen's maps (SSAO_FN's ssao_map and the contact shadows' pre_place): the
 // phone's tier, which draws neither (render3d::ssao_allowed).
 let NO_SSAO = "#define NO_SSAO 1\n";
+// The sharp box's light from the box's map (render3d::box_map), on the phone's tier: the
+// floor's and metals' pipelines with SHARP_BOX and NO_SSAO; the map's bake (BOX_MAP_BAKE,
+// with no group's define, so ROOM_HEAD declares the opaque groups' shared textures alone).
+let BOX_MAP = "#define BOX_MAP 1\n";
+let BOX_MAP_BAKE = "#define BOX_MAP_BAKE 1\n";
 // The light out linear (exposed, its peak held to MIRROR_PEAK) in place of tonemapped
 // sRGB: ROOM_FRAG's room_out and TABLE_FRAG's end. The floor's mirror's, whose target is
 // RGBA16F.

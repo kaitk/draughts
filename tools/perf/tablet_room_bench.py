@@ -61,6 +61,7 @@ VARIANTS = {
     "map-off":     "--window-map off",
     "leaves-off":  "--phone-leaves off",
     "uniforms":    "--room-fixed off",
+    "box-traced":  "--box-map off",
 }
 LINE = re.compile(r"light_tune: ([\d.]+) fps, ([\d.]+) ms a frame, worst ([\d.]+); in the loop ([\d.]+) ms")
 

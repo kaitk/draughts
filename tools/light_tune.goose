@@ -131,7 +131,8 @@
 //       --tier full)] [--tier phone|full] [--aa off|smaa|msaa (the scene's antialiasing; smaa by default, msaa 4×; the 2 key switches MSAA and SMAA live)]
 //       [--box on|off (the phone tier's floor and metals reflecting the room's box sharply; on)]
 //       [--room-fixed on|off (the phone tier's room shaders with the room's block as constants,
-//       src/render3d/room_fixed.goose; on)]
+//       src/render3d/room_fixed.goose; on)] [--box-map on|off (the phone tier's sharp box reading the
+//       box's map, render3d::box_map; on)]
 //       [--window-map on|off (the shell's windows' pattern from the window's light map, render3d::window_map_on;
 //       off traces it a pixel as before; on)] [--phone-leaves static|off (the phone's tier's leaves baked into the
 //       map at one phase of the wind, or none; static)] [--leaves-moving on (the desktop's leaves lit a pixel, not
@@ -1458,6 +1459,8 @@ fn main() {
     render3d::window_map_on = !(has(argv, "--window-map") && argv[flag_value(argv, "--window-map")] == "off");
     // The phone's tier's room shaders with the room's block as constants (render3d::room_fixed_on).
     render3d::room_fixed_on = !(has(argv, "--room-fixed") && argv[flag_value(argv, "--room-fixed")] == "off");
+    // The phone tier's sharp box from the box's map (render3d::box_map_on).
+    render3d::box_map_on = !(has(argv, "--box-map") && argv[flag_value(argv, "--box-map")] == "off");
     render3d::phone_leaves = if has(argv, "--phone-leaves") && argv[flag_value(argv, "--phone-leaves")] == "off" { render3d::LEAVES_OFF }
                              else { render3d::LEAVES_STATIC };
     let leaves_moving_flag = has(argv, "--leaves-moving") && argv[flag_value(argv, "--leaves-moving")] == "on";

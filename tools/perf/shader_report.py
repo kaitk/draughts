@@ -60,7 +60,12 @@ SHADERS = [
     (f"room_{g}_fixed", "frag", defs + ["NO_SSAO", "WINDOW_MAP"] + ROOM_FS[:4] + ["room_fixed.ROOM_FIXED"] + ROOM_FS[4:]
                                   + ["TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"])
      for g, defs in [("floor", ["ROOM_FLOOR", "SHARP_BOX"]), ("walls", ["ROOM_WALLS"]), ("paint", ["ROOM_PAINT"]),
-                     ("sill", ["ROOM_SILL"]), ("metals", ["ROOM_METALS", "SHARP_BOX"])]] + [
+                     ("sill", ["ROOM_SILL"]), ("metals", ["ROOM_METALS", "SHARP_BOX"]),
+                     ("floor_boxmap", ["ROOM_FLOOR", "SHARP_BOX", "BOX_MAP"]),
+                     ("metals_boxmap", ["ROOM_METALS", "SHARP_BOX", "BOX_MAP"])]] + [
+    # The box's map's bake (render3d_gpu's box_map_pass).
+    ("box_map_bake", "vert", ["VS_SET", "FRAME", "BOX_MAP_VERT"]),
+    ("box_map_bake", "frag", ["BOX_MAP_BAKE", "NO_SSAO", "WINDOW_MAP"] + ROOM_FS + ["TABLE_MAP_FN", "SSAO_FN", "TONE_FN", "ROOM_FRAG"]),
     ("table_room", "vert", ["VS_SET", "FRAME", "TABLE_VERT"]),
     ("table_room", "frag", ["TABLE_ROOM", "SHELL_WINDOWS", "NO_SSAO", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN",
                             "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
