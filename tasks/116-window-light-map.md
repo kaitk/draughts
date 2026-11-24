@@ -102,3 +102,19 @@ alternating builds, the desktop at 3840 × 2160, the phone tier (`--phone-tier`)
   mask at their own slots), and the glass and the lace
 - [ ] If the edges near the window want to be sharper: the three windows' tiles side by side
   (5.1 m of texels in place of 7.7 m), or a larger map on desktops
+
+## On the Pixel 7a (2026-11-24)
+
+The phone's tier, native 2400 × 1080 landscape, 4× MSAA, cool (thermal status 0 to 1), two
+alternating rounds, ms a frame (`tools/perf/tablet_room_bench.py --variants base,map-off,leaves-off`):
+
+| Variant | Down | Corner | Room |
+|---|---|---|---|
+| the map, leaves static | 19.2 / 19.3 / 19.6 / 20.4 | 22.4 / 24.2 / 22.6 | 22.4 / 22.5 / 26.4 / 26.5 |
+| `--window-map off` (traced per pixel) | 23.4 / 27.9 | 32.5 | 27.5 / 27.6 |
+| `--phone-leaves off` | 22.8 / 19.4 | 22.3 / 22.6 | 22.5 / 26.2 |
+
+The map saves about 4 to 8 ms straight down, 9 in the corner and 1 to 5 in the room's view,
+a quarter of the frame at most. Leaving the leaves out saves nothing more: static leaves cost
+nothing once baked. Still to run on the Galaxy Tab.
+
