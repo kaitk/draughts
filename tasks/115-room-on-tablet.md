@@ -137,5 +137,21 @@ Cool (thermal status 0 before and after), ms a frame, one run each, the base twi
 
 ## Next (task 110)
 
-- [ ] Choose for each costly part: drop it on phones, make it cheaper, or bake it
+Aim: about 45 fps (22 ms) on this tablet, every second refresh of its 90 Hz; a steady 30 the
+least (the user, 2026-11-24). Lower resolution stays the last resort: the screen shows it.
+The approaches agreed, in order:
+
+- [ ] Rank the room's shaders with the Mali Offline Compiler (cycles, registers and the bound
+      unit per shader, for the G615 and G710), no device needed
+- [ ] Half precision (FP16) for colour, light and BRDF math in the dearest shaders; positions
+      and depth stay full
+- [ ] The sharp box reflection cheaper on phones: its windows, bars and view out from the
+      light map or a small baked texture, not traced per floor pixel
+- [ ] Phone-tier versions of the materials: what doesn't read at tablet size dropped (the
+      second sheen lobe, the paint's relief, the floor's scratches and slow noise, grime)
+- [ ] Detail faded by screen size in the shader (`fwidth`): small surfaces skip normal and
+      relief detail
+- [ ] Smooth terms (the baked light's taps) shared over a 2 × 2 quad, if the devices'
+      Vulkan offers fragment subgroup quad operations
+- [ ] The books' cheaper shader (task 110), the indirect light baked (task 114)
 - [ ] Measure again after each change with the bench
