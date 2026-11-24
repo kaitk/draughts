@@ -757,6 +757,20 @@ to be is in tasks 042, 059, 071, 081, and 086.
   (`room_light::CASE_ALBEDO`, the sun's patches met at their fronts), and the floor's
   reflection sees them dark. Rejected: the low case (A, reads as a sideboard) and the
   concepts' glazed case here (C, kept for the stove wall).
+- The library's rug is drawn by the floor's shader, not as a mesh (2026-11-24, task 107,
+  `build/notes/rug-build/`): a rectangle in the room's frame round the table, its picture
+  sampled where the eye's ray meets its top 8 mm up, its side where the ray meets the
+  floor under it, its fringes past the ends by their cover. The rug then takes all of the
+  floor's light for one texture tap and a few comparisons in the floor's shader, and adds
+  no draw, pipeline or material group; the floor's mirror and the herringbone's joints
+  and wax fade out under it. Its picture is drawn by our own baker
+  (`tools/materials/rug.py`), a knot a texel, with no light or wrinkles in it; the first
+  bake from a downloaded photograph kept the photograph's wrinkles in its colour. Its
+  size and place (3 by 2.2 m along the window wall, its middle 0.1 m into the room from
+  the table's, so 0.2 m of floor shows before the window wall) are task 109's plan; the
+  0.1 m is a choice made here. Rejected: a mesh of its own with the floor's lighting in a
+  new group (a second floor shader and pipeline for a few millimetres of side), and the
+  rug in the room's probes' bake (the floor's mean albedo stands for it).
 - The library's windows have working shutters (2026-11-21, task 107; option A of
   `build/notes/shutters/`, the user's agreement; `room_shell::SHUTTER_*`,
   `shell_mesh::shutters`): two leaves a side of 0.325 m, as the shell's plan had them and

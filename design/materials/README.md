@@ -10,6 +10,7 @@ built into the program from here (`src/native/materials.c`).
 | `outside_band.png` | The park's far tree line on a cylinder 110 m out (`tools/materials/outside.py`), 2048 × 336 RGBA over ±64° from straight out, 16 px a degree, rows linear in height from 14.05 m under the lawn to 26.26 m over it; sRGB, premultiplied in linear light, its sky cut to clear; 0.44 MB. `model3d::view_out` puts it on its cylinder round the middle window, `shaders::OUTSIDE_FRAG` draws it unlit. In git. |
 | `outside_oak.png` | The oak, 29.8 × 20 m, a billboard 70 m out at 22° right of straight out, 584 × 392 RGBA as the band, 0.26 MB. In git. |
 | `books_atlas.png` | The library's books' spines (`tools/materials/books.py`), 1024 × 928 RGBA at 0.7 texels a millimetre, 194 cells (a volume each of `book_titles.py`'s 51 titles) packed in rows by height with 4 texels between: R the cover's tone (in 64 steps), G gilt or ink, B the label, A wear (in 16 steps), 1.03 MB. The baker writes its cells and the covers' and labels' colours as `src/model3d/book_cells.goose`; `shaders::ROOM_FRAG` colours a spine from them (`model3d::books`). In git. |
+| `rug.png` | The rug under the games table (`tools/materials/rug.py`), drawn from nothing: 1280 × 880 RGBA at 2.5 mm a texel, 3.2 m along (the pile's 3 m and 0.1 m of fringe at each end) by 2.2 m; sRGB albedo with no light in it, A the fringes' cover (1 on the pile), 2.1 MB. `shaders::ROOM_FRAG` lays it on the floor round the table (`render3d::put_rug`). In git. |
 | `lace_f2.png`, `lace_f.png`, `lace_d.png` | The curtains' lace, three ways of it while the choice is open (f2 shown, the light tuner's `--lace` picks another): the way's field tile (1024 rows over 0.56 m, `surfaces::LACE_TILE`) over its hem's border (384 rows, 0.21 m), 1024 × 1408 L8, 0.7 MB each: 0 where the light passes, 1 the thread. `tools/materials/lace_panel.py` puts each together from the lace library's bake (`tools/materials/lace_rose2.py` for f2, `lace_rose.py` for f, `lace_blossom.py` for d); `shaders::ROOM_FRAG` reads down the field's tile and on into the hem at the cloth's foot. In git; the two not chosen go once the user chooses. |
 
 To make the mask again, with numpy and Pillow from Homebrew and the downloads of
@@ -51,5 +52,14 @@ shader, so the baker's `outside_sky.png` stays out:
 ```sh
 python3 -I tools/materials/outside.py OUT_DIR      # MANOR_DIR=<checkout>/design/manor from a worktree
 cp OUT_DIR/outside_band.png OUT_DIR/outside_oak.png design/materials/
+touch src/native/materials.c
+```
+
+The rug, drawn by its baker alone (no download; `--preview` adds `rug_preview.png`, the rug
+on a floor-brown ground):
+
+```sh
+python3 -I tools/materials/rug.py OUT_DIR
+cp OUT_DIR/rug.png design/materials/
 touch src/native/materials.c
 ```

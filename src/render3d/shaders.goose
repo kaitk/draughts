@@ -2523,14 +2523,16 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 7) uniform sampler2D floor_noise;
     // Its scratches' repeating tile (surfaces::scratch_tile), R8 with its mips.
     layout(set = 2, binding = 8) uniform sampler2D scratch_tile;
+    // The rug under the games table (render3d::put_rug): sRGB albedo, the fringes' cover in a.
+    layout(set = 2, binding = 9) uniform sampler2D rug_map;
     #ifndef NO_SSAO
-    layout(set = 2, binding = 9) uniform sampler2D ssao_map;
-    layout(set = 2, binding = 10) uniform sampler2D pre_place;
+    layout(set = 2, binding = 10) uniform sampler2D ssao_map;
+    layout(set = 2, binding = 11) uniform sampler2D pre_place;
     #endif
     #ifdef PLANAR_FLOOR
     // The room mirrored in the floor (render3d::planar_pass): its light in the room's units,
     // a the distance from the floor to what it shows along the reflection, with its mips.
-    layout(set = 2, binding = 11) uniform sampler2D planar_map;
+    layout(set = 2, binding = 12) uniform sampler2D planar_map;
     #endif
     #endif
     #ifdef ROOM_WALLS
@@ -2606,7 +2608,7 @@ let ROOM_HEAD = """
     // niche's width, the sill's height, the springing's, the arch's rise (metres); glass:
     // the glass planes' depths into the wall, the lace's distance out of it (world units), w
     // how much of the sun the lace lets through; stone: the sills' (sRGB, and roughness);
-    // ends: the end walls' u, x the stove's, y the far one's, z 1 where the window's light map holds the tree's light; brass: the curtains' (sRGB at
+    // ends: the end walls' u, x the stove's, y the far one's, z 1 where the window's light map holds the tree's light, w 1 with the rug (ROOM_FRAG's rug); brass: the curtains' (sRGB at
     // normal incidence, and roughness); lace_light: the window's light behind the lace
     // (linear, exposed as the view out, lifted with the room), w how strongly its thin parts scatter the sun
     // forward; table: x the table's top's radius, y the floor's height (world units), z and
@@ -3233,6 +3235,13 @@ let ROOM_FRAG = """
     const float FLOOR_STRIPS = 20.0;
     const float FLOOR_NOISE_SIDE = 1024.0;
     const float SCRATCH_TILE = 48.0;
+    // The rug (tools/materials/rug.py's HALF and its picture's size, metres): its pile's half
+    // length along the window wall and half width, the picture's length with the fringes and
+    // its width, its middle this far into the room from the table's, and its thickness.
+    const vec2 RUG_HALF = vec2(1.5, 1.1);
+    const vec2 RUG_TEX = vec2(3.2, 2.2);
+    const float RUG_IN = 0.1;
+    const float RUG_THICK = 0.008;
     // The table's base (mesh::table_base): its column's mean radius, and a leg's curve
     // from its root over the knee to the scroll's foot, out from the axis and up from the
     // floor (world units, mesh::LEG's and SCROLL_MID's), its half thickness.
@@ -3885,6 +3894,37 @@ let ROOM_FRAG = """
             wax = (1.0 + own_wax) * (1.0 - joint) * (1.0 - 0.3 * dull);
             rough *= 1.0 - 0.4 * own_wax;
         #endif
+            // The rug under the games table (render3d::put_rug), lying along the window wall: where
+            // the eye's ray meets its top (q lifted toward the eye by the thickness), its pile;
+            // where the ray meets the floor under it, its side, darker; past its ends, its
+            // fringes lying on the floor by their cover; round it, its contact on the floor.
+            // The floor's light (the sun, the table's shadow, the probes, the corners) is the
+            // rug's too, at the floor's height.
+            vec2 q = uv / shell.w - vec2(0.0, RUG_IN);
+            if (shell_ends.w > 0.5 && max(abs(q.x) - 0.5 * RUG_TEX.x, abs(q.y) - RUG_HALF.y) < 0.05) {
+                vec3 to_eye = eye.xyz - p;
+                vec2 lift = vec2(dot(to_eye.xz, axes.xy), dot(to_eye.xz, axes.zw)) * (RUG_THICK / max(to_eye.y, 1e-3));
+                vec2 out_top = abs(q + lift) - RUG_HALF;
+                vec2 out_q = abs(q) - RUG_HALF;
+                bool on_top = max(out_top.x, out_top.y) < 0.0;
+                bool on_side = !on_top && max(out_q.x, out_q.y) < 0.0;
+                vec2 at = on_top ? q + lift : q;
+                vec4 r4 = textureGrad(rug_map, at / RUG_TEX + 0.5, dx / (shell.w * RUG_TEX), dy / (shell.w * RUG_TEX));
+                float fringe = abs(q.x) < 0.5 * RUG_TEX.x && out_q.y < 0.0 ? r4.a : 0.0;
+                float cover = on_top || on_side ? 1.0 : fringe;
+                // The pile rolls over at its edge; the side is in its own shade.
+                float edge = on_top ? clamp(-max(out_top.x, out_top.y) / 0.004, 0.0, 1.0) : 0.0;
+                vec3 pile = srgb(r4.rgb) * (on_top ? 0.75 + 0.25 * edge : 0.45);
+                albedo = mix(albedo, pile, cover);
+                rough = mix(rough, 1.0, cover);
+                n = normalize(mix(n, ng, cover));
+                fine = mix(fine, 1.0, cover);
+            #ifdef PLANAR_FLOOR
+                wax *= 1.0 - cover;
+                n_film = normalize(mix(n_film, ng, cover));
+            #endif
+                if (!on_top && !on_side) ao *= mix(0.55, 1.0, smoothstep(0.0, 0.025, length(max(out_q, 0.0))));
+            }
             // The table hides the sky under it, its scroll toes the floor they stand on,
             // and the walls along their feet. In the room the top's broad shade is the
             // probes' and the screen's: only the base's contact stays here.

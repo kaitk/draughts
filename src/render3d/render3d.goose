@@ -475,6 +475,10 @@ struct Gpu {
     // room's masks; and a tuner's: the books left out of the mesh, their fade scaled (0 as
     // made).
     book_atlas: Texture,
+    // The rug under the games table (put_rug), put with the room's masks; and a tuner's: the
+    // rug left off the floor.
+    rug_map: Texture,
+    rug_off: bool,
     // The quiet paint's relief tile (room_shell::relief_tile), RGBA8 with its mips, made
     // with the room's bake, and the time it took (measuring).
     paint_tile:    Texture,
@@ -1275,7 +1279,7 @@ fn room_index_range(g: Gpu&, group: i64) -> i64, i64 {
 
 // The textures a group's shader reads, in its slots (shaders::ROOM_HEAD): the tree's
 // and lace's maps, the light's, the group's own, the screen's maps (ssao), and the mirror.
-let ROOM_TEXTURES = 12;
+let ROOM_TEXTURES = 13;
 struct RoomTextures { tex: Texture[ROOM_TEXTURES], smp: Sampler[ROOM_TEXTURES], count: i64 }
 fn add_texture(t: RoomTextures&, tex: Texture, smp: Sampler) {
     t.tex[t.count] = tex;
@@ -1298,6 +1302,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool, mirror: bool = f
         add_texture(t, g.floor_normal, oak);
         add_texture(t, g.floor_noise, g.linear);
         add_texture(t, g.scratch_tile, g.aniso);
+        add_texture(t, g.rug_map, g.aniso);
     } else if group == GROUP_WALLS {
         add_texture(t, g.wall_albedo, oak);
         add_texture(t, g.wall_normal, oak);
@@ -1564,6 +1569,7 @@ fn put_paper<O>(o: O&, g: Gpu&) {
     g.paper_mask = put_mask(o, 0);
     g.plaster_tone = put_mask(o, 1);
     g.book_atlas = put_books(o);
+    g.rug_map = put_rug(o);
     let t0 = clock();
     var px: u8[>..] = [];
     room_shell::relief_tile(px);
@@ -1613,16 +1619,39 @@ let GLASS_SEED: u64 = 7;
 let BOOK_MIPS = 4;
 extern fn draughts_book_atlas(out: u8[:], w: i64, h: i64) -> bool;
 fn put_books<O>(o: O&) -> Texture {
-    let w0 = books::ATLAS_W;
-    let h0 = books::ATLAS_H;
-    var total = 0;
-    for level in BOOK_MIPS { total += 4 * (w0 >> level) * (h0 >> level); }
     var px: u8[>..] = [];
-    px.resize(total, 0);
-    draughts_book_atlas(px[0..4 * w0 * h0], w0, h0);
-    let atlas = o.gpu_sampled(w0, h0, BOOK_MIPS, RGBA8);
+    px.resize(rgba_bytes(books::ATLAS_W, books::ATLAS_H, BOOK_MIPS), 0);
+    draughts_book_atlas(px[0..4 * books::ATLAS_W * books::ATLAS_H], books::ATLAS_W, books::ATLAS_H);
+    return put_rgba(o, px, books::ATLAS_W, books::ATLAS_H, BOOK_MIPS);
+}
+
+// The rug under the games table (design/materials/rug.png, tools/materials/rug.py) on the
+// GPU, RGBA8 (sRGB albedo, the fringes' coverage in A) with RUG_MIPS; blank where it isn't
+// built in. ROOM_FRAG lays it over the floor round the table (its rug).
+let RUG_W = 1280;
+let RUG_H = 880;
+let RUG_MIPS = 5;
+extern fn draughts_rug(out: u8[:], w: i64, h: i64) -> bool;
+fn put_rug<O>(o: O&) -> Texture {
+    var px: u8[>..] = [];
+    px.resize(rgba_bytes(RUG_W, RUG_H, RUG_MIPS), 0);
+    draughts_rug(px[0..4 * RUG_W * RUG_H], RUG_W, RUG_H);
+    return put_rgba(o, px, RUG_W, RUG_H, RUG_MIPS);
+}
+
+// The bytes of a w0 × h0 RGBA8 picture with `mips` levels.
+fn rgba_bytes(w0: i64, h0: i64, mips: i64) -> i64 {
+    var total = 0;
+    for level in mips { total += 4 * (w0 >> level) * (h0 >> level); }
+    return total;
+}
+
+// An RGBA8 picture on the GPU, its top level first in px and the rest made there, each level
+// the mean of four of the level above.
+fn put_rgba<O>(o: O&, px: u8[>..]&, w0: i64, h0: i64, mips: i64) -> Texture {
+    let tex = o.gpu_sampled(w0, h0, mips, RGBA8);
     var at = 0;
-    for level in BOOK_MIPS {
+    for level in mips {
         let w = w0 >> level;
         let h = h0 >> level;
         if level > 0 {
@@ -1637,10 +1666,10 @@ fn put_books<O>(o: O&) -> Texture {
                 }
             }
         }
-        o.gpu_upload(atlas, level, px[at..at + 4 * w * h]);
+        o.gpu_upload(tex, level, px[at..at + 4 * w * h]);
         at += 4 * w * h;
     }
-    return atlas;
+    return tex;
 }
 
 // The lace of `way` on the GPU, R8 with its mips down to where its sides stay even.
@@ -1809,7 +1838,8 @@ fn room_bytes(g: Gpu&) -> i64 {
     let glass = if g.glass_tile.id != 0 { glass_tile::bytes() } else { 0 };
     let floor = if g.floor_noise.id != 0 { 2 * surfaces::FLOOR_NOISE_SIDE * surfaces::FLOOR_NOISE_SIDE } else { 0 };
     let scratches = if g.scratch_tile.id != 0 { texels_with_mips(surfaces::SCRATCH_SIDE) } else { 0 };
-    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass + floor + scratches;
+    let rug = if g.rug_map.id != 0 { rgba_bytes(RUG_W, RUG_H, RUG_MIPS) } else { 0 };
+    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass + floor + scratches + rug;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the
@@ -1891,7 +1921,8 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     let stove_end = room_shell::room_of(s, s.walls[room_shell::STOVE_WALL].a);
     let far_end = room_shell::room_of(s, s.walls[room_shell::FAR_WALL].a);
     // z: 1 where the window's light map holds the tree's light (window_map_tree).
-    b.shell_ends = float4 { stove_end.x, far_end.x, if window_map_shown(g) && window_map_tree(g) { 1.0 } else { 0.0 }, 0.0 };
+    b.shell_ends = float4 { stove_end.x, far_end.x, if window_map_shown(g) && window_map_tree(g) { 1.0 } else { 0.0 },
+                            if g.rug_off || g.rug_map.id == 0 { 0.0 } else { 1.0 } };
     // Its own sun, and its baked light where it is made.
     let r = g.room;
     b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, g.room_tint.z, g.room_tint.w };

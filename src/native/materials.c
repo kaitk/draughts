@@ -90,6 +90,14 @@ static const unsigned char book_atlas[] = {
 static const unsigned char book_atlas[] = { 0 };
 #endif
 
+#if __has_embed("../../design/materials/rug.png")
+static const unsigned char rug[] = {
+#embed "../../design/materials/rug.png"
+    , 0 };
+#else
+static const unsigned char rug[] = { 0 };
+#endif
+
 typedef struct { uint8_t *data; int64_t len; } bytes;
 
 static bool decode_gray(const unsigned char *png, size_t len, bytes out, int64_t w, int64_t h) {
@@ -142,4 +150,10 @@ bool draughts_book_atlas(bytes out, int64_t w, int64_t h) {
 bool draughts_outside_picture(int64_t which, bytes out, int64_t w, int64_t h) {
     if (which == 1) return decode_rgba(oak, sizeof oak, out, w, h);
     return decode_rgba(band, sizeof band, out, w, h);
+}
+
+// The rug under the games table into `out`, w × h RGBA8 as stored (sRGB albedo, coverage in
+// A), or false when it isn't built in or isn't that size.
+bool draughts_rug(bytes out, int64_t w, int64_t h) {
+    return decode_rgba(rug, sizeof rug, out, w, h);
 }

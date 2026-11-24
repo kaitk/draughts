@@ -813,6 +813,20 @@ the oak are darker under each shelf and toward the back, and `case_shade` keeps 
 off what the case's ends, upright, shelves and books hide. The titles are baked into the
 atlas; the fonts that set them stay with the baker.
 
+### The library's rug
+
+A rug 3 by 2.2 m lies under the games table, along the window wall, its middle 0.1 m
+farther into the room than the table's. It is no mesh: the floor's shader draws it where
+it lies (`ROOM_FRAG`'s rug, in the floor's material group), so it takes the floor's light
+as it is: the sun's patches, the table's shadow, the baked probes and the corners' shade.
+The shader lifts each floor pixel toward the eye by the rug's 8 mm to find its top, so
+from a low eye the rug has a dark side and hides the floor just behind it; past its two
+ends its fringes lie on the floor by their cover, and round it the floor is a little
+darker for 2.5 cm. The pile is wool, roughness 1, and holds none of the floor's mirror.
+Its picture (`design/materials/rug.png`, 1280 × 880 RGBA8 at 2.5 mm a texel with five
+mips, 6 MB on the GPU) is drawn by `tools/materials/rug.py`, a knot a texel, with no
+light in it. The light tuner's `--rug off` leaves it out.
+
 ### The library's shutters and doors
 
 Each window's reveals hold a pair of working shutters folded flat

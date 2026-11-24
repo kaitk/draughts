@@ -278,6 +278,15 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   floor reflects the app's look in the tuner's old mode. A split group drawn in another
   order than before moves pixels where two groups' faces tie in depth: draw it where its
   triangles were drawn before (the sills before the paint, as in the walls' draw).
+- Something flat that lies on the floor (the rug, 2026-11-24) goes into the floor's own
+  shader, not a mesh: `ROOM_FRAG`'s floor block mixes its albedo, roughness and normal in
+  by cover before the floor's contact terms, so it takes the floor's light for one tap. A
+  thickness of millimetres is the eye's ray lifted to its top (`q + lift`); the floor's
+  mirror needs `wax` and `n_film` faded under it. Its texture is one more floor slot:
+  `ROOM_HEAD`'s floor bindings (the ones after it move up), `render3d::room_textures`,
+  `ROOM_TEXTURES` (13 now; ngfx's root holds 16), the release lists in both renderers. A
+  uniform-gated branch round the tap cost nothing measurable; the shot with it off was
+  identical to before.
 - gfx counts a shader's samplers from slot 0 and wants every one bound: a variant that
   drops a texture declares the rest without a gap (`ROOM_HEAD`'s per-group slots); ngfx's
   root takes them in declaration order, so both follow one list.

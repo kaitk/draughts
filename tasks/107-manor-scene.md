@@ -862,9 +862,22 @@ gain needs direct compressed-sample measurements.
 
 ## The table and the room around it, after the first shot
 
+- [x] The rug under the games table (2026-11-24, `build/notes/rug-build/`): drawn again
+      by our own baker (`tools/materials/rug.py`, no download, no light or wrinkles in
+      it), a worn Persian-type carpet 3 by 2.2 m along the window wall, its middle 0.1 m
+      into the room from the table's: a madder field strewn with a lattice of small
+      flowers, an indigo medallion with pendants and corner pieces, an indigo main border
+      with a vine and rosettes between guard stripes, dye lots, the window side faded, the
+      pile worn where the chairs stand and along the walk, a knot a texel at 2.5 mm, ivory
+      fringes at the ends. Drawn by the floor's shader where it lies, so it takes the
+      floor's light; 8 mm thick by the eye's ray lifted to its top (a dark side from a low
+      eye), a soft contact on the floor round it, no mirror on the wool. The light tuner's
+      `--rug off` and Rug switch in the table's section. The game's shot unchanged (run
+      noise only), the app's renderer untouched (it never draws the room); costs in task
+      110. Still off: the design reads cleaner and more graphic than a real old rug (no
+      motifs drawn by hand, the border's vine stops short at the corners), the pile has no
+      sheen or velvet at grazing angles, and the rug isn't in the room's probes' bake
 - [ ] The floor and rug, seen in the game's views (task 106)
-      The rug's first bake (`tools/materials/rug.py`) keeps the download's wrinkles in its
-      colour; flatten them or draw it again before it is used (the user, 2026-11-20)
 - [ ] The table's props: the chess clock (100), the pieces' box (102), the score sheet and
       pencil (103)
 - [ ] The writing desk to play on, with and without its green leather (task 108;

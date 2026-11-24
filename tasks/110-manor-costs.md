@@ -377,6 +377,19 @@ the phone's tier; task 115 has the split by part.
 
 Add each new cost here as it lands, with its numbers.
 
+- The rug under the games table (2026-11-24, task 107, `build/notes/rug-build/`): no
+  mesh, draw or pipeline; in the floor's shader a box test a pixel, and inside the rug's
+  area one more texture tap (anisotropic) and the lifted ray's few comparisons. Its
+  picture 1280 × 880 RGBA8 with five mips, 6.0 MB on the GPU (counted in
+  `render3d::room_bytes`), decoded, mipped on the CPU and uploaded with the room's masks;
+  the PNG adds 2.1 MB to every build, though only the tuner shows the room. The floor's
+  group binds 13 textures (`ROOM_TEXTURES`), ngfx's root has 16. The light tuner's
+  counter, headless, two rounds A B A B, means before and after (ms): at 3840 × 2160
+  straight down 11.0 and 10.6 (the rug not in view), the corner 13.35 and 13.19, the room
+  12.66 and 12.60, the menu 12.05 and 12.11, a view filled by the rug 10.75 and 10.95
+  (about 0.2 ms); at 5120 × 2880 every view 40 to 50 ms with runs differing by up to 10,
+  the rug's change inside that. Not measured on the tablet (task 115).
+
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
 
 The cameras are few and mostly still, and the home screen is one scene that can be
