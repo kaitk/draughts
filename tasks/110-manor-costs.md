@@ -8,6 +8,9 @@ branch for now. Ways to pay them, as the user sees it: bake beforehand and store
 results, or keep baking at run time behind a loader when the room or a look is chosen
 (task 101's progress bar), and per render tier (`AGENTS.md`).
 
+On a tablet (the Galaxy Tab A11+, 2026-11-24) the room draws at 45 to 56 ms a frame on
+the phone's tier; task 115 has the split by part.
+
 ## The costs so far (the Mac, 2026-11-20)
 
 - The room's oak (task 104's note): the wood bake's two fields, floor and wainscot, four

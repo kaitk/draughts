@@ -49,6 +49,7 @@ VARIANTS = {
     "aa-off":      "--aa off",
     "smaa":        "--aa smaa",
     "wind-still":  "--wind-kind still",
+    "cheap":       "--window off --box off --aa off",
     "full-tier":   "--tier full",
 }
 LINE = re.compile(r"light_tune: ([\d.]+) fps, ([\d.]+) ms a frame, worst ([\d.]+); in the loop ([\d.]+) ms")
@@ -63,12 +64,21 @@ def run_one(serial, flags, seconds):
     adb(serial, "logcat", "-c")
     args = f"{flags} --fps-seconds {seconds}".strip()
     adb(serial, "shell", "am", "start", "-n", ACTIVITY, "--es", "args", f"'{args}'")
+    # The loop ends after --fps-seconds, but on Android the process stays: done once the
+    # lines have stopped coming for a few seconds (or the process went).
     deadline = time.time() + seconds + 60
+    last, quiet = 0, 0
     while time.time() < deadline:
         time.sleep(2)
         if not adb(serial, "shell", "pidof", PACKAGE, check=False).strip():
             break
+        n = len(LINE.findall(adb(serial, "logcat", "-d", "-s", "goose")))
+        quiet = quiet + 1 if n == last and n > 0 else 0
+        last = n
+        if quiet >= 3:
+            break
     log = adb(serial, "logcat", "-d", "-s", "goose")
+    adb(serial, "shell", "am", "force-stop", PACKAGE)
     rows = [tuple(float(x) for x in m.groups()) for m in LINE.finditer(log)]
     if not rows:
         return None

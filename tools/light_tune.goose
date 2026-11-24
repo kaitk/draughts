@@ -2203,8 +2203,11 @@ fn main() {
             start_at = float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z };
         }
         if walk_now && (touch || gfx::set_mouse_relative(true)) {
-            room_on = true;
-            shell_on = true;
+            // The touch walk keeps the flags' room and shell, so a bench can leave them out.
+            if !touch {
+                room_on = true;
+                shell_on = true;
+            }
             render3d::show_room(g, room_on, away, shell_on);
             if !walk.placed { walk_from(walk, start_eye, start_at); }
             walk.on = true;

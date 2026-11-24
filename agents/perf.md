@@ -86,3 +86,12 @@ open questions with their numbers.
   what it replaces, and `docs/architecture/rendering.md` updated, in the same commit.
 - The numbers go into the task's file (`tasks/107-manor-scene.md` for the manor's speed).
 - Nothing allocates in the frame loop; code lean and plain (`AGENTS.md`).
+
+## On a tablet
+
+`scripts/android.py tools/light_tune.goose --run` installs the tuner beside the app (its own
+id); on Android it opens in the touch walk with the phone's tier (task 115).
+`python tools/perf/tablet_room_bench.py` times the four views above with each part left out,
+and writes `build/perf/tablet-room/results.json`. The device has no GPU counters, so the split
+is the profile. One device at a time; keep it awake and unlocked (`adb shell svc power stayon
+usb`), or the tuner runs without a surface.
