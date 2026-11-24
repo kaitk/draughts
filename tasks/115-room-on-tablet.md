@@ -57,12 +57,16 @@ The views are agents/perf.md's; the walk's field of view is 60°. `no-room` sits
 - **The window's pattern, 9 to 16 ms**, the largest single part: the bars', curtain's and
   leaves' light on every lit pixel. Still wind saves nothing, so it is the pattern's shading,
   not its animation. Off, the sun's patches go entirely (the look changes), so it wants
-  reworking, not dropping: baked (task 114) or evaluated more cheaply.
+  reworking, not dropping. On phones and tablets it is to be baked in the end (task 114; the
+  user, 2026-11-24).
 - **The floor's and metals' box reflection, 3 to 15 ms**, most where the floor fills the
   screen (straight down 15, corner 11, room 9, menu 3). On a phone the walls' broad
   reflection may do; it was still on in the first tries on the tablet.
-- **4× MSAA, 1 to 10 ms**, most in the views with the room's edges (corner 9, menu 10); SMAA
-  saves nearly as much.
+- **4× MSAA, 1 to 10 ms**, most in the views with the room's edges (corner 9, menu 10).
+  SMAA in its place costs only 1 to 3 ms more than no smoothing at all, so swapping to it
+  wins most of that back. It is cheaper, not better looking: it smooths the finished image,
+  so thin lines (the window's bars, the frames) may shimmer more as the view moves; to be
+  judged by eye on the tablet.
 - **Together** (no pattern, no box, no MSAA): 22 to 28 ms, about 36 to 45 fps.
 - **Small**: the books about 3 ms in the corner view, the view out, and the wind under the
   noise. The full tier (SSAO or GTAO, the mirror, HDR) adds 12 to 14 ms where the walls show, none
