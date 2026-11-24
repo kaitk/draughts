@@ -1211,6 +1211,17 @@ to be is in tasks 042, 059, 071, 081, and 086.
     other rounded edge is closed out to the box's corner. The T-junctions showed the
     glass through as single dots at the outer casement's stiles. The shell 37,906 to
     40,182 triangles.
+  - The whole shell closed once it is built (2026-11-24, `src/model3d/mesh_close.goose`):
+    vertices under 0.1 mm apart welded, then every triangle with a vertex inside one of its
+    edges split there. The wainscot's frame had 645 T-junctions with nothing behind them
+    (no wall is built behind the wainscot), a likely cause of the oak's single bright
+    pixels; with the bookcases', the paint's, the plaster's and 405 mitre gaps, 0 left. About
+    0.2 s a build on the PC; the shell 38,262 to 49,148 triangles. Rejected: closing each
+    piece by hand (the wainscot's was, first), a chain of further splits. The headless
+    check that found them (T-junctions, gaps, open and shared edges, a ray through each
+    seam for what it shows; `CRACKS_ALL=1` lists each) is removed; it is
+    `test/model3d/cracks.goose` at 94f13070. Left open: edges of more than two triangles
+    (57 to 638 after the pass) and free open edges (oak 136 to 186), not looked into.
   - The light tuner keeps the old paint one key away (J, `--paint old`) and switches each
     step alone (`--paint-off fillets,tilt,dirt,joints,tile`, `--paint-relief K`), in a
     shader of its own (`PAINT_STEPS`) used only while a switch is off, so the app's has no
