@@ -890,6 +890,9 @@ gain needs direct compressed-sample measurements.
       unchanged; the room a little brighter, as the bake takes the pale stove; costs in
       task 110. Still off: the crest not pierced, no crazing, no sun shadow or corner
       shade from it, the colour reads cream under the warm light; the tablet not checked
+      - A redesign toward `style-01`'s stove is planned (2026-11-25, `build/notes/stove-2/`):
+        a rectangular stove with canted front corners, 1.20 × 0.74 m, its front toward the
+        windows, after `library-stove-01` and `-03`, with a sharper, crazed glaze
 - [x] The chairs at the games table (2026-11-25, `build/notes/chairs-build/`): two
       Neo-Rococo balloon-back side chairs in the table's flame mahogany, one on the board's
       axis behind each player, cabriole front legs, a bowed seat rail, the back legs rising
