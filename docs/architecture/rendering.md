@@ -815,17 +815,23 @@ atlas; the fonts that set them stay with the baker.
 
 ### The library's rug
 
-A rug 3 by 2.2 m lies under the games table, along the window wall, its middle 0.1 m
+A rug 3 by 2 m lies under the games table, along the window wall, its middle 0.1 m
 farther into the room than the table's. It is no mesh: the floor's shader draws it where
 it lies (`ROOM_FRAG`'s rug, in the floor's material group), so it takes the floor's light
 as it is: the sun's patches, the table's shadow, the baked probes and the corners' shade.
 The shader lifts each floor pixel toward the eye by the rug's 8 mm to find its top, so
 from a low eye the rug has a dark side and hides the floor just behind it; past its two
-ends its fringes lie on the floor by their cover, and round it the floor is a little
-darker for 2.5 cm. The pile is wool, roughness 1, and holds none of the floor's mirror.
-Its picture (`design/materials/rug.png`, 1280 × 880 RGBA8 at 2.5 mm a texel with five
-mips, 6 MB on the GPU) is drawn by `tools/materials/rug.py`, a knot a texel, with no
-light in it. The light tuner's `--rug off` leaves it out.
+ends a cream end band and a fringe of tufts lie on the floor by their cover, each tuft
+with a small shadow round it, and round the pile the floor is darker for 3.5 cm. The
+pile is wool, roughness 1, a little brighter toward grazing (a faint sheen), and holds
+none of the floor's mirror. Its picture (`design/materials/rug.png`, 1280 × 800 RGBA8
+at 2.5 mm a texel with five mips, 5.5 MB on the GPU) is ChatGPT's rug
+(`design/manor/pieces/library-rug-01.png`, local) cut from its floor and scaled by
+`tools/materials/rug.py`, which adds the end bands, the tufts and a little wear where
+the chairs stand. The pile's colours are stored at the 2.2 gamma the shader decodes, so
+the room shows the picture's own colours; past the ends the picture holds the cream's
+shade and the tufts' shadows instead (the cream itself is `ROOM_FRAG`'s `RUG_CREAM`).
+The light tuner's `--rug off` leaves it out.
 
 ### The library's stove
 

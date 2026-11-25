@@ -763,14 +763,26 @@ to be is in tasks 042, 059, 071, 081, and 086.
   floor under it, its fringes past the ends by their cover. The rug then takes all of the
   floor's light for one texture tap and a few comparisons in the floor's shader, and adds
   no draw, pipeline or material group; the floor's mirror and the herringbone's joints
-  and wax fade out under it. Its picture is drawn by our own baker
-  (`tools/materials/rug.py`), a knot a texel, with no light or wrinkles in it; the first
-  bake from a downloaded photograph kept the photograph's wrinkles in its colour. Its
-  size and place (3 by 2.2 m along the window wall, its middle 0.1 m into the room from
+  and wax fade out under it. Its size and place (3 by 2 m along the window wall, its middle 0.1 m into the room from
   the table's, so 0.2 m of floor shows before the window wall) are task 109's plan; the
   0.1 m is a choice made here. Rejected: a mesh of its own with the floor's lighting in a
   new group (a second floor shader and pipeline for a few millimetres of side), and the
   rug in the room's probes' bake (the floor's mean albedo stands for it).
+- The rug's picture is ChatGPT's (`design/manor/pieces/library-rug-01.png`), cut from its
+  floor and scaled to the pile (2026-11-25, task 107, `build/notes/rug-swap/`; replaces
+  the 2026-11-24 choice of a design drawn by our own baker, which the user found read as
+  clip-art beside it). The rug went from 3 by 2.2 m to 3 by 2 m so the picture keeps its
+  3:2. The baker (`tools/materials/rug.py`) keeps only what the picture lacks: a cream
+  end band and a fringe of irregular tufts with their small shadows (the concepts'
+  `style-01`), and a little more wear where the chairs stand and along the walk. The
+  pile's colours are stored at the shader's 2.2 gamma, not sRGB's curve, so its darks
+  aren't darkened by the decode; no tint or scale goes on the albedo (a grey stand-in
+  lit in its place gave the room's light, and the rug under it reads as the picture
+  within the tone curve's toe). The edge as the concepts: the side at 0.3 of the pile,
+  the floor's contact to 0.4 over 3.5 cm, the floor's mirror stopping at the rug.
+  Rejected: our own drawn design (too clean, graphic), the first download-based bake (a
+  photograph with wrinkles in its colour), and a second texture tap for the tufts'
+  shadows (they are baked into the picture's G past the ends).
 - The library's stove is option A of `build/notes/stove/` (2026-11-24, task 107,
   `build/notes/stove-build/`; `room_shell::stove`): a pale celadon corner stove with a cut
   front corner, 3.42 m to its crest's top, in the corner of the hall wall and the stove's

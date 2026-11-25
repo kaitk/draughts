@@ -152,7 +152,7 @@ bool draughts_outside_picture(int64_t which, bytes out, int64_t w, int64_t h) {
     return decode_rgba(band, sizeof band, out, w, h);
 }
 
-// The rug under the games table into `out`, w × h RGBA8 as stored (sRGB albedo, coverage in
+// The rug under the games table into `out`, w × h RGBA8 as stored (albedo at a 2.2 gamma, coverage in
 // A), or false when it isn't built in or isn't that size.
 bool draughts_rug(bytes out, int64_t w, int64_t h) {
     return decode_rgba(rug, sizeof rug, out, w, h);

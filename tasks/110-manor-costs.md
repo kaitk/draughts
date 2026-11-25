@@ -389,6 +389,12 @@ Add each new cost here as it lands, with its numbers.
   12.66 and 12.60, the menu 12.05 and 12.11, a view filled by the rug 10.75 and 10.95
   (about 0.2 ms); at 5120 × 2880 every view 40 to 50 ms with runs differing by up to 10,
   the rug's change inside that. Not measured on the tablet (task 115).
+  ChatGPT's picture instead (2026-11-25, `build/notes/rug-swap/`): 1280 × 800, 5.5 MB on
+  the GPU, the PNG 2.7 MB; the shader the same one tap with a few more operations (the
+  tufts' cream and shadows, the sheen, a softer contact). At 3840 × 2160, A B A B, before
+  and after (ms): straight down 10.85 and 10.82, the corner 14.14 and 14.16, the room
+  13.52 and 13.41 (five runs each), the menu 12.51 and 12.47, filled by the rug 11.27 and
+  11.42: no change past the runs' spread.
 - The library's tiled stove (2026-11-24, task 107, `build/notes/stove-build/`): about
   1,200 triangles in the shell's one mesh (the shortened wainscot gave back 1,265), no new
   draw or pipeline; its glaze is a branch of the metals' shader with one more texture, a

@@ -3254,11 +3254,13 @@ let ROOM_FRAG = """
     const float SCRATCH_TILE = 48.0;
     // The rug (tools/materials/rug.py's HALF and its picture's size, metres): its pile's half
     // length along the window wall and half width, the picture's length with the fringes and
-    // its width, its middle this far into the room from the table's, and its thickness.
-    const vec2 RUG_HALF = vec2(1.5, 1.1);
-    const vec2 RUG_TEX = vec2(3.2, 2.2);
+    // its width, its middle this far into the room from the table's, and its thickness; the
+    // end bands' and fringes' cream (linear, its shade in the picture's r).
+    const vec2 RUG_HALF = vec2(1.5, 1.0);
+    const vec2 RUG_TEX = vec2(3.2, 2.0);
     const float RUG_IN = 0.1;
     const float RUG_THICK = 0.008;
+    const vec3 RUG_CREAM = vec3(0.5, 0.44, 0.33);
     // The stove's glaze (room_shell's stove.goose and stove_relief.goose): the body's colour
     // under its clear coat and the lime grout's (sRGB), a tile (metres), a tile's tilt at most
     // (its tangent, 1.2°), how far in from a joint it rolls over, the coat's roughness, the
@@ -3959,11 +3961,16 @@ let ROOM_FRAG = """
                 bool on_side = !on_top && max(out_q.x, out_q.y) < 0.0;
                 vec2 at = on_top ? q + lift : q;
                 vec4 r4 = textureGrad(rug_map, at / RUG_TEX + 0.5, dx / (shell.w * RUG_TEX), dy / (shell.w * RUG_TEX));
-                float fringe = abs(q.x) < 0.5 * RUG_TEX.x && out_q.y < 0.0 ? r4.a : 0.0;
-                float cover = on_top || on_side ? 1.0 : fringe;
-                // The pile rolls over at its edge; the side is in its own shade.
+                bool ends = !on_top && !on_side && abs(q.x) < 0.5 * RUG_TEX.x && out_q.y < 0.0;
+                float cover = on_top || on_side ? 1.0 : (ends ? r4.a : 0.0);
+                // The pile rolls over at its edge, with a faint sheen of the wool toward
+                // grazing; the side is in its own shade. Past the ends the band's and the
+                // tufts' cream by its shade, and the tufts' small shadows on the floor.
                 float edge = on_top ? clamp(-max(out_top.x, out_top.y) / 0.004, 0.0, 1.0) : 0.0;
-                vec3 pile = srgb(r4.rgb) * (on_top ? 0.75 + 0.25 * edge : 0.45);
+                float graze = 1.0 - to_eye.y * inversesqrt(dot(to_eye, to_eye));
+                graze *= graze;
+                vec3 pile = ends ? RUG_CREAM * r4.r
+                                 : srgb(r4.rgb) * (on_top ? (0.7 + 0.3 * edge) * (1.0 + 0.25 * graze * graze) : 0.3);
                 albedo = mix(albedo, pile, cover);
                 rough = mix(rough, 1.0, cover);
                 n = normalize(mix(n, ng, cover));
@@ -3972,7 +3979,10 @@ let ROOM_FRAG = """
                 wax *= 1.0 - cover;
                 n_film = normalize(mix(n_film, ng, cover));
             #endif
-                if (!on_top && !on_side) ao *= mix(0.55, 1.0, smoothstep(0.0, 0.025, length(max(out_q, 0.0))));
+                if (!on_top && !on_side) {
+                    float off = length(max(out_q, 0.0));
+                    ao *= mix(0.4, 1.0, sqrt(smoothstep(0.0, 0.035, off))) * (1.0 - (ends ? r4.g : 0.0));
+                }
             }
             // The table hides the sky under it, its scroll toes the floor they stand on,
             // and the walls along their feet. In the room the top's broad shade is the
