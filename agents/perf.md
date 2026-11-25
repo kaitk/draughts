@@ -21,6 +21,13 @@ profiling") holds the tools' details; `agents/goose.md` ("Speed") the code's rul
   header comment at it, and remove the previous stable binary if no process runs it
   (`pgrep -f`). The user tries changes with `build/stable/run-tuner.sh`.
 
+- The phone tier's room shaders take `src/render3d/room_fixed.goose`'s constants. After a change
+  to a look, the shell, or the `Surfaces` block, write it again from the tuner's phone tier:
+  `--phone-tier --view room --shot X.png --dump-room-block B.bin`, then
+  `python scripts/room_fixed.py B.bin src/render3d/room_fixed.goose`. A stale one isn't wrong,
+  only slow: the tuner prints `the room's constants are stale at <member>` with `--shot`, and the
+  uniform shaders draw. A member the app's state changes goes in the script's `KEEP`.
+
 ## Views
 
 Headless (`GOOSE_GFX_HEADLESS=1`), from `tools/`, with the tuner's defaults (GTAO on), at

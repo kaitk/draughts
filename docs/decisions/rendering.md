@@ -2113,6 +2113,37 @@ to be is in tasks 042, 059, 071, 081, and 086.
   lace, the mirror, the board, the table and the dust still trace. Rejected: baking the
   tree into the casements' channels (their mip blurred its dapple away), and baking the map
   each frame while the wind moves (kept to the still parts, for simplicity).
+- The phone tier's room shaders take the room's fixed numbers as constants (2026-11-24, task
+  115; `src/render3d/room_fixed.goose`, `render3d_gpu::room_frag_fixed`): a Valhall Mali
+  holds 128 uniform components in registers, and the room's shaders read 56 to 100 vec4s of
+  them, each past the registers a load a pixel, so they were bound by those loads, not their
+  math. `scripts/room_fixed.py` writes the `Surfaces` block's members from the light tuner's
+  dump in the phone's tier as GLSL constants, after `ROOM_HEAD`, each sent there by a
+  `#define`, so the block's layout and the CPU's side don't change. What the app's state
+  changes (the sun and the tint on the room, the baked light's switches, the view out's
+  light, the table's map) stays uniform (its `KEEP`), so one set of shaders serves every
+  season. When the room's pipelines are made the renderer checks the constants' bytes against
+  the block it would bind, and where one differs (looks tuned since) it draws with the
+  uniform shaders and the tuner names the member (`render3d::room_fixed_stale`). The
+  tablet's frame 36 to 28, 41 to 33 and 38 to 32 ms (straight down, corner, room); all
+  constants would save under a ms more. Only the phone tier (`NO_SSAO`): ngfx, a desktop's,
+  keeps the uniforms and draws the same picture. Rejected: a packed block per material group
+  (no folding into the math, which halved the floor's), constants for every member (a set
+  of shaders per season and time of day, slow pipeline builds on a Mali at each change), and
+  FP16 alone (`mediump` everywhere gave 74% half precision and the same cycles: the
+  conversions rose as the math fell).
+- The phone tier's sharp box reflection reads the box's baked light from a map (2026-11-24,
+  task 115; `render3d::box_map`, `render3d_gpu::box_map_pass`): the probes' irradiance on
+  the shell box's six faces, a texel each 4 cm in RGBA16F, baked again when the probes, the
+  sun, the window's light map or the box's surfaces change, one tap where a reflected ray
+  ends in place of the probes' lookup. The surface there (`box_albedo`) and the sun through
+  the windows (`box_sun`) stay per pixel, and the window wall's windows stay traced. The
+  tablet's frame 1.8, 0.6 and 0.4 ms faster (straight down, corner, room), the picture the
+  same. With the constants only (`room_frag_fixed`, which it needs for its variants), so not
+  on ngfx. Rejected: the whole light leaving the box in the map (the surface's and the sun
+  patches' sharp edges blurred to 4 cm, up to 60 levels off in 1500 pixels of a view), a
+  finer map (2 cm still blurred them) and tracing hits nearer than 8 texels exactly (the
+  branch cost what the map saved).
 - Trace the floor's sun before evaluating the view direction, light colour and
   occlusion (2026-11-23, task 110). The M1 Pro's straight-down view went from
   10.87 to 10.53 ms at 4K and from 18.39 to 17.82 ms at 5K. All four views at

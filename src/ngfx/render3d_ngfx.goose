@@ -230,6 +230,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
 // The window's light map (render3d::window_map): not baked here, so the room's shaders trace
 // the shell's windows a pixel (shell_open) and the lace keeps its slot.
 fn window_map_pass(own: Own&, g: Gpu&) {}
+fn box_map_pass(own: Own&, g: Gpu&) {}
 
 // The dust's pipeline and seeds (render3d::Dust), made the first time they are wanted,
 // before any pass.

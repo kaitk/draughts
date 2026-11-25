@@ -384,11 +384,19 @@ struct Gpu {
     floor_corners: corner_map::RoomVertex[4],
     sun:           SunDerived,
     // The window's light map (window_map), RGBA8 with its mips, what it was baked from, its
-    // bake's pipeline, and whether the room's pipelines read it (room_mapped).
+    // bake's pipeline, and whether the room's pipelines read it (room_mapped), and whether
+    // they take the room's block as constants (room_fixed, room_fixed_on).
     window_map:      Texture,
     window_map_for:  float4[WINDOW_MAP_KEY],
     window_map_bake: Pipeline,
     room_mapped:     bool,
+    room_fixed:      bool,
+    // The box's map (box_map), RGBA16F, what it was baked from, its bake's pipeline, and
+    // whether the room's pipelines read it (room_boxed).
+    box_map:         Texture,
+    box_map_for:     float4[BOX_MAP_KEY],
+    box_map_bake:    Pipeline,
+    room_boxed:      bool,
     // The room's pipelines, one a material group (room_group), made when first wanted
     // (make_room) for the tier: room_ssao, with the screen's maps (ssao_allowed), or a
     // phone's without them. The floor here sees the room's box; room_planar the mirror.
@@ -989,6 +997,16 @@ fn sun_derived<O>(o: O&, g: Gpu&) {
 // the table or the dust, which trace the windows as before. window_map_on false: shell_open
 // a pixel everywhere (the light tuner's --window-map off).
 var window_map_on = true;
+// The phone's tier's room shaders with the Surfaces block as constants (render3d_gpu's
+// room_frag_fixed, room_fixed.goose; the light tuner's --room-fixed off for the uniforms).
+var room_fixed_on = true;
+// The first member whose constant isn't the block's any more (render3d_gpu's fixed_current):
+// the looks tuned since scripts/room_fixed.py ran, or a state it doesn't keep. Where one is,
+// the uniform shaders draw the room; the light tuner says which.
+var room_fixed_stale: const u8[:] = "";
+// The sharp box's light from the box's map on the phone's tier (box_map; the light
+// tuner's --box-map off traces it a pixel as before).
+var box_map_on = true;
 let WINDOW_MAP_W = 2048;   // shaders::WINDOW_MAP_SIZE: 7.7 m by 3.15 m, a texel about 3.8 mm
 let WINDOW_MAP_H = 832;
 // The phone's tier's leaves (its shaders light none of their own): baked into the map at the
@@ -1034,6 +1052,45 @@ fn window_map<O>(o: O&, g: Gpu&) {
     guard !same else { return; }
     g.window_map_for = key;
     o.window_map_pass(g);
+}
+
+// The box's map (render3d_gpu::box_map_pass, task 115): the light leaving the shell's
+// box (shaders::box_irradiance, the baked light) a texel each 4 cm on its six faces, which the phone
+// tier's sharp reflection (SHARP_BOX on the floor and the metals) reads in one tap, with the
+// surface there (box_albedo) and the sun through the windows (box_sun) worked out as before, in place of the second probe lookup; the windows
+// on the window wall it still traces. Baked again when what it is made from changes: the
+// probes, the window's light map, the sun, the room's light and the box's surfaces.
+fn box_map_shown(g: Gpu&) -> bool {
+    box_map_on && !ssao_allowed && sharp_box_allowed && window_map_shown(g) && light_baked(g) && g.light_volume.id != 0
+}
+let BOX_MAP_KEY = 50;
+fn box_map_key(g: Gpu&) -> float4[BOX_MAP_KEY] {
+    let b = surfaces_block(g);
+    let f = g.frame;
+    var k: float4[BOX_MAP_KEY] = [float4_0; BOX_MAP_KEY];
+    for i in LIGHT_KEY { k[i] = g.light_for[i]; }
+    for i in WINDOW_MAP_KEY { k[LIGHT_KEY + i] = g.window_map_for[i]; }
+    var at = LIGHT_KEY + WINDOW_MAP_KEY;
+    for v in [f.light_dir, f.light_color, f.params, b.shade, b.paper, b.gold, b.ceiling_light, b.paint, b.room_baked, b.room_sun,
+              b.shell_sun, b.room_box, b.room_doors, b.room_heights, b.book_cases, b.light_box, b.light_grid] {
+        k[at] = v;
+        at++;
+    }
+    for i in 9 {
+        k[at] = f.sh[i];
+        at++;
+    }
+    k[at] = float4 { g.light_volume.id, g.window_map.id, 0.0, 0.0 };
+    return k;
+}
+fn box_map<O>(o: O&, g: Gpu&) {
+    guard box_map_shown(g) else { return; }
+    let key = box_map_key(g);
+    var same = g.box_map.id != 0;
+    for k in BOX_MAP_KEY { same = same && same4(key[k], g.box_map_for[k]); }
+    guard !same else { return; }
+    g.box_map_for = key;
+    o.box_map_pass(g);
 }
 
 // The floor's pieces into piece_verts and piece_indices, by kind (g.sun.first, count), from
@@ -1369,6 +1426,10 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool, mirror: bool = f
     } else if group == GROUP_METALS {
         add_texture(t, g.book_atlas, g.aniso);
         add_texture(t, g.stove_relief, g.aniso);
+    }
+    // The box's map after the floor's and metals' own, on the phone's tier (box_map).
+    if g.room_boxed && !ssao && !planar && !mirror && (group == GROUP_FLOOR || group == GROUP_METALS) {
+        add_texture(t, g.box_map, g.linear);
     }
     if group == GROUP_GLASS { add_texture(t, if g.glass_tile.id != 0 { g.glass_tile } else { g.crown_map }, g.aniso); }
     if ssao {
@@ -3218,6 +3279,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     table_map(o, g);
     sun_derived(o, g);
     window_map(o, g);
+    box_map(o, g);
     if g.shadow_dirty || shadow_every {
         o.shadow_pass(g);
         g.shadow_dirty = false;

@@ -135,6 +135,126 @@ Cool (thermal status 0 before and after), ms a frame, one run each, the base twi
 - The target (a steady 30, about 28 ms with room to warm) is within the box's saving and a
   few ms of the shaders'.
 
+## The room's shaders by the Mali Offline Compiler (2026-11-24, room-light 1a0b1a9d)
+
+`tools/perf/shader_report.py --core Mali-G615 --table --only room_` (malioc 2026.5, driver
+r56p1), the phone's tier as `make_room_tier` makes it: no screen maps, the window's light map,
+the sharp box on the floor and metals. Cycles a pixel on the longest path, arithmetic / load-store;
+spill the stack's spill region and the bytes it moves:
+
+| Shader | G615 A / LS | G710 A / LS | G68 A / LS | Spill (G615) | Bound |
+|---|---|---|---|---|---|
+| floor, with the box | 43.9 / 168 | 82.3 / 168 | 116 / 166 | 150 B / 848 | LS |
+| floor, no box | 26.2 / 53 | 49.4 / 53 | 69.5 / 65 | 8 B / 16 | LS (G68 A) |
+| walls (paper, books' cases) | 23.0 / 50 | 43.3 / 50 | 61 / 53 | 12 B / 60 | LS (G68 A) |
+| paint | 23.0 / 43 | 43.1 / 43 | 61 / 40 | 12 B / 60 | LS (G710, G68 A) |
+| sill | 22.9 / 44 | 43.1 / 44 | 61 / 61 | none | LS |
+| metals, with the box | 39.5 / 190 | 74.1 / 190 | 105 / 170 | 182 B / 860 | LS |
+| metals, no box | 21.6 / 46 | 40.7 / 46 | 58 / 47 | 12 B / 24 | LS (G68 A) |
+| table | total 42 / 73 (a loop) | | | 174 B / 744 | LS |
+| glass, lace | total 31 / 16 and 30 / 11 | | | glass 66 B | A |
+| view out | 9.4 / 0 | 17.5 / 0 | 25.8 / 0 | none | A |
+
+Every room shader uses all 64 work registers (half occupancy), all 128 uniform registers, and no
+16-bit arithmetic. Texture and varying cycles are 1 to 7, never the limit.
+
+- **Uniform loads are the bound.** A Valhall Mali keeps 128 32-bit uniform components in
+  registers; each vec4 read past them is about one load/store cycle a pixel (scratch tests: 96
+  vec4s whole cost 64 LS cycles, their `.x` alone none). The room's shaders read 56 to 63 vec4s
+  of `Frame` (31: the sun, the window's panes, the wind and tree, `sh[9]`) and `Surfaces` (25 to
+  32), the metals 102, the table 116. With `Surfaces` as constants in a scratch copy, the sill's
+  LS fell 44 → 1 and the floor's 168 → 3, its spill 150 B → 2 and its arithmetic 43.9 → 19.3
+  (the constants fold into the math). The room's shell would be bound by arithmetic at about
+  half its cycles now.
+- **The sharp box** adds 115 to 145 LS cycles and the spills on the floor and metals: mostly the
+  same loads, the window's geometry read again per traced ray, and registers it holds.
+- **FP16 waits on that.** Arithmetic isn't the G615's or G710's limit yet; it is the G68's (the
+  A33), where it and the loads are about even.
+- The ways to cut the loads: the shell's fixed numbers as constants in the app's shaders, made
+  from the tuned values at build time, the tuner keeping uniforms; or a small packed block per
+  material group with only what it reads (fewer folds, no build step). The user chose the
+  constants (2026-11-24).
+
+### The block as constants on the tablet (2026-11-24, room-light 05758174)
+
+`--room-fixed on` gives the phone tier's room shaders the whole `Surfaces` block as constants
+(`src/render3d/room_fixed.goose`, made by `scripts/room_fixed.py` from the tuner's
+`--dump-room-block` in the phone tier). `Frame` and the table's blocks stay uniforms. The
+picture is the same: on the PC, one pixel of the room view 9 levels off, the rest within 2.
+Cool (thermal status 0 throughout), ms a frame:
+
+| View | base | fixed | saved |
+|---|---|---|---|
+| Down | 35.5 / 36.9 / 35.7 / 35.9; quick 37.4 | 27.4 / 27.4; quick 27.4 | 8.6 |
+| Corner | 41.1 / 41.0 / 39.2 / 41.6; quick 39.7 | 32.9 / 33.0; quick 33.0 | 7.4 |
+| Room | 37.6 / 38.7 / 38.4 / 37.4; quick 37.7 | 32.0 / 31.9; quick 31.8 | 6.1 |
+
+A steady 30 now in every view, from the uniforms alone. Not yet the default: some members
+depend on the tuner's switches and the room's state (the baked light, the light map, the
+tint), so the real version keeps those uniform, or makes the constants for each state the app
+shows. `Frame` (31 vec4s the room reads) is next by the same means, then ngfx's parity.
+
+The bench's `--quick` (5 s of frames a run, no base at the end) took 1 min 37 s for these
+six runs, the full runs about 7 min, with the same figures within 2 ms.
+
+### The split with the constants by default (2026-11-24, room-light 733a308c)
+
+The state's members uniform (`KEEP`), the rest constants, the default. The quick bench, cool,
+ms a frame:
+
+| View | base | no books | no outside | AA off | wind still | no shell | 0.75 scale | leaves off |
+|---|---|---|---|---|---|---|---|---|
+| Down | 28.2 | 28.2 | 28.7 | 25.7 | 28.2 | 25.0 | 18.6 | 28.2 |
+| Corner | 33.4 | 32.3 | 32.3 | 30.5 | 33.3 | 15.4 | 22.8 | 33.3 |
+| Room | 32.2 | 32.1 | 31.1 | 29.5 | 32.2 | 13.6 | 21.9 | 32.1 |
+
+The shell is still most of the frame (18 to 19 ms of the corner's and room's).
+
+### Half precision (2026-11-24)
+
+`mediump` throughout the room's fragment shaders (74% of the math in FP16 by malioc) left the
+cycles where they were: the conversions (CVT) rose as the multiply-adds fell. Set aside; the
+item below is ticked as tried.
+
+### The box's map (2026-11-24)
+
+The sharp box reflection's baked light (the probes' irradiance on the box's six faces, where
+the floor and the metals' reflected rays end) is a texture now: `render3d::box_map`, a texel
+each 4 cm in RGBA16F, baked when the probes, the sun, the window's light map or the box's
+surfaces change, read in one tap. What has sharp edges is still worked out per pixel: the
+surface there (`box_albedo`: the doors, the bookcases, the wainscot) and the sun's patches
+through the windows (`box_sun`); a first version that baked those too blurred the sun's edges
+under a tilted floor and the doors' outlines (60 levels in 1500 pixels). The windows on the
+window wall are traced as before.
+
+On the PC the four views match (`--box-map off` against on): at most 4 levels, but for 6
+pixels of the room view. The faces' cells are sized with half a texel to spare, since a face
+a whole number of texels long put `ceil` on its edge and the constant-folded shader and the
+CPU disagreed by one texel. Cool, the quick bench, ms a frame (two rounds):
+
+| View | traced (`--box-map off`) | map | saved |
+|---|---|---|---|
+| Down | 28.3 / 28.3 | 26.5 / 26.5 | 1.8 |
+| Corner | 33.4 / 33.4 | 32.7 / 32.9 | 0.6 |
+| Room | 32.2 / 32.3 | 31.8 / 31.9 | 0.4 |
+
+Malioc (G615): the floor 22.02 to 21.34 cycles, the metals 18.41 to 17.25 (and their spill
+gone); the bake 7.47 a texel, once.
+
+### Where the floor's cycles go (2026-11-24, malioc ablations)
+
+The floor's phone shader (`room_floor_boxmap_fixed`, longest path 21.34 cycles on the G615)
+with one term at a time replaced by a constant: the sharp reflection 7.1, the table's shade
+3.0 (`table_shade`, the branch the table's map skips at run time), `window_open` 1.5,
+`case_shade` 0.7, the baked light 1.0, the sun's highlight 0.5, the normals' variance 0.25,
+the scratches 0.07, the corners' map 0. The materials' detail costs next to nothing, so
+phone-tier materials would buy under a cycle; the reflection is the cost.
+
+The reflection's windows: only the window nearest where the ray meets the wall is worked out
+(the loop did all three). The picture is identical on both tiers; malioc's floor 21.34 to
+19.53, the metals 17.25 to 15.35; the tablet within its noise (26.7 / 32.5 / 31.7 ms), since
+the loop's early-out already skipped the windows a ray misses.
+
 ## The iPhone 13 mini (2026-11-24)
 
 The iPhone 13 mini (A15, 2340 × 1080 landscape, 60 Hz), native, the phone's tier with 4× MSAA,
@@ -152,14 +272,16 @@ A33 likely: its Mali-G68 MP4 is older and no faster, at 2400 × 1080's 13% more 
 steps down, measured as task 081's 2× MSAA fallback is (the user, 2026-11-24).
 The approaches agreed, in order:
 
-- [ ] Rank the room's shaders with the Mali Offline Compiler (cycles, registers and the bound
+- [x] Rank the room's shaders with the Mali Offline Compiler (cycles, registers and the bound
       unit per shader, for the G615 and G710), no device needed
-- [ ] Half precision (FP16) for colour, light and BRDF math in the dearest shaders; positions
-      and depth stay full
+- [x] Half precision (FP16) for colour, light and BRDF math in the dearest shaders; positions
+      and depth stay full (tried: no gain, above)
 - [ ] The sharp box reflection cheaper on phones: its windows, bars and view out from the
-      light map or a small baked texture, not traced per floor pixel
+      light map or a small baked texture, not traced per floor pixel (its baked light is a
+      map now, above; the windows still traced)
 - [ ] Phone-tier versions of the materials: what doesn't read at tablet size dropped (the
-      second sheen lobe, the paint's relief, the floor's scratches and slow noise, grime)
+      second sheen lobe, the paint's relief, the floor's scratches and slow noise, grime);
+      measured on the floor at under a cycle (above)
 - [ ] Detail faded by screen size in the shader (`fwidth`): small surfaces skip normal and
       relief detail
 - [ ] Smooth terms (the baked light's taps) shared over a 2 × 2 quad, if the devices'

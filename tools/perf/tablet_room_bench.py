@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """Times the light tuner's room on an Android device, view by view and part by part.
 
-    python tools/perf/tablet_room_bench.py [--serial S] [--seconds 24] [--views corner,room]
+    python tools/perf/tablet_room_bench.py [--serial S] [--views corner,room]
         [--variants base,scale75] [--extra "--scene-scale 0.5"] [--out build/perf/tablet-room/results.json]
+        [--quick] [--seconds 13]
 
 The tuner (scripts/android.py tools/light_tune.goose --run) runs in its touch walk with the
 phone's tier, so each run starts it with the view's camera and the variant's flags and
 --fps-seconds, which prints the frame counter each half second and quits. The first
-intervals hold the bakes and the GPU filling, so a run's figure is the median of its last
-half. The base runs again at the end, so a device that warmed up shows it. --extra goes on
+intervals hold the GPU filling, so a run's figure is the median of its last half; --seconds
+counts the frames' seconds from the first line, after the bakes (13 by default, about the
+26 intervals of the runs before 2026-11-24's evening). The base runs again at the end, so a device that warmed up shows it. --extra goes on
 every run (a phone's bigger screen split at half the scale). The tuner holds itself in
 landscape on Android (src/native/tuner_landscape.c), so a phone frames the views as a tablet.
+--quick, for iterating: 5 seconds of frames a run and no base at the end. Two runs of one view agree
+to 1 or 2 ms, so a change of several ms shows; the numbers a task records take the full runs.
 
 The views are agents/perf.md's. The variants each leave one part out (or change the scale),
 so the split says what each costs; parts overlap, so they don't add up.
@@ -56,6 +60,8 @@ VARIANTS = {
     "full-tier":   "--tier full",
     "map-off":     "--window-map off",
     "leaves-off":  "--phone-leaves off",
+    "uniforms":    "--room-fixed off",
+    "box-traced":  "--box-map off",
 }
 LINE = re.compile(r"light_tune: ([\d.]+) fps, ([\d.]+) ms a frame, worst ([\d.]+); in the loop ([\d.]+) ms")
 
@@ -67,26 +73,24 @@ def adb(serial, *args, check=True):
 def run_one(serial, flags, seconds):
     adb(serial, "shell", "am", "force-stop", PACKAGE)
     adb(serial, "logcat", "-c")
-    args = f"{flags} --fps-seconds {seconds}".strip()
+    # `seconds` of frame lines (two a second), counted here from the first: --fps-seconds
+    # counts from the start, the bakes in it, so it is only the run's limit.
+    want = 2 * seconds
+    args = f"{flags} --fps-seconds {seconds + 90}".strip()
     adb(serial, "shell", "am", "start", "-n", ACTIVITY, "--es", "args", f"'{args}'")
-    # The loop ends after --fps-seconds, but on Android the process stays: done once the
-    # lines have stopped coming for a few seconds (or the process went).
-    deadline = time.time() + seconds + 60
-    last, quiet = 0, 0
+    deadline = time.time() + seconds + 90
     while time.time() < deadline:
-        time.sleep(2)
-        if not adb(serial, "shell", "pidof", PACKAGE, check=False).strip():
+        time.sleep(1)
+        if len(LINE.findall(adb(serial, "logcat", "-d", "-s", "goose"))) >= want:
             break
-        n = len(LINE.findall(adb(serial, "logcat", "-d", "-s", "goose")))
-        quiet = quiet + 1 if n == last and n > 0 else 0
-        last = n
-        if quiet >= 3:
+        if not adb(serial, "shell", "pidof", PACKAGE, check=False).strip():
             break
     log = adb(serial, "logcat", "-d", "-s", "goose")
     adb(serial, "shell", "am", "force-stop", PACKAGE)
     rows = [tuple(float(x) for x in m.groups()) for m in LINE.finditer(log)]
     if not rows:
         return None
+    rows = rows[:want]
     steady = rows[len(rows) // 2:]
     return {
         "intervals": len(rows),
@@ -100,18 +104,20 @@ def run_one(serial, flags, seconds):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--serial", default=os.environ.get("ANDROID_SERIAL", ""))
-    ap.add_argument("--seconds", type=int, default=24)
+    ap.add_argument("--seconds", type=int, default=0, help="each run's seconds of frames after the bakes (13, --quick 5)")
+    ap.add_argument("--quick", action="store_true", help="5 seconds of frames a run, no base again at the end")
     ap.add_argument("--views", default=",".join(VIEWS))
     ap.add_argument("--variants", default=",".join(VARIANTS))
     ap.add_argument("--extra", default="", help="flags added to every run")
     ap.add_argument("--out", type=Path, default=ROOT / "build/perf/tablet-room/results.json")
     a = ap.parse_args()
+    a.seconds = a.seconds or (5 if a.quick else 13)
     serial = a.serial or adb_default()
     model = adb(serial, "shell", "getprop", "ro.product.model").strip()
     results = {"device": model, "seconds": a.seconds, "extra": a.extra, "runs": []}
     variants = a.variants.split(",")
     plan = [(v, var) for v in a.views.split(",") for var in variants]
-    if "base" in variants:
+    if "base" in variants and not a.quick:
         plan += [(v, "base") for v in a.views.split(",")]
     for view, variant in plan:
         flags = " ".join(f for f in (VIEWS[view], VARIANTS[variant], a.extra) if f)

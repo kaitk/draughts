@@ -350,7 +350,11 @@ an idle figure; one while charging has no battery estimate, so CPU time is the m
 
 - `tools/perf/shader_report.py --core Mali-G615` (or G710, G68) with Arm's `malioc` on PATH:
   each shader's registers, spills, and cycles. Weigh a feature with a scratch copy that
-  replaces it by a constant.
+  replaces it by a constant. It finds malioc in Program Files on Windows. `--table` gives
+  one line a shader (registers, occupancy, spill, FP16 share, cycles a unit, the bound);
+  `--only room_` keeps the names starting so. The room's entries are the phone's tier;
+  keep them in step with `make_room_tier`'s `room_frag`. `-d` on malioc itself splits the
+  arithmetic into FMA, CVT and SFU.
 - Streamline on the Pixel 7a (a `--debuggable` build): push gatord with
   `streamline_me.py`, run it by hand with `--android-pkg` alone in the background, then
   `am start -S` with the flags quoted as above (press HOME first). A `configuration.xml`
