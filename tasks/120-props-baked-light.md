@@ -127,3 +127,37 @@ Off, every view is today's within 1 level, none over 8; the game's shot unchange
 down unchanged. Time at 3840 × 2160 (`mac_room_bench`, two rounds): the table view 12.85
 → 13.38 ms (+0.53), the corner 14.05 → 14.28 (+0.22). Shots and crops:
 `build/notes/props-light/`.
+
+## Review: why the props look flat (2026-11-26)
+
+The user judged `on` flat: the chairs and the table's base the same all round, "like an
+unshaded 1990s object", where a photo of a period room lit by a window shows strong falloff
+by direction and dark undersides. An independent review (scratch tools and numbers in
+`build/review120/`) measured, with no bug found in the wiring (the bake reaches the pixels,
+in the right space, on the right vertices):
+
+- The chair's rear back pad rises 18 mm over a flush frame: the bake leaves it open (0.93
+  at 11 mm from the rim, 0.99 at 20); the roundness it had before was the hand-made 40 mm
+  edge darkening (0.45 at the rim), not occlusion. The front pad the bake does darken (0.40
+  open at 9 mm, 0.78 at 28, its foot over the seat 0.75 to 0.87 out to 100 mm).
+- The flatness is the indirect light's, in today's look too: the probes are directional
+  (at a chair 0.085 from above, 0.029 from below, green, over pi), but two terms blind to
+  direction are added to every face beside them, `room_shade` (0.034) and the look's
+  harmonics times `room_mix.y` (0.005 to 0.018): about as large as the grid, they take the
+  chair's up/down ratio from 2.9 to 1.8 and the base's room/window ratio from 3.0 to 1.6.
+  With `on` the shaded parts got lighter (the right chair's back pad 30%).
+- Under and beside the table the indirect light comes from the room side and from above:
+  the low sun's floor patches lie 1.6 to 2.3 m into the room, and `under_table` cuts the
+  window's sky from the probes under the top. Whether the sky against the bounced sun is
+  balanced right is open.
+- The base under the top loses its sky twice (the probes' `under_table` and the bake);
+  the chair's frame shows a step at its closed line's seam (duplicate vertices, each its
+  own ray turn).
+- Missing against a path tracer: the window as a compact source (L1 smears it), the
+  blockers' own light (the cream cloth's crease between seat and back), the props in the
+  probes' view.
+
+Next (the user, 2026-11-26): a CPU path-traced reference of the room with its meshes, the
+sun through the windows and the sky, several bounces, at points on the chairs and the base,
+before any redesign; then the redesign in steps checked against it. The shell's props'
+unfinished work waits in a stash.
