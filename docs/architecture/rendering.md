@@ -820,17 +820,15 @@ farther into the room than the table's. It is no mesh: the floor's shader draws 
 it lies (`ROOM_FRAG`'s rug, in the floor's material group), so it takes the floor's light
 as it is: the sun's patches, the table's shadow, the baked probes and the corners' shade.
 The shader lifts each floor pixel toward the eye by the rug's 8 mm to find its top, so
-from a low eye the rug has a dark side and hides the floor just behind it; past its two
-ends a cream end band and a fringe of tufts lie on the floor by their cover, each tuft
-with a small shadow round it, and round the pile the floor is darker for 3.5 cm. The
+from a low eye the rug has a dark side and hides the floor just behind it; round the pile,
+on all four sides alike, the floor is darker for 3.5 cm. The
 pile is wool, roughness 1, a little brighter toward grazing (a faint sheen), and holds
-none of the floor's mirror. Its picture (`design/materials/rug.png`, 1280 × 800 RGBA8
-at 2.5 mm a texel with five mips, 5.5 MB on the GPU) is ChatGPT's rug
+none of the floor's mirror. Its picture (`design/materials/rug.png`, 1200 × 800 RGBA8
+at 2.5 mm a texel with five mips, 5.1 MB on the GPU) is ChatGPT's rug
 (`design/manor/pieces/library-rug-01.png`, local) cut from its floor and scaled by
-`tools/materials/rug.py`, which adds the end bands, the tufts and a little wear where
-the chairs stand. The pile's colours are stored at the 2.2 gamma the shader decodes, so
-the room shows the picture's own colours; past the ends the picture holds the cream's
-shade and the tufts' shadows instead (the cream itself is `ROOM_FRAG`'s `RUG_CREAM`).
+`tools/materials/rug.py`, which adds a little wear where the chairs stand. The pile's
+colours are stored at the 2.2 gamma the shader decodes, so the room shows the picture's
+own colours.
 The light tuner's `--rug off` leaves it out.
 
 ### The library's stove

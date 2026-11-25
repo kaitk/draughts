@@ -866,15 +866,15 @@ gain needs direct compressed-sample measurements.
       swapped 2026-11-25, `build/notes/rug-swap/`): ChatGPT's dense Kashan-type rug
       (`design/manor/pieces/library-rug-01.png`) cut from its floor by
       `tools/materials/rug.py`, 3 by 2 m along the window wall (so the picture keeps its
-      3:2), its middle 0.1 m into the room from the table's, with a cream end band and a
-      fringe of irregular cream tufts at each end and a little wear where the chairs stand.
+      3:2), its middle 0.1 m into the room from the table's, ending at its pile (the cream end
+      bands and fringes were removed at the user's word, 2026-11-25) with a little wear where
+      the chairs stand.
       Drawn by the floor's shader where it lies, so it takes the floor's light; 8 mm thick
       by the eye's ray lifted to its top (a dark side from a low eye), a soft contact
-      shadow on the floor round it, the tufts' small shadows, no mirror on the wool, a faint
+      shadow on the floor round it, no mirror on the wool, a faint
       sheen toward grazing. Its colours are the picture's (stored at the shader's 2.2
       gamma; no tint). The light tuner's `--rug off` and Rug switch in the table's section.
-      The game's shot unchanged (max 0); costs in task 110. Still off: the tufts read as a
-      comb from a low eye (no light or shadow of their own beyond the baked shade), the
+      The game's shot unchanged (max 0); costs in task 110. Still off: the
       side is a flat 0.3 shade with no pile texture, the room's dim warm light and tone
       curve make it darker and redder than the picture, and the rug isn't in the room's
       probes' bake.

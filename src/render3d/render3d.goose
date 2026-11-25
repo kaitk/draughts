@@ -1654,10 +1654,9 @@ fn put_books<O>(o: O&) -> Texture {
 }
 
 // The rug under the games table (design/materials/rug.png, tools/materials/rug.py) on the
-// GPU, RGBA8 (the pile's albedo at a 2.2 gamma, the end bands' and fringes' shades past its
-// ends, their cover in A) with RUG_MIPS; blank where it isn't built in. ROOM_FRAG lays it
-// over the floor round the table (its rug).
-let RUG_W = 1280;
+// GPU, RGBA8 (the pile's albedo at a 2.2 gamma, A 1) with RUG_MIPS; blank where it isn't
+// built in. ROOM_FRAG lays it over the floor round the table (its rug).
+let RUG_W = 1200;
 let RUG_H = 800;
 let RUG_MIPS = 5;
 extern fn draughts_rug(out: u8[:], w: i64, h: i64) -> bool;
