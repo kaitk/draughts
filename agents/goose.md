@@ -388,7 +388,7 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   the gradients to the distance to the edge, and draw nothing past it (`ROOM_LACE`).
 - Metal keywords (`thread`, `device`, `constant`, `kernel`) as GLSL names fail only on
   the Mac's pipeline build.
-- A GLSL change in `src/gfx/*_gpu.goose` or `src/render3d/shaders.goose` reaches the
+- A GLSL change in `src/gfx/*_gpu.goose` or `src/render3d/shaders/` reaches the
   ngfx build through `scripts/ngfx_2d_shaders.py` and `ngfx_3d_shaders.py`. A GLSL
   built-in no shader used before gets a rename in `ngfx_glsl.py`'s `Stage.parse` and a
   `glsl_` function in `src/ngfx/shaders/glsl.slang`; a new 2D pipeline a row in
@@ -397,6 +397,13 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   2D roots take `vec4`-sized fields only. A new `mat * vec4(...)` in GLSL needs its
   replacement in `ngfx_3d_shaders.py`'s `products()` (it asserts on one left). The 3D
   root holds 16 texture slots. Build the ngfx build after any shader change.
+- A new 3D piece goes in the file of `src/render3d/shaders/` for what it draws, the light
+  any lit surface shares in `light.goose`; a new file is `namespace shaders;` and gets an
+  `import .shaders.<file>;` in `src/render3d/shaders.goose`. A name defined in two files
+  fails `ngfx_glsl.strings`, which every reader of the pieces goes through
+  (`ngfx_3d_shaders.py`, `ngfx_2d_shaders.py`, `tools/perf/shader_report.py`'s own reader
+  aside). Moving a piece between files changes the binary's layout, not its shaders: check
+  a move by the pieces' text and the shots, not `cmp` (task 118).
 - A hidden window ignores injected mouse input until `gfx::inject_focus(true)`;
   `gfx::open_headless` draws with no window. Nuklear's slider drags only from its knob.
 

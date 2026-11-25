@@ -16,7 +16,7 @@ profiling") holds the tools' details; `agents/goose.md` ("Speed") the code's rul
 - Tests: `scripts/test.sh ui` with NGFX set (it also runs `goose check` on both apps), all
   of `scripts/test.sh` before pushing (`agents/testing.md`). Must pass.
 - No other build commands, flags or toolchains. ngfx compiles the same GLSL from
-  `src/render3d/shaders.goose` (`scripts/ngfx_3d_shaders.py`) and stays at parity with gfx.
+  `src/render3d/shaders/` (`scripts/ngfx_3d_shaders.py`) and stays at parity with gfx.
 - At the end of a finished change, in the main checkout only: copy `build/light_tune` to
   `build/stable/light_tune-<short hash>`, point `build/stable/run-tuner.sh`'s `exec` line and
   header comment at it, and remove the previous stable binary if no process runs it

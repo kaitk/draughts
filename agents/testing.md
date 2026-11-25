@@ -11,7 +11,10 @@ How to run everything: `docs/development.md`, "Test the rules".
   Command Line Tools' SDK is newer than Xcode's linker (after a macOS update, 2026-11-25):
   every native build and the -O2 tests fail. Build with
   `DEVELOPER_DIR=/Library/Developer/CommandLineTools` until Xcode is updated; ask the user
-  before changing `xcode-select`.
+  before changing `xcode-select`. The Command Line Tools have no `metal`, so the ngfx
+  build's shaders, once stale, build only with Xcode's toolchain and its own SDK:
+  `SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk`,
+  `DEVELOPER_DIR` unset.
 
 - In a separate working tree, make `build/` a real directory holding only a symlink to
   the main checkout's `build/goose-v2026.4-macos-arm64`, never a link to all of `build/`:

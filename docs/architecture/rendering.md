@@ -23,6 +23,16 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
   (`screen-without-depth`, [findings](../goose-findings.md); [GPU memory](#gpu-memory)).
 - **The 3D board** reuses the game state and the flat board's draw lists, with a camera
   and lit meshes in place of the 2D pieces ([Board and pieces](#board-and-pieces)).
+- **The 3D shaders** are GLSL pieces, Goose string constants that `embed_shader` joins in
+  `src/render3d/render3d_gpu.goose`, one file of `src/render3d/shaders/` a kind of thing
+  drawn: `frame` (the block every shader reads, the stages' sets, the full-screen and quad
+  vertex shaders), `light` (the sun, the sky and the probes, the shadow map, the tonemap,
+  the wind: what every lit surface shares), `board` (the board and the pieces), `table`
+  (the games table and its chairs), `room` (the shell and floor), `outside` (the view out),
+  `tree`, `air` (the dust and the haze), `passes` (the screen passes), and `bake` (the wood
+  baked at startup). `src/render3d/shaders.goose` imports them, all in the one namespace
+  `shaders`. The ngfx build writes its Slang from the same pieces
+  (`scripts/ngfx_3d_shaders.py`).
 - **One frame call.** `render::frame` (`src/app/render.goose`) draws each frame from a
   `render::Frame` of plain values and owns the screen's pass: copies and passes into
   textures first, then the screen's one pass. The app holds no gfx handle
@@ -264,7 +274,7 @@ and value noise in the board shader, never a regular stripe.
   theme's page color at the top to a deep tone of its frame at the foot, a faint light of
   its dark square behind the middle, corners 30% darker, mixed in linear light and
   dithered. It is a function of screen position (`FADE_FN` in
-  `src/render3d/shaders.goose`) drawn wherever the photograph would be sampled. No
+  `src/render3d/shaders/frame.goose`) drawn wherever the photograph would be sampled. No
   photograph is decoded or held.
 
   | | Autumn | Winter | Spring | Summer |
