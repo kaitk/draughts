@@ -326,7 +326,10 @@ let TABLE_FRAG = """
         // seats and backs tapestry, a braid where it meets the wood.
         bool chair = v_mat > 4.5;
         bool seat = v_mat > 5.5;
-        bool top = v_normal.y > 0.999 && p.y > TABLE_TOP - 0.01 && !base;
+        // On the top's height: the board's foot and shadow there. Not the chairs, whose
+        // backs rise past it.
+        bool at_top = p.y > TABLE_TOP - 0.01 && !chair;
+        bool top = v_normal.y > 0.999 && at_top && !base;
         vec2 out_dir = p.xz - vec2(0.0, TABLE_Z);
         float from_mid = max(length(out_dir), 1e-3);
         vec2 uv = top ? out_dir / (2.0 * TABLE_MAP_R) + 0.5
@@ -393,7 +396,7 @@ let TABLE_FRAG = """
         ao *= 1.0 - 0.15 * (craze + dent);
         // The board standing on it hides the sky near its foot.
         float foot = round_box(p.xz, vec2(INNER + FRAME_W), FRAME_W);
-        float on_table = step(TABLE_TOP - 0.01, p.y);
+        float on_table = at_top ? 1.0 : 0.0;
         ao *= 1.0 - 0.6 * (1.0 - smoothstep(0.0, 1.4, foot)) * on_table;
         // The crease where it meets the table, tight: the sky and the polish's reflection
         // (spec_ao, the board's side in it too) dim at the foot.
@@ -437,7 +440,7 @@ let TABLE_FRAG = """
         vec3 light = light_color.rgb * light_dir.w * lit;
         float vis = 1.0;
         float hidden = 1.0;
-        if (p.y > TABLE_TOP - 0.01) {
+        if (at_top) {
             // The board's and its pieces' shadow from the map, crisp, where the point is on
             // it; the board's outline swept along the light past it and for the far
             // edge's softness. The table isn't in the map, so the point is lifted only
