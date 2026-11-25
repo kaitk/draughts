@@ -55,6 +55,13 @@ per-pixel lookup, and nothing there gets coarser than today.
       `docs/architecture/rendering.md`
 - [ ] Then the chairs' cloth and wood strengths as sliders in the tuner's Table section,
       if they still need tuning (the user, 2026-11-25: not just darker)
+- [ ] The shell's props take it too (2026-11-25), after the table and chairs: the doors
+      and their handles, the shutters, the bookcases and books, the stove, the curtains.
+      `ROOM_FRAG` reads the grid per pixel already; it takes the bake's direction and open
+      part from a storage buffer as the table does, the walls, floor and ceiling left out
+      (a few large quads). Each object's hand-made shade (the mouldings', the curtains'
+      folds) removed where the bake covers it, each behind a tuner flag with its own
+      shots, judged by the user one by one
 
 ## The bake's cost (2026-11-25)
 
