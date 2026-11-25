@@ -395,6 +395,9 @@ Add each new cost here as it lands, with its numbers.
   and after (ms): straight down 10.85 and 10.82, the corner 14.14 and 14.16, the room
   13.52 and 13.41 (five runs each), the menu 12.51 and 12.47, filled by the rug 11.27 and
   11.42: no change past the runs' spread.
+  Without the end bands and tufts (2026-11-25, `build/notes/rug-swap/no-fringe/`): the
+  pile alone, 1200 × 800, 5.1 MB on the GPU, the PNG 2.6 MB; the shader the same tap with
+  the fringe's operations gone; not timed again.
 - The library's tiled stove (2026-11-24, task 107, `build/notes/stove-build/`): about
   1,200 triangles in the shell's one mesh (the shortened wainscot gave back 1,265), no new
   draw or pipeline; its glaze is a branch of the metals' shader with one more texture, a
