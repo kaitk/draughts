@@ -19,7 +19,7 @@ from ngfx_glsl import Stage, source, strings, unique, write_entries, write_stage
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCES = {
-    "shaders": ROOT / "src/render3d/shaders.goose",
+    "shaders": ROOT / "src/render3d/shaders",
     "draw_gpu": ROOT / "src/gfx/draw_gpu.goose",
     "scene_gpu": ROOT / "src/gfx/scene_gpu.goose",
     "widgets_gpu": ROOT / "src/gfx/widgets_gpu.goose",

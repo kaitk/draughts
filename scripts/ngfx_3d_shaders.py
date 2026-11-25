@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The ngfx build's 3D board shaders (r3d_*.slang) written from gfx's GLSL in
-src/render3d/shaders.goose (task 065), so the two stay one source while both builds live.
+src/render3d/shaders/ (task 065), so the two stay one source while both builds live.
 scripts/ngfx.py calls sources() at every build; on its own it prints them into a folder to
 read:
 
@@ -23,12 +23,12 @@ from pathlib import Path
 from ngfx_glsl import TYPES, Stage, source, strings, unique, write_entries, write_stage
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "src/render3d/shaders.goose"
+SRC = ROOT / "src/render3d/shaders"
 
 
 S = strings(SRC)
 
-# The pipelines: name, vertex parts, fragment parts (shaders.goose's names, as
+# The pipelines: name, vertex parts, fragment parts (src/render3d/shaders/ names, as
 # render3d::setup puts them together).
 FULL = ["FULL_VERT"]
 LIT_VS = ["VS_SET", "FRAME", "LIT_VERT"]
@@ -219,7 +219,7 @@ def module(name, vs_parts, fs_parts):
 
     out = []
     w = out.append
-    w(f"// Written by scripts/ngfx_3d_shaders.py from src/render3d/shaders.goose ({' + '.join(vs_parts)};")
+    w(f"// Written by scripts/ngfx_3d_shaders.py from src/render3d/shaders/ ({' + '.join(vs_parts)};")
     w(f"// {' + '.join(fs_parts)}).")
     w("//")
     w("// Root (r3d.slang): frame, u, buf, verts, tex/smp slots.")

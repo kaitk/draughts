@@ -19,7 +19,7 @@ let FADE_FRAG = """
 
 struct Fade { to: float4, top: float4, low: float4, light: float4 }
 
-// The blur's and the shrink's shaders are the 3D board's too (src/render3d/shaders.goose).
+// The blur's and the shrink's shaders are the 3D board's too (src/render3d/shaders/passes.goose).
 struct Blur { dir: float4 }
 
 struct Shrink { from: float4, to: float4 }

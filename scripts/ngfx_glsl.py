@@ -16,7 +16,15 @@ TYPES = {"float": 1, "vec2": 2, "vec3": 3, "vec4": 4}
 
 def strings(path):
     """A Goose file's top-level strings by name: its multi-line `let NAME = \"\"\"...` ones
-    and its one-line `let NAME = "...";` ones."""
+    and its one-line `let NAME = "...";` ones. A folder's files together (the 3D shaders,
+    src/render3d/shaders/), each name in one of them only."""
+    if path.is_dir():
+        out = {}
+        for f in sorted(path.glob("*.goose")):
+            got = strings(f)
+            assert not got.keys() & out.keys(), f"defined twice: {got.keys() & out.keys()}"
+            out.update(got)
+        return out
     text = path.read_text(encoding="utf-8")
     out = {}
     for m in re.finditer(r'^let (\w+) = """\n(.*?)""";', text, re.S | re.M):

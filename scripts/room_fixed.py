@@ -4,7 +4,7 @@ uniform components in registers, and the room's shaders read far more, each vec4
 a load a pixel. Constants cost none and fold into the math.
 
 Reads the light tuner's `--dump-room-block PATH` (the block's raw bytes, in the phone's
-tier) and the block's declaration in src/render3d/shaders.goose's ROOM_HEAD, and writes,
+tier) and the block's declaration in src/render3d/shaders/room.goose's ROOM_HEAD, and writes,
 for each fixed member, a constant and a #define that sends the shader's reads of the member
 to it. The part goes after ROOM_HEAD, so the block keeps its layout and the CPU's side is
 unchanged. The members in KEEP, which the app's state changes, stay uniforms. It writes
@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "src/render3d/shaders.goose"
+SRC = ROOT / "src/render3d/shaders/room.goose"
 
 # The members a season, the time of day, the room's state or its switches change: they stay
 # uniforms (render3d::surfaces_block and room_block fill them from g.room, g.room_tint,

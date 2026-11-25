@@ -24,7 +24,7 @@ struct Theme {
     glass:   float4,    // the glass tint, w: its opacity
     text:    float4,    // the text and icons; w: how much the glass copy is dimmed to
     // The plain background in place of the photograph, in linear light: top, foot, and
-    // the light behind the middle (src/render3d/shaders.goose, FADE_FN).
+    // the light behind the middle (src/render3d/shaders/frame.goose, FADE_FN).
     fade_top:   float4,
     fade_low:   float4,
     fade_light: float4,

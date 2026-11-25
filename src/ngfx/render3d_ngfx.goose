@@ -3,7 +3,7 @@
 // (src/main/draughts_ngfx.goose): one forward pass, into 4× multisampled transient
 // targets resolved into the picture as gfx's is, or at the size antialiasing wants and
 // then SMAA or the 2 × 2 supersampled pass shrunk. The shaders are gfx's GLSL in
-// shaders.goose, written into Slang by scripts/ngfx_3d_shaders.py, each module with one
+// src/render3d/shaders/, written into Slang by scripts/ngfx_3d_shaders.py, each module with one
 // root (Root) and its blob built ahead. The handles render3d.goose holds are gfx's types (nx).
 namespace render3d_ngfx;
 import std;

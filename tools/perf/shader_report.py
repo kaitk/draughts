@@ -2,7 +2,7 @@
 """The app's shaders as standalone GLSL, and the Mali Offline Compiler's report for each
 (task 059): the 3D renderer's, and the screen's (the flat board, its pieces, the UI).
 
-Pulls each shader's parts out of src/render3d/shaders.goose, joined as embed_shader
+Pulls each shader's parts out of src/render3d/shaders/, joined as embed_shader
 joins them (render3d::setup's calls, repeated in SHADERS below: keep them in step),
 writes them to build/shaders/<name>.<stage>, checks each with glslangValidator (the
 Vulkan SDK's) into SPIR-V, and, when malioc is on PATH (Arm Performance Studio), prints
@@ -15,6 +15,7 @@ its report for the given cores.
     python tools/perf/shader_report.py --core Mali-G615 --table --only room   # names starting so
 """
 import argparse
+import glob
 import os
 import re
 import shutil
@@ -22,8 +23,8 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# A part names a constant of src/render3d/shaders.goose, or of another file as file.NAME.
-SOURCES = {"": os.path.join(ROOT, "src", "render3d", "shaders.goose"),
+# A part names a constant of src/render3d/shaders/, or of another file as file.NAME.
+SOURCES = {"": os.path.join(ROOT, "src", "render3d", "shaders"),
            "draw.": os.path.join(ROOT, "src", "gfx", "draw_gpu.goose"),
            "widgets.": os.path.join(ROOT, "src", "gfx", "widgets_gpu.goose"),
            "room_fixed.": os.path.join(ROOT, "src", "render3d", "room_fixed.goose")}
@@ -164,8 +165,10 @@ def main():
 
     consts = {}
     for prefix, path in SOURCES.items():
-        with open(path, encoding="utf-8") as f:
-            consts.update({prefix + k: v for k, v in constants(f.read()).items()})
+        files = sorted(glob.glob(os.path.join(path, "*.goose"))) if os.path.isdir(path) else [path]
+        for name in files:
+            with open(name, encoding="utf-8") as f:
+                consts.update({prefix + k: v for k, v in constants(f.read()).items()})
     os.makedirs(OUT, exist_ok=True)
     validator = glslang()
     malioc = find_malioc()

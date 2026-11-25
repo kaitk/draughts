@@ -1,5 +1,5 @@
 // What the 3D board's modules share (written by scripts/ngfx_3d_shaders.py from
-// src/render3d/shaders.goose): one root for all of them and gfx's column-major matrices.
+// src/render3d/shaders/): one root for all of them and gfx's column-major matrices.
 // Not a module of its own.
 #pragma once
 #include "glsl.slang"

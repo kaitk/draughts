@@ -49,7 +49,9 @@ fn vec4_constant(text: const u8[:], name: const u8[:]) -> float4, bool {
 }
 
 fn main() {
-    let text = embed_file("../../src/render3d/shaders.goose");
+    // The measures' files: FRAME's board, TABLE_FRAG's table, ROOM_FRAG's floor.
+    let text = str(embed_file("../../src/render3d/shaders/frame.goose"), embed_file("../../src/render3d/shaders/table.goose"),
+                   embed_file("../../src/render3d/shaders/room.goose"));
     let names = ["FIELD", "INNER", "FRAME_W", "FRAME_TOP", "BOTTOM", "RADIUS", "HEIGHT", "EDGE_AT", "TABLE_MAP_R",
                  "TABLE_TOP", "TABLE_Z", "FLOOR_STRIPS", "FLOOR_NOISE_SIDE", "SCRATCH_TILE"];
     let mesh_values: f32[14] = [mesh::FIELD, mesh::INNER, mesh::FRAME_W, mesh::FRAME_TOP, mesh::BOTTOM, mesh::RADIUS,
