@@ -122,8 +122,8 @@ fell from 569 to 240, and the line reads as a soft crease at 100%.
 
 Off, every view is today's within 1 level, none over 8; the game's shot unchanged. On, at
 1920 × 1080 against today (largest difference in levels, pixels over 8): corner 63 and
-6,197, room 65 and 4,527, menu 48 and 27,086, board 18 and 169,155 (the top's shade a
-little lighter), front 49 and 32,793, close 51 and 47,159, low 74 and 82,161; straight
+6,197, room 65 and 4,527, menu 48 and 27,086, board 18 and 169,155 (the top's far part about
+5 levels darker), front 49 and 32,793, close 51 and 47,159, low 74 and 82,161; straight
 down unchanged. Time at 3840 × 2160 (`mac_room_bench`, two rounds): the table view 12.85
 → 13.38 ms (+0.53), the corner 14.05 → 14.28 (+0.22). Shots and crops:
 `build/notes/props-light/`.
