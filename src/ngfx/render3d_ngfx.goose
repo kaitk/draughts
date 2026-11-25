@@ -86,7 +86,7 @@ fn shadow_pass(own: Own&, g: Gpu&) {
     barrier_between_passes();
 }
 
-// The table's top and base into its own map (render3d::table_map), seen along the key
+// The table's top and base, and the chairs, into its own map (render3d::table_map), seen along the key
 // through `place`: the key's pipeline, the board's frame with its light's projection
 // replaced, made the first time.
 fn table_map_pass(own: Own&, g: Gpu&, place: Mat) {
@@ -102,7 +102,7 @@ fn table_map_pass(own: Own&, g: Gpu&, place: Mat) {
     nx::bind(g.shadow);
     var r = lit_root(own, g, f, g.table_vb);
     r.u = blocks([float4 { 0.0, 1.0, 1.0, 0.0 }]);
-    nx::draw_indexed(ngfx::root(r), g.table_ib, 4, g.table_own_count);
+    nx::draw_indexed(ngfx::root(r), g.table_ib, 4, g.table_count);
     ngfx::end_pass();
     barrier_between_passes();
 }
@@ -163,8 +163,9 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
         slot(t, 5, render3d::tree_or_stand_in(g), g.linear);
         slot(t, 6, g.shadow_map, g.compare);
         slot(t, 7, render3d::table_map_or_stand_in(g), g.compare);
-        if room_table && (g.hdr || g.room_ssao) { slot(t, 8, render3d::ssao_or_stand_in(g), g.linear); }
-        if room_table { slot(t, if g.hdr || g.room_ssao { 9 } else { 8 }, render3d::lace_or_stand_in(g), g.linear); }
+        if room_table { slot(t, 8, render3d::tapestry_or_stand_in(g), g.aniso); }
+        if room_table && (g.hdr || g.room_ssao) { slot(t, 9, render3d::ssao_or_stand_in(g), g.linear); }
+        if room_table { slot(t, if g.hdr || g.room_ssao { 10 } else { 9 }, render3d::lace_or_stand_in(g), g.linear); }
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
 
@@ -408,7 +409,8 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
         slot(t, 5, render3d::tree_or_stand_in(g), g.linear);
         slot(t, 6, g.shadow_map, g.compare);
         slot(t, 7, render3d::table_map_or_stand_in(g), g.compare);
-        slot(t, 8, render3d::lace_or_stand_in(g), g.linear);
+        slot(t, 8, render3d::tapestry_or_stand_in(g), g.aniso);
+        slot(t, 9, render3d::lace_or_stand_in(g), g.linear);
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
     // The room less its floor, which lies under the clip plane.
@@ -1739,7 +1741,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
                     g.floor_normal, g.floor_noise, g.scratch_tile, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
-                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.stove_relief, g.corner_map, g.table_map,
+                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.tapestry_map, g.stove_relief, g.corner_map, g.table_map,
                     g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color, g.planar_depth,
                     g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { nx::release(t); } }

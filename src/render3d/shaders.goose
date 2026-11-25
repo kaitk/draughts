@@ -865,9 +865,9 @@ let LIT_SHELL = """
     """;
 let TABLE_SHELL = """
     #ifdef NO_SSAO
-    layout(set = 2, binding = 8) uniform sampler2D lace_mask;
-    #else
     layout(set = 2, binding = 9) uniform sampler2D lace_mask;
+    #else
+    layout(set = 2, binding = 10) uniform sampler2D lace_mask;
     #endif
     layout(set = 3, binding = 2) uniform Shell { vec4 axes; vec4 tile; vec4 shell; vec4 shell_mids; vec4 shell_niche;
                                                  vec4 shell_glass; vec4 shell_sun; vec4 window_view; };
@@ -1874,9 +1874,12 @@ let TABLE_HEAD = """
     // The table's own map in the room (TABLE_MAP_FN).
     layout(set = 2, binding = 7) uniform sampler2DShadow table_depth;
     #ifdef TABLE_ROOM
+    // The chairs' tapestry (render3d::put_tapestry, tools/materials/tapestry.py): its tile's
+    // albedo at a 2.2 gamma.
+    layout(set = 2, binding = 8) uniform sampler2D tapestry_map;
     #ifndef NO_SSAO
     // The room's ambient occlusion at half size (SSAO_FN).
-    layout(set = 2, binding = 8) uniform sampler2D ssao_map;
+    layout(set = 2, binding = 9) uniform sampler2D ssao_map;
     #endif
     #endif
     // tables::Table's. pool: x the light's reach round the board (world units), y how dim
@@ -1946,7 +1949,11 @@ let TABLE_FRAG = """
     // times as large, so the two never repeat together.
     const vec2 TURN = vec2(0.87758, 0.47943);
     const float GROW = 0.73;
-    const vec3 SEAT_VELVET = vec3(0.062, 0.068, 0.050);
+    // The chairs' tapestry's tile, 240 mm (world units), and their braid's colour.
+    const float TAPESTRY_TILE = 7.3152;
+    const vec3 BRAID = vec3(0.38, 0.29, 0.15);
+    const float CHAIR_WOOD = 0.6;
+    const float CHAIR_CLOTH = 0.8;   // the tapestry a little darker in the room than its swatch
 
     float h12(vec2 p) {
         vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -1970,7 +1977,8 @@ let TABLE_FRAG = """
     // the even bounce the room keeps, at the room's exposure under the top (the base, the
     // frieze, which stand in the room) and the board's over it (the top and its board, as
     // tuned in the game: the room's lifts their shade grey and drowns the sun's dapple).
-    vec3 room_light_at(float y, vec3 n, vec3 harmonics) {
+    // `in_room` takes the room's at every height: the chairs, whose backs rise past the top.
+    vec3 room_light_at(float y, vec3 n, vec3 harmonics, bool in_room) {
         float k = clamp(((y - shape.y) / room_shade.w - 0.15) / 0.3, 0.0, 3.0);
         int i = int(min(floor(k), 2.0));
         float f = k - float(i);
@@ -1979,7 +1987,7 @@ let TABLE_FRAG = """
         int j = i + 1;
         vec3 b = vec3(room_light[3 * j].x + dot(room_light[3 * j].yzw, n), room_light[3 * j + 1].x + dot(room_light[3 * j + 1].yzw, n),
                       room_light[3 * j + 2].x + dot(room_light[3 * j + 2].yzw, n));
-        float over = smoothstep(TABLE_TOP - 0.5, TABLE_TOP, y);
+        float over = in_room ? 0.0 : smoothstep(TABLE_TOP - 0.5, TABLE_TOP, y);
         return (max(mix(a, b, f), vec3(0.0)) + harmonics * room_mix.y + room_shade.rgb) * mix(room_mix.z, 1.0, over);
     }
     #endif
@@ -2121,7 +2129,8 @@ let TABLE_FRAG = """
         // base (mesh::MAT_TABLE_BASE) cut from the same wood, its grain along the column
         // and the legs (its v).
         bool base = v_mat > 3.5;
-        // The chairs (mesh::MAT_CHAIR, MAT_SEAT): their wood as the base's, their seats velvet.
+        // The chairs (mesh::MAT_CHAIR, MAT_SEAT, MAT_TRIM): their wood as the base's, their
+        // seats and backs tapestry, a braid where it meets the wood.
         bool chair = v_mat > 4.5;
         bool seat = v_mat > 5.5;
         bool top = v_normal.y > 0.999 && p.y > TABLE_TOP - 0.01 && !base;
@@ -2147,13 +2156,26 @@ let TABLE_FRAG = """
         vec3 albedo = a.rgb;
         float rough = a.a;
         float ao = clamp(v_ao, 0.0, 1.0);
+    #ifdef TABLE_ROOM
+        // The chairs' wood is the base's, darker and less red: the top beside it, under its
+        // polish, reads browner, and the same wood read lighter and redder on the chairs.
+        if (chair && !seat) albedo = mix(vec3(dot(albedo, vec3(0.2126, 0.7152, 0.0722))), albedo, 0.75) * CHAIR_WOOD;
+        // The cloth's tile by its uv (the pads' unrolled millimetres, mesh::cushion), its
+        // derivatives taken before the branch. Matte; the braid a twisted cord, its strands
+        // slanting along it every 3 mm.
+        vec2 tq = v_uv / TAPESTRY_TILE;
+        vec2 tgx = dFdx(tq);
+        vec2 tgy = dFdy(tq);
         if (seat) {
-            // Grey-green velvet, crushed in slow patches, its pile catching the light at
-            // grazing angles.
-            float crush = 0.6 * vnoise(v_uv * 0.9) + 0.4 * vnoise(v_uv * 2.7 + 3.1);
-            albedo = SEAT_VELVET * (0.8 + 0.4 * crush);
-            rough = 1.0;
+            albedo = CHAIR_CLOTH * pow(textureGrad(tapestry_map, tq, tgx, tgy).rgb, vec3(2.2));
+            rough = 0.9;
+            if (v_mat > 6.5) {
+                float twist = 0.5 + 0.5 * sin(68.7 * (v_uv.x + v_uv.y));
+                albedo = BRAID * (0.7 + 0.3 * twist);
+                rough = 0.8;
+            }
         }
+    #endif
 
         // The top's wear, finer than its map: the wear's tile laid twice, the second turned
         // and larger, where the map's patches (tn.z) say. Scratches and dents where the top
@@ -2261,17 +2283,13 @@ let TABLE_FRAG = """
         float spec_vis = hidden * sun_in;
         vec3 irr = sh_eval(n) * params.z * mix(1.0, lit, 0.5);
     #ifdef TABLE_ROOM
-        irr = room_light_at(p.y, n, sh_eval(n) * params.z);
+        irr = room_light_at(p.y, n, sh_eval(n) * params.z, chair);
         // The room's screen occlusion where it finds more than the table's own terms (the
         // board's foot, the top over the base) know.
         float screen_ao = ssao_at(p);
         ao = min(ao, ssao_kept(screen_ao));
     #endif
         vec3 wood = albedo * (diff / PI * light * vis + irr * ao);
-        if (seat) {
-            float nv = 1.0 - max(dot(n, normalize(eye.xyz - p)), 0.0);
-            wood *= 1.0 + 1.5 * nv * nv * nv;
-        }
 
         float nov = max(dot(nc, v), 1e-4);
         float nl = clamp(dot(nc, l), 0.0, 1.0);
@@ -2303,7 +2321,7 @@ let TABLE_FRAG = """
     #ifdef TABLE_ROOM
         // In the room the polish sees the room's surfaces: the light on them toward r by
         // their mean albedo (0.2), as ROOM_FRAG's rough reflections take it.
-        env = 0.2 * room_light_at(p.y, r, sh_eval(r) * params.z);
+        env = 0.2 * room_light_at(p.y, r, sh_eval(r) * params.z, chair);
     #endif
         // Near the board the polish shows the board's side in place of the room.
         if (top && r.y > 0.0) {
@@ -3285,8 +3303,8 @@ let ROOM_FRAG = """
     // legs' and back's feet), front and back, and the sphere at its foot that hides the sky.
     const vec4 CHAIR_A = vec4(0.0, -27.884, 0.104528, 0.994522);
     const vec4 CHAIR_B = vec4(1.829, 24.64, -0.241922, -0.970296);
-    const vec2 CHAIR_FRONT_FOOT = vec2(6.355, 5.898);
-    const vec2 CHAIR_BACK_FOOT = vec2(5.425, -8.077);
+    const vec2 CHAIR_FRONT_FOOT = vec2(6.767, 5.852);
+    const vec2 CHAIR_BACK_FOOT = vec2(5.608, -7.010);
 
     float h12(vec2 p) {
         vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -4615,7 +4633,8 @@ let ROOM_FRAG = """
         // column's and legs' on the sun (table_shade).
         vec3 l = light_dir.xyz;
         float ao = clamp(v_ao, 0.0, 1.0);
-        vec3 albedo = v_mat > 5.5 ? vec3(0.062, 0.068, 0.050) : textureLod(own_albedo, vec2(0.5), 20.0).rgb;
+        // The chairs' tapestry and braid by their means (tools/materials/tapestry.py's).
+        vec3 albedo = v_mat > 6.5 ? vec3(0.38, 0.29, 0.15) : v_mat > 5.5 ? vec3(0.413, 0.272, 0.169) : textureLod(own_albedo, vec2(0.5), 20.0).rgb;
         if (v_mat > 3.5 && v_mat < 4.5) {
             float from_mid = length(p.xz - vec2(0.0, TABLE_Z));
             float e = (TABLE_TOP - p.y) / max(t_shape.x - from_mid, 0.5);

@@ -914,6 +914,17 @@ gain needs direct compressed-sample measurements.
       floor. Room only (`--chairs off`); the game's shot unchanged; costs in task 110. Still
       off: no sun shadow from them (not in the table's map), the back uncarved, the velvet
       plain, the wood lighter than the top beside it; the tablet not checked
+- [x] The chairs, round 2 (2026-11-25, `build/notes/chairs-2/` for the design,
+      `build/notes/chairs-2-build/` for shots and times): oval medallion side chairs as
+      `library-autumn-02`'s, in the table's mahogany toned to match the top and cream floral
+      tapestry (`design/materials/tapestry.png`, 240 mm); the back on the side render's
+      curve, padded front and rear, a small crest; fluted front legs, rosette blocks, a
+      serpentine apron, a gimp braid; about 13,000 triangles each. Their shade baked into
+      the vertices' occlusion, and lit at the room's exposure at every height (a line
+      crossed the backs at the top's height, where the board's exposure began). The table's sun map now
+      holds both chairs at 2048 × 1024. The game's shot unchanged on both renderers. Still
+      off: the window's beam misses the chairs at every verified placement, so their
+      shadow hasn't been seen on screen; the tablet not checked
 - [ ] The floor and rug, seen in the game's views (task 106)
 - [ ] The table's props: the chess clock (100), the pieces' box (102), the score sheet and
       pencil (103)

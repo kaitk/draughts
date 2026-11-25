@@ -99,7 +99,7 @@ fn shadow_pass(own: Own&, g: render3d::Gpu&) {
     gfx::end_pass();
 }
 
-// The table's top and base into its own map (render3d::table_map), seen along the key
+// The table's top and base, and the chairs, into its own map (render3d::table_map), seen along the key
 // through `place`: the key's pipeline, the board's frame with its light's projection
 // replaced, made the first time.
 fn table_map_pass(own: Own&, g: render3d::Gpu&, place: render3d::Mat) {
@@ -116,7 +116,7 @@ fn table_map_pass(own: Own&, g: render3d::Gpu&, place: render3d::Mat) {
     gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 0.0, 1.0, 1.0, 0.0 } });
     gfx::bind_vertex_buffer(g.table_vb);
     gfx::bind_index_buffer(g.table_ib, 4);
-    gfx::draw_indexed(g.table_own_count);
+    gfx::draw_indexed(g.table_count);
     gfx::end_pass();
 }
 
@@ -189,8 +189,9 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 6, g.shadow_map, g.compare);
         gfx::bind_texture(gfx::FRAGMENT, 7, render3d::table_map_or_stand_in(g), g.compare);
         let room_table = g.hdr || render3d::table_in_room(g);
-        if room_table && (g.hdr || g.room_ssao) { gfx::bind_texture(gfx::FRAGMENT, 8, render3d::ssao_or_stand_in(g), g.linear); }
-        if room_table { gfx::bind_texture(gfx::FRAGMENT, if g.hdr || g.room_ssao { 9 } else { 8 }, render3d::lace_or_stand_in(g), g.linear); }
+        if room_table { gfx::bind_texture(gfx::FRAGMENT, 8, render3d::tapestry_or_stand_in(g), g.aniso); }
+        if room_table && (g.hdr || g.room_ssao) { gfx::bind_texture(gfx::FRAGMENT, 9, render3d::ssao_or_stand_in(g), g.linear); }
+        if room_table { gfx::bind_texture(gfx::FRAGMENT, if g.hdr || g.room_ssao { 10 } else { 9 }, render3d::lace_or_stand_in(g), g.linear); }
         gfx::uniforms(gfx::VERTEX, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::table_block(g));
@@ -579,7 +580,8 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
             gfx::bind_texture(gfx::FRAGMENT, 7, render3d::table_map_or_stand_in(g), g.compare);
             gfx::uniforms(gfx::VERTEX, 0, clip);
             gfx::uniforms(gfx::FRAGMENT, 0, clip);
-            gfx::bind_texture(gfx::FRAGMENT, 8, render3d::lace_or_stand_in(g), g.linear);
+            gfx::bind_texture(gfx::FRAGMENT, 8, render3d::tapestry_or_stand_in(g), g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 9, render3d::lace_or_stand_in(g), g.linear);
             gfx::uniforms(gfx::FRAGMENT, 1, render3d::mirror_table_block(g));
             gfx::uniforms(gfx::FRAGMENT, 2, render3d::shell_block(g));
             gfx::bind_vertex_buffer(g.table_vb);
@@ -1925,7 +1927,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.tree_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.floor_noise, g.scratch_tile, g.wall_albedo,
-                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.stove_relief, g.corner_map,
+                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.tapestry_map, g.stove_relief, g.corner_map,
                     g.table_map, g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color,
                     g.planar_depth, g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { gfx::release(t); } }

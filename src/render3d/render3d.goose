@@ -263,9 +263,6 @@ struct Gpu {
     table_vb:        Buffer,
     table_ib:        Buffer,
     table_count:     i64,
-    // The table's own indices, first in its mesh (table_count with the chairs after them):
-    // all its own map draws, so the chairs take the table's shadow and cast none.
-    table_own_count: i64,
     // The two chairs at the table (mesh::chairs) in its mesh: wanted (a tuner's, where the
     // room shows; the game never), and as made, with the rug under their feet or not.
     chairs:          bool,
@@ -487,6 +484,8 @@ struct Gpu {
     // rug left off the floor.
     rug_map: Texture,
     rug_off: bool,
+    // The chairs' tapestry (put_tapestry), put with the room's masks.
+    tapestry_map: Texture,
     // The stove's relief atlas (room_shell::stove_relief), RGBA8 with its mips, put with the
     // room's masks.
     stove_relief: Texture,
@@ -701,7 +700,6 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
             v.normal.z = sn * nx + c * v.normal.z;
         }
     }
-    let own = indices.len;
     // The chairs stand on the board's axis whatever the table's turn, on the rug's top.
     if g.chairs {
         let lift: f32 = if chairs_on_rug(g) { CHAIR_RUG_LIFT * surfaces::METRE } else { 0.0 };
@@ -710,13 +708,17 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
     if g.table_vb.id != 0 { o.gpu_release_mesh(g.table_vb, g.table_ib); }
     g.table_vb, g.table_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
     g.table_count = indices.len;
-    g.table_own_count = own;
     g.chairs_made = g.chairs;
     g.chairs_rug_made = chairs_on_rug(g);
     g.table_edge = e;
     g.table_made_r = r;
     g.table_made_turn = g.table_turn;
 }
+
+// A chair's plan round its seat's middle (world units: half its width, its front, its back's
+// rearmost) and its height, for the table's map (mesh::chairs' measures).
+let CHAIR_PLAN = float3 { 7.925, 7.925, -9.754 };   // 260, 260, -320 mm
+let CHAIR_TALL: f32 = 29.26;                         // 960 mm
 
 // The rug's thickness (ROOM_FRAG's RUG_THICK, metres): the chairs' feet stand on its top.
 let CHAIR_RUG_LIFT: f32 = 0.008;
@@ -785,13 +787,15 @@ fn table_block(g: Gpu&) -> TableBlock {
                  float4 { shade.x, shade.y, shade.z, surfaces::METRE }, if on { ssao_block_of(g) } else { float4_0 } }
 }
 
-// The table's own shadow in the room (shaders::TABLE_MAP_FN): its top and base drawn into a
-// map of their own, projected along the key onto the floor round the table, so the floor,
-// the walls it reaches and the base itself take the table's true shadow. Drawn when the room
-// and the table show, again only when the key or the table changes; the game, which shows
-// no room, never draws it. Its texels about 3 mm on the floor along the shadow, 2 mm across.
-let TABLE_MAP_W = 1024;
-let TABLE_MAP_H = 512;
+// The table's own shadow in the room (shaders::TABLE_MAP_FN): its top and base, and the
+// chairs where they stand, drawn into a map of their own, projected along the key onto the
+// floor round the table, so the floor, the walls it reaches, the base and the chairs take
+// the table's and the chairs' true shadows. Drawn when the room and the table show, again
+// only when the key or the table changes; the game, which shows no room, never draws it.
+// Fitted to the table and the chairs (table_map_rows): its texels about 3 mm on the floor
+// along the shadow, 2 mm across, 2.5 at the worst sun.
+let TABLE_MAP_W = 2048;
+let TABLE_MAP_H = 1024;
 let TABLE_MAP_MARGIN: f32 = 1.5;     // round the top (world units)
 let TABLE_MAP_REACH:  f32 = 122.0;   // the farthest the shadow is followed (4 m)
 let TABLE_MAP_DEPTH:  f32 = 150.0;   // half the depth range along the key (world units)
@@ -819,14 +823,40 @@ fn table_map_rows(g: Gpu&) -> float4[4] {
     let r = table_radius(g) + TABLE_MAP_MARGIN;
     let slope = h / ly;
     let reach = min((mesh::TABLE_TOP - fy) * slope, TABLE_MAP_REACH);
-    let mid = 0.5 * reach;
-    let half = r + 0.5 * reach;
     let cd = c.x * d.x + c.z * d.y;
     let ce = c.x * e.x + c.z * e.y;
+    // What the map holds, along the shadow (s, from the middle on the floor away from the
+    // key) and across it (t): the top's circle and its shadow's reach; with the chairs, each
+    // one's plan's corners and its shadow from its full height.
+    var s0 = -r;
+    var s1 = r + reach;
+    var t0 = -r;
+    var t1 = r;
+    if g.chairs_made {
+        let tall = min(CHAIR_TALL * slope, TABLE_MAP_REACH);
+        for at in mesh::CHAIRS {
+            for k in 4 {
+                let x: f32 = if k % 2 == 0 { -CHAIR_PLAN.x } else { CHAIR_PLAN.x };
+                let z: f32 = if k < 2 { CHAIR_PLAN.y } else { CHAIR_PLAN.z };
+                let px = at.x + at.w * x + at.z * z;
+                let pz = at.y - at.z * x + at.w * z;
+                let s = cd - (px * d.x + pz * d.y);
+                let t = px * e.x + pz * e.y - ce;
+                s0 = min(s0, s - TABLE_MAP_MARGIN);
+                s1 = max(s1, s + tall + TABLE_MAP_MARGIN);
+                t0 = min(t0, t - TABLE_MAP_MARGIN);
+                t1 = max(t1, t + TABLE_MAP_MARGIN);
+            }
+        }
+    }
+    let mid = 0.5 * (s0 + s1);
+    let half = 0.5 * (s1 - s0);
+    let tm = 0.5 * (t0 + t1);
+    let across = 0.5 * (t1 - t0);
     let kz = 0.5 / TABLE_MAP_DEPTH;
     return [
         float4 { -d.x / half, slope / half, -d.y / half, (cd - slope * fy - mid) / half },
-        float4 { e.x / r, 0.0, e.y / r, -ce / r },
+        float4 { e.x / across, 0.0, e.y / across, -(ce + tm) / across },
         float4 { -l.x * kz, -l.y * kz, -l.z * kz, 0.5 + dot(c, l) * kz },
         float4 { 1.0, 0.0, 0.0, 0.0 },
     ];
@@ -1595,6 +1625,7 @@ fn put_paper<O>(o: O&, g: Gpu&) {
     g.plaster_tone = put_mask(o, 1);
     g.book_atlas = put_books(o);
     g.rug_map = put_rug(o);
+    g.tapestry_map = put_tapestry(o);
     var relief: u8[>..] = [];
     room_shell::stove_relief(relief);
     g.stove_relief = put_rgba(o, relief, room_shell::STOVE_RELIEF_SIDE, room_shell::STOVE_RELIEF_SIDE, room_shell::STOVE_RELIEF_MIPS);
@@ -1666,6 +1697,23 @@ fn put_rug<O>(o: O&) -> Texture {
     draughts_rug(px[0..4 * RUG_W * RUG_H], RUG_W, RUG_H);
     return put_rgba(o, px, RUG_W, RUG_H, RUG_MIPS);
 }
+
+// The chairs' tapestry (design/materials/tapestry.png, tools/materials/tapestry.py) on the
+// GPU, RGBA8 (its tile's albedo at a 2.2 gamma, A 1, 240 mm of cloth) with its mips; blank
+// where it isn't built in. TABLE_FRAG covers the chairs' seats and backs with it.
+let TAPESTRY_SIDE = 512;
+let TAPESTRY_MIPS = 10;
+extern fn draughts_tapestry(out: u8[:], w: i64, h: i64) -> bool;
+fn put_tapestry<O>(o: O&) -> Texture {
+    var px: u8[>..] = [];
+    px.resize(rgba_bytes(TAPESTRY_SIDE, TAPESTRY_SIDE, TAPESTRY_MIPS), 0);
+    draughts_tapestry(px[0..4 * TAPESTRY_SIDE * TAPESTRY_SIDE], TAPESTRY_SIDE, TAPESTRY_SIDE);
+    return put_rgba(o, px, TAPESTRY_SIDE, TAPESTRY_SIDE, TAPESTRY_MIPS);
+}
+
+// The tapestry to bind, or the crown's map where it isn't put (the table's room pipelines read it
+// only on the chairs).
+fn tapestry_or_stand_in(g: Gpu&) -> Texture { if g.tapestry_map.id != 0 { g.tapestry_map } else { g.crown_map } }
 
 // The bytes of a w0 × h0 RGBA8 picture with `mips` levels.
 fn rgba_bytes(w0: i64, h0: i64, mips: i64) -> i64 {
@@ -1867,8 +1915,9 @@ fn room_bytes(g: Gpu&) -> i64 {
     let floor = if g.floor_noise.id != 0 { 2 * surfaces::FLOOR_NOISE_SIDE * surfaces::FLOOR_NOISE_SIDE } else { 0 };
     let scratches = if g.scratch_tile.id != 0 { texels_with_mips(surfaces::SCRATCH_SIDE) } else { 0 };
     let rug = if g.rug_map.id != 0 { rgba_bytes(RUG_W, RUG_H, RUG_MIPS) } else { 0 };
+    let tapestry = if g.tapestry_map.id != 0 { rgba_bytes(TAPESTRY_SIDE, TAPESTRY_SIDE, TAPESTRY_MIPS) } else { 0 };
     let stove = if g.stove_relief.id != 0 { room_shell::stove_relief_bytes() } else { 0 };
-    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass + floor + scratches + rug + stove;
+    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass + floor + scratches + rug + tapestry + stove;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the

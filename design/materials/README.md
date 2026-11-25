@@ -11,6 +11,7 @@ built into the program from here (`src/native/materials.c`).
 | `outside_oak.png` | The oak, 29.8 × 20 m, a billboard 70 m out at 22° right of straight out, 584 × 392 RGBA as the band, 0.26 MB. In git. |
 | `books_atlas.png` | The library's books' spines (`tools/materials/books.py`), 1024 × 928 RGBA at 0.7 texels a millimetre, 194 cells (a volume each of `book_titles.py`'s 51 titles) packed in rows by height with 4 texels between: R the cover's tone (in 64 steps), G gilt or ink, B the label, A wear (in 16 steps), 1.03 MB. The baker writes its cells and the covers' and labels' colours as `src/model3d/book_cells.goose`; `shaders::ROOM_FRAG` colours a spine from them (`model3d::books`). In git. |
 | `rug.png` | The rug under the games table (`tools/materials/rug.py`), ChatGPT's `library-rug-01.png` cut from its floor: 1200 × 800 RGBA at 2.5 mm a texel, the pile alone, 3.0 m along by 2.0 m, with no end bands or fringes; the albedo at a 2.2 gamma (the shader's decode) and A 1; 2.6 MB. `shaders::ROOM_FRAG` lays it on the floor round the table (`render3d::put_rug`). In git. |
+| `tapestry.png` | The library chairs' upholstery (`tools/materials/tapestry.py`), ChatGPT's `library-tapestry-01.png` with its caption cut and its light made even: 512² RGBA over 240 mm of fabric, tileable, its seams cut by image quilting; the albedo at a 2.2 gamma and A 1; 0.68 MB. Built into the program (`render3d::put_tapestry`), 1.4 MB on the GPU with its mips. |
 | `lace_f2.png`, `lace_f.png`, `lace_d.png` | The curtains' lace, three ways of it while the choice is open (f2 shown, the light tuner's `--lace` picks another): the way's field tile (1024 rows over 0.56 m, `surfaces::LACE_TILE`) over its hem's border (384 rows, 0.21 m), 1024 × 1408 L8, 0.7 MB each: 0 where the light passes, 1 the thread. `tools/materials/lace_panel.py` puts each together from the lace library's bake (`tools/materials/lace_rose2.py` for f2, `lace_rose.py` for f, `lace_blossom.py` for d); `shaders::ROOM_FRAG` reads down the field's tile and on into the hem at the cloth's foot. In git; the two not chosen go once the user chooses. |
 
 To make the mask again, with numpy and Pillow from Homebrew and the downloads of
@@ -62,4 +63,12 @@ The rug, from `design/manor/pieces/library-rug-01.png` (local; `--preview` adds
 python3 -I tools/materials/rug.py OUT_DIR      # MANOR_DIR=<checkout>/design/manor from a worktree
 cp OUT_DIR/rug.png design/materials/
 touch src/native/materials.c
+```
+
+The chairs' tapestry, from `design/manor/pieces/library-tapestry-01.png` (local; `--preview`
+adds `tapestry_3x3.png`, the tile 3 × 3, and prints its mean colour):
+
+```sh
+python3 -I tools/materials/tapestry.py OUT_DIR      # MANOR_DIR=<checkout>/design/manor from a worktree
+cp OUT_DIR/tapestry.png design/materials/
 ```

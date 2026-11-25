@@ -2,7 +2,7 @@
 // (render3d::room_surfaces), one channel (design/materials/): the library's wallpaper and
 // the plaster's tone, 1024² each, the curtains' lace. And RGBA: the view out of its
 // windows, the far band of trees and the oak (render3d::put_outside); the books' atlas
-// (render3d::put_books).
+// (render3d::put_books); the rug and the chairs' tapestry.
 // stb_image here decodes PNG alone and is static, apart from background.c's JPEG one.
 
 #include <stdbool.h>
@@ -97,6 +97,14 @@ static const unsigned char rug[] = {
 #else
 static const unsigned char rug[] = { 0 };
 #endif
+// The chairs' tapestry (tools/materials/tapestry.py), a 512² tile of 240 mm of cloth.
+#if __has_embed("../../design/materials/tapestry.png")
+static const unsigned char tapestry[] = {
+#embed "../../design/materials/tapestry.png"
+    , 0 };
+#else
+static const unsigned char tapestry[] = { 0 };
+#endif
 
 typedef struct { uint8_t *data; int64_t len; } bytes;
 
@@ -156,4 +164,10 @@ bool draughts_outside_picture(int64_t which, bytes out, int64_t w, int64_t h) {
 // built in or isn't that size.
 bool draughts_rug(bytes out, int64_t w, int64_t h) {
     return decode_rgba(rug, sizeof rug, out, w, h);
+}
+
+// The chairs' tapestry into `out`, w × h RGBA8 as stored (albedo at a 2.2 gamma, A 1), or false when it isn't
+// built in.
+bool draughts_tapestry(bytes out, int64_t w, int64_t h) {
+    return decode_rgba(tapestry, sizeof tapestry, out, w, h);
 }
