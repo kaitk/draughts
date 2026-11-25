@@ -93,3 +93,37 @@ on the tablet's slower cores, is too long at startup; the props change only in t
 so a build step bakes the app's mesh into a file of 4 bytes a vertex (160 KB), refused
 when it doesn't match the mesh, and the tuner bakes again itself when a slider changes
 the mesh.
+
+The app doesn't draw the room's props yet (only the light tuner sets `Gpu.chairs`; the
+room on the home screen is task 106's), so the shipped file is made when it first does;
+until then the tuner bakes for itself, under a second, only with the light on.
+
+## The light per pixel (2026-11-25)
+
+Behind the light tuner's `--props-light on|kept` (default off; the Table section's "Light
+per pixel"): the table's room pipelines (`table_room`, the HDR `h.table`, the floor
+mirror's `planar_table`, and ngfx's) in a `shaders::PROPS_LIGHT` variant. `TABLE_VERT`
+reads each vertex's open direction and open part from a storage buffer by
+`gl_VertexIndex` (`render3d::props_open`, a `vec4` a vertex, 0.64 MB: ngfx's translation
+takes only `vec4` buffers); `TABLE_FRAG` reads the probe grid where the pixel is, toward
+that direction turned as far as the pixel's normal turns from the mesh's (the top's map),
+as `ROOM_FRAG`'s `baked_light` does, times the open part, and the polish's reflection
+likewise. The grid's box and the atlas come in a block and a texture slot of their own
+(`PropsLight`, binding 3; slot 11, 10 in the mirror), so no shared block changed. The
+chairs take the bake in place of their hand-made shade; the table keeps its profile's,
+and `on` drops its two analytic terms (the base under the top, the edge's underside),
+`kept` keeps them.
+
+Two fixes to the bake from the first shots: a dashed near-black line along the rim under
+the top, where the bead's top row touches the slab. Hits nearer than 1.6 mm aren't counted
+(`NEAREST_HIT`), and each vertex is averaged once with its neighbours on the mesh
+(`smooth`): the low view's new near-black pixels (under 6 where today's are 12 or more)
+fell from 569 to 240, and the line reads as a soft crease at 100%.
+
+Off, every view is today's within 1 level, none over 8; the game's shot unchanged. On, at
+1920 × 1080 against today (largest difference in levels, pixels over 8): corner 63 and
+6,197, room 65 and 4,527, menu 48 and 27,086, board 18 and 169,155 (the top's shade a
+little lighter), front 49 and 32,793, close 51 and 47,159, low 74 and 82,161; straight
+down unchanged. Time at 3840 × 2160 (`mac_room_bench`, two rounds): the table view 12.85
+→ 13.38 ms (+0.53), the corner 14.05 → 14.28 (+0.22). Shots and crops:
+`build/notes/props-light/`.
