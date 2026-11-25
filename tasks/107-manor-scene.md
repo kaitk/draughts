@@ -878,6 +878,9 @@ gain needs direct compressed-sample measurements.
       side is a flat 0.3 shade with no pile texture, the room's dim warm light and tone
       curve make it darker and redder than the picture, and the rug isn't in the room's
       probes' bake.
+- [ ] The rug's place and size (the user, 2026-11-25: the look is right now): larger, as
+      `style-01`'s, and in the middle of the room rather than under the games table;
+      fine-tuned once the room's furniture is all in, not before
 - [x] The library's tiled stove (2026-11-24, `build/notes/stove-build/`): option A of
       `build/notes/stove/`, a pale celadon corner stove with a cut front corner, 3.42 m,
       6 cm off the hall wall and the stove's end wall: a tiled plinth with a torus, a lower
