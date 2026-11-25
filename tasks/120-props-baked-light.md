@@ -161,3 +161,36 @@ Next (the user, 2026-11-26): a CPU path-traced reference of the room with its me
 sun through the windows and the sky, several bounces, at points on the chairs and the base,
 before any redesign; then the redesign in steps checked against it. The shell's props'
 unfinished work waits in a stash.
+
+## The path-traced reference (2026-11-26)
+
+A CPU path tracer of the room (`build/review120/`, scratch): every triangle of the shell, the
+glass and lace, the table and chairs, in two uniform grids; Lambertian surfaces with
+`room_light`'s albedos; the sun by a shadow ray at every hit through the panes (0.88, the
+bars being geometry), the tree's factor and the lace's; the sky for rays leaving through the
+glass; up to 10 bounces. The sun's light thrown off a surface keeps `room_light`'s own gain
+and caps, so its numbers compare with the probes'. 23 points × 4,096 paths in 0.62 s; a
+480 × 270 picture of the close view at 512 samples in 170 s on four processes.
+
+- The grid in open air against it (green, faces toward the window, the room, down): toward
+  the window 0.9 to 1.05 of the reference (the sky and the units agree); toward the room
+  1.4 to 2.8 times too bright; down 2.4 to 5.8. The light of the sun's floor patches is
+  overstated on faces turned from it (the L1 lobe, 0.25 + 0.5 cos, gives a point-like patch
+  a quarter on faces at 90°; no furniture in the patches' view). At a chair the window/room
+  ratio is 2.2 in the reference and 0.83 in the grid: the grid turns it round.
+- At the props, none of the points in the sun, today and `on` are 1.5 to 16 times the
+  reference, worst in shade and turned down: the rear pad's middle 0.021 to 0.025 against
+  0.070 to 0.095 today; the seat under the back 0.018 to 0.025 against 0.12; the apron's
+  underside 0.002 to 0.004 against 0.035; the top's underside 0.007 against 0.050. Ratios:
+  front pad over rear pad 2.5 (today 1.0 to 1.7); the seat's top over the apron's underside
+  11 to 18 (today 3.5); the column over the top's underside 4.7 (today 1.5).
+- `on` without `room_shade` and the kept harmonics comes to 0.9 to 1.6 times the reference on
+  lit faces and the pads' ratio to 2.2 to 2.4; the places turned down and the creases stay
+  1.6 to 9 times too bright: the grid's own error, and the floor left out of the props' bake
+  (the apron's underside 0.97 open).
+
+The review's inventory of the light's terms that a physical light wouldn't have, each with a
+verdict against the reference (go, fit to it, or a camera or art choice), is in its report
+and goes into the plan for the light's rebuild (the user, 2026-11-26: build the light as the
+path tracer computes it, ground every approximation against it, remove what it shows isn't
+needed). A Blender Cycles render of the same scene is the second check.
