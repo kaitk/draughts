@@ -74,7 +74,9 @@
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
-//       [--rug on|off (the rug under the games table)] [--chairs on|off (the two chairs at it)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
+//       [--rug on|off (the rug under the games table)] [--chairs on|off (the two chairs at it)]
+//       [--props-light off|on|kept (the table and the chairs lit from the room's probes where each pixel is, through
+//       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
 //       [--paint quiet|old] [--paint-off fillets,tilt,dirt,joints,tile] [--paint-relief K]
 //       [--sill vasalemma|old] [--sill-off speckle,band,arris,nose,dust (the limestone's parts, each off)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
@@ -203,6 +205,7 @@ fn park_frag(part: i64, hdr: bool) -> const u8[:] {
     };
 }
 let TOPS = ["0.95", "1.05", "0.80"];
+let PROPS_WAYS = ["off", "on", "kept"];
 let TREE_GROWS = ["shadow", "whole"];
 let TOP_METRES: f32[3] = [0.95, 1.05, 0.80];
 fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
@@ -1595,6 +1598,10 @@ fn main() {
     var rug_on = !(flag_value(argv, "--rug") > 0 && argv[flag_value(argv, "--rug")] == "off");
     var chairs_on = !(flag_value(argv, "--chairs") > 0 && argv[flag_value(argv, "--chairs")] == "off");
     g.chairs = chairs_on && room_on;
+    // The props' light (render3d::props_light), and the table's own shade terms kept beside it.
+    let props_way = pick(argv, "--props-light", PROPS_WAYS, 0);
+    var props_on = props_way > 0;
+    var props_shade = props_way == 2;
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
     // The stove in its corner, and its crown: A's crest as made, or B's flat top with finials.
@@ -1823,6 +1830,7 @@ fn main() {
                       " ms, the first light ", st[1], ", the bounces ", st[2], ", ", st[3], ", ", st[4], ", the half grid ", st[5],
                       ", the probes ", st[6]);
             }
+            if g.props_baked { print("the props' occlusion baked in ", g.props_ms, " ms, ", g.table_count / 3, " triangles"); }
             if walk_test > 0 {
                 print("walked to ", walk.eye.x, ",", walk.eye.y, ",", walk.eye.z, " yaw ", walk.yaw, " pitch ", walk.pitch,
                       "; walking ", walk.on, ", seated ", walk.seated, ", the mouse relative ", gfx::mouse_relative(),
@@ -2098,6 +2106,9 @@ fn main() {
                 choice(c, "Placement (A)", place, PLACE_NAMES);
                 switch(c, "Rug", rug_on, ["off", "on"]);
                 switch(c, "Chairs", chairs_on, ["off", "on"]);
+                switch(c, "Light per pixel", props_on, ["off", "on"]);
+                switch(c, "  the table's own shade", props_shade, ["off", "on"]);
+                if props_on && g.props_baked { note(c, str("  occlusion baked in ", floor(g.props_ms + 0.5) as i64, " ms")); }
                 slider(c, "Along the wall (m)", table_place.x, 2.5, 6.5);
                 slider(c, "From the hall wall (m)", table_place.y, 4.5, 6.2);
                 slider(c, "Its turn under the board", g.table_turn, -60.0, 60.0);
@@ -2221,6 +2232,8 @@ fn main() {
         g.books_off = !books_on;
         g.rug_off = !rug_on;
         g.chairs = chairs_on && room_on;
+        render3d::props_light = props_on;
+        render3d::props_table_shade = props_shade;
         room_shell::shutters_on = shutters_on;
         if lace_hang != room_shell::lace_hang { room_shell::hang_lace(lace_hang); }
         room_shell::paint_quiet = paint_quiet;
@@ -2369,7 +2382,8 @@ fn main() {
             format(line, " --haze-sigma ", haze_e4 * 1.0e-4, " --haze-toward ", render3d::haze.toward, " --haze-res ",
                    if render3d::haze.half { "half" } else { "full" });
             flag_four(line, "--haze-look", float4 { render3d::haze.g, render3d::haze.even, render3d::haze.taps, render3d::haze.soft });
-            format(line, " --books ", on_off(books_on), " --rug ", on_off(rug_on), " --chairs ", on_off(chairs_on), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on), " --lace-hang ", lace_hang);
+            format(line, " --books ", on_off(books_on), " --rug ", on_off(rug_on), " --chairs ", on_off(chairs_on), " --props-light ",
+                   (if !props_on { "off" } else if props_shade { "kept" } else { "on" }), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on), " --lace-hang ", lace_hang);
             if st.halo.x > 0.0 || st.halo.y > 0.0 { format(line, " --halo ", st.halo.x, " --halo-reach ", st.halo.y); }
             let wv = render3d::window_view;
             format(line, " --lace-sun ", wv.x, " --lace-scatter ", wv.y, " --glass-film ", wv.z, " --scratches ", wv.w, " --sun-veil ",

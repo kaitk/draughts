@@ -153,7 +153,9 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
         var t = no_root();
         t.frame = f;
         let room_table = g.hdr || render3d::table_in_room(g);
-        t.u = table_u(g, render3d::table_block(g), room_table);
+        // The props' light (shaders::PROPS_LIGHT): their bake a vertex, the room's probes.
+        let props = (g.hdr && h.props_light) || (!g.hdr && render3d::table_in_room(g) && g.room_props);
+        t.u = table_u(g, render3d::table_block(g), room_table, props);
         t.verts = nx::address(g.table_vb);
         slot(t, 0, g.table_albedo, g.aniso);
         slot(t, 1, g.table_normal, g.aniso);
@@ -166,6 +168,10 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
         if room_table { slot(t, 8, render3d::tapestry_or_stand_in(g), g.aniso); }
         if room_table && (g.hdr || g.room_ssao) { slot(t, 9, render3d::ssao_or_stand_in(g), g.linear); }
         if room_table { slot(t, if g.hdr || g.room_ssao { 10 } else { 9 }, render3d::lace_or_stand_in(g), g.linear); }
+        if props {
+            t.buf0 = nx::address(g.props_open);
+            slot(t, 11, render3d::light_or_stand_in(g), g.linear);
+        }
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
 
@@ -282,7 +288,8 @@ fn draw_floor_pieces(g: Gpu&, f: u64, u: u64, h: render3d::HdrPipelines&, ssao: 
 // mirror's too, or a phone's without either; made again if the tier changes.
 fn make_room_tier(own: Own&, g: Gpu&) {
     let ssao = render3d::ssao_allowed;
-    guard g.room_walls.id == 0 || g.room_ssao != ssao else { return; }
+    let props = render3d::props_light && ssao;
+    guard g.room_walls.id == 0 || g.room_ssao != ssao || g.room_props != props else { return; }
     if g.room_walls.id != 0 {
         for p in [g.room_floor, g.room_walls, g.room_paint, g.room_sill, g.room_metals, g.room_glass, g.room_lace, g.table_room] { nx::release(p); }
         if g.room_planar.id != 0 {
@@ -300,6 +307,7 @@ fn make_room_tier(own: Own&, g: Gpu&) {
         }
     }
     g.room_ssao = ssao;
+    g.room_props = props;
     let opaque = ngfx::PipelineDesc { depth_test: true, depth_write: true };
     let blended = ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED };
     let table_desc = ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED };
@@ -311,7 +319,8 @@ fn make_room_tier(own: Own&, g: Gpu&) {
         g.room_metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_metals.blob"), opaque);
         g.room_glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_glass.blob"), blended);
         g.room_lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_lace.blob"), blended);
-        g.table_room = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_room.blob"), table_desc);
+        g.table_room = if props { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_room_props.blob"), table_desc) }
+                       else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_room.blob"), table_desc) };
     } else {
         g.room_floor = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_floor_phone.blob"), opaque);
         g.room_walls = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_room_walls_phone.blob"), opaque);
@@ -333,9 +342,10 @@ fn make_room_tier(own: Own&, g: Gpu&) {
                                   ngfx::PipelineDesc { depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED });
     g.planar_lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_mirror_lace.blob"),
                                   ngfx::PipelineDesc { depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED });
-    g.planar_table = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_mirror.blob"),
-                                  ngfx::PipelineDesc { cull: ngfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
-                                                       blend: ngfx::BLEND_PREMULTIPLIED });
+    let mirror_desc = ngfx::PipelineDesc { cull: ngfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
+                                           blend: ngfx::BLEND_PREMULTIPLIED };
+    g.planar_table = if props { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_mirror_props.blob"), mirror_desc) }
+                     else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_table_mirror.blob"), mirror_desc) };
 }
 
 // The room's pipelines (make_room_tier) and its bake's, its view out's, glow's, occlusion's
@@ -400,7 +410,7 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
         nx::bind(g.planar_table);
         var t = no_root();
         t.frame = f;
-        t.u = table_u(g, render3d::mirror_table_block(g), true);
+        t.u = table_u(g, render3d::mirror_table_block(g), true, g.room_props);
         t.verts = nx::address(g.table_vb);
         slot(t, 0, g.table_albedo, g.aniso);
         slot(t, 1, g.table_normal, g.aniso);
@@ -412,6 +422,10 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
         slot(t, 7, render3d::table_map_or_stand_in(g), g.compare);
         slot(t, 8, render3d::tapestry_or_stand_in(g), g.aniso);
         slot(t, 9, render3d::lace_or_stand_in(g), g.linear);
+        if g.room_props {
+            t.buf0 = nx::address(g.props_open);
+            slot(t, 10, render3d::light_or_stand_in(g), g.linear);
+        }
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
     // The room less its floor, which lies under the clip plane.
@@ -645,14 +659,17 @@ fn make_lit_shell(own: Own&, g: Gpu&) {
 // the light tuner's switches are gfx's alone.
 fn make_hdr(own: Own&, g: Gpu&) {
     let h .= g.hdr_pipes;
-    guard h.tone.id == 0 || h.pieces != g.pieces else { return; }
+    let props = render3d::props_light;
+    guard h.tone.id == 0 || h.pieces != g.pieces || h.props_light != props else { return; }
     if h.tone.id != 0 { release_hdr(own, g); }
     h.pieces = g.pieces;
+    h.props_light = props;
     let lit = lit_hdr_blob(g.pieces);
     h.lit = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
     h.fading = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
-    h.table = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_table.blob"),
-                           ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED });
+    let table_desc = ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED };
+    h.table = if props { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_table_props.blob"), table_desc) }
+              else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_table.blob"), table_desc) };
     let opaque = ngfx::PipelineDesc { depth_test: true, depth_write: true };
     h.floor = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor.blob"), opaque);
     h.planar = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar.blob"), opaque);
@@ -1546,9 +1563,15 @@ fn lit_block(g: Gpu&, draw: float4, in_shell: bool) -> u64 {
     return blocks([draw, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view]);
 }
 
-// The table's u: its block, then in the room its shell's windows (TABLE_SHELL's Shell).
+// The table's u: its block, then in the room its shell's windows (TABLE_SHELL's Shell), and
+// with the props' light the probes' grid (TABLE_SHELL's PropsLight).
 struct TableShellBlock { table: render3d::TableBlock, shell: render3d::ShellBlock }
-fn table_u(g: Gpu&, table: render3d::TableBlock, in_room: bool) -> u64 {
+struct TablePropsBlock { table: render3d::TableBlock, shell: render3d::ShellBlock, props: render3d::PropsLightBlock }
+fn table_u(g: Gpu&, table: render3d::TableBlock, in_room: bool, props: bool) -> u64 {
+    if in_room && props {
+        let tb: TablePropsBlock[1] = [TablePropsBlock { table, render3d::shell_block(g), render3d::props_light_block(g) }];
+        return ngfx::frame_data(bytes_of(tb));
+    }
     if in_room {
         let tb: TableShellBlock[1] = [TableShellBlock { table, render3d::shell_block(g) }];
         return ngfx::frame_data(bytes_of(tb));
@@ -1747,7 +1770,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { nx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.window_vb, g.window_ib, g.outside_vb, g.outside_ib, g.haze_panes];
+                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.window_vb, g.window_ib, g.outside_vb, g.outside_ib, g.haze_panes, g.props_open];
     for b in buffers { if b.id != 0 { nx::release(b); } }
     let samplers = [g.linear, own.point, g.aniso, g.compare, g.planar_sampler];
     for s in samplers { if s.id != 0 { nx::release(s); } }

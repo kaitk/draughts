@@ -49,6 +49,9 @@ fn main() {
         var mean_open_chairs = 0.0;
         for k in table_verts..verts.len { mean_open_chairs += reference[k].open; }
         print("  chairs' mean open ", mean_open_chairs / (verts.len - table_verts));
+        var dark = 0;
+        for o in reference { if o.open < 0.1 { dark += 1; } }
+        print("  vertices under 0.1 open ", dark);
         for cell in cells {
             guard !quick || cell == 1.0 else { continue; }
             at = clock();

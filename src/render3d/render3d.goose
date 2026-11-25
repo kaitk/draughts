@@ -268,8 +268,14 @@ struct Gpu {
     chairs:          bool,
     chairs_made:     bool,
     chairs_rug_made: bool,
-    table_lit:       Pipeline,
-    table_room:      Pipeline,
+    // The props' baked occlusion (props_light): one float4 a vertex of the table's mesh, its
+    // open direction and open part (model3d::prop_occlusion), TABLE_VERT's storage buffer
+    // with shaders::PROPS_LIGHT; whether it holds the mesh as made, and the bake's time.
+    props_open:  Buffer,
+    props_baked: bool,
+    props_ms:    f64,
+    table_lit:   Pipeline,
+    table_room:  Pipeline,
     // The table's own shadow in the room (table_map): its map, what it was drawn for
     // (table_map_key()), and the rows that place a point in it (table_map_rows()).
     table_map:       Texture,
@@ -393,10 +399,10 @@ struct Gpu {
     room_fixed:      bool,
     // The box's map (box_map), RGBA16F, what it was baked from, its bake's pipeline, and
     // whether the room's pipelines read it (room_boxed).
-    box_map:         Texture,
-    box_map_for:     float4[BOX_MAP_KEY],
-    box_map_bake:    Pipeline,
-    room_boxed:      bool,
+    box_map:      Texture,
+    box_map_for:  float4[BOX_MAP_KEY],
+    box_map_bake: Pipeline,
+    room_boxed:   bool,
     // The room's pipelines, one a material group (room_group), made when first wanted
     // (make_room) for the tier: room_ssao, with the screen's maps (ssao_allowed), or a
     // phone's without them. The floor here sees the room's box; room_planar the mirror.
@@ -409,6 +415,7 @@ struct Gpu {
     room_views:  bool,              // with the tuner's views (room_views_on)
     room_steps:  bool,              // the painted wood's with the tuner's switches (paint_steps_on)
     sill_steps:  bool,              // the sills' with the tuner's switches (sill_steps_on)
+    room_props:  bool,              // the table's and its mirror's with shaders::PROPS_LIGHT (props_light)
     bake_room:   Pipeline,
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
     // the photograph when on (the tuner's): its mesh, made once, its pipeline, and its two
@@ -629,6 +636,7 @@ struct HdrPipelines {
     paint_steps: bool,
     sill_steps:  bool,
     mapped:      bool,      // with the window's light map (window_map_on)
+    props_light: bool,      // the table's with shaders::PROPS_LIGHT (props_light)
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -690,6 +698,7 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
     let r = table_radius(g);
     guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w || r != g.table_made_r
           || g.table_turn != g.table_made_turn || g.chairs != g.chairs_made || (g.chairs && chairs_on_rug(g) != g.chairs_rug_made)
+          || (props_light && !g.props_baked)
     else { return; }
     var verts:   mesh::Vertex[>..] = [];
     var indices: u32[>..]          = [];
@@ -716,11 +725,53 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
     if g.table_vb.id != 0 { o.gpu_release_mesh(g.table_vb, g.table_ib); }
     g.table_vb, g.table_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
     g.table_count = indices.len;
+    g.props_baked = false;
+    if props_light { bake_props_open(o, g, verts[..], indices[..]); }
     g.chairs_made = g.chairs;
     g.chairs_rug_made = chairs_on_rug(g);
     g.table_edge = e;
     g.table_made_r = r;
     g.table_made_turn = g.table_turn;
+}
+
+// The props' light (shaders::PROPS_LIGHT, task 120): the games table and its chairs lit from
+// the room's probe grid where each pixel is, through their occlusion baked per vertex, in
+// place of the four samples on the table's axis. The light tuner's, off by default (the app's
+// look as before); props_table_shade keeps the table's own shade terms beside the bake (the
+// base's hidden sky, the edge's under the top). The bake's rays a vertex and reach (metres).
+var props_light = false;
+var props_table_shade = false;
+let PROPS_RAYS = 32;
+let PROPS_REACH: f32 = 0.5;
+
+// The props' occlusion baked over the table's mesh as made into g.props_open: a second or
+// so on the main thread, when the mesh is made with props_light on.
+fn bake_props_open<O>(o: O&, g: Gpu&, verts: const mesh::Vertex[:], indices: const u32[:]) {
+    let t0 = clock();
+    let n = verts.len;
+    var pos:    float3[..]               = [..n];
+    var normal: float3[..]               = [..n];
+    var open:   prop_occlusion::Open[..] = [..n];
+    for v in verts {
+        pos.push(v.pos);
+        normal.push(v.normal);
+        open.push(prop_occlusion::Open { float3_0, 0.0 });
+    }
+    prop_occlusion::bake(pos[..], normal[..], indices, PROPS_RAYS, PROPS_REACH * surfaces::METRE, open[..]);
+    var packed: float4[..] = [..n];
+    for a in open { packed.push(float4 { a.dir.x, a.dir.y, a.dir.z, a.open }); }
+    if g.props_open.id != 0 { o.gpu_release_storage(g.props_open); }
+    g.props_open = o.gpu_storage(bytes_of(packed));
+    g.props_baked = true;
+    g.props_ms = (clock() - t0) * 1000.0;
+}
+
+// TABLE_FRAG's block with PROPS_LIGHT (shaders::TABLE_SHELL's PropsLight): the probes' grid
+// as the room's (light_box_of, light_grid_of), and props_look x 1 where the table keeps its
+// own shade terms (props_table_shade).
+struct PropsLightBlock { light_box: float4, light_grid: float4, props_look: float4 }
+fn props_light_block(g: Gpu&) -> PropsLightBlock {
+    PropsLightBlock { light_box_of(), light_grid_of(), float4 { if props_table_shade { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 } }
 }
 
 // A chair's plan round its seat's middle (world units: half its width, its front, its back's
@@ -2068,9 +2119,8 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, g.room_tint.z, g.room_tint.w };
     if light_baked(g) && g.light_volume.id != 0 {
         b.room_baked = float4 { 1.0, shade_fill, r.baked.z, r.baked.w };
-        let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
-        b.light_box = float4 { corner.x, surfaces::FLOOR_Y + room_light::INSET * metre, corner.y, room_light::CELL * metre };
-        b.light_grid = float4 { room_light::NX, room_light::NZ, room_light::NH, 0.0 };
+        b.light_box = light_box_of();
+        b.light_grid = light_grid_of();
         // The box the reflections meet, and its doors.
     }
     // The box the reflections meet and the corners darken in.
@@ -2142,6 +2192,16 @@ fn keep_tree_small(map: const u8[:], w: i64, h: i64) {
     tree_small_w = sw;
     tree_small_h = sh;
 }
+
+// The probes' first corner in the room's frame and, w, the step between them (world units);
+// how many across, along v, and up (model3d::room_light).
+fn light_box_of() -> float4 {
+    let s = room_shell::LIBRARY;
+    let metre = surfaces::METRE;
+    let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
+    return float4 { corner.x, surfaces::FLOOR_Y + room_light::INSET * metre, corner.y, room_light::CELL * metre };
+}
+fn light_grid_of() -> float4 { float4 { room_light::NX, room_light::NZ, room_light::NH, 0.0 } }
 
 // The baked light's atlas to bind, or another texture where none is made: ROOM_FRAG reads
 // it only when its block says it is on.
@@ -3271,6 +3331,8 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
     g.frame.toe = tone_toe;
     keep_backdrop(o, g, size);
+    // The props' occlusion baked when the light tuner turns their light on.
+    if props_light && g.table && g.table_vb.id != 0 && !g.props_baked { table_mesh(o, g); }
     bake_tree(o, g);
     if dust.count > 0 { o.make_motes(g); }
     room_surfaces(o, g);

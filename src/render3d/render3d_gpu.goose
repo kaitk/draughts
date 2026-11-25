@@ -197,6 +197,12 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::uniforms(gfx::FRAGMENT, 0, f);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::table_block(g));
         if room_table { gfx::uniforms(gfx::FRAGMENT, 2, render3d::shell_block(g)); }
+        // The props' light (shaders::PROPS_LIGHT): their bake a vertex, the room's probes.
+        if (g.hdr && h.props_light) || (!g.hdr && render3d::table_in_room(g) && g.room_props) {
+            gfx::bind_storage_buffer(gfx::VERTEX, 0, g.props_open);
+            gfx::bind_texture(gfx::FRAGMENT, 11, render3d::light_or_stand_in(g), g.linear);
+            gfx::uniforms(gfx::FRAGMENT, 3, render3d::props_light_block(g));
+        }
         gfx::bind_vertex_buffer(g.table_vb);
         gfx::bind_index_buffer(g.table_ib, 4);
         gfx::draw_indexed(g.table_count);
@@ -467,7 +473,8 @@ fn room_frag_fixed(group: i64, mapped: bool, boxed: bool) -> const u8[:] {
 // the table's in it, with the screen's maps and then the floor's mirror's too, or a phone's
 // without either; made again if the tier changes, or as the tuner's views come and go
 // (render3d::room_views_on; their code alone cost 0.55 ms), or the tuner's switches of the
-// painted wood or the sills. The toe's shaders have none.
+// painted wood or the sills, or the props' light (render3d::props_light, the table's and its
+// mirror's with the screen's maps). The toe's shaders have none.
 fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     let ssao = render3d::ssao_allowed;
     let views = render3d::room_views_on();
@@ -477,8 +484,9 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     let fixed = render3d::room_fixed_on && !ssao && !views && fixed_current(g);
     // The sharp box from the box's map, with the constants (room_frag_fixed) and the light map.
     let boxed = fixed && mapped && render3d::box_map_shown(g);
+    let props = render3d::props_light && ssao;
     guard g.room_walls.id == 0 || g.room_ssao != ssao || g.room_views != views || g.room_steps != steps || g.sill_steps != sill_steps
-          || g.room_mapped != mapped || g.room_fixed != fixed || g.room_boxed != boxed
+          || g.room_mapped != mapped || g.room_fixed != fixed || g.room_boxed != boxed || g.room_props != props
     else { return; }
     if g.room_walls.id != 0 {
         for p in [g.room_floor, g.room_walls, g.room_paint, g.room_sill, g.room_metals, g.room_glass, g.room_lace, g.table_room] { gfx::release(p); }
@@ -509,6 +517,7 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     g.room_mapped = mapped;
     g.room_fixed = fixed;
     g.room_boxed = boxed;
+    g.room_props = props;
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
     let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
     let blended = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED };
@@ -521,10 +530,11 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     g.room_lace = gfx::pipeline(room_vert, room_frag(render3d::GROUP_LACE, ssao, views, mapped, fixed, boxed), blended);
     let table_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT);
     let table_desc = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED };
-    g.table_room = gfx::pipeline(table_vert,
-                                 if ssao { tuned_or(TUNED_TABLE_ROOM, embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG)) }
-                                 else { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::NO_SSAO, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) },
-                                 table_desc);
+    let props_vert = embed_shader("vert", shaders::PROPS_LIGHT, shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT);
+    let room_table_frag = if props { embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) }
+                          else if ssao { tuned_or(TUNED_TABLE_ROOM, embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG)) }
+                          else { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::NO_SSAO, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) };
+    g.table_room = gfx::pipeline(if props { props_vert } else { table_vert }, room_table_frag, table_desc);
     guard ssao else { return; }
     let planar_frag = if views { embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::ROOM_VIEWS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }
                       else { if mapped { embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::WINDOW_MAP_LEAVES, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG) }
@@ -541,7 +551,9 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
                                    gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
     g.planar_lace = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_LACE, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                                    gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
-    g.planar_table = gfx::pipeline(table_vert, embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+    let mirror_frag = if props { embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) }
+                      else { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) };
+    g.planar_table = gfx::pipeline(if props { props_vert } else { table_vert }, mirror_frag,
                                    gfx::PipelineDesc { cull: gfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
                                                        blend: gfx::BLEND_PREMULTIPLIED });
     guard render3d::mirror_cheap else { return; }
@@ -688,6 +700,11 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
             gfx::bind_texture(gfx::FRAGMENT, 9, render3d::lace_or_stand_in(g), g.linear);
             gfx::uniforms(gfx::FRAGMENT, 1, render3d::mirror_table_block(g));
             gfx::uniforms(gfx::FRAGMENT, 2, render3d::shell_block(g));
+            if g.room_props {
+                gfx::bind_storage_buffer(gfx::VERTEX, 0, g.props_open);
+                gfx::bind_texture(gfx::FRAGMENT, 10, render3d::light_or_stand_in(g), g.linear);
+                gfx::uniforms(gfx::FRAGMENT, 3, render3d::props_light_block(g));
+            }
             gfx::bind_vertex_buffer(g.table_vb);
             gfx::bind_index_buffer(g.table_ib, 4);
             gfx::draw_indexed(g.table_count);
@@ -942,18 +959,23 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     let paint = render3d::paint_steps_on() && tuned_frags[TUNED_PAINT_HDR].len > 0;
     let sill = render3d::sill_steps_on() && tuned_frags[TUNED_SILL_HDR].len > 0;
     let mapped = render3d::window_map_on;
-    guard h.tone.id == 0 || h.pieces != g.pieces || h.paint_steps != paint || h.sill_steps != sill || h.mapped != mapped else { return; }
+    let props = render3d::props_light;
+    guard h.tone.id == 0 || h.pieces != g.pieces || h.paint_steps != paint || h.sill_steps != sill || h.mapped != mapped || h.props_light != props
+    else { return; }
     if h.tone.id != 0 { release_hdr(own, g); }
     h.pieces = g.pieces;
     h.mapped = mapped;
+    h.props_light = props;
     h.paint_steps = paint;
     h.sill_steps = sill;
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
     let lit_fs = lit_hdr_frag(g.pieces);
     h.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
     h.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, blend: gfx::BLEND_ALPHA });
-    h.table = gfx::pipeline(embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
-                            embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
+    h.table = gfx::pipeline(if props { embed_shader("vert", shaders::PROPS_LIGHT, shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT) }
+                            else { embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT) },
+                            if props { embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) }
+                            else { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) },
                             gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
     let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
@@ -2036,7 +2058,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
                     g.planar_depth, g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.table_vb, g.table_ib, g.instances, g.squares, g.marks,
-                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.window_vb, g.window_ib, g.outside_vb, g.outside_ib, g.haze_panes];
+                   g.glows, g.mote_seeds, g.room_vb, g.room_ib, g.window_vb, g.window_ib, g.outside_vb, g.outside_ib, g.haze_panes, g.props_open];
     for b in buffers { if b.id != 0 { gfx::release(b); } }
     let samplers = [g.linear, g.aniso, g.oak_sampler, g.compare, g.planar_sampler];
     for s in samplers { if s.id != 0 { gfx::release(s); } }

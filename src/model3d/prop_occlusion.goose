@@ -15,6 +15,11 @@ import math;
 let CELL_SIDE: f32 = 0.5;
 let MAX_CELLS = 8000000;
 
+// Hits nearer than this (world units, about 1.6 mm) aren't counted: a vertex touching
+// another piece or just inside it (the bead's top row under the table's slab) would see
+// nothing, and its dark value spread across its triangles as a dashed line.
+let NEAREST_HIT: f32 = 0.05;
+
 // One triangle as the ray test reads it: its first corner and its two edges from it.
 struct Triangle { a: float3, ab: float3, ac: float3 }
 
@@ -32,7 +37,7 @@ fn hit(t: Triangle&, o: float3, d: float3, far: f32) -> f32 {
     let v = dot(d, q) * inv;
     guard v >= 0.0 && u + v <= 1.0 else { return far; }
     let at = dot(t.ac, q) * inv;
-    return if at > 0.0 && at < far { at } else { far };
+    return if at > NEAREST_HIT && at < far { at } else { far };
 }
 
 // An integer hash to a float in 0..1, for each vertex's turn of the ray set.
@@ -153,7 +158,36 @@ fn bake(pos: const float3[:], normal: const float3[:], indices: const u32[:], ra
         let len = length(dir);
         out[i] = Open { if len > 1e-4 { dir / len } else { n }, open / n_rays };
     }
+    smooth(out, normal, indices);
     return st;
+}
+
+// Each vertex's open part and direction averaged with those of the vertices it shares a
+// triangle with, once: in a tight crease nearly every ray is hidden, and the few open
+// ones differ from vertex to vertex, so a row along it read as a dashed line.
+fn smooth(out: Open[:], normal: const float3[:], indices: const u32[:]) {
+    var sum: float4[..] = [..out.len];
+    for o in out { sum.push(float4 { o.dir.x * o.open, o.dir.y * o.open, o.dir.z * o.open, o.open }); }
+    var weight: f32[..] = [..out.len];
+    for o in out { weight.push(1.0); }
+    for k in indices.len / 3 {
+        for e in 3 {
+            let a = indices[3 * k + e] as i64;
+            let b = indices[3 * k + (e + 1) % 3] as i64;
+            let oa = out[a];
+            let ob = out[b];
+            sum[a] = sum[a] + float4 { ob.dir.x * ob.open, ob.dir.y * ob.open, ob.dir.z * ob.open, ob.open };
+            sum[b] = sum[b] + float4 { oa.dir.x * oa.open, oa.dir.y * oa.open, oa.dir.z * oa.open, oa.open };
+            weight[a] += 1.0;
+            weight[b] += 1.0;
+        }
+    }
+    for i in out.len {
+        let s = sum[i];
+        let d = float3 { s.x, s.y, s.z };
+        let len = length(d);
+        out[i] = Open { if len > 1e-4 { d / len } else { normal[i] }, s.w / weight[i] };
+    }
 }
 
 // The nearest hit along o + d·t under `far`, walking the grid's cells in the ray's order

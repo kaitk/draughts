@@ -34,6 +34,8 @@ FULL = ["FULL_VERT"]
 LIT_VS = ["VS_SET", "FRAME", "LIT_VERT"]
 QUAD_VS = ["VS_SET", "FRAME", "QUAD_VERT"]
 TABLE_VS = ["VS_SET", "FRAME", "TABLE_VERT"]
+# The table's in the room lit through the props' baked occlusion (render3d::props_light).
+TABLE_PROPS_VS = ["PROPS_LIGHT", "VS_SET", "FRAME", "TABLE_VERT"]
 # The room's pipelines, one a material group (render3d::room_group) and tier, as
 # render3d_gpu.goose's make_room_tier puts them together: the defines, then ROOM_FS, the
 # table's map for opaque groups, SSAO_FN, TONE_FN and ROOM_FRAG.
@@ -94,6 +96,8 @@ MODULES = [
     ("r3d_table_room", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
     ("r3d_table_room_phone", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "NO_SSAO", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
     ("r3d_table_mirror", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "MIRROR_PASS", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_table_room_props", TABLE_PROPS_VS, ["PROPS_LIGHT", "TABLE_ROOM", "SHELL_WINDOWS", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_table_mirror_props", TABLE_PROPS_VS, ["PROPS_LIGHT", "TABLE_ROOM", "SHELL_WINDOWS", "MIRROR_PASS", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
     ("r3d_crown", FULL, ["CROWN_FN", "CROWN_FRAG"]),
     ("r3d_occ", FULL, ["FS_SET", "FRAME", "OCC_FRAG"]),
     ("r3d_backdrop", FULL, ["FS_SET", "FRAME", "FADE_FN", "BACKDROP_FRAG"]),
@@ -135,6 +139,7 @@ MODULES = [
     ("r3d_hdr_lit_winter", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_WINTER", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
     ("r3d_hdr_lit_mineral", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_MINERAL", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
     ("r3d_hdr_table", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "HDR_OUT", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
+    ("r3d_hdr_table_props", TABLE_PROPS_VS, ["PROPS_LIGHT", "TABLE_ROOM", "SHELL_WINDOWS", "HDR_OUT", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
     # The board in the room's shell, 8-bit (render3d::make_lit_shell): the sun through its own
     # windows (LIT_SHELL), the 16-tap shadow.
     ("r3d_lit_shell", LIT_VS, ["SHELL_WINDOWS", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
