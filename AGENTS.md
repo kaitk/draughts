@@ -47,6 +47,8 @@ would otherwise look up again:
 
 ## Working with the user
 
+- For local HTML deliverables, include the absolute `file:///` URL so the user can open
+  the page in a browser. The workspace sidebar preview is not useful for these pages.
 - Commit each finished step with one lean sentence: no body, no `Co-Authored-By` or other
   trailers. Don't push unless asked.
 - Images: a few essential ones the app needs, of a few MB at most (the icon's layers),
