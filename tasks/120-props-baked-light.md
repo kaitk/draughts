@@ -1,6 +1,6 @@
 # 120: The props' light baked per vertex
 
-Status: in progress
+Status: in-progress
 
 The room's surfaces read a baked probe grid (10,140 probes 0.3 m apart, a constant and a
 direction per colour, `model3d::room_light`, rebaked in about 88 ms when the sun, the table
