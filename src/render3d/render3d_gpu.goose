@@ -116,7 +116,7 @@ fn table_map_pass(own: Own&, g: render3d::Gpu&, place: render3d::Mat) {
     gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 0.0, 1.0, 1.0, 0.0 } });
     gfx::bind_vertex_buffer(g.table_vb);
     gfx::bind_index_buffer(g.table_ib, 4);
-    gfx::draw_indexed(g.table_count);
+    gfx::draw_indexed(g.table_own_count);
     gfx::end_pass();
 }
 

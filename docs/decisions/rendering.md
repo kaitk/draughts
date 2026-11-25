@@ -789,6 +789,21 @@ to be is in tasks 042, 059, 071, 081, and 086.
   Rejected: the tiles as geometry (four times the triangles, and a tile's tilt and roll
   are what the shader does better), and a material group of its own for the glaze (more
   pipelines per tier and in the mirror for a few percent of one view's pixels).
+- The games table's chairs are a Neo-Rococo balloon-back side chair of the 1860s
+  (2026-11-25, task 107, `build/notes/chairs-build/`; `mesh::chairs`), matching the
+  style-01 room's suite of cabriole-legged pieces, in the table's flame mahogany with a
+  drop-in seat in grey-green velvet, as the concepts' armchair. Two, on the board's axis
+  where the players sit (task 109's plan): the far one close in, the near one 0.25 m out
+  and turned 14° against the other's 6°. Procedural, from the table base's tools (`bar`,
+  `bent_spine`, Catmull-Rom curves), in the table's mesh and shader rather than the
+  shell's, so they take the table's wood, polish and probes and every pass that draws the
+  table. Not in the table's own shadow map: the map's rectangle is sized to the top, and a
+  chair half out of it would cast a shadow cut at its edge; widening it would coarsen the
+  table's shadow everywhere. So the chairs cast no sun shadow, as the stove casts none.
+  Built only where the room shows (`Gpu.chairs`, the light tuner's), so the game's views
+  and costs don't change. Rejected: a converted Poly Haven chair (no mesh loader, and the
+  pierced-splat or carved back would cost a conversion tool), and a pierced-splat chair
+  (style-01's writing-desk chair, a later style than the suite).
 - The library's windows have working shutters (2026-11-21, task 107; option A of
   `build/notes/shutters/`, the user's agreement; `room_shell::SHUTTER_*`,
   `shell_mesh::shutters`): two leaves a side of 0.325 m, as the shell's plan had them and

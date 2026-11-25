@@ -890,6 +890,16 @@ gain needs direct compressed-sample measurements.
       unchanged; the room a little brighter, as the bake takes the pale stove; costs in
       task 110. Still off: the crest not pierced, no crazing, no sun shadow or corner
       shade from it, the colour reads cream under the warm light; the tablet not checked
+- [x] The chairs at the games table (2026-11-25, `build/notes/chairs-build/`): two
+      Neo-Rococo balloon-back side chairs in the table's flame mahogany, one on the board's
+      axis behind each player, cabriole front legs, a bowed seat rail, the back legs rising
+      into the balloon, a curved cross rail, a drop-in seat in grey-green velvet; about
+      6,200 triangles each, made with `mesh::bar` and `bent_spine` into the table's mesh
+      and shaded by `TABLE_FRAG` on the room's probes. The far one close in, turned 6°; the
+      near one 0.25 m out, turned 14° the other way; feet on the rug, contact shade on the
+      floor. Room only (`--chairs off`); the game's shot unchanged; costs in task 110. Still
+      off: no sun shadow from them (not in the table's map), the back uncarved, the velvet
+      plain, the wood lighter than the top beside it; the tablet not checked
 - [ ] The floor and rug, seen in the game's views (task 106)
 - [ ] The table's props: the chess clock (100), the pieces' box (102), the score sheet and
       pencil (103)

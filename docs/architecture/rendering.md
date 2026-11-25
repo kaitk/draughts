@@ -851,6 +851,27 @@ sees the stove as its pale albedo on the two walls behind it (`room_light::STOVE
 The crown is a part of its own: the light tuner's `--stove-crown flat` gives a flat top
 with two ball finials instead, and `--stove off` leaves the stove out.
 
+### The chairs at the games table
+
+Two balloon-back side chairs stand at the games table, one on the board's axis behind each
+player (`mesh::chairs`, `chairs.goose`): cabriole front legs, a bowed seat rail, back legs
+that rise through the rail into uprights which narrow at the waist, swell into the balloon
+and meet over its top, a curved cross rail closing the balloon, and a drop-in seat in
+grey-green velvet. Each piece is a rounded section swept along a smooth curve
+(`mesh::bar`), the seat a domed pad over the rail's line, about 6,200 triangles a chair.
+The far player's chair stands close in, its seat 6 cm off the top's rim; the near
+player's is pulled 0.25 m out and turned the other way, so the room looks used. Their feet
+stand on the rug's top.
+
+The chairs are built into the table's mesh after the table, so every pass that draws the
+table draws them too (the depth, the screen occlusion, the floor's mirror), and
+`TABLE_FRAG` shades them: the wood as the base's flame mahogany, the velvet matte with a
+sheen at grazing angles, both on the room's probes on the table's axis. The table's own
+shadow map draws only the table's indices: the chairs take the table's shadow but cast
+none. The floor darkens round their feet (`ROOM_FRAG`'s `chair_hides`, as `base_hides`
+does for the table's legs). Only the room shows them: the game never builds them, and the
+light tuner's `--chairs off` leaves them out.
+
 ### The library's shutters and doors
 
 Each window's reveals hold a pair of working shutters folded flat

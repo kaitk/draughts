@@ -102,7 +102,7 @@ fn table_map_pass(own: Own&, g: Gpu&, place: Mat) {
     nx::bind(g.shadow);
     var r = lit_root(own, g, f, g.table_vb);
     r.u = blocks([float4 { 0.0, 1.0, 1.0, 0.0 }]);
-    nx::draw_indexed(ngfx::root(r), g.table_ib, 4, g.table_count);
+    nx::draw_indexed(ngfx::root(r), g.table_ib, 4, g.table_own_count);
     ngfx::end_pass();
     barrier_between_passes();
 }

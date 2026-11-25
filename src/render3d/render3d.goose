@@ -263,6 +263,14 @@ struct Gpu {
     table_vb:        Buffer,
     table_ib:        Buffer,
     table_count:     i64,
+    // The table's own indices, first in its mesh (table_count with the chairs after them):
+    // all its own map draws, so the chairs take the table's shadow and cast none.
+    table_own_count: i64,
+    // The two chairs at the table (mesh::chairs) in its mesh: wanted (a tuner's, where the
+    // room shows; the game never), and as made, with the rug under their feet or not.
+    chairs:          bool,
+    chairs_made:     bool,
+    chairs_rug_made: bool,
     table_lit:       Pipeline,
     table_room:      Pipeline,
     // The table's own shadow in the room (table_map): its map, what it was drawn for
@@ -674,7 +682,7 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
     let was = g.table_edge;
     let r = table_radius(g);
     guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w || r != g.table_made_r
-          || g.table_turn != g.table_made_turn
+          || g.table_turn != g.table_made_turn || g.chairs != g.chairs_made || (g.chairs && chairs_on_rug(g) != g.chairs_rug_made)
     else { return; }
     var verts:   mesh::Vertex[>..] = [];
     var indices: u32[>..]          = [];
@@ -693,13 +701,26 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
             v.normal.z = sn * nx + c * v.normal.z;
         }
     }
+    let own = indices.len;
+    // The chairs stand on the board's axis whatever the table's turn, on the rug's top.
+    if g.chairs {
+        let lift: f32 = if chairs_on_rug(g) { CHAIR_RUG_LIFT * surfaces::METRE } else { 0.0 };
+        mesh::chairs(verts, indices, surfaces::FLOOR_Y + lift);
+    }
     if g.table_vb.id != 0 { o.gpu_release_mesh(g.table_vb, g.table_ib); }
     g.table_vb, g.table_ib = o.gpu_mesh(bytes_of(verts), bytes_of(indices));
     g.table_count = indices.len;
+    g.table_own_count = own;
+    g.chairs_made = g.chairs;
+    g.chairs_rug_made = chairs_on_rug(g);
     g.table_edge = e;
     g.table_made_r = r;
     g.table_made_turn = g.table_turn;
 }
+
+// The rug's thickness (ROOM_FRAG's RUG_THICK, metres): the chairs' feet stand on its top.
+let CHAIR_RUG_LIFT: f32 = 0.008;
+fn chairs_on_rug(g: Gpu&) -> bool { !g.rug_off && g.rug_map.id != 0 }
 
 // The table's wood baked into its maps (rows y0 to y1, -1 all; the mips with the last),
 // as a look's light squares: tables::Table in their slots.
@@ -1928,9 +1949,10 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     // The end walls' u, for the floor's darker band along every wall.
     let stove_end = room_shell::room_of(s, s.walls[room_shell::STOVE_WALL].a);
     let far_end = room_shell::room_of(s, s.walls[room_shell::FAR_WALL].a);
-    // z: 1 where the window's light map holds the tree's light (window_map_tree).
+    // z: 1 where the window's light map holds the tree's light (window_map_tree); w 1 with the rug, 2 more
+    // with the chairs.
     b.shell_ends = float4 { stove_end.x, far_end.x, if window_map_shown(g) && window_map_tree(g) { 1.0 } else { 0.0 },
-                            if g.rug_off || g.rug_map.id == 0 { 0.0 } else { 1.0 } };
+                            (if g.rug_off || g.rug_map.id == 0 { 0.0 } else { 1.0 }) + (if g.chairs && g.chairs_made { 2.0 } else { 0.0 }) };
     // Its own sun, and its baked light where it is made.
     let r = g.room;
     b.shell_sun = float4 { r.shell_sun.x, r.shell_sun.y, g.room_tint.z, g.room_tint.w };

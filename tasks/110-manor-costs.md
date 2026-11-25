@@ -400,6 +400,16 @@ Add each new cost here as it lands, with its numbers.
   12.87 against 12.62), paid by the books' and brass's pixels too; a define variant or a
   group of its own would pay it back if the tablet needs it. At 5120 × 2880 runs scatter
   by 2 to 3 ms, no direction. Not measured on the tablet (task 115).
+- The chairs at the games table (2026-11-25, task 107, `build/notes/chairs-build/`):
+  about 12,500 triangles in the table's mesh, built only where the room shows, no new
+  draw, pipeline or texture; a branch in `TABLE_FRAG` and a gated foot-contact term in the
+  floor's shader. The light tuner's counter, headless, two rounds, means before, after,
+  and after with `--chairs off` (ms) at 3840 × 2160: straight down 10.69, 11.03, 10.73;
+  the corner 14.30, 14.28, 13.88; the room 13.53, 13.23, 13.10; the menu 12.27, 12.57,
+  12.20; a view framing the table and both chairs 11.64, 12.19, 11.73. The new code alone
+  costs nothing measurable; the chairs drawn 0.3 to 0.5 ms where they fill part of the
+  view. At 5120 × 2880 runs scatter by 3 to 6 ms, no direction. Not measured on the
+  tablet (task 115).
 
 ## Ways to pay, only where a cheap measurement shows a cost (the user, 2026-11-20)
 

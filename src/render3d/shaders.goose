@@ -1946,6 +1946,7 @@ let TABLE_FRAG = """
     // times as large, so the two never repeat together.
     const vec2 TURN = vec2(0.87758, 0.47943);
     const float GROW = 0.73;
+    const vec3 SEAT_VELVET = vec3(0.062, 0.068, 0.050);
 
     float h12(vec2 p) {
         vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -2120,7 +2121,10 @@ let TABLE_FRAG = """
         // base (mesh::MAT_TABLE_BASE) cut from the same wood, its grain along the column
         // and the legs (its v).
         bool base = v_mat > 3.5;
-        bool top = v_normal.y > 0.999 && p.y > TABLE_TOP - 0.01;
+        // The chairs (mesh::MAT_CHAIR, MAT_SEAT): their wood as the base's, their seats velvet.
+        bool chair = v_mat > 4.5;
+        bool seat = v_mat > 5.5;
+        bool top = v_normal.y > 0.999 && p.y > TABLE_TOP - 0.01 && !base;
         vec2 out_dir = p.xz - vec2(0.0, TABLE_Z);
         float from_mid = max(length(out_dir), 1e-3);
         vec2 uv = top ? out_dir / (2.0 * TABLE_MAP_R) + 0.5
@@ -2143,6 +2147,13 @@ let TABLE_FRAG = """
         vec3 albedo = a.rgb;
         float rough = a.a;
         float ao = clamp(v_ao, 0.0, 1.0);
+        if (seat) {
+            // Grey-green velvet, crushed in slow patches, its pile catching the light at
+            // grazing angles.
+            float crush = 0.6 * vnoise(v_uv * 0.9) + 0.4 * vnoise(v_uv * 2.7 + 3.1);
+            albedo = SEAT_VELVET * (0.8 + 0.4 * crush);
+            rough = 1.0;
+        }
 
         // The top's wear, finer than its map: the wear's tile laid twice, the second turned
         // and larger, where the map's patches (tn.z) say. Scratches and dents where the top
@@ -2185,7 +2196,7 @@ let TABLE_FRAG = """
         } else if (!base) {
             // The edge and the apron in the shade of the top, darker the lower.
             ao *= mix(1.0 - pool.z, 1.0, smoothstep(TABLE_TOP - 0.6, TABLE_TOP, p.y));
-        } else {
+        } else if (!chair) {
             // The base sees the sky round the top: the share of it the top hides, the
             // cone up to its rim, more for what faces up.
             float e = (TABLE_TOP - p.y) / max(shape.x - from_mid, 0.5);
@@ -2207,7 +2218,7 @@ let TABLE_FRAG = """
         float diff = clamp((nol + wrap) / (1.0 + wrap), 0.0, 1.0) / (1.0 + wrap);
         // The light's pool round the board.
         float d = length(p.xz) / max(pool.x, 1e-3);
-        float lit = mix(pool.y, 1.0, exp(-d * d));
+        float lit = chair ? 1.0 : mix(pool.y, 1.0, exp(-d * d));
         vec3 light = light_color.rgb * light_dir.w * lit;
         float vis = 1.0;
         float hidden = 1.0;
@@ -2257,6 +2268,10 @@ let TABLE_FRAG = """
         ao = min(ao, ssao_kept(screen_ao));
     #endif
         vec3 wood = albedo * (diff / PI * light * vis + irr * ao);
+        if (seat) {
+            float nv = 1.0 - max(dot(n, normalize(eye.xyz - p)), 0.0);
+            wood *= 1.0 + 1.5 * nv * nv * nv;
+        }
 
         float nov = max(dot(nc, v), 1e-4);
         float nl = clamp(dot(nc, l), 0.0, 1.0);
@@ -2274,7 +2289,7 @@ let TABLE_FRAG = """
                                   : smoothstep(TABLE_TOP - 0.5, TABLE_TOP, p.y));
         float cr = (top ? rough + 0.3 * polish.w * scratch : coat.x + 0.25 * polish.w * rim)
                  * (1.0 + 2.0 * polish.x * blot);
-        float strength = coat.y * clamp(1.0 - 2.0 * polish.y * blot, 0.0, 2.0) * (1.0 - 0.6 * polish.w * rim);
+        float strength = seat ? 0.0 : coat.y * clamp(1.0 - 2.0 * polish.y * blot, 0.0, 2.0) * (1.0 - 0.6 * polish.w * rim);
         float ar = cr * cr;
         ar = sqrt(clamp(ar * ar + min(2.0 * variance + 0.3 * top_var, 0.3), 0.0, 1.0));
         ar = max(ar, 0.0079);
@@ -3265,6 +3280,13 @@ let ROOM_FRAG = """
     const vec2 LEG2 = vec2(7.86, 2.13);
     const vec2 LEG3 = vec2(10.0, 0.7);
     const float LEG_HALF = 0.8;
+    // The chairs at the table (mesh::CHAIRS): each seat's middle (x, z) and its turn's sine
+    // and cosine; a foot's place from it across and forward (world units, chairs.goose's
+    // legs' and back's feet), front and back, and the sphere at its foot that hides the sky.
+    const vec4 CHAIR_A = vec4(0.0, -27.884, 0.104528, 0.994522);
+    const vec4 CHAIR_B = vec4(1.829, 24.64, -0.241922, -0.970296);
+    const vec2 CHAIR_FRONT_FOOT = vec2(6.355, 5.898);
+    const vec2 CHAIR_BACK_FOOT = vec2(5.425, -8.077);
 
     float h12(vec2 p) {
         vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -3645,6 +3667,19 @@ let ROOM_FRAG = """
         return clamp(hidden, 0.0, 0.8);
     }
 
+    // How much of the sky the chair at c hides from p on the floor round its four feet, each
+    // a sphere of 22 mm 40 mm up (as base_hides's).
+    float chair_hides(vec3 p, vec4 c) {
+        vec2 d = p.xz - c.xy;
+        if (dot(d, d) > 400.0) return 0.0;
+        vec2 q = vec2(abs(c.w * d.x - c.z * d.y), c.z * d.x + c.w * d.y);
+        vec2 f = q - CHAIR_FRONT_FOOT;
+        vec2 b = q - CHAIR_BACK_FOOT;
+        float h = 1.22;
+        float r2 = 0.45;
+        return r2 * h / pow(dot(f, f) + h * h, 1.5) + r2 * h / pow(dot(b, b) + h * h, 1.5);
+    }
+
     #ifdef ROOM_LACE
     // How much more of the sun the lit lace lets through where it falls on it (window_view.x).
     const float LACE_GLOW = 0.6;
@@ -3915,7 +3950,7 @@ let ROOM_FRAG = """
             // The floor's light (the sun, the table's shadow, the probes, the corners) is the
             // rug's too, at the floor's height.
             vec2 q = uv / shell.w - vec2(0.0, RUG_IN);
-            if (shell_ends.w > 0.5 && max(abs(q.x) - 0.5 * RUG_TEX.x, abs(q.y) - RUG_HALF.y) < 0.05) {
+            if (fract(0.5 * shell_ends.w) > 0.25 && max(abs(q.x) - 0.5 * RUG_TEX.x, abs(q.y) - RUG_HALF.y) < 0.05) {
                 vec3 to_eye = eye.xyz - p;
                 vec2 lift = vec2(dot(to_eye.xz, axes.xy), dot(to_eye.xz, axes.zw)) * (RUG_THICK / max(to_eye.y, 1e-3));
                 vec2 out_top = abs(q + lift) - RUG_HALF;
@@ -3944,6 +3979,7 @@ let ROOM_FRAG = """
             // probes' and the screen's: only the base's contact stays here.
             if (table_map[3].x < 0.5) ao *= mix(0.55, 1.0, smoothstep(0.5625 * table.x, 1.375 * table.x, r));
             ao *= 1.0 - base_hides(p);
+            if (shell_ends.w > 1.5) ao *= 1.0 - clamp(chair_hides(p, CHAIR_A) + chair_hides(p, CHAIR_B), 0.0, 0.7);
             if (shell.x > 0.5) {
                 // A dark contact line at the plinth's lip (5 cm out); the walls' broader shade
                 // is the corners' map's.
@@ -4574,12 +4610,12 @@ let ROOM_FRAG = """
         // column's and legs' on the sun (table_shade).
         vec3 l = light_dir.xyz;
         float ao = clamp(v_ao, 0.0, 1.0);
-        vec3 albedo = textureLod(own_albedo, vec2(0.5), 20.0).rgb;
-        if (v_mat > 3.5) {
+        vec3 albedo = v_mat > 5.5 ? vec3(0.062, 0.068, 0.050) : textureLod(own_albedo, vec2(0.5), 20.0).rgb;
+        if (v_mat > 3.5 && v_mat < 4.5) {
             float from_mid = length(p.xz - vec2(0.0, TABLE_Z));
             float e = (TABLE_TOP - p.y) / max(t_shape.x - from_mid, 0.5);
             ao *= 1.0 - (1.0 - t_pool.z) / (1.0 + e * e) * (0.6 + 0.4 * max(ng.y, 0.0));
-        } else {
+        } else if (v_mat < 3.5) {
             ao *= mix(1.0 - t_pool.z, 1.0, smoothstep(TABLE_TOP - 0.6, TABLE_TOP, p.y));
         }
         float k = clamp(((p.y - t_shape.y) / t_shade.w - 0.15) / 0.3, 0.0, 3.0);

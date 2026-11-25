@@ -35,6 +35,10 @@ formatting is stable). The compiler prints nothing on success; `--stats` gives a
   function can return a reference (`fn shown(sh: Shell&) -> board::Board&`) for `.=`;
   `.=` can't bind an `if` choosing between two fields.
 - Trailing parameters can take defaults, `a: f32 = 1.0`.
+- A limited array passes by reference only as its exact type: `float4[..64]` doesn't match a
+  `float4[..]&` or `float4[..96]&` parameter; pass a `const float4[:]` slice (`xs[..]`) to read,
+  or use one capacity throughout (`src/model3d/chairs.goose`). Overflowing one is a runtime
+  error naming the line ("limited array capacity exceeded").
 - A struct literal ending in `..` leaves the rest at defaults, wherever the skipped
   fields are, so a root's `padN` fields stay out of every literal.
 - `type Name = T;` names a type. An alias of another package's struct builds it by

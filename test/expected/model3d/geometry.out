@@ -12,3 +12,5 @@ TABLE_Z: mesh -4.5, shaders -4.5
 FLOOR_STRIPS: mesh 20.0, shaders 20.0
 FLOOR_NOISE_SIDE: mesh 1024.0, shaders 1024.0
 SCRATCH_TILE: mesh 48.0, shaders 48.0
+CHAIR_A: mesh 0.0 -27.884 0.104528 0.994522
+CHAIR_B: mesh 1.829 24.64 -0.241922 -0.970296
