@@ -194,3 +194,28 @@ verdict against the reference (go, fit to it, or a camera or art choice), is in 
 and goes into the plan for the light's rebuild (the user, 2026-11-26: build the light as the
 path tracer computes it, ground every approximation against it, remove what it shows isn't
 needed). A Blender Cycles render of the same scene is the second check.
+
+## The two references against each other (2026-11-26)
+
+A Blender Cycles render of the same scene (`tools/blender_export.goose`, `tools/blender/`;
+close, front and low views, `build/notes/cycles120/`) with physical inputs: no bounce gain,
+no caps, no fills, the sun as `sun.light`, two panes of 0.92, the lace a sheet passing 0.72.
+The CPU tracer in the same physical mode, measured as Cycles is (the light alone on the
+props' pixels by the normal's largest axis), comes within 0.8 to 1.6 of it: the low view's
+seat turned away 0.0085 (Cycles) and 0.0097, up 0.0119 and 0.0168, down 0.0038 and 0.0035;
+the top's underside 0.0033 and 0.0040. The tracer's darker undersides before were its points
+deep in shade against Cycles' means over the visible pixels, near the rims. No bug found in
+either.
+
+The bake's gain of 10 on the sun's light thrown on, with its caps and grey balance, makes
+the shade 2 to 3.6 times brighter and halves the up/down contrast (the seat's 3.1 in Cycles,
+1.9 with the gains): the largest single flattener. Today's look against the physical light,
+each place over a lit face so exposure drops out: the rear pad 2.3 times too bright, the
+column's room side 2.9, the top's underside 4.7, the apron's underside 5.4. The physical
+ratios: front pad over rear pad 5.5 (today about 1.7), the column toward the window over
+toward the room 2.4 (today 0.8), the column over the top's underside 7.2 (today 1.5).
+
+The ground truth for the light's rebuild: physical inputs (gain 1, no caps, real panes),
+exposure and white balance set as a camera; Cycles for pictures, the CPU tracer for points,
+probes and each step's check. The lace needs one model shared by both before either can
+judge its terms.
