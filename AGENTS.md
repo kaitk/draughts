@@ -64,6 +64,9 @@ would otherwise look up again:
   for the UI's look.
 - Code is lean and game-like, in the spirit of Carmack and Sebastian Aaltonen: flat data,
   fixed buffers, no allocation in hot paths, nothing clever without a measured reason.
+- Tests: `scripts/test.sh quick` before committing a change to the scene, the UI, or the
+  tools; all of `scripts/test.sh` after a change to the rules, the computer, the puzzles,
+  the board, or the game screen, and before pushing (`agents/testing.md`).
 - Check a change that shows on screen on the Mac and then on the tablet over USB
   (`docs/development.md`), and record the numbers a task measures in its file.
 - Subagents: Sonnet for searches and mechanical work, the default model for judgment.

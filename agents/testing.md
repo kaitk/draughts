@@ -1,7 +1,17 @@
 # Testing
 
-How to run everything: `docs/development.md`, "Test the rules". Run `scripts/test.sh`
-before committing a change to `rules/`.
+How to run everything: `docs/development.md`, "Test the rules".
+
+- Which suite: `scripts/test.sh quick` (about 15 s) before committing a change to the 3D
+  scene, the UI, the shaders, or the tools; all of `scripts/test.sh` (about 40 s) after a
+  change to `src/rules/`, `src/ai/`, `src/puzzles/`, `src/board/`, or `src/game/`, after a
+  merge, and before pushing. A long test (`LONG` in `test/run_tests.py`) named on the
+  command line runs under `--quick` too.
+- A link error `unknown architecture ... arm64e.x1-macos` in a `.tbd` file means the
+  Command Line Tools' SDK is newer than Xcode's linker (after a macOS update, 2026-11-25):
+  every native build and the -O2 tests fail. Build with
+  `DEVELOPER_DIR=/Library/Developer/CommandLineTools` until Xcode is updated; ask the user
+  before changing `xcode-select`.
 
 - In a separate working tree, make `build/` a real directory holding only a symlink to
   the main checkout's `build/goose-v2026.4-macos-arm64`, never a link to all of `build/`:
@@ -109,7 +119,11 @@ before committing a change to `rules/`.
 - Tests run through TinyCC by default, but those in `SLOW` (`test/run_tests.py`) build
   at -O2; `--build` builds all, `--tinycc` runs all through TinyCC. A difference between
   the two is a compiler finding (`agents/goose.md`). A test that takes TinyCC's code more
-  than about 5 s goes in `SLOW`.
+  than about 5 s goes in `SLOW`; one that is slow and tests the rules, the computer, the
+  puzzles, or the board's touch goes in `LONG` too, out of the quick suite. A test the
+  3D scene or the UI can break stays out of `LONG`, however slow: make it quicker.
+- The -O2 builds of `aim` and `camera` take 15 s each, most of the full run's critical
+  path; their runs take 1.6 and 0.6 s (2026-11-25).
 
 ## The computer player's tests
 

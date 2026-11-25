@@ -1,5 +1,12 @@
 #!/bin/sh
-# Every check of the rules, stopping at the first that fails:
+# scripts/test.sh [quick]
+#
+# Every check, stopping at the first that fails, about 35 s on a 10-core M-series Mac.
+# `quick` stops after step 2, run with --quick (about 15 s): the tests of the rules, the
+# computer, the puzzles, and the board's aim and camera left out (LONG in
+# test/run_tests.py), for a change to the 3D scene, the UI, or the tools. Run all of it
+# after a change to src/rules/, src/ai/, src/puzzles/, src/board/, or src/game/, and before
+# pushing; CI runs all of it.
 #
 # 0. scripts/strings_keys.py --check: strings/keys.goose is what strings/en.txt makes;
 #    scripts/check_roots.py: the ngfx root and its sidecar hold all the gfx root's.
@@ -11,14 +18,20 @@
 #    against published values (International, English, Brazilian) and against
 #    test/perft.py's (Russian).
 # 4. test/perft.py compare: random games, every position's moves against the
-#    independent Python generator.
+#    independent Python generator, the four variants at once.
 # 5. test/perft.py puzzles: every puzzle's lines played by it, each position's moves
-#    checked against build/perft, for each variant's set.
+#    checked against build/perft, for each variant's set, at once.
 #
 # GOOSE names the compiler (default: the desktop build's copy of the pinned release with the
 # goose_gfx fork's gfx, build/<platform>/goose/, which the build scripts make and the app is
 # built with, as the fork's gfx.goose has what the release's lacks; else the release itself).
 set -e
+quick=
+case $1 in
+    quick) quick=--quick ;;
+    "") ;;
+    *) echo "usage: scripts/test.sh [quick]"; exit 2 ;;
+esac
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
 case $(uname -s) in
@@ -39,7 +52,11 @@ if [ -n "$NGFX" ]; then
     echo "== ngfx build checked"
 fi
 
-test/run_tests.py
+test/run_tests.py $quick
+if [ -n "$quick" ]; then
+    echo "== quick: perft, the random games, the puzzles' lines, and the long tests left out"
+    exit 0
+fi
 
 "$GOOSE" build -o build/perft tools/perft.goose >/dev/null
 check() {
@@ -55,11 +72,33 @@ check english 9 3963680
 check russian 9 4570586
 check brazilian 9 4431766
 
-python3 test/perft.py compare russian 40 120
-python3 test/perft.py compare international 20 150
-python3 test/perft.py compare english 40 120
-python3 test/perft.py compare brazilian 40 120
-
-python3 test/perft.py puzzles international src/puzzles/international.txt
-python3 test/perft.py puzzles russian src/puzzles/russian.txt
-python3 test/perft.py puzzles brazilian src/puzzles/brazilian.txt
+# The independent generator's checks, each in its own process, at once; each one's output
+# kept apart and shown in order, a failure's last.
+work=build/test/perft
+rm -rf "$work"
+mkdir -p "$work"
+n=0
+each() {
+    n=$((n + 1))
+    # Inside an if, as set -e would end the subshell before it writes the code.
+    (if python3 test/perft.py "$@" > "$work/$n.out" 2>&1; then echo 0; else echo 1; fi > "$work/$n.code") &
+}
+each compare russian 40 120
+each compare international 20 150
+each compare english 40 120
+each compare brazilian 40 120
+each puzzles international src/puzzles/international.txt
+each puzzles russian src/puzzles/russian.txt
+each puzzles brazilian src/puzzles/brazilian.txt
+wait
+failed=0
+i=1
+while [ $i -le $n ]; do
+    cat "$work/$i.out"
+    if [ "$(cat "$work/$i.code")" != 0 ]; then failed=1; fi
+    i=$((i + 1))
+done
+if [ $failed != 0 ]; then
+    echo "== the independent generator's checks failed"
+    exit 1
+fi

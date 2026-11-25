@@ -13,7 +13,8 @@ profiling") holds the tools' details; `agents/goose.md` ("Speed") the code's rul
   are on by default (2026-11-23; `--gtao off` gives the standard tier's SSAO).
 - The apps: `python3 scripts/mac.py src/main/draughts.goose` (gfx) and
   `python3 scripts/mac.py src/main/draughts_ngfx.goose` (both renderers). Both must build.
-- Tests: `scripts/test.sh` with NGFX set (it also runs `goose check` on both apps). Must pass.
+- Tests: `scripts/test.sh quick` with NGFX set (it also runs `goose check` on both apps), all
+  of `scripts/test.sh` before pushing (`agents/testing.md`). Must pass.
 - No other build commands, flags or toolchains. ngfx compiles the same GLSL from
   `src/render3d/shaders.goose` (`scripts/ngfx_3d_shaders.py`) and stays at parity with gfx.
 - At the end of a finished change, in the main checkout only: copy `build/light_tune` to
@@ -57,8 +58,15 @@ nothing in headless shots: frame with `--plan-eye`/`--plan-at` (plan metres) ins
   right after the batch. Never overwrite or delete another's lock; one older than
   an hour with no live process of its pid may be stale: report it, don't take it. Never kill a `light_tune` process you didn't start (the user's tuner);
   if one runs, note it, its frames disturb yours.
-- Before and after builds of the same views, two alternating rounds (A B A B), means of each.
-  Measure at the start and after each finished step, not after every edit.
+- `tools/perf/mac_room_bench.py BEFORE AFTER` times builds alternated (A B A B), holding the
+  lock itself. The quick check, about a minute, for a small change such as a new prop: one
+  view with the object in it (`--views table`, the default; add `corner` if the change can
+  reach it), at 3840 × 2160, two rounds. `--full` is the long batch for optimizing work: the
+  four views at both sizes, two rounds, about ten minutes. Copy each build to its own name
+  first (`build/light_tune` is rebuilt in place). One build against itself agreed to 0.05
+  ms; the chairs' round 2 showed as +0.5 ms in the table view (2026-11-25).
+- Measure at the start and after each finished step, not after every edit; the full batch
+  at longer intervals, when optimizing.
 - Where the time goes: Metal System Trace (`agents/testing.md`, "Frame pacing"), split by the
   `Render Command N` index in each row's event label (the main pass was N = 11). Or a
   per-part split: scratch builds each without one part, against one whose shader returns a

@@ -2,13 +2,18 @@
 """Runs the tests under test/<area>/, as goose-http's and plod's runners do.
 
 Each test/<area>/<name>.goose is a program. Its stdout must be
-test/expected/<area>/<name>.out, and it must exit 0. By default the tests run in
-batches through the compiler's TinyCC, a `goose --multi-test` run per batch, but
-for SLOW's, whose search TinyCC's code takes 9 to 28 s over, which each build at
--O2 at once beside the batches: about 20 s on a 10-core M-series Mac, against
-60 s all through TinyCC (--tinycc). --build builds each with `goose build` (C at -O2) into
+test/expected/<area>/<name>.out, and it must exit 0. By default each test runs through
+the compiler's TinyCC, one `goose FILE` a worker, as workers come free (one at a time
+beat batches of 2 to 8, 2026-11-25), but SLOW's, whose search TinyCC's code takes 3 to
+28 s over, each build at -O2 first: about 22 s on a 10-core M-series Mac, 12 s with
+--quick. --build builds each with `goose build` (C at -O2) into
 build/test/<area>/<name>/ and runs that instead, which is what the app ships.
 Every failure is reported, with a count per area at the end.
+
+--quick leaves out LONG's, the tests of the rules, the computer, the puzzles, and the
+board's aim and camera, which change rarely and take most of the time: a few seconds
+for the rest, the suite to run for a change to the 3D scene, the UI, or the tools.
+scripts/test.sh runs everything.
 
 --dump runs them with DRAUGHTS_TEST_VERBOSE=1, which makes the layout tests print the
 coordinates, sizes, and quad counts they measured besides their checks (test/drive's
@@ -17,14 +22,13 @@ nothing: diff two dumps to see a layout change by the pixel.
 
 GOOSE names the compiler (default: the pinned release under build/).
 
-    test/run_tests.py [-j JOBS] [--build | --tinycc] [--bless | --dump] [-v] [AREA | NAME ...]
+    test/run_tests.py [-j JOBS] [--build | --tinycc] [--quick] [--bless | --dump] [-v] [AREA | NAME ...]
 """
 
 import argparse
 import concurrent.futures
 import difflib
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -52,9 +56,18 @@ SLOW = {
     "puzzles/library",  # 9, 2
     "model3d/tree_whole",  # 5, 1
 }
-# What `goose --multi-test` ends each file's part of stdout and stderr with.
-MULTIMARK = "==== goose --multi-test: exit"
-
+# What --quick leaves out (seconds through TinyCC, or built at -O2 then run, on an
+# M-series Mac, 2026-11-25): what guards src/rules/, src/ai/, src/puzzles/, src/board/'s
+# touch, and the game screen's camera, run by scripts/test.sh and CI.
+LONG = {
+    "game/aim",         # 17 built: the drop aimed on the flat and 3D boards
+    "game/camera",      # 16 built: the 3D camera's buttons, turn, and zoom
+    "game/pace",        # 9 built: the computer's time a move, whole games on the clock
+    "puzzles/library",  # 4 built: every daily puzzle reads and checks
+    "puzzles/set",      # 3.5: every built-in puzzle passes puzzles::check
+    "ai/levels",        # 1.4 built: each level's moves
+    "ai/blunders",      # 1.2 built: no hung pieces from skill 15 on
+}
 
 def run(argv, cwd=ROOT):
     try:
@@ -63,27 +76,6 @@ def run(argv, cwd=ROOT):
         return None, "", f"timed out after {TIMEOUT} s"
     text = lambda b: b.decode("utf-8", errors="replace").replace("\r\n", "\n")
     return r.returncode, text(r.stdout), text(r.stderr)
-
-
-def split_multi(text, files):
-    """{file: (exit code, what it printed)} for each file the stream marks."""
-    parts, pos = {}, 0
-    for f in files:
-        m = re.compile(rf"\n?{re.escape(MULTIMARK)} (-?\d+) {re.escape(f)}\n").search(text, pos)
-        if not m:
-            break
-        parts[f] = (int(m[1]), text[pos:m.start()])
-        pos = m.end()
-    return parts
-
-
-def multi_test(files):
-    """{file: (exit code, stdout, stderr)}, from one `goose --multi-test` run;
-    a file that run didn't get through runs alone."""
-    code, out, err = run([GOOSE, "--multi-test", *files])
-    outs, errs = split_multi(out, files), split_multi(err, files)
-    return {f: (outs[f][0], outs[f][1], errs[f][1]) if f in outs and f in errs
-            else run([GOOSE, f]) for f in files}
 
 
 def build_and_run(test):
@@ -114,6 +106,7 @@ def main():
     ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 1)
     ap.add_argument("--build", action="store_true", help="build each natively and run that")
     ap.add_argument("--tinycc", action="store_true", help="run SLOW's through TinyCC too")
+    ap.add_argument("--quick", action="store_true", help="leave out LONG's tests")
     ap.add_argument("--bless", action="store_true", help="write each run's stdout as expected")
     ap.add_argument("--dump", action="store_true", help="run verbose, writing each stdout to build/test/dump/")
     ap.add_argument("-v", "--verbose", action="store_true", help="print the passes too")
@@ -124,20 +117,17 @@ def main():
 
     tests = find_tests(args.names)
     key = lambda t: f"{t.parent.name}/{t.stem}"
+    if args.quick:      # a long test named on its own still runs
+        named = {Path(n).stem for n in args.names}
+        tests = [t for t in tests if key(t) not in LONG or t.stem in named]
     built = (tests if args.build else [] if args.tinycc else
              [t for t in tests if key(t) in SLOW])
-    batched = [t for t in tests if t not in built]
+    tinycc = [t for t in tests if t not in built]
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
-        # The builds go in first, the longest work, then the batches fill the other workers.
+        # The builds go in first, the longest work, then the rest fill the other workers.
         builds = [pool.submit(build_and_run, t) for t in built]
-        files = [t.relative_to(ROOT).as_posix() for t in batched]
-        workers = max(1, args.jobs - len(built))
-        size = max(1, -(-len(files) // workers))
-        done = {}
-        for part in pool.map(multi_test, [files[i:i + size] for i in range(0, len(files), size)]):
-            done.update(part)
-        results = {t: done[t.relative_to(ROOT).as_posix()] for t in batched}
-        results.update(zip(built, (f.result() for f in builds)))
+        runs = [pool.submit(run, [GOOSE, t.relative_to(ROOT).as_posix()]) for t in tinycc]
+        results = dict(zip(built + tinycc, (f.result() for f in builds + runs)))
 
     failed = set()
     for t in tests:
@@ -178,6 +168,8 @@ def main():
         print(f"== {area}: {n - bad} passed" + (f", {bad} failed" if bad else ""))
     how = ("built at -O2" if args.build else
            f"through TinyCC, {len(built)} built at -O2" if built else "through TinyCC")
+    if args.quick:
+        how += ", the long ones left out"
     print(f"== {len(tests)} tests {how}: " + (f"{len(failed)} failed" if failed else "all passed"))
     sys.exit(1 if failed else 0)
 

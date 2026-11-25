@@ -13,7 +13,7 @@ The app builds from a Mac (Apple silicon), from Windows (x64), and from Linux (x
 | Windows release (zip and installer) | Windows | `python scripts/windows.py --release` | [Desktop releases](#desktop-releases) |
 | Linux release (tar.gz) | Linux, in an Ubuntu 22.04 container | `CC=clang-20 scripts/linux.py --release` | [Desktop releases](#desktop-releases) |
 | iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py --run`, `--device --run` | [Run on iOS](#run-on-ios) |
-| Rules tests | Mac, Windows, Linux | `scripts/test.sh` | [Test the rules](#test-the-rules) |
+| Tests | Mac, Windows, Linux | `scripts/test.sh [quick]` | [Test the rules](#test-the-rules) |
 
 With no program, each script builds the app as it ships on its platform: both renderers
 (`src/main/draughts_ngfx.goose`) on macOS, iOS, and Windows, gfx alone
@@ -200,25 +200,36 @@ scripts/linux.py               # then on the host
 ## Test the rules
 
 ```sh
-test/run_tests.py           # test/<area>/*.goose against test/expected/<area>/: about 20 s
+scripts/test.sh quick       # the shaders compiled, the tests but the long ones: about 15 s
+scripts/test.sh             # all of it, perft and the random-game check too: about 40 s
+test/run_tests.py           # test/<area>/*.goose against test/expected/<area>/: about 22 s
+test/run_tests.py --quick   # the same, the long ones left out: about 12 s
 test/run_tests.py --build   # the same, each built natively at -O2: about 90 s
 test/run_tests.py --tinycc  # the same, each through TinyCC: about 60 s
 test/run_tests.py --bless   # write each test's output as its expected output
-scripts/test.sh             # the app's shaders, the tests, then perft and the random-game check
 ```
 
-By default the tests run in batches through TinyCC, but the few whose search is slow
-there (`SLOW` in `test/run_tests.py`) build at -O2 beside the batches. The times are a
-10-core M-series Mac's. GitHub Actions runs `scripts/test.sh` on every push and pull
-request (`.github/workflows/test.yml`) on Ubuntu 22.04, then builds the app with
-`scripts/linux.py` and Clang 20, so a C error in the program's own C fails it too. With
-`NGFX` naming a goose-ngfx checkout, `scripts/test.sh` also checks
+Run `scripts/test.sh quick` for a change to the 3D scene, the UI, or the tools, and all
+of `scripts/test.sh` after a change to `src/rules/`, `src/ai/`, `src/puzzles/`,
+`src/board/`, or `src/game/`, and before pushing. The quick suite leaves out perft, the
+random games, the puzzles' lines, and the seven tests in `LONG` (`test/run_tests.py`):
+the computer's levels, blunders and pace, the puzzles' sets, and the board's aim and
+camera. Those took most of the time and guard code that 171 of 1,876 commits touched,
+the rules, the computer and the puzzles 59, against 306 for the 3D scene (2026-11-25).
+
+Each test runs through TinyCC, one `goose FILE` a worker as workers come free, but the
+few whose search is slow there (`SLOW` in `test/run_tests.py`) build at -O2 beside them.
+The times are a 10-core M-series Mac's. GitHub Actions runs all of `scripts/test.sh` on
+every push and pull request (`.github/workflows/test.yml`) on Ubuntu 22.04, then builds
+the app with `scripts/linux.py` and Clang 20, so a C error in the program's own C fails
+it too. With `NGFX` naming a goose-ngfx checkout, `scripts/test.sh` also checks
 `src/main/draughts_ngfx.goose`; CI clones goose-ngfx for it.
 
 `scripts/test.sh` also builds `tools/perft.goose` into `build/perft`, which counts moves
 from a position (`build/perft russian 9`, `build/perft international 8 FEN --divide`), and
 runs `test/perft.py compare`: random games, every position's legal moves checked against
-an independent Python generator. All of `scripts/test.sh` takes about 50 seconds.
+an independent Python generator, and `test/perft.py puzzles`, the four variants' games
+and three sets' lines at once.
 
 ## Time the computer player
 
