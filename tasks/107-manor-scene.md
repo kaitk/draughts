@@ -896,7 +896,14 @@ gain needs direct compressed-sample measurements.
       shade from it, the colour reads cream under the warm light; the tablet not checked
       - A redesign toward `style-01`'s stove is planned (2026-11-25, `build/notes/stove-2/`):
         a rectangular stove with canted front corners, 1.20 × 0.74 m, its front toward the
-        windows, after `library-stove-01` and `-03`, with a sharper, crazed glaze
+        windows, after `library-stove-01` and `-03`, with a sharper, crazed glaze. Round 2
+        on the same page (the user, 2026-11-25: good enough to model): across the corner,
+        the front turned toward the room's middle, the built door mirrored, the frieze,
+        cornice and crest after `-03`. Except the cornice's profile: the cyma under the
+        ledge and the small egg-and-dart are wrong. `-03`'s corner shows a fuller outline
+        with no deep recesses (`build/notes/stove-2/cornice-profile-marked.png`, the
+        user's marks); neither we nor ChatGPT have drawn it right yet, so read it from
+        `-03`'s corner when building. The user starts the build later
 - [x] The chairs at the games table (2026-11-25, `build/notes/chairs-build/`): two
       Neo-Rococo balloon-back side chairs in the table's flame mahogany, one on the board's
       axis behind each player, cabriole front legs, a bowed seat rail, the back legs rising
