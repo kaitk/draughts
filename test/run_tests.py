@@ -6,13 +6,14 @@ test/expected/<area>/<name>.out, and it must exit 0. By default each test runs t
 the compiler's TinyCC, one `goose FILE` a worker, as workers come free (one at a time
 beat batches of 2 to 8, 2026-11-25), but SLOW's, whose search TinyCC's code takes 3 to
 28 s over, each build at -O2 first: about 22 s on a 10-core M-series Mac, 12 s with
---quick. --build builds each with `goose build` (C at -O2) into
+--ui. --build builds each with `goose build` (C at -O2) into
 build/test/<area>/<name>/ and runs that instead, which is what the app ships.
 Every failure is reported, with a count per area at the end.
 
---quick leaves out LONG's, the tests of the rules, the computer, the puzzles, and the
-board's aim and camera, which change rarely and take most of the time: a few seconds
-for the rest, the suite to run for a change to the 3D scene, the UI, or the tools.
+--ui runs every area but LOGIC's (the rules, the computer, the puzzles), without LONG's
+tests (the board's aim and camera, the computer's pace): the suite for a change to the 3D
+scene, the UI, or the tools. --logic runs LOGIC's areas alone, for a change to the game's
+logic. A test named on the command line runs under either.
 scripts/test.sh runs everything.
 
 --dump runs them with DRAUGHTS_TEST_VERBOSE=1, which makes the layout tests print the
@@ -22,7 +23,7 @@ nothing: diff two dumps to see a layout change by the pixel.
 
 GOOSE names the compiler (default: the pinned release under build/).
 
-    test/run_tests.py [-j JOBS] [--build | --tinycc] [--quick] [--bless | --dump] [-v] [AREA | NAME ...]
+    test/run_tests.py [-j JOBS] [--build | --tinycc] [--ui | --logic] [--bless | --dump] [-v] [AREA | NAME ...]
 """
 
 import argparse
@@ -56,17 +57,14 @@ SLOW = {
     "puzzles/library",  # 9, 2
     "model3d/tree_whole",  # 5, 1
 }
-# What --quick leaves out (seconds through TinyCC, or built at -O2 then run, on an
-# M-series Mac, 2026-11-25): what guards src/rules/, src/ai/, src/puzzles/, src/board/'s
-# touch, and the game screen's camera, run by scripts/test.sh and CI.
+# What --ui leaves out: the areas of the game's logic, which a change to the scene or
+# the UI doesn't reach, and the long tests of other areas (seconds built at -O2 then run,
+# on an M-series Mac, 2026-11-25). scripts/test.sh and CI run them.
+LOGIC = {"rules", "ai", "puzzles"}
 LONG = {
-    "game/aim",         # 17 built: the drop aimed on the flat and 3D boards
-    "game/camera",      # 16 built: the 3D camera's buttons, turn, and zoom
-    "game/pace",        # 9 built: the computer's time a move, whole games on the clock
-    "puzzles/library",  # 4 built: every daily puzzle reads and checks
-    "puzzles/set",      # 3.5: every built-in puzzle passes puzzles::check
-    "ai/levels",        # 1.4 built: each level's moves
-    "ai/blunders",      # 1.2 built: no hung pieces from skill 15 on
+    "game/aim",         # 17: the drop aimed on the flat and 3D boards
+    "game/camera",      # 16: the 3D camera's buttons, turn, and zoom
+    "game/pace",        # 9: the computer's time a move, whole games on the clock
 }
 
 def run(argv, cwd=ROOT):
@@ -106,7 +104,8 @@ def main():
     ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 1)
     ap.add_argument("--build", action="store_true", help="build each natively and run that")
     ap.add_argument("--tinycc", action="store_true", help="run SLOW's through TinyCC too")
-    ap.add_argument("--quick", action="store_true", help="leave out LONG's tests")
+    ap.add_argument("--ui", action="store_true", help="leave out LOGIC's areas and LONG's tests")
+    ap.add_argument("--logic", action="store_true", help="LOGIC's areas alone")
     ap.add_argument("--bless", action="store_true", help="write each run's stdout as expected")
     ap.add_argument("--dump", action="store_true", help="run verbose, writing each stdout to build/test/dump/")
     ap.add_argument("-v", "--verbose", action="store_true", help="print the passes too")
@@ -117,9 +116,11 @@ def main():
 
     tests = find_tests(args.names)
     key = lambda t: f"{t.parent.name}/{t.stem}"
-    if args.quick:      # a long test named on its own still runs
-        named = {Path(n).stem for n in args.names}
-        tests = [t for t in tests if key(t) not in LONG or t.stem in named]
+    named = {Path(n).stem for n in args.names}     # a test named on its own always runs
+    if args.ui:
+        tests = [t for t in tests if t.stem in named or (key(t) not in LONG and t.parent.name not in LOGIC)]
+    elif args.logic:
+        tests = [t for t in tests if t.stem in named or t.parent.name in LOGIC]
     built = (tests if args.build else [] if args.tinycc else
              [t for t in tests if key(t) in SLOW])
     tinycc = [t for t in tests if t not in built]
@@ -168,8 +169,8 @@ def main():
         print(f"== {area}: {n - bad} passed" + (f", {bad} failed" if bad else ""))
     how = ("built at -O2" if args.build else
            f"through TinyCC, {len(built)} built at -O2" if built else "through TinyCC")
-    if args.quick:
-        how += ", the long ones left out"
+    if args.ui or args.logic:
+        how += ", the UI's" if args.ui else ", the logic's"
     print(f"== {len(tests)} tests {how}: " + (f"{len(failed)} failed" if failed else "all passed"))
     sys.exit(1 if failed else 0)
 

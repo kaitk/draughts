@@ -1,12 +1,12 @@
 #!/bin/sh
-# scripts/test.sh [quick]
+# scripts/test.sh [ui | logic]
 #
-# Every check, stopping at the first that fails, about 35 s on a 10-core M-series Mac.
-# `quick` stops after step 2, run with --quick (about 15 s): the tests of the rules, the
-# computer, the puzzles, and the board's aim and camera left out (LONG in
-# test/run_tests.py), for a change to the 3D scene, the UI, or the tools. Run all of it
-# after a change to src/rules/, src/ai/, src/puzzles/, src/board/, or src/game/, and before
-# pushing; CI runs all of it.
+# Every check, stopping at the first that fails, about 40 s on a 10-core M-series Mac;
+# CI runs all of it, and so does a push or a change to src/board/ or src/game/.
+# `ui`, for a change to the 3D scene, the UI, or the tools (about 15 s): steps 0 to 2, the
+# tests with --ui, the logic's areas and the long tests left out (LOGIC and LONG in
+# test/run_tests.py). `logic`, for a change to src/rules/, src/ai/, or src/puzzles/: step 2
+# with --logic, then 3 to 5.
 #
 # 0. scripts/strings_keys.py --check: strings/keys.goose is what strings/en.txt makes;
 #    scripts/check_roots.py: the ngfx root and its sidecar hold all the gfx root's.
@@ -26,11 +26,11 @@
 # goose_gfx fork's gfx, build/<platform>/goose/, which the build scripts make and the app is
 # built with, as the fork's gfx.goose has what the release's lacks; else the release itself).
 set -e
-quick=
+suite=
 case $1 in
-    quick) quick=--quick ;;
+    ui|logic) suite=$1 ;;
     "") ;;
-    *) echo "usage: scripts/test.sh [quick]"; exit 2 ;;
+    *) echo "usage: scripts/test.sh [ui | logic]"; exit 2 ;;
 esac
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
@@ -43,18 +43,20 @@ if [ -z "$GOOSE" ] && [ -x "$root/build/$patched" ]; then GOOSE=$root/build/$pat
 GOOSE=${GOOSE:-$root/build/$release}
 export GOOSE
 
-python3 scripts/strings_keys.py --check
-python3 scripts/check_roots.py
-(cd src/main && "$GOOSE" check draughts.goose)
-echo "== app checked, its shaders compiled"
-if [ -n "$NGFX" ]; then
-    python3 scripts/ngfx.py
-    echo "== ngfx build checked"
+if [ "$suite" != logic ]; then
+    python3 scripts/strings_keys.py --check
+    python3 scripts/check_roots.py
+    (cd src/main && "$GOOSE" check draughts.goose)
+    echo "== app checked, its shaders compiled"
+    if [ -n "$NGFX" ]; then
+        python3 scripts/ngfx.py
+        echo "== ngfx build checked"
+    fi
 fi
 
-test/run_tests.py $quick
-if [ -n "$quick" ]; then
-    echo "== quick: perft, the random games, the puzzles' lines, and the long tests left out"
+test/run_tests.py ${suite:+--$suite}
+if [ "$suite" = ui ]; then
+    echo "== ui: the logic's tests, the long ones, perft, and the random games left out"
     exit 0
 fi
 

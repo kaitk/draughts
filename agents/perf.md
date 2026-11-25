@@ -13,7 +13,7 @@ profiling") holds the tools' details; `agents/goose.md` ("Speed") the code's rul
   are on by default (2026-11-23; `--gtao off` gives the standard tier's SSAO).
 - The apps: `python3 scripts/mac.py src/main/draughts.goose` (gfx) and
   `python3 scripts/mac.py src/main/draughts_ngfx.goose` (both renderers). Both must build.
-- Tests: `scripts/test.sh quick` with NGFX set (it also runs `goose check` on both apps), all
+- Tests: `scripts/test.sh ui` with NGFX set (it also runs `goose check` on both apps), all
   of `scripts/test.sh` before pushing (`agents/testing.md`). Must pass.
 - No other build commands, flags or toolchains. ngfx compiles the same GLSL from
   `src/render3d/shaders.goose` (`scripts/ngfx_3d_shaders.py`) and stays at parity with gfx.

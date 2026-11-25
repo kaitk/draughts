@@ -13,7 +13,7 @@ The app builds from a Mac (Apple silicon), from Windows (x64), and from Linux (x
 | Windows release (zip and installer) | Windows | `python scripts/windows.py --release` | [Desktop releases](#desktop-releases) |
 | Linux release (tar.gz) | Linux, in an Ubuntu 22.04 container | `CC=clang-20 scripts/linux.py --release` | [Desktop releases](#desktop-releases) |
 | iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py --run`, `--device --run` | [Run on iOS](#run-on-ios) |
-| Tests | Mac, Windows, Linux | `scripts/test.sh [quick]` | [Test the rules](#test-the-rules) |
+| Tests | Mac, Windows, Linux | `scripts/test.sh [ui \| logic]` | [Test the rules](#test-the-rules) |
 
 With no program, each script builds the app as it ships on its platform: both renderers
 (`src/main/draughts_ngfx.goose`) on macOS, iOS, and Windows, gfx alone
@@ -200,22 +200,24 @@ scripts/linux.py               # then on the host
 ## Test the rules
 
 ```sh
-scripts/test.sh quick       # the shaders compiled, the tests but the long ones: about 15 s
-scripts/test.sh             # all of it, perft and the random-game check too: about 40 s
+scripts/test.sh ui          # the shaders compiled, the UI's and the scene's tests: about 15 s
+scripts/test.sh logic       # the rules', computer's and puzzles' tests, perft, random games: about 17 s
+scripts/test.sh             # all of it: about 40 s
 test/run_tests.py           # test/<area>/*.goose against test/expected/<area>/: about 22 s
-test/run_tests.py --quick   # the same, the long ones left out: about 12 s
+test/run_tests.py --ui      # the same, the logic's areas and the long tests left out: about 12 s
+test/run_tests.py --logic   # the logic's areas alone
 test/run_tests.py --build   # the same, each built natively at -O2: about 90 s
 test/run_tests.py --tinycc  # the same, each through TinyCC: about 60 s
 test/run_tests.py --bless   # write each test's output as its expected output
 ```
 
-Run `scripts/test.sh quick` for a change to the 3D scene, the UI, or the tools, and all
-of `scripts/test.sh` after a change to `src/rules/`, `src/ai/`, `src/puzzles/`,
-`src/board/`, or `src/game/`, and before pushing. The quick suite leaves out perft, the
-random games, the puzzles' lines, and the seven tests in `LONG` (`test/run_tests.py`):
-the computer's levels, blunders and pace, the puzzles' sets, and the board's aim and
-camera. Those took most of the time and guard code that 171 of 1,876 commits touched,
-the rules, the computer and the puzzles 59, against 306 for the 3D scene (2026-11-25).
+Run `scripts/test.sh ui` for a change to the 3D scene, the UI, or the tools,
+`scripts/test.sh logic` for one to `src/rules/`, `src/ai/`, or `src/puzzles/`, and all of
+it for `src/board/` or `src/game/`, which both reach, and before pushing. The UI suite
+leaves out the `rules`, `ai` and `puzzles` areas (`LOGIC` in `test/run_tests.py`), the
+long tests in `LONG` (the board's aim and camera, the computer's pace), perft, the
+random games, and the puzzles' lines. The logic changed in 59 of 1,876 commits, the 3D
+scene in 306 (2026-11-25).
 
 Each test runs through TinyCC, one `goose FILE` a worker as workers come free, but the
 few whose search is slow there (`SLOW` in `test/run_tests.py`) build at -O2 beside them.

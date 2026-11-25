@@ -1,6 +1,6 @@
 # 119: A lean test suite, the long checks apart
 
-Status: in-progress (built and measured 2026-11-25; the user to agree the split, then archive)
+Status: done (2026-11-25; the user asked for the logic suite apart, done)
 
 `scripts/test.sh` runs everything before a commit and takes a long time (the user,
 2026-11-25: "SUPER long"). It runs, in order: the strings' keys and the two roots' check;
@@ -61,23 +61,27 @@ the independent generator. In git, 59 of 1,876 commits touched `src/rules/`,
 A search of the commit messages found none saying perft, `compare` or the puzzles' lines caught a bug since
 the rules' first commits; they guard a part that rarely changes.
 
-The split (`docs/decisions/layout.md`, "Tests: a quick suite and the whole"):
+The split (`docs/decisions/layout.md`, "Tests: a UI suite, a logic suite, and the
+whole"). The user asked for the logic's tests out of the UI suite and for a logic suite of
+its own; dropping the `rules`, `ai` and `puzzles` areas' quick tests saved little (12.9 to
+11.5 s), as the shell's tests are most of the rest.
 
 | Suite | Before | After |
 |---|---|---|
-| `scripts/test.sh quick` | (none) | 16 s |
+| `scripts/test.sh ui` | (none) | 15 s |
+| `scripts/test.sh logic` | (none) | 17 s |
 | `scripts/test.sh` | 77 s | 40 s |
-| `test/run_tests.py --quick` | (none) | 11.5 s |
+| `test/run_tests.py --ui` | (none) | 11.5 s |
 | `test/run_tests.py` | 38 s | 22 s |
 
 - One `goose FILE` a test, as workers come free, beat `--multi-test` batches: a batch of
   1 or 2 files 11.6 to 11.9 s, 4 12.4 s, 8 14.2 s, the old alphabetical tenths 17.4 s
-  (`--quick`).
+  (the UI's tests and the seven then long, 2026-11-25).
 - The seven `test/perft.py` checks at once: 34 s to about 11, `compare english` (10 s)
   the longest.
 - Planted bugs: Russian's crowning mid-capture turned off in `src/rules/rules.goose`
-  failed 8 tests of the quick suite (`rules/russian_crowning`, `ai/judge`,
-  `puzzles/russian_set`, …); the same bug in `test/perft.py` alone failed the full suite at
+  failed 8 tests (`rules/russian_crowning`, `ai/judge`, `puzzles/russian_set`, and in
+  the UI's areas `board/stuck` and three of `shell`); the same bug in `test/perft.py` alone failed the full suite at
   `compare` (10 and 12 positions differ) and the Russian puzzles (23 problems), with exit 1.
 - Perft's depths stay: 0.2 s a variant.
 

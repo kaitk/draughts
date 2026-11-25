@@ -134,19 +134,22 @@ split is in [the code's layout](README.md#the-codes-layout).
   the file's name (`build/draughts_ngfx`, `build/ios/draughts_ngfx/`), so the two roots'
   builds still don't overwrite each other.
 
-## Tests: a quick suite and the whole (2026-11-25)
+## Tests: a UI suite, a logic suite, and the whole (2026-11-25)
 
-- `scripts/test.sh quick` runs the strings' and roots' checks, `goose check` of both apps,
-  and `test/run_tests.py --quick`: every test but `LONG`'s seven (the computer's levels,
-  blunders and pace, the puzzles' sets, the board's aim and camera), about 15 s. All of
-  `scripts/test.sh`, about 40 s, stays what CI runs and what a change to the rules, the
-  computer, the puzzles, the board, or the game screen and a push take. It replaces one
+- `scripts/test.sh ui` runs the strings' and roots' checks, `goose check` of both apps,
+  and `test/run_tests.py --ui`: every area but the rules', the computer's and the
+  puzzles' (`LOGIC`), without `LONG`'s three (the board's aim and camera, the computer's
+  pace), about 15 s, for the scene, the UI, and the tools: a graphics change is very
+  unlikely to break a rule (the user). `scripts/test.sh logic` runs `LOGIC`'s areas,
+  perft, the random games and the puzzles' lines, about 17 s. All of `scripts/test.sh`,
+  about 40 s, stays what CI runs and what a change to the board or the game screen and a
+  push take. It replaces one
   suite for every commit, about 77 s, of which perft, the random games and the puzzles'
   lines were 34 s and those seven tests most of the rest, while 59 of 1,876 commits
   touched the rules, the computer or the puzzles and 306 the 3D scene.
 - `test/run_tests.py` runs each test as its own `goose FILE`, as workers come free,
   replacing batches of `goose --multi-test` cut alphabetically, whose heaviest batch set
-  the time: the whole went from 38 to 22 s, `--quick` from 17 to 12 s.
+  the time: the whole went from 38 to 22 s, the UI's part from 17 to 12 s.
 - `test/perft.py`'s seven checks run at once, each one's output shown in order.
 - Rejected: choosing the suite from the changed files (`git diff`), which guesses against
   what is staged, merged, or pushed; and smaller perft depths or fewer random games,

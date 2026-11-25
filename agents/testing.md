@@ -2,11 +2,11 @@
 
 How to run everything: `docs/development.md`, "Test the rules".
 
-- Which suite: `scripts/test.sh quick` (about 15 s) before committing a change to the 3D
-  scene, the UI, the shaders, or the tools; all of `scripts/test.sh` (about 40 s) after a
-  change to `src/rules/`, `src/ai/`, `src/puzzles/`, `src/board/`, or `src/game/`, after a
-  merge, and before pushing. A long test (`LONG` in `test/run_tests.py`) named on the
-  command line runs under `--quick` too.
+- Which suite: `scripts/test.sh ui` (about 15 s) before committing a change to the 3D
+  scene, the UI, the shaders, or the tools; `scripts/test.sh logic` (about 17 s) for
+  `src/rules/`, `src/ai/`, or `src/puzzles/`; all of `scripts/test.sh` (about 40 s) for
+  `src/board/` or `src/game/`, after a merge, and before pushing. A test named on the
+  command line runs under `--ui` or `--logic` whatever its area.
 - A link error `unknown architecture ... arm64e.x1-macos` in a `.tbd` file means the
   Command Line Tools' SDK is newer than Xcode's linker (after a macOS update, 2026-11-25):
   every native build and the -O2 tests fail. Build with
@@ -119,9 +119,10 @@ How to run everything: `docs/development.md`, "Test the rules".
 - Tests run through TinyCC by default, but those in `SLOW` (`test/run_tests.py`) build
   at -O2; `--build` builds all, `--tinycc` runs all through TinyCC. A difference between
   the two is a compiler finding (`agents/goose.md`). A test that takes TinyCC's code more
-  than about 5 s goes in `SLOW`; one that is slow and tests the rules, the computer, the
-  puzzles, or the board's touch goes in `LONG` too, out of the quick suite. A test the
-  3D scene or the UI can break stays out of `LONG`, however slow: make it quicker.
+  than about 5 s goes in `SLOW`. A test of the rules, the computer, or the puzzles goes in
+  their areas (`LOGIC`), out of the UI suite; a slow one of another area that the scene
+  can't reach goes in `LONG`. A test the 3D scene or the UI can break stays in the UI
+  suite, however slow: make it quicker.
 - The -O2 builds of `aim` and `camera` take 15 s each, most of the full run's critical
   path; their runs take 1.6 and 0.6 s (2026-11-25).
 
