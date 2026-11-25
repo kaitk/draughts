@@ -53,18 +53,34 @@ def arrays(s):
 def preprocess(text, defined):
     """GLSL's #ifdef, #ifndef, #else, #endif over `defined`, done here so the stage's
     declarations are known."""
-    out, stack = [], []      # stack: (whether the enclosing part is kept, this branch's)
+    out, stack = [], []      # stack: (whether the enclosing part is kept, a branch taken)
     keep = True
+
+    def test(expr):
+        # defined(NAME) joined by !, && and || (with parentheses), as the room's shaders
+        # write them.
+        expr = re.sub(r"defined\((\w+)\)", lambda m: str(m.group(1) in defined), expr)
+        expr = expr.replace("&&", " and ").replace("||", " or ").replace("!", " not ")
+        return bool(eval(expr, {"__builtins__": {}}, {}))
+
     for line in text.split("\n"):
         t = line.strip()
-        if t.startswith("#ifdef ") or t.startswith("#ifndef "):
-            on = (t.split()[1] in defined) == t.startswith("#ifdef ")
+        if t.startswith("#ifdef ") or t.startswith("#ifndef ") or t.startswith("#if "):
+            if t.startswith("#if "):
+                on = test(t[4:])
+            else:
+                on = (t.split()[1] in defined) == t.startswith("#ifdef ")
             stack.append((keep, on))
             keep = keep and on
+        elif t.startswith("#elif "):
+            outer, taken = stack.pop()
+            on = not taken and test(t[6:])
+            stack.append((outer, taken or on))
+            keep = outer and on
         elif t == "#else":
-            outer, on = stack.pop()
-            stack.append((outer, not on))
-            keep = outer and not on
+            outer, taken = stack.pop()
+            stack.append((outer, True))
+            keep = outer and not taken
         elif t == "#endif":
             keep = stack.pop()[0]
         elif keep:
