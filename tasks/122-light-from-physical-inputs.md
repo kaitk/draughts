@@ -749,6 +749,116 @@ target through `--tone-probe 16`, 5 × 5 pixel means, the stove view at 1536 × 
 
 Cost: the bake's ray test a few planes per ray, the settle no more work; nothing per frame.
 
+## The seventh step, varnish and the sun's colour (2026-11-26)
+
+Under `--light physical` only; without it the reference view and the close, low, room and
+menu views are byte-identical to the build before (with `--base-wood today`; the reference
+view within one level in a few pixels, none over 8). Results page:
+`build/notes/light-physical/index.html#step7`; scratch `build/review122/s7/`. Measured with
+`--volumes off`, autumn's grade as made; the regions' chroma as the xy distance from D65
+("sat"), in the light before the camera and in the graded shot; Cycles' gloss as its light
+less its diffuse passes.
+
+What greyed the table, the wainscot and the paper's sun patch, before the change:
+
+| Region | Ours: sun's specular / environment | Cycles: gloss | Light sat, ours / Cycles | Shot sat, ours / reference |
+|---|---|---|---|---|
+| Wallpaper in the sun | 44% (the broad sheen 34%) / 1% | 37% (sun 0%) | 0.093 / 0.106 | 0.111 / 0.175 |
+| Table top in the sun (close) | 23% / 2% | 10% (sun 2%) | 0.115 / 0.128 | 0.062 / – |
+| Table top (reference view) | 6% / 2% | 25% | 0.133 / 0.123 | 0.089 / 0.142 |
+| Table edge (close) | 10% / 6% | 53% | 0.119 / 0.100 | 0.105 / – |
+| Wainscot in the sun | 14% / 0% | (no coat then) | 0.121 / 0.146 | 0.092 / 0.205 |
+| Wainscot in shade (far) | 0% / 7% | (no coat then) | 0.122 / 0.154 | 0.165 / 0.177 |
+| Floor in the sun | 6% / 27% | 30% | 0.135 / 0.141 | 0.104 / 0.155 |
+
+- The broad sheen (`sheen_look`, roughness 0.8 at strength 2 on the paper and the paint):
+  34% of the paper's light in the sun. No such lobe is in Cycles.
+- The polish's highlight widened to a window's (`coat.w` 0.35; the room's 0.06 floor on
+  alpha): the sun's white over the whole lit top, 23% of its light.
+- Not the environment term: too small, not too large. Both shaders put a mean albedo (0.2;
+  `room_wide`'s 0.06 to 0.41) on the probes' light, which is already the light arriving from
+  r's side: 2 to 9% of the light where Cycles' gloss is 10 to 53%.
+- The sun at 0.6 of the key's saturation: 4425 K; the direct sun at 15 degrees, 3954 K.
+- The camera: AgX with the grade takes chroma out of the sunlit regions and adds it to the
+  shade (above); the reference keeps the sun saturated (0.155 to 0.205), its look.
+
+The change (23f57593):
+
+- The table and the chairs' wood (TABLE_FRAG's `PROPS_LIGHT`): the sun's lobe at the
+  polish's own roughness widened by half the sun's angular radius (0.0023, Karis's widening
+  for a disc) in place of coat.w; the environment the probes' light toward r with no albedo.
+  Fresnel and the diffuse under the coat as before (f0 0.04, the wood times 1 − F).
+- The panelling oak and the floor's wax (ROOM_FRAG's `PHYSICAL_COAT` on the walls' and
+  floor's HDR pipelines, `render3d::physical_coat`, `--coat on|off`; ngfx's seven
+  `r3d_hdr_*_coat` modules): the oak's coat over a quarter of the grain's relief, the sun's
+  lobe as above, `room_wide` the light arriving as it is. The oak keeps its field's roughness
+  (0.42 mean). The broad sheen off under the flag (`PHYSICAL_SHEEN`, a uniform).
+- Cycles' panelling had no gloss (`oak_panels`' specular 0): now a clear coat at the oak's
+  roughness on a quarter of the relief.
+- Tried and taken out: the oak seeing the room's box sharp (SHARP_BOX's `room_seen`) showed
+  crisp images of the floor's sun patches in the panels (`box_sun` isn't blurred by the
+  lobe); Cycles at the oak's roughness has only a soft sheen.
+
+After, both with the coat:
+
+| Region | Ours: specular + environment | Cycles: gloss | Light sat, ours / Cycles | Shot sat, before → after |
+|---|---|---|---|---|
+| Wallpaper in the sun | 15% + 8% | 37% | 0.134 / 0.132 | 0.111 → 0.146 |
+| Table top in the sun (close) | 0% + 10% | 10% | 0.140 / 0.149 | 0.062 → 0.078 |
+| Table top (reference view) | 0% + 10% | 26% | 0.149 / 0.144 | 0.089 → 0.097 |
+| Table edge (close) | 0% + 25% | 54% | 0.117 / 0.125 | 0.105 → 0.110 |
+| Wainscot in the sun | 13% + 3% | 42% | 0.146 / 0.141 | 0.092 → 0.103 |
+| Wainscot in shade (far, close, low) | 38%, 38%, 41% | 41%, 53%, 57% | 0.104 / 0.133 (far) | 0.165 → 0.142 (far) |
+| Floor in the sun | 6% + 26% | 30% | 0.158 / 0.162 | 0.104 → 0.116 |
+| Floor in shade | 9% | 20% | 0.149 / 0.159 | 0.165 → 0.170 |
+
+The sunlit regions' chroma lands on Cycles' within 0.01. The varnish greys the wainscot in
+shade in Cycles as in ours (Cycles' far wainscot 0.154 without the coat, 0.133 with): at
+0.42 its reflection of the windows is a broad sheen. Cycles with the oak's coat at 0.2 (the
+table's polish) gathers it into the windows' images and leaves the panels deeper: a material
+choice; the app would then need the windows sharp in the oak's and the table's reflections
+(an analytic window term, about 40 ALU, no reads; the band of the window in Cycles' table
+top is what the probes can't hold).
+
+The wallpaper (gold over ground by luminance, the gold's sat): the albedo 1.65 (0.077); in
+the sun our light 1.50 (0.100) before, 1.64 (0.140) after, Cycles 1.54 (0.136), the shot
+1.36 → 1.49 (0.112 → 0.146); in shade our light 1.52 → 1.39, Cycles 1.33; the reference 5.00
+in its sun, 4.33 in shade. The gold is a dielectric (roughness 0.52 against the ground's
+0.66), not a metal; the mask's contrast is the same in the sun and in shade (1.65, 1.56), so
+no mip blurs it: the blur in the sun was the patch's soft edges and the sheen. The
+reference's print is a material choice (a gold of 4 to 5 times the ground's albedo).
+
+The sun's colour by its height (`rooms::sun_color_at`, `tools/sun_color.py`): a 5778 K sun
+through a clear sky (Rayleigh, Angstrom's 0.08 and 1.3, the ozone's Chappuis band) at Kasten
+and Young's air mass, CIE 1931 to Rec.709, at the key's luminance (the meter moved 0.01 EV):
+2160 K at 3 degrees, 3500 K at 10, 3950 K at 15, 4610 K at 30, 5110 K overhead. The tuner's
+`--sun-color height|key`, the export's and the tracer's `room_scene::light_of` (Cycles' sun
+26.4, 18.4, 13.0 → 27.3, 18.6, 9.0). The floor's sun in the light 3800 → 3540 K (Cycles 3960 →
+3650 K), in the shot 4780 → 4630 K (the reference 3210 K: AgX turns bright patches toward
+white). The lit door is about 1250 K cooler than Cycles' before and after: not the sun, not
+looked into.
+
+The grade: autumn's as made against the reference's regions, error 3.99 before, 4.27 after;
+refitted from it EV −3.81, white 1.3, 1, 0.63, power 0.8, saturation 1.0, error 4.25: kept
+as made. Stops off the reference: the wallpaper −0.58 → −0.16, the wainscot −0.60 → −0.09,
+the floor's sun +0.61 → +0.60, the lit door +0.27 → +0.25; the wainscot's xy 0.467, 0.389 →
+0.443, 0.385 (the reference 0.482, 0.383).
+
+The rug matches its source (the albedo's xy 0.403, 0.361, `rug.png` 0.402, 0.363, Cycles
+0.402, 0.362). Its bluest tenth, B/R: the source 1.00, our albedo 0.78, our light through AgX
+with a neutral white 0.57, with autumn's (blue 0.6) 0.25, Cycles without the grade 0.32, the
+reference 0.36. The room's warm light takes about a quarter of the navy's blue, the grade's
+white half of the rest. Unchanged.
+
+Cost per pixel: the table an add in place of a multiply and a max, a multiply less; the
+walls about 12 ALU more on the oak, about 5 fewer in `room_wide`; the floor about 5 fewer; no
+texture reads. Timed (`mac_room_bench.py`, table and corner at 3840 × 2160, two batches):
+table −1.2 ms, corner −2.1 ms on 23 to 25 ms with a spread of ±5 to 8 ms between rounds
+(something else loaded the GPU; the physical views were 15 to 16 ms in the fourth step), so
+no difference found. Phones (designed): the same define on the phone tier's walls and floor
+costs nothing more; the table's environment there from the props' vertex colour
+(`PROPS_VERTEX`).
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
