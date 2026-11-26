@@ -61,7 +61,16 @@ soft, and keeping it there avoids refitting its moving, alpha-cut leaves each fr
 is the props' and the pieces' shadows: contact-sharp, softening with distance at the sun's
 real disc, no map resolution. First: ray queries and acceleration structures in goose-ngfx,
 through our fork of NoGraphicsAPI: a lean, minimal "trace some rays here" call only, as its
-author proposes, tested on NVIDIA and RDNA2 (Linux) since no newer Mac is at hand; then a
+author proposes, tested on NVIDIA and RDNA2 (Linux); the Mac's Metal path written too (Metal's intersection
+queries run on every Apple GPU, in hardware from M3), kept to "compiles and runs" on the M1; then a
 measure against today's shadow maps. gfx (SDL GPU) has no ray tracing and none is planned
 there: on gfx the level isn't offered, or, the occluders being few, a ray walk in the
 shader over a small fixed tree of their triangles, measured before it's offered.
+
+## ngfx as the renderer of the high tier (the user, 2026-11-26)
+
+Ray tracing comes to ngfx only: a first use that shows why it exists. MSAA may be dropped from
+ngfx altogether (NoGraphicsAPI's author doesn't want it upstream, and SMAA measured better
+in the room's complex scene): first measured on the iPhone, where ngfx ships and MSAA is
+nearly free on a tiled GPU while SMAA is a full-screen pass. A decision against the parity
+rule between gfx and ngfx, to record when done.
