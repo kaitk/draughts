@@ -50,8 +50,18 @@ occlusion, then the atmosphere) and the resolution last.
 ## Later: ray-traced sun shadows on the highest tier (the user, 2026-11-26)
 
 A `shadows` level `traced` on the highest desktops (RDNA2 and up, NVIDIA RTX, Apple M3 and
-up), under `lighting = baked`: the sun's shadows by ray queries in place of the shadow maps,
-the sun's disc sampled for soft edges. Not before: goose-ngfx and gfx expose ray queries
-and acceleration structures; the maple's wind is moved into a compute pass that refits its
-structure each frame (its vertex shader moves the leaves now); its alpha-cut leaves are
-measured on the slowest target GPU (any-hit tests are RDNA2's weak point).
+up), under `lighting = baked`, for the near occluders only. The sun reaches the room only
+through the windows, and a point that can't see a window's opening is already known shaded
+(the window's light map and the niches' outlines), so the rays need only what stands
+between a lit point and the glass: the table, the chairs, the board and its pieces, the
+shell's edges by the windows. That's a few hundred thousand static triangles, built once,
+plus the pieces, which move rarely. The casements and the lace stay in the window's light
+map, exact already; the maple, far outside, keeps its shadow map: its shadow is wide and
+soft, and keeping it there avoids refitting its moving, alpha-cut leaves each frame. The gain
+is the props' and the pieces' shadows: contact-sharp, softening with distance at the sun's
+real disc, no map resolution. First: ray queries and acceleration structures in goose-ngfx,
+through our fork of NoGraphicsAPI: a lean, minimal "trace some rays here" call only, as its
+author proposes, tested on NVIDIA and RDNA2 (Linux) since no newer Mac is at hand; then a
+measure against today's shadow maps. gfx (SDL GPU) has no ray tracing and none is planned
+there: on gfx the level isn't offered, or, the occluders being few, a ray walk in the
+shader over a small fixed tree of their triangles, measured before it's offered.
