@@ -85,7 +85,9 @@
 //       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)]
 //       [--light today|physical (the room's light from physical inputs, physical_light; today as made)]
 //       [--camera-toe room|neutral|none (--light physical's one curve's toe, after the HDR pass)]
-//       [--props-wrap K (--light physical: how far past its terminator the sun wraps on the table and chairs; 0)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
+//       [--props-wrap K (--light physical: how far past its terminator the sun wraps on the table and chairs; 0)]
+//       [--casement-depth on|off (--light physical: the sun through the casements' members with their depth, in the bake
+//       and on every surface, rooms::Room's panes.w; on)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
 //       [--paint quiet|old] [--paint-off fillets,tilt,dirt,joints,tile] [--paint-relief K]
 //       [--sill vasalemma|old] [--sill-off speckle,band,arris,nose,dust (the limestone's parts, each off)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
@@ -104,7 +106,8 @@
 //       [--lace-fold-ao K (how much the folds' valleys darken that fill, 1.5, the deepest to 0.4)]
 //       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
 //       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
-//       [--dump-light PATH (the probes' atlas, a float a line, with --shot)] [--print (the command line printed on the first frame, as P)]
+//       [--dump-light PATH (the probes' atlas, a float a line, with --shot; with the props' light their nine harmonics' atlas
+//       too, PATH.props)] [--print (the command line printed on the first frame, as P)]
 //       [--dump-room-block PATH (the room's Surfaces block as its raw bytes, with --shot; scripts/room_fixed.py)] [--light-ref PATH (the baked light worked
 //       out finely on the room's surfaces, tools/light_ref.goose; --light-ref-stride N, --light-ref-old)]
 //       [--ssao-view off|alone|kept|light|broken (light: the indirect light alone on grey; broken: red where a
@@ -220,6 +223,8 @@ let LIGHT_WAYS = ["today", "physical"];
 
 // The two panes' share of the sun (0.92 each), as tools/path_trace.goose takes them.
 let PANES: f32 = 0.8464;
+// --light physical's sun through the casements' members with their depth (--casement-depth).
+var casement_depth = true;
 
 fn srgb_of(c: f32) -> f32 {
     if c <= 0.0031308 { return c * 12.92; }
@@ -243,6 +248,7 @@ fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_
     r.key_color = float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), made.key_color.w };
     if !key_given { r.key.z = made.key.z * made.shell_sun.y * PANES; }
     r.shell_sun.y = 1.0;
+    r.panes.w = if casement_depth { 1.0 } else { 0.0 };
     render3d::room_sun = float4 { 1.0, 1.0, 1.0, render3d::ROOM_SUN_AS_MADE.w };
     render3d::sun_panes = PANES;
     room_light::glazing = room_light::PHYSICAL_GLAZING;
@@ -1475,6 +1481,7 @@ fn main() {
     g.table = true;
     // --light physical: the table's sun the same all over (no pool round the board).
     let physical = pick(argv, "--light", LIGHT_WAYS, 0) == 1;
+    casement_depth = !(flag_value(argv, "--casement-depth") > 0 && argv[flag_value(argv, "--casement-depth")] == "off");
     g.table_spec = tables::get(take);
     if physical { g.table_spec.light.y = 1.0; }
     // --light physical: one camera curve for the whole picture after the HDR pass, its toe
@@ -1883,6 +1890,11 @@ fn main() {
                 var out: u8[>..] = [];
                 for i in room_light::ATLAS_FLOATS { format(out, render3d::light_atlas[i], "\n"); }
                 guard write_file(argv[dump_light], out[..]) else { abort("could not write the probes"); }
+                if render3d::props_light {
+                    var props: u8[>..] = [];
+                    for i in room_light::PROPS_FLOATS { format(props, render3d::light_props[i], "\n"); }
+                    guard write_file(str(argv[dump_light], ".props"), props[..]) else { abort("could not write the props' probes"); }
+                }
             }
             if render3d::room_fixed_stale.len > 0 {
                 print("the room's constants are stale at ", render3d::room_fixed_stale, ": the uniform shaders drew it (scripts/room_fixed.py)");
@@ -2449,7 +2461,10 @@ fn main() {
             line.append("--room ");
             line.append(rooms::NAMES[room_take]);
             format(line, " --light ", LIGHT_WAYS[if physical { 1 } else { 0 }]);
-            if physical { format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --props-wrap ", render3d::props_wrap); }
+            if physical {
+                format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --props-wrap ", render3d::props_wrap, " --casement-depth ",
+                       if casement_depth { "on" } else { "off" });
+            }
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
                    " --table-top ", TOPS[top], " --lace ", surfaces::LACE_WAYS[g.lace_way]);
             format(line, " --room-surfaces ", on_off(room_on), " --shell ", on_off(shell_on), " --outside ", on_off(outside_on),

@@ -42,6 +42,15 @@ let PROBES = 10140;           // NX × NZ × NH
 let ATLAS_W = 390;            // NX × NH
 let ATLAS_H = 78;             // 3 × NZ
 let ATLAS_FLOATS = 121680;    // ATLAS_W × ATLAS_H × 4
+// The props' atlas (TABLE_FRAG's PROPS_LIGHT, the desktop's tiers): each probe's light as nine
+// harmonics, the first three bands of the same light the room's atlas holds before its
+// settle, their rgb one after another in PROPS_BLOCKS texels (27 floats in 28): the
+// constant, the direction's x, y and z, then the second band's five (props_band). Its
+// blocks as the room's atlas's colours, one over the other. Made only with nine_harmonics.
+let PROPS_BLOCKS = 7;
+let PROPS_H = 182;            // PROPS_BLOCKS × NZ
+let PROPS_FLOATS = 283920;    // ATLAS_W × PROPS_H × 4
+var nine_harmonics = false;
 
 // The sun's rays traced through each window's glazing: RAYS_X across, RAYS_Y up.
 let RAYS_X = 12;
@@ -63,6 +72,13 @@ let GLAZING:     f32 = 0.78;
 // of 0.92 the path tracer takes in place of the 0.88 GLAZING was made with, the bars kept).
 var glazing: f32 = GLAZING;
 let PHYSICAL_GLAZING: f32 = 0.75;
+// The sun's rays traced through the casements' own members (room_shell::casement_members:
+// the frames, sashes and bars with their depth, which at a low sun hide much of what is open
+// square on) in place of the glazing's share; then only the two panes, PANES, stand for the
+// glass (the tuner's --light physical). Each ray's cell is sampled MEMBER_SAMPLES² times.
+var members_traced = false;
+let PANES: f32 = 0.8464;
+let MEMBER_SAMPLES = 8;
 // What the lace lets through where it hangs before the niche (its thread lets 0.45 of the
 // sun through where it covers, and it covers about half).
 let LACE_LETS: f32 = 0.72;
@@ -250,6 +266,52 @@ fn wall_albedo(wall: i64, along: f32, h: f32) -> float3 {
     if h < room_shell::WAINSCOT_TOP { OAK_ALBEDO } else { PAPER_ALBEDO }
 }
 
+// The share of ray (window o, column i, row j)'s cell on the inner glass whose line along d
+// (the plan's, into the room) passes every box of `boxes` (room_shell::casement_members).
+// Only the boxes whose shadow along d on the glass's plane overlaps the cell are tested.
+fn members_let(boxes: room_shell::Member[..room_shell::MEMBERS]&, o: room_shell::Opening, i: i64, j: i64, d: float3) -> f32 {
+    // The line in the window's own metres: x along the wall, y up, z out of the wall.
+    let v = float3 { d.x, d.z, -d.y };
+    let inv = float3 { 1.0 / v.x, 1.0 / v.y, 1.0 / v.z };
+    let low = o.sill + GLAZED_LOW;
+    let high = o.sill + o.height + o.rise - GLAZED_HIGH;
+    let dx = 2.0 * GLAZED_HALF / RAYS_X;
+    let dh = (high - low) / RAYS_Y;
+    let z = -room_shell::WINDOW_GLASS.x;
+    let x0 = -GLAZED_HALF + i * dx;
+    let y0 = low + j * dh;
+    // A point at depth zb meets the line through the plane's (x, y) at x + kx (zb - z).
+    let kx = v.x / v.z;
+    let ky = v.y / v.z;
+    var near: i64[..room_shell::MEMBERS] = [];
+    for b, n in boxes {
+        let ax = kx * (b.lo.z - z);
+        let bx = kx * (b.hi.z - z);
+        let ay = ky * (b.lo.z - z);
+        let by = ky * (b.hi.z - z);
+        guard b.lo.x - max(ax, bx) < x0 + dx && b.hi.x - min(ax, bx) > x0 else { continue; }
+        guard b.lo.y - max(ay, by) < y0 + dh && b.hi.y - min(ay, by) > y0 else { continue; }
+        near.push(n);
+    }
+    var open = 0;
+    for sj in MEMBER_SAMPLES {
+        for si in MEMBER_SAMPLES {
+            let p = float3 { x0 + (si + 0.5) * (dx / MEMBER_SAMPLES), y0 + (sj + 0.5) * (dh / MEMBER_SAMPLES), z };
+            var hit = false;
+            for n in near {
+                let b = boxes[n];
+                let t0 = (b.lo - p) * inv;
+                let t1 = (b.hi - p) * inv;
+                let enter = max(min(t0.x, t1.x), max(min(t0.y, t1.y), min(t0.z, t1.z)));
+                let leave = min(max(t0.x, t1.x), min(max(t0.y, t1.y), max(t0.z, t1.z)));
+                if enter <= leave { hit = true; break; }
+            }
+            if !hit { open++; }
+        }
+    }
+    return open / (MEMBER_SAMPLES * MEMBER_SAMPLES * 1.0);
+}
+
 // The sun's rays through the three windows into the patches they light, binned; how much
 // of the sun each ray's glass point lets through the tree outside is `tree` (RAYS, from
 // render3d, 1 where no tree). Returns how many patches are lit. Each ray's light also goes
@@ -270,14 +332,19 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
     let gy = glass_y();
     let room_x = s.walls[room_shell::FAR_WALL].a.x;
     let lace_y = face - room_shell::LACE_OFF;
+    var boxes = room_shell::casement_members(wins[0]);
     for k in 3 {
         let o = wins[k];
         let cell = (2.0 * GLAZED_HALF / RAYS_X) * ((o.height + o.rise - GLAZED_LOW - GLAZED_HIGH) / RAYS_Y);
-        let each = sun.light * (cell * -d.y * glazing);
+        let each = sun.light * (cell * -d.y * (if members_traced { PANES } else { glazing }));
         for j in RAYS_Y {
             for i in RAYS_X {
                 let q = ray_point(k, i, j);
                 var p = each * tree[(k * RAYS_Y + j) * RAYS_X + i];
+                if members_traced {
+                    p = p * members_let(boxes, o, i, j, d);
+                    guard p.x + p.y + p.z > 0.0 else { continue; }
+                }
                 // Through the niche to the wall's face: the sill, a reveal, or on.
                 let t_face = (gy - face) / -d.y;
                 let t_sill = (q.z - o.sill) / -d.z;
@@ -430,8 +497,12 @@ fn probe_place(wins: room_shell::Opening[3]&, p: float3) -> i64 {
 // wall a quarter of each light along it or behind it, and a floor a quarter of each low
 // light across the room: the floor read up to twice the light it gets, a wall's own sun
 // patch rang dark round itself, and the corners took what lay behind them.
-struct Gathered { c: float3, dr: float3, dg: float3, db: float3, ex: float3, ey: float3, ez: float3 }
-let GATHERED = 21;            // its floats in the half grid: c, dr, dg, db as the atlas's, ex, ey, ez
+//
+// With nine_harmonics also the second band (q*, rgb each): the sum of each light times its
+// direction's xx, yy (less a third), xy, xz, yz; zz is -(xx + yy) (props_band).
+struct Gathered { c: float3, dr: float3, dg: float3, db: float3, ex: float3, ey: float3, ez: float3,
+                  qxx: float3, qyy: float3, qxy: float3, qxz: float3, qyz: float3 }
+let GATHERED = 36;            // its floats in the half grid: c, dr, dg, db as the atlas's, ex, ey, ez, the q's
 
 // How far before a plane the probes that its surface reads stand (0.15 m, and 0.25 m under
 // the ceiling and before the hall wall), and no others.
@@ -462,6 +533,34 @@ fn take(g: Gathered&, f: float3, w: float3, d: float3) {
     if f.x != 0.0 { g.ex = g.ex + w * max(d.x * f.x, 0.0); }
     if f.y != 0.0 { g.ey = g.ey + w * max(d.y * f.y, 0.0); }
     if f.z != 0.0 { g.ez = g.ez + w * max(d.z * f.z, 0.0); }
+    if nine_harmonics {
+        g.qxx = g.qxx + w * (dir.x * dir.x - 1.0 / 3.0);
+        g.qyy = g.qyy + w * (dir.y * dir.y - 1.0 / 3.0);
+        g.qxy = g.qxy + w * (dir.x * dir.y);
+        g.qxz = g.qxz + w * (dir.x * dir.z);
+        g.qyz = g.qyz + w * (dir.y * dir.z);
+    }
+}
+
+// The second band of the clamped cosine's light, as TABLE_FRAG's props_light adds it for a
+// normal n: k (nx² - nz²), (ny² - nz²), nx ny, nx nz, ny nz, each rgb (the gathered q's
+// times 15/32: a light's clamped cosine is 1/4 + cos/2 + 15/32 (cos² - 1/3) to this band).
+fn props_band(g: Gathered&) -> float3[5] {
+    let k: f32 = 15.0 / 32.0;
+    return [g.qxx * k, g.qyy * k, g.qxy * (2.0 * k), g.qxz * (2.0 * k), g.qyz * (2.0 * k)];
+}
+
+// Probe (iz, x: the atlas's column) of the props' atlas from g, before its settle.
+fn put_props(props: f32[:], iz: i64, x: i64, g: Gathered&) {
+    let band = props_band(g);
+    let all: float3[9] = [g.c, float3 { g.dr.x, g.dg.x, g.db.x }, float3 { g.dr.y, g.dg.y, g.db.y },
+                          float3 { g.dr.z, g.dg.z, g.db.z }, band[0], band[1], band[2], band[3], band[4]];
+    for k in 9 {
+        for ch in 3 {
+            let f = 3 * k + ch;
+            props[4 * ((f / 4 * NZ + iz) * ATLAS_W + x) + f % 4] = if ch == 0 { all[k].x } else if ch == 1 { all[k].y } else { all[k].z };
+        }
+    }
 }
 
 // The direction turned along each near face's normal so that the constant and the
@@ -487,8 +586,9 @@ fn to_room(d: float3) -> float3 { float3 { -d.x, d.z, -d.y } }
 // light from bounce.half (gather_half), spread over the whole grid. A probe in a niche sees
 // only its own window and the room through the niche's outline; one inside a wall takes
 // its neighbour's light (fill_walled).
-fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32[:]) {
+fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32[:], props: f32[:]) {
     assert(atlas.len == ATLAS_FLOATS);
+    assert(props.len == PROPS_FLOATS);
     let face = wall_face();
     let gy = glass_y();
     let lace_y = face - room_shell::LACE_OFF;
@@ -538,7 +638,8 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                 var got = Gathered {
                     float3 { hp[0], hp[4], hp[8] }, float3 { hp[1], hp[2], hp[3] }, float3 { hp[5], hp[6], hp[7] },
                     float3 { hp[9], hp[10], hp[11] }, float3 { hp[12], hp[13], hp[14] }, float3 { hp[15], hp[16], hp[17] },
-                    float3 { hp[18], hp[19], hp[20] } };
+                    float3 { hp[18], hp[19], hp[20] }, float3 { hp[21], hp[22], hp[23] }, float3 { hp[24], hp[25], hp[26] },
+                    float3 { hp[27], hp[28], hp[29] }, float3 { hp[30], hp[31], hp[32] }, float3 { hp[33], hp[34], hp[35] } };
                 // The sky, seen through the niche's outline at the wall's face and past
                 // the lace.
                 for si in sky_n {
@@ -572,12 +673,13 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                     guard lets > 0.0 else { continue; }
                     take(got, f, pt.power * (lets * facing * inv_pi2 / r2), v / r);
                 }
+                let x = ih * NX + ix;
+                if nine_harmonics { put_props(props, iz, x, got); }
                 settle(got, f);
                 let c = got.c;
                 let dr = got.dr;
                 let dg = got.dg;
                 let db = got.db;
-                let x = ih * NX + ix;
                 let a = 4 * (iz * ATLAS_W + x);
                 let g = 4 * ((NZ + iz) * ATLAS_W + x);
                 let b = 4 * ((2 * NZ + iz) * ATLAS_W + x);
@@ -596,14 +698,15 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
             }
         }
     }
-    fill_walled(wins, atlas);
+    fill_walled(wins, atlas, 3);
+    if nine_harmonics { fill_walled(wins, props, PROPS_BLOCKS); }
 }
 
 // The probes inside a wall, past the glass or behind the hall wall (probe_place) take the
 // light of the nearest probe toward the room along z, so the surfaces beside them (the
 // window wall's corners, the floor and the ceiling along it, the hall wall) don't read
-// light seen through the wall.
-fn fill_walled(wins: room_shell::Opening[3]&, atlas: f32[:]) {
+// light seen through the wall. `blocks`: the atlas's blocks of NZ rows (3, or PROPS_BLOCKS).
+fn fill_walled(wins: room_shell::Opening[3]&, atlas: f32[:], blocks: i64) {
     let x0 = room_shell::LIBRARY.walls[room_shell::FAR_WALL].a.x;
     for ih in NH {
         for iz in NZ {
@@ -615,7 +718,7 @@ fn fill_walled(wins: room_shell::Opening[3]&, atlas: f32[:]) {
                 while from > 0 && from < NZ - 1 &&
                       probe_place(wins, float3 { p.x, PLAN_Y0 - from * CELL, p.z }) == -2 { from += step; }
                 let x = ih * NX + ix;
-                for c in 3 {
+                for c in blocks {
                     let to = 4 * ((c * NZ + iz) * ATLAS_W + x);
                     let at = 4 * ((c * NZ + from) * ATLAS_W + x);
                     for f in 4 { atlas[to + f] = atlas[at + f]; }
@@ -660,7 +763,7 @@ let LACE_SCATTER: f32 = 0.4;
 let HALF_X = 16;           // every other probe and the last, the stove's end's own row
 let HALF_Z = 13;
 let HALF_H = 7;
-let HALF_FLOATS = 30576;   // HALF_X × HALF_Z × HALF_H × GATHERED
+let HALF_FLOATS = 52416;   // HALF_X × HALF_Z × HALF_H × GATHERED
 
 // The whole grid's x index of the half grid's column ix.
 fn half_column(ix: i64) -> i64 { if ix == HALF_X - 1 { NX - 1 } else { 2 * ix } }
@@ -993,7 +1096,8 @@ fn gather_half(sun: Sun, bounce: Bounce&) {
                 let kp = probe_place(wins, p);
                 guard kp > -2 else { continue; }
                 let f = near_faces(p);
-                var g = Gathered { float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0 };
+                var g = Gathered { float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0,
+                                   float3_0, float3_0 };
                 for j in CELLS {
                     let b .= bounce.cells[j];
                     let l = bounce.seen[j];
@@ -1009,7 +1113,9 @@ fn gather_half(sun: Sun, bounce: Bounce&) {
                 }
                 let at = GATHERED * ((ih * HALF_Z + iz) * HALF_X + ix);
                 let q: f32[GATHERED] = [g.c.x, g.dr.x, g.dr.y, g.dr.z, g.c.y, g.dg.x, g.dg.y, g.dg.z, g.c.z, g.db.x, g.db.y, g.db.z,
-                                        g.ex.x, g.ex.y, g.ex.z, g.ey.x, g.ey.y, g.ey.z, g.ez.x, g.ez.y, g.ez.z];
+                                        g.ex.x, g.ex.y, g.ex.z, g.ey.x, g.ey.y, g.ey.z, g.ez.x, g.ez.y, g.ez.z, g.qxx.x, g.qxx.y,
+                                        g.qxx.z, g.qyy.x, g.qyy.y, g.qyy.z, g.qxy.x, g.qxy.y, g.qxy.z, g.qxz.x, g.qxz.y, g.qxz.z,
+                                        g.qyz.x, g.qyz.y, g.qyz.z];
                 for i in GATHERED { bounce.half[at + i] = q[i]; }
             }
         }

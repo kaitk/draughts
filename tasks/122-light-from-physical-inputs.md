@@ -142,6 +142,69 @@ the window's sun traced through its mesh in the bake and in the room's sun patch
 the sun at this angle, changes the patches' look and the exposure set on them; a few ms a
 bake), and L2 probes (2.25 times the atlas, 18 texel reads a lookup in place of 6).
 
+## The third step (2026-11-26)
+
+Both under `--light physical`; without it the close, low and room shots stay byte-identical
+to `build/perf/light_tune-before122` (with `--base-wood today`). Results page:
+`build/notes/light-physical/index.html#step3`; scratch `build/review122/s3/`.
+
+- The sun through the casements' members with their depth. The bake traces each of its
+  1,080 sun rays (8 × 8 lines over the ray's cell) through the casements' boxes
+  (`room_shell::casement_members`, as `casement_quiet` builds them, and the lunette), the
+  panes' 0.8464 in place of the glazing's 0.75; `LIGHT_FN`'s `casement` widens each
+  member's band by its depth along the sun's line. The switch is `rooms::Room`'s `panes.w`
+  (`--casement-depth off` for the flat members). Against the tracer's mesh at 15°: the
+  bake's sun into the room 0.856 of its glazed rectangle before, 0.381 after, the tracer
+  0.369; the shader's casements 1.13 of the tracer's line by line before, 1.000 after
+  (0.05% of lines differ). The visible patches were 1.13 too bright, not the second step's
+  1.55 to 1.8 (box means mixing in indirect light and gloss): the door's fully lit pixels
+  are 0.93 of the tracer's before and after.
+- L2 probes for the props: the bake gathers the second band of the same lights (through
+  the half grid too) into a props' atlas of nine harmonics, 7 RGBA16F texels a probe before
+  the settle (390 × 182, 555 KiB), only with `render3d::props_light`. `TABLE_FRAG`'s
+  `PROPS_LIGHT` (the desktop's tiers) reads it in the room atlas's slot; `ROOM_FRAG` and
+  its atlas unchanged (the dumped atlas byte-identical).
+
+Per change, over the tracer (the geometric mean counting a ratio under 0.05 as 0.05; the
+error factor the mean of the larger over the smaller; probes: 180 round the table not under
+its top × 6 axes, against the tracer without the props):
+
+| State | 22 points | Range | Error factor | 1,080 probe values | Range | Error factor |
+|---|---|---|---|---|---|---|
+| Before (L1, members flat) | 1.26 | 0.32–3.03 | 1.64 | 1.16 | 0.00–15.7 | 1.88 |
+| L2 alone | 1.14 | 0.13–2.62 | 1.65 | 1.13 | 0.00–17.8 | 1.71 |
+| The window alone (L1) | 0.64 | 0.00–1.82 | 2.00 | 0.65 | 0.00–7.65 | 2.04 |
+| Both | 0.68 | 0.03–1.72 | 1.72 | 0.66 | 0.00–5.31 | 1.72 |
+| Ideal L2 of the tracer's light | 1.00 | 0.23–2.31 | 1.32 | 1.01 | 0.64–2.06 | 1.06 |
+
+(The second step's 1.27, 0.40–3.60 for "before" is the same atlas against another run of
+the tracer's samples.) With ideal L2 probes the points would be 1.00, so most of what is
+left is the probes' own gather, mainly the light from below: the probes' light downward at
+0.15 to 0.75 m is 0.14 to 0.21 of the tracer's, which L1's lobe hid; with L2 the faces
+turned down get it (the aprons' undersides 0.13 and 0.06, the top's underside 0.03). The
+floor's cells' light is about right, but the probes 0.15 m over them gather 0.14 to 0.32 of
+the tracer's light from below (the near limit, 0.3 m; no rug in the bake, 1.7 times the
+floor's albedo). Scratch builds, not kept: the near limit 0.02 m² gives the points 0.80,
+the rug in the floor's cells 0.77, both 0.88 (0.09–1.73, error factor 1.41; probes 0.74),
+with three bounces too 0.90. A shortfall near the floor stays even then (the probes' total
+0.72 and 0.79 of the tracer's at 0.15 and 0.45 m), not yet found. The two smaller causes
+move two points: the top's underside's open part as 1 (0.03 to 0.07) and the table's top
+in the probes' view of the foot (1.72 to 0.84) together give 0.67 (0.06–1.26), error
+factor 1.67. Neither is made.
+
+The exposure stays 3.08 (EV 1.62): the members' depth changes how much of a patch is lit,
+not the sun on a lit spot; the floor patches' brightest pixels are 2% lower (the bake's
+indirect part), which by the first step's rule is 3.16, 0.04 EV.
+
+Cost: the bake 85 to 101 ms on the Mac (the sun's rays 0.1 to 0.8 ms, the half grid 21 to
+29, the probes 46 to 58), the L2 part only with the props' light; per pixel one divide in
+`shell_open` and about a dozen operations a `casement` call, and in `TABLE_FRAG` with
+`PROPS_LIGHT` 28 bilinear reads in place of 12 (two lookups of 7 texels × 2 slices) and
+about 40 more multiply-adds. The phone's tier, designed only: the props' light a colour a
+vertex from the same props' atlas on the CPU after each bake (`grid9` at each vertex half a
+step out along its open direction, times its open part), read under a `PROPS_VERTEX`
+define: no texture and no per-pixel reads.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

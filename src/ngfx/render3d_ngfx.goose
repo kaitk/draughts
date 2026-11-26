@@ -170,7 +170,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
         if room_table { slot(t, if g.hdr || g.room_ssao { 10 } else { 9 }, render3d::lace_or_stand_in(g), g.linear); }
         if props {
             t.buf0 = nx::address(g.props_open);
-            slot(t, 11, render3d::light_or_stand_in(g), g.linear);
+            slot(t, 11, render3d::props_probes_or_stand_in(g), g.linear);
         }
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
@@ -424,7 +424,7 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
         slot(t, 9, render3d::lace_or_stand_in(g), g.linear);
         if g.room_props {
             t.buf0 = nx::address(g.props_open);
-            slot(t, 10, render3d::light_or_stand_in(g), g.linear);
+            slot(t, 10, render3d::props_probes_or_stand_in(g), g.linear);
         }
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
@@ -1765,7 +1765,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
                     g.floor_normal, g.floor_noise, g.scratch_tile, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
-                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.tapestry_map, g.stove_relief, g.corner_map, g.table_map,
+                    g.outside_band, g.outside_oak, g.light_volume, g.props_probes, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.tapestry_map, g.stove_relief, g.corner_map, g.table_map,
                     g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color, g.planar_depth,
                     g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { nx::release(t); } }

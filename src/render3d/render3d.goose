@@ -430,7 +430,9 @@ struct Gpu {
     outside_oak:       Texture,
     // The shell's baked light (model3d::room_light), RGBA16F: made again when what it is
     // baked from changes (light_key), its time (measuring) and how many sun patches lit it.
-    light_volume:  Texture,
+    light_volume: Texture,
+    // The props' atlas of the same light as nine harmonics (props_light).
+    props_probes:  Texture,
     light_for:     float4[LIGHT_KEY],
     light_ms:      f64,
     light_patches: i64,
@@ -1096,15 +1098,16 @@ fn window_map_tree(g: Gpu&) -> bool {
     if !ssao_allowed { return phone_leaves == LEAVES_STATIC; }
     return !leaves_moving;
 }
-// What the map is baked from: the key, the shell's windows, the penumbra, the tree's place
-// and map, and whether the tree is in (never the wind: on the phone's tier the leaves stay
+// What the map is baked from: the key, the shell's windows, the penumbra, whether the
+// casements' members have their depth (Frame's panes.w), the tree's place and map, and
+// whether the tree is in (never the wind: on the phone's tier the leaves stay
 // as they were when it was baked).
-let WINDOW_MAP_KEY = 13;
+let WINDOW_MAP_KEY = 14;
 fn window_map_key(g: Gpu&) -> float4[WINDOW_MAP_KEY] {
     let b = shell_block(g);
     let f = g.frame;
     return [f.light_dir, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view,
-            f.room, f.tree, f.tree_blur, float4 { if window_map_tree(g) { 1.0 } else { 0.0 }, g.tree_bakes, g.lace_mask.id, g.tree_map.id }];
+            f.room, f.panes, f.tree, f.tree_blur, float4 { if window_map_tree(g) { 1.0 } else { 0.0 }, g.tree_bakes, g.lace_mask.id, g.tree_map.id }];
 }
 // The map baked again where what it is made from changed. Recording only, before the
 // board's pass.
@@ -1127,7 +1130,7 @@ fn window_map<O>(o: O&, g: Gpu&) {
 fn box_map_shown(g: Gpu&) -> bool {
     box_map_on && !ssao_allowed && sharp_box_allowed && window_map_shown(g) && light_baked(g) && g.light_volume.id != 0
 }
-let BOX_MAP_KEY = 50;
+let BOX_MAP_KEY = 53;
 fn box_map_key(g: Gpu&) -> float4[BOX_MAP_KEY] {
     let b = surfaces_block(g);
     let f = g.frame;
@@ -2219,31 +2222,40 @@ fn light_grid_of() -> float4 { float4 { room_light::NX, room_light::NZ, room_lig
 // The baked light's atlas to bind, or another texture where none is made: ROOM_FRAG reads
 // it only when its block says it is on.
 fn light_or_stand_in(g: Gpu&) -> Texture { if g.light_volume.id != 0 { g.light_volume } else { g.crown_map } }
+// The props' atlas of nine harmonics (room_light's PROPS_*), or another texture where none is
+// made: TABLE_FRAG reads it with PROPS_LIGHT only.
+fn props_probes_or_stand_in(g: Gpu&) -> Texture { if g.props_probes.id != 0 { g.props_probes } else { g.crown_map } }
 
 // Whether the shell's light is baked: the shell shown and its room asking for it.
 fn light_baked(g: Gpu&) -> bool { g.room_on && g.room_shell && g.room.baked.x + g.room.baked.y > 0.0 }
 
 // What the shell's baked light is made from: the key, the room's light, the tree, the
-// table's top, the bounces and the sun's saturation on the room, and the bake's own
+// casements' members' depth (panes.w), whether the props take their nine harmonics
+// (props_light), the table's top, the bounces and the sun's saturation on the room, and the bake's own
 // settings (room_light's bounce_grey, lace_source, gather_near), and whether the windows
 // have their shutters (room_shell::shutters_on), how far the lace hangs over the opening
 // (room_shell::lace_hang), and where the games table stands in the plan.
-let LIGHT_KEY = 10;
+let LIGHT_KEY = 12;
 fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     let f = g.frame;
     let r = g.room;
-    return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.room_axes,
+    return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.panes, f.room_axes,
+            float4 { if props_light { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 },
             float4 { table_radius(g), g.tree_ms as f32, light_bounces as f32, room_sun.x },
             float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
                      (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang },
             float4 { room_shell::LIBRARY.table.x, room_shell::LIBRARY.table.y, room_light::glazing, sun_panes }];
 }
 
-// The bake's buffers, sized once: the probes' atlas in floats and as half floats, the sun's
+// The bake's buffers, sized once: the probes' atlas in floats and as half floats (and the
+// props' with props_light), the sun's
 // patches, how much of the sun the tree lets through each sun ray's glass point, and the
 // tree's map at a low mip, kept on the CPU when it is baked (bake_tree).
-var light_atlas:   f32[room_light::ATLAS_FLOATS];
-var light_bytes:   u8[ATLAS_BYTES];
+var light_atlas: f32[room_light::ATLAS_FLOATS];
+var light_bytes: u8[ATLAS_BYTES];
+// The props' atlas of nine harmonics (room_light::PROPS_FLOATS), with props_light.
+var light_props:   f32[room_light::PROPS_FLOATS];
+var props_bytes:   u8[PROPS_BYTES];
 var light_patches: room_light::Patch[room_light::BINS];
 var light_tree:    f32[room_light::RAYS];
 var light_bounce:  room_light::Bounce;
@@ -2275,6 +2287,7 @@ var shade_fill: f32 = 0.2;
 // panes): the bake takes the sun before them, as its glazing has them.
 var sun_panes: f32 = 1.0;
 let ATLAS_BYTES = 243360;   // room_light::ATLAS_W × ATLAS_H × 8
+let PROPS_BYTES = 567840;   // room_light::ATLAS_W × PROPS_H × 8
 let TREE_LEVEL = 3;
 let TREE_SMALL = 98304;     // trees::SHELL_W × SHELL_H × 4 >> 2 × TREE_LEVEL
 var tree_small:   u8[TREE_SMALL];
@@ -2311,6 +2324,8 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
         bounce_gain: r.baked.y,
     };
     light_sun = sun;
+    room_light::members_traced = f.panes.w > 0.5;
+    room_light::nine_harmonics = props_light;
     tree_through(g, l);
     var at = clock();
     let n = room_light::sun_patches(sun, light_tree[..], light_patches, light_bounce);
@@ -2327,7 +2342,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     room_light::gather_half(sun, light_bounce);
     light_steps[5] = (clock() - at) * 1000.0;
     at = clock();
-    room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..]);
+    room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..], light_props[..]);
     light_steps[6] = (clock() - at) * 1000.0;
     probes_on_table(g);
     for i in room_light::ATLAS_FLOATS {
@@ -2337,6 +2352,15 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     }
     if g.light_volume.id == 0 { g.light_volume = o.gpu_sampled(room_light::ATLAS_W, room_light::ATLAS_H, 1, RGBA16F); }
     o.gpu_upload(g.light_volume, 0, light_bytes[..]);
+    if props_light {
+        for i in room_light::PROPS_FLOATS {
+            let h = half_bits(light_props[i]);
+            props_bytes[2 * i] = (h & 0xFF) as u8;
+            props_bytes[2 * i + 1] = (h >> 8) as u8;
+        }
+        if g.props_probes.id == 0 { g.props_probes = o.gpu_sampled(room_light::ATLAS_W, room_light::PROPS_H, 1, RGBA16F); }
+        o.gpu_upload(g.props_probes, 0, props_bytes[..]);
+    }
     g.light_for = key;
     g.light_patches = n;
     g.light_ms = (clock() - t0) * 1000.0;

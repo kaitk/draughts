@@ -7,7 +7,8 @@ namespace shaders;
 let TABLE_ROOM = "#define TABLE_ROOM 1\n";
 // TABLE_VERT and TABLE_FRAG in the room lit from the room's probe grid where each pixel is,
 // through the props' baked occlusion (render3d::props_light, task 120), in place of the four
-// samples on the table's axis. With TABLE_ROOM, in both stages.
+// samples on the table's axis; the probes' light as nine harmonics (the props' atlas). With
+// TABLE_ROOM, in both stages; the desktop's tiers only (render3d_gpu::make_room_tier).
 let PROPS_LIGHT = "#define PROPS_LIGHT 1\n";
 
 let TABLE_SHELL = """
@@ -19,11 +20,12 @@ let TABLE_SHELL = """
     layout(set = 3, binding = 2) uniform Shell { vec4 axes; vec4 tile; vec4 shell; vec4 shell_mids; vec4 shell_niche;
                                                  vec4 shell_glass; vec4 shell_sun; vec4 window_view; };
     #ifdef PROPS_LIGHT
-    // The room's baked light (model3d::room_light), its probes' atlas, as ROOM_FRAG's.
+    // The room's baked light (model3d::room_light) for the props: its probes' light as nine
+    // harmonics, in room_light::PROPS_BLOCKS blocks laid out as ROOM_FRAG's atlas's colours.
     #ifdef NO_SSAO
-    layout(set = 2, binding = 10) uniform sampler2D light_volume;
+    layout(set = 2, binding = 10) uniform sampler2D props_probes;
     #else
-    layout(set = 2, binding = 11) uniform sampler2D light_volume;
+    layout(set = 2, binding = 11) uniform sampler2D props_probes;
     #endif
     // render3d::PropsLightBlock: the probes' grid as ROOM_HEAD's light_box and light_grid;
     // props_look x 1 where the table keeps its own shade terms beside the bake, y how far
@@ -212,14 +214,18 @@ let TABLE_FRAG = """
         return (max(mix(a, b, f), vec3(0.0)) + harmonics * room_mix.y + room_shade.rgb) * mix(room_mix.z, 1.0, over);
     }
     #ifdef PROPS_LIGHT
-    // One probe's texel of the room's baked light, as ROOM_FRAG's probe_at: colour c's block,
-    // the height's slice k, at g (the grid's x and along v).
-    vec4 grid_probe(float c, float k, vec2 g) {
-        vec2 size = vec2(light_grid.x * light_grid.z, 3.0 * light_grid.y);
-        return textureLod(light_volume, vec2(k * light_grid.x + g.x + 0.5, c * light_grid.y + g.y + 0.5) / size, 0.0);
+    // One probe's texel of the props' atlas: block t, the height's slice k, at g (the grid's
+    // x and along v), the slices k0 and k1 mixed by kf.
+    vec4 grid_probe(float t, float k0, float k1, float kf, vec2 g) {
+        vec2 size = vec2(light_grid.x * light_grid.z, 7.0 * light_grid.y);
+        vec2 at = vec2(g.x + 0.5, t * light_grid.y + g.y + 0.5);
+        return mix(textureLod(props_probes, (at + vec2(k0 * light_grid.x, 0.0)) / size, 0.0),
+                   textureLod(props_probes, (at + vec2(k1 * light_grid.x, 0.0)) / size, 0.0), kf);
     }
     // The room's baked light at q toward d (both the world's), over pi, as ROOM_FRAG's
-    // baked_light: q turned into the room's frame, the probes half a step out along d.
+    // baked_light but with the second band: q turned into the room's frame, the probes half a
+    // step out along d. The nine harmonics' rgb one after another in seven texels: the
+    // constant, the direction's x, y, z, then (nx² - nz²), (ny² - nz²), nx ny, nx nz, ny nz.
     vec3 grid_light(vec3 q, vec3 d) {
         vec3 lq = vec3(dot(q.xz, axes.xy), q.y, dot(q.xz, axes.zw));
         vec3 ld = vec3(dot(d.xz, axes.xy), d.y, dot(d.xz, axes.zw));
@@ -228,10 +234,17 @@ let TABLE_FRAG = """
         float k0 = floor(g.y);
         float k1 = min(k0 + 1.0, hi.y);
         float kf = g.y - k0;
-        vec4 r = mix(grid_probe(0.0, k0, g.xz), grid_probe(0.0, k1, g.xz), kf);
-        vec4 gr = mix(grid_probe(1.0, k0, g.xz), grid_probe(1.0, k1, g.xz), kf);
-        vec4 b = mix(grid_probe(2.0, k0, g.xz), grid_probe(2.0, k1, g.xz), kf);
-        return max(vec3(r.x + dot(r.yzw, ld), gr.x + dot(gr.yzw, ld), b.x + dot(b.yzw, ld)), vec3(0.0));
+        vec4 t0 = grid_probe(0.0, k0, k1, kf, g.xz);
+        vec4 t1 = grid_probe(1.0, k0, k1, kf, g.xz);
+        vec4 t2 = grid_probe(2.0, k0, k1, kf, g.xz);
+        vec4 t3 = grid_probe(3.0, k0, k1, kf, g.xz);
+        vec4 t4 = grid_probe(4.0, k0, k1, kf, g.xz);
+        vec4 t5 = grid_probe(5.0, k0, k1, kf, g.xz);
+        vec4 t6 = grid_probe(6.0, k0, k1, kf, g.xz);
+        vec3 e = t0.xyz + vec3(t0.w, t1.xy) * ld.x + vec3(t1.zw, t2.x) * ld.y + t2.yzw * ld.z
+               + t3.xyz * (ld.x * ld.x - ld.z * ld.z) + vec3(t3.w, t4.xy) * (ld.y * ld.y - ld.z * ld.z)
+               + vec3(t4.zw, t5.x) * (ld.x * ld.y) + t5.yzw * (ld.x * ld.z) + t6.xyz * (ld.y * ld.z);
+        return max(e, vec3(0.0));
     }
     // room_light_at with the grid at q (world) in place of the samples on the table's axis.
     vec3 props_light_at(vec3 q, vec3 d, vec3 harmonics, bool in_room) {

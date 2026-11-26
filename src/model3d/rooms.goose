@@ -45,7 +45,9 @@ struct Room {
     // (degrees), z the sill's height over the board, w the opening's middle along the wall
     // from where the board's middle sees the sun.
     window: float4 = float4 { 36.0, 20.0, -2.0, 2.0 },
-    // A pane's width and height, a bar's width.
+    // A pane's width and height, a bar's width; w 1 where the shell's casements' members are
+    // seen with their depth, by the sun on every surface (LIGHT_FN's casement) and in the
+    // bake (room_light::members_traced): the light tuner's --light physical.
     panes: float4 = float4 { 9.0, 11.0, 1.0, 0.0 },
     // x panes across, y panes up, z how far the curtain reaches in from the opening's
     // side (0 none), w how much of the sun its lace lets through.

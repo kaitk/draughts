@@ -86,6 +86,7 @@ let WINDOW_MAP_FRAG = """
         vec3 sum = vec3(0.0);
         float tl = t0 - shell_glass.z / toward;
         float cone = window_view.y > 0.0 && tl > 0.5 ? LACE_CONE * tl / metre : 0.0;
+        vec2 slope = vec2(dot(l.xz, along), l.y) * (panes.w / toward);
         for (int i = 0; i < 3; i++) {
             if (float(i) >= shell.x) break;
             float mid = shell_mids[i];
@@ -97,7 +98,7 @@ let WINDOW_MAP_FRAG = """
                 vec3 g = q0 + l * depth;
                 vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
                 float soft_g = (0.03 + widen * tg) / metre;
-                through *= casement(wg, soft_g);
+                through *= casement(wg, soft_g, slope);
             }
             sum.x += through;
             if (tl > 0.5) {
@@ -745,7 +746,7 @@ let ROOM_FRAG = """
                    * smoothstep(-soft.y, soft.y, min(w.y - shell_niche.y, head - w.y));
         if (rect < 0.001) return c;
         vec2 wg = vec2(dot(qg.xz, axes.xy) - mid, qg.y - shell.z) / metre;
-        return mix(c, mix(bars, view, casement(wg, max(soft.x, soft.y))), rect);
+        return mix(c, mix(bars, view, casement(wg, max(soft.x, soft.y), vec2(0.0))), rect);
     }
 
     // What a glossy surface sees along r through a GGX lobe alpha wide: the room seen

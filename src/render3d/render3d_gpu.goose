@@ -200,7 +200,7 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         // The props' light (shaders::PROPS_LIGHT): their bake a vertex, the room's probes.
         if (g.hdr && h.props_light) || (!g.hdr && render3d::table_in_room(g) && g.room_props) {
             gfx::bind_storage_buffer(gfx::VERTEX, 0, g.props_open);
-            gfx::bind_texture(gfx::FRAGMENT, 11, render3d::light_or_stand_in(g), g.linear);
+            gfx::bind_texture(gfx::FRAGMENT, 11, render3d::props_probes_or_stand_in(g), g.linear);
             gfx::uniforms(gfx::FRAGMENT, 3, render3d::props_light_block(g));
         }
         gfx::bind_vertex_buffer(g.table_vb);
@@ -702,7 +702,7 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
             gfx::uniforms(gfx::FRAGMENT, 2, render3d::shell_block(g));
             if g.room_props {
                 gfx::bind_storage_buffer(gfx::VERTEX, 0, g.props_open);
-                gfx::bind_texture(gfx::FRAGMENT, 10, render3d::light_or_stand_in(g), g.linear);
+                gfx::bind_texture(gfx::FRAGMENT, 10, render3d::props_probes_or_stand_in(g), g.linear);
                 gfx::uniforms(gfx::FRAGMENT, 3, render3d::props_light_block(g));
             }
             gfx::bind_vertex_buffer(g.table_vb);
@@ -2053,7 +2053,7 @@ fn release(own: Own&, g: render3d::Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.table_albedo, g.table_normal, g.table_wear, g.table_wear_n, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.tree_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo, g.floor_normal, g.floor_noise, g.scratch_tile, g.wall_albedo,
-                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.tapestry_map, g.stove_relief, g.corner_map,
+                    g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask, g.outside_band, g.outside_oak, g.light_volume, g.props_probes, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.tapestry_map, g.stove_relief, g.corner_map,
                     g.table_map, g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color,
                     g.planar_depth, g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { gfx::release(t); } }
