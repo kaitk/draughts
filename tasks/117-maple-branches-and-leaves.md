@@ -21,11 +21,12 @@ branch), and `build/notes/tree/photos/tartu-maple-1.jpg` (leaf plates from below
 
 ## Acceptance criteria
 
-- [ ] The user answers the page's open questions (one leader or codominant stems, how
+- [x] The user answers the page's open questions (one leader or codominant stems, how
       crooked, the hanging limb).
-- [ ] Below the limbs, each node forks in two: asymmetry 1..6, radii by r^α (α about
-      2.3), the thin side at atan(a), the thick at atan(1/a), the fork's plane a quarter
-      turn from the last, length ∝ r^(2/3); levels 2-4 of `Habit` go.
+- [ ] A gravity layer on the grown skeleton: each node bends by the mass it carries
+      against a stiffness by r⁴, corrected upward (more in young wood), in place of
+      `Habit.sag`; heavier wood sags more, thicker less, upright wood not at all.
+- [ ] Palubicki's shedding: shaded inner wood dies back, some of it as stubs.
 - [ ] A tropism per segment by thickness: thick wood rises, thin wood levels out and
       sags, side shoots lean out of the crown.
 - [ ] Broken leaders in wood of 5-35 cm: the thick side ends as a stub, the thin side
@@ -40,6 +41,32 @@ branch), and `build/notes/tree/photos/tartu-maple-1.jpg` (leaf plates from below
 - [ ] Growth stays under 100 ms on the Mac (now 6.5 ms) and the segment and leaf counts
       within `MAX_WHOLE_SEGMENTS` and `MAX_CARDS`; the times recorded here.
 - [ ] The decision recorded in `docs/decisions/` and `docs/architecture/` updated.
+
+## Round one and the user's answers (2026-11-26)
+
+Three CPU studies, each local in `build/notes/tree/`, with one page of choices
+(`choices.html`): the branches (`branches/compare.html`: space colonisation, Palubicki
+2009, our Weber-Penn generator with broken leaders, Gao and Newberry's forks, each with
+gravity off and on), the leaves (`leaves/index.html`), and the bark, junctions and roots
+(`bark-roots/index.html`). The user added gravity's sag of branches and leaves as a core
+point (`build/notes/tree-gravity/`, Stava et al. 2014), and bark and roots
+(`build/notes/bark-roots/`).
+
+The user's answers:
+
+- The method: our Weber-Penn generator with broken leaders and a gravity layer (Stava's
+  bending with a beam's stiffness, r⁴, and the correction upward), in place of
+  `Habit.sag`, with Palubicki's shedding of shaded wood. This replaces Gao and Newberry's
+  forks below: the criterion on forks of two no longer holds.
+- One leader for now; codominant stems later, in a task of their own.
+- Crooked: a few clear elbows a limb (1-3), to be seen before it is settled.
+- All seasons in the end, so the leaves' tilt and sag follow the season (Raabe et al.
+  2015: the top of the crown flattest in summer, steeper as the leaves age).
+- Bark: a texture and junctions, its relief strong enough for the stark furrows of old
+  maple bark; the roots built even though the window pier hides the trunk's base.
+- Later, not yet built: the bark still looks a little like plastic. Two causes to try: no
+  scattering under the surface (an emulation, not the real thing), and its specular and
+  roughness (bark shows no visible shine).
 
 ## The user's verdict on the first research (2026-11-24)
 
