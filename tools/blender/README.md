@@ -80,7 +80,7 @@ textures on, `-light.png` takes off the gloss passes, which are not denoised.
   herringbone, the wallpaper's print (`wallpaper_mask.png` tinted by `surfaces::LOOK`),
   the limewash (`plaster_tone.png`), the limestone sills, the books' spines
   (`books_atlas.png` and `book_cells.goose`), the stove's glaze, the lace's pattern
-  (`lace_f2.png`). Each needs its uv as the shader takes it.
+  (`lace_f3.png`). Each needs its uv as the shader takes it.
 - The board and the pieces; the park and the tree outside (the bake dims the sun by the
   tree's leaves, about a quarter through two of the three windows; not modelled).
 - Gloss: the polish's blotches and the wear tile (scratches, crazing, dents), the key's
