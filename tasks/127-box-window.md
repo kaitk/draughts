@@ -144,6 +144,24 @@ The metal: a choice of about five darknesses in the light tuner once the hardwar
 judged against Cycles (the export taking the window's metal as its own material); then the
 chosen metal on every hinge in the room, the shutters' and the doors' too (2026-11-26).
 
+## The hardware built (2026-11-26)
+
+Round 2 built (`box_window.goose`'s `cremone`, `lathe_along`, `round_rod`): the grip turned
+from the brief's profile, its spindle and bearing, the housing with stepped ends and screws, the
+rod (6 sides, round by its normals) into a socket on each keeper's plate, a guide at each run's
+middle, two tapered hinge barrels a leaf; the room's mesh 62,906 triangles with the box window
+(49,130 window B's). The metal, the user's pick left to the agent for the first round: bronze B,
+sRGB 0.34, 0.25, 0.17, roughness 0.5 (`room_shell::WINDOW_METAL`, ROOM_FRAG's `WINDOW_BRASS`,
+checked equal by `test/model3d/geometry.goose`; the Cycles export's `window_metal`).
+
+The tuner showed it pale where Cycles shows the same metal dark brown: the grip's mean sRGB 113,
+77, 45 against Cycles' 83, 51, 25. Measured by scratch builds (the reflection off: black; the
+sun's highlight off: as bright), the cause is the box's sharp reflection (`room_reflection`),
+which from inside a window's niche, outside the room's box, reads far too bright. The window's
+hardware now takes the room's wide light (`room_wide`): 57, 34, 17, too dark, its edges unlit;
+with the niche's window light (written for the shutters' hinges) in full, 108, 74, 44 with a hard
+halo; at half (`WINDOW_NICHE`, fitted to Cycles' grip) see below.
+
 ## Acceptance criteria
 
 - [x] The specification read against the room's cameras: what shows, what is geometry,

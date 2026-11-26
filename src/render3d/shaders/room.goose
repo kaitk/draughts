@@ -481,9 +481,12 @@ let ROOM_FRAG = """
     // The chairs at the table (mesh::CHAIRS): each seat's middle (x, z) and its turn's sine
     // and cosine; a foot's place from it across and forward (world units, chairs.goose's
     // legs' and back's feet), front and back, and the sphere at its foot that hides the sky.
-    // The windows' hardware (room_shell's box window): dark brass, its colour at normal
-    // incidence (sRGB) and roughness, from the specification's table.
-    const vec4 WINDOW_BRASS = vec4(0.51, 0.44, 0.30, 0.35);
+    // The windows' hardware (room_shell's box window): a dark bronze, its colour at normal
+    // incidence (sRGB) and roughness (the second of build/notes/box-window/hardware.html's three).
+    const vec4 WINDOW_BRASS = vec4(0.34, 0.25, 0.17, 0.5);
+    // How much of the niche's window light the hardware's reflection takes, growing smoothly
+    // as it turns from the room to the glass (a rough lobe's share), fitted to Cycles' grip.
+    const float WINDOW_NICHE = 0.3;
     const vec4 CHAIR_A = vec4(0.0, -27.884, 0.104528, 0.994522);
     const vec4 CHAIR_B = vec4(1.829, 24.64, -0.241922, -0.970296);
     const vec2 CHAIR_FRONT_FOOT = vec2(6.767, 5.852);
@@ -1946,7 +1949,11 @@ let ROOM_FRAG = """
         // over a quarter.
         float px = metal > 0.5 ? (metal > 0.9 ? 0.5 : 0.25) * length(fwidth(rv)) : (kind > 14.5 ? 0.5 * length(fwidth(rv)) : 1.0);
     #endif
-        vec3 env = room_baked.x > 0.5 ? room_reflection(p, v_local, rv, ar, nov, px) : sh_eval(rv) * params.z;
+        // The windows' hardware stands in a niche, outside the room's box, where the box's sharp
+        // lookup reads far too bright (1.4 times Cycles' on the grip): the room's wide light
+        // there, the window's from the niche below.
+        vec3 env = room_baked.x > 0.5 ? (own > 0.25 ? room_wide(v_local, rv) : room_reflection(p, v_local, rv, ar, nov, px))
+                                      : sh_eval(rv) * params.z;
     #else
         vec3 env = room_baked.x > 0.5 ? room_wide(v_local, rv) : sh_eval(rv) * params.z;
     #endif
@@ -1954,9 +1961,11 @@ let ROOM_FRAG = """
     #endif
     #ifdef ROOM_METALS
         // Brass in a window's niche (the shutters' hinges) sees the window and the lit reveals
-        // the way it faces out, not the room's box behind the glass.
+        // the way it faces out, not the room's box behind the glass; the windows' own hardware
+        // (its fraction a half) the room the way it faces in, as Cycles has it.
         if (metal > 0.9 && v_local.z < room_box.z)
-            env = mix(env, lace_light.rgb / max(params.x * shade.w, 1e-3), clamp(0.6 - dot(rv.xz, axes.zw), 0.15, 1.0));
+            env = mix(env, lace_light.rgb / max(params.x * shade.w, 1e-3),
+                      own > 0.25 ? WINDOW_NICHE * (0.5 - 0.5 * dot(rv.xz, axes.zw)) : clamp(0.6 - dot(rv.xz, axes.zw), 0.15, 1.0));
     #endif
         spec *= gloss;
         fc *= gloss;

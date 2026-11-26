@@ -88,5 +88,10 @@ fn main() {
         print(name, ": window ", box_values[i], ", shaders ", if ok { str(x) } else { str("missing") }, if same { "" } else { "  DIFFERS" });
         if !same { bad++; }
     }
+    let metal, metal_ok = vec4_constant(text, "WINDOW_BRASS");
+    let wm = room_shell::WINDOW_METAL;
+    let metal_same = metal_ok && length(metal - wm) < 0.000001;
+    print("WINDOW_BRASS: window ", wm.x, " ", wm.y, " ", wm.z, " ", wm.w, if metal_same { "" } else { "  DIFFERS" });
+    if !metal_same { bad++; }
     if bad > 0 { exit(1); }
 }

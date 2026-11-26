@@ -751,6 +751,8 @@ mats = {
     "stove_tile": gloss("stove_tile", A["stove_tile"], 0.08),          # ROOM_FRAG's STOVE_ROUGH, the glaze
     # LOOK.brass: its colour at normal incidence (sRGB) and roughness.
     "brass": diffuse("brass", srgb_to_linear(brass[:3]), metallic=1.0, rough=brass[3])[0],
+    # room_shell::WINDOW_METAL: the windows' hardware, as LOOK.brass.
+    "window_metal": diffuse("window_metal", srgb_to_linear(G["window_metal"][:3]), metallic=1.0, rough=G["window_metal"][3])[0],
     "cord": diffuse("cord", (0.30, 0.16, 0.07))[0],
     "glass": glass("glass", 0.92),
     "lace": lace("lace", S["lace_lets"], 0.4),

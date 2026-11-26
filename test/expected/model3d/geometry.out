@@ -30,3 +30,4 @@ BOX_RAIL_LOW: window 0.085, shaders 0.085
 BOX_SURROUND: window 0.04, shaders 0.04
 BOX_BAR_UPPER: window 0.024, shaders 0.024
 BOX_BAR_LOWER: window 0.032, shaders 0.032
+WINDOW_BRASS: window 0.34 0.25 0.17 0.5

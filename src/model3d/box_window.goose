@@ -180,9 +180,8 @@ fn box_members(c: BoxCasement, out: Member[..MEMBERS]&) {
 
 // A leaf's hinges' axis (x, z) and their middles' heights: two long barrels on its outer
 // edge, at the frame's corner before the leaf's face (the axis an open sash would turn on).
-let BOX_HINGE_R:    f32 = 0.0055;
-let BOX_HINGE_HALF: f32 = 0.055;
-let BOX_HINGE_IN:   f32 = 0.16;
+let BOX_HINGE_R:  f32 = 0.0055;
+let BOX_HINGE_IN: f32 = 0.16;
 fn hinge_axis(c: BoxCasement, l: BoxLight) -> float2 {
     let x = if l.leaf == 0 { l.box.z - BOX_HINGE_R } else { l.box.x + BOX_HINGE_R };
     return float2 { x, c.sash_z.x + BOX_HINGE_R };
@@ -314,47 +313,188 @@ fn box_casement_mesh(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh:
 }
 
 // The hardware's material: the brass with a half's fraction, which ROOM_FRAG shades as the
-// specification's dark brass (WINDOW_BRASS).
+// window's bronze (WINDOW_BRASS).
 let WINDOW_HARDWARE: f32 = surfaces::MAT_BRASS + 0.5;
+// Its colour at normal incidence (sRGB) and roughness: ROOM_FRAG's WINDOW_BRASS (checked equal
+// by test/model3d/geometry.goose), the Cycles export's window_metal.
+let WINDOW_METAL = float4 { 0.34, 0.25, 0.17, 0.5 };
 
-// The brass: the crémone's rod in its guides into the transom, its housing and handle at the
-// leaf's bar; on the inner casement each leaf's two hinges and the passive leaf's two bolts.
-fn box_hardware(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c: BoxCasement, inner: bool) {
-    let brass = WINDOW_HARDWARE;
+// The crémone (build/notes/box-window/hardware.html, round 2; the brief
+// cremone-modelling-brief.md), in metres out of the leaf's face: the lip's face, the rod's
+// axis (in front of the frame's face, so it runs past the leaf's rails into its keepers),
+// the housing's front, the grip's axis; the rod's radius, the housing's half width and half
+// height, the spindle's radius, the travel the rod reaches into a socket.
+let CREMONE_LIP:     f32    = BOX_LIP_DEEP;
+let CREMONE_ROD:     f32    = 0.021;
+let CREMONE_HOUSING: f32    = 0.026;
+let CREMONE_GRIP:    f32    = 0.056;
+let CREMONE_ROD_R:   f32    = 0.004;
+let CREMONE_HALF:    float2 = float2 { 0.014, 0.07 };
+let CREMONE_SPINDLE: f32    = 0.006;
+let CREMONE_IN:      f32    = 0.012;
+// The grip's half profile from its middle to an end (along, radius; mm): the brief's, its
+// boss and ends drawn round; mirrored about the spindle.
+let GRIP_HALF: float2[24] = [float2 { 0.0, 12.0 }, float2 { 3.5, 11.6 }, float2 { 6.5, 10.3 }, float2 { 8.8, 8.4 },
+                             float2 { 10.5, 6.5 }, float2 { 12.0, 5.6 }, float2 { 16.0, 4.9 }, float2 { 23.0, 4.6 },
+                             float2 { 30.0, 5.1 }, float2 { 35.0, 6.2 }, float2 { 38.5, 7.6 }, float2 { 40.0, 9.4 },
+                             float2 { 43.5, 9.4 }, float2 { 44.5, 7.8 }, float2 { 45.5, 8.4 }, float2 { 47.5, 8.4 },
+                             float2 { 48.5, 6.2 }, float2 { 50.5, 4.0 }, float2 { 52.0, 4.6 }, float2 { 53.5, 5.4 },
+                             float2 { 55.5, 5.4 }, float2 { 57.5, 4.3 }, float2 { 59.2, 2.4 }, float2 { 60.0, 0.0 }];
+// A guide's sleeve (radius, along; mm): three collars; a keeper's socket; a screw's head; a
+// hinge's barrel, tapered at both ends with a seam at its middle.
+let GUIDE_SLEEVE: float2[12] = [float2 { 8.0, 0.0 }, float2 { 9.5, 1.5 }, float2 { 9.5, 4.0 }, float2 { 8.0, 5.5 },
+                                float2 { 8.0, 11.0 }, float2 { 9.5, 12.5 }, float2 { 9.5, 15.5 }, float2 { 8.0, 17.0 },
+                                float2 { 8.0, 22.5 }, float2 { 9.5, 24.0 }, float2 { 9.5, 26.5 }, float2 { 8.0, 28.0 }];
+let KEEPER_SOCKET: float2[4] = [float2 { 7.0, 0.0 }, float2 { 8.0, 1.0 }, float2 { 8.0, 13.0 }, float2 { 7.0, 14.0 }];
+let SCREW_HEAD:    float2[4] = [float2 { 3.0, 0.0 }, float2 { 3.0, 0.6 }, float2 { 2.0, 1.3 }, float2 { 0.0, 1.5 }];
+let HINGE_BARREL: float2[9] = [float2 { 0.0, 0.0 }, float2 { 2.0, 4.0 }, float2 { 5.5, 10.0 }, float2 { 5.5, 59.0 },
+                               float2 { 5.0, 60.0 }, float2 { 5.5, 61.0 }, float2 { 5.5, 110.0 }, float2 { 2.0, 116.0 },
+                               float2 { 0.0, 120.0 }];
+
+// A profile of (radius, along) points (mm) turned `sides` round the axis from c (metres in
+// b's frame) along the unit `axis`, as lathe turns about the upright: a point's normal its
+// two segments' mean where they turn less than surfaces::CREASE, a segment's own at a sharper
+// turn. `round_only` takes every point's normal off the axis (the rod: round by its normals
+// on a few sides).
+fn lathe_along(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c: float3, axis: float3, prof: const float2[:],
+        sides: i64, mat: f32) {
+    let k = m();
+    let mm: f32 = 0.001;
+    let ref = if abs(axis.z) > 0.9 { float3 { 0.0, 1.0, 0.0 } } else { float3 { 0.0, 0.0, -1.0 } };
+    let u = normalize(cross(ref, axis));
+    let v = cross(u, axis);
+    var flat: float3[..64] = [float3_0];
+    for i in 1..prof.len {
+        let t = prof[i] - prof[i - 1];
+        flat.push(if length(t) > 0.000001 { normalize(float3 { t.y, -t.x, 0.0 }) } else { float3_0 });
+    }
+    for i in 1..prof.len {
+        let n = flat[i];
+        guard length_sq(n) > 0.0 else { continue; }
+        let na = if i > 1 { surfaces::smooth_normal(n, flat[i - 1]) } else { n };
+        let nc = if i + 1 < prof.len { surfaces::smooth_normal(n, flat[i + 1]) } else { n };
+        let ends: float2[2] = [prof[i - 1], prof[i]];
+        let ns:   float3[2] = [na, nc];
+        let base = verts.len as u32;
+        for e in 2 {
+            for sd in sides + 1 {
+                let ang: f32 = TAU * sd / sides;
+                let out = u * cos(ang) + v * sin(ang);
+                let p = (c + axis * (ends[e].y * mm) + out * (ends[e].x * mm)) * k;
+                let q = out * ns[e].x + axis * ns[e].y;
+                verts.push(mesh::Vertex { surfaces::world(b, p.x, p.y, p.z), surfaces::world_normal(b, q), float2_0, 1.0, mat });
+            }
+        }
+        let ring = (sides + 1) as u32;
+        for sd in sides {
+            let s0 = base + sd as u32;
+            indices.append([s0, s0 + 1, s0 + ring + 1, s0, s0 + ring + 1, s0 + ring]);
+        }
+    }
+}
+
+// A round rod of radius r from y0 to y1 at (x, z): `sides` flat sides shading round, its
+// normals off its axis.
+fn round_rod(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x: f32, z: f32, y0: f32, y1: f32, r: f32, sides: i64,
+       mat: f32) {
+    let k = m();
+    let base = verts.len as u32;
+    for e in 2 {
+        for sd in sides + 1 {
+            let ang: f32 = TAU * sd / sides;
+            let out = float3 { cos(ang), 0.0, sin(ang) };
+            let p = float3 { x + out.x * r, if e == 0 { y0 } else { y1 }, z + out.z * r } * k;
+            verts.push(mesh::Vertex { surfaces::world(b, p.x, p.y, p.z), surfaces::world_normal(b, out), float2_0, 1.0, mat });
+        }
+    }
+    let ring = (sides + 1) as u32;
+    for sd in sides {
+        let s0 = base + sd as u32;
+        indices.append([s0, s0 + 1, s0 + ring + 1, s0, s0 + ring + 1, s0 + ring]);
+    }
+}
+
+let TOWARD_ROOM = float3 { 0.0, 0.0, 1.0 };
+let UPWARD = float3 { 0.0, 1.0, 0.0 };
+
+// A slotted screw's head on a face at z (its axis toward the room).
+fn screw_head(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x: f32, y: f32, z: f32) {
+    lathe_along(verts, indices, b, float3 { x, y, z }, TOWARD_ROOM, SCREW_HEAD[..], 6, WINDOW_HARDWARE);
+}
+
+// Casement c's crémone on its active leaf (light 0's lip): the rod from the foot's keeper to
+// the transom's, a guide at each run's middle, the housing at the leaf's bar with its ends,
+// screws and bearing, the spindle and the turned grip, hanging locked; each keeper a plate on
+// the frame's face with its socket on the rod's axis.
+fn cremone(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c: BoxCasement) {
+    let mat = WINDOW_HARDWARE;
+    let f = c.sash_z.x;
     let lo = c.lights[0];
-    let z = c.sash_z.x + BOX_LIP_DEEP;
     let x = cremone_x();
     let y = cremone_y(c);
-    let r0 = lo.box.y + 0.012;
-    let r1 = lo.box.w + 0.02;
-    box_m(verts, indices, b, x - 0.003, x + 0.003, r0, r1, z, z + 0.006, brass);
-    let guides: f32[4] = [0.1, 0.32, 0.68, 0.9];
-    for t in guides {
-        let gy = r0 + (r1 - r0) * t;
-        box_m(verts, indices, b, x - 0.008, x + 0.008, gy - 0.012, gy + 0.012, z, z + 0.009, brass);
+    let zr = f + CREMONE_ROD;
+    let lip = f + CREMONE_LIP;
+    let face = c.frame_z.x;
+    let hh = CREMONE_HALF;
+    // The rod, into both sockets.
+    round_rod(verts, indices, b, x, zr, lo.box.y - CREMONE_IN, lo.box.w + CREMONE_IN, CREMONE_ROD_R, 6, mat);
+    // The housing, its stepped ends, screws, the spindle's bearing.
+    box_m(verts, indices, b, x - hh.x, x + hh.x, y - hh.y, y + hh.y, lip, f + CREMONE_HOUSING, mat);
+    for e in SIDES {
+        let y0 = if e < 0.0 { y - hh.y - 0.006 } else { y + hh.y };
+        box_m(verts, indices, b, x - hh.x - 0.002, x + hh.x + 0.002, y0, y0 + 0.006, lip, f + CREMONE_HOUSING + 0.002, mat);
+        screw_head(verts, indices, b, x, y + e * (hh.y - 0.004), f + CREMONE_HOUSING);
     }
-    box_m(verts, indices, b, x - 0.015, x + 0.015, y - 0.055, y + 0.055, z, z + 0.014, brass);
-    box_m(verts, indices, b, x - 0.008, x + 0.008, y + 0.012, y + 0.028, z + 0.014, z + 0.026, brass);
-    box_m(verts, indices, b, x - 0.006, x + 0.006, y - 0.052, y + 0.024, z + 0.026, z + 0.034, brass);
-    box_m(verts, indices, b, x - 0.008, x + 0.008, y - 0.062, y - 0.048, z + 0.022, z + 0.036, brass);
+    let bearing: float2[4] = [float2 { 9.0, 0.0 }, float2 { 9.0, 2.0 }, float2 { 7.5, 3.0 }, float2 { 0.0, 3.0 }];
+    lathe_along(verts, indices, b, float3 { x, y, f + CREMONE_HOUSING }, TOWARD_ROOM, bearing[..], 10, mat);
+    let reach = (CREMONE_GRIP - CREMONE_HOUSING) * 1000.0;
+    let spindle: float2[4] = [float2 { 6.0, 0.0 }, float2 { 6.0, reach - 8.0 }, float2 { 7.5, reach - 4.0 }, float2 { 7.5, reach }];
+    lathe_along(verts, indices, b, float3 { x, y, f + CREMONE_HOUSING }, TOWARD_ROOM, spindle[..], 8, mat);
+    var grip: float2[..48] = [];
+    for i in GRIP_HALF.len { grip.push(float2 { GRIP_HALF[GRIP_HALF.len - 1 - i].y, 60.0 - GRIP_HALF[GRIP_HALF.len - 1 - i].x }); }
+    for i in 1..GRIP_HALF.len { grip.push(float2 { GRIP_HALF[i].y, 60.0 + GRIP_HALF[i].x }); }
+    lathe_along(verts, indices, b, float3 { x, y - 0.06, f + CREMONE_GRIP }, UPWARD, grip[..], 8, mat);
+    // A guide at each run's middle: its backplate on the lip with two screws, its sleeve.
+    let runs: float2[2] = [float2 { lo.box.y, y - hh.y - 0.006 }, float2 { y + hh.y + 0.006, lo.box.w }];
+    for r in runs {
+        let gy = 0.5 * (r.x + r.y);
+        box_m(verts, indices, b, x - 0.008, x + 0.008, gy - 0.021, gy + 0.021, lip, lip + 0.005, mat);
+        screw_head(verts, indices, b, x, gy - 0.017, lip + 0.005);
+        screw_head(verts, indices, b, x, gy + 0.017, lip + 0.005);
+        lathe_along(verts, indices, b, float3 { x, gy - 0.014, zr }, UPWARD, GUIDE_SLEEVE[..], 8, mat);
+    }
+    // The keepers: the transom's plate over the leaf's top, a lobe at its head; the foot's
+    // under the leaf, on what shows of the foot over the sill; each socket at the leaf's edge.
+    box_m(verts, indices, b, x - 0.014, x + 0.014, lo.box.w + 0.002, lo.box.w + 0.034, face, face + 0.003, mat);
+    let lobe: float2[3] = [float2 { 8.0, 0.0 }, float2 { 8.0, 3.0 }, float2 { 0.0, 3.0 }];
+    lathe_along(verts, indices, b, float3 { x, lo.box.w + 0.034, face }, TOWARD_ROOM, lobe[..], 10, mat);
+    for sx in SIDES { screw_head(verts, indices, b, x + sx * 0.008, lo.box.w + 0.024, face + 0.003); }
+    screw_head(verts, indices, b, x, lo.box.w + 0.036, face + 0.003);
+    lathe_along(verts, indices, b, float3 { x, lo.box.w - 0.002, zr }, UPWARD, KEEPER_SOCKET[..], 8, mat);
+    box_m(verts, indices, b, x - 0.014, x + 0.014, c.foot.y - BOX_FOOT + 0.004, c.foot.y - 0.002, face, face + 0.003, mat);
+    for sx in SIDES { screw_head(verts, indices, b, x + sx * 0.008, c.foot.y - BOX_FOOT + 0.012, face + 0.003); }
+    lathe_along(verts, indices, b, float3 { x, lo.box.y - 0.012, zr }, UPWARD, KEEPER_SOCKET[..], 8, mat);
+}
+
+// The hardware: the crémone on both casements (the outer's on its face toward the room, as
+// the specification has it); on the inner casement each leaf's two hinges and the passive
+// leaf's two bolts.
+fn box_hardware(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c: BoxCasement, inner: bool) {
+    cremone(verts, indices, b, c);
     guard inner else { return; }
+    let mat = WINDOW_HARDWARE;
     for l in c.lights {
         guard l.leaf >= 0 else { continue; }
         let ax = hinge_axis(c, l);
         let hy = hinge_heights(l);
-        let into = if l.leaf == 0 { -1.0 } else { 1.0 };
-        for hh in [hy.x, hy.y] {
-            knuckle(verts, indices, b, float3 { ax.x, hh, ax.y }, BOX_HINGE_R, BOX_HINGE_HALF, 8, true, brass);
-            let x0 = min(ax.x, ax.x + into * 0.024);
-            let x1 = max(ax.x, ax.x + into * 0.024);
-            box_m(verts, indices, b, x0, x1, hh - 0.045, hh + 0.045, c.sash_z.x, c.sash_z.x + 0.0025, brass);
-        }
+        for hh in [hy.x, hy.y] { lathe_along(verts, indices, b, float3 { ax.x, hh - 0.06, ax.y }, UPWARD, HINGE_BARREL[..], 8, mat); }
     }
     let p = c.lights[1];
     let bx = -(BOX_LIP_OVER + 0.5 * (BOX_STILE - BOX_LIP_OVER));
+    let f = c.sash_z.x;
     for by in [p.box.y + 0.12, p.box.w - 0.1] {
-        box_m(verts, indices, b, bx - 0.01, bx + 0.01, by - 0.0325, by + 0.0325, c.sash_z.x, c.sash_z.x + 0.01, brass);
-        box_m(verts, indices, b, bx - 0.005, bx + 0.005, by - 0.005, by + 0.005, c.sash_z.x + 0.01, c.sash_z.x + 0.02, brass);
+        box_m(verts, indices, b, bx - 0.01, bx + 0.01, by - 0.0325, by + 0.0325, f, f + 0.01, mat);
+        box_m(verts, indices, b, bx - 0.005, bx + 0.005, by - 0.005, by + 0.005, f + 0.01, f + 0.02, mat);
     }
 }
 

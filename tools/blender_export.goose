@@ -89,8 +89,10 @@ fn part_of(name: const u8[:], kind: f32) -> i64 {
     return parts.len - 1;
 }
 
-// The shell's material kinds (surfaces::MAT_*) by name; the plaster facing down is the ceiling.
-fn shell_part(kind: i64, n: float3) -> i64 {
+// The shell's material kinds (surfaces::MAT_*) by name; the plaster facing down is the ceiling,
+// the brass with a half's fraction (own) the windows' metal (room_shell::WINDOW_HARDWARE).
+fn shell_part(kind: i64, own: f32, n: float3) -> i64 {
+    if kind == 12 && own > 0.25 { return part_of("window_metal", 12.5); }
     return match kind {
         4 => part_of("floor", 4.0),
         5 => part_of("oak", 5.0),
@@ -133,7 +135,7 @@ fn add(verts: mesh::Vertex[>..]&, indices: u32[>..]&, room: bool, props: bool) {
         let a = indices[3 * t];
         let v = verts[a as i64];
         let kind = floor(v.mat + 0.001) as i64;
-        part.push(if props { prop_part(kind) } else { shell_part(kind, nrm[first + a]) });
+        part.push(if props { prop_part(kind) } else { shell_part(kind, v.mat - floor(v.mat + 0.001), nrm[first + a]) });
         // Wound to face its normals: the app draws both sides and its winding varies, but a
         // path tracer flips the normal on a back face, which turns a lit surface black.
         let i0 = first + indices[3 * t];
@@ -524,6 +526,8 @@ fn main() {
            ",\n    \"stone_rough\": ", look.stone.w, ",\n");
     format(j, "    \"brass\": ");
     put4(j, look.brass);
+    format(j, ",\n    \"window_metal\": ");
+    put4(j, room_shell::WINDOW_METAL);
     format(j, ",\n    \"table_top_rough\": ", t.wood.w, ",\n    \"table_coat\": ");
     put4(j, t.coat);
     format(j, ",\n    \"table_polish\": ");
