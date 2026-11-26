@@ -1,0 +1,156 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maple branches</title><style>body { background: #16181b; color: #d8d6d0; font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 0 auto; max-width: 1500px; padding: 16px; }
+h1 { font-size: 22px; } h2 { font-size: 18px; margin-top: 32px; border-top: 1px solid #333; padding-top: 16px; }
+h3 { font-size: 16px; margin-top: 24px; }
+code { color: #e8c98a; } a { color: #8fb8e8; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; } figure { margin: 0; flex: 1 1 300px; }
+img { width: 100%; height: auto; display: block; border: 1px solid #333; } img.px { image-rendering: pixelated; }
+figcaption { font-size: 13px; color: #a8a6a0; margin-top: 4px; }
+table { border-collapse: collapse; margin-top: 8px; } td, th { border: 1px solid #3a3a3a; padding: 4px 10px; text-align: right; }
+th { background: #22252a; } td:first-child, th:first-child { text-align: left; } td:last-child { text-align: left; color: #a8a6a0; }
+tr.sub td:first-child { padding-left: 26px; } tr.head td { background: #1d2024; font-weight: 600; }
+.note { background: #22252a; border-left: 3px solid #e8c98a; padding: 8px 12px; }
+td { text-align: left; vertical-align: top; }
+@media (max-width: 700px) { table { font-size: 12px; } td, th { padding: 2px 4px; } }</style></head><body>
+<h1>The maple's branches and leaves: what the photos show, and how to grow it</h1>
+<p>Task 115, 2026-11-24, branch <code>room-light</code>. CPU only: the current tree from <code>tools/tree_dump</code>
+(built with <code>python3 scripts/mac.py tools/tree_dump.goose</code>), the prototypes in Python
+(<code>src/proto.py</code>, <code>src/current.py</code>, <code>src/draw.py</code>), drawn by Pillow.</p>
+<p class="note"><b>Recommendation.</b> Keep the generator's frame (trunk, hero limbs, the hanging limb, the envelope, culling,
+dice per branch) and replace the branching rule below the limbs with the asymmetric fork of
+<a href="https://doi.org/10.1093/pnasnexus/pgaf003">Gao and Newberry 2025</a> (code:
+<a href="https://github.com/mnewberry/treescale/blob/main/grove.js">grove.js</a>, 38 lines), taken to 3D, with the
+per-segment tropism of <a href="https://www.algorithmicbotany.org/papers/selforg.sig2009.html">Palubicki et al. 2009</a>
+in place of its single "wind" term, broken leaders as in SpeedTree's <i>Break</i>, and the leaves only at the shoot tips
+in opposite pairs, laid flat. Growth stays at about the current count (40k segments) and well under the 100 ms budget.</p>
+
+<h2>1. The photos</h2>
+<div class="row">
+<figure><img src="img/photo-limbs.jpg"><figcaption><b>PXL_20261124_070810793</b> (crop). The best one. The upper limb runs level,
+then drops at a sharp elbow where its leader broke and a side shoot took over; a cut stub sticks out near the trunk. The
+lower limb has an S-kink. Every limb ends in a fan of fine twigs that hangs down. The inner part of each limb is bare.</figcaption></figure>
+<figure><img src="img/photo-elbows.jpg"><figcaption><b>PXL_20261124_070740245</b> (crop). Limbs zig-zag: each straight run is
+a few years' shoots, then the direction jumps 20-60°. Thick branches leave the trunk wide and level out; side shoots on them
+turn up again. Short dead stubs all along.</figcaption></figure>
+<figure><img src="img/photo-whole.jpg"><figcaption><b>PXL_20261124_070822921</b>. The whole tree: a short trunk forks into two
+or three nearly equal stems at about a third of the height (codominant stems, an old tree's reiterations); the crown is a tall
+oval of crooked wood with a dense twig shell. The larch on the left clips it.</figcaption></figure>
+</div>
+<div class="row">
+<figure><img src="img/photo-ai-branch.jpg"><figcaption><b>ai-branch-canopy.png</b>, the target for leaves on a branch. Leaves
+sit only at the ends of the thin shoots, 2-6 together, on long stalks, the blades almost level and facing up, filling the
+gaps between each other (a leaf mosaic). The wood under them is bare. Branches fork in Y's and bend down at their ends.</figcaption></figure>
+<figure><img src="img/photo-tartu-plates.jpg"><figcaption><b>tartu-maple-1.jpg</b>. The same seen from below on a real tree: the
+leaves form level plates at the ends of crooked, level branches, with sky between the plates.</figcaption></figure>
+</div>
+<p>The other three PXL photos (070807991, 070831223) show the same tree farther away; user-maple-gold/orange show the full crown
+in leaf (the oval, the dense shell) and add nothing new about branches.</p>
+
+<h2>2. Why the current tree reads wrong</h2>
+<div class="row"><figure><img src="img/cmp-tree.jpg"><figcaption>Bare, front view. Current: one straight trunk to 65 %, limbs
+in a regular spiral, every limb with the same number of children at even spacing.</figcaption></figure></div>
+<div class="row"><figure><img src="img/cmp-limb.jpg"><figcaption>One low limb. Current: straight, its children evenly spaced
+and all of the same kind, each a smaller copy.</figcaption></figure></div>
+<ul>
+<li><b>Straight, regular wood.</b> <code>grow_part</code> bends each segment by a small random ball (<code>crook</code>) and a sine
+(<code>wave</code>): noise, never a sharp change of direction. Real limbs are straight runs joined by jumps (broken or
+overtaken leaders).</li>
+<li><b>Fixed levels.</b> Five levels, each with a fixed child count (12, 12, 10, 8) spread evenly along the parent
+(<code>start</code> to the tip). Real branches have no levels: each fork splits thickness unevenly, the thick side goes nearly
+straight on and the thin side leaves wide. The inner part of a limb is bare.</li>
+<li><b>Leaves along the twig, turned at random.</b> <code>add_cards</code> puts 4 pairs evenly along the outer 80 % of every
+twig and turns each blade by <code>roll_ball * 0.9</code>, about ±50°. Real leaves are on the current year's shoot only, at
+the tip, and their stalks lay the blades level and facing up.</li>
+</ul>
+<p>Growth now: 6.5 ms for the whole tree (41k segments, 39k leaves) on the Mac, so there is room for a richer rule.</p>
+
+<h2>3. Prior art</h2>
+<table>
+<tr><th>Method</th><th>What it gives that the photos show</th><th>Cost at room-on</th><th>Code</th><th>Hero limbs / seed</th><th>Fit</th></tr>
+<tr><td><a href="https://doi.org/10.1145/218380.218427">Weber and Penn 1995</a> (ours now)</td><td>Overall shape, envelope (pruning),
+curve and "attraction up" per level. Levels make it regular; no broken leaders.</td><td>6.5 ms now</td><td>Blender Sapling (GPL),
+<a href="https://github.com/friggog/tree-gen">tree-gen</a> (GPL)</td><td>Full / yes</td><td>Is the frame we keep.</td></tr>
+<tr><td><a href="https://doi.org/10.1093/pnasnexus/pgaf003">Gao and Newberry 2025</a></td><td>Natural look from two rules:
+thickness by Leonardo's rule (r<sup>α</sup> kept at each fork, α 2-2.5) and the fork's angles from its asymmetry
+(thin side atan(a), thick side atan(1/a)); the leader zig-zags because the thick side also turns a little. Its trees all
+grow up because one "wind" term pulls every branch to 81°.</td><td>Same order as now (~n ≈ (r₀/r<sub>min</sub>)<sup>α</sup> tips)</td>
+<td><a href="https://github.com/mnewberry/treescale">treescale</a>, grove.js (GPL-3, 2D, 38 lines)</td><td>Below the limbs; seed per node</td>
+<td>Drops into <code>grow_part</code>. For the maple: replace "wind" by a thickness-dependent tropism (thick wood up, thin wood
+level and sagging), roll the fork plane a quarter turn each time (opposite buds), length by elastic similarity
+(r<sup>2/3</sup>) so twigs are slender.</td></tr>
+<tr><td><a href="https://algorithmicbotany.org/papers/colonization.egwnp2007.html">Runions et al. 2007</a>, space colonisation</td>
+<td>Fills an envelope evenly, branches avoid each other; wood looks wandering, not snapped.</td><td>Points × nodes per step; 10-100 ms
+with a grid, ×3 on phones</td><td>Many small ones, e.g. ez-tree's relatives; easy to write</td><td>Weak (emergent); yes</td>
+<td>A fallback for filling the shell's twigs if forks leave holes.</td></tr>
+<tr><td><a href="https://www.algorithmicbotany.org/papers/selforg.sig2009.html">Palubicki et al. 2009</a>, self-organising trees</td>
+<td>Buds compete for light (shadow grid), Borchert-Honda allocation (apical control), tropism vector per internode, shedding of
+shaded branches: bare inner limbs, crown shell, natural asymmetry.</td><td>Iterative over years: 100s of ms to seconds</td>
+<td>No public code found</td><td>Weak; yes</td><td>Too slow whole; borrow its tropism term and its shadow grid for dieback.</td></tr>
+<tr><td><a href="https://cs.purdue.edu/cgvlab/www/publications/Pirk12ToG">Pirk et al. 2012</a>, plastic trees</td><td>Bends an
+existing tree away from a wall and toward light.</td><td>Cheap after growth</td><td>None public</td><td>Full; yes</td><td>The house wall:
+bend instead of cutting branches at <code>WALL_GAP</code>. Later.</td></tr>
+<tr><td><a href="https://cs.purdue.edu/cgvlab/www/publications/Stava14CFG">Stava et al. 2014</a>, inverse procedural</td><td>Fits
+a parametric model's terms to a given tree.</td><td>Offline (MCMC)</td><td>None public</td><td>n/a</td><td>Not for us; its parametric
+model lists the useful terms (apical control, tropisms, shedding).</td></tr>
+<tr><td><a href="https://docs.unity.com/en-us/speedtree-modeler/10/spine-generator-properties">SpeedTree</a></td><td>Per-generator
+spines with <i>jink</i> (sharp kinks), gnarl, <i>Break chance</i> (a capped broken end), forks.</td><td>Offline tool</td><td>Closed</td>
+<td>Full</td><td>Names the features we lack: kinks and breaks.</td></tr>
+<tr><td><a href="https://github.com/dgreenheck/ez-tree">ez-tree</a></td><td>Weber-Penn-like levels with gnarl and twist.</td><td>ms</td>
+<td>MIT, JS</td><td>Full</td><td>Same limits as ours; nothing to take.</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2502.04762">Learned (autoregressive, diffusion)</a></td><td>Skeletons from data or an image.</td>
+<td>Needs a model</td><td>Research code</td><td>Weak</td><td>No.</td></tr>
+</table>
+<p>Botany behind the terms: Norway maple has opposite, decussate buds and terminal flower clusters
+(<a href="https://www.treesandshrubsonline.org/articles/acer/acer-platanoides">Trees and Shrubs Online</a>), so a flowering shoot ends
+and the two buds below it fork (Y-forks, twig fans). Old trees build their crown by reiteration: a broken or overtaken leader is
+replaced by a side shoot, leaving a stub and a jump in direction (<a href="https://doi.org/10.1093/aob/mcl260">Barthélémy and Caraglio
+2007</a>). Leonardo's rule for thickness: <a href="https://arxiv.org/abs/1105.2591">Eloy 2011</a>.</p>
+
+<h2>4. The recommended path</h2>
+<p>Follows Gao and Newberry 2025 for the forks and thickness, with Palubicki et al. 2009's tropism per segment. Each step is
+behind a tuner switch and checked on the CPU against the photos (a silhouette from <code>tools/tree_dump</code> drawn by
+<code>src/current.py</code>) before the GPU.</p>
+<table>
+<tr><th>Step</th><th>Visual effect</th><th>Cost</th><th>Check</th></tr>
+<tr><td>1. Forks below the limbs: each node splits in two, asymmetry a in 1..6, radii by r<sup>α</sup> (α 2.3), angles atan(a) and
+atan(1/a), fork plane a quarter turn from the last, length ∝ r<sup>2/3</sup>, stop at r<sub>min</sub> 6 mm or the envelope.
+Replaces levels 2-4 and <code>Habit</code>'s counts.</td><td>Zig-zag leaders, Y-forks, twig fans; no even spacing.</td>
+<td>Same segment count; ~100 lines</td><td>Limb silhouette against PXL 070810793.</td></tr>
+<tr><td>2. Tropism per segment by thickness: thick wood rises, thin long wood levels out and sags, side shoots lean out of the crown.
+</td><td>Spreading limbs with drooping twig fans.</td><td>Free</td><td>Same, and the whole tree against 070822921.</td></tr>
+<tr><td>3. Broken leaders: in mid-size wood (5-35 cm), a chance per fork (~6 %) that the thick side ends as a stub and the thin side
+takes over, thicker, turned 30-50°. Thick forks near even (a ≤ 1.7) above the trunk, for codominant stems.</td>
+<td>Elbows, stubs, the old tree's forked crown.</td><td>Free</td><td>Count elbows per limb in the photo (1-3) and ours.</td></tr>
+<tr><td>4. Length from room: a fork's length also scales with the room ahead to the envelope (<code>crown_ahead</code>), so the tips
+reach the shell instead of stopping short.</td><td>A full oval crown; the prototype's crown has gaps at the top without it.</td>
+<td>One envelope test per fork</td><td>Bare silhouette's outline against the envelope.</td></tr>
+<tr><td>5. Dieback in the core: thin wood deep in the crown dies, some as short stubs; later, a coarse shadow grid
+(Palubicki) instead of the envelope depth.</td><td>Bare inner limbs, the twigs in the shell.</td><td>Grid 32³, a few ms</td>
+<td>Inner third of each limb bare, as in the photos.</td></tr>
+<tr><td>6. Leaves at the tips: on each tip, the current shoot (10 cm) with its tip pair and one pair a quarter turn below; stalks
+longer for leaves pointing down; blades level, facing up and a little to the sun (±15°), not ±50°.</td><td>Level plates of leaves
+at branch ends, bare wood between.</td><td>Same card count (~40k)</td><td>Leafy branch against ai-branch-canopy and tartu-maple-1.</td></tr>
+</table>
+
+<h2>5. Prototype previews</h2>
+<p>A quick Python prototype of steps 1, 2, 3, 5 and 6 (no step 4), not tuned. Python grows the whole tree in 1.5 s;
+the same work in Goose at C speed is in the tens of ms. Counts: 33k segments bare, 42k leaves.</p>
+<div class="row"><figure><img src="img/cmp-leaves.jpg"><figcaption>Leaves. Current: scattered along the twig, turned every way.
+Prototype: only at the shoot tips, blades level; still too dense and too small for its branch, but it reads as plates.</figcaption></figure></div>
+<div class="row">
+<figure><img src="img/proto-maple-leafy.png"><figcaption>Prototype tree in leaf (every third leaf drawn). The top has no leaves:
+the forks stop at r<sub>min</sub> before they reach the envelope, which is what step 4 fixes.</figcaption></figure>
+<figure><img src="img/proto-baseline-limb.png"><figcaption>Gao-Newberry as published (all up): already less regular than ours,
+but a bush, not a maple limb.</figcaption></figure>
+<figure><img src="img/proto-maple-limb.png"><figcaption>With the maple terms: level and drooping, with elbows.</figcaption></figure>
+</div>
+
+<h2>6. Open questions</h2>
+<ul>
+<li>The trunk: keep one leader to 65 % (old-leader), or fork into two or three stems at about 5 m as the photographed tree does?</li>
+<li>How crooked: the photographed tree is old and broken often (1-3 elbows a limb). Same for ours, or calmer?</li>
+<li>Do the drooping twig fans matter for the shadow through the windows, or only for the picture?</li>
+<li>The hanging limb toward the house: grown by the same forks (it then crooks too), or kept as a hand-placed hero?</li>
+<li>Leaves: keep 8 atlas kinds at random, or tie kind and size to the pair (larger lower leaves in the shade)?</li>
+</ul>
+</body></html>

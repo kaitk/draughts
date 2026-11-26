@@ -1,0 +1,17 @@
+{
+ "tips": 22,
+ "segments": 41,
+ "now_leaves": 176,
+ "now_overlap": 0.7432779636711281,
+ "proposed_leaves": 88,
+ "overlap_before_mosaic": 0.4443315487123373,
+ "overlap_after_mosaic": 0.09691866714439269,
+ "bends": {
+  "flat": 41,
+  "cup up": 19,
+  "lobe tips": 7,
+  "sag + twist": 7,
+  "midrib droop": 5,
+  "edges down": 9
+ }
+}

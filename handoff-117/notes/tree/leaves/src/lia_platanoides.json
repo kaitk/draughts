@@ -1,0 +1,182 @@
+{
+ "bottom canopy 01-08-13": {
+  "n": 92,
+  "mean": 26.2,
+  "median": 23.0,
+  "under15": 27,
+  "under30": 67,
+  "over60": 5
+ },
+ "bottom canopy 13-09-13": {
+  "n": 100,
+  "mean": 26.4,
+  "median": 24.2,
+  "under15": 26,
+  "under30": 65,
+  "over60": 2
+ },
+ "bottom canopy 14-06-13": {
+  "n": 90,
+  "mean": 25.4,
+  "median": 22.9,
+  "under15": 30,
+  "under30": 66,
+  "over60": 4
+ },
+ "bottom canopy 15-05-13": {
+  "n": 80,
+  "mean": 27.1,
+  "median": 27.1,
+  "under15": 25,
+  "under30": 54,
+  "over60": 1
+ },
+ "middle canopy 01-08-13": {
+  "n": 101,
+  "mean": 23.6,
+  "median": 25.0,
+  "under15": 31,
+  "under30": 63,
+  "over60": 0
+ },
+ "middle canopy 13-09-13": {
+  "n": 100,
+  "mean": 27.5,
+  "median": 25.6,
+  "under15": 23,
+  "under30": 63,
+  "over60": 4
+ },
+ "middle canopy 14-06-13": {
+  "n": 93,
+  "mean": 23.1,
+  "median": 21.2,
+  "under15": 29,
+  "under30": 71,
+  "over60": 1
+ },
+ "middle canopy 15-05-13": {
+  "n": 100,
+  "mean": 30.1,
+  "median": 29.0,
+  "under15": 24,
+  "under30": 52,
+  "over60": 4
+ },
+ "top canopy 01-08-13": {
+  "n": 103,
+  "mean": 17.1,
+  "median": 17.6,
+  "under15": 47,
+  "under30": 88,
+  "over60": 1
+ },
+ "top canopy 13-09-13": {
+  "n": 100,
+  "mean": 24.7,
+  "median": 22.1,
+  "under15": 27,
+  "under30": 69,
+  "over60": 0
+ },
+ "top canopy 14-06-13": {
+  "n": 94,
+  "mean": 17.0,
+  "median": 13.8,
+  "under15": 54,
+  "under30": 84,
+  "over60": 0
+ },
+ "top canopy 15-05-13": {
+  "n": 101,
+  "mean": 38.8,
+  "median": 37.7,
+  "under15": 3,
+  "under30": 26,
+  "over60": 4
+ },
+ "whole canopy 11-10-11": {
+  "n": 100,
+  "mean": 41.4,
+  "median": 41.5,
+  "under15": 7,
+  "under30": 25,
+  "over60": 15
+ },
+ "all": {
+  "n": 1254,
+  "mean": 26.8,
+  "median": 24.4,
+  "under15": 27,
+  "under30": 61,
+  "over60": 3
+ },
+ "hist_all": [
+  111,
+  106,
+  122,
+  133,
+  170,
+  122,
+  120,
+  93,
+  78,
+  64,
+  49,
+  45,
+  18,
+  13,
+  4,
+  4,
+  2,
+  0
+ ],
+ "Acer pseudoplatanus": {
+  "n": 102,
+  "mean": 33.8,
+  "median": 32.1,
+  "under15": 17,
+  "under30": 43,
+  "over60": 6
+ },
+ "Acer campestre": {
+  "n": 75,
+  "mean": 50.1,
+  "median": 50.6,
+  "under15": 3,
+  "under30": 9,
+  "over60": 20
+ },
+ "Acer rubrum": {
+  "n": 1001,
+  "mean": 30.3,
+  "median": 30.0,
+  "under15": 19,
+  "under30": 49,
+  "over60": 4
+ },
+ "Betula pendula": {
+  "n": 1685,
+  "mean": 55.6,
+  "median": 58.2,
+  "under15": 5,
+  "under30": 11,
+  "over60": 47
+ },
+ "Fagus sylvatica": {
+  "n": 101,
+  "mean": 18.1,
+  "median": 14.2,
+  "under15": 52,
+  "under30": 82,
+  "over60": 2
+ },
+ "Quercus robur": {
+  "n": 115,
+  "mean": 34.8,
+  "median": 33.7,
+  "under15": 17,
+  "under30": 43,
+  "over60": 10
+ }
+}

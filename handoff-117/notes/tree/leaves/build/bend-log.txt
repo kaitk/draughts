@@ -1,0 +1,8 @@
+the tree baked in 328.67580000311136 ms
+the tree's geometry made in 156.75960000953637 ms
+the room's oak baked in 211.65179999661632 ms, 2048 texels a side, 119 MiB; its mesh made in 184.44329997873865 ms, 49130 triangles and 12540 of glass and lace
+the paint's relief tile made in 52.9060999979265 ms, 1398100 bytes
+the sills' limestone tile made in 112.74959999718703 ms, 5592404 bytes
+the glass's tile made in 392.24419998936355 ms, 5592404 bytes
+the corners' map baked in 347.7181000052951 ms, 16926 charts in 4096 x 981 texels
+the room's light baked in 112.83490000641905 ms, 266 sun patches; the sun's rays 0.10879998444579542 ms, the first light 3.328600025270134, the bounces 8.283299976028502, 0.000100000761449337, 0.0, the half grid 27.860600006533787, the probes 71.79399998858571

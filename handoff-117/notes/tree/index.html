@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maple outside the window</title>
+<style>
+:root { --bg: #1b1a19; --fg: #e8e4dc; --muted: #a39d92; --line: #34312d; --accent: #d9b56a; }
+@media (prefers-color-scheme: light) { :root { --bg: #f6f3ee; --fg: #222; --muted: #555; --line: #d8d2c8; --accent: #8a6420; } }
+body { background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; margin: 0; padding: 16px; }
+main { max-width: 1240px; margin: 0 auto; }
+h1 { font-size: 24px; margin: 8px 0 4px; }
+h2 { font-size: 18px; margin: 32px 0 8px; border-top: 1px solid var(--line); padding-top: 16px; }
+h3 { font-size: 15px; margin: 18px 0 6px; color: var(--accent); }
+p, li { color: var(--muted); max-width: 100ch; }
+p strong, li strong, td strong { color: var(--fg); }
+code { color: var(--accent); font-size: 13px; }
+table { border-collapse: collapse; font-size: 13px; margin: 8px 0 12px; width: 100%; }
+th, td { border-bottom: 1px solid var(--line); padding: 4px 10px 4px 0; text-align: left; vertical-align: top; }
+th { color: var(--fg); font-weight: 600; } td { color: var(--muted); }
+figure { margin: 8px 0 18px; }
+img { max-width: 100%; height: auto; display: block; }
+figcaption { color: var(--muted); font-size: 13px; margin-top: 4px; max-width: 110ch; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+.row figure { flex: 1 1 300px; }
+.callout { border-left: 3px solid var(--accent); padding: 4px 12px; margin: 12px 0; }
+.wrap { overflow-x: auto; }
+a { color: var(--accent); }
+</style>
+</head>
+<body><main>
+<h1>A maple outside the library's windows</h1>
+<p>Task 107, the manor library, 2026-11-21. Research only: no build, no renders, only small Pillow
+previews (<code>src/previews.py</code>). Target: <code>design/manor/concepts/library-home-01.png</code>,
+possibly mirrored. Builds on task 105 (the tree and its baked shadow) and the window-view plan
+(<code>build/notes/window-view/</code>, steps W4 and W6).</p>
+
+<div class="callout">
+<p><strong>In short.</strong> Draw the tree as real geometry, grown by our own generator. Keep
+<code>trees::grow</code>, but grow the whole visible crown at real size. Trunk and limbs become tubes
+with a procedural bark tile. Twigs become thin ribbons with phone-wire antialiasing. Leaves become
+instanced cards from a procedural Norway maple atlas, drawn with alpha-to-coverage under the 4x MSAA.
+The tree draws after the room's opaque pass, so only pixels seen through the glass pay. The sun lights
+the leaves from behind, with each leaf's sun and sky visibility baked once from a voxel grid of the
+crown.</p>
+<p>One tree feeds the room's shadow bake, the probes and the picture. One wind field moves both: the
+vertex shader moves each leaf by the same <code>tree_shift</code> plus <code>branch_sway</code> that
+the shadow lookup uses, at the leaf's own map point, so a leaf and its fleck move by one vector.</p>
+<p>Cost, estimated: about 0.2 to 0.4 ms a frame at 3024 × 1890 in the high tier, the same per drawn
+frame in the standard tier (still), about 10 MB, and 20 to 60 ms at room-on. Phones get one card,
+rendered once from the same geometry. That card replaces W4's CPU-baked layers and also serves the
+floor's mirror and the blurred end of a focus pull.</p>
+<p>A maple is no harder than an oak; the oak's crooked limbs and deep bark are harder. So, a Norway
+maple.</p>
+</div>
+
+<h2>1. The reference</h2>
+<div class="row">
+<figure><img src="img/ref-annotated.jpg" alt="library-home-01's tree annotated">
+<figcaption><strong>library-home-01</strong>, the window, 1:1.
+1 The trunk: straight, about 0.7 m across, grey-brown, shallow ridges, a little lichen, dark against the
+light and lit only by the sky.
+2 The limbs fork at about 3-4 m and reach toward the sun, dark with a faint rim.
+3 The outer shell of leaves: lemon to golden yellow, lit from behind. Sky shows in many small gaps and a few large holes.
+4 The near leaves: hanging sprays of large leaves on long stalks, sharp, single leaves readable.
+5 The sun is hidden in the crown: a white core, sparkle where it shows through gaps (the window-view plan's W5).
+6 The upper panes: more crown, denser and darker where leaves overlap.
+7 The park behind: the band and the far trees, soft.</figcaption></figure>
+<figure><img src="img/oak-light.jpg" alt="result-1-oak's tree">
+<figcaption><strong>result-1-oak</strong> (ChatGPT): take the <strong>light</strong> from it. The leaves are
+saturated yellow-orange where lit through, deeper orange where they lie behind other leaves. The limbs
+are dark with a thin rim on the sun side. The crown reads as clusters with bright gaps. Don't take its
+oak shape. <strong>result-2-maple</strong>: its limbs are an oak's and its leaves pasted on flat. Not used.</figcaption></figure>
+</div>
+<figure><img src="img/ref-mirrored.jpg" alt="library-home-01 mirrored" style="max-width:768px">
+<figcaption>The concept mirrored across x, so the trunk stands right of the sun and the limbs reach left
+toward it. In our room the trunk would stand at the middle window's left half, with the limbs reaching
+right. Which side is the user's choice (section 8).</figcaption></figure>
+
+<h2>2. What makes it read as a Norway maple at 5 to 10 m</h2>
+<table>
+<tr><th>Cue</th><th>The tree</th><th>What we do</th></tr>
+<tr><td><strong>Crown</strong></td><td>Dense, broad, rounded, about as wide as tall (20-30 m tall in the open, the crown 15-20 m
+across). Short trunk, forking low into a few ascending limbs.</td><td>An ellipsoid envelope. Limbs fork at 3-4 m.
+Branches outside the envelope are pruned.</td></tr>
+<tr><td><strong>Leaves in a shell</strong></td><td>Shade-tolerant: a dense outer layer about 1-2 m deep. The inside is
+dark and shows the limbs (Horn's monolayer tree).</td><td>Leaves only on twigs in the outer shell, none in the core.
+This is what makes the gaps and the dark inner crown.</td></tr>
+<tr><td><strong>Branching</strong></td><td>Opposite: buds and shoots in pairs. Fairly straight limbs, fine twigs.</td>
+<td><code>MAPLE.paired</code>, as today. Low crook.</td></tr>
+<tr><td><strong>Leaf</strong></td><td>Palmate, five lobes with a few long sharp teeth, 8-16 cm wide. A long stalk,
+about as long as the blade. Turned out from the crown into a mosaic.</td><td>Real size: about 3-4.5 world units.
+Today's shell tree has leaves about 0.6 units (2 cm), sized for the shadow. The stalk length varies. The blade
+faces out and up.</td></tr>
+<tr><td><strong>Autumn colour</strong></td><td>Mostly clear yellow, sometimes orange. Turns branch by branch, from the
+outside in; yellow-green inside. Tar spot (<i>Rhytisma acerinum</i>) gives black blotches.</td><td>A tint for each
+twig, from its seed and how exposed it is; a little variation for each leaf. Two of eight atlas leaves spotted.</td></tr>
+<tr><td><strong>Translucency</strong></td><td>Lit from behind, a leaf transmits a fair share of the yellow and red and
+little blue, so it glows deeper and more saturated than from the front. The veins show darker. Leaves behind
+other leaves are darker orange.</td><td>The leaf's back colour comes from its own atlas channel. The sun reaching
+each leaf comes from the crown's density.</td></tr>
+<tr><td><strong>Bark</strong></td><td>Grey-brown, shallow narrow ridges that interlace. Not plates (sycamore), not deep
+furrows (oak).</td><td>A procedural tile, ridged noise stretched along the stem, with a little lichen.</td></tr>
+</table>
+<p>Sources: <a href="https://en.wikipedia.org/wiki/Norway_maple">Acer platanoides (Wikipedia)</a>,
+<a href="https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/norway-maple/">Woodland Trust</a>,
+<a href="https://www.rhs.org.uk/plants/246/wd/details">RHS</a>,
+<a href="https://forest.jrc.ec.europa.eu/media/atlas/Acer_platanoides.pdf">European Atlas of Forest Tree Species (JRC)</a>,
+<a href="https://en.wikipedia.org/wiki/Rhytisma_acerinum">Rhytisma acerinum</a>; Horn, <i>The Adaptive Geometry of
+Trees</i> (Princeton, 1971) for monolayer crowns; Jacquemoud and Baret's PROSPECT leaf model (1990) for transmission.
+In Estonian parks the Norway maple (<i>harilik vaher</i>) is the common maple, and it turns yellow, as the concept does.</p>
+
+<div class="row">
+<figure><img src="img/leaf-set.png" alt="procedural maple leaves">
+<figcaption>A procedural Norway maple set (seeded, numpy, about 60 lines). Top: lit from the front against the sky.
+Bottom: lit from behind, deeper and more saturated, veins darker, two leaves with tar spots. In the app it is an
+atlas made once in Goose: RGB the front colour, A the outline, and a second texture or packed channels for the back
+colour and the veins. 8 leaves at 256², about 2.8 MB with mips. The lobes need sharper, longer points than this
+preview has.</figcaption></figure>
+<figure><img src="img/bark-tile.png" alt="procedural bark" style="max-width:256px">
+<figcaption>Bark: ridged value noise stretched about 3:1 along the stem, grey-brown, a little lichen.
+Backlit, the trunk is dark and low in contrast, so a 256 × 512 tile with a normal from the same height is
+enough.</figcaption></figure>
+</div>
+
+<h2>3. Methods compared</h2>
+<h3>Growing the tree</h3>
+<table>
+<tr><th>Method</th><th>For</th><th>Against</th></tr>
+<tr><td><strong>Recursive levels</strong>, Weber and Penn
+(<a href="https://dl.acm.org/doi/10.1145/218380.218427">1995</a>): ours, <code>trees::grow</code></td>
+<td>Exists and is tested. Each branch has its own dice, so pruning changes nothing else. Easy control of the hero limbs
+(trunk place, fork height).</td><td>The crown fills unevenly, and branches can cross. Leaves sprayed in a ball (<code>spray</code>)
+read wrong when seen.</td></tr>
+<tr><td><strong>Space colonisation</strong>, Runions, Lane and Prusinkiewicz
+(<a href="https://algorithmicbotany.org/papers/colonization.egwnp2007.html">2007</a>)</td>
+<td>Fills an envelope evenly with natural spacing and no crossings. The crown's shape is the envelope.</td>
+<td>New code. Less direct control over single limbs. 10-50 ms for a few thousand points with a grid.</td></tr>
+<tr><td><strong>Self-organising</strong>, Palubicki et al.
+(<a href="https://algorithmicbotany.org/papers/selforg.sig2009.html">2009</a>)</td>
+<td>The most natural: light competition shapes the shell.</td><td>The most code and tuning. More than we need through three windows.</td></tr>
+<tr><td><strong>SpeedTree-style</strong> generators by level, with hand-placed hero limbs
+(<a href="https://docs.speedtree.com/">docs</a>); <a href="https://github.com/dgreenheck/ez-tree">ez-tree</a> (MIT, three.js) as a small open example</td>
+<td>Industry practice: procedural levels plus hand control, which is what ours already is.</td><td>Tools, not code we can take;
+ez-tree only as a reading of how a lean generator meshes and places leaves.</td></tr>
+</table>
+<p><strong>Choice:</strong> extend ours. Add an envelope (prune outside it), leaves on twig nodes in opposite
+pairs with stalks (no spray ball), real sizes, and culling by "seen or casting through a window" instead of
+"casting" alone. Space colonisation for levels 2-4 only if the crown still reads clumpy.</p>
+
+<h3>Drawing it</h3>
+<table>
+<tr><th>Method</th><th>Look</th><th>Cost</th><th>Verdict</th></tr>
+<tr><td><strong>Layered cards from a bake</strong> (W4)</td><td>Flat inside each layer; parallax only between three layers;
+leaves can't turn or flutter.</td><td>Very low.</td><td>Phones, the mirror, and the blurred end of a focus pull.</td></tr>
+<tr><td><strong>Octahedral impostors</strong> (<a href="https://shaderbits.com/blog/octahedral-impostors">Brucks</a>)</td>
+<td>Good from any side.</td><td>Atlas memory for many views.</td><td>Not needed: we only see the tree through one wall, from a few metres of room.</td></tr>
+<tr><td><strong>Leaf-cluster cards</strong> (3-6 leaves a card)</td><td>Good from afar; flat clusters show at 5 m.</td><td>About 1/4 of the cards.</td><td>Standard tier on tablets, and the LOD while blurred.</td></tr>
+<tr><td><strong>Single leaf cards + tube wood</strong></td><td>Real: each near leaf readable, turned, fluttering.</td>
+<td>About 25k cards and about 80k wood triangles in view.</td><td><strong>Recommended</strong> for high and standard on desktops.</td></tr>
+</table>
+<p>At the table's camera a 12 cm leaf 6 m away spans about 1.1°, about 60 px at Retina. Leaves are seen one by
+one in focus, so cards from a bake are too flat for the high tier.</p>
+
+<h3>Leaves lit from behind</h3>
+<ul>
+<li><strong>Diffuse transmission</strong>: the sun times the leaf's transmission colour (from the atlas's back colour, about
+0.25-0.35 in yellow and red) times |n·l|, plus a weak forward lobe (Henyey-Greenstein g about 0.3). Leaf transmission
+is close to Lambertian. Same shape as Crysis's leaves
+(<a href="https://developer.nvidia.com/gpugems/gpugems3/part-iii-rendering/chapter-16-vegetation-procedural-animation-and-shading-crysis">Sousa, GPU Gems 3 ch. 16</a>)
+and Frostbite's thin translucency
+(<a href="https://www.ea.com/frostbite/news/approximating-translucency-for-a-fast-cheap-and-convincing-subsurface-scattering-look">Barré-Brisebois and Bouchard</a>).</li>
+<li><strong>The crown shades itself</strong>: at the bake, the leaves' area is put into a voxel grid (64³ over the crown).
+Each leaf gets its sun visibility (Beer-Lambert along the key) and its sky visibility (6 directions), 2 bytes in its
+instance. SpeedTree and Horizon do this with per-vertex occlusion
+(<a href="https://www.gdcvault.com/play/1025530">Horizon's vegetation, GDC 2018</a>). Wind moves leaves by centimetres, so it holds.</li>
+<li><strong>Front side</strong>: sky and lawn bounce times the albedo times sky visibility. A faint cuticle sheen of the sky.</li>
+<li><strong>Wood</strong>: sky only, a rim where the sun grazes (n·l near 0, sun-visible), darker inside the crown.</li>
+<li><strong>Sun and gaps</strong>: the sky with its disc and halo is already drawn behind. Gaps show it in HDR; bloom
+and W5's veil make the sparkle. Leaves near the sun get the forward lobe brighter.</li>
+</ul>
+
+<h3>Wind</h3>
+<table>
+<tr><th>Method</th><th>What it gives</th><th>Fits us?</th></tr>
+<tr><td>Hierarchical bending: trunk, branch, leaf flutter, from per-vertex weights
+(<a href="https://developer.nvidia.com/gpugems/gpugems3/part-i-geometry/chapter-6-gpu-generated-procedural-wind-animations-trees">Zioma, GPU Gems 3 ch. 6</a>,
+Sousa ch. 16, <a href="https://dev.epicgames.com/documentation/unreal-engine/pivot-painter-tool-2.0-in-unreal-engine">Pivot Painter 2</a>, SpeedTree)</td>
+<td>True bends about each branch's pivot.</td><td>Only if the shadow is drawn again each frame from the moving tree (step T7). Otherwise the shadow
+can't follow a rotation.</td></tr>
+<tr><td>One field over the plane, as the shadow moves today (W6;
+<a href="https://gdcvault.com/play/1027350/Blowing-from-the-West-Simulating">Ghost of Tsushima</a>: one wind for everything;
+<a href="https://gdcvault.com/play/1026036/Interactive-Wind-and-Vegetation-in">God of War</a>)</td>
+<td>Smooth in-plane sway, gusts crossing the crown, slower limbs.</td><td><strong>Yes</strong>: exact agreement with the shadow, no new uniforms.</td></tr>
+<tr><td>Flutter alone (leaf turns a few degrees about its stalk, fast, its own phase)</td><td>The backlit twinkle as leaves turn
+and their |n·l| changes.</td><td><strong>Yes</strong>, visual only: smaller than the shadow's blur (1 cm a metre).</td></tr>
+</table>
+<p>Thick limbs barely move, thin twigs move faster and further
+(<a href="https://www.cg.tuwien.ac.at/research/publications/2009/Habel_09_PGT/">Habel et al. 2009</a>). That is
+already the field's per-layer rates and the flex weight below.</p>
+
+<h3>Shadows from the moving tree</h3>
+<table>
+<tr><th>Way</th><th>Agreement</th><th>Cost</th></tr>
+<tr><td><strong>The baked map moved by the field</strong> (today, plus the same field on the geometry)</td>
+<td>Exact for leaves and limbs; to about 1 mm from the field's gradient (under 0.13) times the sway (at most 0.25 units).</td>
+<td>Nothing new a frame. The CPU bake on change, 25-90 ms.</td></tr>
+<tr><td>The map rendered again on the GPU each frame from the moving geometry (high tier)</td><td>Exact, any wind, flutter included.</td>
+<td>Raster of 2048 × 768 with 4 channels, the disc blur for each layer, mips: about 0.2-0.4 ms by estimate. Probes stay on the still bake.</td></tr>
+<tr><td>Rendered again on change only (GPU in place of the CPU bake)</td><td>Same as baked.</td><td>Faster bakes (about 1-3 ms), and one raster path for the map and the card.</td></tr>
+</table>
+
+<h3>Antialiasing</h3>
+<ul>
+<li><strong>Alpha-to-coverage</strong> with the 4x MSAA. Sharpen alpha by its own screen derivative before coverage, and keep the
+coverage in the atlas's mips (the alpha in each level scaled so the share above 0.5 stays the same). See
+<a href="https://bgolus.medium.com/anti-aliased-alpha-test-the-esoteric-alpha-to-coverage-8b177335ae4f">Golus, "Anti-aliased Alpha Test"</a>
+and <a href="https://lisyarus.github.io/blog/posts/exploring-ways-to-mipmap-alpha-tested-textures.html">mipmapping alpha-tested textures</a>.
+SDL3 GPU has <code>enable_alpha_to_coverage</code> in <code>SDL_GPUMultisampleState</code>. goose_gfx doesn't pass it yet
+(<code>gfx_pipeline.c</code> sets only <code>sample_count</code>), so that is a small branch in <code>kaitk/goose_gfx</code>, then upstream.</li>
+<li>With SMAA (no MSAA): an alpha test at 0.5 and the sharpened alpha. SMAA smooths the outlines.</li>
+<li><strong>Twigs</strong> thinner than a pixel: draw them at least a pixel wide and fade by the true width
+(Persson's phone-wire antialiasing), so they don't crawl.</li>
+<li>Apple GPUs skip hidden-surface removal for coverage-writing fragments. So the wood draws first (opaque), then the leaves,
+roughly front to back by cluster.</li>
+</ul>
+
+<h2>4. One tree for the shadow, the probes and the picture</h2>
+<ul>
+<li><strong>One <code>trees::Tree</code></strong>, grown once at room-on from <code>rooms::shell_tree</code>'s spec. Culling keeps a
+branch whose children reach the sun's map rectangle <em>or</em> the view through the three windows. Pruning is per
+branch with its own dice, so the shadow's part is the same tree, not a second one.</li>
+<li><strong>The shadow</strong>: <code>trees::draw_map</code> as today, from the same segments and leaves. The leaves become
+real size and sit on twigs, so its look is retuned (blur, density). Real gaps at 5-9 m give round sun images
+about 5-9 cm across, stretched about 3× by the 18° sun. That is the concept's streaks on the table.</li>
+<li><strong>The probes</strong>: the map at a low mip, as today (<code>render3d.goose</code> keeps it on the CPU). The probes
+take the still tree.</li>
+<li><strong>The picture</strong>: meshes and leaf instances from the same <code>Tree</code>, made at the same time.</li>
+<li><strong>The wind</strong>: a shared snippet (<code>WIND_FN</code>: <code>branch_sway</code> and the layer weights), included by
+<code>LIGHT_FN</code> and the tree's vertex shader. A vertex at tree-frame <code>p</code> moves in the wall's plane by
+<code>d = mix(wood, leaves(on_map(p), z), flex)</code>:
+<ul>
+<li><code>wood</code> is <code>tree_shift[0]</code>.</li>
+<li><code>leaves(m, z)</code> is the leaf layers' <code>tree_shift + branch_sway</code>, blended by depth <code>z</code> across near, middle and far.</li>
+<li><code>flex</code> is 0 on the trunk, rises along each branch, and is 1 on leaves. It is baked into each vertex.</li>
+</ul>
+A move by (dx, dy, 0) moves a point's map image by exactly (dx, dy), because <code>on_map</code> is linear. So a
+leaf and its shadow move together. What can't follow: rotation about a pivot, which is step T7's.</li>
+</ul>
+
+<h2>5. Level of detail and the focus pull</h2>
+<figure><img src="img/bokeh-detail.jpg" alt="what survives the bokeh">
+<figcaption>Left: the concept's tree. Middle: a disc blur of the bokeh study's board-focus radius (2.4% of the width at infinity,
+about 70% of it at 5-8 m, about 25 px here, about 50 px at Retina), with the bright gaps put back to HDR first. Right: the same
+picture at 1/16 size, bilinear back up. The blurred view keeps only the crown's masses, the trunk's band and the gaps' energy.
+A 1/16 picture carries all of that.</figcaption></figure>
+<ul>
+<li><strong>Focus on the board</strong> (the tree's blur radius 40-70 px at Retina): the card at 512 wide is plenty. It must hold
+<em>coverage</em>, not the sky's colour, so the HDR sky and sun still show through the gaps for the bokeh pass. Its mean
+transmission must match the geometry's within about 2%, or the discs' brightness pops at the swap.</li>
+<li><strong>Focus on the tree</strong>: full geometry, every leaf.</li>
+<li><strong>During a pull</strong>: switch geometry and card where the tree's blur passes about 6-8 px. Cross-fade over a few frames
+if a seam shows.</li>
+<li><strong>Depth</strong>: the geometry writes its true depth (5-10 m), which the bokeh pass needs for its blur radius. Today's
+outside pass draws at 1/8 distance with no depth. The card carries one depth, the trunk's plane.</li>
+<li><strong>The floor's mirror</strong> sees the windows soft: it gets the card, not the geometry, so the tree isn't drawn twice.</li>
+</ul>
+
+<h2>6. The plan</h2>
+<p>Each step is a tuner flag and a panel switch (<code>--window-tree off|card|wood|leaves|wind</code> builds up), shown alone in the
+window-view plan's cameras (from the table at the concept's framing, <code>--view window</code>, and a close-up of the near
+leaves). Each step has pipelines of its own (<code>tree_wood</code>, <code>tree_leaves</code>, <code>tree_card</code>) with
+per-tier defines compiled in, and no branches in the room's shader. Prerequisites: the shader split, and W0 (where the sun is
+seen) settled.</p>
+<table>
+<tr><th>Step</th><th>What</th><th>Code</th><th>Switch</th></tr>
+<tr><td><strong>T1 The tree grown whole</strong></td><td>Envelope, real sizes, leaves on twig nodes in pairs with stalks, tints for each
+twig, culled to seen-or-casting. The shadow is retuned on it. A CPU silhouette dump from the window (a <code>draw_map</code> with no shear)
+lets the user judge the shape before any GPU work. Tests: counts, determinism, sizes, that pruning keeps the shadow's part
+identical.</td><td><code>trees.goose</code> (species, grow, cull), <code>rooms::shell_tree</code></td><td><code>--tree-grow shadow|whole</code>,
+<code>--dump-tree-view</code></td></tr>
+<tr><td><strong>T2 Wood</strong></td><td>Tubes for levels 0-2 (12 down to 6 sides), ribbons for 3-4 with phone-wire AA. The bark tile at
+startup. Sky light and rim, occlusion from the grid. Drawn after the room's opaque pass with the depth test.</td><td><code>trees.goose</code>
+(mesh), <code>model3d</code> bark tile, <code>render3d_gpu</code> <code>tree_wood</code></td><td><code>wood</code></td></tr>
+<tr><td><strong>T3 Leaves</strong></td><td>The atlas (8 leaves), instanced cards with alpha-to-coverage (the goose_gfx fork branch first), the grid's
+sun and sky for each leaf, the backlight, a little colour variation per leaf.</td><td><code>trees.goose</code> (instances, grid),
+<code>shaders</code> <code>TREE_LEAF_*</code></td><td><code>leaves</code></td></tr>
+<tr><td><strong>T4 One wind</strong></td><td><code>WIND_FN</code> shared with <code>LIGHT_FN</code>, flex weights, leaf flutter. High tier only; the others
+are still at the same moment as their shadow.</td><td><code>shaders</code>, <code>rooms::wind_at</code> unchanged</td><td>K (still, noise, branches)</td></tr>
+<tr><td><strong>T5 The card</strong></td><td>The geometry rendered once at room-on into an RGBA 1024 × 768 texture with premultiplied coverage. Drawn in the
+outside pass for phones and the mirror. Replaces W4's CPU-baked layers.</td><td><code>render3d</code> bake hook beside <code>bake_tree</code>,
+<code>view_out</code> quad</td><td><code>card</code></td></tr>
+<tr><td><strong>T6 Focus LOD</strong></td><td>Card or geometry by the tree's blur; the mean transmission checked within 2%.</td><td>with the bokeh work</td><td><code>--tree-lod-px</code></td></tr>
+<tr><td>T7 (later, if wanted)</td><td>The shadow map drawn again on the GPU from the moving geometry each frame (high), so true branch bends and flutter
+show in the flecks.</td><td><code>render3d</code></td><td><code>--tree-shadow baked|live</code></td></tr>
+</table>
+<p><strong>What carries over from the window-view work:</strong> W0 (the camera and the sun) unchanged. W4 shrinks to T5, the card for
+phones and the mirror, so its quads and the outside-pass slot stay and its source becomes the GPU render. W5 (the sun's veil)
+unchanged. W6 becomes T4 (the same field, now on geometry too). The motes (W7) and the lace (W2, W3) read <code>shell_open</code>, which
+already carries the moving tree.</p>
+
+<h2>7. Costs by tier (estimates, to be measured on a quiet machine)</h2>
+<table>
+<tr><th></th><th>High (desktop on mains, every frame)</th><th>Standard (draws on change)</th><th>Phones (A33 the slowest)</th></tr>
+<tr><td>What</td><td>Geometry, every leaf, wind, flutter</td><td>The same geometry, still. Tablets: cluster cards (1/4 the cards)</td><td>The card, one layer, still</td></tr>
+<tr><td>Geometry</td><td>About 80k wood triangles, about 25k leaf cards (50k triangles)</td><td>Same, or about 6k cluster cards</td><td>2 triangles</td></tr>
+<tr><td>Memory</td><td>Mesh and instances about 3-4 MB, atlas 2.8 MB, bark 1.4 MB, card 4 MB: about 11 MB</td><td>Same</td><td>Atlas at 128² 0.7 MB, card 512 wide 1 MB</td></tr>
+<tr><td>At room-on</td><td>Grow and mesh 10-25 ms, grid and leaf light about 5 ms, atlas 10-20 ms (once a run), card under 5 ms on the GPU,
+the shadow's bake 25-90 ms as today</td><td>Same</td><td>Same on the CPU, about 3× slower; the atlas could be cached on disk</td></tr>
+<tr><td>A frame at 3024 × 1890</td><td>The tree covers 10-20% of the screen, 3-5 layers of leaves deep: about 3-5M fragments of about 60 ALU
+and 1-2 taps, about 0.2-0.4 ms. Wind adds about 30 ALU a vertex.</td><td>About 0.2-0.3 ms when drawn</td><td>About 0.05-0.1 ms</td></tr>
+<tr><td>T7 if taken</td><td>About +0.2-0.4 ms</td><td>Off</td><td>Off</td></tr>
+</table>
+<p>For scale: the room's main pass was 23 ms at full screen (<code>build/notes/perf/measure-1.md</code>), so the tree is not where the
+time goes. Its number still has to be measured, before and after, under the user's rule.</p>
+
+<h2>8. Open choices for the user</h2>
+<ol>
+<li><strong>The tree's place.</strong> Concept-like: the trunk 5-6 m out behind the middle window, mirrored so the limbs reach toward the
+sun. Or today's: behind a pier, with only the crown in the upper panes. Either way the shadow is retuned.</li>
+<li><strong>Real leaf size (12 cm) for the shadow too.</strong> This keeps the picture and the shadow one tree, and the flecks become
+physically sized. Or keep the shadow's small leaves and accept that the shadow doesn't match the seen leaves.</li>
+<li><strong>Real limb widths in the shadow.</strong> Today <code>SHELL_LIMBS</code> thins and softens the limbs' shadow. With the limbs seen,
+the honest way is to place the tree so its limbs stay out of the beam, rather than thinning them.</li>
+<li><strong>The colour</strong>: clear yellow as in the concept, or with orange branches as in library-autumn-02.</li>
+<li><strong>T7</strong> (the shadow drawn live each frame, about +0.3 ms in the high tier): only if the field's sway looks too stiff
+once the tree is seen.</li>
+<li><strong>The ChatGPT reference</strong> below: send it or not.</li>
+</ol>
+
+<h2>9. A ChatGPT reference (prepared, not sent)</h2>
+<p><code>build/notes/tree/send/01-maple-backlit/</code>: <code>prompt.txt</code> and <code>image-1-concept-tree-mirrored.png</code>.
+One image of the maple alone, backlit by a low sun, in sharp focus. No rays, haze, flare or bokeh. Take from it: the crown's shell
+and gaps, the forks, the leaf sprays and their sizes, the colour spread, and the backlit colours. Don't take the sun's rendering
+or the sky. As always, match only the plausible parts.</p>
+</main></body>
+</html>

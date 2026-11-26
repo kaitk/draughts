@@ -1,0 +1,87 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maple choices</title><style>body { background: #16181b; color: #d8d6d0; font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 0 auto; max-width: 1500px; padding: 16px; }
+h1 { font-size: 22px; } h2 { font-size: 18px; margin-top: 36px; border-top: 1px solid #333; padding-top: 16px; }
+code { color: #e8c98a; } a { color: #8fb8e8; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; } figure { margin: 0; flex: 1 1 300px; }
+img { width: 100%; height: auto; display: block; border: 1px solid #333; }
+figcaption { font-size: 13px; color: #a8a6a0; margin-top: 4px; }
+.note { background: #22252a; border-left: 3px solid #e8c98a; padding: 8px 12px; }
+.good { color: #9fd49a; } .bad { color: #e89a8a; }
+ol li, ul li { margin-bottom: 6px; } .rec { color: #e8c98a; }</style></head><body>
+<h1>Task 117: the maple, round one, and what to choose</h1>
+<p>Three CPU studies, each with its own page. This page gives my reading of their pictures and gathers their questions. Nothing in <code>src/</code> has changed yet.</p>
+<ul>
+<li><a href="branches/compare.html">Branches</a>: four growth methods, each with gravity off and on, beside the photos</li>
+<li><a href="leaves/index.html">Leaves</a>: which leaves sag (the measurements), plates at the shoot tips, bent leaf meshes per tier</li>
+<li><a href="bark-roots/index.html">Bark, junctions, roots</a>: bark that cracks as it grows, collars, the flare and surface roots (shown on today's skeleton)</li>
+</ul>
+
+<h2>Branches</h2>
+<div class="row">
+<figure><img src="branches/img/c-wp-whole.jpg"><figcaption>Our generator with broken leaders: gravity off and on</figcaption></figure>
+<figure><img src="branches/img/c-pal-limb.jpg"><figcaption>Palubicki 2009, one limb: gravity off and on</figcaption></figure>
+</div>
+<p>None of the four matches the photos yet.</p>
+<ul>
+<li><span class="good">Whole tree:</span> our generator with gravity is closest. Its limbs arch outward and their branches turn up. <span class="bad">But</span> the wood is still too even, and the elbows hardly show at this size.</li>
+<li><span class="good">One limb:</span> Palubicki with gravity is closest. It is crooked, with stubs and shoots turning up, like the zig-zag photo. Without gravity it grows like a conifer.</li>
+<li><span class="bad">Gao and Newberry</span> (the task's chosen path) grows a round bush. <span class="bad">Space colonisation</span> grows a smooth vase that gravity hardly changes.</li>
+<li><span class="bad">No method</span> grows the hanging twig fans.</li>
+</ul>
+<p class="note">Gravity changes the most: it takes our generator and Palubicki from upright to spreading. My recommendation is the subagent's: <b>our generator's frame + broken leaders + the gravity layer</b> (in place of <code>Habit.sag</code>), with Palubicki's shedding of shaded wood for stubs and bare inner limbs, and a rule of its own for the hanging fans. That replaces the task's Gao and Newberry forks, so it needs your yes.</p>
+
+<h2>Leaves</h2>
+<div class="row">
+<figure><img src="leaves/img/shoot-proposed-below.png"><figcaption>Proposed: leaves only at the tips, in plates, seen from below</figcaption></figure>
+<figure><img src="leaves/img/shoot-now-below.png"><figcaption>Today's rule on the same branch</figcaption></figure>
+</div>
+<ul>
+<li><b>Measured on Norway maple in Estonia</b> (Raabe et al. 2015): most blades are near level. In summer the top of the crown is flattest (median 15° from level), the middle and bottom steeper (22–23°).</li>
+<li><b>Sag at the crown's edges is not supported</b> for summer. If anything, more sag inside and low down, where the shade leaves are larger and thinner, but that is only weakly supported.</li>
+<li><b>Autumn</b>: the blades tilt more as they age, the top first (median 22° in September, 42° in an October sample).</li>
+<li><b>Curvature</b> (cupping, edges, lobes) by position has <b>never been measured</b> on Norway maple. In beech, sun leaves are folded more than shade leaves.</li>
+<li><b>Plates</b> (Weisse 1895, measured on Norway maple): the lower leaf of a pair is larger and has the longer stalk. Leaves placed this way overlap 10 % from above; today's rule overlaps 74 %.</li>
+<li><b>Drawing</b>: six bent leaf shapes made at startup; flat cards on phones (4 vertices a leaf), 10 on the tablet, 21 on the high tier.</li>
+</ul>
+
+<h2>Bark, junctions, roots</h2>
+<div class="row">
+<figure><img src="bark-roots/img/close.png"><figcaption>Close: photo, today's tile, new (standard), new (high)</figcaption></figure>
+<figure><img src="bark-roots/img/j-flare-new.png"><figcaption>The flare and roots on today's trunk</figcaption></figure>
+</div>
+<ul>
+<li><span class="good">The relief is now strong</span>, as you asked: deep dark furrows from the normal, cavity and shadow maps, with no displacement of the mesh.</li>
+<li><span class="bad">My view:</span> the new tile is <b>too busy and too regular</b> next to the photo. The ridges there are wider and interlaced, with fewer cracks. The cracks look about twice too dense, and almost all of them are vertical.</li>
+<li><span class="bad">The flare</span> shows a seam where the trunk's grain meets the roots' grain, and the roots read as a skirt more than as roots diving into the lawn. This round's demo was on today's skeleton anyway; it gets redone on the chosen one.</li>
+<li>Cost estimates: about +35k triangles on the high tier, +7k standard, +0.5k phone; growth about +10 ms; the tile 25–35 ms once at startup.</li>
+</ul>
+
+<h2>Questions for you</h2>
+<p>Answer the starred ones first: they decide the skeleton, which everything else waits on.</p>
+<h3>Branches</h3>
+<ol>
+<li>★ <b>Method</b>: our generator + broken leaders + gravity + Palubicki's shedding, in place of Gao and Newberry's forks? <span class="rec">(recommended)</span></li>
+<li>★ One leader to the top, or codominant stems as in the photo of the whole tree?</li>
+<li>★ How crooked: a few clear elbows a limb (1–3, as the task says), or more zig-zag throughout?</li>
+<li>The hanging limb: grown and bent down by gravity, or kept placed by hand?</li>
+<li>How much sag: as on the gravity-on pictures, more, or less?</li>
+<li>Palubicki's full shadow grid as a later high-tier option?</li>
+</ol>
+<h3>Leaves</h3>
+<ol start="7">
+<li>★ Is the maple always autumn, or does it follow the season's colours? The tilt and sag rules depend on it.</li>
+<li>Replace the task's "blades within about 15° of level" with tilts drawn from the measured spread, by height and season? <span class="rec">(recommended)</span></li>
+<li>More sag inside the crown and low down, though nothing measures it on Norway maple?</li>
+<li>Is the tablet's bent leaf mesh worth its cost, given the tablet's 27–32 ms a frame now?</li>
+<li>Keep the step that nudges blades apart (10 % overlap), or Weisse's ratios alone (44 %)?</li>
+</ol>
+<h3>Bark and roots</h3>
+<ol start="12">
+<li>Which old bark to match: the park maples' photos or the lawn tree's?</li>
+<li>Moss and lichen now, or later?</li>
+<li>How much of the roots should show above the lawn?</li>
+<li>The bark's age by the wood's radius, or by the skeleton's age? <span class="rec">(radius: simpler; recommended)</span></li>
+<li>Roots on all tiers while the window pier hides the base, or only the high tier?</li>
+<li>Leave parallax out until a close view comes? <span class="rec">(recommended)</span></li>
+</ol>
+</body></html>

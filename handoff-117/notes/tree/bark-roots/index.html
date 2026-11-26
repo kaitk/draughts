@@ -1,0 +1,363 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maple bark and roots</title><style>body { background: #16181b; color: #d8d6d0; font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 0 auto; max-width: 1500px; padding: 16px; }
+h1 { font-size: 22px; } h2 { font-size: 18px; margin-top: 32px; border-top: 1px solid #333; padding-top: 16px; }
+h3 { font-size: 16px; margin-top: 24px; }
+code { color: #e8c98a; } a { color: #8fb8e8; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; } figure { margin: 0; flex: 1 1 300px; }
+img { width: 100%; height: auto; display: block; border: 1px solid #333; }
+figcaption { font-size: 13px; color: #a8a6a0; margin-top: 4px; }
+table { border-collapse: collapse; margin-top: 8px; } td, th { border: 1px solid #3a3a3a; padding: 4px 10px; text-align: left; vertical-align: top; }
+th { background: #22252a; } td.n { text-align: right; }
+.note { background: #22252a; border-left: 3px solid #e8c98a; padding: 8px 12px; }
+.warn { background: #2a2222; border-left: 3px solid #e88a8a; padding: 8px 12px; }
+@media (max-width: 700px) { table { font-size: 12px; } td, th { padding: 2px 4px; } }</style></head><body>
+<h1>The maple's bark, junctions and roots: research and CPU prototypes (round one)</h1>
+<p>Task 117, 2026-11-26, branch <code>room-light</code>. CPU only, in Python with numpy and Pillow; nothing under
+<code>src/</code> changed. The scripts are in <code>src/</code> next to this page: <code>bark.py</code> (the tile's growth),
+<code>render.py</code> and <code>tile_figs.py</code> (the tile on a tube, beside the photos), <code>scene.py</code>,
+<code>junction.py</code> and <code>rast.py</code> (the junctions and the flare on today's skeleton, with a small rasterizer),
+<code>today.py</code> (today's tile in numpy), <code>photo_figs.py</code>. The skeleton is today's
+(<code>../branches/dump/tree-none-whole.bin</code>); the branch skeleton is being chosen in parallel, so the junction
+pictures show the <b>method</b>, to be done again on the chosen skeleton.</p>
+
+<p class="note"><b>Proposal in short.</b>
+(1) <b>Bark:</b> grow the tile once at startup by the fracture of a stretched outer layer (after
+<a href="https://doi.org/10.2312/EGWR/EGWR02/105-116">Lefebvre and Neyret 2002</a>). Every crack keeps the time it
+opened, so one run gives every age: smooth twig bark, first thin cracks on branches, the interlaced ridges of a limb,
+and the deep dark furrows of the old trunk. Bake 4 age layers; the shader blends the two either side of a vertex's age.
+Strength comes from a true height-derived normal, a cavity (occlusion) term and the AO microshadow, not from moving the
+mesh. (2) <b>Junctions:</b> "swell and weld" on the tube mesh as it is: the child swells into a collar, the parent gets a
+bump round the child's foot and a raised fold in the crotch, the child's first rings are laid from the contact line with a
+fillet, and welded a few millimetres under the parent. The bark's grain bends round each foot by a flow field, and the
+two charts blend by height at the contact. (3) <b>Flare and roots:</b> lobes in the trunk's lowest rings over each root,
+and 4-7 flattened root tubes welded the same way, diving under the lawn. Cost on the high tier: about +35k triangles over
+today's 18k tube triangles; much less on the standard tier, almost nothing on the phone.</p>
+
+<h2>1. What the photos show</h2>
+<div class="row">
+<figure><img src="img/photo-flares.jpg"><figcaption>The bases. From the left: a Norway maple on a lawn (USA) with broad
+rounded root lobes that run into the trunk as buttresses; two park maples (the brief's photos, Estonia) with a smooth
+widening into the ground, one shallow root running off, moss and lichen low on the trunk; a park maple from afar. The roots
+show little: lobes, then short humps in the grass. No long "legs".</figcaption></figure>
+</div>
+<div class="row">
+<figure><img src="img/photo-junctions.jpg"><figcaption>Junctions. Left: an old park maple's limbs: each limb's foot swells
+and is wrapped by the trunk's bark, the bark's ridges bend round the foot, and the crotch above it has a ridge of pushed-up
+bark. Middle: an old trunk where stems fused: long deep furrows, broad ridges broken across into scales. Right: the trunk of
+the first photo: narrow raised ridges that part and join into long diamonds, over broad flatter furrows.</figcaption></figure>
+</div>
+<p>Two looks of old Norway maple bark appear in the photos: the park maples (dense, short, wavy ridges with very dark deep
+furrows, mossy) and the lawn tree (narrow raised ridges in long diamonds over broad furrows). The prototype sits between them;
+see open question 1.</p>
+
+<h2>2. Methods, with their sources and parameters</h2>
+<h3>Bark</h3>
+<table>
+<tr><th>Method</th><th>What it does, its parameters</th><th>For us</th></tr>
+<tr><td><a href="https://doi.org/10.2312/EGWR/EGWR02/105-116">Lefebvre and Neyret 2002</a>, "Synthesizing Bark"
+(<a href="https://hal.archives-ouvertes.fr/inria-00537488">HAL</a>)</td>
+<td>Circular 1D strips across the trunk, each a chain of stiff bark elements and soft fracture elements. Growth stretches the
+strip; a crack starts where the relative stretch passes a threshold <i>S + A·rnd</i>, at a weak point from a weakness map. It
+runs into the next strip when an Inglis-ratio test passes; its way is <i>a·slope + b·rnd</i>, where <i>a</i> depends on the
+distance to the nearest crack, so close cracks follow each other, interlace, and leave thin strips between them. A
+fracture-stiffness curve <i>K<sub>f</sub>(strain)</i> sets how a crack opens; later growth widens it. 133 strips took 49 s on
+a 900 MHz Pentium III. No numbers for S and A are given. No code.</td>
+<td><b>Chosen</b>, simplified to a tile (section 3). It is the only method that makes the age continuum come out of the
+process itself.</td></tr>
+<tr><td><a href="https://algorithmicbotany.org/papers/fracture.iccs2004.pdf">Federl and Prusinkiewicz 2004</a>, finite-element
+fracture on growing surfaces (<a href="https://www.algorithmicbotany.org/papers/federl.dis2002.html">thesis</a>)</td>
+<td>A growing core and a bark layer of 6-node wedge elements. A crack starts where the largest principal stress passes the
+material's threshold, across that stress; it grows while the released energy exceeds the energy to form it (Griffith).
+Adaptive time steps, mesh refined near cracks. No constants published, no code.</td>
+<td>The physics behind the simplification; far too slow for startup.</td></tr>
+<tr><td><a href="https://doi.org/10.1111/cgf.12566">Kratt et al. 2015</a>, Woodification
+(<a href="https://cs.purdue.edu/homes/bbenes/papers/Kratt15CGF.pdf">PDF</a>)</td>
+<td>Cambial growth as a moving surface (a deformable simplicial complex) whose speed comes from the skeleton; cracks by the
+Iben and O'Brien stress field: stress spreads over the mesh, a crack edge is inserted where it passes a threshold, with extra
+stress at crack tips; crack width from the distance to the crack's end, depth follows width. Parameters: cracks per step,
+relaxation steps, tip stress 0..1, snap angle. 15-162 ms per growth step, 100-200 steps.</td>
+<td>Good ideas (width by distance to the crack's end; growth stretching the bark), but a full surface simulation. Not
+needed for a tile.</td></tr>
+<tr><td><a href="https://doi.org/10.1007/s00371-005-0317-z">Desbenoit, Galin, Akkouche 2005</a>, "Modeling cracks and
+fractures" (<a href="https://perso.liris.cnrs.fr/egalin/Articles/2005-cracks.pdf">PDF</a>)</td>
+<td>A crack pattern mapped onto a surface and carved as a swept volume; very thin cracks at any resolution. Generic, not bark.</td>
+<td>Not used.</td></tr>
+<tr><td><a href="https://cg.cs.tsinghua.edu.cn/papers/pg2003.pdf">Wang, Wang, Liu, Hu, Guo 2003</a>, "Interactive modeling of
+tree bark"</td>
+<td>From one bark photo: 36 filter responses per pixel clustered into 25 textons, a height field set per texton, a few minutes
+of editing. Not a growth model.</td>
+<td>Not used: needs a photo with a licence, and gives one age.</td></tr>
+<tr><td>Microshadow from AO: Brinck and Maximov, "The Technical Art of Uncharted 4", SIGGRAPH 2016; also Chan, "Material
+Advances in Call of Duty: WWII", SIGGRAPH 2018 course</td>
+<td>A cheap shadow from the occlusion map: <code>saturate(|n·l| + 2·ao² − 1)</code>, so furrows go dark when the sun grazes
+the surface. (Formula as widely quoted; the talks themselves not re-read for this page.)</td>
+<td><b>Chosen</b> for the standard tier.</td></tr>
+<tr><td>Learned bark: <a href="https://github.com/vaishwarya96/Tree-barks-generation">Venkataramanan et al. 2022</a> (GAN on
+scanned bark, code); Pixar's stylised bark for <i>Elemental</i> (SIGGRAPH 2023 talk)</td>
+<td>Data-driven or art-directed; no growth.</td><td>Not used.</td></tr>
+</table>
+
+<h3>Junctions and cambial growth</h3>
+<table>
+<tr><th>Method</th><th>What it does, its parameters</th><th>For us</th></tr>
+<tr><td><a href="https://shigo.davey.com/shigo_publications/2149/publication_file/how-tree-branches-are-attached-to-trunks.pdf">Shigo 1985</a>,
+"How tree branches are attached to trunks", Can. J. Bot. 63:1391-1401</td>
+<td>Botany: each season the trunk's tissue wraps round the branch's base (trunk collars over branch collars), so a branch's foot
+swells, more below, and the bark in the crotch is pushed up into the branch bark ridge. From dissections of over 12,000 trees.
+No sizes given in the abstract.</td><td>The shapes to make: collar, trunk-collar bump, bark ridge.</td></tr>
+<tr><td>Slater and Ennos 2015, Arboricultural Journal 37:21-32; Slater et al. 2014, Trees</td>
+<td>Forks: interlocking grain at the fork's centre makes it strong; included bark (bark caught in a tight fork) makes it weak.</td>
+<td>A codominant fork has a ridge and maybe a seam of included bark, not a collar. Waits for the skeleton.</td></tr>
+<tr><td><a href="https://doi.org/10.1145/325165.325249">Bloomenthal 1985</a>, "Modeling the mighty maple"; Bloomenthal 1997,
+"Bulge elimination in convolution surfaces" (CGF 16(1))</td>
+<td>Limbs as generalized cylinders joined by a free-form surface; later, implicit (convolution) surfaces over the skeleton,
+which bulge at branch points unless the kernel is small against the limbs.</td>
+<td><b>Tried first</b>: both meshes projected onto a smooth union <code>smin(d<sub>parent</sub>, d<sub>child</sub>, k)</code>.
+It left jagged creases at vertex size and folds (section 4). Set aside.</td></tr>
+<tr><td><a href="https://doi.org/10.1016/j.gmod.2004.01.002">Lluch, Vivó, Monserrat 2004</a>, one polygon mesh for a whole
+tree</td>
+<td>At a fork, contours are added from the fork up to where the children part; each is the union of the children's sections
+cut by a plane, merged into one loop. About three times the triangles, then decimated by up to 80 %.</td>
+<td>A true single mesh. Kept as the fallback for hero junctions if the welded seam shows.</td></tr>
+<tr><td><a href="https://people.compute.dtu.dk/janba/Research_in_Graphics/SQM.html">Bærentzen, Misztal, Welnicka 2012</a>,
+skeletal quad meshes</td>
+<td>A polyhedron at each branch node, tubes extruded from its faces' loops; irregular vertices only at poles and joins.</td>
+<td>Also a fallback; needs new topology per node.</td></tr>
+<tr><td><a href="https://doi.org/10.1111/j.1467-8659.2004.00766.x">Galbraith, Mündermann, Wyvill 2004</a>, implicit growing
+trees</td>
+<td>Smooth implicit blends with sharp features added: branch bark ridges, bud scale scars.</td>
+<td>Supports adding the ridge as its own term, as done here.</td></tr>
+</table>
+
+<h3>Root flare and surface roots</h3>
+<table>
+<tr><th>Source</th><th>What it gives</th><th>For us</th></tr>
+<tr><td><a href="https://docs.unity.com/en-us/speedtree-modeler/10/subdiv-generator-properties">SpeedTree Modeler 10</a>,
+"Flares"</td>
+<td>Number (flares round the branch), Balance (even to random spacing), Width (round), Length (out from the radius), Height
+(up the spine), Pinch, Twist, Seed. No defaults given.</td>
+<td>Our lobes take the same knobs: count, uneven azimuths, angular width, reach, flare height.</td></tr>
+<tr><td><a href="https://github.com/abpy/improved-sapling-tree-generator/wiki">Sapling (improved)</a></td>
+<td>"Root Flare": a radius factor at the trunk's base; "Base Splits". No roots.</td><td>Today's <code>flare()</code> is the same idea.</td></tr>
+<tr><td><a href="https://github.com/dgreenheck/ez-tree">ez-tree</a>, <a href="https://github.com/friggog/tree-gen">tree-gen</a></td>
+<td>No root or flare options documented.</td><td>Nothing to take.</td></tr>
+<tr><td><a href="https://doi.org/10.1145/3592145">Li et al. 2023</a>, Rhizomorph
+(<a href="https://www.cs.purdue.edu/homes/bbenes/papers/Li23ToG.pdf">PDF</a>)</td>
+<td>Shoots and roots grown together with a soil model; root types (heart, lateral, sinker, tap) by their tropism weights.</td>
+<td>Below ground, out of scope; confirms laterals near the surface.</td></tr>
+<tr><td>Coutts 1983, "Root architecture and tree stability", Plant and Soil 71:171-188; extension notes
+(<a href="https://extension.colostate.edu/resource/understanding-tree-roots/">Colorado State</a>)</td>
+<td>A root plate of thick laterals that taper fast near the trunk (the zone of rapid taper); "5-15 or more" main structural
+roots in general.</td><td>4-7 visible lobes (the brief) is fewer than the real count: only the strong ones show.</td></tr>
+<tr><td>The brief's numbers (artistic, not measured)</td><td>4-7 lobes; exposed reach 0.3-1.5 trunk diameters on a lawn;
+flare height 0.2-0.6 diameters; no plank buttresses; roots partly buried, never floating.</td>
+<td>Used, with the reach cut to 0.25-0.8 diameters to match the photos.</td></tr>
+</table>
+<p>Norway maple bark (<a href="https://forest.jrc.ec.europa.eu/media/atlas/Acer_platanoides.pdf">Caudullo and de Rigo 2016</a>;
+<a href="https://extension.umd.edu/resource/norway-maple">UMD Extension</a>): smooth, grey to olive-brown when young; later
+shallow interlacing ridges and furrows, grey-brown to dark grey, sometimes in diamonds; "a network of long narrow ridges".
+No published ridge spacing or age of first cracking was found: the numbers below are tuned by eye against the photos.</p>
+
+<h2>3. The bark tile</h2>
+<h3>How it grows</h3>
+<p>The tile is 256 × 512 texels for 25 × 50 cm, as today, wrapping both ways. Time <i>t</i> runs from 0 (a twig) to 1 (an old
+trunk). From <code>T_CRACK</code> = 0.42 to 1, in 36 steps:</p>
+<ol>
+<li>The widest plate the cork can hold shrinks as the stem grows: <code>w = 20 mm · t<sup>−1.6</sup></code>, times a strength
+noise (±35 %). Any plate (a run between cracks across a row) wider than that must crack.</li>
+<li>Among the overstretched texels, the weakest of a few random ones opens (a weakness map: noise stretched along the stem,
+warped).</li>
+<li>The crack runs up and down the stem row by row. Its lean starts random (σ 0.22 texel per row), drifts, and decays; it
+steps to the weakest of three texels near where the lean takes it; a crack within 10 texels pulls it over (probability 0.8)
+and it stops when it meets one. That is Lefebvre and Neyret's <i>a·slope + b·rnd</i> with the pull by distance: cracks interlace
+and join, so ridges part and join into long diamonds. It runs at least 60-260 texels (3-10 spacings), then stops where the
+plate is no longer too wide.</li>
+<li>After t = 0.75, short cuts across old ridges, crack to crack (the thin strips between cracks break again): ridges become
+scales.</li>
+</ol>
+<p>A snapshot at age <i>t</i> keeps only the cracks opened by then. Each furrow's half width grows with its own age
+(1.2 + 3.6 texels), its depth with its age and with the cork's thickness (up to 9 mm at t = 1). The ridge profile: steep
+shoulders into a narrow furrow, a rounded crown. Then a little macro relief, cork grain, and for young bark fine streaks and
+lenticels. The cavity is how far a texel sits under its neighbourhood at 2, 5 and 10 texels; the albedo is weathered grey on the
+crowns and dark brown in the furrows. The run takes 3 s in Python (278 cracks, 24k crack texels); a snapshot 0.24 s.</p>
+<div class="row">
+<figure><img src="img/look-tile.png"><figcaption>One growth run at t = 0.3, 0.5, 0.65, 0.8 and 1, each lit from the side and
+its height. The first cracks are long and lean; later ones split the plates between them and join; at 1, cuts across the
+ridges.</figcaption></figure>
+</div>
+<div class="row">
+<figure><img src="img/channels-10.png"><figcaption>The channels at t = 1: height, tangent normal, cavity (occlusion),
+albedo.</figcaption></figure>
+<figure><img src="img/channels-6.png"><figcaption>The same at t = 0.6: few, shallow, thin cracks.</figcaption></figure>
+</div>
+
+<h3>At the window's distance and close, lit from the side</h3>
+<p class="warn">The user asked (2026-11-26) for relief strong enough to show the stark contrast of old maple bark: deep dark
+furrows between raised ridges, as in the photos, not flat or washed out, and smoother on young wood. Here the strength comes
+from three maps, none from the mesh: a normal from the true height (slopes up to about 60°), a cavity term down to 0.1 in the
+deepest furrows (it darkens the sky's light), and the AO microshadow (it darkens the sun's light where it grazes). The furrows'
+albedo is also darker (0.05 against 0.20 on the crowns). The mips are plain box averages as the GPU's, so the far views show
+what mips do to the relief.</p>
+<div class="row">
+<figure><img src="img/far.png"><figcaption>A 70 cm trunk at about 280 px a metre (a few metres from the window), the low sun from
+the right. From the left: the photo scaled to the same size; today's tile; the new tile with the normal only; with the cavity
+and microshadow (standard tier); with a parallax self-shadow (high tier); and under an overcast sky. Today's tile reads as soft
+streaks; the new one keeps dark furrows at this size. The parallax shadow adds little here: furrows are 4-6 pixels.</figcaption></figure>
+</div>
+<div class="row">
+<figure><img src="img/close.png"><figcaption>Close: half a metre off, 800 px a metre. The photo is upscaled to the same scale.
+Standard and high side by side: the parallax shadow deepens the furrows on the side away from the sun. The cuts across the
+ridges read busy at this distance; they are a knob (<code>bridges</code>).</figcaption></figure>
+</div>
+<div class="row">
+<figure><img src="img/old-photos.png"><figcaption>The park maples' bark (the brief's photos, the scale guessed from the trunk)
+and the old fused trunk, beside the new tile at t = 1 with the high tier. The photos' ridges are shorter and wavier and the furrows
+darker still; the moss and lichen are a separate mask not made here.</figcaption></figure>
+</div>
+<div class="row">
+<figure><img src="img/ages-far.png"><figcaption>Twig to trunk at the window's distance: tubes 2, 4, 8, 16, 32, 60 and 90 cm wide
+(the labels are diameters), each with its age from its radius,
+<code>t = log(r / 4 mm) / log(45 cm / 4 mm)</code>. Smooth with lenticels, first thin cracks at about 7 cm, interlaced
+ridges on limbs, deep furrows on the trunk.</figcaption></figure>
+</div>
+<div class="row">
+<figure><img src="img/ages-close.png"><figcaption>The same close, high tier.</figcaption></figure>
+</div>
+
+<h3>Into the game</h3>
+<ul>
+<li><b>Layers.</b> 4 age layers (t = 0.45, 0.65, 0.82, 1), a 2D array texture, RGBA8 each: normal across, normal along,
+height, cavity. The albedo comes in the shader from the height (crown or furrow colour) and a slow blotch; lichen and moss
+would be a second, small map. 4 × 0.7 MB with mips = 2.8 MB (today 0.7 MB). The shader blends the two layers either side of
+the vertex's age; twigs (ribbons) need none.</li>
+<li><b>The vertex's age.</b> From its radius now; from the skeleton's own age (years from the tip, or level) once the skeleton is
+chosen, since "a thin old branch is not young".</li>
+<li><b>Startup.</b> Estimated, not measured: the growth about 5-10 ms in Goose if the plate widths are kept per row and updated
+only where a crack ran (the Python recomputes them whole); 4 snapshots with a two-pass chamfer distance and separable blurs
+about 15-25 ms. So about 25-35 ms once, inside the bark's share of the 60 ms "atlas and bark" today; to be measured.</li>
+<li><b>Tiers.</b> Standard: normal + cavity + microshadow. High: the same, plus a parallax shadow march (16-24 taps) only if a
+close view comes; at the window's distance it is not needed. No displacement of the mesh.</li>
+</ul>
+
+<h2>4. Junctions and the flare, on today's skeleton</h2>
+<h3>The method: swell and weld</h3>
+<ol>
+<li><b>Rings.</b> Extra rings on the parent round each child's foot, more sides on the trunk; the child's first M = 10 rings are
+for its foot.</li>
+<li><b>Collar.</b> The child's radius swells toward its foot: <code>r (1 + c e<sup>−s/(λ r)</sup> (1 + u·below))</code>,
+c = 0.22, λ = 1.2, u = 0.3 (more on the underside, after Shigo).</li>
+<li><b>Bumps on the parent.</b> Out along the normal: the trunk collar <code>0.28 r<sub>c</sub> e<sup>−(d/1.1 r<sub>c</sub>)²</sup></code>
+by the distance d to the child's surface, and the branch bark ridge, a fold <code>0.10 r<sub>c</sub></code> high and
+<code>0.22 r<sub>c</sub></code> wide along the contact, only on the crotch side (where the two surfaces face each other).
+The child's chain is carried on back past its foot for this, so no point finds its round end.</li>
+<li><b>The foot.</b> For each line along the child (one per side), find where its swollen surface meets the bumped parent; lay
+the M rings from there over 2.2 r<sub>c</sub>, closer near the contact, with a fillet that adds
+<code>k<sub>f</sub> (1 − f/k<sub>f</sub>)²</code> by the distance f to the parent (k<sub>f</sub> = 0.35 r<sub>c</sub>),
+fading out by the end of the foot. Each line is monotone, so rings never fold.</li>
+<li><b>Weld.</b> Any child vertex still inside the parent is pushed out to 4 mm under its surface, so the parent's mesh covers
+the seam. No shared vertices, no new topology.</li>
+<li><b>Grain.</b> The parent's round coordinate is bent round the foot by the stream function of a flow past a cylinder,
+<code>ψ = X (1 − 0.8 / r²)</code> over the foot's ellipse (r<sub>c</sub> across, r<sub>c</sub>/sin θ along). Near the contact
+(0.5 r<sub>c</sub>) each vertex also carries the other part's chart and a weight, 0.5 on the contact; the fragment samples both
+and blends them by height (the higher ridge wins).</li>
+<li><b>Flare.</b> The trunk's lowest 1.5 m get lobes: per root <code>0.95 A R e<sup>−(Δφ/w)²</sup> e<sup>−h/H</sup></code>,
+6 roots, strength A 0.25-0.6, uneven azimuths with gaps, flare height H 0.3-0.8 D. Each root is a tube of 14 sides flattened
+to 0.55, swelling 60 % toward the trunk, its centre a little over the ground then diving 2.4 radii under it past 0.5-1.25 of its
+reach (0.25-0.8 D); its foot laid and welded like a branch's. Its grain runs along it; its age 0.82-1.</li>
+</ol>
+<p>Tried first and set aside: moving both meshes onto one implicit surface <code>smin(d<sub>parent</sub>, d<sub>child</sub>, k)
+− ridge</code>, each vertex kept on its own side of the crease. With tubes of 12-48 sides the crease fell between vertices and
+came out jagged, and the polynomial smooth minimum's fillet (k/4 at most) was too small for a collar.</p>
+
+<h3>The flare and roots</h3>
+<div class="row">
+<figure><img src="img/j-flare-new.png"><figcaption>New: lobes and six welded roots, the low sun from the right, about 3 m
+away.</figcaption></figure>
+<figure><img src="img/j-flare-today.png"><figcaption>Today: a 12-sided tube, flared by 30 %.</figcaption></figure>
+</div>
+<div class="row">
+<figure><img src="img/j-flare-wire.png"><figcaption>Wireframe: the trunk's dense rings at the base, the roots' feet laid from
+the contact.</figcaption></figure>
+<figure><img src="img/j-flare-grain.png"><figcaption>The grain's lines: up the trunk, along each root; the two meet in a short
+blend band at the contact.</figcaption></figure>
+<figure><img src="img/j-flare-far-new.png"><figcaption>About 7 m away: the base reads as a widening into the lawn.</figcaption></figure>
+</div>
+
+<h3>A limb's collar on the trunk</h3>
+<div class="row">
+<figure><img src="img/j-collar-new.png"><figcaption>New: the limb (22 cm radius) swells into its collar, the trunk rises round
+it, the crotch has its ridge.</figcaption></figure>
+<figure><img src="img/j-collar-today.png"><figcaption>Today: a 9-sided tube stuck into a 12-sided one.</figcaption></figure>
+<figure><img src="img/j-collar-below-new.png"><figcaption>From below: the collar fuller underneath.</figcaption></figure>
+</div>
+<div class="row">
+<figure><img src="img/j-collar-shape.png"><figcaption>The shape alone.</figcaption></figure>
+<figure><img src="img/j-collar-wire.png"><figcaption>Wireframe: 48-sided trunk with dense rings round the foot; the limb's
+foot rings follow the contact line.</figcaption></figure>
+<figure><img src="img/j-collar-grain.png"><figcaption>The grain bends round the foot on the trunk. In the blend band the two
+charts cross (a plaid in this line view); in the bark it shows as a smudged band. Open question 5.</figcaption></figure>
+</div>
+
+<h3>A branch on the limb</h3>
+<div class="row">
+<figure><img src="img/j-fork-new.png"><figcaption>New: a rising branch (7 cm radius) on the limb, with its smaller collar;
+younger, smoother bark by its age.</figcaption></figure>
+<figure><img src="img/j-fork-today.png"><figcaption>Today.</figcaption></figure>
+<figure><img src="img/j-fork-wire.png"><figcaption>Wireframe.</figcaption></figure>
+</div>
+<p>Known faults left in the demo: the collar's bark is stretched across (u keeps today's tiles round the tube while the foot is
+wider), the blend band smudges, the skeleton's own kinks show as bands of shading, and a crease remains where the trunk's lobes
+meet the roots' feet.</p>
+
+<h2>5. Fitting it into the tube mesh, and the cost</h2>
+<ul>
+<li><b>Flat data.</b> Every step is per vertex over the arrays <code>wood_mesh</code> already fills: rings with a side count
+per tube, a frame carried along without twist. A junction needs only the parent's chain, the child's chain, its foot's arc
+length, and a few constants; the root lobes need 4-7 (azimuth, strength, width, height) records. Fixed tables:
+<code>MAX_JUNCTIONS</code> and <code>MAX_ROOTS</code> = 8, sized at startup. Nothing in the frame loop.</li>
+<li><b>Vertex.</b> One more float2 (the other chart) and a float (its weight); the age goes in a spare channel. The fragment
+samples the tile twice only where the weight is above 0, else once.</li>
+<li><b>Light.</b> <code>crown_light</code> is computed per ring, not per vertex, so extra rings cost about 800 grid lookups
+each; 800 extra rings is about 3-5 ms.</li>
+<li><b>Growth time</b> (estimated): the feet, 20 sides × 24 samples × 2 field calls per junction, about 100 junctions, about
+3-6 ms; bumps on the parents about 1 ms. With the light, about +10 ms over today's 6.5 ms, inside the 100 ms.</li>
+</ul>
+<table>
+<tr><th>Tier</th><th>What it gets</th><th class="n">Tube triangles</th><th class="n">Over today</th></tr>
+<tr><td>Today</td><td>12 / 9 / 6 sides, no junctions</td><td class="n">18,264</td><td class="n">0</td></tr>
+<tr><td>High (desktop, mains)</td><td>trunk 48 sides, 30 flare rings, 10 rings round each of 12 limbs; limbs 12 sides with
+10-ring feet; feet and 4 rings for the 79 branches over 4 cm; 6 roots (18 rings × 14 sides)</td><td class="n">about 54,000</td><td class="n">+35,000</td></tr>
+<tr><td>Standard</td><td>trunk 24 sides, 16 flare rings, 6 rings per limb foot; limbs 9 sides, 6-ring feet; branches with the
+collar radius only (no rings added); 6 roots of 10 rings × 10 sides</td><td class="n">about 25,000</td><td class="n">+7,000</td></tr>
+<tr><td>Phone</td><td>today's tubes with the collar as a radius profile on the existing rings, the lobes on 4 extra base rings,
+no roots</td><td class="n">about 18,800</td><td class="n">+500</td></tr>
+</table>
+<p>The demo itself (a 2.5 m stretch of trunk, one limb, one branch, 6 roots) is 16.5k triangles: trunk 10,272 (48 sides,
+108 rings, denser than proposed), limb 1,960, branch 408, roots 2,940. Culling by what the windows see still applies:
+today the trunk's base stands behind a window pier and its roots would be culled.</p>
+
+<h2>6. What waits for the chosen skeleton</h2>
+<ul>
+<li>Where the junctions are, how many, and their radius ratios: a collar only where the child is clearly thinner (below about
+0.7 of the parent); a codominant fork gets a ridge and perhaps a seam of included bark instead.</li>
+<li>Stubs and broken leaders: a collar of woundwood round each stub (the same swell, closing over the cut).</li>
+<li>Each segment's age, for the bark's layer, if the skeleton keeps one.</li>
+<li>The trunk's lean and the hanging limb: the flare's lobes stronger on the side the tree leans to resist.</li>
+<li>The final triangle counts and times: measure them in Goose on the Mac and the tablet.</li>
+</ul>
+
+<h2>7. Open questions for the user</h2>
+<ol>
+<li><b>Which old bark?</b> The park maples' (dense short wavy ridges, very dark furrows) or the lawn tree's (narrow raised ridges in
+long diamonds over broad furrows)? The tile sits between; both are a few knobs apart (plate width, furrow width, cuts across).</li>
+<li><b>Moss and lichen:</b> the park photos are mossy low on the trunk. Add the mask now (a second small map, by height, shade
+and the ground), or later?</li>
+<li><b>Roots' exposure:</b> a tidy lawn (short humps, as now) or more worn ground with longer roots showing?</li>
+<li><b>The bark's age:</b> by radius (now) or by the skeleton's own age?</li>
+<li><b>The grain at a junction:</b> keep the cheap two-chart blend (a smudged band a few centimetres wide), or carry one chart
+across each junction (solve a flow field on the foot's vertices at startup, more CPU, no band)?</li>
+<li><b>Worth it behind the pier?</b> The base isn't seen from the library today. Build roots and flare now on all tiers, or the
+high tier only until a view shows them?</li>
+<li><b>Parallax:</b> leave it out until a close view exists? At the window's distance it adds little (section 3).</li>
+</ol>
+</body></html>

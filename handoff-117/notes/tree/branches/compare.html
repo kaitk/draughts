@@ -1,0 +1,249 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maple methods</title><style>body { background: #16181b; color: #d8d6d0; font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 0 auto; max-width: 1500px; padding: 16px; }
+h1 { font-size: 22px; } h2 { font-size: 18px; margin-top: 36px; border-top: 1px solid #333; padding-top: 16px; }
+h3 { font-size: 16px; margin-top: 22px; }
+code { color: #e8c98a; } a { color: #8fb8e8; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; } figure { margin: 0; }
+figure.photo { flex: 1 1 260px; max-width: 340px; } figure.pair { flex: 3 1 640px; }
+img { width: 100%; height: auto; display: block; border: 1px solid #333; }
+figcaption { font-size: 13px; color: #a8a6a0; margin-top: 4px; }
+table { border-collapse: collapse; margin-top: 8px; } td, th { border: 1px solid #3a3a3a; padding: 4px 10px; text-align: left; vertical-align: top; }
+th { background: #22252a; } td.n { text-align: right; white-space: nowrap; }
+.note { background: #22252a; border-left: 3px solid #e8c98a; padding: 8px 12px; }
+.good { color: #9fd49a; } .bad { color: #e89a8a; }
+ul { margin-top: 4px; } li { margin-bottom: 3px; }
+@media (max-width: 700px) { table { font-size: 12px; } td, th { padding: 2px 4px; } figure.photo { max-width: none; } }</style></head><body>
+<h1>The maple's branches: four methods side by side, with gravity off and on</h1>
+<p>Task 117, 2026-11-26, branch <code>room-light</code>. CPU prototypes in Python on the Windows PC, drawn by Pillow.
+The scripts are in <code>src/</code>: <code>compare.py</code> makes every picture here; <code>m_sc.py</code>,
+<code>m_pal.py</code>, <code>m_wp.py</code> and <code>m_gn.py</code> are the four methods; <code>gravity.py</code> is the
+gravity layer; <code>graph.py</code>, <code>views.py</code> and <code>draw.py</code> are shared. The first research is in
+<a href="index.html">index.html</a>.</p>
+
+<p class="note"><b>Short answer.</b> No method matches the photos yet, and I do not want to hide that. By the pictures:
+<b>our Weber-Penn generator with broken leaders and the gravity layer</b> comes closest for the whole tree (an oval
+crown, a fine shell of twigs, limbs that arch down and turn up at their ends). <b>Palubicki's growth with the gravity
+applied each year</b> gives the most natural limbs (crooked, level, stubs where shaded branches fell, shoots that turn
+up), but only with gravity on, with coarse twigs, and it is the slowest. Gao and Newberry's forks make a round bush, not
+a maple. Space colonisation makes a smooth vase of limbs that all rise. <b>The gravity layer helps every method</b>, most
+the ones whose limbs leave the trunk wide (Weber-Penn, Palubicki); it does little where the limbs already stand
+steep (space colonisation). None of the four makes the photo's hanging twig fans; they need a rule of their own
+(open question 5).</p>
+
+<h2>How to read the pictures</h2>
+<ul>
+<li>Every method grows the same tree: seed 7, the generator's envelope (an ellipsoid 20 x 19 x 18 m, its middle
+12.5 m up), a trunk of 50 cm radius. Each picture has two halves: <b>gravity off</b> on the left, <b>gravity on</b>
+on the right, with the same camera.</li>
+<li><b>Whole</b>: the bare tree from the front, the same box of 24 x 24 m for every method.</li>
+<li><b>Limb</b>: one low side limb (radius 6-16 cm, leaving the trunk 2.5-9 m up, the one with the most wood), seen from
+its side with its weight to the right. The bar is 1 m.</li>
+<li><b>Fan</b>: one twig fan (a side shoot of 0.8-2 cm at its base, in the crown's outer part, the one with the most
+tips), from its side. The bar is 20 cm. Space colonisation and Palubicki grow the whole tree too coarsely for twigs,
+so their fans are grown on their own at a fine step with the same rules (said under each).</li>
+<li>Today's generator, as it is, for reference: <a href="img/c-wp-today.jpg">c-wp-today.jpg</a> (with its own sag term).</li>
+</ul>
+
+<h2>The gravity layer</h2>
+<div class="row">
+<figure class="photo"><img src="img/photo-gravity.jpg"><figcaption>One of the brief's reference photos
+(<code>build/notes/tree-gravity/</code>): limbs leave the trunk, arch out, sag at their far part, and the shoots on them
+turn up again.</figcaption></figure>
+<div style="flex: 3 1 600px">
+<p>A pass over the grown tree (<code>gravity.py</code>), the same for all four methods, switched off and on. It follows
+Stava et al. 2014, <i>Inverse Procedural Modeling of Trees</i>, Appendix A (the paper in
+<code>build/notes/tree-gravity/spkcmdb-ipmot-14.pdf</code>). At the foot of each piece of wood, with h its direction:</p>
+<ul>
+<li>The bending force, as Stava: <code>fb = GBS · m · |c − p0| · |h_H| · (1 − |h·g|)</code>, m the mass the piece carries
+(itself and everything beyond it), c that mass's centre, h_H the level part of h. So a level limb with weight far out
+bends most, and an upright piece does not bend sideways at all (h_H = 0).</li>
+<li>The largest bend, as Stava: <code>phimax = (π/2) / d^GBA</code>, d the thickness. Thicker wood bends less.</li>
+<li>The response: a beam's, <code>κ = M / (E·I)</code> with <code>I = π r⁴ / 4</code> (the brief's small-strain form), and
+the angle saturating at phimax. I changed this from Stava's own response, because with Stava's form alone the trunk
+leaned under the whole crown's weight. With the r⁴ term the trunk stays upright.</li>
+<li>The growth's correction upward (Alméras and Fournier 2009): after the bend, each piece turns back toward the way it
+grew: young wood (under 2.5 cm) 85 % of the way, old wood 25 % (reaction wood). What is left is the "residual sag" the
+brief asks for, not the tree's whole lifetime weight on an unloaded beam. This gives the arch: the limb sags, its
+shoots turn up.</li>
+<li>Palubicki's growth calls it once a year, with the bend so far kept per node, as in Stava's model (there the
+growth's own tropism makes the correction). The other three get it once, on the grown tree.</li>
+</ul>
+<p>The brief's checks (<code>src/test_gravity.py</code>, a level limb 6 m long, radius 10 cm, and variants): the tip
+drops 8.8° bare and 10.1° with side twigs (heavier sags more); radius 20 cm drops 4.0° (thicker bends less); a limb rising
+at 45° drops 5°; an upright one does not move. Values: GBS 1, GBA 0.5 (d in mm), E 2·10⁷ Pa, density 900 kg/m³.
+E is an effective stiffness, set by eye: green maple wood is about 10 GPa, which gives almost no bend in one pass;
+real limbs sag over years under growing load, which a single pass cannot see.</p>
+<p>Two things in Stava's text I could not read for sure: the PDF's text of the last two formulas is garbled. I used a
+form that keeps the bend within phimax and growing with the force, as the paper says it does.</p>
+</div></div>
+
+<h2>a. Space colonisation (Runions et al. 2007)</h2>
+<div class="row">
+<figure class="photo"><img src="img/photo-whole.jpg"><figcaption>The photographed tree (PXL_20261124_070822921).</figcaption></figure>
+<figure class="pair"><img src="img/c-sc-whole.jpg"><figcaption>Whole. A vase of long smooth limbs, all rising, the twigs in an
+even shell. Gravity: the crown spreads a little; the limbs are too steep for more.</figcaption></figure>
+</div>
+<div class="row">
+<figure class="photo"><img src="img/photo-limbs.jpg"><figcaption>A limb level, then a sharp elbow and a stub (PXL_…810793).</figcaption></figure>
+<figure class="pair"><img src="img/c-sc-limb.jpg"><figcaption>Limb. Steep, softly curved, side branches running beside it; no
+elbows, no stubs. Gravity: hardly any change.</figcaption></figure>
+</div>
+<div class="row">
+<figure class="photo"><img src="img/photo-fan.jpg"><figcaption>Twig fans hanging from the limb's end (crop of PXL_…810793).</figcaption></figure>
+<figure class="pair"><img src="img/c-sc-fan.jpg"><figcaption>Fan, grown on its own (step 4 cm, 2,500 points in a 1.6 x 1.2 x
+1.4 m envelope). It fills its envelope like a leaf's veins. Gravity: no change (too light).</figcaption></figure>
+</div>
+<p><b>Source and parameters.</b> The paper's algorithm: attraction points in the envelope, radius of influence di, kill
+distance dk, step D, a tropism vector, radii by the pipe model r<sup>n</sup> = Σ r<sub>child</sub><sup>n</sup> (n 2-3 in
+the paper). The paper gives di and dk as multiples of D; I used D 0.30 m, di 12 D, dk 2 D, 9,000 points, n 2.3, a tropism
+of 0.1 upward. None of the open projects named in the task use it (ez-tree, Sapling and tree-gen are all Weber-Penn).</p>
+<p><b>Right:</b> fills the envelope evenly, branches avoid each other, no visible levels. <b class="bad">Wrong:</b> every
+limb rises in a smooth curve toward the points (a vase or umbrella), the wood is never snapped, the limbs end blunt where
+many twigs meet at the envelope, and twigs at 30 cm steps are far too coarse.</p>
+<p><b>Time:</b> 1.5 s in Python for 10,852 segments (vectorised with numpy), gravity pass 1.0 s. In Goose with a grid
+for the nearest-node search, about 10-30 ms at this step; at twig detail the whole crown is out of reach (a million
+nodes). <b>Cheaper path:</b> only as a filler for holes in the shell, which the first research already said.</p>
+
+<h2>b. Palubicki et al. 2009, with the shadow grid</h2>
+<div class="row">
+<figure class="photo"><img src="img/photo-whole.jpg"><figcaption>The photographed tree.</figcaption></figure>
+<figure class="pair"><img src="img/c-pal-whole.jpg"><figcaption>Whole. Off: a strong leader and stiff, upright, almost
+conifer-like branches. On (bent each year): a round crown of crooked limbs that spread and turn up; the best "grown"
+look of the four, but still one leader to the top.</figcaption></figure>
+</div>
+<div class="row">
+<figure class="photo"><img src="img/photo-elbows.jpg"><figcaption>Zig-zag limbs, stubs all along (PXL_…740245).</figcaption></figure>
+<figure class="pair"><img src="img/c-pal-limb.jpg"><figcaption>Limb. Off: straight and rising. On: level at its base, crooked,
+short stubs where shaded branches were shed, new shoots standing up from it. Closest to the zig-zag photo, though the
+upright shoots are too many and too straight.</figcaption></figure>
+</div>
+<div class="row">
+<figure class="photo"><img src="img/photo-fan.jpg"><figcaption>Twig fans.</figcaption></figure>
+<figure class="pair"><img src="img/c-pal-fan.jpg"><figcaption>Fan, grown on its own (9 years of 6 cm internodes). Stiff, with
+the opposite buds' crosses visible; it rises instead of hanging.</figcaption></figure>
+</div>
+<p><b>Source and parameters.</b> All from the paper: shadow s += a·b<sup>−q</sup> in a pyramid qmax layers deep, light
+Q = max(C − s + a, 0), a voxel about one internode, qmax 4-8 (I used 6); bud fate by the extended Borchert-Honda model,
+v = α·Q at the base with α = 2, split by λ (the paper shows 0.46-0.54; 0.52 gave a conifer, 0.49 a broom, I used
+0.50); floor(v) internodes per shoot; direction = default + ε·V (least shaded neighbour) + η·T (tropism); shedding by
+light per internode (Takenaka 1994); pipe model n 2.4. Not given in the paper, set by me: a = 0.25 (a = 1 shaded every
+shoot to death), ε 0.25, η 0.04 (0.12 made every shoot upright), shedding threshold 0.18. The maple's: opposite buds
+a quarter turn apart, 50° off the shoot; no side shoots under 3 m (Stava's LB_PF). No light outside the envelope.
+36 years of 0.30 m internodes.</p>
+<p><b>Right:</b> bare inner limbs, stubs, natural asymmetry, and with gravity each year the limbs come out level and
+crooked with shoots turning up, as in the reference photos. <b class="bad">Wrong:</b> without gravity it reads as a
+conifer; it keeps one leader (the photo forks); twigs are 30 cm long and too thick; many tuning terms are not in the
+paper. The bends depend on the year-by-year growth, so the limb shown differs between off and on.</p>
+<p><b>Time:</b> 36 s in Python for 24,292 segments, 37 s with the yearly bend (25,576). Scaled by our own port's ratio
+(below), about 60 ms in Goose on the Mac at this detail, 10-20 ms at 0.45 m internodes. Twig detail (5 cm) is about
+700,000 internodes in the paper's own table: far over the 100 ms and over <code>MAX_WHOLE_SEGMENTS</code>.
+<b>Cheaper path:</b> grow it coarsely for the limbs only and put twigs on them by another rule; or keep only its shadow
+grid for dieback, as the first research proposed.</p>
+
+<h2>c. Our Weber-Penn generator with broken leaders</h2>
+<div class="row">
+<figure class="photo"><img src="img/photo-whole.jpg"><figcaption>The photographed tree.</figcaption></figure>
+<figure class="pair"><img src="img/c-wp-whole.jpg"><figcaption>Whole. Off: today's oval crown and fine twig shell, limbs
+straight. On: the limbs arch out and down and the crown widens below, much more like the photo's lower limbs. Still one
+trunk to 65 % with limbs in a spiral.</figcaption></figure>
+</div>
+<div class="row">
+<figure class="photo"><img src="img/photo-limbs.jpg"><figcaption>A limb level, then a sharp elbow and a stub.</figcaption></figure>
+<figure class="pair"><img src="img/c-wp-limb.jpg"><figcaption>Limb. An elbow with its stub near the base (the thick piece at
+left). Off: rises in a gentle curve. On: arches down along its length, its side branches turning up: the clearest
+change of the four.</figcaption></figure>
+</div>
+<div class="row">
+<figure class="photo"><img src="img/photo-fan.jpg"><figcaption>Twig fans.</figcaption></figure>
+<figure class="pair"><img src="img/c-wp-fan.jpg"><figcaption>Fan. Regular: a straight axis with side twigs at even steps, as
+the levels make them. Gravity: tilts a little; it does not hang.</figcaption></figure>
+</div>
+<p><b>Source and parameters.</b> <code>grow_whole</code> and <code>grow_part</code> from
+<code>src/model3d/tree_whole.goose</code>, ported line by line to Python in metres, with <code>MAPLE_HABIT</code> and the
+old-leader Whole of <code>rooms.goose</code>, no culling. Weber and Penn 1995's terms, as Blender's Sapling and
+friggog/tree-gen name them: nBranches (our children), downAngle (angle), length ratio (ratio), curveV (crook),
+attractUp (rise). Their parameter tables are hand-tuned by the authors per species and have no maple; tree-gen's
+<code>acer.py</code> preset is its author's own (it gets its crookedness from curveV 100-200), not the paper's. ez-tree
+is the same family: its gnarliness grows as 1/√r and its growth force turns a piece by at most strength/r, so both act
+more on thin wood, which is a cheap tropism by thickness. Ours were tuned by eye in task 107. For the comparison the
+<code>sag</code> term is off in both halves; the gravity layer replaces it.</p>
+<p><b>Broken leaders, added:</b> on limbs and branches with wood of 5-35 cm across, 1-3 elbows a limb (0-1 a branch): the
+axis goes on as a stub (30-70 % of a segment), the side shoot takes over 22 % thinner, turned 30-50°.</p>
+<p><b>Right:</b> the frame we keep (trunk, hero limbs, envelope, culling, dice per branch) is unchanged; the oval crown
+and the twig shell are the best of the four; with gravity the limbs arch as in the photos. <b class="bad">Wrong:</b>
+the wood is still regular (children at even steps, the same kind at each level), the elbows are few and hard to see at
+the whole tree's size, the fans are combs, not fans.</p>
+<p><b>Time:</b> 3.7 s in Python for 49,053 segments; the gravity pass 3.6-3.9 s. Goose does today's growth in 6.5 ms
+(with leaves), about 570 times faster than this port: I used that ratio for all the Goose estimates here. So: elbows
+cost nothing, the gravity pass about 6 ms, total about 13 ms on the Mac. <b>Cheaper path for the gravity:</b> bend
+only wood over 1 cm and carry the rotation to the twigs (a fifth of the nodes), or bend once per axis.</p>
+
+<h2>d. Gao and Newberry's asymmetric forks, with Palubicki's tropism by thickness</h2>
+<div class="row">
+<figure class="photo"><img src="img/photo-whole.jpg"><figcaption>The photographed tree.</figcaption></figure>
+<figure class="pair"><img src="img/c-gn-whole.jpg"><figcaption>Whole. A round bush on a trunk; the crown stops short of
+the envelope's top. Gravity: the outer twigs droop, the shape stays a bush.</figcaption></figure>
+</div>
+<div class="row">
+<figure class="photo"><img src="img/photo-limbs.jpg"><figcaption>A limb level, then a sharp elbow and a stub.</figcaption></figure>
+<figure class="pair"><img src="img/c-gn-limb.jpg"><figcaption>Limb. A tangle of Y-forks of near-equal size right from the
+base; no long runs, so no visible elbows. Gravity: the thin outer forks sag.</figcaption></figure>
+</div>
+<div class="row">
+<figure class="photo"><img src="img/photo-fan.jpg"><figcaption>Twig fans.</figcaption></figure>
+<figure class="pair"><img src="img/c-gn-fan.jpg"><figcaption>Fan. Sparse Y-forks, long thin pieces. Gravity: one twig
+hangs.</figcaption></figure>
+</div>
+<p><b>Source and parameters.</b> grove.js (github.com/mnewberry/treescale), as published, is 2D: every node forks in two;
+asymmetry a = 1/(u(1 − 1/A) + 1/A) with A = 4; radii keep r<sup>α</sup> (α 1-3 in its demo), lengths keep
+l<sup>β</sup> with β = 2; the thin side leaves at atan(a), the thick at atan(1/a); each child's angle is blended 30 %
+toward 81° ("wind"). Mine, from the task: α 2.3, A 6, the fork's plane a quarter turn from the last, lengths scaled by
+the room to the envelope, broken leaders in 5-35 cm wood (10 % a fork), dieback in the core. In place of the wind,
+Palubicki's tropism by thickness: thick wood pulled up (0.6), thin wood pulled toward level (0.25). The growth's
+tropism no longer pulls thin wood down: that is now the gravity layer's work (the first research did both in one
+term, which made the mat of twigs under the crown).</p>
+<p><b>Right:</b> two rules give natural forks and thickness; fast. <b class="bad">Wrong:</b> it makes a bush, not a
+maple: with a uniform asymmetry most forks are near-even, so a limb splits into a tangle at once instead of running
+long with small side shoots; the leader wanders and does not reach the top; this is the user's verdict on the first
+research, and the new terms did not fix it.</p>
+<p><b>Time:</b> 0.8 s in Python for 10,198 segments, gravity 0.9 s; in Goose about 1.5 ms plus 1.5 ms.</p>
+
+<h2>Times and limits</h2>
+<table>
+<tr><th>Method</th><th>Segments (off / on)</th><th>Python, grow</th><th>Python, gravity</th><th>Goose on the Mac, estimate</th><th>Fits the limits?</th></tr>
+<tr><td>a. Space colonisation</td><td class="n">10,852</td><td class="n">1.5 s</td><td class="n">1.0 s</td><td>10-30 ms (with a grid)</td><td>Yes, but twigs only at 30 cm</td></tr>
+<tr><td>b. Palubicki, 0.30 m</td><td class="n">24,292 / 25,576</td><td class="n">36 s</td><td class="n">in the growth</td><td>about 60 ms; 10-20 ms at 0.45 m</td><td>Yes at low detail, no at twig detail</td></tr>
+<tr><td>c. Weber-Penn + elbows</td><td class="n">49,053</td><td class="n">3.7 s</td><td class="n">3.7 s</td><td>about 13 ms (6.5 ms today)</td><td>Yes</td></tr>
+<tr><td>d. Gao-Newberry</td><td class="n">10,198</td><td class="n">0.8 s</td><td class="n">0.9 s</td><td>about 3 ms</td><td>Yes</td></tr>
+</table>
+<p>Python 3.14 on the Windows PC. <code>MAX_WHOLE_SEGMENTS</code> is 80,000 and <code>MAX_CARDS</code> 160,000; leaves were
+not grown in this round. The Goose estimates use one ratio (our own port of today's generator against its measured
+6.5 ms), so they are rough, more so for numpy-heavy code (space colonisation). All of them keep flat arrays: the
+gravity pass is one loop over the nodes in order with a 3 x 3 matrix each, no allocation.</p>
+
+<h2>What I would do next</h2>
+<p>Keep Weber-Penn's frame and its twig shell, add the broken leaders and the gravity layer (replacing
+<code>Habit.sag</code>), and take from Palubicki only what showed in the pictures: the shedding with stubs and, later,
+the shadow grid for dieback. Drop Gao and Newberry's forks as the main rule (the task's path), since its pictures are
+the furthest from the photos. This changes the task's chosen path, so it waits for the user's answer.</p>
+
+<h2>Open questions</h2>
+<ol>
+<li><b>One leader or codominant stems?</b> The photographed tree forks into two or three near-equal stems at about 4.5 m;
+our old-leader Whole has one trunk to 65 % with limbs on it, and so do Weber-Penn and Palubicki here.</li>
+<li><b>How crooked?</b> The photo has 1-3 elbows a limb. At that rate (Weber-Penn here) they hardly show at the whole
+tree's size; they show on the limb. More, or larger turns, or calmer?</li>
+<li><b>The hanging limb:</b> with the gravity layer, a long low limb sags by itself. Grow the hanging limb by the same
+rules and let gravity bend it (it would then crook and arch like the others), or keep it hand-placed with its own
+<code>hang_sag</code>?</li>
+<li><b>How much sag?</b> The stiffness E sets it. The pictures use one value for all; the limbs could sag more (the
+photo's upper limb) or less. Is the arch in the Weber-Penn limb about right?</li>
+<li><b>The twig fans:</b> no method makes the photo's fans that hang from the limbs' ends. Gravity alone does not make
+them, because twigs are light and the growth's correction lifts them again. A rule of their own (fine shoots on the
+underside and end of a sagging limb, growing out and down)? Or are they not worth it at the window's distance?</li>
+<li><b>Palubicki as a tier?</b> Its limbs look the most natural with gravity, at about 60 ms in Goose and only at low
+detail. Worth a "high" tier with twigs added by another rule, or not?</li>
+<li><b>Gravity also on today's tree now?</b> It is a separate pass that works on any tree, about 6 ms. It could go in
+before the branching rule changes.</li>
+</ol>
+</body></html>
