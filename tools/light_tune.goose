@@ -27,8 +27,8 @@
 // till it is let go, so a slider bakes once, not each step.
 //
 //   scripts/mac.py tools/light_tune.goose
-//   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
-//       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
+//   cd tools && ../build/light_tune [--season autumn|winter|spring|summer (the season's room, rooms::for_season)]
+//       [--material auto|wood|stone|carved]
 //       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
 //       [--wind-kind sines|noise|still|branches]
 //       [--gust X,Y,Z,W | --gust-strength K --gust-length S --gust-every S --gust-reach K (rooms::Room's gust)]
@@ -1362,7 +1362,7 @@ fn main() {
     var season = pick(argv, "--season", SEASONS, looks::AUTUMN);
     var material = pick(argv, "--material", MATERIALS, looks::MATERIAL_AUTO);
     var take = pick(argv, "--table", tables::NAMES, tables::FLAME);
-    var room_take = pick(argv, "--room", rooms::NAMES, rooms::for_season(season));
+    var room_take = rooms::for_season(season);
     var pattern: i64 = if flag_value(argv, "--window") > 0 && argv[flag_value(argv, "--window")] == "off" { 0 } else { 1 };
     var st = Setup {};
     st.halo = float2 { number(argv, "--halo", 0.0), number(argv, "--halo-reach", 0.0) };
@@ -1898,7 +1898,6 @@ fn main() {
             if ui::button_label(c, "Print (P)") { print_it = true; }
             if ui::button_label(c, "Reset room") { shown_room = -1; }
             if section(c, open, SCENE) {
-                choice(c, "Room", room_take, rooms::NAMES);
                 choice(c, "Season", season, SEASONS);
                 choice(c, "Board", material, MATERIALS);
                 switch(c, "Room (O)", room_on, ["off", "on"]);
@@ -2341,9 +2340,7 @@ fn main() {
         }
         if print_it {
             var line: u8[>..] = [];
-            line.append("--room ");
-            line.append(rooms::NAMES[room_take]);
-            format(line, " --light ", LIGHT_WAYS[if physical { 1 } else { 0 }]);
+            format(line, "--light ", LIGHT_WAYS[if physical { 1 } else { 0 }]);
             if physical {
                 format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --props-wrap ", render3d::props_wrap, " --casement-depth ",
                        if casement_depth { "on" } else { "off" });

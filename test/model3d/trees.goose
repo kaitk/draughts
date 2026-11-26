@@ -49,7 +49,6 @@ fn main() {
     print("the map: ", trees::SIDE, " texels a side, ", trees::map_bytes(trees::SIDE, trees::SIDE), " bytes with its mips");
     print("the room's: ", trees::ROOM_W, " by ", trees::ROOM_H, ", ", trees::map_bytes(trees::ROOM_W, trees::ROOM_H), " bytes");
     show("library", rooms::get(rooms::LIBRARY));
-    show("hall in winter sun", rooms::get(rooms::HALL_SUN));
     show("hall in spring", rooms::get(rooms::HALL_SPRING));
     show("evening", rooms::get(rooms::SEA_EVENING));
     var bare = rooms::get(rooms::LIBRARY);

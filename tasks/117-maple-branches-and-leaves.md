@@ -200,6 +200,8 @@ What still looks wrong:
   pier, so the roots show only in the CPU renders.
 - Not yet seen on the Mac or the tablet; the standard and phone tiers checked only as
   compiled shaders and counts.
+- The tuner cleanup (2026-11-26) removed the hall in winter sun (`rooms::HALL_SUN`), so
+  `test/model3d/trees.goose` and its golden output lost that room's line.
 
 ## Round one and the user's answers (2026-11-26)
 

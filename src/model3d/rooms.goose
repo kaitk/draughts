@@ -179,27 +179,6 @@ let WINTER = Room {
     ..
 };
 
-// The same hall on a clear January day: the sun at its winter height, about 8° (58.5° N),
-// pale gold, long shadows; the snow outside a strong cold fill from the doors; a bare
-// crooked oak, so only its branches cast shadows.
-let WINTER_SUN = Room {
-    key:        float4 { 25.0, 8.0, 6.0, 0.85 },
-    key_color:  float4 { 1.0, 0.87, 0.72, 0.0 },
-    fill:       float4 { 10.0, 12.0, 1.1, 0.7 },
-    fill_color: float4 { 0.78, 0.86, 1.0, 0.0 },
-    walls:      float4 { 0.62, 0.67, 0.72, 0.35 },
-    ceiling:    float4 { 1.0, 1.0, 1.0, 0.2 },
-    floor:      float4 { 0.35, 0.25, 0.18, 0.1 },
-    lamp:       float4_0,
-    lamp_color: float4_0,
-    opening:    float4 { 2.0, 5.0, 3.0, 0.6 },
-    leaves:     float4 { 0.35, 0.8, 150.0, 0.12 },
-    tree:       float4 { 1.0, 6.0, 70.0, 0.0 },
-    crown:      float4 { 0.0, -45.0, 1.0, 0.3 },
-    species:    3,
-    ..
-};
-
 // The upper hall on a May morning (prompts.txt's 7): low clear sun slanting in from the
 // left, near white; a cool sky, a little green from the trees, pale walls; the tree's
 // young leaves small and sparse, letting more of the sun through.
@@ -240,19 +219,15 @@ let SUMMER = Room {
     ..
 };
 
-// The takes, for the tuner and a season's choice: each season's room, and winter's sunny
-// one beside its snow light.
+// The takes, each season's room.
 let LIBRARY = 0;
 let HALL_SNOW = 1;
-let HALL_SUN = 2;
-let HALL_SPRING = 3;
-let SEA_EVENING = 4;
-let COUNT = 5;
-let NAMES = ["library", "hall-snow", "hall-sun", "hall-spring", "evening"];
+let HALL_SPRING = 2;
+let SEA_EVENING = 3;
+let NAMES = ["library", "hall-snow", "hall-spring", "evening"];
 
 fn get(take: i64) -> Room {
     if take == HALL_SNOW { return WINTER; }
-    if take == HALL_SUN { return WINTER_SUN; }
     if take == HALL_SPRING { return SPRING; }
     if take == SEA_EVENING { return SUMMER; }
     return AUTUMN;
