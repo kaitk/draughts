@@ -117,9 +117,9 @@ let TABLE_HEAD = """
     // three colours' constant and direction; room_mix x 1 there, y the harmonics the room
     // keeps, z the room's exposure over the board's, w the shade's floor of the key kept;
     // room_shade the room's even bounce kept, w a metre; ssao the room's ambient occlusion
-    // (SSAO_FN); base_wood how the base reads its wood (render3d::base_wood).
+    // (SSAO_FN); base_wood and base_look how the base reads its wood (render3d::base_wood).
     layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 shape; vec4 table_map[4];
-                                                 vec4 room_light[12]; vec4 room_mix; vec4 room_shade; vec4 ssao; vec4 base_wood; };
+                                                 vec4 room_light[12]; vec4 room_mix; vec4 room_shade; vec4 ssao; vec4 base_wood; vec4 base_look; };
     """;
 
 // The table's own shadow from its map (render3d::table_map), which TABLE_FRAG and ROOM_FRAG
@@ -393,13 +393,28 @@ let TABLE_FRAG = """
         if (top) uv = vec2(shape.w * out_dir.x + shape.z * out_dir.y, shape.w * out_dir.y - shape.z * out_dir.x) / (2.0 * TABLE_MAP_R) + 0.5;
     #endif
         if (base) uv = vec2(0.2, 0.15) + v_uv / (2.0 * TABLE_MAP_R);
-        // The base's wood as the tuner tries it (render3d::base_wood). The column is what
-        // stands over the drum's top (212 mm) or inside it (72 mm), the legs coming out of
-        // it below 240 mm; its u, mirrored round it (mesh::table_base), half a turn round.
+        // The base's own wood (render3d::base_wood x 1): a turned column and bent legs are
+        // cut from straight blanks, so the grain runs along the column's axis and along each
+        // leg, the map's figure drawn out along it base_wood.w times, with no rings round the
+        // beads. The column's u is its angle round from its side, at 80 mm out, mirrored as
+        // the mesh's (the map doesn't meet itself across), with base_look.x degrees of slant
+        // and base_look.y of how far out the cut is (the rings it crosses on the urn); the
+        // column is what stands over the drum's top (212 mm) or inside it (72 mm), the legs
+        // coming out of it below 240 mm. Each leg (mesh::table_base, toward the board's
+        // corners) reads its own part of the map.
         float up_mm = (p.y - shape.y) / room_shade.w * 1000.0;
         float out_mm = from_mid / room_shade.w * 1000.0;
         bool column = base && !chair && (up_mm > 240.0 || out_mm < 72.5 || (up_mm > 212.0 && out_mm < 83.5));
-        if (column && base_wood.x > 0.5 && base_wood.x < 1.5) uv.x = 0.2 + (PI * from_mid - v_uv.x) / (2.0 * TABLE_MAP_R);
+        bool own_base = base && !chair && base_wood.x > 0.5;
+        if (own_base) {
+            vec2 q = vec2(shape.w * out_dir.x + shape.z * out_dir.y, shape.w * out_dir.y - shape.z * out_dir.x);
+            float r0 = 0.08 * room_shade.w;
+            float along = column ? p.y - shape.y : v_uv.y;
+            float across = column ? abs(atan(q.y, q.x)) * r0 + base_look.y * (from_mid - r0)
+                                    + tan(radians(base_look.x)) * along
+                                  : v_uv.x + 2.3 * floor(atan(q.y, q.x) / (0.5 * PI));
+            uv = vec2(base_look.z + across / (2.0 * TABLE_MAP_R), 0.15 + along / (2.0 * TABLE_MAP_R * base_wood.w));
+        }
         // On the sides and the base the figure is drawn out along the grain (their v)
         // into straight streaks, as an edge's and a frieze's wood is: the filter's
         // footprint lengthened along it, the anisotropic filter blurring that way only.
@@ -413,15 +428,12 @@ let TABLE_FRAG = """
         vec4 tn = textureGrad(table_normal, uv, gx, gy);
         vec3 albedo = a.rgb;
         float rough = a.a;
-        // Even: the base's lightness pulled toward its mean by base_wood.y, the mean of the
-        // map's quarter its u falls in (0.25 to 0.5) on its 4 × 4 mip.
-        if (base && !chair && base_wood.x > 1.5) {
-            float quarter = log2(float(textureSize(table_albedo, 0).x)) - 2.0;
-            vec3 m = vec3(0.0);
-            for (int i = 0; i < 4; i++) m += textureLod(table_albedo, vec2(0.375, 0.125 + 0.25 * float(i)), quarter).rgb;
-            float mean = dot(m, vec3(0.2126, 0.7152, 0.0722)) * 0.25;
+        // Its colour: the lightness the map's mean times base_wood.y, the figure round it
+        // base_wood.z of the map's, the colour's strength base_look.w of the map's.
+        if (own_base) {
+            float mean = dot(textureLod(table_albedo, vec2(0.5), 20.0).rgb, vec3(0.2126, 0.7152, 0.0722));
             float l = max(dot(albedo, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
-            albedo *= (mean + (l - mean) * (1.0 - base_wood.y)) / l;
+            albedo = mix(vec3(l), albedo, base_look.w) * (mean * base_wood.y + (l - mean) * base_wood.z) / l;
         }
         float ao = clamp(v_ao, 0.0, 1.0);
     #ifdef PROPS_LIGHT

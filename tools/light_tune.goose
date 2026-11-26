@@ -45,8 +45,12 @@
 //       [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
-//       [--base-wood today|turned|even (the base's wood: as made, read half a turn round the column, or its
-//       lightness pulled toward its mean)] [--base-even K (how far even pulls it, 0 to 1; 0.4)]
+//       [--base-wood today|own (the table's base: the map as the top's, or its own wood, the grain along the
+//       column and the legs, as the chairs'; own)] [--base-light K (its lightness, a share of the map's; 0.6)]
+//       [--base-figure K (its figure's contrast, a share of the map's; 0.6)] [--base-streaks K (how far the figure
+//       is drawn out along the grain; 3)] [--base-slant DEG (the grain's slant round the column; 0)]
+//       [--base-rings K (the rings the column's cut crosses, 0 none; 0)] [--base-place U (where across the map it
+//       reads, 0 to 1; 0.5)] [--base-colour K (the colour's strength, 1 the map's; 0.75)]
 //       [--board-turn DEG (the board's own z, the players' axis, from the window wall's line in the plan; sets the key's azimuth)]
 //       [--place free|concept|concept-high|along-wall|less-turned|concept-pier|more-turned (PLACE_NAMES: a verified sun, table and
 //       board together, the table-window view's eye with them; less-turned without the flag, free the other flags' own;
@@ -208,7 +212,7 @@ fn park_frag(part: i64, hdr: bool) -> const u8[:] {
     };
 }
 let TOPS = ["0.95", "1.05", "0.80"];
-let BASE_WOODS = ["today", "turned", "even"];
+let BASE_WOODS = ["today", "own"];
 let PROPS_WAYS = ["off", "on", "kept"];
 let LIGHT_WAYS = ["today", "physical"];
 
@@ -1628,8 +1632,16 @@ fn main() {
     if has(argv, "--sun-height") { room.key.y = number(argv, "--sun-height", room.key.y); }
     if has(argv, "--board-turn") { board_turn = number(argv, "--board-turn", 0.0); }
     g.table_turn = number(argv, "--table-turn", g.table_turn);
-    var base_way = pick(argv, "--base-wood", BASE_WOODS, 0);
-    var base_even = number(argv, "--base-even", 0.4);
+    var base_way = pick(argv, "--base-wood", BASE_WOODS, 1);
+    var base_wood = render3d::base_wood;
+    var base_look = render3d::base_look;
+    base_wood.y = number(argv, "--base-light", base_wood.y);
+    base_wood.z = number(argv, "--base-figure", base_wood.z);
+    base_wood.w = number(argv, "--base-streaks", base_wood.w);
+    base_look.x = number(argv, "--base-slant", base_look.x);
+    base_look.y = number(argv, "--base-rings", base_look.y);
+    base_look.z = number(argv, "--base-place", base_look.z);
+    base_look.w = number(argv, "--base-colour", base_look.w);
     room_shell::LIBRARY.table = table_place;
     render3d::show_room(g, room_on, away, shell_on);
     var paper_m = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE);
@@ -2165,7 +2177,13 @@ fn main() {
                 slider(c, "From the hall wall (m)", table_place.y, 4.5, 6.2);
                 slider(c, "Its turn under the board", g.table_turn, -60.0, 60.0);
                 choice(c, "Base's wood", base_way, BASE_WOODS);
-                slider(c, "  even's strength", base_even, 0.0, 1.0);
+                slider(c, "  its lightness (of the map's)", base_wood.y, 0.2, 1.2);
+                slider(c, "  its figure's contrast (of the map's)", base_wood.z, 0.0, 1.5);
+                slider(c, "  the figure drawn out along the grain", base_wood.w, 1.0, 16.0);
+                slider(c, "  the grain's slant round the column", base_look.x, -30.0, 30.0);
+                slider(c, "  the rings the column's cut crosses", base_look.y, 0.0, 3.0);
+                slider(c, "  where across the map it reads", base_look.z, 0.0, 1.0);
+                slider(c, "  its colour's strength (of the map's)", base_look.w, 0.0, 1.5);
                 let board_was = board_turn;
                 slider(c, "Board's turn to the wall", board_turn, -90.0, 90.0);
                 if board_turn != board_was { board_set = true; }
@@ -2596,7 +2614,8 @@ fn main() {
             if frames == 1 { draughts_first_frame(); }
             continue;
         }
-        render3d::base_wood = float4 { base_way as f32, base_even, 0.0, 0.0 };
+        render3d::base_wood = float4 { base_way as f32, base_wood.y, base_wood.z, base_wood.w };
+        render3d::base_look = base_look;
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
         if walk.on {
