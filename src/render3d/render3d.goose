@@ -738,9 +738,12 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
 // the room's probe grid where each pixel is, through their occlusion baked per vertex, in
 // place of the four samples on the table's axis. The light tuner's, off by default (the app's
 // look as before); props_table_shade keeps the table's own shade terms beside the bake (the
-// base's hidden sky, the edge's under the top). The bake's rays a vertex and reach (metres).
+// base's hidden sky, the edge's under the top); props_wrap: how far past its terminator the
+// sun's light wraps on them (0.2 as made, 0 a lambertian face's, the tuner's --light
+// physical). The bake's rays a vertex and reach (metres).
 var props_light = false;
 var props_table_shade = false;
+var props_wrap: f32 = 0.2;
 let PROPS_RAYS = 32;
 let PROPS_REACH: f32 = 0.5;
 
@@ -768,10 +771,10 @@ fn bake_props_open<O>(o: O&, g: Gpu&, verts: const mesh::Vertex[:], indices: con
 
 // TABLE_FRAG's block with PROPS_LIGHT (shaders::TABLE_SHELL's PropsLight): the probes' grid
 // as the room's (light_box_of, light_grid_of), and props_look x 1 where the table keeps its
-// own shade terms (props_table_shade).
+// own shade terms (props_table_shade), y the sun's wrap (props_wrap).
 struct PropsLightBlock { light_box: float4, light_grid: float4, props_look: float4 }
 fn props_light_block(g: Gpu&) -> PropsLightBlock {
-    PropsLightBlock { light_box_of(), light_grid_of(), float4 { if props_table_shade { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 } }
+    PropsLightBlock { light_box_of(), light_grid_of(), float4 { if props_table_shade { 1.0 } else { 0.0 }, props_wrap, 0.0, 0.0 } }
 }
 
 // A chair's plan round its seat's middle (world units: half its width, its front, its back's

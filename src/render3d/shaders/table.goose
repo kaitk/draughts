@@ -26,7 +26,8 @@ let TABLE_SHELL = """
     layout(set = 2, binding = 11) uniform sampler2D light_volume;
     #endif
     // render3d::PropsLightBlock: the probes' grid as ROOM_HEAD's light_box and light_grid;
-    // props_look x 1 where the table keeps its own shade terms beside the bake.
+    // props_look x 1 where the table keeps its own shade terms beside the bake, y how far
+    // past its terminator the sun's light wraps.
     layout(set = 3, binding = 3) uniform PropsLight { vec4 light_box; vec4 light_grid; vec4 props_look; };
     #endif
     """;
@@ -529,7 +530,11 @@ let TABLE_FRAG = """
         vec3 vn = normalize(v_normal);
         vec3 nc = top ? normalize(mix(vn, n, coat.z) + polish.w * vec3(bump.x, 0.0, bump.y)) : vn;
         float nol = dot(n, l);
+    #ifdef PROPS_LIGHT
+        float wrap = props_look.y;
+    #else
         float wrap = 0.2;
+    #endif
         float diff = clamp((nol + wrap) / (1.0 + wrap), 0.0, 1.0) / (1.0 + wrap);
         // The light's pool round the board.
         float d = length(p.xz) / max(pool.x, 1e-3);

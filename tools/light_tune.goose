@@ -84,7 +84,8 @@
 //       [--props-light off|on|kept (the table and the chairs lit from the room's probes where each pixel is, through
 //       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)]
 //       [--light today|physical (the room's light from physical inputs, physical_light; today as made)]
-//       [--camera-toe room|neutral|none (--light physical's one curve's toe, after the HDR pass)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
+//       [--camera-toe room|neutral|none (--light physical's one curve's toe, after the HDR pass)]
+//       [--props-wrap K (--light physical: how far past its terminator the sun wraps on the table and chairs; 0)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
 //       [--paint quiet|old] [--paint-off fillets,tilt,dirt,joints,tile] [--paint-relief K]
 //       [--sill vasalemma|old] [--sill-off speckle,band,arris,nose,dust (the limestone's parts, each off)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
@@ -1673,6 +1674,7 @@ fn main() {
     if physical {
         props_on = true;
         props_shade = false;
+        render3d::props_wrap = number(argv, "--props-wrap", 0.0);
     }
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
@@ -2447,7 +2449,7 @@ fn main() {
             line.append("--room ");
             line.append(rooms::NAMES[room_take]);
             format(line, " --light ", LIGHT_WAYS[if physical { 1 } else { 0 }]);
-            if physical { format(line, " --camera-toe ", TOES[render3d::camera_toe as i64]); }
+            if physical { format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --props-wrap ", render3d::props_wrap); }
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
                    " --table-top ", TOPS[top], " --lace ", surfaces::LACE_WAYS[g.lace_way]);
             format(line, " --room-surfaces ", on_off(room_on), " --shell ", on_off(shell_on), " --outside ", on_off(outside_on),
