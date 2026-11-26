@@ -429,7 +429,13 @@ of need; the biggest cost first, when it shows.
 - Normal or parallax maps in place of geometry where the shape is shallow (mouldings,
   joints, plaster); tessellation not, as phones' GPUs pay dearly for it.
 - Levels of detail for meshes, and smaller textures or mips for what is seen only from
-  afar.
+  afar. In order, if a mesh's geometry ever shows as a cost (the user, 2026-11-26): our
+  generated meshes first take fewer segments from their own generators (a lathe's or a
+  sweep's count per tier), which is exact and free; an imported mesh (task 123) a plain
+  QEM simplification (meshoptimizer's, a C library); the detail lost baked into a normal
+  map. Only if those fail to keep a low level's look: a differentiable simplification
+  that fits the low mesh to the high one's renders, as DiffSimp (arXiv 2611.31018,
+  QEM edge collapse with gradients through it; CUDA, a gradient pipeline we don't have).
 - Frustum culling (above).
 - Not a deferred renderer: it pays off with many lights, and the scene has one sun, its
   bounce and the ambient; its G-buffer costs memory bandwidth, which the A33's tiled GPU
