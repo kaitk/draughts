@@ -25,7 +25,7 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 def flags():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     f = {"scene": "build/blender", "view": "close", "out": None, "size": "960x540", "samples": "512",
-         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu"}
+         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None}
     i = 0
     while i < len(argv):
         name = argv[i][2:]
@@ -500,6 +500,91 @@ def floor_wax(name, color):
     return coated(m, b, G["floor_wax"], G["floor_wax_rough"]) if textures else m
 
 
+# ---- --wood SPEC.json: the oak panels, the table and chairs, and the floor as finished woods
+# (build/notes/wood-materials/): each surface's picture, ours (the maps above) or a downloaded
+# texture at its physical size, optionally stained to three sRGB anchors by its luminance (the
+# grain kept), under a Principled base and a clear coat. SPEC: {"oak"|"table"|"floor": {"tex":
+# DIR or "ours", "mm": its side, "turn": 90, "anchors": [3 hex] or null, "rough": [lo, hi],
+# "coat": [weight, roughness], "bump": [distance, strength]}}.
+
+def finished_wood(name, w, ours_map, ours_uv):
+    m, nt, b = diffuse(name, (0.5, 0.5, 0.5))
+    k = Nodes(nt)
+    if w["tex"] == "ours":
+        col = k.picture(ours_map, *ours_uv, True)
+        rough_src, height = col.outputs["Alpha"], None
+        lo, hi = map_percentiles(ours_map)
+    else:
+        mm = w["mm"] / 1000.0
+        if name == "oak":
+            uv = nt.nodes.new("ShaderNodeTexCoord")
+            mp = nt.nodes.new("ShaderNodeMapping")
+            mp.inputs["Scale"].default_value = (1.0 / (SF["metre"] * mm),) * 3
+            mp.inputs["Rotation"].default_value = (0.0, 0.0, math.radians(w.get("turn", 0)))
+            k.link(uv.outputs["UV"], mp.inputs["Vector"])
+        else:
+            uv = nt.nodes.new("ShaderNodeTexCoord")
+            mp = nt.nodes.new("ShaderNodeMapping")
+            mp.inputs["Scale"].default_value = (1.0 / mm,) * 3
+            mp.inputs["Rotation"].default_value = (0.0, 0.0, math.radians(w.get("turn", 0)))
+            k.link(uv.outputs["Object"], mp.inputs["Vector"])
+
+        def tex(f, colour):
+            t = nt.nodes.new("ShaderNodeTexImage")
+            t.image = bpy.data.images.load(os.path.join(w["tex"], f), check_existing=True)
+            t.image.colorspace_settings.name = "sRGB" if colour else "Non-Color"
+            if name != "oak":
+                t.projection = "BOX"
+                t.projection_blend = 0.15
+            k.link(mp.outputs[0], t.inputs["Vector"])
+            return t
+        files = os.listdir(w["tex"])
+        pick = lambda stem: next(f for f in files if f.startswith(stem))
+        col = tex(pick("diff"), True)
+        rough_src = tex(pick("rough"), False).outputs["Color"]
+        height = tex(pick("disp"), False).outputs["Color"]
+        lo, hi = map_percentiles(os.path.join(w["tex"], pick("diff")))
+    color = col.outputs["Color"]
+    if w.get("anchors"):
+        bw = nt.nodes.new("ShaderNodeRGBToBW")
+        k.link(color, bw.inputs[0])
+        mr = nt.nodes.new("ShaderNodeMapRange")
+        mr.inputs["From Min"].default_value, mr.inputs["From Max"].default_value = lo, hi
+        k.link(bw.outputs[0], mr.inputs["Value"])
+        ramp = nt.nodes.new("ShaderNodeValToRGB")
+        e = ramp.color_ramp.elements
+        hexes = [srgb_to_linear([int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]) for h in w["anchors"]]
+        e[0].position, e[0].color = 0.0, (*hexes[0], 1.0)
+        e[1].position, e[1].color = 1.0, (*hexes[2], 1.0)
+        e.new(0.5).color = (*hexes[1], 1.0)
+        k.link(mr.outputs[0], ramp.inputs["Fac"])
+        color = ramp.outputs["Color"]
+    k.link(color, b.inputs["Base Color"])
+    rr = nt.nodes.new("ShaderNodeMapRange")
+    rr.inputs["To Min"].default_value, rr.inputs["To Max"].default_value = w["rough"]
+    k.link(rough_src, rr.inputs["Value"])
+    k.link(rr.outputs[0], b.inputs["Roughness"])
+    if height is not None:
+        bu = nt.nodes.new("ShaderNodeBump")
+        bu.inputs["Distance"].default_value, bu.inputs["Strength"].default_value = w["bump"]
+        k.link(height, bu.inputs["Height"])
+        k.link(bu.outputs["Normal"], b.inputs["Normal"])
+    b.inputs["Specular IOR Level"].default_value = 0.5
+    b.inputs["IOR"].default_value = 1.5
+    b.inputs["Coat Weight"].default_value, b.inputs["Coat Roughness"].default_value = w["coat"]
+    b.inputs["Coat IOR"].default_value = 1.5
+    return m
+
+
+def map_percentiles(path):
+    # The picture's luminance at its 5th and 95th percentiles, linear (the stain's range).
+    im = bpy.data.images.load(path, check_existing=True)
+    px = np.array(im.pixels[:]).reshape(-1, 4)[::97, :3]
+    px = np.where(px <= 0.04045, px / 12.92, ((px + 0.055) / 1.055) ** 2.4)
+    y = px @ [0.2126, 0.7152, 0.0722]
+    return float(np.percentile(y, 5)), float(np.percentile(y, 95))
+
+
 brass = G["brass"]
 mats = {
     "floor": floor_maps("floor") if room_maps else floor_wax("floor", A["floor"]),
@@ -527,6 +612,17 @@ mats = {
     "rug": (textured("rug", os.path.join(REPO, "design/materials/rug.png"), 1.0, 1.0)
             if textures else diffuse("rug", RUG_MEAN)[0]),
 }
+if F["wood"]:
+    WOOD = json.load(open(F["wood"]))
+    f = SF["wall_field"]
+    lo_u, lo_v, su, sv = SF["floor_laid"]
+    if "oak" in WOOD:
+        mats["oak"] = finished_wood("oak", WOOD["oak"], WALL_ALBEDO, ((1.0 / f, -1.0 / f), (0.0, 0.0)))
+    if "floor" in WOOD:
+        mats["floor"] = finished_wood("floor", WOOD["floor"], FLOOR_ALBEDO, ((1.0 / su, 1.0 / sv), (-lo_u / su, -lo_v / sv)))
+    if "table" in WOOD:
+        for part in ("table_top", "table_base", "chair_wood"):
+            mats[part] = finished_wood(part, WOOD["table"], ALBEDO_MAP, ((1.0, 1.0), (0.0, 0.0)))
 for ob in scene.objects:
     if ob.type != "MESH":
         continue
