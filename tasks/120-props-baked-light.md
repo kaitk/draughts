@@ -219,3 +219,11 @@ The ground truth for the light's rebuild: physical inputs (gain 1, no caps, real
 exposure and white balance set as a camera; Cycles for pictures, the CPU tracer for points,
 probes and each step's check. The lace needs one model shared by both before either can
 judge its terms.
+
+## What follows (2026-11-26)
+
+The user agreed: the light under the bake is rebuilt in task 122, the Blender pipeline is
+task 123, the lace's model task 124. This task's bake is done and stays behind the tuner's
+`--props-light`; it becomes the default, with the chairs' hand-made occlusion removed, in
+task 122. The shell's props (doors, shutters, bookcases, curtains) wait in a git stash
+("task 120: shell props' light, unfinished") until the light under them is right.

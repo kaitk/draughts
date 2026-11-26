@@ -2342,6 +2342,13 @@ to be is in tasks 042, 059, 071, 081, and 086.
   takes its shade at distance 0. Only those lines change, all darker; no work more a pixel
   (the map is baked once). Rejected: insetting each chart's texels from its edge (the
   atlas would move, and the shade would stop short of the corner).
+- The library's light is grounded against a path-traced reference (2026-11-26, tasks 120 and
+  122): physical inputs (bounce gain 1, no caps, the panes' real transmission), exposure and
+  white balance set as a camera; a CPU tracer for points and probes, Blender Cycles for
+  pictures, the two within 0.8 to 1.6 of each other. Every approximation the renderer keeps
+  states its error against it. Replaces tuning the light by eye against ChatGPT repaints
+  (2026-11-21 above), which left the shade 2 to 5 times too bright against the lit faces.
+  Rejected: sliders that darken the props by hand under the old light.
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
 
