@@ -26,7 +26,7 @@ struct Limb { first: i32, count: i32, level: i32, parent: i32, attach: i32 }
 // on); the blade's length and width, which of the atlas's leaves it is, and its tint
 // (0 green, 1 gold, 2 orange-red); the twig's segment it grows on; how its blade is bent
 // (Growth.bend): which of the bent shapes (LEAF_SHAPES, 0 flat), how far toward it (0..1),
-// and its twist about the midrib (-1..1 of Growth.bend.y).
+// and its twist about the midrib (radians at the blade's tip, at most 1).
 struct Card {
     foot:  float3, base: float3, along: float3, face: float3, size: f32, width: f32, kind: i32, tint: f32, segment: i32,
     shape: i32 = 0, shape_amount: f32 = 0.0, twist: f32 = 0.0,

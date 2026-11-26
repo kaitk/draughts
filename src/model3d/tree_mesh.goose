@@ -252,28 +252,39 @@ fn ribbon(t: Tree&, density: f32[>..]&, g: Grid, sun: float3, ways: float3[SKY_W
 // (trees::Card.width over 1.15, as the atlas's leaf is that much wider than long); its face
 // and which of the atlas's leaves; its tint, the sun's and the sky's share through the crown
 // at its middle, and a seed of its own (0..1). Nearest the house first (z up), so a view out
-// draws the near leaves before the far ones it hides.
+// draws the near leaves before the far ones it hides. Written from `at` on (leaf_shapes
+// before them); the atlas's leaf packed with the blade's bend (leaf_code).
 let LEAF_VEC4S = 4;
-fn leaf_cards(t: Tree&, density: f32[>..]&, g: Grid, sun: float3, out: float4[>..]&) -> i64 {
-    out.clear();
+fn leaf_cards(t: Tree&, density: f32[>..]&, g: Grid, sun: float3, out: float4[>..]&, at: i64 = 0) -> i64 {
+    out.resize(min(out.len, at), float4 { 0.0, 0.0, 0.0, 0.0 });
     let ways = sky_ways();
     // A counting sort by the grid's z cell.
     var counts: i64[GRID + 1] = [0; GRID + 1];
     for &c in t.cards { counts[z_cell(g, c.base) + 1]++; }
     for k in 1..GRID + 1 { counts[k] += counts[k - 1]; }
-    out.resize(t.cards.len * LEAF_VEC4S, float4 { 0.0, 0.0, 0.0, 0.0 });
+    out.resize(at + t.cards.len * LEAF_VEC4S, float4 { 0.0, 0.0, 0.0, 0.0 });
     for &c, i in t.cards {
         let mid = c.base + c.along * (c.size * 0.5);
         let open = crown_light(density, g, mid, sun, ways);
         let seed = (((i as u64) * 2654435761) & 0xFFFF) as f32 / 65535.0;
-        let at = counts[z_cell(g, c.base)] * LEAF_VEC4S;
+        let o = at + counts[z_cell(g, c.base)] * LEAF_VEC4S;
         counts[z_cell(g, c.base)]++;
-        out[at] = float4 { c.base.x, c.base.y, c.base.z, c.size };
-        out[at + 1] = float4 { c.along.x, c.along.y, c.along.z, c.width / 1.15 };
-        out[at + 2] = float4 { c.face.x, c.face.y, c.face.z, c.kind as f32 };
-        out[at + 3] = float4 { c.tint, open.x, open.y, seed };
+        out[o] = float4 { c.base.x, c.base.y, c.base.z, c.size };
+        out[o + 1] = float4 { c.along.x, c.along.y, c.along.z, c.width / 1.15 };
+        out[o + 2] = float4 { c.face.x, c.face.y, c.face.z, leaf_code(c) };
+        out[o + 3] = float4 { c.tint, open.x, open.y, seed };
     }
     return t.cards.len;
+}
+
+// A card's atlas leaf and bend in one float, exact (under 2^18): the leaf (3 bits), its shape
+// (3), its amount (6, 0..1) and its twist (6, -1..1 radian, 32 none), as TREE_LEAF_VERT reads
+// it; a flat blade its leaf alone.
+fn leaf_code(c: Card) -> f32 {
+    guard c.shape != SHAPE_FLAT else { return c.kind; }
+    let amount = clamp((c.shape_amount * 63.0 + 0.5) as i64, 0, 63);
+    let twist = clamp((c.twist * 31.0 + 32.5) as i64, 1, 63);
+    return (c.kind as i64 + 8 * (c.shape as i64) + 64 * amount + 4096 * twist) as f32;
 }
 
 fn z_cell(g: Grid, p: float3) -> i64 { clamp(floor((p.z - g.low.z) / g.cell) as i64, 0, GRID - 1) }

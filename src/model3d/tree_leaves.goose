@@ -271,7 +271,7 @@ fn add_plates(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&
             let s, a, tw = chosen_shape(bend_dice, g, l.size / w.leaf, l.deep, leaf_tint);
             shape = s;
             amount = a;
-            twist = tw;
+            twist = tw * radians(g.bend.y);
         }
         let cast = casts(v, mid, l.size);
         guard !cull || cast || seen(sight, mid, l.size) else { continue; }

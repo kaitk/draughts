@@ -41,7 +41,8 @@
 //       --tree-light SUN,SKY,THROUGH,FORWARD (2.5,1,0.35,0.6) --tree-look SHADE,TWIG_PX,SPREAD (1,1,0.15)
 //       --tree-tint TINT,LEAVES,BARK,DEEPER (0.2,1,1,0.6)
 //       --tree-elbows FEWEST,MOST,TURN_LO,TURN_HI (0,0,30,50) --tree-gravity S (0) --tree-shed LIGHT,STUBS (0,0.5)
-//       --tree-plates ON,SPURS,NUDGE (0,2,0) --tree-tilt ON,SEASON,SAG (0,2,8)
+//       --tree-plates ON,SPURS,NUDGE (0,2,0) --tree-tilt ON,SEASON,SAG (0,2,8) --tree-bend SHARE,TWIST (0,25)
+//       --tree-leaf-mesh tier|card|rows|fan (the leaves' meshes; tier)
 //       --tree-wind off|on (the shadow's wind on the geometry, the leaves fluttering in HDR; off) --tree-flutter DEG,RATE (6,9)
 //       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)]
 //       [--azimuth DEG] [--sun-height DEG]
@@ -1678,6 +1679,13 @@ fn main() {
     // their height, SAG degrees more inside and low (0,2,8: level). trees::Growth, task 117.
     render3d::tree_growth.plates = four(argv, "--tree-plates", render3d::tree_growth.plates);
     render3d::tree_growth.tilt = four(argv, "--tree-tilt", render3d::tree_growth.tilt);
+    // --tree-bend SHARE,TWIST: the plates' blades bent (cupped, drooping, tented, tips down,
+    // sagging and twisted) by SHARE of the study's chances, twisted TWIST degrees at most at
+    // the tip (0,25: flat); --tree-leaf-mesh tier|card|rows|fan: the leaves' meshes, by the
+    // tier (the high tier's fan, the standard's rows, with the bend on) or one for all.
+    let bend = four(argv, "--tree-bend", float4 { render3d::tree_growth.bend.x, render3d::tree_growth.bend.y, 0.0, 0.0 });
+    render3d::tree_growth.bend = float2 { bend.x, bend.y };
+    render3d::tree_leaf_mesh = pick(argv, "--tree-leaf-mesh", render3d::TREE_LEAF_MESHES, render3d::tree_leaf_mesh);
     // --tree-wind off|on: the shadow's wind on the tree's geometry, each leaf turning about
     // its stalk too in HDR (render3d::tree_wind, task 107's T4); --tree-flutter DEG,RATE how
     // far a leaf turns in the room's mild wind and how fast (radians a second of the wind).

@@ -271,29 +271,71 @@ let TREE_WOOD_FRAG = """
     }
     """;
 
-// The leaves: each a card (trees::leaf_cards, LEAF_VEC4S vec4s an instance), two triangles
-// over leaf_atlas::QUAD in the leaf's frame, its blade's base at the foot, y along its axis
-// a blade length a unit, x across it the card's half width a unit; the atlas's texel from
-// the cell's foot and SCALE (leaf_atlas). The wind moves the whole card as its shadow moves
-// (tree_leaf_move); with TREE_FLUTTER it also turns about its stalk's axis, a few degrees,
-// fast, each leaf on its own phase and rate, which the shadow doesn't follow (its middle
-// stays where it was). Still air (the wind's seconds held at 0) turns nothing.
+// The leaves: each a card (trees::leaf_cards, LEAF_VEC4S vec4s an instance after the bent
+// shapes' TREE_SHAPE_VEC4S), two triangles over leaf_atlas::QUAD in the leaf's frame, its
+// blade's base at the foot, y along its axis a blade length a unit, x across it the card's
+// half width a unit; the atlas's texel from the cell's foot and SCALE (leaf_atlas). The
+// card's face.w packs which of the atlas's leaves (3 bits), its bent shape (3), how far
+// toward it (6) and its twist (6, about the midrib, a radian at most at its tip). With
+// TREE_LEAF_BENT the blade is a mesh of trees::leaf_shapes, drawn as a triangle list from
+// the buffer's start: TREE_LEAF_ROWS the card in four rows bent along its midrib (the
+// standard tier's, 24 vertices), TREE_LEAF_FAN a fan hugging the leaf's outline (the high
+// tier's, 78); each vertex the flat one moved toward the shape's by the amount, then
+// twisted. The wind moves the whole card as its shadow moves (tree_leaf_move); with
+// TREE_FLUTTER it also turns about its stalk's axis, a few degrees, fast, each leaf on its
+// own phase and rate, which the shadow doesn't follow (its middle stays where it was).
+// Still air (the wind's seconds held at 0) turns nothing.
+let TREE_LEAF_ROWS = "#define TREE_LEAF_BENT 1\n#define TREE_LEAF_ROWS 1\n";
+let TREE_LEAF_FAN = "#define TREE_LEAF_BENT 1\n#define TREE_LEAF_FAN 1\n";
 let TREE_LEAF_VERT = """
     layout(std430, set = 0, binding = 0) readonly buffer TreeCards { vec4 tree_cards[]; };
     layout(location = 0) out vec3 v_world;
     layout(location = 1) out vec3 v_normal;
     layout(location = 2) out vec2 v_uv;
     layout(location = 3) out vec4 v_leaf;
+    const int TREE_SHAPE_VEC4S = 7776;
+    const int TREE_ROW_VEC4S = 288;
+    const int TREE_ROW_VERTICES = 24;
+    const int TREE_FAN_VERTICES = 78;
+    const int TREE_SHAPES = 6;
     const vec2 LEAF_CORNERS[6] = vec2[6](vec2(-1.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0),
                                          vec2(-1.0, 0.0), vec2(1.0, 1.0), vec2(-1.0, 1.0));
     void main() {
-        int at = gl_InstanceIndex * 4;
+        int at = TREE_SHAPE_VEC4S + gl_InstanceIndex * 4;
         vec4 base = tree_cards[at];
         vec4 along = tree_cards[at + 1];
         vec4 face = tree_cards[at + 2];
+        int code = int(face.w + 0.5);
+        int kind = code & 7;
+    #ifdef TREE_LEAF_BENT
+        int shape = (code >> 3) & 7;
+        float amount = float((code >> 6) & 63) / 63.0;
+        float twist = shape == 0 ? 0.0 : float((code >> 12) - 32) / 31.0;
+    #ifdef TREE_LEAF_FAN
+        int flat_at = TREE_ROW_VEC4S + (kind * TREE_SHAPES * TREE_FAN_VERTICES + gl_VertexIndex) * 2;
+        int bent_at = flat_at + shape * TREE_FAN_VERTICES * 2;
+    #else
+        int flat_at = gl_VertexIndex * 2;
+        int bent_at = flat_at + shape * TREE_ROW_VERTICES * 2;
+    #endif
+        vec4 flat0 = tree_cards[flat_at];
+        vec4 flat1 = tree_cards[flat_at + 1];
+        vec4 bent0 = tree_cards[bent_at];
+        vec4 bent1 = tree_cards[bent_at + 1];
+        float lx = flat0.w;
+        float ly = flat1.w;
+        vec3 q = mix(flat0.xyz, bent0.xyz, amount);
+        vec3 qn = normalize(mix(flat1.xyz, bent1.xyz, amount));
+        float tw = twist * max(q.y, 0.0);
+        float tc = cos(tw);
+        float ts = sin(tw);
+        q = vec3(q.x * tc - q.z * ts, q.y, q.x * ts + q.z * tc);
+        qn = vec3(qn.x * tc - qn.z * ts, qn.y, qn.x * ts + qn.z * tc);
+    #else
         vec2 k = LEAF_CORNERS[gl_VertexIndex];
         float lx = k.x * 0.853;
         float ly = mix(-0.573, 1.133, k.y);
+    #endif
         vec3 n = face.xyz;
         vec3 across = cross(n, along.xyz);
         vec4 light = tree_cards[at + 3];
@@ -310,9 +352,13 @@ let TREE_LEAF_VERT = """
         across = turned_across;
     #endif
         vec3 mid = base.xyz + along.xyz * (0.5 * base.w);
+    #ifdef TREE_LEAF_BENT
+        vec3 p = base.xyz + across * (q.x * along.w) + along.xyz * (q.y * base.w) + n * (q.z * base.w) + tree_leaf_move(mid);
+        n = normalize(across * qn.x + along.xyz * qn.y + n * qn.z);
+    #else
         vec3 p = base.xyz + across * (lx * along.w) + along.xyz * (ly * base.w) + tree_leaf_move(mid);
+    #endif
         vec3 pos = tree_world(p);
-        int kind = int(face.w + 0.5);
         vec2 cell = vec2(float(kind % 4), float(kind / 4)) * 256.0;
         v_uv = (cell + vec2(128.0 + lx * 150.0, 170.0 - ly * 150.0)) / vec2(1024.0, 512.0);
         v_world = pos;

@@ -81,4 +81,15 @@ fn main() {
     }
     print("leaf shapes: ", shapes.len, " float4s", if shapes.len == trees::LEAF_SHAPE_VEC4S { "" } else { " WRONG" }, ", ", bad,
           " normals not unit, ", raised, " flat vertices off the plane");
+    // The leaves' vertex shader repeats the counts (embed_shader takes only a literal).
+    let glsl = embed_file("../../src/render3d/shaders/tree.goose");
+    let names = ["TREE_SHAPE_VEC4S", "TREE_ROW_VEC4S", "TREE_ROW_VERTICES", "TREE_FAN_VERTICES", "TREE_SHAPES"];
+    let counts: i64[5] = [trees::LEAF_SHAPE_VEC4S, trees::LEAF_ROW_VEC4S, trees::LEAF_ROW_VERTICES, trees::LEAF_FAN_VERTICES, trees::LEAF_SHAPES];
+    var missing = 0;
+    for name, k in names {
+        let line = str("const int ", name, " = ", counts[k], ";");
+        let before, after, found = split_once(glsl, line[..]);
+        if !found { print("  the shader lacks ", line); missing++; }
+    }
+    print("the shader's counts: ", if missing == 0 { "the same" } else { "DIFFERENT" });
 }

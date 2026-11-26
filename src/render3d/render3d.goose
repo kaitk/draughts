@@ -574,8 +574,11 @@ struct TreeGpu {
     leaf_marks:   Texture,
     leaf:         Pipeline,
     hdr_leaf:     Pipeline,
-    // Whether the pipelines move the tree in the wind (tree_wind), as they were made.
-    wind_made: bool,
+    // Whether the pipelines move the tree in the wind (tree_wind), and the leaves' meshes of
+    // the 8-bit and the HDR pipelines (leaf_mesh), as they were made.
+    wind_made:          bool,
+    leaf_mesh_made:     i64,
+    hdr_leaf_mesh_made: i64,
     // The key's slant onto the shadow's map and its layers' depths (TreeBlock's layers).
     layers:   float4,
     made_for: float4[TREE_GEOMETRY_KEY],
@@ -2796,6 +2799,31 @@ fn whole_tree_of(g: Gpu&) -> trees::Whole {
     return w;
 }
 
+// The leaves' meshes (shaders::TREE_LEAF_VERT, trees::leaf_shapes): flat cards, the card in
+// four rows bent along its midrib, or a fan hugging the leaf's outline, bent; by the tier, with
+// the bent shapes on (tree_growth.bend), the high tier's (HDR) the fan and the standard's the
+// rows, else cards (a phone draws the tree's card, never its leaves). The light tuner's
+// --tree-leaf-mesh tier|card|rows|fan.
+let TREE_LEAF_MESHES = ["tier", "card", "rows", "fan"];
+let LEAF_MESH_TIER = 0;
+let LEAF_MESH_CARD = 1;
+let LEAF_MESH_ROWS = 2;
+let LEAF_MESH_FAN = 3;
+var tree_leaf_mesh = LEAF_MESH_TIER;
+
+fn leaf_mesh(hdr: bool) -> i64 {
+    if tree_leaf_mesh != LEAF_MESH_TIER { return tree_leaf_mesh; }
+    guard tree_growth.bend.x > 0.0 else { return LEAF_MESH_CARD; }
+    return if hdr { LEAF_MESH_FAN } else { LEAF_MESH_ROWS };
+}
+
+// The vertices a leaf draws with its mesh (as triangle lists).
+fn leaf_vertices(mesh: i64) -> i64 {
+    if mesh == LEAF_MESH_ROWS { return trees::LEAF_ROW_VERTICES; }
+    if mesh == LEAF_MESH_FAN { return trees::LEAF_FAN_VERTICES; }
+    return 6;
+}
+
 // The tree outside drawn as geometry (task 107's T2 and T3): off (the view out's pictures
 // alone, the app's), its wood, or all of it (TREE_DRAWS): the light tuner's --tree-draw,
 // until the user has seen it. With it on the shell's shadow comes from the same tree
@@ -2898,7 +2926,10 @@ fn tree_geometry<O>(o: O&, g: Gpu&) {
         made = trees::wood_mesh(t, density, grid, trees::toward_sun(v), verts, indices);
         let d = trees::depths(t, v);
         g.tree.layers = float4 { v.shear.x, v.shear.y, d.near, d.far };
-        if tree_draw == TREE_ALL { leaf_count = trees::leaf_cards(t, density, grid, trees::toward_sun(v), cards); }
+        if tree_draw == TREE_ALL {
+            trees::leaf_shapes(cards);
+            leaf_count = trees::leaf_cards(t, density, grid, trees::toward_sun(v), cards, cards.len);
+        }
         g.tree.card_eye, g.tree.card_rect, g.tree.card_range = tree_card_place(g, verts, cards, sight);
     }
     if leaf_count > 0 && g.tree.leaf_shape.id == 0 {
@@ -2974,10 +3005,12 @@ fn tree_card_place(g: Gpu&, verts: trees::WoodVertex[>..]&, cards: float4[>..]&,
     var sum:  f64 = 0.0;
     var near: f32 = 1e9;
     var far:  f32 = -1e9;
-    let leaves = cards.len / trees::LEAF_VEC4S;
+    // The cards after the bent shapes (tree_geometry).
+    let first = if cards.len > 0 { trees::LEAF_SHAPE_VEC4S } else { 0 };
+    let leaves = (cards.len - first) / trees::LEAF_VEC4S;
     for i in leaves {
-        let b = cards[i * trees::LEAF_VEC4S];
-        let a = cards[i * trees::LEAF_VEC4S + 1];
+        let b = cards[first + i * trees::LEAF_VEC4S];
+        let a = cards[first + i * trees::LEAF_VEC4S + 1];
         sum += (b.z + a.z * b.w * 0.5) as f64;
     }
     for &v in verts {
@@ -3000,7 +3033,7 @@ fn tree_card_place(g: Gpu&, verts: trees::WoodVertex[>..]&, cards: float4[>..]&,
         y1 = max(y1, q.y);
     }
     for i in leaves {
-        let b = cards[i * trees::LEAF_VEC4S];
+        let b = cards[first + i * trees::LEAF_VEC4S];
         let r = b.w * 1.2;
         near = min(near, b.z - r);
         far = max(far, b.z + r);
