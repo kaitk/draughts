@@ -117,8 +117,6 @@
 //       [--contact STRENGTH,LENGTH,STEPS,THICKNESS (the sun's contact shadows, world units; 0.8,3,12,1.5; 0 off)]
 //       [--room-sun K (the sun's saturation on the room, 0.6; 1 as the key)]
 //       [--oak-sun SHARE,SAT,SHEEN (the panelling oak's share of the room's sun, its saturation and share of the sheen)]
-//       [--toe|--table-toe|--board-toe room|neutral|none (the room's and the view out's, the table's, the board's toe)]
-//       [--toe-off K (what the toes take off, 0.02)]
 //       [--sheen STRENGTH,ROUGHNESS,PAPER,VIEW (the sun's broad sheen; 2,0.8,1,0; 0 off; VIEW 1 the highlights alone)]
 //       [--sections all|NAME,NAME.. (SECTION_NAMES open at the start)] [--shot-panel (the panel in a --shot)]
 //       [--view board|room|window|hall|stove|table-window] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
@@ -272,7 +270,7 @@ let TABLE_WINDOW = 5;
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
 // indirect light keeps, or the indirect light alone on grey, or its broken values marked.
 let SSAO_VIEWS = ["off", "alone", "kept", "light", "broken"];
-// The tonemaps' toes (render3d::tone_toe): on the luminance, Khronos PBR Neutral's on the
+// The tonemaps' toes (render3d::camera_toe): on the luminance, Khronos PBR Neutral's on the
 // least channel, none.
 let TOES = ["room", "neutral", "none"];
 // --light physical's camera toe (render3d::camera_toe), as measured against the path tracer.
@@ -1395,44 +1393,6 @@ fn main() {
 
     var g = default<render3d::Gpu>();
     var r3d = default<render3d::Own>();
-    // The toes switched (--toe, --table-toe, --board-toe, --toe-off): the tuner's own
-    // shaders with TOE_FN, the game's left as they are.
-    if has(argv, "--toe") || has(argv, "--table-toe") || has(argv, "--board-toe") || has(argv, "--toe-off") {
-        render3d::tuned_frags = [
-            embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD, shaders::SHADOW_FN,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
-            embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
-                         shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
-            embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
-                         shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
-            embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
-                         shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
-            embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::SHADOW_FN,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG),
-            embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
-            embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::ROOM_WALLS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::OUTSIDE_MAIN),
-            embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            "",
-            embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            "", "", "", "", "",
-            embed_shader("frag", shaders::ROOM_LACE, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)];
-        render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
-                                      pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
-    }
     // The park on the ground outside (--park): the view out's mesh with the lawn and the
     // trees' cards, its shaders the park's; autumn's leaves only in autumn.
     let park = pick(argv, "--park", PARK_NAMES, 0);
@@ -1549,7 +1509,7 @@ fn main() {
     // The panels' rings (at the start only: the mesh): their occlusion's strength, the dip's
     // width in cm up the bevel (0 across it), the crease, the bevel's width ×; the bounce's
     // greying, the lace as a source, the probes' spread; the sun's contact shadows, broad
-    // sheen, saturation on the room and the panelling oak's own share of it; the toes.
+    // sheen, saturation on the room and the panelling oak's own share of it.
     let panel_ao = four(argv, "--panel-ao", float4 { surfaces::panel_ao_scale, surfaces::panel_ao_width * 100.0 / surfaces::METRE,
                                                      surfaces::panel_crease, surfaces::panel_bevel });
     surfaces::panel_ao_scale = panel_ao.x;
@@ -2531,10 +2491,6 @@ fn main() {
             flag_four(line, "--sheen", render3d::sheen_look);
             format(line, " --room-sun ", render3d::room_sun.x);
             flag_four(line, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
-            if render3d::tuned_frags[0].len > 0 {
-                format(line, " --toe ", TOES[render3d::tone_toe.x as i64], " --table-toe ", TOES[render3d::tone_toe.y as i64],
-                       " --board-toe ", TOES[render3d::tone_toe.z as i64], " --toe-off ", render3d::tone_toe.w);
-            }
             flag_four(line, "--panel-ao", float4 { surfaces::panel_ao_scale, surfaces::panel_ao_width * 100.0 / surfaces::METRE,
                                                    surfaces::panel_crease, surfaces::panel_bevel });
             if walk.placed {

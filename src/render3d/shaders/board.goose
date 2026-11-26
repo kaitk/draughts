@@ -521,14 +521,10 @@ let LIT_FRAG = """
 
     vec3 tonemap(vec3 c) {
         // Khronos PBR Neutral: hue kept, highlights eased; its toe halved, as the
-        // references' darks keep their color. The tuner's shaders switch it (TOE_FN).
-    #ifdef TOE_SWITCH
-        c = toe_off(c, toe.z);
-    #else
+        // references' darks keep their color.
         float x = min(c.r, min(c.g, c.b));
         float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
         c -= offset;
-    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;

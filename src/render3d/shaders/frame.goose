@@ -82,10 +82,9 @@ let FRAME = """
         // The room's frame (surfaces::Frame, render3d::put_room): u's direction in the
         // world's x and z, then v's; ROOM_VERT turns the room's mesh by it.
         vec4 room_axes;
-        // The tonemaps' toes as the light tuner switches them (TOE_FN, HDR_OUT; render3d::tone_toe):
-        // x the room's and the view out's way, y the table's, z the board's and the pieces'
-        // (0 on the luminance, 1 on the least channel, Khronos PBR Neutral's, 2 none); w what
-        // a toe takes off above its knee.
+        // The tonemaps' toes into the HDR target (HDR_OUT; render3d::tone_toe): x the room's
+        // and the view out's way, y the table's, z the board's and the pieces' (0 on the
+        // luminance, 1 on the least channel, Khronos PBR Neutral's, 2 none); w unused.
         vec4 toe;
     };
     const float PI = 3.14159265;

@@ -256,13 +256,9 @@ let TABLE_FRAG = """
     #endif
 
     vec3 tonemap(vec3 c) {
-    #ifdef TOE_SWITCH
-        c = toe_off(c, toe.y);
-    #else
         float x = min(c.r, min(c.g, c.b));
         float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
         c -= offset;
-    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;

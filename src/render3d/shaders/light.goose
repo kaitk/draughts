@@ -7,27 +7,6 @@ namespace shaders;
 // and a desktop's (render3d::set_shadow).
 let SHADOW_FEW = "#define SHADOW_FEW 1\n";
 let SHADOW_MANY = "#define SHADOW_MANY 1\n";
-// The light tuner's shaders (render3d::tuned_frags), after FRAME: each tonemap's toe
-// switched by Frame's toe (its --toe, --table-toe, --board-toe, --toe-off). The app's never
-// take it: a uniform switch cost the room 0.7 ms a frame on the Mac, and any change to the
-// lit shader's text moves a few pixels of the game's picture there.
-let TOE_FN = """
-    #define TOE_SWITCH 1
-    // The toe of the way `way` taking toe.w off (Frame's toe).
-    vec3 toe_off(vec3 c, float way) {
-        float f = toe.w;
-        if (way < 0.5) {
-            float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
-            return c * ((y < 2.0 * f ? y * y / (4.0 * f) : y - f) / y);
-        }
-        if (way < 1.5) {
-            float x = min(c.r, min(c.g, c.b));
-            return c - (x < 2.0 * f ? x - x * x / (4.0 * f) : f);
-        }
-        return c;
-    }
-    """;
-
 // The wind in the trees outside (rooms::wind_at), before LIGHT_FN, which reads it for the
 // tree's shadow, and in the tree's vertex stages (TREE_FN's tree_moved), so a leaf and its
 // fleck in the room move by one vector: the noise, the gust where it reaches, the ruffle
@@ -664,12 +643,8 @@ let SHADOW_FN = """
 // off, as the board does, turns the room's dim oak orange.
 let TONE_FN = """
     vec3 tonemap(vec3 c) {
-    #ifdef TOE_SWITCH
-        c = toe_off(c, toe.x);
-    #else
         float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
         c *= (y < 0.04 ? 12.5 * y * y : y - 0.02) / y;
-    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;

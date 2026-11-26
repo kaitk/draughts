@@ -271,7 +271,7 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   1600 × 1000), and not additively. Weigh a feature by a build without its code, not by its
   uniform. Any change to `LIT_FRAG`'s text, even a branch never taken, moved two pixels of
   the game's shot by 7 levels: a tuner-only switch goes in shaders the tuner embeds itself
-  (`render3d_gpu::tuned_frags`, `shaders::TOE_FN`).
+  (`render3d_gpu::tuned_frags`).
   Moving code about in it (one call site in a loop, work done earlier) made it slower, not
   faster; what paid was drawing the triangles that need a path with a pipeline of their
   own. The room is now one pipeline a material group (`render3d::room_group`: floor, walls,

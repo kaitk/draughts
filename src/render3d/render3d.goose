@@ -2255,11 +2255,10 @@ var light_bounce:  room_light::Bounce;
 // 0 the patches alone, the tuner's --bounces), and each step's time in the last bake:
 // the sun's rays, the first light, each bounce, the half grid's gather, the probes.
 var light_bounces = room_light::BOUNCES;
-// The tonemaps' toes as the light tuner switches them in its own shaders (shaders::TOE_FN,
-// FRAME's toe): the room's and the view out's way, the table's, the board's and the pieces'
-// (0 on the luminance, 1 on the least channel, 2 none), and what a toe takes off above its
-// knee. The HDR target's shaders take their ways from it (HDR_OUT: 2 none); the app's
-// 8-bit shaders keep their own toes and never read it.
+// The tonemaps' toes into the HDR target (FRAME's toe, HDR_OUT): the room's and the view
+// out's way, the table's, the board's and the pieces' (0 on the luminance, 1 on the least
+// channel, 2 none, the light tuner's --light physical, whose camera curve takes it); w
+// unused. The app's 8-bit shaders keep their own toes and never read it.
 var tone_toe = float4 { 0.0, 1.0, 1.0, 0.02 };
 var light_steps: f64[8] = [0.0; 8];
 // The probes' light on the games table's axis at TABLE_PROBE_UP + k × CELL over the floor

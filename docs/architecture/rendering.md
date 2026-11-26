@@ -650,8 +650,7 @@ board's light:
   where they turn by less than 32°, a step under 5 mm wide shaded from the facet before it
   to the one after, the groove's occlusion a thin dip in its first 4 mm.
 - **The toes**: each tonemap keeps its own (the room's and the view out's on the
-  luminance, the board's and the table's off the least channel); the light tuner can switch
-  them in shaders of its own (`shaders::TOE_FN`, `--toe`, `--table-toe`, `--board-toe`).
+  luminance, the board's and the table's off the least channel).
 - **Corners and edges** (`model3d::corner_map`, `rooms::Room.corners`): the
   indirect light darkened by the distance to each of the shell's planes standing square to
   a surface, a plane hiding a half of the light at the line and nothing beyond the reach
