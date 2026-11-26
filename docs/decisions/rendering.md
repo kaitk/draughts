@@ -2281,6 +2281,27 @@ to be is in tasks 042, 059, 071, 081, and 086.
   the sky and the far band are. The mirror keeps them, as no geometry is drawn there. Off,
   the four views are byte-identical. Open: the park's cards still cast their shadows on
   the lawn.
+- The maple's branch skeleton is reshaped after growth, behind the light tuner's
+  `--tree-elbows`, `--tree-gravity` and `--tree-shed`, each off by default (2026-11-26,
+  task 117's step one; `trees::Growth`, `tree_skeleton.goose`,
+  `build/notes/tree/branches/compare.html` and `build/`). The method chosen from four CPU
+  studies (space colonisation, Palubicki et al. 2009, our Weber-Penn generator, Gao and
+  Newberry's forks), by the pictures: our Weber-Penn generator kept (trunk, hero limbs,
+  envelope, culling, dice per branch, one leader), with broken leaders added (in 5-35 cm
+  wood a stub, the side shoot 22 % thinner turned 30-50°, 1-3 a hero limb, its count the
+  tuner's until the user has seen it), Stava et al. 2014's bending under the carried wood
+  with a beam's stiffness by r⁴ and the growth's correction upward (85 % in young wood,
+  25 % in old; Almeras and Fournier 2009) in place of `Habit.sag`, and Palubicki's shedding
+  of shaded branches, half left as stubs. The bend's stiffness is an effective 2·10⁷ Pa,
+  set by eye: green maple's 10 GPa barely bends in one pass, as real limbs sag over years.
+  The shedding's light comes from a grid of the twigs' full-leaf foliage, not the season's
+  leaves, so a bare tree sheds as a leafy one. With gravity or shedding on, culling waits
+  until the skeleton is reshaped (a branch bent into view is kept), costing the whole
+  tree's growth: all three on, about 15 ms on the CPU instead of 6.5-7, under the 100 ms
+  budget. Off, the trees are byte-identical. Rejected: Gao and Newberry's forks as the main
+  rule (they make a round bush; this replaces the task's path through them), space
+  colonisation (a vase of rising limbs), and Palubicki's growth whole (natural limbs only
+  with gravity each year, coarse twigs, about 60 ms at low detail).
 - Each limb's bark tile is shifted round and along by dice of its own (2026-11-24, task
   107; `trees::tube`), so neighbouring limbs' tiles don't line up. A stand-in until a
   real fix of the tile's repeat (stochastic or two-scale sampling, and the bare maple's
