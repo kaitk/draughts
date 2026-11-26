@@ -131,16 +131,22 @@ fn flex_at(level: i64, share: f32) -> f32 { clamp((level + share) / LEVELS, 0.0,
 
 // The wood of t (its limbs, each a chain of segments) as one mesh: the tubes' triangles
 // first, then the ribbons' (the counts in the result), lit by the crown's grid (`density`
-// over `g`, crown_grid) toward `sun`.
+// over `g`, crown_grid) toward `sun`; the tubes shaped at their junctions and the trunk's
+// roots as `shape` asks (tree_junctions.goose), else plain.
 // Wound outward as the room's frame sees them (the tree's frame is the room's mirrored in
 // depth, rooms::tree_origin).
-fn wood_mesh(t: Tree&, density: f32[>..]&, g: Grid, sun: float3, verts: WoodVertex[>..]&, indices: u32[>..]&) -> WoodMesh {
+fn wood_mesh(t: Tree&, density: f32[>..]&, g: Grid, sun: float3, verts: WoodVertex[>..]&, indices: u32[>..]&,
+             shape: WoodShape = WoodShape { .. }) -> WoodMesh {
     verts.clear();
     indices.clear();
     let ways = sky_ways();
-    for &l in t.limbs {
-        guard l.level < TUBE_LEVELS && l.count > 0 else { continue; }
-        tube(t, density, g, sun, ways, l, verts, indices);
+    if wood_shaped(shape) {
+        shaped_tubes(t, density, g, sun, ways, shape, verts, indices);
+    } else {
+        for &l in t.limbs {
+            guard l.level < TUBE_LEVELS && l.count > 0 else { continue; }
+            tube(t, density, g, sun, ways, l, verts, indices);
+        }
     }
     let ribbon_first = indices.len;
     for &l in t.limbs {

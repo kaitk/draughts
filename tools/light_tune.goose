@@ -44,7 +44,9 @@
 //       --tree-plates ON,SPURS,NUDGE (0,2,0) --tree-tilt ON,SEASON,SAG (0,2,8) --tree-bend SHARE,TWIST (0,25)
 //       --tree-leaf-mesh tier|card|rows|fan (the leaves' meshes; tier)
 //       --tree-wind off|on (the shadow's wind on the geometry, the leaves fluttering in HDR; off) --tree-flutter DEG,RATE (6,9)
-//       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)]
+//       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)
+//       --tree-bark off|on (the bark's age layers; off) --tree-relief K (1) --tree-scatter W (0) --tree-rough S (0)
+//       --tree-junctions off|on --tree-roots off|on (the wood's junctions, the flare's roots; off) --tree-wood-tier high|standard|phone]
 //       [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
@@ -221,6 +223,8 @@ fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
 // it is, the eye moved). With the shell off, room is the view over the table to the
 // panelled wall.
 let VIEWS = ["board", "room", "window", "hall", "stove", "table-window"];
+let OFF_ON = ["off", "on"];
+let WOOD_TIERS = ["high", "standard", "phone"];
 let TABLE_WINDOW = 5;
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
 // indirect light keeps, or the indirect light alone on grey, or its broken values marked.
@@ -1692,6 +1696,19 @@ fn main() {
     render3d::tree_wind = pick(argv, "--tree-wind", render3d::TREE_WINDS, 0) == 1;
     let flutter = four(argv, "--tree-flutter", float4 { render3d::tree_flutter.x, render3d::tree_flutter.y, 0.0, 0.0 });
     render3d::tree_flutter = float2 { flutter.x, flutter.y };
+    // The maple's wood (task 117's step three), each off by default: --tree-bark off|on the
+    // bark's age layers grown at startup in place of the first tile, --tree-relief K their
+    // relief (1 true slopes); --tree-scatter W the light wrapped past the terminator as if
+    // scattered under the bark, --tree-rough S Oren-Nayar's roughness (0 each: off);
+    // --tree-junctions off|on the collars, swells, ridges, grain round the feet and caps,
+    // --tree-roots off|on the flare's roots; --tree-wood-tier high|standard|phone their mesh.
+    render3d::tree_bark = pick(argv, "--tree-bark", OFF_ON, 0) == 1;
+    render3d::tree_relief = number(argv, "--tree-relief", render3d::tree_relief);
+    render3d::tree_scatter = number(argv, "--tree-scatter", render3d::tree_scatter);
+    render3d::tree_rough = number(argv, "--tree-rough", render3d::tree_rough);
+    render3d::tree_wood.junctions = pick(argv, "--tree-junctions", OFF_ON, 0) == 1;
+    render3d::tree_wood.roots = pick(argv, "--tree-roots", OFF_ON, 0) == 1;
+    render3d::tree_wood.tier = pick(argv, "--tree-wood-tier", WOOD_TIERS, 0);
     // --tree-card off|on|main: the tree's card (render3d::tree_card, T5), drawn once from the
     // geometry: on in the floor's mirror (and a phone's view), main in the main view too in
     // place of the geometry, to compare. It is drawn from the tree, so it grows it all.

@@ -1105,6 +1105,20 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   its light. Each limb's bark tile starts at a shift of its own. While it draws, the view
   out's near trees (the oak's picture, the park's cards, `tree_seen`) are left out of the
   main view; the far band and the sky stay, and the mirror keeps them all.
+- **The maple's bark, junctions and roots** (the light tuner's `--tree-bark`,
+  `--tree-relief`, `--tree-scatter`, `--tree-rough`, `--tree-junctions`, `--tree-roots`
+  and `--tree-wood-tier`, each off by default and in the app; `trees::bark_layers`,
+  `trees::shaped_tubes`, `TREE_WOOD_FRAG`). The bark tile is grown at startup as cracks
+  opening over time (about 35 ms on the CPU), kept at four ages in two textures, height
+  and cavity, and each pixel blends the ages by its wood's radius: twigs smooth, the trunk
+  deeply furrowed. The shader takes the normal from the height's slope, darkens the sky
+  in the cavities and shadows the sun in them; `--tree-scatter` wraps light past the
+  terminator, warm, and `--tree-rough` lights the wood as a rough surface (Oren-Nayar).
+  With junctions on, the wood's tubes are rebuilt with collars, a swelling round each
+  branch's foot on its parent, the foot welded under the parent's skin, and the parent's
+  grain bent round it; with roots on, the trunk's lowest rings follow the trunk and its
+  roots as one surface, out into the lawn. The tube triangles grow from about 17,000 to
+  82,000 on high, 30,000 on standard, 20,000 on phone (no roots).
 - **The maple's growth past its habit** (the light tuner's `--tree-elbows`,
   `--tree-gravity` and `--tree-shed`, each off by default and in the app;
   `trees::Growth`, `src/model3d/tree_skeleton.goose`; `tools/tree_dump` takes the same as

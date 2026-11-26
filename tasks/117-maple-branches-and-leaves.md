@@ -157,6 +157,50 @@ Against the photos, what still looks wrong:
 - Shed twigs take their leaves now, so shedding at 0.45 thins the crown by a third.
 - Not yet seen on the Mac or the tablet.
 
+## Step three: the bark, the junctions and the roots (2026-11-26)
+
+Built on the Windows PC, each part off by default, set by the light tuner (and the wood's
+shape by `tools/tree_dump --junctions --roots --tier N` too):
+
+| Part | Tuner switch | Where |
+|---|---|---|
+| The bark tile in four ages: a fracture growth (Lefebvre and Neyret 2002) whose cracks keep the time they opened, tapered by their distance to their free ends, furrows by a distance transform, a cavity from blurs; height and cavity, one age a channel, the age blended by the wood's radius | `--tree-bark off\|on`, `--tree-relief K` (1) | `trees::bark_layers`, `tree_bark.goose`; `TREE_WOOD_FRAG` |
+| The normal from the height's slope over the pixel's footprint (high: 5 taps; standard: 3, `TREE_BARK_STANDARD`; phone: screen derivatives, `TREE_BARK_PHONE`), the cavity on the sky, an AO microshadow on the sun | with the bark | `TREE_WOOD_FRAG` |
+| Scattering emulated: wrap lighting past the terminator, tinted warm | `--tree-scatter W` (0; 0.5 tried) | `TREE_WOOD_FRAG` |
+| Roughness: Oren-Nayar in place of Lambert (the old wood had no specular to take away) | `--tree-rough S` (0; 0.8 tried) | `TREE_WOOD_FRAG` |
+| Junctions: the collar swells, more beneath; the parent swells round the foot with a ridge in the crotch; a fillet and the foot welded under the parent's skin (wood over 2 cm, standard 4 cm); the parent's grain flows round the foot (ψ = X(1 − 1/ρ²)); the crease shaded; rounded ends on stubs | `--tree-junctions off\|on` | `trees::shaped_tubes`, `tree_junctions.goose` |
+| The flare: 6 roots (strong and weak, one gap), the trunk's lowest rings the level lines of trunk and roots as one surface, so no seam; the roots run out flat into the lawn | `--tree-roots off\|on` | `trees::rooted_radius`, `tree_junctions.goose` |
+| The tier of the wood's shape | `--tree-wood-tier high\|standard\|phone` | `trees::WoodShape` |
+
+Off, the wood mesh, the shader's path and the tests are as before.
+
+Times on the PC (tools/tree_dump, -O2): the bark tile 35 ms (best of 5), once at
+startup, with its mips; the tube mesh, junctions and roots on, high 22.7 ms (13.0 plain),
+standard 15.1, phone 13.6. Tube triangles of the culled tree: plain 16,752; high 81,956
+(roots alone 56,072); standard 29,632; phone 20,328 (no roots). A tree grown again costs
+6.2 ms growth plus 22.7 wood, so about 29 ms with the tile made once; under 100 ms.
+
+Pictures (local, `build/notes/tree/bark-roots/build/`): `tile-layers.png` (the four ages
+flat), `tile-far.png` and `tile-close.png` (a trunk beside the lawn photo's crops),
+`tile-ages.png` (2 to 90 cm wood), `flare-*.png`, `collar-*.png` and `fork-*.png` (CPU
+renders of the shaped mesh: new, today's, the grain, the wire), `app-near-off-on.png`,
+`app-keys.png` and `app-material.png` (the light tuner, `--tree-draw wood`, near the
+window: off and on; the sun from either side; off, scatter, rough, both). `src/` holds
+the scripts that make them from tree_dump's dumps.
+
+What still looks wrong:
+
+- The furrows are wider and interlaced now, but the plates still read a little drawn,
+  their edges too even; the photo's ridges are rougher and broken across.
+- Scatter at 0.5 warms the shadow side; roughness at 0.8 flattens the lit side. Both are
+  subtle at the window's distance and need the user's eye; neither is on by default.
+- A small step where a fork's thinner branch meets its parent, from the rings' spacing,
+  and now and then a notch beside a junction on the trunk.
+- The trunk is mostly backlit from the near-window view, and the flare hidden by the
+  pier, so the roots show only in the CPU renders.
+- Not yet seen on the Mac or the tablet; the standard and phone tiers checked only as
+  compiled shaders and counts.
+
 ## Round one and the user's answers (2026-11-26)
 
 Three CPU studies, each local in `build/notes/tree/`, with one page of choices

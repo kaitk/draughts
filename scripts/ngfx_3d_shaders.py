@@ -158,10 +158,11 @@ MODULES = [
     ("r3d_haze", FULL, ["FS_SET", "FRAME", "HAZE_BLOCK", "HAZE_FRAG"]),
     ("r3d_haze_add", FULL, ["HAZE_ADD_FRAG"]),
     # The tree outside as geometry (render3d::TreeGpu): its tubes and ribbons, 8-bit and HDR,
-    # still or in the wind (render3d::tree_wind, shaders::TREE_WIND).
+    # still or in the wind (render3d::tree_wind, shaders::TREE_WIND); the 8-bit tube the bark's
+    # standard tier (shaders::TREE_BARK_STANDARD), the HDR one its high tier.
     *[(name + wind_name, [*ribbon, *wind, "VS_SET", "FRAME", "TREE_HEAD", *(["WIND_FN"] if wind else []), "TREE_FN", "TREE_WOOD_VERT"],
        [*ribbon, *hdr, "FS_SET", "FRAME", "TREE_HEAD", "TONE_FN", "TREE_LIGHT_FN", "TREE_WOOD_FRAG"])
-      for name, ribbon, hdr in [("r3d_tree_tube", [], []), ("r3d_tree_ribbon", ["TREE_RIBBON"], []),
+      for name, ribbon, hdr in [("r3d_tree_tube", [], ["TREE_BARK_STANDARD"]), ("r3d_tree_ribbon", ["TREE_RIBBON"], []),
                                 ("r3d_hdr_tree_tube", [], ["HDR_OUT"]), ("r3d_hdr_tree_ribbon", ["TREE_RIBBON"], ["HDR_OUT"])]
       for wind_name, wind in [("", []), ("_wind", ["TREE_WIND"])]],
     # Its leaves' cards, still or in the wind; the HDR's (the high tier's) fluttering too.

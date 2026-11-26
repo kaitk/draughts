@@ -2329,6 +2329,22 @@ to be is in tasks 042, 059, 071, 081, and 086.
   study's per-lobe noise per leaf (the amount and twist give enough variety). Fixed on the
   way: `add_cards` gave every card a trunk segment, so leaves neither moved with their twig
   under gravity nor fell with shed wood.
+- The maple's bark is a tile made at startup in four ages plus junctions in the mesh,
+  never displacement, behind the light tuner's `--tree-bark`, `--tree-scatter`,
+  `--tree-rough`, `--tree-junctions` and `--tree-roots`, each off by default (2026-11-26,
+  task 117's step three, the user's choice; `tree_bark.goose`, `tree_junctions.goose`,
+  `build/notes/tree/bark-roots/`). The tile is a fracture growth (Lefebvre and Neyret
+  2002) whose snapshots are the ages, height and cavity one age a channel, blended by the
+  wood's radius, so young wood is smooth and old wood deeply furrowed; 35 ms once. The
+  normal comes from the height's slope in the shader, its taps by tier (5, 3, screen
+  derivatives). The plastic look is tried two ways, each its own switch: a wrap term for
+  light scattered past the terminator, and Oren-Nayar roughness (the wood had no
+  specular). Junctions swell and weld the branch's foot into its parent, the parent's
+  grain flowing round it; the trunk's lowest rings are the level lines of trunk and roots
+  together, so the roots join without a seam and run out into the lawn. Rejected:
+  displacing the mesh by the tile (triangles everywhere for what a normal shows from the
+  room), a separate mesh per root welded to the trunk (the seam of round one), and grain
+  from world position (it stretched on the collar).
 - Each limb's bark tile is shifted round and along by dice of its own (2026-11-24, task
   107; `trees::tube`), so neighbouring limbs' tiles don't line up. A stand-in until a
   real fix of the tile's repeat (stochastic or two-scale sampling, and the bare maple's
