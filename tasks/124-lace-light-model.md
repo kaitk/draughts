@@ -14,3 +14,11 @@ model.
       scattering) used by the bake, the shaders, the CPU tracer and the Cycles scene
 - [ ] The light under the lace in the tuner within a stated error of the reference
 - [ ] The lace's hand-tuned terms kept, fitted or removed, as in task 122
+
+## Progress
+
+- 2026-11-26 (task 122): the CPU tracer's lace is Cycles' model (a sheet with 0.72 open,
+  its thread throwing `LACE_SCATTER` of the light reaching either side on through it and as
+  much back); the lace panels in the close view agree within 1.00 to 1.08. The bake and the
+  shaders still take their own (`tasks/122-light-from-physical-inputs.md`, "The fourth step,
+  the reference's fixes").
