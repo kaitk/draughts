@@ -90,7 +90,11 @@
 //       that toe, or AgX at the metered exposure, the default)] [--camera-ev EV (AgX's exposure over the meter's; 0)]
 //       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
 //       [--coat on|off (--light physical: the varnish and the wax as clear coats on the walls and floor,
-//       render3d::physical_coat; on)] [--sun-color height|key (--light physical: the sun's colour by its
+//       render3d::physical_coat; on)] [--paper-metal on|off (with the coat: the wallpaper's print a metal over a
+//       matt ground; on)] [--paper-ground R,G,B,ROUGH] [--paper-gold R,G,B,ROUGH (the wallpaper's ground and print,
+//       sRGB; with --paper-metal the print's colour at normal incidence)] [--table-wood R,G,B,ROUGH (the table
+//       top's wood, sRGB, and its polish's roughness; tables::Table.wood)] [--table-coat X,Y,Z,W (its polish,
+//       tables::Table.coat: y its strength)] [--sun-color height|key (--light physical: the sun's colour by its
 //       height through a clear sky, or the key's at 0.6 of its saturation; height)]
 //       [--props-wrap K (--light physical: how far past its terminator the sun wraps on the table and chairs; 0)]
 //       [--casement-depth on|off (--light physical: the sun through the casements' members with their depth, in the bake
@@ -249,6 +253,12 @@ fn physical_sun(made: rooms::Room, height: f32) -> float4 {
 // --light physical's sun's broad sheen (render3d::sheen_look): none, as no lobe of the kind is
 // in the references (Cycles' paper and paint have their gloss alone).
 let PHYSICAL_SHEEN = float4 { 0.0, 0.8, 1.0, 0.0 };
+// --light physical's wallpaper (render3d::paper_ground, paper_gold, paper_metal): the print as
+// bronze powder, a metal of a pale dulled gold, over a matt ground (sRGB, roughness). Both fitted
+// through the light and autumn's grade to the autumn reference's print and ground in shade
+// (task 122): the ground's albedo bluish, as the warm light and the grade's white take its blue.
+let PHYSICAL_PAPER_GROUND = float4 { 0.226, 0.207, 0.261, 0.66 };
+let PHYSICAL_PAPER_GOLD = float4 { 0.686, 0.612, 0.43, 0.42 };
 
 // The room's light from physical inputs (task 122), as the path tracer takes them: one sun on
 // every surface, the room's (its strength and saturation), through the panes; the bake's
@@ -1438,6 +1448,8 @@ fn main() {
     casement_depth = !(flag_value(argv, "--casement-depth") > 0 && argv[flag_value(argv, "--casement-depth")] == "off");
     g.table_spec = tables::get(take);
     if physical { g.table_spec.light.y = 1.0; }
+    g.table_spec.wood = four(argv, "--table-wood", g.table_spec.wood);
+    g.table_spec.coat = four(argv, "--table-coat", g.table_spec.coat);
     // --light physical: one camera curve for the whole picture after the HDR pass, the
     // surfaces writing their light linear: --camera-toe's, AgX at the metered exposure
     // compensated by --camera-ev unless it names a toe.
@@ -1534,6 +1546,9 @@ fn main() {
     render3d::contact_look = four(argv, "--contact", render3d::contact_look);
     render3d::sheen_look = four(argv, "--sheen", if physical { PHYSICAL_SHEEN } else { render3d::sheen_look });
     render3d::physical_coat = physical && !(flag_value(argv, "--coat") > 0 && argv[flag_value(argv, "--coat")] == "off");
+    render3d::paper_metal = render3d::physical_coat && !(flag_value(argv, "--paper-metal") > 0 && argv[flag_value(argv, "--paper-metal")] == "off");
+    render3d::paper_ground = four(argv, "--paper-ground", if render3d::paper_metal { PHYSICAL_PAPER_GROUND } else { render3d::paper_ground });
+    render3d::paper_gold = four(argv, "--paper-gold", if render3d::paper_metal { PHYSICAL_PAPER_GOLD } else { render3d::paper_gold });
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);
     let oak_sun = four(argv, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
@@ -2315,6 +2330,8 @@ fn main() {
             shown_take = take;
             g.table_spec = tables::get(take);
             if physical { g.table_spec.light.y = 1.0; }
+            g.table_spec.wood = four(argv, "--table-wood", g.table_spec.wood);
+            g.table_spec.coat = four(argv, "--table-coat", g.table_spec.coat);
             render3d::tune_table(r3d, g, g.table_spec);
             g.room = room;
             put_look(r3d, g, season, material, st);
@@ -2447,6 +2464,13 @@ fn main() {
                    room_light::lace_source, " --gather-near ", room_light::gather_near);
             flag_four(line, "--contact", render3d::contact_look);
             flag_four(line, "--sheen", render3d::sheen_look);
+            if render3d::physical_coat {
+                if !render3d::paper_metal { format(line, " --paper-metal off"); }
+                flag_four(line, "--paper-ground", render3d::paper_ground);
+                flag_four(line, "--paper-gold", render3d::paper_gold);
+                flag_four(line, "--table-wood", g.table_spec.wood);
+                flag_four(line, "--table-coat", g.table_spec.coat);
+            }
             format(line, " --room-sun ", render3d::room_sun.x);
             flag_four(line, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
             flag_four(line, "--panel-ao", float4 { surfaces::panel_ao_scale, surfaces::panel_ao_width * 100.0 / surfaces::METRE,

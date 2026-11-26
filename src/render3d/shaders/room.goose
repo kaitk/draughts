@@ -1135,6 +1135,9 @@ let ROOM_FRAG = """
         vec3 albedo;
         float rough;
         float metal = 0.0;
+        // How much of the surface's dielectric reflection is kept: 0 on a matt one, whose
+        // light is all diffuse (the wallpaper's ground under PHYSICAL_COAT).
+        float gloss = 1.0;
         vec3 n = ng;
         vec3 u_dir = vec3(axes.x, 0.0, axes.y);
         vec3 v_dir = vec3(axes.z, 0.0, axes.w);
@@ -1332,6 +1335,14 @@ let ROOM_FRAG = """
             float m = texture(paper_mask, vec2(v_uv.x, -v_uv.y) / tile.x).r;
             albedo = mix(srgb(paper.rgb), srgb(gold.rgb), m);
             rough = mix(paper.a, gold.a, m);
+        #ifdef PHYSICAL_COAT
+            // The print as bronze powder on the paper (tile.w): a metal, gold.rgb its colour
+            // at normal incidence, over a matt ground that reflects nothing.
+            if (tile.w > 0.5) {
+                metal = m;
+                gloss = m;
+            }
+        #endif
         } else if (kind < 8.5) {
             // The shell's lime plaster: its tone laid on the face's plane in the room's frame,
             // a slow noise over it so the 4 m tile's patches don't repeat; the cornice (own
@@ -1783,6 +1794,8 @@ let ROOM_FRAG = """
         if (metal > 0.9 && v_local.z < room_box.z)
             env = mix(env, lace_light.rgb / max(params.x * shade.w, 1e-3), clamp(0.6 - dot(rv.xz, axes.zw), 0.15, 1.0));
     #endif
+        spec *= gloss;
+        fc *= gloss;
         vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
     #ifdef ROOM_VIEWS
         // The tuner's view of the sun's highlights alone, ×4.

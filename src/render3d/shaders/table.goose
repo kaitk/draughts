@@ -640,6 +640,11 @@ let TABLE_FRAG = """
         float ak = max(ar, coat.w * coat.w);
     #endif
         vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * spec_vis;
+    #ifdef PROPS_LIGHT
+        // The polish reflects its Fresnel share of the sun before it reaches the wood, as a
+        // clear coat does: a quarter of a low sun on the top.
+        wood -= albedo * (diff / PI * light * vis) * strength * f_schlick(f0, nl);
+    #endif
         vec3 r = reflect(-v, nc);
         vec3 env = sh_eval(r) * params.z * mix(1.0, lit, 0.5);
     #ifdef TABLE_ROOM

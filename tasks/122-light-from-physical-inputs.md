@@ -859,6 +859,64 @@ no difference found. Phones (designed): the same define on the phone tier's wall
 costs nothing more; the table's environment there from the props' vertex colour
 (`PROPS_VERTEX`).
 
+## Step 7 redone: the wallpaper and the table's sun (2026-11-26)
+
+The user's verdict on step 7: the wallpaper "super muddy and unreadable", its print to look
+gold on a ground much bluer than ours, as the reference at 300% shows; the wood muddy; the
+table's colours wrong. Judged now against the reference's 300% crops (plausible parts) and an
+independent look, not Cycles, whose materials are copied from the app. Under `--light
+physical` only; without it the close, low, room and menu views are byte-identical to the
+step-7 build, the reference view within a level (none over 8). Results page:
+`build/notes/light-physical/index.html#step8`; scratch `build/review122/s8/`
+(`paperstat.py`, `fitpaper.py`, `fittable.py`).
+
+- The wallpaper's print a metal over a matt ground (ROOM_FRAG's paper under `PHYSICAL_COAT`,
+  `Shell.tile.w`; `render3d::paper_metal`, `paper_ground`, `paper_gold`; the tuner's
+  `--paper-metal`, `--paper-ground`, `--paper-gold`): the mask's gold is bronze powder, its
+  colour f0, roughness 0.42; the ground takes no sun lobe and no reflection (step 7's coat
+  laid the room's light at F 0.04 over a ground of albedo 0.05, a veil as bright as a
+  sixth of it). Both colours fitted through the light and autumn's grade (the grade gives
+  our shot within 0.65 levels) to the reference's print and ground in two boxes: ground
+  sRGB 0.226, 0.207, 0.261 (from 0.259, 0.22, 0.192), gold 0.686, 0.612, 0.43.
+- Measured in the reference view (two boxes of paper in shade; the print over the ground
+  by luminance, and the local contrast, luminance p90/p10 over a 31 px mean):
+
+| | Print / ground | Local contrast | Ground (sRGB levels) | Print |
+|---|---|---|---|---|
+| Reference | 4.33, 3.16 | 2.32, 2.46 | 32 17 6, 34 18 7 | 70 43 22, 65 38 17 |
+| Step 7 | 3.02, 1.76 | 1.39, 1.45 | 35 20 7, 37 19 4 | 63 41 22, 50 28 10 |
+| Now | 4.20, 3.33 | 3.05, 3.20 | 36 21 10, 31 14 3 | 79 50 24, 60 33 13 |
+
+  The reference's ground is not blue in the picture (B/R 0.13 to 0.15, its print 0.11):
+  "bluer" is against the print, where ours had a ground more orange than the print (B/R 0.05
+  against 0.10). To read as the reference's warm near-black under a 3500 K sun and autumn's
+  blue gain 0.6, the albedo itself must be bluish. The independent look: the mud gone, the
+  contrast the reference's; the print a little dusty (its blue taken down a quarter after);
+  our motifs about 1.5 times the reference's and denser (the tile is 0.9 m; a real paper's
+  is 0.65 m, `--wallpaper-tile`), not changed. Not done: the bake's `PAPER_ALBEDO` is still
+  the old mean (the paper's share of the bounce is small).
+- The table: the handover's diagnosis (the top's albedo several times too light) doesn't hold.
+  Our albedo on the top (the diagnosis patch's view 10) is 0.093, 0.052, 0.033, Cycles'
+  diffuse colour there 0.085, 0.050, 0.034. On a common scale (the floor in shade), the
+  top's light was 1.60 times Cycles' (the floor's sun 1.08, the lit door 0.81), and in it
+  the sun's diffuse 1.53 times: our polish took its Fresnel off the view's side only, where
+  Cycles' coat also reflects its share of the sun before it reaches the wood (a quarter for
+  a 15° sun on a level top). TABLE_FRAG under `PROPS_LIGHT` now takes it off: the top 1.29
+  times Cycles'. The polish's reflection is not the top's paleness (with the polish off the
+  top's light moves −2% to −17%).
+- What still separates the top from the reference is the reference's light: its top, lit by
+  the same 15° sun at the same angle as its floor, is about 2.7 stops under its floor's sun,
+  dappled; in Cycles and ours it is in full sun (95% direct). AgX then takes our lit wood
+  toward the shoulder (xy 0.381, 0.373 against the reference's 0.443, 0.380), the open
+  "sun patches kept warm" grade question. A darker, more saturated wood
+  (`--table-wood 0.34,0.2,0.13,0.1`) is on the page as a variant: more saturated, but
+  redder than the reference's orange-brown.
+- New tuner flags for the fits: `--table-wood`, `--table-coat` (tables::Table's wood and
+  coat).
+
+Cost: the paper a multiply of the specular and of the Fresnel a pixel on the walls; the table
+a Fresnel and a multiply-add a pixel under `PROPS_LIGHT`. Not timed (no measurable size).
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

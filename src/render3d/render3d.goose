@@ -2169,10 +2169,10 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
     let s = room_shell::LIBRARY;
     let window_v = shell_face(s);
     let away = s.table.y * surfaces::METRE;
-    SurfacesBlock { k.plank, k.planks, k.worn, k.paper, k.gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
+    SurfacesBlock { k.plank, k.planks, k.worn, paper_ground, paper_gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
-                    float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, 0.0 }, k.plaster_shade, k.plaster_light,
+                    float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, if paper_metal { 1.0 } else { 0.0 } }, k.plaster_shade, k.plaster_light,
                     k.ceiling_shade, k.ceiling_light, k.paint,
                     k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0, k.brass,
                     model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w),
@@ -3867,6 +3867,12 @@ fn pre_place_or_stand_in(g: Gpu&) -> Texture { if g.pre_place.id != 0 { g.pre_pl
 // strength (0 none), y its roughness, z the paper's share, w the tuner's view (1: the sun's
 // highlights alone, ×4). The tuner's --sheen.
 var sheen_look = float4 { 2.0, 0.8, 1.0, 0.0 };
+// The wallpaper's ground and print (sRGB and roughness, surfaces::Look's paper and gold), and
+// with physical_coat whether the print is a metal (gold its colour at normal incidence) over
+// a matt ground. The light tuner's --paper-ground, --paper-gold and --paper-metal.
+var paper_ground = surfaces::LOOK.paper;
+var paper_gold = surfaces::LOOK.gold;
+var paper_metal = false;
 // Whether one of the light tuner's views of the room is on (the screen's occlusion, the
 // indirect light, the sun's highlights, the floor's reflection alone): the room's pipelines
 // then carry their code (shaders::ROOM_VIEWS), else they leave it out.
