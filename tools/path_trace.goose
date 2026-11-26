@@ -8,12 +8,14 @@
 // outer opening, past both casements (their panes, frames and bars); up to 10 bounces. The
 // inputs are physical, as in tools/blender/scene.py's Cycles scene: no bounce gain, no caps,
 // each pane passing 0.92, the lace a sheet passing 0.72 whose thread throws 0.4 of the light
-// it stops on each side, from the light reaching both its sides; no tree.
+// it stops on each side, from the light reaching both its sides; no tree. The casements'
+// backs, which the room's mesh leaves out, are closed (room_scene::casement_backs; --backs off
+// leaves them open).
 // Light is "over pi", the shaders' units: the irradiance on a white surface divided by pi.
 //
 //   goose build -o build/path_trace tools/path_trace.goose          (from the repository's root)
-//   build/path_trace points [--samples 4096]
-//   build/path_trace picture VIEW [--size 480x270] [--samples 64] [--light] [--exposure EV (1.4)]
+//   build/path_trace points [--samples 4096] [--backs on|off]
+//   build/path_trace picture VIEW [--size 480x270] [--samples 64] [--light] [--exposure EV (1.4)] [--backs on|off]
 //       [--out build/path_traced/VIEW]
 //
 // points: named points on the chairs and the table, each its height, the light without the
@@ -34,6 +36,9 @@ let EPS: f32 = 0.004;        // a ray's start off its surface, world units
 let MAX_DEPTH = 10;
 let PANE:      f32 = 0.92;
 let LACE_LETS: f32 = 0.72;   // room_light::LACE_LETS
+
+// The casements' backs, which the room's mesh leaves out (room_scene::casement_backs; --backs off).
+var casement_backs = true;
 
 // The room's placement and light (the tuner's defaults).
 var table_at = float2 { 4.4, 5.8 };
@@ -153,6 +158,7 @@ fn build_scene() {
     var glass:   mesh::Vertex[>..] = [];
     var gi:      u32[>..]          = [];
     room_shell::build(verts, indices, glass, gi, room_shell::LIBRARY, true);
+    if casement_backs { room_scene::casement_backs(verts, indices); }
     for &v in verts {
         v.pos = to_world(v.pos);
         v.normal = to_world(v.normal);
@@ -944,6 +950,8 @@ fn main() {
     var argv = args();
     let mode: const u8[:] = if argv.len > 1 { argv[1][..] } else { "" };
     let t0 = clock();
+    let backs_at = flag_at(argv, "--backs");
+    casement_backs = !(backs_at > 0 && argv[backs_at] == "off");
     build_scene();
     print(tris.len, " triangles in ", (clock() - t0) * 1000.0, " ms");
     if mode == "points" {

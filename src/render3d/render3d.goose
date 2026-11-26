@@ -562,16 +562,16 @@ struct TreeGpu {
     // The bark's age layers (trees::bark_layers, tree_bark): the height and the cavity.
     bark_height: Texture,
     bark_cavity: Texture,
-    tube:         Pipeline,
-    ribbon:       Pipeline,
-    hdr_tube:     Pipeline,
-    hdr_ribbon:   Pipeline,
-    leaves:       Buffer,       // the leaves' cards (trees::leaf_cards), when all is drawn
-    leaf_count:   i64,
-    leaf_shape:   Texture,      // the leaf atlas's two layers (leaf_atlas::make)
-    leaf_marks:   Texture,
-    leaf:         Pipeline,
-    hdr_leaf:     Pipeline,
+    tube:        Pipeline,
+    ribbon:      Pipeline,
+    hdr_tube:    Pipeline,
+    hdr_ribbon:  Pipeline,
+    leaves:      Buffer,        // the leaves' cards (trees::leaf_cards), when all is drawn
+    leaf_count:  i64,
+    leaf_shape:  Texture,       // the leaf atlas's two layers (leaf_atlas::make)
+    leaf_marks:  Texture,
+    leaf:        Pipeline,
+    hdr_leaf:    Pipeline,
     // Whether the pipelines move the tree in the wind (tree_wind), and the leaves' meshes of
     // the 8-bit and the HDR pipelines (leaf_mesh), as they were made.
     wind_made:          bool,
@@ -637,6 +637,7 @@ struct HdrPipelines {
     pieces:      i32,
     mapped:      bool,      // with the window's light map (window_map_on)
     props_light: bool,      // the table's with shaders::PROPS_LIGHT (props_light)
+    volumes:     bool,      // the paint's, sills' and metals' with shaders::PROBE_VOLUMES (room_light::volumes_on)
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -2203,7 +2204,12 @@ fn light_box_of() -> float4 {
     let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
     return float4 { corner.x, surfaces::FLOOR_Y + room_light::INSET * metre, corner.y, room_light::CELL * metre };
 }
-fn light_grid_of() -> float4 { float4 { room_light::NX, room_light::NZ, room_light::NH, 0.0 } }
+// The grid's probes across, along v and up, and how many probe volumes follow it in the
+// atlas (room_light::volumes, with volumes_on; ROOM_FRAG's PROBE_VOLUMES reads them).
+fn light_grid_of() -> float4 {
+    let volumes: f32 = if room_light::volumes_on { room_light::volumes.len } else { 0.0 };
+    return float4 { room_light::NX, room_light::NZ, room_light::NH, volumes };
+}
 
 // The baked light's atlas to bind, or another texture where none is made: ROOM_FRAG reads
 // it only when its block says it is on.
@@ -2228,7 +2234,7 @@ fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     let r = g.room;
     return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.panes, f.room_axes,
             float4 { if props_light { 1.0 } else { 0.0 }, if room_light::rug_in_bake { 1.0 } else { 0.0 },
-                     if room_light::gather_exact { 1.0 } else { 0.0 }, 0.0 },
+                     if room_light::gather_exact { 1.0 } else { 0.0 }, if room_light::volumes_on { room_light::cavity_up + 1000 * room_light::cavity_across } else { 0.0 } },
             float4 { mesh::TABLE_R, g.tree_ms as f32, light_bounces as f32, room_sun.x },
             float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
                      (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang },
@@ -2239,8 +2245,11 @@ fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
 // props' with props_light), the sun's
 // patches, how much of the sun the tree lets through each sun ray's glass point, and the
 // tree's map at a low mip, kept on the CPU when it is baked (bake_tree).
-var light_atlas: f32[room_light::ATLAS_FLOATS];
-var light_bytes: u8[ATLAS_BYTES];
+// With room_light::volumes_on the atlas has the volumes' rows after the grid's
+// (room_light::FULL_H); light_rows is the height of the one on the GPU.
+var light_atlas: f32[room_light::FULL_FLOATS];
+var light_bytes: u8[FULL_BYTES];
+var light_rows = 0;
 // The props' atlas of nine harmonics (room_light::PROPS_FLOATS), with props_light.
 var light_props:   f32[room_light::PROPS_FLOATS];
 var props_bytes:   u8[PROPS_BYTES];
@@ -2271,7 +2280,7 @@ var shade_fill: f32 = 0.2;
 // (1 none; the light tuner's --light physical, which lights every surface through the
 // panes): the bake takes the sun before them, as its glazing has them.
 var sun_panes: f32 = 1.0;
-let ATLAS_BYTES = 243360;   // room_light::ATLAS_W × ATLAS_H × 8
+let FULL_BYTES = 274560;    // room_light::ATLAS_W × FULL_H × 8
 let PROPS_BYTES = 567840;   // room_light::ATLAS_W × PROPS_H × 8
 let TREE_LEVEL = 3;
 let TREE_SMALL = 98304;     // trees::SHELL_W × SHELL_H × 4 >> 2 × TREE_LEVEL
@@ -2327,17 +2336,32 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     room_light::gather_half(sun, light_bounce);
     light_steps[5] = (clock() - at) * 1000.0;
     at = clock();
-    room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..], light_props[..]);
+    room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..room_light::ATLAS_FLOATS], light_props[..]);
     light_steps[6] = (clock() - at) * 1000.0;
+    at = clock();
+    if room_light::volumes_on {
+        room_light::bake_volumes(sun, light_tree[..], light_patches, n, light_bounce, light_atlas[..]);
+        volume_table();
+    }
+    light_steps[7] = (clock() - at) * 1000.0;
     probes_on_table(g);
     meter_light = meter_of(light_bounce, sun.bounce_gain);
-    for i in room_light::ATLAS_FLOATS {
+    let rows = if room_light::volumes_on { room_light::FULL_H } else { room_light::ATLAS_H };
+    let floats = room_light::ATLAS_W * rows * 4;
+    for i in floats {
         let h = half_bits(light_atlas[i]);
         light_bytes[2 * i] = (h & 0xFF) as u8;
         light_bytes[2 * i + 1] = (h >> 8) as u8;
     }
-    if g.light_volume.id == 0 { g.light_volume = o.gpu_sampled(room_light::ATLAS_W, room_light::ATLAS_H, 1, RGBA16F); }
-    o.gpu_upload(g.light_volume, 0, light_bytes[..]);
+    if g.light_volume.id != 0 && light_rows != rows {
+        o.gpu_release(g.light_volume);
+        g.light_volume = Texture { 0 };
+    }
+    if g.light_volume.id == 0 {
+        g.light_volume = o.gpu_sampled(room_light::ATLAS_W, rows, 1, RGBA16F);
+        light_rows = rows;
+    }
+    o.gpu_upload(g.light_volume, 0, light_bytes[..2 * floats]);
     if props_light {
         for i in room_light::PROPS_FLOATS {
             let h = half_bits(light_props[i]);
@@ -2350,6 +2374,29 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     g.light_for = key;
     g.light_patches = n;
     g.light_ms = (clock() - t0) * 1000.0;
+}
+
+// The probe volumes' table in the atlas's row after the grid's, three texels a volume in
+// the room's frame (world units), as ROOM_FRAG's volumes_light reads it: its box's low corner
+// and how far in from its faces it blends into the grid; its size and its block's first
+// column; its probes along x, up and along z, and its block's first row.
+fn volume_table() {
+    let s = room_shell::LIBRARY;
+    let metre = surfaces::METRE;
+    for v, n in room_light::volumes {
+        // The plan's x and y fall along the room's x and z.
+        let low = room_shell::room_of(s, float2 { v.hi.x, v.hi.y });
+        let texels: float4[3] = [float4 { low.x, surfaces::FLOOR_Y + v.lo.z * metre, low.y, v.fade * metre },
+                                 float4 { (v.hi.x - v.lo.x) * metre, (v.hi.z - v.lo.z) * metre, (v.hi.y - v.lo.y) * metre, v.column },
+                                 float4 { v.nx, v.nh, v.ny, v.row }];
+        for t in 3 {
+            let a = 4 * (room_light::ATLAS_H * room_light::ATLAS_W + 3 * n + t);
+            light_atlas[a] = texels[t].x;
+            light_atlas[a + 1] = texels[t].y;
+            light_atlas[a + 2] = texels[t].z;
+            light_atlas[a + 3] = texels[t].w;
+        }
+    }
 }
 
 // The probes' light at four heights on the games table's axis into table_probes, as
@@ -3917,10 +3964,10 @@ let CAMERA_AGX = 3;
 // leaves it; worked out once at the bake (meter_of). The camera exposes it to METER_GREY,
 // times 2 to camera_ev (stops, the light tuner's --camera-ev).
 var meter_light: f32 = 0.0;
-var camera_ev: f32 = 0.0;
+var camera_ev:   f32 = 0.0;
 let METER_GREY: f32 = 0.18;
 fn meter_of(b: room_light::Bounce&, gain: f32) -> f32 {
-    var sum: f32 = 0.0;
+    var sum:  f32 = 0.0;
     var area: f32 = 0.0;
     for c in room_light::LACE_C0 {
         let a = b.cells[c].area;

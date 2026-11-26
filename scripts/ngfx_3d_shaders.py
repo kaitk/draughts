@@ -73,6 +73,9 @@ ROOMS = [
     ("r3d_hdr_paint", ["ROOM_PAINT", "HDR_OUT"]),
     ("r3d_hdr_sill", ["ROOM_SILL", "HDR_OUT"]),
     ("r3d_hdr_metals", ["ROOM_METALS", "SHARP_BOX", "HDR_OUT"]),
+    ("r3d_hdr_paint_volumes", ["PROBE_VOLUMES", "ROOM_PAINT", "HDR_OUT"]),
+    ("r3d_hdr_sill_volumes", ["PROBE_VOLUMES", "ROOM_SILL", "HDR_OUT"]),
+    ("r3d_hdr_metals_volumes", ["PROBE_VOLUMES", "ROOM_METALS", "SHARP_BOX", "HDR_OUT"]),
     ("r3d_hdr_glass", ["ROOM_GLASS", "HDR_OUT"]),
     ("r3d_hdr_lace", ["ROOM_LACE", "HDR_OUT"]),
 ]

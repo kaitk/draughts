@@ -9,7 +9,7 @@ import math;
 // shots' --plan-eye framings in agents/perf.md), each its eye, its target (plan metres) and
 // vertical field of view.
 struct View { name: u8[..16], eye: float3, at: float3, fov: f32 }
-let VIEWS: View[12] = [
+let VIEWS: View[13] = [
     View { "down", float3 { 6.0, 3.0, 1.7 }, float3 { 6.0, 3.05, 0.0 }, 55.0 },
     View { "corner", float3 { 8.4, 0.6, 1.6 }, float3 { 2.0, 5.0, 0.5 }, 55.0 },
     View { "room", float3 { 8.4, 0.6, 1.7 }, float3 { 2.6, 5.8, 1.3 }, 60.0 },
@@ -22,6 +22,7 @@ let VIEWS: View[12] = [
     View { "low", float3 { 6.3, 4.6, 0.35 }, float3 { 5.3, 5.8, 0.45 }, 55.0 },
     View { "base", float3 { 5.75, 4.75, 0.62 }, float3 { 4.5, 5.8, 0.36 }, 42.0 },
     View { "joint", float3 { 4.9, 4.9, 0.45 }, float3 { 4.254, 5.83, 0.62 }, 40.0 },
+    View { "casement", float3 { 4.2, 6.15, 1.3 }, float3 { 4.75, 7.6, 1.55 }, 50.0 },
 ];
 
 // The view of that name; false if there is none.
@@ -56,4 +57,29 @@ fn light_of(sun_at: float2, window_turn: f32) -> Light {
     let sun = (float3 { y, y, y } + (key - float3 { y, y, y }) * room_sun_sat) * (r.key.z * r.shell_sun.y);
     let out = float3 { -f.into.x * 0.94, 0.342, -f.into.y * 0.94 };
     return Light { l, sun, sh_at(rooms::harmonics(r), out), float4 { f.along.x, f.along.y, f.into.x, f.into.y } };
+}
+
+// The backs of the windows' casements (room_shell::casement_members' outward faces), as paint
+// in the room's frame, into verts and indices: the room's mesh draws only the faces that show
+// from the room, which leaves each member's box open toward the outside, and the space between
+// the panes too dark (task 122). The lunette, the last member, is the wall's own.
+fn casement_backs(verts: mesh::Vertex[>..]&, indices: u32[>..]&) {
+    let s = room_shell::LIBRARY;
+    let face = s.walls[room_shell::WINDOW_WALL].a.y;
+    let out = float3 { 0.0, 0.0, -1.0 };    // the plan's +y in the room's frame
+    for o in room_light::windows() {
+        let boxes = room_shell::casement_members(o);
+        for b, n in boxes {
+            guard n < boxes.len - 1 else { continue; }
+            let y = face - b.lo.z;
+            let first = verts.len as u32;
+            for c in 4 {
+                let x = if c == 1 || c == 2 { b.hi.x } else { b.lo.x };
+                let h = if c >= 2 { b.hi.y } else { b.lo.y };
+                let p = float3 { (s.table.x - (o.mid + x)) * surfaces::METRE, surfaces::FLOOR_Y + h * surfaces::METRE, (s.table.y - y) * surfaces::METRE };
+                verts.push(mesh::Vertex { p, out, float2_0, 1.0, surfaces::MAT_PAINT + 0.2 });
+            }
+            indices.append([first, first + 1, first + 2, first, first + 2, first + 3]);
+        }
+    }
 }

@@ -91,6 +91,9 @@
 //       [--props-wrap K (--light physical: how far past its terminator the sun wraps on the table and chairs; 0)]
 //       [--casement-depth on|off (--light physical: the sun through the casements' members with their depth, in the bake
 //       and on every surface, rooms::Room's panes.w; on)] [--stove on|off]
+//       [--volumes on|off (--light physical: the probe volumes, room_light::volumes_on, the windows' spaces between
+//       the panes; on)] [--cavity-up N --cavity-across N (their probes up and across, room_light::cavity_up and
+//       cavity_across; 20, 7)]
 //       [--paint-relief K (the painted wood's relief tile's strength, 1 as made)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
 //       0.15 by default, 0 as made; Y switches 0.15 and 0)]
@@ -1500,6 +1503,9 @@ fn main() {
     room_light::gather_near = number(argv, "--gather-near", if physical { PHYSICAL_GATHER_NEAR } else { room_light::gather_near });
     room_light::gather_exact = physical;
     room_light::niche_faces = physical;
+    room_light::volumes_on = physical && !(flag_value(argv, "--volumes") > 0 && argv[flag_value(argv, "--volumes")] == "off");
+    room_light::cavity_up = number(argv, "--cavity-up", room_light::cavity_up) as i64;
+    room_light::cavity_across = number(argv, "--cavity-across", room_light::cavity_across) as i64;
     render3d::contact_look = four(argv, "--contact", render3d::contact_look);
     render3d::sheen_look = four(argv, "--sheen", render3d::sheen_look);
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);
@@ -1820,7 +1826,8 @@ fn main() {
             let dump_light = flag_value(argv, "--dump-light");
             if dump_light > 0 && g.light_ms > 0.0 {
                 var out: u8[>..] = [];
-                for i in room_light::ATLAS_FLOATS { format(out, render3d::light_atlas[i], "\n"); }
+                let floats = if room_light::volumes_on { room_light::FULL_FLOATS } else { room_light::ATLAS_FLOATS };
+                for i in floats { format(out, render3d::light_atlas[i], "\n"); }
                 guard write_file(argv[dump_light], out[..]) else { abort("could not write the probes"); }
                 if render3d::props_light {
                     var props: u8[>..] = [];
@@ -1840,7 +1847,7 @@ fn main() {
                 let st = render3d::light_steps;
                 print("the room's light baked in ", g.light_ms, " ms, ", g.light_patches, " sun patches; the sun's rays ", st[0],
                       " ms, the first light ", st[1], ", the bounces ", st[2], ", ", st[3], ", ", st[4], ", the half grid ", st[5],
-                      ", the probes ", st[6]);
+                      ", the probes ", st[6], ", the volumes ", st[7]);
                 if render3d::camera_toe > 2.5 {
                     let k = render3d::camera_exposure(g);
                     print("the camera's meter ", render3d::meter_light, ", its exposure ", k, " over Frame's ", g.frame.params.x,
@@ -2363,7 +2370,7 @@ fn main() {
             if physical {
                 format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --camera-ev ", render3d::camera_ev, " --props-wrap ",
                        render3d::props_wrap, " --casement-depth ",
-                       if casement_depth { "on" } else { "off" });
+                       if casement_depth { "on" } else { "off" }, " --volumes ", on_off(room_light::volumes_on));
             }
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
                    " --lace ", LACE_WAYS[g.lace_way]);

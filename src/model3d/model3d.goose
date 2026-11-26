@@ -29,6 +29,7 @@ import .book_cells;
 import .curtains;
 import .view_out;
 import .room_light;
+import .probe_volumes;
 import .corner_map;
 import .glass_tile;
 import .mesh_close;

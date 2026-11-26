@@ -9,7 +9,8 @@
 //   goose build -o build/blender/export tools/blender_export.goose
 //   build/blender/export [--out build/blender] [--table-at 4.4,5.8] [--sun AZ,HEIGHT (0,15)]
 //       [--window-turn DEG (12)] [--table-turn DEG (25)] [--lace-hang M (0.15)] [--books on|off]
-//       [--chairs on|off] [--rug on|off]
+//       [--chairs on|off] [--rug on|off] [--backs on|off (the casements' backs, which the room's mesh leaves
+//       out: room_scene::casement_backs; on)]
 //
 // --maps on also writes, from the app's own code on the GPU, the table's wood maps
 // (table_albedo.png, table_normal.png), the panelling oak's field (wall_albedo.png,
@@ -414,6 +415,8 @@ fn main() {
     var glass:   mesh::Vertex[>..] = [];
     var gi:      u32[>..]          = [];
     room_shell::build(verts, indices, glass, gi, room_shell::LIBRARY, books);
+    // The casements' backs, which the room's mesh leaves out (room_scene::casement_backs).
+    if switch(argv, "--backs", true) { room_scene::casement_backs(verts, indices); }
     add(verts, indices, true, false);
     add(glass, gi, true, false);
     // The floor's uv's rectangle (world units), which its maps cover.

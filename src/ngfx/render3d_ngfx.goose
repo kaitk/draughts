@@ -660,10 +660,12 @@ fn make_lit_shell(own: Own&, g: Gpu&) {
 fn make_hdr(own: Own&, g: Gpu&) {
     let h .= g.hdr_pipes;
     let props = render3d::props_light;
-    guard h.tone.id == 0 || h.pieces != g.pieces || h.props_light != props else { return; }
+    let volumes = room_light::volumes_on;
+    guard h.tone.id == 0 || h.pieces != g.pieces || h.props_light != props || h.volumes != volumes else { return; }
     if h.tone.id != 0 { release_hdr(own, g); }
     h.pieces = g.pieces;
     h.props_light = props;
+    h.volumes = volumes;
     let lit = lit_hdr_blob(g.pieces);
     h.lit = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
     h.fading = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
@@ -678,9 +680,12 @@ fn make_hdr(own: Own&, g: Gpu&) {
     h.planar_kinds = [nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_shade.blob"), opaque),
                       nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_no_table.blob"), opaque)];
     h.walls = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_walls.blob"), opaque);
-    h.paint = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint.blob"), opaque);
-    h.sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_sill.blob"), opaque);
-    h.metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_metals.blob"), opaque);
+    h.paint = if volumes { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint_volumes.blob"), opaque) }
+              else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint.blob"), opaque) };
+    h.sill = if volumes { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_sill_volumes.blob"), opaque) }
+             else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_sill.blob"), opaque) };
+    h.metals = if volumes { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_metals_volumes.blob"), opaque) }
+               else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_metals.blob"), opaque) };
     h.glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_glass.blob"),
                            ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
     h.lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_lace.blob"),

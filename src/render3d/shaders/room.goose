@@ -583,6 +583,7 @@ let ROOM_FRAG = """
     // normal n (the world's), over pi: the probes round lp, half a step out along n so a
     // wall reads the room's side of itself, the layers above and below mixed by hand, each
     // colour a constant and a direction.
+    #ifndef PROBE_VOLUMES
     vec3 baked_light(vec3 lp, vec3 n) {
         vec3 ln = vec3(dot(n.xz, axes.xy), n.y, dot(n.xz, axes.zw));
         vec3 hi = vec3(light_grid.x, light_grid.z, light_grid.y) - 1.0;
@@ -595,6 +596,49 @@ let ROOM_FRAG = """
         vec4 b = mix(probe_at(2.0, k0, g.xz), probe_at(2.0, k1, g.xz), kf);
         return max(vec3(r.x + dot(r.yzw, ln), gr.x + dot(gr.yzw, ln), b.x + dot(b.yzw, ln)), vec3(0.0));
     }
+    #else
+    // With the probe volumes (model3d::room_light's Volume, render3d::volume_table): the atlas
+    // has their rows after the grid's, so its size is its own. A block's probes at g (a block
+    // at `at`: its first column and row, its probes across and along z), mixed between the
+    // slices k0 and k1 by kf; the three colours' constant and direction, as baked_light's.
+    vec3 block_light(vec4 at, vec3 g, float k0, float k1, float kf, vec3 ln) {
+        vec2 size = vec2(textureSize(light_volume, 0));
+        vec2 a = vec2(at.x + g.x + 0.5, at.y + g.z + 0.5);
+        vec2 s0 = vec2(k0 * at.z, 0.0);
+        vec2 s1 = vec2(k1 * at.z, 0.0);
+        vec2 c1 = vec2(0.0, at.w);
+        vec2 c2 = vec2(0.0, 2.0 * at.w);
+        vec4 r = mix(textureLod(light_volume, (a + s0) / size, 0.0), textureLod(light_volume, (a + s1) / size, 0.0), kf);
+        vec4 gr = mix(textureLod(light_volume, (a + s0 + c1) / size, 0.0), textureLod(light_volume, (a + s1 + c1) / size, 0.0), kf);
+        vec4 b = mix(textureLod(light_volume, (a + s0 + c2) / size, 0.0), textureLod(light_volume, (a + s1 + c2) / size, 0.0), kf);
+        return max(vec3(r.x + dot(r.yzw, ln), gr.x + dot(gr.yzw, ln), b.x + dot(b.yzw, ln)), vec3(0.0));
+    }
+    vec3 baked_light(vec3 lp, vec3 n) {
+        vec3 ln = vec3(dot(n.xz, axes.xy), n.y, dot(n.xz, axes.zw));
+        vec3 hi = vec3(light_grid.x, light_grid.z, light_grid.y) - 1.0;
+        vec3 g = clamp((lp + ln * (0.5 * light_box.w) - light_box.xyz) / light_box.w, vec3(0.0), hi);
+        float k0 = floor(g.y);
+        vec3 baked = block_light(vec4(0.0, 0.0, light_grid.x, light_grid.y), g, k0, min(k0 + 1.0, hi.y), g.y - k0, ln);
+        // Each volume whose box holds lp takes over from what is before it in the table by
+        // how far in lp lies (its fade; a centimetre's slack for the table's half floats).
+        int row = int(3.0 * light_grid.y);
+        for (int v = 0; v < int(light_grid.w); v++) {
+            vec4 low = texelFetch(light_volume, ivec2(3 * v, row), 0);
+            vec4 extent = texelFetch(light_volume, ivec2(3 * v + 1, row), 0);
+            vec3 q = lp - low.xyz;
+            vec3 inside = min(q, extent.xyz - q);
+            float d = min(inside.x, min(inside.y, inside.z));
+            if (d < -0.3) continue;
+            vec4 probes = texelFetch(light_volume, ivec2(3 * v + 2, row), 0);
+            vec3 spacing = extent.xyz / probes.xyz;
+            vec3 gv = clamp((q + ln * (0.5 * spacing)) / spacing - 0.5, vec3(0.0), probes.xyz - 1.0);
+            float v0 = floor(gv.y);
+            vec3 own = block_light(vec4(extent.w, probes.w, probes.x, probes.z), gv, v0, min(v0 + 1.0, probes.y - 1.0), gv.y - v0, ln);
+            baked = mix(baked, own, low.w > 0.0 ? clamp(d / low.w, 0.0, 1.0) : 1.0);
+        }
+        return baked;
+    }
+    #endif
 
     // The light in the room's shade for the normal n at lp (the room's frame), over pi:
     // the harmonics and the shade's even light, or with the light baked, that beside what
@@ -1966,6 +2010,10 @@ let FLOOR_NO_TABLE = "#define FLOOR_NO_TABLE 1\n";
 // floor without the mirror. The rest takes room_wide, which room_reflection is for them (a
 // surface not a metal has px 1, so sharp 0).
 let SHARP_BOX = "#define SHARP_BOX 1\n";
+// The probe volumes in the baked light (render3d::volumes_light: the light tuner's --light
+// physical), on the desktop's HDR tier: the paint's, the sills' and the metals' groups, which
+// the windows' spaces between the panes hold.
+let PROBE_VOLUMES = "#define PROBE_VOLUMES 1\n";
 // The sharp box's light from the box's map (render3d::box_map), on the phone's tier: the
 // floor's and metals' pipelines with SHARP_BOX and NO_SSAO; the map's bake (BOX_MAP_BAKE,
 // with no group's define, so ROOM_HEAD declares the opaque groups' shared textures alone).
