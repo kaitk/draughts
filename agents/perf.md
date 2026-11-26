@@ -107,6 +107,7 @@ open questions with their numbers.
 `scripts/android.py tools/light_tune.goose --run` installs the tuner beside the app (its own
 id); on Android it opens in the touch walk with the phone's tier (task 115).
 `python tools/perf/tablet_room_bench.py` times the four views above with each part left out,
+after the app's own board view (`--bench`, the baseline with no room; the app installed),
 and writes `build/perf/tablet-room/results.json`. The device has no GPU counters, so the split
 is the profile. One device at a time; keep it awake and unlocked (`adb shell svc power stayon
 usb`), or the tuner runs without a surface.

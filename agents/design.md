@@ -92,7 +92,7 @@ pieces; the design boards still set the layout, glass, and controls.
   on its middle third), P prints the room as Goose for `src/model3d/rooms.goose`. Script
   sweeps of its flags under bash: zsh passes an unquoted `$args` as one word.
 - The room round the table, its herringbone floor and panelling (`model3d::surfaces`):
-  the light tuner's `--room-surfaces on` (O), `--view room` (V), `--eye X,Y,Z,0 --at
+  the light tuner (always with the room; the app's board alone is the app's), `--view room` (V), `--eye X,Y,Z,0 --at
   X,Y,Z,0` for a camera of its own, `--dump-oak PREFIX` for the baked fields at 1:1,
   `--wallpaper-tile M` for the wall a tile of the wallpaper covers (0.9 m; the slider
   under Wallpaper, 0.65 to 1.4 m, and L cycles a real paper's 0.65 m, 0.9 m and
@@ -121,8 +121,7 @@ pieces; the design boards still set the layout, glass, and controls.
   (`close` the corner at eye height, `top` the frieze, cornice and crest, `foot` the
   plinth and the door).
 - The library's whole room in the light tuner (`model3d::room_shell`, task 107's demo):
-  `--room-surfaces on` (O) shows the shell (walls, wainscot, three box windows, two doors,
-  cornice, ceiling). `--view room|window|hall|stove` (V cycles them after the board's
+  the shell (walls, wainscot, three box windows, two doors, cornice, ceiling). `--view room|window|hall|stove` (V cycles them after the board's
   orbit) are a person's eyes in the plan; `--plan-eye X,Y,H --plan-at X,Y,H` a camera in plan metres (x along the window
   wall from the stove's end, y from the hall wall, H up from the floor), `--fov DEG`. With
   the shell the room's light comes through its own windows (`shaders::LIGHT_FN`'s
@@ -337,7 +336,7 @@ pieces; the design boards still set the layout, glass, and controls.
   -compose difference`) to find it; for the glints and the drift, step `--wind-time` by
   1/60 s or 0.25 s (`build/b33/shots.sh`).
 - The haze in the beam (builder 33, `build/notes/builder-33/`): `--haze menu|game`, HDR
-  on, needs the room's pre-pass (on with `--room-surfaces on`). The realistic strengths
+  on, needs the room's pre-pass. The realistic strengths
   (`--haze-sigma` 5e-5 to 4e-4) only lift the dark wainscot toward the sun; `game` (4e-4)
   reads as a soft beam, `menu` (3e-3, stripes soft 4, `--haze-toward 4`) is close to the
   ChatGPT study's. Looking toward the sun the bars' stripes converge on it and read as god rays:

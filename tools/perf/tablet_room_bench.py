@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Times the light tuner's room on an Android device, view by view and part by part.
 
-    python tools/perf/tablet_room_bench.py [--serial S] [--views corner,room]
+    python tools/perf/tablet_room_bench.py [--serial S] [--views corner,room] [--no-board]
         [--variants base,scale75] [--extra "--scene-scale 0.5"] [--out build/perf/tablet-room/results.json]
         [--quick] [--seconds 13]
 
@@ -17,7 +17,10 @@ landscape on Android (src/native/tuner_landscape.c), so a phone frames the views
 to 1 or 2 ms, so a change of several ms shows; the numbers a task records take the full runs.
 
 The views are agents/perf.md's. The variants each leave one part out (or change the scale),
-so the split says what each costs; parts overlap, so they don't add up.
+so the split says what each costs; parts overlap, so they don't add up. The baseline with no
+room is the app's own board view: the `board` run, first, starts the installed app with
+--bench (docs/development.md, "Time the 3D board") in tools/perf/device_perf.sh's game scene,
+its ms the presented frames' median and waited_ms the waited frame's; --no-board leaves it out.
 """
 import argparse
 import json
@@ -35,6 +38,9 @@ SDK = Path(os.environ.get("ANDROID_HOME", Path(os.environ.get("LOCALAPPDATA", ""
 ADB = str(SDK / "platform-tools" / ("adb.exe" if os.name == "nt" else "adb"))
 PACKAGE = "io.github.kaitk.draughts.light_tune"
 ACTIVITY = f"{PACKAGE}/io.github.kaitk.draughts.DraughtsActivity"
+APP = "io.github.kaitk.draughts"
+APP_ACTIVITY = f"{APP}/io.github.kaitk.draughts.DraughtsActivity"
+APP_FLAGS = "--board 3d --screen game --theme wood --variant russian --bench 300"
 
 VIEWS = {
     "down":   "--plan-eye 6.0,3.0,1.7 --plan-at 6.0,3.05,0",
@@ -49,7 +55,6 @@ VARIANTS = {
     "no-outside":  "--outside off",
     "no-books":    "--books off",
     "no-pattern":  "--window off",
-    "no-room":     "--room-surfaces off",
     "no-box":      "--box off",
     "aa-off":      "--aa off",
     "smaa":        "--aa smaa",
@@ -63,6 +68,8 @@ VARIANTS = {
     "box-traced":  "--box-map off",
 }
 LINE = re.compile(r"light_tune: ([\d.]+) fps, ([\d.]+) ms a frame, worst ([\d.]+); in the loop ([\d.]+) ms")
+APP_LINE = re.compile(r"bench3d: \d+x\d+ with the shadow map: cpu ([\d.]+) ms, cpu\+gpu waited ([\d.]+) ms; "
+                      r"the pass alone waited [\d.]+ ms; presented frame to frame ([\d.]+) ms")
 
 
 def adb(serial, *args, check=True):
@@ -100,6 +107,23 @@ def run_one(serial, flags, seconds):
     }
 
 
+def run_app(serial):
+    """The app's board view, no room: its --bench's presented frames and waited frame."""
+    adb(serial, "shell", "am", "force-stop", APP)
+    adb(serial, "logcat", "-c")
+    adb(serial, "shell", "am", "start", "-S", "-n", APP_ACTIVITY, "--es", "args", f"'{APP_FLAGS}'")
+    deadline = time.time() + 120
+    m = None
+    while time.time() < deadline and not m:
+        time.sleep(1)
+        m = APP_LINE.search(adb(serial, "logcat", "-d", "-s", "goose"))
+    adb(serial, "shell", "am", "force-stop", APP)
+    if not m:
+        return None
+    cpu, waited, presented = (float(x) for x in m.groups())
+    return {"fps": 1000.0 / presented, "ms": presented, "waited_ms": waited, "loop_ms": cpu}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--serial", default=os.environ.get("ANDROID_SERIAL", ""))
@@ -107,6 +131,7 @@ def main():
     ap.add_argument("--quick", action="store_true", help="5 seconds of frames a run, no base again at the end")
     ap.add_argument("--views", default=",".join(VIEWS))
     ap.add_argument("--variants", default=",".join(VARIANTS))
+    ap.add_argument("--no-board", action="store_true", help="leave out the app's board view")
     ap.add_argument("--extra", default="", help="flags added to every run")
     ap.add_argument("--out", type=Path, default=ROOT / "build/perf/tablet-room/results.json")
     a = ap.parse_args()
@@ -115,9 +140,15 @@ def main():
     model = adb(serial, "shell", "getprop", "ro.product.model").strip()
     results = {"device": model, "seconds": a.seconds, "extra": a.extra, "runs": []}
     variants = a.variants.split(",")
-    plan = [(v, var) for v in a.views.split(",") for var in variants]
+    views = a.views.split(",")
+    if not a.no_board:
+        r = run_app(serial)
+        row = {"view": "board", "variant": "app", "flags": APP_FLAGS, **(r or {"error": "no bench3d line"})}
+        results["runs"].append(row)
+        print(json.dumps(row), flush=True)
+    plan = [(v, var) for v in views for var in variants]
     if "base" in variants and not a.quick:
-        plan += [(v, "base") for v in a.views.split(",")]
+        plan += [(v, "base") for v in views]
     for view, variant in plan:
         flags = " ".join(f for f in (VIEWS[view], VARIANTS[variant], a.extra) if f)
         r = run_one(serial, flags, a.seconds)
