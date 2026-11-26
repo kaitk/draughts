@@ -86,14 +86,46 @@ readers of the layout (`cheap_casement`'s and `glazing`'s CPU twins, `render3d::
 hardware stays out of the light's members: within a member's outline but for the handle
 (35 mm out) and the hinges' barrels (11 mm), a few millimetres of shadow.
 
+## The box window, behind `--box-window on` (2026-11-26)
+
+Results page: `build/notes/box-window/index.html` (step 2); scratch `build/bw/` in the worktree
+(`shots.sh`, `same.sh`, `pts/` with `cavstat.py`). The user's real-world reference, a restored
+manor's new box windows from a local newspaper (2026-11-26; one pane each upper light, otherwise
+the same parts), set the look: plain, not overdone.
+
+- The description: `src/model3d/box_window.goose` (`BoxCasement`, its four `BoxLight`s, the
+  members, each leaf's hinge axis, `pane_in`). The mesh (`box_casement_mesh`): the frame as
+  `paint_box`es, its face where window B's was (the sill's dust and the corners' shade are drawn
+  to it), the lights 15 mm behind it in its rebate; a ring a pane (flat, a 6 mm rounded step,
+  the side to the glass, the bar's web behind it), the cells meeting on the bars' middles so
+  neighbours share whole edges; the left leaf's lip; one glass sheet a casement; two long barrel
+  hinges a leaf, the crémone on both casements, two bolts on the passive leaf, in
+  `MAT_BRASS + 0.5`, which ROOM_FRAG shades as the specification's dark brass (`WINDOW_BRASS`).
+- `casement()` takes either layout by `shell_case.x` (a new vec4 in every block carrying the
+  shell's fields; y to w kept for a sash's opening): one body with the measures picked, not a
+  second function, whose five call sites cost about 0.4 ms with the flag off. Flag off: the four
+  views and the casement close-up byte-identical or one level, under both lights, but one pixel
+  of the menu view at 19 levels (the reordered arithmetic; each build is deterministic).
+- Triangles: the room's mesh 49,130 → 52,082; the glass and lace unchanged.
+- The light against the tracer: between the panes, the 11 points seen from the room 0.95 (error
+  factor 1.41) → 1.01 (1.34), all 19 1.76 → 1.62; the 22 props' points unchanged (2.051 →
+  2.059, the bake alone 4.40 → 4.35). A fix on the way: the probe volumes' pane depth was window
+  B's (18 mm behind the plane; the box window's is 13 mm before it), so the sun crossed the inner
+  leaves' backs as glass and the outer frame read 0.05 against 0.24.
+- Against Cycles (the export with `--box-window on`, EV 3.40 and 1.40): the window's crop keeps
+  today's distance within two levels.
+- Cost, rough (runs under another session's builds): +0.4 to 0.8 ms a view at 3840 × 2160.
+- Left as before: `cheap_casement` (the cheap mirror) keeps window B's means; the export maps the
+  hardware to the curtains' brass.
+
 ## Acceptance criteria
 
-- [ ] The specification read against the room's cameras: what shows, what is geometry,
+- [x] The specification read against the room's cameras: what shows, what is geometry,
       what a normal map, what is left out; noted here with the reason
-- [ ] The new window built from one description of its members that the mesh, the bake,
+- [x] The new window built from one description of its members that the mesh, the bake,
       `casement()`, the probe volumes, the tracer and the Blender export all read
 - [ ] The look against the concept pictures and Cycles: close-ups of a window from the
       room, at the metered exposure and at EV −2
 - [ ] Its triangles and its cost per view (`tools/perf/mac_room_bench.py`), and the light's
       numbers against the tracer unchanged or better
-- [ ] An open sash possible later (the hinges' axes in the description), not animated now
+- [x] An open sash possible later (the hinges' axes in the description), not animated now
