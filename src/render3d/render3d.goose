@@ -2253,7 +2253,8 @@ var light_bounces = room_light::BOUNCES;
 // The tonemaps' toes as the light tuner switches them in its own shaders (shaders::TOE_FN,
 // FRAME's toe): the room's and the view out's way, the table's, the board's and the pieces'
 // (0 on the luminance, 1 on the least channel, 2 none), and what a toe takes off above its
-// knee. The app's shaders keep their own toes and never read it.
+// knee. The HDR target's shaders take their ways from it (HDR_OUT: 2 none); the app's
+// 8-bit shaders keep their own toes and never read it.
 var tone_toe = float4 { 0.0, 1.0, 1.0, 0.02 };
 var light_steps: f64[8] = [0.0; 8];
 // The probes' light on the games table's axis at TABLE_PROBE_UP + k × CELL over the floor
@@ -3814,12 +3815,17 @@ fn glow_step_of(from: int2, to: int2, first: bool) -> GlowStep {
 // degree spans there, and w what turns the glow's smallest level there into the share of
 // the sun open (0: taken as all open); veil SunLook's, its x 0 where the sun is behind the
 // eye; disc the disc's radius (pixels) and what turns the picture's light on it into its
-// share open (half the bare disc's light counts as open).
+// share open (half the bare disc's light counts as open), z the camera's toe (camera_toe).
 var tone_probe: f32 = 0.0;
+// The toe the scenic views' camera curve takes after the pass (shaders::HDR_TONE_FRAG's
+// camera_curve): 0 on the luminance, 1 on the least channel, 2 none, as tone_toe's ways.
+// Today 2, each surface taking its own toe as it writes the HDR target (tone_toe); the light
+// tuner's --light physical takes one curve for the whole picture here, the surfaces' toes 2.
+var camera_toe: f32 = 2.0;
 fn hdr_tone_of(g: Gpu&) -> HdrTone {
     let glow = glow_shown(g);
     var t = HdrTone { float4 { if glow { hdr_glow.look.x } else { 0.0 }, 1.0 / g.size.x, 1.0 / g.size.y, tone_probe },
-                      float4_0, sun_look.veil, float4_0 };
+                      float4_0, sun_look.veil, float4 { 0.0, 0.0, camera_toe, 0.0 } };
     guard sun_look.veil.x > 0.0 else { return t; }
     let m = g.frame.view_proj;
     let s = normalize(float3 { g.frame.light_dir.x, g.frame.light_dir.y, g.frame.light_dir.z });
@@ -3843,7 +3849,7 @@ fn hdr_tone_of(g: Gpu&) -> HdrTone {
         open_ref = 1.0 / max(bare, 1e-6);
     }
     t.sun = float4 { at.x, at.y, ppd, open_ref };
-    t.disc = float4 { sun_look.disc.x * ppd, 2.0 / max(sun_look.disc.w * g.room.outside, 1e-6), 0.0, 0.0 };
+    t.disc = float4 { sun_look.disc.x * ppd, 2.0 / max(sun_look.disc.w * g.room.outside, 1e-6), camera_toe, 0.0 };
     return t;
 }
 let SUN_OPEN_FILTER: f32 = 1.0;

@@ -677,8 +677,10 @@ let TONE_FN = """
     }
     #ifdef HDR_OUT
     // The scenic views' HDR target takes the light with tonemap's toe alone taken off; the
-    // shoulder and the grade are HDR_TONE_FRAG's.
+    // shoulder and the grade are HDR_TONE_FRAG's. None where Frame's toe.x says 2 (the
+    // camera's curve takes it).
     vec3 room_toe(vec3 c) {
+        if (toe.x > 1.5) return c;
         float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
         return c * ((y < 0.04 ? 12.5 * y * y : y - 0.02) / y);
     }

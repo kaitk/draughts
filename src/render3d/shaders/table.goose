@@ -645,9 +645,11 @@ let TABLE_FRAG = """
         result = vec4(peak > 16.0 ? color * (16.0 / peak) : color, 1.0);
     #else
     #ifdef HDR_OUT
-        // Into the scenic views' HDR target: the light with tonemap's toe alone taken off.
+        // Into the scenic views' HDR target: the light with tonemap's toe alone taken off,
+        // none where Frame's toe.y says 2 (the camera's curve takes it).
         float least = min(color.r, min(color.g, color.b));
-        result = vec4(color - (least < 0.04 ? least - 12.5 * least * least : 0.02), 1.0);
+        if (toe.y < 1.5) color -= least < 0.04 ? least - 12.5 * least * least : 0.02;
+        result = vec4(color, 1.0);
     #else
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);
