@@ -27,8 +27,18 @@ choice), are listed in `build/review120/report.md`.
 
 ## Baseline (2026-11-26)
 
-To measure: `build/perf/light_tune-before122` is built (the tuner before this task's
-changes); its times with `tools/perf/mac_room_bench.py --full` wait for a quiet machine.
+The tuner before this task's changes, `build/perf/light_tune-before122` (from 7bf87a8b),
+timed with `tools/perf/mac_room_bench.py --full --views down,corner,room,menu,table` under
+the quiet lock, two rounds; ms a frame, the spread between rounds in brackets. The down
+view's first run was still warming (22.7 ms), so it is from a second batch of two rounds.
+
+| View | 3840 × 2160 | 5120 × 2880 |
+|---|---|---|
+| Down | 10.9 (±0.0) | 31.3 (±0.3) |
+| Corner | 13.8 (±0.0) | 37.2 (±0.2) |
+| Room | 13.1 (±0.0) | 35.5 (±0.1) |
+| Menu | 12.7 (±0.0) | 35.0 (±0.7) |
+| Table | 12.4 (±0.0) | 33.6 (±2.1) |
 
 ## Acceptance criteria
 
