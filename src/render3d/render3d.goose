@@ -2330,6 +2330,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..], light_props[..]);
     light_steps[6] = (clock() - at) * 1000.0;
     probes_on_table(g);
+    meter_light = meter_of(light_bounce, sun.bounce_gain);
     for i in room_light::ATLAS_FLOATS {
         let h = half_bits(light_atlas[i]);
         light_bytes[2 * i] = (h & 0xFF) as u8;
@@ -3472,7 +3473,10 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     if !hdr && board_in_shell(g) { o.make_lit_shell(g); }
     o.board_pass(g, if hdr { g.hdr_image } else { shown }, size, backdrop, outside, table_covers);
     if hdr && haze_shown(g) { o.haze_pass(g, size); }
-    if hdr && glow_shown(g) { o.glow_pass(g, size); }
+    if hdr && glow_shown(g) {
+        glow_exposure = camera_exposure(g);
+        o.glow_pass(g, size);
+    }
     if hdr { o.tone_pass(g, shown); }
     if glowing { o.bloom_pass(g, g.image, target, size); }
     if depth_shown(g) {
@@ -3862,7 +3866,9 @@ fn bloom_shown(g: Gpu&) -> bool { room_shown(g) && g.room.bloom.x > 0.0 && g.blo
 // threshold it starts from and z the knee's half width (linear light, the tonemap's white
 // about 1), w its reach (each coarser level's share, 0 to 1); levels how many it goes down,
 // the first a quarter of the picture, each half the last (at most GLOW_LEVELS); cap the
-// brightest a channel is taken at.
+// brightest a channel is taken at. Under AgX the threshold, the knee and the cap are in the
+// picture's light, after the camera's exposure (glow_exposure, camera_exposure's), so the
+// glow starts near AgX's white as it starts near the shoulder's without it.
 let GLOW_LEVELS = 6;
 struct HdrGlow {
     look:   float4 = float4 { 0.06, 1.0, 0.5, 0.65 },
@@ -3870,6 +3876,7 @@ struct HdrGlow {
     cap:    f32    = 60000.0,
 }
 var hdr_glow = HdrGlow {};
+var glow_exposure: f32 = 1.0;
 fn glow_shown(g: Gpu&) -> bool { g.hdr && hdr_glow.look.x > 0.0 && hdr_glow.levels > 0 }
 // The glow's smallest level, which holds the sun's light blurred wide (HDR_TONE_FRAG's
 // share of it open).
@@ -3887,24 +3894,57 @@ fn glow_level_size(size: int2, k: i64) -> int2 {
 fn glow_step_of(from: int2, to: int2, first: bool) -> GlowStep {
     let h = if first { float2 { 1.0 / from.x, 1.0 / from.y } } else { float2 { 0.5 / from.x, 0.5 / from.y } };
     let l = hdr_glow.look;
-    GlowStep { float4 { h.x, h.y, 1.0 / to.x, 1.0 / to.y }, float4 { l.y, l.z, hdr_glow.cap, clamp(l.w, 0.0, 1.0) } }
+    let k = glow_exposure;
+    GlowStep { float4 { h.x, h.y, 1.0 / to.x, 1.0 / to.y }, float4 { l.y / k, l.z / k, hdr_glow.cap / k, clamp(l.w, 0.0, 1.0) } }
 }
 // The tonemap's block: glow x the glow's strength (0 none), yz a pixel in uv, w the light
 // tuner's probe (tone_probe); sun the sun's place on the picture (pixels), the pixels a
 // degree spans there, and w what turns the glow's smallest level there into the share of
 // the sun open (0: taken as all open); veil SunLook's, its x 0 where the sun is behind the
 // eye; disc the disc's radius (pixels) and what turns the picture's light on it into its
-// share open (half the bare disc's light counts as open), z the camera's toe (camera_toe).
+// share open (half the bare disc's light counts as open), z the camera's curve (camera_toe),
+// w its exposure (camera_exposure).
 var tone_probe: f32 = 0.0;
-// The toe the scenic views' camera curve takes after the pass (shaders::HDR_TONE_FRAG's
-// camera_curve): 0 on the luminance, 1 on the least channel, 2 none, as tone_toe's ways.
-// Today 2, each surface taking its own toe as it writes the HDR target (tone_toe); the light
-// tuner's --light physical takes one curve for the whole picture here, the surfaces' toes 2.
+// The scenic views' camera curve after the pass (shaders::HDR_TONE_FRAG's camera_curve): 0
+// to 2 the toe, as tone_toe's ways (0 on the luminance, 1 on the least channel, 2 none), then
+// the shoulder; 3 AgX at the camera's exposure. Today 2, each surface taking its own toe as
+// it writes the HDR target (tone_toe); the light tuner's --light physical takes one curve for
+// the whole picture here, the surfaces' toes 2.
 var camera_toe: f32 = 2.0;
+let CAMERA_AGX = 3;
+// The camera's meter for AgX: the log-average luminance of the light leaving the room's
+// surfaces, each of the bake's cells by its area (the lace's left out), as Frame's exposure
+// leaves it; worked out once at the bake (meter_of). The camera exposes it to METER_GREY,
+// times 2 to camera_ev (stops, the light tuner's --camera-ev).
+var meter_light: f32 = 0.0;
+var camera_ev: f32 = 0.0;
+let METER_GREY: f32 = 0.18;
+fn meter_of(b: room_light::Bounce&, gain: f32) -> f32 {
+    var sum: f32 = 0.0;
+    var area: f32 = 0.0;
+    for c in room_light::LACE_C0 {
+        let a = b.cells[c].area;
+        guard a > 0.0 else { continue; }
+        let l = b.seen[c] + b.sun[c] * (gain / (PI * a));
+        sum += a * log2(max(0.2126 * l.x + 0.7152 * l.y + 0.0722 * l.z, 1e-8));
+        area += a;
+    }
+    let two: f32 = 2.0;
+    return if area > 0.0 { pow(two, sum / area) } else { 0.0 };
+}
+// What the tone pass multiplies the HDR target's light by before AgX: 1 unless metered. The
+// eye's veil is added divided by it, so it adds to the picture what it adds without it.
+fn camera_exposure(g: Gpu&) -> f32 {
+    guard camera_toe > 2.5 && meter_light > 0.0 else { return 1.0; }
+    let two: f32 = 2.0;
+    return METER_GREY * pow(two, camera_ev) / (meter_light * max(g.frame.params.x * g.room.room_exposure, 1e-6));
+}
 fn hdr_tone_of(g: Gpu&) -> HdrTone {
     let glow = glow_shown(g);
+    let k = camera_exposure(g);
     var t = HdrTone { float4 { if glow { hdr_glow.look.x } else { 0.0 }, 1.0 / g.size.x, 1.0 / g.size.y, tone_probe },
-                      float4_0, sun_look.veil, float4 { 0.0, 0.0, camera_toe, 0.0 } };
+                      float4_0, sun_look.veil, float4 { 0.0, 0.0, camera_toe, k } };
+    t.veil.x = sun_look.veil.x / k;
     guard sun_look.veil.x > 0.0 else { return t; }
     let m = g.frame.view_proj;
     let s = normalize(float3 { g.frame.light_dir.x, g.frame.light_dir.y, g.frame.light_dir.z });
@@ -3928,7 +3968,7 @@ fn hdr_tone_of(g: Gpu&) -> HdrTone {
         open_ref = 1.0 / max(bare, 1e-6);
     }
     t.sun = float4 { at.x, at.y, ppd, open_ref };
-    t.disc = float4 { sun_look.disc.x * ppd, 2.0 / max(sun_look.disc.w * g.room.outside, 1e-6), camera_toe, 0.0 };
+    t.disc = float4 { sun_look.disc.x * ppd, 2.0 / max(sun_look.disc.w * g.room.outside, 1e-6), camera_toe, k };
     return t;
 }
 let SUN_OPEN_FILTER: f32 = 1.0;

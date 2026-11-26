@@ -306,7 +306,7 @@ let HDR_TONE_FRAG = """
     // (pixels), the pixels a degree, w what turns glow_wide's light there into the share
     // open (0 all open); tone_veil: render3d::SunLook's veil; tone_disc: x the disc's radius
     // (pixels), y what turns the picture's light on the disc into its share open (0 none),
-    // z the camera's toe (camera_curve).
+    // z the camera's curve, w its exposure (camera_curve).
     layout(set = 3, binding = 0) uniform HdrTone { vec4 tone_glow; vec4 tone_sun; vec4 tone_veil; vec4 tone_disc; };
     // The disc's own pixels, five of them, so a bar thinner than the glow's level still hides it.
     float disc_open() {
@@ -343,10 +343,25 @@ let HDR_TONE_FRAG = """
         float g = 1.0 - 1.0 / (0.15 * (peak - np) + 1.0);
         return mix(c, vec3(np), g);
     }
-    // The camera's curve, the one place a surface's light becomes the picture's: the toe
-    // tone_disc.z says (render3d::camera_toe: 0 on the luminance, 1 on the least channel, 2
-    // none, each surface having taken its own as it wrote the target), then the shoulder.
+    // AgX, a short fit of Blender's AgX view (look None): Rec.709 into AgX's inset Rec.2020,
+    // log2 over 0.18's -10 to +6.5 stops, a polynomial fitted to Blender's curve on grey, the
+    // display's 2.4 power, AgX's outset back into Rec.709 (task 122, build/review122/s5/agx.py).
+    vec3 agx(vec3 c) {
+        c = c.r * vec3(0.5448147, 0.1404170, 0.0888104) + c.g * vec3(0.3737874, 0.7541376, 0.1788717)
+          + c.b * vec3(0.0813979, 0.1054455, 0.7323179);
+        vec3 t = clamp((log2(max(c, vec3(1e-10))) + 12.47393) * (1.0 / 16.5), 0.0, 1.0);
+        vec3 v = -0.008484016 + t * (0.8965809 + t * (-15.11457 + t * (131.6423 + t * (-557.5602 + t * (1276.883
+               + t * (-1578.567 + t * (990.8947 + t * -248.0705)))))));
+        v = pow(max(v, vec3(0.0)), vec3(2.4));
+        return v.r * vec3(1.9648874, -0.2993134, -0.1643526) + v.g * vec3(-0.8559884, 1.3263980, -0.2381840)
+             + v.b * vec3(-0.1088990, -0.0270846, 1.4025366);
+    }
+    // The camera's curve, the one place a surface's light becomes the picture's: AgX at the
+    // camera's exposure where tone_disc.z says 3 (render3d::camera_toe); else the toe it says
+    // (0 on the luminance, 1 on the least channel, 2 none, each surface having taken its own
+    // as it wrote the target), the shoulder and the grade.
     vec3 camera_curve(vec3 c) {
+        if (tone_disc.z > 2.5) return agx(c * tone_disc.w);
         if (tone_disc.z < 0.5) {
             float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
             c *= (y < 0.04 ? 12.5 * y * y : y - 0.02) / y;
@@ -354,7 +369,7 @@ let HDR_TONE_FRAG = """
             float least = min(c.r, min(c.g, c.b));
             c -= least < 0.04 ? least - 12.5 * least * least : 0.02;
         }
-        return shoulder(c);
+        return shoulder(c) * vec3(1.02, 1.0, 0.97);
     }
     vec3 encode(vec3 c) {
         c = clamp(c, 0.0, 1.0);
@@ -368,7 +383,7 @@ let HDR_TONE_FRAG = """
         }
         if (tone_glow.x > 0.0) c += tone_glow.x * max(texture(glow_light, gl_FragCoord.xy * tone_glow.yz).rgb, vec3(0.0));
         if (tone_veil.x > 0.0) c += sun_glare(gl_FragCoord.xy, sun_open());
-        c = camera_curve(c) * vec3(1.02, 1.0, 0.97);
+        c = camera_curve(c);
         float n = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
         result = vec4(encode(c) + n / 255.0, 1.0);
     }

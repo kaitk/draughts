@@ -86,7 +86,8 @@
 //       [--props-light off|on|kept (the table and the chairs lit from the room's probes where each pixel is, through
 //       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)]
 //       [--light today|physical (the room's light from physical inputs, physical_light; today as made)]
-//       [--camera-toe room|neutral|none (--light physical's one curve's toe, after the HDR pass)]
+//       [--camera-toe room|neutral|none|agx (--light physical's one curve after the HDR pass: the shoulder after
+//       that toe, or AgX at the metered exposure, the default)] [--camera-ev EV (AgX's exposure over the meter's; 0)]
 //       [--props-wrap K (--light physical: how far past its terminator the sun wraps on the table and chairs; 0)]
 //       [--casement-depth on|off (--light physical: the sun through the casements' members with their depth, in the bake
 //       and on every surface, rooms::Room's panes.w; on)] [--stove on|off]
@@ -268,15 +269,15 @@ let TABLE_WINDOW = 5;
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
 // indirect light keeps, or the indirect light alone on grey, or its broken values marked.
 let SSAO_VIEWS = ["off", "alone", "kept", "light", "broken"];
-// The tonemaps' toes (render3d::camera_toe): on the luminance, Khronos PBR Neutral's on the
-// least channel, none.
-let TOES = ["room", "neutral", "none"];
+// The camera's curves (render3d::camera_toe): the shoulder after a toe on the luminance,
+// Khronos PBR Neutral's toe on the least channel, or none; AgX.
+let TOES = ["room", "neutral", "none", "agx"];
 // The lace's ways (C, --lace): f3 the app's, f2, f and d spare ones in design/materials/,
 // read into spare_laces at the start.
 let LACE_WAYS = ["f3", "f2", "f", "d"];
 var spare_laces: u8[>..] = [];
-// --light physical's camera toe (render3d::camera_toe), as measured against the path tracer.
-let CAMERA_TOE = 2;
+// --light physical's camera curve (render3d::camera_toe): AgX, as Cycles takes it.
+let CAMERA_TOE = render3d::CAMERA_AGX;
 // The depth of field's depth shown over the picture (render3d::depth_view): none, the
 // distance, the lens's disc.
 let LENS_VIEWS = ["off", "depth", "coc"];
@@ -335,6 +336,10 @@ let SUN_LOOKS: render3d::SunLook[2] = [
                         float4 { 3.0, 1.5, 20.0, 1.0 } }];
 // Each look's glow (render3d::HdrGlow.look: strength, threshold, knee, reach).
 let SUN_GLOWS: float4[2] = [float4 { 0.06, 1.0, 0.5, 0.65 }, float4 { 0.06, 1.0, 0.5, 0.65 }];
+// --light physical's glow under AgX, its threshold and knee in the picture's light after the
+// camera's exposure (render3d::glow_exposure): about AgX's white (0.18 × 2^6.5 is 16), so
+// the window wall's glow in the room view adds about what today's does (task 122, step 5).
+let AGX_GLOW = float4 { 0.006, 16.0, 8.0, 0.65 };
 
 let PLACE_NAMES = ["free", "concept", "concept-high", "along-wall", "less-turned", "concept-pier", "more-turned"];
 let PLACE_DEFAULT = 4;
@@ -1409,11 +1414,13 @@ fn main() {
     casement_depth = !(flag_value(argv, "--casement-depth") > 0 && argv[flag_value(argv, "--casement-depth")] == "off");
     g.table_spec = tables::get(take);
     if physical { g.table_spec.light.y = 1.0; }
-    // --light physical: one camera curve for the whole picture after the HDR pass, its toe
-    // --camera-toe's, the surfaces writing their light linear.
+    // --light physical: one camera curve for the whole picture after the HDR pass, the
+    // surfaces writing their light linear: --camera-toe's, AgX at the metered exposure
+    // compensated by --camera-ev unless it names a toe.
     if physical {
         render3d::tone_toe = float4 { 2.0, 2.0, 2.0, render3d::tone_toe.w };
         render3d::camera_toe = pick(argv, "--camera-toe", TOES, CAMERA_TOE) as f32;
+        render3d::camera_ev = number(argv, "--camera-ev", 0.0);
     }
     var room = rooms::get(room_take);
     room.key.x = number(argv, "--azimuth", room.key.x);
@@ -1528,7 +1535,7 @@ fn main() {
     let nudge = four(argv, "--view-nudge", float4_0);
     table_window_nudge = float3 { nudge.x, nudge.y, nudge.z };
     // The HDR target's glow (render3d::HdrGlow): strength, threshold, knee, reach; its levels.
-    render3d::hdr_glow.look = four(argv, "--glow", SUN_GLOWS[sun_look]);
+    render3d::hdr_glow.look = four(argv, "--glow", if physical && render3d::camera_toe > 2.5 { AGX_GLOW } else { SUN_GLOWS[sun_look] });
     render3d::hdr_glow.levels = number(argv, "--glow-levels", render3d::hdr_glow.levels as f32) as i64;
     var sun_bright_log = log10(max(render3d::sun_look.disc.w, 1.0));
     // The lens (render3d::Lens): on or off, its focus in metres (0 the view's target, kept
@@ -1834,6 +1841,11 @@ fn main() {
                 print("the room's light baked in ", g.light_ms, " ms, ", g.light_patches, " sun patches; the sun's rays ", st[0],
                       " ms, the first light ", st[1], ", the bounces ", st[2], ", ", st[3], ", ", st[4], ", the half grid ", st[5],
                       ", the probes ", st[6]);
+                if render3d::camera_toe > 2.5 {
+                    let k = render3d::camera_exposure(g);
+                    print("the camera's meter ", render3d::meter_light, ", its exposure ", k, " over Frame's ", g.frame.params.x,
+                          ": EV ", log2(k * g.frame.params.x * g.room.room_exposure));
+                }
             }
             if g.props_baked { print("the props' occlusion baked in ", g.props_ms, " ms, ", g.table_count / 3, " triangles"); }
             if walk_test > 0 {
@@ -1959,6 +1971,7 @@ fn main() {
                 if section(c, open, DETAIL) {
                     color_sliders(c, "Sun", room.key_color);
                     slider(c, "Exposure", room.exposure, 0.5, 2.0);
+                    if physical && render3d::camera_toe > 2.5 { slider(c, "Camera EV", render3d::camera_ev, -4.0, 4.0); }
                     slider(c, "Sky round", room.fill.x, -30.0, 150.0);
                     slider(c, "Sky height", room.fill.y, 0.0, 80.0);
                     slider(c, "Sky strength", room.fill.z, 0.0, 3.0);
@@ -2348,7 +2361,8 @@ fn main() {
             var line: u8[>..] = [];
             format(line, "--light ", LIGHT_WAYS[if physical { 1 } else { 0 }]);
             if physical {
-                format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --props-wrap ", render3d::props_wrap, " --casement-depth ",
+                format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --camera-ev ", render3d::camera_ev, " --props-wrap ",
+                       render3d::props_wrap, " --casement-depth ",
                        if casement_depth { "on" } else { "off" });
             }
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
