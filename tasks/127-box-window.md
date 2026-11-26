@@ -129,6 +129,17 @@ against its paint's 172, 160, 149). Concepts on `build/notes/box-window/hardware
 `build/bw/concept/draw.py` from the profiles the lathe would turn): about 5,700 triangles a
 window. The rod round by its normals on 6 sides, not by geometry (the user, 2026-11-26).
 
+Round 2 (2026-11-26), after the user's review: the grip is a symmetric double-ended T-bar
+on a spindle (ChatGPT's study `espagnolette-study.png` and its brief
+`cremone-modelling-brief.md`, both in `build/notes/window-reference/references/`; the brief's
+profile, its boss and ends rounded, 47 points), over a plain housing 28 × 140 with stepped ends
+and slotted screws. Round 1's rod caps and the study's quatrefoil fittings were nonsense for our
+window: the frame stands 15 mm proud of the leaf and the lip 8 mm, so the rod stands off on its
+guides (its axis 21 mm before the leaf's face, 6 mm before the frame's) and runs past the leaf's
+rail into a fixed socket on a small lobed plate on the transom's face, and alike on the foot's;
+the rods draw 15 mm out before the leaf swings. One guide a rod run, two hinges a leaf. About
+4,500 triangles a window (`build/bw/concept/draw2.py`).
+
 The metal: a choice of about five darknesses in the light tuner once the hardware is built,
 judged against Cycles (the export taking the window's metal as its own material); then the
 chosen metal on every hinge in the room, the shutters' and the doors' too (2026-11-26).
