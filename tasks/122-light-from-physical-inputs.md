@@ -90,6 +90,58 @@ the plain tracer's 13.9, the rug in shade 4.3 against 13.1, while the props, und
 other toe, land on the plain tracer (the low view's rear back pad 20.6 against 20.1, the
 close view's column 6.5 against 7.8).
 
+## The second step (2026-11-26)
+
+All under `--light physical`; without it the close, low and room shots stay byte-identical
+to `build/perf/light_tune-before122` (with `--base-wood today`). Results page:
+`build/notes/light-physical/index.html#step2`; scratch `build/review122/`.
+
+- The preset sets its values from the room as made (`physical_light`), so the printed
+  command line (now with `--light`, `--camera-toe`, `--props-wrap`; `--print` prints it
+  on the first frame) gives the same picture again: byte-identical.
+- One camera curve: the surfaces write linear light into the HDR target (Frame's toe ways
+  2) and `HDR_TONE_FRAG`'s `camera_curve` takes the toe and the shoulder in one place, for
+  AgX later. Measured against the tracer through each curve (18 boxes in the three views,
+  the tracer's light averaged before the curve): mean |difference| 5.6 levels with the
+  luminance's toe, 7.2 the least channel's, 8.2 none; the larger level over the smaller
+  2.29, 1.57, 1.45. No toe is kept: the luminance's toe squares the light under 0.04, so
+  it squares the error too and puts the tracer's own shade at 0.1 to 0.7 levels. Cost: a
+  uniform compare a pixel in the HDR output and in the tone pass.
+- The props' sun wrap (0.2 in `TABLE_FRAG`) is `props_look.y` under PROPS_LIGHT, 0 under
+  the flag (`--props-wrap`). No point moves: all 22 are in the sun's shadow in the
+  tracer. On the sunlit pixels it changes the light is 0.67 of the tracer's at 0 and 0.80
+  at 0.2 (close view): those faces carry the window's sun excess below, so they don't
+  decide it. No cost.
+- The 22 points stay at 1.27 (0.40 to 3.60): neither change moves them.
+
+The probes against the tracer (196 probes round the table, six directions, with and
+without the props, an ideal L1 and L2 from the tracer's light):
+
+| Direction | 0.15 m | 0.45 m | 0.75 m | 1.05 m | Ideal L1 | Ideal L2 |
+|---|---|---|---|---|---|---|
+| Up, probes / tracer | 1.11 | 1.35 | 1.61 | 1.76 | 1.04–1.24 | 1.00–1.03 |
+| Down | 1.00 | 0.59 | 0.92 | 3.11 | 1.17–2.04 | 0.97–1.12 |
+| Toward the hall | 1.52 | 1.52 | 0.76 | 0.90 | 0.33–0.80 | 0.96–1.03 |
+| Toward the window | 0.42 | 0.78 | 1.00 | 1.17 | 0.87–1.03 | 1.01–1.04 |
+
+By source (the probes' mean over the tracer's, 0.15 to 1.05 m): the sky alone 0.90 to
+1.15, the sun alone 1.9 to 2.6, the sun's patches without a bounce 2.2 to 3.3. The cause:
+at this sun (15° up) the window's mesh lets 0.37 of the bake's glazed rectangle's sun into
+the room (0.55 square to the wall: the frames' and bars' depth), the bake 0.86. The room's
+own sun patches carry it too: the sunlit door 1.55 to 1.6 times the tracer's, the table's
+top 1.8 (exposure lowered so nothing clips). At the points: the seat tops' excess is the
+gather (probes 1.7 to 2.3 times the tracer at their lookup points, ideal L1 1.07 to 1.46);
+the column's room side, the rear pads, the edge's underside toward the window are the L1
+lobe (ideal L1 0.15 to 0.41, L2 0.98 to 1.03); the top's underside is the props' open
+part (0.42); the foot's top misses the table's top over it (past the bake's 0.5 m).
+
+Emulated on the 22 points: the sun times 0.43 alone 0.66 (0.01 to 2.09), worse, as the
+faces turned down lose the floor's light and their L1 goes under zero; with L2's share as
+a factor 0.67 (0.04 to 1.61), a crude emulation. Not made, as design choices for the user:
+the window's sun traced through its mesh in the bake and in the room's sun patches (halves
+the sun at this angle, changes the patches' look and the exposure set on them; a few ms a
+bake), and L2 probes (2.25 times the atlas, 18 texel reads a lookup in place of 6).
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
