@@ -183,11 +183,9 @@ let PLASTER_TILE: f32 = 4.0 * METRE;
 let LACE_TILE:    f32 = 0.56 * METRE;
 
 // The curtains' lace (design/materials/lace_*.png): the field's tile, 1024 rows over
-// LACE_TILE, over the hem's strip, 384 rows (0.21 m), R8 with 8 mips (to 8 × 11); way f3
-// first, the one drawn, then f2, f and d, kept for the tuner to switch to (--lace, C).
+// LACE_TILE, over the hem's strip, 384 rows (0.21 m), R8 with 8 mips (to 8 × 11): way f3.
 let LACE_TEXELS = int2 { 1024, 1408 };
 let LACE_MIPS = 8;
-let LACE_WAYS = ["f3", "f2", "f", "d"];
 
 // The wallpaper's mask (design/materials/wallpaper_mask.png): its side in texels, and the
 // square of wall one tile covers, 0.9 m, its flowers finer than style-01's 1.4 m and still

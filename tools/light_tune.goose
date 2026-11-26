@@ -271,6 +271,10 @@ let SSAO_VIEWS = ["off", "alone", "kept", "light", "broken"];
 // The tonemaps' toes (render3d::camera_toe): on the luminance, Khronos PBR Neutral's on the
 // least channel, none.
 let TOES = ["room", "neutral", "none"];
+// The lace's ways (C, --lace): f3 the app's, f2, f and d spare ones in design/materials/,
+// read into spare_laces at the start.
+let LACE_WAYS = ["f3", "f2", "f", "d"];
+var spare_laces: u8[>..] = [];
 // --light physical's camera toe (render3d::camera_toe), as measured against the path tracer.
 let CAMERA_TOE = 2;
 // The depth of field's depth shown over the picture (render3d::depth_view): none, the
@@ -1587,7 +1591,14 @@ fn main() {
     var oak = float2 { oak4.x, oak4.y };
     let ceiling4 = four(argv, "--ceiling-tint", float4 { 1.0, 1.0, 0.0, 0.0 });
     var ceiling = float2 { ceiling4.x, ceiling4.y };
-    g.lace_way = pick(argv, "--lace", surfaces::LACE_WAYS, 0);
+    // The lace's ways (C, --lace): f3 built in, the spare ones read from design/materials/
+    // where they are there (not on a phone).
+    var lace_at: i64[5] = [0; 5];
+    for w in 1..LACE_WAYS.len {
+        read_file(str("../design/materials/lace_", LACE_WAYS[w], ".png")[..], spare_laces);
+        lace_at[w + 1] = spare_laces.len;
+    }
+    g.lace_way = pick(argv, "--lace", LACE_WAYS, 0);
     // The bookcases' books in or out, and how much of their fade shows (1 as made).
     var books_on = !(flag_value(argv, "--books") > 0 && argv[flag_value(argv, "--books")] == "off");
     var rug_on = !(flag_value(argv, "--rug") > 0 && argv[flag_value(argv, "--rug")] == "off");
@@ -1864,7 +1875,7 @@ fn main() {
             if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
             if gfx::key_pressed("F") { meter.on = !meter.on; }
             if gfx::key_pressed("G") { meter.wait = !meter.wait; }
-            if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
+            if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % LACE_WAYS.len; }
             if gfx::key_pressed("B") { books_on = !books_on; }
             if gfx::key_pressed("H") { shutters_on = !shutters_on; }
             if gfx::key_pressed("A") { place = place % (PLACE_NAMES.len - 1) + 1; }
@@ -2066,7 +2077,7 @@ fn main() {
                 ui::tree_state_pop(c);
             }
             if section(c, open, CURTAINS) {
-                choice(c, "Lace (C)", g.lace_way, surfaces::LACE_WAYS);
+                choice(c, "Lace (C)", g.lace_way, LACE_WAYS);
                 switch(c, "Shutters (H)", shutters_on, ["off", "on"]);
                 slider(c, "Lace hangs over (Y)", lace_hang, 0.0, 0.2);
                 slider(c, "Lace's sun", render3d::window_view.x, 0.0, 3.0);
@@ -2229,6 +2240,7 @@ fn main() {
         render3d::props_light = props_on;
         render3d::props_table_shade = props_shade;
         room_shell::shutters_on = shutters_on;
+        render3d::lace_png = spare_laces[lace_at[g.lace_way]..lace_at[g.lace_way + 1]];
         if lace_hang != room_shell::lace_hang { room_shell::hang_lace(lace_hang); }
         g.book_fade = max(book_fade, 0.001);
         g.room_tint = float4_0;
@@ -2346,7 +2358,7 @@ fn main() {
                        if casement_depth { "on" } else { "off" });
             }
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
-                   " --lace ", surfaces::LACE_WAYS[g.lace_way]);
+                   " --lace ", LACE_WAYS[g.lace_way]);
             format(line, " --room-surfaces ", on_off(room_on), " --outside ", on_off(outside_on),
                    " --window ", on_off(pattern == 1), " --dust ", DUST_WAYS[dust_way], " --wind-kind ",
                    rooms::WIND_KINDS[render3d::wind_kind], " --view ", VIEWS[view]);

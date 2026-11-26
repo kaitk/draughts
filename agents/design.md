@@ -144,9 +144,10 @@ pieces; the design boards still set the layout, glass, and controls.
   x 3.85 and 5.15; builder 19b's close-ups of the cap's return and the brass:
   `build/notes/builder-19b/shots.sh` (`EXE=` runs another tuner binary).
   The curtains (`model3d`'s `curtains.goose`, task 107): `--lace f3|f2|f|d` (C cycles)
-  picks the lace's way, f3 the default, the others kept in reserve (a way's panel mask by
-  `tools/materials/lace_panel.py LIBRARY TAG OUT`, from `build/notes/lace-library/TAG/`;
-  touch `src/native/materials.c` after a PNG changes); their shots and close-ups by
+  picks the lace's way, f3 the default and the only one built into the app; the others
+  are kept in reserve in `design/materials/`, which the tuner reads at the start from
+  `tools/` (a way's panel mask by `tools/materials/lace_panel.py LIBRARY TAG OUT`, from
+  `build/notes/lace-library/TAG/`; touch `src/native/materials.c` after f3's PNG changes); their shots and close-ups by
   `build/curtains-build/shots.sh EXE TAG` (`build/notes/curtains-build/`). The
   tie-backs' and the hem's close-ups and the lace's ways and table tops side by side:
   `build/choices-2026-11-21/shots.sh` (`build/notes/choices-2026-11-21/`; the right

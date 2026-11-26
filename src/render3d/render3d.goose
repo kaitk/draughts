@@ -366,7 +366,7 @@ struct Gpu {
     corner_ms:    f64,
     plaster_tone: Texture,          // the plaster's tone, R8 as the wallpaper's
     lace_mask:    Texture,          // the curtains' lace, R8 with its mips (surfaces::LACE_TEXELS)
-    lace_way:     i64,              // which lace (surfaces::LACE_WAYS), and the one on the GPU
+    lace_way:     i64,              // which lace (the light tuner's LACE_WAYS), and the one on the GPU
     lace_put:     i64,
     window_vb:    Buffer,            // the shell's glass and lace, drawn blended after the rest
     window_ib:    Buffer,
@@ -1727,7 +1727,7 @@ fn put_paper<O>(o: O&, g: Gpu&) {
         g.lace_mask = Texture { 0 };
     }
     if g.lace_mask.id == 0 {
-        g.lace_mask = put_lace(o, g.lace_way);
+        g.lace_mask = put_lace(o);
         g.lace_put = g.lace_way;
     }
     guard g.paper_mask.id == 0 else { return; }
@@ -1858,13 +1858,17 @@ fn put_rgba<O>(o: O&, px: u8[>..]&, w0: i64, h0: i64, mips: i64) -> Texture {
     return tex;
 }
 
-// The lace of `way` on the GPU, R8 with its mips down to where its sides stay even.
-extern fn draughts_lace_mask(way: i64, out: u8[:], w: i64, h: i64) -> bool;
-fn put_lace<O>(o: O&, way: i64) -> Texture {
+// The lace on the GPU, R8 with its mips down to where its sides stay even: the built-in
+// one, or lace_png where the light tuner set it (its spare ways, read from files).
+var lace_png: const u8[:] = "";
+extern fn draughts_lace_mask(out: u8[:], w: i64, h: i64) -> bool;
+extern fn draughts_gray_png(png: const u8[:], out: u8[:], w: i64, h: i64) -> bool;
+fn put_lace<O>(o: O&) -> Texture {
     let size = surfaces::LACE_TEXELS;
     var px: u8[>..] = [];
     px.resize(lace_bytes(), 0);
-    draughts_lace_mask(way, px[0..size.x * size.y], size.x, size.y);
+    if lace_png.len > 0 { draughts_gray_png(lace_png, px[0..size.x * size.y], size.x, size.y); }
+    else { draughts_lace_mask(px[0..size.x * size.y], size.x, size.y); }
     let mask = o.gpu_sampled(size.x, size.y, surfaces::LACE_MIPS, R8);
     var at = 0;
     for level in surfaces::LACE_MIPS {

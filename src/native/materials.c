@@ -36,29 +36,9 @@ static const unsigned char plaster[] = {
 #else
 static const unsigned char plaster[] = { 0 };
 #endif
-// The curtains' lace (tools/materials/lace_panel.py): way f3, and ways f2, f and d kept for
-// the tuner, the field's tile over the hem's strip, 1024 x 1408 each.
-#if __has_embed("../../design/materials/lace_f2.png")
-static const unsigned char lace_f2[] = {
-#embed "../../design/materials/lace_f2.png"
-    , 0 };
-#else
-static const unsigned char lace_f2[] = { 0 };
-#endif
-#if __has_embed("../../design/materials/lace_f.png")
-static const unsigned char lace_f[] = {
-#embed "../../design/materials/lace_f.png"
-    , 0 };
-#else
-static const unsigned char lace_f[] = { 0 };
-#endif
-#if __has_embed("../../design/materials/lace_d.png")
-static const unsigned char lace_d[] = {
-#embed "../../design/materials/lace_d.png"
-    , 0 };
-#else
-static const unsigned char lace_d[] = { 0 };
-#endif
+// The curtains' lace (tools/materials/lace_panel.py): way f3, the field's tile over the
+// hem's strip, 1024 x 1408. The spare ways f2, f and d stay in design/materials/, out of the
+// build; the light tuner reads them from there (draughts_gray_png).
 #if __has_embed("../../design/materials/lace_f3.png")
 static const unsigned char lace_f3[] = {
 #embed "../../design/materials/lace_f3.png"
@@ -126,13 +106,15 @@ bool draughts_material_mask(int64_t which, bytes out, int64_t side) {
     return decode_gray(wallpaper, sizeof wallpaper, out, side, side);
 }
 
-// The curtains' lace of way `way` (0 f3, 1 f2, 2 f, 3 d) into `out`, w × h bytes, or false when
-// it isn't built in or isn't that size.
-bool draughts_lace_mask(int64_t way, bytes out, int64_t w, int64_t h) {
-    if (way == 1) return decode_gray(lace_f2, sizeof lace_f2, out, w, h);
-    if (way == 2) return decode_gray(lace_f, sizeof lace_f, out, w, h);
-    if (way == 3) return decode_gray(lace_d, sizeof lace_d, out, w, h);
+// The curtains' lace into `out`, w × h bytes, or false when it isn't built in or isn't that
+// size.
+bool draughts_lace_mask(bytes out, int64_t w, int64_t h) {
     return decode_gray(lace_f3, sizeof lace_f3, out, w, h);
+}
+
+// A gray PNG read from a file into `out`, w × h bytes, or false when it isn't that size.
+bool draughts_gray_png(bytes png, bytes out, int64_t w, int64_t h) {
+    return decode_gray(png.data, (size_t)png.len + 1, out, w, h);
 }
 
 static bool decode_rgba(const unsigned char *png, size_t len, bytes out, int64_t w, int64_t h) {
