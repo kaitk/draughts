@@ -236,18 +236,16 @@ pieces; the design boards still set the layout, glass, and controls.
   inside is darkened by the books' and the case's vertex occlusion and `case_shade`
   (the cases' heights repeated in `ROOM_FRAG`: change them with `bookcases.goose`).
 - The doors' and windows' painted wood (`room_shell`'s `joinery.goose`, `relief.goose`):
-  J or `--paint old|quiet`, `--paint-off fillets,tilt,dirt,joints,tile` (each step alone,
-  the panel's Wainscot section), `--paint-relief K` (the tile, 1 as made). A door in the sun
+  `--paint-relief K` (the tile, 1 as made; the panel's Wainscot section). A door in the sun
   close up: `--plan-eye 0.7,2.8,1.3 --plan-at 0.0,2.8,1.2 --fov 30`; the casement's meeting
   `--plan-eye 4.45,6.5,1.25 --plan-at 4.5,7.5,1.3 --fov 18`; the shutters `--plan-eye
   4.9,6.0,1.5 --plan-at 3.95,7.25,1.4 --fov 40`. Builder 25's shots and the step matrix:
   `build/b25/shots.sh EXE TAG [NAMES]`, `cmp.sh A B`, `measure.sh ROUND TAG=EXE,FLAGS..`
-  (`build/notes/builder-25/`). The relief at its physical heights hardly shows in the
-  room's light; at 15 it shows its direction (brush along the grain).
+  (`build/notes/builder-25/`; the steps' and the old paint's flags it used are gone). The
+  relief at its physical heights hardly shows in the room's light; at 15 it shows its
+  direction (brush along the grain).
 - The sills' limestone (`room_shell`'s `limestone.goose`, `shell_mesh::sill_slab`,
-  `ROOM_SILL`): I or `--sill vasalemma|old`, `--sill-off speckle,band,arris,nose,dust` (each
-  part alone, the panel's Wainscot section). The look's values are `surfaces::Look.sill`
-  (arris radius, band's reach, nose's darkening in linear albedo, dust's width); its colour
+  `ROOM_SILL`). The look's values are `surfaces::Look.sill` (arris radius, band's reach, nose's darkening in linear albedo, dust's width); its colour
   is the old stone's (`Look.stone`), so the probes' `STONE_ALBEDO` still holds. Close-ups of
   the middle sill: from above `--plan-eye 4.3,6.55,1.15 --plan-at 4.55,7.2,0.8 --fov 30`,
   the nose `--plan-eye 4.2,6.25,0.95 --plan-at 4.5,7.05,0.78 --fov 28`, along the arris in

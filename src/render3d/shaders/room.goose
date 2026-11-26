@@ -305,7 +305,7 @@ let ROOM_HEAD = """
     // wear, y the walls' darker wax, z the path's reach round the table, w the path's
     // along the room; paper and gold: the wallpaper's ground and gold print (sRGB) and
     // their roughness; axes: u's direction in x and z, then v's; place: x the window's
-    // wall's v, y the panelled wall's, z the floor's field's size, w the wall's (world
+    // wall's v, y the hall wall's, z the floor's field's size, w the wall's (world
     // units); shade: the light thrown back into the room's shade (rooms::Room.bounce),
     // linear, and w the room's exposure over the board's (rooms::Room.room_exposure);
     // tile: the wall a tile of the wallpaper's mask covers, x, of the plaster's tone, y, of
@@ -345,10 +345,9 @@ let ROOM_HEAD = """
     // the sun's contact shadows (render3d::contact_look); sheen: the sun's broad sheen
     // (render3d::sheen_look); room_sun: the sun's saturation on the room, the panelling oak's
     // share of it, its saturation and share of the sheen (render3d::room_sun); paint_quiet:
-    // the quiet paint (surfaces::Look's); paint_steps: the tuner's switches of it
-    // (render3d::paint_steps, read only with PAINT_STEPS); sill: the sills' limestone
-    // (surfaces::Look's); sill_steps: the tuner's switches of it (render3d::sill_steps, read
-    // only with SILL_STEPS); window_view: the window view's steps' strengths, 1 as made
+    // the quiet paint (surfaces::Look's); paint_steps: unused, kept so the block's layout
+    // and room_fixed's constants stay; sill: the sills' limestone (surfaces::Look's);
+    // sill_steps: unused as paint_steps; window_view: the window view's steps' strengths, 1 as made
     // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
     // its scratches); lace_shade: the lace's room-side fill, x what is left of it where
     // neither the sun nor the sky behind the niche reaches the cloth (1 as made), y how much
@@ -1350,10 +1349,6 @@ let ROOM_FRAG = """
         // shade them. Kept on the windows, whose casements' inner corners it shades, but not on
         // the shutters' fronts, where it crawled the same way against the window.
         screen_ao = mix(1.0, screen_ao, (1.0 - no_screen) * max(on_window, smoothstep(0.02, 0.045, v_uv.y)));
-    #ifdef PAINT_STEPS
-        dirt *= paint_steps.x;
-        joint *= paint_steps.y;
-    #endif
         // The relief tile, laid on the face's plane in the room's frame with its grain the
         // piece's (up, or along the wall), a place of its own a piece: its slopes tilt the
         // normal (half as much on a window), its spread widens the sheen, its B makes the
@@ -1372,9 +1367,6 @@ let ROOM_FRAG = """
         vec3 t_along = along > 0.5 ? t_h : t_v;
         vec4 relief = texture(paint_tile, tile_uv);
         float strength = abs(paint_quiet.w) * (1.0 - 0.5 * on_window);
-    #ifdef PAINT_STEPS
-        strength *= paint_steps.z * (1.0 - paint_steps.w);
-    #endif
         vec2 slope = (relief.xy * 255.0 - 128.0) / 127.0 * RELIEF_SLOPE * strength;
         n = normalize(n - t_across * slope.x - t_along * slope.y);
         float spread = relief.w * RELIEF_SLOPE * strength;
@@ -1384,15 +1376,6 @@ let ROOM_FRAG = """
         rough = mix(paint_quiet.x, paint_quiet.y, on_window) + 0.1 * dirt + 0.1 * joint;
         rough += 0.04 * strength * (relief.z * 2.0 - 1.0);
         rough = sqrt(rough * rough + 2.0 * spread * spread);
-    #ifdef PAINT_STEPS
-        if (paint_steps.w > 0.5) {
-            // The old paint, as before the quiet one: a little uneven, its normals the mesh's.
-            n = ng;
-            float m = vnoise(v_local.xz * 0.4 + v_local.y * 0.31);
-            albedo = srgb(paint.rgb) * (0.96 + 0.06 * m);
-            rough = paint.a + 0.1 * m;
-        }
-    #endif
     #endif
     #ifdef ROOM_SILL
         {
@@ -1413,32 +1396,26 @@ let ROOM_FRAG = """
             vec3 ln = abs(vec3(dot(ng.xz, axes.xy), ng.y, dot(ng.xz, axes.zw)));
             vec2 at = on_slab > 0.5 ? vec2(v_uv.x, t) : (ln.x > ln.z ? v_local.zy : v_local.xy) / shell.w;
             vec4 tile4 = texture(stone_tile, at / STONE_TILE);
-            vec4 on = vec4(1.0);
-            float dust_on = 1.0;
-        #ifdef SILL_STEPS
-            on = sill_steps[0];
-            dust_on = sill_steps[1].x;
-        #endif
-            albedo = srgb(stone.rgb) * mix(1.0, 0.4 + tile4.r, on.x);
-            rough = stone.a + on.x * (0.06 * (tile4.a - 0.5) + 0.15 * tile4.g);
+            albedo = srgb(stone.rgb) * (0.4 + tile4.r);
+            rough = stone.a + 0.06 * (tile4.a - 0.5) + 0.15 * tile4.g;
             // The band, 0.36 to 1 of sill.y back, its edge and strength in patches.
             float r = sill.x;
             float ft = max(fwidth(t), 1e-5);
             float back = max(t, 0.0) + 0.012 * (2.0 * tile4.b - 1.0);
             float polish = (1.0 - smoothstep(0.36 * sill.y, sill.y, back)) * smoothstep(-1.5 * r, -0.5 * r, t) * (0.7 + 0.3 * tile4.b);
-            rough -= 0.22 * polish * on.y;
+            rough -= 0.22 * polish;
             // The arris: the normal turned toward it by up to 45° within r of it; under a
             // pixel, spread over the pixel and turned less. A chip in about one 5 cm of it in
             // seven: a flake broken off across it, paler and rougher, its face at an angle of
             // its own; faded as it falls under a pixel.
             float wide = max(r, ft);
-            float ease = clamp(1.0 - abs(t) / wide, 0.0, 1.0) * r / wide * on.z * on_slab;
+            float ease = clamp(1.0 - abs(t) / wide, 0.0, 1.0) * r / wide * on_slab;
             float cell = floor(v_uv.x / 0.05);
             float fp = max(ft, fwidth(v_uv.x));
             float rad = mix(0.0008, 0.0025, h12(vec2(cell, 7.3)));
             vec2 off = vec2((v_uv.x - (cell + 0.15 + 0.7 * h12(vec2(cell, 5.1))) * 0.05) / 0.6, (t + (0.6 - h12(vec2(cell, 9.9))) * r) * 0.6);
             float chip = (1.0 - smoothstep(rad - 0.5 * fp, rad + 0.5 * fp, length(off))) * step(h12(vec2(cell, 3.7)), 0.15)
-                       * min(1.0, rad * rad / (fp * fp)) * on.z * on_slab;
+                       * min(1.0, rad * rad / (fp * fp)) * on_slab;
             albedo *= 1.0 + 0.18 * chip;
             rough += 0.2 * chip;
             vec3 dpx = dFdx(p);
@@ -1453,21 +1430,12 @@ let ROOM_FRAG = """
                 n = normalize(ng * cos(angle) + toward * sin(angle));
             }
             // The nose darker toward its foot, and under it.
-            albedo *= 1.0 - sill.z * smoothstep(0.0, 1.0, clamp(-t / SILL_BOARD, 0.0, 1.0)) * on.w * on_slab;
+            albedo *= 1.0 - sill.z * smoothstep(0.0, 1.0, clamp(-t / SILL_BOARD, 0.0, 1.0)) * on_slab;
             // The dust, thickest against the casement's frame, in patches.
             float before = SILL_FRAME - t;
-            float dust = exp(-max(before, 0.0) / sill.w) * step(0.0, before) * (0.55 + 0.45 * tile4.b) * dust_on;
+            float dust = exp(-max(before, 0.0) / sill.w) * step(0.0, before) * (0.55 + 0.45 * tile4.b);
             albedo = mix(albedo, srgb(vec3(0.45, 0.43, 0.4)), 0.6 * dust);
             rough = mix(rough, 0.85, dust);
-        #ifdef SILL_STEPS
-            if (sill_steps[1].y > 0.5) {
-                // The old stone, as before the limestone: mottled, its normals the mesh's.
-                n = ng;
-                float mo = 0.6 * vnoise(v_local.xz * 1.3 + v_local.y * 0.7) + 0.4 * vnoise(v_local.xz * 4.1 + 2.7);
-                albedo = srgb(stone.rgb) * (0.93 + 0.12 * mo);
-                rough = stone.a + 0.15 * mo;
-            }
-        #endif
         }
     #endif
     #ifdef ROOM_METALS
@@ -1972,10 +1940,6 @@ let ROOM_FLOOR = "#define ROOM_FLOOR 1\n";
 let ROOM_WALLS = "#define ROOM_WALLS 1\n";
 let ROOM_PAINT = "#define ROOM_PAINT 1\n";
 let ROOM_SILL = "#define ROOM_SILL 1\n";
-// The sills' shader with the light tuner's switches (render3d::sill_steps).
-let SILL_STEPS = "#define SILL_STEPS 1\n";
-// The painted wood's shader with the light tuner's switches (render3d::paint_steps).
-let PAINT_STEPS = "#define PAINT_STEPS 1\n";
 let ROOM_METALS = "#define ROOM_METALS 1\n";
 let ROOM_GLASS = "#define ROOM_WINDOW 1\n#define ROOM_GLASS 1\n";
 let ROOM_LACE = "#define ROOM_WINDOW 1\n#define ROOM_LACE 1\n";

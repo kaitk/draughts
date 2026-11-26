@@ -292,24 +292,14 @@ fn smooth_normal(a: float3, c: float3, crease: f32 = CREASE) -> float3 {
     return normalize(a + c);
 }
 
-// A flat piece of the frame (a stile or a rail) over s0..s1, y0..y1 at FRAME_Z.
-fn board(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, s0: f32, s1: f32, y0: f32, y1: f32,
-         vertical: bool, seed: i64, ao_low: f32 = 1.0) {
-    let m = if vertical { piece_map(seed, true, s0, y0, s1 - s0, y1 - y0, true) }
-            else { piece_map(seed, false, s0, y0, y1 - y0, s1 - s0, true) };
-    let p:  float3[4] = [float3 { s0, y0, FRAME_Z }, float3 { s1, y0, FRAME_Z }, float3 { s1, y1, FRAME_Z }, float3 { s0, y1, FRAME_Z }];
-    let uv: float2[4] = [place(m, s0, y0), place(m, s1, y0), place(m, s1, y1), place(m, s0, y1)];
-    quad(verts, indices, b, p, uv, [ao_low, ao_low, 1.0, 1.0], MAT_OAK + 0.9 * hash(seed, 9));
-}
-
-// board's piece cut along at `xs` and up at `ys` (the places inside its edges, in order),
+// A flat piece of the frame (a stile or a rail) over s0..s1, y0..y1 at FRAME_Z, cut along
+// at `xs` and up at `ys` (the places inside its edges, in order),
 // where another piece's corner lies on its edges: the library's stiles where the rails and
 // panels meet them, its rails and stiles where the plinth's and cap's lengths join over
 // them. An edge without a vertex where another piece's corner lies on it rasterizes apart
 // from that piece's and leaves pinholes, the view out shining through them on the dark
 // oak (2026-11-23). The cells share their vertices, so the corners' map takes the piece as
-// one chart as before, and its places, occlusion and normal are affine across it, so they
-// interpolate as board's do.
+// one chart, and its places, occlusion and normal are affine across it.
 fn board_cut(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, s0: f32, s1: f32, y0: f32, y1: f32,
              vertical: bool, seed: i64, xs: f32[], ys: f32[], ao_low: f32 = 1.0) {
     let m = if vertical { piece_map(seed, true, s0, y0, s1 - s0, y1 - y0, true) }
@@ -334,18 +324,6 @@ fn board_cut(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, s0: f32,
             indices.append([a, a + 1, a + row + 1, a, a + row + 1, a + row]);
         }
     }
-}
-
-// The raised and fielded panel in an opening x0..x1, y0..y1 of the frame: the frame's
-// stuck ovolo moulding round it, the panel's bevel rising from its thin edge, a fillet,
-// and the flat field. Each ring of the profile is four mitred strips.
-let PANEL_IN: f32[8] = [0.0, 0.1, 0.22, 0.32, 0.34, 1.5, 1.5, 1.5];
-let PANEL_Z:  f32[8] = [0.75, 0.71, 0.56, 0.32, 0.22, 0.48, 0.56, 0.56];
-let PANEL_AO: f32[8] = [1.0, 0.97, 0.85, 0.62, 0.55, 0.93, 0.97, 1.0];
-fn panel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: Builder, x0: f32, x1: f32, y0: f32, y1: f32,
-         seed: i64, rail_low: Map, rail_high: Map, stile_left: Map, stile_right: Map) {
-    panel_ring(verts, indices, b, x0, x1, y0, y1, seed, rail_low, rail_high, stile_left, stile_right, PANEL_IN, PANEL_Z,
-               PANEL_AO);
 }
 
 // The panels' rings (the tuner's --panel-ao): `panel_ao_scale` of what each ring point's

@@ -408,8 +408,6 @@ struct Gpu {
     room_metals: Pipeline,
     room_ssao:   bool,
     room_views:  bool,              // with the tuner's views (room_views_on)
-    room_steps:  bool,              // the painted wood's with the tuner's switches (paint_steps_on)
-    sill_steps:  bool,              // the sills' with the tuner's switches (sill_steps_on)
     room_props:  bool,              // the table's and its mirror's with shaders::PROPS_LIGHT (props_light)
     bake_room:   Pipeline,
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
@@ -637,8 +635,6 @@ struct HdrPipelines {
     haze_full:   Pipeline,
     haze_add:    Pipeline,
     pieces:      i32,
-    paint_steps: bool,
-    sill_steps:  bool,
     mapped:      bool,      // with the window's light map (window_map_on)
     props_light: bool,      // the table's with shaders::PROPS_LIGHT (props_light)
 }
@@ -1089,11 +1085,9 @@ var leaves_moving = false;
 
 fn window_map_shown(g: Gpu&) -> bool { window_map_on && room_shown(g) }
 // Whether the room's pipelines for group read the map in the lace's slot (make_room_tier,
-// make_hdr): not the glass's or the lace's, the mirror's, the tuner's views or its switched
-// shaders.
+// make_hdr): not the glass's or the lace's, the mirror's or the tuner's views.
 fn window_map_read(g: Gpu&, group: i64, mirror: bool) -> bool {
     g.window_map.id != 0 && window_map_on && !mirror && !window_group(group) && !room_views_on()
-        && !(ssao_allowed && group == GROUP_PAINT && paint_steps_on()) && !(ssao_allowed && group == GROUP_SILL && sill_steps_on())
 }
 // Whether the tree's light is baked into the map: on the phone's tier as phone_leaves says,
 // elsewhere while the leaves keep still.
@@ -1626,9 +1620,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     // The mesh, in the room's frame (ROOM_VERT turns it with the key): made again only
     // where the shell's parts changed.
     let shell_key: f32 =
-        (if g.books_off { 2.0 } else { 1.0 }) + (if room_shell::shutters_on { 0.0 } else { 2.0 }) + (if room_shell::paint_quiet { 0.0 } else { 4.0 })
-        + (if room_shell::paint_fillets { 0.0 } else { 8.0 }) + (if room_shell::paint_tilt { 0.0 } else { 16.0 })
-        + 32.0 * room_shell::lace_hang;
+        (if g.books_off { 2.0 } else { 1.0 }) + (if room_shell::shutters_on { 0.0 } else { 2.0 }) + 32.0 * room_shell::lace_hang;
     let key = float4 { shell_key, 0.0, 0.0, 0.0 };
     // The corners' shade is baked with the mesh, again when the room's corners change, but
     // not while a slider is held.
@@ -2084,9 +2076,9 @@ struct SurfacesBlock {
     sheen:         float4,
     room_sun:      float4,
     paint_quiet:   float4,
-    paint_steps:   float4,
+    paint_steps:   float4,         // unused, kept so the block and room_fixed stay as they are
     sill:          float4,
-    sill_steps:    float4[2],
+    sill_steps:    float4[2],      // unused as paint_steps
     window_view:   float4,
     lace_shade:    float4,
     table_map:     float4[4],
@@ -2179,8 +2171,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
-                    float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paint_steps, k.sill,
-                    sill_steps, window_view, lace_shade,
+                    float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, float4 { 1.0, 1.0, 1.0, 0.0 }, k.sill,
+                    [float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { 1.0, 0.0, 0.0, 0.0 }], window_view, lace_shade,
                     table_map_shown(g),
                     books::COVER, books::LABEL }
 }
@@ -3818,17 +3810,9 @@ var sheen_look = float4 { 2.0, 0.8, 1.0, 0.0 };
 // Whether one of the light tuner's views of the room is on (the screen's occlusion, the
 // indirect light, the sun's highlights, the floor's reflection alone): the room's pipelines
 // then carry their code (shaders::ROOM_VIEWS), else they leave it out.
-// The light tuner's switches of the painted wood's shader (its own, shaders::PAINT_STEPS):
-// x the recesses' dirt, y the joints' hairlines, z the relief tile, each 1 on, w 1 the old
-// paint. While all are as made, the app's shader draws.
-var paint_steps = float4 { 1.0, 1.0, 1.0, 0.0 };
-// The relief tile's strength over its look's (the tuner's --paint-relief, 1 as made).
+// The painted wood's relief tile's strength over its look's (the tuner's --paint-relief, 1
+// as made).
 var paint_relief: f32 = 1.0;
-fn paint_steps_on() -> bool { paint_steps.x < 0.5 || paint_steps.y < 0.5 || paint_steps.z < 0.5 || paint_steps.w > 0.5 }
-// The light tuner's switches of the sills' shader (its own, shaders::SILL_STEPS): the
-// first x the speckle, y the polished band, z the arris, w the nose's foot, the second x
-// the dust line, each 1 on, y 1 the old stone. While all are as made, the app's shader draws.
-var sill_steps: float4[2] = [float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { 1.0, 0.0, 0.0, 0.0 }];
 // The window view's steps (build/notes/builder-27/), each a strength over its look's, 1 as
 // made, 0 off: x the lace's sun (its shadows on it full and its glow where lit), y the sun
 // the lace scatters on below it, z the glass's film, w its cleaning scratches. The light
@@ -3845,10 +3829,6 @@ var sun_veil: f32 = 1.0;
 // The light tuner's park on the ground (--park, model3d::view_out's lawn and cards, its own
 // shaders in TUNED_OUTSIDE and TUNED_OUTSIDE_HDR): the view out's mesh carries them.
 var park_ground = false;
-fn sill_steps_on() -> bool {
-    let a = sill_steps[0];
-    return a.x < 0.5 || a.y < 0.5 || a.z < 0.5 || a.w < 0.5 || sill_steps[1].x < 0.5 || sill_steps[1].y > 0.5;
-}
 
 fn room_views_on() -> bool { ssao_allowed && (ssao_view > 0 || sheen_look.w > 0.5 || planar_view == 1) }
 // The sun on the room's surfaces: x its saturation about its luminance there and in its

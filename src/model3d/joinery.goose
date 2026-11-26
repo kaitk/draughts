@@ -10,12 +10,6 @@ import std;
 import vec;
 import math;
 
-// The paint as made (quiet), or as before it (the light tuner's --paint old); its fillets,
-// and its pieces' tilt and the panels' cup, each switched alone (--paint-off).
-var paint_quiet = true;
-var paint_fillets = true;
-var paint_tilt = true;
-
 // The paint's radius on an arris (metres): a door's coats, a window's thinner.
 let FILLET_DOOR:   f32 = 0.0012;
 let FILLET_WINDOW: f32 = 0.0009;
@@ -36,20 +30,17 @@ fn paint_mat(tone: f32, along_wall: bool, window: bool, screen_ao: bool) -> f32 
 
 // Whether a vertex's material is the quiet paint's (which reads its uv as lines' distances).
 fn quiet_paint(mat: f32) -> bool {
-    guard paint_quiet else { return false; }
     let kind = floor(mat + 0.001);
     return kind == surfaces::MAT_PAINT;
 }
 
 fn fillet(window: bool) -> f32 {
-    guard paint_fillets else { return 0.0; }
     return if window { FILLET_WINDOW } else { FILLET_DOOR };
 }
 
 // A piece's tilt, a small turn about b's s and y axes (radians), from its seed: about normal,
 // as the sum of two uniforms.
 fn tilt_of(seed: i64) -> float2 {
-    guard paint_tilt else { return float2_0; }
     return float2 { PAINT_TILT * 2.45 * (surfaces::hash(seed, 21) + surfaces::hash(seed, 22) - 1.0),
                     PAINT_TILT * 2.45 * (surfaces::hash(seed, 23) + surfaces::hash(seed, 24) - 1.0) };
 }
@@ -274,11 +265,11 @@ fn side_halves(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Build
     side_face(verts, indices, b, [mf, q[1], q[2], mb], n, recess, foot, ao, mat);
 }
 
-// The quiet panel's ring (world units, as surfaces::PANEL_IN and PANEL_Z): the stuck
+// The quiet panel's ring (world units): the stuck
 // moulding, the quirk 40 % shallower than before (filled by the coats), the bevel (a point
 // 8 mm up from its foot and 8 mm short of its top, so the dirt's distance stays exact over
 // it), the riser, and the field's arris rounded in three steps; the quirk and the riser's
-// foot gather dirt. Without fillets, the ring as before (surfaces::PANEL_IN).
+// foot gather dirt.
 let QUIRK_Z:  f32 = 0.26;
 let BEVEL_IN: f32 = 0.0262;     // 8 mm
 
@@ -287,9 +278,8 @@ struct Ring { at: float2[..16], ao: f32[..16], dirt: f32[..16] }
 fn quiet_ring(window: bool) -> Ring {
     var g = Ring { [], [], [] };
     let r = fillet(window) * surfaces::METRE;
-    let quirk = if r > 0.0 { QUIRK_Z } else { surfaces::PANEL_Z[4] };
     let ins: f32[5] = [0.0, 0.1, 0.22, 0.32, 0.34];
-    let zs:  f32[5] = [0.75, 0.71, 0.56, 0.32, quirk];
+    let zs:  f32[5] = [0.75, 0.71, 0.56, 0.32, QUIRK_Z];
     let aos: f32[5] = [1.0, 0.97, 0.85, 0.62, 0.55];
     for i in 5 {
         g.at.push(float2 { ins[i], zs[i] });
@@ -311,19 +301,13 @@ fn quiet_ring(window: bool) -> Ring {
     g.ao.push(0.93);
     g.dirt.push(1.0);
     // The riser and the field's arris.
-    if r > 0.0 {
-        let c = float2 { 1.5, 0.56 };
-        let a = float2 { 1.5, 0.56 - r };
-        let e = float2 { 1.5 + r, 0.56 };
-        for j in 4 {
-            let t: f32 = j / 3.0;
-            g.at.push(a * ((1.0 - t) * (1.0 - t)) + c * (2.0 * t * (1.0 - t)) + e * (t * t));
-            g.ao.push(0.97 + 0.01 * j);
-            g.dirt.push(0.0);
-        }
-    } else {
-        g.at.push(float2 { 1.5, 0.56 });
-        g.ao.push(0.97);
+    let c = float2 { 1.5, 0.56 };
+    let a = float2 { 1.5, 0.56 - r };
+    let e = float2 { 1.5 + r, 0.56 };
+    for j in 4 {
+        let t: f32 = j / 3.0;
+        g.at.push(a * ((1.0 - t) * (1.0 - t)) + c * (2.0 * t * (1.0 - t)) + e * (t * t));
+        g.ao.push(0.97 + 0.01 * j);
         g.dirt.push(0.0);
     }
     return g;
@@ -405,7 +389,7 @@ fn paint_panel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Build
     let z = g.at[last].y;
     let w = (x1 - x0 - 2.0 * f) * k_m;
     let way: f32 = if surfaces::hash(seed, 26) < 0.5 { 1.0 } else { -1.0 };
-    let s = if paint_tilt && w > 0.0 { way * 4.0 * PANEL_SAG / w } else { 0.0 };
+    let s = if w > 0.0 { way * 4.0 * PANEL_SAG / w } else { 0.0 };
     let p: float3[4] = [float3 { x0 + f, y0 + f, z }, float3 { x1 - f, y0 + f, z }, float3 { x1 - f, y1 - f, z }, float3 { x0 + f, y1 - f, z }];
     let ns: float3[4] = [tilted(normalize(float3 { s, 0.0, 1.0 }), t), tilted(normalize(float3 { -s, 0.0, 1.0 }), t),
                          tilted(normalize(float3 { -s, 0.0, 1.0 }), t), tilted(normalize(float3 { s, 0.0, 1.0 }), t)];

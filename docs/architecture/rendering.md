@@ -948,9 +948,7 @@ grazing sun ([why](../decisions/rendering.md)).
 - **Colour and sheen**: `#c6beae`, each piece's tone a percent either way; roughness 0.36
   on the doors and 0.42 on the windows (`surfaces::Look.paint_quiet`).
 - The material's fraction says a piece's tone, its grain and whether it is a window's
-  (`room_shell::paint_mat`). The light tuner's `--paint old` (J) draws the paint as it was
-  before, and `--paint-off fillets,tilt,dirt,joints,tile` switches its steps off one by one
-  in the tuner's own shader (`shaders::PAINT_STEPS`); `--paint-relief K` scales the tile.
+  (`room_shell::paint_mat`). The light tuner's `--paint-relief K` scales the tile.
 
 ### The sills
 
@@ -979,9 +977,6 @@ read as pale stone with a soft nose ([why](../decisions/rendering.md)).
   under it.
 - **The dust**: a grey, matte line before the inner casement's frame, fading over 2 cm,
   in the tile's patches.
-- The light tuner's `--sill old` (I) draws the old mottled stone, and `--sill-off
-  speckle,band,arris,nose,dust` switches its parts off one by one, in the tuner's own
-  shader (`shaders::SILL_STEPS`) in the room and in the floor's mirror.
 
 ### The window view
 

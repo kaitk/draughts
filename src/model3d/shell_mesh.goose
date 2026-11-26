@@ -553,7 +553,7 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
           wb: surfaces::Builder, o: Opening, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
     let plaster = surfaces::MAT_PLASTER;
-    let paint = if paint_quiet { paint_mat(0.5, false, true, true) } else { surfaces::MAT_PAINT };
+    let paint = paint_mat(0.5, false, true, true);
     let w = 0.5 * o.width;
     let wo = w + BAND;
     let sill = o.sill;
@@ -603,15 +603,10 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
                                float3 { -w, spring, -depth }], paint, float3 { 0.0, -1.0, 0.0 }, 0.8);
     sill_slab(verts, indices, b, o, w, depth);
     // The casements, the inner glass and the outer.
-    if paint_quiet {
-        // Their pieces' seeds apart from the shell's, which the curtains and books go on with.
-        var own = 7919 * seed + 17;
-        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.x, own);
-        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.y, own);
-    } else {
-        casement(verts, indices, glass, glass_indices, b, o, o.glass.x);
-        casement(verts, indices, glass, glass_indices, b, o, o.glass.y);
-    }
+    // Their pieces' seeds apart from the shell's, which the curtains and books go on with.
+    var own = 7919 * seed + 17;
+    casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.x, own);
+    casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.y, own);
     // The shutters, two leaves a side folded against the reveal; one stands ajar.
     if shutters_on {
         for sx in SIDES {
@@ -643,10 +638,10 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
             seed: i64&) {
     let k = m();
     let w = 0.5 * o.width;
-    let paint = if paint_quiet { paint_mat(0.5, false, true, true) } else { surfaces::MAT_PAINT };
+    let paint = paint_mat(0.5, false, true, true);
     // The faces toward the room (the panelled face and the front edges) without the screen's
     // occlusion, which crawls on them as the eye moves; the back and the head keep it.
-    let front = if paint_quiet { paint_mat(0.5, false, true, false) } else { surfaces::MAT_PAINT };
+    let front = paint_mat(0.5, false, true, false);
     let stack = SHUTTER_FRONT + SHUTTER_BACK;
     let y0 = o.sill + 0.005;
     let y1 = o.sill + o.height - CASE_HEAD;
@@ -664,10 +659,6 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     let j = 0.5 * SHUTTER_JOINT;
     // The front edges, the front leaf's, the joint, the back leaf's; the back leaf's back,
     // seen when the pair stands ajar.
-    if !paint_quiet {
-        quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK + j }, float3 { leaf, y0, stack }, float3 { leaf, y1, stack },
-                                   float3 { leaf, y1, SHUTTER_BACK + j }], front, float3 { 1.0, 0.0, 0.0 });
-    }
     quad_m(verts, indices, l, [float3 { leaf, y0, SHUTTER_BACK - j }, float3 { leaf, y0, SHUTTER_BACK + j },
                                float3 { leaf, y1, SHUTTER_BACK + j }, float3 { leaf, y1, SHUTTER_BACK - j }], front,
            float3 { 1.0, 0.0, 0.0 }, 0.3);
@@ -683,10 +674,8 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     // The front leaf's face: its stiles' and rails' face at the stack's, the panels sunk in it.
     let face = moved(l, 0.0, (stack * k) - surfaces::FRAME_Z);
     let rows: float2[3] = [float2 { 0.9, 1.62 }, float2 { 1.72, 2.62 }, float2 { 2.72, 3.16 }];
-    if paint_quiet {
-        painted_quiet(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], SHUTTER_FRONT - j, RIGHT | TOP | BOTTOM, RIGHT, true,
-                      1.0, false, seed);
-    } else { painted(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], seed); }
+    painted_quiet(verts, indices, face, 0.0, leaf * k, y0, y1, 0.06, rows[..], SHUTTER_FRONT - j, RIGHT | TOP | BOTTOM, RIGHT, true,
+                  1.0, false, seed);
     // The hinges: on the lining at the front leaf's back edge, and between the leaves.
     let mid = 0.5 * (y0 + y1);
     let heights: f32[3] = [y0 + SHUTTER_HINGE_IN, mid, y1 - SHUTTER_HINGE_IN];
@@ -783,102 +772,6 @@ fn lathe(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c:
     }
 }
 
-// The two halves of a casement at the glass plane `g` metres into the wall from b's face:
-// the blind frame (jambs, head, sill, transom), each sash's stiles and rails, the cover
-// strip over the meeting, the bars, and one sheet of glass behind them.
-fn casement(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&,
-            b: surfaces::Builder, o: Opening, g: f32) {
-    let paint = surfaces::MAT_PAINT;
-    let w = 0.5 * o.width;
-    let gx = 0.5 * o.glass.w - CASE_FRAME;
-    let s = o.sill;
-    let h = o.sill + o.height;
-    let zt = s + (h - s) * 2.0 / 3.0;
-    // The blind frame, 0.1 m deep about the glass.
-    let f0 = -(g + 0.05);
-    let f1 = -(g - 0.05);
-    box_m(verts, indices, b, -w, -gx, s - 0.03, h, f0, f1, paint);
-    box_m(verts, indices, b, gx, w, s - 0.03, h, f0, f1, paint);
-    box_m(verts, indices, b, -gx, gx, h - CASE_HEAD, h, f0, f1, paint);
-    box_m(verts, indices, b, -gx, gx, s - 0.03, s + 0.03, f0, f1, paint);
-    box_m(verts, indices, b, -gx, gx, zt - 0.5 * CASE_TRANSOM, zt + 0.5 * CASE_TRANSOM, f0, f1, paint);
-    // The sashes: above the transom and below it, a leaf each side of the meeting.
-    let z0 = -(g + 0.025);
-    let z1 = -(g - 0.02);
-    let c = 0.5 * CASE_COVER;
-    box_m(verts, indices, b, -c, c, s + 0.03, h - CASE_HEAD, -(g + 0.03), -(g - 0.025), paint);
-    for part in 2 {
-        let y0 = if part == 0 { zt + 0.5 * CASE_TRANSOM } else { s + 0.03 };
-        let y1 = if part == 0 { h - CASE_HEAD } else { zt - 0.5 * CASE_TRANSOM };
-        let rail_low = if part == 0 { CASE_RAIL } else { CASE_RAIL_LOW };
-        let across = if part == 0 { UPPER_ACROSS } else { LOWER_ACROSS };
-        let up = if part == 0 { UPPER_UP } else { LOWER_UP };
-        for side in SIDES {
-            // The leaf from its outer edge (at the frame) to its meeting edge.
-            let outer = side * gx;
-            let meet = side * c;
-            let lo = min(outer, meet);
-            let hi = max(outer, meet);
-            let ax0 = if side < 0.0 { lo + CASE_STILE } else { lo + CASE_MEET };
-            let ax1 = if side < 0.0 { hi - CASE_MEET } else { hi - CASE_STILE };
-            box_m(verts, indices, b, lo, ax0, y0, y1, z0, z1, paint);
-            box_m(verts, indices, b, ax1, hi, y0, y1, z0, z1, paint);
-            box_m(verts, indices, b, ax0, ax1, y0, y0 + rail_low, z0, z1, paint);
-            box_m(verts, indices, b, ax0, ax1, y1 - CASE_RAIL, y1, z0, z1, paint);
-            let ay0 = y0 + rail_low;
-            let ay1 = y1 - CASE_RAIL;
-            let pw = (ax1 - ax0 - (across - 1) * CASE_BAR) / across;
-            let ph = (ay1 - ay0 - (up - 1) * CASE_BAR) / up;
-            for i in 1..across {
-                let x = ax0 + i * (pw + CASE_BAR);
-                box_m(verts, indices, b, x - CASE_BAR, x, ay0, ay1, -(g + 0.021), -(g - 0.015), paint);
-            }
-            for j in 1..up {
-                let y = ay0 + j * (ph + CASE_BAR);
-                box_m(verts, indices, b, ax0, ax1, y - CASE_BAR, y, -(g + 0.021), -(g - 0.015), paint);
-            }
-        }
-    }
-    let gz = -(g + 0.018);
-    quad_m(glass, glass_indices, b, [float3 { -gx, s + 0.03, gz }, float3 { gx, s + 0.03, gz }, float3 { gx, h - CASE_HEAD, gz },
-                                     float3 { -gx, h - CASE_HEAD, gz }], surfaces::MAT_GLASS);
-}
-
-// Panelled painted wood (a door's leaf, a shutter's face) on b's plane from x0 to x1
-// (world units) and y0 to y1 (metres): stiles `stile` metres wide, rails between the
-// panels in `rows` (metres up from y0's floor, as y0 and y1), the panels raised.
-fn painted(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x0: f32, x1: f32, y0: f32, y1: f32,
-           stile: f32, rows: float2[], seed: i64&) {
-    let k = m();
-    let first = verts.len;
-    let st = stile * k;
-    seed++;
-    let left = surfaces::piece_map(seed, true, x0, y0 * k, st, (y1 - y0) * k, true);
-    surfaces::board(verts, indices, b, x0, x0 + st, y0 * k, y1 * k, true, seed);
-    seed++;
-    let right = surfaces::piece_map(seed, true, x1 - st, y0 * k, st, (y1 - y0) * k, true);
-    surfaces::board(verts, indices, b, x1 - st, x1, y0 * k, y1 * k, true, seed);
-    var below = y0;
-    var maps: surfaces::Map[..8] = [];
-    for r in rows {
-        seed++;
-        maps.push(surfaces::piece_map(seed, false, x0 + st, below * k, (r.x - below) * k, x1 - x0 - 2.0 * st, true));
-        surfaces::board(verts, indices, b, x0 + st, x1 - st, below * k, r.x * k, false, seed);
-        below = r.y;
-    }
-    seed++;
-    maps.push(surfaces::piece_map(seed, false, x0 + st, below * k, (y1 - below) * k, x1 - x0 - 2.0 * st, true));
-    surfaces::board(verts, indices, b, x0 + st, x1 - st, below * k, y1 * k, false, seed);
-    for r, i in rows {
-        seed++;
-        surfaces::panel(verts, indices, b, x0 + st, x1 - st, r.x * k, r.y * k, seed, maps[i], maps[i + 1], left, right);
-    }
-    for i in first..verts.len {
-        let v .= verts[i];
-        v.mat = surfaces::MAT_PAINT + 0.3 * (v.mat - floor(v.mat));
-    }
-}
-
 // The threshold's oak: past every other piece's own tone (surfaces' 0.9 * hash), which
 // ROOM_FRAG shades paler and smoother.
 let THRESHOLD_OWN: f32 = 0.95;
@@ -905,7 +798,7 @@ let DOOR_LEVER = float2 { 0.06, 1.05 };
 // hinges and the lever, the architrave round it on its plinth blocks.
 fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o: Opening, thick: f32, seed: i64&) {
     let b = moved(wb, o.mid * m(), 0.0);
-    let paint = if paint_quiet { paint_mat(0.5, false, false, true) } else { surfaces::MAT_PAINT };
+    let paint = paint_mat(0.5, false, false, true);
     let w = 0.5 * o.width;
     let h = o.height;
     let back = DOOR_FACE + DOOR_LEAF;
@@ -936,19 +829,8 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     let y1 = h - j;
     let spans: float2[2] = [float2 { -w + j, -0.5 * j }, float2 { 0.5 * j, w - j }];
     for x in spans {
-        if paint_quiet {
-            painted_quiet(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], DOOR_LEAF, EDGES, LEFT | RIGHT | TOP, false,
-                          0.6, true, seed);
-            continue;
-        }
-        painted(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], seed);
-        for e in 2 {
-            let at = if e == 0 { x.x } else { x.y };
-            quad_m(verts, indices, b, [float3 { at, y0, -DOOR_FACE }, float3 { at, y0, -back }, float3 { at, y1, -back },
-                                       float3 { at, y1, -DOOR_FACE }], paint, float3 { if e == 0 { -1.0 } else { 1.0 }, 0.0, 0.0 }, 0.6);
-        }
-        quad_m(verts, indices, b, [float3 { x.x, y1, -DOOR_FACE }, float3 { x.y, y1, -DOOR_FACE }, float3 { x.y, y1, -back },
-                                   float3 { x.x, y1, -back }], paint, float3 { 0.0, 1.0, 0.0 }, 0.6);
+        painted_quiet(verts, indices, lb, x.x * k, x.y * k, y0, y1, 0.12, rows[..], DOOR_LEAF, EDGES, LEFT | RIGHT | TOP, false,
+                      0.6, true, seed);
     }
     // The meeting bead on the right leaf, a flattened half round over the joint.
     var bead: float2[7] = [float2_0; 7];
@@ -978,46 +860,19 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     // The architrave up each side from its plinth block and over the head, mitred.
     var prof: float2[7] = [float2_0; 7];
     for q, i in ARCHITRAVE_A { prof[i] = float2 { q.x / 100.0, q.y / 100.0 }; }
-    if paint_quiet {
-        // Their seeds apart from the shell's, which the books go on with.
-        architrave_quiet(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0,
-                         7919 * seed + 1);
-        architrave_quiet(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0,
-                         7919 * seed + 2);
-        architrave_quiet(verts, indices, b, prof[..], float2 { -w, h }, float2 { w, h }, float2 { 0.0, 1.0 }, 1.0, 1.0, 7919 * seed + 3);
-    } else {
-        architrave(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0);
-        architrave(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0);
-        architrave(verts, indices, b, prof[..], float2 { -w, h }, float2 { w, h }, float2 { 0.0, 1.0 }, 1.0, 1.0);
-    }
+    // Their seeds apart from the shell's, which the books go on with.
+    architrave_quiet(verts, indices, b, prof[..], float2 { -w, PLINTH_BLOCK }, float2 { -w, h }, float2 { -1.0, 0.0 }, 0.0, 1.0,
+                     7919 * seed + 1);
+    architrave_quiet(verts, indices, b, prof[..], float2 { w, PLINTH_BLOCK }, float2 { w, h }, float2 { 1.0, 0.0 }, 0.0, 1.0,
+                     7919 * seed + 2);
+    architrave_quiet(verts, indices, b, prof[..], float2 { -w, h }, float2 { w, h }, float2 { 0.0, 1.0 }, 1.0, 1.0, 7919 * seed + 3);
     // The plinth blocks the architrave stands on, a little wider and deeper than it, over
     // the wainscot's skirting where it stops.
     for sx in SIDES {
         let a = sx * (w - 0.01);
         let c = sx * (w + ARCHITRAVE + BLOCK_PAST);
-        if paint_quiet {
-            paint_box(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, BLOCK_DEEP,
-                      Piece { round: LEFT | RIGHT | TOP, sides: LEFT | RIGHT | TOP, recess: LEFT | RIGHT, seed: 7919 * seed + 5 + (if sx > 0.0 { 1 } else { 0 }), .. });
-        } else { box_m(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, BLOCK_DEEP, paint); }
-    }
-}
-
-// A profile (metres out from the opening's edge in the wall's plane, out from the wall)
-// swept from p0 to p1 (s, y of b, metres), `side` the way out from the opening; each end
-// mitred where it turns a corner (e 1: the point a metres out runs a metres farther).
-fn architrave(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, prof: float2[], p0: float2, p1: float2,
-              side: float2, e0: f32, e1: f32) {
-    let dir = normalize(p1 - p0);
-    for k in 1..prof.len {
-        let a = prof[k - 1];
-        let c = prof[k];
-        let sa = p0 + side * a.x - dir * (e0 * a.x);
-        let ea = p1 + side * a.x + dir * (e1 * a.x);
-        let sc = p0 + side * c.x - dir * (e0 * c.x);
-        let ec = p1 + side * c.x + dir * (e1 * c.x);
-        let n = float3 { side.x * -(c.y - a.y), side.y * -(c.y - a.y), c.x - a.x };
-        quad_m(verts, indices, b, [float3 { sa.x, sa.y, a.y }, float3 { ea.x, ea.y, a.y }, float3 { ec.x, ec.y, c.y },
-                                   float3 { sc.x, sc.y, c.y }], surfaces::MAT_PAINT + 0.1, n);
+        paint_box(verts, indices, b, min(a, c), max(a, c), 0.0, PLINTH_BLOCK, 0.0, BLOCK_DEEP,
+                  Piece { round: LEFT | RIGHT | TOP, sides: LEFT | RIGHT | TOP, recess: LEFT | RIGHT, seed: 7919 * seed + 5 + (if sx > 0.0 { 1 } else { 0 }), .. });
     }
 }
 
