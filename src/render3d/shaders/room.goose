@@ -660,9 +660,15 @@ let ROOM_FRAG = """
     #ifndef ROOM_WINDOW
     // The room's light the way r looks by its mean albedo there: the floor's below, the
     // walls' across, the plaster's above: what a rough surface sees through its GGX lobe.
+    // With PHYSICAL_COAT the light arriving at lp from r's side as it is: the probes' light
+    // there is already what the room's surfaces send, so no albedo goes on it again.
     vec3 room_wide(vec3 lp, vec3 r) {
+    #ifdef PHYSICAL_COAT
+        return room_irradiance(lp, r);
+    #else
         float albedo = r.y > 0.0 ? mix(0.12, 0.41, r.y * r.y) : mix(0.12, 0.06, -r.y);
         return room_irradiance(lp, r) * albedo;
+    #endif
     }
     #endif
 
@@ -1678,13 +1684,23 @@ let ROOM_FRAG = """
         vec3 irr = room_irradiance(v_local, n) * ao;
         vec3 base = albedo * (1.0 - metal) * (diff / PI * light * vis + irr);
 
+    #ifdef PHYSICAL_COAT
+        // The panelling's varnish lies smooth over the oak's grain, following a quarter of
+        // its relief (as the table's polish, tables::Table.coat.z): its highlights and
+        // reflections turn with the panel, not with each pore.
+        vec3 ns = oak ? normalize(mix(ng, n, 0.25)) : n;
+        float nov = max(dot(ns, v), 1e-4);
+        float nl = clamp(dot(ns, l), 0.0, 1.0);
+    #else
+        vec3 ns = n;
         float nov = max(dot(n, v), 1e-4);
         float nl = clamp(nol, 0.0, 1.0);
+    #endif
         vec3 hv = normalize(v + l);
-        float noh = clamp(dot(n, hv), 0.0, 1.0);
+        float noh = clamp(dot(ns, hv), 0.0, 1.0);
         float voh = clamp(dot(v, hv), 0.0, 1.0);
-        vec3 du = dFdx(n);
-        vec3 dv = dFdy(n);
+        vec3 du = dFdx(ns);
+        vec3 dv = dFdy(ns);
         float variance = 0.15 * (dot(du, du) + dot(dv, dv));
         float ar = clamp(rough, 0.05, 1.0);
         ar = ar * ar;
@@ -1698,8 +1714,14 @@ let ROOM_FRAG = """
         ar = sqrt(clamp(ar * ar + min(2.0 * variance, 0.3), 0.0, 1.0));
     #endif
         vec3 f0 = mix(vec3(0.04), albedo, metal);
+    #ifdef PHYSICAL_COAT
+        // The sun's disc, 0.53 degrees across, widens the lobe by half its angular radius
+        // (Karis's widening for a disc light).
+        float ak = ar + 0.0023;
+    #else
         // The key is a window, not a point: its highlight no sharper than 0.25's.
         float ak = max(ar, 0.06);
+    #endif
         float lobes = d_ggx(noh, ak) * v_smith(nov, nl, ak);
     #ifdef ROOM_WALLS
         // The sun's broad sheen (sheen): a second, rougher lobe on the painted wood, the
@@ -1717,7 +1739,7 @@ let ROOM_FRAG = """
         // The room's reflection, with the room baked; the harmonics alone before. Only the
         // floor and the metals see the room sharply (SHARP_BOX): the panelling's grain turns
         // its normals too fast for a window's edge to hold.
-        vec3 rv = reflect(-v, n);
+        vec3 rv = reflect(-v, ns);
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
     #ifdef PLANAR_FLOOR
         // The floor sees the mirror, through the wax's film over the oak, smoother than the
@@ -2014,6 +2036,11 @@ let SHARP_BOX = "#define SHARP_BOX 1\n";
 // physical), on the desktop's HDR tier: the paint's, the sills' and the metals' groups, which
 // the windows' spaces between the panes hold.
 let PROBE_VOLUMES = "#define PROBE_VOLUMES 1\n";
+// The varnish and the wax as clear coats (render3d::physical_coat: the light tuner's --light
+// physical), on the desktop's HDR tier: the walls' group (the panelling oak's coat over its
+// grain) and the floor's; the highlights as sharp as the sun's disc allows, the reflections
+// the light arriving there.
+let PHYSICAL_COAT = "#define PHYSICAL_COAT 1\n";
 // The sharp box's light from the box's map (render3d::box_map), on the phone's tier: the
 // floor's and metals' pipelines with SHARP_BOX and NO_SSAO; the map's bake (BOX_MAP_BAKE,
 // with no group's define, so ROOM_HEAD declares the opaque groups' shared textures alone).

@@ -630,18 +630,26 @@ let TABLE_FRAG = """
         ar = sqrt(clamp(ar * ar + min(2.0 * variance + 0.3 * top_var, 0.3), 0.0, 1.0));
         ar = max(ar, 0.0079);
         vec3 f0 = vec3(0.04);
+    #ifdef PROPS_LIGHT
+        // The sun's disc, 0.53 degrees across, widens the polish's lobe by half its angular
+        // radius (Karis's widening for a disc light).
+        float ak = ar + 0.0023;
+    #else
         // The key light is a window, not a point: its highlight in the polish is as broad
         // as coat.w's roughness, not the sun's pinpoint.
         float ak = max(ar, coat.w * coat.w);
+    #endif
         vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * spec_vis;
         vec3 r = reflect(-v, nc);
         vec3 env = sh_eval(r) * params.z * mix(1.0, lit, 0.5);
     #ifdef TABLE_ROOM
+    #ifdef PROPS_LIGHT
+        // The polish sees the light arriving from r's side, as the probes hold it: the room's
+        // surfaces' light and the windows', no albedo on it again.
+        env = props_light_at(p, r, sh_eval(r) * params.z, chair);
+    #else
         // In the room the polish sees the room's surfaces: the light on them toward r by
         // their mean albedo (0.2), as ROOM_FRAG's rough reflections take it.
-    #ifdef PROPS_LIGHT
-        env = 0.2 * props_light_at(p, r, sh_eval(r) * params.z, chair);
-    #else
         env = 0.2 * room_light_at(p.y, r, sh_eval(r) * params.z, chair);
     #endif
     #endif

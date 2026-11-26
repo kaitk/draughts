@@ -89,6 +89,9 @@
 //       [--camera-toe room|neutral|none|agx (--light physical's one curve after the HDR pass: the shoulder after
 //       that toe, or AgX at the metered exposure, the default)] [--camera-ev EV (AgX's exposure over the meter's; 0)]
 //       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
+//       [--coat on|off (--light physical: the varnish and the wax as clear coats on the walls and floor,
+//       render3d::physical_coat; on)] [--sun-color height|key (--light physical: the sun's colour by its
+//       height through a clear sky, or the key's at 0.6 of its saturation; height)]
 //       [--props-wrap K (--light physical: how far past its terminator the sun wraps on the table and chairs; 0)]
 //       [--casement-depth on|off (--light physical: the sun through the casements' members with their depth, in the bake
 //       and on every surface, rooms::Room's panes.w; on)] [--stove on|off]
@@ -231,6 +234,22 @@ fn srgb_of(c: f32) -> f32 {
     return 1.055 * pow(c, e) - 0.055;
 }
 
+// --light physical's sun colour (--sun-color): height, the direct sun's at its height through
+// a clear sky (rooms::sun_color_at); key, the key's at ROOM_SUN_AS_MADE.x of its saturation.
+// Either at the key's luminance, so the exposure stays.
+let SUN_COLOR_WAYS = ["height", "key"];
+var sun_by_height = true;
+fn physical_sun(made: rooms::Room, height: f32) -> float4 {
+    let key = rooms::color_of(made.key_color);
+    let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
+    let grey = float3 { y, y, y };
+    let sun = if sun_by_height { rooms::sun_color_at(height) * y } else { grey + (key - grey) * render3d::ROOM_SUN_AS_MADE.x };
+    return float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), made.key_color.w };
+}
+// --light physical's sun's broad sheen (render3d::sheen_look): none, as no lobe of the kind is
+// in the references (Cycles' paper and paint have their gloss alone).
+let PHYSICAL_SHEEN = float4 { 0.0, 0.8, 1.0, 0.0 };
+
 // The room's light from physical inputs (task 122), as the path tracer takes them: one sun on
 // every surface, the room's (its strength and saturation), through the panes; the bake's
 // sun thrown on at its albedo (gain 1, no grey); no light added blind to direction (the
@@ -241,10 +260,7 @@ fn srgb_of(c: f32) -> f32 {
 // the exposure unless `exposure_given`.
 fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_given: bool) -> rooms::Room {
     var r = r0;
-    let key = rooms::color_of(made.key_color);
-    let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
-    let sun = float3 { y, y, y } + (key - float3 { y, y, y }) * render3d::ROOM_SUN_AS_MADE.x;
-    r.key_color = float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), made.key_color.w };
+    r.key_color = physical_sun(made, r0.key.y);
     if !key_given { r.key.z = made.key.z * made.shell_sun.y * PANES; }
     r.shell_sun.y = 1.0;
     r.panes.w = if casement_depth { 1.0 } else { 0.0 };
@@ -1516,7 +1532,9 @@ fn main() {
     room_light::cavity_up = number(argv, "--cavity-up", room_light::cavity_up) as i64;
     room_light::cavity_across = number(argv, "--cavity-across", room_light::cavity_across) as i64;
     render3d::contact_look = four(argv, "--contact", render3d::contact_look);
-    render3d::sheen_look = four(argv, "--sheen", render3d::sheen_look);
+    render3d::sheen_look = four(argv, "--sheen", if physical { PHYSICAL_SHEEN } else { render3d::sheen_look });
+    render3d::physical_coat = physical && !(flag_value(argv, "--coat") > 0 && argv[flag_value(argv, "--coat")] == "off");
+    sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);
     let oak_sun = four(argv, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
     render3d::room_sun = float4 { render3d::room_sun.x, oak_sun.x, oak_sun.y, oak_sun.z };
@@ -2326,6 +2344,8 @@ fn main() {
             room.fill.x += turned;
             room.lamp.x += turned;
         }
+        // Under --light physical the sun's colour follows its height.
+        if physical { room.key_color = physical_sun(rooms::get(room_take), room.key.y); }
         // Cheap enough to do each frame: the harmonics on the CPU and the shadow map.
         g.room = room;
         render3d::window_pattern = pattern == 1;

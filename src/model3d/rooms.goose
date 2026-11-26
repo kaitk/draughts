@@ -261,6 +261,29 @@ fn color_of(c: float4) -> float3 { float3 { srgb_linear(c.x), srgb_linear(c.y), 
 // The key's color times its strength, linear: the shaders' light_color with w 1.
 fn key_light(r: Room) -> float3 { color_of(r.key_color) }
 
+// The direct sun's colour by its height in degrees, linear Rec.709 at luminance 1: a 5778 K
+// sun through a clear sky (Rayleigh, an aerosol of Angstrom's 0.08 and 1.3, the ozone's
+// Chappuis band) at Kasten and Young's air mass, CIE 1931 to Rec.709 (tools/sun_color.py).
+// About 2160 K at 3 degrees, 3950 K at 15, 5110 K overhead.
+let SUN_HEIGHTS: f32[14] = [3.0, 5.0, 7.0, 10.0, 13.0, 16.0, 20.0, 25.0, 30.0, 40.0, 50.0, 60.0, 75.0, 90.0];
+let SUN_COLORS: float3[14] = [
+    float3 { 2.3145, 0.7102, 0.0000 }, float3 { 1.9037, 0.8219, 0.1034 }, float3 { 1.6909, 0.8751, 0.2031 },
+    float3 { 1.5192, 0.9141, 0.3221 }, float3 { 1.4243, 0.9334, 0.4101 }, float3 { 1.3649, 0.9444, 0.4760 },
+    float3 { 1.3139, 0.9531, 0.5409 }, float3 { 1.2737, 0.9592, 0.5982 }, float3 { 1.2475, 0.9629, 0.6390 },
+    float3 { 1.2161, 0.9668, 0.6921 }, float3 { 1.1985, 0.9689, 0.7238 }, float3 { 1.1880, 0.9700, 0.7436 },
+    float3 { 1.1798, 0.9708, 0.7596 }, float3 { 1.1773, 0.9711, 0.7644 },
+];
+
+fn sun_color_at(height: f32) -> float3 {
+    guard height > SUN_HEIGHTS[0] else { return SUN_COLORS[0]; }
+    for i in 1..SUN_HEIGHTS.len {
+        guard height < SUN_HEIGHTS[i] else { continue; }
+        let f = (height - SUN_HEIGHTS[i - 1]) / (SUN_HEIGHTS[i] - SUN_HEIGHTS[i - 1]);
+        return SUN_COLORS[i - 1] + (SUN_COLORS[i] - SUN_COLORS[i - 1]) * f;
+    }
+    return SUN_COLORS[SUN_COLORS.len - 1];
+}
+
 // Adds to `sh` a light from `d` sending `strength` × `c` onto a white surface facing it,
 // over pi as the shaders' sum is, its lobe widened by `broad` (0 a direction, 1 about a
 // hemisphere: the second band gone and the first lowered).

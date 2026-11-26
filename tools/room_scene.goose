@@ -46,15 +46,22 @@ fn sh_at(sh: float4[9], d: float3) -> float3 {
     return float3 { max(c.x, 0.0), max(c.y, 0.0), max(c.z, 0.0) };
 }
 
+// The sun's colour as the tuner's --light physical takes it (its --sun-color): by its height
+// through a clear sky (rooms::sun_color_at), or the key's at 0.6 of its saturation; either at
+// the key's luminance.
+var sun_by_height = true;
+
 // sun_at: the sun's azimuth and height in degrees; window_turn: the window wall's turn.
 fn light_of(sun_at: float2, window_turn: f32) -> Light {
     let r = rooms::AUTUMN;
     let l = rooms::toward(sun_at.x, sun_at.y);
     let f = surfaces::frame_of(l, window_turn);
-    let room_sun_sat: f32 = 0.6;   // render3d::room_sun.x
+    let room_sun_sat: f32 = 0.6;   // render3d::ROOM_SUN_AS_MADE.x
     let key = rooms::color_of(r.key_color);
     let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
-    let sun = (float3 { y, y, y } + (key - float3 { y, y, y }) * room_sun_sat) * (r.key.z * r.shell_sun.y);
+    let grey = float3 { y, y, y };
+    let color = if sun_by_height { rooms::sun_color_at(sun_at.y) * y } else { grey + (key - grey) * room_sun_sat };
+    let sun = color * (r.key.z * r.shell_sun.y);
     let out = float3 { -f.into.x * 0.94, 0.342, -f.into.y * 0.94 };
     return Light { l, sun, sh_at(rooms::harmonics(r), out), float4 { f.along.x, f.along.y, f.into.x, f.into.y } };
 }

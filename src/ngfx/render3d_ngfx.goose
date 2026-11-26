@@ -661,11 +661,13 @@ fn make_hdr(own: Own&, g: Gpu&) {
     let h .= g.hdr_pipes;
     let props = render3d::props_light;
     let volumes = room_light::volumes_on;
-    guard h.tone.id == 0 || h.pieces != g.pieces || h.props_light != props || h.volumes != volumes else { return; }
+    let coat = render3d::physical_coat;
+    guard h.tone.id == 0 || h.pieces != g.pieces || h.props_light != props || h.volumes != volumes || h.coat != coat else { return; }
     if h.tone.id != 0 { release_hdr(own, g); }
     h.pieces = g.pieces;
     h.props_light = props;
     h.volumes = volumes;
+    h.coat = coat;
     let lit = lit_hdr_blob(g.pieces);
     h.lit = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
     h.fading = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
@@ -673,13 +675,13 @@ fn make_hdr(own: Own&, g: Gpu&) {
     h.table = if props { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_table_props.blob"), table_desc) }
               else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_table.blob"), table_desc) };
     let opaque = ngfx::PipelineDesc { depth_test: true, depth_write: true };
-    h.floor = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor.blob"), opaque);
-    h.planar = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar.blob"), opaque);
-    h.floor_kinds = [nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_shade.blob"), opaque),
-                     nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_no_table.blob"), opaque)];
-    h.planar_kinds = [nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_shade.blob"), opaque),
-                      nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_no_table.blob"), opaque)];
-    h.walls = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_walls.blob"), opaque);
+    h.floor = (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor.blob"), opaque) });
+    h.planar = (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar.blob"), opaque) });
+    h.floor_kinds = [(if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_shade_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_shade.blob"), opaque) }),
+                     (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_no_table_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_no_table.blob"), opaque) })];
+    h.planar_kinds = [(if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_shade_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_shade.blob"), opaque) }),
+                      (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_no_table_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_no_table.blob"), opaque) })];
+    h.walls = (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_walls_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_walls.blob"), opaque) });
     h.paint = if volumes { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint_volumes.blob"), opaque) }
               else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint.blob"), opaque) };
     h.sill = if volumes { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_sill_volumes.blob"), opaque) }

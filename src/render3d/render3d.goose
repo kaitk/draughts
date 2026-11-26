@@ -638,6 +638,7 @@ struct HdrPipelines {
     mapped:      bool,      // with the window's light map (window_map_on)
     props_light: bool,      // the table's with shaders::PROPS_LIGHT (props_light)
     volumes:     bool,      // the paint's, sills' and metals' with shaders::PROBE_VOLUMES (room_light::volumes_on)
+    coat:        bool,      // the walls' and floor's with shaders::PHYSICAL_COAT (physical_coat)
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -741,6 +742,9 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
 // beside the bake's open part (off under the tuner's --light physical: the bake's alone, as
 // the chairs'). The bake's rays a vertex and reach (metres).
 var props_light = false;
+// The varnish and wax as clear coats (shaders::PHYSICAL_COAT, the light tuner's --light
+// physical): the walls' and floor's groups on the desktop's HDR tier.
+var physical_coat = false;
 var props_table_shade = false;
 var props_profile_ao = true;
 var props_wrap: f32 = 0.2;

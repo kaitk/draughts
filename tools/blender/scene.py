@@ -416,11 +416,17 @@ def oak_panels(name):
     k.link(ao, step.inputs["Value"])
     grime = k.math("ADD", SF["oak_grime"], k.math("MULTIPLY", step.outputs[0], 1.0 - SF["oak_grime"]))
     k.link(k.scale_rgb(color, grime), b.inputs["Base Color"])
-    k.link(k.math("ADD", rough, k.math("MULTIPLY", k.math("SUBTRACT", 1.0, ao), 0.15)), b.inputs["Roughness"])
+    rough = k.math("ADD", rough, k.math("MULTIPLY", k.math("SUBTRACT", 1.0, ao), 0.15))
+    k.link(rough, b.inputs["Roughness"])
     nm = k.picture(WALL_NORMAL, (1.0 / f, -1.0 / f), (0.0, 0.0), False)
     sep = nt.nodes.new("ShaderNodeSeparateColor")
     k.link(nm.outputs["Color"], sep.inputs[0])
     k.link(k.normal_map(sep.outputs[0], sep.outputs[1], True), b.inputs["Normal"])
+    # The varnish: a clear coat at the oak's roughness, following a quarter of the grain's
+    # relief (ROOM_FRAG's PHYSICAL_COAT), the oak under it matte.
+    coated(m, b, 1.0, 0.0)
+    k.link(rough, b.inputs["Coat Roughness"])
+    k.link(k.normal_map(sep.outputs[0], sep.outputs[1], True, 0.25), b.inputs["Coat Normal"])
     return m
 
 

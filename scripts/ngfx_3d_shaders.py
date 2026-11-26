@@ -76,6 +76,13 @@ ROOMS = [
     ("r3d_hdr_paint_volumes", ["PROBE_VOLUMES", "ROOM_PAINT", "HDR_OUT"]),
     ("r3d_hdr_sill_volumes", ["PROBE_VOLUMES", "ROOM_SILL", "HDR_OUT"]),
     ("r3d_hdr_metals_volumes", ["PROBE_VOLUMES", "ROOM_METALS", "SHARP_BOX", "HDR_OUT"]),
+    ("r3d_hdr_floor_coat", ["PHYSICAL_COAT", "ROOM_FLOOR", "SHARP_BOX", "HDR_OUT"]),
+    ("r3d_hdr_planar_coat", ["PHYSICAL_COAT", "ROOM_FLOOR", "PLANAR_FLOOR", "HDR_OUT"]),
+    ("r3d_hdr_floor_shade_coat", ["PHYSICAL_COAT", "ROOM_FLOOR", "FLOOR_SHADE", "FLOOR_NO_TABLE", "SHARP_BOX", "HDR_OUT"]),
+    ("r3d_hdr_floor_no_table_coat", ["PHYSICAL_COAT", "ROOM_FLOOR", "FLOOR_NO_TABLE", "SHARP_BOX", "HDR_OUT"]),
+    ("r3d_hdr_planar_shade_coat", ["PHYSICAL_COAT", "ROOM_FLOOR", "FLOOR_SHADE", "FLOOR_NO_TABLE", "PLANAR_FLOOR", "HDR_OUT"]),
+    ("r3d_hdr_planar_no_table_coat", ["PHYSICAL_COAT", "ROOM_FLOOR", "FLOOR_NO_TABLE", "PLANAR_FLOOR", "HDR_OUT"]),
+    ("r3d_hdr_walls_coat", ["PHYSICAL_COAT", "ROOM_WALLS", "HDR_OUT"]),
     ("r3d_hdr_glass", ["ROOM_GLASS", "HDR_OUT"]),
     ("r3d_hdr_lace", ["ROOM_LACE", "HDR_OUT"]),
 ]
