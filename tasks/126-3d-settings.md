@@ -71,6 +71,8 @@ shader over a small fixed tree of their triangles, measured before it's offered.
 
 Ray tracing comes to ngfx only: a first use that shows why it exists. MSAA may be dropped from
 ngfx altogether (NoGraphicsAPI's author doesn't want it upstream, and SMAA measured better
-in the room's complex scene): first measured on the iPhone, where ngfx ships and MSAA is
-nearly free on a tiled GPU while SMAA is a full-screen pass. A decision against the parity
+in the room's complex scene). Measured already (decisions 2026-11-16 and 2026-11-24, tasks
+115 and 116): with the room SMAA is cheaper, the Galaxy Tab 1 to 10 ms, the Pixel 7a 1.5 to 3,
+even straight down; the board alone MSAA was cheaper by 0.3 to 1.1 ms (M1 Pro, Pixel 7a, a
+Radeon iGPU), with the same look. Not yet measured on an iPhone. A decision against the parity
 rule between gfx and ngfx, to record when done.
