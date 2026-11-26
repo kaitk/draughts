@@ -457,6 +457,153 @@ menu views within a level (none over 8). Results page:
   under the flag at these exposures (with the old shoulder too): the HDR target there has
   almost no green.
 
+## The sixth step, the season's grade (2026-11-26)
+
+Under `--light physical` only; without it the reference's view and the close, low, room and
+menu views are byte-identical to the build before, and `--grade none` gives the fifth step's
+picture byte for byte. The probe volumes are off in every shot (`--volumes off`). Results
+page: `build/notes/autumn-grade/index.html`; scratch `build/review122/s6/`.
+
+- A grade per season as data, `render3d::Grade` in `render3d::GRADES` (by `looks`' season):
+  `ev`, stops over the meter (added to `--camera-ev`, so the glow's threshold follows it);
+  `white`, the white balance's gains on the light; a look on AgX's curve before its 2.4
+  power as Blender's AgX looks take it, `(v * slope + offset) ^ power`, then `saturation`
+  round its luminance. `HDR_TONE_FRAG`'s `agx` reads them from two more vectors of
+  `HdrTone`. The tuner's `--grade season|none` (season by default; P prints it). Winter,
+  spring and summer are neutral, not tuned.
+- Autumn: `ev` −3.6, `white` 1.3, 1, 0.6, `slope` 1, `offset` 0, `power` 0.8, `saturation` 1.
+  The meter's exposure EV 6.91 → 3.31 at the reference's view.
+
+The reference, `Autumn Light in the Manor Library.png` (ChatGPT's repaint of the fifth
+step's shot at the same framing, `agents/design.md`), against ours, region by region on the
+same pixels: the mean of the sRGB-decoded pixels (display-linear: the reference is a
+picture, not light), its Rec.709 luminance Y and CIE xy. The door's lit and shaded parts
+are the pixels over the 70th (under the 35th) percentile of their box in both pictures;
+the floor's sun likewise; the rest are boxes (`regions.py`).
+
+| Region | Reference Y | Before | After | Today's light | After, stops off |
+|---|---|---|---|---|---|
+| Wallpaper in shade | 0.0157 | 0.0615 | 0.0106 | 0.0064 | −0.57 |
+| Wainscot | 0.0123 | 0.0440 | 0.0081 | 0.0027 | −0.60 |
+| Ceiling | 0.1185 | 0.5054 | 0.1131 | 0.1530 | −0.07 |
+| Floor in shade | 0.0344 | 0.0695 | 0.0120 | 0.0051 | −1.52 |
+| Floor's sun | 0.3074 | 0.8797 | 0.5220 | 0.2839 | +0.76 |
+| Door lit | 0.5962 | 0.9682 | 0.7422 | 0.6549 | +0.32 |
+| Door in shade | 0.1291 | 0.4081 | 0.0803 | 0.1771 | −0.68 |
+| Lace lit | 0.3035 | 0.8755 | 0.5336 | 0.2974 | +0.81 |
+| Lace in shade | 0.1613 | 0.6996 | 0.2807 | 0.0485 | +0.80 |
+| The view out | 0.3496 | 0.8420 | 0.4994 | 0.3608 | +0.51 |
+| Chairs' tapestry | 0.0685 | 0.1074 | 0.0171 | 0.0548 | −2.00 |
+| Rug | 0.0306 | 0.0947 | 0.0156 | 0.0143 | −0.97 |
+
+Over the 12 regions, |stops| off the reference: before 1.50 (+0.65 to +2.12), after 0.80
+(−2.00 to +0.81), today's light 0.88; xy's distance 0.051 → 0.025 (today 0.027); the whole
+picture's mean |difference| 69.4 → 23.8 levels (today 26.2). The wallpaper in shade xy
+0.461, 0.404 against 0.460, 0.395; the ceiling 0.436, 0.395 against 0.418, 0.383.
+
+| Ratio (display-linear) | Reference | Before | After | Today's light |
+|---|---|---|---|---|
+| Door lit / in shade | 4.62 | 2.37 | 9.24 | 3.70 |
+| Floor's sun / in shade | 8.94 | 12.66 | 43.38 | 55.32 |
+| Lace lit / in shade | 1.88 | 1.25 | 1.90 | 6.13 |
+| Ceiling / wallpaper | 7.54 | 8.21 | 10.70 | 24.02 |
+| Wainscot / wallpaper | 0.78 | 0.72 | 0.77 | 0.42 |
+| Floor in shade / wallpaper | 2.19 | 1.13 | 1.14 | 0.81 |
+| Tapestry / wallpaper | 4.36 | 1.75 | 1.62 | 8.60 |
+| Lace in shade / wallpaper | 10.27 | 11.37 | 26.56 | 7.62 |
+
+The fit (`fit.py`, the AgX fit in numpy on the HDR target from `--tone-probe` brackets,
+which gives the tuner's shot within 0.97 levels mean): log luminance and xy of 8 regions,
+not the lace (its own fill, below), the ceiling (its albedo) or the view out. Exposure and
+white balance alone: EV −1.56, gains 1.06, 1, 1.0, error 5.85 (neutral 9.22); with the look
+(power 0.8 to 1.35 and saturation 0.8 to 1.4, Blender's looks' range: Golden's power 0.8,
+Punchy's 1.35 and 1.4; the gains held to red 0.9 to 1.3, blue 0.6 to 1.0): EV −3.6, gains 1.3,
+1, 0.6, power 0.8, saturation 0.99, error 4.00. Slope and offset (0.9 to 1.1, ±0.01) went to
+their limits for 3.23 and are left at 1 and 0. Free, the fit runs to power 0.47 and EV −6.3,
+another tone curve, not a camera.
+
+What the camera can't match, as each region's exposure that would put it on the reference
+(stops over the meter, through AgX at the fitted white balance): the floor in shade −0.84,
+the tapestry −0.57, the rug −1.43, the wainscot −1.47, the wallpaper −1.59, the door in shade
+−2.09, the ceiling −2.74, the lace in shade −3.95, the door lit −4.05, the floor's sun −4.54,
+the lace lit −4.71; 4.1 stops from end to end, which one exposure can't hold:
+
+- Sun against shade: the sunlit regions need 2.5 to 3 stops less than the shaded ones. The
+  power 0.8 takes about half of it; the rest is the light. Against Cycles (the fifth step)
+  the tuner's light is 0.44 to 0.72 of Cycles' in sun and shade alike, and the probes' bounced
+  light 0.5 to 0.8 of the tracer's (the fourth step): the shade's bounce is short, not the
+  sun too strong. The reference's flat sun is also ChatGPT's: its floor's sun over its floor
+  in shade is 8.9, Cycles' room view's floor patches over its shade some 20 or more.
+- The sun patches' colour: AgX takes a bright warm patch toward white. The reference's
+  floor's sun xy 0.417, 0.383 (about 3200 K), ours after 0.365, 0.368 (4400 K); its lit
+  door 0.359, 0.359 (4500 K), ours 0.337, 0.348. The light: the sun at 0.6 of its key's
+  saturation (`ROOM_SUN_AS_MADE.x`, the first step) lights the white door at xy 0.352, 0.371
+  in the HDR target (4800 K). Full saturation would take the floor's sun from 0.352 to 0.367
+  in x; the rest is AgX's desaturation of highlights, which the reference doesn't have.
+- The ceiling over the wallpaper: 12.2 in the light, the albedos' luminance 0.389 over
+  0.050 (7.7), so the ceiling takes 1.6 times the wallpaper's light, from the floor's sun
+  patches. The reference wants about 5.5 in the light. With the grade the ceiling lands on
+  the reference (−0.07 stops) and the wallpaper 0.57 under: a darker ceiling, the user's
+  offer, would be an albedo of about 0.65 of today's (the material), but the wallpaper's
+  shortfall is the same bounce shortfall, which would lift both.
+- The floor in shade and the tapestry: 1.5 and 2.0 stops under after the grade, 0.75 and
+  1.0 stops more than the wallpaper. The floor's shade in the reference holds the windows'
+  reflections, ours less of them (the floor in shade over the wallpaper 2.19 against 1.14);
+  the tapestry faces the room away from the window, lit by the bounce alone.
+
+The lace (task 124's input). Its light split by term on the HDR target (scratch builds with
+`ROOM_FRAG`'s lace's room-side fill, and its sky behind, removed), luminance × 1000:
+
+| | Lace lit | Lace in shade | Wallpaper | Ceiling |
+|---|---|---|---|---|
+| Physical, all | 315.2 | 70.1 | 1.73 | 21.1 |
+| Of it the room-side fill | 81.1 (26%) | 65.2 (93%) | | |
+| Of it the sky behind (`lace_light`) | 93.1 (30%) | 0.15 (0%) | | |
+| Today's light, all | 303.3 | 48.0 | 6.17 | 152.1 |
+| Of it the room-side fill | 62.7 (21%) | 42.5 (89%) | | |
+
+- The room-side fill is `(sh_eval(nf) * params.z + shade.rgb) * fill`: the old room's
+  harmonics (`rooms::harmonics`, `params.z` 1 for the room in both lights) and the room's
+  even bounce (`rooms::Room.bounce`, `SurfacesBlock`'s `shade`), at full in both lights; the
+  first step took their like off every other surface but left them on the lace. The lace's
+  other terms are the same in both lights: `--lace-shade-fill` 0.5 and `--lace-fold-ao` 1.5
+  (`lace_shade`, only the share of that fill kept where neither sun nor sky reaches it and in
+  the folds' valleys), the sun on its back with `LACE_GLOW` and the forward scatter. The
+  bake's `lace_lets` and `LACE_SCATTER` light the room from the lace, not the lace itself;
+  `lace_shadow` is its shadow on the room.
+- So in the light the lace in shade is 40 times the wallpaper under `--light physical` and
+  7.8 under today's (the walls kept their fills there: the wallpaper 3.6 times, the ceiling
+  7.2 times brighter); without the fill it would be 2.8. The meter, set by the darker walls,
+  exposes the lace 2.5 to 3 stops over the reference's, which AgX takes to white: lit 0.876
+  and in shade 0.700 before the grade, 1.25 between them against the reference's 1.88.
+  Today's light was better because its lace sat under the shoulder (lit 0.297, in shade
+  0.049), not through a term of its own: its lit over shade is 6.1, past the reference.
+- What the physical lace must give: in shade about 7.8 times the wallpaper in the light
+  (the reference through AgX; today's light 7.8). Without its fill it is 2.8 (4.9 × 10⁻³),
+  so the room's light on its front should add about 8.6 × 10⁻³ here, 0.13 of the fill it
+  has: about what the probes give a surface there, not the old harmonics and bounce. Lit
+  over shade about 2.7 in the light by the reference through AgX, and 14 in Cycles' room
+  view (lit 18.9 and in shade 1.35 times its ceiling; the tracer 17.0 and 1.38; the fifth
+  step's tuner 7.7 and 3.3): ours is short where lit (0.41 of Cycles' over the ceiling: the
+  light through it from behind) and over in shade (2.4 times; the lowest left panel 5.4
+  times: the fill). The reference is flatter than Cycles here as everywhere (sun against
+  shade above). With the grade the lace's lit over shade is 1.90 (the reference 1.88), but
+  the whole lace is still 0.8 stops over the reference's: the fill.
+
+The glow, tied to the exposure (`render3d::glow_exposure`, the grade's `ev` in it), and the
+sills. The share of pixels the glow raises over 4 levels (shots with and without it),
+before → after: the reference's view 1.8% → 0.2% (mean 0.39 → 0.52 levels), the room view
+5.2% → 0.2%, the menu view 21.9% → 7.5% (mean 4.61 → 1.45, the table's sun). The windows
+keep their glow, the lace and the sunlit floor no longer take it. The sills' yellow front
+band (the reference's view, x 100 to 380) isn't the glow (the same with it off): its light
+in the HDR target is 2.34 : 1 : 0.07 in red, green and blue, almost no blue, as the stove's
+magenta has almost no green; before 163, 116, 33, after 73, 41, 10. A light fault, not
+looked into here.
+
+Seen in the close and low views: the grade darkens them with the rest (their log-averages
+are 0.52 and 0.45 of the meter's), the rug and the chairs' shade 1 to 2 stops under the
+reference's in its own view already; that is the shade's bounce above, not the grade.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
@@ -467,7 +614,8 @@ menu views within a level (none over 8). Results page:
       on the Mac's 10 threads. The old gains' mode is left out: it needs the tree's sun
       factors from the tuner's GPU, and the tuner itself now shows the old light's error)
 - [ ] The bounce's gain, caps and grey balance gone; exposure and white balance set as a
-      camera (2026-11-26, the fifth step: AgX at a metered exposure under `--light physical`)
+      camera (2026-11-26, the fifth step: AgX at a metered exposure under `--light physical`;
+      the sixth: a grade per season, autumn's fitted to the autumn reference)
 - [ ] The direction-blind fills gone, or each kept with its measured need
 - [ ] The probes' light toward the room side and down within a stated error of the
       reference (L2, or gathering with visibility), the props in the probes' view, the

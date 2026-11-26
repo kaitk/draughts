@@ -3930,7 +3930,7 @@ fn glow_shown(g: Gpu&) -> bool { g.hdr && hdr_glow.look.x > 0.0 && hdr_glow.leve
 fn glow_smallest() -> i64 { clamp(hdr_glow.levels, 1, GLOW_LEVELS) - 1 }
 // GLOW_DOWN_FRAG's and GLOW_UP_FRAG's block; HDR_TONE_FRAG's.
 struct GlowStep { step: float4, look: float4 }
-struct HdrTone { glow: float4, sun: float4, veil: float4, disc: float4 }
+struct HdrTone { glow: float4, sun: float4, veil: float4, disc: float4, white: float4, look: float4 }
 fn glow_level_size(size: int2, k: i64) -> int2 {
     var q = int2 { max(size.x / 4, 1), max(size.y / 4, 1) };
     for i in k { q = int2 { max(q.x / 2, 1), max(q.y / 2, 1) }; }
@@ -3966,6 +3966,21 @@ let CAMERA_AGX = 3;
 var meter_light: f32 = 0.0;
 var camera_ev:   f32 = 0.0;
 let METER_GREY: f32 = 0.18;
+// The camera's grade under AgX, a season's (GRADES): ev stops over the meter (with
+// camera_ev), white the white balance's gains on the light (green 1), and a look on AgX's
+// curve as Blender's AgX looks: (v * slope + offset) ^ power, then the saturation round its
+// luminance. Autumn's is fitted to the autumn reference's regions (task 122, the sixth step).
+struct Grade {
+    ev:         f32    = 0.0,
+    white:      float3 = float3 { 1.0, 1.0, 1.0 },
+    slope:      f32    = 1.0,
+    offset:     f32    = 0.0,
+    power:      f32    = 1.0,
+    saturation: f32    = 1.0,
+}
+// By looks' season: autumn, winter (neutral, not tuned yet), spring, summer.
+let GRADES: Grade[4] = [Grade { -3.6, float3 { 1.3, 1.0, 0.6 }, 1.0, 0.0, 0.8, 1.0 }, Grade {}, Grade {}, Grade {}];
+var grade = Grade {};
 fn meter_of(b: room_light::Bounce&, gain: f32) -> f32 {
     var sum:  f32 = 0.0;
     var area: f32 = 0.0;
@@ -3984,13 +3999,15 @@ fn meter_of(b: room_light::Bounce&, gain: f32) -> f32 {
 fn camera_exposure(g: Gpu&) -> f32 {
     guard camera_toe > 2.5 && meter_light > 0.0 else { return 1.0; }
     let two: f32 = 2.0;
-    return METER_GREY * pow(two, camera_ev) / (meter_light * max(g.frame.params.x * g.room.room_exposure, 1e-6));
+    return METER_GREY * pow(two, camera_ev + grade.ev) / (meter_light * max(g.frame.params.x * g.room.room_exposure, 1e-6));
 }
 fn hdr_tone_of(g: Gpu&) -> HdrTone {
     let glow = glow_shown(g);
     let k = camera_exposure(g);
     var t = HdrTone { float4 { if glow { hdr_glow.look.x } else { 0.0 }, 1.0 / g.size.x, 1.0 / g.size.y, tone_probe },
-                      float4_0, sun_look.veil, float4 { 0.0, 0.0, camera_toe, k } };
+                      float4_0, sun_look.veil, float4 { 0.0, 0.0, camera_toe, k },
+                      float4 { grade.white.x, grade.white.y, grade.white.z, grade.saturation },
+                      float4 { grade.slope, grade.offset, grade.power, 0.0 } };
     t.veil.x = sun_look.veil.x / k;
     guard sun_look.veil.x > 0.0 else { return t; }
     let m = g.frame.view_proj;

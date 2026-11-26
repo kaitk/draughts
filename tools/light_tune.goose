@@ -88,6 +88,7 @@
 //       [--light today|physical (the room's light from physical inputs, physical_light; today as made)]
 //       [--camera-toe room|neutral|none|agx (--light physical's one curve after the HDR pass: the shoulder after
 //       that toe, or AgX at the metered exposure, the default)] [--camera-ev EV (AgX's exposure over the meter's; 0)]
+//       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
 //       [--props-wrap K (--light physical: how far past its terminator the sun wraps on the table and chairs; 0)]
 //       [--casement-depth on|off (--light physical: the sun through the casements' members with their depth, in the bake
 //       and on every surface, rooms::Room's panes.w; on)] [--stove on|off]
@@ -281,6 +282,8 @@ let LACE_WAYS = ["f3", "f2", "f", "d"];
 var spare_laces: u8[>..] = [];
 // --light physical's camera curve (render3d::camera_toe): AgX, as Cycles takes it.
 let CAMERA_TOE = render3d::CAMERA_AGX;
+// --light physical's grade (--grade): the season's (render3d::GRADES) or none.
+let GRADE_WAYS = ["season", "none"];
 // The depth of field's depth shown over the picture (render3d::depth_view): none, the
 // distance, the lens's disc.
 let LENS_VIEWS = ["off", "depth", "coc"];
@@ -1420,11 +1423,13 @@ fn main() {
     // --light physical: one camera curve for the whole picture after the HDR pass, the
     // surfaces writing their light linear: --camera-toe's, AgX at the metered exposure
     // compensated by --camera-ev unless it names a toe.
+    let graded = physical && pick(argv, "--grade", GRADE_WAYS, 0) == 0;
     if physical {
         render3d::tone_toe = float4 { 2.0, 2.0, 2.0, render3d::tone_toe.w };
         render3d::camera_toe = pick(argv, "--camera-toe", TOES, CAMERA_TOE) as f32;
         render3d::camera_ev = number(argv, "--camera-ev", 0.0);
     }
+    if graded { render3d::grade = render3d::GRADES[season]; }
     var room = rooms::get(room_take);
     room.key.x = number(argv, "--azimuth", room.key.x);
     room.key.y = number(argv, "--sun-height", room.key.y);
@@ -2281,6 +2286,7 @@ fn main() {
                 shown_room = room_take;
                 room = rooms::get(room_take);
                 if physical { room = physical_light(room, room, false, false); }
+                if graded { render3d::grade = render3d::GRADES[season]; }
             }
             shown_season = season;
             shown_material = material;
@@ -2370,7 +2376,8 @@ fn main() {
             if physical {
                 format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --camera-ev ", render3d::camera_ev, " --props-wrap ",
                        render3d::props_wrap, " --casement-depth ",
-                       if casement_depth { "on" } else { "off" }, " --volumes ", on_off(room_light::volumes_on));
+                       if casement_depth { "on" } else { "off" }, " --volumes ", on_off(room_light::volumes_on), " --grade ",
+                       GRADE_WAYS[if graded { 0 } else { 1 }]);
             }
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
                    " --lace ", LACE_WAYS[g.lace_way]);
