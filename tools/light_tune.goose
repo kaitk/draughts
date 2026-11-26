@@ -254,6 +254,8 @@ fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_
     room_light::bounce_grey = 0.0;
     r.baked = float4 { r.baked.x, 1.0, 0.0, 0.0 };
     render3d::shade_fill = 0.0;
+    // No forward cone off the lace: the bake's lace cells already throw its light.
+    render3d::window_view.y = 0.0;
     if !exposure_given { r.exposure = made.exposure * made.room_exposure / PANES; }
     r.room_exposure = 1.0;
     return r;
@@ -1508,6 +1510,8 @@ fn main() {
     room_light::gather_near = number(argv, "--gather-near", if physical { PHYSICAL_GATHER_NEAR } else { room_light::gather_near });
     room_light::gather_exact = physical;
     room_light::niche_faces = physical;
+    room_light::stove_stops_sun = physical;
+    room_light::sill_settle = physical;
     room_light::volumes_on = physical && !(flag_value(argv, "--volumes") > 0 && argv[flag_value(argv, "--volumes")] == "off");
     room_light::cavity_up = number(argv, "--cavity-up", room_light::cavity_up) as i64;
     room_light::cavity_across = number(argv, "--cavity-across", room_light::cavity_across) as i64;

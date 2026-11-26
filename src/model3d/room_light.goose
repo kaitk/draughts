@@ -159,6 +159,10 @@ let SPLIT = 8;
 // its light to both its sides, into its niche as into the room, as the path tracer's thread
 // does.
 var niche_faces = false;
+// The stove stops the sun's rays (the tuner's --light physical); without it they pass through
+// its body and light the floor and the end wall inside it, which the probes there and before
+// its faces read from behind.
+var stove_stops_sun = false;
 
 // What the bake takes: the sun toward it in the plan's frame, its light on a plane facing
 // it (linear, the room's sun gain in it), the sky's radiance through the windows (linear),
@@ -390,6 +394,29 @@ fn make_lets(table: f32[:], boxes: room_shell::Member[..room_shell::MEMBERS]&, z
         }
     }
 }
+// Whether the ray from b along d meets the stove's body before t: a box in the corner of the
+// stove wall (x 0) and the hall wall (y 0), its corner cut, to its top. The plinth's and the
+// cornice's few centimetres out are left out.
+fn meets_stove(b: float3, d: float3, t: f32) -> bool {
+    guard room_shell::stove_on else { return false; }
+    let side = room_shell::STOVE_SIDE;
+    let normals: float3[4] = [float3 { 1.0, 0.0, 0.0 }, float3 { 0.0, 1.0, 0.0 }, float3 { 0.70710678, 0.70710678, 0.0 },
+                              float3 { 0.0, 0.0, 1.0 }];
+    let offsets: f32[4] = [side, side, (2.0 * side - room_shell::STOVE_CUT) * 0.70710678, room_shell::STOVE_TOP];
+    var t_in: f32 = 0.0;
+    var t_out = t;
+    for m in 4 {
+        let nd = dot(normals[m], d);
+        let nb = dot(normals[m], b);
+        if abs(nd) < 1e-6 {
+            if nb >= offsets[m] { return false; }
+            continue;
+        }
+        let tm = (offsets[m] - nb) / nd;
+        if nd < 0.0 { t_in = max(t_in, tm); } else { t_out = min(t_out, tm); }
+    }
+    return t_in < t_out;
+}
 // What sky sample (i, j) lets through along v (the plan's, from the room to the sample) in
 // place of the glazing: its share past the members times the panes. 1 when the members
 // aren't traced.
@@ -507,6 +534,7 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                         let dy = e.y - sun.table.y - table_off.y;
                         if dx * dx + dy * dy < sun.table.z * sun.table.z { t = tt; hit = 4; }
                     }
+                    if stove_stops_sun && meets_stove(b, d, t) { continue; }
                     at = b + d * t;
                     if hit == 0 {
                         let bx = clamp((at.x / BIN) as i64, 0, FLOOR_BINS_X - 1);
@@ -606,6 +634,12 @@ let GATHERED = 36;            // its floats in the half grid: c, dr, dg, db as t
 // How far before a plane the probes that its surface reads stand (0.15 m, and 0.25 m under
 // the ceiling and before the hall wall), and no others.
 let NEAR_PLANE: f32 = 0.35;
+// With sill_settle (the tuner's --light physical) the window wall's reaches WALL_NEAR: the
+// sills' fronts stand 8 cm out of the wall, so they read the row 0.45 m before it too, which
+// held the sky's lobe from behind them (its blue below zero: a yellow band). WALL_NEAR takes
+// in the half grid's row 0.75 m before the wall, which that row's light is made from.
+var sill_settle = false;
+let WALL_NEAR: f32 = 0.8;
 
 // The normals (the plan's, each axis -1, 1 or 0 for none) of the room's planes that probe
 // point p stands before: the end walls, the window wall's face, the hall wall, the floor
@@ -616,7 +650,7 @@ fn near_faces(p: float3) -> float3 {
     guard p.y <= face else { return if niche_faces { float3 { 0.0, -1.0, 0.0 } } else { float3_0 }; }
     let x_end = s.walls[room_shell::FAR_WALL].a.x;
     let x: f32 = if p.x < NEAR_PLANE { 1.0 } else if p.x > x_end - NEAR_PLANE { -1.0 } else { 0.0 };
-    let y: f32 = if p.y > face - NEAR_PLANE { -1.0 } else if p.y < NEAR_PLANE { 1.0 } else { 0.0 };
+    let y: f32 = if p.y > face - (if sill_settle { WALL_NEAR } else { NEAR_PLANE }) { -1.0 } else if p.y < NEAR_PLANE { 1.0 } else { 0.0 };
     let z: f32 = if p.z < NEAR_PLANE { 1.0 } else if p.z > s.ceiling - NEAR_PLANE { -1.0 } else { 0.0 };
     return float3 { x, y, z };
 }

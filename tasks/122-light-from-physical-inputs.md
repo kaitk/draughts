@@ -700,6 +700,55 @@ Seen in the close and low views: the grade darkens them with the rest (their log
 are 0.52 and 0.45 of the meter's), the rug and the chairs' shade 1 to 2 stops under the
 reference's in its own view already; that is the shade's bounce above, not the grade.
 
+## Fixes: the stove, the lace's cone, the sills (2026-11-26)
+
+Under `--light physical` only; without it the close, low, room and reference views are
+byte-identical to `build/perf/light_tune-before122` with `--base-wood today` (the reference
+view a level at most, no pixel over 8). Results page: `build/notes/stove-and-arc/index.html`
+(its first section); scratch `build/review122/fixes/`. Measured as the diagnosis did: the HDR
+target through `--tone-probe 16`, 5 × 5 pixel means, the stove view at 1536 × 1024.
+
+- The stove stops the sun's rays in the bake (`room_light::stove_stops_sun`,
+  `meets_stove`: its body as three planes and its top). At today's sun 13% of the sun into
+  the room went through it (6.58, 4.60, 3.23 of 49.1, 34.3, 24.1), 26% at 8° up. The stove's
+  lower front against the tracer (× 4.2, the calibration at C):
+
+| Point | Before | After | Tracer × 4.2 |
+|---|---|---|---|
+| A, front, lower | 0.0078 (G/R 0.40) | 0.0191 (0.56) | 0.0166 (0.54) |
+| B, cut, lower | 0.0108 (0.13) | 0.0452 (0.65) | 0.044 (0.65) |
+| D, front, mid | 0.0119 (0.43) | 0.0206 (0.61) | 0.022 (0.59) |
+| C, front, upper | 0.0217 (0.62) | 0.0213 (0.64) | 0.022 (0.60) |
+
+  No magenta is left: over the stove's lower body G/R under 0.4 in 10,191 pixels before, 0
+  after (the 1,159 left are the oak beside it); the reference view's right edge 36 magenta
+  pixels before, 0 after. So the second step (probes inside the stove taking a neighbour's
+  light) wasn't needed.
+- The lace's forward cone off (`render3d::window_view.y = 0` in the tuner's
+  `physical_light`): at the old sun the shot is byte-identical to the build before with
+  `--lace-scatter 0`; over the band (76,778 pixels where the cone gave half the light or
+  more) the median luminance 0.0128 → 0.0024, 2.91 → 0.55 of the tracer (× 4.7); the
+  diagnosis's 23,402 pixels, 3.44 → 0.49.
+- The sills' yellow front band: the probes' light, from behind the face. The sill's nose
+  stands 8 cm out of the window wall (`SILL_NOSE`), so its front reads the probes 0.45 m
+  before the wall as well as those 0.15 m before it; only the latter were settled toward
+  the room. Those 0.45 m out see the windows' sky from behind the face: L0 (86.5, 74.2,
+  86.5) and L1·n (−69.7, −68.9, −90.8) × 10⁻³, blue below zero and clamped. With
+  `room_light::sill_settle` the window wall's settle reaches 0.8 m (`WALL_NEAR`, the half
+  grid's row 0.75 m out with it). The light on the front (× 10⁻³, the HDR target's light
+  term): before 15.5, 4.05, 0 (G/R 0.26, B/R 0), after 25.1, 12.6, 6.8 (0.50, 0.27); the
+  tracer's light there G/R 0.45, B/R 0.22. Over the wainscot below it: tracer 1.55, after
+  0.92, before 0.65 (red) to 0.12 (blue). The shot changes only on the sills' fronts and
+  the lace's tie-backs (3,939 pixels over 8 levels).
+- Other solids the bake's sun passes through (a scratch count of the sun into the room
+  that crosses each, at seven places and three heights): the bookcases' sides 3% at 8° up,
+  0 otherwise; the sills' noses 6 to 10% at 18° up and higher (the rays land on the
+  wainscot below in place of the nose's top), 0 at today's sun. The shutters are already in
+  the reveals' test; the doors' frames, a few centimetres out, weren't counted. Not fixed:
+  no fault measured from them.
+
+Cost: the bake's ray test a few planes per ray, the settle no more work; nothing per frame.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
