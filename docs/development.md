@@ -588,6 +588,20 @@ device cool between series (`adb shell dumpsys thermalservice`, status 0). `tool
 checks the pacing alone. [Rendering](architecture/rendering.md#the-3d-board-on-devices)
 has the numbers.
 
+## Path-trace the room
+
+Two references for the library's light, both built from the program's own meshes with
+physical inputs: a CPU path tracer for points and quick pictures, and Blender Cycles for
+full pictures (`tools/blender/README.md`).
+
+```sh
+goose build -o build/path_trace tools/path_trace.goose
+build/path_trace points                        # the light at named points on the chairs and table
+build/path_trace picture close --light         # a tuner view (tools/room_scene.goose) to build/path_traced/
+```
+
+`tools/path_trace.goose`'s header lists its options; a picture runs on every core.
+
 ## Check idle CPU
 
 ```sh

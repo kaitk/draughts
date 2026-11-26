@@ -32,8 +32,13 @@ changes); its times with `tools/perf/mac_room_bench.py --full` wait for a quiet 
 
 ## Acceptance criteria
 
-- [ ] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
+- [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
       points mode and a picture mode), its numbers agreeing with Cycles' as in task 120
+      (2026-11-26: `tools/path_trace.goose`; its points equal the scratch tracer's
+      `points-phys.txt` to the last digit or two, its views' means within 0.9 to 1.1 of the
+      scratch's; 22 points × 4,096 paths in 0.6 s, a 480 × 270 picture at 64 paths in 10 s
+      on the Mac's 10 threads. The old gains' mode is left out: it needs the tree's sun
+      factors from the tuner's GPU, and the tuner itself now shows the old light's error)
 - [ ] The bounce's gain, caps and grey balance gone; exposure and white balance set as a
       camera
 - [ ] The direction-blind fills gone, or each kept with its measured need
