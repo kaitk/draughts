@@ -414,6 +414,49 @@ lace's fullness (task 124). The shots' mean after over before: close 1.02, low 1
 1.02. Cost on the Mac: the bake 132 to 140 ms before, 134 to 141 after (the probes 68 to 74
 → 69 to 75 ms); nothing per frame.
 
+## The fifth step, the camera (2026-11-26)
+
+All under `--light physical`; without it the close, low and room shots stay byte-identical
+to `build/perf/light_tune-before122` (with `--base-wood today`), the phone tier's room and
+menu views within a level (none over 8). Results page:
+`build/notes/light-physical/index.html#step5`; scratch `build/review122/s5/`.
+
+- AgX, a short fit, as the one camera curve (`HDR_TONE_FRAG`'s `agx`, `--camera-toe agx`,
+  now the default under the flag): Rec.709 to AgX's inset Rec.2020 in one matrix, log2 over
+  0.18's −10 to +6.5 stops, a degree-8 polynomial fitted to Blender 5.3's AgX on grey, the
+  2.4 power, the outset and the way back to Rec.709 in one matrix. Against Blender's AgX
+  (OCIO) on the same linear picture: grey 0.51 levels mean, 1.6 at most; six Cycles views
+  with textures at EV 6.79 1.19 to 1.54 levels a pixel (99th percentile 2.6 to 3.5), their
+  16 regions' mean −0.14 to +1.00; the tracer's five views 1.37 to 1.66. The common
+  real-time fit (Filament's) is 2.2 to 3.9. Cost: about 58 ALU operations and 9
+  transcendentals a pixel in the tone pass, against today's 8 (under the shoulder) to 25
+  with 3 divides; not timed.
+- The exposure from a meter: the log-average luminance of the light leaving the room's
+  surfaces, the bake's 1,208 cells by area, once at the bake (`render3d::meter_of`), exposed
+  to 0.18 times 2 to `--camera-ev` (a slider). Chosen over a read of the picture: no pass,
+  no delay, and no pumping as the eye walks. It gives 0.001646, EV 6.77 in all (35.5 times
+  Frame's 3.08; the fourth step's EV 1.62). The views' own log-averages over it: close
+  0.52, low 0.45, room 1.80, hall 1.37, stove 1.49, corner 1.36 (mean +0.04 stops).
+- White balance against Cycles at the same EV: the tuner's R/G over Cycles' 0.84 to 1.09
+  in the sun, 1.00 to 1.15 in the shade, B/G 0.77 to 1.26 and 0.82 to 1.16, no shift common
+  to the views: the gains stay 1, and today's grade (1.02, 1, 0.97) is left out under AgX.
+  The tuner's luminance is 0.44 to 0.72 of Cycles' in both, its pictures 10 to 16 levels
+  darker on average: light, not the camera.
+- The glow: at the meter's exposure today's glow (0.06 over 1, before the exposure) took
+  in every sunlit surface (17% of the room view's pixels over 4 levels, today 2.4%). Under
+  AgX its threshold, knee and cap are now in the picture's light (`render3d::glow_exposure`)
+  and the tuner's `AGX_GLOW` is 0.006 from 16 (AgX's white), knee 8: the room view 1.7%
+  over 4 levels (mean 0.47, today 0.62), the menu view 9.2% (today 7.3%; the table's
+  physical sun, as with the fourth step's curve, 18.8%). The eye's veil is added over the
+  exposure, as it was. No shader change for either.
+- The Cycles batch (close, low, stove, hall, corner, room; textures on, 256 samples, GPU,
+  960 × 540, 26 to 50 s a view) through AgX at EV 6.77, beside the tuner's and the
+  tracer's: the page's views. At this EV the windows and the lace are white in all three;
+  at `--camera-ev -2` the view out keeps its colour.
+- Seen, not looked into: the stove's glaze, lower front, goes magenta-black in the tuner
+  under the flag at these exposures (with the old shoulder too): the HDR target there has
+  almost no green.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
@@ -424,7 +467,7 @@ lace's fullness (task 124). The shots' mean after over before: close 1.02, low 1
       on the Mac's 10 threads. The old gains' mode is left out: it needs the tree's sun
       factors from the tuner's GPU, and the tuner itself now shows the old light's error)
 - [ ] The bounce's gain, caps and grey balance gone; exposure and white balance set as a
-      camera
+      camera (2026-11-26, the fifth step: AgX at a metered exposure under `--light physical`)
 - [ ] The direction-blind fills gone, or each kept with its measured need
 - [ ] The probes' light toward the room side and down within a stated error of the
       reference (L2, or gathering with visibility), the props in the probes' view, the

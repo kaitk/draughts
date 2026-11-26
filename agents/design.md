@@ -370,6 +370,13 @@ pieces; the design boards still set the layout, glass, and controls.
   window glow. Shots: `build/b35/look.sh EXE TAG SIZE NAME "flags"..`, `cmp.sh A B`,
   `game.sh`; costs `build/b35/rounds.sh` (`measure.sh` filters the trace by the exact
   executable name, so the user's open tuner is left out).
+- The camera under `--light physical` (task 122, step 5, `build/notes/light-physical/#step5`):
+  AgX (`--camera-toe agx`, `none` the shoulder as before) at an exposure metered once at the
+  bake (the room's log-average to 0.18), `--camera-ev` (the "Camera EV" slider) on top; the
+  glow's threshold is then in the picture's light (`AGX_GLOW`, 0.006 from 16). Judge a look
+  against Cycles at the EV the tuner prints with `--shot` ("the camera's meter ... EV"):
+  `tools/blender/scene.py --exposure EV`. Blender's AgX on any linear EXR:
+  `build/review122/s5/agx_ref.py` (OCIO in Blender's Python).
 - The light tuner draws the 3D scene at the screen's native size by default (2026-11-22);
   `--scene-pixels 4.1` (`render3d::HIGH_SCENE_PIXELS`) or `--scene-scale K` draw it smaller
   and upscale it (N cycles native, 0.85, 0.75, 0.67 and the 4.1 MP cap; M the upscale). Builder 24's crops and sweeps:
