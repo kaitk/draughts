@@ -14,3 +14,19 @@ FLOOR_NOISE_SIDE: mesh 1024.0, shaders 1024.0
 SCRATCH_TILE: mesh 48.0, shaders 48.0
 CHAIR_A: mesh 0.0 -27.884 0.104528 0.994522
 CHAIR_B: mesh 1.829 24.64 -0.241922 -0.970296
+BOX_JAMB: window 0.49, shaders 0.49
+BOX_FRAME_FACE: window 0.05, shaders 0.05
+BOX_FRAME_DEEP: window 0.08, shaders 0.08
+BOX_REBATE: window 0.015, shaders 0.015
+BOX_GLASS_IN: window 0.022, shaders 0.022
+BOX_SASH_DEEP: window 0.045, shaders 0.045
+BOX_FOOT: window 0.04, shaders 0.04
+BOX_HEAD: window 0.07, shaders 0.07
+BOX_TRANSOM: window 0.09, shaders 0.09
+BOX_MULLION: window 0.06, shaders 0.06
+BOX_STILE: window 0.06, shaders 0.06
+BOX_RAIL_TOP: window 0.06, shaders 0.06
+BOX_RAIL_LOW: window 0.085, shaders 0.085
+BOX_SURROUND: window 0.04, shaders 0.04
+BOX_BAR_UPPER: window 0.024, shaders 0.024
+BOX_BAR_LOWER: window 0.032, shaders 0.032

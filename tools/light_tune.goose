@@ -82,6 +82,7 @@
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
+//       [--box-window on|off (task 127's box window, its casements from room_shell's box_window.goose; off window B's)]
 //       [--rug on|off (the rug under the games table)] [--chairs on|off (the two chairs at it)]
 //       [--props-light off|on|kept (the table and the chairs lit from the room's probes where each pixel is, through
 //       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)]
@@ -592,6 +593,7 @@ let POINTS_FIBRES: f32 = 0.15;
 // window (its window_open without the shell) says there: its opening is placed on the line
 // from the board's middle to the sun, so it lets the sun on wherever the shell's walls are.
 fn casement_at(o: room_shell::Opening, x: f32, y: f32) -> f32, f32 {
+    if room_shell::box_window_on { return room_shell::box_open_at(room_shell::box_casement(o, o.glass.x), x, y); }
     let bar: f32 = 0.024;
     let s = o.sill;
     let h = o.sill + o.height;
@@ -1806,6 +1808,7 @@ fn main() {
     }
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
+    room_shell::box_window_on = flag_value(argv, "--box-window") > 0 && argv[flag_value(argv, "--box-window")] == "on";
     // The stove in its corner.
     room_shell::stove_on = !(flag_value(argv, "--stove") > 0 && argv[flag_value(argv, "--stove")] == "off");
     render3d::paint_relief = number(argv, "--paint-relief", 1.0);
@@ -2610,7 +2613,7 @@ fn main() {
                    if render3d::haze.half { "half" } else { "full" });
             flag_four(line, "--haze-look", float4 { render3d::haze.g, render3d::haze.even, render3d::haze.taps, render3d::haze.soft });
             format(line, " --books ", on_off(books_on), " --rug ", on_off(rug_on), " --chairs ", on_off(chairs_on), " --props-light ",
-                   (if !props_on { "off" } else if props_shade { "kept" } else { "on" }), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on), " --lace-hang ", lace_hang);
+                   (if !props_on { "off" } else if props_shade { "kept" } else { "on" }), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on), " --box-window ", on_off(room_shell::box_window_on), " --lace-hang ", lace_hang);
             if st.halo.x > 0.0 || st.halo.y > 0.0 { format(line, " --halo ", st.halo.x, " --halo-reach ", st.halo.y); }
             let wv = render3d::window_view;
             format(line, " --lace-sun ", wv.x, " --lace-scatter ", wv.y, " --glass-film ", wv.z, " --scratches ", wv.w, " --sun-veil ",

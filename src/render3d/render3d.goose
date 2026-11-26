@@ -1145,11 +1145,11 @@ fn window_map_tree(g: Gpu&) -> bool {
 // casements' members have their depth (Frame's panes.w), the tree's place and map, and
 // whether the tree is in (never the wind: on the phone's tier the leaves stay
 // as they were when it was baked).
-let WINDOW_MAP_KEY = 14;
+let WINDOW_MAP_KEY = 15;
 fn window_map_key(g: Gpu&) -> float4[WINDOW_MAP_KEY] {
     let b = shell_block(g);
     let f = g.frame;
-    return [f.light_dir, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view,
+    return [f.light_dir, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view, b.shell_case,
             f.room, f.panes, f.tree, f.tree_blur, float4 { if window_map_tree(g) { 1.0 } else { 0.0 }, g.tree_bakes, g.lace_mask.id, g.tree_map.id }];
 }
 // The map baked again where what it is made from changed. Recording only, before the
@@ -1173,7 +1173,7 @@ fn window_map<O>(o: O&, g: Gpu&) {
 fn box_map_shown(g: Gpu&) -> bool {
     box_map_on && !ssao_allowed && sharp_box_allowed && window_map_shown(g) && light_baked(g) && g.light_volume.id != 0
 }
-let BOX_MAP_KEY = 53;
+let BOX_MAP_KEY = 54;
 fn box_map_key(g: Gpu&) -> float4[BOX_MAP_KEY] {
     let b = surfaces_block(g);
     let f = g.frame;
@@ -2223,6 +2223,7 @@ struct SurfacesBlock {
     sill_steps:    float4,         // unused, kept so the block and room_fixed stay as they are
     physical:      float4,         // the lace's light from the room (probes_on_lace) and stove_glaze
     window_view:   float4,
+    shell_case:    float4,
     lace_shade:    float4,
     table_map:     float4[4],
     book_cover:    float4[32],
@@ -2319,7 +2320,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
                     float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paper_detail, k.sill,
-                    float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { lace_room.x + lace_back.x, lace_room.y + lace_back.y, lace_room.z + lace_back.z, stove_glaze }, window_view,
+                    float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { lace_room.x + lace_back.x, lace_room.y + lace_back.y, lace_room.z + lace_back.z, stove_glaze }, window_view, shell_case_of(),
                     float4 { lace_shade.x, lace_shade.y, if lace_probed && light_baked(g) { 1.0 } else { 0.0 }, 0.0 },
                     table_map_shown(g),
                     books::COVER, books::LABEL, wood_rows(g, WOOD_OAK), wood_rows(g, WOOD_FLOOR) }
@@ -4441,6 +4442,7 @@ struct DustBlock {
     shell_glass: float4,
     shell_sun:   float4,
     window_view: float4,
+    shell_case:  float4,
     u:           float4,
     v:           float4,
     w:           float4,
@@ -4452,7 +4454,7 @@ struct DustBlock {
 fn dust_block(g: Gpu&) -> DustBlock {
     var b = DustBlock { model3d::f4(dust.low, wind_time), model3d::f4(dust.span, 0.0),
                         float4 { 0.0, dust.blur, dust.bright, dust.focus }, float4 { 0.0, dust.ahead, 0.0, 0.0 },
-                        float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
+                        float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                         model3d::f4(dust.u, 0.0), model3d::f4(dust.v, 0.0), model3d::f4(dust.w, 0.0),
                         float4 { 0.0, 0.0, dust.fibres, dust.fibre_width }, dust.air,
                         float4 { dust.point_px, dust.glints, g.room.shell_sun.y * g.room.room_exposure, surfaces::METRE },
@@ -4475,6 +4477,7 @@ fn dust_block(g: Gpu&) -> DustBlock {
     b.shell_glass = s.shell_glass;
     b.shell_sun = s.shell_sun;
     b.window_view = s.window_view;
+    b.shell_case = s.shell_case;
     // Only the sun straight through the glass lights a mote, not the light the lace
     // scatters on.
     b.window_view.y = 0.0;
@@ -4534,6 +4537,7 @@ struct HazeBlock {
     shell_glass: float4,
     shell_sun:   float4,
     window_view: float4,
+    shell_case:  float4,
     light:       float4,
     look:        float4,
     plane:       float4,
@@ -4551,6 +4555,7 @@ struct HazeAdd { pixel: float4 }
 // left to right, into xs, and its rows, upward, into ys; how many of each. The lower sash is
 // one pane across a leaf and two up, the upper three by three, between the bars.
 fn casement_sash(niche: float4, upper: bool, xs: float2[12]&, ys: float2[12]&) -> int2 {
+    if room_shell::box_window_on { return room_shell::box_panes(room_shell::window_at(0.0), upper, xs, ys); }
     let bar: f32 = 0.024;
     let s = niche.y;
     let h = niche.y + niche.z;
@@ -4621,7 +4626,7 @@ fn haze_block(g: Gpu&, size: int2) -> HazeBlock {
     let along = float2 { s.axes.x, s.axes.y };
     let nw = float2 { -s.axes.z, -s.axes.w };
     let toward = l.x * nw.x + l.z * nw.y;
-    var b = HazeBlock { s.axes, s.tile, s.shell, s.shell_mids, s.shell_niche, s.shell_glass, s.shell_sun, s.window_view,
+    var b = HazeBlock { s.axes, s.tile, s.shell, s.shell_mids, s.shell_niche, s.shell_glass, s.shell_sun, s.window_view, s.shell_case,
                         float4_0, float4_0, float4_0, float4_0, float4 { 1.0 / size.x, 1.0 / size.y, haze.toward, 0.0 },
                         float4_0, float4_0, float4_0 };
     haze_count = 0;
@@ -4707,7 +4712,11 @@ struct ShellBlock {
     shell_glass: float4,
     shell_sun:   float4,
     window_view: float4,
+    shell_case:  float4,
 }
+// The shell's windows' casements: x 1 with task 127's box window (room_shell::box_window_on),
+// 0 window B's; y, z, w kept for a sash's opening.
+fn shell_case_of() -> float4 { float4 { if room_shell::box_window_on { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 } }
 fn shell_block(g: Gpu&) -> ShellBlock {
     var b = default<ShellBlock>();
     guard g.room_on else { return b; }
@@ -4720,6 +4729,7 @@ fn shell_block(g: Gpu&) -> ShellBlock {
     b.shell_glass = s.shell_glass;
     b.shell_sun = s.shell_sun;
     b.window_view = s.window_view;
+    b.shell_case = s.shell_case;
     return b;
 }
 // Whether the board's pass lights the board and the table through the shell's windows: its

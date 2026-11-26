@@ -1573,7 +1573,7 @@ fn antialias(own: Own&, g: Gpu&, target: nx::Texture, size: int2) {
 fn lit_block(g: Gpu&, draw: float4, in_shell: bool) -> u64 {
     guard in_shell else { return blocks([draw]); }
     let b = render3d::shell_block(g);
-    return blocks([draw, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view]);
+    return blocks([draw, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view, b.shell_case]);
 }
 
 // The table's u: its block, then in the room its shell's windows (TABLE_SHELL's Shell), and

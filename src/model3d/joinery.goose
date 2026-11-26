@@ -635,11 +635,6 @@ fn casement_quiet(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Ve
                                      float3 { -gx, h - CASE_HEAD, gzz }], surfaces::MAT_GLASS);
 }
 
-// A box of a window's casements, in the window's own metres: x along the wall from its
-// middle, y up from the floor, z out of the wall (into it negative), as box_m takes them.
-struct Member { lo: float3, hi: float3 }
-let MEMBERS = 66;
-
 // The boxes the sun meets in window o's opening (room_light's bake traces its rays through
 // them): each casement's blind frame, its cover strip, its sashes' stiles and rails and its
 // bars, as casement and casement_quiet build them at o.glass.x and o.glass.y, and the
@@ -647,6 +642,13 @@ let MEMBERS = 66;
 // in the wall).
 fn casement_members(o: Opening) -> Member[..MEMBERS] {
     var out: Member[..MEMBERS] = [];
+    if box_window_on {
+        box_members(box_casement(o, o.glass.x), out);
+        box_members(box_casement(o, o.glass.y), out);
+        out.push(member(float3 { -0.5 * o.width, o.sill + o.height, -(o.glass.z + 0.01) },
+                        float3 { 0.5 * o.width, o.sill + o.height + 2.0, -o.glass.z }, PART_WALL, -1));
+        return out;
+    }
     let w = 0.5 * o.width;
     let gx = 0.5 * o.glass.w - CASE_FRAME;
     let s = o.sill;
@@ -656,12 +658,12 @@ fn casement_members(o: Opening) -> Member[..MEMBERS] {
     for g in [o.glass.x, o.glass.y] {
         let f0 = -(g + 0.05);
         let f1 = -(g - 0.05);
-        out.push(Member { float3 { -w, s - 0.03, f0 }, float3 { -gx, h, f1 } });
-        out.push(Member { float3 { gx, s - 0.03, f0 }, float3 { w, h, f1 } });
-        out.push(Member { float3 { -gx, h - CASE_HEAD, f0 }, float3 { gx, h, f1 } });
-        out.push(Member { float3 { -gx, s - 0.03, f0 }, float3 { gx, s + 0.03, f1 } });
-        out.push(Member { float3 { -gx, zt - 0.5 * CASE_TRANSOM, f0 }, float3 { gx, zt + 0.5 * CASE_TRANSOM, f1 } });
-        out.push(Member { float3 { -c, s + 0.03, -(g + 0.03) }, float3 { c, h - CASE_HEAD, -(g - 0.025) } });
+        out.push(Member { float3 { -w, s - 0.03, f0 }, float3 { -gx, h, f1 }, .. });
+        out.push(Member { float3 { gx, s - 0.03, f0 }, float3 { w, h, f1 }, .. });
+        out.push(Member { float3 { -gx, h - CASE_HEAD, f0 }, float3 { gx, h, f1 }, .. });
+        out.push(Member { float3 { -gx, s - 0.03, f0 }, float3 { gx, s + 0.03, f1 }, .. });
+        out.push(Member { float3 { -gx, zt - 0.5 * CASE_TRANSOM, f0 }, float3 { gx, zt + 0.5 * CASE_TRANSOM, f1 }, .. });
+        out.push(Member { float3 { -c, s + 0.03, -(g + 0.03) }, float3 { c, h - CASE_HEAD, -(g - 0.025) }, .. });
         let z0 = -(g + 0.025);
         let z1 = -(g - 0.02);
         for part in 2 {
@@ -677,23 +679,23 @@ fn casement_members(o: Opening) -> Member[..MEMBERS] {
                 let ax1 = if side < 0.0 { hi - CASE_MEET } else { hi - CASE_STILE };
                 let ay0 = y0 + rail_low;
                 let ay1 = y1 - CASE_RAIL;
-                out.push(Member { float3 { lo, y0, z0 }, float3 { ax0, y1, z1 } });
-                out.push(Member { float3 { ax1, y0, z0 }, float3 { hi, y1, z1 } });
-                out.push(Member { float3 { ax0, y0, z0 }, float3 { ax1, ay0, z1 } });
-                out.push(Member { float3 { ax0, ay1, z0 }, float3 { ax1, y1, z1 } });
+                out.push(Member { float3 { lo, y0, z0 }, float3 { ax0, y1, z1 }, .. });
+                out.push(Member { float3 { ax1, y0, z0 }, float3 { hi, y1, z1 }, .. });
+                out.push(Member { float3 { ax0, y0, z0 }, float3 { ax1, ay0, z1 }, .. });
+                out.push(Member { float3 { ax0, ay1, z0 }, float3 { ax1, y1, z1 }, .. });
                 let pw = (ax1 - ax0 - (across - 1) * CASE_BAR) / across;
                 let ph = (ay1 - ay0 - (up - 1) * CASE_BAR) / up;
                 for i in 1..across {
                     let x = ax0 + i * (pw + CASE_BAR);
-                    out.push(Member { float3 { x - CASE_BAR, ay0, -(g + 0.021) }, float3 { x, ay1, -(g - 0.015) } });
+                    out.push(Member { float3 { x - CASE_BAR, ay0, -(g + 0.021) }, float3 { x, ay1, -(g - 0.015) }, .. });
                 }
                 for j in 1..up {
                     let y = ay0 + j * (ph + CASE_BAR);
-                    out.push(Member { float3 { ax0, y - CASE_BAR, -(g + 0.021) }, float3 { ax1, y, -(g - 0.015) } });
+                    out.push(Member { float3 { ax0, y - CASE_BAR, -(g + 0.021) }, float3 { ax1, y, -(g - 0.015) }, .. });
                 }
             }
         }
     }
-    out.push(Member { float3 { -w, h, -(o.glass.z + 0.01) }, float3 { w, h + 2.0, -o.glass.z } });
+    out.push(Member { float3 { -w, h, -(o.glass.z + 0.01) }, float3 { w, h + 2.0, -o.glass.z }, .. });
     return out;
 }

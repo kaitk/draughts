@@ -605,8 +605,13 @@ fn window(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..
     // The casements, the inner glass and the outer.
     // Their pieces' seeds apart from the shell's, which the curtains and books go on with.
     var own = 7919 * seed + 17;
-    casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.x, own);
-    casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.y, own);
+    if box_window_on {
+        box_casement_mesh(verts, indices, glass, glass_indices, b, box_casement(o, o.glass.x), true, own);
+        box_casement_mesh(verts, indices, glass, glass_indices, b, box_casement(o, o.glass.y), false, own);
+    } else {
+        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.x, own);
+        casement_quiet(verts, indices, glass, glass_indices, b, o, o.glass.y, own);
+    }
     // The shutters, two leaves a side folded against the reveal; one stands ajar.
     if shutters_on {
         for sx in SIDES {
@@ -723,15 +728,15 @@ fn upright_sweep(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Bui
 // and half length `half`, `sides` round: with `finials` a small ball at each end (the
 // doors'), else a short point (the shutters', a pixel or two in every view).
 fn knuckle(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c: float3, r: f32, half: f32, sides: i64,
-           finials: bool) {
+           finials: bool, mat: f32 = surfaces::MAT_BRASS) {
     if finials {
         let f = 0.8 * r;
         let prof: float2[6] = [float2 { 0.0, -half - 1.75 * f }, float2 { 0.8 * f, -half - 0.85 * f }, float2 { r, -half },
                                float2 { r, half }, float2 { 0.8 * f, half + 0.85 * f }, float2 { 0.0, half + 1.75 * f }];
-        lathe(verts, indices, b, c, prof[..], sides, surfaces::MAT_BRASS);
+        lathe(verts, indices, b, c, prof[..], sides, mat);
     } else {
         let prof: float2[4] = [float2 { 0.0, -half - 0.8 * r }, float2 { r, -half }, float2 { r, half }, float2 { 0.0, half + 0.8 * r }];
-        lathe(verts, indices, b, c, prof[..], sides, surfaces::MAT_BRASS);
+        lathe(verts, indices, b, c, prof[..], sides, mat);
     }
 }
 

@@ -158,7 +158,8 @@ let LIT_HEAD = """
 let LIT_SHELL = """
     layout(set = 2, binding = 8) uniform sampler2D lace_mask;
     layout(set = 3, binding = 1) uniform Shell { vec4 axes; vec4 tile; vec4 shell; vec4 shell_mids; vec4 shell_niche;
-                                                 vec4 shell_glass; vec4 shell_sun; vec4 window_view; };
+                                                 vec4 shell_glass; vec4 shell_sun; vec4 window_view;
+                                                 vec4 shell_case; };
     """;
 let LIT_FRAG = """
     const float CROWN_SPAN = 0.6;       // render3d::crown_map

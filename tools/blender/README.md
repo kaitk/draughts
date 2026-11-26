@@ -32,7 +32,7 @@ The exporter's flags set the room as the tuner's do: `--table-at X,Y`, `--sun AZ
 `--sun-take K,H` (the sun's strength over the clear sky's and the height its colour is taken
 as: `--light physical`'s autumn sun, 0.25 and 8 degrees, by default; 1,-1 the clear sky's),
 `--window-turn DEG`, `--table-turn DEG`, `--lace-hang M`, `--books`, `--chairs`, `--rug
-on|off`, `--backs on|off` (the casements' backs, which the room's mesh leaves out since they
+on|off`, `--box-window on|off` (task 127's box window in place of window B), `--backs on|off` (the casements' backs, which the room's mesh leaves out since they
 face away from the room; on, or the space between the panes takes too little light). `--maps on` also makes, on the GPU with the app's own code, the pictures the
 surfaces read (the defaults are the tuner's at its default placement, less-turned):
 

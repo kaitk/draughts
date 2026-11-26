@@ -2,7 +2,8 @@
 // `const float NAME = value;` (embed_shader takes only a literal); each must equal the
 // mesh's, or the lit shader's field, frame, and pieces stop where the meshes don't; the
 // room's floor its strips' count (src/model3d/surfaces.goose), and where the chairs stand
-// (mesh::CHAIRS, the floor's CHAIR_A and CHAIR_B as `const vec4 NAME = vec4(...);`).
+// (mesh::CHAIRS, the floor's CHAIR_A and CHAIR_B as `const vec4 NAME = vec4(...);`); LIGHT_FN's
+// box_casement the box window's measures (room_shell's box_window.goose), to a millionth.
 import std;
 import vec;
 import model3d from "../../src/model3d";
@@ -70,6 +71,21 @@ fn main() {
         let m = mesh::CHAIRS[i];
         let same = ok && c.x == m.x && c.y == m.y && c.z == m.z && c.w == m.w;
         print(name, ": mesh ", m.x, " ", m.y, " ", m.z, " ", m.w, if same { "" } else { "  DIFFERS" });
+        if !same { bad++; }
+    }
+    let light = embed_file("../../src/render3d/shaders/light.goose");
+    let box_names = ["BOX_JAMB", "BOX_FRAME_FACE", "BOX_FRAME_DEEP", "BOX_REBATE", "BOX_GLASS_IN", "BOX_SASH_DEEP", "BOX_FOOT",
+                     "BOX_HEAD", "BOX_TRANSOM", "BOX_MULLION", "BOX_STILE", "BOX_RAIL_TOP", "BOX_RAIL_LOW", "BOX_SURROUND",
+                     "BOX_BAR_UPPER", "BOX_BAR_LOWER"];
+    let box_values: f32[16] = [room_shell::box_casement(room_shell::window_at(0.0), 0.4).jamb.x, room_shell::BOX_FRAME_FACE,
+                               room_shell::BOX_FRAME_DEEP, room_shell::BOX_REBATE, room_shell::BOX_GLASS_IN, room_shell::BOX_SASH_DEEP,
+                               room_shell::BOX_FOOT, room_shell::BOX_HEAD, room_shell::BOX_TRANSOM, room_shell::BOX_MULLION,
+                               room_shell::BOX_STILE, room_shell::BOX_RAIL_TOP, room_shell::BOX_RAIL_LOW, room_shell::BOX_SURROUND,
+                               room_shell::BOX_BAR_UPPER, room_shell::BOX_BAR_LOWER];
+    for name, i in box_names {
+        let x, ok = constant(light, name);
+        let same = ok && abs((x as f32) - box_values[i]) < 0.000001;
+        print(name, ": window ", box_values[i], ", shaders ", if ok { str(x) } else { str("missing") }, if same { "" } else { "  DIFFERS" });
         if !same { bad++; }
     }
     if bad > 0 { exit(1); }

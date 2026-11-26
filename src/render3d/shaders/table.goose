@@ -18,7 +18,8 @@ let TABLE_SHELL = """
     layout(set = 2, binding = 10) uniform sampler2D lace_mask;
     #endif
     layout(set = 3, binding = 2) uniform Shell { vec4 axes; vec4 tile; vec4 shell; vec4 shell_mids; vec4 shell_niche;
-                                                 vec4 shell_glass; vec4 shell_sun; vec4 window_view; };
+                                                 vec4 shell_glass; vec4 shell_sun; vec4 window_view;
+                                                 vec4 shell_case; };
     #ifdef PROPS_LIGHT
     // The room's baked light (model3d::room_light) for the props: its probes' light as nine
     // harmonics, in room_light::PROPS_BLOCKS blocks laid out as ROOM_FRAG's atlas's colours.

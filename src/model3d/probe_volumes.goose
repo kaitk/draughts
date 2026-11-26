@@ -26,12 +26,11 @@ var volumes_on = false;
 var volumes: Volume[..MAX_VOLUMES] = [];
 
 // A window's volume: cavity_across probes across the niche, cavity_up from the sill to the
-// lining's head, one deep at the middle between the panes. A pane lies PANE_IN past its
-// casement's line (room_shell::casement's glass).
+// lining's head, one deep at the middle between the panes. A pane lies room_shell::pane_in()
+// past its casement's glass plane.
 var cavity_across = 7;
 var cavity_up = 20;
-let PANE_IN: f32 = 0.018;
-let PANE:    f32 = 0.92;
+let PANE: f32 = 0.92;
 
 // The volumes: each window's space between its panes. Their blocks packed in shelves of the
 // atlas's width.
@@ -45,8 +44,8 @@ fn make_volumes() {
     for k in 3 {
         let o = wins[k];
         let w = 0.5 * o.width;
-        var v = Volume { float3 { o.mid - w, face + o.glass.x + PANE_IN, o.sill },
-                         float3 { o.mid + w, face + o.glass.y + PANE_IN, o.sill + o.height },
+        var v = Volume { float3 { o.mid - w, face + o.glass.x + room_shell::pane_in(), o.sill },
+                         float3 { o.mid + w, face + o.glass.y + room_shell::pane_in(), o.sill + o.height },
                          cavity_across, 1, cavity_up, 0.0, k, 0, 0 };
         if column + v.nx * v.nh > ATLAS_W {
             column = 0;
@@ -169,7 +168,7 @@ fn outer_sky(sun: Sun, o: room_shell::Opening, q: float3, n: float3) -> float3 {
     let high = o.sill + o.height + o.rise - GLAZED_HIGH;
     let dx = 2.0 * GLAZED_HALF / SKY_X;
     let dh = (high - low) / SKY_Y;
-    let gy = wall_face() + o.glass.y + PANE_IN;
+    let gy = wall_face() + o.glass.y + room_shell::pane_in();
     let sky = sun.sky * (sun.sky_gain / PI);
     var e = float3_0;
     for j in SKY_Y {
@@ -203,7 +202,7 @@ fn cavity_light(sun: Sun, tree: const f32[:]) {
     var outer: room_shell::Member[..room_shell::MEMBERS] = [];
     members_split(wins[0], inner, outer);
     if !outer_lets_made {
-        make_lets(outer_lets[..], outer, -(wins[0].glass.y + PANE_IN));
+        make_lets(outer_lets[..], outer, -(wins[0].glass.y + room_shell::pane_in()));
         outer_lets_made = true;
     }
     let d = float3_0 - sun.toward;
@@ -224,8 +223,8 @@ fn cavity_light(sun: Sun, tree: const f32[:]) {
             let high = o.sill + o.height + o.rise - GLAZED_HIGH;
             let dx = 2.0 * GLAZED_HALF / RAYS_X;
             let dh = (high - low) / RAYS_Y;
-            let z_out = -(o.glass.y + PANE_IN);
-            let t_pane = (-(o.glass.x + PANE_IN) - z_out) / v.z;
+            let z_out = -(o.glass.y + room_shell::pane_in());
+            let t_pane = (-(o.glass.x + room_shell::pane_in()) - z_out) / v.z;
             let each = sun.light * ((dx * dh / (s * s)) * -d.y * PANE);
             for j in RAYS_Y {
                 for i in RAYS_X {
@@ -312,7 +311,7 @@ fn cavity_probe(sun: Sun, bounce: Bounce&, patches: Patch[BINS]&, count: i64, pa
     let high = o.sill + o.height + o.rise - GLAZED_HIGH;
     let dx = 2.0 * GLAZED_HALF / SKY_X;
     let dh = (high - low) / SKY_Y;
-    let gy = wall_face() + o.glass.y + PANE_IN;
+    let gy = wall_face() + o.glass.y + room_shell::pane_in();
     let sky = sun.sky * (sun.sky_gain / PI);
     for j in SKY_Y {
         for i in SKY_X {
@@ -383,7 +382,7 @@ fn bake_volumes(sun: Sun, tree: const f32[:], patches: Patch[BINS]&, count: i64,
     let low = o.sill + GLAZED_LOW;
     let high = o.sill + o.height - GLAZED_HIGH;
     let inner_lets = PANE * members_let_rect(inner, -GLAZED_HALF, low, 2.0 * GLAZED_HALF, high - low, float3 { 0.0, -1.0, 0.0 },
-                                             32, -(o.glass.x + PANE_IN));
+                                             32, -(o.glass.x + room_shell::pane_in()));
     for v in volumes {
         for ih in v.nh {
             for iy in v.ny {

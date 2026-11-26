@@ -21,6 +21,7 @@ import .leaf_atlas;
 import .shell;
 import .shell_mesh;
 import .joinery;
+import .box_window;
 import .relief;
 import .limestone;
 import .bookcases;

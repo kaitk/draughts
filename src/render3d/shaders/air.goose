@@ -49,6 +49,7 @@ let DUST_HEAD = """
         vec4 shell_glass;
         vec4 shell_sun;
         vec4 window_view;
+        vec4 shell_case;
         vec4 dust_u;
         vec4 dust_v;
         vec4 dust_w;
@@ -262,6 +263,7 @@ let HAZE_BLOCK = """
         vec4 shell_glass;
         vec4 shell_sun;
         vec4 window_view;
+        vec4 shell_case;
         vec4 haze_light;
         vec4 haze_look;
         vec4 haze_plane;

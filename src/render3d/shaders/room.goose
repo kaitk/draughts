@@ -73,7 +73,8 @@ let WINDOW_MAP_HEAD = """
     layout(set = 2, binding = 0) uniform sampler2D tree_map;
     layout(set = 2, binding = 1) uniform sampler2D lace_mask;
     layout(set = 3, binding = 1) uniform Shell { vec4 axes; vec4 tile; vec4 shell; vec4 shell_mids; vec4 shell_niche;
-                                                 vec4 shell_glass; vec4 shell_sun; vec4 window_view; };
+                                                 vec4 shell_glass; vec4 shell_sun; vec4 window_view;
+                                                 vec4 shell_case; };
     // x: 1 the tree's light baked in (render3d::window_map_tree).
     layout(set = 3, binding = 2) uniform WindowMapBake { vec4 map_tree; };
     """;
@@ -353,7 +354,7 @@ let ROOM_HEAD = """
     // fill with lace_shade.z 1, w the stove's glaze's albedo over STOVE_GLAZE's (0 as
     // made; render3d::stove_glaze); window_view: the window view's steps' strengths, 1 as made
     // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
-    // its scratches); lace_shade: the lace's room-side fill, x what is left of it where
+    // its scratches); shell_case: the casements' layout (render3d::shell_case_of); lace_shade: the lace's room-side fill, x what is left of it where
     // neither the sun nor the sky behind the niche reaches the cloth (1 as made), y how much
     // the folds beside it hide (render3d::lace_shade); table_map:
     // the table's own map's rows (TABLE_MAP_FN);
@@ -408,6 +409,7 @@ let ROOM_HEAD = """
         vec4 sill_steps;
         vec4 physical;
         vec4 window_view;
+        vec4 shell_case;
         vec4 lace_shade;
         vec4 table_map[4];
         vec4 book_cover[32];
@@ -479,6 +481,9 @@ let ROOM_FRAG = """
     // The chairs at the table (mesh::CHAIRS): each seat's middle (x, z) and its turn's sine
     // and cosine; a foot's place from it across and forward (world units, chairs.goose's
     // legs' and back's feet), front and back, and the sphere at its foot that hides the sky.
+    // The windows' hardware (room_shell's box window): dark brass, its colour at normal
+    // incidence (sRGB) and roughness, from the specification's table.
+    const vec4 WINDOW_BRASS = vec4(0.51, 0.44, 0.30, 0.35);
     const vec4 CHAIR_A = vec4(0.0, -27.884, 0.104528, 0.994522);
     const vec4 CHAIR_B = vec4(1.829, 24.64, -0.241922, -0.970296);
     const vec2 CHAIR_FRONT_FOOT = vec2(6.767, 5.852);
@@ -1753,9 +1758,11 @@ let ROOM_FRAG = """
             c = mix(c, lum * vec3(1.08, 0.98, 0.82) + 0.06, fade * (1.0 - 0.6 * g));
             albedo = srgb(clamp(c, 0.0, 1.0));
         } else {
-            // The curtains' brass, a metal.
-            albedo = srgb(brass.rgb);
-            rough = brass.a;
+            // The curtains' brass, a metal; the windows' hardware (its material's fraction a
+            // half) the darker, rougher brass of the box window's specification.
+            bool dark = own > 0.25;
+            albedo = srgb(dark ? WINDOW_BRASS.rgb : brass.rgb);
+            rough = dark ? WINDOW_BRASS.a : brass.a;
             metal = 1.0;
         }
     #endif
@@ -2141,7 +2148,7 @@ let ROOM_FRAG = """
         } else if (kind < 9.5) {
             albedo = srgb(paint.rgb);
         } else if (kind < 13.5) {
-            albedo = srgb(brass.rgb);
+            albedo = srgb(own > 0.25 ? WINDOW_BRASS.rgb : brass.rgb);
         } else if (kind > 14.5) {
             // The stove's glaze, its body's colour.
             albedo = srgb(vec3(0.804, 0.835, 0.745)) * 0.95;

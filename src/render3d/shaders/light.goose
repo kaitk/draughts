@@ -185,49 +185,82 @@ let LIGHT_FN = """
     }
 
     #ifdef SHELL_WINDOWS
-    // The shell's box windows (room_shell, shell_mesh.goose's casement, metres): how much
-    // of the sun the casement at a glass plane lets through at w (along from the window's
-    // middle, up from the floor): the blind frame's opening, the transom, the meeting
-    // stiles, each sash's stiles and rails, and its bars, each edge `soft` wide. `slope`:
-    // how far the sun's line moves along the wall and up a metre deeper into it (0 the
-    // members flat at the plane; Frame's panes.w 1, the light tuner's --light physical): each
-    // member's band then widened by its depth along it, the frame's 0.1 m, the sashes' 0.045
-    // and the bars' 0.036 (room_shell::casement_members), the sashes and bars taken at their
-    // middle, 2.5 and 3 mm deeper than the plane.
+    // Task 127's box window's measures (room_shell's box_window.goose, by the same names,
+    // checked equal by test/model3d/geometry.goose), as casement reads them.
+    const float BOX_JAMB = 0.49;
+    const float BOX_FRAME_FACE = 0.05;
+    const float BOX_FRAME_DEEP = 0.08;
+    const float BOX_REBATE = 0.015;
+    const float BOX_GLASS_IN = 0.022;
+    const float BOX_SASH_DEEP = 0.045;
+    const float BOX_FOOT = 0.04;
+    const float BOX_HEAD = 0.07;
+    const float BOX_TRANSOM = 0.09;
+    const float BOX_MULLION = 0.06;
+    const float BOX_STILE = 0.06;
+    const float BOX_RAIL_TOP = 0.06;
+    const float BOX_RAIL_LOW = 0.085;
+    const float BOX_SURROUND = 0.04;
+    const float BOX_BAR_UPPER = 0.024;
+    const float BOX_BAR_LOWER = 0.032;
+    // The shell's box windows (room_shell, metres): how much of the sun the casement at a
+    // glass plane lets through at w (along from the window's middle, up from the floor): the
+    // frame's opening, the transom, the meeting, each light's edges, and its bars, each edge
+    // `soft` wide. `slope`: how far the sun's line moves along the wall and up a metre deeper
+    // into it (0 the members flat at the plane; Frame's panes.w 1, the light tuner's --light
+    // physical): each member's band then widened by half its depth along it about its middle.
+    // shell_case.x picks the layout: 1 task 127's box window (box_window.goose, the BOX_
+    // measures above), 0 window B (shell_mesh.goose's casement_quiet: the frame 0.1 m deep
+    // about the plane, the sashes 0.045 and the bars 0.036 at 2.5 and 3 mm behind it, a
+    // 0.135 m meeting with its cover strip, rails 0.055, the lower sash's foot 0.08).
     float casement(vec2 w, float soft, vec2 slope) {
-        const float BAR = 0.024;
-        vec2 frame = 0.05 * abs(slope);
-        vec2 sash = 0.0225 * abs(slope);
-        vec2 bar = 0.018 * abs(slope);
-        vec2 ws = w + 0.0025 * slope;
-        vec2 wb = w + 0.003 * slope;
+        bool box = shell_case.x > 0.5;
         float s = shell_niche.y;
         float h = shell_niche.y + shell_niche.z;
         float zt = s + (h - s) * 2.0 / 3.0;
-        float gx = 0.49;
-        float x = abs(w.x);
-        float xs = abs(ws.x);
-        float open = min(gx - x - frame.x, min(w.y - (s + 0.03) - frame.y, (h - 0.06) - w.y - frame.y));
-        open = min(open, min(abs(w.y - zt) - 0.045 - frame.y, xs - (0.0175 + 0.05) - sash.x));
+        float gx = box ? BOX_JAMB : 0.49;
+        float foot = box ? BOX_FOOT : 0.03;
+        float top = box ? BOX_HEAD : 0.06;
+        float sash_face = BOX_FRAME_FACE - BOX_REBATE;
+        // Each member's middle before the plane (toward the room) and its half depth.
+        float frame_at = box ? BOX_FRAME_FACE - 0.5 * BOX_FRAME_DEEP : 0.0;
+        float edge_at = box ? sash_face - 0.5 * BOX_SASH_DEEP : -0.0025;
+        float bar_at = box ? sash_face - 0.5 * BOX_GLASS_IN : -0.003;
+        vec2 frame = (box ? 0.5 * BOX_FRAME_DEEP : 0.05) * abs(slope);
+        vec2 edge = 0.0225 * abs(slope);
+        vec2 bar = (box ? 0.5 * BOX_GLASS_IN : 0.018) * abs(slope);
+        vec2 wf = w - frame_at * slope;
+        vec2 ws = w - edge_at * slope;
+        vec2 wb = w - bar_at * slope;
+        float x = abs(wf.x);
+        float open = min(gx - x - frame.x, min(wf.y - (s + foot) - frame.y, (h - top) - wf.y - frame.y));
+        open = min(open, abs(wf.y - zt) - 0.5 * BOX_TRANSOM - frame.y);
         bool upper = ws.y > zt;
-        float y0 = upper ? zt + 0.045 : s + 0.03;
-        float y1 = upper ? h - 0.06 : zt - 0.045;
-        float ax0 = 0.0175 + 0.05;
-        float ax1 = gx - 0.055;
-        float ay0 = y0 + (upper ? 0.055 : 0.08);
-        float ay1 = y1 - 0.055;
-        open = min(open, min(ax1 - xs - sash.x, min(ws.y - ay0 - sash.y, ay1 - ws.y - sash.y)));
+        if (box && upper) open = min(open, x - 0.5 * BOX_MULLION - frame.x);
+        // The light's glazed area inside its edges: from the meeting (the leaves meet at the
+        // middle) or the mullion, to the jamb; over the foot or the transom to the transom or
+        // the head.
+        float rim = box ? (upper ? BOX_SURROUND : BOX_STILE) : 0.055;
+        float ax0 = box ? (upper ? 0.5 * BOX_MULLION : 0.0) + rim : 0.0175 + 0.05;
+        float ax1 = gx - rim;
+        float y0 = upper ? zt + 0.5 * BOX_TRANSOM : s + foot;
+        float y1 = upper ? h - top : zt - 0.5 * BOX_TRANSOM;
+        float ay0 = y0 + (box ? (upper ? BOX_SURROUND : BOX_RAIL_LOW) : (upper ? 0.055 : 0.08));
+        float ay1 = y1 - (box ? (upper ? BOX_SURROUND : BOX_RAIL_TOP) : 0.055);
+        float xs = abs(ws.x);
+        open = min(open, min(min(xs - ax0, ax1 - xs) - edge.x, min(ws.y - ay0, ay1 - ws.y) - edge.y));
+        float bw = box && !upper ? BOX_BAR_LOWER : BOX_BAR_UPPER;
         float across = upper ? 3.0 : 1.0;
         float up = upper ? 3.0 : 2.0;
-        float pitch_x = (ax1 - ax0 + BAR) / across;
-        float pitch_y = (ay1 - ay0 + BAR) / up;
-        // The bars: each the width BAR, its far edge at a whole pitch from the leaf's edge.
-        float u = abs(wb.x) - ax0 + 0.5 * BAR;
-        float v = wb.y - ay0 + 0.5 * BAR;
+        float pitch_x = (ax1 - ax0 + bw) / across;
+        float pitch_y = (ay1 - ay0 + bw) / up;
+        // The bars: each bw wide, its far edge at a whole pitch from the light's edge.
+        float u = abs(wb.x) - ax0 + 0.5 * bw;
+        float v = wb.y - ay0 + 0.5 * bw;
         if (across > 1.5 && u > 0.5 * pitch_x && u < (across - 0.5) * pitch_x)
-            open = min(open, abs(u - pitch_x * floor(u / pitch_x + 0.5)) - 0.5 * BAR - bar.x);
+            open = min(open, abs(u - pitch_x * floor(u / pitch_x + 0.5)) - 0.5 * bw - bar.x);
         if (v > 0.5 * pitch_y && v < (up - 0.5) * pitch_y)
-            open = min(open, abs(v - pitch_y * floor(v / pitch_y + 0.5)) - 0.5 * BAR - bar.y);
+            open = min(open, abs(v - pitch_y * floor(v / pitch_y + 0.5)) - 0.5 * bw - bar.y);
         return smoothstep(-soft, soft, open);
     }
 
@@ -238,7 +271,9 @@ let LIGHT_FN = """
     float glazing(vec2 w, float soft) {
         float s = shell_niche.y;
         float h = shell_niche.y + shell_niche.z;
-        return smoothstep(-soft, soft, min(0.49 - abs(w.x), min(w.y - (s + 0.03), (h - 0.06) - w.y)));
+        float foot = shell_case.x > 0.5 ? BOX_FOOT : 0.03;
+        float head = shell_case.x > 0.5 ? BOX_HEAD : 0.06;
+        return smoothstep(-soft, soft, min(0.49 - abs(w.x), min(w.y - (s + foot), (h - head) - w.y)));
     }
 
     // The curtains' lace panels (model3d's curtains.goose): a panel's height, inner edge and
