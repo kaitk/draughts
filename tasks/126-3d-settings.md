@@ -46,3 +46,12 @@ occlusion, then the atmosphere) and the resolution last.
       mentions point to the presets' table
 - [ ] The first-start measurement on Android and the step-down's order, tested on the
       A33 and the tablet
+
+## Later: ray-traced sun shadows on the highest tier (the user, 2026-11-26)
+
+A `shadows` level `traced` on the highest desktops (RDNA2 and up, NVIDIA RTX, Apple M3 and
+up), under `lighting = baked`: the sun's shadows by ray queries in place of the shadow maps,
+the sun's disc sampled for soft edges. Not before: goose-ngfx and gfx expose ray queries
+and acceleration structures; the maple's wind is moved into a compute pass that refits its
+structure each frame (its vertex shader moves the leaves now); its alpha-cut leaves are
+measured on the slowest target GPU (any-hit tests are RDNA2's weak point).
