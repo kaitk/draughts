@@ -414,6 +414,102 @@ lace's fullness (task 124). The shots' mean after over before: close 1.02, low 1
 1.02. Cost on the Mac: the bake 132 to 140 ms before, 134 to 141 after (the probes 68 to 74
 → 69 to 75 ms); nothing per frame.
 
+## The fourth step, probe volumes (2026-11-26)
+
+The space between a box window's two panes (0.2 m deep) takes light the grid can't hold: its
+probes are 0.3 m apart and the row in the niche stands before the inner pane, so the outer
+casement's frames read the room's side. Under `--light physical` only (`--volumes off` to
+compare); without the flag the close, low and room shots are byte-identical to
+`build/perf/light_tune-before122` (with `--base-wood today`). Results page:
+`build/notes/light-physical/index.html#step4d`; scratch `build/review122/s4d/` (`pts` modes
+`cavity`, `cavsrc`; `cav.py`).
+
+The design (`src/model3d/probe_volumes.goose`, ROOM_FRAG's `PROBE_VOLUMES`):
+
+- Storage: a fixed table of boxes (`room_light::Volume`: its plan box, probes along x, y and
+  up, a fade, its block's column and row; `MAX_VOLUMES` 8). The probes go into the same
+  atlas, in `VOLUME_ROWS` (10) rows after the grid's: first a row with the table (three texels
+  a volume in the room's frame, written by `render3d::volume_table`), then each volume's block
+  laid out as the grid's (height slices side by side, the colours one over the other), packed
+  in shelves. No new texture or slot; the atlas is 390 × 88 with volumes, 390 × 78 without.
+  `light_grid.w` is the count. The atlas's reads are sized by `textureSize`, so the grid's read
+  is right with either height.
+- The bake: after the grid, each volume's probes gather as the grid's do, with the same
+  functions: `gather_cells` (the cells, split near) and the sun's patches, seen through the
+  niche as niche k's probes, times what the inner casement and pane let through (0.92 × the
+  members' share square on); the sky through the outer casement alone (`outer_lets`, the
+  sky's table of slopes made from the outer members at the outer pane) and pane; and the
+  space's own surfaces (`cavity_light`): each inner member's back in 0.25 m pieces, the lining's
+  two sides, the sill and the head, lit by that sky and by the sun's rays traced from the outer
+  pane past the outer members to the first inner member, lining or sill. Each probe is
+  settled exactly toward the room and, on the edges, toward the lining, the sill or the head
+  (as the grid's `near_faces`). Light bounced inside the space is not carried on.
+- The shader: the grid's light first, then a loop over the table (counted by the uniform):
+  a volume whose box holds the surface point (1 cm slack for the half floats) takes over by
+  its fade (0: a hard edge, as each face of a window's space is a pane or a wall); the last
+  in the table wins, so the finest go last. Its lookup is the grid's, half its own step out
+  along the normal. L1 (the room's three texels a colour). L2 for the props is designed, not
+  built: the props' atlas would take the same rows with its seven blocks and TABLE_FRAG's
+  `grid_light` the same loop; no prop stands in a window.
+- The define per tier: the desktop's HDR pipelines of the paint, sills and metals take
+  `PROBE_VOLUMES` while `room_light::volumes_on` (made again when it changes, as with
+  `PROPS_LIGHT`); ngfx has the same three modules (`r3d_hdr_*_volumes`). The other groups and
+  tiers read the grid only.
+- Later, many volumes: the loop costs two texel reads a volume a pixel; past a handful, a
+  coarse index (a texture over the grid's cells naming the finest volume or brick there) makes
+  it one read, and fixed-size bricks (4 × 4 × 4 probes) in an atlas let a volume be any shape.
+
+The window volumes: 7 across the niche (0.19 m), 20 up from the sill to the lining's head
+(0.125 m), one deep at the middle between the panes; 3 windows × 140 probes. Chosen by the
+measure: 3 across 1.37 (0.54–2.53, error factor 1.59), 5 across 1.30 (1.55), 7 across 1.06
+(1.36); 10 up in place of 20, 1.21 (1.56).
+
+The reference: the room's mesh draws only the faces that show from the room, so each casement
+member's box stands open toward the outside, and the tracer and Cycles took the space's
+light as if the inner casement had no back. `room_scene::casement_backs` closes them (paint) in
+`tools/path_trace.goose` and `tools/blender_export.goose` (`--backs off` as before). The 22
+points move 1.03 (1.00–1.07, 32,768 paths). Against the tracer with the backs (light over pi,
+luminance, without the surface's own sun; `pts cavity`):
+
+| Point | Tracer | Before | After |
+|---|---|---|---|
+| Outer frame, room side, 1.2 m | 0.243 | 0.044 | 0.271 |
+| Outer frame, room side, 2.0 m | 0.232 | 0.045 | 0.273 |
+| Outer frame, room side, 2.8 m | 0.298 | 0.028 | 0.256 |
+| Outer transom, room side | 0.449 | 0.051 | 0.474 |
+| Outer bottom rail, room side | 0.472 | 0.012 | 0.630 |
+| Outer sash stile, room side | 0.415 | 0.081 | 0.298 |
+| Outer meeting strip, room side | 0.448 | 0.023 | 0.391 |
+| Lining between the panes, left, 1.5 m | 0.137 | 0.088 | 0.343 |
+| Lining, left, 2.5 m | 0.157 | 0.052 | 0.250 |
+| Lining, right, 1.5 m | 0.159 | 0.080 | 0.154 |
+| Sill between the panes | 0.523 | 0.074 | 0.258 |
+| Inner casement's backs (four points, unseen) | 0.17–0.36 | 0.06–0.09 | 0.04–0.15 |
+| Inner frame and transom, room side (unchanged) | 0.036–0.052 | 0.044–0.051 | 0.044–0.051 |
+
+The 11 points seen from the room over the tracer: before 0.16 (0.03–0.65, error factor 6.34),
+after 1.06 (0.49–2.50, 1.36). Against the tracer with the backs open (as before): before
+0.36 (2.84), after 2.44 (2.53). Left: the lining reads 1.6 to 2.5 times (its probe 0.09 m in
+front sees the sunlit sash backs nearer than the lining does), the sill 0.49 (no bounce inside
+the space), the backs low (settled toward the room; no visible face reads them).
+
+The 22 points and the 144 probes: unchanged (the grid's part of the atlas is the same to the
+last digit with and without volumes). The shots: room view 4,471 pixels more than 8 levels
+apart, stove 298, all in the windows.
+
+A bug on the way: in 15de6719 the other groups still sized their atlas reads by the grid, so
+with the taller atlas they read the wrong rows (the rainbow over the room in the reference
+view, `--plan-eye 6.5,4.3,1.4 --plan-at 2.655,5.403,1.4 --fov 73`); fixed in 374362c4.
+
+Cost on the Mac: the bake 134 to 141 ms before, 178 after (the volumes 43 to 48 ms: 420 probes
+each gathering the cells; the sky's table for the outer members once, a few ms). Per pixel in
+the paint's, sills' and metals' groups: two texel reads and about 12 operations a volume (3),
+and six bilinear reads more inside a window's space. Timed
+(`tools/perf/mac_room_bench.py`, `--light physical`, volumes off against on, 3840 × 2160, a
+batch of two rounds and one of three): room −0.43 and +0.65 ms (round 2 of the first; its
+first round was warming), corner +0.55 and +0.15, table +0.35 and −0.53, on 15.4 to 16.4 ms:
+within the runs' spread, under 0.6 ms (4%).
+
 ## The fifth step, the camera (2026-11-26)
 
 All under `--light physical`; without it the close, low and room shots stay byte-identical
