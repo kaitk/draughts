@@ -6,16 +6,19 @@
 //
 //   goose build -o build/tree_dump tools/tree_dump.goose && build/tree_dump OUT_DIR
 //       [--elbows FEWEST,MOST,TURN_LO,TURN_HI] [--gravity STRENGTH] [--shed LIGHT,STUBS]
+//       [--plates ON,SPURS,NUDGE] [--tilt ON,SEASON,SAG] [--bend SHARE,TWIST]
 //       [--hangs N (the first N low limbs, 4)]
 //
 // The flags set the growth past the habit (trees::Growth, task 117; all off by default, as
-// the light tuner's --tree-elbows, --tree-gravity and --tree-shed).
+// the light tuner's --tree-elbows, --tree-gravity, --tree-shed, --tree-plates, --tree-tilt
+// and --tree-bend).
 //
 // One tree-NAME-whole.bin and -culled.bin for each low limb (rooms::WHOLE_HANGS), its shadow
 // shadow-NAME.grey and times in times.txt; the frame's eyes and windows for the default.
 // tree.bin: "segments" n, then n × (a.xyz b.xyz ra rb level); "limbs" n × (first count
 // level parent); "cards" n × (foot.xyz base.xyz along.xyz face.xyz size width kind tint);
-// each count an f32 too.
+// each count an f32 too; then the cards' bends, n × (shape amount twist). leaf-shapes.bin:
+// trees::leaf_shapes' float4s.
 import std;
 import os;
 import vec;
@@ -44,6 +47,7 @@ fn write_tree(path: const u8[:], t: trees::Tree&) {
         put3(out, c.foot); put3(out, c.base); put3(out, c.along); put3(out, c.face);
         put(out, c.size); put(out, c.width); put(out, c.kind as f32); put(out, c.tint);
     }
+    for &c in t.cards { put(out, c.shape); put(out, c.shape_amount); put(out, c.twist); }
     guard write_file(path, out[..]) else { abort("could not write the tree"); }
 }
 
@@ -92,6 +96,10 @@ fn main() {
     growth.gravity = numbers(args, "--gravity", float4 { growth.gravity, 0.0, 0.0, 0.0 }).x;
     let shed = numbers(args, "--shed", float4 { growth.shed.x, growth.shed.y, 0.0, 0.0 });
     growth.shed = float2 { shed.x, shed.y };
+    growth.plates = numbers(args, "--plates", growth.plates);
+    growth.tilt = numbers(args, "--tilt", growth.tilt);
+    let bend = numbers(args, "--bend", float4 { growth.bend.x, growth.bend.y, 0.0, 0.0 });
+    growth.bend = float2 { bend.x, bend.y };
     let hangs = numbers(args, "--hangs", float4 { 4.0, 0.0, 0.0, 0.0 }).x as i64;
     var times: u8[>..] = [];
     // old-leader, the user's pick, with each of its low limbs (rooms::WHOLE_HANGS).
@@ -133,6 +141,15 @@ fn main() {
         }
     }
     guard write_file(str(dir, "/times.txt")[..], times[..]) else { abort("could not write the times"); }
+
+    // The bent leaves' meshes, as the leaves' vertex shader reads them.
+    var shapes: float4[>..] = [];
+    var t_shapes = clock();
+    trees::leaf_shapes(shapes);
+    print("leaf shapes: ", shapes.len, " float4s in ", (clock() - t_shapes) * 1000.0, " ms");
+    var shape_bytes: u8[>..] = [];
+    for &x in shapes { put(shape_bytes, x.x); put(shape_bytes, x.y); put(shape_bytes, x.z); put(shape_bytes, x.w); }
+    guard write_file(str(dir, "/leaf-shapes.bin")[..], shape_bytes[..]) else { abort("could not write the shapes"); }
 
     // Today's tree's shadow for comparison.
     var today = trees::Tree { .. };

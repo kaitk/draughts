@@ -182,8 +182,9 @@ let CORRECT_OLD:   f32 = 0.25;
 // wood's middle, so upright wood doesn't bend; the angle a beam's, fb L / (E π r⁴ / 4),
 // saturating at Stava's largest (π / 2) / d^0.5 a half metre; then the growth's correction
 // back toward the way it grew (Almeras and Fournier 2009), most in young wood. `strength`
-// divides the stiffness.
-fn bend_by_weight(t: Tree&, strength: f32) {
+// divides the stiffness. Without `turn_blades` the leaves move with their twig but keep
+// their blades' way (the plates', which their stalks hold level).
+fn bend_by_weight(t: Tree&, strength: f32, turn_blades: bool = true) {
     let n = t.segments.len;
     let k = 1.0 / surfaces::METRE;
     var parent: i32[>..] = [];
@@ -263,6 +264,7 @@ fn bend_by_weight(t: Tree&, strength: f32) {
         let q = turn[s];
         c.foot = moved[s] + rotated(q, c.foot - a);
         c.base = moved[s] + rotated(q, c.base - a);
+        guard turn_blades else { continue; }
         c.along = rotated(q, c.along);
         c.face = rotated(q, c.face);
     }

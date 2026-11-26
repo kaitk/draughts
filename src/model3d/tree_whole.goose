@@ -24,8 +24,13 @@ struct Limb { first: i32, count: i32, level: i32, parent: i32, attach: i32 }
 // A leaf as the picture draws it: where its stalk leaves the twig, where the blade starts,
 // the blade's axis from there to its middle lobe's tip and its face (the side the sun is
 // on); the blade's length and width, which of the atlas's leaves it is, and its tint
-// (0 green, 1 gold, 2 orange-red); the twig's segment it grows on.
-struct Card { foot: float3, base: float3, along: float3, face: float3, size: f32, width: f32, kind: i32, tint: f32, segment: i32 }
+// (0 green, 1 gold, 2 orange-red); the twig's segment it grows on; how its blade is bent
+// (Growth.bend): which of the bent shapes (LEAF_SHAPES, 0 flat), how far toward it (0..1),
+// and its twist about the midrib (-1..1 of Growth.bend.y).
+struct Card {
+    foot:  float3, base: float3, along: float3, face: float3, size: f32, width: f32, kind: i32, tint: f32, segment: i32,
+    shape: i32 = 0, shape_amount: f32 = 0.0, twist: f32 = 0.0,
+}
 
 // How a tree grows, per level (the trunk, limbs, branches, branchlets, twigs): the
 // segments a branch, its children, where along it they start, their angle off it
@@ -69,10 +74,22 @@ let MAPLE_HABIT = Habit {
 // y > 0); the gravity layer in place of Habit.sag (gravity its strength, 1 the study's; 0
 // Habit.sag); the shedding of shaded thin wood (shed x the light under which it dies, 0
 // none; y the share of the shed branches left as stubs).
+// The leaves (step two), each off as made: plates x 1 the leaves only on each twig's
+// current shoots (add_plates: its tip's two pairs, and y short shoots of one pair each
+// along it), the lower leaf of a pair larger on the longer stalk (Weisse 1895), the blades
+// spread into one layer, nudged apart in plan by z (0 not, 1 the study's mosaic); 0 the
+// habit's TWIG_NODES pairs along the twig (add_cards). tilt x 1 the plates' blades tilted
+// by the measured Norway maple tilts (LEAF_TILTS) of the season y (0 summer, 1
+// mid-September, 2 October, today's look) at their height in the crown, z degrees more
+// sag inside and low in the crown; 0 level. bend x the share of bent blades against the
+// study's (0 all flat, 1 its chances), y their most twist (degrees at the blade's tip).
 struct Growth {
     elbows:  float4 = float4 { 0.0, 0.0, 30.0, 50.0 },
     gravity: f32    = 0.0,
     shed:    float2 = float2 { 0.0, 0.5 },
+    plates:  float4 = float4 { 0.0, 2.0, 0.0, 0.0 },
+    tilt:    float4 = float4 { 0.0, 2.0, 8.0, 0.0 },
+    bend:    float2 = float2 { 0.0, 25.0 },
 }
 
 // Whether the grown skeleton is reshaped after growth (gravity, shedding): then the tree is
@@ -216,7 +233,7 @@ fn grow_whole(t: Tree&, w: Whole, v: View, sight: Sight, cull: bool) {
     }
     guard after else { return; }
     if w.growth.shed.x > 0.0 { shed_shaded(t, wh); }
-    if w.growth.gravity > 0.0 { bend_by_weight(t, w.growth.gravity); }
+    if w.growth.gravity > 0.0 { bend_by_weight(t, w.growth.gravity, w.growth.plates.x <= 0.0); }
     keep_parts(t, wh, vw, sg, cull);
 }
 
@@ -340,7 +357,8 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
     }
     if level == 4 {
         var leaf_dice = Dice { mixed(b.dice ^ 0x5DEECE66D) };
-        add_cards(t, w, v, sight, cull, leaf_dice, points, dirs, n, b.tint, b.free, first);
+        if w.growth.plates.x > 0.0 { add_plates(t, w, v, sight, cull, leaf_dice, points, dirs, n, b.tint, b.free, first); }
+        else { add_cards(t, w, v, sight, cull, leaf_dice, points, dirs, n, b.tint, b.free, first); }
         return;
     }
     let count = h.children[level];
@@ -410,7 +428,7 @@ fn add_cards(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&,
     let up = float3 { 0.0, 1.0, 0.0 };
     let sun = normalize(float3 { v.shear.x, v.shear.y, 1.0 });
     let middle = w.foot + w.middle;
-    let first = roll(d) * TAU;
+    let first_round = roll(d) * TAU;
     let height_share = clamp((points[n].y - w.foot.y) / w.height, 0.0, 1.0);
     // The twig's own tint: the crown's outside and top turn first.
     let outer = clamp(crown_radius(w, points[n]), 0.0, 1.1);
@@ -426,7 +444,7 @@ fn add_cards(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&,
         guard w.leafy >= 1.0 || roll(d) < w.leafy else { continue; }
         let twig = normalize(dirs[i + 1]);
         let pair = if node == nodes && roll(d) < 0.3 { 3 } else { 2 };
-        let round0 = first + node * (PI * 0.5);
+        let round0 = first_round + node * (PI * 0.5);
         let deep = if free { 0.3 } else { clamp(crown_depth(w, p) / max(w.shell, 1.0), 0.0, 1.0) };
         let out = normalize(p - middle);
         for k in pair {
