@@ -829,8 +829,12 @@ fn table_shown(g: Gpu&) -> bool { g.table && g.table_baked && g.table_side == g.
 // stays (shade_fill); shade: the room's even bounce it keeps, w a metre in world units.
 struct TableBlock {
     pool:       float4, coat: float4, polish: float4, worn: float4, shape: float4, map: float4[4],
-    room_light: float4[12], room_mix: float4, room_shade: float4, ssao: float4,
+    room_light: float4[12], room_mix: float4, room_shade: float4, ssao: float4, base_wood: float4,
 }
+// How the base reads its wood (shaders::TABLE_FRAG's base_wood, the light tuner's
+// --base-wood): x 0 as made, 1 half a turn round the column, 2 its lightness pulled toward
+// its mean by y.
+var base_wood = float4_0;
 // Whether the table stands in the room with its light baked: drawn with TABLE_ROOM's
 // pipeline (g.table_room) and the probes round it.
 fn table_in_room(g: Gpu&) -> bool { table_map_shown(g)[3].x > 0.5 && light_baked(g) && g.light_volume.id != 0 && g.table_room.id != 0 }
@@ -843,7 +847,7 @@ fn table_block(g: Gpu&) -> TableBlock {
     let turn = radians(g.table_turn);
     TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, sin(turn), cos(turn) }, map,
                  table_probes, float4 { if on { 1.0 } else { 0.0 }, r.baked.z, r.room_exposure, shade_fill },
-                 float4 { shade.x, shade.y, shade.z, surfaces::METRE }, if on { ssao_block_of(g) } else { float4_0 } }
+                 float4 { shade.x, shade.y, shade.z, surfaces::METRE }, if on { ssao_block_of(g) } else { float4_0 }, base_wood }
 }
 
 // The table's own shadow in the room (shaders::TABLE_MAP_FN): its top and base, and the
