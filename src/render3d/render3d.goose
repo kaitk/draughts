@@ -2309,6 +2309,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
         bounce_gain: r.baked.y,
     };
     room_light::members_traced = f.panes.w > 0.5;
+    room_light::table_off = if room_light::gather_exact { float2 { fr.along.y, fr.into.y } * (-mesh::TABLE_Z / surfaces::METRE) } else { float2_0 };
     room_light::nine_harmonics = props_light;
     tree_through(g, l);
     var at = clock();

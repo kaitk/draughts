@@ -152,6 +152,13 @@ var gather_near: f32 = 0.09;
 // by the top from the probes over it.
 var gather_exact = false;
 let SPLIT = 8;
+// The niches' probes (the tuner's --light physical): they gather the cells' light themselves,
+// as the half grid has no row in the niches (they took the room's light 0.3 m before the
+// wall), and keep their light toward the room exactly (settle, as before a wall), so the
+// casements' faces, which read them, don't take the sky's negative lobe; and the lace throws
+// its light to both its sides, into its niche as into the room, as the path tracer's thread
+// does.
+var niche_faces = false;
 
 // What the bake takes: the sun toward it in the plan's frame, its light on a plane facing
 // it (linear, the room's sun gain in it), the sky's radiance through the windows (linear),
@@ -255,12 +262,17 @@ fn along_keys(keys: float2[6], h: f32) -> f32 {
     return v;
 }
 
+// The table's top's middle from the board's (the plan's metres): Sun.table's middle is the
+// board's, the room's frame's origin, and the top lies mesh::TABLE_Z from it. 0 as made;
+// render3d sets it with --light physical.
+var table_off = float2_0;
+
 // Whether the segment a to b crosses the table's top (a disc at its height).
 fn under_table(t: float4, a: float3, b: float3) -> bool {
     guard (a.z - t.w) * (b.z - t.w) < (if gather_exact { -1e-6 } else { 0.0 }) else { return false; }
     let f = (t.w - a.z) / (b.z - a.z);
-    let x = a.x + (b.x - a.x) * f - t.x;
-    let y = a.y + (b.y - a.y) * f - t.y;
+    let x = a.x + (b.x - a.x) * f - t.x - table_off.x;
+    let y = a.y + (b.y - a.y) * f - t.y - table_off.y;
     return x * x + y * y < t.z * t.z;
 }
 
@@ -484,8 +496,8 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                     let tt = (b.z - sun.table.w) / -d.z;
                     if tt > 0.0 && tt < t {
                         let e = b + d * tt;
-                        let dx = e.x - sun.table.x;
-                        let dy = e.y - sun.table.y;
+                        let dx = e.x - sun.table.x - table_off.x;
+                        let dy = e.y - sun.table.y - table_off.y;
                         if dx * dx + dy * dy < sun.table.z * sun.table.z { t = tt; hit = 4; }
                     }
                     at = b + d * t;
@@ -594,7 +606,7 @@ let NEAR_PLANE: f32 = 0.35;
 fn near_faces(p: float3) -> float3 {
     let s = room_shell::LIBRARY;
     let face = wall_face();
-    guard p.y <= face else { return float3_0; }
+    guard p.y <= face else { return if niche_faces { float3 { 0.0, -1.0, 0.0 } } else { float3_0 }; }
     let x_end = s.walls[room_shell::FAR_WALL].a.x;
     let x: f32 = if p.x < NEAR_PLANE { 1.0 } else if p.x > x_end - NEAR_PLANE { -1.0 } else { 0.0 };
     let y: f32 = if p.y > face - NEAR_PLANE { -1.0 } else if p.y < NEAR_PLANE { 1.0 } else { 0.0 };
@@ -716,13 +728,14 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                 let kp = probe_place(wins, p);
                 guard kp > -2 else { continue; }
                 let f = near_faces(p);
-                // The bounced light, gathered on the half grid.
+                // The bounced light, gathered on the half grid; a niche's own probes (the half
+                // grid has none in the niches) gather it themselves with niche_faces.
                 let hp = half_probe(bounce.half, ix, iz, ih);
-                var got = Gathered {
+                var got = if niche_faces && kp >= 0 { gather_cells(sun, bounce, wins, p, kp) } else { Gathered {
                     float3 { hp[0], hp[4], hp[8] }, float3 { hp[1], hp[2], hp[3] }, float3 { hp[5], hp[6], hp[7] },
                     float3 { hp[9], hp[10], hp[11] }, float3 { hp[12], hp[13], hp[14] }, float3 { hp[15], hp[16], hp[17] },
                     float3 { hp[18], hp[19], hp[20] }, float3 { hp[21], hp[22], hp[23] }, float3 { hp[24], hp[25], hp[26] },
-                    float3 { hp[27], hp[28], hp[29] }, float3 { hp[30], hp[31], hp[32] }, float3 { hp[33], hp[34], hp[35] } };
+                    float3 { hp[27], hp[28], hp[29] }, float3 { hp[30], hp[31], hp[32] }, float3 { hp[33], hp[34], hp[35] } } };
                 // The sky, seen through the niche's outline at the wall's face and past
                 // the lace.
                 for si in sky_n {
@@ -1070,7 +1083,7 @@ fn first_light(sun: Sun, bounce: Bounce&) {
     if !bounce.made || bounce.made_shutters != room_shell::shutters_on || bounce.made_hang != room_shell::lace_hang {
         make_cells(bounce);
     }
-    bounce.cells[TABLE_C] = Cell { float3 { sun.table.x, sun.table.y, sun.table.w }, float3 { 0.0, 0.0, 1.0 }, TABLE_ALBEDO,
+    bounce.cells[TABLE_C] = Cell { float3 { sun.table.x + table_off.x, sun.table.y + table_off.y, sun.table.w }, float3 { 0.0, 0.0, 1.0 }, TABLE_ALBEDO,
                                    PI * sun.table.z * sun.table.z, -1 };
     // The floor's cells under the rug.
     let fw = room_shell::LIBRARY.walls[room_shell::FAR_WALL].a.x / FLOOR_NX;
@@ -1150,7 +1163,7 @@ fn bounce_once(sun: Sun, bounce: Bounce&, first: bool) {
             let v = b.at - a.at;
             let ca = dot(a.normal, v);
             guard ca > 0.0 else { continue; }
-            let cb = -dot(b.normal, v);
+            let cb = if niche_faces && j >= LACE_C0 { abs(dot(b.normal, v)) } else { -dot(b.normal, v) };
             guard cb > 0.0 else { continue; }
             let r2 = max(dot(v, v), 0.5 * (a.area + b.area));
             let lets = seen_through(sun.table, wins, a.at, a.niche, b.at, b.niche);
@@ -1180,48 +1193,13 @@ fn bounce_once(sun: Sun, bounce: Bounce&, first: bool) {
 fn gather_half(sun: Sun, bounce: Bounce&) {
     var wins = windows();
     let x0 = room_shell::LIBRARY.walls[room_shell::FAR_WALL].a.x;
-    let near2: f32 = gather_near;
     for ih in HALF_H {
         for iz in HALF_Z {
             for ix in HALF_X {
                 let p = float3 { x0 - INSET - half_column(ix) * CELL, PLAN_Y0 - 2 * iz * CELL, INSET + 2 * ih * CELL };
                 let kp = probe_place(wins, p);
                 guard kp > -2 else { continue; }
-                let f = near_faces(p);
-                var g = Gathered { float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0,
-                                   float3_0, float3_0 };
-                for j in CELLS {
-                    let b .= bounce.cells[j];
-                    let l = bounce.seen[j];
-                    guard b.area > 0.0 && l.x + l.y + l.z > 0.0 else { continue; }
-                    let v = b.at - p;
-                    let off = -dot(b.normal, v);
-                    guard off > 0.0 else { continue; }
-                    let lets = seen_through(sun.table, wins, p, kp, b.at, b.niche);
-                    guard lets > 0.0 else { continue; }
-                    let side = sqrt(b.area);
-                    if gather_exact && dot(v, v) < 4.0 * side * side {
-                        // Split in its plane, along the plan's axes it lies across.
-                        let ta = if abs(b.normal.z) > 0.5 { float3 { 1.0, 0.0, 0.0 } } else { float3 { 0.0, 0.0, 1.0 } };
-                        let tb = cross(b.normal, ta);
-                        let each = b.area / (SPLIT * SPLIT);
-                        for sj in SPLIT {
-                            for si in SPLIT {
-                                let q = b.at + ta * (side * ((si + 0.5) / SPLIT - 0.5)) + tb * (side * ((sj + 0.5) / SPLIT - 0.5));
-                                let vq = q - p;
-                                let off_q = -dot(b.normal, vq);
-                                guard off_q > 0.0 else { continue; }
-                                let r2 = max(dot(vq, vq), 1e-4);
-                                let r = sqrt(r2);
-                                take(g, f, l * (lets * each * off_q / (PI * r * r2)), vq / r);
-                            }
-                        }
-                        continue;
-                    }
-                    let r2 = max(dot(v, v), near2);
-                    let r = sqrt(r2);
-                    take(g, f, l * (lets * b.area * off / (PI * r * r2)), v / r);
-                }
+                let g = gather_cells(sun, bounce, wins, p, kp);
                 let at = GATHERED * ((ih * HALF_Z + iz) * HALF_X + ix);
                 let q: f32[GATHERED] = [g.c.x, g.dr.x, g.dr.y, g.dr.z, g.c.y, g.dg.x, g.dg.y, g.dg.z, g.c.z, g.db.x, g.db.y, g.db.z,
                                         g.ex.x, g.ex.y, g.ex.z, g.ey.x, g.ey.y, g.ey.z, g.ez.x, g.ez.y, g.ez.z, g.qxx.x, g.qxx.y,
@@ -1247,6 +1225,48 @@ fn gather_half(sun: Sun, bounce: Bounce&) {
             }
         }
     }
+}
+
+// What probe p (in niche kp, -1 the room) gathers of the cells' light (bounce.seen): each cell
+// as a small lambertian light, as the sun's patches are (near2), through the niches' outlines,
+// the lace, and past the table's top; a near cell split (gather_exact).
+fn gather_cells(sun: Sun, bounce: Bounce&, wins: room_shell::Opening[3]&, p: float3, kp: i64) -> Gathered {
+    let f = near_faces(p);
+    let near2: f32 = gather_near;
+    var g = Gathered { float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0 };
+    for j in CELLS {
+        let b .= bounce.cells[j];
+        let l = bounce.seen[j];
+        guard b.area > 0.0 && l.x + l.y + l.z > 0.0 else { continue; }
+        let v = b.at - p;
+        let off = if niche_faces && j >= LACE_C0 { abs(dot(b.normal, v)) } else { -dot(b.normal, v) };
+        guard off > 0.0 else { continue; }
+        let lets = seen_through(sun.table, wins, p, kp, b.at, b.niche);
+        guard lets > 0.0 else { continue; }
+        let side = sqrt(b.area);
+        if gather_exact && dot(v, v) < 4.0 * side * side {
+            // Split in its plane, along the plan's axes it lies across.
+            let ta = if abs(b.normal.z) > 0.5 { float3 { 1.0, 0.0, 0.0 } } else { float3 { 0.0, 0.0, 1.0 } };
+            let tb = cross(b.normal, ta);
+            let each = b.area / (SPLIT * SPLIT);
+            for sj in SPLIT {
+                for si in SPLIT {
+                    let q = b.at + ta * (side * ((si + 0.5) / SPLIT - 0.5)) + tb * (side * ((sj + 0.5) / SPLIT - 0.5));
+                    let vq = q - p;
+                    let off_q = if niche_faces && j >= LACE_C0 { abs(dot(b.normal, vq)) } else { -dot(b.normal, vq) };
+                    guard off_q > 0.0 else { continue; }
+                    let r2 = max(dot(vq, vq), 1e-4);
+                    let r = sqrt(r2);
+                    take(g, f, l * (lets * each * off_q / (PI * r * r2)), vq / r);
+                }
+            }
+            continue;
+        }
+        let r2 = max(dot(v, v), near2);
+        let r = sqrt(r2);
+        take(g, f, l * (lets * b.area * off / (PI * r * r2)), v / r);
+    }
+    return g;
 }
 
 // The half grid's values (Gathered's) at the whole grid's probe (ix, iz, ih), trilinear.

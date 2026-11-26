@@ -1492,6 +1492,7 @@ fn main() {
     room_light::lace_source = number(argv, "--lace-source", room_light::lace_source);
     room_light::gather_near = number(argv, "--gather-near", if physical { PHYSICAL_GATHER_NEAR } else { room_light::gather_near });
     room_light::gather_exact = physical;
+    room_light::niche_faces = physical;
     render3d::contact_look = four(argv, "--contact", render3d::contact_look);
     render3d::sheen_look = four(argv, "--sheen", render3d::sheen_look);
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);

@@ -370,6 +370,50 @@ Cost on the Mac (room view, three runs each): the bake 123 to 124 ms before, 129
 after; the table 4.5 ms once (in the first light: 3.7 → 8.4 to 8.6 ms), the probes 63 to
 64 → 67 to 70 ms (a bilinear lookup a sky sample). Nothing per frame.
 
+## The fourth step, the bounced light (2026-11-26)
+
+Results page: `build/notes/light-physical/index.html#step4c`; scratch `build/review122/s4c/`
+(`pts` modes `srcsum`, `cellcheck`, `frames`). Under `--light physical` only; without it the
+close, low and room shots are byte-identical to `build/perf/light_tune-before122`.
+
+Each source's light summed over the 144 probes × 6 axes, bake against tracer (the tracer
+split by the first surface a ray meets, the lace's open part looked through): sky 5.05 /
+5.37, the lace's thread 2.43 / 2.31, the floor 0.25 / 0.40 and its sun 0.35 / 0.30, the
+ceiling 0.71 / 1.00, the walls 0.37 / 0.74 and their sun 1.48 / 2.18 (the stove's tiles 0.58 /
+1.02, the wainscot's and sills' ledges 0.02 / 0.30), the niches' lining 0.39 / 0.72, the
+casements' members none / 0.82 (sunlit 0.31), the table's top 0.78 / 1.36; all 11.82 / 15.20.
+Ruled out: the albedos, the form factors and their cap, the bounces' count, the gather from
+the cells, the lace's thread. The cells' own light is 0.5 to 0.8 of the tracer's (the floor
+0.63, the ceiling 0.76, the niches 0.48), from what that list lacks.
+
+- The table's place (`room_light::table_off`, set in `render3d::bake_room_light`): the bake
+  took the top round the board's middle; it lies `mesh::TABLE_Z` (0.15 m) from it. Its sun
+  patch caught 0.68 of the tracer's sun, now 0.90 (the rest the lace's fullness); the
+  table's sun at the probes 0.75 → 1.01 (tracer 1.31).
+- The niches' probes (`room_light::niche_faces`): the half grid has no row in the niches, so
+  their bounced light was the room's 0.3 m before the wall, and toward the room they held
+  the sky's negative L1 lobe, clamped to 0: the casements' faces, which read them, were
+  black (the fills hid it before). Now they gather the cells themselves (`gather_cells`),
+  settle their light toward the room, and the lace throws its light to both sides, as the
+  tracer's thread. The middle window's transom 0 → 0.051 (tracer 0.045), the frame 0.004 →
+  0.024 (0.013 to 0.018), the bottom rail 0.003 → 0.013 (0.043), a shutter's front 0.129 →
+  0.102 (0.101), the head 0.023 → 0.026 (0.051).
+
+| State | 22 points | Range | Error factor | 864 probe values | Range | Error factor |
+|---|---|---|---|---|---|---|
+| Before (the tuner's atlas) | 0.74 | 0.26–1.48 | 1.45 | 0.78 | 0.04–2.34 | 1.39 |
+| Before (`pts`'s bake, no tree) | 0.76 | 0.26–1.55 | 1.43 | 0.80 | 0.04–2.36 | 1.37 |
+| The table's place (`pts`) | 0.75 | 0.20–1.61 | 1.43 | 0.80 | 0.19–2.28 | 1.36 |
+| The niches' probes too (`pts`) | 0.75 | 0.20–1.62 | 1.43 | 0.80 | 0.20–2.28 | 1.36 |
+| After (the tuner's atlas) | 0.74 | 0.20–1.55 | 1.46 | 0.78 | 0.20–2.27 | 1.38 |
+| Ideal L2 of the tracer's light | 0.94 | 0.51–1.77 | 1.27 | 1.01 | 0.11–2.34 | 1.07 |
+
+Left short: the casements' members have no cells (5% of the probes' light); the walls'
+relief in the sun (the stove's faces, the ledges), which the planar bins can't hold; the
+lace's fullness (task 124). The shots' mean after over before: close 1.02, low 1.04, room
+1.02. Cost on the Mac: the bake 132 to 140 ms before, 134 to 141 after (the probes 68 to 74
+→ 69 to 75 ms); nothing per frame.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
