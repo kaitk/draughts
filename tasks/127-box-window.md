@@ -160,7 +160,12 @@ sun's highlight off: as bright), the cause is the box's sharp reflection (`room_
 which from inside a window's niche, outside the room's box, reads far too bright. The window's
 hardware now takes the room's wide light (`room_wide`): 57, 34, 17, too dark, its edges unlit;
 with the niche's window light (written for the shutters' hinges) in full, 108, 74, 44 with a hard
-halo; at half (`WINDOW_NICHE`, fitted to Cycles' grip) see below.
+halo; its share growing smoothly as the reflection turns from the room to the glass, at
+`WINDOW_NICHE` 0.3 (fitted to Cycles' grip), 90, 58, 31. The curtains' brass, the shutters'
+hinges and the stove's glaze (in the metals' shader, its tiles' tone the fraction: test the
+metal, not the fraction alone) are as before: with the flag off the four views and the close-up
+match `room-light`'s head (98eaf679) within a level, under both lights. Pages:
+`build/notes/box-window/hardware.html` ("Built").
 
 ## Acceptance criteria
 

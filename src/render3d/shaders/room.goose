@@ -1952,7 +1952,7 @@ let ROOM_FRAG = """
         // The windows' hardware stands in a niche, outside the room's box, where the box's sharp
         // lookup reads far too bright (1.4 times Cycles' on the grip): the room's wide light
         // there, the window's from the niche below.
-        vec3 env = room_baked.x > 0.5 ? (own > 0.25 ? room_wide(v_local, rv) : room_reflection(p, v_local, rv, ar, nov, px))
+        vec3 env = room_baked.x > 0.5 ? (metal > 0.9 && own > 0.25 ? room_wide(v_local, rv) : room_reflection(p, v_local, rv, ar, nov, px))
                                       : sh_eval(rv) * params.z;
     #else
         vec3 env = room_baked.x > 0.5 ? room_wide(v_local, rv) : sh_eval(rv) * params.z;
@@ -2157,7 +2157,7 @@ let ROOM_FRAG = """
         } else if (kind < 9.5) {
             albedo = srgb(paint.rgb);
         } else if (kind < 13.5) {
-            albedo = srgb(own > 0.25 ? WINDOW_BRASS.rgb : brass.rgb);
+            albedo = srgb(kind > 11.5 && own > 0.25 ? WINDOW_BRASS.rgb : brass.rgb);
         } else if (kind > 14.5) {
             // The stove's glaze, its body's colour.
             albedo = srgb(vec3(0.804, 0.835, 0.745)) * 0.95;
