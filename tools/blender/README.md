@@ -10,8 +10,8 @@ and renders one of the light tuner's views.
 From the repository's root:
 
 ```sh
-build/goose-v2026.4-macos-arm64/goose build -o build/blender/export tools/blender_export.goose
-build/blender/export                     # build/blender/room.obj and scene.json
+python3 scripts/mac.py tools/blender_export.goose -o build/blender/export   # render3d needs the patched goose_gfx
+GOOSE_GFX_HEADLESS=1 build/blender/export --maps on   # room.obj, scene.json and the table's maps
 /Applications/Blender.app/Contents/MacOS/Blender -b --python-exit-code 1 \
     --python tools/blender/scene.py -- --view close --samples 512
 ```
@@ -26,7 +26,9 @@ Hold the GPU lock while rendering (`agents/perf.md`).
 
 The exporter's flags set the room as the tuner's do: `--table-at X,Y`, `--sun AZ,HEIGHT`,
 `--window-turn DEG`, `--table-turn DEG`, `--lace-hang M`, `--books`, `--chairs`, `--rug
-on|off`. The defaults are the tuner's at its default placement (less-turned).
+on|off`. `--maps on` also bakes the table's wood on the GPU with render3d's own bake (autumn,
+the flame mahogany, as the tuner) and saves `table_albedo.png` (sRGB, the polish's roughness
+in alpha) and `table_normal.png` (the normal's x and z in r and g, the wear's patches in b). The defaults are the tuner's at its default placement (less-turned).
 
 ## The frame
 
@@ -58,12 +60,19 @@ the way each faces (toward the window, away, up, down, along the wall).
 
 ## Materials
 
-Diffuse at each surface's mean albedo (`room_light`'s, the table's mahogany, the chairs'
-wood from it as `TABLE_FRAG` makes it), the brass metallic. Pictures wired in from
-`design/materials/`: the chairs' tapestry (`tapestry.png`, 240 mm a tile) and the rug
-(`rug.png`), both at a 2.2 gamma. The glass is two panes letting 0.92 each through
-without refraction; the lace a sheet letting `LACE_LETS` through and its thread throwing
-`LACE_SCATTER` of the rest forward and as much back.
+Each surface at its mean albedo (`room_light`'s) with the shaders' roughness, from
+`scene.json`'s `gloss` (the oak, the paper, the plaster, the paint, the stone; the floor's
+wax as a clear coat, `rooms::Room.planar`; the brass from `surfaces::LOOK.brass`). The
+table's wood from its maps, on the uv the export gives where `TABLE_FRAG` reads them (the
+top from above, the edge unrolled, the base its own way, the chairs the plain base's),
+recoloured for the base (`render3d::base_wood`, `base_look`) and the chairs (`CHAIR_WOOD`),
+under the polish as a clear coat (`tables::Table.coat`), the top with its normal map.
+Pictures from `design/materials/`: the chairs' tapestry (`tapestry.png`, 240 mm a tile)
+and the rug (`rug.png`), both at a 2.2 gamma. The glass is two panes letting 0.92 each
+through without refraction, reflecting 0.6 of Fresnel's; the lace a sheet letting
+`LACE_LETS` through and its thread throwing `LACE_SCATTER` of the rest forward and as much
+back. `--textures off` gives every surface its mean albedo, matte, for the light alone; with
+textures on, `-light.png` takes off the gloss passes, which are not denoised.
 
 ## Left to do
 
@@ -71,10 +80,12 @@ without refraction; the lace a sheet letting `LACE_LETS` through and its thread 
   herringbone, the wallpaper's print (`wallpaper_mask.png` tinted by `surfaces::LOOK`),
   the limewash (`plaster_tone.png`), the limestone sills, the books' spines
   (`books_atlas.png` and `book_cells.goose`), the stove's glaze, the lace's pattern
-  (`lace_f2.png`), the table's mahogany maps. Each needs its uv as the shader takes it.
+  (`lace_f2.png`). Each needs its uv as the shader takes it.
 - The board and the pieces; the park and the tree outside (the bake dims the sun by the
   tree's leaves, about a quarter through two of the three windows; not modelled).
-- Gloss: the polish, the waxed oak and floor, the glass's reflection.
+- Gloss: the polish's blotches and the wear tile (scratches, crazing, dents), the key's
+  highlight widened to a window's (`coat.w`), the sides' figure drawn out along the grain
+  (`SIDE_STREAK`), the sheen lobes; the base's mapping is per vertex, not per pixel.
 
 ## Import (planned)
 

@@ -11,12 +11,17 @@
 //       [--window-turn DEG (12)] [--table-turn DEG (25)] [--lace-hang M (0.15)] [--books on|off]
 //       [--chairs on|off] [--rug on|off]
 //
+// --maps on also writes the table's wood maps as the app bakes them on the GPU
+// (table_albedo.png, table_normal.png), so open no window: GOOSE_GFX_HEADLESS=1.
+//
 // The defaults are the tuner's at its default placement (less-turned).
 import std;
 import os;
 import vec;
 import math;
+import gfx;
 import model3d from "../src/model3d";
+import render3d from "../src/render3d";
 import .room_scene;
 
 let M: f32 = 30.48;   // surfaces::METRE
@@ -175,6 +180,61 @@ fn add_rug(mid: float3, half: float2, thick: f32) {
     }
 }
 
+// The uv TABLE_FRAG reads the table's maps at, a vertex (unturned, the board's world), with
+// v flipped for Blender (its pictures' rows bottom up): the top seen from above; the edge and
+// the frieze unrolled round the table; the base its own way (render3d::base_wood x 1): the
+// column's grain up its axis, each leg's along it; the chairs the plain base's.
+fn table_uv(v: mesh::Vertex) -> float2 {
+    let R = mesh::TABLE_MAP_R;
+    let p = v.pos;
+    let out_dir = float2 { p.x, p.z - mesh::TABLE_Z };
+    let from_mid = max(length(out_dir), 0.001);
+    let base = v.mat > 3.5;
+    let chair = v.mat > 4.5;
+    let top = v.normal.y > 0.999 && p.y > mesh::TABLE_TOP - 0.01 && !base;
+    var uv = if top { out_dir / (2.0 * R) + float2 { 0.5, 0.5 } }
+             else { float2 { 0.3 + (v.uv.y - R) / (2.0 * R), v.uv.x / (2.0 * PI * from_mid) * 3.0 } };
+    if base { uv = float2 { 0.2, 0.15 } + v.uv / (2.0 * R); }
+    let bw = render3d::base_wood;
+    let bl = render3d::base_look;
+    if base && !chair && bw.x > 0.5 {
+        let up_mm = (p.y - surfaces::FLOOR_Y) / M * 1000.0;
+        let out_mm = from_mid / M * 1000.0;
+        let column = up_mm > 240.0 || out_mm < 72.5 || (up_mm > 212.0 && out_mm < 83.5);
+        let r0 = 0.08 * M;
+        let along = if column { p.y - surfaces::FLOOR_Y } else { v.uv.y };
+        let angle = atan2(out_dir.y, out_dir.x);
+        let across = if column { abs(angle) * r0 + bl.y * (from_mid - r0) + tan(radians(bl.x)) * along }
+                     else { v.uv.x + 2.3 * floor(angle / (0.5 * PI)) };
+        uv = float2 { bl.z + across / (2.0 * R), 0.15 + along / (2.0 * R * bw.w) };
+    }
+    return float2 { uv.x, 1.0 - uv.y };
+}
+
+// The table's maps baked as the tuner bakes them (its put_look at autumn, the flame
+// mahogany, tables::for_look) and saved as PNG: the albedo sRGB with the polish's roughness
+// in alpha, the normal's x and z in r and g (0.5 flat), the wear's patches in b.
+fn write_maps(out_dir: const u8[:]) {
+    guard gfx::open("Draughts: the table's maps", 64, 64, 0) else { abort(str("gfx: ", gfx::error())); }
+    defer gfx::close();
+    var g = default<render3d::Gpu>();
+    var r3d = default<render3d::Own>();
+    render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
+    render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
+    g.table = true;
+    g.table_spec = tables::get(tables::for_look(looks::AUTUMN));
+    let look = looks::of(looks::AUTUMN, looks::MATERIAL_AUTO);
+    let shown = looks::shown(look, g.spring);
+    let own = looks::wood_for(shown);
+    render3d::choose(g, if own >= 0 { own } else { model3d::WOOD_MODEL }, -1);
+    g.finish = looks::finish_for(shown, g.wood);
+    g.look = -1;
+    render3d::apply(r3d, g, look, 8);
+    guard gfx::save_png(g.table_albedo, str(out_dir, "/table_albedo.png")[..]) &&
+          gfx::save_png(g.table_normal, str(out_dir, "/table_normal.png")[..]) else { abort(str("could not save the maps: ", gfx::error())); }
+    print("wrote ", out_dir, "/table_albedo.png and table_normal.png");
+}
+
 fn write_obj(path: const u8[:]) {
     var out: u8[>..] = [];
     format(out, "# Draughts' library room (tools/blender_export.goose): metres, z up, the table at the origin\n");
@@ -225,6 +285,7 @@ fn write_obj(path: const u8[:]) {
 }
 
 fn put3(out: u8[>..]&, v: float3) { format(out, "[", v.x, ", ", v.y, ", ", v.z, "]"); }
+fn put4(out: u8[>..]&, v: float4) { format(out, "[", v.x, ", ", v.y, ", ", v.z, ", ", v.w, "]"); }
 
 fn main() {
     var argv = args();
@@ -240,6 +301,7 @@ fn main() {
     room_shell::hang_lace(number(argv, "--lace-hang", room_shell::LACE_HANG));
     room_shell::LIBRARY.table = table_at;
     guard make_dir(out_dir) else { abort(str("could not make ", out_dir)); }
+    if switch(argv, "--maps", false) { write_maps(out_dir); }
 
     // The room as the tuner lights it (room_scene::light_of).
     let r = rooms::AUTUMN;
@@ -257,6 +319,8 @@ fn main() {
     var pv: mesh::Vertex[>..] = [];
     var pi: u32[>..]          = [];
     mesh::table(pv, pi, float4 { 3.0, 0.9, 0.38, 1.4 }, mesh::TABLE_R, surfaces::FLOOR_Y);
+    // The maps' uv where TABLE_FRAG reads them, before the turn (it reads the top turned back).
+    for &v in pv { v.uv = table_uv(v); }
     let a = radians(table_turn);
     let c = cos(a);
     let s = sin(a);
@@ -271,7 +335,14 @@ fn main() {
     }
     // The chairs stand on the rug's top (render3d::CHAIR_RUG_LIFT, ROOM_FRAG's RUG_THICK).
     let rug_thick: f32 = 0.008;
+    let table_count = pv.len;
     if chairs { mesh::chairs(pv, pi, surfaces::FLOOR_Y + (if rug { rug_thick * M } else { 0.0 })); }
+    // The chairs' wood reads the table's maps as the base did (TABLE_FRAG); their cloth keeps
+    // its uv (world units, the tapestry's tile).
+    for i in pv.len - table_count {
+        let k = table_count + i;
+        if pv[k].mat < 5.5 { pv[k].uv = table_uv(pv[k]); }
+    }
     add(pv, pi, false, true);
     // The rug (ROOM_FRAG's RUG_HALF, RUG_IN): 3 by 2 m along the window wall, its middle
     // 0.1 m from the table's into the room.
@@ -316,6 +387,30 @@ fn main() {
     }
     format(j, "    \"table\": ");
     put3(j, room_light::TABLE_ALBEDO);
+    format(j, "\n  },\n");
+    // The gloss as the shaders take it (ROOM_FRAG, TABLE_FRAG), each a roughness (squared
+    // for GGX's alpha) or a colour at normal incidence (sRGB).
+    let look = surfaces::LOOK;
+    let t = tables::get(tables::for_look(looks::AUTUMN));
+    format(j, "  \"gloss\": {\n");
+    format(j, "    \"floor_rough\": ", surfaces::FLOOR_OAK.base.w, ",\n    \"floor_wax\": ", r.planar.x,
+           ",\n    \"floor_wax_rough\": ", surfaces::FLOOR_OAK.base.w * r.planar.y, ",\n");
+    format(j, "    \"oak_rough\": ", surfaces::WALL_OAK.base.w, ",\n    \"paper_rough\": ", look.paper.w,
+           ",\n    \"gold_rough\": ", look.gold.w, ",\n");
+    format(j, "    \"plaster_rough\": ", 0.5 * (look.plaster_shade.w + look.plaster_light.w), ",\n    \"ceiling_rough\": ",
+           0.5 * (look.ceiling_shade.w + look.ceiling_light.w), ",\n");
+    format(j, "    \"paint_rough\": ", look.paint_quiet.x, ",\n    \"window_paint_rough\": ", look.paint_quiet.y,
+           ",\n    \"stone_rough\": ", look.stone.w, ",\n");
+    format(j, "    \"brass\": ");
+    put4(j, look.brass);
+    format(j, ",\n    \"table_top_rough\": ", t.wood.w, ",\n    \"table_coat\": ");
+    put4(j, t.coat);
+    format(j, ",\n    \"table_polish\": ");
+    put4(j, t.polish);
+    format(j, ",\n    \"base_wood\": ");
+    put4(j, render3d::base_wood);
+    format(j, ",\n    \"base_look\": ");
+    put4(j, render3d::base_look);
     format(j, "\n  },\n  \"views\": {\n");
     for v, i in room_scene::VIEWS {
         format(j, "    \"", v.name[..], "\": {\"eye\": ");

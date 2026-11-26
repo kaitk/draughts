@@ -1,0 +1,5 @@
+// The app's C for the built-in images and their upload through gfx's C API, compiled from
+// where it is: render3d's, which --maps bakes the table's maps with.
+c_sources = ["../src/native/background.c", "../src/native/photo.c", "../src/native/materials.c"];
+c_include = ["../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
+             "../third_party/goose_gfx/src/gfx"];
