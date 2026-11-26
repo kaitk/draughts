@@ -3755,7 +3755,8 @@ fn room_views_on() -> bool { ssao_allowed && (ssao_view > 0 || sheen_look.w > 0.
 // the room's sun, z its saturation, w its share of the sheen (the tuner's --oak-sun). The
 // oak keeps the sun it had before the room's sun was doubled (shell_sun.y 2.2): the user
 // wanted the stronger sun on the paper and the doors, the wainscot as it was.
-var room_sun = float4 { 0.6, 0.5, 1.0, 0.0 };
+let ROOM_SUN_AS_MADE = float4 { 0.6, 0.5, 1.0, 0.0 };
+var room_sun = ROOM_SUN_AS_MADE;
 fn room_sun_of(c: float3) -> float3 {
     let y = 0.2126 * c.x + 0.7152 * c.y + 0.0722 * c.z;
     return float3 { y, y, y } + (c - float3 { y, y, y }) * room_sun.x;

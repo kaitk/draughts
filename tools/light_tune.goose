@@ -98,7 +98,7 @@
 //       [--lace-fold-ao K (how much the folds' valleys darken that fill, 1.5, the deepest to 0.4)]
 //       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
 //       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
-//       [--dump-light PATH (the probes' atlas, a float a line, with --shot)]
+//       [--dump-light PATH (the probes' atlas, a float a line, with --shot)] [--print (the command line printed on the first frame, as P)]
 //       [--dump-room-block PATH (the room's Surfaces block as its raw bytes, with --shot; scripts/room_fixed.py)] [--light-ref PATH (the baked light worked
 //       out finely on the room's surfaces, tools/light_ref.goose; --light-ref-stride N, --light-ref-old)]
 //       [--ssao-view off|alone|kept|light|broken (light: the indirect light alone on grey; broken: red where a
@@ -225,22 +225,25 @@ fn srgb_of(c: f32) -> f32 {
 // every surface, the room's (its strength and saturation), through the panes; the bake's
 // sun thrown on at its albedo (gain 1, no grey); no light added blind to direction (the
 // shade's floor of the key, the kept harmonics and bounce); one exposure for the view, the
-// room's sunlit surfaces where today's are. `exposure` over 0 is the camera's own.
-fn physical_light(r0: rooms::Room, exposure: f32) -> rooms::Room {
+// room's sunlit surfaces where today's are. Each value is set from `made`, the room as
+// made, never scaled from what `r0` holds, so the command line the tuner prints gives the
+// same light again: the sun's strength unless `key_given` (--key's is the physical sun's),
+// the exposure unless `exposure_given`.
+fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_given: bool) -> rooms::Room {
     var r = r0;
-    let key = rooms::color_of(r.key_color);
+    let key = rooms::color_of(made.key_color);
     let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
-    let sun = float3 { y, y, y } + (key - float3 { y, y, y }) * render3d::room_sun.x;
-    r.key_color = float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), r.key_color.w };
-    r.key.z = r.key.z * r.shell_sun.y * PANES;
+    let sun = float3 { y, y, y } + (key - float3 { y, y, y }) * render3d::ROOM_SUN_AS_MADE.x;
+    r.key_color = float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), made.key_color.w };
+    if !key_given { r.key.z = made.key.z * made.shell_sun.y * PANES; }
     r.shell_sun.y = 1.0;
-    render3d::room_sun = float4 { 1.0, 1.0, 1.0, render3d::room_sun.w };
+    render3d::room_sun = float4 { 1.0, 1.0, 1.0, render3d::ROOM_SUN_AS_MADE.w };
     render3d::sun_panes = PANES;
     room_light::glazing = room_light::PHYSICAL_GLAZING;
     room_light::bounce_grey = 0.0;
     r.baked = float4 { r.baked.x, 1.0, 0.0, 0.0 };
     render3d::shade_fill = 0.0;
-    r.exposure = if exposure > 0.0 { exposure } else { r.exposure * r.room_exposure / PANES };
+    if !exposure_given { r.exposure = made.exposure * made.room_exposure / PANES; }
     r.room_exposure = 1.0;
     return r;
 }
@@ -1596,7 +1599,7 @@ fn main() {
     var far_cap = caps.y;
     render3d::wind_time = number(argv, "--wind-time", 0.0);
     render3d::wind_kind = pick(argv, "--wind-kind", rooms::WIND_KINDS, rooms::WIND_NOISE);
-    if physical { room = physical_light(room, if has(argv, "--exposure") { room.exposure } else { 0.0 }); }
+    if physical { room = physical_light(room, rooms::get(room_take), has(argv, "--key"), has(argv, "--exposure")); }
     g.room = room;
     g.room_tuned = true;
     render3d::window_pattern = pattern == 1;
@@ -1895,7 +1898,8 @@ fn main() {
         } else {
             ui::input_from_gfx(c);
         }
-        var print_it = gfx::key_pressed("P");
+        // --print: the command line printed on the first frame too, as P prints it.
+        var print_it = gfx::key_pressed("P") || (frames == 1 && has(argv, "--print"));
         // Tab begins the walk; Esc or Tab ends it, and so does losing focus, which lets the mouse go.
         var walk_now = !walk.on && (gfx::key_pressed("Tab") || touch);
         if walk.on && !touch && (gfx::key_pressed("Escape") || gfx::key_pressed("Tab") || !gfx::mouse_relative()) {
@@ -2308,6 +2312,7 @@ fn main() {
         if room_take != shown_room {
             shown_room = room_take;
             room = rooms::get(room_take);
+            if physical { room = physical_light(room, room, false, false); }
         }
         if top != shown_top {
             shown_top = top;
@@ -2319,6 +2324,7 @@ fn main() {
                 room_take = rooms::for_season(season);
                 shown_room = room_take;
                 room = rooms::get(room_take);
+                if physical { room = physical_light(room, room, false, false); }
             }
             shown_season = season;
             shown_material = material;
@@ -2413,6 +2419,7 @@ fn main() {
             var line: u8[>..] = [];
             line.append("--room ");
             line.append(rooms::NAMES[room_take]);
+            format(line, " --light ", LIGHT_WAYS[if physical { 1 } else { 0 }]);
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
                    " --table-top ", TOPS[top], " --lace ", surfaces::LACE_WAYS[g.lace_way]);
             format(line, " --room-surfaces ", on_off(room_on), " --shell ", on_off(shell_on), " --outside ", on_off(outside_on),
