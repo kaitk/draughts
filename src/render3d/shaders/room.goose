@@ -575,7 +575,7 @@ let ROOM_FRAG = """
     // One probe's texel of the baked light: colour c's block, the height's slice k, at g
     // (the grid's x and along v).
     vec4 probe_at(float c, float k, vec2 g) {
-        vec2 size = vec2(light_grid.x * light_grid.z, 3.0 * light_grid.y);
+        vec2 size = vec2(textureSize(light_volume, 0));    // the probe volumes' rows after the grid's, if any
         return textureLod(light_volume, vec2(k * light_grid.x + g.x + 0.5, c * light_grid.y + g.y + 0.5) / size, 0.0);
     }
 
