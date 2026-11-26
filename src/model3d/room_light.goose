@@ -59,6 +59,10 @@ let GLAZED_HALF: f32 = 0.49;
 let GLAZED_LOW:  f32 = 0.03;
 let GLAZED_HIGH: f32 = 0.06;
 let GLAZING:     f32 = 0.78;
+// What the bake takes for it (the tuner's --light physical: PHYSICAL_GLAZING, the two panes
+// of 0.92 the path tracer takes in place of the 0.88 GLAZING was made with, the bars kept).
+var glazing: f32 = GLAZING;
+let PHYSICAL_GLAZING: f32 = 0.75;
 // What the lace lets through where it hangs before the niche (its thread lets 0.45 of the
 // sun through where it covers, and it covers about half).
 let LACE_LETS: f32 = 0.72;
@@ -269,7 +273,7 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
     for k in 3 {
         let o = wins[k];
         let cell = (2.0 * GLAZED_HALF / RAYS_X) * ((o.height + o.rise - GLAZED_LOW - GLAZED_HIGH) / RAYS_Y);
-        let each = sun.light * (cell * -d.y * GLAZING);
+        let each = sun.light * (cell * -d.y * glazing);
         for j in RAYS_Y {
             for i in RAYS_X {
                 let q = ray_point(k, i, j);
@@ -511,7 +515,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
             }
         }
     }
-    let sky = sun.sky * (sun.sky_gain * GLAZING / PI);
+    let sky = sun.sky * (sun.sky_gain * glazing / PI);
     let inv_pi2 = sun.bounce_gain / (PI * PI);
     // The probes' near limit, so a patch's light doesn't spike at the probes beside it:
     // about a bin's size.
@@ -883,7 +887,7 @@ fn first_light(sun: Sun, bounce: Bounce&) {
                                    PI * sun.table.z * sun.table.z, -1 };
     var wins = windows();
     let gy = glass_y();
-    let sky = sun.sky * (sun.sky_gain * GLAZING / PI);
+    let sky = sun.sky * (sun.sky_gain * glazing / PI);
     let gain = sun.bounce_gain / PI;
     for c in CELLS {
         let cell = bounce.cells[c];

@@ -2223,7 +2223,7 @@ fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
             float4 { table_radius(g), g.tree_ms as f32, light_bounces as f32, room_sun.x },
             float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
                      (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang },
-            float4 { room_shell::LIBRARY.table.x, room_shell::LIBRARY.table.y, 0.0, 0.0 }];
+            float4 { room_shell::LIBRARY.table.x, room_shell::LIBRARY.table.y, room_light::glazing, sun_panes }];
 }
 
 // The bake's buffers, sized once: the probes' atlas in floats and as half floats, the sun's
@@ -2256,6 +2256,10 @@ let TABLE_PROBE_UP: f32 = 0.15;
 // --shade-fill). A fifth, with the sun twice as strong on the room (rooms::AUTUMN's
 // shell_sun): the patches gain, the shade stays near where it was.
 var shade_fill: f32 = 0.2;
+// The share of the sun the window's panes let through that the key's strength already holds
+// (1 none; the light tuner's --light physical, which lights every surface through the
+// panes): the bake takes the sun before them, as its glazing has them.
+var sun_panes: f32 = 1.0;
 let ATLAS_BYTES = 243360;   // room_light::ATLAS_W × ATLAS_H × 8
 let TREE_LEVEL = 3;
 let TREE_SMALL = 98304;     // trees::SHELL_W × SHELL_H × 4 >> 2 × TREE_LEVEL
@@ -2285,7 +2289,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     let out = float3 { -fr.into.x * 0.94, up, -fr.into.y * 0.94 };
     let sun = room_light::Sun {
         toward: toward,
-        light:  room_sun_of(float3 { f.light_color.x, f.light_color.y, f.light_color.z }) * (f.light_dir.w * r.shell_sun.y),
+        light:  room_sun_of(float3 { f.light_color.x, f.light_color.y, f.light_color.z }) * (f.light_dir.w * r.shell_sun.y / sun_panes),
         sky:    sh_at(f.sh, out) * f.params.z,
         table: float4 { s.table.x, s.table.y, table_radius(g) / surfaces::METRE,
                         (mesh::TABLE_TOP - surfaces::FLOOR_Y) / surfaces::METRE },

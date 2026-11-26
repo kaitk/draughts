@@ -76,7 +76,8 @@
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
 //       [--rug on|off (the rug under the games table)] [--chairs on|off (the two chairs at it)]
 //       [--props-light off|on|kept (the table and the chairs lit from the room's probes where each pixel is, through
-//       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
+//       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)]
+//       [--light today|physical (the room's light from physical inputs, physical_light; today as made)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
 //       [--paint quiet|old] [--paint-off fillets,tilt,dirt,joints,tile] [--paint-relief K]
 //       [--sill vasalemma|old] [--sill-off speckle,band,arris,nose,dust (the limestone's parts, each off)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
@@ -206,6 +207,40 @@ fn park_frag(part: i64, hdr: bool) -> const u8[:] {
 }
 let TOPS = ["0.95", "1.05", "0.80"];
 let PROPS_WAYS = ["off", "on", "kept"];
+let LIGHT_WAYS = ["today", "physical"];
+
+// The two panes' share of the sun (0.92 each), as tools/path_trace.goose takes them.
+let PANES: f32 = 0.8464;
+
+fn srgb_of(c: f32) -> f32 {
+    if c <= 0.0031308 { return c * 12.92; }
+    let e: f32 = 1.0 / 2.4;
+    return 1.055 * pow(c, e) - 0.055;
+}
+
+// The room's light from physical inputs (task 122), as the path tracer takes them: one sun on
+// every surface, the room's (its strength and saturation), through the panes; the bake's
+// sun thrown on at its albedo (gain 1, no grey); no light added blind to direction (the
+// shade's floor of the key, the kept harmonics and bounce); one exposure for the view, the
+// room's sunlit surfaces where today's are. `exposure` over 0 is the camera's own.
+fn physical_light(r0: rooms::Room, exposure: f32) -> rooms::Room {
+    var r = r0;
+    let key = rooms::color_of(r.key_color);
+    let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
+    let sun = float3 { y, y, y } + (key - float3 { y, y, y }) * render3d::room_sun.x;
+    r.key_color = float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), r.key_color.w };
+    r.key.z = r.key.z * r.shell_sun.y * PANES;
+    r.shell_sun.y = 1.0;
+    render3d::room_sun = float4 { 1.0, 1.0, 1.0, render3d::room_sun.w };
+    render3d::sun_panes = PANES;
+    room_light::glazing = room_light::PHYSICAL_GLAZING;
+    room_light::bounce_grey = 0.0;
+    r.baked = float4 { r.baked.x, 1.0, 0.0, 0.0 };
+    render3d::shade_fill = 0.0;
+    r.exposure = if exposure > 0.0 { exposure } else { r.exposure * r.room_exposure / PANES };
+    r.room_exposure = 1.0;
+    return r;
+}
 let TREE_GROWS = ["shadow", "whole"];
 let TOP_METRES: f32[3] = [0.95, 1.05, 0.80];
 fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
@@ -1424,7 +1459,10 @@ fn main() {
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
     render3d::scatter_allowed = true;
     g.table = true;
+    // --light physical: the table's sun the same all over (no pool round the board).
+    let physical = pick(argv, "--light", LIGHT_WAYS, 0) == 1;
     g.table_spec = tables::get(take);
+    if physical { g.table_spec.light.y = 1.0; }
     var room = rooms::get(room_take);
     room.key.x = number(argv, "--azimuth", room.key.x);
     room.key.y = number(argv, "--sun-height", room.key.y);
@@ -1555,6 +1593,7 @@ fn main() {
     var far_cap = caps.y;
     render3d::wind_time = number(argv, "--wind-time", 0.0);
     render3d::wind_kind = pick(argv, "--wind-kind", rooms::WIND_KINDS, rooms::WIND_NOISE);
+    if physical { room = physical_light(room, if has(argv, "--exposure") { room.exposure } else { 0.0 }); }
     g.room = room;
     g.room_tuned = true;
     render3d::window_pattern = pattern == 1;
@@ -1602,6 +1641,10 @@ fn main() {
     let props_way = pick(argv, "--props-light", PROPS_WAYS, 0);
     var props_on = props_way > 0;
     var props_shade = props_way == 2;
+    if physical {
+        props_on = true;
+        props_shade = false;
+    }
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
     // The stove in its corner, and its crown: A's crest as made, or B's flat top with finials.
@@ -2274,6 +2317,7 @@ fn main() {
             shown_material = material;
             shown_take = take;
             g.table_spec = tables::get(take);
+            if physical { g.table_spec.light.y = 1.0; }
             render3d::tune_table(r3d, g, g.table_spec);
             g.room = room;
             put_look(r3d, g, season, material, st);
