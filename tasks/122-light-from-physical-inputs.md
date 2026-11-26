@@ -296,14 +296,79 @@ edge (10% to 90%): the tuner 8.9 px, the tracer with a point sun 1.8 px, with th
 The exposure stays 3.08: the floor patches' brightest 1% and 5% moved under 0.1%.
 
 Cost: the bake 103 to 104 ms before, 118 to 121 after on the Mac (the half grid 29 → 45 ms,
-the split cells); per pixel one compare in `| State | 22 points | Range | Error factor | 864 probe values (144 × 6) | Range | Error factor |
+the split cells); per pixel one compare in `TABLE_FRAG` with `PROPS_LIGHT`.
+
+## The fourth step, the reference's fixes (2026-11-26)
+
+Results page: `build/notes/light-physical/index.html#step4b`; scratch `build/review122/s4b/`.
+
+- The tracer's sky: a ray goes on past the panes (0.92 each) and the outer casement's
+  frames and bars; it takes the sky only where it leaves through a window's outer opening
+  (the wall's outer face, 1 cm out), as the Cycles scene's box has it, and is dark through a
+  gap in the shell.
+- The tracer's lace, as Cycles': a ray passes its open part (0.72) or meets its thread,
+  picked at random by those shares; the thread throws `LACE_SCATTER` (0.4) of the light
+  reaching either side on through it and as much back, from the sun and one traced ray to a
+  side picked at random. Its glow before the wall no longer takes half the sky.
+
+Against Cycles (`--textures off`, the GPU, 960 × 540 at 1,024 samples, 48 to 51 s a view;
+the tracer 480 × 270 at 256 paths, 33 to 46 s): the light alone on the props by part and
+the way each faces, the cells with 100 pixels or more, tracer over Cycles:
+
+| View | Before: mean | Range | Error factor | After: mean | Range | Error factor |
 |---|---|---|---|---|---|---|
-| Before (step 3 as made) | 0.68 | 0.03–1.69 | 1.72 | 0.76 | 0.02–2.38 | 1.55 |
-| The rug in the bake | 0.77 | 0.07–1.70 | 1.53 | 0.81 | 0.07–2.40 | 1.45 |
-| The near limit 0.02 m² too | 0.87 | 0.09–1.70 | 1.41 | 0.87 | 0.07–4.65 | 1.39 |
-| The exact gather too | 0.89 | 0.11–1.70 | 1.34 | 0.91 | 0.07–2.40 | 1.32 |
-| The table's open part alone too | 0.94 | 0.23–1.89 | 1.27 | 0.91 | 0.07–2.40 | 1.32 |
-| Ideal L2 of the tracer's light | 0.93 | 0.25–1.66 | 1.33 | 1.00 | 0.64–1.70 | 1.05 |_FRAG` with `PROPS_LIGHT`.
+| Close (13 cells) | 1.32 | 1.06–1.73 | 1.32 | 1.07 | 0.98–1.21 | 1.08 |
+| Low (11 cells) | 1.40 | 1.06–1.84 | 1.40 | 1.03 | 0.77–1.20 | 1.10 |
+
+The lace panels in the close view (three boxes, what the camera sees): before 3.7 to 5.3
+times Cycles', after 1.00 to 1.08. At 480 × 270 Cycles' thin parts take the bright window
+into their edge pixels (the chairs' wood toward -x in the low view 0.0082 there, 0.0054 at
+960 × 540), so its pictures are at 960 × 540. The tracer's 22 points fall to 0.64 of before
+(0.49 to 0.99); points in 0.66 s. Left between the two: the tracer's panes pass 0.92 at
+every angle (Cycles' glass reflects 0.6 of Fresnel's, so less at a slant), and Cycles'
+denoiser. The lace still differs between the references and the app (task 124): the bake's
+`lace_lets(h)` 0.33 to 0.72 by the fullness against a sheet of 0.72; its lace cells throw
+`LACE_SCATTER` of the window side's sky and sun toward the room only; the shaders' pattern
+(`lace_f3`) and `ROOM_FRAG`'s own lace fill.
+
+The bake's sky through the casements' members (`room_light::sky_through`, under
+`members_traced`, so `--light physical` only): each of the 40 sky samples of a window takes
+its share past both casements' members from a table of 17 × 17 line slopes (±4, bilinear;
+4 × 4 lines a sample through `members_let_rect`, the sun's test), made once, and the panes'
+0.8464 in place of the glazing's 0.75; in the probes' gather and in the cells' first light.
+Against the fixed tracer (the step 4 method: 22 points, 144 probes × 6 axes):
+
+| State | 22 points | Range | Error factor | 864 probe values | Range | Error factor |
+|---|---|---|---|---|---|---|
+| Before (step 4 as made) | 1.50 | 0.40–2.95 | 1.64 | 1.45 | 0.08–5.25 | 1.65 |
+| The sky through the members | 0.74 | 0.26–1.48 | 1.45 | 0.78 | 0.04–2.34 | 1.39 |
+| Ideal L2 of the tracer's light | 0.94 | 0.51–1.77 | 1.27 | 1.01 | 0.11–2.34 | 1.07 |
+
+(Against the tracer before its fixes the same atlas was 0.94 and 0.91, the fourth step's
+last row.) By direction, before → after, at 0.15, 0.45, 0.75 and 1.05 m:
+
+| Direction | 0.15 m | 0.45 m | 0.75 m | 1.05 m |
+|---|---|---|---|---|
+| Up | 2.03 → 0.82 | 2.03 → 0.81 | 1.89 → 0.76 | 1.97 → 0.80 |
+| Down | 1.52 → 0.79 | 1.27 → 0.78 | 0.93 → 0.66 | 0.93 → 0.70 |
+| Toward the hall | 0.91 → 0.80 | 0.83 → 0.76 | 0.83 → 0.76 | 0.84 → 0.77 |
+| Toward the window | 2.36 → 0.95 | 2.32 → 0.99 | 1.84 → 0.83 | 1.70 → 0.84 |
+| Along the wall, +x | 1.19 → 0.67 | 1.21 → 0.66 | 1.22 → 0.64 | 1.15 → 0.65 |
+| Along the wall, -x | 2.33 → 0.89 | 2.21 → 0.87 | 1.98 → 0.80 | 1.73 → 0.78 |
+
+By source at five probes (`pts bakesrc`, 0.15 to 1.05 m): the bake's sky is now 0.84 to
+1.33 of the tracer's, most 0.9 to 1.1. What is left short is the light thrown on: by the
+walls' and the ceiling's cells 0.4 to 1.1 (most about half), the floor's below the probes at
+0.15 m 0.2 to 0.35, the walls' sun patches 0.6 to 0.9, the lace 0.4 to 1.2 (most 0.45 to
+0.85). Three bounces in place of one: 0.77 and 0.80 (error factors 1.41, 1.36), so not the
+bounces' count. Not found yet.
+
+The exposure stays 3.08: the room view's brightest floor pixels (1% and 5%) 0.6% lower.
+The shots' mean light after over before: close 0.81, low 0.85, room 0.90.
+
+Cost on the Mac (room view, three runs each): the bake 123 to 124 ms before, 129 to 134
+after; the table 4.5 ms once (in the first light: 3.7 → 8.4 to 8.6 ms), the probes 63 to
+64 → 67 to 70 ms (a bilinear lookup a sky sample). Nothing per frame.
 
 ## Acceptance criteria
 

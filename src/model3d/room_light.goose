@@ -71,10 +71,11 @@ let GLAZING:     f32 = 0.78;
 // of 0.92 the path tracer takes in place of the 0.88 GLAZING was made with, the bars kept).
 var glazing: f32 = GLAZING;
 let PHYSICAL_GLAZING: f32 = 0.75;
-// The sun's rays traced through the casements' own members (room_shell::casement_members:
-// the frames, sashes and bars with their depth, which at a low sun hide much of what is open
-// square on) in place of the glazing's share; then only the two panes, PANES, stand for the
-// glass (the tuner's --light physical). Each ray's cell is sampled MEMBER_SAMPLES² times.
+// The sun's rays and the sky's samples (sky_through) traced through the casements' own
+// members (room_shell::casement_members: the frames, sashes and bars with their depth, which
+// at a low sun hide much of what is open square on) in place of the glazing's share; then
+// only the two panes, PANES, stand for the glass (the tuner's --light physical). Each sun
+// ray's cell is sampled MEMBER_SAMPLES² times.
 var members_traced = false;
 let PANES: f32 = 0.8464;
 let MEMBER_SAMPLES = 8;
@@ -297,18 +298,22 @@ fn wall_albedo(wall: i64, along: f32, h: f32) -> float3 {
 
 // The share of ray (window o, column i, row j)'s cell on the inner glass whose line along d
 // (the plan's, into the room) passes every box of `boxes` (room_shell::casement_members).
-// Only the boxes whose shadow along d on the glass's plane overlaps the cell are tested.
 fn members_let(boxes: room_shell::Member[..room_shell::MEMBERS]&, o: room_shell::Opening, i: i64, j: i64, d: float3) -> f32 {
-    // The line in the window's own metres: x along the wall, y up, z out of the wall.
-    let v = float3 { d.x, d.z, -d.y };
-    let inv = float3 { 1.0 / v.x, 1.0 / v.y, 1.0 / v.z };
     let low = o.sill + GLAZED_LOW;
     let high = o.sill + o.height + o.rise - GLAZED_HIGH;
     let dx = 2.0 * GLAZED_HALF / RAYS_X;
     let dh = (high - low) / RAYS_Y;
+    return members_let_rect(boxes, -GLAZED_HALF + i * dx, low + j * dh, dx, dh, d, MEMBER_SAMPLES);
+}
+// The same for the rectangle (x0, y0) to (x0 + dx, y0 + dh) on the inner glass (the window's
+// own metres), sampled samples² times. Only the boxes whose shadow along d on the glass's
+// plane overlaps the rectangle are tested.
+fn members_let_rect(boxes: room_shell::Member[..room_shell::MEMBERS]&, x0: f32, y0: f32, dx: f32, dh: f32, d: float3,
+                    samples: i64) -> f32 {
+    // The line in the window's own metres: x along the wall, y up, z out of the wall.
+    let v = float3 { d.x, d.z, -d.y };
+    let inv = float3 { 1.0 / v.x, 1.0 / v.y, 1.0 / v.z };
     let z = -room_shell::WINDOW_GLASS.x;
-    let x0 = -GLAZED_HALF + i * dx;
-    let y0 = low + j * dh;
     // A point at depth zb meets the line through the plane's (x, y) at x + kx (zb - z).
     let kx = v.x / v.z;
     let ky = v.y / v.z;
@@ -323,9 +328,9 @@ fn members_let(boxes: room_shell::Member[..room_shell::MEMBERS]&, o: room_shell:
         near.push(n);
     }
     var open = 0;
-    for sj in MEMBER_SAMPLES {
-        for si in MEMBER_SAMPLES {
-            let p = float3 { x0 + (si + 0.5) * (dx / MEMBER_SAMPLES), y0 + (sj + 0.5) * (dh / MEMBER_SAMPLES), z };
+    for sj in samples {
+        for si in samples {
+            let p = float3 { x0 + (si + 0.5) * (dx / samples), y0 + (sj + 0.5) * (dh / samples), z };
             var hit = false;
             for n in near {
                 let b = boxes[n];
@@ -338,7 +343,53 @@ fn members_let(boxes: room_shell::Member[..room_shell::MEMBERS]&, o: room_shell:
             if !hit { open++; }
         }
     }
-    return open / (MEMBER_SAMPLES * MEMBER_SAMPLES * 1.0);
+    return open / (samples * samples * 1.0);
+}
+
+// The sky's samples through the casements' members (members_traced): each sample's share
+// past them, by the slopes of its line into the room (along the wall and up, a metre into
+// the room), SLOPES of each from -SLOPE_MOST to SLOPE_MOST, bilinear between. The three
+// windows' members are alike; the table is made once.
+let SLOPES = 17;
+let SLOPE_MOST: f32 = 4.0;
+var sky_lets: f32[11560];     // SKY_X × SKY_Y × SLOPES × SLOPES
+var sky_lets_made = false;
+fn make_sky_lets() {
+    let o = windows()[0];
+    var boxes = room_shell::casement_members(o);
+    let low = o.sill + GLAZED_LOW;
+    let high = o.sill + o.height + o.rise - GLAZED_HIGH;
+    let dx = 2.0 * GLAZED_HALF / SKY_X;
+    let dh = (high - low) / SKY_Y;
+    let step = 2.0 * SLOPE_MOST / (SLOPES - 1);
+    for j in SKY_Y {
+        for i in SKY_X {
+            for b in SLOPES {
+                for a in SLOPES {
+                    let d = float3 { -SLOPE_MOST + a * step, -1.0, -SLOPE_MOST + b * step };
+                    sky_lets[((j * SKY_X + i) * SLOPES + b) * SLOPES + a] =
+                        members_let_rect(boxes, -GLAZED_HALF + i * dx, low + j * dh, dx, dh, d, 4);
+                }
+            }
+        }
+    }
+    sky_lets_made = true;
+}
+// What sky sample (i, j) lets through along v (the plan's, from the room to the sample) in
+// place of the glazing: its share past the members times the panes. 1 when the members
+// aren't traced.
+fn sky_through(i: i64, j: i64, v: float3) -> f32 {
+    guard members_traced else { return 1.0; }
+    let g = float2 { (clamp(-v.x / v.y, -SLOPE_MOST, SLOPE_MOST) + SLOPE_MOST) / (2.0 * SLOPE_MOST) * (SLOPES - 1),
+                     (clamp(-v.z / v.y, -SLOPE_MOST, SLOPE_MOST) + SLOPE_MOST) / (2.0 * SLOPE_MOST) * (SLOPES - 1) };
+    let a0 = min(floor(g.x) as i64, SLOPES - 2);
+    let b0 = min(floor(g.y) as i64, SLOPES - 2);
+    let fa = g.x - a0;
+    let fb = g.y - b0;
+    let at = (j * SKY_X + i) * SLOPES * SLOPES;
+    let l0 = sky_lets[at + b0 * SLOPES + a0] * (1.0 - fa) + sky_lets[at + b0 * SLOPES + a0 + 1] * fa;
+    let l1 = sky_lets[at + (b0 + 1) * SLOPES + a0] * (1.0 - fa) + sky_lets[at + (b0 + 1) * SLOPES + a0 + 1] * fa;
+    return (l0 * (1.0 - fb) + l1 * fb) * (PANES / glazing);
 }
 
 // The sun's rays through the three windows into the patches they light, binned; how much
@@ -627,6 +678,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
     var sky_at:     float3[120] = [float3_0; 120];
     var sky_area:   f32[120]    = [0.0; 120];
     var sky_window: i64[120]    = [0; 120];
+    var sky_ij:     i64[120]    = [0; 120];
     var sky_n = 0;
     for k in 3 {
         let o = wins[k];
@@ -640,11 +692,13 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                 sky_at[sky_n] = float3 { x, gy, h };
                 sky_area[sky_n] = (2.0 * GLAZED_HALF / SKY_X) * ((high - low) / SKY_Y);
                 sky_window[sky_n] = k;
+                sky_ij[sky_n] = j * SKY_X + i;
                 sky_n++;
             }
         }
     }
     let sky = sun.sky * (sun.sky_gain * glazing / PI);
+    if members_traced && !sky_lets_made { make_sky_lets(); }
     let inv_pi2 = sun.bounce_gain / (PI * PI);
     // The probes' near limit, so a patch's light doesn't spike at the probes beside it:
     // about a bin's size.
@@ -685,6 +739,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                         if p.y < lace_y && in_lace(o, c) { lets = lace_lets(c.z); }
                     }
                     guard !under_table(sun.table, p, s) else { continue; }
+                    lets = lets * sky_through(sky_ij[si] % SKY_X, sky_ij[si] / SKY_X, v);
                     let r2 = max(dot(v, v), near2);
                     let r = sqrt(r2);
                     take(got, f, sky * (lets * sky_area[si] * (v.y / r) / r2), v / r);
@@ -1027,6 +1082,7 @@ fn first_light(sun: Sun, bounce: Bounce&) {
     var wins = windows();
     let gy = glass_y();
     let sky = sun.sky * (sun.sky_gain * glazing / PI);
+    if members_traced && !sky_lets_made { make_sky_lets(); }
     let gain = sun.bounce_gain / PI;
     for c in CELLS {
         let cell = bounce.cells[c];
@@ -1056,7 +1112,7 @@ fn first_light(sun: Sun, bounce: Bounce&) {
                     guard facing > 0.0 else { continue; }
                     let lets = if lace || own >= 0 { 1.0 } else { seen_through(sun.table, wins, cell.at, -1, float3 { x, gy, h }, k) };
                     guard lets > 0.0 else { continue; }
-                    e = e + sky * (lets * area * (v.y / r) * facing / r2);
+                    e = e + sky * (lets * sky_through(i, j, v) * area * (v.y / r) * facing / r2);
                 }
             }
         }
