@@ -917,6 +917,42 @@ step-7 build, the reference view within a level (none over 8). Results page:
 Cost: the paper a multiply of the specular and of the Fresnel a pixel on the walls; the table
 a Fresnel and a multiply-add a pixel under `PROPS_LIGHT`. Not timed (no measurable size).
 
+## Step 7b: the wallpaper close up (2026-11-26)
+
+The user: the print loses its depth close up. Worked from ChatGPT's material specification (a
+bronze-powder print on a matt distemper paper, its grain and print relief, roughness 0.42 to
+0.65) and the reference `Victorian Ochre Floral Wallpaper.png` at 300% (its material only; our
+mask's motifs and tile kept). Under `--light physical` only, the tuner's `--paper-detail
+LINES,POWDER,GRAIN,RELIEF` (`render3d::paper_detail`, the block's old unused `paint_steps`; on
+as 1,1,1,1; 0,0,0,0 is c988f308's picture exactly). Results page
+`build/notes/wallpaper-close/index.html`; scratch `build/review122/wp/`.
+
+- ROOM_FRAG's `paper_close`: the print's outline cut sharp at the mask's 0.4 over a pixel; its own
+  lines deepened about the print's mean away from the outline; the metal's tone a little uneven,
+  tarnished browner in low patches, burnished to small pale flecks; the ground's albedo mottled
+  and grained; a bump of the docx's heights (print 40 µm, grain 20 µm). All of it fades out as a
+  mask texel (0.88 mm) falls under a pixel, so the room's distance keeps the flat print.
+- The grain: the mask's G (`render3d::paper_grain`, three tileable value noises), RG8 instead of
+  R8 only with the flag (+1.4 MB), read at the mask's scale and six times finer.
+- Tried and dropped: the docx's ochre binder between the powder (in shade a diffuse binder
+  outshines a metal reflecting the dark room: the close print turned orange and brighter than
+  from afar), the ground showing through the powder in hollows and a strong mottle on the print
+  (read as dirt and sponge in the independent look), the relief at 5× (embossed outlines).
+
+| Shade, 0.8 m | Print (sRGB) | Ground | Print / ground | Print CV | Ground CV |
+|---|---|---|---|---|---|
+| Reference (flat, unlit) | 112 79 47 | 53 51 47 | 1.62 | 0.137 | 0.112 |
+| Before | 113 72 33 | 50 32 24 | 2.23 | 0.076 | 0.048 |
+| After | 113 72 33 | 50 32 24 | 2.23 | 0.123 | 0.070 |
+
+At 0.45 m the same: the means within a level, the print's variation 0.076 to 0.114. The
+reference view under `--light physical` within a level of c988f308 at 1536 × 1024 (none over
+8), 4 levels at 3840 × 2560 (none over 8). Without the flag the close, low, room, menu and
+reference views and the three close views are within a level of c988f308 (none over 8). Open:
+the reference's depth is mostly its dark veins and centres, which our mask hardly has (a new
+mask with the same motifs would be needed); short fibres in the ground's grain. Cost: not
+timed (three taps of one texture and some arithmetic on the walls' pixels near enough).
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

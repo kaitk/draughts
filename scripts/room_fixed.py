@@ -27,7 +27,7 @@ SRC = ROOT / "src/render3d/shaders/room.goose"
 # room_sun and the switches), so one set of shaders serves every state. Keeping a few more
 # costs little: malioc's loads stayed at 1 to 6 cycles with these.
 KEEP = ["shade", "lace_light", "table", "shell_sun", "room_baked", "shell_ends", "corners", "books",
-        "ssao", "planar", "planar_look", "contact", "sheen", "room_sun", "paint_quiet", "paint_steps",
+        "ssao", "planar", "planar_look", "contact", "sheen", "room_sun", "paint_quiet", "paper_detail",
         "sill_steps", "window_view", "lace_shade", "table_map", "tile", "shell_glass", "light_box", "light_grid"]
 
 

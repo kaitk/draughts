@@ -345,9 +345,10 @@ let ROOM_HEAD = """
     // the sun's contact shadows (render3d::contact_look); sheen: the sun's broad sheen
     // (render3d::sheen_look); room_sun: the sun's saturation on the room, the panelling oak's
     // share of it, its saturation and share of the sheen (render3d::room_sun); paint_quiet:
-    // the quiet paint (surfaces::Look's); paint_steps: unused, kept so the block's layout
-    // and room_fixed's constants stay; sill: the sills' limestone (surfaces::Look's);
-    // sill_steps: unused as paint_steps; window_view: the window view's steps' strengths, 1 as made
+    // the quiet paint (surfaces::Look's); paper_detail: the wallpaper close up under
+    // PHYSICAL_COAT (render3d::paper_detail, paper_close's); sill: the sills' limestone
+    // (surfaces::Look's); sill_steps: unused, kept so the block's layout and room_fixed's
+    // constants stay; window_view: the window view's steps' strengths, 1 as made
     // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
     // its scratches); lace_shade: the lace's room-side fill, x what is left of it where
     // neither the sun nor the sky behind the niche reaches the cloth (1 as made), y how much
@@ -397,7 +398,7 @@ let ROOM_HEAD = """
         vec4 sheen;
         vec4 room_sun;
         vec4 paint_quiet;
-        vec4 paint_steps;
+        vec4 paper_detail;
         vec4 sill;
         vec4 sill_steps[2];
         vec4 window_view;
@@ -1042,6 +1043,66 @@ let ROOM_FRAG = """
     }
     #endif
 
+    #if defined(PHYSICAL_COAT) && defined(ROOM_WALLS) && !defined(MIRROR_CHEAP) && !defined(BOX_MAP_BAKE)
+    // The wallpaper close up (paper_detail, each 0 off: x the print's engraved lines and edge,
+    // y the powder's tone, tarnish and flecks, z the paper's grain, w its relief): the print a
+    // bronze powder on a grained paper. uv is the mask's (a tile 1), m its value there. The grain is the mask's G (render3d::paper_grain), read at the mask's scale for
+    // the paper's mottle and PAPER_FINE times finer for its fibre. All of it fades out as a
+    // texel of the mask falls under a pixel, so from the room's distance the print is as flat
+    // as before.
+    const float PAPER_FINE = 6.0;
+    // The tarnished powder, a share of the print's colour (linear).
+    const vec3 PAPER_TARNISH = vec3(0.8, 0.68, 0.5);
+    // The print's relief and the paper's at relief 1 (metres).
+    const float PRINT_RELIEF = 40e-6;
+    const float GRAIN_RELIEF = 20e-6;
+    void paper_close(vec3 p, vec3 ng, vec2 uv, float m, inout vec3 albedo, inout float rough, inout float metal,
+                     inout float gloss, inout vec3 n) {
+        vec2 tx = dFdx(uv) * 1024.0;
+        vec2 ty = dFdy(uv) * 1024.0;
+        float near = clamp(1.0 - 0.5 * log2(max(max(dot(tx, tx), dot(ty, ty)), 1e-8)), 0.0, 1.0);
+        if (near <= 0.0) return;
+        vec4 d = paper_detail * near;
+        float coarse = texture(paper_mask, uv).g - 0.5;
+        float fine = texture(paper_mask, uv * PAPER_FINE + 0.37).g - 0.5;
+        // The print's outline drawn sharp, the mask's soft edge cut at 0.4 over a pixel, as a
+        // block's print is; inside it the engraving, the mask's own lines deepened about the
+        // print's mean (0.85), so it stays as bright, away from the outline only (by the mask
+        // two mips up), whose soft ramp would read as a dark blurred band. Below the cut the
+        // mask's faint mottle of the ground is kept, and near the print, where the mask's values
+        // are its soft edge, their mean on the ground, 0.03, instead.
+        float cut = max(0.75 * fwidth(m), 0.02);
+        float wide = textureLod(paper_mask, uv, 1.5).r;
+        float tone = mix(0.8, clamp(0.85 + 2.2 * (m - 0.85), 0.15, 1.0), smoothstep(0.45, 0.75, wide));
+        float mottle = mix(min(m, 0.08), 0.03, smoothstep(0.1, 0.3, wide));
+        float ink = mix(m, max(smoothstep(0.4 - cut, 0.4 + cut, m) * tone, mottle), d.x);
+        // The powder: its tone a little uneven where it lies thicker or thinner, a little
+        // tarnished browner in the mottle's low patches, burnished to small pale flecks on the
+        // paper's highest tops.
+        float tarnish = clamp(-2.0 * coarse, 0.0, 1.0) * 0.2 * d.y;
+        float burnish = smoothstep(0.33, 0.45, fine) * d.y;
+        vec3 print = srgb(gold.rgb) * (1.0 + d.y * (0.1 * coarse + 0.2 * fine)) * mix(vec3(1.0), PAPER_TARNISH, tarnish);
+        print = mix(print, min(srgb(gold.rgb) * 1.6, vec3(1.0)), burnish);
+        // The ground's mottle and grain, and a few pale flecks in it.
+        float fleck = smoothstep(0.4, 0.48, fine) * d.z;
+        vec3 ground = srgb(paper.rgb) * (1.0 + d.z * (0.35 * fine + 0.45 * coarse) + 0.5 * fleck);
+        albedo = mix(ground, print, ink);
+        rough = mix(paper.a, gold.a + d.y * (0.15 * tarnish - 0.08 * burnish + clamp(-0.3 * fine, -0.05, 0.15)), ink);
+        metal = ink;
+        gloss = ink;
+        // The relief: the print stands on the paper (by the mask as it is, whose soft edge
+        // turns the normal smoothly), the paper's grain under both.
+        float h = (d.w * PRINT_RELIEF * m + d.z * GRAIN_RELIEF * 2.0 * fine) * shell.w;
+        vec3 dpx = dFdx(p);
+        vec3 dpy = dFdy(p);
+        vec3 r1 = cross(dpy, ng);
+        vec3 r2 = cross(ng, dpx);
+        float det = dot(dpx, r1);
+        vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
+        n = normalize(abs(det) * ng - grad);
+    }
+    #endif
+
     #if !defined(MIRROR_CHEAP) && !defined(BOX_MAP_BAKE)
     void main() {
         vec3 p = v_world;
@@ -1341,6 +1402,7 @@ let ROOM_FRAG = """
             if (tile.w > 0.5) {
                 metal = m;
                 gloss = m;
+                if (dot(abs(paper_detail), vec4(1.0)) > 0.0) paper_close(p, ng, vec2(v_uv.x, -v_uv.y) / tile.x, m, albedo, rough, metal, gloss, n);
             }
         #endif
         } else if (kind < 8.5) {

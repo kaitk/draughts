@@ -92,7 +92,9 @@
 //       [--coat on|off (--light physical: the varnish and the wax as clear coats on the walls and floor,
 //       render3d::physical_coat; on)] [--paper-metal on|off (with the coat: the wallpaper's print a metal over a
 //       matt ground; on)] [--paper-ground R,G,B,ROUGH] [--paper-gold R,G,B,ROUGH (the wallpaper's ground and print,
-//       sRGB; with --paper-metal the print's colour at normal incidence)] [--table-wood R,G,B,ROUGH (the table
+//       sRGB; with --paper-metal the print's colour at normal incidence)] [--paper-detail LINES,POWDER,GRAIN,RELIEF
+//       (with --paper-metal the wallpaper close up, render3d::paper_detail: the print's sharp outline and lines, the powder's
+//       tone and flecks, the paper's grain, the relief, each 1 as made, 0 off; 0,0,0,0 the flat print)] [--table-wood R,G,B,ROUGH (the table
 //       top's wood, sRGB, and its polish's roughness; tables::Table.wood)] [--table-coat X,Y,Z,W (its polish,
 //       tables::Table.coat: y its strength)] [--sun-color height|key (--light physical: the sun's colour by its
 //       height through a clear sky, or the key's at 0.6 of its saturation; height)]
@@ -259,6 +261,8 @@ let PHYSICAL_SHEEN = float4 { 0.0, 0.8, 1.0, 0.0 };
 // (task 122): the ground's albedo bluish, as the warm light and the grade's white take its blue.
 let PHYSICAL_PAPER_GROUND = float4 { 0.226, 0.207, 0.261, 0.66 };
 let PHYSICAL_PAPER_GOLD = float4 { 0.686, 0.612, 0.43, 0.42 };
+// --light physical's wallpaper close up (render3d::paper_detail): each part as made.
+let PHYSICAL_PAPER_DETAIL = float4 { 1.0, 1.0, 1.0, 1.0 };
 
 // The room's light from physical inputs (task 122), as the path tracer takes them: one sun on
 // every surface, the room's (its strength and saturation), through the panes; the bake's
@@ -1549,6 +1553,7 @@ fn main() {
     render3d::paper_metal = render3d::physical_coat && !(flag_value(argv, "--paper-metal") > 0 && argv[flag_value(argv, "--paper-metal")] == "off");
     render3d::paper_ground = four(argv, "--paper-ground", if render3d::paper_metal { PHYSICAL_PAPER_GROUND } else { render3d::paper_ground });
     render3d::paper_gold = four(argv, "--paper-gold", if render3d::paper_metal { PHYSICAL_PAPER_GOLD } else { render3d::paper_gold });
+    render3d::paper_detail = if render3d::paper_metal { four(argv, "--paper-detail", PHYSICAL_PAPER_DETAIL) } else { float4_0 };
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);
     let oak_sun = four(argv, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
@@ -2468,6 +2473,7 @@ fn main() {
                 if !render3d::paper_metal { format(line, " --paper-metal off"); }
                 flag_four(line, "--paper-ground", render3d::paper_ground);
                 flag_four(line, "--paper-gold", render3d::paper_gold);
+                if render3d::paper_metal { flag_four(line, "--paper-detail", render3d::paper_detail); }
                 flag_four(line, "--table-wood", g.table_spec.wood);
                 flag_four(line, "--table-coat", g.table_spec.coat);
             }
