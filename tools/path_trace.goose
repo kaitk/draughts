@@ -4,10 +4,11 @@
 // (the sun at azimuth 0 and 15 degrees up, the window wall turned 12 degrees, the table 25,
 // the chairs on the rug). Lambertian surfaces with room_light's albedos; the sun by a
 // shadow ray at every hit toward a point of its disc (0.53 degrees across, as Cycles'),
-// through the panes and the lace; the sky's radiance for a ray
-// leaving through the glass; up to 10 bounces. The inputs are physical, as in
-// tools/blender/scene.py's Cycles scene: no bounce gain, no caps, two panes passing 0.92
-// each, the lace a sheet passing 0.72 that throws on 0.4 of what it stops, no tree.
+// through the panes and the lace; the sky's radiance for a ray leaving through a window's
+// outer opening, past both casements (their panes, frames and bars); up to 10 bounces. The
+// inputs are physical, as in tools/blender/scene.py's Cycles scene: no bounce gain, no caps,
+// each pane passing 0.92, the lace a sheet passing 0.72 whose thread throws 0.4 of the light
+// it stops on each side, from the light reaching both its sides; no tree.
 // Light is "over pi", the shaders' units: the irradiance on a white surface divided by pi.
 //
 //   goose build -o build/path_trace tools/path_trace.goose          (from the repository's root)
@@ -31,7 +32,7 @@ import .room_scene;
 let M:   f32 = 30.48;        // surfaces::METRE
 let EPS: f32 = 0.004;        // a ray's start off its surface, world units
 let MAX_DEPTH = 10;
-let GLASS_T:   f32 = 0.8464; // two panes of 0.92
+let PANE:      f32 = 0.92;
 let LACE_LETS: f32 = 0.72;   // room_light::LACE_LETS
 
 // The room's placement and light (the tuner's defaults).
@@ -39,7 +40,13 @@ var table_at = float2 { 4.4, 5.8 };
 var axes = float4_0;         // the room's frame in the board's world
 var toward_sun = float3_0;
 var sun_light = float3_0;
-var sky = float3_0;          // the sky's radiance through the glass
+var sky = float3_0;          // the sky's radiance outside
+// The windows' outer openings in the plan's metres, as the Cycles scene's box has them: the
+// window wall's outer face (1 cm out), the three openings' middles, their half width, sill
+// and top.
+var outer_y: f32 = 0.0;
+var opening_x = float3_0;
+var opening = float3_0;
 
 // Every triangle: its shape, its mesh (SHELL, GLASS, PROPS), its material (the mesh's
 // mat), its corners' normals.
@@ -93,6 +100,22 @@ fn to_room(p: float3) -> float3 { float3 { axes.x * p.x + axes.y * p.z, p.y, axe
 fn from_plan(q: float3) -> float3 {
     to_world(float3 { (table_at.x - q.x) * M, surfaces::FLOOR_Y + q.z * M, (table_at.y - q.y) * M })
 }
+fn to_plan(p: float3) -> float3 {
+    let r = to_room(p);
+    return float3 { table_at.x - r.x / M, table_at.y - r.z / M, (r.y - surfaces::FLOOR_Y) / M };
+}
+
+// Whether a ray from o along d that meets nothing leaves through a window's outer opening (to
+// the sky) and not through a gap in the shell (dark).
+fn to_sky(o: float3, d: float3) -> bool {
+    let p = to_plan(o);
+    guard p.y < outer_y else { return true; }
+    let v = to_plan(o + d) - p;
+    guard v.y > 1e-6 else { return false; }
+    let q = p + v * ((outer_y - p.y) / v.y);
+    guard q.z > opening.y && q.z < opening.z else { return false; }
+    return abs(q.x - opening_x.x) < opening.x || abs(q.x - opening_x.y) < opening.x || abs(q.x - opening_x.z) < opening.x;
+}
 
 // ---- the scene
 
@@ -116,9 +139,14 @@ fn build_scene() {
     axes = light.axes;
     toward_sun = light.toward;
     sun_light = light.sun;
-    sky = light.sky * (rooms::AUTUMN.baked.x * GLASS_T);
+    sky = light.sky * rooms::AUTUMN.baked.x;
     room_shell::hang_lace(room_shell::LACE_HANG);
     room_shell::LIBRARY.table = table_at;
+    let wall = room_shell::LIBRARY.walls[room_shell::WINDOW_WALL];
+    outer_y = wall.a.y + wall.thick + 0.01;
+    opening_x = room_light::window_mids();
+    let o = room_shell::window_at(opening_x.x);
+    opening = float3 { 0.5 * room_shell::WINDOW_GLASS.w, o.sill, o.sill + o.height + o.rise };
 
     var verts:   mesh::Vertex[>..] = [];
     var indices: u32[>..]          = [];
@@ -379,23 +407,17 @@ fn smooth_normal(k: i64) -> float3 {
 
 // ---- light
 
-// The share of the sun reaching o through the glass and the lace; 0 where anything opaque
-// is in the way, or where the ray leaves without passing the glass (a gap in the shell).
+// The share of the sun reaching o through the panes and the lace; 0 where anything opaque
+// is in the way, or where the ray leaves through a gap in the shell.
 fn sun_through(o0: float3) -> f32 {
     var o = o0;
     var through: f32 = 1.0;
-    var glass = false;
     let d = sun_ray();
     for step in 24 {
         let t = nearest(o, d);
-        guard hit_tri >= 0 else { return if glass { through } else { 0.0 }; }
+        guard hit_tri >= 0 else { return if to_sky(o, d) { through } else { 0.0 }; }
         guard kind[hit_tri] == GLASS else { return 0.0; }
-        if is_lace(hit_tri) {
-            through *= LACE_LETS;
-        } else if !glass {
-            through *= GLASS_T;   // both panes at the first
-            glass = true;
-        }
+        through *= if is_lace(hit_tri) { LACE_LETS } else { PANE };
         o = o + d * (t + EPS);
     }
     return 0.0;
@@ -420,17 +442,20 @@ fn sun_direct(p: float3, n: float3) -> float3 {
     return sun_light * (c * sun_through(p + n * EPS) / PI);
 }
 
-// The lace's glow at p: of the light from outside (the sun's, through the glass, and the
-// sky's on half its view) it throws on LACE_SCATTER of what it stops.
-fn lace_glow(p: float3, k: i64) -> float3 {
-    let u = hit_u;
-    let v = hit_v;
-    let c = abs(dot(face_normal(k), toward_sun));
-    let from_sun = sun_light * (c * sun_through(p + toward_sun * EPS) / PI);
-    hit_tri = k;
-    hit_u = u;
-    hit_v = v;
-    return (from_sun + sky * 0.5) * ((1.0 - LACE_LETS) * room_light::LACE_SCATTER);
+// A ray meeting the lace passes its open part (LACE_LETS of the sheet) or meets its thread,
+// picked at random by those shares. The thread, as Cycles' lace, throws LACE_SCATTER of the
+// light reaching either side on through it and as much back, so the light off it at p is the
+// same toward both sides. The light reaching it: the sun's, and one traced ray to a side
+// picked at random, counted twice.
+recursive fn off_thread(p: float3, k: i64, depth: i64) -> float3 {
+    let n = face_normal(k);
+    let c = abs(dot(n, toward_sun));
+    var e = sun_light * (c * sun_through(p + toward_sun * EPS) / PI);
+    if depth < MAX_DEPTH {
+        let side = if rnd() < 0.5 { n } else { float3_0 - n };
+        e = e + radiance(p + side * EPS, cosine_dir(side), depth + 1) * 2.0;
+    }
+    return e * room_light::LACE_SCATTER;
 }
 
 fn cosine_dir(n: float3) -> float3 {
@@ -448,19 +473,21 @@ fn cosine_dir(n: float3) -> float3 {
 recursive fn radiance(o0: float3, d: float3, depth: i64) -> float3 {
     var o = o0;
     var through: f32 = 1.0;
-    var add = float3_0;
     for step in 24 {
         let t = nearest(o, d);
         guard hit_tri >= 0 else {
+            if to_sky(o, d) { return sky * through; }
             escapes += 1;
-            return add;
+            return float3_0;
         }
         let k = hit_tri;
         let p = o + d * t;
         if kind[k] == GLASS {
-            guard is_lace(k) else { return add + sky * through; }
-            add = add + lace_glow(p, k) * through;
-            through *= LACE_LETS;
+            if !is_lace(k) {
+                through *= PANE;
+            } else if rnd() >= LACE_LETS {
+                return off_thread(p, k, depth) * through;
+            }
             o = p + d * EPS;
             continue;
         }
@@ -468,17 +495,17 @@ recursive fn radiance(o0: float3, d: float3, depth: i64) -> float3 {
         if dot(n, d) > 0.0 { n = float3_0 - n; }
         let a = albedo(k, p, n);
         let lit = a * sun_direct(p, n);
-        guard depth < MAX_DEPTH else { return add + lit * through; }
+        guard depth < MAX_DEPTH else { return lit * through; }
         // Russian roulette from the third bounce.
         var keep: f32 = 1.0;
         if depth >= 3 {
             keep = clamp(max(a.x, max(a.y, a.z)), 0.05, 0.95);
-            if rnd() > keep { return add + lit * through; }
+            if rnd() > keep { return lit * through; }
         }
         let more = radiance(p + n * EPS, cosine_dir(n), depth + 1);
-        return add + (lit + a * more * (1.0 / keep)) * through;
+        return (lit + a * more * (1.0 / keep)) * through;
     }
-    return add;
+    return float3_0;
 }
 
 // The light on p facing n without the sun's own, over pi: the mean radiance over a
@@ -678,16 +705,17 @@ struct Job { y: i64 }   // -1: no more rows
 fn shade(cam: Camera, d: float3, sums: f32[24]&, counts: f32[24]&) -> float3 {
     var o = cam.eye;
     var through: f32 = 1.0;
-    var add = float3_0;
     for step in 24 {
         let t = nearest(o, d);
-        guard hit_tri >= 0 else { return add; }
+        guard hit_tri >= 0 else { return if to_sky(o, d) { sky * through } else { float3_0 }; }
         let k = hit_tri;
         let p = o + d * t;
         if kind[k] == GLASS {
-            guard is_lace(k) else { return add + sky * through; }
-            add = add + lace_glow(p, k) * through;
-            through *= LACE_LETS;
+            if !is_lace(k) {
+                through *= PANE;
+            } else if rnd() >= LACE_LETS {
+                return off_thread(p, k, 1) * through;
+            }
             o = p + d * EPS;
             continue;
         }
@@ -703,9 +731,9 @@ fn shade(cam: Camera, d: float3, sums: f32[24]&, counts: f32[24]&) -> float3 {
             sums[i] += lum(light);
             counts[i] += 1.0;
         }
-        return add + (if cam.light_only { light } else { a * light }) * through;
+        return (if cam.light_only { light } else { a * light }) * through;
     }
-    return add;
+    return float3_0;
 }
 
 fn picture_row(cam: Camera, y: i64) -> Row {
