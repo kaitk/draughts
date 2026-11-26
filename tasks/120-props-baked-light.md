@@ -227,3 +227,8 @@ task 123, the lace's model task 124. This task's bake is done and stays behind t
 `--props-light`; it becomes the default, with the chairs' hand-made occlusion removed, in
 task 122. The shell's props (doors, shutters, bookcases, curtains) wait in a git stash
 ("task 120: shell props' light, unfinished") until the light under them is right.
+
+The sun and the props move between seasons (the user, 2026-11-26), and the trees will
+differ too. The props' bake depends on where they stand against each other, so it is one
+bake per season's arrangement (about 0.8 s on one core at 32 rays, or shipped per season),
+not one for all; the probes are rebaked with each season's sun as today.
