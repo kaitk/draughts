@@ -2349,6 +2349,14 @@ to be is in tasks 042, 059, 071, 081, and 086.
   states its error against it. Replaces tuning the light by eye against ChatGPT repaints
   (2026-11-21 above), which left the shade 2 to 5 times too bright against the lit faces.
   Rejected: sliders that darken the props by hand under the old light.
+- L2 probes (nine numbers a colour) only for the props, on desktop tiers (2026-11-26, task
+  122): the table and chairs, later the other props, read L2 in `TABLE_FRAG`; the walls and
+  floor keep L1 in `ROOM_FRAG`. Measured against the path tracer, ideal L1 is off by 0.33 to
+  2 by direction on the props' faces, ideal L2 within 0.9 to 1.1; the walls are large flat
+  quads, where L1's error shows less, and `ROOM_FRAG` is near the Mac's register limit. The
+  low-end Android tier takes the props' light as a colour a vertex (task 120), so L2 costs
+  it only at the bake. To revisit when optimizing: the props' 18 texel reads a pixel
+  against L1's 6, and whether the walls need L2 after all. Rejected for now: L2 everywhere.
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
 
