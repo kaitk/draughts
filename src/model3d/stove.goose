@@ -206,7 +206,7 @@ fn stove_cap(verts: mesh::Vertex[>..]&, indices: u32[>..]&, s: Shell, d: f32, h:
 
 // A builder on the plan's point p, s along `along` and z out along `out` (plan directions).
 fn plan_builder(s: Shell, p: float2, along: float2, out: float2) -> surfaces::Builder {
-    return surfaces::Builder { room_of(s, p), float2 { -along.x, -along.y }, float2 { -out.x, -out.y }, 0.0, 1.0 };
+    return surfaces::Builder { room_of(s, p), float2 { -along.x, -along.y }, float2 { -out.x, -out.y } };
 }
 
 // A palmette plate of the crest standing on the outline's face at p (its middle, the

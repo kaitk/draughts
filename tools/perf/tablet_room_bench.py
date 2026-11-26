@@ -49,7 +49,6 @@ VARIANTS = {
     "no-outside":  "--outside off",
     "no-books":    "--books off",
     "no-pattern":  "--window off",
-    "no-shell":    "--shell off",
     "no-room":     "--room-surfaces off",
     "no-box":      "--box off",
     "aa-off":      "--aa off",

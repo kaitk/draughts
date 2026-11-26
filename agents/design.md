@@ -122,9 +122,8 @@ pieces; the design boards still set the layout, glass, and controls.
   plinth and the door).
 - The library's whole room in the light tuner (`model3d::room_shell`, task 107's demo):
   `--room-surfaces on` (O) shows the shell (walls, wainscot, three box windows, two doors,
-  cornice, ceiling), `--shell off` (S) the panelled wall alone as before. `--view
-  room|window|hall|stove` (V cycles them after the board's orbit) are a person's eyes in
-  the plan; `--plan-eye X,Y,H --plan-at X,Y,H` a camera in plan metres (x along the window
+  cornice, ceiling). `--view room|window|hall|stove` (V cycles them after the board's
+  orbit) are a person's eyes in the plan; `--plan-eye X,Y,H --plan-at X,Y,H` a camera in plan metres (x along the window
   wall from the stove's end, y from the hall wall, H up from the floor), `--fov DEG`. With
   the shell the room's light comes through its own windows (`shaders::LIGHT_FN`'s
   `shell_open`), not `--wall`/`--panes`, which still light the board and table; behind
@@ -398,7 +397,7 @@ Swept and lathed profiles shade as curves: a profile point's normal is its two
 segments' mean, and only a turn sharper than a crease angle (37°, `surfaces::CREASE`,
 `surfaces::smooth_normal`) keeps each segment's own. The shared routines do it:
 `shell_mesh::sweep` (and so `sweep_oak`, the caps, plinths, cornices and the bookcases'
-mouldings), `surfaces::strip` and `surfaces::panel_ring` (the wainscot's, doors' and
+mouldings), `surfaces::panel_ring` (the wainscot's, doors' and
 shutters' panels), `mesh::turned` (a doubled point is a crease); `mesh::sweep` takes each
 point's normal from its `Profile`, the curtains' `tube` and `ball` theirs from the
 centre, and the books' spines bend theirs (`books::spine_at`). Left flat, as they are

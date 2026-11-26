@@ -110,18 +110,18 @@ fn wall_builder(s: Shell, w: Wall) -> surfaces::Builder {
     let o = room_of(s, w.a);
     let d = normalize(room_of(s, w.b) - o);
     let n = normalize(room_of(s, w.a + inward(w)) - o);
-    return surfaces::Builder { o, d, n, 0.0, 1.0 };
+    return surfaces::Builder { o, d, n };
 }
 
 // A builder moved along its wall by `s` and out of it by `z` (world units).
 fn moved(b: surfaces::Builder, s: f32, z: f32) -> surfaces::Builder {
-    return surfaces::Builder { b.o + b.d * s + b.n * z, b.d, b.n, b.dy, b.deep };
+    return surfaces::Builder { b.o + b.d * s + b.n * z, b.d, b.n };
 }
 
 // A builder of the plane square to b's wall at its s 0, running into the wall, its face
 // toward +s of b (side 1) or -s (side -1).
 fn reveal_builder(b: surfaces::Builder, side: f32) -> surfaces::Builder {
-    return surfaces::Builder { b.o, b.n * -1.0, b.d * side, 0.0, 1.0 };
+    return surfaces::Builder { b.o, b.n * -1.0, b.d * side };
 }
 
 // A quad of corners in metres (s, y, z of b), its uv the corners' s and y in world units.
@@ -157,7 +157,7 @@ fn box_m(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, x0
 // swept along b's wall from s0 to s1 (world units), each end cut square (k 0) or mitred
 // round a corner: an inside corner shortens a point by its distance out (k0 1 at the
 // start, k1 -1 at the end), an outside one lengthens it (k0 -1, k1 1). Oak takes its place
-// in the wall's field as surfaces::strip does; plaster and paint keep s and the profile's
+// in the wall's field (surfaces::piece_map); plaster and paint keep s and the profile's
 // length in uv. A point's normal is its two segments' mean where they turn less than
 // surfaces::CREASE, so a cove, an ovolo or a bead shades as a curve; at a sharper turn (a
 // fillet, a step) each segment keeps its own.
@@ -659,7 +659,7 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     let a = ajar * PI / 180.0;
     let d = along * cos(a) + out * sin(a);
     let n = out * cos(a) - along * sin(a);
-    let l = surfaces::Builder { pivot - d * (hinge.x * k) - n * (hinge.y * k), d, n, 0.0, 1.0 };
+    let l = surfaces::Builder { pivot - d * (hinge.x * k) - n * (hinge.y * k), d, n };
     let leaf = SHUTTER_LEAF;
     let j = 0.5 * SHUTTER_JOINT;
     // The front edges, the front leaf's, the joint, the back leaf's; the back leaf's back,
@@ -674,7 +674,7 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     quad_m(verts, indices, l, [float3 { leaf, y0, 0.0 }, float3 { leaf, y0, SHUTTER_BACK - j }, float3 { leaf, y1, SHUTTER_BACK - j },
                                float3 { leaf, y1, 0.0 }], front, float3 { 1.0, 0.0, 0.0 });
     if ajar > 0.0 {
-        let back = surfaces::Builder { l.o, l.d, l.n * -1.0, 0.0, 1.0 };
+        let back = surfaces::Builder { l.o, l.d, l.n * -1.0 };
         quad_m(verts, indices, back, [float3 { 0.0, y0, 0.0 }, float3 { leaf, y0, 0.0 }, float3 { leaf, y1, 0.0 },
                                       float3 { 0.0, y1, 0.0 }], paint, float3 { 0.0, 0.0, 1.0 }, 0.8);
         quad_m(verts, indices, l, [float3 { 0.0, y1, 0.0 }, float3 { leaf, y1, 0.0 }, float3 { leaf, y1, stack }, float3 { 0.0, y1, stack }],
