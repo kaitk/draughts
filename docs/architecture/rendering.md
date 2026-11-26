@@ -1119,6 +1119,21 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   stub. With gravity or shedding on, the tree is grown whole, shed, bent, and only then
   culled to what the windows show or cast; the culled tree is cut from the whole one. All
   three on, the whole tree grows in about 15 ms on the CPU instead of 7.
+- **The maple's leaves in plates** (the light tuner's `--tree-plates`, `--tree-tilt`,
+  `--tree-bend` and `--tree-leaf-mesh`, each off by default and in the app;
+  `src/model3d/tree_leaves.goose`; `tools/tree_dump` takes `--plates`, `--tilt`, `--bend`).
+  Each twig's leaves grow only on its current shoots: the tip's pair and one a quarter turn
+  below, and short shoots of one pair along it; the lower leaf of a pair is larger on the
+  longer stalk, and the stalks spread the blades into one layer, optionally nudged apart in
+  plan. Each blade's tilt from level is drawn from measured Norway maple tilts for the
+  season (summer to October) and its height in the crown, with a little more sag inside and
+  low. Each blade is flat, cupped up, or one of four sagging shapes, by an amount and a
+  twist packed into its card; the shapes are bent once when the tree is grown and stored
+  before the cards in their storage buffer. The high tier draws each leaf as a 21-vertex
+  fan hugging its outline, the standard tier as the card in four rows bent along its
+  midrib, phones flat cards; the ngfx build draws flat cards. With gravity on, blades keep
+  their way while their twig bends. All on, the whole tree grows in about 34 ms on the CPU,
+  and the fan costs about 0.04 ms a frame on a desktop GPU.
 - **The maple in the wind** (the light tuner's `--tree-wind off|on`, off by default and in
   the app; `shaders::WIND_FN`, `TREE_WIND`, `TREE_FLUTTER`): the wind that moves the
   room's shadow of the tree (`WIND_FN`, which `LIGHT_FN` and the tree's vertex shaders

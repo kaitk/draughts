@@ -33,9 +33,10 @@ branch), and `build/notes/tree/photos/tartu-maple-1.jpg` (leaf plates from below
       takes over, turned 30-50°; 1-3 elbows a limb.
 - [ ] A fork's length scales with the room to the envelope, so tips reach the shell.
 - [x] Thin wood deep in the crown dies back, some of it as stubs.
-- [ ] Leaves only on each tip's current shoot: the tip pair and one pair a quarter turn
-      below, stalks longer for leaves pointing down, blades level and facing up within
-      about 15°.
+- [x] Leaves only on each tip's current shoot: the tip pair and one pair a quarter turn
+      below, stalks longer for leaves pointing down; the blades' tilt drawn from the
+      measured Norway maple tilts by season and height (the user's answer of 2026-11-26 in
+      place of "level within about 15°"), some flat, some cupped, some sagging.
 - [ ] Each step behind a tuner switch, checked first as a CPU silhouette from
       `tools/tree_dump` against the photos, then on the Mac and the tablet.
 - [ ] Growth stays under 100 ms on the Mac (now 6.5 ms) and the segment and leaf counts
@@ -92,6 +93,68 @@ Against the photos, what still looks wrong:
 - Shedding at 0.45 clears the inner thin wood and leaves stubs on the limbs; at 0.6 the
   crown thins too much. It removes few leaves, as the shaded twigs are already leafless
   inner ones.
+- Not yet seen on the Mac or the tablet.
+
+## Step two: the leaves (2026-11-26)
+
+Ported from the leaf study (`build/notes/tree/leaves/`) into `trees::add_plates`,
+`trees::leaf_shapes` (`src/model3d/tree_leaves.goose`) and `shaders::TREE_LEAF_VERT`, each
+part off by default as `trees::Growth`, set by the light tuner and `tools/tree_dump` alike:
+
+| Part | Tuner switch | `tree_dump` flag |
+|---|---|---|
+| Plates: a twig's leaves only on its current shoots, the tip's pair and one a quarter turn below, and SPURS short shoots of one pair along its outer part; the lower leaf of a pair larger (up to 1.22) on the longer stalk (up to 1.45), the outer of a side pair's stalk 1.15 (Weisse 1895, softened as the study); blades spread level, nudged apart in plan by NUDGE (the study's mosaic) | `--tree-plates ON,SPURS,NUDGE` (0,2,0) | `--plates` |
+| Tilt: each blade's tilt from level drawn from Chianucci et al. 2018's Norway maple counts (summer, 13 September, 11 October), blended by SEASON (0 summer, 1 mid-September, 2 October) and the height in the crown, plus SAG degrees inside and low; 2, October, gives today's look (median 42°, as today's rule's) | `--tree-tilt ON,SEASON,SAG` (0,2,8) | `--tilt` |
+| Bend: each blade flat, cupped up or one of four sagging shapes by the study's chances times SHARE, its amount 0.3-1 and twist (TWIST degrees at most) packed into the card's `face.w`; the six shapes bent at startup as triangle lists before the cards in their buffer | `--tree-bend SHARE,TWIST` (0,25) | `--bend` |
+| The leaves' mesh: by the tier with the bend on (the high tier, HDR, a 21-vertex fan hugging each atlas leaf's outline, 78 drawn; the standard tier the card in four rows bent along its midrib, 24 drawn), else flat cards; or one for all | `--tree-leaf-mesh tier\|card\|rows\|fan` | |
+
+With plates on and gravity, the blades keep their way while their twig bends
+(`bend_by_weight`'s `turn_blades`). A step-one bug is fixed on the way: `add_cards`
+shadowed its `first` with a random angle, so every card's segment was one of the trunk's
+first: the leaves didn't move with their twig under gravity and weren't shed with it.
+Step one's counts with shedding were therefore too high: old-leader, elbows 1-2, gravity 1,
+shedding 0.45,0.5 now has 21,102 leaves whole (not 30,453), 13,960 culled (not 17,704).
+
+The checks (`test/model3d/tree_leaves.goose`), whole tree, no reshaping: 33,154 leaves;
+96 % of the pairs standing one over the other have the larger leaf lower, 91 % on the
+longer stalk; the medians of the tilt at the top and low in the crown 15° and 23° in
+summer, 22° and 24° in mid-September, 42° and 42° in October (Raabe et al.: 15, 22-23;
+22, 24-26; 42); with the bend at 1, 55 % flat, 16 % cupped, 29 % sagging; the shapes' 7,776
+float4s with unit normals, their counts the shader's.
+
+Counts, old-leader, elbows 1-2, gravity 1, shedding 0.45,0.5, plates 1,2,1, tilt 1,2,8, bend
+1,25: 20,428 leaves whole, 13,424 culled, within `MAX_CARDS`.
+
+Times on the Windows PC (tools/tree_dump, -O2), the whole tree with step one's three on:
+14.4 ms with today's leaves; plates 16.8, nudged 30.6, tilted 34.0, bent 34.2. The nudge
+(16 steps, every pair in a twig's plate) costs 14 ms of it; NUDGE 0 keeps 20 ms. The shapes
+take 12 ms, once a growth of the geometry (`tree_geometry`). Under the 100 ms budget, as
+the Mac grows about as fast.
+
+Frame cost on the PC (RTX 4090, the tuner at 1600 × 1000, HDR, `--fps-wait`, the
+table-window view moved to the window): 0.83 ms a frame with today's leaves and with the
+plates; the fan 0.865 (+0.035), the rows 0.84 (+0.01); the flat fan as the bent. Not yet
+measured on the tablet, where the rows must be timed before they are kept.
+
+The ngfx build compiles the new leaf shader (the cards after the shapes, the packed
+leaf) but draws flat cards only: the bent variants have no ngfx pipelines yet.
+
+Pictures (local, `build/notes/tree/leaves/build/`): `placement.jpg` (today's rule, plates,
+nudged, tilted in October: a patch of crown from below, the side and against the light, and
+the whole tree, beside the photo crops), `bends.jpg` (flat and bent in October, bent in
+September and summer), `app-compare.jpg` (the light tuner near the middle window: today,
+plates tilted, bent, summer), `app-zoom.png` (flat against bent, close). `src/dump_view.py`
+draws a dump's leaves as the shader does, from its `leaf-shapes.bin`.
+
+Against the photos, what still looks wrong:
+
+- From the room the bends hardly show: the leaves are a few pixels, and the bend shows as
+  light changing across a blade rather than a new outline. Close up, as the study said.
+- The plates read as rosettes from below and thin layers from the side, as the photos'
+  plates do, but the crown from the room looks a little sparser in clumps; SPURS 3 fills it.
+- Summer's level blades seen from below the crown turn to slivers at the window's angle;
+  right for summer, but the tint stays autumn's: the season sets the tilt alone.
+- Shed twigs take their leaves now, so shedding at 0.45 thins the crown by a third.
 - Not yet seen on the Mac or the tablet.
 
 ## Round one and the user's answers (2026-11-26)

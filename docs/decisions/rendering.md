@@ -2302,6 +2302,33 @@ to be is in tasks 042, 059, 071, 081, and 086.
   rule (they make a round bush; this replaces the task's path through them), space
   colonisation (a vase of rising limbs), and Palubicki's growth whole (natural limbs only
   with gravity each year, coarse twigs, about 60 ms at low detail).
+- The maple's leaves sit in plates on the shoot tips, tilted by season and height, and
+  bent, behind the light tuner's `--tree-plates`, `--tree-tilt`, `--tree-bend` and
+  `--tree-leaf-mesh`, each off by default (2026-11-26, task 117's step two;
+  `trees::add_plates`, `trees::leaf_shapes`, `shaders::TREE_LEAF_VERT`,
+  `build/notes/tree/leaves/`). Placement replaces the habit's four pairs along each twig:
+  only each twig's current shoots carry leaves, the tip's two decussate pairs and short
+  shoots of one pair, the lower leaf of a pair larger on the longer stalk (Weisse 1895),
+  the blades spread level, optionally nudged apart in plan (the study's mosaic, 14 ms of
+  growth). Tilt: drawn per blade from Chianucci et al. 2018's measured Norway maple tilts
+  (Raabe et al. 2015) by season and height, the top flattest in summer and steeper in
+  autumn, with a small tunable sag inside and low in the crown (weakly supported: shade
+  leaves are thinner and larger; nothing measures it in Norway maple); October, the
+  default, matches today's tilts. The season will follow the tree's season once all
+  seasons are shown. Bend: six shapes (flat, cupped up, midrib drooping, edges down, lobe
+  tips down, sagging) bent at startup by arcs along the palmate leaf's rays, so the outline
+  doesn't stretch; each leaf a shape, an amount and a twist packed into its card's `face.w`
+  (the card stays four vec4s), most flat, a few cupped in the sun, more sagging in the
+  shade, on big blades and in autumn, so no uniform droop. The shapes are triangle lists
+  put before the cards in their storage buffer, drawn without an index buffer, so neither
+  renderer needs a new binding. A define per tier: flat cards on phones (which draw the
+  tree's card), the card in four rows bent along its midrib on the standard tier (24
+  vertices drawn), a 21-vertex fan hugging each leaf's outline on the high tier (78 drawn;
+  45 % of it blade against the card's 27 %). Rejected: an index buffer per mesh (a second
+  path in each renderer for no gain at these counts), a uniform droop by position, the
+  study's per-lobe noise per leaf (the amount and twist give enough variety). Fixed on the
+  way: `add_cards` gave every card a trunk segment, so leaves neither moved with their twig
+  under gravity nor fell with shed wood.
 - Each limb's bark tile is shifted round and along by dice of its own (2026-11-24, task
   107; `trees::tube`), so neighbouring limbs' tiles don't line up. A stand-in until a
   real fix of the tile's repeat (stochastic or two-scale sampling, and the bare maple's
