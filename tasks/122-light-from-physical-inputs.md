@@ -1,6 +1,6 @@
 # 122: The room's light rebuilt from physical inputs
 
-Status: todo
+Status: in-progress
 
 Task 120's references (a CPU path tracer and a Blender Cycles render, which agree within
 0.8 to 1.6) show the library's shade 2 to 5 times too bright against its lit faces and the
@@ -39,6 +39,56 @@ view's first run was still warming (22.7 ms), so it is from a second batch of tw
 | Room | 13.1 (±0.0) | 35.5 (±0.1) |
 | Menu | 12.7 (±0.0) | 35.0 (±0.7) |
 | Table | 12.4 (±0.0) | 33.6 (±2.1) |
+
+## The first step: `--light physical` (2026-11-26)
+
+Behind the light tuner's `--light today|physical` (default today, its shots byte-identical
+to before): the bake at gain 1 with no grey balance and the panes' real transmission
+(`room_light::glazing` 0.75 in place of 0.78: two panes of 0.92 for the 0.88 it was made
+with); the fills blind to direction gone (`room_shade`, the kept harmonics, the shade's
+floor of the key: all uniforms, so no shader and no pipeline changed); task 120's light per
+pixel on, the chairs' hand-made occlusion and the table's two shade terms off; one sun on
+every surface (the room's, through the panes, at its 0.6 saturation; the board and props
+had 1/4.4 of it, the oak half, the table 0.19 away from the board) and one exposure, 3.08
+in place of the board's 1.45 and the room's 2.61, picked so the room's sunlit floor keeps
+today's direct sun (its patch 130/96/73 against 139/101/76; its colour's ratios within 2%,
+so the white balance's gains stay 1). The cap on thrown light does nothing at gain 1.
+
+Against `build/path_trace points` (light over pi, luminance, no tree in either; the
+tuner's columns are TABLE_FRAG's formula on the CPU from its dumped atlas, scratch in
+`build/review122/`), each column one more removal:
+
+| Ratio | Today | Bake physical | No fills | Props light | Reference |
+|---|---|---|---|---|---|
+| Rear pad / seat top, chair 0 | 0.77 | 0.86 | 0.80 | 0.42 | 0.70 |
+| Rear pad / seat top, chair 1 | 0.58 | 0.52 | 0.25 | 0.16 | 0.26 |
+| Column's room side / window side | 1.53 | 0.62 | 0.42 | 0.44 | 0.43 |
+| Top's underside / column's window side | 0.20 | 0.14 | 0.03 | 0.05 | 0.16 |
+| Apron's underside / seat top, chair 0 | 0.30 | 0.26 | 0.06 | 0.02 | 0.09 |
+| Apron's underside / seat top, chair 1 | 0.29 | 0.26 | 0.05 | 0.08 | 0.06 |
+| Front pad / rear pad, chair 0 | 0.97 | 0.88 | 0.81 | 2.01 | 1.67 |
+| Front pad / rear pad, chair 1 | 1.64 | 2.08 | 4.78 | 7.01 | 5.22 |
+| Points over the reference, geometric mean | 5.18 | 3.73 | 1.34 | 1.27 | 1 |
+| Their range | 1.03–18.7 | 1.07–12.7 | 0.23–3.37 | 0.40–3.60 | |
+
+Three bounces in place of one move the physical points about 3%. Left after the step
+(props light over the reference): faces turned up too bright, the seat tops 1.6 to 2.1,
+the foot's top 2.1, the front rolls 1.3 and 2.2; faces turned down under the table too
+dark, the top's underside 0.41, the edge's underside toward the window 0.40; the apron's
+underside 0.42 and 2.2, the front pad near its rim 3.6 and 1.2; the pads' middles and the
+column within 1.0 to 1.4. Shots and the per-point table: `build/notes/light-physical/`.
+
+Terms this step left in place: the lace's own fill (ROOM_FRAG's lace, the harmonics and
+the bounce at full, task 124), the board's and pieces' ambient (the look's harmonics,
+their only indirect light), the table's sun wrapped 0.2 past its terminator, the polish's
+0.2 of the light as its environment, the view out's own exposure.
+
+The tonemap isn't one camera either: the room's surfaces take a toe by luminance (under
+0.04 it becomes 12.5 y²), the props a toe on their least channel. With the fills gone the
+room's shade falls into its toe: in the shots the hall wall's paper is 3.6 levels against
+the plain tracer's 13.9, the rug in shade 4.3 against 13.1, while the props, under the
+other toe, land on the plain tracer (the low view's rear back pad 20.6 against 20.1, the
+close view's column 6.5 against 7.8).
 
 ## Acceptance criteria
 
