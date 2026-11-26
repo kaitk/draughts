@@ -849,8 +849,8 @@ struct TableBlock {
 // lightness and z its figure's contrast, each a share of the map's, w how far the figure is
 // drawn out along the grain. base_look: x the grain's slant round the column (degrees),
 // y the rings the cut crosses, z its place across the map, w the colour's strength.
-// The defaults are the chairs' wood, darker and less red than the map.
-var base_wood = float4 { 1.0, 0.6, 0.6, 3.0 };
+// The defaults match the chairs' legs (their wood, darker and less red than the map).
+var base_wood = float4 { 1.0, 0.57, 0.6, 3.0 };
 var base_look = float4 { 0.0, 0.0, 0.5, 0.75 };
 // Whether the table stands in the room with its light baked: drawn with TABLE_ROOM's
 // pipeline (g.table_room) and the probes round it.

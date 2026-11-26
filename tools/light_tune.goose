@@ -51,7 +51,7 @@
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
 //       [--base-wood today|own (the table's base: the map as the top's, or its own wood, the grain along the
-//       column and the legs, as the chairs'; own)] [--base-light K (its lightness, a share of the map's; 0.6)]
+//       column and the legs, as the chairs'; own)] [--base-light K (its lightness, a share of the map's; 0.57)]
 //       [--base-figure K (its figure's contrast, a share of the map's; 0.6)] [--base-streaks K (how far the figure
 //       is drawn out along the grain; 3)] [--base-slant DEG (the grain's slant round the column; 0)]
 //       [--base-rings K (the rings the column's cut crosses, 0 none; 0)] [--base-place U (where across the map it
