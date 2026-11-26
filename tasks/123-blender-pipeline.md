@@ -20,3 +20,11 @@ from Blender's ecosystem, for shape only, with our own procedural materials (tas
 - [ ] Import: a mesh from Blender (a glTF or OBJ) into `model3d` as fixed data, shape and
       UVs only, assigned one of our materials; one prop brought in as the example
 - [ ] `tools/blender/README.md` says how to run each direction
+
+## Next renders (the user, 2026-11-26)
+
+The first materials pass (60bab502, `build/notes/cycles-materials/`) gave the table its real
+maps and every surface the app's gloss. Still flat or simple: the lace (a sheet with holes)
+and the walls' paper and plaster. The next Cycles batch, rendered together and not on its
+own, adds the views from the stove and from the room's other side (`stove`, `hall`,
+`corner`), beside close and low.
