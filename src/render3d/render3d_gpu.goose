@@ -1245,8 +1245,10 @@ fn make_tree(own: Own&, g: render3d::Gpu&) {
     };
     let solid = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true };
     let flat = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED };
-    t.tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TONE_FN,
-                                                 shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG), solid);
+    // The bark's tiers (shaders::TREE_BARK_STANDARD): the 8-bit pipeline the standard tier's,
+    // the HDR one the high tier's.
+    t.tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::TREE_BARK_STANDARD, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                                 shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG), solid);
     t.ribbon = gfx::pipeline(ribbon_vs, embed_shader("frag", shaders::TREE_RIBBON, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
                                                      shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG), flat);
     t.hdr_tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
@@ -1281,7 +1283,9 @@ fn draw_tree(own: Own&, g: render3d::Gpu&) {
     let t = g.tree;
     let tb = render3d::tree_block(g, own.samples);
     gfx::bind(if g.hdr { t.hdr_tube } else { t.tube });
-    gfx::bind_texture(gfx::FRAGMENT, 0, t.bark, g.aniso);
+    let bark_height, bark_cavity = render3d::tree_bark_textures(g);
+    gfx::bind_texture(gfx::FRAGMENT, 0, bark_height, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 1, bark_cavity, g.aniso);
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
     gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
     gfx::uniforms(gfx::VERTEX, 1, tb);
@@ -1352,7 +1356,9 @@ fn tree_card_pass(own: Own&, g: render3d::Gpu&, f: render3d::Frame, b: render3d:
     pass.resolve[0] = t.card;
     gfx::begin_pass(pass);
     gfx::bind(t.card_tube);
-    gfx::bind_texture(gfx::FRAGMENT, 0, t.bark, g.aniso);
+    let bark_height, bark_cavity = render3d::tree_bark_textures(g);
+    gfx::bind_texture(gfx::FRAGMENT, 0, bark_height, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 1, bark_cavity, g.aniso);
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     gfx::uniforms(gfx::VERTEX, 1, b);

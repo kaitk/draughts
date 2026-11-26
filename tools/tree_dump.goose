@@ -75,6 +75,24 @@ fn numbers(args: u8[:][>..]&, name: const u8[:], v: float4) -> float4 {
     return float4 { out[0], out[1], out[2], out[3] };
 }
 
+fn write_wood(path: const u8[:], verts: trees::WoodVertex[>..]&, indices: u32[>..]&, tube_indices: i64) {
+    var out: u8[>..] = [];
+    put(out, verts.len as f32);
+    for &x in verts {
+        put3(out, x.pos); put3(out, x.normal); put3(out, x.along);
+        put(out, x.uv.x); put(out, x.uv.y);
+        put(out, x.light.x); put(out, x.light.y); put(out, x.light.z); put(out, x.light.w);
+    }
+    put(out, tube_indices as f32);
+    for i in tube_indices { put(out, indices[i] as f32); }
+    guard write_file(path, out[..]) else { abort("could not write the wood"); }
+}
+
+fn has_flag(args: u8[:][>..]&, name: const u8[:]) -> bool {
+    for a in args { if a == name { return true; } }
+    return false;
+}
+
 fn line3(out: u8[>..]&, name: const u8[:], v: float3) { format(out, name, " ", v.x, " ", v.y, " ", v.z, "\n"); }
 
 fn main() {
@@ -203,4 +221,51 @@ fn main() {
         mh /= 2;
     }
     guard write_file(str(dir, "/atlas-coverage.txt")[..], cover[..]) else { abort("could not write the coverage"); }
+
+    // The wood's mesh from the default tree (trees::wood_mesh), plain and shaped as the flags
+    // say (--junctions, --roots, --tier 0 high, 1 standard, 2 phone; task 117): wood.bin holds
+    // the vertex count, then each WoodVertex's 15 floats, the tube index count and the indices
+    // (as f32), all little-endian f32.
+    {
+        var shape = trees::WoodShape { .. };
+        shape.junctions = has_flag(args, "--junctions");
+        shape.roots = has_flag(args, "--roots");
+        shape.tier = numbers(args, "--tier", float4 { 0.0, 0.0, 0.0, 0.0 }).x as i64;
+        var wd = rooms::whole_tree(r, s, rooms::WHOLE_OLD_LEADER, 0);
+        wd.growth = growth;
+        var all = trees::Tree { .. };
+        trees::grow_whole(all, wd, v, sight, false);
+        var density: f32[>..] = [];
+        let grid = trees::crown_grid(all, density);
+        var c = trees::Tree { .. };
+        if trees::reshaped(wd.growth) { trees::cull_copy(all, c, wd, v, sight); } else { trees::grow_whole(c, wd, v, sight, true); }
+        var verts:   trees::WoodVertex[>..] = [];
+        var indices: u32[>..]               = [];
+        t0 = clock();
+        let plain = trees::wood_mesh(c, density, grid, trees::toward_sun(v), verts, indices);
+        let plain_ms = (clock() - t0) * 1000.0;
+        print("wood, plain: ", plain.tube_indices / 3, " tube triangles, ", plain.ribbon_indices / 3, " ribbon triangles, ", plain.vertices,
+              " vertices, ", plain_ms, " ms");
+        write_wood(str(dir, "/wood-plain.bin")[..], verts, indices, plain.tube_indices);
+        t0 = clock();
+        let m = trees::wood_mesh(c, density, grid, trees::toward_sun(v), verts, indices, shape);
+        let shaped_ms = (clock() - t0) * 1000.0;
+        print("wood, shaped: ", m.tube_indices / 3, " tube triangles, ", m.ribbon_indices / 3, " ribbon triangles, ", m.vertices, " vertices, ",
+              shaped_ms, " ms");
+        write_wood(str(dir, "/wood.bin")[..], verts, indices, m.tube_indices);
+    }
+
+    // The bark's age layers (trees::bark_layers, task 117), level 0 of each texture.
+    var heights:  u8[>..] = [];
+    var cavities: u8[>..] = [];
+    var best_ms:  f64     = 1e9;
+    for k in 5 {
+        t0 = clock();
+        trees::bark_layers(heights, cavities);
+        best_ms = min(best_ms, (clock() - t0) * 1000.0);
+    }
+    print("bark layers: ", trees::BARK_W, " x ", trees::BARK_H, ", ", trees::BARK_LAYERS, " ages, ", best_ms, " ms (best of 5)");
+    let bn = trees::BARK_W * trees::BARK_H * 4;
+    guard write_file(str(dir, "/bark-height.rgba")[..], heights[0..bn]) && write_file(str(dir, "/bark-cavity.rgba")[..], cavities[0..bn])
+        else { abort("could not write the bark"); }
 }

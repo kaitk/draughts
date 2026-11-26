@@ -14,6 +14,8 @@ import .trees;
 import .tree_whole;
 import .tree_skeleton;
 import .tree_mesh;
+import .tree_bark;
+import .tree_junctions;
 import .leaf_atlas;
 import .shell;
 import .shell_mesh;
