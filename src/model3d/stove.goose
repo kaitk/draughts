@@ -4,7 +4,7 @@
 // torus; a lower body 3 cm proud with the warming niche's brass door on face A (toward the
 // room's length); a band of rosette tiles under a cyma at the waist; the upper body, six rows
 // of 22 × 24 cm tiles; a frieze of palmette tiles; the cornice; and the crown, a part of its
-// own (stove_crown): A's crest of three palmettes, or B's flat top with two ball finials.
+// own: A's crest of three palmettes.
 // The tiles are not geometry: each face carries uv in metres along it and up, its tiles
 // centred, and ROOM_FRAG's glaze (MAT_TILE) draws the joints, each tile's tilt and roll, and
 // the relief from room_shell::stove_relief's atlas. Built once with the shell.
@@ -44,12 +44,8 @@ let GLAZE_CREST = 5;
 let GLAZE_BARE = 6;
 fn glaze(code: i64) -> f32 { surfaces::MAT_TILE + (code + 0.5) / 8.0 }
 
-// The crown: A's pierced palmette crest (as made; not yet pierced) or B's flat top with two
-// ball finials on the cut's corners (the light tuner's --stove-crown). stove_on false leaves
-// the stove out (the tuner's --stove off); the wainscot stops for it either way.
-let CROWN_CREST = 0;
-let CROWN_FLAT = 1;
-var stove_crown = CROWN_CREST;
+// stove_on false leaves the stove out (the tuner's --stove off); the wainscot stops for it
+// either way.
 var stove_on = true;
 
 // The profiles (metres out of the upper body's face, up from the floor), from
@@ -264,24 +260,14 @@ fn edge_normal(o: float2[17], i: i64) -> float2 {
 
 // The crown over the cornice: the band (d 0.02, to 3.14 m) with its cap, then A's three
 // palmette plates (the largest over the cut, 0.30 by 0.30 m, smaller ones over the side
-// faces' middles), or B's top at 3.07 m with two turned ball finials on the cut's corners.
+// faces' middles; not yet pierced).
 fn stove_crown_on(verts: mesh::Vertex[>..]&, indices: u32[>..]&, s: Shell) {
-    let top:  f32       = if stove_crown == CROWN_FLAT { 3.07 } else { 3.14 };
+    let top:  f32       = 3.14;
     let band: float2[2] = [float2 { 0.02, 3.04 }, float2 { 0.02, top }];
     stove_moulding(verts, indices, s, band[..]);
     stove_cap(verts, indices, s, 0.02, top);
     let side = STOVE_SIDE;
     let yc = STOVE_SIDE - STOVE_CUT;
-    if stove_crown == CROWN_FLAT {
-        let prof: float2[8] = [float2 { 0.0, 0.0 }, float2 { 0.03, 0.0 }, float2 { 0.02, 0.03 }, float2 { 0.012, 0.035 },
-                               float2 { 0.012, 0.055 }, float2 { 0.035, 0.07 }, float2 { 0.05, 0.1 }, float2 { 0.0, 0.15 }];
-        let corners: float2[2] = [float2 { side - 0.03, yc }, float2 { yc, side - 0.03 }];
-        for c in corners {
-            let b = plan_builder(s, c, float2 { 0.0, 1.0 }, float2 { 1.0, 0.0 });
-            lathe(verts, indices, b, float3 { 0.0, top, 0.0 }, prof[..], 12, glaze(GLAZE_BARE));
-        }
-        return;
-    }
     let mid_a = 0.5 * (STOVE_GAP + yc);
     crest_plate(verts, indices, s, float2 { 0.5 * (side + yc), 0.5 * (side + yc) }, float2 { -0.707107, 0.707107 },
                 float2 { 0.707107, 0.707107 }, top, 0.30, 0.30);

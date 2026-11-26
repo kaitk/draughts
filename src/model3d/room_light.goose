@@ -11,9 +11,8 @@
 // light as a constant and a direction (the first two bands of spherical harmonics, the
 // clamped cosine folded in), so ROOM_FRAG reads a surface's light for its normal from two
 // texels a colour; the probes a wall, the floor or the ceiling reads give that surface's
-// normal its light exactly (settle). The light tuner's --light-ref works the same light
-// out finely on the surfaces themselves to judge the bake against. No graphics: render3d
-// puts the result on the GPU.
+// normal its light exactly (settle). tools/path_trace.goose traces the room to judge the
+// bake against. No graphics: render3d puts the result on the GPU.
 //
 // The plan's metres (room_shell): x along the window wall, y from the hall wall, h up.
 // The probes and their directions are in the room's frame (world units: x along u, y up,

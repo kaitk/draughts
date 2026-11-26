@@ -119,7 +119,7 @@ pieces; the design boards still set the layout, glass, and controls.
 - The stove (2026-11-24, `build/notes/stove-build/`): `build/stove-build/shots.sh EXE TAG
   [SIZE] [NAMES]` takes the four views, the board, the stove view and three close-ups
   (`close` the corner at eye height, `top` the frieze, cornice and crest, `foot` the
-  plinth and the door); `EXTRA="--stove-crown flat"` before it shoots B's crown.
+  plinth and the door).
 - The library's whole room in the light tuner (`model3d::room_shell`, task 107's demo):
   `--room-surfaces on` (O) shows the shell (walls, wainscot, three box windows, two doors,
   cornice, ceiling), `--shell off` (S) the panelled wall alone as before. `--view
@@ -161,8 +161,7 @@ pieces; the design boards still set the layout, glass, and controls.
   only weakly (by sin(π/N)), so a soft collider stretches the loop: hence the girth's
   projection, applied to the last positions too so it adds no speed; steps longer than
   1/240 s go unstable with the push's cap and the grip per iteration.
-  The games table's base (`mesh::table_base`, task 107): `--table-top 0.95|1.05|0.80`
-  (the panel's Top) sets the top across, 0.95 m the game's and the room's; shots by
+  The games table's base (`mesh::table_base`, task 107): its top 0.95 m across; shots by
   `build/games-table-build/shots.sh EXE TAG` (`build/notes/games-table-build/`), the
   base's close-up `--plan-eye 5.75,4.75,0.62 --plan-at 4.5,5.8,0.36 --fov 42`.
   The shell's own light (task 107's light round): `--shell-sun X,Y` (penumbra's widening,
@@ -329,8 +328,8 @@ pieces; the design boards still set the layout, glass, and controls.
   OUT` (SVG, a true top view, x growing to the left), shots `build/b30/options.sh EXE TAG`.
   In zsh a `$extra` of several flags passes as one word and the tuner ignores it: sweep in
   bash.
-- The dust in the beam (builders 29 and 33): `--dust points|points-few|points-many` (the
-  default points, builder 33) draws real dust's points, fibres and glinting flakes in the
+- The dust in the beam (builders 29 and 33): `--dust points` (the default, builder 33;
+  `--motes N` their number) draws real dust's points, fibres and glinting flakes in the
   sunbeam's own volume over the table (`light_tune`'s `beam_box`, BEAM_*), lit only by the
   direct sun; `motes|motes-few|motes-many` are builder 29's tumbling flakes, `sparse|dense|
   coarse` the old round points in the box. `--point-px SIGMA`, `--glints K` (0 off),
@@ -339,11 +338,11 @@ pieces; the design boards still set the layout, glass, and controls.
   shows at native size only: shoot at 3024 × 1890 and diff against `--dust off` (`-alpha off
   -compose difference`) to find it; for the glints and the drift, step `--wind-time` by
   1/60 s or 0.25 s (`build/b33/shots.sh`).
-- The haze in the beam (builder 33, `build/notes/builder-33/`): `--haze clean|lived|dusted|
-  study`, HDR on, needs the room's pre-pass (on with `--room-surfaces on`). The realistic
-  strengths (5e-5 to 4e-4) only lift the dark wainscot toward the sun; `dusted` reads as a
-  soft beam, `study` (3e-3, stripes soft 4, `--haze-toward 4`) is close to the ChatGPT
-  study's. Looking toward the sun the bars' stripes converge on it and read as god rays:
+- The haze in the beam (builder 33, `build/notes/builder-33/`): `--haze menu|game`, HDR
+  on, needs the room's pre-pass (on with `--room-surfaces on`). The realistic strengths
+  (`--haze-sigma` 5e-5 to 4e-4) only lift the dark wainscot toward the sun; `game` (4e-4)
+  reads as a soft beam, `menu` (3e-3, stripes soft 4, `--haze-toward 4`) is close to the
+  ChatGPT study's. Looking toward the sun the bars' stripes converge on it and read as god rays:
   keep `--haze-toward` up wherever the stripes are strong. `--haze-look G,EVEN,TAPS,SOFT`
   (0.7,0.2,12,1); sigma and softness are also sliders under Dust. Compare against
   `build/notes/window-view/refs/` (Gabinio, Sigüenza, the ChatGPT study). The haze's cost

@@ -622,7 +622,7 @@ fn upscale_pass(own: Own&, g: Gpu&, target: Texture, u: render3d::Upscale) {
 
 // The scenic views' HDR targets' format, as gfx's (render3d_gpu.goose's hdr_format).
 fn hdr_format(own: Own&) -> i32 {
-    if !render3d::hdr_wide && ngfx::format_supported(ngfx::RG11B10F, ngfx::COLOR_TARGET | ngfx::SAMPLED) { ngfx::RG11B10F } else { ngfx::RGBA16F }
+    if ngfx::format_supported(ngfx::RG11B10F, ngfx::COLOR_TARGET | ngfx::SAMPLED) { ngfx::RG11B10F } else { ngfx::RGBA16F }
 }
 
 // The board's module into the HDR target for the pieces' material, as gfx's lit_hdr_frag.

@@ -253,8 +253,6 @@ struct Gpu {
     tree_ms:        f64,            // the last bake's time (measuring)
     tree_bakes:     i64,            // how many times the tree's map was baked (window_map_key)
     table_edge:     float4,         // the edge its mesh is made with (tables::Table.edge)
-    table_r:        f32,            // the top's radius (world units), 0 mesh::TABLE_R (a tuner's)
-    table_made_r:   f32,            // and the one its mesh is made with
     // The table turned about its axis under the board (degrees; a tuner's, the room's
     // table only): its mesh, and its top's figure in TABLE_ROOM's shader (TableBlock's
     // shape.zw). 0 the game's.
@@ -307,7 +305,6 @@ struct Gpu {
     size:            int2,
     linear:          Sampler,
     aniso:           Sampler,
-    oak_sampler:     Sampler,      // optional light tuner override for the oak fields
     compare:         Sampler,
     lit:             Pipeline,
     fading:          Pipeline, // the lit pass for a fading piece, blended
@@ -696,16 +693,13 @@ fn table_maps<O>(o: O&, g: Gpu&) {
     g.table_wear_n = baked(o, ws, ws, RGBA8);
 }
 
-// The table's top's radius (world units).
-fn table_radius(g: Gpu&) -> f32 { if g.table_r > 0.0 { g.table_r } else { mesh::TABLE_R } }
-
-// The table's mesh, its top and its base, made again when its edge or its top's radius
-// isn't the one it was made with.
+// The table's mesh, its top and its base, made again when its edge, its turn or its chairs
+// aren't the ones it was made with.
 fn table_mesh<O>(o: O&, g: Gpu&) {
     let e = g.table_spec.edge;
     let was = g.table_edge;
-    let r = table_radius(g);
-    guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w || r != g.table_made_r
+    let r = mesh::TABLE_R;
+    guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w
           || g.table_turn != g.table_made_turn || g.chairs != g.chairs_made || (g.chairs && chairs_on_rug(g) != g.chairs_rug_made)
           || (props_light && !g.props_baked)
     else { return; }
@@ -739,7 +733,6 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
     g.chairs_made = g.chairs;
     g.chairs_rug_made = chairs_on_rug(g);
     g.table_edge = e;
-    g.table_made_r = r;
     g.table_made_turn = g.table_turn;
 }
 
@@ -867,7 +860,7 @@ fn table_block(g: Gpu&) -> TableBlock {
     let on = table_in_room(g);
     let shade = rooms::color_of(r.bounce) * (r.bounce.w * r.baked.w);
     let turn = radians(g.table_turn);
-    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, sin(turn), cos(turn) }, map,
+    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { mesh::TABLE_R, surfaces::FLOOR_Y, sin(turn), cos(turn) }, map,
                  table_probes, float4 { if on { 1.0 } else { 0.0 }, r.baked.z, r.room_exposure, shade_fill },
                  float4 { shade.x, shade.y, shade.z, surfaces::METRE }, if on { ssao_block_of(g) } else { float4_0 }, base_wood,
                  base_look }
@@ -906,7 +899,7 @@ fn table_map_rows(g: Gpu&) -> float4[4] {
     let e = float2 { -d.y, d.x };
     let fy = surfaces::FLOOR_Y;
     let c = float3 { 0.0, fy, mesh::TABLE_Z };
-    let r = table_radius(g) + TABLE_MAP_MARGIN;
+    let r = mesh::TABLE_R + TABLE_MAP_MARGIN;
     let slope = h / ly;
     let reach = min((mesh::TABLE_TOP - fy) * slope, TABLE_MAP_REACH);
     let cd = c.x * d.x + c.z * d.y;
@@ -961,7 +954,7 @@ fn table_map_matrix(rows: float4[4]) -> Mat {
 // What the table's map is drawn for: the key, the top's radius, the table's mesh.
 fn table_map_key(g: Gpu&) -> float4[2] {
     let l = g.frame.light_dir;
-    return [float4 { l.x, l.y, l.z, table_radius(g) }, float4 { g.table_vb.id, g.table_count, g.table_turn, 0.0 }];
+    return [float4 { l.x, l.y, l.z, mesh::TABLE_R }, float4 { g.table_vb.id, g.table_count, g.table_turn, 0.0 }];
 }
 
 // The table's map drawn where it is wanted and what it was drawn for changed. Recording
@@ -1486,7 +1479,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool, mirror: bool = f
         add_texture(t, table_map_or_stand_in(g), g.compare);
         add_texture(t, corners_or_stand_in(g), g.linear);
     }
-    let oak = if g.oak_sampler.id != 0 { g.oak_sampler } else { g.aniso };
+    let oak = g.aniso;
     if group == GROUP_FLOOR {
         add_texture(t, g.floor_albedo, oak);
         add_texture(t, g.floor_normal, oak);
@@ -2197,7 +2190,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     k.ceiling_shade, k.ceiling_light, k.paint,
                     k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0, k.brass,
                     model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w),
-                    float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
+                    float4 { mesh::TABLE_R, surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
@@ -2255,7 +2248,7 @@ fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.panes, f.room_axes,
             float4 { if props_light { 1.0 } else { 0.0 }, if room_light::rug_in_bake { 1.0 } else { 0.0 },
                      if room_light::gather_exact { 1.0 } else { 0.0 }, 0.0 },
-            float4 { table_radius(g), g.tree_ms as f32, light_bounces as f32, room_sun.x },
+            float4 { mesh::TABLE_R, g.tree_ms as f32, light_bounces as f32, room_sun.x },
             float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
                      (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang },
             float4 { room_shell::LIBRARY.table.x, room_shell::LIBRARY.table.y, room_light::glazing, sun_panes }];
@@ -2273,8 +2266,6 @@ var props_bytes:   u8[PROPS_BYTES];
 var light_patches: room_light::Patch[room_light::BINS];
 var light_tree:    f32[room_light::RAYS];
 var light_bounce:  room_light::Bounce;
-// The last bake's sun (the light tuner's --light-ref works from it).
-var light_sun = default<room_light::Sun>();
 // How many times the room's light is thrown on after the sun's patches (room_light::BOUNCES;
 // 0 the patches alone, the tuner's --bounces), and each step's time in the last bake:
 // the sun's rays, the first light, each bounce, the half grid's gather, the probes.
@@ -2332,12 +2323,11 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
         toward: toward,
         light:  room_sun_of(float3 { f.light_color.x, f.light_color.y, f.light_color.z }) * (f.light_dir.w * r.shell_sun.y / sun_panes),
         sky:    sh_at(f.sh, out) * f.params.z,
-        table: float4 { s.table.x, s.table.y, table_radius(g) / surfaces::METRE,
+        table: float4 { s.table.x, s.table.y, mesh::TABLE_R / surfaces::METRE,
                         (mesh::TABLE_TOP - surfaces::FLOOR_Y) / surfaces::METRE },
         sky_gain:    r.baked.x,
         bounce_gain: r.baked.y,
     };
-    light_sun = sun;
     room_light::members_traced = f.panes.w > 0.5;
     room_light::nine_harmonics = props_light;
     tree_through(g, l);
@@ -3521,8 +3511,6 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
 // views of the room (their own pipelines tonemap), nor the table before the room's light
 // is baked. hdr_allowed: the light tuner's (--hdr, X); the app draws no scenic view yet.
 var hdr_allowed = false;
-// RGBA16F in place of RG11B10F (the light tuner's --hdr-format, to weigh the fallback).
-var hdr_wide = false;
 fn hdr_shown(g: Gpu&) -> bool {
     hdr_allowed && outside_shown(g) && (g.aa == AA_MSAA || g.aa == AA_SMAA) && ssao_allowed && !room_views_on()
     && (!table_shown(g) || table_in_room(g))
@@ -3699,7 +3687,7 @@ fn table_hides_screen(g: Gpu&, m: Mat) -> bool {
     guard table_shown(g) && g.frame.eye.y > mesh::TABLE_TOP else { return false; }
     // Stay on the flat part of the bevelled top, including the tuner's thick edges.
     let inset = max(0.08, 0.45 * max(g.table_edge.y, 0.3));
-    let radius = table_radius(g);
+    let radius = mesh::TABLE_R;
     let r = min(radius * 0.97, radius - inset - 0.01);
     guard r > 0.0 else { return false; }
     var at: float2[TOP_SIDES] = [float2_0; TOP_SIDES];
