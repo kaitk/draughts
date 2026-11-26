@@ -5,12 +5,20 @@
 // and how long each step took. Build it (C at -O2) for the times:
 //
 //   goose build -o build/tree_dump tools/tree_dump.goose && build/tree_dump OUT_DIR
+//       [--elbows FEWEST,MOST,TURN_LO,TURN_HI] [--gravity STRENGTH] [--shed LIGHT,STUBS]
+//       [--plates ON,SPURS,NUDGE] [--tilt ON,SEASON,SAG] [--bend SHARE,TWIST]
+//       [--hangs N (the first N low limbs, 4)]
+//
+// The flags set the growth past the habit (trees::Growth, task 117; all off by default, as
+// the light tuner's --tree-elbows, --tree-gravity, --tree-shed, --tree-plates, --tree-tilt
+// and --tree-bend).
 //
 // One tree-NAME-whole.bin and -culled.bin for each low limb (rooms::WHOLE_HANGS), its shadow
 // shadow-NAME.grey and times in times.txt; the frame's eyes and windows for the default.
 // tree.bin: "segments" n, then n × (a.xyz b.xyz ra rb level); "limbs" n × (first count
 // level parent); "cards" n × (foot.xyz base.xyz along.xyz face.xyz size width kind tint);
-// each count an f32 too.
+// each count an f32 too; then the cards' bends, n × (shape amount twist). leaf-shapes.bin:
+// trees::leaf_shapes' float4s.
 import std;
 import os;
 import vec;
@@ -39,6 +47,7 @@ fn write_tree(path: const u8[:], t: trees::Tree&) {
         put3(out, c.foot); put3(out, c.base); put3(out, c.along); put3(out, c.face);
         put(out, c.size); put(out, c.width); put(out, c.kind as f32); put(out, c.tint);
     }
+    for &c in t.cards { put(out, c.shape); put(out, c.shape_amount); put(out, c.twist); }
     guard write_file(path, out[..]) else { abort("could not write the tree"); }
 }
 
@@ -50,6 +59,42 @@ fn write_grey(path: const u8[:], map: u8[>..]&, v: trees::View) {
         grey.push(((map[o] as i64) * (map[o + 1] as i64) / 255 * (map[o + 2] as i64) / 255 * (map[o + 3] as i64) / 255) as u8);
     }
     guard write_file(path, grey[..]) else { abort("could not write the shadow"); }
+}
+
+// The flag's numbers, comma-separated, over `v`'s first ones.
+fn numbers(args: u8[:][>..]&, name: const u8[:], v: float4) -> float4 {
+    var out: f32[4] = [v.x, v.y, v.z, v.w];
+    for a, i in args {
+        guard a == name && i + 1 < args.len else { continue; }
+        var rest: const u8[:] = args[i + 1];
+        for k in 4 {
+            let part, after, more = split_once(rest, ",");
+            let x, ok = parse_flt(part);
+            guard ok else { abort(str(name, ": numbers, x,y,..")); }
+            out[k] = x as f32;
+            guard more else { break; }
+            rest = after;
+        }
+    }
+    return float4 { out[0], out[1], out[2], out[3] };
+}
+
+fn write_wood(path: const u8[:], verts: trees::WoodVertex[>..]&, indices: u32[>..]&, tube_indices: i64) {
+    var out: u8[>..] = [];
+    put(out, verts.len as f32);
+    for &x in verts {
+        put3(out, x.pos); put3(out, x.normal); put3(out, x.along);
+        put(out, x.uv.x); put(out, x.uv.y);
+        put(out, x.light.x); put(out, x.light.y); put(out, x.light.z); put(out, x.light.w);
+    }
+    put(out, tube_indices as f32);
+    for i in tube_indices { put(out, indices[i] as f32); }
+    guard write_file(path, out[..]) else { abort("could not write the wood"); }
+}
+
+fn has_flag(args: u8[:][>..]&, name: const u8[:]) -> bool {
+    for a in args { if a == name { return true; } }
+    return false;
 }
 
 fn line3(out: u8[>..]&, name: const u8[:], v: float3) { format(out, name, " ", v.x, " ", v.y, " ", v.z, "\n"); }
@@ -64,10 +109,22 @@ fn main() {
     let v = rooms::shell_tree_view(r, s);
     let spec = rooms::tree_spec(rooms::shell_tree(r));
     let w = rooms::whole_tree(r, s);
+    var growth = trees::Growth { .. };
+    growth.elbows = numbers(args, "--elbows", growth.elbows);
+    growth.gravity = numbers(args, "--gravity", float4 { growth.gravity, 0.0, 0.0, 0.0 }).x;
+    let shed = numbers(args, "--shed", float4 { growth.shed.x, growth.shed.y, 0.0, 0.0 });
+    growth.shed = float2 { shed.x, shed.y };
+    growth.plates = numbers(args, "--plates", growth.plates);
+    growth.tilt = numbers(args, "--tilt", growth.tilt);
+    let bend = numbers(args, "--bend", float4 { growth.bend.x, growth.bend.y, 0.0, 0.0 });
+    growth.bend = float2 { bend.x, bend.y };
+    let hangs = numbers(args, "--hangs", float4 { 4.0, 0.0, 0.0, 0.0 }).x as i64;
     var times: u8[>..] = [];
     // old-leader, the user's pick, with each of its low limbs (rooms::WHOLE_HANGS).
     for name, k in rooms::WHOLE_HANGS {
-        let wk = rooms::whole_tree(r, s, rooms::WHOLE_OLD_LEADER, k);
+        guard k < hangs else { break; }
+        var wk = rooms::whole_tree(r, s, rooms::WHOLE_OLD_LEADER, k);
+        wk.growth = growth;
         var t = trees::Tree { .. };
         var t0 = clock();
         trees::grow_whole(t, wk, v, sight, false);
@@ -102,6 +159,15 @@ fn main() {
         }
     }
     guard write_file(str(dir, "/times.txt")[..], times[..]) else { abort("could not write the times"); }
+
+    // The bent leaves' meshes, as the leaves' vertex shader reads them.
+    var shapes: float4[>..] = [];
+    var t_shapes = clock();
+    trees::leaf_shapes(shapes);
+    print("leaf shapes: ", shapes.len, " float4s in ", (clock() - t_shapes) * 1000.0, " ms");
+    var shape_bytes: u8[>..] = [];
+    for &x in shapes { put(shape_bytes, x.x); put(shape_bytes, x.y); put(shape_bytes, x.z); put(shape_bytes, x.w); }
+    guard write_file(str(dir, "/leaf-shapes.bin")[..], shape_bytes[..]) else { abort("could not write the shapes"); }
 
     // Today's tree's shadow for comparison.
     var today = trees::Tree { .. };
@@ -172,4 +238,51 @@ fn main() {
         mh /= 2;
     }
     guard write_file(str(dir, "/atlas-coverage.txt")[..], cover[..]) else { abort("could not write the coverage"); }
+
+    // The wood's mesh from the default tree (trees::wood_mesh), plain and shaped as the flags
+    // say (--junctions, --roots, --tier 0 high, 1 standard, 2 phone; task 117): wood.bin holds
+    // the vertex count, then each WoodVertex's 15 floats, the tube index count and the indices
+    // (as f32), all little-endian f32.
+    {
+        var shape = trees::WoodShape { .. };
+        shape.junctions = has_flag(args, "--junctions");
+        shape.roots = has_flag(args, "--roots");
+        shape.tier = numbers(args, "--tier", float4 { 0.0, 0.0, 0.0, 0.0 }).x as i64;
+        var wd = rooms::whole_tree(r, s, rooms::WHOLE_OLD_LEADER, 0);
+        wd.growth = growth;
+        var all = trees::Tree { .. };
+        trees::grow_whole(all, wd, v, sight, false);
+        var density: f32[>..] = [];
+        let grid = trees::crown_grid(all, density);
+        var c = trees::Tree { .. };
+        if trees::reshaped(wd.growth) { trees::cull_copy(all, c, wd, v, sight); } else { trees::grow_whole(c, wd, v, sight, true); }
+        var verts:   trees::WoodVertex[>..] = [];
+        var indices: u32[>..]               = [];
+        t0 = clock();
+        let plain = trees::wood_mesh(c, density, grid, trees::toward_sun(v), verts, indices);
+        let plain_ms = (clock() - t0) * 1000.0;
+        print("wood, plain: ", plain.tube_indices / 3, " tube triangles, ", plain.ribbon_indices / 3, " ribbon triangles, ", plain.vertices,
+              " vertices, ", plain_ms, " ms");
+        write_wood(str(dir, "/wood-plain.bin")[..], verts, indices, plain.tube_indices);
+        t0 = clock();
+        let m = trees::wood_mesh(c, density, grid, trees::toward_sun(v), verts, indices, shape);
+        let shaped_ms = (clock() - t0) * 1000.0;
+        print("wood, shaped: ", m.tube_indices / 3, " tube triangles, ", m.ribbon_indices / 3, " ribbon triangles, ", m.vertices, " vertices, ",
+              shaped_ms, " ms");
+        write_wood(str(dir, "/wood.bin")[..], verts, indices, m.tube_indices);
+    }
+
+    // The bark's age layers (trees::bark_layers, task 117), level 0 of each texture.
+    var heights:  u8[>..] = [];
+    var cavities: u8[>..] = [];
+    var best_ms:  f64     = 1e9;
+    for k in 5 {
+        t0 = clock();
+        trees::bark_layers(heights, cavities);
+        best_ms = min(best_ms, (clock() - t0) * 1000.0);
+    }
+    print("bark layers: ", trees::BARK_W, " x ", trees::BARK_H, ", ", trees::BARK_LAYERS, " ages, ", best_ms, " ms (best of 5)");
+    let bn = trees::BARK_W * trees::BARK_H * 4;
+    guard write_file(str(dir, "/bark-height.rgba")[..], heights[0..bn]) && write_file(str(dir, "/bark-cavity.rgba")[..], cavities[0..bn])
+        else { abort("could not write the bark"); }
 }

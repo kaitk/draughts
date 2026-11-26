@@ -566,6 +566,9 @@ struct TreeGpu {
     ribbon_first: i64,
     ribbon_count: i64,
     bark:         Texture,
+    // The bark's age layers (trees::bark_layers, tree_bark): the height and the cavity.
+    bark_height: Texture,
+    bark_cavity: Texture,
     tube:         Pipeline,
     ribbon:       Pipeline,
     hdr_tube:     Pipeline,
@@ -576,12 +579,16 @@ struct TreeGpu {
     leaf_marks:   Texture,
     leaf:         Pipeline,
     hdr_leaf:     Pipeline,
-    // Whether the pipelines move the tree in the wind (tree_wind), as they were made.
-    wind_made: bool,
+    // Whether the pipelines move the tree in the wind (tree_wind), and the leaves' meshes of
+    // the 8-bit and the HDR pipelines (leaf_mesh), as they were made.
+    wind_made:          bool,
+    leaf_mesh_made:     i64,
+    hdr_leaf_mesh_made: i64,
     // The key's slant onto the shadow's map and its layers' depths (TreeBlock's layers).
     layers:   float4,
     made_for: float4[TREE_GEOMETRY_KEY],
     ms:       f64,
+    bark_ms:  f64,      // the age layers' growth (trees::bark_layers), once
     // The card (tree_card): its picture, RGBA16F with its mips; the pipelines drawing the
     // geometry into it and drawing it in the view out's place, 8-bit (the mirror's too) and
     // HDR; where it is in the tree's frame (tree_card_place: the eye and the plane's depth,
@@ -2799,7 +2806,7 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     {
         var t = trees::Tree { .. };
         if tree_grown_whole && g.room_on && g.room_shell {
-            trees::grow_whole(t, rooms::whole_tree(g.room, room_shell::LIBRARY), v, rooms::whole_sight(g.room, room_shell::LIBRARY), true);
+            trees::grow_whole(t, whole_tree_of(g), v, rooms::whole_sight(g.room, room_shell::LIBRARY), true);
         } else {
             trees::grow(t, s, v);
         }
@@ -2826,6 +2833,43 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     g.tree_ms = (clock() - t0) * 1000.0;
 }
 
+// The maple's growth past its habit (trees::Growth, task 117: broken leaders, the gravity
+// layer, shedding), all off as in the app until checked: the light tuner's --tree-elbows,
+// --tree-gravity and --tree-shed.
+var tree_growth = trees::Growth { .. };
+
+// The old maple as the shell grows it, with tree_growth.
+fn whole_tree_of(g: Gpu&) -> trees::Whole {
+    var w = rooms::whole_tree(g.room, room_shell::LIBRARY);
+    w.growth = tree_growth;
+    return w;
+}
+
+// The leaves' meshes (shaders::TREE_LEAF_VERT, trees::leaf_shapes): flat cards, the card in
+// four rows bent along its midrib, or a fan hugging the leaf's outline, bent; by the tier, with
+// the bent shapes on (tree_growth.bend), the high tier's (HDR) the fan and the standard's the
+// rows, else cards (a phone draws the tree's card, never its leaves). The light tuner's
+// --tree-leaf-mesh tier|card|rows|fan.
+let TREE_LEAF_MESHES = ["tier", "card", "rows", "fan"];
+let LEAF_MESH_TIER = 0;
+let LEAF_MESH_CARD = 1;
+let LEAF_MESH_ROWS = 2;
+let LEAF_MESH_FAN = 3;
+var tree_leaf_mesh = LEAF_MESH_TIER;
+
+fn leaf_mesh(hdr: bool) -> i64 {
+    if tree_leaf_mesh != LEAF_MESH_TIER { return tree_leaf_mesh; }
+    guard tree_growth.bend.x > 0.0 else { return LEAF_MESH_CARD; }
+    return if hdr { LEAF_MESH_FAN } else { LEAF_MESH_ROWS };
+}
+
+// The vertices a leaf draws with its mesh (as triangle lists).
+fn leaf_vertices(mesh: i64) -> i64 {
+    if mesh == LEAF_MESH_ROWS { return trees::LEAF_ROW_VERTICES; }
+    if mesh == LEAF_MESH_FAN { return trees::LEAF_FAN_VERTICES; }
+    return 6;
+}
+
 // The tree outside drawn as geometry (task 107's T2 and T3): off (the view out's pictures
 // alone, the app's), its wood, or all of it (TREE_DRAWS): the light tuner's --tree-draw,
 // until the user has seen it. With it on the shell's shadow comes from the same tree
@@ -2844,6 +2888,19 @@ var tree_twig_px: f32 = 1.0;
 var tree_spread:  f32 = 0.15;
 var tree_tint = float4 { 0.2, 1.0, 1.0, 0.6 };
 
+// The maple's wood (task 117's step three), each part off as in the app until checked: the
+// bark from the age layers grown at startup (trees::bark_layers) in place of the first tile,
+// its relief's strength (1 true slopes); the light wrapped past the terminator as if
+// scattered under the bark (0 none) and Oren-Nayar's roughness (0 Lambert's); the junctions
+// (collars, the parent's swell and ridge, the grain round each foot, caps on the ends) and
+// the flare with its roots (trees::WoodShape). The light tuner's --tree-bark, --tree-relief,
+// --tree-scatter, --tree-rough, --tree-junctions and --tree-roots.
+var tree_bark = false;
+var tree_relief:  f32 = 1.0;
+var tree_scatter: f32 = 0.0;
+var tree_rough:   f32 = 0.0;
+var tree_wood = trees::WoodShape { .. };
+
 // The wind on the tree's geometry (task 107's T4; shaders::TREE_WIND, TREE_FLUTTER): off
 // (still, the app's), or the shadow's field moving it, each leaf also turning about its stalk
 // in the high tier (HDR), the standard tier's held at its shadow's moment; the light tuner's
@@ -2854,7 +2911,7 @@ var tree_wind = false;
 var tree_flutter = float2 { 6.0, 9.0 };
 
 // The tree's block (shaders::TREE_HEAD), for a pass of `samples` samples a pixel.
-struct TreeBlock { origin: float4, light: float4, look: float4, depth: float4, tint: float4, layers: float4 }
+struct TreeBlock { origin: float4, light: float4, look: float4, depth: float4, tint: float4, layers: float4, bark: float4, matte: float4 }
 fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
     let o = rooms::tree_origin(g.room);
     // The projection's depth as A - B / d (d the distance along the view), from the view's
@@ -2869,7 +2926,16 @@ fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
     let keep: f32 = 1e-4;
     let squeeze = (1.0 - keep - from) / max(a - from, 1e-6);
     return TreeBlock { model3d::f4(o, samples), tree_light, float4 { g.room.outside, tree_shade, tree_spread, tree_twig_px },
-                       float4 { from, squeeze, radians(tree_flutter.x), tree_flutter.y }, tree_tint, g.tree.layers };
+                       float4 { from, squeeze, radians(tree_flutter.x), tree_flutter.y }, tree_tint, g.tree.layers,
+                       float4 { if tree_bark { 1.0 } else { 0.0 }, tree_relief, trees::bark_age_scale(), trees::bark_age_from() },
+                       float4 { tree_scatter, tree_rough, 0.0, 0.0 } };
+}
+
+// The tubes' two bark textures (TREE_WOOD_FRAG's slots 0 and 1): the age layers' height and
+// cavity with tree_bark once made, else the first tile in both.
+fn tree_bark_textures(g: Gpu&) -> Texture, Texture {
+    if tree_bark && g.tree.bark_height.id != 0 { return g.tree.bark_height, g.tree.bark_cavity; }
+    return g.tree.bark, g.tree.bark;
 }
 
 // Whether the tree's geometry is drawn: with the view out, once grown, where its card isn't
@@ -2881,7 +2947,7 @@ let TREE_GEOMETRY_KEY = 5;
 fn tree_geometry_key(g: Gpu&) -> float4[TREE_GEOMETRY_KEY] {
     let r = g.room;
     let t = room_shell::LIBRARY.table;
-    return [r.key, r.window, r.tree, r.foliage, float4 { t.x, t.y, tree_draw, 0.0 }];
+    return [r.key, r.window, r.tree, r.foliage, float4 { t.x, t.y, tree_draw, trees::wood_shape_key(tree_wood) + (if tree_bark { 8.0 } else { 0.0 }) }];
 }
 
 // The tree grown whole and made into its meshes and leaf cards (all drawn), lit by its
@@ -2909,8 +2975,25 @@ fn tree_geometry<O>(o: O&, g: Gpu&) {
             at += n;
         }
     }
+    if tree_bark && g.tree.bark_height.id == 0 {
+        var heights:  u8[>..] = [];
+        var cavities: u8[>..] = [];
+        let b0 = clock();
+        trees::bark_layers(heights, cavities);
+        g.tree.bark_ms = (clock() - b0) * 1000.0;
+        let mips = trees::mips_of(trees::BARK_W, trees::BARK_H);
+        g.tree.bark_height = o.gpu_sampled(trees::BARK_W, trees::BARK_H, mips, RGBA8);
+        g.tree.bark_cavity = o.gpu_sampled(trees::BARK_W, trees::BARK_H, mips, RGBA8);
+        var at = 0;
+        for level in mips {
+            let n = (trees::BARK_W >> level) * (trees::BARK_H >> level) * 4;
+            o.gpu_upload(g.tree.bark_height, level, heights[at..at + n]);
+            o.gpu_upload(g.tree.bark_cavity, level, cavities[at..at + n]);
+            at += n;
+        }
+    }
     let v = tree_view_of(g);
-    let w = rooms::whole_tree(g.room, room_shell::LIBRARY);
+    let w = whole_tree_of(g);
     let sight = rooms::whole_sight(g.room, room_shell::LIBRARY);
     var verts:   trees::WoodVertex[>..] = [];
     var indices: u32[>..]               = [];
@@ -2923,11 +3006,15 @@ fn tree_geometry<O>(o: O&, g: Gpu&) {
         trees::grow_whole(all, w, v, sight, false);
         let grid = trees::crown_grid(all, density);
         var t = trees::Tree { .. };
-        trees::grow_whole(t, w, v, sight, true);
-        made = trees::wood_mesh(t, density, grid, trees::toward_sun(v), verts, indices);
+        // A reshaped tree is culled from the whole one rather than grown and reshaped again.
+        if trees::reshaped(w.growth) { trees::cull_copy(all, t, w, v, sight); } else { trees::grow_whole(t, w, v, sight, true); }
+        made = trees::wood_mesh(t, density, grid, trees::toward_sun(v), verts, indices, tree_wood);
         let d = trees::depths(t, v);
         g.tree.layers = float4 { v.shear.x, v.shear.y, d.near, d.far };
-        if tree_draw == TREE_ALL { leaf_count = trees::leaf_cards(t, density, grid, trees::toward_sun(v), cards); }
+        if tree_draw == TREE_ALL {
+            trees::leaf_shapes(cards);
+            leaf_count = trees::leaf_cards(t, density, grid, trees::toward_sun(v), cards, cards.len);
+        }
         g.tree.card_eye, g.tree.card_rect, g.tree.card_range = tree_card_place(g, verts, cards, sight);
     }
     if leaf_count > 0 && g.tree.leaf_shape.id == 0 {
@@ -3003,10 +3090,12 @@ fn tree_card_place(g: Gpu&, verts: trees::WoodVertex[>..]&, cards: float4[>..]&,
     var sum:  f64 = 0.0;
     var near: f32 = 1e9;
     var far:  f32 = -1e9;
-    let leaves = cards.len / trees::LEAF_VEC4S;
+    // The cards after the bent shapes (tree_geometry).
+    let first = if cards.len > 0 { trees::LEAF_SHAPE_VEC4S } else { 0 };
+    let leaves = (cards.len - first) / trees::LEAF_VEC4S;
     for i in leaves {
-        let b = cards[i * trees::LEAF_VEC4S];
-        let a = cards[i * trees::LEAF_VEC4S + 1];
+        let b = cards[first + i * trees::LEAF_VEC4S];
+        let a = cards[first + i * trees::LEAF_VEC4S + 1];
         sum += (b.z + a.z * b.w * 0.5) as f64;
     }
     for &v in verts {
@@ -3029,7 +3118,7 @@ fn tree_card_place(g: Gpu&, verts: trees::WoodVertex[>..]&, cards: float4[>..]&,
         y1 = max(y1, q.y);
     }
     for i in leaves {
-        let b = cards[i * trees::LEAF_VEC4S];
+        let b = cards[first + i * trees::LEAF_VEC4S];
         let r = b.w * 1.2;
         near = min(near, b.z - r);
         far = max(far, b.z + r);

@@ -1223,12 +1223,17 @@ fn draw_outside(own: Own&, g: render3d::Gpu&, in_mirror: bool = false) {
 // writing no depth.
 fn make_tree(own: Own&, g: render3d::Gpu&) {
     let t .= g.tree;
-    guard t.tube.id == 0 || t.wind_made != render3d::tree_wind else { return; }
+    let mesh = render3d::leaf_mesh(false);
+    let hdr_mesh = render3d::leaf_mesh(true);
+    guard t.tube.id == 0 || t.wind_made != render3d::tree_wind || t.leaf_mesh_made != mesh || t.hdr_leaf_mesh_made != hdr_mesh
+        else { return; }
     if t.tube.id != 0 {
         gfx::flush();
         for p in [t.tube, t.ribbon, t.hdr_tube, t.hdr_ribbon, t.leaf, t.hdr_leaf] { gfx::release(p); }
     }
     t.wind_made = render3d::tree_wind;
+    t.leaf_mesh_made = mesh;
+    t.hdr_leaf_mesh_made = hdr_mesh;
     let wind = render3d::tree_wind;
     let tube_vs = if wind {
         embed_shader("vert", shaders::TREE_WIND, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::WIND_FN, shaders::TREE_FN,
@@ -1245,8 +1250,10 @@ fn make_tree(own: Own&, g: render3d::Gpu&) {
     };
     let solid = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true };
     let flat = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, blend: gfx::BLEND_PREMULTIPLIED };
-    t.tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TONE_FN,
-                                                 shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG), solid);
+    // The bark's tiers (shaders::TREE_BARK_STANDARD): the 8-bit pipeline the standard tier's,
+    // the HDR one the high tier's.
+    t.tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::TREE_BARK_STANDARD, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                                 shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG), solid);
     t.ribbon = gfx::pipeline(ribbon_vs, embed_shader("frag", shaders::TREE_RIBBON, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
                                                      shaders::TONE_FN, shaders::TREE_LIGHT_FN, shaders::TREE_WOOD_FRAG), flat);
     t.hdr_tube = gfx::pipeline(tube_vs, embed_shader("frag", shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
@@ -1254,18 +1261,8 @@ fn make_tree(own: Own&, g: render3d::Gpu&) {
     t.hdr_ribbon = gfx::pipeline(ribbon_vs, embed_shader("frag", shaders::TREE_RIBBON, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME,
                                                          shaders::TREE_HEAD, shaders::TONE_FN, shaders::TREE_LIGHT_FN,
                                                          shaders::TREE_WOOD_FRAG), flat);
-    let leaf_vs = if wind {
-        embed_shader("vert", shaders::TREE_WIND, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::WIND_FN, shaders::TREE_FN,
-                     shaders::TREE_LEAF_VERT)
-    } else {
-        embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_LEAF_VERT)
-    };
-    let hdr_leaf_vs = if wind {
-        embed_shader("vert", shaders::TREE_FLUTTER, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::WIND_FN, shaders::TREE_FN,
-                     shaders::TREE_LEAF_VERT)
-    } else {
-        leaf_vs
-    };
+    let leaf_vs = leaf_vertex_shader(mesh, wind, false);
+    let hdr_leaf_vs = leaf_vertex_shader(hdr_mesh, wind, wind);
     // The leaves cut by alpha-to-coverage in a multisampled pass (shaders::TREE_COVERAGE).
     let card = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true, alpha_to_coverage: true };
     t.leaf = gfx::pipeline(leaf_vs, embed_shader("frag", shaders::TREE_COVERAGE, shaders::FS_SET, shaders::FRAME, shaders::TREE_HEAD,
@@ -1275,13 +1272,53 @@ fn make_tree(own: Own&, g: render3d::Gpu&) {
                                                          shaders::TREE_LIGHT_FN, shaders::TREE_LEAF_FRAG), card);
 }
 
+// The leaves' vertex stage for a mesh (render3d::leaf_mesh), still, in the wind, or
+// fluttering too.
+fn leaf_vertex_shader(mesh: i64, wind: bool, flutter: bool) -> const u8[:] {
+    if mesh == render3d::LEAF_MESH_FAN {
+        if flutter {
+            return embed_shader("vert", shaders::TREE_LEAF_FAN, shaders::TREE_FLUTTER, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                shaders::WIND_FN, shaders::TREE_FN, shaders::TREE_LEAF_VERT);
+        }
+        if wind {
+            return embed_shader("vert", shaders::TREE_LEAF_FAN, shaders::TREE_WIND, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                shaders::WIND_FN, shaders::TREE_FN, shaders::TREE_LEAF_VERT);
+        }
+        return embed_shader("vert", shaders::TREE_LEAF_FAN, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN,
+                            shaders::TREE_LEAF_VERT);
+    }
+    if mesh == render3d::LEAF_MESH_ROWS {
+        if flutter {
+            return embed_shader("vert", shaders::TREE_LEAF_ROWS, shaders::TREE_FLUTTER, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                shaders::WIND_FN, shaders::TREE_FN, shaders::TREE_LEAF_VERT);
+        }
+        if wind {
+            return embed_shader("vert", shaders::TREE_LEAF_ROWS, shaders::TREE_WIND, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD,
+                                shaders::WIND_FN, shaders::TREE_FN, shaders::TREE_LEAF_VERT);
+        }
+        return embed_shader("vert", shaders::TREE_LEAF_ROWS, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN,
+                            shaders::TREE_LEAF_VERT);
+    }
+    if flutter {
+        return embed_shader("vert", shaders::TREE_FLUTTER, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::WIND_FN,
+                            shaders::TREE_FN, shaders::TREE_LEAF_VERT);
+    }
+    if wind {
+        return embed_shader("vert", shaders::TREE_WIND, shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::WIND_FN, shaders::TREE_FN,
+                            shaders::TREE_LEAF_VERT);
+    }
+    return embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TREE_HEAD, shaders::TREE_FN, shaders::TREE_LEAF_VERT);
+}
+
 // The tree outside in the board's pass, after the room's opaque groups (render3d::tree_drawn):
 // its tubes, its leaves, then its ribbons (blended, so last).
 fn draw_tree(own: Own&, g: render3d::Gpu&) {
     let t = g.tree;
     let tb = render3d::tree_block(g, own.samples);
     gfx::bind(if g.hdr { t.hdr_tube } else { t.tube });
-    gfx::bind_texture(gfx::FRAGMENT, 0, t.bark, g.aniso);
+    let bark_height, bark_cavity = render3d::tree_bark_textures(g);
+    gfx::bind_texture(gfx::FRAGMENT, 0, bark_height, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 1, bark_cavity, g.aniso);
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
     gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
     gfx::uniforms(gfx::VERTEX, 1, tb);
@@ -1298,7 +1335,7 @@ fn draw_tree(own: Own&, g: render3d::Gpu&) {
         gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
         gfx::uniforms(gfx::VERTEX, 1, tb);
         gfx::uniforms(gfx::FRAGMENT, 1, tb);
-        gfx::draw_instanced(6, t.leaf_count);
+        gfx::draw_instanced(render3d::leaf_vertices(if g.hdr { t.hdr_leaf_mesh_made } else { t.leaf_mesh_made }), t.leaf_count);
     }
     gfx::bind(if g.hdr { t.hdr_ribbon } else { t.ribbon });
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
@@ -1352,7 +1389,9 @@ fn tree_card_pass(own: Own&, g: render3d::Gpu&, f: render3d::Frame, b: render3d:
     pass.resolve[0] = t.card;
     gfx::begin_pass(pass);
     gfx::bind(t.card_tube);
-    gfx::bind_texture(gfx::FRAGMENT, 0, t.bark, g.aniso);
+    let bark_height, bark_cavity = render3d::tree_bark_textures(g);
+    gfx::bind_texture(gfx::FRAGMENT, 0, bark_height, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 1, bark_cavity, g.aniso);
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     gfx::uniforms(gfx::VERTEX, 1, b);

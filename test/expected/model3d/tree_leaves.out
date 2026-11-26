@@ -1,0 +1,8 @@
+plates: 33154 leaves, within the counts, level blades 100.0%
+pairs one over the other: 6178, the lower larger in 96.0%, on the longer stalk in 91.0%
+summer: median tilt at the top 15 degrees, low 23
+mid-September: median tilt at the top 22 degrees, low 24
+October: median tilt at the top 42 degrees, low 42
+shapes (flat, cup, droop, edges, tips, sag): 18237 5376 2468 2545 2400 2440
+leaf shapes: 7776 float4s, 0 normals not unit, 0 flat vertices off the plane
+the shader's counts: the same

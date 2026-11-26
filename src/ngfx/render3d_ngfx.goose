@@ -949,7 +949,9 @@ fn draw_tree(own: Own&, g: Gpu&, f: u64) {
     r.frame = f;
     r.u = ngfx::frame_data(bytes_of(b));
     r.verts = nx::address(t.wood_vb);
-    slot(r, 0, t.bark, g.aniso);
+    let bark_height, bark_cavity = render3d::tree_bark_textures(g);
+    slot(r, 0, bark_height, g.aniso);
+    slot(r, 1, bark_cavity, g.aniso);
     nx::bind(if g.hdr { t.hdr_tube } else { t.tube });
     nx::draw_indexed(ngfx::root(r), t.wood_ib, 4, t.tube_count);
     if t.leaf_count > 0 {
@@ -999,7 +1001,9 @@ fn tree_card_pass(own: Own&, g: Gpu&, f: render3d::Frame, b: render3d::TreeBlock
     r.frame = ngfx::frame_data(bytes_of(one));
     r.u = ngfx::frame_data(bytes_of(bb));
     r.verts = nx::address(t.wood_vb);
-    slot(r, 0, t.bark, g.aniso);
+    let bark_height, bark_cavity = render3d::tree_bark_textures(g);
+    slot(r, 0, bark_height, g.aniso);
+    slot(r, 1, bark_cavity, g.aniso);
     var pass = nx::PassDesc { depth: depth, color_value: float4_0 };
     pass.color[0] = color;
     pass.resolve[0] = t.card;
@@ -1783,7 +1787,7 @@ fn release(own: Own&, g: Gpu&) {
     for p in pipelines { if p.id != 0 { nx::release(p); } }
     release_hdr(own, g);
     for p in [g.depth_room, g.depth_table, g.depth_lace, g.depth_show, g.lit_shell, g.fading_shell] { if p.id != 0 { nx::release(p); } }
-    for t in [g.hdr_image, g.scene_depth, g.tree.bark, g.tree.leaf_shape, g.tree.leaf_marks, g.tree.card] { if t.id != 0 { nx::release(t); } }
+    for t in [g.hdr_image, g.scene_depth, g.tree.bark, g.tree.bark_height, g.tree.bark_cavity, g.tree.leaf_shape, g.tree.leaf_marks, g.tree.card] { if t.id != 0 { nx::release(t); } }
     for t in g.glow_levels { if t.id != 0 { nx::release(t); } }
     for b in [g.tree.wood_vb, g.tree.wood_ib, g.tree.leaves] { if b.id != 0 { nx::release(b); } }
     for p in [g.tree.tube, g.tree.ribbon, g.tree.hdr_tube, g.tree.hdr_ribbon, g.tree.leaf, g.tree.hdr_leaf, g.tree.card_tube,

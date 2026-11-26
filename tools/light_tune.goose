@@ -40,8 +40,13 @@
 //       [--tree-draw off|wood|all (the tree outside drawn as geometry, render3d::TREE_DRAWS; off; on, its shadow grown whole too)
 //       --tree-light SUN,SKY,THROUGH,FORWARD (2.5,1,0.35,0.6) --tree-look SHADE,TWIG_PX,SPREAD (1,1,0.15)
 //       --tree-tint TINT,LEAVES,BARK,DEEPER (0.2,1,1,0.6)
+//       --tree-elbows FEWEST,MOST,TURN_LO,TURN_HI (0,0,30,50) --tree-gravity S (0) --tree-shed LIGHT,STUBS (0,0.5)
+//       --tree-plates ON,SPURS,NUDGE (0,2,0) --tree-tilt ON,SEASON,SAG (0,2,8) --tree-bend SHARE,TWIST (0,25)
+//       --tree-leaf-mesh tier|card|rows|fan (the leaves' meshes; tier)
 //       --tree-wind off|on (the shadow's wind on the geometry, the leaves fluttering in HDR; off) --tree-flutter DEG,RATE (6,9)
-//       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)]
+//       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)
+//       --tree-bark off|on (the bark's age layers; off) --tree-relief K (1) --tree-scatter W (0) --tree-rough S (0)
+//       --tree-junctions off|on --tree-roots off|on (the wood's junctions, the flare's roots; off) --tree-wood-tier high|standard|phone]
 //       [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
@@ -271,6 +276,8 @@ fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
 // it is, the eye moved). With the shell off, room is the view over the table to the
 // panelled wall.
 let VIEWS = ["board", "room", "window", "hall", "stove", "table-window"];
+let OFF_ON = ["off", "on"];
+let WOOD_TIERS = ["high", "standard", "phone"];
 let TABLE_WINDOW = 5;
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
 // indirect light keeps, or the indirect light alone on grey, or its broken values marked.
@@ -1741,12 +1748,48 @@ fn main() {
     render3d::tree_twig_px = tree_look.y;
     render3d::tree_spread = tree_look.z;
     render3d::tree_tint = four(argv, "--tree-tint", render3d::tree_tint);
+    // --tree-elbows FEWEST,MOST,TURN_LO,TURN_HI: broken leaders a hero limb, the side shoot
+    // turned TURN_LO..TURN_HI degrees (0,0,30,50: none); --tree-gravity S: the gravity layer
+    // in place of the habit's sag, S its strength (0 off, 1 the study's); --tree-shed
+    // LIGHT,STUBS: thin wood whose twigs' sky share is under LIGHT dies back, STUBS of it left
+    // as stubs (0,0.5: none). trees::Growth, task 117; the tree as grown by tools/tree_dump.
+    render3d::tree_growth.elbows = four(argv, "--tree-elbows", render3d::tree_growth.elbows);
+    render3d::tree_growth.gravity = number(argv, "--tree-gravity", render3d::tree_growth.gravity);
+    let shed = four(argv, "--tree-shed", float4 { render3d::tree_growth.shed.x, render3d::tree_growth.shed.y, 0.0, 0.0 });
+    render3d::tree_growth.shed = float2 { shed.x, shed.y };
+    // --tree-plates ON,SPURS,NUDGE: the leaves only on each twig's current shoots, the tip's
+    // two pairs and SPURS short shoots of one pair, Weisse's ratios, nudged apart in plan by
+    // NUDGE (0,2,0: the habit's pairs along the twig); --tree-tilt ON,SEASON,SAG: the plates'
+    // blades tilted by the measured tilts of SEASON (0 summer, 1 mid-September, 2 October) at
+    // their height, SAG degrees more inside and low (0,2,8: level). trees::Growth, task 117.
+    render3d::tree_growth.plates = four(argv, "--tree-plates", render3d::tree_growth.plates);
+    render3d::tree_growth.tilt = four(argv, "--tree-tilt", render3d::tree_growth.tilt);
+    // --tree-bend SHARE,TWIST: the plates' blades bent (cupped, drooping, tented, tips down,
+    // sagging and twisted) by SHARE of the study's chances, twisted TWIST degrees at most at
+    // the tip (0,25: flat); --tree-leaf-mesh tier|card|rows|fan: the leaves' meshes, by the
+    // tier (the high tier's fan, the standard's rows, with the bend on) or one for all.
+    let bend = four(argv, "--tree-bend", float4 { render3d::tree_growth.bend.x, render3d::tree_growth.bend.y, 0.0, 0.0 });
+    render3d::tree_growth.bend = float2 { bend.x, bend.y };
+    render3d::tree_leaf_mesh = pick(argv, "--tree-leaf-mesh", render3d::TREE_LEAF_MESHES, render3d::tree_leaf_mesh);
     // --tree-wind off|on: the shadow's wind on the tree's geometry, each leaf turning about
     // its stalk too in HDR (render3d::tree_wind, task 107's T4); --tree-flutter DEG,RATE how
     // far a leaf turns in the room's mild wind and how fast (radians a second of the wind).
     render3d::tree_wind = pick(argv, "--tree-wind", render3d::TREE_WINDS, 0) == 1;
     let flutter = four(argv, "--tree-flutter", float4 { render3d::tree_flutter.x, render3d::tree_flutter.y, 0.0, 0.0 });
     render3d::tree_flutter = float2 { flutter.x, flutter.y };
+    // The maple's wood (task 117's step three), each off by default: --tree-bark off|on the
+    // bark's age layers grown at startup in place of the first tile, --tree-relief K their
+    // relief (1 true slopes); --tree-scatter W the light wrapped past the terminator as if
+    // scattered under the bark, --tree-rough S Oren-Nayar's roughness (0 each: off);
+    // --tree-junctions off|on the collars, swells, ridges, grain round the feet and caps,
+    // --tree-roots off|on the flare's roots; --tree-wood-tier high|standard|phone their mesh.
+    render3d::tree_bark = pick(argv, "--tree-bark", OFF_ON, 0) == 1;
+    render3d::tree_relief = number(argv, "--tree-relief", render3d::tree_relief);
+    render3d::tree_scatter = number(argv, "--tree-scatter", render3d::tree_scatter);
+    render3d::tree_rough = number(argv, "--tree-rough", render3d::tree_rough);
+    render3d::tree_wood.junctions = pick(argv, "--tree-junctions", OFF_ON, 0) == 1;
+    render3d::tree_wood.roots = pick(argv, "--tree-roots", OFF_ON, 0) == 1;
+    render3d::tree_wood.tier = pick(argv, "--tree-wood-tier", WOOD_TIERS, 0);
     // --tree-card off|on|main: the tree's card (render3d::tree_card, T5), drawn once from the
     // geometry: on in the floor's mirror (and a phone's view), main in the main view too in
     // place of the geometry, to compare. It is drawn from the tree, so it grows it all.
@@ -1765,7 +1808,7 @@ fn main() {
         let v = render3d::tree_view_of(g);
         if render3d::tree_grown_whole && g.room_on && g.room_shell {
             let s = room_shell::LIBRARY;
-            trees::grow_whole(t, rooms::whole_tree(g.room, s), v, rooms::whole_sight(g.room, s), true);
+            trees::grow_whole(t, render3d::whole_tree_of(g), v, rooms::whole_sight(g.room, s), true);
         } else {
             trees::grow(t, sp, v);
         }

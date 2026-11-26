@@ -2281,6 +2281,70 @@ to be is in tasks 042, 059, 071, 081, and 086.
   the sky and the far band are. The mirror keeps them, as no geometry is drawn there. Off,
   the four views are byte-identical. Open: the park's cards still cast their shadows on
   the lawn.
+- The maple's branch skeleton is reshaped after growth, behind the light tuner's
+  `--tree-elbows`, `--tree-gravity` and `--tree-shed`, each off by default (2026-11-26,
+  task 117's step one; `trees::Growth`, `tree_skeleton.goose`,
+  `build/notes/tree/branches/compare.html` and `build/`). The method chosen from four CPU
+  studies (space colonisation, Palubicki et al. 2009, our Weber-Penn generator, Gao and
+  Newberry's forks), by the pictures: our Weber-Penn generator kept (trunk, hero limbs,
+  envelope, culling, dice per branch, one leader), with broken leaders added (in 5-35 cm
+  wood a stub, the side shoot 22 % thinner turned 30-50°, 1-3 a hero limb, its count the
+  tuner's until the user has seen it), Stava et al. 2014's bending under the carried wood
+  with a beam's stiffness by r⁴ and the growth's correction upward (85 % in young wood,
+  25 % in old; Almeras and Fournier 2009) in place of `Habit.sag`, and Palubicki's shedding
+  of shaded branches, half left as stubs. The bend's stiffness is an effective 2·10⁷ Pa,
+  set by eye: green maple's 10 GPa barely bends in one pass, as real limbs sag over years.
+  The shedding's light comes from a grid of the twigs' full-leaf foliage, not the season's
+  leaves, so a bare tree sheds as a leafy one. With gravity or shedding on, culling waits
+  until the skeleton is reshaped (a branch bent into view is kept), costing the whole
+  tree's growth: all three on, about 15 ms on the CPU instead of 6.5-7, under the 100 ms
+  budget. Off, the trees are byte-identical. Rejected: Gao and Newberry's forks as the main
+  rule (they make a round bush; this replaces the task's path through them), space
+  colonisation (a vase of rising limbs), and Palubicki's growth whole (natural limbs only
+  with gravity each year, coarse twigs, about 60 ms at low detail).
+- The maple's leaves sit in plates on the shoot tips, tilted by season and height, and
+  bent, behind the light tuner's `--tree-plates`, `--tree-tilt`, `--tree-bend` and
+  `--tree-leaf-mesh`, each off by default (2026-11-26, task 117's step two;
+  `trees::add_plates`, `trees::leaf_shapes`, `shaders::TREE_LEAF_VERT`,
+  `build/notes/tree/leaves/`). Placement replaces the habit's four pairs along each twig:
+  only each twig's current shoots carry leaves, the tip's two decussate pairs and short
+  shoots of one pair, the lower leaf of a pair larger on the longer stalk (Weisse 1895),
+  the blades spread level, optionally nudged apart in plan (the study's mosaic, 14 ms of
+  growth). Tilt: drawn per blade from Chianucci et al. 2018's measured Norway maple tilts
+  (Raabe et al. 2015) by season and height, the top flattest in summer and steeper in
+  autumn, with a small tunable sag inside and low in the crown (weakly supported: shade
+  leaves are thinner and larger; nothing measures it in Norway maple); October, the
+  default, matches today's tilts. The season will follow the tree's season once all
+  seasons are shown. Bend: six shapes (flat, cupped up, midrib drooping, edges down, lobe
+  tips down, sagging) bent at startup by arcs along the palmate leaf's rays, so the outline
+  doesn't stretch; each leaf a shape, an amount and a twist packed into its card's `face.w`
+  (the card stays four vec4s), most flat, a few cupped in the sun, more sagging in the
+  shade, on big blades and in autumn, so no uniform droop. The shapes are triangle lists
+  put before the cards in their storage buffer, drawn without an index buffer, so neither
+  renderer needs a new binding. A define per tier: flat cards on phones (which draw the
+  tree's card), the card in four rows bent along its midrib on the standard tier (24
+  vertices drawn), a 21-vertex fan hugging each leaf's outline on the high tier (78 drawn;
+  45 % of it blade against the card's 27 %). Rejected: an index buffer per mesh (a second
+  path in each renderer for no gain at these counts), a uniform droop by position, the
+  study's per-lobe noise per leaf (the amount and twist give enough variety). Fixed on the
+  way: `add_cards` gave every card a trunk segment, so leaves neither moved with their twig
+  under gravity nor fell with shed wood.
+- The maple's bark is a tile made at startup in four ages plus junctions in the mesh,
+  never displacement, behind the light tuner's `--tree-bark`, `--tree-scatter`,
+  `--tree-rough`, `--tree-junctions` and `--tree-roots`, each off by default (2026-11-26,
+  task 117's step three, the user's choice; `tree_bark.goose`, `tree_junctions.goose`,
+  `build/notes/tree/bark-roots/`). The tile is a fracture growth (Lefebvre and Neyret
+  2002) whose snapshots are the ages, height and cavity one age a channel, blended by the
+  wood's radius, so young wood is smooth and old wood deeply furrowed; 35 ms once. The
+  normal comes from the height's slope in the shader, its taps by tier (5, 3, screen
+  derivatives). The plastic look is tried two ways, each its own switch: a wrap term for
+  light scattered past the terminator, and Oren-Nayar roughness (the wood had no
+  specular). Junctions swell and weld the branch's foot into its parent, the parent's
+  grain flowing round it; the trunk's lowest rings are the level lines of trunk and roots
+  together, so the roots join without a seam and run out into the lawn. Rejected:
+  displacing the mesh by the tile (triangles everywhere for what a normal shows from the
+  room), a separate mesh per root welded to the trunk (the seam of round one), and grain
+  from world position (it stretched on the collar).
 - Each limb's bark tile is shifted round and along by dice of its own (2026-11-24, task
   107; `trees::tube`), so neighbouring limbs' tiles don't line up. A stand-in until a
   real fix of the tile's repeat (stochastic or two-scale sampling, and the bare maple's

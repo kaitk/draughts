@@ -36,6 +36,8 @@ root struct Tree {
     // The whole tree's (grow_whole) branches and leaves as the picture draws them.
     limbs: Limb[>..] = [],          // at most MAX_LIMBS
     cards: Card[>..] = [],          // at most MAX_CARDS
+    // What shedding left of each limb (SHED_GROWN ..), while grow_whole reshapes the tree.
+    limb_shed: u8[>..] = [],
 }
 
 // What the tree is (rooms::Room's tree, crown and foliage).

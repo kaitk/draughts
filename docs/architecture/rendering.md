@@ -1105,6 +1105,49 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   its light. Each limb's bark tile starts at a shift of its own. While it draws, the view
   out's near trees (the oak's picture, the park's cards, `tree_seen`) are left out of the
   main view; the far band and the sky stay, and the mirror keeps them all.
+- **The maple's bark, junctions and roots** (the light tuner's `--tree-bark`,
+  `--tree-relief`, `--tree-scatter`, `--tree-rough`, `--tree-junctions`, `--tree-roots`
+  and `--tree-wood-tier`, each off by default and in the app; `trees::bark_layers`,
+  `trees::shaped_tubes`, `TREE_WOOD_FRAG`). The bark tile is grown at startup as cracks
+  opening over time (about 35 ms on the CPU), kept at four ages in two textures, height
+  and cavity, and each pixel blends the ages by its wood's radius: twigs smooth, the trunk
+  deeply furrowed. The shader takes the normal from the height's slope, darkens the sky
+  in the cavities and shadows the sun in them; `--tree-scatter` wraps light past the
+  terminator, warm, and `--tree-rough` lights the wood as a rough surface (Oren-Nayar).
+  With junctions on, the wood's tubes are rebuilt with collars, a swelling round each
+  branch's foot on its parent, the foot welded under the parent's skin, and the parent's
+  grain bent round it; with roots on, the trunk's lowest rings follow the trunk and its
+  roots as one surface, out into the lawn. The tube triangles grow from about 17,000 to
+  82,000 on high, 30,000 on standard, 20,000 on phone (no roots).
+- **The maple's growth past its habit** (the light tuner's `--tree-elbows`,
+  `--tree-gravity` and `--tree-shed`, each off by default and in the app;
+  `trees::Growth`, `src/model3d/tree_skeleton.goose`; `tools/tree_dump` takes the same as
+  `--elbows`, `--gravity`, `--shed`). Broken leaders: in wood 5-35 cm across a limb's axis
+  ends as a stub on its old way, and the side shoot takes over, thinner, turned 30-50°.
+  The gravity layer, in place of the habit's sag: each segment bends at its foot by the
+  wood it carries against a beam's stiffness by r⁴ (Stava et al. 2014), capped by Stava's
+  largest angle, then turns back toward the way it grew, young wood most; upright wood
+  doesn't bend, twigs turn with the wood they grow on, and leaves with their twig. The
+  shedding (Palubicki et al. 2009): a branch whose twigs see less of the sky than a
+  threshold, through a grid of the twigs' full-leaf foliage, dies, some branches left as a
+  stub. With gravity or shedding on, the tree is grown whole, shed, bent, and only then
+  culled to what the windows show or cast; the culled tree is cut from the whole one. All
+  three on, the whole tree grows in about 15 ms on the CPU instead of 7.
+- **The maple's leaves in plates** (the light tuner's `--tree-plates`, `--tree-tilt`,
+  `--tree-bend` and `--tree-leaf-mesh`, each off by default and in the app;
+  `src/model3d/tree_leaves.goose`; `tools/tree_dump` takes `--plates`, `--tilt`, `--bend`).
+  Each twig's leaves grow only on its current shoots: the tip's pair and one a quarter turn
+  below, and short shoots of one pair along it; the lower leaf of a pair is larger on the
+  longer stalk, and the stalks spread the blades into one layer, optionally nudged apart in
+  plan. Each blade's tilt from level is drawn from measured Norway maple tilts for the
+  season (summer to October) and its height in the crown, with a little more sag inside and
+  low. Each blade is flat, cupped up, or one of four sagging shapes, by an amount and a
+  twist packed into its card; the shapes are bent once when the tree is grown and stored
+  before the cards in their storage buffer. The high tier draws each leaf as a 21-vertex
+  fan hugging its outline, the standard tier as the card in four rows bent along its
+  midrib, phones flat cards; the ngfx build draws flat cards. With gravity on, blades keep
+  their way while their twig bends. All on, the whole tree grows in about 34 ms on the CPU,
+  and the fan costs about 0.04 ms a frame on a desktop GPU.
 - **The maple in the wind** (the light tuner's `--tree-wind off|on`, off by default and in
   the app; `shaders::WIND_FN`, `TREE_WIND`, `TREE_FLUTTER`): the wind that moves the
   room's shadow of the tree (`WIND_FN`, which `LIGHT_FN` and the tree's vertex shaders
