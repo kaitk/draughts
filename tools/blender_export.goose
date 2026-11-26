@@ -11,8 +11,10 @@
 //       [--window-turn DEG (12)] [--table-turn DEG (25)] [--lace-hang M (0.15)] [--books on|off]
 //       [--chairs on|off] [--rug on|off]
 //
-// --maps on also writes the table's wood maps as the app bakes them on the GPU
-// (table_albedo.png, table_normal.png), so open no window: GOOSE_GFX_HEADLESS=1.
+// --maps on also writes, from the app's own code on the GPU, the table's wood maps
+// (table_albedo.png, table_normal.png), the panelling oak's field (wall_albedo.png,
+// wall_normal.png) and the floor laid out in its uv (floor_albedo.png, floor_normal.png,
+// --floor-mm a texel, 2), so open no window: GOOSE_GFX_HEADLESS=1.
 //
 // The defaults are the tuner's at its default placement (less-turned).
 import std;
@@ -70,6 +72,7 @@ struct Part { name: u8[..32], kind: f32 }
 var pos:   float3[>..] = [];
 var nrm:   float3[>..] = [];
 var uvs:   float2[>..] = [];
+var extra: float2[>..] = [];  // a vertex's occlusion and its piece's own tone (mat's fraction)
 var tris:  u32[>..]    = [];
 var part:  i64[>..]    = [];  // a triangle's
 var parts: Part[>..]   = [];
@@ -120,6 +123,7 @@ fn add(verts: mesh::Vertex[>..]&, indices: u32[>..]&, room: bool, props: bool) {
         pos.push(from_room(p));
         nrm.push(normalize(dir_from_room(n)));
         uvs.push(v.uv);
+        extra.push(float2 { v.ao, v.mat - floor(v.mat + 0.001) });
     }
     for t in indices.len / 3 {
         let a = indices[3 * t];
@@ -172,6 +176,7 @@ fn add_rug(mid: float3, half: float2, thick: f32) {
             pos.push(q);
             nrm.push(n);
             uvs.push(float2 { (q.x - x0) / (x1 - x0), (q.y - y0) / (y1 - y0) });
+            extra.push(float2 { 1.0, 0.0 });
         }
         let order: i64[6] = if wound { [0, 1, 2, 0, 2, 3] } else { [0, 2, 1, 0, 3, 2] };
         for e in 6 { tris.push((first + order[e]) as u32); }
@@ -211,10 +216,104 @@ fn table_uv(v: mesh::Vertex) -> float2 {
     return float2 { uv.x, 1.0 - uv.y };
 }
 
+// The floor's surface for Blender: ROOM_VERT's outputs, each vertex placed by its uv over
+// the rectangle `laid` (its lowest corner and its size), v up the picture.
+let SURFACE_VERT = """
+    layout(location = 0) in vec3 a_pos;
+    layout(location = 1) in vec3 a_normal;
+    layout(location = 2) in vec2 a_uv;
+    layout(location = 3) in vec2 a_extra;
+    layout(location = 4) in vec2 a_corner;
+    layout(location = 5) in vec2 a_box;
+    layout(location = 0) out vec3 v_world;
+    layout(location = 1) out vec3 v_normal;
+    layout(location = 2) out vec2 v_uv;
+    layout(location = 3) out vec2 v_extra;
+    layout(location = 4) out vec3 v_local;
+    layout(location = 5) out vec2 v_corner;
+    layout(location = 6) flat out vec2 v_box;
+    layout(set = 1, binding = 1) uniform Laid { vec4 laid; };
+    vec3 turned(vec3 a) {
+        vec2 xz = room_axes.xy * a.x + room_axes.zw * a.z;
+        return vec3(xz.x, a.y, xz.y);
+    }
+    void main() {
+        v_world = turned(a_pos);
+        v_normal = turned(a_normal);
+        v_uv = a_uv;
+        v_extra = a_extra;
+        v_local = a_pos;
+        v_corner = a_corner;
+        v_box = a_box;
+        gl_Position = vec4((a_uv - laid.xy) / laid.zw * 2.0 - 1.0, 0.0, 1.0);
+    }
+    """;
+let SURFACE_OUT = "#define SURFACE_OUT 1\n";
+let SURFACE_NORMAL = "#define SURFACE_OUT 1\n#define SURFACE_NORMAL 1\n";
+struct Laid { laid: float4 }
+
+// The floor drawn by ROOM_FRAG unlit into a w by h picture over its uv's rectangle `laid`.
+fn floor_pass(r3d: render3d::Own&, g: render3d::Gpu&, pipe: gfx::Pipeline, target: gfx::Texture, laid: float4) {
+    var f = g.frame;
+    f.room_axes = axes;
+    var s = render3d::surfaces_block(g);
+    s.axes = axes;
+    s.shell_ends.w = 0.0;  // no rug: it is its own part
+    var pass = gfx::PassDesc { color_value: float4_0 };
+    pass.color[0] = target;
+    gfx::begin_pass(pass);
+    gfx::bind(pipe);
+    let t = render3d::room_textures(g, render3d::GROUP_FLOOR, false, false);
+    for i in 10 { gfx::bind_texture(gfx::FRAGMENT, i, t.tex[i], t.smp[i]); }
+    gfx::uniforms(gfx::VERTEX, 0, f);
+    gfx::uniforms(gfx::VERTEX, 1, Laid { laid });
+    gfx::uniforms(gfx::FRAGMENT, 0, f);
+    gfx::uniforms(gfx::FRAGMENT, 1, s);
+    gfx::bind_vertex_buffer(g.room_vb);
+    gfx::bind_index_buffer(g.room_ib, 4);
+    let first, count = render3d::room_index_range(g, render3d::GROUP_FLOOR);
+    gfx::draw_indexed(count, 1, first, 0, 0);
+    gfx::end_pass();
+}
+
+// The room's surfaces as the tuner draws them (rooms::AUTUMN, no rug): the panelling oak's
+// field as baked (BAKE_FRAG's mode 5: sRGB, roughness in alpha; its slopes along u and v in
+// r and g), and the floor laid out over `laid` (world units), a texel `mm` millimetres:
+// ROOM_FRAG's herringbone, tones, joints, wear and scratches, the albedo sRGB with the
+// roughness in alpha, the normal along u, v and up.
+fn write_room_maps(r3d: render3d::Own&, g: render3d::Gpu&, out_dir: const u8[:], laid: float4, mm: f32) {
+    var room = rooms::AUTUMN;
+    room.baked = float4 { 0.0, 0.0, room.baked.z, room.baked.w };  // the surfaces only, not the light
+    g.room = room;
+    g.room_tuned = true;
+    g.rug_off = true;
+    render3d::show_room(g, true);
+    render3d::room_surfaces(r3d, g);
+    guard g.room_vb.id != 0 else { abort("the room's mesh was not made"); }
+    let texel = mm / 1000.0 * M;
+    let w = min(ceil(laid.z / texel) as i64, 16384);
+    let h = min(ceil(laid.w / texel) as i64, 16384);
+    let vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, SURFACE_VERT);
+    let albedo = gfx::pipeline(vert, embed_shader("frag", SURFACE_OUT, shaders::ROOM_FLOOR, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                               gfx::PipelineDesc {});
+    let normal = gfx::pipeline(vert, embed_shader("frag", SURFACE_NORMAL, shaders::ROOM_FLOOR, shaders::NO_SSAO, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
+                               gfx::PipelineDesc {});
+    let a = render3d::baked(r3d, w, h, gfx::RGBA8_SRGB);
+    let n = render3d::baked(r3d, w, h, gfx::RGBA8);
+    floor_pass(r3d, g, albedo, a, laid);
+    floor_pass(r3d, g, normal, n, laid);
+    guard gfx::save_png(g.wall_albedo, str(out_dir, "/wall_albedo.png")[..]) &&
+          gfx::save_png(g.wall_normal, str(out_dir, "/wall_normal.png")[..]) &&
+          gfx::save_png(a, str(out_dir, "/floor_albedo.png")[..]) &&
+          gfx::save_png(n, str(out_dir, "/floor_normal.png")[..]) else { abort(str("could not save the room's maps: ", gfx::error())); }
+    print("wrote ", out_dir, "/wall_albedo.png, wall_normal.png, floor_albedo.png and floor_normal.png (", w, " x ", h, ")");
+}
+
 // The table's maps baked as the tuner bakes them (its put_look at autumn, the flame
 // mahogany, tables::for_look) and saved as PNG: the albedo sRGB with the polish's roughness
-// in alpha, the normal's x and z in r and g (0.5 flat), the wear's patches in b.
-fn write_maps(out_dir: const u8[:]) {
+// in alpha, the normal's x and z in r and g (0.5 flat), the wear's patches in b; then the
+// room's (write_room_maps).
+fn write_maps(out_dir: const u8[:], laid: float4, mm: f32) {
     guard gfx::open("Draughts: the table's maps", 64, 64, 0) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
     var g = default<render3d::Gpu>();
@@ -233,6 +332,7 @@ fn write_maps(out_dir: const u8[:]) {
     guard gfx::save_png(g.table_albedo, str(out_dir, "/table_albedo.png")[..]) &&
           gfx::save_png(g.table_normal, str(out_dir, "/table_normal.png")[..]) else { abort(str("could not save the maps: ", gfx::error())); }
     print("wrote ", out_dir, "/table_albedo.png and table_normal.png");
+    write_room_maps(r3d, g, out_dir, laid, mm);
 }
 
 fn write_obj(path: const u8[:]) {
@@ -256,9 +356,11 @@ fn write_obj(path: const u8[:]) {
                 }
             }
         }
+        // A vertex's colour: r its occlusion, g its piece's own tone.
         for v in order {
             let q = pos[v as i64];
-            format(out, "v ", q.x, " ", q.y, " ", q.z, "\n");
+            let e = extra[v as i64];
+            format(out, "v ", q.x, " ", q.y, " ", q.z, " ", e.x, " ", e.y, " 0\n");
         }
         for v in order {
             let t = uvs[v as i64];
@@ -301,7 +403,6 @@ fn main() {
     room_shell::hang_lace(number(argv, "--lace-hang", room_shell::LACE_HANG));
     room_shell::LIBRARY.table = table_at;
     guard make_dir(out_dir) else { abort(str("could not make ", out_dir)); }
-    if switch(argv, "--maps", false) { write_maps(out_dir); }
 
     // The room as the tuner lights it (room_scene::light_of).
     let r = rooms::AUTUMN;
@@ -315,6 +416,16 @@ fn main() {
     room_shell::build(verts, indices, glass, gi, room_shell::LIBRARY, books);
     add(verts, indices, true, false);
     add(glass, gi, true, false);
+    // The floor's uv's rectangle (world units), which its maps cover.
+    var lo = float2 { 1.0e9, 1.0e9 };
+    var hi = float2 { -1.0e9, -1.0e9 };
+    for v in verts {
+        guard floor(v.mat + 0.001) == surfaces::MAT_FLOOR else { continue; }
+        lo = float2 { min(lo.x, v.uv.x), min(lo.y, v.uv.y) };
+        hi = float2 { max(hi.x, v.uv.x), max(hi.y, v.uv.y) };
+    }
+    let laid = float4 { lo.x, lo.y, hi.x - lo.x, hi.y - lo.y };
+    if switch(argv, "--maps", false) { write_maps(out_dir, laid, number(argv, "--floor-mm", 2.0)); }
 
     var pv: mesh::Vertex[>..] = [];
     var pi: u32[>..]          = [];
@@ -411,6 +522,22 @@ fn main() {
     put4(j, render3d::base_wood);
     format(j, ",\n    \"base_look\": ");
     put4(j, render3d::base_look);
+    format(j, "\n  },\n");
+    // The room's surfaces' maps (--maps on) and how ROOM_FRAG lays them, in world units
+    // (a metre is `metre`): the floor's maps over its uv's rectangle `floor_laid` (its lowest
+    // corner, its size); the panelling oak's field a tile of `wall_field`, each piece's own
+    // tone (the vertex colour's g) `oak_tone` either way, a threshold (own over 0.925) times
+    // `threshold` and its roughness times 0.8, grime `oak_grime` where the occlusion (the
+    // vertex colour's r) is under 1 and the roughness up 0.15 at none; the wallpaper's mask
+    // (design/materials/wallpaper_mask.png) a tile of `paper_tile`, from its ground to the
+    // gold print (sRGB, a its roughness).
+    format(j, "  \"surfaces\": {\n    \"metre\": ", M, ",\n    \"floor_laid\": ");
+    put4(j, laid);
+    format(j, ",\n    \"wall_field\": ", surfaces::WALL_FIELD, ",\n    \"oak_tone\": 0.16,\n    \"threshold\": [1.45, 1.38, 1.25],\n");
+    format(j, "    \"oak_grime\": 0.55,\n    \"paper_tile\": ", surfaces::PAPER_TILE, ",\n    \"paper_ground\": ");
+    put4(j, look.paper);
+    format(j, ",\n    \"paper_gold\": ");
+    put4(j, look.gold);
     format(j, "\n  },\n  \"views\": {\n");
     for v, i in room_scene::VIEWS {
         format(j, "    \"", v.name[..], "\": {\"eye\": ");

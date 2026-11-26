@@ -1235,6 +1235,16 @@ let ROOM_FRAG = """
                 ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
             }
         }
+    #ifdef SURFACE_OUT
+        // The floor unlit, laid out in its uv, for Blender (tools/blender_export.goose): its
+        // albedo and roughness, or with SURFACE_NORMAL its normal along u, v and up.
+    #ifdef SURFACE_NORMAL
+        result = vec4(vec3(dot(n, u_dir), dot(n, v_dir), n.y) * 0.5 + 0.5, 1.0);
+    #else
+        result = vec4(albedo, clamp(rough, 0.0, 1.0));
+    #endif
+        return;
+    #endif
     #endif
     #ifdef ROOM_WALLS
         if (kind < 5.5) {

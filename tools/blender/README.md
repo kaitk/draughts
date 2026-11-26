@@ -26,9 +26,22 @@ Hold the GPU lock while rendering (`agents/perf.md`).
 
 The exporter's flags set the room as the tuner's do: `--table-at X,Y`, `--sun AZ,HEIGHT`,
 `--window-turn DEG`, `--table-turn DEG`, `--lace-hang M`, `--books`, `--chairs`, `--rug
-on|off`. `--maps on` also bakes the table's wood on the GPU with render3d's own bake (autumn,
-the flame mahogany, as the tuner) and saves `table_albedo.png` (sRGB, the polish's roughness
-in alpha) and `table_normal.png` (the normal's x and z in r and g, the wear's patches in b). The defaults are the tuner's at its default placement (less-turned).
+on|off`, `--backs on|off` (the casements' backs, which the room's mesh leaves out since they
+face away from the room; on, or the space between the panes takes too little light). `--maps on` also makes, on the GPU with the app's own code, the pictures the
+surfaces read (the defaults are the tuner's at its default placement, less-turned):
+
+- `table_albedo.png` (sRGB, the polish's roughness in alpha) and `table_normal.png` (the
+  normal's x and z in r and g, the wear's patches in b): render3d's bake of the table's
+  wood (autumn, the flame mahogany, as the tuner).
+- `wall_albedo.png` and `wall_normal.png`: the panelling oak's field as render3d bakes it
+  (`BAKE_FRAG`'s mode 5, 2048², a tile of `WALL_FIELD`), the roughness in alpha, its slopes
+  along u and v in r and g.
+- `floor_albedo.png` and `floor_normal.png`: the floor drawn by `ROOM_FRAG` itself, unlit
+  (its `SURFACE_OUT` define), laid out in the floor's uv: the herringbone, each plank's
+  place in the oak's field, its tone, the patched ones, the joints, the wear round the table
+  and along the room, the darker wax along the walls, the scratches; the roughness in
+  alpha; the normal along u, v and up (the grain, the planks' tilt and cup, 8 bits). A
+  texel is `--floor-mm` millimetres (2: 4500 × 3500, about 50 MB).
 
 ## The frame
 
@@ -42,8 +55,9 @@ frame is mirrored against the world's, so the export turns it instead.
 `floor`, `oak` (the wainscot and the cases), `paper`, `stone`, `plaster`, `ceiling`,
 `paint`, `books`, `stove_tile`, `brass`, `cord`; the window's `glass` and `lace`; the
 `table_top`, `table_base`, `chair_wood`, `chair_seat`, `chair_trim`, and the `rug`. Each
-vertex keeps its normal and its uv as the app makes them (world units on the chairs'
-cloth, the rug's 0 to 1). `scene.json` has the sun (toward it, and its irradiance as the
+vertex keeps its normal and its uv as the app makes them (world units on the shell and the
+chairs' cloth, the rug's 0 to 1), and a colour: r its occlusion, g its piece's own tone
+(the material's fraction). `scene.json` has the sun (toward it, and its irradiance as the
 shaders' `sun.light`), the sky's radiance through the windows and the bake's gains, the
 albedos from `room_light`, and the named views: `down`, `corner`, `room`, `window`,
 `hall`, `stove`, `menu` (the table-window view at less-turned), `front`, `close`, `low`,
@@ -71,18 +85,27 @@ Pictures from `design/materials/`: the chairs' tapestry (`tapestry.png`, 240 mm 
 and the rug (`rug.png`), both at a 2.2 gamma. The glass is two panes letting 0.92 each
 through without refraction, reflecting 0.6 of Fresnel's; the lace a sheet letting
 `LACE_LETS` through and its thread throwing `LACE_SCATTER` of the rest forward and as much
-back. `--textures off` gives every surface its mean albedo, matte, for the light alone; with
+back. The room's surfaces from `--maps on`, as `ROOM_FRAG` reads them, its values in `scene.json`'s
+`surfaces`: the floor's pictures over its uv's rectangle (`floor_laid`), under the wax as a
+coat at the oak's roughness times the wax's share, following a quarter of the relief; the
+panelling's field a tile of `wall_field` on the uv, each piece's tone and the thresholds by
+the vertex colour's g, the grime and roughness by its r; the wallpaper's mask
+(`design/materials/wallpaper_mask.png`) a tile of `paper_tile`, mixed from its ground to its
+gold print in linear light, their roughness likewise. Without the maps these three keep
+their mean albedos.
+`--textures off` gives every surface its mean albedo, matte, for the light alone; with
 textures on, `-light.png` takes off the gloss passes, which are not denoised.
 
 ## Left to do
 
-- The procedural surfaces the program makes at startup: the oak's grain, the floor's
-  herringbone, the wallpaper's print (`wallpaper_mask.png` tinted by `surfaces::LOOK`),
-  the limewash (`plaster_tone.png`), the limestone sills, the books' spines
+- The procedural surfaces still flat: the limewash (`plaster_tone.png`), the limestone
+  sills, the books' spines
   (`books_atlas.png` and `book_cells.goose`), the stove's glaze, the lace's pattern
   (`lace_f3.png`). Each needs its uv as the shader takes it.
 - The board and the pieces; the park and the tree outside (the bake dims the sun by the
   tree's leaves, about a quarter through two of the three windows; not modelled).
+- The floor's wax per board (`PLANAR_FLOOR`'s `wax`: each board's own, none in the joints,
+  thinner where worn), and the sheen lobes on the oak and the paper.
 - Gloss: the polish's blotches and the wear tile (scratches, crazing, dents), the key's
   highlight widened to a window's (`coat.w`), the sides' figure drawn out along the grain
   (`SIDE_STREAK`), the sheen lobes; the base's mapping is per vertex, not per pixel.
