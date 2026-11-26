@@ -205,6 +205,106 @@ vertex from the same props' atlas on the CPU after each bake (`grid9` at each ve
 step out along its open direction, times its open part), read under a `PROPS_VERTEX`
 define: no texture and no per-pixel reads.
 
+## The fourth step (2026-11-26)
+
+All under `--light physical`; without it the close, low and room shots stay byte-identical
+to `build/perf/light_tune-before122` (with `--base-wood today`). Results page:
+`build/notes/light-physical/index.html#step4`; scratch `build/review122/s4/`.
+
+- The rug in the bake (`room_light::rug_in_bake`): its extent and albedo are
+  `room_light::RUG_HALF`, `RUG_IN` and `RUG_ALBEDO`, which `tools/path_trace.goose` reads
+  too; the floor's cells take it by the share they cover, the floor's sun patches where
+  they land on it.
+- The probes' near limit 0.02 m² in place of 0.09.
+- The exact gather (`room_light::gather_exact`): a cell nearer a half-grid probe than two of
+  its sides is gathered as 8 × 8 small ones; the table's own sun patch, which lies in its
+  top's plane, is no longer hidden by the top from the probes over it (its height rounded
+  under the plane).
+- The table takes the props' bake's open part alone (`render3d::props_profile_ao` off,
+  `props_look.z`), not its profile's hand-made occlusion times it, as the chairs do.
+- The tracer's sun has its disc: each shadow ray goes to a point of a disc 0.004653 rad in
+  radius, as Cycles' 0.53° sun.
+
+The probes are now checked against the tracer with the table's top in its view, as the
+bake has it; step 3's reference had no props, which made the probes at 0.15 and 0.45 m read
+0.71 and 0.77 where, with the top, they are 0.79 and 0.87. 36 of the 180 probes are left
+out: the row 3 cm before the lace (it reads the lace's own glow) and those on the table's
+top at 0.75 m (0.1 mm over the sunlit top). Per change, over the tracer:
+
+| State | 22 points | Range | Error factor | 864 probe values (144 × 6) | Range | Error factor |
+|---|---|---|---|---|---|---|
+| Before (step 3 as made) | 0.68 | 0.03–1.69 | 1.72 | 0.76 | 0.02–2.38 | 1.55 |
+| The rug in the bake | 0.77 | 0.07–1.70 | 1.53 | 0.81 | 0.07–2.40 | 1.45 |
+| The near limit 0.02 m² too | 0.87 | 0.09–1.70 | 1.41 | 0.87 | 0.07–4.65 | 1.39 |
+| The exact gather too | 0.89 | 0.11–1.70 | 1.34 | 0.91 | 0.07–2.40 | 1.32 |
+| The table's open part alone too | 0.94 | 0.23–1.89 | 1.27 | 0.91 | 0.07–2.40 | 1.32 |
+| Ideal L2 of the tracer's light | 0.93 | 0.25–1.66 | 1.33 | 1.00 | 0.64–1.70 | 1.05 |
+
+By direction, before → after, at 0.15, 0.45, 0.75 and 1.05 m:
+
+| Direction | 0.15 m | 0.45 m | 0.75 m | 1.05 m |
+|---|---|---|---|---|
+| Up | 1.15 → 1.15 | 1.23 → 1.23 | 1.23 → 1.24 | 1.27 → 1.29 |
+| Down | 0.15 → 0.89 | 0.24 → 0.60 | 0.31 → 0.44 | 0.36 → 0.70 |
+| Toward the hall | 0.79 → 0.84 | 0.74 → 0.77 | 0.81 → 0.82 | 0.72 → 0.83 |
+| Toward the window | 0.97 → 1.00 | 1.08 → 1.10 | 1.12 → 1.13 | 1.10 → 1.14 |
+| Along the wall, +x | 0.77 → 0.80 | 0.78 → 0.81 | 0.83 → 0.85 | 0.81 → 0.90 |
+| Along the wall, -x | 0.85 → 0.91 | 0.95 → 0.99 | 0.97 → 1.00 | 0.90 → 0.99 |
+
+The near-floor hunt, probe by probe and source by source (scratch `pts bakesrc`: the
+bake's own sources at seven probes, each an exact clamped-cosine sum toward six axes,
+against the tracer's light split by the first surface each ray meets):
+
+- The floor at 0.15 m as point cells gave the light down 0.43 to 1.96 of the tracer's from
+  probe to probe; the exact gather fixes it (down at 0.15 m 0.15 → 0.89 with the rug and
+  the near limit).
+- The table's sun patch was hidden from the probes over it (down at 1.05 m over the
+  table: tracer 0.0077, bake 0.0002); fixed in the exact gather.
+- The bake's sky at the probes is 1.6 to 2.4 times the tracer's (lace removed in both): its
+  sky samples see the glazing flat, as its sun did before step 3. Through L2 the excess
+  from above also takes light from below (the atlas's down 0.0012 where its sources sum to
+  0.0029 and the tracer 0.0030). Traced through the casements' members (a 17 × 17 table of
+  slopes per sky sample, made once, under a millisecond) it is 0.8 to 1.0 of the tracer's
+  with the inner casement only and far below with both: the tracer stops a sky ray at the
+  inner pane, Cycles doesn't. Not made; kept in `s4/sky-members-and-experiments.diff`.
+- The tracer's lace glows with half the sky behind every point, also before the wall;
+  traced from what reaches its back (as Cycles' translucent lace) its glow at the probes
+  falls 2 to 3 times, to the bake's. Against that tracer: The points before 0.87 (0.04–1.72), after all the changes 1.23 (0.37–1.92, error factor 1.38); the probes 1.01 → 1.21.
+- Not found: toward the hall at 0.15 m the hall wall's sun patches reach the probes at 0.7
+  of the tracer, at 0.75 m at 1.2.
+
+The two smaller causes: the top's underside's 0.42 was the table mesh's own occlusion (0.5
+on the underside) times the bake's open part (0.84: the chairs' seats within the reach take
+0.16, the base 0.01; not the floor or the reach); with the bake alone the point goes 0.11 →
+0.23 of the tracer, the edge's undersides 0.48 → 0.62 and 0.62 → 0.80. The foot's top
+(1.70, 1.89 with the bake alone): the bake already hides the top's view from the probes
+under it; the tracer's light at its lookup point with the top is 1.29, so what is left is
+the trilinear lookup mixing in probes outside the top's disc. The props' reach at 1 m: the
+foot 1.89 → 1.35, the seats' front rolls 1.11 → 0.61 and 0.89 → 0.75, all 22 points 0.94
+(error factor 1.27) → 0.87 (1.28). Not made.
+
+The joint of the column and the top (`--plan-eye 4.9,4.9,0.45 --plan-at 4.254,5.83,0.62
+--fov 40`, the tracer's view `joint`): linear luminance of the column's top over the
+underside beside it, the tuner 1.39 before, 0.16 after; the tracer, one albedo for the
+table, 0.89 to 0.98. With the base-wood check's light ratio of about 7 before, the tuner's
+albedo ratio is about 0.2, so its light's ratio after is about 0.8.
+
+The sun's disc: `shell_sun.x` 0.0055 is how fast half the tuner's penumbra widens behind an
+edge, beside a constant 3 cm; the sun's disc gives 0.00465. Across the door patch's left
+edge (10% to 90%): the tuner 8.9 px, the tracer with a point sun 1.8 px, with the disc 10.7.
+
+The exposure stays 3.08: the floor patches' brightest 1% and 5% moved under 0.1%.
+
+Cost: the bake 103 to 104 ms before, 118 to 121 after on the Mac (the half grid 29 → 45 ms,
+the split cells); per pixel one compare in `| State | 22 points | Range | Error factor | 864 probe values (144 × 6) | Range | Error factor |
+|---|---|---|---|---|---|---|
+| Before (step 3 as made) | 0.68 | 0.03–1.69 | 1.72 | 0.76 | 0.02–2.38 | 1.55 |
+| The rug in the bake | 0.77 | 0.07–1.70 | 1.53 | 0.81 | 0.07–2.40 | 1.45 |
+| The near limit 0.02 m² too | 0.87 | 0.09–1.70 | 1.41 | 0.87 | 0.07–4.65 | 1.39 |
+| The exact gather too | 0.89 | 0.11–1.70 | 1.34 | 0.91 | 0.07–2.40 | 1.32 |
+| The table's open part alone too | 0.94 | 0.23–1.89 | 1.27 | 0.91 | 0.07–2.40 | 1.32 |
+| Ideal L2 of the tracer's light | 0.93 | 0.25–1.66 | 1.33 | 1.00 | 0.64–1.70 | 1.05 |_FRAG` with `PROPS_LIGHT`.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

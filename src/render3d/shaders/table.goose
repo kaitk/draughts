@@ -29,7 +29,8 @@ let TABLE_SHELL = """
     #endif
     // render3d::PropsLightBlock: the probes' grid as ROOM_HEAD's light_box and light_grid;
     // props_look x 1 where the table keeps its own shade terms beside the bake, y how far
-    // past its terminator the sun's light wraps.
+    // past its terminator the sun's light wraps, z 1 where the table's profile's occlusion
+    // gives way to the bake's.
     layout(set = 3, binding = 3) uniform PropsLight { vec4 light_box; vec4 light_grid; vec4 props_look; };
     #endif
     """;
@@ -452,9 +453,9 @@ let TABLE_FRAG = """
         float ao = clamp(v_ao, 0.0, 1.0);
     #ifdef PROPS_LIGHT
         // The bake's open part: the chairs' in place of their own shade (mesh::chairs'), the
-        // table's beside its profile's.
+        // table's beside its profile's, or in place of it with props_look.z.
         float open_part = clamp(v_open.w, 0.0, 1.0);
-        ao = chair ? open_part : ao * open_part;
+        ao = chair || props_look.z > 0.5 ? open_part : ao * open_part;
     #endif
     #ifdef TABLE_ROOM
         // The chairs' wood is the base's, darker and less red: the top beside it, under its

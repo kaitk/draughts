@@ -749,9 +749,12 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
 // look as before); props_table_shade keeps the table's own shade terms beside the bake (the
 // base's hidden sky, the edge's under the top); props_wrap: how far past its terminator the
 // sun's light wraps on them (0.2 as made, 0 a lambertian face's, the tuner's --light
-// physical). The bake's rays a vertex and reach (metres).
+// physical); props_profile_ao: the table keeps its profile's own occlusion (mesh::table's)
+// beside the bake's open part (off under the tuner's --light physical: the bake's alone, as
+// the chairs'). The bake's rays a vertex and reach (metres).
 var props_light = false;
 var props_table_shade = false;
+var props_profile_ao = true;
 var props_wrap: f32 = 0.2;
 let PROPS_RAYS = 32;
 let PROPS_REACH: f32 = 0.5;
@@ -780,10 +783,12 @@ fn bake_props_open<O>(o: O&, g: Gpu&, verts: const mesh::Vertex[:], indices: con
 
 // TABLE_FRAG's block with PROPS_LIGHT (shaders::TABLE_SHELL's PropsLight): the probes' grid
 // as the room's (light_box_of, light_grid_of), and props_look x 1 where the table keeps its
-// own shade terms (props_table_shade), y the sun's wrap (props_wrap).
+// own shade terms (props_table_shade), y the sun's wrap (props_wrap), z 1 where the table
+// takes the bake's open part alone (props_profile_ao off).
 struct PropsLightBlock { light_box: float4, light_grid: float4, props_look: float4 }
 fn props_light_block(g: Gpu&) -> PropsLightBlock {
-    PropsLightBlock { light_box_of(), light_grid_of(), float4 { if props_table_shade { 1.0 } else { 0.0 }, props_wrap, 0.0, 0.0 } }
+    PropsLightBlock { light_box_of(), light_grid_of(),
+                      float4 { if props_table_shade { 1.0 } else { 0.0 }, props_wrap, if props_profile_ao { 0.0 } else { 1.0 }, 0.0 } }
 }
 
 // A chair's plan round its seat's middle (world units: half its width, its front, its back's
@@ -2238,7 +2243,8 @@ fn light_baked(g: Gpu&) -> bool { g.room_on && g.room_shell && g.room.baked.x + 
 
 // What the shell's baked light is made from: the key, the room's light, the tree, the
 // casements' members' depth (panes.w), whether the props take their nine harmonics
-// (props_light), the table's top, the bounces and the sun's saturation on the room, and the bake's own
+// (props_light), the rug in the floor's cells and the exact gather (room_light::rug_in_bake,
+// gather_exact), the table's top, the bounces and the sun's saturation on the room, and the bake's own
 // settings (room_light's bounce_grey, lace_source, gather_near), and whether the windows
 // have their shutters (room_shell::shutters_on), how far the lace hangs over the opening
 // (room_shell::lace_hang), and where the games table stands in the plan.
@@ -2247,7 +2253,8 @@ fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     let f = g.frame;
     let r = g.room;
     return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.panes, f.room_axes,
-            float4 { if props_light { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 },
+            float4 { if props_light { 1.0 } else { 0.0 }, if room_light::rug_in_bake { 1.0 } else { 0.0 },
+                     if room_light::gather_exact { 1.0 } else { 0.0 }, 0.0 },
             float4 { table_radius(g), g.tree_ms as f32, light_bounces as f32, room_sun.x },
             float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
                      (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang },

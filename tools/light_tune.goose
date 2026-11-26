@@ -110,7 +110,7 @@
 //       [--lace-shade-fill K (the lace's room-side fill where neither sun nor sky reaches it, 0.5)]
 //       [--lace-fold-ao K (how much the folds' valleys darken that fill, 1.5, the deepest to 0.4)]
 //       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
-//       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
+//       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09; 0.02 with --light physical)]
 //       [--dump-light PATH (the probes' atlas, a float a line, with --shot; with the props' light their nine harmonics' atlas
 //       too, PATH.props)] [--print (the command line printed on the first frame, as P)]
 //       [--dump-room-block PATH (the room's Surfaces block as its raw bytes, with --shot; scripts/room_fixed.py)] [--light-ref PATH (the baked light worked
@@ -228,6 +228,8 @@ let LIGHT_WAYS = ["today", "physical"];
 
 // The two panes' share of the sun (0.92 each), as tools/path_trace.goose takes them.
 let PANES: f32 = 0.8464;
+// --light physical's least squared distance (metres²) from a probe to a light it gathers.
+let PHYSICAL_GATHER_NEAR: f32 = 0.02;
 // --light physical's sun through the casements' members with their depth (--casement-depth).
 var casement_depth = true;
 
@@ -1572,7 +1574,8 @@ fn main() {
     surfaces::panel_bevel = if panel_ao.w > 0.0 { panel_ao.w } else { 1.0 };
     room_light::bounce_grey = number(argv, "--bounce-grey", room_light::bounce_grey);
     room_light::lace_source = number(argv, "--lace-source", room_light::lace_source);
-    room_light::gather_near = number(argv, "--gather-near", room_light::gather_near);
+    room_light::gather_near = number(argv, "--gather-near", if physical { PHYSICAL_GATHER_NEAR } else { room_light::gather_near });
+    room_light::gather_exact = physical;
     render3d::contact_look = four(argv, "--contact", render3d::contact_look);
     render3d::sheen_look = four(argv, "--sheen", render3d::sheen_look);
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);
@@ -1689,6 +1692,7 @@ fn main() {
         props_on = true;
         props_shade = false;
         render3d::props_wrap = number(argv, "--props-wrap", 0.0);
+        render3d::props_profile_ao = false;
     }
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
@@ -2369,6 +2373,7 @@ fn main() {
         g.paper_tile = paper_m * surfaces::METRE;
         g.books_off = !books_on;
         g.rug_off = !rug_on;
+        room_light::rug_in_bake = physical && rug_on;
         g.chairs = chairs_on && room_on;
         render3d::props_light = props_on;
         render3d::props_table_shade = props_shade;

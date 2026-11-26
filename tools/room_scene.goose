@@ -9,7 +9,7 @@ import math;
 // shots' --plan-eye framings in agents/perf.md), each its eye, its target (plan metres) and
 // vertical field of view.
 struct View { name: u8[..16], eye: float3, at: float3, fov: f32 }
-let VIEWS: View[11] = [
+let VIEWS: View[12] = [
     View { "down", float3 { 6.0, 3.0, 1.7 }, float3 { 6.0, 3.05, 0.0 }, 55.0 },
     View { "corner", float3 { 8.4, 0.6, 1.6 }, float3 { 2.0, 5.0, 0.5 }, 55.0 },
     View { "room", float3 { 8.4, 0.6, 1.7 }, float3 { 2.6, 5.8, 1.3 }, 60.0 },
@@ -21,6 +21,7 @@ let VIEWS: View[11] = [
     View { "close", float3 { 2.9, 4.8, 1.15 }, float3 { 3.55, 5.75, 0.55 }, 55.0 },
     View { "low", float3 { 6.3, 4.6, 0.35 }, float3 { 5.3, 5.8, 0.45 }, 55.0 },
     View { "base", float3 { 5.75, 4.75, 0.62 }, float3 { 4.5, 5.8, 0.36 }, 42.0 },
+    View { "joint", float3 { 4.9, 4.9, 0.45 }, float3 { 4.254, 5.83, 0.62 }, 40.0 },
 ];
 
 // The view of that name; false if there is none.

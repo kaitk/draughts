@@ -113,6 +113,29 @@ let CASE_ALBEDO = float3 { 0.066, 0.039, 0.022 };
 let STOVE_ALBEDO = float3 { 0.53, 0.58, 0.45 };
 // The ceiling's and the cornice's limewash, surfaces::LOOK's two ends' mean, linear.
 let CEILING_ALBEDO = float3 { 0.446, 0.383, 0.279 };
+// The rug under the games table (ROOM_FRAG's rug): its half size along the window wall and
+// across it, its middle RUG_IN from the table's toward the hall (metres), and its pile's
+// albedo, design/materials/rug.png's mean in linear light. The bake takes it in the floor's
+// cells and patches with rug_in_bake (the tuner's --light physical).
+let RUG_HALF = float2 { 1.5, 1.0 };
+let RUG_IN: f32 = 0.1;
+let RUG_ALBEDO = float3 { 0.157, 0.075, 0.049 };
+var rug_in_bake = false;
+
+// The share of the floor's rectangle round `at`, `half` each way (the plan's metres), the
+// rug covers, the table's middle at t (the plan's).
+fn rug_cover(t: float2, at: float3, half: float2) -> f32 {
+    let mid = float2 { t.x, t.y - RUG_IN };
+    let x = max(min(at.x + half.x, mid.x + RUG_HALF.x) - max(at.x - half.x, mid.x - RUG_HALF.x), 0.0);
+    let y = max(min(at.y + half.y, mid.y + RUG_HALF.y) - max(at.y - half.y, mid.y - RUG_HALF.y), 0.0);
+    return x * y / (4.0 * half.x * half.y);
+}
+
+// The floor's albedo over that rectangle, the rug's share in with rug_in_bake.
+fn floor_albedo(t: float2, at: float3, half: float2) -> float3 {
+    guard rug_in_bake else { return FLOOR_ALBEDO; }
+    return FLOOR_ALBEDO + (RUG_ALBEDO - FLOOR_ALBEDO) * rug_cover(t, at, half);
+}
 
 // How far the sun's patches' thrown-back light is taken to grey (0 its own colour; the
 // tuner's --bounce-grey): a quarter, as the light thrown off oak, paper and wax is warm.
@@ -122,6 +145,13 @@ var bounce_grey: f32 = 0.25;
 // (metres², 0.09 as made; the tuner's --gather-near): larger spreads a cell's light wider.
 var lace_source: f32 = 1.0;
 var gather_near: f32 = 0.09;
+// The probes' gather exact near what they gather (the tuner's --light physical): a cell
+// nearer than two of its sides taken as SPLIT × SPLIT small ones, so a probe 0.15 m over
+// the floor gets the floor's light as a plane gives it, not as the nearest cells' middles
+// happen to lie; and the table's own sun patch, which lies in its top's plane, not hidden
+// by the top from the probes over it.
+var gather_exact = false;
+let SPLIT = 8;
 
 // What the bake takes: the sun toward it in the plan's frame, its light on a plane facing
 // it (linear, the room's sun gain in it), the sky's radiance through the windows (linear),
@@ -227,7 +257,7 @@ fn along_keys(keys: float2[6], h: f32) -> f32 {
 
 // Whether the segment a to b crosses the table's top (a disc at its height).
 fn under_table(t: float4, a: float3, b: float3) -> bool {
-    guard (a.z - t.w) * (b.z - t.w) < 0.0 else { return false; }
+    guard (a.z - t.w) * (b.z - t.w) < (if gather_exact { -1e-6 } else { 0.0 }) else { return false; }
     let f = (t.w - a.z) / (b.z - a.z);
     let x = a.x + (b.x - a.x) * f - t.x;
     let y = a.y + (b.y - a.y) * f - t.y;
@@ -414,7 +444,7 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                         let by = clamp((at.y / BIN) as i64, 0, FLOOR_BINS_Y - 1);
                         bin = by * FLOOR_BINS_X + bx;
                         n = float3 { 0.0, 0.0, 1.0 };
-                        a = FLOOR_ALBEDO;
+                        a = floor_albedo(float2 { sun.table.x, sun.table.y }, at, float2 { 1e-4, 1e-4 });
                         cell = FLOOR_C0 + plane_cell(at.y, face, FLOOR_NY) * FLOOR_NX + plane_cell(at.x, room_x, FLOOR_NX);
                     } else if hit == 1 {
                         let bx = clamp((at.x / BIN) as i64, 0, FLOOR_BINS_X - 1);
@@ -988,6 +1018,13 @@ fn first_light(sun: Sun, bounce: Bounce&) {
     }
     bounce.cells[TABLE_C] = Cell { float3 { sun.table.x, sun.table.y, sun.table.w }, float3 { 0.0, 0.0, 1.0 }, TABLE_ALBEDO,
                                    PI * sun.table.z * sun.table.z, -1 };
+    // The floor's cells under the rug.
+    let fw = room_shell::LIBRARY.walls[room_shell::FAR_WALL].a.x / FLOOR_NX;
+    let fd = wall_face() / FLOOR_NY;
+    for c in FLOOR_NX * FLOOR_NY {
+        let at = bounce.cells[FLOOR_C0 + c].at;
+        bounce.cells[FLOOR_C0 + c].albedo = floor_albedo(float2 { sun.table.x, sun.table.y }, at, float2 { 0.5 * fw, 0.5 * fd });
+    }
     var wins = windows();
     let gy = glass_y();
     let sky = sun.sky * (sun.sky_gain * glazing / PI);
@@ -1107,6 +1144,25 @@ fn gather_half(sun: Sun, bounce: Bounce&) {
                     guard off > 0.0 else { continue; }
                     let lets = seen_through(sun.table, wins, p, kp, b.at, b.niche);
                     guard lets > 0.0 else { continue; }
+                    let side = sqrt(b.area);
+                    if gather_exact && dot(v, v) < 4.0 * side * side {
+                        // Split in its plane, along the plan's axes it lies across.
+                        let ta = if abs(b.normal.z) > 0.5 { float3 { 1.0, 0.0, 0.0 } } else { float3 { 0.0, 0.0, 1.0 } };
+                        let tb = cross(b.normal, ta);
+                        let each = b.area / (SPLIT * SPLIT);
+                        for sj in SPLIT {
+                            for si in SPLIT {
+                                let q = b.at + ta * (side * ((si + 0.5) / SPLIT - 0.5)) + tb * (side * ((sj + 0.5) / SPLIT - 0.5));
+                                let vq = q - p;
+                                let off_q = -dot(b.normal, vq);
+                                guard off_q > 0.0 else { continue; }
+                                let r2 = max(dot(vq, vq), 1e-4);
+                                let r = sqrt(r2);
+                                take(g, f, l * (lets * each * off_q / (PI * r * r2)), vq / r);
+                            }
+                        }
+                        continue;
+                    }
                     let r2 = max(dot(v, v), near2);
                     let r = sqrt(r2);
                     take(g, f, l * (lets * b.area * off / (PI * r * r2)), v / r);

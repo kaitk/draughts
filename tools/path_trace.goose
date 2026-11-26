@@ -3,7 +3,8 @@
 // its two chairs, made by model3d as the light tuner makes them at its default placement
 // (the sun at azimuth 0 and 15 degrees up, the window wall turned 12 degrees, the table 25,
 // the chairs on the rug). Lambertian surfaces with room_light's albedos; the sun by a
-// shadow ray at every hit, through the panes and the lace; the sky's radiance for a ray
+// shadow ray at every hit toward a point of its disc (0.53 degrees across, as Cycles'),
+// through the panes and the lace; the sky's radiance for a ray
 // leaving through the glass; up to 10 bounces. The inputs are physical, as in
 // tools/blender/scene.py's Cycles scene: no bounce gain, no caps, two panes passing 0.92
 // each, the lace a sheet passing 0.72 that throws on 0.4 of what it stops, no tree.
@@ -331,13 +332,12 @@ fn nearest(o: float3, d: float3) -> f32 {
 
 // ---- materials
 
-// The chairs' and the rug's are tools/blender/scene.py's: the chairs' wood the table's
-// albedo a quarter toward grey times 0.6, the cloth's and the rug's their pictures' means
-// in linear light (the tapestry times 0.8), the braid times 0.85.
+// The chairs' are tools/blender/scene.py's: their wood the table's albedo a quarter toward
+// grey times 0.6, the cloth's its picture's mean in linear light (the tapestry times 0.8),
+// the braid times 0.85. The rug's is room_light's.
 let CHAIR_WOOD = float3 { 0.0647, 0.0377, 0.0266 };
 let TAPESTRY = float3 { 0.413, 0.272, 0.168 };
 let BRAID = float3 { 0.323, 0.247, 0.128 };
-let RUG = float3 { 0.157, 0.075, 0.049 };
 let BRASS = float3 { 0.4, 0.3, 0.15 };        // a diffuse stand-in for the metal
 let CORD = float3 { 0.5, 0.45, 0.4 };
 
@@ -350,9 +350,9 @@ fn albedo(k: i64, p: float3, n: float3) -> float3 {
         return BRAID;
     }
     if m == surfaces::MAT_FLOOR {
-        // The rug: 3 by 2 m along the window wall, its middle 0.1 m from the table's into the room.
+        // The rug (room_light::RUG_HALF), along the window wall round the table.
         let r = to_room(p) / M;
-        if abs(r.x) < 1.5 && abs(r.z - 0.1) < 1.0 { return RUG; }
+        if abs(r.x) < room_light::RUG_HALF.x && abs(r.z - room_light::RUG_IN) < room_light::RUG_HALF.y { return room_light::RUG_ALBEDO; }
         return room_light::FLOOR_ALBEDO;
     }
     if m == surfaces::MAT_OAK { return room_light::OAK_ALBEDO; }
@@ -385,8 +385,9 @@ fn sun_through(o0: float3) -> f32 {
     var o = o0;
     var through: f32 = 1.0;
     var glass = false;
+    let d = sun_ray();
     for step in 24 {
-        let t = nearest(o, toward_sun);
+        let t = nearest(o, d);
         guard hit_tri >= 0 else { return if glass { through } else { 0.0 }; }
         guard kind[hit_tri] == GLASS else { return 0.0; }
         if is_lace(hit_tri) {
@@ -395,9 +396,21 @@ fn sun_through(o0: float3) -> f32 {
             through *= GLASS_T;   // both panes at the first
             glass = true;
         }
-        o = o + toward_sun * (t + EPS);
+        o = o + d * (t + EPS);
     }
     return 0.0;
+}
+
+// The sun's angular radius (0.2666 degrees): a shadow ray goes to a point of its disc,
+// uniformly, so the edges of a shadow are as soft as the real sun's.
+let SUN_RADIUS: f32 = 0.004653;
+fn sun_ray() -> float3 {
+    let side = if abs(toward_sun.y) < 0.9 { float3 { 0.0, 1.0, 0.0 } } else { float3 { 1.0, 0.0, 0.0 } };
+    let tx = normalize(cross(side, toward_sun));
+    let ty = cross(toward_sun, tx);
+    let r = SUN_RADIUS * sqrt(rnd());
+    let phi = TAU * rnd();
+    return normalize(toward_sun + tx * (r * cos(phi)) + ty * (r * sin(phi)));
 }
 
 // The sun's own light on a surface at p facing n, over pi.
