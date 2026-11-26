@@ -5,6 +5,11 @@
 // and how long each step took. Build it (C at -O2) for the times:
 //
 //   goose build -o build/tree_dump tools/tree_dump.goose && build/tree_dump OUT_DIR
+//       [--elbows FEWEST,MOST,TURN_LO,TURN_HI] [--gravity STRENGTH] [--shed LIGHT,STUBS]
+//       [--hangs N (the first N low limbs, 4)]
+//
+// The flags set the growth past the habit (trees::Growth, task 117; all off by default, as
+// the light tuner's --tree-elbows, --tree-gravity and --tree-shed).
 //
 // One tree-NAME-whole.bin and -culled.bin for each low limb (rooms::WHOLE_HANGS), its shadow
 // shadow-NAME.grey and times in times.txt; the frame's eyes and windows for the default.
@@ -52,6 +57,24 @@ fn write_grey(path: const u8[:], map: u8[>..]&, v: trees::View) {
     guard write_file(path, grey[..]) else { abort("could not write the shadow"); }
 }
 
+// The flag's numbers, comma-separated, over `v`'s first ones.
+fn numbers(args: u8[:][>..]&, name: const u8[:], v: float4) -> float4 {
+    var out: f32[4] = [v.x, v.y, v.z, v.w];
+    for a, i in args {
+        guard a == name && i + 1 < args.len else { continue; }
+        var rest: const u8[:] = args[i + 1];
+        for k in 4 {
+            let part, after, more = split_once(rest, ",");
+            let x, ok = parse_flt(part);
+            guard ok else { abort(str(name, ": numbers, x,y,..")); }
+            out[k] = x as f32;
+            guard more else { break; }
+            rest = after;
+        }
+    }
+    return float4 { out[0], out[1], out[2], out[3] };
+}
+
 fn line3(out: u8[>..]&, name: const u8[:], v: float3) { format(out, name, " ", v.x, " ", v.y, " ", v.z, "\n"); }
 
 fn main() {
@@ -64,10 +87,18 @@ fn main() {
     let v = rooms::shell_tree_view(r, s);
     let spec = rooms::tree_spec(rooms::shell_tree(r));
     let w = rooms::whole_tree(r, s);
+    var growth = trees::Growth { .. };
+    growth.elbows = numbers(args, "--elbows", growth.elbows);
+    growth.gravity = numbers(args, "--gravity", float4 { growth.gravity, 0.0, 0.0, 0.0 }).x;
+    let shed = numbers(args, "--shed", float4 { growth.shed.x, growth.shed.y, 0.0, 0.0 });
+    growth.shed = float2 { shed.x, shed.y };
+    let hangs = numbers(args, "--hangs", float4 { 4.0, 0.0, 0.0, 0.0 }).x as i64;
     var times: u8[>..] = [];
     // old-leader, the user's pick, with each of its low limbs (rooms::WHOLE_HANGS).
     for name, k in rooms::WHOLE_HANGS {
-        let wk = rooms::whole_tree(r, s, rooms::WHOLE_OLD_LEADER, k);
+        guard k < hangs else { break; }
+        var wk = rooms::whole_tree(r, s, rooms::WHOLE_OLD_LEADER, k);
+        wk.growth = growth;
         var t = trees::Tree { .. };
         var t0 = clock();
         trees::grow_whole(t, wk, v, sight, false);

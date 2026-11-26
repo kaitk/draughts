@@ -40,6 +40,7 @@
 //       [--tree-draw off|wood|all (the tree outside drawn as geometry, render3d::TREE_DRAWS; off; on, its shadow grown whole too)
 //       --tree-light SUN,SKY,THROUGH,FORWARD (2.5,1,0.35,0.6) --tree-look SHADE,TWIG_PX,SPREAD (1,1,0.15)
 //       --tree-tint TINT,LEAVES,BARK,DEEPER (0.2,1,1,0.6)
+//       --tree-elbows FEWEST,MOST,TURN_LO,TURN_HI (0,0,30,50) --tree-gravity S (0) --tree-shed LIGHT,STUBS (0,0.5)
 //       --tree-wind off|on (the shadow's wind on the geometry, the leaves fluttering in HDR; off) --tree-flutter DEG,RATE (6,9)
 //       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)]
 //       [--azimuth DEG] [--sun-height DEG]
@@ -1660,6 +1661,15 @@ fn main() {
     render3d::tree_twig_px = tree_look.y;
     render3d::tree_spread = tree_look.z;
     render3d::tree_tint = four(argv, "--tree-tint", render3d::tree_tint);
+    // --tree-elbows FEWEST,MOST,TURN_LO,TURN_HI: broken leaders a hero limb, the side shoot
+    // turned TURN_LO..TURN_HI degrees (0,0,30,50: none); --tree-gravity S: the gravity layer
+    // in place of the habit's sag, S its strength (0 off, 1 the study's); --tree-shed
+    // LIGHT,STUBS: thin wood whose twigs' sky share is under LIGHT dies back, STUBS of it left
+    // as stubs (0,0.5: none). trees::Growth, task 117; the tree as grown by tools/tree_dump.
+    render3d::tree_growth.elbows = four(argv, "--tree-elbows", render3d::tree_growth.elbows);
+    render3d::tree_growth.gravity = number(argv, "--tree-gravity", render3d::tree_growth.gravity);
+    let shed = four(argv, "--tree-shed", float4 { render3d::tree_growth.shed.x, render3d::tree_growth.shed.y, 0.0, 0.0 });
+    render3d::tree_growth.shed = float2 { shed.x, shed.y };
     // --tree-wind off|on: the shadow's wind on the tree's geometry, each leaf turning about
     // its stalk too in HDR (render3d::tree_wind, task 107's T4); --tree-flutter DEG,RATE how
     // far a leaf turns in the room's mild wind and how fast (radians a second of the wind).
@@ -1684,7 +1694,7 @@ fn main() {
         let v = render3d::tree_view_of(g);
         if render3d::tree_grown_whole && g.room_on && g.room_shell {
             let s = room_shell::LIBRARY;
-            trees::grow_whole(t, rooms::whole_tree(g.room, s), v, rooms::whole_sight(g.room, s), true);
+            trees::grow_whole(t, render3d::whole_tree_of(g), v, rooms::whole_sight(g.room, s), true);
         } else {
             trees::grow(t, sp, v);
         }

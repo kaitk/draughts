@@ -16,14 +16,16 @@ let MAX_CARDS = 160000;
 let LEAF_KINDS = 8;
 
 // A branch as a chain of segments, segments[first .. first + count], for its tube (T2);
-// its parent's index in limbs, -1 for the trunk.
-struct Limb { first: i32, count: i32, level: i32, parent: i32 }
+// its parent's index in limbs, -1 for the trunk, and the segment its foot sits on (the
+// parent's, or the joint's before a broken leader's stub), -1 for the trunk. A broken
+// leader's stub is a limb of its parent's level.
+struct Limb { first: i32, count: i32, level: i32, parent: i32, attach: i32 }
 
 // A leaf as the picture draws it: where its stalk leaves the twig, where the blade starts,
 // the blade's axis from there to its middle lobe's tip and its face (the side the sun is
 // on); the blade's length and width, which of the atlas's leaves it is, and its tint
-// (0 green, 1 gold, 2 orange-red).
-struct Card { foot: float3, base: float3, along: float3, face: float3, size: f32, width: f32, kind: i32, tint: f32 }
+// (0 green, 1 gold, 2 orange-red); the twig's segment it grows on.
+struct Card { foot: float3, base: float3, along: float3, face: float3, size: f32, width: f32, kind: i32, tint: f32, segment: i32 }
 
 // How a tree grows, per level (the trunk, limbs, branches, branchlets, twigs): the
 // segments a branch, its children, where along it they start, their angle off it
@@ -61,6 +63,22 @@ let MAPLE_HABIT = Habit {
     paired:   [false, false, true, true, true],
 };
 
+// What grow_whole does past the habit (task 117), each part off as made, for the light
+// tuner and tools/tree_dump until checked: broken leaders a hero limb (elbows x the fewest,
+// y the most, z and w the side shoot's turn in degrees; a branch has one at even odds when
+// y > 0); the gravity layer in place of Habit.sag (gravity its strength, 1 the study's; 0
+// Habit.sag); the shedding of shaded thin wood (shed x the light under which it dies, 0
+// none; y the share of the shed branches left as stubs).
+struct Growth {
+    elbows:  float4 = float4 { 0.0, 0.0, 30.0, 50.0 },
+    gravity: f32    = 0.0,
+    shed:    float2 = float2 { 0.0, 0.5 },
+}
+
+// Whether the grown skeleton is reshaped after growth (gravity, shedding): then the tree is
+// grown whole, reshaped, and culled after (keep_parts), not as it grows.
+fn reshaped(g: Growth) -> bool { g.gravity > 0.0 || g.shed.x > 0.0 }
+
 // The tree whole (grow_whole), in the tree's frame and world units.
 struct Whole {
     seed:   f32,
@@ -89,6 +107,7 @@ struct Whole {
     hang_thick: f32,    // its radius against the trunk's
     hang_sag:   f32,    // how much it sags (a main limb's 0.16)
     habit:      Habit,
+    growth:     Growth = Growth { .. },
 }
 
 // Where the tree may be seen from: eyes in the room and the openings they look through,
@@ -149,8 +168,8 @@ fn crown_depth(w: Whole&, p: float3) -> f32 {
 }
 
 // A branch to grow; `free` a hanging limb's and its offspring's, which may leave the
-// crown's envelope below.
-struct Part { at: float3, dir: float3, length: f32, radius: f32, level: i64, dice: u64, tint: f32, parent: i32, free: bool }
+// crown's envelope below; `attach` the segment its foot sits on (Limb.attach).
+struct Part { at: float3, dir: float3, length: f32, radius: f32, level: i64, dice: u64, tint: f32, parent: i32, free: bool, attach: i32 }
 
 // How far out of the envelope a hanging limb's parts may grow.
 let HANG_SLACK: f32 = 1.8;
@@ -161,32 +180,61 @@ let WHOLE_REACH: f32 = 1.4;
 // The leaf pairs on a twig.
 let TWIG_NODES = 4;
 
+// The wood a leader breaks in (Growth.elbows): its radius in metres, 5 to 35 cm across.
+let ELBOW_RADII = float2 { 0.025, 0.175 };
+
 // The tree grown whole from w, all of it, or with `cull` only the parts seen through
 // `sight` or casting on v's map. Each branch has dice of its own, so culling leaves the
 // kept parts as they are. Fills t.segments, t.limbs and t.cards, and t.leaves with the
 // cards that cast, for draw_map.
+// With the skeleton reshaped (Growth: gravity, shedding), it is grown whole, shed, bent and
+// then culled (keep_parts, tree_skeleton.goose), so a branch bent into view is kept.
 fn grow_whole(t: Tree&, w: Whole, v: View, sight: Sight, cull: bool) {
     t.segments.clear();
     t.leaves.clear();
     t.limbs.clear();
     t.cards.clear();
     t.left_out = 0;
-    var d = Dice { mixed(w.seed as u64 + 11) };
-    let lean = float3 { roll_between(d, -0.04, 0.04), 1.0, roll_between(d, -0.04, 0.04) };
-    let trunk = Part { w.foot, normalize(lean), max(w.leader * w.height, w.fork * 1.3), w.girth, 0, d.state, w.autumn, -1, false };
     var wh = w;
     var vw = v;
     var sg = sight;
-    grow_part(t, wh, vw, sg, cull, trunk);
+    let after = reshaped(w.growth);
+    let cull_growing = cull && !after;
+    var d = Dice { mixed(w.seed as u64 + 11) };
+    let lean = float3 { roll_between(d, -0.04, 0.04), 1.0, roll_between(d, -0.04, 0.04) };
+    let trunk = Part { w.foot, normalize(lean), max(w.leader * w.height, w.fork * 1.3), w.girth, 0, d.state, w.autumn, -1, false, -1 };
+    grow_part(t, wh, vw, sg, cull_growing, trunk);
     // The hanging limb, on dice of its own, from the trunk's side.
-    guard w.hang > 0.0 else { return; }
-    var hd = Dice { mixed(w.seed as u64 + 977) };
-    let dir = normalize(w.hang_dir);
-    let at = w.foot + float3 { 0.0, w.hang_at, 0.0 } + float3 { dir.x, 0.0, dir.z } * (w.girth * 0.8);
-    let limb = Part { at, dir, w.hang, w.girth * w.hang_thick, 1, hd.state, w.autumn + 0.15, 0, true };
-    guard !cull || casts(vw, at, w.hang * WHOLE_REACH) || seen(sg, at, w.hang * WHOLE_REACH) else { return; }
-    grow_part(t, wh, vw, sg, cull, limb);
+    if w.hang > 0.0 {
+        var hd = Dice { mixed(w.seed as u64 + 977) };
+        let dir = normalize(w.hang_dir);
+        let at = w.foot + float3 { 0.0, w.hang_at, 0.0 } + float3 { dir.x, 0.0, dir.z } * (w.girth * 0.8);
+        let limb = Part { at, dir, w.hang, w.girth * w.hang_thick, 1, hd.state, w.autumn + 0.15, 0, true, trunk_segment_at(t, at.y) };
+        if !cull_growing || casts(vw, at, w.hang * WHOLE_REACH) || seen(sg, at, w.hang * WHOLE_REACH) {
+            grow_part(t, wh, vw, sg, cull_growing, limb);
+        }
+    }
+    guard after else { return; }
+    if w.growth.shed.x > 0.0 { shed_shaded(t, wh); }
+    if w.growth.gravity > 0.0 { bend_by_weight(t, w.growth.gravity); }
+    keep_parts(t, wh, vw, sg, cull);
 }
+
+// The trunk's segment at height y, for the hanging limb's foot.
+fn trunk_segment_at(t: Tree&, y: f32) -> i32 {
+    guard t.limbs.len > 0 else { return -1; }
+    let l = t.limbs[0];
+    for i in l.count as i64 {
+        let s = l.first + i;
+        if t.segments[s].b.y >= y { return s as i32; }
+    }
+    return l.first + l.count - 1;
+}
+
+// A broken leader's stub where the axis went on: a run on the old way, then a short end
+// closing it.
+let STUB_PARTS = 2;
+let MOST_ELBOWS = 3;
 
 // The trunk's flare at its foot: wider over its lowest metre or so.
 fn flare(w: Whole&, p: float3) -> f32 {
@@ -217,13 +265,31 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
     // far, then turns up late. A slow wave across it, its phase its own.
     let hanging = b.free && level == 1;
     let slender = clamp(b.length / (b.radius * 70.0), 0.4, 2.0);
-    let sag = if hanging { w.hang_sag } else { h.sag[level] * slender };
+    // With the gravity layer on (bend_by_weight), it bends the grown wood instead of sag.
+    let sag = if hanging { w.hang_sag } else if w.growth.gravity > 0.0 { 0.0 } else { h.sag[level] * slender };
     let rise = if hanging { 0.32 } else { h.rise[level] };
     let rise_from: f32 = if hanging { 0.6 } else { 0.4 };
     let phase = roll(d) * TAU;
     let wave_turn = roll(d) * TAU;
     let slack = if b.free { HANG_SLACK } else { 1.06 };
     let first = t.segments.len;
+    // Broken leaders (Growth.elbows) on a limb or branch, at segments 2 .. segments - 2, on
+    // dice of their own so the rest of the branch rolls as without them.
+    var elbow_at: u64 = 0;
+    var ed = Dice { mixed(b.dice ^ 0xB40CE7E1B0) };
+    let elbows = w.growth.elbows;
+    if elbows.y > 0.0 && (level == 1 || level == 2) && !hanging {
+        let want = if level == 1 { floor(roll_between(ed, elbows.x, elbows.y + 0.999)) as i64 }
+                   else if roll(ed) < 0.5 { 1 } else { 0 };
+        for k in min(want, MOST_ELBOWS) * 4 {
+            guard popcount(elbow_at) < min(want, MOST_ELBOWS) else { break; }
+            let at = 2 + min((roll(ed) * (segments - 4)) as i64, segments - 5);
+            elbow_at |= (1 as u64) << at;
+        }
+    }
+    var stubs:       Segment[..6] = [];
+    var stub_attach: i32[..3]     = [];
+    var thinner:     f32          = 1.0;
     var n = 0;
     for i in segments {
         let f = (i + 0.5) / segments;
@@ -232,11 +298,23 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
         let bend = up * (rise * clamp((f - rise_from) / (1.0 - rise_from), 0.0, 1.0) - sag * f * (0.3 + level_out))
                    + side * (h.wave[level] * sin(phase + i * 1.9)) + roll_ball(d) * h.crook[level];
         dir = normalize(dir + bend);
+        // A broken leader in wood of 5-35 cm: the axis ends here as a stub going on its way,
+        // and the side shoot takes over, thinner, turned 30-50 degrees.
+        let r_here = radii[i];
+        if ((elbow_at >> i) & 1) == 1 && r_here > ELBOW_RADII.x * surfaces::METRE && r_here < ELBOW_RADII.y * surfaces::METRE {
+            let run = p + dir * (step * roll_between(ed, 0.3, 0.7));
+            let end = run + dir * (r_here * 0.6);
+            stubs.push(Segment { p, run, r_here, r_here * 0.8, level as i32 });
+            stubs.push(Segment { run, end, r_here * 0.8, r_here * 0.3, level as i32 });
+            stub_attach.push((first + i - 1) as i32);
+            dir = normalize(turned(dir, radians(roll_between(ed, elbows.z, elbows.w)), roll(ed) * TAU) + up * 0.15);
+            thinner *= 0.78;
+        }
         let q = p + dir * step;
         // Stopped at the crown's outside and at the house.
         guard level == 0 || inside_crown(w, q, slack) else { break; }
         guard q.z > w.house + WALL_GAP else { break; }
-        var rb = b.radius * (1.0 + (tip - 1.0) * (i + 1) / segments);
+        var rb = b.radius * (1.0 + (tip - 1.0) * (i + 1) / segments) * thinner;
         if level == 0 { rb *= flare(w, q); }
         if t.segments.len < MAX_WHOLE_SEGMENTS {
             t.segments.push(Segment { p, q, radii[i], rb, level as i32 });
@@ -252,11 +330,17 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
     guard n > 0 else { return; }
     let me = t.limbs.len as i32;
     if t.limbs.len < MAX_LIMBS {
-        t.limbs.push(Limb { first as i32, (t.segments.len - first) as i32, level as i32, b.parent });
+        t.limbs.push(Limb { first as i32, (t.segments.len - first) as i32, level as i32, b.parent, b.attach });
+    }
+    // The stubs, each a limb of this one's level, where the axis reached them.
+    for a, k in stub_attach {
+        guard a < (first + n) as i32 && t.segments.len + STUB_PARTS <= MAX_WHOLE_SEGMENTS && t.limbs.len < MAX_LIMBS else { continue; }
+        t.limbs.push(Limb { t.segments.len as i32, STUB_PARTS, level as i32, me, a });
+        for j in STUB_PARTS { t.segments.push(stubs[k * STUB_PARTS + j]); }
     }
     if level == 4 {
         var leaf_dice = Dice { mixed(b.dice ^ 0x5DEECE66D) };
-        add_cards(t, w, v, sight, cull, leaf_dice, points, dirs, n, b.tint, b.free);
+        add_cards(t, w, v, sight, cull, leaf_dice, points, dirs, n, b.tint, b.free, first);
         return;
     }
     let count = h.children[level];
@@ -311,7 +395,7 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
         guard length > 1.0 && held else { continue; }
         // The core's twigs die back: the leaves stay in the shell.
         if level == 3 && !b.free && crown_depth(w, foot) > w.shell * 1.4 && roll(d) < 0.8 { continue; }
-        let child = Part { foot, cdir, length, radius, level + 1, dice, tint, me, b.free };
+        let child = Part { foot, cdir, length, radius, level + 1, dice, tint, me, b.free, (first + i) as i32 };
         guard !cull || casts(v, foot, length * WHOLE_REACH + w.leaf * 3.0)
                     || seen(sight, foot, length * WHOLE_REACH + w.leaf * 3.0) else { continue; }
         grow_part(t, w, v, sight, cull, child);
@@ -322,7 +406,7 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
 // tip's pair, sometimes three; on stalks about as long as the blade, the blades turned
 // out of the crown and up, as a maple's mosaic. None deep in the crown.
 fn add_cards(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&, points: float3[13]&, dirs: float3[13]&,
-             n: i64, tint: f32, free: bool) {
+             n: i64, tint: f32, free: bool, first: i64) {
     let up = float3 { 0.0, 1.0, 0.0 };
     let sun = normalize(float3 { v.shear.x, v.shear.y, 1.0 });
     let middle = w.foot + w.middle;
@@ -373,7 +457,7 @@ fn add_cards(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool, d: Dice&,
             let cast = casts(v, mid, size);
             guard !cull || cast || seen(sight, mid, size) else { continue; }
             if t.cards.len < MAX_CARDS {
-                t.cards.push(Card { p, base, along, face, size, width, kind as i32, leaf_tint });
+                t.cards.push(Card { p, base, along, face, size, width, kind as i32, leaf_tint, (first + i) as i32 });
             } else {
                 t.left_out++;
             }

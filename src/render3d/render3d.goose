@@ -2757,7 +2757,7 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     {
         var t = trees::Tree { .. };
         if tree_grown_whole && g.room_on && g.room_shell {
-            trees::grow_whole(t, rooms::whole_tree(g.room, room_shell::LIBRARY), v, rooms::whole_sight(g.room, room_shell::LIBRARY), true);
+            trees::grow_whole(t, whole_tree_of(g), v, rooms::whole_sight(g.room, room_shell::LIBRARY), true);
         } else {
             trees::grow(t, s, v);
         }
@@ -2782,6 +2782,18 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     g.tree_for = tree_key(g);
     g.tree_bakes++;
     g.tree_ms = (clock() - t0) * 1000.0;
+}
+
+// The maple's growth past its habit (trees::Growth, task 117: broken leaders, the gravity
+// layer, shedding), all off as in the app until checked: the light tuner's --tree-elbows,
+// --tree-gravity and --tree-shed.
+var tree_growth = trees::Growth { .. };
+
+// The old maple as the shell grows it, with tree_growth.
+fn whole_tree_of(g: Gpu&) -> trees::Whole {
+    var w = rooms::whole_tree(g.room, room_shell::LIBRARY);
+    w.growth = tree_growth;
+    return w;
 }
 
 // The tree outside drawn as geometry (task 107's T2 and T3): off (the view out's pictures
@@ -2868,7 +2880,7 @@ fn tree_geometry<O>(o: O&, g: Gpu&) {
         }
     }
     let v = tree_view_of(g);
-    let w = rooms::whole_tree(g.room, room_shell::LIBRARY);
+    let w = whole_tree_of(g);
     let sight = rooms::whole_sight(g.room, room_shell::LIBRARY);
     var verts:   trees::WoodVertex[>..] = [];
     var indices: u32[>..]               = [];
@@ -2881,7 +2893,8 @@ fn tree_geometry<O>(o: O&, g: Gpu&) {
         trees::grow_whole(all, w, v, sight, false);
         let grid = trees::crown_grid(all, density);
         var t = trees::Tree { .. };
-        trees::grow_whole(t, w, v, sight, true);
+        // A reshaped tree is culled from the whole one rather than grown and reshaped again.
+        if trees::reshaped(w.growth) { trees::cull_copy(all, t, w, v, sight); } else { trees::grow_whole(t, w, v, sight, true); }
         made = trees::wood_mesh(t, density, grid, trees::toward_sun(v), verts, indices);
         let d = trees::depths(t, v);
         g.tree.layers = float4 { v.shear.x, v.shear.y, d.near, d.far };
