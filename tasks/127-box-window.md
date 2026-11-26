@@ -118,6 +118,21 @@ the same parts), set the look: plain, not overdone.
 - Left as before: `cheap_casement` (the cheap mirror) keeps window B's means; the export maps the
   hardware to the curtains' brass.
 
+## The hardware, concepts (2026-11-26)
+
+The user's verdict on the first build: good progress, the brass far too bright; the handle too
+crude. The photo of a restored manor's windows (`build/notes/window-reference/references/
+restored-manor-window.png`) sets the hardware: a turned lever with a finial and a knob beside a
+tall cast housing, a round rod in turned collars with four studs, a cast cap at the rod's top,
+long slender hinges with tapered ends, all a dark, warm bronze (the lever about sRGB 93, 73, 57
+against its paint's 172, 160, 149). Concepts on `build/notes/box-window/hardware.html` (drawn by
+`build/bw/concept/draw.py` from the profiles the lathe would turn): about 5,700 triangles a
+window. The rod round by its normals on 6 sides, not by geometry (the user, 2026-11-26).
+
+The metal: a choice of about five darknesses in the light tuner once the hardware is built,
+judged against Cycles (the export taking the window's metal as its own material); then the
+chosen metal on every hinge in the room, the shutters' and the doors' too (2026-11-26).
+
 ## Acceptance criteria
 
 - [x] The specification read against the room's cameras: what shows, what is geometry,
