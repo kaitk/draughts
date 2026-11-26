@@ -25,6 +25,11 @@ step's check. The tracer is scratch in `build/review120/pt/`; it moves into `too
 The terms to judge, each with a verdict (go, fit to the reference, or a camera or art
 choice), are listed in `build/review120/report.md`.
 
+## Baseline (2026-11-26)
+
+To measure: `build/perf/light_tune-before122` is built (the tuner before this task's
+changes); its times with `tools/perf/mac_room_bench.py --full` wait for a quiet machine.
+
 ## Acceptance criteria
 
 - [ ] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
