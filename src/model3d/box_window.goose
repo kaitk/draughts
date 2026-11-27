@@ -435,6 +435,54 @@ fn screw_head(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builde
     lathe_along(verts, indices, b, float3 { x, y, z }, TOWARD_ROOM, SCREW_HEAD[..], 6, WINDOW_HARDWARE);
 }
 
+// The upper keeper's plate: three round lobes (left, right, above) about a round middle,
+// one outline (metres, about (cx, cy) on a face at z0, 3 mm deep); its rim rounded by its
+// normals. KEEPER_LOBES: each lobe's middle (mm from the plate's) and radius; the middle's
+// radius last.
+let KEEPER_LOBES: float3[4] = [float3 { -11.0, -2.0, 7.0 }, float3 { 11.0, -2.0, 7.0 }, float3 { 0.0, 10.0, 7.0 },
+                               float3 { 0.0, 0.0, 9.5 }];
+fn keeper_plate(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, cx: f32, cy: f32, z0: f32, mat: f32) {
+    let k = m();
+    let n = 48;
+    let deep: f32 = 0.003;
+    let rim: f32 = 0.001;
+    let base = verts.len as u32;
+    let front = float3 { cx, cy, z0 + deep } * k;
+    verts.push(mesh::Vertex { surfaces::world(b, front.x, front.y, front.z), surfaces::world_normal(b, TOWARD_ROOM), float2_0, 1.0, mat });
+    for i in n {
+        let ang: f32 = TAU * i / n;
+        let d = float2 { cos(ang), sin(ang) };
+        // How far the outline reaches along d: the farthest lobe's edge.
+        var t: f32 = 0.0;
+        for l in KEEPER_LOBES {
+            let c = float2 { l.x, l.y } * 0.001;
+            let r = l.z * 0.001;
+            let a = dot(d, c);
+            let q = r * r - (dot(c, c) - a * a);
+            if q >= 0.0 { t = max(t, a + sqrt(q)); }
+        }
+        let out = float3 { d.x, d.y, 0.0 };
+        let tilt = normalize(float3 { d.x, d.y, 1.0 });
+        let edge = float2 { cx, cy } + d * t;
+        let inner = float2 { cx, cy } + d * (t - rim);
+        // Four rings: the face's edge, the rim's top and its side, the back.
+        let rings: float3[4] = [float3 { inner.x, inner.y, z0 + deep }, float3 { edge.x, edge.y, z0 + deep - rim },
+                                float3 { edge.x, edge.y, z0 + deep - rim }, float3 { edge.x, edge.y, z0 }];
+        let normals: float3[4] = [TOWARD_ROOM, tilt, out, out];
+        for e in 4 {
+            let p = rings[e] * k;
+            verts.push(mesh::Vertex { surfaces::world(b, p.x, p.y, p.z), surfaces::world_normal(b, normals[e]), float2_0, 1.0, mat });
+        }
+    }
+    for i in n {
+        let a = base + 1 + (i * 4) as u32;
+        let c = base + 1 + (((i + 1) % n) * 4) as u32;
+        indices.append([base, a, c]);
+        indices.append([a, a + 1, c + 1, a, c + 1, c]);
+        indices.append([a + 2, a + 3, c + 3, a + 2, c + 3, c + 2]);
+    }
+}
+
 // Casement c's crémone on its active leaf (light 0's lip): the rod from the foot's keeper to
 // the transom's, a guide at each run's middle, the housing at the leaf's bar with its ends,
 // screws and bearing, the spindle and the turned grip, hanging locked; each keeper a plate on
@@ -476,13 +524,15 @@ fn cremone(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
         screw_head(verts, indices, b, x, gy + 0.017, lip + 0.005);
         lathe_along(verts, indices, b, float3 { x, gy - 0.014, zr }, UPWARD, GUIDE_SLEEVE[..], 8, mat);
     }
-    // The keepers: the transom's plate over the leaf's top, a lobe at its head; the foot's
-    // under the leaf, on what shows of the foot over the sill; each socket at the leaf's edge.
-    box_m(verts, indices, b, x - 0.014, x + 0.014, lo.box.w + 0.002, lo.box.w + 0.034, face, face + 0.003, mat);
-    let lobe: float2[3] = [float2 { 8.0, 0.0 }, float2 { 8.0, 3.0 }, float2 { 0.0, 3.0 }];
-    lathe_along(verts, indices, b, float3 { x, lo.box.w + 0.034, face }, TOWARD_ROOM, lobe[..], 10, mat);
-    for sx in SIDES { screw_head(verts, indices, b, x + sx * 0.008, lo.box.w + 0.024, face + 0.003); }
-    screw_head(verts, indices, b, x, lo.box.w + 0.036, face + 0.003);
+    // The keepers: the transom's three-lobed plate over the leaf's top, a screw in each lobe;
+    // the foot's under the leaf, on what shows of the foot over the sill; each socket at the
+    // leaf's edge.
+    let ky = lo.box.w + 0.018;
+    keeper_plate(verts, indices, b, x, ky, face, mat);
+    for l in 3 {
+        let at = KEEPER_LOBES[l];
+        screw_head(verts, indices, b, x + 0.001 * at.x, ky + 0.001 * at.y, face + 0.003);
+    }
     lathe_along(verts, indices, b, float3 { x, lo.box.w - 0.002, zr }, UPWARD, KEEPER_SOCKET[..], 8, mat);
     box_m(verts, indices, b, x - 0.014, x + 0.014, c.foot.y - BOX_FOOT + 0.004, c.foot.y - 0.002, face, face + 0.003, mat);
     for sx in SIDES { screw_head(verts, indices, b, x + sx * 0.008, c.foot.y - BOX_FOOT + 0.012, face + 0.003); }

@@ -181,6 +181,11 @@ The handle and the Cycles look approved. Changed, behind the flag:
   facing up into the window's light. The head and the transom are now three pieces, square
   under the mullion; running the mullion over the curve instead overlapped the pieces and sent
   `mesh_close` splitting for ever (a 2 GB stack overflow).
+- The upper keeper's plate is one three-lobed outline after the user's reference (Figure 1 of
+  the antique brass specification), a screw in each lobe (`keeper_plate`, `KEEPER_LOBES`): the
+  old round lobe overlapped the square plate in one plane and darkened where they met.
+- The bronze's level 4 from task 129 is the user's first pick; task 129 ports it with live tuner
+  values.
 
 Left to a session on the room's light, as measured with the scratch tracer's `frames` mode
 (the atlas against the tracer at the real surface, luminance): the niche's faces read too dark,
