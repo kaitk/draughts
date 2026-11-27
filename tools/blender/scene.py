@@ -7,8 +7,8 @@
 #       [--exposure 0] [--textures on|off] [--save-blend] [--wood ours|picks|SPEC.json]
 #       [--paper physical|look] [--paper-mask engraved|today] [--paper-ground R,G,B,ROUGH]
 #       [--paper-gold R,G,B,ROUGH] [--paper-detail L,P,G,R] [--eye X,Y,Z --at X,Y,Z --fov DEG]
-#       [--vertex-colour decoded|written (the panelling's occlusion and tone as the importer decodes them
-#       from sRGB, or encoded back as the export wrote them)]
+#       [--vertex-colour written|decoded (the panelling's occlusion and tone encoded back as the export wrote
+#       them, or as the importer decodes them from sRGB, before 2026-11-27)]
 #       [--window-metal flat|LEVEL (the export's by default)] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
 #
 # Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes), and
@@ -30,7 +30,7 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 def flags():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     f = {"scene": "build/blender", "view": "close", "out": None, "size": "960x540", "samples": "512",
-         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None, "vertex-colour": "decoded",
+         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None, "vertex-colour": "written",
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None,
          "window-metal": None}
