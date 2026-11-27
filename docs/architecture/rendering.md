@@ -810,6 +810,44 @@ board's light:
   that shades the windows draws its limbs finer and softer than the game's
   (`rooms::SHELL_LIMBS`).
 
+### The physical light
+
+The light tuner's `--light physical` lights the library from physical inputs. It is
+planned as the app's light and not yet shipped. Every term is measured against a path-traced reference: Blender Cycles
+for pictures (`tools/blender_export.goose` writes the room, `tools/blender/scene.py` renders
+it) and a CPU tracer for points and probes (`tools/path_trace.goose`).
+
+- **The season's air.** The sun and the light from outside come from one input per season,
+  Blender's sky model at an aerosol density. Autumn's (40) gives a sun at 0.13 of the clear
+  sun, about 3000 K, and a bright, warm sky round it. `model3d::outside_light` holds the
+  outside's radiance by direction, in 5° cells over the sun's luminance: the sky, the lawn,
+  the tree line and the oak as Cycles draws them from just outside the middle window
+  (`tools/blender/sky_model.py`, `outside_table.py`). The other seasons have no air yet:
+  they keep one sky colour in every direction and the sun at its own height's colour.
+  `--season-air clear` gives autumn one sky colour and a sun at 0.25 of the clear sun,
+  coloured as at 8°.
+- **The bake.** The probes, the cells and the windows' probe volumes take the sky by
+  direction through the glass (`room_light::sky_along`), the sun's patches, and the light
+  thrown on at the surfaces' albedos with no gain or caps. The stove stops the sun's rays;
+  the table's sides stop them and throw them back as patches. The lace has one description shared with the
+  tracer and Cycles: its open share from its mask, its thread sending 0.65 of what it stops
+  on into the room and the rest back. The props read nine-harmonic probes; the board reads
+  the props' probes.
+- **The materials.** Varnish and wax are clear coats (Fresnel 0.04, the sun's lobe at the
+  coat's roughness, the room's light along the reflection). The wallpaper's print is a metal
+  over a matt ground. Glossy surfaces read the room's reflection baked into a map from the
+  room's middle (one level per roughness, corrected to the room's box).
+- **The camera.** AgX at an exposure metered once at the bake (the room's surfaces'
+  log-average to 0.18), or on the board where the board fills the frame. A season's grade
+  follows as a light touch: autumn's white balance 1.1, 1, 0.85 and power 0.9 on AgX's
+  curve. The view out is drawn at Cycles' outside light, and the camera exposes it 3 stops
+  under the room (`render3d::window_ev`), as an HDR photograph would; the outside's
+  reflections keep the room's exposure.
+- **Comparing with Cycles.** `tools/blender/app_camera.py` puts Cycles' light through the
+  tuner's camera (its metered exposure, AgX and grade), so only the light differs. At the
+  reference view the app's sunlit floor is within 10% of Cycles' light. The paper in shade
+  and the ceiling are 0.6 to 0.7 of it; the far wainscot and the rug are about twice it.
+
 ### The library's bookcases and books
 
 Two open oak bookcases stand built into the hall wall either side of the door

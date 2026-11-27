@@ -2421,6 +2421,61 @@ to be is in tasks 042, 059, 071, 081, and 086.
   low-end Android tier takes the props' light as a colour a vertex (task 120), so L2 costs
   it only at the bake. To revisit when optimizing: the props' 18 texel reads a pixel
   against L1's 6, and whether the walls need L2 after all. Rejected for now: L2 everywhere.
+- One camera under `--light physical`: AgX (a degree-8 fit to Blender's, within 1.5 levels
+  of it on Cycles' pictures) at an exposure metered once at the bake, the room's surfaces'
+  log-average to 0.18 (2026-11-26, task 122). Replaces the old toe and shoulder with their
+  per-surface exposures (`room_exposure`). Rejected: metering the picture (a pass, a delay,
+  pumping as the eye walks). The board view meters the board where it fills more than 3% of
+  the frame (`render3d::board_meter`, 2026-11-27): one exposure took the sunlit maple 5 stops
+  over grey. Rejected there: a hue-keeping shoulder (the maple turned orange) and local
+  exposure for the whole picture.
+- A grade per season over AgX, as data (`render3d::GRADES`; 2026-11-26): stops over the
+  meter, white balance gains, and a look on AgX's curve. Autumn's was fitted to the autumn
+  reference (white 1.3, 1, 0.6, power 0.8). Replaced on 2026-11-27 (below) by a light touch,
+  since the colour now comes from the light.
+- Varnish and wax as physical coats (2026-11-26, task 122): Fresnel 0.04 over the wood, the
+  sun's lobe at the coat's roughness widened by the sun's disc, the environment as the light
+  arriving along the reflection. Replaces the broad sheen (roughness 0.8, strength 2) on the
+  paper and paint, which no reference has, and the coat's highlight widened to a window's.
+  The wallpaper's print is bronze powder, a metal over a matt ground (the same day).
+- The sun's colour from the atmosphere by its height (`rooms::sun_color_at`, 2026-11-26):
+  replaces the key's colour at 0.6 of its saturation.
+- One description of the lace for the bake, the shaders, the tracer and Cycles (2026-11-27,
+  task 124): its open share from the mask and the density rule, its thread sending
+  `LACE_THROUGH` 0.65 of what it stops on and the rest back, from a measured cream sheer
+  (Kotey, Wright and Collins 2009: openness 0.45, reflectance 0.19, transmittance 0.80).
+  Replaces `lace_lets` with `LACE_SCATTER` and the old 1 : 0.45 split, tuned by eye. Its
+  room side is lit from the probes, not the old harmonics and bounce.
+- Cycles is the look's reference, made to match the concepts by its inputs, and the app made
+  to match Cycles by the same inputs (2026-11-27, task 122). Cycles takes the app's sun,
+  materials and woods (`tools/blender_export.goose`, `tools/blender/scene.py`), and is
+  compared through the tuner's own camera (`tools/blender/app_camera.py`), so only the light
+  differs. The grade stays a light camera touch, not where the colour comes from. Replaces
+  fitting the grade to a repaint, which had to carry the colour the light lacked.
+- The season's air (2026-11-27, task 122): the sun and the light from outside come from one
+  input, Blender's sky model (multiple scattering) at an aerosol density per season. Autumn
+  takes 40: the sun 0.13 of the clear sun at about 3000 K, a bright warm sky round it. The
+  bake takes the outside's radiance by direction (`model3d::outside_light`, 5° cells from
+  Cycles' panorama of the sky, the lawn, the tree line and the oak). Replaces autumn's sun at
+  0.25 of the clear sun coloured as at 8° under a plain clear-sky colour in every direction,
+  including under the horizon. That sky lit the ceiling blue from below the horizon and
+  left the shade bluer than Cycles'. Rejected: 25 (less orange) and the old sky. Autumn's
+  grade becomes white 1.1, 1, 0.85 and power 0.9, about a third of the fitted one, which
+  over-warmed the shade under the new sky.
+- The view out drawn at Cycles' outside light under the season's air, with the camera's own
+  exposure for the windows, 3 stops under the room's (`render3d::window_ev`, 2026-11-27).
+  The park lies 5 stops and more over a room exposed for itself, so the view went white
+  and its grass and trees lost their colour; the concepts hold it about 2 stops over, as an
+  HDR photograph does. A camera choice, not light: the reflections of the outside keep the
+  room's exposure. Replaces the view out's own exposure riding up with the room's meter.
+  Rejected: physics alone (the near maple in Cycles covers only the upper panes and the
+  view stays pale).
+- The room's reflections from a map baked from the room (task 131, 2026-11-27): six 90°
+  views from the room's middle packed octahedrally, one level per roughness, read along the
+  reflected ray corrected to the room's box; the floor's grazing lobe as four taps up its
+  vertical plane. Replaces the analytic box and each material's own sharpness, and the
+  earlier rejection of a cube map ("a pass per face, and the room changes with the sun"):
+  the sun moves only with a rebake.
 - Open: at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
   board's 0.3 (task 042).
 

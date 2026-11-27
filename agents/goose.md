@@ -35,6 +35,8 @@ formatting is stable). The compiler prints nothing on success; `--stats` gives a
   function can return a reference (`fn shown(sh: Shell&) -> board::Board&`) for `.=`;
   `.=` can't bind an `if` choosing between two fields.
 - Trailing parameters can take defaults, `a: f32 = 1.0`.
+- `pow(2.0, x)` with an f32 `x` is an ambiguous call (the literal fits both overloads): give
+  the base a type, `let two: f32 = 2.0; pow(two, x)`.
 - A limited array passes by reference only as its exact type: `float4[..64]` doesn't match a
   `float4[..]&` or `float4[..96]&` parameter; pass a `const float4[:]` slice (`xs[..]`) to read,
   or use one capacity throughout (`src/model3d/chairs.goose`). Overflowing one is a runtime

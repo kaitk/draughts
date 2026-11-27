@@ -44,6 +44,25 @@ pieces; the design boards still set the layout, glass, and controls.
   takes Cycles' light (`scene.py`'s `-combined.npy`) and the tuner's log at the same view
   and writes the picture the tuner's exposure, AgX and season's grade would make of it, so
   only the light differs. Cycles' own PNG has another exposure and no grade (2026-11-27).
+- The look's order (2026-11-27): the concepts set it; Cycles is made to match them by its
+  physical inputs (the season's air, the sun, the view out), then the app is made to match
+  Cycles region by region. A fresh export: `python3 scripts/mac.py tools/blender_export.goose
+  -o build/X/export`, `GOOSE_GFX_HEADLESS=1 build/X/export --out build/X/scene --maps on
+  [--tree on]` (the maple, 66k wood and 44k leaf triangles). Then `scene.py --scene
+  build/X/scene --view reference --wood ours --textures on --sky SKY.json --view-out
+  pictures` (aerosol 40 is autumn's: `tools/blender/sky_model.py -- --elevation 15 --aerosol
+  40 --out SKY.json`, two seconds). 1536 × 1024 at 128 samples takes about a minute. Meter an
+  option as the tuner would: its EV moved by log2 of the frame's log-average against a
+  render whose tuner EV is known (`build/sky-look/cam2.py`). The app's own linear light
+  against Cycles' by region: the tuner's `--tone-probe 64`, `4` and `0.0625` shots merged
+  (`app_camera.merge_probes`) over Frame's exposure 3.0836 (`build/sky-look/lin.py`).
+  Objects scene.py adds must not share a name with room.obj's (`oak`): Blender renames one
+  and the material goes astray. Cycles' camera draws to 1 km (the tree line is 110 m out).
+- The outside's table (`model3d::outside_light`) is generated: render the panorama from just
+  past the middle window (`scene.py --pano 4.5,7.95,1.9 --size 1024x512 --sky SKY.json
+  --view-out pictures`), then `tools/blender/outside_table.py PANO-combined.npy SKY.json
+  SCENE/scene.json autumn src/model3d/outside_light.goose` and `goose format` it. Its
+  azimuth is `atan2(v.x, v.y)` of the plan's direction out (the sun's side positive).
 - Look at the reference up close before writing a shader: crop and enlarge with
   `magick ref.png -crop WxH+X+Y +repage -resize 300% crop.png`, and read the crop.
 - Put the app's screenshot beside the reference at the same scale
@@ -382,6 +401,10 @@ pieces; the design boards still set the layout, glass, and controls.
   against Cycles at the EV the tuner prints with `--shot` ("the camera's meter ... EV"):
   `tools/blender/scene.py --exposure EV`. Blender's AgX on any linear EXR:
   `build/review122/s5/agx_ref.py` (OCIO in Blender's Python).
+- Under `--light physical` in autumn the tuner takes the season's air (`--season-air
+  hazy`; `clear` the plain sky and `PHYSICAL_SUN`) and exposes the view out `--window-ev` -3
+  stops under the room (the Outside section's Window EV). Compare with Cycles at the
+  window's light with `--window-ev 0`; app_camera.py has no window exposure.
 - The tuner's `--wall X,Y,Z,W` is applied after the placement: its y is the sun's turn
   across the window wall, so `--wall 36,20,-2,2` (Room's default, in older shot scripts)
   moves the sun from the default placement's 12° to 20°. The exporter's sun is the
