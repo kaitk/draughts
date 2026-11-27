@@ -12,11 +12,23 @@
 //
 // Nothing to tell on the Mac or iOS.
 //
+// draughts_dev_args: 1 when the development flags (src/app/flags.goose) and the
+// renderer's test variables are read, 0 in a store build (DRAUGHTS_STORE), where launch
+// arguments and the environment change nothing.
+//
 // draughts_platform: which platform the program runs on, which Goose can't ask
 // (docs/goose-findings.md): 0 a desktop, 1 Android, 2 iOS.
 
 #include "platform.h"
 #include <stdint.h>
+
+int64_t draughts_dev_args(void) {
+#if DRAUGHTS_STORE
+    return 0;
+#else
+    return 1;
+#endif
+}
 
 int64_t draughts_platform(void) {
 #if defined(__ANDROID__)

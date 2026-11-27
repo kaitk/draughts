@@ -143,6 +143,23 @@ split is in [the code's layout](README.md#the-codes-layout).
   the file's name (`build/draughts_ngfx`, `build/ios/draughts_ngfx/`), so the two roots'
   builds still don't overwrite each other.
 
+## The App Store's build reads no development flags (2026-11-27)
+
+- `scripts/ios.py --release` builds with `DRAUGHTS_STORE` (`platform/ios/CMakeLists.txt`):
+  `draughts_dev_args()` (`src/native/launch.c`) returns 0, so the app never parses its
+  launch arguments (`src/app/flags.goose`, `dev.goose`), `--renderer` stays `auto`, and the
+  renderer's test variables (`DRAUGHTS_RENDERER_TEST`, `DRAUGHTS_AUTO_NGFX`) change nothing.
+  Link-time optimization, on for that build alone, folds the 0 in and leaves the parser
+  and the flags' names out of the executable (none of `--screen`, `--puzzle`, `--tap`
+  in `strings`, 2026-11-27). Simulator and device builds read flags as before.
+- Why: App Review rejected 0.8.0 and 0.9.0 under Guideline 5.6 for features "intentionally
+  hidden during the review process" without naming one; launch arguments that open any
+  screen or locked puzzle, play scripted taps, or set ratings were the one part of the
+  shipped app no screen reaches (`store/app-store.md`, "App Review").
+- Rejected: a pre-unlocked player for review, which behaves differently during review,
+  what 5.6 forbids; ignoring the arguments at run time alone, which keeps every flag's
+  name in the binary.
+
 ## Rejected (2026-11-18)
 
 - Dropping `src/` and putting the packages at the root: the root would mix the

@@ -23,6 +23,8 @@ let WAIT_WHEN_IDLE = 256;
 
 // DESKTOP, ANDROID, or IOS.
 extern fn draughts_platform() -> i64;
+// 1 when development flags are read, 0 in a store build (src/native/launch.c).
+extern fn draughts_dev_args() -> i64;
 // The system's preferred locales, "et-EE,en-US"; returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
 // The local date as days since the epoch.
@@ -114,6 +116,17 @@ fn screen_size() -> int2 { gfx::screen_size() }
 fn focused() -> bool { gfx::focused() }
 
 fn platform() -> i64 { draughts_platform() }
+
+// Whether the development flags and test variables count: never in a store build, which
+// behaves as from its own screens alone, whatever it is started with.
+fn dev_args() -> bool { draughts_dev_args() != 0 }
+
+// The program's arguments, or the program's name alone in a store build.
+fn launch_args() -> u8[:][>..] {
+    var a = args();
+    if !dev_args() { a.resize(min(a.len, 1)); }
+    return a;
+}
 fn sound_session() { draughts_sound_session(); }
 
 fn read_display(h: Host&) { draughts_display(h.display); }

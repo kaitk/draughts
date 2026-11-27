@@ -207,7 +207,7 @@ release build (`docs/development.md`, "Run on iOS").
 ```text
 Draughts is a board game for all ages, simple enough for young children. It is open source (MIT or Apache 2.0), written by one developer in Goose, a small systems language, with the code at https://github.com/kaitk/draughts.
 
-It has no network code, no accounts, no ads, no purchases, no links out of the app, and no third-party SDKs; everything a player makes (an optional name, settings, stars, saved and past games) stays in the app's container. Nothing is switched on remotely and nothing is hidden: every part is reached from the home screen, as below.
+It has no network code, no accounts, no ads, no purchases, no links out of the app, and no third-party SDKs; everything a player makes (an optional name, settings, stars, saved and past games) stays in the app's container. Every part is reached from the home screen, as below; some open as the player goes on, as said.
 
 - First start: the app asks "Do you know how to play?"; "Show me" starts a short lesson played on the board. It is also under Puzzles, "How to play".
 - New game: the computer at three levels, or a friend on the same device; the kind of draughts, your pieces, and a clock.
@@ -217,7 +217,22 @@ It has no network code, no accounts, no ads, no purchases, no links out of the a
 - Settings (the gear on the home screen): the 3D board (Board), the picture (Theme), Sound, move hints, and the language.
 
 Two things change by design. The background's season follows the date unless a season is chosen in Settings, Theme, so the picture depends on the day. Sound is off until turned up in Settings, Sound.
+
+This build reads no launch arguments or environment variables: the development options used to make screenshots and run tests are left out of it.
 ```
+
+### Rejections
+
+- **0.8.0, 2026-11-16, Guideline 5.6** (Developer Code of Conduct): "features that appear
+  to have been intentionally hidden during the review process", none named. The listing
+  still showed 0.3's screenshots and led with the daily puzzles, which open only after
+  Learn. Answered with screenshots from the build and these notes, resubmitted as 0.9.0.
+- **0.9.0, 2026-11-23, Guideline 5.6**, the same text, the reply's question (which
+  feature) unanswered. The screenshots, from the build, still show a player's unlocked
+  puzzles and all four seasons; the shipped binary read about 50 launch flags that open
+  any screen or puzzle, play taps, and set ratings. From 0.9.4 the release build reads
+  none and holds none of their names (`docs/decisions/layout.md`); the notes drop
+  "nothing is hidden".
 
 ## Builds and the account
 

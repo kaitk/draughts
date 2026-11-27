@@ -40,7 +40,7 @@ fn driver() -> u8[>..] { if ngfx_on { ngfx::driver() } else { gfx::driver() } }
 
 // --renderer's value, "auto" without it.
 fn renderer_flag() -> const u8[:] {
-    let a = args();
+    let a = host::launch_args();
     for i in 1..a.len - 1 { if a[i] == "--renderer" { return a[i + 1]; } }
     return "auto";
 }
@@ -49,6 +49,7 @@ fn renderer_flag() -> const u8[:] {
 // "fail" makes ngfx's open fail after the window opened, "crash" ends the program after
 // ngfx opened, before its first frame; DRAUGHTS_AUTO_NGFX=1 makes auto try ngfx here.
 fn test_env(name: const u8[:], value: const u8[:]) -> bool {
+    guard host::dev_args() else { return false; }
     var v: u8[>..] = [];
     return env(name, v) && v == value;
 }

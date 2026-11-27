@@ -124,6 +124,10 @@ A game against the computer that ends in such a run still moves the playing play
 rating, skill, and games played in `player-N.txt`: for a shot of an ended game, a
 friend's (no `--computer`) moves nothing but `--history`'s file.
 
+The App Store's build (`scripts/ios.py --release`) reads none of them, nor the renderer's
+test variables (`docs/decisions/layout.md`, "The App Store's build reads no development
+flags"); try a flag on the simulator or with `--device`.
+
 On Android the flags go through the intent; `-S` stops the app first, since the
 `singleInstance` activity would otherwise come back with its old flags:
 

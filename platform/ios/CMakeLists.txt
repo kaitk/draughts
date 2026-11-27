@@ -66,6 +66,15 @@ set_source_files_properties(${GOOSE_GFX_SRC}/ui/ui_nuklear.c PROPERTIES COMPILE_
 # Its CMake builds NoGraphicsAPI and the layer for the SDK, its shaders compiled for it.
 # goose.h, which the layer and the program's C include, is the compiler's: the one it wrote
 # for the package's build on the Mac (scripts/ios.py finds it).
+# The App Store's build (scripts/ios.py --release): launch arguments and the environment
+# change nothing (src/native/launch.c), and link-time optimization folds that in, so the
+# development flags' parser and what only it reaches are left out of the executable.
+option(DRAUGHTS_STORE "Build for the App Store" OFF)
+if(DRAUGHTS_STORE)
+    target_compile_definitions(main PRIVATE DRAUGHTS_STORE=1)
+    set_property(TARGET main PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
+
 set(GOOSE_NGFX "" CACHE PATH "A goose-ngfx checkout, for the ngfx build")
 set(GOOSE_H_DIR "" CACHE PATH "The folder of the compiler's goose.h, for the ngfx build")
 if(GOOSE_NGFX)

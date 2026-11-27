@@ -14,7 +14,8 @@
                                   the same with gfx alone, in its place
     scripts/ios.py --release [--upload]
                                   build/ios/draughts_ngfx/Draughts.ipa, signed for the
-                                  App Store, and uploaded to App Store Connect
+                                  App Store, and uploaded to App Store Connect; it
+                                  reads no development flags (DRAUGHTS_STORE)
 
 Steps, as scripts/android.py's: Goose writes the program's C and the runtime's C;
 goose_gfx's sources are copied from the submodule, and SDL is copied and
@@ -468,6 +469,7 @@ def main():
         "-DCMAKE_OSX_ARCHITECTURES=arm64",
         f"-DCMAKE_OSX_DEPLOYMENT_TARGET={MIN_IOS}",
         "-DCMAKE_BUILD_TYPE=Release", *ngfx_cmake,
+        f"-DDRAUGHTS_STORE={'ON' if args.release else 'OFF'}",
         f"-DGOOSE_PROGRAM_C={gen / 'program.c'}",
         f"-DGOOSE_RUNTIME_C={gen / 'goose_runtime.c'}",
         f"-DGOOSE_GFX_SRC={gfx_src}",

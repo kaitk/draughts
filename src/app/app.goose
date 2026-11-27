@@ -266,7 +266,8 @@ fn set_wake(lp: Loop&, h: host::Host&, sh: shell::Shell&, now: f64) {
 }
 
 fn run() {
-    let f = flags::parse(args());
+    // A store build reads no flags, so the parser isn't reached (platform/ios/CMakeLists.txt).
+    let f = if host::dev_args() { flags::parse(args()) } else { flags::Flags { .. } };
     if f.dp > 0 { gui::short_dp = f.dp; }
     if f.density_floor >= 0.0 { gui::density_floor = f.density_floor; }
     if f.display_scale >= 0.0 { gui::display_scale = f.display_scale; }
