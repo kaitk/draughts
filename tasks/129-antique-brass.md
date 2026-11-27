@@ -247,6 +247,70 @@ calls on the hardware's pixels only.
 
 Page: `build/notes/antique-brass/index.html` (its top section).
 
+## The material against Cycles' (2026-11-27)
+
+The user, on the niche view's pair: Cycles' rod and keeper a warm golden brass with subtle
+darker mottling, ours dark brown-black with strong orange blotches, "as if our shaders run
+entirely differently". The material's own colours compared per pixel, Cycles' Diffuse Color and
+Glossy Color passes against the tuner's new `--ssao-view diffuse|glossy` (the material as those
+passes, sRGB of the linear), on the rod (linear means):
+
+| | Diffuse colour | its p10 | Glossy colour |
+|---|---|---|---|
+| Cycles | 0.161, 0.109, 0.051 | 0.046 | 0.227, 0.157, 0.081 |
+| Game before | 0.087, 0.058, 0.027 | 0.009 | 0.312, 0.224, 0.112 |
+| The model, the rank sunk 0.35 (numpy) | 0.166, 0.112, 0.053 | 0.043 | |
+| Game after | 0.184, 0.125, 0.058 | 0.047 | 0.153, 0.108, 0.059 |
+
+The colours, their space and their mix were already the same (the passes' chromaticity
+equal); the coverage was not. Blender's OBJ importer decodes the vertex colour from sRGB, so the
+hardware's wear, written 0.5 (none) in g, reached Cycles' brass as 0.21: a wear of -1 everywhere,
+the rank sunk by 0.35 on every part. At level 1.5 Cycles drew about 3% bare, 47% tarnish and 50%
+deposit (metalness 0.53 on average), the game the model's 31 / 51 / 18 (0.79). Every level judged
+in the room was the sunk one (the controlled checks' sphere and plate were not).
+
+The sunk look is now the model, in both: `SINK` 0.35 on all the hardware, lifted where rubbed by
+`RUB` 0.26 times the wear squared (within 0.03 in rank of what Cycles drew); the mottling still
+pulls toward the level's unsunk mean, as Cycles did; `BRASS_FAR` and `BRASS_FAR_SURFACE` the sunk
+means, for the fade at a distance and the phone tier (`brass_tile.py --levels`). Cycles reads the
+wear back as written (`brass.py`); `brass_check.py`'s sphere and plate set it in sRGB. Cycles
+re-rendered: the niche view as before (no pixel over 20 levels), the handle view 138 pixels over 20
+on the grip's rubbed rings.
+
+The renders, green over the stile or the casement frame beside (the rod at the niche view; the
+handle view's parts), and the rod's local contrast (linear, over a 6 px blur):
+
+| | Niche rod | its contrast | Ball | Stem | Housing | Rod |
+|---|---|---|---|---|---|---|
+| Cycles | 0.68 | 0.22 | 0.94 | 0.79 | 0.59 | 0.95 |
+| Game before | 0.42 | 0.43 | 0.85 | 0.63 | 0.33 | 0.59 |
+| Game after | 0.59 | 0.35 | 0.87 | 0.71 | 0.40 | 0.75 |
+
+What is left is the light. The game's material under Cycles' light (each pixel our passes times
+Cycles' diffuse and glossy light) reads as Cycles: the rod's contrast 0.40 against 0.38, its red
+share 0.661 against 0.664. Fitting the rod as a times the diffuse colour plus b times the glossy,
+b / a (the light the metal reflects over what the deposits scatter) is 0.85 in Cycles and 0.05 in
+the game; the shader's own `room_wide` along the reflection over `room_irradiance` reads 0.076 on
+the rod, the specular occlusion 1. The metal reflects a tenth of what it should beside its
+deposits, which draws the dark metal and the lit blotches: the probes' light toward the room
+(task 122's session), not darkened or flattened over in the brass. Level 1.5 kept until then.
+
+Cycles' other materials read the vertex colour the same way: the panelling's oak takes its
+occlusion (r) and tone (g) decoded from sRGB (`scene.py`'s `vertex_colour()`). Left for the user:
+fixing it changes the Cycles room they have been judging.
+
+The panes' rims on the brass (the user: "aliased and distracting on movement due to it being
+thin"): `niche_seen` softens each casement edge by the pixel's spread of reflected directions
+over the distance to the glass, at most 0.08 rad (more averaged the panes into a bright outline
+on the silhouettes); the hardware takes the normals' full spread into its lobe whatever its
+metalness (the tarnish, at 0.9, took the weaker kernel). Divided by the ray's slant to the glass,
+the blur drew a bright dashed ring where the rays turn parallel to it; dropped. Checked with the eye
+1 mm further each shot (the tuner's strafe moves 64 px a frame at the handle view, too fast to
+judge): the grip's change on its highlights 7.7 to 6.8 levels a step, the thin rims holding about
+a pixel. Without `--light physical` the tuner shoots byte-identical. Cost not measured.
+
+Page: `build/notes/brass-look/index.html`.
+
 ## Acceptance criteria
 
 - [x] The controlled checks in Cycles at about five tone levels, bronze B's among them, with
