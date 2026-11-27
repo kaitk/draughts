@@ -490,7 +490,7 @@ let ROOM_FRAG = """
     const vec4 WINDOW_BRASS = vec4(0.34, 0.25, 0.17, 0.5);
     // How much of the niche's window light the hardware's reflection takes, growing smoothly
     // as it turns from the room to the glass (a rough lobe's share), fitted to Cycles' grip:
-    // window_metal.w, 0.3 (room_shell::WINDOW_METAL_OFF).
+    // window_metal.w (room_shell::WINDOW_METAL_OFF's 0 since the niche's light).
     // Task 129's antique brass (window_metal.x 1 to 5, room_shell::window_metal): one aged yellow
     // brass in three states, bare (C260's f0), a light tarnish and dark deposits, their
     // metalness and roughness; which covers a point is a threshold on the brass tile's rank

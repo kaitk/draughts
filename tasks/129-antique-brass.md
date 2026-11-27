@@ -133,6 +133,27 @@ niche's light (task 128). With `--phone-tier` the room's constants read stale at
 the flag off as well (not this change). Rebased onto `box-window` 561e2723 (the three-lobed
 keeper); the keeper reshot.
 
+## On `room-light`, with the niche's light (2026-11-27)
+
+Rebased onto `room-light` d8eeec25 (task 127's box window and task 128's niche light merged).
+`room_fixed.goose` written again from the tuner's phone tier: unchanged, as `window_metal` is
+kept a uniform. With the niche's light in the probes the window's metal read brighter in the
+tuner than Cycles; measured as the handle view's crops over the casement frame's beside them
+(their green, so the two renderers' exposures cancel):
+
+| | Grip / frame | Housing / frame |
+|---|---|---|
+| Cycles, level 4 | 0.50 | 0.32 |
+| Tuner, level 4, niche 0.3 | 0.89 | 0.73 |
+| Tuner, level 4, niche 0.15 | 0.77 | 0.58 |
+| Tuner, level 4, niche 0.05 | 0.64 | 0.44 |
+| Tuner, level 4, niche 0 | 0.54 | 0.33 |
+| Cycles, flat | 0.42 | 0.17 |
+| Tuner, flat, niche 0 | 0.41 | 0.18 |
+
+The niche's share is now 0 by default (`WINDOW_METAL_OFF`), the flat bronze's too: the niche's
+light in the probes gives what the share used to stand in for.
+
 ## Acceptance criteria
 
 - [x] The controlled checks in Cycles at about five tone levels, bronze B's among them, with

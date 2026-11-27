@@ -84,7 +84,7 @@
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
 //       [--box-window on|off (task 127's box window, its casements from room_shell's box_window.goose; off window B's)]
 //       [--window-metal LEVEL,MOTTLE,ROUGH,NICHE (its hardware's antique brass, task 129: LEVEL 1 to 5, under 1 the
-//        flat bronze; how much of the mottling shows, 0.5; added roughness, 0; the niche's light it reflects, 0.3)]
+//        flat bronze; how much of the mottling shows, 0.5; added roughness, 0; the niche's light it reflects, 0)]
 //       [--rug on|off (the rug under the games table)] [--chairs on|off (the two chairs at it)]
 //       [--props-light off|on|kept (the table and the chairs lit from the room's probes where each pixel is, through
 //       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)]
