@@ -16,6 +16,8 @@
 //       [--box-window on|off (task 127's window; on; off window B, to be dropped)]
 //       [--window-metal LEVEL,MOTTLE,ROUGH,PANES (the tuner's: task 129's antique brass on the hardware;
 //       its --light physical default, 1.5,0.5,0,1)]
+//       [--tree on|off (the maple outside as the tuner's --tree-draw all draws it, tree_wood and
+//       tree_leaves, and leaf_atlas.png: add_tree; off)]
 //
 // --maps on also writes, from the app's own code on the GPU, the table's wood maps
 // (table_albedo.png, table_normal.png), the panelling oak's field (wall_albedo.png,
@@ -27,6 +29,7 @@ import std;
 import os;
 import vec;
 import math;
+import binary;
 import gfx;
 import model3d from "../src/model3d";
 import render3d from "../src/render3d";
@@ -94,7 +97,7 @@ struct Part { name: u8[..32], kind: f32 }
 var pos:   float3[>..] = [];
 var nrm:   float3[>..] = [];
 var uvs:   float2[>..] = [];
-var extra: float2[>..] = [];  // a vertex's occlusion and its piece's own tone (mat's fraction)
+var extra: float3[>..] = [];  // a vertex's occlusion and its piece's own tone (mat's fraction); b a leaf's colour's
 var tris:  u32[>..]    = [];
 var part:  i64[>..]    = [];  // a triangle's
 var parts: Part[>..]   = [];
@@ -147,7 +150,7 @@ fn add(verts: mesh::Vertex[>..]&, indices: u32[>..]&, room: bool, props: bool) {
         pos.push(from_room(p));
         nrm.push(normalize(dir_from_room(n)));
         uvs.push(v.uv);
-        extra.push(float2 { v.ao, v.mat - floor(v.mat + 0.001) });
+        extra.push(float3 { v.ao, v.mat - floor(v.mat + 0.001), 0.0 });
     }
     for t in indices.len / 3 {
         let a = indices[3 * t];
@@ -200,7 +203,7 @@ fn add_rug(mid: float3, half: float2, thick: f32) {
             pos.push(q);
             nrm.push(n);
             uvs.push(float2 { (q.x - x0) / (x1 - x0), (q.y - y0) / (y1 - y0) });
-            extra.push(float2 { 1.0, 0.0 });
+            extra.push(float3 { 1.0, 0.0, 0.0 });
         }
         let order: i64[6] = if wound { [0, 1, 2, 0, 2, 3] } else { [0, 2, 1, 0, 3, 2] };
         for e in 6 { tris.push((first + order[e]) as u32); }
@@ -359,6 +362,193 @@ fn write_maps(out_dir: const u8[:], laid: float4, mm: f32) {
     write_room_maps(r3d, g, out_dir, laid, mm);
 }
 
+// The near maple outside the windows (rooms::shell_tree, the old maple grown whole) as the
+// light tuner's --tree-draw all draws it with the shell on (render3d::tree_geometry): culled
+// to what the windows show or cast through, its wood the tubes (trees::wood_mesh) and the
+// ribbons of its twigs at their true width, turned to face the house (the GPU turns them to
+// the eye), its leaves the flat cards (TREE_LEAF_VERT, no bend) with uv into the leaf atlas,
+// written as leaf_atlas.png (sRGB at the leaves' mean tint, the outline in alpha); each leaf's
+// own tint as its colour over the mean's, halved, in the vertex colour (sRGB, as the OBJ
+// importer decodes it). The room `r` as lit (its key's height and the window's turn).
+fn add_tree(r: rooms::Room, out_dir: const u8[:]) {
+    let s = room_shell::LIBRARY;
+    let v = rooms::shell_tree_view(r, s);
+    let w = rooms::whole_tree(r, s);
+    let sight = rooms::whole_sight(r, s);
+    var all = trees::Tree { .. };
+    trees::grow_whole(all, w, v, sight, false);
+    var density: f32[>..] = [];
+    let grid = trees::crown_grid(all, density);
+    var t = trees::Tree { .. };
+    trees::grow_whole(t, w, v, sight, true);
+    var verts:   trees::WoodVertex[>..] = [];
+    var indices: u32[>..]               = [];
+    let made = trees::wood_mesh(t, density, grid, trees::toward_sun(v), verts, indices);
+    var cards: float4[>..] = [];
+    let leaves = trees::leaf_cards(t, density, grid, trees::toward_sun(v), cards);
+    // The tree's frame into the room's (shaders::TREE_FN's tree_world before its turn).
+    let o = rooms::tree_origin(r);
+
+    // The wood: the tubes as made, each ribbon's two sides at its radius across the way to
+    // the house (the tree's -z).
+    let wood = part_of("tree_wood", 30.0);
+    var wood_tris: i64 = 0;
+    let first = pos.len;
+    for &x in verts {
+        var at = x.pos;
+        var n = x.normal;
+        if length(x.normal) < 0.5 {
+            var side = cross(x.along, float3 { 0.0, 0.0, -1.0 });
+            if length(side) < 1e-3 { side = float3 { 1.0, 0.0, 0.0 }; }
+            side = normalize(side);
+            at = at + side * (x.uv.x * x.light.z);
+            n = normalize(cross(side, x.along));
+            if n.z > 0.0 { n = float3_0 - n; }
+        }
+        pos.push(tree_point(o, at));
+        nrm.push(tree_way(n));
+        uvs.push(x.uv);
+        extra.push(float3 { 1.0, 0.0, 0.0 });
+    }
+    for k in (made.tube_indices + made.ribbon_indices) / 3 {
+        let at = if 3 * k < made.tube_indices { 3 * k } else { made.ribbon_first + 3 * k - made.tube_indices };
+        let i0 = first + indices[at];
+        var i1 = first + indices[at + 1];
+        var i2 = first + indices[at + 2];
+        let face = cross(pos[i1] - pos[i0], pos[i2] - pos[i0]);
+        if dot(face, nrm[i0] + nrm[i1] + nrm[i2]) < 0.0 {
+            let j = i1;
+            i1 = i2;
+            i2 = j;
+        }
+        tris.append([i0 as u32, i1 as u32, i2 as u32]);
+        part.push(wood);
+        wood_tris += 1;
+    }
+
+    // The leaves' tints as TREE_LEAF_FRAG takes them (render3d::tree_tint's x added, each
+    // leaf's own spread by its seed), and their mean.
+    let tint_add = render3d::tree_tint.x;
+    let spread = render3d::tree_spread;
+    var mean: f64 = 0.0;
+    for i in leaves {
+        let l = cards[i * trees::LEAF_VEC4S + 3];
+        mean += clamp(l.x + tint_add + (l.w - 0.5) * spread, 0.0, 2.0) as f64;
+    }
+    let mean_tint = (mean / max(leaves, 1) as f64) as f32;
+    let mean_color = leaf_atlas::tint_color(mean_tint);
+    let leaf_part = part_of("tree_leaves", 31.0);
+    let corners: float2[4] = [float2 { -1.0, 0.0 }, float2 { 1.0, 0.0 }, float2 { 1.0, 1.0 }, float2 { -1.0, 1.0 }];
+    for i in leaves {
+        let at = i * trees::LEAF_VEC4S;
+        let base = cards[at];
+        let along = cards[at + 1];
+        let face = cards[at + 2];
+        let l = cards[at + 3];
+        let kind = ((face.w + 0.5) as i64) & 7;
+        let n = float3 { face.x, face.y, face.z };
+        let a = float3 { along.x, along.y, along.z };
+        let across = cross(n, a);
+        let tint = clamp(l.x + tint_add + (l.w - 0.5) * spread, 0.0, 2.0);
+        let c = leaf_atlas::tint_color(tint);
+        let ratio = float3 { c.x / mean_color.x, c.y / mean_color.y, c.z / mean_color.z } * 0.5;
+        let colour = float3 { srgb_of(ratio.x), srgb_of(ratio.y), srgb_of(ratio.z) };
+        let cell = float2 { (kind % 4) as f32, (kind / 4) as f32 } * 256.0;
+        let v0 = pos.len as u32;
+        for k in corners {
+            let lx = k.x * leaf_atlas::QUAD.x;
+            let ly = leaf_atlas::QUAD.y + (leaf_atlas::QUAD.z - leaf_atlas::QUAD.y) * k.y;
+            let p = float3 { base.x, base.y, base.z } + across * (lx * along.w) + a * (ly * base.w);
+            pos.push(tree_point(o, p));
+            nrm.push(tree_way(n));
+            let uv = (cell + float2 { 128.0 + lx * 150.0, 170.0 - ly * 150.0 }) / float2 { 1024.0, 512.0 };
+            uvs.push(float2 { uv.x, 1.0 - uv.y });
+            extra.push(colour);
+        }
+        let wound = dot(cross(pos[v0 as i64 + 1] - pos[v0 as i64], pos[v0 as i64 + 2] - pos[v0 as i64]), nrm[v0 as i64]) > 0.0;
+        let order: u32[6] = if wound { [0, 1, 2, 0, 2, 3] } else { [0, 2, 1, 0, 3, 2] };
+        for e in 6 { tris.push(v0 + order[e]); }
+        part.push(leaf_part);
+        part.push(leaf_part);
+    }
+
+    // The atlas's top level, lit from the front at the mean tint.
+    var shape: u8[>..] = [];
+    var marks: u8[>..] = [];
+    leaf_atlas::make(shape, marks);
+    var rgba: u8[>..] = [];
+    for i in leaf_atlas::ATLAS_W * leaf_atlas::ATLAS_H {
+        let b = i * 4;
+        let sv: u8[4] = [shape[b], shape[b + 1], shape[b + 2], shape[b + 3]];
+        let mv: u8[4] = [marks[b], marks[b + 1], marks[b + 2], marks[b + 3]];
+        let c = leaf_atlas::texel_color(sv, mv, mean_tint, false);
+        rgba.append([srgb_byte(c.x), srgb_byte(c.y), srgb_byte(c.z), shape[b + 3]]);
+    }
+    write_png_rgba(str(out_dir, "/leaf_atlas.png")[..], rgba[..], leaf_atlas::ATLAS_W, leaf_atlas::ATLAS_H);
+    print("tree: ", wood_tris, " wood triangles (", made.tube_indices / 3, " tubes, ", made.ribbon_indices / 3, " ribbons), ", leaves,
+          " leaves (", 2 * leaves, " triangles), their mean tint ", mean_tint, "; wrote ", out_dir, "/leaf_atlas.png");
+}
+
+// A point and a way of the tree's frame (world units) into the export's, `o` the frame's origin
+// in the room's (rooms::tree_origin): shaders::TREE_FN's tree_world before its turn.
+fn tree_point(o: float3, p: float3) -> float3 { from_room(float3 { p.x - o.x, p.y - o.y, o.z - p.z }) }
+fn tree_way(d: float3) -> float3 { normalize(dir_from_room(float3 { d.x, d.y, -d.z })) }
+
+fn srgb_of(x: f32) -> f32 {
+    let c = clamp(x, 0.0, 1.0);
+    let e: f32 = 1.0 / 2.4;
+    return if c <= 0.0031308 { 12.92 * c } else { 1.055 * pow(c, e) - 0.055 };
+}
+fn srgb_byte(x: f32) -> u8 { (srgb_of(x) * 255.0 + 0.5) as u8 }
+
+// An 8-bit RGBA PNG, rows top down, stored, not compressed (tools/path_trace's write_png).
+fn write_png_rgba(path: const u8[:], px: const u8[:], w: i64, h: i64) {
+    var raw: u8[>..] = [];
+    for y in h {
+        raw.push(0);
+        raw.append(px[y * w * 4..(y + 1) * w * 4]);
+    }
+    var z: u8[>..] = [0x78, 0x01];
+    var at = 0;
+    while true {
+        let n = min(raw.len - at, 65535);
+        z.push(if at + n == raw.len { 1 } else { 0 });
+        binary::write_u16le(z, n as u16);
+        binary::write_u16le(z, (0xFFFF - n) as u16);
+        z.append(raw[at..at + n]);
+        at += n;
+        guard at < raw.len else { break; }
+    }
+    var a: u32 = 1;
+    var b: u32 = 0;
+    for v in raw {
+        a = (a + v) % 65521;
+        b = (b + a) % 65521;
+    }
+    binary::write_u32be(z, (b << 16) | a);
+    var o:    u8[>..] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    var head: u8[>..] = [];
+    binary::write_u32be(head, w as u32);
+    binary::write_u32be(head, h as u32);
+    head.append([8, 6, 0, 0, 0]);
+    png_chunk(o, "IHDR", head[..]);
+    png_chunk(o, "IDAT", z[..]);
+    png_chunk(o, "IEND", raw[..0]);
+    guard write_file(path, o[..]) else { abort(str("could not write ", path)); }
+}
+fn png_chunk(o: u8[>..]&, name: const u8[:], data: const u8[:]) {
+    binary::write_u32be(o, data.len as u32);
+    let from = o.len;
+    o.append(name);
+    o.append(data);
+    var crc: u32 = 0xFFFFFFFF;
+    for v in o[from..] {
+        crc ^= v;
+        for i in 8 { crc = if (crc & 1) != 0 { (crc >> 1) ^ 0xEDB88320 } else { crc >> 1 }; }
+    }
+    binary::write_u32be(o, crc ^ 0xFFFFFFFF);
+}
+
 fn write_obj(path: const u8[:]) {
     var out: u8[>..] = [];
     format(out, "# Draughts' library room (tools/blender_export.goose): metres, z up, the table at the origin\n");
@@ -380,11 +570,11 @@ fn write_obj(path: const u8[:]) {
                 }
             }
         }
-        // A vertex's colour: r its occlusion, g its piece's own tone.
+        // A vertex's colour: r its occlusion, g its piece's own tone (a leaf's: its colour, add_tree).
         for v in order {
             let q = pos[v as i64];
             let e = extra[v as i64];
-            format(out, "v ", q.x, " ", q.y, " ", q.z, " ", e.x, " ", e.y, " 0\n");
+            format(out, "v ", q.x, " ", q.y, " ", q.z, " ", e.x, " ", e.y, " ", e.z, "\n");
         }
         for v in order {
             let t = uvs[v as i64];
@@ -503,6 +693,15 @@ fn main() {
     // The rug (ROOM_FRAG's RUG_HALF, RUG_IN): 3 by 2 m along the window wall, its middle
     // 0.1 m from the table's into the room.
     if rug { add_rug(from_plan(float3 { table_at.x, table_at.y - 0.1, 0.0 }), float2 { 1.5, 1.0 }, rug_thick); }
+    // The maple outside, grown for the sun's height and its turn across the wall (the tuner's
+    // placement puts them in the room's key and window).
+    if switch(argv, "--tree", false) {
+        var lit = r;
+        lit.key.x = sun_at.x;
+        lit.key.y = sun_at.y;
+        lit.window.y = window_turn;
+        add_tree(lit, out_dir);
+    }
 
     write_obj(str(out_dir, "/room.obj")[..]);
 

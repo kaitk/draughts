@@ -17,6 +17,7 @@
 #       thread's own light, while the light through it stays as made; front or back: of that light only what the
 #       thread sends back from the room's side, or on through from the window's)]
 #       [--window-metal flat|LEVEL (the export's by default)] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
+#       [--tree-through SHARE (the maple's leaves' light on through the blade, with blender_export --tree on; 0.35)]
 #       [--pano X,Y,H (an equirectangular panorama from that plan point, 2:1, in place of a view: the middle looks
 #       along the plan's +y, u 0.75 along +x)]
 #
@@ -44,7 +45,7 @@ def flags():
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None,
          "window-metal": None, "lace": "described", "lace-seen": "as-made", "pano": None,
-         "sky": None, "sun-take": "0.25", "view-out": "off", "leaf": "0.3", "lawn": "0.08,0.10,0.035"}
+         "sky": None, "sun-take": "0.25", "view-out": "off", "leaf": "0.3", "tree-through": "0.35", "lawn": "0.08,0.10,0.035"}
     i = 0
     while i < len(argv):
         name = argv[i][2:]
@@ -894,6 +895,48 @@ if F["wood"]:
     if "table" in WOOD:
         for part in ("table_top", "table_base", "chair_wood"):
             mats[part] = finished_wood(part, WOOD["table"], ALBEDO_MAP, ((1.0, 1.0), (0.0, 0.0)))
+
+
+# The maple outside (blender_export --tree on): the bark as TREE_WOOD_FRAG's BARK, matte; the
+# leaves the atlas's colour (leaf_atlas.png, sRGB, at the leaves' mean tint) times each leaf's
+# own over it (the vertex colour, halved), cut where the outline's alpha is under a half as
+# TREE_LEAF_FRAG cuts it, and --tree-through of their light on through the blade (a physical
+# leaf's, about 0.3 to 0.4 of it: published leaf transmittance), both sides alike.
+def tree_leaves(name):
+    m, nt, out = node_material(name)
+    n = Nodes(nt)
+    t = nt.nodes.new("ShaderNodeTexImage")
+    t.image = bpy.data.images.load(os.path.join(scene_dir, "leaf_atlas.png"))
+    t.image.alpha_mode = "CHANNEL_PACKED"
+    t.interpolation = "Linear"
+    t.extension = "CLIP"
+    a = nt.nodes.new("ShaderNodeVertexColor")
+    a.layer_name = "Color"
+    tint = n.scale_rgb(a.outputs["Color"], [2.0, 2.0, 2.0])
+    colour = nt.nodes.new("ShaderNodeVectorMath")
+    colour.operation = "MULTIPLY"
+    n.link(t.outputs["Color"], colour.inputs[0])
+    n.link(tint, colour.inputs[1])
+    d = nt.nodes.new("ShaderNodeBsdfDiffuse")
+    tr = nt.nodes.new("ShaderNodeBsdfTranslucent")
+    n.link(colour.outputs[0], d.inputs["Color"])
+    n.link(colour.outputs[0], tr.inputs["Color"])
+    mix = nt.nodes.new("ShaderNodeMixShader")
+    mix.inputs[0].default_value = float(F["tree-through"])
+    n.link(d.outputs[0], mix.inputs[1])
+    n.link(tr.outputs[0], mix.inputs[2])
+    clear = nt.nodes.new("ShaderNodeBsdfTransparent")
+    cut = nt.nodes.new("ShaderNodeMixShader")
+    n.link(n.math("GREATER_THAN", t.outputs["Alpha"], 0.5), cut.inputs[0])
+    n.link(clear.outputs[0], cut.inputs[1])
+    n.link(mix.outputs[0], cut.inputs[2])
+    n.link(cut.outputs[0], out.inputs["Surface"])
+    return m
+
+
+mats["tree_wood"] = diffuse("tree_wood", (0.16, 0.14, 0.12))[0]
+if os.path.exists(os.path.join(scene_dir, "leaf_atlas.png")):
+    mats["tree_leaves"] = tree_leaves("tree_leaves")
 for ob in scene.objects:
     if ob.type != "MESH":
         continue
@@ -914,9 +957,10 @@ for ob in scene.objects:
 
 def blocker():
     import bmesh
-    lo = Vector((min(o.bound_box[i][0] + o.location.x for o in scene.objects for i in range(8)) - 1.0,
-                 min(o.bound_box[i][1] + o.location.y for o in scene.objects for i in range(8)) - 1.0, -0.5))
-    hi = Vector((max(o.bound_box[i][0] + o.location.x for o in scene.objects for i in range(8)) + 1.0,
+    room = [o for o in scene.objects if not o.name.startswith("tree_")]   # the maple outside is not the room's
+    lo = Vector((min(o.bound_box[i][0] + o.location.x for o in room for i in range(8)) - 1.0,
+                 min(o.bound_box[i][1] + o.location.y for o in room for i in range(8)) - 1.0, -0.5))
+    hi = Vector((max(o.bound_box[i][0] + o.location.x for o in room for i in range(8)) + 1.0,
                  S["window_wall_outer_y"] + 0.01, S["ceiling"] + 1.0))
     W = S["windows"]
     holes = sorted((x - 0.5 * W["width"], x + 0.5 * W["width"]) for x in W["x"])
@@ -1120,6 +1164,8 @@ c.diffuse_bounces = 12
 c.glossy_bounces = 4
 c.transmission_bounces = 12
 c.transparent_max_bounces = 32
+if "tree_leaves" in mats:
+    c.transparent_max_bounces = 128   # a ray crosses many leaves' cards, most of each card cut away
 c.caustics_reflective = False
 c.caustics_refractive = False
 c.sample_clamp_indirect = 0.0

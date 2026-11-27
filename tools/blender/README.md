@@ -34,7 +34,12 @@ The exporter's flags set the room as the tuner's do: `--table-at X,Y`, `--sun AZ
 as: `--light physical`'s autumn sun, 0.25 and 8 degrees, by default; 1,-1 the clear sky's),
 `--window-turn DEG`, `--table-turn DEG`, `--lace-hang M`, `--books`, `--chairs`, `--rug
 on|off`, `--box-window on|off` (task 127's box window, on; off window B, to be dropped), `--backs on|off` (the casements' backs, which the room's mesh leaves out since they
-face away from the room; on, or the space between the panes takes too little light). `--maps on` also makes, on the GPU with the app's own code, the pictures the
+face away from the room; on, or the space between the panes takes too little light). `--tree on` adds the maple outside the windows as the tuner's `--tree-draw all` draws it with the
+shell (`rooms::shell_tree`, culled to what the windows show or cast through, at its sun): `tree_wood`
+(the tubes, and the twigs' ribbons at their true width turned to the house) and `tree_leaves` (the
+flat cards, uv into `leaf_atlas.png`, written beside room.obj at the leaves' mean tint, each leaf's
+own tint over it in the vertex colour); `scene.py` gives the bark `TREE_WOOD_FRAG`'s colour and the
+leaves the atlas, cut at half its alpha, `--tree-through` (0.35) of their light on through. `--maps on` also makes, on the GPU with the app's own code, the pictures the
 surfaces read (the defaults are the tuner's at its default placement, less-turned):
 
 - `table_albedo.png` (sRGB, the polish's roughness in alpha) and `table_normal.png` (the
@@ -156,8 +161,7 @@ Blender -b --python-exit-code 1 --python tools/blender/scene.py -- --exposure 3.
   sills, the books' spines
   (`books_atlas.png` and `book_cells.goose`), the stove's glaze, the lace's pattern
   (`lace_f3.png`). Each needs its uv as the shader takes it.
-- The board and the pieces; the park and the tree outside (the bake dims the sun by the
-  tree's leaves, about a quarter through two of the three windows; not modelled).
+- The board and the pieces.
 - The floor's wax per board (`PLANAR_FLOOR`'s `wax`: each board's own, none in the joints,
   thinner where worn), and the sheen lobes on the oak and the paper.
 - Gloss: the polish's blotches and the wear tile (scratches, crazing, dents), the key's
