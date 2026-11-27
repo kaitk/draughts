@@ -1034,6 +1034,26 @@ and the season's grade; results page `build/notes/curtains-stove/index.html`, sc
   angle, not the glaze. `--stove-glaze K` stays at 1 for trying a creamier glaze.
 - `tools/room_scene.goose` has the reference view, for `path_trace picture reference`.
 
+## Cycles on the app's sun, and the latest look (2026-11-27)
+
+Cycles is the reference look from here on, so it now takes what the app takes under `--light physical`. Results page:
+`build/notes/latest-look/index.html`; scratch `build/latest-look/`.
+
+- The sun: `room_scene::sun_take` (autumn's `PHYSICAL_SUN`, 0.25 and colour as at 8 degrees) for the exporter
+  (`--sun-take`) and the path tracer (`--sun-clear` the old). Cycles' diffuse direct on the sunlit floor is 0.95 of what
+  the app's key gives there (the panes' Fresnel at the slant), its colour equal (R/G 1.839 against 1.840).
+- `scene.py`: `--paper physical` with the engraved mask by default; a finished wood's base specular 0 by default;
+  `--wood ours|picks` (`tools/blender/woods/`): the floor's wax v4's and its stain ×0.75 in linear light, one step
+  darker (sun patches 228 182 136 → 224 177 130 against the reference's 216 152 106; the shade 59 27 11 → 50 24 8
+  against 67 35 15). The app's `--woods` take the same floor, and the wood matt under its coat (the base's lobe was
+  the veil Cycles' s1 took off); the default light unchanged (a level in 3 pixels, run to run).
+- Cycles metered at 8.15 for the weaker sun (its frame's log-average as at 6.91 under the clear sun: −1.24 stops); the
+  app's meter rose 0.81.
+- Why the app's picks were less orange on the woods page: Cycles was graded a stop over the user's pick and had the
+  clear sun, whose bounce makes most of the shade's light; with both on the hazy sun what is left is the app's light in
+  shade, bluer (B/R before the grade 0.39 against 0.23 on the wainscot): against Cycles, measured by the sun at full and
+  a quarter, its sun's bounce 0.5 to 0.8 times and its sky 0.8 to 1.75 times. The probes' criterion below.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
