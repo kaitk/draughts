@@ -7,6 +7,8 @@
 #       [--exposure 0] [--textures on|off] [--save-blend] [--wood ours|picks|SPEC.json]
 #       [--paper physical|look] [--paper-mask engraved|today] [--paper-ground R,G,B,ROUGH]
 #       [--paper-gold R,G,B,ROUGH] [--paper-detail L,P,G,R] [--eye X,Y,Z --at X,Y,Z --fov DEG]
+#       [--vertex-colour decoded|written (the panelling's occlusion and tone as the importer decodes them
+#       from sRGB, or encoded back as the export wrote them)]
 #       [--window-metal flat|LEVEL (the export's by default)] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
 #
 # Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes), and
@@ -28,7 +30,7 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 def flags():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     f = {"scene": "build/blender", "view": "close", "out": None, "size": "960x540", "samples": "512",
-         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None,
+         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None, "vertex-colour": "decoded",
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None,
          "window-metal": None}
@@ -354,7 +356,12 @@ class Nodes:
         a.layer_name = "Color"
         sep = self.nt.nodes.new("ShaderNodeSeparateColor")
         self.link(a.outputs["Color"], sep.inputs[0])
-        return sep.outputs[0], sep.outputs[1]
+        if F["vertex-colour"] != "written":
+            return sep.outputs[0], sep.outputs[1]
+        # The OBJ importer decodes the vertex colour from sRGB: encoded again, as written (the
+        # tone's 0.5 arrived as 0.21; brass.py does the same for the wear).
+        enc = lambda c: self.math("SUBTRACT", self.math("MULTIPLY", self.math("POWER", c, 1.0 / 2.4), 1.055), 0.055)
+        return enc(sep.outputs[0]), enc(sep.outputs[1])
 
     def normal_map(self, r, g, flip_g, strength=1.0):
         # A tangent normal from slopes stored at 0.5 flat along the uv's u and v (g flipped
