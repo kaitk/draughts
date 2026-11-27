@@ -1148,6 +1148,16 @@ the room) the tracer gives 0.0026 to 0.0039 toward the room, the probe 0.15 m be
 to 0.0038, the bake 0.73 of the tracer over the view's 1,824 wainscot points: no leak past the
 sill. The general overhang correction planned for it is not needed.
 
+## The sun's patches as areas, tried and dropped (2026-11-27)
+
+The stove's review held that a point patch reads a probe 0.15 m off a 0.25 m floor bin about
+twice too bright. Tried: each patch with its lit area (each ray's footprint, the glazing's
+share over its slant on the surface) gathered as a disc, distance² plus the area over pi in
+place of `gather_near`. Against the tracer (sun only, tree off, every probe and axis): the sum
+0.610 → 0.595, the error factor 2.18 → 2.18; the probes looking down over the floor's sun (the
+brightest tenth) at 0.15 m 0.76 → 0.56 of the tracer, at 0.45 m 0.56 → 0.48. The points read
+too little there already, not too much; dropped.
+
 ## Open: the wainscot's panel edges shine (2026-11-27)
 
 The user: the panels' edges under the windows shine oddly (`--light physical`). To look at
