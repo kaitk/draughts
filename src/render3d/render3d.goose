@@ -490,22 +490,22 @@ struct Gpu {
     // table wound as in the room) into refl_face, each packed into the octahedral refl_src
     // (pack) with its mips (mip), then refl_map's levels, one a roughness (filter), which the
     // glossy surfaces read.
-    refl_walls:     Pipeline,
-    refl_paint:     Pipeline,
-    refl_sill:      Pipeline,
-    refl_metals:    Pipeline,
-    refl_glass:     Pipeline,
-    refl_lace:      Pipeline,
-    refl_floor:     Pipeline,
-    refl_table:     Pipeline,
-    refl_pack:      Pipeline,
-    refl_mip:       Pipeline,
-    refl_filter:    Pipeline,
-    refl_face:      Texture,
-    refl_depth:     Texture,
-    refl_src:       Texture,
-    refl_map:       Texture,
-    refl_for:       float4[REFL_KEY],
+    refl_walls:  Pipeline,
+    refl_paint:  Pipeline,
+    refl_sill:   Pipeline,
+    refl_metals: Pipeline,
+    refl_glass:  Pipeline,
+    refl_lace:   Pipeline,
+    refl_floor:  Pipeline,
+    refl_table:  Pipeline,
+    refl_pack:   Pipeline,
+    refl_mip:    Pipeline,
+    refl_filter: Pipeline,
+    refl_face:   Texture,
+    refl_depth:  Texture,
+    refl_src:    Texture,
+    refl_map:    Texture,
+    refl_for:    float4[REFL_KEY],
     // A tuner's: the panelling oak's and the ceiling's tint (x, z their lightness, y, w their
     // saturation, as factors, 0 untouched), and the tree's and the shell's light kept as
     // they are, not baked again, while a slider is held, so a drag bakes once on release.
@@ -862,7 +862,7 @@ struct PropsLightBlock {
     light_box: float4, light_grid: float4, props_look: float4,
     room_box:  float4, room_doors: float4, room_heights: float4, lace_light: float4,
     box_paper: float4, box_paint: float4, box_ceiling: float4,
-    env_pano: float4[3],
+    env_pano:  float4[3],
 }
 // Whether the table's and chairs' polish reflects the room's box and its windows sharply
 // (TABLE_FRAG's props_seen_at) in place of the probes' light alone (the light tuner's
@@ -1260,7 +1260,7 @@ let REFL_SIZE = 256;
 let REFL_FACE = 128;
 let REFL_LEVELS = 6;
 let REFL_SAMPLES: f32 = 256.0;
-let REFL_HEIGHT: f32 = 1.0;     // the probe's height over the floor, metres
+let REFL_HEIGHT:  f32 = 1.0;    // the probe's height over the floor, metres
 fn refl_shown(g: Gpu&) -> bool {
     refl_on && physical_coat && g.room_ssao && room_shown(g) && light_baked(g) && g.light_volume.id != 0
 }
@@ -2781,7 +2781,10 @@ fn probes_on_lace() {
 // less what the folds beside it hide (FOLD_HIDDEN over FOLD_DEEP of its corner's x, its
 // hidden share), where it sees the cloth beside it: through its open part the wall's light,
 // its thread the room's light sent back and what the cloth there throws on into the room
-// (room_light::lace_glow, the sun and sky on its window side). Each as its share of the cloth's mean (lace_room_mean,
+// (room_light::lace_glow, the sun and sky on its window side). The window side's view of the
+// wall likewise meets the folds beside it, at their other phase (FOLD_HIDDEN less the room
+// side's hidden share): through their open part the room's light, their thread the window
+// side's sent back and the room's sent on. Each as its share of the cloth's mean (lace_room_mean,
 // lace_back_mean): the room side's in the vertex's corner's y, the window side's in its
 // material's fraction over LACE_BACK_SCALE (ROOM_FRAG's lace).
 let WINDOW_VERTS = 16384;
@@ -2838,12 +2841,16 @@ fn lace_into_mesh<O>(o: O&, g: Gpu&) {
         guard floor(v.mat + 0.001) == surfaces::MAT_LACE else { continue; }
         let p, nrm = plan_of(v.pos, v.normal);
         let wall = room_light::window_wall_light(lace_sun, light_bounce, p);
-        let back = sky * v.box.x + niches[room_light::window_near(p)] * (v.box.y - v.box.x) + wall * (1.0 - v.box.y);
+        let window_part = sky * v.box.x + niches[room_light::window_near(p)] * (v.box.y - v.box.x);
+        let seen = window_part + wall * (1.0 - v.box.y);
         let room = probe_light(float3 { p.x, face, p.z }, 1.0);
         let hidden = min(v.corner.x * (room_shell::FOLD_HIDDEN / room_shell::FOLD_DEEP), 1.0);
-        let glow = room_light::lace_glow(light_bounce, p);
+        let glow = room_light::lace_glow(light_bounce, p, seen);
         let beside = wall * (1.0 - thread) + (albedo * (room * (1.0 - through)) + glow) * thread;
         let front = room * (1.0 - hidden) + beside * hidden;
+        let hidden_back = max(room_shell::FOLD_HIDDEN - hidden, 0.0);
+        let beside_back = room * (1.0 - thread) + albedo * (seen * (1.0 - through) + room * through) * thread;
+        let back = window_part + (wall * (1.0 - hidden_back) + beside_back * hidden_back) * (1.0 - v.box.y);
         front_sum = front_sum + front;
         back_sum = back_sum + back;
         n++;

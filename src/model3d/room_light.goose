@@ -1609,12 +1609,21 @@ fn window_near(p: float3) -> i64 {
     return k;
 }
 
-// The light the lace's thread throws on into the room at p (the plan's), its cell's in the
-// first light over the thread's share there (first_light's lace cells, over pi).
-fn lace_glow(bounce: Bounce&, p: float3) -> float3 {
+// The light the lace's thread throws on into the room at p (the plan's), over the thread's
+// share there. Above its window's sill its cell's in the first light (first_light's lace cells,
+// over pi), the band the sill cuts holding all its sun above the sill. Below the sill, where the
+// band's sky (seen from its middle) doesn't reach the cloth, `back`, the light on its window side
+// there, scattered on.
+fn lace_glow(bounce: Bounce&, p: float3, back: float3) -> float3 {
     let k = window_near(p);
-    let c = lace_cell(k, windows()[k], p);
-    return bounce.seen[c] * (1.0 / max(1.0 - lace_open(p.z, float3 { 0.0, 1.0, 0.0 }), 0.05));
+    let o = windows()[k];
+    guard p.z > o.sill else { return balanced(back * lace_albedo() * LACE_THROUGH) * lace_source; }
+    let c = lace_cell(k, o, p);
+    let band = (room_shell::LACE_TOP - room_shell::LACE_HEM) / LACE_BANDS;
+    let low = room_shell::LACE_HEM + band * ((c - LACE_C0) % LACE_BANDS);
+    let more = if o.sill > low { band / (low + band - o.sill) - 1.0 } else { 0.0 };
+    let sun = balanced(bounce.sun[c] * (1.0 / (PI * bounce.cells[c].area))) * (lace_source * more);
+    return (bounce.seen[c] + sun) * (1.0 / max(1.0 - lace_open(p.z, float3 { 0.0, 1.0, 0.0 }), 0.05));
 }
 
 // The light the room first throws on, besides the sun's patches: each cell's sky (seen
