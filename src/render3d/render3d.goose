@@ -512,6 +512,10 @@ struct Gpu {
     // shell first shows, and the time it took.
     stone_tile:    Texture,
     stone_tile_ms: f64,
+    // The window hardware's antique brass tile (room_shell::brass_tile), RGBA8 with its mips,
+    // made when the box window first shows, and the time it took.
+    brass_tile:    Texture,
+    brass_tile_ms: f64,
     // The glass's wiping tile (model3d's glass_tile), RGBA8 with its mips, made when the
     // shell first shows, and the time it took.
     glass_tile:    Texture,
@@ -1543,6 +1547,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool, mirror: bool = f
     if ssao {
         add_texture(t, ssao_or_stand_in(g), g.linear);
         if !window_group(group) { add_texture(t, pre_place_or_stand_in(g), g.linear); }
+        if group == GROUP_METALS { add_texture(t, if g.brass_tile.id != 0 { g.brass_tile } else { g.crown_map }, g.aniso); }
     }
     if planar { add_texture(t, g.planar_map, g.planar_sampler); }
     return t;
@@ -1663,6 +1668,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     put_paper(o, g);
     if g.stone_tile.id == 0 { put_stone(o, g); }
     if g.glass_tile.id == 0 { put_glass_tile(o, g); }
+    if g.brass_tile.id == 0 && room_shell::box_window_on { put_brass_tile(o, g); }
     bake_room_light(o, g);
     // The view out of the shell's windows, round its middle window: made once, and again
     // with the shell's mesh where the games table moved in the plan (the room's frame is the
@@ -1827,6 +1833,15 @@ fn put_stone<O>(o: O&, g: Gpu&) {
         at += 4 * w * w;
     }
     g.stone_tile_ms = (clock() - t0) * 1000.0;
+}
+
+// The window hardware's brass tile made and put on the GPU with its mips.
+fn put_brass_tile<O>(o: O&, g: Gpu&) {
+    let t0 = clock();
+    var px: u8[>..] = [];
+    room_shell::brass_tile(px);
+    g.brass_tile = put_rgba(o, px, room_shell::BRASS_SIDE, room_shell::BRASS_SIDE, room_shell::BRASS_MIPS);
+    g.brass_tile_ms = (clock() - t0) * 1000.0;
 }
 
 // The glass's wiping tile made and put on the GPU with its mips.
@@ -2164,12 +2179,13 @@ fn room_bytes(g: Gpu&) -> i64 {
     let relief = if g.paint_tile.id != 0 { room_shell::relief_bytes() } else { 0 };
     let stone = if g.stone_tile.id != 0 { room_shell::stone_bytes() } else { 0 };
     let glass = if g.glass_tile.id != 0 { glass_tile::bytes() } else { 0 };
+    let brass = if g.brass_tile.id != 0 { room_shell::brass_bytes() } else { 0 };
     let floor = if g.floor_noise.id != 0 { 2 * surfaces::FLOOR_NOISE_SIDE * surfaces::FLOOR_NOISE_SIDE } else { 0 };
     let scratches = if g.scratch_tile.id != 0 { texels_with_mips(surfaces::SCRATCH_SIDE) } else { 0 };
     let rug = if g.rug_map.id != 0 { rgba_bytes(RUG_W, RUG_H, RUG_MIPS) } else { 0 };
     let tapestry = if g.tapestry_map.id != 0 { rgba_bytes(TAPESTRY_SIDE, TAPESTRY_SIDE, TAPESTRY_MIPS) } else { 0 };
     let stove = if g.stove_relief.id != 0 { room_shell::stove_relief_bytes() } else { 0 };
-    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass + floor + scratches + rug + tapestry + stove;
+    return 4 * 4 * texels_with_mips(g.room_side) + paper + outside + relief + stone + glass + brass + floor + scratches + rug + tapestry + stove;
 }
 
 // ROOM_FRAG's block: surfaces::Look, the room's frame, where its walls and fields are, the
@@ -2230,6 +2246,7 @@ struct SurfacesBlock {
     book_label:    float4[8],
     wood_oak:      float4[5],      // the panelling's finish (Wood, wood_rows)
     wood_floor:    float4[5],      // the floor's
+    window_metal:  float4,         // room_shell::window_metal, last so room_fixed's spans stay
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
@@ -2323,7 +2340,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { lace_room.x + lace_back.x, lace_room.y + lace_back.y, lace_room.z + lace_back.z, stove_glaze }, window_view, shell_case_of(),
                     float4 { lace_shade.x, lace_shade.y, if lace_probed && light_baked(g) { 1.0 } else { 0.0 }, 0.0 },
                     table_map_shown(g),
-                    books::COVER, books::LABEL, wood_rows(g, WOOD_OAK), wood_rows(g, WOOD_FLOOR) }
+                    books::COVER, books::LABEL, wood_rows(g, WOOD_OAK), wood_rows(g, WOOD_FLOOR),
+                    room_shell::window_metal }
 }
 
 // The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.

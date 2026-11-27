@@ -1,10 +1,12 @@
-# The antique brass's seamless tile (task 129): 64 mm square, periodic gradient noise at
-# integer periods, so the game's bake can make the same tile. Writes OUT/brass_tile.png
+# The antique brass's concept tile (task 129) and the levels' solver. The game makes its own
+# tile (room_shell::brass_tile, the export's brass_tile.ppm), which the Cycles material and
+# --levels now take; this one is kept for the concept's micro-finish (brass_height.png, which
+# brass_check.py's --micro reads). 64 mm square, periodic gradient noise. Writes OUT/brass_tile.png
 # (8-bit RGB, linear data: r the mottling as a rank, 0 to 1 evenly; g the speckles; b unused)
 # and OUT/brass_height.png (16-bit grey, the micro-finish's height).
 #
 #   python3 tools/blender/brass_tile.py [--out build/scratch/brass] [--size 2048]
-#   python3 tools/blender/brass_tile.py --levels build/scratch/brass   # brass.LEVELS' gains and tints
+#   python3 tools/blender/brass_tile.py --levels build/blender/brass_tile.ppm   # brass_model.LEVELS from the game's tile
 #
 # The bands (the specification's, at 64 mm a tile): clouds 4-13 mm (periods 5, 9, 16),
 # blots 1.3-2.7 mm (24, 48) and flecks 0.33-0.67 mm (96, 192) under a slight warp, ranked
@@ -64,7 +66,7 @@ def rank(v):
     return r.reshape(v.shape)
 
 
-def levels(tile_dir):
+def levels(tile_path):
     # Solves brass.LEVELS from the tile, without wear: level 1 the specification's mix, level 5
     # bronze B's mean; between them the mean's luminance steps evenly in log and its hue moves
     # from the one to the other by the tarnish's tint.
@@ -72,7 +74,7 @@ def levels(tile_dir):
     spec = importlib.util.spec_from_file_location("brass_model", os.path.join(os.path.dirname(__file__), "brass_model.py"))
     bm = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bm)
-    t = np.asarray(Image.open(os.path.join(tile_dir, "brass_tile.png"))).astype(float)[::2, ::2] / 255
+    t = np.asarray(Image.open(tile_path)).astype(float)[::2, ::2] / 255
     lum = np.array([0.2126, 0.7152, 0.0722])
     lin = np.array([((c + 0.055) / 1.055) ** 2.4 for c in bm.BRONZE_B])
 
@@ -95,8 +97,11 @@ def levels(tile_dir):
                 break
             tint = tint * hue / (m / (m @ lum))
         s = np.where(m <= 0.0031308, 12.92 * m, 1.055 * m ** (1 / 2.4) - 0.055)
+        e, ta, d = bm.weights(t[..., 0], bm.COVER[lv])
+        rough = (e * bm.ROUGH[0] + ta * bm.ROUGH[1] + d * bm.ROUGH[2] + bm.SPECKLE_ROUGH * t[..., 1]).mean()
+        metal = (e * bm.METAL[0] + ta * bm.METAL[1] + d * bm.METAL[2]).mean()
         print(f"    {lv}: ({bm.COVER[lv][0]:.2f}, {bm.COVER[lv][1]:.2f}, {gain:.3f}, ({tint[0]:.3f}, {tint[1]:.3f}, {tint[2]:.3f}),"
-              f" ({m[0]:.4f}, {m[1]:.4f}, {m[2]:.4f})),   # sRGB {s[0]:.2f}, {s[1]:.2f}, {s[2]:.2f}")
+              f" ({m[0]:.4f}, {m[1]:.4f}, {m[2]:.4f}), ({rough:.3f}, {metal:.3f})),   # sRGB {s[0]:.2f}, {s[1]:.2f}, {s[2]:.2f}")
 
 
 def main():

@@ -102,11 +102,43 @@ loaded Mac, the room views about 40 s.
 
 Page: `build/notes/antique-brass/index.html`.
 
+## In the game, level 4 (2026-11-27)
+
+The user picked level 4 for now ("we'll fix the hues etc later"), the other choices left to
+this task: the levels' hue drift kept, the concept's mottling sizes, half the colour's
+contrast. Ported behind the light tuner's `--window-metal LEVEL,MOTTLE,ROUGH,NICHE`, off by
+default, its four values live sliders (the Curtains section) and in the P print:
+
+- The tile: `room_shell::brass_tile` (`src/model3d/brass_tile.goose`), wrapped value noise at
+  whole periods, ranked by a histogram; 1024², 62.5 µm a texel, R the rank and G the pits,
+  RGBA8 with its mips (5.6 MB), made in 0.18 s when the box window first shows.
+- ROOM_FRAG's window metal (`window_hw`): the tile box-projected by world position, three taps;
+  the states, levels and means as `BRASS_*` (the solver's numbers on the game's tile); the
+  mottling fades to the level's mean between 1 and 4 mm a pixel; the phone tier (`NO_SSAO`)
+  reads no tile and takes the mean. The level is continuous (`brass_level` mixes the two either
+  side). Under level 1 the flat bronze B as before.
+- The wear in the vertices: `lathe_along`'s `wear` (the grip's 1) puts the rub in the
+  material's fraction, `WINDOW_HARDWARE` plus `WEAR_SPAN` times it: the whole grip a little,
+  its convex rings more, its necks darker; the shader lifts the rank by 0.35 times it.
+- The block: `window_metal` at the Surfaces block's end (`room_shell::window_metal`), so
+  `room_fixed`'s spans stay; kept a uniform (`scripts/room_fixed.py`'s KEEP). It also holds
+  the niche's share (`WINDOW_NICHE`'s 0.3), for task 128's light.
+- The export: `--window-metal` as the tuner's; `brass_tile.ppm` (the game's tile) and
+  `scene.json`'s `gloss.window_metal_look`, which `scene.py` follows; the wear from the vertex
+  colour's g. The micro-finish is left out of both: finer than a pixel at the close-up.
+
+The game's grip at the handle view against Cycles' (the same crop's mean, sRGB): level 4 110,
+75, 43 against 99, 64, 34; flat 92, 61, 33 against 85, 53, 27: the same 8 to 11% lighter, the
+niche's light (task 128). With `--phone-tier` the room's constants read stale at `paper` with
+the flag off as well (not this change). Rebased onto `box-window` 561e2723 (the three-lobed
+keeper); the keeper reshot.
+
 ## Acceptance criteria
 
-- [ ] The controlled checks in Cycles at about five tone levels, bronze B's among them, with
+- [x] The controlled checks in Cycles at about five tone levels, bronze B's among them, with
       a clean-brass control, on a page beside the specification's target
-- [ ] The user's pick of a level and the look of the mottling
-- [ ] The material in the game behind a tuner flag, default off, matching Cycles at a
-      close-up and at play distance, without shimmer
+- [x] The user's pick of a level (4, for now); the mottling's look left to revisit
+- [x] The material in the game behind a tuner flag, default off, matching Cycles at a
+      close-up and at play distance (the niche's light aside, task 128)
+- [ ] No shimmer as the eye moves, checked in the tuner on the Mac
 - [ ] Its cost per view and on the phone tier; the door handles and hinges on it later

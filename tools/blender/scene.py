@@ -7,7 +7,7 @@
 #       [--exposure 0] [--textures on|off] [--save-blend] [--wood ours|picks|SPEC.json]
 #       [--paper physical|look] [--paper-mask engraved|today] [--paper-ground R,G,B,ROUGH]
 #       [--paper-gold R,G,B,ROUGH] [--paper-detail L,P,G,R] [--eye X,Y,Z --at X,Y,Z --fov DEG]
-#       [--window-metal flat|1..5] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
+#       [--window-metal flat|LEVEL (the export's by default)] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
 #
 # Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes), and
 # OUT-light.png: the diffuse light alone (direct + indirect, no albedo), the room's
@@ -31,7 +31,7 @@ def flags():
          "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None,
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None,
-         "window-metal": "flat", "brass-tile": "build/scratch/brass"}
+         "window-metal": None}
     i = 0
     while i < len(argv):
         name = argv[i][2:]
@@ -767,12 +767,16 @@ mats = {
     "rug": (textured("rug", os.path.join(REPO, "design/materials/rug.png"), 1.0, 1.0)
             if textures else diffuse("rug", RUG_MEAN)[0]),
 }
-if F["window-metal"] != "flat":
-    # Task 129's antique brass at a tone level (1 to 5), from brass_tile.py's tile.
+look = G.get("window_metal_look", [0.0, 0.5, 0.0, 0.3])
+if F["window-metal"] is not None:
+    look = [0.0 if F["window-metal"] == "flat" else float(F["window-metal"])] + look[1:]
+if look[0] >= 1.0:
+    # Task 129's antique brass as ROOM_FRAG has it (the tuner's --window-metal, which the export
+    # writes): its level, mottling and roughness; the niche's share is the game's own.
     sys.path.insert(0, os.path.dirname(__file__))
     import brass
-    tile = F["brass-tile"] if os.path.isabs(F["brass-tile"]) else os.path.join(REPO, F["brass-tile"])
-    mats["window_metal"] = brass.antique_brass("window_metal", int(F["window-metal"]), tile)
+    mats["window_metal"] = brass.antique_brass("window_metal", look[0], os.path.join(scene_dir, "brass_tile.ppm"),
+                                               mottle=look[1], rough_add=look[2])
 if F["wood"]:
     spec = F["wood"]
     if spec in ("ours", "picks"):

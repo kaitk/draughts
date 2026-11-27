@@ -331,6 +331,15 @@ fn hinge_metal() -> f32 { if box_window_on { WINDOW_HARDWARE } else { surfaces::
 // Its colour at normal incidence (sRGB) and roughness: ROOM_FRAG's WINDOW_BRASS (checked equal
 // by test/model3d/geometry.goose), the Cycles export's window_metal.
 let WINDOW_METAL = float4 { 0.34, 0.25, 0.17, 0.5 };
+// Task 129's antique brass in its place (ROOM_FRAG's window metal, the Surfaces block's
+// window_metal, the light tuner's --window-metal): x its tone's level, 1 to 5, continuous (under
+// 1 the flat WINDOW_METAL); y how much of the colour's mottling shows (0.5); z added to its
+// roughness; w how much of the niche's window light its reflection takes (WINDOW_NICHE's 0.3).
+let WINDOW_METAL_OFF = float4 { 0.0, 0.5, 0.0, 0.3 };
+var window_metal = WINDOW_METAL_OFF;
+// The wear a hardware vertex carries in its material's fraction: 0.5 plus WEAR_SPAN times it,
+// -1 (sheltered) to 1 (rubbed).
+let WEAR_SPAN: f32 = 0.2;
 
 // The crémone (build/notes/box-window/hardware.html, round 2; the brief
 // cremone-modelling-brief.md), in metres out of the leaf's face: the lip's face, the rod's
@@ -368,10 +377,17 @@ let HINGE_BARREL: float2[9] = [float2 { 0.0, 0.0 }, float2 { 2.0, 4.0 }, float2 
 // b's frame) along the unit `axis`, as lathe turns about the upright: a point's normal its
 // two segments' mean where they turn less than surfaces::CREASE, a segment's own at a sharper
 // turn. `round_only` takes every point's normal off the axis (the rod: round by its normals
-// on a few sides).
+// on a few sides). `wear` (window hardware only, the hand's: 1 on the grip) rubs the whole a
+// little, the profile's convex points more and darkens its hollows, by how much a point stands
+// out of its neighbours' line (half a millimetre in full).
 fn lathe_along(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c: float3, axis: float3, prof: const float2[:],
-        sides: i64, mat: f32) {
+        sides: i64, mat: f32, wear: f32 = 0.0) {
     let k = m();
+    var mats: f32[..64] = [];
+    for i in prof.len {
+        let bulge = if i > 0 && i + 1 < prof.len { prof[i].x - 0.5 * (prof[i - 1].x + prof[i + 1].x) } else { 0.0 };
+        mats.push(mat + WEAR_SPAN * clamp(wear * (0.3 + 2.0 * bulge), -1.0, 1.0));
+    }
     let mm: f32 = 0.001;
     let ref = if abs(axis.z) > 0.9 { float3 { 0.0, 1.0, 0.0 } } else { float3 { 0.0, 0.0, -1.0 } };
     let u = normalize(cross(ref, axis));
@@ -388,6 +404,7 @@ fn lathe_along(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Build
         let nc = if i + 1 < prof.len { surfaces::smooth_normal(n, flat[i + 1]) } else { n };
         let ends: float2[2] = [prof[i - 1], prof[i]];
         let ns:   float3[2] = [na, nc];
+        let ms:   f32[2]    = [mats[i - 1], mats[i]];
         let base = verts.len as u32;
         for e in 2 {
             for sd in sides + 1 {
@@ -395,7 +412,7 @@ fn lathe_along(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Build
                 let out = u * cos(ang) + v * sin(ang);
                 let p = (c + axis * (ends[e].y * mm) + out * (ends[e].x * mm)) * k;
                 let q = out * ns[e].x + axis * ns[e].y;
-                verts.push(mesh::Vertex { surfaces::world(b, p.x, p.y, p.z), surfaces::world_normal(b, q), float2_0, 1.0, mat });
+                verts.push(mesh::Vertex { surfaces::world(b, p.x, p.y, p.z), surfaces::world_normal(b, q), float2_0, 1.0, ms[e] });
             }
         }
         let ring = (sides + 1) as u32;
@@ -514,7 +531,7 @@ fn cremone(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
     var grip: float2[..48] = [];
     for i in GRIP_HALF.len { grip.push(float2 { GRIP_HALF[GRIP_HALF.len - 1 - i].y, 60.0 - GRIP_HALF[GRIP_HALF.len - 1 - i].x }); }
     for i in 1..GRIP_HALF.len { grip.push(float2 { GRIP_HALF[i].y, 60.0 + GRIP_HALF[i].x }); }
-    lathe_along(verts, indices, b, float3 { x, y - 0.06, f + CREMONE_GRIP }, UPWARD, grip[..], 8, mat);
+    lathe_along(verts, indices, b, float3 { x, y - 0.06, f + CREMONE_GRIP }, UPWARD, grip[..], 8, mat, 1.0);
     // A guide at each run's middle: its backplate on the lip with two screws, its sleeve.
     let runs: float2[2] = [float2 { lo.box.y, y - hh.y - 0.006 }, float2 { y + hh.y + 0.006, lo.box.w }];
     for r in runs {

@@ -4,12 +4,14 @@
 # cards, fixed exposure, AgX. Writes OUT.png.
 #
 #   Blender -b --python-exit-code 1 --python tools/blender/brass_check.py -- \
-#       --level 1..5|clean|flat [--tile build/scratch/brass] [--scene build/blender] \
+#       --level LEVEL|clean|flat [--scene build/blender] [--micro build/scratch/brass] \
 #       [--out build/notes/antique-brass/img/check-1] [--size 1600x900] [--samples 256] \
-#       [--turn on] [--wear off] [--micro off]
+#       [--turn on] [--mottle 0.5]
 #
 # --turn on mirrors the light (the highlights move, the mottling stays); flat is task 127's
-# bronze B.
+# bronze B. The tile is the game's (the export's brass_tile.ppm, `--box-window on`); the handle
+# keeps its vertices' wear, the sphere and plate none; --micro adds the concept's micro-finish
+# (brass_tile.py's brass_height.png), which the game hasn't.
 import math
 import os
 import sys
@@ -25,8 +27,8 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 def flags():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    f = {"level": "3", "tile": "build/scratch/brass", "scene": "build/blender", "out": None,
-         "size": "1600x900", "samples": "256", "turn": "off", "wear": "on", "micro": "on"}
+    f = {"level": "4", "scene": "build/blender", "out": None, "micro": None, "mottle": "0.5",
+         "size": "1600x900", "samples": "256", "turn": "off"}
     for i in range(0, len(argv), 2):
         f[argv[i][2:]] = argv[i + 1]
     if f["out"] is None:
@@ -39,7 +41,8 @@ def at_repo(p):
 
 
 F = flags()
-tile = at_repo(F["tile"])
+tile = os.path.join(at_repo(F["scene"]), "brass_tile.ppm")
+micro = at_repo(F["micro"]) if F["micro"] else None
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
 
@@ -76,19 +79,20 @@ plate.rotation_euler = (0, 0, math.radians(-20))
 # The material on all three.
 lv = F["level"]
 if lv == "clean":
-    mat = brass.clean_brass("brass", tile)
+    mat = brass.clean_brass("brass", micro)
 elif lv == "flat":
     lin = [((c + 0.055) / 1.055) ** 2.4 for c in (0.34, 0.25, 0.17)]
     mat = brass.flat_metal("brass", lin, 0.5)
 else:
-    mat = brass.antique_brass("brass", int(lv), tile, wear=F["wear"] == "on")
-if F["micro"] == "off":
-    for n in mat.node_tree.nodes:
-        if n.bl_idname == "ShaderNodeBump":
-            n.inputs["Strength"].default_value = 0.0
+    mat = brass.antique_brass("brass", float(lv), tile, mottle=float(F["mottle"]), micro_dir=micro)
 for ob in (handle, sphere, plate):
     ob.data.materials.clear()
     ob.data.materials.append(mat)
+# No wear on the sphere and plate: the vertex colour's g at a half.
+for ob in (sphere, plate):
+    attr = ob.data.color_attributes.new("Color", "FLOAT_COLOR", "POINT")
+    for d in attr.data:
+        d.color = (1.0, 0.5, 0.0, 1.0)
 
 # A grey backdrop behind, a grey world, and two white cards.
 bpy.ops.mesh.primitive_plane_add(size=2.0, location=(mid.x, 1.62, mid.z), rotation=(math.radians(90), 0, 0))

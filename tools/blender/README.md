@@ -103,24 +103,26 @@ their mean albedos.
 `--textures off` gives every surface its mean albedo, matte, for the light alone; with
 textures on, `-light.png` takes off the gloss passes, which are not denoised.
 
-## The antique brass (a concept)
+## The antique brass (task 129)
 
-The window's hardware as a mottled, aged brass instead of one flat metal, at one of five tone
-levels; not yet in the game.
+The window's hardware as a mottled, aged brass, as ROOM_FRAG draws it with the light tuner's
+`--window-metal LEVEL,MOTTLE,ROUGH,NICHE`: the exporter takes the same flag, writes the game's
+tile (`brass_tile.ppm`, from `room_shell::brass_tile`) and the values (`gloss.window_metal_look`),
+and `scene.py` puts the material on `window_metal` (`--window-metal flat|LEVEL` overrides the
+level). `brass_model.py` holds the model and the levels, `brass.py` the Cycles material (the tile
+box-projected by position, the wear from the vertex colour's g), `brass_check.py` the
+controlled check: a sphere, the real handle and a plate under neutral light (`--level
+LEVEL|clean|flat`, `--turn on` mirrors the light, `--mottle`, `--micro DIR` the concept's
+micro-finish). `brass_tile.py` made the concept's tile and solves the levels from the game's:
 
 ```sh
-python3 tools/blender/brass_tile.py                       # build/scratch/brass: the 64 mm tile
-python3 tools/blender/brass_tile.py --levels build/scratch/brass   # the levels' gains and tints
-Blender -b --python-exit-code 1 --python tools/blender/brass_check.py -- --level 3
-Blender -b --python-exit-code 1 --python tools/blender/scene.py -- --window-metal 3 --exposure 3.4 \
-    --plan-eye 4.3,6.75,1.55 --plan-at 4.5,7.4,1.64 --fov 20 --out build/scratch/handle   # export --box-window on
+GOOSE_GFX_HEADLESS=1 build/blender/export --box-window on --window-metal 4 --maps on
+python3 tools/blender/brass_tile.py --levels build/blender/brass_tile.ppm   # brass_model.LEVELS, ROOM_FRAG's BRASS_*
+Blender -b --python-exit-code 1 --python tools/blender/brass_check.py -- --level 4
+Blender -b --python-exit-code 1 --python tools/blender/scene.py -- --exposure 3.4 \
+    --plan-eye 4.3,6.75,1.55 --plan-at 4.5,7.4,1.64 --fov 20 --out build/scratch/handle
 ```
 
-`brass_model.py` holds the model and the levels, `brass.py` the Cycles material (the tile
-box-projected by world position, so every part has the same scale), `brass_check.py` the
-controlled check: a sphere, the real handle and a plate under neutral light (`--level
-1..5|clean|flat`, `--turn on` mirrors the light, `--wear off`, `--micro off`). `scene.py
---window-metal 1..5` puts it on `window_metal`; `flat`, the default, keeps the export's colour.
 `scene.py` takes the tuner's `--plan-eye`, `--plan-at` and `--fov` in place of a named view.
 
 ## Left to do

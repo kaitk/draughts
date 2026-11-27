@@ -282,6 +282,9 @@ let ROOM_HEAD = """
     #ifndef NO_SSAO
     layout(set = 2, binding = 7) uniform sampler2D ssao_map;
     layout(set = 2, binding = 8) uniform sampler2D pre_place;
+    // The window hardware's antique brass (room_shell::brass_tile): the rank, the pits; not on
+    // the phone's tier, which takes its mean.
+    layout(set = 2, binding = 9) uniform sampler2D brass_tile;
     #endif
     #endif
     #ifdef ROOM_GLASS
@@ -416,6 +419,7 @@ let ROOM_HEAD = """
         vec4 book_label[8];
         vec4 wood_oak[5];
         vec4 wood_floor[5];
+        vec4 window_metal;
     };
     """;
 
@@ -485,8 +489,37 @@ let ROOM_FRAG = """
     // incidence (sRGB) and roughness (the second of build/notes/box-window/hardware.html's three).
     const vec4 WINDOW_BRASS = vec4(0.34, 0.25, 0.17, 0.5);
     // How much of the niche's window light the hardware's reflection takes, growing smoothly
-    // as it turns from the room to the glass (a rough lobe's share), fitted to Cycles' grip.
-    const float WINDOW_NICHE = 0.3;
+    // as it turns from the room to the glass (a rough lobe's share), fitted to Cycles' grip:
+    // window_metal.w, 0.3 (room_shell::WINDOW_METAL_OFF).
+    // Task 129's antique brass (window_metal.x 1 to 5, room_shell::window_metal): one aged yellow
+    // brass in three states, bare (C260's f0), a light tarnish and dark deposits, their
+    // metalness and roughness; which covers a point is a threshold on the brass tile's rank
+    // (room_shell::brass_tile), soft over BRASS_EDGE. A level sets the share bare and the share
+    // deposit, a gain on the tarnish and deposits (on the bare metal to BRASS_BARE_POWER), the
+    // tarnish's tint, and holds the mean colour, metalness and roughness the mottling fades to
+    // (tools/blender/brass_tile.py --levels; level 5 has bronze B's mean).
+    const vec3 BRASS_BARE = vec3(0.91, 0.778, 0.423);
+    const vec3 BRASS_TARNISH = vec3(0.55, 0.34, 0.13);
+    const vec3 BRASS_DEPOSIT = vec3(0.10, 0.055, 0.025);
+    const vec3 BRASS_ROUGH = vec3(0.28, 0.42, 0.58);
+    const vec3 BRASS_METAL = vec3(1.0, 0.9, 0.1);
+    const float BRASS_EDGE = 0.25;
+    const float BRASS_BARE_POWER = 0.75;
+    const vec4 BRASS_COVER[5] = vec4[5](vec4(0.35, 0.15, 1.000, 0.0), vec4(0.28, 0.20, 0.617, 0.0), vec4(0.22, 0.26, 0.389, 0.0), vec4(0.16, 0.32, 0.252, 0.0), vec4(0.10, 0.38, 0.168, 0.0));
+    const vec3 BRASS_TINT[5] = vec3[5](vec3(1.000, 1.000, 1.000), vec3(1.085, 0.950, 0.973), vec3(1.169, 0.912, 0.951), vec3(1.238, 0.888, 0.953), vec3(1.292, 0.880, 0.975));
+    const vec4 BRASS_MEAN[5] = vec4[5](vec4(0.6022, 0.4460, 0.2147, 0.0), vec4(0.3792, 0.2599, 0.1251, 0.0), vec4(0.2388, 0.1512, 0.0728, 0.0), vec4(0.1503, 0.0878, 0.0423, 0.0), vec4(0.0946, 0.0509, 0.0245, 0.0));
+    const vec2 BRASS_MEAN_SURFACE[5] = vec2[5](vec2(0.399, 0.812), vec2(0.416, 0.768), vec2(0.434, 0.714), vec2(0.451, 0.660), vec2(0.468, 0.607));
+    // A level's entries, between the two levels either side of a continuous one: its cover,
+    // tint, mean colour, and mean roughness and metalness.
+    void brass_level(float level, out vec4 cover, out vec3 tint, out vec3 mean, out vec2 surface) {
+        float t = clamp(level, 1.0, 5.0) - 1.0;
+        int i = int(min(floor(t), 3.0));
+        float f = t - float(i);
+        cover = mix(BRASS_COVER[i], BRASS_COVER[i + 1], f);
+        tint = mix(BRASS_TINT[i], BRASS_TINT[i + 1], f);
+        mean = mix(BRASS_MEAN[i].rgb, BRASS_MEAN[i + 1].rgb, f);
+        surface = mix(BRASS_MEAN_SURFACE[i], BRASS_MEAN_SURFACE[i + 1], f);
+    }
     const vec4 CHAIR_A = vec4(0.0, -27.884, 0.104528, 0.994522);
     const vec4 CHAIR_B = vec4(1.829, 24.64, -0.241922, -0.970296);
     const vec2 CHAIR_FRONT_FOOT = vec2(6.767, 5.852);
@@ -1135,6 +1168,8 @@ let ROOM_FRAG = """
         vec3 ng = normalize(v_normal);
         float kind = floor(v_extra.y + 0.001);
         float own = v_extra.y - kind;
+        // The windows' hardware: brass with its fraction about a half (room_shell::WINDOW_HARDWARE).
+        bool window_hw = kind > 11.5 && kind < 12.5 && own > 0.25;
         // ao: what the mesh and the analytic terms know of the indirect light hidden; fine:
         // the surface's own narrow lines (the floor's joints, the plinth's lip), which the
         // half-size occlusion can't see; screen_ao: the screen's occlusion (SSAO_FN).
@@ -1767,6 +1802,42 @@ let ROOM_FRAG = """
             albedo = srgb(dark ? WINDOW_BRASS.rgb : brass.rgb);
             rough = dark ? WINDOW_BRASS.a : brass.a;
             metal = 1.0;
+            if (dark && window_metal.x >= 1.0) {
+                // Task 127's hardware in task 129's antique brass (BRASS_*): the tile laid by the
+                // world position from three sides, blended by the normal; the vertex's wear (its
+                // fraction about a half, room_shell::WEAR_SPAN) lifting the rank on the grip's
+                // rubbed parts and sinking it in the hollows. Under a millimetre to four a pixel
+                // the mottling fades to the level's mean, which the phone's tier takes alone.
+                vec4 cover;
+                vec3 tint;
+                vec3 mean;
+                vec2 surface;
+                brass_level(window_metal.x, cover, tint, mean, surface);
+                albedo = mean;
+                rough = surface.x;
+                metal = surface.y;
+    #ifndef NO_SSAO
+                float wear = clamp((own - 0.5) / 0.2, -1.0, 1.0);
+                vec3 q = p / (0.064 * shell.w);
+                vec3 w3 = ng * ng;
+                w3 *= w3;
+                w3 /= w3.x + w3.y + w3.z;
+                vec2 t = texture(brass_tile, q.yz).rg * w3.x + texture(brass_tile, q.xz).rg * w3.y + texture(brass_tile, q.xy).rg * w3.z;
+                float rank = clamp(t.x + 0.35 * wear, 0.0, 1.0);
+                float deposit = 1.0 - smoothstep(cover.y - BRASS_EDGE, cover.y + BRASS_EDGE, rank);
+                float bare = smoothstep(1.0 - cover.x - BRASS_EDGE, 1.0 - cover.x + BRASS_EDGE, rank);
+                float tarnish = clamp(1.0 - deposit - bare, 0.0, 1.0);
+                vec3 c = (bare * BRASS_BARE * pow(cover.z, BRASS_BARE_POWER)
+                          + (tarnish * BRASS_TARNISH + deposit * BRASS_DEPOSIT) * cover.z * tint) * (1.0 - 0.4 * t.y);
+                float fp = length(fwidth(p)) / shell.w;
+                float near = 1.0 - smoothstep(0.001, 0.004, fp);
+                albedo = mean + window_metal.y * near * (c - mean);
+                vec3 states = vec3(bare, tarnish, deposit);
+                rough = mix(rough, dot(states, BRASS_ROUGH) + 0.15 * t.y - 0.05 * max(wear, 0.0), near);
+                metal = mix(metal, dot(states, BRASS_METAL), near);
+    #endif
+                rough = clamp(rough + window_metal.z, 0.05, 1.0);
+            }
         }
     #endif
 
@@ -1952,7 +2023,7 @@ let ROOM_FRAG = """
         // The windows' hardware stands in a niche, outside the room's box, where the box's sharp
         // lookup reads far too bright (1.4 times Cycles' on the grip): the room's wide light
         // there, the window's from the niche below.
-        vec3 env = room_baked.x > 0.5 ? (metal > 0.9 && own > 0.25 ? room_wide(v_local, rv) : room_reflection(p, v_local, rv, ar, nov, px))
+        vec3 env = room_baked.x > 0.5 ? (window_hw ? room_wide(v_local, rv) : room_reflection(p, v_local, rv, ar, nov, px))
                                       : sh_eval(rv) * params.z;
     #else
         vec3 env = room_baked.x > 0.5 ? room_wide(v_local, rv) : sh_eval(rv) * params.z;
@@ -1963,9 +2034,9 @@ let ROOM_FRAG = """
         // Brass in a window's niche (the shutters' hinges) sees the window and the lit reveals
         // the way it faces out, not the room's box behind the glass; the windows' own hardware
         // (its fraction a half) the room the way it faces in, as Cycles has it.
-        if (metal > 0.9 && v_local.z < room_box.z)
+        if ((metal > 0.9 || window_hw) && v_local.z < room_box.z)
             env = mix(env, lace_light.rgb / max(params.x * shade.w, 1e-3),
-                      own > 0.25 ? WINDOW_NICHE * (0.5 - 0.5 * dot(rv.xz, axes.zw)) : clamp(0.6 - dot(rv.xz, axes.zw), 0.15, 1.0));
+                      window_hw ? window_metal.w * (0.5 - 0.5 * dot(rv.xz, axes.zw)) : clamp(0.6 - dot(rv.xz, axes.zw), 0.15, 1.0));
     #endif
         spec *= gloss;
         fc *= gloss;
@@ -2158,6 +2229,12 @@ let ROOM_FRAG = """
             albedo = srgb(paint.rgb);
         } else if (kind < 13.5) {
             albedo = srgb(kind > 11.5 && own > 0.25 ? WINDOW_BRASS.rgb : brass.rgb);
+            if (kind > 11.5 && own > 0.25 && window_metal.x >= 1.0) {
+                vec4 cover;
+                vec3 tint;
+                vec2 surface;
+                brass_level(window_metal.x, cover, tint, albedo, surface);
+            }
         } else if (kind > 14.5) {
             // The stove's glaze, its body's colour.
             albedo = srgb(vec3(0.804, 0.835, 0.745)) * 0.95;

@@ -24,6 +24,7 @@ import .joinery;
 import .box_window;
 import .relief;
 import .limestone;
+import .brass_tile;
 import .bookcases;
 import .books;
 import .book_cells;

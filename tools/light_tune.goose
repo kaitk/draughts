@@ -83,6 +83,8 @@
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
 //       [--box-window on|off (task 127's box window, its casements from room_shell's box_window.goose; off window B's)]
+//       [--window-metal LEVEL,MOTTLE,ROUGH,NICHE (its hardware's antique brass, task 129: LEVEL 1 to 5, under 1 the
+//        flat bronze; how much of the mottling shows, 0.5; added roughness, 0; the niche's light it reflects, 0.3)]
 //       [--rug on|off (the rug under the games table)] [--chairs on|off (the two chairs at it)]
 //       [--props-light off|on|kept (the table and the chairs lit from the room's probes where each pixel is, through
 //       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)]
@@ -1809,6 +1811,7 @@ fn main() {
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
     room_shell::box_window_on = flag_value(argv, "--box-window") > 0 && argv[flag_value(argv, "--box-window")] == "on";
+    room_shell::window_metal = four(argv, "--window-metal", room_shell::WINDOW_METAL_OFF);
     // The stove in its corner.
     room_shell::stove_on = !(flag_value(argv, "--stove") > 0 && argv[flag_value(argv, "--stove")] == "off");
     render3d::paint_relief = number(argv, "--paint-relief", 1.0);
@@ -1999,6 +2002,7 @@ fn main() {
                 print("the paint's relief tile made in ", g.paint_tile_ms, " ms, ", room_shell::relief_bytes(), " bytes");
                 print("the sills' limestone tile made in ", g.stone_tile_ms, " ms, ", room_shell::stone_bytes(), " bytes");
                 print("the glass's tile made in ", g.glass_tile_ms, " ms, ", glass_tile::bytes(), " bytes");
+                if g.brass_tile_ms > 0.0 { print("the window metal's brass tile made in ", g.brass_tile_ms, " ms, ", room_shell::brass_bytes(), " bytes"); }
             }
             if g.corner_ms > 0.0 {
                 print("the corners' map baked in ", g.corner_ms, " ms, ", corner_map::chart_count, " charts in ",
@@ -2304,6 +2308,12 @@ fn main() {
             if section(c, open, CURTAINS) {
                 choice(c, "Lace (C)", g.lace_way, LACE_WAYS);
                 switch(c, "Shutters (H)", shutters_on, ["off", "on"]);
+                if room_shell::box_window_on {
+                    slider(c, "Window metal (under 1 flat)", room_shell::window_metal.x, 0.0, 5.0);
+                    slider(c, "  its mottling", room_shell::window_metal.y, 0.0, 1.0);
+                    slider(c, "  its roughness +", room_shell::window_metal.z, -0.3, 0.3);
+                    slider(c, "  the niche's light", room_shell::window_metal.w, 0.0, 1.0);
+                }
                 slider(c, "Lace hangs over (Y)", lace_hang, 0.0, 0.2);
                 slider(c, "Lace's sun", render3d::window_view.x, 0.0, 3.0);
                 slider(c, "Lace's light below", render3d::window_view.y, 0.0, 3.0);
@@ -2614,6 +2624,7 @@ fn main() {
             flag_four(line, "--haze-look", float4 { render3d::haze.g, render3d::haze.even, render3d::haze.taps, render3d::haze.soft });
             format(line, " --books ", on_off(books_on), " --rug ", on_off(rug_on), " --chairs ", on_off(chairs_on), " --props-light ",
                    (if !props_on { "off" } else if props_shade { "kept" } else { "on" }), " --book-fade ", book_fade, " --shutters ", on_off(shutters_on), " --box-window ", on_off(room_shell::box_window_on), " --lace-hang ", lace_hang);
+            if room_shell::box_window_on { flag_four(line, "--window-metal", room_shell::window_metal); }
             if st.halo.x > 0.0 || st.halo.y > 0.0 { format(line, " --halo ", st.halo.x, " --halo-reach ", st.halo.y); }
             let wv = render3d::window_view;
             format(line, " --lace-sun ", wv.x, " --lace-scatter ", wv.y, " --glass-film ", wv.z, " --scratches ", wv.w, " --sun-veil ",

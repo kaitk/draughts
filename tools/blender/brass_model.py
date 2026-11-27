@@ -27,18 +27,36 @@ EDGE = 0.25                        # the states' soft edges, in rank
 SPECKLE_DARK = 0.4                 # the pits: darker by this and rougher by SPECKLE_ROUGH
 SPECKLE_ROUGH = 0.15
 TILE_M = 0.064                     # the tile's side
+WEAR_SPAN = 0.2                    # room_shell::WEAR_SPAN: the vertex's fraction 0.5 plus this times its wear
+WEAR_LIFT = 0.35                   # the rank a full wear moves (ROOM_FRAG's)
 BRONZE_B = (0.34, 0.25, 0.17)      # sRGB, task 127's metal
 
 # level: (exposed, deposit) coverage
 COVER = {1: (0.35, 0.15), 2: (0.28, 0.20), 3: (0.22, 0.26), 4: (0.16, 0.32), 5: (0.10, 0.38)}
-# level: (exposed, deposit, gain, tint, the mean (linear)), from `brass_tile.py --levels` on the tile of seed 129.
+# level: (exposed, deposit, gain, tint, the mean colour (linear), the mean roughness and
+# metalness), from `brass_tile.py --levels` on the game's tile (the export's brass_tile.ppm);
+# ROOM_FRAG's BRASS_COVER, BRASS_TINT, BRASS_MEAN, BRASS_MEAN_SURFACE.
 LEVELS = {
-    1: (0.35, 0.15, 1.000, (1.000, 1.000, 1.000), (0.6044, 0.4477, 0.2155)),   # sRGB 0.80, 0.70, 0.50
-    2: (0.28, 0.20, 0.616, (1.085, 0.950, 0.973), (0.3803, 0.2607, 0.1255)),   # sRGB 0.65, 0.55, 0.39
-    3: (0.22, 0.26, 0.388, (1.169, 0.911, 0.951), (0.2393, 0.1515, 0.0729)),   # sRGB 0.53, 0.43, 0.30
-    4: (0.16, 0.32, 0.251, (1.238, 0.888, 0.953), (0.1505, 0.0879, 0.0423)),   # sRGB 0.42, 0.33, 0.23
-    5: (0.10, 0.38, 0.167, (1.292, 0.880, 0.975), (0.0946, 0.0509, 0.0245)),   # sRGB 0.34, 0.25, 0.17
+    1: (0.35, 0.15, 1.000, (1.000, 1.000, 1.000), (0.6022, 0.4460, 0.2147), (0.399, 0.812)),   # sRGB 0.80, 0.70, 0.50
+    2: (0.28, 0.20, 0.617, (1.085, 0.950, 0.973), (0.3792, 0.2599, 0.1251), (0.416, 0.768)),   # sRGB 0.65, 0.55, 0.39
+    3: (0.22, 0.26, 0.389, (1.169, 0.912, 0.951), (0.2388, 0.1512, 0.0728), (0.434, 0.714)),   # sRGB 0.53, 0.43, 0.30
+    4: (0.16, 0.32, 0.252, (1.238, 0.888, 0.953), (0.1503, 0.0878, 0.0423), (0.451, 0.660)),   # sRGB 0.42, 0.33, 0.23
+    5: (0.10, 0.38, 0.168, (1.292, 0.880, 0.975), (0.0946, 0.0509, 0.0245), (0.468, 0.607)),   # sRGB 0.34, 0.25, 0.17
 }
+
+
+def level_at(level):
+    # A continuous level's entries, between the levels either side (ROOM_FRAG's brass_level).
+    t = min(max(level, 1.0), 5.0) - 1.0
+    i = min(int(t), 3)
+    f = t - i
+    a, b = LEVELS[i + 1], LEVELS[i + 2]
+
+    def mix(x, y):
+        if isinstance(x, tuple):
+            return tuple(u + f * (v - u) for u, v in zip(x, y))
+        return x + f * (y - x)
+    return tuple(mix(x, y) for x, y in zip(a, b))
 
 
 def smooth(a, b, x):

@@ -29,7 +29,7 @@ SRC = ROOT / "src/render3d/shaders/room.goose"
 KEEP = ["shade", "lace_light", "table", "shell_sun", "room_baked", "shell_ends", "corners", "books",
         "ssao", "planar", "planar_look", "contact", "sheen", "room_sun", "paint_quiet", "paper_detail",
         "sill_steps", "window_view", "lace_shade", "table_map", "tile", "shell_glass", "light_box", "light_grid",
-        "wood_oak", "wood_floor"]
+        "wood_oak", "wood_floor", "window_metal"]
 
 
 def members():

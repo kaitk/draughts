@@ -14,6 +14,7 @@
 //       key's at 0.6 of its saturation: room_scene::light_of; height)] [--sun-take K,H (the sun's strength over
 //       the clear sky's and the height its colour is taken as, -1 its own: --light physical's autumn, 0.25,8)]
 //       [--box-window on|off (task 127's window; off window B)]
+//       [--window-metal LEVEL,MOTTLE,ROUGH,NICHE (the tuner's: task 129's antique brass on the hardware)]
 //
 // --maps on also writes, from the app's own code on the GPU, the table's wood maps
 // (table_albedo.png, table_normal.png), the panelling oak's field (wall_albedo.png,
@@ -64,6 +65,22 @@ fn two(argv: u8[:][>..]&, name: const u8[:], otherwise: float2) -> float2 {
     let y, ok_y = parse_flt(b);
     guard more && ok_x && ok_y else { abort(str(name, ": two numbers, a,b")); }
     return float2 { x as f32, y as f32 };
+}
+// Up to four numbers x,y,z,w; those not given `otherwise`'s.
+fn four(argv: u8[:][>..]&, name: const u8[:], otherwise: float4) -> float4 {
+    let at = flag_value(argv, name);
+    guard at > 0 else { return otherwise; }
+    var v:    f32[4]      = [otherwise.x, otherwise.y, otherwise.z, otherwise.w];
+    var rest: const u8[:] = argv[at];
+    for i in 4 {
+        let part, after, more = split_once(rest, ",");
+        let x, ok = parse_flt(part);
+        guard ok else { abort(str(name, ": up to four numbers, x,y,z,w")); }
+        v[i] = x as f32;
+        guard more else { break; }
+        rest = after;
+    }
+    return float4 { v[0], v[1], v[2], v[3] };
 }
 fn switch(argv: u8[:][>..]&, name: const u8[:], otherwise: bool) -> bool {
     let at = flag_value(argv, name);
@@ -393,6 +410,19 @@ fn write_obj(path: const u8[:]) {
 }
 
 fn put3(out: u8[>..]&, v: float3) { format(out, "[", v.x, ", ", v.y, ", ", v.z, "]"); }
+// The window metal's brass tile (room_shell::brass_tile), its top level as brass_tile.ppm: the
+// rank in r, the pits in g (scene.py's antique brass reads them).
+fn brass_tile(out_dir: const u8[:]) {
+    var px: u8[>..] = [];
+    room_shell::brass_tile(px);
+    let n = room_shell::BRASS_SIDE;
+    var out: u8[>..] = [];
+    format(out, "P6\n", n, " ", n, "\n255\n");
+    for i in n * n { out.append([px[4 * i], px[4 * i + 1], px[4 * i + 2]]); }
+    guard write_file(str(out_dir, "/brass_tile.ppm")[..], out[..]) else { abort("could not write brass_tile.ppm"); }
+    print("wrote ", out_dir, "/brass_tile.ppm");
+}
+
 fn put4(out: u8[>..]&, v: float4) { format(out, "[", v.x, ", ", v.y, ", ", v.z, ", ", v.w, "]"); }
 
 fn main() {
@@ -410,9 +440,11 @@ fn main() {
     room_scene::sun_by_height = !(color_at > 0 && argv[color_at] == "key");
     room_scene::sun_take = two(argv, "--sun-take", room_scene::sun_take);
     room_shell::box_window_on = switch(argv, "--box-window", false);
+    room_shell::window_metal = four(argv, "--window-metal", room_shell::WINDOW_METAL_OFF);
     room_shell::hang_lace(number(argv, "--lace-hang", room_shell::LACE_HANG));
     room_shell::LIBRARY.table = table_at;
     guard make_dir(out_dir) else { abort(str("could not make ", out_dir)); }
+    if room_shell::box_window_on { brass_tile(out_dir); }
 
     // The room as the tuner lights it (room_scene::light_of).
     let r = rooms::AUTUMN;
@@ -528,6 +560,8 @@ fn main() {
     put4(j, look.brass);
     format(j, ",\n    \"window_metal\": ");
     put4(j, room_shell::WINDOW_METAL);
+    format(j, ",\n    \"window_metal_look\": ");
+    put4(j, room_shell::window_metal);
     format(j, ",\n    \"table_top_rough\": ", t.wood.w, ",\n    \"table_coat\": ");
     put4(j, t.coat);
     format(j, ",\n    \"table_polish\": ");

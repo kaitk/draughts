@@ -1,19 +1,33 @@
-# The antique brass (task 129) as a Cycles material, for scene.py and brass_check.py; the
-# model and its levels in brass_model.py. Wear shifts the mottling's rank: up on the grip's
-# touched convex parts, down in the recesses (the occlusion within 4 mm).
+# The antique brass (task 129) as a Cycles material, for scene.py and brass_check.py, as
+# ROOM_FRAG's window metal has it: the game's brass tile (the export's brass_tile.ppm, from
+# room_shell::brass_tile) box-projected by position, the wear in the vertex colour's g (the
+# material's fraction: 0.5 plus room_shell::WEAR_SPAN times it) shifting the mottling's rank;
+# the model and its levels in brass_model.py.
 import os
 
 import bpy
+import numpy as np
 
-from brass_model import (DEPOSIT, EDGE, EXPOSED, EXPOSED_POWER, LEVELS, METAL, MOTTLE, ROUGH, SPECKLE_DARK,
-                         SPECKLE_ROUGH, TARNISH, TILE_M)
+from brass_model import (DEPOSIT, EDGE, EXPOSED, EXPOSED_POWER, METAL, MOTTLE, ROUGH, SPECKLE_DARK, SPECKLE_ROUGH,
+                         TARNISH, TILE_M, WEAR_LIFT, WEAR_SPAN, level_at)
 
-# The grip's place in the export's frame (the inner and outer leaves' grips stand 15-40 mm
-# before their housings at y 1.536 and 1.736): a stand-in for the wear the port will put in
-# the vertices.
-GRIP_Y = ((1.490, 1.526), (1.690, 1.726))
-GRIP_Z = (1.50, 1.78)
 
+def tile_image(path):
+    # The export's brass_tile.ppm as a Blender picture, linear data.
+    name = os.path.basename(path)
+    if name in bpy.data.images:
+        return bpy.data.images[name]
+    raw = open(path, "rb").read()
+    head = raw.split(b"\n", 3)
+    w, h = (int(x) for x in head[1].split())
+    px = np.frombuffer(head[3], np.uint8)[:w * h * 3].reshape(h, w, 3).astype(np.float32) / 255.0
+    img = bpy.data.images.new(name, w, h, alpha=False, float_buffer=True)
+    img.colorspace_settings.name = "Non-Color"
+    rgba = np.ones((h, w, 4), np.float32)
+    rgba[:, :, :3] = px[::-1]
+    img.pixels.foreach_set(rgba.ravel())
+    img.pack()
+    return img
 
 class Nodes:
     def __init__(self, nt):
@@ -77,8 +91,11 @@ class Nodes:
         return s
 
     def tile(self, path, coords, colour=False):
-        img = bpy.data.images.load(path, check_existing=True)
-        img.colorspace_settings.name = "sRGB" if colour else "Non-Color"
+        if path.endswith(".ppm"):
+            img = tile_image(path)
+        else:
+            img = bpy.data.images.load(path, check_existing=True)
+            img.colorspace_settings.name = "sRGB" if colour else "Non-Color"
         n = self.new("ShaderNodeTexImage", projection="BOX", projection_blend=0.3, interpolation="Cubic")
         n.image = img
         self.link(coords, n.inputs["Vector"])
@@ -115,14 +132,15 @@ def principled(name):
     return m, N, b
 
 
-def clean_brass(name, tile_dir):
-    # The control: bare C260 brass, the micro-finish only.
+def clean_brass(name, micro_dir=None):
+    # The control: bare C260 brass, with the concept's micro-finish if given.
     m, N, b = principled(name)
     _, uv = coords(N)
     b.inputs["Base Color"].default_value = (*EXPOSED, 1.0)
     b.inputs["Metallic"].default_value = 1.0
     b.inputs["Roughness"].default_value = ROUGH[0]
-    N.link(micro_bump(N, tile_dir, uv), b.inputs["Normal"])
+    if micro_dir:
+        N.link(micro_bump(N, micro_dir, uv), b.inputs["Normal"])
     return m
 
 
@@ -135,34 +153,22 @@ def flat_metal(name, colour, rough):
     return m
 
 
-def antique_brass(name, level, tile_dir, wear=True):
-    exposed_cover, deposit_cover, gain, tint, mean = LEVELS[level]
+def antique_brass(name, level, tile_path, mottle=MOTTLE, rough_add=0.0, micro_dir=None):
+    # level 1 to 5, continuous; mottle how much of the colour's mottling shows; rough_add as
+    # the tuner's; micro_dir a folder with brass_height.png for the concept's micro-finish
+    # (the game has none: it is under its pixels).
+    exposed_cover, deposit_cover, gain, tint, mean, surface = level_at(level)
     m, N, b = principled(name)
     tc, uv = coords(N)
-    t = N.tile(os.path.join(tile_dir, "brass_tile.png"), uv)
+    t = N.tile(tile_path, uv)
     sep = N.new("ShaderNodeSeparateColor")
     N.link(t.outputs["Color"], sep.inputs[0])
     rank, speckle = sep.outputs[0], sep.outputs[1]
-    if wear:
-        # touch: the grip's band; the convex parts by the vertices' pointiness (0.5 flat).
-        xyz = N.new("ShaderNodeSeparateXYZ")
-        N.link(tc.outputs["Object"], xyz.inputs[0])
-        y, z = xyz.outputs["Y"], xyz.outputs["Z"]
-        band = None
-        for lo, hi in GRIP_Y:
-            inside = N.math("MULTIPLY", N.math("GREATER_THAN", y, lo), N.math("LESS_THAN", y, hi))
-            band = inside if band is None else N.math("MAXIMUM", band, inside)
-        touch = N.math("MULTIPLY", band, N.math("MULTIPLY", N.math("GREATER_THAN", z, GRIP_Z[0]),
-                                                N.math("LESS_THAN", z, GRIP_Z[1])))
-        geo = N.new("ShaderNodeNewGeometry")
-        convex = N.math("MULTIPLY", N.math("SUBTRACT", geo.outputs["Pointiness"], 0.5), 4.0, clamp=True)
-        lift = N.math("MULTIPLY", touch, N.math("ADD", 0.05, N.math("MULTIPLY", convex, 0.3)))
-        ao = N.new("ShaderNodeAmbientOcclusion", only_local=True, samples=8)
-        ao.inputs["Distance"].default_value = 0.004
-        sink = N.math("MULTIPLY", N.math("SUBTRACT", 1.0, ao.outputs["AO"]), 0.5)
-        rank = N.math("ADD", rank, N.math("SUBTRACT", lift, sink), clamp=True)
-    else:
-        touch = 0.0
+    vc = N.new("ShaderNodeVertexColor", layer_name="Color")
+    vsep = N.new("ShaderNodeSeparateColor")
+    N.link(vc.outputs["Color"], vsep.inputs[0])
+    wear = N.math("MINIMUM", N.math("MAXIMUM", N.math("DIVIDE", N.math("SUBTRACT", vsep.outputs[1], 0.5), WEAR_SPAN), -1.0), 1.0)
+    rank = N.math("ADD", rank, N.math("MULTIPLY", wear, WEAR_LIFT), clamp=True)
     deposit = N.math("SUBTRACT", 1.0, N.smooth(rank, deposit_cover - EDGE, deposit_cover + EDGE))
     exposed = N.smooth(rank, 1.0 - exposed_cover - EDGE, 1.0 - exposed_cover + EDGE)
     tarnish = N.math("SUBTRACT", N.math("SUBTRACT", 1.0, deposit), exposed, clamp=True)
@@ -170,19 +176,20 @@ def antique_brass(name, level, tile_dir, wear=True):
     c = N.add(N.add(N.scale(N.rgb([k_exposed * v for v in EXPOSED]), exposed),
                     N.scale(N.rgb([gain * v * w for v, w in zip(TARNISH, tint)]), tarnish)),
               N.scale(N.rgb([gain * v * w for v, w in zip(DEPOSIT, tint)]), deposit))
-    # The speckles: small pits, darker and rougher.
+    # The pits: darker and rougher.
     c = N.scale(c, N.math("SUBTRACT", 1.0, N.math("MULTIPLY", speckle, SPECKLE_DARK)))
-    # Halfway to the level's mean: a mix of the mean (A) and the mottled colour (B).
+    # The mottling toward the level's mean: a mix of the mean (A) and the mottled colour (B).
     mix = N.new("ShaderNodeMix", data_type="RGBA", blend_type="MIX")
     pin = {s.identifier: s for s in mix.inputs}
-    pin["Factor_Float"].default_value = MOTTLE
+    pin["Factor_Float"].default_value = mottle
     pin["A_Color"].default_value = (*mean, 1.0)
     N.link(c, pin["B_Color"])
     N.link({s.identifier: s for s in mix.outputs}["Result_Color"], b.inputs["Base Color"])
     N.link(N.weighted((exposed, tarnish, deposit), METAL), b.inputs["Metallic"])
     rough = N.math("ADD", N.weighted((exposed, tarnish, deposit), ROUGH), N.math("MULTIPLY", speckle, SPECKLE_ROUGH))
-    if wear:
-        rough = N.math("SUBTRACT", rough, N.math("MULTIPLY", touch, 0.05))
+    rough = N.math("SUBTRACT", rough, N.math("MULTIPLY", N.math("MAXIMUM", wear, 0.0), 0.05))
+    rough = N.math("MINIMUM", N.math("MAXIMUM", N.math("ADD", rough, rough_add), 0.05), 1.0)
     N.link(rough, b.inputs["Roughness"])
-    N.link(micro_bump(N, tile_dir, uv), b.inputs["Normal"])
+    if micro_dir:
+        N.link(micro_bump(N, micro_dir, uv), b.inputs["Normal"])
     return m
