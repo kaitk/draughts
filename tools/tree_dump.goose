@@ -7,11 +7,12 @@
 //   goose build -o build/tree_dump tools/tree_dump.goose && build/tree_dump OUT_DIR
 //       [--elbows FEWEST,MOST,TURN_LO,TURN_HI] [--gravity STRENGTH] [--shed LIGHT,STUBS]
 //       [--plates ON,SPURS,NUDGE] [--tilt ON,SEASON,SAG] [--bend SHARE,TWIST]
+//       [--elbow-plane ON] [--limb-angle ON,DOWN,DOWN_V] [--hanging-twigs ON,ATTRACTION,LEVEL,TWIGS]
 //       [--hangs N (the first N low limbs, 4)]
 //
 // The flags set the growth past the habit (trees::Growth, task 117; all off by default, as
-// the light tuner's --tree-elbows, --tree-gravity, --tree-shed, --tree-plates, --tree-tilt
-// and --tree-bend).
+// the light tuner's --tree-elbows, --tree-gravity, --tree-shed, --tree-plates, --tree-tilt,
+// --tree-bend, --tree-elbow-plane, --tree-limb-angle and --tree-hanging-twigs).
 //
 // One tree-NAME-whole.bin and -culled.bin for each low limb (rooms::WHOLE_HANGS), its shadow
 // shadow-NAME.grey and times in times.txt; the frame's eyes and windows for the default.
@@ -118,6 +119,9 @@ fn main() {
     growth.tilt = numbers(args, "--tilt", growth.tilt);
     let bend = numbers(args, "--bend", float4 { growth.bend.x, growth.bend.y, 0.0, 0.0 });
     growth.bend = float2 { bend.x, bend.y };
+    growth.elbow_plane = numbers(args, "--elbow-plane", float4 { growth.elbow_plane, 0.0, 0.0, 0.0 }).x;
+    growth.limb_angle = numbers(args, "--limb-angle", growth.limb_angle);
+    growth.hanging_twigs = numbers(args, "--hanging-twigs", growth.hanging_twigs);
     let hangs = numbers(args, "--hangs", float4 { 4.0, 0.0, 0.0, 0.0 }).x as i64;
     var times: u8[>..] = [];
     // old-leader, the user's pick, with each of its low limbs (rooms::WHOLE_HANGS).

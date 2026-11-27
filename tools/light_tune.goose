@@ -42,6 +42,7 @@
 //       --tree-tint TINT,LEAVES,BARK,DEEPER (0.2,1,1,0.6)
 //       --tree-elbows FEWEST,MOST,TURN_LO,TURN_HI (0,0,30,50) --tree-gravity S (0) --tree-shed LIGHT,STUBS (0,0.5)
 //       --tree-plates ON,SPURS,NUDGE (0,2,0) --tree-tilt ON,SEASON,SAG (0,2,8) --tree-bend SHARE,TWIST (0,25)
+//       --tree-elbow-plane ON (0) --tree-limb-angle ON,DOWN,DOWN_V (0,110,80) --tree-hanging-twigs ON,ATTRACTION,LEVEL,TWIGS (0,-1.5,0.45,0.3)
 //       --tree-leaf-mesh tier|card|rows|fan (the leaves' meshes; tier)
 //       --tree-wind off|on (the shadow's wind on the geometry, the leaves fluttering in HDR; off) --tree-flutter DEG,RATE (6,9)
 //       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)
@@ -1689,6 +1690,16 @@ fn main() {
     // tier (the high tier's fan, the standard's rows, with the bend on) or one for all.
     let bend = four(argv, "--tree-bend", float4 { render3d::tree_growth.bend.x, render3d::tree_growth.bend.y, 0.0, 0.0 });
     render3d::tree_growth.bend = float2 { bend.x, bend.y };
+    // The skeleton, round two (trees::Growth, task 117): --tree-elbow-plane ON the broken
+    // leaders' side shoots turned up and down in turn in the limb's upright plane (0: any way);
+    // --tree-limb-angle ON,DOWN,DOWN_V the limbs off the trunk at Sapling's down angle, DOWN
+    // low, DOWN - DOWN_V at the top (0,110,80: Whole.limbs); --tree-hanging-twigs
+    // ON,ATTRACTION,LEVEL,TWIGS the branchlets under level branches (|slope| under LEVEL)
+    // hanging by Weber and Penn's AttractionUp, their twigs by TWIGS of it (0,-1.5,0.45,0.3:
+    // none).
+    render3d::tree_growth.elbow_plane = number(argv, "--tree-elbow-plane", render3d::tree_growth.elbow_plane);
+    render3d::tree_growth.limb_angle = four(argv, "--tree-limb-angle", render3d::tree_growth.limb_angle);
+    render3d::tree_growth.hanging_twigs = four(argv, "--tree-hanging-twigs", render3d::tree_growth.hanging_twigs);
     render3d::tree_leaf_mesh = pick(argv, "--tree-leaf-mesh", render3d::TREE_LEAF_MESHES, render3d::tree_leaf_mesh);
     // --tree-wind off|on: the shadow's wind on the tree's geometry, each leaf turning about
     // its stalk too in HDR (render3d::tree_wind, task 107's T4); --tree-flutter DEG,RATE how

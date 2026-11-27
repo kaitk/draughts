@@ -83,13 +83,26 @@ let MAPLE_HABIT = Habit {
 // mid-September, 2 October, today's look) at their height in the crown, z degrees more
 // sag inside and low in the crown; 0 level. bend x the share of bent blades against the
 // study's (0 all flat, 1 its chances), y their most twist (degrees at the blade's tip).
+// The skeleton, round two: elbow_plane 1 turns a broken leader's side shoot in the limb's
+// upright plane, down on a rising limb and up on a level one, and back a segment or two on,
+// so the limb steps as a zig-zag (0 any way round it). limb_angle x 1 the limbs leave
+// the trunk at Sapling's down angle (y + -z × (1 - (1 - offset) / (1 - base))², degrees,
+// Weber and Penn 1995's down angle and its variation; y 110, z 80 the quaking aspen's), in
+// place of Whole.limbs; 0 Whole.limbs. hanging_twigs x 1 the branches and branchlets from
+// the underside of level limbs and branches hang, with their offspring: each segment turns
+// toward the ground by Weber and Penn's AttractionUp y (negative) times its declination over
+// its segments, less in wood thicker than HANG_RADIUS (ez-tree's force by radius); z the most slope of the wood they leave (|dir.y|) counted level, w the
+// offspring's share of y, so they spread from the hanging axis into a fan.
 struct Growth {
-    elbows:  float4 = float4 { 0.0, 0.0, 30.0, 50.0 },
-    gravity: f32    = 0.0,
-    shed:    float2 = float2 { 0.0, 0.5 },
-    plates:  float4 = float4 { 0.0, 2.0, 0.0, 0.0 },
-    tilt:    float4 = float4 { 0.0, 2.0, 8.0, 0.0 },
-    bend:    float2 = float2 { 0.0, 25.0 },
+    elbows:        float4 = float4 { 0.0, 0.0, 30.0, 50.0 },
+    gravity:       f32    = 0.0,
+    shed:          float2 = float2 { 0.0, 0.5 },
+    plates:        float4 = float4 { 0.0, 2.0, 0.0, 0.0 },
+    tilt:          float4 = float4 { 0.0, 2.0, 8.0, 0.0 },
+    bend:          float2 = float2 { 0.0, 25.0 },
+    elbow_plane:   f32    = 0.0,
+    limb_angle:    float4 = float4 { 0.0, 110.0, 80.0, 0.0 },
+    hanging_twigs: float4 = float4 { 0.0, -1.5, 0.45, 0.3 },
 }
 
 // Whether the grown skeleton is reshaped after growth (gravity, shedding): then the tree is
@@ -185,8 +198,14 @@ fn crown_depth(w: Whole&, p: float3) -> f32 {
 }
 
 // A branch to grow; `free` a hanging limb's and its offspring's, which may leave the
-// crown's envelope below; `attach` the segment its foot sits on (Limb.attach).
-struct Part { at: float3, dir: float3, length: f32, radius: f32, level: i64, dice: u64, tint: f32, parent: i32, free: bool, attach: i32 }
+// crown's envelope below; `attach` the segment its foot sits on (Limb.attach); `hang_from`
+// the level of a branch hanging from a level limb's underside (Growth.hanging_twigs), which
+// it and its offspring carry, -1 none.
+struct Part { at: float3, dir: float3, length: f32, radius: f32, level: i64, dice: u64, tint: f32, parent: i32, free: bool, attach: i32, hang_from: i64 }
+
+// The radius (m) under which hanging wood takes Growth.hanging_twigs' whole pull; thicker
+// wood less, by its radius (ez-tree's force over the section's radius).
+let HANG_RADIUS: f32 = 0.01;
 
 // How far out of the envelope a hanging limb's parts may grow.
 let HANG_SLACK: f32 = 1.8;
@@ -219,14 +238,14 @@ fn grow_whole(t: Tree&, w: Whole, v: View, sight: Sight, cull: bool) {
     let cull_growing = cull && !after;
     var d = Dice { mixed(w.seed as u64 + 11) };
     let lean = float3 { roll_between(d, -0.04, 0.04), 1.0, roll_between(d, -0.04, 0.04) };
-    let trunk = Part { w.foot, normalize(lean), max(w.leader * w.height, w.fork * 1.3), w.girth, 0, d.state, w.autumn, -1, false, -1 };
+    let trunk = Part { w.foot, normalize(lean), max(w.leader * w.height, w.fork * 1.3), w.girth, 0, d.state, w.autumn, -1, false, -1, -1 };
     grow_part(t, wh, vw, sg, cull_growing, trunk);
     // The hanging limb, on dice of its own, from the trunk's side.
     if w.hang > 0.0 {
         var hd = Dice { mixed(w.seed as u64 + 977) };
         let dir = normalize(w.hang_dir);
         let at = w.foot + float3 { 0.0, w.hang_at, 0.0 } + float3 { dir.x, 0.0, dir.z } * (w.girth * 0.8);
-        let limb = Part { at, dir, w.hang, w.girth * w.hang_thick, 1, hd.state, w.autumn + 0.15, 0, true, trunk_segment_at(t, at.y) };
+        let limb = Part { at, dir, w.hang, w.girth * w.hang_thick, 1, hd.state, w.autumn + 0.15, 0, true, trunk_segment_at(t, at.y), -1 };
         if !cull_growing || casts(vw, at, w.hang * WHOLE_REACH) || seen(sg, at, w.hang * WHOLE_REACH) {
             grow_part(t, wh, vw, sg, cull_growing, limb);
         }
@@ -235,6 +254,39 @@ fn grow_whole(t: Tree&, w: Whole, v: View, sight: Sight, cull: bool) {
     if w.growth.shed.x > 0.0 { shed_shaded(t, wh); }
     if w.growth.gravity > 0.0 { bend_by_weight(t, w.growth.gravity, w.growth.plates.x <= 0.0); }
     keep_parts(t, wh, vw, sg, cull);
+}
+
+// A limb's angle off the trunk (degrees) at `high` up the trunk's limbs (0 the fork, 1 its
+// top): Whole.limbs low to high, or with Growth.limb_angle Sapling's down angle, downAngle
+// + -downAngleV × (1 - (1 - offset) / (1 - baseSize))², the share up the limbs squared.
+fn limb_angle(w: Whole&, high: f32) -> f32 {
+    let g = w.growth.limb_angle;
+    guard g.x > 0.0 else { return w.limbs.x + (w.limbs.y - w.limbs.x) * high; }
+    return g.y - g.z * high * high;
+}
+
+// A broken leader's side shoot turned by `angle` in the limb's upright plane, up or down; the
+// other way if that would take it steeper than 55° up or 40° down.
+fn elbow_turned(dir: float3, angle: f32, up_way: bool) -> float3 {
+    let side = cross(dir, float3 { 0.0, 1.0, 0.0 });
+    let sl = length(side);
+    guard sl > 1e-4 else { return dir; }
+    let axis = side / sl;
+    let first = about(dir, axis, if up_way { angle } else { -angle });
+    guard first.y > 0.82 || first.y < -0.64 else { return normalize(first); }
+    return normalize(about(dir, axis, if up_way { -angle } else { angle }));
+}
+
+// Weber and Penn 1995's tropism on a segment: turned toward the sky by `attraction` times
+// its declination (its angle from straight up) over the branch's segments; negative, toward
+// the ground, never past straight down.
+fn pulled_down(dir: float3, attraction: f32, segments: i64) -> float3 {
+    let side = cross(dir, float3 { 0.0, 1.0, 0.0 });
+    let sl = length(side);
+    guard sl > 1e-4 else { return dir; }
+    let declination = acos(clamp(dir.y, -1.0, 1.0));
+    let angle = max(attraction * declination / segments, declination - PI);
+    return normalize(about(dir, side / sl, angle));
 }
 
 // The trunk's segment at height y, for the hanging limb's foot.
@@ -284,7 +336,8 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
     let slender = clamp(b.length / (b.radius * 70.0), 0.4, 2.0);
     // With the gravity layer on (bend_by_weight), it bends the grown wood instead of sag.
     let sag = if hanging { w.hang_sag } else if w.growth.gravity > 0.0 { 0.0 } else { h.sag[level] * slender };
-    let rise = if hanging { 0.32 } else { h.rise[level] };
+    let hangs = b.hang_from >= 0;
+    let rise = if hanging { 0.32 } else if hangs { 0.0 } else { h.rise[level] };
     let rise_from: f32 = if hanging { 0.6 } else { 0.4 };
     let phase = roll(d) * TAU;
     let wave_turn = roll(d) * TAU;
@@ -304,6 +357,12 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
             elbow_at |= (1 as u64) << at;
         }
     }
+    // With Growth.elbow_plane each turn goes down on a rising limb (more than 15° up) and up
+    // on a level one, and one or two segments on the limb turns back most of the way, so it
+    // keeps its way, stepped as the photos' zig-zags.
+    var back_at:     i64          = -1;
+    var back_angle:  f32          = 0.0;
+    var back_up:     bool         = false;
     var stubs:       Segment[..6] = [];
     var stub_attach: i32[..3]     = [];
     var thinner:     f32          = 1.0;
@@ -315,6 +374,13 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
         let bend = up * (rise * clamp((f - rise_from) / (1.0 - rise_from), 0.0, 1.0) - sag * f * (0.3 + level_out))
                    + side * (h.wave[level] * sin(phase + i * 1.9)) + roll_ball(d) * h.crook[level];
         dir = normalize(dir + bend);
+        // ez-tree's force by the section's radius: thick wood arches, thin wood hangs.
+        if hangs {
+            let share = if level == b.hang_from { 1.0 } else { w.growth.hanging_twigs.w };
+            let thin = min(HANG_RADIUS * surfaces::METRE / max(radii[i], 1e-4), 1.0);
+            dir = pulled_down(dir, w.growth.hanging_twigs.y * share * thin, segments);
+        }
+        if i == back_at { dir = elbow_turned(dir, back_angle, back_up); }
         // A broken leader in wood of 5-35 cm: the axis ends here as a stub going on its way,
         // and the side shoot takes over, thinner, turned 30-50 degrees.
         let r_here = radii[i];
@@ -324,7 +390,16 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
             stubs.push(Segment { p, run, r_here, r_here * 0.8, level as i32 });
             stubs.push(Segment { run, end, r_here * 0.8, r_here * 0.3, level as i32 });
             stub_attach.push((first + i - 1) as i32);
-            dir = normalize(turned(dir, radians(roll_between(ed, elbows.z, elbows.w)), roll(ed) * TAU) + up * 0.15);
+            if w.growth.elbow_plane > 0.0 {
+                let elbow_up = dir.y < 0.26;
+                let angle = radians(roll_between(ed, elbows.z, elbows.w));
+                dir = elbow_turned(dir, angle, elbow_up);
+                back_at = i + 1 + min((roll(ed) * 2.0) as i64, 1);
+                back_angle = angle * roll_between(ed, 0.6, 1.0);
+                back_up = !elbow_up;
+            } else {
+                dir = normalize(turned(dir, radians(roll_between(ed, elbows.z, elbows.w)), roll(ed) * TAU) + up * 0.15);
+            }
             thinner *= 0.78;
         }
         let q = p + dir * step;
@@ -384,14 +459,18 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
         // The limbs wide low on the trunk, steeper up it, each its own way.
         let high = (f - fork_share) / max(1.0 - fork_share, 0.05);
         let spread_deg = if leader { roll_between(d, 6.0, 14.0) }
-                         else if level == 0 { w.limbs.x + (w.limbs.y - w.limbs.x) * high + roll_between(d, -10.0, 10.0) }
+                         else if level == 0 { limb_angle(w, high) + roll_between(d, -10.0, 10.0) }
                          else { h.angle[level] + roll_between(d, -14.0, 14.0) };
         let tilt = radians(spread_deg);
         let turn = if paired { slot * (PI * 0.5) + (c % 2) * PI } else { c * 2.39996 };
         let round = first_round + turn + roll_between(d, -0.35, 0.35);
         var cdir = turned(along, tilt, round);
+        // A branch from a level limb's or branch's underside hangs, and its offspring with it.
+        let hang_from = if hangs { b.hang_from }
+                        else if w.growth.hanging_twigs.x > 0.0 && (level == 1 || level == 2) && !b.free && abs(along.y) < w.growth.hanging_twigs.z && cdir.y < 0.0 { level + 1 }
+                        else { -1 };
         // Twigs and branchlets lean out of the crown, toward the light.
-        if level >= 2 {
+        if level >= 2 && hang_from < 0 {
             let out = normalize(foot - (w.foot + w.middle));
             cdir = normalize(cdir + out * 0.35 + up * 0.15);
         }
@@ -413,7 +492,7 @@ recursive fn grow_part(t: Tree&, w: Whole&, v: View&, sight: Sight&, cull: bool,
         guard length > 1.0 && held else { continue; }
         // The core's twigs die back: the leaves stay in the shell.
         if level == 3 && !b.free && crown_depth(w, foot) > w.shell * 1.4 && roll(d) < 0.8 { continue; }
-        let child = Part { foot, cdir, length, radius, level + 1, dice, tint, me, b.free, (first + i) as i32 };
+        let child = Part { foot, cdir, length, radius, level + 1, dice, tint, me, b.free, (first + i) as i32, hang_from };
         guard !cull || casts(v, foot, length * WHOLE_REACH + w.leaf * 3.0)
                     || seen(sight, foot, length * WHOLE_REACH + w.leaf * 3.0) else { continue; }
         grow_part(t, w, v, sight, cull, child);
