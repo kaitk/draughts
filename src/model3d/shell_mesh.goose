@@ -685,10 +685,10 @@ fn shutters(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     let mid = 0.5 * (y0 + y1);
     let heights: f32[3] = [y0 + SHUTTER_HINGE_IN, mid, y1 - SHUTTER_HINGE_IN];
     for y in heights {
-        knuckle(verts, indices, l, float3 { hinge.x, y, hinge.y }, SHUTTER_KNUCKLE, SHUTTER_KNUCKLE_HALF, 6, false);
+        knuckle(verts, indices, l, float3 { hinge.x, y, hinge.y }, SHUTTER_KNUCKLE, SHUTTER_KNUCKLE_HALF, 6, false, hinge_metal());
     }
     for y in [heights[0], heights[2]] {
-        knuckle(verts, indices, l, float3 { leaf + 0.003, y, SHUTTER_BACK }, SHUTTER_KNUCKLE, SHUTTER_KNUCKLE_HALF, 6, false);
+        knuckle(verts, indices, l, float3 { leaf + 0.003, y, SHUTTER_BACK }, SHUTTER_KNUCKLE, SHUTTER_KNUCKLE_HALF, 6, false, hinge_metal());
     }
 }
 
@@ -847,7 +847,7 @@ fn door(verts: mesh::Vertex[>..]&, indices: u32[>..]&, wb: surfaces::Builder, o:
     // The hinges on the outer jambs, the lever and its escutcheon on the right leaf.
     for sx in SIDES {
         for y in DOOR_HINGES {
-            knuckle(verts, indices, b, float3 { sx * (w - 0.5 * j), y, -DOOR_FACE + 0.007 }, DOOR_KNUCKLE, DOOR_KNUCKLE_HALF, 8, true);
+            knuckle(verts, indices, b, float3 { sx * (w - 0.5 * j), y, -DOOR_FACE + 0.007 }, DOOR_KNUCKLE, DOOR_KNUCKLE_HALF, 8, true, hinge_metal());
         }
     }
     // The right leaf seen from the room is b's -s (a wall's s runs leftward from inside).

@@ -99,7 +99,7 @@ the same parts), set the look: plain, not overdone.
   to it), the lights 15 mm behind it in its rebate; a ring a pane (flat, a 6 mm rounded step,
   the side to the glass, the bar's web behind it), the cells meeting on the bars' middles so
   neighbours share whole edges; the left leaf's lip; one glass sheet a casement; two long barrel
-  hinges a leaf, the crémone on both casements, two bolts on the passive leaf, in
+  hinges a leaf, the crémone on both casements, in
   `MAT_BRASS + 0.5`, which ROOM_FRAG shades as the specification's dark brass (`WINDOW_BRASS`).
 - `casement()` takes either layout by `shell_case.x` (a new vec4 in every block carrying the
   shell's fields; y to w kept for a sash's opening): one body with the measures picked, not a
@@ -166,6 +166,33 @@ hinges and the stove's glaze (in the metals' shader, its tiles' tone the fractio
 metal, not the fraction alone) are as before: with the flag off the four views and the close-up
 match `room-light`'s head (98eaf679) within a level, under both lights. Pages:
 `build/notes/box-window/hardware.html` ("Built").
+
+## The user's review of round 2 (2026-11-27)
+
+The handle and the Cycles look approved. Changed, behind the flag:
+
+- The shutters' and the doors' hinges take the window's metal (`hinge_metal()`); the stove's
+  hinges stay its own.
+- The passive leaf's two slide bolts (the specification's section 10, the only source: no photo
+  shows them) are gone: they read crude beside the rest, and the restored manor's photo shows
+  none, its bolts in the leaf's edge, unseen with the window shut.
+- The white line where the mullion stands on the transom was no crack in the mesh
+  (`mesh_close` closes those) but the transom's rounded top edge running on under the mullion,
+  facing up into the window's light. The head and the transom are now three pieces, square
+  under the mullion; running the mullion over the curve instead overlapped the pieces and sent
+  `mesh_close` splitting for ever (a 2 GB stack overflow).
+
+Left to a session on the room's light, as measured with the scratch tracer's `frames` mode
+(the atlas against the tracer at the real surface, luminance): the niche's faces read too dark,
+for window B the same as for the box (box: bottom rail 0.009 against 0.035, the niche's head
+0.024 against 0.051, the wall beside the niche 0.008 against 0.026, the reveal 0.098 against
+0.168; the transom 0.044 against 0.058). The tuner's warmer cast over the whole view, the
+curtains and sky too, is the room's sun and grade, not the window. Also there:
+ROOM_FRAG's volume lookup takes a volume's light in full up to 0.3 m outside it, against its
+comment's centimetre (`d < -0.3`); 0.01 changes only the panes' rounded steps (2% of the keeper
+view), so it is not this look's cause. The metal's next step is the user's antique brass
+specification (`build/notes/window-reference/references/antique-brass-material.pdf`): mottled,
+aged yellow brass, for the door handles too, a task of its own.
 
 ## Acceptance criteria
 

@@ -260,7 +260,7 @@ fn pane_ring(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder
 }
 
 // Casement c's mesh into verts and indices, its glass into its own: the frame, each light's
-// panes in their rings, the lip, the hardware (the inner casement's hinges and bolts; the
+// panes in their rings, the lip, the hardware (the inner casement's hinges; the
 // crémone on both, the outer's on its face toward the room, as the specification has it).
 fn box_casement_mesh(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Vertex[>..]&, glass_indices: u32[>..]&,
                      b: surfaces::Builder, c: BoxCasement, inner: bool, seed: i64&) {
@@ -274,19 +274,29 @@ fn box_casement_mesh(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh:
     seed++;
     paint_box(verts, indices, b, gx, w, c.foot.x, c.head.y, f.y, f.x,
               Piece { round: LEFT, sides: LEFT, recess: LEFT, foot: at_sash, window: true, seed: seed, .. });
+    // The head and the transom in three: square where the mullion meets them, else their
+    // rounded edge runs on under its foot and shows as a bright crack along the joint.
+    let m = c.mullion;
+    let spans: float3[3] = [float3 { -gx, -m, LEFT as f32 }, float3 { -m, m, 0.0 }, float3 { m, gx, RIGHT as f32 }];
     seed++;
-    paint_box(verts, indices, b, -gx, gx, c.head.x, c.head.y, f.y, f.x,
-              Piece { round: BOTTOM, sides: BOTTOM, joints: LEFT | RIGHT, recess: BOTTOM, foot: at_sash, along: true, window: true,
-                      seed: seed, .. });
+    for s in spans {
+        let under = if s.z == 0.0 { 0 } else { BOTTOM };
+        paint_box(verts, indices, b, s.x, s.y, c.head.x, c.head.y, f.y, f.x,
+                  Piece { round: under, sides: under, joints: s.z as i64, recess: under, foot: at_sash, along: true, window: true,
+                          seed: seed, .. });
+    }
     seed++;
     paint_box(verts, indices, b, -gx, gx, c.foot.x, c.foot.y, f.y, f.x,
               Piece { round: TOP, sides: TOP, joints: LEFT | RIGHT, recess: TOP, foot: at_sash, along: true, window: true, seed: seed, .. });
     seed++;
-    paint_box(verts, indices, b, -gx, gx, c.transom.x, c.transom.y, f.y, f.x,
-              Piece { round: TOP | BOTTOM, sides: TOP | BOTTOM, joints: LEFT | RIGHT, recess: TOP | BOTTOM, foot: at_sash, along: true,
-                      window: true, seed: seed, .. });
+    for s in spans {
+        let over = if s.z == 0.0 { BOTTOM } else { TOP | BOTTOM };
+        paint_box(verts, indices, b, s.x, s.y, c.transom.x, c.transom.y, f.y, f.x,
+                  Piece { round: over, sides: over, joints: s.z as i64, recess: over, foot: at_sash, along: true, window: true,
+                          seed: seed, .. });
+    }
     seed++;
-    paint_box(verts, indices, b, -c.mullion, c.mullion, c.transom.y, c.head.x, f.y, f.x,
+    paint_box(verts, indices, b, -m, m, c.transom.y, c.head.x, f.y, f.x,
               Piece { round: LEFT | RIGHT, sides: LEFT | RIGHT, joints: BOTTOM | TOP, recess: LEFT | RIGHT, foot: at_sash, window: true,
                       seed: seed, .. });
     // The lights' panes, each in its ring; a light's tone its own.
@@ -315,6 +325,9 @@ fn box_casement_mesh(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh:
 // The hardware's material: the brass with a half's fraction, which ROOM_FRAG shades as the
 // window's bronze (WINDOW_BRASS).
 let WINDOW_HARDWARE: f32 = surfaces::MAT_BRASS + 0.5;
+
+// The room's hinges (the shutters' and the doors') take the window's metal with the box window.
+fn hinge_metal() -> f32 { if box_window_on { WINDOW_HARDWARE } else { surfaces::MAT_BRASS } }
 // Its colour at normal incidence (sRGB) and roughness: ROOM_FRAG's WINDOW_BRASS (checked equal
 // by test/model3d/geometry.goose), the Cycles export's window_metal.
 let WINDOW_METAL = float4 { 0.34, 0.25, 0.17, 0.5 };
@@ -477,8 +490,8 @@ fn cremone(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, 
 }
 
 // The hardware: the crémone on both casements (the outer's on its face toward the room, as
-// the specification has it); on the inner casement each leaf's two hinges and the passive
-// leaf's two bolts.
+// the specification has it); on the inner casement each leaf's two hinges. The passive leaf's
+// bolts sit in its edge, unseen with the window shut, as in the restored manor's photo.
 fn box_hardware(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder, c: BoxCasement, inner: bool) {
     cremone(verts, indices, b, c);
     guard inner else { return; }
@@ -488,13 +501,6 @@ fn box_hardware(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Buil
         let ax = hinge_axis(c, l);
         let hy = hinge_heights(l);
         for hh in [hy.x, hy.y] { lathe_along(verts, indices, b, float3 { ax.x, hh - 0.06, ax.y }, UPWARD, HINGE_BARREL[..], 8, mat); }
-    }
-    let p = c.lights[1];
-    let bx = -(BOX_LIP_OVER + 0.5 * (BOX_STILE - BOX_LIP_OVER));
-    let f = c.sash_z.x;
-    for by in [p.box.y + 0.12, p.box.w - 0.1] {
-        box_m(verts, indices, b, bx - 0.01, bx + 0.01, by - 0.0325, by + 0.0325, f, f + 0.01, mat);
-        box_m(verts, indices, b, bx - 0.005, bx + 0.005, by - 0.005, by + 0.005, f + 0.01, f + 0.02, mat);
     }
 }
 
