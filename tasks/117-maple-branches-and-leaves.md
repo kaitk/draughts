@@ -201,6 +201,56 @@ What still looks wrong:
 - Not yet seen on the Mac or the tablet; the standard and phone tiers checked only as
   compiled shaders and counts.
 
+## Round two: the bark's material (2026-11-27)
+
+The bark still looked a little like plastic. Checked against the user's material spec
+(`build/notes/bark-roots/norway_maple_bark_material.txt`: geometry and normals first,
+then albedo and roughness, scattering last and barely there on old bark), each part behind
+a light-tuner switch, 0 and off by default, in a third bark texture made with the age
+layers (`trees::bark_detail`, `TREE_WOOD_FRAG`'s slot 2) and `TreeBlock.skin`:
+
+| Part | Tuner switch | Verdict |
+|---|---|---|
+| The cork's fine relief (small domes between the grooves of stretched cells, fibres along the stem; young bark at a third) and secondary cracks (1,400 short ones along the stem, 700 across the crowns, each stopping at a furrow; on grown bark), added to the height and its taps; the plates' edges jagged by noise of a few texels (the tile grown with `jagged`) | `--tree-detail K` (0; 1 tried) | Helps most: the plates are no longer smooth clay, the edges break up, the furrows stay dark |
+| Albedo: the crowns drift between warm grey-brown and olive grey, sheltered plates a fifth darker, weathered tops and the cells' domes lighter; the furrows' dark kept | `--tree-albedo K` (0; 1) | Helps a little, and takes the chalky white off the sunlit trunk |
+| Lichen: clustered pale grey-green patches on the ridges of grown bark, their own mask | `--tree-lichen K` (0; 1) | Helps a little close up; at first too pale (read as paint), darkened |
+| A weak broad specular: GGX, F0 0.034 (IOR 1.45), roughness by age 0.55 shoots, 0.72 young limbs, 0.9 the old trunk, on the sun alone, under the microshadow | `--tree-spec K` (0; 0.5, 1) | Subtle: a dry sheen on lit ridges at grazing light, not waxy. With the sky's reflection added too, the overcast trunk's median rose from 29 to 54 levels and greyed: dropped, as the albedo matched to photos already holds it |
+| Scattering by age: `--tree-scatter W` now W on the shoots, falling to none by age 0.65 (wood over about 2 cm) | `--tree-scatter W` (0; 0.5) | No gain: on the old trunk it is now 0 (round one's 0.5 everywhere made the backlit trunk warm and fleshy), and the thin tubes it reaches are a few pixels from the room. Left off |
+
+Recommended: `--tree-detail 1 --tree-albedo 1 --tree-lichen 1 --tree-spec 1`, scatter 0.
+
+Per tier: high (HDR) central slopes, ten taps with the detail; standard forward slopes,
+six, the fine relief at 0.6 (forward slopes drew the cells' grooves as hard lines; the
+secondary cracks still show as thin hard lines there); phone the screen's derivatives of
+the summed height. Each tap of the detail is skipped while its weights are 0.
+
+Times on the PC (RTX 4090): the bark's textures 57-60 ms once at startup (best of 5,
+`tools/tree_dump`; 34.6 ms before, so the detail costs about 22 ms; jagged edges 2.5 ms
+more). Frame, the light tuner at 1600 × 1000, `--fps-wait --no-vsync`, the trunk filling
+the view from 2.5 m, medians of three A B rounds: HDR 1.115 ms off, 1.128 ms all on
+(+0.013); 8-bit standard and the near-window view within the noise (±0.01).
+
+Checked under the room's low sun from behind the eye, grazing from the side, against it,
+and overcast (`--tree-light 0,1.8`), close (2.5 m) and at 7 m and from the middle
+window, beside the photos. Crack contrast kept: the darkest 5 % of the trunk stays at 4
+levels under overcast light with everything on. The ngfx build isn't checked: the PC's
+goose-ngfx checkout is empty; the translated tube shaders were written
+(`scripts/ngfx_3d_shaders.py`) and take the detail in their root's texture slot 2.
+
+Pictures and the page (local, `build/notes/tree/round-2/bark.html`, pictures in
+`round-2/bark/`): each light before and after, each switch alone, the distances, the
+scatter, the tiers, the specular with the sky.
+
+Open:
+
+- The furrows look thinner and more numerous with the detail (secondary cracks and jagged
+  edges); the old bark's stark wide furrows may want `BARK_EDGE_JAG` lower or the
+  furrows wider.
+- The sunlit trunk is still very light at the room's exposure; the photos' trunks read mid
+  grey in sun.
+- Moss and the green algae of the photos' lower trunks have no mask yet.
+- Not yet seen on the Mac or the tablet.
+
 ## Round one and the user's answers (2026-11-26)
 
 Three CPU studies, each local in `build/notes/tree/`, with one page of choices

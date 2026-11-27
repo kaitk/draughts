@@ -1106,14 +1106,23 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   out's near trees (the oak's picture, the park's cards, `tree_seen`) are left out of the
   main view; the far band and the sky stay, and the mirror keeps them all.
 - **The maple's bark, junctions and roots** (the light tuner's `--tree-bark`,
-  `--tree-relief`, `--tree-scatter`, `--tree-rough`, `--tree-junctions`, `--tree-roots`
-  and `--tree-wood-tier`, each off by default and in the app; `trees::bark_layers`,
+  `--tree-relief`, `--tree-scatter`, `--tree-rough`, `--tree-detail`, `--tree-albedo`,
+  `--tree-lichen`, `--tree-spec`, `--tree-junctions`, `--tree-roots` and
+  `--tree-wood-tier`, each off by default and in the app; `trees::bark_layers`,
   `trees::shaped_tubes`, `TREE_WOOD_FRAG`). The bark tile is grown at startup as cracks
   opening over time (about 35 ms on the CPU), kept at four ages in two textures, height
   and cavity, and each pixel blends the ages by its wood's radius: twigs smooth, the trunk
   deeply furrowed. The shader takes the normal from the height's slope, darkens the sky
   in the cavities and shadows the sun in them; `--tree-scatter` wraps light past the
-  terminator, warm, and `--tree-rough` lights the wood as a rough surface (Oren-Nayar).
+  terminator, warm, on the youngest wood only (none on wood over about 2 cm), and
+  `--tree-rough` lights the wood as a rough surface (Oren-Nayar). A third texture made with
+  the ages (about 22 ms more) holds what all ages share at the small scale: the cork's fine
+  relief and secondary cracks, which `--tree-detail` adds to the height (the plates' edges
+  then grown jagged), the colour's drift between warm and olive grey for `--tree-albedo`
+  (weathered tops lighter), and the lichen's mask for `--tree-lichen`. `--tree-spec` adds a
+  weak broad highlight of the sun, roughness by age from 0.55 on shoots to 0.9 on the old
+  trunk. The high tier takes central slopes, the standard tier forward ones with the fine
+  relief softened, phones the screen's derivatives.
   With junctions on, the wood's tubes are rebuilt with collars, a swelling round each
   branch's foot on its parent, the foot welded under the parent's skin, and the parent's
   grain bent round it; with roots on, the trunk's lowest rings follow the trunk and its

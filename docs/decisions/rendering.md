@@ -2345,6 +2345,22 @@ to be is in tasks 042, 059, 071, 081, and 086.
   displacing the mesh by the tile (triangles everywhere for what a normal shows from the
   room), a separate mesh per root welded to the trunk (the seam of round one), and grain
   from world position (it stretched on the collar).
+- The maple's bark material follows the user's spec, geometry and normals first
+  (2026-11-27, task 117's round two; `trees::bark_detail`, `TREE_WOOD_FRAG`'s `tree_skin`,
+  `build/notes/tree/round-2/bark.html`), each part behind the light tuner's
+  `--tree-detail`, `--tree-albedo`, `--tree-lichen` and `--tree-spec`, off by default until
+  seen on the Mac and the tablet. A third bark texture, grown with the age layers, holds the
+  cork's fine relief and secondary cracks (added to the height, so the plates are no longer
+  smooth) and the colour's drift and lichen as masks of their own; the plates' edges are
+  jagged by noise when the tile is grown. The specular is a GGX lobe with F0 0.034 and
+  roughness by age (0.55 to 0.9), on the sun alone: the sky's reflection on top of an
+  albedo matched to photos greyed the overcast trunk by half again. This replaces the
+  scattering of step three above in part: the wrap now falls with age to none on wood over
+  about 2 cm, as the spec asks (barely any on old bark, never leaf-like backlighting), and
+  stays off, as it showed no gain; 0.5 on the whole trunk read fleshy against the light.
+  The detail costs about 22 ms once at startup and nothing measurable a frame on the PC.
+  Rejected: subsurface scattering on the trunk, the sky's specular, a pale lichen that read
+  as paint.
 - Each limb's bark tile is shifted round and along by dice of its own (2026-11-24, task
   107; `trees::tube`), so neighbouring limbs' tiles don't line up. A stand-in until a
   real fix of the tile's repeat (stochastic or two-scale sampling, and the bare maple's
