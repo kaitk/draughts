@@ -1317,6 +1317,13 @@ before. Only the board's lighting was wrong; the pieces beside the board share t
 Cost not timed: the meter is CPU arithmetic, the bake's 81 traces once and a projected square
 a frame. Page: `build/notes/board-meter/index.html`; scratch `build/boardmeter/`.
 
+Open (the user, 2026-11-27): better, but the board's colours are still washed out against the
+old light. In the table above the sunlit maple is 226 175 122 against the old 244 158 88 (blue
+over red 0.54 against 0.36, so paler and less orange), maple over walnut 2.37 against 3.20, and
+the sun over a piece's shade 1.79 stops against 1.96. Not yet looked into: whether it is the
+light's colour on the board (the sun after the grade), the woods' albedo under the physical
+light, or AgX's desaturation near the top of its curve.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
@@ -1342,5 +1349,7 @@ a frame. Page: `build/notes/board-meter/index.html`; scratch `build/boardmeter/`
       after the desktop look is settled; times with `tools/perf/mac_room_bench.py`
 - [ ] The wainscot's panel edges under the windows within a stated factor of Cycles' (5.7
       times on the brightest 1% on 2026-11-27, "Open: the wainscot's panel edges shine")
+- [ ] The board's colours in the board view as rich as the old light's (the sunlit maple
+      226 175 122 against 244 158 88, maple over walnut 2.37 against 3.20 on 2026-11-27)
 - [ ] The decision in `docs/decisions/rendering.md`, `docs/architecture/rendering.md`
       updated in the same commit
