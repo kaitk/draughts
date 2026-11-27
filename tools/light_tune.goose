@@ -117,7 +117,7 @@
 //       the panes; on)] [--cavity-up N --cavity-across N (their probes up and across, room_light::cavity_up and
 //       cavity_across; 20, 7)] [--niche-light on|off (--light physical: the niche's light, room_light::niche_light, the
 //       sun the inner casement's members catch in the niche thrown on, the probes under the sill and over the head
-//       the niche's; off)]
+//       the niche's; on)]
 //       [--paint-relief K (the painted wood's relief tile's strength, 1 as made)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
 //       0.15 by default, 0 as made; Y switches 0.15 and 0)]
@@ -1662,7 +1662,7 @@ fn main() {
     room_light::stove_stops_sun = physical;
     room_light::sill_settle = physical;
     room_light::volumes_on = physical && !(flag_value(argv, "--volumes") > 0 && argv[flag_value(argv, "--volumes")] == "off");
-    room_light::niche_light = physical && flag_value(argv, "--niche-light") > 0 && argv[flag_value(argv, "--niche-light")] == "on";
+    room_light::niche_light = physical && !(flag_value(argv, "--niche-light") > 0 && argv[flag_value(argv, "--niche-light")] == "off");
     room_light::cavity_up = number(argv, "--cavity-up", room_light::cavity_up) as i64;
     room_light::cavity_across = number(argv, "--cavity-across", room_light::cavity_across) as i64;
     render3d::contact_look = four(argv, "--contact", render3d::contact_look);

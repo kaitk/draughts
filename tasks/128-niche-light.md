@@ -1,6 +1,6 @@
 # 128: The light in the window niche
 
-Status: in-progress (built behind `--niche-light`, for the user to judge)
+Status: done (on by default under `--light physical`; `--niche-light off` for the old bake)
 
 Under `--light physical` the window frame's wood and the window's metal inside the niche (the
 deep window recess) are lit far darker than Cycles lights them: the faces of the frame inside
@@ -42,8 +42,8 @@ colour and the grade, task 122); note it if measured.
       same or better
 - [x] `volumes`' 0.3 m slack in `baked_light` decided on measurement
 - [x] Results on `build/notes/niche-light/index.html`; the numbers recorded here
-- [ ] The user's look at the shots; then `--niche-light` on by default under
-      `--light physical`, or not
+- [x] The user's look at the shots (2026-11-27: "the light looks nice", nothing it makes
+      worse): `--niche-light` on by default under `--light physical`
 
 ## The cause (2026-11-27)
 
