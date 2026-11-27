@@ -182,12 +182,23 @@ struct Sun {
 struct Patch { at: float3, normal: float3, albedo: float3, power: float3 }
 
 // The bins the sun's rays fall into, a patch each: the floor's 0.25 m cells, the hall
-// wall's and the end walls', and each window's sill and two reveals.
+// wall's and the end walls', each window's sill and two reveals, and with niche_light the
+// inner casement's faces in each niche (member_sun), before the table's last.
 let BIN = 0.25;
 let FLOOR_BINS_X = 36;
 let FLOOR_BINS_Y = 28;
 let WALL_BINS_H = 16;
-let BINS = 2490;          // 36×28 + 36×16 + 2 × 28×16 + 3 × 3 + 1 (the table)
+let MEMBER_BANDS = 12;
+let MEMBER_BIN0 = 2489;   // 36×28 + 36×16 + 2 × 28×16 + 3 × 3
+let BINS = 2706;          // + 3 windows × 3 ways × 2 halves × MEMBER_BANDS + 1 (the table)
+
+// The niche's light (the tuner's --niche-light, task 128): the sun the inner casement's
+// members catch on their faces in the niche thrown on as patches of their own (member_sun);
+// the casement's front as cells of the bounces (casement_cell); the lace's light on the
+// window wall behind it in what the probes before the wall give that wall (lace_on_wall);
+// and the walled probes under a niche's sill and over its head taking the niche's light
+// (niche_above_below).
+var niche_light = false;
 
 // The windows' middles along the plan's x, and the niche and its glass.
 fn window_mids() -> float3 {
@@ -468,6 +479,7 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                 let q = ray_point(k, i, j);
                 var p = each * tree[(k * RAYS_Y + j) * RAYS_X + i];
                 if members_traced {
+                    if niche_light { member_sun(boxes, k, o, i, j, d, p, power, where, normal, albedo, lit, bounce, sun.bounce_gain); }
                     p = p * members_let(boxes, o, i, j, d);
                     guard p.x + p.y + p.z > 0.0 else { continue; }
                 }
@@ -588,6 +600,83 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
         count++;
     }
     return count;
+}
+
+// The sun of ray (window k, column i, row j), p of it through the glass, that the inner
+// casement's members catch in the niche: of its MEMBER_SAMPLES² lines, each met first by a
+// member's top or side on the room's side of the inner pane gives that face its share, binned
+// by the face's way (the top, a side facing +x or -x), the window's half and its height
+// (MEMBER_BANDS of BIN from the sill), and into the bounces through the casement's front cell
+// before it.
+fn member_sun(boxes: room_shell::Member[..room_shell::MEMBERS]&, k: i64, o: room_shell::Opening, i: i64, j: i64, d: float3, p: float3,
+              power: float3[BINS]&, where: float3[BINS]&, normal: float3[BINS]&, albedo: float3[BINS]&, lit: f32[BINS]&, bounce: Bounce&,
+              gain: f32) {
+    let low = o.sill + GLAZED_LOW;
+    let high = o.sill + o.height + o.rise - GLAZED_HIGH;
+    let dx = 2.0 * GLAZED_HALF / RAYS_X;
+    let dh = (high - low) / RAYS_Y;
+    let x0 = -GLAZED_HALF + i * dx;
+    let y0 = low + j * dh;
+    let z = -room_shell::WINDOW_GLASS.x;
+    let pane = -(o.glass.x + PANE_IN);
+    let v = float3 { d.x, d.z, -d.y };
+    let inv = float3 { 1.0 / v.x, 1.0 / v.y, 1.0 / v.z };
+    let kx = v.x / v.z;
+    let ky = v.y / v.z;
+    var near: i64[..room_shell::MEMBERS] = [];
+    var in_niche = false;
+    for b, n in boxes {
+        let ax = kx * (b.lo.z - z);
+        let bx = kx * (b.hi.z - z);
+        let ay = ky * (b.lo.z - z);
+        let by = ky * (b.hi.z - z);
+        guard b.lo.x - max(ax, bx) < x0 + dx && b.hi.x - min(ax, bx) > x0 else { continue; }
+        guard b.lo.y - max(ay, by) < y0 + dh && b.hi.y - min(ay, by) > y0 else { continue; }
+        near.push(n);
+        if b.hi.z > pane { in_niche = true; }
+    }
+    guard in_niche else { return; }
+    let samples = MEMBER_SAMPLES;
+    let share = p * (1.0 / (samples * samples));
+    let a = thrown_albedo(PAINT_ALBEDO, gain);
+    let face = wall_face();
+    for sj in samples {
+        for si in samples {
+            let q = float3 { x0 + (si + 0.5) * (dx / samples), y0 + (sj + 0.5) * (dh / samples), z };
+            // The first box along the line from outside: the least entry over all boxes.
+            var first: f32 = 1e9;
+            var way = -1;
+            for n in near {
+                let b = boxes[n];
+                let t0 = (b.lo - q) * inv;
+                let t1 = (b.hi - q) * inv;
+                let tx = min(t0.x, t1.x);
+                let ty = min(t0.y, t1.y);
+                let tz = min(t0.z, t1.z);
+                let enter = max(tx, max(ty, tz));
+                let leave = min(max(t0.x, t1.x), min(max(t0.y, t1.y), max(t0.z, t1.z)));
+                guard enter <= leave && enter < first else { continue; }
+                first = enter;
+                way = if enter == tz { -1 } else if enter == ty { 0 } else if v.x < 0.0 { 1 } else { 2 };
+            }
+            guard first < 1e9 && way >= 0 else { continue; }
+            let e = q + v * first;
+            guard e.z > pane else { continue; }
+            let at = float3 { o.mid + e.x, face - e.z, e.y };
+            let n = if way == 0 { float3 { 0.0, 0.0, 1.0 } } else if way == 1 { float3 { 1.0, 0.0, 0.0 } } else { float3 { -1.0, 0.0, 0.0 } };
+            let half = if e.x > 0.0 { 1 } else { 0 };
+            let band = clamp(((e.y - o.sill) / BIN) as i64, 0, MEMBER_BANDS - 1);
+            let bin = MEMBER_BIN0 + ((k * 3 + way) * 2 + half) * MEMBER_BANDS + band;
+            let weight = share.x + share.y + share.z;
+            power[bin] = power[bin] + share * a;
+            where[bin] = where[bin] + at * weight;
+            lit[bin] += weight;
+            normal[bin] = n;
+            albedo[bin] = a;
+            let cell = CASE_C0 + (k * CASE_UP + clamp(((e.y - o.sill) / o.height * CASE_UP) as i64, 0, CASE_UP - 1)) * CASE_ACROSS + half;
+            bounce.sun[cell] = bounce.sun[cell] + share * a;
+        }
+    }
 }
 
 // The most of the light falling on a surface that the bake throws back off it.
@@ -855,15 +944,46 @@ fn fill_walled(wins: room_shell::Opening[3]&, atlas: f32[:], blocks: i64) {
                 var from = iz + step;
                 while from > 0 && from < NZ - 1 &&
                       probe_place(wins, float3 { p.x, PLAN_Y0 - from * CELL, p.z }) == -2 { from += step; }
+                var from_h = ih;
+                if niche_light {
+                    let up = niche_above_below(wins, p, ix, ih);
+                    if up.x >= 0 {
+                        from = up.x as i64;
+                        from_h = up.y as i64;
+                    }
+                }
                 let x = ih * NX + ix;
                 for c in blocks {
                     let to = 4 * ((c * NZ + iz) * ATLAS_W + x);
-                    let at = 4 * ((c * NZ + from) * ATLAS_W + x);
+                    let at = 4 * ((c * NZ + from) * ATLAS_W + from_h * NX + ix);
                     for f in 4 { atlas[to + f] = atlas[at + f]; }
                 }
             }
         }
     }
+}
+
+// For a walled probe p (whole grid column ix, height ih) in a niche's column, under its sill
+// or over its head, or past its inner glass: the niche's probe nearest it in height (its row
+// iz and its height ih), which the sill, the bottom rail and the head read beside it; -1
+// elsewhere.
+fn niche_above_below(wins: room_shell::Opening[3]&, p: float3, ix: i64, ih: i64) -> int2 {
+    guard p.y > wall_face() else { return int2 { -1, -1 }; }
+    let x0 = room_shell::LIBRARY.walls[room_shell::FAR_WALL].a.x;
+    var row = -1;
+    for iz in NZ {
+        let y = PLAN_Y0 - iz * CELL;
+        if y > wall_face() && y < glass_y() { row = iz; }
+    }
+    guard row >= 0 else { return int2 { -1, -1 }; }
+    for dist in NH {
+        for sign in [-1, 1] {
+            let h = ih + sign * dist;
+            guard h >= 0 && h < NH else { continue; }
+            if probe_place(wins, float3 { x0 - INSET - ix * CELL, PLAN_Y0 - row * CELL, INSET + h * CELL }) >= 0 { return int2 { row as i32, h as i32 }; }
+        }
+    }
+    return int2 { -1, -1 };
 }
 
 // The bounces. The room's surfaces as cells, about half a metre a side on the floor, the
@@ -887,9 +1007,12 @@ let HALL_C0 = 648;         // + FLOOR_NX × WALL_NH
 let STOVE_C0 = 792;
 let FAR_C0 = 904;          // + FLOOR_NY × WALL_NH
 let NICHE_C0 = 1016;
-let TABLE_C = 1208;        // + 3 × NICHE_CELLS
-let LACE_C0 = 1209;
-let CELLS = 1233;          // + 3 windows × 2 panels × LACE_BANDS
+let CASE_ACROSS = 2;
+let CASE_UP = 5;
+let CASE_C0 = 1208;        // + 3 × NICHE_CELLS: the inner casements' fronts (niche_light), CASE_ACROSS × CASE_UP
+let TABLE_C = 1238;        // + 3 × CASE_ACROSS × CASE_UP
+let LACE_C0 = 1239;
+let CELLS = 1263;          // + 3 windows × 2 panels × LACE_BANDS
 // How many times the room throws its light on after the first: one, as two and three
 // change no patch by more than a level (build/notes/panels-shade/) and cost the bake's time.
 let BOUNCES = 1;
@@ -921,6 +1044,7 @@ struct Bounce {
     made:          bool,
     made_shutters: bool,
     made_hang:     f32,
+    made_niche:    bool,
     sun:           float3[CELLS],
     leaves:        float3[CELLS],
     gather:        float3[CELLS],
@@ -1055,6 +1179,14 @@ fn make_cells(bounce: Bounce&) {
                 }
             }
         }
+        // The inner casement's front, facing the niche (niche_light; none without): its frame,
+        // sashes and bars where they cover each cell, the panes left out.
+        for u in CASE_UP {
+            for i in CASE_ACROSS {
+                bounce.cells[CASE_C0 + (k * CASE_UP + u) * CASE_ACROSS + i] = if niche_light { casement_cell(o, i, u) }
+                                                                           else { Cell { float3_0, float3 { 0.0, -1.0, 0.0 }, PAINT_ALBEDO, 0.0, k } };
+            }
+        }
         // The lace before it: each panel's bands, between its inner and outer edge at the
         // band's middle, facing the room.
         let band = (room_shell::LACE_TOP - room_shell::LACE_HEM) / LACE_BANDS;
@@ -1073,6 +1205,39 @@ fn make_cells(bounce: Bounce&) {
     bounce.made = true;
     bounce.made_shutters = room_shell::shutters_on;
     bounce.made_hang = room_shell::lace_hang;
+    bounce.made_niche = niche_light;
+}
+
+// Cell (i across, u up) of niche o's inner casement's front: the part of its rectangle (the
+// niche's width by the casement's height) its members cover, sampled 12 × 12, at their middle,
+// facing the niche.
+fn casement_cell(o: room_shell::Opening, i: i64, u: i64) -> Cell {
+    let w = 0.5 * o.width;
+    let wide = o.width / CASE_ACROSS;
+    let high = o.height / CASE_UP;
+    let boxes = room_shell::casement_members(o);
+    let g = o.glass.x;
+    var at = float3_0;
+    var n = 0;
+    for sj in 12 {
+        for si in 12 {
+            let x = -w + (i + (si + 0.5) / 12.0) * wide;
+            let y = o.sill + (u + (sj + 0.5) / 12.0) * high;
+            var covered = false;
+            for b in boxes {
+                // The inner casement's members: those round the inner glass's depth.
+                guard b.hi.z > -(g + 0.06) && b.lo.z < -(g - 0.06) else { continue; }
+                if x > b.lo.x && x < b.hi.x && y > b.lo.y && y < b.hi.y { covered = true; }
+            }
+            guard covered else { continue; }
+            at = at + float3 { o.mid + x, 0.0, y };
+            n++;
+        }
+    }
+    guard n > 0 else { return Cell { float3_0, float3 { 0.0, -1.0, 0.0 }, PAINT_ALBEDO, 0.0, -1 }; }
+    let c = at * (1.0 / n);
+    return Cell { float3 { c.x, wall_face() + g - 0.05, c.z }, float3 { 0.0, -1.0, 0.0 }, PAINT_ALBEDO, wide * high * n / 144.0,
+                  niche_of(float3 { c.x, wall_face() + g - 0.05, c.z }) };
 }
 
 // The niche a point behind the window wall's face lies in: -1 before the face, -2 inside the
@@ -1121,7 +1286,7 @@ fn balanced(c: float3) -> float3 {
 // the sun (sun_patches) and the sky through their window, throw on what they stop. Into
 // bounce.leaves; bounce.seen starts with all of it but the sun's, which the patches carry.
 fn first_light(sun: Sun, bounce: Bounce&) {
-    if !bounce.made || bounce.made_shutters != room_shell::shutters_on || bounce.made_hang != room_shell::lace_hang {
+    if !bounce.made || bounce.made_shutters != room_shell::shutters_on || bounce.made_hang != room_shell::lace_hang || bounce.made_niche != niche_light {
         make_cells(bounce);
     }
     bounce.cells[TABLE_C] = Cell { float3 { sun.table.x + table_off.x, sun.table.y + table_off.y, sun.table.w }, float3 { 0.0, 0.0, 1.0 }, TABLE_ALBEDO,
@@ -1275,10 +1440,13 @@ fn gather_half(sun: Sun, bounce: Bounce&) {
 fn gather_cells(sun: Sun, bounce: Bounce&, wins: room_shell::Opening[3]&, p: float3, kp: i64, f: float3) -> Gathered {
     let near2: f32 = gather_near;
     var g = Gathered { float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0 };
+    let face = wall_face();
+    let behind_lace = niche_light && f.y < 0.0 && p.y < face - room_shell::LACE_OFF && p.y > face - NEAR_PLANE;
     for j in CELLS {
         let b .= bounce.cells[j];
         let l = bounce.seen[j];
         guard b.area > 0.0 && l.x + l.y + l.z > 0.0 else { continue; }
+        if behind_lace && j >= LACE_C0 { g.ey = g.ey + lace_on_wall(b, l, float3 { p.x, face, p.z }); }
         let v = b.at - p;
         let off = if niche_faces && j >= LACE_C0 { abs(dot(b.normal, v)) } else { -dot(b.normal, v) };
         guard off > 0.0 else { continue; }
@@ -1308,6 +1476,27 @@ fn gather_cells(sun: Sun, bounce: Bounce&, wins: room_shell::Opening[3]&, p: flo
         take(g, f, l * (lets * b.area * off / (PI * r * r2)), v / r);
     }
     return g;
+}
+
+// The light lace cell b (leaving it, l) throws back on the window wall's face at q, behind
+// it (niche_light): a probe before the wall stands in front of the lace, which the wall, the
+// shutters' fronts and the frames in the niche's mouth see from behind.
+fn lace_on_wall(b: Cell&, l: float3, q: float3) -> float3 {
+    let side = sqrt(b.area);
+    let ta = float3 { 1.0, 0.0, 0.0 };
+    let tb = cross(b.normal, ta);
+    let each = b.area / (SPLIT * SPLIT);
+    var e = float3_0;
+    for sj in SPLIT {
+        for si in SPLIT {
+            let c = b.at + ta * (side * ((si + 0.5) / SPLIT - 0.5)) + tb * (side * ((sj + 0.5) / SPLIT - 0.5));
+            let v = c - q;
+            let r2 = max(dot(v, v), 1e-4);
+            let r = sqrt(r2);
+            e = e + l * (each * abs(dot(b.normal, v)) * max(-v.y / r, 0.0) / (PI * r * r2));
+        }
+    }
+    return e;
 }
 
 // The half grid's values (Gathered's) at the whole grid's probe (ix, iz, ih), trilinear.

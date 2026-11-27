@@ -115,7 +115,9 @@
 //       and on every surface, rooms::Room's panes.w; on)] [--stove on|off]
 //       [--volumes on|off (--light physical: the probe volumes, room_light::volumes_on, the windows' spaces between
 //       the panes; on)] [--cavity-up N --cavity-across N (their probes up and across, room_light::cavity_up and
-//       cavity_across; 20, 7)]
+//       cavity_across; 20, 7)] [--niche-light on|off (--light physical: the niche's light, room_light::niche_light, the
+//       sun the inner casement's members catch in the niche thrown on, the probes under the sill and over the head
+//       the niche's; off)]
 //       [--paint-relief K (the painted wood's relief tile's strength, 1 as made)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
 //       0.15 by default, 0 as made; Y switches 0.15 and 0)]
@@ -1660,6 +1662,7 @@ fn main() {
     room_light::stove_stops_sun = physical;
     room_light::sill_settle = physical;
     room_light::volumes_on = physical && !(flag_value(argv, "--volumes") > 0 && argv[flag_value(argv, "--volumes")] == "off");
+    room_light::niche_light = physical && flag_value(argv, "--niche-light") > 0 && argv[flag_value(argv, "--niche-light")] == "on";
     room_light::cavity_up = number(argv, "--cavity-up", room_light::cavity_up) as i64;
     room_light::cavity_across = number(argv, "--cavity-across", room_light::cavity_across) as i64;
     render3d::contact_look = four(argv, "--contact", render3d::contact_look);
@@ -2583,7 +2586,7 @@ fn main() {
             if physical {
                 format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --camera-ev ", render3d::camera_ev, " --props-wrap ",
                        render3d::props_wrap, " --casement-depth ",
-                       if casement_depth { "on" } else { "off" }, " --volumes ", on_off(room_light::volumes_on), " --grade ",
+                       if casement_depth { "on" } else { "off" }, " --volumes ", on_off(room_light::volumes_on), " --niche-light ", on_off(room_light::niche_light), " --grade ",
                        GRADE_WAYS[if graded { 0 } else { 1 }], " --grade-ev ", EXPOSURES[exposure]);
             }
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],

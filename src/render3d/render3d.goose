@@ -2366,8 +2366,8 @@ fn light_baked(g: Gpu&) -> bool { g.room_on && g.room.baked.x + g.room.baked.y >
 
 // What the shell's baked light is made from: the key, the room's light, the tree, the
 // casements' members' depth (panes.w), whether the props take their nine harmonics
-// (props_light), the rug in the floor's cells and the exact gather (room_light::rug_in_bake,
-// gather_exact), the table's top, the bounces and the sun's saturation on the room, and the bake's own
+// (props_light), the rug in the floor's cells, the exact gather and the niche's light
+// (room_light::rug_in_bake, gather_exact, niche_light), the table's top, the bounces and the sun's saturation on the room, and the bake's own
 // settings (room_light's bounce_grey, lace_source, gather_near), and whether the windows
 // have their shutters (room_shell::shutters_on), how far the lace hangs over the opening
 // (room_shell::lace_hang), and where the games table stands in the plan.
@@ -2377,7 +2377,7 @@ fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     let r = g.room;
     return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.panes, f.room_axes,
             float4 { if props_light { 1.0 } else { 0.0 }, if room_light::rug_in_bake { 1.0 } else { 0.0 },
-                     if room_light::gather_exact { 1.0 } else { 0.0 }, if room_light::volumes_on { room_light::cavity_up + 1000 * room_light::cavity_across } else { 0.0 } },
+                     (if room_light::gather_exact { 1.0 } else { 0.0 }) + (if room_light::niche_light { 2.0 } else { 0.0 }), if room_light::volumes_on { room_light::cavity_up + 1000 * room_light::cavity_across } else { 0.0 } },
             float4 { mesh::TABLE_R, g.tree_ms as f32, light_bounces as f32, room_sun.x },
             float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
                      (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang },
@@ -4218,7 +4218,8 @@ fn meter_of(b: room_light::Bounce&, gain: f32) -> f32 {
     var area: f32 = 0.0;
     for c in room_light::LACE_C0 {
         let a = b.cells[c].area;
-        guard a > 0.0 else { continue; }
+        // Not the inner casements' fronts (niche_light), whose sunlit tops and sides they carry.
+        guard a > 0.0 && (c < room_light::CASE_C0 || c >= room_light::TABLE_C) else { continue; }
         let l = b.seen[c] + b.sun[c] * (gain / (PI * a));
         sum += a * log2(max(0.2126 * l.x + 0.7152 * l.y + 0.0722 * l.z, 1e-8));
         area += a;
