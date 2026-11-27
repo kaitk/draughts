@@ -83,8 +83,9 @@
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
 //       [--box-window on|off (task 127's box window, its casements from room_shell's box_window.goose; on; off window B's, to be dropped)]
-//       [--window-metal LEVEL,MOTTLE,ROUGH,NICHE (its hardware's antique brass, task 129: LEVEL 1 to 5, under 1 the
-//        flat bronze; how much of the mottling shows, 0.5; added roughness, 0; the niche's light it reflects, 0)]
+//       [--window-metal LEVEL,MOTTLE,ROUGH,PANES (its hardware's antique brass, task 129: LEVEL 1 to 5, under 1 the
+//        flat bronze; how much of the mottling shows, 0.5; added roughness, 0; how much of the panes beside it its
+//        reflection sees, 0 to 1; 1.5,0.5,0,1 under --light physical, else 0,0.5,0,0)]
 //       [--rug on|off (the rug under the games table)] [--chairs on|off (the two chairs at it)]
 //       [--props-light off|on|kept (the table and the chairs lit from the room's probes where each pixel is, through
 //       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)]
@@ -343,7 +344,7 @@ var sun_by_height = true;
 var sun_color_height: f32 = -1.0;
 var sun_color_given = false;
 // The antique brass's level while the window's metal is the bronze (the Window section).
-var brass_level: f32 = 4.0;
+var brass_level: f32 = 1.5;
 fn sun_color_as(height: f32) -> f32 { return if sun_color_height >= 0.0 { sun_color_height } else { height }; }
 fn physical_sun(made: rooms::Room, height: f32) -> float4 {
     let key = rooms::color_of(made.key_color);
@@ -1820,7 +1821,7 @@ fn main() {
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
     room_shell::box_window_on = !(flag_value(argv, "--box-window") > 0 && argv[flag_value(argv, "--box-window")] == "off");
-    room_shell::window_metal = four(argv, "--window-metal", room_shell::WINDOW_METAL_OFF);
+    room_shell::window_metal = four(argv, "--window-metal", if physical { room_shell::WINDOW_METAL_PHYSICAL } else { room_shell::WINDOW_METAL_OFF });
     // The stove in its corner.
     room_shell::stove_on = !(flag_value(argv, "--stove") > 0 && argv[flag_value(argv, "--stove")] == "off");
     render3d::paint_relief = number(argv, "--paint-relief", 1.0);
@@ -2335,7 +2336,7 @@ fn main() {
                     }
                     slider(c, "  brass's mottling", room_shell::window_metal.y, 0.0, 1.0);
                     slider(c, "  brass's roughness +", room_shell::window_metal.z, -0.3, 0.3);
-                    slider(c, "  the niche's light", room_shell::window_metal.w, 0.0, 1.0);
+                    slider(c, "  the panes in it", room_shell::window_metal.w, 0.0, 1.0);
                 }
                 ui::tree_state_pop(c);
             }

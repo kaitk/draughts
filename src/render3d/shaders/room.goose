@@ -488,9 +488,7 @@ let ROOM_FRAG = """
     // The windows' hardware (room_shell's box window): a dark bronze, its colour at normal
     // incidence (sRGB) and roughness (the second of build/notes/box-window/hardware.html's three).
     const vec4 WINDOW_BRASS = vec4(0.34, 0.25, 0.17, 0.5);
-    // How much of the niche's window light the hardware's reflection takes, growing smoothly
-    // as it turns from the room to the glass (a rough lobe's share), fitted to Cycles' grip:
-    // window_metal.w (room_shell::WINDOW_METAL_OFF's 0 since the niche's light).
+    // How much of the panes beside it the hardware's reflection sees (niche_seen): window_metal.w.
     // Task 129's antique brass (window_metal.x 1 to 5, room_shell::window_metal): one aged yellow
     // brass in three states, bare (C260's f0), a light tarnish and dark deposits, their
     // metalness and roughness; which covers a point is a threshold on the brass tile's rank
@@ -858,6 +856,36 @@ let ROOM_FRAG = """
         if (sharp < 0.001) return wide;
         vec3 lr = vec3(dot(r.xz, axes.xy), r.y, dot(r.xz, axes.zw));
         return mix(wide, room_seen(p, lp, r, lr, alpha, nov, px), sharp);
+    }
+
+    // What the windows' hardware sees along r from p, in the niche outside the room's box: the
+    // window's glass where r meets it (the view out's light, the casement's members as the
+    // light map has them, blurred as the lobe widens), the room's wide light elsewhere.
+    // Cycles' highlights on the metal are the bright panes beside it.
+    vec3 niche_seen(vec3 p, vec3 lp, vec3 r, float alpha) {
+        vec2 nw = -axes.zw;
+        float toward = dot(r.xz, nw);
+        vec3 wide = room_wide(lp, r);
+        if (shell.x < 0.5 || toward < 1e-3) return wide;
+        float metre = shell.w;
+        float along = dot(p.xz, axes.xy);
+        float mid = shell_mids[0];
+        for (int i = 1; i < 3; i++) {
+            if (float(i) < shell.x && abs(along - shell_mids[i]) < abs(along - mid)) mid = shell_mids[i];
+        }
+        // Through both casements, each member as deep as it is at this slant (the box between
+        // the panes, its lining, takes the grazing rays).
+        vec2 slope = vec2(dot(r.xz, axes.xy), r.y) / toward;
+        float through = 1.0;
+        for (int k = 0; k < 2; k++) {
+            float t = (shell.y + (k == 0 ? shell_glass.x : shell_glass.y) - dot(p.xz, nw)) / toward;
+            if (t < 0.0) continue;
+            vec3 q = p + r * t;
+            vec2 w = vec2(dot(q.xz, axes.xy) - mid, q.y - shell.z) / metre;
+            through *= casement(w, (0.003 * metre + t * (0.01 + 1.2 * alpha)) / metre, slope);
+        }
+        vec3 view = lace_light.rgb / max(params.x * shade.w, 1e-3);
+        return mix(wide, view, window_metal.w * through);
     }
     #endif
 
@@ -2023,7 +2051,7 @@ let ROOM_FRAG = """
         // The windows' hardware stands in a niche, outside the room's box, where the box's sharp
         // lookup reads far too bright (1.4 times Cycles' on the grip): the room's wide light
         // there, the window's from the niche below.
-        vec3 env = room_baked.x > 0.5 ? (window_hw ? room_wide(v_local, rv) : room_reflection(p, v_local, rv, ar, nov, px))
+        vec3 env = room_baked.x > 0.5 ? (window_hw ? niche_seen(p, v_local, rv, ar) : room_reflection(p, v_local, rv, ar, nov, px))
                                       : sh_eval(rv) * params.z;
     #else
         vec3 env = room_baked.x > 0.5 ? room_wide(v_local, rv) : sh_eval(rv) * params.z;
@@ -2033,10 +2061,9 @@ let ROOM_FRAG = """
     #ifdef ROOM_METALS
         // Brass in a window's niche (the shutters' hinges) sees the window and the lit reveals
         // the way it faces out, not the room's box behind the glass; the windows' own hardware
-        // (its fraction a half) the room the way it faces in, as Cycles has it.
-        if ((metal > 0.9 || window_hw) && v_local.z < room_box.z)
-            env = mix(env, lace_light.rgb / max(params.x * shade.w, 1e-3),
-                      window_hw ? window_metal.w * (0.5 - 0.5 * dot(rv.xz, axes.zw)) : clamp(0.6 - dot(rv.xz, axes.zw), 0.15, 1.0));
+        // (its fraction a half) sees the panes beside it (niche_seen).
+        if (metal > 0.9 && !window_hw && v_local.z < room_box.z)
+            env = mix(env, lace_light.rgb / max(params.x * shade.w, 1e-3), clamp(0.6 - dot(rv.xz, axes.zw), 0.15, 1.0));
     #endif
         spec *= gloss;
         fc *= gloss;

@@ -772,7 +772,7 @@ if F["window-metal"] is not None:
     look = [0.0 if F["window-metal"] == "flat" else float(F["window-metal"])] + look[1:]
 if look[0] >= 1.0:
     # Task 129's antique brass as ROOM_FRAG has it (the tuner's --window-metal, which the export
-    # writes): its level, mottling and roughness; the niche's share is the game's own.
+    # writes): its level, mottling and roughness; the panes' share is the game's own (Cycles sees them).
     sys.path.insert(0, os.path.dirname(__file__))
     import brass
     mats["window_metal"] = brass.antique_brass("window_metal", look[0], os.path.join(scene_dir, "brass_tile.ppm"),

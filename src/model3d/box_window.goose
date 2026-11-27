@@ -337,9 +337,13 @@ let WINDOW_METAL = float4 { 0.34, 0.25, 0.17, 0.5 };
 // Task 129's antique brass in its place (ROOM_FRAG's window metal, the Surfaces block's
 // window_metal, the light tuner's --window-metal): x its tone's level, 1 to 5, continuous (under
 // 1 the flat WINDOW_METAL); y how much of the colour's mottling shows (0.5); z added to its
-// roughness; w how much of the niche's window light its reflection takes (0: with task 128's niche
-// light in the probes the grip and housing match Cycles' at level 4 and flat; it was 0.3 before).
+// roughness; w how much of the window's panes beside it its reflection sees (ROOM_FRAG's
+// niche_seen; 0 the room's wide light alone, as task 127 left it).
 let WINDOW_METAL_OFF = float4 { 0.0, 0.5, 0.0, 0.0 };
+// Under the light tuner's --light physical, and in the Cycles export: the antique brass at level
+// 1.5 with the panes in its reflection (task 129, the user's pick of a level about 2 or between 1
+// and 2; 1.5 reads nearest Cycles' level 2 in the room, whose room-facing faces read darker).
+let WINDOW_METAL_PHYSICAL = float4 { 1.5, 0.5, 0.0, 1.0 };
 var window_metal = WINDOW_METAL_OFF;
 // The wear a hardware vertex carries in its material's fraction: 0.5 plus WEAR_SPAN times it,
 // -1 (sheltered) to 1 (rubbed).
