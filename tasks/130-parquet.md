@@ -35,8 +35,9 @@ roughness W); under `--light physical` the floor's mirror takes the coat's.
   (45% quarter-sawn) for now; the later stages are shown with it and with its contrast softened
   (`--floor-range 0.022,0.080`, ours 0.0288–0.0734). Against the concepts the difference is the
   grain's contrast beside the blocks' own tones: theirs fine and faint, the blocks apart in tone.
-- [ ] 1. The grain out of the reflection: its share of the wax film's normal (a quarter
-  today) down to 10–25% of it. Less urgent under a matt wax; look before tuning.
+- [x] 1. The grain in the reflection (2026-11-27): the wax film's share of the grain's relief
+  (`--floor-film-grain`) swept 0.25, 0.12, 0.05, 0; under the matt wax hardly different, 0 the
+  window's glow clean. 0.05 picked, the same cost as 0 (one multiply).
 - [ ] 2b. The grain, later: fainter and finer, more tone between blocks.
 - [x] 3. The joints (2026-11-27): each plank's edges rounded down into the joint (`--floor-joint
   WIDTH_MM,SLOPE,DARK`), the slope averaged over the pixel's footprint (`joint_slope`) and what it
@@ -46,7 +47,19 @@ roughness W); under `--light physical` the floor's mirror takes the coat's.
   dark, checked in motion. Open for the end: the dark joint still shows as a line inside the
   window's reflection; with it at 0 (the mirror kept across the joint too) the line went but
   that had issues of its own. Not yet in the Cycles export.
-- [ ] 4. The blocks' tilt and cup; wear only if it still shows.
+- [x] 4. The blocks' cup and tilt (2026-11-27, `--floor-shape CUP,TILT`): today's 0.012 and 0.01,
+  nearly flat (0.004, 0.003, the brief's new floor), more tilt (0.025, the glow's edge stepping
+  block to block), more cup (0.03, each plank shaded across its width). The user picked more
+  cup, more natural: 0.03 and 0.01 under `--light physical`. Wear left as it is.
+- The tuner's panel (Wainscot, with the floor ours under `--light physical`): the planks' cup and
+  tilt, the joints' rounding, its slope and darkness, the grain in the wax; P prints them.
+
+## Open for the end
+
+- The dark joint as a line inside the window's reflection (stage 3).
+- 2b, the grain.
+- The Cycles export: the matt wax only; not the joints, cup and tilt.
+- The floor shader's cost (the rounding's filter), measured at the task's end.
 
 ## Acceptance criteria
 

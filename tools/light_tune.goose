@@ -272,8 +272,9 @@ var OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07
 // y the rounding's slope at the joint, z how dark the joint is (1 as before). 2 mm at 0.5, half as
 // dark: the user's pick (2026-11-27, task 130); 0, 0, 1 the joints as before.
 var FLOOR_JOINT = float4 { 2.0, 0.5, 0.5, 0.0 };
-// The grain's share in our floor's wax film, the mirror's normal (--floor-film-grain).
-var FLOOR_FILM_GRAIN: f32 = 0.25;
+// The grain's share in our floor's wax film, the mirror's normal (--floor-film-grain): 0.05, the
+// window's glow nearly clean (2026-11-27, task 130; 0.25 before, and still without the wood's finish).
+var FLOOR_FILM_GRAIN: f32 = 0.05;
 
 fn linear_of(c: f32) -> f32 {
     let v = c / 255.0;
@@ -1707,8 +1708,9 @@ fn main() {
     FLOOR_JOINT = four(argv, "--floor-joint", FLOOR_JOINT);
     FLOOR_FILM_GRAIN = number(argv, "--floor-film-grain", FLOOR_FILM_GRAIN);
     // --floor-shape CUP,TILT: the planks' cup (the slope at their edges) and tilt (each one's
-    // slope at most), in place of surfaces::LOOK's 0.012 and 0.01.
-    let shape4 = four(argv, "--floor-shape", float4 { -1.0, -1.0, 0.0, 0.0 });
+    // slope at most), in place of surfaces::LOOK's 0.012 and 0.01; under --light physical cupped
+    // more, 0.03, which looks more natural (the user, 2026-11-27, task 130).
+    let shape4 = four(argv, "--floor-shape", if physical { float4 { 0.03, 0.01, 0.0, 0.0 } } else { float4 { -1.0, -1.0, 0.0, 0.0 } });
     render3d::floor_shape = float2 { shape4.x, shape4.y };
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
@@ -2317,6 +2319,14 @@ fn main() {
                     choice(c, "Woods: the wainscot", wood_ways[render3d::WOOD_OAK], WOOD_WAYS[0..3]);
                     choice(c, "  the table and chairs", wood_ways[render3d::WOOD_TABLE], WOOD_WAYS[0..3]);
                     choice(c, "  the floor", wood_ways[render3d::WOOD_FLOOR], WOOD_WAYS[..]);
+                    if wood_ways[render3d::WOOD_FLOOR] == render3d::WOOD_STAINED {
+                        slider(c, "Floor: planks' cup", render3d::floor_shape.x, 0.0, 0.08);
+                        slider(c, "  planks' tilt", render3d::floor_shape.y, 0.0, 0.05);
+                        slider(c, "  joints' rounding (mm)", FLOOR_JOINT.x, 0.0, 4.0);
+                        slider(c, "  rounding's slope", FLOOR_JOINT.y, 0.0, 1.0);
+                        slider(c, "  joints' darkness", FLOOR_JOINT.z, 0.0, 1.0);
+                        slider(c, "  grain in the wax", FLOOR_FILM_GRAIN, 0.0, 0.5);
+                    }
                 }
                 slider(c, "Oak light", oak.x, 0.25, 8.0);
                 slider(c, "Oak colour", oak.y, 0.0, 1.5);
@@ -2702,6 +2712,9 @@ fn main() {
                 flag_four(line, "--table-coat", g.table_spec.coat);
                 format(line, " --woods ", WOOD_WAYS[wood_ways[render3d::WOOD_OAK]], ",", WOOD_WAYS[wood_ways[render3d::WOOD_TABLE]], ",",
                        WOOD_WAYS[wood_ways[render3d::WOOD_FLOOR]]);
+                flag_four(line, "--floor-joint", FLOOR_JOINT);
+                flag_pair(line, "--floor-shape", render3d::floor_shape);
+                flag_one(line, "--floor-film-grain", FLOOR_FILM_GRAIN);
             }
             format(line, " --room-sun ", render3d::room_sun.x);
             flag_four(line, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
