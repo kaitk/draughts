@@ -1696,6 +1696,9 @@ fn main() {
     render3d::paper_detail = if render3d::paper_metal { four(argv, "--paper-detail", PHYSICAL_PAPER_DETAIL) } else { float4_0 };
     // The woods' finishes (--woods), with the coat only; a picture read when first asked for.
     var wood_ways = if render3d::physical_coat { wood_ways_of(argv) } else { [0, 0, 0] };
+    // --floor-finish: the floor's finish in place of WOOD_FINISHES' (the base's roughness x to y,
+    // the coat's weight z and roughness w), for trying how glossy the wax is.
+    let floor_finish = four(argv, "--floor-finish", float4 { 0.0, 0.0, -1.0, 0.0 });
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     sun_color_given = has(argv, "--sun-color-height");
@@ -2805,6 +2808,7 @@ fn main() {
             }
             render3d::woods[k] = wood_of(k, wood_ways[k]);
         }
+        if floor_finish.z >= 0.0 { render3d::woods[render3d::WOOD_FLOOR].finish = floor_finish; }
         render3d::base_look = base_look;
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
