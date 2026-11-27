@@ -1316,9 +1316,10 @@ fn draw_tree(own: Own&, g: render3d::Gpu&) {
     let t = g.tree;
     let tb = render3d::tree_block(g, own.samples);
     gfx::bind(if g.hdr { t.hdr_tube } else { t.tube });
-    let bark_height, bark_cavity = render3d::tree_bark_textures(g);
+    let bark_height, bark_cavity, bark_detail = render3d::tree_bark_textures(g);
     gfx::bind_texture(gfx::FRAGMENT, 0, bark_height, g.aniso);
     gfx::bind_texture(gfx::FRAGMENT, 1, bark_cavity, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 2, bark_detail, g.aniso);
     gfx::uniforms(gfx::VERTEX, 0, g.frame);
     gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
     gfx::uniforms(gfx::VERTEX, 1, tb);
@@ -1389,9 +1390,10 @@ fn tree_card_pass(own: Own&, g: render3d::Gpu&, f: render3d::Frame, b: render3d:
     pass.resolve[0] = t.card;
     gfx::begin_pass(pass);
     gfx::bind(t.card_tube);
-    let bark_height, bark_cavity = render3d::tree_bark_textures(g);
+    let bark_height, bark_cavity, bark_detail = render3d::tree_bark_textures(g);
     gfx::bind_texture(gfx::FRAGMENT, 0, bark_height, g.aniso);
     gfx::bind_texture(gfx::FRAGMENT, 1, bark_cavity, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 2, bark_detail, g.aniso);
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     gfx::uniforms(gfx::VERTEX, 1, b);

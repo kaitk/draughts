@@ -31,8 +31,11 @@ let TREE_FLUTTER = "#define TREE_WIND 1\n#define TREE_FLUTTER 1\n";
 // tree_bark x 1 the tubes' bark from the age layers (trees::bark_layers), 0 the first tile,
 // y the relief's strength (1 its true slopes), z and w the age from the radius (1 over the
 // log of the oldest radius over the youngest, the log of the youngest); tree_matte x the
-// light's wrap past the terminator scattered under the bark's surface (0 none), y the
-// surface's roughness for Oren-Nayar's diffuse (0 Lambert's).
+// light's wrap past the terminator scattered under the bark's surface on the youngest wood
+// (less on older, none on the old trunk; 0 none), y the surface's roughness for Oren-Nayar's
+// diffuse (0 Lambert's); tree_skin (task 117's round two, each 0 off) x the detail's fine
+// relief and secondary cracks, y the albedo's drift and weathering, z the lichen's cover, w
+// the broad specular (1 the dielectric's own).
 let TREE_HEAD = """
     layout(set = FRAME_SET, binding = 1) uniform Tree {
         vec4 tree_origin;
@@ -43,6 +46,7 @@ let TREE_HEAD = """
         vec4 tree_layers;
         vec4 tree_bark;
         vec4 tree_matte;
+        vec4 tree_skin;
     };
     """;
 
@@ -247,14 +251,23 @@ let TREE_WOOD_VERT = """
 // and Maximov 2016), the sun where it grazes; the albedo light on the ridges' crowns, dark in
 // the furrows. Per tier: high central slopes (five taps of the height), TREE_BARK_STANDARD
 // forward ones (three), TREE_BARK_PHONE the screen's derivatives of one. tree_matte: the
-// sun wrapped past the terminator, warmer (light scattered in the cork, an emulation), and
-// Oren-Nayar's rough diffuse in place of Lambert's.
+// sun wrapped past the terminator, warmer (light scattered in the cork, an emulation), on
+// the youngest wood by its age and none on the old trunk, and Oren-Nayar's rough diffuse in
+// place of Lambert's. tree_skin (round two, the bark's spec, slot 2 the detail texture,
+// trees::bark_detail): the cork's fine relief and the secondary cracks added to the height
+// (each tap reads the detail too while it is on), the small cracks darkening the sky a
+// little; the albedo drifting between warm and olive grey, the ridges' tops and the cork's
+// domes lighter; the lichen's pale cover on grown bark; a GGX lobe (F0 0.034, IOR 1.45),
+// its roughness by age (0.55 the shoots, 0.72 young limbs, 0.9 the old trunk), on the sun
+// alone: the sky's reflection is already in the albedo matched to the photos (added, it
+// greyed the bark by half again under an overcast sky).
 let TREE_BARK_STANDARD = "#define TREE_BARK_STANDARD 1\n";
 let TREE_BARK_PHONE = "#define TREE_BARK_PHONE 1\n";
 let TREE_WOOD_FRAG = """
     #ifndef TREE_RIBBON
     layout(set = 2, binding = 0) uniform sampler2D bark;
     layout(set = 2, binding = 1) uniform sampler2D bark_cavity;
+    layout(set = 2, binding = 2) uniform sampler2D bark_detail;
     #endif
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
@@ -267,6 +280,13 @@ let TREE_WOOD_FRAG = """
     const vec3 BARK_CROWN = vec3(0.155, 0.145, 0.13);
     const vec3 BARK_FURROW = vec3(0.045, 0.038, 0.032);
     const vec3 BARK_SCATTER = vec3(1.0, 0.72, 0.5);
+    const vec3 BARK_WARM = vec3(0.165, 0.142, 0.118);
+    const vec3 BARK_OLIVE = vec3(0.136, 0.142, 0.11);
+    const vec3 BARK_LICHEN = vec3(0.2, 0.225, 0.17);
+    // The detail's relief at its full strength: the cork's fine relief and the secondary
+    // cracks' depth, millimetres a unit of the texel.
+    const float BARK_FINE_MM = 0.7;
+    const float BARK_CRACK_MM = 2.4;
     // The age layers' weights (trees::BARK_AGES: 0.45, 0.65, 0.82, 1), each a tent.
     vec4 bark_weights(float a) {
         return vec4(clamp((0.65 - a) / 0.2, 0.0, 1.0),
@@ -274,6 +294,15 @@ let TREE_WOOD_FRAG = """
                     clamp(min((a - 0.65) / 0.17, (1.0 - a) / 0.18), 0.0, 1.0),
                     clamp((a - 0.82) / 0.18, 0.0, 1.0));
     }
+    #ifndef TREE_RIBBON
+    // The bark's height at uv: x the age layers' (a channel's unit 25.5 mm), y the detail's in
+    // millimetres by its weights dw, read only while they are on.
+    vec2 bark_heights(vec2 uv, vec4 wt, vec2 dw) {
+        vec2 h = vec2(dot(texture(bark, uv), wt), 0.0);
+        if (dw.x + dw.y > 0.0) h.y = dot(texture(bark_detail, uv).rg, dw);
+        return h;
+    }
+    #endif
     void main() {
         vec3 l = normalize(light_dir.xyz);
         vec3 v = normalize(eye.xyz - v_world);
@@ -294,14 +323,23 @@ let TREE_WOOD_FRAG = """
         vec3 albedo;
         float cavity = 1.0;
         float grazing = 1.0;
+        float lichen = 0.0;
+        float age = clamp((log(max(v_light.z, 1e-4)) - tree_bark.w) * tree_bark.z, 0.0, 1.0);
         if (tree_bark.x > 0.5) {
-            float age = clamp((log(max(v_light.z, 1e-4)) - tree_bark.w) * tree_bark.z, 0.0, 1.0);
             vec4 wt = bark_weights(age);
             float grown = smoothstep(0.15, 0.45, age);
             vec2 e = max(footprint, vec2(1.0 / 256.0, 1.0 / 512.0));
+            vec4 dt = vec4(0.5, 1.0, 0.5, 0.0);
+            if (tree_skin.x + tree_skin.y + tree_skin.z > 0.0) dt = texture(bark_detail, v_uv);
+            // The fine relief on every age (young bark smoother), the small cracks on grown bark.
+            float cracked = smoothstep(0.3, 0.75, age);
+            vec2 dw = tree_skin.x * vec2(BARK_FINE_MM * mix(0.35, 1.0, age), BARK_CRACK_MM * cracked);
             float h = dot(texture(bark, v_uv), wt);
+            float hd = dot(dt.rg, dw);
+            float k = 25.5 * grown;
     #ifdef TREE_BARK_PHONE
-            vec2 dh = vec2(dFdx(h), dFdy(h));
+            float hm = h * k + hd;
+            vec2 dh = vec2(dFdx(hm), dFdy(hm));
             vec2 du = dFdx(v_uv);
             vec2 dv = dFdy(v_uv);
             float det = du.x * dv.y - du.y * dv.x;
@@ -309,19 +347,38 @@ let TREE_WOOD_FRAG = """
             float sy = (dh.y * du.x - dh.x * dv.x) / (abs(det) > 1e-12 ? det : 1e-12);
     #else
     #ifdef TREE_BARK_STANDARD
-            float sx = (dot(texture(bark, v_uv + vec2(e.x, 0.0)), wt) - h) / e.x;
-            float sy = (dot(texture(bark, v_uv + vec2(0.0, e.y)), wt) - h) / e.y;
+            // Forward slopes draw the cells' grooves as hard lines: the fine relief at 0.6.
+            dw.x *= 0.6;
+            hd = dot(dt.rg, dw);
+            vec2 ha = bark_heights(v_uv + vec2(e.x, 0.0), wt, dw);
+            vec2 hb = bark_heights(v_uv + vec2(0.0, e.y), wt, dw);
+            float sx = ((ha.x - h) * k + ha.y - hd) / e.x;
+            float sy = ((hb.x - h) * k + hb.y - hd) / e.y;
     #else
-            float sx = (dot(texture(bark, v_uv + vec2(e.x, 0.0)), wt) - dot(texture(bark, v_uv - vec2(e.x, 0.0)), wt)) / (2.0 * e.x);
-            float sy = (dot(texture(bark, v_uv + vec2(0.0, e.y)), wt) - dot(texture(bark, v_uv - vec2(0.0, e.y)), wt)) / (2.0 * e.y);
+            vec2 hr = bark_heights(v_uv + vec2(e.x, 0.0), wt, dw);
+            vec2 hl = bark_heights(v_uv - vec2(e.x, 0.0), wt, dw);
+            vec2 hu = bark_heights(v_uv + vec2(0.0, e.y), wt, dw);
+            vec2 hdn = bark_heights(v_uv - vec2(0.0, e.y), wt, dw);
+            float sx = ((hr.x - hl.x) * k + hr.y - hl.y) / (2.0 * e.x);
+            float sy = ((hu.x - hdn.x) * k + hu.y - hdn.y) / (2.0 * e.y);
     #endif
     #endif
-            // A channel's step is 25.5 mm; the tile 250 mm round and 500 along.
-            float k = 25.5 * tree_bark.y * grown;
-            n = normalize(n0 - round_way * (sx * k / 250.0) - t * (sy * k / 500.0));
+            // The slopes in millimetres a unit of uv; the tile 250 mm round and 500 along.
+            n = normalize(n0 - round_way * (sx * tree_bark.y / 250.0) - t * (sy * tree_bark.y / 500.0));
             cavity = mix(1.0, dot(texture(bark_cavity, v_uv), wt), grown);
-            float crown = smoothstep(-3.0, 2.0, (h * 255.0 - 128.0) * 0.1);
-            albedo = mix(BARK_FURROW, BARK_CROWN, crown) * tree_tint.z;
+            cavity *= 1.0 - 0.4 * tree_skin.x * cracked * (1.0 - dt.g);
+            float mm = (h * 255.0 - 128.0) * 0.1;
+            float crown = smoothstep(-3.0, 2.0, mm);
+            vec3 ridge = BARK_CROWN;
+            if (tree_skin.y > 0.0) {
+                float drift = (dt.b - 0.5) * 2.0;
+                ridge = mix(BARK_CROWN, drift > 0.0 ? BARK_OLIVE : BARK_WARM, clamp(abs(drift) * 2.0 * tree_skin.y, 0.0, 1.0));
+                // Sheltered plates darker, weathered tops back to the crown's light.
+                ridge *= 1.0 + tree_skin.y * (0.4 * smoothstep(1.0, 4.0, mm) + 0.3 * (dt.r - 0.5) - 0.2);
+            }
+            albedo = mix(BARK_FURROW, ridge, crown);
+            lichen = clamp(dt.a * tree_skin.z, 0.0, 1.0) * grown;
+            albedo = mix(albedo, BARK_LICHEN * (0.75 + 0.5 * dt.r), lichen) * tree_tint.z;
             grazing = clamp(abs(dot(n, l)) + 2.0 * cavity * cavity - 1.0, 0.0, 1.0);
         } else {
             vec4 b = texture(bark, v_uv);
@@ -341,11 +398,22 @@ let TREE_WOOD_FRAG = """
             diffuse *= 1.0 - 0.5 * s2 / (s2 + 0.33) + 0.45 * s2 / (s2 + 0.09) * facing * sin(max(ti, tr)) * tan(min(ti, tr));
         }
         vec3 sunlit = vec3(diffuse * grazing);
-        if (tree_matte.x > 0.0) {
-            float w = tree_matte.x;
+        float w = tree_matte.x * (1.0 - smoothstep(0.05, 0.65, age));
+        if (w > 0.0) {
             sunlit += BARK_SCATTER * (max(max(ndl + w, 0.0) / (1.0 + w) - max(ndl, 0.0), 0.0) * cavity);
         }
         vec3 c = albedo * (tree_sky(n) * (sky * tree_light.y * cavity) + sunlit * (sun * tree_light.x));
+        if (tree_skin.w > 0.0 && ndl > 0.0) {
+            float r = mix(0.55, 0.9, age) + 0.06 * lichen;
+            float a2 = r * r * r * r;
+            float nv = clamp(dot(n, v), 1e-3, 1.0);
+            vec3 hv = normalize(l + v);
+            float nh = max(dot(n, hv), 0.0);
+            float dd = nh * nh * (a2 - 1.0) + 1.0;
+            float vis = 0.5 / (ndl * sqrt(nv * nv * (1.0 - a2) + a2) + nv * sqrt(ndl * ndl * (1.0 - a2) + a2));
+            float f = 0.034 + 0.966 * pow(1.0 - max(dot(l, hv), 0.0), 5.0);
+            c += vec3(a2 / (dd * dd) * vis * f * ndl * grazing * sun * tree_light.x * tree_skin.w);
+        }
     #endif
         result = tree_out(c);
     #ifdef TREE_RIBBON

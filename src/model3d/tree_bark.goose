@@ -12,7 +12,11 @@
 // Two RGBA8 textures, each channel one age: the height (BARK_HEIGHT_MM a step from 128) and
 // the cavity, how open each texel is to the sky (1 open, its neighbourhood's height over
 // it). The shader blends the channels by the wood's age and takes the normal from the
-// height's slope (shaders::TREE_WOOD_FRAG).
+// height's slope (shaders::TREE_WOOD_FRAG). A third, the detail (task 117's round two),
+// holds what every age shares at the small scale: R the cork's fine relief (its cells' small
+// domes between grooves, and its fibres along the stem), G the secondary cracks in the
+// plates (1 none, 0 the deepest), B the colour's drift (0.5 the mean; lower a warmer
+// grey-brown, higher an olive grey), A the lichen's cover.
 namespace trees;
 import std;
 import vec;
@@ -51,9 +55,24 @@ let BARK_CROWN:       f32 = 0.45;
 let BARK_GRAIN_MM:    f32 = 0.7;
 let BARK_CRACK_NONE:  f32 = 1e9;
 let BARK_LENTICELS = 220;
+// The plates' edges jagged (bark_layers' `jagged`): the distance to the crack moved by up
+// to EDGE_JAG of the furrow's half width either way, by noise of a few texels.
+let BARK_EDGE_JAG: f32 = 0.7;
+// The secondary cracks: FINE_CRACKS short ones along the stem (FINE_RUN_LEAST..MOST
+// texels) and CROSS_CRACKS shorter ones across the ridges' crowns (CROSS_RUN_LEAST..MOST),
+// each stopping at a furrow. The cork's cells, CELLS_ACROSS × CELLS_ALONG over the tile.
+let BARK_FINE_CRACKS = 1400;
+let BARK_FINE_RUN_LEAST = 6;
+let BARK_FINE_RUN_MOST = 34;
+let BARK_CROSS_CRACKS = 700;
+let BARK_CROSS_RUN_LEAST = 3;
+let BARK_CROSS_RUN_MOST = 12;
+let BARK_CELLS_ACROSS = 64;
+let BARK_CELLS_ALONG = 72;
 
-// The bark's two textures with their mips, bark_bytes() each.
-fn bark_layers(heights: u8[>..]&, cavities: u8[>..]&) {
+// The bark's three textures with their mips, bark_bytes() each; with `jagged` the plates'
+// edges broken by noise (BARK_EDGE_JAG), else as round one made them.
+fn bark_layers(heights: u8[>..]&, cavities: u8[>..]&, details: u8[>..]&, jagged: bool) {
     let n = BARK_W * BARK_H;
     var crack:    f32[>..] = [];
     var taper:    f32[>..] = [];
@@ -105,6 +124,13 @@ fn bark_layers(heights: u8[>..]&, cavities: u8[>..]&) {
     var dist:         f32[>..] = [];
     var furrow_width: f32[>..] = [];
     var furrow_depth: f32[>..] = [];
+    var jag:          f32[>..] = [];
+    jag.resize(n, 0.0);
+    if jagged {
+        bark_add_noise(jag, lattice, 89, 48, 48, 0.65 * 2.0 * BARK_EDGE_JAG);
+        bark_add_noise(jag, lattice, 97, 128, 160, 0.35 * 2.0 * BARK_EDGE_JAG);
+        for k in n { jag[k] -= BARK_EDGE_JAG; }
+    }
     furrow_width.resize(n, 1.0);
     furrow_depth.resize(n, 0.0);
     height.resize(n, 0.0);
@@ -131,7 +157,7 @@ fn bark_layers(heights: u8[>..]&, cavities: u8[>..]&) {
             if s >= 0 {
                 let half_width = furrow_width[s as i64];
                 let depth = furrow_depth[s as i64];
-                let d = dist[k];
+                let d = dist[k] + jag[k] * half_width;
                 let shoulder = bark_step(0.0, 1.0, d / half_width);
                 let crown = clamp((d - half_width) * crown_reach, 0.0, 1.0);
                 h += -depth * (1.0 - shoulder) + depth * BARK_CROWN * (1.0 - (1.0 - crown) * (1.0 - crown));
@@ -156,6 +182,13 @@ fn bark_layers(heights: u8[>..]&, cavities: u8[>..]&) {
         }
         for k in n { cavities[k * 4 + layer] = bark_byte(clamp(1.0 - cavity[k] / 2.6, 0.1, 1.0)); }
     }
+    // The detail, from the oldest age's plates (near, dist and height as its snapshot left
+    // them): how far each texel lies inside its plate, in texels.
+    for k in n {
+        let s = near[k];
+        spare[k] = if s >= 0 { dist[k] + jag[k] * furrow_width[s as i64] - furrow_width[s as i64] } else { 1e9 };
+    }
+    bark_detail(details, spare, height, lattice);
     var from = 0;
     var w = BARK_W;
     var h = BARK_H;
@@ -163,6 +196,7 @@ fn bark_layers(heights: u8[>..]&, cavities: u8[>..]&) {
         let to = from + w * h * 4;
         halve(heights, from, to, w, h);
         halve(cavities, from, to, w, h);
+        halve(details, from, to, w, h);
         w /= 2;
         h /= 2;
         from = to;
@@ -444,6 +478,127 @@ fn bark_blur(x: f32[>..]&, spare: f32[>..]&, reach: i64) {
         for j in BARK_H {
             x[j * BARK_W + i] = s / span;
             s += spare[((j + reach + 1) % BARK_H) * BARK_W + i] - spare[((j - reach + BARK_H) % BARK_H) * BARK_W + i];
+        }
+    }
+}
+
+// The detail texture's level 0 (bark_layers): `inside` how far each texel lies inside its
+// plate (texels, under 0 in a furrow), `height` the oldest age's relief (mm).
+fn bark_detail(details: u8[>..]&, inside: f32[>..]&, height: f32[>..]&, lattice: f32[>..]&) {
+    let n = BARK_W * BARK_H;
+    details.clear();
+    details.resize(bark_bytes(), 0);
+    // The cork's cells: a jittered point a cell, each texel's two nearest (F1, F2); a cell's
+    // middle is a small dome, the border between two a groove.
+    var cell_x: f32[>..] = [];
+    var cell_y: f32[>..] = [];
+    var dice = Dice { mixed(0xC0BC311) };
+    let cw = BARK_W as f32 / BARK_CELLS_ACROSS;
+    let ch = BARK_H as f32 / BARK_CELLS_ALONG;
+    for k in BARK_CELLS_ACROSS * BARK_CELLS_ALONG {
+        cell_x.push(0.1 + 0.8 * roll(dice));
+        cell_y.push(0.1 + 0.8 * roll(dice));
+    }
+    var fibre:  f32[>..] = [];
+    var drift:  f32[>..] = [];
+    var lichen: f32[>..] = [];
+    var patch:  f32[>..] = [];
+    fibre.resize(n, 0.0);
+    drift.resize(n, 0.0);
+    lichen.resize(n, 0.0);
+    patch.resize(n, 0.0);
+    bark_add_noise(fibre, lattice, 101, 96, 12, 0.6);
+    bark_add_noise(fibre, lattice, 103, 192, 24, 0.4);
+    bark_add_noise(drift, lattice, 107, 4, 3, 0.6);
+    bark_add_noise(drift, lattice, 109, 24, 20, 0.4);
+    bark_add_noise(lichen, lattice, 113, 6, 8, 0.6);
+    bark_add_noise(lichen, lattice, 127, 24, 32, 0.4);
+    bark_add_noise(patch, lattice, 131, 96, 128, 1.0);
+    // The secondary cracks, a depth 0..1 a texel.
+    var cracks: f32[>..] = [];
+    cracks.resize(n, 0.0);
+    var d = Dice { mixed(0x5EC0DC4) };
+    for c in BARK_FINE_CRACKS { bark_fine_crack(cracks, inside, d, false); }
+    for c in BARK_CROSS_CRACKS { bark_fine_crack(cracks, inside, d, true); }
+    for j in BARK_H {
+        let fy = (j + 0.5) / ch;
+        let cj = floor(fy) as i64;
+        for i in BARK_W {
+            let fx = (i + 0.5) / cw;
+            let ci = floor(fx) as i64;
+            var f1: f32 = 1e9;
+            var f2: f32 = 1e9;
+            for dj in -1..2 {
+                for di in -1..2 {
+                    let a = (ci + di + BARK_CELLS_ACROSS) % BARK_CELLS_ACROSS;
+                    let b = (cj + dj + BARK_CELLS_ALONG) % BARK_CELLS_ALONG;
+                    let px = (ci + di) as f32 + cell_x[b * BARK_CELLS_ACROSS + a] - fx;
+                    // The cells are longer along the stem: the distance along counts less.
+                    let py = ((cj + dj) as f32 + cell_y[b * BARK_CELLS_ACROSS + a] - fy) * 0.8;
+                    let q = px * px + py * py;
+                    if q < f1 {
+                        f2 = f1;
+                        f1 = q;
+                    } else if q < f2 {
+                        f2 = q;
+                    }
+                }
+            }
+            let border = sqrt(f2) - sqrt(f1);
+            let dome = bark_step(0.0, 0.45, border);
+            let k = j * BARK_W + i;
+            let fine = 0.45 * dome + 0.55 * fibre[k];
+            let crown = clamp((height[k] + 3.0) / 6.0, 0.0, 1.0);
+            let cover = bark_step(0.56, 0.68, lichen[k]) * bark_step(0.45, 0.7, patch[k]) * crown;
+            let o = k * 4;
+            details[o] = bark_byte(fine);
+            details[o + 1] = bark_byte(1.0 - clamp(cracks[k], 0.0, 1.0));
+            details[o + 2] = bark_byte(drift[k]);
+            details[o + 3] = bark_byte(cover);
+        }
+    }
+}
+
+// One secondary crack into `cracks` from a texel well inside a plate: along the stem,
+// leaning and drifting, or `across` the ridge, each way until its run is spent or it
+// reaches a furrow; deepest at its middle, a groove a texel wide with soft sides.
+fn bark_fine_crack(cracks: f32[>..]&, inside: f32[>..]&, d: Dice&, across: bool) {
+    let x0 = (roll(d) * BARK_W) as i64 % BARK_W;
+    let y0 = (roll(d) * BARK_H) as i64 % BARK_H;
+    let least: f32 = if across { 3.0 } else { 2.0 };
+    guard inside[y0 * BARK_W + x0] > least else { return; }
+    var run = BARK_FINE_RUN_LEAST + (roll(d) * (BARK_FINE_RUN_MOST - BARK_FINE_RUN_LEAST)) as i64;
+    if across { run = BARK_CROSS_RUN_LEAST + (roll(d) * (BARK_CROSS_RUN_MOST - BARK_CROSS_RUN_LEAST)) as i64; }
+    let depth = 0.45 + 0.55 * roll(d);
+    let half = run / 2 + 1;
+    for way in 2 {
+        let step: f32 = if way == 0 { -1.0 } else { 1.0 };
+        var x = x0 as f32 + 0.5;
+        var y = y0 as f32 + 0.5;
+        var slope = bark_normal(d) * 0.3;
+        for s in half {
+            let i = floor(x) as i64 % BARK_W;
+            let j = floor(y) as i64 % BARK_H;
+            let k = j * BARK_W + i;
+            guard inside[k] > 0.0 else { break; }
+            let h = depth * sqrt(1.0 - (s as f32) / (half as f32));
+            cracks[k] = max(cracks[k], h);
+            if across {
+                let up = ((j + 1) % BARK_H) * BARK_W + i;
+                let down = ((j + BARK_H - 1) % BARK_H) * BARK_W + i;
+                cracks[up] = max(cracks[up], 0.35 * h);
+                cracks[down] = max(cracks[down], 0.35 * h);
+                x += step;
+                y += slope;
+            } else {
+                let right = j * BARK_W + (i + 1) % BARK_W;
+                let left = j * BARK_W + (i + BARK_W - 1) % BARK_W;
+                cracks[right] = max(cracks[right], 0.35 * h);
+                cracks[left] = max(cracks[left], 0.35 * h);
+                y += step;
+                x += slope * step;
+            }
+            slope = clamp(slope + bark_normal(d) * 0.08, -0.8, 0.8);
         }
     }
 }

@@ -567,16 +567,17 @@ struct TreeGpu {
     // The bark's age layers (trees::bark_layers, tree_bark): the height and the cavity.
     bark_height: Texture,
     bark_cavity: Texture,
-    tube:         Pipeline,
-    ribbon:       Pipeline,
-    hdr_tube:     Pipeline,
-    hdr_ribbon:   Pipeline,
-    leaves:       Buffer,       // the leaves' cards (trees::leaf_cards), when all is drawn
-    leaf_count:   i64,
-    leaf_shape:   Texture,      // the leaf atlas's two layers (leaf_atlas::make)
-    leaf_marks:   Texture,
-    leaf:         Pipeline,
-    hdr_leaf:     Pipeline,
+    bark_detail: Texture,       // the fine relief, secondary cracks, colour and lichen (round two)
+    tube:        Pipeline,
+    ribbon:      Pipeline,
+    hdr_tube:    Pipeline,
+    hdr_ribbon:  Pipeline,
+    leaves:      Buffer,        // the leaves' cards (trees::leaf_cards), when all is drawn
+    leaf_count:  i64,
+    leaf_shape:  Texture,       // the leaf atlas's two layers (leaf_atlas::make)
+    leaf_marks:  Texture,
+    leaf:        Pipeline,
+    hdr_leaf:    Pipeline,
     // Whether the pipelines move the tree in the wind (tree_wind), and the leaves' meshes of
     // the 8-bit and the HDR pipelines (leaf_mesh), as they were made.
     wind_made:          bool,
@@ -2857,6 +2858,17 @@ var tree_bark = false;
 var tree_relief:  f32 = 1.0;
 var tree_scatter: f32 = 0.0;
 var tree_rough:   f32 = 0.0;
+// The bark's material (task 117's round two), each 0 off as in the app until checked: the
+// cork's fine relief and the secondary cracks at their strength (1 as made), the plates'
+// edges jagged with them; the albedo's drift between warm and olive grey with the weathered
+// crowns lighter; the lichen's cover; a weak broad specular (1 the dielectric's own, F0
+// 0.034, its roughness by the wood's age). The light tuner's --tree-detail, --tree-albedo,
+// --tree-lichen and --tree-spec; --tree-scatter now wraps by age, the shoots' most, none on
+// the old trunk.
+var tree_detail: f32 = 0.0;
+var tree_albedo: f32 = 0.0;
+var tree_lichen: f32 = 0.0;
+var tree_spec:   f32 = 0.0;
 var tree_wood = trees::WoodShape { .. };
 
 // The wind on the tree's geometry (task 107's T4; shaders::TREE_WIND, TREE_FLUTTER): off
@@ -2869,7 +2881,8 @@ var tree_wind = false;
 var tree_flutter = float2 { 6.0, 9.0 };
 
 // The tree's block (shaders::TREE_HEAD), for a pass of `samples` samples a pixel.
-struct TreeBlock { origin: float4, light: float4, look: float4, depth: float4, tint: float4, layers: float4, bark: float4, matte: float4 }
+struct TreeBlock { origin: float4, light: float4, look: float4, depth: float4, tint: float4, layers: float4, bark: float4, matte: float4,
+                   skin: float4 }
 fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
     let o = rooms::tree_origin(g.room);
     // The projection's depth as A - B / d (d the distance along the view), from the view's
@@ -2886,14 +2899,14 @@ fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
     return TreeBlock { model3d::f4(o, samples), tree_light, float4 { g.room.outside, tree_shade, tree_spread, tree_twig_px },
                        float4 { from, squeeze, radians(tree_flutter.x), tree_flutter.y }, tree_tint, g.tree.layers,
                        float4 { if tree_bark { 1.0 } else { 0.0 }, tree_relief, trees::bark_age_scale(), trees::bark_age_from() },
-                       float4 { tree_scatter, tree_rough, 0.0, 0.0 } };
+                       float4 { tree_scatter, tree_rough, 0.0, 0.0 }, float4 { tree_detail, tree_albedo, tree_lichen, tree_spec } };
 }
 
-// The tubes' two bark textures (TREE_WOOD_FRAG's slots 0 and 1): the age layers' height and
-// cavity with tree_bark once made, else the first tile in both.
-fn tree_bark_textures(g: Gpu&) -> Texture, Texture {
-    if tree_bark && g.tree.bark_height.id != 0 { return g.tree.bark_height, g.tree.bark_cavity; }
-    return g.tree.bark, g.tree.bark;
+// The tubes' three bark textures (TREE_WOOD_FRAG's slots 0, 1 and 2): the age layers' height
+// and cavity and the detail with tree_bark once made, else the first tile in all three.
+fn tree_bark_textures(g: Gpu&) -> Texture, Texture, Texture {
+    if tree_bark && g.tree.bark_height.id != 0 { return g.tree.bark_height, g.tree.bark_cavity, g.tree.bark_detail; }
+    return g.tree.bark, g.tree.bark, g.tree.bark;
 }
 
 // Whether the tree's geometry is drawn: with the view out, once grown, where its card isn't
@@ -2936,17 +2949,20 @@ fn tree_geometry<O>(o: O&, g: Gpu&) {
     if tree_bark && g.tree.bark_height.id == 0 {
         var heights:  u8[>..] = [];
         var cavities: u8[>..] = [];
+        var details:  u8[>..] = [];
         let b0 = clock();
-        trees::bark_layers(heights, cavities);
+        trees::bark_layers(heights, cavities, details, tree_detail > 0.0);
         g.tree.bark_ms = (clock() - b0) * 1000.0;
         let mips = trees::mips_of(trees::BARK_W, trees::BARK_H);
         g.tree.bark_height = o.gpu_sampled(trees::BARK_W, trees::BARK_H, mips, RGBA8);
         g.tree.bark_cavity = o.gpu_sampled(trees::BARK_W, trees::BARK_H, mips, RGBA8);
+        g.tree.bark_detail = o.gpu_sampled(trees::BARK_W, trees::BARK_H, mips, RGBA8);
         var at = 0;
         for level in mips {
             let n = (trees::BARK_W >> level) * (trees::BARK_H >> level) * 4;
             o.gpu_upload(g.tree.bark_height, level, heights[at..at + n]);
             o.gpu_upload(g.tree.bark_cavity, level, cavities[at..at + n]);
+            o.gpu_upload(g.tree.bark_detail, level, details[at..at + n]);
             at += n;
         }
     }

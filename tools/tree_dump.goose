@@ -275,14 +275,19 @@ fn main() {
     // The bark's age layers (trees::bark_layers, task 117), level 0 of each texture.
     var heights:  u8[>..] = [];
     var cavities: u8[>..] = [];
-    var best_ms:  f64     = 1e9;
-    for k in 5 {
-        t0 = clock();
-        trees::bark_layers(heights, cavities);
-        best_ms = min(best_ms, (clock() - t0) * 1000.0);
+    var details:  u8[>..] = [];
+    for jagged in 2 {
+        var best_ms: f64 = 1e9;
+        for k in 5 {
+            t0 = clock();
+            trees::bark_layers(heights, cavities, details, jagged == 1);
+            best_ms = min(best_ms, (clock() - t0) * 1000.0);
+        }
+        print("bark layers", if jagged == 1 { ", jagged" } else { "" }, ": ", trees::BARK_W, " x ", trees::BARK_H, ", ", trees::BARK_LAYERS,
+              " ages and the detail, ", best_ms, " ms (best of 5)");
     }
-    print("bark layers: ", trees::BARK_W, " x ", trees::BARK_H, ", ", trees::BARK_LAYERS, " ages, ", best_ms, " ms (best of 5)");
     let bn = trees::BARK_W * trees::BARK_H * 4;
     guard write_file(str(dir, "/bark-height.rgba")[..], heights[0..bn]) && write_file(str(dir, "/bark-cavity.rgba")[..], cavities[0..bn])
+          && write_file(str(dir, "/bark-detail.rgba")[..], details[0..bn])
         else { abort("could not write the bark"); }
 }

@@ -45,7 +45,8 @@
 //       --tree-leaf-mesh tier|card|rows|fan (the leaves' meshes; tier)
 //       --tree-wind off|on (the shadow's wind on the geometry, the leaves fluttering in HDR; off) --tree-flutter DEG,RATE (6,9)
 //       --tree-card off|on|main (the tree drawn once into a card: in the floor's mirror, or the main view too; off)
-//       --tree-bark off|on (the bark's age layers; off) --tree-relief K (1) --tree-scatter W (0) --tree-rough S (0)
+//       --tree-bark off|on (the bark's age layers; off) --tree-relief K (1) --tree-scatter W (0, the shoots' wrap, none on old bark) --tree-rough S (0)
+//       --tree-detail K --tree-albedo K --tree-lichen K --tree-spec K (the bark's fine relief and small cracks, colour, lichen, specular; 0 each)
 //       --tree-junctions off|on --tree-roots off|on (the wood's junctions, the flare's roots; off) --tree-wood-tier high|standard|phone]
 //       [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
@@ -1699,13 +1700,22 @@ fn main() {
     // The maple's wood (task 117's step three), each off by default: --tree-bark off|on the
     // bark's age layers grown at startup in place of the first tile, --tree-relief K their
     // relief (1 true slopes); --tree-scatter W the light wrapped past the terminator as if
-    // scattered under the bark, --tree-rough S Oren-Nayar's roughness (0 each: off);
+    // scattered under the bark (W on the shoots, less on young limbs, none on old bark),
+    // --tree-rough S Oren-Nayar's roughness (0 each: off);
     // --tree-junctions off|on the collars, swells, ridges, grain round the feet and caps,
     // --tree-roots off|on the flare's roots; --tree-wood-tier high|standard|phone their mesh.
     render3d::tree_bark = pick(argv, "--tree-bark", OFF_ON, 0) == 1;
     render3d::tree_relief = number(argv, "--tree-relief", render3d::tree_relief);
     render3d::tree_scatter = number(argv, "--tree-scatter", render3d::tree_scatter);
     render3d::tree_rough = number(argv, "--tree-rough", render3d::tree_rough);
+    // The bark's material (task 117's round two), each 0 off by default: --tree-detail K the
+    // cork's fine relief and the secondary cracks (the plates' edges jagged with them),
+    // --tree-albedo K the colour's drift and the weathered crowns, --tree-lichen K the
+    // lichen's cover, --tree-spec K the weak broad specular (1 the dielectric's own).
+    render3d::tree_detail = number(argv, "--tree-detail", render3d::tree_detail);
+    render3d::tree_albedo = number(argv, "--tree-albedo", render3d::tree_albedo);
+    render3d::tree_lichen = number(argv, "--tree-lichen", render3d::tree_lichen);
+    render3d::tree_spec = number(argv, "--tree-spec", render3d::tree_spec);
     render3d::tree_wood.junctions = pick(argv, "--tree-junctions", OFF_ON, 0) == 1;
     render3d::tree_wood.roots = pick(argv, "--tree-roots", OFF_ON, 0) == 1;
     render3d::tree_wood.tier = pick(argv, "--tree-wood-tier", WOOD_TIERS, 0);
