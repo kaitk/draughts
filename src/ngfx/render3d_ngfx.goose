@@ -142,7 +142,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
         for i in g.solid..g.instance_count {
             var r = lit_root(own, g, f, g.piece_vb);
             r.u = lit_block(g, float4 { 1.0, 0.0, g.alphas[i - g.solid], i }, in_shell);
-            if in_shell { slot(r, 8, render3d::lace_or_stand_in(g), g.linear); }
+            if in_shell { lit_shell_slots(r, g); }
             nx::draw_indexed(ngfx::root(r), g.piece_ib, 4, g.piece_count);
         }
     }
@@ -627,8 +627,15 @@ fn hdr_format(own: Own&) -> i32 {
     if ngfx::format_supported(ngfx::RG11B10F, ngfx::COLOR_TARGET | ngfx::SAMPLED) { ngfx::RG11B10F } else { ngfx::RGBA16F }
 }
 
-// The board's module into the HDR target for the pieces' material, as gfx's lit_hdr_frag.
-fn lit_hdr_blob(pieces: i32) -> const u8[:] {
+// The board's module into the HDR target for the pieces' material, as gfx's lit_hdr_frag;
+// lit from the room's probes as the table is with `probes` (render3d::board_probes).
+fn lit_hdr_blob(pieces: i32, probes: bool) -> const u8[:] {
+    if probes {
+        if pieces == render3d::PIECES_WOOD { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_props_wood.blob"); }
+        if pieces == render3d::PIECES_WINTER { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_props_winter.blob"); }
+        if pieces == render3d::PIECES_MINERAL { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_props_mineral.blob"); }
+        return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_props.blob");
+    }
     if pieces == render3d::PIECES_WOOD { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_wood.blob"); }
     if pieces == render3d::PIECES_WINTER { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_winter.blob"); }
     if pieces == render3d::PIECES_MINERAL { return embed_file("../../build/ngfx/blobs/r3d_hdr_lit_mineral.blob"); }
@@ -658,19 +665,23 @@ fn make_lit_shell(own: Own&, g: Gpu&) {
 }
 
 // The HDR target's pipelines (render3d::HdrPipelines), as gfx's make_hdr, before any pass;
-// the light tuner's switches are gfx's alone.
+// the light tuner's other switches are gfx's alone.
 fn make_hdr(own: Own&, g: Gpu&) {
     let h .= g.hdr_pipes;
     let props = render3d::props_light;
     let volumes = room_light::volumes_on;
     let coat = render3d::physical_coat;
-    guard h.tone.id == 0 || h.pieces != g.pieces || h.props_light != props || h.volumes != volumes || h.coat != coat else { return; }
+    let board_probes = render3d::board_probes && props;
+    guard h.tone.id == 0 || h.pieces != g.pieces || h.props_light != props || h.volumes != volumes || h.coat != coat
+          || h.board_probes != board_probes
+    else { return; }
     if h.tone.id != 0 { release_hdr(own, g); }
     h.pieces = g.pieces;
     h.props_light = props;
     h.volumes = volumes;
     h.coat = coat;
-    let lit = lit_hdr_blob(g.pieces);
+    h.board_probes = board_probes;
+    let lit = lit_hdr_blob(g.pieces, board_probes);
     h.lit = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
     h.fading = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
     let table_desc = ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true, blend: ngfx::BLEND_PREMULTIPLIED };
@@ -1569,11 +1580,25 @@ fn antialias(own: Own&, g: Gpu&, target: nx::Texture, size: int2) {
 
 // The lit module's root (r3d_lit.slang's header): the frame, the instances, the vertices,
 // and its eight textures.
-// The lit modules' u: the draw's float4, then in the shell its windows (LIT_SHELL's Shell).
+// The lit modules' u: the draw's float4, then in the shell its windows (LIT_SHELL's Shell),
+// and lit from the room's probes (lit_probes) their grid and the room's box (LIT_PROPS's
+// PropsLight).
+struct LitPropsBlock { draw: float4, shell: render3d::ShellBlock, props: render3d::PropsLightBlock }
 fn lit_block(g: Gpu&, draw: float4, in_shell: bool) -> u64 {
     guard in_shell else { return blocks([draw]); }
+    if lit_probes(g) {
+        let b: LitPropsBlock[1] = [LitPropsBlock { draw, render3d::shell_block(g), render3d::props_light_block(g) }];
+        return ngfx::frame_data(bytes_of(b));
+    }
     let b = render3d::shell_block(g);
     return blocks([draw, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view, b.shell_case]);
+}
+// Whether the board's pass draws with r3d_hdr_lit_props (make_hdr), and the shell's and the
+// probes' textures for it.
+fn lit_probes(g: Gpu&) -> bool { g.hdr && g.hdr_pipes.board_probes }
+fn lit_shell_slots(r: Root&, g: Gpu&) {
+    slot(r, 8, render3d::lace_or_stand_in(g), g.linear);
+    if lit_probes(g) { slot(r, 9, render3d::props_probes_or_stand_in(g), g.linear); }
 }
 
 // The table's u: its block, then in the room its shell's windows (TABLE_SHELL's Shell), and
@@ -1659,12 +1684,12 @@ fn draw_meshes(own: Own&, g: Gpu&, f: u64, light: f32, in_shell: bool = false) {
     if g.solid > 0 {
         var r = lit_root(own, g, f, g.piece_vb);
         r.u = lit_block(g, float4 { 1.0, light, 1.0, 0.0 }, in_shell);
-        if in_shell { slot(r, 8, render3d::lace_or_stand_in(g), g.linear); }
+        if in_shell { lit_shell_slots(r, g); }
         nx::draw_indexed_instanced(ngfx::root(r), g.piece_ib, 4, g.piece_count, g.solid);
     }
     var r = lit_root(own, g, f, g.board_vb);
     r.u = lit_block(g, float4 { 0.0, light, 1.0, 0.0 }, in_shell);
-    if in_shell { slot(r, 8, render3d::lace_or_stand_in(g), g.linear); }
+    if in_shell { lit_shell_slots(r, g); }
     nx::draw_indexed(ngfx::root(r), g.board_ib, 4, g.board_count);
 }
 

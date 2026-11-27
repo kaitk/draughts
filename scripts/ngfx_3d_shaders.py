@@ -148,6 +148,10 @@ MODULES = [
     ("r3d_hdr_lit_wood", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_WOOD", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
     ("r3d_hdr_lit_winter", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_WINTER", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
     ("r3d_hdr_lit_mineral", LIT_VS, ["HDR_OUT", "SHELL_WINDOWS", "PIECES_MINERAL", "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD", "LIT_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),
+    # The board lit from the room's probes and its box (render3d::board_probes, LIT_PROPS).
+    *[(f"r3d_hdr_lit_props{suffix}", LIT_VS, ["PROPS_LIGHT", "HDR_OUT", "SHELL_WINDOWS", *pieces, "SHADOW_MANY", "FS_SET", "FRAME", "LIT_HEAD",
+                                              "LIT_SHELL", "LIT_PROPS", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "PROPS_GRID_FN", "LIT_FRAG"])
+      for suffix, pieces in [("", []), ("_wood", ["PIECES_WOOD"]), ("_winter", ["PIECES_WINTER"]), ("_mineral", ["PIECES_MINERAL"])]],
     ("r3d_hdr_table", TABLE_VS, ["TABLE_ROOM", "SHELL_WINDOWS", "HDR_OUT", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "TABLE_FRAG"]),
     ("r3d_hdr_table_props", TABLE_PROPS_VS, ["PROPS_LIGHT", "TABLE_ROOM", "SHELL_WINDOWS", "HDR_OUT", "FS_SET", "FRAME", "TABLE_HEAD", "TABLE_SHELL", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "TABLE_MAP_FN", "SSAO_FN", "PROPS_GRID_FN", "TABLE_FRAG"]),
     # The board in the room's shell, 8-bit (render3d::make_lit_shell): the sun through its own

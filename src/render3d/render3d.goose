@@ -648,7 +648,7 @@ struct HdrPipelines {
     props_light:  bool,     // the table's with shaders::PROPS_LIGHT (props_light)
     volumes:      bool,     // the paint's, sills' and metals' with shaders::PROBE_VOLUMES (room_light::volumes_on)
     coat:         bool,     // the walls' and floor's with shaders::PHYSICAL_COAT (physical_coat)
-    board_probes: bool,     // the board's with shaders::PROPS_LIGHT (board_probes; gfx's alone)
+    board_probes: bool,     // the board's with shaders::PROPS_LIGHT (board_probes)
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
