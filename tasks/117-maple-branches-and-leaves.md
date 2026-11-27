@@ -262,6 +262,8 @@ What still looks wrong:
   fans; their twigs don't yet spread into the photos' flat fans.
 - The crown's leaves still gather in plates at the shell, a little clumpy, with gaps in
   the upper middle.
+- In the tuner's table-window view the table loses its sun patch with round two on: the
+  fuller crown and the hanging branches lie in the sun's path at that placement.
 - The season sets only the tilt; the leaves' tint stays autumn's (a later task). The
   tuner's `--season winter` doesn't take the leaves off the geometry either.
 - Not yet seen on the Mac or the tablet.
