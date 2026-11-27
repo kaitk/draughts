@@ -641,7 +641,8 @@ let TABLE_FRAG = """
                  * (1.0 + 2.0 * polish.x * blot);
         float strength = seat ? 0.0 : coat.y * clamp(1.0 - 2.0 * polish.y * blot, 0.0, 2.0) * (1.0 - 0.6 * polish.w * rim);
         // The wood's own finish: the polish the docx's coat, at its weight and roughness, worn
-        // as the polish is, over the wood's own lobe (below).
+        // as the polish is, the wood matt under it (scene.py's finished_wood, the base's
+        // specular 0).
         finished = finished && !seat;
         float worn_rough = rough - a.a;
         if (finished) {
@@ -662,18 +663,6 @@ let TABLE_FRAG = """
         float ak = max(ar, coat.w * coat.w);
     #endif
         vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * spec_vis;
-        // The finished wood's own lobe under the coat, with the grain's relief, at the base's
-        // roughness from the map's over the finish's range.
-        vec3 base_spec = vec3(0.0);
-        vec3 base_fc = vec3(0.0);
-        if (finished) {
-            float br = clamp(mix(wood_finish[3].x, wood_finish[3].y, a.a) + worn_rough, 0.05, 1.0);
-            float ab = br * br + 0.0023;
-            float bl = clamp(dot(n, l), 0.0, 1.0);
-            float bv = max(dot(n, v), 1e-4);
-            base_spec = d_ggx(clamp(dot(n, hv), 0.0, 1.0), ab) * v_smith(bv, bl, ab) * f_schlick(f0, voh) * bl * light * spec_vis;
-            base_fc = env_brdf(f0, br, bv);
-        }
     #ifdef PROPS_LIGHT
         // The polish reflects its Fresnel share of the sun before it reaches the wood, as a
         // clear coat does: a quarter of a low sun on the top.
@@ -700,7 +689,6 @@ let TABLE_FRAG = """
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
         vec3 fc = env_brdf(f0, sqrt(ar), nov) * strength;
         vec3 color = (wood * (1.0 - fc) + spec * strength + env * fc * spec_ao) * params.x;
-        if (finished) color = (wood * (1.0 - fc - base_fc) + spec * strength + base_spec + env * (fc + base_fc) * spec_ao) * params.x;
     #ifdef LINEAR_OUT
         // In the floor's mirror (shaders::MIRROR_PASS): the light itself, as the room's there,
         // before the board's tonemap.

@@ -243,14 +243,16 @@ let LIGHT_WAYS = ["today", "physical"];
 // panel take them as the wainscot, the table and chairs, the floor. "tuned" is the floor's alone.
 let WOOD_WAYS = ["today", "ours", "picks", "tuned"];
 let WOOD_FLAG_ORDER: i64[3] = [render3d::WOOD_OAK, render3d::WOOD_TABLE, render3d::WOOD_FLOOR];
-// The docx's finishes (manor_wood_materials_cycles.docx; build/wood-room/ours.json), by wood: the
-// stain's three colours (sRGB), the base's roughness from x to y over its map's, the coat's weight
-// z and roughness w. The panelling stained oak under a satin varnish, the floor waxed oak, the
-// table and chairs French-polished mahogany.
+// The docx's finishes (manor_wood_materials_cycles.docx; tools/blender/woods/ours.json), by wood:
+// the stain's three colours (sRGB), the base's roughness from x to y over its map's, the coat's
+// weight z and roughness w. The panelling stained oak under a satin varnish, the floor waxed oak,
+// the table and chairs French-polished mahogany. The floor's stain three quarters of the docx's in
+// linear light and its wax a full coat at 0.08 (2026-11-27, task 122: the sun patches nearer the
+// autumn reference's orange; the far floor's streaks, Cycles' v4).
 let WOOD_STAINS: float3[9] = [float3 { 0x43, 0x27, 0x19 }, float3 { 0x69, 0x43, 0x2B }, float3 { 0x90, 0x60, 0x3D },
-                              float3 { 0x50, 0x34, 0x1F }, float3 { 0x79, 0x52, 0x35 }, float3 { 0xA4, 0x74, 0x45 },
+                              float3 { 0x45, 0x2D, 0x1A }, float3 { 0x6A, 0x47, 0x2D }, float3 { 0x90, 0x65, 0x3C },
                               float3 { 0x35, 0x1C, 0x13 }, float3 { 0x58, 0x30, 0x20 }, float3 { 0x87, 0x50, 0x34 }];
-let WOOD_FINISHES: float4[3] = [float4 { 0.4, 0.52, 0.35, 0.33 }, float4 { 0.36, 0.48, 0.21, 0.31 }, float4 { 0.28, 0.4, 0.78, 0.2 }];
+let WOOD_FINISHES: float4[3] = [float4 { 0.4, 0.52, 0.35, 0.33 }, float4 { 0.36, 0.48, 1.0, 0.08 }, float4 { 0.28, 0.4, 0.78, 0.2 }];
 // Our maps' luminance at their 5th and 95th percentiles (linear), as scene.py's map_percentiles
 // reads blender_export's wall_albedo.png, floor_albedo.png (the floor as laid) and table_albedo.png.
 let OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07343 }, float2 { 0.01716, 0.12983 }];

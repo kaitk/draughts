@@ -1913,9 +1913,7 @@ let ROOM_FRAG = """
         // screen's edge it fades to the room's light that way.
         float film = clamp(mix(rough * planar_look.y, rough, dull), 0.03, 1.0);
     #ifdef PHYSICAL_COAT
-        // With the wood's own finish the mirror is its coat's, at the coat's roughness; the oak
-        // under it sees the room's box (below).
-        float room_ao = spec_ao;
+        // With the wood's own finish the mirror is its coat's, at the coat's roughness.
         if (coat_w > 0.0) film = clamp(mix(coat_r, rough, dull), 0.03, 1.0);
     #endif
         vec4 seen = planar_seen(p, reflect(-v, n_film), film * film, nov);
@@ -1958,23 +1956,20 @@ let ROOM_FRAG = """
         vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
     #ifdef PHYSICAL_COAT
         if (coat_w > 0.0) {
-            // The wood's own finish (render3d::Wood), as Cycles' Principled takes it: the base's
-            // lobe above at the base's roughness, and over it the coat's at its own weight and
-            // roughness, both reflecting the same room (on the floor the coat the mirror, the
-            // base the room's box), the base lit by what the two leave.
+            // The wood's own finish (render3d::Wood), as Cycles' Principled takes it with the
+            // base's specular 0 (scene.py's finished_wood): the wood matt under its coat, the
+            // film and the wood of nearly one index, and the coat's lobe at its own weight and
+            // roughness reflecting the room (on the floor the mirror), the wood lit by what it
+            // leaves. The base's own rough lobe was a milky veil (task 122, Cycles' s1).
             float ca = coat_r * coat_r + 0.0023;
             vec3 coat_spec = coat_w * d_ggx(noh, ca) * v_smith(nov, nl, ca) * f_schlick(f0, voh) * nl * light * open * kept;
             vec3 coat_fc = coat_w * env_brdf(f0, coat_r, nov);
             vec3 coat_env = env * spec_ao;
-            vec3 base_env = env * spec_ao;
-            vec3 base_fc = fc;
         #ifdef PLANAR_FLOOR
             coat_fc = coat_w * env_brdf(f0, film, nov);
             coat_env = env / max(planar.x, 1e-3);
-            base_env = room_wide(v_local, rv) * room_ao;
-            base_fc = env_brdf(f0, sqrt(ar), nov);
         #endif
-            color = (base * (1.0 - base_fc - coat_fc) + spec + coat_spec + base_env * base_fc + coat_env * coat_fc) * params.x * shade.w;
+            color = (base * (1.0 - coat_fc) + coat_spec + coat_env * coat_fc) * params.x * shade.w;
         }
     #endif
     #ifdef ROOM_VIEWS
