@@ -268,6 +268,10 @@ let WOOD_FINISHES: float4[3] = [float4 { 0.4, 0.52, 0.35, 0.33 }, float4 { 0.36,
 // reads blender_export's wall_albedo.png, floor_albedo.png (the floor as laid) and table_albedo.png.
 var OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07343 }, float2 { 0.01716, 0.12983 }];
 
+// Our floor's joints (--floor-joint): x the planks' edges rounded over this many millimetres,
+// y the rounding's slope at the joint, z how dark the joint is (1 as before).
+var FLOOR_JOINT = float4 { 0.0, 0.0, 1.0, 0.0 };
+
 fn linear_of(c: f32) -> f32 {
     let v = c / 255.0;
     return if v <= 0.04045 { v / 12.92 } else { pow((v + 0.055) / 1.055, 2.4 as f32) };
@@ -288,7 +292,9 @@ fn wood_of(k: i64, way: i64) -> render3d::Wood {
     return render3d::Wood { float4 { linear_of(a.x), linear_of(a.y), linear_of(a.z), range.x },
                             float4 { linear_of(b.x), linear_of(b.y), linear_of(b.z), range.y },
                             float4 { linear_of(c.x), linear_of(c.y), linear_of(c.z), way }, WOOD_FINISHES[k],
-                            float4 { tile, 0.0, 0.0, 0.0 } };
+                            if k == render3d::WOOD_FLOOR && way == render3d::WOOD_STAINED {
+                                float4 { 0.0, FLOOR_JOINT.x * surfaces::METRE / 1000.0, FLOOR_JOINT.y, FLOOR_JOINT.z }
+                            } else { float4 { tile, 0.0, 0.0, 0.0 } } };
 }
 
 // --woods: one way for all, or the wainscot's, the table's and the floor's.
@@ -1695,6 +1701,7 @@ fn main() {
     let floor_range = OUR_RANGES[render3d::WOOD_FLOOR];
     let range4 = four(argv, "--floor-range", float4 { floor_range.x, floor_range.y, 0.0, 0.0 });
     OUR_RANGES[render3d::WOOD_FLOOR] = float2 { range4.x, range4.y };
+    FLOOR_JOINT = four(argv, "--floor-joint", FLOOR_JOINT);
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     sun_color_given = has(argv, "--sun-color-height");

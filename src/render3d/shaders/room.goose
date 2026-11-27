@@ -1373,11 +1373,32 @@ let ROOM_FRAG = """
             vec2 t = (n4.xy * 2.0 - 1.0) * sgn;
             float cup = -plank.w * (2.0 * pk.across - 1.0);
             vec2 tilt = planks.z * (vec2(h12(id + 14.1), h12(id + 15.7)) * 2.0 - 1.0);
-            vec2 s = vec2(t.x + cup + tilt.x, t.y + tilt.y);
+            // The joints' distances (world units) and the pixel's footprint.
+            float fpw = max(length(dx), length(dy));
+            float d_a = min(pk.across, 1.0 - pk.across) * w;
+            float d_l = min(pk.along, plank.y - pk.along) * w;
+            // With the wood's own finish, each plank's edges rounded down into the joint
+            // (render3d::Wood's tile row: y the rounding's width, z its slope at the joint, w how
+            // dark the joint is, 1 as before), so the edge facing the light catches it; gone
+            // where the rounding is narrower than a pixel, as the eye can't resolve it there.
+            vec2 shoulder = vec2(0.0);
+            float joint_dark = 1.0;
+        #ifdef PHYSICAL_COAT
+            if (wood_floor[2].w > 0.5 && !picture) {
+                float sw = wood_floor[4].y;
+                if (sw > 0.0) {
+                    float seen = smoothstep(0.5, 2.0, sw / max(fpw, 1e-6)) * wood_floor[4].z;
+                    shoulder = seen * vec2((pk.across < 0.5 ? -1.0 : 1.0) * max(1.0 - d_a / sw, 0.0),
+                                           (pk.along < 0.5 * plank.y ? -1.0 : 1.0) * max(1.0 - d_l / sw, 0.0));
+                }
+                joint_dark = wood_floor[4].w;
+            }
+        #endif
+            vec2 s = vec2(t.x + cup + tilt.x + shoulder.x, t.y + tilt.y + shoulder.y);
             vec2 suv = dir_a * s.x + dir_l * s.y;
             n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
         #ifdef PLANAR_FLOOR
-            vec2 sf = vec2(0.25 * t.x + cup + tilt.x, 0.25 * t.y + tilt.y);
+            vec2 sf = vec2(0.25 * t.x + cup + tilt.x + shoulder.x, 0.25 * t.y + tilt.y + shoulder.y);
             vec2 sfuv = dir_a * sf.x + dir_l * sf.y;
             n_film = normalize(vec3(0.0, 1.0, 0.0) + u_dir * sfuv.x + v_dir * sfuv.y);
         #endif
@@ -1390,9 +1411,6 @@ let ROOM_FRAG = """
             #endif
             }
             // The joints, open a little and dark with old wax.
-            float fpw = max(length(dx), length(dy));
-            float d_a = min(pk.across, 1.0 - pk.across) * w;
-            float d_l = min(pk.along, plank.y - pk.along) * w;
             float joint = max(line_cover(d_a, plank.z, fpw), line_cover(d_l, plank.z, fpw));
             if (picture) joint = 0.0;
             // Worn: the paths round the table and along the room lighter and duller, the
@@ -1418,7 +1436,7 @@ let ROOM_FRAG = """
             float sc = textureGrad(scratch_tile, uv / SCRATCH_TILE, dx / SCRATCH_TILE, dy / SCRATCH_TILE).r * planks.w * (0.35 + wear);
             albedo *= 1.0 + 0.4 * sc;
             rough += 0.3 * sc;
-            albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
+            albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint * joint_dark);
             rough = mix(rough, 0.6, joint);
             fine *= 1.0 - 0.5 * joint;
         #ifdef PHYSICAL_COAT
