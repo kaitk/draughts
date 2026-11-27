@@ -592,6 +592,22 @@ let ROOM_FRAG = """
         return lit;
     }
 
+    // A plank's edge rounded down into a joint: its height h(y) = -sw k (1 - |y| / sw)² / 2 within
+    // sw of the joint (y from the joint, world units), so its slope is k at the joint and 0 at sw.
+    // x: the slope toward +y the normal tilts by, averaged over the pixel's footprint [y - e,
+    // y + e] (the height's difference over 2e); y: the slope's variance left unresolved there.
+    float joint_height(float y, float sw, float k) {
+        float r = max(1.0 - abs(y) / sw, 0.0);
+        return -0.5 * sw * k * r * r;
+    }
+    vec2 joint_slope(float y, float sw, float k, float e) {
+        e = max(e, 1e-5);
+        float mean = -(joint_height(y + e, sw, k) - joint_height(y - e, sw, k)) / (2.0 * e);
+        float near = 1.0 - smoothstep(sw, sw + 2.0 * e, abs(y));
+        float sq = k * k * min(sw / (3.0 * e), 1.0 / 3.0) * near;
+        return vec2(mean, max(sq - mean * mean, 0.0));
+    }
+
     // The herringbone's plank at f (the floor's u and v in plank widths), its rows along
     // u. In a frame turned 45°, planks n widths long lie across, [k, k + n] × [k, k + 1],
     // and up, [k, k + 1] × [k + 1, k + 1 + n], repeated by (n, -n): b is the repeat. id:
@@ -1379,17 +1395,21 @@ let ROOM_FRAG = """
             float d_l = min(pk.along, plank.y - pk.along) * w;
             // With the wood's own finish, each plank's edges rounded down into the joint
             // (render3d::Wood's tile row: y the rounding's width, z its slope at the joint, w how
-            // dark the joint is, 1 as before), so the edge facing the light catches it; gone
-            // where the rounding is narrower than a pixel, as the eye can't resolve it there.
+            // dark the joint is, 1 as before), so the edge facing the light catches it. The
+            // slope is averaged over the pixel (joint_slope), so where a pixel spans the joint
+            // its two sides cancel, and what it can't resolve roughens the wax (shoulder_var).
             vec2 shoulder = vec2(0.0);
+            float shoulder_var = 0.0;
             float joint_dark = 1.0;
         #ifdef PHYSICAL_COAT
             if (wood_floor[2].w > 0.5 && !picture) {
                 float sw = wood_floor[4].y;
                 if (sw > 0.0) {
-                    float seen = smoothstep(0.5, 2.0, sw / max(fpw, 1e-6)) * wood_floor[4].z;
-                    shoulder = seen * vec2((pk.across < 0.5 ? -1.0 : 1.0) * max(1.0 - d_a / sw, 0.0),
-                                           (pk.along < 0.5 * plank.y ? -1.0 : 1.0) * max(1.0 - d_l / sw, 0.0));
+                    float k = wood_floor[4].z;
+                    vec2 ja = joint_slope(pk.across < 0.5 ? d_a : -d_a, sw, k, fpw);
+                    vec2 jl = joint_slope(pk.along < 0.5 * plank.y ? d_l : -d_l, sw, k, fpw);
+                    shoulder = vec2(ja.x, jl.x);
+                    shoulder_var = ja.y + jl.y;
                 }
                 joint_dark = wood_floor[4].w;
             }
@@ -1398,7 +1418,7 @@ let ROOM_FRAG = """
             vec2 suv = dir_a * s.x + dir_l * s.y;
             n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
         #ifdef PLANAR_FLOOR
-            vec2 sf = vec2(0.25 * t.x + cup + tilt.x + shoulder.x, 0.25 * t.y + tilt.y + shoulder.y);
+            vec2 sf = vec2(0.25 * (t.x + shoulder.x) + cup + tilt.x, 0.25 * (t.y + shoulder.y) + tilt.y);
             vec2 sfuv = dir_a * sf.x + dir_l * sf.y;
             n_film = normalize(vec3(0.0, 1.0, 0.0) + u_dir * sfuv.x + v_dir * sfuv.y);
         #endif
@@ -1448,7 +1468,8 @@ let ROOM_FRAG = """
                     rough = mix(wood_floor[3].x, wood_floor[3].y, clamp(rough, 0.0, 1.0));
                 }
                 coat_w = wood_floor[3].z;
-                coat_r = wood_floor[3].w;
+                // The joints' unresolved rounding widens the wax's lobe (alpha² + 2 variance).
+                coat_r = sqrt(sqrt(pow(wood_floor[3].w, 4.0) + 2.0 * shoulder_var));
             }
         #endif
         #ifdef PLANAR_FLOOR
