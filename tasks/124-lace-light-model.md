@@ -236,7 +236,8 @@ room side's phase mirrored, not traced (it reads 1.15–1.47 of the tracer under
 
 ## Handover (2026-11-27)
 
-Next session, in this order:
+Next session, in this order (steps 1 to 3 done the same night, below; what follows them is in
+"`LACE_THROUGH` from a measured sheer"):
 
 1. Probe change (1). The row the lace reads (6.85 m, half grid row 1, `gather_cells`'
    `behind_lace` for probes 0.15–0.35 m before the wall) takes `lace_on_wall` into `ey`, which
@@ -333,3 +334,47 @@ tracer 0.16–0.35). As seen against Cycles: the window wall's wainscot under th
 Left: the stove's share (window 0's room side still 0.33–0.69 of the tracer, window 2's
 0.48–0.81, where the stove is about a third of the missing first bounce), and the lace's
 `LACE_THROUGH` (the handover's step 3).
+
+## `LACE_THROUGH` from a measured sheer (2026-11-27, night)
+
+The user chose published data. Kotey, Wright and Collins (2009a, ASHRAE Transactions; their
+Table 2 as reproduced in the 2016 ASHRAE Winter Conference paper OR-16-C056) measured nine
+drapery fabrics with a spectrophotometer and integrating sphere, solar-weighted, square on.
+Their cream sheer: openness (beam-beam) 0.45, beam-total reflectance 0.19, beam-total
+transmittance 0.80. Their yarn model takes the yarn's reflectance as the fabric's over
+1 − openness (Joong's thesis, eq. 3.3), so the yarn sends 0.355 on and 0.19 back: `LACE_THROUGH`
+0.65 (0.355 / 0.545). The denser white fabrics in the same table split 0.31 (IIIL) to 0.43 (IL,
+IIL): a thin open yarn scatters more forward. The sheer is the one like the lace. All three
+take it from `room_light` (the shaders' uniform, the bake's `lace_throws` and `lace_glow`, the
+tracer), the exporter's `scene.json` too; Cycles rendered with the earlier scene and only
+`through` changed (`build/lace124b/cyscene65`, `c/t65-reference*`). Without `--light physical`
+the reference view is byte-identical.
+
+As seen, the app over Cycles at 0.31 → at 0.65: the lit panel 0.62 → 0.73, the middle panel
+0.90 → 1.04, the near panel in shade 0.78 → 0.77 (B/R 0.49 against 0.39, bluer: its room light
+sent back is 1 − it), the wainscot under the near window 0.77 → 0.87. The room in shade moved
+away: the far wainscot 1.41 → 1.57, the floor 1.62 → 1.75, the paper pier 0.69 → 0.90, the
+ceiling 0.78 → 0.83; the meter's EV 4.33 → 4.19.
+
+Each renderer with the forward share at 0 (`c/t0-reference*`, a scratch tuner), the light at 0.31
+and 0.65 over that at 0:
+
+| Region | App 0.31 | App 0.65 | Cycles 0.31 | Cycles 0.65 |
+|---|---|---|---|---|
+| Far wainscot | 1.27 | 1.57 | 1.13 | 1.25 |
+| Paper pier | 1.54 | 2.13 | 1.06 | 1.13 |
+| Floor in shade | 1.19 | 1.39 | 1.10 | 1.20 |
+| Ceiling | 1.10 | 1.21 | 1.04 | 1.08 |
+| Lit panel | 11.6 | 14.9 | 1.18 | 1.27 |
+
+So the bake throws several times Cycles' share of the lace's forward light into the room (the
+pier gains 1.13 of its no-throw light against Cycles' 0.13), and without it the room's own light
+is short (the pier 0.48 of Cycles'): the two errors had been hiding each other at 0.31. A suspect,
+unmeasured: with `niche_faces` the lace cells throw their light to both their sides
+(`gather_cells`' `abs(dot)`), so what the thread sends forward may reach the room twice, once
+as the cells' and once as `lace_glow`'s on the cloth. The lit panel: with no forward share
+Cycles' still shows most of its light (the flanks' window sides the eye sees, which 91aa2bbe
+turned to the room side's), the app's almost none.
+
+Next: the bake's lace as a source measured against the tracer at the probes (the tracer's lace
+thread's light alone, its forward share at 0.65 against 0), then the flanks' side.

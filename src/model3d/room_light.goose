@@ -102,10 +102,12 @@ fn lace_lets(h: f32) -> f32 {
 // of 1 / max(|cos|, 0.5) straight through. Over the pattern that is lace_open_share, from
 // the field's mask in eight bins (each bin's mean value and share of the field; their mean
 // 0.514). The thread scatters its albedo (surfaces::LOOK's lace_thread, linear) diffusely,
-// LACE_THROUGH of it on through the cloth and the rest back.
+// LACE_THROUGH of it on through the cloth and the rest back: a cream sheer's yarn, 0.355 on
+// and 0.19 back (Kotey, Wright and Collins 2009, solar, square on: openness 0.45, the cloth
+// 0.80 through and 0.19 back).
 let LACE_DENSITY:     f32    = 0.8;
 let LACE_COVER:       f32    = 0.411;
-let LACE_THROUGH:     f32    = 0.31;
+let LACE_THROUGH:     f32    = 0.65;
 let LACE_MASK_VALUES: f32[8] = [0.021, 0.1839, 0.3081, 0.441, 0.5619, 0.6876, 0.8214, 0.9317];
 let LACE_MASK_SHARES: f32[8] = [0.2085, 0.0527, 0.0632, 0.0919, 0.1478, 0.1269, 0.1688, 0.1402];
 var lace_described = false;
