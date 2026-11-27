@@ -331,6 +331,17 @@ let LIGHT_FN = """
         float s = clamp((x - e.x) / (e.y - e.x), 0.0, 1.0);
         vec2 uv = vec2((1.0 - s) * 1.2, w.y - 0.07) * shell.w;
         float cover = textureLod(lace_mask, lace_place(uv), log2(max(soft * 1024.0 / 0.56, 1.0))).r;
+        // With shell_glass.w under 0 the lace as model3d's room_light describes it (task 124),
+        // as one flat sheet (room_light::lace_flat): its thread shell_case.y of the mask's
+        // blurred value, crossed -shell_glass.w times over at its folds' mean slant, more on
+        // their flanks. Not in the lace's own shader but its described one, whose code moved
+        // pixels of the lace without it.
+    #ifndef ROOM_LACE
+        if (shell_glass.w < 0.0) return vec2(mix(1.0, pow(1.0 - shell_case.y * cover, -shell_glass.w * (0.8 + 0.4 * (0.5 + 0.5 * sin(6.2831853 * 6.0 * s)))), inside), scattered);
+    #endif
+    #ifdef LACE_DESCRIBED
+        if (shell_glass.w < 0.0) return vec2(mix(1.0, pow(1.0 - shell_case.y * cover, -shell_glass.w * (0.8 + 0.4 * (0.5 + 0.5 * sin(6.2831853 * 6.0 * s)))), inside), scattered);
+    #endif
         cover = mix(0.5, cover, LACE_PATTERN_SHOWN);
         float folds = 0.8 + 0.4 * (0.5 + 0.5 * sin(6.2831853 * 6.0 * s));
         float flat_lets = 1.0 - clamp(mix(LACE_NET_STOPS, 1.0 - shell_glass.w, cover) * folds, 0.0, 0.9);

@@ -703,8 +703,9 @@ fn make_hdr(own: Own&, g: Gpu&) {
                else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_metals.blob"), opaque) };
     h.glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_glass.blob"),
                            ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
-    h.lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_lace.blob"),
-                           ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
+    h.lace = nx::pipeline(if room_light::lace_described { embed_file("../../build/ngfx/blobs/r3d_hdr_lace_described.blob") }
+                          else { embed_file("../../build/ngfx/blobs/r3d_hdr_lace.blob") },
+                          ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
     h.outside = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_outside.blob"),
                              ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
     h.motes = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_dust.blob"),

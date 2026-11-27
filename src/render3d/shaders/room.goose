@@ -351,15 +351,19 @@ let ROOM_HEAD = """
     // share of it, its saturation and share of the sheen (render3d::room_sun); paint_quiet:
     // the quiet paint (surfaces::Look's); paper_detail: the wallpaper close up under
     // PHYSICAL_COAT (render3d::paper_detail, paper_close's); sill: the sills' limestone
-    // (surfaces::Look's); sill_steps: unused, kept so the block's layout and room_fixed's
-    // constants stay; physical: under the light tuner's --light physical, xyz the probes'
-    // light on the lace's room side (render3d::probes_on_lace), taken in place of its old
-    // fill with lace_shade.z 1, w the stove's glaze's albedo over STOVE_GLAZE's (0 as
-    // made; render3d::stove_glaze); window_view: the window view's steps' strengths, 1 as made
+    // (surfaces::Look's); lace_back: with lace_shade.w, the light on the lace's window side, its
+    // mean over the cloth (render3d::lace_on_vertices), w the sun's share through the cloth to
+    // its room side (render3d::lace_self); physical: under the light tuner's
+    // --light physical, xyz the probes' light on the lace's room side (render3d::probes_on_lace,
+    // with its window side's added; with lace_shade.w its mean over the cloth alone), taken in
+    // place of its old fill with lace_shade.z 1, w the stove's glaze's albedo over STOVE_GLAZE's
+    // (0 as made; render3d::stove_glaze); window_view: the window view's steps' strengths, 1 as made
     // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
     // its scratches); shell_case: the casements' layout (render3d::shell_case_of); lace_shade: the lace's room-side fill, x what is left of it where
     // neither the sun nor the sky behind the niche reaches the cloth (1 as made), y how much
-    // the folds beside it hide (render3d::lace_shade); table_map:
+    // the folds beside it hide (render3d::lace_shade), w over 0 the lace as model3d's
+    // room_light describes it, the share of its thread's light scattered on through
+    // (render3d::room_block's described); table_map:
     // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
     // ending in gilt, ink, the page edges plain and sprinkled. wood_oak and wood_floor: the
@@ -409,7 +413,7 @@ let ROOM_HEAD = """
         vec4 paint_quiet;
         vec4 paper_detail;
         vec4 sill;
-        vec4 sill_steps;
+        vec4 lace_back;
         vec4 physical;
         vec4 window_view;
         vec4 shell_case;
@@ -1077,6 +1081,10 @@ let ROOM_FRAG = """
     const float LACE_GLOW = 0.6;
     // The most of the sky the lace sees behind it (room_shell::LACE_SKY_VIEW, its ao).
     const float LACE_SKY_VIEW = 0.6;
+    #ifdef LACE_DESCRIBED
+    // render3d::LACE_BACK_SCALE: the most of the mean light a vertex's window side takes.
+    const float LACE_BACK_SCALE = 8.0;
+    #endif
     #endif
     #ifdef ROOM_GLASS
     // A kept house's glass, wiped with a cloth: its film, a faint haze of what the cloth left
@@ -1289,6 +1297,20 @@ let ROOM_FRAG = """
         if (lace_shade.z > 0.5) room_side = physical.rgb * (1.0 - clamp(v_corner.x, 0.0, 1.0));
         vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + room_side * ssao_kept(screen_ao);
         c = srgb(lace_thread.rgb) * (front + through);
+    #ifdef LACE_DESCRIBED
+        // With lace_shade.w the lace as model3d's room_light describes it (task 124): its thread
+        // scatters its albedo, lace_shade.w of it on through the cloth and the rest back. The
+        // light on its two sides is each vertex's share of the cloth's mean (physical, lace_back;
+        // render3d::lace_on_vertices): on its room side in v_corner.y, on its window side in
+        // the fraction of v_extra.y, over LACE_BACK_SCALE; and the sun, on its room side through
+        // the cloth (lace_back.w).
+        if (lace_shade.w > 0.0) {
+            float back_share = LACE_BACK_SCALE * (v_extra.y - floor(v_extra.y + 0.001));
+            vec3 back = max(-dot(nf, l), 0.0) * sun * light / PI + lace_back.rgb * back_share;
+            vec3 room_lit = max(dot(nf, l), 0.0) * sun * lace_back.w * light / PI + physical.rgb * v_corner.y;
+            c = srgb(lace_thread.rgb) * mix(room_lit, back, lace_shade.w);
+        }
+    #endif
     #endif
         result = room_out(c * params.x * shade.w, a);
     #ifdef ROOM_GLASS
@@ -2349,6 +2371,9 @@ let ROOM_SILL = "#define ROOM_SILL 1\n";
 let ROOM_METALS = "#define ROOM_METALS 1\n";
 let ROOM_GLASS = "#define ROOM_WINDOW 1\n#define ROOM_GLASS 1\n";
 let ROOM_LACE = "#define ROOM_WINDOW 1\n#define ROOM_LACE 1\n";
+// The lace as model3d's room_light describes it, its HDR pipeline's under the light tuner's
+// --light physical (room_light::lace_described, task 124).
+let LACE_DESCRIBED = "#define LACE_DESCRIBED 1\n";
 // The floor that sees the mirror (render3d::planar_shown), the standard and high tiers';
 // without it the floor sees the room's box.
 let PLANAR_FLOOR = "#define PLANAR_FLOOR 1\n";

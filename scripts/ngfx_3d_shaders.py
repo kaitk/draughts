@@ -85,6 +85,7 @@ ROOMS = [
     ("r3d_hdr_walls_coat", ["PHYSICAL_COAT", "ROOM_WALLS", "HDR_OUT"]),
     ("r3d_hdr_glass", ["ROOM_GLASS", "HDR_OUT"]),
     ("r3d_hdr_lace", ["ROOM_LACE", "HDR_OUT"]),
+    ("r3d_hdr_lace_described", ["ROOM_LACE", "LACE_DESCRIBED", "HDR_OUT"]),
 ]
 MODULES = [
     ("r3d_lit", LIT_VS, ["FS_SET", "FRAME", "LIT_HEAD", "SHADOW_FN", "WIND_FN", "LIGHT_FN", "LIT_FRAG"]),

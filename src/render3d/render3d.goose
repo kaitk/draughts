@@ -1747,6 +1747,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         let whole = mesh::Vertex { v.pos, v.normal, v.uv, v.ao, kind };
         glass_room.push(corner_map::room_vertex(whole, float2 { v.mat - kind, 0.0 }, float2_0));
     }
+    keep_window_verts(glass_room);
     if g.room_vb.id != 0 { o.gpu_release_mesh(g.room_vb, g.room_ib); }
     if g.window_vb.id != 0 { o.gpu_release_mesh(g.window_vb, g.window_ib); }
     g.room_vb, g.room_ib = o.gpu_mesh(bytes_of(room), bytes_of(room_indices));
@@ -1760,6 +1761,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     }
     g.room_for = key;
     g.shell_table = room_shell::LIBRARY.table;
+    if lace_lit_once { lace_into_mesh(o, g); }
     g.mesh_ms = (clock() - t0) * 1000.0;
     if g.corner_map.id != 0 {
         o.gpu_flush();
@@ -2258,7 +2260,7 @@ struct SurfacesBlock {
     paint_quiet:   float4,
     paper_detail:  float4,         // the wallpaper close up (paper_detail)
     sill:          float4,
-    sill_steps:    float4,         // unused, kept so the block and room_fixed stay as they are
+    lace_back:     float4,         // the light on the lace's window side, its mean over the cloth (lace_on_vertices)
     physical:      float4,         // the lace's light from the room (probes_on_lace) and stove_glaze
     window_view:   float4,
     shell_case:    float4,
@@ -2289,7 +2291,8 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     b.shell = float4 { n, shell_face(s), surfaces::FLOOR_Y, metre };
     b.shell_mids = float4 { mids[0], mids[1], mids[2], room_shell::lace_hang };
     b.shell_niche = float4 { 0.5 * o.width, o.sill, o.height, o.rise };
-    b.shell_glass = float4 { o.glass.x * metre, o.glass.y * metre, room_shell::LACE_OFF * metre, g.room.opening.w };
+    b.shell_glass = float4 { o.glass.x * metre, o.glass.y * metre, room_shell::LACE_OFF * metre,
+                             if lace_lit(g) { -lace_slant.x } else { g.room.opening.w } };
     // The end walls' u, for the floor's darker band along every wall.
     let stove_end = room_shell::room_of(s, s.walls[room_shell::STOVE_WALL].a);
     let far_end = room_shell::room_of(s, s.walls[room_shell::FAR_WALL].a);
@@ -2347,6 +2350,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
     let away = s.table.y * surfaces::METRE;
     // The floor's herringbone tuned toward the parquet's (Wood's way 3): its planks' own.
     let tuned = woods[WOOD_FLOOR].light.w == WOOD_TUNED as f32;
+    // The lace as room_light describes it (task 124), lit by the bake's light.
+    let described = lace_lit(g);
     SurfacesBlock { if tuned { surfaces::TUNED_PLANK } else { k.plank }, if tuned { surfaces::TUNED_PLANKS } else { k.planks }, k.worn, paper_ground, paper_gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
@@ -2359,8 +2364,10 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
                     float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paper_detail, k.sill,
-                    float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { lace_room.x + lace_back.x, lace_room.y + lace_back.y, lace_room.z + lace_back.z, stove_glaze }, window_view, shell_case_of(),
-                    float4 { lace_shade.x, lace_shade.y, if lace_probed && light_baked(g) { 1.0 } else { 0.0 }, 0.0 },
+                    if described { model3d::f4(lace_back_mean, lace_self) } else { float4 { 1.0, 1.0, 1.0, 1.0 } },
+                    if described { model3d::f4(lace_room_mean, stove_glaze) } else { float4 { lace_room.x + lace_back.x, lace_room.y + lace_back.y, lace_room.z + lace_back.z, stove_glaze } },
+                    window_view, shell_case_of(g),
+                    float4 { lace_shade.x, lace_shade.y, if lace_probed && light_baked(g) { 1.0 } else { 0.0 }, if described { room_light::LACE_THROUGH } else { 0.0 } },
                     table_map_shown(g),
                     books::COVER, books::LABEL, wood_rows(g, WOOD_OAK), wood_rows(g, WOOD_FLOOR),
                     room_shell::window_metal }
@@ -2530,6 +2537,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     light_steps[7] = (clock() - at) * 1000.0;
     probes_on_table(g);
     if lace_probed { probes_on_lace(); }
+    if room_light::lace_described && lace_probed { lace_on_vertices(o, g, sun); }
     meter_light = meter_of(light_bounce, sun.bounce_gain);
     board_light = board_light_of(sun, light_bounce);
     let rows = if room_light::volumes_on { room_light::FULL_H } else { room_light::ATLAS_H };
@@ -2641,6 +2649,10 @@ fn probes_on_table(g: Gpu&) {
 var lace_probed = false;
 var lace_room = float3_0;
 var lace_back = float3_0;
+// The light on the lace's room side and window side, the means over its vertices
+// (lace_on_vertices, with room_light::lace_described).
+var lace_room_mean = float3_0;
+var lace_back_mean = float3_0;
 // The stove's glaze's albedo over its own (ROOM_FRAG's STOVE_GLAZE), 0 as made (the light
 // tuner's --stove-glaze, --light physical only).
 var stove_glaze: f32 = 0.0;
@@ -2667,6 +2679,103 @@ fn probes_on_lace() {
     lace_room = room * (1.0 / max(n, 1));
     lace_back = back * (1.0 / max(n, 1));
 }
+// The lace's light on each vertex under room_light::lace_described (task 124), after each
+// bake. On its window side what it sees: the glazing's sky, its niche's faces and the window
+// wall (room_light::lace_views, kept in the vertex's box at the mesh's making; the wall's light
+// the probes' there toward the window). On its room side the probes' light half a cell out,
+// less what the folds beside it hide (FOLD_HIDDEN over FOLD_DEEP of its corner's x, its
+// hidden share), where it sees the cloth beside it: through its open part the wall's light,
+// its thread the room's light sent back and what the cloth there throws on into the room
+// (room_light::lace_glow, the sun and sky on its window side). Each as its share of the cloth's mean (lace_room_mean,
+// lace_back_mean): the room side's in the vertex's corner's y, the window side's in its
+// material's fraction over LACE_BACK_SCALE (ROOM_FRAG's lace).
+let WINDOW_VERTS = 16384;
+let LACE_BACK_SCALE: f32 = 8.0;
+var window_verts: corner_map::RoomVertex[WINDOW_VERTS];
+var window_vert_count = 0;
+var lace_lums: float2[WINDOW_VERTS];
+var lace_sun = room_light::Sun { float3_0, float3_0, float3_0, float4_0, 0.0, 0.0 };
+var lace_lit_once = false;
+fn keep_window_verts(verts: corner_map::RoomVertex[>..]&) {
+    window_vert_count = 0;
+    guard room_light::lace_described && lace_probed && verts.len <= WINDOW_VERTS else { return; }
+    for v, i in verts {
+        var w = v;
+        if floor(v.mat + 0.001) == surfaces::MAT_LACE {
+            let p, n = plan_of(v.pos, v.normal);
+            let f = room_light::lace_views(p, n);
+            w.box = float2 { f.x, f.y };
+        }
+        window_verts[i] = w;
+    }
+    window_vert_count = verts.len;
+}
+// Whether the lace is lit as room_light describes it (ROOM_FRAG's lace_shade.w, LIGHT_FN's
+// lace_shadow by shell_glass.w under 0).
+fn lace_lit(g: Gpu&) -> bool { room_light::lace_described && lace_probed && light_baked(g) && lace_lit_once && window_vert_count > 0 }
+// The lace as one flat sheet for the sun (room_light::lace_flat: its folds' slant and the
+// density on the mask's blurred value; LIGHT_FN's lace_shadow by shell_glass.w and shell_case.y).
+var lace_slant = float2 { 1.0, 0.8 };
+// The sun's share through the cloth itself to its room side (lace_back.w): one crossing of
+// the flat sheet, the mask at its mean.
+var lace_self: f32 = 1.0;
+fn lace_on_vertices<O>(o: O&, g: Gpu&, sun: room_light::Sun) {
+    lace_slant = room_light::lace_flat(float3_0 - sun.toward);
+    lace_self = pow(1.0 - lace_slant.y * 0.5137, lace_slant.x);
+    lace_sun = sun;
+    lace_lit_once = true;
+    lace_into_mesh(o, g);
+}
+fn lace_into_mesh<O>(o: O&, g: Gpu&) {
+    guard window_vert_count > 0 && g.window_vb.id != 0 else { return; }
+    let sky = room_light::lace_sky(lace_sun);
+    let niches: float3[3] = [room_light::lace_niche(lace_sun, light_bounce, 0), room_light::lace_niche(lace_sun, light_bounce, 1),
+                             room_light::lace_niche(lace_sun, light_bounce, 2)];
+    let face = room_light::wall_face() - 0.5 * room_light::CELL;
+    let thread = 1.0 - room_light::lace_open_share(0.5);
+    let albedo = room_light::lace_albedo();
+    let through = room_light::LACE_THROUGH;
+    var front_sum = float3_0;
+    var back_sum = float3_0;
+    var n = 0;
+    for i in window_vert_count {
+        let v .= window_verts[i];
+        guard floor(v.mat + 0.001) == surfaces::MAT_LACE else { continue; }
+        let p, nrm = plan_of(v.pos, v.normal);
+        let wall = probe_light(p, -1.0);
+        let back = sky * v.box.x + niches[room_light::window_near(p)] * (v.box.y - v.box.x) + wall * (1.0 - v.box.y);
+        let room = probe_light(float3 { p.x, face, p.z }, 1.0);
+        let hidden = min(v.corner.x * (room_shell::FOLD_HIDDEN / room_shell::FOLD_DEEP), 1.0);
+        let glow = room_light::lace_glow(light_bounce, p);
+        let beside = wall * (1.0 - thread) + (albedo * (room * (1.0 - through)) + glow) * thread;
+        let front = room * (1.0 - hidden) + beside * hidden;
+        front_sum = front_sum + front;
+        back_sum = back_sum + back;
+        n++;
+        lace_lums[i] = float2 { lum(front), lum(back) };
+    }
+    guard n > 0 else { return; }
+    lace_room_mean = front_sum * (1.0 / n);
+    lace_back_mean = back_sum * (1.0 / n);
+    let fl = max(lum(lace_room_mean), 1e-9);
+    let bl = max(lum(lace_back_mean), 1e-9);
+    for i in window_vert_count {
+        let v .= window_verts[i];
+        guard floor(v.mat + 0.001) == surfaces::MAT_LACE else { continue; }
+        v.corner.y = lace_lums[i].x / fl;
+        v.mat = surfaces::MAT_LACE + min(lace_lums[i].y / (bl * LACE_BACK_SCALE), 0.99);
+    }
+    o.gpu_update(g.window_vb, bytes_of(window_verts[..window_vert_count]));
+}
+// A point and normal of the room's mesh (its own frame, ROOM_VERT's a_pos: u along the window
+// wall, v into the room) in the plan's (metres, z up).
+fn plan_of(p: float3, n: float3) -> float3, float3 {
+    let t = room_shell::LIBRARY.table;
+    return float3 { t.x - p.x / surfaces::METRE, t.y - p.z / surfaces::METRE, (p.y - surfaces::FLOOR_Y) / surfaces::METRE },
+           float3 { -n.x, -n.z, n.y };
+}
+fn lum(c: float3) -> f32 { 0.2126 * c.x + 0.7152 * c.y + 0.0722 * c.z }
+
 // The grid's probes' light at a plan point (x, y, metres up) toward +v (toward 1) or -v,
 // trilinear as baked_light.
 fn probe_light(p: float3, toward: f32) -> float3 {
@@ -4837,8 +4946,11 @@ struct ShellBlock {
     shell_case:  float4,
 }
 // The shell's windows' casements: x 1 with task 127's box window (room_shell::box_window_on),
-// 0 window B's; y, z, w kept for a sash's opening.
-fn shell_case_of() -> float4 { float4 { if room_shell::box_window_on { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 } }
+// 0 window B's; y the lace's density as one flat sheet where it is lit as described (lace_lit,
+// lace_slant), else 0; z, w kept for a sash's opening.
+fn shell_case_of(g: Gpu&) -> float4 {
+    return float4 { if room_shell::box_window_on { 1.0 } else { 0.0 }, if lace_lit(g) { lace_slant.y } else { 0.0 }, 0.0, 0.0 };
+}
 fn shell_block(g: Gpu&) -> ShellBlock {
     var b = default<ShellBlock>();
     guard g.room_on else { return b; }

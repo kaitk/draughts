@@ -131,6 +131,85 @@ fn lace_albedo() -> float3 {
     return float3 { model3d::linear(t.x), model3d::linear(t.y), model3d::linear(t.z) };
 }
 
+// The bake's lace is a plane before the niche; the cloth folds in and out of it so deep that
+// it holds LACE_FLAT on the width it hangs at (curtains.goose). Its folds taken as a sine of
+// that fullness, LACE_SLOPES heights from the hem to the rod each its slope's amplitude
+// (made with the hang, make_lace_slopes), and what it lets straight through along d (the
+// plan's) the mean over the folds of each crossing's open share (lace_open).
+let LACE_SLOPES = 33;
+let FOLD_SAMPLES = 8;
+var lace_slope:       f32[LACE_SLOPES] = [0.0; LACE_SLOPES];
+var lace_slopes_hang: f32              = -1.0;
+fn make_lace_slopes() {
+    guard lace_slopes_hang != room_shell::lace_hang else { return; }
+    lace_slopes_hang = room_shell::lace_hang;
+    for i in LACE_SLOPES {
+        let h = room_shell::LACE_HEM + (room_shell::LACE_TOP - room_shell::LACE_HEM) * i / (LACE_SLOPES - 1);
+        let w = along_keys(room_shell::LACE_OUTER, h) - along_keys(room_shell::LACE_INNER, h);
+        let full = room_shell::LACE_FLAT / max(w, 0.05);
+        // The amplitude whose sine's mean length over its width is `full`.
+        var lo: f32 = 0.0;
+        var hi: f32 = 20.0;
+        for step in 24 {
+            let m = 0.5 * (lo + hi);
+            var len: f32 = 0.0;
+            for k in 16 {
+                let t: f32 = (k + 0.5) / 16.0 * PI;
+                let c = m * cos(t);
+                len += sqrt(1.0 + c * c);
+            }
+            if len / 16.0 < full { lo = m; } else { hi = m; }
+        }
+        lace_slope[i] = 0.5 * (lo + hi);
+    }
+}
+fn lace_open(h: f32, d: float3) -> f32 {
+    let f = clamp((h - room_shell::LACE_HEM) / (room_shell::LACE_TOP - room_shell::LACE_HEM), 0.0, 1.0) * (LACE_SLOPES - 1);
+    let i = min(f as i64, LACE_SLOPES - 2);
+    let m = lace_slope[i] + (lace_slope[i + 1] - lace_slope[i]) * (f - i);
+    let r = 1.0 / length(d);
+    var sum: f32 = 0.0;
+    for k in FOLD_SAMPLES {
+        let t: f32 = (k + 0.5) / FOLD_SAMPLES * PI;
+        let s = -m * cos(t);
+        let c = abs(d.x * s + d.y) * r / sqrt(1.0 + s * s);
+        sum += lace_open_share(c);
+    }
+    return sum / FOLD_SAMPLES;
+}
+// The lace for a ray along d as one flat sheet, for the shaders' shadow of it (LIGHT_FN's
+// lace_shadow): x its folds' mean slant (the power on 1 - y m at a place of mask m), y the
+// density that with it lets lace_open's mean through over the heights and the pattern.
+fn lace_flat(d: float3) -> float2 {
+    var e:    f32 = 0.0;
+    var open: f32 = 0.0;
+    for j in 8 {
+        let h: f32 = 0.4 + 0.4 * j;
+        let f = clamp((h - room_shell::LACE_HEM) / (room_shell::LACE_TOP - room_shell::LACE_HEM), 0.0, 1.0) * (LACE_SLOPES - 1);
+        let i = min(f as i64, LACE_SLOPES - 2);
+        let m = lace_slope[i] + (lace_slope[i + 1] - lace_slope[i]) * (f - i);
+        for k in FOLD_SAMPLES {
+            let t: f32 = (k + 0.5) / FOLD_SAMPLES * PI;
+            let s = -m * cos(t);
+            e += 1.0 / max(abs(d.x * s + d.y) / (length(d) * sqrt(1.0 + s * s)), 0.5);
+        }
+        open += lace_open(h, d);
+    }
+    e = e / (8 * FOLD_SAMPLES);
+    open = open / 8.0;
+    return float2 { e, (1.0 - pow(open, 1.0 / e)) / 0.5137 };
+}
+
+// What the lace lets straight through at h along d: as described, or lace_lets as before.
+fn lace_passes(h: f32, d: float3) -> f32 { if lace_described { lace_open(h, d) } else { lace_lets(h) } }
+// Of the light the lace stops along d, what its thread throws on into the room: as described
+// (its albedo's share on through), or LACE_SCATTER as before.
+fn lace_throws(h: f32, d: float3) -> float3 {
+    if lace_described { return lace_albedo() * ((1.0 - lace_open(h, d)) * LACE_THROUGH); }
+    let s = (1.0 - lace_lets(h)) * LACE_SCATTER;
+    return float3 { s, s, s };
+}
+
 // The surfaces' mean albedo, linear: the herringbone's oak, the wallpaper, the wainscot,
 // the white paint of the doors and joinery, the limewash of the reveals, the sills' stone,
 // the table's mahogany (measured off the room's shots and surfaces::LOOK).
@@ -494,6 +573,7 @@ fn lets_at(table: const f32[:], i: i64, j: i64, v: float3) -> f32 {
 // into the bounces' cells (bounce.sun: the cell it lands on, what the lace before the
 // niche stops and throws on into the room).
 fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&) -> i64 {
+    if lace_described { make_lace_slopes(); }
     var power:  float3[BINS] = [float3_0; BINS];
     var where:  float3[BINS] = [float3_0; BINS];
     var normal: float3[BINS] = [float3_0; BINS];
@@ -560,9 +640,8 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                     let c = q + d * ((gy - lace_y) / -d.y);
                     if in_lace(o, c) {
                         let lc = lace_cell(k, o, c);
-                        let lets = lace_lets(c.z);
-                        bounce.sun[lc] = bounce.sun[lc] + p * ((1.0 - lets) * LACE_SCATTER);
-                        p = p * lets;
+                        bounce.sun[lc] = bounce.sun[lc] + p * lace_throws(c.z, d);
+                        p = p * lace_passes(c.z, d);
                     }
                     var t = b.z / -d.z;
                     var hit = 0;
@@ -656,6 +735,7 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
 // metre, as sun_patches fills it, were the whole top lit so.
 let BOARD_POINTS = 9;
 fn board_sun(sun: Sun, tree: const f32[:], r: f32) -> float3 {
+    if lace_described { make_lace_slopes(); }
     let d = float3_0 - sun.toward;
     guard d.y < -0.02 && d.z < -0.02 else { return float3_0; }
     let wins = windows();
@@ -687,7 +767,7 @@ fn board_sun(sun: Sun, tree: const f32[:], r: f32) -> float3 {
                 var lets = tree[(k * RAYS_Y + j) * RAYS_X + i];
                 lets *= if members_traced { PANES * members_let(boxes, o, i, j, d) } else { glazing };
                 let c = q + d * ((gy - lace_y) / -d.y);
-                if in_lace(o, c) { lets *= lace_lets(c.z); }
+                if in_lace(o, c) { lets *= lace_passes(c.z, d); }
                 sum += lets;
                 break;
             }
@@ -968,7 +1048,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                         let f = max(face - p.y, 0.0) / v.y;
                         guard in_niche(o, p + v * f) && past_shutters(o, p, v) else { continue; }
                         let c = p + v * ((lace_y - p.y) / v.y);
-                        if p.y < lace_y && in_lace(o, c) { lets = lace_lets(c.z); }
+                        if p.y < lace_y && in_lace(o, c) { lets = lace_passes(c.z, v); }
                     }
                     guard !under_table(sun.table, p, s) else { continue; }
                     lets = lets * sky_through(sky_ij[si] % SKY_X, sky_ij[si] / SKY_X, v);
@@ -1359,7 +1439,7 @@ fn seen_through(t: float4, wins: room_shell::Opening[3]&, a: float3, ka: i64, b:
         guard in_niche(o, room + v * ((face - room.y) / v.y)) && past_shutters(o, room, v) else { return 0.0; }
         let lace_y = face - room_shell::LACE_OFF;
         let c = room + v * ((lace_y - room.y) / v.y);
-        if room.y < lace_y && in_lace(o, c) { lets = lace_lets(c.z); }
+        if room.y < lace_y && in_lace(o, c) { lets = lace_passes(c.z, v); }
     }
     guard !under_table(t, a, b) else { return 0.0; }
     return lets;
@@ -1369,6 +1449,146 @@ fn seen_through(t: float4, wins: room_shell::Opening[3]&, a: float3, ka: i64, b:
 fn balanced(c: float3) -> float3 {
     let grey = 0.2126 * c.x + 0.7152 * c.y + 0.0722 * c.z;
     return c + (float3 { grey, grey, grey } - c) * bounce_grey;
+}
+
+// The sky on a cell (the lace's facing the window) from each window's glass in SKY_X × SKY_Y
+// samples, over pi: from its own window alone where it is in a niche or the lace.
+fn sky_on(sun: Sun, wins: room_shell::Opening[3]&, cell: Cell, lace: bool, own: i64) -> float3 {
+    let gy = glass_y();
+    let sky = sun.sky * (sun.sky_gain * glazing / PI);
+    var e = float3_0;
+    for k in 3 {
+        guard own < 0 || own == k else { continue; }
+        let o = wins[k];
+        let low = o.sill + GLAZED_LOW;
+        let high = o.sill + o.height + o.rise - GLAZED_HIGH;
+        let area = (2.0 * GLAZED_HALF / SKY_X) * ((high - low) / SKY_Y);
+        for j in SKY_Y {
+            for i in SKY_X {
+                let x = o.mid - GLAZED_HALF + (i + 0.5) * (2.0 * GLAZED_HALF / SKY_X);
+                let h = low + (j + 0.5) * ((high - low) / SKY_Y);
+                guard h < room_shell::head_at(o, x - o.mid) else { continue; }
+                let v = float3 { x, gy, h } - cell.at;
+                guard v.y > 1e-3 else { continue; }
+                let r2 = max(dot(v, v), 0.01);
+                let r = sqrt(r2);
+                let facing = if lace { v.y / r } else { dot(cell.normal, v) / r };
+                guard facing > 0.0 else { continue; }
+                let lets = if lace || own >= 0 { 1.0 } else { seen_through(sun.table, wins, cell.at, -1, float3 { x, gy, h }, k) };
+                guard lets > 0.0 else { continue; }
+                e = e + sky * (lets * sky_through(i, j, v) * area * (v.y / r) * facing / r2);
+            }
+        }
+    }
+    return e;
+}
+
+// What the lace's window side sees at p (the plan's) facing n (either way): its form factors
+// of its own window's glazed opening through the niche's outline (the sky) and of the niche's
+// outline at the wall's face (the sky and the niche's faces); the rest of its view is the
+// window wall's. A sight line along the wall crosses the cloth's folds on its way (their
+// depth the sine's of make_lace_slopes, LACE_FOLDS a panel) until it passes the panel's edge,
+// each crossing at a slant letting lace_open_share's least through. In 8 × 16
+// samples of each, at the mesh's making.
+fn lace_views(p: float3, n: float3) -> float2 {
+    make_lace_slopes();
+    let o = windows()[window_near(p)];
+    let back = if n.y > 0.0 { n } else { float3_0 - n };
+    let face = wall_face();
+    let hf = clamp((p.z - room_shell::LACE_HEM) / (room_shell::LACE_TOP - room_shell::LACE_HEM), 0.0, 1.0) * (LACE_SLOPES - 1);
+    let hi = min(hf as i64, LACE_SLOPES - 2);
+    let slope = lace_slope[hi] + (lace_slope[hi + 1] - lace_slope[hi]) * (hf - hi);
+    let inner = along_keys(room_shell::LACE_INNER, p.z);
+    let period = max(along_keys(room_shell::LACE_OUTER, p.z) - inner, 0.05) / room_shell::LACE_FOLDS;
+    let depth = slope * period / TAU;
+    let to_inner = max(abs(p.x - o.mid) - inner, 0.0);
+    let to_outer = max(along_keys(room_shell::LACE_OUTER, p.z) - abs(p.x - o.mid), 0.0);
+    let slant_open = lace_open_share(0.0);
+    var sky:  f32 = 0.0;
+    var open: f32 = 0.0;
+    for way in 2 {
+        let glazed = way == 0;
+        let y = if glazed { glass_y() } else { face };
+        let half = if glazed { GLAZED_HALF } else { 0.5 * o.width };
+        let low = if glazed { o.sill + GLAZED_LOW } else { o.sill };
+        let high = if glazed { o.sill + o.height + o.rise - GLAZED_HIGH } else { o.sill + o.height + o.rise };
+        let area = (2.0 * half / 8.0) * ((high - low) / 16.0);
+        for j in 16 {
+            for i in 8 {
+                let x = o.mid - half + (i + 0.5) * (2.0 * half / 8.0);
+                let h = low + (j + 0.5) * ((high - low) / 16.0);
+                guard h < room_shell::head_at(o, x - o.mid) - (if glazed { GLAZED_HIGH } else { 0.0 }) else { continue; }
+                let v = float3 { x, y, h } - p;
+                guard v.y > 1e-3 else { continue; }
+                let r2 = dot(v, v);
+                let r = sqrt(r2);
+                let seen = dot(back, v) / r;
+                guard seen > 0.0 && in_niche(o, p + v * ((face - p.y) / v.y)) && past_shutters(o, p, v) else { continue; }
+                let edge = if v.x * (o.mid - p.x) > 0.0 { to_inner } else { to_outer };
+                let crossings = min(depth * abs(v.x) / v.y, edge) / (0.5 * period);
+                let f = seen * (v.y / r) * area / (PI * r2) * pow(slant_open, crossings);
+                if glazed { sky += f; } else { open += f; }
+            }
+        }
+    }
+    return float2 { sky, open };
+}
+
+// The sky's light through the glazing for the lace (ROOM_FRAG's lace under lace_described):
+// the sky on its window side at its inner edge before the glazing (sky_on, the panes and the
+// casements' members in it) over that place's form factor of the glazed opening (lace_views),
+// over the three windows' panels at ten heights.
+fn lace_sky(sun: Sun) -> float3 {
+    var wins = windows();
+    let y = wall_face() - room_shell::LACE_OFF;
+    var e = float3_0;
+    var f: f32 = 0.0;
+    for k in 3 {
+        let o = wins[k];
+        for side in 2 {
+            let x = o.mid + (if side == 0 { -0.44 } else { 0.44 });
+            for j in 10 {
+                let h = o.sill + 0.15 + (j + 0.5) * ((o.height - 0.3) / 10.0);
+                let at = Cell { float3 { x, y, h }, float3 { 0.0, -1.0, 0.0 }, float3_0, 1.0, -1 };
+                e = e + sky_on(sun, wins, at, true, k);
+                f += lace_views(at.at, float3 { 0.0, 1.0, 0.0 }).x;
+            }
+        }
+    }
+    return e * (1.0 / max(f, 1e-6));
+}
+
+// The light leaving window k's niche's faces (its sill, reveals and head, and with niche_light
+// its inner casement's front) on the whole, over pi: the bounces' and the sun's thrown back,
+// by area, for what the lace's window side sees of them (ROOM_FRAG's lace under
+// lace_described).
+fn lace_niche(sun: Sun, bounce: Bounce&, k: i64) -> float3 {
+    let gain = sun.bounce_gain / PI;
+    var sum = float3_0;
+    var area: f32 = 0.0;
+    for c in NICHE_C0..TABLE_C {
+        let cell .= bounce.cells[c];
+        guard cell.area > 0.0 && cell.niche == k else { continue; }
+        sum = sum + bounce.seen[c] * cell.area + bounce.sun[c] * gain;
+        area += cell.area;
+    }
+    return sum * (1.0 / max(area, 1e-6));
+}
+
+// The window whose lace or niche is nearest p (the plan's).
+fn window_near(p: float3) -> i64 {
+    let wins = windows();
+    var k = 0;
+    for i in 3 { if abs(p.x - wins[i].mid) < abs(p.x - wins[k].mid) { k = i; } }
+    return k;
+}
+
+// The light the lace's thread throws on into the room at p (the plan's), its cell's in the
+// first light over the thread's share there (first_light's lace cells, over pi).
+fn lace_glow(bounce: Bounce&, p: float3) -> float3 {
+    let k = window_near(p);
+    let c = lace_cell(k, windows()[k], p);
+    return bounce.seen[c] * (1.0 / max(1.0 - lace_open(p.z, float3 { 0.0, 1.0, 0.0 }), 0.05));
 }
 
 // The light the room first throws on, besides the sun's patches: each cell's sky (seen
@@ -1391,8 +1611,6 @@ fn first_light(sun: Sun, bounce: Bounce&) {
         bounce.cells[FLOOR_C0 + c].albedo = floor_albedo(float2 { sun.table.x, sun.table.y }, at, float2 { 0.5 * fw, 0.5 * fd });
     }
     var wins = windows();
-    let gy = glass_y();
-    let sky = sun.sky * (sun.sky_gain * glazing / PI);
     if members_traced && !sky_lets_made { make_sky_lets(); }
     let gain = sun.bounce_gain / PI;
     for c in CELLS {
@@ -1402,36 +1620,12 @@ fn first_light(sun: Sun, bounce: Bounce&) {
         guard cell.area > 0.0 else { continue; }
         let lace = c >= LACE_C0;
         let own = if lace { (c - LACE_C0) / (2 * LACE_BANDS) } else { cell.niche };
-        // The sky on it: from each window's glass in SKY_X × SKY_Y samples.
-        var e = float3_0;
-        for k in 3 {
-            guard own < 0 || own == k else { continue; }
-            let o = wins[k];
-            let low = o.sill + GLAZED_LOW;
-            let high = o.sill + o.height + o.rise - GLAZED_HIGH;
-            let area = (2.0 * GLAZED_HALF / SKY_X) * ((high - low) / SKY_Y);
-            for j in SKY_Y {
-                for i in SKY_X {
-                    let x = o.mid - GLAZED_HALF + (i + 0.5) * (2.0 * GLAZED_HALF / SKY_X);
-                    let h = low + (j + 0.5) * ((high - low) / SKY_Y);
-                    guard h < room_shell::head_at(o, x - o.mid) else { continue; }
-                    let v = float3 { x, gy, h } - cell.at;
-                    guard v.y > 1e-3 else { continue; }
-                    let r2 = max(dot(v, v), 0.01);
-                    let r = sqrt(r2);
-                    let facing = if lace { v.y / r } else { dot(cell.normal, v) / r };
-                    guard facing > 0.0 else { continue; }
-                    let lets = if lace || own >= 0 { 1.0 } else { seen_through(sun.table, wins, cell.at, -1, float3 { x, gy, h }, k) };
-                    guard lets > 0.0 else { continue; }
-                    e = e + sky * (lets * sky_through(i, j, v) * area * (v.y / r) * facing / r2);
-                }
-            }
-        }
+        let e = sky_on(sun, wins, cell, lace, own);
         let thrown = bounce.sun[c] * (gain / cell.area);
         if lace {
             // The lace's share of the sun it stops is its own (LACE_SCATTER), not lifted by
             // the patches' gain: lifted, it threw on more than the sun brings it.
-            let from_sky = balanced(e * ((1.0 - lace_lets(cell.at.z)) * LACE_SCATTER));
+            let from_sky = balanced(e * lace_throws(cell.at.z, float3 { 0.0, 1.0, 0.0 }));
             let from_sun = bounce.sun[c] * (1.0 / (PI * cell.area));
             bounce.leaves[c] = (from_sky + balanced(from_sun)) * lace_source;
             bounce.seen[c] = bounce.leaves[c];

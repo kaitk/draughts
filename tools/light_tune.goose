@@ -97,6 +97,8 @@
 //       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
 //       [--grade-ev season|-0.5|-1|-1.5|lift|lift2|match|match-dark (with the grade: stops under the season's;
 //       lift, lift2, match, match-dark at -1.5, -1.75, -1, -1 with AgX's look power 0.7, 0.65, 0.65, 0.7; season)]
+//       [--lace-light described|old (--light physical with --lace-fill probes: the lace's light as model3d's
+//       room_light describes it, task 124, room_light::lace_described; or as before; described)]
 //       [--lace-fill probes|old (--light physical: the lace's room side lit by the probes' light before it,
 //       render3d::lace_probed, or the old harmonics and even bounce; probes)] [--stove-glaze K (--light physical:
 //       the stove's glaze's albedo over its own, render3d::stove_glaze; PHYSICAL_STOVE_GLAZE, 1 as made)]
@@ -442,7 +444,7 @@ let GRADE_WAYS = ["season", "none"];
 // (-1, power 0.65) meets the autumn reference's log-average (0.063 against 0.058) with 1.5% of
 // the reference view near white (the season's grade 3.0%, the reference 0.7%).
 let EXPOSURES = ["season", "-0.5", "-1", "-1.5", "lift", "lift2", "match", "match-dark"];
-let EXPOSURE_EV: f32[8] = [0.0, -0.5, -1.0, -1.5, -1.5, -1.75, -1.0, -1.0];
+let EXPOSURE_EV:    f32[8] = [0.0, -0.5, -1.0, -1.5, -1.5, -1.75, -1.0, -1.0];
 let EXPOSURE_POWER: f32[8] = [0.0, 0.0, 0.0, 0.0, 0.7, 0.65, 0.65, 0.7];
 fn graded_as(season: i64, exposure: i64) -> render3d::Grade {
     var g = render3d::GRADES[season];
@@ -1711,6 +1713,7 @@ fn tune<O>(r3d: O&) {
     render3d::sheen_look = four(argv, "--sheen", if physical { PHYSICAL_SHEEN } else { render3d::sheen_look });
     render3d::physical_coat = physical && !(flag_value(argv, "--coat") > 0 && argv[flag_value(argv, "--coat")] == "off");
     render3d::lace_probed = physical && !(flag_value(argv, "--lace-fill") > 0 && argv[flag_value(argv, "--lace-fill")] == "old");
+    room_light::lace_described = render3d::lace_probed && !(flag_value(argv, "--lace-light") > 0 && argv[flag_value(argv, "--lace-light")] == "old");
     render3d::stove_glaze = if physical { number(argv, "--stove-glaze", PHYSICAL_STOVE_GLAZE) } else { 0.0 };
     render3d::paper_metal = render3d::physical_coat && !(flag_value(argv, "--paper-metal") > 0 && argv[flag_value(argv, "--paper-metal")] == "off");
     render3d::paper_ground = four(argv, "--paper-ground", if render3d::paper_metal { PHYSICAL_PAPER_GROUND } else { render3d::paper_ground });
@@ -2084,6 +2087,12 @@ fn tune<O>(r3d: O&) {
                     let lr = render3d::lace_room;
                     let lb = render3d::lace_back;
                     print("the lace's light from the room ", lr.x, ", ", lr.y, ", ", lr.z, ", on its back ", lb.x, ", ", lb.y, ", ", lb.z);
+                    if room_light::lace_described {
+                        let mr = render3d::lace_room_mean;
+                        let mb = render3d::lace_back_mean;
+                        print("the lace's light over its vertices: its room side ", mr.x, ", ", mr.y, ", ", mr.z, ", its window side ",
+                              mb.x, ", ", mb.y, ", ", mb.z);
+                    }
                 }
             }
             if g.props_baked { print("the props' occlusion baked in ", g.props_ms, " ms, ", g.table_count / 3, " triangles"); }
