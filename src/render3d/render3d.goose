@@ -4462,7 +4462,9 @@ let METER_GREY: f32 = 0.18;
 // The camera's grade under AgX, a season's (GRADES): ev stops over the meter (with
 // camera_ev), white the white balance's gains on the light (green 1), and a look on AgX's
 // curve as Blender's AgX looks: (v * slope + offset) ^ power, then the saturation round its
-// luminance. Autumn's is fitted to the autumn reference's regions (task 122, the sixth step).
+// luminance. Autumn's is a light touch over the light, whose colour comes from the season's air
+// (task 122, 2026-11-27: a third of the sixth step's 1.3, 1, 0.6 and power 0.8, which was fitted
+// to the autumn reference's regions under a clear sky's blue light).
 struct Grade {
     ev:         f32    = 0.0,
     white:      float3 = float3 { 1.0, 1.0, 1.0 },
@@ -4472,7 +4474,7 @@ struct Grade {
     saturation: f32    = 1.0,
 }
 // By looks' season: autumn, winter (neutral, not tuned yet), spring, summer.
-let GRADES: Grade[4] = [Grade { -3.6, float3 { 1.3, 1.0, 0.6 }, 1.0, 0.0, 0.8, 1.0 }, Grade {}, Grade {}, Grade {}];
+let GRADES: Grade[4] = [Grade { -3.6, float3 { 1.1, 1.0, 0.85 }, 1.0, 0.0, 0.9, 1.0 }, Grade {}, Grade {}, Grade {}];
 var grade = Grade {};
 fn meter_of(b: room_light::Bounce&, gain: f32) -> f32 {
     var sum:  f32 = 0.0;

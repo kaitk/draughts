@@ -30,6 +30,7 @@ import .books;
 import .book_cells;
 import .curtains;
 import .view_out;
+import .outside_light;
 import .room_light;
 import .probe_volumes;
 import .corner_map;

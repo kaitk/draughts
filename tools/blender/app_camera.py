@@ -47,7 +47,7 @@ from PIL import Image
 
 # render3d::GRADES by season: the white's gains, slope, offset, power, saturation (its ev is in
 # the tuner's exposure already).
-GRADES = {"autumn": ((1.3, 1.0, 0.6), (1.0, 0.0, 0.8), 1.0), "none": ((1.0, 1.0, 1.0), (1.0, 0.0, 1.0), 1.0)}
+GRADES = {"autumn": ((1.1, 1.0, 0.85), (1.0, 0.0, 0.9), 1.0), "none": ((1.0, 1.0, 1.0), (1.0, 0.0, 1.0), 1.0)}
 UNITS = 1.0
 
 # HDR_TONE_FRAG's agx, its numbers as the shader writes them. PRE and POST as rows (the shader

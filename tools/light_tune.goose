@@ -93,6 +93,8 @@
 //       [--light today|physical (the room's light from physical inputs, physical_light; today as made)]
 //       [--camera-toe room|neutral|none|agx (--light physical's one curve after the HDR pass: the shoulder after
 //       that toe, or AgX at the metered exposure, the default)] [--camera-ev EV (AgX's exposure over the meter's; 0)]
+//       [--season-air hazy|clear (--light physical in autumn: the sun and the light from outside from the season's air,
+//       model3d::outside_light; clear PHYSICAL_SUN and the sky's one colour; hazy)]
 //       [--sun-color-height DEG (--light physical: the sun's colour as at this height, a hazier sky's; its own)]
 //       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
 //       [--grade-ev season|-0.5|-1|-1.5|lift|lift2|match|match-dark (with the grade: stops under the season's;
@@ -356,12 +358,22 @@ var sun_color_height: f32 = -1.0;
 var sun_color_given = false;
 // The antique brass's level while the window's metal is the bronze (the Window section).
 var brass_level: f32 = 1.5;
+// --season-air hazy|clear: under --light physical in autumn, the sun and the light from outside from
+// the season's air (Blender's sky model at aerosol density 40, model3d::outside_light, task
+// 122, 2026-11-27): the sun's colour and strength as the model's, the bake's sky by direction
+// from the table (room_light::outside_on). clear: PHYSICAL_SUN and the sky's one colour.
+let AIR_WAYS = ["hazy", "clear"];
+var air_hazy = true;
+fn air_on() -> bool { return air_hazy && light_season == 0; }
 fn sun_color_as(height: f32) -> f32 { return if sun_color_height >= 0.0 { sun_color_height } else { height }; }
 fn physical_sun(made: rooms::Room, height: f32) -> float4 {
     let key = rooms::color_of(made.key_color);
     let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
     let grey = float3 { y, y, y };
-    let sun = if sun_by_height { rooms::sun_color_at(sun_color_as(height)) * y } else { grey + (key - grey) * render3d::ROOM_SUN_AS_MADE.x };
+    let air = outside_light::AUTUMN_SUN;
+    let air_y = 0.2126 * air.x + 0.7152 * air.y + 0.0722 * air.z;
+    let sun = if air_on() { air * (y / air_y) } else if sun_by_height { rooms::sun_color_at(sun_color_as(height)) * y } else {
+        grey + (key - grey) * render3d::ROOM_SUN_AS_MADE.x };
     return float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), made.key_color.w };
 }
 // --light physical's sun's broad sheen (render3d::sheen_look): none, as no lobe of the kind is
@@ -393,7 +405,10 @@ var light_season: i64 = 0;
 fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_given: bool) -> rooms::Room {
     var r = r0;
     r.key_color = physical_sun(made, r0.key.y);
-    if !key_given { r.key.z = made.key.z * made.shell_sun.y * PANES * PHYSICAL_SUN[light_season].x; }
+    let air = outside_light::AUTUMN_SUN;
+    let strength = if air_on() { 0.2126 * air.x + 0.7152 * air.y + 0.0722 * air.z } else { PHYSICAL_SUN[light_season].x };
+    if !key_given { r.key.z = made.key.z * made.shell_sun.y * PANES * strength; }
+    room_light::outside_on = air_on();
     r.shell_sun.y = 1.0;
     r.panes.w = if casement_depth { 1.0 } else { 0.0 };
     render3d::room_sun = float4 { 1.0, 1.0, 1.0, render3d::ROOM_SUN_AS_MADE.w };
@@ -1756,6 +1771,7 @@ fn tune<O>(r3d: O&) {
     let pano_alpha = number(argv, "--env-pano-alpha", 0.25);
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
+    air_hazy = pick(argv, "--season-air", AIR_WAYS, 0) == 0;
     sun_color_given = has(argv, "--sun-color-height");
     sun_color_height = number(argv, "--sun-color-height", PHYSICAL_SUN[light_season].y);
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);

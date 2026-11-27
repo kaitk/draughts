@@ -169,7 +169,7 @@ fn outer_sky(sun: Sun, o: room_shell::Opening, q: float3, n: float3) -> float3 {
     let dx = 2.0 * GLAZED_HALF / SKY_X;
     let dh = (high - low) / SKY_Y;
     let gy = wall_face() + o.glass.y + room_shell::pane_in();
-    let sky = sun.sky * (sun.sky_gain / PI);
+    let sky_scale = 1.0 / PI;
     var e = float3_0;
     for j in SKY_Y {
         for i in SKY_X {
@@ -184,7 +184,7 @@ fn outer_sky(sun: Sun, o: room_shell::Opening, q: float3, n: float3) -> float3 {
                 let facing = dot(n, v) / r;
                 guard facing > 0.0 else { continue; }
                 let lets = lets_at(outer_lets[..], i, j, v) * PANE;
-                e = e + sky * (lets * (dx * dh / 9.0) * (v.y / r) * facing / r2);
+                e = e + sky_along(sun, v) * (sky_scale * lets * (dx * dh / 9.0) * (v.y / r) * facing / r2);
             }
         }
     }
@@ -312,7 +312,7 @@ fn cavity_probe(sun: Sun, bounce: Bounce&, patches: Patch[BINS]&, count: i64, pa
     let dx = 2.0 * GLAZED_HALF / SKY_X;
     let dh = (high - low) / SKY_Y;
     let gy = wall_face() + o.glass.y + room_shell::pane_in();
-    let sky = sun.sky * (sun.sky_gain / PI);
+    let sky_scale = 1.0 / PI;
     for j in SKY_Y {
         for i in SKY_X {
             for s in 9 {
@@ -324,7 +324,7 @@ fn cavity_probe(sun: Sun, bounce: Bounce&, patches: Patch[BINS]&, count: i64, pa
                 let r2 = max(dot(v, v), 1e-4);
                 let r = sqrt(r2);
                 let lets = lets_at(outer_lets[..], i, j, v) * PANE;
-                take(g, f, sky * (lets * (dx * dh / 9.0) * (v.y / r) / r2), v / r);
+                take(g, f, sky_along(sun, v) * (sky_scale * lets * (dx * dh / 9.0) * (v.y / r) / r2), v / r);
             }
         }
     }

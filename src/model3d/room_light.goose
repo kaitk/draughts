@@ -300,6 +300,33 @@ struct Sun {
     bounce_gain: f32,
 }
 
+// The light from outside (the tuner's --light physical with a season's air): with outside_on
+// the bake takes the outside's radiance by direction from outside_light's table (the sky, the
+// tree line and the lawn as Cycles has them under that air), at the sun's luminance, in place of
+// the sky's one colour; the probes' sky gain scales it over OUTSIDE_GAIN, the gain it is made at.
+var outside_on = false;
+var outside_table = outside_light::AUTUMN_OUTSIDE;
+let OUTSIDE_GAIN: f32 = 7.0;
+
+// The outside's radiance along v (the plan's, from the room out through the glass).
+fn sky_along(sun: Sun, v: float3) -> float3 {
+    guard outside_on else { return sun.sky * sun.sky_gain; }
+    let flat = sqrt(v.x * v.x + v.y * v.y);
+    let az = degrees(atan2(v.x, v.y));
+    let el = degrees(atan2(v.z, flat));
+    let fx = clamp((az - outside_light::OUTSIDE_AZ0) / outside_light::OUTSIDE_STEP - 0.5, 0.0, (outside_light::OUTSIDE_COLS - 1) as f32);
+    let fy = clamp((el - outside_light::OUTSIDE_EL0) / outside_light::OUTSIDE_STEP - 0.5, 0.0, (outside_light::OUTSIDE_ROWS - 1) as f32);
+    let i = min(fx as i64, outside_light::OUTSIDE_COLS - 2);
+    let j = min(fy as i64, outside_light::OUTSIDE_ROWS - 2);
+    let tx = fx - i as f32;
+    let ty = fy - j as f32;
+    let at = j * outside_light::OUTSIDE_COLS + i;
+    let low = outside_table[at] + (outside_table[at + 1] - outside_table[at]) * tx;
+    let high = outside_table[at + outside_light::OUTSIDE_COLS] + (outside_table[at + outside_light::OUTSIDE_COLS + 1] - outside_table[at + outside_light::OUTSIDE_COLS]) * tx;
+    let sun_y = 0.2126 * sun.light.x + 0.7152 * sun.light.y + 0.0722 * sun.light.z;
+    return (low + (high - low) * ty) * (sun_y * sun.sky_gain / OUTSIDE_GAIN);
+}
+
 // A patch the sun lights, thrown back: where, its normal (the plan's), its albedo, and the
 // sun's light on it (watts, so to say: irradiance times area).
 struct Patch { at: float3, normal: float3, albedo: float3, power: float3 }
@@ -1131,7 +1158,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
             }
         }
     }
-    let sky = sun.sky * (sun.sky_gain * glazing / PI);
+    let sky_scale = glazing / PI;
     if members_traced && !sky_lets_made { make_sky_lets(); }
     let inv_pi2 = sun.bounce_gain / (PI * PI);
     // The probes' near limit, so a patch's light doesn't spike at the probes beside it:
@@ -1178,7 +1205,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                     lets = lets * sky_through(sky_ij[si] % SKY_X, sky_ij[si] / SKY_X, v);
                     let r2 = max(dot(v, v), near2);
                     let r = sqrt(r2);
-                    take(got, f, sky * (lets * sky_area[si] * (v.y / r) / r2), v / r);
+                    take(got, f, sky_along(sun, v) * (sky_scale * lets * sky_area[si] * (v.y / r) / r2), v / r);
                 }
                 // The sun's patches, each a small lambertian light facing its normal.
                 for pi in count {
@@ -1586,7 +1613,7 @@ fn balanced(c: float3) -> float3 {
 // samples, over pi: from its own window alone where it is in a niche or the lace.
 fn sky_on(sun: Sun, wins: room_shell::Opening[3]&, cell: Cell, lace: bool, own: i64) -> float3 {
     let gy = glass_y();
-    let sky = sun.sky * (sun.sky_gain * glazing / PI);
+    let sky_scale = glazing / PI;
     var e = float3_0;
     for k in 3 {
         guard own < 0 || own == k else { continue; }
@@ -1607,7 +1634,7 @@ fn sky_on(sun: Sun, wins: room_shell::Opening[3]&, cell: Cell, lace: bool, own: 
                 guard facing > 0.0 else { continue; }
                 let lets = if lace || own >= 0 { 1.0 } else { seen_through(sun.table, wins, cell.at, -1, float3 { x, gy, h }, k) };
                 guard lets > 0.0 else { continue; }
-                e = e + sky * (lets * sky_through(i, j, v) * area * (v.y / r) * facing / r2);
+                e = e + sky_along(sun, v) * (sky_scale * lets * sky_through(i, j, v) * area * (v.y / r) * facing / r2);
             }
         }
     }
