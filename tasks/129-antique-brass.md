@@ -211,37 +211,37 @@ faces clear of edges:
 | | Ball | Stem | Top | Housing | Rod | Mottle: ball, stem, housing |
 |---|---|---|---|---|---|---|
 | Cycles, flat bronze | 0.30 | 0.33 | 0.35 | 0.066 | 0.33 | 0.10, 0.14, 0.12 (noise) |
-| Game before (`f56d4987`), flat | 0.21 | 0.24 | 0.37 | 0.009 | 0.08 | |
-| Game, flat, panes 1 | 0.28 | 0.25 | 0.50 | 0.009 | 0.08 | |
+| Game before (`544d5a20`), flat | 0.23 | 0.25 | 0.39 | 0.010 | 0.09 | |
+| Game, flat, panes 1 | 0.31 | 0.26 | 0.52 | 0.010 | 0.09 | |
 | Cycles, level 2 | 0.79 | 0.67 | 0.70 | 0.48 | 0.79 | 0.19, 0.22, 0.07 |
 | Cycles, level 1.5 | 0.93 | 0.78 | 0.80 | 0.59 | 0.95 | 0.19, 0.26, 0.07 |
 | Game, level 2, panes 1 | 0.77 | 0.57 | 0.81 | 0.29 | 0.52 | 0.08, 0.27, 0.35 |
-| Game, level 1.5, panes 1 (the default) | 0.82 | 0.61 | 0.84 | 0.33 | 0.57 | 0.07, 0.30, 0.34 |
-| Game, level 1.5, mottling 0.75 | 0.85 | 0.59 | 0.86 | 0.32 | 0.54 | 0.09, 0.23, 0.28 |
+| Game, level 1.5, panes 1 (the default) | 0.85 | 0.63 | 0.87 | 0.33 | 0.59 | 0.07, 0.31, 0.35 |
+| Game, level 1.5, mottling 0.75 | 0.89 | 0.61 | 0.88 | 0.32 | 0.56 | 0.10, 0.24, 0.29 |
 
 The upper keeper's rod (the `niche` view), over the stile beside it: Cycles 0.23 flat, 0.79 at
-1.5; the game 0.04 flat (before and after), 0.50 at 1.5.
+1.5; the game 0.05 flat (before and after), 0.50 at 1.5.
 
 What is left is the light the parts facing the room reflect: the housing's face, the rod, the
 grip's middle. The probes' light that way (`room_wide`), at the hardware and 0.3 m into the
-room alike, reads about seven times darker than Cycles' (flat housing 0.009 against 0.066),
+room alike, reads about seven times darker than Cycles' (flat housing 0.010 against 0.066),
 half of Cycles' being the lit lace beside the window, which the probes don't hold; the room's
 box reads six times brighter. So the game's metal facing the room is dark, its dielectric
 deposits lit by the probes' irradiance, and the mottling shows as dark metal with lit islands:
-the housing's local contrast 0.34 against Cycles' 0.07, whatever the mottling slider (0 to 1:
-0.57 to 0.25), while the grip's stem matches (0.30 against 0.26). The mottling is the light's,
+the housing's local contrast 0.35 against Cycles' 0.07, whatever the mottling slider (0 to 1:
+0.57 to 0.25), while the grip's stem nearly matches (0.31 against 0.26). The mottling is the light's,
 not the material's; it is for the room's light (task 128's session) or a lace term in
 `niche_seen` later.
 
 Picked, behind `--light physical` (the tuner's default there and the Cycles export's,
 `room_shell::WINDOW_METAL_PHYSICAL`, 1.5, 0.5, 0, 1): the antique brass at level 1.5, the
 user's range, as it reads nearest Cycles' level 2 on the room-facing parts (level 2 reads a
-fifth darker there) while the ball stays within 4%; the mottling at the shared 0.5 (0.75 eases
-the housing a little, 0.34 to 0.28, but the export would carry it to Cycles too); roughness as
+fifth darker there) while the ball reads 8% lighter; the mottling at the shared 0.5 (0.75 eases
+the housing a little, 0.35 to 0.29, but the export would carry it to Cycles too); roughness as
 it is (the game's highlights already read crisper than Cycles', the 95th percentile over the
-median 2.4 against 1.6 on the ball). The bronze keeps the panes as well. Without
+median 2.3 against 1.6 on the ball). The bronze keeps the panes as well. Without
 `--light physical` (the app) nothing changes: with the panes' share 0 and the bronze the tuner
-shoots byte-identical to `f56d4987`. The phone tier draws no `niche_seen` (no `SHARP_BOX`).
+shoots byte-identical to `544d5a20`. The phone tier draws no `niche_seen` (no `SHARP_BOX`).
 Cost not measured (no frame timing while others render); `niche_seen` adds two `casement()`
 calls on the hardware's pixels only.
 
