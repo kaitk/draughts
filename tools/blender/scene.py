@@ -7,6 +7,8 @@
 #       [--exposure 0] [--textures on|off] [--save-blend] [--wood ours|picks|SPEC.json]
 #       [--paper physical|look] [--paper-mask engraved|today] [--paper-ground R,G,B,ROUGH]
 #       [--paper-gold R,G,B,ROUGH] [--paper-detail L,P,G,R] [--eye X,Y,Z --at X,Y,Z --fov DEG]
+#       [--oak-pieces on|off (with --wood: the panelling's pieces' own tone, thresholds and grime kept after
+#       the stain, as the app's ours; on)]
 #       [--vertex-colour written|decoded (the panelling's occlusion and tone encoded back as the export wrote
 #       them, or as the importer decodes them from sRGB, before 2026-11-27)]
 #       [--window-metal flat|LEVEL (the export's by default)] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
@@ -30,7 +32,7 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 def flags():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     f = {"scene": "build/blender", "view": "close", "out": None, "size": "960x540", "samples": "512",
-         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None, "vertex-colour": "written",
+         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None, "vertex-colour": "written", "oak-pieces": "on",
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None,
          "window-metal": None}
@@ -712,11 +714,26 @@ def finished_wood(name, w, ours_map, ours_uv):
         e.new(0.5).color = (*hexes[1], 1.0)
         k.link(mr.outputs[0], ramp.inputs["Fac"])
         color = ramp.outputs["Color"]
-    k.link(color, b.inputs["Base Color"])
     rr = nt.nodes.new("ShaderNodeMapRange")
     rr.inputs["To Min"].default_value, rr.inputs["To Max"].default_value = w["rough"]
     k.link(rough_src, rr.inputs["Value"])
-    k.link(rr.outputs[0], b.inputs["Roughness"])
+    rough = rr.outputs[0]
+    if name == "oak" and F["oak-pieces"] == "on":
+        # The panelling's pieces after the stain, as the app's ours keeps them (ROOM_FRAG): each
+        # its own tone, the thresholds paler and smoother, grime where the occlusion falls.
+        ao, own = k.vertex_colour()
+        color = k.scale_rgb(color, k.math("ADD", 1.0, k.math("MULTIPLY", k.math("SUBTRACT", own, 0.5), SF["oak_tone"])))
+        sill = k.math("GREATER_THAN", own, 0.925)
+        color = k.mix("RGBA", sill, color, k.scale_rgb(color, SF["threshold"]))
+        rough = k.math("MULTIPLY", rough, k.math("SUBTRACT", 1.0, k.math("MULTIPLY", sill, 0.2)))
+        step = nt.nodes.new("ShaderNodeMapRange")
+        step.interpolation_type = "SMOOTHSTEP"
+        step.inputs["From Min"].default_value = 0.5
+        step.inputs["From Max"].default_value = 1.0
+        k.link(ao, step.inputs["Value"])
+        color = k.scale_rgb(color, k.math("ADD", SF["oak_grime"], k.math("MULTIPLY", step.outputs[0], 1.0 - SF["oak_grime"])))
+    k.link(color, b.inputs["Base Color"])
+    k.link(rough, b.inputs["Roughness"])
     if height is not None:
         bu = nt.nodes.new("ShaderNodeBump")
         bu.inputs["Distance"].default_value, bu.inputs["Strength"].default_value = w["bump"]
