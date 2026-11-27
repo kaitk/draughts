@@ -73,5 +73,6 @@ The floor's wax reads the baked map; nothing else does yet. `--refl off` gives t
 - [ ] The floor's reflections of the doors and the windows read as the concepts' matt floor
       (the shade 1.01× Cycles' on 2026-11-27; the band by the near window open)
 - [ ] Bake time, memory and frame cost recorded, on the Mac and the A33
-- [ ] `docs/decisions/rendering.md` records it replacing the cube map's rejection;
-  `docs/architecture/rendering.md` describes it
+- [x] `docs/decisions/rendering.md` records it replacing the cube map's rejection;
+  `docs/architecture/rendering.md` describes it (2026-11-27, bbb393ff; under "The physical
+  light", to be widened with steps 4 and 5)
