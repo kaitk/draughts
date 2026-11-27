@@ -161,3 +161,7 @@ against the CPU tracer at the same points, the same description, 256 cosine rays
   the cloth's mean colour, not each vertex's own colour.
 - The results page has the foot's crops before, after and Cycles
   (`build/notes/lace-shade/index.html`).
+- 2026-11-27, after merging the floor's wax and baked reflection (75265a04): the reference view
+  reshot (build/lace124/a/merged-reference*) against c0bd47f3's build. The lace regions'
+  light is unchanged to the digit (near in shade 0.86 of Cycles', lit 0.56, middle 0.81), so
+  the open items above stand. Only the floor moved: its patch in shade 1.30 → 1.63 of Cycles'.
