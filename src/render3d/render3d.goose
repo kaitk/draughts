@@ -776,6 +776,8 @@ let WOOD_OAK = 0;
 let WOOD_FLOOR = 1;
 let WOOD_TABLE = 2;
 var woods = [default<Wood>(); 3];
+// The tuned floor's oak (Wood's way 3), surfaces::TUNED_FLOOR_OAK unless the tuner sets it.
+var tuned_floor_oak = surfaces::TUNED_FLOOR_OAK;
 // The rows a shader reads for wood `k`: its way 2 only with its picture there, else 1.
 fn wood_rows(g: Gpu&, k: i64) -> float4[5] {
     let w = woods[k];
@@ -1681,7 +1683,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.floor_tuned[1] = baked(o, side, side, RGBA8);
         let finish = g.finish;
         g.finish = looks::Finish { varnish: 0.0, sanding: 0.0, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0, caulk: 0.0 };
-        var t = oak_theme(g, surfaces::TUNED_FLOOR_OAK);
+        var t = oak_theme(g, tuned_floor_oak);
         o.bake(g, g.floor_tuned[0], g.floor_tuned[1], side, side, 4.0, float2 { surfaces::FLOOR_FIELD, surfaces::FLOOR_FIELD }, t,
                0, -1, true, surfaces::FIELD_SIDE / side);
         g.finish = finish;

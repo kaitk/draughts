@@ -273,7 +273,7 @@ let OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07
 // again after the stain (0: the parquet's are no darker than ours), z how far its planks'
 // warmth varies (1 ours). Fitted to the parquet in shade, straight down: the planks' variation
 // 0.220 against its 0.236 (ours 0.189), the grain's 0.167 against 0.110.
-let TUNED_RANGE = float2 { 0.024, 0.08 };
+var TUNED_RANGE = float2 { 0.024, 0.08 };
 let TUNED_FLOOR = float4 { 0.0, 0.0, 2.5, 0.0 };
 
 fn linear_of(c: f32) -> f32 {
@@ -1699,6 +1699,12 @@ fn main() {
     // --floor-finish: the floor's finish in place of WOOD_FINISHES' (the base's roughness x to y,
     // the coat's weight z and roughness w), for trying how glossy the wax is.
     let floor_finish = four(argv, "--floor-finish", float4 { 0.0, 0.0, -1.0, 0.0 });
+    // The tuned floor's grain (surfaces::TUNED_FLOOR_OAK's figure, ring and boards; the stain's range).
+    render3d::tuned_floor_oak.figure = four(argv, "--floor-figure", render3d::tuned_floor_oak.figure);
+    render3d::tuned_floor_oak.ring = four(argv, "--floor-ring", render3d::tuned_floor_oak.ring);
+    render3d::tuned_floor_oak.boards = four(argv, "--floor-boards", render3d::tuned_floor_oak.boards);
+    let range4 = four(argv, "--floor-range", float4 { TUNED_RANGE.x, TUNED_RANGE.y, 0.0, 0.0 });
+    TUNED_RANGE = float2 { range4.x, range4.y };
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     sun_color_given = has(argv, "--sun-color-height");
