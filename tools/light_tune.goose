@@ -326,6 +326,11 @@ fn srgb_of(c: f32) -> f32 {
 // Either at the key's luminance, so the exposure stays.
 let SUN_COLOR_WAYS = ["height", "key"];
 var sun_by_height = true;
+// --sun-color-height: the sun's colour as at this height (a hazier sky reddens it as a lower sun's
+// does), its own height's when negative.
+var sun_color_height: f32 = -1.0;
+var sun_color_given = false;
+fn sun_color_as(height: f32) -> f32 { return if sun_color_height >= 0.0 { sun_color_height } else { height }; }
 fn physical_sun(made: rooms::Room, height: f32) -> float4 {
     let key = rooms::color_of(made.key_color);
     let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
@@ -353,6 +358,12 @@ let PHYSICAL_PAPER_DETAIL = float4 { 1.0, 1.0, 1.0, 1.0 };
 // made, never scaled from what `r0` holds, so the command line the tuner prints gives the
 // same light again: the sun's strength unless `key_given` (--key's is the physical sun's),
 // the exposure unless `exposure_given`.
+// The physical sun by season (light_season): its strength's share of the clear sky's, and its
+// colour as at this height (a hazier sky's; negative: its own height's). Autumn's 2 stops under
+// and as at 8 degrees meet the autumn reference's sunlit floor and door through the season's
+// grade (task 122, 2026-11-27); the others as made until tuned.
+let PHYSICAL_SUN: float2[4] = [float2 { 0.25, 8.0 }, float2 { 1.0, -1.0 }, float2 { 1.0, -1.0 }, float2 { 1.0, -1.0 }];
+var light_season: i64 = 0;
 fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_given: bool) -> rooms::Room {
     var r = r0;
     r.key_color = physical_sun(made, r0.key.y);
@@ -401,11 +412,6 @@ let PAPER_MASKS = ["today", "engraved"];
 var engraved_paper: u8[>..] = [];
 // --light physical's camera curve (render3d::camera_toe): AgX, as Cycles takes it.
 let CAMERA_TOE = render3d::CAMERA_AGX;
-// --sun-color-height: the sun's colour as at this height (a hazier sky reddens it as a lower sun's
-// does), its own height's when negative.
-var sun_color_height: f32 = -1.0;
-var sun_color_given = false;
-fn sun_color_as(height: f32) -> f32 { return if sun_color_height >= 0.0 { sun_color_height } else { height }; }
 // --light physical's grade (--grade): the season's (render3d::GRADES) or none.
 let GRADE_WAYS = ["season", "none"];
 // --grade-ev: darker takes on the season's grade, to choose the current look by eye
@@ -433,12 +439,6 @@ let PLANAR_VIEWS = ["off", "floor", "map", "distance"];
 let SCENE_SCALES: f32[5] = [0.0, 1.0, 0.85, 0.75, 0.67];
 let UPSCALES = ["cubic", "bilinear"];
 let AA_NAMES = ["off", "smaa", "msaa"];
-// The physical sun by season (light_season): its strength's share of the clear sky's, and its
-// colour as at this height (a hazier sky's; negative: its own height's). Autumn's 2 stops under
-// and as at 8 degrees meet the autumn reference's sunlit floor and door through the season's
-// grade (task 122, 2026-11-27); the others as made until tuned.
-let PHYSICAL_SUN: float2[4] = [float2 { 0.25, 8.0 }, float2 { 1.0, -1.0 }, float2 { 1.0, -1.0 }, float2 { 1.0, -1.0 }];
-var light_season: i64 = 0;
 let AA_WAYS: i32[3] = [render3d::AA_OFF, render3d::AA_SMAA, render3d::AA_MSAA];
 let VIEW_EYES: float3[6] = [float3_0, float3 { 8.4, 0.6, 1.7 }, float3 { 4.5, 1.0, 1.6 }, float3 { 4.5, 6.3, 1.6 },
                             float3 { 8.3, 3.5, 1.6 }, float3 { 3.75, 4.5, 1.15 }];
@@ -1518,6 +1518,7 @@ fn main() {
         h = y;
     }
     var season = pick(argv, "--season", SEASONS, looks::AUTUMN);
+    light_season = season;
     var material = pick(argv, "--material", MATERIALS, looks::MATERIAL_AUTO);
     var take = pick(argv, "--table", tables::NAMES, tables::FLAME);
     var room_take = rooms::for_season(season);
@@ -1591,7 +1592,6 @@ fn main() {
     room.opening = four(argv, "--opening", room.opening);
     room.wind = four(argv, "--wind", room.wind);
     room.gust = four(argv, "--gust", room.gust);
-    light_season = season;
     room.gust.x = number(argv, "--gust-strength", room.gust.x);
     room.gust.y = number(argv, "--gust-length", room.gust.y);
     room.gust.z = number(argv, "--gust-every", room.gust.z);
@@ -1673,6 +1673,8 @@ fn main() {
     var wood_ways = if render3d::physical_coat { wood_ways_of(argv) } else { [0, 0, 0] };
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
+    sun_color_given = has(argv, "--sun-color-height");
+    sun_color_height = number(argv, "--sun-color-height", PHYSICAL_SUN[light_season].y);
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);
     let oak_sun = four(argv, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
     render3d::room_sun = float4 { render3d::room_sun.x, oak_sun.x, oak_sun.y, oak_sun.z };
@@ -1746,11 +1748,8 @@ fn main() {
     // shows the room built again round the moved table (a check of the live path).
     let place_then = pick(argv, "--place-then", PLACE_NAMES, -1);
     if has(argv, "--table-at") { table_place = float2 { table_at.x, table_at.y }; }
-    sun_color_height = number(argv, "--sun-color-height", -1.0);
     if has(argv, "--wall") { room.window = four(argv, "--wall", room.window); }
     if has(argv, "--sun-height") { room.key.y = number(argv, "--sun-height", room.key.y); }
-    sun_color_given = has(argv, "--sun-color-height");
-    sun_color_height = number(argv, "--sun-color-height", PHYSICAL_SUN[light_season].y);
     if has(argv, "--board-turn") { board_turn = number(argv, "--board-turn", 0.0); }
     g.table_turn = number(argv, "--table-turn", g.table_turn);
     var base_way = pick(argv, "--base-wood", BASE_WOODS, 1);
@@ -2467,6 +2466,8 @@ fn main() {
         }
         if season != shown_season || material != shown_material || take != shown_take {
             if season != shown_season {
+                light_season = season;
+                if !sun_color_given { sun_color_height = PHYSICAL_SUN[season].y; }
                 room_take = rooms::for_season(season);
                 shown_room = room_take;
                 room = rooms::get(room_take);
@@ -2551,8 +2552,6 @@ fn main() {
             let py = plan_point(g, float3 { 0.0, 1.0, 0.0 }) - o;
             let hand: f32 = if py.x * px.z - py.z * px.x >= 0.0 { 1.0 } else { -1.0 };
             let dt = if walk_test > 0 || walk_frames > 0 { 1.0 / 60.0 } else { min(gfx::delta_time() as f32, LONGEST_STEP) };
-                light_season = season;
-                if !sun_color_given { sun_color_height = PHYSICAL_SUN[season].y; }
             if touch {
                 let look, stick = touch_step(finger, gfx::screen_size());
                 walk_step(walk, look, dt, hand, stick);
