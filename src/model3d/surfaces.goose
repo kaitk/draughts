@@ -193,10 +193,10 @@ let LOOK = Look {
     lace_light: float4 { 0.86, 0.84, 0.78, 0.5 },
 };
 
-// The parquet's herringbone (TUNED_FLOOR_OAK's; Look.plank and planks): planks 3.5 cm wide and
-// eight widths long (28 cm), as the parquet's measure at its 3.4 m tile (3 to 3.8 cm, 26 to
-// 30 cm), the planks' own tones 1.6 times as far apart.
-let TUNED_PLANK = float4 { 1.067, 8.0, 0.016, 0.012 };
+// The parquet's herringbone (TUNED_FLOOR_OAK's; Look.plank and planks): the floor's own planks,
+// 7 by 42 cm, the period's size (task 130; 3.5 by 28 cm, the Poly Haven parquet's measure, before),
+// the planks' own tones 1.6 times as far apart.
+let TUNED_PLANK = float4 { PLANK_W, PLANK_N, 0.016, 0.012 };
 let TUNED_PLANKS = float4 { 0.32, 0.03, 0.01, 0.6 };
 
 // The plaster's tone map (design/materials/plaster_tone.png) covers 4 m of wall a tile,
