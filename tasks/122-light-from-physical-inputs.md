@@ -1009,6 +1009,31 @@ parquet 0.236, 0.110, 0.704; tuned 0.220, 0.167, 0.640. Results page
   picks or tuned (the floor's coat lobe and the box's tap under the mirror); the table view's
   rounds drift more than any difference.
 
+## The lace's room side and the stove in the sun (2026-11-27)
+
+The user: the curtains more like the reference, not as bright; the stove's sunlit tiles near
+white. Under `--light physical` only; without it the reference and room views are
+byte-identical to the build before. Measured at the reference view with the weaker autumn sun
+and the season's grade; results page `build/notes/curtains-stove/index.html`, scratch
+`build/review122/lace/`.
+
+- The lace's room side took the old fill (the harmonics and the room's even bounce at full,
+  22 times the probes' light there). Now `--lace-fill probes` (the default; `old` the picture
+  before, within a level): the probes' light as `baked_light` reads it, computed on the CPU
+  after each bake (`render3d::probes_on_lace`, the block's `physical`): toward the room half a
+  cell out, plus the light on its back over the piers toward the window, as the tracer's
+  thread takes both sides; the folds' share at 1 (not 1.5); `--lace-shade-fill` no longer
+  applies. In light over the wallpaper beside it: in shade 61.9 before, 2.8 with the room
+  side alone, the tracer 7.6 (its lace a sheet 72% open, ours about 42% thread).
+- Display-linear Y, reference / before / after: lace lit 0.304 / 0.662 / 0.512, in shade
+  0.161 / 0.419 / 0.081, the far window's 0.291 / 0.646 / 0.395. The shade now half the
+  reference's: what is left is the probes' shortfall near the window and task 124's model.
+- The stove: its sunlit tiles 0.981 against the reference's 0.838; in light 3.2 times the lit
+  door's (the face square to the low sun), which AgX takes to white. Albedo hardly moves it
+  (`--stove-glaze 0.45`: 0.904), the coat's highlight points back at the windows: the sun's
+  angle, not the glaze. `--stove-glaze K` stays at 1 for trying a creamier glaze.
+- `tools/room_scene.goose` has the reference view, for `path_trace picture reference`.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

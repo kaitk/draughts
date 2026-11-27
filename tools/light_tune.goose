@@ -92,6 +92,9 @@
 //       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
 //       [--grade-ev season|-0.5|-1|-1.5|lift|lift2|match|match-dark (with the grade: stops under the season's;
 //       lift, lift2, match, match-dark at -1.5, -1.75, -1, -1 with AgX's look power 0.7, 0.65, 0.65, 0.7; season)]
+//       [--lace-fill probes|old (--light physical: the lace's room side lit by the probes' light before it,
+//       render3d::lace_probed, or the old harmonics and even bounce; probes)] [--stove-glaze K (--light physical:
+//       the stove's glaze's albedo over its own, render3d::stove_glaze; PHYSICAL_STOVE_GLAZE, 1 as made)]
 //       [--coat on|off (--light physical: the varnish and the wax as clear coats on the walls and floor,
 //       render3d::physical_coat; on)] [--paper-metal on|off (with the coat: the wallpaper's print a metal over a
 //       matt ground; on)] [--paper-ground R,G,B,ROUGH] [--paper-gold R,G,B,ROUGH (the wallpaper's ground and print,
@@ -369,6 +372,8 @@ fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_
     return r;
 }
 let TREE_GROWS = ["shadow", "whole"];
+// --light physical's stove glaze over the one as made (--stove-glaze).
+let PHYSICAL_STOVE_GLAZE: f32 = 1.0;
 
 // The views (V cycles them): the board's orbit, then the room's from a person's eyes, in
 // the plan's metres (room_shell): the whole room from the far corner by the hall; the
@@ -1658,6 +1663,8 @@ fn main() {
     render3d::contact_look = four(argv, "--contact", render3d::contact_look);
     render3d::sheen_look = four(argv, "--sheen", if physical { PHYSICAL_SHEEN } else { render3d::sheen_look });
     render3d::physical_coat = physical && !(flag_value(argv, "--coat") > 0 && argv[flag_value(argv, "--coat")] == "off");
+    render3d::lace_probed = physical && !(flag_value(argv, "--lace-fill") > 0 && argv[flag_value(argv, "--lace-fill")] == "old");
+    render3d::stove_glaze = if physical { number(argv, "--stove-glaze", PHYSICAL_STOVE_GLAZE) } else { 0.0 };
     render3d::paper_metal = render3d::physical_coat && !(flag_value(argv, "--paper-metal") > 0 && argv[flag_value(argv, "--paper-metal")] == "off");
     render3d::paper_ground = four(argv, "--paper-ground", if render3d::paper_metal { PHYSICAL_PAPER_GROUND } else { render3d::paper_ground });
     render3d::paper_gold = four(argv, "--paper-gold", if render3d::paper_metal { PHYSICAL_PAPER_GOLD } else { render3d::paper_gold });
@@ -2019,6 +2026,11 @@ fn main() {
                     let k = render3d::camera_exposure(g);
                     print("the camera's meter ", render3d::meter_light, ", its exposure ", k, " over Frame's ", g.frame.params.x,
                           ": EV ", log2(k * g.frame.params.x * g.room.room_exposure));
+                }
+                if render3d::lace_probed {
+                    let lr = render3d::lace_room;
+                    let lb = render3d::lace_back;
+                    print("the lace's light from the room ", lr.x, ", ", lr.y, ", ", lr.z, ", on its back ", lb.x, ", ", lb.y, ", ", lb.z);
                 }
             }
             if g.props_baked { print("the props' occlusion baked in ", g.props_ms, " ms, ", g.table_count / 3, " triangles"); }

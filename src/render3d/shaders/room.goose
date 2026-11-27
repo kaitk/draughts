@@ -348,7 +348,10 @@ let ROOM_HEAD = """
     // the quiet paint (surfaces::Look's); paper_detail: the wallpaper close up under
     // PHYSICAL_COAT (render3d::paper_detail, paper_close's); sill: the sills' limestone
     // (surfaces::Look's); sill_steps: unused, kept so the block's layout and room_fixed's
-    // constants stay; window_view: the window view's steps' strengths, 1 as made
+    // constants stay; physical: under the light tuner's --light physical, xyz the probes'
+    // light on the lace's room side (render3d::probes_on_lace), taken in place of its old
+    // fill with lace_shade.z 1, w the stove's glaze's albedo over STOVE_GLAZE's (0 as
+    // made; render3d::stove_glaze); window_view: the window view's steps' strengths, 1 as made
     // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
     // its scratches); lace_shade: the lace's room-side fill, x what is left of it where
     // neither the sun nor the sky behind the niche reaches the cloth (1 as made), y how much
@@ -402,7 +405,8 @@ let ROOM_HEAD = """
         vec4 paint_quiet;
         vec4 paper_detail;
         vec4 sill;
-        vec4 sill_steps[2];
+        vec4 sill_steps;
+        vec4 physical;
         vec4 window_view;
         vec4 lace_shade;
         vec4 table_map[4];
@@ -1196,7 +1200,11 @@ let ROOM_FRAG = """
         // valleys (v_corner.x: what the folds beside it hide, room_shell::fold_hidden).
         float reached = max(open, clamp(ao / LACE_SKY_VIEW, 0.0, 1.0));
         float fill = mix(lace_shade.x, 1.0, reached) * (1.0 - lace_shade.y * clamp(v_corner.x, 0.0, 1.0));
-        vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + (sh_eval(nf) * params.z + shade.rgb) * fill * ssao_kept(screen_ao);
+        vec3 room_side = (sh_eval(nf) * params.z + shade.rgb) * fill;
+        // With lace_shade.z the room's light as the probes have it before the lace, less
+        // what the folds beside it hide.
+        if (lace_shade.z > 0.5) room_side = physical.rgb * (1.0 - clamp(v_corner.x, 0.0, 1.0));
+        vec3 front = max(dot(nf, l), 0.0) * sun * light / PI + room_side * ssao_kept(screen_ao);
         c = srgb(lace_thread.rgb) * (front + through);
     #endif
         result = room_out(c * params.x * shade.w, a);
@@ -1685,6 +1693,7 @@ let ROOM_FRAG = """
             float sharp = 1.0 - smoothstep(0.003, 0.012, pw);
             vec2 lean = vec2(0.0);
             vec3 body = srgb(STOVE_GLAZE) * (0.96 + 0.08 * rnd.z) * (0.97 + 0.06 * vnoise(v_uv * vec2(3.0, 2.5)));
+            if (physical.w > 0.0) body *= physical.w;
             body *= mix(vec3(1.0), rnd.w > 0.5 ? vec3(0.98, 1.0, 1.035) : vec3(1.025, 1.0, 0.955), abs(rnd.w - 0.5) * 2.0);
             if (code < 4.5) {
                 lean = (rnd.xy - 0.5) * (2.0 * STOVE_TILT);

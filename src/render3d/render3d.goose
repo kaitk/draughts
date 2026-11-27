@@ -2220,7 +2220,8 @@ struct SurfacesBlock {
     paint_quiet:   float4,
     paper_detail:  float4,         // the wallpaper close up (paper_detail)
     sill:          float4,
-    sill_steps:    float4[2],      // unused, kept so the block and room_fixed stay as they are
+    sill_steps:    float4,         // unused, kept so the block and room_fixed stay as they are
+    physical:      float4,         // the lace's light from the room (probes_on_lace) and stove_glaze
     window_view:   float4,
     lace_shade:    float4,
     table_map:     float4[4],
@@ -2318,7 +2319,8 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
                     float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paper_detail, k.sill,
-                    [float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { 1.0, 0.0, 0.0, 0.0 }], window_view, lace_shade,
+                    float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { lace_room.x + lace_back.x, lace_room.y + lace_back.y, lace_room.z + lace_back.z, stove_glaze }, window_view,
+                    float4 { lace_shade.x, lace_shade.y, if lace_probed && light_baked(g) { 1.0 } else { 0.0 }, 0.0 },
                     table_map_shown(g),
                     books::COVER, books::LABEL, wood_rows(g, WOOD_OAK), wood_rows(g, WOOD_FLOOR) }
 }
@@ -2486,6 +2488,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     }
     light_steps[7] = (clock() - at) * 1000.0;
     probes_on_table(g);
+    if lace_probed { probes_on_lace(); }
     meter_light = meter_of(light_bounce, sun.bounce_gain);
     let rows = if room_light::volumes_on { room_light::FULL_H } else { room_light::ATLAS_H };
     let floats = room_light::ATLAS_W * rows * 4;
@@ -2584,6 +2587,79 @@ fn probes_on_table(g: Gpu&) {
             table_probes[k * 3 + c] = float4 { v.x, wx, v.z, wz };
         }
     }
+}
+
+// The lace's light from the probes (ROOM_FRAG's lace with lace_probed, the light tuner's
+// --lace-fill probes), as baked_light reads them, the mean over the three windows' six
+// panels at nine heights: lace_room the light on its room side, toward the room half a cell
+// out from the panels' middles; lace_back on its window side where the niche hides the sky
+// (over the piers, at the panels' outer parts), toward the window at the cloth. In place of
+// the lace's old fill, the harmonics and the room's even bounce at full, which the other
+// surfaces no longer take under --light physical (task 122).
+var lace_probed = false;
+var lace_room = float3_0;
+var lace_back = float3_0;
+// The stove's glaze's albedo over its own (ROOM_FRAG's STOVE_GLAZE), 0 as made (the light
+// tuner's --stove-glaze, --light physical only).
+var stove_glaze: f32 = 0.0;
+fn probes_on_lace() {
+    let s = room_shell::LIBRARY;
+    let face = s.walls[room_shell::WINDOW_WALL].a.y - room_shell::LACE_MIDDLE[0].y;
+    var room = float3_0;
+    var back = float3_0;
+    var n = 0;
+    for k in s.count {
+        let o = s.openings[k];
+        guard o.kind == room_shell::WINDOW else { continue; }
+        for side in 2 {
+            let sign: f32 = if side == 0 { -1.0 } else { 1.0 };
+            for j in 9 {
+                let h = 0.2 + 0.4 * j;
+                // The room's v grows away from the window wall, so +1 is toward the room.
+                room = room + probe_light(float3 { o.mid + 0.72 * sign, face - 0.5 * room_light::CELL, h }, 1.0);
+                back = back + probe_light(float3 { o.mid + 0.85 * sign, face, h }, -1.0);
+                n++;
+            }
+        }
+    }
+    lace_room = room * (1.0 / max(n, 1));
+    lace_back = back * (1.0 / max(n, 1));
+}
+// The grid's probes' light at a plan point (x, y, metres up) toward +v (toward 1) or -v,
+// trilinear as baked_light.
+fn probe_light(p: float3, toward: f32) -> float3 {
+    let s = room_shell::LIBRARY;
+    let metre = surfaces::METRE;
+    let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
+    let cell = room_light::CELL * metre;
+    let at = room_shell::room_of(s, float2 { p.x, p.y });
+    let gx = clamp((at.x - corner.x) / cell, 0.0, room_light::NX - 1.0);
+    let gh = clamp((p.z - room_light::INSET) / room_light::CELL, 0.0, room_light::NH - 1.0);
+    let gz = clamp((at.y - corner.y) / cell, 0.0, room_light::NZ - 1.0);
+    let x0 = floor(gx) as i64;
+    let h0 = floor(gh) as i64;
+    let z0 = floor(gz) as i64;
+    let x1 = min(x0 + 1, room_light::NX - 1);
+    let h1 = min(h0 + 1, room_light::NH - 1);
+    let z1 = min(z0 + 1, room_light::NZ - 1);
+    let fx = gx - x0;
+    let fh = gh - h0;
+    let fz = gz - z0;
+    var c3: f32[3] = [0.0; 3];
+    for c in 3 {
+        var v = float4_0;
+        for q in 8 {
+            let px = if (q & 1) != 0 { x1 } else { x0 };
+            let ph = if (q & 2) != 0 { h1 } else { h0 };
+            let pz = if (q & 4) != 0 { z1 } else { z0 };
+            let w = (if (q & 1) != 0 { fx } else { 1.0 - fx }) * (if (q & 2) != 0 { fh } else { 1.0 - fh })
+                    * (if (q & 4) != 0 { fz } else { 1.0 - fz });
+            let a = 4 * ((c * room_light::NZ + pz) * room_light::ATLAS_W + ph * room_light::NX + px);
+            v = v + float4 { light_atlas[a], light_atlas[a + 1], light_atlas[a + 2], light_atlas[a + 3] } * w;
+        }
+        c3[c] = max(v.x + toward * v.w, 0.0);
+    }
+    return float3 { c3[0], c3[1], c3[2] };
 }
 
 // The nine harmonics' light toward d.
