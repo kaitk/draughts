@@ -43,7 +43,8 @@ def flags():
          "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None, "vertex-colour": "written", "oak-pieces": "on",
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None,
-         "window-metal": None, "lace": "described", "lace-seen": "as-made", "pano": None}
+         "window-metal": None, "lace": "described", "lace-seen": "as-made", "pano": None,
+         "sky": None, "sun-take": "0.25", "view-out": "off", "leaf": "0.3", "lawn": "0.08,0.10,0.035"}
     i = 0
     while i < len(argv):
         name = argv[i][2:]
@@ -971,6 +972,97 @@ sky = [c * S["sky_gain"] for c in S["sky_radiance"]]
 bg.inputs["Color"].default_value = (*sky, 1.0)
 bg.inputs["Strength"].default_value = 1.0
 scene.world = world
+
+# --sky FILE: sky_model.py's sun and sky for one air (its haze, aerosol), in place of the export's
+# sun and plain sky. The units: the model's clear sun (aerosol 1) is put at the app's clear sun,
+# the export's over --sun-take's strength (0.25 by default, the export's).
+if F["sky"]:
+    M = json.load(open(os.path.join(REPO, F["sky"])))
+    lum = lambda c: 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    units = lum(E) / float(F["sun-take"]) / lum(M["clear_sun"])
+    Es = [c * units for c in M["sun"]]
+    sun.energy = max(Es)
+    sun.color = [c / max(Es) for c in Es]
+    tex = world.node_tree.nodes.new("ShaderNodeTexSky")
+    tex.sky_type = "MULTIPLE_SCATTERING"
+    tex.sun_disc = False
+    tex.sun_elevation = math.asin(sun_dir.z)
+    tex.sun_rotation = math.atan2(sun_dir.x, sun_dir.y)   # sky_model.py: 0 along +y, positive toward +x
+    tex.altitude = 100.0
+    tex.air_density, tex.aerosol_density, tex.ozone_density = M["air"], M["aerosol"], M["ozone"]
+    world.node_tree.links.new(tex.outputs["Color"], bg.inputs["Color"])
+    bg.inputs["Strength"].default_value = units
+    print("sky model: aerosol", M["aerosol"], "units", units, "sun", Es)
+
+# --view-out pictures: the app's view out (model3d::view_out) as things lit by the sun and sky,
+# not pictures of light: the lawn a metre under the floor, the tree line on its cylinder 110 m
+# round the middle window, the oak's card 70 m out, their pictures as albedo (sRGB decoded),
+# each leaf --leaf of its light through to the back (a translucent share).
+if F["view-out"] == "pictures":
+    W_ = S["windows"]
+    cx, cy = W_["x"][1], S["window_wall_outer_y"]
+    lawn_z = -1.0
+
+    def toward(theta):   # theta degrees right of straight out (+y), in the export's x, y
+        a = math.radians(theta)
+        return Vector((math.sin(a), math.cos(a)))
+
+    def picture_material(name, png):
+        m, nt, out = node_material(name)
+        im = bpy.data.images.load(os.path.join(REPO, "design", "materials", png))
+        t = nt.nodes.new("ShaderNodeTexImage")
+        t.image = im
+        t.interpolation = "Linear"
+        t.extension = "CLIP"
+        d = nt.nodes.new("ShaderNodeBsdfDiffuse")
+        tr = nt.nodes.new("ShaderNodeBsdfTranslucent")
+        mix = nt.nodes.new("ShaderNodeMixShader")
+        mix.inputs[0].default_value = float(F["leaf"])
+        nt.links.new(t.outputs["Color"], d.inputs["Color"])
+        nt.links.new(t.outputs["Color"], tr.inputs["Color"])
+        nt.links.new(d.outputs[0], mix.inputs[1])
+        nt.links.new(tr.outputs[0], mix.inputs[2])
+        clear = nt.nodes.new("ShaderNodeBsdfTransparent")
+        cut = nt.nodes.new("ShaderNodeMixShader")
+        nt.links.new(t.outputs["Alpha"], cut.inputs[0])
+        nt.links.new(clear.outputs[0], cut.inputs[1])
+        nt.links.new(mix.outputs[0], cut.inputs[2])
+        nt.links.new(cut.outputs[0], out.inputs["Surface"])
+        return m
+
+    def mesh_of(name, verts, faces, uvs, mat):
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(verts, [], faces)
+        uv = me.uv_layers.new()
+        for poly in me.polygons:
+            for li, vi in zip(poly.loop_indices, poly.vertices):
+                uv.data[li].uv = uvs[vi]
+        me.materials.append(mat)
+        ob = bpy.data.objects.new(name, me)
+        scene.collection.objects.link(ob)
+        return ob
+
+    # The lawn: --lawn's albedo, linear (grass with some fallen leaves; the app's LAWN colour, a
+    # yellow of B/R 0.06 in linear light, sent a yellow bounce up onto the ceiling).
+    lawn = diffuse("lawn", [float(v) for v in F["lawn"].split(",")])[0]
+    mesh_of("lawn", [(-300, cy, lawn_z), (300, cy, lawn_z), (300, 400, lawn_z), (-300, 400, lawn_z)],
+            [(0, 1, 2, 3)], [(0, 0)] * 4, lawn)
+    # The tree line, its picture's top row at v 1 (Blender's images are bottom up).
+    verts, uvs, faces = [], [], []
+    N = 64
+    for j, h in enumerate((-14.05, 26.26)):
+        for i in range(N + 1):
+            k = i / N
+            d = toward(-64 + 128 * k)
+            verts.append((cx + 110 * d.x, cy + 110 * d.y, lawn_z + h))
+            uvs.append((k, j))
+    faces = [(i, i + 1, N + 2 + i, N + 1 + i) for i in range(N)]
+    mesh_of("band", verts, faces, uvs, picture_material("band", "outside_band.png"))
+    foot = Vector((cx, cy)) + toward(22) * 70
+    side = toward(22 + 90) * 14.9
+    verts = [(foot.x - side.x, foot.y - side.y, lawn_z), (foot.x + side.x, foot.y + side.y, lawn_z),
+             (foot.x + side.x, foot.y + side.y, lawn_z + 20), (foot.x - side.x, foot.y - side.y, lawn_z + 20)]
+    mesh_of("oak", verts, [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)], picture_material("oak", "outside_oak.png"))
 
 
 # ---- camera
