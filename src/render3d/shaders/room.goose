@@ -1468,9 +1468,12 @@ let ROOM_FRAG = """
         // the cloth (lace_back.w).
         if (lace_shade.w > 0.0) {
             float back_share = LACE_BACK_SCALE * (v_extra.y - floor(v_extra.y + 0.001));
-            vec3 back = max(-dot(nf, l), 0.0) * sun * light / PI + lace_back.rgb * back_share;
-            vec3 room_lit = max(dot(nf, l), 0.0) * sun * lace_back.w * light / PI + physical.rgb * v_corner.y;
-            c = srgb(lace_thread.rgb) * mix(room_lit, back, lace_shade.w);
+            // Its room side faces into the room, whichever side the eye sees: a fold's flank
+            // seen at a slant can show its window side, lit by the sun straight.
+            vec3 nr = dot(ng, vec3(axes.z, 0.0, axes.w)) >= 0.0 ? ng : -ng;
+            vec3 back = max(-dot(nr, l), 0.0) * sun * light / PI + lace_back.rgb * back_share;
+            vec3 room_lit = max(dot(nr, l), 0.0) * sun * lace_back.w * light / PI + physical.rgb * v_corner.y;
+            c = srgb(lace_thread.rgb) * (dot(nr, v) >= 0.0 ? mix(room_lit, back, lace_shade.w) : mix(back, room_lit, lace_shade.w));
         }
     #endif
     #endif
