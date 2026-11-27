@@ -41,6 +41,9 @@ let PROBES = 10140;           // NX × NZ × NH
 let ATLAS_W = 390;            // NX × NH
 let ATLAS_H = 78;             // 3 × NZ
 let ATLAS_FLOATS = 121680;    // ATLAS_W × ATLAS_H × 4
+// Each probe's light toward the room that is the lace's own on the wall (Gathered.lace, where
+// the probe settles to the window wall's face), one block laid out as the atlas's, rgb and 0.
+let LACE_WALL_FLOATS = 40560; // ATLAS_W × NZ × 4
 // The props' atlas (TABLE_FRAG's PROPS_LIGHT, the desktop's tiers): each probe's light as nine
 // harmonics, the first three bands of the same light the room's atlas holds before its
 // settle, their rgb one after another in PROPS_BLOCKS texels (27 floats in 28): the
@@ -885,9 +888,12 @@ fn probe_place(wins: room_shell::Opening[3]&, p: float3) -> i64 {
 //
 // With nine_harmonics also the second band (q*, rgb each): the sum of each light times its
 // direction's xx, yy (less a third), xy, xz, yz; zz is -(xx + yy) (props_band).
+//
+// lace: the share of ey that is the lace's own light on the window wall behind it
+// (lace_on_wall), which the wall reads and the lace's room side must not (lace_wall).
 struct Gathered { c: float3, dr: float3, dg: float3, db: float3, ex: float3, ey: float3, ez: float3,
-                  qxx: float3, qyy: float3, qxy: float3, qxz: float3, qyz: float3 }
-let GATHERED = 36;            // its floats in the half grid: c, dr, dg, db as the atlas's, ex, ey, ez, the q's
+                  qxx: float3, qyy: float3, qxy: float3, qxz: float3, qyz: float3, lace: float3 }
+let GATHERED = 39;            // its floats in the half grid: c, dr, dg, db as the atlas's, ex, ey, ez, the q's, lace
 
 // How far before a plane the probes that its surface reads stand (0.15 m, and 0.25 m under
 // the ceiling and before the hall wall), and no others.
@@ -976,10 +982,13 @@ fn to_room(d: float3) -> float3 { float3 { -d.x, d.z, -d.y } }
 // pi as the shaders' harmonics are. `patches` and `count` from sun_patches; the bounced
 // light from bounce.half (gather_half), spread over the whole grid. A probe in a niche sees
 // only its own window and the room through the niche's outline; one inside a wall takes
-// its neighbour's light (fill_walled).
-fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32[:], props: f32[:]) {
+// its neighbour's light (fill_walled). lace_wall: LACE_WALL_FLOATS, the lace's part of each
+// probe's light toward the room.
+fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32[:], props: f32[:], lace_wall: f32[:]) {
     assert(atlas.len == ATLAS_FLOATS);
     assert(props.len == PROPS_FLOATS);
+    assert(lace_wall.len == LACE_WALL_FLOATS);
+    for i in LACE_WALL_FLOATS { lace_wall[i] = 0.0; }
     let face = wall_face();
     let gy = glass_y();
     let lace_y = face - room_shell::LACE_OFF;
@@ -1034,7 +1043,8 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                     float3 { hp[0], hp[4], hp[8] }, float3 { hp[1], hp[2], hp[3] }, float3 { hp[5], hp[6], hp[7] },
                     float3 { hp[9], hp[10], hp[11] }, float3 { hp[12], hp[13], hp[14] }, float3 { hp[15], hp[16], hp[17] },
                     float3 { hp[18], hp[19], hp[20] }, float3 { hp[21], hp[22], hp[23] }, float3 { hp[24], hp[25], hp[26] },
-                    float3 { hp[27], hp[28], hp[29] }, float3 { hp[30], hp[31], hp[32] }, float3 { hp[33], hp[34], hp[35] } } };
+                    float3 { hp[27], hp[28], hp[29] }, float3 { hp[30], hp[31], hp[32] }, float3 { hp[33], hp[34], hp[35] },
+                    float3 { hp[36], hp[37], hp[38] } } };
                 // The sky, seen through the niche's outline at the wall's face and past
                 // the lace.
                 for si in sky_n {
@@ -1072,6 +1082,12 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
                 let x = ih * NX + ix;
                 if nine_harmonics { put_props(props, iz, x, got); }
                 settle(got, f);
+                if f.y < 0.0 {
+                    let w = 4 * (iz * ATLAS_W + ih * NX + ix);
+                    lace_wall[w] = got.lace.x;
+                    lace_wall[w + 1] = got.lace.y;
+                    lace_wall[w + 2] = got.lace.z;
+                }
                 let c = got.c;
                 let dr = got.dr;
                 let dg = got.dg;
@@ -1095,6 +1111,7 @@ fn bake(sun: Sun, patches: Patch[BINS]&, count: i64, bounce: Bounce&, atlas: f32
         }
     }
     fill_walled(wins, atlas, 3);
+    fill_walled(wins, lace_wall, 1);
     if nine_harmonics { fill_walled(wins, props, PROPS_BLOCKS); }
 }
 
@@ -1196,7 +1213,7 @@ let LACE_SCATTER: f32 = 0.4;
 let HALF_X = 16;           // every other probe and the last, the stove's end's own row
 let HALF_Z = 13;
 let HALF_H = 7;
-let HALF_FLOATS = 52416;   // HALF_X × HALF_Z × HALF_H × GATHERED
+let HALF_FLOATS = 56784;   // HALF_X × HALF_Z × HALF_H × GATHERED
 
 // The whole grid's x index of the half grid's column ix.
 fn half_column(ix: i64) -> i64 { if ix == HALF_X - 1 { NX - 1 } else { 2 * ix } }
@@ -1731,7 +1748,7 @@ fn gather_half(sun: Sun, bounce: Bounce&) {
                 let q: f32[GATHERED] = [g.c.x, g.dr.x, g.dr.y, g.dr.z, g.c.y, g.dg.x, g.dg.y, g.dg.z, g.c.z, g.db.x, g.db.y, g.db.z,
                                         g.ex.x, g.ex.y, g.ex.z, g.ey.x, g.ey.y, g.ey.z, g.ez.x, g.ez.y, g.ez.z, g.qxx.x, g.qxx.y,
                                         g.qxx.z, g.qyy.x, g.qyy.y, g.qyy.z, g.qxy.x, g.qxy.y, g.qxy.z, g.qxz.x, g.qxz.y, g.qxz.z,
-                                        g.qyz.x, g.qyz.y, g.qyz.z];
+                                        g.qyz.x, g.qyz.y, g.qyz.z, g.lace.x, g.lace.y, g.lace.z];
                 for i in GATHERED { bounce.half[at + i] = q[i]; }
             }
         }
@@ -1760,14 +1777,19 @@ fn gather_half(sun: Sun, bounce: Bounce&) {
 // stands before (near_faces).
 fn gather_cells(sun: Sun, bounce: Bounce&, wins: room_shell::Opening[3]&, p: float3, kp: i64, f: float3) -> Gathered {
     let near2: f32 = gather_near;
-    var g = Gathered { float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0 };
+    var g = Gathered { float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0, float3_0,
+                       float3_0 };
     let face = wall_face();
     let behind_lace = niche_light && f.y < 0.0 && p.y < face - room_shell::LACE_OFF && p.y > face - NEAR_PLANE;
     for j in CELLS {
         let b .= bounce.cells[j];
         let l = bounce.seen[j];
         guard b.area > 0.0 && l.x + l.y + l.z > 0.0 else { continue; }
-        if behind_lace && j >= LACE_C0 { g.ey = g.ey + lace_on_wall(b, l, float3 { p.x, face, p.z }); }
+        if behind_lace && j >= LACE_C0 {
+            let e = lace_on_wall(b, l, float3 { p.x, face, p.z });
+            g.ey = g.ey + e;
+            g.lace = g.lace + e;
+        }
         let v = b.at - p;
         let off = if niche_faces && j >= LACE_C0 { abs(dot(b.normal, v)) } else { -dot(b.normal, v) };
         guard off > 0.0 else { continue; }

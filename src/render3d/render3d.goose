@@ -2542,6 +2542,9 @@ var props_bytes:   u8[PROPS_BYTES];
 var light_patches: room_light::Patch[room_light::BINS];
 var light_tree:    f32[room_light::RAYS];
 var light_bounce:  room_light::Bounce;
+// The lace's own light on the window wall in the probes' light toward the room
+// (room_light::LACE_WALL_FLOATS), which the lace's room side leaves out (lace_into_mesh).
+var light_lace_wall: f32[room_light::LACE_WALL_FLOATS];
 // How many times the room's light is thrown on after the sun's patches (room_light::BOUNCES;
 // 0 the patches alone, the tuner's --bounces), and each step's time in the last bake:
 // the sun's rays, the first light, each bounce, the half grid's gather, the probes.
@@ -2622,7 +2625,8 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     room_light::gather_half(sun, light_bounce);
     light_steps[5] = (clock() - at) * 1000.0;
     at = clock();
-    room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..room_light::ATLAS_FLOATS], light_props[..]);
+    room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..room_light::ATLAS_FLOATS], light_props[..],
+                     light_lace_wall[..]);
     light_steps[6] = (clock() - at) * 1000.0;
     at = clock();
     if room_light::volumes_on {
@@ -2843,7 +2847,7 @@ fn lace_into_mesh<O>(o: O&, g: Gpu&) {
         let wall = room_light::window_wall_light(lace_sun, light_bounce, p);
         let window_part = sky * v.box.x + niches[room_light::window_near(p)] * (v.box.y - v.box.x);
         let seen = window_part + wall * (1.0 - v.box.y);
-        let room = probe_light(float3 { p.x, face, p.z }, 1.0);
+        let room = probe_light(float3 { p.x, face, p.z }, 1.0, true);
         let hidden = min(v.corner.x * (room_shell::FOLD_HIDDEN / room_shell::FOLD_DEEP), 1.0);
         let glow = room_light::lace_glow(light_bounce, p, seen);
         let beside = wall * (1.0 - thread) + (albedo * (room * (1.0 - through)) + glow) * thread;
@@ -2879,8 +2883,9 @@ fn plan_of(p: float3, n: float3) -> float3, float3 {
 fn lum(c: float3) -> f32 { 0.2126 * c.x + 0.7152 * c.y + 0.0722 * c.z }
 
 // The grid's probes' light at a plan point (x, y, metres up) toward +v (toward 1) or -v,
-// trilinear as baked_light.
-fn probe_light(p: float3, toward: f32) -> float3 {
+// trilinear as baked_light; without_lace leaves out the lace's own light on the window wall
+// (light_lace_wall), toward +v only.
+fn probe_light(p: float3, toward: f32, without_lace: bool = false) -> float3 {
     let s = room_shell::LIBRARY;
     let metre = surfaces::METRE;
     let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
@@ -2909,6 +2914,7 @@ fn probe_light(p: float3, toward: f32) -> float3 {
                     * (if (q & 4) != 0 { fz } else { 1.0 - fz });
             let a = 4 * ((c * room_light::NZ + pz) * room_light::ATLAS_W + ph * room_light::NX + px);
             v = v + float4 { light_atlas[a], light_atlas[a + 1], light_atlas[a + 2], light_atlas[a + 3] } * w;
+            if without_lace { v.x -= w * light_lace_wall[4 * (pz * room_light::ATLAS_W + ph * room_light::NX + px) + c]; }
         }
         c3[c] = max(v.x + toward * v.w, 0.0);
     }

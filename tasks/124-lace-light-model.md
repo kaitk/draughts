@@ -283,3 +283,20 @@ Tools, all in `build/lace124b/` (scratch, not in git):
 - `cy.sh SCENE TAG [flags]` renders Cycles at the reference view (the quiet lock);
   `cynosky/` the scene with the sky off, `c/nosky-reference*` its render.
 - `page2.py` wrote the results page's first section.
+
+## The probes' two changes (2026-11-27, night)
+
+Under `--light physical` only; without it the reference view is byte-identical to 1512581a's
+build (both changes). Scratch `build/lace124b/` (`cmp3p1.py`, `cmpsrc*.py`, `pb*.txt`, `pt1*.txt`).
+
+Change (1): the half grid keeps the lace's light on the wall apart (`Gathered.lace`, the share
+of `ey` that `lace_on_wall` adds), the bake writes it for the probes that settle to the window
+wall's face (`room_light::bake`'s `lace_wall`, `render3d::light_lace_wall`), and the lace's room
+side reads the probes without it (`probe_light(..., without_lace)`). The wall reads them as
+before: in the reference view only the lace's pixels and their reflection moved. At the row
+(6.85 m) over the tracer, toward the room: the sky's part 1.40–1.87 → 0.43–1.26, B/R 0.66–0.77
+→ 0.59–0.63 (the tracer 0.52–0.65), the same to the digit as the earlier build without
+`lace_on_wall`; the sun's part 0.29–1.12 → 0.19–0.73, the whole 0.51–1.30 → 0.26–0.92. At the
+lace's vertices in shade the room side 0.53–1.20 → 0.33–0.81 of the tracer, B/R 0.28–0.33 →
+0.24–0.30. As seen against Cycles: the near panel in shade 0.83 → 0.72, the lit panel 0.68 →
+0.62, the middle panel 0.93 → 0.91.

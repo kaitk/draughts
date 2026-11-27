@@ -362,7 +362,7 @@ fn cavity_probe(sun: Sun, bounce: Bounce&, patches: Patch[BINS]&, count: i64, pa
 // g with every sum times s.
 fn scaled(g: Gathered, s: f32) -> Gathered {
     return Gathered { g.c * s, g.dr * s, g.dg * s, g.db * s, g.ex * s, g.ey * s, g.ez * s, g.qxx * s, g.qyy * s, g.qxy * s,
-                      g.qxz * s, g.qyz * s };
+                      g.qxz * s, g.qyz * s, g.lace * s };
 }
 
 // The volumes' probes into the atlas's rows after the grid's (atlas: FULL_FLOATS). The sun's
