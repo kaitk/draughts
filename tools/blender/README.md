@@ -112,9 +112,12 @@ recoloured for the base (`render3d::base_wood`, `base_look`) and the chairs (`CH
 under the polish as a clear coat (`tables::Table.coat`), the top with its normal map.
 Pictures from `design/materials/`: the chairs' tapestry (`tapestry.png`, 240 mm a tile)
 and the rug (`rug.png`), both at a 2.2 gamma. The glass is two panes letting 0.92 each
-through without refraction, reflecting 0.6 of Fresnel's; the lace a sheet letting
-`LACE_LETS` through and its thread throwing `LACE_SCATTER` of the rest forward and as much
-back. The room's surfaces from `--maps on`, as `ROOM_FRAG` reads them, its values in `scene.json`'s
+through without refraction, reflecting 0.6 of Fresnel's; the lace as `room_light` describes
+it (`scene.json`'s `lace`, task 124): its mask (`design/materials/lace_f3.png`) on the uv as
+`LIGHT_FN`'s `lace_place` lays it, the thread `density` of the cloth where the mask is 1 and
+more at a slant, scattering its albedo diffusely, `through` of it on through the cloth and the
+rest back (`--lace sheet` the sheet letting `LACE_LETS` through before; `--lace-seen` shows the
+thread's own light). The room's surfaces from `--maps on`, as `ROOM_FRAG` reads them, its values in `scene.json`'s
 `surfaces`: the floor's pictures over its uv's rectangle (`floor_laid`), under the wax as a
 coat at the oak's roughness times the wax's share, following a quarter of the relief; the
 panelling's field a tile of `wall_field` on the uv, each piece's tone and the thresholds by

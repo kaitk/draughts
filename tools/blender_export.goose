@@ -531,6 +531,13 @@ fn main() {
            "], \"width\": ", room_shell::WINDOW_GLASS.w, ", \"sill\": ", o.sill, ", \"top\": ", o.sill + o.height + o.rise, "},\n");
     format(j, "  \"glazing\": ", room_light::GLAZING, ",\n  \"lace_lets\": ", room_light::LACE_LETS, ",\n");
     format(j, "  \"lace_scatter\": ", room_light::LACE_SCATTER, ",\n");
+    // The lace's one description (room_light's): the thread's share where the mask is 1 and on
+    // the whole, square on; its albedo, linear, and the share of it scattered on through; the
+    // mask's tile in the uv's units (shaders::LIGHT_FN's lace_place).
+    format(j, "  \"lace\": {\"density\": ", room_light::LACE_DENSITY, ", \"cover\": ", room_light::LACE_COVER, ", \"through\": ",
+           room_light::LACE_THROUGH, ", \"albedo\": ");
+    put3(j, room_light::lace_albedo());
+    format(j, ", \"tile\": ", surfaces::LACE_TILE, "},\n");
     format(j, "  \"albedo\": {\n");
     let albedos: float3[9] = [room_light::FLOOR_ALBEDO, room_light::OAK_ALBEDO, room_light::PAPER_ALBEDO,
                               room_light::STONE_ALBEDO, room_light::PLASTER_ALBEDO, room_light::CEILING_ALBEDO,

@@ -7,8 +7,8 @@
 // through the panes and the lace; the sky's radiance for a ray leaving through a window's
 // outer opening, past both casements (their panes, frames and bars); up to 10 bounces. The
 // inputs are physical, as in tools/blender/scene.py's Cycles scene: no bounce gain, no caps,
-// each pane passing 0.92, the lace a sheet passing 0.72 whose thread throws 0.4 of the light
-// it stops on each side, from the light reaching both its sides; no tree. The casements'
+// each pane passing 0.92, the lace as room_light describes it (its thread's share from its
+// mask, more at a slant; the thread's albedo scattered on and back); no tree. The casements'
 // backs, which the room's mesh leaves out, are closed (room_scene::casement_backs; --backs off
 // leaves them open).
 // Light is "over pi", the shaders' units: the irradiance on a white surface divided by pi.
@@ -36,8 +36,7 @@ import .room_scene;
 let M:   f32 = 30.48;        // surfaces::METRE
 let EPS: f32 = 0.004;        // a ray's start off its surface, world units
 let MAX_DEPTH = 10;
-let PANE:      f32 = 0.92;
-let LACE_LETS: f32 = 0.72;   // room_light::LACE_LETS
+let PANE: f32 = 0.92;
 
 // The casements' backs, which the room's mesh leaves out (room_scene::casement_backs; --backs off).
 var casement_backs = true;
@@ -425,7 +424,7 @@ fn sun_through(o0: float3) -> f32 {
         let t = nearest(o, d);
         guard hit_tri >= 0 else { return if to_sky(o, d) { through } else { 0.0 }; }
         guard kind[hit_tri] == GLASS else { return 0.0; }
-        through *= if is_lace(hit_tri) { LACE_LETS } else { PANE };
+        through *= if is_lace(hit_tri) { 1.0 - lace_thread(hit_tri, d) } else { PANE };
         o = o + d * (t + EPS);
     }
     return 0.0;
@@ -450,21 +449,30 @@ fn sun_direct(p: float3, n: float3) -> float3 {
     return sun_light * (c * sun_through(p + n * EPS) / PI);
 }
 
-// A ray meeting the lace passes its open part (LACE_LETS of the sheet) or meets its thread,
-// picked at random by those shares. The thread, as Cycles' lace, throws LACE_SCATTER of the
-// light reaching either side on through it and as much back, so the light off it at p is the
-// same toward both sides. The light reaching it: the sun's, and one traced ray to a side
-// picked at random, counted twice.
-recursive fn off_thread(p: float3, k: i64, depth: i64) -> float3 {
+// A ray meeting the lace passes its open part or meets its thread, picked at random by the
+// thread's share where it crosses (1 - room_light::lace_open_share, over the mask). The thread
+// scatters its albedo diffusely, room_light::LACE_THROUGH of it on through the cloth and the
+// rest back toward where the light came from: toward d's side it sends back what reaches
+// that side and on what reaches the other. The light reaching it: the sun's, and one traced
+// ray to a side picked at random, counted twice.
+recursive fn off_thread(p: float3, k: i64, d: float3, depth: i64) -> float3 {
     let n = face_normal(k);
-    let c = abs(dot(n, toward_sun));
-    var e = sun_light * (c * sun_through(p + toward_sun * EPS) / PI);
+    let seen = if dot(n, d) < 0.0 { n } else { float3_0 - n };
+    let back = 1.0 - room_light::LACE_THROUGH;
+    let c = dot(seen, toward_sun);
+    let share = if c > 0.0 { back } else { room_light::LACE_THROUGH };
+    var e = sun_light * (share * abs(c) * sun_through(p + toward_sun * EPS) / PI);
     if depth < MAX_DEPTH {
-        let side = if rnd() < 0.5 { n } else { float3_0 - n };
-        e = e + radiance(p + side * EPS, cosine_dir(side), depth + 1) * 2.0;
+        let same = rnd() < 0.5;
+        let side = if same { seen } else { float3_0 - seen };
+        let kept = if same { back } else { room_light::LACE_THROUGH };
+        e = e + radiance(p + side * EPS, cosine_dir(side), depth + 1) * (2.0 * kept);
     }
-    return e * room_light::LACE_SCATTER;
+    return e * room_light::lace_albedo();
 }
+
+// The thread's share of the lace where a ray along d crosses triangle k.
+fn lace_thread(k: i64, d: float3) -> f32 { 1.0 - room_light::lace_open_share(dot(face_normal(k), d)) }
 
 fn cosine_dir(n: float3) -> float3 {
     let u1 = rnd();
@@ -493,8 +501,8 @@ recursive fn radiance(o0: float3, d: float3, depth: i64) -> float3 {
         if kind[k] == GLASS {
             if !is_lace(k) {
                 through *= PANE;
-            } else if rnd() >= LACE_LETS {
-                return off_thread(p, k, depth) * through;
+            } else if rnd() < lace_thread(k, d) {
+                return off_thread(p, k, d, depth) * through;
             }
             o = p + d * EPS;
             continue;
@@ -721,8 +729,8 @@ fn shade(cam: Camera, d: float3, sums: f32[24]&, counts: f32[24]&) -> float3 {
         if kind[k] == GLASS {
             if !is_lace(k) {
                 through *= PANE;
-            } else if rnd() >= LACE_LETS {
-                return off_thread(p, k, 1) * through;
+            } else if rnd() < lace_thread(k, d) {
+                return off_thread(p, k, d, 1) * through;
             }
             o = p + d * EPS;
             continue;

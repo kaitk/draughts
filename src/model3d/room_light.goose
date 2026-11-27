@@ -92,6 +92,45 @@ fn lace_lets(h: f32) -> f32 {
     return pow(LACE_LETS, max(LACE_FLAT_WIDTH / max(w, 0.05), 1.0));
 }
 
+// The lace, one description for the bake, the shaders, the CPU tracer and Cycles (task 124;
+// the tuner's --light physical). Its thread covers LACE_DENSITY of the cloth where its mask
+// (design/materials/lace_f3.png) is 1, LACE_COVER on the whole, seen square on; seen at a
+// slant more, as the threads overlap: a place of mask m lets 1 - LACE_DENSITY m to the power
+// of 1 / max(|cos|, 0.5) straight through. Over the pattern that is lace_open_share, from
+// the field's mask in eight bins (each bin's mean value and share of the field; their mean
+// 0.514). The thread scatters its albedo (surfaces::LOOK's lace_thread, linear) diffusely,
+// LACE_THROUGH of it on through the cloth and the rest back.
+let LACE_DENSITY:     f32    = 0.8;
+let LACE_COVER:       f32    = 0.411;
+let LACE_THROUGH:     f32    = 0.31;
+let LACE_MASK_VALUES: f32[8] = [0.021, 0.1839, 0.3081, 0.441, 0.5619, 0.6876, 0.8214, 0.9317];
+let LACE_MASK_SHARES: f32[8] = [0.2085, 0.0527, 0.0632, 0.0919, 0.1478, 0.1269, 0.1688, 0.1402];
+var lace_described = false;
+// lace_open_share at the powers 1 to 2 in LACE_POWERS steps, made once (lace_open_table).
+let LACE_POWERS = 17;
+var lace_open_by_power: f32[LACE_POWERS] = [0.0; LACE_POWERS];
+var lace_open_made = false;
+fn lace_open_table() {
+    guard !lace_open_made else { return; }
+    lace_open_made = true;
+    for k in LACE_POWERS {
+        let e: f32 = 1.0 + k / (LACE_POWERS - 1.0);
+        var open: f32 = 0.0;
+        for i in 8 { open += LACE_MASK_SHARES[i] * pow(1.0 - LACE_DENSITY * LACE_MASK_VALUES[i], e); }
+        lace_open_by_power[k] = open;
+    }
+}
+fn lace_open_share(cosine: f32) -> f32 {
+    lace_open_table();
+    let f = (1.0 / max(abs(cosine), 0.5) - 1.0) * (LACE_POWERS - 1);
+    let i = min(f as i64, LACE_POWERS - 2);
+    return lace_open_by_power[i] + (lace_open_by_power[i + 1] - lace_open_by_power[i]) * (f - i);
+}
+fn lace_albedo() -> float3 {
+    let t = surfaces::LOOK.lace_thread;
+    return float3 { model3d::linear(t.x), model3d::linear(t.y), model3d::linear(t.z) };
+}
+
 // The surfaces' mean albedo, linear: the herringbone's oak, the wallpaper, the wainscot,
 // the white paint of the doors and joinery, the limewash of the reveals, the sills' stone,
 // the table's mahogany (measured off the room's shots and surfaces::LOOK).

@@ -11,6 +11,11 @@
 #       the stain, as the app's ours; on)]
 #       [--vertex-colour written|decoded (the panelling's occlusion and tone encoded back as the export wrote
 #       them, or as the importer decodes them from sRGB, before 2026-11-27)]
+#       [--lace described|sheet|off (room_light's one description of the lace from scene.json, the sheet
+#       letting lace_lets through before task 124, or none, for what is behind it)]
+#       [--lace-seen as-made|solid|front|back (solid: the camera sees the described lace's cloth whole, its
+#       thread's own light, while the light through it stays as made; front or back: of that light only what the
+#       thread sends back from the room's side, or on through from the window's)]
 #       [--window-metal flat|LEVEL (the export's by default)] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
 #
 # Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes),
@@ -36,7 +41,7 @@ def flags():
          "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None, "vertex-colour": "written", "oak-pieces": "on",
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None,
-         "window-metal": None}
+         "window-metal": None, "lace": "described", "lace-seen": "as-made"}
     i = 0
     while i < len(argv):
         name = argv[i][2:]
@@ -138,6 +143,72 @@ def glass(name, lets):
     nt.links.new(t.outputs[0], mix.inputs[1])
     nt.links.new(g.outputs[0], mix.inputs[2])
     nt.links.new(mix.outputs[0], out.inputs["Surface"])
+    return m
+
+
+def lace_described(name, d):
+    # The lace as room_light describes it (scene.json's "lace", task 124): its thread covers
+    # `density` of the cloth where its mask is 1, more at a slant, 1 - (1 - cover)^(1 / max(|cos|,
+    # 0.5)); the rest is open. The thread scatters its albedo diffusely, `through` of it on
+    # through the cloth and the rest back. The mask on the uv as LIGHT_FN's lace_place lays it:
+    # the field's tile (its first 1024 rows) repeating up the cloth, the hem's strip (its last
+    # 384) at the foot; nothing where the mask is under 0.02 or past the hem, as ROOM_FRAG.
+    m, nt, out = node_material(name)
+    N = Nodes(nt)
+    tile = d["tile"]
+    uv = nt.nodes.new("ShaderNodeTexCoord")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    N.link(uv.outputs["UV"], sep.inputs[0])
+    k = N.math("DIVIDE", N.math("SUBTRACT", 0.375 * tile, sep.outputs["Y"]), tile)
+    hem = N.math("GREATER_THAN", k, 0.0)
+    row = N.math("ADD", N.math("MULTIPLY", hem, N.math("ADD", 1.0, N.math("MINIMUM", k, 0.3745))),
+                 N.math("MULTIPLY", N.math("SUBTRACT", 1.0, hem), N.math("FRACT", k)))
+    comb = nt.nodes.new("ShaderNodeCombineXYZ")
+    N.link(N.math("DIVIDE", sep.outputs["X"], tile), comb.inputs[0])
+    # The app's rows run down from the image's top; Blender's v up from its bottom.
+    N.link(N.math("SUBTRACT", 1.0, N.math("MULTIPLY", row, 1024.0 / 1408.0)), comb.inputs[1])
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = bpy.data.images.load(os.path.join(REPO, "design/materials/lace_f3.png"), check_existing=True)
+    tex.image.colorspace_settings.name = "Non-Color"
+    tex.interpolation = "Linear"
+    N.link(comb.outputs[0], tex.inputs["Vector"])
+    mask = tex.outputs["Color"]
+    shown = N.math("MULTIPLY", N.math("GREATER_THAN", mask, 0.02), N.math("LESS_THAN", k, 0.3745))
+    geo = nt.nodes.new("ShaderNodeNewGeometry")
+    dot = nt.nodes.new("ShaderNodeVectorMath")
+    dot.operation = "DOT_PRODUCT"
+    N.link(geo.outputs["Incoming"], dot.inputs[0])
+    N.link(geo.outputs["Normal"], dot.inputs[1])
+    slant = N.math("DIVIDE", 1.0, N.math("MAXIMUM", N.math("ABSOLUTE", dot.outputs["Value"]), 0.5))
+    open_part = N.math("POWER", N.math("SUBTRACT", 1.0, N.math("MULTIPLY", mask, d["density"])), slant)
+    thread = N.math("MULTIPLY", N.math("SUBTRACT", 1.0, open_part), shown)
+    seen = F["lace-seen"]
+    path = nt.nodes.new("ShaderNodeLightPath")
+    if seen != "as-made":
+        # The thread's own light where the camera sees the cloth, the rest of the light as made.
+        thread = N.math("MAXIMUM", thread, path.outputs["Is Camera Ray"])
+    a = d["albedo"]
+    hole = nt.nodes.new("ShaderNodeBsdfTransparent")
+    fwd = nt.nodes.new("ShaderNodeBsdfTranslucent")
+    fwd.inputs["Color"].default_value = (*[c * d["through"] for c in a], 1.0)
+    back = nt.nodes.new("ShaderNodeBsdfDiffuse")
+    back.inputs["Color"].default_value = (*[c * (1.0 - d["through"]) for c in a], 1.0)
+    add = nt.nodes.new("ShaderNodeAddShader")
+    mix = nt.nodes.new("ShaderNodeMixShader")
+    N.link(thread, mix.inputs["Fac"])
+    N.link(fwd.outputs[0], add.inputs[0])
+    N.link(back.outputs[0], add.inputs[1])
+    N.link(hole.outputs[0], mix.inputs[1])
+    thread_bsdf = add.outputs[0]
+    if seen in ("front", "back"):
+        # The camera sees only the light the thread sends back (front) or on through (back).
+        cam = nt.nodes.new("ShaderNodeMixShader")
+        N.link(path.outputs["Is Camera Ray"], cam.inputs["Fac"])
+        N.link(add.outputs[0], cam.inputs[1])
+        N.link((back if seen == "front" else fwd).outputs[0], cam.inputs[2])
+        thread_bsdf = cam.outputs[0]
+    N.link(thread_bsdf, mix.inputs[2])
+    N.link(mix.outputs[0], out.inputs["Surface"])
     return m
 
 
@@ -782,7 +853,9 @@ mats = {
     "window_metal": diffuse("window_metal", srgb_to_linear(G["window_metal"][:3]), metallic=1.0, rough=G["window_metal"][3])[0],
     "cord": diffuse("cord", (0.30, 0.16, 0.07))[0],
     "glass": glass("glass", 0.92),
-    "lace": lace("lace", S["lace_lets"], 0.4),
+    "lace": (lace_described("lace", S["lace"]) if F["lace"] == "described" and "lace" in S
+             else lace("lace", 1.0, 0.0) if F["lace"] == "off"
+             else lace("lace", S["lace_lets"], 0.4)),
     "table_top": wood("table_top", table, "top"),
     "table_base": wood("table_base", table, "base"),
     "chair_wood": wood("chair_wood", chair_wood, "chair"),
