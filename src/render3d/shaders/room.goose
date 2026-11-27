@@ -421,6 +421,7 @@ let ROOM_HEAD = """
         vec4 wood_oak[5];
         vec4 wood_floor[5];
         vec4 window_metal;
+        vec4 env_pano[3];
     };
     """;
 
@@ -938,6 +939,23 @@ let ROOM_FRAG = """
         return mix(room_wide(lp, r), win * planar_look.w, rect);
     }
 
+    // The light tuner's panoramas (render3d::env_pano): the lookup env_pano[0].w along the
+    // direction this pixel stands for, from env_pano[0].xyz.
+    vec3 env_pano_seen() {
+        vec2 uv = gl_FragCoord.xy / screen.xy;
+        float lon = (uv.x - 0.5) * 2.0 * PI;
+        float lat = (0.5 - uv.y) * PI;
+        vec3 d = normalize((env_pano[1].xyz * sin(lon) + env_pano[2].xyz * cos(lon)) * cos(lat) + vec3(0.0, sin(lat), 0.0));
+        vec3 q = env_pano[0].xyz;
+        vec3 lq = vec3(dot(q.xz, axes.xy), q.y, dot(q.xz, axes.zw));
+        vec3 ld = vec3(dot(d.xz, axes.xy), d.y, dot(d.xz, axes.zw));
+        float m = env_pano[0].w;
+        if (m < 1.5) return sh_eval(d) * params.z;
+        if (m < 2.5) return room_wide(lq, d);
+        if (m < 3.5) return room_seen(q, lq, d, ld, 0.0, 1.0, 0.0);
+        return floor_reflection(q, lq, d, env_pano[1].w, 1.0, 0.0);
+    }
+
     // What the windows' hardware sees along r from p, in the niche outside the room's box: the
     // window's glass where r meets it (the view out's light, the casement's members as the
     // light map has them, blurred as the lobe widens and by the pixel's spread of reflected
@@ -1275,6 +1293,12 @@ let ROOM_FRAG = """
 
     #if !defined(MIRROR_CHEAP) && !defined(BOX_MAP_BAKE)
     void main() {
+    #if defined(ROOM_FLOOR) && defined(SHARP_BOX)
+        if (env_pano[0].w > 0.5 && env_pano[0].w < 4.5) {
+            result = room_out(env_pano_seen() * params.x * shade.w, 1.0);
+            return;
+        }
+    #endif
         vec3 p = v_world;
         vec3 ng = normalize(v_normal);
         float kind = floor(v_extra.y + 0.001);

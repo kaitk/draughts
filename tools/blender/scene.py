@@ -10,6 +10,8 @@
 #       [--vertex-colour decoded|written (the panelling's occlusion and tone as the importer decodes them
 #       from sRGB, or encoded back as the export wrote them)]
 #       [--window-metal flat|LEVEL (the export's by default)] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
+#       [--pano X,Y,H (an equirectangular panorama from that plan point, 2:1, in place of a view: the middle looks
+#       along the plan's +y, u 0.75 along +x)]
 #
 # Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes), and
 # OUT-light.png: the diffuse light alone (direct + indirect, no albedo), the room's
@@ -33,7 +35,7 @@ def flags():
          "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None, "vertex-colour": "decoded",
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None,
-         "window-metal": None}
+         "window-metal": None, "pano": None}
     i = 0
     while i < len(argv):
         name = argv[i][2:]
@@ -43,6 +45,8 @@ def flags():
             continue
         f[name] = argv[i + 1]
         i += 2
+    if f["pano"] and f["size"] == "960x540":
+        f["size"] = "1024x512"
     if f["out"] is None:
         f["out"] = os.path.join(f["scene"], f["view"])
     return f
@@ -880,7 +884,13 @@ scene.world = world
 
 # ---- camera
 
-if "plan-eye" in F:
+if F["pano"]:
+    # --pano X,Y,H: a plan point as the tuner's --plan-eye, seen all round.
+    tx, ty = S["table_at"][:2]
+    px, py, ph = (float(c) for c in F["pano"].split(","))
+    v = {"eye": [tx - px, py - ty, ph], "fov": 0.0}
+    v["at"] = [v["eye"][0], v["eye"][1] + 1.0, ph]   # toward the plan's +y (world +y)
+elif "plan-eye" in F:
     # The tuner's --plan-eye, --plan-at and --fov, turned into this frame (x mirrored).
     tx, ty = S["table_at"][:2]
     plan = [[float(c) for c in F[k].split(",")] for k in ("plan-eye", "plan-at")]
@@ -903,6 +913,12 @@ cam_ob = bpy.data.objects.new("cam", cam)
 scene.collection.objects.link(cam_ob)
 cam_ob.location = eye
 cam_ob.rotation_euler = (eye - at).to_track_quat("Z", "Y").to_euler()
+if F["pano"]:
+    cam.type = "PANO"
+    cam.panorama_type = "EQUIRECTANGULAR"
+    cam.latitude_min, cam.latitude_max = -math.pi / 2, math.pi / 2
+    cam.longitude_min, cam.longitude_max = math.pi, -math.pi   # turned round: the plan is mirrored against this world, and +x is to be at u 0.75
+    cam_ob.rotation_euler = (math.pi / 2, 0.0, 0.0)   # the middle looks along +y (Blender's looks along -Z)
 scene.camera = cam_ob
 
 

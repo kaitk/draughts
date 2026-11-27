@@ -1721,6 +1721,11 @@ fn main() {
     // the room's box blurred by the wax's lobe (0) or only its light and the windows (1).
     let box4 = four(argv, "--floor-box", float4 { 0.0, 1.0, 0.0, 0.0 });
     render3d::floor_box = float2 { box4.x, box4.y };
+    // --env-pano MODE,X,Y,H (and --env-pano-alpha A): a panorama of what one of the reflections'
+    // lookups sees from the plan's point (render3d::env_pano); frame the floor or the table's top
+    // filling the screen.
+    let pano4 = four(argv, "--env-pano", float4_0);
+    let pano_alpha = number(argv, "--env-pano-alpha", 0.25);
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     sun_color_given = has(argv, "--sun-color-height");
@@ -2784,6 +2789,12 @@ fn main() {
             eye = plan_point(g, view_eye(view, place));
             target = plan_point(g, view_at(view, place));
             fov = 60.0;
+        }
+        if pano4.x > 0.5 {
+            let o = plan_point(g, float3 { pano4.y, pano4.z, pano4.w });
+            let ex = normalize(plan_point(g, float3 { pano4.y + 1.0, pano4.z, pano4.w }) - o);
+            let ey = normalize(plan_point(g, float3 { pano4.y, pano4.z + 1.0, pano4.w }) - o);
+            render3d::env_pano = [float4 { o.x, o.y, o.z, pano4.x }, float4 { ex.x, ex.y, ex.z, pano_alpha }, float4 { ey.x, ey.y, ey.z, 0.0 }];
         }
         // Behind the shell's windows the park (model3d::view_out), or with U a plain sky of
         // ours (render3d's plain fade), not the season's photograph; the fade gives the

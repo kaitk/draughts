@@ -776,6 +776,14 @@ let WOOD_TABLE = 2;
 var woods = [default<Wood>(); 3];
 // The floor's planks' cup (x) and tilt (y) in place of surfaces::LOOK's where 0 or more (the tuner's --floor-shape).
 var floor_shape = float2 { -1.0, -1.0 };
+// The light tuner's panoramas of what the reflections see (--env-pano): every floor or table-top
+// pixel shows, in place of itself, the light one lookup returns along the direction its place on
+// the screen stands for (equirectangular: the middle column toward [2], [1] to its right, up at
+// the top) from the point [0].xyz (world). [0].w the lookup: 0 none; on the floor 1 the
+// harmonics, 2 the room's probes (room_wide), 3 the room's box sharp (room_seen), 4 the floor's
+// wax as drawn (floor_reflection at [1].w's alpha); on the table 5 the props' probes
+// (grid_light), 6 their box sharp (props_seen_at), 7 the polish as drawn at [1].w.
+var env_pano = [float4_0, float4_0, float4_0];
 // The matt floor's reflection without the mirror (ROOM_FRAG's floor_reflection, in planar_look's
 // z and w): x 0 the room's box blurred by the wax's lobe, 1 only the room's light that way and
 // the windows' soft shapes; y the windows' light in it then. The tuner's --floor-box.
@@ -833,6 +841,7 @@ struct PropsLightBlock {
     light_box: float4, light_grid: float4, props_look: float4,
     room_box:  float4, room_doors: float4, room_heights: float4, lace_light: float4,
     box_paper: float4, box_paint: float4, box_ceiling: float4,
+    env_pano: float4[3],
 }
 // Whether the table's and chairs' polish reflects the room's box and its windows sharply
 // (TABLE_FRAG's props_seen_at) in place of the probes' light alone (the light tuner's
@@ -850,7 +859,7 @@ fn props_light_block(g: Gpu&) -> PropsLightBlock {
     PropsLightBlock { light_box_of(), light_grid_of(),
                       float4 { if props_table_shade { 1.0 } else { 0.0 }, props_wrap, if props_profile_ao { 0.0 } else { 1.0 }, if props_seen { 1.0 } else { 0.0 } },
                       s.room_box, s.room_doors, s.room_heights, s.lace_light, paper + (gold - paper) * 0.3, model3d::linear4(s.paint),
-                      model3d::linear4(s.ceiling_light) }
+                      model3d::linear4(s.ceiling_light), env_pano }
 }
 
 // A chair's plan round its seat's middle (world units: half its width, its front, its back's
@@ -2259,6 +2268,7 @@ struct SurfacesBlock {
     wood_oak:      float4[5],      // the panelling's finish (Wood, wood_rows)
     wood_floor:    float4[5],      // the floor's
     window_metal:  float4,         // room_shell::window_metal, last so room_fixed's spans stay
+    env_pano:      float4[3],      // the light tuner's panoramas (env_pano)
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
@@ -2354,7 +2364,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { lace_shade.x, lace_shade.y, if lace_probed && light_baked(g) { 1.0 } else { 0.0 }, 0.0 },
                     table_map_shown(g),
                     books::COVER, books::LABEL, wood_rows(g, WOOD_OAK), wood_rows(g, WOOD_FLOOR),
-                    room_shell::window_metal }
+                    room_shell::window_metal, env_pano }
 }
 
 // The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.
