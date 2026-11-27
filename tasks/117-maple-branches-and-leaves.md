@@ -39,7 +39,8 @@ branch), and `build/notes/tree/photos/tartu-maple-1.jpg` (leaf plates from below
       place of "level within about 15°"), some flat, some cupped, some sagging.
 - [ ] Each step behind a tuner switch, checked first as a CPU silhouette from
       `tools/tree_dump` against the photos, then on the Mac and the tablet.
-- [ ] Growth stays under 100 ms on the Mac (now 6.5 ms) and the segment and leaf counts
+- [ ] Growth stays under 100 ms on the Mac (6.5 ms before step one; round two all on
+      about 52 ms on the PC plus 26 ms of shaped wood) and the segment and leaf counts
       within `MAX_WHOLE_SEGMENTS` and `MAX_CARDS`; the times recorded here.
 - [ ] The decision recorded in `docs/decisions/` and `docs/architecture/` updated.
 
@@ -249,6 +250,71 @@ Open:
 - The sunlit trunk is still very light at the room's exposure; the photos' trunks read mid
   grey in sun.
 - Moss and the green algae of the photos' lower trunks have no mask yet.
+
+## Round two: the skeleton and density (2026-11-27)
+
+Built on the Windows PC into `trees::grow_whole` (`tree_whole.goose`), each part off by
+default as `trees::Growth`, set by the light tuner and `tools/tree_dump` alike:
+
+| Part | Tuner switch | `tree_dump` flag | Tried | Recommended |
+|---|---|---|---|---|
+| Elbows in the limb's upright plane: the side shoot turns down on a rising limb (over 15° up), up on a level one, never past 55° up or 40° down, and one or two segments on turns back 60-100 % of the way, so the limb steps as the photos' zig-zags and keeps its way | `--tree-elbow-plane ON` (0) | `--elbow-plane` | 0, 1-2, 3 elbows, gravity off and 1 | 1, count the user's |
+| The limbs off the trunk at Sapling's down angle, `DOWN - DOWN_V × high²` (Weber and Penn's down angle and its variation; `high` the share up the trunk's limbs), in place of `Whole.limbs` (62° low to 28° high) | `--tree-limb-angle ON,DOWN,DOWN_V` (0,110,80) | `--limb-angle` | 110,80 (quaking aspen), 90,90 (Japanese maple), 90,60 | 1,90,90 |
+| Hanging twigs: branches and branchlets leaving the underside (pointing down) of limbs and branches within LEVEL of level hang; each segment turns toward the ground by Weber and Penn's AttractionUp (negative) times its declination over its segments, times 1 cm over its radius when thicker (ez-tree's force by the section's radius), their offspring by TWIGS of it | `--tree-hanging-twigs ON,ATTRACTION,LEVEL,TWIGS` (0,-1.5,0.45,0.3) | `--hanging-twigs` | -1.5 and -3 (Sapling's weeping willow), offspring 0.3 and 0 | 1,-3,0.45,0 |
+| Density: the shedding's light and the short shoots retuned | `--tree-shed`, `--tree-plates` | `--shed`, `--plates` | shed 0.3-0.45 × spurs 2-4 | shed 0.3,0.5; plates 1,3,1 |
+
+The published rules: Sapling's `fabricate_stems` (Blender's add-on, `utils.py`) computes a
+child's angle as `downAngle + -downAngleV × (1 - (1 - offset) / (1 - baseSize))²` for a
+positive variation (its comment: "(110, 80) = (60, -50)", Weber and Penn's quaking aspen);
+its presets give the quaking aspen 110,80, the Japanese maple 90,90, the small maple 48,48.
+Sapling's weeping willow hangs its twigs by `attractUp` -2.75 and -3; ez-tree turns each
+section toward its force by `strength / sectionRadius`. Gravity's limit (Stava's largest
+angle) stays as it was: the limbs leave flatter by the down angle, not by more bend.
+
+Off, every dump and the tests are byte-identical to before (`cmp` of the dumps and the wood).
+
+Counts, old-leader, no low limb, whole and culled:
+
+| | Segments | Leaves whole | Leaves culled |
+|---|---|---|---|
+| Before step one | 37,881 | 34,528 | 22,217 |
+| Steps one to three (elbows 1-2, gravity 1, shed 0.45,0.5, plates 1,2,1, tilt, bend) | 28,824 | 20,428 | 13,424 |
+| Round two at step two's density (shed 0.45, spurs 2) | 24,639 | 17,866 | 14,535 |
+| Round two, shed 0.45, spurs 4 | 24,639 | 26,619 | 21,700 |
+| Round two, recommended (shed 0.3, spurs 3) | 32,267 | 32,961 | 25,374 |
+
+All within `MAX_WHOLE_SEGMENTS` and `MAX_CARDS`. The recommended crown holds as many leaves
+seen from the room as before step one (25,374 culled against 22,217) and about as many whole.
+
+Times on the Windows PC (tools/tree_dump, -O2), the recommended tree whole: 52 ms (best
+three runs 52.1-53.5): the skeleton, shedding and bend 15.8, the plates and tilt 8, the
+nudge 28 (NUDGE 1 with SPURS 3; 0 keeps 24 ms in all), the bend's choice under 1. Culled by
+`grow_whole` 53 ms. The shaped wood (junctions and roots, high) 25.8 ms, 88,784 tube
+triangles. So a tree grown again costs about 78 ms with the bark tile made once, under 100
+on the Mac if it grows as fast; NUDGE 0 brings it to about 50.
+
+Pictures (local, `build/notes/tree/round-2/branches/`, the page `../branches.html`):
+`elbows-plane.jpg` (0, 1-2 any way, 1-2 and 3 up and down, with gravity off and 1),
+`limb-angle.jpg` (`Whole.limbs`, 110,80, 90,90, 90,60, front and side), `hanging-twigs.jpg`
+(none, -1.5 and -3, offspring 0.3 and 0), `density.jpg` (before step one, step two's
+density, spurs 4, the recommended: whole and culled from below), `app-up.jpg` and
+`app-table-window.jpg` (the light tuner, `--tree-draw all`: before step one, steps one to
+three, round two recommended).
+
+What still looks wrong:
+
+- The zig-zags read on a limb and a little at the whole tree; the photos' limbs are
+  crookeder over all their length, not only at 1-3 elbows.
+- Flatter limbs from low on the trunk run into the envelope's floor soon, so the low
+  limbs are short and the crown's middle a little hollow above them.
+- The hanging branches read as curtains under the low limbs, denser than the photos'
+  fans; their twigs don't yet spread into the photos' flat fans.
+- The crown's leaves still gather in plates at the shell, a little clumpy, with gaps in
+  the upper middle.
+- In the tuner's table-window view the table loses its sun patch with round two on: the
+  fuller crown and the hanging branches lie in the sun's path at that placement.
+- The season sets only the tilt; the leaves' tint stays autumn's (a later task). The
+  tuner's `--season winter` doesn't take the leaves off the geometry either.
 - Not yet seen on the Mac or the tablet.
 
 ## Round one and the user's answers (2026-11-26)
