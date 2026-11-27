@@ -150,6 +150,11 @@ python scripts/windows.py                 # build/windows/draughts_ngfx.exe
 python scripts/windows.py --run -- --board 3d --screen game
 ```
 
+`scripts/ngfx.py` links `build/ngfx/goose-ngfx` to the goose-ngfx checkout, a junction on
+Windows. Git for Windows' `git worktree remove` followed that junction out of a worktree
+and deleted the checkout (2026-11-26 and 11-27): remove the junction first (`cmd //c rmdir
+build\ngfx\goose-ngfx` in the worktree), and never remove a worktree with `--force`.
+
 The script builds goose_gfx into `build/windows/goose/` (delete it after the release
 changes); SDL is the release's, linked statically. The app draws through Vulkan; Direct3D
 12 needs a patched Goose, built as the `direct3d12` branch's copy of this section says
