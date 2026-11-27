@@ -1717,6 +1717,11 @@ fn main() {
     // 0.03, more natural (the user, 2026-11-27, task 130).
     let shape4 = four(argv, "--floor-shape", if physical { float4 { 0.03, 0.03, 0.0, 0.0 } } else { float4 { -1.0, -1.0, 0.0, 0.0 } });
     render3d::floor_shape = float2 { shape4.x, shape4.y };
+    // --floor-box SHARP,WINDOWS: the matt floor's reflection without the mirror (render3d::floor_box);
+    // under --light physical the room's walls and doors not seen sharply (as sharp, the floor read as
+    // soaking wet: the user, 2026-11-27, task 130) and the windows' glow stronger.
+    let box4 = four(argv, "--floor-box", float4 { 0.0, 1.5, 0.0, 0.0 });
+    render3d::floor_box = float2 { box4.x, box4.y };
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     sun_color_given = has(argv, "--sun-color-height");
@@ -2331,6 +2336,8 @@ fn main() {
                         slider(c, "  rounding's slope", FLOOR_JOINT.y, 0.0, 1.0);
                         slider(c, "  joints' darkness", FLOOR_JOINT.z, 0.0, 1.0);
                         slider(c, "  grain in the wax", FLOOR_FILM_GRAIN, 0.0, 0.5);
+                        slider(c, "  the room seen sharply", render3d::floor_box.x, 0.0, 1.0);
+                        slider(c, "  the windows' glow", render3d::floor_box.y, 0.0, 4.0);
                     }
                 }
                 slider(c, "Oak light", oak.x, 0.25, 8.0);
@@ -2720,6 +2727,7 @@ fn main() {
                 flag_four(line, "--floor-joint", FLOOR_JOINT);
                 flag_pair(line, "--floor-shape", render3d::floor_shape);
                 flag_one(line, "--floor-film-grain", FLOOR_FILM_GRAIN);
+                flag_pair(line, "--floor-box", render3d::floor_box);
             }
             format(line, " --room-sun ", render3d::room_sun.x);
             flag_four(line, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
