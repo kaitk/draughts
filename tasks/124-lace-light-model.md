@@ -262,6 +262,10 @@ Next session, in this order:
    same value in `room_light`, the tracer, and `scene.json`'s `lace` (the exporter), Cycles
    rendered again (`build/lace124b/cy.sh`), and the measures above redone.
 
+Not this task's, seen on the way: the floor's band between the rug and the wainscot under the
+near window, 1.7 to 2.1 times Cycles' and blue, comes from the baked reflection (task 131's
+step 3c), not the lace.
+
 Tools, all in `build/lace124b/` (scratch, not in git):
 
 - `tree/`: a copy of the sources (toolchains and goose_gfx linked in) for dump and scratch

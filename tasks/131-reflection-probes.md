@@ -56,6 +56,15 @@ tuner's `--env-pano`, from the same points.
   0.13 (16 importance samples 0.26). The shade 1.92× → 1.01×, the window corner's glow 5.1 →
   8.2 (Cycles 10.7). Open: the middle window's glow before the rug 2.2× Cycles'; the cost
   (inside the quick bench's spread).
+- [ ] 3c. Open (the user, 2026-11-27): in the reference view the floor between the rug and the
+  near window's wainscot reads a pale grey-blue band, almost as light as the lace, where Cycles'
+  is dark and warm. Measured (`build/lace124/meas.py`'s units, the stable tuner at 887db847,
+  tree off): by the wainscot 2.07 of Cycles' light, B/R 0.31 against 0.07; nearer the camera
+  1.72, B/R 0.30 against 0.09; with `--refl off` 0.90 and 1.12 (B/R 0.20, 0.25). The baked
+  reflection's lookup there, not the lace (the lace's foot and the wainscot don't move with
+  the switch). Cause not measured: what the four taps read at those points (`--env-pano 4`
+  from a floor point there) against Cycles' glossy pass. Crops: `build/lace124b/strip.png`
+  (now, `--refl off`, Cycles).
 - [ ] 4. The brass, the gilt, the glaze, the window hardware, the table, chairs, board and
   pieces, the glass on the same lookup; the old box code and its patches removed.
 - [ ] 5. Phones (its size, the A33), ngfx at parity, the bake's time; the decision and the
