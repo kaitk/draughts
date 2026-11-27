@@ -192,10 +192,8 @@ Left to a session on the room's light, as measured with the scratch tracer's `fr
 for window B the same as for the box (box: bottom rail 0.009 against 0.035, the niche's head
 0.024 against 0.051, the wall beside the niche 0.008 against 0.026, the reveal 0.098 against
 0.168; the transom 0.044 against 0.058). The tuner's warmer cast over the whole view, the
-curtains and sky too, is the room's sun and grade, not the window. Also there:
-ROOM_FRAG's volume lookup takes a volume's light in full up to 0.3 m outside it, against its
-comment's centimetre (`d < -0.3`); 0.01 changes only the panes' rounded steps (2% of the keeper
-view), so it is not this look's cause. The metal's next step is the user's antique brass
+curtains and sky too, is the room's sun and grade, not the window. (Task 128 found ROOM_FRAG's volume slack `d < -0.3` is in world units, about 1 cm as its comment
+says, not 0.3 m.) The metal's next step is the user's antique brass
 specification (`build/notes/window-reference/references/antique-brass-material.pdf`): mottled,
 aged yellow brass, for the door handles too, a task of its own.
 
