@@ -113,7 +113,7 @@
 //       [--woods WAY|WAINSCOT,TABLE,FLOOR (--light physical: the woods' finishes, render3d::Wood, one way for all or
 //       one each: today as made; ours, our maps stained and finished as manor_wood_materials_cycles.docx says; picks,
 //       the downloaded textures under the same finish, read from build/wood-candidates/ (tools/wood_pictures.goose;
-//       ours where they aren't there); tuned, the floor's herringbone tuned toward the parquet's; today)]
+//       ours where they aren't there); tuned, the floor's herringbone tuned toward the parquet's; ours,today,tuned)]
 //       [--casement-depth on|off (--light physical: the sun through the casements' members with their depth, in the bake
 //       and on every surface, rooms::Room's panes.w; on)] [--stove on|off]
 //       [--volumes on|off (--light physical: the probe volumes, room_light::volumes_on, the windows' spaces between
@@ -295,7 +295,10 @@ fn wood_of(k: i64, way: i64) -> render3d::Wood {
 
 // --woods: one way for all, or the wainscot's, the table's and the floor's.
 fn wood_ways_of(argv: u8[:][>..]&) -> i64[3] {
+    // The user's picks (2026-11-27): the wainscot and panelling ours, the floor tuned.
     var ways: i64[3] = [0, 0, 0];
+    ways[render3d::WOOD_OAK] = 1;
+    ways[render3d::WOOD_FLOOR] = 3;
     let at = flag_value(argv, "--woods");
     guard at > 0 else { return ways; }
     var rest: const u8[:] = argv[at];
