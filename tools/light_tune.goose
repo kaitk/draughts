@@ -1708,6 +1708,7 @@ fn tune<O>(r3d: O&) {
     room_light::gather_exact = physical;
     room_light::niche_faces = physical;
     room_light::stove_stops_sun = physical;
+    room_light::table_sides = physical && !(flag_value(argv, "--table-sides") > 0 && argv[flag_value(argv, "--table-sides")] == "off");
     render3d::props_seen = physical && !(flag_value(argv, "--props-seen") > 0 && argv[flag_value(argv, "--props-seen")] == "off");
     render3d::board_probes = physical && !(flag_value(argv, "--board-probes") > 0 && argv[flag_value(argv, "--board-probes")] == "off");
     room_light::sill_settle = physical;

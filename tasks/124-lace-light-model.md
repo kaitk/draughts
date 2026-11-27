@@ -300,3 +300,36 @@ before: in the reference view only the lace's pixels and their reflection moved.
 lace's vertices in shade the room side 0.53–1.20 → 0.33–0.81 of the tracer, B/R 0.28–0.33 →
 0.24–0.30. As seen against Cycles: the near panel in shade 0.83 → 0.72, the lit panel 0.68 →
 0.62, the middle panel 0.93 → 0.91.
+
+Change (2), measured first: the bake's sun patches at the row's probes, by the surface they lie
+on, against the tracer's first bounce (`ptl firstsrc`, 32,768 rays, `--no-sky --depth 1`), face
+toward the room, by window and height:
+
+- The floor beyond 0.5 m 1.0–1.2 of the tracer, the hall wall and the rest 1.1–1.7; the end wall
+  at the stove's end 0.4 (2.2 against 5.4, 10⁻⁴), the others 0.8–1.3; the table's top 0.5–1.0.
+  The floor within 0.5 m takes no sun at this row in either.
+- The stove's sunlit tiles: 0 in the bake (`stove_stops_sun`), the tracer 11.6–16.8 by the
+  stove's window, 4.5–7.1 by the middle one, 2.3–2.9 by the far one; the largest share by the
+  stove's window (17 of about 30). Left for the new stove (task 122, "the stove's sun, tried
+  and dropped").
+- The table's sides (its base, legs and the top's edge): 0 in the bake, whose sun passed them to
+  the floor; the tracer 10–13 at the middle window's probes under 1.2 m, a third of their light.
+  The mesh has 0.89 m² of side to the top's 0.71 m², so at the 18° sun their lit outline (about
+  0.27 m²) is larger than the top's (0.22).
+- The lace's own light, which the row also sees where the tie-backs draw it into the room (130 to
+  190 at 1.2–2 m), is the lace's cavity term's, not the probes'.
+
+Fixed (the table's sides): `room_light::table_sides` (the tuner's `--light physical`,
+`--table-sides off` the picture before), a turned stand-in from the mesh (a cylinder each 5 cm
+of height with the mesh's side area there, `table_radii`), each sun ray split 4 × 4 over its
+glass cell (the column is narrower than the rays' 8 cm), patches by the eighth the faces turn
+to and one facing up for the ledges (`TABLE_WAYS`); the rays it meets no longer reach the floor.
+The middle window's probes under 1.2 m: the first bounce 0.31–0.33 → 0.66–0.70 of the tracer,
+the sides 8–11 against its 10–13, the floor behind 1.7 → 1.5 (the tracer 1.0). At the lace's
+vertices in shade by that window the room side 0.47–0.80 → 0.61–0.85, B/R 0.19–0.24 (the
+tracer 0.16–0.35). As seen against Cycles: the window wall's wainscot under the near window
+0.66 → 0.80, the near panel in shade 0.72 → 0.78, the rest within 1%; the meter EV 4.32 → 4.33.
+
+Left: the stove's share (window 0's room side still 0.33–0.69 of the tracer, window 2's
+0.48–0.81, where the stove is about a third of the missing first bounce), and the lace's
+`LACE_THROUGH` (the handover's step 3).

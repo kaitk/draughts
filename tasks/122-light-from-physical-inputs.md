@@ -1324,6 +1324,15 @@ the sun over a piece's shade 1.79 stops against 1.96. Not yet looked into: wheth
 light's colour on the board (the sun after the grade), the woods' albedo under the physical
 light, or AgX's desaturation near the top of its curve.
 
+## The table's sides take the sun (2026-11-27, task 124)
+
+Under `--light physical`: the table's base, legs and the top's edge stop the sun's rays and
+throw them back as patches (`room_light::table_sides`; `--table-sides off` the picture before),
+found by the sun's first bounce at the lace's probe row against the tracer, surface by surface
+(task 124, "The probes' two changes"). There the stove's tiles are the largest share still
+missing (the bake 0), as the new stove's work above says. Also from task 124: the lace's room
+side reads the probes without the lace's own light on the window wall (`Gathered.lace`).
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

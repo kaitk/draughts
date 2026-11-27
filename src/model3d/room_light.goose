@@ -304,14 +304,103 @@ struct Patch { at: float3, normal: float3, albedo: float3, power: float3 }
 
 // The bins the sun's rays fall into, a patch each: the floor's 0.25 m cells, the hall
 // wall's and the end walls', each window's sill and two reveals, and with niche_light the
-// inner casement's faces in each niche (member_sun), before the table's last.
+// inner casement's faces in each niche (member_sun), with table_sides the table's sides by
+// the way they face, before the table's top last.
 let BIN = 0.25;
 let FLOOR_BINS_X = 36;
 let FLOOR_BINS_Y = 28;
 let WALL_BINS_H = 16;
 let MEMBER_BANDS = 12;
 let MEMBER_BIN0 = 2489;   // 36×28 + 36×16 + 2 × 28×16 + 3 × 3
-let BINS = 2706;          // + 3 windows × 3 ways × 2 halves × MEMBER_BANDS + 1 (the table)
+let TABLE_SIDE_BIN0 = 2705; // + 3 windows × 3 ways × 2 halves × MEMBER_BANDS
+let BINS = 2715;          // + TABLE_WAYS + 1 (the table's top)
+
+// The table's sides (the tuner's --light physical): its base, legs and the top's edge as a
+// turned stand-in, a cylinder each TABLE_BAND of height with the side area the mesh has there
+// (table_radii, from mesh::table with the default edge), so the sun's rays they meet light them
+// and not the floor behind. Their light is a patch for each eighth of the way they face, and
+// one facing up for the ledges a wider band shows above it (TABLE_WAYS). Each sun ray is split
+// TABLE_SPLIT × TABLE_SPLIT over its glass cell, as the column is narrower than the rays'
+// spacing.
+var table_sides = false;
+let TABLE_BAND: f32 = 0.05;
+let TABLE_BANDS = 15;
+let TABLE_WAYS = 9;
+let TABLE_SPLIT = 4;
+var table_radii: f32[TABLE_BANDS] = [0.0; TABLE_BANDS];
+var table_radii_made = false;
+
+// table_radii from the table's mesh: each band's side area over 2 pi times its height.
+fn make_table_radii() {
+    var verts:   mesh::Vertex[>..] = [];
+    var indices: u32[>..]          = [];
+    mesh::table(verts, indices, float4 { 3.0, 0.9, 0.38, 1.4 }, mesh::TABLE_R, surfaces::FLOOR_Y);
+    let m2 = surfaces::METRE * surfaces::METRE;
+    for i in TABLE_BANDS { table_radii[i] = 0.0; }
+    for k in indices.len / 3 {
+        let a = verts[indices[3 * k] as i64].pos;
+        let b = verts[indices[3 * k + 1] as i64].pos;
+        let c = verts[indices[3 * k + 2] as i64].pos;
+        let n = cross(b - a, c - a);
+        let h = ((a.y + b.y + c.y) / 3.0 - surfaces::FLOOR_Y) / surfaces::METRE;
+        let band = clamp((h / TABLE_BAND) as i64, 0, TABLE_BANDS - 1);
+        table_radii[band] += 0.5 * sqrt(n.x * n.x + n.z * n.z) / m2;
+    }
+    for i in TABLE_BANDS { table_radii[i] = table_radii[i] / (TAU * TABLE_BAND); }
+    table_radii_made = true;
+}
+
+// The share of a sun ray along d, through the wall's face at b and spread over its glass cell
+// (cw across, ch up), that the table's sides meet before t_limit, by way (TABLE_WAYS), and the
+// mean point each way is met at (the shares' weights in it).
+fn table_sides_met(sun: Sun, b: float3, d: float3, t_limit: f32, cw: f32, ch: f32, share: f32[TABLE_WAYS]&,
+                   at: float3[TABLE_WAYS]&) {
+    let cx = sun.table.x + table_off.x;
+    let cy = sun.table.y + table_off.y;
+    let each: f32 = 1.0 / (TABLE_SPLIT * TABLE_SPLIT);
+    let flat = d.x * d.x + d.y * d.y;
+    guard flat > 1e-8 else { return; }
+    for sj in TABLE_SPLIT {
+        for si in TABLE_SPLIT {
+            let o = b + float3 { cw * ((si + 0.5) / TABLE_SPLIT - 0.5), 0.0, ch * ((sj + 0.5) / TABLE_SPLIT - 0.5) };
+            // Past the top's edge only: the rays the top meets are its own.
+            let tt = (o.z - sun.table.w) / -d.z;
+            let e = o + d * tt;
+            guard (e.x - cx) * (e.x - cx) + (e.y - cy) * (e.y - cy) >= sun.table.z * sun.table.z else { continue; }
+            var band = TABLE_BANDS - 1;
+            while band >= 0 {
+                let r = table_radii[band];
+                let t0 = (o.z - (band + 1) * TABLE_BAND) / -d.z;
+                let t1 = (o.z - band * TABLE_BAND) / -d.z;
+                guard t0 < t_limit else { break; }
+                let q = o + d * t0;
+                let ex = q.x - cx;
+                let ey = q.y - cy;
+                let c = ex * ex + ey * ey - r * r;
+                if c <= 0.0 {
+                    // Within the band's outline as it enters it: on the ledge above it.
+                    share[TABLE_WAYS - 1] += each;
+                    at[TABLE_WAYS - 1] = at[TABLE_WAYS - 1] + q * each;
+                    break;
+                }
+                let half_b = ex * d.x + ey * d.y;
+                let disc = half_b * half_b - flat * c;
+                if disc >= 0.0 && half_b < 0.0 {
+                    let t = (-half_b - sqrt(disc)) / flat;
+                    if t <= t1 - t0 && t0 + t < t_limit {
+                        let h = q + d * t;
+                        let a = atan2(h.y - cy, h.x - cx);
+                        let way = clamp(floor((a + PI) / TAU * 8.0 + 0.5) as i64 % 8, 0, 7);
+                        share[way] += each;
+                        at[way] = at[way] + h * each;
+                        break;
+                    }
+                }
+                band -= 1;
+            }
+        }
+    }
+}
 
 // The niche's light (the tuner's --niche-light, task 128): the sun the inner casement's
 // members catch on their faces in the niche thrown on as patches of their own (member_sun);
@@ -668,6 +757,29 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                         if dx * dx + dy * dy < sun.table.z * sun.table.z { t = tt; hit = 4; }
                     }
                     if stove_stops_sun && meets_stove(b, d, t) { continue; }
+                    if table_sides && hit != 4 {
+                        if !table_radii_made { make_table_radii(); }
+                        var share: f32[TABLE_WAYS]    = [0.0; TABLE_WAYS];
+                        var met:   float3[TABLE_WAYS] = [float3_0; TABLE_WAYS];
+                        table_sides_met(sun, b, d, t, 2.0 * GLAZED_HALF / RAYS_X, (o.height + o.rise - GLAZED_LOW - GLAZED_HIGH) / RAYS_Y,
+                                        share, met);
+                        let ta = thrown_albedo(TABLE_ALBEDO, sun.bounce_gain);
+                        var met_all: f32 = 0.0;
+                        for w in TABLE_WAYS {
+                            guard share[w] > 0.0 else { continue; }
+                            let pw = p * share[w];
+                            let tb = TABLE_SIDE_BIN0 + w;
+                            let weight = pw.x + pw.y + pw.z;
+                            power[tb] = power[tb] + pw * ta;
+                            where[tb] = where[tb] + met[w] * (weight / share[w]);
+                            lit[tb] += weight;
+                            let way = (w as f32 / 8.0) * TAU - PI;
+                            normal[tb] = if w == TABLE_WAYS - 1 { float3 { 0.0, 0.0, 1.0 } } else { float3 { cos(way), sin(way), 0.0 } };
+                            albedo[tb] = ta;
+                            met_all += share[w];
+                        }
+                        p = p * (1.0 - met_all);
+                    }
                     at = b + d * t;
                     if hit == 0 {
                         let bx = clamp((at.x / BIN) as i64, 0, FLOOR_BINS_X - 1);
