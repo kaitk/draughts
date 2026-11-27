@@ -254,6 +254,12 @@ process, "owned unmapped (graphics)" GPU-only heaps and textures.
 
 - `--bench 60` and `--rest 4` run headless too; `--rest` keeps running after its line:
   take `footprint` then and kill it. Compare medians of five runs, builds in turn.
+- In a worktree on Windows, the tuner builds (`scripts/windows.py tools/light_tune.goose`)
+  with junctions (`mklink /J`) to the main checkout's `build/goose-v2026.4-windows-x64`,
+  `build/windows/goose` and `third_party/goose_gfx`; the last breaks every git command
+  (its `.git` file points nowhere), so take it out with `cmd /c rmdir` (never
+  `Remove-Item`, which may follow it) before committing. The tuner's `--shot` runs
+  headless with `GOOSE_GFX_HEADLESS=1` in about 3 s (2026-11-27).
 - `tools/perf/windows_perf.py` (`EXE=`, `FLAGS=`): PresentMon's GPU busy time is the frame
   time both builds report alike. Uncapped, ngfx flips only while its window is in front:
   check the present mode on every run and never run two benches at once.

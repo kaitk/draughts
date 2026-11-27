@@ -1133,6 +1133,14 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   stub. With gravity or shedding on, the tree is grown whole, shed, bent, and only then
   culled to what the windows show or cast; the culled tree is cut from the whole one. All
   three on, the whole tree grows in about 15 ms on the CPU instead of 7.
+  `--tree-elbow-plane` turns each broken leader's side shoot in the limb's upright plane,
+  down on a rising limb and up on a level one, and back most of the way a segment or two
+  on, so the limb steps as a zig-zag. `--tree-limb-angle ON,DOWN,DOWN_V` sets the limbs'
+  angle off the trunk by Sapling's down angle, `DOWN - DOWN_V × high²` with `high` the
+  share up the trunk's limbs. `--tree-hanging-twigs` makes branches leaving the underside
+  of near-level wood hang: each segment turns toward the ground by Weber and Penn's
+  AttractionUp times its declination, less in wood thicker than a centimetre.
+  (`tools/tree_dump`: `--elbow-plane`, `--limb-angle`, `--hanging-twigs`.)
 - **The maple's leaves in plates** (the light tuner's `--tree-plates`, `--tree-tilt`,
   `--tree-bend` and `--tree-leaf-mesh`, each off by default and in the app;
   `src/model3d/tree_leaves.goose`; `tools/tree_dump` takes `--plates`, `--tilt`, `--bend`).
@@ -1146,7 +1154,8 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   before the cards in their storage buffer. The high tier draws each leaf as a 21-vertex
   fan hugging its outline, the standard tier as the card in four rows bent along its
   midrib, phones flat cards; the ngfx build draws flat cards. With gravity on, blades keep
-  their way while their twig bends. All on, the whole tree grows in about 34 ms on the CPU,
+  their way while their twig bends. All on, with the skeleton's switches and three short
+  shoots a twig, the whole tree grows in about 52 ms on the CPU, 28 ms of it the nudge,
   and the fan costs about 0.04 ms a frame on a desktop GPU.
 - **The maple in the wind** (the light tuner's `--tree-wind off|on`, off by default and in
   the app; `shaders::WIND_FN`, `TREE_WIND`, `TREE_FLUTTER`): the wind that moves the

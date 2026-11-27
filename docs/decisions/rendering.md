@@ -2345,6 +2345,26 @@ to be is in tasks 042, 059, 071, 081, and 086.
   displacing the mesh by the tile (triangles everywhere for what a normal shows from the
   room), a separate mesh per root welded to the trunk (the seam of round one), and grain
   from world position (it stretched on the collar).
+- The maple's skeleton, round two, behind the light tuner's `--tree-elbow-plane`,
+  `--tree-limb-angle` and `--tree-hanging-twigs`, each off by default, and its density
+  retuned by the existing `--tree-shed` and `--tree-plates` (2026-11-27, task 117;
+  `trees::Growth`, `build/notes/tree/round-2/branches.html`). A broken leader's side shoot
+  turns in the limb's upright plane, down on a rising limb and up on a level one, and turns
+  back most of the way a segment or two on, so the limb steps as the photos' zig-zags and
+  keeps its way; the step-one turn any way round read as noise at the tree's size, and a
+  turn without the turn back sent limbs out of the envelope and cost a crown's worth of
+  leaves. The limbs leave the trunk at Sapling's down angle (Blender's add-on, Weber and
+  Penn 1995's down angle and its variation: `DOWN - DOWN_V × high²`), 90,90 recommended,
+  Sapling's Japanese maple: level low on the trunk, steep at the top; not by more of the
+  gravity layer, which saturates at Stava's largest angle by design. Branches leaving the
+  underside of near-level wood hang by Weber and Penn's AttractionUp (negative, as
+  Sapling's weeping willow), less in wood thicker than 1 cm (ez-tree's force over the
+  section's radius), so thick wood arches and thin wood hangs; the step-two density then
+  needed shedding at 0.3 (not 0.45) and three short shoots a twig (not two) to see as many
+  leaves from the room as before step one. Rejected: a hanging rule of our own by
+  position, and pulling the twigs themselves down (they collapsed into vertical strands;
+  the photos' fans spread). With all on, the whole tree grows in about 52 ms on the PC, the
+  plates' nudge 28 ms of it.
 - Each limb's bark tile is shifted round and along by dice of its own (2026-11-24, task
   107; `trees::tube`), so neighbouring limbs' tiles don't line up. A stand-in until a
   real fix of the tile's repeat (stochastic or two-scale sampling, and the bare maple's
