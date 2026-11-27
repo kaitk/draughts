@@ -46,11 +46,14 @@ read 2026-11-09: name 2 to 30 characters, subtitle 30, promotional text 170 (cha
 without a new version), description 4000, keywords 100 bytes with each keyword over 2
 characters, What's New 4000 (from the second version), review notes 4000 bytes.
 
-### Promotional text (158 of 170)
+### Promotional text (166 of 170)
 
 ```text
-Play draughts on a 2D or 3D board against the computer or a friend, and solve puzzles: a course of 216, then new ones each day at your level. No ads, offline.
+Play draughts on a flat or 3D board against the computer or a friend, and learn with puzzles: themes open as you solve Learn, then new ones each day. No ads, offline.
 ```
+
+Since 0.9.4 (2026-11-27) it says up front that the themes and the daily puzzles open as Learn is
+solved, after two rejections under 5.6 for features hidden during review.
 
 ### Keywords (88 of 100 bytes)
 
