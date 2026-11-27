@@ -1178,6 +1178,64 @@ and fix later. Measured so far, the view `--plan-eye 4.5,6.1,1.0 --plan-at 4.5,7
   reflection, the screen's occlusion) against Cycles' passes there (diffuse and glossy,
   direct and indirect).
 
+## The board and pieces under the room's light (2026-11-27)
+
+The user: under `--light physical` the board and its pieces washed out against the old light,
+which they like. Measured in the tuner's board view (`--view board`, autumn), in linear light at
+the camera's curve (the HDR target times the camera's exposure: 1 under the old light, 6.21
+under physical), and with the board's direct light off in a scratch build for its ambient:
+
+- Not a path of its own for the sun or the camera: LIT_FRAG takes the room's sun (`light_color`,
+  `light_dir.w`, through `shadow()`'s `window_light`) into the HDR target the room's AgX camera
+  reads (no toe, `toe.z` 2). Its direct light on a sunlit light square is 11.9 times the old's
+  (0.448 → 5.31): the key 0.93 of the old's (6.52 at the sun's colour as at 8 degrees against 7
+  at the look's key colour, luminance 4.18 against 4.48), the frame's exposure 2.13 (`exposure`
+  × `room_exposure` 1.8 / `PANES` 0.8464), the camera's 6.21: 12.3. The board's sunlit square
+  over the table's sunlit grain (its brightest 5% beside the board) 16.6 under the old light,
+  19.7 under physical: the table's light within 20%.
+- A path of its own for the ambient and the reflections: `sh_eval(n) * params.z`, the look's
+  harmonics (`rooms::harmonics`: the walls 0.22, the ceiling, the floor, the blue fill 0.45),
+  which `physical_light` leaves as they were, at the same 13.2 times and without the old toe
+  that took up to 0.02 off the darks. On the light square 0.049 → 0.89 (18 times), B/R 0.13 →
+  0.27; on the frame's front 0.011 → 0.245: a pale blue veil, half the light in a piece's shadow
+  (0.92 of 1.79).
+
+Done (b2f95c62):
+
+- LIT_FRAG with `PROPS_LIGHT` (`render3d::board_probes`, the tuner's `--board-probes`, on under
+  `--light physical`; gfx's HDR views alone, as the window map): the ambient, the field's body
+  light and the wide reflections from the props' probes where each pixel is (`grid_light`), the
+  narrow ones (the varnish, the wax) the room's box seen sharply as the table's polish sees it
+  (`room_reflection`: `props_seen_at` by `props_look.w`).
+  TABLE_FRAG's `grid_probe`, `grid_light` and `props_seen_at` moved into PROPS_GRID_FN for both,
+  `props_seen_at` taking the room's exposure; the table's light unchanged (the close and
+  table-window views byte-identical with `--board-probes off`). The bounce off the board onto the
+  pieces' sides kept: the probes don't hold it.
+
+| Board view, sRGB | Light square, sun | In a piece's shade | Dark square, sun | Frame's front |
+|---|---|---|---|---|
+| The old light | 245 156 84 | 135 86 45 | 107 42 6 | 92 32 4 |
+| Before (`--board-probes off`) | 255 241 225 | 243 219 194 | 242 186 149 | 230 166 131 |
+| After | 255 240 222 | 239 205 168 | 241 179 137 | 213 126 80 |
+| After, `--camera-ev -3.6` | 226 173 119 | 154 94 40 | 142 61 18 | 96 34 9 |
+
+The ambient on the light square 0.89 → 0.21, on the frame's front 0.245 → 0.033; in a piece's
+shade 1.79 → 1.09 (over the sun's 0.29 → 0.19, the old's 0.24), its B/R 0.16 → 0.09 (0.12), the
+frame's front's 0.09 → 0.02 (0.01). The close view's frame side 200 126 86 → 145 86 56 (the old's
+67 24 5). Saturation and depth toward the old's; the sunlit maple as it was.
+
+Left, the camera: the sunlit maple at 5.75, 5 stops over AgX's grey, at its shoulder. The sun
+stands about 3 stops higher over the room than the old light had it: the close view's log-average
+is 0.66 EV over the old's, the board's sunlit squares 3.6 EV over (the old fills and
+`room_exposure` 1.8 lifted the room against the board's exposure). At `--camera-ev -3.6` the
+board meets the old's (close view: its top 142 88 48 against 133 79 47, the frame's side 65 24 7
+against 67 24 5; the sunlit maple a little paler, AgX's shoulder) and the room goes dark (the
+close view's mean level 42 → 9, the old's 26). Matching the old board and keeping the room's
+exposure pull apart: nothing done there, the user's call. The default light byte-identical (the
+tuner's three views; the app's 3D renderer shots within a level in 3 of 13, as run to run). Cost
+not timed: a probe read is 14 texture reads, up to five a pixel. Page:
+`build/notes/board-light/index.html`; scratch `build/board-light/`.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
