@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maple round two</title><style>body { background: #16181b; color: #d8d6d0; font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 0 auto; max-width: 1500px; padding: 16px; }
+h1 { font-size: 22px; } h2 { font-size: 18px; margin-top: 36px; border-top: 1px solid #333; padding-top: 16px; }
+code { color: #e8c98a; } a { color: #8fb8e8; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; } figure { margin: 0; flex: 1 1 300px; }
+img { width: 100%; height: auto; display: block; border: 1px solid #333; }
+figcaption { font-size: 13px; color: #a8a6a0; margin-top: 4px; }
+.note { background: #22252a; border-left: 3px solid #e8c98a; padding: 8px 12px; }
+.good { color: #9fd49a; } .bad { color: #e89a8a; }
+table { border-collapse: collapse; margin: 8px 0; } td, th { border: 1px solid #333; padding: 4px 8px; text-align: left; vertical-align: top; }
+th { color: #a8a6a0; font-weight: normal; }
+ol li, ul li { margin-bottom: 6px; } .rec { color: #e8c98a; }</style></head><body>
+<h1>Task 117, round two: the maple's skeleton and leaf density</h1>
+<p>Three new switches for the skeleton and a retune of two old ones. Every switch is off by default, so the app is unchanged. Each picture is a CPU silhouette from <code>tools/tree_dump</code> beside the photo crops; the last pictures are from the light tuner (<code>--tree-draw all</code>). The scripts that made them are in <code>round-2/branches/</code> (<code>sheets.sh</code>, <code>app.sh</code>, <code>sheet.py</code>). The previous round is in <a href="../choices.html">choices.html</a>.</p>
+
+<div class="note"><b>Recommended</b>, on top of steps one to three (<code>--tree-elbows 1,2,30,50 --tree-gravity 1 --tree-tilt 1,2,8 --tree-bend 1,25</code>):<br>
+<code class="rec">--tree-elbow-plane 1 --tree-limb-angle 1,90,90 --tree-hanging-twigs 1,-3,0.45,0 --tree-shed 0.3,0.5 --tree-plates 1,3,1</code><br>
+The whole tree: 32,267 segments and 32,961 leaves (25,374 culled). It grows in 52 ms on the PC, plus 26 ms for the shaped wood. With <code>--tree-plates 1,3,0</code> (no nudge) it grows in 24 ms.</div>
+
+<h2>1. Elbows in the limb's upright plane</h2>
+<figure><img src="branches/elbows-plane.jpg"><figcaption>0 elbows; 1-2 turned any way (step one); 1-2 and 3 up and down; the same with gravity 1. Rows: the whole tree, a hero limb from its side, a second limb.</figcaption></figure>
+<p><code>--tree-elbow-plane ON</code>: the side shoot turns in the limb's upright plane. It turns down on a rising limb (more than 15° up) and up on a level one, never past 55° up or 40° down. One or two segments later it turns back 60-100 % of the way. The limb steps like the photos' zig-zags and keeps its way.</p>
+<ul>
+<li><span class="good">Better:</span> the steps read on a limb, best with gravity 1 and 3 elbows. At the whole tree's size they show as level runs broken by a drop.</li>
+<li>Without the turn back, a turned-down limb soon left the envelope and stopped. That cost a third of the crown's leaves, so the turn back is part of the rule.</li>
+<li><span class="bad">Still:</span> the photos' limbs are crooked along their whole length, not just at 1-3 elbows.</li>
+</ul>
+
+<h2>2. The limbs' angle off the trunk</h2>
+<figure><img src="branches/limb-angle.jpg"><figcaption>Today's <code>Whole.limbs</code> (62° low to 28° high); Sapling's quaking aspen 110,80; Sapling's Japanese maple 90,90; 90,60. All with elbows 1-2 up and down and gravity 1, from the front and the side.</figcaption></figure>
+<p><code>--tree-limb-angle ON,DOWN,DOWN_V</code>: the published down angle. Blender's Sapling add-on (<code>fabricate_stems</code>) computes a child's angle as <code>downAngle + -downAngleV × (1 - (1 - offset) / (1 - baseSize))²</code>, which is <code>DOWN - DOWN_V × high²</code> for the trunk's limbs. Its comment says this is Weber and Penn's (60, -50). The presets: quaking aspen 110,80, Japanese maple 90,90, small maple 48,48. The gravity layer is not raised: it saturates at Stava's largest angle by design.</p>
+<ul>
+<li><span class="good">90,90 (recommended):</span> the low limbs leave level, the high ones steep. This gives the level runs of the whole-tree photo and a wider crown.</li>
+<li><span class="bad">110,80</span> sends the low limbs below level, and they droop. <span class="bad">All of them:</span> flat limbs low on the trunk soon reach the envelope's floor, so they stay short.</li>
+</ul>
+
+<h2>3. Hanging twigs</h2>
+<figure><img src="branches/hanging-twigs.jpg"><figcaption>None; AttractionUp -1.5 and -3 with the offspring at 0.3 of it; -3 with the offspring free (recommended). Limbs 90,90.</figcaption></figure>
+<p><code>--tree-hanging-twigs ON,ATTRACTION,LEVEL,TWIGS</code>: a branch or branchlet that leaves the underside (pointing down) of near-level wood (|slope| under LEVEL) hangs. Each of its segments turns toward the ground by Weber and Penn's AttractionUp (negative) times its declination over its segments. Sapling's weeping willow uses -2.75 and -3. The pull weakens in wood thicker than 1 cm, by 1 cm over the radius (ez-tree turns each section by <code>strength / sectionRadius</code>), so thick wood arches and thin wood hangs. TWIGS is the share of the pull the hanging branch's offspring take.</p>
+<ul>
+<li>Pulling the twigs themselves gave vertical strands like icicles. With the offspring free (TWIGS 0), they spread from the hanging axis as in the photos.</li>
+<li><span class="bad">Still:</span> under the low limbs they read as a curtain, denser than the photos' fans, and the twigs don't spread into flat fans.</li>
+</ul>
+
+<h2>4. Density</h2>
+<figure><img src="branches/density.jpg"><figcaption>Before step one; round two at step two's density (shedding 0.45, two short shoots); 0.45 with four; 0.3 with three. Top: the whole tree in leaf; bottom: the culled tree from below. Photos: Tartu's plates, the gold maple.</figcaption></figure>
+<p>Since step two, shed twigs take their leaves with them. Shedding at 0.3 and three short shoots a twig (<code>--tree-shed 0.3,0.5 --tree-plates 1,3,1</code>) put back the leaves seen from the room:</p>
+<table><tr><th></th><th>Segments</th><th>Leaves, whole</th><th>Leaves, culled</th><th>Growth (PC)</th></tr>
+<tr><td>Before step one</td><td>37,881</td><td>34,528</td><td>22,217</td><td>7 ms</td></tr>
+<tr><td>Steps one to three</td><td>28,824</td><td>20,428</td><td>13,424</td><td>35 ms</td></tr>
+<tr><td>Round two, shedding 0.45, spurs 2</td><td>24,639</td><td>17,866</td><td>14,535</td><td>40 ms</td></tr>
+<tr><td>Round two, shedding 0.45, spurs 4</td><td>24,639</td><td>26,619</td><td>21,700</td><td>65 ms</td></tr>
+<tr><td class="rec">Round two, shedding 0.3, spurs 3</td><td>32,267</td><td>32,961</td><td>25,374</td><td>52 ms</td></tr></table>
+<p>The nudge is 28 ms of the 52 and grows with the plate's leaves; spurs 4 would leave little of the 100 ms budget. <span class="bad">Still:</span> the leaves gather in plates at the shell, with gaps in the upper middle of the crown.</p>
+
+<h2>In the light tuner</h2>
+<figure><img src="branches/app-up.jpg"><figcaption>Up through the middle window (<code>--plan-eye 4.25,5.9,1.5 --plan-at 4.3,12,4.5</code>): before step one, steps one to three, round two recommended.</figcaption></figure>
+<figure><img src="branches/app-table-window.jpg"><figcaption>The table-window view: the same three.</figcaption></figure>
+<ul>
+<li><span class="good">Fuller:</span> from below, the crown is as full as before step one. The low limb's hanging branches fill the lower panes.</li>
+<li><span class="bad">The table loses its sun patch</span> in round two: the fuller crown and the hanging branches lie in the sun's path at this placement.</li>
+<li>Seen on this PC only, not yet on the Mac or the tablet.</li>
+</ul>
+
+<h2>5. The season</h2>
+<p>The season sets only the leaves' tilt; their tint stays autumn's. That is left for a later task. The tuner's <code>--season winter</code> doesn't take the leaves off the geometry either.</p>
+
+<h2>Open questions</h2>
+<ol>
+<li>How many elbows a limb: 0, 1-2 or 3? 3 reads best on a limb, 1-2 at the whole tree's size.</li>
+<li>The limbs' angle: Sapling's Japanese maple 90,90, a milder 90,60, or today's?</li>
+<li>Hanging branches: is -3 with free offspring right, or too much curtain? Should only the outer half of a limb hang?</li>
+<li>The sun patch on the table: keep the fuller crown and move the gap (the low limb, the sun's placement), or thin the hanging branches in the sun's path?</li>
+<li>Growth time: keep the nudge (52 ms + 26 ms wood on the PC) or drop it (24 ms)?</li>
+</ol>
+</body></html>

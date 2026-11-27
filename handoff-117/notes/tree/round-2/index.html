@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maple round two</title><style>body { background: #16181b; color: #d8d6d0; font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 0 auto; max-width: 1500px; padding: 16px; }
+h1 { font-size: 22px; } h2 { font-size: 18px; margin-top: 36px; border-top: 1px solid #333; padding-top: 16px; }
+code { color: #e8c98a; } a { color: #8fb8e8; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; } figure { margin: 0; flex: 1 1 300px; }
+img { width: 100%; height: auto; display: block; border: 1px solid #333; }
+figcaption { font-size: 13px; color: #a8a6a0; margin-top: 4px; }
+.note { background: #22252a; border-left: 3px solid #e8c98a; padding: 8px 12px; }
+.good { color: #9fd49a; } .bad { color: #e89a8a; } li { margin-bottom: 6px; } pre { white-space: pre-wrap; color: #e8c98a; }</style></head><body>
+<h1>Task 117, round two: the skeleton, the density and the bark's material</h1>
+<p>Two pages, one for each part: <a href="branches.html">the skeleton and density</a> and <a href="bark.html">the bark's material</a>. Round one's choices: <a href="../choices.html">choices.html</a>. All on branch <code>maple-117</code>, checked on the Windows PC only, every switch off by default.</p>
+
+<h2>Everything on, from the chair behind the table</h2>
+<div class="row">
+<figure><img src="all-on.png"><figcaption>Round two's recommended settings, all on</figcaption></figure>
+<figure><img src="../all-on.png"><figcaption>Round one's settings, all on, for comparison</figcaption></figure>
+</div>
+<pre>light_tune --view table-window --tree-draw all --tree-elbows 1,2,30,50 --tree-elbow-plane 1
+  --tree-limb-angle 1,90,90 --tree-hanging-twigs 1,-3,0.45,0 --tree-gravity 1 --tree-shed 0.3,0.5
+  --tree-plates 1,3,1 --tree-tilt 1,2,8 --tree-bend 1,25 --tree-leaf-mesh tier --tree-bark on
+  --tree-detail 1 --tree-albedo 1 --tree-lichen 1 --tree-spec 1 --tree-rough 0.8
+  --tree-junctions on --tree-roots on</pre>
+
+<h2>The skeleton and density</h2>
+<div class="row"><figure><img src="branches/elbows-plane.jpg"><figcaption>Elbows turned in the limb's upright plane and back: 0, 1-2 and 3 a limb, with gravity off and on</figcaption></figure></div>
+<ul>
+<li class="good">Elbows turned up and down in the limb's own plane, then back: with gravity on, the limbs step and run level, nearer the photos.</li>
+<li class="good">The limbs leave the trunk at Sapling's down angle (Weber-Penn), flatter than before.</li>
+<li class="good">Twigs hanging from under level wood (Weber-Penn's negative AttractionUp, as Sapling's willow).</li>
+<li class="good">The crown from the room as full as before step one (shedding 0.3, three short shoots a twig, the nudge apart on).</li>
+<li class="bad">Limbs crooked only at their elbows; the photos' limbs bend all along.</li>
+<li class="bad">The hanging twigs read as curtains; low flat limbs are short, cut by the crown's outline; the plates a little clumpy.</li>
+<li class="bad">Growth now about 78 ms on the PC in all (the nudge apart 28 ms of it), near the 100 ms budget. Without the nudge, 24 ms for growth.</li>
+<li class="bad">The table loses its sun patch in this view: the fuller crown shades the window.</li>
+</ul>
+
+<h2>The bark's material (after the user's specification)</h2>
+<ul>
+<li class="good"><code>--tree-detail</code> helped most: fine cork relief and small cracks, the plates' edges ragged; the furrows stay dark.</li>
+<li class="good"><code>--tree-albedo</code> (warm grey-brown to olive grey, weathered tops lighter) and <code>--tree-lichen</code> help a little, close up the most.</li>
+<li class="good"><code>--tree-spec</code>: a weak broad highlight, roughness 0.55 on shoots to 0.9 on the old trunk; a dry sheen, not waxy. The sky's reflection was left out (it made the trunk hazy).</li>
+<li class="bad">Scattering by age showed nothing visible from the room; left off, as the specification allows. Round one's 0.5 everywhere looked fleshy against the light.</li>
+<li>Bark textures 57 ms once at startup (34.6 before); +0.013 ms a frame on the high tier.</li>
+</ul>
+
+<h2>Questions for you</h2>
+<ol>
+<li>Elbows: 0, 1-2 or 3 a limb (in the upright plane)?</li>
+<li>The limbs' angle off the trunk: 90,90 (recommended), 90,60, or today's?</li>
+<li>How much should the twigs hang?</li>
+<li>Keep the nudge apart (fuller even plates, 28 ms of growth), or drop it?</li>
+<li>The lost sun patch on the table: thin the crown in front of that window, or accept it?</li>
+<li>The furrows are now thinner and more numerous: still stark enough?</li>
+<li>The sunlit trunk is lighter than in the photos: lower its albedo, or the exposure?</li>
+<li>Moss and the green algae of the lower trunk: a mask of their own?</li>
+</ol>
+</body></html>

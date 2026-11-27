@@ -1,0 +1,75 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maple bark material</title><style>body { background: #16181b; color: #d8d6d0; font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 0 auto; max-width: 1500px; padding: 16px; }
+h1 { font-size: 22px; } h2 { font-size: 18px; margin-top: 36px; border-top: 1px solid #333; padding-top: 16px; }
+code { color: #e8c98a; } a { color: #8fb8e8; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; } figure { margin: 0; flex: 1 1 300px; }
+img { width: 100%; height: auto; display: block; border: 1px solid #333; }
+figcaption { font-size: 13px; color: #a8a6a0; margin-top: 4px; }
+.note { background: #22252a; border-left: 3px solid #e8c98a; padding: 8px 12px; }
+.good { color: #9fd49a; } .bad { color: #e89a8a; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; } td, th { border-top: 1px solid #333; padding: 6px 8px; text-align: left; vertical-align: top; }
+ol li, ul li { margin-bottom: 6px; } .rec { color: #e8c98a; }</style></head><body>
+<h1>Task 117, round two: the bark's material</h1>
+<p>You said the bark still looks a little like plastic. I checked the shader against your material spec (<code>build/notes/bark-roots/norway_maple_bark_material.txt</code>). The spec ranks the parts in this order: geometry and normals first, then albedo and roughness, and scattering last, barely there on old bark. Each change is a switch in the light tuner, off by default. Built and checked on the Windows PC (RTX 4090) only.</p>
+
+<p class="note">Recommended: <code class="rec">--tree-bark on --tree-detail 1 --tree-albedo 1 --tree-lichen 1 --tree-spec 1</code>, with scattering left off (<code>--tree-scatter 0</code>).</p>
+
+<h2>The photos</h2>
+<figure><img src="bark/photos.jpg"><figcaption>Crops of your photos (<code>build/notes/bark-roots/</code>). The plates are corky and broken, and their edges are ragged. The colour is grey-brown with green algae, moss and pale lichen. Nothing shines.</figcaption></figure>
+
+<h2>Before and after, under each light</h2>
+<p>Same camera and exposure in each pair. The room's low sun stays where it is and the camera moves round the trunk: the sun behind the eye, the sun grazing from the side, against the sun, and overcast (no sun, more sky: <code>--tree-light 0,1.8</code>). All close, from about 2.5 m.</p>
+<figure><img src="bark/lights.jpg"><figcaption>Top: round one (bark on, nothing else). Bottom: recommended.</figcaption></figure>
+<ul>
+<li><span class="good">The plates are no longer smooth clay.</span> They have fine relief, small cracks and ragged edges.</li>
+<li><span class="good">The furrows stay dark.</span> Under overcast light, the darkest 5 % of the trunk is at 4 levels both before and after.</li>
+<li><span class="bad">Still:</span> the sunlit trunk is very light at the room's exposure. Your photos' trunks read mid grey or darker even in sun.</li>
+</ul>
+
+<h2>At the window's distance</h2>
+<figure><img src="bark/distance.jpg"><figcaption>From the middle window (against the light; the limb at the top lit grazing) and from 7 m in the park. Top: round one. Bottom: recommended.</figcaption></figure>
+<p>From the window, the limbs gain the most: their plates now break up. On the trunk, seen against the light, the change is small.</p>
+
+<h2>What each switch does</h2>
+<figure><img src="bark/switches.jpg"><figcaption>Grazing light and the sun behind the eye, close. Each row adds one switch to the row above it.</figcaption></figure>
+<table>
+<tr><th>Switch</th><th>What it does</th><th>Verdict</th></tr>
+<tr><td><code>--tree-detail K</code></td><td>A third bark texture, made at startup, adds two things to the height. One is the cork's fine relief: small domes between the grooves of stretched cells, and fibres along the stem (a third as strong on young bark). The other is secondary cracks on grown bark: 1,400 short ones along the stem and 700 across the ridges' crowns, each ending at a furrow. The plates' edges are also made ragged by noise when the tile is made.</td><td class="good">Helps most. This is the spec's first priority.</td></tr>
+<tr><td><code>--tree-albedo K</code></td><td>The ridges' colour drifts between a warm grey-brown and an olive grey. Sheltered plates are a fifth darker. The ridges' weathered tops and the cells' domes are lighter. The furrows stay as dark as before.</td><td class="good">Helps a little. It also takes some chalkiness off the sunlit trunk.</td></tr>
+<tr><td><code>--tree-lichen K</code></td><td>Clustered grey-green patches of lichen on the ridges of grown bark, with a mask of their own.</td><td class="good">Helps close up.</td></tr>
+<tr><td><code>--tree-spec K</code></td><td>A weak, broad highlight of the sun (GGX, F0 0.034, IOR 1.45). Its roughness follows the wood's age: 0.55 on shoots, 0.72 on young limbs, 0.9 on the old trunk. Cracks shadow it as they shadow the sun.</td><td>Subtle: a dry sheen on lit ridges in grazing light, not waxy.</td></tr>
+<tr><td><code>--tree-scatter W</code></td><td>Now follows age: the full W on shoots, less on young limbs, and none on wood over about 2 cm.</td><td class="bad">No gain, so it stays off (below).</td></tr>
+</table>
+
+<h2>Specular: why the sky's reflection was dropped</h2>
+<figure><img src="bark/spec-sky.jpg"><figcaption>The first try: specular 0, 0.5 and 1, with the sky's reflection included. Overcast, grazing, against the light.</figcaption></figure>
+<p>With the sky's reflection added on top, the median of the overcast trunk rose from 29 to 54 levels. The bark turned grey and hazy, and lost some contrast against the light. The albedo is matched to the photos, so it already holds that reflection. The kept lobe reflects the sun alone.</p>
+
+<h2>Scattering</h2>
+<figure><img src="bark/scatter.jpg"><figcaption>Round one's 0.5 on all wood, then the recommended setting with scattering off, then 0.5 by age. Seen from the window and against the light, close.</figcaption></figure>
+<ul>
+<li><span class="bad">Round one's 0.5 on the whole trunk</span> turns the backlit trunk warm and fleshy. The spec rejects exactly that look.</li>
+<li>By age, the old trunk gets none. The thin branches that do get some are a few pixels wide from the room, and I see no difference. Following the spec ("keep it disabled if no meaningful improvement is visible"), it stays off.</li>
+</ul>
+
+<h2>Tiers</h2>
+<figure><img src="bark/tiers.jpg"><figcaption>Recommended on the high tier (HDR, central slopes: ten taps with the detail) and the standard tier (8-bit, forward slopes: six taps).</figcaption></figure>
+<p>The standard tier's forward slopes draw the fine grooves as hard lines. Its fine relief is turned down to 0.6, but the small cracks still show there as thin hard lines. Phones take the screen's derivatives of the summed height. While a part's switch is 0, the shader skips its taps of the detail texture.</p>
+
+<h2>Costs on the PC</h2>
+<ul>
+<li>Startup: the bark's textures take 57 ms instead of 34.6 ms (best of 5, <code>tools/tree_dump</code>), so the detail adds about 22 ms. The ragged edges add 2.5 ms of that. This runs once, not in the frame loop.</li>
+<li>Per frame, with the trunk filling 1600 × 1000 on the high tier: 1.115 ms with the new parts off and 1.128 ms with all on (+0.013 ms, medians of three A/B rounds). The standard tier and the window view stay within the noise.</li>
+<li>The ngfx build isn't checked: the PC's goose-ngfx checkout is empty. Its translated shaders take the detail in texture slot 2.</li>
+</ul>
+
+<h2>Questions for you</h2>
+<ol>
+<li>Does the recommended bark still look like plastic to you? If it does, which light shows it most?</li>
+<li>The furrows now look thinner and more numerous. The small cracks and the ragged edges cause this. Is that still the stark old-bark contrast you want, or should the furrows be wider and the edges less ragged?</li>
+<li>The sunlit trunk is much lighter than in your photos. Should the bark's albedo come down, or is the room's exposure the place to change it?</li>
+<li>Your photos show green algae and moss on the lower trunk. Should they get a mask of their own (by height and the shaded side), as the spec suggests?</li>
+<li>Scattering stays off. Do you agree?</li>
+<li>Should the four switches go on in the app once the bark has been seen on the Mac and the tablet?</li>
+</ol>
+</body></html>

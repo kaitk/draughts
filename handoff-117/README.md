@@ -9,7 +9,31 @@ To use it on the other machine: copy `notes/*` to `build/notes/` (so
 scripts refer to those paths. The large tree dumps (`build/notes/tree/branches/dump/`, 104
 MB) are left out: `tools/tree_dump` makes them again.
 
-## Where to start
+## Round two (2026-11-27)
+
+Start at `notes/tree/round-2/index.html`: everything on from the chair behind the table,
+then a page each for the skeleton and density (`branches.html`) and the bark's material
+(`bark.html`), with the questions for the user. The user's bark specification is
+`notes/bark-roots/norway_maple_bark_material.docx` (and `.txt`). The task file's sections
+"Round two: the skeleton and density" and "Round two: the bark's material" hold the
+switches, times and counts. Round two's new switches, all off by default:
+
+- `--tree-elbow-plane`: elbows turned in the limb's upright plane and back.
+- `--tree-limb-angle ON,DOWN,DOWN_V`: limbs off the trunk at Sapling's down angle.
+- `--tree-hanging-twigs`: twigs hanging under level wood (negative AttractionUp).
+- `--tree-detail`, `--tree-albedo`, `--tree-lichen`, `--tree-spec`: the bark's fine relief
+  and small cracks, colour drift, lichen, and a weak broad highlight. Scattering showed
+  nothing from the room and stays off.
+
+Growth with round two's recommended settings is about 78 ms on the PC (the leaves' nudge
+apart 28 ms of it), near the 100 ms budget: measure on the Mac first.
+
+Warning for agents on Windows: `build/ngfx/goose-ngfx` is a junction to the goose-ngfx
+checkout. Git 2.45's `git worktree remove` followed it out of an agent's worktree and
+deleted the checkout twice (2026-11-26 and 11-27). Remove junctions in a worktree (`cmd /c
+rmdir <junction>`) before removing the worktree, and never pass `--force`.
+
+## Where to start (round one)
 
 1. `tasks/117-maple-branches-and-leaves.md`: the criteria, the user's answers of
    2026-11-26, and a section for each built step with its switches, times and counts.

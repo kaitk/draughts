@@ -1,0 +1,69 @@
+
+Norway maple bark
+MATERIAL SPECIFICATION • Acer platanoides • Blender Cycles
+Asset context: mature Norway maple in an Estonian manor park; close-up trunk, branches and distant tree LODs.
+1. Optical behaviour and anatomy
+Treat mature bark as a predominantly opaque, rough biological dielectric. Microscopic light penetration and scattering are physically plausible, but explicit subsurface scattering (SSS) is not required for a convincing mature trunk. Ordinary diffuse reflection already approximates much unresolved scattering.
+The species develops grey-brown, somewhat corky bark with elongated, narrow, intersecting ridges and furrows. Younger bark is smoother [1, 2]. The outer protective tissues include dead, suberized cork cells; bark is heterogeneous and is not equivalent to exposed wood [3, 4].
+Studies of young woody stems demonstrate light penetration and wavelength-dependent absorption in stem tissues [5]. This supports an age-dependent optical treatment, but does not establish a scattering length or SSS weight for old Norway maple. Avoid extrapolating young-stem transmission to the mature trunk.
+2. Surface construction
+Use actual displacement or geometry for longitudinal ridges and intersecting fissures; use smaller displacement and normal maps for secondary cracking. Avoid exaggerated oak-like plates or pine-like scales.
+Add fine, irregular cellular and fibrous bump; orient elongated texture along the local growth direction, including branch junctions and root flare.
+Use desaturated grey-brown, warm grey and occasional olive-grey variation. Weathered ridges may be lighter than sheltered surfaces; avoid baked directional illumination and excessive AO.
+Keep bark dry and matte, with weak broad dielectric highlights. Separate moss, lichens, exposed wood and moisture into their own masks or materials.
+Priority: geometry and normal quality > albedo and roughness variation > optional microscopic SSS.
+
+3. Cycles shader implementation
+Use Principled BSDF with Random Walk SSS on closed, correctly scaled geometry if explicit scattering is enabled [6]. The following values are artistic starting points, not measured optical constants.
+Parameter
+Mature trunk
+Younger limbs
+Fresh shoots
+Metallic
+0
+0
+0
+Roughness
+0.78–0.95
+0.60–0.85
+0.45–0.70
+IOR
+1.45
+1.45
+1.45
+Specular IOR level
+0.5
+0.5
+0.5
+SSS weight
+0–0.03
+0.02–0.08
+0.05–0.20
+SSS scale (mm)
+0.1–0.3
+0.2–0.8
+0.3–1.0
+SSS radius RGB
+1 / 0.65 / 0.4
+1 / 0.65 / 0.4
+1 / 0.8 / 0.5
+Transmission / coat
+0 / 0
+0 / 0
+0 / 0
+Recommended baseline: SSS weight = 0 for mature bark. Optional close-up test: weight 0.02, scale 0.0002 m (0.2 mm), RGB radius (1, 0.65, 0.4), assuming 1 Blender unit = 1 m and applied object scale. Radius and scale jointly control the scattering distance; RGB ratios are heuristic, not measured spectral data.
+Do not use leaf-style translucency or backlighting on the trunk. Do not scatter light through the entire bark shell. Preserve deep fissure contrast and sharp silhouette structure. If a separate bark shell is used, ensure the geometry and underlying material do not permit unrealistic light leaks.
+Blend material parameters using tissue maturity, local branch diameter and age attributes. Diameter is only a proxy for maturity. Fresh green shoots may justify more scattering than established woody branches; do not make all thin branches translucent.
+4. Moisture and LOD
+For damp bark, use a separate moisture mask to darken diffuse colour moderately and lower roughness. Do not increase SSS merely to simulate wetness. Disable explicit bark SSS on distant geometry and impostors; capture diffuse appearance, normals and relief instead.
+
+5. Validation and acceptance criteria
+Render identical camera and exposure settings with SSS disabled and enabled under overcast daylight, low-angle direct sunlight, strong backlighting and close-up grazing illumination. On old bark, the difference should be barely perceptible. Reject waxy, fleshy, rubbery or glowing bark; reject loss of crack contrast. Keep SSS disabled if no meaningful improvement is visible.
+No species-specific visible-light scattering coefficients, calibrated IOR, roughness or scattering distances for mature Acer platanoides were established by the sources below. All numerical shader recommendations must therefore be treated as adjustable approximations.
+6. Research and implementation references
+[1] Virginia Tech Dendrology — Norway maple. Species-specific mature bark morphology. Open reference
+[2] Keele University Arboretum — Norway maple. Bark photographs and age-related surface development. Open reference
+[3] Priorities for Bark Anatomical Research: Study Venues and Open Questions (2023). General anatomy of bark, cork and developing shoots. Open reference
+[4] Cork-Containing Barks—A Review (2016). Cellular structure, chemistry and protective roles of cork-containing bark. Open reference
+[5] The optical, absorptive and chlorophyll fluorescence properties of young stems of five woody species (2015). Optical behaviour of young stem tissues; not a mature Norway maple SSS calibration. Open reference
+[6] Blender 4.5 LTS Manual — Principled BSDF. SSS weight, radius, scale and Random Walk implementation. Open reference
