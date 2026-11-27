@@ -154,6 +154,19 @@ tuner than Cycles; measured as the handle view's crops over the casement frame's
 The niche's share is now 0 by default (`WINDOW_METAL_OFF`), the flat bronze's too: the niche's
 light in the probes gives what the share used to stand in for.
 
+## The user's verdict (2026-11-27)
+
+The user prefers the old flat bronze for now: the tuner's Curtains section has a "Window metal"
+switch, bronze (default) or antique brass (level 4 when first turned on). The brass is merged into
+`room-light` off by default to keep working on. What needs work, from the user's look at the
+pairs (Cycles' pictures look right, the game's don't):
+
+- The mottling reads too strong in the game, where in Cycles it is subtle and nice.
+- The bronze's specular, flat or brass: flat and blurry in the game, where Cycles shows crisp,
+  broken highlights on the grip, the rod and the keeper. The window metal reflects only the
+  room's wide light (`room_wide`) since task 127 (the box's sharp `room_reflection` read far too
+  bright from the niche), so it has no sharp reflection and no highlight but the sun's.
+
 ## Acceptance criteria
 
 - [x] The controlled checks in Cycles at about five tone levels, bronze B's among them, with

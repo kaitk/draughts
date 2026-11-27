@@ -2309,9 +2309,17 @@ fn main() {
                 choice(c, "Lace (C)", g.lace_way, LACE_WAYS);
                 switch(c, "Shutters (H)", shutters_on, ["off", "on"]);
                 if room_shell::box_window_on {
-                    slider(c, "Window metal (under 1 flat)", room_shell::window_metal.x, 0.0, 5.0);
-                    slider(c, "  its mottling", room_shell::window_metal.y, 0.0, 1.0);
-                    slider(c, "  its roughness +", room_shell::window_metal.z, -0.3, 0.3);
+                    // The window's metal: the flat bronze, or task 129's antique brass (off by
+                    // default; on, at level 4 until moved).
+                    var brass = room_shell::window_metal.x >= 1.0;
+                    switch(c, "Window metal", brass, ["bronze", "antique brass"]);
+                    if brass && room_shell::window_metal.x < 1.0 { room_shell::window_metal.x = 4.0; }
+                    if !brass { room_shell::window_metal.x = 0.0; }
+                    if brass {
+                        slider(c, "  its level", room_shell::window_metal.x, 1.0, 5.0);
+                        slider(c, "  its mottling", room_shell::window_metal.y, 0.0, 1.0);
+                        slider(c, "  its roughness +", room_shell::window_metal.z, -0.3, 0.3);
+                    }
                     slider(c, "  the niche's light", room_shell::window_metal.w, 0.0, 1.0);
                 }
                 slider(c, "Lace hangs over (Y)", lace_hang, 0.0, 0.2);
