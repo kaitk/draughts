@@ -89,6 +89,8 @@
 //       [--camera-toe room|neutral|none|agx (--light physical's one curve after the HDR pass: the shoulder after
 //       that toe, or AgX at the metered exposure, the default)] [--camera-ev EV (AgX's exposure over the meter's; 0)]
 //       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
+//       [--grade-ev 0|-0.5|-1|-1.5|lift|lift2|match|match-dark (with the grade: stops under the season's;
+//       lift, lift2, match, match-dark at -1.5, -1.75, -1, -1 with AgX's look power 0.7, 0.65, 0.65, 0.7; match)]
 //       [--coat on|off (--light physical: the varnish and the wax as clear coats on the walls and floor,
 //       render3d::physical_coat; on)] [--paper-metal on|off (with the coat: the wallpaper's print a metal over a
 //       matt ground; on)] [--paper-ground R,G,B,ROUGH] [--paper-gold R,G,B,ROUGH (the wallpaper's ground and print,
@@ -316,6 +318,19 @@ var spare_laces: u8[>..] = [];
 let CAMERA_TOE = render3d::CAMERA_AGX;
 // --light physical's grade (--grade): the season's (render3d::GRADES) or none.
 let GRADE_WAYS = ["season", "none"];
+// --grade-ev: darker takes on the season's grade, to choose the current look by eye
+// (task 122): stops under it, and AgX's look power (the darks' lift) in its place. match
+// (-1, power 0.65) meets the autumn reference's log-average (0.063 against 0.058) with 1.5% of
+// the reference view near white (the season's grade 3.0%, the reference 0.7%).
+let EXPOSURES = ["0", "-0.5", "-1", "-1.5", "lift", "lift2", "match", "match-dark"];
+let EXPOSURE_EV: f32[8] = [0.0, -0.5, -1.0, -1.5, -1.5, -1.75, -1.0, -1.0];
+let EXPOSURE_POWER: f32[8] = [0.0, 0.0, 0.0, 0.0, 0.7, 0.65, 0.65, 0.7];
+fn graded_as(season: i64, exposure: i64) -> render3d::Grade {
+    var g = render3d::GRADES[season];
+    g.ev += EXPOSURE_EV[exposure];
+    if EXPOSURE_POWER[exposure] > 0.0 { g.power = EXPOSURE_POWER[exposure]; }
+    return g;
+}
 // The depth of field's depth shown over the picture (render3d::depth_view): none, the
 // distance, the lens's disc.
 let LENS_VIEWS = ["off", "depth", "coc"];
@@ -1458,12 +1473,13 @@ fn main() {
     // surfaces writing their light linear: --camera-toe's, AgX at the metered exposure
     // compensated by --camera-ev unless it names a toe.
     let graded = physical && pick(argv, "--grade", GRADE_WAYS, 0) == 0;
+    var exposure = pick(argv, "--grade-ev", EXPOSURES, 6);
     if physical {
         render3d::tone_toe = float4 { 2.0, 2.0, 2.0, render3d::tone_toe.w };
         render3d::camera_toe = pick(argv, "--camera-toe", TOES, CAMERA_TOE) as f32;
         render3d::camera_ev = number(argv, "--camera-ev", 0.0);
     }
-    if graded { render3d::grade = render3d::GRADES[season]; }
+    if graded { render3d::grade = graded_as(season, exposure); }
     var room = rooms::get(room_take);
     room.key.x = number(argv, "--azimuth", room.key.x);
     room.key.y = number(argv, "--sun-height", room.key.y);
@@ -1775,6 +1791,7 @@ fn main() {
     let c = ui::create(13.0, scale);
     guard c.id != 0 else { abort(str("ui: ", ui::error())); }
     var shown_season = season;
+    var shown_exposure = exposure;
     var shown_material = material;
     var shown_take = take;
     var shown_room = room_take;
@@ -1975,6 +1992,7 @@ fn main() {
             if ui::button_label(c, "Reset room") { shown_room = -1; }
             if section(c, open, SCENE) {
                 choice(c, "Season", season, SEASONS);
+                if graded { choice(c, "Exposure", exposure, EXPOSURES); }
                 choice(c, "Board", material, MATERIALS);
                 ui::tree_state_pop(c);
             }
@@ -2322,13 +2340,16 @@ fn main() {
             room = rooms::get(room_take);
             if physical { room = physical_light(room, room, false, false); }
         }
+        if graded && (season != shown_season || exposure != shown_exposure) {
+            render3d::grade = graded_as(season, exposure);
+            shown_exposure = exposure;
+        }
         if season != shown_season || material != shown_material || take != shown_take {
             if season != shown_season {
                 room_take = rooms::for_season(season);
                 shown_room = room_take;
                 room = rooms::get(room_take);
                 if physical { room = physical_light(room, room, false, false); }
-                if graded { render3d::grade = render3d::GRADES[season]; }
             }
             shown_season = season;
             shown_material = material;
@@ -2423,7 +2444,7 @@ fn main() {
                 format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --camera-ev ", render3d::camera_ev, " --props-wrap ",
                        render3d::props_wrap, " --casement-depth ",
                        if casement_depth { "on" } else { "off" }, " --volumes ", on_off(room_light::volumes_on), " --grade ",
-                       GRADE_WAYS[if graded { 0 } else { 1 }]);
+                       GRADE_WAYS[if graded { 0 } else { 1 }], " --grade-ev ", EXPOSURES[exposure]);
             }
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
                    " --lace ", LACE_WAYS[g.lace_way]);
