@@ -1342,7 +1342,7 @@ let ROOM_FRAG = """
         #ifdef PHYSICAL_COAT
             // A picture of its own, its planks in it (render3d::Wood's way 2): its tile laid on
             // the floor's uv, as Cycles lays it, stained, its roughness in the finish's range.
-            bool picture = wood_floor[2].w > 1.5 && wood_floor[2].w < 2.5;
+            bool picture = wood_floor[2].w > 1.5;
             if (picture) {
                 float tile_w = wood_floor[4].x;
                 a4 = textureGrad(floor_albedo, uv / tile_w, dx / tile_w, dy / tile_w);
@@ -1350,13 +1350,8 @@ let ROOM_FRAG = """
                 a4.rgb = wood_stained(a4.rgb, wood_floor[0], wood_floor[1], wood_floor[2]);
                 a4.a = mix(wood_floor[3].x, wood_floor[3].y, a4.a);
             }
-            // Our herringbone tuned toward the parquet's (way 3): its planks' warmth varied
-            // wood_floor[4].z times as much, its joints darkened again after the stain by y.
-            bool tuned = wood_floor[2].w > 2.5;
-            float warm_k = tuned ? wood_floor[4].z : 1.0;
         #else
             bool picture = false;
-            float warm_k = 1.0;
         #endif
             albedo = a4.rgb;
             rough = a4.a;
@@ -1364,7 +1359,7 @@ let ROOM_FRAG = """
                 // Each plank from its own tree: lighter or darker, warmer or greyer; a few
                 // patched with newer oak, paler, less ambered.
                 float tone = (h12(id + 5.5) - 0.5) * 2.0 * planks.x;
-                float warm = (h12(id + 8.8) - 0.5) * warm_k;
+                float warm = (h12(id + 8.8) - 0.5);
                 albedo *= exp(tone) * vec3(1.0 + 0.1 * warm, 1.0, 1.0 - 0.14 * warm);
                 float patched = step(h12(id + 12.3), planks.y);
                 albedo *= mix(vec3(1.0), vec3(1.3, 1.2, 1.02), patched);
@@ -1434,7 +1429,6 @@ let ROOM_FRAG = """
                     albedo = wood_stained(albedo, wood_floor[0], wood_floor[1], wood_floor[2]);
                     rough = mix(wood_floor[3].x, wood_floor[3].y, clamp(rough, 0.0, 1.0));
                 }
-                if (tuned) albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint * wood_floor[4].y);
                 coat_w = wood_floor[3].z;
                 coat_r = wood_floor[3].w;
             }

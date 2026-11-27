@@ -251,8 +251,8 @@ let BASE_WOODS = ["today", "own"];
 let PROPS_WAYS = ["off", "on", "kept"];
 let LIGHT_WAYS = ["today", "physical"];
 // --woods (render3d::Wood's ways), by render3d's WOOD_OAK, WOOD_FLOOR, WOOD_TABLE; the flag and the
-// panel take them as the wainscot, the table and chairs, the floor. "tuned" is the floor's alone.
-let WOOD_WAYS = ["today", "ours", "picks", "tuned"];
+// panel take them as the wainscot, the table and chairs, the floor.
+let WOOD_WAYS = ["today", "ours", "picks"];
 let WOOD_FLAG_ORDER: i64[3] = [render3d::WOOD_OAK, render3d::WOOD_TABLE, render3d::WOOD_FLOOR];
 // The docx's finishes (manor_wood_materials_cycles.docx; tools/blender/woods/ours.json), by wood:
 // the stain's three colours (sRGB), the base's roughness from x to y over its map's, the coat's
@@ -266,15 +266,7 @@ let WOOD_STAINS: float3[9] = [float3 { 0x43, 0x27, 0x19 }, float3 { 0x69, 0x43, 
 let WOOD_FINISHES: float4[3] = [float4 { 0.4, 0.52, 0.35, 0.33 }, float4 { 0.36, 0.48, 0.5, 0.5 }, float4 { 0.28, 0.4, 0.78, 0.2 }];
 // Our maps' luminance at their 5th and 95th percentiles (linear), as scene.py's map_percentiles
 // reads blender_export's wall_albedo.png, floor_albedo.png (the floor as laid) and table_albedo.png.
-let OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07343 }, float2 { 0.01716, 0.12983 }];
-
-// The tuned floor's (render3d::Wood's way 3): the stain's range, wider than ours so the grain
-// is a little softer beside the planks' tones, and its tile's row: y how dark its joints go
-// again after the stain (0: the parquet's are no darker than ours), z how far its planks'
-// warmth varies (1 ours). Fitted to the parquet in shade, straight down: the planks' variation
-// 0.220 against its 0.236 (ours 0.189), the grain's 0.167 against 0.110.
-var TUNED_RANGE = float2 { 0.024, 0.08 };
-let TUNED_FLOOR = float4 { 0.0, 0.0, 2.5, 0.0 };
+var OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07343 }, float2 { 0.01716, 0.12983 }];
 
 fn linear_of(c: f32) -> f32 {
     let v = c / 255.0;
@@ -284,7 +276,7 @@ fn linear_of(c: f32) -> f32 {
 // Wood k's finish the way `way` says (WOOD_WAYS), the picture's range where it is read.
 fn wood_of(k: i64, way: i64) -> render3d::Wood {
     guard way > 0 else { return default<render3d::Wood>(); }
-    var range = if way == render3d::WOOD_TUNED { TUNED_RANGE } else { OUR_RANGES[k] };
+    var range = OUR_RANGES[k];
     var tile: f32 = 0.0;
     if way == render3d::WOOD_PICTURE && wood_pictures::pictured[k].w > 0.0 {
         range = float2 { wood_pictures::pictured[k].x, wood_pictures::pictured[k].y };
@@ -296,16 +288,16 @@ fn wood_of(k: i64, way: i64) -> render3d::Wood {
     return render3d::Wood { float4 { linear_of(a.x), linear_of(a.y), linear_of(a.z), range.x },
                             float4 { linear_of(b.x), linear_of(b.y), linear_of(b.z), range.y },
                             float4 { linear_of(c.x), linear_of(c.y), linear_of(c.z), way }, WOOD_FINISHES[k],
-                            if way == render3d::WOOD_TUNED { TUNED_FLOOR } else { float4 { tile, 0.0, 0.0, 0.0 } } };
+                            float4 { tile, 0.0, 0.0, 0.0 } };
 }
 
 // --woods: one way for all, or the wainscot's, the table's and the floor's.
 fn wood_ways_of(argv: u8[:][>..]&) -> i64[3] {
-    // The user's picks (2026-11-27): the wainscot and panelling ours, the table ours, the floor tuned.
+    // The user's picks (2026-11-27): ours for all; the floor's tuned way, toward the Poly Haven parquet, dropped (task 130).
     var ways: i64[3] = [0, 0, 0];
     ways[render3d::WOOD_OAK] = 1;
     ways[render3d::WOOD_TABLE] = 1;
-    ways[render3d::WOOD_FLOOR] = 3;
+    ways[render3d::WOOD_FLOOR] = 1;
     let at = flag_value(argv, "--woods");
     guard at > 0 else { return ways; }
     var rest: const u8[:] = argv[at];
@@ -313,7 +305,7 @@ fn wood_ways_of(argv: u8[:][>..]&) -> i64[3] {
         let part, after, more = split_once(rest, ",");
         var found = -1;
         for n, j in WOOD_WAYS { if n == part { found = j; } }
-        guard found >= 0 else { abort(str("--woods: no ", part, " (", WOOD_WAYS[0], ", ", WOOD_WAYS[1], ", ", WOOD_WAYS[2], ", ", WOOD_WAYS[3], ")")); }
+        guard found >= 0 else { abort(str("--woods: no ", part, " (", WOOD_WAYS[0], ", ", WOOD_WAYS[1], ", ", WOOD_WAYS[2], ")")); }
         ways[WOOD_FLAG_ORDER[i]] = found;
         if !more {
             if i == 0 { ways = [found, found, found]; }
@@ -321,7 +313,6 @@ fn wood_ways_of(argv: u8[:][>..]&) -> i64[3] {
         }
         rest = after;
     }
-    for k in 3 { if ways[k] == render3d::WOOD_TUNED && k != render3d::WOOD_FLOOR { ways[k] = render3d::WOOD_STAINED; } }
     return ways;
 }
 
@@ -1699,12 +1690,11 @@ fn main() {
     // --floor-finish: the floor's finish in place of WOOD_FINISHES' (the base's roughness x to y,
     // the coat's weight z and roughness w), for trying how glossy the wax is.
     let floor_finish = four(argv, "--floor-finish", float4 { 0.0, 0.0, -1.0, 0.0 });
-    // The tuned floor's grain (surfaces::TUNED_FLOOR_OAK's figure, ring and boards; the stain's range).
-    render3d::tuned_floor_oak.figure = four(argv, "--floor-figure", render3d::tuned_floor_oak.figure);
-    render3d::tuned_floor_oak.ring = four(argv, "--floor-ring", render3d::tuned_floor_oak.ring);
-    render3d::tuned_floor_oak.boards = four(argv, "--floor-boards", render3d::tuned_floor_oak.boards);
-    let range4 = four(argv, "--floor-range", float4 { TUNED_RANGE.x, TUNED_RANGE.y, 0.0, 0.0 });
-    TUNED_RANGE = float2 { range4.x, range4.y };
+    // --floor-range: the map's luminance the floor's stain takes from its darkest to its lightest
+    // (OUR_RANGES'); wider, the grain softer.
+    let floor_range = OUR_RANGES[render3d::WOOD_FLOOR];
+    let range4 = four(argv, "--floor-range", float4 { floor_range.x, floor_range.y, 0.0, 0.0 });
+    OUR_RANGES[render3d::WOOD_FLOOR] = float2 { range4.x, range4.y };
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     sun_color_given = has(argv, "--sun-color-height");
