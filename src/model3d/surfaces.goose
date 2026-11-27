@@ -102,6 +102,22 @@ let WALL_OAK = Oak {
     tint:    float4 { 3.0, 0.6, 0.0, 0.0 },
 };
 
+// The parquet's oak, the floor's tuned toward Poly Haven's herringbone_parquet (task 122, the
+// light tuner's --woods tuned; render3d::Wood's way 3): its rings tighter (2 mm a year, from
+// 3), more of its pores open, the trees' tones further apart. Its straighter, fainter figure
+// was tried and set aside: the parquet's planks show their cathedrals.
+let TUNED_FLOOR_OAK = Oak {
+    base:    FLOOR_OAK.base,
+    figure:  float4 { 0.25, 0.22, 0.3, 1.0 },
+    ring:    float4 { 0.06, 0.0, 0.15, 0.9 },
+    stain:   FLOOR_OAK.stain,
+    wax:     FLOOR_OAK.wax,
+    shellac: FLOOR_OAK.shellac,
+    age:     FLOOR_OAK.age,
+    boards:  float4 { 2.134, 0.45, 0.15, 1.0 },
+    tint:    FLOOR_OAK.tint,
+};
+
 // How ROOM_FRAG lays and wears the floor and lights the wall, in its Surfaces block.
 struct Look {
     plank:  float4,    // a plank's width, length in widths, the joint's half width, the cup
@@ -176,6 +192,12 @@ let LOOK = Look {
     brass:      float4 { 0.959, 0.895, 0.682, 0.28 },
     lace_light: float4 { 0.86, 0.84, 0.78, 0.5 },
 };
+
+// The parquet's herringbone (TUNED_FLOOR_OAK's; Look.plank and planks): planks 3.5 cm wide and
+// eight widths long (28 cm), as the parquet's measure at its 3.4 m tile (3 to 3.8 cm, 26 to
+// 30 cm), the planks' own tones 1.6 times as far apart.
+let TUNED_PLANK = float4 { 1.067, 8.0, 0.016, 0.012 };
+let TUNED_PLANKS = float4 { 0.32, 0.03, 0.01, 0.6 };
 
 // The plaster's tone map (design/materials/plaster_tone.png) covers 4 m of wall a tile,
 // the lace's 0.56 m.

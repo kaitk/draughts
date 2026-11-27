@@ -982,6 +982,33 @@ Results page `build/notes/wallpaper-engraved/index.html`; scratch `build/review1
   none; no dotted eyes. The user's call whether the app takes it (it would replace
   `wallpaper_mask.png`).
 
+## The woods' toggle: ours, the docx's finish, the picks (2026-11-27)
+
+The light tuner's `--woods WAY|WAINSCOT,TABLE,FLOOR` and the Wainscot section's three rows, under
+`--light physical`, live: `today` as made; `ours`, our maps stained to the docx's anchors by
+luminance (each map's 5th to 95th percentile, as `scene.py`'s `finished_wood`) with the base's
+roughness in the docx's range and the docx's coat as a second lobe over the base's
+(`render3d::Wood`, ROOM_FRAG's `wood_oak` and `wood_floor`, TABLE_FRAG's `wood_finish`); `picks`,
+oak_veneer_01, sapele_veneer and herringbone_parquet read at run time from
+`build/wood-candidates/` (`tools/wood_pictures.goose`, `src/native/tuner_jpeg.c`; ours where
+they aren't there) under the same finish, their normal maps scaled to our fields' mean slope;
+`tuned`, the floor's herringbone tuned toward the parquet (`surfaces::TUNED_FLOOR_OAK`,
+`TUNED_PLANK`, `TUNED_PLANKS`): planks 3.5 cm by 28 cm (from 7 by 42; the parquet's 3 to 3.8 by
+26 to 30 at its 3.4 m tile), their tones 0.32 (0.2) and warmth ×2.5, rings 2 mm (3), pores 0.9
+(0.6), the trees' tones 0.15 (0.1), the stain's range 0.024 to 0.080 (0.029 to 0.073). The floor
+in shade straight down, plank-scale variation, grain, dark tail: ours 0.189, 0.153, 0.600; the
+parquet 0.236, 0.110, 0.704; tuned 0.220, 0.167, 0.640. Results page
+`build/notes/wood-in-app/index.html`; scratch `build/wood-app/`.
+
+- Without `--light physical` the reference, close, low, room and menu views are within a level of
+  the build before (2 pixels, none over 8); with it and `--woods today` the reference and close
+  views are byte-identical.
+- Against Cycles, ours over today on the wainscot ×1.42 in the app, ×1.86 in Cycles: the app
+  keeps the panels' own tone and grime after the stain, `finished_wood` drops them.
+- Time (`mac_room_bench.py`, 3840 × 2160, physical): the down view 12.7 ms today, 14.3 ms with
+  picks or tuned (the floor's coat lobe and the box's tap under the mirror); the table view's
+  rounds drift more than any difference.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

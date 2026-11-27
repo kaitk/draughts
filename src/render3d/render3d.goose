@@ -353,12 +353,17 @@ struct Gpu {
     scratch_tile: Texture,          // the floor's scratches' tile, R8 with its mips (surfaces::scratch_tile)
     wall_albedo:  Texture,
     wall_normal:  Texture,
-    paper_mask:   Texture,          // the wallpaper's mask, R8 with its mips (surfaces::PAPER_SIDE)
-    paper_tile:   f32,              // the wall a tile of it covers (world units), 0 surfaces::PAPER_TILE
-    room_frame:   surfaces::Frame,  // the room's frame this frame (put_room)
-    room_for:     float4,           // what the mesh was made for: the shell's key
-    shell_table:  float2,           // the games table's place in the plan the shell's mesh and view out were made round
-    mesh_ms:      f64,              // the mesh's making (measuring)
+    // The woods' pictures (Wood's way 2; the light tuner's, read from files): the panelling's,
+    // the floor's and the table's, each its albedo (RGBA8 sRGB, the roughness in A) and normal
+    // (the slopes in R and G, B 0.4, the normal's up in A), with their mips; 0 none.
+    wood_pictures: Texture[6],
+    floor_tuned:   Texture[2],      // the floor's field tuned toward the parquet (Wood's way 3), its albedo and normal; 0 none
+    paper_mask:    Texture,         // the wallpaper's mask, R8 with its mips (surfaces::PAPER_SIDE)
+    paper_tile:    f32,             // the wall a tile of it covers (world units), 0 surfaces::PAPER_TILE
+    room_frame:    surfaces::Frame, // the room's frame this frame (put_room)
+    room_for:      float4,          // what the mesh was made for: the shell's key
+    shell_table:   float2,          // the games table's place in the plan the shell's mesh and view out were made round
+    mesh_ms:       f64,             // the mesh's making (measuring)
     // The shell's corners' shade (model3d::corner_map), baked with its mesh: the atlas, R8,
     // the room's corners it was baked for, and the bake's time (measuring).
     corner_map:   Texture,
@@ -745,6 +750,42 @@ var props_light = false;
 // The varnish and wax as clear coats (shaders::PHYSICAL_COAT, the light tuner's --light
 // physical): the walls' and floor's groups on the desktop's HDR tier.
 var physical_coat = false;
+// The woods' own finishes (the light tuner's --woods, task 122): the panelling, the floor, and the
+// table with its chairs each as made (way 0), our maps stained and finished as the docx
+// manor_wood_materials_cycles says (1), a picture of its own read by the tuner under the same
+// finish (2, its maps in Gpu.wood_pictures, else as 1), or the floor's herringbone tuned toward
+// the parquet's (3), as tools/blender/scene.py's finished_wood takes them. The walls' and floor's
+// under PHYSICAL_COAT, the table's in any light.
+struct Wood {
+    dark:   float4,   // the stain's darkest colour (linear) and, w, the map's luminance it takes (its 5th percentile)
+    mid:    float4,   // its middle colour and, w, the map's luminance the lightest takes (its 95th)
+    light:  float4,   // its lightest colour and, w, the way
+    finish: float4,   // the base's roughness from x to y over the map's, the coat's weight z and roughness w
+    tile:   float4,   // x the picture's side (world units)
+}
+let WOOD_AS_MADE = 0;
+let WOOD_STAINED = 1;
+let WOOD_PICTURE = 2;
+let WOOD_TUNED = 3;
+let WOOD_OAK = 0;
+let WOOD_FLOOR = 1;
+let WOOD_TABLE = 2;
+var woods = [default<Wood>(); 3];
+// The rows a shader reads for wood `k`: its way 2 only with its picture there, else 1.
+fn wood_rows(g: Gpu&, k: i64) -> float4[5] {
+    let w = woods[k];
+    var way = w.light.w;
+    if way == WOOD_PICTURE as f32 && g.wood_pictures[2 * k].id == 0 { way = WOOD_STAINED as f32; }
+    return [w.dark, w.mid, float4 { w.light.x, w.light.y, w.light.z, way }, w.finish, w.tile];
+}
+// The maps a wood's surface reads: its picture's (way 2) where there is one, else `own`.
+fn wood_maps(g: Gpu&, k: i64, albedo: Texture, normal: Texture) -> Texture, Texture {
+    if woods[k].light.w == WOOD_PICTURE as f32 && g.wood_pictures[2 * k].id != 0 {
+        return g.wood_pictures[2 * k], g.wood_pictures[2 * k + 1];
+    }
+    if k == WOOD_FLOOR && woods[k].light.w == WOOD_TUNED as f32 && g.floor_tuned[0].id != 0 { return g.floor_tuned[0], g.floor_tuned[1]; }
+    return albedo, normal;
+}
 var props_table_shade = false;
 var props_profile_ao = true;
 var props_wrap: f32 = 0.2;
@@ -839,7 +880,7 @@ fn table_shown(g: Gpu&) -> bool { g.table && g.table_baked && g.table_side == g.
 struct TableBlock {
     pool:       float4, coat: float4, polish: float4, worn: float4, shape: float4, map: float4[4],
     room_light: float4[12], room_mix: float4, room_shade: float4, ssao: float4, base_wood: float4,
-    base_look:  float4,
+    base_look:  float4, wood_finish: float4[5],
 }
 // How the base reads its wood (shaders::TABLE_FRAG's base_wood, the light tuner's
 // --base-wood): x 0 as made, 1 its own, its grain along the column and the legs; then y its
@@ -862,7 +903,7 @@ fn table_block(g: Gpu&) -> TableBlock {
     TableBlock { t.light, t.coat, t.polish, t.wear, float4 { mesh::TABLE_R, surfaces::FLOOR_Y, sin(turn), cos(turn) }, map,
                  table_probes, float4 { if on { 1.0 } else { 0.0 }, r.baked.z, r.room_exposure, shade_fill },
                  float4 { shade.x, shade.y, shade.z, surfaces::METRE }, if on { ssao_block_of(g) } else { float4_0 }, base_wood,
-                 base_look }
+                 base_look, wood_rows(g, WOOD_TABLE) }
 }
 
 // The table's own shadow in the room (shaders::TABLE_MAP_FN): its top and base, and the
@@ -1473,14 +1514,17 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool, mirror: bool = f
     }
     let oak = g.aniso;
     if group == GROUP_FLOOR {
-        add_texture(t, g.floor_albedo, oak);
-        add_texture(t, g.floor_normal, oak);
+        // The woods' pictures in the room's own draw only: the mirror's world reads its fields.
+        let fa, fn_ = wood_maps(g, WOOD_FLOOR, g.floor_albedo, g.floor_normal);
+        add_texture(t, if mirror { g.floor_albedo } else { fa }, oak);
+        add_texture(t, if mirror { g.floor_normal } else { fn_ }, oak);
         add_texture(t, g.floor_noise, g.linear);
         add_texture(t, g.scratch_tile, g.aniso);
         add_texture(t, g.rug_map, g.aniso);
     } else if group == GROUP_WALLS {
-        add_texture(t, g.wall_albedo, oak);
-        add_texture(t, g.wall_normal, oak);
+        let wa, wn = wood_maps(g, WOOD_OAK, g.wall_albedo, g.wall_normal);
+        add_texture(t, if mirror { g.wall_albedo } else { wa }, oak);
+        add_texture(t, if mirror { g.wall_normal } else { wn }, oak);
         add_texture(t, g.paper_mask, g.aniso);
         add_texture(t, g.plaster_tone, g.aniso);
     } else if group == GROUP_PAINT {
@@ -1602,6 +1646,19 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.room_side = side;
         g.room_baked = true;
         g.room_ms = (clock() - t0) * 1000.0;
+    }
+    // The floor's field tuned toward the parquet (Wood's way 3), baked when first asked for.
+    if woods[WOOD_FLOOR].light.w == WOOD_TUNED as f32 && g.floor_tuned[0].id == 0 && g.room_side > 0 {
+        let side = g.room_side;
+        g.floor_tuned[0] = baked(o, side, side, RGBA8_SRGB);
+        g.floor_tuned[1] = baked(o, side, side, RGBA8);
+        let finish = g.finish;
+        g.finish = looks::Finish { varnish: 0.0, sanding: 0.0, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0, caulk: 0.0 };
+        var t = oak_theme(g, surfaces::TUNED_FLOOR_OAK);
+        o.bake(g, g.floor_tuned[0], g.floor_tuned[1], side, side, 4.0, float2 { surfaces::FLOOR_FIELD, surfaces::FLOOR_FIELD }, t,
+               0, -1, true, surfaces::FIELD_SIDE / side);
+        g.finish = finish;
+        o.gpu_flush();
     }
     put_paper(o, g);
     if g.stone_tile.id == 0 { put_stone(o, g); }
@@ -1837,10 +1894,10 @@ fn rgba_bytes(w0: i64, h0: i64, mips: i64) -> i64 {
     return total;
 }
 
-// An RGBA8 picture on the GPU, its top level first in px and the rest made there, each level
+// An RGBA8 picture on the GPU (or `format`'s), its top level first in px and the rest made there, each level
 // the mean of four of the level above.
-fn put_rgba<O>(o: O&, px: u8[>..]&, w0: i64, h0: i64, mips: i64) -> Texture {
-    let tex = o.gpu_sampled(w0, h0, mips, RGBA8);
+fn put_rgba<O>(o: O&, px: u8[>..]&, w0: i64, h0: i64, mips: i64, format: i32 = RGBA8) -> Texture {
+    let tex = o.gpu_sampled(w0, h0, mips, format);
     var at = 0;
     for level in mips {
         let w = w0 >> level;
@@ -2169,6 +2226,8 @@ struct SurfacesBlock {
     table_map:     float4[4],
     book_cover:    float4[32],
     book_label:    float4[8],
+    wood_oak:      float4[5],      // the panelling's finish (Wood, wood_rows)
+    wood_floor:    float4[5],      // the floor's
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
@@ -2245,7 +2304,9 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
     let s = room_shell::LIBRARY;
     let window_v = shell_face(s);
     let away = s.table.y * surfaces::METRE;
-    SurfacesBlock { k.plank, k.planks, k.worn, paper_ground, paper_gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
+    // The floor's herringbone tuned toward the parquet's (Wood's way 3): its planks' own.
+    let tuned = woods[WOOD_FLOOR].light.w == WOOD_TUNED as f32;
+    SurfacesBlock { if tuned { surfaces::TUNED_PLANK } else { k.plank }, if tuned { surfaces::TUNED_PLANKS } else { k.planks }, k.worn, paper_ground, paper_gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
                     float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, if paper_metal { 1.0 } else { 0.0 } }, k.plaster_shade, k.plaster_light,
@@ -2259,7 +2320,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paper_detail, k.sill,
                     [float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { 1.0, 0.0, 0.0, 0.0 }], window_view, lace_shade,
                     table_map_shown(g),
-                    books::COVER, books::LABEL }
+                    books::COVER, books::LABEL, wood_rows(g, WOOD_OAK), wood_rows(g, WOOD_FLOOR) }
 }
 
 // The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.
@@ -3926,6 +3987,9 @@ fn mirror_surfaces_block(g: Gpu&) -> SurfacesBlock {
     b.planar = float4_0;
     b.planar_look = float4_0;
     b.contact = float4_0;
+    // The mirror's world reads the woods' fields (room_textures): a picture's way as ours.
+    b.wood_oak[2].w = min(b.wood_oak[2].w, WOOD_STAINED as f32);
+    b.wood_floor[2].w = min(b.wood_floor[2].w, WOOD_STAINED as f32);
     return b;
 }
 

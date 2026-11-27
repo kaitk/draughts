@@ -157,8 +157,9 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
         let props = (g.hdr && h.props_light) || (!g.hdr && render3d::table_in_room(g) && g.room_props);
         t.u = table_u(g, render3d::table_block(g), room_table, props);
         t.verts = nx::address(g.table_vb);
-        slot(t, 0, g.table_albedo, g.aniso);
-        slot(t, 1, g.table_normal, g.aniso);
+        let ta, tn = render3d::wood_maps(g, render3d::WOOD_TABLE, g.table_albedo, g.table_normal);
+        slot(t, 0, ta, g.aniso);
+        slot(t, 1, tn, g.aniso);
         slot(t, 2, g.frame_albedo, g.aniso);
         slot(t, 3, g.table_wear, g.aniso);
         slot(t, 4, g.table_wear_n, g.aniso);
@@ -412,8 +413,9 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
         t.frame = f;
         t.u = table_u(g, render3d::mirror_table_block(g), true, g.room_props);
         t.verts = nx::address(g.table_vb);
-        slot(t, 0, g.table_albedo, g.aniso);
-        slot(t, 1, g.table_normal, g.aniso);
+        let ta, tn = render3d::wood_maps(g, render3d::WOOD_TABLE, g.table_albedo, g.table_normal);
+        slot(t, 0, ta, g.aniso);
+        slot(t, 1, tn, g.aniso);
         slot(t, 2, g.frame_albedo, g.aniso);
         slot(t, 3, g.table_wear, g.aniso);
         slot(t, 4, g.table_wear_n, g.aniso);

@@ -121,9 +121,11 @@ let TABLE_HEAD = """
     // three colours' constant and direction; room_mix x 1 there, y the harmonics the room
     // keeps, z the room's exposure over the board's, w the shade's floor of the key kept;
     // room_shade the room's even bounce kept, w a metre; ssao the room's ambient occlusion
-    // (SSAO_FN); base_wood and base_look how the base reads its wood (render3d::base_wood).
+    // (SSAO_FN); base_wood and base_look how the base reads its wood (render3d::base_wood); wood
+    // the table's and chairs' finish (render3d::Wood, the light tuner's --woods).
     layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 shape; vec4 table_map[4];
-                                                 vec4 room_light[12]; vec4 room_mix; vec4 room_shade; vec4 ssao; vec4 base_wood; vec4 base_look; };
+                                                 vec4 room_light[12]; vec4 room_mix; vec4 room_shade; vec4 ssao; vec4 base_wood; vec4 base_look;
+                                                 vec4 wood_finish[5]; };
     """;
 
 // The table's own shadow from its map (render3d::table_map), which TABLE_FRAG and ROOM_FRAG
@@ -379,6 +381,12 @@ let TABLE_FRAG = """
         return min(lit, smoothstep(-wc, wc, length(a + ba * h) - COLUMN_R));
     }
 
+    // A wood stained by its luminance (render3d::Wood, as ROOM_FRAG's wood_stained).
+    vec3 wood_stained(vec3 a, vec4 w0, vec4 w1, vec4 w2) {
+        float t = clamp((dot(a, vec3(0.2126, 0.7152, 0.0722)) - w0.w) / max(w1.w - w0.w, 1e-4), 0.0, 1.0);
+        return t < 0.5 ? mix(w0.rgb, w1.rgb, 2.0 * t) : mix(w1.rgb, w2.rgb, 2.0 * t - 1.0);
+    }
+
     void main() {
         vec3 p = v_world;
         vec3 n = normalize(v_normal);
@@ -426,6 +434,8 @@ let TABLE_FRAG = """
                                   : v_uv.x + 2.3 * floor(atan(q.y, q.x) / (0.5 * PI));
             uv = vec2(base_look.z + across / (2.0 * TABLE_MAP_R), 0.15 + along / (2.0 * TABLE_MAP_R * base_wood.w));
         }
+        // A picture of its own (render3d::Wood's way 2): the map's places at its size.
+        if (wood_finish[2].w > 1.5) uv *= 2.0 * TABLE_MAP_R / wood_finish[4].x;
         // On the sides and the base the figure is drawn out along the grain (their v)
         // into straight streaks, as an edge's and a frieze's wood is: the filter's
         // footprint lengthened along it, the anisotropic filter blurring that way only.
@@ -441,7 +451,11 @@ let TABLE_FRAG = """
         float rough = a.a;
         // Its colour: the lightness the map's mean times base_wood.y, the figure round it
         // base_wood.z of the map's, the colour's strength base_look.w of the map's.
-        if (own_base) {
+        // With the wood's own finish (render3d::Wood) one wood for the top, the base and the
+        // chairs, stained as the docx says.
+        bool finished = wood_finish[2].w > 0.5;
+        if (finished) albedo = wood_stained(albedo, wood_finish[0], wood_finish[1], wood_finish[2]);
+        if (own_base && !finished) {
             float mean = dot(textureLod(table_albedo, vec2(0.5), 20.0).rgb, vec3(0.2126, 0.7152, 0.0722));
             float l = max(dot(albedo, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
             albedo = mix(vec3(l), albedo, base_look.w) * (mean * base_wood.y + (l - mean) * base_wood.z) / l;
@@ -456,7 +470,7 @@ let TABLE_FRAG = """
     #ifdef TABLE_ROOM
         // The chairs' wood is the base's, darker and less red: the top beside it, under its
         // polish, reads browner, and the same wood read lighter and redder on the chairs.
-        if (chair && !seat) albedo = mix(vec3(dot(albedo, vec3(0.2126, 0.7152, 0.0722))), albedo, 0.75) * CHAIR_WOOD;
+        if (chair && !seat && !finished) albedo = mix(vec3(dot(albedo, vec3(0.2126, 0.7152, 0.0722))), albedo, 0.75) * CHAIR_WOOD;
         // The cloth's tile by its uv (the pads' unrolled millimetres, mesh::cushion), its
         // derivatives taken before the branch. Matte; the braid a twisted cord, its strands
         // slanting along it every 3 mm.
@@ -626,6 +640,14 @@ let TABLE_FRAG = """
         float cr = (top ? rough + 0.3 * polish.w * scratch : coat.x + 0.25 * polish.w * rim)
                  * (1.0 + 2.0 * polish.x * blot);
         float strength = seat ? 0.0 : coat.y * clamp(1.0 - 2.0 * polish.y * blot, 0.0, 2.0) * (1.0 - 0.6 * polish.w * rim);
+        // The wood's own finish: the polish the docx's coat, at its weight and roughness, worn
+        // as the polish is, over the wood's own lobe (below).
+        finished = finished && !seat;
+        float worn_rough = rough - a.a;
+        if (finished) {
+            cr = (top ? wood_finish[3].w + worn_rough + 0.3 * polish.w * scratch : wood_finish[3].w + 0.25 * polish.w * rim) * (1.0 + 2.0 * polish.x * blot);
+            strength = wood_finish[3].z * clamp(1.0 - 2.0 * polish.y * blot, 0.0, 2.0) * (1.0 - 0.6 * polish.w * rim);
+        }
         float ar = cr * cr;
         ar = sqrt(clamp(ar * ar + min(2.0 * variance + 0.3 * top_var, 0.3), 0.0, 1.0));
         ar = max(ar, 0.0079);
@@ -640,6 +662,18 @@ let TABLE_FRAG = """
         float ak = max(ar, coat.w * coat.w);
     #endif
         vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * spec_vis;
+        // The finished wood's own lobe under the coat, with the grain's relief, at the base's
+        // roughness from the map's over the finish's range.
+        vec3 base_spec = vec3(0.0);
+        vec3 base_fc = vec3(0.0);
+        if (finished) {
+            float br = clamp(mix(wood_finish[3].x, wood_finish[3].y, a.a) + worn_rough, 0.05, 1.0);
+            float ab = br * br + 0.0023;
+            float bl = clamp(dot(n, l), 0.0, 1.0);
+            float bv = max(dot(n, v), 1e-4);
+            base_spec = d_ggx(clamp(dot(n, hv), 0.0, 1.0), ab) * v_smith(bv, bl, ab) * f_schlick(f0, voh) * bl * light * spec_vis;
+            base_fc = env_brdf(f0, br, bv);
+        }
     #ifdef PROPS_LIGHT
         // The polish reflects its Fresnel share of the sun before it reaches the wood, as a
         // clear coat does: a quarter of a low sun on the top.
@@ -666,6 +700,7 @@ let TABLE_FRAG = """
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
         vec3 fc = env_brdf(f0, sqrt(ar), nov) * strength;
         vec3 color = (wood * (1.0 - fc) + spec * strength + env * fc * spec_ao) * params.x;
+        if (finished) color = (wood * (1.0 - fc - base_fc) + spec * strength + base_spec + env * (fc + base_fc) * spec_ao) * params.x;
     #ifdef LINEAR_OUT
         // In the floor's mirror (shaders::MIRROR_PASS): the light itself, as the room's there,
         // before the board's tonemap.

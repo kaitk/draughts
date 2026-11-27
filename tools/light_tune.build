@@ -1,7 +1,7 @@
 // The app's C for the season's photograph, compiled from where it is: the built-in
 // images as pixels (embedded by paths relative to itself) and their upload through gfx's C
 // API; and display.c's choice of GPU driver, Vulkan on Windows, as the app's.
-c_sources = ["../src/native/background.c", "../src/native/photo.c", "../src/native/materials.c",
+c_sources = ["../src/native/background.c", "../src/native/photo.c", "../src/native/materials.c", "../src/native/tuner_jpeg.c",
              "../src/native/display.c", "../src/native/launch.c", "../src/native/tuner_capture_stub.c",
              "../src/native/tuner_landscape.c"];
 // Metal's frame capture on the Mac; the stub, empty there, stands in elsewhere (Android

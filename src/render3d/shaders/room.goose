@@ -355,7 +355,9 @@ let ROOM_HEAD = """
     // the folds beside it hide (render3d::lace_shade); table_map:
     // the table's own map's rows (TABLE_MAP_FN);
     // book_cover and book_label: books::COVER and books::LABEL (sRGB), the label's table
-    // ending in gilt, ink, the page edges plain and sprinkled.
+    // ending in gilt, ink, the page edges plain and sprinkled. wood_oak and wood_floor: the
+    // panelling's and the floor's finish under PHYSICAL_COAT (render3d::Wood, the tuner's
+    // --woods).
     layout(set = 3, binding = 1) uniform Surfaces {
         vec4 plank;
         vec4 planks;
@@ -406,6 +408,8 @@ let ROOM_HEAD = """
         vec4 table_map[4];
         vec4 book_cover[32];
         vec4 book_label[8];
+        vec4 wood_oak[5];
+        vec4 wood_floor[5];
     };
     """;
 
@@ -867,6 +871,16 @@ let ROOM_FRAG = """
         return max(mix(vec3(l), a, t.y), vec3(0.0)) * t.x;
     }
 
+    #ifdef PHYSICAL_COAT
+    // A wood stained by its luminance (render3d::Wood, as tools/blender/scene.py's
+    // finished_wood): the map's luminance from w[0].w to w[1].w onto the three colours w[0],
+    // w[1], w[2], evenly spaced.
+    vec3 wood_stained(vec3 a, vec4 w0, vec4 w1, vec4 w2) {
+        float t = clamp((dot(a, vec3(0.2126, 0.7152, 0.0722)) - w0.w) / max(w1.w - w0.w, 1e-4), 0.0, 1.0);
+        return t < 0.5 ? mix(w0.rgb, w1.rgb, 2.0 * t) : mix(w1.rgb, w2.rgb, 2.0 * t - 1.0);
+    }
+    #endif
+
     // The bookcases' own shade on the sun (model3d's bookcases.goose): a point inside a
     // case (lp, the room's frame) sees the sun only where the ray to it leaves by the open
     // front, between the case's ends and either side of its middle upright, under the
@@ -1199,6 +1213,12 @@ let ROOM_FRAG = """
         // How much of the surface's dielectric reflection is kept: 0 on a matt one, whose
         // light is all diffuse (the wallpaper's ground under PHYSICAL_COAT).
         float gloss = 1.0;
+    #ifdef PHYSICAL_COAT
+        // The wood's own clear coat over its base's lobe (render3d::Wood's finish): its weight,
+        // 0 none, and roughness.
+        float coat_w = 0.0;
+        float coat_r = 0.0;
+    #endif
         vec3 n = ng;
         vec3 u_dir = vec3(axes.x, 0.0, axes.y);
         vec3 v_dir = vec3(axes.z, 0.0, axes.w);
@@ -1228,16 +1248,37 @@ let ROOM_FRAG = """
             vec2 gy = (pk.up > 0.5 ? ay : ay.yx) * sgn / place.z;
             vec4 a4 = textureGrad(floor_albedo, fp / place.z, gx, gy);
             vec4 n4 = textureGrad(floor_normal, fp / place.z, gx, gy);
+        #ifdef PHYSICAL_COAT
+            // A picture of its own, its planks in it (render3d::Wood's way 2): its tile laid on
+            // the floor's uv, as Cycles lays it, stained, its roughness in the finish's range.
+            bool picture = wood_floor[2].w > 1.5 && wood_floor[2].w < 2.5;
+            if (picture) {
+                float tile_w = wood_floor[4].x;
+                a4 = textureGrad(floor_albedo, uv / tile_w, dx / tile_w, dy / tile_w);
+                n4 = textureGrad(floor_normal, uv / tile_w, dx / tile_w, dy / tile_w);
+                a4.rgb = wood_stained(a4.rgb, wood_floor[0], wood_floor[1], wood_floor[2]);
+                a4.a = mix(wood_floor[3].x, wood_floor[3].y, a4.a);
+            }
+            // Our herringbone tuned toward the parquet's (way 3): its planks' warmth varied
+            // wood_floor[4].z times as much, its joints darkened again after the stain by y.
+            bool tuned = wood_floor[2].w > 2.5;
+            float warm_k = tuned ? wood_floor[4].z : 1.0;
+        #else
+            bool picture = false;
+            float warm_k = 1.0;
+        #endif
             albedo = a4.rgb;
             rough = a4.a;
-            // Each plank from its own tree: lighter or darker, warmer or greyer; a few
-            // patched with newer oak, paler, less ambered.
-            float tone = (h12(id + 5.5) - 0.5) * 2.0 * planks.x;
-            float warm = h12(id + 8.8) - 0.5;
-            albedo *= exp(tone) * vec3(1.0 + 0.1 * warm, 1.0, 1.0 - 0.14 * warm);
-            float patched = step(h12(id + 12.3), planks.y);
-            albedo *= mix(vec3(1.0), vec3(1.3, 1.2, 1.02), patched);
-            rough += 0.06 * patched;
+            if (!picture) {
+                // Each plank from its own tree: lighter or darker, warmer or greyer; a few
+                // patched with newer oak, paler, less ambered.
+                float tone = (h12(id + 5.5) - 0.5) * 2.0 * planks.x;
+                float warm = (h12(id + 8.8) - 0.5) * warm_k;
+                albedo *= exp(tone) * vec3(1.0 + 0.1 * warm, 1.0, 1.0 - 0.14 * warm);
+                float patched = step(h12(id + 12.3), planks.y);
+                albedo *= mix(vec3(1.0), vec3(1.3, 1.2, 1.02), patched);
+                rough += 0.06 * patched;
+            }
             // The plank's directions in the room: along and across, in u and v.
             vec2 dir_l = pk.up > 0.5 ? vec2(0.70710678, 0.70710678) : vec2(0.70710678, -0.70710678);
             vec2 dir_a = pk.up > 0.5 ? vec2(0.70710678, -0.70710678) : vec2(0.70710678, 0.70710678);
@@ -1254,11 +1295,20 @@ let ROOM_FRAG = """
             vec2 sfuv = dir_a * sf.x + dir_l * sf.y;
             n_film = normalize(vec3(0.0, 1.0, 0.0) + u_dir * sfuv.x + v_dir * sfuv.y);
         #endif
+            if (picture) {
+                // The picture's slopes along u and v, its planks' own; no tilt or cup of ours.
+                t = n4.xy * 2.0 - 1.0;
+                n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * t.x + v_dir * t.y);
+            #ifdef PLANAR_FLOOR
+                n_film = normalize(vec3(0.0, 1.0, 0.0) + 0.25 * (u_dir * t.x + v_dir * t.y));
+            #endif
+            }
             // The joints, open a little and dark with old wax.
             float fpw = max(length(dx), length(dy));
             float d_a = min(pk.across, 1.0 - pk.across) * w;
             float d_l = min(pk.along, plank.y - pk.along) * w;
             float joint = max(line_cover(d_a, plank.z, fpw), line_cover(d_l, plank.z, fpw));
+            if (picture) joint = 0.0;
             // Worn: the paths round the table and along the room lighter and duller, the
             // floor along the walls darker under more wax.
             float r = length(p.xz - vec2(0.0, TABLE_Z));
@@ -1285,10 +1335,23 @@ let ROOM_FRAG = """
             albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
             rough = mix(rough, 0.6, joint);
             fine *= 1.0 - 0.5 * joint;
+        #ifdef PHYSICAL_COAT
+            // Our floor stained and finished as the docx says (render3d::Wood), over all that is
+            // laid, as Cycles takes floor_albedo.png; the picture was stained as it was read.
+            if (wood_floor[2].w > 0.5) {
+                if (!picture) {
+                    albedo = wood_stained(albedo, wood_floor[0], wood_floor[1], wood_floor[2]);
+                    rough = mix(wood_floor[3].x, wood_floor[3].y, clamp(rough, 0.0, 1.0));
+                }
+                if (tuned) albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint * wood_floor[4].y);
+                coat_w = wood_floor[3].z;
+                coat_r = wood_floor[3].w;
+            }
+        #endif
         #ifdef PLANAR_FLOOR
             // Each board waxed and worn a little its own way: its mirror stronger or weaker,
             // and sharper or softer, so the reflection steps from board to board.
-            float own_wax = (h12(id + 21.7) * 2.0 - 1.0) * planar_look.x;
+            float own_wax = picture ? 0.0 : (h12(id + 21.7) * 2.0 - 1.0) * planar_look.x;
             // The film worn thin where feet go (the paths, the scratches), in slow patches
             // waxed less, and over the grain's open pores: there the oak's own rough sheen
             // shows through it (planar_floor's blur), a little weaker, so the window's
@@ -1330,6 +1393,9 @@ let ROOM_FRAG = """
                 wax *= 1.0 - cover;
                 n_film = normalize(mix(n_film, ng, cover));
             #endif
+            #ifdef PHYSICAL_COAT
+                coat_w *= 1.0 - cover;
+            #endif
                 if (!on_top && !on_side) {
                     float off = length(max(out_q, 0.0));
                     ao *= mix(0.4, 1.0, sqrt(smoothstep(0.0, 0.035, off)));
@@ -1365,8 +1431,24 @@ let ROOM_FRAG = """
             // The panelling: the wall's field at the piece's place,
             // the normal by the field's frame worked out from the derivatives.
             vec2 fuv = v_uv / place.w;
+        #ifdef PHYSICAL_COAT
+            // A picture of its own (render3d::Wood's way 2): its tile on the piece's uv, as
+            // Cycles lays it.
+            if (wood_oak[2].w > 1.5) fuv = vec2(v_uv.x, -v_uv.y) / wood_oak[4].x;
+        #endif
             vec4 a4 = texture(wall_albedo, fuv);
             vec4 n4 = texture(wall_normal, fuv);
+        #ifdef PHYSICAL_COAT
+            // Stained and finished as the docx says (render3d::Wood).
+            if (wood_oak[2].w > 0.5) {
+                a4.rgb = wood_stained(a4.rgb, wood_oak[0], wood_oak[1], wood_oak[2]);
+                a4.a = mix(wood_oak[3].x, wood_oak[3].y, a4.a);
+                coat_w = wood_oak[3].z;
+                coat_r = wood_oak[3].w;
+                // The picture's v runs down the piece.
+                if (wood_oak[2].w > 1.5) n4.y = 1.0 - n4.y;
+            }
+        #endif
             albedo = a4.rgb * (1.0 + 0.16 * (own - 0.5));
             if (table.z > 0.0) albedo = tinted(albedo, table.zw);
             rough = a4.a;
@@ -1821,6 +1903,12 @@ let ROOM_FRAG = """
         // what stands there and hides itself, so no occlusion of its own goes on top; past the
         // screen's edge it fades to the room's light that way.
         float film = clamp(mix(rough * planar_look.y, rough, dull), 0.03, 1.0);
+    #ifdef PHYSICAL_COAT
+        // With the wood's own finish the mirror is its coat's, at the coat's roughness; the oak
+        // under it sees the room's box (below).
+        float room_ao = spec_ao;
+        if (coat_w > 0.0) film = clamp(mix(coat_r, rough, dull), 0.03, 1.0);
+    #endif
         vec4 seen = planar_seen(p, reflect(-v, n_film), film * film, nov);
         // The room's box only where the mirror doesn't hold all of it (near the screen's edge),
         // so its probes' taps are left out where the mirror covers.
@@ -1859,6 +1947,27 @@ let ROOM_FRAG = """
         spec *= gloss;
         fc *= gloss;
         vec3 color = (base * (1.0 - fc) + spec + env * fc * spec_ao) * params.x * shade.w;
+    #ifdef PHYSICAL_COAT
+        if (coat_w > 0.0) {
+            // The wood's own finish (render3d::Wood), as Cycles' Principled takes it: the base's
+            // lobe above at the base's roughness, and over it the coat's at its own weight and
+            // roughness, both reflecting the same room (on the floor the coat the mirror, the
+            // base the room's box), the base lit by what the two leave.
+            float ca = coat_r * coat_r + 0.0023;
+            vec3 coat_spec = coat_w * d_ggx(noh, ca) * v_smith(nov, nl, ca) * f_schlick(f0, voh) * nl * light * open * kept;
+            vec3 coat_fc = coat_w * env_brdf(f0, coat_r, nov);
+            vec3 coat_env = env * spec_ao;
+            vec3 base_env = env * spec_ao;
+            vec3 base_fc = fc;
+        #ifdef PLANAR_FLOOR
+            coat_fc = coat_w * env_brdf(f0, film, nov);
+            coat_env = env / max(planar.x, 1e-3);
+            base_env = room_wide(v_local, rv) * room_ao;
+            base_fc = env_brdf(f0, sqrt(ar), nov);
+        #endif
+            color = (base * (1.0 - base_fc - coat_fc) + spec + coat_spec + base_env * base_fc + coat_env * coat_fc) * params.x * shade.w;
+        }
+    #endif
     #ifdef ROOM_VIEWS
         // The tuner's view of the sun's highlights alone, ×4.
         if (sheen.w > 0.5) color = spec * 4.0 * params.x * shade.w;

@@ -181,8 +181,9 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
     // The table under the board, after it, so what the board covers fails the depth test.
     if render3d::table_shown(g) {
         gfx::bind(if g.hdr { h.table } else if render3d::table_in_room(g) { g.table_room } else { g.table_lit });
-        gfx::bind_texture(gfx::FRAGMENT, 0, g.table_albedo, g.aniso);
-        gfx::bind_texture(gfx::FRAGMENT, 1, g.table_normal, g.aniso);
+        let ta, tn = render3d::wood_maps(g, render3d::WOOD_TABLE, g.table_albedo, g.table_normal);
+        gfx::bind_texture(gfx::FRAGMENT, 0, ta, g.aniso);
+        gfx::bind_texture(gfx::FRAGMENT, 1, tn, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 3, g.table_wear, g.aniso);
         gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
@@ -680,8 +681,9 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     } else {
         if render3d::table_shown(g) && render3d::table_in_room(g) {
             gfx::bind(g.planar_table);
-            gfx::bind_texture(gfx::FRAGMENT, 0, g.table_albedo, g.aniso);
-            gfx::bind_texture(gfx::FRAGMENT, 1, g.table_normal, g.aniso);
+            let ta, tn = render3d::wood_maps(g, render3d::WOOD_TABLE, g.table_albedo, g.table_normal);
+            gfx::bind_texture(gfx::FRAGMENT, 0, ta, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 1, tn, g.aniso);
             gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
             gfx::bind_texture(gfx::FRAGMENT, 3, g.table_wear, g.aniso);
             gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
