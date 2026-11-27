@@ -608,6 +608,56 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
 // by the face's way (the top, a side facing +x or -x), the window's half and its height
 // (MEMBER_BANDS of BIN from the sill), and into the bounces through the casement's front cell
 // before it.
+// The sun on the board, for the camera's board meter (render3d::board_light): points
+// over a disc of radius r round the board's middle on the table's top (the plan's metres),
+// BOARD_POINTS across, each traced toward the sun to the inner glass, where the bake's ray
+// nearest its crossing says what the casements' members (or the glazing) and the tree outside
+// let through, and the lace before the niche what it lets; their mean times the sun's light
+// on the level top and the table's thrown albedo: what bounce.sun[TABLE_C] holds a square
+// metre, as sun_patches fills it, were the whole top lit so.
+let BOARD_POINTS = 9;
+fn board_sun(sun: Sun, tree: const f32[:], r: f32) -> float3 {
+    let d = float3_0 - sun.toward;
+    guard d.y < -0.02 && d.z < -0.02 else { return float3_0; }
+    let wins = windows();
+    let face = wall_face();
+    let gy = glass_y();
+    let lace_y = face - room_shell::LACE_OFF;
+    var boxes = room_shell::casement_members(wins[0]);
+    var sum: f32 = 0.0;
+    var count = 0;
+    for b in BOARD_POINTS {
+        for a in BOARD_POINTS {
+            let u = (a + 0.5) / BOARD_POINTS * 2.0 - 1.0;
+            let v = (b + 0.5) / BOARD_POINTS * 2.0 - 1.0;
+            guard u * u + v * v <= 1.0 else { continue; }
+            count++;
+            let p = float3 { sun.table.x + r * u, sun.table.y + r * v, sun.table.w };
+            let at_face = p - d * ((face - p.y) / -d.y);
+            let q = p - d * ((gy - p.y) / -d.y);
+            for k in 3 {
+                let o = wins[k];
+                guard in_niche(o, at_face) else { continue; }
+                let low = o.sill + GLAZED_LOW;
+                let high = o.sill + o.height + o.rise - GLAZED_HIGH;
+                let fi = (q.x - (o.mid - GLAZED_HALF)) / (2.0 * GLAZED_HALF / RAYS_X);
+                let fj = (q.z - low) / ((high - low) / RAYS_Y);
+                guard fi >= 0.0 && fi < RAYS_X && fj >= 0.0 && fj < RAYS_Y else { break; }
+                let i = fi as i64;
+                let j = fj as i64;
+                var lets = tree[(k * RAYS_Y + j) * RAYS_X + i];
+                lets *= if members_traced { PANES * members_let(boxes, o, i, j, d) } else { glazing };
+                let c = q + d * ((gy - lace_y) / -d.y);
+                if in_lace(o, c) { lets *= lace_lets(c.z); }
+                sum += lets;
+                break;
+            }
+        }
+    }
+    guard count > 0 else { return float3_0; }
+    return sun.light * (-d.z * sum / count) * thrown_albedo(TABLE_ALBEDO, sun.bounce_gain);
+}
+
 fn member_sun(boxes: room_shell::Member[..room_shell::MEMBERS]&, k: i64, o: room_shell::Opening, i: i64, j: i64, d: float3, p: float3,
               power: float3[BINS]&, where: float3[BINS]&, normal: float3[BINS]&, albedo: float3[BINS]&, lit: f32[BINS]&, bounce: Bounce&,
               gain: f32) {

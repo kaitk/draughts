@@ -2531,6 +2531,7 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     probes_on_table(g);
     if lace_probed { probes_on_lace(); }
     meter_light = meter_of(light_bounce, sun.bounce_gain);
+    board_light = board_light_of(sun, light_bounce);
     let rows = if room_light::volumes_on { room_light::FULL_H } else { room_light::ATLAS_H };
     let floats = room_light::ATLAS_W * rows * 4;
     for i in floats {
@@ -4268,12 +4269,93 @@ fn meter_of(b: room_light::Bounce&, gain: f32) -> f32 {
     let two: f32 = 2.0;
     return if area > 0.0 { pow(two, sum / area) } else { 0.0 };
 }
+// The camera's board meter (the light tuner's --board-meter, on under --light physical):
+// where the board fills the frame, the camera exposes for it as a photographer meters the
+// subject, and the room round it falls darker; in the room's wide views, the room's meter.
+// board_light is the light leaving the board's middle as meter_of takes the table's top
+// (its bounce and sky, and the sun through the windows on the board, room_light::board_sun),
+// at the bake. The camera exposes it to METER_GREY times 2 to BOARD_KEY, but only ever
+// darker than the room's exposure: a board in shade leaves the room's. Its weight is the
+// board's share of the frame from BOARD_SHARE.x (none) to .y (all), smoothly, so a walk or
+// the camera's ease changes it without a step (task 122, 2026-11-27).
+var board_meter = false;
+var board_light: f32 = 0.0;
+let BOARD_KEY: f32 = 1.5;
+let BOARD_SHARE = float2 { 0.03, 0.25 };
+fn board_light_of(sun: room_light::Sun, b: room_light::Bounce&) -> f32 {
+    let r = mesh::FIELD * 1.128 / surfaces::METRE;     // the field's area as a disc
+    let l = b.seen[room_light::TABLE_C] + room_light::board_sun(sun, light_tree[..], r) * (sun.bounce_gain / PI);
+    return 0.2126 * l.x + 0.7152 * l.y + 0.0722 * l.z;
+}
+// The board's share of the frame: its outer square (the frame's edge, on the table's top)
+// projected by the view, cut to the near plane and to the picture, its area over the
+// picture's. Fixed arrays, no allocation; a few dozen flops a frame.
+fn board_share(m: Mat) -> f32 {
+    let h = mesh::INNER + mesh::FRAME_W;
+    let corners: float3[4] = [float3 { -h, 0.0, -h }, float3 { h, 0.0, -h }, float3 { h, 0.0, h }, float3 { -h, 0.0, h }];
+    var clip: float4[4] = [float4_0; 4];
+    for c, i in corners { clip[i] = m.c0 * c.x + m.c1 * c.y + m.c2 * c.z + m.c3; }
+    // Against the near side (w over a small floor), then into the picture's plane.
+    let near: f32 = 1e-3;
+    var a: float2[16] = [float2_0; 16];
+    var n = 0;
+    for i in 4 {
+        let p = clip[i];
+        let q = clip[(i + 1) % 4];
+        if p.w > near { a[n] = float2 { p.x / p.w, p.y / p.w }; n++; }
+        if (p.w > near) != (q.w > near) {
+            let t = (near - p.w) / (q.w - p.w);
+            let e = p + (q - p) * t;
+            a[n] = float2 { e.x / e.w, e.y / e.w };
+            n++;
+        }
+    }
+    // Against the picture's four edges, -1 to 1 each way.
+    var b: float2[16] = [float2_0; 16];
+    for side in 4 {
+        var k = 0;
+        let axis = side / 2;
+        let s: f32 = if side % 2 == 0 { -1.0 } else { 1.0 };
+        for i in n {
+            let p = a[i];
+            let q = a[(i + 1) % n];
+            let pv = if axis == 0 { p.x } else { p.y };
+            let qv = if axis == 0 { q.x } else { q.y };
+            let p_in = pv * s <= 1.0;
+            let q_in = qv * s <= 1.0;
+            if p_in { b[k] = p; k++; }
+            if p_in != q_in && k < 16 {
+                let t = (s - pv) / (qv - pv);
+                b[k] = p + (q - p) * t;
+                k++;
+            }
+        }
+        n = k;
+        for i in n { a[i] = b[i]; }
+    }
+    var area: f32 = 0.0;
+    for i in n {
+        let p = a[i];
+        let q = a[(i + 1) % n];
+        area += p.x * q.y - q.x * p.y;
+    }
+    return min(abs(area) * 0.125, 1.0);
+}
+// The board meter's weight in this frame, 0 to 1.
+fn board_weight(g: Gpu&) -> f32 {
+    let t = clamp((board_share(g.frame.view_proj) - BOARD_SHARE.x) / (BOARD_SHARE.y - BOARD_SHARE.x), 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+// The stops the board meter takes off the room's exposure at full weight (0 or less).
+fn board_cut() -> f32 { min(log2(meter_light / board_light) + BOARD_KEY, 0.0) }
 // What the tone pass multiplies the HDR target's light by before AgX: 1 unless metered. The
 // eye's veil is added divided by it, so it adds to the picture what it adds without it.
 fn camera_exposure(g: Gpu&) -> f32 {
     guard camera_toe > 2.5 && meter_light > 0.0 else { return 1.0; }
     let two: f32 = 2.0;
-    return METER_GREY * pow(two, camera_ev + grade.ev) / (meter_light * max(g.frame.params.x * g.room.room_exposure, 1e-6));
+    let room = METER_GREY * pow(two, camera_ev + grade.ev) / (meter_light * max(g.frame.params.x * g.room.room_exposure, 1e-6));
+    guard board_meter && board_light > 0.0 else { return room; }
+    return room * pow(two, board_weight(g) * board_cut());
 }
 fn hdr_tone_of(g: Gpu&) -> HdrTone {
     let glow = glow_shown(g);

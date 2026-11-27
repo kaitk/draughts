@@ -127,6 +127,8 @@
 //       its windows sharply, render3d::props_seen, not the probes' light over half the room alone; on)]
 //       [--board-probes on|off (--light physical: the board and pieces lit as the table, the probes' light
 //       where they are and the room's box in their varnish, render3d::board_probes, not the look's harmonics; on)]
+//       [--board-meter on|off (--light physical: the camera exposes for the board where it fills the frame, never
+//       brighter than the room's meter, render3d::board_meter; on)]
 //       [--paint-relief K (the painted wood's relief tile's strength, 1 as made)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
 //       0.15 by default, 0 as made; Y switches 0.15 and 0)]
@@ -1616,6 +1618,7 @@ fn tune<O>(r3d: O&) {
         render3d::tone_toe = float4 { 2.0, 2.0, 2.0, render3d::tone_toe.w };
         render3d::camera_toe = pick(argv, "--camera-toe", TOES, CAMERA_TOE) as f32;
         render3d::camera_ev = number(argv, "--camera-ev", 0.0);
+        render3d::board_meter = pick(argv, "--board-meter", OFF_ON, 1) == 1;
     }
     if graded { render3d::grade = graded_as(season, exposure); }
     var room = rooms::get(room_take);
@@ -2072,6 +2075,10 @@ fn tune<O>(r3d: O&) {
                     let k = render3d::camera_exposure(g);
                     print("the camera's meter ", render3d::meter_light, ", its exposure ", k, " over Frame's ", g.frame.params.x,
                           ": EV ", log2(k * g.frame.params.x * g.room.room_exposure));
+                    if render3d::board_meter {
+                        print("the board meter ", render3d::board_light, ": ", render3d::board_cut(), " stops at full weight; the board ",
+                              render3d::board_share(g.frame.view_proj), " of the frame, its weight ", render3d::board_weight(g));
+                    }
                 }
                 if render3d::lace_probed {
                     let lr = render3d::lace_room;
@@ -2204,7 +2211,14 @@ fn tune<O>(r3d: O&) {
                 if section(c, open, DETAIL) {
                     color_sliders(c, "Sun", room.key_color);
                     slider(c, "Exposure", room.exposure, 0.5, 2.0);
-                    if physical && render3d::camera_toe > 2.5 { slider(c, "Camera EV", render3d::camera_ev, -4.0, 4.0); }
+                    if physical && render3d::camera_toe > 2.5 {
+                        slider(c, "Camera EV", render3d::camera_ev, -4.0, 4.0);
+                        switch(c, "Board meter", render3d::board_meter, ["off", "on"]);
+                        if render3d::board_meter && render3d::board_light > 0.0 {
+                            note(c, str("board ", floor(100.0 * render3d::board_share(g.frame.view_proj) + 0.5) as i64, "% of the frame, ",
+                                        floor(10.0 * render3d::board_weight(g) * render3d::board_cut() - 0.5) / 10.0, " EV"));
+                        }
+                    }
                     slider(c, "Sky round", room.fill.x, -30.0, 150.0);
                     slider(c, "Sky height", room.fill.y, 0.0, 80.0);
                     slider(c, "Sky strength", room.fill.z, 0.0, 3.0);
@@ -2648,7 +2662,8 @@ fn tune<O>(r3d: O&) {
             var line: u8[>..] = [];
             format(line, "--light ", LIGHT_WAYS[if physical { 1 } else { 0 }]);
             if physical {
-                format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --camera-ev ", render3d::camera_ev, " --props-wrap ",
+                format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --camera-ev ", render3d::camera_ev, " --board-meter ",
+                       on_off(render3d::board_meter), " --props-wrap ",
                        render3d::props_wrap, " --casement-depth ",
                        if casement_depth { "on" } else { "off" }, " --volumes ", on_off(room_light::volumes_on), " --niche-light ", on_off(room_light::niche_light), " --grade ",
                        GRADE_WAYS[if graded { 0 } else { 1 }], " --grade-ev ", EXPOSURES[exposure]);

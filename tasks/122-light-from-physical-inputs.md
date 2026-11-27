@@ -1261,6 +1261,62 @@ within 71 levels on at most 61 pixels. The default light's tuner shots and the a
 check (13 screens on each renderer) as before, within 3 levels. Page:
 `build/notes/ngfx-parity/index.html`; scratch `build/ngfx-parity/`.
 
+## The camera meters the board; the board's sun in the shade (2026-11-27)
+
+The question behind the pale board, in an independent look (`build/notes/tonemap-options/`):
+the light is right and AgX does its job. In the close view the sunlit maple reaches the camera
+5.4 stops over grey and the room's median 4.6 under it. The light on the room's surfaces
+(luminance over the albedo pass) spans 6 to 8 stops from the median to the sun patches, a real
+sunbeam in a dark-panelled room's. One exposure, the room's meter from the bake, served every
+view, including the board view, whose frame is nearly all sunlit board. The options weighed
+there: a global knee or a hue-keeping shoulder (the pattern stays flat, or the maple turns
+orange: its light is 1 : 0.28 : 0.03 after the grade's gains), the sun's direct term cut with
+its bounce kept, a local exposure (bilateral grid) or exposure fusion. The user picked
+metering the board.
+
+- The board meter (`render3d::board_meter`, the tuner's `--board-meter`, on under
+  `--light physical`; a switch and a note under the camera's EV in the panel): `board_light`,
+  the light leaving the board's middle as `meter_of` takes the table's top, is the table cell's
+  bounce and sky (`seen[TABLE_C]`) plus the sun on the board. That sun is
+  `room_light::board_sun`: 9 × 9 points over a disc of the field's area, each traced toward the
+  sun to the inner glass, where the bake's nearest ray gives the members (or the glazing) and the
+  tree, and the lace before the niche its share. It is worked out at the bake, so pieces moving
+  change nothing. The camera exposes it to grey times 2 to `BOARD_KEY` (1.5), never brighter than
+  the room's exposure, weighted by the board's share of the frame (its outer square projected,
+  cut to the near plane and the picture), smoothstepped from 3% to 25%.
+- Autumn, sunlit: `board_light` 0.0260 against the meter's 0.000775, so −3.57 stops at full
+  weight. The board's share: the board view 0.351 (weight 1), close 0.0040, table-window 0.0012,
+  the reference view 0.0034 (weight 0). In the board view, distance 1 to 4 (`--distance`):
+  shares 0.59, 0.26, 0.15, 0.097, 0.067, 0.050, 0.038, EV 0.69, 0.69, 2.23, 3.48, 3.99, 4.18,
+  4.25 (the room's 4.26), so no step. A walk at eye height never sees more than 3% of the frame
+  as board: the meter stays the room's while walking.
+- The board view against the old light (display-linear: maple in sun over maple in a piece's
+  shade, maple over walnut in the sun; the sunlit maple):
+
+| Board view | Median sRGB | Mean level | Sun / piece shade | Maple / walnut | Maple, sun |
+|---|---|---|---|---|---|
+| The old light | 30 | 44 | 1.96 stops | 3.20 | 244 158 88 |
+| Before | 120 | 116 | 0.46 | 0.74 | 255 240 222 |
+| Board meter | 33 | 47 | 1.79 | 2.37 | 226 175 122 |
+
+- The wide views (close, table-window, reference) against before: mean 0.01 to 0.04 levels,
+  0.07 to 0.08% of the pixels over 2 levels, all on the board and round it (the fix below).
+  Without `--light physical` the close, board and table-window views are byte-identical.
+
+The board's sun in the shade. With the table out of the sun (`--table-at 3.0,4.0`, the board
+view) the table went dark, but the board and its pieces still looked sunlit, with crisp piece
+shadows. LIT_FRAG's `shadow()` took `window_light`, `mix(1 − room.y, 1, open)`, which keeps the
+pattern's 1 − 0.85 to 0.9 of the key in the shade. That was the game's window standing in for
+the room's bounce; under `--light physical` the probes give that, and the room and the table
+take `shade_fill` 0. With the props' probes (`PROPS_LIGHT`) the board now takes `window_open`
+alone. Its light at the camera in that view: the 90th percentile 0.376 to 0.083, the median
+0.148 to 0.026 (−2.2 and −2.5 stops). The board meter then reads 0.000398, under the room's
+meter: no cut. In the sunlit board view 10.8% of the pixels move over 8 levels: the window's
+bars' and frame's shadows across the board and its front, which kept 10 to 15% of the sun
+before. Only the board's lighting was wrong; the pieces beside the board share the function.
+Cost not timed: the meter is CPU arithmetic, the bake's 81 traces once and a projected square
+a frame. Page: `build/notes/board-meter/index.html`; scratch `build/boardmeter/`.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
