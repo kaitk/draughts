@@ -272,6 +272,8 @@ var OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07
 // y the rounding's slope at the joint, z how dark the joint is (1 as before). 2 mm at 0.5, half as
 // dark: the user's pick (2026-11-27, task 130); 0, 0, 1 the joints as before.
 var FLOOR_JOINT = float4 { 2.0, 0.5, 0.5, 0.0 };
+// The grain's share in our floor's wax film, the mirror's normal (--floor-film-grain).
+var FLOOR_FILM_GRAIN: f32 = 0.25;
 
 fn linear_of(c: f32) -> f32 {
     let v = c / 255.0;
@@ -294,7 +296,7 @@ fn wood_of(k: i64, way: i64) -> render3d::Wood {
                             float4 { linear_of(b.x), linear_of(b.y), linear_of(b.z), range.y },
                             float4 { linear_of(c.x), linear_of(c.y), linear_of(c.z), way }, WOOD_FINISHES[k],
                             if k == render3d::WOOD_FLOOR && way == render3d::WOOD_STAINED {
-                                float4 { 0.0, FLOOR_JOINT.x * surfaces::METRE / 1000.0, FLOOR_JOINT.y, FLOOR_JOINT.z }
+                                float4 { FLOOR_FILM_GRAIN, FLOOR_JOINT.x * surfaces::METRE / 1000.0, FLOOR_JOINT.y, FLOOR_JOINT.z }
                             } else { float4 { tile, 0.0, 0.0, 0.0 } } };
 }
 
@@ -1703,6 +1705,11 @@ fn main() {
     let range4 = four(argv, "--floor-range", float4 { floor_range.x, floor_range.y, 0.0, 0.0 });
     OUR_RANGES[render3d::WOOD_FLOOR] = float2 { range4.x, range4.y };
     FLOOR_JOINT = four(argv, "--floor-joint", FLOOR_JOINT);
+    FLOOR_FILM_GRAIN = number(argv, "--floor-film-grain", FLOOR_FILM_GRAIN);
+    // --floor-shape CUP,TILT: the planks' cup (the slope at their edges) and tilt (each one's
+    // slope at most), in place of surfaces::LOOK's 0.012 and 0.01.
+    let shape4 = four(argv, "--floor-shape", float4 { -1.0, -1.0, 0.0, 0.0 });
+    render3d::floor_shape = float2 { shape4.x, shape4.y };
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     sun_color_given = has(argv, "--sun-color-height");

@@ -1394,13 +1394,14 @@ let ROOM_FRAG = """
             float d_a = min(pk.across, 1.0 - pk.across) * w;
             float d_l = min(pk.along, plank.y - pk.along) * w;
             // With the wood's own finish, each plank's edges rounded down into the joint
-            // (render3d::Wood's tile row: y the rounding's width, z its slope at the joint, w how
+            // (render3d::Wood's tile row: x the grain's share in the wax film, y the rounding's width, z its slope at the joint, w how
             // dark the joint is, 1 as before), so the edge facing the light catches it. The
             // slope is averaged over the pixel (joint_slope), so where a pixel spans the joint
             // its two sides cancel, and what it can't resolve roughens the wax (shoulder_var).
             vec2 shoulder = vec2(0.0);
             float shoulder_var = 0.0;
             float joint_dark = 1.0;
+            float film_grain = 0.25;    // the grain's share in the wax film's normal
         #ifdef PHYSICAL_COAT
             if (wood_floor[2].w > 0.5 && !picture) {
                 float sw = wood_floor[4].y;
@@ -1412,13 +1413,14 @@ let ROOM_FRAG = """
                     shoulder_var = ja.y + jl.y;
                 }
                 joint_dark = wood_floor[4].w;
+                film_grain = wood_floor[4].x;
             }
         #endif
             vec2 s = vec2(t.x + cup + tilt.x + shoulder.x, t.y + tilt.y + shoulder.y);
             vec2 suv = dir_a * s.x + dir_l * s.y;
             n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
         #ifdef PLANAR_FLOOR
-            vec2 sf = vec2(0.25 * (t.x + shoulder.x) + cup + tilt.x, 0.25 * (t.y + shoulder.y) + tilt.y);
+            vec2 sf = vec2(film_grain * t.x + 0.25 * shoulder.x + cup + tilt.x, film_grain * t.y + 0.25 * shoulder.y + tilt.y);
             vec2 sfuv = dir_a * sf.x + dir_l * sf.y;
             n_film = normalize(vec3(0.0, 1.0, 0.0) + u_dir * sfuv.x + v_dir * sfuv.y);
         #endif

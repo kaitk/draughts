@@ -774,6 +774,8 @@ let WOOD_OAK = 0;
 let WOOD_FLOOR = 1;
 let WOOD_TABLE = 2;
 var woods = [default<Wood>(); 3];
+// The floor's planks' cup (x) and tilt (y) in place of surfaces::LOOK's where 0 or more (the tuner's --floor-shape).
+var floor_shape = float2 { -1.0, -1.0 };
 // The rows a shader reads for wood `k`: its way 2 only with its picture there, else 1.
 fn wood_rows(g: Gpu&, k: i64) -> float4[5] {
     let w = woods[k];
@@ -2329,7 +2331,10 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
     let s = room_shell::LIBRARY;
     let window_v = shell_face(s);
     let away = s.table.y * surfaces::METRE;
-    SurfacesBlock { k.plank, k.planks, k.worn, paper_ground, paper_gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
+    // The floor's planks' cup and tilt as the tuner sets them (floor_shape), else the look's.
+    let plank = if floor_shape.x >= 0.0 { float4 { k.plank.x, k.plank.y, k.plank.z, floor_shape.x } } else { k.plank };
+    let planks = if floor_shape.y >= 0.0 { float4 { k.planks.x, k.planks.y, floor_shape.y, k.planks.w } } else { k.planks };
+    SurfacesBlock { plank, planks, k.worn, paper_ground, paper_gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
                     float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, if paper_metal { 1.0 } else { 0.0 } }, k.plaster_shade, k.plaster_light,
