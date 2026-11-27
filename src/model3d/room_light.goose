@@ -163,6 +163,10 @@ var niche_faces = false;
 // its body and light the floor and the end wall inside it, which the probes there and before
 // its faces read from behind.
 var stove_stops_sun = false;
+// With stove_stops_sun, the sun its faces catch thrown on as patches of their own (stove_sun;
+// the tuner's --stove-sun, on under --light physical): stopped alone, a quarter of the sun's
+// bounce was lost (task 122).
+var stove_throws = false;
 
 // What the bake takes: the sun toward it in the plan's frame, its light on a plane facing
 // it (linear, the room's sun gain in it), the sky's radiance through the windows (linear),
@@ -190,7 +194,10 @@ let FLOOR_BINS_Y = 28;
 let WALL_BINS_H = 16;
 let MEMBER_BANDS = 12;
 let MEMBER_BIN0 = 2489;   // 36×28 + 36×16 + 2 × 28×16 + 3 × 3
-let BINS = 2706;          // + 3 windows × 3 ways × 2 halves × MEMBER_BANDS + 1 (the table)
+let STOVE_BIN0 = 2705;    // + 3 windows × 3 ways × 2 halves × MEMBER_BANDS
+let STOVE_ACROSS = 4;
+let STOVE_BANDS = 14;     // the stove's height in BIN bands
+let BINS = 2930;          // + 4 faces × STOVE_ACROSS × STOVE_BANDS + 1 (the table)
 
 // The niche's light (the tuner's --niche-light, task 128): the sun the inner casement's
 // members catch on their faces in the niche thrown on as patches of their own (member_sun);
@@ -409,24 +416,37 @@ fn make_lets(table: f32[:], boxes: room_shell::Member[..room_shell::MEMBERS]&, z
 // stove wall (x 0) and the hall wall (y 0), its corner cut, to its top. The plinth's and the
 // cornice's few centimetres out are left out.
 fn meets_stove(b: float3, d: float3, t: f32) -> bool {
-    guard room_shell::stove_on else { return false; }
+    let t_in, m = stove_entry(b, d, t);
+    return m >= 0;
+}
+// Where the ray from b along d meets the stove's upper body before t: its distance and the face
+// it enters by (0 the +x face, 1 the +y face, 2 the cut between them, 3 the top); -1 none, or
+// starting inside.
+fn stove_entry(b: float3, d: float3, t: f32) -> f32, i64 {
+    guard room_shell::stove_on else { return 0.0, -1; }
     let side = room_shell::STOVE_SIDE;
     let normals: float3[4] = [float3 { 1.0, 0.0, 0.0 }, float3 { 0.0, 1.0, 0.0 }, float3 { 0.70710678, 0.70710678, 0.0 },
                               float3 { 0.0, 0.0, 1.0 }];
     let offsets: f32[4] = [side, side, (2.0 * side - room_shell::STOVE_CUT) * 0.70710678, room_shell::STOVE_TOP];
     var t_in: f32 = 0.0;
     var t_out = t;
+    var face = -1;
     for m in 4 {
         let nd = dot(normals[m], d);
         let nb = dot(normals[m], b);
         if abs(nd) < 1e-6 {
-            if nb >= offsets[m] { return false; }
+            if nb >= offsets[m] { return 0.0, -1; }
             continue;
         }
         let tm = (offsets[m] - nb) / nd;
-        if nd < 0.0 { t_in = max(t_in, tm); } else { t_out = min(t_out, tm); }
+        if nd < 0.0 {
+            if tm > t_in { t_in = tm; face = m; }
+        } else {
+            t_out = min(t_out, tm);
+        }
     }
-    return t_in < t_out;
+    guard t_in < t_out else { return 0.0, -1; }
+    return t_in, face;
 }
 // What sky sample (i, j) lets through along v (the plan's, from the room to the sample) in
 // place of the glazing: its share past the members times the panes. 1 when the members
@@ -546,7 +566,13 @@ fn sun_patches(sun: Sun, tree: const f32[:], out: Patch[BINS]&, bounce: Bounce&)
                         let dy = e.y - sun.table.y - table_off.y;
                         if dx * dx + dy * dy < sun.table.z * sun.table.z { t = tt; hit = 4; }
                     }
-                    if stove_stops_sun && meets_stove(b, d, t) { continue; }
+                    if stove_stops_sun {
+                        let ts, sf = stove_entry(b, d, t);
+                        if sf >= 0 {
+                            if stove_throws { stove_sun(b + d * ts, sf, p, power, where, normal, albedo, lit, bounce, sun.bounce_gain); }
+                            continue;
+                        }
+                    }
                     at = b + d * t;
                     if hit == 0 {
                         let bx = clamp((at.x / BIN) as i64, 0, FLOOR_BINS_X - 1);
@@ -677,6 +703,34 @@ fn member_sun(boxes: room_shell::Member[..room_shell::MEMBERS]&, k: i64, o: room
             bounce.sun[cell] = bounce.sun[cell] + share * a;
         }
     }
+}
+
+// The sun ray p meeting the stove's face f at `at` (stove_entry's), thrown on from a patch of
+// the face's: STOVE_ACROSS along it by STOVE_BANDS up (the top: across x by across y). Its
+// cell for the bounces is the wall's behind it facing the same way: the stove wall's for the
+// +x face, else the hall wall's.
+fn stove_sun(at: float3, f: i64, p: float3, power: float3[BINS]&, where: float3[BINS]&, normal: float3[BINS]&, albedo: float3[BINS]&,
+             lit: f32[BINS]&, bounce: Bounce&, gain: f32) {
+    let s = room_shell::LIBRARY;
+    let side = room_shell::STOVE_SIDE;
+    let n = if f == 0 { float3 { 1.0, 0.0, 0.0 } } else if f == 1 { float3 { 0.0, 1.0, 0.0 } }
+            else if f == 2 { float3 { 0.70710678, 0.70710678, 0.0 } } else { float3 { 0.0, 0.0, 1.0 } };
+    let along = if f == 0 { at.y } else if f == 1 { at.x } else if f == 2 { at.x - (side - room_shell::STOVE_CUT) } else { at.x };
+    let width = if f == 2 { room_shell::STOVE_CUT } else { side };
+    let i = clamp((along / width * STOVE_ACROSS) as i64, 0, STOVE_ACROSS - 1);
+    let j = if f == 3 { clamp((at.y / side * STOVE_ACROSS) as i64, 0, STOVE_ACROSS - 1) } else { clamp((at.z / BIN) as i64, 0, STOVE_BANDS - 1) };
+    let bin = STOVE_BIN0 + (f * STOVE_BANDS + j) * STOVE_ACROSS + i;
+    let a = thrown_albedo(STOVE_ALBEDO, gain);
+    let weight = p.x + p.y + p.z;
+    power[bin] = power[bin] + p * a;
+    where[bin] = where[bin] + at * weight;
+    lit[bin] += weight;
+    normal[bin] = n;
+    albedo[bin] = a;
+    let room_x = s.walls[room_shell::FAR_WALL].a.x;
+    let cell = if f == 0 { STOVE_C0 + plane_cell(at.z, s.ceiling, WALL_NH) * FLOOR_NY + plane_cell(at.y, wall_face(), FLOOR_NY) }
+               else { HALL_C0 + plane_cell(at.z, s.ceiling, WALL_NH) * FLOOR_NX + plane_cell(at.x, room_x, FLOOR_NX) };
+    bounce.sun[cell] = bounce.sun[cell] + p * a;
 }
 
 // The most of the light falling on a surface that the bake throws back off it.
