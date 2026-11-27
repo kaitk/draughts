@@ -1142,10 +1142,31 @@ height (past the glass) or the next one up or down: the floor beside the wall 0.
 tracer 0.0023 to 0.0038); the atlas changes only in the walled probes at 0.15 and 0.45 m and
 the top row, so the bottom rail's reading (the probe just under the sill) is task 128's.
 
-Left: the wainscot under a window reads about 2 times the tracer (0.0019 against 0.0005 to
-0.0012) and its panels' bevels shine in its coat (the brightest edges 2.4 times with the coat
-than without; Cycles shows none): the probes 0.15 m before the wall stand past the sill's
-nose and see the window the wainscot under the sill doesn't.
+Corrected the same day: the wainscot's "2 times the tracer" came from points 3 mm off the
+wall's face, inside the panelling (it stands 2 to 8 cm proud). On its real surface (a ray from
+the room) the tracer gives 0.0026 to 0.0039 toward the room, the probe 0.15 m before it 0.0027
+to 0.0038, the bake 0.73 of the tracer over the view's 1,824 wainscot points: no leak past the
+sill. The general overhang correction planned for it is not needed.
+
+## Open: the wainscot's panel edges shine (2026-11-27)
+
+The user: the panels' edges under the windows shine oddly (`--light physical`). To look at
+and fix later. Measured so far, the view `--plan-eye 4.5,6.1,1.0 --plan-at 4.5,7.4,0.35 --fov
+70`, 800 × 1000, against Cycles at the same view (`build/indirect/c/wainscot.exr`, the export at
+0d1f3fd4, our wood), in linear light over the white sill above each:
+
+- The fields match (median 0.008 against 0.006); the brightest 1% of the wainscot, its edges,
+  are 0.080 against 0.014: 5.7 times Cycles'. Cycles shows no shine on them.
+- The light on them (scratch tracer's `room --under`, the bake against the tracer): faces up
+  1.21 times, the bevels' sides 1.8 to 2.3 times and bluer (B/R 0.67 to 0.78 against 0.23 to
+  0.29), the fields 0.73. That is about 2 of the 5.7.
+- Not the cause, tried: the walls' coat reflecting the room's box sharply (as the table's
+  polish, 0d1f3fd4) left the edges as they were (dropped); `--panel-ao`'s bevel, crease and
+  ring terms change nothing. `--coat off` and `--key …,0` change other things too (the wood's
+  finish, the bake's bounced sun), so they don't isolate a term.
+- Next: each term at those pixels (the diffuse, the coat's Fresnel at grazing and its
+  reflection, the screen's occlusion) against Cycles' passes there (diffuse and glossy,
+  direct and indirect).
 
 ## Acceptance criteria
 
@@ -1170,5 +1191,7 @@ nose and see the window the wainscot under the sill doesn't.
       user's pick before the old light's options are removed
 - [ ] The low-end Android tier (a colour per vertex, task 120) designed as a define, tuned
       after the desktop look is settled; times with `tools/perf/mac_room_bench.py`
+- [ ] The wainscot's panel edges under the windows within a stated factor of Cycles' (5.7
+      times on the brightest 1% on 2026-11-27, "Open: the wainscot's panel edges shine")
 - [ ] The decision in `docs/decisions/rendering.md`, `docs/architecture/rendering.md`
       updated in the same commit
