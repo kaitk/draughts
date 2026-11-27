@@ -347,6 +347,13 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   (a second sum, `min` at the end) made the all-off shader 0.37 ms slower again: measure a
   restructure of `shell_open`, don't assume. No GLSL here takes an `out` parameter;
   return a vector instead.
+- A uniform-gated branch added to `LIGHT_FN`'s `lace_shadow` left every room group's pixels
+  as they were but moved 37 pixels of the lace's own by a level (its hem reads its own
+  shadow): gate it out of `ROOM_LACE` (`#ifndef ROOM_LACE`) and into the lace's variant that
+  needs it (`LACE_DESCRIBED`, task 124). Check a view the lace fills, not only the reference.
+- The room's and the window's meshes are in the room's own frame (ROOM_VERT's `a_pos`: x the
+  room's u along the window wall, z its v into the room; the plan's point is the table's less
+  them over `METRE`, `render3d::plan_of`); ROOM_VERT turns them into the world.
 - A shader that adds light only near the sun (`ROOM_GLASS`'s `glass_sun`) returns early by
   the view's angle to the sun before `window_open`; take its derivatives (`dFdx` of the
   tile's uv, `fwidth(v)`) before that return and read the tile by `textureGrad`.
