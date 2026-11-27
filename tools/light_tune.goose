@@ -122,6 +122,8 @@
 //       cavity_across; 20, 7)] [--niche-light on|off (--light physical: the niche's light, room_light::niche_light, the
 //       sun the inner casement's members catch in the niche thrown on, the probes under the sill and over the head
 //       the niche's; on)]
+//       [--props-seen on|off (--light physical: the table's and chairs' polish reflects the room's box and
+//       its windows sharply, render3d::props_seen, not the probes' light over half the room alone; on)]
 //       [--paint-relief K (the painted wood's relief tile's strength, 1 as made)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
 //       0.15 by default, 0 as made; Y switches 0.15 and 0)]
@@ -296,9 +298,10 @@ fn wood_of(k: i64, way: i64) -> render3d::Wood {
 
 // --woods: one way for all, or the wainscot's, the table's and the floor's.
 fn wood_ways_of(argv: u8[:][>..]&) -> i64[3] {
-    // The user's picks (2026-11-27): the wainscot and panelling ours, the floor tuned.
+    // The user's picks (2026-11-27): the wainscot and panelling ours, the table ours, the floor tuned.
     var ways: i64[3] = [0, 0, 0];
     ways[render3d::WOOD_OAK] = 1;
+    ways[render3d::WOOD_TABLE] = 1;
     ways[render3d::WOOD_FLOOR] = 3;
     let at = flag_value(argv, "--woods");
     guard at > 0 else { return ways; }
@@ -1671,6 +1674,7 @@ fn main() {
     room_light::gather_exact = physical;
     room_light::niche_faces = physical;
     room_light::stove_stops_sun = physical;
+    render3d::props_seen = physical && !(flag_value(argv, "--props-seen") > 0 && argv[flag_value(argv, "--props-seen")] == "off");
     room_light::sill_settle = physical;
     room_light::volumes_on = physical && !(flag_value(argv, "--volumes") > 0 && argv[flag_value(argv, "--volumes")] == "off");
     room_light::niche_light = physical && !(flag_value(argv, "--niche-light") > 0 && argv[flag_value(argv, "--niche-light")] == "off");

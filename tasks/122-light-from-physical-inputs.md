@@ -1096,6 +1096,39 @@ light, B/R 0.38 against 0.23, where Cycles' paper in shade is over half the prin
 reflection (B/R 0.14) and its matt ground alone B/R 0.39; the wainscot 1.30, B/R 0.16 against
 0.08; the lace in shade 2.26 (task 124).
 
+## The table's polish: the room seen sharply (2026-11-27)
+
+The user: the table washed out and over-bright against Cycles and against the old light, its
+edges, base and the chairs' backs without Cycles' shine. Measured in the close view (`--tree
+0,11,70,1`, the table's top in a box of 320 × 110 px, its darkest quarter the casement's shadow
+band): the polish alone made the band's veil. With its strength 0 the band went 103 70 51 →
+53 27 16 (sRGB; Cycles 49 21 9); in linear light the polish was 0.87 of the band's light, B/R
+0.87, Cycles' coat 0.24, B/R 0.25. TABLE_FRAG under `PROPS_LIGHT` lit the polish with the
+probes' light toward r, the light over the half of the room r faces, the windows' with it. On
+the brightest 5% of the rim Cycles' light is 0.91 its coat's, the base's 0.46, the chairs'
+backs' 0.13 to 0.33: the windows seen sharply in the curved polish.
+
+- TABLE_FRAG's `props_seen_at` and `props_reflection` (`render3d::props_seen`, the tuner's
+  `--props-seen`, on under `--light physical`): ROOM_FRAG's `room_seen` for the props, the box
+  met along r, its face's surface (the wainscot, the paper's mean, the doors' paint, the ceiling,
+  the floor's) lit by the props' probes there, the windows as soft rectangles of the view's light
+  with their casements; taking over from the probes' light as the lobe narrows (alpha 0.45 to
+  0.08). Not in it: the sun's patches on the walls, the bookcases. The box's values ride at the
+  end of `PropsLightBlock`, which ngfx packs last.
+- The table's wood `ours` by default (`--woods` ours,ours,tuned): the user's pick.
+
+| Close view, sRGB | Top, shadow band | Top, sunlit | Rim, brightest 5% | Base, brightest 5% |
+|---|---|---|---|---|
+| Before (`--props-seen off`) | 99 64 47 | 243 206 179 | 222 161 123 | 105 65 42 |
+| After | 54 23 11 | 240 209 185 | 220 158 115 | 112 76 51 |
+| Cycles | 49 21 9 | 214 144 101 | 213 142 98 | 93 58 39 |
+
+Left: the sunlit top paler and less saturated than Cycles' though its colour in linear light is
+Cycles' (B/R 0.13 against 0.11): our camera exposes it brighter, AgX takes it to the shoulder
+(step 7's open grade question). The chairs' wood and tapestry warmer in Cycles (the user). The
+default light byte-identical (the table-window view). Cost: not timed; a box intersection, a
+probe read and the windows' casement on the props' pixels.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

@@ -32,7 +32,11 @@ let TABLE_SHELL = """
     // props_look x 1 where the table keeps its own shade terms beside the bake, y how far
     // past its terminator the sun's light wraps, z 1 where the table's profile's occlusion
     // gives way to the bake's.
-    layout(set = 3, binding = 3) uniform PropsLight { vec4 light_box; vec4 light_grid; vec4 props_look; };
+    // w 1 where the polish sees the room's box (render3d::props_seen); then the box, its doors,
+    // heights, the view out's light and the box's surfaces (PropsLightBlock).
+    layout(set = 3, binding = 3) uniform PropsLight { vec4 light_box; vec4 light_grid; vec4 props_look; vec4 room_box;
+                                                      vec4 room_doors; vec4 room_heights; vec4 lace_light; vec4 box_paper;
+                                                      vec4 box_paint; vec4 box_ceiling; };
     #endif
     """;
 
@@ -254,6 +258,64 @@ let TABLE_FRAG = """
     vec3 props_light_at(vec3 q, vec3 d, vec3 harmonics, bool in_room) {
         float over = in_room ? 0.0 : smoothstep(TABLE_TOP - 0.5, TABLE_TOP, q.y);
         return (grid_light(q, d) + harmonics * room_mix.y + room_shade.rgb) * mix(room_mix.z, 1.0, over);
+    }
+    // What the polish at p sees along r: the shell's box met (ROOM_FRAG's room_seen without the
+    // sun's patches and the bookcases), its face's surface lit by the probes' light there, and on
+    // the window wall its windows as soft rectangles of the view's light, their bars at the
+    // inner glass, softer the farther and the rougher. A probe's light toward r is the room's
+    // light over half the room, the windows' with it; a polish sees one place.
+    vec3 props_seen_at(vec3 p, vec3 r, float alpha, float nov) {
+        vec3 lp = vec3(dot(p.xz, axes.xy), p.y, dot(p.xz, axes.zw));
+        vec3 lr = vec3(dot(r.xz, axes.xy), r.y, dot(r.xz, axes.zw));
+        float big = 1e6;
+        float tx = abs(lr.x) < 1e-4 ? big : ((lr.x > 0.0 ? room_box.y : room_box.x) - lp.x) / lr.x;
+        float tz = abs(lr.z) < 1e-4 ? big : ((lr.z > 0.0 ? room_box.w : room_box.z) - lp.z) / lr.z;
+        float ty = abs(lr.y) < 1e-4 ? big : ((lr.y > 0.0 ? room_heights.x : shell.z) - lp.y) / lr.y;
+        float t = max(min(tx, min(ty, tz)), 0.0);
+        vec3 h = lp + lr * t;
+        vec3 hw = p + r * t;
+        vec3 nl = t == ty ? vec3(0.0, lr.y > 0.0 ? -1.0 : 1.0, 0.0)
+                : (t == tx ? vec3(lr.x > 0.0 ? -1.0 : 1.0, 0.0, 0.0) : vec3(0.0, 0.0, lr.z > 0.0 ? -1.0 : 1.0));
+        float up = (h.y - shell.z) / shell.w;
+        vec3 wall = up < room_heights.z ? vec3(0.082, 0.046, 0.030) : box_paper.rgb;
+        vec3 a = wall;
+        if (nl.y != 0.0) a = nl.y < 0.0 ? box_ceiling.rgb : vec3(0.078, 0.045, 0.022);
+        else if (nl.x < 0.0 && abs(h.z - room_doors.z) < room_doors.w && up < room_heights.y) a = box_paint.rgb;
+        else if (nl.z < 0.0 && abs(h.x - room_doors.x) < room_doors.y && up < room_heights.y) a = box_paint.rgb;
+        vec3 nw = vec3(axes.x * nl.x + axes.z * nl.z, nl.y, axes.y * nl.x + axes.w * nl.z);
+        vec3 c = a * grid_light(hw, nw);
+        if (t != tz || lr.z > 0.0 || shell.x < 0.5) return c;
+        float metre = shell.w;
+        float spread = 0.01 + 1.2 * alpha;
+        vec2 soft = vec2(1.0, 1.0 + 3.0 * (1.0 - nov)) * (0.01 * metre + t * spread) / metre;
+        float half_w = shell_niche.x;
+        float rise = shell_niche.w;
+        float radius = (half_w * half_w + rise * rise) / (2.0 * rise);
+        float arch_mid = shell_niche.y + shell_niche.z + rise - radius;
+        vec2 nwin = -axes.zw;
+        float toward = max(dot(r.xz, nwin), 1e-3);
+        vec3 qg = p + r * ((shell.y + shell_glass.x - dot(p.xz, nwin)) / toward);
+        vec3 view = lace_light.rgb / max(params.x * room_mix.z, 1e-3);
+        vec3 bars = box_paint.rgb * 0.12;
+        float along = dot(hw.xz, axes.xy);
+        float mid = shell_mids[0];
+        for (int i = 1; i < 3; i++) {
+            if (float(i) < shell.x && abs(along - shell_mids[i]) < abs(along - mid)) mid = shell_mids[i];
+        }
+        vec2 w = vec2(along - mid, hw.y - shell.z) / metre;
+        float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
+        float rect = smoothstep(-soft.x, soft.x, half_w - abs(w.x)) * smoothstep(-soft.y, soft.y, min(w.y - shell_niche.y, head - w.y));
+        if (rect < 0.001) return c;
+        vec2 wg = vec2(dot(qg.xz, axes.xy) - mid, qg.y - shell.z) / metre;
+        return mix(c, mix(bars, view, casement(wg, max(soft.x, soft.y), vec2(0.0))), rect);
+    }
+    // The polish's light along r: the room seen (props_seen_at) while its lobe is narrow, the
+    // probes' (wide, props_light_at's) as it widens, as ROOM_FRAG's room_reflection.
+    vec3 props_reflection(vec3 p, vec3 r, vec3 wide, float alpha, float nov, bool in_room) {
+        float sharp = 1.0 - smoothstep(0.08, 0.45, alpha);
+        if (props_look.w < 0.5 || sharp < 0.001) return wide;
+        float over = in_room ? 0.0 : smoothstep(TABLE_TOP - 0.5, TABLE_TOP, p.y);
+        return mix(wide, props_seen_at(p, r, alpha, nov) * mix(room_mix.z, 1.0, over), sharp);
     }
     #endif
     #endif
@@ -676,6 +738,7 @@ let TABLE_FRAG = """
         // The polish sees the light arriving from r's side, as the probes hold it: the room's
         // surfaces' light and the windows', no albedo on it again.
         env = props_light_at(p, r, sh_eval(r) * params.z, chair);
+        env = props_reflection(p, r, env, ar, nov, chair);
     #else
         // In the room the polish sees the room's surfaces: the light on them toward r by
         // their mean albedo (0.2), as ROOM_FRAG's rough reflections take it.

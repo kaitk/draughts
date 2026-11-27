@@ -822,10 +822,26 @@ fn bake_props_open<O>(o: O&, g: Gpu&, verts: const mesh::Vertex[:], indices: con
 // as the room's (light_box_of, light_grid_of), and props_look x 1 where the table keeps its
 // own shade terms (props_table_shade), y the sun's wrap (props_wrap), z 1 where the table
 // takes the bake's open part alone (props_profile_ao off).
-struct PropsLightBlock { light_box: float4, light_grid: float4, props_look: float4 }
+// props_look.w 1 where the polish sees the room's box (props_seen); then the box and its
+// surfaces as the room's block has them (TABLE_FRAG's props_seen_at), linear: the paper's
+// mean (its ground and a third of its gold), the doors' paint, the ceiling's.
+struct PropsLightBlock {
+    light_box: float4, light_grid: float4, props_look: float4,
+    room_box: float4, room_doors: float4, room_heights: float4, lace_light: float4,
+    box_paper: float4, box_paint: float4, box_ceiling: float4,
+}
+// Whether the table's and chairs' polish reflects the room's box and its windows sharply
+// (TABLE_FRAG's props_seen_at) in place of the probes' light alone (the light tuner's
+// --props-seen, on under --light physical; task 122).
+var props_seen = false;
 fn props_light_block(g: Gpu&) -> PropsLightBlock {
+    let s = surfaces_block(g);
+    let paper = model3d::linear4(s.paper);
+    let gold = model3d::linear4(s.gold);
     PropsLightBlock { light_box_of(), light_grid_of(),
-                      float4 { if props_table_shade { 1.0 } else { 0.0 }, props_wrap, if props_profile_ao { 0.0 } else { 1.0 }, 0.0 } }
+                      float4 { if props_table_shade { 1.0 } else { 0.0 }, props_wrap, if props_profile_ao { 0.0 } else { 1.0 }, if props_seen { 1.0 } else { 0.0 } },
+                      s.room_box, s.room_doors, s.room_heights, s.lace_light, paper + (gold - paper) * 0.3, model3d::linear4(s.paint),
+                      model3d::linear4(s.ceiling_light) }
 }
 
 // A chair's plan round its seat's middle (world units: half its width, its front, its back's
