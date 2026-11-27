@@ -1084,6 +1084,14 @@ tuner's atlas against pts's own bake), sky and sun split by baking with `--key 3
 | Wainscot, far wall | 0.36 | 0.62 | 0.44 | 1.14 |
 | Wallpaper, hall wall | 0.21 | 0.32 | 0.27 | 1.19 |
 
+Turned off by default the same day (`--stove-sun on` to see it): the user saw purple and dark
+blotches round the stove's sunlit patches, the old purple stove. Measured: the probes beside the
+stove (28,21,0 and its neighbours) went from 0.016 to 0.36, their L1 lobe 1.7 times their
+constant, so a face turned from the patches reads red −0.14, green −0.09, blue −0.014, clamped to
+a purple. Each patch is a point at 0.14 m from them at the nearest (`gather_near`), and some
+probes may stand inside the stove's body. To do: the stove's patches gathered as areas, and the
+probes inside the stove walled like those inside a wall.
+
 Left: the sky's part 1.1 to 1.3 over on the surfaces though equal at the probes (task 122's
 `srcsum`, 5.150 against 5.151): the lookup half a cell out sees more of the windows than the
 surface does (the ceiling 1.27, the wainscot 1.28); the far wall's paint (the door) 1.3 and a

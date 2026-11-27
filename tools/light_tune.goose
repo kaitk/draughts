@@ -122,7 +122,7 @@
 //       sun the inner casement's members catch in the niche thrown on, the probes under the sill and over the head
 //       the niche's; on)]
 //       [--stove-sun on|off (--light physical: the sun the stove's faces catch thrown on in the bake,
-//       room_light::stove_throws; off stops it there alone; on)]
+//       room_light::stove_throws; off stops it there alone; off: on spikes the probes beside the stove, task 122)]
 //       [--paint-relief K (the painted wood's relief tile's strength, 1 as made)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
 //       0.15 by default, 0 as made; Y switches 0.15 and 0)]
@@ -1672,7 +1672,7 @@ fn main() {
     room_light::gather_exact = physical;
     room_light::niche_faces = physical;
     room_light::stove_stops_sun = physical;
-    room_light::stove_throws = physical && !(flag_value(argv, "--stove-sun") > 0 && argv[flag_value(argv, "--stove-sun")] == "off");
+    room_light::stove_throws = physical && flag_value(argv, "--stove-sun") > 0 && argv[flag_value(argv, "--stove-sun")] == "on";
     room_light::sill_settle = physical;
     room_light::volumes_on = physical && !(flag_value(argv, "--volumes") > 0 && argv[flag_value(argv, "--volumes")] == "off");
     room_light::niche_light = physical && !(flag_value(argv, "--niche-light") > 0 && argv[flag_value(argv, "--niche-light")] == "off");
