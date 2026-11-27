@@ -869,9 +869,12 @@ let ROOM_FRAG = """
 
     // What the windows' hardware sees along r from p, in the niche outside the room's box: the
     // window's glass where r meets it (the view out's light, the casement's members as the
-    // light map has them, blurred as the lobe widens), the room's wide light elsewhere.
+    // light map has them, blurred as the lobe widens and by the pixel's spread of reflected
+    // directions `spread` (radians; over the distance to the glass, not over the slant, which
+    // drew a bright ring where the rays turn parallel to it), so a pane's thin rim doesn't
+    // go under about a pixel and crawl as the eye moves), the room's wide light elsewhere.
     // Cycles' highlights on the metal are the bright panes beside it.
-    vec3 niche_seen(vec3 p, vec3 lp, vec3 r, float alpha) {
+    vec3 niche_seen(vec3 p, vec3 lp, vec3 r, float alpha, float spread) {
         vec2 nw = -axes.zw;
         float toward = dot(r.xz, nw);
         vec3 wide = room_wide(lp, r);
@@ -891,7 +894,7 @@ let ROOM_FRAG = """
             if (t < 0.0) continue;
             vec3 q = p + r * t;
             vec2 w = vec2(dot(q.xz, axes.xy) - mid, q.y - shell.z) / metre;
-            through *= casement(w, (0.003 * metre + t * (0.01 + 1.2 * alpha)) / metre, slope);
+            through *= casement(w, (0.003 * metre + t * (0.01 + 1.2 * alpha + spread)) / metre, slope);
         }
         vec3 view = lace_light.rgb / max(params.x * shade.w, 1e-3);
         return mix(wide, view, window_metal.w * through);
@@ -1992,8 +1995,9 @@ let ROOM_FRAG = """
         // The brass's hinges and levers turn their normals within a few pixels: the lobe
         // widened by the normals' spread over the pixel (Tokuyoshi and Kaplanyan's kernel,
         // its variance half a pixel, at most 0.5), or the highlights break into dashes as the
-        // eye moves; the books' gilt as the rest.
-        ar = sqrt(clamp(ar * ar + (metal > 0.9 ? min(dot(du, du) + dot(dv, dv), 0.5) : min(2.0 * variance, 0.3)), 0.0, 1.0));
+        // eye moves; the books' gilt as the rest. The window's hardware takes it all over, its
+        // antique brass's tarnish and deposits too.
+        ar = sqrt(clamp(ar * ar + (metal > 0.9 || window_hw ? min(dot(du, du) + dot(dv, dv), 0.5) : min(2.0 * variance, 0.3)), 0.0, 1.0));
     #else
         ar = sqrt(clamp(ar * ar + min(2.0 * variance, 0.3), 0.0, 1.0));
     #endif
@@ -2062,7 +2066,10 @@ let ROOM_FRAG = """
         // The windows' hardware stands in a niche, outside the room's box, where the box's sharp
         // lookup reads far too bright (1.4 times Cycles' on the grip): the room's wide light
         // there, the window's from the niche below.
-        vec3 env = room_baked.x > 0.5 ? (window_hw ? niche_seen(p, v_local, rv, ar) : room_reflection(p, v_local, rv, ar, nov, px))
+        // The pixel's spread of reflected directions, for the panes' rims in niche_seen; at most
+        // 0.08, or the silhouettes' turning normals average the panes into a bright outline.
+        float spread = min(length(fwidth(rv)), 0.08);
+        vec3 env = room_baked.x > 0.5 ? (window_hw ? niche_seen(p, v_local, rv, ar, spread) : room_reflection(p, v_local, rv, ar, nov, px))
                                       : sh_eval(rv) * params.z;
     #else
         vec3 env = room_baked.x > 0.5 ? room_wide(v_local, rv) : sh_eval(rv) * params.z;
