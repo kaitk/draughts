@@ -69,6 +69,19 @@ roughness W); under `--light physical` the floor's mirror takes the coat's.
 - [x] The user's own settings from the tuner as the defaults: the joints 2 mm at 0.19 with no
   dark line, the cup and tilt 0.03, no grain in the wax.
 
+- [ ] The two reflections (2026-11-27). The user: the windows' reflection matt and right, the
+  doors' and the sun's on them bright and clear, as gold plate or a ballroom floor. One wax has
+  one lobe, so it can't do both. The windows in `room_seen` were blurred by the lobe (their
+  edges `0.01 m + t × (0.01 + 1.2 α)` soft), but the box's doors, bookcases and wainscot line
+  (`box_albedo`'s hard tests) and the sun on them (`box_sun`) were point-sampled, and
+  `room_reflection` takes 0.56 of that at the floor's α 0.25. Each plank's tilt then moved the
+  sharp image plank by plank. Now every edge in the box is as soft as the windows' (`box_albedo`'s
+  `s`) and the sun on it is softer by the same (`shell_open_soft`'s `extra`); the metals keep
+  theirs, their lobe narrow. The tuner's `--floor-box 1,G` (the panel's "only the windows sharp")
+  shows the cheap way instead: the probes' light that way and the windows' shapes at G. Coat weights
+  0.75 and 1.0 tried for a stronger window glow. Page: `build/notes/floor-matt/blur/`. The user's
+  verdict waits; then Cycles at the door view.
+
 ## Open for the end
 
 - 2b, the grain.

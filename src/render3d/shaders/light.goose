@@ -387,7 +387,8 @@ let LIGHT_FN = """
     // mip to its softness at p; then
     // the tree's light (b, 1 where the map holds none), blurred on as tree_light blurs it,
     // or with WINDOW_MAP_LEAVES while the leaves move (shell_ends.z 0) tree_light itself.
-    float shell_open(vec3 p) {
+    // `extra`: every edge that much softer again (world units), for a reflection's lobe.
+    float shell_open_soft(vec3 p, float extra) {
         vec3 l = light_dir.xyz;
         vec2 nw = -axes.zw;
         vec2 along = axes.xy;
@@ -410,7 +411,8 @@ let LIGHT_FN = """
         float radius = (half_w * half_w + rise * rise) / (2.0 * rise);
         float arch_mid = shell_niche.y + shell_niche.z + rise - radius;
         vec2 w = vec2(u - mid, q.y - shell.z) / metre;
-        float soft = (0.03 + widen * t) / metre;
+        float e = extra / metre;
+        float soft = (0.03 + widen * t) / metre + e;
         float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
         float through = smoothstep(-soft, soft, min(half_w - abs(w.x), min(w.y - shell_niche.y, head - w.y)));
         if (through < 0.001) return 0.0;
@@ -421,7 +423,7 @@ let LIGHT_FN = """
         float texel = max(texels.x, texels.y);
         // The bars' softness at the inner glass, at p and as baked.
         float glass = shell_glass.x / toward;
-        float bars = (0.03 + widen * (t + glass)) / metre;
+        float bars = (0.03 + widen * (t + glass)) / metre + e;
         float tl = t0 - shell_glass.z / toward;
         float lit;
         if (t0 + glass <= 0.0) {
@@ -430,14 +432,14 @@ let LIGHT_FN = """
             float tg = t0 + shell_glass.y / toward;
             vec3 g = p + l * tg;
             vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
-            lit = tg > 0.0 ? through * casement(wg, (0.03 + widen * tg) / metre, vec2(dot(l.xz, along), l.y) * (panes.w / toward)) : through;
+            lit = tg > 0.0 ? through * casement(wg, (0.03 + widen * tg) / metre + e, vec2(dot(l.xz, along), l.y) * (panes.w / toward)) : through;
         } else if (tl > 0.5) {
             float tr = window_map_lace_t(toward);
             vec4 m = textureLod(window_map, uv, window_map_lod(bars, (0.03 + widen * (tr + glass)) / metre, texel));
             lit = through * m.r;
             if (window_view.y > 0.0) {
                 float tlr = tr - shell_glass.z / toward;
-                float wide = (0.03 + widen * tl + (LACE_SOFT + LACE_CONE) * tl) / metre;
+                float wide = (0.03 + widen * tl + (LACE_SOFT + LACE_CONE) * tl) / metre + e;
                 float wide_r = (0.03 + widen * tlr + (LACE_SOFT + LACE_CONE) * tlr) / metre;
                 // The glazing the cone sees, traced: blurred apart from the lace's outline,
                 // as the map can't blur their product.
@@ -447,7 +449,7 @@ let LIGHT_FN = """
                     float tg = t0 + (k == 0 ? shell_glass.x : shell_glass.y) / toward;
                     vec3 g = p + l * tg;
                     vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
-                    glazed *= glazing(wg, (0.03 + widen * tg) / metre + cone);
+                    glazed *= glazing(wg, (0.03 + widen * tg) / metre + cone + e);
                 }
                 float lace_wide = textureLod(window_map, uv, window_map_lod(wide, wide_r, texel)).a;
                 lit += window_view.y * LACE_FORWARD * LACE_GLAZED * glazed * lace_wide;
@@ -475,17 +477,22 @@ let LIGHT_FN = """
             float r2 = max((back * back - 2.0 * tree_blur.y * back) * tb2, 1.0);
             float r2_face = max((face * face - 2.0 * tree_blur.y * face) * tb2, 1.0);
             float tree_texel = tree.x / (metre * float(textureSize(tree_map, 0).x));
-            tree_lod = log2(max(sqrt(max(r2 - r2_face, 0.0)) * tree_texel / texel, 1.0));
+            float r = sqrt(max(r2 - r2_face, 0.0)) * tree_texel;
+            tree_lod = log2(max(sqrt(r * r + e * e) / texel, 1.0));
+        } else if (e > 0.0) {
+            tree_lod = log2(max(e / texel, 1.0));
         }
         return lit * textureLod(window_map, uv, tree_lod).b;
     }
+    float shell_open(vec3 p) { return shell_open_soft(p, 0.0); }
     #else
     // How much of the key reaches p through the shell's windows, 0 to 1: p traced along the
     // key to the window wall's inner face (the niche's arched outline: or where p is, if it
     // is in the niche), on to the two glass planes with their bars, and back to the lace in
     // front, which lets on the scattered share of what it stops softly round its shadow
-    // (window_view.y, 0 none); summed over the windows, then the tree outside.
-    float shell_open(vec3 p) {
+    // (window_view.y, 0 none); summed over the windows, then the tree outside. `extra`: every
+    // edge that much softer again (world units), for a reflection's lobe; not the tree's.
+    float shell_open_soft(vec3 p, float extra) {
         vec3 l = light_dir.xyz;
         vec2 nw = -axes.zw;
         vec2 along = axes.xy;
@@ -510,7 +517,7 @@ let LIGHT_FN = """
             float t = max((shell.y - d) / toward, 0.0);
             vec3 q = p + l * t;
             vec2 w = vec2(dot(q.xz, along) - mid, q.y - shell.z) / metre;
-            float soft = (0.03 + widen * t) / metre;
+            float soft = (0.03 + widen * t) / metre + extra / metre;
             float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
             float through = smoothstep(-soft, soft, min(half_w - abs(w.x), min(w.y - shell_niche.y, head - w.y)));
             if (through < 0.001) continue;
@@ -526,14 +533,14 @@ let LIGHT_FN = """
                 if (tg <= 0.0) continue;
                 vec3 g = p + l * tg;
                 vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
-                float soft_g = (0.03 + widen * tg) / metre;
+                float soft_g = (0.03 + widen * tg + extra) / metre;
                 through *= casement(wg, soft_g, slope);
                 if (cone > 0.0) glazed *= glazing(wg, soft_g + cone);
             }
             if (tl > 0.5) {
                 vec3 c = p + l * tl;
                 vec2 wl = vec2(dot(c.xz, along) - mid, c.y - shell.z) / metre;
-                float soft_l = (0.03 + widen * tl) / metre + LACE_SOFT * tl / metre;
+                float soft_l = (0.03 + widen * tl + extra) / metre + LACE_SOFT * tl / metre;
                 vec2 lace = lace_shadow(wl, soft_l, cone > 0.0 ? soft_l + cone : 0.0);
                 through = through * lace.x + window_view.y * LACE_FORWARD * LACE_GLAZED * glazed * lace.y;
             }
@@ -546,6 +553,7 @@ let LIGHT_FN = """
         }
         return lit;
     }
+    float shell_open(vec3 p) { return shell_open_soft(p, 0.0); }
     #endif
     #endif
 
