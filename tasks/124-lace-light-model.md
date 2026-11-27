@@ -8,332 +8,60 @@ way (`room_light::lace_lets`, `LIGHT_FN`'s `lace_shadow`, a sheet passing 0.72 i
 with terms tuned by eye. Task 122 can't judge the lace's terms until all of them share one
 model.
 
-## Acceptance criteria
+## Where it stands (2026-11-27)
 
-- [x] One description of the lace (open part from its mask, the thread's transmission and
-      scattering) used by the bake, the shaders, the CPU tracer and the Cycles scene
-- [ ] The light under the lace in the tuner within a stated error of the reference
-- [x] The lace's hand-tuned terms kept, fitted or removed, as in task 122
+All under the tuner's `--light physical` (`--lace-light old` for the picture before);
+without it the reference, close, room and lace views stay byte-identical. Results page
+`build/notes/lace-shade/index.html`; scratch `build/lace124/` and `build/lace124b/`.
 
-## Progress
-
-- 2026-11-26 (task 122): the CPU tracer's lace is Cycles' model (a sheet with 0.72 open,
-  its thread throwing `LACE_SCATTER` of the light reaching either side on through it and as
-  much back); the lace panels in the close view agree within 1.00 to 1.08. The bake and the
-  shaders still take their own (`tasks/122-light-from-physical-inputs.md`, "The fourth step,
-  the reference's fixes").
-
-## The one description (2026-11-27)
-
-Under the tuner's `--light physical` (`--lace-light old` for the picture before); without it
-the reference, close, room and lace views are byte-identical to the build before (run to run,
-the base itself moves 14 pixels of the reference view's tie-backs). Results page:
-`build/notes/lace-shade/index.html` (the 2026-11-23 page there is now
-`shade-fill-2026-11-23.html`); scratch `build/lace124/`.
-
-The four models before: the bake's plane letting `lace_lets(h)` 0.33–0.72 through and
-throwing `LACE_SCATTER` 0.4 of the rest toward the room; the shaders' shadow (the mask at
-`LACE_PATTERN_SHOWN` 0.75 over `LACE_NET_STOPS` 0.2 and a thread letting `shell_glass.w`
-0.45) and cloth (its albedo in full from the room side, 0.45 of it from the window side with
-`LACE_GLOW` 0.6, a Henyey-Greenstein lobe and a constant `lace_light` by `LACE_SKY_VIEW`'s
-shape; reflection and transmission 1.45 times the albedo); the tracer's and Cycles' grey sheet
-72% open at any slant, 0.4 forward and 0.4 back.
-
-`model3d::room_light` now describes it once:
+The one description, in `model3d::room_light`, taken by the bake, the shaders, the tracer
+and Cycles (`scene.py --lace described`, from `scene.json`'s `lace`):
 
 - The open part from the mask: the thread covers `LACE_DENSITY` 0.8 of the cloth where the
-  mask is 1 (the shader's coverage, kept), more at a slant: a place of mask m lets
-  (1 − 0.8 m)^(1/max(|cos|, 0.5)) straight through. Over the pattern that is
-  `lace_open_share`, from the field's mask in eight bins (`LACE_MASK_VALUES`,
-  `LACE_MASK_SHARES`; 41% thread square on, against the old sheet's 28%). Over the mean
-  instead it was 0.37 in place of 0.43 at the power 1.9.
-- The thread scatters its albedo (`surfaces::LOOK.lace_thread`, linear) diffusely,
-  `LACE_THROUGH` 0.31 of it on through and the rest back: the shaders' 1 : 0.45 normalised.
-  A choice, not measured: with no lace to measure, the earlier ratio kept.
-- Cycles (`scene.py --lace described`, from `scene.json`'s `lace`): the mask on the uv as
-  `lace_place` lays it, the slant from the incoming ray, a translucent and a diffuse closure.
-  `--lace sheet` the old, `--lace off` none, `--lace-seen solid|front|back` the thread's own
-  light for the camera only.
-- The tracer: the same rule, the pattern's share at each crossing (`lace_open_share`).
-- The bake: the lace's plane lets through the mean over its folds as a sine holding 1.2 m of
-  cloth on the width it hangs at (`lace_open`, `make_lace_slopes`): for today's sun 0.45
-  across the heights; the tracer through the exact mesh, rays from 0.6 m before the wall that
-  cross a panel, 0.40 (0.36 to 0.41 by window; `build/lace124/pt/`). What the thread stops
-  it throws on by its albedo's forward share (`lace_throws`).
-- The shaders' shadow: the same as one flat sheet, `lace_flat` (the folds' mean slant, 1.78,
-  and the density, 0.71, that lets `lace_open`'s mean through on the mask's blurred value),
-  in `shell_glass.w` (negative) and `shell_case.y`. The folds' ±20% across the panel kept:
-  the slant's own spread over a fold is about that.
-- The cloth's light per vertex after each bake (`render3d::lace_on_vertices`, the window mesh
-  updated): its window side what it sees of the glazing's sky (`lace_sky`), its niche's faces
-  (`lace_niche`) and the wall (the probes toward the window), by form factors from the
-  geometry (`lace_views`, at the mesh's making), a sight line along the wall losing to each
-  fold it crosses; its room side the probes' light half a cell out, less the share the folds
-  beside it hide (`fold_hidden`'s share itself), which show the wall through their holes and
-  their thread's light (`lace_glow`, the bake's lace cells). The shader (`LACE_DESCRIBED`,
-  the HDR lace pipeline's variant) mixes the two sides by the forward share; the sun on the
-  room side passes the cloth first (`lace_self`).
+  mask is 1, more at a slant: a place of mask m lets (1 − 0.8 m)^(1/max(|cos|, 0.5))
+  straight through; over the pattern `lace_open_share` (`LACE_MASK_VALUES`,
+  `LACE_MASK_SHARES`; 41% thread square on, against the old sheet's 28%).
+- The thread scatters its albedo (`surfaces::LOOK.lace_thread`) diffusely, `LACE_THROUGH`
+  of it on through and the rest back. `LACE_THROUGH` is 0.65, from a measured cream sheer
+  (below).
+- The bake: the plane lets through the mean over the folds (`lace_open`,
+  `make_lace_slopes`; 0.45 for today's sun, the tracer through the mesh 0.40) and throws
+  what the thread stops on by its forward share (`lace_throws`).
+- The shaders' shadow as one flat sheet (`lace_flat`, in `shell_glass.w` and
+  `shell_case.y`).
+- The cloth's light per vertex after each bake (`render3d::lace_on_vertices`; the shader's
+  `LACE_DESCRIBED` mixes the two sides by the forward share): the window side sees the
+  glazing's sky, its niche's faces and the window wall's cells (`window_wall_light`,
+  1e741853); the room side the probes half a cell out without the lace's own light on the
+  wall (`Gathered.lace`, `probe_light(..., without_lace)`), less what the folds beside it
+  hide, which show the wall and their thread's light (`lace_glow`; below the sill from the
+  vertex's own window side, f2833d20). The room side is the one facing into the room
+  (91aa2bbe).
 - Not used under the description: `lace_lets`, `LACE_SCATTER`, `LACE_NET_STOPS`,
   `LACE_PATTERN_SHOWN`, `shell_glass.w`'s 0.45, `LACE_GLOW`, the lobe, `lace_light`'s
-  constant, `LACE_SKY_VIEW`'s shape, `--lace-shade-fill`, `--lace-fold-ao`, and the screen's
-  occlusion on the lace (its folds counted twice). They stay for the app's own light.
+  constant, `LACE_SKY_VIEW`'s shape, `--lace-shade-fill`, `--lace-fold-ao`, the screen's
+  occlusion on the lace. They stay for the app's own light, and for the floor's mirrors of
+  the lace (`refl_lace`, `planar_lace`, `--mirror-cheap`; at most 4 to 5 levels off, left).
+- Cost: the bake 203 → 246 ms on the Mac, the mesh 158 → 180 ms, each bake 7,068 lace
+  vertices' light and the window mesh written again; per pixel a few multiplies less.
 
-The thread's own light, the lace seen solid (the tuner's scratch build with coverage 1,
-Cycles' `--lace-seen solid`), linear light over Frame's exposure × 1000, reference view:
+How it got here, by conclusion (the full measurements are in git before this trim, in
+4e69496a's file):
 
-| Region | Before | After | Cycles | Before / Cycles | After / Cycles |
-|---|---|---|---|---|---|
-| Near panel, low, in shade | 4.92 | 2.57 | 0.96 | 5.12 | 2.68 |
-| Near panel, by the tie | 4.79 | 9.45 | 5.88 | 0.81 | 1.61 |
-| Near panel, high, the window behind | 21.1 | 15.8 | 16.3 | 1.29 | 0.97 |
-| Lit panel | 133.7 | 45.4 | 67.3 | 1.99 | 0.67 |
-| Lit panel, low | 4.14 | 13.7 | 11.9 | 0.35 | 1.15 |
-| Middle window, left panel (shade) | 8.66 | 10.3 | 7.86 | 1.10 | 1.30 |
-| Middle window, right panel (lit) | 126.5 | 42.8 | 84.5 | 1.50 | 0.51 |
-
-Error factor (the geometric mean of each ratio or its inverse): before 1.86, after 1.53. By
-side (`--lace-seen front|back`): the room side 1.4 to 2.6 times Cycles' in shade, B/R 0.32
-against 0.13 to 0.27; the window side 0.86 to 1.25 in shade but 3.7 at the near panel's foot,
-0.56 to 0.78 where lit.
-
-The pixels as seen (the regions of the earlier 2.26): the lace in shade 2.54 → 1.60 times
-Cycles', B/R 0.50 against 0.38; lit 1.50 → 0.63; the middle panel 2.19 → 0.88. These take the
-view out behind the lace too (the tuner's park, Cycles' sky box).
-
-The room under the lace: its sun through the lace on the door 0.55 of the light without the
-lace's shadow (before 0.65), Cycles 0.62; on the floor's sun patch 0.71 (0.75), Cycles 0.79.
-The bake's sun through the lace 0.72 → 0.45 at the rod, with the thread's forward share now
-thrown on: the meter's exposure EV 4.17 → 4.32, the ceiling 0.87 → 0.79 of Cycles', the
-wainscot 1.57 → 1.41, the floor in shade 1.42 → 1.30.
-
-Cost: the bake 203 → 246 ms on the Mac (the probes' sky through the lace's folds, its open
-share a table), the mesh 158 → 180 ms (the lace's form factors), each bake 7,068 lace
-vertices' light and the window mesh written again; per pixel the lace's own a few multiplies
-less than before, the shadow one branch.
-
-Left (the second criterion not met):
-
-- The lace's room side in shade 1.4 to 2.6 times Cycles' and bluer: the probes' light half a
-  cell before the window wall, as task 122's surfaces there (an L1 probe beside a bright
-  window gives its dim side too much, bluish). Next: gather the cells, the sky and the sun's
-  patches at the lace's places one-sided, as the bake gathers the probes, in place of the
-  probes there.
-- The lit panels 0.5 to 0.7: the sun on the cloth in the tuner is as bright at its peak as
-  Cycles' (99th percentile 0.26 against 0.27) but over less of it (median 0.0074 against
-  0.0155): the shadows of the casements' members on the cloth sharp and blocky in the tuner
-  (as before), and the niche's sunlit faces' light on its back by one mean a window.
-- The near panel's foot 2.7: both sides' probes by the floor and the wall.
-- The floor's cheap mirror (`--mirror-cheap`) and the floor's mirror of the lace keep the old
-  lace.
-
-## The near panel's foot (2026-11-27)
-
-The user: the lace below the window considerably lighter than Cycles', evenly pale grey-beige
-to the hem, where Cycles' is dark and warm, about as dark as the wainscot behind it.
-
-Measured at the lace's own vertices below 1.2 m (a scratch dump from `lace_on_vertices`)
-against the CPU tracer at the same points, the same description, 256 cosine rays a side
-(`build/lace124/pt/path_trace_lace.goose`, mode `lacelight`; `build/lace124/cmp_lv.py`):
-
-- The window side just below the sill (0.6–0.8 m) was 4.5 to 5.9 times the tracer's, B/R 1.03
-  against 0.40: nearly all of it the probes' light toward the window at the cloth (0.010 to
-  0.011 against the tracer's 0.0022 to 0.0027 for the whole side), which takes the window's
-  sky above the sill. Through the folds' holes (the room side's cavity term) it lifted the room
-  side there to 1.24 to 1.84.
-- Fixed (1e741853): the window side sees the window wall's own light, the bake's wall cells'
-  (`room_light::window_wall_light`, bilinear, the niches' holes out), not a probe. After: the
-  window side at 0.6–0.8 m 0.90 to 1.01 of the tracer, below 0.6 m 0.2 to 0.3 (its share of
-  the thread's light about a tenth there); the room side below the sill 0.7 to 1.1. The
-  thread's own light against Cycles: the near panel's foot 2.68 → 1.39, by the tie 1.61 →
-  0.86, the middle window's panel in shade 1.30 → 1.00; the error factor over the seven
-  regions 1.53 → 1.43. Without `--light physical` the views as before (within the base's own
-  run-to-run pixels at the tie-backs); `scripts/test.sh ui` passed.
-- Left, not fixed: the room side's colour. Its level is right but its B/R is 0.40 to 0.43
-  against the tracer's 0.16 to 0.27 (the pixels 0.22 against 0.13): the probes' colour in
-  the shade, the whole room's (task 122's "the app's shade bluer than Cycles'": the sky's
-  part 1.1 to 1.4, the sun's bounce 0.5 to 0.8). That is why the foot still reads grey-beige
-  against Cycles' warm brown. A general probe fix, not one for the lace; the user to decide.
-- Left: the lace's window side below 0.6 m 0.2 to 0.3 of the tracer and the lit panels'
-  lower parts 0.1 (the floor between cloth and wall, and the room's light seen back through
-  the folds' holes, are not in it: a cavity term on the window side as the room side has, its
-  hidden share from the folds' other phase, is the next step); the lit panels 0.45 to 0.6
-  (the sun's shadows on the cloth sharp and blocky). The per-vertex light carries a share of
-  the cloth's mean colour, not each vertex's own colour.
-- The results page has the foot's crops before, after and Cycles
-  (`build/notes/lace-shade/index.html`).
-- 2026-11-27, after merging the floor's wax and baked reflection (75265a04): the reference view
-  reshot (build/lace124/a/merged-reference*) against c0bd47f3's build. The lace regions'
-  light is unchanged to the digit (near in shade 0.86 of Cycles', lit 0.56, middle 0.81), so
-  the open items above stand. Only the floor moved: its patch in shade 1.30 → 1.63 of Cycles'.
-
-## The folds' cavity and the lit flanks (2026-11-27, evening)
-
-Under `--light physical` only; without it the reference and lace views match `build/stable`
-(0 and 1 pixels, as a rerun of it). Scratch `build/lace124b/` (a source copy, `tree/`, for
-dump builds; the tracer's copy `pt/` with `--rays N`, `--no-sky`, `--no-sun`, `--depth N`;
-`cmp*.py`); results page `build/notes/lace-shade/index.html`, first section.
-
-- The room side below 0.6 m was mostly `lace_glow` (0.0027, B/R 0.62): the lowest band's light,
-  its sky seen from the band's middle, carried down to the hem, where the tracer's window side
-  is 0.0004 to 0.0006. Now (f2833d20) below the sill the folds' glow comes from the vertex's own
-  window side, and above it from the band, its sun all above the sill. The window side's view of
-  the wall meets the folds at their other phase (`FOLD_HIDDEN` less the room side's hidden
-  share): through them the room's light and their thread's. In shade, over the tracer: the
-  window side under 0.6 m 0.31–0.40 → 1.15–1.47 (B/R 0.34–0.37 against 0.12–0.15), at 0.6 to
-  0.84 m 0.65–0.96 → 0.92–1.34; the room side under 0.6 m 0.77–1.56 → 0.54–1.06, B/R 0.38 →
-  0.30 (the tracer 0.16–0.20).
-- The lit panels: the shader took the side the eye sees as the room side; at the reference
-  view's slant the eye sees some flanks' window side, sunlit, which took the sun through the
-  cloth first (`lace_self`). Now (91aa2bbe) the room side is the one facing into the room. As
-  seen, over Cycles: the lit panel 0.57 → 0.68 (its brightest quarter 0.45 → 0.59), the
-  middle window's right panel's brightest quarter 0.39 → 0.58 (99th percentile 0.56 → 0.82),
-  the middle panel 0.82 → 0.93, the foot 0.86 → 0.83. ngfx at parity on the lace (it differs
-  from gfx only on the floor, which has no baked reflection on ngfx yet).
-- "Sharp and blocky" was the solid scratch build's artefact: at full coverage the unsorted
-  lace draws far folds over near ones. In the real render the bars' shadows match Cycles'. The
-  solid measure is unreliable on the lit folds for the same reason. Against Cycles with its sky
-  off (`build/lace124b/cynosky`), the sun's light on the lit thread was 0.38–0.42 of Cycles',
-  the lit door 0.83.
-- The floor's reflections of the lace (`refl_lace`, `planar_lace`) keep the old model: with
-  `LACE_DESCRIBED` in both, at most 4 levels in the reference view and 5 in a low view onto the
-  floor (no pixel over 8). Left as it is.
-
-The room side's colour, measured, not changed (the user to decide). At the point the lace reads
-the probes (6.85 m, settled toward the room) the tracer gives B/R 0.15–0.24, the probes
-0.29–0.34: the sky's part 1.4–1.9 times the tracer's, the sun's bounce 0.3–1.1. Two causes:
-
-- The probes 0.15–0.35 m before the window wall take the lace cells' light on the wall behind
-  (`gather_cells`' `behind_lace`, `lace_on_wall`), which the wall needs; the lace reads it as
-  the room's, and its cavity term already counts its neighbours. Without it the sky's part has
-  the tracer's colour (B/R 0.59–0.63 against 0.56–0.65), 0.43–1.26 of its level.
-- The sun's bounce toward the window wall is short: without the lace's own light the probes hold
-  0.29–0.35 of the tracer's first two bounces by the stove (window 0), 0.39–0.61 at the middle
-  window, 0.20–0.91 at the far one; the tracer's sun there is 0.75–0.95 first bounce. Task 122's
-  0.52, worst at the wall.
-
-Proposed: (1) keep the lace's light on the wall apart from what the lace reads (a second value
-for that row, or the lace reading it without); (2) measure the first bounce patch by patch at
-those probes against the tracer (the floor's patches 0.15–0.45 m away, gathered as points
-capped at 0.3 m; the stove's faces) before changing the gather.
-
-Error factor of the thread's own light over the seven regions (the solid measure): 1.43 → 1.40.
-Left: the probes' colour above; the lit panels 0.6–0.7; the window side's cavity share is the
-room side's phase mirrored, not traced (it reads 1.15–1.47 of the tracer under 0.6 m).
-
-## Decisions (the user, 2026-11-27)
-
-- Cycles renders the lace's real mask (`scene.py --lace described`), not a plain sheet: the
-  reference for the lace is Cycles with our pattern and our density rule (`LACE_DENSITY`, the
-  slant power), which the app, the tracer and Cycles share, so no comparison tests that rule.
-- `LACE_THROUGH` (0.31, the old shaders' 1 : 0.45 normalised) is to be worked out again, not
-  kept as a choice. All three renderers take it, so no comparison so far tests it. What moves
-  with it: the backlit lace about in proportion, the lace in shade a little the other way
-  (its room light sent back is 1 − it), and the light the bake throws into the room
-  (`lace_throws`), so the camera's meter.
-- Both probe changes proposed above go ahead: (1) the lace reads the window wall's probe row
-  without the lace's own light on the wall (`lace_on_wall`); (2) the sun's bounce toward the
-  window wall located patch by patch against the tracer's first bounce, then fixed.
-
-## Handover (2026-11-27)
-
-Next session, in this order (steps 1 to 3 done the same night, below; what follows them is in
-"`LACE_THROUGH` from a measured sheer"):
-
-1. Probe change (1). The row the lace reads (6.85 m, half grid row 1, `gather_cells`'
-   `behind_lace` for probes 0.15–0.35 m before the wall) takes `lace_on_wall` into `ey`, which
-   the wall's face needs and the lace must not get. Ways: a second value for that row (the
-   half grid's `ey` with and without it), or `lace_into_mesh` reading the row less the lace's
-   part. Measured target: without it the sky's part at that row has the tracer's colour (B/R
-   0.59–0.63 against 0.56–0.65). The wall's own reading must stay as it is: check the window
-   wall's pixels in the reference view against the build before. This is a probe change: it
-   moves `docs/architecture/` and maybe a decision only if it touches the app's light; under
-   `--light physical` only, record it here and in task 122.
-2. Probe change (2). Without the lace's light the probes at that row hold 0.29–0.35 of the
-   tracer's first two sun bounces by the stove (window 0), 0.39–0.61 at the middle window,
-   0.20–0.91 at the far one; the tracer's sun there is 0.75–0.95 first bounce. Measure each
-   patch's share at those probes in the bake against the tracer's first bounce (`--depth 1`)
-   before changing anything. Suspects: the floor's patches 0.15–0.45 m away gathered as points
-   with their distance held to `gather_near`'s 0.3 m (task 122 tried areas and dropped them on
-   a whole-room measure, not this row's), the stove's sunlit faces throwing nothing
-   (`stove_stops_sun`; a new stove is planned, so measure, don't special-case it).
-3. `LACE_THROUGH`: worked out from a source, not tuned against Cycles (Cycles takes the same
-   value). A thin white lace's forward and back split: a published diffuse transmittance and
-   reflectance of thin white woven fabric, or the user's photographs of a real lace lit from
-   behind and from the room at one exposure. Ask the user which before choosing. Then the
-   same value in `room_light`, the tracer, and `scene.json`'s `lace` (the exporter), Cycles
-   rendered again (`build/lace124b/cy.sh`), and the measures above redone.
-
-Not this task's, seen on the way: the floor's band between the rug and the wainscot under the
-near window, 1.7 to 2.1 times Cycles' and blue, comes from the baked reflection (task 131's
-step 3c), not the lace.
-
-Tools, all in `build/lace124b/` (scratch, not in git):
-
-- `tree/`: a copy of the sources (toolchains and goose_gfx linked in) for dump and scratch
-  builds; copy the checkout's changed files into it first. `render3d.dump` holds
-  `lace_into_mesh` with the `LV|` dump (each lace vertex below 1.2 m: point, normal, F_sky,
-  F_open, hidden, probe, wall, back, front, glow); `lv*.txt` the dumps (`lv-nosun`, `lv-nosky`
-  from the tuner's `--key 30,18,0,0.85` and `--baked 0,1,0,0`, which add up to the whole).
-- `pt/ptl`: the tracer with `lacelight FILE --rays N [--no-sky] [--no-sun] [--depth N]`
-  (`path_trace_lace.goose`, built in `pt/`); `ppts.txt` the probe row's points (6.85 m),
-  `tl2k.txt` the vertices at 2,048 rays a side, `tp*.txt` the row by part.
-- `cmpv.py` (vertices against the tracer, in shade), `cmp3.py` (the row by sky and sun),
-  `cmp2.py`; `build/lace124/meas.py` and `solid.py` for the reference view against Cycles
-  (`build/lace124/shot.sh BIN TAG reference` shoots). The solid measure is unreliable on lit
-  folds (the unsorted lace at full coverage).
-- `cy.sh SCENE TAG [flags]` renders Cycles at the reference view (the quiet lock);
-  `cynosky/` the scene with the sky off, `c/nosky-reference*` its render.
-- `page2.py` wrote the results page's first section.
-
-## The probes' two changes (2026-11-27, night)
-
-Under `--light physical` only; without it the reference view is byte-identical to 1512581a's
-build (both changes). Scratch `build/lace124b/` (`cmp3p1.py`, `cmpsrc*.py`, `pb*.txt`, `pt1*.txt`).
-
-Change (1): the half grid keeps the lace's light on the wall apart (`Gathered.lace`, the share
-of `ey` that `lace_on_wall` adds), the bake writes it for the probes that settle to the window
-wall's face (`room_light::bake`'s `lace_wall`, `render3d::light_lace_wall`), and the lace's room
-side reads the probes without it (`probe_light(..., without_lace)`). The wall reads them as
-before: in the reference view only the lace's pixels and their reflection moved. At the row
-(6.85 m) over the tracer, toward the room: the sky's part 1.40–1.87 → 0.43–1.26, B/R 0.66–0.77
-→ 0.59–0.63 (the tracer 0.52–0.65), the same to the digit as the earlier build without
-`lace_on_wall`; the sun's part 0.29–1.12 → 0.19–0.73, the whole 0.51–1.30 → 0.26–0.92. At the
-lace's vertices in shade the room side 0.53–1.20 → 0.33–0.81 of the tracer, B/R 0.28–0.33 →
-0.24–0.30. As seen against Cycles: the near panel in shade 0.83 → 0.72, the lit panel 0.68 →
-0.62, the middle panel 0.93 → 0.91.
-
-Change (2), measured first: the bake's sun patches at the row's probes, by the surface they lie
-on, against the tracer's first bounce (`ptl firstsrc`, 32,768 rays, `--no-sky --depth 1`), face
-toward the room, by window and height:
-
-- The floor beyond 0.5 m 1.0–1.2 of the tracer, the hall wall and the rest 1.1–1.7; the end wall
-  at the stove's end 0.4 (2.2 against 5.4, 10⁻⁴), the others 0.8–1.3; the table's top 0.5–1.0.
-  The floor within 0.5 m takes no sun at this row in either.
-- The stove's sunlit tiles: 0 in the bake (`stove_stops_sun`), the tracer 11.6–16.8 by the
-  stove's window, 4.5–7.1 by the middle one, 2.3–2.9 by the far one; the largest share by the
-  stove's window (17 of about 30). Left for the new stove (task 122, "the stove's sun, tried
-  and dropped").
-- The table's sides (its base, legs and the top's edge): 0 in the bake, whose sun passed them to
-  the floor; the tracer 10–13 at the middle window's probes under 1.2 m, a third of their light.
-  The mesh has 0.89 m² of side to the top's 0.71 m², so at the 18° sun their lit outline (about
-  0.27 m²) is larger than the top's (0.22).
-- The lace's own light, which the row also sees where the tie-backs draw it into the room (130 to
-  190 at 1.2–2 m), is the lace's cavity term's, not the probes'.
-
-Fixed (the table's sides): `room_light::table_sides` (the tuner's `--light physical`,
-`--table-sides off` the picture before), a turned stand-in from the mesh (a cylinder each 5 cm
-of height with the mesh's side area there, `table_radii`), each sun ray split 4 × 4 over its
-glass cell (the column is narrower than the rays' 8 cm), patches by the eighth the faces turn
-to and one facing up for the ledges (`TABLE_WAYS`); the rays it meets no longer reach the floor.
-The middle window's probes under 1.2 m: the first bounce 0.31–0.33 → 0.66–0.70 of the tracer,
-the sides 8–11 against its 10–13, the floor behind 1.7 → 1.5 (the tracer 1.0). At the lace's
-vertices in shade by that window the room side 0.47–0.80 → 0.61–0.85, B/R 0.19–0.24 (the
-tracer 0.16–0.35). As seen against Cycles: the window wall's wainscot under the near window
-0.66 → 0.80, the near panel in shade 0.72 → 0.78, the rest within 1%; the meter EV 4.32 → 4.33.
-
-Left: the stove's share (window 0's room side still 0.33–0.69 of the tracer, window 2's
-0.48–0.81, where the stove is about a third of the missing first bounce), and the lace's
-`LACE_THROUGH` (the handover's step 3).
+- Before the description the thread's own light (the lace seen solid) was 1.86 times off
+  Cycles' (error factor over seven regions); with it 1.53, then 1.43 with the window side
+  reading the wall's cells (the window side under the sill had been 4.5 to 5.9 times the
+  tracer's, from a probe seeing the window's sky), 1.40 with the folds' cavity. The solid
+  measure is unreliable on lit folds (the unsorted lace at full coverage).
+- "Sharp and blocky" shadows on the lit cloth were the solid scratch build's artefact; in
+  the real render the bars' shadows match Cycles'.
+- The probes' two changes (2026-11-27, night): the lace reads the window wall's probe row
+  without the lace's own light (the sky's part there 1.40–1.87 → 0.43–1.26 of the tracer,
+  B/R 0.59–0.63 against 0.52–0.65), and the table's sides take the sun
+  (`room_light::table_sides`, task 122; the middle window's probes' first bounce 0.31–0.33
+  → 0.66–0.70 of the tracer). At those probes the bake's sun patches by surface are 0.8 to
+  1.7 of the tracer's first bounce, but the stove's tiles 0 (the tracer 11.6–16.8 × 10⁻⁴ by
+  its window, 17 of about 30).
 
 ## `LACE_THROUGH` from a measured sheer (2026-11-27, night)
 
@@ -342,22 +70,22 @@ Table 2 as reproduced in the 2016 ASHRAE Winter Conference paper OR-16-C056) mea
 drapery fabrics with a spectrophotometer and integrating sphere, solar-weighted, square on.
 Their cream sheer: openness (beam-beam) 0.45, beam-total reflectance 0.19, beam-total
 transmittance 0.80. Their yarn model takes the yarn's reflectance as the fabric's over
-1 − openness (Joong's thesis, eq. 3.3), so the yarn sends 0.355 on and 0.19 back: `LACE_THROUGH`
-0.65 (0.355 / 0.545). The denser white fabrics in the same table split 0.31 (IIIL) to 0.43 (IL,
-IIL): a thin open yarn scatters more forward. The sheer is the one like the lace. All three
-take it from `room_light` (the shaders' uniform, the bake's `lace_throws` and `lace_glow`, the
-tracer), the exporter's `scene.json` too; Cycles rendered with the earlier scene and only
-`through` changed (`build/lace124b/cyscene65`, `c/t65-reference*`). Without `--light physical`
-the reference view is byte-identical.
+1 − openness (Joong's thesis, eq. 3.3), so the yarn sends 0.355 on and 0.19 back:
+`LACE_THROUGH` 0.65 (0.355 / 0.545). The denser white fabrics in the same table split 0.31
+(IIIL) to 0.43 (IL, IIL): a thin open yarn scatters more forward. The sheer is the one like
+the lace. All three take it from `room_light` (the shaders' uniform, the bake's
+`lace_throws` and `lace_glow`, the tracer), the exporter's `scene.json` too; Cycles rendered
+with the earlier scene and only `through` changed (`build/lace124b/cyscene65`,
+`c/t65-reference*`).
 
 As seen, the app over Cycles at 0.31 → at 0.65: the lit panel 0.62 → 0.73, the middle panel
-0.90 → 1.04, the near panel in shade 0.78 → 0.77 (B/R 0.49 against 0.39, bluer: its room light
-sent back is 1 − it), the wainscot under the near window 0.77 → 0.87. The room in shade moved
-away: the far wainscot 1.41 → 1.57, the floor 1.62 → 1.75, the paper pier 0.69 → 0.90, the
-ceiling 0.78 → 0.83; the meter's EV 4.33 → 4.19.
+0.90 → 1.04, the near panel in shade 0.78 → 0.77 (B/R 0.49 against 0.39, bluer: its room
+light sent back is 1 − it), the wainscot under the near window 0.77 → 0.87. The room in
+shade moved away: the far wainscot 1.41 → 1.57, the floor 1.62 → 1.75, the paper pier 0.69
+→ 0.90, the ceiling 0.78 → 0.83; the meter's EV 4.33 → 4.19.
 
-Each renderer with the forward share at 0 (`c/t0-reference*`, a scratch tuner), the light at 0.31
-and 0.65 over that at 0:
+Each renderer with the forward share at 0 (`c/t0-reference*`, a scratch tuner), the light at
+0.31 and 0.65 over that at 0:
 
 | Region | App 0.31 | App 0.65 | Cycles 0.31 | Cycles 0.65 |
 |---|---|---|---|---|
@@ -367,24 +95,74 @@ and 0.65 over that at 0:
 | Ceiling | 1.10 | 1.21 | 1.04 | 1.08 |
 | Lit panel | 11.6 | 14.9 | 1.18 | 1.27 |
 
-So the bake throws several times Cycles' share of the lace's forward light into the room (the
-pier gains 1.13 of its no-throw light against Cycles' 0.13), and without it the room's own light
-is short (the pier 0.48 of Cycles'): the two errors had been hiding each other at 0.31. A suspect,
-unmeasured: with `niche_faces` the lace cells throw their light to both their sides
-(`gather_cells`' `abs(dot)`), so what the thread sends forward may reach the room twice, once
-as the cells' and once as `lace_glow`'s on the cloth. The lit panel: with no forward share
-Cycles' still shows most of its light (the flanks' window sides the eye sees, which 91aa2bbe
-turned to the room side's), the app's almost none.
+So the bake throws several times Cycles' share of the lace's forward light into the room
+(the pier gains 1.13 of its no-throw light against Cycles' 0.13), and without it the room's
+own light is short (the pier 0.48 of Cycles'): the two errors hide each other. Under task
+122's hazy air the same holds (the lace adds ×1.67 to the paper in shade, ×1.33 to the
+ceiling; the paper still 0.62 of Cycles').
 
-Next: the bake's lace as a source measured against the tracer at the probes (the tracer's lace
-thread's light alone, its forward share at 0.65 against 0), then the flanks' side.
+## Decisions (2026-11-27)
 
-## Open: the lace's folds drawn out of order (the user, 2026-11-27)
+- Cycles renders the lace's real mask (`scene.py --lace described`), not a plain sheet: the
+  reference for the lace is Cycles with our pattern and our density rule (`LACE_DENSITY`,
+  the slant power), which the app, the tracer and Cycles share, so no comparison tests that
+  rule.
+- `LACE_THROUGH` from a source, not tuned against Cycles (which takes the same value): the
+  measured sheer above.
+- Both probe changes went ahead (done above).
 
-Seen low along the window wall (`--plan-eye 5.0,6.45,1.25 --plan-at 2.5,6.95,0.55 --fov 40`): the
-near lace below its tie-back shows stair-stepped blocks, a far fold's triangles painted over a
-near one's. Not this task's light: the same blocks in 75265a04's and 1512581a's builds and in the
-app's default light. The lace pipeline blends (premultiplied, depth test, no depth write, no
-culling) in the mesh's own order (`window_indices_by_group`); the described light makes the folds
-differ more in brightness, so the blocks show more. A fix sorts it back to front: per view, or a
-few presorted orders by the view's direction chosen at the draw, with no cost a frame.
+## Open
+
+- The forward light thrown into the room at several times Cycles' share (the table above).
+  Suspect, unmeasured: with `niche_faces` the lace cells (from `LACE_C0` on) throw their
+  light to both their sides (`gather_cells`' `abs(dot)`), so what the thread sends forward
+  may reach the room twice, once as the cells' and once as `lace_glow`'s on the cloth.
+- The sunlit folds read black without the forward share: with it at 0 Cycles' lit panel
+  keeps most of its light (the flanks' window sides the eye sees), the app's almost none.
+  As seen now the lit panel is 0.73 of Cycles', under the hazy air 0.74.
+- The lace in shade 1.37 of Cycles' under the hazy air (task 122); the near panel in shade
+  bluer (B/R 0.49 against 0.39).
+- The stove's share at the lace's probe row (window 0's room side 0.33–0.69 of the tracer):
+  waits for the new stove (task 122).
+- The window side's cavity share is the room side's phase mirrored, not traced (1.15–1.47
+  of the tracer under 0.6 m); the per-vertex light carries the cloth's mean colour, not
+  each vertex's.
+- The folds drawn out of order (2026-11-27): low along the window wall (`--plan-eye
+  5.0,6.45,1.25 --plan-at 2.5,6.95,0.55 --fov 40`) a far fold's triangles paint over a near
+  one's in stair-stepped blocks, in every build and the default light too. The lace pipeline
+  blends (premultiplied, depth test, no depth write, no culling) in the mesh's own order
+  (`window_indices_by_group`); the described light makes it show more. A fix sorts back to
+  front: per view, or a few presorted orders chosen by the view's direction at the draw.
+
+## Handover
+
+1. The bake's lace as a source against the tracer at the probes: the tracer's thread's
+   light alone, `LACE_THROUGH` 0.65 against 0, the `abs(dot)` double count checked first.
+   Fix, then the table above and task 122's "app over Cycles" list measured again.
+2. The lit flanks: why the app's sunlit folds go dark without the forward share where
+   Cycles' don't.
+3. The folds' draw order.
+4. Then the second criterion: the light under the lace against Cycles with a stated error.
+
+Tools, all scratch (not in git):
+
+- `build/lace124b/tree/`: a copy of the sources for dump builds (copy the checkout's changed
+  files in first); `render3d.dump`'s `LV|` dump of each lace vertex below 1.2 m; `lv*.txt`
+  the dumps (`lv-nosun`, `lv-nosky` from `--key 30,18,0,0.85` and `--baked 0,1,0,0`).
+- `build/lace124b/pt/ptl`: the tracer with `lacelight FILE --rays N [--no-sky] [--no-sun]
+  [--depth N]` and `firstsrc` (`path_trace_lace.goose`); `ppts.txt` the probe row's points
+  (6.85 m), `tl2k.txt` the vertices at 2,048 rays a side.
+- `cmpv.py` (vertices against the tracer), `cmp3.py` and `cmp3p1.py` (the row by sky and
+  sun), `cmpsrc*.py`; `build/lace124/meas.py` and `solid.py` for the reference view against
+  Cycles (`build/lace124/shot.sh BIN TAG reference` shoots).
+- `build/lace124b/cy.sh SCENE TAG [flags]` renders Cycles at the reference view (the quiet
+  lock); `cynosky/` the scene with the sky off, `cyscene65` with `through` 0.65.
+
+## Acceptance criteria
+
+- [x] One description of the lace (open part from its mask, the thread's transmission and
+      scattering) used by the bake, the shaders, the CPU tracer and the Cycles scene
+      (2026-11-27, `LACE_THROUGH` from a measured sheer the same night)
+- [ ] The light under the lace in the tuner within a stated error of the reference (the
+      room's light thrown from the lace several times Cycles' share on 2026-11-27)
+- [x] The lace's hand-tuned terms kept, fitted or removed, as in task 122
