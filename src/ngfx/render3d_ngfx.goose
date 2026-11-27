@@ -170,7 +170,7 @@ fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool, o
         if room_table { slot(t, if g.hdr || g.room_ssao { 10 } else { 9 }, render3d::lace_or_stand_in(g), g.linear); }
         if props {
             t.buf0 = nx::address(g.props_open);
-            slot(t, 11, render3d::light_or_stand_in(g), g.linear);
+            slot(t, 11, render3d::props_probes_or_stand_in(g), g.linear);
         }
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
@@ -424,7 +424,7 @@ fn planar_pass(own: Own&, g: Gpu&, size: int2, clip: render3d::Frame, plain: ren
         slot(t, 9, render3d::lace_or_stand_in(g), g.linear);
         if g.room_props {
             t.buf0 = nx::address(g.props_open);
-            slot(t, 10, render3d::light_or_stand_in(g), g.linear);
+            slot(t, 10, render3d::props_probes_or_stand_in(g), g.linear);
         }
         nx::draw_indexed(ngfx::root(t), g.table_ib, 4, g.table_count);
     }
@@ -622,7 +622,7 @@ fn upscale_pass(own: Own&, g: Gpu&, target: Texture, u: render3d::Upscale) {
 
 // The scenic views' HDR targets' format, as gfx's (render3d_gpu.goose's hdr_format).
 fn hdr_format(own: Own&) -> i32 {
-    if !render3d::hdr_wide && ngfx::format_supported(ngfx::RG11B10F, ngfx::COLOR_TARGET | ngfx::SAMPLED) { ngfx::RG11B10F } else { ngfx::RGBA16F }
+    if ngfx::format_supported(ngfx::RG11B10F, ngfx::COLOR_TARGET | ngfx::SAMPLED) { ngfx::RG11B10F } else { ngfx::RGBA16F }
 }
 
 // The board's module into the HDR target for the pieces' material, as gfx's lit_hdr_frag.
@@ -660,10 +660,14 @@ fn make_lit_shell(own: Own&, g: Gpu&) {
 fn make_hdr(own: Own&, g: Gpu&) {
     let h .= g.hdr_pipes;
     let props = render3d::props_light;
-    guard h.tone.id == 0 || h.pieces != g.pieces || h.props_light != props else { return; }
+    let volumes = room_light::volumes_on;
+    let coat = render3d::physical_coat;
+    guard h.tone.id == 0 || h.pieces != g.pieces || h.props_light != props || h.volumes != volumes || h.coat != coat else { return; }
     if h.tone.id != 0 { release_hdr(own, g); }
     h.pieces = g.pieces;
     h.props_light = props;
+    h.volumes = volumes;
+    h.coat = coat;
     let lit = lit_hdr_blob(g.pieces);
     h.lit = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
     h.fading = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
@@ -671,16 +675,19 @@ fn make_hdr(own: Own&, g: Gpu&) {
     h.table = if props { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_table_props.blob"), table_desc) }
               else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_table.blob"), table_desc) };
     let opaque = ngfx::PipelineDesc { depth_test: true, depth_write: true };
-    h.floor = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor.blob"), opaque);
-    h.planar = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar.blob"), opaque);
-    h.floor_kinds = [nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_shade.blob"), opaque),
-                     nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_no_table.blob"), opaque)];
-    h.planar_kinds = [nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_shade.blob"), opaque),
-                      nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_no_table.blob"), opaque)];
-    h.walls = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_walls.blob"), opaque);
-    h.paint = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint.blob"), opaque);
-    h.sill = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_sill.blob"), opaque);
-    h.metals = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_metals.blob"), opaque);
+    h.floor = (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor.blob"), opaque) });
+    h.planar = (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar.blob"), opaque) });
+    h.floor_kinds = [(if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_shade_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_shade.blob"), opaque) }),
+                     (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_no_table_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_floor_no_table.blob"), opaque) })];
+    h.planar_kinds = [(if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_shade_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_shade.blob"), opaque) }),
+                      (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_no_table_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_planar_no_table.blob"), opaque) })];
+    h.walls = (if coat { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_walls_coat.blob"), opaque) } else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_walls.blob"), opaque) });
+    h.paint = if volumes { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint_volumes.blob"), opaque) }
+              else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_paint.blob"), opaque) };
+    h.sill = if volumes { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_sill_volumes.blob"), opaque) }
+             else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_sill.blob"), opaque) };
+    h.metals = if volumes { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_metals_volumes.blob"), opaque) }
+               else { nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_metals.blob"), opaque) };
     h.glass = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_glass.blob"),
                            ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
     h.lace = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_hdr_lace.blob"),
@@ -1771,7 +1778,7 @@ fn release(own: Own&, g: Gpu&) {
                     g.crown_map, g.tree_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
                     g.warm_color, g.warm_depth, own.warm_kept, g.edges, g.weights, g.area, g.search, g.floor_albedo,
                     g.floor_normal, g.floor_noise, g.scratch_tile, g.wall_albedo, g.wall_normal, g.paper_mask, g.plaster_tone, g.lace_mask,
-                    g.outside_band, g.outside_oak, g.light_volume, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.tapestry_map, g.stove_relief, g.corner_map, g.table_map,
+                    g.outside_band, g.outside_oak, g.light_volume, g.props_probes, g.bloom_a, g.bloom_b, g.book_atlas, g.rug_map, g.tapestry_map, g.stove_relief, g.corner_map, g.table_map,
                     g.pre_place, g.pre_facing, g.pre_depth, g.ssao_raw, g.ssao_map, g.planar_color, g.planar_depth,
                     g.planar_map, g.scene_image];
     for t in textures { if t.id != 0 { nx::release(t); } }

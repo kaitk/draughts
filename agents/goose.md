@@ -271,7 +271,7 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   1600 × 1000), and not additively. Weigh a feature by a build without its code, not by its
   uniform. Any change to `LIT_FRAG`'s text, even a branch never taken, moved two pixels of
   the game's shot by 7 levels: a tuner-only switch goes in shaders the tuner embeds itself
-  (`render3d_gpu::tuned_frags`, `shaders::TOE_FN`).
+  (`render3d_gpu::tuned_frags`).
   Moving code about in it (one call site in a loop, work done earlier) made it slower, not
   faster; what paid was drawing the triangles that need a path with a pipeline of their
   own. The room is now one pipeline a material group (`render3d::room_group`: floor, walls,
@@ -282,10 +282,9 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   both renderers, `scripts/ngfx_3d_shaders.py`'s `ROOMS`, the tuner's `tuned_frags`; and the mirror's
   pipeline (`planar_*`) in both renderers. A material gets a kind of its own
   (`surfaces::MAT_STONE`, 7) rather than a fraction of another's. A tuner-only variant of a
-  group's shader (`PAINT_STEPS`, `SILL_STEPS`) is chosen in `room_frag` and its pipeline made
-  again when it comes or goes (`make_room_tier`'s `room_steps`, `sill_steps`); for the
-  mirror too, give it a `MIRROR_PASS` variant of its own (`TUNED_SILL_MIRROR`), or the
-  floor reflects the app's look in the tuner's old mode. A split group drawn in another
+  group's shader is chosen in `room_frag` and its pipeline made again when it comes or
+  goes (`make_room_tier`); for the mirror too, give it a `MIRROR_PASS` variant of its own,
+  or the floor reflects the app's look in the tuner's. A split group drawn in another
   order than before moves pixels where two groups' faces tie in depth: draw it where its
   triangles were drawn before (the sills before the paint, as in the walls' draw).
 - A furniture piece of the shell with a material of its own can share a group's shader

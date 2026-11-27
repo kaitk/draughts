@@ -45,7 +45,9 @@ struct Room {
     // (degrees), z the sill's height over the board, w the opening's middle along the wall
     // from where the board's middle sees the sun.
     window: float4 = float4 { 36.0, 20.0, -2.0, 2.0 },
-    // A pane's width and height, a bar's width.
+    // A pane's width and height, a bar's width; w 1 where the shell's casements' members are
+    // seen with their depth, by the sun on every surface (LIGHT_FN's casement) and in the
+    // bake (room_light::members_traced): the light tuner's --light physical.
     panes: float4 = float4 { 9.0, 11.0, 1.0, 0.0 },
     // x panes across, y panes up, z how far the curtain reaches in from the opening's
     // side (0 none), w how much of the sun its lace lets through.
@@ -177,27 +179,6 @@ let WINTER = Room {
     ..
 };
 
-// The same hall on a clear January day: the sun at its winter height, about 8° (58.5° N),
-// pale gold, long shadows; the snow outside a strong cold fill from the doors; a bare
-// crooked oak, so only its branches cast shadows.
-let WINTER_SUN = Room {
-    key:        float4 { 25.0, 8.0, 6.0, 0.85 },
-    key_color:  float4 { 1.0, 0.87, 0.72, 0.0 },
-    fill:       float4 { 10.0, 12.0, 1.1, 0.7 },
-    fill_color: float4 { 0.78, 0.86, 1.0, 0.0 },
-    walls:      float4 { 0.62, 0.67, 0.72, 0.35 },
-    ceiling:    float4 { 1.0, 1.0, 1.0, 0.2 },
-    floor:      float4 { 0.35, 0.25, 0.18, 0.1 },
-    lamp:       float4_0,
-    lamp_color: float4_0,
-    opening:    float4 { 2.0, 5.0, 3.0, 0.6 },
-    leaves:     float4 { 0.35, 0.8, 150.0, 0.12 },
-    tree:       float4 { 1.0, 6.0, 70.0, 0.0 },
-    crown:      float4 { 0.0, -45.0, 1.0, 0.3 },
-    species:    3,
-    ..
-};
-
 // The upper hall on a May morning (prompts.txt's 7): low clear sun slanting in from the
 // left, near white; a cool sky, a little green from the trees, pale walls; the tree's
 // young leaves small and sparse, letting more of the sun through.
@@ -238,19 +219,15 @@ let SUMMER = Room {
     ..
 };
 
-// The takes, for the tuner and a season's choice: each season's room, and winter's sunny
-// one beside its snow light.
+// The takes, each season's room.
 let LIBRARY = 0;
 let HALL_SNOW = 1;
-let HALL_SUN = 2;
-let HALL_SPRING = 3;
-let SEA_EVENING = 4;
-let COUNT = 5;
-let NAMES = ["library", "hall-snow", "hall-sun", "hall-spring", "evening"];
+let HALL_SPRING = 2;
+let SEA_EVENING = 3;
+let NAMES = ["library", "hall-snow", "hall-spring", "evening"];
 
 fn get(take: i64) -> Room {
     if take == HALL_SNOW { return WINTER; }
-    if take == HALL_SUN { return WINTER_SUN; }
     if take == HALL_SPRING { return SPRING; }
     if take == SEA_EVENING { return SUMMER; }
     return AUTUMN;
@@ -283,6 +260,29 @@ fn color_of(c: float4) -> float3 { float3 { srgb_linear(c.x), srgb_linear(c.y), 
 
 // The key's color times its strength, linear: the shaders' light_color with w 1.
 fn key_light(r: Room) -> float3 { color_of(r.key_color) }
+
+// The direct sun's colour by its height in degrees, linear Rec.709 at luminance 1: a 5778 K
+// sun through a clear sky (Rayleigh, an aerosol of Angstrom's 0.08 and 1.3, the ozone's
+// Chappuis band) at Kasten and Young's air mass, CIE 1931 to Rec.709 (tools/sun_color.py).
+// About 2160 K at 3 degrees, 3950 K at 15, 5110 K overhead.
+let SUN_HEIGHTS: f32[14] = [3.0, 5.0, 7.0, 10.0, 13.0, 16.0, 20.0, 25.0, 30.0, 40.0, 50.0, 60.0, 75.0, 90.0];
+let SUN_COLORS: float3[14] = [
+    float3 { 2.3145, 0.7102, 0.0000 }, float3 { 1.9037, 0.8219, 0.1034 }, float3 { 1.6909, 0.8751, 0.2031 },
+    float3 { 1.5192, 0.9141, 0.3221 }, float3 { 1.4243, 0.9334, 0.4101 }, float3 { 1.3649, 0.9444, 0.4760 },
+    float3 { 1.3139, 0.9531, 0.5409 }, float3 { 1.2737, 0.9592, 0.5982 }, float3 { 1.2475, 0.9629, 0.6390 },
+    float3 { 1.2161, 0.9668, 0.6921 }, float3 { 1.1985, 0.9689, 0.7238 }, float3 { 1.1880, 0.9700, 0.7436 },
+    float3 { 1.1798, 0.9708, 0.7596 }, float3 { 1.1773, 0.9711, 0.7644 },
+];
+
+fn sun_color_at(height: f32) -> float3 {
+    guard height > SUN_HEIGHTS[0] else { return SUN_COLORS[0]; }
+    for i in 1..SUN_HEIGHTS.len {
+        guard height < SUN_HEIGHTS[i] else { continue; }
+        let f = (height - SUN_HEIGHTS[i - 1]) / (SUN_HEIGHTS[i] - SUN_HEIGHTS[i - 1]);
+        return SUN_COLORS[i - 1] + (SUN_COLORS[i] - SUN_COLORS[i - 1]) * f;
+    }
+    return SUN_COLORS[SUN_COLORS.len - 1];
+}
 
 // Adds to `sh` a light from `d` sending `strength` × `c` onto a white surface facing it,
 // over pi as the shaders' sum is, its lobe widened by `broad` (0 a direction, 1 about a

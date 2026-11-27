@@ -56,7 +56,7 @@ Done and cancelled tasks are listed in `000-archive/README.md`; the MVP in
 - Renderer: 065 NoGraphicsAPI through goose-ngfx, with the renderer chosen at run time,
   the uncapped Windows runs, and MSAA and older Apple GPUs.
 - Code health: 118 the 3D shaders split into files by what they draw (done but the material split, after 120); 119 a lean test suite, done: `scripts/test.sh ui`, `logic`, or all.
-- Light: 120 the props' light baked per vertex (the chairs and table, then every prop; Mali by a colour a vertex); 121 SSAO kept to what the bake can't reach, after 120. 122 the room's light rebuilt from physical inputs against a path-traced reference; 123 the scene to Blender and back; 124 one model of the lace's light, for 122.
+- Light: 120 the props' light baked per vertex (the chairs and table, then every prop; Mali by a colour a vertex); 121 SSAO kept to what the bake can't reach, after 120. 122 the room's light rebuilt from physical inputs against a path-traced reference; 123 the scene to Blender and back; 124 one model of the lace's light, for 122. 125 the look tuned in Blender and carried to the app (a plan, after 122). 126 the 3D settings as data: presets, layers, the stored overrides, `lighting = baked` hidden above them. 127 the box window rebuilt from its reference.
 - Upstream: 010 goose_gfx changes in order, Wayland's branches among them, then SDL's;
   cute_spirv's Direct3D 12 fix for cute_framework and Goose, and the first instance.
 - The manor room: 093, a whole room around the 3D board; exploratory, concept art only.

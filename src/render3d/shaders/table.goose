@@ -7,7 +7,8 @@ namespace shaders;
 let TABLE_ROOM = "#define TABLE_ROOM 1\n";
 // TABLE_VERT and TABLE_FRAG in the room lit from the room's probe grid where each pixel is,
 // through the props' baked occlusion (render3d::props_light, task 120), in place of the four
-// samples on the table's axis. With TABLE_ROOM, in both stages.
+// samples on the table's axis; the probes' light as nine harmonics (the props' atlas). With
+// TABLE_ROOM, in both stages; the desktop's tiers only (render3d_gpu::make_room_tier).
 let PROPS_LIGHT = "#define PROPS_LIGHT 1\n";
 
 let TABLE_SHELL = """
@@ -19,14 +20,17 @@ let TABLE_SHELL = """
     layout(set = 3, binding = 2) uniform Shell { vec4 axes; vec4 tile; vec4 shell; vec4 shell_mids; vec4 shell_niche;
                                                  vec4 shell_glass; vec4 shell_sun; vec4 window_view; };
     #ifdef PROPS_LIGHT
-    // The room's baked light (model3d::room_light), its probes' atlas, as ROOM_FRAG's.
+    // The room's baked light (model3d::room_light) for the props: its probes' light as nine
+    // harmonics, in room_light::PROPS_BLOCKS blocks laid out as ROOM_FRAG's atlas's colours.
     #ifdef NO_SSAO
-    layout(set = 2, binding = 10) uniform sampler2D light_volume;
+    layout(set = 2, binding = 10) uniform sampler2D props_probes;
     #else
-    layout(set = 2, binding = 11) uniform sampler2D light_volume;
+    layout(set = 2, binding = 11) uniform sampler2D props_probes;
     #endif
     // render3d::PropsLightBlock: the probes' grid as ROOM_HEAD's light_box and light_grid;
-    // props_look x 1 where the table keeps its own shade terms beside the bake.
+    // props_look x 1 where the table keeps its own shade terms beside the bake, y how far
+    // past its terminator the sun's light wraps, z 1 where the table's profile's occlusion
+    // gives way to the bake's.
     layout(set = 3, binding = 3) uniform PropsLight { vec4 light_box; vec4 light_grid; vec4 props_look; };
     #endif
     """;
@@ -117,9 +121,9 @@ let TABLE_HEAD = """
     // three colours' constant and direction; room_mix x 1 there, y the harmonics the room
     // keeps, z the room's exposure over the board's, w the shade's floor of the key kept;
     // room_shade the room's even bounce kept, w a metre; ssao the room's ambient occlusion
-    // (SSAO_FN).
+    // (SSAO_FN); base_wood and base_look how the base reads its wood (render3d::base_wood).
     layout(set = 3, binding = 1) uniform Table { vec4 pool; vec4 coat; vec4 polish; vec4 worn; vec4 shape; vec4 table_map[4];
-                                                 vec4 room_light[12]; vec4 room_mix; vec4 room_shade; vec4 ssao; };
+                                                 vec4 room_light[12]; vec4 room_mix; vec4 room_shade; vec4 ssao; vec4 base_wood; vec4 base_look; };
     """;
 
 // The table's own shadow from its map (render3d::table_map), which TABLE_FRAG and ROOM_FRAG
@@ -211,14 +215,18 @@ let TABLE_FRAG = """
         return (max(mix(a, b, f), vec3(0.0)) + harmonics * room_mix.y + room_shade.rgb) * mix(room_mix.z, 1.0, over);
     }
     #ifdef PROPS_LIGHT
-    // One probe's texel of the room's baked light, as ROOM_FRAG's probe_at: colour c's block,
-    // the height's slice k, at g (the grid's x and along v).
-    vec4 grid_probe(float c, float k, vec2 g) {
-        vec2 size = vec2(light_grid.x * light_grid.z, 3.0 * light_grid.y);
-        return textureLod(light_volume, vec2(k * light_grid.x + g.x + 0.5, c * light_grid.y + g.y + 0.5) / size, 0.0);
+    // One probe's texel of the props' atlas: block t, the height's slice k, at g (the grid's
+    // x and along v), the slices k0 and k1 mixed by kf.
+    vec4 grid_probe(float t, float k0, float k1, float kf, vec2 g) {
+        vec2 size = vec2(light_grid.x * light_grid.z, 7.0 * light_grid.y);
+        vec2 at = vec2(g.x + 0.5, t * light_grid.y + g.y + 0.5);
+        return mix(textureLod(props_probes, (at + vec2(k0 * light_grid.x, 0.0)) / size, 0.0),
+                   textureLod(props_probes, (at + vec2(k1 * light_grid.x, 0.0)) / size, 0.0), kf);
     }
     // The room's baked light at q toward d (both the world's), over pi, as ROOM_FRAG's
-    // baked_light: q turned into the room's frame, the probes half a step out along d.
+    // baked_light but with the second band: q turned into the room's frame, the probes half a
+    // step out along d. The nine harmonics' rgb one after another in seven texels: the
+    // constant, the direction's x, y, z, then (nx² - nz²), (ny² - nz²), nx ny, nx nz, ny nz.
     vec3 grid_light(vec3 q, vec3 d) {
         vec3 lq = vec3(dot(q.xz, axes.xy), q.y, dot(q.xz, axes.zw));
         vec3 ld = vec3(dot(d.xz, axes.xy), d.y, dot(d.xz, axes.zw));
@@ -227,10 +235,17 @@ let TABLE_FRAG = """
         float k0 = floor(g.y);
         float k1 = min(k0 + 1.0, hi.y);
         float kf = g.y - k0;
-        vec4 r = mix(grid_probe(0.0, k0, g.xz), grid_probe(0.0, k1, g.xz), kf);
-        vec4 gr = mix(grid_probe(1.0, k0, g.xz), grid_probe(1.0, k1, g.xz), kf);
-        vec4 b = mix(grid_probe(2.0, k0, g.xz), grid_probe(2.0, k1, g.xz), kf);
-        return max(vec3(r.x + dot(r.yzw, ld), gr.x + dot(gr.yzw, ld), b.x + dot(b.yzw, ld)), vec3(0.0));
+        vec4 t0 = grid_probe(0.0, k0, k1, kf, g.xz);
+        vec4 t1 = grid_probe(1.0, k0, k1, kf, g.xz);
+        vec4 t2 = grid_probe(2.0, k0, k1, kf, g.xz);
+        vec4 t3 = grid_probe(3.0, k0, k1, kf, g.xz);
+        vec4 t4 = grid_probe(4.0, k0, k1, kf, g.xz);
+        vec4 t5 = grid_probe(5.0, k0, k1, kf, g.xz);
+        vec4 t6 = grid_probe(6.0, k0, k1, kf, g.xz);
+        vec3 e = t0.xyz + vec3(t0.w, t1.xy) * ld.x + vec3(t1.zw, t2.x) * ld.y + t2.yzw * ld.z
+               + t3.xyz * (ld.x * ld.x - ld.z * ld.z) + vec3(t3.w, t4.xy) * (ld.y * ld.y - ld.z * ld.z)
+               + vec3(t4.zw, t5.x) * (ld.x * ld.y) + t5.yzw * (ld.x * ld.z) + t6.xyz * (ld.y * ld.z);
+        return max(e, vec3(0.0));
     }
     // room_light_at with the grid at q (world) in place of the samples on the table's axis.
     vec3 props_light_at(vec3 q, vec3 d, vec3 harmonics, bool in_room) {
@@ -241,13 +256,9 @@ let TABLE_FRAG = """
     #endif
 
     vec3 tonemap(vec3 c) {
-    #ifdef TOE_SWITCH
-        c = toe_off(c, toe.y);
-    #else
         float x = min(c.r, min(c.g, c.b));
         float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
         c -= offset;
-    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;
@@ -393,6 +404,28 @@ let TABLE_FRAG = """
         if (top) uv = vec2(shape.w * out_dir.x + shape.z * out_dir.y, shape.w * out_dir.y - shape.z * out_dir.x) / (2.0 * TABLE_MAP_R) + 0.5;
     #endif
         if (base) uv = vec2(0.2, 0.15) + v_uv / (2.0 * TABLE_MAP_R);
+        // The base's own wood (render3d::base_wood x 1): a turned column and bent legs are
+        // cut from straight blanks, so the grain runs along the column's axis and along each
+        // leg, the map's figure drawn out along it base_wood.w times, with no rings round the
+        // beads. The column's u is its angle round from its side, at 80 mm out, mirrored as
+        // the mesh's (the map doesn't meet itself across), with base_look.x degrees of slant
+        // and base_look.y of how far out the cut is (the rings it crosses on the urn); the
+        // column is what stands over the drum's top (212 mm) or inside it (72 mm), the legs
+        // coming out of it below 240 mm. Each leg (mesh::table_base, toward the board's
+        // corners) reads its own part of the map.
+        float up_mm = (p.y - shape.y) / room_shade.w * 1000.0;
+        float out_mm = from_mid / room_shade.w * 1000.0;
+        bool column = base && !chair && (up_mm > 240.0 || out_mm < 72.5 || (up_mm > 212.0 && out_mm < 83.5));
+        bool own_base = base && !chair && base_wood.x > 0.5;
+        if (own_base) {
+            vec2 q = vec2(shape.w * out_dir.x + shape.z * out_dir.y, shape.w * out_dir.y - shape.z * out_dir.x);
+            float r0 = 0.08 * room_shade.w;
+            float along = column ? p.y - shape.y : v_uv.y;
+            float across = column ? abs(atan(q.y, q.x)) * r0 + base_look.y * (from_mid - r0)
+                                    + tan(radians(base_look.x)) * along
+                                  : v_uv.x + 2.3 * floor(atan(q.y, q.x) / (0.5 * PI));
+            uv = vec2(base_look.z + across / (2.0 * TABLE_MAP_R), 0.15 + along / (2.0 * TABLE_MAP_R * base_wood.w));
+        }
         // On the sides and the base the figure is drawn out along the grain (their v)
         // into straight streaks, as an edge's and a frieze's wood is: the filter's
         // footprint lengthened along it, the anisotropic filter blurring that way only.
@@ -406,12 +439,19 @@ let TABLE_FRAG = """
         vec4 tn = textureGrad(table_normal, uv, gx, gy);
         vec3 albedo = a.rgb;
         float rough = a.a;
+        // Its colour: the lightness the map's mean times base_wood.y, the figure round it
+        // base_wood.z of the map's, the colour's strength base_look.w of the map's.
+        if (own_base) {
+            float mean = dot(textureLod(table_albedo, vec2(0.5), 20.0).rgb, vec3(0.2126, 0.7152, 0.0722));
+            float l = max(dot(albedo, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
+            albedo = mix(vec3(l), albedo, base_look.w) * (mean * base_wood.y + (l - mean) * base_wood.z) / l;
+        }
         float ao = clamp(v_ao, 0.0, 1.0);
     #ifdef PROPS_LIGHT
         // The bake's open part: the chairs' in place of their own shade (mesh::chairs'), the
-        // table's beside its profile's.
+        // table's beside its profile's, or in place of it with props_look.z.
         float open_part = clamp(v_open.w, 0.0, 1.0);
-        ao = chair ? open_part : ao * open_part;
+        ao = chair || props_look.z > 0.5 ? open_part : ao * open_part;
     #endif
     #ifdef TABLE_ROOM
         // The chairs' wood is the base's, darker and less red: the top beside it, under its
@@ -500,7 +540,11 @@ let TABLE_FRAG = """
         vec3 vn = normalize(v_normal);
         vec3 nc = top ? normalize(mix(vn, n, coat.z) + polish.w * vec3(bump.x, 0.0, bump.y)) : vn;
         float nol = dot(n, l);
+    #ifdef PROPS_LIGHT
+        float wrap = props_look.y;
+    #else
         float wrap = 0.2;
+    #endif
         float diff = clamp((nol + wrap) / (1.0 + wrap), 0.0, 1.0) / (1.0 + wrap);
         // The light's pool round the board.
         float d = length(p.xz) / max(pool.x, 1e-3);
@@ -586,18 +630,26 @@ let TABLE_FRAG = """
         ar = sqrt(clamp(ar * ar + min(2.0 * variance + 0.3 * top_var, 0.3), 0.0, 1.0));
         ar = max(ar, 0.0079);
         vec3 f0 = vec3(0.04);
+    #ifdef PROPS_LIGHT
+        // The sun's disc, 0.53 degrees across, widens the polish's lobe by half its angular
+        // radius (Karis's widening for a disc light).
+        float ak = ar + 0.0023;
+    #else
         // The key light is a window, not a point: its highlight in the polish is as broad
         // as coat.w's roughness, not the sun's pinpoint.
         float ak = max(ar, coat.w * coat.w);
+    #endif
         vec3 spec = d_ggx(noh, ak) * v_smith(nov, nl, ak) * f_schlick(f0, voh) * nl * light * spec_vis;
         vec3 r = reflect(-v, nc);
         vec3 env = sh_eval(r) * params.z * mix(1.0, lit, 0.5);
     #ifdef TABLE_ROOM
+    #ifdef PROPS_LIGHT
+        // The polish sees the light arriving from r's side, as the probes hold it: the room's
+        // surfaces' light and the windows', no albedo on it again.
+        env = props_light_at(p, r, sh_eval(r) * params.z, chair);
+    #else
         // In the room the polish sees the room's surfaces: the light on them toward r by
         // their mean albedo (0.2), as ROOM_FRAG's rough reflections take it.
-    #ifdef PROPS_LIGHT
-        env = 0.2 * props_light_at(p, r, sh_eval(r) * params.z, chair);
-    #else
         env = 0.2 * room_light_at(p.y, r, sh_eval(r) * params.z, chair);
     #endif
     #endif
@@ -616,9 +668,11 @@ let TABLE_FRAG = """
         result = vec4(peak > 16.0 ? color * (16.0 / peak) : color, 1.0);
     #else
     #ifdef HDR_OUT
-        // Into the scenic views' HDR target: the light with tonemap's toe alone taken off.
+        // Into the scenic views' HDR target: the light with tonemap's toe alone taken off,
+        // none where Frame's toe.y says 2 (the camera's curve takes it).
         float least = min(color.r, min(color.g, color.b));
-        result = vec4(color - (least < 0.04 ? least - 12.5 * least * least : 0.02), 1.0);
+        if (toe.y < 1.5) color -= least < 0.04 ? least - 12.5 * least * least : 0.02;
+        result = vec4(color, 1.0);
     #else
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         result = vec4(to_srgb(color) * (1.0 - screen.z), 1.0);

@@ -127,7 +127,7 @@ fn profiled(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Builder,
     sweep(verts, indices, moved(b, 0.0, depth * k), prof[..], lift, 0.0, width * k, -1.0, 1.0, surfaces::MAT_OAK, seed, cm_up());
     for side in SIDES {
         let s = if side < 0.0 { 0.0 } else { width * k };
-        let r = surfaces::Builder { b.o + b.d * s, b.n, b.d * side, 0.0, 1.0 };
+        let r = surfaces::Builder { b.o + b.d * s, b.n, b.d * side };
         seed++;
         sweep(verts, indices, r, prof[..], lift, 0.0, depth * k, 0.0, 1.0, surfaces::MAT_OAK, seed, cm_up());
     }

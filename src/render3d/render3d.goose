@@ -253,8 +253,6 @@ struct Gpu {
     tree_ms:        f64,            // the last bake's time (measuring)
     tree_bakes:     i64,            // how many times the tree's map was baked (window_map_key)
     table_edge:     float4,         // the edge its mesh is made with (tables::Table.edge)
-    table_r:        f32,            // the top's radius (world units), 0 mesh::TABLE_R (a tuner's)
-    table_made_r:   f32,            // and the one its mesh is made with
     // The table turned about its axis under the board (degrees; a tuner's, the room's
     // table only): its mesh, and its top's figure in TABLE_ROOM's shader (TableBlock's
     // shape.zw). 0 the game's.
@@ -307,7 +305,6 @@ struct Gpu {
     size:            int2,
     linear:          Sampler,
     aniso:           Sampler,
-    oak_sampler:     Sampler,      // optional light tuner override for the oak fields
     compare:         Sampler,
     lit:             Pipeline,
     fading:          Pipeline, // the lit pass for a fading piece, blended
@@ -343,11 +340,10 @@ struct Gpu {
     photo_ms:        f64,
     motes:           Pipeline,      // the dust in the sunbeam (draw_motes), made when first wanted
     mote_seeds:      Buffer,        // and each mote's seed (mote_seeds()), filled once
-    // The room round the table (model3d::surfaces, the tuner's for now): shown or not, the
-    // panelled wall's distance, its oak's two fields baked once (the floor's and the
-    // wall's, albedo and roughness, the normal), its mesh made for the room's frame.
+    // The library round the table (room_shell::LIBRARY, the tuner's for now): shown or not,
+    // its oak's two fields baked once (the floor's and the wall's, albedo and roughness, the
+    // normal), its mesh made for the room's frame.
     room_on:      bool,
-    room_away:    f32,
     room_side:    i64,              // the fields' side they are made at, 0 none
     room_baked:   bool,
     room_ms:      f64,              // the bake's time (measuring)
@@ -360,8 +356,7 @@ struct Gpu {
     paper_mask:   Texture,          // the wallpaper's mask, R8 with its mips (surfaces::PAPER_SIDE)
     paper_tile:   f32,              // the wall a tile of it covers (world units), 0 surfaces::PAPER_TILE
     room_frame:   surfaces::Frame,  // the room's frame this frame (put_room)
-    room_shell:   bool,             // the library's shell (room_shell::LIBRARY), not the panelled wall
-    room_for:     float4,           // what the mesh was made for: the window's wall and sill, the wall's v, the shell
+    room_for:     float4,           // what the mesh was made for: the shell's key
     shell_table:  float2,           // the games table's place in the plan the shell's mesh and view out were made round
     mesh_ms:      f64,              // the mesh's making (measuring)
     // The shell's corners' shade (model3d::corner_map), baked with its mesh: the atlas, R8,
@@ -371,7 +366,7 @@ struct Gpu {
     corner_ms:    f64,
     plaster_tone: Texture,          // the plaster's tone, R8 as the wallpaper's
     lace_mask:    Texture,          // the curtains' lace, R8 with its mips (surfaces::LACE_TEXELS)
-    lace_way:     i64,              // which lace (surfaces::LACE_WAYS), and the one on the GPU
+    lace_way:     i64,              // which lace (the light tuner's LACE_WAYS), and the one on the GPU
     lace_put:     i64,
     window_vb:    Buffer,            // the shell's glass and lace, drawn blended after the rest
     window_ib:    Buffer,
@@ -413,8 +408,6 @@ struct Gpu {
     room_metals: Pipeline,
     room_ssao:   bool,
     room_views:  bool,              // with the tuner's views (room_views_on)
-    room_steps:  bool,              // the painted wood's with the tuner's switches (paint_steps_on)
-    sill_steps:  bool,              // the sills' with the tuner's switches (sill_steps_on)
     room_props:  bool,              // the table's and its mirror's with shaders::PROPS_LIGHT (props_light)
     bake_room:   Pipeline,
     // The view out of the shell's windows (model3d::view_out), drawn first in its place of
@@ -430,7 +423,9 @@ struct Gpu {
     outside_oak:       Texture,
     // The shell's baked light (model3d::room_light), RGBA16F: made again when what it is
     // baked from changes (light_key), its time (measuring) and how many sun patches lit it.
-    light_volume:  Texture,
+    light_volume: Texture,
+    // The props' atlas of the same light as nine harmonics (props_light).
+    props_probes:  Texture,
     light_for:     float4[LIGHT_KEY],
     light_ms:      f64,
     light_patches: i64,
@@ -641,10 +636,10 @@ struct HdrPipelines {
     haze_full:   Pipeline,
     haze_add:    Pipeline,
     pieces:      i32,
-    paint_steps: bool,
-    sill_steps:  bool,
     mapped:      bool,      // with the window's light map (window_map_on)
     props_light: bool,      // the table's with shaders::PROPS_LIGHT (props_light)
+    volumes:     bool,      // the paint's, sills' and metals' with shaders::PROBE_VOLUMES (room_light::volumes_on)
+    coat:        bool,      // the walls' and floor's with shaders::PHYSICAL_COAT (physical_coat)
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -695,16 +690,13 @@ fn table_maps<O>(o: O&, g: Gpu&) {
     g.table_wear_n = baked(o, ws, ws, RGBA8);
 }
 
-// The table's top's radius (world units).
-fn table_radius(g: Gpu&) -> f32 { if g.table_r > 0.0 { g.table_r } else { mesh::TABLE_R } }
-
-// The table's mesh, its top and its base, made again when its edge or its top's radius
-// isn't the one it was made with.
+// The table's mesh, its top and its base, made again when its edge, its turn or its chairs
+// aren't the ones it was made with.
 fn table_mesh<O>(o: O&, g: Gpu&) {
     let e = g.table_spec.edge;
     let was = g.table_edge;
-    let r = table_radius(g);
-    guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w || r != g.table_made_r
+    let r = mesh::TABLE_R;
+    guard g.table_vb.id == 0 || e.x != was.x || e.y != was.y || e.z != was.z || e.w != was.w
           || g.table_turn != g.table_made_turn || g.chairs != g.chairs_made || (g.chairs && chairs_on_rug(g) != g.chairs_rug_made)
           || (props_light && !g.props_baked)
     else { return; }
@@ -738,7 +730,6 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
     g.chairs_made = g.chairs;
     g.chairs_rug_made = chairs_on_rug(g);
     g.table_edge = e;
-    g.table_made_r = r;
     g.table_made_turn = g.table_turn;
 }
 
@@ -746,9 +737,18 @@ fn table_mesh<O>(o: O&, g: Gpu&) {
 // the room's probe grid where each pixel is, through their occlusion baked per vertex, in
 // place of the four samples on the table's axis. The light tuner's, off by default (the app's
 // look as before); props_table_shade keeps the table's own shade terms beside the bake (the
-// base's hidden sky, the edge's under the top). The bake's rays a vertex and reach (metres).
+// base's hidden sky, the edge's under the top); props_wrap: how far past its terminator the
+// sun's light wraps on them (0.2 as made, 0 a lambertian face's, the tuner's --light
+// physical); props_profile_ao: the table keeps its profile's own occlusion (mesh::table's)
+// beside the bake's open part (off under the tuner's --light physical: the bake's alone, as
+// the chairs'). The bake's rays a vertex and reach (metres).
 var props_light = false;
+// The varnish and wax as clear coats (shaders::PHYSICAL_COAT, the light tuner's --light
+// physical): the walls' and floor's groups on the desktop's HDR tier.
+var physical_coat = false;
 var props_table_shade = false;
+var props_profile_ao = true;
+var props_wrap: f32 = 0.2;
 let PROPS_RAYS = 32;
 let PROPS_REACH: f32 = 0.5;
 
@@ -776,10 +776,12 @@ fn bake_props_open<O>(o: O&, g: Gpu&, verts: const mesh::Vertex[:], indices: con
 
 // TABLE_FRAG's block with PROPS_LIGHT (shaders::TABLE_SHELL's PropsLight): the probes' grid
 // as the room's (light_box_of, light_grid_of), and props_look x 1 where the table keeps its
-// own shade terms (props_table_shade).
+// own shade terms (props_table_shade), y the sun's wrap (props_wrap), z 1 where the table
+// takes the bake's open part alone (props_profile_ao off).
 struct PropsLightBlock { light_box: float4, light_grid: float4, props_look: float4 }
 fn props_light_block(g: Gpu&) -> PropsLightBlock {
-    PropsLightBlock { light_box_of(), light_grid_of(), float4 { if props_table_shade { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 } }
+    PropsLightBlock { light_box_of(), light_grid_of(),
+                      float4 { if props_table_shade { 1.0 } else { 0.0 }, props_wrap, if props_profile_ao { 0.0 } else { 1.0 }, 0.0 } }
 }
 
 // A chair's plan round its seat's middle (world units: half its width, its front, its back's
@@ -837,8 +839,17 @@ fn table_shown(g: Gpu&) -> bool { g.table && g.table_baked && g.table_side == g.
 // stays (shade_fill); shade: the room's even bounce it keeps, w a metre in world units.
 struct TableBlock {
     pool:       float4, coat: float4, polish: float4, worn: float4, shape: float4, map: float4[4],
-    room_light: float4[12], room_mix: float4, room_shade: float4, ssao: float4,
+    room_light: float4[12], room_mix: float4, room_shade: float4, ssao: float4, base_wood: float4,
+    base_look:  float4,
 }
+// How the base reads its wood (shaders::TABLE_FRAG's base_wood, the light tuner's
+// --base-wood): x 0 as made, 1 its own, its grain along the column and the legs; then y its
+// lightness and z its figure's contrast, each a share of the map's, w how far the figure is
+// drawn out along the grain. base_look: x the grain's slant round the column (degrees),
+// y the rings the cut crosses, z its place across the map, w the colour's strength.
+// The defaults match the chairs' legs (their wood, darker and less red than the map).
+var base_wood = float4 { 1.0, 0.57, 0.6, 3.0 };
+var base_look = float4 { 0.0, 0.0, 0.5, 0.75 };
 // Whether the table stands in the room with its light baked: drawn with TABLE_ROOM's
 // pipeline (g.table_room) and the probes round it.
 fn table_in_room(g: Gpu&) -> bool { table_map_shown(g)[3].x > 0.5 && light_baked(g) && g.light_volume.id != 0 && g.table_room.id != 0 }
@@ -849,9 +860,10 @@ fn table_block(g: Gpu&) -> TableBlock {
     let on = table_in_room(g);
     let shade = rooms::color_of(r.bounce) * (r.bounce.w * r.baked.w);
     let turn = radians(g.table_turn);
-    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { table_radius(g), surfaces::FLOOR_Y, sin(turn), cos(turn) }, map,
+    TableBlock { t.light, t.coat, t.polish, t.wear, float4 { mesh::TABLE_R, surfaces::FLOOR_Y, sin(turn), cos(turn) }, map,
                  table_probes, float4 { if on { 1.0 } else { 0.0 }, r.baked.z, r.room_exposure, shade_fill },
-                 float4 { shade.x, shade.y, shade.z, surfaces::METRE }, if on { ssao_block_of(g) } else { float4_0 } }
+                 float4 { shade.x, shade.y, shade.z, surfaces::METRE }, if on { ssao_block_of(g) } else { float4_0 }, base_wood,
+                 base_look }
 }
 
 // The table's own shadow in the room (shaders::TABLE_MAP_FN): its top and base, and the
@@ -887,7 +899,7 @@ fn table_map_rows(g: Gpu&) -> float4[4] {
     let e = float2 { -d.y, d.x };
     let fy = surfaces::FLOOR_Y;
     let c = float3 { 0.0, fy, mesh::TABLE_Z };
-    let r = table_radius(g) + TABLE_MAP_MARGIN;
+    let r = mesh::TABLE_R + TABLE_MAP_MARGIN;
     let slope = h / ly;
     let reach = min((mesh::TABLE_TOP - fy) * slope, TABLE_MAP_REACH);
     let cd = c.x * d.x + c.z * d.y;
@@ -942,7 +954,7 @@ fn table_map_matrix(rows: float4[4]) -> Mat {
 // What the table's map is drawn for: the key, the top's radius, the table's mesh.
 fn table_map_key(g: Gpu&) -> float4[2] {
     let l = g.frame.light_dir;
-    return [float4 { l.x, l.y, l.z, table_radius(g) }, float4 { g.table_vb.id, g.table_count, g.table_turn, 0.0 }];
+    return [float4 { l.x, l.y, l.z, mesh::TABLE_R }, float4 { g.table_vb.id, g.table_count, g.table_turn, 0.0 }];
 }
 
 // The table's map drawn where it is wanted and what it was drawn for changed. Recording
@@ -1015,7 +1027,7 @@ fn floor_corners_of(room: corner_map::RoomVertex[>..]&) -> corner_map::RoomVerte
 // table's map drawn (FLOOR_SHADE's light then needs neither), in the HDR target, whose
 // pipelines have the pieces' kinds.
 fn floor_pieces_on(g: Gpu&) -> bool {
-    g.sun.pieces_vb.id != 0 && g.hdr && g.room_shell && g.frame.room.y > 0.0 && table_map_shown(g)[3].x > 0.5
+    g.sun.pieces_vb.id != 0 && g.hdr && g.room_on && g.frame.room.y > 0.0 && table_map_shown(g)[3].x > 0.5
 }
 
 // What the sun-derived block is worked out from: the key, the room's turn, the table's map,
@@ -1031,7 +1043,7 @@ fn sun_key(g: Gpu&) -> float4[SUN_KEY] {
 // The sun-derived block worked out again where what it is made from changed. Recording only,
 // before the board's pass.
 fn sun_derived<O>(o: O&, g: Gpu&) {
-    guard room_shown(g) && g.room_shell else { return; }
+    guard room_shown(g) else { return; }
     let key = sun_key(g);
     var same = g.sun.pieces_vb.id != 0;
     for k in SUN_KEY { same = same && same4(key[k], g.sun.made_for[k]); }
@@ -1077,13 +1089,11 @@ var phone_leaves = LEAVES_STATIC;
 // and its shaders light them a pixel. The app keeps them still.
 var leaves_moving = false;
 
-fn window_map_shown(g: Gpu&) -> bool { window_map_on && room_shown(g) && g.room_shell }
+fn window_map_shown(g: Gpu&) -> bool { window_map_on && room_shown(g) }
 // Whether the room's pipelines for group read the map in the lace's slot (make_room_tier,
-// make_hdr): not the glass's or the lace's, the mirror's, the tuner's views or its switched
-// shaders.
+// make_hdr): not the glass's or the lace's, the mirror's or the tuner's views.
 fn window_map_read(g: Gpu&, group: i64, mirror: bool) -> bool {
     g.window_map.id != 0 && window_map_on && !mirror && !window_group(group) && !room_views_on()
-        && !(ssao_allowed && group == GROUP_PAINT && paint_steps_on()) && !(ssao_allowed && group == GROUP_SILL && sill_steps_on())
 }
 // Whether the tree's light is baked into the map: on the phone's tier as phone_leaves says,
 // elsewhere while the leaves keep still.
@@ -1091,15 +1101,16 @@ fn window_map_tree(g: Gpu&) -> bool {
     if !ssao_allowed { return phone_leaves == LEAVES_STATIC; }
     return !leaves_moving;
 }
-// What the map is baked from: the key, the shell's windows, the penumbra, the tree's place
-// and map, and whether the tree is in (never the wind: on the phone's tier the leaves stay
+// What the map is baked from: the key, the shell's windows, the penumbra, whether the
+// casements' members have their depth (Frame's panes.w), the tree's place and map, and
+// whether the tree is in (never the wind: on the phone's tier the leaves stay
 // as they were when it was baked).
-let WINDOW_MAP_KEY = 13;
+let WINDOW_MAP_KEY = 14;
 fn window_map_key(g: Gpu&) -> float4[WINDOW_MAP_KEY] {
     let b = shell_block(g);
     let f = g.frame;
     return [f.light_dir, b.axes, b.tile, b.shell, b.shell_mids, b.shell_niche, b.shell_glass, b.shell_sun, b.window_view,
-            f.room, f.tree, f.tree_blur, float4 { if window_map_tree(g) { 1.0 } else { 0.0 }, g.tree_bakes, g.lace_mask.id, g.tree_map.id }];
+            f.room, f.panes, f.tree, f.tree_blur, float4 { if window_map_tree(g) { 1.0 } else { 0.0 }, g.tree_bakes, g.lace_mask.id, g.tree_map.id }];
 }
 // The map baked again where what it is made from changed. Recording only, before the
 // board's pass.
@@ -1122,7 +1133,7 @@ fn window_map<O>(o: O&, g: Gpu&) {
 fn box_map_shown(g: Gpu&) -> bool {
     box_map_on && !ssao_allowed && sharp_box_allowed && window_map_shown(g) && light_baked(g) && g.light_volume.id != 0
 }
-let BOX_MAP_KEY = 50;
+let BOX_MAP_KEY = 53;
 fn box_map_key(g: Gpu&) -> float4[BOX_MAP_KEY] {
     let b = surfaces_block(g);
     let f = g.frame;
@@ -1366,14 +1377,9 @@ fn tune_table<O>(o: O&, g: Gpu&, t: tables::Table) {
     o.gpu_flush();
 }
 
-// Shows the room round the table or not (model3d::surfaces), its wall `away` into the
-// room, or with `shell` the library's whole shell (room_shell::LIBRARY): its oak is baked
-// and its mesh made before the next draw (room_surfaces).
-fn show_room(g: Gpu&, on: bool, away: f32 = surfaces::WALL_AWAY, shell: bool = false) {
-    g.room_on = on;
-    g.room_away = away;
-    g.room_shell = shell;
-}
+// Shows the library round the table or not (room_shell::LIBRARY): its oak is baked and
+// its mesh made before the next draw (room_surfaces).
+fn show_room(g: Gpu&, on: bool) { g.room_on = on; }
 
 // The room's materials in groups, each drawn with a pipeline of its own whose shader holds
 // only its materials' code: the floor; the walls' surfaces (the panelling oak, the paper,
@@ -1466,7 +1472,7 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool, mirror: bool = f
         add_texture(t, table_map_or_stand_in(g), g.compare);
         add_texture(t, corners_or_stand_in(g), g.linear);
     }
-    let oak = if g.oak_sampler.id != 0 { g.oak_sampler } else { g.aniso };
+    let oak = g.aniso;
     if group == GROUP_FLOOR {
         add_texture(t, g.floor_albedo, oak);
         add_texture(t, g.floor_normal, oak);
@@ -1505,7 +1511,7 @@ fn room_shown(g: Gpu&) -> bool { g.room_on && g.room_baked && g.room_vb.id != 0 
 // Whether the board's pass draws the view out of the shell's windows in place of the
 // photograph.
 fn outside_shown(g: Gpu&) -> bool {
-    room_shown(g) && g.room_shell && g.outside_on && g.outside_vb.id != 0 && g.outside.id != 0
+    room_shown(g) && g.outside_on && g.outside_vb.id != 0 && g.outside.id != 0
 }
 
 // OUTSIDE_FRAG's block: the exposure (rooms::Room.outside), the sun disc's brightness; in
@@ -1599,18 +1605,18 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.room_ms = (clock() - t0) * 1000.0;
     }
     put_paper(o, g);
-    if g.room_shell && g.stone_tile.id == 0 { put_stone(o, g); }
-    if g.room_shell && g.glass_tile.id == 0 { put_glass_tile(o, g); }
+    if g.stone_tile.id == 0 { put_stone(o, g); }
+    if g.glass_tile.id == 0 { put_glass_tile(o, g); }
     bake_room_light(o, g);
     // The view out of the shell's windows, round its middle window: made once, and again
     // with the shell's mesh where the games table moved in the plan (the room's frame is the
     // table's).
-    let table_moved = g.room_shell && !same2(room_shell::LIBRARY.table, g.shell_table);
+    let table_moved = !same2(room_shell::LIBRARY.table, g.shell_table);
     if table_moved && g.outside_vb.id != 0 {
         o.gpu_release_mesh(g.outside_vb, g.outside_ib);
         g.outside_vb = Buffer { 0 };
     }
-    if g.room_shell && g.outside_vb.id == 0 {
+    if g.outside_vb.id == 0 {
         var verts:   mesh::Vertex[>..] = [];
         var indices: u32[>..]          = [];
         g.outside_far_count = view_out::build(verts, indices, view_out::centre_of(room_shell::LIBRARY), park_ground);
@@ -1618,16 +1624,13 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.outside_count = indices.len;
     }
     // The mesh, in the room's frame (ROOM_VERT turns it with the key): made again only
-    // for another room, or the panelled wall's room for another window or wall.
-    let w = g.room.window;
-    let shell_key: f32 = if !g.room_shell { 0.0 } else {
-        (if g.books_off { 2.0 } else { 1.0 }) + (if room_shell::shutters_on { 0.0 } else { 2.0 }) + (if room_shell::paint_quiet { 0.0 } else { 4.0 })
-        + (if room_shell::paint_fillets { 0.0 } else { 8.0 }) + (if room_shell::paint_tilt { 0.0 } else { 16.0 })
-        + 32.0 * room_shell::lace_hang };
-    let key = float4 { w.x, w.z, g.room_away, shell_key };
+    // where the shell's parts changed.
+    let shell_key: f32 =
+        (if g.books_off { 2.0 } else { 1.0 }) + (if room_shell::shutters_on { 0.0 } else { 2.0 }) + 32.0 * room_shell::lace_hang;
+    let key = float4 { shell_key, 0.0, 0.0, 0.0 };
     // The corners' shade is baked with the mesh, again when the room's corners change, but
     // not while a slider is held.
-    let corners = if g.room_shell { g.room.corners } else { float4_0 };
+    let corners = g.room.corners;
     let corners_moved = !same4(corners, g.corner_for) && !g.bake_held;
     guard g.room_vb.id == 0 || !same4(key, g.room_for) || corners_moved || table_moved else { return; }
     let t0 = clock();
@@ -1635,23 +1638,17 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
     var indices:       u32[>..]          = [];
     var glass:         mesh::Vertex[>..] = [];
     var glass_indices: u32[>..]          = [];
-    if g.room_shell { room_shell::build(verts, indices, glass, glass_indices, room_shell::LIBRARY, !g.books_off); }
-    else { surfaces::build(verts, indices, g.room_away, w.x, w.z); }
-    // Each vertex with its place in the corners' map; the panelled wall's room never reads
-    // it, and the glass's holds the fraction of its material, whole across each triangle
+    room_shell::build(verts, indices, glass, glass_indices, room_shell::LIBRARY, !g.books_off);
+    // Each vertex with its place in the corners' map, and the glass's holds the fraction of its material, whole across each triangle
     // (the lace's: what its folds hide, room_shell::fold_hidden).
     var room:         corner_map::RoomVertex[>..] = [];
     var room_indices: u32[>..]                    = [];
-    if g.room_shell { corner_map::lay_out(verts, indices, surfaces::METRE, room, room_indices); }
-    else {
-        for v in verts { room.push(corner_map::room_vertex(v, float2_0, float2_0)); }
-        for i in indices { room_indices.push(i); }
-    }
+    corner_map::lay_out(verts, indices, surfaces::METRE, room, room_indices);
     g.room_from = by_group(room, room_indices);
     // The cheap mirror world's triangles after the groups': the walls' to the metals' less
     // what is small (mirror_cheap).
     g.cheap_from = room_indices.len;
-    if mirror_cheap && g.room_shell {
+    if mirror_cheap {
         for i in g.room_from[GROUP_WALLS]..g.cheap_from {
             if i % 3 == 0 && floor(room[room_indices[i] as i64].mat + 0.001) != surfaces::MAT_CORD {
                 for j in 0..3 { room_indices.push(room_indices[i + j]); }
@@ -1659,7 +1656,7 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         }
     }
     g.cheap_count = room_indices.len - g.cheap_from;
-    if g.room_shell { g.floor_corners = floor_corners_of(room); }
+    g.floor_corners = floor_corners_of(room);
     var glass_room: corner_map::RoomVertex[>..] = [];
     for v in glass {
         let kind = floor(v.mat);
@@ -1686,7 +1683,6 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.corner_map = Texture { 0 };
     }
     g.corner_for = corners;
-    guard g.room_shell else { return; }
     let t1 = clock();
     var planes = corner_planes(g);
     corner_map::bake(planes, verts, indices);
@@ -1737,7 +1733,7 @@ fn put_paper<O>(o: O&, g: Gpu&) {
         g.lace_mask = Texture { 0 };
     }
     if g.lace_mask.id == 0 {
-        g.lace_mask = put_lace(o, g.lace_way);
+        g.lace_mask = put_lace(o);
         g.lace_put = g.lace_way;
     }
     guard g.paper_mask.id == 0 else { return; }
@@ -1868,13 +1864,17 @@ fn put_rgba<O>(o: O&, px: u8[>..]&, w0: i64, h0: i64, mips: i64) -> Texture {
     return tex;
 }
 
-// The lace of `way` on the GPU, R8 with its mips down to where its sides stay even.
-extern fn draughts_lace_mask(way: i64, out: u8[:], w: i64, h: i64) -> bool;
-fn put_lace<O>(o: O&, way: i64) -> Texture {
+// The lace on the GPU, R8 with its mips down to where its sides stay even: the built-in
+// one, or lace_png where the light tuner set it (its spare ways, read from files).
+var lace_png: const u8[:] = "";
+extern fn draughts_lace_mask(out: u8[:], w: i64, h: i64) -> bool;
+extern fn draughts_gray_png(png: const u8[:], out: u8[:], w: i64, h: i64) -> bool;
+fn put_lace<O>(o: O&) -> Texture {
     let size = surfaces::LACE_TEXELS;
     var px: u8[>..] = [];
     px.resize(lace_bytes(), 0);
-    draughts_lace_mask(way, px[0..size.x * size.y], size.x, size.y);
+    if lace_png.len > 0 { draughts_gray_png(lace_png, px[0..size.x * size.y], size.x, size.y); }
+    else { draughts_lace_mask(px[0..size.x * size.y], size.x, size.y); }
     let mask = o.gpu_sampled(size.x, size.y, surfaces::LACE_MIPS, R8);
     var at = 0;
     for level in surfaces::LACE_MIPS {
@@ -2086,9 +2086,9 @@ struct SurfacesBlock {
     sheen:         float4,
     room_sun:      float4,
     paint_quiet:   float4,
-    paint_steps:   float4,
+    paint_steps:   float4,         // unused, kept so the block and room_fixed stay as they are
     sill:          float4,
-    sill_steps:    float4[2],
+    sill_steps:    float4[2],      // unused as paint_steps
     window_view:   float4,
     lace_shade:    float4,
     table_map:     float4[4],
@@ -2097,7 +2097,7 @@ struct SurfacesBlock {
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
-    guard g.room_shell else { return b; }
+    guard g.room_on else { return b; }
     // The shell's windows, which light the room in its place (shaders::LIGHT_FN's
     // shell_open), the lace letting through what the room's curtain does.
     let s = room_shell::LIBRARY;
@@ -2166,10 +2166,10 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
     let k = surfaces::LOOK;
     let f = g.room_frame;
     let tile = if g.paper_tile > 0.0 { g.paper_tile } else { surfaces::PAPER_TILE };
-    // The window wall's and the far wall's v: the shell's, or the tuned window's and wall's.
+    // The window wall's and the far wall's v, the shell's.
     let s = room_shell::LIBRARY;
-    let window_v = if g.room_shell { shell_face(s) } else { g.room.window.x };
-    let away = if g.room_shell { s.table.y * surfaces::METRE } else { g.room_away };
+    let window_v = shell_face(s);
+    let away = s.table.y * surfaces::METRE;
     SurfacesBlock { k.plank, k.planks, k.worn, k.paper, k.gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
@@ -2177,12 +2177,12 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     k.ceiling_shade, k.ceiling_light, k.paint,
                     k.lace_thread, float4_0, float4_0, float4_0, float4_0, k.stone, float4_0, k.brass,
                     model3d::f4(rooms::color_of(k.lace_light) * g.room.outside, k.lace_light.w),
-                    float4 { table_radius(g), surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
+                    float4 { mesh::TABLE_R, surfaces::FLOOR_Y, g.room_tint.x, g.room_tint.y }, float4 { 0.0, 1.0, 0.0, 0.0 },
                     float4_0, float4_0, float4_0, float4_0, float4_0, float4_0,
                     float4 { if g.book_fade > 0.0 { g.book_fade } else { 1.0 }, books::FADE_MAX / books::FADE_STEPS, books::CODES, 0.0 },
                     float4_0, float4_0, ssao_block_of(g), planar_block_of(g), planar_look_of(g), contact_block_of(g), sheen_look, room_sun,
-                    float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, paint_steps, k.sill,
-                    sill_steps, window_view, lace_shade,
+                    float4 { k.paint_quiet.x, k.paint_quiet.y, k.paint_quiet.z, k.paint_quiet.w * paint_relief }, float4 { 1.0, 1.0, 1.0, 0.0 }, k.sill,
+                    [float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { 1.0, 0.0, 0.0, 0.0 }], window_view, lace_shade,
                     table_map_shown(g),
                     books::COVER, books::LABEL }
 }
@@ -2209,49 +2209,66 @@ fn light_box_of() -> float4 {
     let corner = room_shell::room_of(s, float2 { s.walls[room_shell::FAR_WALL].a.x - room_light::INSET, room_light::PLAN_Y0 });
     return float4 { corner.x, surfaces::FLOOR_Y + room_light::INSET * metre, corner.y, room_light::CELL * metre };
 }
-fn light_grid_of() -> float4 { float4 { room_light::NX, room_light::NZ, room_light::NH, 0.0 } }
+// The grid's probes across, along v and up, and how many probe volumes follow it in the
+// atlas (room_light::volumes, with volumes_on; ROOM_FRAG's PROBE_VOLUMES reads them).
+fn light_grid_of() -> float4 {
+    let volumes: f32 = if room_light::volumes_on { room_light::volumes.len } else { 0.0 };
+    return float4 { room_light::NX, room_light::NZ, room_light::NH, volumes };
+}
 
 // The baked light's atlas to bind, or another texture where none is made: ROOM_FRAG reads
 // it only when its block says it is on.
 fn light_or_stand_in(g: Gpu&) -> Texture { if g.light_volume.id != 0 { g.light_volume } else { g.crown_map } }
+// The props' atlas of nine harmonics (room_light's PROPS_*), or another texture where none is
+// made: TABLE_FRAG reads it with PROPS_LIGHT only.
+fn props_probes_or_stand_in(g: Gpu&) -> Texture { if g.props_probes.id != 0 { g.props_probes } else { g.crown_map } }
 
 // Whether the shell's light is baked: the shell shown and its room asking for it.
-fn light_baked(g: Gpu&) -> bool { g.room_on && g.room_shell && g.room.baked.x + g.room.baked.y > 0.0 }
+fn light_baked(g: Gpu&) -> bool { g.room_on && g.room.baked.x + g.room.baked.y > 0.0 }
 
 // What the shell's baked light is made from: the key, the room's light, the tree, the
-// table's top, the bounces and the sun's saturation on the room, and the bake's own
+// casements' members' depth (panes.w), whether the props take their nine harmonics
+// (props_light), the rug in the floor's cells and the exact gather (room_light::rug_in_bake,
+// gather_exact), the table's top, the bounces and the sun's saturation on the room, and the bake's own
 // settings (room_light's bounce_grey, lace_source, gather_near), and whether the windows
 // have their shutters (room_shell::shutters_on), how far the lace hangs over the opening
 // (room_shell::lace_hang), and where the games table stands in the plan.
-let LIGHT_KEY = 10;
+let LIGHT_KEY = 12;
 fn light_key(g: Gpu&) -> float4[LIGHT_KEY] {
     let f = g.frame;
     let r = g.room;
-    return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.room_axes,
-            float4 { table_radius(g), g.tree_ms as f32, light_bounces as f32, room_sun.x },
+    return [f.light_dir, f.light_color, r.baked, r.shell_sun, f.tree, f.room, f.panes, f.room_axes,
+            float4 { if props_light { 1.0 } else { 0.0 }, if room_light::rug_in_bake { 1.0 } else { 0.0 },
+                     if room_light::gather_exact { 1.0 } else { 0.0 }, if room_light::volumes_on { room_light::cavity_up + 1000 * room_light::cavity_across } else { 0.0 } },
+            float4 { mesh::TABLE_R, g.tree_ms as f32, light_bounces as f32, room_sun.x },
             float4 { room_light::bounce_grey, room_light::lace_source, room_light::gather_near,
                      (if room_shell::shutters_on { 1.0 } else { 0.0 }) + 2.0 * room_shell::lace_hang },
-            float4 { room_shell::LIBRARY.table.x, room_shell::LIBRARY.table.y, 0.0, 0.0 }];
+            float4 { room_shell::LIBRARY.table.x, room_shell::LIBRARY.table.y, room_light::glazing, sun_panes }];
 }
 
-// The bake's buffers, sized once: the probes' atlas in floats and as half floats, the sun's
+// The bake's buffers, sized once: the probes' atlas in floats and as half floats (and the
+// props' with props_light), the sun's
 // patches, how much of the sun the tree lets through each sun ray's glass point, and the
 // tree's map at a low mip, kept on the CPU when it is baked (bake_tree).
-var light_atlas:   f32[room_light::ATLAS_FLOATS];
-var light_bytes:   u8[ATLAS_BYTES];
+// With room_light::volumes_on the atlas has the volumes' rows after the grid's
+// (room_light::FULL_H); light_rows is the height of the one on the GPU.
+var light_atlas: f32[room_light::FULL_FLOATS];
+var light_bytes: u8[FULL_BYTES];
+var light_rows = 0;
+// The props' atlas of nine harmonics (room_light::PROPS_FLOATS), with props_light.
+var light_props:   f32[room_light::PROPS_FLOATS];
+var props_bytes:   u8[PROPS_BYTES];
 var light_patches: room_light::Patch[room_light::BINS];
 var light_tree:    f32[room_light::RAYS];
 var light_bounce:  room_light::Bounce;
-// The last bake's sun (the light tuner's --light-ref works from it).
-var light_sun = default<room_light::Sun>();
 // How many times the room's light is thrown on after the sun's patches (room_light::BOUNCES;
 // 0 the patches alone, the tuner's --bounces), and each step's time in the last bake:
 // the sun's rays, the first light, each bounce, the half grid's gather, the probes.
 var light_bounces = room_light::BOUNCES;
-// The tonemaps' toes as the light tuner switches them in its own shaders (shaders::TOE_FN,
-// FRAME's toe): the room's and the view out's way, the table's, the board's and the pieces'
-// (0 on the luminance, 1 on the least channel, 2 none), and what a toe takes off above its
-// knee. The app's shaders keep their own toes and never read it.
+// The tonemaps' toes into the HDR target (FRAME's toe, HDR_OUT): the room's and the view
+// out's way, the table's, the board's and the pieces' (0 on the luminance, 1 on the least
+// channel, 2 none, the light tuner's --light physical, whose camera curve takes it); w
+// unused. The app's 8-bit shaders keep their own toes and never read it.
 var tone_toe = float4 { 0.0, 1.0, 1.0, 0.02 };
 var light_steps: f64[8] = [0.0; 8];
 // The probes' light on the games table's axis at TABLE_PROBE_UP + k × CELL over the floor
@@ -2264,7 +2281,12 @@ let TABLE_PROBE_UP: f32 = 0.15;
 // --shade-fill). A fifth, with the sun twice as strong on the room (rooms::AUTUMN's
 // shell_sun): the patches gain, the shade stays near where it was.
 var shade_fill: f32 = 0.2;
-let ATLAS_BYTES = 243360;   // room_light::ATLAS_W × ATLAS_H × 8
+// The share of the sun the window's panes let through that the key's strength already holds
+// (1 none; the light tuner's --light physical, which lights every surface through the
+// panes): the bake takes the sun before them, as its glazing has them.
+var sun_panes: f32 = 1.0;
+let FULL_BYTES = 274560;    // room_light::ATLAS_W × FULL_H × 8
+let PROPS_BYTES = 567840;   // room_light::ATLAS_W × PROPS_H × 8
 let TREE_LEVEL = 3;
 let TREE_SMALL = 98304;     // trees::SHELL_W × SHELL_H × 4 >> 2 × TREE_LEVEL
 var tree_small:   u8[TREE_SMALL];
@@ -2293,14 +2315,16 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     let out = float3 { -fr.into.x * 0.94, up, -fr.into.y * 0.94 };
     let sun = room_light::Sun {
         toward: toward,
-        light:  room_sun_of(float3 { f.light_color.x, f.light_color.y, f.light_color.z }) * (f.light_dir.w * r.shell_sun.y),
+        light:  room_sun_of(float3 { f.light_color.x, f.light_color.y, f.light_color.z }) * (f.light_dir.w * r.shell_sun.y / sun_panes),
         sky:    sh_at(f.sh, out) * f.params.z,
-        table: float4 { s.table.x, s.table.y, table_radius(g) / surfaces::METRE,
+        table: float4 { s.table.x, s.table.y, mesh::TABLE_R / surfaces::METRE,
                         (mesh::TABLE_TOP - surfaces::FLOOR_Y) / surfaces::METRE },
         sky_gain:    r.baked.x,
         bounce_gain: r.baked.y,
     };
-    light_sun = sun;
+    room_light::members_traced = f.panes.w > 0.5;
+    room_light::table_off = if room_light::gather_exact { float2 { fr.along.y, fr.into.y } * (-mesh::TABLE_Z / surfaces::METRE) } else { float2_0 };
+    room_light::nine_harmonics = props_light;
     tree_through(g, l);
     var at = clock();
     let n = room_light::sun_patches(sun, light_tree[..], light_patches, light_bounce);
@@ -2317,19 +2341,67 @@ fn bake_room_light<O>(o: O&, g: Gpu&) {
     room_light::gather_half(sun, light_bounce);
     light_steps[5] = (clock() - at) * 1000.0;
     at = clock();
-    room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..]);
+    room_light::bake(sun, light_patches, n, light_bounce, light_atlas[..room_light::ATLAS_FLOATS], light_props[..]);
     light_steps[6] = (clock() - at) * 1000.0;
+    at = clock();
+    if room_light::volumes_on {
+        room_light::bake_volumes(sun, light_tree[..], light_patches, n, light_bounce, light_atlas[..]);
+        volume_table();
+    }
+    light_steps[7] = (clock() - at) * 1000.0;
     probes_on_table(g);
-    for i in room_light::ATLAS_FLOATS {
+    meter_light = meter_of(light_bounce, sun.bounce_gain);
+    let rows = if room_light::volumes_on { room_light::FULL_H } else { room_light::ATLAS_H };
+    let floats = room_light::ATLAS_W * rows * 4;
+    for i in floats {
         let h = half_bits(light_atlas[i]);
         light_bytes[2 * i] = (h & 0xFF) as u8;
         light_bytes[2 * i + 1] = (h >> 8) as u8;
     }
-    if g.light_volume.id == 0 { g.light_volume = o.gpu_sampled(room_light::ATLAS_W, room_light::ATLAS_H, 1, RGBA16F); }
-    o.gpu_upload(g.light_volume, 0, light_bytes[..]);
+    if g.light_volume.id != 0 && light_rows != rows {
+        o.gpu_release(g.light_volume);
+        g.light_volume = Texture { 0 };
+    }
+    if g.light_volume.id == 0 {
+        g.light_volume = o.gpu_sampled(room_light::ATLAS_W, rows, 1, RGBA16F);
+        light_rows = rows;
+    }
+    o.gpu_upload(g.light_volume, 0, light_bytes[..2 * floats]);
+    if props_light {
+        for i in room_light::PROPS_FLOATS {
+            let h = half_bits(light_props[i]);
+            props_bytes[2 * i] = (h & 0xFF) as u8;
+            props_bytes[2 * i + 1] = (h >> 8) as u8;
+        }
+        if g.props_probes.id == 0 { g.props_probes = o.gpu_sampled(room_light::ATLAS_W, room_light::PROPS_H, 1, RGBA16F); }
+        o.gpu_upload(g.props_probes, 0, props_bytes[..]);
+    }
     g.light_for = key;
     g.light_patches = n;
     g.light_ms = (clock() - t0) * 1000.0;
+}
+
+// The probe volumes' table in the atlas's row after the grid's, three texels a volume in
+// the room's frame (world units), as ROOM_FRAG's volumes_light reads it: its box's low corner
+// and how far in from its faces it blends into the grid; its size and its block's first
+// column; its probes along x, up and along z, and its block's first row.
+fn volume_table() {
+    let s = room_shell::LIBRARY;
+    let metre = surfaces::METRE;
+    for v, n in room_light::volumes {
+        // The plan's x and y fall along the room's x and z.
+        let low = room_shell::room_of(s, float2 { v.hi.x, v.hi.y });
+        let texels: float4[3] = [float4 { low.x, surfaces::FLOOR_Y + v.lo.z * metre, low.y, v.fade * metre },
+                                 float4 { (v.hi.x - v.lo.x) * metre, (v.hi.z - v.lo.z) * metre, (v.hi.y - v.lo.y) * metre, v.column },
+                                 float4 { v.nx, v.nh, v.ny, v.row }];
+        for t in 3 {
+            let a = 4 * (room_light::ATLAS_H * room_light::ATLAS_W + 3 * n + t);
+            light_atlas[a] = texels[t].x;
+            light_atlas[a + 1] = texels[t].y;
+            light_atlas[a + 2] = texels[t].z;
+            light_atlas[a + 3] = texels[t].w;
+        }
+    }
 }
 
 // The probes' light at four heights on the games table's axis into table_probes, as
@@ -2722,15 +2794,14 @@ fn put_tree(g: Gpu&, on: bool) {
 
 // The room whose tree is shown: the shell's own (rooms::shell_tree) with the shell on.
 fn tree_room(g: Gpu&) -> rooms::Room {
-    if g.room_on && g.room_shell { return rooms::shell_tree(g.room); }
+    if g.room_on { return rooms::shell_tree(g.room); }
     return g.room;
 }
 
-// How the sun sees the tree: over the shell's three windows with it on, over the whole
-// window with the panelled wall's room on, else cut to the table. The shell's windows'
-// niches at the wall's inner face, as the key carries them out to the tree.
+// How the sun sees the tree: over the shell's three windows with the room on, else cut
+// to the table. The shell's windows' niches at the wall's inner face, as the key carries them out to the tree.
 fn tree_view_of(g: Gpu&) -> trees::View {
-    guard g.room_on && g.room_shell else { return rooms::tree_view(g.room, g.room_on); }
+    guard g.room_on else { return rooms::tree_view(g.room, g.room_on); }
     return rooms::shell_tree_view(g.room, room_shell::LIBRARY);
 }
 
@@ -2764,7 +2835,7 @@ fn bake_tree<O>(o: O&, g: Gpu&) {
     var map: u8[>..] = [];
     {
         var t = trees::Tree { .. };
-        if tree_grown_whole && g.room_on && g.room_shell {
+        if tree_grown_whole && g.room_on {
             trees::grow_whole(t, whole_tree_of(g), v, rooms::whole_sight(g.room, room_shell::LIBRARY), true);
         } else {
             trees::grow(t, s, v);
@@ -3469,7 +3540,10 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
     if !hdr && board_in_shell(g) { o.make_lit_shell(g); }
     o.board_pass(g, if hdr { g.hdr_image } else { shown }, size, backdrop, outside, table_covers);
     if hdr && haze_shown(g) { o.haze_pass(g, size); }
-    if hdr && glow_shown(g) { o.glow_pass(g, size); }
+    if hdr && glow_shown(g) {
+        glow_exposure = camera_exposure(g);
+        o.glow_pass(g, size);
+    }
     if hdr { o.tone_pass(g, shown); }
     if glowing { o.bloom_pass(g, g.image, target, size); }
     if depth_shown(g) {
@@ -3488,8 +3562,6 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
 // views of the room (their own pipelines tonemap), nor the table before the room's light
 // is baked. hdr_allowed: the light tuner's (--hdr, X); the app draws no scenic view yet.
 var hdr_allowed = false;
-// RGBA16F in place of RG11B10F (the light tuner's --hdr-format, to weigh the fallback).
-var hdr_wide = false;
 fn hdr_shown(g: Gpu&) -> bool {
     hdr_allowed && outside_shown(g) && (g.aa == AA_MSAA || g.aa == AA_SMAA) && ssao_allowed && !room_views_on()
     && (!table_shown(g) || table_in_room(g))
@@ -3629,7 +3701,7 @@ let PLANAR_DEPTH: f32 = 0.25;
 // units, 1.5 mm).
 let PLANAR_LIFT: f32 = 0.05;
 fn planar_shown(g: Gpu&) -> bool {
-    planar_allowed && room_shown(g) && g.room_shell && g.room.planar.x > 0.0 && g.planar_walls.id != 0
+    planar_allowed && room_shown(g) && g.room.planar.x > 0.0 && g.planar_walls.id != 0
 }
 // A convex floor can be outside a clip plane only if all four corners are
 // outside that same plane. Keep the test homogeneous for corners behind the eye. The
@@ -3666,7 +3738,7 @@ fn table_hides_screen(g: Gpu&, m: Mat) -> bool {
     guard table_shown(g) && g.frame.eye.y > mesh::TABLE_TOP else { return false; }
     // Stay on the flat part of the bevelled top, including the tuner's thick edges.
     let inset = max(0.08, 0.45 * max(g.table_edge.y, 0.3));
-    let radius = table_radius(g);
+    let radius = mesh::TABLE_R;
     let r = min(radius * 0.97, radius - inset - 0.01);
     guard r > 0.0 else { return false; }
     var at: float2[TOP_SIDES] = [float2_0; TOP_SIDES];
@@ -3814,17 +3886,9 @@ var sheen_look = float4 { 2.0, 0.8, 1.0, 0.0 };
 // Whether one of the light tuner's views of the room is on (the screen's occlusion, the
 // indirect light, the sun's highlights, the floor's reflection alone): the room's pipelines
 // then carry their code (shaders::ROOM_VIEWS), else they leave it out.
-// The light tuner's switches of the painted wood's shader (its own, shaders::PAINT_STEPS):
-// x the recesses' dirt, y the joints' hairlines, z the relief tile, each 1 on, w 1 the old
-// paint. While all are as made, the app's shader draws.
-var paint_steps = float4 { 1.0, 1.0, 1.0, 0.0 };
-// The relief tile's strength over its look's (the tuner's --paint-relief, 1 as made).
+// The painted wood's relief tile's strength over its look's (the tuner's --paint-relief, 1
+// as made).
 var paint_relief: f32 = 1.0;
-fn paint_steps_on() -> bool { paint_steps.x < 0.5 || paint_steps.y < 0.5 || paint_steps.z < 0.5 || paint_steps.w > 0.5 }
-// The light tuner's switches of the sills' shader (its own, shaders::SILL_STEPS): the
-// first x the speckle, y the polished band, z the arris, w the nose's foot, the second x
-// the dust line, each 1 on, y 1 the old stone. While all are as made, the app's shader draws.
-var sill_steps: float4[2] = [float4 { 1.0, 1.0, 1.0, 1.0 }, float4 { 1.0, 0.0, 0.0, 0.0 }];
 // The window view's steps (build/notes/builder-27/), each a strength over its look's, 1 as
 // made, 0 off: x the lace's sun (its shadows on it full and its glow where lit), y the sun
 // the lace scatters on below it, z the glass's film, w its cleaning scratches. The light
@@ -3841,10 +3905,6 @@ var sun_veil: f32 = 1.0;
 // The light tuner's park on the ground (--park, model3d::view_out's lawn and cards, its own
 // shaders in TUNED_OUTSIDE and TUNED_OUTSIDE_HDR): the view out's mesh carries them.
 var park_ground = false;
-fn sill_steps_on() -> bool {
-    let a = sill_steps[0];
-    return a.x < 0.5 || a.y < 0.5 || a.z < 0.5 || a.w < 0.5 || sill_steps[1].x < 0.5 || sill_steps[1].y > 0.5;
-}
 
 fn room_views_on() -> bool { ssao_allowed && (ssao_view > 0 || sheen_look.w > 0.5 || planar_view == 1) }
 // The sun on the room's surfaces: x its saturation about its luminance there and in its
@@ -3852,7 +3912,8 @@ fn room_views_on() -> bool { ssao_allowed && (ssao_view > 0 || sheen_look.w > 0.
 // the room's sun, z its saturation, w its share of the sheen (the tuner's --oak-sun). The
 // oak keeps the sun it had before the room's sun was doubled (shell_sun.y 2.2): the user
 // wanted the stronger sun on the paper and the doors, the wainscot as it was.
-var room_sun = float4 { 0.6, 0.5, 1.0, 0.0 };
+let ROOM_SUN_AS_MADE = float4 { 0.6, 0.5, 1.0, 0.0 };
+var room_sun = ROOM_SUN_AS_MADE;
 fn room_sun_of(c: float3) -> float3 {
     let y = 0.2126 * c.x + 0.7152 * c.y + 0.0722 * c.z;
     return float3 { y, y, y } + (c - float3 { y, y, y }) * room_sun.x;
@@ -3865,14 +3926,16 @@ fn mirror_table_block(g: Gpu&) -> TableBlock {
 
 // Whether the window's glow is drawn: the shell's room with its bloom on, in 8 bits (the
 // HDR target has its own, glow_pass).
-fn bloom_shown(g: Gpu&) -> bool { room_shown(g) && g.room_shell && g.room.bloom.x > 0.0 && g.bloom_add.id != 0 && !g.hdr }
+fn bloom_shown(g: Gpu&) -> bool { room_shown(g) && g.room.bloom.x > 0.0 && g.bloom_add.id != 0 && !g.hdr }
 
 // The scenic views' glow in the HDR target's linear light, before the tonemap
 // (shaders::GLOW_DOWN_FRAG, GLOW_UP_FRAG, HDR_TONE_FRAG): x its strength (0 none), y the
 // threshold it starts from and z the knee's half width (linear light, the tonemap's white
 // about 1), w its reach (each coarser level's share, 0 to 1); levels how many it goes down,
 // the first a quarter of the picture, each half the last (at most GLOW_LEVELS); cap the
-// brightest a channel is taken at.
+// brightest a channel is taken at. Under AgX the threshold, the knee and the cap are in the
+// picture's light, after the camera's exposure (glow_exposure, camera_exposure's), so the
+// glow starts near AgX's white as it starts near the shoulder's without it.
 let GLOW_LEVELS = 6;
 struct HdrGlow {
     look:   float4 = float4 { 0.06, 1.0, 0.5, 0.65 },
@@ -3880,13 +3943,14 @@ struct HdrGlow {
     cap:    f32    = 60000.0,
 }
 var hdr_glow = HdrGlow {};
+var glow_exposure: f32 = 1.0;
 fn glow_shown(g: Gpu&) -> bool { g.hdr && hdr_glow.look.x > 0.0 && hdr_glow.levels > 0 }
 // The glow's smallest level, which holds the sun's light blurred wide (HDR_TONE_FRAG's
 // share of it open).
 fn glow_smallest() -> i64 { clamp(hdr_glow.levels, 1, GLOW_LEVELS) - 1 }
 // GLOW_DOWN_FRAG's and GLOW_UP_FRAG's block; HDR_TONE_FRAG's.
 struct GlowStep { step: float4, look: float4 }
-struct HdrTone { glow: float4, sun: float4, veil: float4, disc: float4 }
+struct HdrTone { glow: float4, sun: float4, veil: float4, disc: float4, white: float4, look: float4 }
 fn glow_level_size(size: int2, k: i64) -> int2 {
     var q = int2 { max(size.x / 4, 1), max(size.y / 4, 1) };
     for i in k { q = int2 { max(q.x / 2, 1), max(q.y / 2, 1) }; }
@@ -3897,19 +3961,74 @@ fn glow_level_size(size: int2, k: i64) -> int2 {
 fn glow_step_of(from: int2, to: int2, first: bool) -> GlowStep {
     let h = if first { float2 { 1.0 / from.x, 1.0 / from.y } } else { float2 { 0.5 / from.x, 0.5 / from.y } };
     let l = hdr_glow.look;
-    GlowStep { float4 { h.x, h.y, 1.0 / to.x, 1.0 / to.y }, float4 { l.y, l.z, hdr_glow.cap, clamp(l.w, 0.0, 1.0) } }
+    let k = glow_exposure;
+    GlowStep { float4 { h.x, h.y, 1.0 / to.x, 1.0 / to.y }, float4 { l.y / k, l.z / k, hdr_glow.cap / k, clamp(l.w, 0.0, 1.0) } }
 }
 // The tonemap's block: glow x the glow's strength (0 none), yz a pixel in uv, w the light
 // tuner's probe (tone_probe); sun the sun's place on the picture (pixels), the pixels a
 // degree spans there, and w what turns the glow's smallest level there into the share of
 // the sun open (0: taken as all open); veil SunLook's, its x 0 where the sun is behind the
 // eye; disc the disc's radius (pixels) and what turns the picture's light on it into its
-// share open (half the bare disc's light counts as open).
+// share open (half the bare disc's light counts as open), z the camera's curve (camera_toe),
+// w its exposure (camera_exposure).
 var tone_probe: f32 = 0.0;
+// The scenic views' camera curve after the pass (shaders::HDR_TONE_FRAG's camera_curve): 0
+// to 2 the toe, as tone_toe's ways (0 on the luminance, 1 on the least channel, 2 none), then
+// the shoulder; 3 AgX at the camera's exposure. Today 2, each surface taking its own toe as
+// it writes the HDR target (tone_toe); the light tuner's --light physical takes one curve for
+// the whole picture here, the surfaces' toes 2.
+var camera_toe: f32 = 2.0;
+let CAMERA_AGX = 3;
+// The camera's meter for AgX: the log-average luminance of the light leaving the room's
+// surfaces, each of the bake's cells by its area (the lace's left out), as Frame's exposure
+// leaves it; worked out once at the bake (meter_of). The camera exposes it to METER_GREY,
+// times 2 to camera_ev (stops, the light tuner's --camera-ev).
+var meter_light: f32 = 0.0;
+var camera_ev:   f32 = 0.0;
+let METER_GREY: f32 = 0.18;
+// The camera's grade under AgX, a season's (GRADES): ev stops over the meter (with
+// camera_ev), white the white balance's gains on the light (green 1), and a look on AgX's
+// curve as Blender's AgX looks: (v * slope + offset) ^ power, then the saturation round its
+// luminance. Autumn's is fitted to the autumn reference's regions (task 122, the sixth step).
+struct Grade {
+    ev:         f32    = 0.0,
+    white:      float3 = float3 { 1.0, 1.0, 1.0 },
+    slope:      f32    = 1.0,
+    offset:     f32    = 0.0,
+    power:      f32    = 1.0,
+    saturation: f32    = 1.0,
+}
+// By looks' season: autumn, winter (neutral, not tuned yet), spring, summer.
+let GRADES: Grade[4] = [Grade { -3.6, float3 { 1.3, 1.0, 0.6 }, 1.0, 0.0, 0.8, 1.0 }, Grade {}, Grade {}, Grade {}];
+var grade = Grade {};
+fn meter_of(b: room_light::Bounce&, gain: f32) -> f32 {
+    var sum:  f32 = 0.0;
+    var area: f32 = 0.0;
+    for c in room_light::LACE_C0 {
+        let a = b.cells[c].area;
+        guard a > 0.0 else { continue; }
+        let l = b.seen[c] + b.sun[c] * (gain / (PI * a));
+        sum += a * log2(max(0.2126 * l.x + 0.7152 * l.y + 0.0722 * l.z, 1e-8));
+        area += a;
+    }
+    let two: f32 = 2.0;
+    return if area > 0.0 { pow(two, sum / area) } else { 0.0 };
+}
+// What the tone pass multiplies the HDR target's light by before AgX: 1 unless metered. The
+// eye's veil is added divided by it, so it adds to the picture what it adds without it.
+fn camera_exposure(g: Gpu&) -> f32 {
+    guard camera_toe > 2.5 && meter_light > 0.0 else { return 1.0; }
+    let two: f32 = 2.0;
+    return METER_GREY * pow(two, camera_ev + grade.ev) / (meter_light * max(g.frame.params.x * g.room.room_exposure, 1e-6));
+}
 fn hdr_tone_of(g: Gpu&) -> HdrTone {
     let glow = glow_shown(g);
+    let k = camera_exposure(g);
     var t = HdrTone { float4 { if glow { hdr_glow.look.x } else { 0.0 }, 1.0 / g.size.x, 1.0 / g.size.y, tone_probe },
-                      float4_0, sun_look.veil, float4_0 };
+                      float4_0, sun_look.veil, float4 { 0.0, 0.0, camera_toe, k },
+                      float4 { grade.white.x, grade.white.y, grade.white.z, grade.saturation },
+                      float4 { grade.slope, grade.offset, grade.power, 0.0 } };
+    t.veil.x = sun_look.veil.x / k;
     guard sun_look.veil.x > 0.0 else { return t; }
     let m = g.frame.view_proj;
     let s = normalize(float3 { g.frame.light_dir.x, g.frame.light_dir.y, g.frame.light_dir.z });
@@ -3933,7 +4052,7 @@ fn hdr_tone_of(g: Gpu&) -> HdrTone {
         open_ref = 1.0 / max(bare, 1e-6);
     }
     t.sun = float4 { at.x, at.y, ppd, open_ref };
-    t.disc = float4 { sun_look.disc.x * ppd, 2.0 / max(sun_look.disc.w * g.room.outside, 1e-6), 0.0, 0.0 };
+    t.disc = float4 { sun_look.disc.x * ppd, 2.0 / max(sun_look.disc.w * g.room.outside, 1e-6), camera_toe, k };
     return t;
 }
 let SUN_OPEN_FILTER: f32 = 1.0;
@@ -4133,7 +4252,7 @@ fn dust_block(g: Gpu&) -> DustBlock {
         b.look.w = lens.focus * surfaces::METRE;
         b.lens.w = lens.near_cap * k;
     }
-    guard dust.shell && g.room_shell && g.room_on else { return b; }
+    guard dust.shell && g.room_on else { return b; }
     let s = surfaces_block(g);
     b.axes = s.axes;
     b.tile = s.tile;
@@ -4174,7 +4293,7 @@ struct Haze {
     toward: f32  = 0.0,
 }
 var haze = Haze {};
-fn haze_shown(g: Gpu&) -> bool { g.hdr && haze.sigma > 0.0 && g.room_shell && ssao_shown(g) && g.pre_place.id != 0 }
+fn haze_shown(g: Gpu&) -> bool { g.hdr && haze.sigma > 0.0 && g.room_on && ssao_shown(g) && g.pre_place.id != 0 }
 
 // The panes as the outer glass's plane sees them along the sun (world units: along the
 // window wall's u, and up): haze_panes[0..3] each window's bounding box, then window k's
@@ -4378,7 +4497,7 @@ struct ShellBlock {
 }
 fn shell_block(g: Gpu&) -> ShellBlock {
     var b = default<ShellBlock>();
-    guard g.room_shell && g.room_on else { return b; }
+    guard g.room_on else { return b; }
     let s = surfaces_block(g);
     b.axes = s.axes;
     b.tile = s.tile;
@@ -4392,7 +4511,7 @@ fn shell_block(g: Gpu&) -> ShellBlock {
 }
 // Whether the board's pass lights the board and the table through the shell's windows: its
 // lit pipelines then the shell's (lit_shell, the HDR target's, the room's table).
-fn board_in_shell(g: Gpu&) -> bool { room_shown(g) && g.room_shell }
+fn board_in_shell(g: Gpu&) -> bool { room_shown(g) }
 
 // The lens of the scenic views' depth of field (build/notes/bokeh/, task 111), one for every
 // pass that blurs: a disc's radius at a distance d is aperture × |1 - focus / d| of the

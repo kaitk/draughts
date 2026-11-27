@@ -650,8 +650,7 @@ board's light:
   where they turn by less than 32°, a step under 5 mm wide shaded from the facet before it
   to the one after, the groove's occlusion a thin dip in its first 4 mm.
 - **The toes**: each tonemap keeps its own (the room's and the view out's on the
-  luminance, the board's and the table's off the least channel); the light tuner can switch
-  them in shaders of its own (`shaders::TOE_FN`, `--toe`, `--table-toe`, `--board-toe`).
+  luminance, the board's and the table's off the least channel).
 - **Corners and edges** (`model3d::corner_map`, `rooms::Room.corners`): the
   indirect light darkened by the distance to each of the shell's planes standing square to
   a surface, a plane hiding a half of the light at the line and nothing beyond the reach
@@ -775,7 +774,7 @@ board's light:
   rotated into the plank's frame and divided by the field size. The gradients exclude
   the jumps between strips in the field. There is no mip bias. The walls use the gradients
   of their scaled UVs.
-  Both use 8× anisotropy. The light tuner's `--oak-aniso-4` previews 4×.
+  Both use 8× anisotropy.
 - **The room's shaders**: one pipeline a material group (`render3d::room_group`), each
   with only its group's code (`ROOM_FRAG` under `ROOM_FLOOR`, `ROOM_WALLS`, `ROOM_PAINT`,
   `ROOM_SILL`, `ROOM_METALS`, `ROOM_GLASS`, `ROOM_LACE`). The floor, walls, painted wood,
@@ -867,8 +866,7 @@ windows' reflection breaks tile by tile. The rosettes, the palmettes and the cre
 take their slopes from a small relief atlas made at startup (`room_shell::stove_relief`,
 256 × 256 RGBA8 with five mips), the glaze darker in their hollows. The room's baked light
 sees the stove as its pale albedo on the two walls behind it (`room_light::STOVE_ALBEDO`).
-The crown is a part of its own: the light tuner's `--stove-crown flat` gives a flat top
-with two ball finials instead, and `--stove off` leaves the stove out.
+The light tuner's `--stove off` leaves the stove out.
 
 ### The chairs at the games table
 
@@ -950,9 +948,7 @@ grazing sun ([why](../decisions/rendering.md)).
 - **Colour and sheen**: `#c6beae`, each piece's tone a percent either way; roughness 0.36
   on the doors and 0.42 on the windows (`surfaces::Look.paint_quiet`).
 - The material's fraction says a piece's tone, its grain and whether it is a window's
-  (`room_shell::paint_mat`). The light tuner's `--paint old` (J) draws the paint as it was
-  before, and `--paint-off fillets,tilt,dirt,joints,tile` switches its steps off one by one
-  in the tuner's own shader (`shaders::PAINT_STEPS`); `--paint-relief K` scales the tile.
+  (`room_shell::paint_mat`). The light tuner's `--paint-relief K` scales the tile.
 
 ### The sills
 
@@ -981,9 +977,6 @@ read as pale stone with a soft nose ([why](../decisions/rendering.md)).
   under it.
 - **The dust**: a grey, matte line before the inner casement's frame, fading over 2 cm,
   in the tile's patches.
-- The light tuner's `--sill old` (I) draws the old mottled stone, and `--sill-off
-  speckle,band,arris,nose,dust` switches its parts off one by one, in the tuner's own
-  shader (`shaders::SILL_STEPS`) in the room and in the floor's mirror.
 
 ### The window view
 
@@ -1063,8 +1056,8 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   Fibres are projected lines half a point's footprint across (sub-pixel, their light kept),
   and flakes glint for a few frames as they tumble.
   The air moves them in world units: a drift, a rise, settling by size and divergence-free
-  swirls. `--dust off|points|points-few|points-many` (500, 250, 1000) pick the density (D
-  cycles them), `--mote-fibres` the fibres' share (0 none) and `--fibre-width` their width
+  swirls. `--dust off|points` (500 points) switches them (D), `--motes N` sets their
+  number, `--mote-fibres` the fibres' share (0 none) and `--fibre-width` their width
   across (0.5 of a point's). With the lens on, each point is the lens's disc with its light
   spread over it.
 - **Haze in the sunbeam** (`haze_pass`, `HAZE_CROSS_FRAG`, `HAZE_FRAG`; the tuner's `--haze`,
@@ -1079,10 +1072,9 @@ and a strength over its look's in `render3d::window_view` and `sun_veil`, 1 as m
   onto that plane, a segment there, and averages the atlas over 12 jittered taps along its
   part in each window's slot, from red to green as the sun's disc widens the bars' shadows
   with the depth from the glass. That lit length × sigma × a Henyey-Greenstein phase × the
-  room's sun is the pixel's haze. `--haze off|clean|lived|dusted|study` set sigma (0, 5e-5,
-  1.5e-4, 4e-4, 3e-3 a metre), `menu` and `game` the user's levels for the main menu's
-  scene (the study's) and the game's (dusted), `--haze-look G,EVEN,TAPS,SOFT` the phase, the taps and the
-  stripes' softness, `--haze-toward K` softer stripes looking toward the sun, and
+  room's sun is the pixel's haze. `--haze off|menu|game` set sigma, the user's levels for
+  the main menu's scene (3e-3 a metre, its stripes softer) and the game's (4e-4), `--haze-sigma
+  S` any other, `--haze-look G,EVEN,TAPS,SOFT` the phase, the taps and the stripes' softness, `--haze-toward K` softer stripes looking toward the sun, and
   `--haze-res half|full` the size.
 - The light tuner's Z switches all of these off and back, Y the hang (0.15 or 0), D the
   dust; `--lace-hang`, `--lace-sun`, `--lace-scatter`, `--sun-veil`, `--glass-film`,
@@ -1232,10 +1224,9 @@ game), in steps that each show alone in the light tuner
   the glass and lace's mesh, where the glass writes nothing and the lace writes where its
   thread covers half the pixel or more (`LACE_DEPTH_FRAG`). The view out writes none, so
   it stays at the far plane.
-- The light tuner's Lens section holds them: `--hdr on|off` (X; on), `--hdr-format
-  rgba16f` to weigh the fallback, `--dof on|off`, `--focus M` (0 keeps the focus on the
-  view's target), `--aperture PCT`, `--dof-caps NEAR,FAR`, and `--lens-view
-  depth|coc` (1), the distance on a log scale or the lens's signed disc over the picture
+- The light tuner's Lens section holds them: `--hdr on|off` (X; on), `--dof on|off`,
+  `--focus M` (0 keeps the focus on the view's target), `--aperture PCT`, `--dof-caps
+  NEAR,FAR`, and `--lens-view depth|coc` (1), the distance on a log scale or the lens's signed disc over the picture
   (`DEPTH_SHOW_FRAG`).
 
 At 3024 × 1890 the HDR target's resolve adds 23 MB (RG11B10F; 16 MB at the 4.1 MP budget),

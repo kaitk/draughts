@@ -86,6 +86,7 @@ let WINDOW_MAP_FRAG = """
         vec3 sum = vec3(0.0);
         float tl = t0 - shell_glass.z / toward;
         float cone = window_view.y > 0.0 && tl > 0.5 ? LACE_CONE * tl / metre : 0.0;
+        vec2 slope = vec2(dot(l.xz, along), l.y) * (panes.w / toward);
         for (int i = 0; i < 3; i++) {
             if (float(i) >= shell.x) break;
             float mid = shell_mids[i];
@@ -97,7 +98,7 @@ let WINDOW_MAP_FRAG = """
                 vec3 g = q0 + l * depth;
                 vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
                 float soft_g = (0.03 + widen * tg) / metre;
-                through *= casement(wg, soft_g);
+                through *= casement(wg, soft_g, slope);
             }
             sum.x += through;
             if (tl > 0.5) {
@@ -304,7 +305,7 @@ let ROOM_HEAD = """
     // wear, y the walls' darker wax, z the path's reach round the table, w the path's
     // along the room; paper and gold: the wallpaper's ground and gold print (sRGB) and
     // their roughness; axes: u's direction in x and z, then v's; place: x the window's
-    // wall's v, y the panelled wall's, z the floor's field's size, w the wall's (world
+    // wall's v, y the hall wall's, z the floor's field's size, w the wall's (world
     // units); shade: the light thrown back into the room's shade (rooms::Room.bounce),
     // linear, and w the room's exposure over the board's (rooms::Room.room_exposure);
     // tile: the wall a tile of the wallpaper's mask covers, x, of the plaster's tone, y, of
@@ -344,10 +345,9 @@ let ROOM_HEAD = """
     // the sun's contact shadows (render3d::contact_look); sheen: the sun's broad sheen
     // (render3d::sheen_look); room_sun: the sun's saturation on the room, the panelling oak's
     // share of it, its saturation and share of the sheen (render3d::room_sun); paint_quiet:
-    // the quiet paint (surfaces::Look's); paint_steps: the tuner's switches of it
-    // (render3d::paint_steps, read only with PAINT_STEPS); sill: the sills' limestone
-    // (surfaces::Look's); sill_steps: the tuner's switches of it (render3d::sill_steps, read
-    // only with SILL_STEPS); window_view: the window view's steps' strengths, 1 as made
+    // the quiet paint (surfaces::Look's); paint_steps: unused, kept so the block's layout
+    // and room_fixed's constants stay; sill: the sills' limestone (surfaces::Look's);
+    // sill_steps: unused as paint_steps; window_view: the window view's steps' strengths, 1 as made
     // (render3d::window_view: the lace's sun, its scattered light below, the glass's film,
     // its scratches); lace_shade: the lace's room-side fill, x what is left of it where
     // neither the sun nor the sky behind the niche reaches the cloth (1 as made), y how much
@@ -575,7 +575,7 @@ let ROOM_FRAG = """
     // One probe's texel of the baked light: colour c's block, the height's slice k, at g
     // (the grid's x and along v).
     vec4 probe_at(float c, float k, vec2 g) {
-        vec2 size = vec2(light_grid.x * light_grid.z, 3.0 * light_grid.y);
+        vec2 size = vec2(textureSize(light_volume, 0));    // the probe volumes' rows after the grid's, if any
         return textureLod(light_volume, vec2(k * light_grid.x + g.x + 0.5, c * light_grid.y + g.y + 0.5) / size, 0.0);
     }
 
@@ -583,6 +583,7 @@ let ROOM_FRAG = """
     // normal n (the world's), over pi: the probes round lp, half a step out along n so a
     // wall reads the room's side of itself, the layers above and below mixed by hand, each
     // colour a constant and a direction.
+    #ifndef PROBE_VOLUMES
     vec3 baked_light(vec3 lp, vec3 n) {
         vec3 ln = vec3(dot(n.xz, axes.xy), n.y, dot(n.xz, axes.zw));
         vec3 hi = vec3(light_grid.x, light_grid.z, light_grid.y) - 1.0;
@@ -595,6 +596,49 @@ let ROOM_FRAG = """
         vec4 b = mix(probe_at(2.0, k0, g.xz), probe_at(2.0, k1, g.xz), kf);
         return max(vec3(r.x + dot(r.yzw, ln), gr.x + dot(gr.yzw, ln), b.x + dot(b.yzw, ln)), vec3(0.0));
     }
+    #else
+    // With the probe volumes (model3d::room_light's Volume, render3d::volume_table): the atlas
+    // has their rows after the grid's, so its size is its own. A block's probes at g (a block
+    // at `at`: its first column and row, its probes across and along z), mixed between the
+    // slices k0 and k1 by kf; the three colours' constant and direction, as baked_light's.
+    vec3 block_light(vec4 at, vec3 g, float k0, float k1, float kf, vec3 ln) {
+        vec2 size = vec2(textureSize(light_volume, 0));
+        vec2 a = vec2(at.x + g.x + 0.5, at.y + g.z + 0.5);
+        vec2 s0 = vec2(k0 * at.z, 0.0);
+        vec2 s1 = vec2(k1 * at.z, 0.0);
+        vec2 c1 = vec2(0.0, at.w);
+        vec2 c2 = vec2(0.0, 2.0 * at.w);
+        vec4 r = mix(textureLod(light_volume, (a + s0) / size, 0.0), textureLod(light_volume, (a + s1) / size, 0.0), kf);
+        vec4 gr = mix(textureLod(light_volume, (a + s0 + c1) / size, 0.0), textureLod(light_volume, (a + s1 + c1) / size, 0.0), kf);
+        vec4 b = mix(textureLod(light_volume, (a + s0 + c2) / size, 0.0), textureLod(light_volume, (a + s1 + c2) / size, 0.0), kf);
+        return max(vec3(r.x + dot(r.yzw, ln), gr.x + dot(gr.yzw, ln), b.x + dot(b.yzw, ln)), vec3(0.0));
+    }
+    vec3 baked_light(vec3 lp, vec3 n) {
+        vec3 ln = vec3(dot(n.xz, axes.xy), n.y, dot(n.xz, axes.zw));
+        vec3 hi = vec3(light_grid.x, light_grid.z, light_grid.y) - 1.0;
+        vec3 g = clamp((lp + ln * (0.5 * light_box.w) - light_box.xyz) / light_box.w, vec3(0.0), hi);
+        float k0 = floor(g.y);
+        vec3 baked = block_light(vec4(0.0, 0.0, light_grid.x, light_grid.y), g, k0, min(k0 + 1.0, hi.y), g.y - k0, ln);
+        // Each volume whose box holds lp takes over from what is before it in the table by
+        // how far in lp lies (its fade; a centimetre's slack for the table's half floats).
+        int row = int(3.0 * light_grid.y);
+        for (int v = 0; v < int(light_grid.w); v++) {
+            vec4 low = texelFetch(light_volume, ivec2(3 * v, row), 0);
+            vec4 extent = texelFetch(light_volume, ivec2(3 * v + 1, row), 0);
+            vec3 q = lp - low.xyz;
+            vec3 inside = min(q, extent.xyz - q);
+            float d = min(inside.x, min(inside.y, inside.z));
+            if (d < -0.3) continue;
+            vec4 probes = texelFetch(light_volume, ivec2(3 * v + 2, row), 0);
+            vec3 spacing = extent.xyz / probes.xyz;
+            vec3 gv = clamp((q + ln * (0.5 * spacing)) / spacing - 0.5, vec3(0.0), probes.xyz - 1.0);
+            float v0 = floor(gv.y);
+            vec3 own = block_light(vec4(extent.w, probes.w, probes.x, probes.z), gv, v0, min(v0 + 1.0, probes.y - 1.0), gv.y - v0, ln);
+            baked = mix(baked, own, low.w > 0.0 ? clamp(d / low.w, 0.0, 1.0) : 1.0);
+        }
+        return baked;
+    }
+    #endif
 
     // The light in the room's shade for the normal n at lp (the room's frame), over pi:
     // the harmonics and the shade's even light, or with the light baked, that beside what
@@ -616,9 +660,15 @@ let ROOM_FRAG = """
     #ifndef ROOM_WINDOW
     // The room's light the way r looks by its mean albedo there: the floor's below, the
     // walls' across, the plaster's above: what a rough surface sees through its GGX lobe.
+    // With PHYSICAL_COAT the light arriving at lp from r's side as it is: the probes' light
+    // there is already what the room's surfaces send, so no albedo goes on it again.
     vec3 room_wide(vec3 lp, vec3 r) {
+    #ifdef PHYSICAL_COAT
+        return room_irradiance(lp, r);
+    #else
         float albedo = r.y > 0.0 ? mix(0.12, 0.41, r.y * r.y) : mix(0.12, 0.06, -r.y);
         return room_irradiance(lp, r) * albedo;
+    #endif
     }
     #endif
 
@@ -745,7 +795,7 @@ let ROOM_FRAG = """
                    * smoothstep(-soft.y, soft.y, min(w.y - shell_niche.y, head - w.y));
         if (rect < 0.001) return c;
         vec2 wg = vec2(dot(qg.xz, axes.xy) - mid, qg.y - shell.z) / metre;
-        return mix(c, mix(bars, view, casement(wg, max(soft.x, soft.y))), rect);
+        return mix(c, mix(bars, view, casement(wg, max(soft.x, soft.y), vec2(0.0))), rect);
     }
 
     // What a glossy surface sees along r through a GGX lobe alpha wide: the room seen
@@ -1235,6 +1285,16 @@ let ROOM_FRAG = """
                 ao *= mix(0.6, 1.0, smoothstep(0.0, 8.0, place.y - uv.y)) * mix(0.7, 1.0, smoothstep(0.0, 8.0, uv.y + place.x));
             }
         }
+    #ifdef SURFACE_OUT
+        // The floor unlit, laid out in its uv, for Blender (tools/blender_export.goose): its
+        // albedo and roughness, or with SURFACE_NORMAL its normal along u, v and up.
+    #ifdef SURFACE_NORMAL
+        result = vec4(vec3(dot(n, u_dir), dot(n, v_dir), n.y) * 0.5 + 0.5, 1.0);
+    #else
+        result = vec4(albedo, clamp(rough, 0.0, 1.0));
+    #endif
+        return;
+    #endif
     #endif
     #ifdef ROOM_WALLS
         if (kind < 5.5) {
@@ -1349,10 +1409,6 @@ let ROOM_FRAG = """
         // shade them. Kept on the windows, whose casements' inner corners it shades, but not on
         // the shutters' fronts, where it crawled the same way against the window.
         screen_ao = mix(1.0, screen_ao, (1.0 - no_screen) * max(on_window, smoothstep(0.02, 0.045, v_uv.y)));
-    #ifdef PAINT_STEPS
-        dirt *= paint_steps.x;
-        joint *= paint_steps.y;
-    #endif
         // The relief tile, laid on the face's plane in the room's frame with its grain the
         // piece's (up, or along the wall), a place of its own a piece: its slopes tilt the
         // normal (half as much on a window), its spread widens the sheen, its B makes the
@@ -1371,9 +1427,6 @@ let ROOM_FRAG = """
         vec3 t_along = along > 0.5 ? t_h : t_v;
         vec4 relief = texture(paint_tile, tile_uv);
         float strength = abs(paint_quiet.w) * (1.0 - 0.5 * on_window);
-    #ifdef PAINT_STEPS
-        strength *= paint_steps.z * (1.0 - paint_steps.w);
-    #endif
         vec2 slope = (relief.xy * 255.0 - 128.0) / 127.0 * RELIEF_SLOPE * strength;
         n = normalize(n - t_across * slope.x - t_along * slope.y);
         float spread = relief.w * RELIEF_SLOPE * strength;
@@ -1383,15 +1436,6 @@ let ROOM_FRAG = """
         rough = mix(paint_quiet.x, paint_quiet.y, on_window) + 0.1 * dirt + 0.1 * joint;
         rough += 0.04 * strength * (relief.z * 2.0 - 1.0);
         rough = sqrt(rough * rough + 2.0 * spread * spread);
-    #ifdef PAINT_STEPS
-        if (paint_steps.w > 0.5) {
-            // The old paint, as before the quiet one: a little uneven, its normals the mesh's.
-            n = ng;
-            float m = vnoise(v_local.xz * 0.4 + v_local.y * 0.31);
-            albedo = srgb(paint.rgb) * (0.96 + 0.06 * m);
-            rough = paint.a + 0.1 * m;
-        }
-    #endif
     #endif
     #ifdef ROOM_SILL
         {
@@ -1412,32 +1456,26 @@ let ROOM_FRAG = """
             vec3 ln = abs(vec3(dot(ng.xz, axes.xy), ng.y, dot(ng.xz, axes.zw)));
             vec2 at = on_slab > 0.5 ? vec2(v_uv.x, t) : (ln.x > ln.z ? v_local.zy : v_local.xy) / shell.w;
             vec4 tile4 = texture(stone_tile, at / STONE_TILE);
-            vec4 on = vec4(1.0);
-            float dust_on = 1.0;
-        #ifdef SILL_STEPS
-            on = sill_steps[0];
-            dust_on = sill_steps[1].x;
-        #endif
-            albedo = srgb(stone.rgb) * mix(1.0, 0.4 + tile4.r, on.x);
-            rough = stone.a + on.x * (0.06 * (tile4.a - 0.5) + 0.15 * tile4.g);
+            albedo = srgb(stone.rgb) * (0.4 + tile4.r);
+            rough = stone.a + 0.06 * (tile4.a - 0.5) + 0.15 * tile4.g;
             // The band, 0.36 to 1 of sill.y back, its edge and strength in patches.
             float r = sill.x;
             float ft = max(fwidth(t), 1e-5);
             float back = max(t, 0.0) + 0.012 * (2.0 * tile4.b - 1.0);
             float polish = (1.0 - smoothstep(0.36 * sill.y, sill.y, back)) * smoothstep(-1.5 * r, -0.5 * r, t) * (0.7 + 0.3 * tile4.b);
-            rough -= 0.22 * polish * on.y;
+            rough -= 0.22 * polish;
             // The arris: the normal turned toward it by up to 45° within r of it; under a
             // pixel, spread over the pixel and turned less. A chip in about one 5 cm of it in
             // seven: a flake broken off across it, paler and rougher, its face at an angle of
             // its own; faded as it falls under a pixel.
             float wide = max(r, ft);
-            float ease = clamp(1.0 - abs(t) / wide, 0.0, 1.0) * r / wide * on.z * on_slab;
+            float ease = clamp(1.0 - abs(t) / wide, 0.0, 1.0) * r / wide * on_slab;
             float cell = floor(v_uv.x / 0.05);
             float fp = max(ft, fwidth(v_uv.x));
             float rad = mix(0.0008, 0.0025, h12(vec2(cell, 7.3)));
             vec2 off = vec2((v_uv.x - (cell + 0.15 + 0.7 * h12(vec2(cell, 5.1))) * 0.05) / 0.6, (t + (0.6 - h12(vec2(cell, 9.9))) * r) * 0.6);
             float chip = (1.0 - smoothstep(rad - 0.5 * fp, rad + 0.5 * fp, length(off))) * step(h12(vec2(cell, 3.7)), 0.15)
-                       * min(1.0, rad * rad / (fp * fp)) * on.z * on_slab;
+                       * min(1.0, rad * rad / (fp * fp)) * on_slab;
             albedo *= 1.0 + 0.18 * chip;
             rough += 0.2 * chip;
             vec3 dpx = dFdx(p);
@@ -1452,21 +1490,12 @@ let ROOM_FRAG = """
                 n = normalize(ng * cos(angle) + toward * sin(angle));
             }
             // The nose darker toward its foot, and under it.
-            albedo *= 1.0 - sill.z * smoothstep(0.0, 1.0, clamp(-t / SILL_BOARD, 0.0, 1.0)) * on.w * on_slab;
+            albedo *= 1.0 - sill.z * smoothstep(0.0, 1.0, clamp(-t / SILL_BOARD, 0.0, 1.0)) * on_slab;
             // The dust, thickest against the casement's frame, in patches.
             float before = SILL_FRAME - t;
-            float dust = exp(-max(before, 0.0) / sill.w) * step(0.0, before) * (0.55 + 0.45 * tile4.b) * dust_on;
+            float dust = exp(-max(before, 0.0) / sill.w) * step(0.0, before) * (0.55 + 0.45 * tile4.b);
             albedo = mix(albedo, srgb(vec3(0.45, 0.43, 0.4)), 0.6 * dust);
             rough = mix(rough, 0.85, dust);
-        #ifdef SILL_STEPS
-            if (sill_steps[1].y > 0.5) {
-                // The old stone, as before the limestone: mottled, its normals the mesh's.
-                n = ng;
-                float mo = 0.6 * vnoise(v_local.xz * 1.3 + v_local.y * 0.7) + 0.4 * vnoise(v_local.xz * 4.1 + 2.7);
-                albedo = srgb(stone.rgb) * (0.93 + 0.12 * mo);
-                rough = stone.a + 0.15 * mo;
-            }
-        #endif
         }
     #endif
     #ifdef ROOM_METALS
@@ -1655,13 +1684,23 @@ let ROOM_FRAG = """
         vec3 irr = room_irradiance(v_local, n) * ao;
         vec3 base = albedo * (1.0 - metal) * (diff / PI * light * vis + irr);
 
+    #ifdef PHYSICAL_COAT
+        // The panelling's varnish lies smooth over the oak's grain, following a quarter of
+        // its relief (as the table's polish, tables::Table.coat.z): its highlights and
+        // reflections turn with the panel, not with each pore.
+        vec3 ns = oak ? normalize(mix(ng, n, 0.25)) : n;
+        float nov = max(dot(ns, v), 1e-4);
+        float nl = clamp(dot(ns, l), 0.0, 1.0);
+    #else
+        vec3 ns = n;
         float nov = max(dot(n, v), 1e-4);
         float nl = clamp(nol, 0.0, 1.0);
+    #endif
         vec3 hv = normalize(v + l);
-        float noh = clamp(dot(n, hv), 0.0, 1.0);
+        float noh = clamp(dot(ns, hv), 0.0, 1.0);
         float voh = clamp(dot(v, hv), 0.0, 1.0);
-        vec3 du = dFdx(n);
-        vec3 dv = dFdy(n);
+        vec3 du = dFdx(ns);
+        vec3 dv = dFdy(ns);
         float variance = 0.15 * (dot(du, du) + dot(dv, dv));
         float ar = clamp(rough, 0.05, 1.0);
         ar = ar * ar;
@@ -1675,8 +1714,14 @@ let ROOM_FRAG = """
         ar = sqrt(clamp(ar * ar + min(2.0 * variance, 0.3), 0.0, 1.0));
     #endif
         vec3 f0 = mix(vec3(0.04), albedo, metal);
+    #ifdef PHYSICAL_COAT
+        // The sun's disc, 0.53 degrees across, widens the lobe by half its angular radius
+        // (Karis's widening for a disc light).
+        float ak = ar + 0.0023;
+    #else
         // The key is a window, not a point: its highlight no sharper than 0.25's.
         float ak = max(ar, 0.06);
+    #endif
         float lobes = d_ggx(noh, ak) * v_smith(nov, nl, ak);
     #ifdef ROOM_WALLS
         // The sun's broad sheen (sheen): a second, rougher lobe on the painted wood, the
@@ -1694,7 +1739,7 @@ let ROOM_FRAG = """
         // The room's reflection, with the room baked; the harmonics alone before. Only the
         // floor and the metals see the room sharply (SHARP_BOX): the panelling's grain turns
         // its normals too fast for a window's edge to hold.
-        vec3 rv = reflect(-v, n);
+        vec3 rv = reflect(-v, ns);
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
     #ifdef PLANAR_FLOOR
         // The floor sees the mirror, through the wax's film over the oak, smoother than the
@@ -1971,10 +2016,6 @@ let ROOM_FLOOR = "#define ROOM_FLOOR 1\n";
 let ROOM_WALLS = "#define ROOM_WALLS 1\n";
 let ROOM_PAINT = "#define ROOM_PAINT 1\n";
 let ROOM_SILL = "#define ROOM_SILL 1\n";
-// The sills' shader with the light tuner's switches (render3d::sill_steps).
-let SILL_STEPS = "#define SILL_STEPS 1\n";
-// The painted wood's shader with the light tuner's switches (render3d::paint_steps).
-let PAINT_STEPS = "#define PAINT_STEPS 1\n";
 let ROOM_METALS = "#define ROOM_METALS 1\n";
 let ROOM_GLASS = "#define ROOM_WINDOW 1\n#define ROOM_GLASS 1\n";
 let ROOM_LACE = "#define ROOM_WINDOW 1\n#define ROOM_LACE 1\n";
@@ -1991,6 +2032,15 @@ let FLOOR_NO_TABLE = "#define FLOOR_NO_TABLE 1\n";
 // floor without the mirror. The rest takes room_wide, which room_reflection is for them (a
 // surface not a metal has px 1, so sharp 0).
 let SHARP_BOX = "#define SHARP_BOX 1\n";
+// The probe volumes in the baked light (render3d::volumes_light: the light tuner's --light
+// physical), on the desktop's HDR tier: the paint's, the sills' and the metals' groups, which
+// the windows' spaces between the panes hold.
+let PROBE_VOLUMES = "#define PROBE_VOLUMES 1\n";
+// The varnish and the wax as clear coats (render3d::physical_coat: the light tuner's --light
+// physical), on the desktop's HDR tier: the walls' group (the panelling oak's coat over its
+// grain) and the floor's; the highlights as sharp as the sun's disc allows, the reflections
+// the light arriving there.
+let PHYSICAL_COAT = "#define PHYSICAL_COAT 1\n";
 // The sharp box's light from the box's map (render3d::box_map), on the phone's tier: the
 // floor's and metals' pipelines with SHARP_BOX and NO_SSAO; the map's bake (BOX_MAP_BAKE,
 // with no group's define, so ROOM_HEAD declares the opaque groups' shared textures alone).

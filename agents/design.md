@@ -22,6 +22,7 @@ missing: ask the user for them rather than guessing from memory.
 | `Kabe Winter Stone UI Board.png` | A winter UI board, 1536 px | Glass panels and buttons |
 | `draughts-store/icon/master-winter-jump-1254.png` | The winter jump: a 3×3 stone board at three-quarters, a dark slate piece in the centre, the ivory stacked king jumping it along a pale blue arc, on navy (#06172b corners, #0d2139 top) | The winter master: copy it to `design/icon/master-winter.png` and run `tools/assets/icon.py` (`design/icon/README.md`); the monochrome layer is drawn from its geometry |
 | `draughts-store/icon/master-autumn-jump-1254.png` | The autumn jump, the shipped icon: the same scene in wood, a dark brown piece, the cream king, a golden arc, on dark brown (#140c09 corners) | The autumn master: `design/icon/master-autumn.png`, built with `tools/assets/icon.py autumn --res DIR`; its geometry matches winter's within 0.25 dp |
+| `Autumn Light in the Manor Library.png` | ChatGPT's repaint of our own `--light physical` shot (`draughts-now-autumn-physical.png`: autumn, `--plan-eye 6.5,4.3,1.4 --plan-at 2.655,5.403,1.400 --fov 73`, 1536 × 1024, the same framing) in `library-autumn-02`'s style (2026-11-26; copies in `build/notes/autumn-grade/img/`) | The autumn tone and grade (the door's wall, the floor, the wainscot, the ceiling), and the lace lit against the lace in shade; not its sun patches on the far wall, which our sun can't throw |
 | `draughts-store/tablet-home-with-icons.png` | The icon candidates mocked up on the tablet's real home screen, 82 px | How an icon reads at the launcher's size |
 
 Where the close-ups and the design boards differ, the close-ups win for the board and
@@ -92,7 +93,7 @@ pieces; the design boards still set the layout, glass, and controls.
   on its middle third), P prints the room as Goose for `src/model3d/rooms.goose`. Script
   sweeps of its flags under bash: zsh passes an unquoted `$args` as one word.
 - The room round the table, its herringbone floor and panelling (`model3d::surfaces`):
-  the light tuner's `--room-surfaces on` (O), `--view room` (V), `--eye X,Y,Z,0 --at
+  the light tuner (always with the room; the app's board alone is the app's), `--view room` (V), `--eye X,Y,Z,0 --at
   X,Y,Z,0` for a camera of its own, `--dump-oak PREFIX` for the baked fields at 1:1,
   `--wallpaper-tile M` for the wall a tile of the wallpaper covers (0.9 m; the slider
   under Wallpaper, 0.65 to 1.4 m, and L cycles a real paper's 0.65 m, 0.9 m and
@@ -119,12 +120,10 @@ pieces; the design boards still set the layout, glass, and controls.
 - The stove (2026-11-24, `build/notes/stove-build/`): `build/stove-build/shots.sh EXE TAG
   [SIZE] [NAMES]` takes the four views, the board, the stove view and three close-ups
   (`close` the corner at eye height, `top` the frieze, cornice and crest, `foot` the
-  plinth and the door); `EXTRA="--stove-crown flat"` before it shoots B's crown.
+  plinth and the door).
 - The library's whole room in the light tuner (`model3d::room_shell`, task 107's demo):
-  `--room-surfaces on` (O) shows the shell (walls, wainscot, three box windows, two doors,
-  cornice, ceiling), `--shell off` (S) the panelled wall alone as before. `--view
-  room|window|hall|stove` (V cycles them after the board's orbit) are a person's eyes in
-  the plan; `--plan-eye X,Y,H --plan-at X,Y,H` a camera in plan metres (x along the window
+  the shell (walls, wainscot, three box windows, two doors, cornice, ceiling). `--view room|window|hall|stove` (V cycles them after the board's
+  orbit) are a person's eyes in the plan; `--plan-eye X,Y,H --plan-at X,Y,H` a camera in plan metres (x along the window
   wall from the stove's end, y from the hall wall, H up from the floor), `--fov DEG`. With
   the shell the room's light comes through its own windows (`shaders::LIGHT_FN`'s
   `shell_open`), not `--wall`/`--panes`, which still light the board and table; behind
@@ -145,9 +144,10 @@ pieces; the design boards still set the layout, glass, and controls.
   x 3.85 and 5.15; builder 19b's close-ups of the cap's return and the brass:
   `build/notes/builder-19b/shots.sh` (`EXE=` runs another tuner binary).
   The curtains (`model3d`'s `curtains.goose`, task 107): `--lace f3|f2|f|d` (C cycles)
-  picks the lace's way, f3 the default, the others kept in reserve (a way's panel mask by
-  `tools/materials/lace_panel.py LIBRARY TAG OUT`, from `build/notes/lace-library/TAG/`;
-  touch `src/native/materials.c` after a PNG changes); their shots and close-ups by
+  picks the lace's way, f3 the default and the only one built into the app; the others
+  are kept in reserve in `design/materials/`, which the tuner reads at the start from
+  `tools/` (a way's panel mask by `tools/materials/lace_panel.py LIBRARY TAG OUT`, from
+  `build/notes/lace-library/TAG/`; touch `src/native/materials.c` after f3's PNG changes); their shots and close-ups by
   `build/curtains-build/shots.sh EXE TAG` (`build/notes/curtains-build/`). The
   tie-backs' and the hem's close-ups and the lace's ways and table tops side by side:
   `build/choices-2026-11-21/shots.sh` (`build/notes/choices-2026-11-21/`; the right
@@ -161,8 +161,7 @@ pieces; the design boards still set the layout, glass, and controls.
   only weakly (by sin(π/N)), so a soft collider stretches the loop: hence the girth's
   projection, applied to the last positions too so it adds no speed; steps longer than
   1/240 s go unstable with the push's cap and the grip per iteration.
-  The games table's base (`mesh::table_base`, task 107): `--table-top 0.95|1.05|0.80`
-  (the panel's Top) sets the top across, 0.95 m the game's and the room's; shots by
+  The games table's base (`mesh::table_base`, task 107): its top 0.95 m across; shots by
   `build/games-table-build/shots.sh EXE TAG` (`build/notes/games-table-build/`), the
   base's close-up `--plan-eye 5.75,4.75,0.62 --plan-at 4.5,5.8,0.36 --fov 42`.
   The shell's own light (task 107's light round): `--shell-sun X,Y` (penumbra's widening,
@@ -238,18 +237,16 @@ pieces; the design boards still set the layout, glass, and controls.
   inside is darkened by the books' and the case's vertex occlusion and `case_shade`
   (the cases' heights repeated in `ROOM_FRAG`: change them with `bookcases.goose`).
 - The doors' and windows' painted wood (`room_shell`'s `joinery.goose`, `relief.goose`):
-  J or `--paint old|quiet`, `--paint-off fillets,tilt,dirt,joints,tile` (each step alone,
-  the panel's Wainscot section), `--paint-relief K` (the tile, 1 as made). A door in the sun
+  `--paint-relief K` (the tile, 1 as made; the panel's Wainscot section). A door in the sun
   close up: `--plan-eye 0.7,2.8,1.3 --plan-at 0.0,2.8,1.2 --fov 30`; the casement's meeting
   `--plan-eye 4.45,6.5,1.25 --plan-at 4.5,7.5,1.3 --fov 18`; the shutters `--plan-eye
   4.9,6.0,1.5 --plan-at 3.95,7.25,1.4 --fov 40`. Builder 25's shots and the step matrix:
   `build/b25/shots.sh EXE TAG [NAMES]`, `cmp.sh A B`, `measure.sh ROUND TAG=EXE,FLAGS..`
-  (`build/notes/builder-25/`). The relief at its physical heights hardly shows in the
-  room's light; at 15 it shows its direction (brush along the grain).
+  (`build/notes/builder-25/`; the steps' and the old paint's flags it used are gone). The
+  relief at its physical heights hardly shows in the room's light; at 15 it shows its
+  direction (brush along the grain).
 - The sills' limestone (`room_shell`'s `limestone.goose`, `shell_mesh::sill_slab`,
-  `ROOM_SILL`): I or `--sill vasalemma|old`, `--sill-off speckle,band,arris,nose,dust` (each
-  part alone, the panel's Wainscot section). The look's values are `surfaces::Look.sill`
-  (arris radius, band's reach, nose's darkening in linear albedo, dust's width); its colour
+  `ROOM_SILL`). The look's values are `surfaces::Look.sill` (arris radius, band's reach, nose's darkening in linear albedo, dust's width); its colour
   is the old stone's (`Look.stone`), so the probes' `STONE_ALBEDO` still holds. Close-ups of
   the middle sill: from above `--plan-eye 4.3,6.55,1.15 --plan-at 4.55,7.2,0.8 --fov 30`,
   the nose `--plan-eye 4.2,6.25,0.95 --plan-at 4.5,7.05,0.78 --fov 28`, along the arris in
@@ -329,8 +326,8 @@ pieces; the design boards still set the layout, glass, and controls.
   OUT` (SVG, a true top view, x growing to the left), shots `build/b30/options.sh EXE TAG`.
   In zsh a `$extra` of several flags passes as one word and the tuner ignores it: sweep in
   bash.
-- The dust in the beam (builders 29 and 33): `--dust points|points-few|points-many` (the
-  default points, builder 33) draws real dust's points, fibres and glinting flakes in the
+- The dust in the beam (builders 29 and 33): `--dust points` (the default, builder 33;
+  `--motes N` their number) draws real dust's points, fibres and glinting flakes in the
   sunbeam's own volume over the table (`light_tune`'s `beam_box`, BEAM_*), lit only by the
   direct sun; `motes|motes-few|motes-many` are builder 29's tumbling flakes, `sparse|dense|
   coarse` the old round points in the box. `--point-px SIGMA`, `--glints K` (0 off),
@@ -339,11 +336,11 @@ pieces; the design boards still set the layout, glass, and controls.
   shows at native size only: shoot at 3024 × 1890 and diff against `--dust off` (`-alpha off
   -compose difference`) to find it; for the glints and the drift, step `--wind-time` by
   1/60 s or 0.25 s (`build/b33/shots.sh`).
-- The haze in the beam (builder 33, `build/notes/builder-33/`): `--haze clean|lived|dusted|
-  study`, HDR on, needs the room's pre-pass (on with `--room-surfaces on`). The realistic
-  strengths (5e-5 to 4e-4) only lift the dark wainscot toward the sun; `dusted` reads as a
-  soft beam, `study` (3e-3, stripes soft 4, `--haze-toward 4`) is close to the ChatGPT
-  study's. Looking toward the sun the bars' stripes converge on it and read as god rays:
+- The haze in the beam (builder 33, `build/notes/builder-33/`): `--haze menu|game`, HDR
+  on, needs the room's pre-pass. The realistic strengths
+  (`--haze-sigma` 5e-5 to 4e-4) only lift the dark wainscot toward the sun; `game` (4e-4)
+  reads as a soft beam, `menu` (3e-3, stripes soft 4, `--haze-toward 4`) is close to the
+  ChatGPT study's. Looking toward the sun the bars' stripes converge on it and read as god rays:
   keep `--haze-toward` up wherever the stripes are strong. `--haze-look G,EVEN,TAPS,SOFT`
   (0.7,0.2,12,1); sigma and softness are also sliders under Dust. Compare against
   `build/notes/window-view/refs/` (Gabinio, Sigüenza, the ChatGPT study). The haze's cost
@@ -374,6 +371,13 @@ pieces; the design boards still set the layout, glass, and controls.
   window glow. Shots: `build/b35/look.sh EXE TAG SIZE NAME "flags"..`, `cmp.sh A B`,
   `game.sh`; costs `build/b35/rounds.sh` (`measure.sh` filters the trace by the exact
   executable name, so the user's open tuner is left out).
+- The camera under `--light physical` (task 122, step 5, `build/notes/light-physical/#step5`):
+  AgX (`--camera-toe agx`, `none` the shoulder as before) at an exposure metered once at the
+  bake (the room's log-average to 0.18), `--camera-ev` (the "Camera EV" slider) on top; the
+  glow's threshold is then in the picture's light (`AGX_GLOW`, 0.006 from 16). Judge a look
+  against Cycles at the EV the tuner prints with `--shot` ("the camera's meter ... EV"):
+  `tools/blender/scene.py --exposure EV`. Blender's AgX on any linear EXR:
+  `build/review122/s5/agx_ref.py` (OCIO in Blender's Python).
 - The light tuner draws the 3D scene at the screen's native size by default (2026-11-22);
   `--scene-pixels 4.1` (`render3d::HIGH_SCENE_PIXELS`) or `--scene-scale K` draw it smaller
   and upscale it (N cycles native, 0.85, 0.75, 0.67 and the 4.1 MP cap; M the upscale). Builder 24's crops and sweeps:
@@ -399,7 +403,7 @@ Swept and lathed profiles shade as curves: a profile point's normal is its two
 segments' mean, and only a turn sharper than a crease angle (37°, `surfaces::CREASE`,
 `surfaces::smooth_normal`) keeps each segment's own. The shared routines do it:
 `shell_mesh::sweep` (and so `sweep_oak`, the caps, plinths, cornices and the bookcases'
-mouldings), `surfaces::strip` and `surfaces::panel_ring` (the wainscot's, doors' and
+mouldings), `surfaces::panel_ring` (the wainscot's, doors' and
 shutters' panels), `mesh::turned` (a doubled point is a crease); `mesh::sweep` takes each
 point's normal from its `Profile`, the curtains' `tube` and `ball` theirs from the
 centre, and the books' spines bend theirs (`books::spine_at`). Left flat, as they are

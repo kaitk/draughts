@@ -7,27 +7,6 @@ namespace shaders;
 // and a desktop's (render3d::set_shadow).
 let SHADOW_FEW = "#define SHADOW_FEW 1\n";
 let SHADOW_MANY = "#define SHADOW_MANY 1\n";
-// The light tuner's shaders (render3d::tuned_frags), after FRAME: each tonemap's toe
-// switched by Frame's toe (its --toe, --table-toe, --board-toe, --toe-off). The app's never
-// take it: a uniform switch cost the room 0.7 ms a frame on the Mac, and any change to the
-// lit shader's text moves a few pixels of the game's picture there.
-let TOE_FN = """
-    #define TOE_SWITCH 1
-    // The toe of the way `way` taking toe.w off (Frame's toe).
-    vec3 toe_off(vec3 c, float way) {
-        float f = toe.w;
-        if (way < 0.5) {
-            float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
-            return c * ((y < 2.0 * f ? y * y / (4.0 * f) : y - f) / y);
-        }
-        if (way < 1.5) {
-            float x = min(c.r, min(c.g, c.b));
-            return c - (x < 2.0 * f ? x - x * x / (4.0 * f) : f);
-        }
-        return c;
-    }
-    """;
-
 // The wind in the trees outside (rooms::wind_at), before LIGHT_FN, which reads it for the
 // tree's shadow, and in the tree's vertex stages (TREE_FN's tree_moved), so a leaf and its
 // fleck in the room move by one vector: the noise, the gust where it reaches, the ruffle
@@ -209,35 +188,46 @@ let LIGHT_FN = """
     // The shell's box windows (room_shell, shell_mesh.goose's casement, metres): how much
     // of the sun the casement at a glass plane lets through at w (along from the window's
     // middle, up from the floor): the blind frame's opening, the transom, the meeting
-    // stiles, each sash's stiles and rails, and its bars, each edge `soft` wide.
-    float casement(vec2 w, float soft) {
+    // stiles, each sash's stiles and rails, and its bars, each edge `soft` wide. `slope`:
+    // how far the sun's line moves along the wall and up a metre deeper into it (0 the
+    // members flat at the plane; Frame's panes.w 1, the light tuner's --light physical): each
+    // member's band then widened by its depth along it, the frame's 0.1 m, the sashes' 0.045
+    // and the bars' 0.036 (room_shell::casement_members), the sashes and bars taken at their
+    // middle, 2.5 and 3 mm deeper than the plane.
+    float casement(vec2 w, float soft, vec2 slope) {
         const float BAR = 0.024;
+        vec2 frame = 0.05 * abs(slope);
+        vec2 sash = 0.0225 * abs(slope);
+        vec2 bar = 0.018 * abs(slope);
+        vec2 ws = w + 0.0025 * slope;
+        vec2 wb = w + 0.003 * slope;
         float s = shell_niche.y;
         float h = shell_niche.y + shell_niche.z;
         float zt = s + (h - s) * 2.0 / 3.0;
         float gx = 0.49;
         float x = abs(w.x);
-        float open = min(gx - x, min(w.y - (s + 0.03), (h - 0.06) - w.y));
-        open = min(open, min(abs(w.y - zt) - 0.045, x - (0.0175 + 0.05)));
-        bool upper = w.y > zt;
+        float xs = abs(ws.x);
+        float open = min(gx - x - frame.x, min(w.y - (s + 0.03) - frame.y, (h - 0.06) - w.y - frame.y));
+        open = min(open, min(abs(w.y - zt) - 0.045 - frame.y, xs - (0.0175 + 0.05) - sash.x));
+        bool upper = ws.y > zt;
         float y0 = upper ? zt + 0.045 : s + 0.03;
         float y1 = upper ? h - 0.06 : zt - 0.045;
         float ax0 = 0.0175 + 0.05;
         float ax1 = gx - 0.055;
         float ay0 = y0 + (upper ? 0.055 : 0.08);
         float ay1 = y1 - 0.055;
-        open = min(open, min(ax1 - x, min(w.y - ay0, ay1 - w.y)));
+        open = min(open, min(ax1 - xs - sash.x, min(ws.y - ay0 - sash.y, ay1 - ws.y - sash.y)));
         float across = upper ? 3.0 : 1.0;
         float up = upper ? 3.0 : 2.0;
         float pitch_x = (ax1 - ax0 + BAR) / across;
         float pitch_y = (ay1 - ay0 + BAR) / up;
         // The bars: each the width BAR, its far edge at a whole pitch from the leaf's edge.
-        float u = x - ax0 + 0.5 * BAR;
-        float v = w.y - ay0 + 0.5 * BAR;
+        float u = abs(wb.x) - ax0 + 0.5 * BAR;
+        float v = wb.y - ay0 + 0.5 * BAR;
         if (across > 1.5 && u > 0.5 * pitch_x && u < (across - 0.5) * pitch_x)
-            open = min(open, abs(u - pitch_x * floor(u / pitch_x + 0.5)) - 0.5 * BAR);
+            open = min(open, abs(u - pitch_x * floor(u / pitch_x + 0.5)) - 0.5 * BAR - bar.x);
         if (v > 0.5 * pitch_y && v < (up - 0.5) * pitch_y)
-            open = min(open, abs(v - pitch_y * floor(v / pitch_y + 0.5)) - 0.5 * BAR);
+            open = min(open, abs(v - pitch_y * floor(v / pitch_y + 0.5)) - 0.5 * BAR - bar.y);
         return smoothstep(-soft, soft, open);
     }
 
@@ -405,7 +395,7 @@ let LIGHT_FN = """
             float tg = t0 + shell_glass.y / toward;
             vec3 g = p + l * tg;
             vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
-            lit = tg > 0.0 ? through * casement(wg, (0.03 + widen * tg) / metre) : through;
+            lit = tg > 0.0 ? through * casement(wg, (0.03 + widen * tg) / metre, vec2(dot(l.xz, along), l.y) * (panes.w / toward)) : through;
         } else if (tl > 0.5) {
             float tr = window_map_lace_t(toward);
             vec4 m = textureLod(window_map, uv, window_map_lod(bars, (0.03 + widen * (tr + glass)) / metre, texel));
@@ -476,6 +466,7 @@ let LIGHT_FN = """
         float radius = (half_w * half_w + rise * rise) / (2.0 * rise);
         float spring = shell_niche.y + shell_niche.z;
         float arch_mid = spring + rise - radius;
+        vec2 slope = vec2(dot(l.xz, along), l.y) * (panes.w / toward);
         float lit = 0.0;
         for (int i = 0; i < 3; i++) {
             if (float(i) >= shell.x) break;
@@ -501,7 +492,7 @@ let LIGHT_FN = """
                 vec3 g = p + l * tg;
                 vec2 wg = vec2(dot(g.xz, along) - mid, g.y - shell.z) / metre;
                 float soft_g = (0.03 + widen * tg) / metre;
-                through *= casement(wg, soft_g);
+                through *= casement(wg, soft_g, slope);
                 if (cone > 0.0) glazed *= glazing(wg, soft_g + cone);
             }
             if (tl > 0.5) {
@@ -652,12 +643,8 @@ let SHADOW_FN = """
 // off, as the board does, turns the room's dim oak orange.
 let TONE_FN = """
     vec3 tonemap(vec3 c) {
-    #ifdef TOE_SWITCH
-        c = toe_off(c, toe.x);
-    #else
         float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
         c *= (y < 0.04 ? 12.5 * y * y : y - 0.02) / y;
-    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;
@@ -677,8 +664,10 @@ let TONE_FN = """
     }
     #ifdef HDR_OUT
     // The scenic views' HDR target takes the light with tonemap's toe alone taken off; the
-    // shoulder and the grade are HDR_TONE_FRAG's.
+    // shoulder and the grade are HDR_TONE_FRAG's. None where Frame's toe.x says 2 (the
+    // camera's curve takes it).
     vec3 room_toe(vec3 c) {
+        if (toe.x > 1.5) return c;
         float y = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
         return c * ((y < 0.04 ? 12.5 * y * y : y - 0.02) / y);
     }

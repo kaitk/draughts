@@ -59,15 +59,28 @@ def node_material(name):
     return m, nt, out
 
 
-def diffuse(name, color, metallic=0.0, rough=1.0):
+def diffuse(name, color, metallic=0.0, rough=1.0, spec=None):
+    # spec: the Principled's Specular IOR Level, 0.5 a dielectric's f0 of 0.04 (the shaders').
     m, nt, out = node_material(name)
     b = nt.nodes.new("ShaderNodeBsdfPrincipled")
     b.inputs["Base Color"].default_value = (*color, 1.0)
     b.inputs["Roughness"].default_value = rough
     b.inputs["Metallic"].default_value = metallic
-    b.inputs["Specular IOR Level"].default_value = 0.0 if metallic == 0.0 else 0.5
+    if spec is None:
+        spec = 0.0 if metallic == 0.0 else 0.5
+    b.inputs["Specular IOR Level"].default_value = spec
     nt.links.new(b.outputs[0], out.inputs["Surface"])
     return m, nt, b
+
+
+def coated(m, b, weight, rough):
+    # A clear coat over the albedo (the wax, the polish), f0 0.04; the base then matte, as
+    # the shaders light the wood under it.
+    b.inputs["Specular IOR Level"].default_value = 0.0
+    b.inputs["Coat Weight"].default_value = weight
+    b.inputs["Coat Roughness"].default_value = rough
+    b.inputs["Coat IOR"].default_value = 1.5
+    return m
 
 
 def textured(name, image, scale, gain):
@@ -96,11 +109,24 @@ def textured(name, image, scale, gain):
 
 
 def glass(name, lets):
-    # A pane: what it lets through straight on, no refraction, so the sun's shadow rays pass.
+    # A pane: what it lets through straight on, no refraction, so the sun's shadow rays pass;
+    # ROOM_FRAG's reflection over it, 0.6 of Fresnel's (a glass's, 0.04 straight on), sharp.
     m, nt, out = node_material(name)
     t = nt.nodes.new("ShaderNodeBsdfTransparent")
     t.inputs["Color"].default_value = (lets, lets, lets, 1.0)
-    nt.links.new(t.outputs[0], out.inputs["Surface"])
+    g = nt.nodes.new("ShaderNodeBsdfGlossy")
+    g.inputs["Roughness"].default_value = 0.0
+    fres = nt.nodes.new("ShaderNodeFresnel")
+    fres.inputs["IOR"].default_value = 1.5
+    k = nt.nodes.new("ShaderNodeMath")
+    k.operation = "MULTIPLY"
+    k.inputs[1].default_value = 0.6
+    mix = nt.nodes.new("ShaderNodeMixShader")
+    nt.links.new(fres.outputs[0], k.inputs[0])
+    nt.links.new(k.outputs[0], mix.inputs["Fac"])
+    nt.links.new(t.outputs[0], mix.inputs[1])
+    nt.links.new(g.outputs[0], mix.inputs[2])
+    nt.links.new(mix.outputs[0], out.inputs["Surface"])
     return m
 
 
@@ -124,7 +150,307 @@ def lace(name, lets, scatter):
     return m
 
 
+def srgb_to_linear(c):
+    return [x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+
+
+LUM = (0.2126, 0.7152, 0.0722)
+
+
+def map_mean(path):
+    # The albedo map's mean luminance in linear light: TABLE_FRAG's last mip.
+    img = bpy.data.images.load(path, check_existing=True)
+    px = np.asarray(img.pixels[:], np.float32).reshape(-1, 4)[:, :3]
+    lin = np.where(px <= 0.04045, px / 12.92, ((px + 0.055) / 1.055) ** 2.4)
+    return float((lin.mean(0) * np.array(LUM)).sum())
+
+
+def table_wood(name, part):
+    # The table's wood as TABLE_FRAG draws it from the maps (tools/blender_export.goose
+    # --maps), on the uv the export gives (where the shader reads the maps). part: "top"
+    # (the top and its edge), "base" (its own wood: base_wood, base_look), "chair" (the
+    # base's map darker and less red, CHAIR_WOOD). Under the polish: a coat of strength
+    # coat.y, its roughness the map's alpha on the top, coat.x elsewhere.
+    m, nt, b = diffuse(name, (0.5, 0.5, 0.5))
+    L = nt.links
+    alb = nt.nodes.new("ShaderNodeTexImage")
+    alb.image = bpy.data.images.load(ALBEDO_MAP, check_existing=True)
+    alb.image.colorspace_settings.name = "sRGB"
+    alb.image.alpha_mode = "CHANNEL_PACKED"
+    alb.interpolation = "Cubic"
+
+    def math(op, a, bb=None):
+        n = nt.nodes.new("ShaderNodeMath")
+        n.operation = op
+        for i, x in enumerate((a, bb)):
+            if x is None:
+                continue
+            if isinstance(x, (int, float)):
+                n.inputs[i].default_value = x
+            else:
+                L.new(x, n.inputs[i])
+        return n.outputs[0]
+
+    def mix_rgb(fac, a, c):
+        n = nt.nodes.new("ShaderNodeMix")
+        n.data_type = "RGBA"
+        n.inputs["Factor"].default_value = fac
+        L.new(a, n.inputs["A"])
+        L.new(c, n.inputs["B"])
+        return n.outputs["Result"]
+
+    def scale_rgb(c, k):
+        n = nt.nodes.new("ShaderNodeVectorMath")
+        n.operation = "SCALE"
+        L.new(c, n.inputs[0])
+        if isinstance(k, (int, float)):
+            n.inputs["Scale"].default_value = k
+        else:
+            L.new(k, n.inputs["Scale"])
+        return n.outputs[0]
+
+    lum = nt.nodes.new("ShaderNodeRGBToBW")   # the scene's luminance, Rec. 709's
+    L.new(alb.outputs["Color"], lum.inputs[0])
+    l = lum.outputs[0]
+    grey = nt.nodes.new("ShaderNodeCombineColor")
+    for i in range(3):
+        L.new(l, grey.inputs[i])
+    color = alb.outputs["Color"]
+    if part == "chair":
+        # TABLE_FRAG: mix(vec3(l), albedo, 0.75) * CHAIR_WOOD (0.6).
+        color = scale_rgb(mix_rgb(0.75, grey.outputs[0], color), 0.6)
+    elif part == "base":
+        # TABLE_FRAG's own base: mix(vec3(l), albedo, base_look.w)
+        #     * (mean * base_wood.y + (l - mean) * base_wood.z) / l
+        bw, bl = G["base_wood"], G["base_look"]
+        mean = map_mean(ALBEDO_MAP)
+        k = math("DIVIDE", math("ADD", math("MULTIPLY", math("SUBTRACT", l, mean), bw[2]), mean * bw[1]),
+                 math("MAXIMUM", l, 1e-4))
+        color = scale_rgb(mix_rgb(bl[3], grey.outputs[0], color), k)
+    L.new(color, b.inputs["Base Color"])
+    coat = G["table_coat"]
+    coated(m, b, coat[1], coat[0])       # tables::Table.coat: x the edge's roughness, y strength
+    if part != "top":
+        return m
+    # The top's faces (facing straight up) take the baked normal and the map's roughness
+    # (BAKE_FRAG's polish, alpha); the edge keeps the mesh's normal and coat.x.
+    geo = nt.nodes.new("ShaderNodeNewGeometry")
+    sep_n = nt.nodes.new("ShaderNodeSeparateXYZ")
+    L.new(geo.outputs["True Normal"], sep_n.inputs[0])
+    on_top = math("GREATER_THAN", sep_n.outputs["Z"], 0.999)
+    rough = nt.nodes.new("ShaderNodeMix")
+    rough.data_type = "FLOAT"
+    L.new(on_top, rough.inputs["Factor"])
+    rough.inputs["A"].default_value = coat[0]
+    L.new(alb.outputs["Alpha"], rough.inputs["B"])
+    L.new(rough.outputs["Result"], b.inputs["Coat Roughness"])
+    # The normal map: r and g the normal's x and z over the top seen from above (0.5 flat),
+    # along the uv's u and the app's v (the export flips v, so g flips back); its height
+    # worked out, as TABLE_FRAG's sqrt(1 - t.t). b holds the wear's patches, not a normal.
+    nm = nt.nodes.new("ShaderNodeTexImage")
+    nm.image = bpy.data.images.load(NORMAL_MAP, check_existing=True)
+    nm.image.colorspace_settings.name = "Non-Color"
+    nm.image.alpha_mode = "CHANNEL_PACKED"
+    nm.interpolation = "Cubic"
+    sep = nt.nodes.new("ShaderNodeSeparateColor")
+    L.new(nm.outputs["Color"], sep.inputs[0])
+    tx = math("SUBTRACT", math("MULTIPLY", sep.outputs[0], 2.0), 1.0)
+    ty = math("SUBTRACT", 1.0, math("MULTIPLY", sep.outputs[1], 2.0))
+    tz = math("SQRT", math("MAXIMUM", math("SUBTRACT", 1.0, math("ADD", math("MULTIPLY", tx, tx), math("MULTIPLY", ty, ty))), 0.0))
+    enc = nt.nodes.new("ShaderNodeCombineColor")
+    for i, t in enumerate((tx, ty, tz)):
+        L.new(math("ADD", math("MULTIPLY", t, 0.5), 0.5), enc.inputs[i])
+
+    def normal(strength):
+        n = nt.nodes.new("ShaderNodeNormalMap")
+        n.inputs["Strength"].default_value = strength
+        L.new(enc.outputs[0], n.inputs["Color"])
+        pick = nt.nodes.new("ShaderNodeMix")
+        pick.data_type = "VECTOR"
+        L.new(on_top, pick.inputs["Factor"])
+        L.new(geo.outputs["Normal"], pick.inputs["A"])
+        L.new(n.outputs[0], pick.inputs["B"])
+        return pick.outputs["Result"]
+
+    L.new(normal(1.0), b.inputs["Normal"])
+    L.new(normal(coat[2]), b.inputs["Coat Normal"])   # the polish follows the relief coat.z
+    return m
+
+
+class Nodes:
+    # A material's node tree with small helpers: maths on sockets or numbers, a picture on
+    # the mesh's uv scaled and moved, a vertex colour.
+    def __init__(self, nt):
+        self.nt = nt
+
+    def link(self, a, b):
+        self.nt.links.new(a, b)
+
+    def math(self, op, a, b=None):
+        n = self.nt.nodes.new("ShaderNodeMath")
+        n.operation = op
+        for i, x in enumerate((a, b)):
+            if x is None:
+                continue
+            if isinstance(x, (int, float)):
+                n.inputs[i].default_value = x
+            else:
+                self.link(x, n.inputs[i])
+        return n.outputs[0]
+
+    def scale_rgb(self, c, k):
+        n = self.nt.nodes.new("ShaderNodeVectorMath")
+        n.operation = "MULTIPLY"
+        self.link(c, n.inputs[0])
+        if isinstance(k, (list, tuple)):
+            n.inputs[1].default_value = k
+        else:
+            comb = self.nt.nodes.new("ShaderNodeCombineXYZ")
+            for i in range(3):
+                self.link(k, comb.inputs[i])
+            self.link(comb.outputs[0], n.inputs[1])
+        return n.outputs[0]
+
+    def mix(self, kind, fac, a, b):
+        n = self.nt.nodes.new("ShaderNodeMix")
+        n.data_type = kind
+        sockets = {"RGBA": ("A", "B", "Result"), "FLOAT": ("A", "B", "Result"), "VECTOR": ("A", "B", "Result")}
+        ia, ib, out = sockets[kind]
+        ins = [i for i in n.inputs if i.enabled]
+        fac_in, a_in, b_in = ins[0], [i for i in ins if i.name == ia][0], [i for i in ins if i.name == ib][0]
+        for sock, x in ((fac_in, fac), (a_in, a), (b_in, b)):
+            if isinstance(x, (int, float)):
+                sock.default_value = x
+            elif isinstance(x, (list, tuple)):
+                sock.default_value = (*x, 1.0) if kind == "RGBA" else x
+            else:
+                self.link(x, sock)
+        return [o for o in n.outputs if o.enabled and o.name == out][0]
+
+    def picture(self, path, scale, at, colour):
+        # The picture at uv * scale + at (the uv in the OBJ's units), repeating.
+        tex = self.nt.nodes.new("ShaderNodeTexImage")
+        tex.image = bpy.data.images.load(path, check_existing=True)
+        tex.image.colorspace_settings.name = "sRGB" if colour else "Non-Color"
+        tex.image.alpha_mode = "CHANNEL_PACKED"
+        tex.interpolation = "Cubic"
+        uv = self.nt.nodes.new("ShaderNodeTexCoord")
+        mp = self.nt.nodes.new("ShaderNodeMapping")
+        mp.inputs["Scale"].default_value = (scale[0], scale[1], 1.0)
+        mp.inputs["Location"].default_value = (at[0], at[1], 0.0)
+        self.link(uv.outputs["UV"], mp.inputs["Vector"])
+        self.link(mp.outputs[0], tex.inputs["Vector"])
+        return tex
+
+    def vertex_colour(self):
+        # The export's vertex colour: r the occlusion, g the piece's own tone.
+        a = self.nt.nodes.new("ShaderNodeVertexColor")
+        a.layer_name = "Color"
+        sep = self.nt.nodes.new("ShaderNodeSeparateColor")
+        self.link(a.outputs["Color"], sep.inputs[0])
+        return sep.outputs[0], sep.outputs[1]
+
+    def normal_map(self, r, g, flip_g, strength=1.0):
+        # A tangent normal from slopes stored at 0.5 flat along the uv's u and v (g flipped
+        # where the picture's rows run against Blender's v); its height worked out.
+        tx = self.math("SUBTRACT", self.math("MULTIPLY", r, 2.0), 1.0)
+        ty = self.math("SUBTRACT", self.math("MULTIPLY", g, 2.0), 1.0)
+        if flip_g:
+            ty = self.math("MULTIPLY", ty, -1.0)
+        tz = self.math("SQRT", self.math("MAXIMUM", self.math("SUBTRACT", 1.0, self.math(
+            "ADD", self.math("MULTIPLY", tx, tx), self.math("MULTIPLY", ty, ty))), 0.0))
+        enc = self.nt.nodes.new("ShaderNodeCombineColor")
+        for i, t in enumerate((tx, ty, tz)):
+            self.link(self.math("ADD", self.math("MULTIPLY", t, 0.5), 0.5), enc.inputs[i])
+        n = self.nt.nodes.new("ShaderNodeNormalMap")
+        n.inputs["Strength"].default_value = strength
+        self.link(enc.outputs[0], n.inputs["Color"])
+        return n.outputs[0]
+
+
+def floor_maps(name):
+    # The floor as ROOM_FRAG lays it (blender_export --maps on: floor_albedo.png, its
+    # roughness in alpha; floor_normal.png, its normal along u, v and up), over the uv's
+    # rectangle floor_laid, the picture's rows down v; under the wax (Room.planar), a coat
+    # of strength floor_wax at the oak's roughness times the wax's share, following a
+    # quarter of the grain's relief as the app's film does.
+    m, nt, b = diffuse(name, (0.5, 0.5, 0.5))
+    k = Nodes(nt)
+    lo_u, lo_v, su, sv = SF["floor_laid"]
+    scale, at = (1.0 / su, 1.0 / sv), (-lo_u / su, -lo_v / sv)
+    alb = k.picture(FLOOR_ALBEDO, scale, at, True)
+    k.link(alb.outputs["Color"], b.inputs["Base Color"])
+    k.link(alb.outputs["Alpha"], b.inputs["Roughness"])
+    coated(m, b, G["floor_wax"], 0.0)
+    k.link(k.math("MULTIPLY", alb.outputs["Alpha"], G["floor_wax_rough"] / G["floor_rough"]), b.inputs["Coat Roughness"])
+    nm = k.picture(FLOOR_NORMAL, scale, at, False)
+    n = nt.nodes.new("ShaderNodeNormalMap")
+    k.link(nm.outputs["Color"], n.inputs["Color"])
+    k.link(n.outputs[0], b.inputs["Normal"])
+    film = nt.nodes.new("ShaderNodeNormalMap")
+    film.inputs["Strength"].default_value = 0.25
+    k.link(nm.outputs["Color"], film.inputs["Color"])
+    k.link(film.outputs[0], b.inputs["Coat Normal"])
+    return m
+
+
+def oak_panels(name):
+    # The panelling as ROOM_FRAG draws it: the oak's field (wall_albedo.png, roughness in
+    # alpha; wall_normal.png, its slopes along u and v) a tile of wall_field on the uv, the
+    # picture's rows down v; each piece its own tone, a threshold paler and smoother, grime
+    # where the occlusion falls (the vertex colour).
+    m, nt, b = diffuse(name, (0.5, 0.5, 0.5))
+    k = Nodes(nt)
+    f = SF["wall_field"]
+    alb = k.picture(WALL_ALBEDO, (1.0 / f, -1.0 / f), (0.0, 0.0), True)
+    ao, own = k.vertex_colour()
+    color = k.scale_rgb(alb.outputs["Color"], k.math("ADD", 1.0, k.math("MULTIPLY", k.math("SUBTRACT", own, 0.5), SF["oak_tone"])))
+    sill = k.math("GREATER_THAN", own, 0.925)
+    color = k.mix("RGBA", sill, color, k.scale_rgb(color, SF["threshold"]))
+    rough = k.math("MULTIPLY", alb.outputs["Alpha"], k.math("SUBTRACT", 1.0, k.math("MULTIPLY", sill, 0.2)))
+    # mix(0.55, 1, smoothstep(0.5, 1, ao))
+    step = nt.nodes.new("ShaderNodeMapRange")
+    step.interpolation_type = "SMOOTHSTEP"
+    step.inputs["From Min"].default_value = 0.5
+    step.inputs["From Max"].default_value = 1.0
+    k.link(ao, step.inputs["Value"])
+    grime = k.math("ADD", SF["oak_grime"], k.math("MULTIPLY", step.outputs[0], 1.0 - SF["oak_grime"]))
+    k.link(k.scale_rgb(color, grime), b.inputs["Base Color"])
+    rough = k.math("ADD", rough, k.math("MULTIPLY", k.math("SUBTRACT", 1.0, ao), 0.15))
+    k.link(rough, b.inputs["Roughness"])
+    nm = k.picture(WALL_NORMAL, (1.0 / f, -1.0 / f), (0.0, 0.0), False)
+    sep = nt.nodes.new("ShaderNodeSeparateColor")
+    k.link(nm.outputs["Color"], sep.inputs[0])
+    k.link(k.normal_map(sep.outputs[0], sep.outputs[1], True), b.inputs["Normal"])
+    # The varnish: a clear coat at the oak's roughness, following a quarter of the grain's
+    # relief (ROOM_FRAG's PHYSICAL_COAT), the oak under it matte.
+    coated(m, b, 1.0, 0.0)
+    k.link(rough, b.inputs["Coat Roughness"])
+    k.link(k.normal_map(sep.outputs[0], sep.outputs[1], True, 0.25), b.inputs["Coat Normal"])
+    return m
+
+
+def wallpaper(name):
+    # The wallpaper as ROOM_FRAG draws it: its mask (design/materials/wallpaper_mask.png) a
+    # tile of paper_tile on the uv, from the ground to the gold print in linear light, their
+    # roughness likewise.
+    m, nt, b = diffuse(name, (0.5, 0.5, 0.5))
+    k = Nodes(nt)
+    t = SF["paper_tile"]
+    mask = k.picture(PAPER_MASK, (1.0 / t, 1.0 / t), (0.0, 0.0), False)
+    ground, gold = SF["paper_ground"], SF["paper_gold"]
+    mm = nt.nodes.new("ShaderNodeSeparateColor")
+    k.link(mask.outputs["Color"], mm.inputs[0])
+    mk = mm.outputs[0]
+    k.link(k.mix("RGBA", mk, srgb_to_linear(ground[:3]), srgb_to_linear(gold[:3])), b.inputs["Base Color"])
+    k.link(k.mix("FLOAT", mk, ground[3], gold[3]), b.inputs["Roughness"])
+    b.inputs["Specular IOR Level"].default_value = 0.5
+    return m
+
+
 A = S["albedo"]
+G = S["gloss"]
+SF = S.get("surfaces", {})
 table = A["table"]
 lum = 0.2126 * table[0] + 0.7152 * table[1] + 0.0722 * table[2]
 # TABLE_FRAG's chairs' wood: the base's albedo a quarter toward grey, times CHAIR_WOOD.
@@ -133,26 +459,68 @@ BRAID = [0.38, 0.29, 0.15]
 # The pictures' means in linear light (tapestry 0.8 × its mean, TABLE_FRAG's CHAIR_CLOTH).
 TAPESTRY_MEAN = [0.8 * c for c in (0.5159, 0.3405, 0.2105)]
 RUG_MEAN = [0.1573, 0.0754, 0.0495]
+ALBEDO_MAP = os.path.join(scene_dir, "table_albedo.png")
+NORMAL_MAP = os.path.join(scene_dir, "table_normal.png")
+FLOOR_ALBEDO = os.path.join(scene_dir, "floor_albedo.png")
+FLOOR_NORMAL = os.path.join(scene_dir, "floor_normal.png")
+WALL_ALBEDO = os.path.join(scene_dir, "wall_albedo.png")
+WALL_NORMAL = os.path.join(scene_dir, "wall_normal.png")
+PAPER_MASK = os.path.join(REPO, "design/materials/wallpaper_mask.png")
 textures = F["textures"] == "on"
+maps = textures and os.path.exists(ALBEDO_MAP) and os.path.exists(NORMAL_MAP)
+if textures and not maps:
+    print("no table maps in", scene_dir, "(blender_export --maps on): the table flat")
+room_maps = textures and SF and all(os.path.exists(p) for p in (FLOOR_ALBEDO, FLOOR_NORMAL, WALL_ALBEDO, WALL_NORMAL))
+if textures and not room_maps:
+    print("no room maps in", scene_dir, "(blender_export --maps on): the floor, oak and paper flat")
+
+
+def wood(name, color, part):
+    # The table's wood: its maps, or with --textures off (or no maps) its mean albedo,
+    # matte, for the light alone.
+    if maps:
+        return table_wood(name, part)
+    if not textures:
+        return diffuse(name, color)[0]
+    m, nt, b = diffuse(name, color)
+    return coated(m, b, G["table_coat"][1], G["table_coat"][0])
+
+
+def gloss(name, color, rough, spec=0.5):
+    # A dielectric at f0 0.04 and the shader's roughness; matte with --textures off.
+    if not textures:
+        return diffuse(name, color)[0]
+    return diffuse(name, color, rough=rough, spec=spec)[0]
+
+
+def floor_wax(name, color):
+    # The floor's wax: ROOM_FRAG's mirror over it (rooms::Room.planar: x its strength, its
+    # roughness the oak's times y), one layer; the oak's own sheen (FLOOR_OAK.base.w) left out.
+    m, nt, b = diffuse(name, color, rough=G["floor_rough"])
+    return coated(m, b, G["floor_wax"], G["floor_wax_rough"]) if textures else m
+
+
+brass = G["brass"]
 mats = {
-    "floor": diffuse("floor", A["floor"])[0],
-    "oak": diffuse("oak", A["oak"])[0],
-    "paper": diffuse("paper", A["paper"])[0],
-    "stone": diffuse("stone", A["stone"])[0],
-    "plaster": diffuse("plaster", A["plaster"])[0],
-    "ceiling": diffuse("ceiling", A["ceiling"])[0],
-    "paint": diffuse("paint", A["paint"])[0],
+    "floor": floor_maps("floor") if room_maps else floor_wax("floor", A["floor"]),
+    "oak": oak_panels("oak") if room_maps else gloss("oak", A["oak"], G["oak_rough"]),   # WALL_OAK.base.w
+    "paper": wallpaper("paper") if room_maps else gloss("paper", A["paper"], G["paper_rough"]),   # LOOK.paper.w
+    "stone": gloss("stone", A["stone"], G["stone_rough"]),            # LOOK.stone.w
+    "plaster": gloss("plaster", A["plaster"], G["plaster_rough"]),    # LOOK.plaster_shade.w, _light.w
+    "ceiling": gloss("ceiling", A["ceiling"], G["ceiling_rough"]),    # LOOK.ceiling_shade.w, _light.w
+    "paint": gloss("paint", A["paint"], G["paint_rough"]),            # LOOK.paint_quiet.x, the doors'
     # CASE_ALBEDO is the cases' fronts with the shelves' shadows in; the books alone a guess
-    # half again lighter.
-    "books": diffuse("books", [1.5 * c for c in A["books"]])[0],
-    "stove_tile": diffuse("stove_tile", A["stove_tile"])[0],
-    "brass": diffuse("brass", (0.80, 0.58, 0.28), metallic=1.0, rough=0.35)[0],
+    # half again lighter. Their cloth 0.65 rough (ROOM_FRAG's books, roughly).
+    "books": gloss("books", [1.5 * c for c in A["books"]], 0.65),
+    "stove_tile": gloss("stove_tile", A["stove_tile"], 0.08),          # ROOM_FRAG's STOVE_ROUGH, the glaze
+    # LOOK.brass: its colour at normal incidence (sRGB) and roughness.
+    "brass": diffuse("brass", srgb_to_linear(brass[:3]), metallic=1.0, rough=brass[3])[0],
     "cord": diffuse("cord", (0.30, 0.16, 0.07))[0],
     "glass": glass("glass", 0.92),
     "lace": lace("lace", S["lace_lets"], 0.4),
-    "table_top": diffuse("table_top", table)[0],
-    "table_base": diffuse("table_base", table)[0],
-    "chair_wood": diffuse("chair_wood", chair_wood)[0],
+    "table_top": wood("table_top", table, "top"),
+    "table_base": wood("table_base", table, "base"),
+    "chair_wood": wood("chair_wood", chair_wood, "chair"),
     "chair_seat": (textured("chair_seat", os.path.join(REPO, "design/materials/tapestry.png"), 7.3152, 0.8)
                    if textures else diffuse("chair_seat", TAPESTRY_MEAN)[0]),
     "chair_trim": diffuse("chair_trim", [0.85 * c for c in BRAID])[0],
@@ -292,6 +660,8 @@ layer = scene.view_layers[0]
 layer.use_pass_diffuse_direct = True
 layer.use_pass_diffuse_indirect = True
 layer.use_pass_diffuse_color = True
+layer.use_pass_glossy_direct = True
+layer.use_pass_glossy_indirect = True
 layer.use_pass_normal = True
 layer.use_pass_object_index = True
 # The props' parts numbered for the statistics of their light by facing.
@@ -336,11 +706,12 @@ while inp.seek_subimage(part, 0):
     part += 1
 inp.close()
 combined = passes["Combined"]
-# The light alone: the denoised image over the albedo where there is one, else the noisy
-# diffuse passes (the lace, the brass).
+# The light alone: the denoised image less the gloss (noisy) over the albedo where there is
+# one, else the noisy diffuse passes (the lace, the brass).
 color = passes["Diffuse Color"]
 raw = passes["Diffuse Direct"] + passes["Diffuse Indirect"]
-light = np.where(color > 0.01, combined / np.maximum(color, 1e-4), raw)
+glossy = passes["Glossy Direct"] + passes["Glossy Indirect"]
+light = np.where(color > 0.01, np.maximum(combined - glossy, 0.0) / np.maximum(color, 1e-4), raw)
 
 
 def save(rgb, path):

@@ -936,3 +936,10 @@ gain needs direct compressed-sample measurements.
 
 - [ ] The decisions in `docs/decisions/rendering.md` and `docs/architecture/rendering.md`
 - [ ] The branch squashed and merged, the user approving
+
+## To try: the chairs as in the old sun's shot (the user, 2026-11-26)
+
+Not decided, only to try. The chairs' placement round the table in
+`build/notes/autumn-reference/` (the old sun's shots, `--place free`) looks artistic to the
+user. To try: the table where it stands now (`--place less-turned`, 4.4, 5.8), the chairs
+placed round it as in that shot, the whole arrangement turned 90° from it.

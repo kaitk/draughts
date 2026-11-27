@@ -10,12 +10,6 @@ import std;
 import vec;
 import math;
 
-// The paint as made (quiet), or as before it (the light tuner's --paint old); its fillets,
-// and its pieces' tilt and the panels' cup, each switched alone (--paint-off).
-var paint_quiet = true;
-var paint_fillets = true;
-var paint_tilt = true;
-
 // The paint's radius on an arris (metres): a door's coats, a window's thinner.
 let FILLET_DOOR:   f32 = 0.0012;
 let FILLET_WINDOW: f32 = 0.0009;
@@ -36,20 +30,17 @@ fn paint_mat(tone: f32, along_wall: bool, window: bool, screen_ao: bool) -> f32 
 
 // Whether a vertex's material is the quiet paint's (which reads its uv as lines' distances).
 fn quiet_paint(mat: f32) -> bool {
-    guard paint_quiet else { return false; }
     let kind = floor(mat + 0.001);
     return kind == surfaces::MAT_PAINT;
 }
 
 fn fillet(window: bool) -> f32 {
-    guard paint_fillets else { return 0.0; }
     return if window { FILLET_WINDOW } else { FILLET_DOOR };
 }
 
 // A piece's tilt, a small turn about b's s and y axes (radians), from its seed: about normal,
 // as the sum of two uniforms.
 fn tilt_of(seed: i64) -> float2 {
-    guard paint_tilt else { return float2_0; }
     return float2 { PAINT_TILT * 2.45 * (surfaces::hash(seed, 21) + surfaces::hash(seed, 22) - 1.0),
                     PAINT_TILT * 2.45 * (surfaces::hash(seed, 23) + surfaces::hash(seed, 24) - 1.0) };
 }
@@ -82,15 +73,15 @@ let EDGES = 15;
 // window's or a door's, the side faces' occlusion, its seed (tone and tilt), and whether the
 // screen's occlusion falls on it.
 struct Piece {
-    round:  i64  = 0,
-    sides:  i64  = 0,
-    joints: i64  = 0,
-    recess: i64  = 0,
-    foot:   f32  = 0.0,
-    along:  bool = false,
-    window: bool = false,
-    ao:     f32  = 1.0,
-    seed:   i64  = 0,
+    round:     i64  = 0,
+    sides:     i64  = 0,
+    joints:    i64  = 0,
+    recess:    i64  = 0,
+    foot:      f32  = 0.0,
+    along:     bool = false,
+    window:    bool = false,
+    ao:        f32  = 1.0,
+    seed:      i64  = 0,
     screen_ao: bool = true,
 }
 
@@ -274,11 +265,11 @@ fn side_halves(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Build
     side_face(verts, indices, b, [mf, q[1], q[2], mb], n, recess, foot, ao, mat);
 }
 
-// The quiet panel's ring (world units, as surfaces::PANEL_IN and PANEL_Z): the stuck
+// The quiet panel's ring (world units): the stuck
 // moulding, the quirk 40 % shallower than before (filled by the coats), the bevel (a point
 // 8 mm up from its foot and 8 mm short of its top, so the dirt's distance stays exact over
 // it), the riser, and the field's arris rounded in three steps; the quirk and the riser's
-// foot gather dirt. Without fillets, the ring as before (surfaces::PANEL_IN).
+// foot gather dirt.
 let QUIRK_Z:  f32 = 0.26;
 let BEVEL_IN: f32 = 0.0262;     // 8 mm
 
@@ -287,9 +278,8 @@ struct Ring { at: float2[..16], ao: f32[..16], dirt: f32[..16] }
 fn quiet_ring(window: bool) -> Ring {
     var g = Ring { [], [], [] };
     let r = fillet(window) * surfaces::METRE;
-    let quirk = if r > 0.0 { QUIRK_Z } else { surfaces::PANEL_Z[4] };
     let ins: f32[5] = [0.0, 0.1, 0.22, 0.32, 0.34];
-    let zs:  f32[5] = [0.75, 0.71, 0.56, 0.32, quirk];
+    let zs:  f32[5] = [0.75, 0.71, 0.56, 0.32, QUIRK_Z];
     let aos: f32[5] = [1.0, 0.97, 0.85, 0.62, 0.55];
     for i in 5 {
         g.at.push(float2 { ins[i], zs[i] });
@@ -311,19 +301,13 @@ fn quiet_ring(window: bool) -> Ring {
     g.ao.push(0.93);
     g.dirt.push(1.0);
     // The riser and the field's arris.
-    if r > 0.0 {
-        let c = float2 { 1.5, 0.56 };
-        let a = float2 { 1.5, 0.56 - r };
-        let e = float2 { 1.5 + r, 0.56 };
-        for j in 4 {
-            let t: f32 = j / 3.0;
-            g.at.push(a * ((1.0 - t) * (1.0 - t)) + c * (2.0 * t * (1.0 - t)) + e * (t * t));
-            g.ao.push(0.97 + 0.01 * j);
-            g.dirt.push(0.0);
-        }
-    } else {
-        g.at.push(float2 { 1.5, 0.56 });
-        g.ao.push(0.97);
+    let c = float2 { 1.5, 0.56 };
+    let a = float2 { 1.5, 0.56 - r };
+    let e = float2 { 1.5 + r, 0.56 };
+    for j in 4 {
+        let t: f32 = j / 3.0;
+        g.at.push(a * ((1.0 - t) * (1.0 - t)) + c * (2.0 * t * (1.0 - t)) + e * (t * t));
+        g.ao.push(0.97 + 0.01 * j);
         g.dirt.push(0.0);
     }
     return g;
@@ -405,7 +389,7 @@ fn paint_panel(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::Build
     let z = g.at[last].y;
     let w = (x1 - x0 - 2.0 * f) * k_m;
     let way: f32 = if surfaces::hash(seed, 26) < 0.5 { 1.0 } else { -1.0 };
-    let s = if paint_tilt && w > 0.0 { way * 4.0 * PANEL_SAG / w } else { 0.0 };
+    let s = if w > 0.0 { way * 4.0 * PANEL_SAG / w } else { 0.0 };
     let p: float3[4] = [float3 { x0 + f, y0 + f, z }, float3 { x1 - f, y0 + f, z }, float3 { x1 - f, y1 - f, z }, float3 { x0 + f, y1 - f, z }];
     let ns: float3[4] = [tilted(normalize(float3 { s, 0.0, 1.0 }), t), tilted(normalize(float3 { -s, 0.0, 1.0 }), t),
                          tilted(normalize(float3 { -s, 0.0, 1.0 }), t), tilted(normalize(float3 { s, 0.0, 1.0 }), t)];
@@ -649,4 +633,67 @@ fn casement_quiet(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Ve
     let gzz = -(g + 0.018);
     quad_m(glass, glass_indices, b, [float3 { -gx, s + 0.03, gzz }, float3 { gx, s + 0.03, gzz }, float3 { gx, h - CASE_HEAD, gzz },
                                      float3 { -gx, h - CASE_HEAD, gzz }], surfaces::MAT_GLASS);
+}
+
+// A box of a window's casements, in the window's own metres: x along the wall from its
+// middle, y up from the floor, z out of the wall (into it negative), as box_m takes them.
+struct Member { lo: float3, hi: float3 }
+let MEMBERS = 66;
+
+// The boxes the sun meets in window o's opening (room_light's bake traces its rays through
+// them): each casement's blind frame, its cover strip, its sashes' stiles and rails and its
+// bars, as casement and casement_quiet build them at o.glass.x and o.glass.y, and the
+// lunette over them at the niche's back with the wall over it (2 m up: a line past it is
+// in the wall).
+fn casement_members(o: Opening) -> Member[..MEMBERS] {
+    var out: Member[..MEMBERS] = [];
+    let w = 0.5 * o.width;
+    let gx = 0.5 * o.glass.w - CASE_FRAME;
+    let s = o.sill;
+    let h = o.sill + o.height;
+    let zt = s + (h - s) * 2.0 / 3.0;
+    let c = 0.5 * CASE_COVER;
+    for g in [o.glass.x, o.glass.y] {
+        let f0 = -(g + 0.05);
+        let f1 = -(g - 0.05);
+        out.push(Member { float3 { -w, s - 0.03, f0 }, float3 { -gx, h, f1 } });
+        out.push(Member { float3 { gx, s - 0.03, f0 }, float3 { w, h, f1 } });
+        out.push(Member { float3 { -gx, h - CASE_HEAD, f0 }, float3 { gx, h, f1 } });
+        out.push(Member { float3 { -gx, s - 0.03, f0 }, float3 { gx, s + 0.03, f1 } });
+        out.push(Member { float3 { -gx, zt - 0.5 * CASE_TRANSOM, f0 }, float3 { gx, zt + 0.5 * CASE_TRANSOM, f1 } });
+        out.push(Member { float3 { -c, s + 0.03, -(g + 0.03) }, float3 { c, h - CASE_HEAD, -(g - 0.025) } });
+        let z0 = -(g + 0.025);
+        let z1 = -(g - 0.02);
+        for part in 2 {
+            let y0 = if part == 0 { zt + 0.5 * CASE_TRANSOM } else { s + 0.03 };
+            let y1 = if part == 0 { h - CASE_HEAD } else { zt - 0.5 * CASE_TRANSOM };
+            let rail_low = if part == 0 { CASE_RAIL } else { CASE_RAIL_LOW };
+            let across = if part == 0 { UPPER_ACROSS } else { LOWER_ACROSS };
+            let up = if part == 0 { UPPER_UP } else { LOWER_UP };
+            for side in SIDES {
+                let lo = min(side * gx, side * c);
+                let hi = max(side * gx, side * c);
+                let ax0 = if side < 0.0 { lo + CASE_STILE } else { lo + CASE_MEET };
+                let ax1 = if side < 0.0 { hi - CASE_MEET } else { hi - CASE_STILE };
+                let ay0 = y0 + rail_low;
+                let ay1 = y1 - CASE_RAIL;
+                out.push(Member { float3 { lo, y0, z0 }, float3 { ax0, y1, z1 } });
+                out.push(Member { float3 { ax1, y0, z0 }, float3 { hi, y1, z1 } });
+                out.push(Member { float3 { ax0, y0, z0 }, float3 { ax1, ay0, z1 } });
+                out.push(Member { float3 { ax0, ay1, z0 }, float3 { ax1, y1, z1 } });
+                let pw = (ax1 - ax0 - (across - 1) * CASE_BAR) / across;
+                let ph = (ay1 - ay0 - (up - 1) * CASE_BAR) / up;
+                for i in 1..across {
+                    let x = ax0 + i * (pw + CASE_BAR);
+                    out.push(Member { float3 { x - CASE_BAR, ay0, -(g + 0.021) }, float3 { x, ay1, -(g - 0.015) } });
+                }
+                for j in 1..up {
+                    let y = ay0 + j * (ph + CASE_BAR);
+                    out.push(Member { float3 { ax0, y - CASE_BAR, -(g + 0.021) }, float3 { ax1, y, -(g - 0.015) } });
+                }
+            }
+        }
+    }
+    out.push(Member { float3 { -w, h, -(o.glass.z + 0.01) }, float3 { w, h + 2.0, -o.glass.z } });
+    return out;
 }

@@ -4,14 +4,12 @@
 // with its bars, curtain, and the trees' leaves. Drag to orbit, scroll to zoom, R resets
 // the camera, W switches the pattern (its leaves swaying in the wind), T the leaves between
 // the tree's baked shadow and the noise, K the wind's kind (rooms::WIND_KINDS: sines,
-// noise, still, branches), D the dust in the sunbeam, O the room round the table (the
+// noise, still, branches), D the dust in the sunbeam (the room round the table is the
 // library's shell, room_shell::LIBRARY: its walls, wainscot, windows, doors, cornice and
-// ceiling; S switches it for the panelled wall facing the window alone, model3d::surfaces,
-// as it was), V the views in turn (the board, then the room's: room, window, hall, stove,
+// ceiling), V the views in turn (the board, then the room's: room, window, hall, stove,
 // VIEWS), U the view out of the shell's windows (model3d::view_out) or the plain sky behind
-// them as before, B the bookcases' books (model3d::books) in or out, H the windows' shutters, J the
-// painted wood (quiet or old), I the sills (the limestone or the old stone), L the wallpaper's tile round a real paper's
-// 0.65 m, the default 0.9 m and style-01's 1.4 m, F the frame counter in the corner (frames a
+// them as before, B the bookcases' books (model3d::books) in or out, H the windows'
+// shutters, L the wallpaper's tile round a real paper's 0.65 m, the default 0.9 m and style-01's 1.4 m, F the frame counter in the corner (frames a
 // second, the frame's time and its worst over half a second, the time in the loop before
 // the submit; SDL's GPU has no timer queries, so no GPU time), G waits for the GPU each
 // frame so the loop's time is the CPU's and the GPU's, N the 3D scene's scale (the high
@@ -29,9 +27,9 @@
 // till it is let go, so a slider bakes once, not each step.
 //
 //   scripts/mac.py tools/light_tune.goose
-//   cd tools && ../build/light_tune [--room library|hall-snow|hall-sun|hall-spring|evening]
-//       [--season autumn|winter|spring|summer] [--material auto|wood|stone|carved]
-//       [--table board|flame] [--table-top 0.95|1.05|0.80 (the top across, metres)] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
+//   cd tools && ../build/light_tune [--season autumn|winter|spring|summer (the season's room, rooms::for_season)]
+//       [--material auto|wood|stone|carved]
+//       [--table board|flame] [--window on|off] [--leaves tree|noise|both] [--seed N] [--wind-time S]
 //       [--wind-kind sines|noise|still|branches]
 //       [--gust X,Y,Z,W | --gust-strength K --gust-length S --gust-every S --gust-reach K (rooms::Room's gust)]
 //       [--tree|--crown|--foliage|--trees|--wind X,Y,Z,W (rooms::Room's tree, crown, foliage, leaves, wind)]
@@ -52,6 +50,12 @@
 //       [--azimuth DEG] [--sun-height DEG]
 //       [--table-at X,Y (the games table's middle in the plan, metres; 4.5,5.8 as made)]
 //       [--table-turn DEG (the table turned under the board, its top's figure with it; 0 as the game's)]
+//       [--base-wood today|own (the table's base: the map as the top's, or its own wood, the grain along the
+//       column and the legs, as the chairs'; own)] [--base-light K (its lightness, a share of the map's; 0.57)]
+//       [--base-figure K (its figure's contrast, a share of the map's; 0.6)] [--base-streaks K (how far the figure
+//       is drawn out along the grain; 3)] [--base-slant DEG (the grain's slant round the column; 0)]
+//       [--base-rings K (the rings the column's cut crosses, 0 none; 0)] [--base-place U (where across the map it
+//       reads, 0 to 1; 0.5)] [--base-colour K (the colour's strength, 1 the map's; 0.75)]
 //       [--board-turn DEG (the board's own z, the players' axis, from the window wall's line in the plan; sets the key's azimuth)]
 //       [--place free|concept|concept-high|along-wall|less-turned|concept-pier|more-turned (PLACE_NAMES: a verified sun, table and
 //       board together, the table-window view's eye with them; less-turned without the flag, free the other flags' own;
@@ -59,20 +63,19 @@
 //       [--place-then NAME (that placement taken on the third frame, as A takes it: a check of the room built again)]
 //       [--sun-check (prints where the sun's ray from the board and the table leaves the room: a window's
 //       glass, a bar, its frame, or the wall; then quits unless --shot)]
-//       [--dust off|points|points-few|points-many (in the table-window view only: real dust's points in the sunbeam,
+//       [--dust off|points (in the table-window view only: real dust's points in the sunbeam,
 //       energy-conserving: DUST_WAYS; points the default)]
 //       [--mote-fibres SHARE (0 no fibres)] [--fibre-width K (the fibres' width across, a share of a point's; 0.5)]
 //       [--motes N] [--mote-bright K] [--exposure K]
 //       [--point-px SIGMA (the points' footprint, 0.75)] [--glints K (the flakes' glints, 1 as real, 0 off)]
 //       [--air DRIFT,RISE,SWIRL,SIZE (cm a second, the swirls' size in cm; 1.2,1,1.5,12)] [--near K (denser round the board, 0 even)]
-//       [--haze off|clean|lived|dusted|study|menu|game (the sunbeam's haze with HDR, render3d::Haze: the air's sigma 0,
-//       5e-5, 1.5e-4, 4e-4 a metre, and the ChatGPT study's strength, 3e-3 with its stripes softer; menu the main menu's
-//       scene's level, the study's; game the game's own scene's, dusted; off)] [--haze-sigma S (a metre, over the preset)]
-//       [--haze-look G,EVEN,TAPS,SOFT (0.7,0.2,12,1; SOFT the stripes' softness, 0 sharp, 1 the sun's disc; the study 4)] [--haze-res half|full (half)]
+//       [--haze off|menu|game (the sunbeam's haze with HDR, render3d::Haze: menu the main menu's scene's level, 3e-3 a
+//       metre with its stripes softer; game the game's own scene's, 4e-4; off)] [--haze-sigma S (a metre, over the preset)]
+//       [--haze-look G,EVEN,TAPS,SOFT (0.7,0.2,12,1; SOFT the stripes' softness, 0 sharp, 1 the sun's disc; menu 4)] [--haze-res half|full (half)]
 //       [--haze-toward K (the stripes K times softer again looking toward the sun)]
 //       [--halo K --halo-reach K (the pieces' darkening of the field round them: its strength, and its reach
 //       as a share; 0 or none the shader's own, shaders::OCC_FRAG's HALO and HALO_REACH, 1 and 1 today)]
-//       [--room-surfaces on|off (on)] [--shell on|off] [--wall-away UNITS] [--room-exposure K]
+//       [--room-exposure K]
 //       [--outside on|off] [--outside-exposure K (rooms::Room's outside)]
 //       [--park off|ground|no-shading|no-leaves|no-grounding|no-shadows (the lawn and trees on the ground outside, PARK_NAMES)]
 //       [--eye X,Y,Z --at X,Y,Z (a camera of its own, world units)]
@@ -83,9 +86,21 @@
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
 //       [--rug on|off (the rug under the games table)] [--chairs on|off (the two chairs at it)]
 //       [--props-light off|on|kept (the table and the chairs lit from the room's probes where each pixel is, through
-//       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)] [--stove on|off] [--stove-crown crest|flat (the stove's crown, A's or B's)]
-//       [--paint quiet|old] [--paint-off fillets,tilt,dirt,joints,tile] [--paint-relief K]
-//       [--sill vasalemma|old] [--sill-off speckle,band,arris,nose,dust (the limestone's parts, each off)]
+//       their occlusion baked per vertex, render3d::props_light; kept: the table's own shade terms kept beside the bake)]
+//       [--light today|physical (the room's light from physical inputs, physical_light; today as made)]
+//       [--camera-toe room|neutral|none|agx (--light physical's one curve after the HDR pass: the shoulder after
+//       that toe, or AgX at the metered exposure, the default)] [--camera-ev EV (AgX's exposure over the meter's; 0)]
+//       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
+//       [--coat on|off (--light physical: the varnish and the wax as clear coats on the walls and floor,
+//       render3d::physical_coat; on)] [--sun-color height|key (--light physical: the sun's colour by its
+//       height through a clear sky, or the key's at 0.6 of its saturation; height)]
+//       [--props-wrap K (--light physical: how far past its terminator the sun wraps on the table and chairs; 0)]
+//       [--casement-depth on|off (--light physical: the sun through the casements' members with their depth, in the bake
+//       and on every surface, rooms::Room's panes.w; on)] [--stove on|off]
+//       [--volumes on|off (--light physical: the probe volumes, room_light::volumes_on, the windows' spaces between
+//       the panes; on)] [--cavity-up N --cavity-across N (their probes up and across, room_light::cavity_up and
+//       cavity_across; 20, 7)]
+//       [--paint-relief K (the painted wood's relief tile's strength, 1 as made)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
 //       0.15 by default, 0 as made; Y switches 0.15 and 0)]
 //       [--dump-glass-tile PREFIX (the glass's wiping tile and its previews; then quits)]
@@ -101,22 +116,20 @@
 //       [--lace-shade-fill K (the lace's room-side fill where neither sun nor sky reaches it, 0.5)]
 //       [--lace-fold-ao K (how much the folds' valleys darken that fill, 1.5, the deepest to 0.4)]
 //       [--panel-ao STRENGTH,WIDTH_CM,CREASE,BEVEL (the panels' rings' occlusion, crease and bevel's width; 0.6,0.4,0.85,1; at the start)]
-//       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09)]
-//       [--dump-light PATH (the probes' atlas, a float a line, with --shot)]
-//       [--dump-room-block PATH (the room's Surfaces block as its raw bytes, with --shot; scripts/room_fixed.py)] [--light-ref PATH (the baked light worked
-//       out finely on the room's surfaces, tools/light_ref.goose; --light-ref-stride N, --light-ref-old)]
+//       [--bounces N (1)] [--bounce-grey K (0.25)] [--lace-source K] [--gather-near M2 (the probes' least distance², 0.09; 0.02 with --light physical)]
+//       [--dump-light PATH (the probes' atlas, a float a line, with --shot; with the props' light their nine harmonics' atlas
+//       too, PATH.props)] [--print (the command line printed on the first frame, as P)]
+//       [--dump-room-block PATH (the room's Surfaces block as its raw bytes, with --shot; scripts/room_fixed.py)]
 //       [--ssao-view off|alone|kept|light|broken (light: the indirect light alone on grey; broken: red where a
 //       term isn't finite, yellow where the light is over 64)]
 //       [--contact STRENGTH,LENGTH,STEPS,THICKNESS (the sun's contact shadows, world units; 0.8,3,12,1.5; 0 off)]
 //       [--room-sun K (the sun's saturation on the room, 0.6; 1 as the key)]
 //       [--oak-sun SHARE,SAT,SHEEN (the panelling oak's share of the room's sun, its saturation and share of the sheen)]
-//       [--toe|--table-toe|--board-toe room|neutral|none (the room's and the view out's, the table's, the board's toe)]
-//       [--toe-off K (what the toes take off, 0.02)]
 //       [--sheen STRENGTH,ROUGHNESS,PAPER,VIEW (the sun's broad sheen; 2,0.8,1,0; 0 off; VIEW 1 the highlights alone)]
 //       [--sections all|NAME,NAME.. (SECTION_NAMES open at the start)] [--shot-panel (the panel in a --shot)]
 //       [--view board|room|window|hall|stove|table-window] [--dump-oak PREFIX (the oak's fields as PREFIX-floor.ppm, -wall.ppm)]
 //       [--hdr on|off (the scenic views drawn into the HDR target and tonemapped after, render3d::hdr_shown; on; X
-//       switches it)] [--hdr-format rg11b10f|rgba16f (its target's; rg11b10f)] [--dof on|off (the lens, render3d::Lens; off)] [--focus M (0 the view's target)]
+//       switches it)] [--dof on|off (the lens, render3d::Lens; off)] [--focus M (0 the view's target)]
 //       [--aperture PCT (a disc's radius at infinity, % of the width)] [--dof-caps NEAR,FAR (%)]
 //       [--lens-view off|depth|coc (the depth of field's depth over the picture, or the lens's disc; 1)]
 //       [--size 1600x1000] [--distance K] [--height DEG] [--yaw DEG] [--shot out.png]
@@ -124,7 +137,6 @@
 //       [--fps on|off] [--fps-wait (wait for the GPU each frame, G)]
 //       [--no-vsync (present without waiting for the display, to measure frames uncapped)]
 //       [--fps-seconds S (print the counter each half second, quit after S)]
-//       [--oak-aniso-4 (sample the floor and wall oak with 4× anisotropy)]
 //       [--walk-test N (the walk driven by injected input for N frames, WALK_TEST_END all; with --shot)]
 //       [--planar-size K (the floor mirror's scale, 3 a third, 2 half) --planar-wide TEXELS (its least width, 1600)]
 //       [--mirror-cheap on|off (the floor mirror's cheap world, a trial: large shapes at their mean colours, off)]
@@ -163,7 +175,6 @@ import strings from "../strings";
 import board from "../src/board";
 import model3d from "../src/model3d";
 import render3d from "../src/render3d";
-import .light_ref;
 
 // Asks SDL for the app's GPU driver before the window opens (src/native/display.c).
 extern fn draughts_choose_gpu();
@@ -184,9 +195,6 @@ let ROW:     f32 = 20.0;
 let SEASONS = ["autumn", "winter", "spring", "summer"];
 let MATERIALS = ["auto", "wood", "stone", "carved"];
 let SQUARES = ["8", "10"];
-// The table's tops to compare (--table-top, the panel's Top): the game's 0.95 m
-// (mesh::TABLE_R), the 1.05 m it was and task 109's period 0.80 m; the base under them
-// the same.
 // The park on the ground outside (--park, task 109's look test; render3d::park_ground):
 // off as today, the whole of it, or one part off: the grass's shading, autumn's leaves
 // (off too in the other seasons), the trees' grounding (the darker lawn under the crowns
@@ -211,19 +219,73 @@ fn park_frag(part: i64, hdr: bool) -> const u8[:] {
         _ => embed_shader("frag", shaders::PARK, shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::PARK_FN, shaders::OUTSIDE_MAIN),
     };
 }
-let TOPS = ["0.95", "1.05", "0.80"];
+let BASE_WOODS = ["today", "own"];
 let PROPS_WAYS = ["off", "on", "kept"];
+let LIGHT_WAYS = ["today", "physical"];
+
+// The two panes' share of the sun (0.92 each), as tools/path_trace.goose takes them.
+let PANES: f32 = 0.8464;
+// --light physical's least squared distance (metres²) from a probe to a light it gathers.
+let PHYSICAL_GATHER_NEAR: f32 = 0.02;
+// --light physical's sun through the casements' members with their depth (--casement-depth).
+var casement_depth = true;
+
+fn srgb_of(c: f32) -> f32 {
+    if c <= 0.0031308 { return c * 12.92; }
+    let e: f32 = 1.0 / 2.4;
+    return 1.055 * pow(c, e) - 0.055;
+}
+
+// --light physical's sun colour (--sun-color): height, the direct sun's at its height through
+// a clear sky (rooms::sun_color_at); key, the key's at ROOM_SUN_AS_MADE.x of its saturation.
+// Either at the key's luminance, so the exposure stays.
+let SUN_COLOR_WAYS = ["height", "key"];
+var sun_by_height = true;
+fn physical_sun(made: rooms::Room, height: f32) -> float4 {
+    let key = rooms::color_of(made.key_color);
+    let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
+    let grey = float3 { y, y, y };
+    let sun = if sun_by_height { rooms::sun_color_at(height) * y } else { grey + (key - grey) * render3d::ROOM_SUN_AS_MADE.x };
+    return float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), made.key_color.w };
+}
+// --light physical's sun's broad sheen (render3d::sheen_look): none, as no lobe of the kind is
+// in the references (Cycles' paper and paint have their gloss alone).
+let PHYSICAL_SHEEN = float4 { 0.0, 0.8, 1.0, 0.0 };
+
+// The room's light from physical inputs (task 122), as the path tracer takes them: one sun on
+// every surface, the room's (its strength and saturation), through the panes; the bake's
+// sun thrown on at its albedo (gain 1, no grey); no light added blind to direction (the
+// shade's floor of the key, the kept harmonics and bounce); one exposure for the view, the
+// room's sunlit surfaces where today's are. Each value is set from `made`, the room as
+// made, never scaled from what `r0` holds, so the command line the tuner prints gives the
+// same light again: the sun's strength unless `key_given` (--key's is the physical sun's),
+// the exposure unless `exposure_given`.
+fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_given: bool) -> rooms::Room {
+    var r = r0;
+    r.key_color = physical_sun(made, r0.key.y);
+    if !key_given { r.key.z = made.key.z * made.shell_sun.y * PANES; }
+    r.shell_sun.y = 1.0;
+    r.panes.w = if casement_depth { 1.0 } else { 0.0 };
+    render3d::room_sun = float4 { 1.0, 1.0, 1.0, render3d::ROOM_SUN_AS_MADE.w };
+    render3d::sun_panes = PANES;
+    room_light::glazing = room_light::PHYSICAL_GLAZING;
+    room_light::bounce_grey = 0.0;
+    r.baked = float4 { r.baked.x, 1.0, 0.0, 0.0 };
+    render3d::shade_fill = 0.0;
+    // No forward cone off the lace: the bake's lace cells already throw its light.
+    render3d::window_view.y = 0.0;
+    if !exposure_given { r.exposure = made.exposure * made.room_exposure / PANES; }
+    r.room_exposure = 1.0;
+    return r;
+}
 let TREE_GROWS = ["shadow", "whole"];
-let TOP_METRES: f32[3] = [0.95, 1.05, 0.80];
-fn top_radius(top: i64) -> f32 { mesh::TABLE_R * TOP_METRES[top] / 0.95 }
 
 // The views (V cycles them): the board's orbit, then the room's from a person's eyes, in
 // the plan's metres (room_shell): the whole room from the far corner by the hall; the
 // window wall from the hall door; the hall wall from the window; the stove's end from the
 // far end; table-window from a chair behind the games table into the middle window, the
 // low sun in its upper left pane (library-home-01's framing, mirrored: the sun stays where
-// it is, the eye moved). With the shell off, room is the view over the table to the
-// panelled wall.
+// it is, the eye moved).
 let VIEWS = ["board", "room", "window", "hall", "stove", "table-window"];
 let OFF_ON = ["off", "on"];
 let WOOD_TIERS = ["high", "standard", "phone"];
@@ -231,9 +293,17 @@ let TABLE_WINDOW = 5;
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
 // indirect light keeps, or the indirect light alone on grey, or its broken values marked.
 let SSAO_VIEWS = ["off", "alone", "kept", "light", "broken"];
-// The tonemaps' toes (render3d::tone_toe): on the luminance, Khronos PBR Neutral's on the
-// least channel, none.
-let TOES = ["room", "neutral", "none"];
+// The camera's curves (render3d::camera_toe): the shoulder after a toe on the luminance,
+// Khronos PBR Neutral's toe on the least channel, or none; AgX.
+let TOES = ["room", "neutral", "none", "agx"];
+// The lace's ways (C, --lace): f3 the app's, f2, f and d spare ones in design/materials/,
+// read into spare_laces at the start.
+let LACE_WAYS = ["f3", "f2", "f", "d"];
+var spare_laces: u8[>..] = [];
+// --light physical's camera curve (render3d::camera_toe): AgX, as Cycles takes it.
+let CAMERA_TOE = render3d::CAMERA_AGX;
+// --light physical's grade (--grade): the season's (render3d::GRADES) or none.
+let GRADE_WAYS = ["season", "none"];
 // The depth of field's depth shown over the picture (render3d::depth_view): none, the
 // distance, the lens's disc.
 let LENS_VIEWS = ["off", "depth", "coc"];
@@ -276,25 +346,26 @@ fn view_point(p: float3, view: i64) -> float3 {
 // disc with its edge hidden in its glow and the leaves' gaps sharper, 8000 over the sky,
 // and the eye's veil round the sun, which looked overdone against open sky.
 let SUN_LOOK_NAMES = ["made", "veil"];
-// The haze in the sunbeam's strengths (render3d::Haze.sigma, a metre): off; a clean room's air,
-// a lived-in one's, a room just dusted (build/notes/window-view/refs/research-haze-motes.md),
-// and the ChatGPT library study's soft wide beam across the dark bookcase.
-// The user's levels (2026-11-22): menu, the main menu's scene with its motes, the study's;
-// game, the game's own scene, dusted (the user's slider at about 4.5e-4 at most). Off by
-// default; nothing of it is in the app yet.
-let HAZE_NAMES = ["off", "clean", "lived", "dusted", "study", "menu", "game"];
-let HAZE_STUDY:  f32    = 3.0e-3;
-let HAZE_SIGMAS: f32[7] = [0.0, 5.0e-5, 1.5e-4, 4.0e-4, HAZE_STUDY, HAZE_STUDY, 4.0e-4];
-// Each its stripes' softness (Haze.soft): the sun's disc's, the study's a wide diffuse beam.
-let HAZE_SOFTS: f32[7] = [1.0, 1.0, 1.0, 1.0, 4.0, 4.0, 1.0];
+// The haze in the sunbeam's strengths (render3d::Haze.sigma, a metre), the user's levels
+// (2026-11-22): off; menu, the main menu's scene with its motes, the ChatGPT library
+// study's soft wide beam; game, the game's own scene, a room just dusted (the user's slider
+// at about 4.5e-4 at most). Off by default; nothing of it is in the app yet.
+let HAZE_NAMES = ["off", "menu", "game"];
+let HAZE_SIGMAS: f32[3] = [0.0, 3.0e-3, 4.0e-4];
+// Each its stripes' softness (Haze.soft): the sun's disc's, the menu's a wide diffuse beam.
+let HAZE_SOFTS: f32[3] = [1.0, 4.0, 1.0];
 // Each its stripes softened more looking toward the sun (Haze.toward), where they converge on it.
-let HAZE_TOWARDS: f32[7] = [0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 0.0];
+let HAZE_TOWARDS: f32[3] = [0.0, 4.0, 0.0];
 let SUN_LOOKS: render3d::SunLook[2] = [
     render3d::SunLook {},
     render3d::SunLook { float4 { 0.27, 0.0, 0.27, 8000.0 }, float4 { 0.4, 0.8, 0.25, 4.0 }, float4 { 2.0, 180.0, 0.45, 6.0 },
                         float4 { 3.0, 1.5, 20.0, 1.0 } }];
 // Each look's glow (render3d::HdrGlow.look: strength, threshold, knee, reach).
 let SUN_GLOWS: float4[2] = [float4 { 0.06, 1.0, 0.5, 0.65 }, float4 { 0.06, 1.0, 0.5, 0.65 }];
+// --light physical's glow under AgX, its threshold and knee in the picture's light after the
+// camera's exposure (render3d::glow_exposure): about AgX's white (0.18 × 2^6.5 is 16), so
+// the window wall's glow in the room view adds about what today's does (task 122, step 5).
+let AGX_GLOW = float4 { 0.006, 16.0, 8.0, 0.65 };
 
 let PLACE_NAMES = ["free", "concept", "concept-high", "along-wall", "less-turned", "concept-pier", "more-turned"];
 let PLACE_DEFAULT = 4;
@@ -368,18 +439,18 @@ fn board_in_plan(g: render3d::Gpu&) -> f32 {
 }
 
 // The dust in the sunbeam (D, --dust), in the table-window view only, the main menu's scene
-// (never the game's): off, or points, points-few, points-many: real dust as a camera sees it
+// (never the game's): off, or points: real dust as a camera sees it
 // (builder 33, build/notes/window-view/refs/research-haze-motes.md): points of a fixed small
 // footprint at any resolution carrying the light each really scatters, a few fibres as short
 // sub-pixel lines, the flakes' brief glints, drifting, rising and swirling in centimetres a
 // second in the beam's own volume over the table near the board (beam_box), lit only by the
 // sun straight through the glass. Builder 29's round points in a box and its flakes and lint
 // were taken out (2026-11-22).
-let DUST_WAYS = ["off", "points", "points-few", "points-many"];
+let DUST_WAYS = ["off", "points"];
 let DUST_OFF = 0;
 let DUST_POINTS = 1;
 // Each way's points.
-let POINTS_COUNTS: i64[4] = [0, 500, 250, 1000];
+let POINTS_COUNTS: i64[2] = [0, 500];
 // The points' light over what a 25 µm flake really scatters (the camera's exposure set for
 // the window, the motes that show the larger ones), their forward scattering's g, and their
 // fibres' share.
@@ -518,7 +589,7 @@ fn sun_check(g: render3d::Gpu&, turn: f32, height: f32, loud: bool = true) -> i6
     var through: i64[3] = [0; 3];
     var total = 0;
     for ring in 3 {
-        let r = g.table_r * (0.45 + 0.25 * ring);
+        let r = mesh::TABLE_R * (0.45 + 0.25 * ring);
         for step in 24 {
             let a: f32 = radians((step as f32) * 15.0);
             let w = float3 { r * cos(a), mesh::TABLE_TOP, r * sin(a) };
@@ -1143,18 +1214,9 @@ let WIND = 18;
 let WINDOW = 19;
 let NOISE = 20;
 
-// The quiet paint's steps, each switched off alone by --paint-off NAME,NAME..: the
-// arrises' fillets and the pieces' tilt and the panels' cup (its mesh), the recesses' dirt,
-// the joints' hairlines, the relief tile (its shader).
-let PAINT_STEP_NAMES = ["fillets", "tilt", "dirt", "joints", "tile"];
-// The sills' limestone's parts, each switched off alone by --sill-off NAME,NAME..: the
-// speckle, the polished band, the eased arris and its chips, the nose's darker foot, the
-// dust line (its shader, render3d::sill_steps).
-let SILL_STEP_NAMES = ["speckle", "band", "arris", "nose", "dust"];
-
 let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", "P: print the room and its flags",
-                "V: the views in turn", "O: the room; S: the shell or the wall", "U: the park or a plain sky outside",
-                "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "J: the painted wood, quiet or old; I: the sills", "W: the window's pattern; T: leaves by",
+                "V: the views in turn", "U: the park or a plain sky outside",
+                "L: the wallpaper's tile, 0.65, 0.9 or 1.4 m", "C: the lace's way; B: the books; H: the shutters", "W: the window's pattern; T: leaves by",
                 "K: the wind's kind; D: the dust's way", "Y: the lace's hang, 0.15 or 0 m", "Z: the window view's steps off or on", "F: the frame counter; G: wait for the GPU",
                 "N: the scene's scale; M: its upscale", "X: HDR or 8 bits; 1: the lens's views; 2: MSAA or SMAA",
                 "A: the sun's and table's placements in turn (Table)",
@@ -1335,7 +1397,7 @@ fn main() {
     var season = pick(argv, "--season", SEASONS, looks::AUTUMN);
     var material = pick(argv, "--material", MATERIALS, looks::MATERIAL_AUTO);
     var take = pick(argv, "--table", tables::NAMES, tables::FLAME);
-    var room_take = pick(argv, "--room", rooms::NAMES, rooms::for_season(season));
+    var room_take = rooms::for_season(season);
     var pattern: i64 = if flag_value(argv, "--window") > 0 && argv[flag_value(argv, "--window")] == "off" { 0 } else { 1 };
     var st = Setup {};
     st.halo = float2 { number(argv, "--halo", 0.0), number(argv, "--halo-reach", 0.0) };
@@ -1355,44 +1417,6 @@ fn main() {
 
     var g = default<render3d::Gpu>();
     var r3d = default<render3d::Own>();
-    // The toes switched (--toe, --table-toe, --board-toe, --toe-off): the tuner's own
-    // shaders with TOE_FN, the game's left as they are.
-    if has(argv, "--toe") || has(argv, "--table-toe") || has(argv, "--board-toe") || has(argv, "--toe-off") {
-        render3d::tuned_frags = [
-            embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD, shaders::SHADOW_FN,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
-            embed_shader("frag", shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
-                         shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
-            embed_shader("frag", shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
-                         shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
-            embed_shader("frag", shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::LIT_HEAD,
-                         shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG),
-            embed_shader("frag", shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::SHADOW_FN,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::TABLE_FRAG),
-            embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG),
-            embed_shader("frag", shaders::ROOM_FLOOR, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::ROOM_FLOOR, shaders::PLANAR_FLOOR, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::ROOM_WALLS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::ROOM_METALS, shaders::SHARP_BOX, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN,
-                         shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::ROOM_GLASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OUTSIDE_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TOE_FN, shaders::TONE_FN, shaders::OUTSIDE_FRAG, shaders::OUTSIDE_MAIN),
-            embed_shader("frag", shaders::ROOM_PAINT, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            "",
-            embed_shader("frag", shaders::ROOM_SILL, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
-            "", "", "", "", "",
-            embed_shader("frag", shaders::ROOM_LACE, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TOE_FN, shaders::ROOM_HEAD,
-                         shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG)];
-        render3d::tone_toe = float4 { pick(argv, "--toe", TOES, 0) as f32, pick(argv, "--table-toe", TOES, 1) as f32,
-                                      pick(argv, "--board-toe", TOES, 1) as f32, number(argv, "--toe-off", 0.02) };
-    }
     // The park on the ground outside (--park): the view out's mesh with the lawn and the
     // trees' cards, its shaders the park's; autumn's leaves only in autumn.
     let park = pick(argv, "--park", PARK_NAMES, 0);
@@ -1402,29 +1426,7 @@ fn main() {
         render3d::tuned_frags[render3d::TUNED_OUTSIDE] = park_frag(part, false);
         render3d::tuned_frags[render3d::TUNED_OUTSIDE_HDR] = park_frag(part, true);
     }
-    // The painted wood's shader with its steps switched (J, --paint, --paint-off).
-    render3d::tuned_frags[render3d::TUNED_PAINT_STEPS] = embed_shader("frag", shaders::ROOM_PAINT, shaders::PAINT_STEPS, shaders::SHELL_WINDOWS,
-                                                                      shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN,
-                                                                      shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
-    // The sills' shader with its parts switched (I, --sill, --sill-off), in the room and the mirror.
-    render3d::tuned_frags[render3d::TUNED_SILL_STEPS] = embed_shader("frag", shaders::ROOM_SILL, shaders::SILL_STEPS, shaders::SHELL_WINDOWS,
-                                                                     shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN,
-                                                                     shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG);
-    render3d::tuned_frags[render3d::TUNED_SILL_MIRROR] = embed_shader("frag", shaders::ROOM_SILL, shaders::SILL_STEPS, shaders::MIRROR_PASS,
-                                                                      shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
-                                                                      shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
-                                                                      shaders::ROOM_FRAG);
-    // The same two into the scenic views' HDR target (render3d::make_hdr).
-    render3d::tuned_frags[render3d::TUNED_PAINT_HDR] = embed_shader("frag", shaders::ROOM_PAINT, shaders::PAINT_STEPS, shaders::HDR_OUT,
-                                                                    shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
-                                                                    shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
-                                                                    shaders::ROOM_FRAG);
-    render3d::tuned_frags[render3d::TUNED_SILL_HDR] = embed_shader("frag", shaders::ROOM_SILL, shaders::SILL_STEPS, shaders::HDR_OUT,
-                                                                   shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD,
-                                                                   shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN,
-                                                                   shaders::ROOM_FRAG);
     render3d::setup(r3d, g, render3d::SAMPLES, if phone_tier { render3d::SHADOW_4 } else { render3d::SHADOW_16 });
-    if has(argv, "--oak-aniso-4") { g.oak_sampler = gfx::sampler(gfx::SamplerDesc { max_anisotropy: 4.0 }); }
     // --aa off|smaa|msaa: the scene's antialiasing, SMAA by default in the room (task 115:
     // cheaper on the tablet, the Pixel and the 4090; the app's board alone keeps 4× MSAA,
     // render3d::AA).
@@ -1433,7 +1435,21 @@ fn main() {
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
     render3d::scatter_allowed = true;
     g.table = true;
+    // --light physical: the table's sun the same all over (no pool round the board).
+    let physical = pick(argv, "--light", LIGHT_WAYS, 0) == 1;
+    casement_depth = !(flag_value(argv, "--casement-depth") > 0 && argv[flag_value(argv, "--casement-depth")] == "off");
     g.table_spec = tables::get(take);
+    if physical { g.table_spec.light.y = 1.0; }
+    // --light physical: one camera curve for the whole picture after the HDR pass, the
+    // surfaces writing their light linear: --camera-toe's, AgX at the metered exposure
+    // compensated by --camera-ev unless it names a toe.
+    let graded = physical && pick(argv, "--grade", GRADE_WAYS, 0) == 0;
+    if physical {
+        render3d::tone_toe = float4 { 2.0, 2.0, 2.0, render3d::tone_toe.w };
+        render3d::camera_toe = pick(argv, "--camera-toe", TOES, CAMERA_TOE) as f32;
+        render3d::camera_ev = number(argv, "--camera-ev", 0.0);
+    }
+    if graded { render3d::grade = render3d::GRADES[season]; }
     var room = rooms::get(room_take);
     room.key.x = number(argv, "--azimuth", room.key.x);
     room.key.y = number(argv, "--sun-height", room.key.y);
@@ -1500,7 +1516,7 @@ fn main() {
     // The panels' rings (at the start only: the mesh): their occlusion's strength, the dip's
     // width in cm up the bevel (0 across it), the crease, the bevel's width ×; the bounce's
     // greying, the lace as a source, the probes' spread; the sun's contact shadows, broad
-    // sheen, saturation on the room and the panelling oak's own share of it; the toes.
+    // sheen, saturation on the room and the panelling oak's own share of it.
     let panel_ao = four(argv, "--panel-ao", float4 { surfaces::panel_ao_scale, surfaces::panel_ao_width * 100.0 / surfaces::METRE,
                                                      surfaces::panel_crease, surfaces::panel_bevel });
     surfaces::panel_ao_scale = panel_ao.x;
@@ -1509,9 +1525,18 @@ fn main() {
     surfaces::panel_bevel = if panel_ao.w > 0.0 { panel_ao.w } else { 1.0 };
     room_light::bounce_grey = number(argv, "--bounce-grey", room_light::bounce_grey);
     room_light::lace_source = number(argv, "--lace-source", room_light::lace_source);
-    room_light::gather_near = number(argv, "--gather-near", room_light::gather_near);
+    room_light::gather_near = number(argv, "--gather-near", if physical { PHYSICAL_GATHER_NEAR } else { room_light::gather_near });
+    room_light::gather_exact = physical;
+    room_light::niche_faces = physical;
+    room_light::stove_stops_sun = physical;
+    room_light::sill_settle = physical;
+    room_light::volumes_on = physical && !(flag_value(argv, "--volumes") > 0 && argv[flag_value(argv, "--volumes")] == "off");
+    room_light::cavity_up = number(argv, "--cavity-up", room_light::cavity_up) as i64;
+    room_light::cavity_across = number(argv, "--cavity-across", room_light::cavity_across) as i64;
     render3d::contact_look = four(argv, "--contact", render3d::contact_look);
-    render3d::sheen_look = four(argv, "--sheen", render3d::sheen_look);
+    render3d::sheen_look = four(argv, "--sheen", if physical { PHYSICAL_SHEEN } else { render3d::sheen_look });
+    render3d::physical_coat = physical && !(flag_value(argv, "--coat") > 0 && argv[flag_value(argv, "--coat")] == "off");
+    sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);
     let oak_sun = four(argv, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
     render3d::room_sun = float4 { render3d::room_sun.x, oak_sun.x, oak_sun.y, oak_sun.z };
@@ -1545,7 +1570,7 @@ fn main() {
     let nudge = four(argv, "--view-nudge", float4_0);
     table_window_nudge = float3 { nudge.x, nudge.y, nudge.z };
     // The HDR target's glow (render3d::HdrGlow): strength, threshold, knee, reach; its levels.
-    render3d::hdr_glow.look = four(argv, "--glow", SUN_GLOWS[sun_look]);
+    render3d::hdr_glow.look = four(argv, "--glow", if physical && render3d::camera_toe > 2.5 { AGX_GLOW } else { SUN_GLOWS[sun_look] });
     render3d::hdr_glow.levels = number(argv, "--glow-levels", render3d::hdr_glow.levels as f32) as i64;
     var sun_bright_log = log10(max(render3d::sun_look.disc.w, 1.0));
     // The lens (render3d::Lens): on or off, its focus in metres (0 the view's target, kept
@@ -1553,7 +1578,6 @@ fn main() {
     render3d::lens.on = flag_value(argv, "--dof") > 0 && argv[flag_value(argv, "--dof")] == "on";
     // The scenic views' HDR target (render3d::hdr_shown), on unless --hdr off; X switches it.
     render3d::hdr_allowed = if has(argv, "--hdr") { argv[flag_value(argv, "--hdr")] == "on" } else { !phone_tier };
-    render3d::hdr_wide = flag_value(argv, "--hdr-format") > 0 && argv[flag_value(argv, "--hdr-format")] == "rgba16f";
     render3d::depth_view = pick(argv, "--lens-view", LENS_VIEWS, 0);
     let focus_m = number(argv, "--focus", 0.0);
     var focus_on_target = focus_m <= 0.0;
@@ -1564,13 +1588,11 @@ fn main() {
     var far_cap = caps.y;
     render3d::wind_time = number(argv, "--wind-time", 0.0);
     render3d::wind_kind = pick(argv, "--wind-kind", rooms::WIND_KINDS, rooms::WIND_NOISE);
+    if physical { room = physical_light(room, rooms::get(room_take), has(argv, "--key"), has(argv, "--exposure")); }
     g.room = room;
     g.room_tuned = true;
     render3d::window_pattern = pattern == 1;
-    var room_on = !(flag_value(argv, "--room-surfaces") > 0 && argv[flag_value(argv, "--room-surfaces")] == "off");
-    var shell_on = !(flag_value(argv, "--shell") > 0 && argv[flag_value(argv, "--shell")] == "off");
     var outside_on = !(flag_value(argv, "--outside") > 0 && argv[flag_value(argv, "--outside")] == "off");
-    let away = number(argv, "--wall-away", surfaces::WALL_AWAY);
     // The games table moved in the plan (metres), the room built round it there; the
     // table-window view's chair moves with it.
     let table_at = four(argv, "--table-at", float4 { TABLE_AS_MADE.x, TABLE_AS_MADE.y, 0.0, 0.0 });
@@ -1592,8 +1614,18 @@ fn main() {
     if has(argv, "--sun-height") { room.key.y = number(argv, "--sun-height", room.key.y); }
     if has(argv, "--board-turn") { board_turn = number(argv, "--board-turn", 0.0); }
     g.table_turn = number(argv, "--table-turn", g.table_turn);
+    var base_way = pick(argv, "--base-wood", BASE_WOODS, 1);
+    var base_wood = render3d::base_wood;
+    var base_look = render3d::base_look;
+    base_wood.y = number(argv, "--base-light", base_wood.y);
+    base_wood.z = number(argv, "--base-figure", base_wood.z);
+    base_wood.w = number(argv, "--base-streaks", base_wood.w);
+    base_look.x = number(argv, "--base-slant", base_look.x);
+    base_look.y = number(argv, "--base-rings", base_look.y);
+    base_look.z = number(argv, "--base-place", base_look.z);
+    base_look.w = number(argv, "--base-colour", base_look.w);
     room_shell::LIBRARY.table = table_place;
-    render3d::show_room(g, room_on, away, shell_on);
+    render3d::show_room(g, true);
     var paper_m = number(argv, "--wallpaper-tile", surfaces::PAPER_TILE / surfaces::METRE);
     g.paper_tile = paper_m * surfaces::METRE;
     // The panelling oak's and the ceiling's tint (lightness, saturation; 1,1 as they are).
@@ -1601,60 +1633,34 @@ fn main() {
     var oak = float2 { oak4.x, oak4.y };
     let ceiling4 = four(argv, "--ceiling-tint", float4 { 1.0, 1.0, 0.0, 0.0 });
     var ceiling = float2 { ceiling4.x, ceiling4.y };
-    g.lace_way = pick(argv, "--lace", surfaces::LACE_WAYS, 0);
+    // The lace's ways (C, --lace): f3 built in, the spare ones read from design/materials/
+    // where they are there (not on a phone).
+    var lace_at: i64[5] = [0; 5];
+    for w in 1..LACE_WAYS.len {
+        read_file(str("../design/materials/lace_", LACE_WAYS[w], ".png")[..], spare_laces);
+        lace_at[w + 1] = spare_laces.len;
+    }
+    g.lace_way = pick(argv, "--lace", LACE_WAYS, 0);
     // The bookcases' books in or out, and how much of their fade shows (1 as made).
     var books_on = !(flag_value(argv, "--books") > 0 && argv[flag_value(argv, "--books")] == "off");
     var rug_on = !(flag_value(argv, "--rug") > 0 && argv[flag_value(argv, "--rug")] == "off");
     var chairs_on = !(flag_value(argv, "--chairs") > 0 && argv[flag_value(argv, "--chairs")] == "off");
-    g.chairs = chairs_on && room_on;
+    g.chairs = chairs_on;
     // The props' light (render3d::props_light), and the table's own shade terms kept beside it.
     let props_way = pick(argv, "--props-light", PROPS_WAYS, 0);
     var props_on = props_way > 0;
     var props_shade = props_way == 2;
+    if physical {
+        props_on = true;
+        props_shade = false;
+        render3d::props_wrap = number(argv, "--props-wrap", 0.0);
+        render3d::props_profile_ao = false;
+    }
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
-    // The stove in its corner, and its crown: A's crest as made, or B's flat top with finials.
+    // The stove in its corner.
     room_shell::stove_on = !(flag_value(argv, "--stove") > 0 && argv[flag_value(argv, "--stove")] == "off");
-    if flag_value(argv, "--stove-crown") > 0 && argv[flag_value(argv, "--stove-crown")] == "flat" { room_shell::stove_crown = room_shell::CROWN_FLAT; }
-    // The painted wood (J): quiet or old, and the quiet one's steps each off alone.
-    var paint_quiet = !(flag_value(argv, "--paint") > 0 && argv[flag_value(argv, "--paint")] == "old");
-    var paint_on: bool[5] = [true; 5];
-    if flag_value(argv, "--paint-off") > 0 {
-        var rest: const u8[:] = argv[flag_value(argv, "--paint-off")];
-        while rest.len > 0 {
-            let part, after, more = split_once(rest, ",");
-            var found = false;
-            for n, i in PAINT_STEP_NAMES {
-                if n == part {
-                    paint_on[i] = false;
-                    found = true;
-                }
-            }
-            guard found else { abort(str("--paint-off: no ", part)); }
-            guard more else { break; }
-            rest = after;
-        }
-    }
     render3d::paint_relief = number(argv, "--paint-relief", 1.0);
-    // The sills (I): the limestone or the old stone, and the limestone's parts each off alone.
-    var sill_new = !(flag_value(argv, "--sill") > 0 && argv[flag_value(argv, "--sill")] == "old");
-    var sill_on: bool[5] = [true; 5];
-    if flag_value(argv, "--sill-off") > 0 {
-        var rest: const u8[:] = argv[flag_value(argv, "--sill-off")];
-        while rest.len > 0 {
-            let part, after, more = split_once(rest, ",");
-            var found = false;
-            for n, i in SILL_STEP_NAMES {
-                if n == part {
-                    sill_on[i] = false;
-                    found = true;
-                }
-            }
-            guard found else { abort(str("--sill-off: no ", part)); }
-            guard more else { break; }
-            rest = after;
-        }
-    }
     var book_fade = number(argv, "--book-fade", 1.0);
     // --tree-grow shadow|whole: the shell's tree's shadow from the first tree or the old
     // maple grown whole (render3d::tree_grown_whole).
@@ -1737,8 +1743,6 @@ fn main() {
     if render3d::tree_card != render3d::CARD_OFF && render3d::tree_draw == render3d::TREE_OFF { render3d::tree_draw = render3d::TREE_ALL; }
     let grown = if render3d::tree_draw != render3d::TREE_OFF { 1 } else { 0 };
     render3d::tree_grown_whole = pick(argv, "--tree-grow", TREE_GROWS, grown) == 1;
-    var top = pick(argv, "--table-top", TOPS, 0);
-    g.table_r = top_radius(top);
     // --dump-map out.pgm: the tree's map as the sun sees it, all layers' light multiplied, as
     // the renderer bakes it (the room's on or off).
     let dump = flag_value(argv, "--dump-map");
@@ -1746,7 +1750,7 @@ fn main() {
         var t = trees::Tree { .. };
         let sp = rooms::tree_spec(render3d::tree_room(g));
         let v = render3d::tree_view_of(g);
-        if render3d::tree_grown_whole && g.room_on && g.room_shell {
+        if render3d::tree_grown_whole {
             let s = room_shell::LIBRARY;
             trees::grow_whole(t, render3d::whole_tree_of(g), v, rooms::whole_sight(g.room, s), true);
         } else {
@@ -1775,7 +1779,6 @@ fn main() {
     var shown_material = material;
     var shown_take = take;
     var shown_room = room_take;
-    var shown_top = top;
     var yaw:   f32 = number(argv, "--yaw", 0.0);
     var pitch: f32 = number(argv, "--height", view3d::PITCH);
     var far:   f32 = number(argv, "--distance", 1.3);
@@ -1871,8 +1874,14 @@ fn main() {
             let dump_light = flag_value(argv, "--dump-light");
             if dump_light > 0 && g.light_ms > 0.0 {
                 var out: u8[>..] = [];
-                for i in room_light::ATLAS_FLOATS { format(out, render3d::light_atlas[i], "\n"); }
+                let floats = if room_light::volumes_on { room_light::FULL_FLOATS } else { room_light::ATLAS_FLOATS };
+                for i in floats { format(out, render3d::light_atlas[i], "\n"); }
                 guard write_file(argv[dump_light], out[..]) else { abort("could not write the probes"); }
+                if render3d::props_light {
+                    var props: u8[>..] = [];
+                    for i in room_light::PROPS_FLOATS { format(props, render3d::light_props[i], "\n"); }
+                    guard write_file(str(argv[dump_light], ".props"), props[..]) else { abort("could not write the props' probes"); }
+                }
             }
             if render3d::room_fixed_stale.len > 0 {
                 print("the room's constants are stale at ", render3d::room_fixed_stale, ": the uniform shaders drew it (scripts/room_fixed.py)");
@@ -1882,17 +1891,16 @@ fn main() {
                 let one: render3d::SurfacesBlock[1] = [render3d::surfaces_block(g)];
                 guard write_file(argv[dump_block], bytes_of(one)) else { abort("could not write the room's block"); }
             }
-            let light_ref_at = flag_value(argv, "--light-ref");
-            if light_ref_at > 0 && g.light_ms > 0.0 {
-                let t0 = clock();
-                light_ref::run(render3d::light_sun, render3d::light_tree[..], argv[light_ref_at], whole(argv, "--light-ref-stride", 1), !has(argv, "--light-ref-old"));
-                print("the reference in ", (clock() - t0) * 1000.0, " ms");
-            }
             if g.light_ms > 0.0 {
                 let st = render3d::light_steps;
                 print("the room's light baked in ", g.light_ms, " ms, ", g.light_patches, " sun patches; the sun's rays ", st[0],
                       " ms, the first light ", st[1], ", the bounces ", st[2], ", ", st[3], ", ", st[4], ", the half grid ", st[5],
-                      ", the probes ", st[6]);
+                      ", the probes ", st[6], ", the volumes ", st[7]);
+                if render3d::camera_toe > 2.5 {
+                    let k = render3d::camera_exposure(g);
+                    print("the camera's meter ", render3d::meter_light, ", its exposure ", k, " over Frame's ", g.frame.params.x,
+                          ": EV ", log2(k * g.frame.params.x * g.room.room_exposure));
+                }
             }
             if g.props_baked { print("the props' occlusion baked in ", g.props_ms, " ms, ", g.table_count / 3, " triangles"); }
             if walk_test > 0 {
@@ -1911,7 +1919,8 @@ fn main() {
         } else {
             ui::input_from_gfx(c);
         }
-        var print_it = gfx::key_pressed("P");
+        // --print: the command line printed on the first frame too, as P prints it.
+        var print_it = gfx::key_pressed("P") || (frames == 1 && has(argv, "--print"));
         // Tab begins the walk; Esc or Tab ends it, and so does losing focus, which lets the mouse go.
         var walk_now = !walk.on && (gfx::key_pressed("Tab") || touch);
         if walk.on && !touch && (gfx::key_pressed("Escape") || gfx::key_pressed("Tab") || !gfx::mouse_relative()) {
@@ -1927,18 +1936,14 @@ fn main() {
             if gfx::key_pressed("W") { pattern = 1 - pattern; }
             if gfx::key_pressed("T") { room.tree.x = (room.tree.x as i64 + 1) % 3; }
             if gfx::key_pressed("D") { dust_way = (dust_way + 1) % DUST_WAYS.len; }
-            if gfx::key_pressed("O") { room_on = !room_on; }
             if gfx::key_pressed("V") { view = (view + 1) % VIEWS.len; }
-            if gfx::key_pressed("S") { shell_on = !shell_on; }
             if gfx::key_pressed("U") { outside_on = !outside_on; }
             if gfx::key_pressed("K") { render3d::wind_kind = (render3d::wind_kind + 1) % rooms::WIND_KINDS.len; }
             if gfx::key_pressed("F") { meter.on = !meter.on; }
             if gfx::key_pressed("G") { meter.wait = !meter.wait; }
-            if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % surfaces::LACE_WAYS.len; }
+            if gfx::key_pressed("C") { g.lace_way = (g.lace_way + 1) % LACE_WAYS.len; }
             if gfx::key_pressed("B") { books_on = !books_on; }
             if gfx::key_pressed("H") { shutters_on = !shutters_on; }
-            if gfx::key_pressed("J") { paint_quiet = !paint_quiet; }
-            if gfx::key_pressed("I") { sill_new = !sill_new; }
             if gfx::key_pressed("A") { place = place % (PLACE_NAMES.len - 1) + 1; }
             if gfx::key_pressed("Z") {
                 // The window view's steps all off, or all as made.
@@ -1970,11 +1975,8 @@ fn main() {
             if ui::button_label(c, "Print (P)") { print_it = true; }
             if ui::button_label(c, "Reset room") { shown_room = -1; }
             if section(c, open, SCENE) {
-                choice(c, "Room", room_take, rooms::NAMES);
                 choice(c, "Season", season, SEASONS);
                 choice(c, "Board", material, MATERIALS);
-                switch(c, "Room (O)", room_on, ["off", "on"]);
-                switch(c, "Shell (S)", shell_on, ["wall", "library"]);
                 ui::tree_state_pop(c);
             }
             if section(c, open, LIGHT) {
@@ -2024,6 +2026,7 @@ fn main() {
                 if section(c, open, DETAIL) {
                     color_sliders(c, "Sun", room.key_color);
                     slider(c, "Exposure", room.exposure, 0.5, 2.0);
+                    if physical && render3d::camera_toe > 2.5 { slider(c, "Camera EV", render3d::camera_ev, -4.0, 4.0); }
                     slider(c, "Sky round", room.fill.x, -30.0, 150.0);
                     slider(c, "Sky height", room.fill.y, 0.0, 80.0);
                     slider(c, "Sky strength", room.fill.z, 0.0, 3.0);
@@ -2126,11 +2129,7 @@ fn main() {
                 slider(c, "Oak colour", oak.y, 0.0, 1.5);
                 ui::layout_row_dynamic(c, ROW + 4.0, 1);
                 if ui::button_label(c, "As baked") { oak = float2 { 1.0, 1.0 }; }
-                switch(c, "Paint (J)", paint_quiet, ["old", "quiet"]);
-                for n, i in PAINT_STEP_NAMES { switch(c, str("  its ", n), paint_on[i], ["off", "on"]); }
-                slider(c, "  its relief", render3d::paint_relief, 0.0, 6.0);
-                switch(c, "Sills (I)", sill_new, ["old", "limestone"]);
-                for n, i in SILL_STEP_NAMES { switch(c, str("  its ", n), sill_on[i], ["off", "on"]); }
+                slider(c, "Paint's relief", render3d::paint_relief, 0.0, 6.0);
                 if g.room_ms > 0.0 {
                     note(c, str("oak baked in ", floor(g.room_ms + 0.5) as i64, " ms, ", render3d::room_bytes(g) / 1048576, " MiB"));
                 }
@@ -2144,7 +2143,7 @@ fn main() {
                 ui::tree_state_pop(c);
             }
             if section(c, open, CURTAINS) {
-                choice(c, "Lace (C)", g.lace_way, surfaces::LACE_WAYS);
+                choice(c, "Lace (C)", g.lace_way, LACE_WAYS);
                 switch(c, "Shutters (H)", shutters_on, ["off", "on"]);
                 slider(c, "Lace hangs over (Y)", lace_hang, 0.0, 0.2);
                 slider(c, "Lace's sun", render3d::window_view.x, 0.0, 3.0);
@@ -2166,7 +2165,6 @@ fn main() {
             }
             if section(c, open, TABLE) {
                 choice(c, "Table", take, tables::NAMES);
-                choice(c, "Top (m)", top, TOPS);
                 choice(c, "Placement (A)", place, PLACE_NAMES);
                 switch(c, "Rug", rug_on, ["off", "on"]);
                 switch(c, "Chairs", chairs_on, ["off", "on"]);
@@ -2176,6 +2174,14 @@ fn main() {
                 slider(c, "Along the wall (m)", table_place.x, 2.5, 6.5);
                 slider(c, "From the hall wall (m)", table_place.y, 4.5, 6.2);
                 slider(c, "Its turn under the board", g.table_turn, -60.0, 60.0);
+                choice(c, "Base's wood", base_way, BASE_WOODS);
+                slider(c, "  its lightness (of the map's)", base_wood.y, 0.2, 1.2);
+                slider(c, "  its figure's contrast (of the map's)", base_wood.z, 0.0, 1.5);
+                slider(c, "  the figure drawn out along the grain", base_wood.w, 1.0, 16.0);
+                slider(c, "  the grain's slant round the column", base_look.x, -30.0, 30.0);
+                slider(c, "  the rings the column's cut crosses", base_look.y, 0.0, 3.0);
+                slider(c, "  where across the map it reads", base_look.z, 0.0, 1.0);
+                slider(c, "  its colour's strength (of the map's)", base_look.w, 0.0, 1.5);
                 let board_was = board_turn;
                 slider(c, "Board's turn to the wall", board_turn, -90.0, 90.0);
                 if board_turn != board_was { board_set = true; }
@@ -2295,20 +2301,13 @@ fn main() {
         g.paper_tile = paper_m * surfaces::METRE;
         g.books_off = !books_on;
         g.rug_off = !rug_on;
-        g.chairs = chairs_on && room_on;
+        room_light::rug_in_bake = physical && rug_on;
+        g.chairs = chairs_on;
         render3d::props_light = props_on;
         render3d::props_table_shade = props_shade;
         room_shell::shutters_on = shutters_on;
+        render3d::lace_png = spare_laces[lace_at[g.lace_way]..lace_at[g.lace_way + 1]];
         if lace_hang != room_shell::lace_hang { room_shell::hang_lace(lace_hang); }
-        room_shell::paint_quiet = paint_quiet;
-        room_shell::paint_fillets = paint_on[0];
-        room_shell::paint_tilt = paint_on[1];
-        render3d::paint_steps = float4 { if paint_on[2] { 1.0 } else { 0.0 }, if paint_on[3] { 1.0 } else { 0.0 },
-                                         if paint_on[4] { 1.0 } else { 0.0 }, if paint_quiet { 0.0 } else { 1.0 } };
-        var sill_steps: f32[5] = [0.0; 5];
-        for i in 5 { sill_steps[i] = if sill_on[i] { 1.0 } else { 0.0 }; }
-        render3d::sill_steps = [float4 { sill_steps[0], sill_steps[1], sill_steps[2], sill_steps[3] },
-                                float4 { sill_steps[4], if sill_new { 0.0 } else { 1.0 }, 0.0, 0.0 }];
         g.book_fade = max(book_fade, 0.001);
         g.room_tint = float4_0;
         if oak.x != 1.0 || oak.y != 1.0 {
@@ -2322,22 +2321,21 @@ fn main() {
         if room_take != shown_room {
             shown_room = room_take;
             room = rooms::get(room_take);
-        }
-        if top != shown_top {
-            shown_top = top;
-            g.table_r = top_radius(top);
-            render3d::tune_table(r3d, g, g.table_spec);
+            if physical { room = physical_light(room, room, false, false); }
         }
         if season != shown_season || material != shown_material || take != shown_take {
             if season != shown_season {
                 room_take = rooms::for_season(season);
                 shown_room = room_take;
                 room = rooms::get(room_take);
+                if physical { room = physical_light(room, room, false, false); }
+                if graded { render3d::grade = render3d::GRADES[season]; }
             }
             shown_season = season;
             shown_material = material;
             shown_take = take;
             g.table_spec = tables::get(take);
+            if physical { g.table_spec.light.y = 1.0; }
             render3d::tune_table(r3d, g, g.table_spec);
             g.room = room;
             put_look(r3d, g, season, material, st);
@@ -2367,10 +2365,11 @@ fn main() {
             room.fill.x += turned;
             room.lamp.x += turned;
         }
+        // Under --light physical the sun's colour follows its height.
+        if physical { room.key_color = physical_sun(rooms::get(room_take), room.key.y); }
         // Cheap enough to do each frame: the harmonics on the CPU and the shadow map.
         g.room = room;
         render3d::window_pattern = pattern == 1;
-        render3d::show_room(g, room_on, away, shell_on);
         // A shot is taken at --wind-time itself.
         if shot < 0 && !capturing { render3d::wind_time += gfx::delta_time() as f32; }
         // The desktop's map leaves the tree out while its leaves move (a shot's keep still,
@@ -2382,8 +2381,8 @@ fn main() {
             sun_check(g, room.window.y, room.key.y);
             if shot < 0 { break; }
         }
-        // The walk: begun where the view is (or the room's view from the board's orbit), with
-        // the room and its shell on; another view ends its camera.
+        // The walk: begun where the view is (or the room's view from the board's orbit);
+        // another view ends its camera.
         if view != shown_view {
             shown_view = view;
             walk.placed = false;
@@ -2396,12 +2395,6 @@ fn main() {
             start_at = float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z };
         }
         if walk_now && (touch || gfx::set_mouse_relative(true)) {
-            // The touch walk keeps the flags' room and shell, so a bench can leave them out.
-            if !touch {
-                room_on = true;
-                shell_on = true;
-            }
-            render3d::show_room(g, room_on, away, shell_on);
             if !walk.placed { walk_from(walk, start_eye, start_at); }
             walk.on = true;
             walk.placed = true;
@@ -2424,11 +2417,16 @@ fn main() {
         }
         if print_it {
             var line: u8[>..] = [];
-            line.append("--room ");
-            line.append(rooms::NAMES[room_take]);
+            format(line, "--light ", LIGHT_WAYS[if physical { 1 } else { 0 }]);
+            if physical {
+                format(line, " --camera-toe ", TOES[render3d::camera_toe as i64], " --camera-ev ", render3d::camera_ev, " --props-wrap ",
+                       render3d::props_wrap, " --casement-depth ",
+                       if casement_depth { "on" } else { "off" }, " --volumes ", on_off(room_light::volumes_on), " --grade ",
+                       GRADE_WAYS[if graded { 0 } else { 1 }]);
+            }
             format(line, " --season ", SEASONS[season], " --material ", MATERIALS[material], " --table ", tables::NAMES[take],
-                   " --table-top ", TOPS[top], " --lace ", surfaces::LACE_WAYS[g.lace_way]);
-            format(line, " --room-surfaces ", on_off(room_on), " --shell ", on_off(shell_on), " --outside ", on_off(outside_on),
+                   " --lace ", LACE_WAYS[g.lace_way]);
+            format(line, " --outside ", on_off(outside_on),
                    " --window ", on_off(pattern == 1), " --dust ", DUST_WAYS[dust_way], " --wind-kind ",
                    rooms::WIND_KINDS[render3d::wind_kind], " --view ", VIEWS[view]);
             format(line, " --wallpaper-tile ", paper_m);
@@ -2462,19 +2460,7 @@ fn main() {
             format(line, " --aa ", render3d::aa_name(r3d, g.aa), " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
                    " --aperture ", aperture);
             flag_pair(line, "--dof-caps", float2 { near_cap, far_cap });
-            format(line, " --paint ", if paint_quiet { "quiet" } else { "old" });
-            var off: u8[>..] = [];
-            for n, i in PAINT_STEP_NAMES {
-                if !paint_on[i] { format(off, if off.len > 0 { "," } else { "" }, n); }
-            }
-            if off.len > 0 { format(line, " --paint-off ", off); }
             if render3d::paint_relief != 1.0 { format(line, " --paint-relief ", render3d::paint_relief); }
-            format(line, " --sill ", if sill_new { "vasalemma" } else { "old" });
-            var sill_off: u8[>..] = [];
-            for n, i in SILL_STEP_NAMES {
-                if !sill_on[i] { format(sill_off, if sill_off.len > 0 { "," } else { "" }, n); }
-            }
-            if sill_off.len > 0 { format(line, " --sill-off ", sill_off); }
             flag_pair(line, "--oak-tint", oak);
             flag_pair(line, "--ceiling-tint", ceiling);
             room_flags(line, room);
@@ -2484,10 +2470,6 @@ fn main() {
             flag_four(line, "--sheen", render3d::sheen_look);
             format(line, " --room-sun ", render3d::room_sun.x);
             flag_four(line, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
-            if render3d::tuned_frags[0].len > 0 {
-                format(line, " --toe ", TOES[render3d::tone_toe.x as i64], " --table-toe ", TOES[render3d::tone_toe.y as i64],
-                       " --board-toe ", TOES[render3d::tone_toe.z as i64], " --toe-off ", render3d::tone_toe.w);
-            }
             flag_four(line, "--panel-ao", float4 { surfaces::panel_ao_scale, surfaces::panel_ao_width * 100.0 / surfaces::METRE,
                                                    surfaces::panel_crease, surfaces::panel_bevel });
             if walk.placed {
@@ -2538,23 +2520,15 @@ fn main() {
             eye = plan_point(g, float3 { plan_eye_at.x, plan_eye_at.y, plan_eye_at.z });
             target = plan_point(g, float3 { plan_look_at.x, plan_look_at.y, plan_look_at.z });
             fov = 55.0;
-        } else if view > 0 && shell_on && room_on {
+        } else if view > 0 {
             eye = plan_point(g, view_eye(view, place));
             target = plan_point(g, view_at(view, place));
             fov = 60.0;
-        } else if view > 0 {
-            // From beside the window, a person's eyes high, over the table to the wall.
-            let f = g.room_frame;
-            let e2 = f.along * -15.0 + f.into * -30.0;
-            let t2 = f.along * 12.0 + f.into * (0.7 * away);
-            eye = float3 { e2.x, 22.0, e2.y };
-            target = float3 { t2.x, -14.0, t2.y };
-            fov = 50.0;
         }
         // Behind the shell's windows the park (model3d::view_out), or with U a plain sky of
         // ours (render3d's plain fade), not the season's photograph; the fade gives the
         // board's ambient either way.
-        g.plain = room_on && shell_on;
+        g.plain = true;
         g.outside_on = outside_on;
         g.fade = [SKY_TOP, SKY_LOW, SKY_LIGHT];
         // A preset's settings once when it is picked, the sliders free after; its box in the
@@ -2589,8 +2563,8 @@ fn main() {
         render3d::lens.far_cap = far_cap / 100.0;
         if fov_flag > 0.0 { fov = fov_flag; }
         // The near plane farther with the room, so 16-bit depth keeps its panels apart.
-        let near: f32 = if room_on { clamp(0.2 * length(eye - target), 1.0, 12.0) } else { 1.0 };
-        let proj = gfx::perspective(fov * PI / 180.0, size.x as f32 / size.y, near, if room_on { 600.0 } else { 120.0 });
+        let near: f32 = clamp(0.2 * length(eye - target), 1.0, 12.0);
+        let proj = gfx::perspective(fov * PI / 180.0, size.x as f32 / size.y, near, 600.0);
         render3d::scene_pixels = if scene_k > 0.0 { 0.0 } else { scene_budget };
         render3d::scene_scale = if scene_k > 0.0 { scene_k } else { 1.0 };
         render3d::scene_cubic = upscale == 0;
@@ -2602,6 +2576,8 @@ fn main() {
             if frames == 1 { draughts_first_frame(); }
             continue;
         }
+        render3d::base_wood = float4 { base_way as f32, base_wood.y, base_wood.z, base_wood.w };
+        render3d::base_look = base_look;
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        gfx::screen(), size);
         if walk.on {

@@ -521,14 +521,10 @@ let LIT_FRAG = """
 
     vec3 tonemap(vec3 c) {
         // Khronos PBR Neutral: hue kept, highlights eased; its toe halved, as the
-        // references' darks keep their color. The tuner's shaders switch it (TOE_FN).
-    #ifdef TOE_SWITCH
-        c = toe_off(c, toe.z);
-    #else
+        // references' darks keep their color.
         float x = min(c.r, min(c.g, c.b));
         float offset = x < 0.04 ? x - 12.5 * x * x : 0.02;
         c -= offset;
-    #endif
         float peak = max(c.r, max(c.g, c.b));
         const float start = 0.76;
         if (peak < start) return c;
@@ -979,9 +975,11 @@ let LIT_FRAG = """
         }
         vec3 color = (direct + ambient) * params.x;
     #ifdef HDR_OUT
-        // Into the scenic views' HDR target: the light with tonemap's toe alone taken off.
+        // Into the scenic views' HDR target: the light with tonemap's toe alone taken off,
+        // none where Frame's toe.z says 2 (the camera's curve takes it).
         float least = min(color.r, min(color.g, color.b));
-        result = vec4(color - (least < 0.04 ? least - 12.5 * least * least : 0.02), v_alpha);
+        if (toe.z < 1.5) color -= least < 0.04 ? least - 12.5 * least * least : 0.02;
+        result = vec4(color, v_alpha);
     #else
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         // A win dims the board and the pieces but the winning one, as the flat board's
