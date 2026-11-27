@@ -95,6 +95,8 @@
 //       that toe, or AgX at the metered exposure, the default)] [--camera-ev EV (AgX's exposure over the meter's; 0)]
 //       [--season-air hazy|clear (--light physical in autumn: the sun and the light from outside from the season's air,
 //       model3d::outside_light; clear PHYSICAL_SUN and the sky's one colour; hazy)]
+//       [--window-ev EV (the camera's exposure for what is seen out of the windows, stops over the room's; -3
+//       with --season-air hazy, else 0)]
 //       [--sun-color-height DEG (--light physical: the sun's colour as at this height, a hazier sky's; its own)]
 //       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
 //       [--grade-ev season|-0.5|-1|-1.5|lift|lift2|match|match-dark (with the grade: stops under the season's;
@@ -363,6 +365,12 @@ var brass_level: f32 = 1.5;
 // 122, 2026-11-27): the sun's colour and strength as the model's, the bake's sky by direction
 // from the table (room_light::outside_on). clear: PHYSICAL_SUN and the sky's one colour.
 let AIR_WAYS = ["hazy", "clear"];
+let OUTSIDE_PHYSICAL: f32 = 2.07;
+// The camera's window exposure under the season's air (render3d::window_ev): the view's grass
+// and trees out of AgX's white, the view about the concepts' brightness (task 122, 2026-11-27).
+let WINDOW_EV: f32 = -3.0;
+var window_ev_given = false;
+var outside_given = false;
 var air_hazy = true;
 fn air_on() -> bool { return air_hazy && light_season == 0; }
 fn sun_color_as(height: f32) -> f32 { return if sun_color_height >= 0.0 { sun_color_height } else { height }; }
@@ -420,6 +428,10 @@ fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_
     // No forward cone off the lace: the bake's lace cells already throw its light.
     render3d::window_view.y = 0.0;
     if !exposure_given { r.exposure = made.exposure * made.room_exposure / PANES; }
+    // The view out at the light Cycles' outside sends through the windows under the season's air
+    // (the reference view's window, task 122, 2026-11-27); the camera's window_ev on top.
+    if air_on() && !outside_given { r.outside = made.outside * OUTSIDE_PHYSICAL; }
+    if !window_ev_given { render3d::window_ev = if air_on() { WINDOW_EV } else { 0.0 }; }
     r.room_exposure = 1.0;
     return r;
 }
@@ -1345,6 +1357,7 @@ fn room_flags(out: u8[>..]&, r: rooms::Room) {
     flag_one(out, "--exposure", r.exposure);
     flag_one(out, "--room-exposure", r.room_exposure);
     flag_one(out, "--outside-exposure", r.outside);
+    flag_one(out, "--window-ev", render3d::window_ev);
     flag_one(out, "--tree-blur", r.tree_blur);
 }
 
@@ -1772,6 +1785,9 @@ fn tune<O>(r3d: O&) {
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     air_hazy = pick(argv, "--season-air", AIR_WAYS, 0) == 0;
+    window_ev_given = has(argv, "--window-ev");
+    outside_given = has(argv, "--outside-exposure");
+    render3d::window_ev = number(argv, "--window-ev", render3d::window_ev);
     sun_color_given = has(argv, "--sun-color-height");
     sun_color_height = number(argv, "--sun-color-height", PHYSICAL_SUN[light_season].y);
     render3d::room_sun.x = number(argv, "--room-sun", render3d::room_sun.x);
@@ -2500,7 +2516,8 @@ fn tune<O>(r3d: O&) {
             }
             if section(c, open, OUTSIDE) {
                 switch(c, "Outside (U)", outside_on, ["plain", "park"]);
-                slider(c, "Outside's exposure", room.outside, 0.3, 2.5);
+                slider(c, "Outside's exposure", room.outside, 0.3, 6.0);
+                if physical { slider(c, "Window EV", render3d::window_ev, -6.0, 1.0); }
                 slider(c, "Sun's veil", render3d::sun_veil, 0.0, 4.0);
                 slider(c, "Sun's radius (deg)", render3d::sun_look.disc.x, 0.1, 3.0);
                 slider(c, "Its limb's darkening", render3d::sun_look.disc.y, 0.0, 1.0);

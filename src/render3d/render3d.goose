@@ -1710,8 +1710,14 @@ struct SunLook {
     veil:  float4 = float4 { 1.0, 1.5, 20.0, 1.0 },
 }
 var sun_look = SunLook {};
+// The camera's exposure for what is seen out of the windows, stops over the room's (the light
+// tuner's --window-ev under --light physical): the outside and the tree through the glass, not
+// their reflections. A camera's choice, as an HDR photograph's: the park lies 5 stops and more
+// over the room, the concepts hold it about 2 over (task 122, 2026-11-27).
+var window_ev: f32 = 0.0;
+fn seen_outside(g: Gpu&) -> f32 { let two: f32 = 2.0; return g.room.outside * pow(two, window_ev); }
 fn outside_block(g: Gpu&, in_mirror: bool = false) -> OutsideBlock {
-    OutsideBlock { float4 { g.room.outside, sun_look.disc.w, if in_mirror { max(g.room.planar.w, 1.0) } else { 0.0 }, sun_veil },
+    OutsideBlock { float4 { if in_mirror { g.room.outside } else { seen_outside(g) }, sun_look.disc.w, if in_mirror { max(g.room.planar.w, 1.0) } else { 0.0 }, sun_veil },
                    sun_look.disc, sun_look.glare,
                    if in_mirror || near_trees_left_out(g) { float4_0 }
                    else { float4 { sun_look.tree.x, sun_look.tree.y, sun_look.tree.z, sun_look.tree.w * surfaces::METRE } } }
@@ -3426,7 +3432,7 @@ fn tree_block(g: Gpu&, samples: i32) -> TreeBlock {
     let from = a - b / (0.85 * far);
     let keep: f32 = 1e-4;
     let squeeze = (1.0 - keep - from) / max(a - from, 1e-6);
-    return TreeBlock { model3d::f4(o, samples), tree_light, float4 { g.room.outside, tree_shade, tree_spread, tree_twig_px },
+    return TreeBlock { model3d::f4(o, samples), tree_light, float4 { seen_outside(g), tree_shade, tree_spread, tree_twig_px },
                        float4 { from, squeeze, radians(tree_flutter.x), tree_flutter.y }, tree_tint, g.tree.layers,
                        float4 { if tree_bark { 1.0 } else { 0.0 }, tree_relief, trees::bark_age_scale(), trees::bark_age_from() },
                        float4 { tree_scatter, tree_rough, 0.0, 0.0 } };
