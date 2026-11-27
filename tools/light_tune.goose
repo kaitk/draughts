@@ -82,7 +82,7 @@
 //       [--wallpaper-tile M (the wall a tile of the wallpaper covers, metres)]
 //       [--oak-tint L,S | --ceiling-tint L,S (the panelling oak's, the ceiling's lightness and saturation, 1,1 as made)]
 //       [--books on|off] [--book-fade K (how much of the books' fade shows, 1 as made)] [--shutters on|off]
-//       [--box-window on|off (task 127's box window, its casements from room_shell's box_window.goose; off window B's)]
+//       [--box-window on|off (task 127's box window, its casements from room_shell's box_window.goose; on; off window B's, to be dropped)]
 //       [--window-metal LEVEL,MOTTLE,ROUGH,NICHE (its hardware's antique brass, task 129: LEVEL 1 to 5, under 1 the
 //        flat bronze; how much of the mottling shows, 0.5; added roughness, 0; the niche's light it reflects, 0)]
 //       [--rug on|off (the rug under the games table)] [--chairs on|off (the two chairs at it)]
@@ -1813,7 +1813,7 @@ fn main() {
     }
     var shutters_on = !(flag_value(argv, "--shutters") > 0 && argv[flag_value(argv, "--shutters")] == "off");
     room_shell::shutters_on = shutters_on;
-    room_shell::box_window_on = flag_value(argv, "--box-window") > 0 && argv[flag_value(argv, "--box-window")] == "on";
+    room_shell::box_window_on = !(flag_value(argv, "--box-window") > 0 && argv[flag_value(argv, "--box-window")] == "off");
     room_shell::window_metal = four(argv, "--window-metal", room_shell::WINDOW_METAL_OFF);
     // The stove in its corner.
     room_shell::stove_on = !(flag_value(argv, "--stove") > 0 && argv[flag_value(argv, "--stove")] == "off");

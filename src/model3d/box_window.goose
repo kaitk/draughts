@@ -12,7 +12,10 @@ import std;
 import vec;
 import math;
 
-var box_window_on = false;
+// The box window is the room's window (the user, 2026-11-27); off, window B's casements
+// (casement_quiet, joinery's members, light.goose's B measures), kept only until they are
+// dropped (task 127).
+var box_window_on = true;
 
 // The measures (metres). The frame's face stays where window B's was, 5 cm before the
 // glass plane (the sill's dust and the corners' shade are drawn to it); the leaves and the

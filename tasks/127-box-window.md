@@ -203,8 +203,13 @@ aged yellow brass, for the door handles too, a task of its own.
       what a normal map, what is left out; noted here with the reason
 - [x] The new window built from one description of its members that the mesh, the bake,
       `casement()`, the probe volumes, the tracer and the Blender export all read
-- [ ] The look against the concept pictures and Cycles: close-ups of a window from the
-      room, at the metered exposure and at EV −2
+- [x] The look against the concept pictures and Cycles: close-ups of a window from the
+      room, at the metered exposure and at EV −2 (the user, 2026-11-27: "the windows look
+      good enough, make them default")
+- [x] The box window the default (`box_window_on`; `--box-window off` in the tools for window B)
+- [ ] Window B dropped: `casement_quiet`, its branch in `casement_members`, its measures in
+      light.goose's `casement()` and `glazing()`, `pane_in()`'s B value, `shell_case`, and the
+      tools' `--box-window`
 - [ ] Its triangles and its cost per view (`tools/perf/mac_room_bench.py`), and the light's
       numbers against the tracer unchanged or better
 - [x] An open sash possible later (the hinges' axes in the description), not animated now

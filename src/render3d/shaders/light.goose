@@ -210,7 +210,7 @@ let LIGHT_FN = """
     // into it (0 the members flat at the plane; Frame's panes.w 1, the light tuner's --light
     // physical): each member's band then widened by half its depth along it about its middle.
     // shell_case.x picks the layout: 1 task 127's box window (box_window.goose, the BOX_
-    // measures above), 0 window B (shell_mesh.goose's casement_quiet: the frame 0.1 m deep
+    // measures above), 0 window B, to be dropped with its measures here (task 127) (casement_quiet: the frame 0.1 m deep
     // about the plane, the sashes 0.045 and the bars 0.036 at 2.5 and 3 mm behind it, a
     // 0.135 m meeting with its cover strip, rails 0.055, the lower sash's foot 0.08).
     float casement(vec2 w, float soft, vec2 slope) {

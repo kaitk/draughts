@@ -531,6 +531,7 @@ fn architrave_quiet(verts: mesh::Vertex[>..]&, indices: u32[>..]&, b: surfaces::
     }
 }
 
+// Window B, to be dropped (task 127: the box window is the room's since 2026-11-27).
 // A casement with the quiet paint (as casement, at the glass plane `g` metres into the wall):
 // the blind frame's members rounded and dirty where they meet the sashes' face, the sashes'
 // stiles, rails and bars rounded and dirty along the glass, their ends meeting at joints;
@@ -640,6 +641,7 @@ fn casement_quiet(verts: mesh::Vertex[>..]&, indices: u32[>..]&, glass: mesh::Ve
 // bars, as casement and casement_quiet build them at o.glass.x and o.glass.y, and the
 // lunette over them at the niche's back with the wall over it (2 m up: a line past it is
 // in the wall).
+// Window B's branch (box_window_on false) to be dropped with casement_quiet (task 127).
 fn casement_members(o: Opening) -> Member[..MEMBERS] {
     var out: Member[..MEMBERS] = [];
     if box_window_on {

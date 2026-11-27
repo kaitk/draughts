@@ -15,7 +15,7 @@
 //
 //   goose build -o build/path_trace tools/path_trace.goose          (from the repository's root)
 //   build/path_trace points [--samples 4096] [--backs on|off] [--sun-clear] [--box-window on|off (task 127's
-//       window; off window B)]
+//       window; on; off window B, to be dropped)]
 //   build/path_trace picture VIEW [--size 480x270] [--samples 64] [--light] [--exposure EV (1.4)] [--backs on|off]
 //       [--out build/path_traced/VIEW] [--sun-clear]
 // --sun-clear: the clear sky's sun at its own height's colour, as before the autumn haze.
@@ -956,7 +956,7 @@ fn main() {
     casement_backs = !(backs_at > 0 && argv[backs_at] == "off");
     for a in argv { if a == "--sun-clear" { room_scene::sun_take = float2 { 1.0, -1.0 }; } }
     let box_at = flag_at(argv, "--box-window");
-    room_shell::box_window_on = box_at > 0 && argv[box_at] == "on";
+    room_shell::box_window_on = !(box_at > 0 && argv[box_at] == "off");
     build_scene();
     print(tris.len, " triangles in ", (clock() - t0) * 1000.0, " ms");
     if mode == "points" {
