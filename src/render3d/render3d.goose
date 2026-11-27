@@ -776,10 +776,6 @@ let WOOD_TABLE = 2;
 var woods = [default<Wood>(); 3];
 // The floor's planks' cup (x) and tilt (y) in place of surfaces::LOOK's where 0 or more (the tuner's --floor-shape).
 var floor_shape = float2 { -1.0, -1.0 };
-// The matt floor's reflection without the mirror (ROOM_FRAG's floor_reflection, in planar_look's
-// z and w): x how sharply it shows the room's walls, doors and ceiling (1 as a lobe its width
-// would), y the windows' light in it. The tuner's --floor-box.
-var floor_box = float2 { 1.0, 1.0 };
 // The rows a shader reads for wood `k`: its way 2 only with its picture there, else 1.
 fn wood_rows(g: Gpu&, k: i64) -> float4[5] {
     let w = woods[k];
@@ -4082,8 +4078,8 @@ fn planar_block_of(g: Gpu&) -> float4 {
     return float4 { g.room.planar.x, view, across * 0.5 * g.planar_size.x, PLANAR_MIPS - 1 };
 }
 fn planar_look_of(g: Gpu&) -> float4 {
-    guard planar_seen_on_floor(g) else { return float4 { 0.0, 0.0, floor_box.x, floor_box.y }; }
-    return float4 { g.room.planar.z, g.room.planar.y, floor_box.x, floor_box.y };
+    guard planar_seen_on_floor(g) else { return float4_0; }
+    return float4 { g.room.planar.z, g.room.planar.y, 0.0, 0.0 };
 }
 // Whether the room's floor sees the mirror this frame (drawn with g.room_planar).
 fn planar_seen_on_floor(g: Gpu&) -> bool { g.planar_current && g.planar_map.id != 0 && g.room_planar.id != 0 }

@@ -69,14 +69,6 @@ roughness W); under `--light physical` the floor's mirror takes the coat's.
 - [x] The user's own settings from the tuner as the defaults: the joints 2 mm at 0.19 with no
   dark line, the cup and tilt 0.03, no grain in the wax.
 
-- [x] The room in the matt floor (2026-11-27). Without the mirror the floor still saw the room's
-  box half sharply at the coat's lobe (`room_reflection` gives way only by alpha 0.45): the
-  sunlit door read as on a soaking-wet floor (the user), the windows' glow dim beside it. The
-  floor's own `floor_reflection` (`--floor-box SHARP,WINDOWS`, `render3d::floor_box`, carried
-  in `planar_look.zw`): the walls, doors and ceiling seen sharply SHARP as much (0, their light
-  that way), the windows' soft shapes over them at WINDOWS of their light (1.5). Sliders "the
-  room seen sharply" and "the windows' glow".
-
 ## Open for the end
 
 - 2b, the grain.
