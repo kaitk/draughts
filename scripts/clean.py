@@ -38,12 +38,18 @@ def doomed(folder):
     for path in sorted(folder.iterdir()):
         if not matches(path, whole=False):
             yield path
-        elif not matches(path, whole=True) and path.is_dir() and not path.is_symlink():
+        elif not matches(path, whole=True) and path.is_dir() and not linked(path):
             yield from doomed(path)
 
 
+def linked(path):
+    """A symlink or a Windows junction (build/ngfx/goose-ngfx is one): removed itself, never
+    walked into, so the checkout it points to stays."""
+    return path.is_symlink() or path.is_junction()
+
+
 def size(path):
-    if path.is_symlink() or path.is_file():
+    if linked(path) or path.is_file():
         return path.lstat().st_size
     return sum(f.lstat().st_size for f in path.rglob("*") if f.is_file() or f.is_symlink())
 
@@ -60,7 +66,7 @@ def main():
         total += n
         if a.dry_run:
             print(f"{n / 1e6:8.1f} MB  {path.relative_to(BUILD)}")
-        elif path.is_dir() and not path.is_symlink():
+        elif path.is_dir() and not linked(path):
             shutil.rmtree(path)
         else:
             path.unlink()
