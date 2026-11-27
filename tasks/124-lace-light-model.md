@@ -219,3 +219,63 @@ capped at 0.3 m; the stove's faces) before changing the gather.
 Error factor of the thread's own light over the seven regions (the solid measure): 1.43 → 1.40.
 Left: the probes' colour above; the lit panels 0.6–0.7; the window side's cavity share is the
 room side's phase mirrored, not traced (it reads 1.15–1.47 of the tracer under 0.6 m).
+
+## Decisions (the user, 2026-11-27)
+
+- Cycles renders the lace's real mask (`scene.py --lace described`), not a plain sheet: the
+  reference for the lace is Cycles with our pattern and our density rule (`LACE_DENSITY`, the
+  slant power), which the app, the tracer and Cycles share, so no comparison tests that rule.
+- `LACE_THROUGH` (0.31, the old shaders' 1 : 0.45 normalised) is to be worked out again, not
+  kept as a choice. All three renderers take it, so no comparison so far tests it. What moves
+  with it: the backlit lace about in proportion, the lace in shade a little the other way
+  (its room light sent back is 1 − it), and the light the bake throws into the room
+  (`lace_throws`), so the camera's meter.
+- Both probe changes proposed above go ahead: (1) the lace reads the window wall's probe row
+  without the lace's own light on the wall (`lace_on_wall`); (2) the sun's bounce toward the
+  window wall located patch by patch against the tracer's first bounce, then fixed.
+
+## Handover (2026-11-27)
+
+Next session, in this order:
+
+1. Probe change (1). The row the lace reads (6.85 m, half grid row 1, `gather_cells`'
+   `behind_lace` for probes 0.15–0.35 m before the wall) takes `lace_on_wall` into `ey`, which
+   the wall's face needs and the lace must not get. Ways: a second value for that row (the
+   half grid's `ey` with and without it), or `lace_into_mesh` reading the row less the lace's
+   part. Measured target: without it the sky's part at that row has the tracer's colour (B/R
+   0.59–0.63 against 0.56–0.65). The wall's own reading must stay as it is: check the window
+   wall's pixels in the reference view against the build before. This is a probe change: it
+   moves `docs/architecture/` and maybe a decision only if it touches the app's light; under
+   `--light physical` only, record it here and in task 122.
+2. Probe change (2). Without the lace's light the probes at that row hold 0.29–0.35 of the
+   tracer's first two sun bounces by the stove (window 0), 0.39–0.61 at the middle window,
+   0.20–0.91 at the far one; the tracer's sun there is 0.75–0.95 first bounce. Measure each
+   patch's share at those probes in the bake against the tracer's first bounce (`--depth 1`)
+   before changing anything. Suspects: the floor's patches 0.15–0.45 m away gathered as points
+   with their distance held to `gather_near`'s 0.3 m (task 122 tried areas and dropped them on
+   a whole-room measure, not this row's), the stove's sunlit faces throwing nothing
+   (`stove_stops_sun`; a new stove is planned, so measure, don't special-case it).
+3. `LACE_THROUGH`: worked out from a source, not tuned against Cycles (Cycles takes the same
+   value). A thin white lace's forward and back split: a published diffuse transmittance and
+   reflectance of thin white woven fabric, or the user's photographs of a real lace lit from
+   behind and from the room at one exposure. Ask the user which before choosing. Then the
+   same value in `room_light`, the tracer, and `scene.json`'s `lace` (the exporter), Cycles
+   rendered again (`build/lace124b/cy.sh`), and the measures above redone.
+
+Tools, all in `build/lace124b/` (scratch, not in git):
+
+- `tree/`: a copy of the sources (toolchains and goose_gfx linked in) for dump and scratch
+  builds; copy the checkout's changed files into it first. `render3d.dump` holds
+  `lace_into_mesh` with the `LV|` dump (each lace vertex below 1.2 m: point, normal, F_sky,
+  F_open, hidden, probe, wall, back, front, glow); `lv*.txt` the dumps (`lv-nosun`, `lv-nosky`
+  from the tuner's `--key 30,18,0,0.85` and `--baked 0,1,0,0`, which add up to the whole).
+- `pt/ptl`: the tracer with `lacelight FILE --rays N [--no-sky] [--no-sun] [--depth N]`
+  (`path_trace_lace.goose`, built in `pt/`); `ppts.txt` the probe row's points (6.85 m),
+  `tl2k.txt` the vertices at 2,048 rays a side, `tp*.txt` the row by part.
+- `cmpv.py` (vertices against the tracer, in shade), `cmp3.py` (the row by sky and sun),
+  `cmp2.py`; `build/lace124/meas.py` and `solid.py` for the reference view against Cycles
+  (`build/lace124/shot.sh BIN TAG reference` shoots). The solid measure is unreliable on lit
+  folds (the unsorted lace at full coverage).
+- `cy.sh SCENE TAG [flags]` renders Cycles at the reference view (the quiet lock);
+  `cynosky/` the scene with the sky off, `c/nosky-reference*` its render.
+- `page2.py` wrote the results page's first section.
