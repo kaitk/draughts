@@ -2254,6 +2254,20 @@ fn main() {
                 if ui::button_label(c, "0.65") { paper_m = 0.65; }
                 if ui::button_label(c, "0.9") { paper_m = 0.9; }
                 if ui::button_label(c, "1.4") { paper_m = 1.4; }
+                if render3d::physical_coat {
+                    switch(c, "Print", render3d::paper_metal, ["flat", "metal"]);
+                    color_sliders(c, "Ground", render3d::paper_ground);
+                    slider(c, "Ground's roughness", render3d::paper_ground.w, 0.0, 1.0);
+                    color_sliders(c, "Gold", render3d::paper_gold);
+                    slider(c, "Gold's roughness", render3d::paper_gold.w, 0.0, 1.0);
+                    if render3d::paper_metal {
+                        slider(c, "Close: lines", render3d::paper_detail.x, 0.0, 2.0);
+                        slider(c, "Close: powder", render3d::paper_detail.y, 0.0, 2.0);
+                        slider(c, "Close: grain", render3d::paper_detail.z, 0.0, 2.0);
+                        slider(c, "Close: relief", render3d::paper_detail.w, 0.0, 2.0);
+                    }
+                    note(c, "Mask: --paper-mask today|engraved at start");
+                }
                 ui::tree_state_pop(c);
             }
             if section(c, open, WAINSCOT) {
@@ -2289,6 +2303,8 @@ fn main() {
                 slider(c, "Glass's scratches", render3d::window_view.w, 0.0, 10.0);
                 slider(c, "Lace's fill in shade", render3d::lace_shade.x, 0.2, 1.0);
                 slider(c, "Lace's folds' shade", render3d::lace_shade.y, 0.0, 2.0);
+                if physical { switch(c, "Lace's room side", render3d::lace_probed, ["old fill", "probes"]); }
+                if physical { slider(c, "Stove's glaze", render3d::stove_glaze, 0.3, 1.2); }
                 slider(c, "Curtain in", room.opening.z, 0.0, 20.0);
                 slider(c, "Lace lets", room.opening.w, 0.0, 1.0);
                 ui::tree_state_pop(c);
