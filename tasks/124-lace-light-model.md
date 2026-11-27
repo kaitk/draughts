@@ -378,3 +378,13 @@ turned to the room side's), the app's almost none.
 
 Next: the bake's lace as a source measured against the tracer at the probes (the tracer's lace
 thread's light alone, its forward share at 0.65 against 0), then the flanks' side.
+
+## Open: the lace's folds drawn out of order (the user, 2026-11-27)
+
+Seen low along the window wall (`--plan-eye 5.0,6.45,1.25 --plan-at 2.5,6.95,0.55 --fov 40`): the
+near lace below its tie-back shows stair-stepped blocks, a far fold's triangles painted over a
+near one's. Not this task's light: the same blocks in 75265a04's and 1512581a's builds and in the
+app's default light. The lace pipeline blends (premultiplied, depth test, no depth write, no
+culling) in the mesh's own order (`window_indices_by_group`); the described light makes the folds
+differ more in brightness, so the blocks show more. A fix sorts it back to front: per view, or a
+few presorted orders by the view's direction chosen at the draw, with no cost a frame.
