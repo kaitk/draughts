@@ -618,7 +618,7 @@ fn member_sun(boxes: room_shell::Member[..room_shell::MEMBERS]&, k: i64, o: room
     let x0 = -GLAZED_HALF + i * dx;
     let y0 = low + j * dh;
     let z = -room_shell::WINDOW_GLASS.x;
-    let pane = -(o.glass.x + PANE_IN);
+    let pane = -(o.glass.x + room_shell::pane_in());
     let v = float3 { d.x, d.z, -d.y };
     let inv = float3 { 1.0 / v.x, 1.0 / v.y, 1.0 / v.z };
     let kx = v.x / v.z;
