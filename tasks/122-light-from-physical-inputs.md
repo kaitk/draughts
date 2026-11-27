@@ -1054,50 +1054,47 @@ Cycles is the reference look from here on, so it now takes what the app takes un
   shade, bluer (B/R before the grade 0.39 against 0.23 on the wainscot): against Cycles, measured by the sun at full and
   a quarter, its sun's bounce 0.5 to 0.8 times and its sky 0.8 to 1.75 times. The probes' criterion below.
 
-## The indirect light: the stove's sun (2026-11-27)
+## The indirect light: the stove's sun, tried and dropped (2026-11-27)
 
 The handover's largest error: the app's shade bluer than Cycles' (wainscot B/R 0.39 against
 0.23). Measured with the scratch tracer (`build/indirect/pts/`, modes `room`: the reference
 view's shell points on a 96 × 64 grid, the tuner's dumped atlas as `baked_light` reads it
 against the tracer at the surface, rgb; `allprobes`: every grid probe per axis; `atlascmp`: the
 tuner's atlas against pts's own bake), sky and sun split by baking with `--key 30,18,0,0.85`
-(no sun) and `--baked 0,1,0,0` (no sky).
+(no sun) and `--baked 0,1,0,0` (no sky). Results page `build/notes/indirect-light/`.
 
 - In shade the atlas's light was 0.7 to 0.95 of the tracer's, its blue 1.0 to 1.25 and its red
   0.6 to 0.85: the sky's part 1.1 to 1.4 times the tracer's, the sun's bounce 0.25 to 0.6.
 - Not the probes' places: the tracer's own light at the probes, mixed as the lookup mixes
-  them, gives the surfaces' sun bounce 0.9 to 1.25. The probes' values were short: every probe,
-  every height and axis, held 0.52 of the tracer's sun bounce.
+  them, gives the surfaces' sun bounce 0.9 to 1.25. The probes' values are short: every probe,
+  every height and axis, holds 0.52 of the tracer's sun bounce.
 - Two causes, each measured to the digit against pts's bake: the tree outside (`light_tree`,
-  the tuner's bake only; the tracer and Cycles have none) 0.85; and `stove_stops_sun`, which
-  dropped every ray meeting the stove and threw nothing back off its sunlit tiles, 0.77.
-- Now (`room_light::stove_throws`, the tuner's `--stove-sun`, on under `--light physical`): a
-  ray meeting the stove (`stove_entry`, the face it enters by) lights a patch of that face
-  (`stove_sun`, 4 across by 14 bands, the top 4 × 4; `STOVE_BIN0`), its bounce cell the wall's
-  behind it. The probes' sun bounce 0.52 → 0.88 of the tracer's (the tree off).
-
-| Shade, reference view | B/R tracer | Before | After | Light after / tracer |
-|---|---|---|---|---|
-| Floor | 0.51 | 0.71 | 0.62 | 1.02 |
-| Ceiling | 0.47 | 0.65 | 0.57 | 1.12 |
-| Wallpaper, far wall | 0.49 | 0.64 | 0.50 | 1.13 |
-| Wainscot, far wall | 0.36 | 0.62 | 0.44 | 1.14 |
-| Wallpaper, hall wall | 0.21 | 0.32 | 0.27 | 1.19 |
-
-Turned off by default the same day (`--stove-sun on` to see it): the user saw purple and dark
-blotches round the stove's sunlit patches, the old purple stove. Measured: the probes beside the
-stove (28,21,0 and its neighbours) went from 0.016 to 0.36, their L1 lobe 1.7 times their
-constant, so a face turned from the patches reads red −0.14, green −0.09, blue −0.014, clamped to
-a purple. Each patch is a point at 0.14 m from them at the nearest (`gather_near`), and some
-probes may stand inside the stove's body. To do: the stove's patches gathered as areas, and the
-probes inside the stove walled like those inside a wall.
+  the tuner's bake only; the tracer and Cycles have none) 0.85, so compare the app with Cycles
+  under `--tree 0,11,70,1`; and `stove_stops_sun`, which drops every ray meeting the stove and
+  throws nothing back off its sunlit tiles, 0.77.
+- Tried (f56d4987): the stove's sunlit faces as sun patches of their own. The probes' sun bounce
+  0.52 → 0.88, the light on the far wall's paper B/R 0.64 → 0.50 (tracer 0.49); but purple
+  blotches round the stove's sunlit patches (the user, the same day): the probes beside it 0.016
+  → 0.36, their L1 lobe 1.7 times the constant, so a face turned from the patches read red
+  −0.14, green −0.09, blue −0.014, clamped. Dropped and removed: a scheme for this stove's four
+  faces alone, and a new stove design replaces this one (the handover, 2026-11-27).
+- An independent review of the bake's stove code: the sun patches are points at their bins' mean
+  (`gather_near` caps them at 0.14 m), about 2 times too bright at a probe 0.15 m over a 0.25 m
+  floor bin, for every patch, not the stove's alone; the purple came from prop faces having no
+  `settle` (the room's planes are settled, so their negative lobes point into the wall) and
+  from probes inside the stove's body, which `probe_place` doesn't wall. Kept: `stove_stops_sun`
+  (without it the sun lands inside the stove, the old purple stove) and `wall_albedo`'s stove
+  line. With the new stove: its outline exported by `stove.goose` for `meets_stove` (the bake
+  copies today's planes), probes inside solids walled, prop faces settled, patches gathered as
+  areas.
 
 Left: the sky's part 1.1 to 1.3 over on the surfaces though equal at the probes (task 122's
 `srcsum`, 5.150 against 5.151): the lookup half a cell out sees more of the windows than the
-surface does (the ceiling 1.27, the wainscot 1.28); the far wall's paint (the door) 1.3 and a
-plaster strip 2.5, whose probe values themselves are over. Comparisons of the app with Cycles
-need `--tree 0,11,70,1`, as Cycles has no tree. Without `--light physical` the reference view
-is byte-identical. Cost: the bake's sun rays test the stove as before; 224 bins more.
+surface does (the ceiling 1.27, the wainscot 1.28). Against Cycles before the camera (`--tone-probe`,
+each over its sunlit door, tree off, the stove's sun on): the far wall's paper 1.07 of Cycles'
+light, B/R 0.38 against 0.23, where Cycles' paper in shade is over half the print's warm metal
+reflection (B/R 0.14) and its matt ground alone B/R 0.39; the wainscot 1.30, B/R 0.16 against
+0.08; the lace in shade 2.26 (task 124).
 
 ## Acceptance criteria
 
