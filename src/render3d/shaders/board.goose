@@ -259,7 +259,13 @@ let LIT_FRAG = """
             s = min(s, mix(1.0, discs_shadow(p, p + n * 0.01), facing));
         }
         // A broad key (winter's snowy doors) casts a fainter shadow.
+    #ifdef PROPS_LIGHT
+        // With the room's probes the shade's light is theirs: the sun through the windows
+        // alone, as the table and the room take it, with none of the key kept in the shade.
+        return mix(1.0, s, room.x) * window_open(p);
+    #else
         return mix(1.0, s, room.x) * window_light(p);
+    #endif
     }
 
     // One hardware-compared tap of the key's shadow at q (its bilinear edge only).
