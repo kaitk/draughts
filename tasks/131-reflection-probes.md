@@ -42,6 +42,20 @@ tuner's `--env-pano`, from the same points.
   near floor 2.5× (Cycles 3.3×, the old box 2.0×), the far shade 4.5× (5.9×, 3.3×). `--refl off`
   gives the box back. Open: the bake's floor reads lighter and more orange than the room's; the
   app's shade about twice Cycles' (task 122's indirect light, not this).
+- [x] 3b. The grazing lobe (2026-11-27). The user: the whole floor lit up, an even pale sheen,
+  the windows' reflections no longer shapes. Measured at their view against Cycles (page
+  `build/notes/reflections/grazing.html`): the map, its levels (a numpy GGX convolution of its
+  sharp level within 5%) and the coat's weights were right; the GGX integral of the same map
+  from each floor point gives Cycles' glossy pass (0.13 against 0.133 in shade). The one lookup
+  was 5–13× too bright in shade and 2–3× too dark in the glows: at a grazing look the lobe is
+  narrow across and long up and down, and the map's round lobe spread each window over the
+  floor; the dominant direction's tilt (at the coat's √α, not α) added the ceiling. Now
+  `floor_reflection` takes four taps up the reflection's vertical plane at the GGX slope's
+  quartiles, each at the lobe's width across (0.7 α × the look's sine), weighted by its Fresnel
+  and masking, none under the floor; no tilt. The floor's image error against Cycles 0.65 →
+  0.13 (16 importance samples 0.26). The shade 1.92× → 1.01×, the window corner's glow 5.1 →
+  8.2 (Cycles 10.7). Open: the middle window's glow before the rug 2.2× Cycles'; the cost
+  (inside the quick bench's spread).
 - [ ] 4. The brass, the gilt, the glaze, the window hardware, the table, chairs, board and
   pieces, the glass on the same lookup; the old box code and its patches removed.
 - [ ] 5. Phones (its size, the A33), ngfx at parity, the bake's time; the decision and the
