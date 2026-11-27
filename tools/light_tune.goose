@@ -91,7 +91,7 @@
 //       [--sun-color-height DEG (--light physical: the sun's colour as at this height, a hazier sky's; its own)]
 //       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
 //       [--grade-ev season|-0.5|-1|-1.5|lift|lift2|match|match-dark (with the grade: stops under the season's;
-//       lift, lift2, match, match-dark at -1.5, -1.75, -1, -1 with AgX's look power 0.7, 0.65, 0.65, 0.7; match)]
+//       lift, lift2, match, match-dark at -1.5, -1.75, -1, -1 with AgX's look power 0.7, 0.65, 0.65, 0.7; season)]
 //       [--coat on|off (--light physical: the varnish and the wax as clear coats on the walls and floor,
 //       render3d::physical_coat; on)] [--paper-metal on|off (with the coat: the wallpaper's print a metal over a
 //       matt ground; on)] [--paper-ground R,G,B,ROUGH] [--paper-gold R,G,B,ROUGH (the wallpaper's ground and print,
@@ -252,7 +252,7 @@ fn physical_sun(made: rooms::Room, height: f32) -> float4 {
     let key = rooms::color_of(made.key_color);
     let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
     let grey = float3 { y, y, y };
-    let sun = if sun_by_height { rooms::sun_color_at(if sun_color_height >= 0.0 { sun_color_height } else { height }) * y } else { grey + (key - grey) * render3d::ROOM_SUN_AS_MADE.x };
+    let sun = if sun_by_height { rooms::sun_color_at(sun_color_as(height)) * y } else { grey + (key - grey) * render3d::ROOM_SUN_AS_MADE.x };
     return float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), made.key_color.w };
 }
 // --light physical's sun's broad sheen (render3d::sheen_look): none, as no lobe of the kind is
@@ -278,7 +278,7 @@ let PHYSICAL_PAPER_DETAIL = float4 { 1.0, 1.0, 1.0, 1.0 };
 fn physical_light(r0: rooms::Room, made: rooms::Room, key_given: bool, exposure_given: bool) -> rooms::Room {
     var r = r0;
     r.key_color = physical_sun(made, r0.key.y);
-    if !key_given { r.key.z = made.key.z * made.shell_sun.y * PANES; }
+    if !key_given { r.key.z = made.key.z * made.shell_sun.y * PANES * PHYSICAL_SUN[light_season].x; }
     r.shell_sun.y = 1.0;
     r.panes.w = if casement_depth { 1.0 } else { 0.0 };
     render3d::room_sun = float4 { 1.0, 1.0, 1.0, render3d::ROOM_SUN_AS_MADE.w };
@@ -320,6 +320,11 @@ var sun_color_height: f32 = -1.0;
 var spare_laces: u8[>..] = [];
 // --light physical's camera curve (render3d::camera_toe): AgX, as Cycles takes it.
 let CAMERA_TOE = render3d::CAMERA_AGX;
+// --sun-color-height: the sun's colour as at this height (a hazier sky reddens it as a lower sun's
+// does), its own height's when negative.
+var sun_color_height: f32 = -1.0;
+var sun_color_given = false;
+fn sun_color_as(height: f32) -> f32 { return if sun_color_height >= 0.0 { sun_color_height } else { height }; }
 // --light physical's grade (--grade): the season's (render3d::GRADES) or none.
 let GRADE_WAYS = ["season", "none"];
 // --grade-ev: darker takes on the season's grade, to choose the current look by eye
@@ -347,6 +352,12 @@ let PLANAR_VIEWS = ["off", "floor", "map", "distance"];
 let SCENE_SCALES: f32[5] = [0.0, 1.0, 0.85, 0.75, 0.67];
 let UPSCALES = ["cubic", "bilinear"];
 let AA_NAMES = ["off", "smaa", "msaa"];
+// The physical sun by season (light_season): its strength's share of the clear sky's, and its
+// colour as at this height (a hazier sky's; negative: its own height's). Autumn's 2 stops under
+// and as at 8 degrees meet the autumn reference's sunlit floor and door through the season's
+// grade (task 122, 2026-11-27); the others as made until tuned.
+let PHYSICAL_SUN: float2[4] = [float2 { 0.25, 8.0 }, float2 { 1.0, -1.0 }, float2 { 1.0, -1.0 }, float2 { 1.0, -1.0 }];
+var light_season: i64 = 0;
 let AA_WAYS: i32[3] = [render3d::AA_OFF, render3d::AA_SMAA, render3d::AA_MSAA];
 let VIEW_EYES: float3[6] = [float3_0, float3 { 8.4, 0.6, 1.7 }, float3 { 4.5, 1.0, 1.6 }, float3 { 4.5, 6.3, 1.6 },
                             float3 { 8.3, 3.5, 1.6 }, float3 { 3.75, 4.5, 1.15 }];
@@ -1477,7 +1488,7 @@ fn main() {
     // surfaces writing their light linear: --camera-toe's, AgX at the metered exposure
     // compensated by --camera-ev unless it names a toe.
     let graded = physical && pick(argv, "--grade", GRADE_WAYS, 0) == 0;
-    var exposure = pick(argv, "--grade-ev", EXPOSURES, 6);
+    var exposure = pick(argv, "--grade-ev", EXPOSURES, 0);
     if physical {
         render3d::tone_toe = float4 { 2.0, 2.0, 2.0, render3d::tone_toe.w };
         render3d::camera_toe = pick(argv, "--camera-toe", TOES, CAMERA_TOE) as f32;
@@ -1499,6 +1510,7 @@ fn main() {
     room.opening = four(argv, "--opening", room.opening);
     room.wind = four(argv, "--wind", room.wind);
     room.gust = four(argv, "--gust", room.gust);
+    light_season = season;
     room.gust.x = number(argv, "--gust-strength", room.gust.x);
     room.gust.y = number(argv, "--gust-length", room.gust.y);
     room.gust.z = number(argv, "--gust-every", room.gust.z);
@@ -1651,6 +1663,8 @@ fn main() {
     sun_color_height = number(argv, "--sun-color-height", -1.0);
     if has(argv, "--wall") { room.window = four(argv, "--wall", room.window); }
     if has(argv, "--sun-height") { room.key.y = number(argv, "--sun-height", room.key.y); }
+    sun_color_given = has(argv, "--sun-color-height");
+    sun_color_height = number(argv, "--sun-color-height", PHYSICAL_SUN[light_season].y);
     if has(argv, "--board-turn") { board_turn = number(argv, "--board-turn", 0.0); }
     g.table_turn = number(argv, "--table-turn", g.table_turn);
     var base_way = pick(argv, "--base-wood", BASE_WOODS, 1);
@@ -2436,6 +2450,8 @@ fn main() {
             let py = plan_point(g, float3 { 0.0, 1.0, 0.0 }) - o;
             let hand: f32 = if py.x * px.z - py.z * px.x >= 0.0 { 1.0 } else { -1.0 };
             let dt = if walk_test > 0 || walk_frames > 0 { 1.0 / 60.0 } else { min(gfx::delta_time() as f32, LONGEST_STEP) };
+                light_season = season;
+                if !sun_color_given { sun_color_height = PHYSICAL_SUN[season].y; }
             if touch {
                 let look, stick = touch_step(finger, gfx::screen_size());
                 walk_step(walk, look, dt, hand, stick);
