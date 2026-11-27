@@ -340,6 +340,8 @@ var sun_by_height = true;
 // does), its own height's when negative.
 var sun_color_height: f32 = -1.0;
 var sun_color_given = false;
+// The antique brass's level while the window's metal is the bronze (the Window section).
+var brass_level: f32 = 4.0;
 fn sun_color_as(height: f32) -> f32 { return if sun_color_height >= 0.0 { sun_color_height } else { height }; }
 fn physical_sun(made: rooms::Room, height: f32) -> float4 {
     let key = rooms::color_of(made.key_color);
@@ -1321,11 +1323,11 @@ fn room_flags(out: u8[>..]&, r: rooms::Room) {
 // open at the start.
 let SECTIONS = ["Scene", "Light", "Sun and tree", "Wallpaper", "Wainscot and panelling", "Ceiling", "Curtains and lace",
                 "Bookcases and books", "Table", "Outside", "Dust in the sunbeam (D)", "Camera and views", "Debug", "Keys",
-                "Lens and depth of field", "Light in detail (the board's)", "The sun", "The tree", "Wind", "The board's window", "Noise leaves"];
+                "Lens and depth of field", "Window", "Light in detail (the board's)", "The sun", "The tree", "Wind", "The board's window", "Noise leaves"];
 let SECTION_NAMES = ["scene", "light", "sun", "wallpaper", "wainscot", "ceiling", "curtains", "books", "table", "outside", "dust",
-                     "camera", "debug", "keys", "lens", "detail", "sun-itself", "tree", "wind", "window", "noise"];
-let OPEN_AT_START: i64[21] = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
-let PARTS_FROM = 15;
+                     "camera", "debug", "keys", "lens", "window", "detail", "sun-itself", "tree", "wind", "board-window", "noise"];
+let OPEN_AT_START: i64[22] = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0];
+let PARTS_FROM = 16;
 let SCENE = 0;
 let LIGHT = 1;
 let SUN = 2;
@@ -1341,12 +1343,13 @@ let CAMERA = 11;
 let DEBUG = 12;
 let KEYS = 13;
 let LENS = 14;
-let DETAIL = 15;
-let SUN_ITSELF = 16;
-let TREE = 17;
-let WIND = 18;
-let WINDOW = 19;
-let NOISE = 20;
+let WINDOW = 15;
+let DETAIL = 16;
+let SUN_ITSELF = 17;
+let TREE = 18;
+let WIND = 19;
+let BOARD_WINDOW = 20;
+let NOISE = 21;
 
 let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", "P: print the room and its flags",
                 "V: the views in turn", "U: the park or a plain sky outside",
@@ -1358,12 +1361,12 @@ let KEY_HELP = ["drag: orbit, scroll: zoom", "R: reset the orbit and the view", 
                 "walking: C seated, Q down, E up", "R: back to the view, P: the walk's camera"];
 
 // The sections open at the start: OPEN_AT_START, or --sections NAME,NAME.. (or all).
-fn open_sections(argv: u8[:][>..]&) -> i64[21] {
+fn open_sections(argv: u8[:][>..]&) -> i64[22] {
     var open = OPEN_AT_START;
     let at = flag_value(argv, "--sections");
     guard at > 0 else { return open; }
     let all = argv[at] == "all";
-    for i in 21 { open[i] = if all { ui::MAXIMIZED } else { ui::MINIMIZED }; }
+    for i in 22 { open[i] = if all { ui::MAXIMIZED } else { ui::MINIMIZED }; }
     guard !all else { return open; }
     var rest: const u8[:] = argv[at];
     while rest.len > 0 {
@@ -1383,7 +1386,7 @@ fn open_sections(argv: u8[:][>..]&) -> i64[21] {
 }
 
 // A section's tab (or a part's node inside one): true while open, when tree_state_pop follows.
-fn section(c: ui::Context, open: i64[21]&, i: i64) -> bool {
+fn section(c: ui::Context, open: i64[22]&, i: i64) -> bool {
     let kind = if i >= PARTS_FROM { ui::TREE_NODE } else { ui::TREE_TAB };
     return ui::tree_state_push(c, kind, SECTIONS[i], open[i]);
 }
@@ -2232,7 +2235,7 @@ fn main() {
                     slider(c, "Gust reach", room.gust.w, 0.0, 1.0);
                     ui::tree_state_pop(c);
                 }
-                if section(c, open, WINDOW) {
+                if section(c, open, BOARD_WINDOW) {
                     slider(c, "Shade", room.pattern.x, 0.0, 1.0);
                     slider(c, "Softness", room.pattern.y, 0.0, 0.05);
                     slider(c, "Wall away", room.window.x, 10.0, 80.0);
@@ -2308,28 +2311,36 @@ fn main() {
                 if ui::button_label(c, "As it is") { ceiling = float2 { 1.0, 1.0 }; }
                 ui::tree_state_pop(c);
             }
-            if section(c, open, CURTAINS) {
-                choice(c, "Lace (C)", g.lace_way, LACE_WAYS);
+            if section(c, open, WINDOW) {
                 switch(c, "Shutters (H)", shutters_on, ["off", "on"]);
+                slider(c, "Glass's film", render3d::window_view.z, 0.0, 10.0);
+                slider(c, "Glass's scratches", render3d::window_view.w, 0.0, 10.0);
                 if room_shell::box_window_on {
-                    // The window's metal: the flat bronze, or task 129's antique brass (off by
-                    // default; on, at level 4 until moved).
+                    // The hardware's metal: the flat bronze, or task 129's antique brass (off by
+                    // default). The brass's level is kept while the bronze shows; moving it
+                    // turns the brass on.
                     var brass = room_shell::window_metal.x >= 1.0;
-                    switch(c, "Window metal", brass, ["bronze", "antique brass"]);
-                    if brass && room_shell::window_metal.x < 1.0 { room_shell::window_metal.x = 4.0; }
+                    switch(c, "Metal", brass, ["bronze", "antique brass"]);
+                    if brass && room_shell::window_metal.x < 1.0 { room_shell::window_metal.x = brass_level; }
+                    if !brass && room_shell::window_metal.x >= 1.0 { brass_level = room_shell::window_metal.x; }
                     if !brass { room_shell::window_metal.x = 0.0; }
-                    if brass {
-                        slider(c, "  its level", room_shell::window_metal.x, 1.0, 5.0);
-                        slider(c, "  its mottling", room_shell::window_metal.y, 0.0, 1.0);
-                        slider(c, "  its roughness +", room_shell::window_metal.z, -0.3, 0.3);
+                    var level = if brass { room_shell::window_metal.x } else { brass_level };
+                    slider(c, "  brass's level", level, 1.0, 5.0);
+                    if brass || level != brass_level {
+                        room_shell::window_metal.x = level;
+                        brass_level = level;
                     }
+                    slider(c, "  brass's mottling", room_shell::window_metal.y, 0.0, 1.0);
+                    slider(c, "  brass's roughness +", room_shell::window_metal.z, -0.3, 0.3);
                     slider(c, "  the niche's light", room_shell::window_metal.w, 0.0, 1.0);
                 }
+                ui::tree_state_pop(c);
+            }
+            if section(c, open, CURTAINS) {
+                choice(c, "Lace (C)", g.lace_way, LACE_WAYS);
                 slider(c, "Lace hangs over (Y)", lace_hang, 0.0, 0.2);
                 slider(c, "Lace's sun", render3d::window_view.x, 0.0, 3.0);
                 slider(c, "Lace's light below", render3d::window_view.y, 0.0, 3.0);
-                slider(c, "Glass's film", render3d::window_view.z, 0.0, 10.0);
-                slider(c, "Glass's scratches", render3d::window_view.w, 0.0, 10.0);
                 slider(c, "Lace's fill in shade", render3d::lace_shade.x, 0.2, 1.0);
                 slider(c, "Lace's folds' shade", render3d::lace_shade.y, 0.0, 2.0);
                 if physical { switch(c, "Lace's room side", render3d::lace_probed, ["old fill", "probes"]); }

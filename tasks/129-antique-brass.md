@@ -107,7 +107,7 @@ Page: `build/notes/antique-brass/index.html`.
 The user picked level 4 for now ("we'll fix the hues etc later"), the other choices left to
 this task: the levels' hue drift kept, the concept's mottling sizes, half the colour's
 contrast. Ported behind the light tuner's `--window-metal LEVEL,MOTTLE,ROUGH,NICHE`, off by
-default, its four values live sliders (the Curtains section) and in the P print:
+default, its four values live sliders (now the Window section) and in the P print:
 
 - The tile: `room_shell::brass_tile` (`src/model3d/brass_tile.goose`), wrapped value noise at
   whole periods, ranked by a histogram; 1024², 62.5 µm a texel, R the rank and G the pits,
@@ -156,8 +156,8 @@ light in the probes gives what the share used to stand in for.
 
 ## The user's verdict (2026-11-27)
 
-The user prefers the old flat bronze for now: the tuner's Curtains section has a "Window metal"
-switch, bronze (default) or antique brass (level 4 when first turned on). The brass is merged into
+The user prefers the old flat bronze for now: the tuner's Window section has a "Metal" switch,
+bronze (default) or antique brass (level 4 when first turned on). The brass is merged into
 `room-light` off by default to keep working on. What needs work, from the user's look at the
 pairs (Cycles' pictures look right, the game's don't):
 
@@ -166,6 +166,15 @@ pairs (Cycles' pictures look right, the game's don't):
   broken highlights on the grip, the rod and the keeper. The window metal reflects only the
   room's wide light (`room_wide`) since task 127 (the box's sharp `room_reflection` read far too
   bright from the niche), so it has no sharp reflection and no highlight but the sun's.
+
+## The tuner's Window section (2026-11-27)
+
+The user couldn't find the brass's level. The window's rows are now a top-level section of
+their own, Window (`--sections window`; the board's window pattern under Sun and tree is now
+`board-window`), open at the start: the shutters (H), the glass's film and scratches, the
+metal (bronze or antique brass), the brass's level, mottling and roughness, and the niche's
+light. The level shows with the bronze too, holding 4; moving it turns the brass on. The
+lace's rows stay in Curtains and lace.
 
 ## Acceptance criteria
 
