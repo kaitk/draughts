@@ -38,7 +38,14 @@ roughness W); under `--light physical` the floor's mirror takes the coat's.
 - [ ] 1. The grain out of the reflection: its share of the wax film's normal (a quarter
   today) down to 10–25% of it. Less urgent under a matt wax; look before tuning.
 - [ ] 2b. The grain, later: fainter and finer, more tone between blocks.
-- [ ] 3. The joints: soft shoulders that catch light, not dark lines.
+- [x] 3. The joints (2026-11-27): each plank's edges rounded down into the joint (`--floor-joint
+  WIDTH_MM,SLOPE,DARK`), the slope averaged over the pixel's footprint (`joint_slope`) and what it
+  can't resolve widening the wax's lobe; the floor's mirror takes a quarter of it, as of the
+  grain (the whole swung the reflected ray across the room and beaded the edges). Tried 2 mm and
+  3 mm, slopes 0.5 and 0.8, the joint as dark or half; the user picked 2 mm at 0.5, half as
+  dark, checked in motion. Open for the end: the dark joint still shows as a line inside the
+  window's reflection; with it at 0 (the mirror kept across the joint too) the line went but
+  that had issues of its own. Not yet in the Cycles export.
 - [ ] 4. The blocks' tilt and cup; wear only if it still shows.
 
 ## Acceptance criteria

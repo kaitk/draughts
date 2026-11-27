@@ -269,8 +269,9 @@ let WOOD_FINISHES: float4[3] = [float4 { 0.4, 0.52, 0.35, 0.33 }, float4 { 0.36,
 var OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07343 }, float2 { 0.01716, 0.12983 }];
 
 // Our floor's joints (--floor-joint): x the planks' edges rounded over this many millimetres,
-// y the rounding's slope at the joint, z how dark the joint is (1 as before).
-var FLOOR_JOINT = float4 { 0.0, 0.0, 1.0, 0.0 };
+// y the rounding's slope at the joint, z how dark the joint is (1 as before). 2 mm at 0.5, half as
+// dark: the user's pick (2026-11-27, task 130); 0, 0, 1 the joints as before.
+var FLOOR_JOINT = float4 { 2.0, 0.5, 0.5, 0.0 };
 
 fn linear_of(c: f32) -> f32 {
     let v = c / 255.0;
