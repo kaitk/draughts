@@ -1,15 +1,15 @@
 # The antique brass (task 129) as a Cycles material, for scene.py and brass_check.py, as
 # ROOM_FRAG's window metal has it: the game's brass tile (the export's brass_tile.ppm, from
-# room_shell::brass_tile) box-projected by position, the wear in the vertex colour's g (the
-# material's fraction: 0.5 plus room_shell::WEAR_SPAN times it) shifting the mottling's rank;
-# the model and its levels in brass_model.py.
+# room_shell::brass_tile) box-projected by position, its rank sunk and lifted by the wear in the
+# vertex colour's g (the material's fraction: 0.5 plus room_shell::WEAR_SPAN times it); the
+# model and its levels in brass_model.py.
 import os
 
 import bpy
 import numpy as np
 
-from brass_model import (DEPOSIT, EDGE, EXPOSED, EXPOSED_POWER, METAL, MOTTLE, ROUGH, SPECKLE_DARK, SPECKLE_ROUGH,
-                         TARNISH, TILE_M, WEAR_LIFT, WEAR_SPAN, level_at)
+from brass_model import (DEPOSIT, EDGE, EXPOSED, EXPOSED_POWER, METAL, MOTTLE, ROUGH, RUB, SINK, SPECKLE_DARK,
+                         SPECKLE_ROUGH, TARNISH, TILE_M, WEAR_SPAN, level_at)
 
 
 def tile_image(path):
@@ -157,7 +157,7 @@ def antique_brass(name, level, tile_path, mottle=MOTTLE, rough_add=0.0, micro_di
     # level 1 to 5, continuous; mottle how much of the colour's mottling shows; rough_add as
     # the tuner's; micro_dir a folder with brass_height.png for the concept's micro-finish
     # (the game has none: it is under its pixels).
-    exposed_cover, deposit_cover, gain, tint, mean, surface = level_at(level)
+    exposed_cover, deposit_cover, gain, tint, mean, far, surface = level_at(level)
     m, N, b = principled(name)
     tc, uv = coords(N)
     t = N.tile(tile_path, uv)
@@ -167,8 +167,12 @@ def antique_brass(name, level, tile_path, mottle=MOTTLE, rough_add=0.0, micro_di
     vc = N.new("ShaderNodeVertexColor", layer_name="Color")
     vsep = N.new("ShaderNodeSeparateColor")
     N.link(vc.outputs["Color"], vsep.inputs[0])
-    wear = N.math("MINIMUM", N.math("MAXIMUM", N.math("DIVIDE", N.math("SUBTRACT", vsep.outputs[1], 0.5), WEAR_SPAN), -1.0), 1.0)
-    rank = N.math("ADD", rank, N.math("MULTIPLY", wear, WEAR_LIFT), clamp=True)
+    # The OBJ importer decodes the vertex colour from sRGB: encoded again, the fraction as written
+    # (0.07 to 0.45 decoded, above sRGB's linear toe).
+    own = N.math("SUBTRACT", N.math("MULTIPLY", N.math("POWER", vsep.outputs[1], 1.0 / 2.4), 1.055), 0.055)
+    wear = N.math("MINIMUM", N.math("MAXIMUM", N.math("DIVIDE", N.math("SUBTRACT", own, 0.5), WEAR_SPAN), -1.0), 1.0)
+    rub = N.math("MAXIMUM", wear, 0.0)
+    rank = N.math("ADD", N.math("SUBTRACT", rank, SINK), N.math("MULTIPLY", N.math("MULTIPLY", rub, rub), RUB), clamp=True)
     deposit = N.math("SUBTRACT", 1.0, N.smooth(rank, deposit_cover - EDGE, deposit_cover + EDGE))
     exposed = N.smooth(rank, 1.0 - exposed_cover - EDGE, 1.0 - exposed_cover + EDGE)
     tarnish = N.math("SUBTRACT", N.math("SUBTRACT", 1.0, deposit), exposed, clamp=True)
@@ -187,7 +191,7 @@ def antique_brass(name, level, tile_path, mottle=MOTTLE, rough_add=0.0, micro_di
     N.link({s.identifier: s for s in mix.outputs}["Result_Color"], b.inputs["Base Color"])
     N.link(N.weighted((exposed, tarnish, deposit), METAL), b.inputs["Metallic"])
     rough = N.math("ADD", N.weighted((exposed, tarnish, deposit), ROUGH), N.math("MULTIPLY", speckle, SPECKLE_ROUGH))
-    rough = N.math("SUBTRACT", rough, N.math("MULTIPLY", N.math("MAXIMUM", wear, 0.0), 0.05))
+    rough = N.math("SUBTRACT", rough, N.math("MULTIPLY", rub, 0.05))
     rough = N.math("MINIMUM", N.math("MAXIMUM", N.math("ADD", rough, rough_add), 0.05), 1.0)
     N.link(rough, b.inputs["Roughness"])
     if micro_dir:

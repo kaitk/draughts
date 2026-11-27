@@ -144,8 +144,9 @@
 //       [--dump-light PATH (the probes' atlas, a float a line, with --shot; with the props' light their nine harmonics' atlas
 //       too, PATH.props)] [--print (the command line printed on the first frame, as P)]
 //       [--dump-room-block PATH (the room's Surfaces block as its raw bytes, with --shot; scripts/room_fixed.py)]
-//       [--ssao-view off|alone|kept|light|broken (light: the indirect light alone on grey; broken: red where a
-//       term isn't finite, yellow where the light is over 64)]
+//       [--ssao-view off|alone|kept|light|broken|diffuse|glossy (light: the indirect light alone on grey; broken:
+//       red where a term isn't finite, yellow where the light is over 64; diffuse, glossy: the material's
+//       diffuse colour and reflectance as Cycles' passes, sRGB)]
 //       [--contact STRENGTH,LENGTH,STEPS,THICKNESS (the sun's contact shadows, world units; 0.8,3,12,1.5; 0 off)]
 //       [--room-sun K (the sun's saturation on the room, 0.6; 1 as the key)]
 //       [--oak-sun SHARE,SAT,SHEEN (the panelling oak's share of the room's sun, its saturation and share of the sheen)]
@@ -413,8 +414,9 @@ let OFF_ON = ["off", "on"];
 let WOOD_TIERS = ["high", "standard", "phone"];
 let TABLE_WINDOW = 5;
 // What the room shows (render3d::ssao_view): itself, its screen occlusion alone, or all its
-// indirect light keeps, or the indirect light alone on grey, or its broken values marked.
-let SSAO_VIEWS = ["off", "alone", "kept", "light", "broken"];
+// indirect light keeps, or the indirect light alone on grey, or its broken values marked, or
+// the material's diffuse colour or reflectance (Cycles' Diffuse Color and Glossy Color).
+let SSAO_VIEWS = ["off", "alone", "kept", "light", "broken", "diffuse", "glossy"];
 // The camera's curves (render3d::camera_toe): the shoulder after a toe on the luminance,
 // Khronos PBR Neutral's toe on the least channel, or none; AgX.
 let TOES = ["room", "neutral", "none", "agx"];

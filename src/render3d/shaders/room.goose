@@ -494,8 +494,12 @@ let ROOM_FRAG = """
     // metalness and roughness; which covers a point is a threshold on the brass tile's rank
     // (room_shell::brass_tile), soft over BRASS_EDGE. A level sets the share bare and the share
     // deposit, a gain on the tarnish and deposits (on the bare metal to BRASS_BARE_POWER), the
-    // tarnish's tint, and holds the mean colour, metalness and roughness the mottling fades to
-    // (tools/blender/brass_tile.py --levels; level 5 has bronze B's mean).
+    // tarnish's tint, and the mean colour the colour's mottling is pulled toward
+    // (tools/blender/brass_tile.py --levels; level 5 has bronze B's mean). The rank is sunk by
+    // BRASS_SINK on all the hardware, as Cycles rendered every level the user judged (about
+    // half of it deposit, the bare metal only where rubbed, BRASS_RUB times the wear squared);
+    // BRASS_FAR and BRASS_FAR_SURFACE are the sunk material's mean colour, roughness and
+    // metalness, which the mottling fades to at a distance.
     const vec3 BRASS_BARE = vec3(0.91, 0.778, 0.423);
     const vec3 BRASS_TARNISH = vec3(0.55, 0.34, 0.13);
     const vec3 BRASS_DEPOSIT = vec3(0.10, 0.055, 0.025);
@@ -506,17 +510,22 @@ let ROOM_FRAG = """
     const vec4 BRASS_COVER[5] = vec4[5](vec4(0.35, 0.15, 1.000, 0.0), vec4(0.28, 0.20, 0.617, 0.0), vec4(0.22, 0.26, 0.389, 0.0), vec4(0.16, 0.32, 0.252, 0.0), vec4(0.10, 0.38, 0.168, 0.0));
     const vec3 BRASS_TINT[5] = vec3[5](vec3(1.000, 1.000, 1.000), vec3(1.085, 0.950, 0.973), vec3(1.169, 0.912, 0.951), vec3(1.238, 0.888, 0.953), vec3(1.292, 0.880, 0.975));
     const vec4 BRASS_MEAN[5] = vec4[5](vec4(0.6022, 0.4460, 0.2147, 0.0), vec4(0.3792, 0.2599, 0.1251, 0.0), vec4(0.2388, 0.1512, 0.0728, 0.0), vec4(0.1503, 0.0878, 0.0423, 0.0), vec4(0.0946, 0.0509, 0.0245, 0.0));
-    const vec2 BRASS_MEAN_SURFACE[5] = vec2[5](vec2(0.399, 0.812), vec2(0.416, 0.768), vec2(0.434, 0.714), vec2(0.451, 0.660), vec2(0.468, 0.607));
+    const float BRASS_SINK = 0.35;
+    const float BRASS_RUB = 0.26;
+    const vec4 BRASS_FAR[5] = vec4[5](vec4(0.3539, 0.2256, 0.0939, 0.0), vec4(0.2088, 0.1146, 0.0477, 0.0), vec4(0.1256, 0.0601, 0.0252, 0.0), vec4(0.0771, 0.0333, 0.0143, 0.0), vec4(0.0476, 0.0193, 0.0086, 0.0));
+    const vec2 BRASS_FAR_SURFACE[5] = vec2[5](vec2(0.491, 0.531), vec2(0.507, 0.469), vec2(0.520, 0.413), vec2(0.530, 0.364), vec2(0.540, 0.316));
     // A level's entries, between the two levels either side of a continuous one: its cover,
-    // tint, mean colour, and mean roughness and metalness.
-    void brass_level(float level, out vec4 cover, out vec3 tint, out vec3 mean, out vec2 surface) {
+    // tint, the mottling's mean colour, the far colour (with the mottling at its slider's
+    // `mottle`), and the far roughness and metalness.
+    void brass_level(float level, float mottle, out vec4 cover, out vec3 tint, out vec3 mean, out vec3 far, out vec2 surface) {
         float t = clamp(level, 1.0, 5.0) - 1.0;
         int i = int(min(floor(t), 3.0));
         float f = t - float(i);
         cover = mix(BRASS_COVER[i], BRASS_COVER[i + 1], f);
         tint = mix(BRASS_TINT[i], BRASS_TINT[i + 1], f);
         mean = mix(BRASS_MEAN[i].rgb, BRASS_MEAN[i + 1].rgb, f);
-        surface = mix(BRASS_MEAN_SURFACE[i], BRASS_MEAN_SURFACE[i + 1], f);
+        far = mean + mottle * (mix(BRASS_FAR[i].rgb, BRASS_FAR[i + 1].rgb, f) - mean);
+        surface = mix(BRASS_FAR_SURFACE[i], BRASS_FAR_SURFACE[i + 1], f);
     }
     const vec4 CHAIR_A = vec4(0.0, -27.884, 0.104528, 0.994522);
     const vec4 CHAIR_B = vec4(1.829, 24.64, -0.241922, -0.970296);
@@ -1832,16 +1841,17 @@ let ROOM_FRAG = """
             metal = 1.0;
             if (dark && window_metal.x >= 1.0) {
                 // Task 127's hardware in task 129's antique brass (BRASS_*): the tile laid by the
-                // world position from three sides, blended by the normal; the vertex's wear (its
-                // fraction about a half, room_shell::WEAR_SPAN) lifting the rank on the grip's
-                // rubbed parts and sinking it in the hollows. Under a millimetre to four a pixel
-                // the mottling fades to the level's mean, which the phone's tier takes alone.
+                // world position from three sides, blended by the normal; the rank sunk, and
+                // lifted by the vertex's wear (its fraction about a half, room_shell::WEAR_SPAN)
+                // on the grip's rubbed parts. Under a millimetre to four a pixel the mottling
+                // fades to the level's far mean, which the phone's tier takes alone.
                 vec4 cover;
                 vec3 tint;
                 vec3 mean;
+                vec3 far;
                 vec2 surface;
-                brass_level(window_metal.x, cover, tint, mean, surface);
-                albedo = mean;
+                brass_level(window_metal.x, window_metal.y, cover, tint, mean, far, surface);
+                albedo = far;
                 rough = surface.x;
                 metal = surface.y;
     #ifndef NO_SSAO
@@ -1851,7 +1861,8 @@ let ROOM_FRAG = """
                 w3 *= w3;
                 w3 /= w3.x + w3.y + w3.z;
                 vec2 t = texture(brass_tile, q.yz).rg * w3.x + texture(brass_tile, q.xz).rg * w3.y + texture(brass_tile, q.xy).rg * w3.z;
-                float rank = clamp(t.x + 0.35 * wear, 0.0, 1.0);
+                float rub = max(wear, 0.0);
+                float rank = clamp(t.x - BRASS_SINK + BRASS_RUB * rub * rub, 0.0, 1.0);
                 float deposit = 1.0 - smoothstep(cover.y - BRASS_EDGE, cover.y + BRASS_EDGE, rank);
                 float bare = smoothstep(1.0 - cover.x - BRASS_EDGE, 1.0 - cover.x + BRASS_EDGE, rank);
                 float tarnish = clamp(1.0 - deposit - bare, 0.0, 1.0);
@@ -1859,9 +1870,9 @@ let ROOM_FRAG = """
                           + (tarnish * BRASS_TARNISH + deposit * BRASS_DEPOSIT) * cover.z * tint) * (1.0 - 0.4 * t.y);
                 float fp = length(fwidth(p)) / shell.w;
                 float near = 1.0 - smoothstep(0.001, 0.004, fp);
-                albedo = mean + window_metal.y * near * (c - mean);
+                albedo = mix(far, mean + window_metal.y * (c - mean), near);
                 vec3 states = vec3(bare, tarnish, deposit);
-                rough = mix(rough, dot(states, BRASS_ROUGH) + 0.15 * t.y - 0.05 * max(wear, 0.0), near);
+                rough = mix(rough, dot(states, BRASS_ROUGH) + 0.15 * t.y - 0.05 * rub, near);
                 metal = mix(metal, dot(states, BRASS_METAL), near);
     #endif
                 rough = clamp(rough + window_metal.z, 0.05, 1.0);
@@ -2106,6 +2117,9 @@ let ROOM_FRAG = """
             bool absurd = max(max(color.r, color.g), color.b) > 64.0;
             result = broken ? vec4(1.0, 0.0, 0.0, 1.0) : (absurd ? vec4(1.0, 1.0, 0.0, 1.0) : vec4(result.rgb * 0.25, 1.0));
         }
+        // The tuner's views of the material as Cycles' passes have it (sRGB of the linear
+        // values): its diffuse colour (Diffuse Color) or its reflectance (Glossy Color).
+        if (ssao.y > 4.5) result = vec4(to_srgb(ssao.y < 5.5 ? albedo * (1.0 - metal) : fc), 1.0);
     #endif
     #endif
     }
@@ -2259,8 +2273,9 @@ let ROOM_FRAG = """
             if (kind > 11.5 && own > 0.25 && window_metal.x >= 1.0) {
                 vec4 cover;
                 vec3 tint;
+                vec3 mean;
                 vec2 surface;
-                brass_level(window_metal.x, cover, tint, albedo, surface);
+                brass_level(window_metal.x, window_metal.y, cover, tint, mean, albedo, surface);
             }
         } else if (kind > 14.5) {
             // The stove's glaze, its body's colour.

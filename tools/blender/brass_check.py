@@ -88,11 +88,11 @@ else:
 for ob in (handle, sphere, plate):
     ob.data.materials.clear()
     ob.data.materials.append(mat)
-# No wear on the sphere and plate: the vertex colour's g at a half.
+# No wear on the sphere and plate: the vertex colour's g at a half, in sRGB as the OBJ's.
 for ob in (sphere, plate):
     attr = ob.data.color_attributes.new("Color", "FLOAT_COLOR", "POINT")
     for d in attr.data:
-        d.color = (1.0, 0.5, 0.0, 1.0)
+        d.color_srgb = (1.0, 0.5, 0.0, 1.0)
 
 # A grey backdrop behind, a grey world, and two white cards.
 bpy.ops.mesh.primitive_plane_add(size=2.0, location=(mid.x, 1.62, mid.z), rotation=(math.radians(90), 0, 0))

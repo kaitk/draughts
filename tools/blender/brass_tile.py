@@ -67,7 +67,7 @@ def rank(v):
 
 
 def levels(tile_path):
-    # Solves brass.LEVELS from the tile, without wear: level 1 the specification's mix, level 5
+    # Solves brass.LEVELS from the tile, without the sink: level 1 the specification's mix, level 5
     # bronze B's mean; between them the mean's luminance steps evenly in log and its hue moves
     # from the one to the other by the tarnish's tint.
     import importlib.util
@@ -98,10 +98,15 @@ def levels(tile_path):
             tint = tint * hue / (m / (m @ lum))
         s = np.where(m <= 0.0031308, 12.92 * m, 1.055 * m ** (1 / 2.4) - 0.055)
         e, ta, d = bm.weights(t[..., 0], bm.COVER[lv])
+        # On the hardware the rank is sunk (bm.sunk): its far mean colour, roughness, metalness.
+        r = bm.sunk(t[..., 0])
+        far = bm.colour(r, t[..., 1], bm.COVER[lv], gain, tint).reshape(-1, 3).mean(0)
+        e, ta, d = bm.weights(r, bm.COVER[lv])
         rough = (e * bm.ROUGH[0] + ta * bm.ROUGH[1] + d * bm.ROUGH[2] + bm.SPECKLE_ROUGH * t[..., 1]).mean()
         metal = (e * bm.METAL[0] + ta * bm.METAL[1] + d * bm.METAL[2]).mean()
         print(f"    {lv}: ({bm.COVER[lv][0]:.2f}, {bm.COVER[lv][1]:.2f}, {gain:.3f}, ({tint[0]:.3f}, {tint[1]:.3f}, {tint[2]:.3f}),"
-              f" ({m[0]:.4f}, {m[1]:.4f}, {m[2]:.4f}), ({rough:.3f}, {metal:.3f})),   # sRGB {s[0]:.2f}, {s[1]:.2f}, {s[2]:.2f}")
+              f" ({m[0]:.4f}, {m[1]:.4f}, {m[2]:.4f}), ({far[0]:.4f}, {far[1]:.4f}, {far[2]:.4f}), ({rough:.3f}, {metal:.3f})),"
+              f"   # sRGB {s[0]:.2f}, {s[1]:.2f}, {s[2]:.2f}")
 
 
 def main():
