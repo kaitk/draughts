@@ -19,7 +19,8 @@ GOOSE_GFX_HEADLESS=1 build/blender/export --maps on   # room.obj, scene.json and
 `scene.py` writes `build/blender/<view>.png` (AgX), `.exr` (multilayer: the combined
 image and the diffuse passes), `-light.png` (the diffuse light alone, direct and
 indirect without the albedo: the light the app's shading puts on a white surface), and
-`.json` (the time and the means). Its flags: `--view NAME`, `--out PATH`, `--size WxH`
+`.json` (the time and the means). Its flags: `--view NAME` (or the tuner's `--plan-eye X,Y,Z
+--plan-at X,Y,Z --fov DEG`), `--out PATH`, `--size WxH`
 (960x540), `--samples N` (512, denoised), `--exposure EV` (0), `--textures on|off`,
 `--device gpu|cpu`, `--save-blend` (a `.blend` beside the render, to open in Blender),
 `--paper physical|look` (the wallpaper as the app's `--light physical` draws it, the default,
@@ -101,6 +102,26 @@ gold print in linear light, their roughness likewise. Without the maps these thr
 their mean albedos.
 `--textures off` gives every surface its mean albedo, matte, for the light alone; with
 textures on, `-light.png` takes off the gloss passes, which are not denoised.
+
+## The antique brass (a concept)
+
+The window's hardware as a mottled, aged brass instead of one flat metal, at one of five tone
+levels; not yet in the game.
+
+```sh
+python3 tools/blender/brass_tile.py                       # build/scratch/brass: the 64 mm tile
+python3 tools/blender/brass_tile.py --levels build/scratch/brass   # the levels' gains and tints
+Blender -b --python-exit-code 1 --python tools/blender/brass_check.py -- --level 3
+Blender -b --python-exit-code 1 --python tools/blender/scene.py -- --window-metal 3 --exposure 3.4 \
+    --plan-eye 4.3,6.75,1.55 --plan-at 4.5,7.4,1.64 --fov 20 --out build/scratch/handle   # export --box-window on
+```
+
+`brass_model.py` holds the model and the levels, `brass.py` the Cycles material (the tile
+box-projected by world position, so every part has the same scale), `brass_check.py` the
+controlled check: a sphere, the real handle and a plate under neutral light (`--level
+1..5|clean|flat`, `--turn on` mirrors the light, `--wear off`, `--micro off`). `scene.py
+--window-metal 1..5` puts it on `window_metal`; `flat`, the default, keeps the export's colour.
+`scene.py` takes the tuner's `--plan-eye`, `--plan-at` and `--fov` in place of a named view.
 
 ## Left to do
 

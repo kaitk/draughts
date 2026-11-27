@@ -7,6 +7,7 @@
 #       [--exposure 0] [--textures on|off] [--save-blend] [--wood ours|picks|SPEC.json]
 #       [--paper physical|look] [--paper-mask engraved|today] [--paper-ground R,G,B,ROUGH]
 #       [--paper-gold R,G,B,ROUGH] [--paper-detail L,P,G,R] [--eye X,Y,Z --at X,Y,Z --fov DEG]
+#       [--window-metal flat|1..5] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
 #
 # Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes), and
 # OUT-light.png: the diffuse light alone (direct + indirect, no albedo), the room's
@@ -29,7 +30,8 @@ def flags():
     f = {"scene": "build/blender", "view": "close", "out": None, "size": "960x540", "samples": "512",
          "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None,
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
-         "eye": None, "at": None, "fov": None}
+         "eye": None, "at": None, "fov": None,
+         "window-metal": "flat", "brass-tile": "build/scratch/brass"}
     i = 0
     while i < len(argv):
         name = argv[i][2:]
@@ -765,6 +767,12 @@ mats = {
     "rug": (textured("rug", os.path.join(REPO, "design/materials/rug.png"), 1.0, 1.0)
             if textures else diffuse("rug", RUG_MEAN)[0]),
 }
+if F["window-metal"] != "flat":
+    # Task 129's antique brass at a tone level (1 to 5), from brass_tile.py's tile.
+    sys.path.insert(0, os.path.dirname(__file__))
+    import brass
+    tile = F["brass-tile"] if os.path.isabs(F["brass-tile"]) else os.path.join(REPO, F["brass-tile"])
+    mats["window_metal"] = brass.antique_brass("window_metal", int(F["window-metal"]), tile)
 if F["wood"]:
     spec = F["wood"]
     if spec in ("ours", "picks"):
@@ -861,12 +869,19 @@ scene.world = world
 
 # ---- camera
 
-v = dict(S["views"][F["view"]]) if F["view"] in S["views"] else {}
-for key in ("eye", "at"):     # --eye X,Y,Z --at X,Y,Z --fov DEG: a view of one's own (Blender's metres)
-    if F[key]:
-        v[key] = nums(F[key], None)
-if F["fov"]:
-    v["fov"] = float(F["fov"])
+if "plan-eye" in F:
+    # The tuner's --plan-eye, --plan-at and --fov, turned into this frame (x mirrored).
+    tx, ty = S["table_at"][:2]
+    plan = [[float(c) for c in F[k].split(",")] for k in ("plan-eye", "plan-at")]
+    v = {"eye": [tx - plan[0][0], plan[0][1] - ty, plan[0][2]], "at": [tx - plan[1][0], plan[1][1] - ty, plan[1][2]],
+         "fov": float(F["fov"] or 50)}
+else:
+    v = dict(S["views"][F["view"]]) if F["view"] in S["views"] else {}
+    for key in ("eye", "at"):     # --eye X,Y,Z --at X,Y,Z --fov DEG: a view of one's own (Blender's metres)
+        if F[key]:
+            v[key] = nums(F[key], None)
+    if F["fov"]:
+        v["fov"] = float(F["fov"])
 eye, at = Vector(v["eye"]), Vector(v["at"])
 cam = bpy.data.cameras.new("cam")
 cam.sensor_fit = "VERTICAL"

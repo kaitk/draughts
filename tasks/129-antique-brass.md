@@ -57,6 +57,51 @@ Everything new is behind a light tuner flag, default off, with shots, until the 
    the wear per vertex, the level a tuner flag (`--window-metal`) that the Cycles export
    follows; the look tiers.
 
+## The concept in Cycles (2026-11-27)
+
+`tools/blender/brass_tile.py` makes the tile: 64 mm, 2048², periodic gradient noise at whole
+periods (so the game's bake can make the same): clouds of 4–13 mm, blots of 1.3–2.7 mm and
+flecks of 0.3–0.7 mm under a slight warp, ranked together into one field (r, 0 to 1 evenly),
+pits of 0.2–0.4 mm (g, about 1%), and the micro-finish's height (0.06–0.1 mm, 16 bits).
+`brass_model.py` holds the model and the levels; `brass.py` builds it in Cycles, box-projected
+by world position; `brass_check.py` renders the controlled check (a 40 mm sphere, the real
+handle cut from the room's mesh, a plate the housing's size, under a dark grey world and two
+white cards); `scene.py --window-metal 1..5` puts it in the room (`flat`, the default, is
+bronze B).
+
+The states' coverage is a threshold on the rank, with soft edges (0.25 in rank). The levels:
+the mean's luminance steps evenly in log from the specification's mix to bronze B; a darker
+level moves coverage toward the deposits, scales the tarnish and deposits by its gain and the
+bare metal by the gain to the 0.75, and tints the tarnish toward bronze B's hue
+(`brass_tile.py --levels` solves the gains and tints from the tile).
+
+| Level | Bare / tarnish / deposit | Gain | Mean, sRGB |
+|---|---|---|---|
+| 1 | 35 / 50 / 15 | 1.00 | 0.80, 0.70, 0.50 (the specification's values) |
+| 2 | 28 / 52 / 20 | 0.62 | 0.65, 0.55, 0.39 |
+| 3 | 22 / 52 / 26 | 0.39 | 0.53, 0.43, 0.30 |
+| 4 | 16 / 52 / 32 | 0.25 | 0.42, 0.33, 0.23 |
+| 5 | 10 / 52 / 38 | 0.17 | 0.34, 0.25, 0.17 (bronze B's mean) |
+
+Where it departs from the specification, and why:
+
+- The colour's mottling is pulled halfway to the level's mean: at full contrast the three
+  states read as camouflage or rust beside the target's quiet patina (tried first, with
+  sharper edges and a stronger warp: swirls like marble). Metalness and roughness keep their
+  full contrast, which breaks the highlights.
+- One field and thresholds instead of a base colour, surface and normal map: a level and the
+  wear are then a few constants.
+- The wear in Cycles is a stand-in: the grip found by where it stands (before the housing),
+  the convex parts by Cycles' pointiness, the recesses by a 4 mm occlusion. The game would
+  write it into the hardware's vertices.
+
+In the room (the handle view, EV +3.4) level 5 reads darker than flat bronze B at the same mean:
+its deposits are dielectric (metalness 0.1) and reflect little of the glass; level 4 reads
+nearest to the approved look. Renders: 1600 × 900 checks about 70 s each at 256 samples on a
+loaded Mac, the room views about 40 s.
+
+Page: `build/notes/antique-brass/index.html`.
+
 ## Acceptance criteria
 
 - [ ] The controlled checks in Cycles at about five tone levels, bronze B's among them, with
