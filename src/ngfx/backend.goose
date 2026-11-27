@@ -14,6 +14,7 @@ import std;
 import vec;
 import os;
 import gfx;
+import .app_ngfx;
 
 // renderer.c's.
 extern fn draughts_os() -> i64;

@@ -1,0 +1,11 @@
+// light_tune.build's C, with the photograph's upload through goose-ngfx (photo_ngfx.c) and
+// renderer.c's showing of the window that host_ngfx calls (with the version it reads), and
+// goose-ngfx's headers, as src/main/draughts_ngfx.build has them.
+c_sources = ["../src/native/background.c", "../src/native/photo.c", "../src/native/materials.c", "../src/native/tuner_jpeg.c",
+             "../src/native/display.c", "../src/native/launch.c", "../src/native/tuner_capture_stub.c",
+             "../src/native/tuner_landscape.c", "../src/native/photo_ngfx.c", "../src/native/renderer.c",
+             "../build/draughts_version.c"];
+c_sources_macos = ["../src/native/tuner_capture.m"];
+c_include = ["../build/ngfx", "../build/ngfx/goose-ngfx/native",
+             "../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
+             "../third_party/goose_gfx/src/gfx", "../third_party/goose_gfx/third_party/SDL/src/video/khronos"];

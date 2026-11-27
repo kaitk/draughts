@@ -241,6 +241,11 @@ commit before. A change to the ngfx build alone leaves gfx's binary the same: `c
   its first frame. Delete the marker `renderer-start.txt` in the storage folder after.
 - On ngfx, `--bench`'s waited frame and CPU time include waiting for a free drawable;
   compare the presented rate instead.
+- The room's views (the light tuner's) on ngfx: `tools/light_tune_ngfx.goose`, built like the
+  app with `NGFX` and `NGFX_SLANGC`, takes the tuner's flags and draws no panel; shoot it
+  headless with `--shot` beside `light_tune` at the same flags. gfx lights the room's
+  windows from its window light map (`render3d::window_map_on`), ngfx traces them a pixel:
+  compare against gfx with `--window-map off` for the rest.
 
 ### Memory on the Mac
 

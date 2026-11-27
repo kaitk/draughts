@@ -396,6 +396,13 @@ language (a Finnish or Estonian programmer), who should never need the body to k
   2D roots take `vec4`-sized fields only. A new `mat * vec4(...)` in GLSL needs its
   replacement in `ngfx_3d_shaders.py`'s `products()` (it asserts on one left). The 3D
   root holds 16 texture slots. Build the ngfx build after any shader change.
+- `glsl.slang`'s built-ins must do all GLSL's do: `textureSize` took no mip until
+  2026-11-27, so the floor mirror's mips (`PLANAR_MIP_FRAG`) read the wrong texels and the
+  room's floor showed white blotches on ngfx alone. A tool that draws the room on ngfx
+  (`tools/light_tune_ngfx.goose`) finds such gaps: shoot it against `light_tune`.
+- `src/ngfx/`'s entry (`gpu_ngfx.goose`) holds only what draws the 3D scene; the app's
+  drawers come with `backend.goose` (`app_ngfx.goose`), so a tool root can declare the
+  package without the app.
 - A new 3D piece goes in the file of `src/render3d/shaders/` for what it draws, the light
   any lit surface shares in `light.goose`; a new file is `namespace shaders;` and gets an
   `import .shaders.<file>;` in `src/render3d/shaders.goose`. A name defined in two files

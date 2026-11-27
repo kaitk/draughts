@@ -44,9 +44,10 @@ vec4 glsl_texture_grad(Tex t, vec2 uv, vec2 dx, vec2 dy) {
     return gpu_texture<Texture2D<float4>>(t.t).SampleGrad(gpu_sampler(t.s), uv, dx, dy);
 }
 vec4 glsl_texel_fetch(Tex t, ivec2 p, int lod) { return gpu_texture<Texture2D<float4>>(t.t).Load(int3(p, lod)); }
+// The size of mip `lod`, as GLSL's textureSize (shaders::PLANAR_MIP_FRAG reads the level above's).
 ivec2 glsl_texture_size(Tex t, int lod) {
-    uint w, h;
-    gpu_texture<Texture2D<float4>>(t.t).GetDimensions(w, h);
+    uint w, h, levels;
+    gpu_texture<Texture2D<float4>>(t.t).GetDimensions(uint(lod), w, h, levels);
     return ivec2(int(w), int(h));
 }
 
@@ -59,7 +60,7 @@ float glsl_texture(ShadowTex t, vec3 p) {
     return gpu_texture<Texture2D<float>>(t.t).SampleCmpLevelZero(gpu_sampler<SamplerComparisonState>(t.s), p.xy, p.z);
 }
 ivec2 glsl_texture_size(ShadowTex t, int lod) {
-    uint w, h;
-    gpu_texture<Texture2D<float>>(t.t).GetDimensions(w, h);
+    uint w, h, levels;
+    gpu_texture<Texture2D<float>>(t.t).GetDimensions(uint(lod), w, h, levels);
     return ivec2(int(w), int(h));
 }

@@ -24,7 +24,8 @@
 //
 // The panel is in sections that open and close (SECTIONS, kept for the session; Keys
 // lists the keys). A drag that starts on the panel holds the tree's and the probes' bakes
-// till it is let go, so a slider bakes once, not each step.
+// till it is let go, so a slider bakes once, not each step. tools/light_tune_ngfx.goose draws
+// the same through goose-ngfx, without the panel, for headless shots on both renderers.
 //
 //   scripts/mac.py tools/light_tune.goose
 //   cd tools && ../build/light_tune [--season autumn|winter|spring|summer (the season's room, rooms::for_season)]
@@ -903,7 +904,7 @@ let LOAD_STEPS = 3;
 let LOAD_BAR_W: f32 = 216.0;    // ui units, or 60% of the screen where that is less
 let LOAD_BAR_H: f32 = 4.0;
 
-fn loading_frame(c: ui::Context, scale: f32, done: f32) {
+fn loading_frame<O>(r3d: O&, c: ui::Context, scale: f32, done: f32) {
     let s = gfx::screen_size();
     let r = ui::rect(0.0, 0.0, s.x / scale, s.y / scale);
     // The window past the screen's edges, so its own padding and border don't show.
@@ -916,7 +917,7 @@ fn loading_frame(c: ui::Context, scale: f32, done: f32) {
         if done > 0.0 { ui::fill_rect(c, ui::rect(x, y, max(floor(w * done + 0.5), LOAD_BAR_H), LOAD_BAR_H), 0.5 * LOAD_BAR_H, ui::Color { 255, 255, 255, 230 }); }
     }
     ui::end(c);
-    ui::render(c);
+    r3d.draw_panel(c);
 }
 
 // The touch walk (--touch): one finger at a time, as gfx gives touches as the mouse. A
@@ -1068,7 +1069,7 @@ fn meter_text(m: Meter&, a: u8[..96]&, b: u8[..96]&, still: bool) {
 fn squares_of(st: Setup) -> i64 { if st.n == 1 { 10 } else { 8 } }
 
 // The board's pieces and the table's, put on the GPU.
-fn place(r3d: render3d::Own&, g: render3d::Gpu&, st: Setup) {
+fn place<O>(r3d: O&, g: render3d::Gpu&, st: Setup) {
     var s = view3d::Scene {};
     var squares: float4[200] = [float4_0; 200];
     var marks:   float4[100] = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100];
@@ -1091,11 +1092,11 @@ fn place(r3d: render3d::Own&, g: render3d::Gpu&, st: Setup) {
 }
 
 // place(), for main, where `place` is the placement's number.
-fn place_pieces(r3d: render3d::Own&, g: render3d::Gpu&, st: Setup) { place(r3d, g, st); }
+fn place_pieces<O>(r3d: O&, g: render3d::Gpu&, st: Setup) { place(r3d, g, st); }
 
 // The season's look in the material, its wood and finish as the app picks them
 // (draw3d::choose_look), baked with the table.
-fn put_look(r3d: render3d::Own&, g: render3d::Gpu&, season: i64, material: i64, st: Setup) {
+fn put_look<O>(r3d: O&, g: render3d::Gpu&, season: i64, material: i64, st: Setup) {
     let look = looks::of(season, material);
     if look == looks::SPRING { g.spring = 0; }
     let shown = looks::shown(look, g.spring);
@@ -1261,8 +1262,8 @@ fn report(r: rooms::Room, take: i64, flags: const u8[:]) {
 }
 
 // A square texture's first level as a binary PPM, its alpha left out.
-fn dump_rgb(t: gfx::Texture, side: i64, path: const u8[:]) {
-    let px = gfx::read_pixels(t);
+fn dump_rgb<O>(r3d: O&, t: gfx::Texture, side: i64, path: const u8[:]) {
+    let px = r3d.read_back(t);
     var out: u8[>..] = [];
     format(out, "P6\n", side, " ", side, "\n255\n");
     for i in side * side {
@@ -1508,7 +1509,26 @@ fn dump_glass_tile(prefix: const u8[:]) {
     guard write_file(str(prefix, "-lit.ppm"), lit[..]) else { abort("could not write the preview"); }
 }
 
+// On gfx; tools/light_tune_ngfx.goose runs tune() on goose-ngfx, its window and frame
+// (open_window..) its own.
 fn main() {
+    var r3d = default<render3d::Own>();
+    tune(r3d);
+}
+
+// gfx's window, frame and screen for tune().
+fn open_window(o: render3d::Own&, title: const u8[:], w: i64, h: i64, flags: i64) {
+    guard gfx::open(title, w, h, flags) else { abort(str("gfx: ", gfx::error())); }
+}
+fn close_window(o: render3d::Own&) { gfx::close(); }
+fn next_frame(o: render3d::Own&) -> bool { gfx::frame() }
+fn screen_of(o: render3d::Own&) -> gfx::Texture { gfx::screen() }
+fn save_screen(o: render3d::Own&, path: const u8[:]) -> bool { gfx::screenshot(path) }
+fn draw_panel(o: render3d::Own&, c: ui::Context) { ui::render(c); }
+fn panel_input(o: render3d::Own&, c: ui::Context) { ui::input_from_gfx(c); }
+fn read_back(o: render3d::Own&, t: gfx::Texture) -> u8[>..] { gfx::read_pixels(t) }
+
+fn tune<O>(r3d: O&) {
     let argv = args();
     let capture = flag_value(argv, "--gpu-capture");
     let capturing = capture > 0;
@@ -1552,8 +1572,8 @@ fn main() {
     draughts_choose_gpu();   // Vulkan on Windows, as the app draws
     tuner_landscape();
     let vsync = if has(argv, "--no-vsync") { gfx::NO_VSYNC } else { 0 };
-    guard gfx::open("Draughts: the room's light", w, h, gfx::WINDOW_RESIZABLE | vsync) else { abort(str("gfx: ", gfx::error())); }
-    defer gfx::close();
+    r3d.open_window("Draughts: the room's light", w, h, gfx::WINDOW_RESIZABLE | vsync);
+    defer r3d.close_window();
     // On a phone the whole screen, the status and navigation bars hidden, as the benches
     // frame it; the app itself keeps the bars (platform/android/res's theme).
     if on_phone { set_fullscreen(true); }
@@ -1562,7 +1582,6 @@ fn main() {
     }
 
     var g = default<render3d::Gpu>();
-    var r3d = default<render3d::Own>();
     // The park on the ground outside (--park): the view out's mesh with the lawn and the
     // trees' cards, its shaders the park's; autumn's leaves only in autumn.
     let park = pick(argv, "--park", PARK_NAMES, 0);
@@ -1572,12 +1591,12 @@ fn main() {
         render3d::tuned_frags[render3d::TUNED_OUTSIDE] = park_frag(part, false);
         render3d::tuned_frags[render3d::TUNED_OUTSIDE_HDR] = park_frag(part, true);
     }
-    render3d::setup(r3d, g, render3d::SAMPLES, if phone_tier { render3d::SHADOW_4 } else { render3d::SHADOW_16 });
+    r3d.setup(g, render3d::SAMPLES, if phone_tier { render3d::SHADOW_4 } else { render3d::SHADOW_16 });
     // --aa off|smaa|msaa: the scene's antialiasing, SMAA by default in the room (task 115:
     // cheaper on the tablet, the Pixel and the 4090; the app's board alone keeps 4× MSAA,
     // render3d::AA).
     let aa_way = pick(argv, "--aa", AA_NAMES, 1);
-    render3d::set_aa(r3d, g, AA_WAYS[aa_way]);
+    r3d.set_aa(g, AA_WAYS[aa_way]);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
     render3d::scatter_allowed = true;
     g.table = true;
@@ -1974,7 +1993,7 @@ fn main() {
     // a timed run, which keep their frames as they were.
     let loading = !(shot > 0 || walk_frames > 0 || walk_test > 0 || capturing || meter_for > 0.0);
     var load_step = if loading { 0 } else { LOAD_STEPS };
-    while gfx::frame() {
+    while r3d.next_frame() {
         frames++;
         let frame_at = gfx::time();
         let still = pattern == 0 || render3d::wind_kind == rooms::WIND_STILL || room.wind.y == 0.0;
@@ -1987,7 +2006,7 @@ fn main() {
         if meter_for > 0.0 && frame_at > meter_for { break; }
         let capture_frame = capturing && frames == 5;
         if capture_frame {
-            gfx::flush();
+            r3d.gpu_flush();
             guard tuner_capture_start(argv[capture]) else { abort("could not start Metal capture"); }
         }
         if walk_test > 0 { walk_test_input(frames); }
@@ -1997,19 +2016,19 @@ fn main() {
             let k = frames - WALK_PATH_START - 2;
             if k >= 0 && k < walk_count {
                 let name = str(argv[walk_frames], "/", if k < 10 { "00" } else if k < 100 { "0" } else { "" }, k, ".png");
-                guard gfx::screenshot(name) else { abort(str("could not save ", name)); }
+                guard r3d.save_screen(name) else { abort(str("could not save ", name)); }
             }
         }
         if shot > 0 && frames == shot_frame {
-            guard gfx::screenshot(argv[shot]) else { abort(str("could not save ", argv[shot])); }
+            guard r3d.save_screen(argv[shot]) else { abort(str("could not save ", argv[shot])); }
             if g.tree_ms > 0.0 { print("the tree baked in ", g.tree_ms, " ms"); }
             if g.tree.ms > 0.0 { print("the tree's geometry made in ", g.tree.ms, " ms"); }
             if g.tree.card_ms > 0.0 { print("the tree's card drawn in ", g.tree.card_ms, " ms (the GPU waited for)"); }
             let oak = flag_value(argv, "--dump-oak");
             if oak > 0 && g.room_baked {
-                dump_rgb(g.floor_albedo, g.room_side, str(argv[oak], "-floor.ppm"));
-                dump_rgb(g.wall_albedo, g.room_side, str(argv[oak], "-wall.ppm"));
-                dump_rgb(g.floor_normal, g.room_side, str(argv[oak], "-floor-normal.ppm"));
+                dump_rgb(r3d, g.floor_albedo, g.room_side, str(argv[oak], "-floor.ppm"));
+                dump_rgb(r3d, g.wall_albedo, g.room_side, str(argv[oak], "-wall.ppm"));
+                dump_rgb(r3d, g.floor_normal, g.room_side, str(argv[oak], "-floor-normal.ppm"));
             }
             if g.room_ms > 0.0 {
                 print("the room's oak baked in ", g.room_ms, " ms, ", g.room_side, " texels a side, ",
@@ -2075,7 +2094,7 @@ fn main() {
             ui::input_end(c);
             ui::set_delta_time(c, gfx::delta_time() as f32);
         } else {
-            ui::input_from_gfx(c);
+            r3d.panel_input(c);
         }
         // --print: the command line printed on the first frame too, as P prints it.
         var print_it = gfx::key_pressed("P") || (frames == 1 && has(argv, "--print"));
@@ -2122,7 +2141,7 @@ fn main() {
             }
             if gfx::key_pressed("M") { upscale = 1 - upscale; }
             if gfx::key_pressed("X") { render3d::hdr_allowed = !render3d::hdr_allowed; }
-            if gfx::key_pressed("2") { render3d::set_aa(r3d, g, render3d::aa_next(r3d, g.aa)); }
+            if gfx::key_pressed("2") { r3d.set_aa(g, r3d.aa_next(g.aa)); }
             if gfx::key_pressed("1") { render3d::depth_view = (render3d::depth_view + 1) % LENS_VIEWS.len; }
         }
         let flags = ui::WINDOW_BORDER | ui::WINDOW_TITLE | ui::WINDOW_MOVABLE | ui::WINDOW_SCALABLE;
@@ -2483,7 +2502,7 @@ fn main() {
             }
             if section(c, open, LENS) {
                 switch(c, "HDR (X)", render3d::hdr_allowed, ["off", "on"]);
-                note(c, str("Antialiasing (2): ", render3d::aa_name(r3d, g.aa)));
+                note(c, str("Antialiasing (2): ", r3d.aa_name(g.aa)));
                 note(c, if render3d::hdr_shown(g) { "  drawn in HDR" } else { "  drawn in 8 bits (the view or a tuner's view)" });
                 switch(c, "Depth of field", render3d::lens.on, ["off", "on"]);
                 switch(c, "Focus on the target", focus_on_target, ["no", "yes"]);
@@ -2668,7 +2687,7 @@ fn main() {
             flag_four(line, "--sun-eye", render3d::sun_look.veil);
             flag_four(line, "--glow", render3d::hdr_glow.look);
             format(line, " --glow-levels ", render3d::hdr_glow.levels);
-            format(line, " --aa ", render3d::aa_name(r3d, g.aa), " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
+            format(line, " --aa ", r3d.aa_name(g.aa), " --hdr ", on_off(render3d::hdr_allowed), " --lens-view ", LENS_VIEWS[render3d::depth_view], " --dof ", on_off(render3d::lens.on), " --focus ", if focus_on_target { 0.0 } else { exp2(focus_log) },
                    " --aperture ", aperture);
             flag_pair(line, "--dof-caps", float2 { near_cap, far_cap });
             if render3d::paint_relief != 1.0 { format(line, " --paint-relief ", render3d::paint_relief); }
@@ -2792,7 +2811,7 @@ fn main() {
         if load_step < LOAD_STEPS {
             if load_step == 1 { render3d::bake_tree(r3d, g); }
             if load_step == 2 { render3d::room_surfaces(r3d, g); }
-            loading_frame(c, scale, load_step as f32 / LOAD_STEPS);
+            loading_frame(r3d, c, scale, load_step as f32 / LOAD_STEPS);
             load_step++;
             if frames == 1 { draughts_first_frame(); }
             continue;
@@ -2807,7 +2826,7 @@ fn main() {
         }
         render3d::base_look = base_look;
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
-                       gfx::screen(), size);
+                       r3d.screen_of(), size);
         if walk.on {
             if g.tree_ms != last_tree_ms || g.light_ms != last_light_ms { bakes_walking += 1; }
             if shot < 0 || panel_in_shot {
@@ -2856,14 +2875,14 @@ fn main() {
             }
             ui::end(c);
         }
-        if !capturing && (shot < 0 || panel_in_shot) { ui::render(c); }
+        if !capturing && (shot < 0 || panel_in_shot) { r3d.draw_panel(c); }
         if capture_frame {
             // Metal records command buffers created and submitted within the capture.
-            gfx::flush();
+            r3d.gpu_flush();
             tuner_capture_stop();
             break;
         }
-        if meter.wait { gfx::flush(); }
+        if meter.wait { r3d.gpu_flush(); }
         if frames == 1 { draughts_first_frame(); }
         meter.in_loop += gfx::time() - frame_at;
     }
