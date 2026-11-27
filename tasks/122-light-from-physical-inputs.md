@@ -1236,6 +1236,31 @@ tuner's three views; the app's 3D renderer shots within a level in 3 of 13, as r
 not timed: a probe read is 14 texture reads, up to five a pixel. Page:
 `build/notes/board-light/index.html`; scratch `build/board-light/`.
 
+## ngfx at parity in the room (2026-11-27)
+
+The user: ngfx should look the same in the room view. No ngfx tool drew the tuner's views, so
+ngfx's room had been checked by compiling only. `tools/light_tune_ngfx.goose` now runs the
+tuner's `tune()` through goose-ngfx (its window, frame and screen are the one seam; no panel,
+headless shots), and `src/ngfx/`'s entry holds only the 3D scene's recorder, the app's
+drawers coming with `backend.goose`. Shot against `light_tune` at the same flags (autumn; the
+board, close, table-window, room, handle and niche views; both lights), ngfx lacked:
+
+- The board under `--board-probes` (b2f95c62): `r3d_hdr_lit_props*`, the probes' slot and
+  `PropsLightBlock` after the shell's in its block (75e722d7). The board view 161,330 pixels
+  over 32 → 8.
+- The floor's mirror: `glsl.slang`'s `textureSize` ignored its mip, so `PLANAR_MIP_FRAG`
+  built each mip from the wrong texels and the floor showed white blotches where its wax is
+  rougher, in both lights (the room view 117,770 pixels over 32 → 3,492; cf0c660d).
+- Nothing for the table's polish seeing the box (0d1f3fd4) or the window's metal and brass
+  (74620367, 2abce5ed, 74f6fdf4): the shared shader text and `TablePropsBlock` carry them.
+
+Left: gfx lights the walls and floor from its window light map (`window_map_on`, task 115),
+ngfx traces the windows a pixel; the casements' edges differ by up to 135 levels on about
+1,100 pixels in the table-window view. Against gfx with `--window-map off` every view is
+within 71 levels on at most 61 pixels. The default light's tuner shots and the app's renderer
+check (13 screens on each renderer) as before, within 3 levels. Page:
+`build/notes/ngfx-parity/index.html`; scratch `build/ngfx-parity/`.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

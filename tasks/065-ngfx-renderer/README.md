@@ -93,6 +93,10 @@ for a free drawable, so they aren't comparable with gfx's (`agents/testing.md`).
 - SMAA in the gfx build in place of 4× MSAA, if the tablet's numbers favour it.
 - Displays over 60 Hz on iOS need `CADisableMinimumFrameDurationOnPhone`, and
   `ios_perf.py`'s `HZ = 60` should read the display's rate.
+- The room's window light map (`render3d::window_map_on`, `window_map_pass`, the rooms'
+  `WINDOW_MAP_LEAVES` and phone `WINDOW_MAP` modules), the phone tier's fixed room shaders and
+  box map are gfx's alone: ngfx traces the windows a pixel. Shoot `tools/light_tune_ngfx.goose`
+  against `light_tune` (task 122, "ngfx at parity in the room").
 
 ## Acceptance criteria
 
