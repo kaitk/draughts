@@ -269,12 +269,13 @@ let WOOD_FINISHES: float4[3] = [float4 { 0.4, 0.52, 0.35, 0.33 }, float4 { 0.36,
 var OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07343 }, float2 { 0.01716, 0.12983 }];
 
 // Our floor's joints (--floor-joint): x the planks' edges rounded over this many millimetres,
-// y the rounding's slope at the joint, z how dark the joint is (1 as before). 2 mm at 0.5, half as
-// dark: the user's pick (2026-11-27, task 130); 0, 0, 1 the joints as before.
-var FLOOR_JOINT = float4 { 2.0, 0.5, 0.5, 0.0 };
-// The grain's share in our floor's wax film, the mirror's normal (--floor-film-grain): 0.05, the
-// window's glow nearly clean (2026-11-27, task 130; 0.25 before, and still without the wood's finish).
-var FLOOR_FILM_GRAIN: f32 = 0.05;
+// y the rounding's slope at the joint, z how dark the joint is (1 as before). 2 mm at 0.19, no dark
+// line: the user's, tuned in the tuner (2026-11-27, task 130); 0, 0, 1 the joints as before.
+var FLOOR_JOINT = float4 { 2.0, 0.19, 0.0, 0.0 };
+// The grain's share in our floor's wax film, the normal its reflection is seen along
+// (--floor-film-grain): none (the user, 2026-11-27, task 130; 0.25 before, and still without the
+// wood's finish).
+var FLOOR_FILM_GRAIN: f32 = 0.0;
 
 fn linear_of(c: f32) -> f32 {
     let v = c / 255.0;
@@ -1647,6 +1648,10 @@ fn main() {
         render3d::ssao_allowed = false;
         render3d::planar_allowed = false;
     }
+    // Under --light physical the floor's wax is matt (task 130): its reflection is the room's box
+    // through the film, as wide as Cycles' (the mirror's blur stops at its last mip, far too
+    // narrow and twice as bright); no mirror pass.
+    if physical { room.planar.x = 0.0; }
     room.planar = four(argv, "--planar", room.planar);
     render3d::planar_view = pick(argv, "--planar-view", PLANAR_VIEWS, 0);
     render3d::planar_scale = whole(argv, "--planar-size", 3) as i32;
@@ -1708,9 +1713,9 @@ fn main() {
     FLOOR_JOINT = four(argv, "--floor-joint", FLOOR_JOINT);
     FLOOR_FILM_GRAIN = number(argv, "--floor-film-grain", FLOOR_FILM_GRAIN);
     // --floor-shape CUP,TILT: the planks' cup (the slope at their edges) and tilt (each one's
-    // slope at most), in place of surfaces::LOOK's 0.012 and 0.01; under --light physical cupped
-    // more, 0.03, which looks more natural (the user, 2026-11-27, task 130).
-    let shape4 = four(argv, "--floor-shape", if physical { float4 { 0.03, 0.01, 0.0, 0.0 } } else { float4 { -1.0, -1.0, 0.0, 0.0 } });
+    // slope at most), in place of surfaces::LOOK's 0.012 and 0.01; under --light physical both
+    // 0.03, more natural (the user, 2026-11-27, task 130).
+    let shape4 = four(argv, "--floor-shape", if physical { float4 { 0.03, 0.03, 0.0, 0.0 } } else { float4 { -1.0, -1.0, 0.0, 0.0 } });
     render3d::floor_shape = float2 { shape4.x, shape4.y };
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;

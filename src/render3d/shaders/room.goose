@@ -1244,6 +1244,9 @@ let ROOM_FRAG = """
         // little of the grain's relief, which it fills.
         vec3 n_film = ng;
         float dull = 0.0;
+    #elif defined(ROOM_FLOOR) && defined(PHYSICAL_COAT)
+        // Without the mirror the room's box is seen through the same film.
+        vec3 n_film = ng;
     #endif
     #ifdef ROOM_WINDOW
         // Blend over the scene using premultiplied colour.
@@ -1419,7 +1422,7 @@ let ROOM_FRAG = """
             vec2 s = vec2(t.x + cup + tilt.x + shoulder.x, t.y + tilt.y + shoulder.y);
             vec2 suv = dir_a * s.x + dir_l * s.y;
             n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
-        #ifdef PLANAR_FLOOR
+        #if defined(PLANAR_FLOOR) || defined(PHYSICAL_COAT)
             vec2 sf = vec2(film_grain * t.x + 0.25 * shoulder.x + cup + tilt.x, film_grain * t.y + 0.25 * shoulder.y + tilt.y);
             vec2 sfuv = dir_a * sf.x + dir_l * sf.y;
             n_film = normalize(vec3(0.0, 1.0, 0.0) + u_dir * sfuv.x + v_dir * sfuv.y);
@@ -1428,7 +1431,7 @@ let ROOM_FRAG = """
                 // The picture's slopes along u and v, its planks' own; no tilt or cup of ours.
                 t = n4.xy * 2.0 - 1.0;
                 n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * t.x + v_dir * t.y);
-            #ifdef PLANAR_FLOOR
+            #if defined(PLANAR_FLOOR) || defined(PHYSICAL_COAT)
                 n_film = normalize(vec3(0.0, 1.0, 0.0) + 0.25 * (u_dir * t.x + v_dir * t.y));
             #endif
             }
@@ -2063,6 +2066,16 @@ let ROOM_FRAG = """
         // floor and the metals see the room sharply (SHARP_BOX): the panelling's grain turns
         // its normals too fast for a window's edge to hold.
         vec3 rv = reflect(-v, ns);
+        float ar_env = ar;
+    #if defined(ROOM_FLOOR) && defined(PHYSICAL_COAT) && !defined(PLANAR_FLOOR)
+        // The wood's finish: the box seen in the wax, along its film's normal (little of the
+        // grain and the joints' rounding, or their slopes swing a window's edges pixel by pixel)
+        // and as rough as the coat.
+        if (coat_w > 0.0) {
+            rv = reflect(-v, n_film);
+            ar_env = clamp(coat_r * coat_r, 0.05, 1.0);
+        }
+    #endif
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
     #ifdef PLANAR_FLOOR
         // The floor sees the mirror, through the wax's film over the oak, smoother than the
@@ -2091,7 +2104,10 @@ let ROOM_FRAG = """
     #else
     #ifdef SHARP_BOX
     #ifdef ROOM_FLOOR
-        float px = length(fwidth(rv));
+        // The pixel's spread of reflected directions from the flat floor's: the planks' tilt
+        // jumps at the joints, and its derivatives there, taken over pixels in pairs, dot
+        // the joints with alternate blurs.
+        float px = length(fwidth(reflect(-v, ng)));
     #else
         // The brass sees the room sharp over half its pixel's spread of directions (a
         // quarter sparkled on the hinges: the sun's leaves on the walls it shows), the gilt
@@ -2104,7 +2120,7 @@ let ROOM_FRAG = """
         // The pixel's spread of reflected directions, for the panes' rims in niche_seen; at most
         // 0.08, or the silhouettes' turning normals average the panes into a bright outline.
         float spread = min(length(fwidth(rv)), 0.08);
-        vec3 env = room_baked.x > 0.5 ? (window_hw ? niche_seen(p, v_local, rv, ar, spread) : room_reflection(p, v_local, rv, ar, nov, px))
+        vec3 env = room_baked.x > 0.5 ? (window_hw ? niche_seen(p, v_local, rv, ar, spread) : room_reflection(p, v_local, rv, ar_env, nov, px))
                                       : sh_eval(rv) * params.z;
     #else
         vec3 env = room_baked.x > 0.5 ? room_wide(v_local, rv) : sh_eval(rv) * params.z;

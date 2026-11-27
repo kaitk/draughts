@@ -54,9 +54,23 @@ roughness W); under `--light physical` the floor's mirror takes the coat's.
 - The tuner's panel (Wainscot, with the floor ours under `--light physical`): the planks' cup and
   tilt, the joints' rounding, its slope and darkness, the grain in the wax; P prints them.
 
+- [x] The reflection (2026-11-27). The user: too strong for a matt floor. Measured from the
+  corner by the window (`--plan-eye 7.91,1.72,1.197 --plan-at 7.72,3.249,-0.077 --fov 55`, EV
+  4.05) against Cycles with the same wax (`tools/blender/scene.py --wood ours`, 256 samples):
+  the window's glow over the floor beside it, sRGB grey, the mirror +56, Cycles +28, the room's
+  box +30. The mirror's blur stops at its last mip (`planar_seen`'s lod at `planar.w`), far
+  narrower than a 0.5 coat's lobe, so it drew a glossy floor's patch, twice as bright; and it
+  slid far for a small step (its lookup reprojected along the bent normal). Under `--light
+  physical` the mirror is off (`room.planar.x` 0: no pass, its targets never made): the floor sees the room's box
+  through the wax film, along the film's normal and at the coat's roughness, its blur's
+  footprint from the flat floor's reflection (the tilted planks' `fwidth(rv)` dotted the
+  joints). To record in `docs/decisions/rendering.md` when `--light physical` becomes the app's:
+  it replaces the floor's mirror in the standard and high tiers there.
+- [x] The user's own settings from the tuner as the defaults: the joints 2 mm at 0.19 with no
+  dark line, the cup and tilt 0.03, no grain in the wax.
+
 ## Open for the end
 
-- The dark joint as a line inside the window's reflection (stage 3).
 - 2b, the grain.
 - The Cycles export: the matt wax only; not the joints, cup and tilt.
 - The floor shader's cost (the rounding's filter), measured at the task's end.
