@@ -51,7 +51,7 @@ roughness W); under `--light physical` the floor's mirror takes the coat's.
   nearly flat (0.004, 0.003, the brief's new floor), more tilt (0.025, the glow's edge stepping
   block to block), more cup (0.03, each plank shaded across its width). The user picked more
   cup, more natural: 0.03 and 0.01 under `--light physical`. Wear left as it is. Later the
-  same day the user's defaults: no cup and a tilt of 0.014 (the tuner had 0.03 and 0.03).
+  same day the user's defaults: no cup and a tilt of 0.02 (the tuner had 0.03 and 0.03).
 - The tuner's panel (Wainscot, with the floor ours under `--light physical`): the planks' cup and
   tilt, the joints' rounding, its slope and darkness, the grain in the wax; P prints them.
 

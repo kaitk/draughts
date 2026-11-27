@@ -1739,8 +1739,8 @@ fn tune<O>(r3d: O&) {
     FLOOR_FILM_GRAIN = number(argv, "--floor-film-grain", FLOOR_FILM_GRAIN);
     // --floor-shape CUP,TILT: the planks' cup (the slope at their edges) and tilt (each one's
     // slope at most), in place of surfaces::LOOK's 0.012 and 0.01; under --light physical no cup
-    // and a tilt of 0.014 (the user, 2026-11-27, task 130; 0.03 and 0.03 before).
-    let shape4 = four(argv, "--floor-shape", if physical { float4 { 0.0, 0.014, 0.0, 0.0 } } else { float4 { -1.0, -1.0, 0.0, 0.0 } });
+    // and a tilt of 0.02 (the user, 2026-11-27, task 130; 0.03 and 0.03 before).
+    let shape4 = four(argv, "--floor-shape", if physical { float4 { 0.0, 0.02, 0.0, 0.0 } } else { float4 { -1.0, -1.0, 0.0, 0.0 } });
     render3d::floor_shape = float2 { shape4.x, shape4.y };
     // --floor-box CHEAP,WINDOWS: the matt floor's reflection without the mirror (render3d::floor_box),
     // the room's box blurred by the wax's lobe (0) or only its light and the windows (1).
