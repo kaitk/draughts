@@ -834,6 +834,14 @@ let ROOM_FRAG = """
     // back in the room's units) between them, softer the farther and longer up the wall than
     // across it at a grazing look, as a waxed floor's streaks are. After the gilt and brass
     // study's proposal: no cube map.
+    // The box's face nl at h (hw the world's), its edges soft_w soft and its sun blur softer.
+    vec3 box_face_seen(vec3 h, vec3 hw, vec3 nl, vec2 soft_w, float blur) {
+        #ifdef BOX_MAP
+        return box_albedo(h, nl, soft_w) * (box_map_at(h, nl) + box_sun(hw, nl, blur));
+        #else
+        return box_albedo(h, nl, soft_w) * (box_irradiance(h, nl) + box_sun(hw, nl, blur));
+        #endif
+    }
     // Every edge in it, the windows' and the box's, blurred alike: as wide as the lobe is where
     // it meets the box. win and rect: the window over the box alone and how much it covers.
     vec3 room_seen_parts(vec3 p, vec3 lp, vec3 r, vec3 lr, float alpha, float nov, float px, out vec3 win, out float rect) {
@@ -853,11 +861,21 @@ let ROOM_FRAG = """
         // than across it at a grazing look.
         float spread = 0.01 + 1.2 * alpha + 2.0 * px;
         vec2 soft_w = vec2(1.0, 1.0 + 3.0 * (1.0 - nov)) * (0.01 * metre + t * spread);
-        #ifdef BOX_MAP
-        vec3 c = box_albedo(h, nl, soft_w) * (box_map_at(h, nl) + box_sun(hw, nl, t * spread));
-        #else
-        vec3 c = box_albedo(h, nl, soft_w) * (box_irradiance(h, nl) + box_sun(hw, nl, t * spread));
-        #endif
+        vec3 c = box_face_seen(h, p + r * t, nl, soft_w, t * spread);
+        // The edge to the next face the ray would meet (a corner, the ceiling's or floor's
+        // edge), as soft as the rest: within soft of it, half of each face's light at the edge.
+        float t2 = max(min(max(tx, ty), min(max(ty, tz), max(tx, tz))), 0.0);
+        if (t2 < big) {
+            vec3 nl2 = t2 == ty && t != ty ? vec3(0.0, lr.y > 0.0 ? -1.0 : 1.0, 0.0)
+                     : (t2 == tx && t != tx ? vec3(lr.x > 0.0 ? -1.0 : 1.0, 0.0, 0.0) : vec3(0.0, 0.0, lr.z > 0.0 ? -1.0 : 1.0));
+            vec3 h2 = lp + lr * t2;
+            float d = abs(dot(h2 - h, abs(nl2)));
+            float s = nl.y != 0.0 || nl2.y != 0.0 ? soft_w.y : soft_w.x;
+            if (d < s) {
+                vec3 c2 = box_face_seen(h2, p + r * t2, nl2, soft_w, t2 * spread);
+                c = mix(c, c2, 0.5 - 0.5 * smoothstep(0.0, s, d));
+            }
+        }
         win = c;
         // The windows, on the window wall.
         if (t != tz || lr.z > 0.0) return c;

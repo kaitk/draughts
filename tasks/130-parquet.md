@@ -79,7 +79,8 @@ roughness W); under `--light physical` the floor's mirror takes the coat's.
   `s`) and the sun on it is softer by the same (`shell_open_soft`'s `extra`); the metals keep
   theirs, their lobe narrow. The tuner's `--floor-box 1,G` (the panel's "only the windows sharp")
   shows the cheap way instead: the probes' light that way and the windows' shapes at G. Coat weights
-  0.75 and 1.0 tried for a stronger window glow. Page: `build/notes/floor-matt/blur/`. The user's
+  0.75 and 1.0 tried for a stronger window glow. The box's own edges, a corner and the ceiling's, were still a
+  hard line in the floor (each face lit apart): now as soft, half of each face's light at the edge. Page: `build/notes/floor-matt/blur/`. The user's
   verdict waits; then Cycles at the door view.
 
 ## Open for the end
