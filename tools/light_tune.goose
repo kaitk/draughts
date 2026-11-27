@@ -99,7 +99,7 @@
 //       (with --paper-metal the wallpaper close up, render3d::paper_detail: the print's sharp outline and lines, the powder's
 //       tone and flecks, the paper's grain, the relief, each 1 as made, 0 off; 0,0,0,0 the flat print)]
 //       [--paper-mask today|engraved (the wallpaper's mask: the app's, or with veins drawn in its leaves and petals,
-//       design/materials/wallpaper_engraved.png; today)] [--table-wood R,G,B,ROUGH (the table
+//       design/materials/wallpaper_engraved.png; engraved under --light physical, else today)] [--table-wood R,G,B,ROUGH (the table
 //       top's wood, sRGB, and its polish's roughness; tables::Table.wood)] [--table-coat X,Y,Z,W (its polish,
 //       tables::Table.coat: y its strength)] [--sun-color height|key (--light physical: the sun's colour by its
 //       height through a clear sky, or the key's at 0.6 of its saturation; height)]
@@ -1773,7 +1773,8 @@ fn main() {
         lace_at[w + 1] = spare_laces.len;
     }
     g.lace_way = pick(argv, "--lace", LACE_WAYS, 0);
-    if pick(argv, "--paper-mask", PAPER_MASKS, 0) == 1 {
+    // The engraved mask by default under --light physical (the user, 2026-11-27).
+    if pick(argv, "--paper-mask", PAPER_MASKS, if physical { 1 } else { 0 }) == 1 {
         if !read_file("../design/materials/wallpaper_engraved.png", engraved_paper) { abort("--paper-mask: no design/materials/wallpaper_engraved.png"); }
         render3d::paper_png = engraved_paper[..];
     }
