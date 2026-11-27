@@ -118,7 +118,7 @@ The values to put in place of these wherever they are left in this folder:
 
 | Placeholder | Value |
 | --- | --- |
-| `{DEVELOPER}` | Gideonic: the developer name on Play; on the App Store an individual's legal name is shown instead |
+| `{DEVELOPER}` | Gideonic: the developer name on Play; on the App Store an individual's legal name is shown instead, and is the copyright's (`app-store.md`) |
 | `{CONTACT_EMAIL}` | kaitkasak@proton.me: the contact address both stores show or ask for, also the Play developer account's login |
 | `{PRIVACY_URL}` | https://kaitk.github.io/draughts/privacy/ (from the `gh-pages` branch) |
 | `{SUPPORT_URL}` | https://kaitk.github.io/draughts/ (the App Store's support page, `gh-pages`) |

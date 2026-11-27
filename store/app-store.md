@@ -35,7 +35,7 @@ The counts are Python's `len`, and bytes for the keywords, as Apple counts them;
 | Secondary category | | None |
 | Age rating | | 4+ (below) |
 | Content rights | | No third-party content: the pictures (made with AI, ChatGPT) are the app's own, and the fonts are under the OFL |
-| Copyright | | `2026 Gideonic` (Apple adds the ©); for an individual account the seller shown is the legal name |
+| Copyright | | `2026 Kait Kasak` (Apple adds the ©): the legal name, as the seller an individual account shows, so the owner and the seller agree (Guideline 5.6.2; was `2026 Gideonic` until 0.9.4, 2026-11-27) |
 | Privacy Policy URL | required | `https://kaitk.github.io/draughts/privacy/` |
 | Support URL | required | `https://kaitk.github.io/draughts/` (a support page with the contact email, live 2026-11-09) |
 | Marketing URL | optional | None, or the same site |
