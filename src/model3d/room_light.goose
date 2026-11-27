@@ -1575,6 +1575,32 @@ fn lace_niche(sun: Sun, bounce: Bounce&, k: i64) -> float3 {
     return sum * (1.0 / max(area, 1e-6));
 }
 
+// The light leaving the window wall's face by p (the plan's x and height), over pi: its cells'
+// (the bounces' and the sun's thrown back), bilinear between their middles, the niches'
+// holes left out; what the lace's window side sees of the wall (render3d::lace_on_vertices).
+fn window_wall_light(sun: Sun, bounce: Bounce&, p: float3) -> float3 {
+    let fw = room_shell::LIBRARY.walls[room_shell::FAR_WALL].a.x / FLOOR_NX;
+    let wh = room_shell::LIBRARY.ceiling / WALL_NH;
+    let gain = sun.bounce_gain / PI;
+    let gx = clamp(p.x / fw - 0.5, 0.0, FLOOR_NX - 1.0);
+    let gh = clamp(p.z / wh - 0.5, 0.0, WALL_NH - 1.0);
+    let i0 = min(floor(gx) as i64, FLOOR_NX - 2);
+    let k0 = min(floor(gh) as i64, WALL_NH - 2);
+    var sum = float3_0;
+    var weight: f32 = 0.0;
+    for q in 4 {
+        let i = i0 + (q & 1);
+        let k = k0 + (q >> 1);
+        let c = WIN_C0 + k * FLOOR_NX + i;
+        let cell .= bounce.cells[c];
+        guard cell.area > 0.0 else { continue; }
+        let w = (1.0 - abs(gx - i)) * (1.0 - abs(gh - k)) * cell.area;
+        sum = sum + (bounce.seen[c] + bounce.sun[c] * (gain / cell.area)) * w;
+        weight += w;
+    }
+    return sum * (1.0 / max(weight, 1e-6));
+}
+
 // The window whose lace or niche is nearest p (the plan's).
 fn window_near(p: float3) -> i64 {
     let wins = windows();

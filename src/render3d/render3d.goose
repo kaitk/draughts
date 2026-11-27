@@ -2681,8 +2681,8 @@ fn probes_on_lace() {
 }
 // The lace's light on each vertex under room_light::lace_described (task 124), after each
 // bake. On its window side what it sees: the glazing's sky, its niche's faces and the window
-// wall (room_light::lace_views, kept in the vertex's box at the mesh's making; the wall's light
-// the probes' there toward the window). On its room side the probes' light half a cell out,
+// wall (room_light::lace_views, kept in the vertex's box at the mesh's making; the wall's own
+// light by it, room_light::window_wall_light). On its room side the probes' light half a cell out,
 // less what the folds beside it hide (FOLD_HIDDEN over FOLD_DEEP of its corner's x, its
 // hidden share), where it sees the cloth beside it: through its open part the wall's light,
 // its thread the room's light sent back and what the cloth there throws on into the room
@@ -2742,7 +2742,7 @@ fn lace_into_mesh<O>(o: O&, g: Gpu&) {
         let v .= window_verts[i];
         guard floor(v.mat + 0.001) == surfaces::MAT_LACE else { continue; }
         let p, nrm = plan_of(v.pos, v.normal);
-        let wall = probe_light(p, -1.0);
+        let wall = room_light::window_wall_light(lace_sun, light_bounce, p);
         let back = sky * v.box.x + niches[room_light::window_near(p)] * (v.box.y - v.box.x) + wall * (1.0 - v.box.y);
         let room = probe_light(float3 { p.x, face, p.z }, 1.0);
         let hidden = min(v.corner.x * (room_shell::FOLD_HIDDEN / room_shell::FOLD_DEEP), 1.0);
