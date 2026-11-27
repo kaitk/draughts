@@ -221,8 +221,12 @@ It has no network code, no accounts, no ads, no purchases, no links out of the a
 
 Two things change by design. The background's season follows the date unless a season is chosen in Settings, Theme, so the picture depends on the day. Sound is off until turned up in Settings, Sound.
 
-This build reads no launch arguments or environment variables: the development options used to make screenshots and run tests are left out of it.
+This build reads no launch arguments or environment variables: the development options used to make screenshots and run tests are left out of it. Its exact source is tagged ios-0.9.4 (https://github.com/kaitk/draughts/tree/ios-0.9.4), and docs/development.md there says how to build it ("Run on iOS"; the App Store's build is scripts/ios.py --release, on a Mac with Xcode).
 ```
+
+The tag names the commit each upload was built from (`ios-0.9.4` at `343a924c`, 0.9.4 (6),
+uploaded 2026-11-27), so the notes' link shows the very source reviewed; `v0.9.4` stays on
+the desktop and Android release.
 
 ### Rejections
 
