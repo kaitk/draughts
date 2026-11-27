@@ -21,10 +21,16 @@ image and the diffuse passes), `-light.png` (the diffuse light alone, direct and
 indirect without the albedo: the light the app's shading puts on a white surface), and
 `.json` (the time and the means). Its flags: `--view NAME`, `--out PATH`, `--size WxH`
 (960x540), `--samples N` (512, denoised), `--exposure EV` (0), `--textures on|off`,
-`--device gpu|cpu`, `--save-blend` (a `.blend` beside the render, to open in Blender).
+`--device gpu|cpu`, `--save-blend` (a `.blend` beside the render, to open in Blender),
+`--paper physical|look` (the wallpaper as the app's `--light physical` draws it, the default,
+with its engraved mask, `--paper-mask engraved|today`), `--wood ours|picks|SPEC.json` (the
+panelling, the table and chairs, and the floor as finished woods, as the tuner's `--woods`;
+the specs in `woods/`).
 Hold the GPU lock while rendering (`agents/perf.md`).
 
 The exporter's flags set the room as the tuner's do: `--table-at X,Y`, `--sun AZ,HEIGHT`,
+`--sun-take K,H` (the sun's strength over the clear sky's and the height its colour is taken
+as: `--light physical`'s autumn sun, 0.25 and 8 degrees, by default; 1,-1 the clear sky's),
 `--window-turn DEG`, `--table-turn DEG`, `--lace-hang M`, `--books`, `--chairs`, `--rug
 on|off`, `--backs on|off` (the casements' backs, which the room's mesh leaves out since they
 face away from the room; on, or the space between the panes takes too little light). `--maps on` also makes, on the GPU with the app's own code, the pictures the

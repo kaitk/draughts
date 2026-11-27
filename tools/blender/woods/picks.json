@@ -1,0 +1,67 @@
+{
+ "oak": {
+  "tex": "build/wood-candidates/oak_veneer_01",
+  "mm": 1830,
+  "turn": 0,
+  "anchors": [
+   "432719",
+   "69432B",
+   "90603D"
+  ],
+  "rough": [
+   0.4,
+   0.52
+  ],
+  "coat": [
+   0.35,
+   0.33
+  ],
+  "bump": [
+   6e-05,
+   0.35
+  ]
+ },
+ "table": {
+  "tex": "build/wood-candidates/sapele_veneer",
+  "mm": 500,
+  "anchors": [
+   "351C13",
+   "583020",
+   "875034"
+  ],
+  "rough": [
+   0.28,
+   0.4
+  ],
+  "coat": [
+   0.78,
+   0.2
+  ],
+  "bump": [
+   2e-05,
+   0.18
+  ]
+ },
+ "floor": {
+  "tex": "build/wood-candidates/herringbone_parquet",
+  "mm": 3400,
+  "anchors": [
+   "452D1A",
+   "6A472D",
+   "90653C"
+  ],
+  "rough": [
+   0.36,
+   0.48
+  ],
+  "coat": [
+   1.0,
+   0.08
+  ],
+  "bump": [
+   4e-05,
+   0.28
+  ],
+  "coat_bump": 0.6
+ }
+}

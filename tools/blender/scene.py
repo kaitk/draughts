@@ -4,9 +4,9 @@
 #
 #   Blender -b --python-exit-code 1 --python tools/blender/scene.py -- [--scene build/blender]
 #       [--view close] [--out build/blender/close] [--size 960x540] [--samples 512]
-#       [--exposure 0] [--textures on|off] [--save-blend] [--wood SPEC.json]
-#       [--paper look|physical] [--paper-ground R,G,B,ROUGH] [--paper-gold R,G,B,ROUGH]
-#       [--paper-detail L,P,G,R] [--eye X,Y,Z --at X,Y,Z --fov DEG]
+#       [--exposure 0] [--textures on|off] [--save-blend] [--wood ours|picks|SPEC.json]
+#       [--paper physical|look] [--paper-mask engraved|today] [--paper-ground R,G,B,ROUGH]
+#       [--paper-gold R,G,B,ROUGH] [--paper-detail L,P,G,R] [--eye X,Y,Z --at X,Y,Z --fov DEG]
 #
 # Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes), and
 # OUT-light.png: the diffuse light alone (direct + indirect, no albedo), the room's
@@ -28,7 +28,7 @@ def flags():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     f = {"scene": "build/blender", "view": "close", "out": None, "size": "960x540", "samples": "512",
          "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None,
-         "paper": "look", "paper-ground": None, "paper-gold": None, "paper-detail": None,
+         "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None}
     i = 0
     while i < len(argv):
@@ -452,10 +452,11 @@ def wallpaper(name):
     return m
 
 
-# --paper physical: the wallpaper as the app draws it under --light physical (ROOM_FRAG's paper
-# under PHYSICAL_COAT and paper_close; the light tuner's PHYSICAL_PAPER_GROUND, _GOLD and
-# _DETAIL): the print a metal, bronze powder, its colour f0, over a matt ground that reflects
-# nothing. --paper-ground and --paper-gold: sRGB and roughness; --paper-detail LINES,POWDER,
+# --paper physical (the default; look the paper before task 122's): the wallpaper as the app
+# draws it under --light physical (ROOM_FRAG's paper under PHYSICAL_COAT and paper_close; the
+# light tuner's PHYSICAL_PAPER_GROUND, _GOLD and _DETAIL): the print a metal, bronze powder, its
+# colour f0, over a matt ground that reflects nothing. Its mask the engraved one, as the app's
+# under --light physical (--paper-mask today the plain one). --paper-ground and --paper-gold: sRGB and roughness; --paper-detail LINES,POWDER,
 # GRAIN,RELIEF as the tuner's (0,0,0,0 the flat print). Cycles needs no fade with distance:
 # its samples average the detail over a pixel.
 PAPER_GROUND = [0.226, 0.207, 0.261, 0.66]
@@ -495,7 +496,7 @@ def paper_texture():
     # One float picture: r the mask, g the grain, b the mask blurred about as its mip 1.5
     # (ROOM_FRAG's `wide`: a tileable 3-texel box twice), sampled linearly so the outline's
     # cut at 0.4 falls between texels.
-    img = bpy.data.images.load(PAPER_MASK, check_existing=True)
+    img = bpy.data.images.load(PAPER_MASK_PHYSICAL, check_existing=True)
     side = img.size[0]
     m = np.asarray(img.pixels[:], np.float32).reshape(side, side, 4)[:, :, 0]
     wide = m
@@ -602,6 +603,8 @@ FLOOR_NORMAL = os.path.join(scene_dir, "floor_normal.png")
 WALL_ALBEDO = os.path.join(scene_dir, "wall_albedo.png")
 WALL_NORMAL = os.path.join(scene_dir, "wall_normal.png")
 PAPER_MASK = os.path.join(REPO, "design/materials/wallpaper_mask.png")
+PAPER_MASK_PHYSICAL = (PAPER_MASK if F["paper-mask"] == "today"
+                       else os.path.join(REPO, "design/materials/wallpaper_engraved.png"))
 textures = F["textures"] == "on"
 maps = textures and os.path.exists(ALBEDO_MAP) and os.path.exists(NORMAL_MAP)
 if textures and not maps:
@@ -640,10 +643,12 @@ def floor_wax(name, color):
 # (build/notes/wood-materials/): each surface's picture, ours (the maps above) or a downloaded
 # texture at its physical size, optionally stained to three sRGB anchors by its luminance (the
 # grain kept), under a Principled base and a clear coat. SPEC: {"oak"|"table"|"floor": {"tex":
-# DIR or "ours", "mm": its side, "turn": 90, "anchors": [3 hex] or null, "rough": [lo, hi],
-# "coat": [weight, roughness], "bump": [distance, strength], "spec": the base's Specular IOR Level
-# (0.5 if left out; 0 the wood matte under its coat, as the app's coat model and coated() take it),
-# "coat_bump": the share of the bump the coat follows (0 if left out: the coat flat)}}.
+# DIR (from the repository's root if relative) or "ours", "mm": its side, "turn": 90, "anchors":
+# [3 hex] or null, "rough": [lo, hi], "coat": [weight, roughness], "bump": [distance, strength],
+# "spec": the base's Specular IOR Level (0 if left out: the wood matte under its coat, as the
+# app's coat model and coated() take it; the docx's 0.5 gave a second, rough reflection), "coat_bump":
+# the share of the bump the coat follows (0 if left out: the coat flat)}}. --wood ours and
+# --wood picks: tools/blender/woods/ours.json and picks.json, the app's --woods ours and picks.
 
 def finished_wood(name, w, ours_map, ours_uv):
     m, nt, b = diffuse(name, (0.5, 0.5, 0.5))
@@ -653,6 +658,7 @@ def finished_wood(name, w, ours_map, ours_uv):
         rough_src, height = col.outputs["Alpha"], None
         lo, hi = map_percentiles(ours_map)
     else:
+        w = dict(w, tex=os.path.join(REPO, w["tex"]))
         mm = w["mm"] / 1000.0
         if name == "oak":
             uv = nt.nodes.new("ShaderNodeTexCoord")
@@ -713,7 +719,7 @@ def finished_wood(name, w, ours_map, ours_uv):
             cb.inputs["Strength"].default_value = w["bump"][1] * w["coat_bump"]
             k.link(height, cb.inputs["Height"])
             k.link(cb.outputs["Normal"], b.inputs["Coat Normal"])
-    b.inputs["Specular IOR Level"].default_value = w.get("spec", 0.5)
+    b.inputs["Specular IOR Level"].default_value = w.get("spec", 0.0)
     b.inputs["IOR"].default_value = 1.5
     b.inputs["Coat Weight"].default_value, b.inputs["Coat Roughness"].default_value = w["coat"]
     b.inputs["Coat IOR"].default_value = 1.5
@@ -758,7 +764,10 @@ mats = {
             if textures else diffuse("rug", RUG_MEAN)[0]),
 }
 if F["wood"]:
-    WOOD = json.load(open(F["wood"]))
+    spec = F["wood"]
+    if spec in ("ours", "picks"):
+        spec = os.path.join(REPO, "tools/blender/woods", spec + ".json")
+    WOOD = json.load(open(spec))
     f = SF["wall_field"]
     lo_u, lo_v, su, sv = SF["floor_laid"]
     if "oak" in WOOD:

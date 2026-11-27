@@ -11,7 +11,8 @@
 //       [--window-turn DEG (12)] [--table-turn DEG (25)] [--lace-hang M (0.15)] [--books on|off]
 //       [--chairs on|off] [--rug on|off] [--backs on|off (the casements' backs, which the room's mesh leaves
 //       out: room_scene::casement_backs; on)] [--sun-color height|key (the sun's colour by its height, or the
-//       key's at 0.6 of its saturation: room_scene::light_of; height)]
+//       key's at 0.6 of its saturation: room_scene::light_of; height)] [--sun-take K,H (the sun's strength over
+//       the clear sky's and the height its colour is taken as, -1 its own: --light physical's autumn, 0.25,8)]
 //
 // --maps on also writes, from the app's own code on the GPU, the table's wood maps
 // (table_albedo.png, table_normal.png), the panelling oak's field (wall_albedo.png,
@@ -404,6 +405,7 @@ fn main() {
     let rug = switch(argv, "--rug", true);
     let color_at = flag_value(argv, "--sun-color");
     room_scene::sun_by_height = !(color_at > 0 && argv[color_at] == "key");
+    room_scene::sun_take = two(argv, "--sun-take", room_scene::sun_take);
     room_shell::hang_lace(number(argv, "--lace-hang", room_shell::LACE_HANG));
     room_shell::LIBRARY.table = table_at;
     guard make_dir(out_dir) else { abort(str("could not make ", out_dir)); }

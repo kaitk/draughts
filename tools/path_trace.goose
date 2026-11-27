@@ -2,7 +2,7 @@
 // against. Every triangle of the shell, the window's glass and lace, the games table and
 // its two chairs, made by model3d as the light tuner makes them at its default placement
 // (the sun at azimuth 0 and 15 degrees up, the window wall turned 12 degrees, the table 25,
-// the chairs on the rug). Lambertian surfaces with room_light's albedos; the sun by a
+// the chairs on the rug; the sun as --light physical's autumn, room_scene::sun_take). Lambertian surfaces with room_light's albedos; the sun by a
 // shadow ray at every hit toward a point of its disc (0.53 degrees across, as Cycles'),
 // through the panes and the lace; the sky's radiance for a ray leaving through a window's
 // outer opening, past both casements (their panes, frames and bars); up to 10 bounces. The
@@ -14,9 +14,10 @@
 // Light is "over pi", the shaders' units: the irradiance on a white surface divided by pi.
 //
 //   goose build -o build/path_trace tools/path_trace.goose          (from the repository's root)
-//   build/path_trace points [--samples 4096] [--backs on|off]
+//   build/path_trace points [--samples 4096] [--backs on|off] [--sun-clear]
 //   build/path_trace picture VIEW [--size 480x270] [--samples 64] [--light] [--exposure EV (1.4)] [--backs on|off]
-//       [--out build/path_traced/VIEW]
+//       [--out build/path_traced/VIEW] [--sun-clear]
+// --sun-clear: the clear sky's sun at its own height's colour, as before the autumn haze.
 //
 // points: named points on the chairs and the table, each its height, the light without the
 // sun's own (rgb) and the sun's own (rgb). picture: a view of tools/room_scene.goose's
@@ -952,6 +953,7 @@ fn main() {
     let t0 = clock();
     let backs_at = flag_at(argv, "--backs");
     casement_backs = !(backs_at > 0 && argv[backs_at] == "off");
+    for a in argv { if a == "--sun-clear" { room_scene::sun_take = float2 { 1.0, -1.0 }; } }
     build_scene();
     print(tris.len, " triangles in ", (clock() - t0) * 1000.0, " ms");
     if mode == "points" {
