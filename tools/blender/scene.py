@@ -1044,8 +1044,8 @@ if F["view-out"] == "pictures":
 
     # The lawn: --lawn's albedo, linear (grass with some fallen leaves; the app's LAWN colour, a
     # yellow of B/R 0.06 in linear light, sent a yellow bounce up onto the ceiling).
-    lawn = diffuse("lawn", [float(v) for v in F["lawn"].split(",")])[0]
-    mesh_of("lawn", [(-300, cy, lawn_z), (300, cy, lawn_z), (300, 400, lawn_z), (-300, 400, lawn_z)],
+    lawn = diffuse("outside_lawn", [float(v) for v in F["lawn"].split(",")])[0]
+    mesh_of("outside_lawn", [(-300, cy, lawn_z), (300, cy, lawn_z), (300, 400, lawn_z), (-300, 400, lawn_z)],
             [(0, 1, 2, 3)], [(0, 0)] * 4, lawn)
     # The tree line, its picture's top row at v 1 (Blender's images are bottom up).
     verts, uvs, faces = [], [], []
@@ -1057,12 +1057,12 @@ if F["view-out"] == "pictures":
             verts.append((cx + 110 * d.x, cy + 110 * d.y, lawn_z + h))
             uvs.append((k, j))
     faces = [(i, i + 1, N + 2 + i, N + 1 + i) for i in range(N)]
-    mesh_of("band", verts, faces, uvs, picture_material("band", "outside_band.png"))
+    mesh_of("outside_band", verts, faces, uvs, picture_material("outside_band", "outside_band.png"))
     foot = Vector((cx, cy)) + toward(22) * 70
     side = toward(22 + 90) * 14.9
     verts = [(foot.x - side.x, foot.y - side.y, lawn_z), (foot.x + side.x, foot.y + side.y, lawn_z),
              (foot.x + side.x, foot.y + side.y, lawn_z + 20), (foot.x - side.x, foot.y - side.y, lawn_z + 20)]
-    mesh_of("oak", verts, [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)], picture_material("oak", "outside_oak.png"))
+    mesh_of("outside_oak", verts, [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)], picture_material("outside_oak", "outside_oak.png"))
 
 
 # ---- camera
@@ -1091,7 +1091,7 @@ cam = bpy.data.cameras.new("cam")
 cam.sensor_fit = "VERTICAL"
 cam.angle_y = math.radians(v["fov"])
 cam.clip_start = 0.02
-cam.clip_end = 100.0
+cam.clip_end = 1000.0   # the view out reaches 110 m (the tree line) and the lawn 400 m
 cam_ob = bpy.data.objects.new("cam", cam)
 scene.collection.objects.link(cam_ob)
 cam_ob.location = eye
