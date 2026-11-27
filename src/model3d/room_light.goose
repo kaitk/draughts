@@ -963,8 +963,8 @@ fn fill_walled(wins: room_shell::Opening[3]&, atlas: f32[:], blocks: i64) {
     }
 }
 
-// For a walled probe p (whole grid column ix, height ih) in a niche's column, under its sill
-// or over its head, or past its inner glass: the niche's probe nearest it in height (its row
+// For a walled probe p (whole grid column ix, height ih) in a niche's column, just under its
+// sill or over its head, or past its inner glass: the niche's probe beside it in height (its row
 // iz and its height ih), which the sill, the bottom rail and the head read beside it; -1
 // elsewhere.
 fn niche_above_below(wins: room_shell::Opening[3]&, p: float3, ix: i64, ih: i64) -> int2 {
@@ -976,7 +976,10 @@ fn niche_above_below(wins: room_shell::Opening[3]&, p: float3, ix: i64, ih: i64)
         if y > wall_face() && y < glass_y() { row = iz; }
     }
     guard row >= 0 else { return int2 { -1, -1 }; }
-    for dist in NH {
+    // The niche's probe at the same height (past the glass) or the next one up or down alone:
+    // those further below a sill read on to the floor and the wainscot beside the wall, which
+    // the niche's light doesn't reach (a halo on the floor, task 122, 2026-11-27).
+    for dist in 2 {
         for sign in [-1, 1] {
             let h = ih + sign * dist;
             guard h >= 0 && h < NH else { continue; }

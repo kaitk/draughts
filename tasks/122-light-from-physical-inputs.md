@@ -1129,6 +1129,24 @@ Cycles' (B/R 0.13 against 0.11): our camera exposes it brighter, AgX takes it to
 default light byte-identical (the table-window view). Cost: not timed; a box intersection, a
 probe read and the windows' casement on the props' pixels.
 
+## The floor's halo under the windows (2026-11-27)
+
+The user: a halo on the floor along the wainscot under the windows. Measured with the scratch
+tracer's `line` mode (floor points under the middle window, out from the wall's face; the
+atlas as `baked_light` reads it against the tracer, tree off): within 0.13 m of the wall the
+floor read 1.7 to 10 times the tracer (0.023 to 0.039 against 0.002 to 0.004), from 0.16 m
+on 0.8 to 1.3. With `--niche-light off` it was gone: task 128's `niche_above_below` gave
+every walled probe in a niche's column, down to the floor, the niche's light, and the floor
+and the wainscot beside the wall blend toward them. Now only the niche's probe at the same
+height (past the glass) or the next one up or down: the floor beside the wall 0.0023 (the
+tracer 0.0023 to 0.0038); the atlas changes only in the walled probes at 0.15 and 0.45 m and
+the top row, so the bottom rail's reading (the probe just under the sill) is task 128's.
+
+Left: the wainscot under a window reads about 2 times the tracer (0.0019 against 0.0005 to
+0.0012) and its panels' bevels shine in its coat (the brightest edges 2.4 times with the coat
+than without; Cycles shows none): the probes 0.15 m before the wall stand past the sill's
+nose and see the window the wainscot under the sill doesn't.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
