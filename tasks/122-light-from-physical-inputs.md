@@ -953,6 +953,35 @@ the reference's depth is mostly its dark veins and centres, which our mask hardl
 mask with the same motifs would be needed); short fibres in the ground's grain. Cost: not
 timed (three taps of one texture and some arithmetic on the walls' pixels near enough).
 
+## Step 7c: the wallpaper engraved (2026-11-27)
+
+Step 7b's open point: the reference's depth close up is mostly engraved lines inside the
+motifs, which our mask hardly has. The user: try redrawing the flowers, shown on the wall
+before signing them off for the app. A new mask with the same motifs, layout and tile, in the
+light tuner only: `--paper-mask today|engraved` (`render3d::paper_png`, read from
+`design/materials/wallpaper_engraved.png`; today the default). Made by
+`tools/materials/wallpaper_engrave.py` from the app's mask: midribs from the print's skeleton
+(its serrations blurred away first, only where the print is a leaf's width, so stems stay
+solid), side veins off them slanted to the tip, and the mask's own soft lines (the petals'
+partings, the cups) made sharp and dark, the only lines in the flower heads (the print's
+densest parts). The print between the lines is brightened to keep its mean over 4 texels.
+Results page `build/notes/wallpaper-engraved/index.html`; scratch `build/review122/eng/`.
+
+- Tried and dropped: lines from a ridge filter (cracks), hatching by a line integral of noise
+  (dirt), a dark eye with dots and petal rays from each head's middle (the heads are three-
+  quarter views with no single eye; the eye landed off the cup and the rays wandered).
+- 0.8 m in shade: the print's CV 0.089 to 0.143 (the close-up reference 0.137), its mean and
+  the ground unchanged; 2 m: 0.110 to 0.155, the print within 2 levels. The reference view: the
+  frame's mean within 0.03 levels, the room view's within 0.04; the print's edge contrast in
+  step 7's boxes 0.253, 0.270 to 0.245, 0.265 (the reference 0.256, 0.242), the local contrast
+  2.57, 3.20 to 2.50, 3.14: the lines average out from afar.
+- Without the flag or with `today`, the default light and `--light physical` match a build of
+  164afb1a byte for byte (one default-light run differed by a level in 3 pixels, run-to-run).
+- Size: the PNG 613 KB against 593 KB; the texture's size and format on the GPU unchanged.
+- Open: some veins wiry or stubby where a hand would draw a smooth curve; narrow leaves get
+  none; no dotted eyes. The user's call whether the app takes it (it would replace
+  `wallpaper_mask.png`).
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a

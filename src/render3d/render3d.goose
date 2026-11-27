@@ -1982,13 +1982,20 @@ fn srgb_byte(v: f32) -> u8 {
 // Mask `which` (draughts_material_mask's) on the GPU, R8 with its mips, each level the
 // mean of four texels of the one above; 0 where it isn't built in.
 extern fn draughts_material_mask(which: i64, out: u8[:], side: i64) -> bool;
+// The wallpaper's mask read from a file in place of the built-in one, where the light tuner
+// set it (--paper-mask: the engraved one, tools/materials/wallpaper_engrave.py).
+var paper_png: const u8[:] = "";
+fn material_mask(which: i64, out: u8[:], side: i64) {
+    if which == 0 && paper_png.len > 0 { draughts_gray_png(paper_png, out, side, side); }
+    else { draughts_material_mask(which, out, side); }
+}
 fn put_mask<O>(o: O&, which: i64) -> Texture {
     let side = surfaces::PAPER_SIDE;
     var mips = 0;
     while side >> mips > 0 { mips++; }
     var px: u8[>..] = [];
     px.resize(texels_with_mips(side), 0);
-    draughts_material_mask(which, px[0..side * side], side);
+    material_mask(which, px[0..side * side], side);
     let mask = o.gpu_sampled(side, side, mips, R8);
     var at = 0;
     for level in mips {
@@ -2017,7 +2024,7 @@ fn put_paper_with_grain<O>(o: O&) -> Texture {
     while side >> mips > 0 { mips++; }
     var mask: u8[>..] = [];
     mask.resize(side * side, 0);
-    draughts_material_mask(0, mask[..], side);
+    material_mask(0, mask[..], side);
     var px: u8[>..] = [];
     px.resize(2 * texels_with_mips(side), 0);
     for y in side {

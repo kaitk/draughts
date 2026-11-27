@@ -97,7 +97,9 @@
 //       matt ground; on)] [--paper-ground R,G,B,ROUGH] [--paper-gold R,G,B,ROUGH (the wallpaper's ground and print,
 //       sRGB; with --paper-metal the print's colour at normal incidence)] [--paper-detail LINES,POWDER,GRAIN,RELIEF
 //       (with --paper-metal the wallpaper close up, render3d::paper_detail: the print's sharp outline and lines, the powder's
-//       tone and flecks, the paper's grain, the relief, each 1 as made, 0 off; 0,0,0,0 the flat print)] [--table-wood R,G,B,ROUGH (the table
+//       tone and flecks, the paper's grain, the relief, each 1 as made, 0 off; 0,0,0,0 the flat print)]
+//       [--paper-mask today|engraved (the wallpaper's mask: the app's, or with veins drawn in its leaves and petals,
+//       design/materials/wallpaper_engraved.png; today)] [--table-wood R,G,B,ROUGH (the table
 //       top's wood, sRGB, and its polish's roughness; tables::Table.wood)] [--table-coat X,Y,Z,W (its polish,
 //       tables::Table.coat: y its strength)] [--sun-color height|key (--light physical: the sun's colour by its
 //       height through a clear sky, or the key's at 0.6 of its saturation; height)]
@@ -318,6 +320,10 @@ let LACE_WAYS = ["f3", "f2", "f", "d"];
 // does), its own height's when negative.
 var sun_color_height: f32 = -1.0;
 var spare_laces: u8[>..] = [];
+// The wallpaper's masks (--paper-mask): today's built in, or the engraved one read from
+// design/materials/wallpaper_engraved.png (tools/materials/wallpaper_engrave.py).
+let PAPER_MASKS = ["today", "engraved"];
+var engraved_paper: u8[>..] = [];
 // --light physical's camera curve (render3d::camera_toe): AgX, as Cycles takes it.
 let CAMERA_TOE = render3d::CAMERA_AGX;
 // --sun-color-height: the sun's colour as at this height (a hazier sky reddens it as a lower sun's
@@ -1694,6 +1700,10 @@ fn main() {
         lace_at[w + 1] = spare_laces.len;
     }
     g.lace_way = pick(argv, "--lace", LACE_WAYS, 0);
+    if pick(argv, "--paper-mask", PAPER_MASKS, 0) == 1 {
+        if !read_file("../design/materials/wallpaper_engraved.png", engraved_paper) { abort("--paper-mask: no design/materials/wallpaper_engraved.png"); }
+        render3d::paper_png = engraved_paper[..];
+    }
     // The bookcases' books in or out, and how much of their fade shows (1 as made).
     var books_on = !(flag_value(argv, "--books") > 0 && argv[flag_value(argv, "--books")] == "off");
     var rug_on = !(flag_value(argv, "--rug") > 0 && argv[flag_value(argv, "--rug")] == "off");

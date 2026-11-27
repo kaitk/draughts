@@ -6,6 +6,7 @@ built into the program from here (`src/native/materials.c`).
 | File | What it is |
 | --- | --- |
 | `wallpaper_mask.png` | The library's wallpaper: the gold flowers as one channel, 1024² L8, tileable, 0.6 MB. 0 is the ground, 1 the gold print; `shaders::ROOM_FRAG` tints it and keys its roughness from `surfaces::LOOK` and tiles it over 1.4 m of wall (`surfaces::PAPER_TILE`). In git. |
+| `wallpaper_engraved.png` | The wallpaper's mask with engraved lines drawn in (`tools/materials/wallpaper_engrave.py`, from `wallpaper_mask.png`): the same flowers and tile, a midrib and side veins in the leaves, the petals' partings sharp and dark, the print between brightened to keep its mean; 1024² L8, 0.61 MB. Not built into the app: the light tuner reads it with `--paper-mask engraved` while the user decides (task 122). In git. |
 | `plaster_tone.png` | The library's limewash (`tools/materials/plaster.py`): its tone, 1024² L8, tileable over 4 m (`surfaces::PLASTER_TILE`), 0.66 MB. `ROOM_FRAG` tints it from `surfaces::LOOK.plaster_shade` to `.plaster_light` in linear light, with a slow noise in the room's frame over it so the tile's patches don't repeat, on the ceiling, cornice, reveals and arches. In git. |
 | `outside_band.png` | The park's far tree line on a cylinder 110 m out (`tools/materials/outside.py`), 2048 × 336 RGBA over ±64° from straight out, 16 px a degree, rows linear in height from 14.05 m under the lawn to 26.26 m over it; sRGB, premultiplied in linear light, its sky cut to clear; 0.44 MB. `model3d::view_out` puts it on its cylinder round the middle window, `shaders::OUTSIDE_FRAG` draws it unlit. In git. |
 | `outside_oak.png` | The oak, 29.8 × 20 m, a billboard 70 m out at 22° right of straight out, 584 × 392 RGBA as the band, 0.26 MB. In git. |
@@ -22,6 +23,14 @@ local, not in git):
 python3 tools/materials/wallpaper.py OUT_DIR
 cp OUT_DIR/wallpaper_mask.png design/materials/
 touch src/native/materials.c    # the compiled C is cached by its source
+```
+
+The engraved mask, from the one in git (about 5 s; it also writes `engraved_lines.png`, the lines
+by kind, which stays out):
+
+```sh
+python3 -I tools/materials/wallpaper_engrave.py OUT_DIR
+cp OUT_DIR/wallpaper_engraved.png design/materials/
 ```
 
 The baker also writes `wallpaper_preview.png` and `wallpaper_rough.png`, which stay out of
