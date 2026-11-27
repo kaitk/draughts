@@ -13,7 +13,8 @@
 #       them, or as the importer decodes them from sRGB, before 2026-11-27)]
 #       [--window-metal flat|LEVEL (the export's by default)] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
 #
-# Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes), and
+# Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes),
+# OUT-combined.npy (the combined light, float32, rows top down: app_camera.py takes it), and
 # OUT-light.png: the diffuse light alone (direct + indirect, no albedo), the room's
 # irradiance over pi seen from the view, through the same view transform.
 import bpy
@@ -1007,6 +1008,8 @@ while inp.seek_subimage(part, 0):
     part += 1
 inp.close()
 combined = passes["Combined"]
+# The combined light as is, for tools/blender/app_camera.py (the light tuner's camera on it).
+np.save(out + "-combined.npy", combined.astype(np.float32))
 # The light alone: the denoised image less the gloss (noisy) over the albedo where there is
 # one, else the noisy diffuse passes (the lace, the brass).
 color = passes["Diffuse Color"]

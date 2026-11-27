@@ -18,8 +18,8 @@ GOOSE_GFX_HEADLESS=1 build/blender/export --maps on   # room.obj, scene.json and
 
 `scene.py` writes `build/blender/<view>.png` (AgX), `.exr` (multilayer: the combined
 image and the diffuse passes), `-light.png` (the diffuse light alone, direct and
-indirect without the albedo: the light the app's shading puts on a white surface), and
-`.json` (the time and the means). Its flags: `--view NAME` (or the tuner's `--plan-eye X,Y,Z
+indirect without the albedo: the light the app's shading puts on a white surface),
+`-combined.npy` (the combined light, for `app_camera.py`), and `.json` (the time and the means). Its flags: `--view NAME` (or the tuner's `--plan-eye X,Y,Z
 --plan-at X,Y,Z --fov DEG`), `--out PATH`, `--size WxH`
 (960x540), `--samples N` (512, denoised), `--exposure EV` (0), `--textures on|off`,
 `--device gpu|cpu`, `--save-blend` (a `.blend` beside the render, to open in Blender),
@@ -78,6 +78,28 @@ rasterising, has gaps the sun and the sky would leak through.
 
 `scene.py`'s `.json` also gives the light alone on the table's and the chairs' pixels by
 the way each faces (toward the window, away, up, down, along the wall).
+
+## Through the tuner's camera
+
+`scene.py`'s PNG is Blender's AgX at `--exposure`, with no season's grade, so beside the
+tuner's `--light physical` shot it differs in the camera as well as the light.
+`app_camera.py` (plain Python, numpy and Pillow) writes the picture the tuner's camera
+makes of Cycles' light: the tuner's metered exposure from its log, HDR_TONE_FRAG's AgX fit
+and the season's grade, with Cycles' radiance taken as the tuner's light as is (units 1,
+measured on the sunlit door; the header has how). Shoot both at the same view and size:
+
+```sh
+cd tools && GOOSE_GFX_HEADLESS=1 ../build/light_tune --season autumn --light physical --woods ours \
+    --plan-eye 6.5,4.3,1.4 --plan-at 2.655,5.403,1.400 --fov 73 --size 1536x1024 --shot ref.png > ref.log
+cd .. && Blender -b --python-exit-code 1 --python tools/blender/scene.py -- --wood ours \
+    --plan-eye 6.5,4.3,1.4 --plan-at 2.655,5.403,1.400 --fov 73 --size 1536x1024 --out build/x/ref
+python3 tools/blender/app_camera.py build/x/ref-combined.npy --log tools/ref.log --out build/x/ref-app.png
+```
+
+`--compare tools/ref.png` prints the levels between the two; `--grade none`, `--white`,
+`--look` and `--saturation` change the grade, `--ev` the exposure. It takes an older render's
+`.exr` too, through Blender's own Python. The port's check, the tuner's `--tone-probe` light
+through it against its own shot, is in the header.
 
 ## Materials
 

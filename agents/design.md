@@ -40,6 +40,10 @@ pieces; the design boards still set the layout, glass, and controls.
 
 ## Checking a look against the references
 
+- Comparisons with Cycles go through the light tuner's camera: `tools/blender/app_camera.py`
+  takes Cycles' light (`scene.py`'s `-combined.npy`) and the tuner's log at the same view
+  and writes the picture the tuner's exposure, AgX and season's grade would make of it, so
+  only the light differs. Cycles' own PNG has another exposure and no grade (2026-11-27).
 - Look at the reference up close before writing a shader: crop and enlarge with
   `magick ref.png -crop WxH+X+Y +repage -resize 300% crop.png`, and read the crop.
 - Put the app's screenshot beside the reference at the same scale
