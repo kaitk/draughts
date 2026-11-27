@@ -235,6 +235,12 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 10) uniform sampler2D ssao_map;
     layout(set = 2, binding = 11) uniform sampler2D pre_place;
     #endif
+    #if defined(PHYSICAL_COAT) && defined(SHARP_BOX) && !defined(NO_SSAO) && !defined(PLANAR_FLOOR)
+    // The room's reflection (render3d::refl_pass, task 131): the room from its probe in an
+    // octahedral map, a level a roughness, in the room's units.
+    #define REFL_MAP 1
+    layout(set = 2, binding = 12) uniform sampler2D refl_map;
+    #endif
     #ifdef PLANAR_FLOOR
     // The room mirrored in the floor (render3d::planar_pass): its light in the room's units,
     // a the distance from the floor to what it shows along the reflection, with its mips.
@@ -422,6 +428,7 @@ let ROOM_HEAD = """
         vec4 wood_floor[5];
         vec4 window_metal;
         vec4 env_pano[3];
+        vec4 refl;
     };
     """;
 
@@ -927,10 +934,44 @@ let ROOM_FRAG = """
         return mix(wide, room_seen(p, lp, r, lr, alpha, nov, px), sharp);
     }
 
+    #ifdef REFL_MAP
+    // A direction's place in the reflection's octahedral map (passes.goose's OCTA_FN).
+    vec2 octa_uv(vec3 d) {
+        d /= abs(d.x) + abs(d.y) + abs(d.z);
+        vec2 e = d.y >= 0.0 ? d.xz : (1.0 - abs(d.zx)) * vec2(d.x >= 0.0 ? 1.0 : -1.0, d.z >= 0.0 ? 1.0 : -1.0);
+        return e * 0.5 + 0.5;
+    }
+    // What a surface at p sees along r through a GGX lobe alpha wide: the room's reflection
+    // where r meets the room's box, looked up from the probe (box-projected), at the level of
+    // its roughness.
+    vec3 refl_seen(vec3 p, vec3 r, float alpha) {
+        vec3 lp = vec3(dot(p.xz, axes.xy), p.y, dot(p.xz, axes.zw));
+        vec3 lr = vec3(dot(r.xz, axes.xy), r.y, dot(r.xz, axes.zw));
+        float big = 1e6;
+        float tx = abs(lr.x) < 1e-4 ? big : ((lr.x > 0.0 ? room_box.y : room_box.x) - lp.x) / lr.x;
+        float tz = abs(lr.z) < 1e-4 ? big : ((lr.z > 0.0 ? room_box.w : room_box.z) - lp.z) / lr.z;
+        float ty = abs(lr.y) < 1e-4 ? big : ((lr.y > 0.0 ? room_heights.x : shell.z) - lp.y) / lr.y;
+        float t = max(min(tx, min(ty, tz)), 0.0);
+        vec3 d = p + r * t - refl.xyz;
+        float lod = sqrt(clamp(alpha, 0.0, 1.0)) * (refl.w - 1.0);
+        return textureLod(refl_map, octa_uv(d), lod).rgb;
+    }
+    #endif
+
     // The matt-waxed floor's (PHYSICAL_COAT without the mirror), by render3d::floor_box in
     // planar_look: z 0 as room_reflection; 1 the walls, doors and ceiling only by their light
     // that way (room_wide) and the windows' soft shapes over it; w the windows' light in it.
     vec3 floor_reflection(vec3 p, vec3 lp, vec3 r, float alpha, float nov, float px) {
+    #ifdef REFL_MAP
+        // Toward the floor's normal as the wax roughens (Frostbite's dominant direction,
+        // Lagarde and de Rousiers): the lobe filtered round r alone would dip under the floor
+        // at a grazing look and take the floor's light, which the floor hides.
+        if (refl.w > 0.5 && planar_look.z < 0.5) {
+            float rough = sqrt(clamp(alpha, 0.0, 1.0));
+            float f = (1.0 - rough) * (sqrt(1.0 - rough) + rough);
+            return refl_seen(p, normalize(mix(vec3(0.0, 1.0, 0.0), r, f)), alpha);
+        }
+    #endif
         if (planar_look.z < 0.5) return room_reflection(p, lp, r, alpha, nov, px);
         vec3 lr = vec3(dot(r.xz, axes.xy), r.y, dot(r.xz, axes.zw));
         vec3 win;
@@ -953,6 +994,9 @@ let ROOM_FRAG = """
         if (m < 1.5) return sh_eval(d) * params.z;
         if (m < 2.5) return room_wide(lq, d);
         if (m < 3.5) return room_seen(q, lq, d, ld, 0.0, 1.0, 0.0);
+    #ifdef REFL_MAP
+        if (m > 7.5) return refl.w > 0.5 ? refl_seen(q, d, env_pano[1].w) : vec3(1.0, 0.0, 1.0);
+    #endif
         return floor_reflection(q, lq, d, env_pano[1].w, 1.0, 0.0);
     }
 
@@ -1294,7 +1338,7 @@ let ROOM_FRAG = """
     #if !defined(MIRROR_CHEAP) && !defined(BOX_MAP_BAKE)
     void main() {
     #if defined(ROOM_FLOOR) && defined(SHARP_BOX)
-        if (env_pano[0].w > 0.5 && env_pano[0].w < 4.5) {
+        if (env_pano[0].w > 0.5 && (env_pano[0].w < 4.5 || env_pano[0].w > 7.5)) {
             result = room_out(env_pano_seen() * params.x * shade.w, 1.0);
             return;
         }

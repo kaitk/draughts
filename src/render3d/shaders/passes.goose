@@ -763,3 +763,100 @@ let SHOW_FRAG = """
         result = c * screen.z;
     }
     """;
+
+// The room's reflection (render3d::refl_map, task 131): a direction's place in an octahedral
+// map (y up: the upper half folded flat in the middle, the lower half's four corners out
+// over the edges) and back. ROOM_FRAG keeps its own copy of octa_uv.
+let OCTA_FN = """
+    vec2 octa_uv(vec3 d) {
+        d /= abs(d.x) + abs(d.y) + abs(d.z);
+        vec2 e = d.y >= 0.0 ? d.xz : (1.0 - abs(d.zx)) * vec2(d.x >= 0.0 ? 1.0 : -1.0, d.z >= 0.0 ? 1.0 : -1.0);
+        return e * 0.5 + 0.5;
+    }
+    vec3 octa_dir(vec2 uv) {
+        vec2 e = uv * 2.0 - 1.0;
+        vec3 d = vec3(e.x, 1.0 - abs(e.x) - abs(e.y), e.y);
+        if (d.y < 0.0) d.xz = (1.0 - abs(d.zx)) * vec2(d.x >= 0.0 ? 1.0 : -1.0, d.z >= 0.0 ? 1.0 : -1.0);
+        return normalize(d);
+    }
+    """;
+
+// One of the six views of the room into the octahedral map: each texel whose direction the
+// view frames takes its light there (the light out of the mirror's pass, made safe as
+// PLANAR_RESOLVE_FRAG's, back in the room's units); the rest are left. refl_face: the view's
+// view_proj (columns), refl_at: the probe (world) and 1 / the exposure, refl_size: the map's
+// size.
+let REFL_PACK_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D face;
+    layout(set = 3, binding = 0) uniform ReflPack { vec4 refl_face[4]; vec4 refl_at; vec4 refl_size; };
+    void main() {
+        vec3 d = octa_dir(gl_FragCoord.xy / refl_size.xy);
+        mat4 m = mat4(refl_face[0], refl_face[1], refl_face[2], refl_face[3]);
+        vec4 c = m * vec4(refl_at.xyz + d, 1.0);
+        if (c.w <= 0.0) discard;
+        vec2 uv = vec2(0.5, -0.5) * c.xy / c.w + 0.5;
+        if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) discard;
+        vec3 l = textureLod(face, uv, 0.0).rgb;
+        float y = dot(l, vec3(0.2126, 0.7152, 0.0722));
+        if (!(y >= 0.0 && y <= 1e4)) l = vec3(0.0);
+        l = clamp(l, vec3(0.0), vec3(1e4));
+        result = vec4(l * refl_at.w, 1.0);
+    }
+    """;
+
+// A level of the room's reflection for one roughness: the GGX lobe (α refl_level.y, the
+// normal and the eye along the texel's direction, as Karis's split sum takes them) over the
+// map's mips, each sample from the mip whose texel is as wide as its share of the lobe
+// (filtered importance sampling, Křivánek and Colbert). refl_level: x the level drawn, y its
+// α, z the map's size at its first level, w the samples.
+let REFL_FILTER_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    layout(set = 3, binding = 0) uniform ReflFilter { vec4 refl_level; };
+    const float PI = 3.14159265;
+    void main() {
+        vec2 size = vec2(textureSize(src, 0)) / exp2(refl_level.x);
+        vec2 uv = gl_FragCoord.xy / size;
+        float a = refl_level.y;
+        if (a <= 0.0) {
+            result = vec4(textureLod(src, uv, 0.0).rgb, 1.0);
+            return;
+        }
+        vec3 n = octa_dir(uv);
+        vec3 up = abs(n.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+        vec3 tx = normalize(cross(up, n));
+        vec3 ty = cross(n, tx);
+        int count = int(refl_level.w);
+        float texel = 4.0 * PI / (refl_level.z * refl_level.z);
+        float a2 = a * a;
+        vec3 sum = vec3(0.0);
+        float weight = 0.0;
+        for (int i = 0; i < count; i++) {
+            // Hammersley's points.
+            uint b = uint(i);
+            b = (b << 16u) | (b >> 16u);
+            b = ((b & 0x55555555u) << 1u) | ((b & 0xAAAAAAAAu) >> 1u);
+            b = ((b & 0x33333333u) << 2u) | ((b & 0xCCCCCCCCu) >> 2u);
+            b = ((b & 0x0F0F0F0Fu) << 4u) | ((b & 0xF0F0F0F0u) >> 4u);
+            b = ((b & 0x00FF00FFu) << 8u) | ((b & 0xFF00FF00u) >> 8u);
+            vec2 xi = vec2(float(i) / float(count), float(b) * 2.3283064365386963e-10);
+            float phi = 2.0 * PI * xi.x;
+            float cos_t = sqrt((1.0 - xi.y) / (1.0 + (a2 - 1.0) * xi.y));
+            float sin_t = sqrt(1.0 - cos_t * cos_t);
+            vec3 h = tx * (sin_t * cos(phi)) + ty * (sin_t * sin(phi)) + n * cos_t;
+            vec3 l = 2.0 * dot(n, h) * h - n;
+            float nl = dot(n, l);
+            if (nl <= 0.0) continue;
+            float k = (cos_t * cos_t) * (a2 - 1.0) + 1.0;
+            float pdf = a2 / (PI * k * k) / 4.0;
+            float omega = 1.0 / (float(count) * pdf);
+            float lod = max(0.5 * log2(omega / texel), 0.0);
+            sum += textureLod(src, octa_uv(l), lod).rgb * nl;
+            weight += nl;
+        }
+        result = vec4(sum / max(weight, 1e-4), 1.0);
+    }
+    """;

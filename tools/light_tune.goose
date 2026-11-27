@@ -1724,6 +1724,8 @@ fn main() {
     // --env-pano MODE,X,Y,H (and --env-pano-alpha A): a panorama of what one of the reflections'
     // lookups sees from the plan's point (render3d::env_pano); frame the floor or the table's top
     // filling the screen.
+    // --refl off: the floor's matt wax back on the analytic box (task 131's room's reflection on).
+    render3d::refl_on = !(flag_value(argv, "--refl") > 0 && argv[flag_value(argv, "--refl")] == "off");
     let pano4 = four(argv, "--env-pano", float4_0);
     let pano_alpha = number(argv, "--env-pano-alpha", 0.25);
     var wood_unread: bool[3] = [false, false, false];
