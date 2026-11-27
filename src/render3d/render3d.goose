@@ -639,15 +639,16 @@ struct HdrPipelines {
     glow_up:    Pipeline,
     // The haze's (haze_pass): the beam's cross-section, the haze into its half-size target,
     // added straight into the picture, and that target added bilinear.
-    haze_cross:  Pipeline,
-    haze:        Pipeline,
-    haze_full:   Pipeline,
-    haze_add:    Pipeline,
-    pieces:      i32,
-    mapped:      bool,      // with the window's light map (window_map_on)
-    props_light: bool,      // the table's with shaders::PROPS_LIGHT (props_light)
-    volumes:     bool,      // the paint's, sills' and metals' with shaders::PROBE_VOLUMES (room_light::volumes_on)
-    coat:        bool,      // the walls' and floor's with shaders::PHYSICAL_COAT (physical_coat)
+    haze_cross:   Pipeline,
+    haze:         Pipeline,
+    haze_full:    Pipeline,
+    haze_add:     Pipeline,
+    pieces:       i32,
+    mapped:       bool,     // with the window's light map (window_map_on)
+    props_light:  bool,     // the table's with shaders::PROPS_LIGHT (props_light)
+    volumes:      bool,     // the paint's, sills' and metals' with shaders::PROBE_VOLUMES (room_light::volumes_on)
+    coat:         bool,     // the walls' and floor's with shaders::PHYSICAL_COAT (physical_coat)
+    board_probes: bool,     // the board's with shaders::PROPS_LIGHT (board_probes; gfx's alone)
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -827,13 +828,18 @@ fn bake_props_open<O>(o: O&, g: Gpu&, verts: const mesh::Vertex[:], indices: con
 // mean (its ground and a third of its gold), the doors' paint, the ceiling's.
 struct PropsLightBlock {
     light_box: float4, light_grid: float4, props_look: float4,
-    room_box: float4, room_doors: float4, room_heights: float4, lace_light: float4,
+    room_box:  float4, room_doors: float4, room_heights: float4, lace_light: float4,
     box_paper: float4, box_paint: float4, box_ceiling: float4,
 }
 // Whether the table's and chairs' polish reflects the room's box and its windows sharply
 // (TABLE_FRAG's props_seen_at) in place of the probes' light alone (the light tuner's
 // --props-seen, on under --light physical; task 122).
 var props_seen = false;
+// Whether the board and its pieces in the HDR views are lit as the table is: the probes'
+// light where each pixel is and the room's box in their varnish (LIT_FRAG with PROPS_LIGHT,
+// the props' probes and PropsLightBlock), not the look's harmonics (the light tuner's
+// --board-probes, on under --light physical; task 122). With props_light only.
+var board_probes = false;
 fn props_light_block(g: Gpu&) -> PropsLightBlock {
     let s = surfaces_block(g);
     let paper = model3d::linear4(s.paper);

@@ -161,6 +161,15 @@ let LIT_SHELL = """
                                                  vec4 shell_glass; vec4 shell_sun; vec4 window_view;
                                                  vec4 shell_case; };
     """;
+// LIT_FRAG lit as the table in the room is (PROPS_LIGHT, render3d::board_probes, the HDR views
+// alone): the room's probe grid and its box from the props' atlas and render3d::PropsLightBlock
+// (TABLE_SHELL's PropsLight), read by PROPS_GRID_FN, after LIT_SHELL.
+let LIT_PROPS = """
+    layout(set = 2, binding = 9) uniform sampler2D props_probes;
+    layout(set = 3, binding = 2) uniform PropsLight { vec4 light_box; vec4 light_grid; vec4 props_look; vec4 room_box;
+                                                      vec4 room_doors; vec4 room_heights; vec4 lace_light; vec4 box_paper;
+                                                      vec4 box_paint; vec4 box_ceiling; };
+    """;
 let LIT_FRAG = """
     const float CROWN_SPAN = 0.6;       // render3d::crown_map
 
@@ -519,6 +528,18 @@ let LIT_FRAG = """
         vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
         return normalize(abs(det) * n - grad);
     }
+
+    #ifdef PROPS_LIGHT
+    // A finish's light along r for its lobe's alpha, as the table's polish takes it: the
+    // probes' (grid_light) while the lobe is wide, the room's box seen sharply as it narrows
+    // (props_look.w). The view's light over params.x: the room's exposure is the board's
+    // under --light physical.
+    vec3 room_reflection(vec3 p, vec3 r, float alpha, float nov) {
+        vec3 wide = grid_light(p, r);
+        float sharp = (1.0 - smoothstep(0.08, 0.45, alpha)) * props_look.w;
+        return sharp < 0.001 ? wide : mix(wide, props_seen_at(p, r, alpha, nov, params.x), sharp);
+    }
+    #endif
 
     vec3 tonemap(vec3 c) {
         // Khronos PBR Neutral: hue kept, highlights eased; its toe halved, as the
@@ -926,8 +947,14 @@ let LIT_FRAG = """
         vec3 direct;
         // The photograph's light: diffuse from the harmonics, specular from them along
         // the reflection, through the DFG fit, under the occlusion.
+    #ifdef PROPS_LIGHT
+        // In the room: the probes' light where the pixel is, as the table's (render3d::board_probes).
+        vec3 irr = grid_light(p, n);
+        vec3 env = room_reflection(p, reflect(-v, n), a, nov);
+    #else
         vec3 irr = sh_eval(n) * params.z;
         vec3 env = sh_eval(reflect(-v, n)) * params.z;
+    #endif
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * a - 1.0)) - 1.0 + ao, 0.0, 1.0);
         vec3 ambient;
         #ifdef SHADOW_MANY
@@ -945,8 +972,13 @@ let LIT_FRAG = """
             vec3 body_light = (flat_diff * (center * body + max(spread - center, 0.0) * travelled) + through)
                             * clamp((ao - 0.45) / 0.4, 0.0, 1.0);
             direct = ((albedo * (diff * (1.0 - sss_f) / PI) + spec) * vis + sss_f * body_light / PI) * light;
+        #ifdef PROPS_LIGHT
+            ambient = mix(albedo * irr, body * grid_light(p, ng), sss_f) * ao
+                    + env * env_brdf(f0, rough, nov) * spec_ao;
+        #else
             ambient = mix(albedo * irr, body * sh_eval(ng) * params.z, sss_f) * ao
                     + env * env_brdf(f0, rough, nov) * spec_ao;
+        #endif
         } else
         #endif
         {
@@ -966,7 +998,11 @@ let LIT_FRAG = """
             float fe = coat * env_brdf(vec3(0.04), coat_rough, novc).x;
             vec3 spec_c = vec3(d_ggx(nohc, ac) * v_smith(novc, nlc, ac) * fc * nlc);
             direct = direct * (1.0 - fc) + spec_c * light * vis;
+        #ifdef PROPS_LIGHT
+            ambient = ambient * (1.0 - fe) + room_reflection(p, reflect(-v, n_coat), ac, novc) * fe * spec_ao;
+        #else
             ambient = ambient * (1.0 - fe) + sh_eval(reflect(-v, n_coat)) * params.z * fe * spec_ao;
+        #endif
         }
         if (mat > 1.5) {
             // The lit board's light on a piece's side: what faces down and out sees the

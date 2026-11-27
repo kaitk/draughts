@@ -164,6 +164,10 @@ fn board_pass(own: Own&, g: render3d::Gpu&, target: Texture, size: int2, backdro
         gfx::bind_texture(gfx::FRAGMENT, 8, render3d::lace_or_stand_in(g), g.linear);
         gfx::uniforms(gfx::FRAGMENT, 1, render3d::shell_block(g));
     }
+    if g.hdr && h.board_probes {
+        gfx::bind_texture(gfx::FRAGMENT, 9, render3d::props_probes_or_stand_in(g), g.linear);
+        gfx::uniforms(gfx::FRAGMENT, 2, render3d::props_light_block(g));
+    }
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     draw_meshes(own, g, 0.0);
@@ -526,7 +530,7 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
     let table_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT);
     let table_desc = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED };
     let props_vert = embed_shader("vert", shaders::PROPS_LIGHT, shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT);
-    let room_table_frag = if props { embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) }
+    let room_table_frag = if props { embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::PROPS_GRID_FN, shaders::TABLE_FRAG) }
                           else if ssao { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) }
                           else { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::NO_SSAO, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) };
     g.table_room = gfx::pipeline(if props { props_vert } else { table_vert }, room_table_frag, table_desc);
@@ -546,7 +550,7 @@ fn make_room_tier(own: Own&, g: render3d::Gpu&) {
                                    gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
     g.planar_lace = gfx::pipeline(room_vert, embed_shader("frag", shaders::ROOM_LACE, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG),
                                    gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
-    let mirror_frag = if props { embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) }
+    let mirror_frag = if props { embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::PROPS_GRID_FN, shaders::TABLE_FRAG) }
                       else { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) };
     g.planar_table = gfx::pipeline(if props { props_vert } else { table_vert }, mirror_frag,
                                    gfx::PipelineDesc { cull: gfx::CULL_BACK, clockwise: true, depth_test: true, depth_write: true,
@@ -915,8 +919,15 @@ fn hdr_format(own: Own&) -> i32 {
 }
 
 // The board's lit shader into the HDR target for the pieces' material (render3d::PIECES_..),
-// its shadow in 16 taps, the high tier's.
-fn lit_hdr_frag(pieces: i32) -> const u8[:] {
+// its shadow in 16 taps, the high tier's; lit from the room's probes as the table is with
+// `probes` (render3d::board_probes).
+fn lit_hdr_frag(pieces: i32, probes: bool) -> const u8[:] {
+    if probes {
+        if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::PROPS_LIGHT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::LIT_PROPS, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::PROPS_GRID_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::PROPS_LIGHT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::LIT_PROPS, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::PROPS_GRID_FN, shaders::LIT_FRAG); }
+        if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::PROPS_LIGHT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::LIT_PROPS, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::PROPS_GRID_FN, shaders::LIT_FRAG); }
+        return embed_shader("frag", shaders::PROPS_LIGHT, shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::LIT_PROPS, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::PROPS_GRID_FN, shaders::LIT_FRAG);
+    }
     if pieces == render3d::PIECES_WOOD { return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_WOOD, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
     if pieces == render3d::PIECES_WINTER { return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_WINTER, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
     if pieces == render3d::PIECES_MINERAL { return embed_shader("frag", shaders::HDR_OUT, shaders::SHELL_WINDOWS, shaders::PIECES_MINERAL, shaders::SHADOW_MANY, shaders::FS_SET, shaders::FRAME, shaders::LIT_HEAD, shaders::LIT_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::LIT_FRAG); }
@@ -956,7 +967,9 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     let props = render3d::props_light;
     let volumes = room_light::volumes_on;
     let coat = render3d::physical_coat;
+    let board_probes = render3d::board_probes && props;
     guard h.tone.id == 0 || h.pieces != g.pieces || h.mapped != mapped || h.props_light != props || h.volumes != volumes || h.coat != coat
+          || h.board_probes != board_probes
     else { return; }
     if h.tone.id != 0 { release_hdr(own, g); }
     h.pieces = g.pieces;
@@ -964,13 +977,14 @@ fn make_hdr(own: Own&, g: render3d::Gpu&) {
     h.props_light = props;
     h.volumes = volumes;
     h.coat = coat;
+    h.board_probes = board_probes;
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
-    let lit_fs = lit_hdr_frag(g.pieces);
+    let lit_fs = lit_hdr_frag(g.pieces, board_probes);
     h.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
     h.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, blend: gfx::BLEND_ALPHA });
     h.table = gfx::pipeline(if props { embed_shader("vert", shaders::PROPS_LIGHT, shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT) }
                             else { embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT) },
-                            if props { embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) }
+                            if props { embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::PROPS_GRID_FN, shaders::TABLE_FRAG) }
                             else { embed_shader("frag", shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::HDR_OUT, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TABLE_FRAG) },
                             gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
     let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);

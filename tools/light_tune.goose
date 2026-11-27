@@ -124,6 +124,8 @@
 //       the niche's; on)]
 //       [--props-seen on|off (--light physical: the table's and chairs' polish reflects the room's box and
 //       its windows sharply, render3d::props_seen, not the probes' light over half the room alone; on)]
+//       [--board-probes on|off (--light physical: the board and pieces lit as the table, the probes' light
+//       where they are and the room's box in their varnish, render3d::board_probes, not the look's harmonics; on)]
 //       [--paint-relief K (the painted wood's relief tile's strength, 1 as made)]
 //       [--lace-hang M (the lace panels' inner edges further over the opening, metres, on all three windows;
 //       0.15 by default, 0 as made; Y switches 0.15 and 0)]
@@ -1677,6 +1679,7 @@ fn main() {
     room_light::niche_faces = physical;
     room_light::stove_stops_sun = physical;
     render3d::props_seen = physical && !(flag_value(argv, "--props-seen") > 0 && argv[flag_value(argv, "--props-seen")] == "off");
+    render3d::board_probes = physical && !(flag_value(argv, "--board-probes") > 0 && argv[flag_value(argv, "--board-probes")] == "off");
     room_light::sill_settle = physical;
     room_light::volumes_on = physical && !(flag_value(argv, "--volumes") > 0 && argv[flag_value(argv, "--volumes")] == "off");
     room_light::niche_light = physical && !(flag_value(argv, "--niche-light") > 0 && argv[flag_value(argv, "--niche-light")] == "off");
