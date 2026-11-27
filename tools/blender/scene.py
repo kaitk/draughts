@@ -4,7 +4,9 @@
 #
 #   Blender -b --python-exit-code 1 --python tools/blender/scene.py -- [--scene build/blender]
 #       [--view close] [--out build/blender/close] [--size 960x540] [--samples 512]
-#       [--exposure 0] [--textures on|off] [--save-blend]
+#       [--exposure 0] [--textures on|off] [--save-blend] [--wood SPEC.json]
+#       [--paper look|physical] [--paper-ground R,G,B,ROUGH] [--paper-gold R,G,B,ROUGH]
+#       [--paper-detail L,P,G,R] [--eye X,Y,Z --at X,Y,Z --fov DEG]
 #
 # Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes), and
 # OUT-light.png: the diffuse light alone (direct + indirect, no albedo), the room's
@@ -25,7 +27,9 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 def flags():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     f = {"scene": "build/blender", "view": "close", "out": None, "size": "960x540", "samples": "512",
-         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None}
+         "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None,
+         "paper": "look", "paper-ground": None, "paper-gold": None, "paper-detail": None,
+         "eye": None, "at": None, "fov": None}
     i = 0
     while i < len(argv):
         name = argv[i][2:]
@@ -448,6 +452,138 @@ def wallpaper(name):
     return m
 
 
+# --paper physical: the wallpaper as the app draws it under --light physical (ROOM_FRAG's paper
+# under PHYSICAL_COAT and paper_close; the light tuner's PHYSICAL_PAPER_GROUND, _GOLD and
+# _DETAIL): the print a metal, bronze powder, its colour f0, over a matt ground that reflects
+# nothing. --paper-ground and --paper-gold: sRGB and roughness; --paper-detail LINES,POWDER,
+# GRAIN,RELIEF as the tuner's (0,0,0,0 the flat print). Cycles needs no fade with distance:
+# its samples average the detail over a pixel.
+PAPER_GROUND = [0.226, 0.207, 0.261, 0.66]
+PAPER_GOLD = [0.686, 0.612, 0.43, 0.42]
+PAPER_TARNISH = [0.8, 0.68, 0.5]
+PAPER_FINE = 6.0
+PRINT_RELIEF, GRAIN_RELIEF = 40e-6, 20e-6
+
+
+def floor_hash(x, y):
+    # surfaces::floor_hash, in float32 as the app's.
+    f = lambda v: v - np.floor(v)
+    a, b = f(x * np.float32(0.1031)), f(y * np.float32(0.1031))
+    d = a * (b + np.float32(33.33)) + b * (a + np.float32(33.33)) + a * (a + np.float32(33.33))
+    return f((a + d + b + d) * (a + d))
+
+
+def paper_grain(side):
+    # render3d::paper_grain over the whole tile: three value noises 2, 4 and 8 texels a cell.
+    y, x = np.mgrid[0:side, 0:side].astype(np.float32)
+
+    def noise(cell, seed):
+        cells = side // cell
+        fx, fy = (x + 0.5) / cell, (y + 0.5) / cell
+        ix, iy = np.floor(fx), np.floor(fy)
+        ux, uy = (fx - ix) ** 2 * (3 - 2 * (fx - ix)), (fy - iy) ** 2 * (3 - 2 * (fy - iy))
+        i0, j0 = ix.astype(int) % cells, iy.astype(int) % cells
+        i1, j1 = ((i0 + 1) % cells).astype(np.float32) + seed, ((j0 + 1) % cells).astype(np.float32) + seed
+        i0, j0 = i0.astype(np.float32) + seed, j0.astype(np.float32) + seed
+        a, b, c, d = floor_hash(i0, j0), floor_hash(i1, j0), floor_hash(i0, j1), floor_hash(i1, j1)
+        low = a + (b - a) * ux
+        return low + (c + (d - c) * ux - low) * uy
+    return 0.5 + 0.9 * (noise(2, 0.0) - 0.5) + 0.7 * (noise(4, 11.0) - 0.5) + 0.5 * (noise(8, 23.0) - 0.5)
+
+
+def paper_texture():
+    # One float picture: r the mask, g the grain, b the mask blurred about as its mip 1.5
+    # (ROOM_FRAG's `wide`: a tileable 3-texel box twice), sampled linearly so the outline's
+    # cut at 0.4 falls between texels.
+    img = bpy.data.images.load(PAPER_MASK, check_existing=True)
+    side = img.size[0]
+    m = np.asarray(img.pixels[:], np.float32).reshape(side, side, 4)[:, :, 0]
+    wide = m
+    for _ in range(2):
+        for ax in (0, 1):
+            wide = (np.roll(wide, -1, ax) + wide + np.roll(wide, 1, ax)) / 3.0
+    rgba = np.ones((side, side, 4), np.float32)
+    rgba[:, :, 0], rgba[:, :, 1], rgba[:, :, 2] = m, np.clip(paper_grain(side), 0, 1), wide
+    out = bpy.data.images.new("paper_detail", side, side, alpha=False, float_buffer=True)
+    out.colorspace_settings.name = "Non-Color"
+    out.pixels.foreach_set(rgba.ravel())
+    out.pack()
+    return out
+
+
+def wallpaper_physical(name):
+    m_, nt, b = diffuse(name, (0.5, 0.5, 0.5))
+    k = Nodes(nt)
+    t = SF["paper_tile"]
+    ground, gold = PAPER_GROUND_SET, PAPER_GOLD_SET
+    dx, dy, dz, dw = PAPER_DETAIL_SET
+    pic = paper_texture()
+
+    def sample(scale, at):
+        tex = nt.nodes.new("ShaderNodeTexImage")
+        tex.image = pic
+        tex.interpolation = "Linear"
+        uv = nt.nodes.new("ShaderNodeTexCoord")
+        mp = nt.nodes.new("ShaderNodeMapping")
+        mp.inputs["Scale"].default_value = (scale / t, scale / t, 1.0)
+        mp.inputs["Location"].default_value = (at, at, 0.0)
+        k.link(uv.outputs["UV"], mp.inputs["Vector"])
+        k.link(mp.outputs[0], tex.inputs["Vector"])
+        sep = nt.nodes.new("ShaderNodeSeparateColor")
+        k.link(tex.outputs["Color"], sep.inputs[0])
+        return sep.outputs
+
+    def smooth(x, lo, hi):
+        n = nt.nodes.new("ShaderNodeMapRange")
+        n.interpolation_type = "SMOOTHSTEP"
+        n.inputs["From Min"].default_value, n.inputs["From Max"].default_value = lo, hi
+        k.link(x, n.inputs["Value"])
+        return n.outputs[0]
+
+    def clamp(x, lo, hi):
+        return k.math("MINIMUM", k.math("MAXIMUM", x, lo), hi)
+
+    def rgb(c):
+        return list(srgb_to_linear(c[:3]))
+
+    s = sample(1.0, 0.0)
+    m, wide = s[0], s[2]
+    coarse = k.math("SUBTRACT", s[1], 0.5)
+    fine = k.math("SUBTRACT", sample(PAPER_FINE, 0.37)[1], 0.5)
+    # The print's outline cut sharp at 0.4, its lines deepened about 0.85 away from it.
+    tone = k.mix("FLOAT", smooth(wide, 0.45, 0.75), 0.8, clamp(k.math("ADD", 0.85, k.math("MULTIPLY", 2.2, k.math("SUBTRACT", m, 0.85))), 0.15, 1.0))
+    mottle = k.mix("FLOAT", smooth(wide, 0.1, 0.3), k.math("MINIMUM", m, 0.08), 0.03)
+    ink = k.mix("FLOAT", dx, m, k.math("MAXIMUM", k.math("MULTIPLY", smooth(m, 0.38, 0.42), tone), mottle))
+    # The powder: uneven, tarnished in the low patches, burnished to flecks on the tops.
+    tarnish = k.math("MULTIPLY", clamp(k.math("MULTIPLY", coarse, -2.0), 0.0, 1.0), 0.2 * dy)
+    burnish = k.math("MULTIPLY", smooth(fine, 0.33, 0.45), dy)
+    gl = rgb(gold)
+    pr = k.scale_rgb(k.mix("RGBA", tarnish, (1.0, 1.0, 1.0), PAPER_TARNISH), k.math("ADD", 1.0, k.math("MULTIPLY", dy, k.math("ADD", k.math("MULTIPLY", coarse, 0.1), k.math("MULTIPLY", fine, 0.2)))))
+    pr = k.scale_rgb(pr, gl)
+    pr = k.mix("RGBA", burnish, pr, [min(1.6 * c, 1.0) for c in gl])
+    # The ground: its mottle and grain, a few pale flecks.
+    fleck = k.math("MULTIPLY", smooth(fine, 0.4, 0.48), dz)
+    gk = k.math("ADD", 1.0, k.math("ADD", k.math("MULTIPLY", dz, k.math("ADD", k.math("MULTIPLY", fine, 0.35), k.math("MULTIPLY", coarse, 0.45))), k.math("MULTIPLY", fleck, 0.5)))
+    gr = k.scale_rgb(gk, rgb(ground))
+    k.link(k.mix("RGBA", ink, gr, pr), b.inputs["Base Color"])
+    pr_rough = k.math("ADD", gold[3], k.math("MULTIPLY", dy, k.math("ADD", k.math("SUBTRACT", k.math("MULTIPLY", tarnish, 0.15), k.math("MULTIPLY", burnish, 0.08)), clamp(k.math("MULTIPLY", fine, -0.3), -0.05, 0.15))))
+    k.link(k.mix("FLOAT", ink, ground[3], pr_rough), b.inputs["Roughness"])
+    k.link(ink, b.inputs["Metallic"])
+    b.inputs["Specular IOR Level"].default_value = 0.0   # the ground reflects nothing
+    # The relief in metres: the print on the paper, the grain under both.
+    if dw > 0.0 or dz > 0.0:
+        h = k.math("ADD", k.math("MULTIPLY", m, dw * PRINT_RELIEF), k.math("MULTIPLY", fine, dz * GRAIN_RELIEF * 2.0))
+        bu = nt.nodes.new("ShaderNodeBump")
+        bu.inputs["Distance"].default_value, bu.inputs["Strength"].default_value = 1.0, 1.0
+        k.link(h, bu.inputs["Height"])
+        k.link(bu.outputs["Normal"], b.inputs["Normal"])
+    return m_
+
+
+nums = lambda v, d: [float(x) for x in v.split(",")] if v else d
+PAPER_GROUND_SET = nums(F["paper-ground"], PAPER_GROUND)
+PAPER_GOLD_SET = nums(F["paper-gold"], PAPER_GOLD)
+PAPER_DETAIL_SET = nums(F["paper-detail"], [1.0, 1.0, 1.0, 1.0])
 A = S["albedo"]
 G = S["gloss"]
 SF = S.get("surfaces", {})
@@ -505,7 +641,9 @@ def floor_wax(name, color):
 # texture at its physical size, optionally stained to three sRGB anchors by its luminance (the
 # grain kept), under a Principled base and a clear coat. SPEC: {"oak"|"table"|"floor": {"tex":
 # DIR or "ours", "mm": its side, "turn": 90, "anchors": [3 hex] or null, "rough": [lo, hi],
-# "coat": [weight, roughness], "bump": [distance, strength]}}.
+# "coat": [weight, roughness], "bump": [distance, strength], "spec": the base's Specular IOR Level
+# (0.5 if left out; 0 the wood matte under its coat, as the app's coat model and coated() take it),
+# "coat_bump": the share of the bump the coat follows (0 if left out: the coat flat)}}.
 
 def finished_wood(name, w, ours_map, ours_uv):
     m, nt, b = diffuse(name, (0.5, 0.5, 0.5))
@@ -569,7 +707,13 @@ def finished_wood(name, w, ours_map, ours_uv):
         bu.inputs["Distance"].default_value, bu.inputs["Strength"].default_value = w["bump"]
         k.link(height, bu.inputs["Height"])
         k.link(bu.outputs["Normal"], b.inputs["Normal"])
-    b.inputs["Specular IOR Level"].default_value = 0.5
+        if w.get("coat_bump"):
+            cb = nt.nodes.new("ShaderNodeBump")
+            cb.inputs["Distance"].default_value = w["bump"][0]
+            cb.inputs["Strength"].default_value = w["bump"][1] * w["coat_bump"]
+            k.link(height, cb.inputs["Height"])
+            k.link(cb.outputs["Normal"], b.inputs["Coat Normal"])
+    b.inputs["Specular IOR Level"].default_value = w.get("spec", 0.5)
     b.inputs["IOR"].default_value = 1.5
     b.inputs["Coat Weight"].default_value, b.inputs["Coat Roughness"].default_value = w["coat"]
     b.inputs["Coat IOR"].default_value = 1.5
@@ -589,7 +733,8 @@ brass = G["brass"]
 mats = {
     "floor": floor_maps("floor") if room_maps else floor_wax("floor", A["floor"]),
     "oak": oak_panels("oak") if room_maps else gloss("oak", A["oak"], G["oak_rough"]),   # WALL_OAK.base.w
-    "paper": wallpaper("paper") if room_maps else gloss("paper", A["paper"], G["paper_rough"]),   # LOOK.paper.w
+    "paper": ((wallpaper_physical("paper") if F["paper"] == "physical" else wallpaper("paper")) if room_maps
+              else gloss("paper", A["paper"], G["paper_rough"])),   # LOOK.paper.w
     "stone": gloss("stone", A["stone"], G["stone_rough"]),            # LOOK.stone.w
     "plaster": gloss("plaster", A["plaster"], G["plaster_rough"]),    # LOOK.plaster_shade.w, _light.w
     "ceiling": gloss("ceiling", A["ceiling"], G["ceiling_rough"]),    # LOOK.ceiling_shade.w, _light.w
@@ -705,7 +850,12 @@ scene.world = world
 
 # ---- camera
 
-v = S["views"][F["view"]]
+v = dict(S["views"][F["view"]]) if F["view"] in S["views"] else {}
+for key in ("eye", "at"):     # --eye X,Y,Z --at X,Y,Z --fov DEG: a view of one's own (Blender's metres)
+    if F[key]:
+        v[key] = nums(F[key], None)
+if F["fov"]:
+    v["fov"] = float(F["fov"])
 eye, at = Vector(v["eye"]), Vector(v["at"])
 cam = bpy.data.cameras.new("cam")
 cam.sensor_fit = "VERTICAL"
@@ -758,6 +908,7 @@ layer.use_pass_diffuse_indirect = True
 layer.use_pass_diffuse_color = True
 layer.use_pass_glossy_direct = True
 layer.use_pass_glossy_indirect = True
+layer.use_pass_glossy_color = True
 layer.use_pass_normal = True
 layer.use_pass_object_index = True
 # The props' parts numbered for the statistics of their light by facing.
@@ -806,7 +957,8 @@ combined = passes["Combined"]
 # one, else the noisy diffuse passes (the lace, the brass).
 color = passes["Diffuse Color"]
 raw = passes["Diffuse Direct"] + passes["Diffuse Indirect"]
-glossy = passes["Glossy Direct"] + passes["Glossy Indirect"]
+# The glossy passes are the light over the glossy colour, as the diffuse ones are over theirs.
+glossy = (passes["Glossy Direct"] + passes["Glossy Indirect"]) * passes.get("Glossy Color", 1.0)
 light = np.where(color > 0.01, np.maximum(combined - glossy, 0.0) / np.maximum(color, 1e-4), raw)
 
 

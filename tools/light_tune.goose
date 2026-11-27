@@ -318,6 +318,7 @@ let TOES = ["room", "neutral", "none", "agx"];
 let LACE_WAYS = ["f3", "f2", "f", "d"];
 // --sun-color-height: the sun's colour as at this height (a hazier sky reddens it as a lower sun's
 // does), its own height's when negative.
+var sun_color_height: f32 = -1.0;
 var spare_laces: u8[>..] = [];
 // The wallpaper's masks (--paper-mask): today's built in, or the engraved one read from
 // design/materials/wallpaper_engraved.png (tools/materials/wallpaper_engrave.py).
