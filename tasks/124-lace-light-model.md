@@ -125,3 +125,39 @@ Left (the second criterion not met):
 - The near panel's foot 2.7: both sides' probes by the floor and the wall.
 - The floor's cheap mirror (`--mirror-cheap`) and the floor's mirror of the lace keep the old
   lace.
+
+## The near panel's foot (2026-11-27)
+
+The user: the lace below the window considerably lighter than Cycles', evenly pale grey-beige
+to the hem, where Cycles' is dark and warm, about as dark as the wainscot behind it.
+
+Measured at the lace's own vertices below 1.2 m (a scratch dump from `lace_on_vertices`)
+against the CPU tracer at the same points, the same description, 256 cosine rays a side
+(`build/lace124/pt/path_trace_lace.goose`, mode `lacelight`; `build/lace124/cmp_lv.py`):
+
+- The window side just below the sill (0.6–0.8 m) was 4.5 to 5.9 times the tracer's, B/R 1.03
+  against 0.40: nearly all of it the probes' light toward the window at the cloth (0.010 to
+  0.011 against the tracer's 0.0022 to 0.0027 for the whole side), which takes the window's
+  sky above the sill. Through the folds' holes (the room side's cavity term) it lifted the room
+  side there to 1.24 to 1.84.
+- Fixed (1e741853): the window side sees the window wall's own light, the bake's wall cells'
+  (`room_light::window_wall_light`, bilinear, the niches' holes out), not a probe. After: the
+  window side at 0.6–0.8 m 0.90 to 1.01 of the tracer, below 0.6 m 0.2 to 0.3 (its share of
+  the thread's light about a tenth there); the room side below the sill 0.7 to 1.1. The
+  thread's own light against Cycles: the near panel's foot 2.68 → 1.39, by the tie 1.61 →
+  0.86, the middle window's panel in shade 1.30 → 1.00; the error factor over the seven
+  regions 1.53 → 1.43. Without `--light physical` the views as before (within the base's own
+  run-to-run pixels at the tie-backs); `scripts/test.sh ui` passed.
+- Left, not fixed: the room side's colour. Its level is right but its B/R is 0.40 to 0.43
+  against the tracer's 0.16 to 0.27 (the pixels 0.22 against 0.13): the probes' colour in
+  the shade, the whole room's (task 122's "the app's shade bluer than Cycles'": the sky's
+  part 1.1 to 1.4, the sun's bounce 0.5 to 0.8). That is why the foot still reads grey-beige
+  against Cycles' warm brown. A general probe fix, not one for the lace; the user to decide.
+- Left: the lace's window side below 0.6 m 0.2 to 0.3 of the tracer and the lit panels'
+  lower parts 0.1 (the floor between cloth and wall, and the room's light seen back through
+  the folds' holes, are not in it: a cavity term on the window side as the room side has, its
+  hidden share from the folds' other phase, is the next step); the lit panels 0.45 to 0.6
+  (the sun's shadows on the cloth sharp and blocky). The per-vertex light carries a share of
+  the cloth's mean colour, not each vertex's own colour.
+- The results page has the foot's crops before, after and Cycles
+  (`build/notes/lace-shade/index.html`).
