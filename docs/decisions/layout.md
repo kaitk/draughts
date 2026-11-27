@@ -152,6 +152,10 @@ split is in [the code's layout](README.md#the-codes-layout).
   Link-time optimization, on for that build alone, folds the 0 in and leaves the parser
   and the flags' names out of the executable (none of `--screen`, `--puzzle`, `--tap`
   in `strings`, 2026-11-27). Simulator and device builds read flags as before.
+- The same build leaves out the A key's MSAA and SMAA switch (`host::aa_key`), a
+  development key no screen shows, and every iOS build leaves out SDL's Vulkan
+  (`SDL_VULKAN` off in `platform/ios/CMakeLists.txt`), so the binary names no Vulkan
+  loader or MoltenVK to load at run time (0.9.4 (7), 2026-11-27).
 - Why: App Review rejected 0.8.0 and 0.9.0 under Guideline 5.6 for features "intentionally
   hidden during the review process" without naming one; launch arguments that open any
   screen or locked puzzle, play scripted taps, or set ratings were the one part of the

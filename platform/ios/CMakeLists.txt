@@ -30,6 +30,8 @@ set(SDL_OPENGLES OFF CACHE BOOL "" FORCE)
 # references Bluetooth without a purpose string (NSBluetoothAlwaysUsageDescription). The
 # app opens no joystick, and a Kids app asks for no Bluetooth (task 046).
 set(SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+# gfx draws with Metal on iOS: without Vulkan, SDL loads no outside library (MoltenVK) at run time.
+set(SDL_VULKAN OFF CACHE BOOL "" FORCE)
 add_subdirectory("${SDL_SRC}" SDL EXCLUDE_FROM_ALL)
 
 # --- the program -------------------------------------------------------------------------

@@ -154,7 +154,8 @@ fn input(h: Host&, now: f64) -> gui::Input {
     return input;
 }
 
-fn aa_key() -> bool { gfx::key_pressed("A") }
+// A development key, so never in a store build, where every feature is on a screen.
+fn aa_key() -> bool { dev_args() && gfx::key_pressed("A") }
 
 // The goose_gfx fork's borderless fullscreen, which the release's gfx.goose doesn't
 // declare (gfx_fork.c stands in where the release's gfx is linked).

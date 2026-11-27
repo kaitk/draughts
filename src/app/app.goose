@@ -217,7 +217,7 @@ fn report_dropped(lp: Loop&, g: gui::Gui&, sh: shell::Shell&) {
     print("gui: ", g.dropped, " quads dropped past gui::MAX_QUADS (", gui::MAX_QUADS, ") on screen ", sh.screen);
 }
 
-// A switches the 3D board between MSAA and SMAA; Alt and Enter, or F11, a desktop's window
+// A switches the 3D board between MSAA and SMAA (not in a store build); Alt and Enter, or F11, a desktop's window
 // to fullscreen and back; neither while a name is typed, which keeps the keyboard up.
 fn follow_keys(lp: Loop&, h: host::Host&, rd: render::Renderer&, sh: shell::Shell&, out: shell::Frame&) {
     if !out.typing && host::aa_key() {

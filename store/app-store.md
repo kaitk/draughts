@@ -221,11 +221,11 @@ It has no network code, no accounts, no ads, no purchases, no links out of the a
 
 Two things change by design. The background's season follows the date unless a season is chosen in Settings, Theme, so the picture depends on the day. Sound is off until turned up in Settings, Sound.
 
-This build reads no launch arguments or environment variables: the development options used to make screenshots and run tests are left out of it. Its exact source is tagged ios-0.9.4 (https://github.com/kaitk/draughts/tree/ios-0.9.4), and docs/development.md there says how to build it ("Run on iOS"; the App Store's build is scripts/ios.py --release, on a Mac with Xcode).
+Drawing adapts to the device (Metal 4 on iOS 26 with a recent GPU, otherwise Metal through SDL), with the same look either way. A keyboard only moves and confirms the focus (arrows, Tab, Enter, Escape); there are no shortcuts. This build reads no launch arguments or environment variables: the development options used to make screenshots and run tests are left out of it. Its exact source is tagged ios-0.9.4 (https://github.com/kaitk/draughts/tree/ios-0.9.4), and docs/development.md there says how to build it ("Run on iOS"; the App Store's build is scripts/ios.py --release, on a Mac with Xcode).
 ```
 
-The tag names the commit each upload was built from (`ios-0.9.4` at `343a924c`, 0.9.4 (6),
-uploaded 2026-11-27), so the notes' link shows the very source reviewed; `v0.9.4` stays on
+The tag names the commit each upload was built from (`ios-0.9.4` at the commit of 0.9.4 (7),
+uploaded 2026-11-27; 0.9.4 (6), uploaded first, kept the A key and Vulkan), so the notes' link shows the very source reviewed; `v0.9.4` stays on
 the desktop and Android release.
 
 ### Rejections
@@ -257,6 +257,10 @@ the desktop and Android release.
   app with no income is "unlikely" a trader, and a non-trader shows no contact details
   ([DSA trader requirements](https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements),
   read 2026-11-09).
+- **Not on Macs or Apple Vision Pro** (2026-11-27): Pricing and Availability's "iPhone and
+  iPad Apps on Apple Silicon Macs" and "... on Apple Vision Pro" are off, as the app was never
+  tested in those compatibility modes; a Mac version would be its own macOS platform on this
+  app record later.
 - **iPhone and iPad** (2026-11-09): the Info.plist offers both (`UIDeviceFamily` 1, 2),
   so iPad screenshots are required. `UIRequiresFullScreen` is deprecated in iPadOS 26
   and will be ignored, so the app follows a resized window instead.

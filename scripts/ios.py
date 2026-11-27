@@ -58,7 +58,7 @@ from native import (IOS_ICON, ROOT, VERSION_NAME, add_program_args, app_id_of, a
 # program gets BUNDLE_ID.<name> (native.app_id_of). CFBundleShortVersionString is
 # native.VERSION_NAME.
 BUNDLE_ID = "io.github.kaitk.draughts.app"
-BUILD_NUMBER = "6"        # CFBundleVersion, raised for every upload
+BUILD_NUMBER = "7"        # CFBundleVersion, raised for every upload
 # A release build's App Store profile and the upload's API key ids, outside the repo
 # (docs/development.md, "Release builds"); DRAUGHTS_IOS_PROFILE, DRAUGHTS_ASC_PROPERTIES.
 RELEASE_PROFILE = "~/.config/draughts/draughts-app-store.mobileprovision"
