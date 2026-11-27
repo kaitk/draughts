@@ -88,8 +88,9 @@
 //       [--light today|physical (the room's light from physical inputs, physical_light; today as made)]
 //       [--camera-toe room|neutral|none|agx (--light physical's one curve after the HDR pass: the shoulder after
 //       that toe, or AgX at the metered exposure, the default)] [--camera-ev EV (AgX's exposure over the meter's; 0)]
+//       [--sun-color-height DEG (--light physical: the sun's colour as at this height, a hazier sky's; its own)]
 //       [--grade season|none (--light physical under AgX: the season's grade, render3d::GRADES, or none; season)]
-//       [--grade-ev 0|-0.5|-1|-1.5|lift|lift2|match|match-dark (with the grade: stops under the season's;
+//       [--grade-ev season|-0.5|-1|-1.5|lift|lift2|match|match-dark (with the grade: stops under the season's;
 //       lift, lift2, match, match-dark at -1.5, -1.75, -1, -1 with AgX's look power 0.7, 0.65, 0.65, 0.7; match)]
 //       [--coat on|off (--light physical: the varnish and the wax as clear coats on the walls and floor,
 //       render3d::physical_coat; on)] [--paper-metal on|off (with the coat: the wallpaper's print a metal over a
@@ -251,7 +252,7 @@ fn physical_sun(made: rooms::Room, height: f32) -> float4 {
     let key = rooms::color_of(made.key_color);
     let y = 0.2126 * key.x + 0.7152 * key.y + 0.0722 * key.z;
     let grey = float3 { y, y, y };
-    let sun = if sun_by_height { rooms::sun_color_at(height) * y } else { grey + (key - grey) * render3d::ROOM_SUN_AS_MADE.x };
+    let sun = if sun_by_height { rooms::sun_color_at(if sun_color_height >= 0.0 { sun_color_height } else { height }) * y } else { grey + (key - grey) * render3d::ROOM_SUN_AS_MADE.x };
     return float4 { srgb_of(sun.x), srgb_of(sun.y), srgb_of(sun.z), made.key_color.w };
 }
 // --light physical's sun's broad sheen (render3d::sheen_look): none, as no lobe of the kind is
@@ -313,6 +314,9 @@ let TOES = ["room", "neutral", "none", "agx"];
 // The lace's ways (C, --lace): f3 the app's, f2, f and d spare ones in design/materials/,
 // read into spare_laces at the start.
 let LACE_WAYS = ["f3", "f2", "f", "d"];
+// --sun-color-height: the sun's colour as at this height (a hazier sky reddens it as a lower sun's
+// does), its own height's when negative.
+var sun_color_height: f32 = -1.0;
 var spare_laces: u8[>..] = [];
 // --light physical's camera curve (render3d::camera_toe): AgX, as Cycles takes it.
 let CAMERA_TOE = render3d::CAMERA_AGX;
@@ -322,7 +326,7 @@ let GRADE_WAYS = ["season", "none"];
 // (task 122): stops under it, and AgX's look power (the darks' lift) in its place. match
 // (-1, power 0.65) meets the autumn reference's log-average (0.063 against 0.058) with 1.5% of
 // the reference view near white (the season's grade 3.0%, the reference 0.7%).
-let EXPOSURES = ["0", "-0.5", "-1", "-1.5", "lift", "lift2", "match", "match-dark"];
+let EXPOSURES = ["season", "-0.5", "-1", "-1.5", "lift", "lift2", "match", "match-dark"];
 let EXPOSURE_EV: f32[8] = [0.0, -0.5, -1.0, -1.5, -1.5, -1.75, -1.0, -1.0];
 let EXPOSURE_POWER: f32[8] = [0.0, 0.0, 0.0, 0.0, 0.7, 0.65, 0.65, 0.7];
 fn graded_as(season: i64, exposure: i64) -> render3d::Grade {
@@ -1644,6 +1648,7 @@ fn main() {
     // shows the room built again round the moved table (a check of the live path).
     let place_then = pick(argv, "--place-then", PLACE_NAMES, -1);
     if has(argv, "--table-at") { table_place = float2 { table_at.x, table_at.y }; }
+    sun_color_height = number(argv, "--sun-color-height", -1.0);
     if has(argv, "--wall") { room.window = four(argv, "--wall", room.window); }
     if has(argv, "--sun-height") { room.key.y = number(argv, "--sun-height", room.key.y); }
     if has(argv, "--board-turn") { board_turn = number(argv, "--board-turn", 0.0); }
@@ -2067,7 +2072,8 @@ fn main() {
                     slider(c, "Across the wall", room.window.y, -60.0, 60.0);
                     slider(c, "Height", room.key.y, 3.0, 70.0);
                     slider(c, "Round (turns the room)", room.key.x, -180.0, 180.0);
-                    slider(c, "Strength", room.key.z, 0.0, 12.0);
+                    slider(c, "Strength", room.key.z, 0.0, if physical { 40.0 } else { 12.0 });
+                    if physical { slider(c, "Colour as at (deg)", sun_color_height, -1.0, 30.0); }
                     slider(c, "Shadow", room.key.w, 0.0, 1.0);
                     ui::tree_state_pop(c);
                 }
