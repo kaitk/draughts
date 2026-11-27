@@ -168,7 +168,7 @@ let LIT_PROPS = """
     layout(set = 2, binding = 9) uniform sampler2D props_probes;
     layout(set = 3, binding = 2) uniform PropsLight { vec4 light_box; vec4 light_grid; vec4 props_look; vec4 room_box;
                                                       vec4 room_doors; vec4 room_heights; vec4 lace_light; vec4 box_paper;
-                                                      vec4 box_paint; vec4 box_ceiling; };
+                                                      vec4 box_paint; vec4 box_ceiling; vec4 env_pano[3]; };
     """;
 let LIT_FRAG = """
     const float CROWN_SPAN = 0.6;       // render3d::crown_map

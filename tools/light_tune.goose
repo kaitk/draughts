@@ -256,30 +256,31 @@ let BASE_WOODS = ["today", "own"];
 let PROPS_WAYS = ["off", "on", "kept"];
 let LIGHT_WAYS = ["today", "physical"];
 // --woods (render3d::Wood's ways), by render3d's WOOD_OAK, WOOD_FLOOR, WOOD_TABLE; the flag and the
-// panel take them as the wainscot, the table and chairs, the floor. "tuned" is the floor's alone.
-let WOOD_WAYS = ["today", "ours", "picks", "tuned"];
+// panel take them as the wainscot, the table and chairs, the floor.
+let WOOD_WAYS = ["today", "ours", "picks"];
 let WOOD_FLAG_ORDER: i64[3] = [render3d::WOOD_OAK, render3d::WOOD_TABLE, render3d::WOOD_FLOOR];
 // The docx's finishes (manor_wood_materials_cycles.docx; tools/blender/woods/ours.json), by wood:
 // the stain's three colours (sRGB), the base's roughness from x to y over its map's, the coat's
 // weight z and roughness w. The panelling stained oak under a satin varnish, the floor waxed oak,
 // the table and chairs French-polished mahogany. The floor's stain three quarters of the docx's in
-// linear light and its wax a full coat at 0.08 (2026-11-27, task 122: the sun patches nearer the
-// autumn reference's orange; the far floor's streaks, Cycles' v4).
+// linear light (task 122: the sun patches nearer the autumn reference's orange) and its wax matt,
+// half a coat at 0.5, as the concepts' floor (2026-11-27, task 130; a full coat at 0.08 before).
 let WOOD_STAINS: float3[9] = [float3 { 0x43, 0x27, 0x19 }, float3 { 0x69, 0x43, 0x2B }, float3 { 0x90, 0x60, 0x3D },
                               float3 { 0x45, 0x2D, 0x1A }, float3 { 0x6A, 0x47, 0x2D }, float3 { 0x90, 0x65, 0x3C },
                               float3 { 0x35, 0x1C, 0x13 }, float3 { 0x58, 0x30, 0x20 }, float3 { 0x87, 0x50, 0x34 }];
-let WOOD_FINISHES: float4[3] = [float4 { 0.4, 0.52, 0.35, 0.33 }, float4 { 0.36, 0.48, 1.0, 0.08 }, float4 { 0.28, 0.4, 0.78, 0.2 }];
+let WOOD_FINISHES: float4[3] = [float4 { 0.4, 0.52, 0.35, 0.33 }, float4 { 0.36, 0.48, 0.5, 0.5 }, float4 { 0.28, 0.4, 0.78, 0.2 }];
 // Our maps' luminance at their 5th and 95th percentiles (linear), as scene.py's map_percentiles
 // reads blender_export's wall_albedo.png, floor_albedo.png (the floor as laid) and table_albedo.png.
-let OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07343 }, float2 { 0.01716, 0.12983 }];
+var OUR_RANGES: float2[3] = [float2 { 0.01811, 0.07711 }, float2 { 0.02882, 0.07343 }, float2 { 0.01716, 0.12983 }];
 
-// The tuned floor's (render3d::Wood's way 3): the stain's range, wider than ours so the grain
-// is a little softer beside the planks' tones, and its tile's row: y how dark its joints go
-// again after the stain (0: the parquet's are no darker than ours), z how far its planks'
-// warmth varies (1 ours). Fitted to the parquet in shade, straight down: the planks' variation
-// 0.220 against its 0.236 (ours 0.189), the grain's 0.167 against 0.110.
-let TUNED_RANGE = float2 { 0.024, 0.08 };
-let TUNED_FLOOR = float4 { 0.0, 0.0, 2.5, 0.0 };
+// Our floor's joints (--floor-joint): x the planks' edges rounded over this many millimetres,
+// y the rounding's slope at the joint, z how dark the joint is (1 as before). 2 mm at 0.19, no dark
+// line: the user's, tuned in the tuner (2026-11-27, task 130); 0, 0, 1 the joints as before.
+var FLOOR_JOINT = float4 { 2.0, 0.19, 0.0, 0.0 };
+// The grain's share in our floor's wax film, the normal its reflection is seen along
+// (--floor-film-grain): none (the user, 2026-11-27, task 130; 0.25 before, and still without the
+// wood's finish).
+var FLOOR_FILM_GRAIN: f32 = 0.0;
 
 fn linear_of(c: f32) -> f32 {
     let v = c / 255.0;
@@ -289,7 +290,7 @@ fn linear_of(c: f32) -> f32 {
 // Wood k's finish the way `way` says (WOOD_WAYS), the picture's range where it is read.
 fn wood_of(k: i64, way: i64) -> render3d::Wood {
     guard way > 0 else { return default<render3d::Wood>(); }
-    var range = if way == render3d::WOOD_TUNED { TUNED_RANGE } else { OUR_RANGES[k] };
+    var range = OUR_RANGES[k];
     var tile: f32 = 0.0;
     if way == render3d::WOOD_PICTURE && wood_pictures::pictured[k].w > 0.0 {
         range = float2 { wood_pictures::pictured[k].x, wood_pictures::pictured[k].y };
@@ -301,16 +302,18 @@ fn wood_of(k: i64, way: i64) -> render3d::Wood {
     return render3d::Wood { float4 { linear_of(a.x), linear_of(a.y), linear_of(a.z), range.x },
                             float4 { linear_of(b.x), linear_of(b.y), linear_of(b.z), range.y },
                             float4 { linear_of(c.x), linear_of(c.y), linear_of(c.z), way }, WOOD_FINISHES[k],
-                            if way == render3d::WOOD_TUNED { TUNED_FLOOR } else { float4 { tile, 0.0, 0.0, 0.0 } } };
+                            if k == render3d::WOOD_FLOOR && way == render3d::WOOD_STAINED {
+                                float4 { FLOOR_FILM_GRAIN, FLOOR_JOINT.x * surfaces::METRE / 1000.0, FLOOR_JOINT.y, FLOOR_JOINT.z }
+                            } else { float4 { tile, 0.0, 0.0, 0.0 } } };
 }
 
 // --woods: one way for all, or the wainscot's, the table's and the floor's.
 fn wood_ways_of(argv: u8[:][>..]&) -> i64[3] {
-    // The user's picks (2026-11-27): the wainscot and panelling ours, the table ours, the floor tuned.
+    // The user's picks (2026-11-27): ours for all; the floor's tuned way, toward the Poly Haven parquet, dropped (task 130).
     var ways: i64[3] = [0, 0, 0];
     ways[render3d::WOOD_OAK] = 1;
     ways[render3d::WOOD_TABLE] = 1;
-    ways[render3d::WOOD_FLOOR] = 3;
+    ways[render3d::WOOD_FLOOR] = 1;
     let at = flag_value(argv, "--woods");
     guard at > 0 else { return ways; }
     var rest: const u8[:] = argv[at];
@@ -318,7 +321,7 @@ fn wood_ways_of(argv: u8[:][>..]&) -> i64[3] {
         let part, after, more = split_once(rest, ",");
         var found = -1;
         for n, j in WOOD_WAYS { if n == part { found = j; } }
-        guard found >= 0 else { abort(str("--woods: no ", part, " (", WOOD_WAYS[0], ", ", WOOD_WAYS[1], ", ", WOOD_WAYS[2], ", ", WOOD_WAYS[3], ")")); }
+        guard found >= 0 else { abort(str("--woods: no ", part, " (", WOOD_WAYS[0], ", ", WOOD_WAYS[1], ", ", WOOD_WAYS[2], ")")); }
         ways[WOOD_FLAG_ORDER[i]] = found;
         if !more {
             if i == 0 { ways = [found, found, found]; }
@@ -326,7 +329,6 @@ fn wood_ways_of(argv: u8[:][>..]&) -> i64[3] {
         }
         rest = after;
     }
-    for k in 3 { if ways[k] == render3d::WOOD_TUNED && k != render3d::WOOD_FLOOR { ways[k] = render3d::WOOD_STAINED; } }
     return ways;
 }
 
@@ -1670,6 +1672,10 @@ fn tune<O>(r3d: O&) {
         render3d::ssao_allowed = false;
         render3d::planar_allowed = false;
     }
+    // Under --light physical the floor's wax is matt (task 130): its reflection is the room's box
+    // through the film, as wide as Cycles' (the mirror's blur stops at its last mip, far too
+    // narrow and twice as bright); no mirror pass.
+    if physical { room.planar.x = 0.0; }
     room.planar = four(argv, "--planar", room.planar);
     render3d::planar_view = pick(argv, "--planar-view", PLANAR_VIEWS, 0);
     render3d::planar_scale = whole(argv, "--planar-size", 3) as i32;
@@ -1721,6 +1727,32 @@ fn tune<O>(r3d: O&) {
     render3d::paper_detail = if render3d::paper_metal { four(argv, "--paper-detail", PHYSICAL_PAPER_DETAIL) } else { float4_0 };
     // The woods' finishes (--woods), with the coat only; a picture read when first asked for.
     var wood_ways = if render3d::physical_coat { wood_ways_of(argv) } else { [0, 0, 0] };
+    // --floor-finish: the floor's finish in place of WOOD_FINISHES' (the base's roughness x to y,
+    // the coat's weight z and roughness w), for trying how glossy the wax is.
+    let floor_finish = four(argv, "--floor-finish", float4 { 0.0, 0.0, -1.0, 0.0 });
+    // --floor-range: the map's luminance the floor's stain takes from its darkest to its lightest
+    // (OUR_RANGES'); wider, the grain softer.
+    let floor_range = OUR_RANGES[render3d::WOOD_FLOOR];
+    let range4 = four(argv, "--floor-range", float4 { floor_range.x, floor_range.y, 0.0, 0.0 });
+    OUR_RANGES[render3d::WOOD_FLOOR] = float2 { range4.x, range4.y };
+    FLOOR_JOINT = four(argv, "--floor-joint", FLOOR_JOINT);
+    FLOOR_FILM_GRAIN = number(argv, "--floor-film-grain", FLOOR_FILM_GRAIN);
+    // --floor-shape CUP,TILT: the planks' cup (the slope at their edges) and tilt (each one's
+    // slope at most), in place of surfaces::LOOK's 0.012 and 0.01; under --light physical both
+    // 0.03, more natural (the user, 2026-11-27, task 130).
+    let shape4 = four(argv, "--floor-shape", if physical { float4 { 0.03, 0.03, 0.0, 0.0 } } else { float4 { -1.0, -1.0, 0.0, 0.0 } });
+    render3d::floor_shape = float2 { shape4.x, shape4.y };
+    // --floor-box CHEAP,WINDOWS: the matt floor's reflection without the mirror (render3d::floor_box),
+    // the room's box blurred by the wax's lobe (0) or only its light and the windows (1).
+    let box4 = four(argv, "--floor-box", float4 { 0.0, 1.0, 0.0, 0.0 });
+    render3d::floor_box = float2 { box4.x, box4.y };
+    // --env-pano MODE,X,Y,H (and --env-pano-alpha A): a panorama of what one of the reflections'
+    // lookups sees from the plan's point (render3d::env_pano); frame the floor or the table's top
+    // filling the screen.
+    // --refl off: the floor's matt wax back on the analytic box (task 131's room's reflection on).
+    render3d::refl_on = !(flag_value(argv, "--refl") > 0 && argv[flag_value(argv, "--refl")] == "off");
+    let pano4 = four(argv, "--env-pano", float4_0);
+    let pano_alpha = number(argv, "--env-pano-alpha", 0.25);
     var wood_unread: bool[3] = [false, false, false];
     sun_by_height = pick(argv, "--sun-color", SUN_COLOR_WAYS, 0) == 0;
     sun_color_given = has(argv, "--sun-color-height");
@@ -2345,6 +2377,16 @@ fn tune<O>(r3d: O&) {
                     choice(c, "Woods: the wainscot", wood_ways[render3d::WOOD_OAK], WOOD_WAYS[0..3]);
                     choice(c, "  the table and chairs", wood_ways[render3d::WOOD_TABLE], WOOD_WAYS[0..3]);
                     choice(c, "  the floor", wood_ways[render3d::WOOD_FLOOR], WOOD_WAYS[..]);
+                    if wood_ways[render3d::WOOD_FLOOR] == render3d::WOOD_STAINED {
+                        slider(c, "Floor: planks' cup", render3d::floor_shape.x, 0.0, 0.08);
+                        slider(c, "  planks' tilt", render3d::floor_shape.y, 0.0, 0.05);
+                        slider(c, "  joints' rounding (mm)", FLOOR_JOINT.x, 0.0, 4.0);
+                        slider(c, "  rounding's slope", FLOOR_JOINT.y, 0.0, 1.0);
+                        slider(c, "  joints' darkness", FLOOR_JOINT.z, 0.0, 1.0);
+                        slider(c, "  grain in the wax", FLOOR_FILM_GRAIN, 0.0, 0.5);
+                        slider(c, "  only the windows sharp", render3d::floor_box.x, 0.0, 1.0);
+                        slider(c, "  the windows' glow", render3d::floor_box.y, 0.0, 4.0);
+                    }
                 }
                 slider(c, "Oak light", oak.x, 0.25, 8.0);
                 slider(c, "Oak colour", oak.y, 0.0, 1.5);
@@ -2731,6 +2773,10 @@ fn tune<O>(r3d: O&) {
                 flag_four(line, "--table-coat", g.table_spec.coat);
                 format(line, " --woods ", WOOD_WAYS[wood_ways[render3d::WOOD_OAK]], ",", WOOD_WAYS[wood_ways[render3d::WOOD_TABLE]], ",",
                        WOOD_WAYS[wood_ways[render3d::WOOD_FLOOR]]);
+                flag_four(line, "--floor-joint", FLOOR_JOINT);
+                flag_pair(line, "--floor-shape", render3d::floor_shape);
+                flag_one(line, "--floor-film-grain", FLOOR_FILM_GRAIN);
+                flag_pair(line, "--floor-box", render3d::floor_box);
             }
             format(line, " --room-sun ", render3d::room_sun.x);
             flag_four(line, "--oak-sun", float4 { render3d::room_sun.y, render3d::room_sun.z, render3d::room_sun.w, 0.0 });
@@ -2788,6 +2834,12 @@ fn tune<O>(r3d: O&) {
             eye = plan_point(g, view_eye(view, place));
             target = plan_point(g, view_at(view, place));
             fov = 60.0;
+        }
+        if pano4.x > 0.5 {
+            let o = plan_point(g, float3 { pano4.y, pano4.z, pano4.w });
+            let ex = normalize(plan_point(g, float3 { pano4.y + 1.0, pano4.z, pano4.w }) - o);
+            let ey = normalize(plan_point(g, float3 { pano4.y, pano4.z + 1.0, pano4.w }) - o);
+            render3d::env_pano = [float4 { o.x, o.y, o.z, pano4.x }, float4 { ex.x, ex.y, ex.z, pano_alpha }, float4 { ey.x, ey.y, ey.z, 0.0 }];
         }
         // Behind the shell's windows the park (model3d::view_out), or with U a plain sky of
         // ours (render3d's plain fade), not the season's photograph; the fade gives the
@@ -2848,6 +2900,7 @@ fn tune<O>(r3d: O&) {
             }
             render3d::woods[k] = wood_of(k, wood_ways[k]);
         }
+        if floor_finish.z >= 0.0 { render3d::woods[render3d::WOOD_FLOOR].finish = floor_finish; }
         render3d::base_look = base_look;
         render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 })), eye,
                        r3d.screen_of(), size);

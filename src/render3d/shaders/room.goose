@@ -235,6 +235,12 @@ let ROOM_HEAD = """
     layout(set = 2, binding = 10) uniform sampler2D ssao_map;
     layout(set = 2, binding = 11) uniform sampler2D pre_place;
     #endif
+    #if defined(PHYSICAL_COAT) && defined(SHARP_BOX) && !defined(NO_SSAO) && !defined(PLANAR_FLOOR)
+    // The room's reflection (render3d::refl_pass, task 131): the room from its probe in an
+    // octahedral map, a level a roughness, in the room's units.
+    #define REFL_MAP 1
+    layout(set = 2, binding = 12) uniform sampler2D refl_map;
+    #endif
     #ifdef PLANAR_FLOOR
     // The room mirrored in the floor (render3d::planar_pass): its light in the room's units,
     // a the distance from the floor to what it shows along the reflection, with its mips.
@@ -345,7 +351,8 @@ let ROOM_HEAD = """
     // y its reach in world units), baked into corner_map, not read here; ssao: the room's ambient occlusion (SSAO_FN); planar: the
     // floor's mirror (render3d::planar_block): x how strong (0 none, the room's box seen
     // instead), y the tuner's views, z the map's texels a world unit spans at w 1, w its
-    // last mip; planar_look: x the boards' own wax, y the blur over the wax's lobe; contact:
+    // last mip; planar_look: x the boards' own wax, y the blur over the wax's lobe, z and w the matt floor's
+    // reflection (render3d::floor_box); contact:
     // the sun's contact shadows (render3d::contact_look); sheen: the sun's broad sheen
     // (render3d::sheen_look); room_sun: the sun's saturation on the room, the panelling oak's
     // share of it, its saturation and share of the sheen (render3d::room_sun); paint_quiet:
@@ -424,6 +431,8 @@ let ROOM_HEAD = """
         vec4 wood_oak[5];
         vec4 wood_floor[5];
         vec4 window_metal;
+        vec4 env_pano[3];
+        vec4 refl;
     };
     """;
 
@@ -596,6 +605,22 @@ let ROOM_FRAG = """
         return lit;
     }
 
+    // A plank's edge rounded down into a joint: its height h(y) = -sw k (1 - |y| / sw)² / 2 within
+    // sw of the joint (y from the joint, world units), so its slope is k at the joint and 0 at sw.
+    // x: the slope toward +y the normal tilts by, averaged over the pixel's footprint [y - e,
+    // y + e] (the height's difference over 2e); y: the slope's variance left unresolved there.
+    float joint_height(float y, float sw, float k) {
+        float r = max(1.0 - abs(y) / sw, 0.0);
+        return -0.5 * sw * k * r * r;
+    }
+    vec2 joint_slope(float y, float sw, float k, float e) {
+        e = max(e, 1e-5);
+        float mean = -(joint_height(y + e, sw, k) - joint_height(y - e, sw, k)) / (2.0 * e);
+        float near = 1.0 - smoothstep(sw, sw + 2.0 * e, abs(y));
+        float sq = k * k * min(sw / (3.0 * e), 1.0 / 3.0) * near;
+        return vec2(mean, max(sq - mean * mean, 0.0));
+    }
+
     // The herringbone's plank at f (the floor's u and v in plank widths), its rows along
     // u. In a frame turned 45°, planks n widths long lie across, [k, k + n] × [k, k + 1],
     // and up, [k, k + 1] × [k + 1, k + 1 + n], repeated by (n, -n): b is the repeat. id:
@@ -737,18 +762,24 @@ let ROOM_FRAG = """
     // The shell's box at h (the room's frame), a face whose inward normal in the room's frame
     // is nl: the surface there by where it is (the wainscot, the paper, the two doors' paint,
     // the bookcases, the plaster, the herringbone's mean). What room_seen meets, lit by
-    // box_irradiance and box_sun.
-    vec3 box_albedo(vec3 h, vec3 nl) {
-        float up = (h.y - shell.z) / shell.w;
-        vec3 wall = up < room_heights.z ? vec3(0.082, 0.046, 0.030) : mix(srgb(paper.rgb), srgb(gold.rgb), 0.3);
+    // box_irradiance and box_sun. Its edges `s` soft (smoothstep's half width, world units;
+    // x along the face, y up it), as wide as the lobe seeing them.
+    vec3 box_albedo(vec3 h, vec3 nl, vec2 s) {
+        float m = shell.w;
+        float up = h.y - shell.z;
+        float above = smoothstep(-s.y, s.y, up - room_heights.z * m);
+        vec3 wall = mix(vec3(0.082, 0.046, 0.030), mix(srgb(paper.rgb), srgb(gold.rgb), 0.3), above);
         if (nl.y != 0.0) return nl.y < 0.0 ? srgb(ceiling_light.rgb) : vec3(0.078, 0.045, 0.022);
+        float door_up = 1.0 - smoothstep(-s.y, s.y, up - room_heights.y * m);
         if (nl.x != 0.0) {
-            bool door = nl.x < 0.0 && abs(h.z - room_doors.z) < room_doors.w && up < room_heights.y;
-            return door ? srgb(paint.rgb) : wall;
+            if (nl.x > 0.0) return wall;
+            return mix(wall, srgb(paint.rgb), smoothstep(-s.x, s.x, room_doors.w - abs(h.z - room_doors.z)) * door_up);
         }
-        bool door = nl.z < 0.0 && abs(h.x - room_doors.x) < room_doors.y && up < room_heights.y;
-        bool cases = nl.z < 0.0 && abs(abs(h.x - room_doors.x) - book_cases.x) < book_cases.y && up < book_cases.z;
-        return door ? srgb(paint.rgb) : (cases ? vec3(0.046, 0.029, 0.019) : wall);
+        if (nl.z > 0.0) return wall;
+        float door = smoothstep(-s.x, s.x, room_doors.y - abs(h.x - room_doors.x)) * door_up;
+        float cases = smoothstep(-s.x, s.x, book_cases.y - abs(abs(h.x - room_doors.x) - book_cases.x))
+                    * (1.0 - smoothstep(-s.y, s.y, up - book_cases.z * m));
+        return mix(mix(wall, vec3(0.046, 0.029, 0.019), cases), srgb(paint.rgb), door);
     }
     // The world's normal of the box's face nl (the room's frame).
     vec3 box_normal(vec3 nl) { return vec3(axes.x * nl.x + axes.z * nl.z, nl.y, axes.y * nl.x + axes.w * nl.z); }
@@ -756,13 +787,18 @@ let ROOM_FRAG = """
     // so the box's map holds it (BOX_MAP_BAKE).
     vec3 box_irradiance(vec3 h, vec3 nl) { return room_irradiance(h, box_normal(nl)); }
     // The sun through the windows on the box at hw (the world's) for its face nl: its patches'
-    // edges as sharp as the window's light map's, so worked out where it is seen.
-    vec3 box_sun(vec3 hw, vec3 nl) {
+    // edges as sharp as the window's light map's, so worked out where it is seen, and `blur`
+    // softer again (world units) for the lobe seeing them.
+    vec3 box_sun(vec3 hw, vec3 nl, float blur) {
         vec3 n = box_normal(nl);
         vec3 l = light_dir.xyz;
         float nol = dot(n, l);
         if (nol <= 0.0) return vec3(0.0);
-        return room_sun_color(room_sun.x) * light_dir.w * shell_sun.y * nol / PI * window_light(hw);
+        float open = window_light(hw);
+    #ifdef SHELL_WINDOWS
+        if (room.y > 0.0 && shell.x > 0.5) open = mix(1.0 - room.y, 1.0, shell_open_soft(hw, blur));
+    #endif
+        return room_sun_color(room_sun.x) * light_dir.w * shell_sun.y * nol / PI * open;
     }
 
     // The box's map (render3d::box_map, task 115): box_irradiance a texel each BOX_MAP_TEXEL
@@ -810,7 +846,18 @@ let ROOM_FRAG = """
     // back in the room's units) between them, softer the farther and longer up the wall than
     // across it at a grazing look, as a waxed floor's streaks are. After the gilt and brass
     // study's proposal: no cube map.
-    vec3 room_seen(vec3 p, vec3 lp, vec3 r, vec3 lr, float alpha, float nov, float px) {
+    // The box's face nl at h (hw the world's), its edges soft_w soft and its sun blur softer.
+    vec3 box_face_seen(vec3 h, vec3 hw, vec3 nl, vec2 soft_w, float blur) {
+        #ifdef BOX_MAP
+        return box_albedo(h, nl, soft_w) * (box_map_at(h, nl) + box_sun(hw, nl, blur));
+        #else
+        return box_albedo(h, nl, soft_w) * (box_irradiance(h, nl) + box_sun(hw, nl, blur));
+        #endif
+    }
+    // Every edge in it, the windows' and the box's, blurred alike: as wide as the lobe is where
+    // it meets the box. win and rect: the window over the box alone and how much it covers.
+    vec3 room_seen_parts(vec3 p, vec3 lp, vec3 r, vec3 lr, float alpha, float nov, float px, out vec3 win, out float rect) {
+        rect = 0.0;
         float big = 1e6;
         float tx = abs(lr.x) < 1e-4 ? big : ((lr.x > 0.0 ? room_box.y : room_box.x) - lp.x) / lr.x;
         float tz = abs(lr.z) < 1e-4 ? big : ((lr.z > 0.0 ? room_box.w : room_box.z) - lp.z) / lr.z;
@@ -820,18 +867,31 @@ let ROOM_FRAG = """
         vec3 hw = p + r * t;
         vec3 nl = t == ty ? vec3(0.0, lr.y > 0.0 ? -1.0 : 1.0, 0.0)
                 : (t == tx ? vec3(lr.x > 0.0 ? -1.0 : 1.0, 0.0, 0.0) : vec3(0.0, 0.0, lr.z > 0.0 ? -1.0 : 1.0));
-        #ifdef BOX_MAP
-        vec3 c = box_albedo(h, nl) * (box_map_at(h, nl) + box_sun(hw, nl));
-        #else
-        vec3 c = box_albedo(h, nl) * (box_irradiance(h, nl) + box_sun(hw, nl));
-        #endif
-        // The windows, on the window wall.
-        if (t != tz || lr.z > 0.0) return c;
         float metre = shell.w;
         // The lobe's widening with distance, and the pixel's own spread of directions (a
-        // grooved panel's normals turn fast), so the windows' edges never alias.
+        // grooved panel's normals turn fast), so the edges never alias; longer up the wall
+        // than across it at a grazing look.
         float spread = 0.01 + 1.2 * alpha + 2.0 * px;
-        vec2 soft = vec2(1.0, 1.0 + 3.0 * (1.0 - nov)) * (0.01 * metre + t * spread) / metre;
+        vec2 soft_w = vec2(1.0, 1.0 + 3.0 * (1.0 - nov)) * (0.01 * metre + t * spread);
+        vec3 c = box_face_seen(h, p + r * t, nl, soft_w, t * spread);
+        // The edge to the next face the ray would meet (a corner, the ceiling's or floor's
+        // edge), as soft as the rest: within soft of it, half of each face's light at the edge.
+        float t2 = max(min(max(tx, ty), min(max(ty, tz), max(tx, tz))), 0.0);
+        if (t2 < big) {
+            vec3 nl2 = t2 == ty && t != ty ? vec3(0.0, lr.y > 0.0 ? -1.0 : 1.0, 0.0)
+                     : (t2 == tx && t != tx ? vec3(lr.x > 0.0 ? -1.0 : 1.0, 0.0, 0.0) : vec3(0.0, 0.0, lr.z > 0.0 ? -1.0 : 1.0));
+            vec3 h2 = lp + lr * t2;
+            float d = abs(dot(h2 - h, abs(nl2)));
+            float s = nl.y != 0.0 || nl2.y != 0.0 ? soft_w.y : soft_w.x;
+            if (d < s) {
+                vec3 c2 = box_face_seen(h2, p + r * t2, nl2, soft_w, t2 * spread);
+                c = mix(c, c2, 0.5 - 0.5 * smoothstep(0.0, s, d));
+            }
+        }
+        win = c;
+        // The windows, on the window wall.
+        if (t != tz || lr.z > 0.0) return c;
+        vec2 soft = soft_w / metre;
         float half_w = shell_niche.x;
         float rise = shell_niche.w;
         float radius = (half_w * half_w + rise * rise) / (2.0 * rise);
@@ -852,11 +912,18 @@ let ROOM_FRAG = """
         }
         vec2 w = vec2(along - mid, hw.y - shell.z) / metre;
         float head = arch_mid + sqrt(max(radius * radius - w.x * w.x, 0.0));
-        float rect = smoothstep(-soft.x, soft.x, half_w - abs(w.x))
-                   * smoothstep(-soft.y, soft.y, min(w.y - shell_niche.y, head - w.y));
-        if (rect < 0.001) return c;
+        rect = smoothstep(-soft.x, soft.x, half_w - abs(w.x))
+             * smoothstep(-soft.y, soft.y, min(w.y - shell_niche.y, head - w.y));
+        if (rect < 0.001) { rect = 0.0; return c; }
         vec2 wg = vec2(dot(qg.xz, axes.xy) - mid, qg.y - shell.z) / metre;
-        return mix(c, mix(bars, view, casement(wg, max(soft.x, soft.y), vec2(0.0))), rect);
+        win = mix(bars, view, casement(wg, max(soft.x, soft.y), vec2(0.0)));
+        return c;
+    }
+    vec3 room_seen(vec3 p, vec3 lp, vec3 r, vec3 lr, float alpha, float nov, float px) {
+        vec3 win;
+        float rect;
+        vec3 c = room_seen_parts(p, lp, r, lr, alpha, nov, px, win, rect);
+        return mix(c, win, rect);
     }
 
     // What a glossy surface sees along r through a GGX lobe alpha wide: the room seen
@@ -869,6 +936,92 @@ let ROOM_FRAG = """
         if (sharp < 0.001) return wide;
         vec3 lr = vec3(dot(r.xz, axes.xy), r.y, dot(r.xz, axes.zw));
         return mix(wide, room_seen(p, lp, r, lr, alpha, nov, px), sharp);
+    }
+
+    #ifdef REFL_MAP
+    // A direction's place in the reflection's octahedral map (passes.goose's OCTA_FN).
+    vec2 octa_uv(vec3 d) {
+        d /= abs(d.x) + abs(d.y) + abs(d.z);
+        vec2 e = d.y >= 0.0 ? d.xz : (1.0 - abs(d.zx)) * vec2(d.x >= 0.0 ? 1.0 : -1.0, d.z >= 0.0 ? 1.0 : -1.0);
+        return e * 0.5 + 0.5;
+    }
+    // What a surface at p sees along r through a GGX lobe alpha wide: the room's reflection
+    // where r meets the room's box, looked up from the probe (box-projected), at the level of
+    // its roughness.
+    vec3 refl_seen(vec3 p, vec3 r, float alpha) {
+        vec3 lp = vec3(dot(p.xz, axes.xy), p.y, dot(p.xz, axes.zw));
+        vec3 lr = vec3(dot(r.xz, axes.xy), r.y, dot(r.xz, axes.zw));
+        float big = 1e6;
+        float tx = abs(lr.x) < 1e-4 ? big : ((lr.x > 0.0 ? room_box.y : room_box.x) - lp.x) / lr.x;
+        float tz = abs(lr.z) < 1e-4 ? big : ((lr.z > 0.0 ? room_box.w : room_box.z) - lp.z) / lr.z;
+        float ty = abs(lr.y) < 1e-4 ? big : ((lr.y > 0.0 ? room_heights.x : shell.z) - lp.y) / lr.y;
+        float t = max(min(tx, min(ty, tz)), 0.0);
+        vec3 d = p + r * t - refl.xyz;
+        float lod = sqrt(clamp(alpha, 0.0, 1.0)) * (refl.w - 1.0);
+        return textureLod(refl_map, octa_uv(d), lod).rgb;
+    }
+    #endif
+
+    // The matt-waxed floor's (PHYSICAL_COAT without the mirror), by render3d::floor_box in
+    // planar_look: z 0 as room_reflection; 1 the walls, doors and ceiling only by their light
+    // that way (room_wide) and the windows' soft shapes over it; w the windows' light in it.
+    vec3 floor_reflection(vec3 p, vec3 lp, vec3 r, float alpha, float nov, float px) {
+    #ifdef REFL_MAP
+        // At a grazing look the wax's lobe is narrow across (about alpha times the look's
+        // sine) and long up and down, so one lookup of the map's round lobe spread each window
+        // sideways over the whole floor. Four taps up the reflection's own vertical plane, at
+        // the GGX slope's quartiles, each as wide as the lobe across and weighted by its
+        // Fresnel and masking; none under the floor. Against the GGX integral of the same map
+        // (task 131) the floor's error fell from 0.65 to 0.13.
+        if (refl.w > 0.5 && planar_look.z < 0.5) {
+            float a = clamp(alpha, 0.0, 1.0);
+            float a2 = a * a;
+            vec3 across = normalize(vec3(r.x, 0.0, r.z) + vec3(1e-5, 0.0, 0.0));
+            float up = asin(clamp(r.y, -1.0, 1.0));
+            vec3 v = vec3(-r.x, r.y, -r.z);
+            float narrow = a * 0.7 * clamp(r.y, 0.0, 1.0);
+            const float QUARTILES[4] = float[4](-1.1339, -0.2582, 0.2582, 1.1339);
+            vec3 sum = vec3(0.0);
+            float weight = 0.0;
+            for (int i = 0; i < 4; i++) {
+                float e = up + 2.0 * atan(a * QUARTILES[i]);
+                if (e <= 0.005) continue;
+                vec3 l = across * cos(e) + vec3(0.0, sin(e), 0.0);
+                float vh = sqrt(max(0.5 + 0.5 * dot(v, l), 0.0));
+                float c = sin(e);
+                float w = (0.04 + 0.96 * pow(1.0 - vh, 5.0)) * 2.0 * c / (c + sqrt(a2 + (1.0 - a2) * c * c));
+                sum += w * refl_seen(p, l, narrow);
+                weight += w;
+            }
+            return weight > 0.0 ? sum / weight : refl_seen(p, r, alpha);
+        }
+    #endif
+        if (planar_look.z < 0.5) return room_reflection(p, lp, r, alpha, nov, px);
+        vec3 lr = vec3(dot(r.xz, axes.xy), r.y, dot(r.xz, axes.zw));
+        vec3 win;
+        float rect;
+        room_seen_parts(p, lp, r, lr, alpha, nov, px, win, rect);
+        return mix(room_wide(lp, r), win * planar_look.w, rect);
+    }
+
+    // The light tuner's panoramas (render3d::env_pano): the lookup env_pano[0].w along the
+    // direction this pixel stands for, from env_pano[0].xyz.
+    vec3 env_pano_seen() {
+        vec2 uv = gl_FragCoord.xy / screen.xy;
+        float lon = (uv.x - 0.5) * 2.0 * PI;
+        float lat = (0.5 - uv.y) * PI;
+        vec3 d = normalize((env_pano[1].xyz * sin(lon) + env_pano[2].xyz * cos(lon)) * cos(lat) + vec3(0.0, sin(lat), 0.0));
+        vec3 q = env_pano[0].xyz;
+        vec3 lq = vec3(dot(q.xz, axes.xy), q.y, dot(q.xz, axes.zw));
+        vec3 ld = vec3(dot(d.xz, axes.xy), d.y, dot(d.xz, axes.zw));
+        float m = env_pano[0].w;
+        if (m < 1.5) return sh_eval(d) * params.z;
+        if (m < 2.5) return room_wide(lq, d);
+        if (m < 3.5) return room_seen(q, lq, d, ld, 0.0, 1.0, 0.0);
+    #ifdef REFL_MAP
+        if (m > 7.5) return refl.w > 0.5 ? refl_seen(q, d, env_pano[1].w) : vec3(1.0, 0.0, 1.0);
+    #endif
+        return floor_reflection(q, lq, d, env_pano[1].w, 1.0, 0.0);
     }
 
     // What the windows' hardware sees along r from p, in the niche outside the room's box: the
@@ -1212,6 +1365,12 @@ let ROOM_FRAG = """
 
     #if !defined(MIRROR_CHEAP) && !defined(BOX_MAP_BAKE)
     void main() {
+    #if defined(ROOM_FLOOR) && defined(SHARP_BOX)
+        if (env_pano[0].w > 0.5 && (env_pano[0].w < 4.5 || env_pano[0].w > 7.5)) {
+            result = room_out(env_pano_seen() * params.x * shade.w, 1.0);
+            return;
+        }
+    #endif
         vec3 p = v_world;
         vec3 ng = normalize(v_normal);
         float kind = floor(v_extra.y + 0.001);
@@ -1236,6 +1395,9 @@ let ROOM_FRAG = """
         // little of the grain's relief, which it fills.
         vec3 n_film = ng;
         float dull = 0.0;
+    #elif defined(ROOM_FLOOR) && defined(PHYSICAL_COAT)
+        // Without the mirror the room's box is seen through the same film.
+        vec3 n_film = ng;
     #endif
     #ifdef ROOM_WINDOW
         // Blend over the scene using premultiplied colour.
@@ -1364,7 +1526,7 @@ let ROOM_FRAG = """
         #ifdef PHYSICAL_COAT
             // A picture of its own, its planks in it (render3d::Wood's way 2): its tile laid on
             // the floor's uv, as Cycles lays it, stained, its roughness in the finish's range.
-            bool picture = wood_floor[2].w > 1.5 && wood_floor[2].w < 2.5;
+            bool picture = wood_floor[2].w > 1.5;
             if (picture) {
                 float tile_w = wood_floor[4].x;
                 a4 = textureGrad(floor_albedo, uv / tile_w, dx / tile_w, dy / tile_w);
@@ -1372,13 +1534,8 @@ let ROOM_FRAG = """
                 a4.rgb = wood_stained(a4.rgb, wood_floor[0], wood_floor[1], wood_floor[2]);
                 a4.a = mix(wood_floor[3].x, wood_floor[3].y, a4.a);
             }
-            // Our herringbone tuned toward the parquet's (way 3): its planks' warmth varied
-            // wood_floor[4].z times as much, its joints darkened again after the stain by y.
-            bool tuned = wood_floor[2].w > 2.5;
-            float warm_k = tuned ? wood_floor[4].z : 1.0;
         #else
             bool picture = false;
-            float warm_k = 1.0;
         #endif
             albedo = a4.rgb;
             rough = a4.a;
@@ -1386,7 +1543,7 @@ let ROOM_FRAG = """
                 // Each plank from its own tree: lighter or darker, warmer or greyer; a few
                 // patched with newer oak, paler, less ambered.
                 float tone = (h12(id + 5.5) - 0.5) * 2.0 * planks.x;
-                float warm = (h12(id + 8.8) - 0.5) * warm_k;
+                float warm = (h12(id + 8.8) - 0.5);
                 albedo *= exp(tone) * vec3(1.0 + 0.1 * warm, 1.0, 1.0 - 0.14 * warm);
                 float patched = step(h12(id + 12.3), planks.y);
                 albedo *= mix(vec3(1.0), vec3(1.3, 1.2, 1.02), patched);
@@ -1400,11 +1557,38 @@ let ROOM_FRAG = """
             vec2 t = (n4.xy * 2.0 - 1.0) * sgn;
             float cup = -plank.w * (2.0 * pk.across - 1.0);
             vec2 tilt = planks.z * (vec2(h12(id + 14.1), h12(id + 15.7)) * 2.0 - 1.0);
-            vec2 s = vec2(t.x + cup + tilt.x, t.y + tilt.y);
+            // The joints' distances (world units) and the pixel's footprint.
+            float fpw = max(length(dx), length(dy));
+            float d_a = min(pk.across, 1.0 - pk.across) * w;
+            float d_l = min(pk.along, plank.y - pk.along) * w;
+            // With the wood's own finish, each plank's edges rounded down into the joint
+            // (render3d::Wood's tile row: x the grain's share in the wax film, y the rounding's width, z its slope at the joint, w how
+            // dark the joint is, 1 as before), so the edge facing the light catches it. The
+            // slope is averaged over the pixel (joint_slope), so where a pixel spans the joint
+            // its two sides cancel, and what it can't resolve roughens the wax (shoulder_var).
+            vec2 shoulder = vec2(0.0);
+            float shoulder_var = 0.0;
+            float joint_dark = 1.0;
+            float film_grain = 0.25;    // the grain's share in the wax film's normal
+        #ifdef PHYSICAL_COAT
+            if (wood_floor[2].w > 0.5 && !picture) {
+                float sw = wood_floor[4].y;
+                if (sw > 0.0) {
+                    float k = wood_floor[4].z;
+                    vec2 ja = joint_slope(pk.across < 0.5 ? d_a : -d_a, sw, k, fpw);
+                    vec2 jl = joint_slope(pk.along < 0.5 * plank.y ? d_l : -d_l, sw, k, fpw);
+                    shoulder = vec2(ja.x, jl.x);
+                    shoulder_var = ja.y + jl.y;
+                }
+                joint_dark = wood_floor[4].w;
+                film_grain = wood_floor[4].x;
+            }
+        #endif
+            vec2 s = vec2(t.x + cup + tilt.x + shoulder.x, t.y + tilt.y + shoulder.y);
             vec2 suv = dir_a * s.x + dir_l * s.y;
             n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * suv.x + v_dir * suv.y);
-        #ifdef PLANAR_FLOOR
-            vec2 sf = vec2(0.25 * t.x + cup + tilt.x, 0.25 * t.y + tilt.y);
+        #if defined(PLANAR_FLOOR) || defined(PHYSICAL_COAT)
+            vec2 sf = vec2(film_grain * t.x + 0.25 * shoulder.x + cup + tilt.x, film_grain * t.y + 0.25 * shoulder.y + tilt.y);
             vec2 sfuv = dir_a * sf.x + dir_l * sf.y;
             n_film = normalize(vec3(0.0, 1.0, 0.0) + u_dir * sfuv.x + v_dir * sfuv.y);
         #endif
@@ -1412,14 +1596,11 @@ let ROOM_FRAG = """
                 // The picture's slopes along u and v, its planks' own; no tilt or cup of ours.
                 t = n4.xy * 2.0 - 1.0;
                 n = normalize(vec3(0.0, 1.0, 0.0) + u_dir * t.x + v_dir * t.y);
-            #ifdef PLANAR_FLOOR
+            #if defined(PLANAR_FLOOR) || defined(PHYSICAL_COAT)
                 n_film = normalize(vec3(0.0, 1.0, 0.0) + 0.25 * (u_dir * t.x + v_dir * t.y));
             #endif
             }
             // The joints, open a little and dark with old wax.
-            float fpw = max(length(dx), length(dy));
-            float d_a = min(pk.across, 1.0 - pk.across) * w;
-            float d_l = min(pk.along, plank.y - pk.along) * w;
             float joint = max(line_cover(d_a, plank.z, fpw), line_cover(d_l, plank.z, fpw));
             if (picture) joint = 0.0;
             // Worn: the paths round the table and along the room lighter and duller, the
@@ -1445,7 +1626,7 @@ let ROOM_FRAG = """
             float sc = textureGrad(scratch_tile, uv / SCRATCH_TILE, dx / SCRATCH_TILE, dy / SCRATCH_TILE).r * planks.w * (0.35 + wear);
             albedo *= 1.0 + 0.4 * sc;
             rough += 0.3 * sc;
-            albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint);
+            albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint * joint_dark);
             rough = mix(rough, 0.6, joint);
             fine *= 1.0 - 0.5 * joint;
         #ifdef PHYSICAL_COAT
@@ -1456,9 +1637,9 @@ let ROOM_FRAG = """
                     albedo = wood_stained(albedo, wood_floor[0], wood_floor[1], wood_floor[2]);
                     rough = mix(wood_floor[3].x, wood_floor[3].y, clamp(rough, 0.0, 1.0));
                 }
-                if (tuned) albedo = mix(albedo, albedo * vec3(0.22, 0.18, 0.16), joint * wood_floor[4].y);
                 coat_w = wood_floor[3].z;
-                coat_r = wood_floor[3].w;
+                // The joints' unresolved rounding widens the wax's lobe (alpha² + 2 variance).
+                coat_r = sqrt(sqrt(pow(wood_floor[3].w, 4.0) + 2.0 * shoulder_var));
             }
         #endif
         #ifdef PLANAR_FLOOR
@@ -2050,6 +2231,18 @@ let ROOM_FRAG = """
         // floor and the metals see the room sharply (SHARP_BOX): the panelling's grain turns
         // its normals too fast for a window's edge to hold.
         vec3 rv = reflect(-v, ns);
+        float ar_env = ar;
+        bool matt_floor = false;
+    #if defined(ROOM_FLOOR) && defined(PHYSICAL_COAT) && !defined(PLANAR_FLOOR)
+        // The wood's finish: the box seen in the wax, along its film's normal (little of the
+        // grain and the joints' rounding, or their slopes swing a window's edges pixel by pixel)
+        // and as rough as the coat.
+        if (coat_w > 0.0) {
+            rv = reflect(-v, n_film);
+            ar_env = clamp(coat_r * coat_r, 0.05, 1.0);
+            matt_floor = true;
+        }
+    #endif
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * ar - 1.0)) - 1.0 + ao, 0.0, 1.0);
     #ifdef PLANAR_FLOOR
         // The floor sees the mirror, through the wax's film over the oak, smoother than the
@@ -2078,7 +2271,10 @@ let ROOM_FRAG = """
     #else
     #ifdef SHARP_BOX
     #ifdef ROOM_FLOOR
-        float px = length(fwidth(rv));
+        // The pixel's spread of reflected directions from the flat floor's: the planks' tilt
+        // jumps at the joints, and its derivatives there, taken over pixels in pairs, dot
+        // the joints with alternate blurs.
+        float px = length(fwidth(reflect(-v, ng)));
     #else
         // The brass sees the room sharp over half its pixel's spread of directions (a
         // quarter sparkled on the hinges: the sun's leaves on the walls it shows), the gilt
@@ -2091,7 +2287,7 @@ let ROOM_FRAG = """
         // The pixel's spread of reflected directions, for the panes' rims in niche_seen; at most
         // 0.08, or the silhouettes' turning normals average the panes into a bright outline.
         float spread = min(length(fwidth(rv)), 0.08);
-        vec3 env = room_baked.x > 0.5 ? (window_hw ? niche_seen(p, v_local, rv, ar, spread) : room_reflection(p, v_local, rv, ar, nov, px))
+        vec3 env = room_baked.x > 0.5 ? (window_hw ? niche_seen(p, v_local, rv, ar, spread) : (matt_floor ? floor_reflection(p, v_local, rv, ar_env, nov, px) : room_reflection(p, v_local, rv, ar_env, nov, px)))
                                       : sh_eval(rv) * params.z;
     #else
         vec3 env = room_baked.x > 0.5 ? room_wide(v_local, rv) : sh_eval(rv) * params.z;

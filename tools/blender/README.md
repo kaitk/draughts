@@ -22,7 +22,7 @@ indirect without the albedo: the light the app's shading puts on a white surface
 `-combined.npy` (the combined light, for `app_camera.py`), and `.json` (the time and the means). Its flags: `--view NAME` (or the tuner's `--plan-eye X,Y,Z
 --plan-at X,Y,Z --fov DEG`), `--out PATH`, `--size WxH`
 (960x540), `--samples N` (512, denoised), `--exposure EV` (0), `--textures on|off`,
-`--device gpu|cpu`, `--save-blend` (a `.blend` beside the render, to open in Blender),
+`--device gpu|cpu`, `--pano X,Y,H` (an equirectangular panorama from that plan point in place of a view, 1024 × 512, the window wall in the middle: the truth for the tuner's `--env-pano`), `--save-blend` (a `.blend` beside the render, to open in Blender),
 `--paper physical|look` (the wallpaper as the app's `--light physical` draws it, the default,
 with its engraved mask, `--paper-mask engraved|today`), `--wood ours|picks|SPEC.json` (the
 panelling, the table and chairs, and the floor as finished woods, as the tuner's `--woods`;

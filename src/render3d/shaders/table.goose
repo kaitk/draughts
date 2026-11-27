@@ -36,7 +36,7 @@ let TABLE_SHELL = """
     // heights, the view out's light and the box's surfaces (PropsLightBlock).
     layout(set = 3, binding = 3) uniform PropsLight { vec4 light_box; vec4 light_grid; vec4 props_look; vec4 room_box;
                                                       vec4 room_doors; vec4 room_heights; vec4 lace_light; vec4 box_paper;
-                                                      vec4 box_paint; vec4 box_ceiling; };
+                                                      vec4 box_paint; vec4 box_ceiling; vec4 env_pano[3]; };
     #endif
     """;
 
@@ -458,6 +458,23 @@ let TABLE_FRAG = """
     }
 
     void main() {
+    #if defined(TABLE_ROOM) && defined(PROPS_LIGHT) && defined(HDR_OUT)
+        // The light tuner's panoramas (render3d::env_pano): the props' lookups.
+        if (env_pano[0].w > 4.5) {
+            vec2 uv = gl_FragCoord.xy / screen.xy;
+            float lon = (uv.x - 0.5) * 2.0 * PI;
+            float lat = (0.5 - uv.y) * PI;
+            vec3 d = normalize((env_pano[1].xyz * sin(lon) + env_pano[2].xyz * cos(lon)) * cos(lat) + vec3(0.0, sin(lat), 0.0));
+            vec3 q = env_pano[0].xyz;
+            float m = env_pano[0].w;
+            vec3 wide = props_light_at(q, d, sh_eval(d) * params.z, true);
+            // At the room's exposure, as the chairs take them (props_light_at's in_room).
+            vec3 e = m < 5.5 ? grid_light(q, d) * room_mix.z
+                   : (m < 6.5 ? props_seen_at(q, d, 0.0, 1.0, params.x * room_mix.z) * room_mix.z : props_reflection(q, d, wide, env_pano[1].w, 1.0, true));
+            result = vec4(e * params.x, 1.0);
+            return;
+        }
+    #endif
         vec3 p = v_world;
         vec3 n = normalize(v_normal);
         // The top seen from above; the edge, the frieze and what is under them unrolled,

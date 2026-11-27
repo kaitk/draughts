@@ -742,6 +742,113 @@ fn planar_pass(own: Own&, g: render3d::Gpu&, size: int2, clip: render3d::Frame, 
     }
 }
 
+// The room's reflection (render3d::refl_map, task 131): the room drawn from the probe in six
+// views as the floor's mirror draws it (linear light, no reflections of its own, the floor
+// too, under PHYSICAL_COAT), each packed into refl_src's first level, its mips each a tent
+// over the level above, then refl_map's levels filtered from them, one a roughness.
+fn make_refl(g: render3d::Gpu&) {
+    let room_vert = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::ROOM_VERT);
+    let opaque = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true };
+    let see_through = gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED };
+    g.refl_walls = gfx::pipeline(room_vert, embed_shader("frag", shaders::PHYSICAL_COAT, shaders::ROOM_WALLS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.refl_paint = gfx::pipeline(room_vert, embed_shader("frag", shaders::PHYSICAL_COAT, shaders::ROOM_PAINT, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.refl_sill = gfx::pipeline(room_vert, embed_shader("frag", shaders::PHYSICAL_COAT, shaders::ROOM_SILL, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.refl_metals = gfx::pipeline(room_vert, embed_shader("frag", shaders::PHYSICAL_COAT, shaders::ROOM_METALS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.refl_floor = gfx::pipeline(room_vert, embed_shader("frag", shaders::PHYSICAL_COAT, shaders::ROOM_FLOOR, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), opaque);
+    g.refl_glass = gfx::pipeline(room_vert, embed_shader("frag", shaders::PHYSICAL_COAT, shaders::ROOM_GLASS, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), see_through);
+    g.refl_lace = gfx::pipeline(room_vert, embed_shader("frag", shaders::PHYSICAL_COAT, shaders::ROOM_LACE, shaders::MIRROR_PASS, shaders::SHELL_WINDOWS, shaders::FS_SET, shaders::FRAME, shaders::ROOM_HEAD, shaders::WIND_FN, shaders::LIGHT_FN, shaders::SSAO_FN, shaders::TONE_FN, shaders::ROOM_FRAG), see_through);
+    g.refl_table = gfx::pipeline(embed_shader("vert", shaders::PROPS_LIGHT, shaders::VS_SET, shaders::FRAME, shaders::TABLE_VERT),
+                                 embed_shader("frag", shaders::PROPS_LIGHT, shaders::TABLE_ROOM, shaders::SHELL_WINDOWS, shaders::MIRROR_PASS, shaders::FS_SET, shaders::FRAME, shaders::TABLE_HEAD, shaders::TABLE_SHELL, shaders::SHADOW_FN, shaders::WIND_FN, shaders::LIGHT_FN, shaders::TABLE_MAP_FN, shaders::SSAO_FN, shaders::PROPS_GRID_FN, shaders::TABLE_FRAG),
+                                 gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true, blend: gfx::BLEND_PREMULTIPLIED });
+    let full = embed_shader("vert", shaders::FULL_VERT);
+    g.refl_pack = gfx::pipeline(full, embed_shader("frag", shaders::OCTA_FN, shaders::REFL_PACK_FRAG));
+    g.refl_mip = gfx::pipeline(full, embed_shader("frag", shaders::PLANAR_MIP_FRAG));
+    g.refl_filter = gfx::pipeline(full, embed_shader("frag", shaders::OCTA_FN, shaders::REFL_FILTER_FRAG));
+    let n = render3d::REFL_SIZE as i32;
+    let face = render3d::REFL_FACE;
+    g.refl_face = gfx::render_target(face, face, gfx::RGBA16F);
+    g.refl_depth = gfx::texture2d(face, face, gfx::DEPTH16, gfx::DEPTH_TARGET);
+    g.refl_src = gfx::texture(gfx::TextureDesc { format: gfx::RGBA16F, usage: gfx::COLOR_TARGET | gfx::SAMPLED, width: n, height: n,
+                                                 mips: render3d::REFL_LEVELS as i32 });
+    g.refl_map = gfx::texture(gfx::TextureDesc { format: gfx::RGBA16F, usage: gfx::COLOR_TARGET | gfx::SAMPLED, width: n, height: n,
+                                                 mips: render3d::REFL_LEVELS as i32 });
+}
+fn refl_pass(own: Own&, g: render3d::Gpu&) {
+    if g.refl_map.id == 0 { make_refl(g); }
+    let kept = g.frame;
+    let surfaces = render3d::mirror_surfaces_block(g);
+    for k in 6 {
+        let f = render3d::refl_frame(g, k);
+        var pass = gfx::PassDesc { depth: g.refl_depth, color_value: float4 { 0.0, 0.0, 0.0, 1.0 } };
+        pass.color[0] = g.refl_face;
+        gfx::begin_pass(pass);
+        g.frame = f;
+        if render3d::outside_shown(g) { draw_outside(own, g, true); }
+        if render3d::table_shown(g) && render3d::table_in_room(g) && g.room_props {
+            gfx::bind(g.refl_table);
+            let ta, tn = render3d::wood_maps(g, render3d::WOOD_TABLE, g.table_albedo, g.table_normal);
+            gfx::bind_texture(gfx::FRAGMENT, 0, ta, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 1, tn, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 3, g.table_wear, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 4, g.table_wear_n, g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 5, render3d::tree_or_stand_in(g), g.linear);
+            gfx::bind_texture(gfx::FRAGMENT, 6, g.shadow_map, g.compare);
+            gfx::bind_texture(gfx::FRAGMENT, 7, render3d::table_map_or_stand_in(g), g.compare);
+            gfx::bind_texture(gfx::FRAGMENT, 8, render3d::tapestry_or_stand_in(g), g.aniso);
+            gfx::bind_texture(gfx::FRAGMENT, 9, render3d::lace_or_stand_in(g), g.linear);
+            gfx::bind_texture(gfx::FRAGMENT, 10, render3d::props_probes_or_stand_in(g), g.linear);
+            gfx::bind_storage_buffer(gfx::VERTEX, 0, g.props_open);
+            gfx::uniforms(gfx::VERTEX, 0, f);
+            gfx::uniforms(gfx::FRAGMENT, 0, f);
+            gfx::uniforms(gfx::FRAGMENT, 1, render3d::mirror_table_block(g));
+            gfx::uniforms(gfx::FRAGMENT, 2, render3d::shell_block(g));
+            gfx::uniforms(gfx::FRAGMENT, 3, render3d::props_light_block(g));
+            gfx::bind_vertex_buffer(g.table_vb);
+            gfx::bind_index_buffer(g.table_ib, 4);
+            gfx::draw_indexed(g.table_count);
+        }
+        draw_room_group(g, f, surfaces, g.refl_floor, render3d::GROUP_FLOOR, false, false, true);
+        draw_room_group(g, f, surfaces, g.refl_walls, render3d::GROUP_WALLS, false, false, true);
+        draw_room_group(g, f, surfaces, g.refl_sill, render3d::GROUP_SILL, false, false, true);
+        draw_room_group(g, f, surfaces, g.refl_paint, render3d::GROUP_PAINT, false, false, true);
+        draw_room_group(g, f, surfaces, g.refl_metals, render3d::GROUP_METALS, false, false, true);
+        draw_room_group(g, f, surfaces, g.refl_glass, render3d::GROUP_GLASS, false, false, true);
+        draw_room_group(g, f, surfaces, g.refl_lace, render3d::GROUP_LACE, false, false, true);
+        gfx::end_pass();
+        g.frame = kept;
+        var into = gfx::PassDesc { clear_color: k == 0, color_value: float4_0 };
+        into.color[0] = g.refl_src;
+        gfx::begin_pass(into);
+        gfx::bind(g.refl_pack);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.refl_face, g.planar_sampler);
+        gfx::uniforms(gfx::FRAGMENT, 0, render3d::refl_pack_of(g, f));
+        gfx::draw(3);
+        gfx::end_pass();
+    }
+    for level in 1..render3d::REFL_LEVELS {
+        var down = gfx::PassDesc { mip: level as i32, clear_color: false };
+        down.color[0] = g.refl_src;
+        gfx::begin_pass(down);
+        gfx::bind(g.refl_mip);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.refl_src, g.planar_sampler);
+        gfx::uniforms(gfx::FRAGMENT, 0, float4 { (level - 1) as f32, 0.0, 0.0, 0.0 });
+        gfx::draw(3);
+        gfx::end_pass();
+    }
+    for level in render3d::REFL_LEVELS {
+        let r = level as f32 / (render3d::REFL_LEVELS - 1) as f32;
+        var out = gfx::PassDesc { mip: level as i32, clear_color: false };
+        out.color[0] = g.refl_map;
+        gfx::begin_pass(out);
+        gfx::bind(g.refl_filter);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.refl_src, g.planar_sampler);
+        gfx::uniforms(gfx::FRAGMENT, 0, float4 { level as f32, r * r, render3d::REFL_SIZE as f32, render3d::REFL_SAMPLES });
+        gfx::draw(3);
+        gfx::end_pass();
+    }
+}
+
 // The cheap mirror world (render3d::mirror_cheap_on): the table and the room's large
 // shapes, each with the one cheap shader, into the mirror's pass begun.
 fn cheap_textures(g: render3d::Gpu&) -> Texture[8] {

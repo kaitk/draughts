@@ -357,7 +357,6 @@ struct Gpu {
     // the floor's and the table's, each its albedo (RGBA8 sRGB, the roughness in A) and normal
     // (the slopes in R and G, B 0.4, the normal's up in A), with their mips; 0 none.
     wood_pictures: Texture[6],
-    floor_tuned:   Texture[2],      // the floor's field tuned toward the parquet (Wood's way 3), its albedo and normal; 0 none
     paper_mask:    Texture,         // the wallpaper's mask, R8 with its mips (surfaces::PAPER_SIDE)
     paper_tile:    f32,             // the wall a tile of it covers (world units), 0 surfaces::PAPER_TILE
     room_frame:    surfaces::Frame, // the room's frame this frame (put_room)
@@ -486,6 +485,27 @@ struct Gpu {
     planar_current: bool,
     planar_size:    int2,
     planar_sampler: Sampler,        // clamped, trilinear: the floor's blur picks its mip
+    // The room's reflection (refl_pass, task 131): the room drawn from refl_probe in six views
+    // (its groups' and the table's pipelines in shaders::MIRROR_PASS with PHYSICAL_COAT, the
+    // table wound as in the room) into refl_face, each packed into the octahedral refl_src
+    // (pack) with its mips (mip), then refl_map's levels, one a roughness (filter), which the
+    // glossy surfaces read.
+    refl_walls:     Pipeline,
+    refl_paint:     Pipeline,
+    refl_sill:      Pipeline,
+    refl_metals:    Pipeline,
+    refl_glass:     Pipeline,
+    refl_lace:      Pipeline,
+    refl_floor:     Pipeline,
+    refl_table:     Pipeline,
+    refl_pack:      Pipeline,
+    refl_mip:       Pipeline,
+    refl_filter:    Pipeline,
+    refl_face:      Texture,
+    refl_depth:     Texture,
+    refl_src:       Texture,
+    refl_map:       Texture,
+    refl_for:       float4[REFL_KEY],
     // A tuner's: the panelling oak's and the ceiling's tint (x, z their lightness, y, w their
     // saturation, as factors, 0 untouched), and the tree's and the shell's light kept as
     // they are, not baked again, while a slider is held, so a drag bakes once on release.
@@ -771,11 +791,24 @@ struct Wood {
 let WOOD_AS_MADE = 0;
 let WOOD_STAINED = 1;
 let WOOD_PICTURE = 2;
-let WOOD_TUNED = 3;
 let WOOD_OAK = 0;
 let WOOD_FLOOR = 1;
 let WOOD_TABLE = 2;
 var woods = [default<Wood>(); 3];
+// The floor's planks' cup (x) and tilt (y) in place of surfaces::LOOK's where 0 or more (the tuner's --floor-shape).
+var floor_shape = float2 { -1.0, -1.0 };
+// The light tuner's panoramas of what the reflections see (--env-pano): every floor or table-top
+// pixel shows, in place of itself, the light one lookup returns along the direction its place on
+// the screen stands for (equirectangular: the middle column toward [2], [1] to its right, up at
+// the top) from the point [0].xyz (world). [0].w the lookup: 0 none; on the floor 1 the
+// harmonics, 2 the room's probes (room_wide), 3 the room's box sharp (room_seen), 4 the floor's
+// wax as drawn (floor_reflection at [1].w's alpha); on the table 5 the props' probes
+// (grid_light), 6 their box sharp (props_seen_at), 7 the polish as drawn at [1].w.
+var env_pano = [float4_0, float4_0, float4_0];
+// The matt floor's reflection without the mirror (ROOM_FRAG's floor_reflection, in planar_look's
+// z and w): x 0 the room's box blurred by the wax's lobe, 1 only the room's light that way and
+// the windows' soft shapes; y the windows' light in it then. The tuner's --floor-box.
+var floor_box = float2 { 0.0, 1.0 };
 // The rows a shader reads for wood `k`: its way 2 only with its picture there, else 1.
 fn wood_rows(g: Gpu&, k: i64) -> float4[5] {
     let w = woods[k];
@@ -788,7 +821,6 @@ fn wood_maps(g: Gpu&, k: i64, albedo: Texture, normal: Texture) -> Texture, Text
     if woods[k].light.w == WOOD_PICTURE as f32 && g.wood_pictures[2 * k].id != 0 {
         return g.wood_pictures[2 * k], g.wood_pictures[2 * k + 1];
     }
-    if k == WOOD_FLOOR && woods[k].light.w == WOOD_TUNED as f32 && g.floor_tuned[0].id != 0 { return g.floor_tuned[0], g.floor_tuned[1]; }
     return albedo, normal;
 }
 var props_table_shade = false;
@@ -830,6 +862,7 @@ struct PropsLightBlock {
     light_box: float4, light_grid: float4, props_look: float4,
     room_box:  float4, room_doors: float4, room_heights: float4, lace_light: float4,
     box_paper: float4, box_paint: float4, box_ceiling: float4,
+    env_pano: float4[3],
 }
 // Whether the table's and chairs' polish reflects the room's box and its windows sharply
 // (TABLE_FRAG's props_seen_at) in place of the probes' light alone (the light tuner's
@@ -847,7 +880,7 @@ fn props_light_block(g: Gpu&) -> PropsLightBlock {
     PropsLightBlock { light_box_of(), light_grid_of(),
                       float4 { if props_table_shade { 1.0 } else { 0.0 }, props_wrap, if props_profile_ao { 0.0 } else { 1.0 }, if props_seen { 1.0 } else { 0.0 } },
                       s.room_box, s.room_doors, s.room_heights, s.lace_light, paper + (gold - paper) * 0.3, model3d::linear4(s.paint),
-                      model3d::linear4(s.ceiling_light) }
+                      model3d::linear4(s.ceiling_light), env_pano }
 }
 
 // A chair's plan round its seat's middle (world units: half its width, its front, its back's
@@ -1219,6 +1252,70 @@ fn box_map_key(g: Gpu&) -> float4[BOX_MAP_KEY] {
     k[at] = float4 { g.light_volume.id, g.window_map.id, 0.0, 0.0 };
     return k;
 }
+// The room's reflection (refl_pass, task 131), under the physical light on the desktop's
+// tier: baked again when the room's light, its surfaces or the woods change. REFL_SIZE the
+// octahedral map's side, REFL_FACE a view's, REFL_LEVELS its levels, roughness 0 to 1 evenly.
+var refl_on = true;
+let REFL_SIZE = 256;
+let REFL_FACE = 128;
+let REFL_LEVELS = 6;
+let REFL_SAMPLES: f32 = 256.0;
+let REFL_HEIGHT: f32 = 1.0;     // the probe's height over the floor, metres
+fn refl_shown(g: Gpu&) -> bool {
+    refl_on && physical_coat && g.room_ssao && room_shown(g) && light_baked(g) && g.light_volume.id != 0
+}
+// The probe: the middle of the room's box, REFL_HEIGHT over the floor (the world's).
+fn refl_probe(g: Gpu&) -> float3 { refl_probe_of(surfaces_block(g)) }
+fn refl_probe_of(b: SurfacesBlock) -> float3 {
+    let x = 0.5 * (b.room_box.x + b.room_box.y);
+    let z = 0.5 * (b.room_box.z + b.room_box.w);
+    return float3 { b.axes.x * x + b.axes.z * z, b.shell.z + REFL_HEIGHT * surfaces::METRE, b.axes.y * x + b.axes.w * z };
+}
+let REFL_KEY = BOX_MAP_KEY + 13;
+fn refl_key(g: Gpu&) -> float4[REFL_KEY] {
+    let b = surfaces_block(g);
+    var k: float4[REFL_KEY] = [float4_0; REFL_KEY];
+    let box = box_map_key(g);
+    for i in BOX_MAP_KEY { k[i] = box[i]; }
+    for i in 5 {
+        k[BOX_MAP_KEY + i] = b.wood_oak[i];
+        k[BOX_MAP_KEY + 5 + i] = b.wood_floor[i];
+    }
+    k[BOX_MAP_KEY + 10] = b.paper;
+    k[BOX_MAP_KEY + 11] = b.paper_detail;
+    k[BOX_MAP_KEY + 12] = float4 { g.room_vb.id, g.table_vb.id, if table_shown(g) { 1.0 } else { 0.0 }, 0.0 };
+    return k;
+}
+fn refl_map<O>(o: O&, g: Gpu&) {
+    guard refl_shown(g) else { return; }
+    let key = refl_key(g);
+    var same = g.refl_map.id != 0;
+    for k in REFL_KEY { same = same && same4(key[k], g.refl_for[k]); }
+    guard !same else { return; }
+    g.refl_for = key;
+    o.refl_pass(g);
+}
+// The frame of the probe's view `face` (+x, -x, +y, -y, +z, -z), 90° square.
+fn refl_frame(g: Gpu&, face: i64) -> Frame {
+    let at = refl_probe(g);
+    let dirs = [float3 { 1.0, 0.0, 0.0 }, float3 { -1.0, 0.0, 0.0 }, float3 { 0.0, 1.0, 0.0 },
+                float3 { 0.0, -1.0, 0.0 }, float3 { 0.0, 0.0, 1.0 }, float3 { 0.0, 0.0, -1.0 }];
+    let up = if face == 2 { float3 { 0.0, 0.0, -1.0 } } else if face == 3 { float3 { 0.0, 0.0, 1.0 } } else { float3 { 0.0, 1.0, 0.0 } };
+    var f = g.frame;
+    f.view_proj = gfx::mul(gfx::perspective(1.5707963, 1.0, 0.05 * surfaces::METRE, 40.0 * surfaces::METRE), gfx::look_at(at, at + dirs[face], up));
+    f.eye = float4 { at.x, at.y, at.z, 1.0 };
+    f.screen = float4 { REFL_FACE as f32, REFL_FACE as f32, 0.0, 0.0 };
+    return f;
+}
+// The pack's block for view `face`.
+struct ReflPack { face: float4[4], at: float4, size: float4 }
+fn refl_pack_of(g: Gpu&, f: Frame) -> ReflPack {
+    let at = refl_probe(g);
+    let exposure = max(g.frame.params.x * g.room.room_exposure, 1e-3);
+    ReflPack { [f.view_proj.c0, f.view_proj.c1, f.view_proj.c2, f.view_proj.c3], float4 { at.x, at.y, at.z, 1.0 / exposure },
+               float4 { REFL_SIZE as f32, REFL_SIZE as f32, 0.0, 0.0 } }
+}
+
 fn box_map<O>(o: O&, g: Gpu&) {
     guard box_map_shown(g) else { return; }
     let key = box_map_key(g);
@@ -1571,6 +1668,10 @@ fn room_textures(g: Gpu&, group: i64, ssao: bool, planar: bool, mirror: bool = f
         if !window_group(group) { add_texture(t, pre_place_or_stand_in(g), g.linear); }
         if group == GROUP_METALS { add_texture(t, if g.brass_tile.id != 0 { g.brass_tile } else { g.crown_map }, g.aniso); }
     }
+    // The room's reflection on the floor under the physical light (refl_map), else a stand-in.
+    if group == GROUP_FLOOR && ssao && !planar && !mirror && physical_coat {
+        add_texture(t, if g.refl_map.id != 0 { g.refl_map } else { g.crown_map }, g.planar_sampler);
+    }
     if planar { add_texture(t, g.planar_map, g.planar_sampler); }
     return t;
 }
@@ -1673,19 +1774,6 @@ fn room_surfaces<O>(o: O&, g: Gpu&) {
         g.room_side = side;
         g.room_baked = true;
         g.room_ms = (clock() - t0) * 1000.0;
-    }
-    // The floor's field tuned toward the parquet (Wood's way 3), baked when first asked for.
-    if woods[WOOD_FLOOR].light.w == WOOD_TUNED as f32 && g.floor_tuned[0].id == 0 && g.room_side > 0 {
-        let side = g.room_side;
-        g.floor_tuned[0] = baked(o, side, side, RGBA8_SRGB);
-        g.floor_tuned[1] = baked(o, side, side, RGBA8);
-        let finish = g.finish;
-        g.finish = looks::Finish { varnish: 0.0, sanding: 0.0, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0, caulk: 0.0 };
-        var t = oak_theme(g, surfaces::TUNED_FLOOR_OAK);
-        o.bake(g, g.floor_tuned[0], g.floor_tuned[1], side, side, 4.0, float2 { surfaces::FLOOR_FIELD, surfaces::FLOOR_FIELD }, t,
-               0, -1, true, surfaces::FIELD_SIDE / side);
-        g.finish = finish;
-        o.gpu_flush();
     }
     put_paper(o, g);
     if g.stone_tile.id == 0 { put_stone(o, g); }
@@ -2271,6 +2359,8 @@ struct SurfacesBlock {
     wood_oak:      float4[5],      // the panelling's finish (Wood, wood_rows)
     wood_floor:    float4[5],      // the floor's
     window_metal:  float4,         // room_shell::window_metal, last so room_fixed's spans stay
+    env_pano:      float4[3],      // the light tuner's panoramas (env_pano)
+    refl:          float4,         // the room's reflection: its probe (world), its levels (0 none)
 }
 fn surfaces_block(g: Gpu&) -> SurfacesBlock {
     var b = room_block(g);
@@ -2337,6 +2427,10 @@ fn surfaces_block(g: Gpu&) -> SurfacesBlock {
         let door = room_shell::door_mid(s, c.wall);
         b.book_cases = float4 { abs(c.mid - door) * metre, 0.5 * c.width * metre, c.height, 0.0 };
     }
+    if g.refl_map.id != 0 && refl_on && physical_coat {
+        let p = refl_probe_of(b);
+        b.refl = float4 { p.x, p.y, p.z, REFL_LEVELS as f32 };
+    }
     return b;
 }
 
@@ -2348,11 +2442,12 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
     let s = room_shell::LIBRARY;
     let window_v = shell_face(s);
     let away = s.table.y * surfaces::METRE;
-    // The floor's herringbone tuned toward the parquet's (Wood's way 3): its planks' own.
-    let tuned = woods[WOOD_FLOOR].light.w == WOOD_TUNED as f32;
+    // The floor's planks' cup and tilt as the tuner sets them (floor_shape), else the look's.
+    let plank = if floor_shape.x >= 0.0 { float4 { k.plank.x, k.plank.y, k.plank.z, floor_shape.x } } else { k.plank };
+    let planks = if floor_shape.y >= 0.0 { float4 { k.planks.x, k.planks.y, floor_shape.y, k.planks.w } } else { k.planks };
     // The lace as room_light describes it (task 124), lit by the bake's light.
     let described = lace_lit(g);
-    SurfacesBlock { if tuned { surfaces::TUNED_PLANK } else { k.plank }, if tuned { surfaces::TUNED_PLANKS } else { k.planks }, k.worn, paper_ground, paper_gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
+    SurfacesBlock { plank, planks, k.worn, paper_ground, paper_gold, float4 { f.along.x, f.along.y, f.into.x, f.into.y },
                     float4 { window_v, away, surfaces::FLOOR_FIELD, surfaces::WALL_FIELD },
                     model3d::f4(rooms::color_of(g.room.bounce) * g.room.bounce.w, g.room.room_exposure),
                     float4 { tile, surfaces::PLASTER_TILE, surfaces::LACE_TILE, if paper_metal { 1.0 } else { 0.0 } }, k.plaster_shade, k.plaster_light,
@@ -2370,7 +2465,7 @@ fn room_block(g: Gpu&) -> SurfacesBlock {
                     float4 { lace_shade.x, lace_shade.y, if lace_probed && light_baked(g) { 1.0 } else { 0.0 }, if described { room_light::LACE_THROUGH } else { 0.0 } },
                     table_map_shown(g),
                     books::COVER, books::LABEL, wood_rows(g, WOOD_OAK), wood_rows(g, WOOD_FLOOR),
-                    room_shell::window_metal }
+                    room_shell::window_metal, env_pano, float4_0 }
 }
 
 // The tree's map at TREE_LEVEL kept on the CPU for the shell's baked light, where it fits.
@@ -3871,6 +3966,7 @@ fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, screen: in
         g.shadow_dirty = false;
     }
     occlusion(o, g);
+    refl_map(o, g);
     // With the window's glow the pass draws into the image, and the glow adds it into the
     // target; not where the image is the target (the app's kept image, which shows no shell).
     let glowing = bloom_shown(g) && out.id != 0;
@@ -4201,8 +4297,8 @@ fn planar_block_of(g: Gpu&) -> float4 {
     return float4 { g.room.planar.x, view, across * 0.5 * g.planar_size.x, PLANAR_MIPS - 1 };
 }
 fn planar_look_of(g: Gpu&) -> float4 {
-    guard planar_seen_on_floor(g) else { return float4_0; }
-    return float4 { g.room.planar.z, g.room.planar.y, 0.0, 0.0 };
+    guard planar_seen_on_floor(g) else { return float4 { 0.0, 0.0, floor_box.x, floor_box.y }; }
+    return float4 { g.room.planar.z, g.room.planar.y, floor_box.x, floor_box.y };
 }
 // Whether the room's floor sees the mirror this frame (drawn with g.room_planar).
 fn planar_seen_on_floor(g: Gpu&) -> bool { g.planar_current && g.planar_map.id != 0 && g.room_planar.id != 0 }
@@ -4214,6 +4310,7 @@ fn mirror_surfaces_block(g: Gpu&) -> SurfacesBlock {
     b.planar = float4_0;
     b.planar_look = float4_0;
     b.contact = float4_0;
+    b.refl = float4_0;
     // The mirror's world reads the woods' fields (room_textures): a picture's way as ours.
     b.wood_oak[2].w = min(b.wood_oak[2].w, WOOD_STAINED as f32);
     b.wood_floor[2].w = min(b.wood_floor[2].w, WOOD_STAINED as f32);
