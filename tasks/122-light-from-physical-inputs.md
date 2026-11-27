@@ -1333,6 +1333,36 @@ found by the sun's first bounce at the lace's probe row against the tracer, surf
 missing (the bake 0), as the new stove's work above says. Also from task 124: the lace's room
 side reads the probes without the lace's own light on the window wall (`Gathered.lace`).
 
+## Open: the sun scorching and the outside white under --light physical (the user, 2026-11-27, night)
+
+The user: the sun feels scorching, not the smooth autumn orange tuned against the reference
+images, and the outside far too white. Measured at the reference view (1536 × 1024, autumn,
+default tree) on the stable builds from 6dd8dc5d (26 Nov) to 64458ab1 and the default light, top
+5% of the floor's sun patch and the window view's mean, sRGB (`build/sunreg/`, `grid3.png`):
+
+| Shot | Floor sun, brightest | Its saturation | Window view, mean | Its saturation |
+|---|---|---|---|---|
+| The autumn reference | 227 152 92 | 0.60 | 171 134 105 | 0.38 |
+| Default light (`--light today`) | 204 144 95 | 0.53 | 157 133 105 | 0.33 |
+| Physical, 26 Nov grade (`autumn-grade/after.png`) | 233 202 169 | 0.27 | 188 162 132 | 0.30 |
+| Physical, 2c72c6c7 (the hazy sun) | 227 177 126 | 0.44 | 197 172 143 | 0.28 |
+| Physical, 596b88a3 on (the woods) | 236 191 146 | 0.38 | 198 172 142 | 0.28 |
+| Physical, 64458ab1 | 240 191 147 | 0.39 | 203 176 145 | 0.29 |
+
+Not one session's regression: the orange the user tuned is the default light's (its own sun
+colour and tone curve), which the physical light never had; its sun patches are paler and yellower
+on every build since 26 Nov, its view out brighter and paler. The physical path's AgX rolls a
+bright orange toward yellow-white, and the camera meters the room, so the outside rides up with
+every darkening of the room (the hazy sun's 2 stops took the meter 3.54 → 4.35 EV). Today's build
+with `--grade-ev match --camera-ev -0.8` brings the floor's sun to 217 152 102 (0.53) and the
+view's peak under clipping, so exposure and the curve's highlights are most of it.
+
+To do: measure the sun's patch and the view out against the reference and Cycles through
+`tools/blender/app_camera.py` (the same exposure, AgX and grade, so only the light differs), then
+decide whether the fix is the sun's colour and strength, the view out's own exposure
+(`--outside-exposure`), AgX's highlight handling, or the grade; ask the user before changing the
+look.
+
 ## Acceptance criteria
 
 - [x] The CPU tracer in `tools/` (the room's triangles from `model3d`, physical inputs, a
