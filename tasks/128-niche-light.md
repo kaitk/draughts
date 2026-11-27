@@ -98,3 +98,9 @@ with the room: EV 2.54 → 2.41, the picture 0.13 EV darker overall. The bake 17
 Left: the frames' room faces deep in the niche at 0.68 (one probe row 0.15 m in; a probe
 volume over the niche's air would hold it); single wall points up to 2× behind the folded
 lace (the bake's lace is flat, task 124); the probes' light toward the glass is L1 only.
+
+Rebased onto `room-light` 2c72c6c7 (2026-11-27): off, the atlas byte-identical to its and
+the four standard views identical. Its autumn sun is 2 stops hazier (65ee56c4) while the
+scratch tracer keeps the old one, so the table's numbers stand on 164afb1a; on the new base
+the same comparison moves niche 0.39 → 0.48 and wall 0.26 → 0.47 until the tracer takes
+the new sun. On, the meter moves EV 4.35 → 4.30 there.
