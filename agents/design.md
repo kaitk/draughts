@@ -376,8 +376,15 @@ pieces; the design boards still set the layout, glass, and controls.
   bake (the room's log-average to 0.18), `--camera-ev` (the "Camera EV" slider) on top; the
   glow's threshold is then in the picture's light (`AGX_GLOW`, 0.006 from 16). Judge a look
   against Cycles at the EV the tuner prints with `--shot` ("the camera's meter ... EV"):
-  `tools/blender/scene.py --exposure EV`. Blender's AgX on any linear EXR:
+  `tools/blender/scene.py --exposure EV`. Its PNG takes the app's autumn grade (`--grade
+  season`, the default since 2026-11-27: `render3d::GRADES` through `scene.json`), so it
+  compares with the tuner's picture as shown; `--grade none` is Blender's AgX alone, a stop
+  or so darker in the woods and less warm. Blender's AgX on any linear EXR:
   `build/review122/s5/agx_ref.py` (OCIO in Blender's Python).
+- The tuner's `--wall X,Y,Z,W` is applied after the placement: its y is the sun's turn
+  across the window wall, so `--wall 36,20,-2,2` (Room's default, in older shot scripts)
+  moves the sun from the default placement's 12° to 20°. The exporter's sun is the
+  placement's; leave `--wall` out of shots compared with Cycles (2026-11-27).
 - The light tuner draws the 3D scene at the screen's native size by default (2026-11-22);
   `--scene-pixels 4.1` (`render3d::HIGH_SCENE_PIXELS`) or `--scene-scale K` draw it smaller
   and upscale it (N cycles native, 0.85, 0.75, 0.67 and the 4.1 MP cap; M the upscale). Builder 24's crops and sweeps:

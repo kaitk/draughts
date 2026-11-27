@@ -587,7 +587,11 @@ fn main() {
     put4(j, look.paper);
     format(j, ",\n    \"paper_gold\": ");
     put4(j, look.gold);
-    format(j, "\n  },\n  \"views\": {\n");
+    // The app's camera grade under --light physical, autumn's (render3d::GRADES), for scene.py's --grade.
+    let gr = render3d::GRADES[0];
+    format(j, "\n  },\n  \"grade\": {\"ev\": ", gr.ev, ", \"white\": [", gr.white.x, ", ", gr.white.y, ", ", gr.white.z,
+           "], \"slope\": ", gr.slope, ", \"offset\": ", gr.offset, ", \"power\": ", gr.power, ", \"saturation\": ", gr.saturation, "},\n");
+    format(j, "  \"views\": {\n");
     for v, i in room_scene::VIEWS {
         format(j, "    \"", v.name[..], "\": {\"eye\": ");
         put3(j, from_plan(v.eye));

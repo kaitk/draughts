@@ -12,6 +12,9 @@
 #       [--window-metal flat|LEVEL (the export's by default)] [--plan-eye X,Y,Z --plan-at X,Y,Z --fov DEG]   (the tuner's, in place of --view)
 #       [--pano X,Y,H (an equirectangular panorama from that plan point, 2:1, in place of a view: the middle looks
 #       along the plan's +y, u 0.75 along +x)]
+#       [--grade season|none (OUT.png through the app's camera grade under --light physical, autumn's from
+#       scene.json: its white balance on the light and its look on AgX's curve, at --exposure; none Blender's
+#       AgX alone)]
 #
 # Writes OUT.png (AgX), OUT.exr (multilayer: the combined light and the diffuse passes), and
 # OUT-light.png: the diffuse light alone (direct + indirect, no albedo), the room's
@@ -35,7 +38,7 @@ def flags():
          "exposure": "0", "textures": "on", "save-blend": None, "device": "gpu", "wood": None, "vertex-colour": "decoded",
          "paper": "physical", "paper-mask": "engraved", "paper-ground": None, "paper-gold": None, "paper-detail": None,
          "eye": None, "at": None, "fov": None,
-         "window-metal": None, "pano": None}
+         "window-metal": None, "pano": None, "grade": "season"}
     i = 0
     while i < len(argv):
         name = argv[i][2:]
@@ -1015,19 +1018,48 @@ glossy = (passes["Glossy Direct"] + passes["Glossy Indirect"]) * passes.get("Glo
 light = np.where(color > 0.01, np.maximum(combined - glossy, 0.0) / np.maximum(color, 1e-4), raw)
 
 
-def save(rgb, path):
+def save(rgb, path, transform="AgX"):
     img = bpy.data.images.new(os.path.basename(path), w, h, alpha=False, float_buffer=True)
     rgba = np.ones((h, w, 4), np.float32)
     rgba[:, :, :3] = rgb
     img.pixels.foreach_set(rgba[::-1].ravel())   # Blender's rows bottom up; OIIO's top down
+    was, ev = scene.view_settings.view_transform, scene.view_settings.exposure
+    if transform != was:
+        scene.view_settings.view_transform, scene.view_settings.exposure = transform, 0.0
     img.save_render(path, scene=scene)
+    scene.view_settings.view_transform, scene.view_settings.exposure = was, ev
     bpy.data.images.remove(img)
+
+
+# The app's camera under --light physical (render3d's HDR_TONE_FRAG, camera_curve with AgX):
+# the white balance's gains on the light, its short fit of AgX into AgX's log space, the
+# grade's look on the curve ((v * slope + offset) ^ power, the saturation round its
+# luminance), the display's 2.4 power and AgX's outset; display-linear, for the Standard
+# transform to encode. The grade's ev is over the app's meter, which Cycles hasn't: the
+# exposure is --exposure's.
+def graded(c, g):
+    c = c * (2.0 ** float(F["exposure"])) * np.array(g["white"], np.float32)
+    c = c @ np.array([[0.5448147, 0.1404170, 0.0888104], [0.3737874, 0.7541376, 0.1788717],
+                      [0.0813979, 0.1054455, 0.7323179]], np.float32)
+    t = np.clip((np.log2(np.maximum(c, 1e-10)) + 12.47393) / 16.5, 0.0, 1.0)
+    v = np.zeros_like(t)
+    for k in (-248.0705, 990.8947, -1578.567, 1276.883, -557.5602, 131.6423, -15.11457, 0.8965809, -0.008484016):
+        v = v * t + k
+    v = np.maximum(v * g["slope"] + g["offset"], 0.0) ** g["power"]
+    l = (v * np.array([0.2126, 0.7152, 0.0722], np.float32)).sum(-1, keepdims=True)
+    v = np.maximum(l + g["saturation"] * (v - l), 0.0) ** 2.4
+    v = v @ np.array([[1.9648874, -0.2993134, -0.1643526], [-0.8559884, 1.3263980, -0.2381840],
+                      [-0.1088990, -0.0270846, 1.4025366]], np.float32)
+    return np.clip(v, 0.0, 1.0)
 
 
 r.image_settings.media_type = "IMAGE"
 r.image_settings.file_format = "PNG"
 r.image_settings.color_depth = "8"
-save(combined, out + ".png")
+if F["grade"] == "season" and "grade" in S:
+    save(graded(combined, S["grade"]), out + ".png", "Standard")
+else:
+    save(combined, out + ".png")
 save(light, out + "-light.png")
 # The light on the props by which way their surface faces (the normal's largest axis):
 # toward the window (+y), away (-y), up, down, along the wall (+-x); mean of the light's
