@@ -57,8 +57,9 @@ The App Store's set for 0.9.4, from `main` at `f03173a8`, is in `2026-11-27/`:
 (the iPhone 6.3" set among them), contact sheets, `check.txt`, and `scripts/` with a
 README. After App Review's second 5.6 rejection (0.9.0, 2026-11-23), it shows only what a
 reviewer reaches in minutes from a fresh install: a player with 5 of the 12 Learn puzzles
-solved, so the other themes and the daily puzzles show locked, and every scene in winter,
-the season the date gives from 1 December. Play keeps the 0.9.0 set below.
+solved, so the other themes and the daily puzzles show locked; each scene a season, as
+0.9.0's, all four chosen in Settings, Look, as the review notes say (an all-winter take is
+kept in `winter-only/`, not for upload). Play keeps the 0.9.0 set below.
 
 The set for 0.9.0, from `main` at `e77693f`, is in `2026-11-16/`: `play/phone/`,
 `play/tablet/`, `app-store/iphone-6.9/` (and `-raw/`), and `app-store/ipad-13-landscape/`,

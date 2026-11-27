@@ -217,7 +217,7 @@ It has no network code, no accounts, no ads, no purchases, no links out of the a
 - Continue: the game in progress. Once a game has ended, "Replay" takes its place.
 - Results: past games and a rating against the computer; each game replays move by move.
 - Puzzles: "Learn" is open from the start, 12 short puzzles of one or two moves for each kind of draughts. The other themes open once half of Learn is solved, and "Today's puzzles" (the daily puzzles) once all 12 are solved in any one kind of draughts.
-- Settings (the gear on the home screen): the 3D board (Board), the picture (Theme), Sound, move hints, and the language.
+- Settings (the gear on the home screen), Look: Theme picks the season's picture and board (Winter, Spring, Summer, Autumn, or By date), Board picks the flat 2D board or a 3D one (Raised, Wood, Stone, Carved), and Background the photograph or a plain colour. The screenshots show these looks, each chosen there. Below them: Sound, move hints, and the language.
 
 Two things change by design. The background's season follows the date unless a season is chosen in Settings, Theme, so the picture depends on the day. Sound is off until turned up in Settings, Sound.
 
