@@ -1395,7 +1395,7 @@ let ROOM_FRAG = """
             float d_l = min(pk.along, plank.y - pk.along) * w;
             // With the wood's own finish, each plank's edges rounded down into the joint
             // (render3d::Wood's tile row: y the rounding's width, z its slope at the joint, w how
-            // dark the joint is, 1 as before), so the edge facing the light catches it. The
+            // dark the joint is and how much of the mirror it hides, 1 as before), so the edge facing the light catches it. The
             // slope is averaged over the pixel (joint_slope), so where a pixel spans the joint
             // its two sides cancel, and what it can't resolve roughens the wax (shoulder_var).
             vec2 shoulder = vec2(0.0);
@@ -1483,7 +1483,7 @@ let ROOM_FRAG = """
             float pores = clamp(length(t) * 3.0, 0.0, 1.0);
             float patches = smoothstep(0.35, 0.75, slow.g);
             dull = clamp(0.6 * wear + 0.4 * sc + 0.35 * pores + 0.4 * patches, 0.0, 1.0);
-            wax = (1.0 + own_wax) * (1.0 - joint) * (1.0 - 0.3 * dull);
+            wax = (1.0 + own_wax) * (1.0 - joint * joint_dark) * (1.0 - 0.3 * dull);
             rough *= 1.0 - 0.4 * own_wax;
         #endif
             // The rug under the games table (render3d::put_rug), lying along the window wall: where
