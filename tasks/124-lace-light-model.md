@@ -165,3 +165,57 @@ against the CPU tracer at the same points, the same description, 256 cosine rays
   reshot (build/lace124/a/merged-reference*) against c0bd47f3's build. The lace regions'
   light is unchanged to the digit (near in shade 0.86 of Cycles', lit 0.56, middle 0.81), so
   the open items above stand. Only the floor moved: its patch in shade 1.30 → 1.63 of Cycles'.
+
+## The folds' cavity and the lit flanks (2026-11-27, evening)
+
+Under `--light physical` only; without it the reference and lace views match `build/stable`
+(0 and 1 pixels, as a rerun of it). Scratch `build/lace124b/` (a source copy, `tree/`, for
+dump builds; the tracer's copy `pt/` with `--rays N`, `--no-sky`, `--no-sun`, `--depth N`;
+`cmp*.py`); results page `build/notes/lace-shade/index.html`, first section.
+
+- The room side below 0.6 m was mostly `lace_glow` (0.0027, B/R 0.62): the lowest band's light,
+  its sky seen from the band's middle, carried down to the hem, where the tracer's window side
+  is 0.0004 to 0.0006. Now (f2833d20) below the sill the folds' glow comes from the vertex's own
+  window side, and above it from the band, its sun all above the sill. The window side's view of
+  the wall meets the folds at their other phase (`FOLD_HIDDEN` less the room side's hidden
+  share): through them the room's light and their thread's. In shade, over the tracer: the
+  window side under 0.6 m 0.31–0.40 → 1.15–1.47 (B/R 0.34–0.37 against 0.12–0.15), at 0.6 to
+  0.84 m 0.65–0.96 → 0.92–1.34; the room side under 0.6 m 0.77–1.56 → 0.54–1.06, B/R 0.38 →
+  0.30 (the tracer 0.16–0.20).
+- The lit panels: the shader took the side the eye sees as the room side; at the reference
+  view's slant the eye sees some flanks' window side, sunlit, which took the sun through the
+  cloth first (`lace_self`). Now (91aa2bbe) the room side is the one facing into the room. As
+  seen, over Cycles: the lit panel 0.57 → 0.68 (its brightest quarter 0.45 → 0.59), the
+  middle window's right panel's brightest quarter 0.39 → 0.58 (99th percentile 0.56 → 0.82),
+  the middle panel 0.82 → 0.93, the foot 0.86 → 0.83. ngfx at parity on the lace (it differs
+  from gfx only on the floor, which has no baked reflection on ngfx yet).
+- "Sharp and blocky" was the solid scratch build's artefact: at full coverage the unsorted
+  lace draws far folds over near ones. In the real render the bars' shadows match Cycles'. The
+  solid measure is unreliable on the lit folds for the same reason. Against Cycles with its sky
+  off (`build/lace124b/cynosky`), the sun's light on the lit thread was 0.38–0.42 of Cycles',
+  the lit door 0.83.
+- The floor's reflections of the lace (`refl_lace`, `planar_lace`) keep the old model: with
+  `LACE_DESCRIBED` in both, at most 4 levels in the reference view and 5 in a low view onto the
+  floor (no pixel over 8). Left as it is.
+
+The room side's colour, measured, not changed (the user to decide). At the point the lace reads
+the probes (6.85 m, settled toward the room) the tracer gives B/R 0.15–0.24, the probes
+0.29–0.34: the sky's part 1.4–1.9 times the tracer's, the sun's bounce 0.3–1.1. Two causes:
+
+- The probes 0.15–0.35 m before the window wall take the lace cells' light on the wall behind
+  (`gather_cells`' `behind_lace`, `lace_on_wall`), which the wall needs; the lace reads it as
+  the room's, and its cavity term already counts its neighbours. Without it the sky's part has
+  the tracer's colour (B/R 0.59–0.63 against 0.56–0.65), 0.43–1.26 of its level.
+- The sun's bounce toward the window wall is short: without the lace's own light the probes hold
+  0.29–0.35 of the tracer's first two bounces by the stove (window 0), 0.39–0.61 at the middle
+  window, 0.20–0.91 at the far one; the tracer's sun there is 0.75–0.95 first bounce. Task 122's
+  0.52, worst at the wall.
+
+Proposed: (1) keep the lace's light on the wall apart from what the lace reads (a second value
+for that row, or the lace reading it without); (2) measure the first bounce patch by patch at
+those probes against the tracer (the floor's patches 0.15–0.45 m away, gathered as points
+capped at 0.3 m; the stove's faces) before changing the gather.
+
+Error factor of the thread's own light over the seven regions (the solid measure): 1.43 → 1.40.
+Left: the probes' colour above; the lit panels 0.6–0.7; the window side's cavity share is the
+room side's phase mirrored, not traced (it reads 1.15–1.47 of the tracer under 0.6 m).
